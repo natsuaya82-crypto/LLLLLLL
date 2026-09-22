@@ -289,16 +289,34 @@ function voPlay(f){
   f=String(f||'');
   if(!f) return;
   if(VOAT===f){ voPlayOff(); return; }
-  /* Somebody else's voice is a URL and is played from it -- there is nothing
-     to read off this disk, and downloading it whole before starting would be
-     a wait where every other app starts playing. */
+  /* Somebody else's voice is on the server, and it is FETCHED WHOLE before it
+     plays. This said the opposite until 2026-09-22 -- 「downloading it whole
+     before starting would be a wait where every other app starts playing」 --
+     and that sentence was about a public bucket. It is private now
+     (「サーバーは、サインインしていない人には何も返さない」 OWNER
+     2026-09-22), and **an <audio src> carries no headers**, so streaming from
+     a URL is not a road any more: the bytes come through netMedia()
+     (www/net.js), signed, and what plays is a blob: of what came back.
+
+     What it costs is bounded and small: a voice is thirty seconds
+     (「30秒くらい」) and it is fetched once -- pressing it again plays what
+     this phone is already holding.
+
+     Playing from a callback rather than on the line the press arrived on is
+     not new here: the road just below, for a voice this phone recorded, has
+     always gone through voRead() and the plugin, which is the same shape.
+     The element is made once and kept for exactly that reason. */
   if(voRemote(f)){
-    var ra=voAudio();
-    ra.src=netMediaURL(f);
-    ra.onended=function(){ voPlayOff(); };
-    VOAT=f;
-    voPaintRows();
-    try{ ra.play(); }catch(e){ voPlayOff(); }
+    netMedia(f, function(u){
+      var ra;
+      if(!u){ toast(t('post.vo.gone')); return; }
+      ra=voAudio();
+      ra.src=u;
+      ra.onended=function(){ voPlayOff(); };
+      VOAT=f;
+      voPaintRows();
+      try{ ra.play(); }catch(e){ voPlayOff(); }
+    });
     return;
   }
   voRead(f, function(b64){

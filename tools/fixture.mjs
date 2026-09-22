@@ -737,6 +737,28 @@ export function halfDone(){
     ['the timeline, signed out', () => { const was = SESS; SESS = null;
                                          window.route = 'feed'; NAV = [{ r:'feed' }];
                                          const h = vFeed(); SESS = was; return h; }],
+    /* A PHOTOGRAPH THAT IS ON THE SERVER AND HAS NOT ARRIVED (2026-09-22).
+       「サーバーは、サインインしていない人には何も返さない」 OWNER.
+
+       Somebody else's photograph is a path in a private bucket now, fetched
+       with the session on it (www/net.js § netMedia), so between the row
+       being drawn and the bytes landing there is a frame with no `src`. No
+       check has a network, and this is the state the owner has to be able to
+       look at: `.ppic` carries its width and height in the stylesheet, so the
+       frame is the size the picture will be and nothing jumps when it lands.
+
+       `NET_MED` is seeded with 0 -- 「asked and did not come」 -- rather than
+       left empty, so drawing this face makes no request at all. A fixture
+       that reached for a real bucket would put a live call into every walk. */
+    ['a photograph still on its way', () => {
+       const path = 'aaaa-bbbb/cccc-dddd/0.jpg';
+       NET_MED[path] = 0;
+       POSTS.unshift({ id: 'pw8', at: Date.now() - 900000, lang: 'other',
+                       lname: 'Shango', ln: 'tir mos', who: 'Iri', hd: 'iri',
+                       mn: 'the hills before the rain', ui: 'en',
+                       pu: [path] });
+       window.route = 'feed'; NAV = [{ r: 'feed' }];
+       const h = vFeed(); POSTS.shift(); delete NET_MED[path]; return h; }],
     /* The day's sentence is up. Without this, dayRow() is never rendered by
        anything: DAY is null until a fetch answers, and no check has a network.
        Both faces of it are here, because the second one is the whole point --

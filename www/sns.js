@@ -2116,7 +2116,12 @@ function vPhoto(){
       pics=postPics(p), out='', k;
   if(!p || !pics[n]) return viewGone();
   for(k=0;k<pics.length;k++)
-    out+='<div class="pvpage"><img class="pvimg" src="'+esc(pics[k])+'" alt=""></div>';
+    /* netMediaSrc(), the same as the thumbnail on the row this was opened
+       from: a photograph is a path in a private bucket and what a tag may be
+       given for one is www/net.js's to say. The full picture is usually a
+       second fetch -- the row drew the small copy -- so this is the one place
+       in the app where a frame is genuinely empty for a moment. */
+    out+='<div class="pvpage"><img class="pvimg"'+netMediaSrc(pics[k])+' alt=""></div>';
   return '<div class="view">'+navTop(pics.length>1? String(n+1)+'/'+pics.length : '')+
     '<div class="body">'+
       '<div class="pview"><div class="pvrail" id="pv-rail" data-at="'+n+'">'+
@@ -3137,7 +3142,9 @@ function notRow(n){
        it. Only where this phone has the post: a notice is about something you
        wrote, so it is in `lingua.posts`, and a notice whose post is not here
        shows the time alone rather than a gap. */
-    (pics.length? '<span class="ntfpic"><img src="'+esc(pics[0])+'" alt=""></span>'
+    /* netMediaSrc() for the same reason the row and the viewer use it: the
+       photograph on somebody's notice is a path in a private bucket. */
+    (pics.length? '<span class="ntfpic"><img'+netMediaSrc(pics[0])+' alt=""></span>'
                 : '')+
     '</div>';
 }

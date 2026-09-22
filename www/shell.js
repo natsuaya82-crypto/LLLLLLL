@@ -89,6 +89,14 @@ function viewReset(){
      on. Nothing stored is touched: KEEP holds strings that have never been
      written down. */
   KEEP={};
+  /* And every photograph and voice this phone has fetched. They are blob:
+     URLs -- handles into this phone's memory, held until they are let go --
+     and a long timeline scrolled in one language and then another language
+     opened would be holding both. netMediaForget() (www/net.js) is the one
+     place they are let go; this and netOut() are its two callers, and neither
+     is ordinary navigation: walking to a post and back must not fetch every
+     photograph again. */
+  if(typeof netMediaForget==='function') netMediaForget();
 }
 
 /* ---- and what a SCREEN forgets when you walk off it ---------------------

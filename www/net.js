@@ -878,6 +878,11 @@ function netOut(){
      including the block list above -- they are that account's, and the next
      person to sign in on this phone must ask for their own. */
   netBlockedDrop();
+  /* And every photograph and voice fetched for that account. They were
+     fetched with their token and the next person must ask with their own --
+     and a `0` in that table 「asked and did not come」 is that account's
+     answer too, so signing in again is a phone that tries. */
+  netMediaForget();
   if(typeof pullForget==='function') pullForget();
   /* AND WHO FOLLOWS WHOM, WHICH SINCE 2026-09-09 INCLUDES THIS ACCOUNT'S OWN
      TWO LISTS (www/me.js § folForget). They are keyed by handle and a handle
@@ -4438,10 +4443,141 @@ function netRecentDrop(q, ok, bad){
    else. Nothing here decides that; it obeys it.
 
    A path and not a URL, because the URL is where the bucket happens to live
-   and the path is what the post is about. netMediaURL() is the one place the
-   two are joined. */
-function netMediaURL(path){
-  return SB_URL+'/storage/v1/object/public/post-media/'+String(path||'');
+   and the path is what the post is about. netMedia() below is the one place
+   the two are joined.
+
+   ---- AND IT IS FETCHED AS SOMEBODY ------------------------------------
+
+   「サーバーは、サインインしていない人には何も返さない」 OWNER 2026-09-22.
+
+   `netMediaURL()` stood here and built
+   `…/storage/v1/object/public/post-media/<path>` -- a string handed straight
+   to `<img src>` and `<audio src>`. **A tag's `src` carries no headers**, so
+   every photograph and every voice in this app was fetched by anybody, signed
+   in or not, for as long as the bucket was public. The bucket is private now
+   and `media_read` asks `is_member()`, which means that road answers nothing:
+   not an error on the screen, just pictures that do not appear.
+
+   So the bytes are fetched with the session on them and the picture is drawn
+   from what came back. `/object/authenticated/<bucket>/<path>` with
+   `Authorization: Bearer <SESS.at>`, and `URL.createObjectURL()` turns the
+   blob into something a tag can be given.
+
+   **NOT A SIGNED URL.** That would keep `<img src="…?token=…">` working with
+   no change anywhere else, and it would be a second way this app authorises a
+   request -- one for every other road and one for pictures. CLAUDE.md
+   「one thing is done by ONE mechanism」.
+
+   **AND NOT THROUGH netSend1().** That function is the one window onto rows
+   of JSON, and this is bytes: netUp() one screen down made the same call for
+   the same reason 「the body is bytes rather than JSON」 and it is the write
+   half of exactly this sentence. One place reads media and one place writes
+   it, and they sit either side of this comment.
+
+   **NO SPINNER.** netOn()/netOff() turn the mark that says 「something is in
+   the air」, and a timeline filling in twenty photographs would turn it for
+   as long as somebody scrolled. The app's own promise here is that the text
+   arrives at once and the pictures fill in behind it; a mark that says the
+   app is busy for the whole of that is the opposite of that promise. */
+/* WHAT HAS BEEN FETCHED, AND WHAT IS NOT WORTH ASKING FOR AGAIN.
+     a string   the blob: URL, ready to be given to a tag
+     1          on its way
+     0          asked and did not come, and not asked again until the app is
+                opened again, netOut() or viewReset(). A render is what asks,
+                so clearing this on a failure would be a render that asks, a
+                failure that clears, and a render again -- every picture on the
+                screen, for ever. Bounded and said out loud rather than a loop
+                nobody can see. */
+var NET_MED={};
+/* A path is a uuid, a uuid, and a file name. It is somebody else's string --
+   it arrives on a post, off the server -- and it goes into a URL and into a
+   `data-med` attribute this file then looks elements up by, so what it may
+   contain is said once, here. Anything else is refused rather than escaped:
+   there is no path that needs a quote in it. */
+function netMediaOK(p){ return /^[A-Za-z0-9][A-Za-z0-9/_.-]*$/.test(p); }
+/* The one road. Returns the URL when this phone already holds it -- which is
+   what lets a render put it straight into `src` -- and calls `ok` with it
+   when it lands. `ok` is optional: the pictures do not want it (netMediaFill()
+   below paints them in place), and the voice does, because there is one of it
+   and it was pressed. */
+function netMedia(path, ok){
+  var p=String(path||''), had, x;
+  function done(u){ if(ok) ok(u); }
+  if(!p || !netMediaOK(p)){ done(''); return ''; }
+  had=NET_MED[p];
+  if(typeof had==='string'){ done(had); return had; }
+  /* On its way, or it did not come. Either way there is nothing to give now;
+     the one on its way will paint itself. */
+  if(had===1 || had===0){ done(''); return ''; }
+  if(!netSignedIn() || !SESS || !SESS.at){ done(''); return ''; }
+  NET_MED[p]=1;
+  x=new XMLHttpRequest();
+  x.open('GET', SB_URL+'/storage/v1/object/authenticated/post-media/'+p, true);
+  x.timeout=NET_WAIT;
+  x.responseType='blob';
+  x.setRequestHeader('apikey', SB_KEY);
+  x.setRequestHeader('Authorization', 'Bearer '+SESS.at);
+  x.onreadystatechange=function(){
+    var u;
+    if(x.readyState!==4) return;
+    if(x.status>=200 && x.status<300 && x.response){
+      u=URL.createObjectURL(x.response);
+      NET_MED[p]=u;
+      netMediaFill(p, u);
+      done(u);
+      return;
+    }
+    NET_MED[p]=0; done('');
+  };
+  x.onerror=function(){ NET_MED[p]=0; done(''); };
+  x.send(null);
+  return '';
+}
+/* And the picture that was already on the screen, waiting for it.
+   Painted in place rather than through render(): a timeline redrawn once per
+   photograph is a timeline that jumps under a thumb, and www/post.js makes
+   the same call for the same reason (pwMarkPaint). An element that has gone
+   -- somebody walked to another screen while it was in the air -- is simply
+   not found, which is the right answer and needs no guard. */
+function netMediaFill(p, url){
+  var l=document.querySelectorAll('[data-med="'+p+'"]'), i;
+  for(i=0;i<l.length;i++) l[i].src=url;
+}
+/* WHAT A TAG IS GIVEN, and it is the other half of one sentence, so it is
+   here rather than in the screens.
+
+   Three kinds of thing arrive: a picture this phone took a moment ago and has
+   not uploaded (`data:`), one already fetched (`blob:`), and a path in the
+   bucket. The first two are given straight to `src` -- a post you just wrote
+   draws at once, with no network, which is what makes your own timeline
+   instant and is not a road through the server at all.
+
+   A path that is not here yet gets **no `src`** and the mark saying which
+   object it is waiting for. Not `src=""`: an empty `src` is a request for the
+   page itself in every browser this app has ever run in. */
+function netMediaSrc(u){
+  var s=String(u||''), got;
+  if(!s) return '';
+  if(s.indexOf('data:')===0 || s.indexOf('blob:')===0 || s.indexOf('http')===0)
+    return ' src="'+esc(s)+'"';
+  got=netMedia(s);
+  return got? ' src="'+esc(got)+'"' : ' data-med="'+esc(s)+'"';
+}
+/* Let go of every one of them. A blob: URL is a handle into this phone's
+   memory and it is held until it is revoked, so somebody who scrolled a long
+   timeline and then opened another language would be holding both.
+
+   viewReset() is where a screen forgets (CLAUDE.md § One place) and netOut()
+   is where a session does; both call this. It is NOT called on ordinary
+   navigation, and that is the point -- walking to a post and back must not
+   fetch every photograph again. */
+function netMediaForget(){
+  var p;
+  for(p in NET_MED)
+    if(Object.prototype.hasOwnProperty.call(NET_MED, p) &&
+       typeof NET_MED[p]==='string')
+      try{ URL.revokeObjectURL(NET_MED[p]); }catch(e){}
+  NET_MED={};
 }
 /* A post's name before the post exists. The row's id is made HERE rather than
    by the server, because the pictures have to be uploaded under it and an id
@@ -4954,13 +5090,19 @@ function netDropFiles(p, done){
   netSend('DELETE', '/storage/v1/object/post-media', {prefixes:paths}, SESS.at,
           function(){ done(); },
           /* The row still goes -- the paragraph above says why and it stands.
-             What used to happen next is that the paths went with it. The
-             bucket is PUBLIC (netMediaURL() builds
-             /storage/v1/object/public/post-media/), so what was left was not
-             litter: anybody holding the URL went on seeing the photograph of
-             a post its author had deleted, and nothing pointed at the file
-             any more, so there was nothing left to delete it with.
-             docs/RISK.md § 9.
+             What used to happen next is that the paths went with it, and what
+             was left was not litter: the bucket was PUBLIC, so anybody holding
+             the URL went on seeing the photograph of a post its author had
+             deleted, and nothing pointed at the file any more, so there was
+             nothing left to delete it with. docs/RISK.md § 9.
+
+             **The bucket is private since 2026-09-22** (§ netMedia above), so
+             the first half of that is no longer true: what is left cannot be
+             read by somebody with a URL, only by somebody with an account.
+             The second half is untouched and is the whole of why this is
+             here -- a file nothing points at is a file nobody can delete, and
+             it is the author's photograph sitting on a server after they
+             asked for it to go.
 
              So the paths are kept and asked for again. Not a cleanup and not
              a sweep -- these are the files of a post somebody asked to be

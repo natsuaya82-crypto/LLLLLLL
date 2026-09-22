@@ -120,6 +120,16 @@ forgotten password, the hour running out) and `/rest/v1/rpc/email_taken`
 「sign in」 from 「sign up」). Nothing else. Read `netDoor()` rather than this
 sentence; a road added to it is a road anybody can walk.
 
+**A PHOTOGRAPH AND A VOICE GO THE SAME WAY, and they are the one road that
+could not simply be signed.** A tag's `src` carries no headers, so
+`<img src="…/object/public/post-media/<path>">` was fetched by anybody. The
+bytes are fetched instead — `netMedia()` in `www/net.js`, one place,
+`/object/authenticated/…` with the session on it — and what a tag is given is
+a `blob:` of what came back. Not a signed URL: that would be a second way this
+app authorises a request. `netUp()` is the write half of the same sentence and
+sits beside it; neither goes through `netSend1()`, because both are bytes
+rather than JSON, and that was already `netUp()`'s reason.
+
 This closed something that had been open since the beginning: `netGet()` handed
 `''` whenever there was no session, the header falls back to the publishable
 key, and the reading policies were `using (true)` — so signed out, every read

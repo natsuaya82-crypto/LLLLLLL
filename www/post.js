@@ -3508,8 +3508,17 @@ function postPics(p){
   if(!p) return [];
   if(Object.prototype.toString.call(p.pics)==='[object Array]' && p.pics.length)
     return p.pics;
+  /* THE PATH, NOT A URL (2026-09-22). This built one -- netMediaURL() -- and
+     what it built was the public bucket, which is the one road in this app
+     that went out with nobody on it. The bucket is private now; what a tag is
+     given is netMediaSrc()'s to say (www/net.js), and it needs the path to
+     say it. Everything that reads this list reads the same three kinds it
+     always did: a `data:` from the camera, a `blob:` already fetched, or a
+     path in the bucket -- and netMediaSrc() is the one place that tells them
+     apart. The LENGTH is unchanged, which is what postHasMedia() and
+     netUpPics() read it for. */
   if(Object.prototype.toString.call(p.pu)==='[object Array]' && p.pu.length){
-    for(i=0;i<p.pu.length;i++) out.push(netMediaURL(p.pu[i]));
+    for(i=0;i<p.pu.length;i++) out.push(String(p.pu[i]||''));
     return out;
   }
   return p.pic? [p.pic] : [];
@@ -3536,7 +3545,7 @@ function postThumbs(p){
     return full;
   for(i=0;i<full.length;i++){
     t=p.pt[i];
-    out.push(t? netMediaURL(t) : full[i]);
+    out.push(t? String(t) : full[i]);
   }
   return out;
 }
@@ -3981,7 +3990,13 @@ function postRow(p){
                  because act.js delivers a press to the nearest name above the
                  thumb. Tapping the picture opens the picture; tapping beside
                  it opens the conversation. */
-              return '<img class="ppic" src="'+esc(u)+'" alt=""' +
+              /* netMediaSrc() and not `src="'+esc(u)+'"`: a photograph on
+                 somebody else's post is a path in a private bucket now, and
+                 what an <img> may be given for one of those is that
+                 function's to say (www/net.js). It hands back `src` when this
+                 phone already holds the bytes and the mark it fills in by
+                 when they land. */
+              return '<img class="ppic"'+netMediaSrc(u)+' alt=""' +
                 DO('postPic', [p.id, i]) + '>';
             }).join('')+'</div>'
         : '')+

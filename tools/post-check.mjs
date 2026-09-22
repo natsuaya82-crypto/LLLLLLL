@@ -2286,25 +2286,31 @@ const R = await pg.evaluate(async () => {
                JSON.stringify(capWH) + ' and POST_PIC is ' + POST_PIC);
   PW = pwBlank();
 
-  /* And what each of the two screens is handed. Per picture, because `pt` is
+  /* And what each of the two screens is handed. **A PATH, since 2026-09-22**:
+     it used to be netMediaURL()'s public URL, and a tag's `src` carries no
+     headers, so that road was the one thing in this app that went out with
+     nobody on it. What a tag is given is netMediaSrc()'s (www/net.js) and the
+     list is what it is given FOR, so the list is the path.
+
+     Per picture, because `pt` is
      allowed to have a hole in it: a small copy that failed to go up must fall
      back to the photograph IN ITS OWN PLACE. A list that closed the hole
      would put picture two’s thumbnail under picture one, which is the
      wrong picture shown with nothing throwing. */
   const A = 'u/p/0.jpg', B = 'u/p/1.jpg', TA = 'u/p/0.t.jpg', TB = 'u/p/1.t.jpg';
   const tail = postThumbs({ pu: [A, B], pt: [TA] });
-  if (tail[0] !== netMediaURL(TA) || tail[1] !== netMediaURL(B))
+  if (tail[0] !== TA || tail[1] !== B)
     fails.push('with a small copy for the first picture only, the timeline ' +
                'draws ' + JSON.stringify(tail) + ' -- it has to be the small ' +
                'copy then the photograph');
   const lead = []; lead[1] = TB;
   const holed = postThumbs({ pu: [A, B], pt: lead });
-  if (holed[0] !== netMediaURL(A) || holed[1] !== netMediaURL(TB))
+  if (holed[0] !== A || holed[1] !== TB)
     fails.push('with a small copy for the SECOND picture only, the timeline ' +
                'draws ' + JSON.stringify(holed) + ' -- picture one is wearing ' +
                'picture two\u2019s thumbnail');
   const opened = postPics({ pu: [A, B], pt: [TA, TB] });
-  if (opened[0] !== netMediaURL(A))
+  if (opened[0] !== A)
     fails.push('opening a photograph shows the small copy, so there is no way ' +
                'to see the photograph at all');
   /* On this phone the picture is in hand. Nothing is downloaded either way,
@@ -2312,7 +2318,7 @@ const R = await pg.evaluate(async () => {
   if (postThumbs({ pics: [big] })[0] !== big)
     fails.push('a post written on this phone does not draw its own picture');
   /* A post from before any of this has no `pt` and draws the photograph. */
-  if (postThumbs({ pu: [A] })[0] !== netMediaURL(A))
+  if (postThumbs({ pu: [A] })[0] !== A)
     fails.push('a post written before there were small copies draws nothing');
 
   /* And the row itself, which is the half that matters and the half a check
@@ -2331,9 +2337,9 @@ const R = await pg.evaluate(async () => {
     if (wasP === undefined) delete seen.pics;
     if (wasU === undefined) delete seen.pu;
     if (wasT === undefined) delete seen.pt;
-    if (drawn.indexOf(netMediaURL(TA)) < 0)
+    if (drawn.indexOf('data-med="' + TA + '"') < 0)
       fails.push('the row a timeline draws does not ask for the small copy at all');
-    if (drawn.indexOf(netMediaURL(A)) >= 0)
+    if (drawn.indexOf('data-med="' + A + '"') >= 0)
       fails.push('the row a timeline draws still asks for the photograph, so ' +
                  'every picture scrolled past costs its full size. Nothing looks ' +
                  'wrong -- the browser scales it down on arrival -- and the only ' +
@@ -2973,11 +2979,14 @@ const R = await pg.evaluate(async () => {
          photographs and the voice, and when that fails its handler is
          function(){ done(); } -- the row is deleted anyway, deliberately
          (「a post somebody asked to be gone must go」). What was never
-         written down is that the bucket is PUBLIC (netMediaURL() builds
-         /storage/v1/object/public/post-media/), so what is left is not
-         merely litter: anybody holding the URL goes on seeing the
-         photograph of a post its author deleted. Nothing points at the
-         files any more, so there is nothing left to delete them WITH.
+         written down is that the bucket was PUBLIC, so what is left was not
+         merely litter: anybody holding the URL went on seeing the
+         photograph of a post its author deleted. **The bucket is private
+         since 2026-09-22** and that half is closed -- what is left can be
+         read only by somebody with an account. The half that decides this
+         claim is untouched: nothing points at the files any more, so there
+         is nothing left to delete them WITH, and they are the author's
+         photographs sitting on a server after they asked for them to go.
 
          The row going is right and is not what this asks about. What it
          asks is that the paths are not thrown away with it. */
@@ -4061,6 +4070,147 @@ const R = await pg.evaluate(async () => {
     POSTS = wasPosts; savePosts();
     window.route = wasRoute; NAV = wasNav;
     try { closeSheet(); } catch (e) {}
+  }
+
+  /* ---- a photograph on SOMEBODY ELSE'S post is fetched as somebody -------
+     「サーバーは、サインインしていない人には何も返さない」 OWNER 2026-09-22.
+
+     A photograph used to be `…/object/public/post-media/<path>` handed
+     straight to `<img src>`. **A tag's `src` carries no headers**, so every
+     picture in this app was fetched by anybody, signed in or not -- and with
+     the bucket private that road answers nothing at all: no error, no blank
+     screen, just photographs that never appear. Which is why this is measured
+     from the PAGE and not read off net.js: what matters is what the <img>
+     ends up carrying.
+
+     Four. With a session: nothing is asked of the server with the anon key,
+     the request that fetches the bytes carries `Bearer <SESS.at>`, and the
+     <img> ends up with a `blob:` in its `src`. With none: nothing is fetched
+     at all -- a signed-out phone that asked would be asking to be refused.
+
+     XMLHttpRequest is wrapped rather than netSend, because 「did it go out」
+     is the question and a fake netSend would not answer it -- and the media
+     road is deliberately not netSend's (www/net.js: bytes, not JSON). */
+  {
+    const wasPosts = POSTS, wasRoute = window.route, wasNav = NAV, wasSess = SESS;
+    const openWas = XMLHttpRequest.prototype.open;
+    const hdrWas = XMLHttpRequest.prototype.setRequestHeader;
+    const sendWas = XMLHttpRequest.prototype.send;
+    let asked = [];
+    const JPG = 'data:image/jpeg;base64,/9j/4AAQSkZJRg==';
+    XMLHttpRequest.prototype.open = function (m, u) {
+      this.__u = String(u); asked.push({ u: String(u), auth: '' });
+      return openWas.apply(this, arguments);
+    };
+    XMLHttpRequest.prototype.setRequestHeader = function (k, v) {
+      if (String(k).toLowerCase() === 'authorization')
+        for (const a of asked) if (a.u === this.__u) a.auth = String(v);
+      return hdrWas.apply(this, arguments);
+    };
+    /* Answered here rather than over a wire: there is no server in this check.
+       A real Blob comes back, so URL.createObjectURL() is the real one and the
+       `blob:` on the <img> is a real object URL. */
+    XMLHttpRequest.prototype.send = function () {
+      const me = this;
+      if (String(me.__u).indexOf('/storage/v1/object/authenticated/') < 0)
+        return sendWas.apply(this, arguments);
+      setTimeout(() => {
+        Object.defineProperty(me, 'readyState', { value: 4, configurable: true });
+        Object.defineProperty(me, 'status', { value: 200, configurable: true });
+        Object.defineProperty(me, 'response',
+          { value: new Blob([new Uint8Array([1, 2, 3])], { type: 'image/jpeg' }),
+            configurable: true });
+        if (me.onreadystatechange) me.onreadystatechange();
+      }, 0);
+    };
+    const media = () => asked.filter(a => a.u.indexOf('/storage/v1/object/') >= 0);
+    const draw = () => {
+      POSTS = [{ id: 'mp', at: Date.now(), lang: 'other', lname: 'Shango',
+                 ln: 'kano', who: 'Iri', hd: 'iri', mine: false, ui: 'en',
+                 pu: ['aaaa/bbbb/0.jpg'] }];
+      window.route = 'feed'; NAV = [{ r: 'feed' }];
+      render();
+      return document.querySelector('img.ppic');
+    };
+
+    /* No session: nothing is fetched.
+
+       Asked of netMediaSrc() and NOT of a rendered timeline, and the first
+       version of this asked the timeline and was green with the guard taken
+       out. The three sns tabs answer with the DOOR when there is no session,
+       so there was no <img> on the screen to fetch anything for: the claim
+       was true for a reason that has nothing to do with what it is about.
+       A check that is green because the screen it walked does not exist is a
+       proxy, and CLAUDE.md says what those are worth. */
+    netMediaForget();
+    SESS = null;
+    asked = [];
+    const outSrc = netMediaSrc('aaaa/bbbb/0.jpg');
+    await new Promise(r => setTimeout(r, 30));
+    if (media().length)
+      fails.push('**signed out, a photograph is still fetched** — ' +
+                 JSON.stringify(media().map(a => a.u)) +
+                 '. The bucket refuses it; asking at all is the fault');
+    if (outSrc.indexOf('src=') >= 0)
+      fails.push('signed out, an <img> is still given a src — ' + outSrc);
+
+    /* A session: fetched, signed, and the <img> ends up with the bytes. */
+    SESS = wasSess;
+    netMediaForget();
+    asked = [];
+    const im = draw();
+    if (!im) fails.push('no photograph on the row at all');
+    if (im && im.getAttribute('src'))
+      fails.push('**the <img> was given a src before the bytes arrived** — ' +
+                 im.getAttribute('src').slice(0, 60) +
+                 '. An empty or public src is what this change is about');
+    if (im && im.getAttribute('data-med') !== 'aaaa/bbbb/0.jpg')
+      fails.push('the <img> does not say which object it is waiting for — ' +
+                 JSON.stringify(im && im.getAttribute('data-med')));
+    await new Promise(r => setTimeout(r, 30));
+    const m = media();
+    if (m.length !== 1)
+      fails.push('**the photograph was not fetched** — ' + m.length +
+                 ' requests. A private bucket answers nothing to an <img src>');
+    else {
+      if (m[0].u.indexOf('/object/authenticated/post-media/aaaa/bbbb/0.jpg') < 0)
+        fails.push('not the authenticated road — ' + m[0].u);
+      if (m[0].u.indexOf('/object/public/') >= 0)
+        fails.push('**still the public road** — ' + m[0].u);
+      if (m[0].auth !== 'Bearer ' + SESS.at)
+        fails.push('**the photograph was not fetched as this person** — ' +
+                   JSON.stringify(m[0].auth.slice(0, 24) + '…') +
+                   '. The anon key is what the public bucket took');
+    }
+    const now = document.querySelector('img.ppic');
+    if (now && String(now.src).indexOf('blob:') !== 0)
+      fails.push('**the photograph never reached the <img>** — src=' +
+                 JSON.stringify(String(now.src).slice(0, 60)) +
+                 '. The bytes came back and nothing put them on the screen');
+
+    /* And a picture this phone took itself does NOT go near the server. */
+    netMediaForget();
+    asked = [];
+    POSTS = [{ id: 'mine', at: Date.now(), lang: langId, ln: 'kano',
+               who: 'Aya', hd: 'aya', mine: true, ui: 'en', pics: [JPG] }];
+    window.route = 'feed'; NAV = [{ r: 'feed' }];
+    render();
+    await new Promise(r => setTimeout(r, 30));
+    if (media().length)
+      fails.push('a picture this phone is holding was fetched from the server — ' +
+                 JSON.stringify(media().map(a => a.u)));
+    const own = document.querySelector('img.ppic');
+    if (own && String(own.getAttribute('src') || '').indexOf('data:') !== 0)
+      fails.push('a picture this phone is holding is not drawn from it — src=' +
+                 JSON.stringify(String(own.getAttribute('src') || '').slice(0, 40)));
+
+    XMLHttpRequest.prototype.open = openWas;
+    XMLHttpRequest.prototype.setRequestHeader = hdrWas;
+    XMLHttpRequest.prototype.send = sendWas;
+    netMediaForget();
+    SESS = wasSess;
+    POSTS = wasPosts; savePosts();
+    window.route = wasRoute; NAV = wasNav;
   }
 
   return { fails, mid: (nowLight * 100).toFixed(1), corner: (wasLight * 100).toFixed(1),
