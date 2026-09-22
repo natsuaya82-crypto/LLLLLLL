@@ -414,7 +414,26 @@ function contactKind(k){ CONT.kind=String(k||'opinion'); render(); }
 /* Stored and not rendered back: render() here would rebuild the field under
    whoever is typing into it. setPwSet() above and adminSet() in www/mod.js
    are the same line, and lnGrow() is what makes the box follow the words. */
-function contactSet(k, v){ if(k==='body'){ CONT.body=String(v||''); lnGrow('cont-b'); } }
+var CONT_MAX=2000;
+function contactSet(k, v){
+  if(k!=='body') return;
+  /* 「2000文字以降は勝手に文字消えるようにしていいよ」 OWNER 2026-09-22.
+     2001 字目からは入りません -- 打った物が消えるのではなく、そこから先が
+     入らないという形です。断りの文は出ません（説明を書かない）。
+
+     `maxlength` ではなく切るのは、貼り付けが maxlength を素通りする
+     WKWebView があるからではなく、サーバーの床（length(body) between 1
+     and 2000）と同じ数を一箇所で言うためです -- 欄の属性に書くと、同じ数が
+     画面と schema の二箇所になります。 */
+  var txt=String(v||'');
+  if(txt.length>CONT_MAX) txt=txt.slice(0, CONT_MAX);
+  CONT.body=txt;
+  /* 切った時だけ欄を書き戻します。打っている間に render() すると指の下の
+     欄が作り直されるので（setPwSet と同じ）、切れていない時は触りません。 */
+  var b=document.getElementById('cont-b');
+  if(b && b.value!==txt) b.value=txt;
+  lnGrow('cont-b');
+}
 /* WHAT WAS TYPED STAYS ON THE SCREEN WHEN THE SEND FAILS. 「保存するタイミング
    でエラーが起きるなら、保存されないし」「なら失敗して残るにするべき。」 OWNER
    2026-09-05 -- with no signal there is nothing to send and nothing is sent,
@@ -437,22 +456,42 @@ function contactGo(){
   });
 }
 function vContact(){
+  /* THE SHAPE IS THIS APP'S OWN FORM, and it is the shape four other screens
+     already have: `<div class="field"><label>` -- the項目名 above, the thing
+     itself under it, one rule and nothing else. 「フォームみたいな見た目で
+     作ってくれない？」 OWNER 2026-09-22, shown beside a form whose boxes and
+     orange button are exactly what 「角丸やめろ」「かくまるみたいなのでくくる
+     のやめて欲しい。基本下線だけ」 took out of this app. What makes that
+     picture read as a form is the LABELS, not the frames, so the labels are
+     what was missing here and the frames stay gone.
+
+     A label is not an explanation. It says what the thing under it IS, which
+     is the same thing `.sl` does on every settings row. */
   return '<div class="view">'+navTop('')+'<div class="body">'+
-    CONT_KINDS.map(function(k){
-      return '<button class="set lrow'+(CONT.kind===k? ' on':'')+'"' +
-        DO('contactKind', [k]) + '>'+
-        '<span class="sl">'+esc(t('contact.'+k))+'</span>'+
-        '<span class="lchk">'+(CONT.kind===k? ICON_TICK : '')+'</span></button>';
-    }).join('')+
-    /* The one place a textarea is made, so this one is the same height, the
-       same growing box and the same placeholder shape as every other. NO
-       `.sfont`: what is written here is read by whoever makes the app, in
-       their own letters, and a message in somebody's own alphabet is a
-       message nobody can answer. */
-    '<div class="field" style="margin-top:14px">'+
-      lnField('cont-b', t('contact.ph'), IN('contactSet', ['body']), CONT.body)+
+    '<div class="field">'+
+      '<label>'+esc(t('contact.kind'))+'</label>'+
+      /* Rows and not a rail of round chips, which is banned; the same
+         `.set lrow` the interface languages are chosen with, so one press
+         chooses and the chosen one carries the tick. */
+      CONT_KINDS.map(function(k){
+        return '<button class="set lrow'+(CONT.kind===k? ' on':'')+'"' +
+          DO('contactKind', [k]) + '>'+
+          '<span class="sl">'+esc(t('contact.'+k))+'</span>'+
+          '<span class="lchk">'+(CONT.kind===k? ICON_TICK : '')+'</span></button>';
+      }).join('')+
     '</div>'+
-    '<button class="btn ghost" style="margin-top:18px"' + DO('contactGo') +
+    /* NO PLACEHOLDER. The label above it already says what goes here, and a
+       placeholder repeating it is the same word twice -- one of which
+       disappears the moment somebody types.
+
+       No `.sfont`: what is written here is read by whoever makes the app, in
+       their own letters. A message in somebody's own alphabet is a message
+       nobody can answer. */
+    '<div class="field" style="margin-top:26px">'+
+      '<label>'+esc(t('contact.body'))+'</label>'+
+      lnField('cont-b', '', IN('contactSet', ['body']), CONT.body)+
+    '</div>'+
+    '<button class="btn ghost" style="margin-top:22px"' + DO('contactGo') +
       (CONT.busy? ' disabled':'') + '>'+
       esc(t(CONT.busy? 'ob.mail.wait' : 'contact.send'))+'</button>'+
     '</div></div>';
