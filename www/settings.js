@@ -410,7 +410,10 @@ function vSet(){
    thing they can see. */
 var CONT={kind:'opinion', body:'', busy:false};
 var CONT_KINDS=['opinion', 'request', 'bug'];
-function contactKind(k){ CONT.kind=String(k||'opinion'); render(); }
+/* The wheel hands the value over; nothing else on the screen reads it, so
+   there is nothing to draw again. render() here would rebuild the field the
+   person is about to type into for no reason. */
+function contactKind(k){ CONT.kind=String(k||'opinion'); }
 /* Stored and not rendered back: render() here would rebuild the field under
    whoever is typing into it. setPwSet() above and adminSet() in www/mod.js
    are the same line, and lnGrow() is what makes the box follow the words. */
@@ -465,27 +468,38 @@ function vContact(){
      picture read as a form is the LABELS, not the frames, so the labels are
      what was missing here and the frames stay gone.
 
-     A label is not an explanation. It says what the thing under it IS, which
-     is the same thing `.sl` does on every settings row. */
+     AND THE KIND IS A `<select>`, NOT THREE ROWS DOWN THE PAGE.
+     「お問い合わせの意見とか縦に並べるのきもいからやめてくれ。選択肢気にして
+     くれ」 OWNER 2026-09-22 -- three rows of a settings list is what a list of
+     DESTINATIONS looks like, and these three are not places to go, they are
+     one answer to one question. A form asks it with a wheel, which is what the
+     picture the owner sent asks it with.
+
+     The word sheet went the other way for its three (`wdPickRow`), and that
+     was about a different thing: a part of speech is a long list and a form is
+     one a person can ADD to, so neither fits in a wheel and both need a page.
+     Three fixed words do.
+
+     `.field select` is already in the stylesheet and `obLang` in the
+     onboarding is already one, so nothing new is invented here and no CSS is
+     added. */
   return '<div class="view">'+navTop('')+'<div class="body">'+
     '<div class="field">'+
       '<label>'+esc(t('contact.kind'))+'</label>'+
-      /* Rows and not a rail of round chips, which is banned; the same
-         `.set lrow` the interface languages are chosen with, so one press
-         chooses and the chosen one carries the tick. */
+      '<select id="cont-k" aria-label="'+esc(t('contact.kind'))+'"' +
+        CH('contactKind') + '>'+
       CONT_KINDS.map(function(k){
-        return '<button class="set lrow'+(CONT.kind===k? ' on':'')+'"' +
-          DO('contactKind', [k]) + '>'+
-          '<span class="sl">'+esc(t('contact.'+k))+'</span>'+
-          '<span class="lchk">'+(CONT.kind===k? ICON_TICK : '')+'</span></button>';
+        return '<option value="'+esc(k)+'"'+(CONT.kind===k? ' selected':'')+'>'+
+          esc(t('contact.'+k))+'</option>';
       }).join('')+
+      '</select>'+
     '</div>'+
     /* NO PLACEHOLDER. The label above it already says what goes here, and a
-       placeholder repeating it is the same word twice -- one of which
-       disappears the moment somebody types.
+     placeholder repeating it is the same word twice -- one of which
+     disappears the moment somebody types.
 
-       No `.sfont`: what is written here is read by whoever makes the app, in
-       their own letters. A message in somebody's own alphabet is a message
+     No `.sfont`: what is written here is read by whoever makes the app, in
+     their own letters. A message in somebody's own alphabet is a message
        nobody can answer. */
     '<div class="field" style="margin-top:26px">'+
       '<label>'+esc(t('contact.body'))+'</label>'+

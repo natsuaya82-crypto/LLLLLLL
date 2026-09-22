@@ -3998,18 +3998,26 @@ const R = await pg.evaluate(async () => {
     /* そして本物の道。行を押して種類を選び、欄に打ち、送るを押す。 */
     CONT = { kind: 'opinion', body: '', busy: false };
     open79();
-    const rows79 = document.querySelectorAll('[data-do="contactKind"]');
-    if (rows79.length !== 3)
-      no('79: 種類の行が三つではない ── ' + rows79.length +
-         '（意見・要望・バグ。丸いチップの横並びは禁止なので行）');
-    if (rows79.length === 3) {
-      rows79[2].click();                      /* バグ */
+    /* 種類は wheel です。「お問い合わせの意見とか縦に並べるのきもいから
+       やめてくれ。選択肢気にしてくれ」 OWNER 2026-09-22 -- 三行ではありません。
+       本物の `<select>` に本物の change を投げます。 */
+    const sel79 = document.querySelector('[data-ch="contactKind"]');
+    if (!sel79)
+      no('79: **種類が wheel ではない** ── `<select data-ch="contactKind">` が' +
+         '画面に無い（三行に戻っていないか）');
+    else {
+      const opts79 = sel79.querySelectorAll('option');
+      if (opts79.length !== 3)
+        no('79: 選択肢が三つではない ── ' + opts79.length + '（意見・要望・バグ）');
+      /* 開いた時に一つ目が選ばれていること。「最初につけていいよ」 OWNER。 */
+      if (sel79.value !== 'opinion')
+        no('79: 開いた時に一つ目が選ばれていない ── ' +
+           JSON.stringify(sel79.value));
+      sel79.value = 'bug';
+      sel79.dispatchEvent(new Event('change', { bubbles: true }));
       if (CONT.kind !== 'bug')
-        no('79: 行を押しても種類が変わらない ── CONT.kind=' +
+        no('79: wheel を回しても種類が変わらない ── CONT.kind=' +
            JSON.stringify(CONT.kind));
-      const on79 = document.querySelectorAll('[data-do="contactKind"].on');
-      if (on79.length !== 1)
-        no('79: 押した行が一つだけ光っていない ── ' + on79.length + ' 件');
     }
     const ta79 = document.getElementById('cont-b');
     if (!ta79) no('79: 本文の欄が画面に無い');
