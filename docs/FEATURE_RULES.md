@@ -69,6 +69,31 @@ Not everything that repeats is duplication. `cffNum` and `csNum` in `otf5.js`
 encode the same integers to different byte forms because that is what CFF
 specifies. Merging them would be inventing a rule, not finding one.
 
+### A hole is not plugged. The whole is looked at, and covered
+
+「基本的に穴を潰すんじゃなくて同じように全体を俯瞰して穴を覆って欲しい」
+「今までも全部そうして」「じゃないとコードががんじがらめになるし、ルールに
+追加して必ず守るように」 OWNER 2026-09-22.
+
+A fault is a hole in a SURFACE, and the work is to name the surface, not the
+hole. Before anything is written:
+
+1. **Count the surface.** What is the whole set of things this fault is one
+   of? Every table, every screen, every field, every key — read it off the
+   repository or the catalogue, never off memory.
+2. **Write the one statement that covers all of it**, in the one place that
+   governs the surface, and delete the plugs that were standing in the holes.
+3. **The check counts, it does not list.** It enumerates the surface the same
+   way (the catalogue, the page, the file) and asks the statement of every
+   member, so a member added tomorrow is asked tomorrow.
+4. **An exception is the owner's**, named in the decision log, and the check
+   counts it as the one allowed name.
+
+What was plugged before this was written is covered the same way the day that
+area is next touched; `docs/BACKLOG.md` carries the sweep. **Nothing holds
+this mechanically. A person holds it by reading the change, and the leader by
+counting the surface before dispatching (`docs/LEADER.md`).**
+
 ## Refactoring
 
 Not a goal. Do it only when one of these is true:
@@ -217,6 +242,19 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Affected docs:
 - Implementation status:
 ```
+
+### 2026-09-22 サインインなしでサーバーに触れる道は無い ── 穴ではなく面を覆う。扉の `email_taken()` だけ例外
+- Date: 2026-09-22
+- Area: サーバー（`supabase/schema.sql`、bucket、edge function）、`www/net.js`、そして直し方そのもの
+- Decision: 「サインインなしで勧めるものないけど」「そもそもサインインがない状態でできることがないはずなのにそれがあることを疑って言ってんの。小さい穴だけ潰しても意味ねえだろ、大きいカバーで覆えやバカ」「基本的に穴を潰すんじゃなくて同じように全体を俯瞰して穴を覆って欲しい。今までも全部そうして。じゃないとコードががんじがらめになるし、ルールに追加して必ず守るように」「判断だけどこれは例外で」
+  1. **サーバーの物は一つもサインインなしでは触れない** ── 表・view・関数・bucket・edge function の全部。`anon` には権限が無い、と一文で言い（今ある物も明日足す物も）、`rls-check` はカタログを数えて全部を「誰でもない人」として試す。名指しの一覧では持たない。
+  2. **扉の `email_taken()` だけが例外** ── アカウントができる前に訊く物なので。check はそれを「許した一つの名前」として数える。
+  3. **直し方**: 穴を潰さず、面を数えて一文で覆う。`CLAUDE.md` と § One place に書いた。
+- Reason: 通知の関数がサインインなしで叩けると分かり、それを一つ閉じる案を出したら、オーナーは「一つ」ではなく「そういう物がある事」を疑っていた。数えたら既定で全部が開いていて、RLS だけが壁だった。
+- Affected features: 通知（r47）、写真の bucket（非公開になる、アプリはセッション付きで取る）、サインインしていない画面からの読み（アプリは送らない）
+- Affected data: 無し。誰の行も動かない。**誰が読めるか**が変わる
+- Affected docs: `CLAUDE.md` § Simple の次の段、この file § One place、`docs/ARCHITECTURE.md`／`DATA_SAFETY.md` の RLS の文（r47 が書き換える）、`docs/BACKLOG.md`（過去の「穴」の掃除）
+- Implementation status: r47（サーバー）・r48（`www/net.js`）が作業中。163 には入れず、通知と一緒に 164
 
 ### 2026-09-18 無料の段は `$0` をやめて「無料」の語 ── 期間は付けない
 - Date: 2026-09-18

@@ -8,6 +8,15 @@ refactor, a feature and a rename never arrive in the same diff.
 The order is the order to do them in.
 
 
+## 過去に「穴を潰した」所を「面を覆う」形に置き換える掃除（2026-09-22、オーナー）
+
+「基本的に穴を潰すんじゃなくて同じように全体を俯瞰して穴を覆って欲しい。今までも
+全部そうして」 OWNER 2026-09-22。`CLAUDE.md` § Simple の次の段と
+`docs/FEATURE_RULES.md` § One place に規則として書いた。それより前に一つずつ
+閉じた所は、その面を次に触る日に覆い直す ── この項はその一覧の置き場。
+まだ何も挙げていない。触った session が、閉じた穴の隣に別の穴が見えたら、
+ここにその**面の名**を一行足す（穴の名ではなく）。
+
 ## `www/img/` を見る check がありません（2026-09-18、r44 が測った）
 
 `tools/assets-check.mjs` は `index.html` の `<script src>`／`<link href>`、
