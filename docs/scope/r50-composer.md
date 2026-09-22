@@ -171,6 +171,26 @@ N ぶんだけ下がって**どの N でも見えたまま**。`post-check` も�
 原因に直しは当てていません。**残るとすれば実機でしか出ないもので、§ 実機 の
 2 を押してもらうのが一番早い道です。
 
+## ④ 新しい規則を、自分の検査に当て直しました
+
+取り込みで入った `453360b1`（`CLAUDE.md` §「穴は潰さない。面を俯瞰して覆う」、
+OWNER 2026-09-22）を読んで、**①と②の検査が穴の一覧だったので書き直しました。**
+
+| | 前（穴を並べる） | 後（面を数える） |
+|---|---|---|
+| ② 動かない | `#pw-ln`・`#pw-mn`・`.pwbar` の三つを名指し | **`.view.fit` の中の全要素**。明日行が増えても明日から覆われる |
+| ① 立つ | `#pw-ln` を名指し | **`dir-ttb-*` を着ている物すべて** |
+
+`post-check` は毎回**面を印字**します ──
+「one-screen form: 53 things on it, none of which moves on the screen when the
+page is lifted; 2 written downward, every one of them standing upright.」
+面が黙って縮んだら、緑ではなく数字が落ちます。
+
+**書き直したら、前の形より多く見つけました。**バグを戻すと前は「意味が動いた」
+一つでしたが、今は **「53 のうち 5 つが動いた ── `#pw-mn`, `#pw-tags`,
+`LABEL.pwtagw`, `SPAN.pwtagh`, `INPUT.pwtag`」**。タグの行ぜんぶが動いていた
+ことは、三つを名指しした検査には見えていませんでした。
+
 ## 実機（**リーダーへ：`docs/CHECK-0907.md` はまだ r48 が持っています**）
 
 `origin/claude/r48-push-app` の `dec27bac` が `docs/CHECK-0907.md` に居るままです

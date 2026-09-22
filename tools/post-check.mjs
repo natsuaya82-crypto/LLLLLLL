@@ -106,6 +106,10 @@ await pg.evaluate((s) => { eval('(' + s + ')()'); SET.walked = true; SET.ui = 'e
 
 const R = await pg.evaluate(async () => {
   const fails = [];
+  /* Surfaces counted rather than holes listed (CLAUDE.md § a hole is not
+     plugged). Printed on every run, so a surface that quietly shrank to
+     nothing shows instead of passing. */
+  const counts = { fitParts: 0, uprightFields: 0 };
 
   /* A photograph that is black everywhere, so a white letter drawn into it is
      the only light thing there can be. A gradient would leave the answer to
@@ -2004,43 +2008,67 @@ const R = await pg.evaluate(async () => {
        precisely so the focused field does not move -- so a check on it alone
        would have been green with the bug in. */
     {
-      const lift = (sel) => {
-        const e = sel.charAt(0) === '#' ? document.getElementById(sel.slice(1))
-                                        : document.querySelector(sel);
-        if (!e) return null;
-        const r = e.getBoundingClientRect();
-        /* the page's own lift taken out: where it sits on the SCREEN */
-        return Math.round(r.top) - fake.offsetTop;
+      /* EVERY element of the screen, counted, rather than the three
+         somebody thought of. 「基本的に穴を潰すんじゃなくて同じように全体を
+         俯瞰して穴を覆って欲しい」 OWNER 2026-09-22: the surface here is the
+         whole one-screen form, and a row added to the composer tomorrow is
+         covered tomorrow because nothing here names a row. The count is
+         printed, so a surface that quietly shrank to nothing is visible
+         instead of green. */
+      const surface = () => {
+        const box = document.querySelector('.view.fit');
+        if (!box) return null;
+        const out = [];
+        const all = [box].concat(Array.prototype.slice.call(
+          box.querySelectorAll('*')));
+        all.forEach((e, i) => {
+          const r = e.getBoundingClientRect();
+          if (!r.width && !r.height) return;   /* nothing drawn, nothing to move */
+          out.push({ at: i,
+            what: e.id ? '#' + e.id : e.tagName + '.' + String(e.className || ''),
+            /* the page's own lift taken out: where it sits on the SCREEN,
+               which is the only frame the owner is in. A rect in the page is
+               not an answer -- the page is what moved. */
+            top: Math.round(r.top) - fake.offsetTop,
+            left: Math.round(r.left) });
+        });
+        return out;
       };
-      const read = () => ({ ln: lift('#pw-ln'), mn: lift('#pw-mn'),
-                            bar: lift('.pwbar') });
 
       PW = pwBlank(); openPost(); render();
       fake.height = window.innerHeight - KB; fake.offsetTop = 0; vvFit();
-      const before = read();
-      Object.keys(before).forEach((k) => {
-        if (before[k] === null)
-          fails.push('the composer drew no ' + k + ' to measure, so the ' +
-            'claim that it does not move is about nothing');
-      });
-      /* every lift a tap can produce, not one: WebKit hands over a different
-         number for a different field and a different keyboard, and a screen
-         that holds still at 40 and not at 200 is a screen that moves. */
-      [20, 40, 80, 120, 200, 300].forEach((N) => {
-        fake.offsetTop = N; vvFit();
-        const now = read();
-        Object.keys(before).forEach((k) => {
-          if (before[k] === null || now[k] === null) return;
-          if (now[k] !== before[k])
-            fails.push('iOS lifted the page ' + N + 'px to reveal the field ' +
-              'and the ' + k + ' moved ' + (now[k] - before[k]) + 'px on the ' +
-              'screen (' + before[k] + ' -> ' + now[k] + '). Nothing on the ' +
-              'composer may move when the field is tapped. 「入力位置も' +
-              'タップしても動かない」 OWNER 2026-09-22. .view.fit is pinned ' +
-              'to var(--vvtop) and has to be the page LESS that lift: ' +
+      const before = surface();
+      if (!before || before.length < 5) {
+        fails.push('the one-screen form drew ' + (before ? before.length : 'no') +
+          ' elements to measure, so the claim that nothing moves is about ' +
+          'nothing');
+      } else {
+        counts.fitParts = before.length;
+        /* every lift a tap can produce, not one: WebKit hands over a
+           different number for a different field and a different keyboard,
+           and a screen that holds still at 40 and not at 200 moves. */
+        [20, 40, 80, 120, 200, 300].forEach((N) => {
+          fake.offsetTop = N; vvFit();
+          const now = surface() || [];
+          const moved = [];
+          before.forEach((b, k) => {
+            const n = now[k];
+            if (!n || n.what !== b.what) return;  /* the screen changed shape */
+            if (n.top !== b.top || n.left !== b.left)
+              moved.push(b.what + ' ' + (n.top - b.top) + 'px');
+          });
+          if (moved.length)
+            fails.push('iOS lifted the page ' + N + 'px to reveal the focused ' +
+              'field and ' + moved.length + ' of ' + before.length + ' things ' +
+              'on the composer moved on the SCREEN: ' +
+              moved.slice(0, 6).join(', ') +
+              (moved.length > 6 ? ', ...' : '') + '. Nothing on a one-screen ' +
+              'form may move when the field is tapped. 「入力位置もタップしても' +
+              '動かない」 OWNER 2026-09-22. .view.fit is pinned to ' +
+              'var(--vvtop) and has to be the page LESS that lift: ' +
               'height:calc(100dvh - var(--vvtop, 0px))');
         });
-      });
+      }
       fake.offsetTop = 0; vvFit();
       /* and the document itself never scrolled -- html.fitlock, the half that
          was already there and is not the half that was broken. */
@@ -2083,27 +2111,39 @@ const R = await pg.evaluate(async () => {
     const wasPW = PW, wasDir = SCRIPT.dir;
     try {
       planGot('pro');
+      /* EVERY thing on the screen written downward, counted, rather than
+         the one field somebody thought of (CLAUDE.md § a hole is not
+         plugged). The surface is 「anything wearing a vertical direction」,
+         so a second field that starts carrying dirClass() tomorrow is asked
+         tomorrow, and both directions are walked because they are two
+         selectors and a rule put back on one of them is the fault existing
+         in half the languages. */
+      let asked = 0;
       ['ttb-rl', 'ttb-lr'].forEach((d) => {
         SCRIPT.dir = d;
         PW = pwBlank(); openPost(); render();
-        const e = document.getElementById('pw-ln');
-        if (!e) { fails.push('the composer drew no line field in ' + d); return; }
-        if (e.className.indexOf('dir-' + d) < 0) {
-          fails.push('the line field in a ' + d + ' language does not wear ' +
-            'dir-' + d + ' (' + e.className + '), so what follows is not a ' +
-            'reading of a vertical field');
+        const down = document.querySelectorAll('.dir-ttb-rl, .dir-ttb-lr');
+        if (!down.length) {
+          fails.push('the composer in a ' + d + ' language drew nothing ' +
+            'wearing a vertical direction, so nothing here is a reading of ' +
+            'a vertical field');
           return;
         }
-        const o = getComputedStyle(e).textOrientation ||
-                  getComputedStyle(e).webkitTextOrientation;
-        if (o !== 'upright')
-          fails.push('the line field in a ' + d + ' language computes ' +
-            'text-orientation: ' + o + '. It has to be upright -- a column ' +
-            'stands its letters on their feet, which is what a post\'s own ' +
-            'line does, so 「Hello」 typed into the field lies on its side ' +
-            'and the same word stands up once it is posted. ' +
-            '「横にするなんか言ったことない」 OWNER 2026-09-22');
+        Array.prototype.forEach.call(down, (e) => {
+          asked++;
+          const cs = getComputedStyle(e);
+          const o = cs.textOrientation || cs.webkitTextOrientation;
+          if (o !== 'upright')
+            fails.push((e.id ? '#' + e.id : e.tagName + '.' + e.className) +
+              ', written ' + d + ', computes text-orientation: ' + o + '. ' +
+              'It has to be upright -- a column stands its letters on their ' +
+              'feet, which is what a post\'s own line does, so 「Hello」 ' +
+              'typed into the field lies on its side and the same word ' +
+              'stands up once it is posted. ' +
+              '「横にするなんか言ったことない」 OWNER 2026-09-22');
+        });
       });
+      counts.uprightFields = asked;
     } finally {
       SCRIPT.dir = wasDir; PW = wasPW;
     }
@@ -4063,7 +4103,8 @@ const R = await pg.evaluate(async () => {
     try { closeSheet(); } catch (e) {}
   }
 
-  return { fails, mid: (nowLight * 100).toFixed(1), corner: (wasLight * 100).toFixed(1),
+  return { fails, counts,
+           mid: (nowLight * 100).toFixed(1), corner: (wasLight * 100).toFixed(1),
            bytes: Math.round(String(out[0] || '').length / 1024),
            thumb: Math.round(small.length / 1024), full: Math.round(big.length / 1024),
            vof: (v && v.vo && v.vo.f) || '' };
@@ -4079,6 +4120,9 @@ if (R.fails.length) {
   for (const f of R.fails) console.error('  ' + f + '\n');
   process.exit(1);
 }
+console.log('one-screen form: ' + R.counts.fitParts + ' things on it, none of ' +
+  'which moves on the screen when the page is lifted; ' + R.counts.uprightFields +
+  ' written downward, every one of them standing upright.');
 console.log('post: a letter placed on a black photograph is IN the file that goes\n' +
             '      out -- ' + R.mid + '% of it is light where the photograph was ' +
             R.corner + '%, ' + R.bytes + ' KB.\n' +
