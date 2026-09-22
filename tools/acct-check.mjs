@@ -4156,6 +4156,127 @@ const R = await pg.evaluate(async () => {
         'その行の id、消えるのは押した一件だけ（OWNER 2026-09-22）');
   }
 
+
+  /* ---- 81. 送信は右上、本文は画面全部、送ったら「送信しました」が出る -----
+     「本文が増えたらこれ見えなくなるやろ送信右上にして本文は画面全部に広がる
+     ようにして。送信したら送信しました。って出るようにして。」 OWNER
+     2026-09-22。三つとも、**書いてある**ことと**出る**ことは別なので測ります。
+
+     三つ目がこの claim の理由です。`contactGo()` には 2026-09-22 から
+     `back(); toast(t('contact.sent'))` と書いてありましたが、**書いてある
+     だけでは出ているとは言えません** ── `back()` は `render()` を呼びます。
+     `#toast` は `#app` の外にある（www/shell.js § toast）ので消えない、
+     というのがコードを読んだ答えで、読んだ答えは推測です
+     （CLAUDE.md「原因は憶測ではなく確かめる」）。ここでは本物のボタンを
+     押して、本物の返事を返して、**画面から読み返します**。
+
+     一つ目（右上）は `.navtop` の中に居ることで測ります ── 本文の下の
+     `.btn.ghost` に戻ると、そこには居ません。二つ目（画面全部）は欄が
+     `fitin` を着ていること、つまり lnFit() が高さを触らない欄であること：
+     伸びる欄に戻ると、長い本文でまた下へ伸びて送信を押し出します。 */
+  {
+    start();
+    netOut(); arrive(A);
+    const keep81 = netSend;
+    /* 届いた、という返事。`netFeedbackSend()` の ok がこれで呼ばれます。 */
+    netSend = (method, path, body, tok, ok2) => {
+      if (ok2) ok2([]);
+    };
+    const open81 = () => {
+      window.route = 'contact'; NAV = [{ r: 'settings' }, { r: 'contact' }];
+      render();
+    };
+
+    /* ── 一つ目。送るはバーの隅に立っていて、本文の下には居ない。 */
+    CONT = { kind: 'opinion', body: '', busy: false };
+    open81();
+    const bar81 = document.querySelector('.navtop [data-do="contactGo"]');
+    if (!bar81)
+      no('81: **送るがバーの右上に居ない** ── `.navtop` の中に ' +
+         '`[data-do="contactGo"]` が無い。本文の下に置くと、長く書いたぶん' +
+         'だけ下へ押し出されて画面から消えます（OWNER 2026-09-22）');
+    const body81 = document.querySelector('.body [data-do="contactGo"]');
+    if (body81)
+      no('81: **送るが本文の下にも居る** ── 二つあると、どちらが押された' +
+         'のか誰にも言えません');
+    /* 空のあいだは消えている。navDo() の二つの状態（www/shell.js）。 */
+    if (bar81 && bar81.className.indexOf('navon') >= 0)
+      no('81: 本文が空なのに送るが光っている ── 押しても断られる物が' +
+         '押せる色をしています');
+
+    /* ── 二つ目。本文は残りを取る欄で、伸びる欄ではない。 */
+    const ta81 = document.getElementById('cont-b');
+    if (!ta81) no('81: 本文の欄が画面に無い');
+    else if (String(ta81.className || '').indexOf('fitin') < 0)
+      no('81: **本文が伸びる欄のまま** ── `fitin` が付いていないので ' +
+         'lnFit() が中身のぶんだけ高さを付けます。「本文は画面全部に広がる' +
+         'ようにして」は、残りを取って**中でスクロール**する欄のこと');
+    else if (ta81.parentNode &&
+             String(ta81.parentNode.className || '').indexOf('ctbody') < 0)
+      no('81: 本文の欄が `.ctbody` の中に居ない ── 残りを取る形は' +
+         'その二行（www/index.html）が付けています');
+
+    /* 打つ。画面は描き直されない（指の下の欄が作り直されるので）ので、
+       バーのボタンは手で塗り直されているはず ── それを読みます。 */
+    if (ta81) {
+      ta81.value = '三行目のキーがずれます';
+      ta81.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+    const bar81b = document.querySelector('.navtop [data-do="contactGo"]');
+    if (!bar81b || bar81b.className.indexOf('navon') < 0)
+      no('81: **打っても送るが光らない** ── 打っている間この画面は描き直され' +
+         'ないので、navDoPaint() で塗る一箇所が要ります（www/post.js の' +
+         ' pwSetLn と同じ）。光らないボタンは押せるのかわかりません');
+    /* そして欄そのものが作り直されていないこと ── render() を呼ぶと、
+       打っている人の下から欄が消えます。 */
+    if (document.getElementById('cont-b') !== ta81)
+      no('81: **打つたびに画面を描き直している** ── 欄が別物になりました。' +
+         '実機ではキーボードが下りてカーソルが飛びます');
+
+    /* ── 三つ目。押す。「送信しました」が画面に出ていること。 */
+    const toastEl = document.getElementById('toast');
+    if (toastEl) { toastEl.textContent = ''; toastEl.className = ''; }
+    const want81 = t('contact.sent');
+    /* 隅のを押します。隅に無い時 ── それは上で赤くなっている ── でも、
+       三つ目は別の主張なので、居る方を押して最後まで測ります。押す物が
+       一つも無いのは赤一本で、そこで止まります。 */
+    const go81 = bar81b || document.querySelector('[data-do="contactGo"]');
+    if (!go81) no('81: 送るボタンが画面のどこにも無い');
+    else go81.click();
+
+    const tEl = go81 ? document.getElementById('toast') : null;
+    if (go81 && !tEl)
+      no('81: 画面に toast が無い');
+    else if (tEl) {
+      if (String(tEl.textContent || '') !== want81)
+        no('81: **送ったのに「送信しました」が出ていない** ── toast に出て' +
+           'いるのは ' + JSON.stringify(String(tEl.textContent || '')) +
+           '、出るはずなのは ' + JSON.stringify(want81) +
+           '（`contact.sent`）。「送信したら送信しました。って出るように' +
+           'して」 OWNER 2026-09-22');
+      if (String(tEl.className || '').indexOf('on') < 0)
+        no('81: **「送信しました」が画面に出ていない** ── 字は入っているのに' +
+           ' `.on` が付いていないので、透明なまま。back() の render() が' +
+           '消しているなら、順を書き換える（toast は #app の外に居る）');
+    }
+    /* 出た画面は設定。お問い合わせに立ったままだと、同じ物を二度送ります。 */
+    if (go81 && here() && here().r === 'contact')
+      no('81: 送れたのにお問い合わせの画面に立ったまま');
+    if (go81 && (!here() || here().r !== 'settings'))
+      no('81: 送ったあとに立っているのが設定の画面ではない ── ' +
+         JSON.stringify(here() && here().r));
+    /* そして欄は空。次に開いた人が前の文を見ることはありません。 */
+    if (go81 && CONT.body !== '')
+      no('81: 送れたのに本文が残っている ── ' + JSON.stringify(CONT.body));
+
+    netSend = keep81;
+    CONT = { kind: 'opinion', body: '', busy: false };
+    start();
+    say('81: 送るはバーの右上（打つと光る、画面は描き直さない）、本文は残りを' +
+        '取る欄（`fitin`）、送ったら画面に「送信しました」が出て設定へ戻り' +
+        '欄は空（OWNER 2026-09-22）');
+  }
+
   return out;
 });
 

@@ -1435,6 +1435,27 @@ export function halfDone(){
         CONT = { kind:'request', body:'文字を並べ替えられるようにしてほしい。', busy:false };
         window.route='contact'; NAV=[{r:'settings'},{r:'contact'}];
         return vContact(); }],
+    /* AND A LONG ONE, which is the state the screen was changed FOR.
+       「本文が増えたらこれ見えなくなるやろ」 OWNER 2026-09-22 -- the send
+       button used to be at the foot of the form, so it went off the bottom of
+       the phone as this grew. A short line cannot show that, and a picture of
+       the short line is a picture of the screen that was already fine. */
+    ['contact, written long', () => {
+        CONT = { kind:'bug', busy:false, body:
+          'キーボードの三行目がずれます。\n' +
+          '半キーぶん内側に入っている行で、列の文字を押しても\n' +
+          'どのキーも光らないことがあります。\n' +
+          '\n' +
+          '起きるとき:\n' +
+          '  1. 有料のキーボードを開く\n' +
+          '  2. 三行目の左端のキーを押して選ぶ\n' +
+          '  3. 上の列の文字を押す\n' +
+          '\n' +
+          '二つ光る時と、一つも光らない時があります。\n' +
+          '端末は iPhone SE で、縦で使っています。\n' +
+          'それから、行を消したあとの戻るが一回ぶん効かない気がします。' };
+        window.route='contact'; NAV=[{r:'settings'},{r:'contact'}];
+        return vContact(); }],
     /* Both halves of the admin screen, because they are two screens and only
        one of them is ever on. The door is what everybody sees -- the fixture's
        account came in through `email`, so adminLocked() is true here exactly
