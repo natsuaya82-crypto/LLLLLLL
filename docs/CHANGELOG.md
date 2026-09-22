@@ -15,6 +15,35 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### 2026-09-22 打つ欄の空白が一マス幅だった ── **貯まる物は何も変わりません**
+
+**オーナーの言葉（2026-09-22、新しい投稿の写真二枚、ビルド 162）**：
+「a line みたいなとこ空白開きすぎだし。直せないの？」
+
+新しい投稿の一行目の欄は `.tfont`、つまり `LinguaType` で描かれます。この書体は
+**私用領域（U+E000〜）しか持たない**はずのもので、`CLAUDE.md` 規則 10 が
+その言葉で書いています。持っていませんでした ── `LinguaFont.build` が
+**どの書体にも必ず** `space` を**一マス（0.800 em）**で足していたので、
+`.tfont` の欄では**ローマ字は普通の書体に落ち、空白だけが `LinguaType` から
+来て一 em 近く**になっていました。見え方：
+
+    before   a  line  in  your  language
+    after    a line in your language
+
+直したのは書体を作る側です（CSS ではありません）。`LinguaFont.build` に
+`space` という選択肢が付き、`installTypeFont()`（`www/glyph.js`）が
+`space:false` を渡します。U+0020 は隣のローマ字と同じように落ちます。
+
+**`LinguaScript`（描いた文字の書体、`.sfont`）は今までどおり一マスのままです。**
+そちらは空白がその文字体系自身の字送りで、一マスであることに意味があります。
+
+- 貯まる物：**変わりません。**移行もありません。書体は起動のたびに作り直される
+  もので、どこにも保存されていません。
+- 押さえているもの：`conv-check` の十一番目（「打つための書体は、そのための
+  範囲しか持たない」）。バグを戻して赤を見ています。
+- 写真：`shots/r50-space-before.png` / `-after.png` / `-after-ja.png`
+- **実機未確認**（DEVICE CONFIRMED: no）。
+
 ### 2026-09-22 設定に「お問い合わせ」── **新しく貯まる物：サーバーの表 `feedback`**
 
 **オーナーの決定（2026-09-22）**：「設定にお問合せを足して欲しい。フォームみたいな

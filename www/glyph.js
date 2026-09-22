@@ -513,9 +513,16 @@ function installTypeFont(){
       defs.push(d);
     }
     if(!defs.length) return;
+    /* No space glyph. This face carries the private use range and nothing
+       else (CLAUDE.md rule 10), so U+0020 falls through the same way every
+       roman letter in a .tfont field already does. It used to answer for
+       one, at one cell, and the composer's line field read
+       「a  line  in  your  language」 on a phone -- 「空白開きすぎ」 OWNER
+       2026-09-22. LinguaScript keeps its cell: there the space is the
+       script's own spacing. */
     var f=LinguaFont.build(defs, {mode:'center', pen:GPEN, side:geSide(),
                        asc:geInkTop(), desc:geInkTop()-geInkSpan()-geStep(),
-                                   family:'LinguaType', style:'Regular'});
+                       space:false, family:'LinguaType', style:'Regular'});
     el=document.createElement('style');
     el.id='tfontcss';
     el.appendChild(document.createTextNode(
