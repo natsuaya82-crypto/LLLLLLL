@@ -2109,7 +2109,19 @@ function setKeep(){
    the way `lingua.me` is: with no signal the app is arranged the way it was
    last seen, which is what a copy is for. What changed is which of the two is
    the RECORD. */
-var SET_PREFS=['theme','ui','myfont','showScript','kbrom'];
+/* AND THE FOUR NOTIFICATIONS (2026-09-22). Which kinds somebody wants told
+   to them is theirs and not this handset's: a person with an iPhone and an
+   iPad wants 「いいね」 off on both, and the permission -- which IS the
+   handset's -- is iOS's to hold, not ours.
+
+   THE NAMES ARE THE SERVER'S NAMES. netPrefsPut() writes `SET`'s own
+   spelling into `profile.prefs`, so `push_follow` here is `push_follow`
+   there, and the function that decides who to send to reads that one
+   word. **Absent is ON**, on both sides: nobody who has never opened the
+   room has any of these, and no default is minted -- www/push.js
+   § pushWants(). */
+var SET_PREFS=['theme','ui','myfont','showScript','kbrom',
+               'push_follow','push_reply','push_like','push_boost'];
 /* WHAT IS LEFT IS THIS HANDSET'S SETUP, AND THERE IS VERY LITTLE OF IT.
    `acct` says which account's things are live here -- the settings that
    setFor() parks and hands back. It was `planUid`, because the plan copy sat

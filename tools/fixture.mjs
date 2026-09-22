@@ -700,6 +700,33 @@ export function halfDone(){
        way in -- the three sign-in buttons and the mail door -- is on neither
        of them without this. It used to be the other way round; seed() signs
        in now, because the timeline does not exist without a session. */
+    /* ---- THE NOTIFICATIONS ROOM, BOTH WAYS ROUND ----------------------
+       「それに加えて設定で個別通知のオンオフできるように。」 OWNER 2026-09-22.
+
+       The walk runs in a browser, where there is no native side at all, so
+       `PUSH_ST` is '' on every other render and the row that says iOS has
+       refused is drawn by nothing. That row is a button -- it opens iOS's own
+       settings -- so without this face `pushSettings` is an entry no screen
+       names, which is act-check's way of saying 「this is unreachable」 and is
+       true.
+
+       Both states, because 「見た目を変えたものは必ずスクショで提示する」
+       (OWNER 2026-09-04) and the fault is nearly always in the one nobody
+       photographed. The four switches are live in BOTH: they are
+       `profile.prefs`, which is this account on every phone, so turning
+       `like` off on a phone that has refused the permission still has to hold
+       on the iPad that has not.
+
+       `PUSH_ST` is put back, because these two are the only faces that move
+       it and shot.mjs renders again afterwards. */
+    ['notifications', () => {
+       const was = PUSH_ST; PUSH_ST = 'authorized';
+       window.route = 'set'; NAV = [{ r:'settings' }, { r:'set', a:'push' }];
+       const h = vSet(); PUSH_ST = was; return h; }],
+    ['notifications, refused on the phone itself', () => {
+       const was = PUSH_ST; PUSH_ST = 'denied';
+       window.route = 'set'; NAV = [{ r:'settings' }, { r:'set', a:'push' }];
+       const h = vSet(); PUSH_ST = was; return h; }],
     ['the account, signed out', () => { const was = SESS; SESS = null;
                                         window.route = 'set'; NAV = [{ r:'set', a:'acct' }];
                                         const h = vSet(); SESS = was; return h; }],

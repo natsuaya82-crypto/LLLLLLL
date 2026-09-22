@@ -31,6 +31,11 @@ class MainViewController: CAPBridgeViewController {
        starts, and a renewal that arrives while nothing is listening is a day
        the app is wrong about. See the head of LinguaStore.swift. */
     bridge?.registerPluginInstance(LinguaStorePlugin())
+    /* Registered here like the other three, and for one reason on top of
+       being reachable: load() is where it picks up a notification tapped
+       from a cold launch, which AppDelegate has been holding since before
+       there was a bridge. See the head of LinguaPush.swift. */
+    bridge?.registerPluginInstance(LinguaPushPlugin())
     // And the plan itself, as a script rather than as an answer to a call:
     // what a free plan looks like is decided on the first frame, and a call
     // comes back after it. See the head of LinguaPlan.swift.

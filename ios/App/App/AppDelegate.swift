@@ -1,6 +1,7 @@
 import UIKit
 import Capacitor
 import AVFoundation
+import UserNotifications
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -48,7 +49,34 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             // A phone that refuses the category still runs the app; it just
             // goes back to obeying the silent switch.
         }
+        /* AND WHO ANSWERS A NOTIFICATION BEING TAPPED, said here because it
+           has to be said before the app has finished launching.
+
+           A notification tapped on a phone where Lingua is not running LAUNCHES
+           the app, and UNUserNotificationCenter delivers that tap in the same
+           breath — before the bridge exists and long before www/push.js has
+           been read. A delegate set any later than this line is a delegate
+           that was not standing when the one tap that matters arrived.
+
+           LinguaPushTaps holds what it is handed until there is a web view to
+           hand it to (ios/App/App/LinguaPush.swift § flush). */
+        UNUserNotificationCenter.current().delegate = LinguaPushTaps.shared
         return true
+    }
+
+    /* ---- what Apple answers registerForRemoteNotifications() with --------
+       Neither of these decides anything: LinguaPushPlugin parked the call that
+       asked and these are the two ways it is answered. The token is this
+       HANDSET's address, not an account's — www/push.js is what says which
+       account is at it, by POSTing the pair to `device`. */
+    func application(_ application: UIApplication,
+                     didRegisterForRemoteNotificationsWithDeviceToken token: Data) {
+        LinguaPushPlugin.took(token)
+    }
+
+    func application(_ application: UIApplication,
+                     didFailToRegisterForRemoteNotificationsWithError error: Error) {
+        LinguaPushPlugin.failed("apple: " + error.localizedDescription)
     }
 
     func applicationWillResignActive(_ application: UIApplication) {

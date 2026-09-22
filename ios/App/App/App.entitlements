@@ -19,6 +19,20 @@
 	<array>
 		<string>Default</string>
 	</array>
+	<!-- Apple's own notifications. `production` is right for both TestFlight
+	     and the App Store; a development build signed with a development
+	     profile is still routed to the sandbox by Apple, so there is no
+	     second value to keep in step with a build configuration.
+
+	     THIS LINE NEEDS THE CAPABILITY ON THE APP ID, the same as Sign in
+	     with Apple above: the App ID com.tokinets.lingua must have Push
+	     Notifications switched on in the Apple developer site, and the
+	     distribution provisioning profile REGENERATED after that and put in
+	     the PROVISIONING_PROFILE_BASE64 secret. An old profile does not gain
+	     a capability by the app claiming one — the Archive fails saying the
+	     entitlement is not in the profile. docs/apple.md. -->
+	<key>aps-environment</key>
+	<string>production</string>
 	<key>com.apple.security.application-groups</key>
 	<array>
 		<string>group.com.tokinets.lingua</string>

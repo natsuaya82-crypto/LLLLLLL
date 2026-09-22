@@ -759,6 +759,21 @@ function netTook(d){
      keeps the same guard netLangBack() one line up does, and netOut() is what
      clears it, which is the half that was missing. */
   netStaff(function(yes){ if(yes) render(); });
+  /* AND WHERE THIS HANDSET CAN BE REACHED FOR THE ACCOUNT THAT JUST ARRIVED.
+     Here for the reason meFor(), planFor(), langTookFor() and storeSync() are
+     here: this is the one place that knows a session arrived, and a `device`
+     row is an account AND an address, so it cannot be written a moment
+     earlier or by anybody else. **There is no second road** -- obIn() does not
+     call it, because the door comes through here.
+
+     Not inside `netCame`. A launch resuming a stored session does not come
+     through that branch, and that is most of the launches there are: the
+     token could have changed since (a restore, a reinstall) and the row would
+     be stale for as long as somebody stayed signed in. It decides everything
+     itself -- no native side, no permission, no token, nothing happens -- and
+     it is an upsert, so offering the same pair again costs one small write.
+     storeSync() one screen up is the same shape and the same argument. */
+  if(typeof pushAsk==='function') pushAsk();
   if(typeof pullBoot==='function') pullBoot();
   return true;
 }
@@ -1289,6 +1304,59 @@ function netPrefsPut(){
   }
   netSend('PATCH', '/rest/v1/profile?id=eq.'+encodeURIComponent(SESS.uid),
           {prefs:o}, SESS.at, function(){}, function(){});
+}
+/* WHERE THIS HANDSET CAN BE REACHED, UNDER THE ACCOUNT THAT IS AT IT.
+   -------------------------------------------------------------------------
+   「通知作ろう。アップルのネイティブ通知で」 OWNER 2026-09-22.
+
+   A `device` row is a PAIR -- an account and an address -- and neither half
+   means anything on its own. The token is the handset's, issued by Apple and
+   the same whoever is signed in; the account is who is at it now. So the key
+   is both, two people on one iPhone are two rows, and one person on two
+   phones is two rows, and neither of those is a conflict to be resolved.
+
+   IT IS NOT WRITTEN DOWN ON THIS PHONE. The row is the record -- rule 22 --
+   and the only copy here is NET_TOK below, in memory, for the one thing that
+   cannot be done without it: telling the server to stop reaching this handset
+   for somebody who has just signed out.
+
+   An UPSERT, which is what `up` is. www/push.js asks Apple on every session
+   arrival, so the same pair is offered again every launch; a plain insert
+   would be a refusal on every one of them, and a token that CHANGED -- a
+   restore, a reinstall -- has to land. Offering the pair again is the road
+   being self-healing rather than a call that should not have been made.
+
+   Nothing is said either way. A token that did not reach the server is a
+   notification that does not arrive, and there is nothing a person could do
+   about it on the screen they are standing on; the next session arrival
+   offers it again. */
+var NET_TOK='';
+function netDevicePut(token){
+  var tk=String(token||'');
+  if(!netSignedIn() || !SESS || !SESS.uid || !tk) return;
+  NET_TOK=tk;
+  netSend('POST', '/rest/v1/device', {uid:SESS.uid, token:tk}, SESS.at,
+          function(){}, function(){}, true);
+}
+/* AND STOP REACHING IT FOR SOMEBODY WHO HAS SIGNED OUT.
+   Called from setSignOutGo() BEFORE netOut(), because netOut() is where the
+   session ends and this needs the token that is ending.
+
+   BOTH HALVES OF THE KEY, and that is the whole of the safety: this takes the
+   row for THIS account at THIS handset and no other. Not the account's other
+   phones -- they are still theirs -- and not the other accounts on this one.
+   docs/CHANGELOG.md 2026-09-22 carries the DELETE REVIEW.
+
+   With no signal it does not happen, and the sign-out happens anyway: being
+   unable to tell the server is not a reason to keep somebody signed in. The
+   row that is left is the pair, so the same person signing in on the same
+   handset writes over it rather than adding a second. */
+function netDeviceDrop(){
+  if(!netSignedIn() || !SESS || !SESS.uid || !NET_TOK) return;
+  netSend('DELETE', '/rest/v1/device?uid=eq.'+encodeURIComponent(SESS.uid)+
+          '&token=eq.'+encodeURIComponent(NET_TOK), null, SESS.at,
+          function(){}, function(){});
+  NET_TOK='';
 }
 function netAvSync(){
   if(!netSignedIn() || !SESS || !SESS.uid) return;

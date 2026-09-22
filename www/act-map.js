@@ -139,6 +139,9 @@ act('kbSetPat', kbSetPat);
 act('kbReset', kbReset);
 act('kbSettings', kbSettings);
 act('setKbRom', setKbRom);
+/* 第 28 章 ── 通知。四つのスイッチと、iOS の設定への一行。 */
+act('pushSw', pushSw);
+act('pushSettings', pushSettings);
 act('kbSetKind', kbSetKind);
 act('kbSlot', kbSlot);
 act('kbLtTap', kbLtTap);

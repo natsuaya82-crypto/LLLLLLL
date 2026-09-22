@@ -70,6 +70,11 @@ var SETS=[
   {id:'lang',  k:'set.lang'},
   {id:'look',  k:'set.look'},
   {id:'acct',  k:'set.account'},
+  /* 「それに加えて設定で個別通知のオンオフできるように。」 OWNER 2026-09-22.
+     Under the account rather than under Display, because what it answers is
+     about being reached as a person -- and it is four switches on `prefs`,
+     which is the account's, so it follows somebody to their next phone. */
+  {id:'push',  k:'set.push'},
   {id:'data',  k:'set.data'},
   {id:'ui',    k:'set.display'}
 ];
@@ -241,6 +246,11 @@ function vSet(){
       '<button class="set" style="border-bottom:none"' + DO('go', ["wsys"]) + '><span class="sl">'+t('ws.kind')+'</span>'+
       '<span class="sv">'+esc(t('ws.k.'+wsys()))+ICON_GO+'</span></button>'+
       '';
+  } else if(id==='push'){
+    /* Four rows, and the state above them when iOS has said no. www/push.js
+       draws it: this file says where the room is and that file says what is
+       in it, the same way the keyboard's own switch lives in keyboard.js. */
+    body=pushRoomHTML();
   } else if(id==='pw'){
     /* Two fields and a button. The same shape as the door's, because it is
        the same act -- and it is a page you went to rather than a sheet over
@@ -1351,6 +1361,12 @@ function setSignOut(){
   popAsk(t('set.signout.ask'), function(){ setSignOutGo(); }, t('set.signout'));
 }
 function setSignOutGo(){
+  /* BEFORE netOut(), and that order is the whole of it: this takes the
+     `device` row for the account that is leaving, at this handset, and
+     netOut() is where the session -- and the token that signs the DELETE --
+     ends. www/net.js § netDeviceDrop has both halves of the key and why.
+     It decides everything itself, so it is a call and not a condition. */
+  netDeviceDrop();
   netOut();
   /* And the provider is told too. Lingua's tokens are not the only session
      there is: the social plugin keeps its own, and it survived this -- so the
