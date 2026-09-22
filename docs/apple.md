@@ -537,3 +537,102 @@ repo には置いていません）。
   `APPLE_PROVISIONING_PROFILE_BASE64` の期限切れ。1 年で切れます
 - 「ビルド番号が既に使われています」→ run 番号は増え続けるので普通は
   起きません。起きたら誰かが手で番号を戻しています
+
+---
+
+## 8. 通知 ── Apple 側でやること（2026-09-22）
+
+オーナーの決定（2026-09-22）：「通知作ろう。アップルのネイティブ通知で、
+フォローされた時、返信きた時みたいな感じでSNS部分であるやつ。それに加えて設定で
+個別通知のオンオフできるように。」
+
+**上から順に。**途中を飛ばすと、通知は一通も出ないか、ビルドが落ちます。
+
+### 1. Identifiers に Push Notifications を付ける
+
+**developer.apple.com → Certificates, Identifiers & Profiles → Identifiers →
+`com.tokinets.lingua`**
+
+- Capabilities の一覧から **Push Notifications** にチェック → **Save**
+- キーボード拡張（`com.tokinets.lingua.LinguaKeyboard`）は**触らないでください。**
+  通知を受け取るのは本体だけです
+
+### 2. **配布プロファイルを作り直して、GitHub の Secret を入れ直す**
+
+**§ 2 と同じことが、同じ理由でもう一度必要です。** App ID に capability を
+足しても、既に在るプロファイルは自動では追いつきません。**作り直して初めて
+入ります。**
+
+1. **Profiles → 本体の配布用プロファイル「Lingua Distribution」→ Edit →
+   そのまま Save** → **Download**
+2. **GitHub → Settings → Secrets and variables → Actions** の
+   `PROVISIONING_PROFILE_BASE64` を、その base64 に差し替える
+   （Mac なら `base64 -i Lingua.mobileprovision | pbcopy`）
+3. キーボードのほう（`KEYBOARD_PROVISIONING_PROFILE_BASE64`）は
+   **そのままで構いません**
+
+**これを飛ばすと、次のビルドが Archive で落ちます。**#83 が落ちた時と同じ形の
+エラーで、文面は Sign in with Apple ではなく Push Notifications になります。
+
+### 3. APNs の鍵を作る（.p8 と Key ID）
+
+**developer.apple.com → Certificates, Identifiers & Profiles → Keys → ＋**
+
+- 名前は何でも構いません（`Lingua APNs` など）
+- **Apple Push Notifications service (APNs)** にチェック → Continue → Register
+- **`AuthKey_XXXXXXXXXX.p8` をダウンロード**
+- **画面に出ている Key ID（10 文字）を控える**
+
+**`.p8` は一度しかダウンロードできません。**失くしたら鍵を作り直しです
+（古い鍵を Revoke してから新しいものを作れば、それで済みます）。
+
+**この二つは repo に入れません。**`supabase/mail.md` と同じ理由で、ここにあるのは
+「どこで作るか」だけです。
+
+### 4. GitHub の Secrets に入れる
+
+**GitHub → Settings → Secrets and variables → Actions → New repository secret**
+
+| 名前 | 中身 |
+|---|---|
+| `APNS_KEY_ID` | 3 で控えた 10 文字 |
+| `APNS_P8` | `.p8` ファイルの**中身をそのまま**（`-----BEGIN PRIVATE KEY-----` の行から最後まで、改行ごと） |
+| `APPLE_TEAM_ID` | **既に入っています**（ビルドが使っています）。無ければ Membership の Team ID |
+
+**`APNS_P8` は改行のある文字列です。**貼るときに一行に潰さないでください ──
+潰れると函数が鍵を読めず、500 を返して何も送らなくなります。
+
+### 5. Supabase 側 ── **`supabase/setup.md` § 12 を先に**
+
+**Dashboard → Database → Webhooks → Enable webhooks**（ボタン一つ）。
+そのあと `supabase/setup.md` § 2 で **`schema.sql` を流し直す**。
+
+**この一クリックが無いと、通知のトリガーは作られません。**入ったかどうかの
+見かたも `setup.md` § 12 にあります。
+
+### 6. 函数を置く
+
+**GitHub → Actions → Supabase Deploy → Run workflow → `push-send`**
+
+4 で入れた三つを Supabase の Secrets に入れてから置きます。最後に
+「中身の無い POST が 400 で、何も送らない」ところまで確かめて緑になります。
+どれかの Secret が空なら、**その名前を言って止まります。**
+
+### 7. アプリ側
+
+iPhone が通知を許可して token をサーバーに送るところと、設定のオン／オフの画面は
+**別の作業（r48）**です。ここまでが済んでいても、そちらが入ったビルドでなければ
+`device` に行が一つも無く、**何も送られません**（それが正しい動きです ── 行が
+無ければ送らない）。
+
+### まとめ ── 順番
+
+```
+1  Identifiers → com.tokinets.lingua → Push Notifications にチェック
+2  Profiles → Lingua Distribution を作り直す → PROVISIONING_PROFILE_BASE64 を入れ直す
+3  Keys → APNs の鍵を作る（.p8 と Key ID）
+4  GitHub の Secrets に APNS_KEY_ID と APNS_P8
+5  Supabase → Database → Webhooks を ON → schema.sql を流し直す
+6  GitHub → Actions → Supabase Deploy → push-send
+7  （別の作業）アプリ側が入ったビルドを実機に入れて、通知を許可する
+```
