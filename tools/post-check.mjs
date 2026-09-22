@@ -2032,6 +2032,56 @@ const R = await pg.evaluate(async () => {
     PW = wasPW;
   }
 
+  /* ---- 11d-2. a column of letters STANDS UP -------------------------
+     「横にするなんか言ったことない。直して。」 OWNER 2026-09-22, a third
+     photograph: a vertical-writing language, 「Hello」 typed into the line
+     field, coming out lying on its side.
+
+     `.dir-ttb-rl` / `.dir-ttb-lr` declare `text-orientation:upright`
+     (index.html § the post's line), which stands every character on its feet
+     and stacks them down the column -- which is what a column IS, and what
+     a post's own line (`.pline`) has always done. The FIELD had a second
+     rule under it turning roman runs on their side (`text-orientation:mixed`,
+     the r6-post block, build 142), so the field and the post disagreed about
+     the same language: what you typed lay down and what was posted stood up.
+
+     Asked of the COMPUTED value and not of the source. A rule deleted from
+     the stylesheet is not the same statement as the element resolving to
+     upright -- another selector of higher specificity would answer for it
+     and read identically to a grep. Same reason face-check asks the page.
+
+     Both vertical directions, because they are two selectors and a rule put
+     back on one of them is the fault existing in half the languages. */
+  {
+    const wasPW = PW, wasDir = SCRIPT.dir;
+    try {
+      planGot('pro');
+      ['ttb-rl', 'ttb-lr'].forEach((d) => {
+        SCRIPT.dir = d;
+        PW = pwBlank(); openPost(); render();
+        const e = document.getElementById('pw-ln');
+        if (!e) { fails.push('the composer drew no line field in ' + d); return; }
+        if (e.className.indexOf('dir-' + d) < 0) {
+          fails.push('the line field in a ' + d + ' language does not wear ' +
+            'dir-' + d + ' (' + e.className + '), so what follows is not a ' +
+            'reading of a vertical field');
+          return;
+        }
+        const o = getComputedStyle(e).textOrientation ||
+                  getComputedStyle(e).webkitTextOrientation;
+        if (o !== 'upright')
+          fails.push('the line field in a ' + d + ' language computes ' +
+            'text-orientation: ' + o + '. It has to be upright -- a column ' +
+            'stands its letters on their feet, which is what a post\'s own ' +
+            'line does, so 「Hello」 typed into the field lies on its side ' +
+            'and the same word stands up once it is posted. ' +
+            '「横にするなんか言ったことない」 OWNER 2026-09-22');
+      });
+    } finally {
+      SCRIPT.dir = wasDir; PW = wasPW;
+    }
+  }
+
   /* ---- 11e. the face on a post is the way to whoever wears it ---------
      「タイムライン検索含めて人のツイートのアイコン押したらその人のホーム画面に
      飛ぶようにしてよ。自分ならプロフィールのページ。」

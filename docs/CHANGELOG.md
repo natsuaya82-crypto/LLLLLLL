@@ -15,6 +15,33 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### 2026-09-22 縦書きの欄は字が立つ ── **貯まる物は変わりません**
+
+**オーナーの決定（2026-09-22、縦書きの言語の写真）**：
+「横にするなんか言ったことない。直して。」
+
+欄に打った「Hello」が**横倒し**で出ていました。`www/index.html` の r6-post の
+節（ビルド 142）が、欄にだけ `text-orientation:mixed` ── ローマ字の連なりを
+90 度倒す指定 ── を掛けていたからです。**節はコメントごと削除しました。**
+
+欄は親の `.dir-ttb-rl,.dir-ttb-lr` の `text-orientation:upright` を受け継ぎ、
+**人の投稿の行（`.pline`）と同じ**になります。打った物と投稿された物が同じ
+向きで立ちます。
+
+    before   H e l l o が横倒しで縦に並ぶ
+    after    H / e / l / l / o と立って積まれる
+
+- 測った副作用：欄の幅が英語の placeholder で 82px（二列ぶん）、日本語で 53px。
+  **切れません** ── `lnFit()` が幅を測って伸ばすので広くなるだけです。
+- 押さえているもの：`post-check` 11d-2。両方向（`ttb-rl` `ttb-lr`）を
+  `getComputedStyle` で訊きます（ソースではなく）。赤を見てから消しました。
+- 写真：`shots/r50-ttb-before-roman.png` / `-after-roman.png`、
+  `-before-drawn.png` / `-after-drawn.png`
+- 貯まる物：**変わりません。**
+- **実機未確認**（DEVICE CONFIRMED: no）。
+- 決定の記録：`docs/FEATURE_RULES.md` § Owner decision log 2026-09-22。
+  **142 の r6-post の決定は取り消しです。**
+
 ### 2026-09-22 欄を一度タップすると意味とタグが隠れる ── **原因を測っただけ。直りは www/index.html の一行で、まだ入っていません**
 
 **オーナーの言葉（2026-09-22、新しい投稿の写真二枚、ビルド 162、日本語キーボード）**：

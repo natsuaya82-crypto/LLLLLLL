@@ -218,6 +218,32 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Implementation status:
 ```
 
+### 2026-09-22 縦書きの欄は字を立てる ── 142 の `mixed` を取り消す
+- Date: 2026-09-22
+- Area: 新しい投稿の一行目の欄、縦書きの言語（`.lnin.dir-ttb-rl` /
+  `.lnin.dir-ttb-lr`、`www/index.html` の r6-post の節）
+- Decision:（原文のまま）「横にするなんか言ったことない。直して。」
+- Reason: 実機の写真（ビルド 162、縦書きの言語）で、欄に打った「Hello」が
+  **横倒し**で出ていた。`text-orientation:mixed` はローマ字の連なりだけを
+  90 度倒す指定で、それが欄にだけ掛かっていた。
+- **2026-09-XX（ビルド 142）の r6-post の決定を取り消します。**あの節は
+  「縦書きの欄でローマ字が一字ずつ縦に積まれていた」という実機報告への
+  対応として `mixed` を入れたものですが、オーナーは今、倒すことを頼んだ
+  覚えは無いと言っています。**新しい方が勝ちます**（`CLAUDE.md` §
+  オーナーが今言ったことは仕様）。節はコメントごと**削除**しました ──
+  「歴史として」残さない（同 § 規則を直すとは消すこと）。
+- これで欄は親の `.dir-ttb-rl,.dir-ttb-lr` の `text-orientation:upright` を
+  受け継ぎ、**人の投稿の行（`.pline`）と同じ**になります。打った物と
+  投稿された物が同じ向きで立つ、というのがこの決定の中身です。
+- 測った副作用（390x844、1.2rem）：`upright` だと欄の幅が英語の placeholder
+  で 82px（二列ぶん）、日本語で 53px。**切れません** ── `lnFit()` が幅を
+  測って伸ばすので、欄が広くなるだけです。
+- Affected features: 新しい投稿・返信（同じ `pwHTML()`）
+- Affected data: **無し。**貯まる物は一バイトも変わりません
+- Affected docs: `docs/CHANGELOG.md` 2026-09-22
+- Implementation status: IMPLEMENTED（`post-check` 11d-2 が両方向を
+  `getComputedStyle` で押さえる。赤を見てから消した）。**実機未確認**
+
 ### 2026-09-18 無料の段は `$0` をやめて「無料」の語 ── 期間は付けない
 - Date: 2026-09-18
 - Area: プラン画面の無料の段（`planPrice()` の中の `term()`、`plan.price.free`）
