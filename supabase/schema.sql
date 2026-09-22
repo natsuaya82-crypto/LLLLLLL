@@ -908,11 +908,14 @@ alter table report add constraint report_actor_fkey
 -- operator can count beat a box of free text nobody can sort. `body` is the
 -- person's own words and is the whole of the rest of it.
 --
--- WHAT IS NOT HERE: an update policy, a delete policy, and no twin of
--- report_drop(). Answering one is not the same act as answering a report --
--- a report is a queue with a decision at the end of it, and this is a record
--- of what somebody said -- and nobody has decided that the operator may clear
--- it. So there is no road that removes one, for anybody.
+-- WHAT IS NOT HERE: an update policy and a delete policy. Reading what
+-- somebody wrote and then rewriting it is not an act anybody asked for, and
+-- nobody deletes one through a policy.
+--
+-- THE OPERATOR DOES DELETE ONE. 「運営は消せるように。」 OWNER 2026-09-22 --
+-- feedback_drop() at the foot of this file, the same shape as report_drop()
+-- and for the same reason: a queue that only grows is a queue nobody reads.
+-- The person who SENT it still cannot, which is the half that did not move.
 create table if not exists feedback (
   id         bigint generated always as identity primary key,
   -- Nullable and `set null`, exactly as `report.actor` is, and for a reason
@@ -2328,6 +2331,26 @@ begin
 end $$;
 revoke all on function report_drop(bigint) from public;
 grant execute on function report_drop(bigint) to authenticated;
+
+-- And the same for something somebody wrote in. 「運営は消せるように。」 OWNER
+-- 2026-09-22, said about exactly this and nothing else.
+--
+-- A function and not a delete policy, for the reason report_drop() is one: a
+-- policy would be a door on the table, and what may go through it would then
+-- be 「rows is_staff() can see」 -- which is every row. The function is the one
+-- road, is_staff() is asked inside it, and the app is a suggestion.
+--
+-- Nothing else changed: there is still no update policy and no update here.
+-- Reading a complaint and rewriting it is not an act anybody asked for.
+create or replace function feedback_drop(f bigint)
+returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if not is_staff() then raise exception 'not staff'; end if;
+  delete from feedback where id = f;
+end $$;
+revoke all on function feedback_drop(bigint) from public;
+grant execute on function feedback_drop(bigint) to authenticated;
 
 -- Ejecting somebody, which is the other half of answering a report and is the
 -- half App Store guideline 1.2 asks for by name. Taking the post down leaves
