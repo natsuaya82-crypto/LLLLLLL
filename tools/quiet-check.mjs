@@ -217,7 +217,11 @@ const DISK = {
   /* a starred search the account has since changed on another phone -- the
      answer is written with save() on this phone before 2026-09-23, which
      wrote the picture of the dictionary as this phone's own (r63-audit 0-1) */
-  'lingua.set':   JSON.stringify({ done:true, theme:'dark', saved:['tir'], savedUp:true }),
+  /* ...and what the language is for, from before it moved into the language
+     (migrateWorld): moved when the language arrives, not lost to a save the
+     picture refused (r69-misc 申し送り 1) */
+  'lingua.set':   JSON.stringify({ done:true, theme:'dark', saved:['tir'], savedUp:true,
+                                   world:{ where:'the old coast' } }),
   'lingua.langs': JSON.stringify({ 'L-1':{}, 'L-2':{} }),
   'lingua.cur':   'L-1',
   /* the picture of L-1, from before `zo` was deleted on another phone -- and
@@ -269,6 +273,9 @@ const seen = await pg.evaluate(() => ({ pic:ME.pic, theme:SET.theme,
 say(seen.pic === PIC_NEW, '2 the photograph on screen is the account\'s, not the one this phone had' +
     (seen.pic === PIC_NEW ? '' : ' -- ' + String(seen.pic).slice(0, 32)));
 say(seen.words === 'ka,mi', '2 the language on screen is the server\'s -- ' + seen.words);
+const moved = await pg.evaluate(() => ({ where:WLD.where, mark:!!SET.wldMoved }));
+say(moved.where === 'the old coast' && moved.mark,
+    '2 and the launch\'s migrations land when the language does -- ' + JSON.stringify(moved));
 
 /* What went out as writes while `fn` ran and the wire went quiet again. */
 async function writesDuring(fn, arg){

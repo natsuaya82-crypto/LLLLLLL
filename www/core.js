@@ -452,19 +452,19 @@ function langOwnGot(id, uid){
   slGot(langOwnKey(k), v);
   /* AND THE OPEN LANGUAGE HAS JUST BECOME WRITABLE (§ langLocked), so what
      could not be written while nobody had answered goes in now rather than on
-     the next launch. ltStart() (www/letters.js) is the one thing that tops a
-     free alphabet up to its slots and it refuses a language that is not
-     writable -- which on a launch is every language until its answer is in,
+     the next launch -- migrateAll() below, the old shapes brought forward
+     and the free alphabet topped up (ltStart, www/letters.js). Each of them
+     refuses a language that is not writable -- which on a launch is every language until its answer is in,
      and at the door is the walk's own language until its row is made.
 
      Not a second mechanism: it is the same call, made at the moment the fact
      it waited on becomes true, and it tops up only what is missing. Only on
-     the OPEN language, because ltStart() works on LETTERS; and only where the
+     the OPEN language, because they work on its globals; and only where the
      answer is new in this run of the app, so a walk over every row does not
      run it once per row. `was` is LOWN and never the picture: the picture is
      not an answer, and comparing against it is what kept this from running
      on a launch. */
-  if(k===langId && v && v!==was && typeof ltStart==='function') ltStart();
+  if(k===langId && v && v!==was && typeof migrateAll==='function') slAsApp(migrateAll, []);
 }
 function langOwnOf(id){
   var k=String(id||''), p;
@@ -1428,7 +1428,7 @@ function langOpen(id){
      not reads and stay -- one tops a free language up, two bring an older
      shape forward. */
   langLoad();
-  slAsApp(function(){ ltStart(); migrateKbFree(); migratePostInk(); }, []);
+  slAsApp(migrateAll, []);
   /* and where you were standing in the old one is not a place in this one:
      a filter left on would hide most of a dictionary you have never seen. */
   viewReset();
@@ -1533,6 +1533,39 @@ function langNew(){
    first and always: a language that may not be written (somebody else's, or
    the picture before the server has answered) is no reason to lose the theme
    somebody just chose. It used to decline both at once. */
+/* ---- EVERY OLD SHAPE BROUGHT FORWARD, AND ONLY WHERE IT CAN BE WRITTEN ----
+   One list, and three moments ask it: the launch (www/boot.js), the open
+   language becoming writable (langOwnGot above), and a language being opened
+   (langOpen). It was a list at the foot of boot.js and a shorter one here, and
+   the boot one ran while the screen was still the picture -- where langLocked()
+   refuses every save -- so migrateWorld() raised its mark and wrote nothing,
+   and the copy it was moving was never moved again (r69-misc 申し送り 1).
+
+   So the language being writable is asked ONCE, here, before anything moves;
+   a migration that cannot write does not run and raises no mark, and runs the
+   moment it can. Every one of them fills in what is missing and stops, so a
+   second run finds nothing to do. The app's own writes, always: every caller
+   wraps it in slAsApp() (§ LTOUCH). */
+function migrateAll(){
+  if(langLocked()) return;
+  migratePh();
+  migrateMn();
+  /* and a part of speech saved as its label rather than its key */
+  migratePos();
+  migrateLetters();
+  migrateMarks();
+  migrateSndName();
+  migrateSnd();
+  migratePosts();
+  migratePostInk();
+  migrateSp();
+  /* and what the language is for, off the phone and into the language */
+  migrateWorld();
+  /* and the free QWERTY out of the keyboard list, keeping an edited one */
+  migrateKbFree();
+  /* and a free language gets the twenty-eight slots it is allowed */
+  ltStart();
+}
 function save(){
   setKeep();
   if(langLocked()) return;   /* not writable: nothing is written to the language */

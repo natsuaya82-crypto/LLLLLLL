@@ -787,8 +787,13 @@ const del = await pg.evaluate(async ({ s, srv }) => {
   for (var i in LANGS)
     if (Object.prototype.hasOwnProperty.call(LANGS, i)) langOwnGot(i, SESS.uid);
   langStore();
-  /* On the disk before anything is sent. The seed fills the globals; a slice
-     is what localStorage holds, and the sync reads it from there. */
+  /* THE SEED IS NOT SOMEBODY'S WRITING. It fills the globals, and since
+     2026-09-23 the migrations run the moment the owner answers (migrateAll,
+     www/core.js) -- migrateSp() brings the seed's spellings forward and saves
+     them, as the APP, so nothing of it counts as touched and nothing of it
+     goes up (r60: an app write never travels). These claims are about a
+     dictionary somebody wrote, so somebody writes one word first. */
+  WORDS.push({ hw:'tessa', gl:'a word somebody wrote' });
   save(); saveLetters();
 
   /* 1. the dictionary goes up, so the server is holding it */
@@ -873,7 +878,15 @@ const up2 = await pg.evaluate(async ({ s, srv }) => {
 
   var id = langId;
   LANGS[id].mine = true; langOwnGot(id, 'me2'); langStore();
-  langName = 'Save Now'; save();
+  langName = 'Save Now';
+  /* AND HERE TOO: THE SEED IS NOT SOMEBODY'S WRITING. It fills the globals, and since
+     2026-09-23 the migrations run the moment the owner answers (migrateAll,
+     www/core.js) -- migrateSp() brings the seed's spellings forward and saves
+     them, as the APP, so nothing of it counts as touched and nothing of it
+     goes up (r60: an app write never travels). These claims are about a
+     dictionary somebody wrote, so somebody writes one word first. */
+  WORDS.push({ hw:'tessa', gl:'a word somebody wrote' });
+  save();
 
   /* まず一度合わせて、両者が同じものを持っている所から始める。ここから先の
      送信だけを見たいので、記録を空にする。 */

@@ -409,6 +409,14 @@ const R = await pg.evaluate(async () => {
   langOwnGot(langId, A);
   langStore();
   netOut(); arrive(A);
+  /* 行はまだ無い所から訊きます。`LROW` はこの実行の記憶で、前の案件が
+     この言語の行を立てたまま残っています ── それがあると netLangRow() は
+     何も送らずに「ある」と答えます。2026-09-23 まではそれでも緑でした:
+     start() の ltStart() がアプリ自身の書き込みなのに「人が触った」と数え
+     られ、arrive() の扉がその言語を上げていたからです。その道は r60 が
+     閉じた道で（docs/scope/r60-up.md）、ここが測りたいのは扉ではなく
+     netLangRow() そのものです。 */
+  delete LROW[langId];
   let r11 = askRow();
   unwire();
   if (r11.refused) no('11: 本人が自分の言語の行を断られた');
