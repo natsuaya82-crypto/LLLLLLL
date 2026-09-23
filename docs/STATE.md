@@ -121,7 +121,7 @@ un-re-read.
   の `push_follow/reply/like/boost`、無いのはオン）、サインアウトで自分の token
   の行だけ落とす。`acct-check` 82〜85。**`www/net.js` はセッションが無ければ
   一本も送らない**（扉の `email_taken` と `/auth/v1/*` だけ通す）、**写真と声は
-  `netMedia()` 一箇所がセッション付きで取って objectURL**（`netMediaURL()` は
+  `netMedia()` 一箇所がセッション付きで取って objectURL**（~~`netMediaURL()`~~ は
   消えた）。写真 `shots/r48-*`。**実機は全部まだ。**
 
 **オーナーがやること（順に）**：`docs/apple.md` § 8 の 1〜6（App ID の Push、
@@ -288,7 +288,7 @@ Apple：154 は落ちている（`profile.link`、登録エラー ── どち�
 （「端末で使うものなんかないだろ」「設計ミスなんだから作り直し」OWNER
 2026-09-15）。端末の索引 `lingua.langs` は電波なしで眺める写しで、数えず・
 決めず・上らない。`netLangsGone(mine, ids)` 一つが、自分の言語も取った言語も
-「答えに無い行を端末から落とす」（`netTakeGone()` は削除）。`langCount()`／
+「答えに無い行を端末から落とす」（~~`netTakeGone()`~~ は削除）。`langCount()`／
 `langMainId()` は未回答なら `null`、`langStop()` は数を見る前に「接続できません」。
 ログアウト→ログインで名前の無い空の `language` 行がサーバーにできていた道
 （`langMineIds()` が索引を舐めて `netLangRow()` が insert）は、押して測った赤
@@ -534,7 +534,7 @@ staff の plan は free に戻らない）が実物でも真になります。
 ### 今日、形が変わったもの ── 索引。中身は CHANGELOG
 
 - **投稿の意味欄は辞書と文法で組む。機械翻訳は無い。** `www/post.js` の `pwMn()`
-  → `LinguaGrammarEngine.translate.toNatural(model, line, lang)`。`postTr()`・
+  → `LinguaGrammarEngine.translate.toNatural(model, line, lang)`。~~`postTr()`~~・
   `TR_SEAM`・`post.tr` は削除。「単語はその単語の意味を 文法は並び替えた単語たち
   が文章として成り立つように。きかいほんやくはつかわない。」
 - 文法ページ: 語順は常に出る、規則の画面は「足す文字」と「前後」だけ、時制・相の
@@ -723,7 +723,7 @@ Google と同じアドレスを打って二つ目のアカウントを立てて�
 - **1アドレス1アカウント**（上）。`open-check` 2b。
 - **言語にアカウントの印。**言語を作る道は全部 `SESS.uid` を押します ──
   `langNew()`、`langForAcct()`、`langSeenAdd()`、`netLangsDown()`、
-  `bkRestore()`、そして `langMigrate()` は `mig` を通して。印の無い言語を
+  ~~`bkRestore()`~~、そして ~~`langMigrate()`~~ は `mig` を通して。印の無い言語を
   自分のものと答えるのはオンボーディングの歩きの途中（`SET.done` が偽）だけで、
   扉を出た `obFinish()` がそこで印を付けます。どの iPhone かを憶える仕掛けはありません。
 - **Keychain。**読めなかった Keychain に段を書きません。`Transaction.updates` は
@@ -743,7 +743,7 @@ Google と同じアドレスを打って二つ目のアカウントを立てて�
   最後に読まれ、移行を走らせるためだけにあります。定義は `shell.js` のままです。
 - **アカウント削除が平キー八つも消す。**`LS_FLAT` は言語に id が無かった頃の
   八つ（`lingua.words` `lines` `lang` `script` `letters` `notes` `phases`
-  `talk`）で、`langMigrate()` がそこから言語へ写し、`lsWipeAcct()` が
+  `talk`）で、~~`langMigrate()`~~ がそこから言語へ写し、`lsWipeAcct()` が
   アカウントと一緒に持っていきます。**一箇所に書いて二つが読む**ので、
   片方だけ足すことができません。
 - **全角 ＠ で人が検索できる。**`netHandleOf()` が落とすのは `/^[@＠]+/` で、
@@ -762,7 +762,7 @@ Google と同じアドレスを打って二つ目のアカウントを立てて�
   最後から二つ目を答え、`swPrev()` はそれと `NAVBK` が指す画面が一致したときだけ
   絵を返します。タブを押すと `NAV` は捨てられるので、タブの画面には後ろが
   ありません。
-- **`lsWipeNS()` と `netMember()` が消えました。**前者は `lingua.` で始まる
+- **~~`lsWipeNS()`~~ と ~~`netMember()`~~ が消えました。**前者は `lingua.` で始まる
   キーを全部持っていく関数で、**別アカウントの言語まで消していました。**
   後者は §3 に書いてある通りです。
 - **`admin` は `handle = 'lingua'` で決まります。**`ADMIN_HANDLE` が
@@ -994,14 +994,14 @@ app's own door when there is no session.
 
 **There is one kind of account and there are no anonymous ones**
 「匿名アカウントはねえよ」. **There is one question and it is `netSignedIn()`.**
-`netMember()` was the second one — a session that also carries a name — and with
+~~`netMember()`~~ was the second one — a session that also carries a name — and with
 no anonymous accounts it could never answer no, so it was a true question with
-nothing left to ask. It and `netAnonTok()` are **deleted**, and every one of the
+nothing left to ask. It and ~~`netAnonTok()`~~ are **deleted**, and every one of the
 twenty-eight callers asks `netSignedIn()`. Do not put either back; the comment
 above `netOut()` in `www/net.js` says why at length.
 
-There is no `netAnon()` either — the comment where it stood says so — and
-`supabase/schema.sql` **drops** `has_account()`
+There is no ~~`netAnon()`~~ either — the comment where it stood says so — and
+`supabase/schema.sql` **drops** ~~`has_account()`~~
 (`drop function if exists has_account()`), so every policy that used to ask it
 asks `is_member()` now.
 
@@ -1069,7 +1069,7 @@ Order, and where it stands:
    like, a boost, a report, a follow, a block.
    The door is the LAST step of the onboarding and there is no way past it.
    Held by `open-check` and by `migrate-check` case 7.
-2. **`is_member()` is the one question — done.** `has_account()` is dropped in
+2. **`is_member()` is the one question — done.** ~~`has_account()`~~ is dropped in
    `schema.sql`, and the `language` write policies that used to ask it ask
    `is_member()`. `language.owner` points at `auth.users` rather than
    `profile`. Held by `npm run rls`.
@@ -1408,7 +1408,7 @@ under `lingua.sess`.
 | 二 版の大きさ | `slice` テーブル、`netSlicePut()` |
 | 二 直した時刻の粒度 | `docs/FEATURE_RULES.md` §「同期でぶつかったら、後から『直した』ほうが残るべき」 |
 | 三 空のキーボード | `www/keyboard.js` の `saveKb()` ── 直っています。`docs/EXPIRY.md`（`claude/keep2`・`claude/keep4`）1番 |
-| 四 戻す画面 | `bkTake()` / `bkRestore()`、`docs/RECOVERY.md` |
+| 四 戻す画面 | ~~`bkTake()`~~ / ~~`bkRestore()`~~、`docs/RECOVERY.md` |
 | 五 まとめてか一部か | 集めた先が消えました（下） |
 | 六 小さくなったら書かない | `netKeeps()` / `NET_SHRANK` |
 | 七 既定の値 | `www/phases.js:98-125` `migrateGramLang()`、`www/core.js:220` `setDefaults()` が `order:'SOV'` を入れる。`docs/EXPIRY.md`（`claude/keep4`）4番の末尾 |
@@ -1790,7 +1790,7 @@ anywhere in this repo.
 - **Reach the native side with `Capacitor.nativePromise` and nothing else.**
     `Capacitor.Plugins` and `Capacitor.registerPlugin` are filled by
     `@capacitor/core`, which this app does not load — there is no bundler, only
-    plain script tags. `planKeep()` asked `Capacitor.Plugins` for `LinguaPlan`
+    plain script tags. ~~`planKeep()`~~ asked `Capacitor.Plugins` for `LinguaPlan`
     and every write was the early return.
 - **A native call that fails silently is invisible to every check here.**
     In a browser `PLAN_NATIVE` is false and the plan stays in the settings file,

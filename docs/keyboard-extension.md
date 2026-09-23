@@ -344,8 +344,9 @@ build()（毎回、全部作り直す。層の切替もこれ一本）
        その上に CandidateBar も貼る（無ければバーは無し）
 ```
 
-高さは `rowHeight(54) × 行数 + 8 + (バーがあれば barHeight(44))` を
-`NSLayoutConstraint` 1本で持ち、次の `build()` では作り直さず値だけ書き換えます
+高さは `rowHeight`（画面の短い辺 × 0.1385。390pt の電話で 54）× 行数 + 8 +
+（バーがあれば `barHeight` の 44）を、画面の高さの半分（`mostOfScreen`）で
+頭打ちにして `NSLayoutConstraint` 1本で持ち、次の `build()` では作り直さず値だけ書き換えます
 （作り直すと制約が1回ごとに積み上がって iOS が壊し始めるため）。
 
 `needsInputModeSwitchKey` が false の場合だけ 🌐 を落とします
@@ -579,16 +580,15 @@ function sharePlug(){
 }
 ```
 
-**同じ穴が `LinguaPlan` でも開きました。**`planKeep()` が
-`Capacitor.Plugins` に訊いていて、書き込みが毎回 early return していた ──
+**同じ穴が `LinguaPlan` でも開きました。**~~`planKeep()`~~（2026-09-11 に
+Keychain ごと `www/` から消えた）が `Capacitor.Plugins` に訊いていて、書き込みが毎回 early return していた ──
 実機で Plus が次の起動に free で戻り、ブラウザでは `PLAN_NATIVE` が false
-なので検査は全部緑でした。`nativePromise` に直してあります。
+なので検査は全部緑でした。
 **ネイティブを呼ぶ新しい道を書くときは、必ずこの形にしてください。**
 
 | | |
 |---|---|
 | `write({json, font})` | `keyboard.json` と `LinguaScript.otf` を App Group に置く。`www/share.js` が呼ぶ |
-| `registerFont()` | その otf を iOS に登録する。**まだ誰も呼んでいません**（下） |
 
 `write` の細かいところ2つ。どちらも実機でしか出ない類です:
 
@@ -599,25 +599,6 @@ function sharePlug(){
   だとロック中のファイルが読めません。キーボード拡張はアプリが見ない状態で
   起こされるので、既定のままだと**再起動後に文字が消えます**。誰も再現
   できないバグになります
-
-`registerFont` はボタンです。**自動では絶対に呼びません** — iOS が毎回
-「Lingua がフォントを追加しようとしています」と確認を出すので、文字を1画
-描くたびにそれが出ることになります。ボタンはまだ作っていません（画面が
-増えるので、見てもらってから）。
-
-- native 側で `CTFontManagerRegisterFontURLs(urls, .persistent, true, ...)`
-  — その前に必ず unregister します。文字を描くたびにフォントは建て直される
-  のに、同じ URL の二度目の登録はエラーで、登録し直さないと**最初に登録した
-  日のアルファベットが出続けます**
-- iOS が「Lingua がフォントを追加しようとしています」と確認を出す →
-  許可すると、**フォントを選べるアプリ**でフォント名 `LinguaScript` が
-  選べるようになります
-- 設定 → 一般 → フォント に入り、そこから消せます
-
-**出るアプリ**: メモ・メール・Pages・Keynote・Numbers・Word・Pixelmator など
-フォントピッカーがあるもの
-**出ないアプリ**: LINE・X・メッセージ・Instagram。フォントを変える手段が
-ないので、どうやっても無理です
 
 ---
 

@@ -189,12 +189,9 @@ for real.
 
 ```
 
-**There is nothing off to one side any more.** A JSON file in Documents used
-to stand there — written by `bkPush()`, read by `bkRestore()` at launch — and
-it was what was left when neither of the other two was. It is deleted
-(`CLAUDE.md` rule 11, 2026-09-04): a save reaches the server at once now, so
-the hours it was covering are gone, and `netLangsDown()` at the foot of
-`www/boot.js` is what a phone whose storage was reclaimed comes back from.
+**There is nothing off to one side** (`CLAUDE.md` rule 11): a save reaches
+the server at once, and `netLangsDown()` at the foot of `www/boot.js` is what a
+phone whose storage was reclaimed comes back from.
 
 and, once, in the other direction:
 
