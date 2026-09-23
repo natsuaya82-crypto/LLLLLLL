@@ -1745,7 +1745,11 @@ say(r.unknownCan, 'and any plan that is no rung of the ladder buys nothing -- ga
 say(r.unknownWords, 'and the words are all still there while it does');
 say(!r.unknownThrew, 'and nothing about it throws (' + (r.unknownThrew || 'nothing') + ')');
 
-say(r.canCount === 12, 'CAN names ' + r.canCount + ' capabilities');
+/* HOW MANY is CAN's to say and is read off it (CLAUDE.md rule 5: 「Read CAN」),
+   and whether the list and the price list agree is paid-check's. What is
+   asked here is only that there IS a list: the two lines under this are
+   `every`, and every one of nothing is true. */
+say(r.canCount > 0, 'CAN names ' + r.canCount + ' capabilities');
 say(r.freeAll, 'every one of them is closed on free');
 say(r.paidAll, 'and open on plus');
 say(r.canTypo, 'and a name that is not in the table throws rather than reading as free');
