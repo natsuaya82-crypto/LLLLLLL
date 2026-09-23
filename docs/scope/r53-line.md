@@ -28,9 +28,3 @@
 - `tools/card-check.mjs` §7 ── 消した canvas を測っていた。線の半分を `line-check` へ移し、カードの半分だけ残した。
 - `tools/sheet-check.mjs` §3c ── カレンダーの数字に canvas を求めていた。同じ主張を、書体の墨として画素で訊く形に。
 - `tools/post-check.mjs` 1328 行の前提一つ ── 「短い投稿に描いた字がある」を canvas ではなく私用領域の文字で訊く。`claude/r50-composer` の未取り込みの一コミットとは重ならない場所。
-
-## リーダーの追加指示（2026-09-23 06:17）
-
-入力欄の textarea はキーを受けるだけにし、文字は透明。見える一行とカーソルは
-`postLnHTML()` が描く（カーソルは行末だけ）。空白と改行の判定は `postRuns()` 一か所で、
-カード（`cardInkUnits`）もそれを読む。

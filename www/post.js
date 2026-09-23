@@ -1546,9 +1546,14 @@ function pwHTML(){
          what you had written were two different-looking things.
          「自作文字で出せ、向きも縦向きになってないけど」
 
-         What is seen is the post before it is sent, on every plan and
-         whatever SET.myfont says. 「書いている時の見た目が、そのまま投稿の
-         見た目になること」 OWNER 2026-09-23. */
+         It is set by the SAME rule as a post's line (`.pline, .pwfield
+         #pw-ln` in index.html) -- the face, the size, the spacing, and
+         `pre-wrap` -- and on every plan and whatever SET.myfont says, because
+         this field is not a field set in the letters somebody drew, it is
+         the post before it is sent. 「書いている時の見た目が、そのまま投稿の
+         見た目になること」 OWNER 2026-09-23. Nothing is flattened here any
+         more: a column IS typed into now, and lnFit() measures the width when
+         the writing-mode is vertical, because that is the way a column grows. */
       /* Not `fitin` any more. That said "the layout gives this field its
          height", which is what a field takes when it is the only thing that
          can stretch -- and it was, so a photograph sat under the fold and the
@@ -1567,21 +1572,8 @@ function pwHTML(){
 
          The ring is what says so before the press: past zero it counts in
          negative numbers and goes red, in front of somebody while they type. */
-      /* THE LINE YOU SEE IS NOT THE FIELD. 「一本化して欲しい。穴埋めみたい
-         な直し方は禁止って話したよね？」 OWNER 2026-09-23. The field takes
-         the keys and shows nothing -- its letters are transparent and a
-         thumb goes through it -- and what stands in its place is the line
-         drawn by postLnHTML(), the timeline's own function, with a caret
-         drawn at its end. There is no second thing deciding where a letter
-         stands. The caret is only ever at the end: 「入力位置もタップしても
-         動かないそれでいいやん」 OWNER (r50), so pressing the line is
-         pwFocusLn(), which puts it there. */
-      '<div class="pwlnbox'+(scriptDir().indexOf('ttb')===0? ' pwcol' : '')+'">'+
-        '<div class="pline pwview '+dirClass(scriptDir())+'" id="pw-view"'+DO('pwFocusLn')+'>'+
-          pwViewHTML()+'</div>'+
-        lnField('pw-ln', t('post.ln.ph'), IN('pwSetLn'),
-          PW.ln, dirClass(scriptDir())+' fitin')+
-      '</div>'+
+      lnField('pw-ln', t('post.ln.ph'), IN('pwSetLn'),
+        PW.ln, dirClass(scriptDir()))+
       /* The meaning sits in the same column as the line, in the same
          borderless field, because it is the second half of the same act. */
       /* Read-only when it is the day's sentence. Not disabled: a disabled
@@ -1656,18 +1648,6 @@ function pwHTML(){
    render() -- come back from the card and the line you were typing is gone.
    So the string is kept in step too, without redrawing anything. */
 function pwFresh(){ if(FORM && FORM.key==='post:') FORM.html=pwHTML(); }
-/* The line as it will be posted, and the caret after it. A post-shaped thing
-   handed to postLnHTML() -- the ink is cut exactly as pwSend() will cut it
-   (postInkTyped), so the letters, the gap and the newlines are the post's. */
-function pwViewHTML(){
-  return postLnHTML({ln:PW.ln, ink:postInkTyped(PW.ln)})+'<span class="pwcaret"></span>';
-}
-function pwViewPaint(){
-  var v=document.getElementById('pw-view');
-  if(!v) return;
-  v.innerHTML=pwViewHTML();
-  inkFaces();
-}
 /* The empty part of the column, pressed. The caret goes to the END of what is
    there rather than to the start: pressing under the last line of something
    you are writing is asking to go on writing it. */
@@ -1730,8 +1710,6 @@ function pwSetLn(v){
      same decision made once, and the screen is the answer.
      「文字数に含ませたくないのよ」 OWNER 2026-09-08. */
   pwAtLift();
-  pwViewPaint();
-  pwFocusLn();
   var m=document.getElementById('pw-mn');
   if(m) m.setAttribute('placeholder', pwMn());
   lnGrow('pw-ln');
@@ -3592,38 +3570,16 @@ function postDir(p){
    language and may not be named here. A post written before a language could
    set one carries none, and stood one step apart -- inkSide() says that. */
 function postSide(p){ return inkSide(p && p.ink && p.ink.sp); }
-/* A line as the things it is made of, and the ONE place that says what a
-   space and a newline are: a shape, a run of text with no whitespace in it,
-   a space, or the end of a line. postLnHTML() sets these as the line the
-   timeline and the composer show; cardInkUnits() (www/card.js) sets them on
-   the card. Neither looks at a character to decide whether it is blank.
-   A post with no ink is its text, which is a line with no shapes in it. */
-function postRuns(ink){
-  var out=[], i, j, x, ch, run;
-  for(i=0;i<ink.s.length;i++){
-    x=ink.s[i];
-    if(typeof x==='number'){ out.push({st:ink.g[x]}); continue; }
-    x=String(x); run='';
-    for(j=0;j<x.length;j++){
-      ch=x.charAt(j);
-      if(!/\s/.test(ch)){ run+=ch; continue; }
-      if(run){ out.push({tx:run}); run=''; }
-      out.push(ch==='\n'? {br:true} : {sp:true});
-    }
-    if(run) out.push({tx:run});
-  }
-  return out;
-}
 function postLnHTML(p){
   /* A TAG IS TEXT, so it comes out of the cut as text -- nobody has a letter
-     for `#` and the ink carries only what the writer drew. A run never holds
-     a space, and a tag never does either, so a tag is always whole inside
-     one run and tagHTML() finds it there. www/sns.js § tagHTML. */
-  var ink=(p && postInkOK(p.ink))? p.ink : {g:[], s:[String((p && p.ln)||'')]};
-  var rs=postRuns(ink), side=postSide(p), out='', i, u;
-  for(i=0;i<rs.length;i++){
-    u=rs[i];
-    out+= u.st? inkChar(u.st, side) : u.tx? tagHTML(u.tx) : u.br? '\n' : ' ';
+     for `#` and the ink carries only what the writer drew. Both roads
+     through this function draw those runs, so both ask tagHTML() and a tag
+     is blue whether or not the post has ink on it. www/sns.js § tagHTML. */
+  if(!p || !postInkOK(p.ink)) return tagHTML(String((p && p.ln)||''));
+  var out='', i, x, side=postSide(p);
+  for(i=0;i<p.ink.s.length;i++){
+    x=p.ink.s[i];
+    out+=(typeof x==='number')? inkChar(p.ink.g[x], side) : tagHTML(String(x));
   }
   return out;
 }

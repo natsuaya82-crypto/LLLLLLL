@@ -952,20 +952,12 @@ a canvas per letter with its own scale and `white-space:normal`, so a letter was
 `inkChar(st, side)` in `glyph.js` turns a shape at a gap into a character from the
 top of the private use area, `inkFaces()` adds a face for those characters to the
 `LinguaType` family (one `unicode-range` each, built by `inkFaceCSS()` — the same
-builder as the keyboard's own face), and `.pline` in `index.html` is the one rule
-for how a line is set, `pre-wrap` included. `postRuns()` in `post.js` is the one
-place that says what a space and a newline are; `postLnHTML()` sets its runs as a
-line and the card (`cardInkUnits()`) draws them. **The composer's field shows
-nothing**: its letters are transparent and a thumb goes through it, and what is
-seen is `postLnHTML()`'s drawing of the line being written with a caret drawn at
-its end — the caret is only ever at the end (OWNER 「入力位置もタップしても動かない
-それでいいやん」). A field that showed its own letters would be a second thing
-deciding where a letter stands, and that is closed (OWNER 2026-09-23 「一本化して
-欲しい。穴埋めみたいな直し方は禁止」). A post, a quoted post, the spacing preview
-and the calendar are the same text. The card is a canvas and keeps `inkAdv()`; it
-takes a space as the ordinary face's (`inkSpace()`) and a newline as a break.
-`tools/line-check.mjs` watches `postLnHTML()` drawing the composer, photographs it
-and the posted row, and asks for the same ink.
+builder as the keyboard's own face), and `.pline, .pwfield #pw-ln` in `index.html`
+is the one rule for how a line is set, `pre-wrap` included. The field, a post, a
+quoted post, the spacing preview and the calendar are all that text. The card is a
+canvas and keeps `inkAdv()`; it takes a space as the ordinary face's (`inkSpace()`)
+and a newline as a break. `tools/line-check.mjs` photographs the field and the
+posted row and asks for the same ink.
 
 `tools/sides-check.mjs` holds the line: nothing below it may name `WORDS`, `LETTERS`,
 `STG`, `SET`, `langName`, `findWord`, `myFontOn`, `ltById`, `ME`, `meName` or their
