@@ -1164,8 +1164,8 @@ export function halfDone(){
                            NAV=[{r:'ltset', a:'mark'}]; return vLtset(); }],
     ['a letter in the editor', () => { editGlyph('k'); window.route='glyph';
                                        NAV=[{r:'glyph', a:GE.lid}]; return vGlyph(); }],
-    /* The two faces of the editor's canvas the three guide lines have to be
-       seen in (OWNER 2026-09-23): nothing drawn yet, so the lines stand alone
+    /* The two faces of the editor's canvas the 田 guides have to be seen
+       in (OWNER 2026-09-23): nothing drawn yet, so the lines stand alone
        over the dots; and pinched in, so the lines are shown to move with the
        dots. GE is the editor's buffer and is never saved from here. */
     ['an empty letter in the editor', () => { editGlyph('k'); GE.st=[]; GE.si=-1; GE.pi=-1;
@@ -3337,18 +3337,18 @@ export function halfDone(){
     /* THE GAP BETWEEN LETTERS (www/glyph.js § geSide, www/wsys.js § SP_RANGE).
        「0 にすると、端まで描いた線が隣とくっついて一本に繋がる」「スライドで
        文字間が見えるように … 最大0と2くらい」「それぞれの字間を見せてね」
-       OWNER 2026-09-23. At each of five points along the slider: the row in
-       設定 → 言語 with the language's own letters standing at that gap, and a
-       post written at it. Two letters each run a stem from the left edge of
+       OWNER 2026-09-23. At each of five points along the slider: 字間's own
+       page (「別ページにした方が見やすい」, same day), the language's own
+       letters across and down at that gap, and a post written at it. Two letters each run a stem from the left edge of
        the lattice to the right -- one with a stroke up off it, one with a
        loop under it -- so at 0 the stem is one line through the word.
        SCRIPT.sp is put back before returning (seed() does not rebuild SCRIPT);
        the preview carries its gap in its own markup, so nothing it draws
        afterwards needs it. */
     ...[0, 0.5, 1, 1.5, 2].map((v) => ['the gap between letters, the language at ' + v, () => {
-       __stemLetters(); const was = SCRIPT.sp; SCRIPT.sp = v; window.route = 'set';
-       NAV = [{ r:'settings' }, { r:'set', a:'lang' }];
-       const h = vSet(); if (was === undefined) delete SCRIPT.sp; else SCRIPT.sp = was; return h; }]),
+       __stemLetters(); const was = SCRIPT.sp; SCRIPT.sp = v; window.route = 'sp';
+       NAV = [{ r:'settings' }, { r:'set', a:'lang' }, { r:'sp' }];
+       const h = vSp(); if (was === undefined) delete SCRIPT.sp; else SCRIPT.sp = was; return h; }]),
     ...[0, 0.5, 1, 1.5, 2].map((v) => ['a post whose letters stand ' + v + ' apart', () => {
        __joinPosts(v); window.route = 'feed'; NAV = [{ r:'feed' }];
        return vFeed(); }]),
