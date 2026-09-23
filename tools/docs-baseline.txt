@@ -26,7 +26,7 @@ orphan docs/SCOPE-yaa.md
 # session did not own, so it is written down here rather than fixed:
 #
 #   docs/STATE.md               the leader's
-#   docs/TESTING.md
+
 #   docs/FEATURE_RULES.md       every one of these is inside the Owner decision
 #                               log, whose entries were not that session's to
 #                               edit. The body of that file has none.
@@ -64,6 +64,176 @@ call docs/FEATURE_RULES.md openCapLapse
 call docs/FEATURE_RULES.md planKeep
 call docs/FEATURE_RULES.md planMigrate
 call docs/FEATURE_RULES.md postTr
-call docs/FEATURE_RULES.md pushMay
 call docs/FEATURE_RULES.md voPlayPW
-call docs/TESTING.md keep
+
+# `name` `file` `check` `npm` `count` `owner` `gone` `struck` -- the rest of the
+# surface, counted from 2026-09-23 (claude/r77-docs, docs/scope/r73-audit.md
+# § 2-17). What was already stale that day, written down by
+# `node tools/docs-check.mjs --keys`. Taking a line out is progress.
+
+check docs/BACKLOG.md backup-check
+check docs/FEATURE_RULES.md backup-check
+check docs/STATE.md backup-check
+count docs/BACKLOG.md 検査 16 本
+count docs/FEATURE_RULES.md ゲート28本
+count docs/STATE.md 39 checks
+count docs/STATE.md ゲート 41 本
+count docs/STATE.md ゲートは 44 本
+count docs/STATE.md 検査 8 本
+file docs/BACKLOG.md backup-check.mjs
+file docs/BACKLOG.md lt.sh
+file docs/BACKLOG.md talk.js
+file docs/FEATURES.md LinguaPlan.swift
+file docs/FEATURES.md lt.sh
+file docs/FEATURE_RULES.md backup-check.mjs
+file docs/STATE.md LinguaPlan.swift
+file docs/STATE.md backup-check.mjs
+gone docs/FEATURE_RULES.md 【差し替え済み 2026-09-05】「保存されない」は仕様。オンライン
+gone docs/FEATURE_RULES.md 【差し替え済み 2026-09-05】保存が失敗したら、人が作ったものは
+gone docs/FEATURE_RULES.md 【差し替え済み】お題のタグは、お題そのものが持っている十言語から出す
+gone docs/FEATURE_RULES.md 【差し替え済み】お題は #今日のお題。十言語ぶんで、どの言語で書かれてい
+name docs/BACKLOG.md DOC_
+name docs/BACKLOG.md KB_MAX
+name docs/BACKLOG.md abtline
+name docs/BACKLOG.md abts
+name docs/BACKLOG.md appstore
+name docs/BACKLOG.md bkDropFor
+name docs/BACKLOG.md capFirst
+name docs/BACKLOG.md draftsPullOnce
+name docs/BACKLOG.md dropSome
+name docs/BACKLOG.md netLangBack
+name docs/BACKLOG.md obws
+name docs/BACKLOG.md postsRead
+name docs/BACKLOG.md readMode
+name docs/BACKLOG.md readSeq
+name docs/BACKLOG.md saveWord
+name docs/BACKLOG.md server.hostname
+name docs/BACKLOG.md snsFilName
+name docs/BACKLOG.md sth
+name docs/BACKLOG.md token_hash
+name docs/BACKLOG.md tokushoho
+name docs/BACKLOG.md vFmrFm
+name docs/BACKLOG.md wSetSort
+name docs/BACKLOG.md wdMode
+name docs/BACKLOG.md weave
+name docs/FEATURES.md AI_FREE_DAILY
+name docs/FEATURES.md ASC_VENDOR_NUMBER
+name docs/FEATURES.md STAGES_IF
+name docs/FEATURES.md TR_FREE_DAILY
+name docs/FEATURES.md TR_SEAM
+name docs/FEATURES.md notifyListeners
+name docs/FEATURES.md postTr
+name docs/FEATURE_RULES.md ADMIN_ASC
+name docs/FEATURE_RULES.md AI_FREE_DAILY
+name docs/FEATURE_RULES.md AI_SEAM
+name docs/FEATURE_RULES.md Basic
+name docs/FEATURE_RULES.md CAN.ai
+name docs/FEATURE_RULES.md CAN.write
+name docs/FEATURE_RULES.md FM
+name docs/FEATURE_RULES.md GE_
+name docs/FEATURE_RULES.md GE_MAXPTS
+name docs/FEATURE_RULES.md GHCYC
+name docs/FEATURE_RULES.md GHDCYC
+name docs/FEATURE_RULES.md GHDEMO
+name docs/FEATURE_RULES.md GHINT
+name docs/FEATURE_RULES.md GHP
+name docs/FEATURE_RULES.md GHTAP
+name docs/FEATURE_RULES.md KB_MAX
+name docs/FEATURE_RULES.md LANG_MAX
+name docs/FEATURE_RULES.md LS_FLAT
+name docs/FEATURE_RULES.md PLAN_BUY
+name docs/FEATURE_RULES.md SET.aiDate
+name docs/FEATURE_RULES.md SET.anon
+name docs/FEATURE_RULES.md SET.plan
+name docs/FEATURE_RULES.md SET.planPend
+name docs/FEATURE_RULES.md SET.planUid
+name docs/FEATURE_RULES.md SET.planWas
+name docs/FEATURE_RULES.md SET.trDate
+name docs/FEATURE_RULES.md SET.trN
+name docs/FEATURE_RULES.md SET_PLAN
+name docs/FEATURE_RULES.md TR_FREE_DAILY
+name docs/FEATURE_RULES.md Transaction.expirationDate
+name docs/FEATURE_RULES.md WORDS.slot
+name docs/FEATURE_RULES.md adminAsc
+name docs/FEATURE_RULES.md adminAt
+name docs/FEATURE_RULES.md adminDays
+name docs/FEATURE_RULES.md adminGoTo
+name docs/FEATURE_RULES.md adminGotTop
+name docs/FEATURE_RULES.md adminMD
+name docs/FEATURE_RULES.md adminMon
+name docs/FEATURE_RULES.md adminMonthTop
+name docs/FEATURE_RULES.md adminMonths
+name docs/FEATURE_RULES.md adminNow
+name docs/FEATURE_RULES.md adminOne
+name docs/FEATURE_RULES.md adminOpen
+name docs/FEATURE_RULES.md adminPct
+name docs/FEATURE_RULES.md adminPlanTop
+name docs/FEATURE_RULES.md adminPlans
+name docs/FEATURE_RULES.md adminPurse
+name docs/FEATURE_RULES.md adminView
+name docs/FEATURE_RULES.md adminWhenRow
+name docs/FEATURE_RULES.md adsDisabled
+name docs/FEATURE_RULES.md capPop
+name docs/FEATURE_RULES.md delNote
+name docs/FEATURE_RULES.md freeSlots
+name docs/FEATURE_RULES.md ghDemo
+name docs/FEATURE_RULES.md ghDraw
+name docs/FEATURE_RULES.md ghEase
+name docs/FEATURE_RULES.md ghField
+name docs/FEATURE_RULES.md ghInk
+name docs/FEATURE_RULES.md ghMount
+name docs/FEATURE_RULES.md ghPos
+name docs/FEATURE_RULES.md ghSeg
+name docs/FEATURE_RULES.md ghShow
+name docs/FEATURE_RULES.md ghTick
+name docs/FEATURE_RULES.md langOwned
+name docs/FEATURE_RULES.md ltFace
+name docs/FEATURE_RULES.md navsave
+name docs/FEATURE_RULES.md netAnon
+name docs/FEATURE_RULES.md netLangBack
+name docs/FEATURE_RULES.md noteAt
+name docs/FEATURE_RULES.md noteBody
+name docs/FEATURE_RULES.md noteCut
+name docs/FEATURE_RULES.md noteHead
+name docs/FEATURE_RULES.md noteRead
+name docs/FEATURE_RULES.md notesFound
+name docs/FEATURE_RULES.md openMePic
+name docs/FEATURE_RULES.md planUid
+name docs/FEATURE_RULES.md plans.intro
+name docs/FEATURE_RULES.md post.letterId
+name docs/FEATURE_RULES.md postsRead
+name docs/FEATURE_RULES.md saveWord
+name docs/FEATURE_RULES.md wSetFil
+name docs/FEATURE_RULES.md wSetSort
+name docs/GRAMMAR-V2-SPEC.md GrammarRepository
+name docs/GRAMMAR-V2-SPEC.md LanguageRepository
+name docs/GRAMMAR-V2-SPEC.md SentenceRepository
+name docs/GRAMMAR-V2-SPEC.md generator
+name docs/PAID_FEATURES.md AI_SEAM
+name docs/PAID_FEATURES.md KB_MAX
+name docs/PAID_FEATURES.md PLUS
+name docs/PAID_FEATURES.md netPlanSync
+name docs/RECOVERY.md slice_past
+name docs/STATE.md KB_MAX
+name docs/STATE.md LS_FLAT
+name docs/STATE.md PLAN_NATIVE
+name docs/STATE.md SET_PLAN
+name docs/STATE.md TR_SEAM
+name docs/STATE.md geKeepPut
+name docs/STATE.md goPlans
+name docs/STATE.md gstep
+name docs/STATE.md inkLine
+name docs/STATE.md isUpgraded
+name docs/STATE.md kb.step4
+name docs/STATE.md nidDrop
+name docs/STATE.md nidFor
+name docs/STATE.md nidHolds
+name docs/STATE.md node_modules
+name docs/STATE.md obBackTo
+name docs/STATE.md scriptDrawn
+name docs/STATE.md setPlan
+name docs/STATE.md tcln
+owner 2026-08-31
+owner 2026-09-07
+owner 2026-09-10
+owner 2026-09-16

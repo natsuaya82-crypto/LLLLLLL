@@ -417,17 +417,22 @@ branch's report arrives and where the owner's decisions land, so the leader is
 the one who knows what became true today.
 
 And the same reason the corners needed `box-check`: prose does not hold a rule.
-**One part of it is held: a function a document names is a function the code
-has.** `docs-check` counts every call written in backticks — `langKey()`,
-`can('kb')` — in every document that is not a
-day's record (`docs/CHANGELOG.md`, the handovers, `docs/reports/`,
-`docs/scope/`) and fails on one that nothing in `www/`, `ios/`, `tools/` or
-`supabase/` defines — so a function deleted tomorrow fails tomorrow, in every
-sentence that still names it. A sentence ABOUT a function that is gone strikes
-it — ~~`wldSeenHTML()`~~ — and the check fails a struck name the code still
-has. The
-rest — a sentence claiming something is absent while the code has it, and
-anything outside the repo — is held by nothing; `docs/BACKLOG.md` carries it.
+**One part of it is held: a name a document gives is a name the code has.**
+`docs-check` counts, in every document that is not a day's record
+(`docs/CHANGELOG.md`, the handovers, the dated `CHECK-` pages, `docs/reports/`,
+`docs/scope/`): every call in backticks — `langKey()`, `can('kb')` — against
+what `www/`, `ios/`, `tools/` and `supabase/` define; every other name in
+backticks — `PLAN`, `STG.order`, `CAN.kb` — against the code with its comments
+taken out; every code file, every check named by name and every npm script against what
+git and `package.json` have; every sentence saying how many checks the gate
+has, which fails whatever the number; every OWNER date a code comment quotes,
+against the decision log; and every 【差し替え済み】 entry of the log, which
+keeps one line. So a name deleted tomorrow fails tomorrow, in every sentence
+that still names it. A sentence ABOUT something that is gone strikes it —
+~~`wldSeenHTML()`~~ — and the check fails a struck name the code still has.
+What it cannot read is a sentence claiming something that a name does not
+carry — `docs/BACKLOG.md` carries that — and `tools/docs-baseline.txt` is what
+was already stale the day each part was counted.
 
 **An owner decision is a specification, not an instruction for today.** When
 the owner settles behaviour, a threshold, a limit, the free/paid line,
@@ -734,8 +739,8 @@ every phone ever made, Apple's own keyboard included. Widening that floor to 44
 would not make a keyboard safer to type on; it would forbid a keyboard.
 **And which class is actually WORN by something.** A screen can be deleted and
 its CSS stay: `a.set` is styled under a comment naming two documents that are
-no longer anchors, and `.weave` is the sentence-weaving chapter, whose word
-appears in no `.js` file at all. `dead-check` asks this of every function and
+no longer anchors, and ~~`.weave`~~ was the sentence-weaving chapter, styled
+long after its word appeared in no `.js` file at all. `dead-check` asks this of every function and
 nothing had ever asked it of a selector — and a grep cannot, because a class is
 worn from a string built by concatenation, from `classList.add`, and from
 `index.html`'s own markup. So the PAGE is asked, from here, after every build
@@ -879,7 +884,7 @@ the index of languages, the flat keys from before there could be more than
 one. One bug, seven times: **a list of keys, written by hand, that nobody
 remembered to add to.** So `lsWipeAcct(uid)` counts `localStorage` instead —
 no list, and a key added tomorrow is taken the day it is added. The prefix
-includes the dot, because `lingua` and `linguaX` in the same storage are
+includes the dot, because `lingua` and *linguaX* in the same storage are
 somebody else's.
 
 **And it takes THAT ACCOUNT's and no other's.** It walks the index for the
@@ -1664,8 +1669,8 @@ check now stands on the route.
 **§ One place, not fifteen finally has something holding it.** That section
 ends with the sentence this rule is: *"A comment saying 'this is the one place'
 is worth nothing on its own... Either a check holds the claim, or do not make
-it."* Nothing held it, and on 2026-09-01 it was broken with every one of the
-twenty-nine checks green.
+it."* Nothing held it, and on 2026-09-01 it was broken with every check in
+the gate green.
 
 `wldPage()` in `www/home.js` is the language's page — ABOUT THIS LANGUAGE, with
 Overview / Phonology / Letters / Lexicon / Grammar / Keyboard down it — and its
@@ -1690,7 +1695,7 @@ two pages. Nothing here reads `vAbout`'s source or restates its branch: a check
 that recomputes the thing under test is a copy of it, and a copy always agrees.
 
 **The faces are asked of the page, and that is the half that matters.** The
-reason twenty-nine checks were green is not that they were weak — it is that
+reason every check was green is not that they were weak — it is that
 **no walk had ever handed `about` an argument.** `argsOf` in `i18n-check` and
 `walkArg` in `act-check` are lists somebody has to remember to add a route to,
 and this is the one bug in `docs/DATA_SAFETY.md`'s family: *a list of keys,
@@ -1698,7 +1703,7 @@ written by hand, that nobody remembered to add to.* So `page-check` harvests
 every `data-do="go"` carrying a two-element argument out of what it has already
 rendered — the doors the app itself offers — and then gives every route two
 arguments nothing knows as well, **because a second page reached only from a
-door that has not been built yet is still a second page.** `wldSeenHTML`
+door that has not been built yet is still a second page.** ~~`wldSeenHTML`~~
 shipped before the row on a profile became pressable; a check that waited for
 the door would have waited a commit. It was the probe that caught it, both at
 `3230182` and at the branch tip.
@@ -1893,7 +1898,7 @@ wrote down.
 **Inside `lingua.set` the question is asked the OTHER WAY ROUND**, and it had
 to be: 「アカウント消したのに検索履歴残ってたんだけどなんで？…全部アカウント
 だって言ってるやん おかしいだろお前一本化しろって。」 OWNER 2026-09-04.
-`SET_ACCT` used to name the six fields that are a PERSON's, `recent` was added
+~~`SET_ACCT`~~ used to name the six fields that are a PERSON's, `recent` was added
 to `SET` a day later and never reached that list, and a deleted account's
 search history was still on the screen — **a list of keys, written by hand,
 that nobody remembered to add to**, which is the same fault `lsWipeAcct` was
@@ -2069,7 +2074,7 @@ you only read one. `scriptGlyphDefs()` built its glyphs from three lists that
 had each been added on a different day: the units the writing system needs
 (`wsUnits`, which only ever answers in sounds), the marks (a letter reading
 `?` is not a sound, so it could not be among them), and the names, which came
-last and as a patch — `scriptNameCodes` walked `LETTERS` to find what the
+last and as a patch — ~~`scriptNameCodes`~~ walked `LETTERS` to find what the
 letter behind each unit was called, and took only a name one character long.
 Three lists is three answers to "what letters do I have". They did not agree:
 a letter reading `?` got **two** glyphs both claiming `?`, and a letter with no
@@ -2126,7 +2131,7 @@ findable — `st*` grammar stages, `ob*` onboarding, `ge*` the glyph editor,
 `share*` what leaves for the system keyboard,
 `f*` search, `v*` a view, `open*` a form, `net*` the server.
 
-`set*` is reserved for settings: it writes `SET.x`, or it builds part of the
+`set*` is reserved for settings: it writes a field of `SET`, or it builds part of the
 settings screen. It is not the English word "set". ~~`setAbVow`~~ wrote `abVow`
 and never touched `SET` at all — it is `abSetVow`. Thirteen were like that.
 
