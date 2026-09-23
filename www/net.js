@@ -4796,8 +4796,7 @@ function netUp(path, b64, mime, ok, bad){
 
    A picture that would not go used to be DROPPED FROM THIS POST'S LIST and
    the post went up without it, for good: the row was inserted, `sid` was
-   written onto the post, and postCatchUp() never looks again at a post that
-   has one. The bytes stayed on the phone that wrote it, so the writer went on
+   written onto the post, and nothing looks again at a post that has one. The bytes stayed on the phone that wrote it, so the writer went on
    seeing four photographs while everybody else saw three, and nothing
    anywhere said so. 「他の人の画面には三枚しか出ないことがあります」
    docs/RISK.md § 6.
@@ -4929,13 +4928,13 @@ function netPush(post, ok, bad){
      whatever happened above it: a photograph that would not upload was
      dropped from the list and the voice fell through to ok(''), the row was
      inserted, and `sid` came back and was written onto the post -- which is
-     the one thing that makes postCatchUp() stop looking at it. The post was
+     the one thing that says it has gone. The post was
      finished, missing what somebody had put on it, silently and for ever.
      docs/RISK.md § 6.
 
      A refusal here is the same state as a post written in a tunnel: no row,
-     no `sid`, the post sitting in POSTS with its bytes in hand, and
-     postCatchUp() trying it again off the back of the next timeline answer.
+     no `sid`, the post sitting in POSTS with its bytes in hand, 未送信 until
+     somebody sends it again (［再接続］).
      The second attempt sends only what is still missing -- netUpPics() writes
      the paths onto the post as they land -- so the retry is one file, not
      four. NOTHING IS DROPPED and nothing is deleted; what is refused is the
@@ -4943,8 +4942,7 @@ function netPush(post, ok, bad){
 
      The person who pressed the button is told, because pwSendWith() already
      says a failed push out loud (netWhy) and this is now one of the ways a
-     push fails. The retries behind a timeline stay quiet, which is what
-     postCatchUp() passes an empty handler for. */
+     push fails. */
   netUpPics(SESS.uid, pid, post, postPics(post), function(left, st){
     if(left){ bad(null, st); return; }
     netUpVoice(SESS.uid, pid, post, function(vleft, vst){
@@ -5155,8 +5153,8 @@ function netDropFiles(p, done){
 /* ---- what the bucket would not take -------------------------------------
    The paths of files a person has already asked to be deleted and the wire
    refused. One list, no duplicates, and it goes out whole on the next moment
-   the network is known to be working -- which is the same moment
-   postCatchUp() uses and for the same reason.
+   the network is known to be working -- the next timeline answer
+   (www/sns.js).
 
    IT IS IN MEMORY AND IT DOES NOT SURVIVE THE APP BEING KILLED. That is a
    hole and it is written here rather than left to be discovered: an app

@@ -368,8 +368,7 @@ function snsSetFil(k){
 /* What has arrived, asked for whenever the timeline is looked at. The screen
    does NOT wait: it draws the posts that are here and takes an answer when
    one comes, which is what a timeline does and is the only shape that works
-   on a phone in a tunnel. The answer is whatever netFeed() brings back, and
-   postCatchUp() sends whatever this phone has that the server has not.
+   on a phone in a tunnel. The answer is whatever netFeed() brings back.
 
    A second ask while one is out is refused by pullRun() below, which holds
    that for every screen rather than each screen holding it for itself. */
@@ -381,10 +380,10 @@ function snsSetFil(k){
    anybody was looking at it -- measured at over twenty asks a second with no
    network in the way. Nothing threw and nothing looked wrong.
 
-   It also duplicated a post. Every one of those answers ran postCatchUp(),
-   and a post this phone has not got a `sid` back for yet is a post that has
-   not been sent -- so the same post went up again, and again, while the first
-   send was still in the air. A search for it afterwards found two.
+   It also duplicated a post. Every one of those answers ran postCatchUp()
+   (gone now -- a post that did not go is sent by a press), and a post this
+   phone had not got a `sid` back for yet was sent again, and again, while the
+   first send was still in the air. A search for it afterwards found two.
 
    The guard is the fact this file already keeps: `SNS_GOT[tab]` is set when
    an answer arrives, empty or not, and the body already reads it to tell
@@ -628,12 +627,14 @@ function askFeedRun(tabs, ok, bad, person){
      timeline underneath is asked for either way: it is still the list the
      word comes off onto. */
   if(person && here().r==='feed' && snsFil) snsFilFind(true);
-  /* And what this phone has that the server has not. It goes off the back of
-     a pull rather than on a timer: the moment somebody is asking for a
-     timeline is the moment the network is known to be working. ONCE, however
-     many tabs went out -- it was inside the ask and therefore ran per tab,
-     and a post sent twice is what www/sns.js § pullRun was written about. */
-  postCatchUp();
+  /* And the files of a post somebody deleted that the bucket refused
+     (netDropAgain, www/net.js) -- the one thing that goes off the back of a
+     pull rather than a press, because it is the rest of a press that did not
+     finish. Whether it stays is a deletion question and the owner's
+     (docs/scope/r60-up.md). What this line ALSO did was send every post this
+     phone had that the server had not, with nobody having pressed anything;
+     that half is gone (r46-audit § A5). ONCE, however many tabs went out. */
+  netDropAgain();
   /* And the places sold in it, in the same moment and counted in the same
      pair, so the timeline and its PR rows arrive as one render rather than a
      list that grows a row under somebody's eye. A place that could not be

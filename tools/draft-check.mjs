@@ -330,7 +330,9 @@ const R = await pg.evaluate(() => {
      四本訊きます:
      1. 保存は行が出来てから ── 落ちれば何も入らず、打ったものは欄に残る
      2. 引いたら、サーバーに無い（＝向こうで消された）下書きは手元からも消える
-     3. サーバーに行ったことの無い古い下書きは、消さずに送る
+     3. サーバーに行ったことの無い古い下書きは、消さず、送らない ── 引いた
+        答えの後ろで黙って上げる道だった（r46-audit § A6、2026-09-23）。開いて
+        「取っておく」を押せば上がる
      4. 開いている下書きは、引いても触らない
 
      赤を見た形（2026-09-09）: `draftKeep()` を「端末に先に書く」形に戻すと 1、
@@ -366,15 +368,12 @@ const R = await pg.evaluate(() => {
   if (draftById('gone-elsewhere'))
     out.fails.push('もう一台で消した下書きが手元に残っている ── 次の pull で戻る道');
   if (!draftById('never-up'))
-    out.fails.push('サーバーに行ったことの無い下書きが消えた ── これは送るほう');
-  if (!srvSaw.some(x => x.indexOf('/rest/v1/draft') >= 0))
-    out.fails.push('サーバーに行ったことの無い下書きが送られていない — ' +
+    out.fails.push('サーバーに行ったことの無い下書きが消えた ── 人が書いたもの');
+  if (srvSaw.some(x => /^(POST|PATCH) \/rest\/v1\/draft/.test(x)))
+    out.fails.push('引いた答えの後ろで、誰も押していない下書きが送られた — ' +
                    JSON.stringify(srvSaw));
-  const upNow = draftById('never-up');
-  if (upNow && !upNow.up)
-    out.fails.push('送ったのに「送った」印が付いていない');
   out.said.push('引いたらサーバーの一覧になる ── 向こうで消したものは戻らず、' +
-                '行ったことの無いものは消さずに送る');
+                '行ったことの無いものは消さず、押すまで送らない');
 
   /* 開いている下書きは触らない。 */
   start();

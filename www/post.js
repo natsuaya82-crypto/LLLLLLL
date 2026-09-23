@@ -690,19 +690,19 @@ function draftsPull(ok, bad){
        server has not got is a row somebody deleted somewhere else: the copy
        catches up and it goes off this phone. A draft that has never been up
        -- written before there was a server -- has never been anywhere else,
-       so it is sent, once, and joins the rest.
+       so it STAYS in the list, and goes up when somebody opens it and keeps it
+       (draftKeep). It was sent from here, once, off the back of this answer
+       with nobody having pressed anything -- the same road r46-audit § A6
+       found beside the keep that waits for the server.
 
        Nothing of anybody's is lost either way: the first is something they
-       deleted, and the second is on its way to where it lives. */
+       deleted, and the second is still here. */
     for(i=0;i<DRAFTS.length;i++){
       d=DRAFTS[i];
       if(!d || !d.id || seen[d.id]) continue;
       if(PW && PW.did===d.id){ keep.push(d); continue; }
       if(d.up){ moved=true; continue; }
       keep.push(d);
-      netDraftUp(d, (function(one){
-        return function(){ one.up=1; draftsSave(); };
-      })(d));
     }
     if(moved || keep.length!==DRAFTS.length){
       DRAFTS=keep;
@@ -1272,25 +1272,19 @@ function postSid(p, sid){
   savePosts();
 }
 /* Written here and never sent. One question, one place: a post of mine that
-   the server has no id for, and that is not kept to myself -- postCatchUp()
-   is what tries to send those, and the row is what says so on the screen.
-   「5 いります」 OWNER 2026-09-06.
+   the server has no id for, and that is not kept to myself -- the row is what
+   says so on the screen. 「5 いります」 OWNER 2026-09-06.
+
+   NOTHING SENDS IT BUT A PRESS. postCatchUp() used to, off the back of the
+   next timeline answer, with nobody having pressed anything -- and that is
+   the other half of 「保存するタイミングでエラーが起きるなら、保存されない」
+   「なら失敗して残るにするべき」 OWNER 2026-09-05: a send that failed stays,
+   here, as this, and goes when somebody sends it (r46-audit § A5).
 
    It reads nothing but what is ON the post, so the reading side may ask it. */
 function postUnsent(p){
   return !!(p && p.mine && !p.sid && !p.pv);
 }
-/* Everything already on this phone that the server has never seen.
-   「あげよう」
-
-   It walks oldest first, so a thread goes up in the order it was written and
-   a reply finds its parent's `sid` already there. A few at a time: this runs
-   off the back of a timeline pull, and forty posts in one breath is a phone
-   that appears to have frozen.
-
-   Nothing is removed, nothing is rewritten, and a post that fails is simply
-   one that still has no `sid` -- so the next pull tries it again. A post kept
-   to yourself never goes, which is the same door pwSendWith() uses. */
 /* ---- ONE POST, ONE SEND AT A TIME --------------------------------------
    Which posts are on the wire right now, by this phone's own name for them.
 
@@ -1300,18 +1294,15 @@ function postUnsent(p){
    same post was sent again inside that window, under a new id (netPush()
    makes one per call), and it arrived twice: on the writer's timeline and on
    everybody else's, to be deleted one at a time.
-   「同じ投稿が二つ、三つと並びます」 docs/RISK.md § 5.
+   「同じ投稿が二つ、三つと並びます」 docs/RISK.md § 5. The second road it
+   raced was postCatchUp(), which is gone; ［再接続］ pressed while the first
+   send is still out is the one that is left.
 
    It is in memory and it is NOT on the post. A mark that is saved is a mark
    that survives the app being killed halfway through a send, and the post
    would then never be sent again -- which is worse than the fault it is
    fixing. Killed, this phone holds a post with no `sid`, which is exactly
-   the state postCatchUp() exists for.
-
-   BOTH ROADS OUT OF THE COMPOSER COME THROUGH HERE, and that is the whole of
-   why it is a function rather than a line in postCatchUp(). The press
-   (pwSendWith) was half of the window: somebody sends, and a timeline answer
-   lands while the photographs are still going up. */
+   a post that failed to send, and it stays one (postUnsent). */
 var POST_SENDING={};
 function postSend(p, ok, bad){
   var id=p && p.id;
@@ -1332,31 +1323,6 @@ function postSend(p, ok, bad){
              if(p.to) postCountsPull(p.to);
              ok(sid); },
              function(d, s){ delete POST_SENDING[id]; savePosts(); bad(d, s); });
-}
-var POST_CATCH=4;
-function postCatchUp(){
-  var i, n=0, ps;
-  if(!netSignedIn()) return;
-  /* And everything the server should no longer HAVE. The files of a post
-     somebody deleted, where the bucket refused to take them -- netDropAgain()
-     in www/net.js owns the list and says why it is here. This is the moment
-     the network is known to be working, which is the whole reason the
-     sending below happens here rather than on a timer, and it is the same
-     reason for both directions. */
-  netDropAgain();
-  ps=POSTS.slice().sort(function(a, b){ return (a.at||0)-(b.at||0); });
-  for(i=0;i<ps.length && n<POST_CATCH;i++){
-    if(!postUnsent(ps[i])) continue;
-    /* Already on the wire. Read here as well as refused in postSend() so an
-       in-flight post does not eat one of the four -- postSend() is what owns
-       the answer; this is one of the places that ask it. */
-    if(POST_SENDING[ps[i].id]) continue;
-    n++;
-    /* The closure is the post, so a slow answer lands on the right one. */
-    (function(p){
-      postSend(p, function(sid){ postSid(p, sid); }, function(){});
-    })(ps[i]);
-  }
 }
 /* ---- the badge, and the one thing on a post that is NOT frozen ----------
    One gold star beside a name, and it says the person is on Pro.
@@ -2183,8 +2149,8 @@ function pwSendWith(ln, pics, vo){
   /* It has stopped being a draft, so the row goes -- AFTER the post is
      written and never before. The other order is somebody's writing gone on
      the day the post itself would not go: what is on this phone now is the
-     post, which savePosts() has just put down and postCatchUp() keeps trying
-     to send, so there is nothing left for the draft to be the only copy of.
+     post, which savePosts() has just put down and which stays there, sent or
+     not, so there is nothing left for the draft to be the only copy of.
 
      A post kept to yourself (`pv`) goes no further than this phone, and its
      draft still goes: private is what the POST is, and the draft was never a
@@ -2198,9 +2164,8 @@ function pwSendWith(ln, pics, vo){
      OWNER 2026-09-05. It used to fire postSend() and move straight to the
      feed with nothing on screen but the post drawn as not-yet-sent -- pwSendPost()
      is the one place that waits for the answer, so this function only starts
-     it. The post itself is never lost either way: it is already in POSTS and
-     postCatchUp() keeps trying if the app is closed before an answer comes
-     back. 「spl流したのにまだ投稿載らんの？」 */
+     it. The post itself is never lost either way: it is already in POSTS, and
+     one that did not go stays there as 未送信. 「spl流したのにまだ投稿載らんの？」 */
   if(!mine.pv) pwSendPost(mine);
   PW=pwBlank();
   goTab('feed');

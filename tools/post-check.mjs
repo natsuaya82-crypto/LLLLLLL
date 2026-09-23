@@ -2898,20 +2898,23 @@ const R = await pg.evaluate(async () => {
       SESS = { at: 'x', rt: 'y', uid: 'u1', anon: false };
 
       /* ---- 15. the same post does not go to the server twice ------------
-         docs/RISK.md § 5. www/sns.js calls postCatchUp() off the back of
-         EVERY netFeed answer, and vFeed() asks for a feed on every render --
-         so on a slow wire the second answer arrives while the first post is
-         still walking its photographs up. `sid` is the only thing that says
-         「this one has gone」 and it is not written until the row lands, so
-         the same post is sent again, under a NEW id (netPush() makes one per
-         call), and the timeline holds it twice. */
+         docs/RISK.md § 5. A post goes up when somebody presses -- the send,
+         and ［再接続］ -- and on a slow wire the second press lands while the
+         first post is still walking its photographs up. `sid` is the only
+         thing that says 「this one has gone」 and it is not written until the
+         row lands, so the same post would be sent again, under a NEW id
+         (netPush() makes one per call), and the timeline would hold it twice.
+         The second road this raced was postCatchUp(), off the back of every
+         timeline answer; it is gone (r46-audit § A5), and postSend() is the
+         one door both presses come through. */
       rows = {}; bucket = {}; upWall = []; inserts = 0;
       POSTS = [{ id: 'catch-1', at: 1, mine: true, ln: 'kano',
                  pics: [blackPic, blackPic] }];
       POST_GONE = {};
-      postCatchUp();
+      const nop = () => {};
+      postSend(POSTS[0], nop, nop);
       await new Promise(r => setTimeout(r, 25));
-      postCatchUp();                       /* the second timeline answer */
+      postSend(POSTS[0], nop, nop);        /* pressed again while it is going */
       await new Promise(r => setTimeout(r, 700));
       if (inserts !== 1)
         fails.push('one post that had not gone up yet was inserted ' + inserts +
@@ -2926,16 +2929,16 @@ const R = await pg.evaluate(async () => {
       /* ---- 16. what will not go up is not lost for good ------------------
          docs/RISK.md § 6. A photograph that would not upload is dropped from
          the post’s list and the row goes up anyway; the voice does the
-         same through ok(\'\'). Then `sid` is written, and postCatchUp() never
-         looks at a post that has one -- so the photograph and the voice are
+         same through ok(\'\'). Then `sid` is written, and nothing looks at a
+         post that has one again -- so the photograph and the voice are
          gone for everybody except the phone that wrote them, which still
          holds the bytes in hand and still draws all four.
 
          What is asked here is NOT which of the two answers the app gives --
          hold the post, or carry the failure home and finish it later. That is
          the owner’s. What is asked is that ONE OF THEM HAPPENS: the wire
-         comes back, the app is given the same chance it is given for a post
-         written in a tunnel, and the server must end up holding everything
+         comes back, somebody sends it again -- the same chance a post written
+         in a tunnel is given -- and the server must end up holding everything
          the post carries. Under one row, because two is § 15. */
       rows = {}; bucket = {}; inserts = 0; patches = 0;
       files['v-fail-1.m4a'] = 'QUJDRA==';
@@ -2943,10 +2946,10 @@ const R = await pg.evaluate(async () => {
       POSTS = [{ id: 'catch-2', at: 2, mine: true, ln: 'kano',
                  pics: [blackPic, blackPic], vo: { f: 'v-fail-1.m4a', ms: 3000 } }];
       POST_GONE = {};
-      postCatchUp();
+      postSend(POSTS[0], nop, nop);
       await new Promise(r => setTimeout(r, 700));
       upWall = [];                          /* the wire comes back */
-      postCatchUp();                        /* the next timeline answer */
+      postSend(POSTS[0], nop, nop);         /* and ［再接続］ is pressed */
       await new Promise(r => setTimeout(r, 900));
       const r16 = only();
       if (!r16)
@@ -3004,7 +3007,7 @@ const R = await pg.evaluate(async () => {
         fails.push('a post somebody deleted is still a row on the server. ' +
                    'The files not going is not a reason for the post to stay');
       dropWall = false;                     /* the wire comes back */
-      postCatchUp();                        /* the next timeline answer */
+      netDropAgain();                       /* the next timeline answer (www/sns.js) */
       await new Promise(r => setTimeout(r, 400));
       const left = del.pu.concat(del.pt, [del.vu]).filter(f => bucket[f] !== undefined);
       if (left.length)

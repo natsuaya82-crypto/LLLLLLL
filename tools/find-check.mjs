@@ -676,16 +676,31 @@ const before = await pg.evaluate(() => new Promise(function(d){
 }));
 say(before === 0,
     'まだサーバーに無いので、その場では検索に出ない (' + before + ' 件)');
-/* 次につながったとき ── タイムラインを引いた背中で追いつきます。 */
-const caught = await pg.evaluate(() => new Promise(function(d){
+/* 次につながったとき ── タイムラインを引いた背中では**上がらない**。
+   2026-09-23 まではここが「追いついて上がる」で、それは postCatchUp() が
+   答えの後ろで黙って送っていたからです。OWNER 2026-09-05「保存するタイミングで
+   エラーが起きるなら、保存されない」「なら失敗して残るにするべき」── 送れなかった
+   投稿は「未送信」のまま残り、上がるのは人が送った時（r46-audit § A5）。 */
+const quiet = await pg.evaluate(() => new Promise(function(d){
   window.__MODE = 'ok';
-  postCatchUp();
+  netDropAgain();          /* the whole of what a timeline answer now sends */
   setTimeout(function(){
     d(window.__POSTS.filter(function(r){
         return (r.body || {}).ln === 'zzuquat'; }).length);
   }, 700);
 }));
-say(caught === 1, '次につながったときに追いついて上がる (' + caught + ' 件)');
+say(quiet === 0, 'つながっても、押すまでは上がらない (' + quiet + ' 件)');
+const caught = await pg.evaluate(() => new Promise(function(d){
+  window.__MODE = 'ok';
+  var p = null, i;
+  for (i = 0; i < POSTS.length; i++) if (POSTS[i].ln === 'zzuquat') p = POSTS[i];
+  postSend(p, function(){}, function(){});
+  setTimeout(function(){
+    d(window.__POSTS.filter(function(r){
+        return (r.body || {}).ln === 'zzuquat'; }).length);
+  }, 700);
+}));
+say(caught === 1, '押せば上がる (' + caught + ' 件)');
 const back = await pressed('zzuquat');
 say(back.after.rows === 1,
     '上がったあとは検索に出る ── 何も失われていない (' + back.after.rows + ' 件)');
@@ -697,9 +712,9 @@ say(back.after.rows === 1,
    その画面がまた訊く。誰かがタイムラインを見ている間じゅう、同じ問いが
    出続けていました。何も投げず、何も間違って見えません。
 
-   そして毎回 `postCatchUp()` が走ります。`sid` がまだ返ってきていない投稿は
-   「まだ送っていない投稿」なので、最初の送信が空中にある間に同じものが何度も
-   上がり、あとで探すと二件出てきました。
+   そして毎回 `postCatchUp()` が走っていました（2026-09-23 に消えた）。`sid` が
+   まだ返ってきていない投稿は「まだ送っていない投稿」なので、最初の送信が空中に
+   ある間に同じものが何度も上がり、あとで探すと二件出てきました。
 
    だから訊いた本数を数えます。一本が正しい姿です ── 立てて、一度訊いて、
    答えが来て、止まる。**人が引っ張って訊き直す道はこれとは別**で、そちらは
