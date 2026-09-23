@@ -88,16 +88,4 @@ call docs/FEATURE_RULES.md planMigrate
 call docs/FEATURE_RULES.md postTr
 call docs/FEATURE_RULES.md pushMay
 call docs/FEATURE_RULES.md voPlayPW
-call docs/STATE.md bkRestore
-call docs/STATE.md bkTake
-call docs/STATE.md has_account
-call docs/STATE.md langMigrate
-call docs/STATE.md lsWipeNS
-call docs/STATE.md netAnon
-call docs/STATE.md netAnonTok
-call docs/STATE.md netMediaURL
-call docs/STATE.md netMember
-call docs/STATE.md netTakeGone
-call docs/STATE.md planKeep
-call docs/STATE.md postTr
 call docs/TESTING.md keep
