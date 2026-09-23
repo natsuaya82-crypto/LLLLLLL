@@ -632,6 +632,16 @@ function myFontOn(){ return myFontWant() && SFONT.built; }
    used to decide this for themselves and drew the shape with the switch off
    and the borrowed character where none was drawn (r73 §2-11);
    tools/ink-check.mjs B holds it. */
+/* A FIELD a word of the language is typed into wears the typing face when the
+   drawn letters are on, so what the Lingua keyboard puts in comes out as the
+   shapes. Three fields ask it -- a spelling (spTypeField), a form of a word
+   (addFmHTML), a word for a rule (g2PolPickHTML) -- and it is written here
+   once because whether a field is set in the drawn letters at all is not
+   settled: 2026-08-13 「A field is in ordinary letters」 and 2026-09-23
+   「一行を描く仕組みを一つに」 disagree, and the post's own field wears the
+   face whatever the switch says (docs/scope/r73-audit.md § 5-14). The
+   answer, when it comes, is this line. */
+function myFontField(){ return myFontOn()? 'tfont' : ''; }
 function ltLineChar(l){
   var g=inkGeo(l);
   return (g && myFontWant())? inkChar(g, geSide()) : '';
@@ -656,12 +666,14 @@ function ltLineChar(l){
    character if a drawn shape carries it, else it is roman. SFONT.one and
    SFONT.seq come off the build, so this can never disagree with the file.
 
-   ONE PLACE. sfontHTML() is what every screen calls, and no screen asks
-   myFontOn() about text again: the answer is per character now, and a second
-   place asking it is a second answer. What it does not reach is a TEXTAREA --
-   the composer's line over a photograph, which cannot hold a span -- and the
-   card and the timeline, which draw ink rather than text and were never
-   asking this question. */
+   ONE PLACE FOR TEXT. sfontHTML() is what every screen calls to show a word,
+   and the answer is per character. myFontOn() is asked by three other things
+   and each is a different question: a FIELD (myFontField, below -- a textarea
+   cannot hold a span), whether a word is spelled in BORROWED characters
+   instead (wOut in www/home.js), and this. What sfontHTML does not reach is
+   the composer's line over a photograph, a textarea too, and the card, the
+   timeline and a letter on a line, which draw ink (inkChar, ltLineChar) rather
+   than this font. */
 function sfontRuns(txt){
   var s=String(txt||''), out=[], i=0, on='', off='', hit, k, q;
   if(!s) return out;
