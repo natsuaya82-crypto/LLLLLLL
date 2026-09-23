@@ -1091,6 +1091,26 @@ the reasoning — a reason can be re-derived, a decision cannot.
 ### 【差し替え済み 2026-09-05】空と、届かなかったのを画面ごとに分ける形（2026-09-05 朝）
 - 差し替えた決定: 「通信が落ちたら何も進まない。ポップは一つ」（2026-09-05）
 
+### 半キーは新しく作れない ── 半分の枠は選べて、＋は下りる
+- Date: 2026-09-05
+- Area: キーボードの編集画面のシート（`www/keyboard.js`）
+- Decision:
+
+  ```
+  半キーを追加できるのやめてほしい
+  ```
+
+  キーは一キーの幅で入り、半分の枠には入らない。半分の枠も押せば選ばれ（「全部の
+  升、触ったら選択」2026-08-28）、選ばれている間は ＋ が下りる。**既にある半キーは
+  動かない。** QWERTY の三段目を寄せる半キーは gap であってキーではなく、触らない。
+- Reason: 半キーは誰も幅を選んでいないキー ── キーのページの幅は 1・2・3・4 で、
+  半分を出したことが無い。
+- Affected features: キーボードの編集画面
+- Affected data: 無し。既にある半キーはそのまま
+- Affected docs: この項、`CLAUDE.md` 規則 19、「全部の升、触ったら選択」の項、
+  `docs/CHANGELOG.md`（2026-09-05）
+- Implementation status: **IMPLEMENTED** ── `kbCellFits()`（`www/keyboard.js`）。
+
 ### 保存されないのは仕様。失敗して黙って消えるのは仕様ではない
 - Date: 2026-09-05
 - Area: 保存ぜんぶ（`www/core.js` の `save()`）。オンラインのアプリが何を
@@ -1978,37 +1998,20 @@ the reasoning — a reason can be re-derived, a decision cannot.
 ### 【差し替え済み 2026-09-04】無料でも有料と同じ数の枠が並ぶ。二つ目以降は押すとプランへ（2026-09-03）
 - 差し替えた決定: 「＋は右下。上限を越えて押したときにポップが出る。無料に空の枠は並べない」（2026-09-04）
 
-### 設定へ飛ぶボタンを、手順 1 にも置く
-- Date: 2026-09-03
-- Area: `HELP.kb` ── キーボードを iOS で入れる四つの手順（`www/keyboard.js`）
-- Decision:
-
-  ```
-  後これも、この画面まで飛ぶリンクあったはずなのに無くなった？
-  ```
-
-  リーダーが「手順 3 の中に在ります」と答えたのに対して:
-
-  ```
-  １にもほしくない？
-  ```
-
-  **手順 1 にも、手順 3 と同じ「設定を開く」のボタンを置きます。**同じ
-  `kbSettings()` を呼び、文言も同じ `kb.sys.go` です。
-- Reason: 手順 1 が、設定へ行けと初めて言っている場所です。ボタンは三つ先に
-  しか無く、オーナーは「無くなった？」と読みました。
-- Affected features: ⑨ キーボード
+### 設定へ飛ぶボタンは手順 3 にだけ
+- Date: 2026-09-06
+- Area: `HELP.kb` ── キーボードを iOS で入れる手順（`www/keyboard.js`）
+- Decision: 「手順 3 にだけ。」OWNER 2026-09-06（`www/keyboard.js` の手順の上の注に原文）。
+  設定へ飛ぶボタンは手順 3 の中の一つだけ。手順 1 の道順は設定の一番上から書く。
+- Reason: 同じボタンが二つの手順に在ると、どちらで押しても同じ所へ着き、手順の意味が消える。
+- Affected features: `HELP.kb`
 - Affected data: 無し
-- Affected docs: この項目、`docs/CHANGELOG.md`、`docs/keyboard.md`
-- Implementation status: **IMPLEMENTED（この項目と同じコミット）。**
-  `kbSettings()` は一箇所のままで、二つ目は作っていません。新しい鍵も
-  作っていません。`kb-check` が「手順 1 と手順 3 の両方に在る」ことと
-  「両方が同じ一つの関数を呼ぶ」ことを別々に持っています。
+- Affected docs: この項、`docs/CHANGELOG.md`
+- Implementation status: **IMPLEMENTED** ── `kbStepHTML(3, …)` だけが `kbSettings` を持つ。`kb-check` が持つ。
 
-  **開くのは Settings → Lingua です**（`openSettingsURLString` が Apple の
-  唯一の公開の戸 ── `ios/App/App/LinguaShare.swift` がそう書いています）。
-  手順 1 の行そのもの（Settings → General → Keyboard → Keyboards）には
-  公開の URL がありません。**DEVICE CONFIRMED ではありません。**
+### 【差し替え済み 2026-09-06】設定へ飛ぶボタンを、手順 1 にも置く（2026-09-03）
+- 差し替えた決定: 「設定へ飛ぶボタンは手順 3 にだけ」（2026-09-06、すぐ上）
+
 ### 買う画面には、そのプランが売っているものを全部書く
 - Date: 2026-09-03
 - Area: プランのカードの行（`PLANS` の `lines`、`www/core.js` と `www/i18n`）
@@ -4452,39 +4455,24 @@ and is never merged into your own」と言っている。**入らない、は二
   number of rows falls out of it.** It is not a number anybody chooses and
   there is no longer one written in the app.
 
-  `KeyboardViewController` caps the whole keyboard at `mostOfScreen = 0.55`
-  of the screen, a row at `rowHeight = 54`, and the edges plus the candidate
-  bar at `8 + 44` — and past the cap it SQUEEZES the rows rather than growing
-  (「高さやめて、フリックなら日本語のサイズ、qwartyなら無料版のサイズくらいまで
-  にしないとキツくない？」). So a row past the cap was never a row; it was
-  every row on the keyboard getting shorter.
+  `KeyboardViewController` caps the whole keyboard at `mostOfScreen` of the
+  screen — **half**, 「0.5が限界」 OWNER 2026-08-27, which replaced the 0.55 this
+  entry was written with — a row at `rowPerWidth` of the phone's short side,
+  and the edges plus the candidate bar at `8 + 44`; past the cap it SQUEEZES
+  the rows rather than growing (「高さやめて、フリックなら日本語のサイズ、qwartyなら
+  無料版のサイズくらいまでにしないとキツくない？」). So a row past the cap was
+  never a row; it was every row on the keyboard getting shorter.
 
   **And a row is a KEY tall.** 「キーのサイズはiPhoneのサイズによって変わる
-  んじゃないの？八行入っても小さかったら打ちにくいだけだぞ？」
+  んじゃないの？八行入っても小さかったら打ちにくいだけだぞ？」 The height
+  follows the width at **0.1385 of the phone's short side** — 54 at 390pt — so a
+  key keeps its shape everywhere.
 
-  `rowHeight` was a flat `54`, so a key was the same height on every phone and
-  the only thing a bigger phone bought was MORE ROWS. Width always scaled —
-  ten keys divide whatever the phone is across — and the height now follows
-  it at **0.1385 of the phone's short side**, which is that same 54 at the
-  390pt phone it was measured on. A key keeps its shape everywhere.
-
-  `kbRowsMax()` divides the rest out: `(screen × 0.55 − 52) / (width × 0.1385)`.
-
-  | phone | row height | rows that fit |
-  |---|---|---|
-  | 320 × 568 (SE 1) | 44.3pt | **5** |
-  | 375 × 667 (SE 2/3) | 51.9pt | **6** |
-  | 375 × 812 … 402 × 874 (13 mini … 16) | 51.9 – 55.7pt | **7** |
-  | 428 × 926 … 440 × 956 (Pro Max) | 59.3 – 60.9pt | **7** |
-
-  **Eight fits on nothing now**, which is what the report was about.
-
-  **The ceiling is ONE number — seven — and not each row of that table.** A
-  keyboard belongs to a language and a language moves between phones, so
-  "as many as the phone in your hand fits" builds eight on a Pro Max and hands
-  an SE eight rows squeezed to 39pt. It is the width rule one axis over:
-  rule 19 has always set the width by the narrowest iPhone, not the phone in
-  your hand.
+  **The ceiling is ONE number, divided out of the SMALLEST phone** (320 × 568):
+  `kbRowsMax()`, which gives **five** — the free QWERTY's own row count. A
+  keyboard belongs to a language and a language moves between phones, so it is
+  the width rule one axis over: rule 19 sets the width by the narrowest iPhone,
+  not the phone in your hand.
 
   It was `KB_ROWS = 8`, invented in `www/keyboard.js` under a comment saying
   「nothing on the phone sets a height」 — which was not true when it was
