@@ -207,6 +207,20 @@ bordered strip across Home, and a gold pill on the password screen. `.btn`
 still exists and is on about thirty older screens; it is not to be reached
 for again.
 
+**And a sixth: AN OPERATION THAT HAS A MARK IS DRAWN AS THE MARK, NOT WRITTEN.**
+「送信とか共有とかもそうだけど、文字でドカンって共有とか書くの禁止してるよね？
+だから+〇とか送信なら紙飛行機マークにしてるはずなんだけど。これ禁止だから全部
+なくせや」 OWNER 2026-09-23. Send is the paper plane, share is `ICON_SHARE`,
+add is the plus, delete is the bin, edit is the pen, and undo, search, back,
+close, settings and more are the marks every phone already draws — from the
+`ICON_*` row in `www/glyph.js`, with the word on the button as its
+`aria-label`, through `t()`. A label that is more than the verb — 「アカウント
+を削除」, a row saying what goes — is a row, and an operation with no settled
+mark (sign in, next, save, done) stays a word until the owner gives it one.
+**`marks-check` holds it**: it walks every screen and face `press` walks and
+the bar over every route, and fails on a button whose whole label is one of
+those verbs in words with no mark; `--list` prints every word-only button left.
+
 **Rows in one list are one height.** Set `font-size` and `line-height` on the
 row class rather than letting the tag decide -- a `<button>` takes the
 browser's 13.3px/normal and an `<a>` takes the body's, and the same row came
