@@ -363,7 +363,7 @@ function numCut(s, n){
 function numMonthHTML(){
   var m=calMonthOf(new Date()), w=shareSlotWord('month.'+numLabel(m));
   if(!w || !w.hw) return '<span class="numcm">'+numLineHTML(m)+'</span>';
-  return '<span class="numcm">'+sfontHTML(w.hw)+'</span>';
+  return '<span class="numcm">'+sfontHTML(wOut(w.hw))+'</span>';
 }
 /* The name a day of the week already has, for the days the language has not
    named yet. 「ない分の言葉はmondayとかで代用しよう」
@@ -432,7 +432,7 @@ function numCalHTML(){
        the day's name down -- Mon, 月, M -- because seven of them share the
        width of the grid, and a word somebody made is no different. Two signs,
        which is what the phone's own short names come to. */
-    nm=(w && w.hw)? sfontHTML(numCut(w.hw, 2)) : esc(numCut(numWdayName(i), 3));
+    nm=(w && w.hw)? sfontHTML(wOut(numCut(w.hw, 2))) : esc(numCut(numWdayName(i), 3));
     heads+='<span class="numch'+
       (calRed(i)? ' sun':'')+(calBlue(i)? ' sat':'')+'">'+nm+'</span>';
   }

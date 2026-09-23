@@ -1064,7 +1064,7 @@ function stSlotRow(p, k){
   return '<button class="stslot'+(w?' has':'')+'"' + DO('openSlot', [p.id, k]) + '>'+
     (p.id==='count'? numFace(k) : '')+
     '<span class="psm">'+esc(stSlotLabel(p, k))+'</span>'+
-    (w ? '<span class="psw">'+esc(w.hw)+'</span>'+
+    (w ? '<span class="psw">'+sfontHTML(wOut(w.hw))+'</span>'+
          '<span class="psi">'+esc(phIpa(wPh(w)))+'</span>'
        : '<span class="psn">'+t('stg.make')+'</span>')+
     ICON_GO+'</button>';

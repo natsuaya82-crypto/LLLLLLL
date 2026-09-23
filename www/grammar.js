@@ -765,7 +765,7 @@ function g2Move(key, i){
    on one page cannot pick each other's words up. */
 function g2Chip(key, i, w){
   return '<button class="seg'+(g2Lift===key+':'+i? ' on' : '')+'"' +
-    DO('g2Move', [key, i]) + '>'+esc(wOut(w.hw))+'</button>';
+    DO('g2Move', [key, i]) + '>'+sfontHTML(wOut(w.hw))+'</button>';
 }
 
 /* ---- THE BOARD THE WORD ORDER IS ARRANGED ON ---------------------------
@@ -956,7 +956,7 @@ function g2Board(c){
 function g2Demo(seq){
   var w=g2Three(seq), i, out='';
   if(!w) return '';
-  for(i=0;i<w.length;i++) out+='<span class="gor">'+esc(wOut(w[i].hw))+'</span>';
+  for(i=0;i<w.length;i++) out+='<span class="gor">'+sfontHTML(wOut(w[i].hw))+'</span>';
   return '<div class="gorder">'+out+'</div>';
 }
 /* THE SAME DEMONSTRATION, of a noun phrase. gLay() runs the real engine on a
@@ -978,7 +978,7 @@ function g2NpDemo(seq){
   if(!list.length) return '';
   list.push(n);
   w=gLay(list, 'np', seq);
-  for(i=0;i<w.length;i++) out+='<span class="gor">'+esc(wOut(w[i].hw))+'</span>';
+  for(i=0;i<w.length;i++) out+='<span class="gor">'+sfontHTML(wOut(w[i].hw))+'</span>';
   return '<div class="gorder">'+out+'</div>';
 }
 /* §14 Nouns. 「ユーザーが『りんご』『りんごたち』などを実際の言語で作る。
@@ -1039,7 +1039,7 @@ function g2Row(lab, add, side, from, to, act, arg, id){
       '<span class="psm">'+lab+'</span>'+
       (add? '<span class="psw">'+sfontHTML(add)+'</span>' : '')+
       (side? '<span class="psi">'+esc(side)+'</span>' : '')+
-      ((to || side)? '<span class="psi">'+esc(to)+'</span>' : '')+
+      ((to || side)? '<span class="psi">'+sfontHTML(to)+'</span>' : '')+
       '</button></div>';
   }
   return '<div class="fmmk">'+
@@ -1055,7 +1055,7 @@ function g2Row(lab, add, side, from, to, act, arg, id){
        leaving the span out made the row's LAST `.psi` the END rather than the
        form. Nothing on the screen changes; what changes is that the row means
        the same thing whether or not there is a word to try it on. */
-    ((to || side)? '<span class="psi">'+esc(to)+'</span>' : '')+
+    ((to || side)? '<span class="psi">'+sfontHTML(to)+'</span>' : '')+
     ICON_GO+'</button></div>';
 }
 /* ---- choosing several rules, and taking them away ----------------------
