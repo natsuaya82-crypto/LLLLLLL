@@ -2378,12 +2378,21 @@ function inkOfCut(cut){
 }
 /* Posts written before a post carried its author. They are all this person's,
    because there was nowhere else for one to come from. */
+/* Posts written before a post carried who wrote it. Those were this phone's
+   own -- there was no timeline of anybody else's then -- and that is only
+   still true of a post that never came from the server. One that DID came
+   with its writer on the row (netRow in www/net.js answers `mine` off
+   `author`), so a post from the server with no name in it is somebody else's
+   from an old version of the app, and it is not given this account's name
+   (r73 § 2-2: 「写しで何も決めない」). */
 function migratePosts(){
-  var i, n=0;
+  var i, p, n=0;
   for(i=0;i<POSTS.length;i++){
-    if(POSTS[i].who!==undefined) continue;
-    POSTS[i].who=meName(); POSTS[i].hd=meHandle();
-    POSTS[i].mine=true; POSTS[i].av=postAvatar();
+    p=POSTS[i];
+    if(p.who!==undefined) continue;
+    if(p.sid && !p.mine) continue;
+    p.who=meName(); p.hd=meHandle();
+    p.mine=true; p.av=postAvatar();
     n++;
   }
   if(n) savePosts();

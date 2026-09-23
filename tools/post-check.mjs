@@ -3079,6 +3079,22 @@ const R = await pg.evaluate(async () => {
         fails.push('at the door a post was lost or not given the server\u2019s ' +
                    'id: ' + JSON.stringify(POSTS.map(x => [x.id, x.sid || ''])));
 
+      /* ---- 21. a post with no name on it is not made mine by guessing --
+         migratePosts() gives the posts written before a post carried its
+         writer this account's name -- they were all this phone's own. A post
+         that came from the SERVER says whose it is on its row (netRow's
+         `mine`, off `author`), so one of somebody else's from an old version
+         of the app must not come out wearing my name (r73 § 2-2). */
+      POSTS = [{ id: 'old-here', at: 1, ln: 'written here, long ago' },
+               { id: 's-theirs', sid: 's-theirs', at: 2, mine: false, ln: 'somebody else\u2019s' }];
+      migratePosts();
+      if (postById('s-theirs').mine || postById('s-theirs').who !== undefined)
+        fails.push('somebody else\u2019s post from the server, with no name on it, was ' +
+                   'made this account\u2019s: ' + JSON.stringify(postById('s-theirs')));
+      if (!postById('old-here').mine || postById('old-here').who === undefined)
+        fails.push('a post written on this phone before posts carried their writer ' +
+                   'was not given this account\u2019s name: ' + JSON.stringify(postById('old-here')));
+
       /* ---- 17. a delete whose files will not go does not happen ---------
          「通信エラーなら進むわけねえだろ全部」「なら失敗して残るにするべき」
          OWNER 2026-09-05. This held the other shape until 2026-09-23: the row
