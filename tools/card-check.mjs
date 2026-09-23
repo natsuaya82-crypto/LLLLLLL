@@ -39,11 +39,17 @@
    What it cannot see, so that nobody mistakes silence for safety:
      - whether the card LOOKS right. Only which shapes go on it, in which
        order. What the canvas does with them is cardInk()'s business
-     - a post with no ink at all. That is a post written in borrowed
-       characters, and text is the correct answer for it -- asserted here as
-       "text", not as shapes
 
-   Exit code is 0 only when all five hold.
+   And what it asks besides, because each is the same sentence -- a card of a
+   post is the post as the timeline draws it -- or the card's other half:
+     - a post with no drawable ink, mine or not, is its TEXT, character for
+       character with postLnHTML(), on a line this dictionary CAN spell
+     - spaces and newlines are postRuns()'s, on a post and on an example
+     - a word's letter is inkGeo()'s shape, a ring included
+     - what a post's card says it means is postSay()
+     - a card of a post, word or example that is gone is no card at all
+
+   Exit code is 0 only when all of it holds.
    --------------------------------------------------------------------------- */
 import http from 'http';
 import fs from 'fs';
@@ -110,6 +116,19 @@ const R = await pg.evaluate(async () => {
   if (!p.ink || !p.ink.g.length)
     fails.push('the post carries no ink, so nothing below this is a test of anything');
   const wrote = shapes(itemsFor('p', 'pcard').items);
+
+  /* ---- a letter nobody has drawn yet is its name ------------------- */
+  /* `kano` is stored with its spelling (`sp`, letter ids and no sounds) and
+     three of its four letters have no shape: the card read the missing sound
+     and wrote "undefined" where the names belong. */
+  if (!findWord('kano') || !findWord('kano').sp)
+    fails.push('"kano" carries no stored spelling, so a letter named by id alone is not walked');
+  /* The headword is the first four things on the page; the family rows under
+     it are words too and are asked only for the word "undefined". */
+  const kn = itemsFor('w', 'kano').items.map((u) => u.st ? '#' : String(u.tx));
+  if (kn.slice(0, 4).join('') !== '#ano' || kn.join('').indexOf('undefined') >= 0)
+    fails.push('a word spelt with letters nobody has drawn yet draws ' +
+               JSON.stringify(kn.join('')) + ' for them, not their names');
 
   /* ---- imported letters (sh only, no st) are drawn too --------------- */
   /* A letter brought in from a PDF import carries `sh` -- a ring -- and no
@@ -281,6 +300,14 @@ const R = await pg.evaluate(async () => {
      these must also come back without throwing -- a card that crashes on a
      malformed post is a timeline that cannot be opened. */
   const G = [[{ pts: [[0, 0], [500, 500]] }]];
+  /* The line every one of these carries is one THIS dictionary spells, with a
+     letter that has a shape. It used to be 'qq ww', which no dictionary holds
+     -- so a card that spelled somebody else's post out of mine drew nothing
+     from it either, and every case below was green with that bug in. */
+  const SPELT = 'ke tir';
+  if (!findWord('ke') || !itemsFor('w', 'ke').items.some((u) => u.st))
+    fails.push('"ke" is not a word this dictionary draws, so a post reading "' + SPELT +
+               '" is not a test of a card spelling it out of the open language');
   const CASES = [
     ['no ink at all',            undefined,                 'text'],
     ['ink is null',              null,                      'text'],
@@ -301,7 +328,7 @@ const R = await pg.evaluate(async () => {
   ];
   CASES.forEach((c, i) => {
     const id = 'pink' + i;
-    POSTS.push({ id, at: 3, lang: 'x', lname: 'Edge', ln: 'qq ww', who: 'Iri',
+    POSTS.push({ id, at: 3, lang: 'x', lname: 'Edge', ln: SPELT, who: 'Iri',
                  hd: 'iri', mine: false, mn: '', ui: 'en', ink: c[1] });
     let got;
     try { got = itemsFor('p', id); }
@@ -326,13 +353,85 @@ const R = await pg.evaluate(async () => {
     }
   });
 
-  /* ---- and a post with no ink is text, which is right --------------- */
-  POSTS.push({ id: 'pnoink', at: 2, lang: 'x', lname: 'Borrowed', ln: 'qq ww',
-               who: 'Iri', hd: 'iri', mine: false, mn: '', ui: 'en' });
-  const plain = itemsFor('p', 'pnoink');
-  if (plain.items.some((u) => u.st))
-    fails.push('a post with no ink came out with shapes on it, which can only ' +
-               'have come from the open language');
+  /* ---- and a post with no ink is its text, as on the timeline ------ */
+  /* Whoever wrote it. The timeline draws a post whose ink is not drawable as
+     its text (postLnHTML), so the card of it is that text too -- the same
+     characters, the same spaces, and a newline still a newline. Somebody
+     else's post, and one of my own from before a post carried ink: both. */
+  const lineText = (items) => items.map((u) => u.br ? '\n' : u.sp ? ' ' : (u.tx || '#')).join('');
+  [['somebody else', false, 'x'], ['mine', true, langId]].forEach((c, i) => {
+    const id = 'pnoink' + i, ln = 'ke  tir\nke';
+    POSTS.push({ id, at: 2, lang: c[2], lname: 'Borrowed', ln, who: 'Iri',
+                 hd: 'iri', mine: c[1], mn: '', ui: 'en' });
+    const got = itemsFor('p', id).items;
+    if (got.some((u) => u.st))
+      fails.push('a post (' + c[0] + ') with no ink came out with shapes on it, which ' +
+                 'can only have come from the open language -- its line on the ' +
+                 'timeline is its text');
+    const shown = document.createElement('div');
+    shown.innerHTML = postLnHTML(postById(id));
+    if (lineText(got) !== shown.textContent)
+      fails.push('a post (' + c[0] + ') with no ink reads ' + JSON.stringify(lineText(got)) +
+                 ' on its card and ' + JSON.stringify(shown.textContent) + ' on the timeline');
+  });
+
+  /* And an example is a line too: its spaces and its newlines are postRuns()'s,
+     the same as a post's, and not a split of its own. */
+  const keW = findWord('ke'), wasEx = keW.ex;
+  keW.ex = [{ ln: 'ke  tir\nke' }];
+  const exLine = lineText(itemsFor('x', 'ke#0').items).replace(/#+/g, '#');
+  keW.ex = wasEx;
+  if (exLine.split('\n').length !== 2 || exLine.indexOf('  ') < 0)
+    fails.push('an example written "ke  tir\\nke" reads ' + JSON.stringify(exLine) +
+               ' on its card -- its spaces and its line are not the ones postRuns() says');
+
+  /* ---- a word's letters are what inkGeo() says they are -------------- */
+  /* A letter written on paper comes in as a ring (`sh`) and no strokes. The
+     post's cut asks inkGeo() and draws it; the word's card has to as well. */
+  const keLt = spOf(findWord('ke')).map((x) => x.l ? ltById(x.l) : ltMain(x.u))
+                                   .filter((l) => l && l.st && l.st.length)[0];
+  if (!keLt) fails.push('"ke" has no letter with strokes, so the ring case is not walked');
+  else {
+    const was = keLt.st;
+    keLt.sh = [[[100, 100], [700, 100], [700, 700], [100, 700]]]; keLt.st = [];
+    const ring = itemsFor('w', 'ke').items.filter((u) => u.st).length;
+    keLt.st = was; delete keLt.sh;
+    if (!ring)
+      fails.push("a word's card drops a letter whose shape is a ring (sh) -- " +
+                 'cardUnit() has to ask inkGeo(), as the post does');
+  }
+
+  /* ---- what a post's card says it means is what the timeline says ---- */
+  const realDay = dayMap;
+  dayMap = function(){ return { en: 'today, in the reader\'s words' }; };
+  POSTS.push({ id: 'pday', at: 2, lang: 'x', lname: 'Other', ln: 'ke', who: 'Iri',
+               hd: 'iri', mine: false, mn: 'what the writer typed', pr: 'd1', ui: 'en' });
+  const said = { card: itemsFor('p', 'pday').src.mn, line: postSay(postById('pday')) };
+  dayMap = realDay;
+  if (said.card !== said.line)
+    fails.push("a post's card means " + JSON.stringify(said.card) + ' and its timeline row ' +
+               JSON.stringify(said.line) + ' -- one post, two meanings');
+
+  /* ---- a card of something that is gone draws nothing -------------- */
+  /* Not the newest word signed with my handle, which is what it was. A post,
+     a word and an example, each asked for by a key nothing answers to. */
+  [['p', 'nope'], ['w', 'nope'], ['x', 'ke#99'], ['x', 'nope#0']].forEach((c) => {
+    CARD = { k: c[0], v: c[1], sh: '' };
+    if (cardSrc() !== null)
+      fails.push('a card of ' + c.join(':') + ', which is not there, is a card of ' +
+                 JSON.stringify(cardSrc().line));
+    cardOpen(c[0], c[1]);
+    if (document.getElementById('cardc'))
+      fails.push('the card of ' + c.join(':') + ', which is not there, still offers a picture');
+  });
+  /* And the thing going while its card is open: the fonts arriving paint it
+     again, and Save names the file after it. Neither may throw. */
+  POSTS.push({ id: 'pgo', at: 2, lang: 'x', lname: 'Other', ln: 'ke', who: 'Iri',
+               hd: 'iri', mine: false, mn: '', ui: 'en' });
+  cardOpen('p', 'pgo');
+  POSTS = POSTS.filter((x) => x.id !== 'pgo');
+  try { cardPaint(document.getElementById('cardc')); cardSave(); }
+  catch (e) { fails.push('a post gone while its card was open: ' + e.message); }
 
   return { fails, wrote: JSON.parse(wrote).length, cases: CASES.length,
            other: other ? other.lname : '', drew: after.items.length };
@@ -352,8 +451,10 @@ console.log('card: a post written, the alphabet redrawn and a word deleted under
             '      and its card is still the ' + R.drew + ' shapes it was written with.\n' +
             "      A post from " + R.other + " -- another language, another person, no\n" +
             '      word of it in this dictionary -- draws its own shapes and wears its\n' +
-            '      own name. A card of a WORD still follows the letters, and a post\n' +
-            '      with no ink is still text, and every one of ' + R.cases +
+            '      own name. A card of a WORD still follows the letters, a post\n' +
+            '      with no ink is its text as on the timeline -- mine or not, spelt\n' +
+            '      or not -- it means what its row means, a card of what is gone\n' +
+            '      draws nothing, and every one of ' + R.cases +
             ' shapes ink\n      can arrive in -- empty, missing, pointing at nothing -- comes ' +
             'back\n      as text rather than as a guess, without throwing.\n' +
             '      The gap is the post\'s: the open language set to 0 moves no card\n' +
