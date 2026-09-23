@@ -890,8 +890,6 @@ function wipeHere(uid){
      It was `SET.plan` and `SET.planWas` in `lingua.set`; what an account pays
      is `verify-plan`'s answer, held in memory (www/core.js § PLAN), and
      netOut() a few lines below forgets it with the session. */
-  delete SET.acct; delete SET.saved;
-  delete SET.savedUp; delete SET.notAt;
   /* AND IT OPENS ON THE DOOR, not on the walk. 「アカウント削除した後
      オンボーディングから始まるのはなぜ？」 OWNER 2026-09-03.
 

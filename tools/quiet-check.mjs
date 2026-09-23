@@ -312,7 +312,11 @@ say(kinds.join() === 'words', '3 one word added sends the words slice and nothin
   await pg2.route('https://fonts.googleapis.com/**', r => r.fulfill({ status:200, contentType:'text/css', body:'' }));
   await pg2.route('https://fonts.gstatic.com/**', r => r.abort());
   await pg2.addInitScript(wire, { srv:SRV, out:true, disk:{
-    'lingua.me': JSON.stringify({ name:'', handle:'', bio:'an old line', pic:PIC_OLD })
+    'lingua.me': JSON.stringify({ name:'', handle:'', bio:'an old line', pic:PIC_OLD }),
+    /* settings that name nobody (an account was deleted on this phone), and
+       what this account parked here the last time it left (r63-audit L1) */
+    'lingua.set':   JSON.stringify({ done:true }),
+    'lingua.set.u': JSON.stringify({ notAt:99, savedUp:true })
   } });
   await pg2.goto(INDEX);
   await pg2.waitForSelector('#splash', { state:'detached', timeout:20000 });
@@ -328,6 +332,9 @@ say(kinds.join() === 'words', '3 one word added sends the words slice and nothin
   const me = await pg2.evaluate(() => ({ bio:ME.bio, pic:ME.pic }));
   say(me.bio === 'hello' && me.pic === PIC_NEW, '5 and the profile on this phone is the account\'s -- bio ' +
       JSON.stringify(me.bio) + ', photograph ' + (me.pic === PIC_NEW ? 'the account\'s' : String(me.pic).slice(0, 30)));
+  const notAt = await pg2.evaluate(() => SET.notAt);
+  say(notAt === 99, '5 and what this account parked on this phone is its settings again -- notAt ' +
+      JSON.stringify(notAt));
   await pg2.close();
 }
 

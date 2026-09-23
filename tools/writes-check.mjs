@@ -69,20 +69,16 @@ const WRITERS = {
   'SET.saved': {
     askSaved: "the account's list arriving from the server",
     snsSaveQ: 'the person saving or unsaving a search',
-    wipeHere: 'the account deleted on a phone whose settings carry no stamp (SET.acct absent), where lsWipeAcct() takes nothing. A HAND LIST and a plug: it takes four fields and leaves `recent`. The cover is lsWipeAcct() answering for an unstamped SET (www/core.js) -- docs/scope/r61-face.md. Take this line out with it',
   },
   'SET.savedUp': {
     askSaved: "this phone's list handed to the account once",
-    wipeHere: 'the account deleted on a phone whose settings carry no stamp (SET.acct absent), where lsWipeAcct() takes nothing. A HAND LIST and a plug: it takes four fields and leaves `recent`. The cover is lsWipeAcct() answering for an unstamped SET (www/core.js) -- docs/scope/r61-face.md. Take this line out with it',
   },
   'SET.notAt': {
     notSeen: 'how far down the notices the person has read',
-    wipeHere: 'the account deleted on a phone whose settings carry no stamp (SET.acct absent), where lsWipeAcct() takes nothing. A HAND LIST and a plug: it takes four fields and leaves `recent`. The cover is lsWipeAcct() answering for an unstamped SET (www/core.js) -- docs/scope/r61-face.md. Take this line out with it',
   },
   'SET.acct': {
     setFor: 'which account these settings are, stamped as that account arrives',
     lsWipeAcct: 'that account deleted: the stamp goes with its fields',
-    wipeHere: 'the account deleted on a phone whose settings carry no stamp (SET.acct absent), where lsWipeAcct() takes nothing. A HAND LIST and a plug: it takes four fields and leaves `recent`. The cover is lsWipeAcct() answering for an unstamped SET (www/core.js) -- docs/scope/r61-face.md. Take this line out with it',
   },
   'ME.name': {
     meKeepPut: 'the profile editor -- the person deciding, written once the server has taken it',

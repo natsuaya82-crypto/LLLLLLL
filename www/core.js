@@ -142,7 +142,12 @@ function lsWipeAcct(uid){
      -- so the fields were written straight back under the name of the account
      that had just been deleted. Cleared here, there is nothing left to park:
      setFor('') finds no owner and returns having written nothing. */
-  if(String(SET.acct||'')===me){
+  /* This account's, or nobody's -- and nobody's settings on the phone of the
+     account being deleted are that account's, by the same rule setFor()
+     adopts them by. It asked `SET.acct===me` alone, so settings that named
+     nobody survived the deletion and settings.js took four of their fields
+     off by name and left the rest (`recent`) standing (r61-face 止めたこと 2). */
+  if(String(SET.acct||'')===me || !SET.acct){
     keys=setAcctKeys(null);
     for(i=0;i<keys.length;i++) delete SET[keys[i]];
     /* THE PLAN IS NOT HERE. It was two more words -- `SET.plan` and
@@ -2279,9 +2284,14 @@ function setFor(uid){
     try{ park=localStorage.getItem(setParkKey(me)); }catch(e){ park=null; }
     if(park){ try{ got=JSON.parse(park); }catch(e){ got=null; } }
   }
-  /* Nobody was written down: what is here is this person's, the way meFor()
-     adopts an unclaimed copy. Only on the way IN. */
-  if(was){
+  /* WHAT THE ARRIVING ACCOUNT PARKED IS ITS OWN, whoever was written down
+     before. This asked `was` alone, so a phone whose settings named nobody --
+     after an account was deleted on it, or from before the stamp existed --
+     let somebody in and never read what they had parked, and the next
+     park wrote their empty fields over it (r63-audit L1). Only where the
+     arriving account has parked nothing AND nobody was written down is what
+     is here adopted as theirs, the way meFor() adopts an unclaimed copy. */
+  if(was || got){
     keys=setAcctKeys(got);
     for(i=0;i<keys.length;i++){
       k=keys[i];
