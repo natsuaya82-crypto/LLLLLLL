@@ -22,7 +22,8 @@ is the procedure.
 
 ## The language
 
-Twelve slices, filed under `lingua.<id>.<slice>`. `SLICES` in `www/core.js` is
+The slices are `slice` rows on the server, and `lingua.<id>.<slice>` names each
+in memory while the app runs (`LSL`, CLAUDE.md rule 22). `SLICES` in `www/core.js` is
 the list, and **being in that list is what makes a slice real**: `netSaveUp()`
 and `netLangSync()` walk it, so a slice outside it reaches no server;
 `wipeLangsGo()` walks it for
@@ -32,13 +33,11 @@ it once — the keyboard and the world — and neither could throw. **Count them
 off `SLICES` itself and not off this sentence**, which has said eleven and has
 said twelve.
 
-**One key under `lingua.<id>.` is not a slice**, and it is the only one:
-`lingua.<id>.bkn`, the save counter. It was a fact about the backup FILE
-rather than part of the language, and the file is gone (`CLAUDE.md` rule 11,
-2026-09-04) — so the key is written by nothing now and goes up nowhere,
-and `tools/store-check.mjs` names it as the phone's own. Being outside `SLICES`
-also puts it outside both deletes above; **whether it should be** is with the
-owner (`docs/scope/aud-data.md` § オーナーに訊くこと).
+**`lingua.<id>.bkn` is not a slice.** It was the backup FILE's save counter,
+and the file is gone (`CLAUDE.md` rule 11, 2026-09-04): nothing in the app reads
+or writes it, and a phone an older version wrote it on still has it. Whether it
+goes with the deletes above is with the owner (`docs/scope/aud-data.md`
+§ オーナーに訊くこと).
 
 **And now a third reader walks it: the server.** OWNER DECISION 2026-08-26 —
 「基本は全部サーバー管理」. Each slice is one
@@ -73,8 +72,8 @@ anywhere.**
 
 **And all of it goes when the account does.** OWNER DECISION 2026-08-26 —
 「アカウント消したら全部消えるに決まってる」. Not the server rows only: the
-`slice` rows, the `language` row, the bytes in Storage, **and every
-`lingua.<id>.<slice>` key on the phone**, and the language's row out of
+`slice` rows, the `language` row, the bytes in Storage, **and every key of
+that account on the phone** (`lsWipeAcct(uid)`), and the language's row out of
 `lingua.langs`. This is the one place in this file where data is removed on
 purpose, and it is allowed for the one reason `docs/DATA_SAFETY.md` does not
 forbid: **the person asked.**
