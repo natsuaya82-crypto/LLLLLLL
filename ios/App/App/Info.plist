@@ -91,5 +91,44 @@
 	<!-- And the library, which is a picker of the person's own photographs. -->
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>To put one of your photographs on a post.</string>
+	<!-- AdMob, for the places in the timeline nobody has bought
+	     (App/LinguaAds.swift). Both ids are filled by
+	     .github/workflows/ios-deploy.yml from GitHub secrets, and with Google's
+	     own TEST ids until the owner has made Lingua's in AdMob; a build never
+	     ships these names as they are (build 86, ITMS-90158). -->
+	<key>GADApplicationIdentifier</key>
+	<string>__ADMOB_APP_ID__</string>
+	<key>LinguaAdUnit</key>
+	<string>__ADMOB_NATIVE_UNIT__</string>
+	<!-- The question iOS asks before an ad may be chosen by tracking. Asked
+	     only while nobody has answered it, the way jpel does; saying no still
+	     shows ads, only not ones chosen for you. -->
+	<key>NSUserTrackingUsageDescription</key>
+	<string>Lingua asks so the ads between posts can be ones that matter to you. The app works the same if you say no.</string>
+	<!-- The ad networks allowed to count an install without tracking. Google's
+	     list, as jpel carries it. -->
+	<key>SKAdNetworkItems</key>
+	<array>
+		<dict><key>SKAdNetworkIdentifier</key><string>cstr6suwn9.skadnetwork</string></dict>
+		<dict><key>SKAdNetworkIdentifier</key><string>4fzdc2evr5.skadnetwork</string></dict>
+		<dict><key>SKAdNetworkIdentifier</key><string>2fnua5tdw4.skadnetwork</string></dict>
+		<dict><key>SKAdNetworkIdentifier</key><string>ydx93a7ass.skadnetwork</string></dict>
+		<dict><key>SKAdNetworkIdentifier</key><string>p78axxw29g.skadnetwork</string></dict>
+		<dict><key>SKAdNetworkIdentifier</key><string>v72qych5uu.skadnetwork</string></dict>
+		<dict><key>SKAdNetworkIdentifier</key><string>ludvb6z3bs.skadnetwork</string></dict>
+		<dict><key>SKAdNetworkIdentifier</key><string>cp8zw746q7.skadnetwork</string></dict>
+		<dict><key>SKAdNetworkIdentifier</key><string>c6k4g5qg8m.skadnetwork</string></dict>
+		<dict><key>SKAdNetworkIdentifier</key><string>s39g8k73mm.skadnetwork</string></dict>
+		<dict><key>SKAdNetworkIdentifier</key><string>3qy4746246.skadnetwork</string></dict>
+		<dict><key>SKAdNetworkIdentifier</key><string>f38h382jlk.skadnetwork</string></dict>
+		<dict><key>SKAdNetworkIdentifier</key><string>hs6bdukanm.skadnetwork</string></dict>
+		<dict><key>SKAdNetworkIdentifier</key><string>v4nxqhlyqp.skadnetwork</string></dict>
+		<dict><key>SKAdNetworkIdentifier</key><string>wzmmz9fp6w.skadnetwork</string></dict>
+		<dict><key>SKAdNetworkIdentifier</key><string>yclnxrl5pm.skadnetwork</string></dict>
+		<dict><key>SKAdNetworkIdentifier</key><string>4468km3ulz.skadnetwork</string></dict>
+		<dict><key>SKAdNetworkIdentifier</key><string>2u9pt9hc89.skadnetwork</string></dict>
+		<dict><key>SKAdNetworkIdentifier</key><string>klf5c3l5u5.skadnetwork</string></dict>
+		<dict><key>SKAdNetworkIdentifier</key><string>ppxm28t8ap.skadnetwork</string></dict>
+	</array>
 </dict>
 </plist>

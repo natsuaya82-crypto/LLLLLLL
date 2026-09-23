@@ -421,18 +421,168 @@ function snsHas(){ return !!SNS_GOT[snsTab]; }
    not go on seeing the list it was handed before. */
 var PROMO=[], PROMO_EVERY=10;
 function snsPromoAsk(done){
-  if(can('noads')){ PROMO=[]; done(0); return; }
+  if(can('noads')){ PROMO=[]; admDrop(); done(0); return; }
+  admStart();
   netPromos(function(ps){ PROMO=ps || []; done(1); },
             function(){ done(0); });
 }
+/* The places, in order: the k-th place is PROMO[k] while there are promoted
+   posts, and AdMob's k-th after that. `{adm:k}` is not a post and is not
+   drawn by postRow() -- it is an empty row the ad is laid over natively. */
 function snsWithPromo(list){
   var out=[], i, k=0;
   if(can('noads')) return list;
   for(i=0;i<list.length;i++){
     out.push(list[i]);
-    if((i+1)%PROMO_EVERY===0 && k<PROMO.length) out.push(PROMO[k++]);
+    if((i+1)%PROMO_EVERY===0){
+      if(k<PROMO.length) out.push(PROMO[k]);
+      else if(ADM.on) out.push({adm:k});
+      k++;
+    }
   }
   return out;
+}
+function snsRow(x){ return (x && x.adm!==undefined)? admSlotHTML(x.adm) : postRow(x); }
+/* ---- AND WHAT FILLS A PLACE NOBODY BOUGHT: AdMob -------------------------
+   「今は売る人いないからadmobを流す」 OWNER 2026-09-23.
+
+   An AdMob ad is drawn by Google's own views on the native side
+   (ios/App/App/LinguaAds.swift): its text and pictures may not be drawn in
+   HTML. So a place is an empty `.padm` row, as tall as the ad the native
+   side laid out, and the ad is put over it there. What this half does is
+   say, after anything on the page moves, where each row is on the PAGE and
+   what the app keeps fixed on the SCREEN -- the native side follows the
+   scroll by itself, so nothing here runs while a finger is moving.
+
+   Only on a phone: `Capacitor.nativePromise` is the whole of the difference,
+   the way storeOn() is store.js's. In a browser ADM.on stays false and no
+   place is drawn at all -- an empty row is not a thing to show anybody.
+
+   can('noads') is asked before EVERY call that could draw, and `place`
+   carries the answer to the native side, which takes every ad down on
+   `on:false` -- the last line jpel's adsDisabled is, put where the drawing is. */
+var ADM={on:false, h:{}, asked:{}, raf:0, last:'', loop:false};
+function admPlug(){
+  return (window.Capacitor && Capacitor.nativePromise)? Capacitor.nativePromise : null;
+}
+function admCall(m, o, ok, bad){
+  var np=admPlug();
+  if(!np){ if(bad) bad(); return; }
+  np('LinguaAds', m, o || {}).then(function(r){ if(ok) ok(r || {}); },
+                                   function(e){ if(bad) bad(e); });
+}
+function admStart(){
+  if(ADM.on || !admPlug() || can('noads')) return;
+  ADM.on=true;
+  admCall('start', {}, function(){ admSoon(); });
+  admWatch();
+}
+function admDrop(){
+  if(!ADM.on) return;
+  ADM.on=false; ADM.h={}; ADM.asked={}; ADM.last='';
+  admCall('drop', {});
+}
+/* The row. Nothing is in it: until the native side says how tall its ad is,
+   it is no height and no line (`padm0`), so a place with no ad is nothing. */
+function admSlotHTML(k){
+  var h=ADM.h[k] || 0;
+  return '<div class="post padm'+(h? '' : ' padm0')+'" data-adm="'+k+'"'+
+         ' style="height:'+h+'px"></div>';
+}
+/* Once per frame at most, however many things moved in it. */
+function admSoon(){
+  if(!ADM.on || ADM.raf) return;
+  ADM.raf=requestAnimationFrame(admPlace);
+}
+function admPlace(){
+  var els, out=[], i, r, k, sx, sy, cover, msg, same;
+  ADM.raf=0;
+  if(!ADM.on) return;
+  if(can('noads')){ admDrop(); return; }
+  els=document.querySelectorAll('.padm');
+  sx=window.pageXOffset || 0; sy=window.pageYOffset || 0;
+  for(i=0;i<els.length;i++){
+    k=parseInt(els[i].getAttribute('data-adm'), 10);
+    r=els[i].getBoundingClientRect();
+    admLoad(k, Math.round(r.width));
+    if(ADM.h[k]) out.push({k:k, x:r.left+sx, y:r.top+sy, w:Math.round(r.width)});
+  }
+  cover=admCover();
+  msg={on:!can('noads'), slots:out, holes:cover.holes, over:cover.over};
+  same=JSON.stringify(msg);
+  if(same===ADM.last) return;
+  ADM.last=same;
+  admCall('place', msg);
+}
+function admLoad(k, w){
+  if(!w || ADM.asked[k]===w) return;
+  ADM.asked[k]=w;
+  admCall('load', {k:k, w:w, look:admLook(), label:t('post.pr')},
+    function(r){
+      var h=Math.ceil(Number(r.h) || 0), els, i;
+      if(!h || h===ADM.h[k]) return;
+      ADM.h[k]=h;
+      els=document.querySelectorAll('.padm[data-adm="'+k+'"]');
+      for(i=0;i<els.length;i++){
+        els[i].style.height=h+'px';
+        els[i].className='post padm';
+      }
+      admSoon();
+    },
+    /* No fill: the place stays nothing. Asked again only when the width
+       changes, which is a new row rather than the same one refused twice. */
+    function(){});
+}
+/* WHAT STANDS OVER THE TIMELINE, counted rather than listed: every child of
+   the body, and every bar, that is fixed or sticky and can be seen. One that
+   covers the whole screen (a sheet's backdrop, a question, the turning mark)
+   hides the ads; anything smaller is cut out of them, for drawing and for
+   touches -- so a fixed thing added tomorrow is cut out tomorrow.
+   `pointer-events` is asked beside opacity because a thing fading IN is at
+   opacity 0 on the frame its class changes, and already takes presses. */
+function admCover(){
+  var els=[], kids=document.body.children, bars=document.querySelectorAll('.navtop'),
+      holes=[], over=false, vw=window.innerWidth, vh=window.innerHeight, i, cs, r;
+  for(i=0;i<kids.length;i++) els.push(kids[i]);
+  for(i=0;i<bars.length;i++) els.push(bars[i]);
+  for(i=0;i<els.length;i++){
+    cs=getComputedStyle(els[i]);
+    if(cs.position!=='fixed' && cs.position!=='sticky') continue;
+    if(cs.display==='none' || cs.visibility==='hidden') continue;
+    if(!(parseFloat(cs.opacity)>0) && cs.pointerEvents==='none') continue;
+    r=els[i].getBoundingClientRect();
+    if(r.width<=0 || r.height<=0 || r.bottom<=0 || r.top>=vh || r.right<=0 || r.left>=vw) continue;
+    if(r.width>=vw && r.height>=vh){ over=true; continue; }
+    holes.push({x:r.left, y:r.top, w:r.width, h:r.height});
+  }
+  return {holes:holes, over:over};
+}
+/* The page's own colours, so the ad row wears the theme every post does. */
+function admLook(){
+  var p=document.createElement('span'), out={}, k,
+      names={fg:'--tx', sub:'--txs', mute:'--txm', acc:'--gold', bg:'--bg', line:'--line'};
+  document.body.appendChild(p);
+  for(k in names){
+    p.style.color='var('+names[k]+')';
+    out[k]=getComputedStyle(p).color;
+  }
+  document.body.removeChild(p);
+  return out;
+}
+/* After anything on the page moves -- a render, a sheet or a toast coming or
+   going, the window turning -- asked once a frame while ads are on, and the
+   native side is told only when the answer is different. Scrolling changes
+   nothing here: rows are given in PAGE coordinates, so a finger moving the
+   timeline sends nothing and the native side follows the scroll by itself. */
+function admWatch(){
+  function tick(){
+    if(!ADM.on){ ADM.loop=false; return; }
+    admSoon();
+    requestAnimationFrame(tick);
+  }
+  if(ADM.loop) return;
+  ADM.loop=true;
+  requestAnimationFrame(tick);
 }
 /* THE TIMELINE'S ASK. It writes the answer down and says whether one came;
    the mark, the pop, the 再接続 and the render are pullRun()'s and are not
@@ -1443,7 +1593,7 @@ function vFeed(){
       : snsFil
       ? snsAnsHTML(snsFil.q, snsFil.r)
       : list.length
-      ? snsWithPromo(list).map(postRow).join('')
+      ? snsWithPromo(list).map(snsRow).join('')
       /* Two different emptinesses. Nothing at all is a timeline that has not
          started; nothing HERE, with posts on the other tab, is a person who
          has not followed anybody yet, and telling them "nothing has been

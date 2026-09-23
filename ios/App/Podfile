@@ -17,6 +17,9 @@ end
 target 'App' do
   capacitor_pods
   # Add your Pods here
+  # AdMob, for the places in the timeline nobody has bought
+  # (App/LinguaAds.swift). The version jpel's @capacitor-community/admob 8 pins.
+  pod 'Google-Mobile-Ads-SDK', '13.6.0'
 end
 
 post_install do |installer|

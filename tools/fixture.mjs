@@ -660,15 +660,17 @@ export function obStates(){
 export function halfDone(){
   /* 売れた枠を一つ入れて、タイムラインを描いて、元に戻す。上の二つの面が
      使う ── halfDone() は文字列としてページに送られるので、ここに置く。 */
-  function fixPromo(pl, few){
-    const wasPlan = plan(), wasPromo = PROMO, n = POSTS.length;
+  function fixPromo(pl, few, admH){
+    const wasPlan = plan(), wasPromo = PROMO, n = POSTS.length,
+          wasAdm = { on: ADM.on, h: ADM.h };
+    if (admH) { ADM.on = true; ADM.h = { 0: admH }; }
     planGot(pl);
     for (let i = 0; i < (few ? 0 : PROMO_EVERY); i++)
       POSTS.unshift({ id:'fill-' + i, at: Date.now() - 60000 * (i + 1), lang: langId,
                       lname:'Shango', who:'Aya', hd:'aya', mine:true,
                       av:{st:[{pts:[[112,112],[688,112],[400,688]]}]},
                       ln:'kano mos tir', mn:'a tall mountain is seen', ui:'en' });
-    PROMO = [{ id:'ad-1', at: Date.now() - 86400000, lang:'other', lname:'Vethi',
+    PROMO = admH ? [] : [{ id:'ad-1', at: Date.now() - 86400000, lang:'other', lname:'Vethi',
                ln:'qel dross', who:'Kiyo', hd:'kiyo', mine:false, av:{ch:'K'},
                mn:'the river is wide', ui:'en', ad:true }];
     window.route = 'feed'; NAV = [{ r:'feed' }];
@@ -676,6 +678,7 @@ export function halfDone(){
     const h = document.getElementById('app').innerHTML;
     POSTS.splice(0, POSTS.length - n);
     PROMO = wasPromo;
+    ADM.on = wasAdm.on; ADM.h = wasAdm.h;
     planGot(wasPlan);
     return h;
   }
@@ -877,6 +880,9 @@ export function halfDone(){
     /* 「少ない時は出さない！」 ── 売れた広告はあるのに、投稿が PROMO_EVERY
        件に届かないタイムライン。PR の行が出ないことが写る面。 */
     ['a place sold, fewer posts than a place needs', () => fixPromo('free', true)],
+    /* AdMob の枠。ブラウザには本物の広告が無いので、ネイティブが「この高さ」と
+       答えた後の、空の行だけが写る（その上に iOS 側が広告を重ねる）。 */
+    ['a place AdMob fills, as the page draws it', () => fixPromo('free', false, 260)],
     ['a long post folded', () => {
         const wasPlan = plan();
         planGot('plus');
