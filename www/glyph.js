@@ -1643,11 +1643,14 @@ function geNow(){ return GE? {ink:JSON.stringify(geInk(GE.st))} : {ink:''}; }
 function geKeep(){
   var keep=geInk(GE.st);
   ltSetStrokes(GE.lid, keep);
-  /* Drawing a letter is asking for your own writing. Only onboarding ever set
-     this, so every letter drawn in the letters chapter went into a font that
-     nothing had been told to use -- which is 「単語に自作文字出てこない」. */
-  if(keep.length) SET.myfont=true;
-  save(); netPrefsPut();
+  /* NOT THE SWITCH. Whether words are set in the drawn letters is SET.myfont,
+     and the switch on the alphabet (setMyFont) is the one place a person
+     decides it. This used to turn it on whenever a letter with ink was
+     saved, so somebody who had turned it off had it back on -- and sent to
+     their account -- the next time they drew. 「SET.myfont is off until
+     somebody turns it on」 CLAUDE.md; tools/writes-check.mjs counts every
+     writer of the field. */
+  save();
   installScriptFont();
   return keep;
 }
