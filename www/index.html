@@ -306,7 +306,7 @@ canvas.pkc{width:34px;height:34px;display:block}
    「1マスとキーボードの1マスのサイズが一緒じゃないから分かりにくいよ」
    kbNewHTML() writes calc() over these two, so the number lives here only. */
 :root{--kbw:83vw;--kbgap:4.2px}
-.kb.kbsheet{width:var(--kbw);margin:2px auto 0;--kh:44px;--kbrg:5px;gap:var(--kbrg)}
+.kb.kbsheet{position:relative;width:var(--kbw);margin:2px auto 0;--kh:44px;--kbrg:5px;gap:var(--kbrg)}
 /* No gap between COLUMNS -- a column is half a key, so a gap there would be
    counted twice on a whole key and twelve times on a space bar. The space
    between two keys is the keys' own margin, which is the same 4 whatever they
@@ -350,7 +350,6 @@ canvas.pkc{width:34px;height:34px;display:block}
    and which key you have OPEN, and this is what the buttons above are about.
    The band runs out past the keys on both sides so the row's number stands on
    it -- the number is what was pressed, so it has to be inside what lit up. */
-.kb.kbsheet{position:relative}
 .kb.kbsheet .kbrow.sel::before{content:"";position:absolute;
      top:-3px;bottom:-3px;left:-32px;right:-6px;background:var(--pursf);
      border-top:1px solid var(--purln);border-bottom:1px solid var(--purln);
@@ -1078,37 +1077,12 @@ canvas.pkc{width:34px;height:34px;display:block}
 .navdo.navdel{color:var(--bad)}
 .pwtop{display:flex;gap:12px;margin-bottom:6px}
 .pwfield{flex:1 1 auto;min-width:0}
-.pwfield input, .pwfield textarea{width:100%;background:none;border:0;color:var(--tx);
-               font-family:inherit;font-size:1.2rem;line-height:1.5;min-height:44px;padding:0;
-               resize:none;overflow:hidden}
-/* And the line somebody writes in gets its own padding back.
-   「自作文字打つ時に、投稿の隙間が小さすぎてなにも見えなくなるのを修正して
-   くれ」 OWNER 2026-08-25. `.lnin` declares `padding:11px 2px` and wears it on
-   every other screen; here the rule above is two selectors where `.lnin` is
-   one, so `padding:0` won and the composer -- and only the composer -- had no
-   room above or below the type at all. Measured: 0/0 here, 11/11 everywhere
-   else. With nothing above or below the glyphs, whatever comes next sits
-   against them, which is what 「なにも見えなくなる」 looks like.
-   No new number: this is `.lnin`'s own, delivered to the one place it could
-   not reach. Same shape as `.sfont` having to say `!important` to beat the
-   dozen container rules that set font-family on the input inside them -- the
-   file already carries that story, and this is the same story about padding. */
-.pwfield .lnin{padding:11px 2px}
-/* And the COLUMN keeps its own, which the rule above took away from it.
-   `.lnin.dir-ttb-rl,.lnin.dir-ttb-lr` declares `padding:2px 12px`, and in a
-   vertical column the 12px is the same thing 11px is in a horizontal line:
-   the room above and below the type. The inline axis has turned, so it is
-   written on the physical sides. The rule above is the same two selectors,
-   later in the file, so it won here too and cut those 12px to 2px -- and with
-   `box-sizing:border-box` and `min-width:1.6em` doing the rest, the composer
-   came out 34px wide where a thumb needs 44. `press` measured it: 34x251 on
-   the reply to the day's sentence.
-   No new number: this is the vertical rule's own, delivered back to the one
-   place it lost it -- the same sentence as the comment above, about the case
-   that comment did not cover. */
-.pwfield .lnin.dir-ttb-rl,
-.pwfield .lnin.dir-ttb-lr{padding:2px 12px}
-.pwfield input:focus, .pwfield textarea:focus{outline:none}
+/* The line and the meaning are `.lnin`, the field every screen writes in,
+   and wear all of it -- the padding, the 44, the column's own sides when the
+   language runs down the page -- except the line under it: here the two are
+   one column with nothing ruled between them. What the line is SET in is
+   `.pline, .pwfield #pw-ln`, above; the meaning's size is `.lnin.pwmn`, below. */
+.pwfield .lnin{border-bottom:0}
 /* How much of the post is left, and only once it is worth knowing. It is a
    number and nothing else, so there is no sentence in it to translate. */
 .pwleft{font-size:.8rem;color:var(--txm);text-align:right;margin-top:2px}
@@ -1132,7 +1106,7 @@ canvas.pkc{width:34px;height:34px;display:block}
 .pwring.bad .pwrt{stroke:var(--bad)}
 .pwring .pwleft{margin-top:0}
 .pwring.bad .pwleft{color:var(--bad)}
-.pwmn{margin-top:10px;font-size:1.02rem !important;color:var(--txs) !important}
+.lnin.pwmn{margin-top:10px;font-size:1.02rem;color:var(--txs)}
 /* タグの枠 ── 本文の入れ物とは別。「#はべつで」 OWNER 2026-09-15。
    投稿の行（`.ptags`）と同じ .84rem で、同じ順（本文／翻訳／タグ）に並びます。
 
@@ -1140,11 +1114,9 @@ canvas.pkc{width:34px;height:34px;display:block}
    五つ目を断る文はありません、入れ物が増えないだけです
    （CLAUDE.md § Explaining、www/post.js § pwTagsShown）。
 
-   `.pwfield input` は二つの selector なので、こちらも二つで書かないと
-   `width:100%` と 1.2rem に負けます。下線一本だけ ── 四辺でも角丸でもない
-   のは `index.html` が欄について前から書いている通りです
-   （「かくまるみたいなのでくくるのやめて欲しい。基本下線だけ」）。
-   `min-height:44px` は上の規則のものをそのまま着ています。 */
+   下線一本だけ ── 四辺でも角丸でもないのは `index.html` が欄について前から
+   書いている通りで（「かくまるみたいなのでくくるのやめて欲しい。基本下線
+   だけ」）、その線は欄ではなく包み（`.pwtagw`）が持ちます。 */
 .pwtags{display:flex;flex-wrap:wrap;gap:0 14px;margin-top:12px}
 /* 一つの欄 ── `#` は欄の外に印として置いてあり、中には入りません
    （www/post.js § pwTagField）。下線は欄の分だけなので、`#` ではなくこの
@@ -1156,7 +1128,9 @@ canvas.pkc{width:34px;height:34px;display:block}
 .pwtagw{display:flex;align-items:center;gap:4px;flex:0 1 calc(50% - 7px);
         min-width:88px;border-bottom:1px solid var(--line)}
 .pwtagh{font-size:.84rem;color:var(--txm)}
-.pwfield .pwtag{width:auto;flex:1 1 auto;min-width:0;font-size:.84rem}
+.pwtag{width:auto;flex:1 1 auto;min-width:0;min-height:44px;padding:0;background:none;
+       border:0;color:var(--tx);font-family:inherit;font-size:.84rem;line-height:1.5;
+       overflow:hidden;outline:none}
 /* Over the feed, above the bar, under the thumb already holding the phone. */
 .fab{position:fixed;right:20px;bottom:calc(var(--tabh) + 20px);
      z-index:26;width:56px;height:56px;border-radius:50%;border:0;
@@ -1293,7 +1267,7 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
    the mark inside it reads as a bar with something missing. 46 is still
    clear of the 44pt floor `press` holds every target to. --tabh moves with
    it, 72 to 66, because every screen's foot is measured from that. */
-.tab{flex:1 1 0;min-width:0;min-height:46px;background:none;border:0;color:var(--txm);
+.tab{position:relative;flex:1 1 0;min-width:0;min-height:46px;background:none;border:0;color:var(--txm);
      border-radius:999px;display:flex;align-items:center;justify-content:center;
      font-family:inherit;padding:5px 2px;transition:color .18s,background .18s}
 /* How many notices arrived since the screen was last opened. 「下のタブの
@@ -1306,12 +1280,7 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
    already a flex box with the mark centred in it, so this is hung off the
    corner rather than put in the flow: a number in the flow moves the bell
    sideways, and the tab it is on would then sit differently from the four
-   beside it.
-
-   `.tab` has to be a positioned box for that, and it was not. Nothing else
-   in it is absolute, so the only thing this changes is what an absolute
-   child would measure from -- and there were none. */
-.tab{position:relative}
+   beside it. `.tab` is a positioned box for that and for nothing else. */
 .tabn{position:absolute;top:4px;left:50%;margin-left:6px;
       font-size:.68rem;line-height:1;font-weight:700;color:var(--gold)}
 /* the lens: the one tab you are on is a solid pill inside the glass */
@@ -1334,8 +1303,58 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
    screen. --vvtop is visualViewport.offsetTop, so the screen stays where it
    is whether the keyboard is up or down, and the bar does not move when it
    goes down. 「上のポストと戻るボタンは画面上部に固定で動かない」 */
-/* How TALL it is is not said here any more -- the r4-sns block at the foot of
-   this file says it, and says why. */
+/* THE COMPOSER IS THE WHOLE PHONE, AND ONLY THE ROW OF TOOLS FOLLOWS THE
+   KEYBOARD. 「投稿画面は画像3枚目の位置で固定して。意味とかタップすると動く
+   し…縦書きでも横書きでもその位置固定で。Twitterの投稿画面は動きません」
+   OWNER 2026-09-06.
+
+   It was `--vvmin` tall -- the smallest the visible part had ever been, which
+   is what the phone has with its TALLEST keyboard up. Two keyboards are two
+   heights, and the box was laid out to one of them: measured on a 390x844,
+   the roman keyboard's top is at 508 and the box ended at 464, so there were
+   44px of screen that belonged to neither, with the row of tools hanging
+   outside the box it was the last child of. Switch to the Japanese keyboard
+   and the numbers meet; switch back and they part again.
+
+   So the box is the phone. It is one number, it is the same number with a
+   keyboard up and with one down, and nothing in it moves when a keyboard
+   changes size. What has to move is the row of tools, because it sits ON the
+   keyboard, and it does that already: `bottom:var(--vvkb)` reads the live
+   height. The FLOW stops where that row starts and nothing in it scrolls, and
+   both of those are said where they were already said -- `.view.fit .body`'s
+   padding and `.view.fit .pwscroll`'s overflow, below.
+   「日本語キーボードで意味の行が隠れるなら、道具の行の上に意味の行も一緒に
+   寄せる」
+
+   AND IT IS THE PAGE LESS THE LIFT, because the box STARTS at that lift.
+   「そもそも画面はスクロールできないようにして欲しいんだけど、そうすれば
+   ズレすら無くなるはずなのになんで？」「キーボードはそこで止める。入力位置も
+   タップしても動かないそれでいいやん。」 OWNER 2026-09-22.
+
+   The answer to 「なんで？」 is that the document was already locked and the
+   thing that moves is not the document. `html.fitlock` is `overflow:hidden`
+   on the page while this is open, and that is what stopped the DRAG. A TAP
+   is not a drag: WebKit lifts the LAYOUT viewport to reveal the field it has
+   just focused, `overflow:hidden` does not forbid that, and nothing in
+   JavaScript can refuse it -- `preventScroll` is an option on a PROGRAMMATIC
+   focus, which is why the frame this screen OPENS on was always right
+   (`pwKeepKb`), and a finger on a textarea does not go through it.
+
+   So the lift is not fought, it is subtracted, and in ONE place: this box is
+   pinned to `--vvtop` and is the page LESS `--vvtop`. It was `100dvh` -- a
+   whole page, beginning a lift down the page -- so it hung exactly that far
+   past the foot, and everything laid out against the foot hung with it.
+   Measured, 390x844 with a 380 keyboard: the visible window came down by the
+   lift and the MEANING came down by twice it, so past 114 the meaning was
+   under the keyboard and the tags with it. The line and the row of tools held
+   still throughout, which is why nobody saw it -- iOS lifts the page
+   precisely so the focused field does not move.
+
+   `post-check` § NOTHING ON THE COMPOSER MOVES asks it in SCREEN
+   coordinates, of the line, the row and the meaning together. */
+.view.fit{position:fixed;left:0;right:0;top:var(--vvtop,0px);
+   height:100vh;height:calc(100dvh - var(--vvtop, 0px));
+   display:flex;flex-direction:column;overflow:hidden}
 /* THE DOCUMENT DOES NOT MOVE WHILE A ONE-SCREEN FORM IS OPEN. www/shell.js
    § tabPaint puts this on, and the whole of why is written there: a drag
    rubber-bands the layout viewport, `--vvtop` chases it one event behind, and
@@ -1343,13 +1362,10 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
    `overscroll-behavior:none` is what stops the rubber-band; the height and
    the overflow are what stop an ordinary scroll under it. */
 html.fitlock, html.fitlock body{height:100%;overflow:hidden;overscroll-behavior:none}
-.view.fit{position:fixed;left:0;right:0;top:var(--vvtop,0px);
-   display:flex;flex-direction:column;overflow:hidden}
 /* AND THE OTHER KIND OF ONE SCREEN, which is now a difference of ONE LINE.
    「キーボードかんがえないでいいから。画面全部にしてほしい」 OWNER 2026-09-05,
-   about the note. Both kinds are the whole phone -- the r4-sns block at the
-   foot of this file says why the composer became one too -- so the height is
-   not restated here. What is left is the foot: a note has nothing under the
+   about the note. Both kinds are the whole phone -- `.view.fit` above says
+   why the composer became one too -- so the height is not restated here. What is left is the foot: a note has nothing under the
    body, so it keeps no room for a row of tools it does not have and lets the
    keyboard cover a page nobody was reading at the bottom of.
 
@@ -1385,27 +1401,26 @@ html.fitlock, html.fitlock body{height:100%;overflow:hidden;overscroll-behavior:
 
    The two halves of `.pwbar`'s height are declared together below, so the 53
    here is those two added up and nothing else. */
-/* AND THE KEYBOARD ITSELF, which is the r4-sns block at the foot of this file:
+/* AND THE KEYBOARD ITSELF, which is `.view.fit` above:
    the box is the whole phone now, so what the flow has to clear is the row AND
    whatever the keyboard is covering. It used to be the row alone, because the
    box was already cut short to a guess at a keyboard. */
-.view.fit .body{flex:1;min-height:0;display:flex;flex-direction:column;
-   padding-bottom:calc(var(--vvkb,0px) + 53px +
-     max(0px, calc(env(safe-area-inset-bottom,0px) - var(--vvkb,0px))));
-   overflow:hidden}
 /* ⑩ 「なんか空白がきもい」 OWNER 2026-08-28、実機ビルド #106、写真つき。
    バーの下から、プロフィール画像と一行目の行までが空いていました。`.body` の
    上の余白 10px と、`.pwtop` と一行目の下の 6px ずつ ── 合わせて 22px が、
-   バーと、書き始める場所のあいだに積んであった余白です。ここだけ詰めます。
+   バーと、書き始める場所のあいだに積んであった余白です。ここだけ詰めます ──
+   `.body` の padding-top:0 は下、`.pwtop` と一行目の 2px はそれぞれの規則に。
 
    測った（キーボードは下りた状態、`.navtop` は 60px）:
      402x874  行の上端 70 -> 60   一行目と意味のあいだ 16 -> 12
      320x568  行の上端 70 -> 60   一行目と意味のあいだ 16 -> 12
    意味の欄の 10px は動かしていません ── 2026-08-26 に測って決めた数で、
    返信画面の 104px の内訳がその 10 を数えています。 */
-.view.fit .body{padding-top:0}
-.view.fit .pwtop{margin-bottom:2px}
-.view.fit .pwfield .lnin{margin-bottom:2px}
+.view.fit .body{flex:1;min-height:0;display:flex;flex-direction:column;
+   padding-top:0;
+   padding-bottom:calc(var(--vvkb,0px) + 53px +
+     max(0px, calc(env(safe-area-inset-bottom,0px) - var(--vvkb,0px))));
+   overflow:hidden}
 /* Everything you are writing, and it is the part that scrolls -- so the line
    can be as long as it likes and the photographs under it move down with it,
    the way they do on Twitter. 「文字が増えたら画像が下にいく仕様にして」
@@ -1465,7 +1480,7 @@ html.fitlock, html.fitlock body{height:100%;overflow:hidden;overscroll-behavior:
 .view.fit .pwscroll{flex:1;min-width:0;min-height:104px;overflow:hidden;
    display:flex;flex-direction:column}
 .view.fit .pwqs{flex:0 1 auto;min-height:0}
-.view.fit .pwtop{flex:1 1 auto;min-height:0}
+.view.fit .pwtop{flex:1 1 auto;min-height:0;margin-bottom:2px}
 .view.fit .pwfield{flex:1 1 auto;display:flex;flex-direction:column;min-width:0}
 /* What is left of the column under the two fields and the row of pictures.
    It is not a spacer -- it is the field, one step further down: pressing it
@@ -1475,7 +1490,7 @@ html.fitlock, html.fitlock body{height:100%;overflow:hidden;overscroll-behavior:
 .pwrest{flex:1 1 auto;min-height:0}
 /* As tall as its text -- lnFit says how tall; this only stops it widening
    past the column it is in. */
-.view.fit .pwfield .lnin{max-width:100%;min-height:44px}
+.view.fit .pwfield .lnin{max-width:100%;min-height:44px;margin-bottom:2px}
 /* A column grows the other way: its height is the page's to give and its
    WIDTH is what runs out. Capped at the column and scrolling inside itself --
    without the cap a long line walked off the side of the phone.
@@ -1867,9 +1882,8 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
    you have not been told 「謎の四角も要らないマークとしてわからん」 -- and it
    was the only sound button in the app wearing one. */
 .play{flex:0 0 auto;min-width:44px;min-height:44px;background:none;border:0;color:var(--txm);
-      display:inline-flex;align-items:center;justify-content:center}
-.play:active{color:var(--gold)}
-.play:active{opacity:.6}
+      justify-content:center}
+.play:active{color:var(--gold);opacity:.6}
 
 /* ---------- rules ---------- */
 
@@ -1916,7 +1930,7 @@ a.set{text-decoration:none}
    style="color:#c9553f" on six screens and once more in this file -- seven
    copies of one colour, none of which changed when the dark theme did. */
 .bad{color:var(--bad)}
-.set .sv{margin-left:auto;color:var(--txm);font-size:.85rem}
+.set .sv{display:flex;align-items:center;gap:6px;margin-left:auto;color:var(--txm);font-size:.85rem}
 /* A setting that is a yes or a no wears a switch, not the word ON in ten
    languages. 51x31 and a 27 knob is iOS's own, so it reads as the thing it
    is on the phone this app runs on. */
@@ -1972,27 +1986,24 @@ a.set{text-decoration:none}
 .plname .badge{font-size:.72rem;letter-spacing:.16em;color:var(--gold);padding:2px 0}
 /* The month and the year, beside each other, each one a button that buys that
    term. 「値段はマンスリー、イヤーを並べてイヤーは何パーオフかを書く」
-   1.25rem and not the 1.9 a single price on a full-width card was: two of
-   them share a page 80% of a phone wide, and 1.9 wraps `$4.9 / 9`. */
+
+   「4.99/月は一列にしろ」OWNER 2026-08-26: the amount and its term are one
+   line, `inline` both, so a price reads as one thing rather than an amount
+   with a caption under it. The size is a clamp because `$4.99 / month` has to
+   sit on that one line inside the box the term buttons got -- measured at 320
+   and 390, both currencies, both terms; `press` walks a 402pt phone and only
+   that one. An amount never breaks, and neither does its term: what may drop
+   to a second line is the whole of `/ month`, and only on a 320 phone. The
+   saving stays on its own line: it is a third thing and not part of what the
+   year costs. The button's own padding is `.btn.plterm`'s, below; this one is
+   what the free plan's price, which is not a button, stands in. */
 .plterms{display:flex;gap:14px;margin-top:8px}
 .plterm{flex:1;display:block;text-align:left;padding:6px 0;min-height:44px}
-.plterm .pp{display:block;font-size:1.25rem;font-weight:600;color:var(--tx);
-            line-height:1.25;letter-spacing:-.01em}
-.plterm .pper{display:block;font-size:.72rem;color:var(--txm)}
+.plterm .pp{display:inline;font-size:clamp(.78rem, 3.3vw, 1.1rem);font-weight:600;
+            color:var(--tx);line-height:1.25;letter-spacing:-.01em;white-space:nowrap}
+.plterm .pper{display:inline;margin-left:2px;font-size:clamp(.6rem, 2.1vw, .72rem);
+              color:var(--txm);white-space:nowrap}
 .plterm .plsave{display:block;font-size:.72rem;color:var(--gold)}
-/* 1.25rem was 3px too wide for `$4.99 / month` to sit on one line inside the
-   box the term buttons got, so 「4.99/月は一列にしろ」OWNER 2026-08-26 was not
-   actually met -- and at 320 the amount broke mid-number (`$99.9` / `9`).
-   Measured at 320 and 390, both currencies, both terms. `press` walks a 402pt
-   phone and only that one, so neither showed there. The padding lives on the
-   box rule below and NOT here: this file already had a `.btn.plterm` twenty
-   lines down, so a second one of the same strength was simply overwritten --
-   green everywhere, because box-check counts borders and corners and says
-   nothing about a rule that lost. */
-.plterm .pp{font-size:clamp(.78rem, 3.3vw, 1.1rem)}
-/* An amount never breaks, and neither does its term: what may drop to a second
-   line is the whole of `/ month`, and only on a 320 phone. */
-.plterm .pp,.plterm .pper{white-space:nowrap}
 /* Twelve months at the monthly price, struck through, on the line above what a
    year costs. Its own line: beside the price it pushes the amount onto a second
    line, which is the fault above. Muted and small -- it is the number being
@@ -2025,12 +2036,6 @@ a.set{text-decoration:none}
 .btn.plbuy{border:1px solid var(--line);border-radius:12px;padding:13px 12px}
 .btn.plbuy.on{border-color:var(--gold);background:var(--goldsf);color:var(--gold)}
 .btn.plbuy:active{opacity:.82}
-/* 「4.99/月は一列にしろ」OWNER 2026-08-26. The amount and the term were two
-   blocks, so every price stood two lines high and the term read as a caption
-   under it rather than as part of the price. The saving stays on its own
-   line: it is a third thing and not part of what the year costs. */
-.plterm .pp{display:inline}
-.plterm .pper{display:inline;margin-left:2px;font-size:clamp(.6rem, 2.1vw, .72rem)}
 /* Free carries its price too, and it is not a button: without it the four
    lines start higher than the paid pages' five do and the lists jump as
    somebody slides between them. */
@@ -2195,8 +2200,10 @@ a.set{text-decoration:none}
    type cost nothing over one.
 
    Each line is cut with an ellipsis, so the row is the same height whatever
-   the day says. */
-.dayrw{align-items:center}
+   the day says. The -8 over it takes back the bar's own 8, which with the
+   body's 10 stacked into 18px of nothing between the name of the screen and
+   the face. */
+.dayrw{align-items:center;margin-top:-8px}
 .dayrb{flex:1 1 auto;min-width:0}
 /* The two lines are TALLER than the face, so each sticks out half a step past
    it rather than both sitting inside it 「アイコンの内に収まるんじゃなくて
@@ -2214,9 +2221,6 @@ a.set{text-decoration:none}
 /* And which day the sentence is for. On the second line, quiet, because it
    qualifies the label rather than competing with the sentence. */
 .dayd{margin-left:10px;font-size:.82rem;color:var(--txs)}
-/* And the gap over it. The bar's own 8 and the body's 10 stack into 18px of
-   nothing between the name of the screen and the face under it. */
-.dayrw{margin-top:-8px}
 /* The post a reply is going into, above what you are writing. It is shaped
    the way every other row in this app is -- a hairline under it -- rather
    than as a filled 14px panel, which is the chip problem again and is what
@@ -3353,7 +3357,7 @@ button.spbig{display:block;width:100%;background:none;border:0;padding:0;font:in
    point of the app, and nothing may quietly outrank it.
 
    A dozen rules in this file put font-family:inherit on the input inside
-   their own container (.pwfield input, .search input, and so on), and every
+   their own container (.search input, .mnadd input, and so on), and every
    one of them is two selectors where this is one, so every one of them wins
    on specificity. The post composer's line was set in the system font for
    that reason and no other: the class was on the element, the font was built,
@@ -3370,8 +3374,6 @@ button.spbig{display:block;width:100%;background:none;border:0;padding:0;font:in
    font-family:inherit on the input inside them, and every one of those is two
    selectors where this is one. */
 .tfont{font-family:var(--face-type) !important}
-</style>
-<style id="ob-rework">
 .obtag{margin-top:20px;font-size:1.15rem;line-height:1.7;opacity:.92;text-align:center}
 /* The one place a corner stays on a button, and it is not ours to decide:
    Apple and Google both specify the shape of their own sign-in button, down
@@ -3577,7 +3579,7 @@ button.spbig{display:block;width:100%;background:none;border:0;padding:0;font:in
 /* .btn is flex:1 so a row of them shares the width; one beside a field is
    not sharing anything and shrank to the width of its word and grew tall. */
 .pkown .btn{flex:0 0 auto;min-width:88px}
-.pkclear{width:100%;margin-bottom:12px;padding:8px;border:1px solid var(--line);border-radius:9px;
+.pkclear{width:100%;min-height:44px;margin-bottom:12px;padding:8px;border:1px solid var(--line);border-radius:9px;
   background:transparent;color:var(--txm);font:inherit;font-size:.86rem;cursor:pointer}
 .pktabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:9px;margin-bottom:9px;
   border-bottom:1px solid var(--line);-webkit-overflow-scrolling:touch}
@@ -3774,12 +3776,6 @@ textarea.ntbody.grow{min-height:0;height:auto;overflow:hidden;resize:none}
    at the foot of the grammar list (「この言語については非表示にしてよ 文法
    ページ」 OWNER 2026-09-08). Nothing wears them now. */
 
-/* ---------- nothing tappable smaller than a thumb ----------
-   Apple's floor is 44px and a phone has nothing finer to point with. These
-   are the buttons that were drawn to the size of their mark rather than to
-   the size of the finger that has to find them. */
-.play,.pkclear,.obskip{min-height:44px}
-
 /* ---------- the marks, now that they are drawn ----------
    A typed character sat on the text baseline and took its size from whichever
    font answered. A drawn one does neither, so every place that used to hold
@@ -3795,7 +3791,6 @@ textarea.ntbody.grow{min-height:0;height:auto;overflow:hidden;resize:none}
 .search button.lens{min-width:44px;min-height:44px;margin:-10px -14.5px;
       justify-content:center;background:none;border:0;padding:0}
 .search button.lens:active{color:var(--gold)}
-.set .sv{display:flex;align-items:center;gap:6px}
 .set .sv .go,.capgo .go{opacity:.75}
 
 /* ---- r4-gram ----------------------------------------------------------
@@ -3866,57 +3861,6 @@ textarea.ntbody.grow{min-height:0;height:auto;overflow:hidden;resize:none}
    stands in its parent's column. */
 .pjoin{position:absolute;top:0;height:10px;
        border-left:1px solid var(--line);border-bottom:1px solid var(--line)}
-/* THE COMPOSER IS THE WHOLE PHONE, AND ONLY THE ROW OF TOOLS FOLLOWS THE
-   KEYBOARD. 「投稿画面は画像3枚目の位置で固定して。意味とかタップすると動く
-   し…縦書きでも横書きでもその位置固定で。Twitterの投稿画面は動きません」
-   OWNER 2026-09-06.
-
-   It was `--vvmin` tall -- the smallest the visible part had ever been, which
-   is what the phone has with its TALLEST keyboard up. Two keyboards are two
-   heights, and the box was laid out to one of them: measured on a 390x844,
-   the roman keyboard's top is at 508 and the box ended at 464, so there were
-   44px of screen that belonged to neither, with the row of tools hanging
-   outside the box it was the last child of. Switch to the Japanese keyboard
-   and the numbers meet; switch back and they part again.
-
-   So the box is the phone. It is one number, it is the same number with a
-   keyboard up and with one down, and nothing in it moves when a keyboard
-   changes size. What has to move is the row of tools, because it sits ON the
-   keyboard, and it does that already: `bottom:var(--vvkb)` reads the live
-   height. The FLOW stops where that row starts and nothing in it scrolls, and
-   both of those are said where they were already said -- `.view.fit .body`'s
-   padding and `.view.fit .pwscroll`'s overflow, up the file. One selector says
-   a thing once, so the height is the only line that belongs here.
-   「日本語キーボードで意味の行が隠れるなら、道具の行の上に意味の行も一緒に
-   寄せる」
-
-   AND IT IS THE PAGE LESS THE LIFT, because the box STARTS at that lift.
-   「そもそも画面はスクロールできないようにして欲しいんだけど、そうすれば
-   ズレすら無くなるはずなのになんで？」「キーボードはそこで止める。入力位置も
-   タップしても動かないそれでいいやん。」 OWNER 2026-09-22.
-
-   The answer to 「なんで？」 is that the document was already locked and the
-   thing that moves is not the document. `html.fitlock` is `overflow:hidden`
-   on the page while this is open, and that is what stopped the DRAG. A TAP
-   is not a drag: WebKit lifts the LAYOUT viewport to reveal the field it has
-   just focused, `overflow:hidden` does not forbid that, and nothing in
-   JavaScript can refuse it -- `preventScroll` is an option on a PROGRAMMATIC
-   focus, which is why the frame this screen OPENS on was always right
-   (`pwKeepKb`), and a finger on a textarea does not go through it.
-
-   So the lift is not fought, it is subtracted, and in ONE place: this box is
-   pinned to `--vvtop` and is the page LESS `--vvtop`. It was `100dvh` -- a
-   whole page, beginning a lift down the page -- so it hung exactly that far
-   past the foot, and everything laid out against the foot hung with it.
-   Measured, 390x844 with a 380 keyboard: the visible window came down by the
-   lift and the MEANING came down by twice it, so past 114 the meaning was
-   under the keyboard and the tags with it. The line and the row of tools held
-   still throughout, which is why nobody saw it -- iOS lifts the page
-   precisely so the focused field does not move.
-
-   `post-check` § NOTHING ON THE COMPOSER MOVES asks it in SCREEN
-   coordinates, of the line, the row and the meaning together. */
-.view.fit{height:100vh;height:calc(100dvh - var(--vvtop, 0px))}
 
 /* ---- r5-gram ----------------------------------------------------------
    文法の章を埋める（オーナー決定 2026-09-07）。ここより上には触っていない。
