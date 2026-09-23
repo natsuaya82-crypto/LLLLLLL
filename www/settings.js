@@ -865,7 +865,7 @@ function wipeHere(uid){
      slice, which is why none of them was going anywhere before today. The
      keys are gone above; these are the copies in memory, which would
      otherwise be written straight back out by the next save. */
-  ME={name:'', handle:'', bio:'', pic:'', link:'', loc:'', avSent:''};
+  ME=meBlank();
   POSTS=[]; DRAFTS=[];
   /* the person's settings, back to what a fresh install has, and NOTHING is
      carried over -- not the theme, not the interface language, not the plan.
