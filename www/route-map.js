@@ -56,6 +56,7 @@ page('spell',    vSpell);
 page('ltset',    vLtset);
 page('letter',   vLetter);
 page('wsys',     vWsys);
+page('sp',       vSp);
 page('abugida',  vAbugida);
 page('relate',   vRelate);
 page('fm',       vFm);
