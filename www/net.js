@@ -5036,13 +5036,17 @@ function netUpVoice(uid, pid, post, ok){
    copy that works with no signal -- www/post.js's DRAFTS -- and that copy is
    never the place a draft lives.
 
-   The whole of a draft goes in `body`, pictures and recording included, as
-   the composer holds them: base64 in hand. Not in the media bucket, and that
-   is not a shortcut -- `post-media` is PUBLIC (schema.sql § the bucket, and
-   media_read is `using (bucket_id = 'post-media')`), so a draft's photographs
-   put there would be readable by anybody with the publishable key while the
-   draft itself was not. The bytes go up when the post does, through
-   netUpPics() and netUpVoice(), exactly as they do today.
+   The whole of a draft goes in `body`: the photographs as base64, as the
+   composer holds them, and the recording as `{f, ms}` -- the NAME of a file
+   in this phone's Documents (「声は Documents のファイル、localStorage には
+   入れない」 2026-08-30, and the rewrite of 2026-09-03 that took the bytes
+   out of the draft). So a draft opened on another phone names a file that is
+   not there and has no voice (r63-audit R3). Whether the recording should
+   travel with the draft, and how, is two written decisions against one
+   finding and is the owner's (docs/scope/r60-up.md). Not in the media
+   bucket: that bucket holds the files of POSTS, and a draft is not one. The
+   bytes go to the bucket when the post does, through netUpPics() and
+   netUpVoice().
 
    It also means account deletion has nothing extra to reach: netMyFiles()
    below collects what to remove out of `post.body`, and a draft that owned
