@@ -3,15 +3,15 @@
 ## The gate
 
 ```
-npm test        # thirty-five checks
+npm test        # every check in tools/gate.mjs; its last line says how many
 ```
 
-`tools/gate.mjs` runs them, and the two numbers below are `FAST` and `SLOW` in
-that file — **count them there rather than believing this line.** The **nine**
+`tools/gate.mjs` runs them: `FAST` and `SLOW` in that file are the two lists,
+and **the run's last line is the count** — no sentence here says it. The ones
 that need no browser go first,
 one after another, and take about two seconds between them — a missing script
 tag or an arrow function fails there and nothing heavy is started at all. The
-**twenty-six** that each start a headless Chromium then go **four at a time**
+ones that each start a headless Chromium then go **four at a time**
 (`WIDE` is `min(4, cpus)`), because they are separate processes holding separate
 ports with nothing to say to each other. Run one after another they were about
 ten minutes, on a machine nobody has re-measured on since the count grew.
@@ -25,22 +25,21 @@ it always did and a counter that moved is still visible.
 **Once before pushing, not once per commit.** A session that makes five
 commits and gates each one has spent half an hour proving the same thing five
 times. Make the whole batch, gate it once, push. 「全部やって完成！じゃあ全部
-のチェックを回す」 If it goes red the nine browserless checks and the by-name
+のチェックを回す」 If it goes red the browserless checks and the by-name
 check have already caught most of what could have caused it, and `git log -p` is
 there for the rest.
 
 **While working, run the check that holds what you are changing** — one, by
-name, plus the nine that need no browser. `npm run backup`, `npm run post`.
+name, plus the ones that need no browser. `npm run again`, `npm run post`.
 That is the loop; `npm test` is the gate at the end of it.
 
-**"the fast five" means the five in `tools/pre-commit`**, and it is a different
-group from the gate's nine. The hook runs `dead` `import` `sides` `face` `box`
-as one line; the gate's `FAST` is those five plus `assets` `es5`
-`grammar-engine` `store`. **Two groups, two names** — never call both "fast".
+**The fast ones are one group**: `tools/pre-commit` reads `FAST` out of
+`tools/gate.mjs` rather than naming them, so the hook and the gate run the same
+list and a check added to `FAST` is in the hook the same day.
 
 **Watching a check fail is one run, not a suite.** Put the bug back, run
-**that check alone**, watch it go red, take the bug out. The other thirty-four
-have nothing to say about it.
+**that check alone**, watch it go red, take the bug out. The others have
+nothing to say about it.
 
 ### What stops a second box: `npm run docs`
 
@@ -140,54 +139,10 @@ git push
 not `npm test && git push`, where the second half runs off an exit code and
 the first half goes unread.
 
-All thirty-five, in the order `tools/gate.mjs` prints them. **If this table and
-that file disagree, the file is right.**
-
-Nine that need no browser:
-
-| check | holds |
-|---|---|
-| `assets` | every `.js` is in `index.html` and tracked by git; every `.swift` is in the Xcode Sources phase |
-| `docs` | every document under `docs/` is one a reader is sent to, and every `docs/….md` the map names exists |
-| `es5` | nothing under `www/` uses anything WKWebView on an old iPhone lacks, and every file parses |
-| `grammar-engine` | the grammar engine's own files, without a browser |
-| `dead` | nothing unreached; nothing called that is not something; `CAN` has nothing spare and nothing missing |
-| `import` | eleven real shapes of somebody's word list come in whole |
-| `sides` | below the line in `post.js` and `card.js`, nothing names the open language |
-| `face` | a font family is named on `:root` and nowhere else, and the drawn font under one name |
-| `box` | NO ROUNDED BOX (rule 18) — corners and borders against a frozen baseline, and none set from JS |
-| `store` | what the store layer claims about the four products and the plan they map to |
-
-Twenty-six that each start a headless Chromium:
-
-| check | holds |
-|---|---|
-| `migrate` | an old install opens with everything in it |
-| `i18n` | every visible string went through `t()`, in all ten languages, with fallback armed |
-| `act` | every name a screen says is bound, and every binding is said |
-| `conv` | the nine claims made about the conversion table (the count is in its own last line) |
-| `card` | a card of a post is a picture of *that* post |
-| `word` | what a word does after two presses in a row — rename, delete, save — and what screen you are left on |
-| `post` | what a post carries is put on it when it is written |
-| `backup` | a language survives a wipe, and a restore never wins |
-| `fill` | a stroke drawn with the fill on inks the inside of what it went round, and that survives being saved and read back |
-| `round` | ROUND bends a stroke that exists, never invents one, never bends a straight one, and undoes exactly |
-| `base` | raising the base makes the digits at once; lowering it never takes away one somebody drew |
-| `kb` | the keyboard editor's rows, columns and the step back behind them |
-| `plan` | `CAN`, `can()`, `has()`, the ceilings, and where the plan is kept |
-| `term` | the grammar terms |
-| `sheet` | a file arriving is sorted into the right one of four kinds |
-| `shape` | the ink shapes, off `file://` — it takes no port, which is why it cannot collide in the pool |
-| `draft` | a draft survives and comes back |
-| `gramlang` | the grammar and the language together |
-| `world` | the world screen |
-| `acct` | whose phone this is — one account's things and nobody else's |
-| `page` | the pages of a keyboard |
-| `dl` | taking a chapter of somebody else's language |
-| `again` | what happens on the second press |
-| `open` | what a brand new phone opens on, booted from an empty `localStorage`, read off `#app` |
-| `find` | typing a person's name reaches the server and the answer reaches the screen, full-width ＠ included |
-| `press` | every button of every screen, pressed for real; 44pt floor |
+Which checks there are is `FAST` and `SLOW` in `tools/gate.mjs`, and what each
+one holds is the opening comment of `tools/<name>.mjs` — read it there. This
+file keeps no table of them: the one it kept went a whole release without the
+checks added after it, and still listed one that had been deleted.
 
 ```
 npm run rls     # supabase/schema.sql, and a second person (~15s)
@@ -212,13 +167,13 @@ One check, by name, for what you changed. Not `npm test` — see rule 2.
 | the base a language counts in | `npm run base` |
 | a row or a column of the keyboard editor, or the step back behind them | `npm run kb` |
 | `supabase/schema.sql` | `npm run rls`, and somebody who is not you |
-| how anything is saved | `npm run backup` + `npm run migrate`, and see `docs/DATA_SAFETY.md` § changing anything that saves |
-| a slice, or `SLICES` | `npm run backup` — and add the slice by NAME to the check, not to a count |
+| how anything is saved | `npm run again` + `npm run migrate` + `npm run store`, and see `docs/DATA_SAFETY.md` § changing anything that saves |
+| a slice, or `SLICES` | `npm run again` + `npm run acct` — and add the slice by NAME to the check, not to a count |
 | how a post is rendered | `npm run sides` + `npm run card` |
 | what a word does after two presses in a row — rename, delete, save | `npm run word` |
 | a screen | `node tools/shot.mjs <screen>` and look at it |
 | `www/i18n/*` | `npm run i18n` |
-| anything a plan gates | `npm run plan`, **and** add a `halfDone` face in `tools/fixture.mjs` that flips `SET.plan` and puts it back |
+| anything a plan gates | `npm run plan`, **and** add a `halfDone` face in `tools/fixture.mjs` that flips the plan with `planGot()` and puts it back |
 | `CAN`, `can()`, `has()`, a ceiling, or where the plan is kept | `npm run plan` |
 | a corner, a border, or a panel | `npm run box` — rule 18, against a frozen baseline |
 | what the app asks the server for | `npm run acct` + `npm run find` |
@@ -432,9 +387,6 @@ Device required:
 this list by construction — the app's five, the keyboard extension's six, the
 widget's eight. `assets-check` asks whether each one is in the Xcode Sources
 phase and says nothing whatever about whether it compiles.
-
-`backup-check` holds everything on this side of the native call; `keep()` and
-`kept()` are Swift and there is no Swift on a Linux runner.
 
 iOS builds happen on a Mac with Xcode, or through the `ios-deploy.yml` workflow.
 **Do not trigger a build without being asked.**

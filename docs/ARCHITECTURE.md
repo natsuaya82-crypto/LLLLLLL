@@ -17,8 +17,8 @@ exists.
 
 Capacitor wraps it for iOS. `ios/App/` is the native side: the bridge
 (`App/LinguaShare.swift` — the voice files and the sheet an export writes; the
-backup file it also wrote is gone, `CLAUDE.md` rule 11), the plan in the Keychain (`App/LinguaStore.swift`,
-`App/LinguaPlan.swift`), the system keyboard extension (`LinguaKeyboard/`) and
+backup file it also wrote is gone, `CLAUDE.md` rule 11), the App Store's receipts (`App/LinguaStore.swift` — the plan itself is the
+server's answer, `supabase/functions/verify-plan/`), the system keyboard extension (`LinguaKeyboard/`) and
 the home-screen widget (`LinguaWidget/`).
 
 ## The two sides

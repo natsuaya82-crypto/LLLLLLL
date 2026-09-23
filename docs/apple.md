@@ -544,7 +544,7 @@ repo には置いていません）。
 - ビルドが TestFlight に出てこない → GitHub Actions の run が緑か。
   緑なのに出ない → App Store Connect のメール（Apple から却下の理由が来ます）
 - 「Invalid Signature」→ `DISTRIBUTION_P12_BASE64` か
-  `APPLE_PROVISIONING_PROFILE_BASE64` の期限切れ。1 年で切れます
+  `PROVISIONING_PROFILE_BASE64`（と拡張・ウィジェットの二つ） の期限切れ。1 年で切れます
 - 「ビルド番号が既に使われています」→ run 番号は増え続けるので普通は
   起きません。起きたら誰かが手で番号を戻しています
 
