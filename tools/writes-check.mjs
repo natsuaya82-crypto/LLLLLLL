@@ -86,12 +86,10 @@ const WRITERS = {
   },
   'ME.name': {
     meKeepPut: 'the profile editor -- the person deciding, written once the server has taken it',
-    obIn: "the door: the account's own answer arriving at sign-in",
     obWhoGo: 'the door: the account made, with the name that was just sent and landed',
   },
   'ME.handle': {
     meKeepPut: 'the profile editor -- the person deciding, written once the server has taken it',
-    obIn: "the door: the account's own answer arriving at sign-in",
     obWhoGo: 'the door: the account made, with the @ that was just sent and landed',
   },
   'ME.av': {
@@ -121,7 +119,7 @@ const DYNAMIC = {
     keepBack: 'a save that did not land: the snapshot from before it put back',
   },
   'ME[]': {
-    netProfSync: "the account's profile arriving at launch",
+    meProfGot: "the account's profile arriving -- at the door (netMyProfile) and on a launch (netProfSync), the one place both put it on ME",
   },
 };
 

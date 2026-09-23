@@ -633,6 +633,36 @@ function meAvGot(av){
   if(av && !av.pic) ME.av=av;
   saveMe();
 }
+/* ---- THE ACCOUNT'S PROFILE, PUT ON ME -- AND THIS IS THE ONE PLACE ------
+   Three places used to do it, each with a different part: netMyProfile()
+   (the door) put the face and nothing else, obIn() (www/onboard.js) put the
+   name and the @, and netProfSync() (a launch) put the five columns of
+   PROF_MINE. So somebody signing in on a second phone had their name and @
+   and no line about themselves until they relaunched (r61-face 止めたこと 1),
+   and a copy this phone adopted from nobody (meFor) wore its own photograph
+   into the account until the next launch (r63-audit A1 漏れ 3).
+
+   A row is the whole answer: every column of PROF_MINE, and `av` through
+   meAvGot(). Returns whether anything on ME moved, so a caller that draws
+   knows whether to. */
+function meProfGot(row){
+  var moved=false, i, k, there, face;
+  if(!row) return false;
+  for(i=0;i<PROF_MINE.length;i++){
+    k=PROF_MINE[i][0];
+    if(!Object.prototype.hasOwnProperty.call(row, PROF_MINE[i][1])) continue;
+    there=String(row[PROF_MINE[i][1]]||'');
+    if(there===String(ME[k]||'')) continue;
+    ME[k]=there; moved=true;
+  }
+  if(Object.prototype.hasOwnProperty.call(row, 'av')){
+    face=String(ME.pic||'')+JSON.stringify(ME.av||null);
+    meAvGot(row.av);
+    if(face!==String(ME.pic||'')+JSON.stringify(ME.av||null)) moved=true;
+  }
+  saveMe();
+  return moved;
+}
 /* ---- what somebody types after an @ ------------------------------------
    「IDは2文字以上で登録してくださいと / このIDはもう使われていますと
      みたいに断る文章と実際に断ってほしい」OWNER, 2026-08-25

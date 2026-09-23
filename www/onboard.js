@@ -946,7 +946,8 @@ function obIn(prof){
   netMyProfile(function(p){
     OBM.busy=false;
     if(p){
-      ME.name=String(p.display||''); ME.handle=String(p.handle||''); saveMe();
+      /* The profile is already on ME: netMyProfile() put it there, name and
+         @ and the rest, through meProfGot() (www/me.js). */
       OBM.mode='in';
       /* AND THE LANGUAGES THIS ACCOUNT ALREADY HAS. A profile row means this
          account has been used, so there may be languages on the server that

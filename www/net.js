@@ -1133,7 +1133,7 @@ function netSetPass(pass, ok, bad){
    ago. */
 function netMyProfile(ok, bad){
   if(!netSignedIn()){ bad(null, 0, 'profile −'); return; }
-  netGet('/rest/v1/profile?select=handle,display,bio,link,loc,av&limit=1&id=eq.'+
+  netGet('/rest/v1/profile?select='+profCols()+',av&limit=1&id=eq.'+
          encodeURIComponent(SESS.uid),
          function(d){
            var p=d && d.length? d[0] : null;
@@ -1142,12 +1142,10 @@ function netMyProfile(ok, bad){
               until 2026-09-09, and a flag about the phone cannot answer a
               question about the account. */
            meRowGot(!!p);
-           /* The face, read back same as the name and the handle -- signing
-              in on a second phone used to leave ME.av empty until a letter
-              was drawn or redrawn here, so the account's own icon never
-              followed it over. meAvGot() (www/me.js) is the one place ME is
-              told what it is. */
-           if(p && p.av!==undefined) meAvGot(p.av);
+           /* The whole profile, face included, put on ME in the one place
+              that does it (meProfGot, www/me.js) -- the name, the @, the line
+              about themselves, where they are, their link, and the face. */
+           if(p) meProfGot(p);
            ok(p);
          }, bad);
 }
@@ -1270,7 +1268,7 @@ function netProfSync(){
   netGet('/rest/v1/profile?select='+profCols()+',av&limit=1&id=eq.'+
          encodeURIComponent(SESS.uid),
     function(d){
-      var row=(d && d.length)? (d[0]||{}) : {}, drew=false, i, k, there, face;
+      var row=(d && d.length)? (d[0]||{}) : {};
       /* AND THE SAME ANSWER THIS ASK ALREADY CARRIES: a row means this
          account has been through the walk (www/me.js § ME_ROW). */
       meRowGot(!!(d && d.length));
@@ -1280,21 +1278,10 @@ function netProfSync(){
          empty strings over the copy would be this road taking something away
          rather than bringing it. */
       if(!(d && d.length)) return;
-      for(i=0;i<PROF_MINE.length;i++){
-        k=PROF_MINE[i][0];
-        there=String(row[PROF_MINE[i][1]]||'');
-        if(there===String(ME[k]||'')) continue;
-        ME[k]=there; drew=true;
-      }
-      /* AND THE FACE, read and never sent -- a photograph this phone holds
-         that the account has since replaced is not put back up from here
-         (r46-audit § A1). meAvGot() (www/me.js) is the one place ME hears it. */
-      if(Object.prototype.hasOwnProperty.call(row, 'av')){
-        face=String(ME.pic||'')+JSON.stringify(ME.av||null);
-        meAvGot(row.av);
-        if(face!==String(ME.pic||'')+JSON.stringify(ME.av||null)) drew=true;
-      }
-      if(drew){ saveMe(); render(); }
+      /* The five columns and the face, put on ME in the one place that does
+         it (meProfGot, www/me.js), and read only -- a launch sends none of
+         them (r46-audit § A1). */
+      if(meProfGot(row)) render();
     }, function(){});
 }
 /* AND THE ONE PLACE THOSE THREE ARE WRITTEN. The editor waits for it: what

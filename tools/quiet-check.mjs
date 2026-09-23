@@ -98,9 +98,11 @@ function wire(cfg){
       .replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
   };
   var TOK = 'h.' + b64({ sub:'u', email:'aya@example.com', app_metadata:{ provider:'email' } }) + '.s';
+  window.__TOK = TOK;
   try {
     var d = cfg.disk, k;
-    localStorage.setItem('lingua.sess', JSON.stringify({ at:TOK, rt:'r', uid:'u', anon:false }));
+    if (!cfg.out)
+      localStorage.setItem('lingua.sess', JSON.stringify({ at:TOK, rt:'r', uid:'u', anon:false }));
     for (k in d) if (Object.prototype.hasOwnProperty.call(d, k)) localStorage.setItem(k, d[k]);
   } catch (e) {}
   function qs(u, k){ var m = new RegExp('[?&]' + k + '=([^&]*)').exec(u); return m ? decodeURIComponent(m[1]) : ''; }
@@ -300,6 +302,37 @@ const up = one.filter(r => writes(r.m, r.u));
 const kinds = up.map(r => (r.body && r.body.kind) || r.u.replace(/^[a-z]+:\/\/[^/]*/, '').split('?')[0]);
 console.log('one word added: ' + kinds.join(', '));
 say(kinds.join() === 'words', '3 one word added sends the words slice and nothing else');
+
+/* ---- 5. somebody signs in, and presses nothing after ----------------------
+   The door is the one place the phone sends what it made before there was an
+   account (netTook) -- and a phone that made nothing sends nothing. What the
+   door DOES do is put the account's profile on ME, whole: a copy this phone
+   adopted from nobody (meFor) does not keep its own photograph and line
+   about itself (r63-audit A1 漏れ 3, r61-face 止めたこと 1). */
+{
+  const pg2 = await br.newPage({ viewport:{ width:390, height:844 } });
+  pg2.on('pageerror', e => ERR.push(String((e && e.message) || e)));
+  await pg2.route('https://fonts.googleapis.com/**', r => r.fulfill({ status:200, contentType:'text/css', body:'' }));
+  await pg2.route('https://fonts.gstatic.com/**', r => r.abort());
+  await pg2.addInitScript(wire, { srv:SRV, out:true, disk:{
+    'lingua.me': JSON.stringify({ name:'', handle:'', bio:'an old line', pic:PIC_OLD })
+  } });
+  await pg2.goto(INDEX);
+  await pg2.waitForSelector('#splash', { state:'detached', timeout:20000 });
+  await quiet(pg2);
+  await pg2.evaluate(() => { window.__Q.log.length = 0;
+    netTook({ access_token:window.__TOK, refresh_token:'r', user:{ id:'u' } });
+    netMyProfile(function(){}, function(){}); });
+  await quiet(pg2);
+  const door = await pg2.evaluate(() => window.__Q.log.map(r => ({ m:r.m, u:r.u, body:r.body })));
+  const dw = door.filter(r => writes(r.m, r.u));
+  say(dw.length === 0, '5 a sign-in nobody presses anything after writes nothing' +
+      (dw.length ? ' -- ' + named(dw) : ''));
+  const me = await pg2.evaluate(() => ({ bio:ME.bio, pic:ME.pic }));
+  say(me.bio === 'hello' && me.pic === PIC_NEW, '5 and the profile on this phone is the account\'s -- bio ' +
+      JSON.stringify(me.bio) + ', photograph ' + (me.pic === PIC_NEW ? 'the account\'s' : String(me.pic).slice(0, 30)));
+  await pg2.close();
+}
 
 console.log('not held: one setting changed sends that one setting -- profile.prefs is one column ' +
             '(docs/scope/r60-up.md § A2)');
