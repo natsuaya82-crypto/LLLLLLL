@@ -46,6 +46,14 @@
        has none pending, so it is not exercised.
      - The door. netTook() sends the walk's language as a session ARRIVES
        and that is the one exception CLAUDE.md names; acct-check holds it.
+     - A language whose `language.name` column is empty has it filled, on the
+       launch, from the `lang` slice the server already holds (netLangsWalk →
+       netLangNamePut). Measured 2026-09-23: one PATCH. It is the server's
+       own name moved from one of its places to the other, not a copy winning
+       -- and the place for a move like that is the server (one UPDATE in
+       supabase/schema.sql), which is not this branch's to write. The phone
+       here has every column filled, so it is not exercised.
+       docs/scope/r60-up.md § B3.
 
    Run: node tools/quiet-check.mjs        (npm run quiet)                      */
 import { fileURLToPath } from 'url';

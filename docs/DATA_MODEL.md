@@ -45,8 +45,8 @@ owner (`docs/scope/aud-data.md` § オーナーに訊くこと).
 row in `slice` (`supabase/schema.sql`), keyed `(language, kind)`, and `body` is
 **the exact string `localStorage` holds** — the same string `syMerge()` works
 on and the file, so a slice has one shape and not three that could drift.
-`netLangSync()` (`www/net.js`, fired from `www/boot.js`) reads, merges through
-`www/sync.js` and writes back. So being in `SLICES` now decides three things at
+`netSaveUp()` (a person's save) and `netLangSync()` (the door) read, merge
+through `www/sync.js` and write back; a launch only reads (`netLangsDown()`). So being in `SLICES` now decides three things at
 once — wipe and what goes up — and a slice added outside the list is
 missing from all three.
 

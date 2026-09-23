@@ -56,7 +56,14 @@ the whole of it.
 ### 1. A save reaches the server, and a merge never destroys what is there
 
 `netSlice1()` in `www/net.js` is the only thing that puts a slice up, and both
-roads call it — `netSaveUp()` on every save, `netLangSync()` at launch. It
+roads call it — `netSaveUp()` on a save a person makes, `netLangSync()` at the
+door (what the walk made). **A launch sends nothing** (2026-09-23,
+`tools/quiet-check.mjs`): until a language's slices have come down in this run
+of the app, what is on the screen is the picture, `langLocked()` refuses every
+save onto it, and a slice goes up only when a PERSON wrote it
+(`LTOUCH` in `www/core.js`) — a slice the app itself changed inside a server
+answer (the free alphabet topped up, a migration) goes with the next thing
+somebody saves in that slice and never on its own. It
 MERGES: `syMerge()` (`www/sync.js`) adds both sides and lets neither win by
 being newer, so a word added here and a word added there are both added.
 「そりゃあ両方足すだろ」

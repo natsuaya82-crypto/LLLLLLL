@@ -3223,7 +3223,6 @@ the reasoning — a reason can be re-derived, a decision cannot.
 
 ```
 www/net.js:1474  netPush() → :1503 netUpVoice() → post-media、道は body.vu
-www/post.js:862  netPush() ── postCatchUp() から。sid の無い過去の投稿も上げる
 www/post.js:1290 netPush() ── 投稿した瞬間
 www/net.js:1544  netDraftUp() ── www/post.js:380 と :463 から
 ```
@@ -4185,7 +4184,8 @@ instead of appearing here.
   削除ではない、という一行がそのまま理由である。**これは `docs/DATA_SAFETY.md` の
   絶対規則と衝突しない**（下）。
 - Affected features: `netDropMe()`（`www/net.js`）、`wipeAll()`（`www/settings.js`）、
-  `netLangSync()` の撃ち方（`www/boot.js`）。
+  `netLangSync()` の撃ち方（`www/boot.js` にあった。2026-09-23 から起動では撃たない ──
+  扉と人の保存だけ、`docs/scope/r60-up.md`）。
 - Affected data: **人が作ったもの全部**。ただし本人が消せと言った場合に限る。
 - Affected docs: `docs/FEATURES.md` § 8、`docs/DATA_MODEL.md`、
   `docs/PAID_FEATURES.md`、`docs/DATA_SAFETY.md`（私の持ち物ではない ── 報告に書いた）。
@@ -4256,8 +4256,8 @@ something was restructured」であり、**理由を四つ挙げて禁じてい�
      `Documents/Languages/<name>.json` が消えるのではなく、**サーバが本体で
      file がバックアップ**という並びになる。
   3. **制作はオフラインでも可能。次につながった時に更新される。**
-     これは既にそう動いている ── `www/sync.js`（章26）が両側を足し、
-     `netLangSync()` が起動時に撃つ。
+     **2026-09-04 の「オンラインのみ」で置き換わった。**起動では何も送らない
+     （2026-09-23、`docs/scope/r60-up.md`）── 上がるのは人が保存した時と扉。
   4. **SNS 部分はオフラインでは動かない。**「そりゃそう」。既にそう。
   5. **アカウントを消したら残らない。** サーバ側は既にそう ──
      `account_delete()` の cascade が profile・言語・投稿・follow・block を
