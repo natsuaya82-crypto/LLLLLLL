@@ -284,7 +284,7 @@ Studio の商品は作りません。
 | グループ内のレベル | 2（下） | 2 | 1（上） | 1 |
 
 **この 4 つの ID は、アプリのコードに既に書いてあります**
-（`ios/App/App/LinguaStore.swift` の `plans`）。無い商品を聞いても StoreKit は
+（`ios/App/App/LinguaStore.swift` の `ids`）。無い商品を聞いても StoreKit は
 それを返さないだけなので、**先に作った分から順に売り物として出てきます**。
 Plus を先に作れば Plus だけが並びます。
 
@@ -488,7 +488,8 @@ Connect の審査ノート欄に直接入れてください。repo に置いた�
 ## 6. 買う道はつながっています。足りないのはサーバー側です
 
 **両側とも在ります。** `ios/App/App/LinguaStore.swift` に `products` / `buy` /
-`restore` / `current` / `manage` があり、署名が通らない取引は拒み、消費した
+`restore` / `current` / `manage` があり、署名が端末で通らない取引も**わざと**
+サーバーへ送り（通るかを決めるのは `verify-plan`）、消費した
 取引は finish し、アプリを閉じている間に届く更新も `Transaction.updates` で
 見ています。プラグインは使っていません（このアプリは `@capacitor/core` を
 読み込まないので、使えません。`www/share.js` の長い注を参照）。

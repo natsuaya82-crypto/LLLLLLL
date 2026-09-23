@@ -18,3 +18,86 @@
 
 orphan docs/HANDOVER-2026-08-28-2.md
 orphan docs/SCOPE-yaa.md
+
+# `call <doc> <name>`           <doc> names <name>() as a call and nothing in
+#                               www/ ios/ tools/ supabase/ defines it.
+#
+# 2026-09-23 (claude/r62-docs). Every one of these is in a document that
+# session did not own, so it is written down here rather than fixed:
+#
+#   README.md                   a second description of the app, 21 names gone
+#   docs/STATE.md               the leader's
+#   docs/TESTING.md
+#   docs/FEATURE_RULES.md       every one of these is inside the Owner decision
+#                               log, whose entries were not that session's to
+#                               edit. The body of that file has none.
+#
+# A sentence about a function that is gone strikes it: ~~`name()`~~. Taking a
+# line out is progress; putting one in is not how a new one gets fixed.
+
+call README.md compAdd
+call README.md findings
+call README.md fixOrder
+call README.md getVoices
+call README.md ipa
+call README.md ipaSyl
+call README.md linked
+call README.md loadVoices
+call README.md nextHint
+call README.md orderCheck
+call README.md pickVoice
+call README.md rdIn
+call README.md rdSyl
+call README.md readLink
+call README.md readMode
+call README.md readOut
+call README.md saveWord
+call README.md speak
+call README.md syl_xx
+call README.md vSent
+call README.md word_xx
+call docs/FEATURE_RULES.md bkDropAll
+call docs/FEATURE_RULES.md bkDropFor
+call docs/FEATURE_RULES.md bkPack
+call docs/FEATURE_RULES.md calSlots
+call docs/FEATURE_RULES.md capLapse
+call docs/FEATURE_RULES.md dayPull
+call docs/FEATURE_RULES.md geDirty
+call docs/FEATURE_RULES.md has_account
+call docs/FEATURE_RULES.md kbCellW
+call docs/FEATURE_RULES.md kbFrameHTML
+call docs/FEATURE_RULES.md kbKeyW
+call docs/FEATURE_RULES.md kbOutSay
+call docs/FEATURE_RULES.md kbRows
+call docs/FEATURE_RULES.md kbSlots
+call docs/FEATURE_RULES.md keep
+call docs/FEATURE_RULES.md langAcct
+call docs/FEATURE_RULES.md langMigStamp
+call docs/FEATURE_RULES.md langMigrate
+call docs/FEATURE_RULES.md langOwned
+call docs/FEATURE_RULES.md lsWipeNS
+call docs/FEATURE_RULES.md netAnon
+call docs/FEATURE_RULES.md netAnonTok
+call docs/FEATURE_RULES.md netMember
+call docs/FEATURE_RULES.md netNoneHTML
+call docs/FEATURE_RULES.md netStore
+call docs/FEATURE_RULES.md netTakeGone
+call docs/FEATURE_RULES.md openCapLapse
+call docs/FEATURE_RULES.md planKeep
+call docs/FEATURE_RULES.md planMigrate
+call docs/FEATURE_RULES.md postTr
+call docs/FEATURE_RULES.md pushMay
+call docs/FEATURE_RULES.md voPlayPW
+call docs/STATE.md bkRestore
+call docs/STATE.md bkTake
+call docs/STATE.md has_account
+call docs/STATE.md langMigrate
+call docs/STATE.md lsWipeNS
+call docs/STATE.md netAnon
+call docs/STATE.md netAnonTok
+call docs/STATE.md netMediaURL
+call docs/STATE.md netMember
+call docs/STATE.md netTakeGone
+call docs/STATE.md planKeep
+call docs/STATE.md postTr
+call docs/TESTING.md keep

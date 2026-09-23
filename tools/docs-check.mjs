@@ -1,4 +1,5 @@
-// Refuse a second box: a document under docs/ that no map points at.
+// Refuse a second box: a document under docs/ that no map points at -- and
+// a document pointing at a page or a function that is not there.
 //
 //   node tools/docs-check.mjs      # npm run docs
 //
@@ -19,7 +20,7 @@
 // none of the three reaches — directly or through a document they do reach —
 // is a document nobody opens.
 //
-// Two directions, the same statement:
+// Three directions:
 //
 //   1. Every document under docs/ is reachable from one of the three
 //      entrances. An unreachable one is a second box.
@@ -32,6 +33,29 @@
 //      document that is gone says its bare file name and not its path. That
 //      is the whole of the workaround, and it is the honest shape: a page is
 //      being remembered, not linked to.
+//
+//   3. Every function a document NAMES -- written as a call in backticks,
+//      `langKey()` or `can('kb')` -- is defined in the code: `www/`, the
+//      Swift under `ios/`, a check under `tools/`, or `supabase/`. 2026-09-23
+//      counted seventy-six names in these documents that nothing defines any
+//      more, each one a sentence telling a session how the app works that
+//      stopped being true the day the function went. A stale fact is simply
+//      believed (CLAUDE.md, "a change lands with every sentence it
+//      falsifies"), and a name is the one part of that sentence a machine can
+//      read. So this counts the surface -- every call in every live document
+//      -- rather than listing the names that were found, and a function
+//      deleted tomorrow fails here tomorrow.
+//
+//      A sentence ABOUT a function that is gone strikes it through:
+//      ~~`wldSeenHTML()`~~. Same shape as a gone document's bare file name --
+//      the thing is being remembered, not pointed at -- and it is held in
+//      both directions: a struck name that the code DOES define is a sentence
+//      saying something is gone that is standing right there.
+//
+//      What the platform provides -- `confirm()`, `layoutSubviews()`,
+//      `to_jsonb()` -- is not ours to define, and is named in PLATFORM below.
+//      An entry nothing mentions any more, or that the code now defines as
+//      its own, fails like a baseline line that outlived what it allowed.
 //
 // One difference from `assets-check`, and it is deliberate. There, a mention
 // in another file's COMMENT does not count, because a comment cannot load a
@@ -49,7 +73,7 @@
 // `tools/docs-baseline.txt` holds what was ALREADY lost the day this was
 // written. A NEW one fails. Taking a line out is progress and needs nobody.
 
-import { readFileSync, existsSync } from 'node:fs'
+import { readFileSync, existsSync, readdirSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
 import { join } from 'node:path'
 
@@ -187,6 +211,113 @@ for (const key of dangling) {
   )
 }
 
+// ------------------------------------------------ what the map calls
+
+/* Written on a day and never revisited, so a function it names may have gone
+   since and the sentence is still true of that day. `docs/CHANGELOG.md` and
+   the handovers are this, as well as the two record folders above. */
+const PAST = (rel) => isRecord(rel) || rel === 'docs/CHANGELOG.md' || /^docs\/HANDOVER[^/]*\.md$/.test(rel)
+
+/* Not ours. The browser's, JavaScript's, UIKit's and Core Graphics', and
+   PostgreSQL's -- named in these documents as what they are. And `actor(...)`,
+   which is a column of `report` that PostgREST follows to `profile` in a
+   select (www/net.js § netReports) rather than a function anybody defines. */
+const PLATFORM = [
+  // JavaScript and the browser
+  'confirm', 'alert', 'prompt', 'String', 'Symbol', 'indexOf', 'function', 'var', 'for', 'min',
+  'getBoundingClientRect', 'decode',
+  // UIKit, Core Graphics, Core Text
+  'advanceToNextInputMode', 'deleteBackward', 'fillPath', 'UILayoutPriority',
+  // PostgreSQL, and PostgREST following a foreign key: `actor(handle)`
+  'to_jsonb', 'actor',
+]
+
+/* What the code defines. Read loosely on purpose: a false "it is there" costs
+   one stale sentence staying unnoticed, a false "it is gone" costs a red on a
+   true document, and the second is the one that teaches people to skip. */
+const walkFiles = (dir, keep) => {
+  const out = []
+  const go = (d) => {
+    let ents
+    try { ents = readdirSync(join(ROOT, d), { withFileTypes: true }) } catch { return }
+    for (const e of ents) {
+      if (e.name === 'node_modules' || e.name.startsWith('.')) continue
+      const rel = d + '/' + e.name
+      if (e.isDirectory()) go(rel)
+      else if (keep.test(e.name)) out.push(rel)
+    }
+  }
+  go(dir)
+  return out
+}
+const defined = new Set()
+const collect = (files, re) => {
+  for (const f of files) {
+    for (const m of read(f).matchAll(re)) {
+      const n = m.slice(1).find(Boolean)
+      if (n) defined.add(n)
+    }
+  }
+}
+collect(walkFiles('www', /\.(js|html)$/),
+  /function\s+([A-Za-z_$][\w$]*)\s*\(|(?:var|window\.)\s*([A-Za-z_$][\w$]*)\s*=\s*function|([A-Za-z_$][\w$]*)\s*:\s*function/g)
+collect(walkFiles('ios', /\.swift$/), /func\s+([A-Za-z_]\w*)/g)
+collect(walkFiles('tools', /\.m?js$/),
+  /function\s+([A-Za-z_$][\w$]*)|(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*(?:async\s*)?(?:\([^)]*\)\s*=>|function|[A-Za-z_$]\w*\s*=>)/g)
+collect(walkFiles('supabase', /\.sql$/),
+  /create\s+(?:or\s+replace\s+)?function\s+(?:public\.|storage\.)?([a-z_]\w*)/gi)
+/* A table is written `device(uid, token)` when a document gives its columns,
+   and that is a real thing being pointed at. It is not a function, so it may
+   share a name with the platform's -- the table `prompt` is not `prompt()`. */
+const fns = new Set(defined)
+collect(walkFiles('supabase', /\.sql$/),
+  /create\s+(?:table|view)\s+(?:if\s+not\s+exists\s+)?(?:public\.|storage\.)?([a-z_]\w*)/gi)
+
+const live = files.filter((f) => f.endsWith('.md') && (f.startsWith('docs/') || ENTRANCES.indexOf(f) >= 0) && !PAST(f))
+const lineOf = (src, i) => src.slice(0, i).split('\n').length
+const platformSeen = new Set()
+let calls = 0
+let struck = 0
+for (const d of live) {
+  const src = read(d)
+  for (const m of src.matchAll(/(~~)?`([A-Za-z_$][\w$]*)\(/g)) {
+    const gone = !!m[1]
+    const n = m[2]
+    const at = `${d}:${lineOf(src, m.index)}`
+    if (PLATFORM.indexOf(n) >= 0) { platformSeen.add(n); continue }
+    if (gone) {
+      struck++
+      if (!defined.has(n)) continue
+      if (forgiven(`struck ${d} ${n}`)) continue
+      note(
+        `${at} strikes ${n}() through as gone, and the code defines it.\n` +
+          `      Either the sentence is about something else of that name, or it\n` +
+          `      is not gone: say what it does now, without the strike.`
+      )
+      continue
+    }
+    calls++
+    if (defined.has(n)) continue
+    if (forgiven(`call ${d} ${n}`)) continue
+    note(
+      `${at} names ${n}() and nothing in www/, ios/, tools/ or supabase/\n` +
+        `      defines it. A sentence naming a function that went is a sentence\n` +
+        `      about the app that stopped being true that day. Say what does\n` +
+        `      that job now -- read the code for its name -- or, if the sentence\n` +
+        `      is about the going, strike it: ~~\`${n}()\`~~.`
+    )
+  }
+}
+for (const n of PLATFORM) {
+  if (fns.has(n)) {
+    note(`PLATFORM in tools/docs-check.mjs names ${n}, and the code defines a ${n} of its own --\n` +
+      `      take it off the list, so a sentence about ours is held.`)
+  } else if (!platformSeen.has(n)) {
+    note(`PLATFORM in tools/docs-check.mjs names ${n}, and no document calls it any more --\n` +
+      `      take it off the list. An exemption nothing uses is a hole.`)
+  }
+}
+
 // ------------------------------------------------- a baseline that outlived
 
 /* Same as `box-check`: a line allowing something that no longer happens is a
@@ -207,6 +338,11 @@ for (const key of allowed) {
     if (!tracked.has(path)) why = 'and THE DOCUMENT IS GONE -- nothing to be lost any more'
     else if (isRecord(path)) why = 'and the document has moved into a record folder, which this check does not hold'
     else why = 'and SOMETHING REACHES IT NOW -- it is on the map'
+  } else if (key.startsWith('call ') || key.startsWith('struck ')) {
+    const [, c, n] = key.split(/\s+/)
+    if (!tracked.has(c)) why = `and ${c} IS GONE`
+    else if (key.startsWith('call ') && defined.has(n)) why = `and ${n}() IS DEFINED NOW`
+    else why = `and ${c} no longer names ${n}() that way`
   } else if (key.startsWith('dangling ')) {
     const [c, target] = key.slice(9).split(' -> ').map((x) => x.trim())
     if (!tracked.has(c)) why = `and ${c} IS GONE, so it names nothing`
@@ -237,3 +373,7 @@ console.log(
     `${ENTRANCES.join(' / ')}${allowed.size ? ` (baseline ${allowed.size})` : ''}.`
 )
 console.log(`docs: ${records} under docs/reports/ and docs/scope/ — a day's record, not on the map.`)
+console.log(
+  `docs: ${calls} function calls named in ${live.length} live documents, every one defined in ` +
+    `www/ ios/ tools/ supabase/; ${struck} struck through as gone; ${PLATFORM.length} the platform's.`
+)
