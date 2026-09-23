@@ -17,13 +17,38 @@
    ことが分かるのは、切ったはずの通知が鳴った日か、許可したのに一通も来ない日で、
    どちらも人が気づくまで誰も知りません。
 
-   四つの語 ── `follow` `reply` `like` `boost` ── は
-   `supabase/schema.sql` の `notices()` が返すのと同じ四つです。五つ目はあり
-   ません。
+   種類は下の `PUSH` が一箇所です。`follow` `reply` `like` `boost` の四つは
+   `supabase/schema.sql` の `notices()` が返すのと同じ四つです。
    --------------------------------------------------------------------------- */
 
-/* 通知の四種類。通知タブと同じ語、同じ順。 */
-export const KINDS = ['follow', 'reply', 'like', 'boost'];
+/* ---- 通知の種類 ── **ここが一箇所です** -----------------------------
+   一行が一つの種類で、その種類について問われることは全部その行が答えます
+   ── どの表の insert から来るか、その行を何で見分けるか（`key`）、読み直す
+   列、返信やいいねのように相手が**親の投稿**にしか書いていないならその列
+   （`parent`）、誰に（`to`）、誰がやったことか（`from`）、開く先（`post`）、
+   文の `{0}` に何が入るか（`fill`）。
+
+   下の函数はどれも**この表を読むだけ**で、種類の名前を一つも知りません。 */
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+export const PUSH = [
+  { kind: 'follow', table: 'follow', cols: 'follower,followed',
+    key: { follower: UUID, followed: UUID }, parent: null,
+    to: (r) => r.followed, from: (r) => r.follower, post: () => null, fill: 'handle' },
+  { kind: 'reply', table: 'post', cols: 'id,author,reply_to',
+    key: { id: UUID }, parent: 'reply_to',
+    to: (r, p) => p.author, from: (r) => r.author, post: (r) => r.id, fill: 'handle' },
+  { kind: 'like', table: 'react', cols: 'post,actor,kind',
+    key: { post: UUID, actor: UUID, kind: 'like' }, parent: 'post',
+    to: (r, p) => p.author, from: (r) => r.actor, post: (r) => r.post, fill: 'handle' },
+  { kind: 'boost', table: 'react', cols: 'post,actor,kind',
+    key: { post: UUID, actor: UUID, kind: 'boost' }, parent: 'post',
+    to: (r, p) => p.author, from: (r) => r.actor, post: (r) => r.post, fill: 'handle' },
+];
+
+/* 種類の名前。通知タブと同じ語、同じ順。 */
+export const KINDS = PUSH.map((e) => e.kind);
+/* 行を入れると鳴る表。schema.sql の push 節のトリガーは、この全部に一つずつ。 */
+export const TABLES = PUSH.map((e) => e.table).filter((t, i, a) => a.indexOf(t) === i);
 
 /* アプリの表示言語、www/i18n/ と同じ十。`en` が既定。 */
 export const LANGS = ['en', 'es', 'pt', 'fr', 'de', 'it', 'ru', 'zh', 'ko', 'ja'];
@@ -40,7 +65,8 @@ export const TOPIC = 'com.tokinets.lingua';
 
    だから**訳し直していません**：上の四つの鍵の値をそのまま持ってきてあります。
    二箇所あることは避けられませんが、二つの文言があることは避けられます。
-   `{0}` は `@handle`（`profile.handle`）。
+   `{0}` は、`fill: 'handle'` の種類ではやった人の `@handle`
+   （`profile.handle`）。
 
    `docs/DUPLICATES.md` に載せる一件です。 */
 export const SAY = {
@@ -70,43 +96,52 @@ export const SAY = {
 export const TITLE = 'Lingua';
 
 /* ---- request をここで捨てる -------------------------------------------
-   Database Webhook は `{type, table, schema, record, old_record}` を送って
-   きます。**この函数はそのうち二つしか受け取りません** ── どの表の、どの行か。
-   文面に使える文字は一つも通しません。
+   トリガー（`push_ping()`）は `{table, record}` を送ってきます。**この函数は
+   そのうち二つしか受け取りません** ── どの表の、どの行か。文面に使える文字は
+   一つも通しません。
 
-   なぜそこまでするか。この口は JWT の検証なしで置かれます（トリガーは秘密を
-   持って行けないので ── supabase/schema.sql 末尾）。つまり**誰でも叩けます**。
-   届いた JSON から一文字でも文面に流れれば、それは知らない人が他人の iPhone に
-   好きな文を出せるということです。鍵は uuid の形をしていなければ捨てます
-   ── URL に入る値なので、形が違うものはそこで終わりです。
+   なぜそこまでするか。この口を叩けるのは署名した人ですが、署名した人が本当の
+   ことを言っているとは限りません。届いた JSON から一文字でも文面に流れれば、
+   それは他人の iPhone に好きな文を出せるということです。鍵は `PUSH` の行が
+   言う形をしていなければ捨てます ── URL に入る値なので、形が違うものは
+   そこで終わりです。文字列の鍵（react の `kind`）は**その値でなければ**
+   捨てます。
 
    返すのは `{table, key}` か `null`。`null` は「読めなかった」で、`index.ts`
    はそこで何もせずに終わります。 */
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-function id(v) {
-  const s = typeof v === 'string' ? v : '';
-  return UUID.test(s) ? s : '';
+function keyOf(e, r) {
+  const out = {};
+  for (const f of Object.keys(e.key)) {
+    const want = e.key[f];
+    const v = r[f];
+    const s = (typeof v === 'string' || typeof v === 'number') ? String(v) : '';
+    if (typeof want === 'string' ? s !== want : !want.test(s)) return null;
+    out[f] = s;
+  }
+  return out;
 }
 export function pushWhat(body) {
   const b = (body && typeof body === 'object') ? body : {};
   const r = (b.record && typeof b.record === 'object') ? b.record : {};
   const table = String(b.table || '');
-  if (table === 'follow') {
-    const a = id(r.follower), c = id(r.followed);
-    return (a && c) ? { table: table, key: { follower: a, followed: c } } : null;
-  }
-  if (table === 'post') {
-    const a = id(r.id);
-    return a ? { table: table, key: { id: a } } : null;
-  }
-  if (table === 'react') {
-    const a = id(r.post), c = id(r.actor);
-    /* `kind` は鍵の一部なので通しますが、**閉じた集合のどちらかでなければ
-       捨てます**。行は主キーで読み直すので、返ってきた行が答えです。 */
-    const k = (r.kind === 'like' || r.kind === 'boost') ? r.kind : '';
-    return (a && c && k) ? { table: table, key: { post: a, actor: c, kind: k } } : null;
+  for (const e of PUSH) {
+    if (e.table !== table) continue;
+    const k = keyOf(e, r);
+    if (k) return { table: table, key: k };
   }
   return null;
+}
+
+/* その表のその行が、どの種類か。同じ表に二つの種類がある（react の like と
+   boost）ので、表の名前だけでは決まらず、鍵が合う行を選びます。 */
+function kindOf(table, row) {
+  for (const e of PUSH) if (e.table === table && keyOf(e, row)) return e;
+  return null;
+}
+/* 読み直す列と、親の列。index.ts はこれを訊くだけで種類を知りません。 */
+export function pushRead(table, key) {
+  const e = kindOf(table, key || {});
+  return e ? { cols: e.cols, parent: e.parent } : null;
 }
 
 /* ---- 誰への、どの知らせか ----------------------------------------------
@@ -114,34 +149,29 @@ export function pushWhat(body) {
    もう一枚（返信なら返された投稿、react ならその投稿）。どちらも DB の行で、
    request のものではありません。
 
-   `follow` は相手がそのまま書いてある。`reply` と `like` と `boost` は、
-   相手は**その投稿を書いた人**で、それは親の行にしかありません ── だから
-   親が読めなければ何もしません（消された投稿への返信は、誰への知らせでも
-   ない）。
+   相手が親の行にしか無い種類は、親が読めなければ何もしません（消された投稿
+   への返信は、誰への知らせでもない）。
 
-   `post` は開く先。follow には無いので載せません（載せるところが無いのと、
-   無い物を空文字で埋めるのは同じではない）。 */
+   `post` は開く先。無い種類には載せません（載せるところが無いのと、無い物を
+   空文字で埋めるのは同じではない）。 */
 export function pushTo(table, row, parent) {
   if (!row || typeof row !== 'object') return null;
-  if (table === 'follow') {
-    return { kind: 'follow', to: row.followed || '', from: row.follower || '', post: null };
-  }
-  if (table === 'post') {
-    if (!parent || typeof parent !== 'object') return null;
-    return { kind: 'reply', to: parent.author || '', from: row.author || '', post: row.id || null };
-  }
-  if (table === 'react') {
-    if (!parent || typeof parent !== 'object') return null;
-    if (row.kind !== 'like' && row.kind !== 'boost') return null;
-    return { kind: row.kind, to: parent.author || '', from: row.actor || '', post: row.post || null };
-  }
-  return null;
+  const e = kindOf(table, row);
+  if (!e) return null;
+  if (e.parent && (!parent || typeof parent !== 'object')) return null;
+  return {
+    kind: e.kind,
+    to: e.to(row, parent) || '',
+    from: e.from(row, parent) || '',
+    post: e.post(row, parent) || null,
+  };
 }
 
 /* ---- そのスイッチ -------------------------------------------------------
-   `profile.prefs` の中の四つ。**無いのはオン**で、これは既定ではなく仕様です
-   ── 前から居る人の `prefs` にこの四つは無く、無いことを「切ってある」と読むと
-   許可を出した人に一通も届きません。切ってあるのは `false` と書いてある時だけ。 */
+   `profile.prefs` の中の `push_<種類>`。**無いのはオン**で、これは既定ではなく
+   仕様です ── 前から居る人の `prefs` にこれらは無く、無いことを「切ってある」
+   と読むと許可を出した人に一通も届きません。切ってあるのは `false` と書いて
+   ある時だけ。 */
 export function pushSwitch(kind) { return 'push_' + kind; }
 export function pushWants(prefs, kind) {
   const p = (prefs && typeof prefs === 'object') ? prefs : {};
@@ -155,38 +185,65 @@ export function pushLang(prefs) {
   return LANGS.indexOf(v) === -1 ? 'en' : v;
 }
 
-/* 文面。`handle` は**相手ではなく、やった人**の @。 */
-export function pushSay(prefs, kind, handle) {
-  const one = SAY[pushLang(prefs)] || SAY.en;
+/* `{0}` に入るもの。`who` は index.ts が DB から組んだもので、
+   `handle` はやった人の @。 */
+function fillOf(kind, who, lang) {
+  const e = PUSH.find((x) => x.kind === kind);
+  if (!e) return '';
+  const w = (who && typeof who === 'object') ? who : {};
+  if (e.fill === 'handle') return '@' + String(w.handle || '');
+  return '';
+}
+
+/* 文面。`who` は `{handle}`、あるいは古い呼び方で handle の文字列そのもの。 */
+export function pushSay(prefs, kind, who) {
+  const lang = pushLang(prefs);
+  const one = SAY[lang] || SAY.en;
   const line = one[kind] || '';
   if (!line) return null;
-  return { title: TITLE, body: line.replace('{0}', '@' + String(handle || '')) };
+  const w = (typeof who === 'string') ? { handle: who } : who;
+  const fill = fillOf(kind, w, lang);
+  if (!fill) return null;
+  return { title: TITLE, body: line.replace('{0}', fill) };
+}
+
+/* ---- 鳴らしてよいか ---------------------------------------------------
+   **サインインしていない人には何も起こせない。**
+   「サインインなしで勧めるものないけど」 OWNER 2026-09-22。
+
+   `by` は名乗りではありません（index.ts）。無ければそこで終わり ──
+   publishable キーで叩かれた時もここに来ます（あの鍵に user の sub は無い）。
+
+   そして **その人がやったことでなければ鳴らさない**。JWT の検証だけでは
+   「サインインしている誰か」までしか言えず、サインインした他人が、他人の
+   フォローの行を指して他人の iPhone を鳴らせます。行の actor と一致して
+   初めて、これは**その人自身の操作の通知**です。
+
+   `pushPlan()` が最初にこれを訊き、index.ts も相手を読みに行く**前に**
+   これを訊きます ── 同じ函数を二度呼ぶのであって、二つ目の判断ではありません。
+   返すのは断る理由か `''`。 */
+export function pushMay(aim, by) {
+  if (!aim || !aim.kind || !aim.from) return 'no such event';
+  if (KINDS.indexOf(aim.kind) === -1) return 'no such kind';
+  if (!by) return 'no session';
+  if (by !== aim.from) return 'not theirs to ring';
+  return '';
 }
 
 /* ---- 送るか、送らないか -------------------------------------------------
-   送らない理由は四つあり、**どれも黙って終わります** ── 通知が出ないことは
+   送らない理由はいくつかあり、**どれも黙って終わります** ── 通知が出ないことは
    エラーではありません。理由を文字で返すのは、実機で「来ない」と言われた時に
    どれだったかを分けるためです（verify-plan の `left` と同じ）。
 
-   `who` は `{handle, prefs}` ── `handle` はやった人の @、`prefs` は**相手の**
+   一回の呼び出しは**一人の相手**について。
+
+   `who` は `{handle, prefs}` ── `prefs` は**相手の**
    設定。`devices` は相手の token の配列。どれも DB から来ます。`by` は
-   **叩いた人**で、提示された JWT を Supabase に照らして返ってきた uid です。 */
+   **叩いた人**で、提示された JWT を Supabase に照らして返ってきた uid。 */
 export function pushPlan(aim, who, devices, by) {
-  if (!aim || !aim.kind || !aim.to || !aim.from) return { send: false, why: 'no such event' };
-  if (KINDS.indexOf(aim.kind) === -1) return { send: false, why: 'no such kind' };
-  /* **サインインしていない人には何も起こせない。**
-     「サインインなしで勧めるものないけど」 OWNER 2026-09-22。
-
-     `by` は**提示された JWT を Supabase 自身に照らして返ってきた uid** で、
-     名乗りではありません（index.ts）。無ければそこで終わり ── publishable
-     キーで叩かれた時もここに来ます（あの鍵に user の sub は無い）。
-
-     そして **その人がやったことでなければ送らない**。JWT の検証だけでは
-     「サインインしている誰か」までしか言えず、サインインした他人が、他人の
-     フォローの行を指して他人の iPhone を鳴らせます。行の actor と一致して
-     初めて、これは**その人自身の操作の通知**です。 */
-  if (!by) return { send: false, why: 'no session' };
-  if (by !== aim.from) return { send: false, why: 'not theirs to ring' };
+  const may = pushMay(aim, by);
+  if (may) return { send: false, why: may };
+  if (!aim.to) return { send: false, why: 'no such event' };
   /* 自分がやったことは自分に知らせない。notices() が
      `r.actor <> auth.uid()` と書いているのと同じ一行。 */
   if (aim.to === aim.from) return { send: false, why: 'their own' };
@@ -201,7 +258,7 @@ export function pushPlan(aim, who, devices, by) {
   /* 許可していない人、アプリを消した人。**行が無いのは切ってあるのとは別**
      ですが、どちらも送る先が無いので同じ終わり方をします。 */
   if (!to.length) return { send: false, why: 'no device' };
-  const say = pushSay(w.prefs, aim.kind, w.handle);
+  const say = pushSay(w.prefs, aim.kind, w);
   if (!say) return { send: false, why: 'nothing to say' };
   const payload = { aps: { alert: say, sound: 'default' }, kind: aim.kind };
   /* 開く先。無ければ**載せない** ── 空の値は「無い」ではありません。 */
@@ -214,8 +271,8 @@ export function pushPlan(aim, who, devices, by) {
    ということです。**410 だけ**：400 も 429 も 500 もタイムアウトも「読めな
    かった」であって「無い」ではなく、枝を分けません（CLAUDE.md 一枚目）。
 
-   `sent` は `[{token, status}]`。返すのは消す token。DELETE REVIEW は
-   docs/CHANGELOG.md 2026-09-22。 */
+   `sent` は `[{token, status}]`。返すのは消す
+   token。DELETE REVIEW は docs/CHANGELOG.md 2026-09-22。 */
 export function pushGone(sent) {
   const out = [];
   for (let i = 0; i < (sent || []).length; i++) {
