@@ -2433,73 +2433,66 @@ const R = await pg.evaluate(async () => {
                  'is what was typed.');
   }());
 
-  /* ---- the face on the profile row follows the face on the phone --------
-     netMakeProfile() wrote `av` once, the day the account was made, and
-     nothing ever wrote it again. So drawing a new first letter or setting a
-     photograph changed what postAvatar() answers everywhere in the app except
-     the little face beside "somebody liked this", which is the one place that
-     reads the profile row. A notice could draw a face somebody had not worn
-     for a month.
+  /* ---- the face goes up when somebody changes it, and only then ---------
+     「サーバーが聞くのは、人が今つくった・押したもの、そのものだけ」
+     (docs/scope/brief-r60-up.md, r46-audit § A1).
 
-     Nothing about the timeline was wrong -- a post freezes its own face when
-     it is written -- so this is not visible anywhere a check was looking.
-
-     Three things, and the middle one is the reason it sat in the backlog
-     rather than being fixed: sending on every change would be a request per
-     letter drawn. It is not -- postAvatar() answers the photograph, else the
-     face written down on the account (claim 18 below), which moves twice in
-     a language's life and not once per stroke -- but "it only sends when it
-     moved" has to be held or the cheap version silently becomes the expensive
-     one.
+     This held netAvSync(): on every launch, the face this phone was holding
+     went up wherever it differed from a mark of what had been sent. So a
+     photograph changed on one phone was put back by the other one's launch,
+     and a changed photograph reached everybody else only when its owner next
+     relaunched. The launch now sends nothing (tools/quiet-check.mjs); what is
+     held here is the press. Choosing a photograph and taking one off each send
+     ONE PATCH of `av`, and the face moves when the server has taken it --
+     meProfPut()'s shape. A refusal moves nothing.
 
      The requests are counted rather than the state read: what is being held
-     is what goes OUT. netSend is wrapped and answers success without a
-     server, the same way conv-check wraps LinguaFont.build. */
+     is what goes OUT. netSend is wrapped and answers without a server. */
   const realSend = netSend;
-  let sent = [];
-  netSend = function (method, path, body, tok, ok, bad) {
-    if (String(path).indexOf('/rest/v1/profile') === 0) {
-      sent.push({ method, av: JSON.stringify((body && body.av) || null) });
-      if (ok) ok(null);
-      return;
+  {
+    const wasNav = NAV, wasRoute = route;
+    const wasAv = ME.av, wasPic = ME.pic;
+    let sent = [], answer = 'ok';
+    netSend = function (method, path, body, tok, ok, bad) {
+      if (String(path).indexOf('/rest/v1/profile') === 0) {
+        sent.push({ method, av: JSON.stringify((body && body.av) || null) });
+        if (answer === 'ok') { if (ok) ok(null); }
+        else if (bad) bad(null, 0, 'profile 0');
+        return;
+      }
+      return realSend.apply(this, arguments);
+    };
+    try {
+      ME.av = { st: [{ pts: [[1, 1], [2, 2]] }] };
+      ME.pic = '';
+      meFacePut({ pic: 'data:image/jpeg;base64,AAAA' });
+      if (sent.length !== 1 || sent[0].method !== 'PATCH' ||
+          sent[0].av !== JSON.stringify({ pic: 'data:image/jpeg;base64,AAAA' }))
+        fails.push('choosing a photograph did not send it, once, as a PATCH of av: ' +
+                   JSON.stringify(sent));
+      if (ME.pic !== 'data:image/jpeg;base64,AAAA')
+        fails.push('the server took the photograph and the face on this phone did not move');
+
+      sent = [];
+      meDropPic();
+      if (sent.length !== 1 || sent[0].av !== JSON.stringify(ME.av))
+        fails.push('taking the photograph off did not send the face on file: ' +
+                   JSON.stringify(sent));
+      if (ME.pic !== '')
+        fails.push('taking the photograph off left it on this phone');
+
+      sent = []; answer = 'no';
+      meFacePut({ pic: 'data:image/jpeg;base64,BBBB' });
+      if (ME.pic !== '')
+        fails.push('a photograph the server REFUSED is on this phone anyway -- ' +
+                   '「保存するタイミングでエラーが起きるなら、保存されない」');
+      if (typeof popYes === 'function' && popOn()) popNo();
+    } finally {
+      netSend = realSend; NAV = wasNav; route = wasRoute;
+      ME.av = wasAv; ME.pic = wasPic;
+      if (!ME.av) delete ME.av;
     }
-    return realSend.apply(this, arguments);
-  };
-  try {
-    ME.avSent = '';
-    ME.pic = '';
-    sent = [];
-    netAvSync();
-    const first = sent.length;
-
-    netAvSync();                                  /* nothing moved */
-    const again = sent.length;
-
-    ME.pic = 'data:image/jpeg;base64,AAAA';       /* the face moves */
-    netAvSync();
-    const moved = sent.length;
-
-    netAvSync();                                  /* and settles again */
-    const settled = sent.length;
-
-    if (first !== 1)
-      fails.push('the face was never sent: netAvSync() made ' + first +
-                 ' requests for a profile that has never had one');
-    if (again !== first)
-      fails.push('the face was sent again with nothing changed (' + again +
-                 ' requests) -- that is a request every launch for a face ' +
-                 'that has not moved');
-    if (moved !== first + 1)
-      fails.push('the face changed and ' + (moved - again) + ' requests went ' +
-                 'out: a notice goes on drawing a face somebody has stopped ' +
-                 'wearing');
-    if (settled !== moved)
-      fails.push('after the change it kept sending (' + settled + ')');
-    if (moved > first && sent[sent.length - 1].method !== 'PATCH')
-      fails.push('the face was updated with ' + sent[sent.length - 1].method +
-                 ' rather than PATCH -- schema.sql grants update(handle, ' +
-                 'display, av), and an insert on a row that exists is a 409');
-  } finally { netSend = realSend; }
+  }
 
   /* ---- 18. the face is DECIDED ONCE, and nothing decides it again -------
      「アイコン勝手に変わるのは何だ。最初の文字になるのはいいけど、それはオン

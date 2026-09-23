@@ -102,14 +102,12 @@ function bootSession(){
      netTook() (www/net.js) now -- the one place that knows a session arrived.
      This call was the whole of it, so a launch made signed out never asked and
      the door somebody then came in through never asked either. */
-  /* And the face on the profile row, which nothing updated after the account
-     was made: a notice could draw a face somebody had not worn for a month.
-     It asks the server nothing on a launch where the face has not moved --
-     the comparison is against ME.avSent, which is local. */
-  netAvSync();
-  /* And the line about themselves, which was on the phone and only there.
-     「自己紹介を見せないって選択肢を俺はいつ与えた？」 It asks before it
-     writes and takes the account's when this phone has none. */
+  /* And the profile -- the line about themselves and the face -- READ.
+     「自己紹介を見せないって選択肢を俺はいつ与えた？」 netAvSync() stood above
+     this and sent the face this phone was holding on every launch where it
+     differed from a mark of what it had sent last, so an old photograph on a
+     second phone put itself back over a new one (r46-audit § A1). The face
+     goes up when somebody chooses it (meFacePut, www/me.js). */
   netProfSync();
   /* And how this account has the app set up -- the theme, the interface
      language and the three switches about the drawn letters

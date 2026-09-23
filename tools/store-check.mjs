@@ -113,9 +113,10 @@ const ROADS = {
   /* the timeline */
   'post.js:LS_POSTS':  { to: 'netPush' },
   'post.js:LS_DRAFTS': { to: 'netDraftUp' },
-  /* the face and the line about yourself go up on their own timers; the
-     handle and the display name are written when the account is made */
-  'me.js:LS_ME':       { to: 'netAvSync' },
+  /* the name, the @, the line about yourself and the face go up when they
+     are pressed, all through the one PATCH of the profile row (meProfPut and
+     meFacePut in www/me.js); a launch sends none of them */
+  'me.js:LS_ME':       { to: 'netProfPut' },
   /* and the four that are the phone's, each for its own reason */
   'core.js:LS_S':    { phone: 'the settings. Everything in them is an account\'s and is parked under `lingua.set.<uid>` by setFor() EXCEPT what `SET_PHONE` in www/core.js names; what that names is how this handset is set up -- the theme, the interface language, the marks that a migration has run here -- and follows the handset because there is nothing else for it to follow' },
   'core.js:langTakeKey(me)': { phone: 'which of somebody else\'s languages this account had TAKEN, as the `language_take` table last answered (www/core.js § LTAKE). A picture of a server answer, filed under the account it is about -- the key ends in the uid, so lsWipeAcct() takes it by counting the namespace, and langTookFor() reads only the account in hand, never the one before it. It exists so a launch with no signal draws the languages somebody took instead of hiding them: 「前に読み込んだの出していいよ。何か更新するならクルクルが必要」 OWNER 2026-09-12. It has no road UP and must not be given one -- what this account has taken is `language_take`, netTakes() is what asks, and nothing on this phone may answer it' },

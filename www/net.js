@@ -1145,11 +1145,9 @@ function netMyProfile(ok, bad){
            /* The face, read back same as the name and the handle -- signing
               in on a second phone used to leave ME.av empty until a letter
               was drawn or redrawn here, so the account's own icon never
-              followed it over. avSent is set to match so netAvSync() does
-              not turn straight round and PATCH back what it was just given. */
-           if(p && p.av!==undefined){
-             ME.av=p.av; ME.avSent=JSON.stringify(p.av||null); saveMe();
-           }
+              followed it over. meAvGot() (www/me.js) is the one place ME is
+              told what it is. */
+           if(p && p.av!==undefined) meAvGot(p.av);
            ok(p);
          }, bad);
 }
@@ -1177,18 +1175,14 @@ function netMakeProfile(h, name, ok, bad){
      display, bio, link, loc, one literal each -- so 「which columns is a
      person's profile」 had two answers, and the day the save road grew the
      name and the @ (2026-09-11) only one of the two had them. `av` is not on
-     it: nobody types a face, and the road that keeps it level is netAvSync()
-     below. */
+     it: nobody types a face, and its road is meFacePut() (www/me.js). */
   for(i=0;i<PROF_MINE.length;i++){
     k=PROF_MINE[i][0];
     row[PROF_MINE[i][1]]=Object.prototype.hasOwnProperty.call(typed, k)?
       typed[k] : String(ME[k]||'');
   }
   netPost('/rest/v1/profile', row, SESS.at,
-          /* what was sent, so netAvSync() does not send it again on the
-             next launch for a face that has not moved */
           function(d){
-            ME.avSent=JSON.stringify(av||null); saveMe();
             /* AND THE ROW EXISTS NOW, WHICH NOTHING WROTE DOWN.
                `meRowHas()` (www/me.js § ME_ROW) is 「does this account have a
                profile row」 and appIs() (www/shell.js) answers 'door' while it
@@ -1206,31 +1200,6 @@ function netMakeProfile(h, name, ok, bad){
           },
           bad);
 }
-/* The face on the profile row, kept level with the face on the phone.
-   ------------------------------------------------------------------
-   netMakeProfile() wrote `av` once, the day the account was made, and nothing
-   ever wrote it again -- so drawing a new letter or setting a photograph
-   changed what postAvatar() answers everywhere in the app EXCEPT the little
-   face beside "somebody liked this". A notice could draw a face somebody had
-   not worn for a month.
-
-   Nothing about the timeline was wrong: a post freezes its own face when it
-   is written (rule 8), so what a reader sees on a post is right. The notice
-   is the one place that reads the profile row.
-
-   Why this is cheap, which was the reason it sat in the backlog: postAvatar()
-   answers the photograph if there is one and otherwise the FIRST letter that
-   has been drawn. It does not change when a letter is drawn -- it changes
-   when the first one is redrawn, or a photograph is set. Twice in a language's
-   life, not once per stroke. So "send it when it differs" costs one request
-   on the launches where it actually moved and none on the others.
-
-   ME.avSent is the copy that was sent, so the comparison is local. A launch
-   where nothing moved asks the server nothing at all.
-
-   Fired and not waited for, like everything else in bootSession(): the little
-   face being a launch behind is not worth making the app open slower, and
-   there is nothing on screen that depends on the answer. */
 /* What a person writes about themselves, kept the same on both sides.
    「そもそも端末に保存するもんはないぞほとんど」 OWNER 2026-09-01 -- the
    server is the record and the phone is the copy that works with no signal.
@@ -1266,13 +1235,10 @@ function netMakeProfile(h, name, ok, bad){
    fortnight and @lingua are `profile_rename()` in supabase/schema.sql, which
    answers with an exception, which arrives here as a refusal like any other.
 
-   It ASKS before it writes, where netAvSync() below compares against a mark
-   it keeps locally (`ME.avSent`). Two reasons, and the second is the one that
-   decided it: a mark would be a new field on ME, and the shape of ME is
-   www/me.js's -- meBlank() and meFrom() build it column by column, so a key
-   this file invented would be dropped on the next read and the mark would
-   never match. Asking the server costs one small request on a launch and
-   cannot go stale.
+   It ASKS rather than keeping a mark of what was last sent: asking the server
+   costs one small request on a launch and cannot go stale. The face is read
+   by the same ask (`av`, meAvGot in www/me.js) and written by its own press
+   (meFacePut) -- a launch writes none of them.
 
    THERE IS NO SIDE THAT WINS ANY MORE, BECAUSE THERE IS ONE SIDE.
    「端末に残すものないんですけど。サーバーで同じ機能になるように代替して」
@@ -1301,10 +1267,10 @@ function profCols(){
 }
 function netProfSync(){
   if(!netSignedIn() || !SESS || !SESS.uid) return;
-  netGet('/rest/v1/profile?select='+profCols()+'&limit=1&id=eq.'+
+  netGet('/rest/v1/profile?select='+profCols()+',av&limit=1&id=eq.'+
          encodeURIComponent(SESS.uid),
     function(d){
-      var row=(d && d.length)? (d[0]||{}) : {}, drew=false, i, k, there;
+      var row=(d && d.length)? (d[0]||{}) : {}, drew=false, i, k, there, face;
       /* AND THE SAME ANSWER THIS ASK ALREADY CARRIES: a row means this
          account has been through the walk (www/me.js § ME_ROW). */
       meRowGot(!!(d && d.length));
@@ -1319,6 +1285,14 @@ function netProfSync(){
         there=String(row[PROF_MINE[i][1]]||'');
         if(there===String(ME[k]||'')) continue;
         ME[k]=there; drew=true;
+      }
+      /* AND THE FACE, read and never sent -- a photograph this phone holds
+         that the account has since replaced is not put back up from here
+         (r46-audit § A1). meAvGot() (www/me.js) is the one place ME hears it. */
+      if(Object.prototype.hasOwnProperty.call(row, 'av')){
+        face=String(ME.pic||'')+JSON.stringify(ME.av||null);
+        meAvGot(row.av);
+        if(face!==String(ME.pic||'')+JSON.stringify(ME.av||null)) drew=true;
       }
       if(drew){ saveMe(); render(); }
     }, function(){});
@@ -1346,8 +1320,8 @@ function netProfPut(fields, ok, bad){
    DOWN AT A SIGN-IN AND UP WHEN ONE MOVES. A setting has to move on the
    screen the moment it is pressed -- a theme that waits for a server is a
    screen somebody presses twice -- so the press writes the copy and sends,
-   and the ROW is what the next sign-in reads. That is netAvSync()'s shape and
-   not the 公開 switch's, and the difference is what is at stake: nothing
+   and the ROW is what the next sign-in reads. That is not the 公開 switch's
+   shape, and the difference is what is at stake: nothing
    anybody made is here, and the worst a send that did not land can cost is
    the theme being what it was on the phone that last spoke.
 
@@ -1443,15 +1417,6 @@ function netDeviceDrop(){
           '&token=eq.'+encodeURIComponent(NET_TOK), null, SESS.at,
           function(){}, function(){});
   NET_TOK='';
-}
-function netAvSync(){
-  if(!netSignedIn() || !SESS || !SESS.uid) return;
-  var av=postAvatar(), now=JSON.stringify(av||null);
-  if(now===ME.avSent) return;
-  netSend('PATCH', '/rest/v1/profile?id=eq.'+encodeURIComponent(SESS.uid),
-          {av:av}, SESS.at,
-          function(){ ME.avSent=now; saveMe(); },
-          function(){});
 }
 /* ---- which side of the nonce ------------------------------------------
    Supabase refuses this call when the id_token carries a nonce claim and the
