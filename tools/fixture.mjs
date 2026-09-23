@@ -3449,9 +3449,18 @@ export function halfDone(){
        on no screen but the third. */
     ['a word as a card',       () => { cardOpen('w', 'kano'); return vForm(); }],
     ['a sentence as a card',   () => { findWord('kano').ex=[{ln:'kano mos tir', gl:'a tall mountain is seen'}];
-                                       cardOpen('x', 'kano#0');
-                                       const h=vForm(); delete findWord('kano').ex; return h; }],
+                                       cardOpen('x', 'kano#0'); return vForm(); }],
     ['a post as a card',       () => { cardOpen('p', 'p1'); return vForm(); }],
+    /* Somebody else's post with nothing drawable on it, in words THIS
+       dictionary happens to spell: its card is its text, as its row on the
+       timeline is -- not the post spelt out in my letters. And a card of a
+       post that is gone, which is no card. (www/card.js § cardSrc) */
+    ['somebody else\'s post with no ink, as a card', () => {
+       POSTS.unshift({ id: 'pnoink', at: Date.now() - 60000, lang: 'other', lname: 'Vethi',
+                       ln: 'kano tir\nke', who: 'Iri', hd: 'iri', mine: false, av: { ch: 'Ж' },
+                       mn: 'the mountain is seen', ui: 'en' });
+       cardOpen('p', 'pnoink'); return vForm(); }],
+    ['a card of a post that is gone', () => { cardOpen('p', 'gone'); return vForm(); }],
     /* THE GAP BETWEEN LETTERS (www/glyph.js § geSide, www/wsys.js § SP_RANGE).
        「0 にすると、端まで描いた線が隣とくっついて一本に繋がる」「スライドで
        文字間が見えるように … 最大0と2くらい」「それぞれの字間を見せてね」
