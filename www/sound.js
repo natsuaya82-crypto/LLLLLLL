@@ -257,13 +257,22 @@ function saveSnd(){ if(langLocked()) return; bkTouch(); slWr(langKey('snd'), JSO
    "the sounds of the language in front of me", and they still do. */
 function addedSnd(){ return SND; }
 /* Whatever was in SET.snd belonged to whichever language was open when it was
-   written, which is this one. Copied, then taken off the settings so nothing
-   can read it again. */
+   written, which is this one. It is copied into that language, ONCE, and the
+   old copy is left exactly where it is -- CLAUDE.md § Data: a migration
+   copies and never removes what it read. migrateWorld()'s shape, for
+   migrateWorld()'s reason: a copy that ran on every launch would put this
+   language's sounds into the next one opened with none. SET.sndMoved is the
+   mark, and it sits beside SET.snd -- an account's field, parked and handed
+   back with it by setFor().
+
+   A language this launch may not write to is not marked: the copy would be
+   refused and the mark would spend it. It fills in what is missing and stops,
+   so a language already holding sounds keeps them. */
 function migrateSnd(){
-  if(SND.length || !SET.snd || !SET.snd.length) return;
-  SND=SET.snd.slice();
-  delete SET.snd;
-  saveSnd(); save();
+  if(SET.sndMoved || !SET.snd || !SET.snd.length || !langId || langLocked()) return;
+  if(!SND.length){ SND=SET.snd.slice(); saveSnd(); }
+  SET.sndMoved=1;
+  setKeep();
 }
 /* The chart is also how a letter is told what it reads, and that is a
    different thing to do with the same button, so the name it says is passed

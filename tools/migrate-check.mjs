@@ -709,6 +709,30 @@ want('and still not copied', f2.carried, '');
 want('and no mark is left for anybody to spend', f2.marks, 0);
 want('and the eight are still all there', f2.kept, f2.eight);
 
+/* ---- the sounds that sat in the settings ---------------------------------
+   CLAUDE.md § Data: *a migration COPIES and never removes what it read*.
+   migrateSnd() moved SET.snd -- the inventory from when there was one per
+   person -- into the open language, and then deleted it off `lingua.set`.
+   It copies now and leaves it, and SET.sndMoved is what stops the copy
+   landing again in the next language opened with no sounds. */
+await pg.evaluate(() => {
+  localStorage.clear();
+  localStorage.setItem('lingua.langs', JSON.stringify({ LA: { name: 'Vaska', mine: true } }));
+  localStorage.setItem('lingua.cur', 'LA');
+  localStorage.setItem('lingua.LA.words', JSON.stringify([{ hw: 'tuf' }]));
+  localStorage.setItem('lingua.set', JSON.stringify(
+    { theme: 'dark', walked: true, snd: ['k', 't', 'a'] }));
+});
+await pg.reload();
+await settle();
+const sn = await pg.evaluate(() => {
+  var s = {}; try { s = JSON.parse(localStorage.getItem('lingua.set') || '{}'); } catch (e) {}
+  return { snd: addedSnd().join(','), kept: (s.snd || []).join(','), mark: s.sndMoved };
+});
+want('the sounds in the settings reach the open language', sn.snd, 'k,t,a');
+want('and are still in the settings afterwards', sn.kept, 'k,t,a');
+want('and the copy is marked as made', sn.mark, 1);
+
 /* ---- a pronunciation somebody brought in is not replaced by a guess -----
    CLAUDE.md § Data: *a migration COPIES and never removes what it read*.
    migrateSp() took a word from when a word was its sounds and, along with the
