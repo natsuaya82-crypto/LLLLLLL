@@ -33,6 +33,7 @@
     "base": "node tools/base-check.mjs",
     "word": "node tools/word-check.mjs",
     "plan": "node tools/plan-check.mjs",
+    "forms": "node tools/forms-check.mjs",
     "term": "node tools/term-check.mjs",
     "gramlang": "node tools/gramlang-check.mjs",
     "kb": "node tools/kb-check.mjs",

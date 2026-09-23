@@ -669,6 +669,13 @@ function fmGroup(f){
   if(fmOwn(f)) return String(f).charAt(0);
   return (FM_INF.indexOf(f)>=0)? 'i' : ((FM_DER.indexOf(f)>=0)? 'd' : '');
 }
+/* WHETHER A LABEL IS AN INFLECTION, which since 2026-09-23 is whether it makes
+   a word at all: an inflection is a form OF a word and a derivation is another
+   word. Anything that is not a derivation -- a label of ours, one somebody
+   wrote under 活用, and the agreement labels a noun class makes
+   (`ncls~n`, which fmGroup() has no group for) -- is a form. It is the line
+   gFmRules() in www/grammar.js has always drawn for the engine, drawn here once. */
+function fmInf(f){ return !!f && fmGroup(f)!=='d'; }
 function fmLabel(f){
   if(!f) return '';
   if(fmOwn(f)) return String(f).slice(2);
@@ -694,10 +701,14 @@ function fmRank(f){
    ones somebody wrote come back from. Read off the words themselves, in the
    order they were made, each one once. */
 function fmMine(g){
-  var out=[], i, f;
+  var out=[], i, j, f, a;
+  function take(f){ if(fmOwn(f) && String(f).charAt(0)===g && out.indexOf(f)<0) out.push(f); }
   for(i=0;i<WORDS.length;i++){
-    f=WORDS[i].fm;
-    if(fmOwn(f) && String(f).charAt(0)===g && out.indexOf(f)<0) out.push(f);
+    take(WORDS[i].fm);
+    /* and the ones on the forms a word carries, which is where a label
+       written under 活用 lives now */
+    a=WORDS[i].fms||[];
+    for(j=0;j<a.length;j++) take(a[j] && a[j].fm);
   }
   return out;
 }
@@ -723,7 +734,18 @@ function wdFmHTML(){
    being coined has nowhere to save to yet, so it goes on the draft and
    addOne() carries it over. */
 function fmPick(hw, f){
-  var w=hw? findWord(hw) : addW;
+  var w;
+  /* A FORM's label (§ the forms of a word): it goes onto the screen the form
+     is being written on, which is where Save is, and that screen is drawn
+     again so the row says what was chosen. */
+  if(String(hw||'').charAt(0)==='#'){
+    back();
+    keepSet('fm', f||'');
+    FORM=null;
+    render();
+    return;
+  }
+  w=hw? findWord(hw) : addW;
   if(!w) return;
   if(f) w.fm=f; else delete w.fm;
   if(hw) save();
@@ -794,12 +816,15 @@ function fmGroupHTML(hw, g, now){
 
    It is deliberately NOT a paradigm, for the reason the note above this
    section already gives: 「型決めても英語みたいに変わってる可能性もあるやん」.
-   A rule does not declare that every verb HAS a past tense, it does not go
-   and make them, and it does not own the words it made. What it does is
-   offer: press the button on a word and the forms appear as ordinary words,
-   each editable and deletable like any other. go/went is still typed by hand,
-   and typing it by hand is not working around the rule -- it is the rule not
-   applying, which is what an irregular is. */
+   A rule does not declare that every verb HAS a past tense.
+
+   What a rule gives is two different things since 2026-09-23, because an
+   inflection is not a word (§ the forms of a word, below). A rule for an
+   INFLECTION answers on the word's page as it is asked and is stored nowhere;
+   go/went is placed there by hand, and placing it is not working around the
+   rule -- it is the rule not applying, which is what an irregular is. A rule
+   for a DERIVATION still offers: press the button on a word and the words it
+   makes appear as ordinary words, each editable and deletable like any other. */
 function fmRules(){ if(!STG.fm) STG.fm=[]; return STG.fm; }
 /* WHICH RULE AN ID IS, AND IT IS THE ONE PLACE THAT CHOOSES. A rule being
    written for the first time is not in the chapter yet -- it is the draft
@@ -876,6 +901,9 @@ function fmrTodo(w){
   var a=fmRules(), kids=w? wKids(w) : [], out=[], i, j, m, has;
   if(!w || w.fm) return out;
   for(i=0;i<a.length;i++){
+    /* An inflection is not a word (§ the forms of a word): its rule answers on
+       the word's page as it is asked, and there is nothing here to make. */
+    if(fmInf(a[i].fm)) continue;
     m=fmrMake(w, a[i]);
     if(!m || findWord(m.hw)) continue;
     has=false;
@@ -886,24 +914,22 @@ function fmrTodo(w){
   return out;
 }
 /* WHAT A FORM IS, and it is one place. This was written out three times --
-   in fmrAdd(), in fmrAddAll() and in addFmWrite() -- and the third one's
+   in fmrAdd(), in a bulk maker since deleted and in addFmWrite() -- and the third one's
    comment said "made the way fmrAdd() makes one", which nothing held. A word
    is what it has ON it, so adding anything to a form meant finding all three.
 
-   An inflection takes the meanings of the word it is a form of -- a past
-   tense is still the verb. A derivation takes none: "one who wakes early" is
-   a different word that happens to be built out of this one, and filling in
-   the parent's meaning there would be the app claiming to know what somebody's
-   word means. It comes out with no meaning, and the half-done list on the
-   search tab is already the screen that says so.
+   It is a DERIVATION, and only ever one since 2026-09-23 -- an inflection is
+   not a word (§ the forms of a word). A derivation takes no meaning: "one who
+   wakes early" is a different word that happens to be built out of this one,
+   and filling in the parent's meaning there would be the app claiming to know
+   what somebody's word means. It comes out with no meaning, and the half-done
+   list on the search tab is already the screen that says so.
 
    Nothing marks it as having been made by a rule, because nothing about it is
    different from a word somebody typed. */
 function fmrWord(w, m){
   var nw={hw:m.hw, pos:w.pos, at:Date.now(), from:String(w.hw), fm:m.fm,
-          sp:JSON.parse(JSON.stringify(m.sp)),
-          mns:(fmGroup(m.fm)==='i')? wMns(w).slice() : []};
-  nw.mn=nw.mns[0]||'';
+          sp:JSON.parse(JSON.stringify(m.sp)), mns:[], mn:''};
   return nw;
 }
 /* Making them, for one word. What a form IS is fmrWord() above; this is the
@@ -928,54 +954,6 @@ function fmrAdd(hw){
   toast(tn('fmr.made', made.length));
   openWord(String(w.hw));
 }
-/* Every form the rules can make, across the whole dictionary. A rule is
-   written once and is meant to answer for the language, not for the word you
-   happen to be standing on -- making them one word at a time is the same
-   press repeated as many times as there are words.
-
-   A snapshot of WORDS at the moment it is asked, so a word a rule makes is
-   not immediately fed back into the rules: making the past of a past is not
-   what anybody wrote a rule for, and it would not stop. */
-function fmrTodoAll(){
-  var out=[], seen={}, list=WORDS.slice(), i, j, todo;
-  for(i=0;i<list.length;i++){
-    todo=fmrTodo(list[i]);
-    for(j=0;j<todo.length;j++){
-      if(seen[todo[j].hw]) continue;
-      seen[todo[j].hw]=1;
-      out.push({w:list[i], m:todo[j]});
-    }
-  }
-  return out;
-}
-/* Making all of them. The same word fmrAdd writes, because both ask
-   fmrWord(). What is left different is the end: fmrAdd opens the word's page
-   afterwards and this one has no word to go back to.
-
-   Every word the rules would make, or every word ONE KIND of rule would make.
-   A chapter of the grammar page asks for its own -- 「その章のページへ」 -- and
-   being on the verbs and having it make a noun's plurals would be the button
-   doing more than the page it is on says. Asked for with no kind, it is
-   everything, which is what it always was. */
-function fmrAddAll(pos, fms){
-  var all=fmrTodoAll(), i, w, m, nw, made=0;
-  if(pos) all=all.filter(function(x){
-    return String(x.w.pos)===String(pos) &&
-           (!fms || !fms.length || fms.indexOf(String(x.m.fm))>=0);
-  });
-  if(!all.length) return;
-  if(capStop(all.length)) return;
-  for(i=0;i<all.length;i++){
-    w=all[i].w; m=all[i].m;
-    if(findWord(m.hw)) continue;
-    nw=fmrWord(w, m);
-    WORDS.push(nw); made++;
-  }
-  if(!made) return;
-  save();
-  toast(tn('fmr.made', made));
-  render();
-}
 /* The row on a word's page. Only when there is something to make: a button
    that does nothing when pressed is worse than no button. */
 function fmrTodoHTML(w){
@@ -984,6 +962,170 @@ function fmrTodoHTML(w){
   return '<button class="btn ghost" style="width:100%;margin-top:10px"' +
     DO('fmrAdd', [String(w.hw)]) + '>'+ICON_ADD+
     esc(tn('fmr.todo', todo.length))+'</button>';
+}
+
+/* ---- the forms of a word -------------------------------------------------
+   「語ページの活用一覧に出てくる。活用は活用であって単語じゃない。その代わり
+   活用にはラベルが必要。原型 aa／未来形 aai。ラベルと単語がセットじゃないと
+   登録できない。ラベル自体は自分でも作れる。キーボードの変換もできるように。」
+   「活用は数えないにしよう。無料でなるべく使って欲しい。」 OWNER 2026-09-23.
+
+   An inflection used to be written into the dictionary as a word of its own,
+   pointing at its parent with `from` and saying what it was with `fm`. It is
+   the word's now: a label and a spelling, listed on the word's page, counted
+   toward nothing.
+
+   wForms() IS THE ONE PLACE THAT ANSWERS 「the forms of this word」, and the
+   word's page, the card, the keyboard's conversion and the meaning line of a
+   post all ask it. Three things answer, one label each, the first to answer a
+   label keeping it:
+
+     placed   `w.fms`, what somebody wrote by hand. It wins, because that is
+              what an irregular is: went is the past of go whatever the past
+              rule says.
+     old      an inflection stored as a word before 2026-09-23 (wIsForm()).
+              Nothing about it is rewritten or moved -- it is read here, where
+              it is, which is the shape slRd() reading an old key has
+              (CLAUDE.md rule 22). docs/CHANGELOG.md 2026-09-23.
+     rule     what a rule makes, worked out now and stored nowhere, so a rule
+              changed today changes every word's form today.
+
+   Of the rules, one that says which ending it is for goes before one that
+   does not, for the reason gFmSpecificFirst() gives the engine: "after y it
+   is -ied, otherwise -ed" is two rules about one label, and the choosier one
+   is the one that is meant.
+
+   An old inflection has no forms of its own -- it IS one. */
+function wForms(w){
+  var out=[], by={}, a, i, pass, x;
+  function put(x){
+    if(!x.fm || !x.hw || by[x.fm]) return;
+    by[x.fm]=1; out.push(x);
+  }
+  if(!w || wIsForm(w)) return out;
+  a=w.fms||[];
+  for(i=0;i<a.length;i++) if(a[i])
+    put({fm:String(a[i].fm||''), hw:String(a[i].hw||''), sp:a[i].sp||[], by:'placed'});
+  a=wKids(w);
+  for(i=0;i<a.length;i++) if(wIsForm(a[i]))
+    put({fm:String(a[i].fm), hw:String(a[i].hw), sp:spOf(a[i]), by:'old'});
+  a=fmRules();
+  for(pass=0;pass<2;pass++) for(i=0;i<a.length;i++){
+    if(!fmInf(a[i].fm) || ((a[i].when==='x')!==(pass===0))) continue;
+    x=fmrMake(w, a[i]);
+    if(x) put({fm:String(x.fm), hw:x.hw, sp:x.sp, by:'rule'});
+  }
+  return wdFamSort(out);
+}
+/* One of them, by label -- the one the page shows under that label. */
+function wFormOf(w, fm){
+  var a=wForms(w), i;
+  for(i=0;i<a.length;i++) if(a[i].fm===String(fm||'')) return a[i];
+  return null;
+}
+/* The list on the word's page. The word itself first, under 基本形, because
+   that is how somebody reads a paradigm -- 原型 aa, then 未来形 aai -- and it
+   is a row like the others: pressing it is where the word's own spelling is
+   changed, exactly as pressing a form is where that form's is. */
+function wfmRowHTML(label, hw, doAttr){
+  return '<button class="wdrow"'+doAttr+'>'+
+    '<span class="wdrowf">'+esc(label)+'</span>'+
+    '<span class="wdroww">'+sfontHTML(wOut(hw))+'</span></button>';
+}
+function wfmListHTML(w){
+  var a=wForms(w);
+  return '<div class="wdrows">'+
+    wfmRowHTML(t('word.root'), w.hw, DO('openEdit', [String(w.hw)]))+
+    a.map(function(x){
+      return wfmRowHTML(fmLabel(x.fm), x.hw, DO('openWfm', [String(w.hw), x.fm]));
+    }).join('')+'</div>';
+}
+/* The section, with its + -- and none at all on an old inflection, which is
+   a form of its parent and whose page says so with the family. */
+function wfmSecHTML(w){
+  if(wIsForm(w)) return '';
+  return secAdd(esc(t('word.fm.inf')), DO('openWfm', [String(w.hw), '']), t('word.fm.inf'))+
+    wfmListHTML(w);
+}
+
+/* ---- writing one ---------------------------------------------------------
+   One screen, two things on it: the label, chosen on a screen of its own
+   (the same list a word's 語形 is chosen from, its inflection half, with the
+   row that writes a label of one's own at its foot), and the form, typed.
+   Both, or Save says so and nothing is written.
+
+   Save is the corner's -- keepOn(), www/shell.js § KEEP -- so it lights when
+   something has changed and asks on the way out, like every other screen that
+   is typed into. `was` is the label the screen was opened on, and empty for a
+   new one. */
+function wfmKey(hw, was){ return 'wfm:'+String(hw)+'|'+String(was||''); }
+function wfmArg(rest){
+  var s=String(rest||''), i=s.indexOf('|');
+  return (i<0)? {hw:s, was:''} : {hw:s.slice(0, i), was:s.slice(i+1)};
+}
+function openWfm(hw, was){
+  var w=findWord(hw), k, cur;
+  if(!w || wIsForm(w)) return;
+  was=String(was||'');
+  cur=was? wFormOf(w, was) : null;
+  k=wfmKey(w.hw, was);
+  keepOn(keepKeyOf('form', k),
+    function(){ return {fm:was, f:cur? cur.hw : ''}; },
+    function(v, done){ done(wfmSave(String(w.hw), was)); });
+  openForm(k, t('word.fm.inf'), wfmFormHTML(w, was, k));
+}
+FORM_OPEN.wfm=function(rest){ var a=wfmArg(rest); openWfm(a.hw, a.was); };
+function wfmFormHTML(w, was, k){
+  var fm=keepVal(keepKeyOf('form', k), 'fm'), f=keepVal(keepKeyOf('form', k), 'f'),
+      placed=false, a=w.fms||[], i;
+  for(i=0;i<a.length;i++) if(a[i] && String(a[i].fm)===was) placed=true;
+  return wdPickRow(t('wfm.label'), fmLabel(fm)||t('word.none'),
+      DO('go', ['fm', '#'+String(w.hw)+'|'+was]))+
+    '<div class="sec">'+esc(t('wfm.form'))+'</div>'+
+    spTypeField('wfm-f', 'wfmSetF', spType(f), 'whin')+
+    /* The way out, and only for a form somebody placed: a form a rule makes
+       is the rule's, and an old one is a word in the dictionary, which this
+       screen does not delete. */
+    (placed? '<button class="btn ghost"'+DO('wfmDel', [String(w.hw), was])+'>'+
+      esc(t('wfm.del'))+'</button>' : '');
+}
+function wfmSetF(v){ keepSet('f', String(v||'')); lnGrow('wfm-f'); }
+/* THE ONE PLACE A FORM IS WRITTEN. Both halves or nothing: 「ラベルと単語が
+   セットじゃないと登録できない」. One label, one form -- the label it was
+   opened on and the label it now has are both taken off before it goes on,
+   so moving a form to another label moves it rather than copying it. */
+function wfmSave(hw, was){
+  var w=findWord(hw), k=keepKeyOf('form', wfmKey(hw, was)),
+      fm=keepVal(k, 'fm'), sp=spType(keepVal(k, 'f')), a, out=[], i;
+  if(!w) return false;
+  if(!fm || !sp.length || !spWord(sp)){ toast(t('wfm.need')); return false; }
+  a=w.fms||[];
+  for(i=0;i<a.length;i++)
+    if(a[i] && String(a[i].fm)!==String(was) && String(a[i].fm)!==fm) out.push(a[i]);
+  out.push({fm:fm, hw:spWord(sp), sp:JSON.parse(JSON.stringify(sp))});
+  w.fms=out;
+  save();
+  return true;
+}
+/* Taking a placed form off. It asks, in the app's own popup, because there is
+   no step back behind it -- the question is `confirm.del`, the one a word and
+   a letter are deleted with. What goes is that one form: the word, its other
+   forms and the dictionary are untouched, and a rule of the same label answers
+   again the moment it has gone. */
+function wfmDel(hw, was){
+  var w=findWord(hw), f=w? wFormOf(w, was) : null;
+  if(!f || f.by!=='placed') return;
+  popAsk(t('confirm.del', f.hw), function(){ wfmDelGo(String(hw), String(was)); }, t('pop.yes'));
+}
+function wfmDelGo(hw, was){
+  var w=findWord(hw), a, out=[], i;
+  if(!w) return;
+  a=w.fms||[];
+  for(i=0;i<a.length;i++) if(a[i] && String(a[i].fm)!==was) out.push(a[i]);
+  if(out.length) w.fms=out; else delete w.fms;
+  save();
+  keepDrop(keepKeyOf('form', wfmKey(hw, was)));
+  back();
 }
 
 /* ---- the forms on the sheet the word is coined on ------------------------
@@ -1021,6 +1163,9 @@ function addFmSync(){
   if(!addW || !w.hw || !w.sp.length) return;
   for(i=0;i<a.length;i++){
     if(addFmOff[a[i].id]) continue;
+    /* The words made with this one, which are derivations: an inflection is
+       the word's own and is on its page the moment the word exists. */
+    if(fmInf(a[i].fm)) continue;
     m=fmrMake(w, a[i]);
     if(!m) continue;
     /* Typed over: the letters are the person's, and the headword is those
@@ -1064,8 +1209,8 @@ function addFmDrop(id){
   delete addFmEd[String(id)];
   addFmPaint();
 }
-/* Written when the word is. Each is fmrWord() -- the same form fmrAdd() and
-   fmrAddAll() write. A form whose spelling is already a word in the
+/* Written when the word is. Each is fmrWord() -- the same word fmrAdd()
+   writes. A form whose spelling is already a word in the
    dictionary is skipped rather than overwriting it: two words cannot share a
    headword, and the one already there is the one somebody wrote. */
 function addFmWrite(hw){
@@ -1193,13 +1338,31 @@ function fmrKeep(fn){
 }
 function fmrSetAdd(v){ fmrKeep(function(r){ r.add=spType(v); }); lnGrow('fmr-add'); }
 function fmrSetAt(v){ fmrKeep(function(r){ r.at=(v==='start')? 'start':'end'; }); fmrPaint(); }
+/* Two things choose off this list, and each is shown its own half of it.
+
+   A FORM's label -- the argument is `#` and the form's screen (§ the forms of
+   a word) -- is an inflection's, with no 「none」: a form without a label is
+   what 「ラベルと単語がセットじゃないと登録できない」 forbids.
+
+   A WORD's -- what it is of the word it came from -- is a derivation's, since
+   2026-09-23: an inflection is not a word, and offering its labels here would
+   be a way to make one. A word that already wears one keeps it; it is simply
+   not offered again. */
 function vFm(){
-  var hw=String(here().a||''), w=hw? findWord(hw) : addW, now;
+  var a=String(here().a||''), w, now, rest, hw;
+  if(a.charAt(0)==='#'){
+    rest=wfmArg(a.slice(1));
+    w=findWord(rest.hw);
+    if(!w) return viewGone();
+    now=keepVal(keepKeyOf('form', wfmKey(w.hw, rest.was)), 'fm');
+    return '<div class="view">'+navTop()+'<div class="body">'+
+      fmGroupHTML(a, 'i', now)+'</div></div>';
+  }
+  hw=a; w=hw? findWord(hw) : addW;
   if(!w) return viewGone();
   now=w.fm||'';
   return '<div class="view">'+navTop()+'<div class="body">'+
     fmRowHTML(hw, '', !now)+
-    fmGroupHTML(hw, 'i', now)+
     fmGroupHTML(hw, 'd', now)+
     '</div></div>';
 }
@@ -1661,13 +1824,15 @@ function wdFamGroupHTML(label, list, labelled){
   return (label? '<div class="wdrowg">'+esc(label)+'</div>' : '')+
     list.map(function(x){ return wdRowHTML(x, labelled? (x.fm||'') : ''); }).join('');
 }
+/* The WORDS of the family. An inflection is not one -- the word's forms are
+   the section above this (wfmSecHTML), and an old inflection stored as a word
+   is one of its parent's forms there (wForms), so it is not counted twice. */
 function wdFamHTML(w){
   var par=wParent(w), root=par||w, kids;
-  kids=wdFamSort(wKids(root).filter(function(x){ return x!==w; }));
+  kids=wdFamSort(wKids(root).filter(function(x){ return x!==w && !wIsForm(x); }));
   if(!par && !kids.length) return '';
   return '<div class="wdrows">'+
     (par? wdFamGroupHTML(t('word.root'), [par], false) : '')+
-    wdFamGroupHTML(t('word.fm.inf'), wdFamOf(kids,'i'), true)+
     wdFamGroupHTML(t('word.fm.der'), wdFamOf(kids,'d'), true)+
     wdFamGroupHTML('',               wdFamOf(kids,''),  true)+
     '</div>';
@@ -1713,6 +1878,7 @@ function wdViewHTML(){
             (mns.length>1? '<span class="sn">'+(i+1)+'</span>' : '')+esc(m)+'</span></div>';
         }).join('')+'</div>'
       : '<div class="note">'+esc(t('words.addmn'))+'</div>')+
+    wfmSecHTML(w)+
     wdSecHTML(t('word.family'), wdFamHTML(w)+fmrTodoHTML(w))+
     wdSecHTML(t('word.syn'), wdRelsHTML(w,'syn'))+
     wdSecHTML(t('word.ant'), wdRelsHTML(w,'ant'))+

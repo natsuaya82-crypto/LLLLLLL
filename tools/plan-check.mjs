@@ -58,6 +58,10 @@ const r = await pg.evaluate(({ s }) => {
   save();                        /* core.js's save() is what writes WORDS */
   out.paidHeld = WORDS.length;
   out.paidShown = wordsSeen().length;
+  /* The fixture's two inflections stored as words (tira, tiran) are words of
+     no list since 2026-09-23 -- they are forms of `tir` -- so what is listed
+     is every word that COUNTS, which is wCountable()'s one answer. */
+  out.paidWords = wCountable();
   var wasBytes = bytes();
 
   planGot('free');
@@ -123,6 +127,31 @@ const r = await pg.evaluate(({ s }) => {
   window.confirm = function(){ return false; };
   out.capStopped = capStop(1);
   out.capStayed = here().r === whereWas;
+
+  /* ---- 2b. an inflection is not a word, and is not counted --------------
+     「活用は数えないにしよう。無料でなるべく使って欲しい。」 OWNER 2026-09-23.
+     A free language of 99 words, one of them carrying 30 forms placed by
+     hand and 30 more stored AS words the way an inflection was before that
+     day. The ceiling is a hundred; what it counts is 99, so one more word
+     goes in. Then the plan goes up and down, and not one byte moves. */
+  var keep500 = WORDS.slice(), fmsList = [], j;
+  planGot('free');
+  WORDS.length = 0;
+  for (j = 0; j < 99; j++) WORDS.push({ hw: 'fmw' + j, mns: ['a word'], pos: 'v' });
+  for (j = 0; j < 30; j++) fmsList.push({ fm: 'i~f' + j, hw: 'fmw0x' + j, sp: [] });
+  WORDS[0].fms = fmsList;
+  for (j = 0; j < 30; j++) WORDS.push({ hw: 'fmw0y' + j, mns: ['a word'], pos: 'v', from: 'fmw0', fm: 'i~g' + j });
+  save();
+  out.fmHeld = WORDS.length;
+  out.fmForms = wForms(WORDS[0]).length;
+  out.fmRoom = capOK(1);
+  out.fmFull = capOK(2);
+  var fmWas = bytes();
+  planGot('pro'); planGot('free');
+  out.fmKept = same(fmWas, bytes());
+  WORDS.length = 0;
+  for (j = 0; j < keep500.length; j++) WORDS.push(keep500[j]);
+  save();
 
   /* ---- 3. the plan being unknown is not the same as having no data -----
      A receipt that fails, a network that is down, an answer that has not come
@@ -195,6 +224,7 @@ const r = await pg.evaluate(({ s }) => {
   out.capTop = (planGot('pro'), wordCap());
   planGot('plus');
   out.midShows = wordsSeen().length;        /* 500 words, ceiling 1000 */
+  out.midWords = wCountable();
   out.midHolds = WORDS.length;
   out.midRoom = capOK(1) === true;
   planGot('free');
@@ -1683,8 +1713,8 @@ await br.close();
 const bad = [];
 function say(ok, line){ console.log('  ' + (ok ? '' : 'FAILED  ') + line); if (!ok) bad.push(line); }
 
-say(r.paidHeld === 500 && r.paidShown === 500,
-    'the paid plan holds 500 words and lists 500 (' + r.paidHeld + ', ' + r.paidShown + ')');
+say(r.paidHeld === 500 && r.paidShown === r.paidWords && r.paidWords === 498,
+    'the paid plan holds 500 words and lists every one that is a word -- 498, less the two inflections stored as words (' + r.paidHeld + ', ' + r.paidShown + ')');
 say(r.freeHeld === 500,
     'the plan ending keeps all 500 (' + r.freeHeld + ')');
 say(r.freeShown === r.freeCap,
@@ -1703,6 +1733,12 @@ say(r.capOKfree === false && r.capOKpaid === true,
     'the ceiling is met on free and is not there on paid');
 say(r.capStopped === true, 'and adding one more is refused');
 say(r.capStayed, 'without taking the screen off anybody');
+
+say(r.fmHeld === 129 && r.fmForms === 60,
+    'a free language of 99 words holds 60 inflections -- 30 placed on a word and 30 stored as words before 2026-09-23 (held ' + r.fmHeld + ', forms ' + r.fmForms + ')');
+say(r.fmRoom === true && r.fmFull === false,
+    'and none of the 60 is counted: there is room for exactly one more word under the hundred');
+say(r.fmKept, 'and not one byte of it moved when the plan went up and came back down');
 
 say(r.emptyPlan, 'no plan at all reads as free');
 say(r.unknownCan, 'and any plan that is no rung of the ladder buys nothing -- garbage, PRO, basic, studio');
@@ -1857,7 +1893,7 @@ say(r.capFree === 100, 'free counts to 100 (' + r.capFree + ')');
 say(r.capMid === 1000, 'plus counts to 1000 (' + r.capMid + ')');
 say(r.capTop === null || r.capTop === undefined || r.capTop > 1e9 || r.capTop === 'Infinity',
     'and pro has no number at all (' + r.capTop + ')');
-say(r.midShows === 500 && r.midHolds === 500,
+say(r.midShows === r.midWords && r.midHolds === 500,
     'a 500-word dictionary is all shown on plus (' + r.midShows + ')');
 say(r.midRoom, 'and there is room for another');
 say(r.freeShows2 === 100 && r.freeHolds2,

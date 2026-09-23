@@ -641,7 +641,7 @@ rule holds without an exception being needed: a download **adds**.
 
 ```js
 { hw, sp[], mns[], mn, pos, at,
-  from?, fm?, syn[]?, ant[]?, ex[]?, nt?, reg?, tags[]?, ety?, up? }
+  from?, fm?, fms[]?, syn[]?, ant[]?, ex[]?, nt?, reg?, tags[]?, ety?, up? }
 ```
 
 `hw` is the headword and `sp` is the spelling as letters — **the spelling is
@@ -667,6 +667,24 @@ not a paradigm the language declares: a language does not say which forms it
 has, and a form built out of nothing like its parent is still just a word with
 a label on it. `fm` without `from` is not a state — `wdPutExtras()` deletes it
 when the parent goes.
+
+**An inflection is not a word** (OWNER 2026-09-23, `docs/FEATURE_RULES.md`
+§ Owner decision log). `fms` is the forms somebody PLACED on this word by hand —
+`{fm, hw, sp}`, one per label, `fm` the same label codes as above and `hw`/`sp`
+the form's spelling in the same shape as the word's own. Both the label and the
+spelling or it is not written. A form a rule makes is not stored: it is worked
+out when it is asked for, and a placed form of the same label wins over it —
+that is how an irregular is written. `wForms()` in `www/wordsheet.js` is the one
+place that answers 「the forms of this word」, and every reader asks it: the
+word page, the card, the keyboard's conversion, the meaning line of a post.
+
+A word with `from` and an `fm` that is not a derivation is an **inflection made
+before 2026-09-23**, when an inflection was stored as a word of its own. It is
+left exactly as it is. `wForms()` reads it as a form of its parent wherever the
+parent has no placed form of that label, and `wCountable()` in `www/core.js`
+does not count it toward the plan's ceiling. It is **not in the dictionary list**
+either (`wordsSeen()` in `www/words.js` leaves out what `wIsForm()` names) —
+it is listed under 活用 on its parent's page, and stays in `WORDS` unchanged.
 
 A word is **current data**. A card of a word follows the letters being redrawn,
 and that is correct.

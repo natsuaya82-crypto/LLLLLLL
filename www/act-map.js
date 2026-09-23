@@ -398,10 +398,13 @@ actIn('wdSetNt', wdSetNt);
    editor, and the word a grammar stage asks for. */
 actIn('wdSetLn', wdSetLn);
 actIn('addFmSet', addFmSet);
+actIn('wfmSetF', wfmSetF);
 actIn('ipaSetQ', ipaSetQ);
 actIn('ltSetQ', ltSetQ);
 actIn('fmrSetAdd', fmrSetAdd);
 act('fmPick', fmPick);
+act('openWfm', openWfm);
+act('wfmDel', wfmDel);
 act('fmSay', fmSay);
 act('fmOpen', fmOpen);
 act('posPick', posPick);
@@ -410,7 +413,6 @@ act('subNewOpen', subNewOpen);
 /* Forms made by a rule: writing one, and asking a word for the ones it has
    not got. */
 act('fmrNew', fmrNew);
-act('fmrAddAll', fmrAddAll);
 act('openFmr', openFmr);
 act('g2SelOn', g2SelOn);
 act('g2SelOff', g2SelOff);

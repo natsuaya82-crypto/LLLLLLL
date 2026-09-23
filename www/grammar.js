@@ -481,7 +481,7 @@ function gFmRules(){
     pos=r.pos;
     k={id:'fm.'+String(r.id||i), operation:op, form:f, separator:'',
        drop:gFmDrop(r), conditions:c||{},
-       metadata:{label:fmLabel(fm), rule:String(r.id||'')}};
+       metadata:{label:fmLabel(fm), rule:String(r.id||''), fm:fm}};
     if(fmGroup(fm)==='d'){
       k.sourcePartOfSpeech=gFmPos(pos);
       k.targetPartOfSpeech=GFM_DER[fm] || null;
@@ -575,7 +575,34 @@ function gModel(list){
      something to read, and so that "some rules did not travel" is a number
      rather than a silence. */
   m.metadata.fmLeft=fm.left;
+  m.forms=gForms(list||WORDS, fm.inf);
   return m;
+}
+/* EVERY FORM OF EVERY WORD, as the engine reads one: the spelling, the word it
+   is a form of, and what it is. An inflection is not a word since 2026-09-23
+   (www/wordsheet.js § the forms of a word), so it is not in model.words and
+   the engine would otherwise have to guess it backwards off the rules -- which
+   it cannot do for a stem that changed, and cannot do at all for an irregular.
+
+   wForms() is asked and nothing here restates it. What a form IS comes from the
+   rule of that label when the language has one, so a form read here is the same
+   inflection the engine makes forward; a label no rule makes (went, placed by
+   hand) is still its feature, which is what gFmFeat() says of a label anywhere.
+   wForms() is www/wordsheet.js's and this file is also read on its own by
+   tools/grammar-engine-check.mjs, so it is asked for rather than assumed. */
+function gForms(list, inf){
+  var out=[], i, j, k, a, w, r, g;
+  if(typeof wForms!=='function') return out;
+  for(i=0;i<list.length;i++){
+    w=list[i]; a=wForms(w);
+    for(j=0;j<a.length;j++){
+      r=null;
+      for(k=0;k<inf.length;k++) if(inf[k].metadata && inf[k].metadata.fm===a[j].fm){ r=inf[k]; break; }
+      if(!r){ g=gFmFeat(a[j].fm); r={id:'form.'+a[j].fm, feature:g[0], value:g[1], metadata:{label:fmLabel(a[j].fm), fm:a[j].fm}}; }
+      out.push({surface:a[j].hw, lemma:String(w.hw), fm:a[j].fm, inflections:[r]});
+    }
+  }
+  return out;
 }
 /* The engine's word and the dictionary's word are one word seen from two
    sides. The engine knows what part of speech it is and where it stands; only
@@ -2083,8 +2110,7 @@ function g2FmsOf(id){
   if(!c || !c.pos) return out;
   /* A SECTION is about its own forms and no others, and it draws its own way
      to add one on each of their headings -- g2FmSec() -- so there is nothing
-     for g2Add() to offer. What is left for g2MakeAll() is the words those
-     rules would make, which is every form of the section at once. */
+     for g2Add() to offer. */
   if(c.fms) return c.fms;
   if(typeof FM_INF==='undefined') return out;
   for(i=0;i<FM_INF.length;i++){
@@ -2104,31 +2130,6 @@ function g2HasFm(pos, fm){
   for(i=0;i<a.length;i++)
     if(a[i] && String(a[i].fm)===fm && String(a[i].pos||'')===String(pos)) return true;
   return false;
-}
-/* The words this chapter's rules would make and this language has not got.
-   fmrTodoAll() is the one place that works that out; this only narrows it to
-   the chapter somebody is standing on. */
-function g2Todo(id){
-  var c=g2ChapBy(id), fms=g2FmsOf(id), all, out=[], i, x;
-  if(!c || !c.pos || typeof fmrTodoAll!=='function') return out;
-  all=fmrTodoAll();
-  for(i=0;i<all.length;i++){
-    x=all[i];
-    if(String(x.w.pos)!==c.pos) continue;
-    if(fms.indexOf(String(x.m.fm))<0) continue;
-    out.push(x);
-  }
-  return out;
-}
-/* And the button that makes them, only when there are some -- a button that
-   does nothing when pressed is worse than no button, which is what the row on
-   a word's page has always said. */
-function g2MakeAll(id){
-  var c=g2ChapBy(id), n=g2Todo(id).length;
-  if(!c || !c.pos || !n) return '';
-  return '<button class="btn ghost" style="width:100%;margin-top:14px"' +
-    DO('fmrAddAll', [c.pos, g2FmsOf(id)]) + '>'+ICON_ADD+
-    esc(tn('fmr.all', n))+'</button>';
 }
 function g2Add(id){
   var c=g2ChapBy(id), fms=g2FmsOf(id), i, out='';
@@ -2695,7 +2696,7 @@ function g2Page(c){
      them here would be the chapter said twice, on a page that is a part of
      it. */
   if(c.on) return c.body(c);
-  return c.body(c)+g2Add(c.id)+g2MakeAll(c.id)+
+  return c.body(c)+g2Add(c.id)+
     (c.id==='st'? '' : g2ChapEx(c.id));
 }
 

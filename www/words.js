@@ -134,12 +134,24 @@ function wFilters(){
    doing so. `findWord()` in particular: a post's gloss, a spelling and an
    example are about words that exist, not about words that are listed, and
    filtering there would quietly change what somebody's own posts say. */
+/* AND AN INFLECTION IS NOT A WORD, so it is not in the list either.
+   「活用は活用であって単語じゃない」 OWNER 2026-09-23; that it leaves THIS list
+   is the leader's reading of those words (docs/FEATURE_RULES.md § Owner
+   decision log, the same day). What leaves is an inflection stored as a word
+   before that day, and it leaves the list only: it is still in `WORDS`, byte
+   for byte, and it is listed where it belongs -- under 活用 on the page of the
+   word it is a form of (wForms(), www/wordsheet.js).
+
+   wIsForm() (www/core.js) is what says which rows those are, and it is the
+   same answer the ceiling counts with (wCountable()) and the word's page and
+   the keyboard's conversion read through wForms(). So the hundred here and
+   the hundred the ceiling counts are the same hundred. */
 function wordsSeen(){
-  var cap=wordCap();
-  if(WORDS.length<=cap) return WORDS;
-  return WORDS.slice(0, cap);
+  var cap=wordCap(), out=[], i;
+  for(i=0;i<WORDS.length && out.length<cap;i++) if(!wIsForm(WORDS[i])) out.push(WORDS[i]);
+  return out;
 }
-function wordsHidden(){ return WORDS.length-wordsSeen().length; }
+function wordsHidden(){ return wCountable()-wordsSeen().length; }
 /* One place decides what is on screen, so the list, the count and the button
    that says them all can never disagree about it. */
 function wordsList(){
