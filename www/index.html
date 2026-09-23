@@ -613,7 +613,7 @@ canvas.pkc{width:34px;height:34px;display:block}
    auto` and carries no handler at all.
 
    It stands OUTSIDE `#sbg` for that reason and not for a layering one: the
-   scrim runs `closeSheet()` on a press, and this must do nothing when it is
+   scrim's press is `closeSheet`, and this must do nothing when it is
    pressed. `#netspin` is the empty div at the foot of this file, and
    www/net.js § netSpin puts the mark in it and takes `on` on and off. */
 .netspin{position:fixed;inset:0;z-index:42;display:flex;align-items:center;
@@ -3039,13 +3039,13 @@ a.set{text-decoration:none}
 .btn.ghost{background:none;border:none;color:var(--gold);font-weight:600}
 .btn.ghost:active{opacity:.55}
 .sbg{position:fixed;inset:0;z-index:40;background:rgba(0,0,0,.5);opacity:0;pointer-events:none;transition:.24s}
-.sbg.on{opacity:1;pointer-events:auto}
+.sbg.on, #sbg.on > .sbg{opacity:1;pointer-events:auto}
 /* THE POPUP, and it is the app's own. 「正直自前のpopがいいんだけどな。
    iPhoneのやつ使ってるsnsないしな」「ポップは角丸でいいから」 OWNER 2026-09-01.
 
    Three shapes were made and thrown away in one afternoon before this one:
    a page you travel to (openForm, which is go('form', …)), the bottom sheet
-   (.sheet below -- banned by 「ページ遷移型にせず下からひょいって出すやつ」),
+   (banned by 「ページ遷移型にせず下からひょいって出すやつ」, and gone),
    and iOS's own confirm() (banned by 「標準は使わねえって言ってるだろこれも
    禁止や」). What is left is this: in the middle of the screen, over the
    scrim, not sliding up from anywhere.
@@ -3066,12 +3066,6 @@ a.set{text-decoration:none}
    13+19+13 = 45。 */
 .pop .btn{display:block;width:100%;margin-top:8px;font-size:1.02rem;padding:13px 0}
 .pop .btn.popno{margin-top:2px;color:var(--txm)}
-.sheet{position:fixed;left:0;right:0;bottom:0;z-index:41;max-width:480px;margin:0 auto;background:var(--pane);
-       border-top:1px solid var(--line);border-radius:22px 22px 0 0;
-       padding:8px 22px calc(env(safe-area-inset-bottom,0) + 20px);transform:translateY(101%);
-       transition:.27s cubic-bezier(.2,.8,.2,1);max-height:92dvh;overflow:auto}
-.sheet.on{transform:none}
-.sheet h3{font-size:1.05rem;margin:0 2px 6px;font-weight:700}
 .field{margin-bottom:11px}
 .field label{font-size:.84rem;color:var(--txm);letter-spacing:.04em;display:block;margin-bottom:5px}
 /* A field is a LINE, not a box. 「かくまるみたいなのでくくるのやめて欲しい。
@@ -3874,8 +3868,14 @@ textarea.ntbody.grow{min-height:0;height:auto;overflow:hidden;resize:none}
      over tabBar(). -->
 <div id="tabs"></div>
 
-<div class="sbg" id="sbg" onclick="closeSheet(event)">
-  <div class="sheet" id="sheet" onclick="event.stopPropagation()"></div>
+<!-- The popup and the dark behind it, and nothing else: `#pop` is drawn by
+     popPaint() (www/shell.js) and by nothing else, and the dark is a button
+     like every other button in the app -- a name, not code. It is its own
+     element rather than the one the popup sits in, so a press on the words of
+     the popup is a press on the popup and not on the dark. `#sbg` carries `on`
+     for both and is what boot.js listens on. -->
+<div id="sbg">
+  <div class="sbg" data-do="closeSheet"></div>
   <div class="pop" id="pop"></div>
 </div>
 <div class="netspin" id="netspin"></div>

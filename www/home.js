@@ -296,11 +296,13 @@ function openHelp(k){
 }
 FORM_OPEN.help=function(a){ openHelp(String(a||'')); };
 function formMount(){ if(FORM && FORM.mount) FORM.mount(); }
-/* Kept because a dozen save buttons call it. Closing a form is leaving a page. */
-function closeSheet(e){
-  if(e && e.target && e.target.id!=='sbg') return;
-  /* The popup rides on this same scrim and is not a route: taking it down is
-     all there is to do. Pressing the dark is the "no". */
+/* The dark behind the popup, pressed -- and the way a save button leaves the
+   form it saved. The popup is not a route, so taking it down is all there is
+   to do while it is up; pressing the dark is the "no". Otherwise closing a
+   form is leaving a page. The dark is an element of its own in index.html,
+   so a press here is never a press on the popup's words: nothing is asked of
+   the event, and nobody hands one in. */
+function closeSheet(){
   if(popOn()){ popOff(); return; }
   if(here().r==='form') back();
 }
@@ -2433,7 +2435,7 @@ function saveName(){
      `language.name` column -- the half anybody else reads -- kept the name
      the language was made with. The box closes when the server has taken it
      and stays open when it has not. */
-  netLangRename(v, function(){ closeSheet({target:{id:'sbg'}}); render(); });
+  netLangRename(v, function(){ closeSheet(); render(); });
 }
 
 /* =========================================================================

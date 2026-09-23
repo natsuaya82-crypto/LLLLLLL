@@ -105,6 +105,8 @@ act('upFile', upFile);
 act('upData', upData);
 act('popYes', popYes);
 act('popNo', popNo);
+/* the dark behind the popup -- index.html's shell, harvested by act-check */
+act('closeSheet', closeSheet);
 /* And the two on the popup the launch puts up when a plan has ended -- the box
    that says 「今後表示しない」 and the way out. www/settings.js § capLapseSaw;
    the tick is what sends `plan_lapse_seen`, closing without it writes nothing

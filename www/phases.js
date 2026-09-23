@@ -630,7 +630,7 @@ function stAddOwn(){
   }
   STG.extra.push({id:'own'+(STG.extra.length+1)+'_'+WORDS.length+'_'+slots.length,
                  title:title, slots:slots, labels:labels, what:''});
-  saveStg(); closeSheet({target:{id:'sbg'}}); render(); toast(t('stg.own.added', title));
+  saveStg(); closeSheet(); render(); toast(t('stg.own.added', title));
 }
 /* Deleting one is gated too, and that is a change: it used to be open on
    every plan, on the grounds that a language which came down from a paid plan

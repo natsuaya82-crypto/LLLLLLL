@@ -1964,7 +1964,7 @@ function nclsSave(i){
   i=Number(i);
   if(i<0) STG.ncls.names.push(v); else STG.ncls.names[i]=v;
   stMarkSet('ncls');
-  closeSheet({target:{id:'sbg'}});
+  closeSheet();
   render();
 }
 /* DELETING ONE. It asks once, in the app's own popup -- 「標準は使わねえって

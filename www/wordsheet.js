@@ -2010,7 +2010,7 @@ function wdDelMn(i){ wEdit.mns.splice(i,1); wdPaint(); }
    deriving is. It is a real entry, so it can itself be derived from. */
 function wdDerive(){
   var w=findWord(openHw); if(!w) return;
-  closeSheet({target:{id:'sbg'}});
+  closeSheet();
   openAdd(w.hw);
 }
 /* The four, and the note, written onto a word -- by Save and by Add, which

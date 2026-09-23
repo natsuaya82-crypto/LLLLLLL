@@ -87,7 +87,6 @@
 .rowq .qo | border-radius
 .scin | border
 .scin | border-radius
-.sheet | border-radius
 .swk | border-radius
 .swt | border-radius
 .tab | border-radius
