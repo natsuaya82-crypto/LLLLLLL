@@ -2990,6 +2990,22 @@ const R = await pg.evaluate(async () => {
       }
       delete files['v-fail-1.m4a'];
 
+      /* ---- the voice's length travels, and a voice that is gone is said -
+         r63-audit R1: netBody() dropped `vo` whole, so every other phone
+         showed 0:00. R2: a recording this phone could not read went up as a
+         post with no voice, and nothing said so. */
+      const bodyV = netBody({ id: 'x', ln: 'k', vo: { f: 'v-here.m4a', ms: 3000 } });
+      if (!bodyV.vo || bodyV.vo.ms !== 3000 || bodyV.vo.f !== undefined)
+        fails.push('the row does not carry the voice\u2019s length, or carries this ' +
+                   'phone\u2019s file name: ' + JSON.stringify(bodyV.vo));
+      let goneV = null;
+      netUpVoice('u1', 'p-gone', { vo: { f: 'v-not-here.m4a', ms: 2000 } },
+                 function (l, st, m) { goneV = [l, m]; });
+      await new Promise(r => setTimeout(r, 100));
+      if (!goneV || goneV[0] !== 1 || String(goneV[1]).indexOf('\u2205') < 0)
+        fails.push('a recording this phone cannot read went up as a post with no ' +
+                   'voice: ' + JSON.stringify(goneV));
+
       /* ---- 17. a delete whose files will not go does not happen ---------
          「通信エラーなら進むわけねえだろ全部」「なら失敗して残るにするべき」
          OWNER 2026-09-05. This held the other shape until 2026-09-23: the row

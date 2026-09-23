@@ -1329,7 +1329,7 @@ function postSend(p, ok, bad){
                 come through here. */
              if(p.to) postCountsPull(p.to);
              ok(sid); },
-             function(d, s){ delete POST_SENDING[id]; savePosts(); bad(d, s); });
+             function(d, s, m){ delete POST_SENDING[id]; savePosts(); bad(d, s, m); });
 }
 /* ---- the badge, and the one thing on a post that is NOT frozen ----------
    One gold star beside a name, and it says the person is on Pro.
@@ -2202,6 +2202,10 @@ function pwSendPost(p){
     goTab('feed');
   }, function(d, s, m){
     netSpin(false);
+    /* Answered and refused for a reason that is not the wire -- the voice's
+       file is gone (`∅`, netWhy). One sentence, and no ［再接続］: pressing
+       again would not bring the file back. */
+    if(String(m||'').indexOf('∅')>=0){ toast(netWhy(d, s, m)); return; }
     netPop(d, s, m, function(){ pwSendPost(p); });
   });
 }

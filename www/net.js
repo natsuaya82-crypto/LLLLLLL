@@ -479,8 +479,10 @@ function netWhy(d, status, mark){
      落ちた話ではないので `net.offline` ではないし、状態のどれでもない。
      `−` や `≠` と同じく印で分ける。出すのは netDrop() と netLangDrop() で、
      どちらの話かは印の頭に書いてある ── 「投稿」と「言語」は別の文。 */
-  if(String(mark||'').indexOf('∅')>=0)
+  if(String(mark||'').indexOf('∅')>=0){
+    if(String(mark).indexOf('vo')===0) return t('post.vo.gone');
     return String(mark).indexOf('language')===0? t('lang.del.no') : t('post.del.no');
+  }
   if(!status) return t('net.offline') + (mark? ' ('+mark+')' : '');
   var m=(d && (d.msg || d.message || d.error_description || d.error)) || '';
   if(status===400 && /invalid login/i.test(m)) return t('net.badlogin');
@@ -3164,6 +3166,12 @@ function netBody(p){
   var o={}, k, skip={id:1, sid:1, mine:1, at:1, to:1, pics:1, vo:1, li:1, bo:1, re:1,
                      down:1, out:1};
   for(k in p) if(Object.prototype.hasOwnProperty.call(p, k) && !skip[k]) o[k]=p[k];
+  /* THE VOICE'S LENGTH TRAVELS; ITS FILE ON THIS PHONE DOES NOT. `vo` was
+     skipped whole because `vo.f` names a file in this phone's Documents, and
+     the length went with it -- so every other phone showed 0:00 on every
+     recording (r63-audit R1, measured). The recording itself is `vu`, a path
+     in the bucket, and postVoAt() reads that where there is no `f`. */
+  if(p.vo && p.vo.ms) o.vo={ms:p.vo.ms};
   return o;
 }
 /* And what a row is on the way back. The server's uuid becomes the post's id,
@@ -4942,8 +4950,8 @@ function netPush(post, ok, bad){
      push fails. */
   netUpPics(SESS.uid, pid, post, postPics(post), function(left, st){
     if(left){ bad(null, st); return; }
-    netUpVoice(SESS.uid, pid, post, function(vleft, vst){
-      if(vleft){ bad(null, vst); return; }
+    netUpVoice(SESS.uid, pid, post, function(vleft, vst, vm){
+      if(vleft){ bad(null, vst, vm); return; }
       /* The paths are ON the post now, so netBody() carries them up with
          everything else it carries. They were written onto the row here, and
          that was a second place holding what a post is made of. */
@@ -4972,7 +4980,12 @@ function netUpVoice(uid, pid, post, ok){
   if(post && post.vu){ ok(0, 0); return; }
   if(!vo || !vo.f){ ok(0, 0); return; }
   voRead(vo.f, function(b64){
-    if(!b64){ ok(0, 0); return; }
+    /* NOT THERE IS NOT 「NO VOICE」. A recording the post names and this phone
+       cannot read went up as a post with no voice, and nothing said so
+       (r63-audit R2). It is a send that did not happen -- with the mark
+       netWhy() turns into 「この声は見つかりません」, because it is not the
+       wire, and ［再接続］ would not bring the file back. */
+    if(!b64){ ok(1, 0, 'vo ∅'); return; }
     netUp(uid+'/'+pid+'/vo.m4a', b64, 'audio/mp4',
       function(path){ post.vu=path; ok(0, 0); },
       function(d, s){ ok(1, s||0); });
