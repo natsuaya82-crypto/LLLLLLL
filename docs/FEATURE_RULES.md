@@ -298,6 +298,28 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Affected docs: `docs/CHANGELOG.md`
 - Implementation status: r56-guide-sp。行と列は `geGuideRows()` 一箇所、`tools/guide-check.mjs` が描いた線を行・列に戻して測る
 
+### 2026-09-23 人の言語の ↓ は ⭕ で待ち、⭕☑️ で済み。人の言語は wiki に出さない
+- Date: 2026-09-23
+- Area: 人の「この言語について」のダウンロード欄（`www/home.js` `wldGetRow()` `wldGet()`）、
+  wiki（`wldPage()`、プロフィールの `wldRow()`）
+- Decision:「人の言語dlした時にdlできたかわかりにくいから↓を押したら⭕️でダウンロード状況表示。
+  ダウンロードしてる言語は⭕️☑️にして。」「後人の言語は自分の言語じゃないからwikiページに
+  表示させないように。」
+  - **↓ を押すと、その章の行が回る**（サーバーの答えが来るまで）。
+  - **答えが来たら ⭕☑️**。最初から取ってある章も ⭕☑️。どちらも **サーバーの答え**
+    （`language_take`）と、その章が読み込まれていることから出す。端末の印では出さない。
+  - **断られたら ↓ に戻り、「接続できません」**。
+  - **取った言語は wiki に出ない**：取った言語を開いていると、プロフィールの wiki の行が無く、
+    about / world は自分の記事を描かない（`langLocked()` 一つで問う）。
+    その言語の語・字・キーボードは今まで通り読める。
+  - 「dlした言語で開いた時だから、そもそも存在しないから無視してもいいよ」── 取った言語の
+    about が回り続けた件は追わない（入口が無くなる）。
+- Reason: 押して何も変わらないと取れたか分からない。人の言語は自分の wiki ではない。
+- Affected features: 人の言語のダウンロード、プロフィールの言語の行、この言語について
+- Affected data: なし。貯まる物・移行・削除なし
+- Implementation status: r59-take。`tools/take-check.mjs` が持つ
+- 未決: 回っている間の印は、アプリに既にある回る印（`snsWaitWord()`）。文字どおりの ⭕ ではない。
+
 ### 2026-09-23 字間は言語ごと。既定は 1 歩、0 で繋がる
 - Date: 2026-09-23
 - Area: 字の並び（`www/glyph.js` `geSide()`）、設定 → 言語、投稿とカード
