@@ -1757,6 +1757,22 @@ was missing was the rule: `ltSetRoman()` did not refuse, so a screen was the
 only thing holding it. It refuses now and `base-check` holds both halves —
 a slot keeps its name, and a letter somebody ADDED is still theirs to name.
 
+## Can a digit's value be changed by anybody? ── the owner has not said
+
+A digit has **no road to its own value**, and nobody has confirmed that is
+intended. ~~`numSetVal()`~~ was the one writer and it went on 2026-09-01
+(`d38258b5`), because its only caller was `ltSetRoman()` turning an ordinary
+letter into a digit — a bug. That commit reads the value as **what the base
+gives**: `numTopUp()` (`www/numbers.js`) puts one slot per value, the + in the
+digits room asks `numFree()`, and the letter page hides the name field on every
+digit (`ltIsBase()`).
+
+That reading is the session's, not a written decision. 「数字が設定できないわ。
+そこ文字から設定できるように頼む」 was asked about DRAWING on a digit, which works.
+Whether a digit's value is something a person may ever edit is a spec question
+for the owner, and nothing should be built on 「this cannot happen」 until they
+have said so.
+
 ## `tools/verify-script.mjs` runs now, and says nineteen things
 
 It was recorded as "broken, a font experiment, not in the gate". Two of those
