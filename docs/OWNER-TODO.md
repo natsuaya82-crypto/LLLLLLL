@@ -11,7 +11,7 @@
 | 4 | 通知のトリガーに要る pg_net | Supabase → Database → Webhooks → Enable webhooks（ボタン一つ。Webhook は作らない）（setup.md § 12） | setup.md § 12 の見かた | まだ |
 | 5 | 通知・広告の表をサーバーに | supabase/schema.sql を流し直す（setup.md § 2） | setup.md § 2 の見かた | 待ち：r55（広告の表）と r58（通知の種類）が integ に入ったとリーダーが言うまで |
 | 6 | 通知を送る函数を置く | GitHub → Actions → Supabase Deploy → Run workflow → `push-send`（3 と 5 の後）（§ 8-6） | 緑。Secret が空なら名前を言って止まる | まだ（3・5 の後） |
-| 7 | 毎日の通知の時刻 | Supabase の Cron `daily-prompt` の時刻を変える。今の `5 7 * * *` は冬時間で一日遅れる | — | 待ち：r58 が setup.md を直すまで。その値に変える |
+| 7 | 毎日のお題（と通知）が夏も冬も太平洋時間 0 時に出る | Supabase Dashboard → Integrations → Cron（または Database → Cron Jobs）→ `daily-prompt` → Schedule を `0 7,8 * * *` に変えて保存（setup.md § 9-5）。今の `5 7 * * *` は冬時間で一日遅れる | `daily-prompt` の Schedule が `0 7,8 * * *` | まだ（r58 が integ-0905 92e1744a に入った） |
 | 8 | 広告 | AdMob：jpel と同じアカウント（pub-2442181569589497）に Lingua のアプリを登録 → ネイティブ広告の広告ユニットを作る。Secrets の名前と手順は r55 が docs/apple.md に書く | — | 待ち：r55 |
 | 9 | App Store のプライバシー表示（広告・トラッキング） | App Store Connect | — | 待ち：r55 |
 | 10 | 166 を実機で見る | docs/CHECK-0907.md と今日の分：書いている時と投稿の見た目が同じ（改行も）、字を描く画面の田の目安の線、設定→言語→字間、通知（3〜6 の後）、投稿の共有→カード→共有シートに X や Reddit、App Store の説明が多言語 | — | 待ち：166 が届くまで（1・2 の後） |
