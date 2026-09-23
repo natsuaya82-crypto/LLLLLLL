@@ -453,12 +453,22 @@ function shareKbd(){
    same reason — a rule with one place to live. scriptSig() is the letters,
    verbatim, so a shape drawn a second ago is on the key. */
 function shareSig(){
+  /* WHOSE COMES FIRST, and with nobody signed in there is nothing to sign.
+     The App Group is the account's like everything else -- 「NOTHING IS THE
+     PHONE'S. EVERYTHING IS THE ACCOUNT'S」 (CLAUDE.md) -- so a sign-out or a
+     different account moves the signature even when the letters on the
+     screen have not moved yet, and sharePush() hands over what that account
+     has: nothing, or theirs. r63 § 2-1 K5. LANG_WAIT is the one place
+     that says the open language is still whoever used this phone before
+     (www/core.js § langForAcct), and that is nobody's to hand over either. */
+  var who=(netSignedIn() && !LANG_WAIT)? String(SESS.uid||'') : '';
+  if(!who) return '';
   /* The base is in here and the digits are not, because a digit IS a letter
      and scriptSig() already walks every one of them -- drawing one, naming
      one or giving one a value all move it. What it cannot see is the base
      going 12 -> 10 with every digit already drawn: no letter changes, and
      the widget would go on counting in twelve. */
-  return scriptSig()+'|'+langId+'|'+(can('kb')? 'p':'f')+'|'+
+  return who+'|'+scriptSig()+'|'+langId+'|'+(can('kb')? 'p':'f')+'|'+
          (kbRomOn()? 'm':'-')+'|'+numBase()+'|'+JSON.stringify(KB);
 }
 /* ---- what the widgets read ---------------------------------------------
@@ -613,15 +623,20 @@ function sharePlug(){
    waiting on it — but the one question worth answering later is "did it ever
    land", and the answer has to survive until something asks. */
 function sharePush(){
-  var sig=shareSig(), out, num, p;
+  var sig=shareSig(), give, p;
   if(sig===SHARE.sent) return;
   SHARE.sent=sig;
-  out=JSON.stringify(shareKbd());
-  num=JSON.stringify(shareWidget());
+  /* ALL THREE, EVERY TIME, AND EMPTY IS EMPTY. LinguaShare.swift writes what
+     it is handed and removes a file handed '' -- so with nobody signed in
+     the keyboard, the font and the widget are all three handed nothing, and
+     nobody's letters are left behind in the App Group. */
+  give=sig? {json:JSON.stringify(shareKbd()), font:SFONT.b64||'',
+             num:JSON.stringify(shareWidget())}
+          : {json:'', font:'', num:''};
   p=sharePlug();
   if(!p){ SHARE.how='no bridge'; return; }
   SHARE.how='sent';
-  p('LinguaShare', 'write', {json:out, font:SFONT.b64||'', num:num})['catch'](function(e){
+  p('LinguaShare', 'write', give)['catch'](function(e){
     SHARE.how='refused: '+((e && (e.message||e.errorMessage))? (e.message||e.errorMessage) : e);
   });
 }

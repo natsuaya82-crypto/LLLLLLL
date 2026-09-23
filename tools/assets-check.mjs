@@ -385,26 +385,81 @@ if (existsSync(IOS)) {
 //
 // The bridge is one shape and only one: Capacitor.nativePromise('Plugin',
 // 'method', …) -- www/ has no bundler, so `Capacitor.Plugins` is undefined and
-// there is no second way to reach these (docs/keyboard-extension.md). So the
-// method name appears in www/ as a quoted string, and that is what is counted.
+// there is no second way to reach these (docs/keyboard-extension.md).
+//
+// A METHOD IS A PAIR, AND IT IS ASKED AS ONE. This counted bare method names,
+// and a bare name is not a method: `LinguaPlan.write` was in the table, no line
+// of www/ had called it since 2026-09-11, and it passed because
+// `LinguaShare.write` is called -- the plugin injected the Keychain's plan on
+// every launch with this line reading 「every one of them named by www/」
+// (r63 § 2-5 S1). So a plugin's jsName has to be written in a file of www/,
+// and THAT file has to name the method. A wrapper like admCall('start') for
+// 'LinguaAds' is the same file naming both, which is what it is.
 const NATIVE = /CAPPluginMethod\(name:\s*"([A-Za-z0-9_]+)"/g
-const wwwSrc = referenced
+const wwwFiles = referenced
   .filter((r) => r.endsWith('.js'))
   .map((r) => { try { return readFileSync(join(WWW, r), 'utf8') } catch (e) { return '' } })
-  .join('\n')
+const quoted = (src, q) => src.indexOf(`'${q}'`) >= 0 || src.indexOf(`"${q}"`) >= 0
 let nm, natives = 0
 for (const e of readdirSync(join(IOS, "App"), { withFileTypes: true })) {
   if (!e.isFile() || !e.name.endsWith('.swift')) continue
   const sw = readFileSync(join(IOS, "App", e.name), "utf8")
+  const js = (sw.match(/jsName\s*=\s*"([A-Za-z0-9_]+)"/) || [])[1] || ''
+  const callers = js ? wwwFiles.filter((src) => quoted(src, js)) : []
   NATIVE.lastIndex = 0
   while ((nm = NATIVE.exec(sw))) {
     natives++
     const q = nm[1]
-    if (wwwSrc.indexOf(`'${q}'`) < 0 && wwwSrc.indexOf(`"${q}"`) < 0)
-      note(`ios/App/App/${e.name}: the native method \`${q}\` is in the plugin's ` +
-           `table and no line of www/ names it. Delete it -- git remembers, and ` +
-           `a method that is still compiled is one anybody can call.`)
+    if (!callers.some((src) => quoted(src, q)))
+      note(`ios/App/App/${e.name}: \`${js || '?'}.${q}\` is in the plugin's table and ` +
+           `no file of www/ that names '${js || '?'}' names '${q}'. Delete it -- git ` +
+           `remembers, and a method that is still compiled is one anybody can call.`)
   }
+}
+
+// AND THE APP GROUP HOLDS NOTHING THAT NOBODY WILL TAKE BACK.
+//
+// 「NOTHING IS THE PHONE'S. EVERYTHING IS THE ACCOUNT'S」 (CLAUDE.md). The
+// keyboard and the widget read files out of the App Group, and the only
+// writer is LinguaShare.swift's `write`, which www/share.js hands the
+// signed-in account's copy -- or, for nobody, every file empty. A file there
+// that `write` does not answer for is a file that survives the account it
+// came from: signed out, or deleted, the last person's letters stay on the
+// keyboard (r63 § 2-1 K5). So the surface is counted from the READERS' side:
+// every file name a target other than the app opens is one `write` mirrors,
+// and the app asks for the container in that one function. A fourth file a
+// widget starts reading tomorrow is red tomorrow until `write` answers for it.
+let groupFiles = 0
+{
+  const share = readFileSync(join(IOS, 'App', 'LinguaShare.swift'), 'utf8')
+  const lets = {}
+  for (const m of share.matchAll(/static let (\w+)\s*=\s*"([^"]+)"/g)) lets[m[1]] = m[2]
+  const mirrored = new Set([...share.matchAll(/try mirror\([^,]+,\s*Self\.(\w+)\s*,/g)]
+    .map((m) => lets[m[1]]).filter(Boolean))
+  const asks = (share.match(/\bcontainer\(\)/g) || []).length
+  /* one definition and one caller */
+  if (asks !== 2)
+    note(`ios/App/App/LinguaShare.swift asks for the App Group container ${asks - 1} times. ` +
+         `\`write\` is the one writer, so every file there is one it answers for; a second ` +
+         `door into the folder is a file nothing takes back when the account goes.`)
+  for (const e of readdirSync(IOS, { withFileTypes: true })) {
+    if (!e.isDirectory() || e.name === 'App' || e.name.endsWith('.xcodeproj') ||
+        e.name.endsWith('.xcworkspace')) continue
+    for (const f of readdirSync(join(IOS, e.name))) {
+      if (!f.endsWith('.swift')) continue
+      const sw = readFileSync(join(IOS, e.name, f), 'utf8')
+      for (const m of sw.matchAll(/"([A-Za-z0-9_-]+\.(?:json|otf|ttf|png|bin|txt))"/g)) {
+        groupFiles++
+        if (!mirrored.has(m[1]))
+          note(`ios/App/${e.name}/${f} reads "${m[1]}" out of the App Group, and ` +
+               `LinguaShare.swift's \`write\` does not mirror it -- so nothing empties it ` +
+               `when the account signs out or is deleted, and the last person's copy ` +
+               `stays. Hand it through \`write\` like the others.`)
+      }
+    }
+  }
+  if (groupFiles === 0)
+    note('no file name was found in any extension target -- the App Group check read nothing, which is not the same as it holding')
 }
 
 /* ---------------------------------------------------- the checks are wired up
@@ -475,5 +530,6 @@ console.log(`assets: ${referenced.length} files loaded by index.html, all presen
 if (swiftCount) console.log(`swift: ${swiftCount} files under ios/App/, every one of them in the project's Sources phase.`)
 if (privCount) console.log(`privacy: ${privCount} PrivacyInfo.xcprivacy (${PRIV.map(p => p[0]).join(', ')}), each in its own target's Resources phase.`)
 console.log(`placeholders: ${holes} under ios/App/, every one of them substituted by the deploy workflow.`)
-console.log(`the bridge: ${natives} native methods, every one of them named by www/.`)
+console.log(`the bridge: ${natives} native methods, every one of them called by www/ as plugin and method together.`)
+console.log(`the App Group: ${groupFiles} files read by the keyboard and the widget, every one of them mirrored by LinguaShare's write -- emptied when nobody is signed in.`)
 console.log(`load order: core.js -> ${LANGS.length} languages -> ... -> otf5.js -> glyph.js -> act-map.js -> boot.js (last)`)
