@@ -734,7 +734,8 @@ Dashboard → **Integrations** → **Cron**（または Database → Cron Jobs�
 アメリカ時間の0時から」OWNER 2026-08-23）。太平洋時間の 0 時は、夏時間（3 月〜
 11 月、PDT）は **07:00 UTC**、冬（PST）は **08:00 UTC** で、一つの時刻では両方に
 当たりません。だから二回鳴らします。関数はその日の行があれば何もしないので、
-**どちらの季節でも書くのは 0 時ちょうどの一回だけで、もう一回は何もしません。**
+**どちらの季節でも書くのは 0 時ちょうどの一回だけで、もう一回は何もしません**
+── そして行が入った瞬間がお題の通知です（§ 12）。
 
 2026-09-23 に測ったもの（関数と同じ `Intl` で、`America/Los_Angeles` の日付）:
 
@@ -748,8 +749,9 @@ Dashboard → **Integrations** → **Cron**（または Database → Cron Jobs�
 00:00 PST で書き、翌日からは 07:00 UTC が 00:00 PDT で書く。
 
 **冬の 07:00 UTC は前日の 23:00 です。**前日の 0 時の回が失敗していて前日の行が
-無ければ、この回が前日の行をその 23:00 に書きます ── 取り損ねた一日を拾う
-代わりに、その日が残り一時間の時に入る、ということです。
+無ければ、この回が前日の行を書き、前日のお題の通知がその 23:00 に出ます ──
+取り損ねた一日を拾う代わりに、その日が残り一時間の時に知らせが来る、という
+ことです。
 
 ### 9-6. 文が気に入らない日は
 
@@ -991,10 +993,17 @@ SNS の分（投稿・下書き・プロフィール・フォロー）は元か�
 フォローされた時、返信きた時みたいな感じでSNS部分であるやつ。それに加えて設定で
 個別通知のオンオフできるように。」
 
+オーナーの決定（2026-09-23）：「通知なんだけど、今日のお題が変わった時にも出るように
+できる？」「時間が決まってるでしょ。アメリカ時間の0時。それに合わせるのは？」
+── お題は全員宛てで、§ 9-5 の cron がアメリカ太平洋時間の 0 時に行を入れた瞬間に
+出ます。
+
 ### なぜ Dashboard でしかできないのか
 
-`supabase/schema.sql` は、フォローされた・返信された・いいね／リポストされた瞬間に
-edge function `push-send` を叩く**トリガーを三つ**作ります。その叩く道は
+`supabase/schema.sql` は、フォローされた・返信された・いいね／リポストされた瞬間と、
+**その日のお題の行が入った瞬間**に edge function `push-send` を叩く**トリガー**を
+作ります（どの表に作るかは `supabase/functions/push-send/push.mjs` の `PUSH` が
+言います）。その叩く道は
 **pg_net**（`net.http_post`）で、**これは PostgreSQL の物でも `schema.sql` の物でも
 ありません** ── Supabase が、Database → Webhooks を有効にした時に入れます。
 だから `mail.md` と同じで、ここが唯一の置き場所です。
@@ -1028,29 +1037,30 @@ free と表示された、あの壊れ方をしないためです。
 
 ```
 NOTICE:  push-send: Database -> Webhooks has not been turned on for this
-project, so the three notification triggers were NOT made. Everything else in
+project, so the notification triggers were NOT made. Everything else in
 this file is in. See supabase/setup.md section 12, then run this file again.
 ```
 
 ### 入ったかどうかを見るところ
 
-**Database → Triggers**（または SQL Editor で下を実行）。三つとも在れば済みです。
+**Database → Triggers**（または SQL Editor で下を実行）。四つとも在れば済みです。
 
 ```sql
-select tgname, tgrelid::regclass as "表"
-  from pg_trigger
- where tgname in ('push_on_follow', 'push_on_reply', 'push_on_react')
- order by tgname;
+select g.tgname, g.tgrelid::regclass as "表"
+  from pg_trigger g join pg_proc f on f.oid = g.tgfoid
+ where f.proname = 'push_ping'
+ order by g.tgname;
 ```
 
 | あるべきもの | 表 |
 |---|---|
 | `push_on_follow` | `follow` |
+| `push_on_prompt` | `prompt` |
 | `push_on_react` | `react` |
 | `push_on_reply` | `post` |
 
-**三行出なければ、通知は出ません。**Enable webhooks をしてから、§ 2 をもう一度
-流してください。
+**四行出なければ、足りない種類の通知は出ません。**Enable webhooks をしてから、
+§ 2 をもう一度流してください。
 
 ### 通知が来ないとき、どこを見るか
 
@@ -1058,14 +1068,15 @@ select tgname, tgrelid::regclass as "表"
 
 | 見るところ | 入っていなければ |
 |---|---|
-| Database → Triggers（上の三つ） | この節をやり直す |
+| Database → Triggers（上の四つ） | この節をやり直す |
 | Edge Functions → `push-send` → Logs | 置かれていない（Actions → Supabase Deploy） |
 | そのログの `not set: …` | Apple の鍵が入っていない（`docs/apple.md` § 8） |
 | そのログの `switched off` | その人が設定でその種類を切っている |
 | そのログの `no device` | その iPhone が通知を許可していない |
 | そのログの `their own` | 自分でやったこと（仕様 ── 自分には送りません） |
 | そのログの `no session` / HTTP 401 | 呼び出しに署名が付いていない。`request.headers` に `authorization` が来ていない可能性 |
-| そのログの `not theirs to ring` | 行の actor と、叩いた人が違う |
+| そのログの `not theirs to ring` | 行の actor と、叩いた人が違う。お題なら、行を入れたのが daily-prompt（service role の鍵）ではない |
+| お題の通知だけ来ない | § 9-5 の Schedule が `0 7,8 * * *` か。daily-prompt の Logs に `wrote` があるか |
 
 **`push-send` はサインインした本人しか叩けません。**「サインインなしで勧める
 ものないけど」OWNER 2026-09-22。トリガーは**行を入れた人の Authorization を
@@ -1073,6 +1084,14 @@ select tgname, tgrelid::regclass as "表"
 呼び出しは函数が走る前に断られます。そのうえで函数は、**誰から来たかを
 Supabase 自身に訊き直し**、その人がやった行でなければ何も送りません ──
 サインインした他人が、他人の iPhone を鳴らすこともできません。
+
+**お題だけは全員宛てで、それを鳴らせるのは service role の鍵だけです。**お題の
+行を入れるのは daily-prompt で、それは service role の鍵で REST を叩きます。
+トリガーはその Authorization を持って行き、`push-send` は「その鍵そのものか」を
+見て、そうでなければ全員宛てを一通も出しません。`prompt` の表にはアプリから
+書く道が無い（insert の policy も grant も無い）ので、サインインした人がお題の
+行を作って全員を鳴らすことはできません ── `npm run rls` が B と anon で試して
+います。
 
 **だから `supabase_functions.http_request()`（Webhooks の画面で作るふつうの
 Webhook）は使っていません。**あれの header は**トリガーの引数**で、

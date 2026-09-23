@@ -642,3 +642,21 @@ iPhone が通知を許可して token をサーバーに送るところと、設
 6  GitHub → Actions → Supabase Deploy → push-send
 7  （別の作業）アプリ側が入ったビルドを実機に入れて、通知を許可する
 ```
+
+### 8. その日のお題の通知（2026-09-23）
+
+オーナーの決定（2026-09-23）：「通知なんだけど、今日のお題が変わった時にも出るように
+できる？」「時間が決まってるでしょ。アメリカ時間の0時。それに合わせるのは？」
+
+**Apple 側で増えることはありません。** 1〜4 がそのまま使えます。増えるのは
+サーバーの三つで、この順です：
+
+```
+1  Supabase → SQL Editor → schema.sql を流し直す（push_on_prompt ができる。setup.md § 12 の確かめ方で四行）
+2  Supabase → Cron → daily-prompt の Schedule を 0 7,8 * * * に（setup.md § 9-5）
+3  GitHub → Actions → Supabase Deploy → push-send（全員宛てを送れる版に置き換える）
+```
+
+2 を飛ばすと、夏（PDT）は 0 時に来ますが、**冬（11 月〜）は 23 時間遅れて前日の
+23 時に来ます**。3 を飛ばすと、行が入ってもお題の通知は一通も出ません（古い
+push-send は `prompt` の表を知らないので、`not an event` で終わります）。

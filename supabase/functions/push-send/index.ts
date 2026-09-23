@@ -1,4 +1,7 @@
-// push-send — フォロー・返信・いいね・リポストを、アプリを閉じている iPhone へ。
+// push-send — フォロー・返信・いいね・リポスト、そしてその日のお題を、アプリを
+// 閉じている iPhone へ。
+//
+// OWNER 2026-09-23「通知なんだけど、今日のお題が変わった時にも出るようにできる？」
 //
 // OWNER 2026-09-22「通知作ろう。アップルのネイティブ通知で、フォローされた時、
 // 返信きた時みたいな感じでSNS部分であるやつ。それに加えて設定で個別通知のオンオフ
@@ -10,7 +13,7 @@
 // 数えます。
 //
 // **この函数は種類の名前を一つも知りません。**どの列を読み直すか、親の行が
-// 要るか ── 全部 `push.mjs` の `PUSH` に訊きます。
+// 要るか、一人宛てか全員宛てか ── 全部 `push.mjs` の `PUSH` に訊きます。
 //
 // **サインインしていない人には何も起こせません。**
 // 「サインインなしで勧めるものないけど」 OWNER 2026-09-22 ── このアプリに、
@@ -24,8 +27,10 @@
 //     この行が走る前に断られます。
 //   二枚目 ── **その人がやったことか。**一枚目が言えるのは「サインインして
 //     いる誰か」までで、サインインした他人が他人の行を指して他人の iPhone を
-//     鳴らせます。だから下で `/auth/v1/user` に**誰から来たかを訊き**、返って
-//     きた uid を `push.mjs` の `pushMay()` が行の actor と突き合わせます。
+//     鳴らせます。だから下で**誰から来たかを確かめ**（service role の鍵その
+//     ものか、そうでなければ `/auth/v1/user` に訊いた uid）、`push.mjs` の
+//     `pushMay()` が行の actor と突き合わせます。お題の actor は service role
+//     なので、全員を鳴らせるのはお題の行を書いた daily-prompt だけです。
 //     publishable キーで叩かれた時もここで止まります ── あの鍵に user の sub
 //     はありません。
 //
@@ -46,7 +51,7 @@
 // **一つでも無ければ 500 で止まり、何も送りません。**送れないのと、間違った所へ
 // 送るのとでは、間違ってよい側が決まっています。
 
-import { pushWhat, pushRead, pushTo, pushMay, pushPlan, pushGone, TOPIC } from './push.mjs';
+import { pushWhat, pushRead, pushTo, pushMay, pushPlan, pushBy, pushGone, TOPIC } from './push.mjs';
 
 const APNS = 'https://api.push.apple.com/3/device/';
 
@@ -71,8 +76,8 @@ const b64u = (u8: Uint8Array) =>
     .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 
 /* APNs の鍵は JWT 一枚：ES256、header に kid、payload に iss と iat。
-   有効なのは一時間までで、ここは呼び出しごとに一枚作ります ── 一回の呼び出しで
-   送るのは一人の iPhone の台数ぶんだけなので、貯める値打ちがありません。 */
+   有効なのは一時間までで、ここは呼び出しごとに一枚作ります ── 一回の呼び出し
+   は一人の iPhone の台数ぶんか、一日一回のお題なので、貯める値打ちがありません。 */
 async function apnsJwt(kid: string, team: string, p8: string): Promise<string> {
   const key = await crypto.subtle.importKey(
     'pkcs8', derOf(p8), { name: 'ECDSA', namedCurve: 'P-256' }, false, ['sign']);
@@ -105,14 +110,22 @@ Deno.serve(async (req: Request) => {
      同じ理由です。この函数は service role を持っているので、uid を body から
      取ったら誰でも誰の iPhone でも鳴らせます。
 
+     先に**service role の鍵そのものか**を見ます（`pushBy()`）。お題の行を
+     入れるのは daily-prompt で、トリガーはその Authorization を持って来るので、
+     全員宛てを鳴らせるのはこの鍵を持っている者だけです。そうでなければ
+     `/auth/v1/user` に訊き、返ってきた uid が `by`。
+
      `SUPABASE_ANON_KEY` が無ければ訊けないので、その時も 401 ── 訊けないことを
      「誰でもよい」と読まないためです。 */
   const anon = Deno.env.get('SUPABASE_ANON_KEY') || '';
   const auth = req.headers.get('Authorization') || '';
   if (!anon || !/^Bearer .+/.test(auth)) return said({ why: 'no session' }, 401);
-  const who = await fetch(`${url}/auth/v1/user`, { headers: { apikey: anon, Authorization: auth } });
-  if (!who.ok) return said({ why: 'no session' }, 401);
-  const by = String(((await who.json()) || {}).id || '');
+  let by = pushBy(auth, svc);
+  if (!by) {
+    const who = await fetch(`${url}/auth/v1/user`, { headers: { apikey: anon, Authorization: auth } });
+    if (!who.ok) return said({ why: 'no session' }, 401);
+    by = String(((await who.json()) || {}).id || '');
+  }
   if (!by) return said({ why: 'no session' }, 401);
 
   let raw: unknown;
@@ -143,7 +156,7 @@ Deno.serve(async (req: Request) => {
      ── トリガーは `reply_to is not null` の行だけを通しますが、それは**送る
      側の都合**で、ここは自分で確かめます。一つのことを二箇所で信じないため）。 */
   const k = ev.key as Record<string, string>;
-  const how = pushRead(ev.table, k) as { cols: string; parent: string | null } | null;
+  const how = pushRead(ev.table, k) as { cols: string; parent: string | null; all: boolean } | null;
   if (!how) return said({ why: 'not an event' }, 400);
   let q = `${ev.table}?select=${how.cols}`;
   for (const f of Object.keys(k)) q += `&${f}=${eq(k[f])}`;
@@ -157,30 +170,67 @@ Deno.serve(async (req: Request) => {
   if (!row) return said({ sent: 0, why: 'no such row' });
 
   const aim = pushTo(ev.table, row, parent) as
-    { kind: string; to: string; from: string; post: string | null } | null;
+    { kind: string; to: string | null; from: string; post: string | null } | null;
   if (!aim || !aim.from) return said({ sent: 0, why: 'no such event' });
-  /* 鳴らしてよいか。`pushPlan()` が訊くのと同じ函数を、相手を読みに行く
-     **前に**一度。 */
+  /* 鳴らしてよいか。`pushPlan()` が一人ずつ訊くのと同じ函数を、全員を読みに
+     行く**前に**一度 ── サインインした誰かがお題の行を指して叩いても、device
+     の表を一枚も読まずにここで終わります。 */
   const may = pushMay(aim, by);
   if (may) return said({ sent: 0, why: may });
 
-  /* ---- 相手と、やった人 ------------------------------------------------
-     相手からは設定を、やった人からは @ を。**二人を一度に読みません** ──
-     `id=in.(a,b)` は行の順を約束しないので、どちらの設定かを取り違えます。 */
-  if (!aim.to) return said({ sent: 0, why: 'no such event' });
-  const you = await one(`profile?select=prefs&id=${eq(aim.to)}`);
-  const doer = await one(`profile?select=handle&id=${eq(aim.from)}`);
-  if (!you || !doer) return said({ sent: 0, why: 'no such account' });
+  /* ---- 相手 ------------------------------------------------------------
+     一人宛てなら、相手からは設定を、やった人からは @ を。**二人を一度に
+     読みません** ── `id=in.(a,b)` は行の順を約束しないので、どちらの設定かを
+     取り違えます。
 
-  const devs = await rows(`device?select=token&uid=${eq(aim.to)}`);
-  /* `push.mjs` は素の JavaScript なので、ここで形を言います ── 送らないと
-     決めた答えには `to` も `payload` もありません。三つ全部を見てから先へ
-     進むのは、型を黙らせるためではなく、**片方だけ在る答えは無い**と言って
-     おくためです。 */
-  const plan = pushPlan(aim, { handle: doer.handle, prefs: you.prefs }, devs, by) as
-    { send: boolean; why?: string; to?: string[]; payload?: unknown };
-  if (!plan.send || !plan.to || !plan.payload) return said({ sent: 0, why: plan.why });
-  const sends = [{ uid: aim.to, to: plan.to, payload: plan.payload }];
+     全員宛てなら、iPhone を登録している全員を device から読み、その人の
+     設定を profile から一緒に持って来ます（device.uid → profile.id）。相手が
+     一人でも千人でも、決めるのは下の同じ `pushPlan()` を一人ずつ ── スイッチも
+     言語も、フォローの通知と同じ一行が答えます。 */
+  type One = { uid: string; prefs: unknown; tokens: string[] };
+  const them: One[] = [];
+  let fill: Record<string, unknown> = {};
+  if (!how.all) {
+    if (!aim.to) return said({ sent: 0, why: 'no such event' });
+    const you = await one(`profile?select=prefs&id=${eq(aim.to)}`);
+    const doer = await one(`profile?select=handle&id=${eq(aim.from)}`);
+    if (!you || !doer) return said({ sent: 0, why: 'no such account' });
+    const devs = await rows(`device?select=token&uid=${eq(aim.to)}`);
+    them.push({ uid: aim.to, prefs: you.prefs,
+                tokens: devs.map((d) => String(d.token || '')) });
+    fill = { handle: doer.handle };
+  } else {
+    fill = { says: row.says, text: row.text };
+    const by_uid: Record<string, One> = {};
+    /* 千行ずつ。PostgREST は一度に返す数に上限を持つので、読み切るまで。 */
+    for (let from = 0; ; from += 1000) {
+      const page = await rows(`device?select=uid,token,profile(prefs)` +
+                              `&order=uid,token&limit=1000&offset=${from}`);
+      for (const d of page) {
+        const uid = String(d.uid || '');
+        if (!uid) continue;
+        const p = (d.profile && typeof d.profile === 'object') ?
+          (d.profile as Record<string, unknown>).prefs : null;
+        if (!by_uid[uid]) { by_uid[uid] = { uid, prefs: p, tokens: [] }; them.push(by_uid[uid]); }
+        by_uid[uid].tokens.push(String(d.token || ''));
+      }
+      if (page.length < 1000) break;
+    }
+  }
+
+  const sends: { uid: string; to: string[]; payload: unknown }[] = [];
+  let why = '';
+  for (const t of them) {
+    /* `push.mjs` は素の JavaScript なので、ここで形を言います ── 送らないと
+       決めた答えには `to` も `payload` もありません。三つ全部を見てから先へ
+       進むのは、型を黙らせるためではなく、**片方だけ在る答えは無い**と言って
+       おくためです。 */
+    const plan = pushPlan({ ...aim, to: t.uid }, { ...fill, prefs: t.prefs }, t.tokens, by) as
+      { send: boolean; why?: string; to?: string[]; payload?: unknown };
+    if (!plan.send || !plan.to || !plan.payload) { why = plan.why || why; continue; }
+    sends.push({ uid: t.uid, to: plan.to, payload: plan.payload });
+  }
+  if (!sends.length) return said({ sent: 0, why: why || 'no device' });
 
   /* ---- そして Apple へ ------------------------------------------------- */
   let jwt: string;

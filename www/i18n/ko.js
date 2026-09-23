@@ -665,6 +665,7 @@ defLang('ko', (function(){
       'push.reply'            : "답글",
       'push.like'             : "좋아요",
       'push.boost'            : "다시 올리기",
+      'push.prompt'           : "오늘의 주제",
       'push.off'              : "iPhone 설정에서 알림이 꺼져 있습니다",
       'push.no'               : "설정을 열 수 없습니다",
       'notif.pick'            : "읽어볼 만합니다",

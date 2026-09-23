@@ -23,7 +23,7 @@
      they say yes, hands the token to netDevicePut(). **This phone keeps no
      copy of it**: the row in `device` is the record, and NET_TOK in
      www/net.js is only what the sign-out DELETE needs, in memory.
-   - the four switches. Which kinds of notification somebody wants, which are
+   - the switches. Which kinds of notification somebody wants, which are
      fields of `SET` on `SET_PREFS`, so `profile.prefs` carries them and a
      second phone is arranged the way the first one was.
    - the tap. Swift calls window.pushOpened() with what the notification
@@ -56,11 +56,18 @@ function pushPlug(){
   return np ? np : null;
 }
 
-/* THE FOUR KINDS, and this is the only list of them in www/.
-   The names of the fields they set are `push_` + one of these, and that is
-   the same name the server reads out of `profile.prefs` -- netPrefsPut()
-   writes `SET`'s own names, so there is one spelling and not two. */
-var PUSH_KINDS=['follow','reply','like','boost'];
+/* THE KINDS, as the settings room lists them.
+   What the kinds ARE is `PUSH` in supabase/functions/push-send/push.mjs --
+   which table raises each, who it is for -- and this file cannot read it:
+   that is Deno, this is an ES5 script. So this is a copy of its names, in
+   its order, and tools/push-check.mjs reads both and fails on the day they
+   differ, the same way it holds `SET_PREFS` in www/core.js and the ten
+   `push.<kind>` strings. The names of the fields they set are `push_` + one
+   of these, and that is the same name the server reads out of
+   `profile.prefs` -- netPrefsPut() writes `SET`'s own names, so there is one
+   spelling and not two. `prompt` is the day's sentence
+   (OWNER 2026-09-23), for everybody at US Pacific midnight. */
+var PUSH_KINDS=['follow','reply','like','boost','prompt'];
 
 /* Whether one kind is wanted. **ABSENT IS ON**, and it is the server's rule
    rather than a second one written here: somebody who has never opened this
@@ -133,15 +140,16 @@ function pushSw(k){
      can be NAMED by reading the source (tools/store-check.mjs): a computed
      write is a place to keep somebody's setting that nothing can say the road
      of, and 「a field added tomorrow」 is exactly what that check exists to
-     catch. Four names in the table, four names here.
+     catch. One name per kind in the table, one here.
 
      What that costs is a kind on PUSH_KINDS with no line here -- a switch
      drawn and a switch that does not move. It is what acct-check 82 presses
-     all four of. */
-  if(n==='follow')     SET.push_follow=on;
-  else if(n==='reply') SET.push_reply=on;
-  else if(n==='like')  SET.push_like=on;
-  else if(n==='boost') SET.push_boost=on;
+     every one of. */
+  if(n==='follow')      SET.push_follow=on;
+  else if(n==='reply')  SET.push_reply=on;
+  else if(n==='like')   SET.push_like=on;
+  else if(n==='boost')  SET.push_boost=on;
+  else if(n==='prompt') SET.push_prompt=on;
   else return;
   setKeep();
   netPrefsPut();
@@ -162,11 +170,11 @@ function pushSettings(){
   np('LinguaShare', 'settings', {})['catch'](function(){ toast(t('push.no')); });
 }
 
-/* The settings room. Four rows and a switch on each, and above them -- only
+/* The settings room. A row and a switch for each kind, and above them -- only
    when iOS says the permission was refused -- one row saying so, which opens
    iOS's settings. That row is a STATE and not an explanation: the app has had
-   something taken away from it and the screen would otherwise be four
-   switches that do nothing with no cause and no way out (CLAUDE.md
+   something taken away from it and the screen would otherwise be a column
+   of switches that do nothing with no cause and no way out (CLAUDE.md
    § Explaining, the narrowing of 2026-08-22).
 
    The switches are live in that state and are not disabled. They are
@@ -202,6 +210,7 @@ function pushRoomHTML(){
    has to be ready first.
 
    WHERE IT GOES: the post's own thread if the notification was about a post,
+   the timeline if it was the day's prompt -- the prompt is the top of it --
    and the notices otherwise. The payload is somebody else's dictionary --
    it comes off the server through Apple -- so the id is taken as a string and
    used as a route's argument and nothing else. A route that cannot find it
@@ -210,5 +219,5 @@ function pushRoomHTML(){
 window.pushOpened=function(p){
   var id=(p && p.post!=null) ? String(p.post) : '';
   if(id){ go('thread', id); return; }
-  goTab('notif');
+  goTab(p && p.kind==='prompt' ? 'feed' : 'notif');
 };
