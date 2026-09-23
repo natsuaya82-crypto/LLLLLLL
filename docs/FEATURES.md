@@ -92,7 +92,7 @@ Marked separately, because they are not the same question:
 | Which way a language is written | shipped | **reading, always** | `dir`: choosing one | `SCRIPT.dir` in the `script` slice; frozen on the post as `post.dir` | decided |
 | A calendar of your own | shipped | **month and weekday names** | — the year is twelve months and the week seven (`CAL_MONTHS`, `CAL_WEEK`), not a setting | the names are words with `slot` on them | decided — names and numerals only, no arithmetic of anybody's own (`www/cal.js`) |
 | A post shown two ways | shipped | **both layers** | — | both frozen on the post (`ln`+`ink`, `mn`) | decided — the third layer went out with the AI (decision log, 【差し替え済み】A post shown three ways) |
-| What a post MEANS, in the reader's own words | shipped | yes | yes | `post.mn`, frozen on the post. Nothing else — there is no `tr` field written any more | decided — 「単語はその単語の意味を 文法は並び替えた単語たちが文章として成り立つように。きかいほんやくはつかわない」 OWNER 2026-09-05. `toNatural()` in `www/grammar-engine/translate.js`: each word says what the DICTIONARY says it means, and the GRAMMAR puts those meanings in an order that reads as a sentence in the reader's language. A line the engine cannot parse falls to the word-by-word gloss. **No machine translation, and no seam for one** — `postTr` and `TR_SEAM` are deleted |
+| What a post MEANS, in the reader's own words | shipped | yes | yes | `post.mn`, frozen on the post. Nothing else — there is no `tr` field written any more | decided — 「単語はその単語の意味を 文法は並び替えた単語たちが文章として成り立つように。きかいほんやくはつかわない」 OWNER 2026-09-05. `toNatural()` in `www/grammar-engine/translate.js`: each word says what the DICTIONARY says it means, and the GRAMMAR puts those meanings in an order that reads as a sentence in the reader's language. A line the engine cannot parse falls to the word-by-word gloss. **No machine translation, and no seam for one** — ~~`postTr`~~ and ~~`TR_SEAM`~~ are deleted |
 | Posts on the server | shipped, **not device confirmed** | yes | — | `post` rows | done — `netPush`/`netFeed`/`postCatchUp`. An account is required to read the timeline or post to it (decision 2026-08-18) |
 | Explore | shipped, **not device confirmed** | yes | — | — | done — people while you type, posts when you press Search; both ask the server (`netFindWho`/`netFindPosts`) |
 | **Search history — the last five words typed** | **shipped 2026-09-03**, **not device confirmed** | yes | — | **`recent_search` rows on the server (new table); `SET.recent` is the copy that works with no signal (new key)** | decided — 「検索した履歴もユーザーはいらんから5個くらい検索履歴出るようにしたい」「1件づつ消せるでいいよ」 OWNER 2026-09-03. Five, newest first, under an **empty** search field; pressing one searches it again; the ✕ on a row takes that one and there is no button that takes them all. **No row of round faces** 「人の丸い列は作らない」 — the owner's TikTok screenshot had one and it was named as the part they did not want; CLAUDE.md § Shape forbids it anyway. **A word is recorded when 🔍 is pressed and by nothing else** 「検索は🔍押したらって言ってるやん」 — never per keystroke, or the prefixes typed on the way are three more rows; the same sentence this screen already lived by 「ツイートの検索は検索ボタン押したら出てくる。それまでは人」 (2026-08-26). Opening a person off the answer was built as a second road and the decision took it out. **Not the star**: `saved_search` is a word somebody chose, this is a word they typed, and one table with a kind-column on it would let the five-item ceiling delete somebody's star |
@@ -183,7 +183,7 @@ person can write which does NOT point at the dictionary.
 **It is on the list from the start.** 「文法ページに◉+ あるのに下までいくと
 助詞+って二重になってる。◉＋だけにして、助詞は最初から出せ」 OWNER 2026-09-01.
 It used to be off the list until a language turned out to have one, with a door
-at the foot to turn it on — `STAGES_IF`, which is gone with the door. A language
+at the foot to turn it on — ~~`STAGES_IF`~~, which is gone with the door. A language
 with no particles leaves the chapter empty, which is what an unanswered chapter
 already is everywhere else.
 
@@ -212,12 +212,12 @@ the thing rather than by answering it. **There is no hosted model, no key, and
 nothing to hold one** — post-time translation through somebody else's service
 was the shape that needed a server-side function, a price per post, and an
 answer to "what happens when it fails". None of those is a question any more.
-The seam that was left for it is gone: `postTr` and `TR_SEAM` are deleted, and
+The seam that was left for it is gone: ~~`postTr`~~ and ~~`TR_SEAM`~~ are deleted, and
 `post.tr` is written by nothing.
 
 **It has no limit and no capability**, and it never can have one: what a post
-means is not a thing money may decide (`docs/PAID_FEATURES.md`). `AI_FREE_DAILY`
-went out with Studio, `TR_FREE_DAILY` has no declaration anywhere in `www/`,
+means is not a thing money may decide (`docs/PAID_FEATURES.md`). ~~`AI_FREE_DAILY`~~
+went out with Studio, ~~`TR_FREE_DAILY`~~ has no declaration anywhere in `www/`,
 and there is no name in `CAN` for this — count them off that table, not off a
 line here 「1日3回は亡くなりましたaiいれないから」. The only ceiling free has
 left is `FREE_LIMIT`, and that is words.
@@ -421,7 +421,7 @@ RevenueCat の画面で見ます。App Store Connect のキーは作りません
 
 コードは 2026-09-02 に消えています ── `supabase/functions/appstore/` は無く、
 `www/net.js` に ~~`netStore()`~~ は無く、`www/mod.js` の五ページも無い。
-`supabase/setup.md` の `ASC_VENDOR_NUMBER` も、それを読むものが無くなった
+`supabase/setup.md` の ~~`ASC_VENDOR_NUMBER`~~ も、それを読むものが無くなった
 ので要りません。**RevenueCat の枝は `claude/rc`** で、公開キー待ちのまま
 取り込まれていません。
 

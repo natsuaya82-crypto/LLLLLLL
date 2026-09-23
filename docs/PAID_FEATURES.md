@@ -21,7 +21,7 @@ OWNER 2026-09-06。「だから端末でやるわけねえだろ」OWNER 2026-09
 
 端末には段を決める判定が一つも残っていない ── `LinguaStore.swift` の ~~`best()`~~、
 ~~`entitledPlan()`~~、~~`writeDown()`~~ は消えた。`www/` から `plan` 表を触る道も無い
-（`netPlanUp`、`netPlanSync` は削除）。
+（`netPlanUp`、~~`netPlanSync`~~ は削除）。
 
 ## プランは絶対におかしくしてはいけない
 
@@ -267,7 +267,7 @@ between the prices and the button that buys.
 **`kb` is Plus's, and its number landed in the same commit** — 2026-08-23.
 「1,1+3.無制限って言わなかったっけ？」 Free 1, Plus 1 + 3 = 4, Pro no ceiling,
 and **counted as a pool across languages** rather than per language: three
-languages were nine keyboards while `KB_MAX` was three per language, on a plan
+languages were nine keyboards while ~~`KB_MAX`~~ was three per language, on a plan
 that sells three.
 
 **`dl` is Plus's, and its numbers are the owner's of 2026-09-02.**
@@ -414,7 +414,7 @@ stops answering is a person who can still look at their language.
 reason: a constant was one fact while there was one paid tier and is three
 facts now. `kbCount()` in `keyboard.js` is what it is compared against, and it
 reads every language rather than the open one. **The door and its number are
-one statement and did not land apart**: opening `can('kb')` while `KB_MAX`
+one statement and did not land apart**: opening `can('kb')` while ~~`KB_MAX`~~
 still handed out three would have given Plus a number the owner never said.
 `plan-check` holds all seven claims, and three of them were watched failing
 with the bug put back.
@@ -574,7 +574,7 @@ for a month and then never again. 「a にしたら最初の1ヶ月で作りき�
 
 There used to be a fourth plan, Studio, and it sold the hosted model — the
 conversation, and word suggestions with no daily limit. There is no hosted
-model: `AI_SEAM` in `www/glyph.js` marks where one would join and nothing joins
+model: the comment AI_SEAM in `www/glyph.js` marks where one would join and nothing joins
 it. A tier whose headline is a thing the app cannot do is the app lying to
 somebody who is about to pay, so Studio is out until the seam has something
 behind it, and what it opened went with it.
@@ -745,8 +745,8 @@ alone. What it cannot ask is what happens to somebody's WORDS when the answer
 changes, and that is this: five hundred words made on the paid plan, the plan
 ended, and then the list is a hundred while the language is still five hundred
 and **not one byte of any slice has moved**. Also that no plan at all reads as
-free; that any plan which is not the word `plus` buys nothing (`garbage`,
-`PLUS`, `studio`); that the ceiling refuses without taking the screen off
+free; that any plan which is not the word `plus` buys nothing (`'garbage'`,
+`'PLUS'`, `'studio'`); that the ceiling refuses without taking the screen off
 anybody; that **a launch holds no plan at all** until `verify-plan` answers,
 whatever an old `lingua.set` holds, and writes nothing back; that no field of
 the settings is about money; and that **「プランが終了しました」 is the
