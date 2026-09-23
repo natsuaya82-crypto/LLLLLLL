@@ -403,6 +403,8 @@ defLang('pt', (function(){
       "wld.title"    : "Para que serve esta língua",
       'wld.about'             : "Sobre esta língua",
       'wld.edit'            : "Editar",
+      'wld.taking'          : "Baixando",
+      'wld.took'            : "Baixado",
       'wld.public'            : "Mostrar esta língua a outras pessoas",
       'wld.public.d' : "Outras pessoas podem abrir a página da sua língua e lê-la.",
       'wld.dl'       : "Permitir baixar",

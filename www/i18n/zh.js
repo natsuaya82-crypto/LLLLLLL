@@ -404,6 +404,8 @@ defLang('zh', (function(){
       "wld.title"    : "这门语言是为了什么",
       'wld.about'             : "关于这门语言",
       'wld.edit'            : "编辑",
+      'wld.taking'          : "正在下载",
+      'wld.took'            : "已下载",
       'wld.public'            : "把这门语言展示给别人",
       'wld.public.d' : "其他人可以打开并阅读你的语言页面。",
       'wld.dl'       : "允许他人下载",

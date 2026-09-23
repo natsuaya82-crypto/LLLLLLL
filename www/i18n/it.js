@@ -396,6 +396,8 @@ defLang('it', (function(){
       "wld.title"    : "A cosa serve questa lingua",
       'wld.about'             : "Su questa lingua",
       'wld.edit'            : "Modifica",
+      'wld.taking'          : "Download in corso",
+      'wld.took'            : "Scaricato",
       'wld.public'            : "Mostrare questa lingua ad altri",
       'wld.public.d' : "Altre persone possono aprire la pagina della tua lingua e leggerla.",
       'wld.dl'       : "Permetti di scaricarla",
