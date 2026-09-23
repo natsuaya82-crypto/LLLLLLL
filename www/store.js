@@ -12,10 +12,11 @@
    phone and a call through it does nothing, silently. That cost four builds
    to learn once already -- www/share.js carries the long version of it.
 
-   **In a browser there is no App Store**, and that is not an error state to
-   be drawn: the plans screen goes on setting the plan by hand there, which is
-   how every check walks it, how every screenshot is taken, and how the owner
-   tries a tier on. storeOn() is the whole of the difference.
+   **In a browser there is no App Store**, and the plans screen is drawn
+   there exactly as on a phone -- every check walks it and every screenshot
+   is taken of it. Pressing a card or the cancel row says the App Store could
+   not be reached, and the plan does not move: nothing but verify-plan's
+   answer writes one. storeOn() is the whole of the difference.
 
    What this file does NOT do, deliberately:
 
@@ -106,8 +107,8 @@ function storeSync(){
    just pressed Cancel does not need to be told they cancelled. */
 function storeBuy(id){
   var np=storePlug();
-  if(!np) return false;
-  if(!netSignedIn()){ toast(t('store.nosess')); return true; }
+  if(!np){ toast(t('store.fail')); return; }
+  if(!netSignedIn()){ toast(t('store.nosess')); return; }
   toast(t('store.wait'));
   np('LinguaStore', 'buy', { id:String(id||''), uid:SESS.uid })
     .then(function(r){
@@ -133,7 +134,6 @@ function storeBuy(id){
       });
     })
     ['catch'](function(){ toast(t('store.fail')); });
-  return true;
 }
 
 /* The Restore button. Apple wants one and this is it.
@@ -207,12 +207,12 @@ function storeRestore(){
    anything: somebody may have cancelled in there, and a cancellation is
    Apple's to say. It arrives as a transaction, which goes up with the rest.
 
-   In a browser there is no sheet to open, and the plan goes back to free by
-   hand -- which is what the button under it used to do on every plan, and is
-   how a tier is tried on and taken off again while none of them is on sale. */
+   In a browser there is no sheet to open, and the plan is not this button's
+   to write -- it is verify-plan's answer and nothing else (www/core.js §
+   PLAN) -- so it says there is no App Store, the way storeBuy() does. */
 function storeManage(){
   var np=storePlug();
-  if(!np){ setPlan('free'); return; }
+  if(!np){ toast(t('store.fail')); return; }
   np('LinguaStore', 'manage', {})
     .then(function(r){ netPlanVerify(storeJws(r), storeUntilTook); })
     ['catch'](function(){ toast(t('store.fail')); });

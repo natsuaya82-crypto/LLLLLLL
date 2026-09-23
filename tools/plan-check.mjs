@@ -409,14 +409,13 @@ const r = await pg.evaluate(({ s }) => {
   out.dblSameBought = boughtId;
   popOff();
   /* AND GOING UP STILL GOES THROUGH -- the guard is about what is held, not
-     a wall in front of the shop. In a browser there is no App Store, so
-     setPlan() writes the plan itself (storeOn() is false); what is asked is
-     therefore the plan, which is the same thing the phone ends up with. */
+     a wall in front of the shop. What going through IS is asking the App
+     Store for that product; the plan is verify-plan's to write (§ 8). */
   boughtId = '';
   planGot('plus');
   PLPICK = { id:'pro', yr:false };
   plBuy();
-  out.upPlan = plan();
+  out.upBought = boughtId;
   window.storeBuy = realBuy;
 
   /* AND THE BUTTON IS NOT THERE AT ALL FOR SOMETHING ALREADY PAID FOR.
@@ -581,18 +580,31 @@ const r = await pg.evaluate(({ s }) => {
 
   /* ---- 8. the App Store, and the browser that is not one ---------------
      www/store.js is the one window onto StoreKit, and in a browser there is
-     no App Store to look through it at. What must NOT happen there is an
-     error state on the plans screen: every check walks that screen without a
-     bridge, every screenshot of it is taken without one, and a tier is tried
-     on before it is on sale. So the button goes on setting the plan by hand,
-     and storeOn() is the whole of the difference. */
+     no App Store to look through it at. The plans screen is drawn there all
+     the same -- every check walks it and every screenshot is taken of it --
+     and PRESSING it moves nothing. www/ is published (vercel.json), and a
+     card that wrote the plan where there is no App Store was Pro for anybody
+     with a browser: free -> pro on the card, pro -> free on the cancel row
+     (r63 § 2-5 S3, measured). Nothing but verify-plan's answer writes a plan,
+     and § 8b below counts that.
+
+     The REAL buttons are pressed, through the real storeBuy(): plBuy() and
+     storeManage(), from both ends of the ladder. */
   out.storeOff = storeOn() === false;
-  out.storeRefuses = storeBuy('com.tokinets.lingua.pro.monthly') === false;
+  var said8 = [], realToast8 = window.toast;
+  window.toast = function(m){ said8.push(String(m)); };
   planGot('free');
-  setPlan('pro');
-  out.byHand = plan() === 'pro';
-  setPlan('free');
-  out.byHandBack = plan() === 'free';
+  PLPICK = { id:'pro', yr:false };
+  plBuy();
+  out.cardFree = plan();
+  planGot('pro');
+  storeManage();
+  out.cancelPro = plan();
+  window.toast = realToast8;
+  PLPICK = null;
+  out.said8 = said8.join(' / ');
+  out.said8ok = said8.length === 2 && said8[0] === t('store.fail') && said8[1] === t('store.fail');
+  planGot('free');
 
   /* The product ids the app asks for are the ones the Swift sells. Two lists
      of ids is how a buy button comes to name a product App Store Connect has
@@ -1795,7 +1807,9 @@ say(r.dblBought === '' && r.dblPlan === 'pro',
 say(r.dblAsked, 'and it says so rather than doing nothing');
 say(r.dblSameBought === '', 'nor is the plan already in force (' +
     (r.dblSameBought || 'nothing asked for') + ')');
-say(r.upPlan === 'pro', 'and going UP still goes through (' + r.upPlan + ')');
+say(r.upBought === 'com.tokinets.lingua.pro.monthly',
+    'and going UP still goes through — the App Store is asked for it (' +
+    (r.upBought || 'nothing asked for') + ')');
 say(!r.buyOnHeld && !r.buyOnSame,
     'and the button is not drawn at all for a rung already paid for ' +
     '(below: ' + (r.buyOnHeld ? 'drawn' : 'gone') +
@@ -1938,8 +1952,10 @@ say(r.lapseNoEssay,
     '— the owner\'s drawing is a heading, a box to tick and 閉じる');
 
 say(r.storeOff, 'in a browser there is no App Store to ask');
-say(r.storeRefuses, 'and storeBuy() says so rather than pretending');
-say(r.byHand && r.byHandBack, 'so the plans screen still sets the plan by hand there');
+say(r.cardFree === 'free', 'and pressing a card there does not write a plan (free -> ' +
+    r.cardFree + ')');
+say(r.cancelPro === 'pro', 'nor does the cancel row (pro -> ' + r.cancelPro + ')');
+say(r.said8ok, 'both say the App Store could not be reached (' + r.said8 + ')');
 say(r.ids === 'com.tokinets.lingua.plus.monthly com.tokinets.lingua.plus.yearly ' +
              'com.tokinets.lingua.pro.monthly com.tokinets.lingua.pro.yearly',
     'the four product ids are the four LinguaStore.swift sells (' + r.ids + ')');
@@ -2174,6 +2190,47 @@ const WWWALL = fs.readdirSync(path.join(dir, '..', 'www'))
 say(WWWALL.indexOf('__plan') < 0 && WWWALL.indexOf('LinguaPlan') < 0,
     'nothing under www/ reads the Keychain — the plan is the server\'s answer ' +
     'and is held in memory, so there is no word on this handset to protect');
+/* ---- 8b. WHO WRITES A PLAN, COUNTED RATHER THAN LISTED ------------------
+   「a plan decides what a person may DO」, and the word itself is
+   verify-plan's: planTook() is the one writer and netPlanVerify() is its one
+   caller (www/core.js § PLAN). That sentence was in core.js while setPlan()
+   and storeManage() were two more callers -- a comment saying 「the only
+   thing that reaches it」 over a function three things reached. So the whole
+   surface is counted: every write to PLAN, every planGot(), every planTook()
+   in every file under www/, each named by the top-level function it sits in.
+   Three pairs are the design and nothing else may appear -- a road added
+   tomorrow is red tomorrow. The fixture's own planGot() calls are in tools/
+   and are not the app. */
+{
+  const ALLOWED = ['PLAN= in planGot', 'PLAN= in planForget',
+                   'planGot( in planTook', 'planTook( in netPlanVerify'];
+  const seen = [];
+  for (const f of fs.readdirSync(path.join(dir, '..', 'www'))) {
+    if (!f.endsWith('.js')) continue;
+    const src = fs.readFileSync(path.join(dir, '..', 'www', f), 'utf8')
+      .replace(/\/\*[\s\S]*?\*\//g, (c) => c.replace(/[^\n]/g, ' '))
+      .split('\n').map((l) => (/^\s*\/\//.test(l) ? '' : l)).join('\n');
+    const tops = [];
+    for (const m of src.matchAll(/^function ([A-Za-z0-9_$]+)\s*\(/gm)) tops.push([m.index, m[1]]);
+    const inFn = (at) => { let n = '(top)'; for (const [i, nm] of tops) if (i < at) n = nm; return n; };
+    for (const [re, what] of [[/\bPLAN\s*=(?!=)/g, 'PLAN='],
+                              [/\bplanGot\(/g, 'planGot('],
+                              [/\bplanTook\(/g, 'planTook(']]) {
+      for (const m of src.matchAll(re)) {
+        const fn = inFn(m.index);
+        /* the declarations themselves are not a write */
+        if (what !== 'PLAN=' && src.slice(m.index - 9, m.index) === 'function ') continue;
+        if (what === 'PLAN=' && src.slice(m.index - 4, m.index) === 'var ') continue;
+        seen.push(what + ' in ' + fn + ' (' + f + ')');
+      }
+    }
+  }
+  const bad = seen.filter((x) => ALLOWED.indexOf(x.replace(/ \([^)]*\)$/, '')) < 0);
+  say(bad.length === 0 && seen.length > 0,
+      'a plan is written by verify-plan\u2019s answer and nothing else — ' + seen.length +
+      ' writes and calls counted across www/' +
+      (bad.length ? ', and these are not that road: ' + bad.join('; ') : ''));
+}
 /* The bound the test lowered. Read rather than waited on: twenty seconds in
    the gate would prove the same thing and cost twenty seconds.
 
