@@ -46,11 +46,9 @@ function storeOn(){ return !!storePlug(); }
    「アカウントごとなんだから、違うアカウントで復元できるのおかしいだろ。
      検証して」 OWNER 2026-09-06.
 
-   `storeTook()` was here until 2026-09-06: it read `r.plan` -- a word the
-   phone had worked out -- and wrote it down. ios/App/App/LinguaStore.swift no
-   longer answers a plan at all. Every road out of it answers
-   `jws`: the signed transactions, exactly as Apple wrote them, and the one
-   thing that reads a signature is supabase/functions/verify-plan.
+   ios/App/App/LinguaStore.swift answers no plan at all. Every road out of it
+   answers `jws`: the signed transactions, exactly as Apple wrote them, and
+   the one thing that reads a signature is supabase/functions/verify-plan.
 
    So this file's job on every road is the same two lines: take the receipts,
    hand them to netPlanVerify(), and say what came back. */
@@ -321,24 +319,20 @@ function storeRow(id){
    and the timer are two different things, and whichever of them happens first
    does not silence the other. What DOES silence an ask is a newer one --
    STORE_N. */
-/* WHAT THIS APPLE ID ACTUALLY HOLDS, asked once when the plans screen opens.
-   「ローディングすればそんなの起きないだろ」 OWNER 2026-09-03.
-
-   Nothing called `current` before, so the screen drew the plan out of the
-   copy in the Keychain -- written the last time anything answered. On a phone
-   where that copy is behind, somebody on Pro was shown a live 「buy Plus」
-   button and Apple took the press as a downgrade.
+/* WHAT THIS APPLE ID ACTUALLY HOLDS, asked the first time the plans screen
+   opens in a launch. 「ローディングすればそんなの起きないだろ」 OWNER
+   2026-09-03: a plan drawn before the answer lands can show somebody on Pro
+   a live 「buy Plus」, and Apple takes that press as a downgrade.
    「そもそもプロの人が買えるのが意味わからないだろ」 OWNER 2026-09-03.
 
-   Asking is not enough on its own: the answer is a moment later, and drawing
-   from the stale copy in that moment is the same bug in a smaller window.
    So the screen WAITS -- the same answer the owner gave about a language
    arriving after a sign-in, and the same mark drawn for it.
 
-   One call per visit, the latch storeAsk() already uses. The receipts go to
-   netPlanVerify() and the plan comes back from the server, which is the same
-   road every other one here takes. */
-var STORE_CUR=false;   /* asked this visit */
+   ONCE PER LAUNCH: STORE_CUR goes up on the first ask and nothing puts it
+   down, so a second visit to the plans screen draws from the answer the
+   first one got. The receipts go to netPlanVerify() and the plan comes back
+   from the server, which is the same road every other one here takes. */
+var STORE_CUR=false;   /* asked in this launch */
 var STORE_GOT=false;   /* and the answer is in */
 function storeHeld(){ return !storeOn() || STORE_GOT; }
 /* AND WHEN THE PLAN IN FORCE RUNS TO. 「消すなら同じ場所に現在このプランです

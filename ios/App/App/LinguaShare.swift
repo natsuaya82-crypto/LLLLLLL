@@ -103,36 +103,17 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
     }
   }
 
-  // ---- WHAT USED TO BE HERE, AND WHY IT IS NOT ------------------------
-  //
-  // `keep()`, `kept()` and `dropSome()` wrote, read and removed a language as
-  // one JSON file in Documents/Languages/, three generations deep -- the copy
-  // that survived the app itself.
-  //
-  // 「オンラインは一本化ね？」「保存としたらオンラインおしまい」「今ファイルも
-  //   いらん。オンラインのみで行こうってことになってる今後オフライン対応する
-  //   時にまた考えることにした」 OWNER 2026-09-04.
-  //
-  // A save reaches the server the moment it is made now (netSaveUp() in
-  // www/net.js), so the hours those files were covering are gone. They are
-  // deleted rather than left compiled: a method in the plugin's table is one
-  // anybody can call, and tools/assets-check.mjs fails on one that no line of
-  // www/ names. docs/CHANGELOG.md 2026-09-04 carries the DELETE REVIEW.
-  //
-  // The voices and the sheets below are NOT this. They are the post's and the
-  // person's, they were never a copy of a language, and they stay.
-
   // ---- the paper -------------------------------------------------------
   //
   // www/sheet.js (chapter 26) builds the PDF bytes; this writes them down.
-  // Documents again, and for the same reason keep() is there: the App Group
-  // is how two programs of this app talk, and Documents is where the
+  // Documents and not the App Group: the App Group is how two programs of
+  // this app talk (write above), and Documents is where the
   // person's own work lives -- iOS puts it in the device backup and, with
   // UIFileSharingEnabled, the Files app can show it. A sheet is paper: it is
   // a thing somebody prints, writes on, and hands back.
   //
-  // The one difference from keep(). A sheet is not filed against a language
-  // and every write would carry the same name, so this NEVER OVERWRITES: a
+  // A sheet is not filed against a language and every write would carry
+  // the same name, so this NEVER OVERWRITES: a
   // sheet already sitting in Documents may have been written on -- opened in
   // Files, marked up with a pencil, saved in place -- and that is somebody's
   // own work. `<name> 2.pdf` and on. Nothing here removes anything.
@@ -210,9 +191,8 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
   /// docs/DATA_SAFETY.md, and a sheet somebody already drew on lives there.
   /// This hands over the file that is already on disk.
   ///
-  /// A name, not a path and not bytes: the same fence keep()'s siblings have,
-  /// because Documents is the person's own folder and the Files app puts other
-  /// things in it.
+  /// A name, not a path and not bytes, because Documents is the person's own
+  /// folder and the Files app puts other things in it.
   ///
   /// **The popover is not optional.** On iPad a UIActivityViewController with
   /// no sourceView is a crash, not a layout problem, and this is a Universal
