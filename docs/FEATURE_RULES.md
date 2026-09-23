@@ -243,6 +243,23 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Implementation status:
 ```
 
+### 2026-09-23 広告は Twitter と同じ形 ── 投稿に擬態して右上に PR、枠は売れる形、今は AdMob、pro は無し
+- Date: 2026-09-23
+- Area: ホームのタイムライン（`www/sns.js` `vFeed()`）、投稿の頭（`www/post.js` `postRow()`）、`supabase/schema.sql` の `promo`、`CAN.noads`
+- Decision: 言葉どおり ──
+  「広告の形は、Twitterと同じ。ツイート擬態右上にprとつく。広告枠が売れる形にする。今は売る人いないからadmobを流す。proのみ表示なし。」
+  同じ日の前の言葉 ──「Twitterみたいに間に動画広告みたいな」「広告枠は今後売る可能性もあるTwitterと同じ形だよ？admobで動画流せんの？ツイート擬態で」
+  - 広告はタイムラインの中の一行で、投稿と同じ見た目、右上に **PR**。
+  - 枠は**売れる**形 ── 売った広告はサーバーが持つ行（`promo` = どの投稿を・いつまで）。
+  - 売る相手がいない間は **AdMob** で埋める（動画可）。
+  - **pro は表示なし**。plus と free は表示あり。
+- Reason: オーナーの言葉のとおり。
+- Affected features: ホームのタイムライン。探索・検索・プロフィールには枠を入れていない（Twitter と同じ ── 決まっていないので既定として報告済み）
+- Affected data: 新しいテーブル `promo`（運営だけが書く）。人の作った物は何も動かない
+- Affected docs: `docs/CHANGELOG.md`、`docs/PAID_FEATURES.md`、`docs/apple.md`、`docs/scope/r55-ads.md`
+- Implementation status: r55-ads。売れた枠と PR と `can('noads')` まで。**AdMob で埋める部分は未着手** ── 出し方の選択と、下の二つの問いがオーナー待ち：
+  枠の間隔（`PROMO_EVERY`、今は仮の 5）、AdMob の行の表示が「PR」で Google の規約を満たすか（Google は「広告」「Ad」「Sponsored」を求める）
+
 ### 2026-09-23 文字を描く面にガイド線 ── 固定の三本、見るだけ（案 A）
 - Date: 2026-09-23
 - Area: 文字の編集画面のキャンバス（`www/glyph.js` `geDraw()`）

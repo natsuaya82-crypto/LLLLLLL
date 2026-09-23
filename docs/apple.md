@@ -642,3 +642,43 @@ iPhone が通知を許可して token をサーバーに送るところと、設
 6  GitHub → Actions → Supabase Deploy → push-send
 7  （別の作業）アプリ側が入ったビルドを実機に入れて、通知を許可する
 ```
+
+## 9. 広告（AdMob）── オーナーが作るもの（2026-09-23、まだ何も要りません）
+
+**アプリ側の AdMob のコードはまだ一行もありません。**出し方の選択がオーナー待ちです
+（`docs/scope/r55-ads.md` § 調べ）。決まったら、次のものが要ります。それまでは、
+開発中は Google の**テスト用の ID** を使います（本物の ID で自分の広告を押すと、
+アカウントが止められます）。
+
+### Google（AdMob）でやること
+
+1. AdMob のアカウントを作る。支払いと税の情報を入れる。
+2. アプリを登録する（iOS、App Store の Lingua）→ **アプリ ID**
+   （`ca-app-pub-XXXXXXXXXXXXXXXX~NNNNNNNNNN` の形）。
+3. 広告ユニットを作る。種類は **ネイティブ アドバンス**（動画も流すなら、ユニットで動画を許可）
+   → **広告ユニット ID**（`ca-app-pub-…/NNNNNNNNNN`）。
+4. **app-ads.txt**：App Store の「マーケティング URL / サポート URL」に書いたサイトの
+   一番上に `app-ads.txt` を置く。中身は AdMob の画面が出す一行。確認に最大 24 時間。
+5. ヨーロッパ・イギリス・スイスで個人に合わせた広告を出すなら、AdMob の
+   「プライバシーとメッセージ」で同意の画面（UMP）を作る。
+
+テスト用の ID（Google の公式、iOS）：
+
+| もの | ID |
+|---|---|
+| アプリ ID | `ca-app-pub-3940256099942544~1458002511` |
+| ネイティブ | `ca-app-pub-3940256099942544/3986624511` |
+| ネイティブ（動画） | `ca-app-pub-3940256099942544/2521693316` |
+
+### Apple（App Store Connect）でやること
+
+- **プライバシーの一覧表を書き直す**（§ 5 の表）。AdMob の SDK が集めるもの ──
+  デバイス ID（IDFA/IDFV、第三者広告と分析）、広告データ、製品の操作、
+  IP アドレスからの大まかな位置、クラッシュと性能のデータ。Google の一覧：
+  https://developers.google.com/admob/ios/privacy/data-disclosure
+- **ATT（追跡の許可のダイアログ）は無くても広告は出ます。**出すなら Info.plist に
+  `NSUserTrackingUsageDescription` が要り、その文言は 10 言語で要ります。
+  出さなければ IDFA を使わない広告になり、収入は下がります。**どちらにするかはオーナー。**
+- ビルドの側（コードが入るとき）：Info.plist に `GADApplicationIdentifier` と
+  `SKAdNetworkItems`（Google の一覧）。SDK は Swift Package Manager で入れる
+  （`https://github.com/googleads/swift-package-manager-google-mobile-ads`）。
