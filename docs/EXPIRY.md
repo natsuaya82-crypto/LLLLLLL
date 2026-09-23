@@ -199,8 +199,7 @@ www/*.js`）。だから一度消えると、iPhone からも、バックアッ�
 **何が、どういうときに消えるか。** 直接は何も消えません。
 **「無い」が「有る」に変わる**ので、そのあと
 
-- バックアップファイルからの穴埋め（`www/backup.js:274`、`bkTake()`）
-- 他の iPhone から降りてくる穴埋め（`www/net.js:1168`、`netLangBack1()`）
+- サーバーから降りてくる穴埋め（`netLangsDown()`、`www/net.js`）
 
 が、その言語の文法を埋めなくなります。`docs/DATA_SAFETY.md` の
 「A slice the app has never written is **absent**, and absent is what a restore
@@ -260,9 +259,9 @@ and so is the language that is not the open one:              got "{}", wanted n
 absent is still absent, so a restore can still fill it in:    got true, wanted false
 ```
 
-三行目は `www/backup.js` の `bkSound()` にそのまま訊いたものです。`true` は
-「ここに何かある」で、それが `bkTake()`（`www/backup.js:274`）と
-`netLangBack1()`（`www/net.js:1168`）にそのスライスを飛ばさせます。
+三行目は当時の `www/backup.js` の ~~`bkSound()`~~ にそのまま訊いたものです。
+`true` は「ここに何かある」で、それが当時の穴埋め二つ（~~`bkTake()`~~ と
+~~`netLangBack1()`~~）にそのスライスを飛ばさせていました。
 
 **写す道は赤の時から緑のままで、直した後も緑です。**`migrate-check` が持って
 いる項目は九つ ── 上の三つに加えて、語順を写す・開いていない言語にも写す・
