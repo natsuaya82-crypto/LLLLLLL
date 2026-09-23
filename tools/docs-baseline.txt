@@ -74,7 +74,6 @@ check docs/FEATURE_RULES.md backup-check
 check docs/STATE.md backup-check
 count docs/BACKLOG.md 検査 16 本
 count docs/FEATURE_RULES.md ゲート28本
-count docs/STATE.md 39 checks
 count docs/STATE.md ゲート 41 本
 count docs/STATE.md ゲートは 44 本
 count docs/STATE.md 検査 8 本
@@ -84,7 +83,6 @@ file docs/BACKLOG.md talk.js
 file docs/FEATURES.md LinguaPlan.swift
 file docs/FEATURES.md lt.sh
 file docs/FEATURE_RULES.md backup-check.mjs
-file docs/STATE.md LinguaPlan.swift
 file docs/STATE.md backup-check.mjs
 name docs/BACKLOG.md DOC_
 name docs/BACKLOG.md KB_MAX
@@ -206,7 +204,6 @@ name docs/PAID_FEATURES.md netPlanSync
 name docs/RECOVERY.md slice_past
 name docs/STATE.md KB_MAX
 name docs/STATE.md LS_FLAT
-name docs/STATE.md PLAN_NATIVE
 name docs/STATE.md SET_PLAN
 name docs/STATE.md TR_SEAM
 name docs/STATE.md geKeepPut
@@ -219,9 +216,7 @@ name docs/STATE.md nidDrop
 name docs/STATE.md nidFor
 name docs/STATE.md nidHolds
 name docs/STATE.md node_modules
-name docs/STATE.md obBackTo
 name docs/STATE.md scriptDrawn
-name docs/STATE.md setPlan
 name docs/STATE.md tcln
 owner 2026-08-31
 owner 2026-09-07

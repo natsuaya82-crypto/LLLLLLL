@@ -499,7 +499,7 @@ headless の手歩き（記録は枝 `claude/walk` と `claude/walk-words` `-sns
 browser の check は www/ を生で読むので、途中で取り込むと違うコードを検査する
 （この日 3 本赤になった原因）。
 
-## 2026-09-05 の夜 ── いまの状況（一番新しい）
+## 2026-09-05 の夜の状況
 
 **訊く一行**（sha は書かない。一日で古くなる）:
 
@@ -585,12 +585,14 @@ CODE CONFIRMED だけ。**検査の緑は証拠になりません。**
    「オーナーに確認が要る」ものではありません。**
 2. **ただし「失敗して黙って消える」は仕様ではありません。**保存がサーバーで
    失敗しても、人が作ったものは目の前に残ります。もう一度押せば送れる。
-   **着手していません** ── `www/core.js` の `save()` の catch はまだ空です。
+   `saveTry()`（`www/core.js`）が「保存できませんでした」と言い、`LSL`・`WORDS`・
+   `LETTERS` はそのまま残ります。
 3. **電波が無いときは、前に読み込んだ分を出します。見るだけです。**作れない、
    保存できない。**その写しはサーバーへ戻りません ── 片道です。**理由は
    `syMerge()`（`www/sync.js`）が壊れた写しでサーバーの正しいほうを上書きする
-   バグだからです。**着手していません。**いまスライスはメモリだけなので、電波が
-   無いと出せるものがありません。
+   バグがあったからです（今は `sySide()` が壊れと空を分けます）。写しは
+   `lingua.<id>.<slice>.got` で、`slGot()` が書き `slRd()` が最後に読み、上り道の
+   `slMine()` は読みません（`www/core.js`、CLAUDE.md 規則 22）。
 4. **`ONE.md` を消しました。**承認されなかった案です。次の人が仕様として読む
    危険がありました。
 5. **オンラインは進める。パッチはオーナーが後で流します。**アプリ側は待ちません。
@@ -869,9 +871,8 @@ Connect と DNS のダッシュボードの話なので、**済んだかどう�
 A fresh clone of `master` is the current app. **No sha is written here** — a sha
 has a shelf life of about a day.
 
-The gate is **39 checks** — twelve that need no browser and twenty-seven that do.
-Count `FAST` and `SLOW` in `tools/gate.mjs`, which is the only place the number
-lives.
+How many checks the gate has is `FAST` and `SLOW` in `tools/gate.mjs`, and the
+last line `npm test` prints — the only place the number lives.
 
 **Never write "the gate is green" here unless you watched it go green.** A
 sentence in this file claiming a green nobody saw is the failure this file
@@ -952,12 +953,13 @@ Pushing to `master` is the owner's call and is asked for each time.
 - **Accounts.** Sign up, sign in, verify, sign out, password reset, and a
   profile with a handle. `www/net.js`.
 - **The onboarding, in the owner's order** 「オンボーディング→最後にログイン」.
-  Draw one letter, be walked through the app, name the language, **then** the
-  door — `OB_DRAW=0, OB_NAME=1, OB_IN=2` in `www/onboard.js`, with `OB_TOUR=3`
-  outside the counted range because the walk is not a screen of that file.
-  There is no way past the door: 「あとで」 went on 2026-08-26 and stayed gone.
-  What the walk made before the account existed goes to the server at the
-  door — `obFinish()` calls `netLangSync()`.
+  Draw one letter, be walked through the app, see the timeline, name the
+  language, **then** the door — `OB_DRAW`, `OB_SNS`, `OB_NAME`, `OB_IN` in
+  `www/onboard.js`, with `OB_TOUR` outside the counted range because the walk
+  is not a screen of that file. There is no way past the door: 「あとで」 went
+  on 2026-08-26 and stayed gone. What the walk made before the account existed
+  goes to the server as the session arrives — `netTook()` (`www/net.js`) sends
+  first and only then asks what the account has.
 
   **`open-check` is what holds the order.** It boots from an empty
   `localStorage` and reads `#app` rather than asking `appIs()`, because
@@ -1097,14 +1099,14 @@ Order, and where it stands:
    and it needs the owner to deploy the function and set `APPLE_ROOT_CA_G3`
    (`supabase/setup.md` § 8b); until then nobody gets a plan at all.
 5. The rest of moderation — **the tombstone in a thread (`postTomb()`), the
-   notices (`vNotif`) and the frozen state are in.** What is left is the ⋯
-   menu on a profile.
-6. Terms and privacy, under `/home/user/tokine2`, linked from Settings and not
-   from the onboarding. Not started.
+   notices (`vNotif`), the frozen state and the ⋯ on a profile (`whoMore()`,
+   `www/me.js`) are in.
+6. Terms and privacy: `DOC_TERMS` / `DOC_PRIVACY` in `www/settings.js`, drawn by
+   `docRows()` on Settings, on the plans page and on the onboarding's sign-up face.
 7. What a purchase OPENS. StoreKit is **written** ── `ios/App/App/LinguaStore.swift`,
-   `www/store.js`, and `setPlan` in `www/settings.js` is `storeBuy`'s one caller.
-   The plan now reaches the server too (item 4). **What is not done is the
-   receipt**: nothing but the phone says the purchase happened.
+   `www/store.js`, and `plBuy()` in `www/settings.js` is `storeBuy`'s one caller.
+   The plan is the server's answer: `verify-plan` checks Apple's signature on
+   the receipt (item 4).
 
 **Everything still to do that needs the server is one list**, in
 `docs/FEATURES.md` → "What is left to do online": the plan (the one with money
@@ -1149,14 +1151,13 @@ written as though it were. Read `git grep` for the repo side; ask for the rest.
 
 **StoreKit is written, and has never run on a device.** `LinguaStore.swift`
 holds the four products, `www/store.js` is the only thing in `www/` that talks
-to it, and `setPlan` in `www/settings.js` is `storeBuy`'s one caller. The owner
+to it, and `plBuy()` in `www/settings.js` is `storeBuy`'s one caller. The owner
 reports the four subscription products made in App Store Connect (2026-08-27) —
 which this repository cannot see. Asking for a product that does not exist is
 not an error: StoreKit returns nothing for it, so a missing product looks
 exactly like a button that does nothing. That is what to expect if a purchase
-does not start. The plan itself lives in the Keychain rather than in the
-settings file — `ios/App/App/LinguaPlan.swift` says why, and what it does not
-stop.
+does not start. The plan itself is not on the phone at all: it is
+`verify-plan`'s answer, held in memory (`PLAN`, `www/core.js`).
 
 **No landing page in this repository.** `vercel.json` copies `www/` into
 `public/` and serves the app itself as a static site. There is no marketing
@@ -1483,8 +1484,6 @@ equal and making them equal would be wrong: one rule can take three checks and
 one check can hold two rules.
 
 **How many checks there are is printed on the run's last line. Read it there.**
-Counted on 2026-09-04: master is 14 + 28 = **42**, and `claude/online` is
-14 + 27 = **41** — `backup-check` went with the file it held (§ 0-a).
 
 `tools/gate.mjs` runs the ones that need no browser first, in about two seconds,
 then the browser ones four at a time (`WIDE` is `min(4, cpus)`). Run one after
@@ -1493,7 +1492,7 @@ has re-measured since the count grew.
 
 **It is run once before pushing**, not once per commit — the owner's rule, and
 `docs/TESTING.md` has all three. While working, run the one check that holds
-what you are changing, by name, plus the six fast ones.
+what you are changing, by name, plus the fast ones (`FAST`).
 
 **GitHub Actions runs three of them** — `assets`, `es5`, `i18n`
 (`.github/workflows/i18n.yml`). A green tick on a push does not mean the gate
@@ -1589,13 +1588,11 @@ assuming a thing is waiting for you.
   which draws the same queue with the same `modRow()`. Reports keep landing in
   the table either way. **Nothing here is outstanding** — it is written down
   because "the row was deleted" and "moderation was deleted" are one grep apart.
-- **A PDF that was traced on a screen still cannot be read.** The scanned kind
-  works and has since `claude/sheet` landed. `sheet.js` sorts an arriving file
-  into four kinds and `'drawn'` — ink drawn rather than photographed — is on
-  the *cannot* side, by design and in writing: *"That is a renderer, and the
-  phone has one (PDFKit, native) while this file does not."* So
-  「上からなぞった文字のみ利用できる」 is a native-Swift job nobody holds, not
-  a rename. Said here because the file's surface makes it look done.
+- **A PDF that was traced on a screen is read through the phone's renderer.**
+  `sheet.js` sorts an arriving file into four kinds, and `'drawn'` goes to
+  `shPdfDraw()`, which asks `LinguaShare`'s `renderPdf` (PDFKit) for a picture
+  and reads that. In a browser there is no renderer and it says so
+  (`wr.pdf.drawn`). **Device unconfirmed.**
 
 **A duplicate CSS declaration is invisible to every check in the gate.** A
 second `.wldrow` overriding `border` while never mentioning `border-radius`
@@ -1636,32 +1633,22 @@ can hold two rules.
   「紙より 0.85 倍暗い」 floor the reader uses has not been checked, so a
   pencil-drawn sheet may simply not be seen. Measuring it needs a printed
   sheet and a person, not a check.
-- **RevenueCat Shipaton 2026 — whether to enter.** Recorded here on
-  2026-08-25 because it existed in one session's chat and nowhere in this
-  repository, and a fact that lives only in a chat is a fact that is about to
-  be lost. **None of it is verified against RevenueCat's own page** — it is
-  written down as the previous leader reported it, and the first thing to do
-  with it is check it:
-  entry closes 2026-09-30, and an app is disqualified unless its first public
-  release falls between 2026-08-01 and 2026-09-30. Lingua has never been
-  released publicly, so on that reading it qualifies.
-  The decision is not a technical one and is nobody's but the owner's: **is
-  there an intention to be on the App Store by 9/30?** Swapping the store
-  layer to RevenueCat's SDK is the small part — `ios/App/App/LinguaStore.swift`
-  is the only file that talks to StoreKit — and it is downstream of §7 items
-  16a and 17, neither of which any agent can do.
+- **RevenueCat Shipaton 2026 — entered.** 「shipaton だそう。9／30 までには出したい」
+  OWNER 2026-08-25 (`docs/FEATURE_RULES.md`, the Shipaton entry). The first
+  public version went live on 2026-09-22 (1.0.0 (162), § the head of this file).
 
 ### Blocks shipping the free version
 
 - **Signing in from Settings** is written and has not been opened on a phone.
-  `obBackTo`/`obReturn` in `www/onboard.js`.
+  `obReturn()` in `www/onboard.js`.
 
 Everything else on this list is done. What holds each: posts, Explore and
 Notices read the server (`netPush`, `netFeed`, `netNotices`, `postCatchUp`);
 the reset mail is a six-digit code because a link has nowhere to land in a
-Capacitor app (`supabase/mail.md`, template `{{ .Token }}`); and **there is one
-free ceiling**, asked by `capStop()` at the moment a word will not fit, on the
-screen the person was typing on. `quote` and `publication` are still unused.
+Capacitor app (`supabase/mail.md`, template `{{ .Token }}`); and the ceilings
+are each asked at the moment they are met, on the screen the person is on —
+`capStop()` (a word), `langStop()` (a language), `dlStop()` (a download) and
+`upStop()`, all in `www/core.js`. `quote` and `publication` are still unused.
 
 ### Found and left alone, deliberately
 
@@ -1759,9 +1746,9 @@ known place** (`docs/apple.md` § 4 has every field):
     serves the repo root with `cleanUrls: true`, so `/lingua/terms.html`
     redirects to `/lingua/terms` — a redirect a browser follows, not a 404.
 
-    **What is missing is the sentence in the app.** Not one of the ten
-    `www/i18n/*.js` carries an auto-renew disclosure; `set.terms` and
-    `set.privacy` are the link labels and nothing else. `claude/pay` has it.
+    **The sentence in the app is there**: `plan.renew` in every
+    `www/i18n/*.js`, drawn above `docRows()` on the plans page
+    (`www/settings.js`).
 17a. **Sandbox testing**, once the products exist: buy, then `restore` after
     deleting and reinstalling, then a renewal arriving while the app is shut,
     and — new since the middle tier — **a Plus receipt reading as Plus and not
@@ -1793,12 +1780,10 @@ anywhere in this repo.
     plain script tags. ~~`planKeep()`~~ asked `Capacitor.Plugins` for `LinguaPlan`
     and every write was the early return.
 - **A native call that fails silently is invisible to every check here.**
-    In a browser `PLAN_NATIVE` is false and the plan stays in the settings file,
-    so everything is green; on a phone `setOnDisk()` takes the plan out of that
-    file on the grounds that the Keychain holds it, and if the write never
-    landed nothing holds it at all. **Plus came back as free at the next
-    launch.** Written correctly now, and **device unconfirmed** — no check here
-    can raise it.
+    In a browser there is no native side, so everything is green whatever the
+    phone would have done. The Keychain copy of the plan that went this way is
+    gone (2026-09-11 — the plan is the server's answer now); the rule stands
+    for every native call still written.
 
 ### Waiting on a phone
 
