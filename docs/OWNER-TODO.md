@@ -13,6 +13,7 @@
 |---|---|---|
 | 1 | Apple：App ID に Push Notifications | まだ |
 | 2 | Apple：配布プロファイル作り直し → GitHub Secret 差し替え → リーダーに「済んだ」 | まだ |
+| 11 | Supabase：今日のお題が 9/20 で止まっている理由を見る（2 の次に） | まだ |
 | 3 | Apple：APNs の鍵 → GitHub Secrets 二つ | まだ |
 | 4 | Supabase：Webhooks を ON | まだ |
 | 5 | Supabase：schema.sql を流し直す（4 の後） | まだ |
@@ -62,6 +63,47 @@
 10. **リーダーのセッションに「1 と 2 済んだ」と言う** → 166 が出る
 
 **終わったら見えるもの：** Secrets の一覧で `PROVISIONING_PROFILE_BASE64` の更新日が今日。166 が Archive を通る。
+
+---
+
+## 11. Supabase：今日のお題が 9/20 で止まっている理由を見る（2 の次に）
+
+**何のため：** アプリはサーバーの `prompt` 表の一番新しい行を出すだけで、9/21 以降の行が無い。
+行を書くのは関数 `daily-prompt`。9/13 から repo で daily-prompt・cron・鍵を触った変更は無い
+（リーダーが測った）。だから原因はサーバーの中で、Supabase に入れるのはオーナーだけ。
+
+**11-1 呼ばれているか**
+1. supabase.com → Lingua のプロジェクト → 左の **Edge Functions**
+2. **daily-prompt** → 上のタブの **Invocations**（無ければ **Logs**）
+3. 9/21 以降の行があるか、あれば**その行の状態の数字**を見る：
+
+| 数字 | 意味 |
+|---|---|
+| 行が一つも無い | 予約の方 → 11-2 |
+| 401 | 合言葉（`CRON_SECRET`）が Cron と関数でずれている |
+| 500 | `GEMINI_API_KEY` が入っていない |
+| 502 | Gemini が断った（鍵・上限・モデル名）か、返事が JSON でなかった |
+| 422 | Gemini の文が決まりを破ったので書かなかった |
+| 200 | 呼ばれて書けている（→ それでも行が無いならリーダーに） |
+
+**⚠ この関数はログに文を出さない。**画面に出るのは数字だけ。
+文そのものが要る時は 11-3。
+
+**11-2 行が一つも無い時：予約を見る**
+1. 左の **Integrations** → **Cron**（無ければ Database → **Cron Jobs**）
+2. **`daily-prompt`** の Job があるか。**Active（有効）**になっているか
+3. その Job の **History（実行履歴）** を開く → 9/20 の後に行があるか、あれば Status と Message
+
+**11-3 文を見たい時（任意）**
+Mac のターミナルで（`<CRON_SECRET>` は Supabase の Edge Functions → Secrets に入れた合言葉）：
+```
+curl -X POST "https://iimwukyyasbybfrirhsf.supabase.co/functions/v1/daily-prompt" \
+  -H "x-cron-secret: <CRON_SECRET>"
+```
+返ってきた一行がそのまま原因。動けばその場で今日のお題が一つ書かれる（それで構わない）。
+
+**終わったら見えるもの：** 数字（か 11-2 の Status／Message、か 11-3 の一行）を**リーダーのセッションに送る**。
+リーダーが原因を決めて直す。
 
 ---
 
