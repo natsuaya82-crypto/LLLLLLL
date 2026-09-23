@@ -15,24 +15,27 @@
    refuses every save onto it -- so the migrations below change what is on
    the screen and write none of it anywhere. */
 
-/* old shapes of stored things, brought forward */
-migratePh();
-migrateMn();
-/* and a part of speech saved as its label rather than its key */
-migratePos();
-migrateLetters();
-migrateMarks();
-migrateSndName();
-migrateSnd();
-migratePosts();
-migratePostInk();
-migrateSp();
-/* and what the language is for, off the phone and into the language */
-migrateWorld();
-/* and the free QWERTY out of the keyboard list, keeping an edited one */
-migrateKbFree();
-/* and a free language gets the twenty-eight slots it is allowed */
-ltStart();
+/* Old shapes of stored things, brought forward -- the APP writing for itself
+   (www/core.js § LTOUCH), so nothing here is ever sent on its own. */
+slAsApp(function(){
+  migratePh();
+  migrateMn();
+  /* and a part of speech saved as its label rather than its key */
+  migratePos();
+  migrateLetters();
+  migrateMarks();
+  migrateSndName();
+  migrateSnd();
+  migratePosts();
+  migratePostInk();
+  migrateSp();
+  /* and what the language is for, off the phone and into the language */
+  migrateWorld();
+  /* and the free QWERTY out of the keyboard list, keeping an edited one */
+  migrateKbFree();
+  /* and a free language gets the twenty-eight slots it is allowed */
+  ltStart();
+}, []);
 /* the font built from whatever letters have been drawn */
 installScriptFont();
 /* and how much of the screen there is, which the keyboard changes */

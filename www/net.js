@@ -3056,6 +3056,15 @@ function netLangSync(then){
    `langKeyOf(id, …)` and not `langKey(…)`: this is asked about a language
    that may not be the open one, which is the whole of the change. */
 function netLangSync1(id, done){
+  /* THE SLICES A PERSON WROTE, and not all twelve (www/core.js § LTOUCH) --
+     the same question the save road asks. What the walk drew and typed was
+     written by the person, signed out, and is marked; the free alphabet's
+     slots, a migration, and a slice an older version left on the disk that
+     nothing here has written (`lang`, r63-audit B3) are not, and go up only
+     with the next thing a person writes in that slice. */
+  var mine=[], i;
+  for(i=0;i<SLICES.length;i++)
+    if(slTouched(langKeyOf(id, SLICES[i]))) mine.push(SLICES[i]);
   netLangRow(id, function(sid){
     /* THE SECOND READ OF THE WHOLE LANGUAGE, and it is on every launch.
        netLangsWalk() has just brought this language down and recorded what
@@ -3064,7 +3073,8 @@ function netLangSync1(id, done){
        language, half of it for nothing. docs/reports/cost-2026-09-09.md 二.
        netGotFor() asks the marks first, so a slice the two sides already
        agree on costs nothing here. */
-    netGotFor(id, sid, SLICES, function(there){
+    if(!mine.length){ done(false); return; }
+    netGotFor(id, sid, mine, function(there){
       /* ---- ALL TWELVE AT ONCE, NOT ONE AFTER ANOTHER --------------------
          「なんか全体的に遅くない？」 OWNER 2026-09-08 (143). This was a walk:
          slice one went up, and only when its answer came back did slice two
@@ -3083,7 +3093,7 @@ function netLangSync1(id, done){
          rest are already in the air, and each one still records its own
          agreement or does not. Either way the next save sends what is still
          missing, which is what netAgreed() is for. */
-      var left=SLICES.length, moved=false, i;
+      var left=mine.length, moved=false, i;
       function step(){
         /* The last one in is the one that goes on. Each of the twelve calls
            this exactly once, whichever way it went. */
@@ -3105,8 +3115,8 @@ function netLangSync1(id, done){
            「端末に hide の存在があるわけないやろ」 OWNER 2026-09-08. */
         done(moved);
       }
-      for(i=0;i<SLICES.length;i++)
-        netSlice1(id, sid, SLICES[i], there[SLICES[i]], function(m){
+      for(i=0;i<mine.length;i++)
+        netSlice1(id, sid, mine[i], there[mine[i]], function(m){
           if(m) moved=true;
           step();
         }, /* A LAUNCH WALKS ON, and it did before `bad` existed too -- this

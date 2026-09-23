@@ -844,12 +844,16 @@ function slGot(k, body){
    every load and never need to travel by themselves -- they go with the slice
    the next time a PERSON writes it.
 
-   A write made while the server is answering is the app's; every other is a
-   person's, because every other save in this app runs inside something a
-   person did. www/net.js hands every answer over through slAsApp() -- the one
-   window every answer comes through -- so the store knows without asking the
-   network anything. A depth rather than a flag, because an answer can start a
-   request whose answer lands inside it. netSaveUpGo() sends a slice that is
+   A write is a PERSON's when it CHANGES what this phone holds and it is not
+   made inside slAsApp(). slAsApp() is the app writing for itself: every
+   answer from the server (www/net.js hands each one over through it -- the
+   one window every answer comes through), the launch's migrations
+   (www/boot.js), and what langOpen() writes out and works over when a
+   language is opened. A depth rather than a flag, because an answer can start
+   a request whose answer lands inside it. A write of the same string is
+   nobody changing anything -- a settings save() writes the dictionary back
+   exactly as it was, and that is not a person writing the dictionary
+   (r63-audit 0-1). netSaveUpGo() and netLangSync1() send a slice that is
    marked here AND has moved; netAgreed() takes the mark off when the two
    sides hold the same string. */
 var LTOUCH={}, SL_APP=0;
@@ -859,8 +863,9 @@ function slAsApp(fn, args){
   finally{ SL_APP--; }
 }
 function slWr(k, v){
-  LSL[k]=String(v);
-  if(!SL_APP) LTOUCH[k]=1;
+  var s=String(v);
+  if(!SL_APP && slMine(k)!==s) LTOUCH[k]=1;
+  LSL[k]=s;
 }
 function slTouched(k){ return !!LTOUCH[k]; }
 function slSettled(k){ delete LTOUCH[k]; }
@@ -1394,12 +1399,17 @@ function langOpen(id){
      one in a backup file, netLangSync() does not sync one, and the row in the
      language list is not a button. Each of those is at the place that does
      the thing. docs/DATA_MODEL.md § A language that is only read. */
-  langSaveAll();
+  /* The app's own writes (§ LTOUCH): the old language written out as it
+     stands, and the new one's top-ups and migrations. None of it is somebody
+     changing their language, so none of it goes up by itself -- it rides the
+     next thing a person saves in that slice. */
+  slAsApp(langSaveAll, []);
   langId=id; langStore();
   /* LANG_IO is the list; ltStart(), migrateKbFree() and migratePostInk() are
      not reads and stay -- one tops a free language up, two bring an older
      shape forward. */
-  langLoad(); ltStart(); migrateKbFree(); migratePostInk();
+  langLoad();
+  slAsApp(function(){ ltStart(); migrateKbFree(); migratePostInk(); }, []);
   /* and where you were standing in the old one is not a place in this one:
      a filter left on would hide most of a dictionary you have never seen. */
   viewReset();
@@ -1498,14 +1508,20 @@ function langNew(){
   if(typeof netLangSync==='function') netLangSync();
 }
 
+/* The dictionary, the lines and the writing -- AND the settings, which every
+   save has carried since before setKeep() existed, and which forty-odd callers
+   in files that are not this one still reach through here. The settings go
+   first and always: a language that may not be written (somebody else's, or
+   the picture before the server has answered) is no reason to lose the theme
+   somebody just chose. It used to decline both at once. */
 function save(){
-  if(langLocked()) return;   /* somebody else's language: nothing is written to it */
+  setKeep();
+  if(langLocked()) return;   /* not writable: nothing is written to the language */
   bkTouch();
   saveTry(function(){
     slWr(langKey('words'),JSON.stringify(WORDS));
     slWr(langKey('lines'),JSON.stringify(LINES));
     slWr(langKey('script'),JSON.stringify(SCRIPT));
-    localStorage.setItem(LS_S,JSON.stringify(setOnDisk()));
     langStore();
   });
 }

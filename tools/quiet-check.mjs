@@ -155,6 +155,7 @@ function wire(cfg){
       return rows;
     }
     if (p === '/rest/v1/draft') return m === 'GET' ? S.draft : [];
+    if (p === '/rest/v1/saved_search') return m === 'GET' ? S.saved : [];
     if (p.indexOf('/storage/v1/') === 0) return { Key:'ok' };
     return m === 'GET' ? [] : (p.indexOf('/rest/v1/rpc/') === 0 ? [] : [{ id:'x' }]);
   }
@@ -207,16 +208,20 @@ const SRV = {
             lines: { kind:'lines',  body:'[]', no:1, at:'A2' },
             script:{ kind:'script', body:JSON.stringify({ g:{}, extra:[] }), no:1, at:'A3' } },
     'L-2':{ words: { kind:'words',  body:JSON.stringify([W('ta')]), no:2, at:'B1' } } },
-  draft:[]
+  draft:[],
+  saved:[ { q:'kano' } ]
 };
 const DISK = {
-  'lingua.set':   JSON.stringify({ done:true, theme:'dark' }),
+  /* a starred search the account has since changed on another phone -- the
+     answer is written with save() on this phone before 2026-09-23, which
+     wrote the picture of the dictionary as this phone's own (r63-audit 0-1) */
+  'lingua.set':   JSON.stringify({ done:true, theme:'dark', saved:['tir'], savedUp:true }),
   'lingua.langs': JSON.stringify({ 'L-1':{}, 'L-2':{} }),
   'lingua.cur':   'L-1',
   /* the picture of L-1, from before `zo` was deleted on another phone -- and
      `zo` with no sounds yet, which is what migratePh() fills in, so the launch's own
      migrations have something to save */
-  'lingua.L-1.words.got': JSON.stringify([W('ka'), W('mi'), { hw:'zo', ph:'', mn:'zo', mns:['zo'], pos:'n', at:1 }]),
+  'lingua.L-1.words.got': JSON.stringify([W('ka'), W('mi'), { hw:'zo', ph:'', mn:'zo', pos:'n', at:1 }]),
   'lingua.L-1.owner.got': 'u',
   /* what a version from before 2026-09-04 left of L-2 */
   'lingua.L-2.words':     JSON.stringify([W('ta'), W('zo')]),
@@ -262,6 +267,30 @@ const seen = await pg.evaluate(() => ({ pic:ME.pic, theme:SET.theme,
 say(seen.pic === PIC_NEW, '2 the photograph on screen is the account\'s, not the one this phone had' +
     (seen.pic === PIC_NEW ? '' : ' -- ' + String(seen.pic).slice(0, 32)));
 say(seen.words === 'ka,mi', '2 the language on screen is the server\'s -- ' + seen.words);
+
+/* What went out as writes while `fn` ran and the wire went quiet again. */
+async function writesDuring(fn, arg){
+  await pg.evaluate(() => { window.__Q.log.length = 0; });
+  await pg.evaluate(fn, arg);
+  await quiet(pg);
+  const log = await pg.evaluate(() => window.__Q.log.map(r => ({ m:r.m, u:r.u, body:r.body })));
+  return log.filter(r => writes(r.m, r.u));
+}
+function named(ws){
+  return ws.map(r => r.m + ' ' + r.u.replace(/^[a-z]+:\/\/[^/]*/, '').split('?')[0] +
+                     (r.body && r.body.kind ? ' (' + r.body.kind + ')' : '')).join(', ');
+}
+
+/* ---- 4. a person opens another language ---------------------------------
+   langOpen() writes the one it leaves and works over the one it opens -- the
+   free alphabet's slots, the keyboard's migration, ids for an old board. None
+   of that is somebody changing their language (r63-audit 0-2). */
+{
+  const w = await writesDuring(() => { langOpen('L-2'); });
+  say(w.length === 0, '4 opening another language sends nothing' + (w.length ? ' -- ' + named(w) : ''));
+  await pg.evaluate(() => { langOpen('L-1'); });
+  await quiet(pg);
+}
 
 /* ---- 3. a person adds one word ------------------------------------------ */
 await pg.evaluate(() => { window.__Q.log.length = 0; WORDS.push({ hw:'lo', ph:['l','o'], mn:'lo', mns:['lo'], pos:'n', at:2 }); save(); });
