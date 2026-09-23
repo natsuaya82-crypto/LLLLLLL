@@ -37,7 +37,7 @@ grep して読み直したものです。行番号は書きません（次のコ
 ## 1. 右上の決定ボタンが三通り。一つは色が付かない ── **閉じた**
 
 `navdo` / `navq navdone` / `navq navsave` の三通りが一つになりました。
-`.navsave` はどの stylesheet にも無く、文字を描く画面の保存だけ灰色でした。
+~~`.navsave`~~ はどの stylesheet にも無く、文字を描く画面の保存だけ灰色でした。
 
 ```
 grep -rn "navsave\|navdone" www/*.js     いま出るのは、そうだったと書いた注記だけ
@@ -131,8 +131,8 @@ grep -rn "capwarn" www/*.js      www/shell.js の一行だけ
 
 **一箇所は `emptyBox(text, sub, more, bad)`（`www/shell.js`）です。**残って
 いた五箇所 ── `www/sns.js`（`snsNone` `snsNoneFo` と凍結の表示）`www/me.js`
-`www/notes.js` ── を寄せ、`www/mod.js` の `.mnone` 六箇所も同じ箱にしました。
-`.mnone` の CSS 二行は `www/index.html` から消えています。
+`www/notes.js` ── を寄せ、`www/mod.js` の ~~`.mnone`~~ 六箇所も同じ箱にしました。
+~~`.mnone`~~ の CSS 二行は `www/index.html` から消えています。
 
 **引数は三つ増え、三つとも呼ぶ人がいます**（誰も通らない枝は作っていません）:
 
@@ -143,7 +143,7 @@ grep -rn "capwarn" www/*.js      www/shell.js の一行だけ
          赤は www/index.html に既にある .bad が付ける（CSS は足していない）
 ```
 
-**通報と運営の画面だけ見た目が変わります。**`.mnone` は余白 24px・書体も
+**通報と運営の画面だけ見た目が変わります。**~~`.mnone`~~ は余白 24px・書体も
 大きさも継承でしたが、`.empty` は 54px・見出しの書体・1.3rem。他のどの画面
 とも違って見えていたのが、同じになりました。前後のスクショ:
 
@@ -166,7 +166,7 @@ grep -rn "capwarn" www/*.js      www/shell.js の一行だけ
 回っている印で、「まだ何も無い」ではなく「まだ答えが来ていない」という
 別の状態だからです（`snsWaitHTML()` の注記がその理由を書いています）。
 
-**`.mnone` の六箇所と、赤い三つは、どの walk も通りません。**
+**~~`.mnone`~~ の六箇所と、赤い三つは、どの walk も通りません。**
 `tools/fixture.mjs` に `MODERR` も `ADREC_ERR` も `admin.rec.none` も無い
 ので、写真は面を五つ足して撮り、**足した面は commit していません**（9番 と
 同じ理由）。

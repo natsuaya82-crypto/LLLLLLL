@@ -271,7 +271,7 @@ sina は戻るか   : true
 `www/net.js:2635`。
 
 **確かめたこと。** ソースを読みました。`postCatchUp()` に送信中の印が無いこと、
-`snsPulling` が押さえているのは `netFeed` だけで `netPush` ではないこと、
+~~`snsPulling`~~ が押さえているのは `netFeed` だけで `netPush` ではないこと、
 `netPush` が毎回新しい id を作ることを確認しました。
 
 **確かめていないこと。実機で押していません。**上は道が二本以上あることを
