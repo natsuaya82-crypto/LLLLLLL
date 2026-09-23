@@ -84,8 +84,7 @@ the difference the hard way — deleting a second account emptied the whole
 `lingua.` namespace and took the first account's only copy of a language with
 it. `wipeAll()` (`www/settings.js`) is the button; `wipeAllGo()` reads who is
 signed in AT THE PRESS, hands that uid down both arms of `netDropMe()`, and
-`wipeHere(uid)` calls `lsWipeAcct(uid)` (`www/core.js`) and `bkDropFor(ids)`
-(`www/backup.js`). What comes off the phone is listed under **what an account
+`wipeHere(uid)` calls `lsWipeAcct(uid)` (`www/core.js`). What comes off the phone is listed under **what an account
 deletion actually takes**, below.
 
 Which of the copies is believed when they differ: **neither.** `sync.js` adds
@@ -315,33 +314,13 @@ destroys, and because until 2026-09-03 it took the whole `lingua.` namespace
 and that is how one person's deletion erased another person's language.
 
 ```
-  every SLICES key of every language whose LANGS entry carries this uid
+  every key under lingua.<id>. -- in memory and on the disk -- of every
+    language this account wrote (langOwnOf) or took (langTookHas)
   that language's row out of LANGS
-  lingua.me.<uid>      lingua.posts.<uid>      lingua.drafts.<uid>
+  every lingua.… key whose last part is this uid
   lingua.me            lingua.posts            lingua.drafts     (the live ones)
-  the eight LS_FLAT keys
+  this account's fields inside lingua.set
 ```
-
-**The eight flat keys** are `lingua.words` `lingua.lines` `lingua.lang`
-`lingua.script` `lingua.letters` `lingua.notes` `lingua.phases`
-`lingua.talk` — the dictionary a single-language build wrote before a language
-had an id. `langMigrate()` **copies** out of them and never removes
-(`docs/DATA_SAFETY.md` § 2), so after the migration they are a second copy of
-that account's dictionary answering to nobody — and `langMigrate()` reads them
-again the moment the index has no current language, which handed the next
-person to sign in on this handset the first person's words. They are that
-account's dictionary in an older spelling, so they go with it. They carry no
-uid, and that is the whole reason this is written down rather than left to the
-prefix test above.
-
-**All of that is on its way out.** OWNER 2026-09-03: 「今の状態の話平キーなんか
-いらない」 — the road is being deleted, not conditioned: `langMigrate()`,
-`LS_FLAT`, `langMigStamp()` and the `mig` mark with them, and this line of
-`lsWipeAcct()` goes when they do because there is nothing left for it to take.
-The decision is in `docs/FEATURE_RULES.md` and the branch is `claude/flat`.
-**Delete this paragraph and the `mig` row above in the same commit that lands
-it** — a description of a road nobody walks is the thing this file is being
-audited for.
 
 **Two things under `lingua.` are NOT taken.** They are named so that nobody
 reads the list above as complete:
@@ -492,7 +471,7 @@ which one every global on the making side means.
 （`www/net.js`）はそれを insert に**入れて**送ります ── 列は
 `default gen_random_uuid()` なので、送れば送った値になります。それまでは
 番号が二つあり、`sid` がサーバー側のもう一つでした。二つを突き合わせていた
-`nidFor()` `nidHolds()` `nidDrop()` は削除。**取った言語はダウンロードが
+~~`nidFor()`~~ ~~`nidHolds()`~~ ~~`nidDrop()`~~ は削除。**取った言語はダウンロードが
 できた日からこの形です**（`langSeenAdd()` はサーバーの id をそのまま鍵に
 します）── 作る側が読む側に追いついたということです。
 
@@ -508,7 +487,6 @@ which one every global on the making side means.
 | `mine` | **nothing, since 2026-09-11** | whether the entry was made as a language you are MAKING or one you are only READING — a boolean this phone wrote. Four functions read it and fell three different ways where the server had not spoken, and `langForAcct()` read the disagreement as 「this account has no language」 and made a second one. **Whose a language is is `language.owner` and whether this account is reading somebody else's is a `language_take` row**; `langWhose()` (`www/core.js` § langWhose) is the one place both are asked. **An entry written by an older version still carries this field and nothing reads it**; nothing removes it, because a migration copies |
 | `sid` | **nothing, since 2026-09-10** | the server's id for this language, back when a language had two numbers. The id IS that number now, so there is nothing to keep beside it. `langsOneId()` (`www/core.js`) reads this field once, on the launch that moves the entry to it, and it is the last thing that ever does — it also says the `language` row EXISTS, because `netLangRow()` wrote it at the moment it made the row and at no other moment (`LROW`, `www/core.js`) |
 | `uid` | **nothing, since 2026-09-09** | it answered TWO questions with one field: on a language somebody made it was who MADE it, and on a downloaded one it was who TOOK it (`langSeenAdd()`'s own comment said so). The two come apart the moment a language moves between people, and `dlCount()` counted the second — so the ceiling on downloads was per handset. They are two questions now and both are the server's: **who wrote it** is `language.owner` (`langOwnOf()`, `www/core.js` § LOWN) and **that this account took it** is a `language_take` row (`langTookHas()`). An entry written by an older version still carries this field and nothing reads it |
-| `mig` | `langMigrate()` (`www/core.js`), removed by `langMigStamp()` | the mark that this entry came out of the eight flat keys and is still waiting for an account to be stamped on it. `langMigrate()` runs while `core.js` is loading, before `SESS` is even declared, so there is nothing to stamp with at the moment it is made and `netRead()` does it eighteen lines later |
 
 **Count them off the writers above and off `www/core.js`, not off a number
 written here.**
@@ -843,16 +821,6 @@ codebase hard to read. New posts do not carry it.
 somebody's, and removing what a person made because the current shape has no
 use for it is what `docs/DATA_SAFETY.md` forbids outright. It is simply
 ignored.
-
-### The reader's own words
-
-A post said again in the reader's conlang is the one thing here that is
-**current** rather than frozen, and deliberately: it is built from the
-reader's dictionary, now, so a sentence that half renders today renders whole
-next month because the dictionary grew. Freezing it would be the bug — the
-mirror image of `ink`, and correct for the same reason. `trUnits()` in
-`post.js` is above the line and touches `mn`/`tr` and never `ln` or `ink`;
-`sides-check` holds that with a named exception rather than by silence.
 
 ## What somebody looks for — two lists, never one
 
