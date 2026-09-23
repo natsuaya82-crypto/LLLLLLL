@@ -214,12 +214,17 @@ for again.
 add is the plus, delete is the bin, edit is the pen, and undo, search, back,
 close, settings and more are the marks every phone already draws — from the
 `ICON_*` row in `www/glyph.js`, with the word on the button as its
-`aria-label`, through `t()`. A label that is more than the verb — 「アカウント
-を削除」, a row saying what goes — is a row, and an operation with no settled
-mark (sign in, next, save, done) stays a word until the owner gives it one.
-**`marks-check` holds it**: it walks every screen and face `press` walks and
-the bar over every route, and fails on a button whose whole label is one of
-those verbs in words with no mark; `--list` prints every word-only button left.
+`aria-label`, through `t()`. **And a screen's send and share are that mark
+at the top right of the bar** 「右上にしてね。送信も紙飛行機右上、共有も共有
+マークを右上。」 OWNER 2026-09-23 — `navDo(label, name, args, on, {icon})`,
+the one place the corner is drawn. A label that is more than the verb —
+「アカウントを削除」, a row saying what goes — is a row, and an operation with
+no settled mark (sign in, next, save, done) stays a word until the owner gives
+it one. **`marks-check` holds it**: it walks every screen and face `press`
+walks and the bar over every route, and fails on a button whose whole label is
+one of those verbs in words with no mark, and on a send or a share anywhere but
+the corner; it prints how many word-only buttons are still in the corner, and
+`--list` names them and every other word-only button left.
 
 **Rows in one list are one height.** Set `font-size` and `line-height` on the
 row class rather than letting the tag decide -- a `<button>` takes the
