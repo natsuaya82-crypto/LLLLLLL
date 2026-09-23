@@ -1476,6 +1476,45 @@ const CASES = [
     `insert into draft(id,author,body) values ('${DR}','${A}','{\"ln\":\"secret\"}'::jsonb)`],
   ['and reads it back',                       'ok',     A, 0,
     `select 1 from draft where id='${DR}'`],
+  /* --- THE LATER EDIT WINS (keep_newer in schema.sql) --------------------
+     「普通後から変えたほうになる？」 OWNER 2026-09-04. Two phones of A's,
+     one that changed a thing at 2000 and one that changed it at 1000 and
+     connected second. What stays is the 2000 one, on every table the
+     trigger is on, and the older write lands everything it carries that is
+     not older. */
+  ['A\u2019s later phone names A "late"',     'ok',     A, 0,
+    `update profile set display='late', ed='{"display":2000}'::jsonb where id='${A}'`],
+  ['the earlier phone, connecting second, sends "early" and a line', 'ok', A, 0,
+    `update profile set display='early', bio='a line',
+            ed='{"display":1000,"bio":1000}'::jsonb where id='${A}'`],
+  ['and the name is the later one, the line the earlier phone\u2019s', 'ok', A, 0,
+    `select 1 from profile where id='${A}' and display='late' and bio='a line'
+       and (ed->>'display')::numeric = 2000`],
+  ['a setting pressed later',                 'ok',     A, 0,
+    `select prefs_put('{"theme":"dusk"}'::jsonb, '{"theme":2000}'::jsonb)`],
+  ['and one pressed earlier arriving after it is told what stands', 'ok', A, 0,
+    `select 1 where prefs_put('{"theme":"noon"}'::jsonb, '{"theme":1000}'::jsonb) ->> 'theme' = 'dusk'`],
+  ['and the row says so',                     'ok',     A, 0,
+    `select 1 from profile where id='${A}' and prefs->>'theme'='dusk'`],
+  ['a draft written later',                   'ok',     A, 0,
+    `update draft set body='{"ln":"later"}'::jsonb, ed='{"body":2000}'::jsonb where id='${DR}'`],
+  ['and an older one does not replace it',    'ok',     A, 0,
+    `update draft set body='{"ln":"older"}'::jsonb, ed='{"body":1000}'::jsonb where id='${DR}'`],
+  ['it is still the later one',               'ok',     A, 0,
+    `select 1 from draft where id='${DR}' and body->>'ln'='later'`],
+  /* And a slice, which two phones ADD to: the write says which version it
+     put itself together with, and one made against a version that has since
+     moved is refused rather than written over it (r63-audit 0-4). */
+  ['A writes notes, merged against nothing',  'ok',     A, 0,
+    `insert into slice(language,kind,body,ed) values ('${L}','notes','["a"]','{"body":1000,"was":0}'::jsonb)`],
+  ['and "was" is not kept on the row',        'ok',     A, 0,
+    `select 1 from slice where language='${L}' and kind='notes' and not (ed ? 'was')`],
+  ['another write merged against nothing is refused -- it has not seen "a"', 'denied', A, 0,
+    `update slice set body='["b"]', ed='{"body":3000,"was":0}'::jsonb where language='${L}' and kind='notes'`],
+  ['one merged against what is there lands',  'ok',     A, 0,
+    `update slice set body='["a","b"]', ed='{"body":3000,"was":1000}'::jsonb where language='${L}' and kind='notes'`],
+  ['and holds both',                          'ok',     A, 0,
+    `select 1 from slice where language='${L}' and kind='notes' and body='["a","b"]'`],
   /* The four somebody else would try. READ FIRST and not last: it is the one
      that costs somebody something even when nothing is written, and it is the
      one a `for all` policy or a `using (true)` would hand over in silence. */

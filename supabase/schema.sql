@@ -223,6 +223,12 @@ alter table profile add column if not exists handle_at timestamptz;
 -- and is nobody else's business -- the view is what other people may read.
 alter table profile add column if not exists prefs jsonb not null default '{}'::jsonb;
 
+-- WHEN EACH THING ON THIS ROW WAS LAST CHANGED BY A PERSON, as the phone they
+-- changed it on tells it: field -> milliseconds. keep_newer() below is what
+-- reads it. Said here because prefs_put() writes it; `slice` and `draft` get
+-- the same column where they are made.
+alter table profile add column if not exists ed jsonb not null default '{}'::jsonb;
+
 -- AND ONE SETTING AT A TIME. A PATCH of `prefs` replaces the whole object, so
 -- a phone that changed the theme sent every setting it was holding -- and the
 -- one it was holding stale (a notification switched off on the other phone)
@@ -232,10 +238,21 @@ alter table profile add column if not exists prefs jsonb not null default '{}'::
 -- AS THE CALLER, so the row policy and the column grant below are what decide
 -- whose row it touches -- `id = auth.uid()` is the caller's own and nobody
 -- else's, and a caller with no session updates nothing.
-create or replace function prefs_put(p jsonb) returns void
+--
+-- AND EACH KEY CARRIES WHEN IT WAS PRESSED (`e`, key -> milliseconds), which
+-- goes into `profile.ed` as `prefs.<key>` -- keep_newer() below keeps a key
+-- whose press is older than the one already here. What is handed back is the
+-- settings as they now stand, so the phone that lost takes the other one's.
+drop function if exists prefs_put(jsonb);
+create or replace function prefs_put(p jsonb, e jsonb default '{}'::jsonb) returns jsonb
   language sql security invoker set search_path = public as $$
-  update profile set prefs = coalesce(prefs, '{}'::jsonb) || coalesce(p, '{}'::jsonb)
-   where id = auth.uid();
+  update profile set prefs = coalesce(prefs, '{}'::jsonb) || coalesce(p, '{}'::jsonb),
+                     ed = coalesce(ed, '{}'::jsonb) ||
+                          coalesce((select jsonb_object_agg('prefs.' || k, v)
+                                      from jsonb_each(coalesce(e, '{}'::jsonb)) as x(k, v)),
+                                   '{}'::jsonb)
+   where id = auth.uid()
+  returning prefs;
 $$;
 
 -- ---- what ------------------------------------------------------------------
@@ -392,6 +409,7 @@ create table if not exists slice (
   primary key (language, kind)
 );
 create index if not exists slice_language_idx on slice(language);
+alter table slice add column if not exists ed jsonb not null default '{}'::jsonb;
 
 -- ---- slice_hist ---------------------------------------------------------
 -- The three versions before now, so that somebody who writes in and says
@@ -633,6 +651,92 @@ create table if not exists draft (
   updated_at timestamptz not null default now()
 );
 create index if not exists draft_author_idx on draft(author, updated_at desc);
+alter table draft add column if not exists ed jsonb not null default '{}'::jsonb;
+
+-- ---- THE LATER EDIT WINS ------------------------------------------------
+-- 「普通後から変えたほうになる？アプリ気になるそこ」 OWNER 2026-09-04
+-- (docs/FEATURE_RULES.md § 同期でぶつかったら、後から「直した」ほうが残るべき).
+--
+-- Two phones change the same thing. What stayed was whichever CONNECTED last,
+-- because nothing on a row said when anything on it was changed -- the server
+-- had nothing to compare. One sentence covers every place that can happen:
+--
+--   A WRITE CARRIES WHEN A PERSON MADE IT, AND THE SERVER KEEPS A THING ONLY
+--   FROM A WRITE NEWER THAN THE ONE IT IS HOLDING.
+--
+-- `ed` on each row is that record: a field (or `prefs.<key>`, one level down
+-- into a jsonb column) -> the milliseconds the phone says it was changed at.
+-- On an update, every field the write carries a time for is compared, and a
+-- field whose time is OLDER keeps what is here; its time stays the newer one.
+-- A field the write carries no time for is not compared -- an older version
+-- of the app writes none, and there is nothing to compare it with.
+--
+-- ONE MORE THING FOR A SLICE, and it is the same sentence one step earlier.
+-- A slice is a list that two phones ADD to, and the phone puts the two
+-- together before it writes (www/sync.js) -- which only works if what it put
+-- together is what is here. `ed.was` is the time it merged against; if this
+-- row has moved since, the write is refused with `stale` and the phone reads
+-- again and merges again (r63-audit 0-4: `no` was a counter nobody compared).
+-- A refusal and not a quiet keep, because a slice is written without asking for
+-- the row back (www/net.js § netSend) and a quiet keep would say nothing.
+--
+-- The time is the phone's clock. A phone whose clock is far out wins or loses
+-- by that much; nothing here can know better.
+create or replace function keep_newer() returns trigger
+language plpgsql as $$
+declare
+  o  jsonb := '{}'::jsonb;
+  n  jsonb := to_jsonb(new);
+  ed jsonb := '{}'::jsonb;
+  k  text; col text; sub text; ne numeric; oe numeric;
+begin
+  -- A first write has nothing here to be newer than; it is asked the same
+  -- questions against an empty row, so `was` is held to 「nothing」 too.
+  if tg_op = 'UPDATE' then
+    o  := to_jsonb(old);
+    ed := coalesce(o -> 'ed', '{}'::jsonb);
+  end if;
+  if (n -> 'ed') ? 'was' then
+    if coalesce(nullif(ed ->> 'body', '')::numeric, 0)
+       <> coalesce(nullif(n -> 'ed' ->> 'was', '')::numeric, 0) then
+      raise exception 'stale' using errcode = 'P0001';
+    end if;
+    n := jsonb_set(n, '{ed}', (n -> 'ed') - 'was');
+  end if;
+  for k in select jsonb_object_keys(coalesce(n -> 'ed', '{}'::jsonb)) loop
+    ne  := nullif(n -> 'ed' ->> k, '')::numeric;
+    oe  := nullif(ed ->> k, '')::numeric;
+    col := split_part(k, '.', 1);
+    sub := nullif(split_part(k, '.', 2), '');
+    if oe is not null and (ne is null or ne < oe) then
+      if sub is null then
+        n := jsonb_set(n, array[col], coalesce(o -> col, 'null'::jsonb));
+      elsif (o -> col) ? sub then
+        n := jsonb_set(n, array[col, sub], o -> col -> sub);
+      else
+        n := jsonb_set(n, array[col], coalesce(n -> col, '{}'::jsonb) - sub);
+      end if;
+    elsif ne is not null then
+      ed := jsonb_set(ed, array[k], to_jsonb(ne));
+    end if;
+  end loop;
+  n := jsonb_set(n, '{ed}', ed);
+  new := jsonb_populate_record(new, n);
+  return new;
+end
+$$;
+-- First of every trigger on the row (they run in name order), so what the
+-- others see -- slice_hist keeping the version before, profile_rename's
+-- fourteen days -- is the write as it will land.
+drop trigger if exists a_keep_newer on slice;
+create trigger a_keep_newer before insert or update on slice
+  for each row execute function keep_newer();
+drop trigger if exists a_keep_newer on draft;
+create trigger a_keep_newer before insert or update on draft
+  for each row execute function keep_newer();
+drop trigger if exists a_keep_newer on profile;
+create trigger a_keep_newer before insert or update on profile
+  for each row execute function keep_newer();
 
 -- ---- looked for, and kept -------------------------------------------------
 -- A search somebody starred. 「SNSは全部サーバー」 OWNER -- a search is
@@ -2954,7 +3058,7 @@ create trigger profile_follows after insert on profile
 -- notices reach a phone are fields of this column (2026-09-22), and a switch
 -- that cannot be written is a switch that is always on.
 revoke update on profile from anon, authenticated;
-grant  update (handle, display, av, bio, link, loc, prefs) on profile to authenticated;
+grant  update (handle, display, av, bio, link, loc, prefs, ed) on profile to authenticated;
 
 -- And the same sentence about INSERT, which is not the same statement.
 --
