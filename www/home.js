@@ -308,9 +308,23 @@ function closeSheet(){
 }
 function pkSwitch(id){
   pkScript = (pkScript===id ? '' : id);           /* tap again to fold away */
-  var e=document.getElementById('pk-chars'); if(e) e.innerHTML=pkCharsHTML();
-  var r=document.querySelectorAll('.pktab'); for(var i=0;i<r.length;i++){ var b=r[i];
-    if(b.getAttribute('data-id')===pkScript) b.classList.add('on'); else b.classList.remove('on'); } }
+  var e=document.getElementById('pk-list'); if(e) e.innerHTML=pkListHTML(); }
+/* THE SCRIPTS ARE A LIST, one row each, and the open one has its characters
+   under it. They were a row of boxed chips scrolled sideways -- fifteen of
+   them, 1537px of them across a 354px screen -- which is two things CLAUDE.md
+   § Shape bans at once: 「丸パッチ無限横並び」, and a box round a word.
+   「数が多ければリスト」. The row is the app's ordinary `.set` row, so nothing
+   here draws a shape of its own. This is the one place the list is drawn;
+   pkSwitch() asks it again rather than moving classes around by hand. */
+function pkListHTML(){
+  return WORLD_SCRIPTS.map(function(w){
+    var on=(w.id===pkScript);
+    return '<button class="set"' + DO('pkSwitch', [w.id]) + '>'+
+        '<span class="pkpv">'+esc(w.pv.slice(0,2))+'</span>'+
+        '<span class="sl'+(on?' on':'')+'">'+esc(t('ws.'+w.id))+'</span></button>'+
+      (on? '<div class="pkchars" id="pk-chars">'+pkCharsHTML()+'</div>' : '');
+  }).join('');
+}
 var pkFor='';
 function pkCharsHTML(){
   if(!pkScript) return '';
@@ -348,11 +362,7 @@ function openPick(lid){
     '<div class="pkown"><input class="scin own" id="own-ch" maxlength="4" value="'+esc(cur)+'" placeholder="'+esc(t('script.own.ph'))+'" autocomplete="off" '+
       '' + IN('pkSetCh') + '></div>'+
     (cur? '<button class="pkclear"' + DO('ltTakeChar', [lid, ""]) + '>'+t('ch.clear')+'</button>':'')+
-    '<div class="pktabs">'+WORLD_SCRIPTS.map(function(w){
-      return '<button class="pktab'+(w.id===pkScript?' on':'')+'" data-id="'+w.id+'"' + DO('pkSwitch', [w.id]) + '>'+
-        '<span class="pkpv">'+esc(w.pv.slice(0,2))+'</span>'+esc(t('ws.'+w.id))+'</button>';
-    }).join('')+'</div>'+
-    '<div class="pkchars" id="pk-chars">'+pkCharsHTML()+'</div>');
+    '<div id="pk-list">'+pkListHTML()+'</div>');
 }
 FORM_OPEN.pick=function(x){ openPick(x); };
 /* ---- PRESSING A CHARACTER CHOOSES; THE BAR SAVES ----------------------
