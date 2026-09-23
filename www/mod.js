@@ -471,9 +471,16 @@ function adminStaffDrop(h){
    staff_drop() in schema.sql refuses to take it off, so a button there would
    be one that does nothing. Same class either way, so the rows are one
    height; what differs is whether it is pressable, which is what the rule
-   about rows is not about. */
+   about rows is not about.
+
+   WHICH ROW THAT IS, IS THE HANDLE. It is `handle = 'lingua'` on the server
+   (is_admin(), staff_drop()) and ADMIN_HANDLE in www/net.js, which is what
+   NET_ADMIN is asked with. This read `profile.admin`, a column schema.sql
+   says nothing reads or writes any more and that is false on a new
+   database -- so @lingua was drawn as a button that succeeded and changed
+   nothing. */
 function adminStaffRow(r){
-  return r.admin
+  return String(r.handle||'')===ADMIN_HANDLE
     ? '<div class="set"><span class="sl">@'+esc(r.handle)+'</span></div>'
     : '<button class="set"' + DO('adminStaffDrop', [r.handle]) + '>'+
         '<span class="sl">@'+esc(r.handle)+'</span></button>';

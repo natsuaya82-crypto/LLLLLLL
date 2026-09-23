@@ -273,6 +273,9 @@ const staff = await pg.evaluate(async () => {
   return out;
 });
 console.log('\n  報告に答える人');
+say(!staff.lingua, '権限者の行（@lingua）は押せない ── 決めるのは handle、' +
+    'profile.admin ではない（サーバーの行は admin=false）');
+say(staff.mod, 'スタッフの行は押せる（@mod）');
 say(staff.list === null,
     '断られた一覧は空の一覧ではない ── ADMINS=' + JSON.stringify(staff.list));
 say(!!staff.drawn, 'そして画面の一覧の場所に何が起きたかが出る（' + JSON.stringify(staff.err) + '）');

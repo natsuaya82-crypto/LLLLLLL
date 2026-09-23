@@ -15,6 +15,22 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### 2026-09-23 管理画面：権限者の行を決めるのは handle 一つ ── **貯まる物は変わりません**
+
+r63-audit § 2-6 M2 のアプリ側（r69-misc）。「どのスタッフ行が権限者か」をサーバーは
+`handle = 'lingua'`（`is_admin()`・`staff_drop()`）で、アプリは `profile.admin` で決めていた。
+`schema.sql` は `profile.admin` を「もう誰も読まず書かない」と言い、新しい DB では @lingua も
+`false`。なので @lingua の行が押せる行として出て、押すと成功して何も変わらなかった。
+
+- **見て変わること**：@lingua の行は押せない行になる（見た目は同じ行、押しても何も起きない）。
+- **一つの答え**：アプリで権限者を言うのは `ADMIN_HANDLE`（`www/net.js`）だけになる ──
+  `NET_ADMIN` もそれで訊いている。`adminStaffRow()` もそれを読む。
+- **残り（持ち主の違うファイル、報告のみ）**：`netStaffList()`（`www/net.js`）はまだ `admin` を
+  select している（誰も読まない列）。
+- **貯まる物**：変わらない。`profile.admin` 列には触らない。
+- **検査**：`hist-check`（サーバーと同じ `admin=false` の行で、@lingua が押せないこと）。
+  旧コードで赤を見た。fixture の行も `admin:false`（サーバーが返すとおり）にした。
+
 ### 2026-09-23 管理画面：届かなかった一覧は空の一覧にしない、断られた理由はサーバーの答え ── **貯まる物は変わりません**
 
 r63-audit § 2-6 M1（r69-misc）。`adminLoad()`（`www/mod.js`）は、報告に答える人の一覧
