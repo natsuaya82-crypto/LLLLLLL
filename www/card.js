@@ -80,11 +80,16 @@ function cardOpen(kind, key){
   CARD={k:String(kind), v:String(key), sh:CARD.sh};
   /* A card of something that is not there any more says so, the way a screen
      does (viewGone): no canvas, so nothing below is ever asked to draw it. */
+  /* THE SHARE IS IN THE CORNER OF THE BAR, AS THE MARK. 「右上にしてね。
+     送信も紙飛行機右上、共有も共有マークを右上。」 OWNER 2026-09-23 -- the
+     one thing this screen does is the thing every phone puts top right, and
+     navDo() is the one place the corner is drawn. A card of something gone
+     has nothing to share and no corner. */
   openForm('card:'+CARD.k+'/'+CARD.v, t('card.title'),
     cardSrc()? '<div class="cardbox"><canvas id="cardc" class="cardc"></canvas></div>'+
-    cardShapesHTML()+
-    markBtn(ICON_SHARE, t('card.save'), 'cardSave') : goneBox(),
-    cardMount);
+    cardShapesHTML() : goneBox(),
+    cardMount,
+    cardSrc()? navDo(t('card.save'), 'cardSave', null, true, {icon:ICON_SHARE}) : '');
 }
 function cardShapesHTML(){
   if(cardSrc().kind!=='p') return '';
