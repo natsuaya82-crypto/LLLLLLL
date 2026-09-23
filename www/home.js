@@ -1265,6 +1265,9 @@ function setWldSecDl(r, v){ wldSecSet(r, 'dl', v); }
 /* The row on the profile, in place of the small tag that used to sit beside
    the handle. 「linguaパッチの代わり。Lingua > みたいになってて」 */
 function wldRow(){
+  /* Not yours, no row -- wldPage() below says why, and it is the same one
+     question asked by the door and by the page. */
+  if(langLocked()) return '';
   /* A LANGUAGE WITH NO NAME YET STILL HAS A ROW, and it says so.
      「未設定って出てくればいいよ。プロフィールにね。」OWNER 2026-09-02.
      It returned nothing at all, so a language nobody had named had no row on
@@ -1975,10 +1978,9 @@ function wldOpen(){
    wldPage() ends in two places, because a language nobody may open stops at
    its heading, and the two were writing this out identically. The condition
    was in both: Edit is only on your own. 「Edit は出ません（他人のものなので）」
-   -- and `mine` is whose ARTICLE this is, which is a different question from
-   whether the OPEN language may be changed: a downloaded language opened from
-   the switcher draws its own article with mine true. langLocked() answers the
-   second. Who may edit is one decision, so it is asked once.
+   -- and `mine` is whose ARTICLE this is. The open language's article is only
+   ever drawn when it is this account's (wldPage() asks langLocked() before it
+   gets here), so `mine` is the whole of who may edit, asked once.
 
    IT IS THE BAR AND THE BODY, AND NOT THE PAGE. Written to return the whole
    page it BECAME the drawer of this route -- page-check watches the innermost
@@ -1986,12 +1988,23 @@ function wldOpen(){
    drawn by two functions and the gate went red on rule 21. The frame is a
    piece wldPage() puts in; wldPage() is what draws this route. */
 function wldFrame(body, ed, mine){
-  return navTop('', (!ed && mine && !langLocked())?
+  return navTop('', (!ed && mine)?
       navDo(t('wld.edit'), 'go', ["world"], true) : '')+
     '<div class="body">'+body+'</div>';
 }
 function wldPage(ed, L, lid){
   var w, mine, drawn, body='', dls='', done, i;
+  /* THE WIKI IS ONLY EVER YOUR OWN LANGUAGE'S.
+     「後人の言語は自分の言語じゃないからwikiページに表示させないように。」
+     OWNER 2026-09-23. With no bundle this page is the OPEN language's article
+     -- your wiki, with its Edit -- and a language taken off somebody else's
+     page can be the open one (it is opened from the switcher to be read). It
+     drew as yours, named in your profile's row. langLocked() (www/core.js) is
+     the one question 「is the open language not this account's」, and this
+     page and its door on the profile, wldRow() above, both ask it and nothing
+     else. The language is still read where the app reads it -- its words,
+     letters and keyboard; only the article is not offered. */
+  if(!L && langLocked()) return viewGone();
   L=L||wldOpen();
   /* NOT HERE YET, and that is a face of this page rather than a page of its
      own. Somebody else's article arrives in two answers off the network, and
