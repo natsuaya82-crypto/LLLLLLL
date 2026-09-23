@@ -34,32 +34,6 @@ orphan docs/SCOPE-yaa.md
 # A sentence about a function that is gone strikes it: ~~`name()`~~. Taking a
 # line out is progress; putting one in is not how a new one gets fixed.
 
-call docs/FEATURE_RULES.md bkDropAll
-call docs/FEATURE_RULES.md bkDropFor
-call docs/FEATURE_RULES.md bkPack
-call docs/FEATURE_RULES.md calSlots
-call docs/FEATURE_RULES.md capLapse
-call docs/FEATURE_RULES.md dayPull
-call docs/FEATURE_RULES.md geDirty
-call docs/FEATURE_RULES.md has_account
-call docs/FEATURE_RULES.md kbCellW
-call docs/FEATURE_RULES.md kbKeyW
-call docs/FEATURE_RULES.md kbRows
-call docs/FEATURE_RULES.md kbSlots
-call docs/FEATURE_RULES.md keep
-call docs/FEATURE_RULES.md langAcct
-call docs/FEATURE_RULES.md langMigStamp
-call docs/FEATURE_RULES.md langMigrate
-call docs/FEATURE_RULES.md langOwned
-call docs/FEATURE_RULES.md lsWipeNS
-call docs/FEATURE_RULES.md netAnon
-call docs/FEATURE_RULES.md netAnonTok
-call docs/FEATURE_RULES.md netMember
-call docs/FEATURE_RULES.md netStore
-call docs/FEATURE_RULES.md netTakeGone
-call docs/FEATURE_RULES.md planKeep
-call docs/FEATURE_RULES.md planMigrate
-call docs/FEATURE_RULES.md voPlayPW
 
 # `name` `file` `check` `npm` `count` `owner` `gone` `struck` -- the rest of the
 # surface, counted from 2026-09-23 (claude/r77-docs, docs/scope/r73-audit.md
@@ -70,7 +44,6 @@ check docs/BACKLOG.md backup-check
 check docs/FEATURE_RULES.md backup-check
 check docs/STATE.md backup-check
 count docs/BACKLOG.md 検査 16 本
-count docs/FEATURE_RULES.md ゲート28本
 count docs/STATE.md ゲート 41 本
 count docs/STATE.md ゲートは 44 本
 count docs/STATE.md 検査 8 本
@@ -78,7 +51,6 @@ file docs/BACKLOG.md backup-check.mjs
 file docs/BACKLOG.md lt.sh
 file docs/BACKLOG.md talk.js
 file docs/FEATURES.md lt.sh
-file docs/FEATURE_RULES.md backup-check.mjs
 file docs/STATE.md backup-check.mjs
 name docs/BACKLOG.md DOC_
 name docs/BACKLOG.md KB_MAX
@@ -111,83 +83,6 @@ name docs/FEATURES.md TR_FREE_DAILY
 name docs/FEATURES.md TR_SEAM
 name docs/FEATURES.md notifyListeners
 name docs/FEATURES.md postTr
-name docs/FEATURE_RULES.md ADMIN_ASC
-name docs/FEATURE_RULES.md AI_FREE_DAILY
-name docs/FEATURE_RULES.md AI_SEAM
-name docs/FEATURE_RULES.md Basic
-name docs/FEATURE_RULES.md CAN.ai
-name docs/FEATURE_RULES.md CAN.write
-name docs/FEATURE_RULES.md GE_
-name docs/FEATURE_RULES.md GE_MAXPTS
-name docs/FEATURE_RULES.md GHCYC
-name docs/FEATURE_RULES.md GHDCYC
-name docs/FEATURE_RULES.md GHDEMO
-name docs/FEATURE_RULES.md GHINT
-name docs/FEATURE_RULES.md GHP
-name docs/FEATURE_RULES.md GHTAP
-name docs/FEATURE_RULES.md KB_MAX
-name docs/FEATURE_RULES.md LANG_MAX
-name docs/FEATURE_RULES.md LS_FLAT
-name docs/FEATURE_RULES.md PLAN_BUY
-name docs/FEATURE_RULES.md SET.aiDate
-name docs/FEATURE_RULES.md SET.plan
-name docs/FEATURE_RULES.md SET.planPend
-name docs/FEATURE_RULES.md SET.planUid
-name docs/FEATURE_RULES.md SET.planWas
-name docs/FEATURE_RULES.md SET_PLAN
-name docs/FEATURE_RULES.md TR_FREE_DAILY
-name docs/FEATURE_RULES.md Transaction.expirationDate
-name docs/FEATURE_RULES.md WORDS.slot
-name docs/FEATURE_RULES.md adminAsc
-name docs/FEATURE_RULES.md adminAt
-name docs/FEATURE_RULES.md adminDays
-name docs/FEATURE_RULES.md adminGoTo
-name docs/FEATURE_RULES.md adminGotTop
-name docs/FEATURE_RULES.md adminMD
-name docs/FEATURE_RULES.md adminMon
-name docs/FEATURE_RULES.md adminMonthTop
-name docs/FEATURE_RULES.md adminMonths
-name docs/FEATURE_RULES.md adminNow
-name docs/FEATURE_RULES.md adminOne
-name docs/FEATURE_RULES.md adminOpen
-name docs/FEATURE_RULES.md adminPct
-name docs/FEATURE_RULES.md adminPlanTop
-name docs/FEATURE_RULES.md adminPlans
-name docs/FEATURE_RULES.md adminPurse
-name docs/FEATURE_RULES.md adminView
-name docs/FEATURE_RULES.md adminWhenRow
-name docs/FEATURE_RULES.md adsDisabled
-name docs/FEATURE_RULES.md capPop
-name docs/FEATURE_RULES.md delNote
-name docs/FEATURE_RULES.md freeSlots
-name docs/FEATURE_RULES.md ghDemo
-name docs/FEATURE_RULES.md ghDraw
-name docs/FEATURE_RULES.md ghEase
-name docs/FEATURE_RULES.md ghField
-name docs/FEATURE_RULES.md ghInk
-name docs/FEATURE_RULES.md ghMount
-name docs/FEATURE_RULES.md ghPos
-name docs/FEATURE_RULES.md ghSeg
-name docs/FEATURE_RULES.md ghShow
-name docs/FEATURE_RULES.md ghTick
-name docs/FEATURE_RULES.md langOwned
-name docs/FEATURE_RULES.md ltFace
-name docs/FEATURE_RULES.md navsave
-name docs/FEATURE_RULES.md netLangBack
-name docs/FEATURE_RULES.md noteAt
-name docs/FEATURE_RULES.md noteBody
-name docs/FEATURE_RULES.md noteCut
-name docs/FEATURE_RULES.md noteHead
-name docs/FEATURE_RULES.md noteRead
-name docs/FEATURE_RULES.md notesFound
-name docs/FEATURE_RULES.md openMePic
-name docs/FEATURE_RULES.md planUid
-name docs/FEATURE_RULES.md plans.intro
-name docs/FEATURE_RULES.md post.letterId
-name docs/FEATURE_RULES.md postsRead
-name docs/FEATURE_RULES.md saveWord
-name docs/FEATURE_RULES.md wSetFil
-name docs/FEATURE_RULES.md wSetSort
 name docs/GRAMMAR-V2-SPEC.md GrammarRepository
 name docs/GRAMMAR-V2-SPEC.md LanguageRepository
 name docs/GRAMMAR-V2-SPEC.md SentenceRepository
