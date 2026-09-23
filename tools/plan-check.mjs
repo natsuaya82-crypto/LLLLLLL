@@ -471,6 +471,15 @@ const r = await pg.evaluate(({ s }) => {
   });
   function sentOn(p){
     var got = [], realSend = netSend, realRow = netLangRow, realSlices = netSlices;
+    /* A PERSON HAS WRITTEN EVERY SLICE. Since 2026-09-23 a save sends only
+       what a person wrote (www/core.js § LTOUCH) -- the app's own writes and
+       the picture go with nothing -- so a slice nobody wrote says nothing
+       about the plan either way. Taken off and put back as it was, which is
+       a write of every slice by somebody, on both plans alike. */
+    SLICES.forEach(function(sl){
+      var k = langKey(sl), v = slRd(k);
+      slRm(k); slWr(k, v === null ? '[]' : v);
+    });
     planGot(p);
     SESS = { at:'t', rt:'r', uid:'planner', anon:false };
     LANGS[langId].mine = true; langOwnGot(langId, 'planner');
