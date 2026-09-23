@@ -1,97 +1,30 @@
-# What was ALREADY lost the day tools/docs-check.mjs was written, 2026-09-04.
-# A NEW one fails. Taking a line OUT is progress and needs nobody -- either
-# the map learned to point at the document, or the document went.
+# What was ALREADY stale the day each part of tools/docs-check.mjs was
+# counted. A NEW one fails. Taking a line OUT is progress and needs nobody --
+# `node tools/docs-check.mjs` names a line that outlived what it allowed.
 #
-# `orphan <path>`               nothing reaches it from CLAUDE.md, README.md
-#                               or docs/STATE.md.
-# `dangling <doc> -> <path>`    <doc> sends a reader to a page that is not
-#                               there.
+#   orphan <path>              nothing reaches it from CLAUDE.md, README.md or docs/STATE.md
+#   dangling <doc> -> <path>   <doc> sends a reader to a page that is not there
+#   call <doc> <name>          a call nothing in www/ ios/ tools/ supabase/ defines
+#   name <doc> <name>          a name in backticks the code (comments out) does not have
+#   file / check / npm         a code file, an x-check, an npm script that is not there
+#   count <doc> <text>         a sentence saying how many checks the gate has
+#   owner <date>               an OWNER date a code comment quotes, with no log entry
+#   gone / struck              see tools/docs-check.mjs
 #
-# Two documents nobody is sent to. Not fixed here on purpose: which map each
-# belongs on, and whether a handover from a week ago is still worth a page,
-# are the owner's, not a check's.
-#
-# `ONE.md` was written, then deleted the same day on the owner's word
-# (2026-09-04, decision log). No line here allows a pointer at it: the two
-# sentences that still remember the page say its bare file name, which is what
-# this check asks of a sentence ABOUT a document that is gone.
+# Two documents nobody is sent to. Which map each belongs on, and whether a
+# handover from a week ago is still worth a page, are the owner's, not a check's.
 
 orphan docs/HANDOVER-2026-08-28-2.md
 orphan docs/SCOPE-yaa.md
 
-# `call <doc> <name>`           <doc> names <name>() as a call and nothing in
-#                               www/ ios/ tools/ supabase/ defines it.
-#
-# 2026-09-23 (claude/r62-docs). Every one of these is in a document that
-# session did not own, so it is written down here rather than fixed:
-#
-#   docs/STATE.md               the leader's
+# docs/STATE.md is the LEADER's. claude/r77-docs was handed its appendix-C
+# sentences only (docs/scope/r73-audit.md), and these are the rest.
 
-#   docs/FEATURE_RULES.md       every one of these is inside the Owner decision
-#                               log, whose entries were not that session's to
-#                               edit. The body of that file has none.
-#
-# A sentence about a function that is gone strikes it: ~~`name()`~~. Taking a
-# line out is progress; putting one in is not how a new one gets fixed.
-
-
-# `name` `file` `check` `npm` `count` `owner` `gone` `struck` -- the rest of the
-# surface, counted from 2026-09-23 (claude/r77-docs, docs/scope/r73-audit.md
-# § 2-17). What was already stale that day, written down by
-# `node tools/docs-check.mjs --keys`. Taking a line out is progress.
-
-check docs/BACKLOG.md backup-check
-check docs/FEATURE_RULES.md backup-check
 check docs/STATE.md backup-check
-count docs/BACKLOG.md 検査 16 本
 count docs/STATE.md ゲート 41 本
 count docs/STATE.md ゲートは 44 本
 count docs/STATE.md 検査 8 本
-file docs/BACKLOG.md backup-check.mjs
-file docs/BACKLOG.md lt.sh
-file docs/BACKLOG.md talk.js
-file docs/FEATURES.md lt.sh
 file docs/STATE.md backup-check.mjs
-name docs/BACKLOG.md DOC_
-name docs/BACKLOG.md KB_MAX
-name docs/BACKLOG.md abtline
-name docs/BACKLOG.md abts
-name docs/BACKLOG.md appstore
-name docs/BACKLOG.md bkDropFor
-name docs/BACKLOG.md capFirst
-name docs/BACKLOG.md draftsPullOnce
-name docs/BACKLOG.md dropSome
-name docs/BACKLOG.md netLangBack
-name docs/BACKLOG.md obws
-name docs/BACKLOG.md postsRead
-name docs/BACKLOG.md readMode
-name docs/BACKLOG.md readSeq
-name docs/BACKLOG.md saveWord
-name docs/BACKLOG.md server.hostname
-name docs/BACKLOG.md snsFilName
-name docs/BACKLOG.md sth
-name docs/BACKLOG.md token_hash
-name docs/BACKLOG.md tokushoho
-name docs/BACKLOG.md vFmrFm
-name docs/BACKLOG.md wSetSort
-name docs/BACKLOG.md wdMode
-name docs/BACKLOG.md weave
-name docs/FEATURES.md AI_FREE_DAILY
-name docs/FEATURES.md ASC_VENDOR_NUMBER
-name docs/FEATURES.md STAGES_IF
-name docs/FEATURES.md TR_FREE_DAILY
-name docs/FEATURES.md TR_SEAM
-name docs/FEATURES.md notifyListeners
-name docs/FEATURES.md postTr
-name docs/GRAMMAR-V2-SPEC.md GrammarRepository
-name docs/GRAMMAR-V2-SPEC.md LanguageRepository
-name docs/GRAMMAR-V2-SPEC.md SentenceRepository
-name docs/GRAMMAR-V2-SPEC.md generator
-name docs/PAID_FEATURES.md AI_SEAM
-name docs/PAID_FEATURES.md KB_MAX
-name docs/PAID_FEATURES.md PLUS
-name docs/PAID_FEATURES.md netPlanSync
-name docs/RECOVERY.md slice_past
 name docs/STATE.md KB_MAX
 name docs/STATE.md LS_FLAT
 name docs/STATE.md SET_PLAN
@@ -108,6 +41,20 @@ name docs/STATE.md nidHolds
 name docs/STATE.md node_modules
 name docs/STATE.md scriptDrawn
 name docs/STATE.md tcln
+
+# Proposals, not the app: names of what docs/GRAMMAR-V2-SPEC.md and
+# docs/RECOVERY.md describe building. They go the day it is built or dropped.
+
+name docs/GRAMMAR-V2-SPEC.md GrammarRepository
+name docs/GRAMMAR-V2-SPEC.md LanguageRepository
+name docs/GRAMMAR-V2-SPEC.md SentenceRepository
+name docs/GRAMMAR-V2-SPEC.md generator
+name docs/RECOVERY.md slice_past
+
+# A comment in the code quotes the owner on a day the decision log has no entry
+# for. The leader heard those decisions and writes them down; a session reading
+# a comment does not.
+
 owner 2026-08-31
 owner 2026-09-07
 owner 2026-09-10

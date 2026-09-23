@@ -423,6 +423,8 @@ const NOT_OURS = [
   'FBSDK', 'amplitude', 'mixpanel', 'Sentry', 'appsflyer',
   // the browser
   'DecompressionStream', 'geolocation', 'getCurrentPosition',
+  // Capacitor's configuration and bridge, Supabase's verify parameter
+  'server.hostname', 'notifyListeners', 'token_hash',
   // what drives a session (docs/SESSIONS.md, docs/LEADER.md)
   'create_session', 'send_message', 'archive_session', 'unarchive_session', 'get_session',
   'create_trigger', 'fire_trigger', 'cron_expression', 'run_once_at', 'source_url', 'source_revision',
@@ -483,14 +485,23 @@ const KEYS_ONLY = process.argv.indexOf('--keys') >= 0
 const say = (key, at, msg) => { if (forgiven(key)) return; if (KEYS_ONLY) console.log(key); else note(`${at} ${msg}`) }
 const fileOf = (t) => {
   if (/:\/\/|^[\w-]+\.(?:com|org|net|io)\//.test(t)) return null
-  const m = t.match(/^(?:[\w.-]*\/)*([\w.-]+\.(?:js|mjs|swift|sql|json|ya?ml|html|plist|sh|txt))(?:[:#].*)?$/)
+  /* A shell script is named with its path (`tools/pre-commit`); a bare `x.sh`
+     is a field -- `lt.sh`, a letter's shape -- and not a file. */
+  const m = t.match(/^(?:[\w.-]*\/)*([\w.-]+\.(?:js|mjs|swift|sql|json|ya?ml|html|plist|txt))(?:[:#].*)?$/)
   return m ? m[1] : null
 }
 for (const d of live) {
   const src = read(d)
   const at = (i) => `${d}:${lineOf(src, i)}`
+  /* A strike covers everything inside it: ~~`wSetFil` / `wSetSort`~~ is two
+     names that went, not one that went and one standing. */
+  const strikes = [...src.matchAll(/~~[^~\n]+~~/g)].map((x) => [x.index, x.index + x[0].length])
+  const inStrike = (i) => strikes.some(([a, b]) => i > a && i < b)
   for (const m of src.matchAll(/(~~)?`([^`\n]+)`/g)) {
-    const gone = !!m[1], t = m[2]
+    /* Struck directly is a claim that the name went, and is held both ways.
+       Inside a wider strike -- a finished BACKLOG heading -- it is only not
+       asked. */
+    const direct = !!m[1], gone = direct || inStrike(m.index), t = m[2]
     const f = fileOf(t)
     if (f) {
       fileRefs++
@@ -502,13 +513,23 @@ for (const d of live) {
     }
     const nm = t.match(/^\.?([A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*)$/)
     if (!nm) continue
-    if (/\.md$/.test(nm[1]) || /^__\w+__$/.test(nm[1]) || /XXXX/.test(nm[1])) continue // a document is surface 2's; a placeholder is assets-check's
+    // a document is surface 2's; a placeholder is assets-check's
+    if (/\.md$/.test(nm[1]) || /^__\w+__$/.test(nm[1]) || /XXXX/.test(nm[1])) continue
     const segs = nm[1].split('.')
     if (HEX.test(segs[0]) && /\d/.test(segs[0])) continue
     namesSeen++
     if (NOT_OURS.indexOf(nm[1]) >= 0 || NOT_OURS.indexOf(segs[0]) >= 0) { notOursSeen.add(NOT_OURS.indexOf(nm[1]) >= 0 ? nm[1] : segs[0]); continue }
+    /* A prefix -- `DOC_`, `ICON_` -- names a family, and is there when one of
+       the family is. */
+    if (/_$/.test(nm[1]) && segs.length === 1) {
+      let any = false
+      for (const w of words) if (w.startsWith(nm[1]) && w !== nm[1]) { any = true; break }
+      if (gone || any) continue
+      say(`name ${d} ${nm[1]}`, at(m.index), `names the prefix ${nm[1]} and no name in the code starts with it.`)
+      continue
+    }
     if (gone) {
-      if (segs.length === 1 && declared.has(segs[0])) say(`struck ${d} ${segs[0]}`, at(m.index),
+      if (direct && segs.length === 1 && declared.has(segs[0])) say(`struck ${d} ${segs[0]}`, at(m.index),
         `strikes ${segs[0]} through as gone, and the code declares it.\n` +
         `      Say what it does now, without the strike.`)
       continue
@@ -533,7 +554,7 @@ for (const d of live) {
     if (ENGLISH_CHECK.indexOf(c) >= 0) continue
     checkRefs++
     const has = allTracked.has(`tools/${c}.mjs`) || allTracked.has(`tools/${c.replace(/-check$/, '')}.mjs`)
-    if (m[1]) continue
+    if (m[1] || inStrike(m.index)) continue
     if (!has) say(`check ${d} ${c}`, at(m.index), `names the check ${c} and tools/ has no such check.\n` +
       `      Name the check that holds it now, or strike it: ~~${c}~~.`)
   }
