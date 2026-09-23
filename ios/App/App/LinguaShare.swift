@@ -50,16 +50,32 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
     FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: Self.group)
   }
 
-  /// Written whole or not at all, because the keyboard may be reading it: a
+  /// WHAT IS HANDED IS WHAT IS THERE. Each of the three files is written
+  /// whole from what www/share.js gave, and one it gave EMPTY is removed.
+  /// There is no 「leave what was there」: the folder is a copy of the open
+  /// language of the account signed in, and a file left over from before is
+  /// somebody else's letters on the keyboard and the widget -- signed out, or
+  /// another account, or an account deleted. 「NOTHING IS THE PHONE'S.
+  /// EVERYTHING IS THE ACCOUNT'S」 (CLAUDE.md), r63 § 2-1 K5. www sends all
+  /// three empty when nobody is signed in; the readers already have a state
+  /// for a missing file (Shared.board(), Numerals.read(), ScriptFont.ready()).
+  ///
+  /// Written atomically, because the keyboard may be reading it: a
   /// half-written layout is a keyboard with no keys on it.
   ///
   /// The protection class matters. The default one makes a file unreadable
   /// while the phone is locked, and a keyboard extension is woken in states
   /// the app never sees — so the letters would simply be gone until somebody
   /// unlocked the phone, which is not a bug anybody would ever reproduce.
-  private func put(_ data: Data, _ name: String, _ dir: URL) throws {
-    try data.write(to: dir.appendingPathComponent(name),
-                   options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
+  private func mirror(_ data: Data, _ name: String, _ dir: URL) throws {
+    let url = dir.appendingPathComponent(name)
+    if data.isEmpty {
+      if FileManager.default.fileExists(atPath: url.path) {
+        try FileManager.default.removeItem(at: url)
+      }
+      return
+    }
+    try data.write(to: url, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
   }
 
   @objc func write(_ call: CAPPluginCall) {
@@ -67,38 +83,26 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
       call.reject("no container for \(Self.group)")
       return
     }
-    let json = call.getString("json") ?? ""
-    let font = call.getString("font") ?? ""
-    let num = call.getString("num") ?? ""
+    let json = Data((call.getString("json") ?? "").utf8)
+    let num = Data((call.getString("num") ?? "").utf8)
+    /* Nothing drawn is no font rather than an empty one, exactly as
+       installScriptFont() decides it -- www sends '' and the file goes. */
+    let font = Data(base64Encoded: call.getString("font") ?? "") ?? Data()
     do {
-      try put(Data(json.utf8), Self.jsonName, dir)
-      /* Absent leaves what is there, the way the font does: an app built
-         before the widgets existed sends nothing, and a widget already on
-         somebody's home screen goes on showing the digits it has rather
-         than emptying itself. */
-      if !num.isEmpty {
-        try put(Data(num.utf8), Self.numName, dir)
-        /* And tell WidgetKit, or nobody does. WidgetPoke.swift holds that
-           call and says why it is not in this file: `import WidgetKit` here
-           takes PHPickerViewController out of scope, which is how #84 failed
-           on a picker that had compiled green since a82a633. */
-        WidgetPoke.reload()
-      }
-      // Nothing drawn is no font rather than an empty one, exactly as
-      // installScriptFont() decides it — so an absent font leaves whatever
-      // was there rather than replacing it with zero bytes.
-      if !font.isEmpty, let bytes = Data(base64Encoded: font) {
-        try put(bytes, Self.fontName, dir)
-      }
+      try mirror(json, Self.jsonName, dir)
+      try mirror(num, Self.numName, dir)
+      try mirror(font, Self.fontName, dir)
+      /* And tell WidgetKit, or nobody does. WidgetPoke.swift holds that
+         call and says why it is not in this file: `import WidgetKit` here
+         takes PHPickerViewController out of scope, which is how #84 failed
+         on a picker that had compiled green since a82a633. */
+      WidgetPoke.reload()
       call.resolve()
     } catch {
       call.reject(error.localizedDescription)
     }
   }
 
-  // ---- the copy that survives the app ------------------------------------
-  //
-  // A different folder and a different argument from everything above. The
   // ---- WHAT USED TO BE HERE, AND WHY IT IS NOT ------------------------
   //
   // `keep()`, `kept()` and `dropSome()` wrote, read and removed a language as

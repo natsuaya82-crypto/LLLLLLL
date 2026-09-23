@@ -417,6 +417,51 @@ for (const e of readdirSync(join(IOS, "App"), { withFileTypes: true })) {
   }
 }
 
+// AND THE APP GROUP HOLDS NOTHING THAT NOBODY WILL TAKE BACK.
+//
+// 「NOTHING IS THE PHONE'S. EVERYTHING IS THE ACCOUNT'S」 (CLAUDE.md). The
+// keyboard and the widget read files out of the App Group, and the only
+// writer is LinguaShare.swift's `write`, which www/share.js hands the
+// signed-in account's copy -- or, for nobody, every file empty. A file there
+// that `write` does not answer for is a file that survives the account it
+// came from: signed out, or deleted, the last person's letters stay on the
+// keyboard (r63 § 2-1 K5). So the surface is counted from the READERS' side:
+// every file name a target other than the app opens is one `write` mirrors,
+// and the app asks for the container in that one function. A fourth file a
+// widget starts reading tomorrow is red tomorrow until `write` answers for it.
+let groupFiles = 0
+{
+  const share = readFileSync(join(IOS, 'App', 'LinguaShare.swift'), 'utf8')
+  const lets = {}
+  for (const m of share.matchAll(/static let (\w+)\s*=\s*"([^"]+)"/g)) lets[m[1]] = m[2]
+  const mirrored = new Set([...share.matchAll(/try mirror\([^,]+,\s*Self\.(\w+)\s*,/g)]
+    .map((m) => lets[m[1]]).filter(Boolean))
+  const asks = (share.match(/\bcontainer\(\)/g) || []).length
+  /* one definition and one caller */
+  if (asks !== 2)
+    note(`ios/App/App/LinguaShare.swift asks for the App Group container ${asks - 1} times. ` +
+         `\`write\` is the one writer, so every file there is one it answers for; a second ` +
+         `door into the folder is a file nothing takes back when the account goes.`)
+  for (const e of readdirSync(IOS, { withFileTypes: true })) {
+    if (!e.isDirectory() || e.name === 'App' || e.name.endsWith('.xcodeproj') ||
+        e.name.endsWith('.xcworkspace')) continue
+    for (const f of readdirSync(join(IOS, e.name))) {
+      if (!f.endsWith('.swift')) continue
+      const sw = readFileSync(join(IOS, e.name, f), 'utf8')
+      for (const m of sw.matchAll(/"([A-Za-z0-9_-]+\.(?:json|otf|ttf|png|bin|txt))"/g)) {
+        groupFiles++
+        if (!mirrored.has(m[1]))
+          note(`ios/App/${e.name}/${f} reads "${m[1]}" out of the App Group, and ` +
+               `LinguaShare.swift's \`write\` does not mirror it -- so nothing empties it ` +
+               `when the account signs out or is deleted, and the last person's copy ` +
+               `stays. Hand it through \`write\` like the others.`)
+      }
+    }
+  }
+  if (groupFiles === 0)
+    note('no file name was found in any extension target -- the App Group check read nothing, which is not the same as it holding')
+}
+
 /* ---------------------------------------------------- the checks are wired up
    Same statement as the two above, one wall further out: a name that points
    at a file which is not there. `npm run ask` named tools/ask-check.mjs for
@@ -486,4 +531,5 @@ if (swiftCount) console.log(`swift: ${swiftCount} files under ios/App/, every on
 if (privCount) console.log(`privacy: ${privCount} PrivacyInfo.xcprivacy (${PRIV.map(p => p[0]).join(', ')}), each in its own target's Resources phase.`)
 console.log(`placeholders: ${holes} under ios/App/, every one of them substituted by the deploy workflow.`)
 console.log(`the bridge: ${natives} native methods, every one of them called by www/ as plugin and method together.`)
+console.log(`the App Group: ${groupFiles} files read by the keyboard and the widget, every one of them mirrored by LinguaShare's write -- emptied when nobody is signed in.`)
 console.log(`load order: core.js -> ${LANGS.length} languages -> ... -> otf5.js -> glyph.js -> act-map.js -> boot.js (last)`)

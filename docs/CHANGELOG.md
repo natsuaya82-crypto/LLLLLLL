@@ -20,8 +20,8 @@ where it starts.
 r63 § 2-1 K5 を測った（r67-ios）。`sharePush()`（`www/share.js`）が App Group に書く三つの
 ファイル ── `keyboard.json`・`LinguaScript.otf`・`widget.json` ── は、誰のアカウントの物か
 を持たず、サインアウトでもアカウント削除でも片付かなかった。測定: 一度送ったあと
-`netOut()` → `render()` で書き込み 0、`wipeHere()` → `render()` で `sharePush()` の呼び出し
-自体が 0（扉はオンボーディングの道で、`render()` がその手前で return する）。さらに
+`netOut()` → `render()` でも `wipeHere()` → `render()` でも `sharePush()` の呼び出しが 0
+（扉はオンボーディングの道で、`render()` がその手前で return する）。さらに
 `LinguaShare.swift` の `write` は「空のフォントは前の物を残す」「空の数字は前の物を残す」
 だったので、字を一つも描いていない次のアカウントが入っても、前の人の書体が残った。
 
@@ -32,9 +32,12 @@ r63 § 2-1 K5 を測った（r67-ios）。`sharePush()`（`www/share.js`）が A
   （字が無ければ書体も無い）。
 - **貯まる物**: 形は変わらない。App Group の三つのファイルを、空で渡された時に**消す**。
 - **端末でしか確かめられない**（Swift はここでビルドできない）。DEVICE 未確認。
-- **残る穴**: アカウント削除の直後は `render()` が `sharePush()` まで届かない（`www/glyph.js`
-  は r67 の持ち物ではない）。次にサインインした時に上の一文で書き直される。`sharePush()` を
-  `render()` の早い return より前へ出す一行が要る ── `docs/scope/r67-ios.md`。
+- **この版で覆ったもの**: 別のアカウントが入った時（字の無い人でも前の人の書体が残らない）、
+  入ったばかりで前の人の言語がまだ開いている間（`LANG_WAIT`、何も渡さない）。
+- **残る穴**: サインアウトと削除の直後は、扉の道で `render()` が `sharePush()` まで届かない
+  （`www/glyph.js` は r67 の持ち物ではない）ので、次にサインインするまで前の人の三つが残る。
+  `render()` の「フォントの作り直しと `sharePush()`」の二行を `if(appIs()!=='app')` の前へ
+  出せば覆える（測った）── `docs/scope/r67-ios.md`。
 
 ```
 DELETE REVIEW
