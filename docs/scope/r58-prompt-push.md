@@ -17,4 +17,5 @@ OWNER 2026-09-23「通知なんだけど、今日のお題が変わった時に�
 
 ## May not change
 - www/index.html (r55), the settings→language row (r56), the anon cover block at the foot of schema.sql.
-- www/core.js `SET_PREFS` and tools/store-check.mjs name the four push_* fields by hand. They are the same surface. If covering it needs them, it is reported, not done here.
+## Outside the list, and why (reported)
+- www/core.js `SET_PREFS` (one word, `push_prompt`, and the comment over it) and tools/store-check.mjs `FIELDS` (one line). Without them the fifth switch never reaches `profile.prefs` and store-check fails on an unnamed field. Both name the fields by hand on purpose (store-check reads `SET.x =` off the source), so they cannot be derived from `PUSH`; tools/push-check.mjs now holds `SET_PREFS`, `PUSH_KINDS` and the ten `push.<kind>` strings to `PUSH` instead.
