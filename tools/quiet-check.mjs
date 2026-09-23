@@ -28,7 +28,7 @@
                                 and nothing this phone holds; the run checks
                                 that too.
 
-   THREE CLAIMS.
+   THE CLAIMS.
      1. A launch nobody touches writes nothing -- with a phone holding every
         kind of copy that can disagree with the server: the picture of a
         language that has lost a word since, the disk an older version left,
@@ -36,11 +36,12 @@
         a post that never went, a draft from before there was a server.
      2. And the server holds after it exactly what it held before.
      3. A person adding one word sends the one slice that moved.
+     4. Opening another language sends nothing.
+     5. Signing in and pressing nothing sends nothing, and the account's
+        profile and parked settings are what this phone then holds.
+     6. Changing one setting sends that one setting.
 
    WHAT IT DOES NOT HOLD, said so silence is not read as a check:
-     - 「one setting changed sends that one setting」. profile.prefs is one
-       jsonb column and a PATCH replaces it whole; sending one key needs the
-       server to merge (docs/scope/r60-up.md § A2). Printed on every run.
      - The door. netTook() sends the walk's language as a session ARRIVES
        and that is the one exception CLAUDE.md names; acct-check holds it.
      - A language whose `language.name` column is empty has it filled, on the
@@ -338,8 +339,17 @@ say(kinds.join() === 'words', '3 one word added sends the words slice and nothin
   await pg2.close();
 }
 
-console.log('not held: one setting changed sends that one setting -- profile.prefs is one column ' +
-            '(docs/scope/r60-up.md § A2)');
+/* ---- 6. a person changes one setting -------------------------------------
+   `prefs` is one column, and a PATCH of it replaced every setting the account
+   has with this phone's (r63-audit SQ1・L2). What goes up is the one that
+   moved, through prefs_put(), which lays it over what is there. */
+{
+  const w = await writesDuring(() => { SET.theme = (SET.theme === 'dark') ? 'light' : 'dark'; netPrefsPut(); });
+  const one = w.length === 1 && /\/rpc\/prefs_put$/.test(w[0].u.split('?')[0]) &&
+              w[0].body && w[0].body.p && Object.keys(w[0].body.p).join() === 'theme';
+  say(one, '6 one setting changed sends that one setting -- ' +
+      (w.length ? w.map(r => r.u.replace(/^[a-z]+:\/\/[^/]*/, '') + ' ' + JSON.stringify(r.body)).join(', ') : 'nothing'));
+}
 if (ERR.length) say(false, 'the page threw: ' + ERR.join(' | '));
 await br.close();
 console.log(bad.length ? '\nquiet-check: ' + bad.length + ' FAILED' : '\nquiet-check: ok');

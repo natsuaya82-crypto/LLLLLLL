@@ -782,6 +782,13 @@ function netTook(d){
        A token being REFRESHED does not come through here, so an hour passing
        does not blank it. netLangsDown() below answers it. */
     langMineForget();
+    /* AND HOW THIS ACCOUNT HAS THE APP SET UP. It was asked on a launch and
+       nowhere else, so somebody signing in on a second phone and changing one
+       setting before relaunching sent this phone's whole set over theirs
+       (r63-audit L2). Forgotten first: the last person's agreement is not
+       this one's. */
+    NET_PREFS=null;
+    netPrefsPull();
     LANG_WAIT=true;
     netLangSync(function(){
       if(typeof pullWait==='function') pullWait('mylangs', function(){
@@ -1318,6 +1325,21 @@ function netProfPut(fields, ok, bad){
    function up. An account whose row has not been made yet has not chosen
    anything, and writing five defaults over the copy would be this road taking
    something away rather than bringing it. */
+/* WHAT THE TWO SIDES LAST AGREED THE SETTINGS WERE, in memory -- the settings
+   of SET_PREFS as they stood the moment the server's answer was laid on them,
+   or the moment a send of them landed. It is the only thing that can say
+   which setting a person has just CHANGED: the callers of netPrefsPut() set a
+   field of SET and call it with no argument, and every one of them is in a
+   file that is not this one. `null` is 「not heard yet」. */
+var NET_PREFS=null;
+function netPrefsSaw(){
+  var o={}, i, k;
+  for(i=0;i<SET_PREFS.length;i++){
+    k=SET_PREFS[i];
+    if(SET[k]!==undefined) o[k]=SET[k];
+  }
+  NET_PREFS=o;
+}
 function netPrefsPull(){
   if(!netSignedIn() || !SESS || !SESS.uid) return;
   netGet('/rest/v1/profile?select=prefs&limit=1&id=eq.'+
@@ -1326,13 +1348,14 @@ function netPrefsPull(){
       var row=(d && d.length)? (d[0]||{}) : null, p, i, k, drew=false;
       if(!row) return;
       p=row.prefs;
-      if(!p || typeof p!=='object') return;
+      if(!p || typeof p!=='object') p={};
       for(i=0;i<SET_PREFS.length;i++){
         k=SET_PREFS[i];
         if(!Object.prototype.hasOwnProperty.call(p, k)) continue;
         if(SET[k]===p[k]) continue;
         SET[k]=p[k]; drew=true;
       }
+      netPrefsSaw();
       if(drew){
         setKeep();
         /* The theme is painted rather than drawn: applyTheme() writes the
@@ -1344,15 +1367,29 @@ function netPrefsPull(){
       }
     }, function(){});
 }
+/* THE SETTINGS THAT MOVED, AND ONLY THOSE. This PATCHed `prefs` with every
+   setting this phone held, which replaced the column whole: a notification
+   switched off on the other phone was switched back on by this one changing
+   the theme, and a setting this phone had never heard of was taken off the
+   row (r63-audit SQ1・L2, measured). `prefs_put()` (supabase/schema.sql) lays
+   what is sent over what is there, so what goes is what differs from what the
+   two sides last agreed -- and, before anything has been heard, what this
+   phone holds, which can overwrite a key but can no longer remove one. */
 function netPrefsPut(){
   if(!netSignedIn() || !SESS || !SESS.uid) return;
-  var o={}, i, k;
+  var o={}, n=0, i, k;
   for(i=0;i<SET_PREFS.length;i++){
     k=SET_PREFS[i];
-    if(SET[k]!==undefined) o[k]=SET[k];
+    if(SET[k]===undefined) continue;
+    if(NET_PREFS && NET_PREFS[k]===SET[k]) continue;
+    o[k]=SET[k]; n++;
   }
-  netSend('PATCH', '/rest/v1/profile?id=eq.'+encodeURIComponent(SESS.uid),
-          {prefs:o}, SESS.at, function(){}, function(){});
+  if(!n) return;
+  netSend('POST', '/rest/v1/rpc/prefs_put', {p:o}, SESS.at,
+          function(){
+            if(!NET_PREFS) NET_PREFS={};
+            for(k in o) if(Object.prototype.hasOwnProperty.call(o, k)) NET_PREFS[k]=o[k];
+          }, function(){});
 }
 /* WHERE THIS HANDSET CAN BE REACHED, UNDER THE ACCOUNT THAT IS AT IT.
    -------------------------------------------------------------------------

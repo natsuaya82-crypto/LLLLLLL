@@ -223,6 +223,21 @@ alter table profile add column if not exists handle_at timestamptz;
 -- and is nobody else's business -- the view is what other people may read.
 alter table profile add column if not exists prefs jsonb not null default '{}'::jsonb;
 
+-- AND ONE SETTING AT A TIME. A PATCH of `prefs` replaces the whole object, so
+-- a phone that changed the theme sent every setting it was holding -- and the
+-- one it was holding stale (a notification switched off on the other phone)
+-- went back on (r63-audit SQ1, measured). This lays what was sent OVER what is
+-- there: the keys sent change, every other key stays exactly as it is.
+--
+-- AS THE CALLER, so the row policy and the column grant below are what decide
+-- whose row it touches -- `id = auth.uid()` is the caller's own and nobody
+-- else's, and a caller with no session updates nothing.
+create or replace function prefs_put(p jsonb) returns void
+  language sql security invoker set search_path = public as $$
+  update profile set prefs = coalesce(prefs, '{}'::jsonb) || coalesce(p, '{}'::jsonb)
+   where id = auth.uid();
+$$;
+
 -- ---- what ------------------------------------------------------------------
 -- A language. Published or not; a language nobody published is a private
 -- backup of what is on the phone.

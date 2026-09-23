@@ -2970,7 +2970,10 @@ const R = await pg.evaluate(async () => {
      たまたまなっている形**でアプリが開きます。
 
      四本訊きます:
-     1. 一つ変えると `profile.prefs` へ PATCH が飛び、五つとも載る
+     1. 一つ変えると `prefs_put()` へ、変えた一つだけが載る（2026-09-23 から。
+        前は PATCH で持っている欄を全部載せ、列を丸ごと置き換えていた ──
+        r63-audit SQ1・L2）。まだ一度も聞いていない時は持っている欄を載せ、
+        どちらでも誰も触っていない欄は作らない
      2. サインインで行が降りてきて、画面がその形になる
      3. 行が無ければ写しを触らない（「行が無い」は「何も選んでいない」ではない）
      4. `SET_PHONE` はもうこの五つを「この端末の設え」と言っていない
@@ -2983,13 +2986,22 @@ const R = await pg.evaluate(async () => {
     const realSend64 = netSend, realGet64 = netGet;
     let put64 = null;
     netSend = (method, path, body) => {
-      if (method === 'PATCH' && path.indexOf('/rest/v1/profile') === 0 &&
-          body && body.prefs) put64 = body.prefs;
+      if (method === 'POST' && path.indexOf('/rest/v1/rpc/prefs_put') === 0 &&
+          body && body.p) put64 = body.p;
     };
     SET.theme = 'dark'; SET.myfont = false; SET.showScript = false;
     SET.kbrom = true;
+    /* 両側が合意した形がある時: 変えた一つだけ。 */
+    netPrefsSaw();
     setUi('ja');
-    if (!put64) no('64: 設えを変えても profile.prefs へ出ていない');
+    if (!put64) no('64: 設えを変えても prefs_put へ出ていない');
+    else if (JSON.stringify(put64) !== JSON.stringify({ ui:'ja' }))
+      no('64: 変えたのは ui 一つなのに、載ったのは ' + JSON.stringify(put64) +
+         ' ── 変えていない欄を送ると、別の端末で変えた値を上書きする');
+    /* まだ聞いていない時: 持っている欄を載せ、無い欄は作らない。 */
+    put64 = null; NET_PREFS = null;
+    netPrefsPut();
+    if (!put64) no('64: まだ聞いていない時に、設えが出ていない');
     else {
       if (put64.ui !== 'ja') no('64: 変えた欄が載っていない — ' + JSON.stringify(put64));
       /* **持っている物は全部載る。**「五つとも載る」でした ── 2026-09-22 に
@@ -4318,8 +4330,10 @@ const R = await pg.evaluate(async () => {
     netOut(); arrive(A);
     const keep82 = netSend;
     let last82 = null, calls82 = 0;
+    /* The settings go up through prefs_put() (supabase/schema.sql,
+       2026-09-23) -- one key laid over the row, not the column replaced. */
     netSend = (method, path, body, tok, ok2) => {
-      if (String(path).indexOf('/rest/v1/profile') === 0) {
+      if (String(path).indexOf('/rest/v1/rpc/prefs_put') === 0) {
         calls82++; last82 = { method: method, body: body };
       }
       if (ok2) ok2([]);
@@ -4366,9 +4380,9 @@ const R = await pg.evaluate(async () => {
         no('82: ' + k + ' を押しても prefs が上がっていない ── ' +
            (calls82 - was) + ' 回');
       else {
-        if (last82.method !== 'PATCH')
-          no('82: PATCH ではない ── ' + last82.method);
-        const pr = last82.body && last82.body.prefs;
+        if (last82.method !== 'POST')
+          no('82: prefs_put への POST ではない ── ' + last82.method);
+        const pr = last82.body && last82.body.p;
         if (!pr || pr['push_' + k] !== false)
           no('82: **上がった prefs に push_' + k + ':false が無い** ── ' +
              JSON.stringify(pr) +
