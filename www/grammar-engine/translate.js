@@ -17,12 +17,13 @@
    words and you are the one who can see it is wrong. docs/FEATURES.md says
    the same thing under "A post shown three ways", layer three.
 
-   Nothing here is frozen onto a post and nothing here waits on a hosted
-   model. 「きかいほんやくはつかわない」 OWNER 2026-09-05. Both directions are
-   computed now, offline, costing nothing, and it is right that they are not
-   frozen: a line that half-rendered yesterday renders fully today because the
-   dictionary grew. docs/FEATURES.md calls freezing a translation onto a post
-   the bug.
+   Nothing here waits on a hosted model. 「きかいほんやくはつかわない」 OWNER
+   2026-09-05. It is computed offline and costs nothing. What toNatural()
+   says of a line IS put on a post -- as `post.mn`, at the moment it is
+   written or edited, when the writer typed no meaning of their own
+   (pwSend() and pwSaveEdit() in www/post.js) -- because what a post means is
+   the value as it was then, not the dictionary as it is now (CLAUDE.md
+   § The past; docs/FEATURES.md, 「post.mn, frozen on the post」).
 
    DOM-free and globals-free, like lexicon.js beside it. */
 (function(root){

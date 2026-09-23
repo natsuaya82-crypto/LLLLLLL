@@ -117,7 +117,8 @@ function vWsys(){
     }).join('')+
     /* Which way it is written. Here rather than in the person's settings
        because it is the language's -- one language, one answer, and it goes
-       in the backup with the rest of the language.
+       to the server with the rest of the language (`SCRIPT.dir`, the
+       `script` slice).
 
        All four are drawn on every plan. This used to show a free language
        the one direction it had, on the grounds that rows nothing can press
@@ -1007,7 +1008,7 @@ function vLtset(){
        from. Same as wordsHidHTML() in www/words.js and for the same reason:
        an alphabet that is suddenly shorter with nothing saying why is the app
        telling somebody their work is gone. It is not gone -- every letter is
-       in LETTERS, in storage, in the backup and on the server -- and paying
+       in LETTERS and in the language's `letters` slice on the server -- and paying
        again brings it straight back. */
     ltHidHTML(k)+
     ((k==='alpha' && loose.length)

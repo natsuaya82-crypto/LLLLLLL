@@ -368,10 +368,10 @@ function adminFbk(){
   netFeedbacks(function(rows){ FBK=rows; FBK_ERR=''; adminAsk(); },
                function(d, st){ FBK=null; FBK_ERR=netWhy(d, st); adminAsk(); });
 }
-/* One thing somebody wrote in. The kind, whose it is and when, then the words.
-   No button: there is nothing to do to one of these from here -- the schema
-   has no delete policy and no report_drop() twin, because 「what happens to
-   one after it has been read」 is not a thing anybody has decided.
+/* One thing somebody wrote in. The kind, whose it is and when, the words,
+   and the one thing the operator can do to it: take it away (fbkDrop() below,
+   feedback_drop() in supabase/schema.sql). 「運営は消せるように。」 OWNER
+   2026-09-22.
 
    `.fbk` and not `.mrep`: a card with a corner on it is the shape the owner
    took out 「角丸やめろ」, so this is a row on a line. The reports above keep

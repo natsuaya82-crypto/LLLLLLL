@@ -23,8 +23,10 @@
    So the year has twelve months and the week has seven days, because that is
    the calendar every reader of it already reads. What a language does is NAME
    them -- twelve words and seven words -- and write the numbers in its own
-   digits. A month with no word made for it is the phone's own name for that
-   month; a day with no word is the phone's name for that day.
+   digits. A month with no word made for it is drawn as its NUMBER, in the
+   language's own digits (numMonthHTML() in www/numbers.js, and the widget's
+   CalendarWidget.swift); a day with no word is the phone's own name for that
+   day (numWdayName()).
 
    Everything that made this a calendar of somebody's own is therefore gone:
    no year of your own length, no week of your own length, no epoch, no leap
