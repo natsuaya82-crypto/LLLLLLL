@@ -719,7 +719,8 @@ function meCard(){
         '<span class="phandle">@'+esc(meHandle())+'</span>'+
       '</div>'+
     '</div>'+
-    '<button class="meedit edit"' + DO('openMe') + '>'+esc(t('me.edit'))+'</button>'+
+    /* The pen, and the word is its name (CLAUDE.md § Shape, the sixth). */
+    markBtn(ICON_PEN, t('me.edit'), 'openMe')+
     '</div>'+
     (ME.bio? '<div class="pbio">'+esc(ME.bio)+'</div>' : '')+
     /* And where they are and their address, in the row meWhereRow() is. */

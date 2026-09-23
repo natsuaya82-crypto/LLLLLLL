@@ -442,7 +442,10 @@ function openPost(from, at){
        this is; whether there IS one to send is the colour, and the colour is
        www/shell.js § navDo's two states. */
     navDo(t(PW.ed? 'post.save' : 'post.send'), 'pwSend', null, pwOn(),
-          {id:'pw-go', cls:(pwPriv()? 'pv' : ''), mark:(pwPriv()? ICON_LOCK : '')}),
+          /* A send is the paper plane (CLAUDE.md § Shape, the sixth). Saving
+             an edit has no settled mark yet, so that one stays a word. */
+          {id:'pw-go', cls:(pwPriv()? 'pv' : ''), mark:(pwPriv()? ICON_LOCK : ''),
+           icon:(PW.ed? '' : ICON_SEND)}),
     true);
 }
 /* The timer, wired after the screen is drawn. Holding turns the post private
