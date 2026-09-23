@@ -139,7 +139,7 @@ green.
 **There is one kind of account and there are no anonymous ones** 「匿名アカウント
 はねえよ」「二種類になる意味も分からないけど」. An account is somebody who
 signed in. The onboarding ends at that door and there is no way past it. Nothing
-asks a second question about what kind of account this is — `has_account()`
+asks a second question about what kind of account this is — ~~`has_account()`~~
 beside `is_member()` existed to let an anonymous one through, and there is
 nothing to let through. **The first language is the one place this is not true
 yet**: it is minted at the top of `www/core.js`, which `index.html` loads before
@@ -399,9 +399,17 @@ branch's report arrives and where the owner's decisions land, so the leader is
 the one who knows what became true today.
 
 And the same reason the corners needed `box-check`: prose does not hold a rule.
-This one is not held by anything yet — `docs/BACKLOG.md` carries what a check
-could mechanically catch (a line claiming something is absent while the code
-has it) and what it could not.
+**One part of it is held: a function a document names is a function the code
+has.** `docs-check` counts every call written in backticks — `langKey()`,
+`can('kb')` — in every document that is not a
+day's record (`docs/CHANGELOG.md`, the handovers, `docs/reports/`,
+`docs/scope/`) and fails on one that nothing in `www/`, `ios/`, `tools/` or
+`supabase/` defines — so a function deleted tomorrow fails tomorrow, in every
+sentence that still names it. A sentence ABOUT a function that is gone strikes
+it — ~~`wldSeenHTML()`~~ — and the check fails a struck name the code still
+has. The
+rest — a sentence claiming something is absent while the code has it, and
+anything outside the repo — is held by nothing; `docs/BACKLOG.md` carries it.
 
 **An owner decision is a specification, not an instruction for today.** When
 the owner settles behaviour, a threshold, a limit, the free/paid line,
@@ -1102,7 +1110,7 @@ window that closed.
 **And a phone whose storage is reclaimed comes back from the server.**
 `netLangsDown()` at the foot of `www/boot.js` brings down every language this
 ACCOUNT has. What it brings down it fills in and never writes over -- which is
-what `bkRestore()` used to do out of the file, with the same rule: it fills in
+what ~~`bkRestore()`~~ used to do out of the file, with the same rule: it fills in
 what is **missing** and stops. `again-check` holds it, and holds the save
 arriving without a launch.
 
@@ -1167,9 +1175,12 @@ dictionary, and that is deliberate.** `migratePostInk()` cuts ink onto posts
 one language at a time, as each is opened, because a post can only be cut with
 the alphabet it was written in. Until it is cut, a post has no ink and falls to
 `cardUnits()` — which for the person's own old posts is right, and for a post
-from a language this phone does not have would be wrong. It cannot happen yet:
-every post without ink predates the timeline holding anybody else's. The day
-posts arrive from a server they must arrive with their ink already on them.
+from a language this phone does not have is wrong. **And that happens now.** A
+line with not one drawn shape in it carries no ink (`inkOfCut()` answers
+`null`), posts arrive from the server as they were written, and so somebody
+else's post can reach `cardPaint()` with no ink and be spelled out of MY
+dictionary in MY letters — measured in `docs/scope/r63-audit.md` (CD1). That
+is a fault in `card.js`, and it is not held by anything yet.
 
 ### 13. What a post carries is put on it when it is written
 
@@ -1634,7 +1645,7 @@ own comment is the rule written out: *"There is no separate editor screen any
 more. There were two screens with two layouts for one thing... One function
 draws both now, so a section cannot appear in one and not the other."* Then
 somebody else's published language needed drawing, and what was written was
-`wldSeenHTML()`: a **second page on the same route**, under a different name,
+~~`wldSeenHTML()`~~: a **second page on the same route**, under a different name,
 showing a different set of sections, reached by giving `about` an argument.
 
 Nothing throws. It is not a copy of `wldPage` — **a three-line sliding window
@@ -1708,11 +1719,12 @@ nothing is made on it, nothing is saved to it, and **it never goes back to the
 server. The road is one way.**
 
 **The one-way line is what stops it becoming a second answer to 「what is this
-language」.** A copy that can travel back is a copy that can win, and
-`syMerge()` (`www/sync.js`) is that bug standing in the tree today: it reads a
-copy it cannot parse as an empty one and overwrites the server's good rows with
-it (`docs/HANDOVER.md` 七章). With no road back, a copy that is wrong costs the
-copy and nothing else.
+language」.** A copy that can travel back is a copy that can win. `syMerge()`
+(`www/sync.js`) is where what this phone holds meets the server, and it tells
+wreckage from empty (`sySide()`): a copy it cannot parse takes the server's,
+and a server row it cannot parse is not written over. What keeps the picture
+off that road is `slMine()` — the up road asks it, and the picture is not in
+it. With no road back, a copy that is wrong costs the copy and nothing else.
 
 **Not built yet.** The slices are in memory only, so with no signal there is
 nothing to show today. `docs/STATE.md` says where this stands.
@@ -1756,7 +1768,7 @@ outlives it. The owner deleted two nameless `language` rows on a real phone and
 設定→言語 went on drawing them as 「未設定」, with 「言語を追加」 refused
 because `langCount()` was counting them. `netLangsGone()` (`www/net.js`) is the
 sweep, it is **one function for this account's own languages and for the ones it
-took** — `netTakeGone()` is gone, because two mechanisms for one sentence is
+took** — ~~`netTakeGone()`~~ is gone, because two mechanisms for one sentence is
 what `CLAUDE.md` § Simple forbids — and what it takes is the **copy on this
 phone**: not one byte of any `language` row moves, `netLangDrop()` is not
 called, and a language this phone is holding something of is never touched,
@@ -1857,9 +1869,13 @@ search history was still on the screen — **a list of keys, written by hand,
 that nobody remembered to add to**, which is the same fault `lsWipeAcct` was
 rewritten for a week earlier.
 
-**`SET_PHONE` in `core.js` names this HANDSET's own setup** — the theme, the
-interface language, the marks that a migration has run here, `planUid` — and
-**everything else in `SET` is an account's**, counted rather than named.
+**`SET_PHONE` in `core.js` names this HANDSET's own setup** — which account's
+things are live here, what the onboarding needs with no session to ask, a
+measurement of this screen, a migration mark, and four of the making side's
+that are not settled (`docs/BACKLOG.md`); read the array, not this line — and
+**everything else in `SET` is an account's**, counted rather than named. The
+theme and the interface language are not on it: they are the account's and
+go up in `profile.prefs` (`SET_PREFS`).
 `setFor(uid)` parks those on the way out and brings that account's own back on
 the way in; `lsWipeAcct(uid)` empties the live key of them and takes the parked
 one. A field added tomorrow is that account's the day it is added.
@@ -1987,15 +2003,15 @@ it.**
 A later audit found twelve more. Six by reading the seam between the two sides:
 the root bar (`rootTop()` — the contents page and the timeline each hand-rolled
 it and had already drifted in what goes in the corner), the gloss row
-(`postGloss()` with `postGlossLine()`), what the meaning defaults to (`pwMn()`), what to call an
+(`translate.toNatural()` in `www/grammar-engine/` now, which arranges the line as well), what the meaning defaults to (`pwMn()`), what to call an
 author (`postWho()`), "nothing here yet" (`snsNone()`), and "the thing you came
 back for is gone" (`viewGone()`, five screens in four files).
 
 Six more by running a three-line sliding window over every line of `www/`,
 which is worth doing again and takes a minute to write: a letter's face
 (`ltInk()`), strokes into ink (`inkStrokes()`), the spelling page
-(`spPageHTML()`, since deleted — a reading is chosen off sounds now and no
-letter appears on that page at all), the spelling row (`spRowHTML()`, deleted
+(~~`spPageHTML()`~~, since deleted — a reading is chosen off sounds now and no
+letter appears on that page at all), the spelling row (~~`spRowHTML()`~~, deleted
 with it), an example sentence (`exRowHTML()`), and where the thumb is
 (`geXY()`).
 
@@ -2109,7 +2125,7 @@ the string and the function — and `act-check` fails on either half alone.
 | `www/me.js` | who you are: the face, the name, the handle, the line about yourself (ch 20) |
 | `www/backup.js` | the one line every save passes through, and where a save reaches the server (ch 24) |
 | `www/rec.js` | the voice on a post — thirty seconds. It goes up with the post 「SNSは全部サーバー」: `netUpVoice()` (`www/net.js`) puts it in the `post-media` bucket and writes the path to `body.vu`, and `voRemote()` is how one name tells a path on the server from a file this phone recorded (ch 25) |
-| `www/sheet.js` | the sheet somebody writes a word on paper on, and the number printed on it that says which one (ch 26) |
+| `www/sheet.js` | the sheet somebody writes a word on paper on; what is printed on it is `Lingua` and the page, `n/N` (ch 26) |
 | `www/store.js` | the App Store: what `LinguaStore.swift` is asked and what comes back (ch 26) |
 | `www/sync.js` | putting a language and what this phone is holding back together — two phones can still both edit one language, so the merge stays (ch 26) |
 | `www/mod.js` | the other side of a report — what somebody with the flag sees |
@@ -2128,8 +2144,8 @@ the string and the function — and `act-check` fails on either half alone.
 | `docs/FEATURES.md` | the registry: every feature, its status, its plan, its data, and whether the owner has decided it. Read before building anything |
 | `docs/ARCHITECTURE.md`, `DATA_MODEL.md`, `DATA_SAFETY.md`, `FEATURE_RULES.md`, `PAID_FEATURES.md`, `TESTING.md`, `CHANGELOG.md` | the rules above, in full. What is at the head of this file is the part that may not be argued with; these are the working detail |
 | `docs/keyboard.md` | how a person builds a keyboard in the app — every field of the editor, and the two ways to lock yourself out of a layer |
-| `docs/keyboard-extension.md` | the whole spec for the **Lingua keyboard**: what a person clicks in Apple's site, what the App Group carries, and what the extension may not do. It is an iOS keyboard extension by mechanism and a **Lingua-only** keyboard by purpose -- where somebody writes in their own letters is a field inside this app, not Messages, and **that is why the timeline is inside this app too**. Built now -- `ios/App/LinguaKeyboard/` holds six Swift files, and a person has typed their own letters on it on a real phone. Getting there took four failed builds with one symptom between them, and the fourth cause is the one to remember: the native bridge injects `toNative`, `nativePromise`, `nativeCallback`, `isPluginAvailable` and `withPlugin`, and nothing else. `registerPlugin` and `Plugins` are `@capacitor/core`'s, and **this app has no bundler and never loads it** -- so `Capacitor.Plugins.LinguaShare` is undefined on a phone and silently does nothing. `Capacitor.nativePromise('LinguaShare','write',…)` is the call. Three builds were spent guessing before the app was made to say on screen whether the hand-over had gone out (`kbOutSay()`); the fourth cause fell out of one screenshot. Build the status line first |
-| `docs/apple.md` | what a person does in App Store Connect — TestFlight, the two subscriptions, and the fact that no StoreKit code exists yet. Same argument as `mail.md`: none of it can live in the repo except as words |
+| `docs/keyboard-extension.md` | the whole spec for the **Lingua keyboard**: what a person clicks in Apple's site, what the App Group carries, and what the extension may not do. It is an iOS keyboard extension by mechanism and a **Lingua-only** keyboard by purpose -- where somebody writes in their own letters is a field inside this app, not Messages, and **that is why the timeline is inside this app too**. Built now -- `ios/App/LinguaKeyboard/` holds six Swift files, and a person has typed their own letters on it on a real phone. Getting there took four failed builds with one symptom between them, and the fourth cause is the one to remember: the native bridge injects `toNative`, `nativePromise`, `nativeCallback`, `isPluginAvailable` and `withPlugin`, and nothing else. `registerPlugin` and `Plugins` are `@capacitor/core`'s, and **this app has no bundler and never loads it** -- so `Capacitor.Plugins.LinguaShare` is undefined on a phone and silently does nothing. `Capacitor.nativePromise('LinguaShare','write',…)` is the call. Three builds were spent guessing before the app was made to say on screen whether the hand-over had gone out (~~`kbOutSay()`~~, since deleted); the fourth cause fell out of one screenshot. Build the status line first |
+| `docs/apple.md` | what a person does in App Store Connect — TestFlight and the two subscriptions; the StoreKit side is `ios/App/App/LinguaStore.swift`. Same argument as `mail.md`: none of it can live in the repo except as words |
 | `tools/*.mjs` | the checks; `verify-script.mjs`, `lattice-truth.mjs` etc. are font/script experiments |
 
 A new view is found automatically by the checks (they ask the page for globals named

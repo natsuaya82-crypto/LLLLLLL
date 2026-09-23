@@ -533,7 +533,7 @@ Parser / Generator / Grammar Checker / Translation の精度が上がる。
 | §1 語順をドラッグで導出 | **出来た。**語を動かして並べる。六択は誰にも訊かれない |
 | §3 動詞の活用を人が定義 | **繋がった。**`gFmRules()` が `STG.fm` をエンジンの `inflection`/`derivation` にする。`zmi luma` → `zmi lumaka` |
 | §8 例文を構造として保存 | `STG.ex` は文字列。構造では持っていない |
-| §16 Migration | `SET.order` → `STG.order` はある。`gpos.negp` → 否定の Rule も（`migrateNeg()`、写すだけ）。ほかの `gpos` は **Grammar Rule への変換をしていない** |
+| §16 Migration | `SET.order` → `STG.order` はある。`gpos.negp` → 否定の Rule も（`gPolOld()` が読むときに写す、書き戻さない）。ほかの `gpos` は **Grammar Rule への変換をしていない** |
 | §18 Repository 層 | **無い**。`adapter.load/save` が直接 localStorage |
 | §21 責務分離 | 5本のまま（`derivation`/`inflection`/`parser`/`generator`/`sentence` は `morphology`と`translate`の中） |
 
