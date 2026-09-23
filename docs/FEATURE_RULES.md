@@ -264,6 +264,24 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Affected data: 無し（読む時が変わるだけ。保存する物は変えない）
 - Affected docs: CLAUDE.md（直す session が一文を足す）
 - Implementation status: 未実装。2026-09-23 夜に測った起動時の読み込みは 22 本（リーダー、偽のサーバーで）。
+### 2026-09-23 一行を描く仕組みを一つにする ── 入力欄も投稿も同じ仕組みで描く
+- Date: 2026-09-23
+- Area: 言語の一行を描く所（`inkChar()` `inkFaces()` `inkAdv()` `www/glyph.js`、`postRuns()` `www/post.js`、`.pline, .pwfield #pw-ln` `www/index.html`）
+- Decision:「一行を描く仕組みが二つある件。…入力欄では単語の間が全角分あくのに、投稿すると普通の間隔になる。
+  入力欄で改行しても、タイムラインでは消える。…一行を描く仕組みを一つにして、入力欄も投稿もそれで描くように
+  書き直す。書いている時の見た目が、そのまま投稿の見た目になること。字間の設定も同じ話なので一緒に見てほしい。」
+  - 一行は `LinguaType` の字で、ブラウザが並べる。形は `inkChar()`（一つの形と字間 → 一字）、カードは canvas
+    なので `inkAdv()`。どちらも同じ `reach()` の物差し。
+  - 空白と改行が何かを言うのは `postRuns()` 一か所。
+- Reason: 書いている時の見た目と投稿の見た目が違った（字の大きさ 0.79em と 1.0em、改行が消える）。
+- Affected features: 投稿欄、タイムラインの行、引用、字間の見本、暦
+- Affected data: 無し
+- Affected docs: `CLAUDE.md` 規則 8（原文はそこにあった。決定ログに無かったのを r76-lines が足した）
+- Implementation status: 投稿欄とタイムラインは IMPLEMENTED（`line-check`）。**範囲がまだ決まっていない物**
+  ── 例文・文法の行（`.sfont`、`sfontHTML()`）と、語をつづる欄（`.tfont` を `myFontOn()` で出し分ける三つ）が
+  この「一つ」に入るか ── は `docs/scope/r73-audit.md` §5-8・§5-14 でオーナーへ。写真の上の字・下書き一覧・
+  通知の行は r60 の持ち物で、直し方は `docs/scope/r76-lines.md`。
+
 ### 2026-09-23 自作文字で表示は、既定でオン
 - Date: 2026-09-23
 - Area: 語を自作文字で出すかどうか（`myFontWant()` `myFontOn()` `www/glyph.js`、書き字のページのスイッチ `www/sound.js`、`obDone()` `www/onboard.js`）
@@ -327,7 +345,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Affected features: 辞書、単語のページ、文法の章、暦、投稿の一行以外で語を出す所
 - Affected data: 無し
 - Affected docs: 無し
-- Implementation status: IMPLEMENTED ── 今のコードがすでにこの振る舞い（r61 が測った、`docs/scope/r61-face.md`「決めていないこと」）。
+- Implementation status: IMPLEMENTED。語は `sfontRuns()`（r61 が測った、`docs/scope/r61-face.md`「決めていないこと」）、暦・時計の数字は `ltLineChar()`（r76-lines ── それまで借りた字を出していた、r73 §2-11）。`ink-check` B が持つ。
 
 ### 2026-09-23 古い購入をどのアカウントに付けるかは、考えなくていい
 - Date: 2026-09-23

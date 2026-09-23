@@ -48,7 +48,7 @@ const SLOW = ['migrate-check', 'i18n-check', 'act-check', 'conv-check', 'card-ch
               'word-check', 'forms-check', 'post-check', 'fill-check', 'round-check', 'guide-check',
               'base-check', 'kb-check', 'plan-check', 'term-check', 'sheet-check',
               'shape-check', 'draft-check', 'gramlang-check', 'world-check', 'tl-check',
-              'acct-check', 'page-check', 'dl-check', 'again-check', 'hist-check', 'open-check', 'line-check',
+              'acct-check', 'page-check', 'dl-check', 'again-check', 'hist-check', 'open-check', 'line-check', 'ink-check',
               'find-check', 'keep-check', 'slow-check', 'take-check', 'marks-check', 'press'];
 const WIDE = Math.max(1, Math.min(4, (os.cpus() || []).length || 4));
 
