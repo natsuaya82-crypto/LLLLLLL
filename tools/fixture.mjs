@@ -1680,6 +1680,13 @@ export function halfDone(){
         window.route='admin'; NAV=[{r:'admin'}];
         const h = vAdmin();
         ADMIN_OK = false; ADMINN = keepN; ADMINS = keepS; MODS = keep; return h; }],
+    /* AND THE LIST OF WHO ANSWERS THE REPORTS, REFUSED. Not an empty list:
+       what went wrong stands in its place (www/mod.js § adminLoad). */
+    ['the admin screen, the staff list refused', () => { const keepS = ADMINS, keepE = ADMINS_ERR;
+        ADMIN_OK = true; ADMINS = null; ADMINS_ERR = netWhy(null, 0);
+        window.route='admin'; NAV=[{r:'admin'}];
+        const h = vAdmin();
+        ADMIN_OK = false; ADMINS = keepS; ADMINS_ERR = keepE; return h; }],
     /* AND THE PAGE THE FEEDBACK ROW OPENS. 「お問い合わせ→開いたらお問い合わせ
        だけの画面」 OWNER 2026-09-22 -- a face of `admin`, so the walk reaches
        it only past the door, and without this every button on it （the 消す

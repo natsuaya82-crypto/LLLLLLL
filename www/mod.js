@@ -243,7 +243,7 @@ function vMod(){
    password it does not have would lock the owner out of their own screen. So
    the lock is only there where there is something to unlock it with. */
 var ADMIN_OK=false, ADMIN_PW='', ADMIN_BUSY=false, ADMIN_ERR='', ADMINN=null;
-var ADMINS=null, ADMIN_H='';
+var ADMINS=null, ADMINS_ERR='', ADMIN_H='';
 /* ---- putting somebody's language back -----------------------------------
    「運営が治せる仕様は欲しい。ユーザーが問い合わせてきた時に、アカウントの
    復旧ができるようにしたい、管理画面で」 OWNER 2026-09-09.
@@ -334,11 +334,13 @@ function adminLoad(){
     ADMINN=n;
     /* Who answers the reports is the third thing on this screen and the only
        one that can be changed from it, so it is asked for in the same press.
-       A list that failed to arrive is an empty list and not an error: the
-       numbers above it are already up, and one refusal that stops the whole
-       screen is a screen that is blank for the wrong reason. */
-    netStaffList(function(rows){ ADMINS=rows; adminFbk(); },
-                 function(){ ADMINS=[]; adminFbk(); });
+       A list that failed to arrive is NOT an empty list -- 「empty」 and
+       「broken」 are two states (CLAUDE.md § Data) -- so it is drawn as what
+       went wrong, in the list's place, the way FBK_ERR is. The rest of the
+       screen is drawn either way: one refusal that stops the whole screen is
+       a screen that is blank for the wrong reason. */
+    netStaffList(function(rows){ ADMINS=rows; ADMINS_ERR=''; adminFbk(); },
+                 function(d, st){ ADMINS=null; ADMINS_ERR=netWhy(d, st); adminFbk(); });
   },        function(d, st){ ADMIN_BUSY=false; ADMIN_ERR=netWhy(d, st); render(); });
 }
 /* ---- who answers the reports -------------------------------------------
@@ -433,7 +435,7 @@ function adRecFind(){
   ADREC_BUSY=true; ADREC_ERR=''; ADREC=null; render();
   netHist(ADREC_H,
     function(d){ ADREC_BUSY=false; ADREC=d; render(); },
-    function(){ ADREC_BUSY=false; ADREC_ERR=t('net.offline'); render(); });
+    function(d, st){ ADREC_BUSY=false; ADREC_ERR=netWhy(d, st); render(); });
 }
 /* THE APP'S OWN QUESTION AND NEVER THE SYSTEM'S. confirm() is banned outright
    (CLAUDE.md § Shape) and tools/es5-check.mjs fails on the word. */
@@ -451,7 +453,7 @@ function adRecGo(sid, kind, at){
   ADREC_BUSY=true; ADREC_ERR=''; render();
   netRestore(sid, kind, at,
     function(){ ADREC_BUSY=false; adRecFind(); },
-    function(){ ADREC_BUSY=false; ADREC_ERR=t('net.offline'); render(); });
+    function(d, st){ ADREC_BUSY=false; ADREC_ERR=netWhy(d, st); render(); });
 }
 function adminStaffAdd(){
   if(ADMIN_BUSY || !ADMIN_H) return;
@@ -609,6 +611,7 @@ function vAdmin(){
        buttons exist only where they are drawn, and act-check walks this route
        with no argument -- see the head of this section. */
     '<div class="set"><span class="sl">'+esc(t('admin.staff'))+'</span></div>'+
+    (ADMINS_ERR? emptyBox(ADMINS_ERR, '', '', true) : '')+
     (ADMINS||[]).map(adminStaffRow).join('')+
     /* A handle is short, but nothing stops a long one being pasted here.
        The password on the door above is NOT this -- it stays an
