@@ -2458,29 +2458,6 @@ a.set{text-decoration:none}
    things away on a sheet is the edge: the row's number and the column's
    letter. 「マイナスボタンもなくそう」 */
 @media (prefers-reduced-motion:reduce){.kbk.wob{animation:none}}
-/* Three widths to put on the keyboard: press one, then press where it goes.
-   The tile IS the width -- a row of the numbers 1 2 3 says how wide in a unit
-   nobody has been told. */
-/* Three widths to put on the keyboard, drawn as the KEYS they make: a tile is
-   one cell of the sheet, or two, or three, at the sheet's own cell and the
-   sheet's own height. It used to be a fixed 22/48/74 pill with a grey bar in
-   it, which is a picture of a width rather than the width.
-   「1マスとキーボードの1マスのサイズが一緒じゃないから分かりにくいよ」
-   kbNewHTML() gives each its width in calc() over --kbw, because how many
-   columns the sheet has is the layout's answer and changes with it. */
-/* The three widths, ACROSS the sheet rather than piled at its left corner --
-   they are the size of the cells they make and were sitting shoulder to
-   shoulder with 4 between them, which reads as one lump rather than three
-   things. 「つまりすぎだから幅いっぱいに使ってすきまあっちいから」 */
-/* A width being carried onto the sheet: the tile stays where it is -- a
-   palette does not empty when you take from it -- and this is what follows
-   the finger. It is under the finger rather than beside it, because that is
-   where the thing being carried is. */
-.kbghost{position:fixed;height:44px;margin:-22px 0 0 0;transform:translateX(-50%);
-         background:var(--gold);opacity:.45;
-         pointer-events:none;z-index:60}
-/* and the cell it would land on says so */
-.kbk.drop{border-color:var(--gold);background:var(--goldsf)}
 /* The keyboard's name, at the head of its own page: a line, like every other
    field. */
 .kbnm{font-size:1.05rem;margin-bottom:14px}
