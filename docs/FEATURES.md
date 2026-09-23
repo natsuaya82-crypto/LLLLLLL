@@ -47,7 +47,7 @@ Marked separately, because they are not the same question:
 | Notebook | shipped | yes | — | slice `notes` | decided |
 | Numbers — a digit is a letter with a value | shipped | yes | — | slice `letters` | decided |
 | What the language is for (the world) | shipped | yes | — | slice `wld` | decided |
-| **AI に相談 — ChatGPT を本文入りで開く** | **planned — 一行も入っていません**。`SET.askTo` も `ask*` の関数も `ask.*` の文字列も `www/` に無く、`package.json` の `npm run ask` が指す `tools/ask-check.mjs` も存在しません | yes — アプリは生成せず鍵も持たない。開く先はその人のアカウント | — | none | **partial** — 相手は ChatGPT だけ・ボタンは常に「AIに相談」は decided (2026-08-28)。**本文の文面と候補の数は open** — `docs/reports/ask-2026-08-27.md` §4 |
+| **AI に相談 — ChatGPT を本文入りで開く** | **planned — 一行も入っていません**。ChatGPT を開く関数も文字列も `www/` に無く、それを持つ検査もありません | yes — アプリは生成せず鍵も持たない。開く先はその人のアカウント | — | none | **partial** — 相手は ChatGPT だけ・ボタンは常に「AIに相談」は decided (2026-08-28)。**本文の文面と候補の数は open** — `docs/reports/ask-2026-08-27.md` §4 |
 | Keyboard layout built in the app | shipped | fixed QWERTY, nothing to set | `kb`: your own | slice `kb` | decided |
 | Keyboard: flick, four directions per key | shipped | — | `kb` | slice `kb` | decided |
 | Keyboard: any letter on any key, any position, rows and layers | shipped | — | `kb` | slice `kb` | decided |
@@ -90,7 +90,7 @@ Marked separately, because they are not the same question:
 | Your voice on a post — 30 seconds | shipped, **not device confirmed** | **yes** | yes | the bytes go up with the post — `netUpVoice()` into the `post-media` bucket, path on `body.vu`. `post.vo = {f, ms}` names the local file this phone recorded; never in `localStorage` | decided — 「30秒くらい」「ファイルに出す」「録音まで作る」 |
 | Editing your own post | shipped | yes | — | overwrites `ln`, `ink` and `mn` on that post; `post.ed` is new | decided — the line and the meaning only 「文と意味だけ」, and it says `Edited` |
 | Which way a language is written | shipped | **reading, always** | `dir`: choosing one | `SCRIPT.dir` in the `script` slice; frozen on the post as `post.dir` | decided |
-| A calendar of your own | shipped | **month and weekday names** | `gram`: choosing how many of each | `STG.months`, `STG.week`; the names are words with `slot` on them | decided — names and numerals only, no arithmetic of anybody's own (`www/cal.js`) |
+| A calendar of your own | shipped | **month and weekday names** | — the year is twelve months and the week seven (`CAL_MONTHS`, `CAL_WEEK`), not a setting | the names are words with `slot` on them | decided — names and numerals only, no arithmetic of anybody's own (`www/cal.js`) |
 | A post shown three ways | shipped | **all three layers** | — | layers 1 and 2 frozen on the post; layer 3 computed now | decided — the daily three went out with the AI (2026-08-22) |
 | What a post MEANS, in the reader's own words | shipped | yes | yes | `post.mn`, frozen on the post. Nothing else — there is no `tr` field written any more | decided — 「単語はその単語の意味を 文法は並び替えた単語たちが文章として成り立つように。きかいほんやくはつかわない」 OWNER 2026-09-05. `toNatural()` in `www/grammar-engine/translate.js`: each word says what the DICTIONARY says it means, and the GRAMMAR puts those meanings in an order that reads as a sentence in the reader's language. A line the engine cannot parse falls to the word-by-word gloss. **No machine translation, and no seam for one** — `postTr` and `TR_SEAM` are deleted |
 | Posts on the server | shipped, **not device confirmed** | yes | — | `post` rows | done — `netPush`/`netFeed`/`postCatchUp`. An account is required to read the timeline or post to it (decision 2026-08-18) |

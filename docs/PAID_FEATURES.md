@@ -53,7 +53,7 @@ OWNER 2026-09-06。「だから端末でやるわけねえだろ」OWNER 2026-09
 決まってるんだから端末でやることねえ」「段 ── 答えは全部サーバー」 OWNER
 2026-09-11（`docs/FEATURE_RULES.md` § 端末は何も決めない）。
 
-`SET.plan` `SET.planWas` `SET.planV` `SET.planUid` の四つが `lingua.set` から
+~~`SET.plan`~~ ~~`SET.planWas`~~ ~~`SET.planV`~~ ~~`SET.planUid`~~ の四つが `lingua.set` から
 消え、Keychain は `www/` から読まれなくなった。段は `verify-plan` の答えで、
 **メモリに一つ**（`PLAN`、`www/core.js`）。起動（`storeSync()`）と扉
 （`netTook()` が同じ `storeSync()` を呼ぶ）で訊き、セッションが行けば忘れる。
@@ -75,7 +75,7 @@ OWNER 2026-09-06。「だから端末でやるわけねえだろ」OWNER 2026-09
 
 **「プランが終了しました」はサーバーの答えで出る ── 起動のポップで一度。**
 「オンラインで出してね流石に」「4 起動の時に表示して ☑️今後表示しない 閉じる
-みたいなポップにしたくない？」OWNER 2026-09-12。~~`capLapse()`~~ は `SET.planWas`
+みたいなポップにしたくない？」OWNER 2026-09-12。~~`capLapse()`~~ は ~~`SET.planWas`~~
 （端末の語）と比べていたので、語と一緒に消えました ── 端末の一語で「見せる／
 見せない」を決める行です。今は `plan` 表の二列が答えます：`was`（下がる前の段。
 下がった時だけ入る）と `lapse_seen_at`（本人が「今後表示しない」と言った時刻。
@@ -779,7 +779,7 @@ The four subscriptions are configured in App Store Connect and are described in
 `docs/apple.md` § 4.
 
 **WHERE THE PLAN IS KEPT IS MEMORY, AND THERE IS NO SECOND PLACE** (2026-09-11).
-There were three. `SET.plan` in the settings file; the iOS Keychain, which
+There were three. ~~`SET.plan`~~ in the settings file; the iOS Keychain, which
 `setOnDisk()` kept the settings out of because that file is in the backup a PC
 makes; and the PARKED settings, `lingua.set.<uid>`, written from `SET` directly
 and past the line that kept the plan out of the file. Whichever ran last

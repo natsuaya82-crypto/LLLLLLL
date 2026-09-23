@@ -192,8 +192,8 @@ were in `SET_PHONE` as 「how this handset is set up」, and that sentence was
 wrong about all five: signing in on a second phone gave somebody the app
 arranged the way that phone happened to be. `lingua.set` still holds them as
 the copy, filed under the account by `setFor()`, and what is left in
-`SET_PHONE` is `planUid`, `wldMoved`, `vvkb`, `planV`, and `done`/`obback`
-pending the decision in `docs/reports/r8-item2-2026-09-08.md`.
+`SET_PHONE` in `www/core.js` is what that array names — read it there, not
+here.
 
 `lingua.me` (`ME`) is the person — the copy of their `profile` row. **Who they
 follow and who follows them are not in it**, since 2026-09-09: `ME.fo` and
@@ -537,10 +537,9 @@ and then writes the slices it was asked for with `langKeyOf(id, kind)`.
    (It said 「the backup file」 and there is no file — `CLAUDE.md` rule 11.)
    `SLICES` is
    unchanged — it is the list of what a language is MADE of, and that is the
-   same list for every language. **`netSaveUp()` is where it is refused**
-   (`www/net.js`), on `langWhose()`,
-   with `BK.dirty` cleared so every later save does not come back to be
-   refused again. Nothing is deleted and nothing is moved: it is the FILE that
+   same list for every language. **Every writer refuses it** — each asks
+   `langLocked()` (`www/core.js`, off `langWhose()`) before it writes, so
+   nothing of it reaches `netSaveUp()`. Nothing is deleted and nothing is moved: it is the FILE that
    does not carry it, and it is not lost by being skipped, because it came
    from somewhere and can be taken again.
 3. **A partial language is a normal state, not an error.** OWNER 2026-09-01:
@@ -868,15 +867,16 @@ was built as a second road into it and the decision took it out.
 round.** 「アカウント消したのに検索履歴残ってたんだけどなんで？…全部アカウント
 だって言ってるやん おかしいだろお前一本化しろって。」 OWNER 2026-09-04. The
 history was left behind on a deletion, and not because anything about it was
-special: `SET_ACCT` was a hand-written list of the fields that are an
+special: ~~`SET_ACCT`~~ was a hand-written list of the fields that are an
 account's, `recent` was added to `SET` a day after the list was last touched,
 and `setFor(uid)` walks the list. `recent_search` cascades off `profile` and so
 off `auth.users`, so `account_delete()` had already taken the rows — what
 stayed was the phone's copy.
 
 **`SET_PHONE` in `www/core.js` is that list turned inside out**, and it names
-this HANDSET's own setup: the theme, the interface language, the marks that
-say a migration has run here, `planUid`. **Everything else in `SET` is an
+this HANDSET's own setup — read the array; the theme and the interface
+language are not on it, they are the account's and go up in `profile.prefs`
+(`SET_PREFS`). **Everything else in `SET` is an
 account's**, counted rather than named, so a field added tomorrow travels
 without anybody remembering — which is the whole of what went wrong. It is
 parked under `lingua.set.<uid>` when somebody signs out and read back when they
@@ -933,8 +933,9 @@ See `docs/PAID_FEATURES.md`.
 plans screen draws no buy button for a rung already paid for, so the place it
 left says which plan is on and until when — 「消すなら同じ場所に現在この
 プランです〇〇/〇〇までみたいな感じにしないとわからんやろ」 OWNER 2026-09-03.
-The date comes from `Transaction.expirationDate` through `LinguaStore.current`
-and stops at `STORE_UNTIL` in `www/store.js`, which is a variable and not a
+The date is the server's: `decidePlan()` in
+`supabase/functions/verify-plan/verify.mjs` works out `until` in the same place
+as the plan, and `storeUntilTook()` puts it at `STORE_UNTIL` in `www/store.js`, which is a variable and not a
 key: it is gone when the app is closed and asked for again the next time the
 screen is opened.
 

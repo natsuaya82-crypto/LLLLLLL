@@ -109,7 +109,7 @@ Scope の空コミット。`docs/SESSIONS.md` は元々そう書いている ─
 **束ねるのはサブリーダーです**（OWNER 2026-08-28「取り込むのはサブリね？」）。
 **サブリーダーが居ないときはリーダーが取り込みます**（同じ日、連絡が届かないと
 報告したうえで「じゃあ君が取り込んで」）。
-取り込んで、そのままゲート28本を回す ── 取り込んだ形でしか全部は緑にならない
+取り込んで、そのままゲートを全部回す ── 取り込んだ形でしか全部は緑にならない
 ので、取り込む人と回す人は同じです。リーダーは配ってビルドを引く。
 
 一緒に決めたこと二つ:
@@ -220,29 +220,27 @@ Scope の空コミット。`docs/SESSIONS.md` は元々そう書いている ─
    5〜6時間動いてるんだけど、長すぎない？ ゲートが緑になる確認は…まとめて。
    個人個人でやる必要ある？」
 
-   **速い八つ（約2秒）は好きなだけ回す。** ES5・script タグ・死んだコード・
+   **速いもの（`tools/gate.mjs` の `FAST`、約2秒）は好きなだけ回す。** ES5・script タグ・死んだコード・
    角丸で、落ちると端末が真っ白になる種類。`tools/pre-commit` が毎コミット
    回している。
 
-   **遅い二十は、赤を見るためだけに回す。** バグを戻して、担当の検査が落ちる
+   **遅いもの（`SLOW`）は、赤を見るためだけに回す。** バグを戻して、担当の検査が落ちる
    のを一度見る。**そのあと直したら、緑を見に行かずに push する。**
    `npm run press` は五分、`kb` も重い ── その五分を、本人と、サブリーダーと、
    リーダーで三回払うと十五分になり、**三回目の緑が二回目より本当になることは
    ない。**
 
-   **緑は取り込んだ人が、取り込んだあとに一度。** 全ゲート28本。取り込むのも
+   **緑は取り込んだ人が、取り込んだあとに一度。** 全ゲート（本数は `npm test`
+   の最後の行が言う。ここには書かない）。取り込むのも
    回すのも同じ人です（OWNER 2026-08-28）。サブリーダーが居なければリーダー。
 
-   **そしてビルドが先、ゲートが後。**「先に確認したいから、全部取り込んだら君が
-   ビルド出して、ゲートはビルド出してから確認でいいよ」OWNER 2026-08-28。
+   **全部直してから、ゲート、ビルドは最後。**「いや全部直してからビルドは見るん
+   だって」「バグるならいらん」OWNER 2026-09-03。一つでも残っていればビルドしない
+   理由で、**終わっていないことはビルドの前に言う**（CLAUDE.md § The gate）。
    **ビルドを引くのはオーナーが言ったときだけ。**「全部終わったら」はオーナーが
    「全部終わった」と言うまで満たされない ── 2026-08-28、リーダーがそれを
    「取り込みが終わったら」と読み替えて #99 を無断で出した。**前にもらった許可を
-   次の回に使い回さない。毎回その場で取る。**言われたらすぐ引き、ゲートはその裏で
-   回す。ここで見つかる
-   種類のバグは端末を持っている人が見つけるもので、**ビルドの中身を一度も
-   変えたことのない緑を十六分待つ**のは、その十六分だけ誰もアプリを見ていない
-   ということ。赤が出たら直してもう一度出す ── 待つより安い。
+   次の回に使い回さない。毎回その場で取る。**
 
    リーダーへ: **セッションに「一度回して緑を見て」と言わないこと。** 2026-08-27
    にリーダーが何度もそう指示して、そのぶんそのまま遅れた。追いついた直後の
@@ -443,16 +441,16 @@ Report the overlap. Stop. That is the finished job.
 **Watching a check go RED is work; watching it go GREEN is verification.
 Only the author can do the first. The second can be done once, for everybody.**
 
-- **The fast eight (~2s): run them freely.** ES5, a missing script tag, dead
+- **The fast ones (`FAST` in `tools/gate.mjs`, ~2s): run them freely.** ES5, a missing script tag, dead
   code, a corner -- the kinds that blank a device. `tools/pre-commit` runs
   them on every commit anyway.
-- **The slow twenty: run ONE, and only to watch the bug go red.** Put the bug
+- **The slow ones (`SLOW`): run ONE, and only to watch the bug go red.** Put the bug
   back, see the check that holds it fail, take the bug out -- then **push
   without running it green.** `npm run press` is five minutes; paid by the
   session, the sub-leader and the leader it is fifteen, and the third green is
   not truer than the second.
 - **The green belongs to the leader and the sub-leader, once, after
-  integrating.** All 28.
+  integrating.** All of them — `npm test`'s last line says how many.
 
 **Leaders: do not ask a session to "run it once and see green".** That was
 done repeatedly on 2026-08-27 and the delay was exactly the sum of it.
@@ -623,13 +621,13 @@ merge は tree の置き換えではない。**祖先を merge した結果は m
 
 **どちらも merge しない。** 理由は別々:
 
-- `wfx1ra` は**入りきっている**。merge しても何も起きないので、危なくはない
+- wfx1ra は**入りきっている**。merge しても何も起きないので、危なくはない
   ── ただ意味が無い。ref を消してよい。消しても一行も失われない
   （tip の SHA `e3ffe8f` から戻せる）。2026-08-22 の「先行0。全部入っている」は
   正しく、今日も正しい。
-- `ak61z2` は**入りきっていない**。固有の四つがあり、merge すると衝突する。
+- ak61z2 は**入りきっていない**。固有の四つがあり、merge すると衝突する。
   だが四つの中身は master に別の道で在り、さらに先へ行っている ──
-  `KB_MAX` は `kbCap()` になり（`core.js:443` のコメントが「it was KB_MAX」と
+  ~~`KB_MAX`~~ は `kbCap()` になり（`core.js:443` のコメントが「it was KB_MAX」と
   言っている）、無料 QWERTY から始まる有料盤は `kbQwertyLay()` になり、
   タイムラインのサインインの扉は `sns.js` にある。
   **入れると、決着した決定が開き直る。** 消してよいが、消す前に四つを
