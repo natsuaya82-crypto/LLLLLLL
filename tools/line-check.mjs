@@ -21,8 +21,10 @@
 
      1  the same line, typed into the composer and then posted, comes out in
         the same columns of ink and on the same number of lines, at the same
-        distance apart. The field and the row are photographed; nothing about
-        either is recomputed here
+        distance apart. What the composer shows and the row are photographed;
+        nothing about either is recomputed here. And what the composer shows
+        is postLnHTML()'s drawing (watched) with the field's own letters
+        transparent -- one function draws both, not two that agree
      2  the newline survives: two lines in the field are two lines on the post
         and the card breaks there too (cardInk() wrapped, as card-check does)
      3  the gap is the POST's: the open language set to 0 under a post written
@@ -166,11 +168,34 @@ await pg.evaluate((raw) => {
   POSTS = POSTS.filter((p) => p.id !== 'pline');
   PW = pwBlank(); openPost(); render();
   const e = document.getElementById('pw-ln');
-  e.style.caretColor = 'transparent';     /* the caret is not the line */
-  e.value = raw;
-  e.dispatchEvent(new Event('input', { bubbles: true }));
+  /* Which function drew what is seen: postLnHTML() is watched, not assumed. */
+  window.__drew = [];
+  const real = postLnHTML;
+  postLnHTML = function (p) { const h = real(p); window.__drew.push(h); return h; };
+  try {
+    e.value = raw;
+    e.dispatchEvent(new Event('input', { bubbles: true }));
+  } finally { postLnHTML = real; }
+  /* the caret is drawn at the end and is not the line */
+  document.querySelectorAll('.pwcaret').forEach((c) => { c.style.visibility = 'hidden'; });
 }, RAW);
-const typed = await inkOf('#pw-ln');
+const typed = await inkOf('#pw-view');
+/* What is SEEN is that drawing and nothing else: the field's own letters are
+   not shown, and the view's letters are exactly what postLnHTML() returned. */
+const who = await pg.evaluate(() => {
+  const e = document.getElementById('pw-ln'), v = document.getElementById('pw-view');
+  const cs = getComputedStyle(e);
+  const probe = document.createElement('div');
+  probe.innerHTML = window.__drew.length ? window.__drew[window.__drew.length - 1] : '';
+  return { color: cs.color, drew: window.__drew.length,
+           same: !!v && probe.textContent === v.textContent };
+});
+if (!/rgba\(\d+, \d+, \d+, 0\)|transparent/.test(who.color))
+  fails.push('the field shows its own letters (' + who.color + ') -- what is seen in the ' +
+             'composer is set by the field and not by the one function a post is drawn by');
+if (!who.drew || !who.same)
+  fails.push('what the composer shows is not what postLnHTML() drew for it (' + who.drew +
+             ' calls) -- the line is being drawn by something else');
 const sent = await pg.evaluate(() => {
   const was = POSTS.map((p) => p.id);
   pwSend();
@@ -251,11 +276,11 @@ for (const sp of [1, 0]) {
   await pg.evaluate((two) => {
     PW = pwBlank(); openPost(); render();
     const e = document.getElementById('pw-ln');
-    e.style.caretColor = 'transparent';
     e.value = two;
     e.dispatchEvent(new Event('input', { bubbles: true }));
+    document.querySelectorAll('.pwcaret').forEach((c) => { c.style.visibility = 'hidden'; });
   }, two);
-  const field = await inkOf('#pw-ln');
+  const field = await inkOf('#pw-view');
   JOIN[sp] = { line: gaps(line), field: gaps(field) };
   await pg.evaluate(() => { PW = pwBlank(); });
 }

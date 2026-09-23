@@ -1134,25 +1134,19 @@ function cardInkShown(ink){
   return {g:ink.g, s:s};
 }
 /* The post's line as things to draw, in the shapes cardInk() already knows:
-   a shape, a character, a space, or the end of a line. A text run may be
-   several characters long -- postCut() gathers what was never drawn into one
-   piece -- so it is spread out one at a time.
-
-   A space and a newline are what they are on the post's own line, where the
-   browser sets them (www/glyph.js § A LINE OF THE LANGUAGE IS TEXT): a space
-   is the ordinary face's space (inkSpace, in cardMeasure), and a newline is
-   the line ending there. It used to be a space as well, so a post written on
-   two lines came out on the card as one. */
+   a shape, a character, a space, or the end of a line. What is a space and
+   what ends a line is postRuns()'s to say (www/post.js), the same answer the
+   line on the timeline is set from; a run of text is spread out here one
+   character at a time, because cardInk() draws one thing per item. A space is
+   the ordinary face's space (inkSpace, in cardMeasure), and the end of a line
+   is a break cardBreak() has to take. */
 function cardInkUnits(ink){
-  var out=[], i, j, x, ch;
-  for(i=0;i<ink.s.length;i++){
-    x=ink.s[i];
-    if(typeof x==='number'){ out.push({st:ink.g[x]}); continue; }
-    x=String(x);
-    for(j=0;j<x.length;j++){
-      ch=x.charAt(j);
-      out.push(ch==='\n'? {sp:true, br:true} : /\s/.test(ch)? {sp:true} : {tx:ch});
-    }
+  var out=[], rs=postRuns(ink), i, j, u;
+  for(i=0;i<rs.length;i++){
+    u=rs[i];
+    if(u.st) out.push({st:u.st});
+    else if(u.tx){ for(j=0;j<u.tx.length;j++) out.push({tx:u.tx.charAt(j)}); }
+    else out.push(u.br? {sp:true, br:true} : {sp:true});
   }
   return out;
 }

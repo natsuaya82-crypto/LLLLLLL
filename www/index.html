@@ -840,18 +840,35 @@ canvas.pkc{width:34px;height:34px;display:block}
    it as `left`. What is left here is what a line LOOKS like. */
 .prail{position:absolute;top:0;bottom:0;width:1px;background:var(--line)}
 .prail.pfrom{top:58px}
-/* A LINE OF THE LANGUAGE, and the composer's field is one: the same face,
-   size, spacing and breaking, in one rule, because what is being written and
-   what was written are one line. 「書いている時の見た目が、そのまま投稿の見た目
-   になること」 OWNER 2026-09-23. The face is LinguaType, which a post's own
-   shapes are added to (www/glyph.js § A LINE OF THE LANGUAGE IS TEXT), so a
-   letter, a space and a newline stand the same on both. `pre-wrap` is what a
-   field already is, and it is what keeps a newline on the post.
+/* A LINE OF THE LANGUAGE, wherever one is shown -- a post, a quoted post, and
+   the line being written, which is drawn by the same postLnHTML() into this
+   same class (www/post.js § pwViewHTML). The face is LinguaType, which a
+   post's own shapes are added to (www/glyph.js § A LINE OF THE LANGUAGE IS
+   TEXT). `pre-wrap` is what keeps a newline.
    Drawn letters stand at their full height on this line, so 1.45 put the
    rows of a two-line post against each other. 「ここつまりすぎてる」 */
-.pline,.pwfield #pw-ln{font-family:var(--face-type);font-size:1.3rem;line-height:1.7;
-       white-space:pre-wrap;word-break:normal;overflow-wrap:break-word}
-.pline{color:var(--tx);margin-top:6px}
+.pline{font-family:var(--face-type);font-size:1.3rem;line-height:1.7;color:var(--tx);
+       margin-top:6px;white-space:pre-wrap;word-break:normal;overflow-wrap:break-word}
+/* The composer: the line drawn, and the field lying over it taking the keys
+   and showing nothing. The field is as big as the line, never bigger, and a
+   thumb goes through it to the line, which puts the caret at the end. */
+.pwlnbox{position:relative}
+.pwlnbox .pwview{margin:0;padding:11px 2px;min-height:44px}
+/* `!important` on the size because lnFit() writes a column's width inline,
+   and this field is as big as the drawn line whichever way it runs. */
+.pwfield .pwlnbox .lnin{position:absolute;left:0;top:0;width:100% !important;
+       height:100% !important;margin:0;border:0;
+       color:transparent;caret-color:transparent;pointer-events:none}
+/* A column keeps the rule on the side it comes from, and its own padding --
+   what the field wore when the field was what you saw. */
+.pwlnbox .pwview.dir-ttb-rl,.pwlnbox .pwview.dir-ttb-lr{padding:2px 12px;min-width:44px}
+.pwlnbox .pwview.dir-ttb-rl{border-right:1px solid var(--gold)}
+.pwlnbox .pwview.dir-ttb-lr{border-left:1px solid var(--gold)}
+/* The caret, at the end of the line and nowhere else. Across the line it is
+   upright; down a column it lies across, which is what the logical sides say. */
+.pwcaret{display:inline-block;inline-size:0;block-size:1.1em;vertical-align:-.2em;
+       border-inline-start:2px solid var(--gold);animation:pwblink 1.1s steps(1) infinite}
+@keyframes pwblink{50%{opacity:0}}
 /* ---------- which way a line runs ----------
    Four of them, and the class is the only place any of it is written down --
    dirClass() in wsys.js names one and nothing else sets `direction` or
@@ -1489,9 +1506,13 @@ html.fitlock, html.fitlock body{height:100%;overflow:hidden;overscroll-behavior:
    quoted post is what was asked for, so the column is what yields, and it
    scrolls inside itself the way it already did when a line got too long.
    On a 402 it is 242 tall and none of this is reached. */
-.view.fit .pwfield .lnin.dir-ttb-rl,
-.view.fit .pwfield .lnin.dir-ttb-lr{
-   height:auto;flex:1 1 auto;min-height:0;
+/* The box the line is drawn in is what gives way, not the field: the field is
+   a transparent layer the size of the line (www/post.js § pwHTML). Across, it
+   gives way down to the 44 a thumb needs, as the field did; down, it takes
+   what is there and scrolls inside itself. */
+.view.fit .pwfield .pwlnbox{flex:0 1 auto;min-height:44px;overflow:hidden}
+.view.fit .pwfield .pwlnbox.pwcol{
+   flex:1 1 auto;min-height:0;
    max-width:100%;overflow:auto}
 /* The one thing that does not scroll: the row that adds a photograph or a
    voice, and how much of the line is left. It is the last child of the form,
