@@ -3132,7 +3132,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
   「languages on the account 1 / 1 / 3」は、アカウントに付いていて初めて
   上限になります。プランも同じで、端末の中の値なら端末を変えれば無関係です。
 - Affected features: `www/core.js`（`planKeep()` / `setOnDisk()`）、
-  `www/settings.js`（`setPlan()`）、`supabase/schema.sql`（`profile` の列）、
+  `www/settings.js`（~~`setPlan()`~~）、`supabase/schema.sql`（`profile` の列）、
   `www/net.js`（プランを送る道）。キーボードは言語の一部なので `slice` の `kb`
   ── **こちらは既にそうなっています。**
 - Affected data: `profile` に列が増えます。消えるものはありません。
@@ -3146,7 +3146,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
 #### コードと合っていない所。直していない ── 報告した
 
 **プランが端末に在る。**`www/core.js` の `planKeep()`／`setOnDisk()`、
-`www/settings.js` の `setPlan()`、`tools/plan-check.mjs` の
+`www/settings.js` の ~~`setPlan()`~~、`tools/plan-check.mjs` の
 「ブラウザでは設定ファイルに在り、実機では Keychain に在る」という主張、
 `docs/PAID_FEATURES.md` がその検査について書いている行 ── **どれもコード側で、
 この枝の持ち物ではありません。**プランを `profile` に載せるのは購入がサーバーに

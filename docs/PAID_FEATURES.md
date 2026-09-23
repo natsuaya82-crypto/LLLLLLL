@@ -765,14 +765,15 @@ backup, and the ceiling putting somebody on a price list mid-word.
 **Both halves are in.** `ios/App/App/LinguaStore.swift` has `products`, `buy`,
 `restore`, `current` and `manage`, refuses an `.unverified` transaction,
 finishes what it consumes and watches `Transaction.updates` for a renewal that
-arrives while the app is shut; it writes the answer through
-`LinguaPlanPlugin.set()`. **`www/store.js` is the one window onto it** — the
-way `net.js` is the one window onto the server — and `setPlan()` in
-`www/settings.js` is `storeBuy()`'s only caller. `PLAN_BUY` is `true`.
+arrives while the app is shut; it writes nothing down — what it hands over is
+what Apple signed, and `verify-plan` answers the plan. **`www/store.js` is the
+one window onto it** — the way `net.js` is the one window onto the server — and
+`plBuy()` in `www/settings.js` is `storeBuy()`'s only caller.
 
-**In a browser there is no App Store**, so `storeOn()` is false and the plans
-screen goes on setting the plan by hand there. That is how every check walks
-it, how every screenshot is taken, and how a tier is tried on.
+**In a browser there is no App Store**, so `storeOn()` is false: the plans
+screen is drawn there as on a phone, and pressing a card or the cancel row says
+the App Store could not be reached and moves nothing. `planTook()` is called by
+`netPlanVerify()` and nothing else — `plan-check` § 8b counts every write.
 
 The four subscriptions are configured in App Store Connect and are described in
 `docs/apple.md` § 4.
@@ -786,9 +787,9 @@ decided.
 
 None of them exists. `PLAN` in `www/core.js` holds `verify-plan`'s answer about
 the account that is signed in; `planGot()` writes it and `planForget()` empties
-it, and nothing else assigns it. `ios/App/App/LinguaPlan.swift` still has its
-own key and nothing in `www/` speaks to it — taking that out is an iOS change
-(`docs/BACKLOG.md`). `plan-check` holds all of it, and `store-check` holds the
+it, and nothing else assigns it. The Swift that read the Keychain is deleted
+(2026-09-23); the items it wrote stay on phones and nothing reads them.
+`plan-check` holds all of it, and `store-check` holds the
 other half: no field of `lingua.set` is about money.
 
 ## Not built yet

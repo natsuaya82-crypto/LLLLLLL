@@ -50,16 +50,32 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
     FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: Self.group)
   }
 
-  /// Written whole or not at all, because the keyboard may be reading it: a
+  /// WHAT IS HANDED IS WHAT IS THERE. Each of the three files is written
+  /// whole from what www/share.js gave, and one it gave EMPTY is removed.
+  /// There is no 「leave what was there」: the folder is a copy of the open
+  /// language of the account signed in, and a file left over from before is
+  /// somebody else's letters on the keyboard and the widget -- signed out, or
+  /// another account, or an account deleted. 「NOTHING IS THE PHONE'S.
+  /// EVERYTHING IS THE ACCOUNT'S」 (CLAUDE.md), r63 § 2-1 K5. www sends all
+  /// three empty when nobody is signed in; the readers already have a state
+  /// for a missing file (Shared.board(), Numerals.read(), ScriptFont.ready()).
+  ///
+  /// Written atomically, because the keyboard may be reading it: a
   /// half-written layout is a keyboard with no keys on it.
   ///
   /// The protection class matters. The default one makes a file unreadable
   /// while the phone is locked, and a keyboard extension is woken in states
   /// the app never sees — so the letters would simply be gone until somebody
   /// unlocked the phone, which is not a bug anybody would ever reproduce.
-  private func put(_ data: Data, _ name: String, _ dir: URL) throws {
-    try data.write(to: dir.appendingPathComponent(name),
-                   options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
+  private func mirror(_ data: Data, _ name: String, _ dir: URL) throws {
+    let url = dir.appendingPathComponent(name)
+    if data.isEmpty {
+      if FileManager.default.fileExists(atPath: url.path) {
+        try FileManager.default.removeItem(at: url)
+      }
+      return
+    }
+    try data.write(to: url, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
   }
 
   @objc func write(_ call: CAPPluginCall) {
@@ -67,68 +83,37 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
       call.reject("no container for \(Self.group)")
       return
     }
-    let json = call.getString("json") ?? ""
-    let font = call.getString("font") ?? ""
-    let num = call.getString("num") ?? ""
+    let json = Data((call.getString("json") ?? "").utf8)
+    let num = Data((call.getString("num") ?? "").utf8)
+    /* Nothing drawn is no font rather than an empty one, exactly as
+       installScriptFont() decides it -- www sends '' and the file goes. */
+    let font = Data(base64Encoded: call.getString("font") ?? "") ?? Data()
     do {
-      try put(Data(json.utf8), Self.jsonName, dir)
-      /* Absent leaves what is there, the way the font does: an app built
-         before the widgets existed sends nothing, and a widget already on
-         somebody's home screen goes on showing the digits it has rather
-         than emptying itself. */
-      if !num.isEmpty {
-        try put(Data(num.utf8), Self.numName, dir)
-        /* And tell WidgetKit, or nobody does. WidgetPoke.swift holds that
-           call and says why it is not in this file: `import WidgetKit` here
-           takes PHPickerViewController out of scope, which is how #84 failed
-           on a picker that had compiled green since a82a633. */
-        WidgetPoke.reload()
-      }
-      // Nothing drawn is no font rather than an empty one, exactly as
-      // installScriptFont() decides it — so an absent font leaves whatever
-      // was there rather than replacing it with zero bytes.
-      if !font.isEmpty, let bytes = Data(base64Encoded: font) {
-        try put(bytes, Self.fontName, dir)
-      }
+      try mirror(json, Self.jsonName, dir)
+      try mirror(num, Self.numName, dir)
+      try mirror(font, Self.fontName, dir)
+      /* And tell WidgetKit, or nobody does. WidgetPoke.swift holds that
+         call and says why it is not in this file: `import WidgetKit` here
+         takes PHPickerViewController out of scope, which is how #84 failed
+         on a picker that had compiled green since a82a633. */
+      WidgetPoke.reload()
       call.resolve()
     } catch {
       call.reject(error.localizedDescription)
     }
   }
 
-  // ---- the copy that survives the app ------------------------------------
-  //
-  // A different folder and a different argument from everything above. The
-  // ---- WHAT USED TO BE HERE, AND WHY IT IS NOT ------------------------
-  //
-  // `keep()`, `kept()` and `dropSome()` wrote, read and removed a language as
-  // one JSON file in Documents/Languages/, three generations deep -- the copy
-  // that survived the app itself.
-  //
-  // 「オンラインは一本化ね？」「保存としたらオンラインおしまい」「今ファイルも
-  //   いらん。オンラインのみで行こうってことになってる今後オフライン対応する
-  //   時にまた考えることにした」 OWNER 2026-09-04.
-  //
-  // A save reaches the server the moment it is made now (netSaveUp() in
-  // www/net.js), so the hours those files were covering are gone. They are
-  // deleted rather than left compiled: a method in the plugin's table is one
-  // anybody can call, and tools/assets-check.mjs fails on one that no line of
-  // www/ names. docs/CHANGELOG.md 2026-09-04 carries the DELETE REVIEW.
-  //
-  // The voices and the sheets below are NOT this. They are the post's and the
-  // person's, they were never a copy of a language, and they stay.
-
   // ---- the paper -------------------------------------------------------
   //
   // www/sheet.js (chapter 26) builds the PDF bytes; this writes them down.
-  // Documents again, and for the same reason keep() is there: the App Group
-  // is how two programs of this app talk, and Documents is where the
+  // Documents and not the App Group: the App Group is how two programs of
+  // this app talk (write above), and Documents is where the
   // person's own work lives -- iOS puts it in the device backup and, with
   // UIFileSharingEnabled, the Files app can show it. A sheet is paper: it is
   // a thing somebody prints, writes on, and hands back.
   //
-  // The one difference from keep(). A sheet is not filed against a language
-  // and every write would carry the same name, so this NEVER OVERWRITES: a
+  // A sheet is not filed against a language and every write would carry
+  // the same name, so this NEVER OVERWRITES: a
   // sheet already sitting in Documents may have been written on -- opened in
   // Files, marked up with a pencil, saved in place -- and that is somebody's
   // own work. `<name> 2.pdf` and on. Nothing here removes anything.
@@ -206,9 +191,8 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
   /// docs/DATA_SAFETY.md, and a sheet somebody already drew on lives there.
   /// This hands over the file that is already on disk.
   ///
-  /// A name, not a path and not bytes: the same fence keep()'s siblings have,
-  /// because Documents is the person's own folder and the Files app puts other
-  /// things in it.
+  /// A name, not a path and not bytes, because Documents is the person's own
+  /// folder and the Files app puts other things in it.
   ///
   /// **The popover is not optional.** On iPad a UIActivityViewController with
   /// no sourceView is a crash, not a layout problem, and this is a Universal

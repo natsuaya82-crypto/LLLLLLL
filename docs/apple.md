@@ -493,8 +493,8 @@ Connect の審査ノート欄に直接入れてください。repo に置いた�
 取引は finish し、アプリを閉じている間に届く更新も `Transaction.updates` で
 見ています。プラグインは使っていません（このアプリは `@capacitor/core` を
 読み込まないので、使えません。`www/share.js` の長い注を参照）。
-`www/` 側は `www/store.js` 一枚で、`setPlan()`（`www/settings.js`）が
-`storeBuy()` の唯一の呼び出し元、`PLAN_BUY` は `true` です。
+`www/` 側は `www/store.js` 一枚で、`plBuy()`（`www/settings.js`）が
+`storeBuy()` の唯一の呼び出し元です。
 
 画面のほうも揃っています ── 三段のカード、月と年の二つのボタン、購入、
 購入を復元、サブスクリプションの管理、そして Guideline 3.1.2 の開示

@@ -211,6 +211,12 @@ One deletion is outside that table on purpose, because it is not a button:
 - `lsWipeAcct()` (`www/core.js`) taking that account's keys off the phone
   happens under `wipeAll`, which is in the table, and is written out in
   `docs/DATA_MODEL.md` § what an account deletion actually takes
+- `sharePush()` emptying the App Group (`www/share.js`, `LinguaShare.swift`
+  `write`) when no account is signed in. The three files there are copies
+  rebuilt from the open language on every change, so a file handed empty is
+  a file that is not there; the DELETE REVIEW is `docs/CHANGELOG.md`
+  2026-09-23. `assets-check` counts every file the keyboard and the widget
+  read and asks that `write` answers for each one.
 
 ## Changing anything that saves
 
