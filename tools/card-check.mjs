@@ -233,18 +233,9 @@ const R = await pg.evaluate(async () => {
      The gap is the language's, and a post carries the one it was written
      with (`ink.sp`, postInkTyped). So the same test a third time: change the
      OPEN language's gap under posts that already exist, and nothing they
-     draw may move -- on the card, and on the timeline's own line, which is
-     a different renderer (postLnHTML + inkLine) and is measured separately.
-     Widths and places are compared, not strings: a gap is a width. */
-  const lineW = (post) => {
-    const box = document.createElement('div');
-    box.style.cssText = 'position:absolute;left:0;top:0;font-size:40px;white-space:nowrap';
-    box.innerHTML = postLnHTML(post);
-    document.body.appendChild(box);
-    postLines();
-    const w = [].map.call(box.querySelectorAll('canvas'), (c) => c.width);
-    return { box, w };
-  };
+     draw on the card may move. Widths and places are compared, not strings:
+     a gap is a width. The timeline's own line is tools/line-check.mjs's --
+     it is set in the face now, and asked there in pixels. */
   const cardW = (id) => JSON.stringify(itemsFor('p', id).items.map(
     (u) => u.sp ? 'sp' : [u.w, Math.round(u.ax || 0)]));
   const wasSp = SCRIPT.sp;
@@ -257,11 +248,9 @@ const R = await pg.evaluate(async () => {
     fails.push('a post written with the language at one step carries sp=' +
                (pNew.ink && pNew.ink.sp) + ', not 1: the gap is not put on the post ' +
                'when it is written');
-  const before = { old: cardW('pcard'), now: cardW('pgap'),
-                   ln: lineW(p), lnNew: lineW(pNew) };
+  const before = { old: cardW('pcard'), now: cardW('pgap') };
   SCRIPT.sp = 0;
-  const after0 = { old: cardW('pcard'), now: cardW('pgap'),
-                   ln: lineW(p), lnNew: lineW(pNew) };
+  const after0 = { old: cardW('pcard'), now: cardW('pgap') };
   if (after0.old !== before.old)
     fails.push('a card of a post written before a language had a gap moved when ' +
                'the open language was set to 0:\n     ' + before.old.slice(0, 160) +
@@ -269,15 +258,9 @@ const R = await pg.evaluate(async () => {
   if (after0.now !== before.now)
     fails.push('a card of a post written at one step moved when the open language ' +
                'was set to 0 -- the card is spacing it with the OPEN language');
-  if (JSON.stringify(after0.ln.w) !== JSON.stringify(before.ln.w) ||
-      JSON.stringify(after0.lnNew.w) !== JSON.stringify(before.lnNew.w))
-    fails.push("a post's line on the timeline changed width when the open " +
-               'language was set to 0: ' + JSON.stringify(before.lnNew.w) + ' -> ' +
-               JSON.stringify(after0.lnNew.w));
-  [before, after0].forEach((o) => { o.ln.box.remove(); o.lnNew.box.remove(); });
   /* And the other way round: somebody else's post written at 0, on a phone
      whose own language stands at one step, is drawn JOINED -- every letter
-     exactly as wide as its ink, on the card and on the line. */
+     exactly as wide as its ink. */
   SCRIPT.sp = 1;
   const oj = JSON.parse(JSON.stringify(other || {}));
   if (other) {
@@ -287,62 +270,8 @@ const R = await pg.evaluate(async () => {
     if (!it.length || loose.length)
       fails.push("somebody else's post written at 0 is not drawn joined on the card: " +
                  loose.length + ' of ' + it.length + ' letters are wider than their ink');
-    const jl = lineW(oj), jw = jl.w;
-    const want = oj.ink.s.filter((x) => typeof x === 'number').map((x) => {
-      const a = inkAdv(oj.ink.g[x], 0); return a ? a.w : null; });
-    const k = jl.box.querySelector('canvas');
-    const kf = k ? k.height / 800 : 0;
-    if (!jw.length || jw.some((w, i) => want[i] !== null && w !== Math.max(1, Math.round(want[i] * kf))))
-      fails.push("somebody else's post written at 0 is spaced on the timeline by " +
-                 "this phone's language: " + JSON.stringify(jw));
-    jl.box.remove();
   }
-  /* And 0 is JOINED, measured in ink rather than read off the arithmetic.
-     A letter drawn from the left edge of the lattice to the right, two of
-     them side by side: at 0 not one empty column between them, on the post's
-     line and in the font that is built from the language; at one step, a
-     gap. Pixels, because "the advance is the ink" is also true of a font
-     whose pen stops short of the edge. */
-  const L0 = ltPuaOrder()[0], stWas = L0.st;
-  L0.st = [{ pts: [[GGRID.inset, 400], [800 - GGRID.inset, 400]] }];
-  const gapCols = (c) => {
-    const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data, col = [];
-    for (let i = 0; i < c.width; i++) {
-      let n = 0;
-      for (let j = 0; j < c.height; j++) if (d[(j * c.width + i) * 4 + 3] > 127) n++;
-      col.push(n > 0);
-    }
-    const f = col.indexOf(true), l = col.lastIndexOf(true);
-    let g = 0;
-    for (let i = f; i <= l; i++) if (!col[i]) g++;
-    return f < 0 ? -1 : g;
-  };
-  const JOIN = {};
-  for (const sp of [1, 0]) {
-    SCRIPT.sp = sp;
-    const pj = { id: 'pj' + sp, ink: postInkTyped(ltPua(0) + ltPua(0)), ln: 'x' };
-    const jl = lineW(pj), cs = jl.box.querySelectorAll('canvas');
-    const both = document.createElement('canvas');
-    both.width = cs[0].width + cs[1].width; both.height = cs[0].height;
-    both.getContext('2d').drawImage(cs[0], 0, 0);
-    both.getContext('2d').drawImage(cs[1], cs[0].width, 0);
-    jl.box.remove();
-    installScriptFont();
-    await document.fonts.load('160px LinguaType', ltPua(0));
-    const fc = document.createElement('canvas');
-    fc.width = 400; fc.height = 200;
-    const fx = fc.getContext('2d');
-    fx.font = '160px LinguaType'; fx.fillStyle = '#000'; fx.textBaseline = 'middle';
-    fx.fillText(ltPua(0) + ltPua(0), 10, 100);
-    JOIN[sp] = { line: gapCols(both), font: gapCols(fc) };
-  }
-  L0.st = stWas; SCRIPT.sp = wasSp; installScriptFont();
-  if (JOIN[0].line !== 0 || JOIN[0].font !== 0)
-    fails.push('at 0 two letters drawn edge to edge do not join: ' +
-               JOIN[0].line + ' empty columns on the line, ' + JOIN[0].font + ' in the font');
-  if (!(JOIN[1].line > 0) || !(JOIN[1].font > 0))
-    fails.push('at one step two letters stand with no gap between them (line ' +
-               JOIN[1].line + ', font ' + JOIN[1].font + '), so the test above proves nothing');
+  SCRIPT.sp = wasSp;
 
   /* ---- every shape ink can arrive in -------------------------------- */
   /* postInkOK() decides, once, for the timeline and the card both. What is
@@ -406,7 +335,7 @@ const R = await pg.evaluate(async () => {
                'have come from the open language');
 
   return { fails, wrote: JSON.parse(wrote).length, cases: CASES.length,
-           other: other ? other.lname : '', drew: after.items.length, join: JOIN };
+           other: other ? other.lname : '', drew: after.items.length };
 });
 
 await br.close();
@@ -427,8 +356,6 @@ console.log('card: a post written, the alphabet redrawn and a word deleted under
             '      with no ink is still text, and every one of ' + R.cases +
             ' shapes ink\n      can arrive in -- empty, missing, pointing at nothing -- comes ' +
             'back\n      as text rather than as a guess, without throwing.\n' +
-            '      The gap is the post\'s: the open language set to 0 moves no post\n' +
-            '      written before it, and one written at 0 elsewhere is drawn joined.\n' +
-            '      Two letters drawn edge to edge, empty columns between them --\n' +
-            '      at 1: line ' + R.join[1].line + ', font ' + R.join[1].font +
-            ';  at 0: line ' + R.join[0].line + ', font ' + R.join[0].font + '.');
+            '      The gap is the post\'s: the open language set to 0 moves no card\n' +
+            '      of a post written before it, and one written at 0 elsewhere is\n' +
+            '      drawn joined.');

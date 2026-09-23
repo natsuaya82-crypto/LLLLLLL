@@ -582,18 +582,35 @@ const free = await pg.evaluate(() => {
    pixels, because "it emitted a canvas" is also true of one that paints
    nothing. Digit seven carries a sheet's picture by now -- the take above put
    it there. */
-const sign = await pg.evaluate(() => {
+const sign = await pg.evaluate(async () => {
   var host = document.createElement('div');
   host.style.cssText = 'position:fixed;left:0;top:0;width:200px;font-size:40px';
   host.innerHTML = '<span id="wr-sign">' + numSignHTML(7) + '</span>';
   document.body.appendChild(host);
   numWidMount();
-  var c = document.querySelector('#wr-sign canvas'), n = 0, i, d;
-  var out = { canvas: !!c, roman: host.innerHTML.indexOf('numrm') >= 0, pixels: 0 };
-  if (c && c.width){
-    d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
-    for (i = 3; i < d.length; i += 4) if (d[i] > 10) n++;
-    out.pixels = n;
+  /* The sign is a character of the face a line is set in (www/glyph.js § A
+     LINE OF THE LANGUAGE IS TEXT), so its ink is asked of that face: drawn
+     onto a canvas in the family the page gives it, once the page has it. */
+  /* And against the same character with no face under it, because a box
+     where a glyph is missing is ink too. */
+  var e = document.querySelector('#wr-sign .tfont'), fam;
+  var out = { face: !!e, roman: host.innerHTML.indexOf('numrm') >= 0, pixels: 0, same: true };
+  var ink = function (f, ch) {
+    var c = document.createElement('canvas'), x, d, i, n = 0, bits = '';
+    c.width = 160; c.height = 160;
+    x = c.getContext('2d');
+    x.font = '80px ' + f; x.textBaseline = 'middle'; x.fillStyle = '#000';
+    x.fillText(ch, 20, 80);
+    d = x.getImageData(0, 0, c.width, c.height).data;
+    for (i = 3; i < d.length; i += 4){ if (d[i] > 10) n++; bits += d[i] > 10 ? 1 : 0; }
+    return { n: n, bits: bits };
+  };
+  if (e && e.textContent){
+    fam = getComputedStyle(e).fontFamily;
+    await document.fonts.load('80px ' + fam, e.textContent);
+    var got = ink(fam, e.textContent), bare = ink('sans-serif', e.textContent);
+    out.pixels = got.n;
+    out.same = got.bits === bare.bits;
   }
   host.parentNode.removeChild(host);
   return out;
@@ -1039,7 +1056,7 @@ say(free.after === free.before && free.same,
 say(free.wentAsked, 'and pressing it asks rather than doing nothing');
 say(free.wentToPlans,
     'and yes goes to the plans screen');
-say(sign.canvas && !sign.roman && sign.pixels > 0,
+say(sign.face && !sign.roman && sign.pixels > 0 && !sign.same,
     'and a digit that came in on a sheet is drawn with the sign somebody drew ' +
     'for it, not a roman one: ' + sign.pixels + ' pixels of ink on the clock');
 

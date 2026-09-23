@@ -228,7 +228,8 @@ function cardUnit(lid, u){
    the only picture that ever leaves the phone was the one place in the app
    the language was spaced wrong.
 
-   A space is one whole cell, which is what otf5 gives it.
+   A space is the ordinary face's space, inkSpace(), which is what it is on
+   the line this card is a picture of.
 
    A borrowed character has no strokes to measure, so it is measured in the
    face it will be drawn in and then given the same half step each side. Its
@@ -239,7 +240,7 @@ function cardMeasure(x, items, side){
   for(i=0;i<items.length;i++){
     u=items[i];
     u.ax=null;
-    if(u.sp){ u.w=CARD_CELL; u.h=CARD_CELL; continue; }
+    if(u.sp){ u.w=inkSpace(); u.h=u.w; continue; }
     if(u.st){
       a=inkAdv(u.st, side);
       if(a){
@@ -283,20 +284,29 @@ function cardRun(run, vert){
 }
 /* The units broken into `n` runs -- lines across the card, or columns down it
    -- as evenly as the words allow. Only a space may be broken at: a word cut
-   in half is not a shorter card, it is a wrong one. Null when there are not
-   that many places to break. */
+   in half is not a shorter card, it is a wrong one. A newline IS a break,
+   always, because the line ends there on the post; `n` counts them. Nothing
+   after the last thing with ink is a run -- a newline at the end of a post is
+   no line on it either. Null when there are not that many places to break. */
 function cardBreak(items, n, vert){
-  var runs=[[]], tot=0, acc=0, i, u, cut, left=0, need;
-  for(i=0;i<items.length;i++){
+  var runs=[[]], tot=0, acc=0, i, u, cut, left=0, need, brs=0, end=items.length;
+  while(end>0 && items[end-1].sp) end--;
+  for(i=0;i<end;i++){
     tot += vert? items[i].h : items[i].w;
-    if(items[i].sp) left++;
+    if(items[i].br) brs++;
+    else if(items[i].sp) left++;
   }
   cut = tot/n;
-  for(i=0;i<items.length;i++){
+  for(i=0;i<end;i++){
     u=items[i];
+    if(u.br){
+      brs--;
+      if(runs.length>=n) return null;
+      runs.push([]); acc=0; continue;
+    }
     if(u.sp){
       left--;
-      need = n - runs.length;
+      need = n - runs.length - brs;
       /* Break here if the run has had its share, or if every space still to
          come is needed to make the count. Without the second half, walking on
          past a short run spent the last space it had and the layout could not
@@ -1124,10 +1134,15 @@ function cardInkShown(ink){
   return {g:ink.g, s:s};
 }
 /* The post's line as things to draw, in the shapes cardInk() already knows:
-   a shape, a character, or the gap between two words. A text run may be
+   a shape, a character, a space, or the end of a line. A text run may be
    several characters long -- postCut() gathers what was never drawn into one
-   piece -- so it is spread out one at a time, and whitespace inside it is the
-   gap rather than a character that happens to be blank. */
+   piece -- so it is spread out one at a time.
+
+   A space and a newline are what they are on the post's own line, where the
+   browser sets them (www/glyph.js § A LINE OF THE LANGUAGE IS TEXT): a space
+   is the ordinary face's space (inkSpace, in cardMeasure), and a newline is
+   the line ending there. It used to be a space as well, so a post written on
+   two lines came out on the card as one. */
 function cardInkUnits(ink){
   var out=[], i, j, x, ch;
   for(i=0;i<ink.s.length;i++){
@@ -1136,7 +1151,7 @@ function cardInkUnits(ink){
     x=String(x);
     for(j=0;j<x.length;j++){
       ch=x.charAt(j);
-      out.push(/\s/.test(ch)? {sp:true} : {tx:ch});
+      out.push(ch==='\n'? {sp:true, br:true} : /\s/.test(ch)? {sp:true} : {tx:ch});
     }
   }
   return out;

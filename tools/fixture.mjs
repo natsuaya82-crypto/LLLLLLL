@@ -702,6 +702,8 @@ export function halfDone(){
   const __STEM = [[{ pts:[[40,400],[760,400]] }, { pts:[[400,400],[400,160]] }],
                   [{ pts:[[40,400],[760,400]] }, { pts:[[220,400],[220,620],[580,620],[580,400]] }]];
   const __stemLetters = () => { LETTERS[0].st = __STEM[0]; LETTERS[1].st = __STEM[1]; };
+  const __twoLines = () => ltPua(0) + ltPua(1) + ltPua(0) + ' ' + ltPua(1) + ltPua(0) +
+                           '\n' + ltPua(0) + ltPua(0) + ltPua(1);
   const __joinPosts = (sp) => {
     POSTS.unshift({ id: 'pj', at: Date.now() - 60000, lang: 'other', lname: 'Tsagaan',
                     ln: 'abab baa', who: 'Iri', hd: 'iri', mn: 'the steppe after rain',
@@ -3344,6 +3346,24 @@ export function halfDone(){
        __joinPosts(0); cardOpen('p', 'pj'); return vForm(); }],
     ['the same post at one step, as a card', () => {
        __joinPosts(1); cardOpen('p', 'pj'); return vForm(); }],
+    /* ONE LINE, WRITTEN AND POSTED. 「書いている時の見た目が、そのまま投稿の
+       見た目になること」 OWNER 2026-09-23. The same two lines -- a space in
+       the first, a newline after it -- typed the way the Lingua keyboard
+       types them, in the composer and then on the timeline, so the two
+       pictures can be laid side by side. tools/line-check.mjs asks it in
+       pixels. */
+    ['a line being written on two lines', () => {
+       __stemLetters(); installScriptFont();
+       PW = pwBlank(); openPost(); pwSetLn(__twoLines());
+       const h = vForm(); PW = pwBlank(); return h; }],
+    ['the same line, posted', () => {
+       __stemLetters(); installScriptFont();
+       const raw = __twoLines();
+       POSTS.unshift({ id: 'p2l', at: Date.now() - 60000, lang: langId, lname: langName,
+                       ln: puaRoman(raw), who: meName(), hd: meHandle(), mine: true, mn: '',
+                       ui: 'en', ink: postInkTyped(raw), dir: 'ltr' });
+       window.route = 'feed'; NAV = [{ r:'feed' }];
+       return vFeed(); }],
     /* The rule a form is made by. It takes an id, and the id is the one the
        fixture put in STG above. */
     ['a rule for making a form', () => { openFmr('fr1'); return vForm(); }],

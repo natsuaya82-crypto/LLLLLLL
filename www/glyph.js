@@ -432,7 +432,7 @@ var SFONT_FAMILY='LinguaScript';
 var SFONT={built:false, sig:null, b64:'', one:{}, seq:[]};
 /* The typing face. No `b64`: it never leaves this phone -- what the system
    keyboard is handed is the shapes, not a font file. */
-var TFONT={built:false};
+var TFONT={built:false, n:0};
 /* What the font is made of, in one string. The alphabet grows on its own as
    the dictionary does, so a word written today can need a letter the font was
    not built with — this is how the page notices without rebuilding on every
@@ -538,14 +538,11 @@ function installTypeFont(){
        「a  line  in  your  language」 on a phone -- 「空白開きすぎ」 OWNER
        2026-09-22. LinguaScript keeps its cell: there the space is the
        script's own spacing. */
-    var f=LinguaFont.build(defs, {mode:'center', pen:GPEN, side:geSide(),
-                       asc:geInkTop(), desc:geInkTop()-geInkSpan()-geStep(),
-                       space:false, family:'LinguaType', style:'Regular'});
     el=document.createElement('style');
     el.id='tfontcss';
-    el.appendChild(document.createTextNode(
-      "@font-face{font-family:'LinguaType';src:url("+f.dataUrl()+") format('opentype');}"));
+    el.appendChild(document.createTextNode(inkFaceCSS(defs, geSide())));
     document.head.appendChild(el);
+    TFONT.n=defs.length;
     TFONT.built=true;
   }catch(e){ TFONT.built=false; }
 }
@@ -2758,7 +2755,9 @@ function inkCanvases(sel, floor, dflt, stOf){
    `h` and `dy` are the same answer asked downward, which is what a script
    that runs down the page needs and what a vmtx would be written from. otf5
    says so itself: one formula, whichever axis it is asked about. The card
-   asks for both; a line of ink only ever asks for the first two.
+   asks for both. A line of the language does not ask here at all -- it is
+   set in the face, whose advances otf5 works out with this same `reach` --
+   so a letter on the card and a letter on a line stand the same.
 
    `x0`/`x1`/`y0`/`y1` are the ink's own corners, for a caller placing several
    letters against one shared edge rather than each against its own.
@@ -2775,38 +2774,102 @@ function inkAdv(st, side){
           h:LinguaFont.reach(e[0], e[1], side), dy:Math.round(side-e[0]),
           y0:e[0], y1:e[1]};
 }
-/* A line of ink: letters standing beside each other. Not the same thing as a
-   tile or a key, which are square cells and rightly so -- those go through
-   inkCanvases, and a square is the whole point of them.
+/* A space, in the same units as inkAdv -- a thousand to the em, which is
+   otf5's. It is the ordinary face's space and nothing else: the face a line
+   is set in carries none of its own (inkFaceCSS, `space:false`), so on a
+   line a space falls through to --face-ui, and the card, which is a canvas
+   with nothing to fall through to, asks that same face here. It used to give
+   a space a whole cell, the width of a letter, so a card of a line was spaced
+   three times as wide as the line it was a picture of. */
+var INKSP=null;
+function inkSpace(){
+  if(!INKSP) INKSP=document.createElement('canvas').getContext('2d');
+  INKSP.font='1000px '+cssVar('--face-ui', 'sans-serif');
+  return Math.round(INKSP.measureText(' ').width);
+}
+/* ---- A LINE OF THE LANGUAGE IS TEXT, SET IN ONE FACE -------------------
+   「一行を描く仕組みを一つにして、入力欄も投稿もそれで描くように書き直す。
+   書いている時の見た目が、そのまま投稿の見た目になること。」 OWNER 2026-09-23.
 
-   Each canvas is given its letter's advance as the canvas's own width, which
-   is what a canvas's intrinsic ratio means, so CSS hangs the width off the
-   height and the line spaces itself exactly as the font would space it.
+   There were two. The composer was a field set in LinguaType, so the browser
+   laid the line out: the font's own advances, the ordinary face's space, and
+   a newline where one was typed. A post was a canvas per letter sized off the
+   line's height, with its own scale (a cell of the height, where the font's
+   cell is eight tenths of the em), its spaces in whatever the row's face was,
+   and `white-space:normal`, which ate the newline. Measured on the fixture at
+   one step: a letter 0.79em in the field and 1.0em on the timeline, and the
+   second line of the field run into the first on the post.
 
-   `of` answers, for each canvas, its strokes and the side they stand with --
-   {st, side} -- because a line of somebody's post stands the way THEY set
-   their language, and a canvas carries no language to ask. */
-function inkLine(sel, of){
-  var els=document.querySelectorAll(sel), i, c, o, st, a, dpr, H, k;
-  for(i=0;i<els.length;i++){
-    c=els[i];
-    o=of(c);
-    st=o && o.st;
-    if(!st || !st.length) continue;
-    a=inkAdv(st, o.side);
-    if(!a) continue;
-    dpr=window.devicePixelRatio||1;
-    H=Math.max(24, Math.round((c.getBoundingClientRect().height||18)*dpr));
-    k=H/800;
-    c.height=H; c.width=Math.max(1, Math.round(a.w*k));
-    /* The colour the canvas is standing in, not --tx.
-       A letter drawn on a canvas took the ink colour straight from the token,
-       so it was the same black wherever it stood -- and a calendar's Sunday
-       is red. Everywhere else the computed colour IS --tx, because that is
-       what the surrounding CSS sets, so nothing that was right changes.
-       「日曜🟥土曜🟦 カレンダーって数字だけがあればいいわけじゃねえぞ？」 */
-    inkStrokes(c.getContext('2d'), st, k, a.dx*k, 0,
-               (window.getComputedStyle? getComputedStyle(c).color : '') || cssVar('--tx'));
+   So there is one. A line of ink is CHARACTERS in the LinguaType family, and
+   the browser lays it out -- the field, a post, a quoted post, the preview on
+   the spacing row, a date on the calendar. Whatever decides where a letter
+   stands, how wide a space is and where a line breaks decides it for all of
+   them, because it is the same engine reading the same face.
+
+   A post's letters are not this phone's, so they cannot be the keyboard's
+   code points. Each shape, at the gap it stands with, is given a code point
+   of its own from the top of the private use area DOWN -- the keyboard's run
+   from U+E000 UP -- and a face holding exactly those is added to the family
+   with a unicode-range naming exactly them. One family, one builder
+   (inkFaceCSS), and the field and the post are the same sentence.
+
+   The same shape at the same gap is the same code point for as long as the
+   page lives, so a letter used on forty posts is built once. */
+function inkFaceCSS(defs, side){
+  var f=LinguaFont.build(defs, {mode:'center', pen:GPEN, side:side,
+                     asc:geInkTop(), desc:geInkTop()-geInkSpan()-geStep(),
+                     space:false, family:'LinguaType', style:'Regular'});
+  var cs=[], i;
+  for(i=0;i<defs.length;i++) cs.push('U+'+defs[i].roman.charCodeAt(0).toString(16).toUpperCase());
+  /* `block`: while the face is loading its letters are held back rather than
+     drawn as boxes, which a data URL makes a frame at most. */
+  return "@font-face{font-family:'LinguaType';src:url("+f.dataUrl()+") format('opentype');"+
+         'unicode-range:'+cs.join(',')+';font-display:block;}';
+}
+var INKCP={at:{}, top:0xF8FF, wait:[]};
+/* One shape at one gap, as the character that draws it. Nothing is read but
+   what is handed in -- a post passes its own strokes and postSide(), the
+   making side passes a letter's and geSide() -- so either side of the line in
+   post.js may ask it.
+
+   A shape that inks nothing is nothing, which is what a canvas with no ink
+   was. And a page that has run out of code points says so with the
+   replacement character rather than drawing somebody's letter as another
+   one: six thousand distinct shapes in one sitting is the ceiling. */
+function inkChar(st, side){
+  var key, c;
+  if(!st || !st.length) return '';
+  key=side+':'+JSON.stringify(st);
+  c=INKCP.at[key];
+  if(c===undefined){
+    if(!inkAdv(st, side)) return '';
+    if(INKCP.top < PUA0+TFONT.n) return '�';
+    c=INKCP.top--;
+    INKCP.at[key]=c;
+    INKCP.wait.push({st:st, side:side, c:c});
+  }
+  return String.fromCharCode(c);
+}
+/* The faces the characters handed out since last time need, put on the page.
+   After the HTML exists and never before -- render() calls it through
+   postLines() -- and one face per gap, because a font has one. */
+function inkFaces(){
+  var by={}, sides=[], i, w, d, el;
+  if(!INKCP.wait.length) return;
+  for(i=0;i<INKCP.wait.length;i++){
+    w=INKCP.wait[i];
+    if(!by[w.side]){ by[w.side]=[]; sides.push(w.side); }
+    d=inkDef(w.st);
+    d.name='ink'+w.c.toString(16);
+    d.roman=String.fromCharCode(w.c);
+    by[w.side].push(d);
+  }
+  INKCP.wait=[];
+  for(i=0;i<sides.length;i++){
+    el=document.createElement('style');
+    try{ el.appendChild(document.createTextNode(inkFaceCSS(by[sides[i]], sides[i]))); }
+    catch(e){ continue; }
+    document.head.appendChild(el);
   }
 }
 function phkMount(){ inkCanvases('canvas.pkc', 40, 34); }
@@ -2981,7 +3044,7 @@ function renderMount(){
      post is longer than the timeline shows cannot be said in markup -- it is
      measured, once, after the HTML exists (www/post.js § postFolds). */
   geTiles(); phkMount(); postFaces(); postLines(); postFolds();
-  pwHoldMount(); numWidMount(); spMount();
+  pwHoldMount(); numWidMount();
   pvMount();
   /* and somebody else's alphabet, whose letters are not in LETTERS to be
      looked up -- www/home.js hands the shapes over instead */

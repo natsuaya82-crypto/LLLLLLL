@@ -840,10 +840,18 @@ canvas.pkc{width:34px;height:34px;display:block}
    it as `left`. What is left here is what a line LOOKS like. */
 .prail{position:absolute;top:0;bottom:0;width:1px;background:var(--line)}
 .prail.pfrom{top:58px}
-/* Drawn letters stand at their full height on this line, so 1.45 put the
+/* A LINE OF THE LANGUAGE, and the composer's field is one: the same face,
+   size, spacing and breaking, in one rule, because what is being written and
+   what was written are one line. 「書いている時の見た目が、そのまま投稿の見た目
+   になること」 OWNER 2026-09-23. The face is LinguaType, which a post's own
+   shapes are added to (www/glyph.js § A LINE OF THE LANGUAGE IS TEXT), so a
+   letter, a space and a newline stand the same on both. `pre-wrap` is what a
+   field already is, and it is what keeps a newline on the post.
+   Drawn letters stand at their full height on this line, so 1.45 put the
    rows of a two-line post against each other. 「ここつまりすぎてる」 */
-.pline{font-size:1.3rem;line-height:1.7;color:var(--tx);
-       margin-top:6px;word-break:break-word}
+.pline,.pwfield #pw-ln{font-family:var(--face-type);font-size:1.3rem;line-height:1.7;
+       white-space:pre-wrap;word-break:normal;overflow-wrap:break-word}
+.pline{color:var(--tx);margin-top:6px}
 /* ---------- which way a line runs ----------
    Four of them, and the class is the only place any of it is written down --
    dirClass() in wsys.js names one and nothing else sets `direction` or
@@ -900,17 +908,6 @@ canvas.pkc{width:34px;height:34px;display:block}
 .lnin.dir-ttb-lr:focus{border-left-color:var(--gold)}
 .dir-ttb-rl{padding-right:14px}
 .dir-ttb-lr{padding-left:14px}
-.dir-ttb-rl .tcln,.dir-ttb-lr .tcln{vertical-align:middle}
-/* One letter of somebody's line. Square, because a drawn letter is drawn in a
-   square, and sized off the line rather than in pixels so it sits on the same
-   baseline as the spaces and full stops around it. */
-/* A letter on a line of a post. The height is the font's: otf5's cell is 800
-   of a 1000 em and its base is 800, so the drawing is eight tenths of the
-   size and its foot IS the baseline -- which is why this sits on the baseline
-   rather than being nudged under it. The width is left to the canvas: inkLine
-   gives each one its own advance, and a canvas with a height and no width is
-   as wide as its own ratio says. */
-.tcln{display:inline-block;vertical-align:baseline;width:auto;height:1em}
 /* The widgets, as they come out, in the room that makes the signs they are
    made of. No frame and no corner: iOS draws a widget's own ground, and this
    is not the app drawing a box. */

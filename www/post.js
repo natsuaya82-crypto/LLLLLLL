@@ -1114,21 +1114,6 @@ function pwAddHTML(){
          edited, which is the one state drafts have nothing to do with. */
       '<span class="pwside" id="pw-side">'+pwSideHTML()+'</span>';
 }
-/* The line as it will actually look, under the field.
-
-   The field could not BE vertical -- a column was not something this webview
-   would let anybody type into -- so a language that runs down the page was
-   typed across and posted downward, and the first time somebody saw the shape
-   of their own sentence was after it had gone.
-   「縦書きにしたのに投稿プレビューだと見えない」
-
-   It renders through postLnHTML() -- the timeline's own function, handed a
-   post-shaped thing -- so the preview and the post cannot disagree about
-   anything, because they are one renderer rather than two that look alike.
-
-   Only for a language that runs down the page. For one that runs across, the
-   field already IS the preview, and a second copy of the line under it would
-   be the same sentence twice. */
 /* Posts that arrived from somewhere else. One place, because "have I already
    got this one" is a question with exactly one right answer and two copies of
    it would drift.
@@ -1561,10 +1546,14 @@ function pwHTML(){
          what you had written were two different-looking things.
          「自作文字で出せ、向きも縦向きになってないけど」
 
-         `.sfont` is what puts the drawn letters in a field and it was on
-         every other one. Nothing is flattened here any more: a column IS
-         typed into now, and lnFit() measures the width when the writing-mode
-         is vertical, because that is the way a column grows. */
+         It is set by the SAME rule as a post's line (`.pline, .pwfield
+         #pw-ln` in index.html) -- the face, the size, the spacing, and
+         `pre-wrap` -- and on every plan and whatever SET.myfont says, because
+         this field is not a field set in the letters somebody drew, it is
+         the post before it is sent. 「書いている時の見た目が、そのまま投稿の
+         見た目になること」 OWNER 2026-09-23. Nothing is flattened here any
+         more: a column IS typed into now, and lnFit() measures the width when
+         the writing-mode is vertical, because that is the way a column grows. */
       /* Not `fitin` any more. That said "the layout gives this field its
          height", which is what a field takes when it is the only thing that
          can stretch -- and it was, so a photograph sat under the fold and the
@@ -1584,7 +1573,7 @@ function pwHTML(){
          The ring is what says so before the press: past zero it counts in
          negative numbers and goes red, in front of somebody while they type. */
       lnField('pw-ln', t('post.ln.ph'), IN('pwSetLn'),
-        PW.ln, dirClass(scriptDir())+(myFontOn()? ' tfont' : ''))+
+        PW.ln, dirClass(scriptDir()))+
       /* The meaning sits in the same column as the line, in the same
          borderless field, because it is the second half of the same act. */
       /* Read-only when it is the day's sentence. Not disabled: a disabled
@@ -3441,19 +3430,21 @@ function postAct(fn, id, icon, n, on){
   return '<button class="pact'+(on? ' on':'')+'"' + DO(fn, [id]) + '>'+icon+
     '<span class="pn">'+(n? String(n) : '')+'</span></button>';
 }
-/* The line, drawn. Each letter is a canvas of the strokes the post carries,
-   so a post in a language this phone has never seen is still in that
-   language's letters -- which is most of the reason to look at a timeline.
-   Anything the writer's alphabet had no shape for -- a space, a full stop, a
-   character they borrowed rather than drew -- is text, and stays text.
+/* The line, drawn. Each letter is the shape the post carries, so a post in a
+   language this phone has never seen is still in that language's letters --
+   which is most of the reason to look at a timeline. Anything the writer's
+   alphabet had no shape for -- a space, a full stop, a character they
+   borrowed rather than drew -- is text, and stays text.
 
    A post with no ink is text. That is every post written before this, and
    every post whose language is written in borrowed characters, and both are
    right: there is nothing to draw.
 
-   It is one canvas per letter rather than one per line so that a long post
-   wraps the way any other line of text wraps. */
-var PLINE={};
+   It is characters, not pictures: inkChar() (www/glyph.js § A LINE OF THE
+   LANGUAGE IS TEXT) turns each shape, at the gap this post was written with,
+   into a character of the one face the composer's field is set in -- so a
+   line wraps, keeps its newlines and spaces its words exactly as it did while
+   it was being written. */
 /* Whether a post's ink can be drawn from at all, asked in ONE place.
 
    "Is there ink" is not the question and was the one being asked, in two
@@ -3585,20 +3576,24 @@ function postLnHTML(p){
      through this function draw those runs, so both ask tagHTML() and a tag
      is blue whether or not the post has ink on it. www/sns.js § tagHTML. */
   if(!p || !postInkOK(p.ink)) return tagHTML(String((p && p.ln)||''));
-  var out='', i, x, k;
+  var out='', i, x, side=postSide(p);
   for(i=0;i<p.ink.s.length;i++){
     x=p.ink.s[i];
-    if(typeof x!=='number'){ out+=tagHTML(String(x)); continue; }
-    k=String((p.id)||'p')+'_'+i;
-    PLINE[k]={st:p.ink.g[x], side:postSide(p)};
-    out+='<canvas class="tcln" data-p="'+esc(k)+'"></canvas>';
+    out+=(typeof x==='number')? inkChar(p.ink.g[x], side) : tagHTML(String(x));
   }
   return out;
 }
+/* After a render: the faces the lines just drawn asked for. www/sns.js and
+   the onboarding call it by this name when they draw a timeline of their own.
+   A face arrives a moment after it is put on the page, and a line is as tall
+   as its letters make it, so whether a post is cut is asked again then
+   (postFoldBtn says why it has to be able to change its answer). */
 function postLines(){
-  inkLine('canvas.tcln', function(c){
-    return PLINE[c.getAttribute('data-p')] || null;
-  });
+  inkFaces();
+  try{
+    if(document.fonts && document.fonts.ready && document.fonts.ready.then)
+      document.fonts.ready.then(function(){ postFolds(); });
+  }catch(e){}
 }
 /* Where this post's voice is, as one string, and the one place that decides
    between the two answers. On this phone it is `vo.f`, a name in Documents;

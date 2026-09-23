@@ -350,40 +350,42 @@ function spClamp(v){
    drawn; a language with one draws it three times, and a language with none
    shows their names as text, which is what a post line shows. */
 function spRowHTML(){
-  var v=inkSteps(SCRIPT.sp), lts=ltPuaOrder().filter(ltHasShape).slice(0,3), i, a, pv='', wide=0;
-  while(lts.length && lts.length<3) lts.push(lts[0]);
+  var v=inkSteps(SCRIPT.sp), lts=spPvLts(), i, a, wide=0;
   for(i=0;i<lts.length;i++){
-    pv+='<canvas class="tcln spv" data-l="'+esc(lts[i].id)+'" data-sd="'+v+'"></canvas>';
     /* the room the letters take at the widest gap, so the slider beside
        them does not slide about under the thumb as they spread */
     a=inkAdv(inkGeo(lts[i]), inkSide(SP_RANGE.max));
     wide+=a? a.w : 800;
   }
-  if(!pv) pv=esc(ltPuaOrder().slice(0,3).map(ltName).join(''));
   /* Styled here rather than in index.html, which is nobody's to touch today.
      The row keeps the height of the rows round it: the slider is the 44pt a
      thumb needs, so the row's own padding gives up what the slider takes. */
   return '<div class="set sprow" style="padding:2px 2px 3px">'+
     '<span class="sl" style="flex:0 0 auto">'+t('set.sp')+'</span>'+
-    '<span class="sppv" style="flex:0 0 auto;'+(wide? 'width:'+Math.ceil(wide*SP_PV/800)+'px;' : '')+'font-size:'+SP_PV+'px;line-height:1;white-space:nowrap;color:var(--tx)">'+pv+'</span>'+
+    '<span class="sppv tfont" style="flex:0 0 auto;'+(wide? 'width:'+Math.ceil(wide*SP_PV/1000)+'px;' : '')+'font-size:'+SP_PV+'px;line-height:1;white-space:nowrap;color:var(--tx)">'+spPv(v)+'</span>'+
     '<input type="range" style="flex:1 1 auto;min-width:0;height:44px;margin:0;accent-color:var(--gold)" min="'+SP_RANGE.min+'" max="'+SP_RANGE.max+'" step="'+SP_RANGE.step+'" '+
       'value="'+v+'" aria-label="'+esc(t('set.sp'))+'"' + IN('spFeel') + CH('setScriptSp') + '></div>';
 }
-/* The preview's letters, drawn by inkLine() -- the road a post's line takes,
-   so what stands here is what a post will look like. */
-function spMount(){
-  inkLine('canvas.spv', function(c){
-    return {st:inkGeo(ltById(c.getAttribute('data-l'))),
-            side:inkSide(parseFloat(c.getAttribute('data-sd')))};
-  });
+function spPvLts(){
+  var lts=ltPuaOrder().filter(ltHasShape).slice(0,3);
+  while(lts.length && lts.length<3) lts.push(lts[0]);
+  return lts;
+}
+/* The preview's letters at gap `v`, as the characters a post's line is made
+   of (www/glyph.js § A LINE OF THE LANGUAGE IS TEXT) -- so what stands here
+   is what a post will look like, because it is the same thing. */
+function spPv(v){
+  var lts=spPvLts(), out='', i;
+  for(i=0;i<lts.length;i++) out+=inkChar(inkGeo(lts[i]), inkSide(v));
+  return out || esc(ltPuaOrder().slice(0,3).map(ltName).join(''));
 }
 /* The thumb moving: the preview and nothing else. A render here would rebuild
    the slider under the finger. */
 function spFeel(v){
-  var els=document.querySelectorAll('canvas.spv'), i;
-  v=spClamp(v);
-  for(i=0;i<els.length;i++) els[i].setAttribute('data-sd', v);
-  spMount();
+  var el=document.querySelector('.sppv');
+  if(!el) return;
+  el.innerHTML=spPv(spClamp(v));
+  inkFaces();
 }
 /* The thumb let go: the language's, saved the way every row of this room
    saves -- save(), then render(), which also rebuilds the font. No plan is

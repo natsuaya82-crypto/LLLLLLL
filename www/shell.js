@@ -1344,9 +1344,9 @@ function viewGone(){
    field you cannot proofread.
 
    What is DISPLAYED stays in the drawn letters: the timeline, the word list, a
-   saved example, the card. And the composer shows the line under the field, in
-   the letters, at every direction rather than only the vertical ones -- so
-   nothing was lost, it moved to the half of the screen that is for looking. */
+   saved example, the card. The composer's line is the one field that is in
+   them, because it is not a field somebody proofreads -- it is the post before
+   it is sent, and it is set by the post's own rule (www/post.js § pwHTML). */
 function lnField(id, ph, attrs, val, cls){
   return '<textarea id="'+id+'" class="lnin'+
     (cls? ' '+cls : '')+'" '+

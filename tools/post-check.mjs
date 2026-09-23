@@ -1324,8 +1324,11 @@ const R = await pg.evaluate(async () => {
         fails.push('a three-word post measures as overflowing (' +
                    sf.scrollHeight + ' into ' + sf.clientHeight + '), so the ' +
                    'measurement itself is wrong. This post carries INK -- if ' +
-                   'the fold re-lays the row out, every canvas becomes a line');
-      if (sf && !sf.querySelector('canvas'))
+                   'the fold re-lays the row out, every letter becomes a line');
+      /* A drawn shape on a line is a character of the face a line is set in,
+         from the private use area (www/glyph.js § A LINE OF THE LANGUAGE IS
+         TEXT); it used to be a canvas. */
+      if (sf && !/[\uE000-\uF8FF]/.test(sf.textContent))
         fails.push('the short post in this claim has no drawn shapes on it, ' +
                    'so it does not test the thing that actually broke');
       if (lm && String(lm.getAttribute('data-do')) !== 'postUnfold')

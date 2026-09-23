@@ -255,17 +255,17 @@ function numWordRow(l){
    possible. */
 
 /* One sign: the shape if there is one, the character it borrows, or the roman
-   digit that stands in for one nobody drew. The canvas is `tcln`, which is
-   what a LINE of letters is drawn on — width from the ink's own advance,
-   height from the type — so two signs beside each other sit one step apart
-   and not one cell. */
+   digit that stands in for one nobody drew. The shape is a character of the
+   face every line of the language is set in (www/glyph.js § A LINE OF THE
+   LANGUAGE IS TEXT), so two signs beside each other stand the way two letters
+   of a post do -- one step apart and not one cell. */
 function numSignHTML(v){
   var l=numByVal(v);
   /* inkGeo() and not `st`: a digit drawn on a SHEET carries its picture as
      `sh` (www/sheet.js), and asking for strokes here put a roman 7 on the
      clock beside somebody's own six. */
   if(l && inkGeo(l))
-    return '<canvas class="tcln" data-l="'+esc(l.id)+'"></canvas>';
+    return '<span class="tfont">'+inkChar(inkGeo(l), geSide())+'</span>';
   if(l && l.ch) return '<span class="numrm">'+esc(l.ch)+'</span>';
   return '<span class="numrm">'+esc(v.toString(36))+'</span>';
 }
@@ -400,9 +400,9 @@ function numTimeHTML(){
      size would jump at ten o'clock, when the hour gains a sign.
      A sign is about 0.55 of the em across, and 0.42 is the mark. Estimates,
      and estimates are all this needs: it is choosing a size, not placing
-     anything -- the placing is inkLine's, off the ink's own advance. The
+     anything -- the placing is the face's, off the ink's own advance. The
      Swift asks the real widths because it has them; here the shapes are
-     canvases the browser has not laid out yet when this runs. */
+     characters of a face that is not on the page yet when this runs. */
   em=Math.min(W*0.40, W*0.92/((numSigns(h)+mm.length)*0.55+0.42));
   return '<div class="numwd"><span class="numwbig" style="font-size:'+em.toFixed(1)+'px">'+
     numLineHTML(h)+'<span class="numsep">'+esc(numSepText())+'</span>'+
@@ -489,10 +489,5 @@ function numWidOut(){
   for(k in dg) if(dg.hasOwnProperty(k)) n++;
   return '<div class="mini numwout">'+esc(n+' · '+(SHARE.how||'-'))+'</div>';
 }
-/* The canvases, once the HTML they are in exists. inkLine gives each one the
-   width its own ink asks for, which is what makes this a line. */
-function numWidMount(){
-  inkLine('canvas.tcln', function(c){
-    return {st:inkGeo(ltById(c.getAttribute('data-l'))), side:geSide()};
-  });
-}
+/* The signs' face, once the HTML they are in exists. */
+function numWidMount(){ inkFaces(); }

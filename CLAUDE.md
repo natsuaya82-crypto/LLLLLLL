@@ -941,10 +941,23 @@ the language's and then the post's** (OWNER 2026-09-23 — one step by default, 
 the letters): `inkAdv(st, side)` is handed it rather than reading it, the making side
 passes `geSide()` (`SCRIPT.sp`), and below the line a post passes `postSide()` — the
 `ink.sp` it was written with, absent meaning one step — so nobody's post is spaced by
-MY language and my old posts do not move when I change mine. `inkLine()`
-gives each canvas that advance as its own width and lets CSS hang it off the height;
-`inkCanvases` is still the square one, for the things that are squares. Rendered both
-ways at 20px, six letters of four widths come to 61px either way.
+MY language and my old posts do not move when I change mine.
+`inkCanvases` is still the square one, for the things that are squares.
+
+**A line is drawn by ONE mechanism, and it is the browser setting text in one
+face** (OWNER 2026-09-23 「一行を描く仕組みを一つにして、入力欄も投稿もそれで描く
+ように書き直す」). The composer's field was text in `LinguaType` and a post's line was
+a canvas per letter with its own scale and `white-space:normal`, so a letter was
+0.79em in one and 1.0em in the other and a typed newline vanished on the post.
+`inkChar(st, side)` in `glyph.js` turns a shape at a gap into a character from the
+top of the private use area, `inkFaces()` adds a face for those characters to the
+`LinguaType` family (one `unicode-range` each, built by `inkFaceCSS()` — the same
+builder as the keyboard's own face), and `.pline, .pwfield #pw-ln` in `index.html`
+is the one rule for how a line is set, `pre-wrap` included. The field, a post, a
+quoted post, the spacing preview and the calendar are all that text. The card is a
+canvas and keeps `inkAdv()`; it takes a space as the ordinary face's (`inkSpace()`)
+and a newline as a break. `tools/line-check.mjs` photographs the field and the
+posted row and asks for the same ink.
 
 `tools/sides-check.mjs` holds the line: nothing below it may name `WORDS`, `LETTERS`,
 `STG`, `SET`, `langName`, `findWord`, `myFontOn`, `ltById`, `ME`, `meName` or their
