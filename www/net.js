@@ -396,7 +396,7 @@ function netSend1(method, path, body, tok, ok, bad, up, may){
     var d=null;
     netOff(x);
     try{ d=JSON.parse(x.responseText||'null'); }catch(e){}
-    if(x.status>=200 && x.status<300){ ok(d); return; }
+    if(x.status>=200 && x.status<300){ slAsApp(ok, [d]); return; }
     /* An hour has gone by with the app open. Everything about this request is
        still right except the token on it, so it goes again with a live one.
        netFresh() answers false for a refresh token the server no longer
@@ -415,9 +415,11 @@ function netSend1(method, path, body, tok, ok, bad, up, may){
       });
       return;
     }
-    bad(d, x.status, netTag(path)+' '+x.status);
+    /* Handed over through the slice store (www/core.js § LTOUCH): what an
+       answer writes is the app's and not a person's. */
+    slAsApp(bad, [d, x.status, netTag(path)+' '+x.status]);
   };
-  x.onerror=function(){ netOff(x); bad(null, 0, netTag(path)+' 0'); };
+  x.onerror=function(){ netOff(x); slAsApp(bad, [null, 0, netTag(path)+' 0']); };
   netOn(x);
   x.send(body? JSON.stringify(body) : null);
 }
@@ -2180,10 +2182,6 @@ function netLangsWalk(d, done){
     var row, nid, own;
     if(i>=rows.length){
       if(made) langStore();
-      /* The OPEN language's slices came down, so what the screens are holding
-         is older than what is in the store. Read it in the way langOpen() does
-         rather than patching each global by hand. */
-      if(filled) langLoad();
       if(made || filled) render();
       done(made); return;
     }
@@ -2237,9 +2235,12 @@ function netLangsWalk(d, done){
        It was `SET.wsys` -- one answer for all of somebody's languages, on this
        handset, invisible to everybody else. */
     langWsysGot(nid, row.wsys);
-    /* AND WHO WROTE IT -- www/core.js § LOWN, where 「not asked」 is neither
-       side and is what langMine() waits for. */
-    langOwnGot(nid, own);
+    /* WHO WROTE IT IS WRITTEN IN fill() BELOW, and not here. It is also
+       「this language may be written」 (www/core.js § langLocked), and on a
+       launch that has to wait for the slices: written here, a round trip
+       before them, it opened the language while the screen was still the
+       picture, and a settings answer landing in between saved the picture as
+       this phone's own work. tools/quiet-check.mjs 2, 2026-09-23. */
     /* AND WHEN IT WAS MADE, which is the fourth column (www/core.js § LMADE).
        It is what says which of this account's languages is the MAIN one, and
        it is the same column `profile_seen.lang_id` is already ordered by --
@@ -2298,8 +2299,19 @@ function netLangsWalk(d, done){
            a moment later, reads all twelve bodies back to merge them against
            what it has just written -- netGotFor() above. */
         netAgreed(nid, k, there[k].body, there[k].at);
-        if(nid===langId) filled=true;
       }
+      /* The OPEN language's slices came down, so what the screens are holding
+         is the picture. Read it in the way langOpen() does rather than
+         patching each global by hand -- HERE, before anything else can run.
+         Read after the whole walk, as this was, there was a window of other
+         answers in which a save wrote the picture over what had just been
+         filled in. */
+      if(nid===langId){ langLoad(); filled=true; }
+      /* AND WHO WROTE IT -- www/core.js § LOWN, where 「not asked」 is
+         neither side and is what langMine() waits for. Now and not with the
+         row: the screen is the server's from this line, so this is the moment
+         the answer may also say 「and it may be written」. */
+      langOwnGot(nid, own);
       /* AND A COLUMN THAT NOBODY EVER WROTE IS FILLED FROM THE SLICE. Every
          language made before today has its name in the `lang` slice, and a
          language made before netLangRow() sent one has an EMPTY column -- so
@@ -2620,6 +2632,7 @@ function netKeeps(mine, put){
    read for -- it is on no road back up, and slMine() below is what keeps it
    off one. */
 function netAgreed(id, kind, body, at){
+  slSettled(langKeyOf(id, kind));
   try{
     if(body==='') slRm(langWasKey(id, kind));
     else slWr(langWasKey(id, kind), body);
@@ -2835,7 +2848,9 @@ function netSlice1(id, sid, kind, got, done, bad){
 var NET_UPMS=1200, NET_UPT=null;
 function netSaveUp(){
   if(NET_UPT){ clearTimeout(NET_UPT); NET_UPT=null; }
-  if(!netSignedIn() || !langId || !langMine(langId)) return;
+  /* The same question every save asks (langLocked, www/core.js): whose the
+     language is, as the SERVER has said it in this run -- never the picture. */
+  if(!netSignedIn() || langLocked()) return;
   NET_UPT=setTimeout(netSaveUpGo, NET_UPMS);
 }
 /* ---- AND WHEN A PERSON PRESSED THE BUTTON, THE BUTTON WAITS ---------------
@@ -2903,9 +2918,13 @@ function netSaveUpGo(done){
   if(NET_SYNCING){ if(done) done(true); return; }
   /* No account: the language is on the phone and has nowhere else to be. */
   if(!netSignedIn()){ if(done) done(true); return; }
-  if(!id || !langMine(id)){ none(); return; }
+  if(langLocked()){ none(); return; }
   for(i=0;i<SLICES.length;i++){
     k=SLICES[i];
+    /* A slice a PERSON wrote (core.js § LTOUCH) and that has moved since the
+       two sides last agreed. Moved alone is not enough: the app's own
+       top-ups move a slice too, and they are not anybody's to send. */
+    if(!slTouched(langKeyOf(id, k))) continue;
     mine=slMine(langKeyOf(id, k));
     was=slMine(langWasKey(id, k));
     if((mine===null? '' : mine)!==(was===null? '' : was)) kinds.push(k);

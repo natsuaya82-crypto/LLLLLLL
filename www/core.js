@@ -438,23 +438,25 @@ function langWsysOf(id){
 var LOWN={};
 function langOwnKey(id){ return langKeyOf(String(id||''), 'owner'); }
 function langOwnGot(id, uid){
-  var k=String(id||''), v=String(uid||''), was=langOwnOf(k);
+  var k=String(id||''), v=String(uid||''),
+      was=Object.prototype.hasOwnProperty.call(LOWN, k)? LOWN[k] : '';
   if(!k) return;
   LOWN[k]=v;
   slGot(langOwnKey(k), v);
-  /* AND THE OPEN LANGUAGE HAS JUST BECOME WRITABLE, so what could not be
-     written while nobody had answered goes in now rather than on the next
-     launch. ltStart() (www/letters.js) is the one thing that tops a free
-     alphabet up to its slots and it REFUSES a language langWhose() has not
-     answered mine for -- 「未回答は書かせない」 -- which at the door is the
-     walk's own language, every time: the row is made and the owner column
-     comes back a moment after ltStart() has already run and returned.
+  /* AND THE OPEN LANGUAGE HAS JUST BECOME WRITABLE (§ langLocked), so what
+     could not be written while nobody had answered goes in now rather than on
+     the next launch. ltStart() (www/letters.js) is the one thing that tops a
+     free alphabet up to its slots and it refuses a language that is not
+     writable -- which on a launch is every language until its answer is in,
+     and at the door is the walk's own language until its row is made.
 
      Not a second mechanism: it is the same call, made at the moment the fact
      it waited on becomes true, and it tops up only what is missing. Only on
      the OPEN language, because ltStart() works on LETTERS; and only where the
-     answer MOVED, so the launch's own walk over every row does not run it
-     once per language. */
+     answer is new in this run of the app, so a walk over every row does not
+     run it once per row. `was` is LOWN and never the picture: the picture is
+     not an answer, and comparing against it is what kept this from running
+     on a launch. */
   if(k===langId && v && v!==was && typeof ltStart==='function') ltStart();
 }
 function langOwnOf(id){
@@ -834,7 +836,34 @@ function slGot(k, body){
     else localStorage.setItem(slGotKey(k), String(body));
   }catch(e){}
 }
-function slWr(k, v){ LSL[k]=String(v); }
+/* AND WHICH OF THEM A PERSON WROTE. 「上がるのは変わった所だけで、端末にある
+   ものを丸ごと送らない」 (docs/scope/brief-r60-up.md). The up road used to
+   send every slice that differed from what the two sides last agreed, and a
+   slice differs for reasons nobody pressed: the free alphabet topped up, a
+   migration bringing an old shape forward. Those are worked out again on
+   every load and never need to travel by themselves -- they go with the slice
+   the next time a PERSON writes it.
+
+   A write made while the server is answering is the app's; every other is a
+   person's, because every other save in this app runs inside something a
+   person did. www/net.js hands every answer over through slAsApp() -- the one
+   window every answer comes through -- so the store knows without asking the
+   network anything. A depth rather than a flag, because an answer can start a
+   request whose answer lands inside it. netSaveUpGo() sends a slice that is
+   marked here AND has moved; netAgreed() takes the mark off when the two
+   sides hold the same string. */
+var LTOUCH={}, SL_APP=0;
+function slAsApp(fn, args){
+  SL_APP++;
+  try{ fn.apply(null, args); }
+  finally{ SL_APP--; }
+}
+function slWr(k, v){
+  LSL[k]=String(v);
+  if(!SL_APP) LTOUCH[k]=1;
+}
+function slTouched(k){ return !!LTOUCH[k]; }
+function slSettled(k){ delete LTOUCH[k]; }
 /* Gone from memory, and both disk keys with it -- what an older version wrote
    and the picture slGot() keeps. This is the one place that REMOVES, and it is
    only ever a person deleting a language or an account (wipeLangsGo,
@@ -843,6 +872,7 @@ function slWr(k, v){ LSL[k]=String(v); }
    くる」 wearing the migration's clothes. */
 function slRm(k){
   delete LSL[k];
+  slSettled(k);
   try{ localStorage.removeItem(k); localStorage.removeItem(slGotKey(k)); }catch(e){}
 }
 
@@ -1198,11 +1228,34 @@ function langMine(id){ return langWhose(id)===LW_MINE; }
    those savers writes langKey(), which is the open language and nothing else.
    A saver given an id would be a second question.
 
-   AND 「まだ訊けていない」 STOPS IT TOO. Anything but LW_MINE refuses, so a
-   launch with no signal looks at what was last loaded and writes none of it
-   back -- which is the one-way road of CLAUDE.md rule 22 asked at the door
-   every save goes through. */
-function langLocked(){ return langWhose(langId)!==LW_MINE; }
+   AND 「まだ訊けていない」 STOPS IT TOO, AND THE PICTURE IS NOT AN ANSWER.
+   langWhose() is the DRAWING question and it reads langOwnOf(), which falls
+   back to the picture kept for a launch with no signal -- right for drawing,
+   and the reason this was not enough: on every launch, before the server had
+   said anything, the picture answered 「mine」, a migration saved, the picture
+   became what this phone was HOLDING, and the up road sent it. A word deleted
+   on another phone came back from this one (tools/quiet-check.mjs 2,
+   measured 2026-09-23).
+
+   So a save asks what the SERVER said, in this run of the app: LOWN, the
+   answer itself, and never slRd()'s picture -- the same two questions
+   slRd()/slMine() are for a slice. And the launch's walk writes that answer
+   only once the language's slices have landed and the open one has been read
+   in from them (www/net.js § netLangsWalk), so 「the server has said it is
+   mine」 is also 「what is on the screen is the server's」 -- one fact, not
+   two. The walk is the one language nobody has to answer for (signed out,
+   § langWhose), and one this account has just MADE has its answer written
+   the moment it is made (langNew, langForAcct). A
+   launch therefore looks at what was last loaded and writes none of it, which
+   is the one-way road of CLAUDE.md rule 22 asked at the door every save goes
+   through. */
+function langLocked(){
+  var k=String(langId||''),
+      me=(typeof SESS!=='undefined' && SESS && SESS.uid)? String(SESS.uid) : '';
+  if(!k || !LANGS[k]) return true;
+  if(!me) return false;
+  return !Object.prototype.hasOwnProperty.call(LOWN, k) || LOWN[k]!==me;
+}
 /* ---- ONE EMPTY LANGUAGE, MADE WHERE SOMEBODY STARTS MAKING ONE ----------
    「オンラインで 1 端末に 1 アカウント、そのアカウントに結びつけられる言語数が
    決まってるんだから端末でやることねえ」 OWNER 2026-09-11

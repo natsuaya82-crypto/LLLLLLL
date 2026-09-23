@@ -205,8 +205,10 @@ const DISK = {
   'lingua.set':   JSON.stringify({ done:true, theme:'dark' }),
   'lingua.langs': JSON.stringify({ 'L-1':{}, 'L-2':{} }),
   'lingua.cur':   'L-1',
-  /* the picture of L-1, from before `zo` was deleted on another phone */
-  'lingua.L-1.words.got': JSON.stringify([W('ka'), W('mi'), W('zo')]),
+  /* the picture of L-1, from before `zo` was deleted on another phone -- and
+     `zo` with no sounds yet, which is what migratePh() fills in, so the launch's own
+     migrations have something to save */
+  'lingua.L-1.words.got': JSON.stringify([W('ka'), W('mi'), { hw:'zo', ph:'', mn:'zo', mns:['zo'], pos:'n', at:1 }]),
   'lingua.L-1.owner.got': 'u',
   /* what a version from before 2026-09-04 left of L-2 */
   'lingua.L-2.words':     JSON.stringify([W('ta'), W('zo')]),
