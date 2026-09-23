@@ -3813,6 +3813,16 @@ export function halfDone(){
     ['searching everything, a sound pressed', () => {
        fpick = { k:'s', v: addedSnd()[0] };
        window.route = 'find'; NAV = [{ r:'find' }];
-       const h = vFind(); fpick = null; return h; }]
+       const h = vFind(); fpick = null; return h; }],
+    /* THE DICTIONARY OF SOMEBODY WHO NEVER TOUCHED THE SWITCH -- walked
+       past the drawing in the onboarding, drew later. 「オンをデフォルトに
+       してくれ。」 OWNER 2026-09-23: nobody-has-decided is ON. The seed says
+       `false`, which is somebody who turned it off; this is the other one.
+       Appended at the END so no index moves. */
+    ['the dictionary, nobody has touched the switch', () => {
+       const was = SET.myfont;
+       delete SET.myfont; installScriptFont();
+       window.route = 'words'; NAV = [{ r:'words' }];
+       const h = vWords(); SET.myfont = was; return h; }]
   ];
 }

@@ -243,6 +243,20 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Implementation status:
 ```
 
+### 2026-09-23 自作文字で表示は、既定でオン
+- Date: 2026-09-23
+- Area: 語を自作文字で出すかどうか（`myFontWant()` `myFontOn()` `www/glyph.js`、書き字のページのスイッチ `www/sound.js`、`obDone()` `www/onboard.js`）
+- Decision:「オンをデフォルトにしてくれ。」
+  問いは「オンボーディングで字を描かずに進んだ人は、後で描いても自作文字で表示されない。既定をどうするか」。
+  - **まだ誰も決めていない（`SET.myfont` が無い）はオン。** スイッチで切った人（`false`）だけオフで、それは変えない。
+  - 「オンか」を答えるのは `myFontWant()` 一か所。`myFontOn()` とスイッチがそれを訊く。
+  - オンボーディングで字を描いた時に `true` を書いていた所（`obDone()`）は、既定がオンなので消した。書くのはスイッチ（`setMyFont()`）だけ。
+- Reason: 描いた字は見えるのが当たり前。描かずに進んだ人に、後で描いた字が出ないのはおかしい。
+- Affected features: 辞書、語のページ、文法の章など、語を出す所全部
+- Affected data: 貯まる物は変わらない。前に入った `false` はそのまま（人が切ったもの）
+- Affected docs: `CLAUDE.md`（§ One place の `SET.myfont` の一文）
+- Implementation status: r70-marks。`writes-check`（書き手一つ・読むのは `myFontWant()` だけ）と `line-check` 9 が持つ。
+
 ### 2026-09-23 操作のボタンは字で書かない ── 印にする
 - Date: 2026-09-23
 - Area: data-do を持つボタン全部（全画面・全顔、棒の隅のボタン、選んで消す隅の削除）

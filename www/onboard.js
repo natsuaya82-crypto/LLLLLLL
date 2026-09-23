@@ -1930,7 +1930,6 @@ function obDone(){
   slot=obSlot();
   ob.lid = slot? ((ltSetStrokes(slot.id, st)||slot).id)
                : obIntoSlot(ltNew({ st: st }).id);
-  SET.myfont=true;
   save(); installScriptFont(); GE=null;
   obTour=0; ob.step=OB_TOUR; save(); obTourGo();
 }
@@ -1983,9 +1982,10 @@ function obFinish(){
      (docs/scope/r24-lang.md). netTook() sends first and asks afterwards now,
      and this call is gone rather than kept beside it: one road, and it is the
      earlier one. */
-  /* AND HOW THE WALK LEFT THE APP SET UP. The drawing turned `myfont` on and
-     borrowing a character turned `showScript` on, both before there was an
-     account to put them under (www/core.js § SET_PREFS). This is the same
+  /* AND HOW THE WALK LEFT THE APP SET UP. Borrowing a character turned
+     `showScript` on (the drawn letters need nothing: nobody-has-decided is
+     on, www/glyph.js § myFontWant), before there was an
+     account to put it under (www/core.js § SET_PREFS). This is the same
      moment the language goes up and for the same reason: the door is the last
      step, so it is the first time there is anywhere to send them. */
   if(typeof netPrefsPut==='function') netPrefsPut();

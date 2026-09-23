@@ -58,6 +58,9 @@
         file's to answer -- named so that it is seen, not so that it is
         allowed (docs/scope/r69-misc.md).
         r69-misc, r61 「止めたこと」3
+     9  nobody-has-decided is ON: with SET.myfont absent the dictionary is set
+        in the drawn letters and the switch reads on; with it `false` neither.
+        「オンをデフォルトにしてくれ。」 OWNER 2026-09-23
 
    A browser, on its own port.
    --------------------------------------------------------------------------- */
@@ -548,6 +551,41 @@ if (!FACE.seen.nodes)
   fails.push('no text was set in the drawn face on any of ' + FACE.seen.screens +
              ' screens -- the walk is not reaching the words, so section 7 holds nothing');
 
+/* ---- 9. nobody-has-decided is ON ------------------------------------ */
+/* 「オンをデフォルトにしてくれ。」 OWNER 2026-09-23. Somebody who walked past
+   the drawing in the onboarding and drew later has never touched the switch,
+   so SET.myfont is absent -- and that is on. Only a person turning it off is
+   off, and that stays off. Asked of what the dictionary and the switch on
+   the writing page actually draw, for both. */
+const MYF = await pg.evaluate(() => {
+  const was = SET.myfont, out = {};
+  const look = () => {
+    installScriptFont();
+    window.route = 'words'; NAV = [{ r: 'words' }];
+    const box = document.createElement('div'); box.innerHTML = vWords();
+    window.route = 'wsys'; NAV = [{ r: 'wsys' }];
+    const sw = document.createElement('div'); sw.innerHTML = vWsys();
+    const b = sw.querySelector('[data-do="setMyFont"]');
+    return { sfont: box.querySelectorAll('.sfont').length,
+             press: b ? b.getAttribute('data-a') : 'no switch' };
+  };
+  delete SET.myfont; out.none = look();
+  SET.myfont = false; out.off = look();
+  SET.myfont = was; installScriptFont();
+  return out;
+});
+if (!MYF.none.sfont)
+  fails.push('somebody who never touched the switch sees the dictionary in roman -- nobody-has-' +
+             'decided is ON (OWNER 2026-09-23): 0 words set in the drawn face');
+if (MYF.none.press !== '[false]')
+  fails.push('the switch reads OFF for somebody who never touched it -- pressing it would say ' +
+             MYF.none.press + ', and the first press has to be the one that turns it off');
+if (MYF.off.sfont)
+  fails.push('somebody who turned the drawn letters OFF sees them anyway: ' + MYF.off.sfont +
+             ' words set in the drawn face');
+if (MYF.off.press !== '[true]')
+  fails.push('the switch of somebody who turned it off does not read off: pressing it says ' + MYF.off.press);
+
 if (errs.length) fails.push('the page threw: ' + errs.slice(0, 3).join(' | '));
 
 await br.close();
@@ -573,4 +611,6 @@ console.log('line: typed into the composer and posted, one line comes out in the
             '-' + own.kb[1].toString(16) + '), and the same shape is the same one.\n' +
             '      ' + FACE.seen.nodes + ' text nodes set in the drawn face across ' + FACE.seen.screens +
             ' screens, every character one the face draws;\n      ' + FACE.seen.words +
-            ' text nodes that are a word, none of them roman where the face draws it.');
+            ' text nodes that are a word, none of them roman where the face draws it.\n' +
+            '      Nobody-has-decided draws the dictionary in the drawn face (' + MYF.none.sfont +
+            ' words) and the switch reads on;\n      turned off, ' + MYF.off.sfont + ' and the switch reads off.');

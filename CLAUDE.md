@@ -2093,8 +2093,11 @@ the font was built, the glyph for `l` was in it — and `l` came out as `l`.
 time is a dozen places agreeing that have to be found and kept found; `.sfont`
 saying `!important` is one place saying so once. `.sfont` means "this is set in
 the letters somebody drew," the whole point of the app, and nothing may quietly
-outrank it. (Not a bug and worth knowing: `SET.myfont` is off until somebody
-turns it on — with it off there is no `.sfont` at all, and roman is correct.)
+outrank it. (Worth knowing: the drawn letters are ON until somebody turns them
+off 「オンをデフォルトにしてくれ。」 OWNER 2026-09-23 — `myFontWant()` in
+`www/glyph.js` is the one place that answers it and `writes-check` holds that
+nothing else reads `SET.myfont`; `setMyFont()` is its one writer. Turned off,
+there is no `.sfont` at all, and roman is correct. `line-check` 9 holds both.)
 
 ## Names
 
