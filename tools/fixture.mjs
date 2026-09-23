@@ -112,7 +112,12 @@ export function seed(){
        one, and the sheet's picker is that same list. Three, so that "narrows
        to this subclass" is a different answer from "narrows to this part of
        speech" and from "everything". */
-    {hw:'tir',  ph:['t','i','r'],     mn:'to see',   mns:['to see'],   pos:'v', sub:'\u4ed6\u52d5\u8a5e', at:2},
+    /* `fms` is a form PLACED by hand (www/wordsheet.js § the forms of a
+       word): a future that no rule makes, so the word's page lists one of
+       each kind -- placed, old (tira, tiran below) and made by a rule -- and
+       the screen a placed one is opened on carries the way to take it off. */
+    {hw:'tir',  ph:['t','i','r'],     mn:'to see',   mns:['to see'],   pos:'v', sub:'\u4ed6\u52d5\u8a5e', at:2,
+     fms:[{fm:'fut', hw:'tiru', sp:[]}]},
     {hw:'mos',  ph:['m','o','s'],     mn:'tall',     mns:['tall'],     pos:'adj', at:3},
     {hw:'lom',  ph:['l','o','m'],     mn:'to fall',  mns:['to fall'],  pos:'v', sub:'\u81ea\u52d5\u8a5e', at:11},
     {hw:'sar',  ph:['s','a','r'],     mn:'river',    mns:['river'],    pos:'n', at:4},
@@ -377,6 +382,14 @@ export function seed(){
             a past would have nothing left to offer and the button that
             offers it would never be drawn. */
          fm:[{id:'fr1', pos:'n', fm:'pl', at:'end', drop:0, when:'',
+              add:[{l:'l1', u:'k'}]},
+            /* And a DERIVATION, which is the only kind of rule that still
+               makes a word (an inflection is a form of one since 2026-09-23).
+               No screen writes one any more -- the grammar book's sections
+               are all inflections -- so this is a rule an older language
+               carries, and the button on a word's page and the rows on the
+               new-word sheet are what it still drives. */
+            {id:'fr2', pos:'', fm:'dim', at:'end', drop:0, when:'',
               add:[{l:'l1', u:'k'}]}]};
   /* SOMETHING UNREAD, so the number on the bell is a state the walk reaches.
      `press` reported `.tabn` as styled and worn by nothing -- which is that
@@ -977,7 +990,21 @@ export function halfDone(){
        window.route = 'gram'; NAV = [{ r:'gram', a:id }]; stExNew = id;
        const h = vGram(); stExNew = ''; return h; }],
     ['a label of your own', () => {
-       window.route = 'fm'; NAV = [{ r:'fm', a:'tira' }]; fmNewG = 'i';
+       window.route = 'fm'; NAV = [{ r:'fm', a:'tira' }]; fmNewG = 'd';
+       const h = vFm(); fmNewG = ''; return h; }],
+    /* A FORM of a word, being written: the screen and the label it is given,
+       which is chosen off the inflection half of the same list with the row
+       for a label of one's own open at its foot. Opened on the placed form,
+       because that is the one that carries the way to take it off. */
+    ['a form being written', () => { openWfm('tir', 'fut'); return vForm(); }],
+    /* and a NEW one with both halves typed, so Save stands lit -- the state
+       「ラベルと単語がセット」 is, which nothing else here reaches */
+    ['a new form, both halves in', () => {
+       openWfm('tir', ''); keepSet('fm', 'pst'); keepSet('f', 'tirat');
+       FORM = null; return vForm(); }],
+    ['the label of a form', () => {
+       openWfm('tir', '');
+       window.route = 'fm'; NAV = [{ r:'fm', a:'#tir|' }]; fmNewG = 'i';
        const h = vFm(); fmNewG = ''; return h; }],
     /* What a word is of the word it came from, asked only of a word that HAS
        a parent

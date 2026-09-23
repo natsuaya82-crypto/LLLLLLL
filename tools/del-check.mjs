@@ -45,6 +45,7 @@ const SHAPED = /del|drop|wipe|clear|remove|purge/i;
 const DELETES = {
   /* ---- the making side: asked first ---------------------------------- */
   delWord:    { takes: 'one word out of WORDS, with its spelling and everything on it', asks: true },
+  wfmDel:     { takes: 'one form placed by hand on a word, out of that word\'s fms -- never a word', asks: true },
   ltDelete:   { takes: 'one letter out of LETTERS, and the sounds no other letter reads', asks: true },
   ntSelDel:   { takes: 'the notes that are selected, out of NOTES', asks: true },
   wSelDel:    { takes: 'the words that are selected, out of WORDS', asks: true },

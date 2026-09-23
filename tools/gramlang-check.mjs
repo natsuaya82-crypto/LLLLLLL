@@ -1565,97 +1565,38 @@ want('and its row starts a NOUN rule', mk.secondPos, 'n');
 want('of the form that section names', mk.secondFm, 'pl');
 want('a chapter that is not a section offers no rule to write', mk.nounAdds, 0);
 
-/* ---- 99-106: the words a chapter's rules make are made from the chapter ---
-   「fmrAddAll（規則が作る語をまとめて作る）も、その章のページへ。どこにも無く
-   なると、規則を作っても語が出ません。」
+/* ---- 99-102: a chapter's rules make FORMS, and never words ----------------
+   「活用は活用であって単語じゃない」「活用は数えないにしよう」 OWNER 2026-09-23.
 
-   The rules screen that used to carry this button is being closed, so the
-   chapter is where it goes. It is narrowed to the chapter rather than moved
-   whole: standing on the verbs and having it write every noun's plural would
-   be the button doing more than the page it is on says.
+   The chapter used to carry a button that wrote every form its rules made into
+   the dictionary as a word of its own (fmrAddAll), narrowed to the chapter it
+   was pressed on. An inflection is not a word now: what a rule makes is on the
+   word's page, worked out when it is asked (wForms(), www/wordsheet.js), and
+   there is nothing left to make -- so the button went with the words it made.
 
-   Nothing here throws either way. A button that made everything would look
-   exactly right on the chapter it was pressed from -- the words it was asked
-   for ARE among the ones it made -- and the surprise is on another screen
-   entirely, which is why what is asked below is what did NOT get made. */
+   What is asked is that each rule's form arrives on its OWN part of speech's
+   words, and that drawing the chapter wrote nothing into the dictionary. */
 const all = await pg.evaluate(() => {
   const sp = (w) => w.split('').map((u) => ({ l:'', u:u }));
   const wasFm = JSON.stringify(STG.fm || []), wl = WORDS.length;
-  /* LA already has one noun, `tuf`. A second noun, so the count is a count
-     and not a one; and a verb, which is the word the noun chapter must leave
-     alone. */
   WORDS.push({ hw:'kano', pos:'n', mns:['stone'], at:1 });
   WORDS.push({ hw:'zluma', pos:'v', mns:['eat'], at:1 });
   STG.fm = [{ id:'a1', pos:'n', fm:'pl',  at:'end', drop:0, when:'', add:sp('k') },
             { id:'a2', pos:'v', fm:'pst', at:'end', drop:0, when:'', add:sp('ka') }];
-
-  const open = (id) => { window.route = 'gram';
-    NAV = [{ r:'gram', a:'v2:' + id }]; render(); };
-  const btn = () => document.querySelector('#app [data-do="fmrAddAll"]');
-  const ask = (id) => { open(id); const b = btn();
-    return b ? b.getAttribute('data-a') : ''; };
-
-  /* The SECTION the form is in, because that is where a rule of that form now
-     lives: 複数形 for the nouns' plural, 時制 for the verb's past. The chapter
-     that used to hold both -- 名詞 -- holds no rule at all and is asked about
-     below. */
-  const nBefore = ask('pl'), vBefore = ask('tense'), plainBefore = ask('n');
-  open('pl');
-  /* Said rather than left to throw. A missing button is the failure this
-     whole commit is against -- 「どこにも無くなると、規則を作っても語が出ま
-     せん」 -- and `undefined.click` names neither the screen nor the reason. */
-  if (!btn()) throw new Error('the plural chapter carries no way to make its words');
-  btn().click();
-  const spellings = WORDS.map((w) => w.hw).join(' ');
-  const madePos = WORDS.filter((w) => w.from).map((w) => w.pos + ':' + w.fm).join(' ');
-  const vKids = WORDS.filter((w) => w.from === 'zluma').map((w) => w.hw).join(' ');
-  /* and with no kind it is still everything, which is what it always was */
-  const rest = fmrTodoAll().map((x) => x.w.hw + '>' + x.m.fm).join(' ');
-
+  const forms = (hw) => wForms(findWord(hw)).map((f) => f.fm).join(' ');
+  window.route = 'gram'; NAV = [{ r:'gram', a:'v2:pl' }]; render();
+  const noun = forms('kano'), verb = forms('zluma'),
+        made = WORDS.length - wl - 2,
+        btn = document.querySelectorAll('#app [data-do="fmrAddAll"]').length;
   WORDS.length = wl;
   STG.fm = JSON.parse(wasFm);
   save();
-  return { nBefore: nBefore, vBefore: vBefore, plainBefore: plainBefore,
-           spellings: spellings,
-           madePos: madePos, vKids: vKids, rest: rest };
+  return { noun: noun, verb: verb, made: made, btn: btn };
 });
-
-/* The button carries the chapter's own answer to both questions: whose words,
-   and of which forms. Read off data-a rather than off the label, because the
-   label is a count and a count is arrived at by accident. */
-want('the plural chapter offers to make the words its rule makes',
-     all.nBefore, '["n",["pl"]]');
-/* A SECTION ASKS FOR EVERY FORM IT IS MADE OF. 時制 is six, so the button says
-   six -- pressing it on the page that says 時制 and having it make only the
-   past would be the button doing less than the page it is on says. */
-want('and the tense section offers every form it is made of', all.vBefore,
-     '["v",["prs","pst","fut","plp","prg","prf"]]');
-want('and a chapter that is not a section offers none', all.plainBefore, '');
-/* Two nouns had a plural to make and one verb had a past. Pressing on the
-   nouns makes the two, and `kano` comes back `canok` -- the word is re-spelled
-   in this language's letters, whose letter for /k/ is named c. Same round trip
-   as the one written out at 20-31; it is fmrMake()'s business and not what is
-   under test here. */
-want('pressing it makes this chapter\'s words', all.spellings,
-     'tuf kano zluma tufk canok');
-want('and every one of them is of this chapter', all.madePos, 'n:pl n:pl');
-/* The two that would have gone silently wrong. A button that made everything
-   would have made the verb's past as well, and the noun chapter it was pressed
-   from would look exactly the same afterwards -- the surprise is a screen
-   away. So what is asked is what did NOT happen.
-
-   Asked of the VERB rather than of the verb chapter's button. The button is
-   drawn from a count, and with the bug put back that count does not reach
-   zero either: the past it wrongly made has a past of its own to make
-   (docs/BACKLOG.md). The claim went green with the bug in until it was asked
-   this way instead. */
-want('and the verb was left with no past on it', all.vKids, '');
-want('and asked for with no kind it is still there too',
-     all.rest.split(' ').indexOf('zluma>pst') >= 0, true);
-/* What the noun chapter offers now is the plural of a plural -- docs/BACKLOG.md
-   「作られた語が、また作られる」. It is fmrTodo()'s and predates this button
-   moving, so it is not asserted here in either direction; what is asserted is
-   that the verb was left alone, which is this commit's whole claim. */
+want('the plural is a form of the noun', all.noun, 'pl');
+want('and the past a form of the verb, and nothing else', all.verb, 'pst');
+want('and drawing the chapter wrote no word', all.made, 0);
+want('and it offers to make none', all.btn, 0);
 
 /* ---- the noun chapter is never blank -------------------------------------
    「文法の名詞ページ見たけど、真っ暗で何もない」 OWNER 2026-09-05.

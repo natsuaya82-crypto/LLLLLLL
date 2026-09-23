@@ -2435,9 +2435,18 @@ function can(what){
   if(!lv) throw new Error('can: no such capability: '+what);
   return has(lv);
 }
+/* WHAT THE CEILING COUNTS, and it is words. 「活用は数えないにしよう。無料で
+   なるべく使って欲しい。」 OWNER 2026-09-23 -- an inflection is not a word
+   (www/wordsheet.js § the forms of a word), so the only thing left to leave
+   out is an inflection stored AS a word before that day, which is still in
+   WORDS and is counted by nobody. */
+function wCountable(){
+  var n=0, i;
+  for(i=0;i<WORDS.length;i++) if(!wIsForm(WORDS[i])) n++;
+  return n;
+}
 function capOK(add){
-  add=add||1;
-  return WORDS.length+(add||1)<=wordCap();
+  return wCountable()+(add||1)<=wordCap();
 }
 /* The ceiling, met. True means the caller must stop.
 
@@ -2703,6 +2712,12 @@ function wKids(w){
   for(i=0;i<WORDS.length;i++) if(WORDS[i].from===k) out.push(WORDS[i]);
   return out;
 }
+/* An inflection made before 2026-09-23, when one was stored as a word of its
+   own: it has a parent and a label that is not a derivation. It stays exactly
+   where it is (docs/CHANGELOG.md 2026-09-23); this is how everything that has
+   to tell it from a word asks. fmInf() is www/wordsheet.js's -- which labels
+   are inflections is said there and nowhere else. */
+function wIsForm(w){ return !!(w && w.from && fmInf(w.fm)); }
 function wParent(w){
   if(!w || !w.from) return null;
   var i;

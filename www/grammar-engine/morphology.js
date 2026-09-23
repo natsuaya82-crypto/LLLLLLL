@@ -70,9 +70,11 @@
   /* Reading a surface back to its lemma. A rule that CHANGES THE STEM cannot
      be walked backwards from the surface alone -- taking `ied` off `carried`
      leaves `carr`, and what went missing is not written anywhere on the word.
-     So those rules are not tried here, and that is not a hole: the app writes
-     every form it makes into the dictionary as a word of its own, so `carried`
-     is found by looking it up, with its own entry saying what it is a form of.
+     So those rules are not tried here, and that is not a hole: the language
+     HANDS OVER every form its words have, `model.forms`, surface and lemma and
+     what it is (www/grammar.js § gModel, from the app's one answer to 「the
+     forms of this word」), and parseToken() below reads a surface there first.
+     `carried` is found as the past of `carry` because the language said so.
      Guessing `carry` back out of `carr` would be inventing somebody's word. */
   function analyzeForm(model,surface,word){ var rules=model.inflections||[],i,r,piece,sep,mark,hit=[],changed=true;
     surface=String(surface||'');
@@ -156,7 +158,11 @@
     return null;
   }
   function lookupWord(model,lemma){ var words=model.words||[],i; for(i=0;i<words.length;i++) if(words[i].lemma===lemma) return words[i]; return null; }
-  function parseToken(model,text){ var words=model.words||[],i,w,a; for(i=0;i<words.length;i++){ w=words[i]; a=analyzeForm(model,text,w); if(a.lemma===w.lemma) return {word:w,lemma:w.lemma,inflections:a.inflections,derivations:[],surface:text}; } return parseDerived(model,text); }
+  /* A form the language handed over, read as the form it is. First, because it
+     is the language speaking -- an irregular (went) and a form whose stem
+     changed (carried) have no other way to be read at all. */
+  function formToken(model,text){ var a=model.forms||[],i,w; for(i=0;i<a.length;i++){ if(!a[i]||a[i].surface!==text) continue; w=lookupWord(model,a[i].lemma); if(w) return {word:w,lemma:w.lemma,inflections:(a[i].inflections||[]).slice(),derivations:[],surface:text}; } return null; }
+  function parseToken(model,text){ var words=model.words||[],i,w,a,f=formToken(model,text); if(f) return f; for(i=0;i<words.length;i++){ w=words[i]; a=analyzeForm(model,text,w); if(a.lemma===w.lemma) return {word:w,lemma:w.lemma,inflections:a.inflections,derivations:[],surface:text}; } return parseDerived(model,text); }
   var NOT_A_SLOT={VERB:1, ADVERB:1, ADPOSITION:1, NEGATION:1, QUESTION:1};
   function parseSentence(model,text){ var parts=String(text||'').replace(/^\s+|\s+$/g,'').split(/\s+/), tokens=[], i, parsed, role, order=model.wordOrder||[], roles={}, features={}, rule, j, next, slots=[], si=0, vi=-1, marked=[], taken={};
     for(i=0;i<parts.length;i++){ parsed=parseToken(model,parts[i]); if(!parsed && i+1<parts.length){

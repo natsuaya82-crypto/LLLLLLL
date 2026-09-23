@@ -165,16 +165,24 @@ function cardSrc(){
 
 /* The words this one is family to, for the page: what each is called, what it
    is, and what it means. A word that has a past tense and a progressive has
-   them in the dictionary as words of their own, and a picture of the entry
-   that left them off would be a picture of the smaller half of it.
+   them as its FORMS (wForms(), www/wordsheet.js -- an inflection is not a
+   word since 2026-09-23), and a picture of the entry that left them off would
+   be a picture of the smaller half of it. A form means what its word means.
 
    Four at most. A page is a page and a verb with nine forms on it is a table.
    The root first when this word has one, because that is where the family
-   starts and it is the row a stranger needs to be told about. */
+   starts and it is the row a stranger needs to be told about; then the forms,
+   which are what the page lists first; then the words built out of it. */
 function cardFam(w){
-  var par=wParent(w), root=par||w, out=[], kids, i, x;
+  var par=wParent(w), root=par||w, out=[], fms, kids, i, x;
   if(par) out.push({lb:t('word.root'), hw:String(par.hw), mn:String(wMn(par)||'')});
-  kids=wdFamSort(wKids(root).filter(function(k){ return k!==w; }));
+  fms=wForms(root);
+  for(i=0;i<fms.length && out.length<4;i++){
+    x=fms[i];
+    if(x.hw===String(w.hw)) continue;
+    out.push({lb:fmLabel(x.fm), hw:x.hw, mn:String(wMn(root)||'')});
+  }
+  kids=wdFamSort(wKids(root).filter(function(k){ return k!==w && !wIsForm(k); }));
   for(i=0;i<kids.length && out.length<4;i++){
     x=kids[i];
     out.push({lb:fmLabel(x.fm||''), hw:String(x.hw), mn:String(wMn(x)||'')});

@@ -282,23 +282,32 @@ function shareMapLts(t, map){
 /* And every word, under its own spelling -- which is already roman, because
    a word IS its letters and a letter's name is what it is typed as. spOf()
    is the spelling and spWord() is that spelling as text; neither is worked
-   out here. */
+   out here.
+
+   AND EVERY FORM OF EVERY WORD. 「キーボードの変換もできるように」 OWNER
+   2026-09-23: an inflection is not a word any more (www/wordsheet.js § the
+   forms of a word), so walking WORDS alone would have stopped offering aai
+   the day it stopped being one. wForms() is asked, which is the one place
+   that says what a word's forms are -- placed, old and made by a rule. */
 function shareMapWords(t, map){
-  var i, sp, j, ok, ix;
+  var i, j, fms;
   for(i=0;i<WORDS.length;i++){
-    sp=spOf(WORDS[i]);
-    if(!sp.length) continue;
-    /* Every letter checked before any slot is asked for. Reserving as we went
-       left the shapes of a dropped word's letters behind in the table -- the
-       same mistake as above, and the same reason: t.of() both looks up and
-       creates, so asking it a question is not free. */
-    ok=true;
-    for(j=0;j<sp.length;j++) if(!sp[j].l || !ltById(sp[j].l)) ok=false;
-    if(!ok) continue;
-    ix=[];
-    for(j=0;j<sp.length;j++) ix.push(t.of(sp[j].l));
-    sharePut(map, spWord(sp), ix);
+    shareMapSp(t, map, spOf(WORDS[i]));
+    fms=wForms(WORDS[i]);
+    for(j=0;j<fms.length;j++) shareMapSp(t, map, fms[j].sp||[]);
   }
+}
+function shareMapSp(t, map, sp){
+  var j, ix;
+  if(!sp.length) return;
+  /* Every letter checked before any slot is asked for. Reserving as we went
+     left the shapes of a dropped word's letters behind in the table -- the
+     same mistake as above, and the same reason: t.of() both looks up and
+     creates, so asking it a question is not free. */
+  for(j=0;j<sp.length;j++) if(!sp[j] || !sp[j].l || !ltById(sp[j].l)) return;
+  ix=[];
+  for(j=0;j<sp.length;j++) ix.push(t.of(sp[j].l));
+  sharePut(map, spWord(sp), ix);
 }
 /* Null when there is nothing to offer, so the keyboard shows no bar at all
    rather than an empty one. */
