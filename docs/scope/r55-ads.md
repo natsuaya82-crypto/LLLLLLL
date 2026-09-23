@@ -120,7 +120,7 @@ HTML の投稿と投稿の間に、そのまま置くことはできない。
   いいね・返信・通報がサーバー側ではそのまま効く形（アプリ側の制限は下）。`post` の列にしなかったのは、作者が自分の投稿を編集できる
   （`post_edit`）ので、自分で自分に枠を売れてしまうから。
 - `tools/rls-check.mjs`：B と anon が読む・作る・変える・消すを試すケースを 9 本。
-- `www/net.js` `netPromos()`、`www/sns.js` `snsPromoAsk()` / `snsWithPromo()` / `PROMO_EVERY`（仮の 5）、
+- `www/net.js` `netPromos()`、`www/sns.js` `snsPromoAsk()` / `snsWithPromo()` / `PROMO_EVERY`（10、OWNER 2026-09-23「10で。少ない時は出さない！」）、
   `www/core.js` `CAN.noads`、`www/post.js` の PR、`www/index.html` `.ppr`、`www/i18n/*.js` `post.pr`。
 - `tools/fixture.mjs`：「the timeline with a place sold in it」「the same timeline on pro, with no place」。
 

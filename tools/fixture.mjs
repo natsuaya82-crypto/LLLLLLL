@@ -660,10 +660,10 @@ export function obStates(){
 export function halfDone(){
   /* 売れた枠を一つ入れて、タイムラインを描いて、元に戻す。上の二つの面が
      使う ── halfDone() は文字列としてページに送られるので、ここに置く。 */
-  function fixPromo(pl){
+  function fixPromo(pl, few){
     const wasPlan = plan(), wasPromo = PROMO, n = POSTS.length;
     planGot(pl);
-    for (let i = 0; i < PROMO_EVERY; i++)
+    for (let i = 0; i < (few ? 0 : PROMO_EVERY); i++)
       POSTS.unshift({ id:'fill-' + i, at: Date.now() - 60000 * (i + 1), lang: langId,
                       lname:'Shango', who:'Aya', hd:'aya', mine:true,
                       av:{st:[{pts:[[112,112],[688,112],[400,688]]}]},
@@ -860,6 +860,9 @@ export function halfDone(){
        二つ目は同じ状態の pro で、PR の行が一つも出ないことが写る面です。 */
     ['the timeline with a place sold in it', () => fixPromo('free')],
     ['the same timeline on pro, with no place', () => fixPromo('pro')],
+    /* 「少ない時は出さない！」 ── 売れた広告はあるのに、投稿が PROMO_EVERY
+       件に届かないタイムライン。PR の行が出ないことが写る面。 */
+    ['a place sold, fewer posts than a place needs', () => fixPromo('free', true)],
     ['a long post folded', () => {
         const wasPlan = plan();
         planGot('plus');

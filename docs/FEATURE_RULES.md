@@ -253,12 +253,14 @@ the reasoning — a reason can be re-derived, a decision cannot.
   - 枠は**売れる**形 ── 売った広告はサーバーが持つ行（`promo` = どの投稿を・いつまで）。
   - 売る相手がいない間は **AdMob** で埋める（動画可）。
   - **pro は表示なし**。plus と free は表示あり。
+  - 頻度（同じ日、後から）：「10で。少ない時は出さない！」── **10 件おきに 1 件。投稿が 10 件より少ない時は出さない。**
+    `PROMO_EVERY`（`www/sns.js`）の一つの定数で、10 件目・20 件目…の後に入るので、10 件未満には枠が無い。
 - Reason: オーナーの言葉のとおり。
 - Affected features: ホームのタイムライン。探索・検索・プロフィールには枠を入れていない（Twitter と同じ ── 決まっていないので既定として報告済み）
 - Affected data: 新しいテーブル `promo`（運営だけが書く）。人の作った物は何も動かない
 - Affected docs: `docs/CHANGELOG.md`、`docs/PAID_FEATURES.md`、`docs/apple.md`、`docs/scope/r55-ads.md`
 - Implementation status: r55-ads。売れた枠と PR と `can('noads')` まで。**AdMob で埋める部分は未着手** ── 出し方の選択と、下の二つの問いがオーナー待ち：
-  枠の間隔（`PROMO_EVERY`、今は仮の 5）、AdMob の行の表示が「PR」で Google の規約を満たすか（Google は「広告」「Ad」「Sponsored」を求める）
+  AdMob の行の表示が「PR」で Google の規約を満たすか（Google は「広告」「Ad」「Sponsored」を求める）
 
 ### 2026-09-23 文字を描く面にガイド線 ── 固定の三本、見るだけ（案 A）
 - Date: 2026-09-23

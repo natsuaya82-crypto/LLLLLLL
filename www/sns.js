@@ -408,16 +408,18 @@ function snsHas(){ return !!SNS_GOT[snsTab]; }
    post put into POSTS would also be in the search, the recommended list and
    the copy this phone keeps.
 
-   PROMO_EVERY is how many posts stand between two places. 5 IS A PLACEHOLDER
-   -- the owner has not given the number yet -- and this is the one line it
-   lives on. A place with nothing sold in it draws nothing: filling it from
-   AdMob is waiting on the owner's choice (docs/scope/r55-ads.md).
+   PROMO_EVERY is how many posts stand before each place: 「10で。少ない時は
+   出さない！」 OWNER 2026-09-23. Both halves are this one number -- a place
+   comes after the tenth post, the twentieth, and so on, so a timeline of
+   fewer than ten has none. A place with nothing sold in it draws nothing:
+   filling it from AdMob is waiting on the owner's choice
+   (docs/scope/r55-ads.md).
 
    can('noads') is the one place that decides whether there are places at all,
    and it is asked twice for one reason: a pro account is not asked for
    promotions it will never be shown, and one that has just become pro does
    not go on seeing the list it was handed before. */
-var PROMO=[], PROMO_EVERY=5;
+var PROMO=[], PROMO_EVERY=10;
 function snsPromoAsk(done){
   if(can('noads')){ PROMO=[]; done(0); return; }
   netPromos(function(ps){ PROMO=ps || []; done(1); },
