@@ -363,7 +363,7 @@ function numCut(s, n){
 function numMonthHTML(){
   var m=calMonthOf(new Date()), w=shareSlotWord('month.'+numLabel(m));
   if(!w || !w.hw) return '<span class="numcm">'+numLineHTML(m)+'</span>';
-  return '<span class="numcm">'+sfontHTML(w.hw)+'</span>';
+  return '<span class="numcm">'+sfontHTML(wOut(w.hw))+'</span>';
 }
 /* The name a day of the week already has, for the days the language has not
    named yet. 「ない分の言葉はmondayとかで代用しよう」
@@ -372,10 +372,10 @@ function numMonthHTML(){
    answers, not the app's -- because it is the device that will answer on the
    home screen, and a preview that used a different one would be showing a
    widget nobody is going to get.
-   Day one is a Sunday, because that is where a calendar starts and where
-   calDayOf() counts from. */
+   Day one is a Sunday, because that is where a calendar starts and it is the
+   day calDayOf() calls 1 (getDay()+1). */
 function numWdayName(i){
-  /* 1970-01-04 was a Sunday, and calDayOf() counts day one from there. */
+  /* 1970-01-04 was a Sunday: any Sunday would do, it is only asked its name. */
   var d=new Date(Date.UTC(1970, 0, 4+(i-1)));
   try{ return d.toLocaleDateString(undefined, {weekday:'short', timeZone:'UTC'}); }
   catch(e){ return numLabel(i); }
@@ -432,7 +432,7 @@ function numCalHTML(){
        the day's name down -- Mon, 月, M -- because seven of them share the
        width of the grid, and a word somebody made is no different. Two signs,
        which is what the phone's own short names come to. */
-    nm=(w && w.hw)? sfontHTML(numCut(w.hw, 2)) : esc(numCut(numWdayName(i), 3));
+    nm=(w && w.hw)? sfontHTML(wOut(numCut(w.hw, 2))) : esc(numCut(numWdayName(i), 3));
     heads+='<span class="numch'+
       (calRed(i)? ' sun':'')+(calBlue(i)? ' sat':'')+'">'+nm+'</span>';
   }

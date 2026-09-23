@@ -1133,16 +1133,13 @@ function shPics(names){
    bridge, a phone that files nothing, a refusal. Cancelling says nothing,
    because changing your mind is not a failure.
 
-   **It does not rotate generations, and www/backup.js does. That difference is
-   deliberate and it is not an inconsistency.** keep() rotates the last file to
-   `.1` and that to `.2` because a backup is a REPLACEMENT: the new file says
-   the same thing as the old one, only later, so letting the third one push the
-   first off the end costs nothing anybody had. A sheet is not a replacement.
-   Each one is a separate piece of paper, and the one already sitting there may
-   have been opened in Files and written on -- rotating would be the app
-   deleting what somebody drew, to make room for a blank. So nothing here moves
-   anything: CLAUDE.md's Data rule, where automatic deletion, pruning and
-   cleanup are forbidden unless a written spec asks for them, and none does.
+   **It never overwrites and never rotates.** Each sheet is a separate piece
+   of paper, and the one already sitting there may have been opened in Files
+   and written on -- replacing it would be the app deleting what somebody
+   drew, to make room for a blank. So a second sheet of the same name is filed
+   beside the first (`<name> 2.pdf`, below) and nothing here moves anything:
+   CLAUDE.md's Data rule, where automatic deletion, pruning and cleanup are
+   forbidden unless a written spec asks for them, and none does.
 
    **What it says is the part that had to be got right.** The one way this
    chapter can hurt somebody is to say a sheet was written when none was: they
@@ -1186,11 +1183,10 @@ function shMake(){
     })
     ['catch'](function(){ toast(t('wr.nobridge')); });
 }
-/* A name a person will recognise in the Files app. bkName()'s argument, and
-   deliberately not bkName() itself: that one carries the language id because
-   two backups of two languages must not overwrite each other, and a sheet is
-   paper -- it is not filed against anything and does not point at a language.
-   It names itself in its own strip. */
+/* A name a person will recognise in the Files app: the language's name and
+   the word sheet. No language id -- a sheet is paper, it is not filed against
+   anything and does not point at a language. It names itself in its own
+   strip. */
 function shFileName(){
   var n = String(langName || '').replace(/[^\w \-]/g, '').replace(/\s+/g, ' ');
   return (n ? n.slice(0, 40) + ' ' : '') + 'sheet';
@@ -1246,9 +1242,9 @@ function shInHTML(){
      `can('file')` -- 「a list brought in as a file rather than a paste」, and
      a sheet handed back is a file brought in. It is asked inside
      fileInHTML(); shTakeIn() asks it again where the file arrives, because a
-     control drawn on a screen is not the gate. docs/PAID_FEATURES.md also
-     names a capability `write` at the same rung for this chapter and `CAN`
-     does not have one; www/core.js is not this session's file.
+     control drawn on a screen is not the gate. There is no separate `write`:
+     `file` is the sheet's gate too (docs/PAID_FEATURES.md, OWNER DECISION
+     2026-08-23).
 
      `.btn.ghost` rather than a row, and its words are bare: this is a button
      under a picture, not a line of a list. */

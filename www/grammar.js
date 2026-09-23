@@ -535,41 +535,36 @@ function gFmPos(p){
    phone share one, so the caller answers with the language's own. The engine
    is DOM-free and globals-free and this is the one place that crosses back:
    it does not know what a stage is and does not have to. */
-/* Where the model comes from, from 2026-08-26. A language that has a model of
-   its own under langKey('gram2') is read from it; every other language is
-   built from the stages exactly as before, so nothing a person has today
-   answers differently. Nothing writes that key yet -- this is the road in,
-   built before there is anything on it.
+/* WHERE THE MODEL COMES FROM: this language, every time, and nothing else.
+   The word order is orderDef(), the rules are gRules(), the inflections and
+   derivations are what the chapters say (gInfl(), gFmRules()), and the words
+   are the dictionary. Every one of them points AT the language, and a stored
+   copy of something that points at the language parts company with it the
+   first time somebody renames a word or moves a card.
 
-   TWO things are put back on every read rather than being taken from the
-   store, and it is one reason twice: they point AT the dictionary, and a
-   stored copy of something that points at the dictionary parts company with
-   it the first time somebody renames a word.
-
-     words         the dictionary itself
-     grammarRules  'hw:<headword>' -- which words are the negation and the
-                   adpositions. isMarked() in translate.js compares that
-                   string against a word id rebuilt from WORDS, so a stored
-                   rule simply stops matching. Nothing throws: the sentence
-                   still comes out, with the negation read as an ordinary
-                   noun.
+   There was a second road here: a model stored under langKey('gram2') was
+   read in place of the stages, and its inflections were ADDED to the ones
+   the chapters make. Nothing ever wrote that key -- the road was built
+   before there was anything on it -- so it was a second answer to 「what is
+   this language's word order」 waiting for the first byte to arrive. It is
+   gone (docs/CHANGELOG.md 2026-09-23). A `gram2` slice somebody has is not
+   read, not written and not removed: it stays in SLICES and travels with
+   the language as it always did.
 
    docs/FEATURES.md says the same thing from the other side -- this
    arithmetic is `current`, not `frozen`, and freezing it would be the bug. */
 function gModel(list){
-  var e=LinguaGrammarEngine, m=e.adapter.load(langId);
   /* THE CARDS, not the name they make. `id` is them run together so that three
      of them still read as one of the six on the old stage screen, and handing
      THAT to the engine is a string it reads one letter at a time: a board of
      主語 副詞 目的語 動詞 came out 'SADVOV', which is S A D V O V -- six roles
      with the verb in twice, and the demonstration under the board printed this
      language's verb twice. Nothing threw. */
-  if(!m) m=e.adapter.fromLegacy(langId, list||WORDS, {order:orderDef().seq});
-  else m.words=e.adapter.wordsOf(list||WORDS);
+  var m=LinguaGrammarEngine.adapter.fromLegacy(langId, list||WORDS, {order:orderDef().seq}),
+      fm=gFmRules();
   m.grammarRules=gRules();
-  var fm=gFmRules();
-  m.inflections=(m.inflections||[]).concat(gInfl()).concat(fm.inf);
-  m.derivations=(m.derivations||[]).concat(fm.der);
+  m.inflections=gInfl().concat(fm.inf);
+  m.derivations=fm.der;
   /* How many of somebody's rules this side could not say. Nothing shows it
      yet; it is on the model so that the screen which will show it has
      something to read, and so that "some rules did not travel" is a number
@@ -765,7 +760,7 @@ function g2Move(key, i){
    on one page cannot pick each other's words up. */
 function g2Chip(key, i, w){
   return '<button class="seg'+(g2Lift===key+':'+i? ' on' : '')+'"' +
-    DO('g2Move', [key, i]) + '>'+esc(wOut(w.hw))+'</button>';
+    DO('g2Move', [key, i]) + '>'+sfontHTML(wOut(w.hw))+'</button>';
 }
 
 /* ---- THE BOARD THE WORD ORDER IS ARRANGED ON ---------------------------
@@ -956,7 +951,7 @@ function g2Board(c){
 function g2Demo(seq){
   var w=g2Three(seq), i, out='';
   if(!w) return '';
-  for(i=0;i<w.length;i++) out+='<span class="gor">'+esc(wOut(w[i].hw))+'</span>';
+  for(i=0;i<w.length;i++) out+='<span class="gor">'+sfontHTML(wOut(w[i].hw))+'</span>';
   return '<div class="gorder">'+out+'</div>';
 }
 /* THE SAME DEMONSTRATION, of a noun phrase. gLay() runs the real engine on a
@@ -978,7 +973,7 @@ function g2NpDemo(seq){
   if(!list.length) return '';
   list.push(n);
   w=gLay(list, 'np', seq);
-  for(i=0;i<w.length;i++) out+='<span class="gor">'+esc(wOut(w[i].hw))+'</span>';
+  for(i=0;i<w.length;i++) out+='<span class="gor">'+sfontHTML(wOut(w[i].hw))+'</span>';
   return '<div class="gorder">'+out+'</div>';
 }
 /* §14 Nouns. 「ユーザーが『りんご』『りんごたち』などを実際の言語で作る。
@@ -1039,7 +1034,7 @@ function g2Row(lab, add, side, from, to, act, arg, id){
       '<span class="psm">'+lab+'</span>'+
       (add? '<span class="psw">'+sfontHTML(add)+'</span>' : '')+
       (side? '<span class="psi">'+esc(side)+'</span>' : '')+
-      ((to || side)? '<span class="psi">'+esc(to)+'</span>' : '')+
+      ((to || side)? '<span class="psi">'+sfontHTML(to)+'</span>' : '')+
       '</button></div>';
   }
   return '<div class="fmmk">'+
@@ -1055,7 +1050,7 @@ function g2Row(lab, add, side, from, to, act, arg, id){
        leaving the span out made the row's LAST `.psi` the END rather than the
        form. Nothing on the screen changes; what changes is that the row means
        the same thing whether or not there is a word to try it on. */
-    ((to || side)? '<span class="psi">'+esc(to)+'</span>' : '')+
+    ((to || side)? '<span class="psi">'+sfontHTML(to)+'</span>' : '')+
     ICON_GO+'</button></div>';
 }
 /* ---- choosing several rules, and taking them away ----------------------

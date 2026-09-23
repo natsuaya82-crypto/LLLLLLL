@@ -1671,8 +1671,11 @@ export function halfDone(){
         ADMINN = { people:1284, posts:9130, langs:412, reports:1 };
         /* Two rows and they are not the same row: the one above staff is in
            the list and cannot be taken off it, so it is the one without a
-           press. A list holding only the second kind would never draw that. */
-        ADMINS = [{ id:'u9', handle:'lingua', admin:true },
+           press. A list holding only the second kind would never draw that.
+           `admin` is false on both, which is what a database built from
+           supabase/schema.sql answers -- which row is above staff is the
+           handle, not that column. */
+        ADMINS = [{ id:'u9', handle:'lingua', admin:false },
                   { id:'u1', handle:'mod', admin:false }];
         MODS = [{ id:1, why:'spam', note:'', at:Date.now()-600000,
                   who:'veth', uid:'u1', out:false, by:'aya',
@@ -1680,6 +1683,13 @@ export function halfDone(){
         window.route='admin'; NAV=[{r:'admin'}];
         const h = vAdmin();
         ADMIN_OK = false; ADMINN = keepN; ADMINS = keepS; MODS = keep; return h; }],
+    /* AND THE LIST OF WHO ANSWERS THE REPORTS, REFUSED. Not an empty list:
+       what went wrong stands in its place (www/mod.js § adminLoad). */
+    ['the admin screen, the staff list refused', () => { const keepS = ADMINS, keepE = ADMINS_ERR;
+        ADMIN_OK = true; ADMINS = null; ADMINS_ERR = netWhy(null, 0);
+        window.route='admin'; NAV=[{r:'admin'}];
+        const h = vAdmin();
+        ADMIN_OK = false; ADMINS = keepS; ADMINS_ERR = keepE; return h; }],
     /* AND THE PAGE THE FEEDBACK ROW OPENS. 「お問い合わせ→開いたらお問い合わせ
        だけの画面」 OWNER 2026-09-22 -- a face of `admin`, so the walk reaches
        it only past the door, and without this every button on it （the 消す
@@ -3449,9 +3459,18 @@ export function halfDone(){
        on no screen but the third. */
     ['a word as a card',       () => { cardOpen('w', 'kano'); return vForm(); }],
     ['a sentence as a card',   () => { findWord('kano').ex=[{ln:'kano mos tir', gl:'a tall mountain is seen'}];
-                                       cardOpen('x', 'kano#0');
-                                       const h=vForm(); delete findWord('kano').ex; return h; }],
+                                       cardOpen('x', 'kano#0'); return vForm(); }],
     ['a post as a card',       () => { cardOpen('p', 'p1'); return vForm(); }],
+    /* Somebody else's post with nothing drawable on it, in words THIS
+       dictionary happens to spell: its card is its text, as its row on the
+       timeline is -- not the post spelt out in my letters. And a card of a
+       post that is gone, which is no card. (www/card.js § cardSrc) */
+    ['somebody else\'s post with no ink, as a card', () => {
+       POSTS.unshift({ id: 'pnoink', at: Date.now() - 60000, lang: 'other', lname: 'Vethi',
+                       ln: 'kano tir\nke', who: 'Iri', hd: 'iri', mine: false, av: { ch: 'Ж' },
+                       mn: 'the mountain is seen', ui: 'en' });
+       cardOpen('p', 'pnoink'); return vForm(); }],
+    ['a card of a post that is gone', () => { cardOpen('p', 'gone'); return vForm(); }],
     /* THE GAP BETWEEN LETTERS (www/glyph.js § geSide, www/wsys.js § SP_RANGE).
        「0 にすると、端まで描いた線が隣とくっついて一本に繋がる」「スライドで
        文字間が見えるように … 最大0と2くらい」「それぞれの字間を見せてね」
