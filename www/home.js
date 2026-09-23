@@ -795,8 +795,9 @@ function fResultsHTML(qq){
 function fPickedHTML(){
   var hits = fpick.k==='s'? fWordsWithSnd(fpick.v) : fWordsWithLtr(fpick.v);
   var name = fpick.k==='s'? fpick.v : (ltName(ltById(fpick.v))||'');
-  return '<button class="trow"' + DO('fPick', [fpick.k, fpick.v]) + '>'+
-      '<span class="rn"></span><span class="rt">'+esc(t('find.back'))+'</span>'+
+  return '<button class="trow"' + DO('fPick', [fpick.k, fpick.v]) +
+      ' aria-label="'+esc(t('find.back'))+'">'+
+      '<span class="rn"></span><span class="rt">'+ICON_BACK+'</span>'+
       '<span class="lead"></span></button>'+
     fSec(t(fpick.k==='s'? 'find.hit.snd':'find.hit.lt', name), hits.length)+
     (hits.length? hits.map(entryOneHTML).join('') : emptyBox(t('words.nomatch')));
@@ -2032,7 +2033,7 @@ function wldOpen(){
    piece wldPage() puts in; wldPage() is what draws this route. */
 function wldFrame(body, ed, mine){
   return navTop('', (!ed && mine && !langLocked())?
-      navDo(t('wld.edit'), 'go', ["world"], true) : '')+
+      navDo(t('wld.edit'), 'go', ["world"], true, {icon:ICON_PEN}) : '')+
     '<div class="body">'+body+'</div>';
 }
 function wldPage(ed, L, lid){

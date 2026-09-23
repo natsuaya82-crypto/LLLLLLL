@@ -83,8 +83,7 @@ function cardOpen(kind, key){
   openForm('card:'+CARD.k+'/'+CARD.v, t('card.title'),
     cardSrc()? '<div class="cardbox"><canvas id="cardc" class="cardc"></canvas></div>'+
     cardShapesHTML()+
-    '<button class="btn" style="width:100%;margin-top:18px"' + DO('cardSave') + '>'+
-      t('card.save')+'</button>' : goneBox(),
+    markBtn(ICON_SHARE, t('card.save'), 'cardSave') : goneBox(),
     cardMount);
 }
 function cardShapesHTML(){

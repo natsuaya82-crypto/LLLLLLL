@@ -1057,6 +1057,12 @@ var ICON_SHARE='<svg class="ic" viewBox="0 0 24 24" width="15" height="15" fill=
   'stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
   '<path d="M12 15V3"/><path d="M8.5 6.5 12 3l3.5 3.5"/>'+
   '<path d="M20 13v6.5a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 19.5V13"/></svg>';
+/* send: the paper plane. 「送信なら紙飛行機マークにしてるはずなんだけど」
+   OWNER 2026-09-23 -- an operation every phone already draws is drawn, and
+   the word is the button's aria-label (CLAUDE.md § Shape, marks-check). */
+var ICON_SEND='<svg class="ic" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" '+
+  'stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
+  '<path d="M21 3 10.5 13.5"/><path d="M21 3 14.5 21l-4-7.5L3 9.5z"/></svg>';
 /* What a post can be given: the camera, the pictures already on the phone,
    and the microphone. One plus used to stand for all three and only ever
    meant the second. 「photoボタンやめて。📷 ライブラリ マイクボタンにして」 */

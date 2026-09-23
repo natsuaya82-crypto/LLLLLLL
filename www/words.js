@@ -474,8 +474,7 @@ function wordsUndoHTML(){
   if(!wUndo) return '';
   return '<div class="wsub2" style="margin-top:18px">'+
       esc(t('words.sel.gone', wUndo.n))+'</div>'+
-    '<button class="set" style="border-bottom:none"' + DO('wSelUndo') + '>'+
-      '<span class="sl">'+esc(t('imp.undo'))+'</span></button>';
+    markBtn(ICON_UNDO, t('imp.undo'), 'wSelUndo');
 }
 /* One entry. The word says itself when you touch it; the chevron at its edge
    opens it. Listening is what you do dozens of times on this screen and

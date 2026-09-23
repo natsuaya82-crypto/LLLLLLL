@@ -84,7 +84,7 @@ function openNote(i){
        Deleting is the list's own, by a left swipe on the row -- 「メモの編集の
        ところに削除ボタンやめて。一覧から右にスワイプして削除。標準アプリと
        同じ作りにして」 OWNER 2026-09-05, `delNoteGo()` below. */
-    langLocked()? '' : navDo(t('wld.edit'), 'openNoteEdit', [k], true), 'full');
+    langLocked()? '' : navDo(t('wld.edit'), 'openNoteEdit', [k], true, {icon:ICON_PEN}), 'full');
 }
 /* 本文だけ、打たれたまま ── 改行はそのまま出す。題名は上の帯に立っている
    ので、ここには書かない: 名前は一か所。題名が空のときは一行目が名前の代わり
