@@ -58,6 +58,10 @@ const r = await pg.evaluate(({ s }) => {
   save();                        /* core.js's save() is what writes WORDS */
   out.paidHeld = WORDS.length;
   out.paidShown = wordsSeen().length;
+  /* The fixture's two inflections stored as words (tira, tiran) are words of
+     no list since 2026-09-23 -- they are forms of `tir` -- so what is listed
+     is every word that COUNTS, which is wCountable()'s one answer. */
+  out.paidWords = wCountable();
   var wasBytes = bytes();
 
   planGot('free');
@@ -220,6 +224,7 @@ const r = await pg.evaluate(({ s }) => {
   out.capTop = (planGot('pro'), wordCap());
   planGot('plus');
   out.midShows = wordsSeen().length;        /* 500 words, ceiling 1000 */
+  out.midWords = wCountable();
   out.midHolds = WORDS.length;
   out.midRoom = capOK(1) === true;
   planGot('free');
@@ -1708,8 +1713,8 @@ await br.close();
 const bad = [];
 function say(ok, line){ console.log('  ' + (ok ? '' : 'FAILED  ') + line); if (!ok) bad.push(line); }
 
-say(r.paidHeld === 500 && r.paidShown === 500,
-    'the paid plan holds 500 words and lists 500 (' + r.paidHeld + ', ' + r.paidShown + ')');
+say(r.paidHeld === 500 && r.paidShown === r.paidWords && r.paidWords === 498,
+    'the paid plan holds 500 words and lists every one that is a word -- 498, less the two inflections stored as words (' + r.paidHeld + ', ' + r.paidShown + ')');
 say(r.freeHeld === 500,
     'the plan ending keeps all 500 (' + r.freeHeld + ')');
 say(r.freeShown === r.freeCap,
@@ -1888,7 +1893,7 @@ say(r.capFree === 100, 'free counts to 100 (' + r.capFree + ')');
 say(r.capMid === 1000, 'plus counts to 1000 (' + r.capMid + ')');
 say(r.capTop === null || r.capTop === undefined || r.capTop > 1e9 || r.capTop === 'Infinity',
     'and pro has no number at all (' + r.capTop + ')');
-say(r.midShows === 500 && r.midHolds === 500,
+say(r.midShows === r.midWords && r.midHolds === 500,
     'a 500-word dictionary is all shown on plus (' + r.midShows + ')');
 say(r.midRoom, 'and there is room for another');
 say(r.freeShows2 === 100 && r.freeHolds2,

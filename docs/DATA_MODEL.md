@@ -682,8 +682,9 @@ A word with `from` and an `fm` that is not a derivation is an **inflection made
 before 2026-09-23**, when an inflection was stored as a word of its own. It is
 left exactly as it is. `wForms()` reads it as a form of its parent wherever the
 parent has no placed form of that label, and `wCountable()` in `www/core.js`
-does not count it toward the plan's ceiling. How the dictionary list shows those
-rows is the owner's and has not been decided.
+does not count it toward the plan's ceiling. It is **not in the dictionary list**
+either (`wordsSeen()` in `www/words.js` leaves out what `wIsForm()` names) —
+it is listed under 活用 on its parent's page, and stays in `WORDS` unchanged.
 
 A word is **current data**. A card of a word follows the letters being redrawn,
 and that is correct.

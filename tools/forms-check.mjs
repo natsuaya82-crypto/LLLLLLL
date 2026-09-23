@@ -13,7 +13,8 @@
      1. saving a form writes the form ON the word and not one word into WORDS
      2. a label with no form, or a form with no label, writes nothing
      3. an inflection stored as a word before that day is read as its parent's
-        form, and is still in the dictionary byte for byte after a save
+        form, is still in WORDS byte for byte after a save, and is in no list
+        and no count
      4. a form placed by hand wins over what a rule makes of the same label
      5. a rule for an inflection offers no word to make; only a derivation does
 
@@ -84,6 +85,8 @@ const r = await pg.evaluate(async ({ s }) => {
   out.oldRead = f ? (f.by + ':' + f.hw) : '';
   save();
   out.oldKept = JSON.stringify(findWord('tira')) === old;
+  out.oldListed = wordsSeen().some(function (w) { return String(w.hw) === 'tira'; });
+  out.oldCounted = WORDS.length - wCountable();
 
   /* 4 -- the fixture's plural rule reaches `sar`; a plural placed on it wins */
   var ruleMade = wFormOf(findWord('sar'), 'pl');
@@ -114,6 +117,8 @@ say(r.halfWords === 0, 'and neither makes a word');
 say(r.oldRead === 'old:tira',
     'an inflection stored as a word before 2026-09-23 is read as its parent\'s form (' + (r.oldRead || 'not at all') + ')');
 say(r.oldKept, 'and it is still in the dictionary, byte for byte, after a save');
+say(!r.oldListed, 'but it is not in the dictionary list -- it is listed under its word');
+say(r.oldCounted === 2, 'and neither of the two stored that way is counted (' + r.oldCounted + ' left out)');
 say(r.ruleBy === 'rule', 'a rule answers for a label nobody placed (' + (r.ruleBy || 'nothing') + ')');
 say(r.placedWins === 'placed:saren', 'and a form placed by hand wins over it (' + (r.placedWins || 'nothing') + ')');
 say(r.todo === 'dim', 'a rule for an inflection offers no word to make -- only the derivation does (' + (r.todo || 'nothing') + ')');

@@ -261,7 +261,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Affected features: 語のページ、新しい語のシート、文法の章の一括ボタン、100 語、キーボードの変換、投稿の意味の行、カード
 - Affected data: 語に `fms` が増える（`docs/CHANGELOG.md` 2026-09-23）。前からの活用語は書き換えも削除もしない
 - Affected docs: `docs/CHANGELOG.md` `docs/DATA_MODEL.md`
-- Implementation status: r52-forms。「語の活用」は `wForms()` 一か所。**前からの活用語を辞書の一覧でどう見せるかは未決**（オーナー待ち）
+- Implementation status: r52-forms。「語の活用」は `wForms()` 一か所。前からの活用語は**辞書の一覧から外す**（B）── オーナーの言葉「活用は活用であって単語じゃない」からリーダーが B と読んだ（2026-09-23）。データは一つも消さない・移さない。語ページの活用一覧に出て、100語にも数えない。一覧から外す条件は `wIsForm()` 一か所（数え方・`wForms()`・変換と同じ答え）
 - Not decided: 接辞の重ね掛け（未来＋仮定＋受動）── r46 の話の残り、この枝ではしない
 
 ### 2026-09-23 文字を描く面にガイド線 ── 固定の三本、見るだけ（案 A）
