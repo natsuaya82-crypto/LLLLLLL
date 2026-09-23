@@ -173,30 +173,37 @@ function abVowel(){
 function abSetVow(v){ abVow=v; render(); }
 /* Moving the mark moves the mark, not this one letter: it is one drawing and
    every combination is made out of it. Whole lattice steps, so what was on a
-   dot stays on a dot. */
+   dot stays on a dot. A mark written on a SHEET is rings rather than strokes
+   (inkGeo, www/glyph.js) and is moved and scaled the same way, but not put on
+   the lattice: its points are an outline somebody traced, and snapping them
+   would be a different shape. It used to ask `l.st`, so a sheet mark was
+   「no mark」 on the screen that was showing it. */
+function abMark(){
+  var g=inkGeo(ltMain(abVowel()));
+  if(!g){ toast(t('ab.nomark')); return null; }
+  return {pts:inkPts(g), snap: inkRings(g)? function(x){ return x; } : geSnap};
+}
 function abNudge(dx, dy){
-  var v=abVowel(), l=ltMain(v);
-  if(!l || !l.st || !l.st.length){ toast(t('ab.nomark')); return; }
-  var s=geStep(), i, j, p;
-  for(i=0;i<l.st.length;i++) for(j=0;j<l.st[i].pts.length;j++){
-    p=l.st[i].pts[j];
-    p[0]=geSnap(p[0]+dx*s); p[1]=geSnap(p[1]+dy*s);
+  var m=abMark(), s=geStep(), i, p;
+  if(!m) return;
+  for(i=0;i<m.pts.length;i++){
+    p=m.pts[i];
+    p[0]=m.snap(p[0]+dx*s); p[1]=m.snap(p[1]+dy*s);
   }
   saveLetters(); installScriptFont(); render();
 }
 function abScale(f){
-  var v=abVowel(), l=ltMain(v);
-  if(!l || !l.st || !l.st.length){ toast(t('ab.nomark')); return; }
-  var lo=[1e9,1e9], hi=[-1e9,-1e9], i, j, p;
-  for(i=0;i<l.st.length;i++) for(j=0;j<l.st[i].pts.length;j++){
-    p=l.st[i].pts[j];
+  var m=abMark(), lo=[1e9,1e9], hi=[-1e9,-1e9], i, p;
+  if(!m) return;
+  for(i=0;i<m.pts.length;i++){
+    p=m.pts[i];
     if(p[0]<lo[0]) lo[0]=p[0]; if(p[0]>hi[0]) hi[0]=p[0];
     if(p[1]<lo[1]) lo[1]=p[1]; if(p[1]>hi[1]) hi[1]=p[1];
   }
   var cx=(lo[0]+hi[0])/2, cy=(lo[1]+hi[1])/2;
-  for(i=0;i<l.st.length;i++) for(j=0;j<l.st[i].pts.length;j++){
-    p=l.st[i].pts[j];
-    p[0]=geSnap(cx+(p[0]-cx)*f); p[1]=geSnap(cy+(p[1]-cy)*f);
+  for(i=0;i<m.pts.length;i++){
+    p=m.pts[i];
+    p[0]=m.snap(cx+(p[0]-cx)*f); p[1]=m.snap(cy+(p[1]-cy)*f);
   }
   saveLetters(); installScriptFont(); render();
 }
@@ -221,13 +228,13 @@ function vAbugida(){
             '<button' + DO('abNudge', [0, 1]) + ' aria-label="'+esc(t('ab.down'))+'">'+ICON_ARR_D+'</button>'+
             '<button' + DO('abScale', [1.25]) + '>'+t('ab.bigger')+'</button>'+
             '<button' + DO('abScale', [0.8]) + '>'+t('ab.smaller')+'</button>'+
-            ((vl && vl.sh && vl.sh.length)? '' :
+            (inkRings(inkGeo(vl))? '' :
               '<button' + DO('editGlyph', [v]) + '>'+ICON_PEN+t('ab.draw')+'</button>')+
           '</div></div>'+
         '<div class="sec">'+t('ab.every', v)+'</div>'+
         (cs.length
           ? '<div class="abgrid">'+cs.map(function(c){
-              var u=wsKey([c,v]), own=!!ltStrokes(u);
+              var u=wsKey([c,v]), own=!!inkGeo(ltMain(u));
               return '<button class="abcell'+(own?' own':'')+'"' + DO('editGlyph', [u]) + '>'+
                 '<canvas class="tc" data-r="'+esc(u)+'"></canvas>'+
                 '<span class="abu">'+esc(u)+'</span></button>';

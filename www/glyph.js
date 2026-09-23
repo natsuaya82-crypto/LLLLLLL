@@ -199,11 +199,41 @@ function scriptLetters(){ return wsUnits(); }
    letter that exists today moves and there is nothing to migrate.
 
    A stroke is an object with pts on it and a ring is a plain array of points,
-   so nothing has to be stored to tell the two apart. */
+   so nothing has to be stored to tell the two apart.
+
+   THESE THREE ARE THE ONLY THINGS THAT TOUCH `st` AND `sh` ON A LETTER.
+   「形があるか・何かは inkGeo() だけが答える」 r73 §2-12. Thirteen places asked
+   `l.st` for themselves, and to every one of them a letter off a sheet had no
+   shape: a digit written on a sheet read as blank and was deleted when the
+   base came down, a shape named into a free slot arrived without its rings,
+   and a sheet letter drawn over went on showing the sheet. inkGeo() says what
+   a letter's shape is, inkRings() which kind a shape is, and inkSet() is the
+   one writer, so "one and never both" is kept in one place rather than by
+   everybody who assigns. tools/ink-check.mjs counts every `.st` and `.sh` in
+   www/ and fails one on a letter anywhere else. */
 function inkGeo(l){
   if(!l) return null;
   if(l.sh && l.sh.length) return l.sh;
   return (l.st && l.st.length)? l.st : null;
+}
+function inkRings(g){ return !!(g && g.length && g[0] && g[0].pts===undefined); }
+/* A letter's shape becomes `g`, whichever kind it is, and the other kind
+   goes. Nothing, or an empty list, is no shape. `st` is null rather than
+   absent because that is how ltNew() has always stored a letter nobody drew. */
+function inkSet(l, g){
+  var has=!!(g && g.length);
+  l.st=(has && !inkRings(g))? g : null;
+  if(has && inkRings(g)) l.sh=g; else delete l.sh;
+}
+/* Every point of a shape, of either kind, as the arrays themselves -- so a
+   caller moving them moves the shape. */
+function inkPts(g){
+  var out=[], i, a, j;
+  for(i=0;g && i<g.length;i++){
+    a=inkRings(g)? g[i] : g[i].pts;
+    for(j=0;j<a.length;j++) out.push(a[j]);
+  }
+  return out;
 }
 /* ---- an area is the inside of a RING, and a ring gets drawn a side at a time
    On a lattice nobody draws a square in one sweep: they draw the top, then
@@ -301,7 +331,7 @@ function inkJoinFills(v){
   return grew? out : v;
 }
 function inkDef(v){
-  if(v && v.length && v[0] && v[0].pts===undefined) return {sh:v};
+  if(inkRings(v)) return {sh:v};
   return {strokes: (v && v.length)? inkJoinFills(v) : v};
 }
 
@@ -453,8 +483,7 @@ function scriptSig(){
   for(i=0;i<LETTERS.length;i++){
     l=LETTERS[i];
     s.push(l.id+':'+(l.ab||'')+':'+ltUnits(l).join('')+':'+
-           (l.st? JSON.stringify(l.st).length : 0)+':'+
-           (l.sh? JSON.stringify(l.sh).length : 0));
+           (inkRings(inkGeo(l))? 'r' : 's')+JSON.stringify(inkGeo(l)||[]).length);
   }
   /* and what the writing system composes, which is not any letter */
   scriptLetters().forEach(function(r){
@@ -595,6 +624,28 @@ function installScriptFont(){
    roman, because the field was absent and absent read as off. */
 function myFontWant(){ return SET.myfont!==false; }
 function myFontOn(){ return myFontWant() && SFONT.built; }
+/* ONE LETTER ON A LINE OF THE LANGUAGE: the character of the typing face that
+   draws its shape (inkChar, at the language's gap), or '' -- which is roman,
+   and what roman is (a name, a value) is the caller's to say. Roman when the
+   drawn letters are off, and roman where nothing was drawn, a borrowed
+   character included: 「ローマ字」 OWNER 2026-09-23. The calendar's digits
+   used to decide this for themselves and drew the shape with the switch off
+   and the borrowed character where none was drawn (r73 §2-11);
+   tools/ink-check.mjs B holds it. */
+/* A FIELD a word of the language is typed into wears the typing face when the
+   drawn letters are on, so what the Lingua keyboard puts in comes out as the
+   shapes. Three fields ask it -- a spelling (spTypeField), a form of a word
+   (addFmHTML), a word for a rule (g2PolPickHTML) -- and it is written here
+   once because whether a field is set in the drawn letters at all is not
+   settled: 2026-08-13 「A field is in ordinary letters」 and 2026-09-23
+   「一行を描く仕組みを一つに」 disagree, and the post's own field wears the
+   face whatever the switch says (docs/scope/r73-audit.md § 5-14). The
+   answer, when it comes, is this line. */
+function myFontField(){ return myFontOn()? 'tfont' : ''; }
+function ltLineChar(l){
+  var g=inkGeo(l);
+  return (g && myFontWant())? inkChar(g, geSide()) : '';
+}
 /* ---- and which of the characters in front of you it can actually draw ----
    「アプリ内はみんなが見れる仕様なんだから、どこがおかしいかじゃなくて全部
    見れるように一本化」 OWNER 2026-09-06, about a row of NO GLYPH boxes on an
@@ -615,12 +666,14 @@ function myFontOn(){ return myFontWant() && SFONT.built; }
    character if a drawn shape carries it, else it is roman. SFONT.one and
    SFONT.seq come off the build, so this can never disagree with the file.
 
-   ONE PLACE. sfontHTML() is what every screen calls, and no screen asks
-   myFontOn() about text again: the answer is per character now, and a second
-   place asking it is a second answer. What it does not reach is a TEXTAREA --
-   the composer's line over a photograph, which cannot hold a span -- and the
-   card and the timeline, which draw ink rather than text and were never
-   asking this question. */
+   ONE PLACE FOR TEXT. sfontHTML() is what every screen calls to show a word,
+   and the answer is per character. myFontOn() is asked by three other things
+   and each is a different question: a FIELD (myFontField, below -- a textarea
+   cannot hold a span), whether a word is spelled in BORROWED characters
+   instead (wOut in www/home.js), and this. What sfontHTML does not reach is
+   the composer's line over a photograph, a textarea too, and the card, the
+   timeline and a letter on a line, which draw ink (inkChar, ltLineChar) rather
+   than this font. */
 function sfontRuns(txt){
   var s=String(txt||''), out=[], i=0, on='', off='', hit, k, q;
   if(!s) return out;
@@ -675,7 +728,9 @@ var GE=null;
    exactly the assumption 「音に対して文字入れるのおかしくね？」 objects to. GE.lid
    is which letter; GE.r is only what to call it on screen. */
 function newGE(lid, label){
-  var l=ltById(lid), src=(l && l.st)? l.st : [];
+  /* The editor draws strokes. A letter off a sheet is rings and opens on an
+     empty paper; what is saved there replaces it (inkSet). */
+  var l=ltById(lid), g=inkGeo(l), src=(g && !inkRings(g))? g : [];
   var r=label || ltName(l) || '';
   /* A letter opened for editing is finished work, the same as a drawing
      handed back by undo, so it opens sealed: the first press starts a new
