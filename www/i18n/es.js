@@ -356,6 +356,8 @@ defLang('es', (function(){
       "wld.title"    : "Para qué es esta lengua",
       'wld.about'             : "Sobre esta lengua",
       'wld.edit'            : "Editar",
+      'wld.taking'          : "Descargando",
+      'wld.took'            : "Descargado",
       'wld.public'            : "Mostrar esta lengua a otras personas",
       'wld.public.d' : "Otras personas pueden abrir la página de tu lengua y leerla.",
       'wld.dl'       : "Permitir descargarlo",

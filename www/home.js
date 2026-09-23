@@ -1265,6 +1265,9 @@ function setWldSecDl(r, v){ wldSecSet(r, 'dl', v); }
 /* The row on the profile, in place of the small tag that used to sit beside
    the handle. 「linguaパッチの代わり。Lingua > みたいになってて」 */
 function wldRow(){
+  /* Not yours, no row -- wldPage() below says why, and it is the same one
+     question asked by the door and by the page. */
+  if(langLocked()) return '';
   /* A LANGUAGE WITH NO NAME YET STILL HAS A ROW, and it says so.
      「未設定って出てくればいいよ。プロフィールにね。」OWNER 2026-09-02.
      It returned nothing at all, so a language nobody had named had no row on
@@ -1333,6 +1336,11 @@ var ICON_FOLD='<svg class="ic abmk" viewBox="0 0 24 24" width="13" height="13" f
 var ICON_DL='<svg class="ic" viewBox="0 0 24 24" width="14" height="14" fill="none" '+
   'stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" '+
   'aria-hidden="true"><path d="M12 4v10"/><path d="M8 10l4 4 4-4"/><path d="M4 20h16"/></svg>';
+/* And the row once it is taken: the same circle the wait mark turns in, with
+   the tick inside it. 「⭕️☑️」 */
+var ICON_TOOK='<svg class="ic" viewBox="0 0 24 24" width="14" height="14" fill="none" '+
+  'stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" '+
+  'aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.2l2.8 2.8L16 9.6"/></svg>';
 /* ---- the overview is the person's own list now -------------------------
    「メモじゃなくて概要に好きに追加したいこと並べればいいやん」 OWNER 2026-08-25.
    Four fixed facts and one box called 「メモ」 was what this page had; what it
@@ -1622,9 +1630,36 @@ function wldGetRow(sec, lid){
      It used to say the row needed no plan because downloading letters and a
      keyboard was free; that was 2026-08-19 and 「plusからです」 OWNER
      2026-09-02 replaced it. `CAN.dl` is `plus` and has been since. */
-  return '<button class="set"' + DO('wldGet', [String(lid||''), sec.r]) + '>'+
-    '<span class="sl">'+esc(wldSecNm(sec))+'</span>'+
+  var st=wldTakeOf(lid, sec.r), nm='<span class="sl">'+esc(wldSecNm(sec))+'</span>';
+  if(st==='wait') return '<div class="set" aria-busy="true">'+nm+
+    '<span class="sv" aria-label="'+esc(t('wld.taking'))+'">'+snsWaitWord()+'</span></div>';
+  if(st==='took') return '<div class="set">'+nm+
+    '<span class="sv" aria-label="'+esc(t('wld.took'))+'">'+ICON_TOOK+'</span></div>';
+  return '<button class="set"' + DO('wldGet', [String(lid||''), sec.r]) + '>'+nm+
     '<span class="sv">'+ICON_DL+'</span></button>';
+}
+/* WHICH OF THE THREE A SECTION'S ROW IS -- ↓, ⭕ or ⭕☑️.
+   「人の言語dlした時にdlできたかわかりにくいから↓を押したら⭕️でダウンロード
+   状況表示。ダウンロードしてる言語は⭕️☑️にして。」 OWNER 2026-09-23.
+   The press used to write the chapter, fire netTakePut() and draw straight
+   away, so nothing on the screen said whether it had gone.
+
+   One place answers it, and it asks two things that are not this phone's
+   opinion: whether the SERVER says this account took the language
+   (langWhose(), which is `language_take`'s answer), and whether the chapter
+   is in what is loaded (slMine() -- the slices a take wrote, or the ones
+   netLangsWalk() brought down for a language taken before this launch).
+   WLD_TAKING is the one thing held here, and it is only 「a put is out for
+   the chapter that was pressed」: set by the press, cleared by the answer,
+   whichever answer it is. The other rows stay what they were. */
+var WLD_TAKING={};
+function wldTakeOf(lid, r){
+  var id=String(lid||''), kinds=wldDlKind(r)||[], i;
+  if(WLD_TAKING[id+'|'+r]) return 'wait';
+  if(langWhose(id)!==LW_READ) return 'dl';
+  for(i=0;i<kinds.length;i++)
+    if(slMine(langKeyOf(id, kinds[i]))!==null) return 'took';
+  return 'dl';
 }
 /* TAKING IT. The one road, and the end of it is localStorage.
    ------------------------------------------------------------------
@@ -1691,8 +1726,15 @@ function wldGet(lid, r){
      per handset: the same account on a second phone started at nought.
      Fired and not waited for -- the chapter is already here and the count
      it moves is asked for again by the answer. */
-  if(seen && seen.owner && typeof netTakePut==='function')
-    netTakePut(id, function(){ render(); }, function(){});
+  /* WAITED FOR NOW, on the screen: the row turns until the server answers
+     and then says which answer it was (wldTakeOf() above). A refusal is
+     「接続できません」, the sentence every send that did not land already says,
+     and the row is a ↓ again because the server did not say otherwise. */
+  if(seen && seen.owner && typeof netTakePut==='function'){
+    WLD_TAKING[id+'|'+r]=1;
+    netTakePut(id, function(){ delete WLD_TAKING[id+'|'+r]; render(); },
+      function(){ delete WLD_TAKING[id+'|'+r]; toast(t('net.offline')); render(); });
+  }
   /* Its name came down with the row and langSeenAdd() above has already
      recorded it. It used to be written into the `lang` slice as well, so that
      the index and the language could not drift; there is one answer now and
@@ -1975,10 +2017,9 @@ function wldOpen(){
    wldPage() ends in two places, because a language nobody may open stops at
    its heading, and the two were writing this out identically. The condition
    was in both: Edit is only on your own. 「Edit は出ません（他人のものなので）」
-   -- and `mine` is whose ARTICLE this is, which is a different question from
-   whether the OPEN language may be changed: a downloaded language opened from
-   the switcher draws its own article with mine true. langLocked() answers the
-   second. Who may edit is one decision, so it is asked once.
+   -- and `mine` is whose ARTICLE this is. The open language's article is only
+   ever drawn when it is this account's (wldPage() asks langLocked() before it
+   gets here), so `mine` is the whole of who may edit, asked once.
 
    IT IS THE BAR AND THE BODY, AND NOT THE PAGE. Written to return the whole
    page it BECAME the drawer of this route -- page-check watches the innermost
@@ -1986,12 +2027,23 @@ function wldOpen(){
    drawn by two functions and the gate went red on rule 21. The frame is a
    piece wldPage() puts in; wldPage() is what draws this route. */
 function wldFrame(body, ed, mine){
-  return navTop('', (!ed && mine && !langLocked())?
+  return navTop('', (!ed && mine)?
       navDo(t('wld.edit'), 'go', ["world"], true) : '')+
     '<div class="body">'+body+'</div>';
 }
 function wldPage(ed, L, lid){
   var w, mine, drawn, body='', dls='', done, i;
+  /* THE WIKI IS ONLY EVER YOUR OWN LANGUAGE'S.
+     「後人の言語は自分の言語じゃないからwikiページに表示させないように。」
+     OWNER 2026-09-23. With no bundle this page is the OPEN language's article
+     -- your wiki, with its Edit -- and a language taken off somebody else's
+     page can be the open one (it is opened from the switcher to be read). It
+     drew as yours, named in your profile's row. langLocked() (www/core.js) is
+     the one question 「is the open language not this account's」, and this
+     page and its door on the profile, wldRow() above, both ask it and nothing
+     else. The language is still read where the app reads it -- its words,
+     letters and keyboard; only the article is not offered. */
+  if(!L && langLocked()) return viewGone();
   L=L||wldOpen();
   /* NOT HERE YET, and that is a face of this page rather than a page of its
      own. Somebody else's article arrives in two answers off the network, and

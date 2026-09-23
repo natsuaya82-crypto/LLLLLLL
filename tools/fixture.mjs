@@ -1188,6 +1188,43 @@ export function halfDone(){
        const h=vAbout();
        ABOPEN.wlddl = was;
        return h; }],
+    /* THE ↓ WHILE ITS PUT IS OUT, AND ONCE THE SERVER SAYS IT IS TAKEN.
+       「↓を押したら⭕️でダウンロード状況表示。ダウンロードしてる言語は⭕️☑️」
+       OWNER 2026-09-23 -- www/home.js § wldTakeOf. Taken is the SERVER's two
+       answers (the owner is somebody else, a `language_take` row is this
+       account's) and the chapter in what is loaded; all three are pushed here
+       because no check has a network. */
+    ['somebody else\u2019s language page, a download going', () => {
+       const lid = __seenLang();
+       const was = ABOPEN.wlddl;
+       ABOPEN.wlddl = true; WLD_TAKING[lid + '|letters'] = 1;
+       window.route='about'; NAV=[{ r:'about', a:lid }];
+       const h=vAbout();
+       delete WLD_TAKING[lid + '|letters']; ABOPEN.wlddl = was;
+       return h; }],
+    ['somebody else\u2019s language page, taken', () => {
+       const lid = __seenLang();
+       const was = ABOPEN.wlddl;
+       ABOPEN.wlddl = true;
+       LANGS[lid] = {}; langOwnGot(lid, 'somebody-else'); langTookGot([lid]);
+       slWr(langKeyOf(lid, 'letters'), WLDS_HAVE[lid].letters.body);
+       window.route='about'; NAV=[{ r:'about', a:lid }];
+       const h=vAbout();
+       slRm(langKeyOf(lid, 'letters')); delete LANGS[lid]; langTookGot([]);
+       ABOPEN.wlddl = was;
+       return h; }],
+    /* AND A TAKEN LANGUAGE OPEN, WHICH HAS NO WIKI. 「後人の言語は自分の言語
+       じゃないからwikiページに表示させないように。」 OWNER 2026-09-23. The
+       profile's row to the article is not there, and the article is not
+       drawn as yours -- www/home.js § wldPage. */
+    ['the profile with a taken language open', () => {
+       const was = langOwnOf(langId);
+       langOwnGot(langId, 'somebody-else'); langTookGot([langId]);
+       window.route='profile'; NAV=[{ r:'profile' }];
+       const h=vProfile();
+       if (was) langOwnGot(langId, was); else delete LOWN[langId];
+       langTookGot([]);
+       return h; }],
     /* AND THE SAME PAGE WITH ITS ALPHABET OPEN, which is the only face that
        draws somebody else's LETTERS at all -- every section arrives shut, so
        neither face above had ever rendered one. That is why 「人のwikiページ

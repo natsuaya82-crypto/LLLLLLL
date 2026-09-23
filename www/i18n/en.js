@@ -299,6 +299,8 @@ defLang('en', (function(){
       'wld.title'    : 'What this language is for',
       'wld.about'             : "About this language",
       'wld.edit'            : "Edit",
+      'wld.taking'          : "Downloading",
+      'wld.took'            : "Downloaded",
       'wld.public'            : "Show this language to other people",
       'wld.public.d' : "Other people can open your language page and read it.",
       'wld.dl'       : "Let people download it",
