@@ -145,10 +145,10 @@ function cardSrc(){
        one thing the person pressing it was looking at. */
     if(ex) return {kind:'x', of:String(w.hw||''),
                    line:String(ex.ln||''), mn:String(ex.gl || exGloss(ex.ln) || ''),
-                   hd:hd, nm:nm, dir:scriptDir()};
+                   hd:hd, nm:nm, dir:scriptDir(), sd:geSide()};
   }
   w=findWord(v) || WORDS[WORDS.length-1];
-  if(!w) return {kind:'w', line:'', mn:'', hd:hd, nm:nm, dir:scriptDir()};
+  if(!w) return {kind:'w', line:'', mn:'', hd:hd, nm:nm, dir:scriptDir(), sd:geSide()};
   /* A word and an example are things in the language that is OPEN, so they
      run the way it runs. Only a post carries a direction of its own.
 
@@ -160,7 +160,7 @@ function cardSrc(){
           mns:wMns(w), ex:(w.ex||[])[0]||null, from:String(w.from||''),
           rd:phIpa(wPh(w)), pos:posLabel(w.pos), posk:String(w.pos||''),
           ety:String(w.ety||''), fam:cardFam(w),
-          hd:hd, nm:nm, dir:scriptDir()};
+          hd:hd, nm:nm, dir:scriptDir(), sd:geSide()};
 }
 
 /* The words this one is family to, for the page: what each is called, what it
@@ -218,8 +218,10 @@ function cardUnit(lid, u){
    own corners so a run can be hung off them.
 
    inkAdv works all six out from the strokes by the one rule the font carries
-   -- a letter is its own ink plus one step, half a step at each end -- so the
-   gap between any two letters is one step whichever two meet. This screen
+   -- a letter is its own ink plus the gap, half of it at each end -- so the
+   gap between any two letters is the same whichever two meet. `side` is half
+   that gap and comes with the source (cardSrc's `sd`): a post's is the one it
+   was written with, a word's is the open language's. This screen
    used to set the line in square boxes of its own invention instead, one box
    per letter with a gap between boxes, which is a different rule and a worse
    one: a narrow letter floated in the middle of a box it did not fill, and
@@ -232,14 +234,14 @@ function cardUnit(lid, u){
    face it will be drawn in and then given the same half step each side. Its
    ink is called from 0.185 to 0.85 of the cell so that its capitals stand
    where the drawn letters stand rather than floating above them. */
-function cardMeasure(x, items){
-  var i, u, a, side=geSide(), sz=Math.round(CARD_CELL*0.95);
+function cardMeasure(x, items, side){
+  var i, u, a, sz=Math.round(CARD_CELL*0.95);
   for(i=0;i<items.length;i++){
     u=items[i];
     u.ax=null;
     if(u.sp){ u.w=CARD_CELL; u.h=CARD_CELL; continue; }
     if(u.st){
-      a=inkAdv(u.st);
+      a=inkAdv(u.st, side);
       if(a){
         u.w=a.w; u.dx=a.dx; u.x0=a.x0; u.x1=a.x1;
         u.h=a.h; u.dy=a.dy; u.y0=a.y0; u.y1=a.y1;
@@ -319,8 +321,8 @@ function cardBreak(items, n, vert){
    the old behaviour and it wasted the card twice over -- the letters too
    small to read and the space above and below them empty. Two lines of a
    sentence, or five columns of one, is the same ink at twice the size. */
-function cardPlace(items, aw, ah, cap, vert){
-  var ext=cardExtent(items), side=geSide(), best=null;
+function cardPlace(items, aw, ah, cap, vert, side){
+  var ext=cardExtent(items), best=null;
   var across=vert? LinguaFont.reach(ext.x0, ext.x1, side)
                  : LinguaFont.reach(ext.y0, ext.y1, side);
   var along=vert? ah : aw, cross=vert? aw : ah;
@@ -346,7 +348,7 @@ function cardPlace(items, aw, ah, cap, vert){
        every space it keeps, and only wins on size if it is a third bigger. */
     score=k*(vert? Math.pow(0.75, held) : 1);
     if(!best || score>best.score)
-      best={score:score, k:k, runs:runs, ext:ext, across:across, len:len};
+      best={score:score, k:k, runs:runs, ext:ext, across:across, len:len, side:side};
   }
   return best;
 }
@@ -357,7 +359,7 @@ function cardPlace(items, aw, ah, cap, vert){
    Right to left is the same run walked with the units handed over backwards,
    which puts the first letter of the line at the right-hand end of it. */
 function cardLayout(items, lay, dir, vert, pad, top, aw, ah){
-  var side=geSide(), k=lay.k, i, j, run, list, cur, off, at, u, len;
+  var side=lay.side, k=lay.k, i, j, run, list, cur, off, at, u, len;
   var block=lay.runs.length*lay.across*k;
   var c0=vert? (pad+(aw-block)/2) : (top+(ah-block)/2);
   /* Lines are centred the way a title on a card is. Columns are not: they
@@ -577,9 +579,9 @@ function cardMark(x, cx, cy, r){
    called once for the whole page, so what went onto the picture can be read
    off in one place -- which is the thing tools/card-check.mjs watches. */
 function cardBlock(x, line, bx, by, bw, bh, cap){
-  var items=cardUnits(line), lay, i, u, minx=null, miny=null, maxy=null, maxx=null, dx, dy;
-  cardMeasure(x, items);
-  lay=items.length? cardPlace(items, bw, bh, cap, false) : null;
+  var items=cardUnits(line), side=geSide(), lay, i, u, minx=null, miny=null, maxy=null, maxx=null, dx, dy;
+  cardMeasure(x, items, side);
+  lay=items.length? cardPlace(items, bw, bh, cap, false, side) : null;
   if(!lay) return {items:[], bot:by};
   cardLayout(items, lay, 'ltr', false, bx, by, bw, bh);
   for(i=0;i<items.length;i++){
@@ -858,7 +860,7 @@ function cardPaint(c){
   var kind=CARD_KINDS[src.kind] || CARD_KINDS.w;
   var dir=src.dir, vert=dir.indexOf('ttb')===0, lay, g, i;
   c.width=W; c.height=H;
-  cardMeasure(x, items);
+  cardMeasure(x, items, src.sd);
 
   /* Where the reading sits, measured up from the foot of the plate, and where
      the writing therefore has room to be. Fractions of the short side for the
@@ -894,7 +896,7 @@ function cardPaint(c){
   }
 
   /* the script, as large as it can be and still stand inside the rules */
-  lay=items.length? cardPlace(items, aw, ah, Math.round(S*kind.cap), vert) : null;
+  lay=items.length? cardPlace(items, aw, ah, Math.round(S*kind.cap), vert, src.sd) : null;
   if(lay) cardLayout(items, lay, dir, vert, pad, top, aw, ah);
   /* The writing sits on the plate rather than in it: a soft shadow under the
      ink is the whole difference between a letter and a hole. */
@@ -1094,7 +1096,11 @@ function cardOfPost(po){
      in columns. It used to be flattened to a side-to-side direction, because
      the only shape a card had was 1920 by 1080 and a column has nowhere to go
      in a band that wide. The card has three shapes now, so it no longer has
-     to misspell somebody's writing to fit one of them. */
+     to misspell somebody's writing to fit one of them.
+
+     And the gap between its letters, for the same reason again: a card of a
+     post written with its letters touching is a picture of letters touching,
+     whatever this phone's own language does. postSide(). */
   /* AND THE DAY'S TAG IS SAID IN THE READER'S OWN WORDS. It is stored as one
      mark and shown ten ways (www/sns.js § THE TAG), and this is the canvas's
      one mouth for that -- a canvas inherits nothing, so the swap that
@@ -1103,7 +1109,8 @@ function cardOfPost(po){
      is never touched. */
   return {kind:'p', line:dayTagShow(String(po.ln||'')), mn:String(po.mn||''),
           hd:String(po.hd||''), nm:langNameSaid(po.lname),
-          ink:postInkOK(po.ink)? cardInkShown(po.ink) : null, dir:postDir(po)};
+          ink:postInkOK(po.ink)? cardInkShown(po.ink) : null, dir:postDir(po),
+          sd:postSide(po)};
 }
 /* The same ink with the day's mark said in the reader's words. A copy: the
    strokes are shared (nothing draws on them) and only the text runs are

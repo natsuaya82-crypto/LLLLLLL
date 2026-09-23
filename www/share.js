@@ -133,7 +133,7 @@ function shareFace(id){
        its row, and shareKey() writes it over whatever the face put there.
        Two different widths cannot share a name in a file where the key and
        the face it wears are one object. */
-    a=inkAdv(inkGeo(l));
+    a=inkAdv(inkGeo(l), geSide());
     if(a){ o.aw=a.w; o.dx=a.dx; }
   }
   else if(l.ch) o.ch=l.ch;

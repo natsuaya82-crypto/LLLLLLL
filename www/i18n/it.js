@@ -854,6 +854,7 @@ defLang('it', (function(){
       "theme.dark"       : "Scuro",
       "set.display"      : "Lingua dell'interfaccia",
       "set.lang"         : "La tua lingua",
+      "set.sp"           : "Spaziatura",
       "set.name"         : "Nome",
       "set.count"        : "Parole",
       "set.plan"         : "Piano",

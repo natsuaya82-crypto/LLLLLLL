@@ -770,6 +770,7 @@ defLang('ja', (function(){
       'theme.dark'      : 'ダーク',
       'set.display'     : '表示言語',
       'set.lang'        : "自分の言語",
+      'set.sp'          : "字間",
       'set.name'        : '言語名',
       'set.count'       : '単語数',
       'set.plan'        : 'プラン',

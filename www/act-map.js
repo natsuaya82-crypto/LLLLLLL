@@ -297,6 +297,7 @@ act('wSelUndo', wSelUndo);
 act('setTheme', setTheme);
 act('setAuto', setAuto);
 act('setUi', setUi);
+act('setScriptSp', setScriptSp);
 act('wldArtAdd', wldArtAdd);
 act('wldOvAdd', wldOvAdd);
 act('wldOvDel', wldOvDel);

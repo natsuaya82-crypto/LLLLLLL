@@ -935,8 +935,13 @@ second try. Each letter was a canvas of a square cell, which is right for a tile
 for a key and is a **different rule** from the one the font obeys: there the gap
 between two letters is `cell - inkA/2 - inkB/2`, so no two pairs are alike and a
 narrow letter floats in the middle of nothing. 「文字間おかしくね」 `inkAdv()` is the
-one place — the font's own `reach()` asked of one letter at a time, ink plus one step
-with half a step at each end, so the gap is one step whichever two meet. `inkLine()`
+one place — the font's own `reach()` asked of one letter at a time, ink plus the gap
+with half of it at each end, so the gap is the same whichever two meet. **The gap is
+the language's and then the post's** (OWNER 2026-09-23 — one step by default, 0 joins
+the letters): `inkAdv(st, side)` is handed it rather than reading it, the making side
+passes `geSide()` (`SCRIPT.sp`), and below the line a post passes `postSide()` — the
+`ink.sp` it was written with, absent meaning one step — so nobody's post is spaced by
+MY language and my old posts do not move when I change mine. `inkLine()`
 gives each canvas that advance as its own width and lets CSS hang it off the height;
 `inkCanvases` is still the square one, for the things that are squares. Rendered both
 ways at 20px, six letters of four widths come to 61px either way.

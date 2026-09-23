@@ -843,6 +843,7 @@ defLang('de', (function(){
       "theme.dark"       : "Dunkel",
       "set.display"      : "Anzeigesprache",
       "set.lang"         : "Ihre Sprache",
+      "set.sp"           : "Zeichenabstand",
       "set.name"         : "Name",
       "set.count"        : "Wörter",
       "set.plan"         : "Tarif",

@@ -867,6 +867,7 @@ defLang('ru', (function(){
       "theme.dark"        : "Тёмная",
       "set.display"       : "Язык интерфейса",
       "set.lang"          : "Ваш язык",
+      "set.sp"            : "Интервал",
       "set.name"          : "Название",
       "set.count"         : "Слова",
       "set.plan"          : "Тариф",

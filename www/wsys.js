@@ -329,3 +329,17 @@ function setScriptDir(k){
   SCRIPT.dir=k; save();
   render();
 }
+/* What 字間 offers, in steps (glyph.js § geSide). 「既定は今と同じ 1 歩。0 に
+   すると、端まで描いた線が隣とくっついて一本に繋がる」 OWNER 2026-09-23 --
+   the one and the nought are theirs; the rest of this list is not decided, so
+   it is written here and nowhere else, and changing it is the whole of
+   changing what the row offers. */
+var SP_STEPS=[0, 0.5, 1, 1.5, 2];
+/* No plan is asked. A plan decides what somebody may DO, and this is how the
+   letters they drew stand beside each other; it is not in CAN. */
+function setScriptSp(v){
+  v=Number(v);
+  if(SP_STEPS.indexOf(v)<0) return;
+  SCRIPT.sp=v; save();
+  render();
+}

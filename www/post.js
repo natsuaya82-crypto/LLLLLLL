@@ -2350,7 +2350,16 @@ function postCutTyped(raw){
   if(txt) cut.push({t:txt});
   return cut;
 }
-function postInkTyped(raw){ return inkOfCut(postCutTyped(raw)); }
+/* And the gap its letters stand with, which is the language's at this moment
+   and the post's from now on (glyph.js § geSide) -- the same moment and the
+   same reason as `dir`. Here only: postInk() cuts posts written before a
+   language had a gap of its own, when every one stood one step apart, and a
+   post carrying no `sp` is read as exactly that. */
+function postInkTyped(raw){
+  var ink=inkOfCut(postCutTyped(raw));
+  if(ink) ink.sp=inkSteps(SCRIPT.sp);
+  return ink;
+}
 function postInk(ln){ return inkOfCut(postCut(ln)); }
 function inkOfCut(cut){
   var g=[], s=[], seen=[], i, k, key;
@@ -2726,13 +2735,13 @@ function pwMarkCut(m){
   return (m && m.tx)? postCut(m.tx) : [];
 }
 /* How wide that line is, in cells of its own height. The font's own rule --
-   inkAdv() is reach(), ink plus one step with half a step at each end -- so
-   the letters stand here the way they stand everywhere else in the app. A
+   inkAdv() is reach(), ink plus the language's gap with half of it at each
+   end -- so the letters stand here the way they stand in its font. A
    piece that was never drawn is text and takes a cell. */
 function pwMarkAdv(units){
   var w=0, i, a;
   for(i=0;i<units.length;i++){
-    if(units[i].st){ a=inkAdv(units[i].st); w+=a? a.w : 800; }
+    if(units[i].st){ a=inkAdv(units[i].st, geSide()); w+=a? a.w : 800; }
     else w+=String(units[i].t||'').length*440;
   }
   return w;
@@ -2787,7 +2796,7 @@ function pwMarkLines(m){
       out=[], cur=[], w=0, i, aw, a;
   for(i=0;i<atoms.length;i++){
     a=atoms[i];
-    aw=a.st? ((inkAdv(a.st)||{w:800}).w) : String(a.t||'').length*440;
+    aw=a.st? ((inkAdv(a.st, geSide())||{w:800}).w) : String(a.t||'').length*440;
     if(cur.length && max>0 && w+aw>max){ out.push(cur); cur=[]; w=0; }
     cur.push(a); w+=aw;
   }
@@ -2826,7 +2835,7 @@ function pwMarkRun(x, units, k, ox, oy, col){
   x.fillStyle=col; x.textAlign='left'; x.textBaseline='alphabetic';
   for(i=0;i<units.length;i++){
     if(units[i].st){
-      a=inkAdv(units[i].st);
+      a=inkAdv(units[i].st, geSide());
       if(a){ inkStrokes(x, units[i].st, k, cur+a.dx*k, oy, col); cur+=a.w*k; }
       else cur+=800*k;
     } else {
@@ -3564,6 +3573,12 @@ function postDir(p){
   var d=p && p.dir;
   return DIRS.indexOf(d)>=0 ? d : 'ltr';
 }
+/* What stands between two of this post's letters, asked of the POST, for the
+   reason postDir() asks it: the gap is the writer's language's and was put on
+   the ink when the line was written (postInkTyped). geSide() is the open
+   language and may not be named here. A post written before a language could
+   set one carries none, and stood one step apart -- inkSide() says that. */
+function postSide(p){ return inkSide(p && p.ink && p.ink.sp); }
 function postLnHTML(p){
   /* A TAG IS TEXT, so it comes out of the cut as text -- nobody has a letter
      for `#` and the ink carries only what the writer drew. Both roads
@@ -3575,7 +3590,7 @@ function postLnHTML(p){
     x=p.ink.s[i];
     if(typeof x!=='number'){ out+=tagHTML(String(x)); continue; }
     k=String((p.id)||'p')+'_'+i;
-    PLINE[k]=p.ink.g[x];
+    PLINE[k]={st:p.ink.g[x], side:postSide(p)};
     out+='<canvas class="tcln" data-p="'+esc(k)+'"></canvas>';
   }
   return out;

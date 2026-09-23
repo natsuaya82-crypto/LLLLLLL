@@ -493,6 +493,6 @@ function numWidOut(){
    width its own ink asks for, which is what makes this a line. */
 function numWidMount(){
   inkLine('canvas.tcln', function(c){
-    return inkGeo(ltById(c.getAttribute('data-l')));
+    return {st:inkGeo(ltById(c.getAttribute('data-l'))), side:geSide()};
   });
 }

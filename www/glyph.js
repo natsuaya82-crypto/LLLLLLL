@@ -113,8 +113,22 @@ function geStep(){ return (800 - GGRID.inset*2) / (GGRID.n - 1); }
    reason that had nothing to do with what anybody had drawn. A whole step of
    the finer lattice is the gap the coarse one had, and the letters stand
    apart the way they did before.
-   「一点開けてるのを2にできる？つまりすぎて見づらい」 */
-function geSide(){ return geStep(); }
+   「一点開けてるのを2にできる？つまりすぎて見づらい」
+
+   AND HOW MANY STEPS IS THE LANGUAGE'S. 「字と字の間を、言語ごとに設定できる
+   ようにする。既定は今と同じ 1 歩。0 にすると、端まで描いた線が隣とくっついて
+   一本に繋がる」 OWNER 2026-09-23. `SCRIPT.sp` holds it, in steps, and a
+   language that has never been given one stands at the one step every
+   language stood at before -- nothing is written into anybody's slice to say
+   so. inkSteps() is the one place that says what an absent or unreadable
+   value means, and inkSide() the one place steps become font units, so the
+   post that carries its own value (`ink.sp`, post.js) is turned into a side
+   by exactly the arithmetic the making side uses. geSide() reads the OPEN
+   language and is the making side's; below post.js's line a post asks
+   postSide() instead, and sides-check holds that. */
+function inkSteps(sp){ return (typeof sp==='number' && isFinite(sp) && sp>=0)? sp : 1; }
+function inkSide(sp){ return geStep()*inkSteps(sp); }
+function geSide(){ return inkSide(SCRIPT.sp); }
 /* Where the ink can reach, in font space, which is y-up from the baseline.
    A stroke on the top row of dots puts ink half a pen above that row; one on
    the bottom row half a pen below. Nothing goes further, because nothing can
@@ -439,6 +453,9 @@ function scriptSig(){
     var g=wsStrokes(r);
     s.push(r+':'+(g? JSON.stringify(g).length : 0));
   });
+  /* and what stands between two of them, which is in every advance the font
+     carries -- so moving it rebuilds both faces and re-sends the keyboard */
+  s.push('sp:'+geSide());
   return s.join(',');
 }
 /* The same shapes, mapped somewhere nobody types by accident.
@@ -2726,8 +2743,11 @@ function inkCanvases(sel, floor, dflt, stOf){
    plus one step, half a step at each end, so the gap between any two letters
    is one step whichever two meet.
    「どこから並んでも1点線分の隙間があるからバランス崩れない」
-   `reach` is otf5's, not a copy of it, and the step is the same geSide()
-   that installScriptFont hands the font as `side`.
+   `reach` is otf5's, not a copy of it. `side` is what stands at each end,
+   and it is the CALLER's to say, because it is somebody's: the making side
+   passes geSide(), which is what installScriptFont hands the font, and a
+   post passes the value it was written with (postSide(), post.js). This
+   function reads nothing of the open language, so either side may ask it.
 
    A square cell per letter is a DIFFERENT rule and a worse one: there the gap
    is cell - inkA/2 - inkB/2, so no two pairs are alike and a narrow letter
@@ -2743,8 +2763,8 @@ function inkCanvases(sel, floor, dflt, stOf){
    letters against one shared edge rather than each against its own.
 
    Null when the strokes ink nothing, which is a letter with no shape. */
-function inkAdv(st){
-  var cs, p, e, side=geSide();
+function inkAdv(st, side){
+  var cs, p, e;
   try{ cs=LinguaFont.glyphContours(inkDef(st), GPEN); }catch(err){ return null; }
   p=LinguaFont.profile(cs);
   if(!(p.xMax>p.xMin)) return null;
@@ -2760,14 +2780,19 @@ function inkAdv(st){
 
    Each canvas is given its letter's advance as the canvas's own width, which
    is what a canvas's intrinsic ratio means, so CSS hangs the width off the
-   height and the line spaces itself exactly as the font would space it. */
-function inkLine(sel, stOf){
-  var els=document.querySelectorAll(sel), i, c, st, a, dpr, H, k;
+   height and the line spaces itself exactly as the font would space it.
+
+   `of` answers, for each canvas, its strokes and the side they stand with --
+   {st, side} -- because a line of somebody's post stands the way THEY set
+   their language, and a canvas carries no language to ask. */
+function inkLine(sel, of){
+  var els=document.querySelectorAll(sel), i, c, o, st, a, dpr, H, k;
   for(i=0;i<els.length;i++){
     c=els[i];
-    st=stOf(c);
+    o=of(c);
+    st=o && o.st;
     if(!st || !st.length) continue;
-    a=inkAdv(st);
+    a=inkAdv(st, o.side);
     if(!a) continue;
     dpr=window.devicePixelRatio||1;
     H=Math.max(24, Math.round((c.getBoundingClientRect().height||18)*dpr));

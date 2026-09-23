@@ -243,6 +243,21 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Implementation status:
 ```
 
+### 2026-09-23 字間は言語ごと。既定は 1 歩、0 で繋がる
+- Date: 2026-09-23
+- Area: 字の並び（`www/glyph.js` `geSide()`）、設定 → 言語、投稿とカード
+- Decision: r/casualconlang のコメント（単語が一本の軸に見えるモンゴル文字風の文字）から。
+  - 字と字の間を、**言語ごとに**設定できるようにする。
+  - **既定は今と同じ 1 歩**。
+  - **0 にすると、端まで描いた線が隣とくっついて一本に繋がる。**
+  - **置き場所は言語の設定画面**（設定 → 言語）。
+  - **アラビア語式の位置別字形（語頭・語中・語末・独立）は今回やらない。**
+- Reason: 軸で繋がる文字は、字の間に隙間があると作れない。
+- Affected features: 描いた字のフォント二つ、投稿の線、カード、写真の上の字、キーボードの候補欄
+- Affected data: `script` スライスの `sp`、投稿の `ink.sp`。どちらも無い＝1 歩。書き足し・移行・削除なし
+- Affected docs: `CLAUDE.md` 規則 8、`docs/DATA_MODEL.md`、`docs/CHANGELOG.md`、`docs/CHECK-0907.md` § 166
+- Implementation status: r51-spacing。選べる値（0 と 1 以外）は未決定で、`SP_STEPS` 一行
+
 ### 2026-09-22 サインインなしでサーバーに触れる道は無い ── 穴ではなく面を覆う。扉の `email_taken()` だけ例外
 - Date: 2026-09-22
 - Area: サーバー（`supabase/schema.sql`、bucket、edge function）、`www/net.js`、そして直し方そのもの

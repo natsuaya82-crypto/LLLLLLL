@@ -1249,6 +1249,11 @@ function langRead(){
        drawn yet, and reading it only when there are glyphs would lose it for
        exactly the person who set it first and drew second. */
     if(gg && gg.dir) SCRIPT.dir=gg.dir;
+    /* And what stands between two letters, in steps (glyph.js § geSide).
+       Read here or it is gone: SCRIPT is rebuilt from these lines and saved
+       whole, so a field this function does not copy is a field the next save
+       drops. Absent stays absent -- one step, which is what it always was. */
+    if(gg && typeof gg.sp==='number') SCRIPT.sp=gg.sp;
   }catch(e){}
 }
 langRead();

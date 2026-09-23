@@ -228,6 +228,14 @@ const up = await pg.evaluate(async ({ s, srv }) => {
   for (var __i in LANGS)
     if (Object.prototype.hasOwnProperty.call(LANGS, __i)) langOwnGot(__i, SESS.uid);
   langStore();
+  /* And the first one's letters set to touch (www/glyph.js § geSide) -- a
+     value that is not the default, so what comes back is the value and not
+     the default arriving by itself. Here and not above: until the line above
+     this one the language was nobody's, and save() refuses a language that
+     is nobody's. It has to survive a langRead() on the way too, so the other
+     language is opened and this one opened again before anything goes up. */
+  SCRIPT.sp = 0; save();
+  langOpen(second); langOpen(first);
   /* and a language that is only READ, which must never go up */
   langSeenAdd('theirs-1', 'Shango', 'somebody-else');
   slWr(langKeyOf('theirs-1', 'letters'), '[{"id":"x"}]');
@@ -251,6 +259,8 @@ const up = await pg.evaluate(async ({ s, srv }) => {
     /* every slice that went up, by language */
     upFirst: S.slice.filter(function(r){ return r.language === first; }).length,
     upSecond: S.slice.filter(function(r){ return r.language === second; }).length,
+    upSp: S.slice.filter(function(r){ return r.language === first && r.kind === 'script'; })
+                 .map(function(r){ try { return JSON.parse(r.body).sp; } catch (e) { return 'unreadable'; } })[0],
     theirsSent: S.sent.filter(function(x){ return x.indexOf('theirs-1') >= 0; }).length,
     theirsRow: langWhose('theirs-1') === LW_READ,
     srv: JSON.stringify({ lang:S.lang, slice:S.slice })
@@ -265,6 +275,8 @@ say(up.sids[0] === 1 && up.sids[1] === 1,
     'so nothing makes a second row later: ' + JSON.stringify(up.sids) + ' rows each');
 say(up.upFirst > 0 && up.upSecond > 0,
     'with the slices of both: ' + up.upFirst + ' and ' + up.upSecond);
+say(up.upSp === 0,
+    'and the gap between its letters went up in the script slice: sp=' + up.upSp);
 say(up.theirsRow && up.theirsSent === 0,
     'and a language that is only READ went nowhere — syMerge adds both sides, ' +
     'and one pass would put something into a language somebody else wrote (' +
@@ -306,7 +318,12 @@ const came = await pg.evaluate(async ({ srv, saved }) => {
     out.push({ id:ids[i], name:langNameOf(ids[i]), whose:langWhose(ids[i]),
                sid:String(ids[i]), slices:n, bytes:b });
   }
-  return { before: before, after: ids.length, langs: out };
+  /* and the gap came back with it, read by the one road a language is read
+     by -- langOpen() is langRead(), which is what drops a field it does not
+     copy */
+  var vk = ids.filter(function(x){ return langNameOf(x) === 'Vaska'; })[0], sp;
+  if (vk){ langOpen(vk); sp = SCRIPT.sp; }
+  return { before: before, after: ids.length, langs: out, sp: sp };
 }, { srv: SERVER, saved: up.srv });
 
 const names = came.langs.map(l => l.name).sort().join(',');
@@ -319,6 +336,8 @@ say(cameBy['Vaska'] >= 1 && cameBy['Toko'] >= 1,
     'and with what was in them, not just their names — asked of each language ' +
     'by name, over every slice: ' +
     JSON.stringify(came.langs.map(l => l.name + ' ' + l.slices + ' slices ' + l.bytes + 'B')));
+say(came.sp === 0,
+    'and Vaska opens with its letters still set to touch: sp=' + came.sp);
 say(came.langs.every(l => l.whose === 'mine'),
     'and both are the person’s own: ' +
     JSON.stringify(came.langs.map(l => l.name + ' ' + l.whose)));

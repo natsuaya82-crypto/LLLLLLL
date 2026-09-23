@@ -695,6 +695,18 @@ export function halfDone(){
     };
     return lid;
   };
+  /* Two posts carrying the same joining letters, one written at 0 and one at
+     one step -- see the faces that ask for them. */
+  const __joinPosts = () => {
+    const A = [{ pts:[[40,400],[760,400]] }, { pts:[[400,400],[400,160]] }];
+    const B = [{ pts:[[40,400],[760,400]] }, { pts:[[220,400],[220,620],[580,620],[580,400]] }];
+    const s = [0, 1, 0, 1, ' ', 1, 0, 0];
+    [['pj1', 1], ['pj0', 0]].forEach(([id, sp]) => {
+      POSTS.unshift({ id, at: Date.now() - 60000, lang: 'other', lname: 'Tsagaan',
+                      ln: 'abab baa', who: 'Iri', hd: 'iri', mn: 'the steppe after rain',
+                      ui: 'en', ink: { g: [A, B], s: s.slice(), sp } });
+    });
+  };
   return [
     /* The account screen has two faces and the walk arrives signed IN, so the
        way in -- the three sign-in buttons and the mail door -- is on neither
@@ -3310,6 +3322,30 @@ export function halfDone(){
                                        cardOpen('x', 'kano#0');
                                        const h=vForm(); delete findWord('kano').ex; return h; }],
     ['a post as a card',       () => { cardOpen('p', 'p1'); return vForm(); }],
+    /* THE GAP BETWEEN LETTERS, AT 0 AND AT ONE STEP (www/glyph.js § geSide).
+       「0 にすると、端まで描いた線が隣とくっついて一本に繋がる」 OWNER
+       2026-09-23. Two letters that each run a stem from the left edge of the
+       lattice to the right -- one with a stroke up off it, one with a loop
+       under it -- so at 0 the stem is one line through the word and at one
+       step it is broken between every letter. The same ink on two posts, the
+       only difference `ink.sp`, because the gap is the post's. The settings
+       row is here at 0 as well: at rest it is at one, and 「both states are
+       shown」. */
+    ['the gap between letters, the language at 0', () => {
+       SCRIPT.sp = 0; window.route = 'set';
+       NAV = [{ r:'settings' }, { r:'set', a:'lang' }];
+       const h = vSet(); delete SCRIPT.sp; return h; }],
+    ['choosing the gap between letters, at 0', () => {
+       SCRIPT.sp = 0; window.route = 'set';
+       NAV = [{ r:'settings' }, { r:'set', a:'lang' }, { r:'set', a:'sp' }];
+       const h = vSet(); delete SCRIPT.sp; return h; }],
+    ['a post whose letters join, above the same at one step', () => {
+       __joinPosts(); window.route = 'feed'; NAV = [{ r:'feed' }];
+       return vFeed(); }],
+    ['a post whose letters join, as a card', () => {
+       __joinPosts(); cardOpen('p', 'pj0'); return vForm(); }],
+    ['the same post at one step, as a card', () => {
+       __joinPosts(); cardOpen('p', 'pj1'); return vForm(); }],
     /* The rule a form is made by. It takes an id, and the id is the one the
        fixture put in STG above. */
     ['a rule for making a form', () => { openFmr('fr1'); return vForm(); }],

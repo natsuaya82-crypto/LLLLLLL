@@ -861,6 +861,7 @@ defLang('pt', (function(){
       "theme.dark"       : "Escuro",
       "set.display"      : "Idioma de exibição",
       "set.lang"         : "Seu idioma",
+      "set.sp"           : "Espaçamento",
       "set.name"         : "Nome",
       "set.count"        : "Palavras",
       "set.plan"         : "Plano",

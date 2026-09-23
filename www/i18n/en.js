@@ -766,6 +766,7 @@ defLang('en', (function(){
       'theme.dark'      : "Dark",
       'set.display'     : "Display language",
       'set.lang'        : "Your language",
+      'set.sp'          : "Letter spacing",
       'set.name'        : "Name",
       'set.count'       : "Words",
       'set.plan'        : "Plan",

@@ -814,6 +814,7 @@ defLang('es', (function(){
       "theme.dark"       : "Oscuro",
       "set.display"      : "Idioma de la app",
       "set.lang"         : "Tu idioma",
+      "set.sp"           : "Espaciado",
       "set.name"         : "Nombre",
       "set.count"        : "Palabras",
       "set.plan"         : "Plan",

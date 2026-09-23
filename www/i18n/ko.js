@@ -1029,6 +1029,7 @@ defLang('ko', (function(){
       "theme.dark"       : "어둡게",
       "set.display"      : "표시 언어",
       "set.lang"         : "내 언어",
+      "set.sp"           : "자간",
       "set.name"         : "이름",
       "set.count"        : "낱말 수",
       "set.plan"         : "요금제",

@@ -859,6 +859,7 @@ defLang('zh', (function(){
       "theme.dark"       : "深色",
       "set.display"      : "显示语言",
       "set.lang"         : "你的语言",
+      "set.sp"           : "字间距",
       "set.name"         : "名字",
       "set.count"        : "词数",
       "set.plan"         : "方案",

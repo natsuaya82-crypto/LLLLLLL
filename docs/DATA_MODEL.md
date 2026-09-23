@@ -141,7 +141,7 @@ original is gone — and `docs/BACKLOG.md` carries them.
 
 | `made` | — | **not a slice.** `lingua.<id>.made.got` is the picture of `language.created_at` and nothing writes a `made` slice — it is listed here only so the key is not read as one | — |
 | `lang` | — | the language's name, and **nothing in `www/` reads or writes it** since 2026-09-08. What a language is called is the `language.name` column on the server; `langNameOf()` in `www/core.js` is how it is asked, `LNAME` holds what the server has said this session, and `lingua.<id>.name.got` is the picture a launch with no signal draws from. The slice stays in `SLICES` and is not deleted — what an older version wrote is left exactly where it is | text |
-| `script` | `SCRIPT` | roman → strokes, letters no word uses yet, and **which way the language is written** (`dir`) | object |
+| `script` | `SCRIPT` | roman → strokes, letters no word uses yet, **which way the language is written** (`dir`), and **what stands between two letters** (`sp`, in steps of the lattice — absent means 1, which every language was before 2026-09-23; written only when somebody chooses one in 設定 → 言語 → 字間) | object |
 | `letters` | `LETTERS` | the alphabet | array |
 | `notes` | `NOTES` | the notebook | array |
 | `phases` | `STG` | grammar stages, `fm` — the rules a form is made by (`docs/FEATURES.md`) — and the calendar's two numbers, `months` and `week` (`www/cal.js`) | object |
@@ -747,8 +747,18 @@ writer's language:
 
 ```js
 { g: [ [stroke, …], … ],     // every shape, written out once
-  s: [ 0, 1, 0, ' ', 1, … ] } // the line: a number indexes g, a string is itself
+  s: [ 0, 1, 0, ' ', 1, … ],  // the line: a number indexes g, a string is itself
+  sp: 1 }                     // the gap its letters stand with, in steps
 ```
+
+`sp` is the language's `SCRIPT.sp` at the moment the line was written
+(`postInkTyped()`, which the composer and an edit both use), for the reason
+`dir` is: the reader has neither the writer's language nor its settings, and
+the writer's own old posts must not move when they change it. **Absent means
+1** — every post written before 2026-09-23, and every post whose ink was cut by
+`migratePostInk()`, stood one step apart. `postSide()` is the one place below
+the line that reads it. It travels inside `body` (jsonb) with the rest of the
+ink; the server's shape did not change.
 
 Anything the writer never drew is text and stays text, which is why a
 half-drawn alphabet gives a half-drawn line.

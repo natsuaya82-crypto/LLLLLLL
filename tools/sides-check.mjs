@@ -108,7 +108,13 @@ const MINE = [
      which is the hole the four-into-one opened the moment it closed.
      postCutTyped() calls it and is ABOVE the line, where the writer still
      exists; that is why the line is where it is. */
-  'ltPuaOrder'
+  'ltPuaOrder',
+  /* What stands between two letters of the OPEN language (www/glyph.js §
+     geSide). It reads SCRIPT, so it is the making side under a name of its
+     own -- and a post drawn with it is somebody else's line spaced the way
+     MY language is spaced, and my own old posts moving when I change mine.
+     A post carries the gap it was written with; postSide() reads that. */
+  'geSide'
 ];
 
 /* ---- rule one again, on the other place a post is drawn -------------------

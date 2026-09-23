@@ -902,6 +902,7 @@ defLang('fr', (function(){
       "theme.dark"       : "Sombre",
       "set.display"      : "Langue d’affichage",
       "set.lang"         : "Votre langue",
+      "set.sp"           : "Espacement",
       "set.name"         : "Nom",
       "set.count"        : "Mots",
       "set.plan"         : "Formule",
