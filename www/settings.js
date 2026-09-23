@@ -502,9 +502,9 @@ function vContact(){
      one a person can ADD to, so neither fits in a wheel and both need a page.
      Three fixed words do.
 
-     `.field select` is already in the stylesheet and `obLang` in the
-     onboarding is already one, so nothing new is invented here and no CSS is
-     added. */
+     `.field select` is already in the stylesheet and the onboarding's
+     interface language is already one, so nothing new is invented here and
+     no CSS is added. */
   /* AND THE SEND IS IN THE CORNER OF THE BAR, NOT UNDER THE BODY.
      「本文が増えたらこれ見えなくなるやろ送信右上にして本文は画面全部に広がる
      ようにして。」 OWNER 2026-09-22. It was a `.btn.ghost` at the foot of the
@@ -865,7 +865,7 @@ function wipeHere(uid){
      slice, which is why none of them was going anywhere before today. The
      keys are gone above; these are the copies in memory, which would
      otherwise be written straight back out by the next save. */
-  ME={name:'', handle:'', bio:'', pic:'', link:'', loc:'', avSent:''};
+  ME=meBlank();
   POSTS=[]; DRAFTS=[];
   /* the person's settings, back to what a fresh install has, and NOTHING is
      carried over -- not the theme, not the interface language, not the plan.

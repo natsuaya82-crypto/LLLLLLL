@@ -532,7 +532,7 @@ function vRelate(){
           var has=on.indexOf(x.hw)>=0;
           return '<div class="entry'+(has?' on':'')+'">'+
             '<button class="ebody"' + DO('wRelToggle', [hw, k, x.hw]) + '>'+
-            '<div class="hwrow"><span class="hw">'+esc(wOut(x.hw))+'</span>'+
+            '<div class="hwrow"><span class="hw">'+sfontHTML(wOut(x.hw))+'</span>'+
             '<span class="pos">'+esc(posLabel(x.pos))+'</span></div>'+
             '<div class="mn">'+esc(wMns(x)[0]||t('words.addmn'))+'</div></button>'+
             '<span class="ltck">'+(has? ICON_TICK : '')+'</span></div>';
@@ -1838,8 +1838,17 @@ function wdFamHTML(w){
     '</div>';
 }
 /* Whether the head of the word page is showing something other than the
-   spelling -- a font of the person's own, or a script standing in for one. */
-function wdRdShown(w){ return myFontOn() || wOut(w.hw)!==String(w.hw); }
+   spelling -- letters the person drew, or a script standing in for one.
+   Drawn is asked PER CHARACTER, of sfontRuns(), because that is how the head
+   is drawn (www/glyph.js § sfontRuns): a font being on says nothing about
+   whether it draws this word, and a head nothing is drawn in was followed by
+   the same spelling a second time. */
+function wdRdShown(w){
+  var s=wOut(w.hw), a=sfontRuns(s), i;
+  if(s!==String(w.hw)) return true;
+  for(i=0;i<a.length;i++) if(a[i].on) return true;
+  return false;
+}
 function wdViewHTML(){
   var w=findWord(openHw); if(!w) return viewGone();
   var seq=wPh(w), mns=wMns(w), ex=w.ex||[];
