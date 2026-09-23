@@ -197,7 +197,9 @@ async function quiet(pg){
 
 /* ---- the phone and the server, disagreeing about everything ------------- */
 function W(hw){ return { hw:hw, ph:hw.split(''), mn:hw, mns:[hw], pos:'n', at:1 }; }
-const NOW = JSON.stringify([W('ka'), W('mi')]);          /* what the server has */
+/* what the server has -- and `mi` is a word somebody emptied the sounds of,
+   which the launch must leave empty (no guess written, r73 § 2-8) */
+const NOW = JSON.stringify([W('ka'), Object.assign(W('mi'), { ph:[] })]);
 const PIC_OLD = 'data:image/jpeg;base64,T0xE';          /* this phone's photograph */
 const PIC_NEW = 'data:image/jpeg;base64,TkVX';          /* the account's, from another phone */
 const SRV = {
@@ -276,6 +278,11 @@ const seen = await pg.evaluate(() => ({ pic:ME.pic, theme:SET.theme,
 say(seen.pic === PIC_NEW, '2 the photograph on screen is the account\'s, not the one this phone had' +
     (seen.pic === PIC_NEW ? '' : ' -- ' + String(seen.pic).slice(0, 32)));
 say(seen.words === 'ka,mi', '2 the language on screen is the server\'s -- ' + seen.words);
+const emptied = await pg.evaluate(() => {
+  var w = WORDS.filter(function(x){ return x.hw === 'mi'; })[0];
+  return w ? JSON.stringify(w.ph) : 'no word';
+});
+say(emptied === '[]', '2 and a word whose sounds somebody emptied is still empty -- no guess written back -- ' + emptied);
 const moved = await pg.evaluate(() => ({ where:WLD.where, mark:!!SET.wldMoved }));
 say(moved.where === 'the old coast' && moved.mark,
     '2 and the launch\'s migrations land when the language does -- ' + JSON.stringify(moved));

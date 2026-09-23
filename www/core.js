@@ -1554,7 +1554,12 @@ function langNew(){
    wraps it in slAsApp() (§ LTOUCH). */
 function migrateAll(){
   if(langLocked()) return;
-  migratePh();
+  /* migratePh() stood first here and is gone (2026-09-23, r73 § 2-8): it
+     wrote a guess into every word with no sounds -- a word made today has
+     none on purpose (www/wordsheet.js § addOne), and one somebody emptied
+     had its guess written back on the next launch. wPh() guesses when it
+     reads, so nothing on a screen moves. 「保存を押したときだけ、保存されて
+     いるものが変わる」 OWNER 2026-09-04. */
   migrateMn();
   /* and a part of speech saved as its label rather than its key */
   migratePos();
@@ -2823,8 +2828,10 @@ function wPh(w){
   if(w && w.ph && w.ph.length) return w.ph;
   return phGuess(w? w.hw : '');
 }
-/* The old reading of a Latin spelling, kept for exactly one job: giving the
-   words that predate the chart a sequence to carry from now on. */
+/* The old reading of a Latin spelling: what a word with no spelling and no
+   sounds of its own reads as, worked out when it is read (wPh) and when a
+   list is brought in (www/import.js) -- and never written onto a word by
+   anything nobody pressed (migratePh is gone, 2026-09-23). */
 function phGuess(hw){
   var s=String(hw||'').toLowerCase().replace(/[^a-z]/g,''), out=[], i=0, two;
   while(i<s.length){
@@ -2875,13 +2882,6 @@ function wParent(w){
   var i;
   for(i=0;i<WORDS.length;i++) if(String(WORDS[i].hw)===w.from) return WORDS[i];
   return null;
-}
-function migratePh(){
-  var changed=false;
-  WORDS.forEach(function(w){
-    if(!w.ph || !w.ph.length){ w.ph=phGuess(w.hw); changed=true; }
-  });
-  if(changed) save();
 }
 /* Syllables, cut out of the sounds rather than out of the letters.
    A run of consonants, then the vowels. Then the run of consonants before the

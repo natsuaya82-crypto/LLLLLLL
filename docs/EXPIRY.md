@@ -73,7 +73,7 @@ CLAUDE.md は「A migration **copies** and never removes what it read」と
 書き込まれます。綴りを letters で組み直した単語だけが対象です。
 
 **どこにあるか。** `www/letters.js:1265`（`migrateSp()` の `delete w.ph;`）。
-書き戻しは `www/core.js:1648`（`migratePh()`）。
+書き戻しは `www/core.js:1648`（~~`migratePh()`~~ ── 2026-09-23 に消えた、`claude/r60-up`）。
 取り込みで入る所は `www/import.js:818`。
 
 **それは人が作ったものか。** はい。その人が用意した表の一列です。
@@ -98,7 +98,7 @@ CLAUDE.md は「A migration **copies** and never removes what it read」と
 **無くなるのではなく、その人が入れたものに見える別の答えに置き換わります。**
 `migrate-check` がこの項目を持っています。**実機では押していません。**
 
-### 3-a-2. ⚠️ 同じことが、単語シートの保存でも起きる ── 確かめた。直していない
+### 3-a-2. ⚠️ 同じことが、単語シートの保存でも起きる ── 推測を書く半分は 2026-09-23 に消えた
 
 **`claude/keep3`、2026-09-04。`www/wordsheet.js` は `claude/pop` のものなので、
 一行も触っていません。**リーダー待ちです。
@@ -116,8 +116,8 @@ CLAUDE.md は「A migration **copies** and never removes what it read」と
 | | |
 |---|---|
 | `www/wordsheet.js:1533` | `wdWrite()` の `w.hw=hw; delete w.ph;` |
-| `www/core.js:1653-1659` | `migratePh()` が、`ph` が空なら `phGuess(w.hw)` を書き込む |
-| `www/boot.js:31` | `migratePh()` は**毎起動走ります**（済みの印が無い） |
+| `www/core.js:1653-1659` | ~~`migratePh()`~~ が、`ph` が空なら `phGuess(w.hw)` を書き込んでいた（2026-09-23 に消えた） |
+| `www/boot.js:31` | ~~`migratePh()`~~ は**毎起動走っていました**（済みの印が無い） |
 | `www/import.js:818` | 表の発音の列が `w.ph` に入る所 |
 
 **確かめたこと ── 本物のアプリを走らせています。**取り込んだ単語
@@ -138,13 +138,13 @@ CLAUDE.md は「A migration **copies** and never removes what it read」と
 **半分ずつ、別の人のファイルにあります。**
 
 - **消す半分** `www/wordsheet.js:1533` ── `claude/pop` のもの。
-- **推測を書く半分** `www/core.js` の `migratePh()` ── `claude/keep3` のものだが、
+- **推測を書く半分** `www/core.js` の ~~`migratePh()`~~ ── **2026-09-23 に消えた（`claude/r60-up`、r73 §2-8）。**当時は `claude/keep3` のもので、
   **こちらを変えるのは振る舞いの判断です。**コメントに書いてあるとおり
   「音の表より前の単語に並びを持たせる」という仕事があります。
   勝手に止めません。
 
 **もう一つ、見てほしいこと。** `wPh(w)`（`www/core.js:1597`）は、`ph` が空のとき
-**読む側で `phGuess()` を返します**。つまり画面に出すだけなら `migratePh()` が
+**読む側で `phGuess()` を返します**。つまり画面に出すだけなら ~~`migratePh()`~~ が
 書き込まなくても同じものが出ます。書き込むことで増えるのは、
 **その推測が人の打った値と見分けられなくなり、バックアップとサーバーにまで
 上がる**ことだけです。これをどうするかはオーナーかリーダーの判断だと思います。
