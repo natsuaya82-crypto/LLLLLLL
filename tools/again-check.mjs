@@ -1402,7 +1402,7 @@ const loop = await pg.evaluate(async ({ srv, saved }) => {
   out.diskKeys = [];
   try{ for (var _i=0;_i<localStorage.length;_i++){ var _k=localStorage.key(_i);
     if (_k && _k.indexOf('lingua.'+langId+'.')===0) out.diskKeys.push(_k); } }catch(e){}
-  out.lslKeys = Object.keys(LSL);
+  out.lslKeys = Object.keys(LSL).filter(function(k){ return k.indexOf('lingua.' + langId + '.') === 0; });
   /* 人が一語足して保存する。 */
   WORDS.push({ hw:'tunnelword', gl:'written where there was no signal' });
   save();
@@ -1420,29 +1420,30 @@ say(loop.diskKeys.length > 0 && loop.diskKeys.every(function(k){
 say(loop.fromGot.indexOf('kelasu') >= 0,
     '（前提）そして電波なしで開いた直後、画面の語は写しから来ている（' +
     loop.fromGot.length + ' 語）');
-/* **誰も何も触っていないのに、写しが上りの道に乗っています。**
-   `docs/reports/mixed-2026-09-11.md` まとまり 9 は「人が一語足して保存すると」
-   と読んでいましたが、**保存を待つまでもありません** ── 起動が `langRead()`
-   で写しをグローバルへ読み、そのあと走る移行と `ltStart()` が、**直すものが
-   無くても** `save()` を通ります。`slWr()` は `LSL` に書き、`slMine()` は
-   それを見る。
+/* **誰も何も触っていないとき、写しは上りの道に乗らない。**
+   ここは 2026-09-23 まで、逆のことを緑として主張していました ── 起動が
+   `langRead()` で写しをグローバルへ読み、そのあと走る移行と `ltStart()` が
+   `save()` を通り、`slWr()` が `LSL` に書き、`slMine()` がそれを見る。
+   「これは報告であって、ここで直すものではない」と書いたまま、在ることを
+   主張していました。測ると、その道で別の端末で消した語が起動のたびに
+   戻っていました（tools/quiet-check.mjs 2）。
 
-   **これは報告であって、ここで直すものではありません。**どの起動の道が
-   「何も直していないのに保存する」かを決めるのは保存の道の話で、
-   `docs/scope/r31-server.md` § リーダーへ に測った結果を書いてあります。
-   下の二つが、それが何を壊して何を壊さないかです。 */
-say(loop.lslKeys.length > 0,
-    '**誰も触っていないのに、写しが上りの道に乗っている** ── 起動の移行と ' +
-    'ltStart() が、直すものが無くても save() を通る（LSL に ' +
-    JSON.stringify(loop.lslKeys.map(function(k){ return k.split('.').pop(); })) +
-    '）。まとまり 9 は「保存したら」と読んでいたが、保存を待たない');
-say(loop.mineAfter !== null && String(loop.mineAfter).indexOf('tunnelword') >= 0,
-    'そこへ一語足して保存すると、その仕事も同じ道に乗る ── ' +
-    '規則 11「失敗して残る」の側（' +
-    (loop.mineAfter === null ? '**乗らない**' : '乗る') + '）');
+   今の決まりは CLAUDE.md ルール 22「Looking is the whole of it — nothing is
+   made on it, nothing is saved to it」: 書いてよいかは、この起動でサーバーが
+   言った持ち主（`langLocked()`、www/core.js）で答えるので、答えの来ていない
+   写しには何も書かれない。一語足して保存しても取られず、電波が戻っても
+   上がらず、答えが来たら画面はサーバーの中身になる。 */
+say(loop.lslKeys.length === 0,
+    '**誰も触っていないとき、写しは上りの道に乗らない** ── 起動の移行と ' +
+    'ltStart() は写しに書かない（LSL に ' +
+    JSON.stringify(loop.lslKeys.map(function(k){ return k.split('.').pop(); })) + '）');
+say(loop.mineAfter === null || String(loop.mineAfter).indexOf('tunnelword') < 0,
+    '写しの上で一語足して保存しても、写しは書き換わらない ── ルール 22「nothing ' +
+    'is saved to it」（' + (loop.mineAfter === null ? '取られない' : '**取られた**') + '）');
 
 /* 電波が戻る。サーバーは別の iPhone が足した語を持っている ── 写しが答えを
-   上書きするなら、ここでそれが消えます。 */
+   上書きするなら、ここでそれが消えます。戻った時に走るのは起動と同じ道 ──
+   この言語が降りてくる netLangsDown() で、上り道ではない。 */
 await pg.unroute('https://*.supabase.co/**');
 const loopUp = await pg.evaluate(async ({ srv, saved }) => {
   function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
@@ -1455,23 +1456,22 @@ const loopUp = await pg.evaluate(async ({ srv, saved }) => {
       S.slice[i].body = JSON.stringify(
         JSON.parse(S.slice[i].body).concat([{ hw:'otherphone', gl:'added on another phone' }]));
   SESS = { at:'t', rt:'r', uid:'me3', anon:false };
-  await new Promise(function(f){ netLangSync(function(){ f(); }); });
-  await wait(400);
+  await new Promise(function(f){ netLangsDown(function(){ f(); }); });
+  await wait(1600);
   var body = '';
   for (i = 0; i < S.slice.length; i++)
     if (S.slice[i].kind === 'words') body = String(S.slice[i].body);
-  return { body:body, words:WORDS.map(function(w){ return String(w.hw); }) };
+  return { body:body, sent:S.sent.slice(), words:WORDS.map(function(w){ return String(w.hw); }) };
 }, { srv: SERVER, saved: seenUp.srv });
 
-say(loopUp.body.indexOf('tunnelword') >= 0,
-    '電波が戻ると、トンネルで書いた語がサーバーに着く（' +
-    (loopUp.body.indexOf('tunnelword') >= 0 ? '着いた' : '**着いていない**') + '）');
+say(loopUp.body.indexOf('tunnelword') < 0,
+    '電波が戻っても、写しの上で書いた語はサーバーへ行かない（' +
+    (loopUp.body.indexOf('tunnelword') < 0 ? '行かない' : '**行った**') + '）');
 say(loopUp.body.indexOf('otherphone') >= 0,
-    '**そして別の iPhone の語は消えない** ── 規則 22 が禁じているのは写しが' +
-    '答えとして勝つことで、`syMerge` が両方足すのでここは越えていません（' +
+    '**そして別の iPhone の語は消えない**（' +
     (loopUp.body.indexOf('otherphone') >= 0 ? '残っている' : '**消えた**') + '）');
-say(loopUp.words.indexOf('otherphone') >= 0 && loopUp.words.indexOf('tunnelword') >= 0,
-    'そして画面にも両方ある: ' + JSON.stringify(loopUp.words));
+say(loopUp.words.indexOf('otherphone') >= 0 && loopUp.words.indexOf('tunnelword') < 0,
+    'そして画面はサーバーの中身: ' + JSON.stringify(loopUp.words));
 
 /* 「別のアカウントで入ると前の人の取った言語は出ない」は、この節ではなく
    **ファイルの最後**にあります ── 別のアカウントで立ち上げ直すので、落ちた

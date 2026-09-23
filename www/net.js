@@ -783,7 +783,20 @@ function netTook(d){
     LANG_WAIT=true;
     netLangSync(function(){
       if(typeof pullWait==='function') pullWait('mylangs', function(){
-        langForAcct(); render();
+        langForAcct();
+        /* AND THE ROW OF WHAT THIS DOOR HAS JUST MADE. An account the server
+           says has no language is given one here (langForAcct), and it is the
+           door that made it -- so the door makes its row, through the one
+           road that makes rows. Nothing else of it goes: it holds nothing yet,
+           and what somebody puts in it goes up when they save it. The row
+           used to appear by accident, on the free alphabet's own save riding
+           the up road; that road carries only what a person wrote now
+           (www/core.js § LTOUCH). A LAUNCH that finds no language mints one
+           too and makes no row -- that was the nameless row of 2026-09-15 --
+           and its row is made by the first save (netSaveUpGo). */
+        if(langId && !langRowUp(langId) && langMine(langId))
+          netLangRow(langId, function(){ render(); }, function(){});
+        render();
       });
     });
   }
@@ -2918,7 +2931,20 @@ function netSaveUpGo(done){
   if(NET_SYNCING){ if(done) done(true); return; }
   /* No account: the language is on the phone and has nowhere else to be. */
   if(!netSignedIn()){ if(done) done(true); return; }
-  if(langLocked()){ none(); return; }
+  /* NOT ANSWERED YET IS NOT 「NOTHING TO SEND」. On a launch the language on
+     the screen is the picture until its slices land, and langLocked()
+     (www/core.js) refuses every save onto it -- so a press in that moment
+     saved nothing, and asking the wire here would answer 「保存しました」 for
+     it. It is told what a press with no signal is told. Somebody else's
+     language is the other kind of locked: nothing of this phone's goes into
+     it, and the press is a question about the wire, as it was. */
+  if(langLocked()){
+    if(!Object.prototype.hasOwnProperty.call(LOWN, String(id||''))){
+      if(done) no(null, 0, '');
+      return;
+    }
+    none(); return;
+  }
   for(i=0;i<SLICES.length;i++){
     k=SLICES[i];
     /* A slice a PERSON wrote (core.js § LTOUCH) and that has moved since the

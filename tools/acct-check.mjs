@@ -344,6 +344,13 @@ const R = await pg.evaluate(async () => {
     netGet  = (path, ok, bad) => { getted.push(path); ok([]); };
   };
   const unwire = () => { netPost = realPost; netGet = realGet; };
+  /* THE ROWS THAT WERE ABOUT THIS LANGUAGE, by its number. 「B のセッションで
+     language に POST した」 was counted as ANY row posted while B arrived --
+     and B arriving to an account the server says has no language is given one
+     at the door, whose row the door makes (www/net.js § netTook, 2026-09-23;
+     77 below is that). That row is B's own and carries B's own number; the
+     claim is about A's. */
+  const postedFor = (id) => posted.filter(p => p.body && String(p.body.id) === String(id));
   const askRow = (id) => {
     let got = '', refused = false;
     /* netLangRow() takes the id now: it used to ask about whichever language
@@ -370,9 +377,9 @@ const R = await pg.evaluate(async () => {
   let r9 = askRow(id9);
   unwire();
   if (!r9.refused) no('9: B が A の言語の行を受け取った — 番号=' + JSON.stringify(r9.got));
-  if (posted.length)
-    no('9: B のセッションで language に POST した — owner=' +
-       JSON.stringify(posted[0].body && posted[0].body.owner));
+  if (postedFor(id9).length)
+    no('9: B のセッションで A の言語を language に POST した — owner=' +
+       JSON.stringify(postedFor(id9)[0].body.owner));
   say('9: 別のアカウントは、前の人の言語をサーバへ上げない');
 
   /* 10. 一度も上がっていない言語も、前の人のものなら上げない。
@@ -387,10 +394,10 @@ const R = await pg.evaluate(async () => {
   netOut(); arrive(B);
   let r10 = askRow(id10);
   unwire();
-  if (posted.length)
+  if (postedFor(id10).length)
     no('10: A の言語が B のアカウントに作られた — owner=' +
-       JSON.stringify(posted[0].body && posted[0].body.owner) +
-       ' name=' + JSON.stringify(posted[0].body && posted[0].body.name));
+       JSON.stringify(postedFor(id10)[0].body.owner) +
+       ' name=' + JSON.stringify(postedFor(id10)[0].body.name));
   if (!r10.refused) no('10: 上がっていない他人の言語の行が受け取られた');
   say('10: 一度も上がっていない他人の言語も、上げない');
 
@@ -442,7 +449,7 @@ const R = await pg.evaluate(async () => {
   unwire();
   if (!getted.length) no('12: uid が無いのにサーバへ訊かなかった');
   if (!r12.refused) no('12: サーバが行を返さないのに通した');
-  if (posted.length) no('12: 断ったあとで行を作りに行った');
+  if (postedFor(id12).length) no('12: 断ったあとで行を作りに行った');
   if (langOwnOf(id12)) no('12: 持ち主でないのに書いた人を書いた');
   say('12: uid の無い言語は、サーバが持ち主を答える（他人なら断る）');
 
