@@ -243,6 +243,29 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Implementation status:
 ```
 
+### 2026-09-23 自作文字がオンでも、描いていない字はローマ字で出す
+- Date: 2026-09-23
+- Area: 語を出す所（`wOut()` `www/home.js`、`sfontHTML()` `www/glyph.js`）
+- Decision: 「ローマ字」
+  自作文字で表示がオンのとき、まだ描いていない字は、借りた文字ではなくローマ字で出す。
+- Reason: オーナーがそう決めた（リーダーの問い「描いていない字は借りた字か、ローマ字か」への答え）。
+- Affected features: 辞書、単語のページ、文法の章、暦、投稿の一行以外で語を出す所
+- Affected data: 無し
+- Affected docs: 無し
+- Implementation status: IMPLEMENTED ── 今のコードがすでにこの振る舞い（r61 が測った、`docs/scope/r61-face.md`「決めていないこと」）。
+
+### 2026-09-23 古い購入をどのアカウントに付けるかは、考えなくていい
+- Date: 2026-09-23
+- Area: 購入の確かめ（`supabase/functions/verify-plan/`）
+- Decision: 「そもそもアプリ公開されたの昨日だから必要ない。」
+  `appAccountToken` の無い購入（2026-09-06 より前）は、実際の利用者にはいない。
+  `docs/scope/r63-audit.md` §2-5 S2 は、直すことも決めることも無い。
+- Reason: 公開は 2026-09-22。それより前に買った人はいない。
+- Affected features: 無し
+- Affected data: 無し
+- Affected docs: `docs/scope/r63-audit.md` §2-5 S2（記録なので書き換えない）
+- Implementation status: 何もしない、が決定。
+
 ### 2026-09-23 活用は語にしない ── 語の上にラベルと形のセットで持ち、数えない
 - Date: 2026-09-23
 - Area: 語の活用（`www/wordsheet.js` § forms、`capOK()`、キーボードの変換、投稿の意味の行）
