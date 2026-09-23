@@ -1102,7 +1102,7 @@ Order, and where it stands:
    notices (`vNotif`), the frozen state and the ⋯ on a profile (`whoMore()`,
    `www/me.js`) are in.
 6. Terms and privacy: `DOC_TERMS` / `DOC_PRIVACY` in `www/settings.js`, drawn by
-   `docRows()` on Settings, on the plans page and on the onboarding's sign-up face.
+   `docRows()` on the plans page (`planTerms()`) and on the onboarding's sign-up face.
 7. What a purchase OPENS. StoreKit is **written** ── `ios/App/App/LinguaStore.swift`,
    `www/store.js`, and `plBuy()` in `www/settings.js` is `storeBuy`'s one caller.
    The plan is the server's answer: `verify-plan` checks Apple's signature on

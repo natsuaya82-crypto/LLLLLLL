@@ -61,7 +61,6 @@ call docs/FEATURE_RULES.md netTakeGone
 call docs/FEATURE_RULES.md openCapLapse
 call docs/FEATURE_RULES.md planKeep
 call docs/FEATURE_RULES.md planMigrate
-call docs/FEATURE_RULES.md postTr
 call docs/FEATURE_RULES.md voPlayPW
 
 # `name` `file` `check` `npm` `count` `owner` `gone` `struck` -- the rest of the
@@ -133,7 +132,6 @@ name docs/FEATURE_RULES.md LANG_MAX
 name docs/FEATURE_RULES.md LS_FLAT
 name docs/FEATURE_RULES.md PLAN_BUY
 name docs/FEATURE_RULES.md SET.aiDate
-name docs/FEATURE_RULES.md SET.anon
 name docs/FEATURE_RULES.md SET.plan
 name docs/FEATURE_RULES.md SET.planPend
 name docs/FEATURE_RULES.md SET.planUid

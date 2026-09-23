@@ -1594,25 +1594,11 @@ the reasoning — a reason can be re-derived, a decision cannot.
   **繋がっていなければ保存できません。そう画面に出します。**黙って iPhone に
   溜めません。溜めた瞬間に、いま消そうとしている問題が戻ります。
 
-  **そして写しも持ちません。**
-
-  ```
-  オフラインをなくそう。
-  写しも別に今はいらなくない？今後の設計で。
-  ```
-
-  OWNER 2026-09-04。**書き込む写しは持ちません。**仕組みに入れておくと、必ず
-  「これが本物かもしれない」と思い始めます ── **それが今日の穴でした。**
-
-  **電波が無いときの画面は、同じ日の「電波が無いときは、前に読み込んだ分を出す。
-  見るだけ」が今の仕様です**（この決定ログの上のほう）。真っ白にはしません。
-  **前に読み込んだものを、見るだけ出します。**その写しは**読むだけで、
-  サーバーへ戻る道はありません。**
-
-  **iPhone に残るのは `lingua.sess` だけです** ── どのアカウントでログイン
-  しているか。**これは写しではなく「この iPhone は誰か」という札**で、無いと
-  起動のたびにログインし直しになります。CLAUDE.md 規則22 が元からそう
-  書いています。
+  **書き込む写しは持ちません。**「写しも別に今はいらなくない？」の見るだけの
+  写しの側は【差し替え済み 2026-09-04】── 差し替えた決定:「電波が無いときは、
+  前に読み込んだ分を出す。見るだけ」（2026-09-04）。その写しに、サーバーへ戻る
+  道はありません。iPhone の鍵のうち誰の物でもないのは `lingua.sess`（「この
+  iPhone は誰か」）だけで、残りはどれもアカウントの物の写しです（CLAUDE.md 規則 22）。
 - Affected features: 保存・同期・復元・運営側の復旧。制作側の全画面
 - Affected data: **減ります。**合わせるために持っていた控え（最後に一致した
   写しなど）が要らなくなります。**まだリリースしていないので、いま iPhone に
@@ -2172,9 +2158,8 @@ the reasoning — a reason can be re-derived, a decision cannot.
   ではいなら保存　いいえならそのまま戻るにしない？保存ボタン必要なとこ全部
   ```
 
-  1. **打ち込みのある画面には、右上に保存のボタンが立つ。**変えていない間は
-     薄い灰色、何か打ったら金 ── **この 1 は 2026-09-03「決定ボタンのルール」
-     で置き換わりました**（下の項）。出る／出ないではなく、色で言います
+  1. 【差し替え済み 2026-09-03】差し替えた決定: 「決定ボタンのルール ── なにもない時は
+     薄い灰色、何か打ったら金」（2026-09-03）
   2. **保存せずに画面を出ようとしたら、この app 自身のポップが訊く** ──
      「入力内容を保存しますか？」はい／いいえ
   3. **はい → 保存して戻る。いいえ → 保存せずに戻る**
@@ -2639,16 +2624,17 @@ the reasoning — a reason can be re-derived, a decision cannot.
   （docs/FEATURES.md § 4）
 - Affected data: 何も消えない。**上限を超えた分は一覧から隠れる**
   ── 「減った時は隠すだけね」「だって単語でも文法でも同じようにやったじゃん」。
-  単語が無料で先頭百語だけ並べるのと同じ形（`wordsSeen()` → `langsSeen()`）で、
-  **開いている言語は必ず一覧に残る**（「開いてるものを残すでいいよ」）。
+  単語が無料で先頭百語だけ並べるのと同じ形（`wordsSeen()` → `langsSeen()`）。
+  どれが残るかは【差し替え済み 2026-09-12】── 差し替えた決定:「主言語 ── 一番古く
+  作った言語。無料はそれだけ出て、それが開く」（2026-09-12）。
   `LANGS` も `lingua.` の鍵も一つも動かず、払い直せば全部元どおり並ぶ。
   これは `www/core.js` に書いてあった「never hides one, never shortens a
   list」を置き換える
 - Affected docs: この項目、docs/FEATURES.md § 4
 - Implementation status: IMPLEMENTED。`dl-check` が持つ
   （無料は不可・Plus は 1・Pro は 3・二つの数が互いを見ない）。赤を見た。
-  隠す側も `dl-check` が持つ（Pro で三つ、無料で一つ、開いているものが残る、
-  鍵が一つも消えない、払い直すと戻る）。赤を見た
+  隠す側も `dl-check` が持つ（Pro で三つ、無料で一つ、鍵が一つも消えない、
+  払い直すと戻る）。
 
 ### 言語の記事は「人にどう見えるか」──自分のページで分岐しない
 - Date: 2026-09-02
@@ -3743,24 +3729,13 @@ spec asks for them」と書いている ── **人が押した削除は automa
   `'ob'` を返していたので、`appIs()` を訊く検査では捕まらなかった。
   **ゲートには未接続**（`package.json` / `tools/gate.mjs` はリーダーのもの）。
 
-### 特定商取引法の表記は出さない ── 場所の半分は **superseded 2026-09-01 / 09-02**
-- Date: 2026-08-26
+### 特定商取引法の表記は出さない
+- Date: 2026-08-26（読める場所は 2026-09-01・09-02 の二つが置き換えた）
 - Area: 規約・プライバシーポリシー・特定商取引法に基づく表記
-- Decision: **特商法の表記は出さない**（「出さない。」）。これは今も効いている。
-
-  **場所についての半分は置き換えられた。**この日オーナーが言ったのは
-  「ログアウト中は見れなくていいでしょ？ログインしたら設定から見れるし」で、
-  その言葉は記録として残す。そこから書かれた規則 ──〈読める道は設定 →
-  アカウントの一番下、一箇所だけ〉── は、二つの決定が置き換えた:
-
-  - 「設定のアカウントの利用規約とプライバシーポリシー消しといて。課金の方に
-    あるからいらん」**OWNER 2026-09-01** ── アカウント室から消え、プラン画面へ
-  - 「続けるとの説明は ok」**OWNER 2026-09-02** ── 登録画面の面にも出す。
-    つまり**サインアウト中でも読める**
-
-  **今そうであること:** 読める道は**プラン画面**（`planTerms()`）と
-  **登録画面の面**（`www/onboard.js`）の二つ。**アカウント室には無い。**
-  三本目の文書は無い。
+- Decision: **特商法の表記は出さない**（「出さない。」）。規約とプライバシーポリシーが
+  読める道は**プラン画面**と**登録画面の面**の二つ ──「設定のアカウントの利用規約と
+  プライバシーポリシー消しといて。課金の方にあるからいらん」OWNER 2026-09-01、
+  「続けるとの説明は ok」OWNER 2026-09-02（サインアウト中でも読める）。
 - Reason: オーナーの言葉のまま上に。仕組みの側で分かっていること ── App Store
   の課金は販売者が Apple（日本では iTunes K.K.）で、購入契約の相手も返金の窓口も
   Apple なので、App Store Connect は特商法のページを訊いてこない。必須で訊くのは
@@ -3771,23 +3746,9 @@ spec asks for them」と書いている ── **人が押した削除は automa
   呼ぶ。`docRows()` 自体は一つで、URL も `DOC_TERMS` / `DOC_PRIVACY` の一組。
 - Affected data: **無し。** 保存するものは増えも減りもしない。
 - Affected docs: docs/BACKLOG.md（§3 と §4 をこの決定に合わせる）、docs/apple.md
-- Implementation status: **特商法の半分は入っている**（三本目の文書はどこにも
-  無い）。**場所の半分は上のとおり置き換えられ、コードは新しい方に従っている。**
-  この項が〈一箇所だけ〉と言い続けていたのを 2026-09-03 の監査が見つけた ──
-  コードは正しく、古かったのはこの文だった。
-
-  残っているのは repo の外で、**そちらは 2026-08-26 以降たしかめていない** ──
-  `natsuaya82-crypto/tokine2`
-  （Vercel で tokinets.com）を読んだ結果:
-  **`lingua/` の中は `index.html` 一つだけで、`terms.html` も `privacy.html` も
-  無い。** アプリの二本のリンクは 2026-08-26 の時点で 404。直下には二本あるが
-  **どちらも別アプリのもの**（`terms.html` は「利用規約 | JPEL Manager」、
-  `privacy.html` は
-  「本アプリには『JPEL Manager』が含まれます」と書き、メールを求めない・端末内
-  にのみ保存・AdMob 広告あり、と Lingua と真逆を宣言している）。**流用は不可** ──
-  審査に落ちるより先に、事実と違う申告になる。
-  **要るのは Lingua 用に書き下ろした二本。** App Store Connect のプライバシー
-  ポリシー URL は必須なので、これができるまで審査に出せない。サイトの仕事。
+- Implementation status: **IMPLEMENTED** ── `docRows()` を `planTerms()` と
+  `www/onboard.js` の登録の面が呼ぶ。三本目の文書は無い。二本は tokinets.com の
+  `lingua/` にある（`docs/STATE.md`）。
 
 ### 運営ページのパスワードは、Apple/Google サインインでは出ない。そのままにする
 - Date: 2026-09-02
@@ -3894,8 +3855,8 @@ instead of appearing here.
 
 2026-08-22「When somebody is asked who they are」── 匿名アカウントを起動時に
 作り、身元を訊くのは投稿と課金の二箇所だけ、`is_member()` を二つに割る。
-**下のその項目に superseded の行を付けた。言葉は消していない。**
-消したのは、それを言っていた**規則**のほうである。
+**下のその項目は【差し替え済み】の見出しと一行だけになっている**（2026-09-03
+「古い規則は残さない」）。
 
 ### Decision
 - Date: 2026-08-26 (同日、四つめ)
@@ -5375,12 +5336,8 @@ and is never merged into your own」と言っている。**入らない、は二
 ### Decision
 - Date: 2026-08-18
 - Area: Anything that is the server's — and the timeline first
-- **Superseded in part on 2026-08-26** (the entry at the head of this log).
-  Point 1 stands and is still absolute. **Point 3 does not**: 「言語はアカウント
-  ないと作れないです」「古い記載消してくれうざい」. The words below are left
-  exactly as they were written — this log is the record of what was decided
-  when, and a record that gets edited to agree with today is not one. Read
-  point 3 as history.
+- **Point 3 was replaced on 2026-08-26** by 「匿名アカウントは無くなる。
+  アカウントは一種類」 — 「言語はアカウントないと作れないです」. Points 1 and 2 stand.
 - Decision:
   1. **Anything that needs the server is built assuming the server is
      there.** A screen that half-works without one is not a step on the way
@@ -5390,9 +5347,8 @@ and is never merged into your own」と言っている。**入らない、は二
      require an account.** The feed, the search and the notices show the
      app's own door when there is no session, and the composer does not open
      at all.
-  3. **The making side is untouched.** A language is made on this phone with
-     or without an account, and 「アカウントなしで続ける」 stays on the door
-     and keeps meaning exactly that. What it does not buy is a timeline.
+  3. 【差し替え済み 2026-08-26】差し替えた決定: 「匿名アカウントは無くなる。
+     アカウントは一種類」（2026-08-26）。
 - Reason: 「なんでログインしてないアカウントで投稿できんの？そんなsnsどこにあん
   の？」「だからなんで最初からオンライン前提で作れっつってんだろ、そういう中途
   半端なバグを出すんだって何回言えばわかるの？」 — said more than once before
@@ -5400,9 +5356,7 @@ and is never merged into your own」と言っている。**入らない、は二
 - Affected features: the timeline, the search, the notices, the composer, the
   onboarding door (it takes a `skip` argument now, so the same door can be
   shown without "continue without an account")
-- Affected data: **none.** `SET.anon` still means what it meant. No post is
-  touched, moved or removed; posts already written while signed out stay
-  where they are and go up when there is a session, exactly as before.
+- Affected data: **none.** No post is touched, moved or removed.
 - Affected docs: `docs/FEATURES.md`, `docs/ARCHITECTURE.md`, `CLAUDE.md`
 - Implementation status: implemented, held by `post-check` (all three
   assertions watched failing), **not device confirmed**
@@ -5607,16 +5561,15 @@ and is never merged into your own」と言っている。**入らない、は二
 - Affected data: **new, frozen on the post** — `post.tr`, a translation per
   language code
 - Affected docs: FEATURES.md, DATA_MODEL.md
-- Implementation status: **縫い目だけがあります。**`postTr()`（`www/post.js`）は
-  `done(null)` を返し、`tr` は付かず、読む人は書いた人が打った自然言語を見ます
-  ── 動くべき姿であって、穴ではありません。`AI_SEAM` と同じ形です。
+- Implementation status: **未実装。**縫い目の関数も無く（`post.js` に翻訳を付ける
+  関数は無い）、`tr` は付かず、読む人は書いた人が打った自然言語を見ます。
 
 #### And the standing instruction that goes with it
 
 **Build for the online and AI parts now; wire them up later.** An unbuilt
 service is not a reason to stop — it is a reason to put a seam where it will
 attach, and to make everything on this side work with the seam answering
-nothing. `AI_SEAM` in `www/glyph.js` is the pattern and it predates this.
+nothing. The comment AI_SEAM in `www/glyph.js` marks one such place.
 
 Reporting "there is no hosted model" as a blocker was wrong. It is a fact
 about today, not about the design, and the design is the part being asked
