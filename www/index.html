@@ -15,7 +15,7 @@
    skeleton printed on paper instead. Every colour lives in these two blocks
    and nowhere else; the views only ever touch the variables.
    ========================================================================= */
-html[data-theme="dark"]{
+html[data-theme="dark"], .thmini.dark{
   --bg:#0a0a0e; --pane:#101017; --sf:#15151d; --sf2:#1e1e29;
   --line:rgba(255,255,255,.09); --line2:rgba(255,255,255,.05);
   --tx:#ece9e3; --txs:#a9a6b3; --txm:#6f6c7a;
@@ -43,7 +43,7 @@ html[data-theme="dark"]{
   --glassrim:rgba(255,255,255,.13); --glassspec:rgba(255,255,255,.22);
   --glassdrop:rgba(0,0,0,.46);
 }
-html[data-theme="light"]{
+html[data-theme="light"], .thmini.light{
   --bg:#faf8f3; --pane:#ffffff; --sf:#f3efe6; --sf2:#eae5da;
   --line:rgba(26,23,18,.12); --line2:rgba(26,23,18,.06);
   --tx:#1b1814; --txs:#5c574e; --txm:#8e887c;
@@ -3125,20 +3125,21 @@ a.set{text-decoration:none}
 /* A note on a word is a line or two, not a page. */
 .field textarea#wd-nt{height:76px}
 .row2{display:flex;gap:10px}.row2 .field{flex:1}
-/* The look, shown as what it looks like. The two minis are painted in
-   literal colours, not variables: the light card has to stay light while
-   the app around it is dark, which is the only reason it is a picture. */
+/* The look, shown as what it looks like. The light card has to stay light
+   while the app around it is dark, which is the only reason it is a picture
+   -- and the way it stays light is that each theme block at the top of this
+   file is also the block for its card (`.thmini.dark`, `.thmini.light`). The
+   card is painted by the theme it shows, with the theme's own variables, so
+   the picture cannot drift from the thing it is a picture of. It used to be
+   seven literal colours of its own, one of them a gold neither theme has. */
 .thcards{display:flex;gap:18px;justify-content:center;margin:8px 0 4px}
 .thcard{flex:1 1 0;max-width:172px;background:none;border:0;padding:6px 0;font:inherit;
         color:var(--tx);display:flex;flex-direction:column;align-items:center;gap:11px;min-height:44px}
 .thmini{width:100%;height:176px;border-radius:15px;border:1px solid var(--line);
         display:flex;flex-direction:column;gap:9px;padding:16px 13px;overflow:hidden}
-.thmini.light{background:#F7F5EF;border-color:#E3DED1}
-.thmini.dark{background:#131210;border-color:#2B2822}
-.thbar{height:11px;width:54%;border-radius:3px;background:#A5822F;flex:0 0 auto}
-.thl{height:7px;border-radius:4px;flex:0 0 auto;margin-top:3px}
-.thmini.light .thl{background:#DFD9C9}
-.thmini.dark .thl{background:#35312A}
+.thmini.light, .thmini.dark{background:var(--bg);border-color:var(--line)}
+.thbar{height:11px;width:54%;border-radius:3px;background:var(--gold);flex:0 0 auto}
+.thl{height:7px;border-radius:4px;flex:0 0 auto;margin-top:3px;background:var(--sf2)}
 .thl.w1{width:90%}.thl.w2{width:70%}.thl.w3{width:82%}
 .thnm{font-size:.92rem}
 .thtick{width:25px;height:25px;border-radius:999px;border:1.5px solid var(--line);
@@ -3516,7 +3517,7 @@ button.spbig{display:block;width:100%;background:none;border:0;padding:0;font:in
 .scin:focus{border-color:var(--gold)}
 .scin.own{text-align:left}
 .capwarn{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;margin:2px 0 14px;padding:12px 14px;
-  border:1px solid rgba(201,168,106,.3);border-radius:10px;background:transparent;color:var(--txm);font:inherit;font-size:.88rem;cursor:pointer}
+  border:1px solid var(--goldln);border-radius:10px;background:transparent;color:var(--txm);font:inherit;font-size:.88rem;cursor:pointer}
 /* The 「go and see the plans」 tail on a ceiling's row. It was written in two
    places 142 lines apart -- the colour here, the layout down in the drawn-marks
    section -- so neither block was the look of this thing and changing either

@@ -15,6 +15,17 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### 2026-09-23 外観の二枚の見本と上限の案内の枠が、テーマの色で描かれる ── **貯まる物は何も変わりません**
+
+r73 §2-14（r75-shape）。「Every colour lives in these two blocks and nowhere else」（index.html のテーマの一文）。
+
+- **見て変わること**：設定 → 画面表示の「ライト」「ダーク」の見本が、それぞれのテーマの金・地・線で描かれる
+  （前は両方とも、どちらのテーマにもない金 `#A5822F` と、見本だけの色 6 つ）。上限の案内（`.capwarn`）の枠は
+  ライトでもダークの金だったのが、そのテーマの `--goldln` になる。
+- **一か所**：テーマの二つのブロックが、それぞれ自分の見本（`.thmini.dark` / `.thmini.light`）にも効く。
+- 前後の写真：`shots/r75-set-look-*-before.png` / `-after.png`、`shots/r75-half-the-dictionary-past-the-free-ceiling-ja-*.png`。
+- 貯まる物・移行・削除：なし。
+
 ### 2026-09-23 字を借りるページの文字の種類が、横に流す枠から縦の一覧になる ── **貯まる物は何も変わりません**
 
 r73 §2-14（r75-shape）。「丸パッチ無限横並び…禁止」「数が多ければリスト」（CLAUDE.md § Shape）。
