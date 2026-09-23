@@ -1,20 +1,231 @@
-# オーナーだけができること
+# オーナーのやること
 
-**明日（2026-09-24）まとめて。1・2 が済んだらリーダーのセッションに「済んだ」→ 166。**
+**明日（2026-09-24）まとめて。1・2 が済んだらリーダーのセッションに「済んだ」→ 166 が出る。**
 
 オーナーの To-Do セッションが書く。リーダーはここを読む。
-上から順。状態は「まだ／済み（日付）／待ち：何を待つか」。
-手順の元：docs/apple.md § 8・§ 9、supabase/setup.md § 2・§ 9-5・§ 12（integ-0905 46280fcb で読んだもの）。
+上から順番に。飛ばすとビルドが落ちるか、通知が一通も出ない。
+手順の元：docs/apple.md § 8・§ 9、supabase/setup.md § 2・§ 9-5・§ 12、
+.github/workflows/supabase-deploy.yml（integ-0905 46280fcb で読んだもの）。
 
-| # | 何のため | どこで（画面とボタンの順） | 終わったら見えるもの | 状態 |
-|---|---|---|---|---|
-| 1 | 通知。これと 2 が無いとビルド 166 が Archive で落ちる | developer.apple.com → Certificates, Identifiers & Profiles → Identifiers → `com.tokinets.lingua` → Capabilities の Push Notifications にチェック → Save。キーボード拡張（`…LinguaKeyboard`）は触らない（apple.md § 8-1） | `com.tokinets.lingua` の Capabilities で Push Notifications にチェックが付いている | まだ |
-| 2 | 1 をプロファイルに入れる。済んだらリーダーに「済んだ」→ 166 が出る | Profiles → Lingua Distribution → Edit → そのまま Save → Download → GitHub → Settings → Secrets and variables → Actions → `PROVISIONING_PROFILE_BASE64` を差し替え（Mac: `base64 -i Lingua.mobileprovision \| pbcopy`）。`KEYBOARD_…` はそのまま（§ 8-2） | Secret の更新日が今日。166 が Archive を通る | まだ |
-| 3 | 通知を送る鍵 | Keys → ＋ → 名前（例 Lingua APNs）→ Apple Push Notifications service (APNs) にチェック → Continue → Register → .p8 を Download・Key ID（10 文字）を控える → GitHub Secrets に `APNS_KEY_ID`、`APNS_P8`（中身を改行ごと）。.p8 は一度しか落とせない（§ 8-3, 8-4） | Secrets の一覧に `APNS_KEY_ID` と `APNS_P8` | まだ |
-| 4 | 通知のトリガーに要る pg_net（5 より先） | Supabase → Database → Webhooks → Enable webhooks（ボタン一つ。Webhook は作らない）（setup.md § 12） | setup.md § 12 の見かた | まだ |
-| 5 | 通知の種類（お題の通知 `push_on_prompt` 含む）と広告の表をサーバーに | Supabase → SQL Editor → New query → schema.sql を全部貼る → Run（setup.md § 2）。**貼るのは integ-0905 の版**：`https://raw.githubusercontent.com/natsuaya82-crypto/LLLLLLL/integ-0905/supabase/schema.sql`（setup.md に書いてある master の URL の版には r55・r58 が入っていない） | `Success. No rows returned`。Storage で `post-media` が Public でない。setup.md § 12 の確かめ方 | まだ（4 の後） |
-| 6 | 通知を送る函数を置く（全員宛てを送れる版） | GitHub → Actions → Supabase Deploy → Run workflow → `push-send`（3 と 5 の後）（§ 8-6, 8-8） | 緑。Secret が空なら名前を言って止まる | まだ（3・5 の後） |
-| 7 | 毎日のお題（と通知）が夏も冬も太平洋時間 0 時に出る | Supabase Dashboard → Integrations → Cron（または Database → Cron Jobs）→ `daily-prompt` → Schedule を `0 7,8 * * *` に変えて保存（setup.md § 9-5）。今の `5 7 * * *` は冬時間で一日遅れる | `daily-prompt` の Schedule が `0 7,8 * * *` | まだ |
-| 8 | 本物の広告（無い間はテスト用 ID で動く。ビルドは通る） | AdMob（pub-2442181569589497）→ アプリ → アプリを追加 → iOS → 「App Store に公開済み」で Lingua → アプリ ID（`~` の方）を控える → そのアプリ → 広告ユニット → ネイティブ アドバンス → 名前（例 timeline）→ 詳細設定で動画を許可 → 広告ユニット ID（`/` の方）を控える → アプリの設定 → 広告コンテンツのレーティング T → GitHub Secrets に `ADMOB_APP_ID`（`~` の方）と `ADMOB_NATIVE_UNIT`（`/` の方）→ app-ads.txt（AdMob が出す一行）をマーケティング URL（無ければサポート URL）のサイトの一番上に置く（apple.md § 9-1〜9-3） | Secrets に二つ。次のビルドから本物。app-ads.txt の確認は最大 24 時間 | まだ |
-| 9 | App Store のプライバシー表示（広告・トラッキング） | App Store Connect → App のプライバシー：識別子→デバイス ID（第三者広告・分析）、使用状況データ→広告データ・製品の操作（第三者広告・分析）、位置情報→おおよその場所（第三者広告）、診断→クラッシュ・パフォーマンス（分析）。「トラッキングに使用」は はい（デバイス ID と広告データ）（apple.md § 9-4） | 公開前の表示がこの内容 | まだ |
-| 10 | 166 を実機で見る | docs/CHECK-0907.md と今日の分：書いている時と投稿の見た目が同じ（改行も）、字を描く画面の田の目安の線、設定→言語→字間、通知（3〜6 の後）、投稿の共有→カード→共有シートに X や Reddit、App Store の説明が多言語、広告（テスト用）と初回の追跡の許可画面 | — | 待ち：166 が届くまで（1・2 の後） |
+## 一覧
+
+| # | 何 | 状態 |
+|---|---|---|
+| 1 | Apple：App ID に Push Notifications | まだ |
+| 2 | Apple：配布プロファイル作り直し → GitHub Secret 差し替え → リーダーに「済んだ」 | まだ |
+| 3 | Apple：APNs の鍵 → GitHub Secrets 二つ | まだ |
+| 4 | Supabase：Webhooks を ON | まだ |
+| 5 | Supabase：schema.sql を流し直す（4 の後） | まだ |
+| 6 | GitHub：push-send を置く（3・5 の後） | まだ |
+| 7 | Supabase：Cron `daily-prompt` の時刻 | まだ |
+| 8 | AdMob：アプリ登録・広告ユニット・Secrets・app-ads.txt | まだ |
+| 9 | App Store Connect：App のプライバシー | まだ |
+| 10 | 166 を実機で見る | 待ち：166 が届くまで（1・2 の後） |
+
+---
+
+## 1. Apple：App ID に Push Notifications を付ける
+
+**何のため：** 通知。これと 2 が無いと、ビルド 166 が Archive で落ちる。
+
+1. パソコンで developer.apple.com を開いてサインイン
+2. **Account** → **Certificates, Identifiers & Profiles**
+3. 左の **Identifiers**
+4. 一覧から **`com.tokinets.lingua`** を押す
+   （`com.tokinets.lingua.LinguaKeyboard` は**触らない**）
+5. **Capabilities** の一覧で **Push Notifications** にチェック
+   （横に Configure ボタンが出ても押さなくていい）
+6. 右上の **Save** → 確認が出たら **Confirm**
+
+**終わったら見えるもの：** `com.tokinets.lingua` を開き直すと Push Notifications にチェックが付いている。
+
+---
+
+## 2. Apple：配布プロファイルを作り直して、GitHub の Secret を差し替える
+
+**何のため：** 1 のチェックはプロファイルに自動では入らない。作り直して初めて入る。
+
+1. 同じ画面の左の **Profiles**
+2. **Lingua Distribution** を押す（本体の方。キーボードの方ではない）
+3. **Edit**
+4. 何も変えずに **Save**
+5. **Download** → `Lingua.mobileprovision`（名前は多少違ってもいい）が落ちる
+6. Mac のターミナルで、落ちたファイルのあるフォルダで：
+   ```
+   base64 -i Lingua.mobileprovision | pbcopy
+   ```
+   （これで中身がコピーされる。画面には何も出ない）
+7. github.com → **natsuaya82-crypto/LLLLLLL** → **Settings** → 左の
+   **Secrets and variables** → **Actions**
+8. **`PROVISIONING_PROFILE_BASE64`** の右の鉛筆（Update）→ 中を全部消して貼り付け → **Update secret**
+9. **`KEYBOARD_PROVISIONING_PROFILE_BASE64` はそのまま**
+10. **リーダーのセッションに「1 と 2 済んだ」と言う** → 166 が出る
+
+**終わったら見えるもの：** Secrets の一覧で `PROVISIONING_PROFILE_BASE64` の更新日が今日。166 が Archive を通る。
+
+---
+
+## 3. Apple：APNs の鍵を作って GitHub に入れる
+
+**何のため：** サーバーが iPhone に通知を送るための鍵。
+
+1. developer.apple.com → Certificates, Identifiers & Profiles → 左の **Keys**
+2. **＋**
+3. Key Name：`Lingua APNs`（何でもいい）
+4. **Apple Push Notifications service (APNs)** にチェック（Configure が出たら、環境は Sandbox & Production のまま）
+5. **Continue** → **Register**
+6. **Download** → `AuthKey_XXXXXXXXXX.p8` が落ちる
+   **⚠ 一度しか落とせない。**失くしたら Revoke して作り直し
+7. 画面の **Key ID**（10 文字）を控える
+8. github.com → LLLLLLL → Settings → Secrets and variables → Actions → **New repository secret** を二回：
+   - Name `APNS_KEY_ID` ／ Secret：7 の 10 文字
+   - Name `APNS_P8` ／ Secret：`.p8` をテキストエディタで開いて**中身を全部**
+     （`-----BEGIN PRIVATE KEY-----` から `-----END PRIVATE KEY-----` まで、**改行ごと**。一行に潰さない）
+9. `APPLE_TEAM_ID` は既に入っている（触らない）
+
+**終わったら見えるもの：** Secrets の一覧に `APNS_KEY_ID` と `APNS_P8`。
+
+---
+
+## 4. Supabase：Webhooks を ON にする（5 より先）
+
+**何のため：** 通知のトリガーが使う pg_net を入れる。これが無いと通知は一通も出ない。
+
+1. supabase.com → Lingua のプロジェクト
+2. 左の **Database** → **Webhooks**
+3. **Enable webhooks** を押す
+4. **それだけ。**画面で Webhook を作らない（Create a new hook は押さない）
+
+**終わったら見えるもの：** Webhooks の画面が「有効にする」ボタンではなく一覧の画面になる。
+
+---
+
+## 5. Supabase：schema.sql を流し直す（4 の後）
+
+**何のため：** 通知の種類（お題の通知を含む）と広告の表をサーバーに入れる。
+
+1. ブラウザで下を開く → 全部選んでコピー：
+   ```
+   https://raw.githubusercontent.com/natsuaya82-crypto/LLLLLLL/integ-0905/supabase/schema.sql
+   ```
+   **⚠ integ-0905 の方。**setup.md に書いてある master の URL の方には、今日の分が入っていない
+2. Supabase → 左の **SQL Editor** → **New query**
+3. 貼り付け → **Run**
+4. `Success. No rows returned` が出れば通っている
+5. 下を New query に貼って Run：
+   ```sql
+   select g.tgname, g.tgrelid::regclass as "表"
+     from pg_trigger g join pg_proc f on f.oid = g.tgfoid
+    where f.proname = 'push_ping'
+    order by g.tgname;
+   ```
+6. 四行出れば済み：`push_on_follow` `push_on_prompt` `push_on_react` `push_on_reply`
+7. 左の **Storage** → `post-media` が **Public ではない**ことを見る
+
+**四行出ない／NOTICE: push-send: Database -> Webhooks has not been turned on… が出たら：**
+4 をやってから、もう一度 1〜3。壊れてはいない。
+
+---
+
+## 6. GitHub：push-send を置く（3 と 5 の後）
+
+**何のため：** 通知を実際に送る関数を Supabase に置く。
+
+1. github.com → LLLLLLL → 上の **Actions**
+2. 左の **Supabase Deploy**
+3. 右の **Run workflow**
+4. **どの関数を置くか** を **`push-send`** に変える（最初は `verify-plan` になっている。**そのまま押さない**）
+5. 緑の **Run workflow**
+
+**終わったら見えるもの：** 緑のチェック。
+赤で Secret の名前が出たら、その Secret が空（3 を見直す）。
+
+---
+
+## 7. Supabase：Cron `daily-prompt` の時刻を変える
+
+**何のため：** 毎日のお題（と通知）を、夏も冬もアメリカ太平洋時間の 0 時に出す。今の `5 7 * * *` だと冬（11 月〜）は 23 時間ずれる。
+
+1. Supabase → 左の **Integrations** → **Cron**（無ければ Database → **Cron Jobs**）
+2. **`daily-prompt`** の行 → 編集（… → Edit）
+3. **Schedule** を **`0 7,8 * * *`** に書き換え
+4. 他は触らない → **Save**
+
+**終わったら見えるもの：** 一覧の `daily-prompt` の Schedule が `0 7,8 * * *`。
+
+---
+
+## 8. AdMob：本物の広告にする
+
+**何のため：** 今は Google のテスト用 ID で動いている（ビルドは通る）。本物の広告と収益にはこれが要る。
+**⚠ 本物の ID が入ったビルドで、自分の広告を押さない**（アカウントが止まる）。
+
+**8-1 アプリを登録**
+1. admob.google.com（jpel と同じアカウント pub-2442181569589497）
+2. 左の **アプリ** → **アプリを追加**
+3. プラットフォーム **iOS** → 「App Store に公開済み」**はい** → 「Lingua」で検索 → 選ぶ → 追加
+4. 出てきた **アプリ ID**（`ca-app-pub-2442181569589497~` で始まる、`~` の方）を控える
+
+**8-2 広告ユニットを作る**
+1. そのアプリ → **広告ユニット** → **広告ユニットを追加**
+2. **ネイティブ アドバンス** を選ぶ
+3. 名前：`timeline`
+4. **詳細設定** → **動画を許可** をオン
+5. 作成 → **広告ユニット ID**（`ca-app-pub-2442181569589497/` で始まる、`/` の方）を控える
+
+**8-3 レーティング**
+1. そのアプリ → **アプリの設定** → **広告コンテンツのレーティング** を **T（ティーン）**（jpel と同じ）
+
+**8-4 GitHub に入れる**
+1. github.com → LLLLLLL → Settings → Secrets and variables → Actions → **New repository secret** を二回：
+   - `ADMOB_APP_ID` ／ 8-1 の `~` の方
+   - `ADMOB_NATIVE_UNIT` ／ 8-2 の `/` の方
+2. 次のビルドから本物になる（片方だけだと、もう片方はテスト用のまま）
+
+**8-5 app-ads.txt**
+1. AdMob → アプリ → **app-ads.txt** の画面に出る一行をコピー
+2. App Store Connect の「マーケティング URL」（無ければサポート URL）のサイトの一番上に `app-ads.txt` というファイルで置く
+   （例：`https://そのドメイン/app-ads.txt` で開けるように）
+3. AdMob 側の確認は最大 24 時間
+
+**終わったら見えるもの：** Secrets に `ADMOB_APP_ID` と `ADMOB_NATIVE_UNIT`。AdMob の app-ads.txt が「確認済み」。
+
+---
+
+## 9. App Store Connect：App のプライバシーを書き直す
+
+**何のため：** 広告の SDK が集めるものを申告する。
+
+1. appstoreconnect.apple.com → **アプリ** → **Lingua** → 左の **App のプライバシー**
+2. データの種類に下を足す（**編集**）：
+
+| 種類 | 用途 | ユーザーに関連付け | トラッキング |
+|---|---|---|---|
+| 識別子 → デバイス ID | 他社の広告、分析 | — | **はい** |
+| 使用状況データ → 広告データ | 他社の広告、分析 | — | **はい** |
+| 使用状況データ → 製品の操作 | 他社の広告、分析 | — | — |
+| 位置情報 → おおよその場所 | 他社の広告 | — | — |
+| 診断 → クラッシュデータ、パフォーマンスデータ | 分析 | — | — |
+
+3. 「トラッキングに使用」の質問は **はい**（デバイス ID と広告データ）
+4. **公開**
+
+元：apple.md § 9-4（Google の一覧 https://developers.google.com/admob/ios/privacy/data-disclosure ）。
+「ユーザーに関連付け」は apple.md に書いていない。**わからなければ聞いて**、調べてから答える。
+
+---
+
+## 10. 166 が届いたら実機で見る
+
+TestFlight で 166 を入れて：
+
+- docs/CHECK-0907.md の項目
+- 書いている時と、投稿した後の見た目が同じ（改行も）
+- 字を描く画面に、田の字の目安の線
+- 設定 → 言語 → 字間 の画面
+- 投稿の共有ボタン → カード → 共有シートに X や Reddit が出る
+- App Store の説明が多言語
+- ホームのタイムラインに広告（テスト用）、初めての時に「追跡を許可しますか」が一度出る（断っても広告は出る）
+- 通知（3〜6 が済んでから）：フォロー・返信・いいね、それとお題が変わった時
+
+**見えたものをスクショで送ってくれれば、どれが通ってどれがダメか書く。**
