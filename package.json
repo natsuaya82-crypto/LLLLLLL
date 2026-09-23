@@ -21,6 +21,7 @@
     "css-snap": "node tools/css-snap.mjs",
     "measure": "node tools/measure-cost.mjs",
     "press": "node tools/press.mjs",
+    "marks": "node tools/marks-check.mjs",
     "dead": "node tools/dead-check.mjs",
     "migrate": "node tools/migrate-check.mjs",
     "rls": "node tools/rls-check.mjs",

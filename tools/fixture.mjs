@@ -3805,6 +3805,14 @@ export function halfDone(){
        window.route = 'gram'; NAV = [{ r:'gram', a:'v2:n' }];
        const h = vGram();
        WORDS.pop();
-       return h; }]
+       return h; }],
+    /* SEARCHING EVERYTHING, A SOUND PRESSED -- what that sound is in, with
+       the way back to the whole list at the head of it. No face stood here,
+       so the back row was a word nothing walked: marks-check could not see
+       it, and neither could press. Appended at the END so no index moves. */
+    ['searching everything, a sound pressed', () => {
+       fpick = { k:'s', v: addedSnd()[0] };
+       window.route = 'find'; NAV = [{ r:'find' }];
+       const h = vFind(); fpick = null; return h; }]
   ];
 }
