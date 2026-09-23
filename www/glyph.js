@@ -140,6 +140,17 @@ function geSide(){ return inkSide(SCRIPT.sp); }
    beside a letter are the same number, and neither is a screen's to decide. */
 function geInkTop(){ return Math.round(800 - (GGRID.inset - GPEN.width/2)); }
 function geInkSpan(){ return Math.round(geStep()*(GGRID.n-1) + GPEN.width); }
+/* The rows of dots the editor's three guide lines run along, top to bottom.
+   Measured off how a letter is put into the font, not chosen: LinguaFont
+   turns the square into font space as 800 - y (otf5.js), and the font's
+   ascender is geInkTop(). So a stroke on the TOP row reaches exactly the
+   ascender, a stroke on the BOTTOM row is the lowest ink can go -- the
+   baseline itself is y=800, which is off the lattice, and the ink rests the
+   inset less half a pen above it -- and the MIDDLE row is the half-way of
+   that ink span. tools/guide-check.mjs builds the font and measures all
+   three. Drawn only; nothing stores them and no letter, key, tile or card
+   carries them. */
+function geGuideRows(){ return [0, (GGRID.n-1)/2, GGRID.n-1]; }
 function geSnap(v){
   var s=geStep(), i=Math.round((v - GGRID.inset) / s);
   if(i<0) i=0; if(i>GGRID.n-1) i=GGRID.n-1;
@@ -2559,8 +2570,18 @@ function geDraw(){
   x.strokeStyle=cssVar('--goldln'); x.lineWidth=Math.max(1,k0*2.5);
   x.strokeRect(k0*3,k0*3,S-k0*6,S-k0*6);
   /* The lattice is drawn as dots, not as ruled lines: a line says "anywhere
-     along here", and that is the thing being taken away. */
-  var gs=geStep(), gi, gj;
+     along here", and that is the thing being taken away. The three lines
+     under the dots are not the lattice and say something else -- a HEIGHT to
+     aim for, not a place a point may land -- which is why they are fainter
+     than the dots rather than as strong. 「aやね」 OWNER 2026-09-23. */
+  var gs=geStep(), gi, gj, gr=geGuideRows();
+  x.strokeStyle=cssVar('--line'); x.lineWidth=Math.max(1,k0*1.5);
+  for(gi=0; gi<gr.length; gi++){
+    x.beginPath();
+    x.moveTo(X(GGRID.inset), Y(GGRID.inset+gr[gi]*gs));
+    x.lineTo(X(GGRID.inset+(GGRID.n-1)*gs), Y(GGRID.inset+gr[gi]*gs));
+    x.stroke();
+  }
   /* A lattice you cannot see is a lattice that is not there, and this surface
      has one job: to show where a point may land. It has been too faint twice.
      First at 5% white, which reads on a desk and vanishes on a phone. Then at

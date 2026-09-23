@@ -243,6 +243,22 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Implementation status:
 ```
 
+### 2026-09-23 文字を描く面にガイド線 ── 固定の三本、見るだけ（案 A）
+- Date: 2026-09-23
+- Area: 文字の編集画面のキャンバス（`www/glyph.js` `geDraw()`）
+- Decision: r/casualconlang のコメント「精密に描く機能か、ガイド線を置く設定が欲しい」から。
+  精密さは既にある（21×21 の点、どの点にも吸い付く）ので、足すのはガイド線だけ。
+  二案を出した ── A：下・中・上の固定の線を点の上に薄く引く、見るだけ、何も保存しない。
+  B：言語ごとに人が置く線（保存する）。オーナー「aやね」→ **A**。
+  - 線は三本、**フォントの下・中・上に当たる点の行**（上から 0・10・20 行目）。
+  - 薄く、点より弱く。両テーマ。
+  - **何も保存しない**。切替も設定も説明文も無い。フォント・キー・タイル・カードは変わらない。
+- Reason: 字の高さを揃える目安が欲しい、という声。置ける線（B）は保存する物が増える。
+- Affected features: 文字の編集画面だけ
+- Affected data: なし
+- Affected docs: `docs/CHANGELOG.md`
+- Implementation status: r54-guides。行は `geGuideRows()` 一箇所、`tools/guide-check.mjs` がフォントを組んで測る
+
 ### 2026-09-23 字間は言語ごと。既定は 1 歩、0 で繋がる
 - Date: 2026-09-23
 - Area: 字の並び（`www/glyph.js` `geSide()`）、設定 → 言語、投稿とカード

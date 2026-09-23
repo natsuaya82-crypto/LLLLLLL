@@ -1164,6 +1164,16 @@ export function halfDone(){
                            NAV=[{r:'ltset', a:'mark'}]; return vLtset(); }],
     ['a letter in the editor', () => { editGlyph('k'); window.route='glyph';
                                        NAV=[{r:'glyph', a:GE.lid}]; return vGlyph(); }],
+    /* The two faces of the editor's canvas the three guide lines have to be
+       seen in (OWNER 2026-09-23): nothing drawn yet, so the lines stand alone
+       over the dots; and pinched in, so the lines are shown to move with the
+       dots. GE is the editor's buffer and is never saved from here. */
+    ['an empty letter in the editor', () => { editGlyph('k'); GE.st=[]; GE.si=-1; GE.pi=-1;
+                                              window.route='glyph';
+                                              NAV=[{r:'glyph', a:GE.lid}]; return vGlyph(); }],
+    ['a letter in the editor, pinched in', () => { editGlyph('k'); GE.z=2; GE.cx=400; GE.cy=580;
+                                                   window.route='glyph';
+                                                   NAV=[{r:'glyph', a:GE.lid}]; return vGlyph(); }],
     /* The IPA, opened from the letter it is about, and again from the
        inventory -- one page, two things a press means, so both are walked.
        Nothing reaches either by walking the routes. And once with something
