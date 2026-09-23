@@ -47,6 +47,11 @@ S2 は決めない ── 下に形と選択肢。
    ── 「set up」が改名の巻き添えで `setPlan` になっている。
 6. `docs/STATE.md` 「プランは Keychain にある」、`docs/BACKLOG.md` の「Swift を外すのは iOS の変更」
    （もう外した）。
+7. **`docs-check` が `setPlan()` で 7 本赤**（integ-0905 を入れた後、r62 の新しい「docs が名指す
+   関数はコードにある」）: `docs/BACKLOG.md:1313`、`docs/FEATURES.md:273`、
+   `docs/FEATURE_RULES.md:3135`・`3149`、`docs/PAID_FEATURES.md:770`、`docs/STATE.md:1747`、
+   `docs/apple.md:496`。今その仕事をしているのは `plBuy()` → `storeBuy()`、手で段を変える道は無い。
+   docs/ は r62 の持ち物なので触っていない。
 
 ## S2 ── 決めない（オーナーの決定）
 
