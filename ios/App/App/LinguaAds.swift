@@ -71,7 +71,7 @@ public class LinguaAdsPlugin: CAPPlugin, CAPBridgedPlugin {
     DispatchQueue.main.async {
       if !self.started {
         self.started = true
-        MobileAds.shared.requestConfiguration.maxAdContentRating = GADMaxAdContentRating.teen
+        MobileAds.shared.requestConfiguration.maxAdContentRating = .teen
         MobileAds.shared.start(completionHandler: nil)
       }
       self.askTracking { call.resolve([:]) }

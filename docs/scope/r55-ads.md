@@ -90,6 +90,15 @@ JS 側も `can('noads')` を呼ぶたびに訊き、pro なら `drop` する。
 Swift の名前は v12 以降の物（`AdLoader`・`NativeAdView`・`MediaView`・`MobileAds.shared`）で、
 Google の公式サンプル（googleads-mobile-ios-examples、2026-09-22）と
 `@capacitor-community/admob` の iOS のコードで確かめた。**この Linux ではコンパイルしていない。**
+`LinguaAds.swift` の Google の名前は全部照らした（2026-09-23）── `MobileAds.shared`・
+`requestConfiguration.maxAdContentRating`・`start(completionHandler:)`・`VideoOptions.shouldStartMuted`・
+`NativeAdViewAdOptions.preferredAdChoicesPosition`（`.bottomRightCorner`）・
+`AdLoader(adUnitID:rootViewController:adTypes:[.native]:options:)`・`Request()`・`NativeAdLoaderDelegate`
+（`didReceive nativeAd: NativeAd`／`didFailToReceiveAdWithError`）・`NativeAd`・`NativeAdView` と
+その `iconView` `headlineView` `advertiserView` `bodyView` `mediaView` `callToActionView` `nativeAd`・
+`MediaView`・`mediaContent.aspectRatio`・`icon?.image`。どれも公式サンプルか 13.6.0 のプラグインに同じ形で在る。
+`GAD` の付いた名前は残っていない ── Teen は型に頼る `= .teen` と書く（接頭辞付きの型名は書かない）。
+SDK のヘッダそのもの（dl.google.com）はこの環境の網で断られて読めていない。
 
 **ID**：`Info.plist` に `__ADMOB_APP_ID__`（`GADApplicationIdentifier`）と
 `__ADMOB_NATIVE_UNIT__`（`LinguaAdUnit`）。`ios-deploy.yml` が GitHub の Secret
