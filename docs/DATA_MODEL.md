@@ -291,9 +291,10 @@ the owner's decision rather than for want of a column.
 
 What is IN a draft's `body` is what the composer had in its hands, pictures and
 recording as base64 — **not** files in the media bucket. That is not a
-shortcut. `post-media` is public (`media_read` is `using (bucket_id =
-'post-media')`), so a draft's photographs put there would be readable by
-anybody holding the publishable key while the draft itself was not; and
+shortcut. `post-media` is readable by every signed-in person (`media_read` is
+`using (is_member() and bucket_id = 'post-media')`), so a draft's photographs
+put there would be readable by everybody signed in while the draft itself was
+only its author's; and
 `netMyFiles()` collects what an account deletion removes out of `post.body`
 only, so a draft owning files in the bucket would be files nothing points at.
 The bytes go up when the post does, and not before.
