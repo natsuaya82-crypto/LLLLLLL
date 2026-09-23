@@ -82,6 +82,14 @@ const SERVER = `
           S.slice[i].body = h.body;
       return answer(null);
     }
+    /* AND THE REST OF THE OPERATOR'S SCREEN, which adminLoad() asks in one
+       press. S.staffDeny is the staff list being refused. */
+    if (p.indexOf('/rest/v1/rpc/admin_counts') === 0) return answer({ reports:0 });
+    if (method === 'GET' && p.indexOf('/rest/v1/profile?select=id,handle,admin&staff') === 0){
+      if (S.staffDeny) return refuse();
+      return answer(S.staff || []);
+    }
+    if (method === 'GET' && p.indexOf('/rest/v1/feedback') === 0) return answer([]);
     if (method === 'GET' && p.indexOf('/rest/v1/slice') === 0){
       var want = arg('language'), out = [], q;
       for (q = 0; q < S.slice.length; q++) if (S.slice[q].language === want)
@@ -215,6 +223,7 @@ const ask = await pg.evaluate(async ({ srv }) => {
   popYes();
   await wait(120);
   out.err = String(ADREC_ERR || '');
+  out.offline = t('net.offline');
   S.deny = false;
   return out;
 }, { srv: SERVER });
@@ -228,7 +237,48 @@ say(ask.sent === 1 && ask.body && ask.body.language === 'L1' &&
     '「戻す」で押した行そのものが出る（' + JSON.stringify(ask.body) + '）');
 say(ask.slice === '["もどした姿"]', 'サーバーの slice がその版になる');
 say(ask.reasked >= 1, '戻したあと一覧を訊き直す ── 戻すのを戻せる行が出る');
-say(!!ask.err, '断られたら画面がそう言う（' + JSON.stringify(ask.err) + '）');
+say(!!ask.err && ask.err !== ask.offline,
+    '断られたら画面がサーバーの答えを言う ── 「接続できません」ではない（' +
+    JSON.stringify(ask.err) + '）');
+
+/* ---- 2b. who answers the reports ---------------------------------------
+   The list on the same screen. Two things, and neither can throw:
+     - which row is the account above staff is its HANDLE -- `handle =
+       'lingua'` on the server, ADMIN_HANDLE in www/net.js -- and not
+       `profile.admin`, which a database built from schema.sql answers false
+       for everybody. S.staff is exactly what such a database sends.
+     - a list that was refused is not an empty list (CLAUDE.md § Data). */
+const staff = await pg.evaluate(async () => {
+  const S = window.__SRV;
+  function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
+  const out = {};
+  S.staff = [{ id:'u9', handle:'lingua', admin:false }, { id:'u1', handle:'mod', admin:false }];
+  ADMIN_OK = true; ADMIN_BUSY = false; window.route = 'admin'; NAV = [{ r:'admin' }];
+  adminLoad();
+  await wait(150);
+  let h = vAdmin();
+  out.lingua = h.indexOf('data-do="adminStaffDrop" data-a="[&quot;lingua&quot;]"') >= 0 ||
+               h.indexOf('[\"lingua\"]') >= 0 || /adminStaffDrop[^>]*lingua/.test(h);
+  out.mod = /adminStaffDrop[^>]*mod/.test(h);
+  S.staffDeny = true;
+  adminLoad();
+  await wait(150);
+  out.list = ADMINS;
+  /* What a refusal says is netWhy()'s, asked of the page rather than
+     written out here, and it has to be ON the screen. */
+  out.err = netWhy(null, 400);
+  h = vAdmin();
+  out.drawn = h.indexOf(esc(out.err)) >= 0;
+  S.staffDeny = false;
+  return out;
+});
+console.log('\n  報告に答える人');
+say(!staff.lingua, '権限者の行（@lingua）は押せない ── 決めるのは handle、' +
+    'profile.admin ではない（サーバーの行は admin=false）');
+say(staff.mod, 'スタッフの行は押せる（@mod）');
+say(staff.list === null,
+    '断られた一覧は空の一覧ではない ── ADMINS=' + JSON.stringify(staff.list));
+say(!!staff.drawn, 'そして画面の一覧の場所に何が起きたかが出る（' + JSON.stringify(staff.err) + '）');
 
 /* ---- 3. the road to the person's phone ---------------------------------- */
 const road = await pg.evaluate(async ({ srv }) => {

@@ -534,22 +534,29 @@ const k = await pg.evaluate(() => {
 want('the line reads exactly as it was typed', k.reads, 'tuf rice');
 want('and the word this dictionary does not have is the one marked', k.marked, 'rice');
 
-/* ---- 11, 12, 13: the model comes from the store when there is one --------
-   gModel() used to build the model from the stages every time. A language
-   with a model of its own under langKey('gram2') is read from it now, and
-   this is the road in -- nothing writes that key yet.
+/* ---- 11, 12, 13: the model comes from the language, and nothing else ----
+   gModel() read a model stored under langKey('gram2') in place of the
+   stages, and ADDED its inflections to the ones the chapters make. Nothing
+   ever wrote that key; it was a second answer to 「what is this language's
+   word order」 waiting for the first byte (r63-audit § 2-4 G2). The road is
+   gone, and what somebody may have under that key is not read, not written
+   and not removed.
 
    Nothing here can throw. A model read from the wrong place still arranges a
-   sentence; it arranges it by somebody else's word order. So all three are
-   about WHICH answer came back, never about whether one did.
-
-   The middle one is the load-bearing one: `words` is put back from WORDS on
-   every read, so a stored model can never become a second, stale copy of the
-   dictionary. Adding a word is how you see that -- a copy would not grow. */
+   sentence; it arranges it by somebody else's word order. So all three ask
+   WHICH answer came back, and they ask it by putting a stored model there
+   and requiring that it change nothing -- the same model with it as
+   without, and its bytes exactly as they were put down. */
 const m = await pg.evaluate(() => {
-  /* A model of this language's own: a word order the stages do not say, and
-     an inflection, which is the thing that has nowhere else to live. */
-  slWr('lingua.' + langId + '.gram2', JSON.stringify({
+  const key = langKeyOf(langId, 'gram2');
+  const shape = (x) => JSON.stringify({ o: x.wordOrder, i: x.inflections, d: x.derivations,
+                                        r: x.grammarRules.length, w: x.words.length });
+  slRm(key);
+  const none = gModel();
+  /* A model of this language's own, as the road used to take one: a word
+     order the stages do not say, an inflection, and a word the dictionary
+     does not have. */
+  const stored = JSON.stringify({
     schema: 'lingua.grammar', version: 2, languageId: langId,
     wordOrder: ['VERB', 'SUBJECT', 'OBJECT'],
     words: [{ id: 'hw:GONE', lemma: 'GONE', meaning: 'not in the dictionary' }],
@@ -557,55 +564,31 @@ const m = await pg.evaluate(() => {
                     value: 'NOMINATIVE', operation: 'suffix',
                     form: 'ga', separator: ' ' }],
     grammarRules: []
-  }));
-  const before = gModel();
-  const had = before.words.length;
-  /* The dictionary grows. A stored copy would not. */
-  WORDS.push({ hw: 'zzznew', pos: 'n', mns: ['new'], at: 1 });
-  const after = gModel();
-  const stale = after.words.filter((w) => w.lemma === 'GONE').length;
-  const grew = after.words.filter((w) => w.lemma === 'zzznew').length;
-  WORDS.pop();
-  /* And a language with no model of its own is untouched. */
-  slRm('lingua.' + langId + '.gram2');
-  const none = gModel();
+  });
+  slWr(key, stored);
+  const had = gModel();
+  const kept = slRd(key);
+  slRm(key);
   return {
-    order: before.wordOrder.join(','), infl: before.inflections.length,
-    storedRules: before.grammarRules.length,
-    had: had, dict: WORDS.length, stale: stale, grew: grew,
-    afterCount: after.words.length,
-    noneOrder: none.wordOrder.join(','), noneInfl: none.inflections.length,
-    /* Which words are the negation is put back on every read for the same
-       reason the words are: it names them by headword. */
-    rules: none.grammarRules.length
+    none: shape(none), had: shape(had), order: had.wordOrder.join(','),
+    noneOrder: none.wordOrder.join(','),
+    stale: had.words.filter((w) => w.lemma === 'GONE').length,
+    rules: none.grammarRules.length,
+    kept: kept === stored
   };
 });
 
-want('the stored model is the one that answers', m.order, 'VERB,SUBJECT,OBJECT');
-want('and it brought the inflection nothing else can hold', m.infl, 1);
-want('its words are this dictionary, not the ones it was stored with',
-     m.had, m.dict);
-want('a word the stored model carried is not in the model that came back',
-     m.stale, 0);
-want('and a word added to the dictionary afterwards IS', m.grew, 1);
-want('so the count followed the dictionary', m.afterCount, m.dict + 1);
-
-want('a language with no model of its own answers from its stages',
-     m.noneOrder, 'OBJECT,SUBJECT,VERB');
-want('with nothing invented in the slot nobody has filled', m.noneInfl, 0);
+want('the word order is the language\'s own, stored model or not', m.order, m.noneOrder);
+want('a language answers from its stages', m.noneOrder, 'OBJECT,SUBJECT,VERB');
+want('and a stored model changes nothing about the model -- order, inflections, ' +
+     'derivations, rules, words', m.had, m.none);
+want('a word a stored model carried is not in the model', m.stale, 0);
+want('and what was stored under gram2 is still there, byte for byte', m.kept, true);
 /* NOT A NUMBER. How many rules gRules() builds is what gRules() decides, and
    writing it here would be a second answer to it -- which is exactly what went
    red the day the 助詞 stage went from three roles to seven. What is held is
-   the two things the label says: there ARE some, and a stored model comes back
-   with the same ones a model with none does. */
-want('and the rules that name words are built fresh either way',
-     m.rules > 0, true);
-/* The one the objection is about. The stored model above carries an EMPTY
-   grammarRules on purpose: a rule there says 'hw:<headword>' and would stop
-   matching the day that word was renamed, so it is rebuilt from the stages on
-   every read exactly as the words are. Empty in, the same ones out. */
-want('a model stored with no rules still comes back with the ones the stages say',
-     m.storedRules, m.rules);
+   that there ARE some. */
+want('and the rules that name words are built fresh', m.rules > 0, true);
 
 /* ---- 14-19: a mark takes a word out of the queue, wherever it stands -----
    The engine has been able to hear a case mark since the day morphology.js
@@ -2230,8 +2213,8 @@ console.log('          somebody already has, the settings still hold their copy,
 console.log('          nothing else in a stage moves, an unreadable slice is left');
 console.log('          alone, and a language made afterwards is born with none.');
 console.log('          Changed in one language, the other one does not move.');
-console.log('          A language with a model of its own is read from it, and its');
-console.log('          words are this dictionary every time rather than a copy.');
+console.log('          The model is built from the language every time: a model');
+console.log('          stored under gram2 changes nothing, and is left as it was.');
 console.log('          A particle somebody made is a word, and a word carrying one');
 console.log('          is the doer wherever it stands.');
 console.log('          What somebody wrote on the forms page reaches the engine,');
