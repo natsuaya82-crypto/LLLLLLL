@@ -717,7 +717,7 @@ function fPick(kind, key){
    loads first, so every key on this screen was drawn by the other one. */
 function fLtkHTML(l, call){
   var face='';
-  if(l.st && l.st.length) face='<canvas class="pkc" data-l="'+esc(l.id)+'"></canvas>';
+  if(inkGeo(l)) face='<canvas class="pkc" data-l="'+esc(l.id)+'"></canvas>';
   else if(l.ch) face='<span class="pkb">'+esc(l.ch)+'</span>';
   return '<button class="phk'+(face?' hasg':'')+'"'+call+'>'+face+
     '<span class="pks">'+esc(ltName(l)||'\u00b7')+'</span></button>';
@@ -731,7 +731,7 @@ function fTodo(){
   var out=[];
   var noMn=WORDS.filter(function(w){ return !wMns(w).length; }).length;
   var noSnd=LETTERS.filter(function(l){ return ltHasShape(l) && !ltUnits(l).length; }).length;
-  var noLt=addedSnd().filter(function(x){ return !ltStrokes(x) && !ltChar(x); }).length;
+  var noLt=addedSnd().filter(function(x){ return !ltHasShape(ltMain(x)); }).length;
   var stg=stAll().filter(function(p){ return !stIsDone(p); }).length;
   if(noMn) out.push([t('find.todo.mn'), noMn, 'words']);
   if(noSnd) out.push([t('find.todo.lt'), noSnd, 'letters']);

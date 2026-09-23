@@ -27,6 +27,7 @@
     "rls": "node tools/rls-check.mjs",
     "card": "node tools/card-check.mjs",
     "line": "node tools/line-check.mjs",
+    "ink": "node tools/ink-check.mjs",
     "post": "node tools/post-check.mjs",
     "fill": "node tools/fill-check.mjs",
     "round": "node tools/round-check.mjs",

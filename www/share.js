@@ -524,7 +524,7 @@ function shareWordAll(w){
   if(!sp.length) return false;
   for(i=0;i<sp.length;i++){
     l=ltById(sp[i].l);
-    if(!l || !l.st || !l.st.length) return false;
+    if(!inkGeo(l)) return false;
   }
   return true;
 }
@@ -559,7 +559,7 @@ function shareSep(){
   for(i=0;i<LETTERS.length;i++){
     l=LETTERS[i];
     if(String(ltName(l)||'')!==':') continue;
-    return {r:':', all:!!(l.st && l.st.length)};
+    return {r:':', all:!!inkGeo(l)};
   }
   return {r:':', all:false};
 }

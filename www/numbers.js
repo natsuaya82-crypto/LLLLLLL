@@ -54,15 +54,17 @@ function numSetBase(b){
   STG.base=(NUM_BASES.indexOf(b)>=0)? b : 10;
   saveStg(); numTopUp(); numDropBlank(); render();
 }
-/* A digit nobody has touched: no strokes, no sound, and no name anybody
-   typed. The slot itself is the app's -- numTopUp made it -- so it is the one
+/* A digit nobody has touched: no shape -- drawn, written on a sheet, or a
+   borrowed character (ltHasShape, which asks inkGeo) -- no sound, and no name
+   anybody typed. It asked `l.st` and a digit written on a sheet read as blank
+   and was deleted here when the base came down (r73 §2-12). The slot itself is the app's -- numTopUp made it -- so it is the one
    thing here that was never anybody's work. Everything else on a digit is.
 
    Not ltName(): a digit says what it is WORTH, so ltName never comes back
    empty for one and every slot read as somebody's. What a person can put on a
    digit is nm and ab, and those are the two to ask about. */
 function numBlank(l){
-  return !(l.st && l.st.length) && !(l.snd && l.snd.length) && !l.nm && !l.ab;
+  return !ltHasShape(l) && !(l.snd && l.snd.length) && !l.nm && !l.ab;
 }
 /* Counting back down. Every digit the new base cannot reach is looked at
    once: an empty slot goes, and one that has been drawn on, named or given a
@@ -218,9 +220,9 @@ function numFace(k){
   if(isNaN(v)) return '';
   l=numByVal(v);
   if(!l) return '';
-  /* Same as numSignHTML: the picture may be `sh` or `st`, and inkGeo() is the
-     one place that knows. ltHasShape() does not -- it is older than the sheet
-     -- so it is not what is asked here. */
+  /* The picture may be `sh` or `st`, and inkGeo() is the one place that
+     knows. Not ltHasShape(): that is also true of a borrowed character, which
+     is text and is the line below. */
   if(inkGeo(l)) return '<canvas class="tc numsm" data-l="'+esc(l.id)+'"></canvas>';
   if(l.ch) return '<span class="bch numsm">'+esc(l.ch)+'</span>';
   return '';

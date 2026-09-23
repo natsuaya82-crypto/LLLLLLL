@@ -416,8 +416,23 @@ function coreBlock(from, fn){
   process.exit(1);
 }
 const SLSRC = coreBlock('var LSL={};', 'function slRm(');
+/* And what a letter's shape is -- www/glyph.js's inkGeo() through inkPts(),
+   the only things that touch `st` and `sh` on a letter (tools/ink-check.mjs).
+   Cut out of that file for the same reason as the store above. */
+const GLYPH = fs.readFileSync(path.join(WWW, 'glyph.js'), 'utf8');
+const INKSRC = (() => {
+  const a = GLYPH.indexOf('function inkGeo('), b = GLYPH.indexOf('function inkPts(', a);
+  let i = (a < 0 || b < 0) ? -1 : GLYPH.indexOf('{', b), d = 0;
+  for (; i >= 0 && i < GLYPH.length; i++){
+    if (GLYPH[i] === '{') d++;
+    else if (GLYPH[i] === '}' && --d === 0) return GLYPH.slice(a, i + 1);
+  }
+  console.error('\nimport: www/glyph.js no longer holds inkGeo() .. inkPts() together.\n' +
+                '  Say here where a letter\'s shape is asked now. Do not copy it.\n');
+  process.exit(1);
+})();
 const LTREG = 'var localStorage={getItem:function(){return null;},removeItem:function(){}};\n' +
-              SLSRC + '\n' +
+              SLSRC + '\n' + INKSRC + '\n' +
               'function langKey(k){ return String(k); }\n' +
               'function bkTouch(){}\n' +
               /* Whether the open language may be written to -- www/core.js, and

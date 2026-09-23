@@ -77,7 +77,6 @@ function ltFor(unit){
 }
 /* The one the font uses. */
 function ltMain(unit){ var a=ltFor(unit); return a.length? a[0] : null; }
-function ltStrokes(unit){ var l=ltMain(unit); return (l && l.st && l.st.length)? l.st : null; }
 function ltChar(unit){ var l=ltMain(unit); return (l && l.ch)? l.ch : ''; }
 function ltHasShape(l){ return !!(inkGeo(l) || (l && l.ch)); }
 /* What a letter LOOKS like: what was drawn, or the character it borrows, or
@@ -468,7 +467,7 @@ function migrateMarks(){
    simply one of those until somebody says otherwise. One made FOR a sound
    (ltForUnit, and an import that carries one) still arrives with it. */
 function ltNew(o){
-  var l={id:ltId(), st:(o&&o.st)||null, ch:(o&&o.ch)||'', nm:(o&&o.nm)||'',
+  var l={id:ltId(), st:null, ch:(o&&o.ch)||'', nm:(o&&o.nm)||'',
          snd:(o&&o.snd)? o.snd.slice() : [],
          /* A letter made FOR a sound arrives with an answer; one that is just
             a shape gets the app's guess as soon as it is named. */
@@ -481,7 +480,7 @@ function ltNew(o){
      why not one letter that exists today is touched and there is no
      migration. It is put on at the moment the letter arrives and is never
      worked out again from the shape afterwards. */
-  if(o && o.sh && o.sh.length) l.sh=o.sh;
+  inkSet(l, inkGeo(o));
   if(o && o.via) l.via=String(o.via);
   /* A SLOT SAYS WHICH SLOT IT IS, and ltSlotId() below is the only caller.
      Everything else a person makes is a letter of their own and takes the id
@@ -1019,7 +1018,7 @@ function ltSetRoman(id, sp){
      is removed and why that is not somebody's work. */
   var into=ltFreeSlot(l);
   if(into){
-    if(l.st) into.st=JSON.parse(JSON.stringify(l.st));
+    if(inkGeo(l)) inkSet(into, JSON.parse(JSON.stringify(inkGeo(l))));
     if(l.ch) into.ch=l.ch;
     if(l.snd && l.snd.length){ into.snd=l.snd.slice(); into.chose=l.chose||0; }
     LETTERS.splice(LETTERS.indexOf(l), 1);
@@ -1107,13 +1106,14 @@ function ltFreeSlot(l, nm0){
 }
 function ltSetStrokes(id, st){
   var l=ltById(id); if(!l) return null;
-  if(st && st.length){ l.st=st; l.ch=''; } else l.st=null;
+  inkSet(l, st);
+  if(inkGeo(l)) l.ch='';
   saveLetters(); return l;
 }
 function ltSetChar(id, ch){
   var l=ltById(id); if(!l) return null;
   ch=String(ch||'').trim();
-  if(ch){ l.ch=ch; l.st=null; } else l.ch='';
+  if(ch){ l.ch=ch; inkSet(l, null); } else l.ch='';
   saveLetters(); return l;
 }
 /* Deleting a letter: asked for, confirmed, and left behind. ltDel() below is
@@ -1163,7 +1163,7 @@ function ltDeleteGo(id){
      Nothing else changes: the name stays, the reading stays, and sndDropLoose
      is not called because the letter has not left. */
   if(l && ltIsBase(l)){
-    delete l.st; delete l.sh; delete l.ch;
+    inkSet(l, null); delete l.ch;
     saveLetters();
     if(GE && GE.lid===id) GE=null;
     save(); installScriptFont();
