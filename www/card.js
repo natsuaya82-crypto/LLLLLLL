@@ -1071,8 +1071,8 @@ function cardBytes(c){
    shFileName() cuts one: this is pasted into a file name on the phone, and
    the handle it comes from arrives on somebody else's post.
 
-   Named after what is ON the card, which for a post is the language it was
-   written in and not the one you happen to have open. No extension -- the
+   Named after the handle ON the card: for a post, whose post it is, not
+   whoever has the phone. No extension -- the
    native side puts that on, because it is the native side that knows which
    of `<name>.png` and `<name> 2.png` it actually filed. */
 function cardFileName(){
