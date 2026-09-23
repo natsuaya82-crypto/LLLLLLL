@@ -568,7 +568,10 @@ function draftKeep(){
      typed stays in the composer, on the screen, and ［再接続］ presses Keep
      again. Nothing of anybody's is thrown away by a failure: the composer is
      untouched until the row is there. */
-  netDraftUp(d, function(){
+  netDraftUp(d, function(row){
+    /* The row as it now stands: where another phone kept this draft LATER,
+       that is the draft (supabase/schema.sql § keep_newer). */
+    if(row && row.body) d=draftOfRow(row);
     d.up=1;
     DRAFTS.push(d);
     draftsSave();
@@ -665,11 +668,20 @@ function draftDropHere(d){
    askDrafts() (www/sns.js). So the drafts fall down the same one road every
    other screen's pull does -- the mark, the pop and ［再接続］ are pullRun()'s
    and are not written again here. */
+/* A draft as the server holds it, put back into the shape the list keeps --
+   the one place a row becomes a draft (draftsPull, and draftKeep's answer). */
+function draftOfRow(r){
+  var d={}, b=(r && r.body) || {}, k;
+  for(k in b) if(Object.prototype.hasOwnProperty.call(b, k)) d[k]=b[k];
+  d.id=r.id; d.up=1;
+  if(!d.at) d.at=Date.parse(r.updated_at) || Date.now();
+  return d;
+}
 function draftsPull(ok, bad){
   var done=ok || function(){};
   if(!netSignedIn()){ done(0); return; }
   netDrafts(function(rows){
-    var i, k, r, b, d, had, seen={}, keep=[], moved=false;
+    var i, r, d, had, seen={}, keep=[], moved=false;
     for(i=0;i<(rows||[]).length;i++){
       r=rows[i];
       if(!r || !r.id) continue;
@@ -687,10 +699,7 @@ function draftsPull(ok, bad){
          not given -- what is being typed lives in the composer, and the one
          that is open is skipped above. */
       had=draftById(r.id);
-      d={}; b=r.body || {};
-      for(k in b) if(Object.prototype.hasOwnProperty.call(b, k)) d[k]=b[k];
-      d.id=r.id; d.up=1;
-      if(!d.at) d.at=Date.parse(r.updated_at) || Date.now();
+      d=draftOfRow(r);
       keep.push(d);
       if(!had || JSON.stringify(had)!==JSON.stringify(d)) moved=true;
     }

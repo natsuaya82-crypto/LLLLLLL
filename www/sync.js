@@ -6,14 +6,23 @@
    where it is made, and on the server, where it is kept. Two copies of one
    thing is the whole of what this chapter is about.
 
-   The rule is one sentence and it is docs/DATA_SAFETY.md's:
+   The rule is two sentences and they are docs/DATA_SAFETY.md's:
 
-     PUT THE TWO TOGETHER. NEITHER SIDE WINS BY BEING NEWER.
+     PUT THE TWO TOGETHER. WHERE THEY DISAGREE ABOUT ONE THING, THE LATER
+     CHANGE WINS.
 
    A word added here and a word added there are BOTH added -- which is what
    anybody would expect and is not what "sync" usually means. The usual thing
    is a save number, and a save number decides which of the two people loses
    an afternoon. 「そりゃあ両方足すだろ」
+
+   What cannot be added is ONE thing changed on both: the language's name, a
+   value in the grammar, the same word's meaning, a row removed on one phone
+   and changed on the other. That went to this phone's side whoever changed
+   it last. 「普通後から変えたほうになる？」 OWNER 2026-09-04: the side changed
+   LATER keeps it. `later` below is that answer, worked out by the caller from
+   when each side was last written by a person (www/net.js § netSlice1) --
+   true when the server's side is the later one. Nothing here reads a clock.
 
    What that costs is a duplicate rather than a deletion. Edit the same note
    on two phones and there are two notes afterwards, both of them yours, one
@@ -86,12 +95,11 @@ function syText(x){ try{ return JSON.stringify(x); }catch(e){ return String(x); 
    first sync after this shipped, or a language that has never been up --
    nothing is dropped and this is exactly what it always was.
 
-   IT DROPS ONLY WHAT IS UNCHANGED ON THE OTHER SIDE. If what the server is
-   holding is not the same thing that was removed, somebody edited it on
-   another phone after this one deleted it, and WHICH OF THOSE TWO WINS IS NOT
-   DECIDED ANYWHERE YET. So it comes back, which is what happens today and is
-   the side that loses nothing. Nothing here quietly answers a question the
-   owner has not been asked. */
+   REMOVED ON ONE SIDE AND CHANGED ON THE OTHER is one thing changed twice,
+   and the later change keeps it: removed here later, it stays removed;
+   changed there later, it comes back. And the other way round, which this
+   used to have no answer for at all: a row the other phone removed LATER,
+   that is unchanged here since the two agreed, goes here too. */
 /* ---- TWO ROWS THAT ARE ONE THING ---------------------------------------
    An id says which ROW this is. It does not always say which THING, and for
    the free plan's thirty-eight it never did: `a` is a slot, the same slot on
@@ -136,7 +144,7 @@ function syMade(kind, x){ return (kind==='letters') && ltDrawn(x); }
    letters of which thirty-eight were drawn, against thirty-eight of which NONE
    were. A duplicate is on the screen and can be dealt with. A deletion is not
    there to be noticed. 「そりゃあ両方足すだろ」 */
-function syPut(kind, out, at, seen, x){
+function syPut(kind, out, at, seen, x, win){
   var k=syOneOf(kind, x) || syKeyOf(kind, x), j=at[k];
   seen[syKeyOf(kind, x)]=1;
   if(j===undefined){ at[k]=out.length; out.push(x); return; }
@@ -148,20 +156,34 @@ function syPut(kind, out, at, seen, x){
      say so. Two ids under one slot is the other thing, and is the only thing
      this branch is for. */
   if(syKeyOf(kind, out[j])!==syKeyOf(kind, x) &&
-     syMade(kind, out[j]) && syMade(kind, x)) out.push(x);
+     syMade(kind, out[j]) && syMade(kind, x)){ out.push(x); return; }
+  /* ONE ROW ON BOTH SIDES, AND THE LATER SIDE'S IS IT. Mine is put in first,
+     so `win` is true only for a row of theirs when theirs is the later side.
+     It keeps its place in the list and takes their contents -- except that a
+     drawing is never replaced by a slot with nothing on it, which is the
+     paragraph above: a blank is not a change anybody made. */
+  if(win && !(syMade(kind, out[j]) && !syMade(kind, x))) out[j]=x;
 }
-function syArr(kind, mine, theirs, base){
-  var out=[], seen={}, at={}, was={}, i, k;
+function syArr(kind, mine, theirs, base, later){
+  var out=[], seen={}, at={}, was={}, there={}, i, k;
   if(base) for(i=0;i<base.length;i++) was[syKeyOf(kind, base[i])]=syText(base[i]);
-  for(i=0;i<mine.length;i++) syPut(kind, out, at, seen, mine[i]);
+  for(i=0;i<theirs.length;i++) there[syKeyOf(kind, theirs[i])]=1;
+  for(i=0;i<mine.length;i++){
+    k=syKeyOf(kind, mine[i]);
+    /* removed over there, later, and not touched here since the two agreed */
+    if(later && !there[k] && Object.prototype.hasOwnProperty.call(was, k) &&
+       was[k]===syText(mine[i])) continue;
+    syPut(kind, out, at, seen, mine[i], false);
+  }
   for(i=0;i<theirs.length;i++){
     k=syKeyOf(kind, theirs[i]);
-    /* it was here, it is not here now, and nobody has touched it over there.
-       Asked only of what mine does not already hold -- `seen` is every row
-       mine put in, which is what "it is not here now" means. */
+    /* it was here and it is not here now. It stays gone when this side is
+       the later one, and when nobody has touched it over there. Asked only of
+       what mine does not already hold -- `seen` is every row mine put in,
+       which is what "it is not here now" means. */
     if(!seen[k] && Object.prototype.hasOwnProperty.call(was, k) &&
-       was[k]===syText(theirs[i])) continue;
-    syPut(kind, out, at, seen, theirs[i]);
+       (!later || was[k]===syText(theirs[i]))) continue;
+    syPut(kind, out, at, seen, theirs[i], !!later);
   }
   return out;
 }
@@ -173,10 +195,9 @@ function syIsArr(x){ return Object.prototype.toString.call(x)==='[object Array]'
    of thing, they go together too -- SCRIPT is {g:{...}, extra:[...]} and STG
    is seven of these, so a merge that stopped at the top level would take one
    phone's whole grammar over the other's. Where they are two different
-   things, or two plain values, the phone's own is kept: this is called with
-   what came back from the server as `theirs`, and a language is edited on
-   the phone. */
-function syObj(kind, mine, theirs, base){
+   things, or two plain values, it is one thing changed on both, and the
+   later side's is kept. */
+function syObj(kind, mine, theirs, base, later){
   var out={}, k, b;
   for(k in theirs) if(Object.prototype.hasOwnProperty.call(theirs, k)) out[k]=theirs[k];
   for(k in mine) if(Object.prototype.hasOwnProperty.call(mine, k)){
@@ -185,10 +206,10 @@ function syObj(kind, mine, theirs, base){
        a slice -- STG's seven, SCRIPT's `extra` -- knows what was removed too */
     b=(base && Object.prototype.hasOwnProperty.call(base, k))? base[k] : null;
     if(syIsArr(mine[k]) && syIsArr(out[k])){
-      out[k]=syArr(kind, mine[k], out[k], syIsArr(b)? b : null); continue; }
+      out[k]=syArr(kind, mine[k], out[k], syIsArr(b)? b : null, later); continue; }
     if(syIsObj(mine[k]) && syIsObj(out[k])){
-      out[k]=syObj(kind, mine[k], out[k], syIsObj(b)? b : null); continue; }
-    out[k]=mine[k];
+      out[k]=syObj(kind, mine[k], out[k], syIsObj(b)? b : null, later); continue; }
+    if(!later) out[k]=mine[k];
   }
   return out;
 }
@@ -219,8 +240,8 @@ function sySide(kind, s){
    seen this language, or a language that has never been up, and neither of
    them is a merge.
 
-   THE NAME IS THE PHONE'S. Renaming a language on the other phone is not
-   something this chapter can put together, and it is one word to retype.
+   THE NAME IS ONE THING. Two names cannot be put together, so the later
+   rename is the name.
 
    AND WRECKAGE IS NEITHER OF THOSE. 「空」と「壊れている」は違う状態で、同じ枝
    に入れてはいけません -- CLAUDE.md's first rule, and this function was the
@@ -249,11 +270,11 @@ function sySide(kind, s){
    netSlice1() drops the `was` record on its way past, so the next merge cannot
    tell a removal from a row it has not been told about. That is the side that
    drops nothing, which is the side to be on. */
-function syMerge(kind, mine, theirs, base){
+function syMerge(kind, mine, theirs, base, later){
   var m=sySide(kind, mine), th=sySide(kind, theirs), c;
   if(m.is==='none')   return (th.is==='none' || th.is==='wreck')? '' : theirs;
   if(th.is==='none')  return mine;
-  if(m.is==='plain')  return mine;
+  if(m.is==='plain')  return (later && th.is==='plain')? theirs : mine;
   if(mine===theirs)   return mine;
   if(th.is==='wreck') return '';
   if(m.is==='wreck')  return theirs;
@@ -263,8 +284,9 @@ function syMerge(kind, mine, theirs, base){
      that cannot be read is a merge with no note -- which drops nothing. */
   c=sySide(kind, base); c=(c.is==='read')? c.v : null;
   if(syIsArr(m.v) && syIsArr(th.v))
-    return JSON.stringify(syArr(kind, m.v, th.v, syIsArr(c)? c : null));
+    return JSON.stringify(syArr(kind, m.v, th.v, syIsArr(c)? c : null, later));
   if(syIsObj(m.v) && syIsObj(th.v))
-    return JSON.stringify(syObj(kind, m.v, th.v, syIsObj(c)? c : null));
-  return mine;
+    return JSON.stringify(syObj(kind, m.v, th.v, syIsObj(c)? c : null, later));
+  /* two different kinds of thing: one thing changed on both */
+  return later? theirs : mine;
 }

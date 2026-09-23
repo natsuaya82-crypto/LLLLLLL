@@ -101,7 +101,7 @@ const DYNAMIC = {
     '(top)': 'the load: what is on the disk read in over the defaults',
     setFor: "this account's own settings brought back, the one before it parked",
     lsWipeAcct: "the account deleted: its fields taken off the live copy",
-    netPrefsPull: "the account's settings arriving from the server",
+    netPrefsGot: "the account's settings arriving from the server -- a sign-in's read, or the answer to a send (the later press stands)",
   },
   'ME': {
     '(top)': 'the load: nobody yet',

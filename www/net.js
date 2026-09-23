@@ -787,7 +787,7 @@ function netTook(d){
        setting before relaunching sent this phone's whole set over theirs
        (r63-audit L2). Forgotten first: the last person's agreement is not
        this one's. */
-    NET_PREFS=null;
+    NET_PREFS=null; NET_PREFS_AT={};
     netPrefsPull();
     /* AND WHAT THIS ACCOUNT WROTE THAT THE SERVER HAS NOT GOT, sent here and
        nowhere else without a press -- the same door the language goes up at
@@ -1303,10 +1303,20 @@ function netProfSync(){
    (www/me.js § meProfPut), which is the same sentence as the 公開 switch and
    the heart. 「保存するタイミングでエラーが起きるなら、保存されないし」
    OWNER 2026-09-05. */
-function netProfPut(fields, ok, bad){
+/* EACH FIELD CARRIES THE MOMENT IT WAS SAVED (`at`, the press), so that of
+   two phones changing the same field the later press stands
+   (supabase/schema.sql § keep_newer). `ok` is handed the row as it now is,
+   which is the answer to that -- the caller puts THAT on ME, not what it
+   sent. */
+function netProfPut(fields, at, ok, bad){
   if(!netSignedIn() || !SESS || !SESS.uid){ bad(null, 0, 'prof \u2212'); return; }
+  var o={}, ed={}, k;
+  for(k in fields) if(Object.prototype.hasOwnProperty.call(fields, k)){
+    o[k]=fields[k]; ed[k]=at;
+  }
+  o.ed=ed;
   netSend('PATCH', '/rest/v1/profile?id=eq.'+encodeURIComponent(SESS.uid),
-          fields, SESS.at, ok, bad);
+          o, SESS.at, function(d){ ok((d && d.length)? d[0] : null); }, bad);
 }
 /* HOW THIS ACCOUNT HAS THE APP SET UP, BOTH WAYS.
    -------------------------------------------------------------------------
@@ -1347,30 +1357,48 @@ function netPrefsSaw(){
 }
 function netPrefsPull(){
   if(!netSignedIn() || !SESS || !SESS.uid) return;
-  netGet('/rest/v1/profile?select=prefs&limit=1&id=eq.'+
+  netGet('/rest/v1/profile?select=prefs,ed&limit=1&id=eq.'+
          encodeURIComponent(SESS.uid),
     function(d){
-      var row=(d && d.length)? (d[0]||{}) : null, p, i, k, drew=false;
+      var row=(d && d.length)? (d[0]||{}) : null;
       if(!row) return;
-      p=row.prefs;
-      if(!p || typeof p!=='object') p={};
-      for(i=0;i<SET_PREFS.length;i++){
-        k=SET_PREFS[i];
-        if(!Object.prototype.hasOwnProperty.call(p, k)) continue;
-        if(SET[k]===p[k]) continue;
-        SET[k]=p[k]; drew=true;
-      }
-      netPrefsSaw();
-      if(drew){
-        setKeep();
-        /* The theme is painted rather than drawn: applyTheme() writes the
-           attribute the stylesheet's two blocks hang off, and render() alone
-           would leave the page in the last one. */
-        if(typeof applyTheme==='function') applyTheme();
-        if(typeof installScriptFont==='function') installScriptFont();
-        render();
-      }
+      netPrefsGot(row.prefs, row.ed);
     }, function(){});
+}
+/* WHAT THE SERVER SAYS THE SETTINGS ARE, put on SET -- the one place. Both a
+   sign-in's read and the answer to a send come here: prefs_put() hands back
+   the settings as they stand, which is how a phone whose press was OLDER than
+   the other phone's takes the other one's (supabase/schema.sql § keep_newer).
+
+   AND A KEY PRESSED HERE THAT HAS NOT LANDED is the same question asked on the
+   way down: it stands if its press is later than the time the server holds
+   for it (`ed`, `prefs.<key>`), and gives way if the server's is later. With
+   no time from the server, the press here is the later one -- the value there
+   was put before anything said when. */
+function netPrefsGot(p, ed){
+  var i, k, w, their, drew=false;
+  if(!p || typeof p!=='object') p={};
+  if(!ed || typeof ed!=='object') ed={};
+  for(i=0;i<SET_PREFS.length;i++){
+    k=SET_PREFS[i];
+    if(!Object.prototype.hasOwnProperty.call(p, k)) continue;
+    w=NET_PREFS_AT[k];
+    their=Number(ed['prefs.'+k]) || 0;
+    if(w && w.at>=their) continue;
+    delete NET_PREFS_AT[k];
+    if(SET[k]===p[k]) continue;
+    SET[k]=p[k]; drew=true;
+  }
+  netPrefsSaw();
+  if(drew){
+    setKeep();
+    /* The theme is painted rather than drawn: applyTheme() writes the
+       attribute the stylesheet's two blocks hang off, and render() alone
+       would leave the page in the last one. */
+    if(typeof applyTheme==='function') applyTheme();
+    if(typeof installScriptFont==='function') installScriptFont();
+    render();
+  }
 }
 /* THE SETTINGS THAT MOVED, AND ONLY THOSE. This PATCHed `prefs` with every
    setting this phone held, which replaced the column whole: a notification
@@ -1380,20 +1408,30 @@ function netPrefsPull(){
    what is sent over what is there, so what goes is what differs from what the
    two sides last agreed -- and, before anything has been heard, what this
    phone holds, which can overwrite a key but can no longer remove one. */
+/* AND WHEN EACH ONE WAS PRESSED, which is what the server compares
+   (supabase/schema.sql § keep_newer): the moment a setting is first seen to
+   differ from what the two sides agreed, and kept until the send of that
+   value lands -- a send that failed and goes again later is still the press
+   it was, not a later one. In memory: `{v, at}` per key. */
+var NET_PREFS_AT={};
 function netPrefsPut(){
   if(!netSignedIn() || !SESS || !SESS.uid) return;
-  var o={}, n=0, i, k;
+  var o={}, e={}, n=0, i, k, w;
   for(i=0;i<SET_PREFS.length;i++){
     k=SET_PREFS[i];
     if(SET[k]===undefined) continue;
-    if(NET_PREFS && NET_PREFS[k]===SET[k]) continue;
-    o[k]=SET[k]; n++;
+    if(NET_PREFS && NET_PREFS[k]===SET[k]){ delete NET_PREFS_AT[k]; continue; }
+    w=NET_PREFS_AT[k];
+    if(!w || w.v!==SET[k]) w=NET_PREFS_AT[k]={v:SET[k], at:Date.now()};
+    o[k]=SET[k]; e[k]=w.at; n++;
   }
   if(!n) return;
-  netSend('POST', '/rest/v1/rpc/prefs_put', {p:o}, SESS.at,
-          function(){
-            if(!NET_PREFS) NET_PREFS={};
-            for(k in o) if(Object.prototype.hasOwnProperty.call(o, k)) NET_PREFS[k]=o[k];
+  netSend('POST', '/rest/v1/rpc/prefs_put', {p:o, e:e}, SESS.at,
+          function(d){
+            for(k in o)
+              if(Object.prototype.hasOwnProperty.call(o, k) &&
+                 NET_PREFS_AT[k] && NET_PREFS_AT[k].v===o[k]) delete NET_PREFS_AT[k];
+            netPrefsGot(d);
           }, function(){});
 }
 /* WHERE THIS HANDSET CAN BE REACHED, UNDER THE ACCOUNT THAT IS AT IT.
@@ -2072,7 +2110,7 @@ function netInList(xs){
    「訊かなかった中身」 and 「空の中身」 are two states and must not share a
    branch (docs/DATA_SAFETY.md rule 3). */
 function netSlices(sid, ok, bad, kinds, cols){
-  netGet('/rest/v1/slice?select='+(cols || 'kind,body,no,at')+
+  netGet('/rest/v1/slice?select='+(cols || 'kind,body,no,at,ed')+
          '&language=eq.'+encodeURIComponent(sid)+
          ((kinds && kinds.length)
             ? '&kind=in.('+netInList(kinds)+')' : ''),
@@ -2080,7 +2118,10 @@ function netSlices(sid, ok, bad, kinds, cols){
       var out={}, i, r;
       for(i=0;i<(d||[]).length;i++){
         r=d[i];
-        out[r.kind]={no:r.no||0, at:String(r.at||'')};
+        /* `ed` is when a person last wrote it, on whichever phone
+           (supabase/schema.sql § keep_newer) -- 0 where nobody has said. */
+        out[r.kind]={no:r.no||0, at:String(r.at||''),
+                     ed:Number((r.ed && r.ed.body) || 0)};
         if(r.body!==undefined && r.body!==null) out[r.kind].body=String(r.body);
       }
       ok(out);
@@ -2089,7 +2130,7 @@ function netSlices(sid, ok, bad, kinds, cols){
 /* One slice, written. `Prefer: resolution=merge-duplicates` is what makes an
    insert into a table with a two-column primary key an upsert -- the phone
    does not have to know whether this slice has ever been up. */
-function netSlicePut(sid, kind, body, no, ok, bad){
+function netSlicePut(sid, kind, body, no, ed, was, ok, bad){
   /* Through netSend(), like everything else here: this is the write a
      person's work actually goes up in, and it used to open its own
      XMLHttpRequest, outside the token renewal. 「保存押せば起動されないの？」
@@ -2100,11 +2141,19 @@ function netSlicePut(sid, kind, body, no, ok, bad){
      this line sent. netSlice1() gives it to netAgreed(), and the next save
      compares against it rather than reading the dictionary back. */
   var at=(new Date()).toISOString();
+  /* AND WHEN IT WAS WRITTEN, AND WHAT IT WAS PUT TOGETHER WITH. `ed` is the
+     later of the person's own write and the server's (what went up holds
+     both); `was` is the server's time this merged against, and the server
+     refuses the write with `stale` if it has moved since (keep_newer). That
+     refusal is the one answer handed back as the third argument, so the
+     caller can tell 「read again」 from 「no signal」. */
   netSend('POST', '/rest/v1/slice',
           {language:sid, kind:kind, body:String(body||''),
-           no:(no||0)+1, at:at},
+           no:(no||0)+1, at:at, ed:{body:ed||0, was:was||0}},
           SESS && SESS.at, function(){ ok(at); },
-          function(d, st){ bad(null, st||0); }, true);
+          function(d, st){
+            bad(null, st||0, (d && d.message==='stale')? 'stale' : '');
+          }, true);
 }
 /* EVERY LANGUAGE THIS ACCOUNT HAS, BROUGHT DOWN TO THE PHONE.
    -------------------------------------------------------------------------
@@ -2736,7 +2785,7 @@ function netGotFor(id, sid, kinds, ok, bad){
          CLAUDE.md 規則 11 is about. Where either half is missing this reads
          the body, which is what it did before any of this existed. */
       if(was===null || !netAtSame(id, kk, st[kk])){ need.push(kk); continue; }
-      got[kk]={body:was, no:st[kk].no, at:st[kk].at};
+      got[kk]={body:was, no:st[kk].no, at:st[kk].at, ed:st[kk].ed};
     }
     if(!need.length){ ok(got); return; }
     netSlices(sid, function(there){
@@ -2754,7 +2803,7 @@ function netGotFor(id, sid, kinds, ok, bad){
       step();
     }, bail, dunno);
   if(know.length)
-    netSlices(sid, function(rows){ st=rows; step(); }, bail, know, 'kind,no,at');
+    netSlices(sid, function(rows){ st=rows; step(); }, bail, know, 'kind,no,at,ed');
 }
 var NET_SHRANK=[];
 var NET_SYNCING=false;
@@ -2784,8 +2833,8 @@ var NET_SYNCING=false;
    that answer, and it is the file's own `ok, bad` shape rather than a new
    one. Which of the two a caller wants is the CALLER's, so both call sites
    pass one and neither can inherit a swallow it did not ask for. */
-function netSlice1(id, sid, kind, got, done, bad){
-  var mine, was, put;
+function netSlice1(id, sid, kind, got, done, bad, tries){
+  var mine, was, put, my, their, later, ed;
   /* WHAT THIS PHONE HAS THAT THE SERVER MAY NOT KNOW ABOUT, and never the
      picture kept for a launch with no signal -- slGot() in www/core.js says
      why. This is the only function that puts a slice up, so slMine() here is
@@ -2797,8 +2846,15 @@ function netSlice1(id, sid, kind, got, done, bad){
      want opposite answers. No record means no dropping, which is what
      this did before there was one. */
   was=slMine(langWasKey(id, kind));
+  /* WHICH SIDE WAS CHANGED LATER, for the one thing the two cannot both keep
+     (www/sync.js § syMerge). This phone's is when a person here last wrote
+     this slice; the server's is when anybody did, on any phone. */
+  my=slTouchedAt(langKeyOf(id, kind));
+  their=(got && got.ed) || 0;
+  later=their>my;
+  ed=later? their : my;
   put=syMerge(kind, mine===null? '' : mine, got? got.body : '',
-              was===null? '' : was);
+              was===null? '' : was, later);
   if(put!=='' && put!==mine){
     /* and only where it keeps everything that is already there */
     if(netKeeps(mine, put)){
@@ -2816,11 +2872,14 @@ function netSlice1(id, sid, kind, got, done, bad){
        agreed. Recorded here rather than after the write, because there is
        nothing to write. */
     if(got && put===got.body){ netAgreed(id, kind, put, got.at); done(true); return; }
-    netSlicePut(sid, kind, put, got? got.no : 0,
+    netSlicePut(sid, kind, put, got? got.no : 0, ed, their,
                 function(at){ netAgreed(id, kind, put, at); done(true); },
                 /* A write that did not land agreed nothing, and the record
-                   stays as it was. What happens next is the caller's. */
-                function(d, st){ bad(d, st); });
+                   stays as it was. What happens next is the caller's --
+                   unless the server said `stale` (netSliceAgain). */
+                function(d, st, m){
+                  if(m==='stale'){ netSliceAgain(id, sid, kind, done, bad, tries); return; }
+                  bad(d, st); });
     return;
   }
   /* The stamp only where the server is KNOWN to be holding `put`. An empty
@@ -2831,9 +2890,26 @@ function netSlice1(id, sid, kind, got, done, bad){
     netAgreed(id, kind, put, (got && put===got.body)? got.at : '');
     done(false); return;
   }
-  netSlicePut(sid, kind, put, got? got.no : 0,
+  netSlicePut(sid, kind, put, got? got.no : 0, ed, their,
               function(at){ netAgreed(id, kind, put, at); done(false); },
-              function(d, st){ bad(d, st); });
+              function(d, st, m){
+                if(m==='stale'){ netSliceAgain(id, sid, kind, done, bad, tries); return; }
+                bad(d, st); });
+}
+/* ANOTHER PHONE WROTE THIS SLICE BETWEEN THIS ONE READING IT AND WRITING IT
+   (the server said `stale`, supabase/schema.sql § keep_newer). What this
+   phone put together is missing whatever that was, so it is not written: the
+   slice is read again -- its body, whatever the mark said -- and put together
+   again, by the same netSlice1(). Three times and no more: a slice two phones
+   are both writing every second is a slice somebody has to be told about,
+   and the answer then is the ordinary failure. */
+function netSliceAgain(id, sid, kind, done, bad, tries){
+  var n=(tries||0)+1;
+  if(n>3){ bad(null, 0); return; }
+  netAtSet(id, kind, '');
+  netSlices(sid, function(there){
+    netSlice1(id, sid, kind, there[kind], done, bad, n);
+  }, function(d, st){ bad(d, st); }, [kind]);
 }
 /* ---- and the moment a save reaches the server --------------------------
    「保存としたらオンラインおしまい」「オンラインは一本化ね？」 OWNER 2026-09-04.
@@ -5066,12 +5142,17 @@ function netDraftUp(d, ok, bad){
      order is an insert that fails on the primary key every time after the
      first, and a refusal that is expected is a refusal nobody reads. Two
      requests happen once per draft; every save after it is one. */
+  /* AND WHEN IT WAS WRITTEN -- `d.at`, the keep -- so that of two phones
+     keeping the same draft the later keep stands (supabase/schema.sql §
+     keep_newer). `ok` is handed the row as it now is. */
+  row.ed={body:d.at||0};
   netSend('PATCH', '/rest/v1/draft?id=eq.'+encodeURIComponent(d.id),
-          {body:row.body, updated_at:(new Date()).toISOString()}, SESS.at,
+          {body:row.body, updated_at:(new Date()).toISOString(), ed:row.ed}, SESS.at,
     function(r){
-      if(r && r.length){ ok && ok(); return; }
+      if(r && r.length){ ok && ok(r[0]); return; }
       netSend('POST', '/rest/v1/draft', row, SESS.at,
-              function(){ ok && ok(); }, bad || function(){});
+              function(r2){ ok && ok((r2 && r2.length)? r2[0] : null); },
+              bad || function(){});
     },
     bad || function(){});
 }

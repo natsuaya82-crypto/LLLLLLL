@@ -2650,11 +2650,17 @@ const R = await pg.evaluate(async () => {
       /* An update that matched nothing, so netDraftUp() falls through to the
          insert -- which is the branch worth driving: it is the one that puts a
          draft the server has never seen on the server. */
-      if (ok) ok(method === 'PATCH' ? [] : null);
+      const idD = decodeURIComponent((/id=eq\.([^&]+)/.exec(String(path)) || [])[1] || '');
+      if (ok) ok(method === 'PATCH'
+                 ? (draftRow ? [Object.assign({ id: idD }, draftRow)] : [])
+                 : null);
       return;
     }
     return realSend.apply(this, arguments);
   };
+  /* The row the server hands back to a PATCH, when a claim wants one --
+     the draft as it stands after the write (keep_newer). */
+  let draftRow = null;
   const wasDrafts = DRAFTS.slice();
   const wasSess2 = SESS;
   try {
@@ -2677,6 +2683,26 @@ const R = await pg.evaluate(async () => {
     if (dsent.length && !dsent.some(r => r.method === 'POST'))
       fails.push('the draft was never inserted -- the update matched no row ' +
                  'and nothing followed it, so the draft exists nowhere but here');
+
+    /* AND THE LATER KEEP STANDS. A draft carries when it was kept, and
+       where the server already holds a LATER keep of the same draft from
+       another phone, that is what the list here holds -- not what this
+       phone sent (supabase/schema.sql § keep_newer, 「普通後から変えた
+       ほうになる？」 OWNER 2026-09-04). */
+    PW = pwBlank(); PW.ln = 'older words';
+    dsent = [];
+    draftRow = { body: { ln: 'later words', at: Date.now() + 60000 },
+                 updated_at: new Date().toISOString() };
+    draftKeep();
+    draftRow = null;
+    const sentEd = (dsent[0] && dsent[0].body && dsent[0].body.ed) || null;
+    if (!sentEd || !(sentEd.body > 0))
+      fails.push('a draft went up without when it was kept: ' + JSON.stringify(sentEd));
+    const keptL = DRAFTS[DRAFTS.length - 1];
+    if (!keptL || keptL.ln !== 'later words')
+      fails.push('a draft kept LATER on another phone lost to this phone\u2019s ' +
+                 'older one -- the list holds ' + JSON.stringify(keptL && keptL.ln));
+    DRAFTS.pop();
 
     /* AND NO RECORDING IS IN THE DRAFT, ANYWHERE.
        「声は Documents のファイル、localStorage には入れない」 ── the decision

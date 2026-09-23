@@ -411,8 +411,10 @@ function meKeepSave(v, done){
 
    Nothing to send is not a failure: pressing Save with nothing moved writes
    what is already there, which is what it did before. */
-function meProfPut(v, done){
+function meProfPut(v, done, at){
   var send=null, i, k;
+  /* the press, kept across ［再接続］ so a retry is still the press it was */
+  at=at || Date.now();
   for(i=0;i<PROF_MINE.length;i++){
     k=PROF_MINE[i][0];
     if(v.hasOwnProperty(k) && String(v[k])!==String(ME[k]||'')){
@@ -421,9 +423,15 @@ function meProfPut(v, done){
     }
   }
   if(!send || typeof netProfPut!=='function'){ meKeepPut(v); done(true); return; }
-  netProfPut(send, function(){ meKeepPut(v); done(true); },
+  /* The row that comes back is what the account now says -- a field another
+     phone saved LATER is that phone's (supabase/schema.sql § keep_newer), and
+     meProfGot() is the one place a row goes on ME. */
+  netProfPut(send, at, function(row){
+      if(row) meProfGot(row); else meKeepPut(v);
+      done(true);
+    },
     function(d, st, m){
-      netPop(d, st, m, function(){ meProfPut(v, function(){}); });
+      netPop(d, st, m, function(){ meProfPut(v, function(){}, at); });
       done(false);
     });
 }
@@ -612,14 +620,20 @@ function meDropPic(){ meFacePut(ME.av || null); }
    to everybody until they relaunched -- and a second phone, still holding
    the old photograph, sent THAT on its own launch and put it back
    (r46-audit § A1). Taking a photograph off here, it came back from there. */
-function meFacePut(av){
+function meFacePut(av, at){
   /* 「何か更新するならクルクルが必要」 OWNER 2026-09-12 -- the same mark
      pwSendPost() turns while a post goes up. */
   netSpin(true);
-  netProfPut({av:av}, function(){ netSpin(false); meAvGot(av); openMe(); },
+  at=at || Date.now();
+  netProfPut({av:av}, at, function(row){
+      netSpin(false);
+      /* the face the account now has: a face another phone set later is it */
+      meAvGot(row? row.av : av);
+      openMe();
+    },
     function(d, st, m){
       netSpin(false);
-      netPop(d, st, m, function(){ meFacePut(av); });
+      netPop(d, st, m, function(){ meFacePut(av, at); });
     });
 }
 /* What the server says the face is, and the one place ME is told. The `av`

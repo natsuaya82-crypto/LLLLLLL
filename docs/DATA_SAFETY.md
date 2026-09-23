@@ -64,17 +64,24 @@ save onto it, and a slice goes up only when a PERSON wrote it
 (`LTOUCH` in `www/core.js`) — a slice the app itself changed inside a server
 answer (the free alphabet topped up, a migration) goes with the next thing
 somebody saves in that slice and never on its own. It
-MERGES: `syMerge()` (`www/sync.js`) adds both sides and lets neither win by
-being newer, so a word added here and a word added there are both added.
-「そりゃあ両方足すだろ」
+MERGES: `syMerge()` (`www/sync.js`) adds both sides, so a word added here and
+a word added there are both added 「そりゃあ両方足すだろ」 — and where the two
+disagree about ONE thing (a value, the same row changed on both, a row removed
+on one and changed on the other) **the side a person changed later keeps it**
+「普通後から変えたほうになる？」 OWNER 2026-09-04. When is `LTOUCH`'s time on
+this phone and `slice.ed` on the server.
 
 **A write that only wrote would destroy.** `slice`'s primary key is
-`(language, kind)` and `no` guards nothing, so a phone that sent what it was
-holding would take out whatever another one had added, silently. That is why
-there is one road and not a short one beside it.
+`(language, kind)`, so a phone that sent what it was holding would take out
+whatever another one had added, silently. That is why there is one road and
+not a short one beside it — and why the server refuses a write put together
+against a version that has since moved (`stale`, `keep_newer()` in
+`supabase/schema.sql`): the phone reads again and merges again.
 
 `again-check` holds it: a save arrives without a launch, only the slices that
-moved are asked for and sent, and a word deleted here stays deleted.
+moved are asked for and sent, a word deleted here stays deleted, a `stale`
+write is merged again with both phones' words kept, and the later change of
+one value stands. `rls-check` holds the server half.
 
 ### 2. A restore never overwrites a slice that is there
 

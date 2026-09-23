@@ -355,11 +355,11 @@ by remembering:
   `supabase/schema.sql` is `(language, kind)` primary key, `body` the exact
   string the app holds for it — so a slice has one shape and not two that
   could disagree.
-- **two phones**: `www/sync.js` (ch. 26) reads, merges and writes back, and
-  **neither side wins by being newer.** Both are added. The price of that is a
-  duplicate, never a deletion 「そりゃあ両方足すだろ」 — which is
-  `docs/DATA_SAFETY.md`'s rule, applied to the one place it would have been
-  easiest to break.
+- **two phones**: `www/sync.js` (ch. 26) reads, merges and writes back.
+  Lists are both added — the price of that is a duplicate, never a deletion
+  「そりゃあ両方足すだろ」 — and one thing changed on both is the later
+  change's 「普通後から変えたほうになる？」 OWNER 2026-09-04
+  (`docs/DATA_SAFETY.md` § 1).
 - `netLangRow()` makes the `language` row and puts its id on `LANGS[id].sid`;
   `netSlicePut()` upserts (`Prefer: resolution=merge-duplicates`);
   `netSlices()` reads them; `netLangSync()` runs the three, and
@@ -664,9 +664,9 @@ What that means here, item by item, and most of it is **already built**:
 - **the language lives on the server.** `netLangRow()` makes the `language`
   row and keeps its id on `LANGS[id].sid`; `netSlicePut()` upserts one slice
   (`Prefer: resolution=merge-duplicates`); `netSlices()` reads them back;
-  `netLangSync()` puts the two copies together through `www/sync.js`, whose
-  rule is that **neither side wins by being newer** — both are added, and the
-  price of that is a duplicate rather than a deletion 「そりゃあ両方足すだろ」.
+  `netLangSync()` puts the two copies together through `www/sync.js`: lists
+  are both added, and the price of that is a duplicate rather than a deletion
+  「そりゃあ両方足すだろ」; one thing changed on both is the later change's.
   `www/boot.js` fires it on launch.
 - **there is no file.** The Documents backup was deleted 2026-09-04
   (`CLAUDE.md` rule 11): a save reaches the server at once.

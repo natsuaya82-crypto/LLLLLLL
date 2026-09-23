@@ -2993,9 +2993,12 @@ const R = await pg.evaluate(async () => {
   {
     const realSend64 = netSend, realGet64 = netGet;
     let put64 = null;
-    netSend = (method, path, body) => {
+    /* 答えも返す ── 送ったものが着いた、という形で。着かないままの押しは
+       「まだ出ている押し」で、降りてきた値より新しい限り画面に残ります
+       （www/net.js § netPrefsGot）。 */
+    netSend = (method, path, body, tok, ok) => {
       if (method === 'POST' && path.indexOf('/rest/v1/rpc/prefs_put') === 0 &&
-          body && body.p) put64 = body.p;
+          body && body.p){ put64 = body.p; if (ok) ok(null); }
     };
     SET.theme = 'dark'; SET.myfont = false; SET.showScript = false;
     SET.kbrom = true;
@@ -3057,6 +3060,41 @@ const R = await pg.evaluate(async () => {
     for (let z = 0; z < SET_PREFS.length; z++)
       if (SET_PHONE.indexOf(SET_PREFS[z]) >= 0)
         no('64: SET_PHONE がまだ ' + SET_PREFS[z] + ' をこの端末の設えだと言っている');
+    /* AND THE LATER PRESS STANDS (supabase/schema.sql § keep_newer,
+       「普通後から変えたほうになる？」 OWNER 2026-09-04). A press carries when
+       it happened; what prefs_put() hands back is what stands, and a phone
+       whose press was older takes it. A press that has not landed gives way
+       on the way down only to a LATER time. */
+    {
+      let e64 = null;
+      const t64 = Date.now();
+      netPrefsSaw();
+      netSend = (method, path, body, tok, ok) => {
+        if (path.indexOf('/rest/v1/rpc/prefs_put') === 0){
+          e64 = body.e;
+          /* the other phone chose dusk after this press */
+          if (ok) ok({ theme:'dusk', ui:SET.ui });
+        }
+      };
+      setTheme('light');
+      if (!e64 || !(e64.theme >= t64))
+        no('64: 押した時刻が設えと一緒に出ていない — ' + JSON.stringify(e64));
+      if (SET.theme !== 'dusk')
+        no('64: **後から押された別の端末の設えが画面に来ない** — ' + SET.theme);
+      /* a press still out, and a read coming down: older gives way to it,
+         later takes it */
+      netSend = () => {};
+      setTheme('light');
+      netGet = (path, ok) => ok([{ prefs:{ theme:'noon' }, ed:{ 'prefs.theme':1000 } }]);
+      netPrefsPull();
+      if (SET.theme !== 'light')
+        no('64: まだ着いていない押しが、それより古いサーバーの値に上書きされた — ' + SET.theme);
+      netGet = (path, ok) => ok([{ prefs:{ theme:'night' }, ed:{ 'prefs.theme':Date.now() + 60000 } }]);
+      netPrefsPull();
+      if (SET.theme !== 'night')
+        no('64: 後から押されたサーバーの値が、着いていない古い押しに負けた — ' + SET.theme);
+      say('64: 設えは後から押したほうが残る ── 押した時刻が出て行き、答えと降りてきた値のうち後のものが画面に来る');
+    }
     netSend = realSend64; netGet = realGet64;
     SET.theme = 'system'; SET.ui = 'en'; setKeep();
     say('64: アプリの設えはアカウントのもの ── profile.prefs へ上がり、' +
@@ -3265,7 +3303,8 @@ const R = await pg.evaluate(async () => {
   {
     const sentAt = [];
     const keepPut = netProfPut, keepFree = netHandleFree;
-    netProfPut = (fields, ok) => { sentAt.push(fields); ok({}); };
+    let at67 = null;
+    netProfPut = (fields, at, ok) => { sentAt.push(fields); at67 = at; ok(fields); };
     netHandleFree = (h, ok) => ok(true);
     ME.name = 'アヤ'; ME.handle = 'aya'; ME.bio = ''; saveMe();
     meKeepSave({ name: 'アヤ改', handle: 'ayaka', bio: 'ここに一行' }, () => {});
@@ -3284,8 +3323,18 @@ const R = await pg.evaluate(async () => {
     const sent2 = sentAt.length ? sentAt[0] : {};
     if (sent2.hasOwnProperty('display') || sent2.hasOwnProperty('handle'))
       no('67: 動いていない名前と @ まで送っている — ' + JSON.stringify(sent2));
+    /* 保存を押した時刻が、送る欄と一緒に出る（後から直したほうが残る、
+       supabase/schema.sql § keep_newer）。 */
+    if (!(at67 > 0))
+      no('67: 保存を押した時刻が一緒に出ていない — ' + JSON.stringify(at67));
+    /* そして返ってきた行が ME になる ── 別の端末が後から直した名前なら、
+       それが名前。 */
+    netProfPut = (fields, at, ok) => ok(Object.assign({}, fields, { display:'後から直した名' }));
+    meKeepSave({ name: 'さきの名' }, () => {});
+    if (ME.name !== '後から直した名')
+      no('67: **後から別の端末で直した名前が、古い保存に負けた** — ' + ME.name);
     /* 送れなかったら端末にも書かない ── 保存は半分では済まない。 */
-    netProfPut = (fields, ok, bad) => bad(null, 0, 'prof −');
+    netProfPut = (fields, at, ok, bad) => bad(null, 0, 'prof −');
     ME.name = 'アヤ改'; ME.handle = 'ayaka'; saveMe();
     meKeepSave({ name: 'もどらない', handle: 'nope' }, () => {});
     if (ME.name !== 'アヤ改' || ME.handle !== 'ayaka')

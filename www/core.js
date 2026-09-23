@@ -862,7 +862,12 @@ function slGot(k, body){
    exactly as it was, and that is not a person writing the dictionary
    (r63-audit 0-1). netSaveUpGo() and netLangSync1() send a slice that is
    marked here AND has moved; netAgreed() takes the mark off when the two
-   sides hold the same string. */
+   sides hold the same string.
+
+   AND WHEN. The mark is the moment the person last wrote that slice, by this
+   phone's clock, because that is what goes up with it: two phones that
+   changed the same thing keep the later change (www/sync.js § syMerge,
+   supabase/schema.sql § keep_newer). */
 var LTOUCH={}, SL_APP=0;
 function slAsApp(fn, args){
   SL_APP++;
@@ -871,10 +876,11 @@ function slAsApp(fn, args){
 }
 function slWr(k, v){
   var s=String(v);
-  if(!SL_APP && slMine(k)!==s) LTOUCH[k]=1;
+  if(!SL_APP && slMine(k)!==s) LTOUCH[k]=Date.now();
   LSL[k]=s;
 }
 function slTouched(k){ return !!LTOUCH[k]; }
+function slTouchedAt(k){ return LTOUCH[k] || 0; }
 function slSettled(k){ delete LTOUCH[k]; }
 /* Gone from memory, and both disk keys with it -- what an older version wrote
    and the picture slGot() keeps. This is the one place that REMOVES, and it is
