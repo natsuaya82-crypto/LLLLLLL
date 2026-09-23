@@ -80,7 +80,6 @@ count docs/STATE.md 検査 8 本
 file docs/BACKLOG.md backup-check.mjs
 file docs/BACKLOG.md lt.sh
 file docs/BACKLOG.md talk.js
-file docs/FEATURES.md LinguaPlan.swift
 file docs/FEATURES.md lt.sh
 file docs/FEATURE_RULES.md backup-check.mjs
 file docs/STATE.md backup-check.mjs
