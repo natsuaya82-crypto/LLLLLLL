@@ -43,7 +43,6 @@ call docs/FEATURE_RULES.md dayPull
 call docs/FEATURE_RULES.md geDirty
 call docs/FEATURE_RULES.md has_account
 call docs/FEATURE_RULES.md kbCellW
-call docs/FEATURE_RULES.md kbFrameHTML
 call docs/FEATURE_RULES.md kbKeyW
 call docs/FEATURE_RULES.md kbOutSay
 call docs/FEATURE_RULES.md kbRows
@@ -57,7 +56,6 @@ call docs/FEATURE_RULES.md lsWipeNS
 call docs/FEATURE_RULES.md netAnon
 call docs/FEATURE_RULES.md netAnonTok
 call docs/FEATURE_RULES.md netMember
-call docs/FEATURE_RULES.md netNoneHTML
 call docs/FEATURE_RULES.md netStore
 call docs/FEATURE_RULES.md netTakeGone
 call docs/FEATURE_RULES.md openCapLapse
@@ -88,10 +86,6 @@ file docs/FEATURES.md lt.sh
 file docs/FEATURE_RULES.md backup-check.mjs
 file docs/STATE.md LinguaPlan.swift
 file docs/STATE.md backup-check.mjs
-gone docs/FEATURE_RULES.md 【差し替え済み 2026-09-05】「保存されない」は仕様。オンライン
-gone docs/FEATURE_RULES.md 【差し替え済み 2026-09-05】保存が失敗したら、人が作ったものは
-gone docs/FEATURE_RULES.md 【差し替え済み】お題のタグは、お題そのものが持っている十言語から出す
-gone docs/FEATURE_RULES.md 【差し替え済み】お題は #今日のお題。十言語ぶんで、どの言語で書かれてい
 name docs/BACKLOG.md DOC_
 name docs/BACKLOG.md KB_MAX
 name docs/BACKLOG.md abtline
@@ -129,7 +123,6 @@ name docs/FEATURE_RULES.md AI_SEAM
 name docs/FEATURE_RULES.md Basic
 name docs/FEATURE_RULES.md CAN.ai
 name docs/FEATURE_RULES.md CAN.write
-name docs/FEATURE_RULES.md FM
 name docs/FEATURE_RULES.md GE_
 name docs/FEATURE_RULES.md GE_MAXPTS
 name docs/FEATURE_RULES.md GHCYC
@@ -148,8 +141,6 @@ name docs/FEATURE_RULES.md SET.plan
 name docs/FEATURE_RULES.md SET.planPend
 name docs/FEATURE_RULES.md SET.planUid
 name docs/FEATURE_RULES.md SET.planWas
-name docs/FEATURE_RULES.md SET.trDate
-name docs/FEATURE_RULES.md SET.trN
 name docs/FEATURE_RULES.md SET_PLAN
 name docs/FEATURE_RULES.md TR_FREE_DAILY
 name docs/FEATURE_RULES.md Transaction.expirationDate
@@ -189,7 +180,6 @@ name docs/FEATURE_RULES.md ghTick
 name docs/FEATURE_RULES.md langOwned
 name docs/FEATURE_RULES.md ltFace
 name docs/FEATURE_RULES.md navsave
-name docs/FEATURE_RULES.md netAnon
 name docs/FEATURE_RULES.md netLangBack
 name docs/FEATURE_RULES.md noteAt
 name docs/FEATURE_RULES.md noteBody

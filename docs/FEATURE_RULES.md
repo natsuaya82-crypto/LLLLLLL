@@ -216,11 +216,17 @@ it. **The newest thing the owner said is the specification.** Older written
 decisions are the record of what it replaced, not a second opinion to weigh
 against it.
 
-Marking and fixing happen in the **same commit** as the new decision. The old
-entry in the log below keeps its words and gains a superseded line — that log
-is a record of what was decided when. **The rules are the opposite: they are
-fixed, and fixing means deleting.** A rule left standing is read, and a rule
-that is read is obeyed.
+Marking and fixing happen in the **same commit** as the new decision. An
+entry of the log below that a later one replaces WHOLE keeps its heading,
+opened with 【差し替え済み YYYY-MM-DD】, and ONE line naming what replaced it
+(`- 差し替えた決定: 「<heading>」（date）`) — and nothing else:
+「印を付けて本文を残すのも残したことになる。消す。」 OWNER 2026-09-03 (the
+entry 「古い規則は残さない」 below). One replaced IN PART loses the part, and
+says in one line which part went and what replaced it. What was decided on the
+day is in git and in `docs/CHANGELOG.md`, which is never rewritten. **The rules
+are fixed the same way: fixing means deleting.** A rule left standing is read,
+and a rule that is read is obeyed. `docs-check` holds the whole-entry half: a
+【差し替え済み】 heading with more than its one line under it fails.
 
 And the other direction, which is the same rule: **a decision once made is not
 re-opened by a later session because a different shape seems more natural.** If
@@ -1085,16 +1091,8 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Implementation status: IMPLEMENTED（`netPop()` と四箇所の配線、削除の印）。
   **DEVICE CONFIRMED ではありません。**
 
-### 空と、届かなかったのを画面ごとに分ける形は、上の決定に置き換わりました
-- Date: 2026-09-05
-- Area: `netNoneHTML()`（削除）、`net.none`（削除）
-- Decision: 上の「通信が落ちたら何も進まない。ポップは一つ」がこれを覆します。
-- Reason: 同日の朝、`netNoneHTML()` は空の画面が出す文を六箇所で切り替えて
-  いました。**通信が落ちたらそこへは行けません**（「そもそも通信エラーなら
-  そこにはいけないはずでしょ」）。行けない画面に置く文は、要りません。
-  「歴史とかいいから消せよ」 OWNER。**残さず消しました。**
-- Affected data: 無し
-- Implementation status: IMPLEMENTED
+### 【差し替え済み 2026-09-05】空と、届かなかったのを画面ごとに分ける形（2026-09-05 朝）
+- 差し替えた決定: 「通信が落ちたら何も進まない。ポップは一つ」（2026-09-05）
 
 ### 保存されないのは仕様。失敗して黙って消えるのは仕様ではない
 - Date: 2026-09-05
@@ -1146,58 +1144,11 @@ the reasoning — a reason can be re-derived, a decision cannot.
   **止めるものはありません。**ディスクをいっぱいにする検査は門にありません。
   人が押して確かめる規則です。
 
-### 【差し替え済み 2026-09-05】「保存されない」は仕様。オンラインのアプリとはそういうもの
-- Date: 2026-09-04
-- Area: 保存・オフライン。**制作側ぜんぶ**
+### 【差し替え済み 2026-09-05】「保存されない」は仕様。オンラインのアプリとはそういうもの（2026-09-04）
+- 差し替えた決定: 「保存されないのは仕様。失敗して黙って消えるのは仕様ではない」（2026-09-05）
 
-- Decision:
-
-  ```
-  Twitterとかは電波がないと開かないでしょ？ そもそも通信してないならエラーで
-  開けないし、保存するタイミングでエラーが起きるなら、保存されないし。そう言う
-  もんじゃないの？オンラインアプリってどうなの？
-
-  スタンダードに合わせて作りたいから間違ってることあったら言って。
-  ```
-
-- Reason: **オーナーが自分で読んだうえでの決定です。**リーダーが「これは失われ
-  ます」と並べた三つ ── **アプリが落ちて消えること、電波が無くて言語が開かない
-  こと、送れていない分が次の起動まででなくなること** ── は、この一言で全部
-  **仕様になりました。**
-
-  **だから、この三つはもう但し書きではありません。**「オーナーに確認が要る」
-  「気をつけること」「これが代償です」として書いてある文は、決まったので
-  消します。オンラインのアプリはそういうものだ、というのがオーナーの答えです。
-- Affected features: 保存、起動、オンボーディングの歩き
-- Affected data: **サーバーに届いていない分は失われます。それが仕様です。**
-- Affected docs: この項目、`CLAUDE.md` 冒頭の Online・規則11・規則22、
-  `docs/DATA_SAFETY.md`、`docs/STATE.md`
-- Implementation status: **仕様として書き留めました。**コードは変わりません ──
-  いまの姿がそのまま仕様になった、という決定です。
-
-### 【差し替え済み 2026-09-05】保存が失敗したら、人が作ったものは目の前に残る
-- Date: 2026-09-04
-- Area: 保存の失敗（`www/core.js` の `save()`、`www/net.js`）
-
-- Decision:
-
-  ```
-  なら失敗して残るにするべき。
-  ```
-
-- Reason: 上の決定の**続きで、そこに引かれた線です。**「保存されない」は仕様
-  ですが、**「失敗して黙って消える」は仕様ではありません。**
-
-  保存がサーバーで失敗したとき、人が作ったものは**目の前に残ります。**もう一度
-  押せば送れる状態です。**これは「iPhone に溜めて後で送る」ではありません** ──
-  溜めるのはオフライン対応で、それは今やりません。残るのは、その人がいま見て
-  いる画面の中です。
-- Affected features: 保存のある画面ぜんぶ
-- Affected data: **無くなりません。**失敗したときに消えないことが、この決定です。
-- Affected docs: この項目、`docs/HANDOVER.md` 七章
-- Implementation status: **入りました 2026-09-05。**`saveTry()`（`www/core.js`）が
-  一箇所で答え、届かなければ `save.no` と言います。上の 2026-09-05 の項目が
-  この項目に代わります。
+### 【差し替え済み 2026-09-05】保存が失敗したら、人が作ったものは目の前に残る（2026-09-04）
+- 差し替えた決定: 「保存されないのは仕様。失敗して黙って消えるのは仕様ではない」（2026-09-05）
 
 ### 電波が無いときは、前に読み込んだ分を出す。見るだけ
 - Date: 2026-09-04
@@ -1537,33 +1488,8 @@ the reasoning — a reason can be re-derived, a decision cannot.
   押さえるのは `post-check` 26・27・28。畳む行数は 5 で決まりました
   （写真 `shots/r39-fold-5-ja.png`、開いた状態は `shots/r39-fold-open-ja.png`）。
 
-### 【差し替え済み】お題のタグは、お題そのものが持っている十言語から出す
-
-> **「タグは別の枠。本文の外、翻訳の下、最大 4 つ」（2026-09-15）で
-> 差し替わりました。**
-> 下は当日より前の記録です。従わないでください。
-
-- Date: 2026-09-04
-- Area: お題（`prompt`）、`www/sns.js`
-- Decision:
-
-  ```
-  お題はなってる
-  タグとお題一本化してってこと。
-  ```
-
-- Reason: **お題の文は既に読む人の設定言語で出ています。**サーバーが十言語ぶんを
-  持っているからです。**タグも、その同じ十言語から出します。**
-
-  **`www/i18n/` に新しく十言語ぶんのタグの言葉を書かないでください。**
-  そうすると、**同じお題の言葉が二箇所に十言語ぶんある**ことになります。
-  **その時点で二本です。**「一つの場所、二箇所目を作らない」。
-
-  **リーダーが最初にタグを別の言葉として配ったのが誤りでした。**
-- Affected features: ⑯ SNS
-- Affected data: 無し
-- Affected docs: この項目
-- Implementation status: **`claude/find3` に配り直します**
+### 【差し替え済み 2026-09-15】お題のタグは、お題そのものが持っている十言語から出す（2026-09-04）
+- 差し替えた決定: 「タグは別の枠。本文の外、翻訳の下、最大 4 つ」（2026-09-15）
 
 ### 頼まれていないものを、アプリが書き込まない。**発音は別 ── あれは頼まれている**
 - Date: 2026-09-04
@@ -1702,54 +1628,8 @@ the reasoning — a reason can be re-derived, a decision cannot.
   一箇所からしか来ないので、順番はサーバーが受け取った順そのものです。
   **狂った時計の問題も消えます。**
 
-### オフラインで作れるのは制作だけ。版はサーバーの番号、勝ち負けは iPhone の時刻 ── 同じ日に差し替え
-- **SUPERSEDED。**上の「オンライン前提に切り替える。保存を押した瞬間にサーバーへ行く」（OWNER 2026-09-04）が今の仕様です。**この項目のとおりに作らないでください。**オフラインは、余裕が出てから足します。
-- Date: 2026-09-04
-- Area: 保存・同期・版の積み方
-- Decision:
-
-  ```
-  （オフラインを切れば楽か、と自ら問うたうえで）
-  うん。制作のみで。
-
-  時刻もしくは番号で管理すればいいのか？番号だと被る可能性ある？
-  ```
-
-- Reason: **オフラインは残します。ただし制作だけ。**SNS は元からオンライン
-  だけです。オーナーが 2026-09-03 に決めた「制作はオフラインでも可能、次
-  つながった時に更新される」は、そのまま生きています。
-
-  **切らない理由:** 面倒の正体は「オフラインだから」ではなく、**同じものが
-  二箇所で別々に変わるから**です。一台で電波の無い所で作って繋がったときに
-  上げるのはぶつかりません ── 順に積むだけです。ぶつかるのは二台目からで、
-  それは下の時刻で決まります。**辞書を書く作業は、電車でも布団の中でも
-  できたほうがいい類のものです。**
-
-  **番号だけでは被ります。**二台がどちらもオフラインで作ると、両方が同じ
-  番号を作ります。**番号は一箇所が配らないと被ります。**
-
-  **時刻だけでも足りません。**iPhone の時計は人がいじれます。去年にして
-  ある端末の新しい変更が「古い」ことになります。
-
-  **だから両方使い、役割を分けます。**
-
-  | | 誰が付ける | 何のため |
-  |---|---|---|
-  | **番号** | **サーバー** | 積む順番。「◯番に戻す」と言えるように |
-  | **時刻** | **iPhone**（直したその場で） | どっちが勝つか。後から直したほうが残る |
-
-  **オーナーが決めた二つが一つずつ対応します** ──「サーバーに版を積む」には
-  番号が、「後から変えたほうが残る」には時刻が要ります。**片方では足りません。**
-- Affected features: 保存・同期・復元・運営側の復旧
-- Affected data: **増えます。**版ごとに、サーバーの番号と、iPhone が押した時刻
-- Affected docs: この項目、`docs/DATA_SAFETY.md`
-- Implementation status: **設計中（`claude/one`）。**
-
-  **決まっていないことが一つ残っています ── 時計が狂っている iPhone。**
-  サーバーは「受け取った時刻」も持てるので、iPhone の言う時刻がありえない値
-  なら気づけます。**気づいたあと断るのか、受け取った時刻で代用するのかは
-  決めごとです。**`claude/one` に選択肢を並べさせます。**勝手に決めさせない
-  こと。**
+### 【差し替え済み 2026-09-04】オフラインで作れるのは制作だけ。版はサーバーの番号、勝ち負けは iPhone の時刻（2026-09-04）
+- 差し替えた決定: 「オンライン前提に切り替える。保存を押した瞬間にサーバーへ行く」（2026-09-04）
 
 ### 消えないための仕組みを一本にする。サーバーに版を積む
 - Date: 2026-09-04
@@ -1991,57 +1871,8 @@ the reasoning — a reason can be re-derived, a decision cannot.
   行は翻訳の下で写真より上／タグ 0 の投稿は行が無い／検索は枠を `#` 無しで・
   本文を `#` 付きで訊く。赤は六つ見てから直しました。
 
-### 【差し替え済み】お題は #今日のお題。十言語ぶんで、どの言語で書かれていても同じ一つ
-
-> **「タグは別の枠。本文の外、翻訳の下、最大 4 つ」（2026-09-15）で
-> 差し替わりました。**
-> 下は当日より前の記録です。従わないでください。
-
-- Date: 2026-09-04
-- Area: お題（`prompt`）、投稿の作成、検索（`www/sns.js`）
-- Decision:
-
-  ```
-  お題は#今日のお題で。10言語文。
-  これも上タップして投稿すると勝手に入って言語関係なく翻訳される。
-
-  検索も#@投稿が一気に検索できるようにして
-  ```
-
-- Reason: お題にハッシュタグが無く、その日のお題で投稿を集める道が無かった。
-  **上のお題をタップして投稿すると、`#今日のお題` が勝手に入ります。**人が
-  打つものではありません。
-
-  **文もタグも、読む人の設定言語です。**
-
-  ```
-  今日のお題は翻訳もタグもその人の設定言語になるようにしてって頼んでるんだけど
-  ```
-
-  OWNER 2026-09-04。**お題の文そのものは既にそうなっています** ── サーバーが
-  十言語ぶんを持っていて、読む人の設定言語のものを出します（OWNER 2026-09-01
-  「今日のお題だけ、毎回その人の表示言語になるようにできないの？」で入った分。
-  `www/sns.js` の `daySay()` と `dayMap()`。**リーダーが読んで確かめました。
-  実機では押していません**）。
-
-  **入っていないのはタグだけです。**この項目に**タグしか書かなかったのは
-  リーダーの落ち度**で、次に読む人が「文のほうはどうなのか」を迷います。
-  **文とタグは一続きの一つの決定です。**
-
-  **十言語ぶんというのは、十個の別々のタグではありません。**一つのタグが、
-  読む人の言語で表示されるということです ── 日本語の人には `#今日のお題`、
-  英語の人にはその言語での言い方。**日本語で書かれた投稿と英語で書かれた
-  投稿は、同じ一つのタグで一緒に出てきます。**「言語関係なく翻訳される」は
-  そこです。これが分かれていたら、その日のお題が言語の数だけ割れます。
-
-  **そして検索は、#（タグ）と @（人）と投稿を一度に返します。**箱は一つ、
-  結果も一度。今は投稿しか見ておらず、しかも Enter を押したときだけでした。
-- Affected features: ⑯ SNS（`docs/FEATURES.md`）
-- Affected data: 投稿の本文にタグの文字が入る。**タグそのものを別に保存する
-  かどうかは実装の話で、この決定はそこを指定していません。**投稿には既に
-  「どのお題に対する投稿か」を持つ欄があります（OWNER DECISION 2026-08-23 #6）
-- Affected docs: この項目、`docs/CHANGELOG.md`
-- Implementation status: **未実装。**`claude/find2` に配布
+### 【差し替え済み 2026-09-15】お題は #今日のお題。十言語ぶんで、どの言語で書かれていても同じ一つ（2026-09-04）
+- 差し替えた決定: 「タグは別の枠。本文の外、翻訳の下、最大 4 つ」（2026-09-15）
 
 ### 上限のポップは Pro を言う。Plus は飛ばす
 - Date: 2026-09-04
@@ -2159,57 +1990,8 @@ the reasoning — a reason can be re-derived, a decision cannot.
   pruning and cleanup are forbidden unless a written spec asks for them。
   この決定はそれを、期間を訊かれたその場で言い直したもの。
 
-### 無料でも有料と同じ数の枠が並ぶ。二つ目以降は押すとプランへ ── 2026-09-04 に差し替え
-- **SUPERSEDED。**上の「＋は右下。上限を越えて押したときにポップが出る。無料に空の枠は並べない」（OWNER 2026-09-04）が今の仕様です。**この項目のとおりに作らないでください。**
-- Date: 2026-09-03
-- Area: キーボードの章（`www/keyboard.js`、⑨）
-- Decision:
-
-  ```
-  キーボードの画面無料だと何で1個なの？
-  一覧が並ばないの？無料も有料も同じ画面っちうルールは？
-  ```
-
-  そしてリーダーの二択に対して:
-
-  ```
-  有料と同じ数の枠が並び、二つ目以降は押すとプランへ
-  ```
-
-  **無料でも、有料と同じ数の枠が一覧に並びます。**一つ目は今までどおり
-  ── 無料の board 0 は QWERTY そのもので、編集はできません。**二つ目以降の
-  枠を押すと、プランの画面へ行きます。**説明文は書きません ── 枠が在って、
-  押すとプランへ行く、それだけです。
-
-- Reason: **2026-09-01 の「無料でもplusでもproでも同じ画面なのよ」に反していた
-  状態です。**`HELP.kb` のコメント自身がその決定を引用しているのに、
-  `vKb()` は無料で一覧の手前から返っていて、無料の画面には行が一つも
-  ありませんでした。オーナーが実機で見つけました。
-
-  枠が並ぶことと、押すとプランへ行くことは一つの文です。2026-08-25 の
-  「そのプランでできることできないことで UI 自体に変更がない方が良くない？」
-  「課金させる動線を減らしたくない」がその形で、`langStop()` と `kbAdd()` の
-  上限が既に同じ形です。
-- Affected features: ⑨ キーボード（`docs/FEATURES.md`）
-- Affected data: **無し。**`KB` の中身は増えません ── 枠は画面が見せるもので、
-  言語が持つものではありません。無料の `kbBoards()` は `[kbFree()]` を答え、
-  `kbFree()` は storage に無く `kbFixed()` から毎回組まれます。
-  `kb-check` が「無料の board が増えていないこと」を持っています
-- Affected docs: この項目、`docs/CHANGELOG.md`、`docs/keyboard.md`
-- Implementation status: **IMPLEMENTED（この項目と同じコミット）。**
-  `kbBoards()` の無料の枝、`kbSlots()`、`kbFrameHTML()`、`vKb()`。
-  `tools/kb-check.mjs` に **8 本**足しました（`say(` の行は 289 → 299 で、
-  残り 2 本は手順のボタンの項です）。全部赤を見ています。既に在った無料の章の
-  6 本は、board 0 の頁に立たせ直しました ── 一覧に立つと `#kb` が無いので、
-  そのままなら「無料のキーボードが消えた」と読める赤になります。
-  **DEVICE CONFIRMED ではありません。**
-
-  **枠の数について、オーナーに確かめる一行があります。**「有料と同じ数」の
-  有料の上限は `kbCap()` で、無料 1・Plus 4・**Pro は `Infinity`**
-  （「1,1+3.無制限って言わなかったっけ？」）。Pro の数は並べられないので、
-  **有料の有限の上限 `PLUS_KB`（4）**を読んでいます ── Plus の一覧が持てる
-  行数がちょうど 4 なので、「有料と同じ数」はそこです。違うなら
-  `kbSlots()` の一行です。**`kbCap()` の数は触っていません。**
+### 【差し替え済み 2026-09-04】無料でも有料と同じ数の枠が並ぶ。二つ目以降は押すとプランへ（2026-09-03）
+- 差し替えた決定: 「＋は右下。上限を越えて押したときにポップが出る。無料に空の枠は並べない」（2026-09-04）
 
 ### 設定へ飛ぶボタンを、手順 1 にも置く
 - Date: 2026-09-03
@@ -4063,34 +3845,8 @@ spec asks for them」と書いている ── **人が押した削除は automa
 - Affected docs: `supabase/setup.md` § 10、`docs/FEATURES.md` § 8、
   `docs/BACKLOG.md`、`docs/apple.md`
 
-### 売上とアナリティクスを、アプリの中で見る ── **superseded 2026-09-02**
-- Date: 2026-08-26
-- Area: 数字を見る画面（新しい章）／App Store Connect の API／Supabase
-- Decision: **アプリの中に、staff だけ見える一枚を作る。** 出すのは四つ ──
-  ①契約者数と売上 ②ダウンロード数 ③解約と継続率 ④アプリの中の数
-  （アカウント数・投稿数・言語数）。**数字は画面を開いたときに毎回取る。**
-- Reason:「売り上げもアナリティクスも見れるようにしたい」。
-  **〈アプリの中で見たい〉〈画面を開いたときに毎回〉は鍵括弧を外した** ──
-  オーナーは 2026-09-02 に「アプリの中で見るなんて一言も言ってないけど」と
-  言っている。書いた者の地の文に括弧が付いていたもの。鍵の置き場所は
-  Supabase の Secrets で、
-  GitHub ではない ──「（GitHub ではない）」。理由はオーナーの言葉ではなく
-  コードが言っている: アプリは Supabase と直接しゃべっていて間にうちのサーバーが
-  無いので、**アプリが持つものは全部公開されている**（www/net.js の SB_KEY の
-  コメント）。だから Apple の鍵は Edge Function の中にしか置けない。
-- Affected features: 新しい章。前例は二つあり、どちらも動いている ──
-  `mod`（staff だけ見える画面、schema.sql の is_staff() が守る）と
-  `daily-prompt`（Edge Function ＋ Secrets ＋ cron）
-- Affected data: **増える。** Apple から取った数字を置く表が要る（未設計）。
-  ④ だけは表が要らない ── profile / post / language を数えるだけ
-- Affected docs: supabase/setup.md（鍵の作り方と置き方）、docs/apple.md、
-  docs/FEATURES.md、schema.sql と npm run rls
-- Implementation status: **決定のみ。コードは一行も無い。**
-  四つのうち **④ だけが今日作れる**（鍵も Edge Function も要らない）。
-  ①②③ は App Store Connect の API キー待ち、かつ **「開くたび」がどこまで
-  可能かは Apple の API の形しだい** ── 売上レポートと解析レポートは取り方が
-  違い、後者は「頼んで作らせてから取りに行く」形のことがある。
-  **確かめてから作る。推測で作らない。**
+### 【差し替え済み 2026-09-02】売上とアナリティクスを、アプリの中で見る（2026-08-26）
+- 差し替えた決定: 「売上とアナリティクスは RevenueCat で見る」（2026-09-02）
 
 ### Decision
 - Date:
@@ -5477,34 +5233,8 @@ and is never merged into your own」と言っている。**入らない、は二
 - Affected docs: `FEATURES.md`, `STATE.md`, `DATA_MODEL.md`, `PAID_FEATURES.md`.
 - Implementation status: **not started.**
 
-### Decision
-- Date: 2026-08-22
-- **SUPERSEDED 2026-08-26** by 「匿名アカウントはねえよ」「言語はアカウントないと
-  作れないです」「ログインした人しか書けないけど」「二種類になる意味も分からない
-  けど」 — the entry at the head of this log. **There is no anonymous account
-  and no second question.** The words below are the record of what was decided
-  on the 22nd and are left exactly as they were; nothing in them is a rule any
-  more. Do not build off this entry.
-- Area: When somebody is asked who they are
-- Decision: An **anonymous account is made silently at first launch** and
-  everything is made under it. Identity is asked in **two places only:
-  posting, and buying.** The uid does not change when it is attached.
-- Reason: 「サインイン必須にしたいけど、オンボーディングで離脱されるのは防ぎたい」
-  「課金とツイートにはログイン必須。それ以外は流さない」. Buying needs it
-  because an anonymous account is one phone's refresh token, and a receipt
-  bound to a lost one is paid for and unreachable.
-- Affected features: onboarding, composer, plans screen, `is_member()` — which
-  becomes two questions: your own things, and things other people see.
-- Affected data: none.
-- Affected docs: `FEATURES.md`, `STATE.md`, `supabase/setup.md`.
-- Implementation status: **the phone's half is done.** The first launch signs
-  in anonymously (`netAnon` in `net.js`, called from `boot.js`); `netMember()`
-  is the second question and `obNeed()` asks it at the six things other people
-  see; the door left the onboarding and is opened by `obDoor()`. Buying is
-  untouched — there is no StoreKit to put a door in front of. The SERVER half
-  is not done: `is_member()` still refuses an anonymous account for
-  everything, including its own things, so nothing an anonymous account makes
-  can be stored yet.
+### 【差し替え済み 2026-08-26】When somebody is asked who they are（2026-08-22）
+- 差し替えた決定: 「匿名アカウントは無くなる。アカウントは一種類」（2026-08-26）
 
 ### Decision
 - Date: 2026-08-22
@@ -5899,31 +5629,8 @@ Reporting "there is no hosted model" as a blocker was wrong. It is a fact
 about today, not about the design, and the design is the part being asked
 for.
 
-### Decision
-- Date: 2026-08-12
-- **SUPERSEDED、全部。**三層という枠組みそのものが無くなりました。
-  「なら自分の言語でどう言うか翻訳いらなくない？元々ai前提やったし」。
-  経緯は `docs/CHANGELOG.md` § 「自分の言語で読む」は無くなった — OWNER
-  DECISION。**投稿は二層です。**
-- Area: A post shown three ways
-- Decision: 投稿は**二層**で見えます ── (1) 書いた人が描いた文字、(2) それが
-  読む人の言語で何と言っているか。**第三層（それを読む人の人工言語に置き直す）は
-  作られ、外されました。**
-- Reason: 語を入れ替えるのは翻訳ではありません。`Mama seja luna` が文になって
-  いるかは、その言語がコピュラを持つか、所有をどう示すか、主題に何を付けるかで
-  決まり、その答えを持っている場所がアプリのどこにもありません ──
-  「単語を並べるだけじゃ文法はできないのよわかる？」。文法ページの自由文のメモを
-  読めるのは AI だけで、AI は入れません ── 「AI入れないって言ってるでしょ？」
-- Affected features: timeline, post
-- Affected data: 二層とも投稿に凍らせてあります（`ink`, `mn`）。
-  **前の版で `SET.trDate` と `SET.trN` を書いた端末では、その二つがまだ
-  `SET` に残っています** ── いまのコードはどちらも書かず、読まず、そして
-  **消しにも行きません**。人の設定にある二つの数で、このアプリは要らなく
-  なったものを削除しません（`www/post.js` § Layer three ... is gone）。
-- Affected docs: FEATURES.md, DATA_MODEL.md
-- Implementation status: 二層とも入っています。第三層は外れています。
-- Note: this does not overturn the decision at the head of `www/post.js` — no
-  machine reads an invented language on the author's behalf.
+### 【差し替え済み】A post shown three ways（2026-08-12）
+- 差し替えた決定: 投稿は二層 ── `docs/CHANGELOG.md` §「自分の言語で読む」は無くなった
 
 ### Decision
 - Date: 2026-08-12
@@ -6047,23 +5754,8 @@ for.
 - Affected docs: DATA_MODEL.md, CHANGELOG.md, CLAUDE.md rule 12
 - Implementation status: implemented; code confirmed, not device confirmed
 
-### Number of languages — **superseded 2026-09-02**
-- Date: 2026-08-12
-- Area: Number of languages
-- **Superseded by 2026-09-02 「ダウンロードは Plus から。上限は make と別で、
-  Plus 1・Pro 3」** (in this log). Making a language is now **Free 1, Plus 1,
-  Pro 3** — `FREE_LANGS` / `PRO_LANGS` and `langCap()` in `www/core.js`,
-  with `langStop()` sending somebody to the plans screen at the ceiling.
-  Downloading somebody else's is a separate number again.
-- Decision: One language per person, on every plan. Not a price.
-- Reason: there is no way to make a second anywhere in the app, so a plan
-  promising more would promise a button that does not exist.
-- **Why it fell**: that reason stopped being true. `langAddRow()`
-  (`www/home.js`) is the door to a second language and `langNew()`
-  (`www/core.js`) is what it presses, so the number is something a plan can
-  sell. `LANG_MAX`, which this entry named, no longer exists.
-- Affected features: languages
-- Affected docs: PAID_FEATURES.md, FEATURES.md
+### 【差し替え済み 2026-09-02】Number of languages（2026-08-12）
+- 差し替えた決定: 「ダウンロードは Plus から。上限は make と別で、Plus 1・Pro 3」（2026-09-02）
 
 ### Decision
 - Date: 2026-08-11
@@ -6320,32 +6012,8 @@ for.
   invisible on build 57 and could not be reproduced here, so the row is a
   second entrance rather than a replacement
 
-### A word's derived words — **superseded 2026-08-20 (the entry below)**
-- Date: 2026-08-20
-- Area: A word's derived words
-- **Superseded the same day by 「A word's related words」, which is the NEXT
-  entry down.** The nine below became **two groups of twelve** — 活用 and
-  派生 — and a language may write its own in either. `FM_INF` and `FM_DER` in
-  `www/wordsheet.js` are those two lists.
-  **The ordering of this log is what makes this worth marking**: entries run
-  newest first, and these two share a date the wrong way round, so whoever
-  reads down the file meets the nine before the twenty-four and takes the
-  nine for the newer answer.
-- Decision: A derived word carries **which form of its parent it is**, chosen
-  from a fixed list of labels the app supplies. The language does not declare
-  a paradigm, nothing obliges a word to have every form or any of them, and a
-  form built out of nothing like its parent is still just a word with a label.
-  The nine: 過去形 · 未来形 · 進行形 · 完了形 · 複数形 · 否定形 · 命令形 ·
-  受身形, and no label.
-- Reason: 「過去形とか未来形とか現在進行形みたいなの形変えたのも一括で見れたほう
-  が良くない？」「ラベルはこっちで用意すればいいのでは」「型決めても英語みたいに
-  変わってる可能性もあるやん」
-- Affected features: the dictionary, the word sheet, the word read
-- Affected data: `fm` on a word — a code, never a label, deleted when empty and
-  when the parent goes
-- Affected docs: CHANGELOG, DATA_MODEL, FEATURES
-- Implementation status: implemented. `FM` and `fmLabel()` in
-  `www/wordsheet.js`; written by `wdPutExtras()`, which Save and Add both call
+### 【差し替え済み 2026-08-20】A word's derived words（2026-08-20）
+- 差し替えた決定: 「A word's related words」（2026-08-20、すぐ下）
 
 ### Decision
 - Date: 2026-08-20
