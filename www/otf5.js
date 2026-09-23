@@ -203,8 +203,8 @@ var LinguaFont = (function () {
   // right width in the two directions it faces.
   // The one rule, on whichever axis it is asked about: what a letter takes up
   // is its own ink plus the gap, half of it at each end. Horizontally that is
-  // the advance width; vertically it is the line box, and when vmtx is written
-  // it will be the vertical advance. Three answers, one formula -- which is
+  // the advance width; vertically it is the line box and the vertical advance
+  // (vmtx, in build()). Three answers, one formula -- which is
   // the point, because the day they were three formulas the horizontal one
   // took nine different values over ten letters.
   function reach(lo, hi, side) { return Math.round((hi - lo) + 2 * side); }
@@ -988,6 +988,13 @@ var LinguaFont = (function () {
 
     charstrings.push(charstring([], EM));
     advances.push({ adv: EM, lsb: 0 });
+    // What a glyph takes up written DOWN, and where its top is: the same
+    // reach() and the same SIDE as across, asked of the ink's top and bottom.
+    // Without it a column is laid out by the line box and the gap does
+    // nothing -- 「横と縦それぞれスライドしてどう動くか」 OWNER 2026-09-23,
+    // and down it did not move. `org` is the vertical origin in font units,
+    // SIDE above the ink, which is what VORG says for a CFF face.
+    var vert = [{ adv: EM, org: ASC }];
 
     raw.forEach(function (q0) {
       var cs = q0.cs, sx = 1;
@@ -1015,6 +1022,10 @@ var LinguaFont = (function () {
              : Math.round(SIDE - p.xMin);
       var adv = (mode === 'asdrawn' || mode === 'fit') ? CELL
               : reach(p.xMin, p.xMax, SIDE);
+      var ey = extent(cs);
+      vert.push((mode === 'asdrawn' || mode === 'fit' || !(ey[1] > ey[0]))
+        ? { adv: CELL, org: BASE }
+        : { adv: reach(ey[0], ey[1], SIDE), org: Math.round(BASE - ey[0] + SIDE) });
 
       var contours = cs.map(function (c) {
         var nodes = signedArea(c) < 0 ? c : c.slice().reverse();
@@ -1057,6 +1068,7 @@ var LinguaFont = (function () {
       names.push('space');
       charstrings.push(charstring([], spaceAdv));
       advances.push({ adv: spaceAdv, lsb: 0 });
+      vert.push({ adv: spaceAdv, org: BASE });
     }
 
     if (bbox[0] === Infinity) bbox = [0, 0, 0, 0];
@@ -1101,6 +1113,32 @@ var LinguaFont = (function () {
     var hmtx = new W();
     advances.forEach(function (a) { hmtx.u16(a.adv).i16(a.lsb); });
 
+    // vhea / vmtx / VORG: the vertical half of hhea / hmtx, from `vert`.
+    // tsb is the origin less the glyph's top; a glyph with no ink has none.
+    var tops = [ASC];
+    Object.keys(metrics).forEach(function (k) {
+      var t = -Infinity;
+      metrics[k].contours.forEach(function (c) { c.forEach(function (q) { if (q[1] > t) t = q[1]; }); });
+      tops[index[k]] = t;
+    });
+    var vmtx = new W(), vorg = [], maxVAdv = 0, minTsb = Infinity;
+    vert.forEach(function (v, i) {
+      var tsb = (tops[i] > -Infinity && tops[i] !== undefined) ? v.org - tops[i] : 0;
+      vmtx.u16(v.adv).i16(tsb);
+      if (v.adv > maxVAdv) maxVAdv = v.adv;
+      if (tsb < minTsb) minTsb = tsb;
+      if (v.org !== ASC) vorg.push([i, v.org]);
+    });
+    if (minTsb === Infinity) minTsb = 0;
+    var vhea = new W();
+    vhea.u32(0x00011000).i16(Math.round(EM / 2)).i16(-Math.round(EM / 2)).i16(0).u16(maxVAdv)
+        .i16(minTsb).i16(0).i16(maxVAdv)
+        .i16(0).i16(1).i16(0).i16(0).i16(0).i16(0).i16(0).i16(0)
+        .u16(vert.length);
+    var VORG = new W();
+    VORG.u16(1).u16(0).i16(ASC).u16(vorg.length);
+    vorg.forEach(function (o) { VORG.u16(o[0]).i16(o[1]); });
+
     var maxp = new W();
     maxp.u32(0x00005000).u16(names.length);
 
@@ -1140,6 +1178,9 @@ var LinguaFont = (function () {
       head: head.b,
       hhea: hhea.b,
       hmtx: hmtx.b,
+      vhea: vhea.b,
+      vmtx: vmtx.b,
+      VORG: VORG.b,
       maxp: maxp.b,
       name: nameT,
       post: post.b,

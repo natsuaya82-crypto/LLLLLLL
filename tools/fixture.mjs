@@ -704,6 +704,11 @@ export function halfDone(){
   const __stemLetters = () => { LETTERS[0].st = __STEM[0]; LETTERS[1].st = __STEM[1]; };
   const __twoLines = () => ltPua(0) + ltPua(1) + ltPua(0) + ' ' + ltPua(1) + ltPua(0) +
                            '\n' + ltPua(0) + ltPua(0) + ltPua(1);
+  /* The same two, turned: a stem from the top edge of the lattice to the
+     bottom, so a COLUMN of them joins at 0 the way a row of the two above
+     does. 「横と縦それぞれスライドしてどう動くか」 OWNER 2026-09-23. */
+  const __STEMDOWN = [[{ pts:[[400,40],[400,760]] }, { pts:[[400,400],[640,400]] }],
+                      [{ pts:[[400,40],[400,760]] }, { pts:[[400,220],[180,220],[180,580],[400,580]] }]];
   const __joinPosts = (sp) => {
     POSTS.unshift({ id: 'pj', at: Date.now() - 60000, lang: 'other', lname: 'Tsagaan',
                     ln: 'abab baa', who: 'Iri', hd: 'iri', mn: 'the steppe after rain',
@@ -3361,6 +3366,23 @@ export function halfDone(){
     ...[0, 0.5, 1, 1.5, 2].map((v) => ['a post whose letters stand ' + v + ' apart', () => {
        __joinPosts(v); window.route = 'feed'; NAV = [{ r:'feed' }];
        return vFeed(); }]),
+    /* Written DOWN at 0 and at 2 -- a post, and the field it was typed
+       into. The face's vertical advance is what stands them apart
+       (www/otf5.js § vmtx); tools/line-check.mjs 6 asks it in pixels. */
+    ...[0, 2].map((v) => ['a column whose letters stand ' + v + ' apart', () => {
+       POSTS.unshift({ id: 'pjd', at: Date.now() - 60000, lang: 'other', lname: 'Tsagaan',
+                       ln: 'ababa', who: 'Iri', hd: 'iri', mn: 'the steppe after rain', ui: 'en',
+                       dir: 'ttb-rl', ink: { g: __STEMDOWN, s: [0, 1, 0, 1, 0], sp: v } });
+       window.route = 'feed'; NAV = [{ r:'feed' }];
+       return vFeed(); }]),
+    ...[0, 2].map((v) => ['a column being written at ' + v, () => {
+       const wasPlan = plan(), wasDir = SCRIPT.dir, was = SCRIPT.sp;
+       LETTERS[0].st = __STEMDOWN[0]; LETTERS[1].st = __STEMDOWN[1];
+       planGot('pro'); SCRIPT.dir = 'ttb-rl'; SCRIPT.sp = v; installScriptFont();
+       PW = pwBlank(); openPost(); pwSetLn(ltPua(0) + ltPua(1) + ltPua(0) + ltPua(1) + ltPua(0));
+       const h = vForm(); PW = pwBlank();
+       SCRIPT.dir = wasDir; if (was === undefined) delete SCRIPT.sp; else SCRIPT.sp = was;
+       planGot(wasPlan); return h; }]),
     ['a post whose letters join, as a card', () => {
        __joinPosts(0); cardOpen('p', 'pj'); return vForm(); }],
     ['the same post at one step, as a card', () => {

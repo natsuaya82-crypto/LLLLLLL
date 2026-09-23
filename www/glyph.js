@@ -2776,8 +2776,9 @@ function inkCanvases(sel, floor, dflt, stOf){
    day and it showed. 「文字間おかしくね」
 
    `h` and `dy` are the same answer asked downward, which is what a script
-   that runs down the page needs and what a vmtx would be written from. otf5
-   says so itself: one formula, whichever axis it is asked about. The card
+   that runs down the page needs and what otf5 writes the face's vmtx from:
+   one formula, whichever axis it is asked about, so a column of a line
+   stands at the gap the way a row does. The card
    asks for both. A line of the language does not ask here at all -- it is
    set in the face, whose advances otf5 works out with this same `reach` --
    so a letter on the card and a letter on a line stand the same.
