@@ -877,11 +877,17 @@ const SESS = JSON.stringify({ at: 'not a jwt', rt: 'a refresh token',
 
    三本訊きます:
    1. 歩きを済ませてサインアウトした端末は**扉**で開く（文字を描く画面ではない）
-   2. 古い `done` は一度きり `walked` へ写され、`done` は消える
+   2. 古い `done` は一度きり `walked` へ写され、`done` はそのまま残る ──
+      移行は写すだけで、読んだものを消さない（CLAUDE.md § Data。消していた
+      のは r69-misc 申し送り 2）。「写した」は `doneMoved` の印が言い、印の
+      ある端末では二度写さない
    3. 新品の端末は今までどおり歩きで開く（1 番の裏 ── 上の § 1 が持っています）
 
    赤を見た形（2026-09-09）: `appIs()` の `if(!SET.walked) return 'ob'` を
-   消すと 1 が赤（歩きで開く）。`walkedMigrate()` を消すと 2 が赤。 */
+   消すと 1 が赤（歩きで開く）。`walkedMigrate()` を消すと 2 が赤。
+   2026-09-23: `delete SET.done` を戻すと 2 が赤（古い `done` が消えている）、
+   `doneMoved` の印を見ないようにすると 2 の二本目が赤（後で変わった
+   `walked` が写し直される）。 */
 {
   /* 歩きを済ませ、サインアウトした端末 ── セッションは無く、`walked` は在る。 */
   const r = await boot({ 'lingua.set': JSON.stringify({ walked: true }) });
@@ -894,21 +900,34 @@ const SESS = JSON.stringify({ at: 'not a jwt', rt: 'a refresh token',
     no('歩きを済ませた端末が、文字を描く画面から始まっている');
 }
 {
-  /* 古い版が書いた `done`。一度きり写して、古い名前は消える。 */
+  /* 古い版が書いた `done`。一度きり写して、古い名前はそのまま。 */
   const r = await boot({ 'lingua.set': JSON.stringify({ done: true }) },
                        () => { window.__mig = { walked: SET.walked,
                                                 done: SET.done,
+                                                moved: SET.doneMoved,
                                                 onDisk: localStorage.getItem('lingua.set') }; });
   const m = r.mig || {};
   if (m.walked !== true)
     no('古い `done` が `walked` へ写っていない — ' + JSON.stringify(m.walked));
-  if (m.done !== undefined)
-    no('写したのに古い `done` が残っている — ' + JSON.stringify(m.done));
-  if (String(m.onDisk || '').indexOf('"done"') >= 0)
-    no('ディスクにも古い `done` が残っている — ' + m.onDisk);
+  if (m.done !== true)
+    no('写した古い `done` が消えている（移行は写すだけ）— ' + JSON.stringify(m.done));
+  if (String(m.onDisk || '').indexOf('"done":true') < 0)
+    no('ディスクの古い `done` が消えている — ' + m.onDisk);
+  if (!m.moved)
+    no('写したことが `doneMoved` に残っていない — ' + JSON.stringify(m.moved));
   if (r.is !== 'door')
     no('古い `done` を持つ端末が扉で開かない — appIs()=' + r.is);
-  say('古い `done` は一度きり `walked` へ写り、古い名前は端末から消える');
+  say('古い `done` は一度きり `walked` へ写り、古い名前はそのまま残る');
+}
+{
+  /* 写した後で `walked` が変わった端末。古い `done` が残っていても、印が
+     あるので写し直さない。 */
+  const r = await boot({ 'lingua.set': JSON.stringify({ done: true, walked: false, doneMoved: 1 }) },
+                       () => { window.__mig = { walked: SET.walked }; });
+  const m = r.mig || {};
+  if (m.walked !== false)
+    no('写し済みの端末で古い `done` がもう一度 `walked` へ写った — ' + JSON.stringify(m.walked));
+  say('写し済みの端末では、残っている `done` をもう一度写さない');
 }
 
 await br.close();

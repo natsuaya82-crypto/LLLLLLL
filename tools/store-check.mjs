@@ -264,6 +264,7 @@ const FIELDS = {
   push_prompt: { to: 'netPrefsPut' },
   vvkb:     { phone: 'how much of THIS screen the phone\'s own keyboard covers. A measurement of one handset and meaningless on another' },
   wldMoved: { phone: 'the mark that 「what the language is for」 has been moved out of the settings and into the language. A migration mark' },
+  doneMoved: { phone: 'the mark that the old `done` has been copied into `walked` (walkedMigrate, www/core.js). A migration mark -- it is what the old field\'s absence used to say, now that the migration copies and removes nothing' },
   sndMoved: { phone: 'the mark that SET.snd -- the sounds from when there was one list per person -- has been copied into the language. A migration mark; SET.snd itself is left where it was, and this sits beside it and is parked with it by setFor()' },
   /* `wsys` STOOD HERE AS A GAP AND IS GONE (2026-09-09). It was named rather
      than blessed -- 「言語のものなのに人の設定に入っているので、公開した言語は

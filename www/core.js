@@ -1382,9 +1382,12 @@ var ACCT_DISK=String(SET.acct||'');
    the row is gone.
 
    So the flag keeps the second question and is named for it. This copies the
-   old value across ONCE, on the launch after the update, and takes the old
-   name away so nothing can read it again -- what is copied is the same fact
-   under the name that says which fact it is. A phone that has never had the
+   old value across ONCE, on the launch after the update -- and COPIES: the old
+   field stays exactly where it was (a migration copies and never removes what
+   it read, CLAUDE.md § Data; it used to `delete SET.done`, r69-misc 申し送り 2).
+   Nothing reads `done` any more, so leaving it costs nothing; what said 「this
+   has been moved」 was its absence, and that is `doneMoved` now, a mark of
+   this handset's beside `wldMoved` (§ SET_PHONE). A phone that has never had the
    old field is untouched: absent is not false, it is 「there was nothing to
    move」, and setDefaults() answers for a fresh install.
 
@@ -1392,9 +1395,9 @@ var ACCT_DISK=String(SET.acct||'');
    field that changed meaning is moved once, on this phone, before anything
    reads it. */
 function walkedMigrate(){
-  if(SET.done===undefined) return;
+  if(SET.done===undefined || SET.doneMoved) return;
   if(SET.walked===undefined || SET.walked===false) SET.walked=!!SET.done;
-  delete SET.done;
+  SET.doneMoved=1;
   setKeep();
 }
 walkedMigrate();
@@ -2255,7 +2258,7 @@ var SET_PREFS=['theme','ui','myfont','showScript','kbrom',
    `order`, `read`, `voice` and `script` are NOT settled: they are the
    language-making side's, and moving them is a different question from this
    one. docs/BACKLOG.md. `planV` was here and is gone with the plan. */
-var SET_PHONE=['acct','walked','obback','vvkb','wldMoved',
+var SET_PHONE=['acct','walked','obback','vvkb','wldMoved','doneMoved',
                'order','read','voice','script'];
 /* `SET_PLAN` STOOD HERE AND IS GONE (2026-09-11). It named `plan` and
    `planWas` -- the copy of the server's last answer about this account, and
