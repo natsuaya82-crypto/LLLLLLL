@@ -15,6 +15,21 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### 2026-09-23 組の間の空きが一つの形になる ── **貯まる物は何も変わりません**
+
+r73 §2-14（r75-shape）。「No margin-top on a row to make a group」（CLAUDE.md）。
+
+- **見て変わること**：画面の一番下の一行（文字の削除・語の削除・自作の段の削除・「やり直す」・システムの外観）と、
+  語のページの「作成／更新」の行、単語一覧の取り消しの行、お問い合わせの本文の上の空きが、
+  10・12・14・18・26px ばらばらだったのが全部 14px。幅いっぱいのゴーストボタン 8 つの上の空きが 8〜14px から 10px。
+  数 px ずつ動くだけで、並びは変わらない。
+- **一か所**：組の間は `.grpsep`、下に線のない一行は `.set.end`、幅いっぱいのボタンは `.btn.ghost.wide`（`www/index.html`）。
+  JavaScript は自分の持ち場で margin を書かなくなった。`press` が「一つのリストの兄弟で margin-top が違う」を数える。
+- **残り**：`www/keyboard.js` の 2 か所（`.note` の 16px、キーの削除行の 12px）は r60-up の持ち物で直していない ──
+  press はその `.note` で赤くなる。`docs/scope/r75-shape.md`。
+- 前後の写真：`shots/r75-grp-*-before.png` / `-after.png`。
+- 貯まる物・移行・削除：なし。
+
 ### 2026-09-23 外観の二枚の見本と上限の案内の枠が、テーマの色で描かれる ── **貯まる物は何も変わりません**
 
 r73 §2-14（r75-shape）。「Every colour lives in these two blocks and nowhere else」（index.html のテーマの一文）。

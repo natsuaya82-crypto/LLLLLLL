@@ -1901,6 +1901,19 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
    are anchors, because a link to a page off the phone cannot be a button. */
 .set{display:flex;align-items:center;gap:12px;padding:15px 2px;border-bottom:1px solid var(--line);width:100%;background:none;border-left:0;border-right:0;border-top:0;text-align:left;color:var(--tx);font-size:.95rem;line-height:1.25}
 .set .sl{font-size:.95rem}
+/* A GROUP IS MADE BY A ROW THAT SEPARATES, not by pushing one row down.
+   「No margin-top on a row to make a group」(CLAUDE.md): a row given a margin
+   of its own is one row taller than its neighbours, and each screen had
+   written its own -- 10, 12, 14, 18 and 26px -- inline, from JavaScript.
+   `.grpsep` is the one gap between two groups, and `press` fails on
+   siblings of one class that disagree about their margin-top.
+   `.set.end` is a row standing on its own at the foot of a screen -- a
+   delete, 「やり直す」 -- with nothing under it to rule off. */
+.grpsep{height:14px}
+.set.end{border-bottom:none}
+/* A button across the width, under what it acts on. Eight of them wrote
+   `width:100%;margin-top:8/10/12/14px` inline; one class, one gap. */
+.btn.ghost.wide{width:100%;margin-top:10px}
 /* Two of these are <a> rather than <button> -- the two documents at the foot
    of the settings list, which are pages on the site. An anchor is not a
    button and carries an underline nothing else in this app has. */

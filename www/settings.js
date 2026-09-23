@@ -204,7 +204,7 @@ function vSet(){
        「設定の見た目は外観モードを写真と同じようにして。Linguaの画面のスクショ
        みたいな感じ」 */
     body='<div class="thcards">'+setLookCard('light')+setLookCard('dark')+'</div>'+
-      '<button class="set" style="margin-top:14px;border-bottom:none"' +
+      '<div class="grpsep"></div><button class="set end"' +
         DO('setAuto', [SET.theme!=='system']) + '>'+
         '<span class="sl">'+t('theme.system')+'</span>'+
         swtHTML(SET.theme==='system')+'</button>'+
@@ -549,7 +549,7 @@ function vContact(){
        text」and「as tall as what is left」are two different fields and doing
        both is the box growing back off the bottom of the phone.
        One rule under it and nothing else -- no frame, no corner, no panel. */
-    '<div class="field ctbody" style="margin-top:26px">'+
+    '<div class="grpsep"></div><div class="field ctbody">'+
       '<label>'+esc(t('contact.body'))+'</label>'+
       lnField('cont-b', '', IN('contactSet', ['body']), CONT.body, 'fitin')+
     '</div>'+
