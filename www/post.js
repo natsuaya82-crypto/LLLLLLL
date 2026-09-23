@@ -80,7 +80,11 @@ function savePosts(){
    been posting since before this line existed carries posts with no owner,
    and they are the person who is signing in. Only on the way IN -- signing
    out of an unclaimed copy leaves it where it is. */
-var POSTS_UID='';
+/* Whose they were when they were written down -- the settings' stamp, read
+   before anything moved it (www/core.js § ACCT_DISK). It began as '' on
+   every load, so every launch found an unclaimed copy and adopted it for
+   whoever was signed in (r63-audit L3). */
+var POSTS_UID=ACCT_DISK;
 function postParkKey(uid, k){ return 'lingua.' + k + '.' + String(uid||''); }
 function postFor(uid){
   var want=String(uid||''), had=POSTS_UID, park, got;

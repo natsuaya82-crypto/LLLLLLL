@@ -40,6 +40,8 @@
      5. Signing in and pressing nothing sends nothing, and the account's
         profile and parked settings are what this phone then holds.
      6. Changing one setting sends that one setting.
+     7. A copy on the disk is filed under whoever wrote it, not whoever
+        launched.
 
    WHAT IT DOES NOT HOLD, said so silence is not read as a check:
      - The door. netTook() sends the walk's language as a session ARRIVES
@@ -337,6 +339,30 @@ say(kinds.join() === 'words', '3 one word added sends the words slice and nothin
   say(notAt === 99, '5 and what this account parked on this phone is its settings again -- notAt ' +
       JSON.stringify(notAt));
   await pg2.close();
+}
+
+/* ---- 7. what is on the disk is filed under whoever wrote it ----------------
+   A launch as `u` on a phone whose copies were written under somebody else:
+   their posts are parked under their name and are not `u`'s (r63-audit L3).
+   Nothing is deleted -- the park is where signing back in finds them. */
+{
+  const pg3 = await br.newPage({ viewport:{ width:390, height:844 } });
+  pg3.on('pageerror', e => ERR.push(String((e && e.message) || e)));
+  await pg3.route('https://fonts.googleapis.com/**', r => r.fulfill({ status:200, contentType:'text/css', body:'' }));
+  await pg3.route('https://fonts.gstatic.com/**', r => r.abort());
+  await pg3.addInitScript(wire, { srv:SRV, disk:{
+    'lingua.set':   JSON.stringify({ done:true, acct:'other' }),
+    'lingua.posts': JSON.stringify([{ id:'p-other', mine:true, at:1, ln:'theirs', mn:'theirs', sid:'s-other' }])
+  } });
+  await pg3.goto(INDEX);
+  await pg3.waitForSelector('#splash', { state:'detached', timeout:20000 });
+  await quiet(pg3);
+  const r7 = await pg3.evaluate(() => ({
+    here: POSTS.filter(function(p){ return p.id === 'p-other'; }).length,
+    parked: String(localStorage.getItem('lingua.posts.other') || '').indexOf('p-other') >= 0 }));
+  say(r7.here === 0 && r7.parked, '7 somebody else\'s copy is filed under them, not handed to whoever launched -- ' +
+      'on screen ' + r7.here + ', parked ' + r7.parked);
+  await pg3.close();
 }
 
 /* ---- 6. a person changes one setting -------------------------------------

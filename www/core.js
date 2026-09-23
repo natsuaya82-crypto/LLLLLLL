@@ -1341,6 +1341,15 @@ try{
   var s=JSON.parse(localStorage.getItem(LS_S)||'null');
   if(s) for(var sk in s) if(Object.prototype.hasOwnProperty.call(s,sk)) SET[sk]=s[sk];
 }catch(e){}
+/* WHOSE THE COPIES ON THIS PHONE'S DISK WERE WRITTEN UNDER, read once, here,
+   before anything can change it. `SET.acct` is 「which account's things are
+   live on this handset」 (§ planFor) and every copy that is switched when an
+   account arrives -- the settings, the posts, the drafts -- is switched
+   together, so the stamp on the settings is the stamp on all of them. It has
+   to be taken now: www/net.js runs planFor() as it loads, which moves
+   SET.acct to the session before www/post.js has asked whose its copy is
+   (r63-audit L3). */
+var ACCT_DISK=String(SET.acct||'');
 /* ---- THE KEYCHAIN IS NOT READ, AND THERE IS NOTHING TO MIGRATE ----------
    This is where `window.__plan`, `window.__planuid` and `window.__planok`
    were taken off the native side and written into `SET`, and where
