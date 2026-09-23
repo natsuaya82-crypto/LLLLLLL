@@ -156,11 +156,12 @@ const lacks = (label, got, unwanted) => {
 
 const br = await chromium.launch(LAUNCH);
 const pg = await br.newPage();
-/* The phone, when a case asks for one. ios/App/App/LinguaPlan.swift reads the
-   Keychain and injects the plan as a script before anything else runs, so
-   there is nothing to await and nothing to stub except the value itself --
-   and the one call that writes it back. Asleep unless `__test.keychain` is
-   there, so the five cases above run in the browser they always ran in. */
+/* A phone as builds before 2026-09-23 were: the native side injected the
+   Keychain's plan as `window.__plan` before any script ran, and `LinguaPlan`
+   `write` put one back. Neither exists now; they are faked so that www/
+   reading or writing them again would show here. Asleep unless
+   `__test.keychain` is there, so the five cases above run in the browser
+   they always ran in. */
 await pg.addInitScript(() => {
   let box = null;
   try { box = JSON.parse(localStorage.getItem('__test.keychain') || 'null'); } catch (e) {}

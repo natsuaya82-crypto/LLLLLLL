@@ -2134,7 +2134,6 @@ say(K['unreadable'].file.indexOf('"plan":"pro"') !== -1,
    the file, and nothing written down on this side of the bridge. */
 const IOS = path.join(dir, '..', 'ios', 'App', 'App');
 const STORE = fs.readFileSync(path.join(IOS, 'LinguaStore.swift'), 'utf8');
-const KEYC = fs.readFileSync(path.join(IOS, 'LinguaPlan.swift'), 'utf8');
 /* Comments say the words on purpose -- this change is written down in them --
    so it is the CODE that is asked. */
 const CODE = STORE.replace(/\/\*[\s\S]*?\*\//g, ' ')
@@ -2179,10 +2178,10 @@ say(/Transaction\.updates/.test(CODE) && /held\.add\(result\.jwsRepresentation\)
 /* THE KEYCHAIN IS NOT READ BY `www/` AT ALL (2026-09-11). It held the plan
    because the settings file is in the backup a PC makes; there is no word on
    this handset now -- `verify-plan` answers and the answer is in memory
-   (www/core.js § PLAN). `ios/App/App/LinguaPlan.swift` still has its own key
-   and still injects it, and nothing looks: taking the Swift out is an iOS
-   change and docs/BACKLOG.md carries it. What is held is that the WEB side
-   does not read it. */
+   (www/core.js § PLAN). The Swift that injected it is deleted too
+   (2026-09-23); that nothing on the native side is left uncalled is
+   assets-check's, which asks every plugin method as plugin and method
+   together. What is held here is that the WEB side does not read it. */
 const WWWALL = fs.readdirSync(path.join(dir, '..', 'www'))
   .filter((f) => f.endsWith('.js'))
   .map((f) => fs.readFileSync(path.join(dir, '..', 'www', f), 'utf8'))
