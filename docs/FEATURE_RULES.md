@@ -474,7 +474,8 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Affected features: 通知（r47）、写真の bucket（非公開になる、アプリはセッション付きで取る）、サインインしていない画面からの読み（アプリは送らない）
 - Affected data: 無し。誰の行も動かない。**誰が読めるか**が変わる
 - Affected docs: `CLAUDE.md` § Simple の次の段、この file § One place、`docs/ARCHITECTURE.md`／`DATA_SAFETY.md` の RLS の文（r47 が書き換える）、`docs/BACKLOG.md`（過去の「穴」の掃除）
-- Implementation status: r47（サーバー）・r48（`www/net.js`）が作業中。163 には入れず、通知と一緒に 164
+- Implementation status: **IMPLEMENTED**（CODE CONFIRMED）── `supabase/schema.sql` の末尾の一塊が `anon` から
+  表・関数・ストレージを全部外し、`npm run rls` が `anon` で全部を試す。
 
 ### 2026-09-22 投稿画面は、欄をタップしても何も動かない
 - Date: 2026-09-22
@@ -863,10 +864,8 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Affected features: ♡、古い言語、管理画面
 - Affected data: ♡は保存されるものが増えない（画面の一時状態だけ）。復旧は
   サーバーに前の版が積まれる（作る時に DATA_MODEL を書く）。
-- Implementation status: ♡は **IMPLEMENTED**（`claude/r10-sns`、2026-09-09 ──
-  `postLike()` と `PMARK`、`www/post.js`。押さえるのは `acct-check` 62、
-  「押した瞬間は動かず」の claim を書き換えた）。古い言語は BACKLOG に
-  「作らない」。復旧は BACKLOG（リリース後、日数待ち）。
+- Implementation status: ♡は **IMPLEMENTED**（`postLike()` と `PMARK`、`www/post.js`、`acct-check` 62）。
+  古い言語は BACKLOG に「作らない」。復旧は BACKLOG（リリース後、日数待ち）。
 
 ### 2026-09-09 の午後、画面で訊いて答えの出た十一
 - Date: 2026-09-09
@@ -896,8 +895,8 @@ the reasoning — a reason can be re-derived, a decision cannot.
   REVIEW）。9 は「一枚にまとめる」削除を**やめる**（消えるものが減る）。10 は
   クラスと規則の削除（DELETE REVIEW）。他は保存されるものは増えない。
 - Affected docs: `docs/BACKLOG.md` の該当項目（消す）、`docs/CHECK-0907.md`
-- Implementation status: `claude/r10-dl`（1・15・4）、`claude/r10-sns`（6・7・8）、
-  `claude/r10-gram`（10・11・12）、`claude/r10-kb`（9）で作業中。
+- Implementation status: **2026-09-23 に番号ごとの照合はしていない。**配った枝の名前で書いた作業中の
+  記録は古いので消した。どれが入ったかは、各番号の Area のコードを読むこと。
 
 **4 の但し書き**：「圏外でログイン」の話ではない。9/4 より前の古いアプリで作って
 一度もサーバーに上がっていない言語を持つ端末で、（電波のある所で）サインイン
@@ -928,10 +927,9 @@ the reasoning — a reason can be re-derived, a decision cannot.
   要る**。3・4 はデータ無し。
 - Affected docs: `docs/FEATURES.md`「Reading a downloaded language」、
   `docs/BACKLOG.md`、`docs/CHECK-0907.md`、`supabase/setup.md`
-- Implementation status: 1・2 は IMPLEMENTED（`claude/r9-dl`、2026-09-09、
-  実機未確認）── 1 は `netTakeGone()`（`www/net.js`、`again-check` 四本）、
-  2 は `language_took()`（`supabase/schema.sql`、`npm run rls`、**SQL の流し
-  直しが要る**）。3 は IMPLEMENTED（今の形）。4 は BACKLOG。
+- Implementation status: 1・2・3 は IMPLEMENTED ── 1 は `netLangsGone()`（`www/net.js`、
+  `acct-check` 74・75・76）、2 は `language_took()`（`supabase/schema.sql`、`npm run rls`）、
+  3 は今の形。4 は BACKLOG。実機未確認。
 
 ### DL した言語は「印」── 元が消えれば取った側からも消える
 - Date: 2026-09-09
@@ -955,9 +953,8 @@ the reasoning — a reason can be re-derived, a decision cannot.
   2026-09-09。答えが来ていない起動（`LTAKE===null`）では何も落とさない。
 - Affected docs: `docs/FEATURES.md`「Reading a downloaded language」、
   `docs/BACKLOG.md`、`docs/CHECK-0907.md`
-- Implementation status: IMPLEMENTED ── サーバー側は cascade、端末の索引の
-  行は `netTakeGone()`（`claude/r9-dl`、2026-09-09、実機未確認）。元が
-  **非公開**にしたときは同日の決定「DL 言語の四つ」の 2 で決まった。
+- Implementation status: IMPLEMENTED ── サーバー側は cascade、端末の索引の行は `netLangsGone()`
+  （`www/net.js`、実機未確認）。元が**非公開**にしたときは「DL 言語の四つ」の 2。
 
 ### お題の札は、保存は一つの綴り・見せるのは読む人の表示言語
 - Date: 2026-09-08
@@ -1260,7 +1257,8 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Affected docs: `CLAUDE.md` 規則19（キーボードの編集画面）に、この ＋ を
   説明した文があれば同じコミットで直す。`press` のボタン数が減ります ──
   減ったこと自体は正しい。
-- Implementation status: **着手していません。**`docs/HANDOVER.md` 六章の 10。
+- Implementation status: **2026-09-23 に照合していない。**「着手していません」は `docs/HANDOVER.md` の
+  日付の記録で、今のコードは確かめていない。
 
 ### 保存を押したときだけ、保存されているものが変わる
 - Date: 2026-09-04
@@ -1522,7 +1520,8 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Affected features: 文法の語順の既定値。**発音は変えません**
 - Affected data: 文法の語順を触っていない人の欄が、空のままになります
 - Affected docs: この項目、`docs/EXPIRY.md` 4番
-- Implementation status: **未実装。**オンライン前提への書き換えと同じ回で
+- Implementation status: **一部。**押していないのに書く道が残っている ── 起動・移行・描画から書く所は
+  `docs/scope/r73-audit.md` § 2-2 が測った一覧。
 
 ### バックアップのファイルも無くす。★の51件目は一番古いのを押し出す
 - Date: 2026-09-04
@@ -1552,7 +1551,8 @@ the reasoning — a reason can be re-derived, a decision cannot.
   その三世代。**サーバーのバックアップがそれを引き受けます。**
 - Affected docs: この項目、`docs/DATA_SAFETY.md`、
   `CLAUDE.md` 規則11、`docs/STATE.md`、`supabase/setup.md`
-- Implementation status: **設計に入れ直します（`claude/one`）。**
+- Implementation status: ファイルは **IMPLEMENTED**（消えた、2026-09-04、CLAUDE.md 規則 11）。★の
+  51 件目は「★は50件まで」（下）が今の決定。
 
   **これで「消えないための仕組み」は一本になります** ── サーバーが本物、
   版を積む、サーバー自体がバックアップされる。**それだけです。**
@@ -1707,7 +1707,8 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Affected data: **一筆の点。**外すと、いままで途中で捨てられていた点が
   残るようになります。既に描かれたものは変わりません
 - Affected docs: この項目、`docs/EXPIRY.md`、`docs/CHANGELOG.md`
-- Implementation status: **未実装。**ビルドのあとに配ります
+- Implementation status: 160 点は **IMPLEMENTED**（`www/glyph.js` に天井が無い）。★の 50 の天井は
+  `www/sns.js`・`www/net.js`・`supabase/schema.sql` に見当たらない（2026-09-23、grep）── 未実装。
 
 ### バックアップの三世代と、元に戻せる段数は、いまのまま
 - Date: 2026-09-04
@@ -1928,10 +1929,8 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Affected features: ⑨ キーボード（`docs/FEATURES.md`）
 - Affected data: **無し。**見た目と、＋を押したときにどこへ行くかだけ
 - Affected docs: この項目、`docs/CHANGELOG.md`、`docs/keyboard.md`
-- Implementation status: **未実装。**`claude/kbfree2` に配布。直す所は五つ:
-  `kbSlots()`（`www/keyboard.js:979`）と、そこと `vKb()` の上のコメント二つ
-  （:969 と :2378）、`tools/kb-check.mjs` の二箇所（:1708 と :3442、
-  `freeSlots` を含む）。**古い文は消すこと ── 残すと読まれます。**
+- Implementation status: **2026-09-23 に照合していない。**名指していた `kbSlots()` と `freeSlots` は
+  コードに無く、`kbSlotsShown()`（`www/keyboard.js`）がある。
 
   数は既に `www/core.js:791` に一つずつ在ります ── `FREE_KB=1`、`PLUS_KB=4`、
   Pro は `kbCap()` で無制限。**新しい数を書かないこと。**
@@ -2128,7 +2127,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
   なくなる** ── アプリが消すのではない。
 - Affected docs: この項、docs/DATA_MODEL.md、docs/DATA_SAFETY.md、
   docs/CHANGELOG.md、CLAUDE.md 規則6
-- Implementation status: **未実装。**`claude/flat` に渡した（2026-09-03）
+- Implementation status: **IMPLEMENTED** ── 平キーは読まず、写さず、消さない。`migrate-check` 8 が持つ。
 
 ### 古い規則は残さない。全部いまの規則。食い違いはオーナーに訊く
 - Date: 2026-09-03
@@ -2332,7 +2331,8 @@ the reasoning — a reason can be re-derived, a decision cannot.
   **最初に @ を決めるのは「変更」ではない。**アカウントを作った直後、まだ
   一度も変えていない人が14日待たされるのは、この決定の言っていることでは
   ない。
-- Implementation status: **未実装。**`claude/me3` に渡した（2026-09-03）
+- Implementation status: **IMPLEMENTED** ── `profile_rename()`（`supabase/schema.sql`）が `handle_at` から
+  14 日の内を断る。実機未確認。
 
 ### キーの画面 ── 選んだら確定ボタン、もう一度触れば解除、戻れば選択は消える
 - Date: 2026-09-03
@@ -2428,8 +2428,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
   なくアカウントのもの。`localStorage` はいつもどおり圏外で動く写し
 - Affected docs: この項、docs/DATA_MODEL.md、docs/CHANGELOG.md、
   docs/FEATURES.md
-- Implementation status: **未実装。**`claude/find` に渡した（2026-09-03）。
-  あの枝が `www/sns.js` と `www/net.js` を持っているため
+- Implementation status: **IMPLEMENTED** ── `SNS_RECENT=5`（`www/sns.js`）、サーバーが本物で `SET.recent` は写し。
 
 ### シンプルに作る。バグが出たら、直すのではなくそのコードを書き換える
 - Date: 2026-09-03
@@ -2511,9 +2510,8 @@ the reasoning — a reason can be re-derived, a decision cannot.
   一度も上がっていない言語」に限られ、増えません。
 - Affected docs: `docs/DATA_MODEL.md`、`docs/DATA_SAFETY.md`、
   `www/core.js` の `langOwned()` のコメント（同じコミットで書き換え済み）
-- Implementation status: **core.js 側は実装済み**（`langOwned()`、
-  `acct-check` 35 番）。`www/net.js` の `netLangRow()` 四つ目の状態は
-  リーダーのもので、**まだ拾います。**
+- Implementation status: **2026-09-23 に照合していない。**名指していた `langOwned()` はコードに無い。
+  誰の言語かは今 `language.owner` を `langOwnOf()`（`www/core.js`）が読む（CLAUDE.md 規則 22）。
 
   未決が一つ、リーダーとオーナーへ: net.js の四つ目も閉じると、**今すでに
   端末にあって一度も上がっていない言語は、作った本人にも二度と戻りません。**
@@ -2585,12 +2583,8 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Affected data: Keychain に、段と一緒に「買ったアカウントの uid」が入る。
   uid が合わないセッションは、サーバーの答えが来るまで free から始める。
 - Affected docs: `docs/PAID_FEATURES.md`、`docs/scope/claude-login-billing.md`
-- Implementation status: **IMPLEMENTED**（2026-09-11、`claude/r18-plan`）。
-  `planFor()`（`www/core.js`）が比較する一箇所で、枝は二つ ── 同じ人なら端末の
-  写し、それ以外は free から始めてサーバーに訊く。Keychain には書き戻さないので
-  買った本人のものは残る。`acct-check` 37・38・39・40・40b・40c・41・42 が持つ。
-  赤を見た。
-  実機は未確認（Keychain の往復は実機でしか見られない）。
+- Implementation status: **IMPLEMENTED、形は 2026-09-11 に変わった** ── 段は端末に無く、`verify-plan` の答えが
+  メモリに一つ（`PLAN`、`www/core.js`）。Keychain も `planFor()` も無い（「端末は何も決めない」）。
 
 ### 1アカウントに1課金。印の無い端末も例外にしない
 - Date: 2026-09-11
@@ -2709,8 +2703,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Affected features: ⑬。`www/sns.js` の同じ形も同じ値
 - Affected data: 無し
 - Affected docs: 無し
-- Implementation status: **実装済み（master）。**`HOLD_SLOP=10` が
-  `www/shell.js:824`、測るのが `:855`。
+- Implementation status: **IMPLEMENTED** ── `HOLD_SLOP=10`（`www/shell.js`）。
 
 ### iOS 標準のダイアログもシートも使わない ── 五つ目の禁止
 - Date: 2026-09-01
@@ -2826,7 +2819,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Affected data: 1 に入るものは全部データを触る。**消す行を書かないこと**が
   条件（同日、`claude/scan` への指示）
 - Affected docs: `docs/STATE.md` §0-a
-- Implementation status: 進行中
+- Implementation status: **済み** ── 1.0.0 (162) が 2026-09-22 に App Store に出た（`docs/STATE.md`）。
 
 **この決定が禁じるものを、名前で書いておく。**リリース前に「ついでに」で入る
 ものは全部この三段の外にある ── 整理、改名、きれいにすること、あったほうがいい
@@ -2880,7 +2873,8 @@ the reasoning — a reason can be re-derived, a decision cannot.
   変わらないが、**DL した言語の id を `bkPack()` が飛ばす**必要がある
 - Affected docs: `docs/DATA_MODEL.md` § A language that is only read の
   未決 2・3・4 を答えに差し替え済み
-- Implementation status: **未実装。**`docs/FEATURES.md` は 0 lines と書いている
+- Implementation status: **IMPLEMENTED** ── 1 は `langLocked()` を書き手が訊く、2 はファイルが消えて無くなった
+  問い、3 は `dlCount()` が言語を数える、4 は `dlCap()` が作った言語と別に数える（`www/core.js`、`dl-check`）。
 ### 1. 画面の基準が十になった
 - Date: 2026-09-01
 - Area: 画面ぜんぶ
@@ -2915,7 +2909,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Affected data: 無し。
 - Affected docs: `CLAUDE.md` § Shape（直した）、この項、
   `docs/CHANGELOG.md`（`claude/fo2` が原文を入れた `3538668`。書き換えない）。
-- Implementation status: **規則は直した。画面は誰も触っていない。**
+- Implementation status: 規則は直した。下の「コードと合っていない所」は **2026-09-23 に照合していない**。
 
 #### コードと合っていない所。直していない ── **二つあります**
 
@@ -2987,8 +2981,8 @@ the reasoning — a reason can be re-derived, a decision cannot.
   するには `ios/App/` に `UIAlertController` が要ります。
 - Affected data: 無し。
 - Affected docs: `CLAUDE.md` § Shape（直した）、この項。
-- Implementation status: **規則は直した。コードは誰も触っていない**
-  ── `www/` も `ios/` もこの枝の持ち物ではありません。
+- Implementation status: **IMPLEMENTED** ── プロフィール画像は iOS 自身のシート（`mePicAsk()` が
+  `LinguaShare` の `ask` を呼ぶ、`www/me.js`）。
 
 ### 3. 課金とアカウントとキーボードはアカウントに結びつく
 - Date: 2026-09-01
@@ -3013,9 +3007,8 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Affected docs: `CLAUDE.md` § Online、`docs/PAID_FEATURES.md`、
   `docs/DATA_MODEL.md`、`docs/STATE.md` § 3 項目4、`docs/keyboard.md`
   ── **全部直しました。**
-- Implementation status: **キーボードは在る。プランは無い。**
-  `profile` にプランの列が無く、`www/net.js` はプランを一度も送らず、値は
-  `SET.plan`（実機では Keychain）です。差は `docs/STATE.md` § 3 項目4 に。
+- Implementation status: **IMPLEMENTED** ── 段は `plan` 表（`supabase/schema.sql`）、`verify-plan` が書き、
+  端末はメモリの `PLAN` だけ。キーボードは言語の `kb` slice。
 
 #### コードと合っていない所。直していない ── 報告した
 
@@ -3140,8 +3133,8 @@ www/net.js:1544  netDraftUp() ── www/post.js:380 と :463 から
   いまは画面（`openForm`）です**（項目2）。
 - Affected data: 無し。`ME.pic` を空にするだけです。
 - Affected docs: この項。
-- Implementation status: **中身は在る。形が基準どおりでない。**
-  `www/` も `ios/` もこの枝の持ち物ではないので、触っていません。
+- Implementation status: **IMPLEMENTED** ── `mePicAsk()`（`www/me.js`）が iOS のシートで「選ぶ／削除」。実機は
+  写真つきで確かめた日がこの項に無いので未確認。
 
 ### 7. 自己紹介は出す。言語の詳細も
 - Date: 2026-09-01
