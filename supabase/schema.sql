@@ -1529,6 +1529,24 @@ create view profile_seen as
     ) l on true;
 grant select on profile_seen to authenticated;
 
+-- A POST KEPT TO YOURSELF is read by the person who wrote it and by nobody
+-- else -- not a follower, not the person it answers, not staff.
+-- 「SNSは全部サーバー」 and 「NOTHING IS THE PHONE'S」 (CLAUDE.md § Online):
+-- it lived on the phone that wrote it and nowhere else until 2026-09-23, which
+-- made it the one thing somebody wrote that a lost phone took with it.
+--
+-- The mark is `body.pv`, where it has always been on the phone -- a post's
+-- fields travel in `body` (www/net.js § netBody) -- so there is no column and
+-- nothing to grant. This is the ONE place that says what the mark is, and
+-- every reader asks it: the table's read policy (post_read), post_seen, which
+-- reads the table as its owner and so has to ask for itself (the row and the
+-- count of replies), and the trigger that rings somebody when they are
+-- answered. A reader added tomorrow asks this, or it is a second answer.
+create or replace function post_private(b jsonb) returns boolean
+language sql immutable as $$
+  select coalesce(b ->> 'pv', '') not in ('', '0', 'false')
+$$;
+
 drop view if exists post_seen cascade;
 create view post_seen as
   select p.id, p.author, p.language, p.prompt, p.reply_to, p.created_at,
@@ -1561,7 +1579,8 @@ create view post_seen as
          -- table. Taken-down replies are not counted: a count that includes
          -- what nobody can open is a number with nothing behind it.
          (select count(*) from post q
-           where q.reply_to = p.id and q.hidden_at is null) as replies,
+           where q.reply_to = p.id and q.hidden_at is null
+             and not post_private(q.body)) as replies,
          -- AND WHETHER THIS READER IS ONE OF THEM, which is a different
          -- question from how many and cannot be worked out from the count.
          -- Signed out, auth.uid() is null and both are false -- correct:
@@ -1572,7 +1591,9 @@ create view post_seen as
          exists (select 1 from react r
                   where r.post = p.id and r.kind = 'boost'
                     and r.actor = auth.uid()) as i_boost
-    from post p left join profile a on a.id = p.author;
+    from post p left join profile a on a.id = p.author
+   -- and a post kept to yourself is not a row for anybody else (post_private).
+   where not post_private(p.body) or p.author = auth.uid();
 grant select on post_seen to authenticated;
 
 -- post: everyone reads, you write as yourself.
@@ -1595,7 +1616,9 @@ grant select on post_seen to authenticated;
 -- a view is only a wall if there is no door beside it.
 drop policy if exists post_read on post;
 create policy post_read on post for select using (
-  hidden_at is null or author = auth.uid() or is_staff()
+  (hidden_at is null or author = auth.uid() or is_staff())
+  -- and one kept to yourself is yours alone, staff included (post_private)
+  and (not post_private(body) or author = auth.uid())
 );
 drop policy if exists post_make on post;
 create policy post_make on post for insert with check (is_member() and author = auth.uid());
@@ -2245,6 +2268,7 @@ language sql stable as $$
       select (count(*) * 5) as pts
         from post q
        where q.reply_to = v.id and q.created_at <= feed_slot()
+         and not post_private(q.body)
     ) a on true
    /* AS THE TICK LEFT IT, on both sides: the posts that existed then, and the
       reactions that had happened by then. That is what makes the list stand
@@ -3138,7 +3162,10 @@ begin
   -- whole timeline through this road to be thrown away at the far end.
   drop trigger if exists push_on_reply on post;
   create trigger push_on_reply after insert on post
-    for each row when (new.reply_to is not null) execute function push_ping();
+    -- A reply kept to yourself rings nobody: the person answered cannot read
+    -- it, so telling them it exists is reading it (post_private).
+    for each row when (new.reply_to is not null and not post_private(new.body))
+    execute function push_ping();
 
   -- Both kinds down one trigger. `react.kind` is where like and boost are
   -- told apart and it is told apart there for notices() as well; a second
