@@ -1744,7 +1744,7 @@ known place** (`docs/apple.md` § 4 has every field):
     The code side of this is done as far as it can be here:
     `LinguaStore.swift` (`products` `buy` `restore` `current` `manage`, the
     `Transaction.updates` listener, and an id→plan map that answers with the
-    HIGHEST entitlement) and `www/store.js`, which `setPlan()` goes through on
+    HIGHEST entitlement) and `www/store.js`, which `plBuy()` goes through on
     a phone. The three things that were waiting on another session's files are
     in: Restore (**Apple requires it**), Plus's own card, and Cancel opening
     Apple's own sheet rather than setting a flag. What the screen still lacks

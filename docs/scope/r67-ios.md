@@ -50,8 +50,12 @@ S2 は決めない ── 下に形と選択肢。
 7. **`docs-check` が `setPlan()` で 7 本赤**（integ-0905 を入れた後、r62 の新しい「docs が名指す
    関数はコードにある」）: `docs/BACKLOG.md:1313`、`docs/FEATURES.md:273`、
    `docs/FEATURE_RULES.md:3135`・`3149`、`docs/PAID_FEATURES.md:770`、`docs/STATE.md:1747`、
-   `docs/apple.md:496`。今その仕事をしているのは `plBuy()` → `storeBuy()`、手で段を変える道は無い。
-   docs/ は r62 の持ち物なので触っていない。
+   `docs/apple.md:496`。**済み**（リーダーがこの 7 か所を r67 の持ち物に足した）: 今の事実の文は
+   `plBuy()` → `storeBuy()` に書き直し、決定ログの二か所は ~~`setPlan()`~~ と打ち消した。
+   PAID_FEATURES の同じ節で私の変更が偽にした三文（`LinguaPlanPlugin.set()` で書く、ブラウザでは
+   手で段が変わる、`LinguaPlan.swift` がまだ鍵を持つ）と、FEATURES の同じ行の「Keychain
+   （`LinguaPlan.swift`）」も直した。同じ所の「`.unverified` を拒む」（LinguaStore はわざと送る）は
+   私の変更とは関係ないので触っていない。
 
 ## S2 ── 決めない（オーナーの決定）
 
