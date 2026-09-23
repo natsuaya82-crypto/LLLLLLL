@@ -286,8 +286,8 @@ the reasoning — a reason can be re-derived, a decision cannot.
   - 見本は投稿の一行と同じ物（`.pline` と `dirClass()`、字は `inkChar()`）で描く。別の描き方をしない。
   - 保存する物は増えない（`SCRIPT.sp` 一つのまま）。
 - Implementation status: r51-spacing、ページは r56-guide-sp（ルート `sp`、`vSp()`）。数は `www/wsys.js` の `SP_RANGE` 一箇所。
-  **縦の見本は字間で動かない（r56 で測った。0・1・2 とも列の長さ 48.0px）**── 一行を描く書体が
-  字間を横の送りにしか持たないため。縦書きの投稿も同じはず。リーダーに上げた
+  縦は書体の縦の送り（`www/otf5.js` の vhea・vmtx・VORG、横と同じ `reach()`）で字間に従う。
+  `tools/line-check.mjs` 6 が縦書きの投稿と入力欄を字間 0・1・2 で測る
 
 ### 2026-09-22 サインインなしでサーバーに触れる道は無い ── 穴ではなく面を覆う。扉の `email_taken()` だけ例外
 - Date: 2026-09-22

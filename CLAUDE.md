@@ -961,6 +961,14 @@ canvas and keeps `inkAdv()`; it takes a space as the ordinary face's (`inkSpace(
 and a newline as a break. `tools/line-check.mjs` photographs the field and the
 posted row and asks for the same ink.
 
+**Down is the same gap as across, and it is the face's.** A column is laid out by
+the face's VERTICAL advance, and the face had none, so written down every letter
+stood in the line box whatever the gap — the spacing page's column did not move
+when the slider did 「横と縦それぞれスライドしてどう動くか」. `otf5.js` writes
+vhea, vmtx and VORG from the same `reach()` and the same side as the horizontal
+advance, so the field, a post and the preview written down obey the gap all at
+once. `line-check` 6 measures a column at 0, 1 and 2, on a post and in the field.
+
 `tools/sides-check.mjs` holds the line: nothing below it may name `WORDS`, `LETTERS`,
 `STG`, `SET`, `langName`, `findWord`, `myFontOn`, `ltById`, `ME`, `meName` or their
 siblings. It also refuses a **two-argument function passed bare to `map`** — `postRow` grew
