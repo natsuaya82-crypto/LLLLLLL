@@ -142,9 +142,9 @@ function vWsys(){
        Off is roman, which is what the app shows when somebody's own letters
        are not being shown, and does not need a button of its own to say so. */
     '<div class="sec">'+t('script.show')+'</div>'+
-    '<button class="set" style="border-bottom:none"' + DO('setMyFont', [!SET.myfont]) + '>'+
+    '<button class="set" style="border-bottom:none"' + DO('setMyFont', [!myFontWant()]) + '>'+
       '<span class="sl">'+esc(t('script.show.own'))+'</span>'+
-      swtHTML(!!SET.myfont)+'</button>'+
+      swtHTML(myFontWant())+'</button>'+
     '</div></div>';
 }
 /* ---- the abugida bench ------------------------------------------------

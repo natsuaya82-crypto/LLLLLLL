@@ -515,11 +515,12 @@ function vContact(){
      states, the colour and nothing else (www/shell.js § navDo).
 
      `on` is contactOn() above and it is painted by hand while somebody types
-     (contactSet), because this screen is not redrawn on a keystroke. The word
-     is still the busy one while a send is in the air. */
+     (contactSet), because this screen is not redrawn on a keystroke. It is
+     the paper plane and the word is its name (OWNER 2026-09-23); while a send
+     is in the air the name is the busy one and the plane is grey. */
   return '<div class="view">'+
     navTop('', navDo(t(CONT.busy? 'ob.mail.wait' : 'contact.send'),
-                     'contactGo', null, contactOn()))+
+                     'contactGo', null, contactOn(), {icon:ICON_SEND}))+
     /* `tall` is the body that is as tall as the screen -- vSet()'s account
        room above already wears it -- and it is what lets the field below take
        what is left. */

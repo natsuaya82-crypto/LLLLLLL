@@ -705,23 +705,43 @@ function keepPaint(){
    line in the composer, a field different from the one it opened with. What
    is held here is that there are two states and where the colour comes from.
 
-   `opts` is for the one button that is more than a word: the composer's,
-   which carries an id for its long-press timer, a lock when the post is
-   private, and the ground that goes under it. Its COLOUR is still these two
-   states and it no longer names one of its own. */
+   `opts.icon` is the operation's MARK, and when there is one it IS the
+   button: an operation every phone draws a mark for -- send, add, edit -- is
+   drawn, and `label` is what the button is called (`aria-label`) rather than
+   what it shows. 「文字でドカンって共有とか書くの禁止してるよね？」 OWNER
+   2026-09-23, CLAUDE.md § Shape, and marks-check holds it. A decide button
+   with no settled mark (save, done) is still its word.
+
+   The rest of `opts` is for the composer's: an id for its long-press timer, a
+   lock when the post is private, and the ground that goes under it. Its
+   COLOUR is still these two states and it no longer names one of its own. */
 function navDo(label, name, args, on, opts){
   var o=opts||{};
-  return '<button class="navdo'+(on? ' navon' : '')+(o.cls? ' '+o.cls : '')+'"'+
-         (o.id? ' id="'+o.id+'"' : '')+DO(name, args)+'>'+
-         (o.mark||'')+esc(label)+'</button>';
+  return '<button class="navdo'+(on? ' navon' : '')+(o.icon? ' navmk' : '')+
+         (o.cls? ' '+o.cls : '')+'"'+
+         (o.id? ' id="'+o.id+'"' : '')+DO(name, args)+
+         (o.icon? ' aria-label="'+esc(label)+'">'+(o.mark||'')+o.icon
+                 : '>'+(o.mark||'')+esc(label))+'</button>';
 }
 /* THE DELETE, at the far end of the same bar while a list is being chosen
    from. It is NOT the decide button and not a third state of it: 「右上に選択
    したら削除できるみたいな感じに」 OWNER 2026-09-01, and it is the one colour
    in this app that means a thing goes. It shares the box because it stands in
-   the same corner and a thumb is the same size either way. */
+   the same corner and a thumb is the same size either way. It is the bin and
+   the word is its name -- every list that is chosen from passes through here,
+   so every one of them is the same mark (OWNER 2026-09-23). */
 function navDel(label, name, args){
-  return '<button class="navdo navdel"'+DO(name, args)+'>'+esc(label)+'</button>';
+  return '<button class="navdo navmk navdel"'+DO(name, args)+' aria-label="'+esc(label)+'">'+
+         ICON_BIN+'</button>';
+}
+/* A MARK THAT ACTS, standing on its own in a page rather than in the bar: the
+   share under a card, the plus under a form, the bin at the foot of a row.
+   The one shape for it, so they are one size and one colour -- `.markb` in
+   www/index.html -- and the word is the name, through t(). `attrs` is what
+   the button carries beyond that (`disabled`). */
+function markBtn(icon, label, name, args, attrs){
+  return '<button class="markb"'+DO(name, args)+(attrs||'')+
+         ' aria-label="'+esc(label)+'">'+icon+'</button>';
 }
 /* AND REPAINTED WHERE IT STANDS. Typing does not redraw these screens and must
    not: a field being typed into loses the keyboard the moment the page under

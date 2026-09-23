@@ -1062,6 +1062,21 @@ canvas.pkc{width:34px;height:34px;display:block}
    word is the button. 「右上に選択したら削除できるみたいな感じに」OWNER
    2026-09-01. */
 .navdo.navdel{color:var(--bad)}
+/* AND WHEN THE OPERATION HAS A MARK, THE MARK IS THE BUTTON -- the paper
+   plane, the plus, the pen, the bin (www/shell.js § navDo, CLAUDE.md
+   § Shape). One size for all of them, whatever size each was drawn at, so
+   the corner does not change size from screen to screen. */
+.navdo.navmk{display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.navdo.navmk > .ic:last-child{width:22px;height:22px}
+/* The same, standing on its own in a page (markBtn()): the share under a
+   card, the plus under a form, the bin at the foot of a row. Words in no box
+   before; a mark in no box now. */
+.markb{display:flex;align-items:center;justify-content:center;
+       min-width:44px;min-height:44px;margin:10px auto 0;padding:0;
+       border:0;background:none;color:var(--gold)}
+.markb .ic{width:24px;height:24px}
+.markb:active{opacity:.55}
+.markb:disabled{opacity:.3}
 .pwtop{display:flex;gap:12px;margin-bottom:6px}
 .pwfield{flex:1 1 auto;min-width:0}
 /* The line and the meaning are `.lnin`, the field every screen writes in,
