@@ -98,20 +98,25 @@ const R = await pg.evaluate(() => {
       const e = els[i];
       if (e.offsetParent === null && getComputedStyle(e).position !== 'fixed') continue;
       looked++;
-      if (e.querySelector('svg, img, canvas')) continue;
+      const act = e.getAttribute('data-do');
+      /* THE CORNER: what navTop() puts at the right end of the bar -- the bar
+         itself, less the arrow back. */
+      const corner = !!(e.closest('.navtop') && !e.classList.contains('back'));
+      const marked = !!e.querySelector('svg, img, canvas');
+      /* What the button is called: its words, or its aria-label when it is a
+         mark. Both are the interface's English, so both classify the same. */
+      const name = marked ? norm(e.getAttribute('aria-label') || '') : norm(e.textContent);
       /* THE ANSWERS TO A QUESTION ARE WORDS. popAsk() puts the question
          (`.popm`) and its two answers side by side, and an answer is what the
          question is answered WITH -- iOS's own question answers 「削除」 and
          「キャンセル」 in words too. A bin under 「この単語を削除しますか？」 is
          a picture of the answer rather than the answer. */
       if (e.parentNode && e.parentNode.querySelector(':scope > .popm')) continue;
-      const txt = norm(e.textContent);
-      if (!/\p{L}/u.test(txt)) continue;
-      const keys = keysOf(txt);
+      if (!/\p{L}/u.test(name)) continue;
+      const keys = keysOf(name);
       if (!keys.length) continue;           /* somebody's word, not a label */
-      const act = e.getAttribute('data-do');
-      const id = act + ' | ' + txt;
-      if (!found[id]) found[id] = { act, text: txt, keys, at: where, n: 0 };
+      const id = act + ' | ' + name + ' | ' + (marked ? 'mark' : 'words') + ' | ' + (corner ? 'corner' : 'page');
+      if (!found[id]) found[id] = { act, text: name, keys, at: where, n: 0, marked, corner };
       found[id].n++;
     }
   }
@@ -181,19 +186,40 @@ const MARKED = [
 ];
 const kind = (txt) => { const m = MARKED.find(x => x[1].test(txt)); return m ? m[0] : ''; };
 
-const bad = R.found.filter(f => kind(f.text));
-const rest = R.found.filter(f => !kind(f.text));
+/* Two statements, both about the surface.
+   1. An operation with a mark is not written as words, anywhere.
+   2. The screen's send and share are the mark IN THE CORNER of the bar --
+      「右上にしてね。送信も紙飛行機右上、共有も共有マークを右上。」OWNER
+      2026-09-23. A send or a share standing anywhere else, mark or words, is
+      in the wrong place. (A post row's mark and the word page's open the CARD
+      -- they are called "Card", and the card screen's corner is where the
+      sharing is.) */
+const words = R.found.filter(f => !f.marked);
+const bad = words.filter(f => kind(f.text)).map(f =>
+  '  FAIL  ' + f.act + ' says "' + f.text + '" (' + f.ja + ') in words on ' + f.at +
+  ' -- a ' + kind(f.text) + ' is a mark');
+R.found.filter(f => (kind(f.text) === 'send' || kind(f.text) === 'share') && !f.corner).forEach(f =>
+  bad.push('  FAIL  ' + f.act + ' ("' + f.text + '") is a ' + kind(f.text) + ' in the page on ' + f.at +
+           ' -- a send or a share is the mark at the top right of the bar'));
+const rest = words.filter(f => !kind(f.text));
+/* The corner in words, counted and printed and not failed: what goes there
+   when an operation has no settled mark (Save, Done, Select) is the owner's
+   (CLAUDE.md § Deciding). */
+const cornerWords = rest.filter(f => f.corner);
 if (LIST) {
-  console.log('word-only buttons whose words are the interface\'s: ' + R.found.length);
-  R.found.forEach(f => console.log((kind(f.text) || '-') + '\t' + f.act + '\t' + f.text + '\t' +
-                                  f.ja + '\t' + f.keys.slice(0, 3).join(',') + '\t' + f.at));
+  console.log('word-only buttons whose words are the interface\'s: ' + words.length);
+  words.forEach(f => console.log((kind(f.text) || '-') + '\t' + f.act + '\t' + f.text + '\t' +
+                                f.ja + '\t' + f.keys.slice(0, 3).join(',') + '\t' + f.at +
+                                (f.corner ? '\tcorner' : '')));
+  console.log('\nin the corner of the bar, in words, with no settled mark: ' + cornerWords.length);
+  cornerWords.forEach(f => console.log('  ' + f.act + '\t' + f.text + '\t' + f.ja + '\t' + f.at));
 }
 console.log('marks: ' + R.screens + ' screens, ' + R.looked + ' buttons looked at, ' +
-            R.found.length + ' word-only, ' + rest.length + ' of them with no settled mark');
+            words.length + ' word-only, ' + rest.length + ' of them with no settled mark, ' +
+            cornerWords.length + ' of those in the corner of the bar');
 if (bad.length) {
-  bad.forEach(f => console.log('  FAIL  ' + f.act + ' says "' + f.text + '" (' + f.ja + ') in words on ' +
-                               f.at + ' -- a ' + kind(f.text) + ' is a mark'));
-  console.log('marks: FAIL -- ' + bad.length + ' operation(s) with a mark written as words');
+  bad.forEach(l => console.log(l));
+  console.log('marks: FAIL -- ' + bad.length);
   process.exit(1);
 }
 console.log('marks: ok');
