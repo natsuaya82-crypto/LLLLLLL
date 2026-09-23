@@ -502,9 +502,9 @@ function vContact(){
      one a person can ADD to, so neither fits in a wheel and both need a page.
      Three fixed words do.
 
-     `.field select` is already in the stylesheet and `obLang` in the
-     onboarding is already one, so nothing new is invented here and no CSS is
-     added. */
+     `.field select` is already in the stylesheet and the onboarding's
+     interface language is already one, so nothing new is invented here and
+     no CSS is added. */
   /* AND THE SEND IS IN THE CORNER OF THE BAR, NOT UNDER THE BODY.
      「本文が増えたらこれ見えなくなるやろ送信右上にして本文は画面全部に広がる
      ようにして。」 OWNER 2026-09-22. It was a `.btn.ghost` at the foot of the
