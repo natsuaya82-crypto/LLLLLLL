@@ -222,9 +222,11 @@ var SLICES=['words','lines','lang','script','letters','notes','phases','talk','s
      talk    a chapter that closed. Nothing in www/ reads or writes it, and it
              is NOT deleted -- somebody's may be in it and that is the owner's
              to decide (docs/DATA_SAFETY.md § 4)
-     gram2   read and written BY LANGUAGE ID, on demand, in
-             www/grammar-engine/adapter.js. There is no global copy to go
-             stale, which is why it never belonged in the sequences above
+     gram2   a grammar model an older version kept. Nothing in www/ reads or
+             writes it any more (the adapter's load and save went on
+             2026-09-23, www/grammar.js § gModel) and it is NOT deleted --
+             what somebody has in it is theirs, and the article still offers
+             it for download beside `phases` (www/home.js § WLD_DL_KIND)
 
    The functions are named inside a function body rather than beside the key,
    because www/core.js is the FIRST script index.html loads: `ltRead` and
@@ -245,7 +247,7 @@ var LANG_IO={
   wld:    { rd:function(){ wldRead(); },  wr:function(){ saveWld(); } },
   lang:   { why:'the name, and it is the `language.name` column now (www/core.js § LNAME). Nothing writes it; langNameOld() reads it where the column has said nothing yet, and it is not deleted -- what is in it is what an older version of this app put there' },
   talk:   { why:'a chapter that closed. Nothing reads or writes it, and it is not deleted' },
-  gram2:  { why:'read by language id on demand in www/grammar-engine/adapter.js; there is no global copy' }
+  gram2:  { why:'a grammar model an older version kept. Nothing reads or writes it (the adapter\'s load and save are gone, 2026-09-23), and it is not deleted' }
 };
 /* Everything this language is, into the globals. One pass, and a function
    named by four slices is called once -- the dictionary and the lines come
