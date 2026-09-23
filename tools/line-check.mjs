@@ -43,6 +43,21 @@
         The surface is COUNTED: nothing here lists which classes may wear
         the face, so a rule added tomorrow that sets a whole string in it
         fails tomorrow. 「一つに書き直す」 r61-face, r46-audit § B1
+     8  and the other way round: a word the font draws is never shown in
+        roman. Every text node on the same walk, and on every chapter of the
+        grammar, that IS one of the language's words is asked whether it
+        came through sfontHTML() -- a whole headword standing as one text
+        node outside `.sfont`, while sfontRuns() says the face draws some of
+        it, was written with esc(). And again with letters BORROWED for the
+        sounds, which replace the text: a headword standing as itself then
+        was written without wOut(). Counted the same way: nothing lists
+        which rows draw words. The one row that gives the spelling in roman
+        on purpose, `.wrd` under a word's head, is named, and has to be met.
+        So is the bar's title on a word's page (`.navt`): it is text, built
+        by pageName() in www/shell.js, and whether it is drawn is that
+        file's to answer -- named so that it is seen, not so that it is
+        allowed (docs/scope/r69-misc.md).
+        r69-misc, r61 「止めたこと」3
 
    A browser, on its own port.
    --------------------------------------------------------------------------- */
@@ -421,18 +436,43 @@ const FACE = await pg.evaluate(async () => {
   const st = [{ pts: [[112, 112], [688, 112], [400, 688]] }];
   LETTERS = [{ id: 'F1', st: st, ch: '', nm: '', ab: 'sh', snd: ['ʃ'] },
              { id: 'F2', st: [{ pts: [[112, 400], [688, 400]] }], ch: '', nm: '', snd: ['a'] }];
+  /* `sha` holds a slot, so a grammar chapter draws it on a row; the rest
+     are what the grammar's demonstrations and arranged rows are built of --
+     two nouns, a verb, an adjective, a particle in a slot of its own -- and
+     the verb is this month's name, so the calendar draws a word too. */
   WORDS = [{ hw: 'has', ph: ['h', 'a', 's'], mn: 'x', pos: 'n' },
-           { hw: 'sha', ph: ['ʃ', 'a'], mn: 'y', pos: 'n' }];
+           { hw: 'sha', ph: ['ʃ', 'a'], mn: 'y', pos: 'n', slot: 'det.a' },
+           { hw: 'asha', ph: ['a', 'ʃ', 'a'], mn: 'go', pos: 'v',
+             slot: 'month.' + numLabel(calMonthOf(new Date())) },
+           { hw: 'aa', ph: ['a', 'a'], mn: 'big', pos: 'adj' },
+           { hw: 'sa', ph: ['s', 'a'], mn: 'subject mark', pos: 'part', slot: 'part.subj' }];
+  /* An order arranged and a side said: the demonstrations draw only what
+     somebody has answered. */
+  STG.order = ['S', 'O', 'V']; STG.np = ['ADJ', 'N'];
+  STG.gpos = STG.gpos || {}; STG.gpos.adj = 'before';
   SET.myfont = true; installScriptFont();
   await document.fonts.load('20px ' + SFONT_FAMILY);
-  const bad = [], seen = { nodes: 0, screens: 0 };
-  const look = (where) => {
+  const bad = [], seen = { nodes: 0, screens: 0, words: 0, wrd: 0, navt: 0 }, roman = [];
+  /* A word of the language, exactly: findWord() folds case, and an
+     interface language's sample 「HAS」 is not the word `has`. */
+  const isHw = (x) => WORDS.some((w) => w.hw === x);
+  let look = (where) => {
     seen.screens++;
     const tw = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
     let n;
     while ((n = tw.nextNode())) {
       const el = n.parentElement, s = n.nodeValue;
       if (!el || !s.trim()) continue;
+      /* 8. a headword standing whole, outside sfontHTML()'s spans */
+      if (isHw(s.trim()) && !el.closest('.sfont') &&
+          sfontRuns(s.trim()).some((r) => r.on)) {
+        if (el.closest('.wrd')) seen.wrd++;
+        else if (el.closest('.navt')) seen.navt++;
+        else if (roman.length < 8)
+          roman.push(where + ': <' + el.tagName.toLowerCase() + ' class="' + el.className + '"> ' +
+                     JSON.stringify(s.trim()));
+      }
+      if (isHw(s.trim())) seen.words++;
       if (getComputedStyle(el).fontFamily.indexOf(SFONT_FAMILY) !== 0) continue;
       seen.nodes++;
       const off = sfontRuns(s).filter((r) => !r.on && r.t.trim());
@@ -441,10 +481,29 @@ const FACE = await pg.evaluate(async () => {
                  JSON.stringify(s) + ' -- ' + off.map((r) => r.t).join(',') + ' not drawn');
     }
   };
-  for (const r of Object.keys(PAGES)) {
-    try { go(r); render(); } catch (e) { continue; }
-    look(r);
-  }
+  /* Every route, every face of one that the app's own doors open (a
+     `data-do="go"` carrying an argument, harvested from what the walk has
+     rendered), and every chapter of the grammar with every target of the two
+     written per target -- all asked of the page, so a face added tomorrow
+     is walked tomorrow. */
+  const walk = () => {
+    const todo = Object.keys(PAGES).map((r) => [r]), done = {};
+    for (const c of g2Chaps())
+      for (const a of [c.id].concat(Object.keys(GPOL_TARGET).map((k) => c.id + ':' + k)))
+        if (g2ChapBy(a)) todo.push(['gram', 'v2:' + a]);
+    while (todo.length) {
+      const d = todo.shift(), k = d.join(' ');
+      if (done[k]) continue;
+      done[k] = 1;
+      try { go(d[0], d[1]); render(); } catch (e) { continue; }
+      look(k);
+      document.querySelectorAll('[data-do="go"]').forEach((b) => {
+        let a; try { a = JSON.parse(b.getAttribute('data-a') || 'null'); } catch (e) { a = null; }
+        if (a && a.length === 2 && PAGES[a[0]] && typeof a[1] === 'string') todo.push(a);
+      });
+    }
+  };
+  walk();
   /* `xyz` has nothing the face draws. Its head is the spelling as it is,
      so the row under it that gives the spelling again is the same word
      twice -- that row is for a head showing something else. */
@@ -456,8 +515,35 @@ const FACE = await pg.evaluate(async () => {
     if (head && rd && !head.querySelector('.sfont') && head.textContent === rd.textContent)
       twice.push(w.hw);
   }
-  return { bad, seen, twice };
+  /* 8, the other road to the same statement: letters BORROWED for the
+     sounds replace the text (wOut()), and a headword shown as itself while
+     they are on was written without wOut(). */
+  LETTERS.forEach((l) => { if ((l.snd || [])[0]) l.ch = '\u05d0'; });
+  SET.showScript = true; SET.myfont = false;
+  const own = look, bor = [];
+  look = (where) => {
+    const tw = document.createTreeWalker(document.getElementById('app'), NodeFilter.SHOW_TEXT);
+    let n;
+    while ((n = tw.nextNode())) {
+      const el = n.parentElement, s = n.nodeValue.trim();
+      if (!el || !isHw(s) || wOut(s) === s || el.closest('.wrd') || el.closest('.navt')) continue;
+      if (bor.length < 8) bor.push(where + ': <' + el.tagName.toLowerCase() + ' class="' + el.className + '"> ' + JSON.stringify(s));
+    }
+  };
+  walk();
+  for (const w of WORDS) { go('words'); openWord(w.hw); render(); look('word ' + w.hw); }
+  look = own;
+  return { bad, seen, twice, roman: roman.concat(bor) };
 });
+if (FACE.roman.length)
+  fails.push('a word of the language is shown as its bare spelling where its letters were due -- ' +
+             'written with esc() rather than sfontHTML(wOut()):\n    ' + FACE.roman.join('\n    '));
+if (!FACE.seen.wrd)
+  fails.push("section 8 names `.wrd` as the one row that spells a word in roman on purpose, and " +
+             'no `.wrd` on the walk held one -- the exemption matches nothing and is permission');
+if (!FACE.seen.navt)
+  fails.push('section 8 names the bar title `.navt` as spelling a word in roman, and no bar on the ' +
+             'walk did -- it is drawn now: take the name out of line-check');
 if (FACE.bad.length)
   fails.push('a word is set in the drawn face where the face does not draw it -- a dashed box ' +
              'where the letters were:\n    ' + FACE.bad.join('\n    '));
@@ -492,4 +578,5 @@ console.log('line: typed into the composer and posted, one line comes out in the
             ', mine U+' + own.mine.toString(16) + ',\n      keyboard U+' + own.kb[0].toString(16) +
             '-' + own.kb[1].toString(16) + '), and the same shape is the same one.\n' +
             '      ' + FACE.seen.nodes + ' text nodes set in the drawn face across ' + FACE.seen.screens +
-            ' screens, every character one the face draws.');
+            ' screens, every character one the face draws;\n      ' + FACE.seen.words +
+            ' text nodes that are a word, none of them roman where the face draws it.');

@@ -3,6 +3,5 @@
 # A NEW one fails. Taking a line OUT is progress and needs nobody --
 # either the rule went, or a seed was added that reaches the state that
 # wears it, which is the better way.
-kbghost
 lift
 moving

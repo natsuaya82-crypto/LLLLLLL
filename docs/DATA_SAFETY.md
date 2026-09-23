@@ -80,12 +80,14 @@ moved are asked for and sent, and a word deleted here stays deleted.
 
 It fills in one that is **missing** and stops. This is the one that matters:
 **the way a copy destroys somebody's work is by winning.** `netLangsDown()`
-and `netLangBack1()` both work that way — a slice already on the phone is
-stepped over, whatever the server is holding.
+works that way — a slice already on the phone is stepped over, whatever the
+server is holding.
 
-`langMigrate()` has the same rule for the same reason — it **copies** from the
-eight old flat keys and never removes what it read. It runs once, on a phone,
-against the only copy of something somebody spent months on. Copying costs a
+Reading what an older version left on the disk has the same rule for the same
+reason — `slMine()` (`www/core.js`) reads the old `lingua.<id>.<slice>` key,
+`slWr()` never writes there, and nothing but a person deleting a language or
+an account removes it (`slRm()`). That key can be the only copy of
+something somebody spent months on. Copying costs a
 few hundred kilobytes and cannot lose anything; moving could.
 
 ### 3. "Empty" and "broken" are not the same state
@@ -213,8 +215,8 @@ went away, and so is a line describing a button no screen carries any more.
 
 One deletion is outside that table on purpose, because it is not a button:
 
-- `lsWipeAcct()` taking the eight flat keys (`www/core.js`) happens under
-  `wipeAll`, which is in the table, and is written out in
+- `lsWipeAcct()` (`www/core.js`) taking that account's keys off the phone
+  happens under `wipeAll`, which is in the table, and is written out in
   `docs/DATA_MODEL.md` § what an account deletion actually takes
 
 ## Changing anything that saves

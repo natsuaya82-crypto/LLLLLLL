@@ -81,7 +81,7 @@ grep -n "capStop\|capOK" www/wordsheet.js      capOK は出ない
 
 ## 8. プラン画面への行き方が二通り。片方はシートを閉じない ── **閉じた**
 
-**一箇所は `go('plans')` です。**二つ目の名前だった `goPlans()`
+**一箇所は `go('plans')` です。**二つ目の名前だった ~~`goPlans()`~~
 （`www/wordsheet.js`）と `act-map.js` の行を消し、`DO('goPlans')` を書いて
 いた五箇所 ── `www/settings.js` `www/words.js` `www/keyboard.js`
 `www/phases.js` `www/sound.js` ── を `DO('go', ["plans"])` にしました。
@@ -226,7 +226,7 @@ npm run page
 `profile?select=id&handle=eq.` を送りますが、**失敗の意味が違います** ──
 あれは「要求が倒れた」と「その handle の行が無い」を同じ `bad` で答えます。
 `netFollow` は行が無いのを `ok()`（作る行が無いだけで、何も壊れていない）、
-倒れたのを `bad()`（画面がそう言えるように）としています。畳むと、倒れた
+倒れたのを `bad`（画面がそう言えるように）としています。畳むと、倒れた
 follow が「そんな handle は無い」として `ok()` で返り、**ボタンが起きて
 いない成功を報告します**。だから畳んでいません。**どうするかは決めごとで、
 ここでは決めません。**
@@ -274,8 +274,8 @@ npm run post
 
 ## 16. 形から新しい語を作る所が二回 ── **閉じた。二回ではなく三回でした**
 
-`fmrWord(w, m)`（`www/wordsheet.js`）。`fmrAdd()` `fmrAddAll()`
-`addFmWrite()` の三つが呼びます。三つ目の注記は「made the way fmrAdd()
+`fmrWord(w, m)`（`www/wordsheet.js`）。`fmrAdd()` と `addFmWrite()` の二つが
+呼びます（三つ目の ~~`fmrAddAll()`~~ はその後に消えた）。三つ目の注記は「made the way fmrAdd()
 makes one」と自分で言っていて、それを持っているものは何もありませんでした。
 
 ## 17. サーバーの一覧を読む所が二組 ── **閉じた**
@@ -312,7 +312,7 @@ npm run find
 ## 18. ファイルを取り込むボタンが二箇所 ── **閉じた**
 
 **一箇所は `fileInHTML(cls, inner, id, accept)`（`www/shell.js`）です。**
-`impFileHTML()`（`www/import.js`）と `shInFileHTML()`（`www/sheet.js`）は
+~~`impFileHTML()`~~（`www/import.js`）と ~~`shInFileHTML()`~~（`www/sheet.js`）は
 **両方消しました** ── 呼び側（`impGetHTML()` と `shInHTML()`）が直に呼びます。
 片方だけ残すと 8番 で消したのと同じ「二つ目の名前」になります。
 

@@ -422,9 +422,9 @@ function stAll(){
   /* The stages somebody added, and only while the plan that added them is
      paid for. 「課金で追加した機能は無料になったら全部隠れる」 OWNER
      2026-09-01 -- the same as the words past a hundred and the letters past
-     the free alphabet: hidden, never removed. STG.extra is untouched, it is
-     in storage, in the backup and on the server, and paying again brings
-     every one of them straight back.
+     the free alphabet: hidden, never removed. STG.extra is untouched -- it is
+     in the language's `phases` slice on the server -- and paying again
+     brings every one of them straight back.
 
      The stages the book always has are not this: they are what a free grammar
      IS, and they stay. */
@@ -638,7 +638,7 @@ function stAddOwn(){
    still owns what it made. It still owns it -- which is exactly why it cannot
    be thrown away from a plan that cannot make another one.
    「無料に戻ったら無料の形に戻る」 A stage of somebody's own stays on the
-   list, stays in the backup, and cannot be added to or removed until the plan
+   list, stays in the language, and cannot be added to or removed until the plan
    that made it is back. Gating a delete never costs anybody anything. */
 function stDelOwn(id){
   if(upStop(can('gram'))) return;
@@ -1064,7 +1064,7 @@ function stSlotRow(p, k){
   return '<button class="stslot'+(w?' has':'')+'"' + DO('openSlot', [p.id, k]) + '>'+
     (p.id==='count'? numFace(k) : '')+
     '<span class="psm">'+esc(stSlotLabel(p, k))+'</span>'+
-    (w ? '<span class="psw">'+esc(w.hw)+'</span>'+
+    (w ? '<span class="psw">'+sfontHTML(wOut(w.hw))+'</span>'+
          '<span class="psi">'+esc(phIpa(wPh(w)))+'</span>'
        : '<span class="psn">'+t('stg.make')+'</span>')+
     ICON_GO+'</button>';

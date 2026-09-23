@@ -19,8 +19,8 @@ OWNER 2026-09-06。「だから端末でやるわけねえだろ」OWNER 2026-09
 行全部から段を決め、service role で `plan` に書く。`plan` も `purchase` も API
 からは**読むだけ**（`supabase/schema.sql`、`npm run rls`）。
 
-端末には段を決める判定が一つも残っていない ── `LinguaStore.swift` の `best()`、
-`entitledPlan()`、`writeDown()` は消えた。`www/` から `plan` 表を触る道も無い
+端末には段を決める判定が一つも残っていない ── `LinguaStore.swift` の ~~`best()`~~、
+~~`entitledPlan()`~~、~~`writeDown()`~~ は消えた。`www/` から `plan` 表を触る道も無い
 （`netPlanUp`、`netPlanSync` は削除）。
 
 ## プランは絶対におかしくしてはいけない
@@ -38,7 +38,7 @@ OWNER 2026-09-06。「だから端末でやるわけねえだろ」OWNER 2026-09
 | どこ | 何が起きたか |
 |---|---|
 | `LinguaPlan.read()` | 読み取り失敗が空文字。`core.js` が空を見て `free` を Keychain に書いた |
-| `LinguaStore.entitledPlan()` | 権利が一つも返らないと `free`。`writeDown()` がそれを書いた |
+| `LinguaStore.entitledPlan()` | 権利が一つも返らないと `free`。~~`writeDown()`~~ がそれを書いた |
 
 どちらも「持っていない」と「分からない」が同じ枝だった。CLAUDE.md の一ページ目
 に書いてある通りのことが、お金の上で起きた。
@@ -56,7 +56,7 @@ OWNER 2026-09-06。「だから端末でやるわけねえだろ」OWNER 2026-09
 `SET.plan` `SET.planWas` `SET.planV` `SET.planUid` の四つが `lingua.set` から
 消え、Keychain は `www/` から読まれなくなった。段は `verify-plan` の答えで、
 **メモリに一つ**（`PLAN`、`www/core.js`）。起動（`storeSync()`）と扉
-（`netPlanSync()`）で訊き、セッションが行けば忘れる。
+（`netTook()` が同じ `storeSync()` を呼ぶ）で訊き、セッションが行けば忘れる。
 
 **そして三つ目の状態が要る。**「まだ訊けていない」は `free` ではない。倒せば、
 それが失った日の形そのものになる ── 電波の無い起動で、払った人が無料の姿の
@@ -75,7 +75,7 @@ OWNER 2026-09-06。「だから端末でやるわけねえだろ」OWNER 2026-09
 
 **「プランが終了しました」はサーバーの答えで出る ── 起動のポップで一度。**
 「オンラインで出してね流石に」「4 起動の時に表示して ☑️今後表示しない 閉じる
-みたいなポップにしたくない？」OWNER 2026-09-12。`capLapse()` は `SET.planWas`
+みたいなポップにしたくない？」OWNER 2026-09-12。~~`capLapse()`~~ は `SET.planWas`
 （端末の語）と比べていたので、語と一緒に消えました ── 端末の一語で「見せる／
 見せない」を決める行です。今は `plan` 表の二列が答えます：`was`（下がる前の段。
 下がった時だけ入る）と `lapse_seen_at`（本人が「今後表示しない」と言った時刻。
@@ -109,7 +109,7 @@ CLAUDE.md が禁じている三番目の規則 ── 何も止めていない�
 `.swift` を実行できない。**が、読むことはできる** ── `sides-check` が `post.js`
 を、`assets-check` が `project.pbxproj` を読むのと同じ。今読んでいるのは
 **段の語が `LinguaStore.swift` に一つも無いこと**、Keychain に書かないこと、
-`best()`／`entitledPlan()` が無いこと、四本の道が全部 `jws` を返すこと、
+~~`best()`~~／~~`entitledPlan()`~~ が無いこと、四本の道が全部 `jws` を返すこと、
 `appAccountToken` が付くこと、アカウント無しの購入を断ること、
 `Transaction.updates` に来たものを取っておくこと。
 
@@ -323,7 +323,7 @@ twice, both about CSV. Corrected 2026-08-26.
 
 **So the bill scales with people, not with payers.** Every account's twelve
 slices are `slice` rows — 5.4 KB for a small language, about a megabyte for a
-large one (`bkPack()`'s own numbers) — plus the egress of reading them back on
+large one (the numbers ~~`bkPack()`~~ measured) — plus the egress of reading them back on
 every launch. `docs/FEATURES.md` § 2 carried 「deferred until Supabase $25 is
 worth paying」 as the reason nothing was built; the decision overrode the
 deferral and **the cost did not change**. Nobody has priced it against the four
@@ -368,29 +368,27 @@ The arithmetic was right; **the premise was not.** The language is not on the
 per-open clock, so the table above stands at 8,000 and the language is not what
 threatens it.
 
-**The timeline half is the one to watch, and the code does MORE than 「開くたび」.**
-`vFeed()` calls `snsPull()` **every time it runs** — its own comment in
-`www/post.js` says so — and `render()` rebuilds the whole screen on any state
-change. So a like, a follow, a toast, a tab switch back: each is another
-`netFeed()`, which is `NET_PAGE=50` posts with their whole `body` on it,
-**`ink` included** — the frozen stroke shapes, which is the biggest field a
-post has. `snsPulling` only stops a second ask while one is still out; it does
-not stop the next one.
+**The timeline half is the one to watch.** `askFeed()` (`www/sns.js`) asks
+for a timeline only while that tab has no answer, and a pull-to-refresh asks
+for the tab on screen 「最初の起動の一回の更新で全部取得してその後それぞれを
+プルトゥーリフレッシュとかで更新して取得する」 OWNER 2026-09-05 — a render is
+not an ask. Each ask is a `netFeed()`, which is `NET_PAGE=50` posts with their
+whole `body` on it, **`ink` included** — the frozen stroke shapes, which is the
+biggest field a post has.
 
 The photographs are the cheap half of that, and deliberately: they are Storage
 URLs on the post rather than bytes in the JSON, so the webview caches them and
 a re-render redraws the same picture without asking for it again. **It is the
 JSON that repeats.**
 
-So the honest form of the number: **8,000 daily openers if a visit is a pull,
-and fewer in proportion to how many times a visit re-renders.** Nobody has
-measured that multiplier on a device. It is the single cheapest thing to
+So the honest form of the number: **8,000 daily openers if a visit is one
+open, and fewer in proportion to how many times a visit is pulled down.**
+Nobody has measured that multiplier on a device. It is the single cheapest thing to
 measure and the single most likely reason the table is optimistic.
 
 **None of this is a decision to make here.** Not the interval, not the tier,
-not the price. What this section is for is that the person who implements
-「開くたび」 knows the app currently does it per RENDER, and that the expensive
-part of a pull is the fifty bodies, not the pictures.
+not the price. What this section is for is that the expensive part of a pull is the fifty
+bodies, not the pictures.
 
 **And for the language half, when it is written:** `no` is a version counter
 that goes up on every write (`netSlicePut`, and `supabase/schema.sql` says so),
@@ -411,9 +409,9 @@ What is still true and still this file's job to say: **none of it may reach
 anybody's data.** An enterprise plan that lapses, a bill that goes unpaid, a
 project that gets suspended — each of those is the entitlement check failing,
 and the rule at the head of this file already says what happens then: fewer
-buttons, never fewer words, and every byte where it was. The phone holds a
-working copy of every slice and `bkPack()` writes the file; a server that
-stops answering is a person who can still open their language.
+buttons, never fewer words, and every byte where it was. The phone keeps the
+language as it was last loaded, read-only (`CLAUDE.md` rule 22); a server that
+stops answering is a person who can still look at their language.
 
 `CAN.kb` is the DOOR — may this person lay a keyboard out at all — and
 `kbCap()` in `core.js` is the number, beside `wordCap()` and for the same
@@ -512,7 +510,7 @@ same shape as every other ceiling here.
 `kbCount()` in `www/keyboard.js`, `langCount()` and `dlCount()` in `core.js`
 are what those are compared against, and all three count **across languages**:
 the ceiling is on the ACCOUNT, not on each language and not on a phone —
-「は？端末の話なんかしてねえだろ」 OWNER 2026-09-03. `langOwned()` is where
+「は？端末の話なんかしてねえだろ」 OWNER 2026-09-03. `langWhose()` is where
 the account is asked.
 
 **And the ceilings are on the plans screen**, because a number that is sold and
@@ -556,22 +554,22 @@ words and the keyboards dropped out of the list — four screens with two
 answers to one question, each correct on its own. They are the one answer now.
 
 Every word, every letter, every keyboard layout, every stage, every language
-and every conversation is still in storage, still packed by `bkPack()`, still
-in the file in Documents, and still there in full the moment the plan comes
-back. The app reads the **whole** dictionary for itself — a post, a gloss, a
+and every conversation is still on the server and still there in full the
+moment the plan comes back. The app reads the **whole** dictionary for itself — a post, a gloss, a
 spelling, an example — and only the list on the dictionary screen is short.
 
 Because "shorter list" and "my work is gone" look identical from the outside,
 the app says the difference out loud, twice:
 
-- **once, on the day it happens**, in a sheet — `capLapse()` in `core.js`
-  notices the plan has changed since the last launch and `openCapLapse()` says
-  it. 「バックアップには保存されてるよーって一回出せばok」
+- **once, on the day it happens**, in a popup at the launch — `capLapseSaw()`
+  in `www/settings.js` reads `was` off `verify-plan`'s answer and
+  `capLapsePop()` says it, until the person says 「今後表示しない」
+  (`plan.lapse_seen_at`).
 - **every time**, at the foot of the dictionary: how many words are not listed.
 
-`backup-check` holds the half that matters: on the free plan, past the ceiling,
-`findWord()` still finds a word that is not listed and `bkPack()` still carries
-every one of them.
+`plan-check` holds the half that matters: five hundred words made on the paid
+plan are five hundred words after it ends, the list is a hundred, and not one
+byte of any slice moved.
 
 Why this and not "keep everything working, lock only the buttons": a language
 is built once. A plan that kept working after the money stopped would be paid

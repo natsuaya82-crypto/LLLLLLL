@@ -55,8 +55,7 @@ Marked separately, because they are not the same question:
 | Import a word list | shipped | paste | `file`: a file | slice `words` | decided |
 | **write — letters brought in on a sheet** | **in progress** — the road is in (`www/sheet.js`, ch 26, `npm run sheet`) and **so is the plan gate**; the drawing is not | — | **Pro**, and it is `file` that says so — the door (`fileInHTML()` in `www/shell.js`) and `shTakeIn()` both ask `can('file')`, which is Pro. There is no `write` capability and there is not going to be one | slice `letters`: `lt.sh` and `lt.via` | partial |
 | Export CSV | shipped | — | `data` | none | decided |
-| Backup to Documents | shipped | **yes, on every plan** | — | the file | decided |
-| Restore from Documents | shipped | **yes, on every plan** | — | fills in what is missing | decided |
+| Backup to Documents / Restore from Documents | **deleted 2026-09-04** — the server is the only copy that counts and a save reaches it at once (`netSaveUp()`, `www/net.js`); a phone whose storage is reclaimed fills back from it (`netLangsDown()`), filling in what is missing and stopping | — | — | none | decided — 「今ファイルもいらん。オンラインのみで行こう」 OWNER 2026-09-04; `CLAUDE.md` rule 11 |
 | How many languages of your own | shipped | 1 | Plus 1, Pro 3 | `LANGS`; `langCap()` / `langCount()` / `langStop()` in `www/core.js` | decided — 「言語数はプラスは1、プロは3」 2026-08-25. A ceiling now shortens the LIST as well (`langsSeen()`), and the open language is always on it |
 | Word suggestions | **lifted** | — | — | none | the chips and their daily three went out with Studio; `makeWord()` in `www/reading.js` stays and is used everywhere else |
 | The conversation — the last chapter | **lifted** | — | — | slice `talk` kept | out until the hosted model is in. See the note on `PLANS` in `www/core.js` |
@@ -67,9 +66,9 @@ Marked separately, because they are not the same question:
 
 | Feature | Status | Free | Paid | Data | Owner decision |
 |---|---|---|---|---|---|
-| Writing a post | shipped | yes | — | the `post` row on the server, ink frozen on write; `lingua.posts` is the copy that works with no signal | decided |
+| Writing a post | shipped | yes | — | the `post` row on the server, ink frozen on write; `lingua.posts` is the copy shown with no signal, read-only (rule 22) | decided |
 | Making a second language | shipped | — | Pro | `lingua.langs` | decided — the door is on the language list in Settings (`langNew`, `www/home.js`), not on the profile 「せっていからでいいよ」. `langCount()` counts languages that are `mine` AND on this account, so reading somebody else's is not making one and signing in as somebody else does not inherit their count |
-| Timeline | shipped, **not device confirmed** | yes | — | `post` rows on the server; `lingua.posts` is the copy that works with no signal | decided — **an account is required to read it and to post**. 「なんでログインしてないアカウントで投稿できんの？」 The making side needed none; **2026-08-26 ended that** — 「言語はアカウントないと作れないです」. It works offline and goes up on the next connection; it does not work without an account |
+| Timeline | shipped, **not device confirmed** | yes | — | `post` rows on the server; `lingua.posts` is the copy shown with no signal, read-only (rule 22) | decided — **an account is required to read it and to post**. 「なんでログインしてないアカウントで投稿できんの？」 The making side needed none; **2026-08-26 ended that** — 「言語はアカウントないと作れないです」. With no signal a post is not sent: it fails, says so, and stays in front of the person so pressing again sends it — it is **not** kept on the phone to go up later 「なら失敗して残るにするべき」 OWNER 2026-09-05 (`docs/FEATURE_RULES.md` decision log, 2026-09-05). **The code does not match that yet**: ~~`postCatchUp()`~~ (`www/post.js`) sends a post the server has no id for off the back of the next timeline answer, with nobody pressing (r46-audit A5). It does not work without an account |
 | Timeline split — For you / Following | shipped, **not device confirmed** | yes | — | none new; `ME.fo` is the follow list already | decided — 「フォロー中とおススメみたいに分けたい」. For you is everything, Following is `ME.fo` plus your own, matched on the post's frozen `hd` |
 | A post carries its own shapes (`ink`) | shipped | yes | — | on the post | decided |
 | How long a post may be | shipped 2026-09-15, **not device confirmed** | yes | Plus (no ceiling) | none new — the ceiling is a screen thing, `post.body` is unchanged | decided — 「140にしようか。」「plusプランから無限」「文字数上限突破してツイートしようとしたらポップだそう」 OWNER 2026-09-15. Free **140 on BOTH rows** (the line and what it means — the meaning had no ceiling at all until this day); Plus and Pro no ceiling. `postCap()` beside `wordCap()`; **no capability added** — everybody may post and only the number moves. No `maxlength`: you can type past it and the PRESS refuses, with the same `popAsk(t('up.need'))` four other ceilings already use, so **no new string in ten languages**. Two rings, left the line and right the meaning; none at all where there is no ceiling. **Posts already longer are never shortened.** Held by `post-check` 26 |
@@ -100,7 +99,7 @@ Marked separately, because they are not the same question:
 | Notices | shipped, **not device confirmed** | yes | — | — | done — `netNotices`, an RPC in `schema.sql` |
 | Following | shipped, **not device confirmed** | yes | — | `follow` rows, `ME.fo` | done — `netFollow`, and Follow is on a person's row in the search |
 | Quoting | **planned** | ? | ? | `quote` rows | **open** — the table exists in `schema.sql` and nothing reads it |
-| **DL — a chapter of somebody else's published language** | **shipped 2026-09-01**, **not device confirmed** — the ↓ on their article page lands the slice in storage and puts a `mine:false` row in `LANGS`, which this app had never written | no | **Plus**, every chapter of it — `CAN.dl` (2026-09-02). The dictionary still cannot be taken from anybody: `slice_read` refuses `words` and `gram2` to everybody but their owner | `LANGS[<their id>] = {name, mine:false, sid}` and `lingua.<their id>.<slice>`; **nothing of yours is touched** — it is not backed up (`bkPush` refuses it), not synced (`netLangSync` refuses it) and not topped up (`ltStart` refuses it) | decided — **it cannot be edited** 「dl言語はへんしゅうはできないってなんかいもいわせんなよ」 OWNER 2026-09-01; **it is not in your backup** 「入らん」; **one chapter at a time** 「いや一つづつdlでいいよ」; **counted separately** 「別に数える」 — `langCount()` counts `mine` and is untouched |
+| **DL — a chapter of somebody else's published language** | **shipped 2026-09-01**, **not device confirmed** — the ↓ on their article page (`wldGet()`, `www/home.js`) puts a row in the index (`langSeenAdd()`), the slices in memory under `langKeyOf()` (rule 22), and a `language_take` row on the server (`netTakePut()`) | no | **Plus**, every chapter of it — `CAN.dl` (2026-09-02). The dictionary and the grammar only where their owner's own switch says so: `slice_read` opens `words`, `phases` and `gram2` on a published or taken language when `slice_dl()` answers yes, and refuses them otherwise | the index row, the slices in memory, and the `language_take` row; **nothing of yours is touched** — it is not sent up (`langMineIds()` skips a language whose `language.owner` is somebody else) and not topped up (`ltStart()` asks `langMine()` first) | decided — **it cannot be edited** 「dl言語はへんしゅうはできないってなんかいもいわせんなよ」 OWNER 2026-09-01; **it is not in your backup** 「入らん」; **one chapter at a time** 「いや一つづつdlでいいよ」; **counted separately** 「別に数える」 — `langCount()` counts the languages `language.owner` says are yours and is untouched |
 | **A language comes back on a new phone** | **shipped 2026-09-01**, **not device confirmed** — `netLangSync()` now sends every language a person made, not only the one that is open, and `netTook()` pulls their `language` rows back and fills in the slices this phone does not have | yes | — | nothing new is stored; the local id of a language that came back **is its `sid`**, so a second phone cannot make a second copy | decided — 「基本は全部サーバー管理」「アカウント消したら残るわけがない」 OWNER 2026-08-26. It **fills in what is missing and stops**: a language or a slice already on the phone is untouched, and a server that does not answer changes nothing |
 | Reading a downloaded language | **shipped 2026-09-02**, **not device confirmed** — the row in the language switcher is a button and `langOpen()` takes it; `langLocked()` in `core.js` is what every saver asks, so nothing writes to it. The ↓ itself stays on the article and does not switch (`wldGet`, `www/home.js`). **The launch brings it back whole (2026-09-09)**: `netLangsDown()` walks this account's own rows AND the ones `language_take` says it took, in one ask, and fills the slices that are missing — so closing the app and opening it finds the language with what the server holds for it in it. What crosses is what `slice_read` allows (`words`/`gram2` only where the owner's own switch says so). `again-check` holds it | — | — | nothing new | decided — 「ダウンロード言語にしようよ。編集不可でそのアカウントに切り替えたらダウンロードした人の言語が使える」 OWNER 2026-09-02. **A DL is a POINTER, not a copy**: 「dl元が言語を削除したり、アカウントを消してその言語自体が消えた場合は、dlユーザーからも削除される」 OWNER 2026-09-09 — the server cascades (`language_take`, `schema.sql`) and the phone's index row and slices go with it on the next launch — `netLangsGone()` in `www/net.js`, DELETE REVIEW in `docs/CHANGELOG.md` 2026-09-09, and nothing is dropped on a launch where the answer never came. ↓ does NOT switch — 「切り替えなくていい」 OWNER 2026-09-09, settled. A language the source has deleted goes from the phone too, and unpublishing only stops NEW takes — somebody who already took it keeps reading it (`language_took()` in `schema.sql`, **SQL has to be re-run**). Both decided and built 2026-09-09, `claude/r9-dl`, not device confirmed |
 | How many DL'd languages a plan holds | **shipped 2026-09-02**, **not device confirmed** | 0 | Plus 1, Pro 3 | `language_take` on the server, one row per (account, language) — `dlCount()` counts what `netTakes()` brought down, so a second phone counts from where the first left off (2026-09-09) | decided — 「dlはしかもplusは1つproは3つ DL言語とmake言語でそれぞれ別の最大値」 OWNER 2026-09-02. `dlCap()` is the number and `dlStop()` is the refusal, both in `www/core.js`; `dl-check` holds them. Two ceilings that cannot see each other: filling this one leaves `langCap()` where it was |
@@ -288,8 +287,8 @@ deleting an account.
 **One kind of account, and no anonymous ones** (OWNER DECISION 2026-08-26 —
 「匿名アカウントはねえよ」「二種類になる意味も分からないけど」). An account is
 somebody who signed in; nothing asks a second question about what kind it is.
-`has_account()` beside `is_member()` in `supabase/schema.sql` existed to let an
-anonymous one through and comes out with it. `claude/admin` has that half.
+~~`has_account()`~~ beside `is_member()` in `supabase/schema.sql` existed to let an
+anonymous one through and is gone from it.
 
 ### 1. The plan, on the server — the one with money on it
 
@@ -354,8 +353,8 @@ by remembering:
 
 - **a row per slice**, not a column and not a file in Storage. `slice` in
   `supabase/schema.sql` is `(language, kind)` primary key, `body` the exact
-  string `localStorage` holds — so a slice has one shape and not two that
-  could disagree, and it is the same string `bkPack()` writes to the file.
+  string the app holds for it — so a slice has one shape and not two that
+  could disagree.
 - **two phones**: `www/sync.js` (ch. 26) reads, merges and writes back, and
   **neither side wins by being newer.** Both are added. The price of that is a
   duplicate, never a deletion 「そりゃあ両方足すだろ」 — which is
@@ -449,7 +448,7 @@ RevenueCat の画面で見ます。App Store Connect のキーは作りません
 運営そのものの作業だからです。
 
 コードは 2026-09-02 に消えています ── `supabase/functions/appstore/` は無く、
-`www/net.js` に `netStore()` は無く、`www/mod.js` の五ページも無い。
+`www/net.js` に ~~`netStore()`~~ は無く、`www/mod.js` の五ページも無い。
 `supabase/setup.md` の `ASC_VENDOR_NUMBER` も、それを読むものが無くなった
 ので要りません。**RevenueCat の枝は `claude/rc`** で、公開キー待ちのまま
 取り込まれていません。
@@ -618,10 +617,11 @@ Decided, and in:
   the top rung gets a sentence rather than a dialog, because there is nothing
   to fly to
 - the thing you get **does not join your language. You switch to it.**
-  `langSeenAdd()` puts a `mine:false` row in `LANGS`
+  `langSeenAdd()` puts a row in the index, and `language.owner` says whose it is
 - it **cannot be edited**, and the reason is not tidiness:
-  「トキポナに文字足したらトキポナじゃないです」. `ltStart()`, `bkPush()` and
-  `netLangSync()` each refuse a language that is not `mine`
+  「トキポナに文字足したらトキポナじゃないです」. `ltStart()` asks `langMine()`
+  and `netLangSync()` sends only what `langMineIds()` hands it, which skips a
+  language whose owner is somebody else
 - **単語 / 文字 / 文法 / キーボード** are four separate unlocks and four separate
   downloads — `wldSecDl()`, per chapter, not one switch
 - taken from **the language's overview page on Home**, where public/private
@@ -668,11 +668,11 @@ What that means here, item by item, and most of it is **already built**:
   rule is that **neither side wins by being newer** — both are added, and the
   price of that is a duplicate rather than a deletion 「そりゃあ両方足すだろ」.
   `www/boot.js` fires it on launch.
-- **the file is the BACKUP, not the truth.** 「言語周りだけバックアップにfile
-  使う」 — `bkPack()` and `Documents/Languages/<name>.json` (`www/backup.js`)
-  stay exactly as they are; what changed is which of the two is the copy.
-- **making works offline.** 「制作はオフラインでも可能次つながった時に更新される」
-  Already true, and it is what `sync.js` is for.
+- **there is no file.** The Documents backup was deleted 2026-09-04
+  (`CLAUDE.md` rule 11): a save reaches the server at once.
+- **making needs a signal.** 「オンラインのみで行こうってことになってる」
+  OWNER 2026-09-04 — with none there is nothing to send, and what was loaded
+  before is there to look at, read-only (rule 22).
 - **the sns half does not work offline.** 「そりゃそう」 Already true —
   `vFeed`/`vExplore`/`vNotif` show the app's own door with no session.
 - **deleting the account takes it with them.** 「アカウント消したら残るわけが
@@ -692,11 +692,11 @@ What that means here, item by item, and most of it is **already built**:
   one.** Refined the same day: 「タイムラインは開くたび / 言語はそういう
   わけじゃない」.
 
-  **The timeline: every open — and already more than that.** `vFeed()` calls
-  `snsPull()` every time it RUNS, and `render()` rebuilds the screen on any
-  state change, so a like or a toast is another 50-post pull. Whether that
-  wants narrowing to once per visit is a real question and it is about the
-  bill, not about correctness (`docs/PAID_FEATURES.md`).
+  **The timeline: both timelines at the open, and the one you are looking at
+  on a pull.** `askFeed()` (`www/sns.js`) asks the server for a tab only while
+  that tab has no answer, and a pull-to-refresh asks for the tab on screen
+  「最初の起動の一回の更新で全部取得してその後それぞれをプルトゥーリフレッシュ
+  とかで更新して取得する」 OWNER 2026-09-05.
 
   **The language: NOT per-open — and that is all that has been said.** The
   owner named what it is not. What it IS is **open**, and writing a positive
@@ -715,11 +715,10 @@ wrong twice before it had it right.**
 
 **There is one kind of account and no anonymous ones** 「匿名アカウントはねえよ」
 「二種類になる意味も分からないけど」. An account is somebody who signed in.
-**`makeNeed()` asking `netMember()` is right and must not be loosened** —
-`netSignedIn()` would let a language be made off a token with nobody on it,
-which is the reverse of 「言語はアカウントないと作れないです」. The anonymous
-token itself is going: `claude/admin` has `netAnon()`, `netAnonTok()` and
-`has_account()`.
+**`makeNeed()` asks `obNeed()`, which asks `netSignedIn()`, and that is the
+whole of it** — with no anonymous token there is no second kind of session for
+it to tell apart. ~~`netAnon()`~~, ~~`netAnonTok()`~~ and ~~`has_account()`~~
+are gone.
 
 **The cause is one button: `www/onboard.js:722.**
 
@@ -741,10 +740,10 @@ so the button goes with it. That is the fix, and it is a deletion rather than a
 change.
 
 **Done — the owner said 直して, 2026-08-26.** The button is gone, and with it
-`obLastStep()` (its only caller), `act('obFinish', …)` (no screen names it now)
+~~`obLastStep()`~~ (its only caller), `act('obFinish', …)` (no screen names it now)
 and `ob.in.later` in ten `www/i18n` files. `obFinish()` itself stays: lines 499
 and 777 still call it, after an account exists. `makeNeed()` was **not** touched
-— `netMember()` is the rule, not a gate to loosen. Green: `es5` `dead` `act`
+— signing in is the rule, not a gate to loosen. Green: `es5` `dead` `act`
 `i18n`, and `press` at **10666 buttons / 222 names**, one fewer of each, which is
 the button.
 
