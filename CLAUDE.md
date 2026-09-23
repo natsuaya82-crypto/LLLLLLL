@@ -399,9 +399,17 @@ branch's report arrives and where the owner's decisions land, so the leader is
 the one who knows what became true today.
 
 And the same reason the corners needed `box-check`: prose does not hold a rule.
-This one is not held by anything yet — `docs/BACKLOG.md` carries what a check
-could mechanically catch (a line claiming something is absent while the code
-has it) and what it could not.
+**One part of it is held: a function a document names is a function the code
+has.** `docs-check` counts every call written in backticks — `langKey()`,
+`can('kb')` — in every document that is not a
+day's record (`docs/CHANGELOG.md`, the handovers, `docs/reports/`,
+`docs/scope/`) and fails on one that nothing in `www/`, `ios/`, `tools/` or
+`supabase/` defines — so a function deleted tomorrow fails tomorrow, in every
+sentence that still names it. A sentence ABOUT a function that is gone strikes
+it — ~~`wldSeenHTML()`~~ — and the check fails a struck name the code still
+has. The
+rest — a sentence claiming something is absent while the code has it, and
+anything outside the repo — is held by nothing; `docs/BACKLOG.md` carries it.
 
 **An owner decision is a specification, not an instruction for today.** When
 the owner settles behaviour, a threshold, a limit, the free/paid line,
