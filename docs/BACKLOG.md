@@ -241,7 +241,7 @@ gate に入っていません ── 落ちるものが無いためです。
 - `langMine()` が偽 ── `langLocked()` が**全部の書き手を止めます**
   （`saveStg` `saveLetters` `saveKb` `saveWld` `saveNotes` ほか）。
 - `ltStart()` も止まるので、**文字が一枚も入りません**（無料の 38 枠が来ない）。
-- `langOwned()` も偽なので、言語一覧に**出ません**（`vLangs` が数だけ言う）。
+- `langWhose()` が `LW_MINE` と答えないので、言語一覧（`langsList()`）に**出ません**（足元の数に入るだけ）。
 - `netLangSync()` も上げないので、**サーバーへ上がる道がありません** ──
   上がらない限り印は付かないので、そのままです。
 
@@ -349,55 +349,14 @@ App ID の Push capability・APNs キー .p8・Function の secrets・SQL の流
 検索の箱と履歴の二つで、ここは別の画面です。CLAUDE.md § Answer before you
 move ── 頼まれていないものは作りません。
 
-## ログアウト→ログインでプランが pro になるか ── **ならない**（測った、2026-09-08）
+## ログアウト→ログインでプランが pro になるか ── **ならない**
 
-リーダーの依頼で headless で通しました（`claude/r7-acct`）。**何も直して
-いません** ── 頼まれていないことはしない。ここは「測った、ならなかった、
-どこを通したか」の記録です。
-
-| 通した道 | `SET.plan` |
-|---|---|
-| free のアカウントで起動 | `free` |
-| サインイン（`netTook`） | `free` |
-| ログアウト（`netOut`） | `free` |
-| もう一度ログイン（`netTook` → `obIn`） | `free` |
-| この端末が `pro` を持っている状態で別の人が入る | `free`（`planUid` はその人） |
-| その別の人が出て、元の人が戻る | `pro` |
-
-`can('kb')` も同じように動きます。Keychain の `window.__plan='pro'` を残した
-まま別の uid が入る道も通しました ── 漏れません。`setFor()`（`www/core.js`
-1436）が預けて返しているからで、`plan` は `SET_PHONE` に無い、つまり
-アカウントのものだからです。
-
-**払わずに `pro` になる道は一本だけあって、それは改名の移行です。**
-`planMigrate()`（`www/core.js` 690）── 2026-08-23 の改名（Plus→Pro、
-Basic→Plus）より前に書かれた端末、つまり `plan:'plus'` で `planV` が無い
-ものが、**最初の起動で一度だけ** `pro` になります。設計どおりで、当時の
-Plus は今の Pro だからです。測りました:
-
-| 端末のファイル | 起動後 |
-|---|---|
-| `{plan:'free'}`、`planV` 無し | `free`、`planV=2` |
-| `{plan:'plus'}`、`planV` 無し | **`pro`**、`planV=2` |
-| `{plan:'plus', planV:2}` | `plus`（動かない） |
-
-ログアウト→ログインでは起きません ── 印は `planV` で、`SET_PHONE` にある
-この端末のものなので、アカウントごとに預けたり返したりしません。
-
-**そして決めるのはサーバーです。**`storeSync()`（`www/boot.js`）が起動ごとに
-`netPlanVerify()` を呼び、Apple が署名した取引を送って、`verify-plan` が
-答えた段が `planTook()` で書かれます。測りました:
-
-| `verify-plan` の答え | `SET.plan` |
-|---|---|
-| `{plan:'pro'}` | `pro` |
-| `{plan:'free'}`（端末は `pro` だった） | `free` ── **下がる** |
-| 答えに plan の語が無い／通信が落ちた | 動かない |
-
-なので、上の移行で `pro` になった端末も、電波のある次の起動でサーバーに
-`free` へ下ろされます。端末はもう自分の段について意見を持っていません。
-
-**検査は足していません。**なるなら一本入れる約束でしたが、ならなかったので。
+段は端末に一言も書かれません。`PLAN`（`www/core.js`）はメモリにだけあり、
+書くのは `planGot()` 一つで、そこへ届くのは `netPlanVerify()` が Apple の署名
+した取引を送って `verify-plan` が答えた段（`planTook()`）だけです。セッションが
+去れば `PLAN` も去るので、次のアカウントは「まだ誰も訊いていない」から始まり、
+前の人の段を持って入ることはありません。`SET.plan` と改名の移行は 2026-09-11
+（`f2d231ed`）に消えました。
 
 ## `NET_STAFF` を読んで描くものが一つも無い ── 通報に辿り着けるのは @lingua だけ（2026-09-08）
 
@@ -766,29 +725,6 @@ Plus の人が用紙を使えるようになった日です。
 （対を作る `kbVJoin()` が無いので）。
 
 **kb5 が master に入った日に、その枝の持ち主が入れられます。**
-
-## `askLink()` の `extra` に、値を入れる呼び手が一つもありません
-
-**消していません。消すなら別のコミットです。**
-
-`www/assist.js` の `askLink(ask, extra)` / `askHead(extra)` は、呼ぶ側が自分の
-材料を行の配列で渡せる口を持っています。**文法ページから呼ぶために開けたもの
-です。**
-
-その予定は 2026-08-27 に消えました ── 「あと、AIは単語だけでいいや」。
-今この口に値を入れる呼び手は**一つもありません**: `askBtn` は受け取って渡す
-だけで、`www/words.js` は `null` を渡します。
-
-**これは `CLAUDE.md` が名指しで禁じている *we'll need this later* です。**
-`dead-check` は関数と変数を見るので、引数一つでは赤くなりません ── だから
-ここに書いてあります。
-
-**やらない理由:** 消すのは refactor で、「a behaviour change, a refactor and a
-rename never share a commit」。単語側の作り直しと同じコミットには入れられま
-せんでした。リーダーの指示も「口そのものを壊す必要はない」です。
-
-**消すときは三行**: `askHead` の引数と `if(extra)` の行、`askLink` の引数、
-`askBtn` の引数。`tools/ask-check.mjs` は `null` しか渡していないので触りません。
 
 ## ~~AI に相談 ── アカウントを持っていない人は、外で止まります~~ ── 閉じました
 
@@ -1709,7 +1645,8 @@ bisected against instead of one.
 
 - **`wordsheet.js` input handling.** `wdSetLn` / `wdSetPos` / `wdSetReg` /
   `wdSetTags` / `wdSetEty` / `wdSetNt` are six one-line setters that all write
-  `wEdit.<k>` and differ in the key. One `wdSet(k, v)` would do — `IN` already
+  `wEdit.<k>` (some then do one thing more). One setter handed the key would
+  do — `IN` already
   carries an argument before the value, which is how `wldSet('where', v)`
   works. Worth doing; worth doing after the device.
 
@@ -1820,32 +1757,21 @@ was missing was the rule: `ltSetRoman()` did not refuse, so a screen was the
 only thing holding it. It refuses now and `base-check` holds both halves —
 a slot keeps its name, and a letter somebody ADDED is still theirs to name.
 
-## Is `numSetVal()` reachable at all?
+## Can a digit's value be changed by anybody? ── the owner has not said
 
-Found while placing that refusal, not looked for, and **not** answered here.
+A digit has **no road to its own value**, and nobody has confirmed that is
+intended. ~~`numSetVal()`~~ was the one writer and it went on 2026-09-01
+(`d38258b5`), because its only caller was `ltSetRoman()` turning an ordinary
+letter into a digit — a bug. That commit reads the value as **what the base
+gives**: `numTopUp()` (`www/numbers.js`) puts one slot per value, the + in the
+digits room asks `numFree()`, and the letter page hides the name field on every
+digit (`ltIsBase()`).
 
-`numSetVal()` is called from one place — `ltSetRoman()`, when what was typed is
-all digits. Two things sit in front of it:
-
-- it refuses a value another digit already has, and `ltStart()` fills every
-  value below the base, so inside a base **every value is taken by
-  construction**; and
-- the field that reaches `ltSetRoman()` is `ltAbField()`, which `sound.js`
-  shows only when `can('letters') && !ltIsBase(l)` — and `ltIsBase()` is true
-  for every digit.
-
-So a digit appears to have no road to its own value. That may be exactly
-right — 「数字が設定できないわ。そこ文字から設定できるように頼む」 was asked
-about DRAWING on a digit, which works, and a digit's value is arguably what
-the slot IS rather than something to edit. It may also be a door that closed
-when the letter page learned about `ltIsBase`.
-
-Not resolved because the answer is a spec question, not a code question, and
-because a check was written for it and had to be deleted: no assertion about
-moving a value can be satisfied in a normal state, which is itself the
-evidence. **A check that cannot be made true is not a weak check, it is a
-statement about the app** — and the statement here is "this cannot happen",
-which somebody should confirm is intended before anything is built on it.
+That reading is the session's, not a written decision. 「数字が設定できないわ。
+そこ文字から設定できるように頼む」 was asked about DRAWING on a digit, which works.
+Whether a digit's value is something a person may ever edit is a spec question
+for the owner, and nothing should be built on 「this cannot happen」 until they
+have said so.
 
 ## `tools/verify-script.mjs` runs now, and says nineteen things
 
@@ -1854,8 +1780,8 @@ three were wrong.
 
 What was wrong with it was three things, and the first two are fixed:
 
-1. `gstep()` — renamed `geStep()` and this file was missed.
-2. `scriptDrawn()` — went out in `9226dd6`, when the font stopped being built
+1. ~~`gstep()`~~ — renamed `geStep()` and this file was missed.
+2. ~~`scriptDrawn()`~~ — went out in `9226dd6`, when the font stopped being built
    from anything but the letters. `scriptGlyphDefs().defs.length` is the same
    number now.
 3. **every mouse click was landing on `#splash`.** It waited 250 ms after
@@ -2325,49 +2251,6 @@ www/i18n/en.js` に該当なし）。だからこのダイアログは「Upgrade
 
 どれも一行から数行で、**止まっているのは手ではなく決定。**
 
-## 取り込みを取り消しても、単語から生まれた音は言語に残る ── 片側だけの弁
-
-`claude/letters` が見つけて、そちらの持ち物ではないので置いていったもの。
-**import.js はこの枝の持ち物でもないので、ここに書くだけで直していない。**
-
-取り込みは二つのものを言語に足す。`impPut()` が**単語と文字**を足し、その
-途中で `impGrow()`（`www/import.js:652`）が単語の**読み**を切って、まだ
-`SND` に無い音を `SND` へ押し込み `saveSnd()` する。音は三つ目の、誰も
-数えていない副作用として入ってくる。
-
-`impUndo()`（`www/import.js:685`）が戻すのは**二つだけ**:
-
-```
-  d.hws   足した単語を WORDS から抜く
-  d.was   上書きした単語を元に戻す
-  d.lts   足した文字を ltDel() で消す
-  d.wasL  上書きした文字を元に戻す
-  save(); saveLetters(); installScriptFont();
-```
-
-`SND` はこの一覧に無く、`saveSnd()` はここから一度も呼ばれない。
-**`IMP.done` は足した音を控えてすらいない**ので、戻す材料が無い。
-取り込みを取り消した言語には、取り込む前には無かった音が残り、音の章に
-並び、キーボードとフォントがそれを数える。
-
-**弁が片側なのは、もう一方が塞がれたから。** `claude/letters` の 1079ee2
-「文字を消したら、その文字が読んでいた音も言語から出る」で `ltDel()` が
-`ltUnits()` を見て音を落とすようになり、**文字と一緒に来た音は
-`impUndo()` の `d.lts` ループ経由で自然に出るようになった。**
-単語と一緒に来た音には、そのループが無い。同じ取り消しで、片方の音は出て
-片方は残る。
-
-**まだどちらの枝にも入っていない。** 1079ee2 は `claude/letters`（未取り込み、
-`master` から 8 コミット先）にあり、`master` の `ltDel()`
-（`www/letters.js:792`）は今も `LETTERS` を絞って `saveLetters()` するだけ。
-つまり `master` の今の姿では**両側とも残る**。letters が入った日に、
-これは「片側だけの弁」になる。
-
-安全ではある ── 誰の作ったものも消えない。余分な音が増えるだけで、音は
-手で消せる。だから backlog に置く。直すときに要るのは `impGrow()` が
-足した音を `IMP.done` に控えることで、それは取り込みの記録の形が変わると
-いうことなので、`docs/CHANGELOG.md` が先。
-
 ## 移行が値だけを配ったので、「触っていないのに既定でない」言語が出来る
 
 `claude/grammar2` が 835f45c の本文で立てて、決めずに置いていったもの。
@@ -2592,72 +2475,6 @@ is worth nothing on its own」に当たる。**着る者が消えたのに、着
 順番としては、`docs/STATE.md` §7 の Wiki の SQL と同じところに並ぶ:
 「見た目を完璧にしてからsqlね」の逆で、これは**先にサーバが要る**。
 
-## 下書きについて、決まっていない二つ ── `claude/draft` が残した
-
-`claude/draft` を取り込んだとき（2026-08-25）に一緒に運んだもの。
-**どちらも「保存するもの」の決めごとなので、決めない。書き留めるだけ。**
-
-### 下書きはバックアップに入れるか
-
-`SLICES` に入れるかどうか。入れれば `bkPack()` が拾い、`wipeAll` が消す。
-入れなければ**バックアップに無い**ので、アプリを消した人の書きかけは戻らない。
-
-天秤の両側:
-
-```
-  入れる    書きかけも一緒に戻る。ただし「下書き」は未完成のもので、
-            それを他の言語スライスと同じ重さで扱うことになる
-  入れない  規則11「言語は失われない」が言っているのは言語であって、
-            書きかけの投稿ではない、という読み方もできる
-```
-
-**2026-08-28**: 下書きはサーバーに在るようになったので、この天秤に三つ目の側が
-できた ── 「バックアップに無くてもサーバーには在る」。アプリを消して入れ直した
-人は、サインインすれば下書きが戻る。**それでもオーナーの決めごとなので、
-決めない。書き留めるだけ。**
-
-**規則6が「SLICES に入っていることが、そのスライスを本物にする」と言っている。**
-キーボードと「言語が何のためか」の二つが SLICES の外に居て、片方はどの
-バックアップにも入っていなかった。同じ形の判断。
-
-### アカウント削除で下書きも消すか ── **決まった 2026-08-28**
-
-書かれた当時は「下書きはこの端末の中のもの」という前提だった。その前提が
-2026-08-27 の「SNSは全部サーバー」で無くなり、`claude/draft` が下書きを
-`draft` の表へ移した。
-
-**両側とも消える。** 端末側は `lsWipeNS()` が `lingua.` で始まる鍵を数えて
-消すので、`lingua.drafts` も一緒に行く（`wipeAll()` は列挙しない ── 手で
-書いた鍵の一覧は、誰かが足し忘れる一覧）。サーバー側は `draft.author` が
-`profile(id) on delete cascade` なので `account_delete()` が消す。
-オーナーの言葉:
-「アカウント削除で残るものねえって言ってんだろ何回言わせんだよ全部消える」
-
-DELETE REVIEW は `docs/CHANGELOG.md` の同じ日の項目に在る。
-
-## 端末からファイルが出ていく道が二本ある ── 2026-08-27, claude/pw2
-
-`www/card.js` の `cardDeliver()`（997行）と `www/wordsheet.js` の `exportCSV()`
-が、同じ一つの規則を二回書いている: **share sheet を先に、`<a download>` は
-ブラウザ用の落とし所。** カードは第15章で先にそれを決めていて、辞書の書き出しは
-それを受け取っていなかった ── だから `<a download>` 一本のままで、WKWebView が
-それを黙って無視するので、何も書かれていないのに「書き出しました」と出ていた
-（`exportCSV()` は直した。二本になっているのは直していない）。
-
-CLAUDE.md 「One place, not fifteen」そのものの形なので一箇所にしたいが、
-`cardDeliver()` は card.js にあり、pw2 の territory の外。前置きも `card*` の
-ままでは辞書から呼べない（前置きは本当のことを言っていなければならない）。
-**一つの家に移すのは、機能と同じコミットに乗せてはいけない種類の作業**なので
-ここに置く。
-
-やること: 「ファイルを端末から出す」を一つの関数にして、card.js と
-wordsheet.js の両方がそれを呼ぶ。文言は呼ぶ側が渡す（カードは
-`t('card.saved')`、辞書は `t('toast.exported')`）。
-
-**確かめられていないこと:** WKWebView が `<a download>` で何もしないことは
-Linux では実機確認できない。証明できたのは「端末でもブラウザ用の道を通り、
-どの条件でも成功と言う」ところまで。
-
 ## 形容詞の章が、十二の形すべてを「作る」と申し出る ── 2026-08-27, claude/gram
 
 `g2Add()` が章のページに並べる作成の行は、その章が受け持つ形だけを並べる。
@@ -2823,7 +2640,10 @@ kb5 の残したもう片方。**そのままにする**、というのがリー
 
 やり方: `STATE.md` から否定の文を拾い、そこに現れる識別子
 （`LinguaStore.swift`、`storeBuy`、`GOOGLE_IOS_ID` のような）を repo で引く。
-**在れば赤。** 逆方向 ──「在る」と書いてあるものが無い ── も同じ形で引けます。
+**在れば赤。** 逆方向 ──「在る」と書いてあるものが無い ── は、**関数の名前に
+ついては `docs-check` が持っています**（2026-09-23）: `STATE.md` を含む記録
+以外の全部の文書で、呼び出しの形で書かれた名前がコードに無ければ赤です。残って
+いるのはこちらの向き（「無い」と書いた物が在る）と、関数でない名前です。
 
 ### 照合できないもの、そしてそれが半分以上
 
@@ -2841,31 +2661,6 @@ kb5 の残したもう片方。**そのままにする**、というのがリー
 
 ## 形容詞の章が、十二の形すべてを「作る」と申し出る ── 2026-08-27, claude/gram
 
-
-## 辞書の ⋯ が、何も入っていない紙を開く ── 2026-08-27, claude/gram × claude/ai
-
-**二つの削除が合わさった結果で、どちらのセッションの設計でもありません。**
-
-```
-claude/ai   AIに相談の行を ⋯ から出してバーの印にした（91bc7c1、オーナー決定
-            「AIを使いたいって思うとこどこ？隠してどうすんの？」）
-claude/gram 規則で作る形の行を ⋯ から出して文法の章に移した（d60d466）
-```
-
-`wordsMore()` に残っているものはありません。⋯ はバーに立ったままで、押すと
-空の紙が開きます。
-
-**どちらの側も相手の行を消していません。** master を取り込むまで、どちらの
-ブランチでも紙には一行残っていました。
-
-**答えはたぶん、その関数の上のコメントが既に書いています** ──
-「a row that opens nothing is a button that used to work」。⋯ 自体を外す、が
-素直です。そこには「ダウンロードした単語リストがいずれ入る」とも書いてあり、
-まだ入っていません。
-
-**このセッションでは外しませんでした。** ⋯ は `vWords()` のバーにあり、
-`claude/ai` が今朝書き直した場所です。`docs/SESSIONS.md`「リーダーが持ち場を
-決め、セッションはそれ以外を触らない」。**リーダーの判断です。**
 
 1. `g2Chap()` の形容詞の行を、形容詞が実際に一致する feature（NUMBER、CASE、
    あるいは比較級）だけに狭める ── 何が「実際に」かを決めるのが判断。
@@ -2991,27 +2786,6 @@ throw しない**。`post(id)` を参照する表も三つあり（`quote` `reac
 - `tokinets.com/lingua/privacy.html` は、これで書ける。
 
 
-## `www/reading.js` に、読みの部屋が消えて誰も呼ばなくなったものが四つ
-
-**2026-08-28、`claude/acct2`。** 設定の「読みの表示」の部屋を消したので
-（OWNER「そもそもこのページ消していいよ」）、`SET.read` を読む唯一の道が
-無くなりました。`npm run dead` が二つを名指しします:
-
-```
-  www/reading.js:15  capFirst    その部屋の二箇所からしか呼ばれていなかった
-  www/reading.js:36  readSeq     同じく、その部屋の見本一行からだけ
-```
-
-消すと続けて二つ落ちます ── `rd()` は `readSeq()` からしか呼ばれておらず、
-`approx()` は `rd()` からしか呼ばれていません。**四つで一組です。**
-そのあと `www/i18n/*.js` の `LANG[x].read`（十の respelling エンジン）と
-`rdName` を読む人が居なくなりますが、`dead-check` はオブジェクトの
-フィールドを見ないので赤にはなりません ── 消すかどうかは別の判断です。
-
-**やらなかった理由**: `www/reading.js` はこのセッションの持ち物ではありません
-（`docs/SESSIONS.md` §1）。**一コミット一事**でもあります ── 部屋を消すのと
-死んだ関数を消すのは別のことです。
-
 ## 「端末のデータを消す」を押さえる検査がありません
 
 **2026-08-28、`claude/acct2`。** `wipeLangs()`（`www/settings.js`）を足しました
@@ -3106,7 +2880,7 @@ throw しない**。`post(id)` を参照する表も三つあり（`quote` `reac
 - `read` と `rdName` は object literal の**プロパティ**であって、関数宣言でも
   top-level var でもない ── `dead-check` が数えている二つのどちらでもない
 
-だから `approx()` が `langDef().read` を読む唯一の場所だったとしても、それを
+だから ~~`approx()`~~ が `langDef().read` を読む唯一の場所だったとしても、それを
 消した瞬間に十個のエンジンが宙に浮いたことを**どの検査も赤にしません。**
 `CLAUDE.md` § 5 が閉じている穴（書かれて読まれない global）の、一段外側です。
 
