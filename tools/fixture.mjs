@@ -1164,8 +1164,8 @@ export function halfDone(){
                            NAV=[{r:'ltset', a:'mark'}]; return vLtset(); }],
     ['a letter in the editor', () => { editGlyph('k'); window.route='glyph';
                                        NAV=[{r:'glyph', a:GE.lid}]; return vGlyph(); }],
-    /* The two faces of the editor's canvas the three guide lines have to be
-       seen in (OWNER 2026-09-23): nothing drawn yet, so the lines stand alone
+    /* The two faces of the editor's canvas the 田 guides have to be seen
+       in (OWNER 2026-09-23): nothing drawn yet, so the lines stand alone
        over the dots; and pinched in, so the lines are shown to move with the
        dots. GE is the editor's buffer and is never saved from here. */
     ['an empty letter in the editor', () => { editGlyph('k'); GE.st=[]; GE.si=-1; GE.pi=-1;

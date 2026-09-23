@@ -140,16 +140,12 @@ function geSide(){ return inkSide(SCRIPT.sp); }
    beside a letter are the same number, and neither is a screen's to decide. */
 function geInkTop(){ return Math.round(800 - (GGRID.inset - GPEN.width/2)); }
 function geInkSpan(){ return Math.round(geStep()*(GGRID.n-1) + GPEN.width); }
-/* The rows of dots the editor's three guide lines run along, top to bottom.
-   Measured off how a letter is put into the font, not chosen: LinguaFont
-   turns the square into font space as 800 - y (otf5.js), and the font's
-   ascender is geInkTop(). So a stroke on the TOP row reaches exactly the
-   ascender, a stroke on the BOTTOM row is the lowest ink can go -- the
-   baseline itself is y=800, which is off the lattice, and the ink rests the
-   inset less half a pen above it -- and the MIDDLE row is the half-way of
-   that ink span. tools/guide-check.mjs builds the font and measures all
-   three. Drawn only; nothing stores them and no letter, key, tile or card
-   carries them. */
+/* The rows and columns of dots the editor's guides run along: a 口 round
+   the lattice (the first and last row, the first and last column) and a 十
+   through its middle -- 田. 「十時に引いて口と十で引けばいいんじゃない？」
+   OWNER 2026-09-23. The same three numbers across and down, because the
+   lattice is square. Drawn only; nothing stores them and no letter, key,
+   tile or card carries them. tools/guide-check.mjs holds it. */
 function geGuideRows(){ return [0, (GGRID.n-1)/2, GGRID.n-1]; }
 function geSnap(v){
   var s=geStep(), i=Math.round((v - GGRID.inset) / s);
@@ -2570,16 +2566,22 @@ function geDraw(){
   x.strokeStyle=cssVar('--goldln'); x.lineWidth=Math.max(1,k0*2.5);
   x.strokeRect(k0*3,k0*3,S-k0*6,S-k0*6);
   /* The lattice is drawn as dots, not as ruled lines: a line says "anywhere
-     along here", and that is the thing being taken away. The three lines
-     under the dots are not the lattice and say something else -- a HEIGHT to
-     aim for, not a place a point may land -- which is why they are fainter
-     than the dots rather than as strong. 「aやね」 OWNER 2026-09-23. */
-  var gs=geStep(), gi, gj, gr=geGuideRows();
-  x.strokeStyle=cssVar('--line'); x.lineWidth=Math.max(1,k0*1.5);
+     along here", and that is the thing being taken away. The 田 under the
+     dots is not the lattice and says something else -- where the square's
+     edges and middle are, not a place a point may land -- which is why it is
+     a line in --gold rather than the dots' grey. It is two canvas pixels at
+     the least: one pixel at a whole coordinate lands half on each of two and
+     comes out at half its colour. The first
+     version was --line and measured 1.1:1 against the panel: 「線がわかりにくい」
+     OWNER 2026-09-23. */
+  var gs=geStep(), gi, gj, gr=geGuideRows(), g0=GGRID.inset, g1=GGRID.inset+(GGRID.n-1)*gs;
+  x.strokeStyle=cssVar('--gold'); x.lineWidth=Math.max(2,k0*3);
   for(gi=0; gi<gr.length; gi++){
     x.beginPath();
-    x.moveTo(X(GGRID.inset), Y(GGRID.inset+gr[gi]*gs));
-    x.lineTo(X(GGRID.inset+(GGRID.n-1)*gs), Y(GGRID.inset+gr[gi]*gs));
+    x.moveTo(X(g0), Y(g0+gr[gi]*gs)); x.lineTo(X(g1), Y(g0+gr[gi]*gs));
+    x.stroke();
+    x.beginPath();
+    x.moveTo(X(g0+gr[gi]*gs), Y(g0)); x.lineTo(X(g0+gr[gi]*gs), Y(g1));
     x.stroke();
   }
   /* A lattice you cannot see is a lattice that is not there, and this surface
