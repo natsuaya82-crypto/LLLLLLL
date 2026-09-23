@@ -656,11 +656,19 @@ assert.equal(e.morphology.inflect(short, short.words[0], {X:'Y'}).surface, 'az')
    which is not what the function does or has ever claimed. The engine was
    right and the expectation was habit.
 
-   The real road back is the dictionary. The app writes every form it makes in
-   as a word of its own, so `carried` is FOUND, with its own entry saying what
-   it is a form of. Guessing `carry` out of `carr` would be inventing a word. */
+   The real road back is the language itself. An inflection is not a word
+   since 2026-09-23 -- 「活用は活用であって単語じゃない」 -- so it is not in
+   the dictionary to be found; the language HANDS OVER every form its words
+   have, `model.forms` (www/grammar.js § gForms), and `carried` is read there
+   as the past of `carry` because the language said so. Guessing `carry` out
+   of `carr` would be inventing a word. */
 assert.notEqual(e.morphology.analyzeForm(stemChange, 'carried', carry).lemma, 'carry');
 assert.equal(e.morphology.parseToken(stemChange, 'carried'), null);
+const handed = Object.assign({}, stemChange,
+  {forms:[{surface:'carried', lemma:'carry', inflections:[stemChange.inflections[0]]}]});
+assert.equal(e.morphology.parseToken(handed, 'carried').lemma, 'carry',
+  'a stem-changing form the language handed over is not read as a form of its word');
+assert.equal(e.morphology.parseToken(handed, 'carried').inflections[0].value, 'PAST');
 /* The plain rule still reads its own forms perfectly. */
 assert.equal(e.morphology.analyzeForm(stemChange, 'walked',  walk).lemma,  'walk');
 assert.equal(e.morphology.parseToken(stemChange, 'walked').lemma, 'walk');
@@ -868,6 +876,23 @@ assert.equal(e.translate.fromSemantic(persModel,
    the verb alone -- the part drops out, nothing breaks. */
 assert.equal(e.translate.fromSemantic(persModel,
   e.semanticIR({roles:{PREDICATE:'eat'}})).text,'luma');
+/* AND A FORM THE WORD CARRIES REACHES THE MEANING LINE. An inflection is not a
+   word (OWNER 2026-09-23), so gModel() hands the engine the word's forms off
+   wForms() -- www/wordsheet.js's, stubbed here as it is for every other app
+   function. `lumied` is the past with the stem changed (luma -> lumi + ed),
+   which the rule alone can never read back; `lumo` is a past no rule makes at
+   all, placed by hand, whose label has no rule behind it. Both must come out
+   as eat, in the past. */
+stage([{hw:'mi',mns:['I'],pos:'pro'},{hw:'poko',mns:['apple'],pos:'n'},{hw:'luma',mns:['eat'],pos:'v'}],
+      {order:'SOV', fm:[{id:'rpy', fm:'pst', pos:'v', at:'end', add:['i','e','d'], drop:1, when:''}]},
+      null);
+app.wForms=(w)=>w.hw==='luma'?[{fm:'pst', hw:'lumied', sp:[]}, {fm:'i~odd', hw:'lumo', sp:[]}]:[];
+const formModel=app.gModel();
+assert.equal(e.translate.toNatural(formModel, 'mi poko lumied', 'en'), 'I eat apple (past)',
+  'a form whose stem changed lost its meaning on the way to the meaning line');
+assert.equal(e.translate.toNatural(formModel, 'mi poko lumo', 'ja').indexOf('I apple eat'), 0,
+  'a form placed by hand with no rule behind it is not read as its word');
+app.wForms=undefined;
 /* a mood reaches the engine the same way, and only one of them at a time */
 stage([{hw:'luma',mns:['eat'],pos:'v'}],
       {order:'SOV', fm:[{id:'rp', fm:'pot', pos:'v', at:'end', add:['r','e'], drop:0, when:''},
