@@ -563,7 +563,8 @@ async function wrote(ln, mn, mode){
         pwSend();
         setTimeout(function(){
           window.__MODE = 'ok';
-          d({ here: POSTS.filter(function(p){ return p.ln === ln; }).length,
+          d({ kept: PW.ln === ln,
+              here: POSTS.filter(function(p){ return p.ln === ln; }).length,
               there: window.__POSTS.filter(function(r){
                        return (r.body || {}).ln === ln; }).length });
         }, 900);
@@ -658,17 +659,20 @@ const byWho = await pressed('aya');
 say(byWho.after.rows === 0,
     '書いた人の @ では投稿は出ない (人の検索の仕事: ' + byWho.after.rows + ' 件)');
 
-/* ---- 11. 信号が無いときに書いた投稿は、追いついてから出る -------------
+/* ---- 11. 信号が無いときに書いた投稿は、欄に残り、押せば上がって出る ------
    検索はサーバーのものです ── 手元の五十件を絞ったものは上位五十件ではない、
    とこの画面は既に書いている。だからサーバーに届いていない投稿は、書いた
    本人にも探せません。**そして、それは失われたということではありません。**
-   次にタイムラインを引いたときに追いついて上がり、そこから探せます。
+   送れなかった投稿は欄に残り（サーバーが先、2026-09-23）、もう一度押せば
+   上がって、そこから探せます。
 
    二つを分けて押さえるのは、片方だけ見ると別の結論になるからです ──
    「出ない」だけ見れば消えたように見え、「出る」だけ見れば信号の有無は
    関係ないように見えます。 */
 const w2 = await wrote('zzuquat', 'つながっていないときに書いた', 'nosignal');
-say(w2.here === 1, '出ていかなくても手元には残る (' + w2.here + ' 件)');
+say(w2.kept && w2.here === 0,
+    '出ていかなかった投稿は欄に残り、端末の一覧には入らない (欄 ' +
+    (w2.kept ? '残る' : '**空**') + '、一覧 ' + w2.here + ' 件)');
 say(w2.there === 0, 'サーバーへは出ていかなかった (' + w2.there + ' 件)');
 const before = await pg.evaluate(() => new Promise(function(d){
   window.__MODE = 'ok';
@@ -676,31 +680,19 @@ const before = await pg.evaluate(() => new Promise(function(d){
 }));
 say(before === 0,
     'まだサーバーに無いので、その場では検索に出ない (' + before + ' 件)');
-/* 次につながったとき ── タイムラインを引いた背中では**上がらない**。
-   2026-09-23 まではここが「追いついて上がる」で、それは postCatchUp() が
-   答えの後ろで黙って送っていたからです。OWNER 2026-09-05「保存するタイミングで
-   エラーが起きるなら、保存されない」「なら失敗して残るにするべき」── 送れなかった
-   投稿は「未送信」のまま残り、上がるのは人が送った時（r46-audit § A5）。 */
-const quiet = await pg.evaluate(() => new Promise(function(d){
-  window.__MODE = 'ok';
-  netDropAgain();          /* the whole of what a timeline answer now sends */
-  setTimeout(function(){
-    d(window.__POSTS.filter(function(r){
-        return (r.body || {}).ln === 'zzuquat'; }).length);
-  }, 700);
-}));
-say(quiet === 0, 'つながっても、押すまでは上がらない (' + quiet + ' 件)');
+/* 次につながったとき ── タイムラインを引いた背中では上がらない。2026-09-23
+   まではここが「追いついて上がる」で、それは postCatchUp() が答えの後ろで黙って
+   送っていたからです。OWNER 2026-09-05「保存するタイミングでエラーが起きるなら、
+   保存されない」「なら失敗して残るにするべき」── 上がるのは人が送った時。 */
 const caught = await pg.evaluate(() => new Promise(function(d){
   window.__MODE = 'ok';
-  var p = null, i;
-  for (i = 0; i < POSTS.length; i++) if (POSTS[i].ln === 'zzuquat') p = POSTS[i];
-  postSend(p, function(){}, function(){});
+  pwSend();                /* the same composer, pressed again */
   setTimeout(function(){
     d(window.__POSTS.filter(function(r){
         return (r.body || {}).ln === 'zzuquat'; }).length);
-  }, 700);
+  }, 900);
 }));
-say(caught === 1, '押せば上がる (' + caught + ' 件)');
+say(caught === 1, 'つながってからもう一度押せば上がる (' + caught + ' 件)');
 const back = await pressed('zzuquat');
 say(back.after.rows === 1,
     '上がったあとは検索に出る ── 何も失われていない (' + back.after.rows + ' 件)');

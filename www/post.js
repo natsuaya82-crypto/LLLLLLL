@@ -662,7 +662,7 @@ function draftsPull(ok, bad){
   var done=ok || function(){};
   if(!netSignedIn()){ done(0); return; }
   netDrafts(function(rows){
-    var i, k, r, b, d, seen={}, keep=[], moved=false;
+    var i, k, r, b, d, had, seen={}, keep=[], moved=false;
     for(i=0;i<(rows||[]).length;i++){
       r=rows[i];
       if(!r || !r.id) continue;
@@ -671,14 +671,21 @@ function draftsPull(ok, bad){
          it was opened, and putting it back is the same post in two places,
          which is the thing tools/draft-check.mjs holds. */
       if(PW && PW.did===r.id) continue;
-      d=draftById(r.id);
-      if(d){ keep.push(d); continue; }
+      /* THE SERVER'S ROW IS THE DRAFT, and the copy here is the picture of
+         it (rule 22). This kept the copy wherever both had one, so an edit
+         made on another phone never showed here, and keeping it from here
+         put the old words back over the new ones (r63-audit A6). Nothing is
+         lost by the answer winning: a draft is kept on the server FIRST
+         (draftKeep), so the copy here never holds anything the server was
+         not given -- what is being typed lives in the composer, and the one
+         that is open is skipped above. */
+      had=draftById(r.id);
       d={}; b=r.body || {};
       for(k in b) if(Object.prototype.hasOwnProperty.call(b, k)) d[k]=b[k];
       d.id=r.id; d.up=1;
       if(!d.at) d.at=Date.parse(r.updated_at) || Date.now();
       keep.push(d);
-      moved=true;
+      if(!had || JSON.stringify(had)!==JSON.stringify(d)) moved=true;
     }
     /* AND WHAT THIS PHONE HAS THAT THE SERVER DOES NOT, WHICH IS TWO
        DIFFERENT THINGS.
@@ -2144,50 +2151,57 @@ function pwSendWith(ln, pics, vo){
      reply_to to hold. postToWho() asks the handle first, so the line over it
      reads the same as a reply's. */
   else if(PW.toh) mine.toh=PW.toh;
-  POSTS.push(mine);
-  savePosts();
-  /* It has stopped being a draft, so the row goes -- AFTER the post is
-     written and never before. The other order is somebody's writing gone on
-     the day the post itself would not go: what is on this phone now is the
-     post, which savePosts() has just put down and which stays there, sent or
-     not, so there is nothing left for the draft to be the only copy of.
-
-     A post kept to yourself (`pv`) goes no further than this phone, and its
-     draft still goes: private is what the POST is, and the draft was never a
-     way of storing one. */
-  if(PW.did){ netDraftDrop(PW.did); PW.did=''; }
   /* A post kept to yourself is never told to anybody. It is the one post
-     that does not go through this door at all -- not "sent and hidden",
-     which is a flag somebody else's server has to be trusted with. */
-  /* AND IT IS WAITED ON, WITH A SPINNER, AND SAID WHEN IT IS DONE.
-     「投稿した後に投稿しましたって出ないと…投稿する時もくるくる入れて欲しい」
-     OWNER 2026-09-05. It used to fire postSend() and move straight to the
-     feed with nothing on screen but the post drawn as not-yet-sent -- pwSendPost()
-     is the one place that waits for the answer, so this function only starts
-     it. The post itself is never lost either way: it is already in POSTS, and
-     one that did not go stays there as 未送信. 「spl流したのにまだ投稿載らんの？」 */
-  if(!mine.pv) pwSendPost(mine);
-  PW=pwBlank();
-  goTab('feed');
+     that does not go through the server at all -- not "sent and hidden",
+     which is a flag somebody else's server has to be trusted with -- so it is
+     written here, its draft goes (private is what the POST is, and the draft
+     was never a way of storing one), and the composer is emptied. Whether a
+     private post should be the account's on the server is the owner's
+     (docs/scope/r60-up.md). */
+  if(mine.pv){
+    POSTS.push(mine);
+    savePosts();
+    if(PW.did){ netDraftDrop(PW.did); PW.did=''; }
+    PW=pwBlank();
+    goTab('feed');
+    return;
+  }
+  pwSendPost(mine);
 }
-/* postSend() and not netPush(): the press is one of the two roads a post goes
-   up by, and both have to be behind the same one-send-at-a-time mark or the
-   window is still open from this side.
+/* ---- THE SERVER FIRST, AND THIS PHONE WHEN IT HAS LANDED -----------------
+   「保存するタイミングでエラーが起きるなら、保存されないし」「なら失敗して残るに
+   するべき」「通信エラーなら進むわけねえだろ全部」 OWNER 2026-09-05, and
+   「投稿した後に投稿しましたって出ないと…投稿する時もくるくる入れて欲しい」.
 
-   netSpin() covers the screen while this is out, which is the whole reason it
-   is a function of its own rather than a line inside pwSendWith(): a retry
-   pressed from the popup below calls this again, on the exact post, and has
-   to spin and answer exactly the same way the first press did. */
+   The order was the other way round: the post was put into POSTS and written
+   down, its draft was taken off the server, the composer was emptied and the
+   feed shown -- and only then was it sent. So a send that failed left a post
+   on this phone that the server had never heard of (and postCatchUp() sent it
+   later, with nobody pressing anything), and the draft it came from was
+   already gone off the server (r63-audit A5 漏れ).
+
+   Now nothing moves until the row is there. The mark turns while it goes; when
+   it lands the post is written down here, its draft is taken off the server,
+   the composer empties and the feed shows it. When it does not, NOTHING has
+   moved -- what was typed is still in the composer, the draft is still a
+   draft -- and ［再接続］ sends the same post again. The draft (`PW.did`) is
+   read at the moment the send lands, which is the moment it stops being one.
+
+   postSend() and not netPush(): the one-send-at-a-time mark is on it, so a
+   ［再接続］ pressed while the first send is still out does not send twice. */
 function pwSendPost(p){
   netSpin(true);
   postSend(p, function(sid){
     netSpin(false);
+    POSTS.push(p);
     postSid(p, sid);
+    savePosts();
+    if(PW.did){ netDraftDrop(PW.did); PW.did=''; }
+    PW=pwBlank();
     toast(t('post.sent'));
+    goTab('feed');
   }, function(d, s, m){
     netSpin(false);
-    /* 通信が落ちたら何も進まない ── netPop() (www/net.js) が pullRun()
-       (sns.js) と同じ道で失敗を出し、［再接続］は同じ投稿をもう一度送る。 */
     netPop(d, s, m, function(){ pwSendPost(p); });
   });
 }

@@ -41,9 +41,6 @@
      - 「one setting changed sends that one setting」. profile.prefs is one
        jsonb column and a PATCH replaces it whole; sending one key needs the
        server to merge (docs/scope/r60-up.md § A2). Printed on every run.
-     - A deletion that did not finish (netDropAgain, the files of a post
-       somebody deleted) is retried after a timeline answer. The phone here
-       has none pending, so it is not exercised.
      - The door. netTook() sends the walk's language as a session ARRIVES
        and that is the one exception CLAUDE.md names; acct-check holds it.
      - A language whose `language.name` column is empty has it filled, on the

@@ -106,6 +106,17 @@ await pg.evaluate((s) => { eval('(' + s + ')()'); SET.walked = true; SET.ui = 'e
 
 const R = await pg.evaluate(async () => {
   const fails = [];
+  /* THE SERVER TAKES THE POST, in every section that is about what a post IS
+     -- the bake, the ink, the reply, the draft it came from. A post is written
+     down here only once the server has it (pwSendPost, 2026-09-23), and this
+     page has no server; the road is answered as taken, with no number, which
+     is the state these sections were written against (a post this phone holds
+     and the server has not numbered). The ROAD itself -- refused leaves the
+     composer, pressed again goes up once -- is 15 and 16 below, on the real
+     postSend(), and find-check 11. */
+  const realPostSend = postSend;
+  const tookPost = function (p, ok) { ok(''); };
+  postSend = tookPost;
 
   /* A photograph that is black everywhere, so a white letter drawn into it is
      the only light thing there can be. A gradient would leave the answer to
@@ -448,8 +459,10 @@ const R = await pg.evaluate(async () => {
     }, 0);
   };
   PW = pwBlank(); PW.to = host.id; PW.ln = 'sar';
+  postSend = realPostSend;             /* this section stands a server up */
   pwSend();
   await new Promise(r => setTimeout(r, 400));
+  postSend = tookPost;
   if ((host.re || 0) !== wasRe)
     fails.push('a reply was sent and the PHONE counted it: `re` went ' + wasRe +
                ' -> ' + host.re + '. The count is post_seen.replies and this ' +
@@ -2799,8 +2812,11 @@ const R = await pg.evaluate(async () => {
       fails.push('posting deleted a draft that was not the one being posted (' +
                  gone[0].path + ')');
 
-    /* and what comes down never wins. docs/DATA_SAFETY.md § 2: the way a copy
-       destroys somebody's work is by winning. */
+    /* and what comes down IS the draft -- the copy here is the picture of it
+       (rule 22). A draft is kept on the server FIRST (draftKeep), so the copy
+       never holds anything the server was not given; keeping the copy over
+       the answer is what hid an edit made on another phone and then put the
+       old words back over it (r63-audit A6). */
     DRAFTS = [{ id: 'd-keep', at: 1, ln: 'what this phone has' }];
     netSend = function (method, path, body, tok, ok, bad) {
       if (String(path).indexOf('/rest/v1/draft') === 0) {
@@ -2816,11 +2832,11 @@ const R = await pg.evaluate(async () => {
     draftsPull();
     await new Promise(r => setTimeout(r, 50));
     const keptRow = DRAFTS.filter(d => d && d.id === 'd-keep')[0];
-    if (!keptRow || keptRow.ln !== 'what this phone has')
-      fails.push('a draft that is on this phone was written over by the ' +
-                 'server\u2019s copy. Somebody may have been editing it thirty ' +
-                 'seconds ago, and the way a copy destroys what somebody wrote ' +
-                 'is by winning (docs/DATA_SAFETY.md \u00a7 2)');
+    if (!keptRow || keptRow.ln !== 'what the server has')
+      fails.push('a draft the server holds came home as this phone\u2019s older ' +
+                 'copy (' + JSON.stringify(keptRow && keptRow.ln) + '). The copy won ' +
+                 'over the answer, so an edit made on another phone is not here, and ' +
+                 'keeping it from here puts the old words back (rule 22)');
     if (DRAFTS.filter(d => d && d.id === 'd-keep').length !== 1)
       fails.push('a draft that is on this phone AND on the server came home as ' +
                  'two drafts');
@@ -2896,6 +2912,7 @@ const R = await pg.evaluate(async () => {
 
     try {
       SESS = { at: 'x', rt: 'y', uid: 'u1', anon: false };
+      postSend = realPostSend;
 
       /* ---- 15. the same post does not go to the server twice ------------
          docs/RISK.md § 5. A post goes up when somebody presses -- the send,
@@ -2973,7 +2990,16 @@ const R = await pg.evaluate(async () => {
       }
       delete files['v-fail-1.m4a'];
 
-      /* ---- 17. the bytes of a deleted post do not stay public ------------
+      /* ---- 17. a delete whose files will not go does not happen ---------
+         「通信エラーなら進むわけねえだろ全部」「なら失敗して残るにするべき」
+         OWNER 2026-09-05. This held the other shape until 2026-09-23: the row
+         went anyway and the paths were deleted again off the back of the next
+         timeline answer (netDropAgain), with nobody pressing anything
+         (r63-audit A5 漏れ). What it holds now: refused, the post is still a
+         row and still on this phone; pressed again with the wire back, the
+         files and the row are gone; and nothing of another post is touched.
+         The history of the old shape follows, kept for why the files matter. */
+      /* ---- (was) 17. the bytes of a deleted post do not stay public ------
          docs/RISK.md § 9. netDropFiles() asks the bucket to remove the
          photographs and the voice, and when that fails its handler is
          function(){ done(); } -- the row is deleted anyway, deliberately
@@ -3003,12 +3029,18 @@ const R = await pg.evaluate(async () => {
       postDel('del-1');
       if (popOn()) popYes();
       await new Promise(r => setTimeout(r, 300));
-      if (rows[del.sid])
-        fails.push('a post somebody deleted is still a row on the server. ' +
-                   'The files not going is not a reason for the post to stay');
+      if (!rows[del.sid])
+        fails.push('the bucket refused the files and the row went anyway -- the ' +
+                   'delete moved on through a failure, and the files are left ' +
+                   'with nothing pointing at them');
+      if (!POSTS.some(p => p.id === 'del-1'))
+        fails.push('the bucket refused and the post went off this phone anyway');
+      if (popOn()) popNo();
       dropWall = false;                     /* the wire comes back */
-      netDropAgain();                       /* the next timeline answer (www/sns.js) */
+      postDelGo('del-1');                   /* and it is pressed again */
       await new Promise(r => setTimeout(r, 400));
+      if (rows[del.sid])
+        fails.push('pressed again with the wire back, the row is still there');
       const left = del.pu.concat(del.pt, [del.vu]).filter(f => bucket[f] !== undefined);
       if (left.length)
         fails.push('the photographs and the voice of a deleted post are still ' +
@@ -3022,6 +3054,7 @@ const R = await pg.evaluate(async () => {
                    'nobody deleted. That is a cleanup, and docs/DATA_SAFETY.md ' +
                    'forbids one');
     } finally {
+      postSend = tookPost;
       netSend = realSend3; netUp = realUp3;
       POSTS = wasPosts3; SESS = wasSess3; POST_GONE = wasGone3; savePosts();
     }

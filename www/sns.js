@@ -627,14 +627,11 @@ function askFeedRun(tabs, ok, bad, person){
      timeline underneath is asked for either way: it is still the list the
      word comes off onto. */
   if(person && here().r==='feed' && snsFil) snsFilFind(true);
-  /* And the files of a post somebody deleted that the bucket refused
-     (netDropAgain, www/net.js) -- the one thing that goes off the back of a
-     pull rather than a press, because it is the rest of a press that did not
-     finish. Whether it stays is a deletion question and the owner's
-     (docs/scope/r60-up.md). What this line ALSO did was send every post this
-     phone had that the server had not, with nobody having pressed anything;
-     that half is gone (r46-audit § A5). ONCE, however many tabs went out. */
-  netDropAgain();
+  /* NOTHING IS SENT OFF THE BACK OF A PULL. postCatchUp() stood here and
+     sent every post this phone had that the server had not, and the files of
+     deleted posts the bucket had refused -- both with nobody pressing
+     anything (r46-audit § A5, r63-audit A5 漏れ). A post and a delete each
+     happen when they are pressed, and a refusal leaves them as they were. */
   /* And the places sold in it, in the same moment and counted in the same
      pair, so the timeline and its PR rows arrive as one render rather than a
      list that grows a row under somebody's eye. A place that could not be
