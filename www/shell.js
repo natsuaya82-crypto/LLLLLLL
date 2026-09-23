@@ -987,6 +987,7 @@ var PAGES={
   ltset:   {tab:'build', k:'toc.letters'},
   letter:  {tab:'build', k:'lt.title'},
   wsys:    {tab:'profile',  k:'ws.kind'},
+  sp:      {tab:'profile',  k:'set.sp'},
   abugida: {tab:'build', k:'ab.title'},
   relate:  {tab:'build'},
   fm:      {tab:'build', k:'word.fm'},
