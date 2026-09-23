@@ -44,7 +44,6 @@ call docs/FEATURE_RULES.md geDirty
 call docs/FEATURE_RULES.md has_account
 call docs/FEATURE_RULES.md kbCellW
 call docs/FEATURE_RULES.md kbKeyW
-call docs/FEATURE_RULES.md kbOutSay
 call docs/FEATURE_RULES.md kbRows
 call docs/FEATURE_RULES.md kbSlots
 call docs/FEATURE_RULES.md keep
@@ -58,7 +57,6 @@ call docs/FEATURE_RULES.md netAnonTok
 call docs/FEATURE_RULES.md netMember
 call docs/FEATURE_RULES.md netStore
 call docs/FEATURE_RULES.md netTakeGone
-call docs/FEATURE_RULES.md openCapLapse
 call docs/FEATURE_RULES.md planKeep
 call docs/FEATURE_RULES.md planMigrate
 call docs/FEATURE_RULES.md voPlayPW

@@ -4367,9 +4367,8 @@ and is never merged into your own」と言っている。**入らない、は二
    やん？あれが言語切り替えになるって感じ」「せっていからでいいよ」
 
   **A language is an account, and the language list is the account switcher.**
-  It stays where it is — Settings → Languages (`www/settings.js`, `go('langs')`,
-  `vLangs()` in `www/home.js`). It is NOT moved onto the profile or behind the
-  face; that was offered and turned down.
+  Where the switcher is: 【差し替え済み 2026-09-12】── 差し替えた決定:
+  「2026-09-12 朝の六つ ── 言語の切り替えはプロフィールへ、…」（2026-09-12）。
 
   What is added is one button at the **foot of that list**, where "add an
   account" sits in the app this is modelled on. Pressing it makes a language
@@ -4386,8 +4385,7 @@ and is never merged into your own」と言っている。**入らない、は二
   **the language ceiling** — which lands in the SAME commit, because a door
   with no ceiling is unlimited languages on the free plan. Free 1 / Plus 1 /
   Pro 3, from the decision of 2026-08-23. It HIDES and never deletes
-  (`wordsSeen()`'s shape): somebody who already has three keeps three, sees
-  three, backs up three, and is refused only the fourth.
+  (`wordsSeen()`'s shape); which one stays on free is 「2026-09-12 主言語」.
 
 ### Decision
 - Date: 2026-08-26
@@ -4642,8 +4640,8 @@ and is never merged into your own」と言っている。**入らない、は二
   `langCap()` beside `kbCap()` in `www/core.js` (1 / 1 / 3, with `langStop()`
   as the refusal), `CAN.edit` at `plus` with `postEdit()` asking `can('edit')`,
   and `CAN.badge` at `pro` with `postBadge()` asking `can('badge')` instead of
-  reading `plan()`. `dl` was added on 2026-09-02. **広告は今やりません**
-  ──「6いまはいい」 OWNER 2026-09-03 ── ので `noads` は `CAN` に入れません。
+  reading `plan()`. `dl` was added on 2026-09-02. `noads` は 「広告は Twitter と同じ形 ── 投稿に擬態して右上に PR、枠は売れる形、今は AdMob、pro は無し」（2026-09-23） で
+  `CAN` に入り、pro に付く。
 
   **数えるのはアカウントです。**「は？端末の話なんかしてねえだろ」「だから端末で
   やるわけねえだろ」 OWNER 2026-09-03。この app に「端末ごと」という単位は
@@ -4757,10 +4755,8 @@ and is never merged into your own」と言っている。**入らない、は二
   | `file` a list brought in as a file | — | — | yes |
   | `noads` | — | — | **yes** |
 
-  **`noads` は `CAN` に入れません。**「6いまはいい」 OWNER 2026-09-03 ──
-  広告は今やらないので、消すものがありません。`dead-check` は誰も訊かない
-  能力を拒みます（何も課金していない値段表の一行）。**広告をやると決まった日に、
-  その実装と同じコミットで入ります。**それまでこの行は一つも足しません。
+  **`noads`**: 「6いまはいい」（2026-09-03）の方は【差し替え済み 2026-09-23】──
+  差し替えた決定: 「広告は Twitter と同じ形 ── 投稿に擬態して右上に PR、枠は売れる形、今は AdMob、pro は無し」（2026-09-23）。`CAN.noads` は pro。
 
   **`words` and `kb` are the two that stop being yes/no.** Everything else in
   that table is a door; those two are a number, and the number is the plan's.
@@ -4840,19 +4836,15 @@ and is never merged into your own」と言っている。**入らない、は二
   Native Advanced reader is ours to write: `GADAdLoader` in Swift, materials
   out through `nativePromise`.
 
-  The mimicry has a ceiling that is not ours: AdMob requires the word
-  "Ad"/"Sponsored" and forbids rearranging the materials. Same skeleton, same
-  spacing, same face as a post, with one word saying what it is — about what
-  X's Promoted looks like.
+  The word that says what it is: 【差し替え済み 2026-09-23】── 差し替えた決定:
+  「広告は Twitter と同じ形 ── 投稿に擬態して右上に PR、枠は売れる形、今は AdMob、pro は無し」（2026-09-23）（右上に PR）。
 - Affected features: a new `LinguaAds` on the native side; the feed inserting
   a row every N posts; `press` (an ad row must carry no button of ours).
 - Affected data: none.
 - Affected docs: `docs/apple.md` (a second AdMob app, ATT, the privacy
   manifest).
-- Implementation status: **nothing built.** The Swift side is the expensive
-  half, and this app has had four native hand-overs of which three failed
-  silently — so it gets a status line on screen first, the way `kbOutSay()`
-  was added before anything else worked.
+- Implementation status: **IMPLEMENTED** ── `ios/App/App/LinguaAds.swift` が素材を読み、
+  行はタイムラインが描く（2026-09-23 の項の状況を見ること）。
 
 ### Decision
 - Date: 2026-08-22
@@ -5355,36 +5347,30 @@ and is never merged into your own」と言っている。**入らない、は二
   person made is deleted.**
   1. The dictionary **lists the first 100 words** it was given, in the order
      they were made. The rest are not on screen. Every one of them is still in
-     `WORDS`, in `save()`, in the backup and in the file in Documents, and the
-     app reads the whole dictionary for itself — a post, a gloss, a spelling,
-     an example. Only the list is short.
+     `WORDS` and on the server, and the app reads the whole dictionary for
+     itself — a post, a gloss, a spelling, an example. Only the list is short.
   2. The writing goes back to an alphabet, the keyboard to the fixed QWERTY,
      the direction to left→right. All three were already true of `wsys` and
      `kb`; `dir` joins them.
   3. 自作のステージは**一覧から隠れます**。本にもともとある章は「無料の文法が
      何であるか」そのものなので残ります。`stAll()` が `can('gram')` の中でしか
      `STG.extra` を並べず、`stHidden()` がその数を足元に出します。
-  4. **The day it happens the app says so, once**, in a sheet: nothing has
-     been deleted, it is all in the backup, and it all comes back on
-     resubscribing. `capLapse()` in `core.js` decides when; `openCapLapse()`
-     in `settings.js` is what it says.
+  4. 【差し替え済み 2026-09-12】差し替えた決定: 「2026-09-12 朝の六つ」の (g)（2026-09-12） ── 起動のポップで一度、
+     サーバーの答え（`plan.was`、`capLapseSaw()`）。
   5. The foot of the dictionary says how many are not listed, every time.
 - Reason: 「a にしたら最初の1ヶ月で作りきったらそのあと課金されねえだろ」
   「非表示や」「課金切れたら、ポップ出して、バックアップには保存されてるよーって
   一回出せばok」
 - Affected features: the dictionary, search, the relation picker, the writing
   system, the keyboard, direction, grammar stages, the plans screen
-- Affected data: **none.** Nothing is written, moved or removed. `SET.planWas`
-  is added — the plan the app last saw, so a change can be noticed however it
-  happens (set by hand today, StoreKit tomorrow, found lapsed at launch)
+- Affected data: **none.** Nothing is written, moved or removed.
 - Affected docs: PAID_FEATURES.md, DATA_SAFETY.md, DATA_MODEL.md, CHANGELOG.md
 - Implementation status: implemented; code confirmed, not device confirmed
 - **The rule it is measured against**: `docs/DATA_SAFETY.md` forbids removing
   what somebody made. It does not forbid a shorter list. The line between the
-  two is the whole of this decision, so `backup-check` now holds it: on the
-  free plan, past the ceiling, `findWord()` still finds a word that is not
-  listed and `bkPack()` still carries every one of them. Both were watched
-  failing with the bug put back.
+  two is the whole of this decision, and `plan-check` holds it: on the free
+  plan, past the ceiling, the list is a hundred and not one byte of any slice
+  has moved.
 
 ### Decision
 - Date: 2026-08-13
@@ -5396,15 +5382,15 @@ and is never merged into your own」と言っている。**入らない、は二
      left→right.
   2. **Reading is free.** A post written in any of the four is shown that way
      to everybody, on every plan.
-  3. **Setting it is Plus.** Choosing a direction, and posting in one, is a
-     paid capability.
+  3. **Setting it is paid** — `CAN.dir`, at Pro (the rung this entry called
+     Plus before 「What the tiers are called」, 2026-08-23).
 - Reason: 「縦書き、右→左 左→右の投稿」「言語の設定でしょ右左とかは」
   「無料でも言語の向きは見ることはできる。でも設定してsnsとかに登校するのは
   有料会員のみ」 The vertical column order: 「右から左と左から右の両方」
 - Affected features: the writing system screen, the composer, the timeline,
   the card
 - Affected data: `SCRIPT.dir` in the **`script` slice** — the language's, so
-  it is in the backup and travels with the language. **Frozen onto the post**
+  it travels with the language to the server. **Frozen onto the post**
   as `post.dir`, for the same reason `ink` is: a reader has neither the
   writer's alphabet nor their language's settings
 - Affected docs: FEATURES.md, DATA_MODEL.md, PAID_FEATURES.md, CHANGELOG.md
@@ -5602,14 +5588,16 @@ for.
 - Date: 2026-08-11
 - Area: Data safety
 - Decision: Losing somebody's language is not acceptable under any
-  circumstance. A backup lives in Documents; a restore fills in what is
-  missing and never overwrites.
+  circumstance. A restore fills in what is missing and never overwrites.
+  Where the copy lives: 【差し替え済み 2026-09-04】── 差し替えた決定:
+  「バックアップのファイルも無くす。★の51件目は一番古いのを押し出す」（2026-09-04）
+  ── the server is the only copy that counts.
 - Reason: 「データ消えるのだけはありえない」
-- Affected features: backup, restore
-- Affected data: all eleven slices
+- Affected features: restore
+- Affected data: every slice in `SLICES`
 - Affected docs: DATA_SAFETY.md, CLAUDE.md rule 11
-- Implementation status: implemented; **device verification outstanding**
-  (9 items, `docs/TESTING.md` § device)
+- Implementation status: implemented — `netLangsDown()` fills in what is missing
+  (`again-check`, `acct-check` 13); **device verification outstanding**
 
 ### Decision
 - Date: 2026-08-11
@@ -5636,15 +5624,9 @@ for.
 - Reason: 「2ページ目なしでqwertyの上に1〜0の数字と！？入れてこれで無料版1ページに
   抑えよう」「これスペースデカすぎやね。！スペース？みたいにできない？」
   「デリートキーは横二つ分欲しいかも」
-- **The bar and the delete key were settled again after this entry was
-  written, and this entry did not say so for a week.** Both are the owner's
-  and both are in `docs/CHANGELOG.md`:
-  「2があった分謎に隙間できたから無くして」 took the key-wide hole out of
-  the third row, which made the delete three wide rather than two; and
-  「改行入れるか無料も。！？スペース　改行」 moved the two marks together to
-  make room for a return key — a keyboard that cannot start a new line is
-  one nobody can send a message on. The Decision above is written as they
-  left it. 「2ページ目なし」 is untouched.
+  The bar and the delete are the owner's later words: 「2があった分謎に隙間
+  できたから無くして」（delete three wide）and 「改行入れるか無料も。！？スペース
+  改行」（the return key）.
 - Affected features: keyboard
 - Affected data: none (`kbFixed()` is built from `LETTERS`, stored nowhere)
 - Affected docs: PAID_FEATURES.md, CLAUDE.md § what the free plan is
