@@ -243,6 +243,17 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Implementation status:
 ```
 
+### 2026-09-23 管理画面の「数」は @lingua だけ、「履歴」と「戻す」はスタッフ全員 ── 今のままでいい
+- Date: 2026-09-23
+- Area: 管理画面（`www/mod.js`）、`supabase/schema.sql` の `admin_counts`（`is_admin()`）・`admin_hist` と `admin_restore`（`is_staff()`）
+- Decision: 「それでいいよ」
+  集計の「数」は @lingua 本人だけ、言語の過去の版を見て戻す「履歴」「戻す」はスタッフなら誰でも。門が違うのは意図どおり。
+- Reason: オーナーがそう決めた（`docs/scope/r63-audit.md` §2-7 SQ6 の問いへの答え）。
+- Affected features: 管理画面
+- Affected data: 無し
+- Affected docs: 無し
+- Implementation status: IMPLEMENTED ── 今の schema がこの形。
+
 ### 2026-09-23 自作文字がオンでも、描いていない字はローマ字で出す
 - Date: 2026-09-23
 - Area: 語を出す所（`wOut()` `www/home.js`、`sfontHTML()` `www/glyph.js`）
