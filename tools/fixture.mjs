@@ -737,6 +737,15 @@ export function halfDone(){
        const was = PUSH_ST; PUSH_ST = 'authorized';
        window.route = 'set'; NAV = [{ r:'settings' }, { r:'set', a:'push' }];
        const h = vSet(); PUSH_ST = was; return h; }],
+    /* And with switches OFF, because a switch has two states and the room
+       above only ever draws them on -- nobody in the fixture has turned one
+       off. The day's prompt and likes, put back afterwards. */
+    ['notifications, some turned off', () => {
+       const was = PUSH_ST, p = SET.push_prompt, l = SET.push_like;
+       PUSH_ST = 'authorized'; SET.push_prompt = false; SET.push_like = false;
+       window.route = 'set'; NAV = [{ r:'settings' }, { r:'set', a:'push' }];
+       const h = vSet(); PUSH_ST = was; SET.push_prompt = p; SET.push_like = l;
+       return h; }],
     ['notifications, refused on the phone itself', () => {
        const was = PUSH_ST; PUSH_ST = 'denied';
        window.route = 'set'; NAV = [{ r:'settings' }, { r:'set', a:'push' }];

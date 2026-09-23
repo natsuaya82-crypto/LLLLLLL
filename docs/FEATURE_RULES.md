@@ -243,6 +243,19 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Implementation status:
 ```
 
+### 2026-09-23 今日のお題が変わった時にも通知 ── アメリカ太平洋時間の 0 時、切り替えは五つ目のスイッチ
+- Date: 2026-09-23
+- Area: 通知（`supabase/functions/push-send`、`supabase/schema.sql` の push 節、`www/push.js` の設定の部屋）、お題の cron（`supabase/setup.md` § 9-5）
+- Decision: 「通知なんだけど、今日のお題が変わった時にも出るようにできる？」「時間が決まってるでしょ。アメリカ時間の0時。それに合わせるのは？」「いいよ」「ちゃんとルールに則った綺麗な治し方してよ？」
+  - その日のお題の行が入った瞬間に、**全員へ**一通。時刻はお題の日付が変わる **アメリカ太平洋時間の 0 時**（2026-08-23 の「日付はアメリカ時間の0時から」と同じ時計）。
+  - 通知の設定に**五つ目のスイッチ**（`profile.prefs.push_prompt`）。四つと同じく、**無いのはオン**。
+  - 文は「今日のお題：<その人の表示言語のお題>」、タップでタイムライン。
+- Reason: お題は毎日変わり、それを知らせるのが次の一行を書かせる。
+- Affected features: 通知、お題
+- Affected data: `profile.prefs` に `push_prompt`（押した人だけ）。表・列・移行は無し。トリガー `push_on_prompt` が一つ増える。
+- Affected docs: `supabase/setup.md` § 9-5・§ 12、`docs/apple.md` § 8、`docs/CHANGELOG.md`
+- Implementation status: r58-prompt-push。**種類は push-send の `PUSH` 一箇所**になり（それまでは push.mjs の `pushWhat`/`pushTo` と index.ts がそれぞれ表の名前で枝を分けていた）、お題はその一行。全員宛てを鳴らせるのは service role の鍵だけ（`pushMay()`）。**それまでの `5 7 * * *` は冬に 23 時間遅れていた**（07:05 UTC は PST の前日 23:05）── `0 7,8 * * *` に。
+
 ### 2026-09-23 文字を描く面にガイド線 ── 田（口と十）、見るだけ
 - Date: 2026-09-23（同日二度。二度目が今のもの）
 - Area: 文字の編集画面のキャンバス（`www/glyph.js` `geDraw()`）

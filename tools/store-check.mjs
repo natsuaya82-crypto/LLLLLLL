@@ -246,17 +246,21 @@ const FIELDS = {
   myfont:   { to: 'netPrefsPut' },
   showScript: { to: 'netPrefsPut' },
   kbrom:    { to: 'netPrefsPut' },
-  /* AND THE FOUR NOTIFICATIONS (2026-09-22). 「それに加えて設定で個別通知の
+  /* AND THE NOTIFICATIONS (2026-09-22). 「それに加えて設定で個別通知の
      オンオフできるように。」 OWNER. Which kinds somebody wants told to them
      is theirs and follows them to the next phone; the PERMISSION, which is
      the handset's, is iOS's and is written down nowhere in this app --
      www/push.js says why a copy of it would be wrong. `absent` is ON, on
      both sides, so nothing is minted into setDefaults() and a phone that
-     has never opened the room has none of these four. */
+     has never opened the room has none of these. */
   push_follow: { to: 'netPrefsPut' },
   push_reply:  { to: 'netPrefsPut' },
   push_like:   { to: 'netPrefsPut' },
   push_boost:  { to: 'netPrefsPut' },
+  /* And the day's prompt (OWNER 2026-09-23). The kinds are push-send's
+     `PUSH`; tools/push-check.mjs holds `SET_PREFS` to it, and this table has
+     to name each field by hand because it reads `SET.x =` off the source. */
+  push_prompt: { to: 'netPrefsPut' },
   vvkb:     { phone: 'how much of THIS screen the phone\'s own keyboard covers. A measurement of one handset and meaningless on another' },
   wldMoved: { phone: 'the mark that 「what the language is for」 has been moved out of the settings and into the language. A migration mark' },
   /* `wsys` STOOD HERE AS A GAP AND IS GONE (2026-09-09). It was named rather

@@ -389,6 +389,7 @@ defLang('en', (function(){
       'push.reply'            : "Replies",
       'push.like'             : "Likes",
       'push.boost'            : "Reposts",
+      'push.prompt'           : "Today’s prompt",
       'push.off'              : "Notifications are off in iPhone Settings",
       'push.no'               : "Settings would not open",
       'notif.pick'            : "Worth reading",

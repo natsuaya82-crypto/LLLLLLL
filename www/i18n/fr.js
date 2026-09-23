@@ -534,6 +534,7 @@ defLang('fr', (function(){
       'push.reply'            : "Réponses",
       'push.like'             : "J’aime",
       'push.boost'            : "Republications",
+      'push.prompt'           : "Sujet du jour",
       'push.off'              : "Les notifications sont désactivées dans les Réglages de l’iPhone",
       'push.no'               : "Impossible d’ouvrir les Réglages",
       'notif.pick'            : "À lire",
