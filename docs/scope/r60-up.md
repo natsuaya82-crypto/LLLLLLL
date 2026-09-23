@@ -148,7 +148,12 @@ r46 は CLAUDE.md ルール 22 の「syMerge は今も木に立っている（�
 消したものは `was` と比べる）は変えていない。
 
 ### その他の見つけたこと
-- `acct-check` 60 は土台（integ-0905）でも赤（私の変更と無関係、測った）。
+- `acct-check` 60 は取り込む前の土台（integ-0905 ecf88d0f）でも赤だった（私の変更と無関係、
+  測った）。c2aff7b1 を取り込んだ木では緑。
+- 押下の中で起きる派生の変更は、その押下に乗って上がる: 人が言語を切り替えると `langOpen` →
+  `langSaveAll` が id の無い古い板に id を振り（`kbIded`）、`kb` の slice が一度上がる（r63-audit
+  0-2）。答えの中ではないので「人の書き込み」と数えている。一度きりで、写しが勝つ話ではない。
+- r63-audit L2（`netPrefsPull()` がサインインで走らない）は A2 と同じ面で、この指示には無い。
 - `www/settings.js` 868 行の `avSent:''` ── r61 のファイル。害は無い（`meFrom` が読み捨てる）
   が、もう無い欄の名前。
 - 画面の編集ボタンの多く（words・notes・keyboard・phases・sound・home）は `langLocked()` で
