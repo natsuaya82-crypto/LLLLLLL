@@ -2182,7 +2182,7 @@ const R = await pg.evaluate(async () => {
     localStorage.setItem('lingua.me.d46b', '{"name":"B"}');
     localStorage.setItem('lingua.posts.d46b', '[{"id":"pb"}]');
   }catch(e){}
-  SET.theme = 'dark'; SET.ui = 'ja'; SET.wldMoved = true; save();
+  SET.theme = 'dark'; SET.ui = 'ja'; SET.doneMoved = 1; save();
   var wasConfirm = window.confirm; window.confirm = function(){ return true; };
   try{ wipeHere(); }catch(e){ no('46: 削除が投げた ── ' + e.message); }
   window.confirm = wasConfirm;
@@ -2196,8 +2196,11 @@ const R = await pg.evaluate(async () => {
   /* テーマと表示言語はアカウントのものになりました（2026-09-09、
      www/core.js § SET_PREFS）。だから消したアカウントと一緒に落ちるのが
      正しい ── ここで見るのは、**この端末の設え**として残るもののほうです。
-     `wldMoved` は移行の印で、どのアカウントのものでもありません。 */
-  if (SET.wldMoved !== true) no('46: この端末の移行の印まで消した');
+     `doneMoved` は移行の印で、印を付けた物（`walked`）がこの端末のものなので、
+     印もこの端末のもの。`wldMoved` はそうではありません ── 移す物
+     （`SET.world`）がアカウントのものなので、印もアカウントのもの（64 番、
+     r73 § 2-7）。 */
+  if (SET.doneMoved !== 1) no('46: この端末の移行の印まで消した');
   if (planKnown()) no('46: 消したアカウントの段が残っている — ' + plan());
   say('46: アカウント削除は、そのアカウントの言語・単語・投稿・段だけ ── '
     + '別のアカウントのものは一つも動かず、端末の設えも残る');
@@ -2545,13 +2548,13 @@ const R = await pg.evaluate(async () => {
   delete SET.__later57;
   /* そして逆向き ── **この端末の**設えは、誰が来ても動かない。テーマと
      表示言語は 2026-09-09 からアカウントのものなので、ここではない
-     （64 番がそちらを持っています）。残っているのは移行の印とこの画面の
-     測りだけです。 */
-  SET.wldMoved = true; SET.vvkb = 260; save();
+     （64 番がそちらを持っています）。残っているのはこの端末の物の移行の印
+     （`doneMoved`）とこの画面の測りです。 */
+  SET.doneMoved = 1; SET.vvkb = 260; save();
   netOut(); arrive(B);
-  if (SET.wldMoved !== true || SET.vvkb !== 260)
+  if (SET.doneMoved !== 1 || SET.vvkb !== 260)
     no('57: この端末の設え（移行の印・この画面の測り）が、人が変わって動いた ── ' +
-       SET.wldMoved + ' / ' + SET.vvkb);
+       SET.doneMoved + ' / ' + SET.vvkb);
   say('57: 一覧は数えていて並べていない ── 明日足す欄もその人のもの、端末の設えだけが残る');
 
   /* ---- 58. スタッフの @ を打って押すと、呼び出しが一回出る ---------------
@@ -3094,6 +3097,23 @@ const R = await pg.evaluate(async () => {
       if (SET.theme !== 'night')
         no('64: 後から押されたサーバーの値が、着いていない古い押しに負けた — ' + SET.theme);
       say('64: 設えは後から押したほうが残る ── 押した時刻が出て行き、答えと降りてきた値のうち後のものが画面に来る');
+    }
+    /* AND A MIGRATION'S MARK IS WHOEVER OWNS WHAT IT MARKS (r73 § 2-7).
+       `wldMoved` says SET.world has been moved into the language, and
+       SET.world is the account's -- so the mark is parked with it. As the
+       handset's it stayed behind for the next account, whose own `world`
+       was then never moved. */
+    {
+      SET.wldMoved = 1; setKeep();
+      setFor('uB-wld');
+      const other = SET.wldMoved;
+      setFor(A);
+      if (other)
+        no('64: 前のアカウントの「移した」印が、次に入った人にも立っている ── ' +
+           'その人の SET.world は言語へ移されない');
+      if (!SET.wldMoved)
+        no('64: 戻ってきた人の「移した」印が消えた');
+      say('64: 移行の印は、移した物と同じくアカウントの物 ── 別の人には立たず、戻れば戻る');
     }
     netSend = realSend64; netGet = realGet64;
     SET.theme = 'system'; SET.ui = 'en'; setKeep();

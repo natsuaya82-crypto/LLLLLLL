@@ -1392,8 +1392,9 @@ var ACCT_DISK=String(SET.acct||'');
    field stays exactly where it was (a migration copies and never removes what
    it read, CLAUDE.md § Data; it used to `delete SET.done`, r69-misc 申し送り 2).
    Nothing reads `done` any more, so leaving it costs nothing; what said 「this
-   has been moved」 was its absence, and that is `doneMoved` now, a mark of
-   this handset's beside `wldMoved` (§ SET_PHONE). A phone that has never had the
+   has been moved」 was its absence, and that is `doneMoved` now -- a mark of
+   this handset's, because what it marks (`walked`) is this handset's
+   (§ SET_PHONE). A mark belongs to whoever owns what it marks. A phone that has never had the
    old field is untouched: absent is not false, it is 「there was nothing to
    move」, and setDefaults() answers for a fresh install.
 
@@ -2279,8 +2280,9 @@ var SET_PREFS=['theme','ui','myfont','showScript','kbrom',
    `acct` says which account's things are live here -- the settings that
    setFor() parks and hands back. It was `planUid`, because the plan copy sat
    beside them; the plan is not on this handset any more (§ PLAN) and the
-   field is named for the one thing it still says. `wldMoved` is a
-   migration mark; `vvkb` is a MEASUREMENT of this screen and is meaningless
+   field is named for the one thing it still says. `doneMoved` is a
+   migration mark of a field that was this handset's; `vvkb` is a MEASUREMENT
+   of this screen and is meaningless
    on another phone. `done` and `obback` are the onboarding's, and they are
    here under protest -- 「セッションが無い」 cannot tell a phone out of the box
    from one somebody signed out of, and after an account is deleted there is no
@@ -2302,7 +2304,7 @@ var SET_PREFS=['theme','ui','myfont','showScript','kbrom',
    `order`, `read`, `voice` and `script` are NOT settled: they are the
    language-making side's, and moving them is a different question from this
    one. docs/BACKLOG.md. `planV` was here and is gone with the plan. */
-var SET_PHONE=['acct','walked','obback','vvkb','wldMoved','doneMoved',
+var SET_PHONE=['acct','walked','obback','vvkb','doneMoved',
                'order','read','voice','script'];
 /* `SET_PLAN` STOOD HERE AND IS GONE (2026-09-11). It named `plan` and
    `planWas` -- the copy of the server's last answer about this account, and
