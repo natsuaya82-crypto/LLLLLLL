@@ -56,7 +56,7 @@ r44 自身が一度そこに落ちた：`git stash` の往復で削除が index 
 2. `tools/fixture.mjs:2877`、`PW.vo = {b64:'AA', mime:'audio/mp4', ms:7000}`。
    `www/rec.js` § voTook は「no base64 is held anywhere after this function
    returns」と書いていて、**この面はアプリがもう取れない状態を歩いています**
-   ── `wdMode` と同じ形（CLAUDE.md 規則 5）。直すと `press` と `act` の数が
+   ── ~~`wdMode`~~ と同じ形（CLAUDE.md 規則 5）。直すと `press` と `act` の数が
    動くので、数を動かす commit を単独で立てる話です。
 
 どちらも赤を出していないので、今日の枝では触っていません。
@@ -208,7 +208,7 @@ DECIDE」と書いています。扉で印が付くようになった（2026-09-
 「アップデートするたびにキーボード増殖してる」OWNER 2026-09-07（実機、142）が
 その claim の由来なので、これは実機で見える形です。**キーボードの板をまとめる
 道**（`r10-kb`「まとめるのは id の無い古い板だけ」）と**起動の道を一本にした
-変更**（`r10-dl`「`netLangBack` を消し、`netLangsWalk` だけが行を作る」）の
+変更**（`r10-dl`「~~`netLangBack`~~ を消し、`netLangsWalk` だけが行を作る」）の
 どちらか、あるいは二つが合わさったところです。どちらもこの枝の持ち物では
 ないので触っていません。**リーダーへ。**
 
@@ -342,7 +342,7 @@ App ID の Push capability・APNs キー .p8・Function の secrets・SQL の流
 検索の箱と検索履歴の行は、読む人の表示言語で出るようになりました（2026-09-09
 の決定 6、`docs/CHANGELOG.md`）。同じ形が二箇所残っています ── 絞り込みの
 画面で星をつけた検索の行（`vFilter`、`www/sns.js`）と、タイムラインの角に出る
-いま効いている絞り込みの札（`snsFilName`）。どちらも `esc(q)` で、お題の札を
+いま効いている絞り込みの札（~~`snsFilName`~~）。どちらも `esc(q)` で、お題の札を
 星につけた人には `#今日のお題` の綴りが出ます。
 
 直すなら一語ずつ（`esc(dayTagShow(q))`）ですが、オーナーが名指ししたのは
@@ -355,7 +355,7 @@ move ── 頼まれていないものは作りません。
 書くのは `planGot()` 一つで、そこへ届くのは `netPlanVerify()` が Apple の署名
 した取引を送って `verify-plan` が答えた段（`planTook()`）だけです。セッションが
 去れば `PLAN` も去るので、次のアカウントは「まだ誰も訊いていない」から始まり、
-前の人の段を持って入ることはありません。`SET.plan` と改名の移行は 2026-09-11
+前の人の段を持って入ることはありません。~~`SET.plan`~~ と改名の移行は 2026-09-11
 （`f2d231ed`）に消えました。
 
 ## `NET_STAFF` を読んで描くものが一つも無い ── 通報に辿り着けるのは @lingua だけ（2026-09-08）
@@ -609,7 +609,7 @@ Plus の人が用紙を使えるようになった日です。
 2026-09-03。アカウント削除は、いままで Documents の三つのフォルダを全部空に
 していました ── バックアップ、録音、書き出したシート。それが**別のアカウントの
 バックアップまで消していた**ので、バックアップは「消す言語のものだけ」に
-変えました（`bkDropFor` / `dropSome`）。
+変えました（~~`bkDropFor`~~ / ~~`dropSome`~~）。
 
 録音と書き出したシートは、そう変えられません。**ファイル名にアカウントも言語も
 入っていない**からです。全部消せば、また他人のファイルを消します。だから今は
@@ -763,15 +763,15 @@ repo には `supabase/config.toml` がなく、テンプレートを置く場所
 
 Supabase には認証メールの送信そのものを自分の関数に渡す仕組みがあるはずで、
 それを使えば**本文が `supabase/functions/` に入り、テンプレートは無関係になります。**
-前例はこの repo に二つあります ── `daily-prompt` と `appstore` は、どちらも
+前例はこの repo にあります ── `daily-prompt` と `verify-plan` は、どちらも
 「鍵が端末に置けないから関数にした」という同じ理由で立っています。
 
 **書いていません。確かめられないからです。**
 
 - このセッションからは Supabase にも Supabase のドキュメントにも手が届きません
   （プロキシが方針で `CONNECT` を 403 にします）
-- `docs/FEATURES.md` § 8 が `appstore` について書いた一文がそのまま当てはまります
-  ── **「Check before building. Do not guess.」**。`appstore` はそれに従って
+- 関数を足すときの一文がそのまま当てはまります
+  ── **「Check before building. Do not guess.」**。`verify-plan` はそれに従って
   先に Apple の API の形を確かめてから書かれました
 
 ### 作る前に確かめること
@@ -1033,38 +1033,14 @@ Capacitor 8 の実物の Swift を読んで確かめました
 **公開済み**です（OWNER 2026-09-06「1あるやん」）。アプリ側の `DOC_TERMS` /
 `DOC_PRIVACY` はそこを指しています。
 
-### 3. ログアウト中はそこに行けない ← 2026-08-26 に入れた退行
+### ~~3. ログアウト中はそこに行けない~~ — 片付いた
 
-`docRows()` を呼ぶのは**一箇所だけ**（`settings.js:292`、アカウントの部屋の一番下）。
-そのすぐ上のコメントはこう書いています:
-
-> Under both faces of the room, because somebody who has never signed in has to
-> be able to read them too.
-
-**アカウントの部屋のサインアウト側の顔が、読める道でした。**
-同じ日に入った「ログアウト中は扉だけ」（`appIs()` in `www/shell.js`）が塞ぎました。
-`act-check` の主張がそのまま証拠です ── `signed out: 38 routes asked, every one of
-them the door`。`set` も扉になります。
-
-**扉には二本とも一行もありません**（`www/onboard.js` に `DOC_` は一つも無い）。
-`?` のヘルプも持っていません。つまり **アカウントを作る人は、同意する相手の文面を
-読めません。**
-
-**決まりました。退行ではなく仕様です。** OWNER 2026-08-26:
-「ログアウト中は見れなくていいでしょ？ログインしたら設定から見れるし」
-
-**直すものはありません。** 扉に二本を足すことも、`appIs()` に例外を作ることも
-しません。読める道は設定 → アカウントの一番下、一箇所だけ。
-決定ログは docs/FEATURE_RULES.md。
-
-`www/settings.js` に立っていた「Under both faces of the room, because somebody
-who has never signed in has to be able to read them too」の二箇所は、この決定で
-嘘になったので消しました ── CLAUDE.md「決定が規則を置き換えたら、同じコミットで
-規則を直せ。直すとは消すこと」。
+規約とプライバシーポリシーは登録の面に出る（`docRows()`、`www/onboard.js`）──
+「続けるとの説明は ok」OWNER 2026-09-02。決定ログ「特定商取引法の表記は出さない」。
 
 ### 4. 特定商取引法に基づく表記 ── **出さない**（OWNER 2026-08-26）
 
-`www/` `docs/` `supabase/` `ios/` を全部見て、`特定商取引` `特商` `tokushoho` は
+`www/` `docs/` `supabase/` `ios/` を全部見て、「特定商取引」「特商」「tokushoho」は
 一件も出ません。アプリが持っている外部文書は `DOC_TERMS` と `DOC_PRIVACY` の
 **二本だけ**です。`docs/apple.md` にも EULA・販売者・返金の節はありません。
 
@@ -1300,7 +1276,7 @@ things on the same day; it says this one in both places now.
 (1 / 4 / Infinity), `kbCount()` in `www/keyboard.js` summing across `LANGS`,
 `kbRoomKb()` adding the QWERTY as the 1 in 1 + 3, and `CAN.kb` moved to `plus`
 **in the same commit** — a door opened without its number would have given
-Plus the three `KB_MAX` handed out. `KB_MAX` is gone.
+Plus the three ~~`KB_MAX`~~ handed out. ~~`KB_MAX`~~ is gone.
 
 It was deferred here because `www/keyboard.js` was `claude/detailed-tasks-
 execution`'s. That branch has not touched the file since 2026-08-15 and no
@@ -1358,7 +1334,7 @@ and came back down, and there the answer is the one that is already law: fewer
 buttons, never fewer words.
 
 **What this unblocks, and what it costs.** `CAN.kb` moves from `'pro'` to
-`'plus'`; `KB_MAX` stops being a per-language 3 and becomes a per-plan pool (4,
+`'plus'`; ~~`KB_MAX`~~ stops being a per-language 3 and becomes a per-plan pool (4,
 then no ceiling); `edit` and `badge` join `CAN`; and a language ceiling appears
 **where none exists at all today** — anybody may make any number of languages
 right now. That last one is the app TAKING SOMETHING AWAY, so it is a
@@ -1384,9 +1360,9 @@ Four against one, and no ceiling against three. `CLAUDE.md` says an owner
 decision is a specification and that a session may not resolve a conflict
 between two of them, so **`can('kb')` has been left where it was — `plus`**.
 Moving it down to `basic` without the number would have given Basic the three
-that `KB_MAX` hands out today, which is neither answer.
+that ~~`KB_MAX`~~ handed out, which is neither answer.
 
-What is waiting on it: `KB_MAX` in `www/keyboard.js` (a per-language constant
+What was waiting on it: ~~`KB_MAX`~~ in `www/keyboard.js` (a per-language constant
 today, a per-plan number either way, and a pool across languages if the
 earlier decision stands), and the language ceiling, which does not exist at
 all yet.
@@ -1482,7 +1458,7 @@ state wears would be reported as dead.
 
 **202 classes were styled and worn by nothing** on the day it was written, and
 they are frozen in `tools/css-baseline.txt` as a ratchet: a new one fails,
-taking a line out needs nobody. `a.set` and `.weave` are both on it.
+taking a line out needs nobody. `a.set` is on it; ~~`.weave`~~ has gone.
 
 **The check says "nothing here wore it", not "it is dead", and the difference
 is the whole design.** A class worn only in a state the walk never reaches — an
@@ -1625,7 +1601,7 @@ from the first.** `postAvatar()` answers the photograph if there is one and
 otherwise the FIRST drawn letter, so it does not move when a letter is drawn
 — it moves when the first one is redrawn, or a photograph is set. Twice in a
 language's life. There was no frequency to decide: **send it when it differs**
-was always the whole answer, and `ME.avSent` makes the comparison local, so a
+was always the whole answer, and ~~`ME.avSent`~~ makes the comparison local, so a
 launch where nothing moved asks the server nothing.
 
 The server was already ready and nobody had noticed: `schema.sql`'s
@@ -1655,7 +1631,7 @@ bisected against instead of one.
   their own empty state. Changes what is on screen, so it needs a screenshot
   and an approval, not a quiet commit.
 
-- ~~**`talk.js` / `grammar.js` shared logic.**~~ Moot: `talk.js` went out with
+- ~~**`talk.js` / `grammar.js` shared logic.**~~ Moot: ~~`talk.js`~~ went out with
   Studio. If the conversation comes back with the hosted model, so does this
   question, and the answer it had still holds — only if the shared thing is
   genuinely one rule, and not everything that repeats is duplication.
@@ -1698,10 +1674,10 @@ got wrong about itself.*
   `nt*`. `openNote` and `vNotes` stayed; `open*` and `v*` are in CLAUDE.md.
 
 **`savePosts` and `saveMe` were listed here and should not have been.** The
-entry put them beside `postsRead` as if all three were a `posts*`/`post*`
+entry put them beside ~~`postsRead`~~ as if all three were a `posts*`/`post*`
 collision. They are not: they are `save*`, and `save*` is a family of exactly
 ten — `saveKb` `saveLetters` `saveMe` `saveNote` `saveNotes` `savePosts`
-`saveSnd` `saveStg` `saveWld` `saveWord` — every one of which names what it
+`saveSnd` `saveStg` `saveWld` ~~`saveWord`~~ — every one of which names what it
 saves. Renaming two of the ten would have left eight, which is the tangle
 rather than the untangling.
 
@@ -1833,7 +1809,7 @@ about — and is in the repo. It is not a check and is not in the gate.
 
 ```
   2211   引き継ぎに書かれていた数
-  2213   npm test の中（browser 検査 16 本、同時 4 本）
+  2213   npm test の中（browser の検査を同時 4 本）
   2212   npm run press 単体
 ```
 
@@ -2374,7 +2350,7 @@ is obvious — and it is also the door to making that word」。一語も無い�
   取り込み後          FAILED (3)  .abtline .abts .obws
 ```
 
-差の二件は `leader-integration` が先に直したもの（`.sth` の削除と
+差の二件は `leader-integration` が先に直したもの（~~`.sth`~~ の削除と
 `.pwfield .lnin.dir-ttb-*` の padding）で、取り込んだあとも直ったまま。
 **三件は取り込む前から枝の上で赤かった。** `leader-integration` は
 `www/home.js` に一行も触っていない（`git diff --name-only master..HEAD --
@@ -2384,11 +2360,11 @@ www/home.js` が空）。
 
 | クラス | 今どうなっているか | どちら側か |
 |---|---|---|
-| `.obws` | `master` では `www/home.js` が着ていた。wiki の `home.js` 書き直しで着る者が消え、規則だけ残った | **画面が消えた側** ── 規則を消す |
-| `.abts` | 規則は `master` にもある。wiki が着る者を外し、今は `home.js:948` の**コメントの中にしか名前が無い** | 同上。ただしコメントが「`.abts` は `<h2>`」と、もう本当でないことを言っている |
-| `.abtline` | wiki が新しく足した規則。`home.js:1123` の `<div class="abtl abtline">` が**着ている** | **種を足す側** ── 段が一つでも `stIsDone` な状態に歩きが届いていない |
+| ~~`.obws`~~ | `master` では `www/home.js` が着ていた。wiki の `home.js` 書き直しで着る者が消え、規則だけ残った | **画面が消えた側** ── 規則を消す |
+| ~~`.abts`~~ | 規則は `master` にもある。wiki が着る者を外し、今は `home.js:948` の**コメントの中にしか名前が無い** | 同上。ただしコメントが「~~`.abts`~~ は `<h2>`」と、もう本当でないことを言っている |
+| ~~`.abtline`~~ | wiki が新しく足した規則。`home.js:1123` の `<div class="abtl abtline">` が**着ている** | **種を足す側** ── 段が一つでも `stIsDone` な状態に歩きが届いていない |
 
-`.abts` のコメントは CLAUDE.md の「a comment saying 'this is the one place'
+~~`.abts`~~ のコメントは CLAUDE.md の「a comment saying 'this is the one place'
 is worth nothing on its own」に当たる。**着る者が消えたのに、着ていると
 言っている行が残っている。**
 
@@ -2501,7 +2477,7 @@ adj  pst prs fut prg prf neg imp que cnd cau pas pl   (12)
 
 だから `g2FmsOf()` の問いも答えも、それ自体は筋が通っている。おかしいのは
 `FM_INF` が品詞と無関係な十二の平らな並びであることで、これはこのセッションより
-ずっと古い。同じ日に閉じた `vFmrFm` も、形容詞を選んだあと同じ二十四を
+ずっと古い。同じ日に閉じた ~~`vFmrFm`~~ も、形容詞を選んだあと同じ二十四を
 出していた。
 
 **なぜ今日直さないか。** 「形容詞はどの形を取りうるか」は言語についての判断で
@@ -2772,7 +2748,7 @@ throw しない**。`post(id)` を参照する表も三つあり（`quote` `reac
 
 - **`bootSession()`（`www/boot.js`）から下書きを取りに行っていない。**
   あのファイルは `claude/draft` の持ち物ではないので、今は「下書きの画面を
-  開いたとき」に取りに行く（`draftsPullOnce`、uid ごとに一度）。起動時に
+  開いたとき」に取りに行く（`draftsPull()`、`www/post.js`。~~`draftsPullOnce`~~ の二つ目の道は消えた）。起動時に
   欲しいなら `www/boot.js` を持っている人が一行足す。
 - **打鍵中の自動保存は無い。** リーダーは「打つ手が止まって数秒後」と言ったが、
   **composer で書いている間は下書きがまだ存在しない** ── 今のアプリで下書きが
@@ -2786,13 +2762,13 @@ throw しない**。`post(id)` を参照する表も三つあり（`quote` `reac
 - `tokinets.com/lingua/privacy.html` は、これで書ける。
 
 
-## 「端末のデータを消す」を押さえる検査がありません
+## ~~「端末のデータを消す」を押さえる検査がありません~~ — 行が 2026-09-03 に「この言語を削除」に変わり、`del-check` が削除のボタン全部を持つ
 
 **2026-08-28、`claude/acct2`。** `wipeLangs()`（`www/settings.js`）を足しました
 が、押さえるものがありません。`docs/TESTING.md` は削除に回帰テストを要ると
 言っています。`tools/` はこのセッションの持ち物ではないので書けませんでした。
 
-主張すべきこと（`tools/backup-check.mjs` の隣か、`del-check` として）:
+主張すべきこと（今は `del-check` が持つ）:
 
 ```
   開いていない二つ目の言語の lingua.<id>.<slice> も消えること
@@ -2868,7 +2844,7 @@ throw しない**。`post(id)` を参照する表も三つあり（`quote` `reac
 ## `dead-check` は「返した object のプロパティ」を見ていません ── 誰も確かめていない
 
 **2026-08-28、`claude/tail`。**「読みの表示」の部屋が消えて `www/reading.js` の
-五つ（`capFirst` `readSeq` `rd` `readMode` `approx`）が浮いたのを消したときに
+五つ（~~`capFirst` `readSeq` `rd` `readMode` `approx`~~）が浮いたのを消したときに
 分かったことです。**何も直していません。**
 
 `www/i18n/*.js` の十ファイルは、それぞれ最後に object を `return` します。

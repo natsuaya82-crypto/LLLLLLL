@@ -21,7 +21,7 @@ OWNER 2026-09-06。「だから端末でやるわけねえだろ」OWNER 2026-09
 
 端末には段を決める判定が一つも残っていない ── `LinguaStore.swift` の ~~`best()`~~、
 ~~`entitledPlan()`~~、~~`writeDown()`~~ は消えた。`www/` から `plan` 表を触る道も無い
-（`netPlanUp`、`netPlanSync` は削除）。
+（`netPlanUp`、~~`netPlanSync`~~ は削除）。
 
 ## プランは絶対におかしくしてはいけない
 
@@ -53,7 +53,7 @@ OWNER 2026-09-06。「だから端末でやるわけねえだろ」OWNER 2026-09
 決まってるんだから端末でやることねえ」「段 ── 答えは全部サーバー」 OWNER
 2026-09-11（`docs/FEATURE_RULES.md` § 端末は何も決めない）。
 
-`SET.plan` `SET.planWas` `SET.planV` `SET.planUid` の四つが `lingua.set` から
+~~`SET.plan`~~ ~~`SET.planWas`~~ ~~`SET.planV`~~ ~~`SET.planUid`~~ の四つが `lingua.set` から
 消え、Keychain は `www/` から読まれなくなった。段は `verify-plan` の答えで、
 **メモリに一つ**（`PLAN`、`www/core.js`）。起動（`storeSync()`）と扉
 （`netTook()` が同じ `storeSync()` を呼ぶ）で訊き、セッションが行けば忘れる。
@@ -75,7 +75,7 @@ OWNER 2026-09-06。「だから端末でやるわけねえだろ」OWNER 2026-09
 
 **「プランが終了しました」はサーバーの答えで出る ── 起動のポップで一度。**
 「オンラインで出してね流石に」「4 起動の時に表示して ☑️今後表示しない 閉じる
-みたいなポップにしたくない？」OWNER 2026-09-12。~~`capLapse()`~~ は `SET.planWas`
+みたいなポップにしたくない？」OWNER 2026-09-12。~~`capLapse()`~~ は ~~`SET.planWas`~~
 （端末の語）と比べていたので、語と一緒に消えました ── 端末の一語で「見せる／
 見せない」を決める行です。今は `plan` 表の二列が答えます：`was`（下がる前の段。
 下がった時だけ入る）と `lapse_seen_at`（本人が「今後表示しない」と言った時刻。
@@ -190,8 +190,9 @@ Forbidden, without exception:
 
 **"The plan is unknown" and "this person has no data" are not the same thing
 and must never share a branch.** A failed entitlement check means *fewer
-buttons*, never *fewer words*. If the check fails, fail toward the free plan
-and leave every byte where it is.
+buttons*, never *fewer words*. A check that has not answered is not the free
+plan either — `planKnown()` is false, a ceiling says 「接続できません」, and
+every byte stays where it is (§ 三つ目の状態 above, 2026-09-11).
 
 **The buttons half was turned over by the owner on 2026-08-25, and the words
 half was not.** 「だいたい無料で使えないやつは表示させていいよ。課金させる
@@ -212,11 +213,6 @@ covered by this, and the reason is written on the function: it stopped doing
 them. That is a *metered* ceiling arrived at by accident; this decision is
 about a door pressed on purpose. The decision log says to ask the owner if that
 reading is wrong.
-
-This is already how it is built and it is worth saying why: the backup list
-sits **above** the lock in the settings, not behind it, because charging for
-not losing somebody's work means answering, on the day it is lost, whether they
-had paid.
 
 ## How it is asked
 
@@ -259,7 +255,7 @@ ceiling at all". Everything that shows or enforces the ceiling asks
 
 **The middle rung is on sale.** Its two prices are in all ten `www/i18n`
 files (`plan.price.plus`, `plan.price.plus.yr`), its two products are named in
-`docs/apple.md` § 4 and in `LinguaStore.plans`, and `PLANS` in `www/core.js`
+`docs/apple.md` § 4 and in `LinguaStore.ids`, and `PLANS` in `www/core.js`
 carries the card. The plans screen sells all three rungs.
 
 What is typed in `www/i18n` is the FALLBACK and only the fallback: `storeCost()`
@@ -271,7 +267,7 @@ between the prices and the button that buys.
 **`kb` is Plus's, and its number landed in the same commit** — 2026-08-23.
 「1,1+3.無制限って言わなかったっけ？」 Free 1, Plus 1 + 3 = 4, Pro no ceiling,
 and **counted as a pool across languages** rather than per language: three
-languages were nine keyboards while `KB_MAX` was three per language, on a plan
+languages were nine keyboards while ~~`KB_MAX`~~ was three per language, on a plan
 that sells three.
 
 **`dl` is Plus's, and its numbers are the owner's of 2026-09-02.**
@@ -418,7 +414,7 @@ stops answering is a person who can still look at their language.
 reason: a constant was one fact while there was one paid tier and is three
 facts now. `kbCount()` in `keyboard.js` is what it is compared against, and it
 reads every language rather than the open one. **The door and its number are
-one statement and did not land apart**: opening `can('kb')` while `KB_MAX`
+one statement and did not land apart**: opening `can('kb')` while ~~`KB_MAX`~~
 still handed out three would have given Plus a number the owner never said.
 `plan-check` holds all seven claims, and three of them were watched failing
 with the bug put back.
@@ -578,7 +574,7 @@ for a month and then never again. 「a にしたら最初の1ヶ月で作りき�
 
 There used to be a fourth plan, Studio, and it sold the hosted model — the
 conversation, and word suggestions with no daily limit. There is no hosted
-model: `AI_SEAM` in `www/glyph.js` marks where one would join and nothing joins
+model: the comment AI_SEAM in `www/glyph.js` marks where one would join and nothing joins
 it. A tier whose headline is a thing the app cannot do is the app lying to
 somebody who is about to pay, so Studio is out until the seam has something
 behind it, and what it opened went with it.
@@ -630,8 +626,8 @@ Four places say it and they say four different things: `ltStart` in
 
 Four different situations with four different right answers. Written as one
 condition — `if (!paid) { … }` — they become one wrong answer, and the wrong
-answer is the one that costs somebody their language. The first means *try
-again later, free plan for now, touch nothing*. The third is a new install.
+answer is the one that costs somebody their language. The first means *not
+known yet — not free, 「接続できません」, touch nothing*. The third is a new install.
 The fourth is what a restore is for.
 
 ## What has to be on the screen a price is on
@@ -717,7 +713,8 @@ Data:            what is stored, and where
 Downgrade:       what happens when the plan ends
                  — and the answer to "is any data removed?" is NO
 Check fails:     what happens when the plan cannot be determined
-                 — and the answer is: free plan, all data intact
+                 — and the answer is: not known, which is not free;
+                   「接続できません」, all data intact
 Offline:         what happens with no network
 ```
 
@@ -748,13 +745,13 @@ alone. What it cannot ask is what happens to somebody's WORDS when the answer
 changes, and that is this: five hundred words made on the paid plan, the plan
 ended, and then the list is a hundred while the language is still five hundred
 and **not one byte of any slice has moved**. Also that no plan at all reads as
-free; that any plan which is not the word `plus` buys nothing (`garbage`,
-`PLUS`, `studio`); that a backup written on the free plan holds every slice the
-paid one does; that the ceiling refuses without taking the screen off anybody;
-that **a launch holds no plan at all** until `verify-plan` answers, whatever
-the Keychain says and whatever an old `lingua.set` holds, and writes nothing
-back; that no field of the settings is about money; and that **「プランが終了
-しました」 is not said**, because the `plan` table carries no previous plan.
+free; that any plan which is not the word `plus` buys nothing (`'garbage'`,
+`'PLUS'`, `'studio'`); that the ceiling refuses without taking the screen off
+anybody; that **a launch holds no plan at all** until `verify-plan` answers,
+whatever an old `lingua.set` holds, and writes nothing back; that no field of
+the settings is about money; and that **「プランが終了しました」 is the
+server's answer** — `plan.was` and `plan.lapse_seen_at`, handed to
+`capLapseSaw()` — and never a word this phone kept.
 
 Six of those were watched failing, with three real bugs put back: a list that
 trims the thing it is listing, a slice quietly left out of a free plan's
@@ -779,7 +776,7 @@ The four subscriptions are configured in App Store Connect and are described in
 `docs/apple.md` § 4.
 
 **WHERE THE PLAN IS KEPT IS MEMORY, AND THERE IS NO SECOND PLACE** (2026-09-11).
-There were three. `SET.plan` in the settings file; the iOS Keychain, which
+There were three. ~~`SET.plan`~~ in the settings file; the iOS Keychain, which
 `setOnDisk()` kept the settings out of because that file is in the backup a PC
 makes; and the PARKED settings, `lingua.set.<uid>`, written from `SET` directly
 and past the line that kept the plan out of the file. Whichever ran last
@@ -792,20 +789,12 @@ it, and nothing else assigns it. The Swift that read the Keychain is deleted
 `plan-check` holds all of it, and `store-check` holds the
 other half: no field of `lingua.set` is about money.
 
-## Not built yet
+## What CAN is not
 
-**The receipt is not verified anywhere.** The plan reaches the account — the
-`plan` table — but what it carries is what the phone said, and a jailbroken
-phone can say anything. Nothing asks Apple. `CAN` is which buttons to show;
-**it is not a security check and must never be relied on as one.**
-`docs/FEATURES.md` § 1 has what is left.
-
-**The plans screen does not say what plan is running, or until when.** The buy
-button is correctly not drawn for the rung in force or one below it
-(`plHave()`, 2026-09-03), and what should stand where it was has not been
-written. `claude/plannow` has it.
-
-When receipts do arrive, the rule above is the first thing to hold: a receipt
-that fails to validate, a network that is down, a sandbox that answers wrong —
-each of those makes the app the free plan for the moment, and none of them
-touches a single slice.
+`CAN` is which buttons to show; **it is not a security check and must never be
+relied on as one.** What an account may do on the server is `supabase/schema.sql`
+and `verify-plan`, which checks Apple's signature on the receipt and binds it to
+the account (`docs/FEATURES.md` § 1). The plans screen says which plan is running
+and until when where the buy button is not drawn (`plNow()`, `www/settings.js`).
+A receipt that fails to validate, a network that is down, a sandbox that answers
+wrong — none of them touches a single slice.

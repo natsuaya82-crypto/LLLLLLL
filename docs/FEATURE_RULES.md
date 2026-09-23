@@ -43,7 +43,7 @@ history or an export means something because of the state at the time it was
 made, that state goes ON it when it is made. Not an id pointing at the current
 object — the value.
 
-**An id is not the data.** `post.letterId` → look up `LETTERS` → get the shape
+**An id is not the data.** ~~`post.letterId`~~ → look up `LETTERS` → get the shape
 is banned for anything past-tense, because `LETTERS` is now and the post is
 then. `post.ink` is the shape itself, which is why it survives the letter being
 redrawn, deleted or never having existed on this phone at all.
@@ -61,7 +61,7 @@ the one place that governs it was not.
 
 **A comment saying "this is the one place" is worth nothing on its own.**
 Whoever reads it will fix that one and go home. Either a check holds the claim,
-or do not make the claim. `ltFace` opened with "a letter's face, wherever one
+or do not make the claim. ~~`ltFace`~~ opened with "a letter's face, wherever one
 is shown" and there were five others; `inkStrokes` said it was "the one place
 that turns strokes into a shape" and the glyph editor did not go through it.
 
@@ -216,11 +216,17 @@ it. **The newest thing the owner said is the specification.** Older written
 decisions are the record of what it replaced, not a second opinion to weigh
 against it.
 
-Marking and fixing happen in the **same commit** as the new decision. The old
-entry in the log below keeps its words and gains a superseded line — that log
-is a record of what was decided when. **The rules are the opposite: they are
-fixed, and fixing means deleting.** A rule left standing is read, and a rule
-that is read is obeyed.
+Marking and fixing happen in the **same commit** as the new decision. An
+entry of the log below that a later one replaces WHOLE keeps its heading,
+opened with 【差し替え済み YYYY-MM-DD】, and ONE line naming what replaced it
+(`- 差し替えた決定: 「<heading>」（date）`) — and nothing else:
+「印を付けて本文を残すのも残したことになる。消す。」 OWNER 2026-09-03 (the
+entry 「古い規則は残さない」 below). One replaced IN PART loses the part, and
+says in one line which part went and what replaced it. What was decided on the
+day is in git and in `docs/CHANGELOG.md`, which is never rewritten. **The rules
+are fixed the same way: fixing means deleting.** A rule left standing is read,
+and a rule that is read is obeyed. `docs-check` holds the whole-entry half: a
+【差し替え済み】 heading with more than its one line under it fails.
 
 And the other direction, which is the same rule: **a decision once made is not
 re-opened by a later session because a different shape seems more natural.** If
@@ -258,6 +264,24 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Affected data: 無し（読む時が変わるだけ。保存する物は変えない）
 - Affected docs: CLAUDE.md（直す session が一文を足す）
 - Implementation status: 未実装。2026-09-23 夜に測った起動時の読み込みは 22 本（リーダー、偽のサーバーで）。
+### 2026-09-23 一行を描く仕組みを一つにする ── 入力欄も投稿も同じ仕組みで描く
+- Date: 2026-09-23
+- Area: 言語の一行を描く所（`inkChar()` `inkFaces()` `inkAdv()` `www/glyph.js`、`postRuns()` `www/post.js`、`.pline, .pwfield #pw-ln` `www/index.html`）
+- Decision:「一行を描く仕組みが二つある件。…入力欄では単語の間が全角分あくのに、投稿すると普通の間隔になる。
+  入力欄で改行しても、タイムラインでは消える。…一行を描く仕組みを一つにして、入力欄も投稿もそれで描くように
+  書き直す。書いている時の見た目が、そのまま投稿の見た目になること。字間の設定も同じ話なので一緒に見てほしい。」
+  - 一行は `LinguaType` の字で、ブラウザが並べる。形は `inkChar()`（一つの形と字間 → 一字）、カードは canvas
+    なので `inkAdv()`。どちらも同じ `reach()` の物差し。
+  - 空白と改行が何かを言うのは `postRuns()` 一か所。
+- Reason: 書いている時の見た目と投稿の見た目が違った（字の大きさ 0.79em と 1.0em、改行が消える）。
+- Affected features: 投稿欄、タイムラインの行、引用、字間の見本、暦
+- Affected data: 無し
+- Affected docs: `CLAUDE.md` 規則 8（原文はそこにあった。決定ログに無かったのを r76-lines が足した）
+- Implementation status: 投稿欄とタイムラインは IMPLEMENTED（`line-check`）。**範囲がまだ決まっていない物**
+  ── 例文・文法の行（`.sfont`、`sfontHTML()`）と、語をつづる欄（`.tfont` を `myFontOn()` で出し分ける三つ）が
+  この「一つ」に入るか ── は `docs/scope/r73-audit.md` §5-8・§5-14 でオーナーへ。写真の上の字・下書き一覧・
+  通知の行は r60 の持ち物で、直し方は `docs/scope/r76-lines.md`。
+
 ### 2026-09-23 自作文字で表示は、既定でオン
 - Date: 2026-09-23
 - Area: 語を自作文字で出すかどうか（`myFontWant()` `myFontOn()` `www/glyph.js`、書き字のページのスイッチ `www/sound.js`、`obDone()` `www/onboard.js`）
@@ -321,7 +345,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Affected features: 辞書、単語のページ、文法の章、暦、投稿の一行以外で語を出す所
 - Affected data: 無し
 - Affected docs: 無し
-- Implementation status: IMPLEMENTED ── 今のコードがすでにこの振る舞い（r61 が測った、`docs/scope/r61-face.md`「決めていないこと」）。
+- Implementation status: IMPLEMENTED。語は `sfontRuns()`（r61 が測った、`docs/scope/r61-face.md`「決めていないこと」）、暦・時計の数字は `ltLineChar()`（r76-lines ── それまで借りた字を出していた、r73 §2-11）。`ink-check` B が持つ。
 
 ### 2026-09-23 古い購入をどのアカウントに付けるかは、考えなくていい
 - Date: 2026-09-23
@@ -468,7 +492,8 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Affected features: 通知（r47）、写真の bucket（非公開になる、アプリはセッション付きで取る）、サインインしていない画面からの読み（アプリは送らない）
 - Affected data: 無し。誰の行も動かない。**誰が読めるか**が変わる
 - Affected docs: `CLAUDE.md` § Simple の次の段、この file § One place、`docs/ARCHITECTURE.md`／`DATA_SAFETY.md` の RLS の文（r47 が書き換える）、`docs/BACKLOG.md`（過去の「穴」の掃除）
-- Implementation status: r47（サーバー）・r48（`www/net.js`）が作業中。163 には入れず、通知と一緒に 164
+- Implementation status: **IMPLEMENTED**（CODE CONFIRMED）── `supabase/schema.sql` の末尾の一塊が `anon` から
+  表・関数・ストレージを全部外し、`npm run rls` が `anon` で全部を試す。
 
 ### 2026-09-22 投稿画面は、欄をタップしても何も動かない
 - Date: 2026-09-22
@@ -632,7 +657,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
   `docs/CHANGELOG.md`
 - Implementation status: **CODE CONFIRMED**（`claude/r36-index`）。
   `netLangsGone()` が自分の言語と取った言語の両方を扱う一つの関数
-  （`netTakeGone()` は削除）、`LMINE` が「訊けたか」の三つ目の状態、
+  （~~`netTakeGone()`~~ は削除）、`LMINE` が「訊けたか」の三つ目の状態、
   `langMineIds()` は `langHeld()` が真のものだけを上げる。
   `acct-check` 74・75・76。**実機は未確認。**
 
@@ -755,7 +780,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
   「前に読み込んだ写し（読むだけ）」だけで、**端末の物で分岐して作る・消す・
   送る・見せる／見せないを決める行は、全部消す**。電波が無ければ「接続できません」
   （回る）であって「まだ何もない」ではない。
-- Reason: 端末側の印（`langMine`／`langOwned`、段の写し、登録の印、`.got` の印、
+- Reason: 端末側の印（`langMine`／~~`langOwned`~~、段の写し、登録の印、`.got` の印、
   移行の印）で分岐する行が百か所を超え、絡まった所からバグが出ている ── 登録の
   最後に空の言語が一本生え、打った名前がそちらに付く、が今日の実例。
 - Affected features: 登録の最後、言語の一覧、二台目のサインイン、ログインし直し、
@@ -793,7 +818,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
   「君たちの形」で、文法の話をしている人に向けた語ではなかった。
 - Affected features: 文法（章の頁・節の頁・`?`・語の表・例文）
 - Affected data: **なし。**`STG.fm` の規則も、その `fm` も `id` も、`STG.gr`
-  `STG.ex` `WORDS.slot` もそのまま。移行なし。消えたのは形ごとの章
+  `STG.ex` ~~`WORDS.slot`~~ もそのまま。移行なし。消えたのは形ごとの章
   （`v2:p1s` 等の route arg）と、`G2BOOK` の群の見出し
 - Affected docs: `docs/GRAMMAR-V2-SPEC.md` § 完成の定義（動詞と修飾の行）、
   `docs/CHANGELOG.md`
@@ -814,7 +839,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
   どこまでが動詞の話なのかは並び順でしか分からず、「否定形」だけが四つの対象を
   選ぶ頁を一枚余分に持っていた。
 - Affected features: 文法（目次・章の頁・否定・疑問）
-- Affected data: **なし。**`STG.gr` `STG.fm` `STG.extra` `STG.set` `WORDS.slot`
+- Affected data: **なし。**`STG.gr` `STG.fm` `STG.extra` `STG.set` ~~`WORDS.slot`~~
   はそのまま。移行なし。消えたのは描く関数だけ
 - Affected docs: `docs/GRAMMAR-V2-SPEC.md` § 完成の定義（表を書き換え）、
   `docs/CHANGELOG.md`
@@ -857,10 +882,8 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Affected features: ♡、古い言語、管理画面
 - Affected data: ♡は保存されるものが増えない（画面の一時状態だけ）。復旧は
   サーバーに前の版が積まれる（作る時に DATA_MODEL を書く）。
-- Implementation status: ♡は **IMPLEMENTED**（`claude/r10-sns`、2026-09-09 ──
-  `postLike()` と `PMARK`、`www/post.js`。押さえるのは `acct-check` 62、
-  「押した瞬間は動かず」の claim を書き換えた）。古い言語は BACKLOG に
-  「作らない」。復旧は BACKLOG（リリース後、日数待ち）。
+- Implementation status: ♡は **IMPLEMENTED**（`postLike()` と `PMARK`、`www/post.js`、`acct-check` 62）。
+  古い言語は BACKLOG に「作らない」。復旧は BACKLOG（リリース後、日数待ち）。
 
 ### 2026-09-09 の午後、画面で訊いて答えの出た十一
 - Date: 2026-09-09
@@ -890,8 +913,8 @@ the reasoning — a reason can be re-derived, a decision cannot.
   REVIEW）。9 は「一枚にまとめる」削除を**やめる**（消えるものが減る）。10 は
   クラスと規則の削除（DELETE REVIEW）。他は保存されるものは増えない。
 - Affected docs: `docs/BACKLOG.md` の該当項目（消す）、`docs/CHECK-0907.md`
-- Implementation status: `claude/r10-dl`（1・15・4）、`claude/r10-sns`（6・7・8）、
-  `claude/r10-gram`（10・11・12）、`claude/r10-kb`（9）で作業中。
+- Implementation status: **2026-09-23 に番号ごとの照合はしていない。**配った枝の名前で書いた作業中の
+  記録は古いので消した。どれが入ったかは、各番号の Area のコードを読むこと。
 
 **4 の但し書き**：「圏外でログイン」の話ではない。9/4 より前の古いアプリで作って
 一度もサーバーに上がっていない言語を持つ端末で、（電波のある所で）サインイン
@@ -922,10 +945,9 @@ the reasoning — a reason can be re-derived, a decision cannot.
   要る**。3・4 はデータ無し。
 - Affected docs: `docs/FEATURES.md`「Reading a downloaded language」、
   `docs/BACKLOG.md`、`docs/CHECK-0907.md`、`supabase/setup.md`
-- Implementation status: 1・2 は IMPLEMENTED（`claude/r9-dl`、2026-09-09、
-  実機未確認）── 1 は `netTakeGone()`（`www/net.js`、`again-check` 四本）、
-  2 は `language_took()`（`supabase/schema.sql`、`npm run rls`、**SQL の流し
-  直しが要る**）。3 は IMPLEMENTED（今の形）。4 は BACKLOG。
+- Implementation status: 1・2・3 は IMPLEMENTED ── 1 は `netLangsGone()`（`www/net.js`、
+  `acct-check` 74・75・76）、2 は `language_took()`（`supabase/schema.sql`、`npm run rls`）、
+  3 は今の形。4 は BACKLOG。実機未確認。
 
 ### DL した言語は「印」── 元が消えれば取った側からも消える
 - Date: 2026-09-09
@@ -944,14 +966,13 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Affected features: DL、言語切り替え、アカウント削除、言語削除
 - Affected data: **サーバーは今のまま**（`language_take` は `language` の
   削除で cascade、`schema.sql`）。**端末の索引の行も落ちる**：起動の
-  `netTakeGone()`（`www/net.js`）が、`language_take` の答えに無くなった
+  ~~`netTakeGone()`~~（`www/net.js`）が、`language_take` の答えに無くなった
   `mine:false` の行と slice を落とす。DELETE REVIEW は `docs/CHANGELOG.md`
   2026-09-09。答えが来ていない起動（`LTAKE===null`）では何も落とさない。
 - Affected docs: `docs/FEATURES.md`「Reading a downloaded language」、
   `docs/BACKLOG.md`、`docs/CHECK-0907.md`
-- Implementation status: IMPLEMENTED ── サーバー側は cascade、端末の索引の
-  行は `netTakeGone()`（`claude/r9-dl`、2026-09-09、実機未確認）。元が
-  **非公開**にしたときは同日の決定「DL 言語の四つ」の 2 で決まった。
+- Implementation status: IMPLEMENTED ── サーバー側は cascade、端末の索引の行は `netLangsGone()`
+  （`www/net.js`、実機未確認）。元が**非公開**にしたときは「DL 言語の四つ」の 2。
 
 ### お題の札は、保存は一つの綴り・見せるのは読む人の表示言語
 - Date: 2026-09-08
@@ -980,7 +1001,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
 ### 「この言語は非公開か」の答えはサーバーの `published_at` 一つ
 - Date: 2026-09-08
 - Area: 言語のページの公開（`www/home.js` の `wldHidden`／`wldPubGot`、
-  `www/net.js` の `netLangPublic`／`netLangsDown`／`netLangBack`、
+  `www/net.js` の `netLangPublic`／`netLangsDown`／~~`netLangBack`~~、
   `supabase/schema.sql` の `language.published_at`）
 - Decision:
 
@@ -1035,7 +1056,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
   a request can set their OWN plan to 'pro'」。行を書くのは電話で、電話はその人。
 - Affected features: 買う・復元する・失効する。`CAN` が閉める全部
 - Affected data: `purchase` 表が増える（取引が誰のものか）。`plan` 表を書くのが
-  service role だけになる。`SET.planPend` が消える。**人が作ったものは動かない**
+  service role だけになる。~~`SET.planPend`~~ が消える。**人が作ったものは動かない**
 - Affected docs: `docs/PAID_FEATURES.md`（先頭に節）、`docs/FEATURES.md` § 1、
   `docs/apple.md`、`docs/STATE.md`、`supabase/setup.md` § 8b、
   `docs/CHANGELOG.md` ── 同じコミットで書き換えた
@@ -1085,16 +1106,28 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Implementation status: IMPLEMENTED（`netPop()` と四箇所の配線、削除の印）。
   **DEVICE CONFIRMED ではありません。**
 
-### 空と、届かなかったのを画面ごとに分ける形は、上の決定に置き換わりました
+### 【差し替え済み 2026-09-05】空と、届かなかったのを画面ごとに分ける形（2026-09-05 朝）
+- 差し替えた決定: 「通信が落ちたら何も進まない。ポップは一つ」（2026-09-05）
+
+### 半キーは新しく作れない ── 半分の枠は選べて、＋は下りる
 - Date: 2026-09-05
-- Area: `netNoneHTML()`（削除）、`net.none`（削除）
-- Decision: 上の「通信が落ちたら何も進まない。ポップは一つ」がこれを覆します。
-- Reason: 同日の朝、`netNoneHTML()` は空の画面が出す文を六箇所で切り替えて
-  いました。**通信が落ちたらそこへは行けません**（「そもそも通信エラーなら
-  そこにはいけないはずでしょ」）。行けない画面に置く文は、要りません。
-  「歴史とかいいから消せよ」 OWNER。**残さず消しました。**
-- Affected data: 無し
-- Implementation status: IMPLEMENTED
+- Area: キーボードの編集画面のシート（`www/keyboard.js`）
+- Decision:
+
+  ```
+  半キーを追加できるのやめてほしい
+  ```
+
+  キーは一キーの幅で入り、半分の枠には入らない。半分の枠も押せば選ばれ（「全部の
+  升、触ったら選択」2026-08-28）、選ばれている間は ＋ が下りる。**既にある半キーは
+  動かない。** QWERTY の三段目を寄せる半キーは gap であってキーではなく、触らない。
+- Reason: 半キーは誰も幅を選んでいないキー ── キーのページの幅は 1・2・3・4 で、
+  半分を出したことが無い。
+- Affected features: キーボードの編集画面
+- Affected data: 無し。既にある半キーはそのまま
+- Affected docs: この項、`CLAUDE.md` 規則 19、「全部の升、触ったら選択」の項、
+  `docs/CHANGELOG.md`（2026-09-05）
+- Implementation status: **IMPLEMENTED** ── `kbCellFits()`（`www/keyboard.js`）。
 
 ### 保存されないのは仕様。失敗して黙って消えるのは仕様ではない
 - Date: 2026-09-05
@@ -1146,58 +1179,11 @@ the reasoning — a reason can be re-derived, a decision cannot.
   **止めるものはありません。**ディスクをいっぱいにする検査は門にありません。
   人が押して確かめる規則です。
 
-### 【差し替え済み 2026-09-05】「保存されない」は仕様。オンラインのアプリとはそういうもの
-- Date: 2026-09-04
-- Area: 保存・オフライン。**制作側ぜんぶ**
+### 【差し替え済み 2026-09-05】「保存されない」は仕様。オンラインのアプリとはそういうもの（2026-09-04）
+- 差し替えた決定: 「保存されないのは仕様。失敗して黙って消えるのは仕様ではない」（2026-09-05）
 
-- Decision:
-
-  ```
-  Twitterとかは電波がないと開かないでしょ？ そもそも通信してないならエラーで
-  開けないし、保存するタイミングでエラーが起きるなら、保存されないし。そう言う
-  もんじゃないの？オンラインアプリってどうなの？
-
-  スタンダードに合わせて作りたいから間違ってることあったら言って。
-  ```
-
-- Reason: **オーナーが自分で読んだうえでの決定です。**リーダーが「これは失われ
-  ます」と並べた三つ ── **アプリが落ちて消えること、電波が無くて言語が開かない
-  こと、送れていない分が次の起動まででなくなること** ── は、この一言で全部
-  **仕様になりました。**
-
-  **だから、この三つはもう但し書きではありません。**「オーナーに確認が要る」
-  「気をつけること」「これが代償です」として書いてある文は、決まったので
-  消します。オンラインのアプリはそういうものだ、というのがオーナーの答えです。
-- Affected features: 保存、起動、オンボーディングの歩き
-- Affected data: **サーバーに届いていない分は失われます。それが仕様です。**
-- Affected docs: この項目、`CLAUDE.md` 冒頭の Online・規則11・規則22、
-  `docs/DATA_SAFETY.md`、`docs/STATE.md`
-- Implementation status: **仕様として書き留めました。**コードは変わりません ──
-  いまの姿がそのまま仕様になった、という決定です。
-
-### 【差し替え済み 2026-09-05】保存が失敗したら、人が作ったものは目の前に残る
-- Date: 2026-09-04
-- Area: 保存の失敗（`www/core.js` の `save()`、`www/net.js`）
-
-- Decision:
-
-  ```
-  なら失敗して残るにするべき。
-  ```
-
-- Reason: 上の決定の**続きで、そこに引かれた線です。**「保存されない」は仕様
-  ですが、**「失敗して黙って消える」は仕様ではありません。**
-
-  保存がサーバーで失敗したとき、人が作ったものは**目の前に残ります。**もう一度
-  押せば送れる状態です。**これは「iPhone に溜めて後で送る」ではありません** ──
-  溜めるのはオフライン対応で、それは今やりません。残るのは、その人がいま見て
-  いる画面の中です。
-- Affected features: 保存のある画面ぜんぶ
-- Affected data: **無くなりません。**失敗したときに消えないことが、この決定です。
-- Affected docs: この項目、`docs/HANDOVER.md` 七章
-- Implementation status: **入りました 2026-09-05。**`saveTry()`（`www/core.js`）が
-  一箇所で答え、届かなければ `save.no` と言います。上の 2026-09-05 の項目が
-  この項目に代わります。
+### 【差し替え済み 2026-09-05】保存が失敗したら、人が作ったものは目の前に残る（2026-09-04）
+- 差し替えた決定: 「保存されないのは仕様。失敗して黙って消えるのは仕様ではない」（2026-09-05）
 
 ### 電波が無いときは、前に読み込んだ分を出す。見るだけ
 - Date: 2026-09-04
@@ -1309,7 +1295,8 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Affected docs: `CLAUDE.md` 規則19（キーボードの編集画面）に、この ＋ を
   説明した文があれば同じコミットで直す。`press` のボタン数が減ります ──
   減ったこと自体は正しい。
-- Implementation status: **着手していません。**`docs/HANDOVER.md` 六章の 10。
+- Implementation status: **2026-09-23 に照合していない。**「着手していません」は `docs/HANDOVER.md` の
+  日付の記録で、今のコードは確かめていない。
 
 ### 保存を押したときだけ、保存されているものが変わる
 - Date: 2026-09-04
@@ -1417,7 +1404,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
 
 ### バックアップの三世代は、そのまま。入っているのは制作の分だけ
 - Date: 2026-09-04
-- Area: `ios/App/App/LinguaShare.swift`（`keep()`）、`www/backup.js`（`bkPack()`）
+- Area: `ios/App/App/LinguaShare.swift`（~~`keep()`~~）、`www/backup.js`（~~`bkPack()`~~）
 - Decision:
 
   ```
@@ -1539,33 +1526,8 @@ the reasoning — a reason can be re-derived, a decision cannot.
   押さえるのは `post-check` 26・27・28。畳む行数は 5 で決まりました
   （写真 `shots/r39-fold-5-ja.png`、開いた状態は `shots/r39-fold-open-ja.png`）。
 
-### 【差し替え済み】お題のタグは、お題そのものが持っている十言語から出す
-
-> **「タグは別の枠。本文の外、翻訳の下、最大 4 つ」（2026-09-15）で
-> 差し替わりました。**
-> 下は当日より前の記録です。従わないでください。
-
-- Date: 2026-09-04
-- Area: お題（`prompt`）、`www/sns.js`
-- Decision:
-
-  ```
-  お題はなってる
-  タグとお題一本化してってこと。
-  ```
-
-- Reason: **お題の文は既に読む人の設定言語で出ています。**サーバーが十言語ぶんを
-  持っているからです。**タグも、その同じ十言語から出します。**
-
-  **`www/i18n/` に新しく十言語ぶんのタグの言葉を書かないでください。**
-  そうすると、**同じお題の言葉が二箇所に十言語ぶんある**ことになります。
-  **その時点で二本です。**「一つの場所、二箇所目を作らない」。
-
-  **リーダーが最初にタグを別の言葉として配ったのが誤りでした。**
-- Affected features: ⑯ SNS
-- Affected data: 無し
-- Affected docs: この項目
-- Implementation status: **`claude/find3` に配り直します**
+### 【差し替え済み 2026-09-15】お題のタグは、お題そのものが持っている十言語から出す（2026-09-04）
+- 差し替えた決定: 「タグは別の枠。本文の外、翻訳の下、最大 4 つ」（2026-09-15）
 
 ### 頼まれていないものを、アプリが書き込まない。**発音は別 ── あれは頼まれている**
 - Date: 2026-09-04
@@ -1598,12 +1560,13 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Affected features: 文法の語順の既定値。**発音は変えません**
 - Affected data: 文法の語順を触っていない人の欄が、空のままになります
 - Affected docs: この項目、`docs/EXPIRY.md` 4番
-- Implementation status: **未実装。**オンライン前提への書き換えと同じ回で
+- Implementation status: **一部。**押していないのに書く道が残っている ── 起動・移行・描画から書く所は
+  `docs/scope/r73-audit.md` § 2-2 が測った一覧。
 
 ### バックアップのファイルも無くす。★の51件目は一番古いのを押し出す
 - Date: 2026-09-04
-- Area: `www/backup.js`（第24章）、`ios/App/App/LinguaShare.swift` の `keep()`/`kept()`、
-  `tools/backup-check.mjs`、設定→データの一覧。そして★を付けた検索
+- Area: `www/backup.js`（第24章）、`ios/App/App/LinguaShare.swift` の ~~`keep()`~~/`kept()`、
+  ~~`tools/backup-check.mjs`~~、設定→データの一覧。そして★を付けた検索
 - Decision:
 
   ```
@@ -1628,7 +1591,8 @@ the reasoning — a reason can be re-derived, a decision cannot.
   その三世代。**サーバーのバックアップがそれを引き受けます。**
 - Affected docs: この項目、`docs/DATA_SAFETY.md`、
   `CLAUDE.md` 規則11、`docs/STATE.md`、`supabase/setup.md`
-- Implementation status: **設計に入れ直します（`claude/one`）。**
+- Implementation status: ファイルは **IMPLEMENTED**（消えた、2026-09-04、CLAUDE.md 規則 11）。★の
+  51 件目は「★は50件まで」（下）が今の決定。
 
   **これで「消えないための仕組み」は一本になります** ── サーバーが本物、
   版を積む、サーバー自体がバックアップされる。**それだけです。**
@@ -1670,25 +1634,11 @@ the reasoning — a reason can be re-derived, a decision cannot.
   **繋がっていなければ保存できません。そう画面に出します。**黙って iPhone に
   溜めません。溜めた瞬間に、いま消そうとしている問題が戻ります。
 
-  **そして写しも持ちません。**
-
-  ```
-  オフラインをなくそう。
-  写しも別に今はいらなくない？今後の設計で。
-  ```
-
-  OWNER 2026-09-04。**書き込む写しは持ちません。**仕組みに入れておくと、必ず
-  「これが本物かもしれない」と思い始めます ── **それが今日の穴でした。**
-
-  **電波が無いときの画面は、同じ日の「電波が無いときは、前に読み込んだ分を出す。
-  見るだけ」が今の仕様です**（この決定ログの上のほう）。真っ白にはしません。
-  **前に読み込んだものを、見るだけ出します。**その写しは**読むだけで、
-  サーバーへ戻る道はありません。**
-
-  **iPhone に残るのは `lingua.sess` だけです** ── どのアカウントでログイン
-  しているか。**これは写しではなく「この iPhone は誰か」という札**で、無いと
-  起動のたびにログインし直しになります。CLAUDE.md 規則22 が元からそう
-  書いています。
+  **書き込む写しは持ちません。**「写しも別に今はいらなくない？」の見るだけの
+  写しの側は【差し替え済み 2026-09-04】── 差し替えた決定:「電波が無いときは、
+  前に読み込んだ分を出す。見るだけ」（2026-09-04）。その写しに、サーバーへ戻る
+  道はありません。iPhone の鍵のうち誰の物でもないのは `lingua.sess`（「この
+  iPhone は誰か」）だけで、残りはどれもアカウントの物の写しです（CLAUDE.md 規則 22）。
 - Affected features: 保存・同期・復元・運営側の復旧。制作側の全画面
 - Affected data: **減ります。**合わせるために持っていた控え（最後に一致した
   写しなど）が要らなくなります。**まだリリースしていないので、いま iPhone に
@@ -1704,54 +1654,8 @@ the reasoning — a reason can be re-derived, a decision cannot.
   一箇所からしか来ないので、順番はサーバーが受け取った順そのものです。
   **狂った時計の問題も消えます。**
 
-### オフラインで作れるのは制作だけ。版はサーバーの番号、勝ち負けは iPhone の時刻 ── 同じ日に差し替え
-- **SUPERSEDED。**上の「オンライン前提に切り替える。保存を押した瞬間にサーバーへ行く」（OWNER 2026-09-04）が今の仕様です。**この項目のとおりに作らないでください。**オフラインは、余裕が出てから足します。
-- Date: 2026-09-04
-- Area: 保存・同期・版の積み方
-- Decision:
-
-  ```
-  （オフラインを切れば楽か、と自ら問うたうえで）
-  うん。制作のみで。
-
-  時刻もしくは番号で管理すればいいのか？番号だと被る可能性ある？
-  ```
-
-- Reason: **オフラインは残します。ただし制作だけ。**SNS は元からオンライン
-  だけです。オーナーが 2026-09-03 に決めた「制作はオフラインでも可能、次
-  つながった時に更新される」は、そのまま生きています。
-
-  **切らない理由:** 面倒の正体は「オフラインだから」ではなく、**同じものが
-  二箇所で別々に変わるから**です。一台で電波の無い所で作って繋がったときに
-  上げるのはぶつかりません ── 順に積むだけです。ぶつかるのは二台目からで、
-  それは下の時刻で決まります。**辞書を書く作業は、電車でも布団の中でも
-  できたほうがいい類のものです。**
-
-  **番号だけでは被ります。**二台がどちらもオフラインで作ると、両方が同じ
-  番号を作ります。**番号は一箇所が配らないと被ります。**
-
-  **時刻だけでも足りません。**iPhone の時計は人がいじれます。去年にして
-  ある端末の新しい変更が「古い」ことになります。
-
-  **だから両方使い、役割を分けます。**
-
-  | | 誰が付ける | 何のため |
-  |---|---|---|
-  | **番号** | **サーバー** | 積む順番。「◯番に戻す」と言えるように |
-  | **時刻** | **iPhone**（直したその場で） | どっちが勝つか。後から直したほうが残る |
-
-  **オーナーが決めた二つが一つずつ対応します** ──「サーバーに版を積む」には
-  番号が、「後から変えたほうが残る」には時刻が要ります。**片方では足りません。**
-- Affected features: 保存・同期・復元・運営側の復旧
-- Affected data: **増えます。**版ごとに、サーバーの番号と、iPhone が押した時刻
-- Affected docs: この項目、`docs/DATA_SAFETY.md`
-- Implementation status: **設計中（`claude/one`）。**
-
-  **決まっていないことが一つ残っています ── 時計が狂っている iPhone。**
-  サーバーは「受け取った時刻」も持てるので、iPhone の言う時刻がありえない値
-  なら気づけます。**気づいたあと断るのか、受け取った時刻で代用するのかは
-  決めごとです。**`claude/one` に選択肢を並べさせます。**勝手に決めさせない
-  こと。**
+### 【差し替え済み 2026-09-04】オフラインで作れるのは制作だけ。版はサーバーの番号、勝ち負けは iPhone の時刻（2026-09-04）
+- 差し替えた決定: 「オンライン前提に切り替える。保存を押した瞬間にサーバーへ行く」（2026-09-04）
 
 ### 消えないための仕組みを一本にする。サーバーに版を積む
 - Date: 2026-09-04
@@ -1829,11 +1733,12 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Affected data: **一筆の点。**外すと、いままで途中で捨てられていた点が
   残るようになります。既に描かれたものは変わりません
 - Affected docs: この項目、`docs/EXPIRY.md`、`docs/CHANGELOG.md`
-- Implementation status: **未実装。**ビルドのあとに配ります
+- Implementation status: 160 点は **IMPLEMENTED**（`www/glyph.js` に天井が無い）。★の 50 の天井は
+  `www/sns.js`・`www/net.js`・`supabase/schema.sql` に見当たらない（2026-09-23、grep）── 未実装。
 
 ### バックアップの三世代と、元に戻せる段数は、いまのまま
 - Date: 2026-09-04
-- Area: `ios/App/App/LinguaShare.swift`（`keep()`）、`www/glyph.js`、`www/keyboard.js`
+- Area: `ios/App/App/LinguaShare.swift`（~~`keep()`~~）、`www/glyph.js`、`www/keyboard.js`
 - Decision:
 
   ```
@@ -1993,57 +1898,8 @@ the reasoning — a reason can be re-derived, a decision cannot.
   行は翻訳の下で写真より上／タグ 0 の投稿は行が無い／検索は枠を `#` 無しで・
   本文を `#` 付きで訊く。赤は六つ見てから直しました。
 
-### 【差し替え済み】お題は #今日のお題。十言語ぶんで、どの言語で書かれていても同じ一つ
-
-> **「タグは別の枠。本文の外、翻訳の下、最大 4 つ」（2026-09-15）で
-> 差し替わりました。**
-> 下は当日より前の記録です。従わないでください。
-
-- Date: 2026-09-04
-- Area: お題（`prompt`）、投稿の作成、検索（`www/sns.js`）
-- Decision:
-
-  ```
-  お題は#今日のお題で。10言語文。
-  これも上タップして投稿すると勝手に入って言語関係なく翻訳される。
-
-  検索も#@投稿が一気に検索できるようにして
-  ```
-
-- Reason: お題にハッシュタグが無く、その日のお題で投稿を集める道が無かった。
-  **上のお題をタップして投稿すると、`#今日のお題` が勝手に入ります。**人が
-  打つものではありません。
-
-  **文もタグも、読む人の設定言語です。**
-
-  ```
-  今日のお題は翻訳もタグもその人の設定言語になるようにしてって頼んでるんだけど
-  ```
-
-  OWNER 2026-09-04。**お題の文そのものは既にそうなっています** ── サーバーが
-  十言語ぶんを持っていて、読む人の設定言語のものを出します（OWNER 2026-09-01
-  「今日のお題だけ、毎回その人の表示言語になるようにできないの？」で入った分。
-  `www/sns.js` の `daySay()` と `dayMap()`。**リーダーが読んで確かめました。
-  実機では押していません**）。
-
-  **入っていないのはタグだけです。**この項目に**タグしか書かなかったのは
-  リーダーの落ち度**で、次に読む人が「文のほうはどうなのか」を迷います。
-  **文とタグは一続きの一つの決定です。**
-
-  **十言語ぶんというのは、十個の別々のタグではありません。**一つのタグが、
-  読む人の言語で表示されるということです ── 日本語の人には `#今日のお題`、
-  英語の人にはその言語での言い方。**日本語で書かれた投稿と英語で書かれた
-  投稿は、同じ一つのタグで一緒に出てきます。**「言語関係なく翻訳される」は
-  そこです。これが分かれていたら、その日のお題が言語の数だけ割れます。
-
-  **そして検索は、#（タグ）と @（人）と投稿を一度に返します。**箱は一つ、
-  結果も一度。今は投稿しか見ておらず、しかも Enter を押したときだけでした。
-- Affected features: ⑯ SNS（`docs/FEATURES.md`）
-- Affected data: 投稿の本文にタグの文字が入る。**タグそのものを別に保存する
-  かどうかは実装の話で、この決定はそこを指定していません。**投稿には既に
-  「どのお題に対する投稿か」を持つ欄があります（OWNER DECISION 2026-08-23 #6）
-- Affected docs: この項目、`docs/CHANGELOG.md`
-- Implementation status: **未実装。**`claude/find2` に配布
+### 【差し替え済み 2026-09-15】お題は #今日のお題。十言語ぶんで、どの言語で書かれていても同じ一つ（2026-09-04）
+- 差し替えた決定: 「タグは別の枠。本文の外、翻訳の下、最大 4 つ」（2026-09-15）
 
 ### 上限のポップは Pro を言う。Plus は飛ばす
 - Date: 2026-09-04
@@ -2086,7 +1942,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
   そちらは無料の画面に **キーボード2・3・4 という空の行を三つ**並べていて、
   オーナーが実機で見つけました ──「無料なのにキーボード1〜4表示されてるのは
   なぜ？」。**持っていない物を三つ、在るように見せていた**わけで、しかも
-  有料は作った数だけしか並ばない（`kbSlots()` が `kbBoards().length`）ので、
+  有料は作った数だけしか並ばない（~~`kbSlots()`~~ が `kbBoards().length`）ので、
   **一つしか持てない人が一番たくさんの行を見せられている**という逆さまの
   状態でした。「無料も有料も同じ画面」を直したはずが、無料だけ別の画面に
   なっていた。
@@ -2099,10 +1955,8 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Affected features: ⑨ キーボード（`docs/FEATURES.md`）
 - Affected data: **無し。**見た目と、＋を押したときにどこへ行くかだけ
 - Affected docs: この項目、`docs/CHANGELOG.md`、`docs/keyboard.md`
-- Implementation status: **未実装。**`claude/kbfree2` に配布。直す所は五つ:
-  `kbSlots()`（`www/keyboard.js:979`）と、そこと `vKb()` の上のコメント二つ
-  （:969 と :2378）、`tools/kb-check.mjs` の二箇所（:1708 と :3442、
-  `freeSlots` を含む）。**古い文は消すこと ── 残すと読まれます。**
+- Implementation status: **2026-09-23 に照合していない。**名指していた ~~`kbSlots()`~~ と ~~`freeSlots`~~ は
+  コードに無く、`kbSlotsShown()`（`www/keyboard.js`）がある。
 
   数は既に `www/core.js:791` に一つずつ在ります ── `FREE_KB=1`、`PLUS_KB=4`、
   Pro は `kbCap()` で無制限。**新しい数を書かないこと。**
@@ -2117,7 +1971,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
 
 ### 上限のポップは、そこに出す。後ろの画面は閉じない、動かさない
 - Date: 2026-09-04
-- Area: 上限に当たったときのポップ（`capPop` まわり）。呼ぶ側ぜんぶ
+- Area: 上限に当たったときのポップ（~~`capPop`~~ まわり）。呼ぶ側ぜんぶ
 - Decision:
 
   ```
@@ -2161,89 +2015,23 @@ the reasoning — a reason can be re-derived, a decision cannot.
   pruning and cleanup are forbidden unless a written spec asks for them。
   この決定はそれを、期間を訊かれたその場で言い直したもの。
 
-### 無料でも有料と同じ数の枠が並ぶ。二つ目以降は押すとプランへ ── 2026-09-04 に差し替え
-- **SUPERSEDED。**上の「＋は右下。上限を越えて押したときにポップが出る。無料に空の枠は並べない」（OWNER 2026-09-04）が今の仕様です。**この項目のとおりに作らないでください。**
-- Date: 2026-09-03
-- Area: キーボードの章（`www/keyboard.js`、⑨）
-- Decision:
+### 【差し替え済み 2026-09-04】無料でも有料と同じ数の枠が並ぶ。二つ目以降は押すとプランへ（2026-09-03）
+- 差し替えた決定: 「＋は右下。上限を越えて押したときにポップが出る。無料に空の枠は並べない」（2026-09-04）
 
-  ```
-  キーボードの画面無料だと何で1個なの？
-  一覧が並ばないの？無料も有料も同じ画面っちうルールは？
-  ```
-
-  そしてリーダーの二択に対して:
-
-  ```
-  有料と同じ数の枠が並び、二つ目以降は押すとプランへ
-  ```
-
-  **無料でも、有料と同じ数の枠が一覧に並びます。**一つ目は今までどおり
-  ── 無料の board 0 は QWERTY そのもので、編集はできません。**二つ目以降の
-  枠を押すと、プランの画面へ行きます。**説明文は書きません ── 枠が在って、
-  押すとプランへ行く、それだけです。
-
-- Reason: **2026-09-01 の「無料でもplusでもproでも同じ画面なのよ」に反していた
-  状態です。**`HELP.kb` のコメント自身がその決定を引用しているのに、
-  `vKb()` は無料で一覧の手前から返っていて、無料の画面には行が一つも
-  ありませんでした。オーナーが実機で見つけました。
-
-  枠が並ぶことと、押すとプランへ行くことは一つの文です。2026-08-25 の
-  「そのプランでできることできないことで UI 自体に変更がない方が良くない？」
-  「課金させる動線を減らしたくない」がその形で、`langStop()` と `kbAdd()` の
-  上限が既に同じ形です。
-- Affected features: ⑨ キーボード（`docs/FEATURES.md`）
-- Affected data: **無し。**`KB` の中身は増えません ── 枠は画面が見せるもので、
-  言語が持つものではありません。無料の `kbBoards()` は `[kbFree()]` を答え、
-  `kbFree()` は storage に無く `kbFixed()` から毎回組まれます。
-  `kb-check` が「無料の board が増えていないこと」を持っています
-- Affected docs: この項目、`docs/CHANGELOG.md`、`docs/keyboard.md`
-- Implementation status: **IMPLEMENTED（この項目と同じコミット）。**
-  `kbBoards()` の無料の枝、`kbSlots()`、`kbFrameHTML()`、`vKb()`。
-  `tools/kb-check.mjs` に **8 本**足しました（`say(` の行は 289 → 299 で、
-  残り 2 本は手順のボタンの項です）。全部赤を見ています。既に在った無料の章の
-  6 本は、board 0 の頁に立たせ直しました ── 一覧に立つと `#kb` が無いので、
-  そのままなら「無料のキーボードが消えた」と読める赤になります。
-  **DEVICE CONFIRMED ではありません。**
-
-  **枠の数について、オーナーに確かめる一行があります。**「有料と同じ数」の
-  有料の上限は `kbCap()` で、無料 1・Plus 4・**Pro は `Infinity`**
-  （「1,1+3.無制限って言わなかったっけ？」）。Pro の数は並べられないので、
-  **有料の有限の上限 `PLUS_KB`（4）**を読んでいます ── Plus の一覧が持てる
-  行数がちょうど 4 なので、「有料と同じ数」はそこです。違うなら
-  `kbSlots()` の一行です。**`kbCap()` の数は触っていません。**
-
-### 設定へ飛ぶボタンを、手順 1 にも置く
-- Date: 2026-09-03
-- Area: `HELP.kb` ── キーボードを iOS で入れる四つの手順（`www/keyboard.js`）
-- Decision:
-
-  ```
-  後これも、この画面まで飛ぶリンクあったはずなのに無くなった？
-  ```
-
-  リーダーが「手順 3 の中に在ります」と答えたのに対して:
-
-  ```
-  １にもほしくない？
-  ```
-
-  **手順 1 にも、手順 3 と同じ「設定を開く」のボタンを置きます。**同じ
-  `kbSettings()` を呼び、文言も同じ `kb.sys.go` です。
-- Reason: 手順 1 が、設定へ行けと初めて言っている場所です。ボタンは三つ先に
-  しか無く、オーナーは「無くなった？」と読みました。
-- Affected features: ⑨ キーボード
+### 設定へ飛ぶボタンは手順 3 にだけ
+- Date: 2026-09-06
+- Area: `HELP.kb` ── キーボードを iOS で入れる手順（`www/keyboard.js`）
+- Decision: 「手順 3 にだけ。」OWNER 2026-09-06（`www/keyboard.js` の手順の上の注に原文）。
+  設定へ飛ぶボタンは手順 3 の中の一つだけ。手順 1 の道順は設定の一番上から書く。
+- Reason: 同じボタンが二つの手順に在ると、どちらで押しても同じ所へ着き、手順の意味が消える。
+- Affected features: `HELP.kb`
 - Affected data: 無し
-- Affected docs: この項目、`docs/CHANGELOG.md`、`docs/keyboard.md`
-- Implementation status: **IMPLEMENTED（この項目と同じコミット）。**
-  `kbSettings()` は一箇所のままで、二つ目は作っていません。新しい鍵も
-  作っていません。`kb-check` が「手順 1 と手順 3 の両方に在る」ことと
-  「両方が同じ一つの関数を呼ぶ」ことを別々に持っています。
+- Affected docs: この項、`docs/CHANGELOG.md`
+- Implementation status: **IMPLEMENTED** ── `kbStepHTML(3, …)` だけが `kbSettings` を持つ。`kb-check` が持つ。
 
-  **開くのは Settings → Lingua です**（`openSettingsURLString` が Apple の
-  唯一の公開の戸 ── `ios/App/App/LinguaShare.swift` がそう書いています）。
-  手順 1 の行そのもの（Settings → General → Keyboard → Keyboards）には
-  公開の URL がありません。**DEVICE CONFIRMED ではありません。**
+### 【差し替え済み 2026-09-06】設定へ飛ぶボタンを、手順 1 にも置く（2026-09-03）
+- 差し替えた決定: 「設定へ飛ぶボタンは手順 3 にだけ」（2026-09-06、すぐ上）
+
 ### 買う画面には、そのプランが売っているものを全部書く
 - Date: 2026-09-03
 - Area: プランのカードの行（`PLANS` の `lines`、`www/core.js` と `www/i18n`）
@@ -2331,9 +2119,9 @@ the reasoning — a reason can be re-derived, a decision cannot.
   消して今の形だけにする。
 
   消すもの:
-  - `langMigrate()`（`www/core.js`）── 平キーを読んで写す
-  - `LS_FLAT`（`www/core.js`）── 八つの鍵の表
-  - `langMigStamp()` と `mig` の印 ── 写した言語にアカウントを押すためだけのもの
+  - ~~`langMigrate()`~~（`www/core.js`）── 平キーを読んで写す
+  - ~~`LS_FLAT`~~（`www/core.js`）── 八つの鍵の表
+  - ~~`langMigStamp()`~~ と `mig` の印 ── 写した言語にアカウントを押すためだけのもの
   - `lsWipeAcct()` の平キー削除 ── 消すものが無くなる
   - `tools/migrate-check.mjs` の平キーについての主張
 - Reason: オーナーの言葉のまま上に。**リリース前で、平キーを持つ端末は
@@ -2348,7 +2136,29 @@ the reasoning — a reason can be re-derived, a decision cannot.
   なくなる** ── アプリが消すのではない。
 - Affected docs: この項、docs/DATA_MODEL.md、docs/DATA_SAFETY.md、
   docs/CHANGELOG.md、CLAUDE.md 規則6
-- Implementation status: **未実装。**`claude/flat` に渡した（2026-09-03）
+- Implementation status: **IMPLEMENTED** ── 平キーは読まず、写さず、消さない。`migrate-check` 8 が持つ。
+
+### 消す行の真ん中は「この言語を削除」── 開いている言語一つの制作物が全部なくなる
+- Date: 2026-09-03
+- Area: 設定 → アカウントの、消す三行の真ん中
+- Decision:
+
+  ```
+  この言語を削除で言語の制作のものは全部なくなるってずっと言ってんだろ
+  ```
+
+  消す行は三本 ── ログアウト、**この言語を削除**、アカウントを削除。真ん中は
+  開いている言語一つの制作物を全部消す: サーバーのその言語の行（slice は
+  カスケード）と、この端末のその言語の slice と索引の一行。他の言語・投稿・
+  下書き・プロフィール・設定・アカウントは消えない。
+- Reason: 端末だけ消すと次の `netLangsDown()` で戻ってくる。「消えたのに戻って
+  くる」は消えていないのと同じ。
+- Affected features: 設定 → アカウント（`wipeLangs()` / `wipeLangsGo()`、`www/settings.js`）
+- Affected data: その言語の `language` 行と `slice` 行、端末のその言語の slice と
+  `lingua.langs` の一行。DELETE REVIEW は `docs/CHANGELOG.md` 2026-09-03。
+- Affected docs: `CLAUDE.md` 規則 6、この項、`docs/FEATURES.md` § 8
+- Implementation status: **IMPLEMENTED** ── `wipeLangsGo()` が `netLangDrop()` の後に
+  `wipeLangsHere()`。自分のでない言語では下りる（`langLocked()`）。
 
 ### 古い規則は残さない。全部いまの規則。食い違いはオーナーに訊く
 - Date: 2026-09-03
@@ -2393,9 +2203,8 @@ the reasoning — a reason can be re-derived, a decision cannot.
   ではいなら保存　いいえならそのまま戻るにしない？保存ボタン必要なとこ全部
   ```
 
-  1. **打ち込みのある画面には、右上に保存のボタンが立つ。**変えていない間は
-     薄い灰色、何か打ったら金 ── **この 1 は 2026-09-03「決定ボタンのルール」
-     で置き換わりました**（下の項）。出る／出ないではなく、色で言います
+  1. 【差し替え済み 2026-09-03】差し替えた決定: 「決定ボタンのルール ── なにもない時は
+     薄い灰色、何か打ったら金」（2026-09-03）
   2. **保存せずに画面を出ようとしたら、この app 自身のポップが訊く** ──
      「入力内容を保存しますか？」はい／いいえ
   3. **はい → 保存して戻る。いいえ → 保存せずに戻る**
@@ -2491,7 +2300,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
 
   **数え直しました。**三通りの直書きは 23 箇所です ── `navdo` が 20
   （うち 4 は赤い削除）、`navq navdone` が 2（キーボードと文字の一覧）、
-  `navq navsave` が 1（文字を描く画面の保存）。`.navsave` は
+  `navq navsave` が 1（文字を描く画面の保存）。~~`.navsave`~~ は
   `www/index.html` に定義がありませんでした。
 
   **一箇所は `navDo()`（`www/shell.js`）です。**23 箇所すべてがそこを呼び、
@@ -2501,7 +2310,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
   **「何か打ったか」は画面が答えます。**書き込む中身を知っているのは画面
   だけなので、一箇所が持つのは「状態は二つ」と「色はどこから来るか」だけです。
   ── 打ちかけの欄は `KEEP`、文字を描く画面は開いた時の線と今の線
-  （`geDirty()`）、投稿は `pwSend()` が断る条件そのもの（`pwOn()`）、
+  （~~`geDirty()`~~）、投稿は `pwSend()` が断る条件そのもの（`pwOn()`）、
   単語の追加は `addOne()` が断る条件そのもの（`wdAddOn()`）。
 
   **打っている間は画面を描き直さないので、色は塗り直します**
@@ -2552,7 +2361,8 @@ the reasoning — a reason can be re-derived, a decision cannot.
   **最初に @ を決めるのは「変更」ではない。**アカウントを作った直後、まだ
   一度も変えていない人が14日待たされるのは、この決定の言っていることでは
   ない。
-- Implementation status: **未実装。**`claude/me3` に渡した（2026-09-03）
+- Implementation status: **IMPLEMENTED** ── `profile_rename()`（`supabase/schema.sql`）が `handle_at` から
+  14 日の内を断る。実機未確認。
 
 ### キーの画面 ── 選んだら確定ボタン、もう一度触れば解除、戻れば選択は消える
 - Date: 2026-09-03
@@ -2608,7 +2418,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
   StoreKit の契約が持っているので、ネイティブ側から出すところから
 - Affected docs: この項、docs/CHANGELOG.md、docs/DATA_MODEL.md
 - Implementation status: **実装済み（CODE CONFIRMED）。**`claude/plannow`
-  （2026-09-03）。`LinguaStore.current` が `Transaction.expirationDate` から
+  （2026-09-03）。`LinguaStore.current` が ~~`Transaction.expirationDate`~~ から
   `until` を返し、`www/store.js` の `STORE_UNTIL` が**答えた段と一緒に**
   セッションの間だけ持ち、`plNow()` が `.plgo` の中に一行を出す。
   **保存するものは増えていない。**`plan-check` に九本。
@@ -2648,8 +2458,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
   なくアカウントのもの。`localStorage` はいつもどおり圏外で動く写し
 - Affected docs: この項、docs/DATA_MODEL.md、docs/CHANGELOG.md、
   docs/FEATURES.md
-- Implementation status: **未実装。**`claude/find` に渡した（2026-09-03）。
-  あの枝が `www/sns.js` と `www/net.js` を持っているため
+- Implementation status: **IMPLEMENTED** ── `SNS_RECENT=5`（`www/sns.js`）、サーバーが本物で `SET.recent` は写し。
 
 ### シンプルに作る。バグが出たら、直すのではなくそのコードを書き換える
 - Date: 2026-09-03
@@ -2702,7 +2511,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
 
 ### 印の無い言語を拾うのは、オンボーディングの扉だけ
 - Date: 2026-09-02
-- Area: 言語とアカウントの結びつき（`langOwned()` www/core.js、
+- Area: 言語とアカウントの結びつき（~~`langOwned()`~~ www/core.js、
   `netLangRow()` www/net.js の四つ目の状態）
 - Decision:
 
@@ -2730,10 +2539,9 @@ the reasoning — a reason can be re-derived, a decision cannot.
   言語には全部 `uid` が付くので、これが届く範囲は「今すでに端末にあって、
   一度も上がっていない言語」に限られ、増えません。
 - Affected docs: `docs/DATA_MODEL.md`、`docs/DATA_SAFETY.md`、
-  `www/core.js` の `langOwned()` のコメント（同じコミットで書き換え済み）
-- Implementation status: **core.js 側は実装済み**（`langOwned()`、
-  `acct-check` 35 番）。`www/net.js` の `netLangRow()` 四つ目の状態は
-  リーダーのもので、**まだ拾います。**
+  `www/core.js` の ~~`langOwned()`~~ のコメント（同じコミットで書き換え済み）
+- Implementation status: **2026-09-23 に照合していない。**名指していた ~~`langOwned()`~~ はコードに無い。
+  誰の言語かは今 `language.owner` を `langOwnOf()`（`www/core.js`）が読む（CLAUDE.md 規則 22）。
 
   未決が一つ、リーダーとオーナーへ: net.js の四つ目も閉じると、**今すでに
   端末にあって一度も上がっていない言語は、作った本人にも二度と戻りません。**
@@ -2764,26 +2572,26 @@ the reasoning — a reason can be re-derived, a decision cannot.
 
 - Reason: 2026-09-03 に、別のアカウントを消したらオーナーの言語が消えました。
   サーバーは正しく、消えたのは端末とバックアップです。`wipeHere()` が
-  `lingua.` を全部消し、`bkDropAll()` がバックアップを全部落とすからで、
+  `lingua.` を全部消し、~~`bkDropAll()`~~ がバックアップを全部落とすからで、
   どちらも「端末は一人のもの」と書いてあった 2026-08-27 の姿のままでした。
   **規則に「端末のものは三つ」と書いてあったことが、その姿を正しく見せて
   いました。**規則を消さないと同じ形が出続けます。
 - Affected features: 保存するもの全部。特にアカウント削除
 - Affected data: `SET` の中の `plan` `planWas`
   `saved` `savedUp` `notAt` は、アカウントごとに `lingua.set.<uid>` へ
-  預けます（`setFor()`）。`planUid` は「いま誰の分が載っているか」なので
+  預けます（`setFor()`）。~~`planUid`~~ は「いま誰の分が載っているか」なので
   預けません。
 - Affected docs: `CLAUDE.md` § Online、§ 規則22 ── 同じコミットで書き換えた
 - Implementation status: **入りました。**三つです ──
   (1) `setFor()` が段・保存した検索・通知の位置をアカウントごとに預ける、
-  (2) アカウント削除は `lsWipeAcct()` と `bkDropFor()` で**そのアカウントの
-  ぶんだけ**（`lsWipeNS()` と `bkDropAll()` は消えました）、
-  (3) `langOwned()` は印を読む一行で、端末を憶える枝はありません。
+  (2) アカウント削除は `lsWipeAcct()` と ~~`bkDropFor()`~~ で**そのアカウントの
+  ぶんだけ**（~~`lsWipeNS()`~~ と ~~`bkDropAll()`~~ は消えました）、
+  (3) ~~`langOwned()`~~ は印を読む一行で、端末を憶える枝はありません。
   `acct-check` 19・35・46 が持ちます。
 
 ### 課金はメールアドレスのアカウントに紐づく。端末が同じでも引き継がない
 - Date: 2026-09-02
-- Area: プラン（`SET.plan`、Keychain、段を読み合わせる道）とアカウントの関係
+- Area: プラン（~~`SET.plan`~~、Keychain、段を読み合わせる道）とアカウントの関係
 - Decision:
 
   ```
@@ -2795,7 +2603,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
   引き継がない**。段はアカウントのもので、Apple ID のものではない。
 
 - Reason: 言語とアカウントが結びついているのと同じ話。A（Pro）がサインアウト
-  して B がサインインすると、端末の `SET.plan` が pro のまま残り、次の起動で
+  して B がサインインすると、端末の ~~`SET.plan`~~ が pro のまま残り、次の起動で
   端末が B のアカウントに Pro を書き込んでいた（その道は 2026-09-06 に無くなり
   ました）。一つの Apple ID から
   いくつでもアカウントに Pro を配れる。「アカウント変えたら無限に言語作れる
@@ -2805,16 +2613,12 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Affected data: Keychain に、段と一緒に「買ったアカウントの uid」が入る。
   uid が合わないセッションは、サーバーの答えが来るまで free から始める。
 - Affected docs: `docs/PAID_FEATURES.md`、`docs/scope/claude-login-billing.md`
-- Implementation status: **IMPLEMENTED**（2026-09-11、`claude/r18-plan`）。
-  `planFor()`（`www/core.js`）が比較する一箇所で、枝は二つ ── 同じ人なら端末の
-  写し、それ以外は free から始めてサーバーに訊く。Keychain には書き戻さないので
-  買った本人のものは残る。`acct-check` 37・38・39・40・40b・40c・41・42 が持つ。
-  赤を見た。
-  実機は未確認（Keychain の往復は実機でしか見られない）。
+- Implementation status: **IMPLEMENTED、形は 2026-09-11 に変わった** ── 段は端末に無く、`verify-plan` の答えが
+  メモリに一つ（`PLAN`、`www/core.js`）。Keychain も `planFor()` も無い（「端末は何も決めない」）。
 
 ### 1アカウントに1課金。印の無い端末も例外にしない
 - Date: 2026-09-11
-- Area: 段の持ち主（`planFor()`、`SET.planUid`、`SET_PLAN`、`www/core.js`）
+- Area: 段の持ち主（`planFor()`、~~`SET.planUid`~~、~~`SET_PLAN`~~、`www/core.js`）
 - Decision:
 
   ```
@@ -2828,7 +2632,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Reason: 2026-09-02 の決定の実装に、一つだけ枝が残っていた ── 「持ち主が空なら
   名前を書き留めるだけで段は動かさない」。空を「この端末を持っている人の段」と
   読む枝で、測ると印の無い端末に残った `pro` が次に入ったアカウントに付き、
-  `planWas` も一緒なので `capLapse()` は何も言わなかった。表は
+  `planWas` も一緒なので ~~`capLapse()`~~ は何も言わなかった。表は
   `docs/scope/r18-plan.md`。
 - Affected features: 課金全体。2026-09-02 の決定の **Implementation status を
   置き換える**（その決定を置き換えるのではなく、例外なしで実装する）。
@@ -2865,16 +2669,17 @@ the reasoning — a reason can be re-derived, a decision cannot.
   （docs/FEATURES.md § 4）
 - Affected data: 何も消えない。**上限を超えた分は一覧から隠れる**
   ── 「減った時は隠すだけね」「だって単語でも文法でも同じようにやったじゃん」。
-  単語が無料で先頭百語だけ並べるのと同じ形（`wordsSeen()` → `langsSeen()`）で、
-  **開いている言語は必ず一覧に残る**（「開いてるものを残すでいいよ」）。
+  単語が無料で先頭百語だけ並べるのと同じ形（`wordsSeen()` → `langsSeen()`）。
+  どれが残るかは【差し替え済み 2026-09-12】── 差し替えた決定:「主言語 ── 一番古く
+  作った言語。無料はそれだけ出て、それが開く」（2026-09-12）。
   `LANGS` も `lingua.` の鍵も一つも動かず、払い直せば全部元どおり並ぶ。
   これは `www/core.js` に書いてあった「never hides one, never shortens a
   list」を置き換える
 - Affected docs: この項目、docs/FEATURES.md § 4
 - Implementation status: IMPLEMENTED。`dl-check` が持つ
   （無料は不可・Plus は 1・Pro は 3・二つの数が互いを見ない）。赤を見た。
-  隠す側も `dl-check` が持つ（Pro で三つ、無料で一つ、開いているものが残る、
-  鍵が一つも消えない、払い直すと戻る）。赤を見た
+  隠す側も `dl-check` が持つ（Pro で三つ、無料で一つ、鍵が一つも消えない、
+  払い直すと戻る）。
 
 ### 言語の記事は「人にどう見えるか」──自分のページで分岐しない
 - Date: 2026-09-02
@@ -2929,8 +2734,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Affected features: ⑬。`www/sns.js` の同じ形も同じ値
 - Affected data: 無し
 - Affected docs: 無し
-- Implementation status: **実装済み（master）。**`HOLD_SLOP=10` が
-  `www/shell.js:824`、測るのが `:855`。
+- Implementation status: **IMPLEMENTED** ── `HOLD_SLOP=10`（`www/shell.js`）。
 
 ### iOS 標準のダイアログもシートも使わない ── 五つ目の禁止
 - Date: 2026-09-01
@@ -3046,7 +2850,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Affected data: 1 に入るものは全部データを触る。**消す行を書かないこと**が
   条件（同日、`claude/scan` への指示）
 - Affected docs: `docs/STATE.md` §0-a
-- Implementation status: 進行中
+- Implementation status: **済み** ── 1.0.0 (162) が 2026-09-22 に App Store に出た（`docs/STATE.md`）。
 
 **この決定が禁じるものを、名前で書いておく。**リリース前に「ついでに」で入る
 ものは全部この三段の外にある ── 整理、改名、きれいにすること、あったほうがいい
@@ -3081,7 +2885,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
      § A language that is only read の三箇所に既に書いてある。**それでも
      オーナーに四度目を言わせた。** 訊く前に grep する。
   2. **DL した言語は、その人のバックアップファイルに入らない。**
-     `SLICES` に含めない。`bkPack()` は歩かない。
+     `SLICES` に含めない。~~`bkPack()`~~ は歩かない。
   3. **章は一つずつ取る。数えるのは言語。** 単語・文字・文法・キーボードは
      それぞれ別の ↓ で取るので、言語は**部分的に届く** ── 単語が入っていて
      文字が入っていない状態が正規の状態としてある。**上限が数えるのは、その
@@ -3097,10 +2901,11 @@ the reasoning — a reason can be re-derived, a decision cannot.
   他人のものが自分の持ち物として数えられない・配られないため。3 は原文のまま。
 - Affected features: ⑫ ダウンロード（`docs/FEATURES.md` § DL）
 - Affected data: `LANGS[id].mine` が初めて `false` になる。`SLICES` は
-  変わらないが、**DL した言語の id を `bkPack()` が飛ばす**必要がある
+  変わらないが、**DL した言語の id を ~~`bkPack()`~~ が飛ばす**必要がある
 - Affected docs: `docs/DATA_MODEL.md` § A language that is only read の
   未決 2・3・4 を答えに差し替え済み
-- Implementation status: **未実装。**`docs/FEATURES.md` は 0 lines と書いている
+- Implementation status: **IMPLEMENTED** ── 1 は `langLocked()` を書き手が訊く、2 はファイルが消えて無くなった
+  問い、3 は `dlCount()` が言語を数える、4 は `dlCap()` が作った言語と別に数える（`www/core.js`、`dl-check`）。
 ### 1. 画面の基準が十になった
 - Date: 2026-09-01
 - Area: 画面ぜんぶ
@@ -3135,7 +2940,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Affected data: 無し。
 - Affected docs: `CLAUDE.md` § Shape（直した）、この項、
   `docs/CHANGELOG.md`（`claude/fo2` が原文を入れた `3538668`。書き換えない）。
-- Implementation status: **規則は直した。画面は誰も触っていない。**
+- Implementation status: 規則は直した。下の「コードと合っていない所」は **2026-09-23 に照合していない**。
 
 #### コードと合っていない所。直していない ── **二つあります**
 
@@ -3201,14 +3006,14 @@ the reasoning — a reason can be re-derived, a decision cannot.
   二つの relay の両方に在る上の一行だけを原文として置いています。
 - Reason: 基準1。標準で出せるものを独自に描くのは、基準1が「標準では実現
   できない場合のみ」と言っている側にあたります。
-- Affected features: プロフィール画像を触ったときの道（`openMePic`、
+- Affected features: プロフィール画像を触ったときの道（~~`openMePic`~~、
   `www/me.js:787`）。いまは**画面**（`openForm`）で、変える／外すが縦に
   並んでいます。基準2の「プロフィールはアイコン→タップ→アクションシート」に
   するには `ios/App/` に `UIAlertController` が要ります。
 - Affected data: 無し。
 - Affected docs: `CLAUDE.md` § Shape（直した）、この項。
-- Implementation status: **規則は直した。コードは誰も触っていない**
-  ── `www/` も `ios/` もこの枝の持ち物ではありません。
+- Implementation status: **IMPLEMENTED** ── プロフィール画像は iOS 自身のシート（`mePicAsk()` が
+  `LinguaShare` の `ask` を呼ぶ、`www/me.js`）。
 
 ### 3. 課金とアカウントとキーボードはアカウントに結びつく
 - Date: 2026-09-01
@@ -3225,7 +3030,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
   **アカウントを変えるだけで何回でも作れます** ── `docs/PAID_FEATURES.md` の
   「languages on the account 1 / 1 / 3」は、アカウントに付いていて初めて
   上限になります。プランも同じで、端末の中の値なら端末を変えれば無関係です。
-- Affected features: `www/core.js`（`planKeep()` / `setOnDisk()`）、
+- Affected features: `www/core.js`（~~`planKeep()`~~ / `setOnDisk()`）、
   `www/settings.js`（~~`setPlan()`~~）、`supabase/schema.sql`（`profile` の列）、
   `www/net.js`（プランを送る道）。キーボードは言語の一部なので `slice` の `kb`
   ── **こちらは既にそうなっています。**
@@ -3233,18 +3038,8 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Affected docs: `CLAUDE.md` § Online、`docs/PAID_FEATURES.md`、
   `docs/DATA_MODEL.md`、`docs/STATE.md` § 3 項目4、`docs/keyboard.md`
   ── **全部直しました。**
-- Implementation status: **キーボードは在る。プランは無い。**
-  `profile` にプランの列が無く、`www/net.js` はプランを一度も送らず、値は
-  `SET.plan`（実機では Keychain）です。差は `docs/STATE.md` § 3 項目4 に。
-
-#### コードと合っていない所。直していない ── 報告した
-
-**プランが端末に在る。**`www/core.js` の `planKeep()`／`setOnDisk()`、
-`www/settings.js` の ~~`setPlan()`~~、`tools/plan-check.mjs` の
-「ブラウザでは設定ファイルに在り、実機では Keychain に在る」という主張、
-`docs/PAID_FEATURES.md` がその検査について書いている行 ── **どれもコード側で、
-この枝の持ち物ではありません。**プランを `profile` に載せるのは購入がサーバーに
-届く話（`docs/STATE.md` § 3 の項目7）と同じ一つの仕事なので、別の枝で。
+- Implementation status: **IMPLEMENTED** ── 段は `plan` 表（`supabase/schema.sql`）、`verify-plan` が書き、
+  端末はメモリの `PLAN` だけ。キーボードは言語の `kb` slice。
 
 ### 4. 通知の未読は「最後に通知の画面を開いた時刻より新しいもの」
 - Date: 2026-09-01
@@ -3354,13 +3149,13 @@ www/net.js:1544  netDraftUp() ── www/post.js:380 と :463 から
   外してもいい、という話でした。急がないと言われた以上、外す理由は残りません。
 - Reason: 原文の二行目。**急ぎがこれを外す唯一の理由だった**ので、
   急がないなら入れる、が同じ一行から出ます。
-- Affected features: `openMePic`（`www/me.js:787`）── 変える／外すの二つが
+- Affected features: ~~`openMePic`~~（`www/me.js:787`）── 変える／外すの二つが
   既に在ります。**形は基準2の「アイコン→タップ→アクションシート」で、
   いまは画面（`openForm`）です**（項目2）。
 - Affected data: 無し。`ME.pic` を空にするだけです。
 - Affected docs: この項。
-- Implementation status: **中身は在る。形が基準どおりでない。**
-  `www/` も `ios/` もこの枝の持ち物ではないので、触っていません。
+- Implementation status: **IMPLEMENTED** ── `mePicAsk()`（`www/me.js`）が iOS のシートで「選ぶ／削除」。実機は
+  写真つきで確かめた日がこの項に無いので未確認。
 
 ### 7. 自己紹介は出す。言語の詳細も
 - Date: 2026-09-01
@@ -3396,20 +3191,15 @@ www/net.js:1544  netDraftUp() ── www/post.js:380 と :463 から
   「押すと選択」。
 
   **答え: 全部の升、触ったら選択。**キーを入れるのはシートの上の帯のボタン。
-  入るのは**その升の幅**（半分の升なら半キー）。
+  入るのは**一キーの幅**で、半分の升には入らない ──「半キーを追加できるのやめて
+  ほしい」OWNER 2026-09-05（`kbCellFits()`、`www/keyboard.js`）。
 - Reason: シートは端から作業する。行の番号で行を、列の文字で列を、キーを押して
   キーを選び、**上の帯のボタンが選ばれたものに働く。**升だけ例外にすると、
   同じ見た目のものが二つの答えを持つ。
 - Affected features: キーボードの編集画面
 - Affected data: 無し（描き方と、押したときに何が起きるか）
 - Affected docs: この項、`CLAUDE.md` § 19
-- Implementation status: 実装中（`claude/cell2`）
-
-#### これが置き換えたもの
-
-**「タップが追加ボタン」は無い。**同じ日の「点線キーが入ってんの。追加するなら
-タップまで追加ボタン」をリーダーが「押したら入る」と読み、そう実装させた。
-**同じ日に置き換えられた。**押したら選ばれる。
+- Implementation status: **IMPLEMENTED** ── `kb-check` が持つ。
 
 ### シートは升。空いた升は点線のキーで、押せる。中央寄せは両端に半分ずつ
 - Date: 2026-08-28
@@ -3456,89 +3246,11 @@ www/net.js:1544  netDraftUp() ── www/post.js:380 と :463 から
 **「余りが一列のときは押せない空白にする」も無い。**それはリーダーが
 2026-08-28 に入れたもので、同じ日にオーナーに否定された。
 
-### 上がっていない言語を守る条件は入れない。字義どおり全部消える
-- Date: 2026-08-28
-- Area: 設定 →「端末のデータを消す」
-- Decision:
+### 【差し替え済み 2026-09-03】上がっていない言語を守る条件は入れない。字義どおり全部消える（2026-08-28）
+- 差し替えた決定: 「消す行の真ん中は「この言語を削除」── 開いている言語一つの制作物が全部なくなる」（2026-09-03）
 
-  ```
-  4です。
-  最初からずっと言ってるけど
-  ```
-
-  リーダーが四つ並べて訊いた答え。**4 は「字義どおり、何もしない」。**
-
-  `sid` の無い言語（一度もサーバーに上がっていない言語）があっても、
-  **名指して訊かない・先に同期を回さない・バックアップを残さない。**
-  押した人が消したものは消えます。戻せない人が出ます。
-- Reason:
-
-  ```
-  最初からずっと言ってるけど
-  ```
-
-  オーナーは同じ日に「全部」を三度言っている ──「アカウント削除はもう全部
-  消えるの。全部。」「言語データが全部消える」「全部消えるって」。
-  **リーダーが三度訊き直した。**決定は最初から動いていない。
-- Affected features: 設定 →「端末のデータを消す」
-- Affected data: 変更なし（実装は最初から条件無しで入っている）
-- Affected docs: この項、`docs/BACKLOG.md`、`docs/DATA_SAFETY.md`
-- Implementation status: 実装済み（`claude/acct2` → master `2e13788`）
-
-#### 規則との関係 ── ぶつかっていなかった
-
-リーダーは `docs/DATA_SAFETY.md` の「データ消えるのだけはありえない」と
-この決定がぶつかると読んで、`CLAUDE.md` の「決定と規則がぶつかったら止めて
-報告する」に従って止めた。**読み違いだった。**
-
-あの一文は**アプリが勝手に失う**ことについてのもので、`docs/DATA_SAFETY.md`
-自身が「Automatic deletion, pruning and cleanup are forbidden unless a written
-spec asks for them」と書いている ── **人が押した削除は automatic ではない。**
-何が消えるかを言う確認があり、人がそれを読んで押す。ぶつかる余地は無かった。
-
-**止めるのは、二つの書かれた決定が食い違っていて、どちらもオーナーが言い直して
-いないときだけ。**今回はオーナーが言い直していた。
-
-### 端末のデータを消すと、Documents のバックアップも消える
-- Date: 2026-08-28
-- Area: 設定 → アカウント →「端末のデータを消す」
-- Decision:
-
-  ```
-  全部消えるって
-  ```
-
-  リーダーが「Documents のバックアップファイルは消していません」と報告したのに
-  対して、同じ日の
-
-  ```
-  古い情報残すな。端末のデータはSNSは消えないで言語データが全部消えるの
-  ```
-
-  を言い直したもの。**Documents のバックアップファイルは「端末の言語データ」に
-  入る。**残すと「言語データが全部消える」が嘘になり、次の起動で書き戻って、
-  ボタンが何もしなかったことになる。
-- Reason: 消える範囲を人が読めるようにするため。アカウントは消えないので、
-  **サーバーには全部残っていて戻せる。**
-- Affected features: 設定 → アカウント →「端末のデータを消す」
-- Affected data: `lingua.<id>.*`（`SLICES` 全部・全言語）、`lingua.langs`、
-  **Documents の言語のバックアップファイル**。`lingua.set` は消さない。
-  サーバーには触らない
-- Affected docs: この項、`docs/DATA_SAFETY.md` の DELETE REVIEW、
-  `docs/CHANGELOG.md`
-- Implementation status: 実装中（`claude/acct2`）
-
-#### これが置き換えたもの
-
-**「バックアップは残す」は無い。**リーダーが 2026-08-28 に「含めない方が安全だと
-思う」と書いて、その場でオーナーに否定された。
-
-#### 一度もサーバーに上がっていない言語は、戻せない
-
-起きます。二通りで ── 圏外だけで使った場合と、**二つ目以降の言語**（電波と
-無関係。`netLangSync()` を呼ぶ場所はアプリに二つしかなく、どちらも開いている
-言語しか見ない）。**守る条件は入れません。**同じ日の「4です。最初からずっと
-言ってるけど」で決まっています。
+### 【差し替え済み 2026-09-03】端末のデータを消すと、Documents のバックアップも消える（2026-08-28）
+- 差し替えた決定: 「消す行の真ん中は「この言語を削除」── 開いている言語一つの制作物が全部なくなる」（2026-09-03）
 
 ### サブリーダーが居ないときは、リーダーが取り込む
 - Date: 2026-08-28
@@ -3554,7 +3266,7 @@ spec asks for them」と書いている ── **人が押した削除は automa
   順番です:
 
   **サブリーダーが居るならサブリーダーが取り込む。居ないならリーダーが取り込む。**
-  取り込んだ人がそのままゲート28本を回します ── 取り込んだ形でしか全部は
+  取り込んだ人がそのままゲートを全部回します ── 取り込んだ形でしか全部は
   緑にならないので、取り込む人と回す人は同じです。
 
   **リーダーがコードを書かないことは変わりません**（同じ日の「君が作業するん
@@ -3583,7 +3295,7 @@ spec asks for them」と書いている ── **人が押した削除は automa
   君が作業するんじゃなよね？
   ```
 
-  **枝を master に取り込むのはサブリーダー①。**そのままゲート28本もそこで回す
+  **枝を master に取り込むのはサブリーダー①。**そのままゲートを全部もそこで回す
   ── 取り込んだ形でしか全部は緑にならないので、取り込む人と回す人は同じです。
 
   **リーダーは配ってビルドを引くだけ。**取り込まない、ゲートを回さない、
@@ -3620,18 +3332,13 @@ spec asks for them」と書いている ── **人が押した削除は automa
   **三本ある。**
 
   1. **ログアウト** ── 何も消えない。
-  2. **端末のデータを消す** ── **この端末の言語データが全部消える。SNS は消えない。**
-     サーバーのアカウント・投稿・写真・録音・プロフィールはそのまま。
-     戻す一本で、今のアプリには無い。
-  3. **アカウント削除** ── **全部消える。全部。** サーバーも端末もバックアップも。
-     今の `wipeAll()` がこれで、変える所は無い。
+  2. 【差し替え済み 2026-09-03】差し替えた決定: 「消す行の真ん中は「この言語を削除」── 開いている言語一つの制作物が全部なくなる」（2026-09-03）
+  3. **アカウント削除** ── **全部消える。全部。** サーバーも端末も。`wipeAll()`。
 - Reason: 2 と 3 は消える範囲が違う。片方しか無いと、言語を作り直したいだけの
   人がアカウントごと消すしかない。
 - Affected features: 設定 → アカウント
-- Affected data: 2 が消すのは `lingua.<id>.*`（`SLICES` 全部）と `lingua.langs`。
-  **`lingua.set` は人の設定なので消さない。**サーバーには一切触らない。
 - Affected docs: この項、`docs/DATA_SAFETY.md`（DELETE REVIEW）、`docs/CHANGELOG.md`
-- Implementation status: 未着手（2 を戻す。3 はそのまま）
+- Implementation status: 1・3 は IMPLEMENTED（`wipeAll()`）。2 は 2026-09-03 の決定の形で入った。
 
 #### これが置き換えたもの
 
@@ -3827,7 +3534,7 @@ spec asks for them」と書いている ── **人が押した削除は automa
   ```
 
   アメリカ時間の 0 4 8 12 16 20。この刻みは動かない。
-  **どの時間帯かは、お題のページ（`netDay()` / `dayPull()`）と同じにする。**
+  **どの時間帯かは、お題のページ（`netDay()` / ~~`dayPull()`~~）と同じにする。**
 - Reason: お題と同じ日付の決まりで動く。時間の決まりの二つ目の写しを作らない。
 - Affected features: おすすめのタイムライン、検索の「話題」
 - Affected data: 無し
@@ -3969,24 +3676,13 @@ spec asks for them」と書いている ── **人が押した削除は automa
   `'ob'` を返していたので、`appIs()` を訊く検査では捕まらなかった。
   **ゲートには未接続**（`package.json` / `tools/gate.mjs` はリーダーのもの）。
 
-### 特定商取引法の表記は出さない ── 場所の半分は **superseded 2026-09-01 / 09-02**
-- Date: 2026-08-26
+### 特定商取引法の表記は出さない
+- Date: 2026-08-26（読める場所は 2026-09-01・09-02 の二つが置き換えた）
 - Area: 規約・プライバシーポリシー・特定商取引法に基づく表記
-- Decision: **特商法の表記は出さない**（「出さない。」）。これは今も効いている。
-
-  **場所についての半分は置き換えられた。**この日オーナーが言ったのは
-  「ログアウト中は見れなくていいでしょ？ログインしたら設定から見れるし」で、
-  その言葉は記録として残す。そこから書かれた規則 ──〈読める道は設定 →
-  アカウントの一番下、一箇所だけ〉── は、二つの決定が置き換えた:
-
-  - 「設定のアカウントの利用規約とプライバシーポリシー消しといて。課金の方に
-    あるからいらん」**OWNER 2026-09-01** ── アカウント室から消え、プラン画面へ
-  - 「続けるとの説明は ok」**OWNER 2026-09-02** ── 登録画面の面にも出す。
-    つまり**サインアウト中でも読める**
-
-  **今そうであること:** 読める道は**プラン画面**（`planTerms()`）と
-  **登録画面の面**（`www/onboard.js`）の二つ。**アカウント室には無い。**
-  三本目の文書は無い。
+- Decision: **特商法の表記は出さない**（「出さない。」）。規約とプライバシーポリシーが
+  読める道は**プラン画面**と**登録画面の面**の二つ ──「設定のアカウントの利用規約と
+  プライバシーポリシー消しといて。課金の方にあるからいらん」OWNER 2026-09-01、
+  「続けるとの説明は ok」OWNER 2026-09-02（サインアウト中でも読める）。
 - Reason: オーナーの言葉のまま上に。仕組みの側で分かっていること ── App Store
   の課金は販売者が Apple（日本では iTunes K.K.）で、購入契約の相手も返金の窓口も
   Apple なので、App Store Connect は特商法のページを訊いてこない。必須で訊くのは
@@ -3997,23 +3693,9 @@ spec asks for them」と書いている ── **人が押した削除は automa
   呼ぶ。`docRows()` 自体は一つで、URL も `DOC_TERMS` / `DOC_PRIVACY` の一組。
 - Affected data: **無し。** 保存するものは増えも減りもしない。
 - Affected docs: docs/BACKLOG.md（§3 と §4 をこの決定に合わせる）、docs/apple.md
-- Implementation status: **特商法の半分は入っている**（三本目の文書はどこにも
-  無い）。**場所の半分は上のとおり置き換えられ、コードは新しい方に従っている。**
-  この項が〈一箇所だけ〉と言い続けていたのを 2026-09-03 の監査が見つけた ──
-  コードは正しく、古かったのはこの文だった。
-
-  残っているのは repo の外で、**そちらは 2026-08-26 以降たしかめていない** ──
-  `natsuaya82-crypto/tokine2`
-  （Vercel で tokinets.com）を読んだ結果:
-  **`lingua/` の中は `index.html` 一つだけで、`terms.html` も `privacy.html` も
-  無い。** アプリの二本のリンクは 2026-08-26 の時点で 404。直下には二本あるが
-  **どちらも別アプリのもの**（`terms.html` は「利用規約 | JPEL Manager」、
-  `privacy.html` は
-  「本アプリには『JPEL Manager』が含まれます」と書き、メールを求めない・端末内
-  にのみ保存・AdMob 広告あり、と Lingua と真逆を宣言している）。**流用は不可** ──
-  審査に落ちるより先に、事実と違う申告になる。
-  **要るのは Lingua 用に書き下ろした二本。** App Store Connect のプライバシー
-  ポリシー URL は必須なので、これができるまで審査に出せない。サイトの仕事。
+- Implementation status: **IMPLEMENTED** ── `docRows()` を `planTerms()` と
+  `www/onboard.js` の登録の面が呼ぶ。三本目の文書は無い。二本は tokinets.com の
+  `lingua/` にある（`docs/STATE.md`）。
 
 ### 運営ページのパスワードは、Apple/Google サインインでは出ない。そのままにする
 - Date: 2026-09-02
@@ -4056,42 +3738,16 @@ spec asks for them」と書いている ── **人が押した削除は automa
 - Affected data: 減らない。Apple の数字を置く表は元々作られていない。
   `admin_counts()` はサーバーに残り、通報の件数だけが読まれる。
 - **Implemented 2026-09-02.** 消したもの ── `www/mod.js` の五ページと六行
-  （`adminOpen` `adminGotTop` `adminMonthTop` `adminPlanTop` `adminView`
-  `adminGoTo` `adminAt` `adminAsc` `adminNow` `adminPurse` `adminPlans`
-  `adminPct` `adminMD` `adminMon` `adminOne` `adminWhenRow` `adminDays`
-  `adminMonths`、`ADMIN_ASC`）、`www/net.js` の `netStore()`、
-  `supabase/functions/appstore/`、`act-map` の `adminGoTo`、十言語 × 11 の文言。
+  （~~`adminOpen`~~ ~~`adminGotTop`~~ ~~`adminMonthTop`~~ ~~`adminPlanTop`~~ ~~`adminView`~~
+  ~~`adminGoTo`~~ ~~`adminAt`~~ ~~`adminAsc`~~ ~~`adminNow`~~ ~~`adminPurse`~~ ~~`adminPlans`~~
+  ~~`adminPct`~~ ~~`adminMD`~~ ~~`adminMon`~~ ~~`adminOne`~~ ~~`adminWhenRow`~~ ~~`adminDays`~~
+  ~~`adminMonths`~~、~~`ADMIN_ASC`~~）、`www/net.js` の ~~`netStore()`~~、
+  `supabase/functions/appstore/`、`act-map` の ~~`adminGoTo`~~、十言語 × 11 の文言。
 - Affected docs: `supabase/setup.md` § 10、`docs/FEATURES.md` § 8、
   `docs/BACKLOG.md`、`docs/apple.md`
 
-### 売上とアナリティクスを、アプリの中で見る ── **superseded 2026-09-02**
-- Date: 2026-08-26
-- Area: 数字を見る画面（新しい章）／App Store Connect の API／Supabase
-- Decision: **アプリの中に、staff だけ見える一枚を作る。** 出すのは四つ ──
-  ①契約者数と売上 ②ダウンロード数 ③解約と継続率 ④アプリの中の数
-  （アカウント数・投稿数・言語数）。**数字は画面を開いたときに毎回取る。**
-- Reason:「売り上げもアナリティクスも見れるようにしたい」。
-  **〈アプリの中で見たい〉〈画面を開いたときに毎回〉は鍵括弧を外した** ──
-  オーナーは 2026-09-02 に「アプリの中で見るなんて一言も言ってないけど」と
-  言っている。書いた者の地の文に括弧が付いていたもの。鍵の置き場所は
-  Supabase の Secrets で、
-  GitHub ではない ──「（GitHub ではない）」。理由はオーナーの言葉ではなく
-  コードが言っている: アプリは Supabase と直接しゃべっていて間にうちのサーバーが
-  無いので、**アプリが持つものは全部公開されている**（www/net.js の SB_KEY の
-  コメント）。だから Apple の鍵は Edge Function の中にしか置けない。
-- Affected features: 新しい章。前例は二つあり、どちらも動いている ──
-  `mod`（staff だけ見える画面、schema.sql の is_staff() が守る）と
-  `daily-prompt`（Edge Function ＋ Secrets ＋ cron）
-- Affected data: **増える。** Apple から取った数字を置く表が要る（未設計）。
-  ④ だけは表が要らない ── profile / post / language を数えるだけ
-- Affected docs: supabase/setup.md（鍵の作り方と置き方）、docs/apple.md、
-  docs/FEATURES.md、schema.sql と npm run rls
-- Implementation status: **決定のみ。コードは一行も無い。**
-  四つのうち **④ だけが今日作れる**（鍵も Edge Function も要らない）。
-  ①②③ は App Store Connect の API キー待ち、かつ **「開くたび」がどこまで
-  可能かは Apple の API の形しだい** ── 売上レポートと解析レポートは取り方が
-  違い、後者は「頼んで作らせてから取りに行く」形のことがある。
-  **確かめてから作る。推測で作らない。**
+### 【差し替え済み 2026-09-02】売上とアナリティクスを、アプリの中で見る（2026-08-26）
+- 差し替えた決定: 「売上とアナリティクスは RevenueCat で見る」（2026-09-02）
 
 ### Decision
 - Date:
@@ -4125,7 +3781,7 @@ instead of appearing here.
   1. **匿名アカウントは無い。**「アカウント」はサインインした人のこと、一種類。
   2. **言語はアカウントが無いと作れない。**
   3. **書けるのはログインした人だけ。**
-  4. **アカウントの種類を二つに分けない。**`has_account()`（アカウントがある）と
+  4. **アカウントの種類を二つに分けない。**~~`has_account()`~~（アカウントがある）と
      `is_member()`（名前がある）の二本立ては**やめる。** 一本になる。
 
 - Reason: 「二種類になる意味も分からないけど」。二本立ては匿名アカウントを
@@ -4133,8 +3789,8 @@ instead of appearing here.
   区別が要るのは「まだ名前を決めていない人」を通すためであり、その人がもう
   居ない。
 - Affected features: `www/onboard.js`（扉が唯一の終わり方 ── 済み）、
-  `www/boot.js` の `netAnon()`、`www/net.js` の `netSignedIn()`/`netMember()`/
-  `netAnonTok()`、`supabase/schema.sql` の `has_account()` と、それを使う
+  `www/boot.js` の ~~`netAnon()`~~、`www/net.js` の `netSignedIn()`/~~`netMember()`~~/
+  ~~`netAnonTok()`~~、`supabase/schema.sql` の ~~`has_account()`~~ と、それを使う
   `language` / `slice` の書き込みポリシー。
 - Affected data: **無い。** 誰の作ったものも消えない。
 - Affected docs: `CLAUDE.md`、`docs/FEATURES.md`、`docs/ARCHITECTURE.md`。
@@ -4146,8 +3802,8 @@ instead of appearing here.
 
 2026-08-22「When somebody is asked who they are」── 匿名アカウントを起動時に
 作り、身元を訊くのは投稿と課金の二箇所だけ、`is_member()` を二つに割る。
-**下のその項目に superseded の行を付けた。言葉は消していない。**
-消したのは、それを言っていた**規則**のほうである。
+**下のその項目は【差し替え済み】の見出しと一行だけになっている**（2026-09-03
+「古い規則は残さない」）。
 
 ### Decision
 - Date: 2026-08-26 (同日、四つめ)
@@ -4233,7 +3889,7 @@ instead of appearing here.
    消さないと、次に `netLangSync()` が走った瞬間 **`syMerge` が両方足して
    帰ってくる** ── 消したはずの言語が戻る。**ここは間違えると
    「消えない削除」になる。**
-3. **バックアップの file はどうするか。** `bkDropAll()` は全部消す道しか無い。
+3. **バックアップの file はどうするか。** ~~`bkDropAll()`~~ は全部消す道しか無い。
    一つだけ消す道は無い。
 4. **DL した言語を消すのは同じボタンか。** 読み取り専用の言語も一覧に並ぶ
    （2026-08-25）。消せて当然に見えるが、あれは自分の作ったものではない。
@@ -4255,8 +3911,8 @@ instead of appearing here.
   1. **アカウントを消したら全部消える。端末の中も含む。**
      前日の「アカウント消したら残るわけがないあほだろ」をサーバの話と読んだのは
      **狭すぎた。**「全部」である。
-  2. **同期は常に。** 前の項目で「全部だって」の一語からは書き起こさない、と
-     open にしていたものが、これで閉じた。**常に同期する。**
+  2. **同期は常に。** 言語の側の頻度は【差し替え済み 2026-09-04】── 差し替えた決定:
+     「オンライン前提に切り替える。保存を押した瞬間にサーバーへ行く」（2026-09-04）。タイムラインは開くたび。
 
      **そして同じ日に中身が分かれた ──「タイムラインは開くたび / 言語は
      そういうわけじゃない」。** 「常に」は一つの時計ではなく二つである:
@@ -4284,12 +3940,9 @@ instead of appearing here.
 - Affected docs: `docs/FEATURES.md` § 8、`docs/DATA_MODEL.md`、
   `docs/PAID_FEATURES.md`、`docs/DATA_SAFETY.md`（私の持ち物ではない ── 報告に書いた）。
 - Implementation status:
-  **1 は入った。**`wipeAll()`（`www/settings.js`）が一つのボタンで全部やる ──
-  一度だけ訊いて、`netDropMe()` でサーバー、続けて `wipeHere()` で `lingua.` の
-  鍵ぜんぶ（`lsWipeNS()`、手の一覧は無い）とバックアップのファイル。
-  **2 はタイムライン側だけ。**言語は起動時一回（`www/boot.js`）で、これは
-  per-open ではないという決定と食い違わない。間隔を作るのは open。
-  **3 はオーナーの側で、リポジトリには無い。**
+  **1 は入った。**`wipeAll()`（`www/settings.js`）が一度だけ訊いて、`netDropMe()`
+  でサーバー、消し終えてから `wipeHere()` がその account の鍵（`lsWipeAcct()`）。
+  **2 は 2026-09-04 の形**（保存の瞬間に上がる）。**3 はオーナーの側で、リポジトリには無い。**
 
 #### `DATA_SAFETY.md` と衝突しないこと。ここが大事
 
@@ -4299,17 +3952,14 @@ something was restructured」であり、**理由を四つ挙げて禁じてい�
 「本人が消せと言った」はその四つのどれでもない。禁じられているのは
 **アプリが勝手に決めること**であって、人が自分のものを捨てることではない。
 
-**ただし、これは今まで別々だった二つのボタンが一つになるという意味である。**
-端末の言語を消すのは別のボタンだ、という 2026-08-21 の決めは、今日の決定が
-上書きした。**ボタンは一つで、自分が何を持っていくかを自分で言う** ──
-「すべて消去します。アカウントと、サーバー上の投稿・写真・録音。この端末の
-言語・文字・設定。バックアップファイルも。」`docs/FEATURES.md` § 8 も直した。
+**アカウントを消す行は一つで、自分が何を持っていくかを自分で言う**
+（`confirm.wipe`、`www/i18n/`）。言語一つを消すのは別の行 ──「消す行の真ん中は
+「この言語を削除」」（2026-09-03）。
 
 **そして順番が要る。** 消す順を間違えると「消えたと言われたのに残っている」か
 「消したいと言っていないものまで消えた」のどちらかになる。順番を決めるのは
 実装する人の仕事だが、**確認は一度だけにすること** ── 二度訊くのは、一度目に
-何を訊いたのか分からなくなるという意味である。`wipeAll()` は既に iOS 自身の
-ダイアログで一度訊いている。
+何を訊いたのか分からなくなるという意味である。`wipeAll()` は `popAsk()` で一度訊く。
 
 ### Decision
 - Date: 2026-08-26
@@ -4346,18 +3996,14 @@ something was restructured」であり、**理由を四つ挙げて禁じてい�
 
   1. **基本は全部サーバー管理。** 「Xがローカル保存してんの？」── 普通の
      アプリはそうしていない、が理由である。
-  2. **言語周りだけ、バックアップに file を使う。** `www/backup.js`（章24）の
-     `Documents/Languages/<name>.json` が消えるのではなく、**サーバが本体で
-     file がバックアップ**という並びになる。
-  3. **制作はオフラインでも可能。次につながった時に更新される。**
-     **2026-09-04 の「オンラインのみ」で置き換わった。**起動では何も送らない
-     （2026-09-23、`docs/scope/r60-up.md`）── 上がるのは人が保存した時と扉。
+  2. 【差し替え済み 2026-09-04】差し替えた決定: 「バックアップのファイルも無くす。★の51件目は一番古いのを押し出す」（2026-09-04）
+  3. 【差し替え済み 2026-09-04】差し替えた決定: 「オンライン前提に切り替える。保存を押した瞬間にサーバーへ行く」（2026-09-04）
   4. **SNS 部分はオフラインでは動かない。**「そりゃそう」。既にそう。
   5. **アカウントを消したら残らない。** サーバ側は既にそう ──
      `account_delete()` の cascade が profile・言語・投稿・follow・block を
      連れていく（`docs/FEATURES.md` § 8）。
-  6. **言語はアカウントが無いと作れない。** これは**まだそうなっていない。**
-     下の「コードと合っていない所」を見ること。
+  6. **言語はアカウントが無いと作れない。** オンボーディングの歩きだけが扉の前で
+     作り、扉が最後の段で、歩きで作った物は扉で上がる（CLAUDE.md § Online）。
   7. **古い記載を消す。** 「アカウント無しでも言語は作れる」と書いてある所を
      消して、今そうであることを書く。
 
@@ -4379,37 +4025,8 @@ something was restructured」であり、**理由を四つ挙げて禁じてい�
 - Affected docs: `CLAUDE.md`、`docs/FEATURES.md`、`docs/ARCHITECTURE.md`、
   `docs/DATA_MODEL.md`、`docs/PAID_FEATURES.md`、`docs/STATE.md`、
   `docs/CHANGELOG.md`（あれは足すだけ。書き換えない）。
-- Implementation status: **ほぼ implemented、ただし 6 は未実装。**
-  1〜5 はコードに在る。**6「言語はアカウントないと作れない」だけが無い。**
+- Implementation status: **IMPLEMENTED**（1・4・5・6・7）。2・3 は 2026-09-04 に差し替え。
 
-#### コードと合っていない所。直していない ── 報告した
-
-このファイルの「if existing code contradicts it, **report the contradiction** —
-do not go and change unrelated code to match」に従う。今日は docs だけ触った。
-
-**最初の言語は、アカウントを訊けない所で作られている。**
-`www/core.js` の最上位に
-
-```
-try{ if(!langId || !LANGS[langId]){ if(!langMigrate()) langFirst(); } }catch(e){ langFirst(); }
-```
-
-があり、これは `www/index.html` の 2749 行目 ── `net.js`（2766）より前、
-`boot.js`（2802）よりずっと前 ── で走る。その時点で `netSignedIn` はまだ
-**定義されてすらいない。** つまり最初の言語は、アカウントの有無を訊く手段が
-無い場所で、無条件に作られている。「アカウントないと作れない」を効かせるには
-最初の言語を作る場所を動かす必要があり、それは core.js の一行では済まない。
-
-**そして「アカウントの無い人はいない」も、厳密には今日まだ真ではない。**
-`www/boot.js:96` の `netAnon(bootSession, function(){})` は失敗しうる。
-失敗のコールバックは空で、その上のコメントが理由を書いている ──
-「It means the phone is offline on its first launch, and the whole making side
-works offline; the next launch asks again」。**初回起動＋圏外**は、
-アカウントが無く、それでも制作ができる状態であり、コードはそれを意図して
-支えている。この決定は、その状態をどうするかを決めていない。
-
-だから今日消した文は「もう嘘だから」ではなく、**「もう規則ではないから」**
-消した。事実としてはまだ半分残っており、上の一段落がその残りである。
 
 ### Decision
 - Date: 2026-08-25
@@ -4562,7 +4179,7 @@ and is never merged into your own」と言っている。**入らない、は二
   / `calWeekSlots`）
 - Affected data: 何も増えない。スロットの**ラベル**だけで、作られる単語も
   その並びも変わらない
-- Affected docs: `www/cal.js` の `calSlots()` のコメント、`docs/CHANGELOG.md`
+- Affected docs: `www/cal.js` の ~~`calSlots()`~~ のコメント、`docs/CHANGELOG.md`
 - Implementation status: **入っている。**`calMonthSlots()` と `calWeekSlots()`
   （`www/cal.js`）が `cal.m.1`…`cal.m.12` と `cal.d.1`…`cal.d.7` を引き、
   十言語ぶんの 19 個が入っている。英語は January…December と
@@ -4752,7 +4369,7 @@ and is never merged into your own」と言っている。**入らない、は二
 - Affected features: every screen that draws something a plan closes.
   Named today: `kb.full` (`www/keyboard.js`), `postEdit()` (`www/post.js`),
   the door to a second language (`www/home.js`), and the write road
-  (`www/sheet.js`) once `CAN.write` exists.
+  (`www/sheet.js`) once ~~`CAN.write`~~ exists.
 - Affected data: none.
 
 ### Decision
@@ -4764,9 +4381,8 @@ and is never merged into your own」と言っている。**入らない、は二
    やん？あれが言語切り替えになるって感じ」「せっていからでいいよ」
 
   **A language is an account, and the language list is the account switcher.**
-  It stays where it is — Settings → Languages (`www/settings.js`, `go('langs')`,
-  `vLangs()` in `www/home.js`). It is NOT moved onto the profile or behind the
-  face; that was offered and turned down.
+  Where the switcher is: 【差し替え済み 2026-09-12】── 差し替えた決定:
+  「2026-09-12 朝の六つ ── 言語の切り替えはプロフィールへ、…」（2026-09-12）。
 
   What is added is one button at the **foot of that list**, where "add an
   account" sits in the app this is modelled on. Pressing it makes a language
@@ -4783,8 +4399,7 @@ and is never merged into your own」と言っている。**入らない、は二
   **the language ceiling** — which lands in the SAME commit, because a door
   with no ceiling is unlimited languages on the free plan. Free 1 / Plus 1 /
   Pro 3, from the decision of 2026-08-23. It HIDES and never deletes
-  (`wordsSeen()`'s shape): somebody who already has three keeps three, sees
-  three, backs up three, and is refused only the fourth.
+  (`wordsSeen()`'s shape); which one stays on free is 「2026-09-12 主言語」.
 
 ### Decision
 - Date: 2026-08-26
@@ -4834,7 +4449,7 @@ and is never merged into your own」と言っている。**入らない、は二
 - Reason: the editor is the preview and a pattern is where a keyboard starts,
   so a pattern that starts at a shape no phone has is the app handing somebody
   a bad keyboard and calling it a starting point.
-- Affected features: `kbPer()`, `kbRows()`, `kbFlickLay()`, `kbChartLay()`
+- Affected features: `kbPer()`, ~~`kbRows()`~~, `kbFlickLay()`, `kbChartLay()`
   (`www/keyboard.js`). **Nothing stored changes and no existing keyboard
   moves** — only what a NEW board is made from.
 - Implementation status: **implemented**, 2026-08-26, `claude/kb2`.
@@ -4851,39 +4466,24 @@ and is never merged into your own」と言っている。**入らない、は二
   number of rows falls out of it.** It is not a number anybody chooses and
   there is no longer one written in the app.
 
-  `KeyboardViewController` caps the whole keyboard at `mostOfScreen = 0.55`
-  of the screen, a row at `rowHeight = 54`, and the edges plus the candidate
-  bar at `8 + 44` — and past the cap it SQUEEZES the rows rather than growing
-  (「高さやめて、フリックなら日本語のサイズ、qwartyなら無料版のサイズくらいまで
-  にしないとキツくない？」). So a row past the cap was never a row; it was
-  every row on the keyboard getting shorter.
+  `KeyboardViewController` caps the whole keyboard at `mostOfScreen` of the
+  screen — **half**, 「0.5が限界」 OWNER 2026-08-27, which replaced the 0.55 this
+  entry was written with — a row at `rowPerWidth` of the phone's short side,
+  and the edges plus the candidate bar at `8 + 44`; past the cap it SQUEEZES
+  the rows rather than growing (「高さやめて、フリックなら日本語のサイズ、qwartyなら
+  無料版のサイズくらいまでにしないとキツくない？」). So a row past the cap was
+  never a row; it was every row on the keyboard getting shorter.
 
   **And a row is a KEY tall.** 「キーのサイズはiPhoneのサイズによって変わる
-  んじゃないの？八行入っても小さかったら打ちにくいだけだぞ？」
+  んじゃないの？八行入っても小さかったら打ちにくいだけだぞ？」 The height
+  follows the width at **0.1385 of the phone's short side** — 54 at 390pt — so a
+  key keeps its shape everywhere.
 
-  `rowHeight` was a flat `54`, so a key was the same height on every phone and
-  the only thing a bigger phone bought was MORE ROWS. Width always scaled —
-  ten keys divide whatever the phone is across — and the height now follows
-  it at **0.1385 of the phone's short side**, which is that same 54 at the
-  390pt phone it was measured on. A key keeps its shape everywhere.
-
-  `kbRowsMax()` divides the rest out: `(screen × 0.55 − 52) / (width × 0.1385)`.
-
-  | phone | row height | rows that fit |
-  |---|---|---|
-  | 320 × 568 (SE 1) | 44.3pt | **5** |
-  | 375 × 667 (SE 2/3) | 51.9pt | **6** |
-  | 375 × 812 … 402 × 874 (13 mini … 16) | 51.9 – 55.7pt | **7** |
-  | 428 × 926 … 440 × 956 (Pro Max) | 59.3 – 60.9pt | **7** |
-
-  **Eight fits on nothing now**, which is what the report was about.
-
-  **The ceiling is ONE number — seven — and not each row of that table.** A
-  keyboard belongs to a language and a language moves between phones, so
-  "as many as the phone in your hand fits" builds eight on a Pro Max and hands
-  an SE eight rows squeezed to 39pt. It is the width rule one axis over:
-  rule 19 has always set the width by the narrowest iPhone, not the phone in
-  your hand.
+  **The ceiling is ONE number, divided out of the SMALLEST phone** (320 × 568):
+  `kbRowsMax()`, which gives **five** — the free QWERTY's own row count. A
+  keyboard belongs to a language and a language moves between phones, so it is
+  the width rule one axis over: rule 19 sets the width by the narrowest iPhone,
+  not the phone in your hand.
 
   It was `KB_ROWS = 8`, invented in `www/keyboard.js` under a comment saying
   「nothing on the phone sets a height」 — which was not true when it was
@@ -4966,9 +4566,9 @@ and is never merged into your own」と言っている。**入らない、は二
   a row to it was 60px against 320 on page one, which reads as 「8列も追加
   できるのに行は2ページ目から追加できない」. Rows could always be added; the
   thing to press was a sliver.
-- Affected features: `kbSheetW()`, `kbKeyW()` and the `cols` `kbHTML()` draws
+- Affected features: `kbSheetW()`, ~~`kbKeyW()`~~ and the `cols` `kbHTML()` draws
   on (`www/keyboard.js`), how every board narrower than ten columns is DRAWN —
-  **nothing stored changes, no layout moves, only the drawing**. `kbCellW()` stays on the ten-key scale
+  **nothing stored changes, no layout moves, only the drawing**. ~~`kbCellW()`~~ stays on the ten-key scale
   and is now only the 1/2/3 width palette, which is a palette of proportions
   and not a picture of a key: at true size on a three-key board those three
   tiles come to twice the screen, which is the fault
@@ -4988,7 +4588,7 @@ and is never merged into your own」と言っている。**入らない、は二
   | **Basic** | **1** | **1 + 3 = 4** |
   | **Plus** | **3** | **no ceiling** |
 
-  Keyboards are counted **across languages, not within one**. Today `KB_MAX`
+  Keyboards are counted **across languages, not within one**. Today ~~`KB_MAX`~~
   is three boards *per language*; from now the number is a pool. A language
   may hold all four of Basic's, or one each across Plus's three, or any other
   split.
@@ -5025,27 +4625,28 @@ and is never merged into your own」と言っている。**入らない、は二
   language deeply — the dictionary, the letters, the writing system, the
   keyboard, the calendar all stack onto one. Three is there for the person who
   wants a second and a third, not as the thing being sold.
-- Affected features: `KB_MAX` (a per-language ceiling then, a pool now, and
+- Affected features: ~~`KB_MAX`~~ (a per-language ceiling then, a pool now, and
   gone entirely on Pro), a new language ceiling that does not exist at
   all today, `postEdit()`, `planBadge()`.
 - Affected data: none. Somebody over a ceiling keeps everything — every
-  keyboard, every language — and simply cannot add another. `backup-check`
+  keyboard, every language — and simply cannot add another. ~~`backup-check`~~
   holds this for keyboards already.
 - Affected docs: `docs/PAID_FEATURES.md`, `docs/FEATURES.md`.
 - Implementation status: **the keyboards are built** (2026-08-23,
   `claude/save`): `kbCap()` in `www/core.js`, `kbCount()` / `kbRoomKb()` in
-  `www/keyboard.js`, `CAN.kb` at `plus`, `KB_MAX` gone. Held by `plan-check`.
+  `www/keyboard.js`, `CAN.kb` at `plus`, ~~`KB_MAX`~~ gone. Held by `plan-check`.
   **The language ceiling, `can('edit')` and `can('badge')` are all built now** --
   `langCap()` beside `kbCap()` in `www/core.js` (1 / 1 / 3, with `langStop()`
   as the refusal), `CAN.edit` at `plus` with `postEdit()` asking `can('edit')`,
   and `CAN.badge` at `pro` with `postBadge()` asking `can('badge')` instead of
-  reading `plan()`. `dl` was added on 2026-09-02. **広告は今やりません**
-  ──「6いまはいい」 OWNER 2026-09-03 ── ので `noads` は `CAN` に入れません。
+  reading `plan()`. `dl` was added on 2026-09-02. `noads` は 「広告は Twitter と同じ形 ── 投稿に擬態して右上に PR、枠は売れる形、今は AdMob、pro は無し」（2026-09-23） で
+  `CAN` に入り、pro に付く。
 
   **数えるのはアカウントです。**「は？端末の話なんかしてねえだろ」「だから端末で
   やるわけねえだろ」 OWNER 2026-09-03。この app に「端末ごと」という単位は
-  ありません（`CLAUDE.md` § Online）。`langCount()` は `langAcct()` を通し、
-  `langOwned()` が `SESS.uid` と言語の `uid` を突き合わせます。
+  ありません（`CLAUDE.md` § Online）。`langCount()` はサーバーの答え
+  （`language?owner=eq.<me>`、`LMINE`）を数え、誰の言語かは `langOwnOf()` が
+  `language.owner` で答えます（CLAUDE.md 規則 22）。
   アカウントを共有して数を増やすのは規約の話で、コードが追うものではない
   ── 「普通に共有は規約違反でしょ」。
 
@@ -5063,23 +4664,23 @@ and is never merged into your own」と言っている。**入らない、は二
   | **Plus** | **Pro** | $9.99 / $99.99 |
 
   Nothing about what each buys changed. Only the words did, and the stored
-  value with them: `SET.plan` and the Keychain hold `free` / `plus` / `pro`,
+  value with them: ~~`SET.plan`~~ and the Keychain hold `free` / `plus` / `pro`,
   and the product ids are `com.tokinets.lingua.plus.*` and `...pro.*`.
-- Reason: `Basic` is what most apps call their FREE tier, so the confusable
+- Reason: ~~`Basic`~~ is what most apps call their FREE tier, so the confusable
   pair was Free and Basic rather than Basic and Plus — and the order was
   inferrable rather than obvious. `Free < Plus < Pro` needs nobody told which
   is which, and all three words survive untranslated in the ten languages,
   which plan names have to (they do not go through `t()`).
 - Affected features: `PLAN_ORDER`, `CAN`, `wordCap()`, `PLANS`, `planBadge()`,
-  the plans screen, `LinguaStore.swift`'s product map, every `SET.plan` in
+  the plans screen, `LinguaStore.swift`'s product map, every ~~`SET.plan`~~ in
   `tools/`, and the nine `plan.plus.*` keys in ten language files, which are
   `plan.pro.*` now.
 - Affected data: **one value, moved once.** A phone already holding
   `plan: 'plus'` wrote it while Plus was the TOP tier; read in the new world
-  it would be the middle one. `planMigrate()` in `www/core.js` moves it up
+  it would be the middle one. ~~`planMigrate()`~~ in `www/core.js` moves it up
   and writes `SET.planV = 2` so it can never run twice — after this `plus` is
-  a real middle tier and must be left alone. `SET.planWas` carries a plan name
-  too and moves with it, or the next `capLapse()` would announce a step
+  a real middle tier and must be left alone. ~~`SET.planWas`~~ carries a plan name
+  too and moves with it, or the next ~~`capLapse()`~~ would announce a step
   nobody took. On a phone the Keychain is written again, or the next launch
   would hand back the old word.
 
@@ -5103,14 +4704,14 @@ and is never merged into your own」と言っている。**入らない、は二
   said 4 in a pool and Plus with no ceiling, and the `CAN` table below it said
   Basic 1 and Plus 3. A session that was about to move `can('kb')` down to
   Basic stopped on it instead, because a door opened without its number would
-  have given Basic the three `KB_MAX` hands out today, which is neither
+  have given Basic the three ~~`KB_MAX`~~ hands out today, which is neither
   answer. The owner named the first one. The table below now says the same
   thing, so there is one answer in this file again.
-- Affected features: `KB_MAX` in `www/keyboard.js` — a per-language constant
+- Affected features: ~~`KB_MAX`~~ in `www/keyboard.js` — a per-language constant
   today, a per-plan number counted across languages from now — and
   `CAN.kb`, which moves from `plus` to `basic`.
 - Affected data: none. Somebody over the ceiling keeps every keyboard and
-  simply cannot add another. `backup-check` holds that already.
+  simply cannot add another. ~~`backup-check`~~ holds that already.
 - Affected docs: `docs/PAID_FEATURES.md`, `docs/BACKLOG.md`.
 - Implementation status: **built, 2026-08-23, `claude/save`.** It was deferred
   because `www/keyboard.js` was another branch's; that branch has not touched
@@ -5120,7 +4721,7 @@ and is never merged into your own」と言っている。**入らない、は二
   `www/keyboard.js` sums the built keyboards across `LANGS` -- the open
   language from memory, every other one through `kbBoardsOf()` so an older
   single-keyboard file counts as the one it is -- `kbRoomKb()` adds the QWERTY
-  as the 1 in 1 + 3, and `CAN.kb` moved to `plus` in the same commit. `KB_MAX`
+  as the 1 in 1 + 3, and `CAN.kb` moved to `plus` in the same commit. ~~`KB_MAX`~~
   is gone. Seven claims in `plan-check`; three bugs put back and watched.
 
 ### Decision
@@ -5154,10 +4755,8 @@ and is never merged into your own」と言っている。**入らない、は二
   | `file` a list brought in as a file | — | — | yes |
   | `noads` | — | — | **yes** |
 
-  **`noads` は `CAN` に入れません。**「6いまはいい」 OWNER 2026-09-03 ──
-  広告は今やらないので、消すものがありません。`dead-check` は誰も訊かない
-  能力を拒みます（何も課金していない値段表の一行）。**広告をやると決まった日に、
-  その実装と同じコミットで入ります。**それまでこの行は一つも足しません。
+  **`noads`**: 「6いまはいい」（2026-09-03）の方は【差し替え済み 2026-09-23】──
+  差し替えた決定: 「広告は Twitter と同じ形 ── 投稿に擬態して右上に PR、枠は売れる形、今は AdMob、pro は無し」（2026-09-23）。`CAN.noads` は pro。
 
   **`words` and `kb` are the two that stop being yes/no.** Everything else in
   that table is a door; those two are a number, and the number is the plan's.
@@ -5174,7 +4773,7 @@ and is never merged into your own」と言っている。**入らない、は二
   ads. "Remove the ads" is a reason to buy that everybody understands without
   being told what a syllabary is.
 - Affected features: `CAN` (a third level, and a new `noads`), `FREE_LIMIT`
-  and `KB_MAX` (constants today, per-plan from now), `capLapse()` (one road
+  and ~~`KB_MAX`~~ (constants today, per-plan from now), ~~`capLapse()`~~ (one road
   today — "back to free" — two from now), the plans screen, StoreKit.
 - Affected data: none. Nothing about a plan may change what is stored:
   somebody at 1500 words dropping to Basic keeps all 1500 and simply cannot
@@ -5198,7 +4797,7 @@ and is never merged into your own」と言っている。**入らない、は二
   - **`kb` has not moved down to Basic.** How many is a number, and the two
     decisions of this day disagree about it — 4 in a pool against 1, and no
     ceiling against 3. `docs/BACKLOG.md` has both sides. Opening the door
-    without the number would give Basic the three `KB_MAX` hands out today,
+    without the number would give Basic the three ~~`KB_MAX`~~ hands out today,
     which is neither answer.
   - **`edit` and `badge` are not in `CAN`.** `postEdit()` and `planBadge()`
     are both in `www/post.js`, which belongs to another session today, and
@@ -5220,7 +4819,7 @@ and is never merged into your own」と言っている。**入らない、は二
   rather than guessed.
 
   What carries over: the AdMob account and its ad unit ids, the ATT call, the
-  initialisation, and one shape worth copying outright — `adsDisabled` is
+  initialisation, and one shape worth copying outright — ~~`adsDisabled`~~ is
   checked **immediately before display**, not only at the call sites, because
   a save loading asynchronously can otherwise let an ad appear for somebody
   who has already paid.
@@ -5237,19 +4836,15 @@ and is never merged into your own」と言っている。**入らない、は二
   Native Advanced reader is ours to write: `GADAdLoader` in Swift, materials
   out through `nativePromise`.
 
-  The mimicry has a ceiling that is not ours: AdMob requires the word
-  "Ad"/"Sponsored" and forbids rearranging the materials. Same skeleton, same
-  spacing, same face as a post, with one word saying what it is — about what
-  X's Promoted looks like.
+  The word that says what it is: 【差し替え済み 2026-09-23】── 差し替えた決定:
+  「広告は Twitter と同じ形 ── 投稿に擬態して右上に PR、枠は売れる形、今は AdMob、pro は無し」（2026-09-23）（右上に PR）。
 - Affected features: a new `LinguaAds` on the native side; the feed inserting
   a row every N posts; `press` (an ad row must carry no button of ours).
 - Affected data: none.
 - Affected docs: `docs/apple.md` (a second AdMob app, ATT, the privacy
   manifest).
-- Implementation status: **nothing built.** The Swift side is the expensive
-  half, and this app has had four native hand-overs of which three failed
-  silently — so it gets a status line on screen first, the way `kbOutSay()`
-  was added before anything else worked.
+- Implementation status: **IMPLEMENTED** ── `ios/App/App/LinguaAds.swift` が素材を読み、
+  行はタイムラインが描く（2026-09-23 の項の状況を見ること）。
 
 ### Decision
 - Date: 2026-08-22
@@ -5346,29 +4941,29 @@ and is never merged into your own」と言っている。**入らない、は二
   **(1) A consistent verb family is a legitimate prefix and is not to be
   broken up.** `save*` is exactly ten functions — `saveKb` `saveLetters`
   `saveMe` `saveNote` `saveNotes` `savePosts` `saveSnd` `saveStg` `saveWld`
-  `saveWord` — and every one of them names what it saves. It stays as it is.
-  `del*` (`delNote`, `delWord`) stays for the same reason. Nobody is to
+  ~~`saveWord`~~ — and every one of them names what it saves. It stays as it is.
+  `del*` (~~`delNote`~~, `delWord`) stays for the same reason. Nobody is to
   "fix" two members of a family into a chapter prefix and leave the other
   eight; that is the tangle, not the untangling. **`docs/BACKLOG.md` was
-  wrong to list `savePosts` and `saveMe` beside `postsRead`** — those two are
-  not a `posts*`/`post*` collision, they are `save*`, and only `postsRead` is
-  the thing the entry was actually about. `postsRead` → `postRead`.
+  wrong to list `savePosts` and `saveMe` beside ~~`postsRead`~~** — those two are
+  not a `posts*`/`post*` collision, they are `save*`, and only ~~`postsRead`~~ is
+  the thing the entry was actually about. ~~`postsRead`~~ → `postRead`.
 
   **(2) `gh*` in `glyph.js` is `ge*`'s and is renamed `geHint*`.** The ten
   functions are the silent demo canvas inside the glyph editor — an arrow
   replaying three points closing into a shape, and a before/after of the ○ /
   fill / new-stroke buttons. It draws no text at all, which is why it is
   right in ten languages. It is not grammar (`g*`) and it is not the editor
-  itself, so: `ghDemo` `ghDraw` `ghEase` `ghField` `ghInk` `ghMount` `ghPos`
-  `ghSeg` `ghShow` `ghTick` → `geHint*`. Its uppercase globals take `GE_`,
-  which `GE_MAXPTS` already established in the same file: `GHINT` `GHP`
-  `GHTAP` `GHCYC` `GHDCYC` `GHDEMO` → `GE_HINT` `GE_HINT_P` `GE_HINT_TAP`
+  itself, so: ~~`ghDemo`~~ ~~`ghDraw`~~ ~~`ghEase`~~ ~~`ghField`~~ ~~`ghInk`~~ ~~`ghMount`~~ ~~`ghPos`~~
+  ~~`ghSeg`~~ ~~`ghShow`~~ ~~`ghTick`~~ → `geHint*`. Its uppercase globals take ~~`GE_`~~,
+  which ~~`GE_MAXPTS`~~ already established in the same file: ~~`GHINT`~~ ~~`GHP`~~
+  ~~`GHTAP`~~ ~~`GHCYC`~~ ~~`GHDCYC`~~ ~~`GHDEMO`~~ → `GE_HINT` `GE_HINT_P` `GE_HINT_TAP`
   `GE_HINT_CYC` `GE_HINT_DCYC` `GE_HINT_DEMO`.
 
   **(3) `note*` in `notes.js` is the chapter spelled long, and goes to
-  `nt*`.** `noteRead` `noteCut` `noteHead` `noteBody` `noteAt` → `nt*`, and
-  `notesFound` → `ntFound`. `openNote` and `vNotes` are untouched — `open*`
-  and `v*` are named in CLAUDE.md — and `saveNote` `saveNotes` `delNote` are
+  `nt*`.** ~~`noteRead`~~ ~~`noteCut`~~ ~~`noteHead`~~ ~~`noteBody`~~ ~~`noteAt`~~ → `nt*`, and
+  ~~`notesFound`~~ → `ntFound`. `openNote` and `vNotes` are untouched — `open*`
+  and `v*` are named in CLAUDE.md — and `saveNote` `saveNotes` ~~`delNote`~~ are
   untouched by (1).
 - Reason: the Names rule exists so that 500-odd globals in one namespace stay
   findable, and a ten-member verb family is findable. CLAUDE.md's own prefix
@@ -5383,7 +4978,7 @@ and is never merged into your own」と言っている。**入らない、は二
 - Affected data: none. Nothing stored is named by any of these.
 - Affected docs: `docs/BACKLOG.md` — the "a rename is not a fix" entry is
   corrected on the `savePosts`/`saveMe` half and struck as each part lands.
-- Implementation status: `wSetFil`/`wSetSort` → `wordsSetFil`/`wordsSetSort`
+- Implementation status: ~~`wSetFil`~~/~~`wSetSort`~~ → `wordsSetFil`/`wordsSetSort`
   landed (yoo). The three above are assigned and not yet in.
 
 ### Decision
@@ -5479,34 +5074,8 @@ and is never merged into your own」と言っている。**入らない、は二
 - Affected docs: `FEATURES.md`, `STATE.md`, `DATA_MODEL.md`, `PAID_FEATURES.md`.
 - Implementation status: **not started.**
 
-### Decision
-- Date: 2026-08-22
-- **SUPERSEDED 2026-08-26** by 「匿名アカウントはねえよ」「言語はアカウントないと
-  作れないです」「ログインした人しか書けないけど」「二種類になる意味も分からない
-  けど」 — the entry at the head of this log. **There is no anonymous account
-  and no second question.** The words below are the record of what was decided
-  on the 22nd and are left exactly as they were; nothing in them is a rule any
-  more. Do not build off this entry.
-- Area: When somebody is asked who they are
-- Decision: An **anonymous account is made silently at first launch** and
-  everything is made under it. Identity is asked in **two places only:
-  posting, and buying.** The uid does not change when it is attached.
-- Reason: 「サインイン必須にしたいけど、オンボーディングで離脱されるのは防ぎたい」
-  「課金とツイートにはログイン必須。それ以外は流さない」. Buying needs it
-  because an anonymous account is one phone's refresh token, and a receipt
-  bound to a lost one is paid for and unreachable.
-- Affected features: onboarding, composer, plans screen, `is_member()` — which
-  becomes two questions: your own things, and things other people see.
-- Affected data: none.
-- Affected docs: `FEATURES.md`, `STATE.md`, `supabase/setup.md`.
-- Implementation status: **the phone's half is done.** The first launch signs
-  in anonymously (`netAnon` in `net.js`, called from `boot.js`); `netMember()`
-  is the second question and `obNeed()` asks it at the six things other people
-  see; the door left the onboarding and is opened by `obDoor()`. Buying is
-  untouched — there is no StoreKit to put a door in front of. The SERVER half
-  is not done: `is_member()` still refuses an anonymous account for
-  everything, including its own things, so nothing an anonymous account makes
-  can be stored yet.
+### 【差し替え済み 2026-08-26】When somebody is asked who they are（2026-08-22）
+- 差し替えた決定: 「匿名アカウントは無くなる。アカウントは一種類」（2026-08-26）
 
 ### Decision
 - Date: 2026-08-22
@@ -5603,7 +5172,7 @@ and is never merged into your own」と言っている。**入らない、は二
 - Implementation status: **取る側は入りました。**`can('dl')`（`www/core.js` の
   `CAN`）と `dlCap()`（Plus 1・Pro 3、無料は 0）、`dlCount()`、`dlStop()`。
   押すと本当に着地することを `tools/dl-check.mjs` が持ちます ── 記事の見た目
-  ではなく storage を訊きます（`LANGS[id].mine` が false、`bkPack()` は運ばない、
+  ではなく storage を訊きます（`LANGS[id].mine` が false、~~`bkPack()`~~ は運ばない、
   `netLangSync()` は走らない）。「ダウンロードボタン押しても言語追加されない
   けど？」OWNER 2026-09-01 が、その検査が書かれた理由です。
   6 番（落としたキーボードに当てられる文字は落とした人のもの）はまだです。
@@ -5633,9 +5202,9 @@ and is never merged into your own」と言っている。**入らない、は二
 - Not covered by this: an EMPTY state ("nothing here yet"), a count, a state
   ("only for an abugida"), an error, and the `?` sheets. None of those is the
   screen explaining itself.
-- Affected features: every screen. Removed with the decision: `plans.intro`,
+- Affected features: every screen. Removed with the decision: ~~`plans.intro`~~,
   `plans.note`, `set.theme.note`, `ws.kind.note`, `ab.cell`, `langs.more`,
-  `kb.locked` — and `LANG_MAX`, whose only reader was one of them.
+  `kb.locked` — and ~~`LANG_MAX`~~, whose only reader was one of them.
 - Affected data: none.
 - Affected docs: `CLAUDE.md`, `docs/FEATURES.md`
 - **Held by: nobody but a person.** Measured 2026-09-01. `.note` is worn 39
@@ -5654,12 +5223,8 @@ and is never merged into your own」と言っている。**入らない、は二
 ### Decision
 - Date: 2026-08-18
 - Area: Anything that is the server's — and the timeline first
-- **Superseded in part on 2026-08-26** (the entry at the head of this log).
-  Point 1 stands and is still absolute. **Point 3 does not**: 「言語はアカウント
-  ないと作れないです」「古い記載消してくれうざい」. The words below are left
-  exactly as they were written — this log is the record of what was decided
-  when, and a record that gets edited to agree with today is not one. Read
-  point 3 as history.
+- **Point 3 was replaced on 2026-08-26** by 「匿名アカウントは無くなる。
+  アカウントは一種類」 — 「言語はアカウントないと作れないです」. Points 1 and 2 stand.
 - Decision:
   1. **Anything that needs the server is built assuming the server is
      there.** A screen that half-works without one is not a step on the way
@@ -5669,9 +5234,8 @@ and is never merged into your own」と言っている。**入らない、は二
      require an account.** The feed, the search and the notices show the
      app's own door when there is no session, and the composer does not open
      at all.
-  3. **The making side is untouched.** A language is made on this phone with
-     or without an account, and 「アカウントなしで続ける」 stays on the door
-     and keeps meaning exactly that. What it does not buy is a timeline.
+  3. 【差し替え済み 2026-08-26】差し替えた決定: 「匿名アカウントは無くなる。
+     アカウントは一種類」（2026-08-26）。
 - Reason: 「なんでログインしてないアカウントで投稿できんの？そんなsnsどこにあん
   の？」「だからなんで最初からオンライン前提で作れっつってんだろ、そういう中途
   半端なバグを出すんだって何回言えばわかるの？」 — said more than once before
@@ -5679,9 +5243,7 @@ and is never merged into your own」と言っている。**入らない、は二
 - Affected features: the timeline, the search, the notices, the composer, the
   onboarding door (it takes a `skip` argument now, so the same door can be
   shown without "continue without an account")
-- Affected data: **none.** `SET.anon` still means what it meant. No post is
-  touched, moved or removed; posts already written while signed out stay
-  where they are and go up when there is a session, exactly as before.
+- Affected data: **none.** No post is touched, moved or removed.
 - Affected docs: `docs/FEATURES.md`, `docs/ARCHITECTURE.md`, `CLAUDE.md`
 - Implementation status: implemented, held by `post-check` (all three
   assertions watched failing), **not device confirmed**
@@ -5718,12 +5280,12 @@ and is never merged into your own」と言っている。**入らない、は二
 - Reason: 段のはしごが一行で読めること。`docs/apple.md` に、Apple のサイトで
   どこを押すかまで書いてあります。
 - Affected features: the plans screen, everything `CAN` gates
-- Affected data: none. `SET.plan` は端末の写しで、**答えは Apple のもの** ──
+- Affected data: none. ~~`SET.plan`~~ は端末の写しで、**答えは Apple のもの** ──
   2026-09-06 以降、その答えを読むのはサーバー（`verify-plan`）です。
 - Affected docs: `docs/apple.md`, `docs/PAID_FEATURES.md`, `docs/FEATURES.md`
 - Implementation status: **StoreKit は入っています。**
   `ios/App/App/LinguaStore.swift` が StoreKit 2 でこの四つを扱い、
-  `www/store.js` がその一つの窓、`www/settings.js` の `PLAN_BUY` は **true**
+  `www/store.js` がその一つの窓、`www/settings.js` の ~~`PLAN_BUY`~~ は **true**
   です。実機では `storeBuy()` を通らなければ段は動きません。**false に戻さない
   こと** ── ビルド #106 が false のまま実機に出て、段のカードを押しただけで
   Pro が付きました。ブラウザには App Store が無いので `storeOn()` が false に
@@ -5785,36 +5347,30 @@ and is never merged into your own」と言っている。**入らない、は二
   person made is deleted.**
   1. The dictionary **lists the first 100 words** it was given, in the order
      they were made. The rest are not on screen. Every one of them is still in
-     `WORDS`, in `save()`, in the backup and in the file in Documents, and the
-     app reads the whole dictionary for itself — a post, a gloss, a spelling,
-     an example. Only the list is short.
+     `WORDS` and on the server, and the app reads the whole dictionary for
+     itself — a post, a gloss, a spelling, an example. Only the list is short.
   2. The writing goes back to an alphabet, the keyboard to the fixed QWERTY,
      the direction to left→right. All three were already true of `wsys` and
      `kb`; `dir` joins them.
   3. 自作のステージは**一覧から隠れます**。本にもともとある章は「無料の文法が
      何であるか」そのものなので残ります。`stAll()` が `can('gram')` の中でしか
      `STG.extra` を並べず、`stHidden()` がその数を足元に出します。
-  4. **The day it happens the app says so, once**, in a sheet: nothing has
-     been deleted, it is all in the backup, and it all comes back on
-     resubscribing. `capLapse()` in `core.js` decides when; `openCapLapse()`
-     in `settings.js` is what it says.
+  4. 【差し替え済み 2026-09-12】差し替えた決定: 「2026-09-12 朝の六つ」の (g)（2026-09-12） ── 起動のポップで一度、
+     サーバーの答え（`plan.was`、`capLapseSaw()`）。
   5. The foot of the dictionary says how many are not listed, every time.
 - Reason: 「a にしたら最初の1ヶ月で作りきったらそのあと課金されねえだろ」
   「非表示や」「課金切れたら、ポップ出して、バックアップには保存されてるよーって
   一回出せばok」
 - Affected features: the dictionary, search, the relation picker, the writing
   system, the keyboard, direction, grammar stages, the plans screen
-- Affected data: **none.** Nothing is written, moved or removed. `SET.planWas`
-  is added — the plan the app last saw, so a change can be noticed however it
-  happens (set by hand today, StoreKit tomorrow, found lapsed at launch)
+- Affected data: **none.** Nothing is written, moved or removed.
 - Affected docs: PAID_FEATURES.md, DATA_SAFETY.md, DATA_MODEL.md, CHANGELOG.md
 - Implementation status: implemented; code confirmed, not device confirmed
 - **The rule it is measured against**: `docs/DATA_SAFETY.md` forbids removing
   what somebody made. It does not forbid a shorter list. The line between the
-  two is the whole of this decision, so `backup-check` now holds it: on the
-  free plan, past the ceiling, `findWord()` still finds a word that is not
-  listed and `bkPack()` still carries every one of them. Both were watched
-  failing with the bug put back.
+  two is the whole of this decision, and `plan-check` holds it: on the free
+  plan, past the ceiling, the list is a hundred and not one byte of any slice
+  has moved.
 
 ### Decision
 - Date: 2026-08-13
@@ -5826,15 +5382,15 @@ and is never merged into your own」と言っている。**入らない、は二
      left→right.
   2. **Reading is free.** A post written in any of the four is shown that way
      to everybody, on every plan.
-  3. **Setting it is Plus.** Choosing a direction, and posting in one, is a
-     paid capability.
+  3. **Setting it is paid** — `CAN.dir`, at Pro (the rung this entry called
+     Plus before 「What the tiers are called」, 2026-08-23).
 - Reason: 「縦書き、右→左 左→右の投稿」「言語の設定でしょ右左とかは」
   「無料でも言語の向きは見ることはできる。でも設定してsnsとかに登校するのは
   有料会員のみ」 The vertical column order: 「右から左と左から右の両方」
 - Affected features: the writing system screen, the composer, the timeline,
   the card
 - Affected data: `SCRIPT.dir` in the **`script` slice** — the language's, so
-  it is in the backup and travels with the language. **Frozen onto the post**
+  it travels with the language to the server. **Frozen onto the post**
   as `post.dir`, for the same reason `ink` is: a reader has neither the
   writer's alphabet nor their language's settings
 - Affected docs: FEATURES.md, DATA_MODEL.md, PAID_FEATURES.md, CHANGELOG.md
@@ -5886,46 +5442,22 @@ and is never merged into your own」と言っている。**入らない、は二
 - Affected data: **new, frozen on the post** — `post.tr`, a translation per
   language code
 - Affected docs: FEATURES.md, DATA_MODEL.md
-- Implementation status: **縫い目だけがあります。**`postTr()`（`www/post.js`）は
-  `done(null)` を返し、`tr` は付かず、読む人は書いた人が打った自然言語を見ます
-  ── 動くべき姿であって、穴ではありません。`AI_SEAM` と同じ形です。
+- Implementation status: **未実装。**縫い目の関数も無く（`post.js` に翻訳を付ける
+  関数は無い）、`tr` は付かず、読む人は書いた人が打った自然言語を見ます。
 
 #### And the standing instruction that goes with it
 
 **Build for the online and AI parts now; wire them up later.** An unbuilt
 service is not a reason to stop — it is a reason to put a seam where it will
 attach, and to make everything on this side work with the seam answering
-nothing. `AI_SEAM` in `www/glyph.js` is the pattern and it predates this.
+nothing. The comment AI_SEAM in `www/glyph.js` marks one such place.
 
 Reporting "there is no hosted model" as a blocker was wrong. It is a fact
 about today, not about the design, and the design is the part being asked
 for.
 
-### Decision
-- Date: 2026-08-12
-- **SUPERSEDED、全部。**三層という枠組みそのものが無くなりました。
-  「なら自分の言語でどう言うか翻訳いらなくない？元々ai前提やったし」。
-  経緯は `docs/CHANGELOG.md` § 「自分の言語で読む」は無くなった — OWNER
-  DECISION。**投稿は二層です。**
-- Area: A post shown three ways
-- Decision: 投稿は**二層**で見えます ── (1) 書いた人が描いた文字、(2) それが
-  読む人の言語で何と言っているか。**第三層（それを読む人の人工言語に置き直す）は
-  作られ、外されました。**
-- Reason: 語を入れ替えるのは翻訳ではありません。`Mama seja luna` が文になって
-  いるかは、その言語がコピュラを持つか、所有をどう示すか、主題に何を付けるかで
-  決まり、その答えを持っている場所がアプリのどこにもありません ──
-  「単語を並べるだけじゃ文法はできないのよわかる？」。文法ページの自由文のメモを
-  読めるのは AI だけで、AI は入れません ── 「AI入れないって言ってるでしょ？」
-- Affected features: timeline, post
-- Affected data: 二層とも投稿に凍らせてあります（`ink`, `mn`）。
-  **前の版で `SET.trDate` と `SET.trN` を書いた端末では、その二つがまだ
-  `SET` に残っています** ── いまのコードはどちらも書かず、読まず、そして
-  **消しにも行きません**。人の設定にある二つの数で、このアプリは要らなく
-  なったものを削除しません（`www/post.js` § Layer three ... is gone）。
-- Affected docs: FEATURES.md, DATA_MODEL.md
-- Implementation status: 二層とも入っています。第三層は外れています。
-- Note: this does not overturn the decision at the head of `www/post.js` — no
-  machine reads an invented language on the author's behalf.
+### 【差し替え済み】A post shown three ways（2026-08-12）
+- 差し替えた決定: 投稿は二層 ── `docs/CHANGELOG.md` §「自分の言語で読む」は無くなった
 
 ### Decision
 - Date: 2026-08-12
@@ -5952,7 +5484,7 @@ for.
   編集画面にあります。いくつ扉があるかはここに書きません ── 書けば次に増えた日に
   古くなるので、`npm run dead` が毎回数えて出します。
   **クラウドはどの段にも属しません** ── `netLangSync()` は段を訊きません。
-  **翻訳は `CAN` に一度も入らず**、`TR_FREE_DAILY` も宣言されませんでした。
+  **翻訳は `CAN` に一度も入らず**、~~`TR_FREE_DAILY`~~ も宣言されませんでした。
 
 ### Decision
 - Date: 2026-08-12
@@ -5961,12 +5493,12 @@ for.
   day; unmetered AI is not a Plus capability.
 - Reason: 「aiはaiチャットが1日数回できるくらいで、基本機能にはついてない」
 - Affected features: AI suggestions, AI conversation
-- Affected data: `SET.aiDate` / `SET.aiN` (the daily counter)
+- Affected data: ~~`SET.aiDate`~~ / `SET.aiN` (the daily counter)
 - Affected docs: PAID_FEATURES.md, FEATURES.md
-- Implementation status (2026-08-21): **moot.** There is no AI. `AI_SEAM` in
+- Implementation status (2026-08-21): **moot.** There is no AI. ~~`AI_SEAM`~~ in
   `www/glyph.js` marks where a hosted model would join and nothing joins it, so
-  Studio — the tier that sold it — is out, and with it went `CAN.ai`,
-  `AI_FREE_DAILY`, `SET.aiDate`/`SET.aiN`, the suggestion chips and the
+  Studio — the tier that sold it — is out, and with it went ~~`CAN.ai`~~,
+  ~~`AI_FREE_DAILY`~~, ~~`SET.aiDate`~~/`SET.aiN`, the suggestion chips and the
   conversation chapter. The question this decision answers comes back the day
   the seam has something behind it.
 
@@ -6049,36 +5581,23 @@ for.
 - Affected docs: DATA_MODEL.md, CHANGELOG.md, CLAUDE.md rule 12
 - Implementation status: implemented; code confirmed, not device confirmed
 
-### Number of languages — **superseded 2026-09-02**
-- Date: 2026-08-12
-- Area: Number of languages
-- **Superseded by 2026-09-02 「ダウンロードは Plus から。上限は make と別で、
-  Plus 1・Pro 3」** (in this log). Making a language is now **Free 1, Plus 1,
-  Pro 3** — `FREE_LANGS` / `PRO_LANGS` and `langCap()` in `www/core.js`,
-  with `langStop()` sending somebody to the plans screen at the ceiling.
-  Downloading somebody else's is a separate number again.
-- Decision: One language per person, on every plan. Not a price.
-- Reason: there is no way to make a second anywhere in the app, so a plan
-  promising more would promise a button that does not exist.
-- **Why it fell**: that reason stopped being true. `langAddRow()`
-  (`www/home.js`) is the door to a second language and `langNew()`
-  (`www/core.js`) is what it presses, so the number is something a plan can
-  sell. `LANG_MAX`, which this entry named, no longer exists.
-- Affected features: languages
-- Affected docs: PAID_FEATURES.md, FEATURES.md
+### 【差し替え済み 2026-09-02】Number of languages（2026-08-12）
+- 差し替えた決定: 「ダウンロードは Plus から。上限は make と別で、Plus 1・Pro 3」（2026-09-02）
 
 ### Decision
 - Date: 2026-08-11
 - Area: Data safety
 - Decision: Losing somebody's language is not acceptable under any
-  circumstance. A backup lives in Documents; a restore fills in what is
-  missing and never overwrites.
+  circumstance. A restore fills in what is missing and never overwrites.
+  Where the copy lives: 【差し替え済み 2026-09-04】── 差し替えた決定:
+  「バックアップのファイルも無くす。★の51件目は一番古いのを押し出す」（2026-09-04）
+  ── the server is the only copy that counts.
 - Reason: 「データ消えるのだけはありえない」
-- Affected features: backup, restore
-- Affected data: all eleven slices
+- Affected features: restore
+- Affected data: every slice in `SLICES`
 - Affected docs: DATA_SAFETY.md, CLAUDE.md rule 11
-- Implementation status: implemented; **device verification outstanding**
-  (9 items, `docs/TESTING.md` § device)
+- Implementation status: implemented — `netLangsDown()` fills in what is missing
+  (`again-check`, `acct-check` 13); **device verification outstanding**
 
 ### Decision
 - Date: 2026-08-11
@@ -6105,15 +5624,9 @@ for.
 - Reason: 「2ページ目なしでqwertyの上に1〜0の数字と！？入れてこれで無料版1ページに
   抑えよう」「これスペースデカすぎやね。！スペース？みたいにできない？」
   「デリートキーは横二つ分欲しいかも」
-- **The bar and the delete key were settled again after this entry was
-  written, and this entry did not say so for a week.** Both are the owner's
-  and both are in `docs/CHANGELOG.md`:
-  「2があった分謎に隙間できたから無くして」 took the key-wide hole out of
-  the third row, which made the delete three wide rather than two; and
-  「改行入れるか無料も。！？スペース　改行」 moved the two marks together to
-  make room for a return key — a keyboard that cannot start a new line is
-  one nobody can send a message on. The Decision above is written as they
-  left it. 「2ページ目なし」 is untouched.
+  The bar and the delete are the owner's later words: 「2があった分謎に隙間
+  できたから無くして」（delete three wide）and 「改行入れるか無料も。！？スペース
+  改行」（the return key）.
 - Affected features: keyboard
 - Affected data: none (`kbFixed()` is built from `LETTERS`, stored nowhere)
 - Affected docs: PAID_FEATURES.md, CLAUDE.md § what the free plan is
@@ -6200,7 +5713,7 @@ for.
   this decision was written to prevent. The fix is not a condition added on
   top: the file is written **the moment the recording ends** (`voTook()` in
   `www/rec.js`), so `PW.vo` is `{f, ms}` from then on and no base64 is held
-  anywhere. There is one road for a voice instead of two — `voPlayPW()` is
+  anywhere. There is one road for a voice instead of two — ~~`voPlayPW()`~~ is
   gone and the composer plays through `voPlay()` like everything else. A
   draft written before this still holding `b64` is put on the disk by
   `draftOpen()` and replaced in place. `post-check` walks the recording
@@ -6322,32 +5835,8 @@ for.
   invisible on build 57 and could not be reproduced here, so the row is a
   second entrance rather than a replacement
 
-### A word's derived words — **superseded 2026-08-20 (the entry below)**
-- Date: 2026-08-20
-- Area: A word's derived words
-- **Superseded the same day by 「A word's related words」, which is the NEXT
-  entry down.** The nine below became **two groups of twelve** — 活用 and
-  派生 — and a language may write its own in either. `FM_INF` and `FM_DER` in
-  `www/wordsheet.js` are those two lists.
-  **The ordering of this log is what makes this worth marking**: entries run
-  newest first, and these two share a date the wrong way round, so whoever
-  reads down the file meets the nine before the twenty-four and takes the
-  nine for the newer answer.
-- Decision: A derived word carries **which form of its parent it is**, chosen
-  from a fixed list of labels the app supplies. The language does not declare
-  a paradigm, nothing obliges a word to have every form or any of them, and a
-  form built out of nothing like its parent is still just a word with a label.
-  The nine: 過去形 · 未来形 · 進行形 · 完了形 · 複数形 · 否定形 · 命令形 ·
-  受身形, and no label.
-- Reason: 「過去形とか未来形とか現在進行形みたいなの形変えたのも一括で見れたほう
-  が良くない？」「ラベルはこっちで用意すればいいのでは」「型決めても英語みたいに
-  変わってる可能性もあるやん」
-- Affected features: the dictionary, the word sheet, the word read
-- Affected data: `fm` on a word — a code, never a label, deleted when empty and
-  when the parent goes
-- Affected docs: CHANGELOG, DATA_MODEL, FEATURES
-- Implementation status: implemented. `FM` and `fmLabel()` in
-  `www/wordsheet.js`; written by `wdPutExtras()`, which Save and Add both call
+### 【差し替え済み 2026-08-20】A word's derived words（2026-08-20）
+- 差し替えた決定: 「A word's related words」（2026-08-20、すぐ下）
 
 ### Decision
 - Date: 2026-08-20

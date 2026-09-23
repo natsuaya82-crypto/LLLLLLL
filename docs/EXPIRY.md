@@ -520,7 +520,7 @@ and it is still a serpentine and not one long drag -- 15 corners over 21 rows
   **どちらも全ゲートは回していません。**
 - 3-a・3-b・4 のほかは、この一覧を書いたときのまま ── 読んだだけです。
 - `docs/CHANGELOG.md`（15042 行）と `docs/FEATURE_RULES.md`（4695 行）は
-  全文を読んでいません。決定ログの当該項目と、`期限`／`retention`／
+  全文を読んでいません。決定ログの当該項目と、「期限」／「retention」／
   `自動削除`／`世代` の検索だけです。ここに「消してよい」と書いてある項目を
   見落としている可能性があります。
 - PostgREST が返す行数の既定の上限は見ていません。5 の 50 件は

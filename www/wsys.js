@@ -253,17 +253,20 @@ function wsUnits(){
    know how to combine drawings, because there is nothing to combine: strokes
    in the same square are already one letter. */
 function wsStrokes(unit){
-  var own=ltStrokes(unit);
-  if(own && own.length) return own;
+  var own=inkGeo(ltMain(unit));
+  if(own) return own;
   if(wsHasMarks() && unit && unit.length>1){
     var i, base=null, mark=null, ch;
     for(i=0;i<unit.length;i++){
       ch=unit.charAt(i);
-      if(ipaIsVowel(ch)) mark=ltStrokes(ch);
-      else base=ltStrokes(ch);
+      if(ipaIsVowel(ch)) mark=inkGeo(ltMain(ch));
+      else base=inkGeo(ltMain(ch));
     }
-    if(base && base.length && mark && mark.length) return base.concat(mark);
-    if(base && base.length) return base;
+    /* Two lists of one kind are one shape. A drawn base under a mark written
+       on a sheet is two kinds, and a shape is one kind (inkRings), so there
+       is nothing composed -- the base alone, as when there is no mark. */
+    if(base && mark && inkRings(base)===inkRings(mark)) return base.concat(mark);
+    if(base) return base;
   }
   return null;
 }

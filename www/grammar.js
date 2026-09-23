@@ -1821,7 +1821,7 @@ function g2PolPickHTML(which){
   out='<div class="field">'+
     lnField('gpol-w', '', KD('g2PolOwn', [which])+
       ' aria-label="'+esc(t('g2.pol.own'))+'" autocapitalize="none"', '',
-      (typeof myFontOn==='function' && myFontOn())? 'tfont' : '')+'</div>';
+      myFontField())+'</div>';
   for(i=0;i<a.length;i++)
     out+='<button class="stslot has"' + DO('g2PolPutW', [which, a[i].hw]) + '>'+
       '<span class="psm">'+sfontHTML(wOut(a[i].hw))+'</span>'+
