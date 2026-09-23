@@ -3329,41 +3329,6 @@ button.spbig{display:block;width:100%;background:none;border:0;padding:0;font:in
 .gtools button:active{opacity:.55}
 .ghintwrap{margin:18px 0 2px;display:flex;justify-content:center;margin-top:0}
 .ghint{width:100%;max-width:152px;aspect-ratio:1/1;display:block;opacity:.85;pointer-events:none}
-/* The one switch the whole feature turns on. Everything it changes is a
-   font-family: the stored text stays roman letters, always. */
-/* Every place a headword is shown as itself, and nowhere else: not the reading,
-   not the meaning, not the kana. The sentence screen counts twice — the chips
-   you are weaving and the line they read as — and it was the one place the
-   switch used to miss. */
-/* Everywhere a word of this language is written, it is written in this
-   language's letters. The list was five places and the app has fifteen: the
-   words a grammar stage holds, the sentence a word is used in, a proposed
-   word, the word being built out of sounds, the demonstration under a
-   grammar decision. A letter that has not been drawn falls through to the
-   serif underneath, which is what a font stack is for -- so a half-drawn
-   script shows the half that exists instead of nothing at all. */
-html[data-script="on"] .hw,
-html[data-script="on"] .psw,
-html[data-script="on"] .whw{font-family:var(--face-script);letter-spacing:0}
-/* The declaration is on .whw because .whw is the last of them, and it went
-   missing once for exactly that reason: the selectors under it were dropped
-   when the screen that wore them was deleted, and
-   the block came away with them. What was left was four selectors ending in a
-   comma, which a browser reads as the head of the NEXT rule: every headword,
-   every proposed word and every word under a grammar stage was set in
-   --face-ital, with the placeholder rule's !important behind it, and the
-   drawn letters never appeared anywhere the toggle was for.
-   tools/verify-script.mjs is what said so, by measuring .hw with the toggle
-   on and finding Cormorant Garamond. Nothing else could: the class is worn,
-   the file parses, and every screen still renders. */
-/* Eight selectors came off this list. Seven of them -- .line .tname .wcw
-   .sww .usew .lcs .cw .link .src -- are on no element anywhere in www/ any
-   more, so they were a list of places the font USED to reach, and a reader
-   checking whether something wears the script would have believed them.
-   The eighth, .gor, is on an element that still exists and should never have
-   been here: it holds t('gram.role.x') -- Subject, Object, Verb -- which is
-   the app's own word for a thing, not a word of anybody's language.
-   「自作文字になるのは自分が打った文字だけにしてくれない？」 */
 /* A placeholder is never in the drawn letters. It is the app saying what the
    box is for, in the app's own language, and .sfont carries !important so it
    was winning against every font rule on every empty field: the composer,
@@ -3378,9 +3343,11 @@ html[data-script="on"] .whw{font-family:var(--face-script);letter-spacing:0}
   letter-spacing:normal}
 .sfont::-webkit-input-placeholder{font-family:var(--face-ital) !important;
   letter-spacing:normal}
-/* `normal` hands the line box to the font, which is where the rule lives:
-   ink plus one lattice step. A number here would be a screen deciding the
-   spacing of somebody else's script, and there are four screens. */
+/* `normal` hands the line box to the font, and `letter-spacing:0` hands it
+   the gap between letters: both are the font's, ink plus the language's own
+   gap (SCRIPT.sp, CLAUDE.md rule 8). A number here would be a screen deciding
+   the spacing of somebody's script -- `.hw` and `.whw` each ask for their own
+   tracking, and a drawn letter inside them is not theirs to space. */
 /* !important, and it is the one place that gets to say so.
    .sfont means "this is set in the letters somebody drew" -- it is the whole
    point of the app, and nothing may quietly outrank it.
@@ -3392,7 +3359,7 @@ html[data-script="on"] .whw{font-family:var(--face-script);letter-spacing:0}
    that reason and no other: the class was on the element, the font was built,
    the glyph was there, and `l` came out as l. 「これ押してもlになる。lingua内
    でも」 Beating them one at a time is a dozen places agreeing; this is one. */
-.sfont{font-family:var(--face-script) !important;line-height:normal}
+.sfont{font-family:var(--face-script) !important;line-height:normal;letter-spacing:0}
 /* A field you type into. `LinguaType` carries only the private use area, so
    what the Lingua keyboard inserted is drawn and everything else -- roman,
    kana, anything -- falls through to the ordinary font because this face has

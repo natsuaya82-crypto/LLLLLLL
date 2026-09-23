@@ -711,7 +711,6 @@ function obBack(){
   if(ob.step===OB_SNS){ ob.step=OB_TOUR; GE=null; obTourGo(); return; }
   if(ob.step>0) obGo(ob.step-1);
 }
-function obLang(v){ SET.ui=v; save(); netPrefsPut(); render(); }
 
 /* ---- the door, which is not a step ------------------------------------ */
 /* Signing in is the LAST step of the onboarding and the app does not open on
@@ -2189,7 +2188,7 @@ function vOb(){
        read as though the old field were still alive. */
     '<div class="obtop">'+(obPending()? '' : obDots().map(function(i){
       return '<div class="dot'+(i<=s?' on':'')+'"></div>'; }).join(''))+'</div>'+
-    '<select class="oblang" aria-label="'+esc(t('ob.lang.a'))+'"' + CH('obLang') + '>'+
+    '<select class="oblang" aria-label="'+esc(t('ob.lang.a'))+'"' + CH('setUi') + '>'+
       UI_LANGS.map(function(c){
         return '<option value="'+c+'"'+(uiLang()===c?' selected':'')+'>'+esc(LANG[c].label)+'</option>';
       }).join('')+

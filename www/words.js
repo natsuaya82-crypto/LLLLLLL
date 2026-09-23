@@ -498,7 +498,7 @@ function wordsUndoHTML(){
    it says and what it calls itself to somebody who cannot see it. That stays
    where it is, which is what makes this the shared half. */
 function wEntryLines(w, mn){
-  return '<div class="hwrow"><span class="hw">'+esc(wOut(w.hw))+'</span>'+
+  return '<div class="hwrow"><span class="hw">'+sfontHTML(wOut(w.hw))+'</span>'+
     '<span class="rd">'+esc(phIpa(wPh(w)))+'</span>'+
     /* The subclass sits INSIDE the same span as the part of speech, not in
        one beside it. `.pos` carries `margin-left:auto` -- two of them is two

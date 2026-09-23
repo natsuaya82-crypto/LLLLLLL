@@ -1207,6 +1207,20 @@ function langWhose(id){
   return langTookHas(k)? LW_READ : LW_NONE;
 }
 function langMine(id){ return langWhose(id)===LW_MINE; }
+/* AND WHETHER IT IS SOMEBODY ELSE'S, which is not 「not mine」.
+   langWhose() has a third answer, 「not asked yet」, and a question that
+   folds it into either side draws a guess (CLAUDE.md rule 22). langLocked()
+   below folds it into 「not mine」 on purpose -- it is the door every WRITE
+   passes, and not writing until the answer is in is right there. What a
+   screen SHOWS is the other question: only the owner column having answered
+   with somebody who is not this account says a language is somebody else's.
+   「後人の言語は自分の言語じゃないからwikiページに表示させないように。」
+   OWNER 2026-09-23 -- the wiki asks this one (www/home.js § wldPage). */
+function langTheirs(id){
+  var own=langOwnOf(id),
+      me=(typeof SESS!=='undefined' && SESS && SESS.uid)? String(SESS.uid) : '';
+  return !!(own && me && own!==me);
+}
 /* AND THE OPEN LANGUAGE, ASKED BY EVERY WRITER OF ONE. True means the caller
    must stop -- upStop()'s shape, and for the same reason: a rule that lives in
    one place and is ASKED at each road that could break it.
