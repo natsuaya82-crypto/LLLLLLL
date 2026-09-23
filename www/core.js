@@ -2114,7 +2114,9 @@ function setKeep(){
    the way `lingua.me` is: with no signal the app is arranged the way it was
    last seen, which is what a copy is for. What changed is which of the two is
    the RECORD. */
-/* AND THE FOUR NOTIFICATIONS (2026-09-22). Which kinds somebody wants told
+/* AND THE NOTIFICATIONS (2026-09-22, and the day's prompt 2026-09-23).
+   Which kinds they are is push-send's `PUSH`, and tools/push-check.mjs holds
+   the `push_` names here to it. Which kinds somebody wants told
    to them is theirs and not this handset's: a person with an iPhone and an
    iPad wants 「いいね」 off on both, and the permission -- which IS the
    handset's -- is iOS's to hold, not ours.
@@ -2126,7 +2128,7 @@ function setKeep(){
    room has any of these, and no default is minted -- www/push.js
    § pushWants(). */
 var SET_PREFS=['theme','ui','myfont','showScript','kbrom',
-               'push_follow','push_reply','push_like','push_boost'];
+               'push_follow','push_reply','push_like','push_boost','push_prompt'];
 /* WHAT IS LEFT IS THIS HANDSET'S SETUP, AND THERE IS VERY LITTLE OF IT.
    `acct` says which account's things are live here -- the settings that
    setFor() parks and hands back. It was `planUid`, because the plan copy sat

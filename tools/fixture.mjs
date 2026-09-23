@@ -725,6 +725,11 @@ export function halfDone(){
   const __stemLetters = () => { LETTERS[0].st = __STEM[0]; LETTERS[1].st = __STEM[1]; };
   const __twoLines = () => ltPua(0) + ltPua(1) + ltPua(0) + ' ' + ltPua(1) + ltPua(0) +
                            '\n' + ltPua(0) + ltPua(0) + ltPua(1);
+  /* The same two, turned: a stem from the top edge of the lattice to the
+     bottom, so a COLUMN of them joins at 0 the way a row of the two above
+     does. 「横と縦それぞれスライドしてどう動くか」 OWNER 2026-09-23. */
+  const __STEMDOWN = [[{ pts:[[400,40],[400,760]] }, { pts:[[400,400],[640,400]] }],
+                      [{ pts:[[400,40],[400,760]] }, { pts:[[400,220],[180,220],[180,580],[400,580]] }]];
   const __joinPosts = (sp) => {
     POSTS.unshift({ id: 'pj', at: Date.now() - 60000, lang: 'other', lname: 'Tsagaan',
                     ln: 'abab baa', who: 'Iri', hd: 'iri', mn: 'the steppe after rain',
@@ -758,6 +763,15 @@ export function halfDone(){
        const was = PUSH_ST; PUSH_ST = 'authorized';
        window.route = 'set'; NAV = [{ r:'settings' }, { r:'set', a:'push' }];
        const h = vSet(); PUSH_ST = was; return h; }],
+    /* And with switches OFF, because a switch has two states and the room
+       above only ever draws them on -- nobody in the fixture has turned one
+       off. The day's prompt and likes, put back afterwards. */
+    ['notifications, some turned off', () => {
+       const was = PUSH_ST, p = SET.push_prompt, l = SET.push_like;
+       PUSH_ST = 'authorized'; SET.push_prompt = false; SET.push_like = false;
+       window.route = 'set'; NAV = [{ r:'settings' }, { r:'set', a:'push' }];
+       const h = vSet(); PUSH_ST = was; SET.push_prompt = p; SET.push_like = l;
+       return h; }],
     ['notifications, refused on the phone itself', () => {
        const was = PUSH_ST; PUSH_ST = 'denied';
        window.route = 'set'; NAV = [{ r:'settings' }, { r:'set', a:'push' }];
@@ -1195,8 +1209,8 @@ export function halfDone(){
                            NAV=[{r:'ltset', a:'mark'}]; return vLtset(); }],
     ['a letter in the editor', () => { editGlyph('k'); window.route='glyph';
                                        NAV=[{r:'glyph', a:GE.lid}]; return vGlyph(); }],
-    /* The two faces of the editor's canvas the three guide lines have to be
-       seen in (OWNER 2026-09-23): nothing drawn yet, so the lines stand alone
+    /* The two faces of the editor's canvas the 田 guides have to be seen
+       in (OWNER 2026-09-23): nothing drawn yet, so the lines stand alone
        over the dots; and pinched in, so the lines are shown to move with the
        dots. GE is the editor's buffer and is never saved from here. */
     ['an empty letter in the editor', () => { editGlyph('k'); GE.st=[]; GE.si=-1; GE.pi=-1;
@@ -3368,21 +3382,38 @@ export function halfDone(){
     /* THE GAP BETWEEN LETTERS (www/glyph.js § geSide, www/wsys.js § SP_RANGE).
        「0 にすると、端まで描いた線が隣とくっついて一本に繋がる」「スライドで
        文字間が見えるように … 最大0と2くらい」「それぞれの字間を見せてね」
-       OWNER 2026-09-23. At each of five points along the slider: the row in
-       設定 → 言語 with the language's own letters standing at that gap, and a
-       post written at it. Two letters each run a stem from the left edge of
+       OWNER 2026-09-23. At each of five points along the slider: 字間's own
+       page (「別ページにした方が見やすい」, same day), the language's own
+       letters across and down at that gap, and a post written at it. Two letters each run a stem from the left edge of
        the lattice to the right -- one with a stroke up off it, one with a
        loop under it -- so at 0 the stem is one line through the word.
        SCRIPT.sp is put back before returning (seed() does not rebuild SCRIPT);
        the preview carries its gap in its own markup, so nothing it draws
        afterwards needs it. */
     ...[0, 0.5, 1, 1.5, 2].map((v) => ['the gap between letters, the language at ' + v, () => {
-       __stemLetters(); const was = SCRIPT.sp; SCRIPT.sp = v; window.route = 'set';
-       NAV = [{ r:'settings' }, { r:'set', a:'lang' }];
-       const h = vSet(); if (was === undefined) delete SCRIPT.sp; else SCRIPT.sp = was; return h; }]),
+       __stemLetters(); const was = SCRIPT.sp; SCRIPT.sp = v; window.route = 'sp';
+       NAV = [{ r:'settings' }, { r:'set', a:'lang' }, { r:'sp' }];
+       const h = vSp(); if (was === undefined) delete SCRIPT.sp; else SCRIPT.sp = was; return h; }]),
     ...[0, 0.5, 1, 1.5, 2].map((v) => ['a post whose letters stand ' + v + ' apart', () => {
        __joinPosts(v); window.route = 'feed'; NAV = [{ r:'feed' }];
        return vFeed(); }]),
+    /* Written DOWN at 0 and at 2 -- a post, and the field it was typed
+       into. The face's vertical advance is what stands them apart
+       (www/otf5.js § vmtx); tools/line-check.mjs 6 asks it in pixels. */
+    ...[0, 2].map((v) => ['a column whose letters stand ' + v + ' apart', () => {
+       POSTS.unshift({ id: 'pjd', at: Date.now() - 60000, lang: 'other', lname: 'Tsagaan',
+                       ln: 'ababa', who: 'Iri', hd: 'iri', mn: 'the steppe after rain', ui: 'en',
+                       dir: 'ttb-rl', ink: { g: __STEMDOWN, s: [0, 1, 0, 1, 0], sp: v } });
+       window.route = 'feed'; NAV = [{ r:'feed' }];
+       return vFeed(); }]),
+    ...[0, 2].map((v) => ['a column being written at ' + v, () => {
+       const wasPlan = plan(), wasDir = SCRIPT.dir, was = SCRIPT.sp;
+       LETTERS[0].st = __STEMDOWN[0]; LETTERS[1].st = __STEMDOWN[1];
+       planGot('pro'); SCRIPT.dir = 'ttb-rl'; SCRIPT.sp = v; installScriptFont();
+       PW = pwBlank(); openPost(); pwSetLn(ltPua(0) + ltPua(1) + ltPua(0) + ltPua(1) + ltPua(0));
+       const h = vForm(); PW = pwBlank();
+       SCRIPT.dir = wasDir; if (was === undefined) delete SCRIPT.sp; else SCRIPT.sp = was;
+       planGot(wasPlan); return h; }]),
     ['a post whose letters join, as a card', () => {
        __joinPosts(0); cardOpen('p', 'pj'); return vForm(); }],
     ['the same post at one step, as a card', () => {

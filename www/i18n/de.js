@@ -474,6 +474,7 @@ defLang('de', (function(){
       'push.reply'            : "Antworten",
       'push.like'             : "Gefällt mir",
       'push.boost'            : "Geteilte Beiträge",
+      'push.prompt'           : "Thema des Tages",
       'push.off'              : "Mitteilungen sind in den iPhone-Einstellungen deaktiviert",
       'push.no'               : "Einstellungen ließen sich nicht öffnen",
       'notif.pick'            : "Lesenswert",

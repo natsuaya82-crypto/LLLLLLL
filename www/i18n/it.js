@@ -486,6 +486,7 @@ defLang('it', (function(){
       'push.reply'            : "Risposte",
       'push.like'             : "Mi piace",
       'push.boost'            : "Ripubblicazioni",
+      'push.prompt'           : "Tema di oggi",
       'push.off'              : "Le notifiche sono disattivate nelle Impostazioni dell’iPhone",
       'push.no'               : "Impossibile aprire le Impostazioni",
       'notif.pick'            : "Da leggere",

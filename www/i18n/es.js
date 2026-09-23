@@ -446,6 +446,7 @@ defLang('es', (function(){
       'push.reply'            : "Respuestas",
       'push.like'             : "Me gusta",
       'push.boost'            : "Republicaciones",
+      'push.prompt'           : "Tema de hoy",
       'push.off'              : "Las notificaciones están desactivadas en los Ajustes del iPhone",
       'push.no'               : "No se pudieron abrir los Ajustes",
       'notif.pick'            : "Vale la pena leerlo",

@@ -886,8 +886,8 @@ create index if not exists block_actor_idx on block(actor);
 -- Deleting the account takes it, the way it takes everything else:
 -- 「アカウント削除で残るものねえって言ってんだろ何回言わせんだよ全部消える」.
 --
--- AND THE SWITCHES ARE NOT HERE. Which of the four kinds a person wants is
--- `profile.prefs` (`push_follow`, `push_reply`, `push_like`, `push_boost`),
+-- AND THE SWITCHES ARE NOT HERE. Which kinds a person wants is
+-- `profile.prefs` (`push_` + each kind in push-send's `PUSH`),
 -- because it is the ACCOUNT's answer and not this handset's -- the same
 -- sentence the theme and the interface language are under. A column here
 -- would be the answer per phone, which is the thing 2026-09-03 took out of
@@ -2911,7 +2911,7 @@ create trigger profile_follows after insert on profile
 -- added later is not updatable until it is added to one of these lines」 --
 -- happening to the column added the day after it was written.
 --
--- It is not a preference any more either: the four switches that say which
+-- It is not a preference any more either: the switches that say which
 -- notices reach a phone are fields of this column (2026-09-22), and a switch
 -- that cannot be written is a switch that is always on.
 revoke update on profile from anon, authenticated;
@@ -2975,18 +2975,27 @@ revoke insert on post from anon, authenticated;
 grant  insert (id, author, language, body, prompt, reply_to) on post to authenticated;
 
 -- ---------------------------------------------------------------------------
--- And the road OUT: three triggers that tell push-send something happened
+-- And the road OUT: a trigger on each table whose insert is a notice
 --
 -- 「通知作ろう。アップルのネイティブ通知で、フォローされた時、返信きた時みたい
 --   な感じでSNS部分であるやつ。」 OWNER 2026-09-22.
+-- 「通知なんだけど、今日のお題が変わった時にも出るようにできる？」
+-- 「時間が決まってるでしょ。アメリカ時間の0時。それに合わせるのは？」
+--   OWNER 2026-09-23.
 --
--- Four kinds, and they are the four `notices()` already returns -- `follow`,
--- `reply`, `like`, `boost`. There is no fifth, and these triggers are not a
--- second list of them: `react.kind` decides between `like` and `boost` the
--- same way that function does, and `post.reply_to is not null` is what a
--- reply IS there too.
+-- WHAT THE KINDS ARE IS NOT SAID HERE. It is `PUSH` in
+-- supabase/functions/push-send/push.mjs -- one entry per kind, saying which
+-- table's insert raises it, how its row is read back, and who it is for.
+-- These triggers only knock: each hands push-send the table and the row, and
+-- push-send asks that entry what it is. `follow`, `reply`, `like` and `boost`
+-- are the four `notices()` returns (`react.kind` tells the last two apart
+-- there and there), and `prompt` is the day's sentence, which is for
+-- everybody and is not a notice in the tab. tools/rls-check.mjs reads every
+-- `table` out of `PUSH` and fails on one with no trigger here, so a kind
+-- added tomorrow is an entry there and a line below, and the second is
+-- counted rather than remembered.
 --
--- THE TRIGGER CARRIES THE SIGNED-IN PERSON, AND NOTHING ELSE.
+-- THE TRIGGER CARRIES WHOEVER WROTE THE ROW, AND NOTHING ELSE.
 -- 「サインインなしで勧めるものないけど」 OWNER 2026-09-22 -- there is nothing
 -- in this app that proceeds without a sign-in, and this road is not to be the
 -- first. A trigger fires INSIDE the REST request of the person who wrote the
@@ -3000,6 +3009,17 @@ grant  insert (id, author, language, body, prompt, reply_to) on post to authenti
 -- No secret is written down here and none could be: what travels is the
 -- caller's own token, which they already hold, and it is read at the moment
 -- of the write rather than stored.
+--
+-- THE DAY'S PROMPT IS THE SAME ROAD. Its row is written by
+-- supabase/functions/daily-prompt with the service role key, through
+-- PostgREST like every other write, so that key is what is in
+-- `request.headers` and what push_ping() hands on. push-send rings EVERYBODY
+-- for that kind and nobody else can make it: the entry says its actor is the
+-- service role, and a signed-in person's token is not that key. `prompt` has
+-- no insert policy and no insert grant for anybody the app signs in as
+-- (the prompt_read policy above, the cover at the foot), so no request from
+-- a phone can reach this trigger at all -- tools/rls-check.mjs tries, as B
+-- and as anon, and watches the queue stay empty.
 --
 -- WHY THIS IS OUR OWN FUNCTION AND NOT `supabase_functions.http_request()`.
 -- That is the packaged one a Database Webhook uses, and its headers are
@@ -3037,10 +3057,11 @@ grant  insert (id, author, language, body, prompt, reply_to) on post to authenti
 --
 -- A skipped block is not a silent one. It says so, and setup.md § 12 says to
 -- look for it -- 「空」と「壊れている」は別の状態, which is the first page of
--- CLAUDE.md. What holds the three triggers themselves is tools/rls-check.mjs,
+-- CLAUDE.md. What holds the triggers themselves is tools/rls-check.mjs,
 -- which applies this file once WITHOUT pg_net (and asks that the rest of it
--- still landed) and once WITH it (and asks that all three are there, and that
--- what goes down the road carries the writer's own Authorization).
+-- still landed) and once WITH it (and asks that every table `PUSH` names has
+-- one, and that what goes down the road carries the writer's own
+-- Authorization).
 
 -- The one place a write becomes a knock on push-send's door.
 --
@@ -3087,7 +3108,7 @@ begin
                    join pg_namespace n on n.oid = p.pronamespace
                   where n.nspname = 'net' and p.proname = 'http_post') then
     raise notice '%', 'push-send: Database -> Webhooks has not been turned on '
-      'for this project, so the three notification triggers were NOT made. '
+      'for this project, so the notification triggers were NOT made. '
       'Everything else in this file is in. See supabase/setup.md section 12, '
       'then run this file again.';
     return;
@@ -3109,6 +3130,14 @@ begin
   -- trigger per kind would be that one fact written down twice.
   drop trigger if exists push_on_react on react;
   create trigger push_on_react after insert on react
+    for each row execute function push_ping();
+
+  -- The day's prompt, for everybody. After insert only: daily-prompt writes
+  -- a day's row once and does nothing when it is there, and somebody fixing
+  -- the sentence in the Table Editor (supabase/setup.md § 9-6) is an update
+  -- and rings nobody.
+  drop trigger if exists push_on_prompt on prompt;
+  create trigger push_on_prompt after insert on prompt
     for each row execute function push_ping();
 end
 $b$;

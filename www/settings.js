@@ -243,9 +243,11 @@ function vSet(){
          has never been touched falls back to (`wldSecDl`). Nothing was
          removed from anybody's file -- what went is the second place to set
          it, which is the thing that was wrong. */
-      /* What stands between two letters (www/wsys.js § spRowHTML).
-         「置き場所は言語の設定画面」 OWNER 2026-09-23. */
-      spRowHTML()+
+      /* What stands between two letters -- a row that goes to its own page
+         (www/wsys.js § vSp). 「置き場所は言語の設定画面」「字間> … 別ページに
+         した方が見やすい。」 OWNER 2026-09-23. */
+      '<button class="set"' + DO('go', ["sp"]) + '><span class="sl">'+t('set.sp')+'</span>'+
+      '<span class="sv">'+inkSteps(SCRIPT.sp)+ICON_GO+'</span></button>'+
       '<button class="set" style="border-bottom:none"' + DO('go', ["wsys"]) + '><span class="sl">'+t('ws.kind')+'</span>'+
       '<span class="sv">'+esc(t('ws.k.'+wsys()))+ICON_GO+'</span></button>'+
       '';

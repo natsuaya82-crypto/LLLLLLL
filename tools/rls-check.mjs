@@ -52,6 +52,9 @@ import os from 'os';
 import path from 'path';
 import { execFileSync } from 'child_process';
 import { fileURLToPath } from 'url';
+/* Which tables a notice is raised from is push-send's to say, not this
+   file's: `TABLES` is every `table` in its `PUSH`, the one list of kinds. */
+import { TABLES as PUSH_TABLES } from '../supabase/functions/push-send/push.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const SCHEMA = path.join(HERE, '..', 'supabase', 'schema.sql');
@@ -1845,32 +1848,33 @@ const SHAPE = [
        join pg_namespace n on n.oid = d.defaclnamespace
       where n.nspname = 'public'
         and array_to_string(d.defaclacl, ',') like '%anon=%'`, '0'],
-  /* THE ROAD OUT IS THERE, ALL THREE OF IT. The block at the foot of
-     schema.sql makes them only when Database -> Webhooks has been turned on,
-     and it is applied above once without that schema and once with it -- so
-     these three say both halves at once: the file survived the pass that had
-     nowhere to send anything, and the pass that did made all three. A missing
-     one is a kind of notice that silently never arrives, which is the one
-     thing about this feature no screen could ever show. */
-  ['a follow says so', `
-     select ((select count(*) from pg_trigger
-               where tgname='push_on_follow'
-                 and tgrelid='follow'::regclass) <> 1)::int`, '0'],
-  ['a reply says so', `
-     select ((select count(*) from pg_trigger
-               where tgname='push_on_reply'
-                 and tgrelid='post'::regclass) <> 1)::int`, '0'],
-  ['a like and a boost say so', `
-     select ((select count(*) from pg_trigger
-               where tgname='push_on_react'
-                 and tgrelid='react'::regclass) <> 1)::int`, '0'],
+  /* THE ROAD OUT IS THERE, FOR EVERY KIND. The block at the foot of
+     schema.sql makes the triggers only when Database -> Webhooks has been
+     turned on, and it is applied above once without that schema and once with
+     it -- so these say both halves at once: the file survived the pass that
+     had nowhere to send anything, and the pass that did made one for every
+     table a kind is raised from. A missing one is a kind of notice that
+     silently never arrives, which is the one thing about this feature no
+     screen could ever show.
+
+     COUNTED OFF `PUSH`, NOT LISTED HERE. The tables are read out of
+     supabase/functions/push-send/push.mjs, so a kind added there tomorrow is
+     asked for here tomorrow, and the trigger it needs is not something
+     anybody has to remember. What is asked is the FUNCTION a trigger calls,
+     not its name: a trigger named right that calls something else is not
+     the road. */
+  ...PUSH_TABLES.map((t) => ['an insert into ' + t + ' knocks on push-send', `
+     select ((select count(*) from pg_trigger g
+               join pg_proc f on f.oid = g.tgfoid
+              where g.tgrelid = '${t}'::regclass and not g.tgisinternal
+                and f.proname = 'push_ping') <> 1)::int`, '0']),
   /* AND THE ROAD CARRIES THE PERSON. Three claims and they are one sentence:
      exactly one of the two writes above went out, it carried the writer's own
      Authorization, and it said which row it was about. The one with no
      signature behind it sent nothing -- which is the door the owner closed
      on 2026-09-22. */
   ['one write went out and the unsigned one did not', `
-     select ((select count(*) from net._sent) <> 1)::int`, '0'],
+     select ((select count(*) from net._sent where body->>'table' = 'react') <> 1)::int`, '0'],
   ['and it carries the writer\u2019s own Authorization', `
      select ((select count(*) from net._sent
                where headers->>'Authorization' = 'Bearer THE-WRITERS-OWN-TOKEN')
@@ -1885,6 +1889,20 @@ const SHAPE = [
   ['and no key of ours is written into the road', `
      select ((select count(*) from net._sent
                where headers::text ~* '(service|secret|apikey|sb_)') <> 0)::int`, '0'],
+  /* AND THE DAY'S PROMPT, WHICH IS FOR EVERYBODY.
+     「通知なんだけど、今日のお題が変わった時にも出るようにできる？」 OWNER
+     2026-09-23. It rings every phone whose switch is on, so the one thing that
+     may raise it is the row daily-prompt writes with the service role key --
+     and ROAD below tries it as B, signed in, and as nobody at all, each with
+     a signature on the request so that a write that landed WOULD knock. Both
+     are refused, and what is left in the notebook is the one knock the
+     service role's own insert made, carrying its own key. */
+  ['the day’s prompt knocks once, as the one who wrote it', `
+     select ((select count(*) from net._sent
+               where body->>'table' = 'prompt'
+                 and headers->>'Authorization' = 'Bearer DAILY-PROMPTS-OWN-KEY') <> 1)::int`, '0'],
+  ['and nobody else’s attempt at one went down the road', `
+     select ((select count(*) from net._sent where body->>'table' = 'prompt') <> 1)::int`, '0'],
   /* A TOKEN IS NOT EDITED. schema.sql says so over the policies -- 「no update
      policy at all (a token does not change -- a new one is a new row and the
      old one goes)」 -- and an UPDATE policy added later would be the one road
@@ -2416,11 +2434,25 @@ end $$;
 `;
 
 const q = (s) => "'" + String(s).replace(/'/g, "''") + "'";
-const run = CASES.map(([name, want, who, anon, sql]) =>
+const chk = ([name, want, who, anon, sql]) =>
   `select _chk(${q(name)}, ${q(want)}, ${q(sql)}, ${q(who)}, ` +
   `${anon === 2 ? 'null' : (anon ? 'true' : 'false')}, ` +
-  `${q(anon === 2 ? 'anon' : 'authenticated')});`
-).join('\n');
+  `${q(anon === 2 ? 'anon' : 'authenticated')});`;
+const run = CASES.map(chk).join('\n');
+
+/* THE ATTEMPTS THAT NEED A SIGNATURE ON THE REQUEST. Every case above runs
+   with no `request.headers` at all, so a trigger behind one of them would
+   have nobody to send as and would send nothing whether the write landed or
+   not -- which makes 「nothing went down the road」 true for the wrong reason.
+   These run after a signature has been put on, so a write that got through
+   is a knock in the notebook, and the SHAPE claims about `prompt` above
+   count them. */
+const ROAD = [
+  ['B cannot raise the day’s notice',      'denied', B, 0,
+    `insert into prompt(on_day,text) values (current_date + 1,'forged')`],
+  ['nor can somebody with no session',        'denied', B, 2,
+    `insert into prompt(on_day,text) values (current_date + 2,'forged')`],
+];
 
 /* OVER THE SHAPE A REAL SERVER HOLDS, AND THEN AGAIN. The file says at its
    head that the whole of it can be run again, any number of times, and that
@@ -2455,7 +2487,7 @@ const SCHEMA_SQL = fs.readFileSync(SCHEMA, 'utf8');
    pass runs without it (so the guard at the foot of schema.sql has to skip
    the triggers and let the rest of the file land -- 2026-09-15, a paste that
    stopped part-way left nothing behind it), and the second pass runs with it
-   (so the three triggers have to be there).
+   (so every trigger `PUSH` asks for has to be there).
 
    The real one queues the request and returns. This one WRITES DOWN WHAT IT
    WAS GIVEN, because that is the claim: the road out carries the writing
@@ -2578,6 +2610,17 @@ const sql = [
      の逆側でもある：送る相手ではなく、送る資格が無い。 */
   `select set_config('request.headers', '', true);`,
   `insert into react(post,actor,kind) values (${q(H3b)}, ${q(F)}, 'like');`,
+  /* The day's prompt, tried by somebody who is not the service role, with a
+     signature on the request -- and then written the way daily-prompt writes
+     it, by the owner of the table with the service role's key in the header
+     PostgREST would set. */
+  `select set_config('request.headers',
+     '{"authorization":"Bearer B-SIGNED-IN"}', true);`,
+  ROAD.map(chk).join('\n'),
+  `select set_config('request.headers',
+     '{"authorization":"Bearer DAILY-PROMPTS-OWN-KEY"}', true);`,
+  `insert into prompt(on_day,text) values (current_date + 10,'It rained.');`,
+  `select set_config('request.headers', '', true);`,
   `\\pset format unaligned`,
   `\\pset tuples_only on`,
   /* chr(9) rather than a backslash-t: PostgreSQL string literals are standard
@@ -2613,7 +2656,7 @@ try {
 }
 
 const rows = out.split('\n').map((l) => l.split('\t')).filter((r) => r.length === 3);
-const want = CASES.length + SHAPE.length;
+const want = CASES.length + ROAD.length + SHAPE.length;
 if (rows.length !== want) {
   console.error(`expected ${want} answers and got ${rows.length}; psql said:\n` + out);
   process.exit(1);
@@ -2645,6 +2688,6 @@ if (bad.length) {
   for (const [n, w, g] of bad) console.error(`  ${n}\n    wanted ${w}, got ${g}\n`);
   process.exit(1);
 }
-console.log(`rls: ${CASES.length} attempts by somebody who is not the owner, ` +
+console.log(`rls: ${CASES.length + ROAD.length} attempts by somebody who is not the owner, ` +
             `none of them got through`);
 console.log(`     ${SHAPE.length} things the file cannot be without, all present`);
