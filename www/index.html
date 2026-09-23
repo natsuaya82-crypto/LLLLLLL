@@ -471,13 +471,6 @@ canvas.pkc{width:34px;height:34px;display:block}
 .kbedit.fn .kbec{grid-area:1/1}
 /* How tall the keys are, directly under them. No number and no label: the
    keyboard above is the readout, and it moves as the thumb moves. */
-/* The ＋ under the keyboard is gone and so are the two rules that drew it.
-   「キーボードのこの下の+もいらない。誤タッチが多いから」 OWNER 2026-09-04,
-   through `claude/dup`, which took the button out of www/keyboard.js. This
-   file is not that session's, so the CSS was left standing -- and a selector
-   nothing wears is what `press` reports and what CLAUDE.md § box-baseline
-   calls permission for something nobody meant to allow. Its baseline line
-   (`.kbk.addrow | border`) goes with it, in this commit. */
 /* A line of the language, typed on the language's own keyboard. `readonly`
    keeps the phone's keyboard from coming up over it -- the keys are on the
    page, and two keyboards at once is one too many. */
@@ -809,18 +802,14 @@ canvas.pkc{width:34px;height:34px;display:block}
    THREAD_IN in post.js is the same number and is the one that decides.
 
    The wrapper takes over the post's bleed to the edge of the screen, so the
-   indent is one number in one place: the post no longer pushes itself left,
-   the wrapper does, and what is left is how far in this row starts.
+   indent is one number in one place: the wrapper pushes the post left, and
+   what is left is how far in this row starts.
 
    ONE STEP IS ONE FACE. 「線はあるけど、わかりにくすぎる。孫投稿の方が外に線
-   があるし」 OWNER 2026-09-05. There were RAILS down the left of every deep
-   row -- a fence at the row's own edge and gradients standing 14 and 28 into
-   it -- so the deeper a reply went the further OUT its line stood, which is
-   backwards: a reply hangs off the post above it, and the thing above it is
-   the face. So the fences are gone, the step is the width of a face (40, the
-   `.pav` above), and the only line left is the one down the face's own
-   column -- `.pkid .post::after` below. A grandchild's line starts at the
-   CHILD's face, because the child's row is where it is drawn. */
+   があるし」 OWNER 2026-09-05. A reply hangs off the post above it, and the
+   thing above it is the face, so the step is the width of a face (40, the
+   `.pav` above) and a line stands down a face's own column -- `.prail`
+   below. */
 .pind{position:relative;margin:0 -24px}
 .pind .post{margin:0}
 .pind1{padding-left:40px}
@@ -833,20 +822,18 @@ canvas.pkc{width:34px;height:34px;display:block}
 
    A line stands in a COLUMN, not in a row: 40 for each step in, 36 to the
    middle of a 40 circle behind 16 of padding, and the four are the four steps
-   the indent takes. It was one rail hung off `.post` and it could therefore
-   only ever be that row's own -- a line reaching a later answer has to stand
-   through the rows between, which are other posts at other depths. So the
-   rails are in the wrapper, which is the thing that spans the row, and
-   thRails() in www/sns.js is what says which of them this row carries.
+   the indent takes. A line reaching a later answer has to stand through the
+   rows between, which are other posts at other depths, so the rails are in
+   the wrapper, which is the thing that spans the row, and thRails() in
+   www/sns.js is what says which of them this row carries.
 
    `pfrom` is the row's own: it starts under the face, which is 58 down --
    44 on the two rows that are buttons, 40 on the one that is not. Every other
    line is passing through and runs the whole height.
 
-   WHICH COLUMN a line stands in is not written here. It was four classes,
-   `.prail0`..`.prail3`, which is the depth in the stylesheet and a fifth step
-   nothing could draw; thColX() in www/sns.js works it out and the row carries
-   it as `left`. What is left here is what a line LOOKS like. */
+   WHICH COLUMN a line stands in is not written here: thColX() in www/sns.js
+   works it out and the row carries it as `left`. What is here is what a line
+   LOOKS like. */
 .prail{position:absolute;top:0;bottom:0;width:1px;background:var(--line)}
 .prail.pfrom{top:58px}
 /* A LINE OF THE LANGUAGE, and the composer's field is one: the same face,
@@ -1293,9 +1280,7 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
 
    The field takes what is left after everything under it has had its height,
    and scrolls inside itself rather than growing -- which is why lnFit()
-   leaves a `fitin` field alone. There was a .view.fixed under this that held
-   the cover still -- a page that does not scroll rather than a child that
-   takes the slack -- and it went with the cover it was written for. */
+   leaves a `fitin` field alone. */
 /* Pinned to the part of the page that can actually be SEEN, not to the
    document. iOS does not shrink the page for the keyboard -- it slides the
    keyboard over it and then scrolls the layout viewport up to put the focused
@@ -1801,7 +1786,7 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
    a word nobody has given a meaning to is one line -- 23px, which is half a
    thumb. The floor was on `.entry.one .ebody` alone, so it held the rows that
    are one line BY DESIGN and missed the one that becomes one. It is on the
-   body itself now and that block is gone: a column, centred, so the two lines
+   body itself: a column, centred, so the two lines
    of a word sit where they always did and one line sits in the middle of the
    44. tools/press.mjs measures it. */
 .ebody{flex:1;min-width:0;background:none;border:0;padding:0;text-align:left;color:inherit;font-family:inherit;
@@ -1817,14 +1802,6 @@ html[lang="ja"] .sec, html[lang="zh"] .sec, html[lang="ko"] .sec{letter-spacing:
 .esay{flex:0 0 44px;width:44px;min-height:44px;background:none;border:0;color:var(--txm);
   display:flex;align-items:center;justify-content:center}
 .esay:active{color:var(--gold)}
-/* This said .wsrt a second time, three hundred lines under the first, as a
-   bordered pill with a 10pt radius -- and being second it won. So the sort
-   button was a rounded box beside a control that is a line, which is the one
-   shape this app does not have: everything a thumb chooses from sits on a
-   rule. 「基本的に下直線なんだから角丸禁止」 The rule that means it is the
-   one beside the filter, and there is only one of it now.
-   `.wsay` went with it: nothing in www/ has carried that class since the
-   dictionary stopped playing a whole list. */
 /* Six ways to narrow the list will not fit across 320px, so the rail slides
    sideways rather than wrapping into a second row that pushes the words off
    the screen. */
@@ -1966,7 +1943,7 @@ a.set{text-decoration:none}
    `text-align:right`. Somebody reading THIS line saw the line that puts the
    tick on the right, changed it, and nothing moved. One block now, and the
    right edge is `justify-content` because that is what a flex box listens
-   to. `text-align:right` is gone rather than carried: it decided nothing. */
+   to. */
 .lrow .lchk{flex:0 0 16px;display:flex;align-items:center;justify-content:flex-end;color:var(--gold)}
 .lrow.on .sl{font-weight:600}
 /* The plans, side by side. Three pages that slide, with the next one showing
@@ -2052,11 +2029,9 @@ a.set{text-decoration:none}
 .plfoot{padding:22px 24px 0;text-align:center}
 .plfoot2{padding:2px 24px 0;text-align:center}
 .plfoot2 button{font-size:.8rem;opacity:.7}
-/* THE PRESS THAT BUYS. A word, in the colour everything pressable is -- no
-   box: the two term buttons above are the one pair of corners the owner
-   allowed on this screen (規則18), and this is not a third.
-   「プランタップして下のサブスクライブするみたいなボタン押してやっと課金いける
-   みたいにしたい」OWNER 2026-09-01. */
+/* THE PRESS THAT BUYS, under the terms. 「プランタップして下のサブスクライブ
+   するみたいなボタン押してやっと課金いけるみたいにしたい」OWNER 2026-09-01.
+   Its box is `.btn.plbuy`, above (OWNER 2026-09-03). */
 .plgo{padding:26px 24px 0;text-align:center}
 /* DOWN UNTIL A TERM IS CHOSEN, AND LIT ONCE ONE IS. 「サブスクライブするボタン
    は、プラン選んだら光らせろよ」OWNER 2026-09-01 -- it was the same gold either
@@ -2090,14 +2065,6 @@ a.set{text-decoration:none}
    bar. Held by `press`, which walks every route and fails on anything left
    under the bar with no way to scroll to it. */
 .view.plans{padding-bottom:calc(var(--tabh) + 96px)}
-
-/* Nothing is drawn as locked any more. 「できないことは、有料と同じ画面に同じ
-   形で出す。押したら有料へ」 OWNER 2026-09-04 -- `.lock` was the dashed,
-   rounded panel the settings' data room put in front of the free plan, with a
-   bordered PLUS tag inside it, and it was the only shape in the app that said
-   「you may not」 by being drawn differently. The row is the ordinary `.set`
-   row on every plan now (www/settings.js), so there is nothing left to style.
-   The four lines it held in tools/box-baseline.txt went with it. */
 
 /* ---------- the profile, above the three lists ----------
    The whole of it under a third of the phone, so the posts start on the first
@@ -2273,8 +2240,7 @@ a.set{text-decoration:none}
    for an official account -- and the official one had nowhere to come from,
    so what shipped was a blue mark and a rule nothing ever wore.
    「企業バッジ一旦廃止して、青バッジをそのまま金にして欲しい。プロプラン」
-   OWNER 2026-09-01. `--verif` went with it: a token nothing reads is the next
-   person's wrong answer. */
+   OWNER 2026-09-01. */
 .bdg{color:var(--gold)}
 .bdgw svg{display:block}
 .pname .bdgw{margin-left:5px}
@@ -2290,12 +2256,8 @@ a.set{text-decoration:none}
    shape and this is that shape -- said again rather than borrowed, because
    .set lives on a settings screen and this lives on a profile, and the day
    one of them changes it must not drag the other with it.
-   There was a SECOND `.wldrow` rule earlier in this sheet -- the cover's, a
-   bordered box with a 10px corner. This one overrode its `border` and did not
-   override its `border-radius`, so the corner outlived the box: a 10px radius
-   on a rule that draws one hairline, curling the line up at both ends.
-   「角丸みたいな下線がきもい」 The second rule is gone. This is the only
-   `.wldrow`, and it is the cover's row as well as the profile's. */
+   This is the only `.wldrow`, and it is the cover's row as well as the
+   profile's. 「角丸みたいな下線がきもい」 */
 .wldrow{display:flex;align-items:center;gap:10px;width:100%;min-height:48px;
         margin-top:6px;padding:13px 2px;background:none;
         border:0;border-bottom:1px solid var(--line);
@@ -2307,14 +2269,9 @@ a.set{text-decoration:none}
 .wldrow:active{opacity:.6}
 /* The page itself. The language names itself, then what it is for, then the
    facts as rows, then what was written about it, then the letters drawn.
-   The three tiles that used to sit here (.abtnums/.abtn) are gone with their
-   rules: 「wikiの見た目にしろって言ってなんでそんなゴミができるの？」
-   OWNER 2026-08-25. An article opens with a table of facts, not a row of
-   cards, and `.abtn` carried a `border-radius:14px` besides. The rows are
-   `.set` now, which every settings screen already wears.
-   Deleted rather than left unworn: tools/css-baseline.txt says a line comes
-   OUT as progress, and growing that list to keep a dead rule quiet is the
-   opposite of what it is for. */
+   「wikiの見た目にしろって言ってなんでそんなゴミができるの？」 OWNER
+   2026-08-25. An article opens with a table of facts, not a row of cards: the
+   rows are `.set`, which every settings screen already wears. */
 /* An article's headings. `.sec` is a SETTINGS label -- .82rem, grey, uppercase,
    tracked out -- and using it here was the whole reason this page read as a
    settings screen with a name on top instead of an article.
@@ -2452,11 +2409,6 @@ a.set{text-decoration:none}
 .kbk.wob{animation:kbwob .28s linear infinite}
 .kbk.wob:nth-child(2n){animation-delay:.09s}
 .kbk.wob:nth-child(3n){animation-delay:.05s}
-/* There is no mark on a held key any more. It was a ⊖ on the corner, the way
-   a home screen marks an icon, and it was one of two ways to take a key away
-   -- the other being the key's own page, which is still there. What takes
-   things away on a sheet is the edge: the row's number and the column's
-   letter. 「マイナスボタンもなくそう」 */
 @media (prefers-reduced-motion:reduce){.kbk.wob{animation:none}}
 /* The keyboard's name, at the head of its own page: a line, like every other
    field. */
@@ -2479,7 +2431,6 @@ a.set{text-decoration:none}
    the row's own face are two things to press, so the row itself is not a
    button any more. 「キーボードも選択削除したいから」OWNER 2026-09-01. */
 .kblist .kbrow.kbrowq{cursor:default}
-/* The same, on the notebook. */
 /* ---------- switching language ----------
    The account switcher's shape, and it is a SCREEN 「言語切り替えは設定の言語
    じゃなくて、ちゃんとした画面作ってくれよ。インスタのアカウント切り替えみたい
@@ -2503,11 +2454,7 @@ a.set{text-decoration:none}
 
    THERE IS NOTHING HERE. A row deleted by sliding it is ONE thing in this app
    and it is written once, further down this file (§ a row deleted by sliding
-   it) -- `.swipe`, `.swrow`, `.swdel`, `.swopen`. This screen wears those.
-   The four rules that used to sit here were a second answer to the same
-   question and came out gold, 96px and 1.02rem where the notebook's is red,
-   76 and .92; the owner stood the two screens next to each other and read
-   them. */
+   it) -- `.swipe`, `.swrow`, `.swdel`, `.swopen`. This screen wears those. */
 .ntrow.ntrowq{display:flex;flex-direction:row;align-items:center;gap:12px}
 /* `flex-direction` and not only `display`: .ntrow is a COLUMN (a heading over
    a line of the note), and this pair of classes was overriding the display and
@@ -2611,13 +2558,7 @@ a.set{text-decoration:none}
    A third of the screen's width, square. 「何があっても画面の33パーに収めたい」
    `--picpct` is the one number, and it is a plain 33 rather than `33vw` so
    that tools/press.mjs can read the same number this does. A size written
-   twice is a size that will disagree with itself.
-
-   What was here before, and each was its own bug: `width:100%`, which blew a
-   900-pixel photograph up to the 1000 pixels of a phone column and is what
-   "the quality dropped" looks like; `max-height:60vh`, which let one post fill
-   a phone; and a strip where only the several-photograph case had a box, so
-   one picture and four were two different rules. */
+   twice is a size that will disagree with itself. */
 :root{--picpct:33}
 /* One row, always, whether there is one photograph or four. `align-items` has
    to be said even with the box fixed: a flex row stretches its items by
@@ -2867,9 +2808,7 @@ a.set{text-decoration:none}
    sentence about the app, so it may sit in a row of marks -- and it is what
    the words used to carry before the drafts control became a mark like the
    camera and the microphone beside it.
-   「下書きマーク作ったのにないけど？文字で書けなんか言ってねえよ」2026-08-26.
-   `.pwab.wide` -- the rule that made a button as wide as the words on it --
-   went with them: nothing wears it now. */
+   「下書きマーク作ったのにないけど？文字で書けなんか言ってねえよ」2026-08-26. */
 .pwabn{font-size:.78rem;font-weight:600;color:var(--txs)}
 /* The drafts control is drawn only when it has something to say -- nothing
    typed means no draft to save, and none saved means nowhere to go back to.
@@ -3354,9 +3293,8 @@ button.spbig{display:block;width:100%;background:none;border:0;padding:0;font:in
 .obtag{margin-top:20px;font-size:1.15rem;line-height:1.7;opacity:.92;text-align:center}
 /* The one place a corner stays on a button, and it is not ours to decide:
    Apple and Google both specify the shape of their own sign-in button, down
-   to the radius. It sat here inherited from `.btn` and had to be written out
-   when `.btn` stopped having one -- the same corner, in the one place a
-   corner is somebody else's rule. 「きーぼーどとかは角丸でいい」 and this is
+   to the radius -- the one place a corner is somebody else's rule.
+   「きーぼーどとかは角丸でいい」 and this is
    the same kind of exception: a thing with a shape, not words in a box. */
 .btn.signin{width:100%;justify-content:center;display:inline-flex;align-items:center;gap:10px;margin-bottom:10px;
             border-radius:13px}
@@ -3747,11 +3685,6 @@ textarea.ntbody.grow{min-height:0;height:auto;overflow:hidden;resize:none}
 .gorder{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:12px 0 2px}
 .gor{font-size:.86rem;color:var(--tx)}
 .gsep{display:flex;align-items:center;color:var(--gold);opacity:.8}
-/* .gdemo, .gsi, .gsg, .gsp, .gside, .gsl and .gsw went with what they
-   dressed: gSide() and gPosDemo() went with the grammar STAGES
-   (「重複はいらない」 OWNER 2026-09-06), and g2Stat() went with この言語について
-   at the foot of the grammar list (「この言語については非表示にしてよ 文法
-   ページ」 OWNER 2026-09-08). Nothing wears them now. */
 
 /* ---------- the marks, now that they are drawn ----------
    A typed character sat on the text baseline and took its size from whichever
