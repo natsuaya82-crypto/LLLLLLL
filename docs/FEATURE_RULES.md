@@ -264,6 +264,26 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Implementation status: r52-forms。「語の活用」は `wForms()` 一か所。前からの活用語は**辞書の一覧から外す**（B）── オーナーの言葉「活用は活用であって単語じゃない」からリーダーが B と読んだ（2026-09-23）。データは一つも消さない・移さない。語ページの活用一覧に出て、100語にも数えない。一覧から外す条件は `wIsForm()` 一か所（数え方・`wForms()`・変換と同じ答え）
 - Not decided: 接辞の重ね掛け（未来＋仮定＋受動）── r46 の話の残り、この枝ではしない
 
+### 2026-09-23 広告は Twitter と同じ形 ── 投稿に擬態して右上に PR、枠は売れる形、今は AdMob、pro は無し
+- Date: 2026-09-23
+- Area: ホームのタイムライン（`www/sns.js` `vFeed()`）、投稿の頭（`www/post.js` `postRow()`）、`supabase/schema.sql` の `promo`、`CAN.noads`
+- Decision: 言葉どおり ──
+  「広告の形は、Twitterと同じ。ツイート擬態右上にprとつく。広告枠が売れる形にする。今は売る人いないからadmobを流す。proのみ表示なし。」
+  同じ日の前の言葉 ──「Twitterみたいに間に動画広告みたいな」「広告枠は今後売る可能性もあるTwitterと同じ形だよ？admobで動画流せんの？ツイート擬態で」
+  - 広告はタイムラインの中の一行で、投稿と同じ見た目、右上に **PR**。
+  - 枠は**売れる**形 ── 売った広告はサーバーが持つ行（`promo` = どの投稿を・いつまで）。
+  - 売る相手がいない間は **AdMob** で埋める（動画可）。
+  - **pro は表示なし**。plus と free は表示あり。
+  - 頻度（同じ日、後から）：「10で。少ない時は出さない！」── **10 件おきに 1 件。投稿が 10 件より少ない時は出さない。**
+    `PROMO_EVERY`（`www/sns.js`）の一つの定数で、10 件目・20 件目…の後に入るので、10 件未満には枠が無い。
+- Reason: オーナーの言葉のとおり。
+- Affected features: ホームのタイムライン。探索・検索・プロフィールには枠を入れていない（Twitter と同じ ── 決まっていないので既定として報告済み）
+- Affected data: 新しいテーブル `promo`（運営だけが書く）。人の作った物は何も動かない
+- Affected docs: `docs/CHANGELOG.md`、`docs/PAID_FEATURES.md`、`docs/apple.md`、`docs/scope/r55-ads.md`
+- Implementation status: r55-ads。売れた枠（`promo`）、PR、`can('noads')`、10 件おき、そして AdMob（`ios/App/App/LinguaAds.swift`）。
+  作り方は `docs/scope/r55-ads.md`。jpel と同じく Teen まで・ATT は未回答の時だけ・表示の直前で pro を見る。
+  **ATT の許可の画面は iOS 自身が出す物で、`www/` の `confirm()` `alert()` `prompt()` の禁止とは別物**。UMP は入れていない（`docs/BACKLOG.md`）。
+
 ### 2026-09-23 今日のお題が変わった時にも通知 ── アメリカ太平洋時間の 0 時、切り替えは五つ目のスイッチ
 - Date: 2026-09-23
 - Area: 通知（`supabase/functions/push-send`、`supabase/schema.sql` の push 節、`www/push.js` の設定の部屋）、お題の cron（`supabase/setup.md` § 9-5）

@@ -671,6 +671,30 @@ export function obStates(){
    at all -- and press.mjs, which has to rebuild a screen before every press,
    needs the same list act-check walks or the two drift apart silently. */
 export function halfDone(){
+  /* 売れた枠を一つ入れて、タイムラインを描いて、元に戻す。上の二つの面が
+     使う ── halfDone() は文字列としてページに送られるので、ここに置く。 */
+  function fixPromo(pl, few, admH){
+    const wasPlan = plan(), wasPromo = PROMO, n = POSTS.length,
+          wasAdm = { on: ADM.on, h: ADM.h };
+    if (admH) { ADM.on = true; ADM.h = { 0: admH }; }
+    planGot(pl);
+    for (let i = 0; i < (few ? 0 : PROMO_EVERY); i++)
+      POSTS.unshift({ id:'fill-' + i, at: Date.now() - 60000 * (i + 1), lang: langId,
+                      lname:'Shango', who:'Aya', hd:'aya', mine:true,
+                      av:{st:[{pts:[[112,112],[688,112],[400,688]]}]},
+                      ln:'kano mos tir', mn:'a tall mountain is seen', ui:'en' });
+    PROMO = admH ? [] : [{ id:'ad-1', at: Date.now() - 86400000, lang:'other', lname:'Vethi',
+               ln:'qel dross', who:'Kiyo', hd:'kiyo', mine:false, av:{ch:'K'},
+               mn:'the river is wide', ui:'en', ad:true }];
+    window.route = 'feed'; NAV = [{ r:'feed' }];
+    render();
+    const h = document.getElementById('app').innerHTML;
+    POSTS.splice(0, POSTS.length - n);
+    PROMO = wasPromo;
+    ADM.on = wasAdm.on; ADM.h = wasAdm.h;
+    planGot(wasPlan);
+    return h;
+  }
   /* What the app puts round a sheet, for a seed that has changed something
      since the form opened. FORM.html is the body as it was the moment
      openForm() ran; a seed that then sets a flag or fills a field has to
@@ -859,6 +883,19 @@ export function halfDone(){
 
        plus に上げてから描くのは、無料の 140 字はどの端末でも二、三行で
        畳まれないからです ── 畳みは有料が書けるようになった長さの話。 */
+    /* 売れた枠。「広告の形は、Twitterと同じ。ツイート擬態右上にprとつく。
+       …proのみ表示なし。」 OWNER 2026-09-23 ── 枠は PROMO_EVERY 件ごとに一つ
+       なので、それだけの投稿を前に積んでから描きます。宣伝されている投稿は
+       他人のもので、postRow() がほかの投稿と同じに描き、右上に PR が付く。
+       二つ目は同じ状態の pro で、PR の行が一つも出ないことが写る面です。 */
+    ['the timeline with a place sold in it', () => fixPromo('free')],
+    ['the same timeline on pro, with no place', () => fixPromo('pro')],
+    /* 「少ない時は出さない！」 ── 売れた広告はあるのに、投稿が PROMO_EVERY
+       件に届かないタイムライン。PR の行が出ないことが写る面。 */
+    ['a place sold, fewer posts than a place needs', () => fixPromo('free', true)],
+    /* AdMob の枠。ブラウザには本物の広告が無いので、ネイティブが「この高さ」と
+       答えた後の、空の行だけが写る（その上に iOS 側が広告を重ねる）。 */
+    ['a place AdMob fills, as the page draws it', () => fixPromo('free', false, 260)],
     ['a long post folded', () => {
         const wasPlan = plan();
         planGot('plus');

@@ -3930,6 +3930,12 @@ function postRow(p){
              acts on the post rather than describing it, so it stays where a
              thumb has learned it is whether the head came out one line or
              two, and a 44pt target sits on the line that is 44pt tall. */
+          /* PROMOTED, in the corner. 「ツイート擬態右上にprとつく」 OWNER
+             2026-09-23. It is the one thing on the row that says somebody paid
+             for it to be here, so it stands where the eye starts on the right
+             and never folds under the name. Off the POST (`ad`, put on by
+             netPromos()), because the row is read out of the row. */
+          (p.ad? '<span class="ppr">'+esc(t('post.pr'))+'</span>' : '')+
           '<span class="pmw">'+
             '<button class="pmore"' + DO('postMore', [p.id]) + ' aria-label="'+
               esc(t('post.more'))+'">'+ICON_DOTS+'</button>'+

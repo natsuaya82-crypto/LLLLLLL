@@ -979,6 +979,38 @@ create table if not exists feedback (
 );
 create index if not exists feedback_made_idx on feedback(created_at desc);
 
+-- A SOLD PLACE IN THE TIMELINE. 「広告の形は、Twitterと同じ。ツイート擬態右上に
+-- prとつく。広告枠が売れる形にする。」 OWNER 2026-09-23.
+--
+-- A promotion and not an advert: what is sold is a POST, written by the
+-- advertiser's own account like any other, and this row says which post and
+-- for how long. That is the Twitter shape the owner named, and it is why there
+-- is no second kind of row to draw -- www/post.js draws a promoted post with
+-- the one postRow() every post goes through, with PR in its corner. A table of
+-- adverts with their own text and pictures would be a second post nobody can
+-- like, reply to or report, and a second renderer to keep looking like the
+-- first.
+--
+-- A TABLE OF ITS OWN, and not a column on `post`, for the reason `draft` is:
+-- the author may update their own post (post_edit), and an author who could
+-- set a flag on it could sell themselves a place.
+--
+-- NOBODY WRITES ONE THROUGH A POLICY. There is no insert, update or delete
+-- policy, and each is deliberate: a place in somebody else's timeline is sold
+-- by the operator, through the service role, which no policy applies to.
+--
+-- `on delete cascade`: an advertiser deleting their post takes its promotion
+-- with it, because a promotion of nothing is not a thing anybody made -- it is
+-- the operator's note about a post, and the post is what it was about.
+create table if not exists promo (
+  id         bigint generated always as identity primary key,
+  post       uuid not null references post(id) on delete cascade,
+  starts_at  timestamptz not null default now(),
+  ends_at    timestamptz,
+  created_at timestamptz not null default now()
+);
+create index if not exists promo_run_idx on promo(starts_at, ends_at);
+
 -- ---------------------------------------------------------------------------
 -- Row level security
 --
@@ -1024,6 +1056,7 @@ alter table saved_search enable row level security;
 alter table recent_search enable row level security;
 alter table plan        enable row level security;
 alter table purchase    enable row level security;
+alter table promo       enable row level security;
 
 -- One question, and until 2026-08-26 there were two.
 --
@@ -1699,6 +1732,17 @@ grant execute on function plan_lapse_seen() to authenticated;
 drop policy if exists purchase_read on purchase;
 create policy purchase_read on purchase for select
   using (is_member() and uid = auth.uid());
+
+-- promo: everybody signed in reads the ones running NOW, and nobody writes.
+--
+-- The window is asked here rather than by the phone, so a promotion that has
+-- ended is not handed to anybody -- a phone with the wrong clock cannot draw a
+-- place that was paid for until yesterday. Nothing is said about the plan:
+-- whether a reader SEES a promotion is www/core.js's can('noads'), because a
+-- plan decides what a person may do and this row is not theirs.
+drop policy if exists promo_read on promo;
+create policy promo_read on promo for select
+  using (starts_at <= now() and (ends_at is null or ends_at > now()));
 
 -- quote: readable by everyone, because the count is the point. Written only by
 -- the author of the post it sits in -- so nobody can inflate somebody else's

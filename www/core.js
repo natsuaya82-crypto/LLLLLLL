@@ -2399,6 +2399,10 @@ var CAN={
      to prevent -- a plan name written into a screen is a question nobody can
      move between rungs without finding every place that asked it. */
   badge:   'pro',
+  /* No places sold in the timeline. 「proのみ表示なし」 OWNER 2026-09-23 --
+     the one capability that is an ABSENCE: what pro buys is the timeline
+     without them. Asked in one place, www/sns.js § THE PLACES SOLD. */
+  noads:   'pro',
   gram:    'pro',    /* a grammar stage of your own, past the fifteen there are */
   dir:     'pro'     /* choosing which way the language is written */
 };

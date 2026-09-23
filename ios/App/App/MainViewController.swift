@@ -36,6 +36,10 @@ class MainViewController: CAPBridgeViewController {
        from a cold launch, which AppDelegate has been holding since before
        there was a bridge. See the head of LinguaPush.swift. */
     bridge?.registerPluginInstance(LinguaPushPlugin())
+    /* The places in the timeline nobody has bought, filled by AdMob. Nothing
+       loads until www/sns.js asks, and it never asks on pro. See the head of
+       LinguaAds.swift. */
+    bridge?.registerPluginInstance(LinguaAdsPlugin())
     // And the plan itself, as a script rather than as an answer to a call:
     // what a free plan looks like is decided on the first frame, and a call
     // comes back after it. See the head of LinguaPlan.swift.
