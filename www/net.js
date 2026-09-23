@@ -3888,7 +3888,7 @@ function netHandleOf(s){
    is not. */
 function netStaffList(ok, bad){
   if(!netSignedIn()){ bad(null, 0); return; }
-  netGet('/rest/v1/profile?select=id,handle,admin&staff=is.true&order=handle.asc',
+  netGet('/rest/v1/profile?select=id,handle&staff=is.true&order=handle.asc',
     function(d){ ok(d || []); }, bad);
 }
 /* The reports, newest first, each carrying the thing it is about -- because a

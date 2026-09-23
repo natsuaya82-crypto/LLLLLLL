@@ -85,7 +85,7 @@ const SERVER = `
     /* AND THE REST OF THE OPERATOR'S SCREEN, which adminLoad() asks in one
        press. S.staffDeny is the staff list being refused. */
     if (p.indexOf('/rest/v1/rpc/admin_counts') === 0) return answer({ reports:0 });
-    if (method === 'GET' && p.indexOf('/rest/v1/profile?select=id,handle,admin&staff') === 0){
+    if (method === 'GET' && p.indexOf('/rest/v1/profile?select=id,handle&staff') === 0){
       if (S.staffDeny) return refuse();
       return answer(S.staff || []);
     }
