@@ -29,6 +29,8 @@
         at one step moves nothing on its line
      4  at 0 two letters drawn edge to edge JOIN -- no empty column between
         them -- on a post's line and in the field; at one step they do not
+     5  somebody else's shape is never one of my keyboard's code points nor
+        mine for a different shape, and the same shape is the same one
 
    A browser, on its own port.
    --------------------------------------------------------------------------- */
@@ -267,6 +269,31 @@ if (!(JOIN[1].line > 0) || !(JOIN[1].field > 0))
   fails.push('at one step two letters stand with no gap (line ' + JOIN[1].line + ', field ' +
              JOIN[1].field + '), so the test above proves nothing');
 
+/* ---- 5. somebody else's letters are theirs ------------------------ */
+/* Two posts at the same gap, both with the first letter at index 0 of their
+   ink -- mine, drawn with my alphabet, and somebody else's, where that index
+   is a different shape. On the page each shape is its own code point: never
+   one of my keyboard's (U+E000 up), and never the same as mine for a
+   different shape. And the same shape at the same gap is the same code point
+   wherever it comes from, which is what keeps a letter used on forty posts
+   one glyph. Asked of what postLnHTML() actually wrote. */
+const own = await pg.evaluate(() => {
+  SCRIPT.sp = 1; installScriptFont();
+  const mineInk = postInkTyped(ltPua(0));
+  const theirs = { g: [[{ pts: [[100, 100], [700, 700]] }, { pts: [[700, 100], [100, 700]] }]], s: [0], sp: 1 };
+  const same = { g: [mineInk.g[0]], s: [0], sp: 1 };
+  const cp = (ink) => postLnHTML({ id: 'x', ln: 'x', ink }).charCodeAt(0);
+  return { mine: cp(mineInk), theirs: cp(theirs), same: cp(same), kb: [PUA0, PUA0 + TFONT.n - 1] };
+});
+if (own.theirs === own.mine || (own.theirs >= own.kb[0] && own.theirs <= own.kb[1]) ||
+    (own.mine >= own.kb[0] && own.mine <= own.kb[1]))
+  fails.push("somebody else's letter shares a code point with mine or with my keyboard: mine U+" +
+             own.mine.toString(16) + ', theirs U+' + own.theirs.toString(16) +
+             ', keyboard U+' + own.kb[0].toString(16) + '-' + own.kb[1].toString(16));
+if (own.same !== own.mine)
+  fails.push('the same shape at the same gap came out as two code points (U+' +
+             own.mine.toString(16) + ', U+' + own.same.toString(16) + ')');
+
 if (errs.length) fails.push('the page threw: ' + errs.slice(0, 3).join(' | '));
 
 await br.close();
@@ -283,4 +310,7 @@ console.log('line: typed into the composer and posted, one line comes out in the
             '      card breaks where the newline is. The open language set to 0 moves nothing on a post written\n' +
             '      at one step. Two letters drawn edge to edge, px empty between them --\n' +
             '      at 1: line ' + JOIN[1].line + ', field ' + JOIN[1].field +
-            ';  at 0: line ' + JOIN[0].line + ', field ' + JOIN[0].field + '.');
+            ';  at 0: line ' + JOIN[0].line + ', field ' + JOIN[0].field + '.\n' +
+            "      Somebody else's letter is its own code point (U+" + own.theirs.toString(16) +
+            ', mine U+' + own.mine.toString(16) + ',\n      keyboard U+' + own.kb[0].toString(16) +
+            '-' + own.kb[1].toString(16) + '), and the same shape is the same one.');

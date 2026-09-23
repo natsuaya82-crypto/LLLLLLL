@@ -3570,16 +3570,38 @@ function postDir(p){
    language and may not be named here. A post written before a language could
    set one carries none, and stood one step apart -- inkSide() says that. */
 function postSide(p){ return inkSide(p && p.ink && p.ink.sp); }
+/* A line as the things it is made of, and the ONE place that says what a
+   space and a newline are: a shape, a run of text with no whitespace in it,
+   a space, or the end of a line. postLnHTML() sets these as the line the
+   timeline shows; cardInkUnits() (www/card.js) sets them on the card.
+   Neither looks at a character to decide whether it is blank.
+   A post with no ink is its text, which is a line with no shapes in it. */
+function postRuns(ink){
+  var out=[], i, j, x, ch, run;
+  for(i=0;i<ink.s.length;i++){
+    x=ink.s[i];
+    if(typeof x==='number'){ out.push({st:ink.g[x]}); continue; }
+    x=String(x); run='';
+    for(j=0;j<x.length;j++){
+      ch=x.charAt(j);
+      if(!/\s/.test(ch)){ run+=ch; continue; }
+      if(run){ out.push({tx:run}); run=''; }
+      out.push(ch==='\n'? {br:true} : {sp:true});
+    }
+    if(run) out.push({tx:run});
+  }
+  return out;
+}
 function postLnHTML(p){
   /* A TAG IS TEXT, so it comes out of the cut as text -- nobody has a letter
-     for `#` and the ink carries only what the writer drew. Both roads
-     through this function draw those runs, so both ask tagHTML() and a tag
-     is blue whether or not the post has ink on it. www/sns.js § tagHTML. */
-  if(!p || !postInkOK(p.ink)) return tagHTML(String((p && p.ln)||''));
-  var out='', i, x, side=postSide(p);
-  for(i=0;i<p.ink.s.length;i++){
-    x=p.ink.s[i];
-    out+=(typeof x==='number')? inkChar(p.ink.g[x], side) : tagHTML(String(x));
+     for `#` and the ink carries only what the writer drew. A run never holds
+     a space, and a tag never does either, so a tag is always whole inside
+     one run and tagHTML() finds it there. www/sns.js § tagHTML. */
+  var ink=(p && postInkOK(p.ink))? p.ink : {g:[], s:[String((p && p.ln)||'')]};
+  var rs=postRuns(ink), side=postSide(p), out='', i, u;
+  for(i=0;i<rs.length;i++){
+    u=rs[i];
+    out+= u.st? inkChar(u.st, side) : u.tx? tagHTML(u.tx) : u.br? '\n' : ' ';
   }
   return out;
 }

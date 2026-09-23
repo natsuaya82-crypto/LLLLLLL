@@ -953,7 +953,9 @@ a canvas per letter with its own scale and `white-space:normal`, so a letter was
 top of the private use area, `inkFaces()` adds a face for those characters to the
 `LinguaType` family (one `unicode-range` each, built by `inkFaceCSS()` — the same
 builder as the keyboard's own face), and `.pline, .pwfield #pw-ln` in `index.html`
-is the one rule for how a line is set, `pre-wrap` included. The field, a post, a
+is the one rule for how a line is set, `pre-wrap` included. `postRuns()` in
+`post.js` is the one place that says what a space and a newline are; the line and
+the card both read it. The field, a post, a
 quoted post, the spacing preview and the calendar are all that text. The card is a
 canvas and keeps `inkAdv()`; it takes a space as the ordinary face's (`inkSpace()`)
 and a newline as a break. `tools/line-check.mjs` photographs the field and the
