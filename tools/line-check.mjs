@@ -439,12 +439,25 @@ const FACE = await pg.evaluate(async () => {
     try { go(r); render(); } catch (e) { continue; }
     look(r);
   }
-  for (const w of WORDS) { go('words'); openWord(w.hw); render(); look('word ' + w.hw); }
-  return { bad, seen };
+  /* `xyz` has nothing the face draws. Its head is the spelling as it is,
+     so the row under it that gives the spelling again is the same word
+     twice -- that row is for a head showing something else. */
+  WORDS.push({ hw: 'xyz', ph: ['x'], mn: 'z', pos: 'n' });
+  const twice = [];
+  for (const w of WORDS) {
+    go('words'); openWord(w.hw); render(); look('word ' + w.hw);
+    const head = document.querySelector('.whw'), rd = document.querySelector('.wrd');
+    if (head && rd && !head.querySelector('.sfont') && head.textContent === rd.textContent)
+      twice.push(w.hw);
+  }
+  return { bad, seen, twice };
 });
 if (FACE.bad.length)
   fails.push('a word is set in the drawn face where the face does not draw it -- a dashed box ' +
              'where the letters were:\n    ' + FACE.bad.join('\n    '));
+if (FACE.twice.length)
+  fails.push("a word's page gives its spelling twice -- the head is not in the drawn face and the " +
+             'row under it repeats it: ' + FACE.twice.join(', '));
 if (!FACE.seen.nodes)
   fails.push('no text was set in the drawn face on any of ' + FACE.seen.screens +
              ' screens -- the walk is not reaching the words, so section 7 holds nothing');
