@@ -1,7 +1,8 @@
 // App Store のローカリゼーション（副題・説明文・キーワード・宣伝文・新機能）を
 // store/<locale>.json から App Store Connect API に入れる。
 //
-//   node tools/store-localize.mjs --dry                       # 文の長さと JSON だけ見る（鍵不要）
+//   node tools/store-localize.mjs --dry                       # Apple が断る文（長さ・文字）を見るだけ（鍵不要）
+//   node tools/store-localize.mjs                             # 同じ（--version が無ければ送らない）
 //   node tools/store-localize.mjs --version 1.0.2             # 全部の locale を入れる
 //   node tools/store-localize.mjs --version 1.0.2 --skip en-US
 //
@@ -23,22 +24,45 @@ const ROOT = path.resolve(new URL('..', import.meta.url).pathname);
 const DIR = path.join(ROOT, 'store');
 const BUNDLE = 'com.tokinets.lingua';
 
-/* Apple の上限。超えると API が 409 で断るので、送る前にここで止める。 */
+/* Apple が断る文は、鍵を使う前にここで断る。長さと文字の二つ。
+   長さ：Apple の上限。超えると API が 409 で断る。 */
 const MAX = { name: 30, subtitle: 30, description: 4000, keywords: 100,
               promotionalText: 170, whatsNew: 4000 };
 const VERSION_FIELDS = ['description', 'keywords', 'promotionalText', 'whatsNew',
                         'supportUrl', 'marketingUrl'];
 const INFO_FIELDS = ['name', 'subtitle', 'privacyPolicyUrl'];
+/* 文字：Apple は許す文字の一覧を出していない。分かっているのは断られた物で、
+   (1) U+2500 ─ 罫線（So）── 2026-09-23 の run 35867674238 で ja の説明文が
+       409 INVALID_CHARACTERS。実測。
+   (2) ✓ や絵文字（So）── 開発者の報告（sindresorhus/appstore-symbols、
+       developer.apple.com/forums/thread/729435）。
+   (3) 合成されていない結合記号 ── fastlane #20603（ベトナム語、NFD で送ると断られ、
+       同じ字を合成済みで貼ると通る）。
+   だから一文字ずつではなく類で断る：ASCII の外で Unicode の「記号」(S*)・
+   「制御/書式/私用/未割当」(C*)・囲み記号 (Me)・行/段落区切り (Zl/Zp) は全部、
+   そして NFC でない文。Apple より厳しい側に倒れている（● ■ ∞ ⌘ © ™ は Apple が
+   通すと報告があるがここは断る）── 要るならその時に決める。
+   持っていない所：句読点 (P*) の中で Apple が断る物（† ‡ が報告されている）は
+   類で言えないので見ていない。 */
+const APPLE_NO = /[\p{S}\p{C}\p{Me}\p{Zl}\p{Zp}]/u;
+function badChars(s){
+  const out = [];
+  for (const ch of String(s)) {
+    if (ch === '\n' || (ch >= ' ' && ch <= '~')) continue;
+    if (APPLE_NO.test(ch) && out.indexOf(ch) < 0) out.push(ch);
+  }
+  return out;
+}
 
 const args = process.argv.slice(2);
 const flag = (n) => { const i = args.indexOf(n); return i >= 0 ? args[i + 1] : null; };
 const has = (n) => args.includes(n);
-const DRY = has('--dry');
 const VERSION = flag('--version');
+const DRY = has('--dry') || !VERSION;   /* 版を言わなければ何も送らない。gate はこの形で走らせる */
 const CREATE = has('--create');
 const SKIP = (flag('--skip') || '').split(',').filter(Boolean);
 
-/* ---- store/*.json を読み、長さを見る ------------------------------------ */
+/* ---- store/*.json を読み、Apple が断る文を見る ------------------------------------ */
 function load(){
   const out = [];
   for (const f of readdirSync(DIR).filter((n) => n.endsWith('.json')).sort()) {
@@ -49,6 +73,14 @@ function load(){
     for (const [k, m] of Object.entries(MAX)) {
       if (j[k] != null && String(j[k]).length > m)
         bad.push(`${k} is ${String(j[k]).length} chars, the ceiling is ${m}`);
+    }
+    for (const [k, v] of Object.entries(j)) {
+      if (!VERSION_FIELDS.includes(k) && !INFO_FIELDS.includes(k))
+        bad.push(`${k}: not a field this tool sends -- it would never reach Apple`);
+      const c = badChars(v);
+      if (c.length) bad.push(`${k}: Apple refuses ${c.map((ch) => `${ch} U+${ch.codePointAt(0).toString(16).toUpperCase().padStart(4, '0')}`).join(', ')}`);
+      if (String(v) !== String(v).normalize('NFC'))
+        bad.push(`${k}: not NFC -- a mark not composed onto its letter is refused`);
     }
     if (j.keywords && /\s,|,\s/.test(j.keywords))
       bad.push('keywords: no space beside the comma (Apple counts the space)');
@@ -72,9 +104,8 @@ function attrs(row, fields){
 async function main(){
   const rows = load();
   console.log(`store/: ${rows.length} locales -- ${rows.map((r) => r.locale).join(' ')}`);
-  if (process.exitCode) { console.error('fix the lengths above first'); return; }
+  if (process.exitCode) { console.error('fix the text above first: Apple would refuse it'); return; }
   if (DRY) { console.log('dry run: nothing sent'); return; }
-  if (!VERSION) throw new Error('--version <x.y.z> is needed (the version in Prepare for Submission)');
 
   TOKEN = ascJwt();
   const app = (await call('GET', `/apps?filter[bundleId]=${BUNDLE}`)).data[0];
