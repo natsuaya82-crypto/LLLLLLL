@@ -398,6 +398,40 @@ function snsSetFil(k){
    as its own, which is per TAB and not per route: the followed timeline and
    the recommended one are two answers on one screen. */
 function snsHas(){ return !!SNS_GOT[snsTab]; }
+/* ---- THE PLACES SOLD IN THE TIMELINE -------------------------------------
+   「広告の形は、Twitterと同じ。ツイート擬態右上にprとつく。広告枠が売れる形に
+   する。今は売る人いないからadmobを流す。proのみ表示なし。」 OWNER 2026-09-23.
+
+   A place is a promoted POST (supabase/schema.sql § promo), so it is drawn by
+   postRow() like every other row and carries PR in its corner. It is kept
+   here and not in POSTS: a promotion is a place in the home timeline, and a
+   post put into POSTS would also be in the search, the recommended list and
+   the copy this phone keeps.
+
+   PROMO_EVERY is how many posts stand between two places. 5 IS A PLACEHOLDER
+   -- the owner has not given the number yet -- and this is the one line it
+   lives on. A place with nothing sold in it draws nothing: filling it from
+   AdMob is waiting on the owner's choice (docs/scope/r55-ads.md).
+
+   can('noads') is the one place that decides whether there are places at all,
+   and it is asked twice for one reason: a pro account is not asked for
+   promotions it will never be shown, and one that has just become pro does
+   not go on seeing the list it was handed before. */
+var PROMO=[], PROMO_EVERY=5;
+function snsPromoAsk(done){
+  if(can('noads')){ PROMO=[]; done(0); return; }
+  netPromos(function(ps){ PROMO=ps || []; done(1); },
+            function(){ done(0); });
+}
+function snsWithPromo(list){
+  var out=[], i, k=0;
+  if(can('noads')) return list;
+  for(i=0;i<list.length;i++){
+    out.push(list[i]);
+    if((i+1)%PROMO_EVERY===0 && k<PROMO.length) out.push(PROMO[k++]);
+  }
+  return out;
+}
 /* THE TIMELINE'S ASK. It writes the answer down and says whether one came;
    the mark, the pop, the 再接続 and the render are pullRun()'s and are not
    here. */
@@ -448,6 +482,12 @@ function askFeedRun(tabs, ok, bad, person){
      many tabs went out -- it was inside the ask and therefore ran per tab,
      and a post sent twice is what www/sns.js § pullRun was written about. */
   postCatchUp();
+  /* And the places sold in it, in the same moment and counted in the same
+     pair, so the timeline and its PR rows arrive as one render rather than a
+     list that grows a row under somebody's eye. A place that could not be
+     asked is not a timeline that could not be: it answers `one`, never `no`. */
+  left++;
+  snsPromoAsk(one);
   function one(got){
     if(fell) return;
     if(got) drew=1;
@@ -1401,7 +1441,7 @@ function vFeed(){
       : snsFil
       ? snsAnsHTML(snsFil.q, snsFil.r)
       : list.length
-      ? list.map(postRow).join('')
+      ? snsWithPromo(list).map(postRow).join('')
       /* Two different emptinesses. Nothing at all is a timeline that has not
          started; nothing HERE, with posts on the other tab, is a person who
          has not followed anybody yet, and telling them "nothing has been

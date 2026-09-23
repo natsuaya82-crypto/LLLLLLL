@@ -1275,6 +1275,7 @@ defLang('pt', (function(){
       'post.editplan'         : "Editar uma publicação é do plano Plus",
       'post.save'             : "Guardar",
       'post.edited'           : "Editado",
+      'post.pr'               : "PR",
       'post.unsent'           : "Não enviado",
       'post.pv'               : "Privado",
       'post.pv.on'            : "Só você vai ver",

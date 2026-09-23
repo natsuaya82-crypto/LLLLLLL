@@ -1183,6 +1183,7 @@ defLang('en', (function(){
       'post.editplan'         : "Editing a post is on the Plus plan",
       'post.save'             : "Save",
       'post.edited'           : "Edited",
+      'post.pr'               : "PR",
       'post.unsent'           : "Not sent",
       'post.pv'               : "Private",
       'post.pv.on'            : "Only you will see this",

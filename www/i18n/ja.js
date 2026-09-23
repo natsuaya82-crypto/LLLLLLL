@@ -1184,6 +1184,7 @@ defLang('ja', (function(){
       'post.editplan'         : "投稿の編集はPlusプランからです",
       'post.save'             : "保存",
       'post.edited'           : "編集済み",
+      'post.pr'               : "PR",
       'post.unsent'           : "未送信",
       'post.pv'               : "自分だけ",
       'post.pv.on'            : "自分だけの投稿になります",

@@ -1268,6 +1268,7 @@ defLang('it', (function(){
       'post.editplan'         : "Modificare un post è del piano Plus",
       'post.save'             : "Salva",
       'post.edited'           : "Modificato",
+      'post.pr'               : "PR",
       'post.unsent'           : "Non inviato",
       'post.pv'               : "Privato",
       'post.pv.on'            : "Lo vedrai solo tu",

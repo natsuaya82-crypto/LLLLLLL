@@ -1273,6 +1273,7 @@ defLang('zh', (function(){
       'post.editplan'         : "编辑动态是 Plus 方案的功能",
       'post.save'             : "保存",
       'post.edited'           : "已编辑",
+      'post.pr'               : "PR",
       'post.unsent'           : "未发送",
       'post.pv'               : "仅自己",
       'post.pv.on'            : "只有你能看到",
