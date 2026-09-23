@@ -15,6 +15,91 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### 2026-09-23 キーボードとウィジェットの置き場（App Group）は、サインインしているアカウントの物だけ ── **写しを消します**
+
+r63 § 2-1 K5 を測った（r67-ios）。`sharePush()`（`www/share.js`）が App Group に書く三つの
+ファイル ── `keyboard.json`・`LinguaScript.otf`・`widget.json` ── は、誰のアカウントの物か
+を持たず、サインアウトでもアカウント削除でも片付かなかった。測定: 一度送ったあと
+`netOut()` → `render()` で書き込み 0、`wipeHere()` → `render()` で `sharePush()` の呼び出し
+自体が 0（扉はオンボーディングの道で、`render()` がその手前で return する）。さらに
+`LinguaShare.swift` の `write` は「空のフォントは前の物を残す」「空の数字は前の物を残す」
+だったので、字を一つも描いていない次のアカウントが入っても、前の人の書体が残った。
+
+- **一文**: App Group にあるのは、サインインしているアカウントの開いている言語が渡した物
+  だけ。渡された物がそのまま在り、空で渡された物は無い。アカウントが居なければ三つとも空。
+- **見て変わること**: サインアウトすると、Lingua キーボードは「先に Lingua で文字を描いて
+  ください」、ウィジェットはローマ数字になる。別のアカウントで入ると、その人の字になる
+  （字が無ければ書体も無い）。
+- **貯まる物**: 形は変わらない。App Group の三つのファイルを、空で渡された時に**消す**。
+- **端末でしか確かめられない**（Swift はここでビルドできない）。DEVICE 未確認。
+- **残る穴**: アカウント削除の直後は `render()` が `sharePush()` まで届かない（`www/glyph.js`
+  は r67 の持ち物ではない）。次にサインインした時に上の一文で書き直される。`sharePush()` を
+  `render()` の早い return より前へ出す一行が要る ── `docs/scope/r67-ios.md`。
+
+```
+DELETE REVIEW
+  who deletes         automatic — sharePush() on a render where the account moved
+  when                サインアウトした後の最初の render。別のアカウントが入った後の最初の
+                      render（その人の言語に字が無い時の書体）
+  what exactly        App Group（group.com.tokinets.lingua）の keyboard.json・
+                      LinguaScript.otf・widget.json。それ以外は触らない（Documents の
+                      声・用紙は別のフォルダで、この道は通らない）
+  why                 CLAUDE.md「NOTHING IS THE PHONE'S. EVERYTHING IS THE ACCOUNT'S」。
+                      前のアカウントの字が拡張とウィジェットに残っていた
+  recoverable?        はい。三つとも言語から毎回作り直す写しで、言語はサーバーにある。
+                      サインインして言語が開けば次の render で同じ物が書かれる
+  is it still on the server?   はい（language・slice は何も動かない）
+  anything to do with the plan?    no
+  migration / rollback         移行なし。戻すと前の人の字が残る形に戻る
+```
+
+### 2026-09-23 プランを書くのは verify-plan の答えだけ ── **貯まる物は変わりません**
+
+r63 § 2-5 S3 を測った（r67-ios）。ブラウザ（`storeOn()` が偽）でプランの部屋のカードを押すと
+`setPlan()` が `planTook()` を直に呼び、`free → pro`。「サブスクリプションを解除する」は
+`storeManage()` → `setPlan('free')` で `pro → free`。`vercel.json` が `www/` を公開している
+ので、web 版では誰でも押すだけで Pro だった。`PLAN_BUY` の一つの値が偽になれば実機でも同じ。
+
+- **一文**: プランを書く（`planTook()`）のは `netPlanVerify()` が受け取った verify-plan の
+  答えだけ。
+- **消したもの**: `setPlan()` と `PLAN_BUY`。カードは `storeBuy()` を直に呼ぶ。App Store が
+  無い所では、`storeBuy()` も `storeManage()` も「App Store につながりませんでした」と言う
+  だけで、プランは動かない。
+- **見て変わること**: 実機では何も変わらない。ブラウザではカードを押してもプランは変わらない。
+- **貯まる物**: 変わらない。プランはもともとメモリだけ（`PLAN`）。移行なし。削除なし。
+- **残る一つ**: `toast.plan.free`（「無料プランにもどしました」）は、手で free に戻す道が
+  無くなって、どこからも言われなくなる。`i18n-check` は使われない鍵で落ちるので、10 言語から
+  消す一行が要る（`www/i18n/` は r67 の持ち物ではない）── `docs/scope/r67-ios.md`。
+
+### 2026-09-23 Keychain のプランを読む道を消す ── **Keychain の中身は消しません**
+
+r63 § 2-5 S1 を確かめた（r67-ios、grep）。`MainViewController.swift` が毎起動
+`LinguaPlanPlugin` を登録して `inject()` し、Keychain のプランと uid を
+`window.__plan`・`__planuid`・`__planok` に書いていた。`www/` でそれを読む所は 0
+（2026-09-11 からプランはサーバーの答えをメモリに持つだけ）。`LinguaPlan` の `write` を呼ぶ所も
+0。使われない道が毎起動走り、そのコメントは「core.js が見つける」「LinguaStore が書く」と
+今と違うことを言っていた。
+
+- **消したもの**: `ios/App/App/LinguaPlan.swift`、`MainViewController.swift` の登録と
+  `inject()`、project の Sources の一行。`LinguaStore.swift` の頭の「Keychain は
+  LinguaPlan.swift がまだ持っている」の段落。
+- **消さないもの**: 端末の Keychain にある二つの項目（service `com.tokinets.lingua.plan`、
+  account `plan` と `uid`）。読む物も書く物も無くなるだけで、何も取り除かない。
+- **見て変わること**: 無い。
+
+```
+DELETE REVIEW
+  who deletes         nobody — コードを消すだけで、端末の保存物は何も取り除かない
+  when                この版から
+  what exactly        LinguaPlan.swift（Keychain を読む inject() と書く write/set/setUid）。
+                      Keychain の項目そのものは残る
+  why                 www/ が読まない道（ルール 5 の考え）。プランは verify-plan の答え
+  recoverable?        git にある。Keychain の項目は触らないので、戻せば同じ物が読める
+  is it still on the server?   プランはもともとサーバー（purchase・plan 表）にある
+  anything to do with the plan?    no — 何を持っているかは変えない。読まない写しの道を消すだけ
+  migration / rollback         移行なし
+```
+
 ### 2026-09-23 自作文字のスイッチは本人だけが動かす。SET と ME の一つの項目を決めるのは一か所 ── **貯まる物の形は変わりません**
 
 r46-audit § B2・B4 を測った（r61-face）。アルファベットのスイッチで自作文字をオフにして、字を
