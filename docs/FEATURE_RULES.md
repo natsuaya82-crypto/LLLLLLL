@@ -243,6 +243,98 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Implementation status:
 ```
 
+### 2026-09-23 読むのは開いた画面の分だけ ── 起動は通知とタイムライン、他はその画面に進んだ時、ダウンロードは押した時
+- Date: 2026-09-23
+- Area: サーバーから読む全部（`www/net.js` の GET と RPC、起動 `www/boot.js`、人の言語のページ `wldSlicesPull()` `www/home.js`）
+- Decision:
+  「開いた時は通知とタイムラインだけでしょ、そのページに進むときに読み込むべきなぜ一括なの？そこも直せ」
+  「ダウンロードってそれが普通じゃないの？」（押した時に落とす）
+  「ダウンロードは普通⭕️のメーターだろ」
+  - 起動で読むのは、通知とタイムラインだけ。
+  - それ以外（プロフィール、フォロー・フォロワー、下書き、検索、自分の投稿、言語の一覧の中身、人の言語のページ…）は、その画面に進んだ時に、その画面に描く分だけ読む。一覧は上限を付けて、続きはスクロールで。
+  - 人の言語の章は ↓ を押した時にサーバーから落とす。落としている間は ⭕ のメーター（進みが取れない時は ⭕ が回る）、済んだら ⭕☑️。
+- Reason: 全部を一度に読むとアプリが重い。普通のアプリはそう動く。
+- Affected features: 起動、全部のタブと画面、人の言語のダウンロード
+- Affected data: 無し（読む時が変わるだけ。保存する物は変えない）
+- Affected docs: CLAUDE.md（直す session が一文を足す）
+- Implementation status: 未実装。2026-09-23 夜に測った起動時の読み込みは 22 本（リーダー、偽のサーバーで）。
+### 2026-09-23 自作文字で表示は、既定でオン
+- Date: 2026-09-23
+- Area: 語を自作文字で出すかどうか（`myFontWant()` `myFontOn()` `www/glyph.js`、書き字のページのスイッチ `www/sound.js`、`obDone()` `www/onboard.js`）
+- Decision:「オンをデフォルトにしてくれ。」
+  問いは「オンボーディングで字を描かずに進んだ人は、後で描いても自作文字で表示されない。既定をどうするか」。
+  - **まだ誰も決めていない（`SET.myfont` が無い）はオン。** スイッチで切った人（`false`）だけオフで、それは変えない。
+  - 「オンか」を答えるのは `myFontWant()` 一か所。`myFontOn()` とスイッチがそれを訊く。
+  - オンボーディングで字を描いた時に `true` を書いていた所（`obDone()`）は、既定がオンなので消した。書くのはスイッチ（`setMyFont()`）だけ。
+- Reason: 描いた字は見えるのが当たり前。描かずに進んだ人に、後で描いた字が出ないのはおかしい。
+- Affected features: 辞書、語のページ、文法の章など、語を出す所全部
+- Affected data: 貯まる物は変わらない。前に入った `false` はそのまま（人が切ったもの）
+- Affected docs: `CLAUDE.md`（§ One place の `SET.myfont` の一文）
+- Implementation status: r70-marks。`writes-check`（書き手一つ・読むのは `myFontWant()` だけ）と `line-check` 9 が持つ。
+
+### 2026-09-23 操作のボタンは字で書かない ── 印にする
+- Date: 2026-09-23
+- Area: data-do を持つボタン全部（全画面・全顔、棒の隅のボタン、選んで消す隅の削除）
+- Decision:「あのさ、送信とか共有とかもそうだけど、文字でドカンって共有とか書くの禁止
+  してるよね？だから+〇とか送信なら紙飛行機マークにしてるはずなんだけど。これ禁止だから
+  全部なくせや」
+  - 印のある操作は印で描く：送る＝紙飛行機（`ICON_SEND`）、共有＝`ICON_SHARE`、足す＝＋
+    （`ICON_ADD2`）、消す＝ごみ箱（`ICON_BIN`）、編集＝ペン（`ICON_PEN`）、戻す＝`ICON_UNDO`、
+    探す＝`ICON_LENS`、戻る＝`ICON_BACK`。字はボタンの `aria-label`（`t()` を通す）。
+  - 印は `www/glyph.js` の `ICON_*` の並びから。無い物（紙飛行機）だけ同じ形で一つ足した。
+  - 続き（同じ日）：「右上にしてね。送信も　紙飛行機右上、共有も共有マークを右上。その位置に
+    書くものはない。」「ルールの徹底なんだからそこだけ直すのやめろよ」
+    **画面の送る・共有は、印で、バーの右上**（`navDo()` の `icon`、右上を描く一か所）。
+    カードの共有は右上へ移した。お問い合わせの紙飛行機はもとから右上。
+    投稿の行・語のページ・例文の行の共有の印は「カード」を開くもので（名前は「カード」）、
+    共有そのものはカード画面の右上。
+  - 目的語つきの行（「アカウントを削除」「この単語を削除」）は何が消えるかを言う行で、替えない。
+  - 印の決まっていない操作（サインイン・次へ・保存・完了・確認…）は字のまま。何の印を
+    当てるかはオーナーのもの。一覧は `docs/scope/r70-marks.md`。
+  - 問い（`popAsk()`）の二つの答え「削除／閉じる」は字のまま ── iOS の問いも字で答える。
+    **オーナーが違うと言えば替える**（r70 の報告に書いた）。
+- Reason: 文字でドカンと書かない。送信・共有・追加は印で分かる。この規則はコードのコメント
+  （glyph.js の下書きの印）にしか無く、読まれずに「共有」が字で入った。
+- Affected features: カード、問い合わせ、辞書・メモ・規則・キーボード・下書きを選んで消す、
+  言語の記事・メモ・語の編集、新しい語、自分の項目、ノートの種類、運営画面、検索の戻る
+- Affected data: なし。貯まる物・移行・削除なし
+- Implementation status: r70-marks。`tools/marks-check.mjs` が持つ。r60 の持ち物
+  （post.js の投稿ボタン、me.js のプロフィール編集）は数えて一覧に書き、r60 の後に直す。
+
+### 2026-09-23 管理画面の「数」は @lingua だけ、「履歴」と「戻す」はスタッフ全員 ── 今のままでいい
+- Date: 2026-09-23
+- Area: 管理画面（`www/mod.js`）、`supabase/schema.sql` の `admin_counts`（`is_admin()`）・`admin_hist` と `admin_restore`（`is_staff()`）
+- Decision: 「それでいいよ」
+  集計の「数」は @lingua 本人だけ、言語の過去の版を見て戻す「履歴」「戻す」はスタッフなら誰でも。門が違うのは意図どおり。
+- Reason: オーナーがそう決めた（`docs/scope/r63-audit.md` §2-7 SQ6 の問いへの答え）。
+- Affected features: 管理画面
+- Affected data: 無し
+- Affected docs: 無し
+- Implementation status: IMPLEMENTED ── 今の schema がこの形。
+
+### 2026-09-23 自作文字がオンでも、描いていない字はローマ字で出す
+- Date: 2026-09-23
+- Area: 語を出す所（`wOut()` `www/home.js`、`sfontHTML()` `www/glyph.js`）
+- Decision: 「ローマ字」
+  自作文字で表示がオンのとき、まだ描いていない字は、借りた文字ではなくローマ字で出す。
+- Reason: オーナーがそう決めた（リーダーの問い「描いていない字は借りた字か、ローマ字か」への答え）。
+- Affected features: 辞書、単語のページ、文法の章、暦、投稿の一行以外で語を出す所
+- Affected data: 無し
+- Affected docs: 無し
+- Implementation status: IMPLEMENTED ── 今のコードがすでにこの振る舞い（r61 が測った、`docs/scope/r61-face.md`「決めていないこと」）。
+
+### 2026-09-23 古い購入をどのアカウントに付けるかは、考えなくていい
+- Date: 2026-09-23
+- Area: 購入の確かめ（`supabase/functions/verify-plan/`）
+- Decision: 「そもそもアプリ公開されたの昨日だから必要ない。」
+  `appAccountToken` の無い購入（2026-09-06 より前）は、実際の利用者にはいない。
+  `docs/scope/r63-audit.md` §2-5 S2 は、直すことも決めることも無い。
+- Reason: 公開は 2026-09-22。それより前に買った人はいない。
+- Affected features: 無し
+- Affected data: 無し
+- Affected docs: `docs/scope/r63-audit.md` §2-5 S2（記録なので書き換えない）
+- Implementation status: 何もしない、が決定。
+
 ### 2026-09-23 活用は語にしない ── 語の上にラベルと形のセットで持ち、数えない
 - Date: 2026-09-23
 - Area: 語の活用（`www/wordsheet.js` § forms、`capOK()`、キーボードの変換、投稿の意味の行）
@@ -3132,7 +3224,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
   「languages on the account 1 / 1 / 3」は、アカウントに付いていて初めて
   上限になります。プランも同じで、端末の中の値なら端末を変えれば無関係です。
 - Affected features: `www/core.js`（`planKeep()` / `setOnDisk()`）、
-  `www/settings.js`（`setPlan()`）、`supabase/schema.sql`（`profile` の列）、
+  `www/settings.js`（~~`setPlan()`~~）、`supabase/schema.sql`（`profile` の列）、
   `www/net.js`（プランを送る道）。キーボードは言語の一部なので `slice` の `kb`
   ── **こちらは既にそうなっています。**
 - Affected data: `profile` に列が増えます。消えるものはありません。
@@ -3146,7 +3238,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
 #### コードと合っていない所。直していない ── 報告した
 
 **プランが端末に在る。**`www/core.js` の `planKeep()`／`setOnDisk()`、
-`www/settings.js` の `setPlan()`、`tools/plan-check.mjs` の
+`www/settings.js` の ~~`setPlan()`~~、`tools/plan-check.mjs` の
 「ブラウザでは設定ファイルに在り、実機では Keychain に在る」という主張、
 `docs/PAID_FEATURES.md` がその検査について書いている行 ── **どれもコード側で、
 この枝の持ち物ではありません。**プランを `profile` に載せるのは購入がサーバーに

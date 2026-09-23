@@ -605,10 +605,9 @@ function openOwnPhase(){
       lnField('st-t', t('stg.own.title.ph'), '', '')+'</div>'+
     '<div class="field"><label>'+t('stg.own.words')+'</label>'+
       '<textarea id="st-w" class="ntbody" style="min-height:120px" placeholder="'+esc(t('stg.own.words.ph'))+'"></textarea></div>'+
-    /* This one still says what it does: it is the button that makes the
-       thing the form is for, not one more row of a list. */
-    '<button class="btn" style="width:100%;margin-top:6px"' + DO('stAddOwn') + '>'+
-      t('stg.own.add')+'</button>');
+    /* The button that makes the thing the form is for, and it is the plus
+       (OWNER 2026-09-23 -- an add is a mark, not a word). */
+    markBtn(ICON_ADD2, t('stg.own.add'), 'stAddOwn'));
 }
 FORM_OPEN.own=function(){ openOwnPhase(); };
 /* Saying yes to the stage that is off the list. stMarkSet() is what stUsed()

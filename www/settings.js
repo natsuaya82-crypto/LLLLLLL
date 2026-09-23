@@ -515,11 +515,12 @@ function vContact(){
      states, the colour and nothing else (www/shell.js § navDo).
 
      `on` is contactOn() above and it is painted by hand while somebody types
-     (contactSet), because this screen is not redrawn on a keystroke. The word
-     is still the busy one while a send is in the air. */
+     (contactSet), because this screen is not redrawn on a keystroke. It is
+     the paper plane and the word is its name (OWNER 2026-09-23); while a send
+     is in the air the name is the busy one and the plane is grey. */
   return '<div class="view">'+
     navTop('', navDo(t(CONT.busy? 'ob.mail.wait' : 'contact.send'),
-                     'contactGo', null, contactOn()))+
+                     'contactGo', null, contactOn(), {icon:ICON_SEND}))+
     /* `tall` is the body that is as tall as the screen -- vSet()'s account
        room above already wears it -- and it is what lets the field below take
        what is left. */
@@ -1201,7 +1202,12 @@ function plBuy(){
       t('plan.cancel'));
     return;
   }
-  setPlan(PLPICK.id, PLPICK.yr);
+  /* Pressing a card ASKS APPLE AND NOTHING ELSE. planTook() is the one
+     writer of a plan and netPlanVerify(), with verify-plan's answer, is its
+     one caller (www/core.js § PLAN). www/ is published (vercel.json), so a
+     card that wrote the plan where there is no App Store would be Pro for
+     anybody with a browser; there, storeBuy() says so and nothing moves. */
+  storeBuy(storeId(PLPICK.id, PLPICK.yr));
 }
 function planPrice(p, free){
   function term(yr){
@@ -1398,35 +1404,6 @@ function vPlans(){
     '<div class="plfoot2 plunder"><button class="btn ghost" style="width:100%"' +
       DO('storeManage') + '>'+esc(t('plan.cancel'))+'</button></div>'+
   '</div>';
-}
-/* 段は、Apple の購入が通ってから書かれる。
-   「課金もタップしたら勝手になるけど？」OWNER 2026-08-31。
-
-   `PLAN_BUY` は買う道を通すかどうかの一箇所の値で、2026-08-25 から `false`
-   でした ── その日 App Store Connect に商品が一つも無く、実機で段を試す道が
-   それしか無かったからです。そのときのコメント自身が「出荷前に true に戻す
-   こと」と書いていて、戻らないままビルド #106 が実機に出て、段のカードを
-   押しただけで Pro が付きました。
-
-   `true` です。実機では `storeBuy()` を通り、通らなければ段は動きません
-   ── そして段は**要求ではなく返事から**取られます（`storeTook()` は
-   `r.plan` を読む）ので、取り消しも保留も失敗も `free` のままです。
-
-   ブラウザには App Store が無いので `storeOn()` が false になり、そこでは
-   今までどおり手で切り替わります ── 検査もスクリーンショットもそれで歩きます。
-
-   値のまま残してあるのは行ごと消せないからではなく、`setPlan` が `storeBuy`
-   の唯一の呼び出し元だからです。消すと StoreKit 側が丸ごと dead-check に
-   落ちます。**false に戻さないこと。** false のまま App Store に出すと、
-   誰でも自分に Pro を付けられます。 */
-var PLAN_BUY=true;
-function setPlan(id, yearly){
-  if(PLAN_BUY && id!=='free' && storeOn() && storeBuy(storeId(id, yearly))) return;
-  /* planTook() and not four lines of its own: it is the one place a plan is
-     written down, wherever the word came from -- the server's answer, or this
-     hand in a browser. 2026-09-06. */
-  planTook(id);
-  toast(id==='free'? t('toast.plan.free') : t('toast.plan.other', id));
 }
 
 

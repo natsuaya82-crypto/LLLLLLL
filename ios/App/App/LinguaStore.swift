@@ -39,14 +39,11 @@
 //    this app -- www/share.js says why, at length -- so there is no
 //    addListener on the JavaScript side to notify. A transaction that arrives
 //    with nobody in the app is KEPT (`pending` below) and goes out with the
-//    next `current`, which www asks on every launch. That is the same latency
-//    the Keychain gave and one mechanism fewer.
+//    next `current`, which www asks on every launch.
 //
-//    It no longer writes the Keychain. LinguaPlan.swift is still the plan the
-//    app opens on with no signal, and www writes it from the server's answer
-//    (`planKeep` in www/core.js). A second writer here would be a second
-//    answer to 「what plan is this」, which is the whole of what this change
-//    removes.
+//    It writes nothing down. The plan is verify-plan's answer, held in memory
+//    by www/core.js § PLAN and nowhere on this phone; a writer here would be
+//    a second answer to 「what plan is this」.
 
 import Foundation
 import Capacitor

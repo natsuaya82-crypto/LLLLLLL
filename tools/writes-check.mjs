@@ -43,10 +43,6 @@ const WWW = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'www')
 
 /* field -> { function: why this is a different moment } */
 const WRITERS = {
-  'SET.myfont': {
-    setMyFont: 'the switch on the alphabet -- the person deciding',
-    obDone: 'the walk: the first letter somebody draws, before there is a switch they could have touched',
-  },
   'SET.showScript': {
     pkKeepSave: "a character borrowed on a letter's own page. There is no switch for this field and nothing sets it false, so nothing a person decided is written over",
     obTakeCh: 'a character borrowed in the walk -- the same moment, before the app is open',
@@ -119,6 +115,15 @@ const DYNAMIC = {
   },
 };
 
+/* field -> the ONE function that answers it. Every other read of the field
+   is a second answer to the same question, and a second answer is how
+   `undefined` came to mean off in one place and on in another. 「オンを
+   デフォルトにしてくれ。」 OWNER 2026-09-23: nobody-has-decided is ON, and
+   that sentence lives in myFontWant() and nowhere else. */
+const READS = {
+  'SET.myfont': 'myFontWant',
+};
+
 /* ---- read -------------------------------------------------------------- */
 /* Comments out, keeping every newline so a line number is a line number
    (box-check's lesson: a check that names the wrong line is believed). Then
@@ -146,6 +151,7 @@ function strip(src) {
 }
 
 const found = {};   /* field -> { fn: [file:line] } */
+const readFails = [];
 let writes = 0, files = 0;
 for (const f of fs.readdirSync(WWW).filter((x) => x.endsWith('.js')).sort()) {
   files++;
@@ -167,13 +173,19 @@ for (const f of fs.readdirSync(WWW).filter((x) => x.endsWith('.js')).sort()) {
     /* And the whole object at once, which is every field. */
     const all = /(^|[^.\w$])(SET|ME)\s*=(?!=)/g;
     while ((w = all.exec(ln))) put(w[2]);
+    for (const key of Object.keys(READS)) {
+      const [o, k] = key.split('.');
+      const rr = new RegExp('\\b' + o + '\\s*\\.\\s*' + k + '\\b(?!\\s*(=(?!=)|\\+=|-=|\\+\\+|--))', 'g');
+      while (rr.exec(ln)) if (fn !== READS[key]) readFails.push(key + ' is read in ' + fn + ' (' + f + ':' + (i + 1) +
+        ') -- ' + READS[key] + '() is the one place that answers it; ask that');
+    }
     for (const ch of ln) { if (ch === '{') depth++; else if (ch === '}') depth--; }
     if (depth === 0) fn = '(top)';
   });
 }
 
 /* ---- ask ---------------------------------------------------------------- */
-const fails = [];
+const fails = readFails.slice();
 let multi = 0;
 const table = Object.assign({}, WRITERS, DYNAMIC);
 for (const key of Object.keys(found).sort()) {

@@ -585,8 +585,16 @@ function installScriptFont(){
 /* Two ways to see your language in its own writing exist side by side: letters
    you borrowed from an existing script, which change the text itself, and
    letters you drew, which change only the face the same text is set in. This
-   one is the drawn one, so it is named for the font and not for the script. */
-function myFontOn(){ return !!SET.myfont && SFONT.built; }
+   one is the drawn one, so it is named for the font and not for the script.
+
+   WHETHER THE PERSON WANTS IT is myFontWant(), and it is the ONE place
+   SET.myfont is read: this, and the switch on the writing page, both ask it.
+   「オンをデフォルトにしてくれ。」 OWNER 2026-09-23 -- nobody-has-decided is
+   ON, and only a person turning it off (setMyFont(false)) is off. Somebody
+   who walked past the drawing in the onboarding and drew later used to see
+   roman, because the field was absent and absent read as off. */
+function myFontWant(){ return SET.myfont!==false; }
+function myFontOn(){ return myFontWant() && SFONT.built; }
 /* ---- and which of the characters in front of you it can actually draw ----
    「アプリ内はみんなが見れる仕様なんだから、どこがおかしいかじゃなくて全部
    見れるように一本化」 OWNER 2026-09-06, about a row of NO GLYPH boxes on an
@@ -645,7 +653,7 @@ function sfontHTML(txt){
 }
 function setMyFont(v){
   SET.myfont=!!v;
-  if(SET.myfont && !SFONT.built) installScriptFont();
+  if(v && !SFONT.built) installScriptFont();
   /* AND IT GOES WITH THE ACCOUNT (www/core.js § SET_PREFS, 2026-09-09). It
      was 「how this handset is set up」, so a second phone showed somebody the
      roman letters after they had turned them off on the first. */
@@ -1057,6 +1065,12 @@ var ICON_SHARE='<svg class="ic" viewBox="0 0 24 24" width="15" height="15" fill=
   'stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
   '<path d="M12 15V3"/><path d="M8.5 6.5 12 3l3.5 3.5"/>'+
   '<path d="M20 13v6.5a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 19.5V13"/></svg>';
+/* send: the paper plane. 「送信なら紙飛行機マークにしてるはずなんだけど」
+   OWNER 2026-09-23 -- an operation every phone already draws is drawn, and
+   the word is the button's aria-label (CLAUDE.md § Shape, marks-check). */
+var ICON_SEND='<svg class="ic" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" '+
+  'stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
+  '<path d="M21 3 10.5 13.5"/><path d="M21 3 14.5 21l-4-7.5L3 9.5z"/></svg>';
 /* What a post can be given: the camera, the pictures already on the phone,
    and the microphone. One plus used to stand for all three and only ever
    meant the second. 「photoボタンやめて。📷 ライブラリ マイクボタンにして」 */
@@ -1643,13 +1657,13 @@ function geNow(){ return GE? {ink:JSON.stringify(geInk(GE.st))} : {ink:''}; }
 function geKeep(){
   var keep=geInk(GE.st);
   ltSetStrokes(GE.lid, keep);
-  /* NOT THE SWITCH. Whether words are set in the drawn letters is SET.myfont,
-     and the switch on the alphabet (setMyFont) is the one place a person
+  /* NOT THE SWITCH. Whether words are set in the drawn letters is
+     myFontWant(), and the switch (setMyFont) is the one place a person
      decides it. This used to turn it on whenever a letter with ink was
      saved, so somebody who had turned it off had it back on -- and sent to
-     their account -- the next time they drew. 「SET.myfont is off until
-     somebody turns it on」 CLAUDE.md; tools/writes-check.mjs counts every
-     writer of the field. */
+     their account -- the next time they drew. It is on until somebody turns
+     it off (OWNER 2026-09-23); tools/writes-check.mjs counts every writer of
+     the field and every reader. */
   save();
   installScriptFont();
   return keep;

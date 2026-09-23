@@ -103,6 +103,126 @@ OWNER 2026-09-05「保存するタイミングでエラーが起きるなら、�
 - **貯まる物（投稿・下書き）**：なし。未送信の投稿も、上がっていない下書きも、一つも消えない。
   下書きの写し（`lingua.drafts`）は、サーバーの答えで書き換わる ── 写しは読むだけ（ルール 22）で、
   「取っておく」はサーバーが先なので、写しにしか無い本文は無い。
+
+### 2026-09-23 自作文字で表示は、既定でオン ── **貯まる物は何も変わりません**
+
+「オンをデフォルトにしてくれ。」OWNER 2026-09-23（r70-marks）。
+
+- **見て変わること**：オンボーディングで字を描かずに進んだ人（スイッチに触ったことの無い人）も、
+  描いた字が辞書・語のページなどで自作文字で出る。今までは roman のままだった。
+  書き字のページのスイッチも、その人にはオンで出る。前後の写真 `shots/r70-myfont-*`。
+- **変わらないこと**：スイッチで切った人はオフのまま。
+- **書くもの**：オンボーディングで字を描いた時に `SET.myfont=true` を書かなくなった（既定が
+  オンなので同じ見た目）。書くのはスイッチだけ。
+- 貯まる物・移行・削除：なし。
+
+### 2026-09-23 操作のボタンは字で書かない ── 印にする ── **貯まる物は何も変わりません**
+
+「文字でドカンって共有とか書くの禁止してるよね？…これ禁止だから全部なくせや」OWNER
+2026-09-23（r70-marks）。
+
+- **見て変わること**：字だけで書かれていた操作が印になる。カードの「共有」→ 共有の印で、
+  **バーの右上**（前はカードの下）。問い合わせの「送信」→ 紙飛行機（新しい印 `ICON_SEND`、
+  送っている間は灰色）。辞書・メモ・規則・キーボード・下書きを選んでいる時の右上の
+  「削除」→ 赤いごみ箱（`navDel()` 一か所）。言語の記事・メモ・語の右上の「編集」→ ペン。
+  新しい語の右上の「追加」、自分の項目の「追加」、運営画面のスタッフの「追加」→ ＋。
+  ノートの種類と運営画面のお問い合わせの「削除」→ ごみ箱。まとめて消した後の「戻す」→
+  戻す印。運営画面の復旧の「さがす」→ 虫めがね。検索で音・字を押した後の「戻る」行 →
+  戻る印。字はどれもボタンの `aria-label` に残る。前後の写真は `shots/r70-*`。
+- **替えなかったもの**：目的語つきの行（「アカウントを削除」など）、印の決まっていない
+  操作（サインイン・次へ・保存・完了…）、問いの二つの答え。一覧は `docs/scope/r70-marks.md`。
+- **まだ字のもの（r60 の持ち物）**：投稿画面の「投稿する」（`post.js`）、プロフィールの
+  「編集」（`me.js`）。`marks-check` はこの二つで赤い。r60 の後に同じ形で直す。
+- 貯まる物・移行・削除：なし。
+
+### 2026-09-23 キーボードとウィジェットの置き場（App Group）は、サインインしているアカウントの物だけ ── **写しを消します**
+
+r63 § 2-1 K5 を測った（r67-ios）。`sharePush()`（`www/share.js`）が App Group に書く三つの
+ファイル ── `keyboard.json`・`LinguaScript.otf`・`widget.json` ── は、誰のアカウントの物か
+を持たず、サインアウトでもアカウント削除でも片付かなかった。測定: 一度送ったあと
+`netOut()` → `render()` でも `wipeHere()` → `render()` でも `sharePush()` の呼び出しが 0
+（扉はオンボーディングの道で、`render()` がその手前で return する）。さらに
+`LinguaShare.swift` の `write` は「空のフォントは前の物を残す」「空の数字は前の物を残す」
+だったので、字を一つも描いていない次のアカウントが入っても、前の人の書体が残った。
+
+- **一文**: App Group にあるのは、サインインしているアカウントの開いている言語が渡した物
+  だけ。渡された物がそのまま在り、空で渡された物は無い。アカウントが居なければ三つとも空。
+- **見て変わること**: サインアウトすると、Lingua キーボードは「先に Lingua で文字を描いて
+  ください」、ウィジェットはローマ数字になる。別のアカウントで入ると、その人の字になる
+  （字が無ければ書体も無い）。
+- **貯まる物**: 形は変わらない。App Group の三つのファイルを、空で渡された時に**消す**。
+- **端末でしか確かめられない**（Swift はここでビルドできない）。DEVICE 未確認。
+- **この版で覆ったもの**: 別のアカウントが入った時（字の無い人でも前の人の書体が残らない）、
+  入ったばかりで前の人の言語がまだ開いている間（`LANG_WAIT`、何も渡さない）。
+- **残る穴**: サインアウトと削除の直後は、扉の道で `render()` が `sharePush()` まで届かない
+  （`www/glyph.js` は r67 の持ち物ではない）ので、次にサインインするまで前の人の三つが残る。
+  `render()` の「フォントの作り直しと `sharePush()`」の二行を `if(appIs()!=='app')` の前へ
+  出せば覆える（測った）── `docs/scope/r67-ios.md`。
+
+```
+DELETE REVIEW
+  who deletes         automatic — sharePush() on a render where the account moved
+  when                サインアウトした後の最初の render。別のアカウントが入った後の最初の
+                      render（その人の言語に字が無い時の書体）
+  what exactly        App Group（group.com.tokinets.lingua）の keyboard.json・
+                      LinguaScript.otf・widget.json。それ以外は触らない（Documents の
+                      声・用紙は別のフォルダで、この道は通らない）
+  why                 CLAUDE.md「NOTHING IS THE PHONE'S. EVERYTHING IS THE ACCOUNT'S」。
+                      前のアカウントの字が拡張とウィジェットに残っていた
+  recoverable?        はい。三つとも言語から毎回作り直す写しで、言語はサーバーにある。
+                      サインインして言語が開けば次の render で同じ物が書かれる
+  is it still on the server?   はい（language・slice は何も動かない）
+  anything to do with the plan?    no
+  migration / rollback         移行なし。戻すと前の人の字が残る形に戻る
+```
+
+### 2026-09-23 プランを書くのは verify-plan の答えだけ ── **貯まる物は変わりません**
+
+r63 § 2-5 S3 を測った（r67-ios）。ブラウザ（`storeOn()` が偽）でプランの部屋のカードを押すと
+`setPlan()` が `planTook()` を直に呼び、`free → pro`。「サブスクリプションを解除する」は
+`storeManage()` → `setPlan('free')` で `pro → free`。`vercel.json` が `www/` を公開している
+ので、web 版では誰でも押すだけで Pro だった。`PLAN_BUY` の一つの値が偽になれば実機でも同じ。
+
+- **一文**: プランを書く（`planTook()`）のは `netPlanVerify()` が受け取った verify-plan の
+  答えだけ。
+- **消したもの**: `setPlan()` と `PLAN_BUY`。カードは `storeBuy()` を直に呼ぶ。App Store が
+  無い所では、`storeBuy()` も `storeManage()` も「App Store につながりませんでした」と言う
+  だけで、プランは動かない。
+- **見て変わること**: 実機では何も変わらない。ブラウザではカードを押してもプランは変わらない。
+- **貯まる物**: 変わらない。プランはもともとメモリだけ（`PLAN`）。移行なし。削除なし。
+- **残る一つ**: `toast.plan.free`（「無料プランにもどしました」）は、手で free に戻す道が
+  無くなって、どこからも言われなくなる。`i18n-check` は使われない鍵で落ちるので、10 言語から
+  消す一行が要る（`www/i18n/` は r67 の持ち物ではない）── `docs/scope/r67-ios.md`。
+
+### 2026-09-23 Keychain のプランを読む道を消す ── **Keychain の中身は消しません**
+
+r63 § 2-5 S1 を確かめた（r67-ios、grep）。`MainViewController.swift` が毎起動
+`LinguaPlanPlugin` を登録して `inject()` し、Keychain のプランと uid を
+`window.__plan`・`__planuid`・`__planok` に書いていた。`www/` でそれを読む所は 0
+（2026-09-11 からプランはサーバーの答えをメモリに持つだけ）。`LinguaPlan` の `write` を呼ぶ所も
+0。使われない道が毎起動走り、そのコメントは「core.js が見つける」「LinguaStore が書く」と
+今と違うことを言っていた。
+
+- **消したもの**: `ios/App/App/LinguaPlan.swift`、`MainViewController.swift` の登録と
+  `inject()`、project の Sources の一行。`LinguaStore.swift` の頭の「Keychain は
+  LinguaPlan.swift がまだ持っている」の段落。
+- **消さないもの**: 端末の Keychain にある二つの項目（service `com.tokinets.lingua.plan`、
+  account `plan` と `uid`）。読む物も書く物も無くなるだけで、何も取り除かない。
+- **見て変わること**: 無い。
+
+```
+DELETE REVIEW
+  who deletes         nobody — コードを消すだけで、端末の保存物は何も取り除かない
+  when                この版から
+  what exactly        LinguaPlan.swift（Keychain を読む inject() と書く write/set/setUid）。
+                      Keychain の項目そのものは残る
+  why                 www/ が読まない道（ルール 5 の考え）。プランは verify-plan の答え
+  recoverable?        git にある。Keychain の項目は触らないので、戻せば同じ物が読める
+  is it still on the server?   プランはもともとサーバー（purchase・plan 表）にある
+  anything to do with the plan?    no — 何を持っているかは変えない。読まない写しの道を消すだけ
+  migration / rollback         移行なし
+```
+
 ### 2026-09-23 カードは投稿の絵 ── ink の無い投稿は文字、消えた物のカードは無い ── **貯まる物は何も変わりません**
 
 r63-audit § 2-2 の CD1〜CD5 を測って直した（r64-card）。`www/card.js` だけ。

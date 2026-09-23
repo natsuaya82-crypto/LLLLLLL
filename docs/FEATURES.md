@@ -270,7 +270,7 @@ vertically-written language is. It is a compromise and it is written down in
 |---|---|---|---|---|---|
 | System keyboard extension (iOS) | shipped | yes | — | App Group | decided |
 | Hand-over app → keyboard | shipped | yes | — | App Group | decided |
-| Purchases (StoreKit) | **shipped**, **not device confirmed** — `ios/App/App/LinguaStore.swift` (`products` / `buy` / `restore` / `current` / `manage`, `.unverified` refused, `Transaction.updates` watched), `www/store.js` the one window onto it, `setPlan()` in `www/settings.js` its only caller, `PLAN_BUY` true | — | the four products of `docs/apple.md` § 4 | Keychain (`LinguaPlan.swift`), and the plan only ever goes UP except on the three roads § プランは絶対におかしくしてはいけない names | decided — **what is NOT built is the server half**: no plan column, no receipt verification, so `CAN` is which buttons to show and is not a security check. § 1 below |
+| Purchases (StoreKit) | **shipped**, **not device confirmed** — `ios/App/App/LinguaStore.swift` (`products` / `buy` / `restore` / `current` / `manage`, `.unverified` refused, `Transaction.updates` watched), `www/store.js` the one window onto it, `plBuy()` in `www/settings.js` its only caller | — | the four products of `docs/apple.md` § 4 | nothing on the phone — `verify-plan`'s answer, in memory (`PLAN`), and the plan only ever goes UP except on the three roads § プランは絶対におかしくしてはいけない names | decided — **what is NOT built is the server half**: no plan column, no receipt verification, so `CAN` is which buttons to show and is not a security check. § 1 below |
 | Android | **planned** | — | — | — | **open** — one repo with `android/` beside `ios/`, nothing started |
 
 ## What is left to do online

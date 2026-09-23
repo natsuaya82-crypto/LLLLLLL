@@ -207,6 +207,25 @@ bordered strip across Home, and a gold pill on the password screen. `.btn`
 still exists and is on about thirty older screens; it is not to be reached
 for again.
 
+**And a sixth: AN OPERATION THAT HAS A MARK IS DRAWN AS THE MARK, NOT WRITTEN.**
+「送信とか共有とかもそうだけど、文字でドカンって共有とか書くの禁止してるよね？
+だから+〇とか送信なら紙飛行機マークにしてるはずなんだけど。これ禁止だから全部
+なくせや」 OWNER 2026-09-23. Send is the paper plane, share is `ICON_SHARE`,
+add is the plus, delete is the bin, edit is the pen, and undo, search, back,
+close, settings and more are the marks every phone already draws — from the
+`ICON_*` row in `www/glyph.js`, with the word on the button as its
+`aria-label`, through `t()`. **And a screen's send and share are that mark
+at the top right of the bar** 「右上にしてね。送信も紙飛行機右上、共有も共有
+マークを右上。」 OWNER 2026-09-23 — `navDo(label, name, args, on, {icon})`,
+the one place the corner is drawn. A label that is more than the verb —
+「アカウントを削除」, a row saying what goes — is a row, and an operation with
+no settled mark (sign in, next, save, done) stays a word until the owner gives
+it one. **`marks-check` holds it**: it walks every screen and face `press`
+walks and the bar over every route, and fails on a button whose whole label is
+one of those verbs in words with no mark, and on a send or a share anywhere but
+the corner; it prints how many word-only buttons are still in the corner, and
+`--list` names them and every other word-only button left.
+
 **Rows in one list are one height.** Set `font-size` and `line-height` on the
 row class rather than letting the tag decide -- a `<button>` takes the
 browser's 13.3px/normal and an `<a>` takes the body's, and the same row came
@@ -2074,8 +2093,11 @@ the font was built, the glyph for `l` was in it — and `l` came out as `l`.
 time is a dozen places agreeing that have to be found and kept found; `.sfont`
 saying `!important` is one place saying so once. `.sfont` means "this is set in
 the letters somebody drew," the whole point of the app, and nothing may quietly
-outrank it. (Not a bug and worth knowing: `SET.myfont` is off until somebody
-turns it on — with it off there is no `.sfont` at all, and roman is correct.)
+outrank it. (Worth knowing: the drawn letters are ON until somebody turns them
+off 「オンをデフォルトにしてくれ。」 OWNER 2026-09-23 — `myFontWant()` in
+`www/glyph.js` is the one place that answers it and `writes-check` holds that
+nothing else reads `SET.myfont`; `setMyFont()` is its one writer. Turned off,
+there is no `.sfont` at all, and roman is correct. `line-check` 9 holds both.)
 
 ## Names
 

@@ -1671,7 +1671,7 @@ function wdAddOn(){
   return !!(sp.length && spWord(sp));
 }
 function wdSaveBtn(){
-  return navDo(t('add.btn'), 'addOne', null, wdAddOn());
+  return navDo(t('add.btn'), 'addOne', null, wdAddOn(), {icon:ICON_ADD2});
 }
 /* ---- the word sheet, and what "changed" means on it ---------------------
    OWNER DECISION 2026-09-03 -- www/shell.js § KEEP. This sheet already had the
@@ -1912,7 +1912,7 @@ function openWord(hw){
   openHw=w.hw; addW=null; wEdit=null;
   openForm('word:'+w.hw, wOut(w.hw), '<div id="wd-view">'+wdViewHTML()+'</div>',
            function(){ geTiles(); },
-           navDo(t('word.edit'), 'openEdit', [w.hw], true));
+           navDo(t('word.edit'), 'openEdit', [w.hw], true, {icon:ICON_PEN}));
 }
 /* The same sheet a new word is written on, opened on one that exists. */
 function openEdit(hw){

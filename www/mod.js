@@ -393,8 +393,7 @@ function fbkRow(r){
     /* 「運営は消せるように。」 OWNER 2026-09-22. `.ghost` and not `.bad`:
        what it takes away is the row in front of you and nothing of anybody's
        account, which is what the red on modRow()'s two buttons is for. */
-    '<button class="btn ghost"' + DO('fbkDrop', [r.id]) + '>'+
-      esc(t('admin.fb.drop'))+'</button>'+
+    markBtn(ICON_BIN, t('admin.fb.drop'), 'fbkDrop', [r.id])+
     '</div>';
 }
 /* It asks first, because it cannot be taken back -- the same shape and the
@@ -542,8 +541,7 @@ function adRecBody(a){
       lnField('adrec-h', t('admin.rec.ph'), ' autocapitalize="none"' +
         IN('adRecSet', ['h']), ADREC_H)+'</div>'+
     (ADREC_ERR? emptyBox(ADREC_ERR, '', '', true) : '')+
-    '<button class="btn ghost"' + DO('adRecFind') +
-      (ADREC_BUSY? ' disabled':'') + '>'+esc(t('admin.rec.find'))+'</button>'+
+    markBtn(ICON_LENS, t('admin.rec.find'), 'adRecFind', null, ADREC_BUSY? ' disabled':'')+
     (ADREC
       ? ((ADREC.langs && ADREC.langs.length)
           ? ADREC.langs.map(adRecLangRow).join('')
@@ -633,8 +631,7 @@ function vAdmin(){
        has emptied the field and said nothing anybody saw. One message, in the
        one place a failure on this screen can come from. */
     (ADMIN_ERR? emptyBox(ADMIN_ERR, '', '', true) : '')+
-    '<button class="btn ghost"' + DO('adminStaffAdd') +
-      (ADMIN_BUSY? ' disabled':'') + '>'+esc(t('admin.staff.add'))+'</button>'+
+    markBtn(ICON_ADD2, t('admin.staff.add'), 'adminStaffAdd', null, ADMIN_BUSY? ' disabled':'')+
     '</div></div>';
 }
 /* Not named vSomething: tools/act-check.mjs reads every `v[A-Z]` in the app

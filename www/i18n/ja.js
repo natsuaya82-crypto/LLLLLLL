@@ -885,7 +885,6 @@ defLang('ja', (function(){
       "store.pending" : "承認待ちです。決まったらお知らせします。",
       "store.fail" : "App Store につながりませんでした",
       "store.nosale" : "まだ販売されていません",
-      'toast.plan.free' : '無料プランにもどしました',
       'toast.plan.other': '{0} になりました',
       'add.title'       : '単語の作成',
       'f.spelling'      : 'つづり',

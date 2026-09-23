@@ -1310,7 +1310,7 @@ this could be picked up rather than waiting on a session that had moved on.
 
 ## The plans screen is half wired, and the half that is missing is named
 
-`www/store.js` is in and `setPlan()` goes through it: on a phone, pressing a
+`www/store.js` is in and `plBuy()` goes through it: on a phone, pressing a
 paid card buys, and the plan comes from the App Store's answer. Three things
 are deliberately not there yet, each because a file it needs belongs to
 another session today (`docs/SESSIONS.md`).
