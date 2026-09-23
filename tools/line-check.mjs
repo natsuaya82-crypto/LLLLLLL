@@ -35,6 +35,14 @@
         they stand further apart than at 1, and the field and the post are
         the same column -- a column is laid out by the face's vertical
         advance, so this is the face's vmtx asked of the page
+     7  a word of the language is set in the letters somebody drew ONLY where
+        the font draws it. Every text node on every route and every word's
+        page whose face is LinguaScript is asked of sfontRuns(), and each
+        character has to be one the font draws -- a character reached only
+        as part of a ligature (`s` of `sh`) is a dashed box in that face.
+        The surface is COUNTED: nothing here lists which classes may wear
+        the face, so a rule added tomorrow that sets a whole string in it
+        fails tomorrow. 「一つに書き直す」 r61-face, r46-audit § B1
 
    A browser, on its own port.
    --------------------------------------------------------------------------- */
@@ -396,6 +404,64 @@ if (own.same !== own.mine)
   fails.push('the same shape at the same gap came out as two code points (U+' +
              own.mine.toString(16) + ', U+' + own.same.toString(16) + ')');
 
+
+/* ---- 7. the drawn face goes only where it draws -------------------- */
+/* One letter typed as `sh` -- a ligature, so `s` and `h` alone are the
+   dashed box in LinguaScript -- and one drawn `a`. `has` then has exactly
+   one character the font draws. sfontHTML() says so per character; an
+   element set in the face whole says otherwise, and the two used to meet
+   on the dictionary and on a word's head. */
+const FACE = await pg.evaluate(async () => {
+  const st = [{ pts: [[112, 112], [688, 112], [400, 688]] }];
+  LETTERS = [{ id: 'F1', st: st, ch: '', nm: '', ab: 'sh', snd: ['ʃ'] },
+             { id: 'F2', st: [{ pts: [[112, 400], [688, 400]] }], ch: '', nm: '', snd: ['a'] }];
+  WORDS = [{ hw: 'has', ph: ['h', 'a', 's'], mn: 'x', pos: 'n' },
+           { hw: 'sha', ph: ['ʃ', 'a'], mn: 'y', pos: 'n' }];
+  SET.myfont = true; installScriptFont();
+  await document.fonts.load('20px ' + SFONT_FAMILY);
+  const bad = [], seen = { nodes: 0, screens: 0 };
+  const look = (where) => {
+    seen.screens++;
+    const tw = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    let n;
+    while ((n = tw.nextNode())) {
+      const el = n.parentElement, s = n.nodeValue;
+      if (!el || !s.trim()) continue;
+      if (getComputedStyle(el).fontFamily.indexOf(SFONT_FAMILY) !== 0) continue;
+      seen.nodes++;
+      const off = sfontRuns(s).filter((r) => !r.on && r.t.trim());
+      if (off.length && bad.length < 8)
+        bad.push(where + ': <' + el.tagName.toLowerCase() + ' class="' + el.className + '"> ' +
+                 JSON.stringify(s) + ' -- ' + off.map((r) => r.t).join(',') + ' not drawn');
+    }
+  };
+  for (const r of Object.keys(PAGES)) {
+    try { go(r); render(); } catch (e) { continue; }
+    look(r);
+  }
+  /* `xyz` has nothing the face draws. Its head is the spelling as it is,
+     so the row under it that gives the spelling again is the same word
+     twice -- that row is for a head showing something else. */
+  WORDS.push({ hw: 'xyz', ph: ['x'], mn: 'z', pos: 'n' });
+  const twice = [];
+  for (const w of WORDS) {
+    go('words'); openWord(w.hw); render(); look('word ' + w.hw);
+    const head = document.querySelector('.whw'), rd = document.querySelector('.wrd');
+    if (head && rd && !head.querySelector('.sfont') && head.textContent === rd.textContent)
+      twice.push(w.hw);
+  }
+  return { bad, seen, twice };
+});
+if (FACE.bad.length)
+  fails.push('a word is set in the drawn face where the face does not draw it -- a dashed box ' +
+             'where the letters were:\n    ' + FACE.bad.join('\n    '));
+if (FACE.twice.length)
+  fails.push("a word's page gives its spelling twice -- the head is not in the drawn face and the " +
+             'row under it repeats it: ' + FACE.twice.join(', '));
+if (!FACE.seen.nodes)
+  fails.push('no text was set in the drawn face on any of ' + FACE.seen.screens +
+             ' screens -- the walk is not reaching the words, so section 7 holds nothing');
+
 if (errs.length) fails.push('the page threw: ' + errs.slice(0, 3).join(' | '));
 
 await br.close();
@@ -418,4 +484,6 @@ console.log('line: typed into the composer and posted, one line comes out in the
             [0, 1, 2].map((s) => dn(s, 'field')).join('/') + '.\n' +
             "      Somebody else's letter is its own code point (U+" + own.theirs.toString(16) +
             ', mine U+' + own.mine.toString(16) + ',\n      keyboard U+' + own.kb[0].toString(16) +
-            '-' + own.kb[1].toString(16) + '), and the same shape is the same one.');
+            '-' + own.kb[1].toString(16) + '), and the same shape is the same one.\n' +
+            '      ' + FACE.seen.nodes + ' text nodes set in the drawn face across ' + FACE.seen.screens +
+            ' screens, every character one the face draws.');

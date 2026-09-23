@@ -119,6 +119,20 @@ const r = await pg.evaluate(({ s }) => {
     window.route = 'about'; NAV = [{ r:'about' }]; render();
     out.ownH1 = !!document.querySelector('#app h1.abth'); }
   out.mine = mine || null;
+  /* ---- and a language whose owner has not answered yet is NOT somebody
+     else's: its row and article stay, and Edit waits for the answer. The
+     first version of this gate asked langLocked(), which folds 「not asked」
+     into 「not mine」, and world-check and acct-check went red at the
+     integration -- a new language of your own lost its row and its page. */
+  LANGS['take-new'] = { name:'Zeth' }; langStore(); wldPubGot('take-new', true);
+  langOpen('take-new');
+  out.waitWhose = langWhose('take-new');
+  window.route = 'profile'; NAV = [{ r:'profile' }]; render();
+  out.waitRow = !!document.querySelector('#app .wldrow');
+  window.route = 'about'; NAV = [{ r:'about' }]; render();
+  out.waitH1 = !!document.querySelector('#app h1.abth');
+  out.waitEdit = Array.prototype.some.call(document.querySelectorAll('#app [data-do="go"]'),
+    function(e){ return (e.getAttribute('data-a') || '').indexOf('world') !== -1; });
   return out;
 }, { s: seed.toString() });
 
@@ -144,6 +158,10 @@ say(r.noArg.every((x) => !x.edit && !x.h1),
 say(r.mine && r.ownRow === true && r.ownH1 === true,
     '9 your own language still has its row and its article', r);
 
+say(r.waitWhose === 'wait' && r.waitRow === true && r.waitH1 === true && r.waitEdit === false,
+    '10 owner not answered yet: the row and the article stay, Edit waits',
+    { whose: r.waitWhose, row: r.waitRow, h1: r.waitH1, edit: r.waitEdit });
+
 await br.close();
-console.log(bad ? `\ntake-check: ${bad} failed` : '\ntake-check: 9 of 9');
+console.log(bad ? `\ntake-check: ${bad} failed` : '\ntake-check: 10 of 10');
 process.exit(bad ? 1 : 0);

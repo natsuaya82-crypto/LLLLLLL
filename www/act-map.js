@@ -374,7 +374,7 @@ actIn('pwMarkSize', pwMarkSize);
 actIn('pwMarkText', pwMarkText);
 actIn('ltDraftName', ltDraftName);
 actIn('ltSetNote', ltSetNote);
-actIn('obLang', obLang);
+actIn('setUi', setUi);
 actIn('obMailSet', obMailSet);
 actIn('setPwSet', setPwSet);
 actIn('contactKind', contactKind);

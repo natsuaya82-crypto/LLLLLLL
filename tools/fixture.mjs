@@ -676,14 +676,14 @@ export function halfDone(){
   function fixPromo(pl, few, admH){
     const wasPlan = plan(), wasPromo = PROMO, n = POSTS.length,
           wasAdm = { on: ADM.on, h: ADM.h };
-    if (admH) { ADM.on = true; ADM.h = { 0: admH }; }
+    if (admH !== undefined) { ADM.on = true; ADM.h = admH ? { 0: admH } : {}; }
     planGot(pl);
     for (let i = 0; i < (few ? 0 : PROMO_EVERY); i++)
       POSTS.unshift({ id:'fill-' + i, at: Date.now() - 60000 * (i + 1), lang: langId,
                       lname:'Shango', who:'Aya', hd:'aya', mine:true,
                       av:{st:[{pts:[[112,112],[688,112],[400,688]]}]},
                       ln:'kano mos tir', mn:'a tall mountain is seen', ui:'en' });
-    PROMO = admH ? [] : [{ id:'ad-1', at: Date.now() - 86400000, lang:'other', lname:'Vethi',
+    PROMO = admH !== undefined ? [] : [{ id:'ad-1', at: Date.now() - 86400000, lang:'other', lname:'Vethi',
                ln:'qel dross', who:'Kiyo', hd:'kiyo', mine:false, av:{ch:'K'},
                mn:'the river is wide', ui:'en', ad:true }];
     window.route = 'feed'; NAV = [{ r:'feed' }];
@@ -896,6 +896,9 @@ export function halfDone(){
     /* AdMob の枠。ブラウザには本物の広告が無いので、ネイティブが「この高さ」と
        答えた後の、空の行だけが写る（その上に iOS 側が広告を重ねる）。 */
     ['a place AdMob fills, as the page draws it', () => fixPromo('free', false, 260)],
+    /* そして、まだ埋まっていない時 ── 広告が来る前・来なかった時の枠は高さ 0 で線も無い
+       （`.padm0`）。何も写らないのが正しい面。 */
+    ['a place AdMob has not filled', () => fixPromo('free', false, 0)],
     ['a long post folded', () => {
         const wasPlan = plan();
         planGot('plus');
