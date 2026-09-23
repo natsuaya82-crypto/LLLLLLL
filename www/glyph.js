@@ -624,6 +624,18 @@ function installScriptFont(){
    roman, because the field was absent and absent read as off. */
 function myFontWant(){ return SET.myfont!==false; }
 function myFontOn(){ return myFontWant() && SFONT.built; }
+/* ONE LETTER ON A LINE OF THE LANGUAGE: the character of the typing face that
+   draws its shape (inkChar, at the language's gap), or '' -- which is roman,
+   and what roman is (a name, a value) is the caller's to say. Roman when the
+   drawn letters are off, and roman where nothing was drawn, a borrowed
+   character included: 「ローマ字」 OWNER 2026-09-23. The calendar's digits
+   used to decide this for themselves and drew the shape with the switch off
+   and the borrowed character where none was drawn (r73 §2-11);
+   tools/ink-check.mjs B holds it. */
+function ltLineChar(l){
+  var g=inkGeo(l);
+  return (g && myFontWant())? inkChar(g, geSide()) : '';
+}
 /* ---- and which of the characters in front of you it can actually draw ----
    「アプリ内はみんなが見れる仕様なんだから、どこがおかしいかじゃなくて全部
    見れるように一本化」 OWNER 2026-09-06, about a row of NO GLYPH boxes on an

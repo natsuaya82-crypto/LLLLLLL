@@ -256,20 +256,15 @@ function numWordRow(l){
    § settings() has that paragraph. So a sentence is the whole of what is
    possible. */
 
-/* One sign: the shape if there is one, the character it borrows, or the roman
-   digit that stands in for one nobody drew. The shape is a character of the
-   face every line of the language is set in (www/glyph.js § A LINE OF THE
-   LANGUAGE IS TEXT), so two signs beside each other stand the way two letters
-   of a post do -- one step apart and not one cell. */
+/* One sign: what ltLineChar() makes of the digit, or its value in roman.
+   The shape is a character of the face every line of the language is set in
+   (www/glyph.js § A LINE OF THE LANGUAGE IS TEXT), so two signs beside each
+   other stand the way two letters of a post do -- one step apart and not one
+   cell. Whether it is the shape is not this function's to say. */
 function numSignHTML(v){
-  var l=numByVal(v);
-  /* inkGeo() and not `st`: a digit drawn on a SHEET carries its picture as
-     `sh` (www/sheet.js), and asking for strokes here put a roman 7 on the
-     clock beside somebody's own six. */
-  if(l && inkGeo(l))
-    return '<span class="tfont">'+inkChar(inkGeo(l), geSide())+'</span>';
-  if(l && l.ch) return '<span class="numrm">'+esc(l.ch)+'</span>';
-  return '<span class="numrm">'+esc(v.toString(36))+'</span>';
+  var c=ltLineChar(numByVal(v));
+  return c? '<span class="tfont">'+c+'</span>'
+          : '<span class="numrm">'+esc(v.toString(36))+'</span>';
 }
 /* A whole number, in this language's base. */
 function numLineHTML(n){

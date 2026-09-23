@@ -339,7 +339,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Affected features: 辞書、単語のページ、文法の章、暦、投稿の一行以外で語を出す所
 - Affected data: 無し
 - Affected docs: 無し
-- Implementation status: IMPLEMENTED ── 今のコードがすでにこの振る舞い（r61 が測った、`docs/scope/r61-face.md`「決めていないこと」）。
+- Implementation status: IMPLEMENTED。語は `sfontRuns()`（r61 が測った、`docs/scope/r61-face.md`「決めていないこと」）、暦・時計の数字は `ltLineChar()`（r76-lines ── それまで借りた字を出していた、r73 §2-11）。`ink-check` B が持つ。
 
 ### 2026-09-23 古い購入をどのアカウントに付けるかは、考えなくていい
 - Date: 2026-09-23

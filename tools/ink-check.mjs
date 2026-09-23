@@ -166,7 +166,9 @@ pg.on('pageerror', (e) => errs.push(e.message));
 const fresh = async () => {
   await pg.goto(`http://localhost:${PORT}/`);
   await pg.waitForSelector('#splash', { state: 'detached', timeout: 10000 });
-  await pg.evaluate((s) => { eval('(' + s + ')()'); SET.walked = true; SET.ui = 'en'; }, seed.toString());
+  /* the settings are kept on the phone and outlive a reload, so B1's switch
+     would still be off here: every group starts from nobody-has-decided */
+  await pg.evaluate((s) => { eval('(' + s + ')()'); SET.walked = true; SET.ui = 'en'; delete SET.myfont; }, seed.toString());
 };
 /* One ring, as a sheet hands it back: a plain array of points. */
 const RING = [[[200, 200], [600, 200], [600, 600], [200, 600]]];
@@ -247,9 +249,9 @@ say(!b2, 'B2 ' + b2);
 const b3 = await pg.evaluate((STROKES) => {
   const d = numByVal(1); d.ch = ''; d.st = STROKES; delete d.sh;
   installScriptFont();
-  return (numSignHTML(1).match(/[-]/g) || []).length;
+  return [(numSignHTML(1).match(/[\uE000-\uF8FF]/g) || []).length, myFontWant(), numSignHTML(1)];
 }, STROKES);
-say(b3 === 1, `B3 a drawn digit with the letters on is ${b3} shapes, not 1 (the positive half of B1)`);
+say(b3[0] === 1, `B3 a drawn digit with the letters on is ${b3[0]} shapes, not 1 (the positive half of B1): ${JSON.stringify(b3)}`);
 
 say(!errs.length, 'page errors: ' + errs.join(' | '));
 await br.close();
