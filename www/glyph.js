@@ -3002,9 +3002,6 @@ function render(){
      to be twenty-two conditions here -- a second copy of PAGES that nothing
      could check against the first. */
   var pg = PAGES[route], v = (pg && pg.view)? pg.view() : vProfile();
-  /* one attribute decides whether words are shown in roman letters or in the
-     ones you drew — the text itself never changes, only the family it is set in */
-  document.documentElement.setAttribute('data-script', myFontOn()? 'on':'off');
   /* Replacing the view resets the scroll, which threw you to the top on every
      edit, so the old offset is put back. Only within one screen, though: a
      chapter opened from the contents was being handed the offset of whatever

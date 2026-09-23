@@ -532,7 +532,7 @@ function vRelate(){
           var has=on.indexOf(x.hw)>=0;
           return '<div class="entry'+(has?' on':'')+'">'+
             '<button class="ebody"' + DO('wRelToggle', [hw, k, x.hw]) + '>'+
-            '<div class="hwrow"><span class="hw">'+esc(wOut(x.hw))+'</span>'+
+            '<div class="hwrow"><span class="hw">'+sfontHTML(wOut(x.hw))+'</span>'+
             '<span class="pos">'+esc(posLabel(x.pos))+'</span></div>'+
             '<div class="mn">'+esc(wMns(x)[0]||t('words.addmn'))+'</div></button>'+
             '<span class="ltck">'+(has? ICON_TICK : '')+'</span></div>';
