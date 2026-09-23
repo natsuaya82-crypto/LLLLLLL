@@ -67,9 +67,6 @@ var DOC_PRIVACY='https://tokinets.com/lingua/privacy.html';
    is not in it is a room nothing ever renders. */
 var SETS=[
   {id:'pw',    k:'set.pw', off:true},
-  /* Reached from the language's room, not from this list: it is the open
-     language's, like everything in that room. */
-  {id:'sp',    k:'set.sp', off:true},
   {id:'lang',  k:'set.lang'},
   {id:'look',  k:'set.look'},
   {id:'acct',  k:'set.account'},
@@ -246,25 +243,12 @@ function vSet(){
          has never been touched falls back to (`wldSecDl`). Nothing was
          removed from anybody's file -- what went is the second place to set
          it, which is the thing that was wrong. */
-      /* What stands between two letters, in steps (glyph.js § geSide).
-         「置き場所は言語の設定画面」 OWNER 2026-09-23. A row that opens the
-         choosing, the way the interface language is chosen: a wheel in this
-         row made it half again as tall as the rows around it. */
-      '<button class="set"' + DO('go', ["set", "sp"]) + '><span class="sl">'+t('set.sp')+'</span>'+
-      '<span class="sv">'+inkSteps(SCRIPT.sp)+ICON_GO+'</span></button>'+
+      /* What stands between two letters (www/wsys.js § spRowHTML).
+         「置き場所は言語の設定画面」 OWNER 2026-09-23. */
+      spRowHTML()+
       '<button class="set" style="border-bottom:none"' + DO('go', ["wsys"]) + '><span class="sl">'+t('ws.kind')+'</span>'+
       '<span class="sv">'+esc(t('ws.k.'+wsys()))+ICON_GO+'</span></button>'+
       '';
-  } else if(id==='sp'){
-    /* The few values SP_STEPS offers, one row each, the one this language
-       stands at ticked -- the interface language's room above, with a number
-       where a language's name is. */
-    body=SP_STEPS.map(function(v){
-      var on=inkSteps(SCRIPT.sp)===v;
-      return '<button class="set lrow'+(on?' on':'')+'"' + DO('setScriptSp', [v]) + '>'+
-        '<span class="sl">'+v+'</span>'+
-        '<span class="lchk">'+(on?ICON_TICK:'')+'</span></button>';
-    }).join('');
   } else if(id==='push'){
     /* Four rows, and the state above them when iOS has said no. www/push.js
        draws it: this file says where the room is and that file says what is

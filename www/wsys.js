@@ -329,17 +329,67 @@ function setScriptDir(k){
   SCRIPT.dir=k; save();
   render();
 }
-/* What 字間 offers, in steps (glyph.js § geSide). 「既定は今と同じ 1 歩。0 に
-   すると、端まで描いた線が隣とくっついて一本に繋がる」 OWNER 2026-09-23 --
-   the one and the nought are theirs; the rest of this list is not decided, so
-   it is written here and nowhere else, and changing it is the whole of
-   changing what the row offers. */
-var SP_STEPS=[0, 0.5, 1, 1.5, 2];
-/* No plan is asked. A plan decides what somebody may DO, and this is how the
-   letters they drew stand beside each other; it is not in CAN. */
+/* 字間, in steps of the lattice (glyph.js § geSide), and the one place its
+   three numbers are written. 「あの文字間は規定を1としてスライドで文字間が見える
+   ように … 最大0と2くらいでいいと思う。開けすぎると投稿が大変」 OWNER
+   2026-09-23. `def` is what inkSteps() gives a language that was never set,
+   and the slider's rest. The step is not the owner's number: a tenth. */
+var SP_RANGE={min:0, max:2, def:1, step:0.1};
+/* How tall the preview's letters stand, in px. */
+var SP_PV=24;
+/* A value off the slider, held to the range and to the step -- a range input
+   hands back a string, and 0.30000000000000004 is not a tenth. */
+function spClamp(v){
+  v=parseFloat(v);
+  if(!(v===v)) return SP_RANGE.def;
+  v=Math.max(SP_RANGE.min, Math.min(SP_RANGE.max, v));
+  return parseFloat((Math.round(v/SP_RANGE.step)*SP_RANGE.step).toFixed(6));
+}
+/* The row in 設定 → 言語: the word, the language's own letters standing at the
+   gap, and the slider. Up to three letters that have a shape, the first ones
+   drawn; a language with one draws it three times, and a language with none
+   shows their names as text, which is what a post line shows. */
+function spRowHTML(){
+  var v=inkSteps(SCRIPT.sp), lts=ltPuaOrder().filter(ltHasShape).slice(0,3), i, a, pv='', wide=0;
+  while(lts.length && lts.length<3) lts.push(lts[0]);
+  for(i=0;i<lts.length;i++){
+    pv+='<canvas class="tcln spv" data-l="'+esc(lts[i].id)+'" data-sd="'+v+'"></canvas>';
+    /* the room the letters take at the widest gap, so the slider beside
+       them does not slide about under the thumb as they spread */
+    a=inkAdv(inkGeo(lts[i]), inkSide(SP_RANGE.max));
+    wide+=a? a.w : 800;
+  }
+  if(!pv) pv=esc(ltPuaOrder().slice(0,3).map(ltName).join(''));
+  /* Styled here rather than in index.html, which is nobody's to touch today.
+     The row keeps the height of the rows round it: the slider is the 44pt a
+     thumb needs, so the row's own padding gives up what the slider takes. */
+  return '<div class="set sprow" style="padding:2px 2px 3px">'+
+    '<span class="sl" style="flex:0 0 auto">'+t('set.sp')+'</span>'+
+    '<span class="sppv" style="flex:0 0 auto;'+(wide? 'width:'+Math.ceil(wide*SP_PV/800)+'px;' : '')+'font-size:'+SP_PV+'px;line-height:1;white-space:nowrap;color:var(--tx)">'+pv+'</span>'+
+    '<input type="range" style="flex:1 1 auto;min-width:0;height:44px;margin:0;accent-color:var(--gold)" min="'+SP_RANGE.min+'" max="'+SP_RANGE.max+'" step="'+SP_RANGE.step+'" '+
+      'value="'+v+'" aria-label="'+esc(t('set.sp'))+'"' + IN('spFeel') + CH('setScriptSp') + '></div>';
+}
+/* The preview's letters, drawn by inkLine() -- the road a post's line takes,
+   so what stands here is what a post will look like. */
+function spMount(){
+  inkLine('canvas.spv', function(c){
+    return {st:inkGeo(ltById(c.getAttribute('data-l'))),
+            side:inkSide(parseFloat(c.getAttribute('data-sd')))};
+  });
+}
+/* The thumb moving: the preview and nothing else. A render here would rebuild
+   the slider under the finger. */
+function spFeel(v){
+  var els=document.querySelectorAll('canvas.spv'), i;
+  v=spClamp(v);
+  for(i=0;i<els.length;i++) els[i].setAttribute('data-sd', v);
+  spMount();
+}
+/* The thumb let go: the language's, saved the way every row of this room
+   saves -- save(), then render(), which also rebuilds the font. No plan is
+   asked. A plan decides what somebody may DO, and this is how the letters
+   they drew stand beside each other; it is not in CAN. */
 function setScriptSp(v){
-  v=Number(v);
-  if(SP_STEPS.indexOf(v)<0) return;
-  SCRIPT.sp=v; save();
+  SCRIPT.sp=spClamp(v); save();
   render();
 }

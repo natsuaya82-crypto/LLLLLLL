@@ -256,7 +256,10 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Affected features: 描いた字のフォント二つ、投稿の線、カード、写真の上の字、キーボードの候補欄
 - Affected data: `script` スライスの `sp`、投稿の `ink.sp`。どちらも無い＝1 歩。書き足し・移行・削除なし
 - Affected docs: `CLAUDE.md` 規則 8、`docs/DATA_MODEL.md`、`docs/CHANGELOG.md`、`docs/CHECK-0907.md` § 166
-- Implementation status: r51-spacing。選べる値（0 と 1 以外）は未決定で、`SP_STEPS` 一行
+- 選び方（同日、二つ目の答え）:「あの文字間は規定を1としてスライドで文字間が見えるように l----l----l ↑こう言うレバーみたいなのあるやん その横にどのくらい空いてるかが見える。最大0と2くらいでいいと思う。開けすぎると投稿が大変」「それぞれの字間を見せてね」
+  - **スライダー、0〜2、既定 1**。横に、その言語の描いた字がその字間で並ぶ見本。
+  - 刻みは言われていない。0.1 にした（`SP_RANGE.step`）。
+- Implementation status: r51-spacing。数は `www/wsys.js` の `SP_RANGE` 一箇所
 
 ### 2026-09-22 サインインなしでサーバーに触れる道は無い ── 穴ではなく面を覆う。扉の `email_taken()` だけ例外
 - Date: 2026-09-22

@@ -121,12 +121,13 @@ function geStep(){ return (800 - GGRID.inset*2) / (GGRID.n - 1); }
    language that has never been given one stands at the one step every
    language stood at before -- nothing is written into anybody's slice to say
    so. inkSteps() is the one place that says what an absent or unreadable
-   value means, and inkSide() the one place steps become font units, so the
+   value means (SP_RANGE.def, www/wsys.js), and inkSide() the one place steps
+   become font units, so the
    post that carries its own value (`ink.sp`, post.js) is turned into a side
    by exactly the arithmetic the making side uses. geSide() reads the OPEN
    language and is the making side's; below post.js's line a post asks
    postSide() instead, and sides-check holds that. */
-function inkSteps(sp){ return (typeof sp==='number' && isFinite(sp) && sp>=0)? sp : 1; }
+function inkSteps(sp){ return (typeof sp==='number' && isFinite(sp) && sp>=0)? sp : SP_RANGE.def; }
 function inkSide(sp){ return geStep()*inkSteps(sp); }
 function geSide(){ return inkSide(SCRIPT.sp); }
 /* Where the ink can reach, in font space, which is y-up from the baseline.
@@ -2980,7 +2981,7 @@ function renderMount(){
      post is longer than the timeline shows cannot be said in markup -- it is
      measured, once, after the HTML exists (www/post.js § postFolds). */
   geTiles(); phkMount(); postFaces(); postLines(); postFolds();
-  pwHoldMount(); numWidMount();
+  pwHoldMount(); numWidMount(); spMount();
   pvMount();
   /* and somebody else's alphabet, whose letters are not in LETTERS to be
      looked up -- www/home.js hands the shapes over instead */

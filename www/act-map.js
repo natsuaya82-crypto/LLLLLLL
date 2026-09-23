@@ -297,7 +297,6 @@ act('wSelUndo', wSelUndo);
 act('setTheme', setTheme);
 act('setAuto', setAuto);
 act('setUi', setUi);
-act('setScriptSp', setScriptSp);
 act('wldArtAdd', wldArtAdd);
 act('wldOvAdd', wldOvAdd);
 act('wldOvDel', wldOvDel);
@@ -379,6 +378,8 @@ actIn('obLang', obLang);
 actIn('obMailSet', obMailSet);
 actIn('setPwSet', setPwSet);
 actIn('contactKind', contactKind);
+actIn('spFeel', spFeel);
+actIn('setScriptSp', setScriptSp);
 actIn('contactSet', contactSet);
 actIn('fSetQ', fSetQ);
 /* the names typed into the sheet (www/sheet.js, chapter 26) */
