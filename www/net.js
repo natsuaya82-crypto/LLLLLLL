@@ -789,6 +789,11 @@ function netTook(d){
        this one's. */
     NET_PREFS=null;
     netPrefsPull();
+    /* AND WHAT THIS ACCOUNT WROTE THAT THE SERVER HAS NOT GOT, sent here and
+       nowhere else without a press -- the same door the language goes up at
+       (www/post.js § postUpAll). postFor() above has just made POSTS this
+       account's own. */
+    if(typeof postUpAll==='function') postUpAll();
     LANG_WAIT=true;
     netLangSync(function(){
       if(typeof pullWait==='function') pullWait('mylangs', function(){

@@ -235,7 +235,10 @@ const DISK = {
   'lingua.me': JSON.stringify({ name:'Aya', handle:'aya', bio:'hello', pic:PIC_OLD,
                                 avSent:JSON.stringify({ pic:'data:image/jpeg;base64,QU5DSUVOVA' }),
                                 uid:'u' }),
-  'lingua.posts':  JSON.stringify([{ id:'p-local', mine:true, at:1, ln:'ka', mn:'ka' }]),
+  /* an unsent post, and one kept to yourself from before those went up
+     (2026-09-23): both go at the door and a launch sends neither */
+  'lingua.posts':  JSON.stringify([{ id:'p-local', mine:true, at:1, ln:'ka', mn:'ka' },
+                                   { id:'p-kept',  mine:true, at:2, ln:'mi', mn:'mi', pv:1 }]),
   'lingua.drafts': JSON.stringify([{ id:'d-local', at:1, ln:'mi', mn:'mi' }])
 };
 

@@ -3006,6 +3006,53 @@ const R = await pg.evaluate(async () => {
         fails.push('a recording this phone cannot read went up as a post with no ' +
                    'voice: ' + JSON.stringify(goneV));
 
+      /* ---- 20. a post kept to yourself goes to the server -------------
+         「SNSは全部サーバー」「NOTHING IS THE PHONE'S」 -- it used to be the one
+         post pwSend() kept on this phone and never sent. It goes up like any
+         other and carries its lock in its body, where the server's
+         post_private() reads it (supabase/schema.sql; npm run rls holds that
+         nobody else reads it). */
+      rows = {}; bucket = {}; upWall = []; inserts = 0;
+      POSTS = []; POST_GONE = {};
+      PW = pwBlank(); PW.ln = 'kano'; PW.pv = true;
+      pwSend();
+      await new Promise(r => setTimeout(r, 400));
+      const r20 = only();
+      if (!r20)
+        fails.push('a post kept to yourself did not reach the server -- ' +
+                   Object.keys(rows).length + ' rows. It lives on this phone ' +
+                   'alone and a lost phone takes it');
+      else if (!(r20.body && r20.body.pv))
+        fails.push('a post kept to yourself reached the server without its ' +
+                   'lock, so everybody reads it: ' + JSON.stringify(r20.body));
+      const pv20 = POSTS.filter(x => x.pv)[0];
+      if (!pv20 || !pv20.sid)
+        fails.push('the post kept to yourself is not on this phone with the ' +
+                   'server\u2019s id on it: ' + JSON.stringify(pv20 || null));
+
+      /* ...and what an older version kept here alone goes up AT THE DOOR,
+         as the account arriving: postUpAll(), which netTook() calls and
+         nothing else does. Oldest first, so a reply can name what it
+         answers; nothing deleted; somebody else's never. */
+      rows = {}; inserts = 0; POST_GONE = {};
+      POSTS = [{ id: 'old-pv', at: 5, mine: true, ln: 'kept', pv: 1 },
+               { id: 'old-un', at: 3, mine: true, ln: 'failed' },
+               { id: 'old-up', at: 4, mine: true, ln: 'went', sid: 's-went' },
+               { id: 'theirs', at: 6, mine: false, ln: 'not mine' }];
+      postUpAll();
+      await new Promise(r => setTimeout(r, 400));
+      const went20 = Object.keys(rows).map(k => rows[k].body.ln);
+      if (went20.join(',') !== 'failed,kept')
+        fails.push('at the door the posts the server has not got went up as ' +
+                   JSON.stringify(went20) + ' and should be ["failed","kept"] -- ' +
+                   'what this account wrote and never sent, oldest first, and ' +
+                   'nothing that already went or is somebody else\u2019s');
+      if (!Object.keys(rows).some(k => rows[k].body.ln === 'kept' && rows[k].body.pv))
+        fails.push('the old post kept to yourself went up without its lock');
+      if (POSTS.length !== 4 || !postById('old-pv').sid || !postById('old-un').sid)
+        fails.push('at the door a post was lost or not given the server\u2019s ' +
+                   'id: ' + JSON.stringify(POSTS.map(x => [x.id, x.sid || ''])));
+
       /* ---- 17. a delete whose files will not go does not happen ---------
          「通信エラーなら進むわけねえだろ全部」「なら失敗して残るにするべき」
          OWNER 2026-09-05. This held the other shape until 2026-09-23: the row

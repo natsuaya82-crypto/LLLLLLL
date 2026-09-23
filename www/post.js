@@ -1286,18 +1286,43 @@ function postSid(p, sid){
   savePosts();
 }
 /* Written here and never sent. One question, one place: a post of mine that
-   the server has no id for, and that is not kept to myself -- the row is what
-   says so on the screen. 「5 いります」 OWNER 2026-09-06.
+   the server has no id for -- kept to myself or not, since a private post
+   goes up too -- and the row is what says so on the screen. 「5 いります」
+   OWNER 2026-09-06.
 
-   NOTHING SENDS IT BUT A PRESS. postCatchUp() used to, off the back of the
-   next timeline answer, with nobody having pressed anything -- and that is
-   the other half of 「保存するタイミングでエラーが起きるなら、保存されない」
-   「なら失敗して残るにするべき」 OWNER 2026-09-05: a send that failed stays,
-   here, as this, and goes when somebody sends it (r46-audit § A5).
+   NOTHING SENDS IT ON ITS OWN BUT THE DOOR (postUpAll below). postCatchUp()
+   used to, off the back of the next timeline answer, with nobody having
+   pressed anything -- and that is the other half of 「保存するタイミングで
+   エラーが起きるなら、保存されない」「なら失敗して残るにするべき」 OWNER
+   2026-09-05 (r46-audit § A5).
 
    It reads nothing but what is ON the post, so the reading side may ask it. */
 function postUnsent(p){
-  return !!(p && p.mine && !p.sid && !p.pv);
+  return !!(p && p.mine && !p.sid);
+}
+/* ---- AT THE DOOR, WHAT THIS ACCOUNT WROTE AND THE SERVER HAS NOT GOT ----
+   The one moment the phone's copy goes up without a press, and it is the
+   same exception the language has: the door (www/net.js § netTook) puts what
+   is on this phone up as the account arriving. What is left here is what an
+   older version kept on this phone alone -- a post kept to yourself, which
+   was never sent, and a post whose send failed before a failed send stayed in
+   the composer. Nothing is deleted: each one is sent as it is, gets the
+   server's id (postSid), and the copy here stays.
+
+   One at a time and oldest first, through postSend() -- the one-send-at-a-time
+   mark is on it -- so a reply goes after the post it answers and can name it
+   (netPush reads the parent's `sid`). A send that fails leaves that post as it
+   was, saying 「未送信」, and the next is tried. */
+function postUpAll(){
+  var list=[], i;
+  for(i=0;i<POSTS.length;i++) if(postUnsent(POSTS[i])) list.push(POSTS[i]);
+  list.sort(function(a, b){ return (a.at||0)-(b.at||0); });
+  function one(k){
+    if(k>=list.length) return;
+    postSend(list[k], function(sid){ postSid(list[k], sid); one(k+1); },
+             function(){ one(k+1); });
+  }
+  one(0);
 }
 /* ---- ONE POST, ONE SEND AT A TIME --------------------------------------
    Which posts are on the wire right now, by this phone's own name for them.
@@ -2158,21 +2183,11 @@ function pwSendWith(ln, pics, vo){
      reply_to to hold. postToWho() asks the handle first, so the line over it
      reads the same as a reply's. */
   else if(PW.toh) mine.toh=PW.toh;
-  /* A post kept to yourself is never told to anybody. It is the one post
-     that does not go through the server at all -- not "sent and hidden",
-     which is a flag somebody else's server has to be trusted with -- so it is
-     written here, its draft goes (private is what the POST is, and the draft
-     was never a way of storing one), and the composer is emptied. Whether a
-     private post should be the account's on the server is the owner's
-     (docs/scope/r60-up.md). */
-  if(mine.pv){
-    POSTS.push(mine);
-    savePosts();
-    if(PW.did){ netDraftDrop(PW.did); PW.did=''; }
-    PW=pwBlank();
-    goTab('feed');
-    return;
-  }
+  /* A post kept to yourself goes up like any other and is read by nobody but
+     you -- `pv` rides in its body and supabase/schema.sql § post_private is
+     what keeps it yours. 「SNSは全部サーバー」: it used to stay on this phone
+     alone, which made it the one thing somebody wrote that a lost phone took
+     with it. */
   pwSendPost(mine);
 }
 /* ---- THE SERVER FIRST, AND THIS PHONE WHEN IT HAS LANDED -----------------
