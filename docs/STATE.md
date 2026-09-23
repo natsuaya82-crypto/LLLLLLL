@@ -32,6 +32,43 @@ un-re-read.
 
 ---
 
+## 2026-09-23 夕 ── 活用形・広告・目安の線 田・字間の画面・通知「今日のお題」・↓ の状態（integ `cf2d9408`、166 で出す ── **オーナーの Apple 側 1・2 待ち**）
+
+- `claude/r52-forms` ── **活用形は語ではなく形**（OWNER 2026-09-23）。語の上に
+  「ラベル＋形」で持つ（原型 aa／未来形 aai）。ラベルと形が揃わないと登録できない。
+  ラベルは自分でも作れる（`i~`）。100 語／1000 語に数えない。語ページの活用一覧に出る。
+  キーボードの変換も引ける。**前に語として作られた活用形は一覧から隠すだけで消さない**
+  （`wIsForm()`、決定 B）。`forms-check`（新規）、`plan-check`・conv・grammar を更新。
+- `claude/r55-ads` ── **広告枠**（OWNER 2026-09-23「Twitterと同じ。ツイート擬態右上に
+  pr」）。投稿 10 件ごとに一枠、10 件未満なら無し、pro は無し（`can('noads')`）。
+  枠は売れる形 ── サーバーの広告行を `postRow` で描き右上に PR。売れていない枠は
+  AdMob ネイティブ（`ios/App/App/LinguaAds.swift`、GMA 13.6.0、Podfile）。
+  ID は `ios-deploy.yml` の「Inject AdMob IDs」が secrets `ADMOB_APP_ID`・
+  `ADMOB_NATIVE_UNIT` から入れ、無ければ Google のテスト ID。ATT の許可は jpel と同じ。
+  UMP（EU の同意）は BACKLOG。**実機はまだ ── 広告が実際に出るかは 166 で見る。**
+- `claude/r56-guide-sp` ── **目安の線は 田**（口＋十、点の 0・10・20 段と列、
+  コントラスト 5.04:1／暗 8.38:1、`guide-check`）。**字間は別ページ**（設定 → 言語 →
+  字間 >、横と縦の見本）。otf5.js が vhea/vmtx/VORG を書くので縦書きも字間に従う
+  （`line-check` 6）。
+- `claude/r57-store` ── `tools/store-localize.mjs --dry` が Apple の断る字を種類で
+  拒む（FAST に登録）。Store Localize は 1.0.2 で 10 言語成功（run 35871369202）。
+- `claude/r58-prompt-push` ── **通知「今日のお題」**。通知の種類は一覧一つ、`prompt`
+  を足した。Supabase の cron `daily-prompt` は `0 7,8 * * *`（ロサンゼルスの 0 時、
+  夏冬どちらも）、関数は同じ日に二度送らない。通知の部屋のスイッチは 5 つ。rls の
+  ケースを追加。
+- `claude/r59-take` ── **人の言語の ↓**（OWNER 2026-09-23）。押すと回る印、サーバーが
+  取れたと言えば ⭕☑️、断られたら ↓ に戻り「接続できません」。⭕☑️ はサーバーの答え
+  （`langWhose()`）と読み込み済みの章から（`wldTakeOf()`、home.js）。**人の言語は
+  wiki に出ない** ── 取った言語を開いていてもプロフィールの「この言語について」の行は
+  出ず、記事は開かない（`langLocked()` 一問、`wldRow()`・`wldPage()`）。`take-check`
+  （新規）。取った言語で about が回り続ける件はオーナーが「無視していい」。
+
+**166 の前にオーナーがやること**（枝 `claude/owner-todo` の OWNER-TODO.md）：
+① App ID `com.tokinets.lingua` に Push Notifications を足す ② 配布用プロファイルを
+作り直して secret `PROVISIONING_PROFILE_BASE64` に入れる。`aps-environment` が入って
+いるので、この二つの前に出すと Archive で落ちる。AdMob の本番 ID の secrets も同じ
+ファイルにある（無くてもテスト ID で出る）。
+
 ## 2026-09-23 午後 ── 一行を描く仕組みを一つに・文字を描く面の目安の線（integ `8801f35b`、ゲート 47 緑、166 で出す）
 
 - `claude/r53-line` ── **一行を描く仕組みを一つに**（OWNER 2026-09-23「片方ずつ直すのは
@@ -46,14 +83,7 @@ un-re-read.
 - `claude/r54-guides` ── **文字を描く面に目安の線三本**（OWNER 2026-09-23「aやね」、
   r/casualconlang「guide lines」から）。点の 0・10・20 段目（字体の上・中・下）に
   点より薄い横線。何も保存しない、設定も無い。`geDraw()`（glyph.js）。`guide-check`
-  （新規、ゲートに登録済み）。写真 `shots/half-*-in-the-editor-*`。**線の濃さと位置は
-  オーナーの返事待ち。**
-- **決まったが作っていない：** 活用形は辞書の語にせず 100 語に数えない（OWNER
-  2026-09-23）。重ね方の画面（A=別画面で重ねる／B=画面は作らず意味の行が読む）が
-  オーナーの返事待ちで、セッションはまだ出していない。
-- **広告：** Twitter と同じく投稿の間に動画広告を挟む形を検討中（OWNER 2026-09-23、枠を
-  売る可能性あり）。AdMob のネイティブ広告は Web の画面に差し込めないので、自前の広告枠
-  （広告を投稿の一種としてサーバーに置く、「広告」表示は必須）を提案してオーナーの返事待ち。
+  （新規、ゲートに登録済み）。写真 `shots/half-*-in-the-editor-*`。線は r56 で 田 になった（上）。
 
 ## 2026-09-23 ── 字間（integ に取り込み済み、166 で出す）
 
