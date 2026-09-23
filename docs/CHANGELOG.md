@@ -15,6 +15,22 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### 2026-09-23 売れていない枠を AdMob で埋める ── **貯まる物は変わりません**
+
+**オーナーの決定（2026-09-23）**：「今は売る人いないからadmobを流す。proのみ表示なし。」
+
+- **見て変わること**：ホームのタイムラインの 10 件ごとの枠のうち、宣伝の投稿が無い枠に
+  AdMob の広告が一行入る。投稿と同じ形（顔・名前・広告主・右上に `PR`・本文・画像か動画・
+  行動の言葉）。動画は音を消して始まる。pro には出ない。ブラウザには出ない。
+- **初めての時だけ、iOS の「追跡を許可しますか」が一度出る**（ATT、まだ誰も答えていない時だけ）。
+  断っても広告は出る。
+- **貯まる物**：なし。サーバーにも端末にも何も増えない。広告はメモリの中だけ。
+- **アプリに入った物**：`ios/App/App/LinguaAds.swift`（新しいプラグイン）、`Podfile` に
+  `Google-Mobile-Ads-SDK` 13.6.0、`Info.plist` に `GADApplicationIdentifier`・`LinguaAdUnit`・
+  `NSUserTrackingUsageDescription`・`SKAdNetworkItems`、`ios-deploy.yml` が ID を差し込む
+  （Secret が無い間は Google のテスト用 ID）。
+- 移行なし。削除なし。プラン：`can('noads')`（pro）が枠を作らず、ネイティブも表示の直前に同じ答えで全部捨てる。
+
 ### 2026-09-23 タイムラインに売れる広告の枠 ── **新しく貯まる物：`promo` テーブル**
 
 **オーナーの決定（2026-09-23）**：「広告の形は、Twitterと同じ。ツイート擬態右上にprとつく。広告枠が売れる形にする。今は売る人いないからadmobを流す。proのみ表示なし。」

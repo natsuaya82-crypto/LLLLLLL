@@ -259,8 +259,9 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Affected features: ホームのタイムライン。探索・検索・プロフィールには枠を入れていない（Twitter と同じ ── 決まっていないので既定として報告済み）
 - Affected data: 新しいテーブル `promo`（運営だけが書く）。人の作った物は何も動かない
 - Affected docs: `docs/CHANGELOG.md`、`docs/PAID_FEATURES.md`、`docs/apple.md`、`docs/scope/r55-ads.md`
-- Implementation status: r55-ads。売れた枠と PR と `can('noads')` まで。**AdMob で埋める部分は未着手** ── 出し方の選択と、下の二つの問いがオーナー待ち：
-  AdMob の行の表示が「PR」で Google の規約を満たすか（Google は「広告」「Ad」「Sponsored」を求める）
+- Implementation status: r55-ads。売れた枠（`promo`）、PR、`can('noads')`、10 件おき、そして AdMob（`ios/App/App/LinguaAds.swift`）。
+  作り方は `docs/scope/r55-ads.md`。jpel と同じく Teen まで・ATT は未回答の時だけ・表示の直前で pro を見る。
+  **ATT の許可の画面は iOS 自身が出す物で、`www/` の `confirm()` `alert()` `prompt()` の禁止とは別物**。UMP は入れていない（`docs/BACKLOG.md`）。
 
 ### 2026-09-23 今日のお題が変わった時にも通知 ── アメリカ太平洋時間の 0 時、切り替えは五つ目のスイッチ
 - Date: 2026-09-23

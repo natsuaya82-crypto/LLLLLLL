@@ -1,23 +1,28 @@
 # r55 ── 広告（タイムラインの PR 枠）
 
 - 日付: 2026-09-23
-- 枝: `claude/r55-ads`（`integ-0905` の `1a7b8db1` から）
-- 仕様: OWNER 2026-09-23「広告の形は、Twitterと同じ。ツイート擬態右上にprとつく。
+- 枝: `claude/r55-ads`（`integ-0905` から。途中で `integ-0905` を取り込み済み）
+- 仕様（OWNER 2026-09-23）：「広告の形は、Twitterと同じ。ツイート擬態右上にprとつく。
   広告枠が売れる形にする。今は売る人いないからadmobを流す。proのみ表示なし。」
+  「10で。少ない時は出さない！」
+- 土台：オーナーの別アプリ jpel（`natsuaya82-crypto/JJJJ`）の AdMob の入れ方 ──
+  Teen までの広告、ATT は未回答の時だけ、買った人には表示の直前で出さない。
 
 ## 触ってよいもの（leader が名指し）
 
 `www/sns.js`、`www/post.js`（投稿の頭の PR だけ）、`www/core.js`（`CAN` の一行だけ）、
-`www/net.js`（広告を取る）、`www/index.html`（PR の CSS だけ）、`www/i18n/*.js`（PR の鍵）、
-`www/act-map.js`（ボタンを足すなら）、`supabase/schema.sql`、`tools/rls-check.mjs`、
-`tools/fixture.mjs`、`docs/FEATURE_RULES.md`、`docs/CHANGELOG.md`、
-`docs/PAID_FEATURES.md`、`docs/apple.md`、この文書。
+`www/net.js`（広告を取る）、`www/index.html`（PR と広告の行の CSS だけ）、
+`www/i18n/*.js`（PR の鍵）、`supabase/schema.sql`、`tools/rls-check.mjs`、
+`tools/fixture.mjs`、`ios/App/App/Info.plist`、`ios/App/App/LinguaAds.swift`、
+`ios/App/App/MainViewController.swift`（登録の一行）、`ios/App/App.xcodeproj/project.pbxproj`
+（Sources）、`ios/App/Podfile`、`.github/workflows/ios-deploy.yml`（ID の差し込み）、
+`docs/FEATURE_RULES.md`、`docs/CHANGELOG.md`、`docs/PAID_FEATURES.md`、`docs/apple.md`、
+`docs/BACKLOG.md`（UMP の一行）、この文書。
 
 ## 触らないもの
 
-`ios/` の下は一切（leader が言うまで）。AdMob / ネイティブのコードは書かない
-（調べて報告して止まる）。r52 の領分 ── `www/core.js` の capOK・語数、
-`www/wordsheet.js`、`www/share.js`、`www/card.js`。
+r52 の領分 ── `www/core.js` の capOK・語数、`www/wordsheet.js`、`www/share.js`、`www/card.js`。
+`www/glyph.js`（`renderMount`）と `tools/dead-check.mjs` にも触らない（下の「作り方」の 4）。
 
 ## 同じファイルにいる他の枝
 
@@ -25,111 +30,87 @@
 `www/post.js` に r53・r54、`supabase/schema.sql` に r47・r51・r53、
 `tools/fixture.mjs` に r54。統合は leader。
 
-## 調べ（AdMob をどう出すか）
+## 何を作るか
 
-**出典の注意**：この環境からは developers.google.com・support.google.com・caa.go.jp が
-開けず、下は検索結果の要約（公式 URL を示しているもの）から。全文を読んだのは
-BrandonKnudsen の README だけ。確かめられなかったものは「未確認」と書く。
+- ホームのタイムラインで、投稿 10 件ごとに一つ枠（`PROMO_EVERY`、10 件に届かなければ無い）。
+- 枠 k は、宣伝の投稿（`promo`）があればそれ、無ければ AdMob。
+- 宣伝の投稿は `postRow()` がほかの投稿と同じに描き、右上に `PR`。
+- AdMob の枠は、投稿の形をしたネイティブの行（顔・名前・広告主・右上に `PR`・本文・
+  画像か動画・行動の言葉）。**動画あり**（`MediaView`、音は消して始まる）。
+- pro（`can('noads')`）には枠が一つも無く、AdMob も呼ばない。
 
-### 問題
+## 作り方 ── 測って決めたこと
 
-タイムラインは WKWebView の中の HTML。AdMob のネイティブ広告（動画を含む）は
-`GADNativeAdView` / `GADMediaView` という**ネイティブの view** で描かないといけない。
-HTML の投稿と投稿の間に、そのまま置くことはできない。
+**問題**：タイムラインは WKWebView の中の HTML。AdMob のネイティブ広告は Google の
+view（`NativeAdView`・`MediaView`）で描かないといけない ── 見出しや画像を取り出して
+HTML で描くのはネイティブ広告の規約違反（表示と押された数を数えるのが view だから）。
+`@capacitor-community/admob`（jpel が使う物）はバナー・全画面・リワードだけで、
+列の中のネイティブ広告は出せない。「WebView API for Ads」は AdMob の広告を WebView に
+出す物ではなく、ウェブ用の広告タグ（AdSense・Ad Manager）向け。
 
-### 案 (a) ネイティブの広告 view を HTML の空き枠の上に重ね、スクロールに合わせて動かす
+**だから**：HTML には空の行（`.padm`、広告と同じ高さ）を置き、ネイティブの広告を
+その上に重ねる。どう重ねるかは、ブラウザでタイムラインを動かして測って決めた：
 
-- やり方：タイムラインに透明な空き枠（PR 行の高さ）を置き、その画面上の位置を
-  `getBoundingClientRect()` で Swift に渡して、`GADNativeAdView` をその上に重ねる。
-  スクロールするたびに位置を合わせ、画面の外に出たら隠す。
-  既存の例：`@brandonknudsen/admob-native-advanced`
-  （https://github.com/BrandonKnudsen/admob-native-advanced）がこの形。
-  `@capacitor-community/admob` はバナー・全画面・リワードだけで、ネイティブ広告は無い
-  （https://github.com/capacitor-community/admob/issues/110）。
-- 動画：**流せる**（MediaView）。https://developers.google.com/admob/ios/native/advanced
-- 規約：広告の上に、アプリの物（上のバー・下のタブ・＋ボタン）を重ねてはいけない。
-  AdChoices の印も隠してはいけない（https://support.google.com/admob/answer/6329638）。
-  → バーやタブの下にかかる所では、広告を切るか隠す必要がある。重ねる形そのものについて
-  Google がはっきり書いた物は見つからなかった（未確認）。
-- 費用：**中〜大**。Swift のプラグイン（読み込み・表示・位置・隠す）、JS 側の位置合わせ、
-  勢いのあるスクロールで遅れて見えるずれへの対処。`ios/` と `project.pbxproj` に入る。
-  AdMob Plus の資料には、webview とネイティブを混ぜるとスクロールがもたつくという注意がある。
-- **規約に沿って、しかも動画も流せるのはこの案だけ。**
+1. **スクロールするのはページそのもの**（`window.scrollY` が 800 動くと投稿も 800 動く。
+   中でスクロールする要素は無い）。iOS ではこれは WKWebView 自身の `scrollView`。
+   → 広告は `scrollView` の**中**の箱（`AdBox`）に置く。
+   - 指が広告の上から始まっても、タイムラインはそのままスクロールする（`scrollView` の
+     指の認識は子の view の上でも働く）。
+   - 箱は `contentOffset` が変わるたびに、見えている範囲へ動かす（KVO）。UIKit のスクロールと
+     同じコマで動くので、HTML とずれない。**JS はスクロール中に何もしない** ── 行の位置は
+     ページの座標で渡すので、スクロールでは変わらない。
+2. **上のバーは `sticky`、下のタブと ＋ は `fixed`**（`.navtop`、`.tabbar`、`.fab`）。
+   ネイティブの view は HTML より上に描かれるので、そのままだと広告がバーやタブの上に出る。
+   → **アプリが画面に固定している物は、箱から切り抜く**（描くのも、押すのも）。
+   どれを切るかは名前で並べず、**body の子とバーのうち、fixed か sticky で、見えている物
+   全部**を毎回数える（`admCover()`）。明日足された固定の物も、その日から切り抜かれる。
+   画面全体を覆う物（シートの背景・問い・回る印）が出ている間は、広告を隠す。
+3. 広告の高さはネイティブが組んで答え（`load` → `h`）、JS は空の行をその高さにする。
+   答えが来るまで・広告が来なかった時は、行は高さ 0 で線も無い（何も無い）。
+4. ページが動いたこと（描き直し、シートやトーストの出入り、回転）は、広告が出ている間
+   **毎コマ一度訊いて、変わった時だけ**ネイティブに渡す。`MutationObserver` は
+   `dead-check` の知らない名前で、描き直しの後の一箇所（`www/glyph.js` の `renderMount`）
+   は持ち場の外なので、使わなかった。
 
-### 案 (b) Google Mobile Ads SDK の「WebView API for Ads」
+**最終防衛線**：`place` は毎回 `on: !can('noads')` を持って行き、ネイティブは `on:false`
+なら何かを描く前に全部の広告を捨てる（jpel の `adsDisabled` を表示の直前で見る形）。
+JS 側も `can('noads')` を呼ぶたびに訊き、pro なら `drop` する。
 
-- **AdMob の広告を WebView の中に出す仕組みではない。**WebView の中に置いた
-  **ウェブ用の広告タグ**（AdSense、Ad Manager の GPT、動画なら IMA HTML5）に、
-  アプリの情報を足すための物（`MobileAds.shared.register(webView)`）。
-  https://developers.google.com/admob/ios/browser/webview/api-for-ads
-- つまり中身は AdMob ではなく **Ad Manager か AdSense**。AdSense は審査で「サイト」が要り、
-  このアプリのタイムラインには公開された URL が無いので、通るかは疑わしい（未確認）。
-  Ad Manager は小さな運営者でも使える（AdSense のアカウントが要る）。
-  https://support.google.com/admanager/answer/7084151
-- 良い所：広告が本当に HTML の一行になる。Ad Manager なら「直接売った枠」も同じ仕組みで入る。
-- 動画：IMA HTML5 は WebView・Cordova を公式には対応しないと言われ、WKWebView で
-  押せない報告がある → **動画は未確認で危ない**。
-- 費用：Swift は一行の登録だけで小さい。ただし Ad Manager の審査と設定が要る。
+**設定**（jpel と同じ）：
+- 出す広告は **Teen まで**（`GADMaxAdContentRating.teen`）。
+- **ATT**：`start` の中で、誰もまだ答えていない（`notDetermined`）時だけ訊く。断っても
+  広告は出る（追跡で選ばない広告になる）。**これは iOS 自身が出す許可の画面で、
+  `CLAUDE.md` の禁止（`www/` の `confirm()` `alert()` `prompt()`）とは別物。**
+- **UMP（ヨーロッパの同意画面）は入れない** ── jpel に無い。`docs/BACKLOG.md` に一行。
+- AdChoices の印（Google が付ける）は右下。PR が右上なので重ならない。
 
-### 案 (c) そのほか
+**SDK**：`Google-Mobile-Ads-SDK` 13.6.0（jpel の `@capacitor-community/admob` 8 が固定する版）。
+この app は CocoaPods で組んでいて CI が `pod install` を回すので、`Podfile` に一行。
+（leader は SPM と言ったが、このプロジェクトの依存の入れ方は Pods なので、それに合わせた。）
+Swift の名前は v12 以降の物（`AdLoader`・`NativeAdView`・`MediaView`・`MobileAds.shared`）で、
+Google の公式サンプル（googleads-mobile-ios-examples、2026-09-22）と
+`@capacitor-community/admob` の iOS のコードで確かめた。**この Linux ではコンパイルしていない。**
 
-- **AdMob の中身（見出し・画像・ボタン）を取り出して自分の HTML で描く** → **規約違反**。
-  中身は `GADNativeAdView` の中に置かないと、表示と押された数が数えられない。一番危ない。
-- **画面の下に固定のバナー / 全画面の広告**：`@capacitor-community/admob` で簡単。
-  ただしタイムラインの中の一行ではない（オーナーの言う形ではない）。
-- **売った枠**（今回作った物）：自分の HTML で描く PR の行。Google の規約は関係なく、
-  日本の法律（下）だけ。
+**ID**：`Info.plist` に `__ADMOB_APP_ID__`（`GADApplicationIdentifier`）と
+`__ADMOB_NATIVE_UNIT__`（`LinguaAdUnit`）。`ios-deploy.yml` が GitHub の Secret
+`ADMOB_APP_ID` / `ADMOB_NATIVE_UNIT` から入れ、Secret が無い間は Google の**テスト用 ID**
+を入れる。オーナーのアカウントは `pub-2442181569589497`。手順は `docs/apple.md` § 9。
 
-### 表示の言葉 ── **オーナーに訊くこと**
+## 表示の言葉
 
-- 日本のステマ規制（景品表示法、2023-10-01 から）：「広告」「宣伝」「プロモーション」「PR」の
-  どれでもよく、見つけやすい場所にはっきり書くこと。→ **PR で足りる。**
-  https://www.caa.go.jp/policies/policy/representation/fair_labeling/faq/stealth_marketing/
-- **Google（AdMob のネイティブ広告）**：「Ad」「Advertisement」「Sponsored」
-  （その国の言葉で）の印が要る。15px 以上、広告の上の方。
-  https://support.google.com/admob/answer/6329638
-  **「PR」でこれを満たすかは確かめられなかった**（PR は Ad の訳ではない）。
-  → AdMob で埋める行だけは「広告」と出すのが安全。売った枠は「PR」のままでよい。
-  **オーナーの「右上に pr」と食い違う可能性があるので、決めずに上げる。**
-- AdChoices の印は SDK が角に付ける。PR を右上にするなら、AdChoices は別の角に。
-
-### 設定で要るもの（案 a でも b でも）
-
-- Info.plist：`GADApplicationIdentifier`、`SKAdNetworkItems`（Google の一覧）。
-- SDK：v13（2026-02、iOS 13 以上）。Swift Package Manager で入れられる。
-  https://ads-developers.googleblog.com/2026/02/announcing-ios-google-mobile-ads-sdk.html
-- ATT（`NSUserTrackingUsageDescription` と許可のダイアログ）：**入れなくても広告は出る**。
-  入れないと IDFA 無しで収入が下がる。https://developers.google.com/admob/ios/privacy/strategies
-  → **オーナーが決めること。**許可のダイアログは「システムのダイアログ禁止」の例外に当たるかも
-  オーナーの判断（iOS が出す物で、アプリからは描き方を選べない）。
-- ヨーロッパ・イギリス・スイスで個人向けの広告を出すなら、同意の画面（UMP）が要る。
-  https://support.google.com/admob/answer/13554116
-- App Store のプライバシー一覧表の書き直し：https://developers.google.com/admob/ios/privacy/data-disclosure
-- オーナーが作るもの：`docs/apple.md` § 9（AdMob のアカウント、アプリ ID、広告ユニット ID、
-  app-ads.txt、支払い）。それまでは Google のテスト用 ID。
-
-### 私の見立て（決めるのはオーナー）
-
-動画込みで、投稿の形で、AdMob なら **(a)**。代わりに (b) にすると広告は本当に HTML の一行になるが、
-中身は AdMob ではなく Ad Manager/AdSense で、審査が要り、動画は当てにならない。
-
-## 作った物（オーナーの選択が要らない分）
-
-- `supabase/schema.sql`：`promo`（どの投稿を・いつからいつまで）。**一つの描き方（`postRow`）**のために、
-  広告は「広告主のアカウントの普通の投稿」で、`promo` はそれを指すだけ。Twitter と同じ形で、
-  いいね・返信・通報がサーバー側ではそのまま効く形（アプリ側の制限は下）。`post` の列にしなかったのは、作者が自分の投稿を編集できる
-  （`post_edit`）ので、自分で自分に枠を売れてしまうから。
-- `tools/rls-check.mjs`：B と anon が読む・作る・変える・消すを試すケースを 9 本。
-- `www/net.js` `netPromos()`、`www/sns.js` `snsPromoAsk()` / `snsWithPromo()` / `PROMO_EVERY`（10、OWNER 2026-09-23「10で。少ない時は出さない！」）、
-  `www/core.js` `CAN.noads`、`www/post.js` の PR、`www/index.html` `.ppr`、`www/i18n/*.js` `post.pr`。
-- `tools/fixture.mjs`：「the timeline with a place sold in it」「the same timeline on pro, with no place」。
+右上は `PR`（オーナーの言葉のまま）。日本のステマ規制は「PR」で足りる。Google の
+ネイティブ広告の規約は「広告」「Ad」「Sponsored」の印を求めていて、「PR」でそれを
+満たすかはこちらで確かめられていない ── 審査で言われたら、`post.pr` の文字を変える
+だけで済む形にしてある（AdMob の行の印は JS が `t('post.pr')` を渡している）。
 
 ## 分かっている制限
 
-- **PR の行でいいね・リポスト・返信を押しても、その場では何も起きない。**`postLike()` などは
-  `postById()` で `POSTS` の中だけを探し、宣伝の投稿は `POSTS` に入れていないため
-  （入れると検索・おすすめ・端末のコピーにも混ざる）。行をタップしてスレッドを開けば
-  `netPostById()` で `POSTS` に入り、そこから先は押せる。直すには `postById()` に手を入れる必要があり、
-  それは私の担当（`post.js` は PR だけ）の外。
+- **宣伝の投稿（PR の行）でいいね・リポスト・返信を押しても、その場では何も起きない。**
+  `postLike()` などは `postById()` で `POSTS` の中だけを探し、宣伝の投稿は `POSTS` に
+  入れていないため。行をタップしてスレッドを開けば押せる。直すのは `post.js` の持ち場の外。
 - スレッドを開いた後は、その投稿が普通の投稿として「おすすめ」にも出る。
-- **pro に PR が出ないこと**を止めるチェックは無い。スクリーンショットで見ただけ。
+- 引っ張って更新している間は、HTML が指について下がり、広告はついて来ない（指を離すと戻る）。
+- ＋ボタンの丸の外の四隅も、四角として切り抜く。
+- **pro に枠が出ないこと・10 件未満で出ないこと**を止めるチェックは無い。スクリーンショットで見ただけ。
+- **実機で一度も動かしていない**。ブラウザでは本物の広告は出ない（`Capacitor` が無いと
+  枠そのものを作らない）。
