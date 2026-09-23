@@ -402,6 +402,7 @@ defLang('ja', (function(){
       'push.reply'            : "返信",
       'push.like'             : "いいね",
       'push.boost'            : "リポスト",
+      'push.prompt'           : "今日のお題",
       'push.off'              : "通知は iPhone の設定でオフになっています",
       'push.no'               : "設定を開けませんでした",
       'notif.pick'            : "読んでみては",

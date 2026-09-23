@@ -20,11 +20,18 @@
      - device の行が無ければ送らない
      - 410 だけで token が落ち、他のどの答えでも落ちない
      - **request の文字が payload に一文字も混ざらない**
-     - 四種類 × 十言語の文が全部あり、どれも {0} を持っている
+     - 種類 × 十言語の文が全部あり、どれも {0} を持っている
+     - お題は全員宛てで、鳴らせるのは service role の鍵だけ
+     - **種類は `PUSH` が一箇所**で、www/ の二つの手書き（`PUSH_KINDS` と
+       `SET_PREFS`）と i18n の `push.<種類>` がそれと揃っていること
    --------------------------------------------------------------------------- */
-import { pushWhat, pushTo, pushPlan, pushSay, pushWants, pushLang, pushGone,
-         KINDS, LANGS, SAY, TITLE, TOPIC } from
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { pushWhat, pushTo, pushPlan, pushMay, pushBy, pushSay, pushWants, pushLang,
+         pushGone, pushRead, PUSH, KINDS, SERVICE, LANGS, SAY, TITLE, TOPIC } from
   '../supabase/functions/push-send/push.mjs';
+const WWW = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'www');
 
 let bad = 0, said = 0;
 function say(name, got, want) {
@@ -147,14 +154,14 @@ for (const k of KINDS) {
 }
 /* **前から居る人の prefs にはこの四つがありません。**無いのを「切ってある」と
    読むと、許可を出した人に一通も届かず、そのことは誰の画面にも出ません。 */
-say('2026-09-08 からある prefs（テーマと言語だけ）は四つともオン',
-    KINDS.filter((k) => pushWants({ theme: 'dark', ui: 'ja' }, k)).length, '4');
-say('prefs が丸ごと無い人も四つともオン',
-    KINDS.filter((k) => pushWants(null, k)).length, '4');
+say('2026-09-08 からある prefs（テーマと言語だけ）は全部オン',
+    KINDS.filter((k) => pushWants({ theme: 'dark', ui: 'ja' }, k)).length, String(KINDS.length));
+say('prefs が丸ごと無い人も全部オン',
+    KINDS.filter((k) => pushWants(null, k)).length, String(KINDS.length));
 /* そして**切れているのはその一つだけ**。一つ切ったら全部止まった、はこの逆側。 */
-say('like を切っても他の三つは生きている',
+say('like を切っても他は生きている',
     KINDS.filter((k) => pushWants({ push_like: false }, k)).join(','),
-    'follow,reply,boost');
+    KINDS.filter((k) => k !== 'like').join(','));
 {
   const off = pushPlan(lik, { handle: 'iri', prefs: { push_like: false } }, DEV, B);
   say('切れていれば送らない', off.send, 'false');
@@ -190,7 +197,7 @@ console.log('push: Apple に渡す形');
 }
 
 /* ---- 言語 ------------------------------------------------------------- */
-console.log('push: 文面は相手の表示言語で、四種類 × 十言語');
+console.log('push: 文面は相手の表示言語で、種類 × 十言語');
 say('十言語ある', LANGS.length, '10');
 say('言語の数だけ表がある', Object.keys(SAY).length, String(LANGS.length));
 {
@@ -201,9 +208,9 @@ say('言語の数だけ表がある', Object.keys(SAY).length, String(LANGS.leng
       if (typeof s !== 'string' || !s.trim() || s.indexOf('{0}') === -1) holes.push(l + '.' + k);
     }
   }
-  /* 四十とも在って、四十とも {0} を持っている。持っていない一つは「誰が」の
-     消えた通知で、鳴っても誰からか分かりません。 */
-  say('四十の文が全部あり、全部 {0} を持っている', holes.join(' ') || 'none', 'none');
+  /* 全部在って、全部 {0} を持っている。持っていない一つは「誰が」や「何が」の
+     消えた通知で、鳴っても何のことか分かりません。 */
+  say('種類 × 十言語の文が全部あり、全部 {0} を持っている', holes.join(' ') || 'none', 'none');
   const seen = {};
   let same = [];
   for (const l of LANGS) {
@@ -211,7 +218,7 @@ say('言語の数だけ表がある', Object.keys(SAY).length, String(LANGS.leng
     if (seen[key]) same.push(seen[key] + '=' + l); else seen[key] = l;
   }
   /* 十言語のうち二つが一字一句同じなら、片方は訳されずに en のまま残った物です。 */
-  say('同じ四行を持つ言語は二つと無い', same.join(' ') || 'none', 'none');
+  say('同じ文の組を持つ言語は二つと無い', same.join(' ') || 'none', 'none');
 }
 say('知らない言語は en', pushLang({ ui: 'sv' }), 'en');
 say('何も言っていない人は en', pushLang({}), 'en');
@@ -263,9 +270,111 @@ say('二台のうち 410 の方だけ落ちる',
 say('何も送っていなければ何も落ちない', pushGone([]).length, '0');
 say('undefined でも落ちない', pushGone(undefined).length, '0');
 
+/* ---- 今日のお題 ── 全員宛て -----------------------------------------
+   「通知なんだけど、今日のお題が変わった時にも出るようにできる？」
+   OWNER 2026-09-23。
+
+   一人宛ての四つと**同じ一本の道**を通ります。違うのは表の一行だけ ──
+   相手は全員（`to: null`、index.ts が一人ずつ入れる）、やったのは service
+   role（`from: SERVICE`）、`{0}` はその日の一文。 */
+console.log('push: お題は全員へ、鳴らせるのは service role の鍵だけ');
+{
+  const SVC = 'sb-service-role-key-of-this-project';
+  const ROW = { id: 42, text: 'It rained.', says: { ja: '雨が降った。', en: 'It rained.' } };
+  say('prompt の行は id で取り出す',
+      JSON.stringify(pushWhat(hook('prompt', { id: 42, on_day: '2026-09-23', text: 'ZZ' }))),
+      JSON.stringify({ table: 'prompt', key: { id: '42' } }));
+  say('数でない id は捨てる', pushWhat(hook('prompt', { id: '../x' })), 'null');
+  say('読み直すのは id と文と十言語', JSON.stringify(pushRead('prompt', { id: '42' })),
+      JSON.stringify({ cols: 'id,text,says', parent: null, all: true }));
+  say('follow は一人宛て', pushRead('follow', { follower: B, followed: A }).all, 'false');
+  const aim = pushTo('prompt', ROW, null) || {};
+  say('相手は決めない（全員）', aim.to, 'null');
+  say('やったのは service role', aim.from, SERVICE);
+  say('開く先は無い', aim.post, 'null');
+
+  /* 叩いた人。service role の鍵そのものだけが SERVICE。 */
+  say('service role の鍵なら SERVICE', pushBy('Bearer ' + SVC, SVC), SERVICE);
+  say('違う鍵なら誰でもない', pushBy('Bearer ' + SVC + 'x', SVC), '');
+  say('サインインした人の JWT は誰でもない', pushBy('Bearer eyJhbGciOi.user.sig', SVC), '');
+  say('鍵が函数に無ければ誰でもない', pushBy('Bearer ', ''), '');
+  say('何も無ければ誰でもない', pushBy('', SVC), '');
+
+  /* **全員宛てを鳴らせるのは service role だけ。**サインインした B が
+     お題の行を指して叩いても、`pushMay()` が一人も読まないうちに断る。 */
+  say('サインインした人はお題を鳴らせない', pushMay(aim, B), 'not theirs to ring');
+  say('publishable キーでも鳴らせない', pushMay(aim, ''), 'no session');
+  say('service role なら鳴らせる', pushMay(aim, SERVICE), '');
+
+  const ja = pushPlan({ ...aim, to: A }, { ...ROW, prefs: { ui: 'ja' } }, DEV, SERVICE);
+  say('一人ずつ、同じ pushPlan で送る', ja.send, 'true');
+  say('文はその人の言語のお題', line(ja), '今日のお題：雨が降った。');
+  say('種類は prompt', pay(ja).kind, 'prompt');
+  say('お題に開く先の欄は無い', Object.prototype.hasOwnProperty.call(pay(ja), 'post'), 'false');
+  say('B が叩いた同じ行では一通も出ない',
+      pushPlan({ ...aim, to: A }, { ...ROW, prefs: {} }, DEV, B).send, 'false');
+  /* その言語の文がお題の行に無ければ英語の `text`。アプリがお題を出す時と
+     同じ落ち方。 */
+  const ko = pushPlan({ ...aim, to: A }, { ...ROW, prefs: { ui: 'ko' } }, DEV, SERVICE);
+  say('お題の行に無い言語は text に落ちる', line(ko), '오늘의 주제: It rained.');
+  say('一文が無いお題は送らない',
+      pushPlan({ ...aim, to: A }, { says: {}, text: '', prefs: {} }, DEV, SERVICE).why,
+      'nothing to say');
+  say('push_prompt を切った人には送らない',
+      pushPlan({ ...aim, to: A }, { ...ROW, prefs: { push_prompt: false } }, DEV, SERVICE).why,
+      'switched off');
+  say('お題を切ってもいいねは届く',
+      pushPlan(lik, { handle: 'iri', prefs: { push_prompt: false } }, DEV, B).send, 'true');
+  say('iPhone を登録していない人には送らない',
+      pushPlan({ ...aim, to: A }, { ...ROW, prefs: {} }, [], SERVICE).why, 'no device');
+  /* 一人宛ての種類に service role の鍵を持って来ても、行の actor ではない。 */
+  say('service role でもフォローは鳴らせない', pushPlan(fol, WHO, DEV, SERVICE).why,
+      'not theirs to ring');
+}
+
+/* ---- 種類は一箇所、www/ の手書きはそれと揃っている ------------------
+   `PUSH` は Deno の一枚で、www/ は ES5 の script なのでそれを読めません。
+   だから www/ には手で書いた語が残ります ── `www/push.js` の `PUSH_KINDS`
+   （設定の部屋が並べる行）、`www/core.js` の `SET_PREFS`（`profile.prefs` に
+   上がる欄。tools/store-check.mjs が欄の名前を字で読むので、ここは計算で
+   作れません）、そして十言語の `push.<種類>`。**ここがその全部を `PUSH` と
+   突き合わせます** ── 種類を一つ足して一箇所忘れると、ここが名前を挙げて
+   落ちます。数えるのは面の方で、手書きの箇所を覚えておく人ではありません。 */
+console.log('push: 種類は PUSH が一箇所、www/ の手書きはそれと揃っている');
+{
+  const src = (f) => fs.readFileSync(path.join(WWW, f), 'utf8');
+  const list = (re, f) => {
+    const m = re.exec(src(f));
+    return m ? (m[1].match(/'([A-Za-z0-9_]+)'/g) || []).map((x) => x.slice(1, -1)) : null;
+  };
+  const kinds = list(/var PUSH_KINDS=\[([^\]]*)\]/, 'push.js');
+  say('www/push.js の PUSH_KINDS は PUSH と同じ語、同じ順',
+      (kinds || ['(無い)']).join(','), KINDS.join(','));
+  const prefs = (list(/var SET_PREFS=\[([\s\S]*?)\];/, 'core.js') || [])
+    .filter((k) => k.indexOf('push_') === 0);
+  say('www/core.js の SET_PREFS の push_ は PUSH の全部',
+      prefs.slice().sort().join(','), KINDS.map((k) => 'push_' + k).sort().join(','));
+  const holes = [];
+  for (const l of LANGS) {
+    const t = src('i18n/' + l + '.js');
+    for (const k of KINDS) if (t.indexOf("'push." + k + "'") === -1) holes.push(l + '.' + k);
+  }
+  say('十言語に push.<種類> の行がある', holes.join(' ') || 'none', 'none');
+  /* 一つの種類が二つの表から来ることはあっても、一つの表の一つの行が二つの
+     種類であってはいけません ── どちらの通知かを表の順が決めることになる。 */
+  const dup = [];
+  for (const a of PUSH) for (const b of PUSH)
+    if (a !== b && a.table === b.table && JSON.stringify(Object.keys(a.key)) ===
+        JSON.stringify(Object.keys(b.key)) &&
+        !Object.keys(a.key).some((f) => typeof a.key[f] === 'string' &&
+                                       typeof b.key[f] === 'string' && a.key[f] !== b.key[f]))
+      dup.push(a.kind + '=' + b.kind);
+  say('一つの行が二つの種類になることは無い', dup.join(' ') || 'none', 'none');
+}
+
 /* ---- そのほか、名前が合っていること ---------------------------------- */
-console.log('push: 四つの語と topic');
-say('四種類、通知タブと同じ語', KINDS.join(','), 'follow,reply,like,boost');
+console.log('push: 語と topic');
+say('通知タブの四つ、そしてお題', KINDS.join(','), 'follow,reply,like,boost,prompt');
 say('topic は bundle id', TOPIC, 'com.tokinets.lingua');
 say('知らない種類は送らない',
     pushPlan({ kind: 'hug', to: A, from: B, post: null }, WHO, DEV, B).send, 'false');

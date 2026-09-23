@@ -31,6 +31,10 @@
         them -- on a post's line and in the field; at one step they do not
      5  somebody else's shape is never one of my keyboard's code points nor
         mine for a different shape, and the same shape is the same one
+     6  written DOWN, the gap is the same gap: at 0 two letters join, at 2
+        they stand further apart than at 1, and the field and the post are
+        the same column -- a column is laid out by the face's vertical
+        advance, so this is the face's vmtx asked of the page
 
    A browser, on its own port.
    --------------------------------------------------------------------------- */
@@ -269,6 +273,104 @@ if (!(JOIN[1].line > 0) || !(JOIN[1].field > 0))
   fails.push('at one step two letters stand with no gap (line ' + JOIN[1].line + ', field ' +
              JOIN[1].field + '), so the test above proves nothing');
 
+/* ---- 6. written DOWN, the gap is the same gap ---------------------- */
+/* 「字間> スライダーと下に横と縦それぞれスライドしてどう動くかで別ページに
+   した方が見やすい。」 OWNER 2026-09-23 -- and down, the slider moved
+   nothing: a column is laid out by the face's VERTICAL advance, and the face
+   had none, so the browser gave every letter the line box whatever the gap.
+   A letter whose stem runs from the top edge of the lattice to the bottom,
+   two of them in a column, on a post written down and in the field written
+   down, at 0, 1 and 2: the empty rows between the first ink and the last are
+   none at 0, more at 2 than at 1, and the field and the post agree. */
+const inkDown = async (sel) => {
+  await pg.evaluate(() => document.fonts.ready);
+  await pg.waitForTimeout(150);
+  const box = await pg.evaluate((sel) => {
+    const e = document.querySelector(sel);
+    if (!e) return null;
+    /* a field's text is not in the DOM, so its own box; a line's, its text */
+    let r;
+    if (e.tagName === 'TEXTAREA' || e.tagName === 'INPUT') {
+      const b = e.getBoundingClientRect();
+      r = { left: b.left + 2, top: b.top + 2, width: b.width - 4, height: b.height - 4 };
+      return { x: r.left, y: r.top, width: r.width, height: r.height };
+    }
+    const rg = document.createRange(); rg.selectNodeContents(e);
+    r = rg.getBoundingClientRect();
+    return { x: r.left - 4, y: r.top - 4, width: r.width + 8, height: r.height + 8 };
+  }, sel);
+  if (!box || !(box.width > 8) || !(box.height > 8)) return null;
+  const png = await pg.screenshot({ clip: box });
+  return pg.evaluate(async (b64) => {
+    const im = new Image();
+    await new Promise((ok) => { im.onload = ok; im.src = 'data:image/png;base64,' + b64; });
+    const c = document.createElement('canvas');
+    c.width = im.width; c.height = im.height;
+    const x = c.getContext('2d');
+    x.drawImage(im, 0, 0);
+    const d = x.getImageData(0, 0, c.width, c.height).data;
+    const bg = [d[0], d[1], d[2]];
+    const on = (i, j) => { const k = (j * c.width + i) * 4;
+      return Math.abs(d[k] - bg[0]) + Math.abs(d[k + 1] - bg[1]) + Math.abs(d[k + 2] - bg[2]) > 120; };
+    const runs = [];
+    for (let j = 0; j < c.height; j++) {
+      let n = false;
+      for (let i = 0; i < c.width && !n; i++) n = on(i, j);
+      if (!n) continue;
+      const last = runs[runs.length - 1];
+      if (last && last[1] === j - 1) last[1] = j; else runs.push([j, j]);
+    }
+    const S = window.devicePixelRatio || 1;
+    let g = 0;
+    for (let i = 1; i < runs.length; i++) g += (runs[i][0] - runs[i - 1][1] - 1);
+    return { runs: runs.length, gap: Math.round(g / S * 10) / 10,
+             tall: runs.length ? Math.round((runs[runs.length - 1][1] + 1 - runs[0][0]) / S * 10) / 10 : 0 };
+  }, png.toString('base64'));
+};
+await pg.evaluate(() => {
+  const I = GGRID.inset, R = 800 - GGRID.inset;
+  LETTERS[2].st = [{ pts: [[400, I], [400, R]] }, { pts: [[400, 400], [640, 400]] }];
+  planGot('pro'); SCRIPT.dir = 'ttb-rl';
+});
+const DOWN = {};
+for (const sp of [0, 1, 2]) {
+  const two = await pg.evaluate((sp) => {
+    SCRIPT.sp = sp; installScriptFont();
+    const two = ltPua(2) + ltPua(2);
+    POSTS = POSTS.filter((p) => p.id !== 'pdown');
+    POSTS.push({ id: 'pdown', at: 1, lang: 'other', lname: 'Other', ln: 'x', who: 'Iri', hd: 'iri',
+                 mine: false, mn: '', ui: 'en', ink: postInkTyped(two), dir: 'ttb-rl' });
+    go('thread', 'pdown');
+    return two;
+  }, sp);
+  const line = await inkDown('#app .pline');
+  await pg.evaluate((two) => {
+    PW = pwBlank(); openPost(); render();
+    const e = document.getElementById('pw-ln');
+    e.style.caretColor = 'transparent';
+    e.value = two;
+    e.dispatchEvent(new Event('input', { bubbles: true }));
+  }, two);
+  const field = await inkDown('#pw-ln');
+  DOWN[sp] = { line, field };
+  await pg.evaluate(() => { PW = pwBlank(); });
+}
+await pg.evaluate(() => { SCRIPT.sp = 1; SCRIPT.dir = 'ltr'; planGot('free'); installScriptFont(); });
+const dn = (sp, k) => (DOWN[sp][k] ? DOWN[sp][k].gap : -1);
+if (dn(0, 'line') !== 0 || dn(0, 'field') !== 0)
+  fails.push('written down, at 0 two letters drawn edge to edge do not join: ' + dn(0, 'line') +
+             'px empty on a post, ' + dn(0, 'field') + 'px in the field');
+if (!(dn(1, 'line') > 0) || !(dn(2, 'line') > dn(1, 'line')) ||
+    !(dn(1, 'field') > 0) || !(dn(2, 'field') > dn(1, 'field')))
+  fails.push('written down, the gap does not follow the setting -- px empty between two letters at 0/1/2: ' +
+             'post ' + [0, 1, 2].map((s) => dn(s, 'line')).join('/') +
+             ', field ' + [0, 1, 2].map((s) => dn(s, 'field')).join('/'));
+for (const sp of [0, 1, 2])
+  if (!DOWN[sp].line || !DOWN[sp].field || !near(DOWN[sp].line.tall, DOWN[sp].field.tall, 1) ||
+      !near(DOWN[sp].line.gap, DOWN[sp].field.gap, 1))
+    fails.push('written down at ' + sp + ', the field and the post are not the same column: post ' +
+               JSON.stringify(DOWN[sp].line) + ', field ' + JSON.stringify(DOWN[sp].field));
+
 /* ---- 5. somebody else's letters are theirs ------------------------ */
 /* Two posts at the same gap, both with the first letter at index 0 of their
    ink -- mine, drawn with my alphabet, and somebody else's, where that index
@@ -311,6 +413,9 @@ console.log('line: typed into the composer and posted, one line comes out in the
             '      at one step. Two letters drawn edge to edge, px empty between them --\n' +
             '      at 1: line ' + JOIN[1].line + ', field ' + JOIN[1].field +
             ';  at 0: line ' + JOIN[0].line + ', field ' + JOIN[0].field + '.\n' +
+            '      Written down, px empty between two letters at 0/1/2 -- post ' +
+            [0, 1, 2].map((s) => dn(s, 'line')).join('/') + ', field ' +
+            [0, 1, 2].map((s) => dn(s, 'field')).join('/') + '.\n' +
             "      Somebody else's letter is its own code point (U+" + own.theirs.toString(16) +
             ', mine U+' + own.mine.toString(16) + ',\n      keyboard U+' + own.kb[0].toString(16) +
             '-' + own.kb[1].toString(16) + '), and the same shape is the same one.');

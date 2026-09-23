@@ -493,6 +493,7 @@ defLang('pt', (function(){
       'push.reply'            : "Respostas",
       'push.like'             : "Gostos",
       'push.boost'            : "Republicações",
+      'push.prompt'           : "Tema de hoje",
       'push.off'              : "As notificações estão desativadas nos Ajustes do iPhone",
       'push.no'               : "Não foi possível abrir os Ajustes",
       'notif.pick'            : "Vale a pena ler",

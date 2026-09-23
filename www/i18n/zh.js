@@ -494,6 +494,7 @@ defLang('zh', (function(){
       'push.reply'            : "回复",
       'push.like'             : "点赞",
       'push.boost'            : "转发",
+      'push.prompt'           : "今日话题",
       'push.off'              : "通知已在 iPhone 设置中关闭",
       'push.no'               : "无法打开设置",
       'notif.pick'            : "值得一读",

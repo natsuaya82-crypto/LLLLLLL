@@ -489,6 +489,7 @@ defLang('ru', (function(){
       'push.reply'            : "Ответы",
       'push.like'             : "Оценки",
       'push.boost'            : "Репосты",
+      'push.prompt'           : "Тема дня",
       'push.off'              : "Уведомления выключены в настройках iPhone",
       'push.no'               : "Не удалось открыть настройки",
       'notif.pick'            : "Стоит прочитать",
