@@ -113,6 +113,11 @@ const RC = 'c0000000-0000-4000-8000-0000000000d1';  /* A’s search history */
 const RC2= 'c0000000-0000-4000-8000-0000000000d2';  /* the one B tries to plant */
 const LD = 'd0000000-0000-4000-8000-00000000000d';  /* the language it makes anyway */
 const LB = 'b0000000-0000-4000-8000-00000000000b';  /* and the frozen account's */
+/* A post somebody paid to have in other people's timelines, and the place it
+   was sold -- one running, one that ran out yesterday. Both put in by the
+   owner of the table below, because that is the only road there is: the
+   service role, which no policy applies to. */
+const PA = '5a000000-0000-4000-8000-0000000000a1';  /* the promoted post */
 
 /* What Supabase already has when schema.sql is pasted into it. None of this is
    ours -- it is the ground the file is poured onto, and it is here so that the
@@ -1706,6 +1711,30 @@ const CASES = [
   ['but does ask whether an address is taken',     'ok',     B, 2,
     `select 1 where email_taken('nobody@example.com') is not null`],
 
+  /* --- a place in the timeline, which is sold and not taken ---------------
+     「広告枠が売れる形にする」 OWNER 2026-09-23. `promo` in schema.sql has a
+     read policy and nothing else, so every write below is refused by the
+     policy being ABSENT -- which is the claim, and a policy added tomorrow
+     that let one through would turn one of these green. */
+  ['B sees the place that is running',            'ok',     B, 0,
+    `select 1 from promo where id=1`],
+  ['but not the one that ran out',                'denied', B, 0,
+    `select 1 from promo where id=2`],
+  ['B cannot sell himself a place',               'denied', B, 0,
+    `insert into promo(post) values ('${PA}')`],
+  ['nor put his own post in the running one',     'denied', B, 0,
+    `update promo set post='${PA}', ends_at=null where id=1`],
+  ['nor bring the one that ran out back',         'denied', B, 0,
+    `update promo set ends_at=null where id=2`],
+  ['nor take the running one down',               'denied', B, 0,
+    `delete from promo where id=1`],
+  ['the staff do not sell one either',            'denied', C, 0,
+    `insert into promo(post) values ('${PA}')`],
+  ['somebody with no account sees no place',      'denied', B, 2,
+    `select 1 from promo`],
+  ['nor sells one',                               'denied', B, 2,
+    `insert into promo(post) values ('${PA}')`],
+
   /* Deleting the account takes the drafts with it. Asked by DOING it, and
      asked as the owner of the table rather than through a policy, because
      what has to hold is that the row is GONE -- a select that returns nothing
@@ -2485,6 +2514,15 @@ const sql = [
   `insert into purchase(orig_tx,uid,product,until,env) values
      ('2000000000000001', ${q(A)}, 'com.tokinets.lingua.pro.monthly',
       now() + interval '20 days', 'Sandbox');`,
+  /* A PLACE SOLD IN THE TIMELINE, put here by the owner of the table because
+     nobody else can put one anywhere: `promo` has no insert policy at all, and
+     the operator sells a place through the service role. C writes the post --
+     C's profile is the one row above that exists before the attempts do. One
+     place is running and one ran out yesterday; the attempts are about both. */
+  `insert into post(id,author,body) values (${q(PA)}, ${q(C)}, '{"ln":"paid for"}'::jsonb);`,
+  `insert into promo(id,post,starts_at,ends_at) overriding system value values
+     (1, ${q(PA)}, now() - interval '1 day', null),
+     (2, ${q(PA)}, now() - interval '3 days', now() - interval '1 day');`,
   run,
   /* Three posts of different ages, written HERE by the owner of the table and
      not by anybody a policy lets write. That is not a shortcut around a
