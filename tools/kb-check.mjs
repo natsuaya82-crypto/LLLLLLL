@@ -1789,8 +1789,21 @@ const r = await pg.evaluate(({ s }) => {
   out.vjUndo = rows().join('|') === vjWas.join('|');
   kbRedo();
   out.vjRedo = rows().join('|') === vjJoined;
-  /* h and up are still there after it has been through localStorage */
-  saveKb(); kbRead();
+  /* h and up are still there after it has been through storage -- written
+     by the page's Save */
+  function kbPageSave(){
+    /* THE BOARD'S PAGE'S SAVE (K1, r79): while that page has its draft open a
+       change is not written until Save is pressed. The buffer is found the way
+       kbDrafting() finds it; its own save is pressed rather than keepSave(),
+       whose other half is the wire and not this check's. No page open is a
+       change saveKb() writes itself. */
+    var k;
+    for (k in KEEP) if (Object.prototype.hasOwnProperty.call(KEEP, k) && KEEP[k] && KEEP[k].now === kbNow){
+      KEEP[k].save(KEEP[k].v, function (){}); return true;
+    }
+    saveKb(); return false;
+  }
+  saveKb(); kbPageSave(); kbRead();
   out.vjKept = (kbLayer().rows[0][3].h || 1) === 2 && !!kbLayer().rows[1][3].up;
   /* what the extension is handed: the rows tall, and not this side's word for
      which gap is the lower half */
@@ -3116,7 +3129,21 @@ const r = await pg.evaluate(({ s }) => {
     /* ---- the confirm writes it, once ---------------------------------- */
     out.ltpConfirmed = tap(bar()[0]);
     out.ltpPut = String(kbAt(0, 0).v) === lid;
-    out.ltpPutWrote = bytes() !== was && stored() !== wasStored;
+    /* the confirm puts it on the board's draft, and the page's Save is what
+       writes it (K1, r79) */
+    function kbPageSave(){
+      /* THE BOARD'S PAGE'S SAVE (K1, r79): while that page has its draft open a
+         change is not written until Save is pressed. The buffer is found the way
+         kbDrafting() finds it; its own save is pressed rather than keepSave(),
+         whose other half is the wire and not this check's. No page open is a
+         change saveKb() writes itself. */
+      var k;
+      for (k in KEEP) if (Object.prototype.hasOwnProperty.call(KEEP, k) && KEEP[k] && KEEP[k].now === kbNow){
+        KEEP[k].save(KEEP[k].v, function (){}); return true;
+      }
+      saveKb(); return false;
+    }
+    out.ltpPutWrote = bytes() !== was && (kbPageSave(), stored() !== wasStored);
     out.ltpPutOneStep = KBU.u.length === wasU + 1;
     /* AND IT IS ONE STEP BACK: the key's screen is left behind and what is in
        front of somebody is the sheet the key is on.
@@ -3566,6 +3593,19 @@ const SF = await sf.evaluate(({ s }) => {
     KB = { kbs: [copy, mine], at: 1 };
     kbShow = 0;
     migrateKbFree();
+    function kbPageSave(){
+      /* THE BOARD'S PAGE'S SAVE (K1, r79): while that page has its draft open a
+         change is not written until Save is pressed. The buffer is found the way
+         kbDrafting() finds it; its own save is pressed rather than keepSave(),
+         whose other half is the wire and not this check's. No page open is a
+         change saveKb() writes itself. */
+      var k;
+      for (k in KEEP) if (Object.prototype.hasOwnProperty.call(KEEP, k) && KEEP[k] && KEEP[k].now === kbNow){
+        KEEP[k].save(KEEP[k].v, function (){}); return true;
+      }
+      saveKb(); return false;
+    }
+    kbPageSave();
     var stored = slRd(langKey('kb')) || '';
     out.migList = KB.kbs.map(function (b){ return b.nm || b.pat; }).join(',');
     out.migKept = stored.indexOf(JSON.stringify(copy.lay)) >= 0;
@@ -4123,7 +4163,7 @@ say(r.vjAlDown, 'the three alignments are down on a row with half a merge in it'
 say(r.vjAlNoop, 'and asking anyway moves nothing');
 say(r.vjUndo, 'the step back takes the merge apart again, exactly');
 say(r.vjRedo, 'and the step forward puts it back');
-say(r.vjKept, 'the merge is still there after localStorage');
+say(r.vjKept, 'the merge is still there after the page is saved and read back');
 say(r.vjSendsH, 'the extension is handed how many rows the key stands in');
 say(r.vjSendsNoUp, 'and an ordinary gap of the right width where the lower half is');
 say(r.vjRagged, 'two that do not line up are refused, and nothing moves');

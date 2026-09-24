@@ -66,14 +66,10 @@ const WRITERS = {
     askSaved: "the account's list arriving from the server",
     snsSaveQ: 'the person saving or unsaving a search',
   },
-  'SET.savedUp': {
-    askSaved: "this phone's list handed to the account once",
-  },
   'SET.notAt': {
     notSeen: 'how far down the notices the person has read',
   },
   'SET.acct': {
-    setFor: 'which account these settings are, stamped as that account arrives',
     lsWipeAcct: 'that account deleted: the stamp goes with its fields',
   },
   'ME.name': {
@@ -99,15 +95,11 @@ const DYNAMIC = {
   },
   'SET[]': {
     '(top)': 'the load: what is on the disk read in over the defaults',
-    setFor: "this account's own settings brought back, the one before it parked",
-    lsWipeAcct: "the account deleted: its fields taken off the live copy",
+    setGot: "an account's own settings arriving at a switch (acctFor) -- the defaults, then lingua.set.<uid>",
     netPrefsGot: "the account's settings arriving from the server -- a sign-in's read, or the answer to a send (the later press stands)",
   },
   'ME': {
-    '(top)': 'the load: nobody yet',
-    meRead: 'what is on the disk read in',
-    meFor: "this account's own copy brought back, the one before it parked",
-    wipeHere: 'this language and this account deleted: back to nobody',
+    '(top)': "the load: nobody yet, then the account's own copy read in (acctKeep)",
     keepBack: 'a save that did not land: the snapshot from before it put back',
   },
   'ME[]': {

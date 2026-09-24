@@ -826,6 +826,13 @@ const del = await pg.evaluate(async ({ s, srv }) => {
   SET.walked = true;
   eval(srv);
   SESS = { at:'t', rt:'r', uid:'me', anon:false };
+  /* A SESSION ARRIVING (www/core.js § ACCT). The fixture's language is
+     the walk's, and this account arrives at the door with it: the
+     container forgets whose memory was (the seed's 'u') and the one
+     switch fills the arriving account from it -- the way netTook() does.
+     Without it memory is still filed under 'u' while SESS says who, and
+     every save is written for somebody else. */
+  ACCT_UID = ''; acctFor(netUid());
   function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
   for (var i in LANGS)
     if (Object.prototype.hasOwnProperty.call(LANGS, i)) langOwnGot(i, SESS.uid);
@@ -913,6 +920,7 @@ const up2 = await pg.evaluate(async ({ s, srv }) => {
   SET.walked = true;
   eval(srv);
   SESS = { at:'t', rt:'r', uid:'me2', anon:false };
+  ACCT_UID = ''; acctFor(netUid());
   function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
   const out = {};
   /* 待つのは NET_UPMS ＋ 往復のぶん。数はコードから読む ── ここに書くと
@@ -1124,6 +1132,7 @@ async function pressSave(how){
     SET.walked = true;
     eval(srv);
     SESS = { at:'t', rt:'r', uid:'me3', anon:false };
+    ACCT_UID = ''; acctFor(netUid());
     function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
     var id = langId;
     LANGS[id].mine = true; langOwnGot(id, 'me3');
@@ -1259,6 +1268,7 @@ const seenUp = await pg.evaluate(async ({ s, srv }) => {
   SET.walked = true; setKeep();
   eval(srv);
   SESS = { at:'t', rt:'r', uid:'me3', anon:false };
+  ACCT_UID = ''; acctFor(netUid());
   ME.name = 'Aya'; ME.handle = 'aya'; saveMe();
   function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
   var id = langId;
@@ -1395,6 +1405,7 @@ const road = await pg.evaluate(async ({ srv, saved }) => {
      道から見えていれば、ここで写しがまるごと送られる。 */
   S.lang = keep.lang; S.slice = []; S.sent = [];
   SESS = { at:'t', rt:'r', uid:'me3', anon:false };
+  ACCT_UID = ''; acctFor(netUid());
   await new Promise(function(f){ netLangSync(function(){ f(); }); });
   await wait(300);
   out.sent = S.sent.filter(function(x){ return x.indexOf('slice:') === 0; });
@@ -1516,6 +1527,7 @@ const loopUp = await pg.evaluate(async ({ srv, saved }) => {
       S.slice[i].body = JSON.stringify(
         JSON.parse(S.slice[i].body).concat([{ hw:'otherphone', gl:'added on another phone' }]));
   SESS = { at:'t', rt:'r', uid:'me3', anon:false };
+  ACCT_UID = ''; acctFor(netUid());
   await new Promise(function(f){ netLangsDown(function(){ f(); }); });
   await new Promise(function(f){ netLangFill(langId, function(){ f(); }, function(){ f(); }); });
   await wait(1600);
@@ -1562,6 +1574,7 @@ const one = await pg.evaluate(({ s, srv }) => {
   SET.walked = true;
   eval(srv);
   SESS = { at:'t', rt:'r', uid:'me3', anon:false };
+  ACCT_UID = ''; acctFor(netUid());
   var out = {}, r, pulls = [], build = [];
   for (r in PAGES) if (Object.prototype.hasOwnProperty.call(PAGES, r)){
     /* 引く画面は、読みの表の行が「引く」と言うもの（www/sns.js § WHAT EACH
@@ -1618,6 +1631,7 @@ const pop = await pg.evaluate(async ({ s, srv }) => {
   SET.walked = true;
   eval(srv);
   SESS = { at:'t', rt:'r', uid:'me3', anon:false };
+  ACCT_UID = ''; acctFor(netUid());
   function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
   var id = langId;
   LANGS[id].mine = true; langOwnGot(id, 'me3');
@@ -1735,6 +1749,7 @@ const hid = await pg.evaluate(async ({ s, srv }) => {
   SET.walked = true;
   eval(srv);
   SESS = { at:'t', rt:'r', uid:'wld1', anon:false };
+  ACCT_UID = ''; acctFor(netUid());
   function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
   var id;
   for (id in LANGS)
@@ -1847,6 +1862,7 @@ const kbGrow = await pg.evaluate(async ({ s, srv }) => {
   SET.walked = true; planGot('pro'); setKeep();
   eval(srv);
   SESS = { at:'t', rt:'r', uid:'kb1', anon:false };
+  ACCT_UID = ''; acctFor(netUid());
   langRowGot(langId); langOwnGot(langId, SESS.uid); langStore(); netSave();
   var lay = kbFixed().lay; lay[0].rows = lay[0].rows.slice(0, 3);
   var board = { nm:'', pat:'qwerty', lay:lay };
@@ -1900,7 +1916,7 @@ say(kbA.n === 1 && kbB.n === 1 && kbC.n === 1,
    1. 改名で列に PATCH が飛び、**答えが戻ってから**画面の名前が動く
    2. `lang` スライスへは一文字も書かない（端末は意見を持たない）
    3. ログアウトして立ち上げなおして、写しが一本も無くても、名前は列から出る
-   4. 列が空の古い言語は、スライスの名前で**埋める**（あるものは書き換えない）
+   4. 列が空の古い言語を端末は埋めない ── サーバーが一度だけ写す（あるものは書き換えない）
 
    赤を見た形（2026-09-08）: `saveName()` を `langName=v; save();` に戻すと 1 と
    3 が赤 ── サーバーの列は古い名前のまま、写しを消した端末は 未設定。 */
@@ -1912,6 +1928,7 @@ const nmA = await pg.evaluate(async ({ s, srv }) => {
   SET.walked = true;
   eval(srv);
   SESS = { at:'t', rt:'r', uid:'nm1', anon:false };
+  ACCT_UID = ''; acctFor(netUid());
   function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
   var id;
   for (id in LANGS)
@@ -1987,6 +2004,9 @@ await pg.reload();
 await pg.waitForSelector('#splash', { state:'detached', timeout:20000 });
 const nmC = await pg.evaluate(async ({ s, srv }) => {
   localStorage.clear();
+  /* localStorage.clear() without a launch leaves memory filed under the last
+     section's account; a fresh phone is nobody until the seed signs in. */
+  SESS = null; acctFor('');
   eval('(' + s + ')()');
   SET.walked = true;
   eval(srv);
@@ -2007,17 +2027,24 @@ const nmC = await pg.evaluate(async ({ s, srv }) => {
     return LANGS[sid] ? langNameOf(sid) : '(no entry)';
   }
   return { col: S.lang.map(function(r){ return r.name; }),
+           patched: S.tried.filter(function(t){ return t.indexOf('PATCH /rest/v1/language') === 0; }),
            slice: S.slice.filter(function(r){ return r.kind === 'lang'; })
                          .map(function(r){ return r.body; }),
            shown: [nameOfSid('srvold'), nameOfSid('srvnew')] };
 }, { s: seed.toString(), srv: SERVER });
 
-say(nmC.col[0] === '古い名' && nmC.col[1] === 'あとからの名' &&
-    nmC.shown[0] === '古い名' && nmC.shown[1] === 'あとからの名' &&
+/* 空の列を埋めるのは端末ではなくサーバー（supabase/schema.sql、r65 B3 ──
+   `lang` スライスから一度だけ）。画面に着いただけで出る書き込みだったので、
+   端末の段は消えた（ed6036a8、r60 B3）。ここが訊くのは端末の側: 列へは何も
+   書かない、埋まっている列は触らない、スライスは一字も変わらない。
+   空の列の言語が画面で何と出るかは、サーバーが写すまでの間の話で、ここでは
+   決めない（docs/scope/r79-acct.md、r81-checks の報告）。 */
+say(nmC.patched.length === 0 && nmC.col[0] === '' && nmC.col[1] === 'あとからの名' &&
+    nmC.shown[1] === 'あとからの名' &&
     nmC.slice[0] === '古い名' && nmC.slice[1] === 'スライスの古い名',
-    '**空の列は古いスライスから埋め、埋まっている列は触らない** ── ' +
-    'language.name は ' + JSON.stringify(nmC.col) + '、画面は ' + JSON.stringify(nmC.shown) +
-    '、スライスは一字も変わらない ' + JSON.stringify(nmC.slice));
+    '**空の列は端末が埋めない（サーバーが一度だけ写す）、埋まっている列は触らない** ── ' +
+    'language への PATCH ' + nmC.patched.length + ' 件、language.name は ' + JSON.stringify(nmC.col) +
+    '、画面は ' + JSON.stringify(nmC.shown) + '、スライスは一字も変わらない ' + JSON.stringify(nmC.slice));
 
 /* ---- 前からの索引が、起動で一本の番号に写る --------------------------------
    「スパゲッティみたいにするのやめて欲しい」「太い幹を分岐させて欲しい」 OWNER
@@ -2037,11 +2064,14 @@ const OLDU = '8b1f0c2e-7a34-4c19-9d55-0a1b2c3d4e5f';
 await pg.evaluate(({ u }) => {
   localStorage.clear();
   /* 147 までが書いた索引 ── 鍵は端末の番号、サーバーの番号は `sid` の欄に。
-     二つ目は一度も上がっていない言語（`sid` が無い）。 */
-  localStorage.setItem('lingua.langs', JSON.stringify({
+     二つ目は一度も上がっていない言語（`sid` が無い）。索引はアカウントの鍵
+     （`lingua.langs.<uid>`、www/core.js § ACCT）で、起動がどのアカウントかを
+     知るのはセッションから ── 下の netTook と同じ 'idm'。 */
+  localStorage.setItem('lingua.sess', JSON.stringify({ at:'t', rt:'r', uid:'idm', anon:false }));
+  localStorage.setItem('lingua.langs.idm', JSON.stringify({
     Lold1: { mine:true, name:'Vaska', sid:u },
     Lold2: { mine:true, name:'Toko' } }));
-  localStorage.setItem('lingua.cur', 'Lold1');
+  localStorage.setItem('lingua.cur.idm', JSON.stringify('Lold1'));
   localStorage.setItem('lingua.Lold1.words', '[{"hw":"tuf"}]');
   localStorage.setItem('lingua.Lold2.words', '[{"hw":"kef"}]');
 }, { u: OLDU });
@@ -2052,7 +2082,7 @@ await pg.waitForSelector('#splash', { state:'detached', timeout:20000 });
    写しではなく fixture を見ることになります。 */
 const oneA = await pg.evaluate(({ u }) => ({
   rows: Object.keys(LANGS),
-  open: langId, cur: localStorage.getItem('lingua.cur'),
+  open: langId, cur: JSON.parse(localStorage.getItem('lingua.cur.idm') || 'null'),
   word0: WORDS[0] && WORDS[0].hw,
   upWords: slRd('lingua.' + u + '.words'),
   old1: localStorage.getItem('lingua.Lold1.words'),
@@ -2112,10 +2142,11 @@ say(oneC.sent > 0,
    方が残り、空と空なら空です。 */
 await pg.evaluate(({ u }) => {
   localStorage.clear();
-  localStorage.setItem('lingua.langs', JSON.stringify({
+  localStorage.setItem('lingua.sess', JSON.stringify({ at:'t', rt:'r', uid:'idm', anon:false }));
+  localStorage.setItem('lingua.langs.idm', JSON.stringify({
     Lmint1: { mine:true, name:'Vaska', sid:u },   /* 148 が作った行、中身あり */
     [u]:    { mine:true } }));                    /* それ以前が残した空の行 */
-  localStorage.setItem('lingua.cur', u);
+  localStorage.setItem('lingua.cur.idm', JSON.stringify(u));
   localStorage.setItem('lingua.Lmint1.letters',
     JSON.stringify([{ id:'lt.a', ab:'a' }, { id:'lt.b', ab:'b' }]));
 }, { u: OLDU });
@@ -2164,6 +2195,10 @@ const tookA = await pg.evaluate(async ({ s, srv }) => {
   SET.walked = true;
   eval(srv);
   SESS = { at:'t', rt:'r', uid:'tk1', anon:false };
+  ACCT_UID = ''; acctFor(netUid());
+  /* a phone signed in has its session on the disk, so the launch after it
+     knows whose index to read (www/core.js § ACCT) */
+  netSave();
   function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
   var id;
   for (id in LANGS)
@@ -2294,6 +2329,7 @@ const goneA = await pg.evaluate(async ({ s, srv }) => {
   SET.walked = true;
   eval(srv);
   SESS = { at:'t', rt:'r', uid:'gn1', anon:false };
+  ACCT_UID = ''; acctFor(netUid());
   function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
   var id;
   for (id in LANGS)
@@ -2495,11 +2531,17 @@ await pg.waitForSelector('#splash', { state:'detached', timeout:20000 });
 const lt42A = await pg.evaluate(({ s }) => {
   /* 前の場面が索引に残した言語ごと片づける ── ここが測るのは一つの言語です。 */
   localStorage.clear();
+  /* localStorage.clear() without a launch leaves memory filed under the last
+     section's account; a fresh phone is nobody until the seed signs in. */
+  SESS = null; acctFor('');
   eval('(' + s + ')()');
   SET.walked = true;
   var id2;
   for (id2 in LANGS)
-    if (Object.prototype.hasOwnProperty.call(LANGS, id2)) langOwnGot(id2, 'me42');
+    if (Object.prototype.hasOwnProperty.call(LANGS, id2)) langOwnGot(id2, netUid());
+  /* the account in hand (the seed's) and not 'me42': a language is written only
+     by whoever the server says wrote it (langLocked), and this is the first
+     phone putting it up. Which account the SECOND phone is, is lt42B's. */
   langStore(); save();
   /* サーバーが持っている本文は、一台目が上げたそのもの ── ここでは手で置きます。
      netLangSync() を通して置くと、起動の sync と競って NET_SYNCING で黙って
@@ -2513,13 +2555,15 @@ const lt42A = await pg.evaluate(({ s }) => {
 }, { s: seed.toString() });
 
 /* 索引とセッションだけ残す ── 写し（`.got`）も、古い版がディスクに書いた鍵も
-   無い端末。localStorage.clear() のあと索引を戻すのが、その端末そのものです。 */
+   無い端末。localStorage.clear() のあと索引を戻すのが、その端末そのものです。
+   索引はアカウントの鍵（www/core.js § ACCT）で、fixture は 'u' として書いた
+   ので、下で入る 'me42' の鍵へ置きます ── その人の索引がある端末。 */
 await pg.evaluate(() => {
-  var a = localStorage.getItem('lingua.langs'), b = localStorage.getItem('lingua.cur'),
-      c = localStorage.getItem('lingua.set');
+  var who = netUid(), a = localStorage.getItem('lingua.langs.' + who),
+      b = localStorage.getItem('lingua.cur.' + who), c = localStorage.getItem('lingua.set');
   localStorage.clear();
-  if (a) localStorage.setItem('lingua.langs', a);
-  if (b) localStorage.setItem('lingua.cur', b);
+  if (a) localStorage.setItem('lingua.langs.me42', a);
+  if (b) localStorage.setItem('lingua.cur.me42', b);
   if (c) localStorage.setItem('lingua.set', c);
 });
 await pg.reload();
@@ -2787,6 +2831,7 @@ const late = await pg.evaluate(async ({ s, srv }) => {
   SET.walked = true;
   eval(srv);
   SESS = { at:'t', rt:'r', uid:'me3', anon:false };
+  ACCT_UID = ''; acctFor(netUid());
   function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
   const settle = () => wait(NET_UPMS + 600);
   var S = window.__SRV, id = langId, out = {};

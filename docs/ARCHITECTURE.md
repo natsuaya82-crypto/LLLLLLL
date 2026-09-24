@@ -59,18 +59,18 @@ locked door but `langLocked()` (`www/core.js`), asked at every saver.
 | thing | the truth is | read by |
 |---|---|---|
 | a language's words, letters, script, keyboard, world | **the `slice` rows on the server, and nowhere else.** `LSL` in `www/core.js` holds them under `lingua.<id>.<slice>` while the app is RUNNING — memory, not this phone's disk 「今ファイルもいらん。オンラインのみで行こう」 OWNER 2026-09-04 | globals loaded on `langOpen()`; `netSaveUp()` sends a save, `netLangsDown()` brings a language back |
-| the timeline — a post, its photographs, its voice, reactions, follows, blocks, reports | **the server**, with `lingua.posts` as the copy that survives a bad network 「SNSは全部サーバー」 | `POSTS` (`www/post.js`) |
-| what was written and not sent | **the `draft` rows on the server**, with `lingua.drafts` as the copy | `DRAFTS` (`www/post.js`) |
-| the person — the handle, the display name, the profile picture | **the `profile` row on the server**, with `lingua.me` as the copy | `ME` (`www/me.js`) |
-| which languages exist, which is open | `lingua.langs`, `lingua.cur` — the phone's index of the copies it is holding. `LANGS[id].sid` is the language's row on the server, and an entry with no `sid` has never been up | `LANGS`, `langId` |
-| the person's settings | `lingua.set`. Everything in it is that account's and is parked under `lingua.set.<uid>` by `setFor()` when somebody else signs in, EXCEPT what `SET_PHONE` names — this handset's own setup | `SET` |
+| the timeline — a post, its photographs, its voice, reactions, follows, blocks, reports | **the server**, with `lingua.posts.<uid>` as the copy that survives a bad network 「SNSは全部サーバー」 | `POSTS` (`www/post.js`) |
+| what was written and not sent | **the `draft` rows on the server**, with `lingua.drafts.<uid>` as the copy | `DRAFTS` (`www/post.js`) |
+| the person — the handle, the display name, the profile picture | **the `profile` row on the server**, with `lingua.me.<uid>` as the copy | `ME` (`www/me.js`) |
+| which languages exist, which is open | `lingua.langs.<uid>`, `lingua.cur.<uid>` — that account's index of the copies this phone is holding. `LANGS[id].sid` is the language's row on the server, and an entry with no `sid` has never been up | `LANGS`, `langId` |
+| the person's settings | `lingua.set.<uid>`, written there the moment it is written (`acctPut()`) and read back when that account arrives (`acctFor()`). `lingua.set` holds only what `SET_PHONE` names — this handset's own setup | `SET` |
 | the person's session | `lingua.sess` — the token pair only | `SESS` (`www/net.js`) |
 | what the server holds and who may touch it | `supabase/schema.sql` | nothing on the phone decides this |
 
 **No row of that table is the device's.** 「端末ごとにやることなんてねえよ」
 「アカウントごとってずっと言ってるよな？」 OWNER 2026-09-03. Every `lingua.*`
 key is a working copy of something an account owns, filed under the account it
-belongs to — the settings among them (`SET_PHONE` and `setParkKey()` in
+belongs to — the settings among them (`SET_PHONE` and `acctPut()` in
 `www/core.js`, where a field is an account's unless it is named as this
 handset's setup), and an exported sheet is that account's language in a form a
 person can hold. When something new is stored the question

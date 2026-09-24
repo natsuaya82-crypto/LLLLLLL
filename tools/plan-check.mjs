@@ -519,13 +519,17 @@ const r = await pg.evaluate(({ s }) => {
      about its old shape: a count says 「one went」 and goes on saying it when
      the one that went is the wrong one. */
   planGot('pro');
-  var kept = setOnDisk(), dk;
+  /* TWO FILES NOW (www/core.js § SET_PHONE, § ACCT): this handset's setup in
+     `lingua.set` (setOnDisk) and the account's settings in `lingua.set.<uid>`
+     (setMine). Asked of both together, which is what SET is written as. */
+  var kept = setOnDisk(), mineSet = setMine(), dk;
+  for (dk in mineSet) if (Object.prototype.hasOwnProperty.call(mineSet, dk)) kept[dk] = mineSet[dk];
   out.diskPlanFields = [];
   for (dk in kept)
     if (Object.prototype.hasOwnProperty.call(kept, dk) &&
         /^plan/.test(dk)) out.diskPlanFields.push(dk);
   out.diskPlanFields = out.diskPlanFields.join(' ');
-  /* AND THE FILE IS WHAT `SET` IS, with nothing held back. Two lines stood
+  /* AND THE FILES ARE WHAT `SET` IS, with nothing held back. Two lines stood
      here dropping `plan` and `planUid` on a phone; there is nothing to drop,
      so a field missing from the file is a bug rather than a policy. */
   var dropped = [];
@@ -536,7 +540,8 @@ const r = await pg.evaluate(({ s }) => {
   /* AND THE WORD IS NOT WRITTEN OUT AT ALL. planGot() above set the plan to
      pro; the settings that then go to the disk must not have grown one. */
   save();
-  out.diskFileHasPlan = /\"plan/.test(String(localStorage.getItem('lingua.set') || ''));
+  out.diskFileHasPlan = /\"plan/.test(String(localStorage.getItem('lingua.set') || '') +
+                                       String(localStorage.getItem('lingua.set.' + ACCT_UID) || ''));
 
   /* ---- 7. 「プランが終了しました」 IS THE SERVER'S ANSWER AND NOT A PLAN
      MOVING ----------------------------------------------------------------

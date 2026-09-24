@@ -83,7 +83,7 @@ const one = await pg.evaluate(async ({ w, s }) => {
     return 200;
   };
   var got = null;
-  netSlicePut('srv1', 'words', '[]', 0, 0, 0, function(){ got = 'ok'; },
+  netSlicePut('srv1', 'words', '[]', 0, 0, function(){ got = 'ok'; },
                                         function(d, st){ got = 'bad ' + st; });
   await wait(120);
   var sl = window.__of('/rest/v1/slice');
@@ -118,7 +118,7 @@ const two = await pg.evaluate(async ({ w, s }) => {
   };
   var done = 0, i;
   for (i = 0; i < 20; i++)
-    netSlicePut('srv1', 'k' + i, '[]', 0, 0, 0, function(){ done++; }, function(){});
+    netSlicePut('srv1', 'k' + i, '[]', 0, 0, function(){ done++; }, function(){});
   await wait(200);
   return { done: done,
            tries: window.__count('/rest/v1/slice'),
@@ -151,7 +151,7 @@ const three = await pg.evaluate(async ({ w, s }) => {
   SESS = { at:'OLD', rt:'r', uid:'me', anon:false };
   window.__X.refuse = function(r){ return /\/rest\/v1\/slice|refresh_token/.test(r.u) ? 401 : 200; };
   var got2 = null;
-  netSlicePut('srv1', 'words', '[]', 0, 0, 0, function(){ got2 = 'ok'; },
+  netSlicePut('srv1', 'words', '[]', 0, 0, function(){ got2 = 'ok'; },
                                         function(d, st){ got2 = 'bad ' + st; });
   await wait(200);
   a.got2 = got2;
@@ -178,7 +178,7 @@ const four = await pg.evaluate(async ({ w, s }) => {
   window.__reset();
   window.__X.refuse = function(r){ return /\/rest\/v1\/slice/.test(r.u) ? 401 : 200; };
   var got = null;
-  netSlicePut('srv1', 'words', '[]', 0, 0, 0, function(){ got = 'ok'; },
+  netSlicePut('srv1', 'words', '[]', 0, 0, function(){ got = 'ok'; },
                                         function(d, st){ got = 'bad ' + st; });
   await wait(200);
   return { got: got, tries: window.__count('/rest/v1/slice'),

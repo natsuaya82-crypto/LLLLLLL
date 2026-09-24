@@ -121,8 +121,48 @@ const REPORT = () => ({
   langs: Object.keys(LANGS).length, id: langId,
   mine: langWhose(langId) === LW_MINE,
   indexName: LANGS[langId] && LANGS[langId].name,
-  cur: localStorage.getItem('lingua.cur')
+  /* where somebody is standing is the account's (`lingua.cur.<uid>`) */
+  cur: JSON.parse(localStorage.getItem('lingua.cur.' + netUid()) || 'null')
 });
+
+/* WHAT A REAL PHONE CARRIED WITH ITS OLD KEYS (www/core.js § ACCT, r79).
+   Every launch with a session wrote `acct` into `lingua.set` -- which account
+   these things are -- and every language carried its `owner` picture
+   (`lingua.<id>.owner`, 2026-09-09) before the app was published on
+   2026-09-22. What an older version left is read for the account that stamp
+   names and for nobody else (「持ち主の無い写しは読まない、消さない」), so a
+   seed with no stamp is a phone nobody's things are on -- and every claim
+   below would be measuring an empty app. This puts the stamp on whatever old
+   keys a section has just laid down, and changes none of them.
+
+   The session is what tells a launch which account it is. `__test.net` is set
+   to no signal for everything where a section has not chosen one, so the
+   session is kept and nothing is answered -- without it the launch would ask
+   the real server, and an answer of 「no languages」 is the sweep's to act on. */
+const OLD_UID = 'u-old';
+const oldPhone = () => pg.evaluate((u) => {
+  localStorage.setItem('lingua.sess', JSON.stringify({ at: 't', rt: 'r', uid: u, anon: false }));
+  if (localStorage.getItem('__test.net') === null)
+    localStorage.setItem('__test.net', JSON.stringify({ refresh: 'off', all: 'off' }));
+  var st = {}, ix = {}, id;
+  try { st = JSON.parse(localStorage.getItem('lingua.set') || '{}') || {}; } catch (e) {}
+  st.acct = u;
+  localStorage.setItem('lingua.set', JSON.stringify(st));
+  try { ix = JSON.parse(localStorage.getItem('lingua.langs') || '{}') || {}; } catch (e) {}
+  for (id in ix)
+    if (Object.prototype.hasOwnProperty.call(ix, id) && localStorage.getItem('lingua.' + id + '.owner') === null)
+      localStorage.setItem('lingua.' + id + '.owner', u);
+}, OLD_UID);
+
+/* AND THE SERVER'S ANSWER TO 「WHO WROTE IT」, which is what a launch waits for
+   before it writes anything into a language (www/core.js § langLocked --
+   migrateAll() runs from langOwnGot() the moment that answer arrives). With
+   no signal it never arrives, so a section about what a migration WRITES has
+   it arrive, for every row of the index, the way netLangFill() hands it on. */
+const ownerSaid = () => pg.evaluate((u) => {
+  var id;
+  for (id in LANGS) if (Object.prototype.hasOwnProperty.call(LANGS, id)) langOwnGot(id, u);
+}, OLD_UID);
 
 const fails = [];
 const addedSndLen = (s) => (s ? s.split(',').length : 0);
@@ -225,6 +265,10 @@ await pg.addInitScript(() => {
     const self = this, u = String(self._u || '');
     window.__sent.push(u);
     let status = 200, out = '[]';
+    /* all: 'off' -- no signal for anything, not only the token: a launch
+       with a session reads the timeline and the account's languages, and an
+       empty answer to the second is an answer (www/net.js § netLangsGone). */
+    if (knob().all === 'off') status = 0;
     /* AND WHAT THIS ACCOUNT PAYS. The door asks `verify-plan` now
        (www/net.js § netTook, 2026-09-11) and the answer is the only thing
        that gives this app a plan at all -- ltStart() does not write the free
@@ -304,6 +348,7 @@ await pg.evaluate(() => {
   /* B has nothing at all: no keys, not empty ones. A language somebody has
      only just made. */
 });
+await oldPhone();
 await pg.reload();
 
 /* which number each of the two ended up under -- asked of the app, by the
@@ -724,11 +769,17 @@ await pg.evaluate(() => {
   localStorage.setItem('lingua.set', JSON.stringify(
     { theme: 'dark', walked: true, snd: ['k', 't', 'a'] }));
 });
+await oldPhone();
 await pg.reload();
 await settle();
+await ownerSaid();
 const sn = await pg.evaluate(() => {
-  var s = {}; try { s = JSON.parse(localStorage.getItem('lingua.set') || '{}'); } catch (e) {}
-  return { snd: addedSnd().join(','), kept: (s.snd || []).join(','), mark: s.sndMoved };
+  /* the old file keeps what it said (it is read, never removed); the mark is
+     the account's setting and is written under the account (lingua.set.<uid>) */
+  var s = {}, m = {};
+  try { s = JSON.parse(localStorage.getItem('lingua.set') || '{}'); } catch (e) {}
+  try { m = JSON.parse(localStorage.getItem('lingua.set.' + netUid()) || '{}') || {}; } catch (e) {}
+  return { snd: addedSnd().join(','), kept: (s.snd || []).join(','), mark: m.sndMoved };
 });
 want('the sounds in the settings reach the open language', sn.snd, 'k,t,a');
 want('and are still in the settings afterwards', sn.kept, 'k,t,a');
@@ -770,6 +821,7 @@ const phOf = () => pg.evaluate(() => {
   return { hw: String(w.hw || ''), ph: (w.ph || []).join(' '), spv: !!w.spv };
 });
 
+await oldPhone();
 await pg.reload(); await settle();
 const p1 = await phOf();
 want('after one launch the imported pronunciation is still there', p1.ph, PH.join(' '));
@@ -840,8 +892,9 @@ const marksOf = () => pg.evaluate(() => {
            ids: LETTERS.map((x) => x.id).join(',') };
 });
 
-await pg.reload(); await settle();
-await pg.reload(); await settle();
+await oldPhone();
+await pg.reload(); await settle(); await ownerSaid();
+await pg.reload(); await settle(); await ownerSaid();
 const mk = await marksOf();
 
 /* ltStart() tops a free language up to its twenty-eight slots, so the two
@@ -888,7 +941,7 @@ if (mk.stored.indexOf('\u00b6') < 0)
    Two languages, because the migration walks LANGS and the open one is not a
    special case. Two launches, so what is asked is what was WRITTEN rather
    than what one launch happened to hold in memory. */
-const GLANGS = (setJson, phasesA) => pg.evaluate(([sj, pa]) => {
+const GLANGS = async (setJson, phasesA) => { await pg.evaluate(([sj, pa]) => {
   localStorage.clear();
   localStorage.setItem('lingua.langs', JSON.stringify(
     { LA: { name: 'Aya', mine: true }, LG: { name: 'Gora', mine: true } }));
@@ -897,7 +950,7 @@ const GLANGS = (setJson, phasesA) => pg.evaluate(([sj, pa]) => {
   localStorage.setItem('lingua.LG.lang', 'Gora');
   if (pa !== null) localStorage.setItem('lingua.LA.phases', pa);
   localStorage.setItem('lingua.set', sj);
-}, [setJson, phasesA === undefined ? null : phasesA]);
+}, [setJson, phasesA === undefined ? null : phasesA]); await oldPhone(); };
 
 /* WHICH NUMBER EACH OF THE TWO ENDED UP UNDER. `langsOneId()` (www/core.js,
    2026-09-10) moves an index an older version wrote onto the language's own
@@ -938,8 +991,8 @@ const gramOf = async () => pg.evaluate(([ida, idg]) => ({
   mark: SET.gramLang === 1 ? 'set' : 'unset'
 }), [await gid('Aya'), await gid('Gora')]);
 
-const twice = async () => { await pg.reload(); await settle();
-                            await pg.reload(); await settle(); };
+const twice = async () => { await pg.reload(); await settle(); await ownerSaid();
+                            await pg.reload(); await settle(); await ownerSaid(); };
 
 /* 1. nothing to copy. The settings say an order no screen in this app could
       have put there, and no modifier position at all. */
@@ -1050,13 +1103,14 @@ await pg.evaluate(({ u1, u2 }) => {
   localStorage.setItem('lingua.Lold3.words', '[{"hw":"geb"}]');
   /* the row that is already one number is EMPTY, which is what 150 met */
 }, { u1: U1, u2: U2 });
+await oldPhone();
 await pg.reload();
 await settle();
 const one = await pg.evaluate(({ u1, u2 }) => {
   const ids = Object.keys(LANGS), by = {};
   ids.forEach((k) => { by[(LANGS[k] || {}).name || ''] = k; });
   return {
-    ids: ids, byName: by, cur: localStorage.getItem('lingua.cur'), open: langId,
+    ids: ids, byName: by, cur: JSON.parse(localStorage.getItem('lingua.cur.' + netUid()) || 'null'), open: langId,
     word0: WORDS[0] && WORDS[0].hw,
     upWords: slRd('lingua.' + u1 + '.words'),
     tokWords: (function(){ var k; for (k in LANGS)

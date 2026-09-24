@@ -70,7 +70,7 @@
 - **9 か所はサーバーに写しがありません。**`lingua.set`（設定）、`lingua.langs`
   （この iPhone にどの言語があるかの索引）、`lingua.cur`（今どれを開いているか）、
   `lingua.sess`（トークン）、`lingua.<id>.bkn`（バックアップファイルの通し番号）、
-  そして預けの三つ（`setParkKey` `meParkKey` `postParkKey`）と
+  そして預けの三つ（~~`setParkKey`~~ ~~`meParkKey`~~ ~~`postParkKey`~~ ── 今は預けが無く、書く時に `lingua.<name>.<uid>` へ書く `acctPut()`）と
   `phases.js` からの設定書き込み。
 
 ### 設定（`lingua.set`）の中身 ── 名前の付いた欄

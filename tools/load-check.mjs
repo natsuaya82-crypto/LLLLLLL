@@ -75,11 +75,11 @@ function wire(cfg){
   try {
     localStorage.setItem('lingua.sess', JSON.stringify({ at:TOK, rt:'r', uid:'me1' }));
     localStorage.setItem('lingua.set', JSON.stringify({ walked:true, done:true, acct:'me1' }));
-    localStorage.setItem('lingua.me', JSON.stringify({ uid:'me1', name:'Aya', handle:'aya' }));
+    localStorage.setItem('lingua.me.me1', JSON.stringify({ uid:'me1', name:'Aya', handle:'aya' }));
     /* a phone that has opened this account's language before: the index says
        which, and nothing of it is in memory (CLAUDE.md rule 22) */
-    localStorage.setItem('lingua.langs', JSON.stringify({ L1:{} }));
-    localStorage.setItem('lingua.cur', 'L1');
+    localStorage.setItem('lingua.langs.me1', JSON.stringify({ L1:{} }));
+    localStorage.setItem('lingua.cur.me1', JSON.stringify('L1'));
   } catch (e) {}
   function qs(u, k){ var m = new RegExp('[?&]' + k + '=([^&]*)').exec(u); return m ? decodeURIComponent(m[1]) : ''; }
   var N = cfg.n;
@@ -363,9 +363,11 @@ function readKey(u){
    renewal (netSend1, netFresh, netResume) and by nothing else in www/net.js --
    a request with nobody on it is the window's 401 and nothing more. The ones
    that are a written rule rather than a guard are lines in
-   tools/load-baseline.txt, with the rule. And SESS is named by www/net.js
-   alone; inside it, the account's uid and token are read by netUid() and
-   netTok() and by nothing else. */
+   tools/load-baseline.txt, with the rule. And SESS is named by www/core.js
+   § session, which READS it (sessRead, and netUid() -- which account this is
+   has to be known before anything of an account's is read, § ACCT), and by
+   www/net.js, the window, and by no other file; the account's uid and token
+   are read by netUid() and netTok() and by nothing else. */
 {
   function decomment(s){
     return s.replace(/\/\*[\s\S]*?\*\//g, m => m.replace(/[^\n]/g, ' ')).replace(/(^|[^:'"\\])\/\/[^\n]*/g, '$1');
@@ -396,7 +398,8 @@ function readKey(u){
       '; ' + ruled.length + ' a written rule in the baseline (' + ruled.join(', ') + ')');
   say(rot7.length === 0, '7 every signed-in line of the baseline is a function that still asks -- ' +
       (rot7.length ? 'matching nothing: ' + rot7.join(', ') : 'all ' + RULE.length));
-  const files = fs.readdirSync(WWW).filter(f => /\.js$/.test(f) && f !== 'net.js');
+  const SESSHOME = ['core.js', 'net.js'];
+  const files = fs.readdirSync(WWW).filter(f => /\.js$/.test(f) && SESSHOME.indexOf(f) < 0);
   const SESSB = fs.readFileSync(path.join(dir, 'load-baseline.txt'), 'utf8').split('\n')
     .filter(l => /^sess /.test(l)).map(l => l.split('|')[0].replace(/^sess /, '').trim());
   const elsewhere = [], held = [];
@@ -406,7 +409,21 @@ function readKey(u){
     if (SESSB.indexOf(file) >= 0) held.push(file); else elsewhere.push(file + ' ' + n);
   }
   const rot7b = SESSB.filter(f => held.indexOf(f) < 0);
-  say(elsewhere.length === 0 && rot7b.length === 0, '7 SESS is named by www/net.js and no other file -- ' +
+  /* core.js is the session's reader, and only there: the declaration,
+     sessRead() and netUid(). Anywhere else in the file is a second reader. */
+  {
+    const core = decomment(fs.readFileSync(path.join(WWW, 'core.js'), 'utf8'));
+    const keep = fns(core).filter(f => ['sessRead', 'netUid'].indexOf(f.name) >= 0);
+    let rest = core;
+    for (const f of keep.slice().reverse()){
+      const end = f.name === 'netUid' ? core.indexOf('\n', f.at) : core.indexOf('\n}', f.at) + 2;
+      rest = rest.slice(0, f.at) + rest.slice(end);
+    }
+    rest = rest.replace(/^var SESS=null;$/m, '');
+    const n = (rest.match(/\bSESS\b/g) || []).length;
+    if (n || keep.length !== 2) elsewhere.push('core.js outside sessRead/netUid ' + n + (keep.length !== 2 ? ' (sessRead or netUid is gone)' : ''));
+  }
+  say(elsewhere.length === 0 && rot7b.length === 0, '7 SESS is named by www/core.js § session (reads it) and www/net.js (the window) and no other file -- ' +
       (elsewhere.length ? elsewhere.join(', ') : files.length + ' files asked') +
       (held.length ? '; ' + held.length + ' in the baseline (' + held.join(', ') + ')' : '') +
       (rot7b.length ? '; baseline lines matching nothing: ' + rot7b.join(', ') : ''));
