@@ -1828,6 +1828,15 @@ function migrateAll(){
   migrateSp();
   /* and what the language is for, off the phone and into the language */
   migrateWorld();
+  /* and the word order and the three positions a person chose when they were
+     the person's, into the language (www/phases.js). It stood at the top of
+     that file, outside this list -- so it ran before any answer, whether or
+     not the language could be written, and nothing held it (r73 § 2-2). Here
+     it is asked the one question every migration is. The open language's
+     stages are read again after it, because it writes the slice they were
+     read from. */
+  migrateGramLang();
+  stRead();
   /* and the free QWERTY out of the keyboard list, keeping an edited one */
   migrateKbFree();
   /* and a free language gets the twenty-eight slots it is allowed */

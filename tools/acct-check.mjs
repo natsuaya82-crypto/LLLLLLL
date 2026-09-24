@@ -4972,6 +4972,32 @@ const R2 = { said: [], fails: [] };
   R2.said.push('88: netOut() の「忘れる」は ' + calls.length + ' 行（' + calls.join(' ') + '）── 入れ物を一行で捨てる');
 }
 
+/* 92. 起動の移行は一つの一覧（`migrateAll`）だけが呼ぶ ── 書けるかを一度訊く所
+   （www/core.js § migrateAll、r73 § 2-2）。`function migrate…` を www/ の全部から
+   数え、それぞれが migrateAll の本文から呼ばれていて、どのファイルの一番上からも
+   呼ばれていないこと。明日足された移行も明日数えられる。 */
+{
+  const strip = (x) => x.replace(/\/\*[\s\S]*?\*\//g, '');
+  const files = fs.readdirSync(ROOT).filter(f => f.endsWith('.js'));
+  const defs = [], top = [];
+  let all = '';
+  for (const f of files) {
+    const src = strip(fs.readFileSync(path.join(ROOT, f), 'utf8'));
+    let m; const re = /^function (migrate[A-Za-z]+)\(/gm;
+    while ((m = re.exec(src))) if (m[1] !== 'migrateAll') defs.push(m[1]);
+    const rt = /^(migrate[A-Za-z]*)\(\);/gm;
+    while ((m = rt.exec(src))) top.push(f + ':' + m[1]);
+    if (f === 'core.js') {
+      const a = src.indexOf('function migrateAll(){'), b = src.indexOf('\n}\n', a);
+      all = src.slice(a, b);
+    }
+  }
+  const outside = defs.filter(d => all.indexOf(d + '(') < 0);
+  if (outside.length) R2.fails.push('92: migrateAll() の外の移行 ── ' + outside.join(' '));
+  if (top.length) R2.fails.push('92: ファイルの一番上から呼ばれる移行 ── ' + top.join(' '));
+  R2.said.push('92: 起動の移行 ' + defs.length + ' 本は全部 migrateAll() から ── 一番上から呼ぶもの ' + top.length);
+}
+
 await br.close();
 srv.close();
 

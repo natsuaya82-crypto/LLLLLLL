@@ -15,6 +15,17 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### 2026-09-24 語順と三つの位置の移行も、書ける言語でだけ走る（r79-acct、r73 § 2-2）
+
+- **振る舞い**：`migrateGramLang()`（人の設定にあった語順・位置を言語へ写す、www/phases.js）を、phases.js の一番上の
+  呼び出しから `migrateAll()` の一覧へ移した。書けるかを一度訊く所（`langLocked()`）を通り、サーバーが持ち主を
+  言う前には走らない。写した後に開いている言語の段（`STG`）を読み直す。
+- **貯まる物**：変わらない（写す物・写し方は同じ、写すだけで消さない）。
+- **まだ残る物（持ち物外）**：`migrateGramLang()` の本文は索引の**全部**の言語へ書く ── 取っただけの人の言語にも
+  この端末の語順が入りうる（r73 § 2-2）。持ち主を訊く一行は phases.js の本文で、r79 の持ち物ではない。
+- **検査**：`acct-check` 92（`function migrate…` を全部数え、`migrateAll` の外と一番上からの呼び出し 0。赤: 前の
+  phases.js で見た）、`gramlang-check`。
+
 ### 2026-09-24 どの道でサインアウトしても、この端末の `device` の行を落とす（r79-acct、r65 S4 の端末側）
 
 - **振る舞い**：`netDeviceDrop()`（この端末のこの人の `device` の行を uid と token の両方で絞って DELETE）を、
