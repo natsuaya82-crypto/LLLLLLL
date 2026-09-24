@@ -756,6 +756,7 @@ function snsEmpty(k, none, a){
    somebody else's language (www/home.js). They were forgotten by three
    functions called from two places, and the door called one of them. */
 function pullForget(){
+  PULL_GEN++;
   PULL_GOT={}; PULL_OFF={}; PULL_OUT={}; PULL_WAIT={};
   /* and a move that was waiting on them (www/shell.js § navLand): its
      waiters have just been dropped, so it would never land, and every move
@@ -794,8 +795,18 @@ function pullWoke(q){
   PULL_WAIT[q]=null;
   return ws || [];
 }
+/* WHICH ACCOUNT ASKED. An answer is 「what the server told THIS account」
+   (§ pullForget), and a question still in the air when the account changes
+   is the last account's: its answer or its failure landing afterwards woke
+   the NEXT account's waiters -- measured (acct-check 77, r79): a read of the
+   last session's languages failed on the wire after the door, woke the new
+   account's 「which languages」 waiter with `false`, and the phone stood
+   waiting for a list that had in fact arrived. So an ask carries the
+   generation it was made in, pullForget() moves it on, and an answer from
+   an older one is nobody's and is dropped. */
+var PULL_GEN=0;
 function pullRun(k, a, person){
-  var ask=PULL_ON[k], hav=PULL_HAS[k], q=pullKey(k, a);
+  var ask=PULL_ON[k], hav=PULL_HAS[k], q=pullKey(k, a), gen=PULL_GEN;
   if(!ask){ pullSpinOff(); return; }
   /* Already asking. The ask in the air is the one that takes the mark out. */
   if(PULL_OUT[q]) return;
@@ -803,6 +814,7 @@ function pullRun(k, a, person){
   PULL_OUT[q]=1;
   ask(function(got){
     var ws, i;
+    if(gen!==PULL_GEN) return;
     PULL_OUT[q]=0;
     pullSpinOff();
     /* An answer is the road working, so it is also the end of 「訊けなかった」
@@ -813,6 +825,7 @@ function pullRun(k, a, person){
     if(got) render();
   }, function(d, s, m){
     var ws, i, fell;
+    if(gen!==PULL_GEN) return;
     PULL_OUT[q]=0;
     pullSpinOff();
     /* 訊けなかった、と書き残す一箇所。ポップは消せるし、消えたあとも
