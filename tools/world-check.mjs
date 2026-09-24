@@ -41,6 +41,12 @@ await pg.waitForSelector('#splash', { state:'detached', timeout:10000 });
 const r = await pg.evaluate(({s}) => {
   eval('(' + s + ')()');
   SET.walked = true; planGot('pro');
+  /* The door onto a page waits for what that page reads (www/shell.js
+     § navLand, OWNER 2026-09-23 「読むのは開いた画面の分だけ」), and there is
+     no server here -- so go() and langOpen()'s goTab() would never land and
+     viewLeft() would never run. What is asked below is ABOPEN, not the
+     reads: the answers are taken as already in. */
+  window.pageWait = function(r, a, done){ done(true); };
   var out = {};
 
   /* Every heading that CAN fold, and whether it arrived shut. A heading with
