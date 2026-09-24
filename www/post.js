@@ -3160,17 +3160,49 @@ function postEdit(id){
   PW.ed=p.id; PW.ln=String(p.ln||''); PW.mn=String(p.mn||'');
   openPost();
 }
+/* AN EDIT GOES TO THE SERVER FIRST, THE SAME AS A POST (r79).
+   「SNSは全部サーバー」, and 「なら失敗して残るにするべき」 OWNER 2026-09-05.
+   This wrote the edited line into this phone's copy and nowhere else, so the
+   post everybody else read never changed and the next answer from the server
+   put the old line back on this phone too (r60 見つけたこと).
+
+   Now the edited post is built as a COPY, the row is changed on the server
+   (netPostEdit, `post_edit` + the column grant on `body`), and only when that
+   lands is this phone's copy written and the composer emptied. When it does
+   not land nothing has moved: what was typed is still in the composer and
+   ［再接続］ sends the same edit again. A post that never reached the server
+   has no row to change, so the edit is the post going up (postSend, the one
+   road a post goes up by) -- what the person pressed save on is what the post
+   is. */
 function pwSaveEdit(ln){
-  var p=postById(PW.ed), mn;
+  var p=postById(PW.ed), mn, q, k;
   if(!p || !p.mine){ toast(t('post.gone')); PW=pwBlank(); goTab('feed'); return; }
   /* OWNER 2026-09-05 単語はその単語の意味を 文法は並び替えた単語たちが文章として成り立つように */
   mn=String(PW.mn||'').trim() || LinguaGrammarEngine.translate.toNatural(gModel(), ln, uiLang());
-  p.ln=ln; p.ink=postInkTyped(PWRAW); p.mn=mn;
-  p.ui=uiLang();
-  p.ed=Date.now();
-  savePosts();
-  PW=pwBlank();
-  goTab('feed');
+  q={};
+  for(k in p) if(Object.prototype.hasOwnProperty.call(p, k)) q[k]=p[k];
+  q.ln=ln; q.ink=postInkTyped(PWRAW); q.mn=mn;
+  q.ui=uiLang();
+  q.ed=Date.now();
+  pwEditPut(p, q);
+}
+function pwEditPut(p, q){
+  function landed(sid){
+    var k;
+    netSpin(false);
+    for(k in q) if(Object.prototype.hasOwnProperty.call(q, k)) p[k]=q[k];
+    if(sid) postSid(p, sid);
+    savePosts();
+    PW=pwBlank();
+    goTab('feed');
+  }
+  function fell(d, s, m){
+    netSpin(false);
+    netPop(d, s, m, function(){ pwEditPut(p, q); });
+  }
+  netSpin(true);
+  if(p.sid) netPostEdit(p.sid, q, function(){ landed(''); }, fell);
+  else postSend(q, landed, fell);
 }
 /* MAY THIS PERSON POST, REPLY, BOOST AND LIKE -- one question, one place.
    Signed in, and not frozen.

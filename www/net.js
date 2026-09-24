@@ -4767,6 +4767,15 @@ function netDay(ok, bad){
   netGet('/rest/v1/prompt?select=id,on_day,text,says&order=on_day.desc&limit=1',
     function(d){ ok(d && d.length? d[0] : null); }, bad);
 }
+/* AN EDIT TO A POST THAT IS ALREADY UP: the row's body, and nothing else --
+   `post_edit` lets the author change their own row and the column grant lets
+   them change `body` (supabase/schema.sql). The same body netPush() sends,
+   out of the same netBody(), so an edited post is shaped exactly as a sent
+   one. */
+function netPostEdit(sid, post, ok, bad){
+  netSend('PATCH', '/rest/v1/post?id=eq.'+encodeURIComponent(sid),
+          {body:netBody(post)}, netTok(), ok, bad);
+}
 function netPush(post, ok, bad){
   var row, pid, up;
   if(!post){ bad(null, 0); return; }

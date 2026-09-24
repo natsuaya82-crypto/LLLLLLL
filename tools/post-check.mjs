@@ -4350,6 +4350,42 @@ const R = await pg.evaluate(async () => {
     window.route = wasRoute; NAV = wasNav;
   }
 
+  /* ---- AN EDIT GOES TO THE SERVER FIRST (r79) --------------------------
+     「SNSは全部サーバー」「なら失敗して残るにするべき」 OWNER 2026-09-05.
+     pwSaveEdit() wrote the edited line into this phone's copy and nowhere else,
+     so everybody else went on reading the old line. Pressed for real: open
+     the edit, change the line, press the send. */
+  {
+    const wasPosts = POSTS, keepSend = netSend, sentE = [];
+    let answer = 'fall';
+    POSTS = [{ id: 'e1', sid: 's-e1', at: Date.now(), lang: langId, ln: 'kano',
+               who: 'Aya', hd: 'aya', mine: true, ui: 'en' }];
+    netSend = function (method, path, body, tok, ok, bad) {
+      if (String(path).indexOf('/rest/v1/post') === 0) sentE.push({ m: method, p: path, body: body });
+      if (answer === 'fall') { bad(null, 0, 'post 0'); return; }
+      ok([]);
+    };
+    const was = planKnown() ? plan() : null;
+    planGot('plus');
+    postEdit('e1');
+    PW.ln = 'kamo'; pwSend();
+    const patch = sentE.filter(r => r.m === 'PATCH' && r.p.indexOf('id=eq.s-e1') >= 0);
+    if (!patch.length || !patch[0].body || !patch[0].body.body || patch[0].body.body.ln !== 'kamo')
+      fails.push('**an edit did not go to the server** — ' + JSON.stringify(sentE));
+    if (POSTS[0].ln !== 'kano')
+      fails.push('an edit the server refused was written on this phone anyway — ' + POSTS[0].ln);
+    if (String(PW.ln) !== 'kamo')
+      fails.push('an edit the server refused took what was typed out of the composer');
+    popOff();
+    answer = 'ok';
+    pwSend();
+    if (POSTS[0].ln !== 'kamo')
+      fails.push('an edit the server took is not on this phone — ' + POSTS[0].ln);
+    netSend = keepSend;
+    if (was) planGot(was); else planForget();
+    POSTS = wasPosts; savePosts(); PW = pwBlank();
+  }
+
   return { fails, mid: (nowLight * 100).toFixed(1), corner: (wasLight * 100).toFixed(1),
            bytes: Math.round(String(out[0] || '').length / 1024),
            thumb: Math.round(small.length / 1024), full: Math.round(big.length / 1024),
