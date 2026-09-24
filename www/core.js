@@ -1030,8 +1030,65 @@ function slAsApp(fn, args){
   try{ fn.apply(null, args); }
   finally{ SL_APP--; }
 }
+/* ---- WHAT A SLICE IS: FOUR ANSWERS, AND THIS IS WHERE THEY ARE MADE -----
+   「"Empty" and "broken" are different states and must not share a branch」
+   (CLAUDE.md § Data). Every reader of a slice asks here, and so does the
+   merge (www/sync.js § syMerge) and what may be written over what
+   (www/net.js § netKeeps):
+
+     none    no string, or an empty one: there is nothing
+     plain   a slice that is not JSON and never was -- `lang`, the name
+     read    a slice this app understands, in the SHAPE its readers take
+     wreck   one it does not: not JSON, or JSON of a shape this slice never
+             has -- a dictionary that is `{}`, an alphabet that is `5`
+
+   It was ten readers each doing `try{JSON.parse(slRd(k)||'[]')}catch(e){}`,
+   so a wreck read as the empty default and the next save wrote the default
+   in its place (docs/scope/r73-audit.md § 2-4), and a merge that told the
+   two apart while nothing else did. `plain` and `wreck` look alike from the
+   string -- JSON.parse throws on `Shango` as on `[[[not json` -- so which one
+   it is, is a question about the SLICE and is asked of `kind`. */
+var SL_SHAPE={words:'a', lines:'a', letters:'a', notes:'a', snd:'a',
+              script:'o', phases:'o', wld:'o', kb:'o'};
+function slState(kind, s){
+  var v, want=SL_SHAPE[kind];
+  if(typeof s!=='string' || s==='') return {is:'none', v:null};
+  if(kind==='lang') return {is:'plain', v:s};
+  try{ v=JSON.parse(s); }catch(e){ return {is:'wreck', v:null}; }
+  if(v!==null && ((want==='a' && !(v instanceof Array)) ||
+                  (want==='o' && (typeof v!=='object' || v instanceof Array))))
+    return {is:'wreck', v:null};
+  return {is:'read', v:v};
+}
+/* THE OPEN LANGUAGE'S SLICE, as its readers want it: what was read, or null
+   for nothing and for a wreck alike -- the screen draws the empty language
+   either way. What is NOT alike is what happens next: a slice that could not
+   be read is marked, and slWr() will not write the default over it. */
+var LWRECK={};
+function slOpen(kind){
+  var k=langKey(kind), d=slState(kind, slRd(k));
+  if(d.is==='wreck') LWRECK[k]=1;
+  else delete LWRECK[k];
+  return d.v;
+}
+/* And the one write that may go over a wreck: the SERVER's readable answer,
+   put there by the merge (www/net.js § netKeeps) -- 「a copy it cannot parse
+   takes the server's」 (CLAUDE.md rule 22). */
+function slMend(k){ delete LWRECK[k]; }
 function slWr(k, v){
   var s=String(v);
+  /* NOTHING IS WRITTEN OVER A SLICE THAT COULD NOT BE READ. What is in
+     memory is the empty default the reader fell to, and writing it would be
+     the app deciding that what it cannot read is nothing -- and the next
+     person's save would carry it up. It is not saved, and it says so
+     (rule 11: 「NOT SAVING IS THE SPEC. SAVING AND SAYING NOTHING IS NOT」). */
+  if(LWRECK[k]){ saveNo(); return; }
+  /* NOTHING, written by a writer -- the keyboard reset, a slice whose last
+     thing went -- is the slice taken away, and it passes the line above
+     first: kbWrite() called slRm() itself, so a keyboard that could not be
+     read was REMOVED, disk copy and all, by every langSaveAll()
+     (tools/state-check.mjs E, measured). */
+  if(v===null){ slRm(k); return; }
   if(!SL_APP && slMine(k)!==s) LTOUCH[k]=Date.now();
   LSL[k]=s;
 }
@@ -1049,6 +1106,8 @@ function slRm(k){
   slSettled(k);
   try{ localStorage.removeItem(k); localStorage.removeItem(slGotKey(k)); }catch(e){}
 }
+/* Which slices could not be read is about the account that read them. */
+acctMem(function(){ LWRECK={}; });
 
 /* ---- AND A SAVE THAT DID NOT LAND SAYS SO -------------------------------
    「なら失敗して残るにするべき。」
@@ -1498,24 +1557,23 @@ function langFirst(){
    somebody else's language and find your own dictionary in it. */
 var LSAVED='';
 function langRead(){
-  WORDS=[]; LINES=[]; langName=''; SCRIPT={g:{}, extra:[]};
-  try{ var a=JSON.parse(slRd(langKey('words'))||'[]'); if(Array.isArray(a)) WORDS=a; }catch(e){}
-  try{ var l=JSON.parse(slRd(langKey('lines'))||'[]'); if(Array.isArray(l)) LINES=l; }catch(e){}
-  langName=langNameOf(langId);
-  try{
-    var gg=JSON.parse(slRd(langKey('script'))||'null');
-    if(gg && gg.g){ SCRIPT.g=gg.g; SCRIPT.extra=gg.extra||[]; }
+  var gg;
+  WORDS=slOpen('words') || []; LINES=slOpen('lines') || [];
+  langName=langNameOf(langId); SCRIPT={g:{}, extra:[]};
+  gg=slOpen('script');
+  if(gg){
+    if(gg.g){ SCRIPT.g=gg.g; SCRIPT.extra=gg.extra||[]; }
     /* Which way the language is written. Read on its own rather than inside
        the `gg.g` branch above: a language can have a direction and no glyphs
        drawn yet, and reading it only when there are glyphs would lose it for
        exactly the person who set it first and drew second. */
-    if(gg && gg.dir) SCRIPT.dir=gg.dir;
+    if(gg.dir) SCRIPT.dir=gg.dir;
     /* And what stands between two letters, in steps (glyph.js § geSide).
        Read here or it is gone: SCRIPT is rebuilt from these lines and saved
        whole, so a field this function does not copy is a field the next save
        drops. Absent stays absent -- one step, which is what it always was. */
-    if(gg && typeof gg.sp==='number') SCRIPT.sp=gg.sp;
-  }catch(e){}
+    if(typeof gg.sp==='number') SCRIPT.sp=gg.sp;
+  }
   /* what the language was when it was read -- save() asks it (§ langMoved) */
   LSAVED=langShape();
 }
@@ -2021,7 +2079,7 @@ var PLANS=[
 var FREE_LIMIT=100, PLUS_LIMIT=1000;
 function wordCap(){
   if(can('words')) return Infinity;
-  return has('plus')? PLUS_LIMIT : FREE_LIMIT;
+  return planNum(FREE_LIMIT, PLUS_LIMIT, Infinity);
 }
 /* HOW LONG A POST MAY BE. 「plusプランから無限だけど、もっと読むで開く
    Twitterと同じ方式で頑む。」 OWNER 2026-09-15.
@@ -2040,12 +2098,13 @@ function wordCap(){
    POST_MAX (www/post.js) is the free number. It is declared there because it
    is the composer's, and this is the only place the PLAN is asked about it.
 
-   Nobody-has-answered-yet reads as free, which is has()'s own posture: false
-   is 「no button」 and never 「no words」. Nothing of anybody's is lost by it
-   -- the ceiling refuses a press, it never shortens what is already written
-   (docs/PAID_FEATURES.md, docs/DATA_SAFETY.md). */
+   Nobody-has-answered-yet is `null` and not the free number (§ planNum): the
+   ring is not drawn and the press says 「接続できません」. Nothing of
+   anybody's is lost by the ceiling either way -- it refuses a press, it never
+   shortens what is already written (docs/PAID_FEATURES.md,
+   docs/DATA_SAFETY.md). */
 function postCap(){
-  return has('plus')? Infinity : POST_MAX;
+  return planNum(POST_MAX, Infinity, Infinity);
 }
 /* How many keyboards this person may have, counting the fixed QWERTY as one
    of them. 「1,1+3.無制限って言わなかったっけ？」 -- OWNER DECISION,
@@ -2067,8 +2126,7 @@ function postCap(){
    behind it. Infinity and not a big number, exactly as wordCap(). */
 var FREE_KB=1, PLUS_KB=4;
 function kbCap(){
-  if(has('pro')) return Infinity;
-  return has('plus')? PLUS_KB : FREE_KB;
+  return planNum(FREE_KB, PLUS_KB, Infinity);
 }
 /* How many languages of their own this person may have. Free 1, Plus 1,
    Pro 3 -- OWNER DECISION 2026-08-23, restated 2026-08-25「言語数はプラスは1、
@@ -2094,13 +2152,12 @@ var FREE_LANGS=1, PRO_LANGS=3;
    this phone deciding from an answer it has not been given. The plan is in
    memory (rule 22), so a launch with no signal never has one.
 
-   `null` is that state and it is not a number: langsSeen() (www/home.js) does
-   not cut on it, so nothing is folded away and no count is drawn. It does not
-   loosen the ceiling -- langStop() below refuses with 「接続できません」 before
-   the number is ever reached, which is capStop()'s and upStop()'s sentence. */
+   `null` is that state and it is not a number (§ planNum): langsSeen()
+   (www/home.js) does not cut on it, so nothing is folded away and no count is
+   drawn. It does not loosen the ceiling -- langStop() below hands it to
+   upStop(), which says 「接続できません」. */
 function langCap(){
-  if(!planKnown()) return null;
-  return has('pro')? PRO_LANGS : FREE_LANGS;
+  return planNum(FREE_LANGS, FREE_LANGS, PRO_LANGS);
 }
 /* And what it is compared against: the languages that are THIS PERSON'S.
 
@@ -2300,9 +2357,7 @@ function dlCap(){
   /* 「nobody has asked」 is not nought, exactly as langCap() above: a launch
      with no signal answered ZERO here and every language somebody had taken
      off another page was folded off the list, with 「1 hidden」 at its foot. */
-  if(!planKnown()) return null;
-  if(has('pro')) return PRO_DL;
-  return has('plus')? PLUS_DL : 0;
+  return planNum(0, PLUS_DL, PRO_DL);
 }
 /* The languages this person is READING: in the index, not theirs, and on this
    account. langAcct() is the making side's question and this is its opposite
@@ -2319,27 +2374,17 @@ function dlCount(){ return langTook(); }
    sentence: 「全部確認して飛ぶ」. Somebody already holding the biggest ceiling
    there is gets one line and no dialog, because there is nothing to fly to. */
 function dlStop(){
-  var n=dlCount();
-  /* And nobody has said what this account PAYS either, which is a second
-     unanswered question and the same sentence. It used to be reached only
-     through the count below -- with no signal there was no count at all -- and
-     the picture of the take answer (§ LTAKE, 2026-09-12) means there now is
-     one, so the plan has to be asked for in its own right or a launch with no
-     signal offers a price instead of 「接続できません」. */
-  if(!planKnown()){ toast(t('net.offline')); return true; }
-  /* NOT ASKED YET IS NOT NOUGHT AND IS NOT FULL. Nothing is refused and
-     nothing is let through on a number nobody has given: the button waits,
-     and netTakes() puts one there. The screen that presses this has already
-     asked (www/home.js § wldGet). */
-  if(n===null){ toast(t('net.offline')); return true; }
-  if(n<dlCap()) return false;
-  if(dlCap()<PRO_DL) popAsk(t('up.need'), function(){ go('plans'); });
+  /* NOT ASKED YET IS NOT NOUGHT AND IS NOT FULL, and neither is a plan nobody
+     has answered for: planFits() hands upStop() `null` for either, and that
+     is 「接続できません」. The screen that presses this has already asked
+     (www/home.js § wldGet). */
+  var ok=planFits(dlCount(), 1, dlCap());
   /* toast() and not alert(): iOS's own box is banned outright
      （「標準は使わねえって言ってるだろこれも禁止や」OWNER 2026-09-01）and
      there is nothing to ASK here -- somebody already on the top rung cannot
      be offered a bigger one, so what is left is the sentence. */
-  else toast(t('up.need'));
-  return true;
+  if(ok===false && dlCap()>=PRO_DL){ toast(t('up.need')); return true; }
+  return upStop(ok);
 }
 /* THE OPEN LANGUAGE BELONGS TO WHOEVER IS SIGNED IN.
    「ログアウトして違うアカウントでログインしても前のアカウント残ってるんだけど
@@ -2419,26 +2464,16 @@ function langForAcct(){
   return true;
 }
 function langStop(){
-  /* Asked BEFORE the ceiling, which is capStop()'s and upStop()'s line and is
-     here for their reason: the ceiling is worked out FROM the plan, so a
-     number measured against an answer nobody has given refuses somebody their
-     own next language -- and what it refused them with was a PRICE, offering
-     to sell what this account may already have bought. */
-  if(!planKnown()){ toast(t('net.offline')); return true; }
-  /* AND NOBODY HAS SAID WHAT THIS ACCOUNT ALREADY HAS, which is the second
-     unanswered question and the same sentence -- dlStop() below asks its two
-     the same way. The ceiling is measured against a COUNT, and the count is
-     the server's (§ LMINE): with no answer the index is a picture of rows
-     that may not exist any more, and measuring against it is what refused
-     the owner their own next language on 2026-09-15. */
-  if(!langMineKnown()){ toast(t('net.offline')); return true; }
-  if(langCount()<langCap()) return false;
-  if(langCap()<PRO_LANGS){
-    popAsk(t('up.need'), function(){ go('plans'); });
-  }
-  /* toast() and not alert(), for the reason written over dlStop() above. */
-  else toast(t('up.need'));
-  return true;
+  /* The plan and what this account already has are two unanswered questions
+     with one sentence: the ceiling is worked out FROM the plan and measured
+     against the server's COUNT (§ LMINE), and with either missing the index
+     is a picture of rows that may not exist any more -- measuring against it
+     is what refused the owner their own next language on 2026-09-15. Both
+     are `null` until answered, and planFits() hands upStop() the `null`. */
+  var ok=planFits(langCount(), 1, langCap());
+  /* Nothing bigger to buy -- see above -- and toast() for dlStop()'s reason. */
+  if(ok===false && langCap()>=PRO_LANGS){ toast(t('up.need')); return true; }
+  return upStop(ok);
 }
 /* ---- WHAT THIS ACCOUNT HAS PAID FOR, AND IT IS THE SERVER'S ANSWER ------
    「オンラインで 1 端末に 1 アカウント…誰の物か・あるか無いか・名前・公開か・
@@ -2615,16 +2650,39 @@ function planTook(id){
   render();
   return p;
 }
+/* THREE ANSWERS, AND THIS IS WHERE THE THIRD ONE IS MADE.
+   「未回答は free ではない」 OWNER 2026-09-11 (docs/FEATURE_RULES.md § 端末は
+   何も決めない), and CLAUDE.md § Money: 「a failed check means fewer buttons,
+   never fewer words」.
+
+   true and false are the server's answer. `null` is 「nobody has asked yet」
+   -- a launch with no signal, or the moment before verify-plan lands -- and
+   it is not false. It is falsy, so a DOOR drawn on `if(can(x))` stays shut
+   while nobody knows, which is the 「fewer buttons」 half and needs nothing
+   written anywhere else. Everything that is not a door hands the answer to
+   one of four below, and those are the only places the third state is
+   decided:
+
+     upStop(ok)          a PRESS: null is 「接続できません」, never a price
+     planNo(ok)          a SHAPE -- a list folded, the fixed QWERTY, an
+                         alphabet, left to right, no places sold: true only
+                         when the answer is in and it is no, so nobody is
+                         shown the free shape of what they paid for on an
+                         answer nobody gave
+     planSaid(ok)        a WRITE, or something handed off the phone: nothing
+                         goes until the answer is in, and planTook() calls
+                         the writer again the moment it is
+     planNum(f, p, r)    a NUMBER: null, and planFits() passes the null on
+
+   planKnown() is asked here and in planNum() and nowhere else in www/. These
+   replaced nine places that each asked it again for themselves (docs/scope/r73-audit.md § 2-3), and the ceilings that forgot
+   to: the dictionary folded to a hundred, the alphabet to its slots, the
+   grammar lost its own stages and the composer counted to 140 for somebody
+   on Pro whose answer had not come in yet. */
 function has(level){ /* level: 'plus' | 'pro' */
   var want=PLAN_ORDER.indexOf(level), got=PLAN_ORDER.indexOf(plan());
-  /* NOBODY HAS ASKED YET IS NOT A PLAN EITHER, and it is the state this
-     answers false for rather than guesses at. False here is 「no button」 and
-     never 「no words」: upStop() and capStop() below turn it into
-     「接続できません」 rather than a price, and nothing writes on it
-     (www/letters.js § ltStart). docs/PAID_FEATURES.md.
-
-     A plan nobody has heard of lands here too -- a receipt that would not
-     validate, a word from a version that spelled them differently. */
+  if(!planKnown()) return null;
+  /* A plan nobody has heard of cannot land: planGot() makes it free. */
   if(got<0) return false;
   /* And a level nobody has heard of is a typo in CAN. can() has already
      thrown on the capability by the time this runs; this is the second wall
@@ -2745,6 +2803,25 @@ function can(what){
   if(!lv) throw new Error('can: no such capability: '+what);
   return has(lv);
 }
+/* THE SHAPE, and it takes the ANSWER for upStop()'s reason below: `can()` is
+   given a literal where a check can see it. True only when the server has
+   answered and the answer is no -- see has() above. */
+function planNo(ok){ return ok===false; }
+function planSaid(ok){ return ok===true || ok===false; }
+/* THE NUMBER: one per rung, and `null` while nobody has asked. Every ceiling
+   is this with its three numbers, so no ceiling can answer the free number
+   for a plan nobody has heard, which four of them did. */
+function planNum(free, plus, pro){
+  if(!planKnown()) return null;
+  return has('pro')? pro : has('plus')? plus : free;
+}
+/* WHETHER `add` MORE FIT UNDER A CEILING, from a count and the ceiling --
+   `null` when either is missing, which is a count nobody has given
+   (langCount(), dlCount(), kbCount()) or a plan nobody has answered for. */
+function planFits(n, add, cap){
+  if(n===null || n===undefined || cap===null) return null;
+  return n+add<=cap;
+}
 /* WHAT THE CEILING COUNTS, and it is words. 「活用は数えないにしよう。無料で
    なるべく使って欲しい。」 OWNER 2026-09-23 -- an inflection is not a word
    (www/wordsheet.js § the forms of a word), so the only thing left to leave
@@ -2756,7 +2833,7 @@ function wCountable(){
   return n;
 }
 function capOK(add){
-  return wCountable()+(add||1)<=wordCap();
+  return planFits(wCountable(), add||1, wordCap());
 }
 /* The ceiling, met. True means the caller must stop.
 
@@ -2777,16 +2854,7 @@ function capOK(add){
    Two strings that already exist, in all ten languages, rather than an
    eleventh: the sentence the toast said, and the word on the upgrade button.
    A new key here would have been one sentence in English and nine holes. */
-function capStop(add){
-  /* Asked BEFORE the ceiling, because the ceiling is worked out FROM the
-     plan: a number measured against an answer nobody has given refuses
-     somebody their next word, or lets one through. upStop()'s sentence,
-     for the same reason. */
-  if(!planKnown()){ toast(t('net.offline')); return true; }
-  if(capOK(add)) return false;
-  popAsk(t('up.need'), function(){ go('plans'); });
-  return true;
-}
+function capStop(add){ return upStop(capOK(add)); }
 /* THE SAME THING FOR A CAPABILITY, AND IT IS WHY EVERY PLAN SEES ONE SCREEN.
    「無料でもplusでもproでも同じ画面なのよ。でも無料から文字を足すところは
      課金のポップが出ないといけない、画面は変わらないプランで押す場所に
@@ -2825,16 +2893,19 @@ function capStop(add){
    (CLAUDE.md § 5, and dead-check refuses anything else) -- a capability read
    from a variable cannot be held by any check and a wrong one reads as free
    rather than throwing. So the caller writes `upStop(can('letters'))` and the
-   name stays where a check can see it. */
-function upStop(ok){
+   name stays where a check can see it.
+
+   `say` is the one sentence where the owner settled a different one for one
+   wall -- 「投稿の編集はplusプランからです」 (OWNER 2026-08-25, `post.editplan`,
+   www/post.js § postEdit). Absent, it is `up.need`. */
+function upStop(ok, say){
   if(ok) return false;
-  /* NOBODY HAS ASKED WHAT THIS ACCOUNT PAYS, so there is no price to offer:
-     a phone with no signal would be told to buy something it may already
-     have. 「電波が無ければ接続できません」 (docs/FEATURE_RULES.md § 端末は何も
-     決めない) -- the same sentence dlStop() has said since the download
-     ceiling became the server's count. */
-  if(!planKnown()){ toast(t('net.offline')); return true; }
-  popAsk(t('up.need'), function(){ go('plans'); });
+  /* NOBODY HAS ANSWERED -- the plan, or the count a ceiling is measured
+     against -- so there is no price to offer: a phone with no signal would be
+     told to buy something it may already have. 「電波が無ければ接続できません」
+     (docs/FEATURE_RULES.md § 端末は何も決めない). */
+  if(ok===null){ toast(t('net.offline')); return true; }
+  popAsk(t(say || 'up.need'), function(){ go('plans'); });
   return true;
 }
 

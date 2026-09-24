@@ -110,9 +110,9 @@ function wsGuess(){
    the line taken out: the fixture's free language came back `syll`, and the
    characters borrowed for it stopped being drawn.
 
-   `planKnown()` in front of it is the whole of what changed. `can()` answers
-   false for 「nobody has asked」 as readily as for 「free」 (www/core.js §
-   PLAN), and falling to `alpha` on the first is this app telling somebody who
+   planNo() is the whole of what changed: it is true for 「free」 and not for
+   「nobody has asked」 (www/core.js § has), and falling to `alpha` on the
+   second is this app telling somebody who
    PAID that their abugida is an alphabet -- on a launch with no signal, and
    on every launch before the answer lands. That is the head of
    docs/PAID_FEATURES.md backwards: 「No byte of anybody's language may depend
@@ -125,7 +125,7 @@ function wsGuess(){
    room, and which says 「接続できません」 rather than a price while nobody
    has asked. */
 function wsys(){
-  if(planKnown() && !can('wsys')) return 'alpha';
+  if(planNo(can('wsys'))) return 'alpha';
   var w=langWsysOf(langId);
   return WSYS.indexOf(w)>=0 ? w : wsGuess();
 }
@@ -309,9 +309,14 @@ var DIRS=['ltr', 'rtl', 'ttb-rl', 'ttb-lr'];
 
    This is the whole plan speaking with one voice -- 「無料に戻ったら無料の形
    に戻る、作ったものは全部残る」 -- rather than this one capability being
-   the exception that keeps working after the money stops. */
+   the exception that keeps working after the money stops.
+
+   And 「nobody has asked」 is not free (www/core.js § has): the language is
+   written the way it is written until the answer says otherwise, so a post
+   sent before verify-plan lands does not carry `ltr` for a language written
+   right to left -- pwSend() puts scriptDir() ON the post (The past). */
 function scriptDir(){
-  if(!can('dir')) return 'ltr';
+  if(planNo(can('dir'))) return 'ltr';
   return DIRS.indexOf(SCRIPT.dir)>=0 ? SCRIPT.dir : 'ltr';
 }
 /* What a direction is called in CSS. `writing-mode` is the whole of it for

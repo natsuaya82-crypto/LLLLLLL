@@ -2550,7 +2550,7 @@ const lt42A = await pg.evaluate(({ s }) => {
   return { id: langId, name: langNameOf(langId) || 'Vaska', body: body, n: L.length,
            /* どの行に線が載っているか ── 数ではなく id で。数だけだと、
               この検査が一文字描く分と、消えた一行とが打ち消し合います。 */
-           drawn: L.filter(function(l){ return ltDrawn(l); })
+           drawn: L.filter(function(l){ return ltHasShape(l); })
                    .map(function(l){ return l.id; }) };
 }, { s: seed.toString() });
 
@@ -2601,10 +2601,10 @@ const lt42B = await pg.evaluate(async ({ srv, a }) => {
   for (w = 0; w < a.drawn.length; w++){
     var still = null, y;
     for (y = 0; y < end.length; y++) if (end[y].id === a.drawn[w]) still = end[y];
-    if (!still || !ltDrawn(still)) lost.push(a.drawn[w]);
+    if (!still || !ltHasShape(still)) lost.push(a.drawn[w]);
   }
   return { boot: boot, n: end.length, dup: dup, lost: lost,
-           drawn: end.filter(function(l){ return ltDrawn(l); }).length,
+           drawn: end.filter(function(l){ return ltHasShape(l); }).length,
            sent: S.sent.filter(function(x){ return x.indexOf(':letters') >= 0; }).length };
 }, { srv: SERVER, a: lt42A });
 

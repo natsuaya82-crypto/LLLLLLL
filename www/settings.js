@@ -223,7 +223,7 @@ function vSet(){
       '<button class="set"' + DO('editName') + '><span class="sl">'+t('set.name')+'</span>'+
       '<span class="sv">'+esc(langNameSaid(langName))+ICON_GO+'</span></button>'+
       '<button class="set"' + DO('go', ["words"]) + '><span class="sl">'+t('set.count')+'</span>'+
-      '<span class="sv">'+WORDS.length+(can('words')?'':' / '+wordCap())+ICON_GO+'</span></button>'+
+      '<span class="sv">'+WORDS.length+(planNo(can('words'))? ' / '+wordCap() : '')+ICON_GO+'</span></button>'+
       '<button class="set"' + DO('go', ["letters"]) + '><span class="sl">'+t('toc.letters')+'</span>'+
       '<span class="sv">'+LETTERS.length+ICON_GO+'</span></button>'+
       /* Answered once, if ever: wsGuess() reads it off the letters, and the
@@ -1117,14 +1117,21 @@ function plPicked(id, yr){ return !!(PLPICK && PLPICK.id===id && PLPICK.yr===!!y
 /* Whether what is picked is already paid for -- the plan in force, or one
    below it on the ladder. plBuy()'s own test, asked before the button is
    drawn instead of after it is pressed. Nothing picked is not 「held」: the
-   button is drawn disabled then, which is what it has always been. */
+   button is drawn disabled then, which is what it has always been.
+
+   THREE ANSWERS, has()'s own (www/core.js § has): `null` while nobody has
+   said what this account pays -- plan() is '' then and only then -- and then
+   there is nothing to buy and nothing to name. It answered 「not held」, and
+   a person on Pro in a tunnel was offered Plus: the 2026-09-01 double charge
+   by another road (docs/scope/r63-audit.md § 0-3). */
 function plHave(){
   var i, j;
   if(!PLPICK) return false;
   if(plan()==='free') return false;
   i=PLAN_ORDER.indexOf(plan());
   j=PLAN_ORDER.indexOf(PLPICK.id);
-  return j>=0 && i>=0 && j<=i;
+  if(i<0) return null;
+  return j>=0 && j<=i;
 }
 /* ---- and what stands where that button was -----------------------------
    「消すなら同じ場所に現在このプランです〇〇/〇〇までみたいな感じにしないと
@@ -1182,8 +1189,11 @@ function plBuy(){
   /* plHave() and not the comparison written out again: the button above is
      drawn from it and this is the same question. Two copies is the one thing
      this repo has been bitten by most -- the day one of them changes, the
-     other goes on answering the old way and nothing says so. */
-  if(plHave()){
+     other goes on answering the old way and nothing says so. Nothing goes
+     to Apple on an answer nobody gave: upStop() says 「接続できません」. */
+  var have=plHave();
+  if(!planSaid(have)){ upStop(have); return; }
+  if(have){
     popAsk(t('plan.already', planName(plan())), function(){ storeManage(); },
       t('plan.cancel'));
     return;
@@ -1368,7 +1378,8 @@ function vPlans(){
        the way TO this screen. Here there is nowhere to send anybody. */
     '<div class="plgo">'+
       (storeSay()? '<div class="note">'+esc(storeSay())+'</div>' : '')+
-      (plHave()? plNow() :
+      (!planSaid(plHave())? '<div class="note">'+esc(t('net.offline'))+'</div>' :
+       plHave()? plNow() :
         '<button class="btn plbuy'+(PLPICK? ' on' : '')+'"' + DO('plBuy') +
         (PLPICK? '' : ' disabled')+' style="width:100%">'+
         esc(t('plan.buy'))+'</button>')+'</div>'+

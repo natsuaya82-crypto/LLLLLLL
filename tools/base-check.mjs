@@ -432,7 +432,7 @@ const r = await pg.evaluate(({s}) => {
     return JSON.stringify(LETTERS);
   }
   function drawOn(l){ l.st = [{ pts: [[100, 100], [700, 700]] }]; }
-  function inked(a){ return a.filter(function(l){ return ltDrawn(l); }).length; }
+  function inked(a){ return a.filter(function(l){ return ltHasShape(l); }).length; }
 
   var blank = pack(function(){}), drawn = pack(drawOn);
   var mineBlank = JSON.parse(syMerge('letters', blank, drawn));
@@ -470,7 +470,7 @@ const r = await pg.evaluate(({s}) => {
   ltStart();
   out.joinedN = LETTERS.length;
   out.joinedDrawn = inked(LETTERS);
-  out.joinedA = ltDrawn(LETTERS.filter(function(l){ return ltSlotKey(l) === 'a'; })[0]);
+  out.joinedA = ltHasShape(LETTERS.filter(function(l){ return ltSlotKey(l) === 'a'; })[0]);
   LETTERS = wasLts;
 
   return out;

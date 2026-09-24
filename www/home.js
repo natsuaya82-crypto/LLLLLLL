@@ -13,7 +13,7 @@
 /* Free accounts hit a ceiling; saying so before they reach it reads as
    information rather than as an interruption. */
 function capBanner(){
-  if(can('words')) return '';
+  if(!planNo(can('words'))) return '';
   var left=wordCap()-WORDS.length;
   if(left>20 || left<0) return '';
   return capWarnHTML(t('cap.warn', left));
@@ -865,9 +865,7 @@ function fSetQ(v){ fq=v; if(v) fpick=null; lnGrow('f-q'); findPaint(); }
    reason: this runs on a phone, against the only copy. */
 var WLD={};
 function wldRead(){
-  WLD={};
-  try{ var w=JSON.parse(slRd(langKey('wld'))||'null');
-       if(w && typeof w==='object' && !(w instanceof Array)) WLD=w; }catch(e){}
+  WLD=slOpen('wld') || {};
 }
 /* An install from before this is holding its answer in SET, which is the
    person's settings: one answer per phone, shown on every language's cover.
@@ -1929,16 +1927,19 @@ function abInkMount(){
     return l? inkGeo(l) : null;
   });
 }
-/* One slice, read back into what it was. A slice holds exactly the string
-   localStorage holds, so this is the same JSON.parse the app does on its own
-   -- and a slice that is not there, or is not readable, is `fb` rather than
-   an exception: an unpublished section is a section with nothing to show,
-   not a broken page. */
+/* One slice of somebody else's language, read back into what it was --
+   through slState() (www/core.js), the one place that says what a slice is,
+   so it is the SHAPE the page draws from or it is `fb`. Somebody else wrote
+   it, and a reader cannot assume they wrote it this build's way: letters
+   that came down as `{}` went straight through the old JSON.parse and the
+   page fell over on `.filter` (docs/scope/r73-audit.md § 2-4, measured). An
+   unpublished section, or one that cannot be read, is a section with nothing
+   to show, not a broken page. */
 function wldSliceOf(m, kind, fb){
-  var o=m && m[kind], v;
-  if(!o || !o.body) return fb;
-  try{ v=JSON.parse(o.body); }catch(e){ return fb; }
-  return (v===null || v===undefined)? fb : v;
+  var o=m && m[kind], d;
+  if(!o) return fb;
+  d=slState(kind, o.body);
+  return (d.is==='read' && d.v!==null)? d.v : fb;
 }
 /* SOMEBODY ELSE'S LANGUAGE AS A BUNDLE, answering the same seven questions
    wldOpen() answers -- so the SAME page draws it. 「このwikiのような感じに
@@ -2447,7 +2448,7 @@ FORM_OPEN.name=function(){ editName(); };
 function saveName(){
   var a=document.getElementById('ln-nm');
   if(!a) return;
-  var v=String(a.value||'').replace(/^\s+|\s+$/g, '');
+  var v=actVal(a).replace(/^\s+|\s+$/g, '');
   /* 空は未設定 -- OWNER 2026-09-06. Emptying the box takes the name off, and
      what every screen then says is langNameSaid()'s. It used to be thrown
      away here, so the box closed and the old name stayed with nothing said. */

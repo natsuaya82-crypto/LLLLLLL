@@ -72,12 +72,10 @@ var STG=stBlank();
    is the one thing that could quietly drop somebody's work on an older
    build. docs/BACKLOG.md carries it. */
 function stRead(){
+  var stgs=slOpen('phases'), k;
   STG=stBlank();
-  try{
-    var stgs=JSON.parse(slRd(langKey('phases'))||'null'), k;
-    if(stgs) for(k in STG_DEF)
-      if(Object.prototype.hasOwnProperty.call(STG_DEF, k) && stgs[k]) STG[k]=stgs[k];
-  }catch(e){}
+  if(stgs) for(k in STG_DEF)
+    if(Object.prototype.hasOwnProperty.call(STG_DEF, k) && stgs[k]) STG[k]=stgs[k];
 }
 /* ---- the word order and the three positions belong to the LANGUAGE -------
    They belonged to the phone. SET.order and SET.gpos.{adj,negp,adp} live in
@@ -427,14 +425,14 @@ function stAll(){
 
      The stages the book always has are not this: they are what a free grammar
      IS, and they stay. */
-  if(can('gram'))
+  if(!planNo(can('gram')))
     for(i=0;i<STG.extra.length;i++) out.push({id:STG.extra[i].id, slots:STG.extra[i].slots||[],
                                              pos:'x', own:STG.extra[i]});
   return out;
 }
 /* How many are not on screen. The foot of the list says so, the same way the
    dictionary and the alphabet do. */
-function stHidden(){ return can('gram')? 0 : (STG.extra? STG.extra.length : 0); }
+function stHidden(){ return planNo(can('gram'))? (STG.extra? STG.extra.length : 0) : 0; }
 /* Every argument the `gram` route takes -- the stages, and the chapters of
    the chapter that is being rebuilt. Both walks ask THIS rather than keeping
    a list of their own: tools/act-check.mjs's walkArg and tools/i18n-check.mjs's
@@ -619,9 +617,9 @@ function stAddOwn(){
   if(upStop(can('gram'))) return;
   var a=document.getElementById('st-t'), b=document.getElementById('st-w');
   if(!a) return;
-  var title=String(a.value||'').trim();
+  var title=actVal(a).trim();
   if(!title){ toast(t('stg.own.need')); return; }
-  var lines=String((b&&b.value)||'').split('\n'), slots=[], labels={}, i, s, k=0;
+  var lines=actVal(b).split('\n'), slots=[], labels={}, i, s, k=0;
   for(i=0;i<lines.length;i++){
     s=lines[i].trim();
     if(!s) continue;
@@ -733,11 +731,11 @@ function stAddEx(id){
      is decided, so this stays one question asked in one place: it reads the
      dictionary and the word order, and it can be put samples through in Node.
      What was typed always wins; only an empty line is filled in. */
-  var gl=String((c&&c.value)||'').trim();
-  var ln=gExLine(String(b.value||''), gl);
+  var gl=actVal(c).trim();
+  var ln=gExLine(actVal(b), gl);
   if(!ln){ toast(t('word.ex.need')); return; }
   stExPut(id, stExKept(id).concat([
-    {lb:String((a&&a.value)||'').trim(), ln:ln, gl:gl}]));
+    {lb:actVal(a).trim(), ln:ln, gl:gl}]));
 }
 function stDelEx(id, i){
   var a=stExKept(id).slice();

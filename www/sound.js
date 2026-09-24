@@ -255,9 +255,7 @@ function vAbugida(){
 var SND=[];
 /* The open language's sounds. Empty first: see langRead() in core.js. */
 function sndRead(){
-  SND=[];
-  try{ var s=JSON.parse(slRd(langKey('snd'))||'null');
-       if(s && s.length) SND=s; }catch(e){}
+  SND=slOpen('snd') || [];
 }
 sndRead();
 function saveSnd(){ if(langLocked()) return; bkTouch(); slWr(langKey('snd'), JSON.stringify(SND)); }
@@ -759,7 +757,7 @@ function ltHidHTML(k){
   return capWarnHTML(t('cap.hid', n));
 }
 function ltSeen(){
-  if(can('letters')) return LETTERS;
+  if(!planNo(can('letters'))) return LETTERS;
   return LETTERS.filter(ltIsBase);
 }
 /* How many are not on screen. With no room named it is the alphabet entire,
@@ -859,13 +857,13 @@ function ltSortList(list){
   });
   return list;
 }
-/* ltDrawn() is www/letters.js's. There was a copy of it here and it was the
+/* ltHasShape() is www/letters.js's. There was a copy of it here and it was the
    shorter one: it asked for `st` and for a borrowed character and never for
    `sh`, the shape a letter arrives with off a written sheet -- so 「描いたもの」
    hid every letter that came in that way. One sentence, one place. */
 function ltFilList(list){
-  if(ltFil==='drawn') return list.filter(ltDrawn);
-  if(ltFil==='blank') return list.filter(function(l){ return !ltDrawn(l); });
+  if(ltFil==='drawn') return list.filter(ltHasShape);
+  if(ltFil==='blank') return list.filter(function(l){ return !ltHasShape(l); });
   if(ltFil==='nosnd') return list.filter(function(l){ return !ltUnits(l).length; });
   return list;
 }

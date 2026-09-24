@@ -2412,13 +2412,22 @@ function netLangsGone(mine, ids){
    `syMerge()` in www/sync.js already adds both sides and falls back to what is
    on the phone whenever it cannot read either half, so this should never fire.
    That is exactly why it is here: it costs one comparison, and the day it
-   fires is the day something upstream changed. */
-function netKeeps(mine, put){
-  var a, b, k;
-  if(mine===null || mine==='') return true;      /* placing, not replacing */
+   fires is the day something upstream changed.
+
+   WHAT EACH SIDE IS, it asks slState() (www/core.js) -- the four answers
+   every reader of a slice gets. It used to parse for itself and measure
+   whatever it could not parse by its LENGTH, so a shorter name was refused
+   and a longer string of wreckage was let over a readable slice
+   (docs/scope/r73-audit.md § 2-4). Now: nothing unreadable goes over
+   anything; a copy on this phone that cannot be read takes the server's
+   (CLAUDE.md rule 22); a name is a name. */
+function netKeeps(kind, mine, put){
+  var s1=slState(kind, mine), s2=slState(kind, put), a, b, k;
+  if(s1.is==='none') return true;                /* placing, not replacing */
   if(put===mine) return true;
-  try{ a=JSON.parse(mine); b=JSON.parse(put); }
-  catch(e){ return String(put).length>=String(mine).length; }
+  if(s2.is==='wreck' || s2.is==='none') return false;
+  if(s1.is==='wreck' || s1.is==='plain') return true;
+  a=s1.v; b=s2.v;
   if(a instanceof Array)
     return (b instanceof Array) && b.length>=a.length;
   if(a && typeof a==='object'){
@@ -2611,7 +2620,8 @@ function netSlice1(id, sid, kind, got, done, bad, tries){
               was===null? '' : was, later);
   if(put!=='' && put!==mine){
     /* and only where it keeps everything that is already there */
-    if(netKeeps(mine, put)){
+    if(netKeeps(kind, mine, put)){
+      slMend(langKeyOf(id, kind));
       slWr(langKeyOf(id, kind), put);
       /* Something came back, so say so: the caller reads the screens again. */
       if(put===''){ done(true); return; }
@@ -3158,15 +3168,14 @@ function netFeed(which, ok, bad, more){
     for(i=0;i<d.length;i++) out.push(netRow(d[i]));
     ok(out);
   }
-  /* Whoever you have blocked is asked for FIRST and left out by the server. A
-     timeline that downloaded their posts and then hid them would be a block
-     the phone knows about and the server does not, which is not a block. */
+  /* Whoever you have blocked is not in the answer: `post_seen` asks
+     block_hides() of every author (supabase/schema.sql, r80-block), so the
+     server leaves them out of every list read through it and this takes the
+     answer as it comes. */
   function pull(who){
     var q=sel+(who||'');
     if(more) q+='&created_at=lt.'+encodeURIComponent(String(more));
-    netBlocked(function(bl){
-      netGet(bl.length? q+'&author=not.in.('+bl.join(',')+')' : q, got, bad);
-    });
+    netGet(q, got, bad);
   }
   /* THE DAY'S ANSWERS. 「絞り込みに「#今日のお題」を足す。その行を選ぶと、
      その日のお題に答えた投稿だけ」 OWNER 2026-09-06.
@@ -3199,20 +3208,7 @@ function netFeed(which, ok, bad, more){
   if(which!=='fo'){
     netSend('POST', '/rest/v1/rpc/feed_hot',
             {lim:NET_PAGE, off:(parseInt(more, 10) || 0)},
-            netTok(),
-      function(d){
-        /* Blocked accounts are taken out here and not by the server, because
-           feed_hot() in schema.sql does not take them out. The SQL that would
-           is written in docs/scope/r71-net.md for r65-server, which owns that
-           file. */
-        netBlocked(function(bl){
-          var out=[], i, j, skip={};
-          for(i=0;i<bl.length;i++) skip[bl[i]]=1;
-          for(i=0;i<(d||[]).length;i++)
-            if(!skip[d[i].author]) out.push(netRow(d[i]));
-          ok(out);
-        });
-      }, bad);
+            netTok(), got, bad);
     return;
   }
   /* WHAT THEY WROTE AND WHAT THEY PASSED ON, which is one list and is now one
@@ -3232,24 +3228,7 @@ function netFeed(which, ok, bad, more){
      which is the boost's time for a boost. Sorting a passed-on post by when
      it was written would file a five year old thing where nobody will scroll. */
   netSend('POST', '/rest/v1/rpc/feed_fo',
-          {lim:NET_PAGE, before:more? String(more) : null}, netTok(),
-    function(d){
-      /* Blocked accounts come out here rather than in the question, the same
-         way feed_hot()'s do: one place that knows what a block does to a
-         list. A boost BY somebody blocked goes too, not only a post by them
-         -- being passed something on by somebody you blocked is still hearing
-         from them. */
-      netBlocked(function(bl){
-        var out=[], i, skip={}, r;
-        for(i=0;i<bl.length;i++) skip[bl[i]]=1;
-        for(i=0;i<(d||[]).length;i++){
-          r=d[i]||{};
-          if(skip[r.author] || (r.by && skip[r.by])) continue;
-          out.push(netRow(r));
-        }
-        ok(out);
-      });
-    }, bad);
+          {lim:NET_PAGE, before:more? String(more) : null}, netTok(), got, bad);
 }
 /* WHO THIS ACCOUNT FOLLOWS, as handles.
    -------------------------------------------------------------------------
@@ -3445,55 +3424,37 @@ function netBlock(handle, on, ok, bad){
   netBlockedDrop();
   netPairRow('block', 'actor', 'blocked', handle, on, ok, bad);
 }
-/* The uuids you have blocked, for the one thing that needs uuids: keeping
-   their posts out of a timeline. Signed out there is nobody to have blocked
-   and the answer is none, which is not a failure.
+/* WHO YOU HAVE BLOCKED, BY HANDLE, for the one thing on this phone that still
+   asks: which word the ... menu puts on the row, 「ブロック」 or 「解除」.
 
-   ---- AND IT IS ASKED ONCE, AT THE OPEN ------------------------------------
-   「アプリ開くタイミングで通信入るなら全部一気に入るやろ」 OWNER 2026-09-05.
+   It was a list of uuids too, and every timeline was filtered through it --
+   netFeed() and netPromos() waited for it and took the rows out after the
+   answer came. The server does that now: `post_seen`, `feed_fo()` and
+   `notices()` ask block_hides() (supabase/schema.sql, r80-block), so what a
+   block keeps out never arrives, and the uuid copy had nothing left to do.
 
-   It was asked EVERY TIME a timeline was, and asked FIRST -- netFeed() above
-   waits for this answer before it puts its own question, so every page of
-   every timeline cost two round trips end to end and the posts could not
-   arrive until both had. Measured on a launch: feed_hot went out, and the
-   block list went out 1.2 seconds later, off the back of it.
-
-   So the list is fetched like everything else the app needs -- once, when it
-   opens, through the pull table (`blocks`, www/sns.js) -- and this answers
-   out of `NET_BL` when it is held. A timeline is one question again.
-
-   `NET_BL` is null for 「nobody has asked」 and an ARRAY for 「asked」, empty
-   or not, which is the same distinction everything else on this branch makes.
-   Not asked yet, this falls back to asking -- so a timeline reached before
-   the open's answer lands is still right, it is only slower. */
-/* AND THE SAME ANSWER IN THE FORM A SCREEN ASKS IN. `block` is keyed by uuid
-   -- that is what a row about an account IS -- and the timeline needs uuids,
-   because a post carries its author's id. A SCREEN knows a person by their
-   HANDLE: 「this person, blocked or not」 is what the ... menu asks to decide
-   which word goes on the row.
+   `block` is keyed by uuid -- that is what a row about an account IS -- and a
+   SCREEN knows a person by their HANDLE, so the handles come off
+   `profile_seen` for the ids that came back. When `profile_seen` leaves the
+   blocked out too (r80-block § 保留), this is rewritten with it.
 
    It was `ME.bl` on the phone, written only when somebody pressed the row and
    with no road to fill it from the server -- so on a second phone it was
-   empty, and the menu offered to block somebody who was already blocked while
-   the timeline correctly kept them out. 「NOTHING IS THE PHONE'S. EVERYTHING
-   IS THE ACCOUNT'S.」
+   empty, and the menu offered to block somebody who was already blocked.
+   「NOTHING IS THE PHONE'S. EVERYTHING IS THE ACCOUNT'S.」
 
-   The handles come off `profile_seen`, asked for the ids that just came back,
-   and the two are set TOGETHER in netBlockedRead() below: one road, one
-   answer, two forms of it. `null` is 「not asked」 for both. */
-var NET_BL=null, NET_BL_HD=null, NET_BL_WAIT=null;
+   Asked once, at the open, through the pull table (`blocks`, www/sns.js), and
+   again after a block or an unblock. `null` is 「not asked」. */
+var NET_BL_HD=null, NET_BL_WAIT=null;
 /* The handles, for a screen. `null` (not asked) answers as none: a button
    that said 「blocked」 before the list came down would be this phone saying
    something the server has not said. */
 function netBlockedHandles(){ return NET_BL_HD || []; }
-/* ONE REQUEST, HOWEVER MANY ARE WAITING ON IT. The open asks for this list
-   and the timeline asks for it in the same moment -- feed_hot and this go out
-   together -- so without somewhere to wait, the second caller found `NET_BL`
-   still empty and put the identical question a second time. Measured on a
-   launch: two block requests, and the timeline waiting on the later one.
-
-   `NET_BL_WAIT` is that somewhere. It exists only while a request is out, and
-   everybody holding a place in it is answered from the one reply. */
+function netBlockedGot(){ return NET_BL_HD!==null; }
+/* ONE REQUEST, HOWEVER MANY ARE WAITING ON IT. The open and a block pressed
+   in the same moment would otherwise put the identical question twice.
+   `NET_BL_WAIT` exists only while a request is out, and everybody holding a
+   place in it is answered from the one reply. */
 function netBlockedRead(ok, bad){
   var i, who;
   if(NET_BL_WAIT){ NET_BL_WAIT.push({ok:ok, bad:bad}); return; }
@@ -3504,12 +3465,10 @@ function netBlockedRead(ok, bad){
      postFor() against, one file over. The waiters are still answered, with
      none, because a caller left hanging is worse than a caller told nothing. */
   who=netUid();
-  /* Both forms land in one place, so 「asked」 is one fact rather than two
-     that can come apart. */
   function done(ids, hd){
     var w=NET_BL_WAIT, j;
     NET_BL_WAIT=null;
-    if(netSignedIn() && netUid()===who){ NET_BL=ids; NET_BL_HD=hd; }
+    if(netSignedIn() && netUid()===who) NET_BL_HD=hd;
     else ids=[];
     for(j=0;j<w.length;j++) w[j].ok(ids);
   }
@@ -3517,16 +3476,11 @@ function netBlockedRead(ok, bad){
     function(d){
       var out=[];
       for(i=0;i<(d||[]).length;i++) if(d[i] && d[i].blocked) out.push(d[i].blocked);
-      /* AND WHAT THOSE IDS ARE CALLED. The uuid is what the timeline filters
-         on and the handle is what a screen knows a person by, and asking the
-         server for both is what makes the second one the account's rather
-         than this handset's. `profile_seen` is the row a person is drawn
-         from everywhere else in this file.
-
-         The waiters are answered either way. A handle that does not come back
-         -- a deleted account, a row a policy refuses -- is one this app
-         cannot name, and the block is still a block: the uuid is in the list
-         and the posts stay out. */
+      /* AND WHAT THOSE IDS ARE CALLED. `profile_seen` is the row a person is
+         drawn from everywhere else in this file. The waiters are answered
+         either way: a handle that does not come back -- a deleted account, a
+         row a policy refuses -- is one this app cannot name, and the block is
+         still a block on the server. */
       if(!out.length){ done(out, []); return; }
       netGet('/rest/v1/profile_seen?select=id,handle&id=in.('+netInList(out)+')',
         function(pd){
@@ -3544,13 +3498,9 @@ function netBlockedRead(ok, bad){
     });
 }
 /* Blocking or unblocking somebody makes the copy wrong, and it is the one
-   thing that can. Dropped rather than re-asked: netBlock() below already
-   renders when the row lands, and the next timeline fetches it. */
-function netBlockedDrop(){ NET_BL=null; NET_BL_HD=null; }
-function netBlocked(ok){
-  if(NET_BL){ ok(NET_BL); return; }
-  netBlockedRead(ok, function(){ ok([]); });
-}
+   thing that can; so does signing out. Dropped rather than re-asked: meBlock()
+   asks again when the row lands. */
+function netBlockedDrop(){ NET_BL_HD=null; }
 /* Something is wrong with this post, or with this person. Written and never
    read back: there is no select policy on `report` at all, so nobody using
    the app can read one -- not the person who wrote it and not the person it
@@ -4095,8 +4045,9 @@ function netPostById(id, ok, bad){
    Two questions, because `promo` points at a post by id and a view is not a
    foreign key PostgREST can walk. A post taken down, or written by an account
    that is frozen, is not a place anybody may be sold: both are left out by the
-   question rather than hidden after it arrives. So is whoever this account
-   has blocked -- a block is a block whether or not somebody paid. */
+   question rather than hidden after it arrives. Whoever this account has
+   blocked is left out by `post_seen` itself -- a block is a block whether or
+   not somebody paid. */
 /* `n` is how many places the page being drawn has (www/sns.js
    § snsPromoAsk) -- a place comes after every PROMO_EVERY posts, so a page of
    NET_PAGE posts has that many and no more is asked for. */
@@ -4105,17 +4056,14 @@ function netPromos(n, ok, bad){
     var ids=[], i;
     for(i=0;i<(d||[]).length;i++) if(d[i] && d[i].post) ids.push(d[i].post);
     if(!ids.length){ ok([]); return; }
-    netBlocked(function(bl){
-      netGet(NET_POST_SEL+
-             '&id=in.('+netInList(ids)+')&hidden_at=is.null&author_out=is.false'+
-             (bl.length? '&author=not.in.('+bl.join(',')+')' : '')+
-             '&limit='+ids.length,
-        function(ps){
-          var out=[], j, p;
-          for(j=0;j<(ps||[]).length;j++){ p=netRow(ps[j]); p.ad=true; out.push(p); }
-          ok(out);
-        }, bad);
-    });
+    netGet(NET_POST_SEL+
+           '&id=in.('+netInList(ids)+')&hidden_at=is.null&author_out=is.false'+
+           '&limit='+ids.length,
+      function(ps){
+        var out=[], j, p;
+        for(j=0;j<(ps||[]).length;j++){ p=netRow(ps[j]); p.ad=true; out.push(p); }
+        ok(out);
+      }, bad);
   }, bad);
 }
 /* THE ANSWERS TO POSTS THAT ARE ON THE SCREEN.

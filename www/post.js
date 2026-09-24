@@ -71,9 +71,12 @@ acctKeep('posts', function(){ return POSTS.length? POSTS : null; },
          function(v){ POSTS=(v && typeof v.length==='number')? v : []; }, LS_POSTS);
 /* Newest first, which is the only order a timeline has. */
 /* Whoever you have blocked is not in any list. 「ブロックは何も見えなくなる」
-   netFeed() leaves them out on the SERVER, which is the only way a block is a
-   block at all -- their posts never arrive. This is the other half: a post of
-   theirs already on this phone, in a thread, on a profile, in a search.
+   What the server sends leaves them out already -- `post_seen` asks
+   block_hides() of every author (supabase/schema.sql, r80-block) -- so no
+   answer is sieved on this phone. This is the other half, and the one the
+   server cannot reach: a post of theirs this phone ALREADY holds, brought
+   down before the block. postTake() adds to the copy and never replaces it,
+   so a timeline, a thread and a profile would go on drawing it.
 
    Never your own: `mine` is checked because a handle can be your own on a
    phone whose account changed, and a block that hid your own writing would be
@@ -1987,8 +1990,10 @@ function pwRingHTML(used){
   var cap=postCap(), left, f;
   /* NO CEILING, NO RING. There is nothing for it to draw -- a circle that can
      never empty says only that something is being counted, which is the one
-     thing that is not true on the plan that removed the count. */
-  if(!isFinite(cap)) return '';
+     thing that is not true on the plan that removed the count. And none while
+     nobody has said which plan this is (`null`): a ring counting to the free
+     number is the free shape on an answer nobody gave. */
+  if(cap===null || !isFinite(cap)) return '';
   left=cap-used; f=left/cap;
   if(f<0) f=0;
   if(f>1) f=1;
@@ -2016,23 +2021,17 @@ function pwLeftHTML(){
    use. There is no new string in ten languages; `up.need` is ONE sentence for
    every ceiling and capStop()'s comment says so.
 
-   Asked BEFORE the number, exactly as capStop() does: a ceiling worked out
-   from a plan nobody has answered for would refuse somebody their post, or
-   let one through. 「接続できません」 and not a price.
+   A ceiling worked out from a plan nobody has answered for would refuse
+   somebody their post, or let one through: planFits() hands upStop() the
+   `null` and it says 「接続できません」 and not a price.
 
    BOTH ROWS, because both have the ceiling now. */
-function pwOver(){
-  var cap=postCap();
-  if(!isFinite(cap)) return false;
-  return pwLineLen()>cap ||
-    (!PW.pr && String(PW.mn||'').length>cap);
+function pwFits(){
+  var cap=postCap(), a=planFits(pwLineLen(), 0, cap);
+  if(PW.pr || !a) return a;
+  return planFits(String(PW.mn||'').length, 0, cap);
 }
-function pwCapStop(){
-  if(!pwOver()) return false;
-  if(!planKnown()){ toast(t('net.offline')); return true; }
-  popAsk(t('up.need'), function(){ go('plans'); });
-  return true;
-}
+function pwCapStop(){ return upStop(pwFits()); }
 function pwLeftPaint(){
   var e=document.getElementById('pw-left');
   if(e) e.innerHTML=pwLeftHTML();
@@ -3232,11 +3231,14 @@ function postEdit(id){
      「投稿の編集はplusプランからです」. `post.editplan` is that sentence, and
      the plan is written into it rather than read off `CAN.edit`, because what
      the owner settled is this sentence and not a rule about tiers. If `edit`
-     ever moves off plus, this string moves with it. */
-  if(!can('edit')){
-    popAsk(t('post.editplan'), function(){ go('plans'); });
-    return;
-  }
+     ever moves off plus, this string moves with it.
+
+     And it is upStop() now, with that sentence handed in: this was the one
+     wall that asked on its own, so a plan nobody had answered for was told
+     「投稿の編集はplusプランからです」 and offered a price for what it may have
+     bought. upStop() says 「接続できません」 then (docs/scope/r73-audit.md
+     § 2-3, measured). */
+  if(upStop(can('edit'), 'post.editplan')) return;
   PW=pwBlank();
   PW.ed=p.id; pwLine(postCutOf(p)); PW.mn=String(p.mn||'');
   openPost();
@@ -3584,7 +3586,13 @@ function postInkOK(ink){
     x=ink.s[i];
     if(typeof x==='string') continue;
     if(typeof x!=='number') return false;
-    if(!(x>=0 && x<ink.g.length) || !ink.g[x]) return false;
+    if(!(x>=0 && x<ink.g.length)) return false;
+    /* AND WHAT IT POINTS AT IS A SHAPE -- strokes or rings, a list with
+       something in it (www/glyph.js § inkGeo). It asked only that it was
+       there, so `{}`, `[]`, 'abc' and 5 passed, the line came out as nothing
+       and the text was not drawn either (docs/scope/r73-audit.md § 2-4,
+       measured). Somebody else wrote this post. */
+    if(Object.prototype.toString.call(ink.g[x])!=='[object Array]' || !ink.g[x].length) return false;
   }
   return true;
 }
