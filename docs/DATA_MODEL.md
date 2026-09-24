@@ -412,18 +412,20 @@ it goes with the rest of that account's keys. **It is with the owner** —
 | 誰の | その iPhone を持っているアカウントの。`uid uuid references profile(id) on delete cascade` |
 | 何が | `token`（APNs がその**インストール**に出した宛先、hex）と `created_at`。主キーは `(uid, token)` |
 | 誰が読めるか | **本人だけ**（`is_member() and uid = auth.uid()`）。`using (true)` はどこにもありません ── 読める token は、他人の行に書き込んで鳴らせる token です |
-| 誰が書けるか | 本人が自分の `uid` で insert するときだけ。`npm run rls` が B の名前で書けないこと・A の行を読めないことを試します |
+| 誰が書けるか | 本人が自分の `uid` で insert するときだけ。同じ組を出し直すのは何もしない（毎回の起動が出す）。`npm run rls` が B の名前で書けないこと・A の行を読めないこと・出し直しが断られないことを試します |
 | 編集 | **できません。**update の policy が一つもありません ── token は変わらず、新しいのは新しい行で、古いのは消えます |
-| いつ消えるか | 本人が消したとき（通知を切る）と、**Apple が `410 Unregistered` と答えたとき**。後者は `push-send` が service role で消します ── DELETE REVIEW は `docs/CHANGELOG.md` 2026-09-22 |
+| いつ消えるか | 本人が消したとき（通知を切る）、**Apple が `410 Unregistered` と答えたとき**（`push-send` が service role で、DELETE REVIEW は `docs/CHANGELOG.md` 2026-09-22）、そして**別のアカウントがその iPhone で同じ token を登録したとき**（`device_one()`、DELETE REVIEW は `docs/CHANGELOG.md` 2026-09-24） |
 | 退会したら | `on delete cascade` で消えます |
 
-**なぜ `(uid, token)` で `token` だけではないか。**APNs の token は
-「このアプリの、この端末への、このインストール」を指していて、**人を指して
-いません**。一台の iPhone で別のアカウントにサインインすると、同じ token が
-二つ目の uid に付きます。`token` だけを主キーにすると二人目のサインインが
-一人目の行を奪い、一人目は「その電話を誰かが一度使った」というだけの理由で
-通知が止まります。**二行あるのが本当の形**で、どちらを鳴らすかは知らせの宛先
-（uid）が決めます。
+**一つの token は、一つのアカウントの物です。**APNs の token は「このアプリの、
+この端末への、このインストール」を指していて、その iPhone で今サインインして
+いるのは一人です（`lingua.sess` は「この端末はどのアカウントか」、CLAUDE.md
+§ NOTHING IS THE PHONE'S）。だから別のアカウントがその iPhone で token を登録
+すると、**前のアカウントの行はそこで外れます**（`device_one()`、
+`supabase/schema.sql`）。前は二行が並び、サインアウトせずに替わった前の人の
+通知が、今その iPhone を持っている人に届き続けました（r63-audit S4）。主キーは
+`(uid, token)` のままで、「一つの token に一人」を言うのはその関数一つです。
+既にある重なりは消していません ── 次にその token が登録された時に外れます。
 
 **どの種類か** ── `current` です。宛先は「今どこに送れるか」で、過去形の data
 ではありません。だから古い token を残しておく意味はなく、Apple が無いと言った
