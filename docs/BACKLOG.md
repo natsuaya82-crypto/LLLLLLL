@@ -1665,7 +1665,7 @@ vertically, and nothing is flattened on the way.
 *Done on 2026-08-22, one commit each, and kept as the record of what the entry
 got wrong about itself.*
 
-- ~~`postsRead`~~ → `postRead`.
+- ~~`postsRead`~~ → ~~`postRead`~~ (since gone with the live `lingua.posts` key — `acctKeep()`, `www/core.js` § ACCT).
 - ~~`wSetFil` / `wSetSort`~~ → `wordsSetFil` / `wordsSetSort`.
 - ~~`gh*`~~ → `geHint*`, and `GH*` → `GE_HINT*`. It turned out to be the silent
   demo canvas inside the glyph editor — ten functions that draw no text at all,
