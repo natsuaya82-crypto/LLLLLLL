@@ -120,12 +120,12 @@ function syOneOf(kind, x){
   return s? ('s'+s) : '';
 }
 /* WHETHER ANYBODY HAS MADE ANYTHING OF THIS ROW, and it is a question only the
-   alphabet can answer: ltDrawn() -- a drawing, a shape off a written sheet, a
+   alphabet can answer: ltHasShape() -- a drawing, a shape off a written sheet, a
    borrowed character. FALSE everywhere else, and that is not a gap. It is what
    keeps every other slice exactly as it was: a word, a note or a stage that is
    on both sides falls to the last line of syPut(), which is mine. Nothing here
    changes what happens to anything but letters. */
-function syMade(kind, x){ return (kind==='letters') && ltDrawn(x); }
+function syMade(kind, x){ return (kind==='letters') && ltHasShape(x); }
 /* One row, put in -- and what happens when the thing it is, is already here.
 
    Three answers, and they are docs/DATA_SAFETY.md's order rather than a

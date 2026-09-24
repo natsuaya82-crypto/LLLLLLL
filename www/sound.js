@@ -859,13 +859,13 @@ function ltSortList(list){
   });
   return list;
 }
-/* ltDrawn() is www/letters.js's. There was a copy of it here and it was the
+/* ltHasShape() is www/letters.js's. There was a copy of it here and it was the
    shorter one: it asked for `st` and for a borrowed character and never for
    `sh`, the shape a letter arrives with off a written sheet -- so 「描いたもの」
    hid every letter that came in that way. One sentence, one place. */
 function ltFilList(list){
-  if(ltFil==='drawn') return list.filter(ltDrawn);
-  if(ltFil==='blank') return list.filter(function(l){ return !ltDrawn(l); });
+  if(ltFil==='drawn') return list.filter(ltHasShape);
+  if(ltFil==='blank') return list.filter(function(l){ return !ltHasShape(l); });
   if(ltFil==='nosnd') return list.filter(function(l){ return !ltUnits(l).length; });
   return list;
 }

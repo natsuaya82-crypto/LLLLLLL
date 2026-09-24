@@ -78,7 +78,15 @@ function ltFor(unit){
 /* The one the font uses. */
 function ltMain(unit){ var a=ltFor(unit); return a.length? a[0] : null; }
 function ltChar(unit){ var l=ltMain(unit); return (l && l.ch)? l.ch : ''; }
-function ltHasShape(l){ return !!(inkGeo(l) || (l && l.ch)); }
+/* WHETHER ANYBODY HAS MADE ANYTHING OF THIS LETTER -- a drawing, a shape that
+   came in on a sheet, or a character borrowed for it. It is the sentence the
+   two DELETE REVIEWs in this file already made in their own words twice
+   (「no strokes, no borrowed character, made by the app and never touched by
+   anybody」), and syPut() in www/sync.js asks it a third time when two rows
+   turn out to be one slot. One sentence, one place: an empty slot is the
+   app's, and anything else is somebody's. It was two functions with two
+   names and one body (r78-sides); this is the one. */
+function ltHasShape(l){ return !!l && (!!inkGeo(l) || !!l.ch); }
 /* What a letter LOOKS like: what was drawn, or the character it borrows, or
    whatever the caller wants for a letter that is neither yet -- a pen on the
    alphabet, its name on a spelling, nothing at all on a strip.
@@ -559,14 +567,6 @@ function ltSlotKey(l){
   return (nm.length===1 && LT_START.indexOf(nm)>=0)? nm : '';
 }
 function ltIsBase(l){ return !!l && !!ltSlotKey(l); }
-/* WHETHER ANYBODY HAS MADE ANYTHING OF THIS LETTER -- a drawing, a shape that
-   came in on a sheet, or a character borrowed for it. It is the sentence the
-   two DELETE REVIEWs in this file already made in their own words twice
-   (「no strokes, no borrowed character, made by the app and never touched by
-   anybody」), and syPut() in www/sync.js asks it a third time when two rows
-   turn out to be one slot. One sentence, one place: an empty slot is the
-   app's, and anything else is somebody's. */
-function ltDrawn(l){ return !!l && (!!inkGeo(l) || !!l.ch); }
 /* THE THIRTY-EIGHT, ONCE EACH.
    「だからリリース前の今は消していいから、描いてないからリリースしてから確認
    してくれ、データがないから」OWNER 2026-09-04.
@@ -1048,7 +1048,7 @@ function ltToDigit(id, v){
   var l=ltById(id), d;
   if(!l) return id;
   d=numByVal(v);
-  if(d && d.id!==l.id && !ltDrawn(d)) ltDel(d.id);
+  if(d && d.id!==l.id && !ltHasShape(d)) ltDel(d.id);
   delete l.ab;
   l.val=v;
   l.snd=[];
@@ -1099,7 +1099,7 @@ function ltFreeSlot(l, nm0){
        out a second time. */
     if(s===l || numIsDigit(s)) continue;
     if(ltSlotKey(s)!==nm) continue;
-    if(ltDrawn(s)) return null;
+    if(ltHasShape(s)) return null;
     return s;
   }
   return null;
