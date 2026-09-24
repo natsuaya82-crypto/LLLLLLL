@@ -2345,8 +2345,22 @@ function snsGo(){
    Your own row has neither: you cannot follow yourself, and the chevron is
    not needed to say where your own name goes. */
 function snsWhoRow(p, full){
-  var h=String(p.hd||''), on=meFollows(h);
-  var inner='<span class="pav">'+postFace(p)+'</span>'+
+  var h=String(p.hd||''), on=meFollows(h), inner=snsWhoFace(p, full);
+  return '<div class="whrow">'+
+    (p.mine
+      ? '<button class="whgo"' + DO('profileOpen', [""]) + '>'+inner+'</button>'
+      : '<button class="whgo"' + DO('profileOpen', [h]) + '>'+inner+'</button>')+
+    (p.mine? ''
+      : '<button class="whfo'+(on? ' on' : '')+'"' + DO('meFollow', [h]) + '>'+
+          esc(t(on? 'me.unfollow' : 'me.follow'))+'</button>')+
+    '</div>';
+}
+/* WHO A ROW IS ABOUT -- the face, the name and the @ -- in one place, for
+   every list of people: the follows, the search, and whom you have blocked
+   (www/settings.js). */
+function snsWhoFace(p, full){
+  var h=String(p.hd||'');
+  return '<span class="pav">'+postFace(p)+'</span>'+
     '<span class="whb">'+
       /* 「フォローされています」の札は**名前の行**、@ の行ではありません。
          「Follows you は @ の横ではなく名前の横」OWNER 2026-09-08、実機 143。
@@ -2375,14 +2389,6 @@ function snsWhoRow(p, full){
       (full && p.bio? '<span class="pbio">'+esc(p.bio)+'</span>' : '')+
     '</span>'+
     (p.lname? '<span class="plangtag">'+esc(p.lname)+'</span>' : '');
-  return '<div class="whrow">'+
-    (p.mine
-      ? '<button class="whgo"' + DO('profileOpen', [""]) + '>'+inner+'</button>'
-      : '<button class="whgo"' + DO('profileOpen', [h]) + '>'+inner+'</button>')+
-    (p.mine? ''
-      : '<button class="whfo'+(on? ' on' : '')+'"' + DO('meFollow', [h]) + '>'+
-          esc(t(on? 'me.unfollow' : 'me.follow'))+'</button>')+
-    '</div>';
 }
 /* ---- the words somebody keeps ------------------------------------------
    「検索ページで言葉を⭐️で保存、絞り込みから選ぶとその言葉で検索し直す」
