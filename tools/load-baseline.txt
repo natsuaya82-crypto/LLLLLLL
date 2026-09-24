@@ -1,0 +1,14 @@
+# tools/load-check.mjs claim 3 -- a read of a list with no cap, the day each was counted.
+# One line per read: the table and its `select`, a bar, and why it is not capped yet.
+# Taking a line out is progress and needs nobody; putting one in is a diff on this file.
+# A line that matches no read any more fails the check (it would be permission that rotted).
+rest/v1/block select=blocked | what every timeline is filtered by -- a cap would let the blocked back in; the server has to leave them out (supabase/schema.sql, r65-server; docs/scope/r71-net.md § SQL)
+rest/v1/draft select=id,body,updated_at | draftsPull() takes a draft the answer does not name off this phone -- a page of 50 would take the rest; which of them is the owner's (docs/scope/r71-net.md § オーナーへ)
+# tools/load-check.mjs claim 7 -- a function in www/net.js that asks whether anybody is signed in,
+# and it is a written rule rather than a guard the window already is. `signed-in <function>`.
+signed-in netSaveUp | 「その歩きは、作ったものがこの端末にしかない唯一の窓」 (CLAUDE.md § Online): the walk's language is saved before the door, and nothing goes up until it -- r73 § 2-5 says this sentence is against § Online, which makes it the owner's (docs/scope/r71-net.md § オーナーへ)
+signed-in netSaveUpGo | the same rule at the press: signed out, 「the language is on the phone and has nowhere else to be」 answers the Save button yes -- the owner's, with the line above
+signed-in netLangSync | the door's send (netTook) and the up road answer 「nothing to send」 for a phone with no account -- the same rule, the owner's
+# tools/load-check.mjs claim 7 -- a file other than www/net.js that still names SESS. `sess <file>`.
+sess share.js | shareKbd's uid, `String(SESS.uid||'')` -- not this branch's file; netUid() is the one answer (docs/scope/r71-net.md § 持ち物外)
+sess store.js | the uid handed to LinguaStore.buy, `SESS.uid` -- not this branch's file; netUid() is the one answer (docs/scope/r71-net.md § 持ち物外)

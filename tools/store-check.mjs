@@ -296,7 +296,7 @@ const SET_LOADER = {
      that FIELDS does not already answer for -- what could be parked is what
      `SET` held, and every one of those is in the table. */
   'core.js:SET[k]=got[k]': true,
-  /* netPrefsPull() handing this account back how it has the app set up.
+  /* netMyProfile() handing this account back how it has the app set up.
      The names it writes are `SET_PREFS` in www/core.js and nothing else --
      it walks that list -- so every field it can touch is one FIELDS answers
      for below, each with `netPrefsPut` as its road. Writing the five out by

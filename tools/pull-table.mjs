@@ -37,12 +37,12 @@ const faces = await pg.evaluate(() => {
              for (var i = 0; i < ps.length; i++) if (postPics(ps[i]).length) return ps[i].id + ':0';
              return ''; })(),
     follows: 'ers', letters: '', words: '', notes: '',
-    profile: (typeof meFollowing === 'function' && meFollowing()[0]) || '',
+    profile: (typeof folOf === 'function' && folOf(false, meHandle())[0]) || '',
     about: '', world: ''
   };
   for (r in PAGES) if (Object.prototype.hasOwnProperty.call(PAGES, r))
     out.push({ r: r, a: Object.prototype.hasOwnProperty.call(arg, r) ? arg[r] : '',
-               tab: PAGES[r].tab || '', pull: !!(typeof PULL_ON !== 'undefined' && PULL_ON[r]) });
+               tab: PAGES[r].tab || '', pull: !!(typeof PAGE_PULL !== 'undefined' && PAGE_PULL[r]) });
   return out;
 });
 

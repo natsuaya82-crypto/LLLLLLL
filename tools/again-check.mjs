@@ -197,6 +197,26 @@ const SERVER = `
      On 2026-09-02 it moved onto netSend() -- it differed by one header and by
      being outside the token renewal -- so the stub above is now the only
      transport again, and nothing extra is needed. */
+  /* AND A PERSON WALKING ONTO WHAT THEY HAVE. 「開いた時は通知とタイムライン
+     だけでしょ、そのページに進むときに読み込むべき」 OWNER 2026-09-23: the
+     list of languages is read when the list is arrived at, and what is in each
+     one when a page drawn from it is (www/sns.js § WHAT EACH PAGE READS,
+     mylangs and lang). A section that asks 「did it all come back after a
+     launch」 walks the road a person walks to see it: the list, then each
+     language's dictionary. Nothing here reads or writes on its own -- it is
+     go(), langOpen() and the door. */
+  window.__walk = async function(){
+    function nap(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
+    var ids, w, back = langId;
+    /* after a launch nobody has asked for the list yet -- the fixture's seed
+       says it was answered, and that is the seed's state, not a launch's */
+    pullDrop('mylangs');
+    NAV = [{ r:'plans' }]; route = 'plans';
+    go('langs'); await nap(250);
+    ids = Object.keys(LANGS);
+    for (w = 0; w < ids.length; w++){ langOpen(ids[w]); go('words'); await nap(200); }
+    if (back && LANGS[back] && langId !== back){ langOpen(back); go('words'); await nap(200); }
+  };
 `;
 
 /* ---- 1. two languages, one of them not open ----------------------------- */
@@ -315,7 +335,12 @@ const came = await pg.evaluate(async ({ srv, saved }) => {
   /* signing in is netTook() -- the one place that knows a session arrived */
   netTook({ access_token:'t', refresh_token:'r', user:{ id:'me' } });
   await wait(400);
+  /* AND WHAT IS IN EACH ONE COMES DOWN WHEN A PAGE DRAWN FROM IT IS ARRIVED
+     AT (docs/FEATURE_RULES.md § 2026-09-23 読むのは開いた画面の分だけ;
+     www/sns.js § WHAT EACH PAGE READS, `lang`) -- so the person opens each and
+     walks onto its dictionary, which is how its slices reach this phone. */
   var ids = Object.keys(LANGS), i, j, out = [], v, n, b;
+  for (i = 0; i < ids.length; i++){ langOpen(ids[i]); go('words'); await wait(150); }
   for (i = 0; i < ids.length; i++){
     /* WHAT CAME BACK, MEASURED OVER EVERY SLICE AND NOT OVER `words`.
        ここは `words` の長さだけを数えて「2 本以上が 2 バイトを超えている」と
@@ -360,7 +385,7 @@ say(came.langs.every(l => l.whose === 'mine'),
 
    `netTook()` fired TWO roads that each bring this account's languages down
    and each MAKE the index row: `netLangBack()` straight from it, and
-   `netLangsDown()` through `pullBoot()`. They raced. `netLangBack1()` asked
+   `netLangsDown()` through ~~`pullBoot()`~~. They raced. `netLangBack1()` asked
    the slices FIRST and made its entry in the answer, keyed by the `sid`;
    `netLangsWalk()` made its entry FIRST, keyed by a fresh `langMint()` id --
    so by the time netLangBack1()'s answer came back, `LANGS[sid]` was still
@@ -583,18 +608,19 @@ const W = await pg.evaluate(async () => {
   SET.walked = true;
   ME.name = 'Aya'; ME.handle = 'aya'; saveMe();
   /* 「NOBODY HAS ASKED YET」 IS THE WHOLE TABLE AND NOT ONE FLAG. It was
-     `SNS_GOT = {}` alone, and that stopped being the whole of it on
+     `SNS_GOT = {}` alone (gone -- the timeline is a question per tab on
+     the table now, `feed|fo`), and that stopped being the whole of it on
      2026-09-11, when the table gained 「訊けなかった」 (www/sns.js § pullSay):
      every request this page has made has fallen -- there is no server behind
      `file://` -- so the feed was quite correctly saying ［接続できません］ and
      this claim read it as 「said empty」. pullForget() is the app's own one
      place for 「this phone has been told nothing」 and it is what is meant. */
-  POSTS = []; SNS_GOT = {}; snsTab = 'fo'; pullForget();
+  POSTS = []; snsTab = 'fo'; pullForget();
   window.route = 'feed'; NAV = [{ r:'feed' }]; render();
   out.markTurns = !!document.querySelector('#app .snswait .pullrule');
   out.saidNoneWaiting = document.querySelector('#app .empty .eb') !== null;
   /* An answer that came back EMPTY is still an answer, and now it may say so. */
-  SNS_GOT['fo'] = 1; render();
+  PULL_GOT['feed|fo'] = 1; render();
   out.saysNoneAfter = document.querySelector('#app .empty .eb') !== null;
   out.markGone = !document.querySelector('#app .snswait');
   /* ---- AND THE THIRD FACE: 訊けなかった ---------------------------------
@@ -602,13 +628,13 @@ const W = await pg.evaluate(async () => {
      An answer of 0 from ten minutes ago is not a statement about a server this
      phone cannot reach now, so 「まだ何もない」 may not stand after a fall.
      It is the sentence netPop() already puts up, drawn in the body. */
-  PULL_OFF['feed'] = 1; render();
+  PULL_OFF['feed|fo'] = 1; render();
   out.offSaysOffline = ((document.querySelector('#app .empty .eb') || {}).textContent
                           === t('net.offline'));
   out.offMarkGone = !document.querySelector('#app .snswait');
   /* And an answer coming back is the end of it, without anybody clearing a
      second flag by hand. */
-  PULL_OFF['feed'] = 0; render();
+  PULL_OFF['feed|fo'] = 0; render();
   out.backToNone = ((document.querySelector('#app .empty .eb') || {}).textContent
                       === t('sns.none.fo'));
   /* ---- AND THE DAY'S SENTENCE, WHICH IS THREE FACES AND ONE ROAD ---------
@@ -631,7 +657,7 @@ const W = await pg.evaluate(async () => {
     if (fall) { bad(null, 0, 'day 0'); return; }
     ok({ id:'p1', on_day:'2026-09-02', text:'the sea', says:{ en:'the sea' } });
   };
-  DAY = null; DAY_GOT = false; PULL_GOT.day = 0; PULL_OUT.day = 0;
+  DAY = null; PULL_GOT.day = 0; PULL_OUT.day = 0;
   /* Not asked yet: the mark stands where the sentence goes, and the row is
      still a button. */
   render();
@@ -654,7 +680,7 @@ const W = await pg.evaluate(async () => {
   out.asks = asks;
   out.gotDay = !!(DAY && DAY.text);
   /* And a day the writer missed: an answer, with no sentence in it. */
-  DAY = null; DAY_GOT = true;
+  DAY = null; PULL_GOT.day = 1;
   render();
   out.plainAfterNone = !document.querySelector('#app .wrow .numwait') &&
     (document.querySelector('#app .wrow .wrt') || {}).textContent === t('post.ln.ph');
@@ -732,6 +758,10 @@ const V = await pg.evaluate(() => {
      record has three values, not two, and a route whose last ask FELL is not
      a route nobody has asked (www/sns.js § pullSay). Every request on this
      page has fallen. */
+  /* The kept words are on this screen too and are this screen's other read
+     (www/sns.js § WHAT EACH PAGE READS, `explore`) -- answered here, so the
+     mark measured is the typed words' and nothing else's. */
+  PULL_GOT.saved = 1;
   snsQ = ''; snsHits = null; SET.recent = []; pullDrop('recent'); render();
   out.recentTurns = markOn();
   PULL_GOT.recent = 1; render();
@@ -1377,6 +1407,9 @@ const road = await pg.evaluate(async ({ srv, saved }) => {
       S.slice[i].body = JSON.stringify(
         JSON.parse(S.slice[i].body).concat([{ hw:'newer', gl:'added on another phone' }]));
   await new Promise(function(f){ netLangsDown(function(){ f(); }); });
+  /* and its slices, which come down when a page drawn from it is arrived at
+     (www/net.js § netLangFill) -- the road the answer takes now */
+  await new Promise(function(f){ netLangFill(langId, function(){ f(); }, function(){ f(); }); });
   await wait(300);
   out.words = WORDS.map(function(w){ return String(w.hw); });
   return out;
@@ -1468,8 +1501,9 @@ say(loop.mineAfter === null || String(loop.mineAfter).indexOf('tunnelword') < 0,
     'is saved to it」（' + (loop.mineAfter === null ? '取られない' : '**取られた**') + '）');
 
 /* 電波が戻る。サーバーは別の iPhone が足した語を持っている ── 写しが答えを
-   上書きするなら、ここでそれが消えます。戻った時に走るのは起動と同じ道 ──
-   この言語が降りてくる netLangsDown() で、上り道ではない。 */
+   上書きするなら、ここでそれが消えます。戻った時に走るのは降りる道 ──
+   一覧の netLangsDown() と、その言語の画面に進んだ時の netLangFill() で、
+   上り道ではない。 */
 await pg.unroute('https://*.supabase.co/**');
 const loopUp = await pg.evaluate(async ({ srv, saved }) => {
   function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
@@ -1483,6 +1517,7 @@ const loopUp = await pg.evaluate(async ({ srv, saved }) => {
         JSON.parse(S.slice[i].body).concat([{ hw:'otherphone', gl:'added on another phone' }]));
   SESS = { at:'t', rt:'r', uid:'me3', anon:false };
   await new Promise(function(f){ netLangsDown(function(){ f(); }); });
+  await new Promise(function(f){ netLangFill(langId, function(){ f(); }, function(){ f(); }); });
   await wait(1600);
   var body = '';
   for (i = 0; i < S.slice.length; i++)
@@ -1529,7 +1564,9 @@ const one = await pg.evaluate(({ s, srv }) => {
   SESS = { at:'t', rt:'r', uid:'me3', anon:false };
   var out = {}, r, pulls = [], build = [];
   for (r in PAGES) if (Object.prototype.hasOwnProperty.call(PAGES, r)){
-    if (!PULL_ON[r]) continue;
+    /* 引く画面は、読みの表の行が「引く」と言うもの（www/sns.js § WHAT EACH
+       PAGE READS の `pull`）。 */
+    if (!PAGE_PULL[r]) continue;
     pulls.push(r);
     /* 制作側かどうかは PAGES の tab が言います ── ここに一覧を書くと、
        画面が増えた日にこの check が古いほうを持ちます。 */
@@ -1961,6 +1998,9 @@ const nmC = await pg.evaluate(async ({ s, srv }) => {
              { language:'srvnew', kind:'lang', body:'スライスの古い名', no:1 }];
   netTook({ access_token:'t', refresh_token:'r', user:{ id:'nm2' } });
   await wait(1500);
+  /* the column is filled from the slice when that language's slices come
+     down, which is when a page drawn from it is arrived at */
+  await window.__walk();
   /* 索引の鍵はその行の id そのものです（2026-09-10、幹一本）── 突き合わせる
      ものがないので、探すのではなく引きます。 */
   function nameOfSid(sid){
@@ -2030,6 +2070,7 @@ const oneC = await pg.evaluate(async ({ srv, u }) => {
   S.slice = [];
   netTook({ access_token:'t', refresh_token:'r', user:{ id:'idm' } });
   await wait(1600);
+  await window.__walk();
   S.tried = [];
   if (LETTERS.length) LETTERS[0].g = [[[0,0],[1,1]]];
   saveLetters();
@@ -2176,6 +2217,7 @@ const tookB = await pg.evaluate(async ({ srv, saved, lid }) => {
               letters: slMine(langKeyOf('far-1', 'letters')) };
   netTook({ access_token:'t', refresh_token:'r', user:{ id:'tk1' } });
   await wait(1500);
+  await window.__walk();
   /* 自分の言語は、この端末が閉じる前に立っていた言語そのもの。索引は disk に
      残るので local id は生き残ります ── `sid` で引くと、行がサーバーに無い
      ときに何も見つからず、主張が「見つからなかった」で緑になります。 */
@@ -2283,6 +2325,7 @@ const goneA = await pg.evaluate(async ({ s, srv }) => {
   /* 一度目の起動 ── 二つとも降りてきて、写しがディスクに残ります。 */
   netTook({ access_token:'t', refresh_token:'r', user:{ id:'gn1' } });
   await wait(1500);
+  await window.__walk();
   return { lid: langId, sid: mySid,
            mineWords: slMine(langKeyOf(langId, 'words')),
            /* 写しはディスク（slGot の `.got`）。開き直しても残るのはこれです。 */
@@ -2315,6 +2358,7 @@ const goneNull = await pg.evaluate(async ({ srv, saved }) => {
   function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
   netTook({ access_token:'t', refresh_token:'r', user:{ id:'gn1' } });
   await wait(1500);
+  await window.__walk();
   return { took: langTook(), row: !!LANGS['gone-1'],
            got: localStorage.getItem(langKeyOf('gone-1', 'letters') + '.got'),
            stay: !!LANGS['stay-1'] };
@@ -2347,6 +2391,7 @@ const goneB = await pg.evaluate(async ({ srv, saved, lid }) => {
               got: localStorage.getItem(langKeyOf('gone-1', 'letters') + '.got') };
   netTook({ access_token:'t', refresh_token:'r', user:{ id:'gn1' } });
   await wait(1500);
+  await window.__walk();
   var mine = LANGS[lid] ? lid : '';
   return {
     was: was,
@@ -2409,6 +2454,7 @@ const goneC = await pg.evaluate(async ({ srv, saved, lid }) => {
   var was = !!LANGS['stay-1'];
   netTook({ access_token:'t', refresh_token:'r', user:{ id:'gn1' } });
   await wait(1500);
+  await window.__walk();
   return { was: was, took: langTook(), stay: !!LANGS['stay-1'],
            letters: slRd(langKeyOf('stay-1', 'letters')),
            mineRow: !!LANGS[lid],
@@ -2493,6 +2539,7 @@ const lt42B = await pg.evaluate(async ({ srv, a }) => {
   }
   netTook({ access_token:'t', refresh_token:'r', user:{ id:'me42' } });
   await wait(900);
+  await window.__walk();
   var boot = LETTERS.length;
   langOpen(a.id);
   /* 一文字に線を引いて保存 ── 人がやる道と同じ（saveLetters → bkTouch →
@@ -2677,6 +2724,7 @@ const takeA = await pg.evaluate(async ({ s, srv }) => {
   langSeenAdd('tk-theirs', 'Theirs', 'somebody-else');
   netTook({ access_token:'t', refresh_token:'r', user:{ id:'tk1' } });
   await wait(1500);
+  await window.__walk();
   return { took:langTook(), read:langWhose('tk-theirs') === LW_READ,
            pic:localStorage.getItem('lingua.take.tk1') };
 }, { s: seed.toString(), srv: SERVER });

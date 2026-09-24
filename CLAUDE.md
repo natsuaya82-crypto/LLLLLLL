@@ -108,6 +108,15 @@ at** 「前に読み込んだ分は出て欲しい。制作も眺めたい人は
 2026-09-04. Looking is the whole of it: nothing is made, nothing is saved, and
 nothing on that copy ever travels back to the server (rule 22).
 
+**And what is READ is decided by the screen** 「読むのは開いた画面の分だけ」
+OWNER 2026-09-23. The launch reads the notices and the timeline (`PAGE_OPEN`
+in `www/sns.js`); every other screen reads what it draws when it is arrived
+at, through the one door (`navLand()`, `www/shell.js`) and its row in
+`PAGE_READS`; a view reads nothing; a list is cut at `NET_PAGE` and carries on
+at the bottom; somebody else's chapter comes down when ↓ is pressed.
+**`load-check` holds it** — it counts the launch, every route's arrival,
+every view, every GET's cap and one function per table and columns.
+
 **The onboarding is the one place making happens before there is an account,
 and that is the order the owner asked for** 「オンボーディング→最後にログイン」.
 Somebody draws a letter, is walked through the app, and names what they are
@@ -859,8 +868,8 @@ through and `netSaveUp()` (`www/net.js`) sends the slices that moved, one
 short read and one short write, after the typing stops. 「保存としたらオンライン
 おしまい」 OWNER 2026-09-04; before that a language went up on a LAUNCH and at
 the door and nowhere else, so an hour's writing sat on one phone until the app
-was opened again. `netLangSync()` is still the launch, and it is the same road:
-both call `netSlice1()`, which is the only thing that puts a slice up. `SLICES` in `core.js` is the list of them —
+was opened again. `netLangSync()` is the door's (`netTook()`) and a new
+language's (`langNew()`), and it is the same road: both call `netSlice1()`, which is the only thing that puts a slice up. `SLICES` in `core.js` is the list of them —
 **count them off that and not off a line here**, which has said eleven and has
 said twelve. `lingua.langs` says which languages are here and whose;
 `lingua.set` is the person's settings and belongs to no language.
@@ -1141,8 +1150,10 @@ nowhere else. A save now goes up the moment it is made (`netSaveUp()` in
 window that closed.
 
 **And a phone whose storage is reclaimed comes back from the server.**
-`netLangsDown()` at the foot of `www/boot.js` brings down every language this
-ACCOUNT has. What it brings down it fills in and never writes over -- which is
+`netLangsDown()` brings down which languages this ACCOUNT has, and
+`netLangFill()` (`www/net.js`) brings a language's slices down when a screen
+drawn from it is arrived at 「読むのは開いた画面の分だけ」 OWNER 2026-09-23.
+What it brings down it fills in and never writes over -- which is
 what ~~`bkRestore()`~~ used to do out of the file, with the same rule: it fills in
 what is **missing** and stops. `again-check` holds it, and holds the save
 arriving without a launch.
@@ -1761,8 +1772,8 @@ every save and read back at launch. **They are in memory now** — `LSL` in
 `core.js`, reached by `slRd`/`slWr`/`slRm`, keyed by the same `langKeyOf()`
 that has always said how a language is filed. What is there is what the
 RUNNING app is holding, the same kind of thing `WORDS` and `LETTERS` already
-were, one step further out. Close the app and it is gone; open it signed in
-and `netLangsDown()` brings it back.
+were, one step further out. Close the app and it is gone; open it signed in,
+arrive at a screen drawn from it, and `netLangFill()` brings it back.
 
 **There is one copy on this phone and it is READ-ONLY.**
 「前に読み込んだ分は出て欲しい。制作も眺めたい人はいるだろうし、」 OWNER
@@ -1805,7 +1816,7 @@ to; after the door a save goes up the moment it is made (rule 6), so there is
 no other window. What that same decision does NOT allow is a failure that
 takes the work with it -- rule 11 above and `saveTry()` in `www/core.js`.
 
-**And `netLangsDown()` fills a language it already knows about.** It used to
+**And `netLangFill()` fills a language it already knows about.** It used to
 skip one whose id was in the index, which was right while a slice survived a
 launch and is the line that would silently empty everybody's dictionary now:
 the index is on disk and the slices are not, so every launch starts with a

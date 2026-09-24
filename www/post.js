@@ -531,7 +531,7 @@ draftsRead();
    net.js is loaded before this file (www/index.html: 3585 and 3611), so SESS
    is here to be asked. Signed out, this parks what the phone was holding,
    which is what netOut() does for the same reason. */
-postFor(SESS && SESS.uid);
+postFor(netUid());
 draftsName();
 /* Saved as it stands: the line, the meaning, whom it answers, WHOM IT IS FOR,
    the pictures with their letters still placed on them, the recording, and
@@ -743,9 +743,10 @@ function draftsPull(ok, bad){
 
    It is one entry in the pull table now (`drafts`, www/sns.js), so the flag,
    the mark, the pop and ［再接続］ are the table's; the uid it was keyed on is
-   pullForget(), which empties every answer when a session ends. And it is on
-   PULL_OPEN, so the drafts are in hand before this screen is opened rather
-   than a second after -- nothing is asked for on the way in. */
+   pullForget(), which empties every answer when a session ends. And it is
+   this page's row in www/sns.js § WHAT EACH PAGE READS, so the door waits
+   for the drafts and they are in hand before this screen is drawn rather
+   than a second after -- the view itself asks for nothing. */
 /* A page of its own. 「下書きはそこに入れないで。別ページに飛ぶ感じで」 A list
    at the foot of the screen you are writing on is a list under the thing it
    is about, and the two are read as one screen -- so the drafts are somewhere

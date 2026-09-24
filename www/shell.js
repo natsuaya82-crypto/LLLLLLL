@@ -73,15 +73,11 @@ function viewReset(){
   snsQ=''; snsHits=null;               /* the search and what came back */
   snsSort='new';                       /* and newest or most answered */
   snsFil=null;                         /* and the word the feed is filtered to */
-  /* The notices, ASKED AGAIN, because what a notice SAYS is written in the
-     language the app is read in. All three moves and not one: what was
-     answered, the table's record THAT it was answered, and the question
-     itself. Dropping the record alone would leave the screen turning its mark
-     for ever -- nothing asks on the way onto a screen any more (www/sns.js
-     § WHAT AN OPEN ASKS FOR), so unless the asking happens HERE, where the
-     language actually changed, the only thing left that would ask is somebody
-     pulling the screen down. */
-  NOTES_HAVE=null; pullDrop('notif'); pullNeed('notif');
+  /* NOTHING IS READ HERE. This is where a screen forgets, and it runs when a
+     LANGUAGE is opened (langOpen, www/core.js) -- the notices were asked again
+     from this line on every one of those, which is the language somebody is
+     making and not the one the app is read in. That is setUi()'s
+     (www/settings.js), and reading is the door's (§ navLand). */
   /* And what has been typed into a field and not saved. It is where you are
      standing rather than anything a language owns, and standing in one
      language's article with the paragraph you were typing into another's
@@ -219,17 +215,50 @@ function vpKbWire(){
 var NAV=[{r:'profile'}];
 function here(){ return NAV[NAV.length-1]; }
 function prevPage(){ return NAV.length>1? NAV[NAV.length-2] : null; }
+/* ---- THE ONE DOOR ONTO A PAGE -------------------------------------------
+   「開いた時は通知とタイムラインだけでしょ、そのページに進むときに読み込む
+   べき」 OWNER 2026-09-23, and 「押してから読み込みが終わるまで前の画面の
+   ままで、揃った瞬間に出る」「くるくるも出さない」 OWNER 2026-09-07.
+
+   Every move -- a press onto a page, back, a tab -- works out the trail it
+   is going to and hands it here. What the page arriving is drawn from is its
+   row in www/sns.js § WHAT EACH PAGE READS; this waits for those answers and
+   THEN moves, so the page pressed from stays on the glass until the one
+   pressed to is whole, and no view has anything to read. A page whose
+   answers are in (or which reads nothing) moves at once, in the same turn,
+   exactly as a move always did.
+
+   NAV_TO is the trail being landed. A second press while one is waiting
+   works out its trail from THAT, and wins: only the newest waiting move
+   lands.
+
+   AND A PAGE WHOSE QUESTION FELL ON THE WIRE IS NOT ARRIVED AT.
+   「そもそも通信エラーならそこにはいけないはずでしょ。途中でエラーになった
+   場合は全部ポップで良くない？」 OWNER 2026-09-05. The page pressed from
+   stays, the pop is up (netPop, through pullRun), and ［再接続］ makes this
+   same move again. A server that ANSWERED -- empty, or refusing -- is an
+   answer, and the page is arrived at and says so. */
+var NAV_TO=null;
+function navNow(){ return NAV_TO || NAV; }
+function navLand(nav){
+  var to=nav[nav.length-1];
+  NAV_TO=nav;
+  pageWait(to.r, to.a, function(went){
+    if(NAV_TO!==nav) return;
+    NAV_TO=null;
+    if(!went){ netPop(null, 0, 'page', function(){ navLand(nav); }); return; }
+    NAV=nav; route=to.r; render(); window.scrollTo(0,0);
+  });
+}
 function go(r, a){
-  var h=here();
+  var now=navNow(), h=now[now.length-1], i;
   if(h.r===r && h.a===a) return;
   /* Going back to a page already on the trail is going back, not deeper.
      Without this, contents -> words -> contents -> words piles up four
      screens and the back button walks a circle. */
-  var i;
-  for(i=NAV.length-2;i>=0;i--){
-    if(NAV[i].r===r && NAV[i].a===a){ NAV.length=i+1; route=r; render(); window.scrollTo(0,0); return; }
-  }
-  NAV.push({r:r, a:a}); route=r; render(); window.scrollTo(0,0);
+  for(i=now.length-2;i>=0;i--)
+    if(now[i].r===r && now[i].a===a){ navLand(now.slice(0, i+1)); return; }
+  navLand(now.concat([{r:r, a:a}]));
 }
 /* ---- a post half written, on the way out ------------------------------
    OWNER DECISION 2026-08-25: 「戻るをした時は確認ダイアログを入れて下書きに
@@ -819,8 +848,8 @@ function backGo(){
      there is no Done in that bar any more, and a save that landed comes down
      this road too. 「並べ替えは保存か戻るで終わる」 OWNER 2026-09-05. */
   kbWob=false;
-  if(NAV.length>1) NAV.pop(); else NAV=[{r:'profile'}];
-  route=here().r; render(); window.scrollTo(0,0);
+  var now=navNow();
+  navLand(now.length>1? now.slice(0, now.length-1) : [{r:'profile'}]);
 }
 function back(){
   if(backDraftKept()) return;
@@ -874,7 +903,7 @@ function navDrop(a, r){
 /* Leaving the search tab for a chapter of the build tab: two moves, and the
    pair of them is one thing a row does. It was two statements inside markup. */
 function goIn(r){ goTab('build'); go(r); }
-function goTab(r){ NAV=[{r:r}]; route=r; render(); window.scrollTo(0,0); }
+function goTab(r){ navLand([{r:r}]); }
 /* Kept because a hundred lines still read it. It is here()'s route. */
 var route='profile';
 
@@ -999,49 +1028,55 @@ function appIs(){
 /* ---- every page ------------------------------------------------------
    Its numeral in the book, its name, and which tab it lives under. The back
    button says where it goes and the heading says where you are, side by
-   side: 「←目次　Ⅰ 単語」 */
+   side: 「←目次　Ⅰ 単語」
+
+   `lang` is 「this page is drawn from the language that is open」, so the
+   door onto it reads that language's slices (www/sns.js § WHAT EACH PAGE
+   READS, `lang`) -- 「その画面に進んだ時に」 OWNER 2026-09-23. A page not
+   marked is not drawn from it; the language list and the profile are drawn
+   from the rows, which are theirs. */
 var PAGES={
   feed:    {tab:'feed',    k:'tab.home'},
   explore: {tab:'explore', k:'tab.explore'},
   notif:   {tab:'notif',   k:'tab.notif'},
   profile: {tab:'profile', k:'tab.me'},
-  build:   {tab:'build', k:'tab.build'},
-  find:    {tab:'build', k:'tab.find'},
-  form:    {tab:'build'},
-  letters: {tab:'build', k:'toc.letters'},
-  kb:      {tab:'build', k:'kb.title'},
-  ltset:   {tab:'build', k:'toc.letters'},
-  letter:  {tab:'build', k:'lt.title'},
-  wsys:    {tab:'profile',  k:'ws.kind'},
-  sp:      {tab:'profile',  k:'set.sp'},
-  abugida: {tab:'build', k:'ab.title'},
-  relate:  {tab:'build'},
-  fm:      {tab:'build', k:'word.fm'},
-  pos:     {tab:'build', k:'f.pos'},
-  reg:     {tab:'build', k:'word.reg'},
-  sub:     {tab:'build', k:'f.sub'},
+  build:   {lang:1, tab:'build', k:'tab.build'},
+  find:    {lang:1, tab:'build', k:'tab.find'},
+  form:    {lang:1, tab:'build'},
+  letters: {lang:1, tab:'build', k:'toc.letters'},
+  kb:      {lang:1, tab:'build', k:'kb.title'},
+  ltset:   {lang:1, tab:'build', k:'toc.letters'},
+  letter:  {lang:1, tab:'build', k:'lt.title'},
+  wsys:    {lang:1, tab:'profile',  k:'ws.kind'},
+  sp:      {lang:1, tab:'profile',  k:'set.sp'},
+  abugida: {lang:1, tab:'build', k:'ab.title'},
+  relate:  {lang:1, tab:'build'},
+  fm:      {lang:1, tab:'build', k:'word.fm'},
+  pos:     {lang:1, tab:'build', k:'f.pos'},
+  reg:     {lang:1, tab:'build', k:'word.reg'},
+  sub:     {lang:1, tab:'build', k:'f.sub'},
   follows: {tab:'profile'},
   /* The people one notice is about. Named 「フォロワー」 because that is what
      they are -- a follow notice is people who followed you -- and the word is
      already written in all ten languages, under the number on a profile. */
   notfo:   {tab:'notif', k:'me.followers'},
-  glyph:   {tab:'build'},
-  spell:   {tab:'build', k:'word.sp'},
-  words:   {tab:'build', k:'toc.words'},
-  gram:    {tab:'build', k:'toc.gram'},   /* the numeral is dropped on a single stage */
+  glyph:   {lang:1, tab:'build'},
+  spell:   {lang:1, tab:'build', k:'word.sp'},
+  words:   {lang:1, tab:'build', k:'toc.words'},
+  gram:    {lang:1, tab:'build', k:'toc.gram'},   /* the numeral is dropped on a single stage */
 
-  notes:   {tab:'build', k:'toc.notes'},
+  notes:   {lang:1, tab:'build', k:'toc.notes'},
   settings:{tab:'profile',  k:'set.title'},
   /* Saying something to whoever makes the app. A route and not a sheet:
      writing is a screen, the way choosing is. 「設定にお問合せを足して欲しい」
      OWNER 2026-09-22. */
   contact: {tab:'profile', k:'set.contact'},
-  set:     {tab:'profile'},
-  world:   {tab:'profile', k:'wld.title'},
+  set:     {lang:1, tab:'profile'},
+  world:   {lang:1, tab:'profile', k:'wld.title'},
   /* One section of the language's article. Named after the section, not
      after the chapter it sits in -- pageName() below does that for a stage
      and a letter for the same reason. */
-  wldart:  {tab:'profile', k:'wld.secs'},
+  wldart:  {lang:1, tab:'profile', k:'wld.secs'},
   about:   {tab:'profile', k:'wld.about'},
   /* Which timeline the feed is showing, chosen on a page of its own.
      「右上にフィルター作って」 OWNER 2026-08-28 -- and choosing is a screen,
@@ -1542,10 +1577,10 @@ function tabBar(){
        The name is still said -- as the button's aria-label, because a button
        whose whole content is an aria-hidden drawing has nothing to be called
        by otherwise, and pageName() stays the one place that names a tab. */
-    /* THE PROFILE IS THE ONE TAB THAT IS NOT goTab(). It is not drawn until
-       everything on it has answered -- www/me.js § profileOpen -- and that
-       is the whole of 「全部読み込んでから開く」. Everything else on this bar
-       draws out of what is already here. */
+    /* Every tab arrives through the one door (navLand, above), which waits
+       for what that page reads. The profile's press is profileOpen(), which
+       is goTab('profile') for your own page (www/me.js), and it alone carries
+       the hold that opens the languages. */
     out+='<button class="tab'+(cur===r?' on':'')+'"' +
       (r==='profile'? DO('profileOpen', [""]) : DO('goTab', [r])) +
       (r==='profile'? ' data-hold="1"' : '')+

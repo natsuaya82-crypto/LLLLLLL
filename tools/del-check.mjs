@@ -200,12 +200,15 @@ const evalled = (names) => {
    answers what the popup's own button is: not part of any menu.           */
 {
   const world = {
-    POSTS: [], POST_GONE: {}, PMENU: 'p1', WMENU: false, SESS: { uid: 'u', at: 'tok' },
+    POSTS: [], POST_GONE: {}, PMENU: 'p1', WMENU: false,
     asked: null,
     popAsk: (msg, yes) => { world.asked = yes; },
     actOf: () => null,
     said: [], sent: null, answer: null,
     netSignedIn: () => true,
+    /* who this is and the token it goes with, asked of their one place each
+       (www/net.js § netUid, netTok) rather than read off SESS */
+    netUid: () => 'u', netTok: () => 'tok',
     dropped: 0,
     netDropFiles: (p, done) => { world.dropped++; done(); },
     netSend: (m, path, body, tok, ok, bad) => { world.sent = m + ' ' + path; world.answer(ok, bad); },

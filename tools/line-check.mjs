@@ -93,7 +93,12 @@ const errs = [];
 pg.on('pageerror', (e) => errs.push(e.message));
 await pg.goto(`http://localhost:${PORT}/`);
 await pg.waitForSelector('#splash', { state: 'detached', timeout: 10000 });
-await pg.evaluate((s) => { eval('(' + s + ')()'); SET.walked = true; SET.ui = 'en'; },
+/* The door onto a page waits for what that page reads (www/shell.js
+   § navLand, OWNER 2026-09-23 「読むのは開いた画面の分だけ」) and there is no
+   server here, so go('thread') below would never land. What is measured is
+   the line, not the reads: a page's answers are taken as already in. */
+await pg.evaluate((s) => { eval('(' + s + ')()'); SET.walked = true; SET.ui = 'en';
+                           window.pageWait = function (r, a, done) { done(true); }; },
                   seed.toString());
 
 const fails = [];

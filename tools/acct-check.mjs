@@ -146,7 +146,7 @@ const R = await pg.evaluate(async () => {
     ME.link = 'example.com'; ME.loc = 'どこか';
     saveMe();
     /* フォローはサーバーの答えで、`follow` 表から降りてくる場所に置きます
-       （www/me.js § meFollowing、2026-09-09）。`ME.fo` は書きません ──
+       （www/me.js § folPull、2026-09-09）。`ME.fo` は書きません ──
        もう誰も読みません。 */
     folPut(false, 'lingua2', ['someone', 'someone-else']);
   };
@@ -190,7 +190,9 @@ const R = await pg.evaluate(async () => {
   if (ME.pic) no('1: 前の人の顔が残っている — netMakeProfile() が av として送る');
   if (ME.link) no('1: 前の人のリンクが残っている');
   if (ME.loc) no('1: 前の人の居るところが残っている');
-  if (meFollowing().length) no('1: 前の人のフォローが残っている — ' + meFollowing().length + '人');
+  if (folOf(false, meHandle()).length)
+    no('1: 前の人のフォローが残っている — ' + folOf(false, meHandle()).length + '人' +
+       '（一覧は FOL_HAVE。lingua.me の ME.fo・ME.fr は読みも書きもしない）');
   say('1: 別のアカウントが入ったとき、前の人は一つも残らない');
 
   /* ---- 2. and nothing was destroyed to do it ---------------------------
@@ -221,7 +223,7 @@ const R = await pg.evaluate(async () => {
      Going A -> B -> A -> B: the second person must still be empty, which is
      what says the parking is per account and not one drawer everybody shares. */
   netOut(); arrive(B);
-  if (ME.name || ME.bio || meFollowing().length)
+  if (ME.name || ME.bio || folOf(false, meHandle()).length)
     no('3: 二人分が混ざっている — B に A のものが出た');
   ME.name = 'Two'; ME.handle = 'two'; saveMe();
   netOut(); arrive(A);
@@ -521,6 +523,12 @@ const R = await pg.evaluate(async () => {
   };
   let made = 0;
   netLangsDown((n) => { made = n; });
+  /* The rows come down with the list; each language's slices when a page
+     drawn from it is arrived at (www/net.js § netLangFill, `lang` in
+     www/sns.js § WHAT EACH PAGE READS) -- so both are asked here, on the
+     same stubs, the way arriving at each would ask them. */
+  netLangFill(keepId, () => {}, () => {});
+  netLangFill('far-lang', () => {}, () => {});
   netGet = realGet;
 
   if (made !== 1) no('13: 降ろした数が 1 でない — ' + made + '（既にある言語まで作った？）');
@@ -541,7 +549,7 @@ const R = await pg.evaluate(async () => {
   if (slRd(langKeyOf(keepId, 'lang')) !== 'むこうの言語')
     no('13: 既にある言語の、欠けていたスライスが降りてこない ── ' +
        JSON.stringify(slRd(langKeyOf(keepId, 'lang'))) +
-       '。写しがメモリになったので、起動のたびにこれが要る');
+       '。写しがメモリになったので、その言語の画面に進むたびにこれが要る');
   say('13: 既にある言語は、持っているスライスを上書きされず、欠けているスライスが埋まる');
 
   /* 降りてきた言語の鍵は、その行の id そのものです（幹一本）。 */
@@ -580,6 +588,7 @@ const R = await pg.evaluate(async () => {
     return ok([]);
   };
   netLangsDown(() => {});
+  netLangFill(ORPH, () => {}, () => {});
   netGet = realGet;
 
   if (slRd(langKeyOf(ORPH, 'words')) !== '[{"hw":"残っていた単語"}]')
@@ -706,7 +715,7 @@ const R = await pg.evaluate(async () => {
      「端末に残すものないんですけど。サーバーで同じ機能になるように代替して」
      OWNER 2026-09-08。
 
-     `netProfSync()` は欄ごとに両側を訊いて、**食い違えば端末を上げて**いま
+     ~~`netProfSync()`~~ は欄ごとに両側を訊いて、**食い違えば端末を上げて**いま
      した。だから二台が別々の一行を持ち、あとで起動したほうが相手のを黙って
      上書きし、どちらが勝ったかは誰にも言えませんでした ── 規則 22 の例外が
      一つ、木に立っていた形です。
@@ -734,7 +743,7 @@ const R = await pg.evaluate(async () => {
                    link: 'tokinets.com', loc: '谷' }]);
     return ok([]);
   };
-  netProfSync();
+  netMyProfile(function () {}, function () {});
   netGet = realGet;
   if (ME.bio !== 'アカウントに書いてあった一行')
     no('21: アカウントの自己紹介を取っていない — ' + JSON.stringify(ME.bio));
@@ -754,7 +763,7 @@ const R = await pg.evaluate(async () => {
     return ok([]);
   };
   netSend = (method, path, body) => { if (method === 'PATCH') patched21 = body || {}; };
-  netProfSync();
+  netMyProfile(function () {}, function () {});
   netGet = realGet; netSend = realSend21;
   if (patched21)
     no('21: 起動の読み込みが端末のものを上げにいった — ' + JSON.stringify(patched21));
@@ -766,7 +775,7 @@ const R = await pg.evaluate(async () => {
      写しは一字も触らない。 */
   ME.bio = '前からある一行'; ME.link = 'a.example'; ME.loc = 'どこか'; saveMe();
   netGet = (path, ok) => ok([]);
-  netProfSync();
+  netMyProfile(function () {}, function () {});
   netGet = realGet;
   if (ME.bio !== '前からある一行' || ME.link !== 'a.example' || ME.loc !== 'どこか')
     no('21: 行が無いのを「空の自己紹介」と読んで、写しを消した — ' +
@@ -1348,10 +1357,10 @@ const R = await pg.evaluate(async () => {
   if (meFollows('iri')) no('30b: 答えが戻っても外れていない');
   /* 落ちたら何も動かない。 */
   netFollow = (h, on, ok2, bad2) => { bad2(null, 0, 'down'); };
-  const wasFo30 = meFollowing().join(',');
+  const wasFo30 = meFollows('kai');
   meFollow('kai');
-  if (meFollowing().join(',') !== wasFo30)
-    no('30b: 落ちたのにフォローが動いた — ' + meFollowing().join(','));
+  if (meFollows('kai') !== wasFo30)
+    no('30b: 落ちたのにフォローが動いた — ' + meFollows('kai'));
   netFollow = realFollow; netWho = realWho30;
   say('30b: Follow は答えが戻ってから動き、相手の数はサーバーに訊き直す ── ' +
       '落ちれば何も動かない');
@@ -1386,11 +1395,11 @@ const R = await pg.evaluate(async () => {
   };
 
   /* 人のフォロワー。**扉から入ります** ── 一覧も人も、画面が開く前に
-     取りに行く道になったので（www/me.js § followsOpen、OWNER 2026-09-07
+     取りに行く道になったので（www/shell.js § navLand、OWNER 2026-09-07
      「全部読み込んでから開く」）、vFollows() を直に呼ぶのは押した人が
      通らない道を測ることになります。 */
   NAV = [{ r: 'feed' }]; window.route = 'feed';
-  followsOpen('ers:iri');
+  go('follows', 'ers:iri');
   let seenHtml = document.getElementById('app').innerHTML;
   if (foSeen.join('\n').indexOf('handle=eq.iri') < 0)
     no('30c: 画面が、その人のハンドルで訊いていない');
@@ -1398,13 +1407,13 @@ const R = await pg.evaluate(async () => {
     no('30c: その人のフォロワーが画面に出ない');
   if (seenHtml.indexOf('veth') >= 0)
     no('30c: 人の画面に自分のフォロワーが出ている');
-  if (meFollowing().join(',') !== 'kai' || meFollowers().join(',') !== 'veth')
+  if (folOf(false, meHandle()).join(',') !== 'kai' || folOf(true, meHandle()).join(',') !== 'veth')
     no('30c: 人の一覧が自分の一覧を書き換えた ── ' +
-       JSON.stringify([meFollowing(), meFollowers()]));
+       JSON.stringify([folOf(false, meHandle()), folOf(true, meHandle())]));
 
   /* 人のフォロー中 ── 同じ画面、引数のもう半分。 */
   NAV = [{ r: 'feed' }]; window.route = 'feed';
-  followsOpen('ing:iri');
+  go('follows', 'ing:iri');
   seenHtml = document.getElementById('app').innerHTML;
   if (seenHtml.indexOf('tavi') < 0) no('30c: その人のフォロー中が出ない');
   if (seenHtml.indexOf('kai') >= 0)
@@ -1416,22 +1425,22 @@ const R = await pg.evaluate(async () => {
      「アイコンも1秒遅れ表示」OWNER 2026-09-05。ME.fo はこの端末が前回
      もらったもので、それを先に描いて答えが来たら差し替えるのは、すぐ上の
      二つの数がもう止めた動きと同じです。答えが来るまでは印、来てからが
-     一覧 ── PULL_GOT('mine') がその一つの記録（www/sns.js § pullRun）。 */
+     一覧 ── 扉が待つ `fols` の答えがその一つの記録（www/sns.js § WHAT EACH
+     PAGE READS）。 */
   NAV = [{ r: 'follows', a: 'ing' }];
-  PULL_GOT.mine = 1;
   if (vFollows().indexOf('kai') < 0) no('30c: 自分のフォロー中が出なくなった');
 
   /* 答えが来る前にこの画面は無い ── 描き分けではなく、扉が開かないこと。
      「押してから読み込みが終わるまで前の画面のままで、揃った瞬間に出る」
      OWNER 2026-09-07。前は vFollows() が「まだ来ていない」用の印を描いて
      いて、それが 30e のくるくるの正体でした。 */
-  PULL_GOT.mine = 0; PULL_OUT.mine = 0;
+  folDrop(false, meHandle());
   netGet = () => {};
   NAV = [{ r: 'feed' }]; window.route = 'feed';
-  followsOpen('ing');
+  go('follows', 'ing');
   if (here().r === 'follows')
     no('30c: 自分のぶんの答えが来ていないのに一覧が開いた');
-  PULL_GOT.mine = 1;
+  pullForget();
   say('30c: 人のフォロー中／フォロワーの一覧が画面に出る ── 自分のぶんは一行も動かない');
 
   /* ---- 30e. 人のフォロワーが、永遠にくるくるしない --------------------
@@ -1439,7 +1448,7 @@ const R = await pg.evaluate(async () => {
      OWNER 2026-09-08。
 
      訊く道には答えが**三つ**ありました ── 一覧、空、そして `null`。
-     `netWhoseId()` がハンドルを uuid に直せなかったとき、要求が落ちたのも
+     ~~`netWhoseId()`~~ がハンドルを uuid に直せなかったとき、要求が落ちたのも
      「そんな人は居ない」のも同じ `ok(null)` になり、folPull() は何も書かず、
      訊いたという印だけを残しました。だから画面は開いて、印が回り続け、
      入り直しても folWait() が即答するので**一本も訊きません**。
@@ -1454,7 +1463,7 @@ const R = await pg.evaluate(async () => {
     WHO_HAVE = {}; WHO_ASKED = {}; FOL_HAVE = {}; FOL_ASKED = {};
     popOff(); NET_AGAIN = [];
     NAV = [{ r: 'feed' }]; window.route = 'feed'; render();
-    followsOpen('ers:' + h);
+    go('follows', 'ers:' + h);
     return document.getElementById('app').innerHTML;
   };
 
@@ -1468,7 +1477,8 @@ const R = await pg.evaluate(async () => {
   {
     const was = seen30e.length;
     popOff();
-    followsOpen('ers:iri');
+    NAV = [{ r: 'feed' }]; window.route = 'feed';
+    go('follows', 'ers:iri');
     if (seen30e.length === was)
       no('30e: 落ちたあと、入り直しても一本も訊いていない ── 永遠にくるくる');
   }
@@ -2230,16 +2240,27 @@ const R = await pg.evaluate(async () => {
 
      ここで測るのは「描き直したか」ではなく **「画面が、今描いたらこうなる、
      というものになっているか」** です。render() を呼んだ結果と突き合わせます。 */
-  const rSend49 = netSend, rGet49 = netGet, rPost49 = netPost;
-  const unwire49 = () => { netSend = rSend49; netGet = rGet49; netPost = rPost49; };
-  /* サーバを一つの関数に。answer(path) が数字を返し、0 は「届かなかった」。 */
+  const rXHR49 = window.XMLHttpRequest;
+  const unwire49 = () => { window.XMLHttpRequest = rXHR49; };
+  /* サーバを一つの関数に。answer(path) が数字を返し、0 は「届かなかった」。
+     **線（XMLHttpRequest）の所に置きます** ── 窓（netSend1）の上に置くと、
+     誰もサインインしていない要求を窓が断る所を飛ばしてしまい、サーバの代わり
+     が答えてしまいます（「サインインしているかは窓だけが決める」r73 § 2-5）。 */
   const srv49 = (answer) => {
-    netSend = (method, p, body, tok, ok, bad) => {
-      const st = answer(p);
-      setTimeout(() => { st >= 200 && st < 300 ? ok(null) : bad(null, st, 'x'); }, 0);
+    window.XMLHttpRequest = function () {
+      const self = this;
+      this.readyState = 0; this.status = 0; this.responseText = '';
+      this.open = function (m, u) { self.__p = String(u).replace(/^[a-z]+:\/\/[^/]*/, ''); };
+      this.setRequestHeader = function () {};
+      this.send = function () {
+        const st = answer(self.__p);
+        setTimeout(() => {
+          self.readyState = 4; self.status = st; self.responseText = 'null';
+          if (!st) { if (self.onerror) self.onerror(); return; }
+          if (self.onreadystatechange) self.onreadystatechange();
+        }, 0);
+      };
     };
-    netGet = (p, ok, bad) => netSend('GET', p, null, null, ok, bad);
-    netPost = (p, body, tok, ok, bad) => netSend('POST', p, body, tok, ok, bad);
   };
   const settle49 = () => new Promise(r => setTimeout(r, 30));
 
@@ -2652,6 +2673,10 @@ const R = await pg.evaluate(async () => {
       if (p.indexOf('/rest/v1/follow_seen?select=followed') === 0) return [{ followed_handle: 'iri' }];
       if (p.indexOf('/rest/v1/follow_seen?select=follower') === 0) return [{ follower_handle: 'veth' }];
       if (p.indexOf('/rest/v1/profile?select=id') === 0) return [{ id: SESS.uid }];
+      /* the two counts are this account's own `profile_seen` row -- the same
+         row somebody else's page is drawn from (www/me.js § whoOf) */
+      if (p.indexOf('/rest/v1/profile_seen?') === 0)
+        return [{ id: SESS.uid, handle: meHandle(), display: 'A', fo: 1, fr: 1 }];
       /* 非公開は **サーバーから来る** ── ここで直に代入したら、「印が描ける
          か」を訊くだけの検査になり、印が出なかった本当の理由（答えがまだ来て
          いない）を跨いでしまう。2026-09-08 まではその答えが `wld` スライスの
@@ -2666,6 +2691,7 @@ const R = await pg.evaluate(async () => {
        この言語はサーバーに在る（sid）が、この端末はスライスを一つも
        持っていない ── 起動直後そのもの（規則 22、スライスは記憶の中）。 */
     PULL_GOT = {}; PULL_OUT = {}; PULL_WAIT = {};
+    WHO_HAVE = {}; WHO_ASKED = {}; REL = {};
     langId = SID59;
     LANGS[langId] = { name: 'Shango', mine: true, uid: SESS.uid };
     langRowGot(langId);
@@ -2714,8 +2740,7 @@ const R = await pg.evaluate(async () => {
            settled + '。「0 と出て1秒後に1に変わる、をしない」');
       else if (settled !== '<b>1</b>,<b>1</b>')
         no('60: サーバーが答えた数（1 と 1）になっていない ── ' + settled +
-           '。fo=' + JSON.stringify(ME.fo) + '（前回の値がそのまま出ていれば、' +
-           'この頁は mine を待っていない）');
+           '（前回の値がそのまま出ていれば、この頁は自分の行を待っていない）');
       else if (first.indexOf('wldoff') < 0)
         no('60: 最初に描かれたプロフィールに非公開の印が無い ── ' +
            'wld のスライスがまだ来ていない。「非公開の文字も出ない」');
@@ -2731,8 +2756,9 @@ const R = await pg.evaluate(async () => {
      「設定7回タップしても管理画面開かんくなった」OWNER 2026-09-08、実機 143。
      @lingua でログイン中、その日にログアウト→ログインをしている。
 
-     扉が見ているのは `NET_ADMIN`（www/mod.js § adminTap）で、それを立てるのは
-     `netStaff()` ただ一つ。呼んでいたのは **www/boot.js の起動一回だけ**でした。
+     扉が見ているのは `NET_ADMIN`（www/mod.js § adminTap）で、それを立てていたのは
+     ~~`netStaff()`~~ ただ一つ（今はこのアカウントの行を読む一つ、`netMyProfile()`）。
+     呼んでいたのは **www/boot.js の起動一回だけ**でした。
      だからサインアウトのまま立ち上げた起動は一度も訊かず、そのあとドアから
      入っても誰も訊き直さない ── @lingua で入っているのに七回叩いても設定の
      ままです。測ってから直しました（起動から入れば `admin`、ドアから入れば
@@ -2745,7 +2771,7 @@ const R = await pg.evaluate(async () => {
     const realGetAd = netGet, realSendAd = netSend;
     let handle = 'lingua';
     netGet = (path, ok) => {
-      if (String(path).indexOf('/rest/v1/profile?select=staff') === 0)
+      if (String(path).indexOf('/rest/v1/profile?select=' + profCols()) === 0)
         return ok([{ staff: true, handle: handle, banned_at: null, banned_why: null }]);
       return ok([]);
     };
@@ -3043,19 +3069,19 @@ const R = await pg.evaluate(async () => {
     SET.theme = 'system'; SET.ui = 'en'; SET.myfont = false;
     SET.showScript = false; SET.kbrom = true; setKeep();
     netGet = (path, ok) => {
-      if (path.indexOf('/rest/v1/profile?select=prefs') === 0)
+      if (path.indexOf('/rest/v1/profile?select=' + profCols()) === 0)
         return ok([{ prefs: { theme:'dark', ui:'ja', myfont:true,
                               showScript:true, kbrom:false } }]);
       return ok([]);
     };
-    netPrefsPull();
+    netMyProfile(function () {}, function () {});
     if (SET.theme !== 'dark' || SET.ui !== 'ja' || SET.myfont !== true ||
         SET.showScript !== true || SET.kbrom !== false)
       no('64: サインインで降りてきた設えが画面に入っていない — ' +
          JSON.stringify([SET.theme, SET.ui, SET.myfont, SET.showScript, SET.kbrom]));
     /* 行が無ければ触らない。 */
     netGet = (path, ok) => ok([]);
-    netPrefsPull();
+    netMyProfile(function () {}, function () {});
     if (SET.theme !== 'dark' || SET.ui !== 'ja')
       no('64: 行が無いのを「何も選んでいない」と読んで、写しを消した — ' +
          JSON.stringify([SET.theme, SET.ui]));
@@ -3089,11 +3115,11 @@ const R = await pg.evaluate(async () => {
       netSend = () => {};
       setTheme('light');
       netGet = (path, ok) => ok([{ prefs:{ theme:'noon' }, ed:{ 'prefs.theme':1000 } }]);
-      netPrefsPull();
+      netMyProfile(function () {}, function () {});
       if (SET.theme !== 'light')
         no('64: まだ着いていない押しが、それより古いサーバーの値に上書きされた — ' + SET.theme);
       netGet = (path, ok) => ok([{ prefs:{ theme:'night' }, ed:{ 'prefs.theme':Date.now() + 60000 } }]);
-      netPrefsPull();
+      netMyProfile(function () {}, function () {});
       if (SET.theme !== 'night')
         no('64: 後から押されたサーバーの値が、着いていない古い押しに負けた — ' + SET.theme);
       say('64: 設えは後から押したほうが残る ── 押した時刻が出て行き、答えと降りてきた値のうち後のものが画面に来る');
@@ -3456,15 +3482,19 @@ const R = await pg.evaluate(async () => {
   start();
   {
     netOut(); arrive(A);
-    const keepProf69 = netMyProfile, keepPrefs69 = netPrefsPut;
+    const keepProf69 = netMyProfile, keepPrefs69 = netPrefsPut, keepWait69 = pageWait;
     let prefsUp69 = 0;
     netMyProfile = (ok2) => ok2({ handle: 'lingua9', display: 'Lingua' });
     netPrefsPut = () => { prefsUp69++; };
+    /* 問うのは「どの画面へ行くか」で、行った先が何を読むかではありません ──
+       その画面の読みは答えたことにして（www/shell.js § navLand が待つもの）、
+       サーバーの無いこの頁で行き先そのものを見ます。 */
+    pageWait = (r, a, done) => done(true);
     /* この端末は歩いていない ── 二台目、あるいはサインアウトしたあと。 */
     SET.walked = false; SET.obback = null; save();
     window.route = 'ob'; NAV = [{ r: 'ob' }];
     obIn();
-    netMyProfile = keepProf69; netPrefsPut = keepPrefs69;
+    netMyProfile = keepProf69; netPrefsPut = keepPrefs69; pageWait = keepWait69;
     if (!SET.walked)
       no('69: 行のあるアカウントで入り直したのに、歩きが済みになっていない');
     if (window.route !== 'profile')
@@ -4665,8 +4695,7 @@ const R = await pg.evaluate(async () => {
     netGet('/rest/v1/profile?select=prefs&limit=1&id=eq.x',
            function () { no('85: サインアウトなのに profile が答えた'); },
            function (d, st, mk) { why85 = netWhy(d, st, mk); });
-    netPrefsPull();
-    netStaff(function () {});
+    netMyProfile(function () {}, function () {});
     netDevicePut('tok');
     if (rest().length !== 0)
       no('85: **サインアウトなのに ' + rest().length + ' 本が線に乗った** ── ' +

@@ -114,8 +114,8 @@ const r = await pg.evaluate(({ s }) => {
   out.recReplies = snsList().filter((p) => !!p.to).length;
   out.recPosts   = snsList().length;
   snsTab = 'fo';
-  /* フォローは `follow` 表の答えで、FOL_HAVE がその置き場です
-     （www/me.js § meFollowing、2026-09-09）。 */
+  /* フォローは `follow` 表の答えで、一覧は FOL_HAVE がその置き場です
+     （www/me.js § folPull、2026-09-09）。 */
   folPut(false, meHandle(), ['iri']);
   out.foReplies = snsList().filter((p) => !!p.to).length;
   snsTab = 'rec';
@@ -163,7 +163,7 @@ const r = await pg.evaluate(({ s }) => {
      characters in the body -- so a post somebody deleted the tag from is
      still in the list and a post that merely says 「#今日のお題」 is not. */
   DAY = { id:77, on_day:'2026-09-06', text:'today', says:{} };
-  DAY_GOT = true;
+  PULL_GOT.day = 1;
   POSTS.push({ id:'pr-yes', at:Date.now()-10, lang:'other', lname:'V', ln:'qel',
                who:'Iri', hd:'iri', mine:false, mn:'answered it', ui:'en', pr:77 },
              { id:'pr-tag', at:Date.now()-20, lang:'other', lname:'V',
@@ -188,12 +188,16 @@ const r = await pg.evaluate(({ s }) => {
   /* ---- 2: yourself, out of your own two lists -------------------------- */
   folPut(false, meHandle(), [meHandle(), 'iri']);
   folPut(true, meHandle(), [meHandle(), 'veth']);
-  out.ownFollowing = meFollowing();
-  out.ownFollowers = meFollowers();
+  out.ownFollowing = meNotMe(folOf(false, meHandle()));
+  out.ownFollowers = meNotMe(folOf(true, meHandle()));
   NAV = [{ r:'follows', a:'ing' }];
   out.ownRows = vFollows().split('<div class="whrow">').length - 1;
-  /* AND THE COUNT SAYS WHAT THE LIST SHOWS. Taking the row out at the row
-     would leave the number saying two over a list of one. */
+  /* AND THE COUNT IS THE SERVER'S. It was the length of the two lists this
+     phone read at a launch; the lists are a page at a time now (www/me.js
+     § folPull) and the two numbers are this account's own `profile_seen`
+     row, the one somebody else's page is drawn from. */
+  const wasMe = WHO_HAVE[meHandle()];
+  WHO_HAVE[meHandle()] = { who:'Aya', hd:meHandle(), fo:1, fr:1 };
   NAV = [{ r:'profile', a:'' }];
   out.ownCountShown = (meCard().match(/<b>(\d+)<\/b>/g) || []).join(',');
 
@@ -217,13 +221,17 @@ const r = await pg.evaluate(({ s }) => {
      would have gone out. */
   const asked = { replies:null, by:null };
   const realReplies = netReplies, realBy = netPostsBy, realWho = netWho,
-        realFollowers = netFollowers;
+        realFollowers = netFollowers, realRel = netRel;
   netReplies  = function(ids, k){ asked.replies = ids.slice(); k([]); };
-  netPostsBy  = function(h, k){ asked.by = String(h); k([]); };
-  netWho      = function(h, k){ asked.who = String(h); k(null); };
-  netFollowers = function(k){ asked.fr = (asked.fr || 0) + 1; k(null); };
+  /* A person's posts are asked by the account's uuid, which is on the row
+     `who` brings (www/sns.js § askPosts) -- so the row this answers carries
+     one, and what is read is that the posts were asked for THAT account. */
+  netPostsBy  = function(uid, k){ asked.by = String(uid); k([]); };
+  netWho      = function(h, k){ asked.who = String(h); k({ who:'Iri', hd:String(h), uid:'U-' + h }); };
+  netFollowers = function(k){ asked.fr = (asked.fr || 0) + 1; k([]); };
+  netRel      = function(hs, k){ k({}); };
   try {
-    out.pullRoutes = Object.keys(PULL_ON).sort().join(' ');
+    out.pullRoutes = Object.keys(PAGE_PULL).sort().join(' ');
 
     /* A thread: every post drawn on it, by the name the server knows it by.
        `p1` has gone up (sid SRV-1); the reply arrived wearing SRV-9; a post
@@ -240,19 +248,18 @@ const r = await pg.evaluate(({ s }) => {
     WHO_ASKED['iri'] = 1;
     NAV = [{ r:'profile', a:'iri' }];
     pullLet(true);
-    out.whoPullAsked = asked.by === 'iri' && asked.who === 'iri';
+    out.whoPullAsked = asked.by === 'U-iri' && asked.who === 'iri';
 
     /* And your own two lists, which are asked ONCE a session -- when it
        begins. A pull is a person saying 「もう一度聞け」.
        「なんか3フォロワーなのに2人しかいない」 */
-    PULL_GOT.mine = 1;
     asked.fr = 0;
     NAV = [{ r:'follows', a:'ers' }];
     pullLet(true);
     out.followersAskedAgain = asked.fr;
   } finally {
     netReplies = realReplies; netPostsBy = realBy; netWho = realWho;
-    netFollowers = realFollowers;
+    netFollowers = realFollowers; netRel = realRel;
   }
 
   /* ---- and the mark on your own name stays where it was ----------------
@@ -282,23 +289,17 @@ const r = await pg.evaluate(({ s }) => {
      waits, not the card that hides. Without this line the check stands in a
      state where the old road would have been right too, and would go green
      with it put back. */
-  const wasFo = folOf(false, meHandle()), wasFr = folOf(true, meHandle()),
-        wasGot = PULL_GOT.mine;
-  PULL_GOT.mine = 0;
   NAV = [{ r:'profile', a:'' }];
-  /* Two names in one list and one in the other, neither of them yours: the
-     count is what these say and there is nothing for meNotMe() to take out
-     of them, so the number expected here is written down rather than worked
-     out again from the lists. */
-  folPut(false, meHandle(), ['iri', 'veth']); folPut(true, meHandle(), ['iri']);
+  /* The server says two and one: the count is what the row says, written
+     down here rather than worked out again. */
+  WHO_HAVE[meHandle()] = { who:'Aya', hd:meHandle(), fo:2, fr:1 };
   out.meWaits = (meCard().match(/numwait/g) || []).length;
   /* and what stands there is the count */
   out.meHeldLast = meCard().indexOf('<b>2</b>') >= 0 &&
                    meCard().indexOf('<b>1</b>') >= 0;
-  folPut(false, meHandle(), []); folPut(true, meHandle(), []);
+  WHO_HAVE[meHandle()] = { who:'Aya', hd:meHandle(), fo:0, fr:0 };
   out.meZeroIsZero = meCard().indexOf('<b>0</b>') >= 0;
-  folPut(false, meHandle(), wasFo); folPut(true, meHandle(), wasFr);
-  PULL_GOT.mine = wasGot;
+  if (wasMe) WHO_HAVE[meHandle()] = wasMe; else delete WHO_HAVE[meHandle()];
   /* and somebody else's card, whose numbers are the server's */
   delete WHO_HAVE['iri'];
   NAV = [{ r:'profile', a:'iri' }];
@@ -313,20 +314,23 @@ const r = await pg.evaluate(({ s }) => {
 
      TWO HALVES, and the second is the one that fails without a mark on the
      screen. The badge has to be DRAWN on somebody's card, and this phone has
-     to have ASKED who follows it on the road that goes straight to that card.
-     With only the first, ME.fr is ABSENT, meFollowers() answers [], and an
-     absent list draws exactly the picture 「nobody follows you」 draws --
-     「空」と「まだ誰も訊いていない」は別 (CLAUDE.md § Data). That is the
-     half a screenshot cannot tell apart, so it is asked here as a REQUEST:
-     what is read is whether the question went out at all. */
-  const heldFr = folOf(true, meHandle());
+     to have ASKED whether they follow it on the road that goes straight to
+     that card -- with no answer, an absent relation draws exactly the
+     picture 「they do not follow you」 draws -- 「空」と「まだ誰も訊いて
+     いない」は別 (CLAUDE.md § Data). That is the half a screenshot cannot
+     tell apart, so it is asked here as a REQUEST: what is read is whether the
+     question went out at all. */
+  const heldRel = REL;
   WHO_HAVE.veth = { who:'Veth', hd:'veth', fo:1, fr:1 };
-  folPut(true, meHandle(), ['iri']);
+  REL = { iri:{ i:false, u:true }, veth:{ i:false, u:false } };
   out.backOnCard  = whoCard('iri').indexOf('whyou') >= 0;
   out.backOnOther = whoCard('veth').indexOf('whyou') >= 0;
-  /* and never on your own name -- meFollowers() is the list with you taken
-     out of it, and this is the screen that would say 「you follow you」 */
-  folPut(true, meHandle(), [meHandle(), 'iri']);
+  /* and never on your own name: whether you follow yourself is never asked
+     (www/me.js § relAsk), whatever the server would answer. */
+  const wasRel = netRel;
+  netRel = function (hs, ok) { const by = {}; hs.forEach(h => { by[h] = { i:true, u:true }; }); ok(by); };
+  relAsk([meHandle(), 'iri'], function () {}, function () {});
+  netRel = wasRel;
   out.backOnSelf = whoCard(meHandle()).indexOf('whyou') >= 0;
 
   /* AND THE QUESTION IS PUT, ON A ROAD THAT DOES NOT DEPEND ON WHICH SCREEN
@@ -334,24 +338,24 @@ const r = await pg.evaluate(({ s }) => {
      why it is measured here at all -- somebody who reached a person's page
      from a notice without ever opening their own profile never sent it.
 
-     It is not asked by a screen at all now 「画面に入った瞬間にサーバーへ
-     訊きに行くのは無し」 OWNER 2026-09-05: it goes out when the SESSION
-     begins, with everything else the app reads (www/sns.js § WHAT AN OPEN
-     ASKS FOR). So what is read here is that road -- `mine` is on the open's
-     list, and asking it sends the request. */
-  const wasFollowers = netFollowers;
-  let followerAsks = 0;
-  netFollowers = function (ok) { followerAsks++; ok([]); };
-  /* 「まだ誰も訊いていない」は、答えが無いこと ── FOL_HAVE にその鍵が
-     無いことです（www/me.js § folGot）。 */
-  delete FOL_HAVE[folKey(true, meHandle())];
-  out.mineOnOpen = PULL_OPEN.indexOf('mine') >= 0;
-  PULL_GOT.mine = 0; PULL_OUT.mine = 0;
-  pullBoot();
-  out.askedOnTheirs = followerAsks;
-  netFollowers = wasFollowers;
-  PULL_GOT.mine = 1; PULL_OUT.mine = 0;
-  folPut(true, meHandle(), heldFr);
+     It is asked by the DOOR onto the page that draws the person, before the
+     page opens -- 「そのページに進むときに読み込むべき」 OWNER 2026-09-23
+     (www/sns.js § WHAT EACH PAGE READS, `who`, which asks REL for them). So
+     what is read here is that road: arriving at somebody's page with the
+     relation unknown sends the question, once. */
+  const wasRel2 = netRel, wasWho2 = netWho, wasBy2 = netPostsBy;
+  netWho = function (h, k) { k({ who:'Iri', hd:String(h), uid:'U-' + h }); };
+  netPostsBy = function (u, k) { k([]); };
+  let relAsks = 0;
+  netRel = function (hs, ok) { relAsks++; const by = {}; hs.forEach(h => { by[h] = { i:false, u:true }; }); ok(by); };
+  REL = {};
+  NAV = [{ r:'feed' }]; window.route = 'feed';
+  go('profile', 'iri');
+  out.mineOnOpen = here().r === 'profile' && meFollowed('iri');
+  out.askedOnTheirs = relAsks;
+  netRel = wasRel2; netWho = wasWho2; netPostsBy = wasBy2;
+  REL = heldRel;
+  NAV = [{ r:'feed' }]; window.route = 'feed';
 
   /* ---- 8: a request that falls over says so, and 再接続 goes back for it -
      「通信エラーなら進むわけねえだろ全部」「エラーになったらエラー用のポップ
@@ -368,28 +372,25 @@ const r = await pg.evaluate(({ s }) => {
      all about what happened. */
   const heldPair = { fr:folOf(true, meHandle()), fo:folOf(false, meHandle()),
                      ers:netFollowers, ing:netFollowing };
-  const fell = () => {
+  const fell = (a) => {
     popOff();
     NET_AGAIN = [];
-    PULL_GOT.mine = 0; PULL_OUT.mine = 0;
-    pullGo('mine');
+    pullGo('fols', a);
     return { pop:popOn(), again:NET_AGAIN.length === 1 };
   };
-  /* EITHER HALF FALLING IS ONE FALL, because the two lists are one ask now
-     (`mine`, www/me.js § meFollowsPull). It was two functions with a flag
-     each, and one of them swallowed its failure in silence -- no pop, and
-     再接続 with nowhere to go back to. There is one road and it cannot
-     differ from itself. */
+  /* EITHER LIST FALLING IS THE SAME ROAD: each is the follows page's one
+     question (`fols`, www/me.js § folsAsk), and a fall reaches netPop()
+     through pullRun() like every other -- no pop, and 再接続 with nowhere to
+     go back to, is what one of the old two did. */
   netFollowers = function (ok, bad) { bad(null, 0, 'follow 0'); };
   netFollowing = function (ok, bad) { ok([]); };
-  out.ersFell = fell();
+  out.ersFell = fell('ers');
   netFollowers = function (ok, bad) { ok([]); };
   netFollowing = function (ok, bad) { bad(null, 0, 'follow 0'); };
-  out.ingFell = fell();
+  out.ingFell = fell('ing');
   popOff();
   NET_AGAIN = [];
   netFollowers = heldPair.ers; netFollowing = heldPair.ing;
-  PULL_GOT.mine = 1; PULL_OUT.mine = 0;
   folPut(true, meHandle(), heldPair.fr); folPut(false, meHandle(), heldPair.fo);
 
   /* ---- 8: NOBODY IS A '?' THAT BECOMES A NAME ---------------------------
@@ -408,8 +409,10 @@ const r = await pg.evaluate(({ s }) => {
      that way: a post carries its writer (rule 8), so those two screens ask
      about nobody at all. The two that were wrong are the lists of people --
      the follow lists, and the people on a grouped notice -- and both go
-     through a door that gets the lot in ONE request before the screen opens
-     (www/me.js § whoNeed, followsOpen, notfoOpen).
+     through the door onto the page, which gets the lot before the screen
+     opens (www/shell.js § navLand, `fols` and `people`): the page of handles
+     (a follows list only), the people in ONE request, and whether you follow
+     each and each follows you -- one request each way.
 
      ONE REQUEST AND NOT TWO. It was two until 2026-09-08: the people, and
      then their languages' names, asked one after the other. The language is
@@ -429,9 +432,13 @@ const r = await pg.evaluate(({ s }) => {
     netSend1 = function (m, p, b, t, ok) {
       p = String(p); wire.push(p);
       held.push(function () {
+        /* the page of handles is what the server says this account follows;
+           the relation questions (`…_handle=in.(…)`) find no rows */
         ok(p.indexOf('/rest/v1/profile_seen?') === 0
              ? [{ id:'u1', handle:'kai', display:'Kai', av:null, fo:1, fr:2 },
                 { id:'u2', handle:'noa', display:'Noa', av:null, fo:0, fr:0 }]
+             : (p.indexOf('/rest/v1/follow_seen?') === 0 && p.indexOf('in.(') < 0)
+             ? [{ followed_handle:'kai' }, { followed_handle:'noa' }]
              : [], 200);
       });
     };
@@ -455,7 +462,7 @@ const r = await pg.evaluate(({ s }) => {
 
     /* a list of people, entered the way a thumb enters it */
     const walk = (name, fn) => {
-      WHO_HAVE = {}; WHO_ASKED = {};
+      WHO_HAVE = {}; WHO_ASKED = {}; REL = {};
       NAV = [{ r:'feed' }]; window.route = 'feed'; render();
       const wasFeed = app.innerHTML;
       wire.length = 0; held.length = 0;
@@ -474,8 +481,8 @@ const r = await pg.evaluate(({ s }) => {
       out[name + 'Req'] = wire.length;
     };
     folPut(false, meHandle(), ['kai', 'noa']);
-    walk('fol', () => followsOpen('ing'));
-    walk('ntf', () => notfoOpen('kai,noa'));
+    walk('fol', () => go('follows', 'ing'));
+    walk('ntf', () => go('notfo', 'kai,noa'));
     folPut(false, meHandle(), heldPair.fo);
     WHO_HAVE = {}; WHO_ASKED = {};
     netSend1 = realS1; netSend = realS; netGet = realG;
@@ -572,8 +579,8 @@ if (r.ownRows !== 1)
   say('your own 「フォロー中」 draws ' + r.ownRows + ' rows where the list ' +
       'has one.');
 if (r.ownCountShown !== '<b>1</b>,<b>1</b>')
-  say('the count under the profile says ' + r.ownCountShown + ' over a list ' +
-      'of one. Taking the row out at the row leaves the number behind.');
+  say('the count under the profile says ' + r.ownCountShown + ' where the ' +
+      'account’s own row says one and one. The numbers are the server’s.');
 
 if (r.ownRowQ || r.ownRowName !== 'Aya')
   say('your own row on somebody else’s followers list draws ' +
@@ -638,16 +645,15 @@ if (!r.backOnCard)
 if (r.backOnOther)
   say('and somebody who does NOT follow you wears it.');
 if (r.backOnSelf)
-  say('and your own name wears it. meFollowers() is the list with you taken ' +
-      'out of it and this reads something else.');
+  say('and your own name wears it. Whether you follow yourself is never ' +
+      'asked (relAsk), and this reads something else.');
 if (!r.mineOnOpen)
-  say('「who follows me」 is not on the list the app asks for when a session ' +
-      'begins, so nothing asks it at all: no screen may ask on the way in. ' +
-      '「画面に入った瞬間にサーバーへ訊きに行くのは無し」');
+  say('arriving at somebody’s page does not bring whether they follow ' +
+      'you, so the card cannot say it. 「そのページに進むときに読み込むべき」');
 if (r.askedOnTheirs !== 1)
-  say('the session beginning sends ' + r.askedOnTheirs + ' request(s) for who ' +
-      'follows this account. With none, ME.fr stays ABSENT and an absent list ' +
-      'draws the same picture as 「nobody follows you」. ' +
+  say('the door onto somebody’s page sends ' + r.askedOnTheirs +
+      ' request(s) for whether they follow this account. With none, an absent ' +
+      'relation draws the same picture as 「they do not follow you」. ' +
       '「空」と「まだ誰も訊いていない」は別');
 
 if (!r.ersFell.pop)
@@ -658,8 +664,8 @@ if (!r.ersFell.again)
   say('and 再接続 does not go back for it, so there is no way to ask again ' +
       'short of killing the app.');
 if (!r.ingFell.pop || !r.ingFell.again)
-  say('「who I follow」 falling over is silent — the two lists are one ask ' +
-      'now, so either half falling has to reach the same pop.');
+  say('「who I follow」 falling over is silent — both lists are the follows ' +
+      'page’s one question, so either falling has to reach the same pop.');
 
 if (errs.length) say('the page threw: ' + errs[0]);
 
@@ -671,7 +677,7 @@ console.log('おすすめ: ' + r.recPosts + ' posts, no replies; フォロー中
             '返信 tab keep theirs');
 console.log('your own two lists: ' + r.ownFollowing.length + ' / ' +
             r.ownFollowers.length + ', with you in neither, and the counts ' +
-            'say the same');
+            'are the account’s own row');
 console.log('your own row elsewhere: 「' + r.ownRowName + '」 with a face, on a ' +
             'phone holding no post of yours');
 console.log('counts: nothing turns under them — the page waits for both ' +
@@ -679,10 +685,9 @@ console.log('counts: nothing turns under them — the page waits for both ' +
             '0 is an answer');
 console.log('and the Pro mark is on your own name on Pro and off it on free');
 console.log('「フォローされています」: on the card of somebody who does, off ' +
-            'everybody else’s and off your own, and the session beginning ' +
-            'asks who follows this account ' + r.askedOnTheirs + ' time(s) — ' +
-            'no screen asks on the way in');
-console.log('either half of the one follow ask falling over puts up ' +
+            'everybody else’s and off your own, and the door onto their page ' +
+            'asks whether they follow this account ' + r.askedOnTheirs + ' time(s)');
+console.log('either follows list falling over puts up ' +
             '「接続できません」, and 再接続 goes back for it');
 if (r.feedQ || r.thrQ)
   say('a post is drawn with 「?」 where its writer\u2019s name goes (feed ' +
@@ -698,11 +703,15 @@ if (r.folQ !== 0 || r.ntfQ !== 0)
   say('the first drawing of a list of people carries 「?」 faces (follows ' +
       r.folQ + ', the people on a notice ' + r.ntfQ + '), which become names ' +
       'a moment later. 「？になってあとで表示される」 OWNER 2026-09-07.');
-if (r.folReq !== 1 || r.ntfReq !== 1)
+/* A follows page is the page of handles, the people in ONE request (their
+   language on the same row), and whether you follow each and each follows
+   you, one request each way -- four, whoever is on it. The people on a
+   notice arrive in the argument, so they are the last three. Never one per
+   row, and never a second round trip for the language. */
+if (r.folReq !== 4 || r.ntfReq !== 3)
   say('a list of two people costs ' + r.folReq + ' and ' + r.ntfReq +
-      ' request(s). It is ONE whoever is on it — the people, with their ' +
-      'language on the same row — and never one per row, and never a second ' +
-      'round trip for the language. 「毎回1読み込みだろ？」');
+      ' request(s). It is four and three whoever is on it — never one per ' +
+      'row, and never a second round trip for the language. 「毎回1読み込みだろ？」');
 
 const PAIR_ON =
   'POST /rest/v1/follow {"follower":"u","followed":"them"} | ' +
@@ -726,7 +735,7 @@ console.log('a follow and a block are one row written by one function, and ' +
             'the columns are its argument: ' + r.pairOn);
 console.log('nobody is a 「?」 that becomes a name: a post carries its writer ' +
             '(feed and thread ask about nobody), and a list of people is ' +
-            'asked for in one request before the screen opens (' +
+            'asked for before the screen opens, the people in one request (' +
             r.folReq + ' at the wire for two people, ' + r.ntfReq +
             ' for the people on a notice)');
 console.log('the pull answers on: ' + r.pullRoutes + ' — a thread asks about ' +

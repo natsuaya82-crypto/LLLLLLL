@@ -111,7 +111,7 @@ const DYNAMIC = {
     keepBack: 'a save that did not land: the snapshot from before it put back',
   },
   'ME[]': {
-    meProfGot: "the account's profile arriving -- at the door (netMyProfile) and on a launch (netProfSync), the one place both put it on ME",
+    meProfGot: "the account's profile arriving -- read once a session by netMyProfile, the one reader, and put on ME in this one place",
   },
 };
 

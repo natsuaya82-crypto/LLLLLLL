@@ -578,7 +578,14 @@ function setAuto(on){
   var dark=!!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
   setTheme(dark? 'dark' : 'light');
 }
-function setUi(l){ SET.ui=l; save(); netPrefsPut(); render(); }
+/* AND THE NOTICES ARE ASKED AGAIN, because what a notice SAYS is written in
+   the language the app is read in -- the answer and the record that it was
+   answered both go, and the question goes out on this press. */
+function setUi(l){
+  SET.ui=l; save(); netPrefsPut();
+  NOTES_HAVE=null; pullDrop('notif'); pullNeed('notif');
+  render();
+}
 /* Delete account: everything this phone holds, and the tokens with it.
 
    It used to empty the words, the sentences and the name and stop there, so
@@ -793,7 +800,7 @@ function wipeAll(){
    finishes at www/boot.js § bootSession(). A phone closed while the request
    was in the air has nothing to finish: the account is still there. */
 function wipeAllGo(){
-  var uid=(typeof SESS!=='undefined' && SESS && SESS.uid)? String(SESS.uid) : '';
+  var uid=netUid();
   netDropMe(function(){ netEnding(); wipeHere(uid); }, wipeStopped);
 }
 /* It did not go. Nothing on this phone has been touched, nothing was written
@@ -848,8 +855,7 @@ function wipeHere(uid){
      loses everything anyway, because everything on it is that account's.
      Writing 「and if nobody else is here, wipe the lot」 was a first draft and
      it is two behaviours where the rule has one. */
-  var wipeUid=String(uid||
-    ((typeof SESS!=='undefined' && SESS && SESS.uid)? SESS.uid : ''));
+  var wipeUid=String(uid || netUid());
   var wipeIds=lsWipeAcct(wipeUid);
   langId='';
   langFirst();

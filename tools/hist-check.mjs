@@ -294,7 +294,10 @@ const road = await pg.evaluate(async ({ srv }) => {
   for (const x in LSL) if (Object.prototype.hasOwnProperty.call(LSL, x)) delete LSL[x];
   S.lang = [{ id:'L1', owner:'them', name:'Kano' }];
   S.slice = [{ language:'L1', kind:'words', body:'[{"hw":"restored"}]' }];
-  await new Promise(function(f){ netLangsDown(function(){ f(); }); });
+  /* which languages this account has, and then the language itself, the way
+     arriving at one of its screens brings it (www/net.js § netLangFill,
+     OWNER 2026-09-23 「読むのは開いた画面の分だけ」) */
+  await new Promise(function(f){ netLangsDown(function(){ netLangFill('L1', f, f); }, f); });
   await wait(300);
 
   /* THE ID ON THIS PHONE IS THE ID ON THE SERVER (2026-09-10). A language has
@@ -307,12 +310,15 @@ const road = await pg.evaluate(async ({ srv }) => {
   out.cold = !!nid && (slRd(k) || '').indexOf('restored') >= 0;
 
   /* AND AN APP LEFT OPEN DOES NOT TAKE IT, which is the price of there being
-     one road rather than two: netLangsWalk() fills in what is MISSING and
+     one road rather than two: netLangFill() fills in what is MISSING and
      stops, because a slice this phone is holding may be a minute of somebody's
      typing that has not gone up yet (docs/DATA_SAFETY.md rule 2). */
   slWr(k, '[{"hw":"still-open"}]');
   S.slice = [{ language:'L1', kind:'words', body:'[{"hw":"restored-again"}]' }];
-  await new Promise(function(f){ netLangsDown(function(){ f(); }); });
+  /* which languages this account has, and then the language itself, the way
+     arriving at one of its screens brings it (www/net.js § netLangFill,
+     OWNER 2026-09-23 「読むのは開いた画面の分だけ」) */
+  await new Promise(function(f){ netLangsDown(function(){ netLangFill('L1', f, f); }, f); });
   await wait(300);
   out.open = (slRd(k) || '').indexOf('still-open') >= 0;
 
@@ -320,7 +326,10 @@ const road = await pg.evaluate(async ({ srv }) => {
      launch and the slices do not, which is the state rule 22 describes — so
      the entry is still here and the walk fills it. */
   for (const x in LSL) if (Object.prototype.hasOwnProperty.call(LSL, x)) delete LSL[x];
-  await new Promise(function(f){ netLangsDown(function(){ f(); }); });
+  /* which languages this account has, and then the language itself, the way
+     arriving at one of its screens brings it (www/net.js § netLangFill,
+     OWNER 2026-09-23 「読むのは開いた画面の分だけ」) */
+  await new Promise(function(f){ netLangsDown(function(){ netLangFill('L1', f, f); }, f); });
   await wait(300);
   out.again = (slRd(k) || '').indexOf('restored-again') >= 0;
 
@@ -333,7 +342,7 @@ const road = await pg.evaluate(async ({ srv }) => {
 
 console.log('\n  本人の端末に届く道');
 say(road.nid, 'サーバーの id そのもので索引に入る ── 番号は一本（2026-09-10）');
-say(road.cold, 'アプリを開き直すと戻った中身が出る ── 起動の netLangsWalk 一本');
+say(road.cold, 'アプリを開き直すと戻った中身が出る ── その言語の画面に進むと netLangFill 一本');
 say(road.open, 'アプリを開いたままだと届かない ── 端末が持っているものは' +
     '書き換えない（規則：無いものを埋めて止まる）。運営はその人に' +
     '「一度閉じて開き直して」と言うことになる');

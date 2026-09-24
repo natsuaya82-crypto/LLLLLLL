@@ -270,6 +270,18 @@ const plan = launch.filter(r => /verify-plan/.test(r.u));
 say(plan.every(r => r.body && Object.keys(r.body).join() === 'jws'),
     '1 what the plan question carries is what Apple signed and nothing else');
 
+/* AND THE LANGUAGE COMES DOWN WHEN A PAGE DRAWN FROM IT IS ARRIVED AT, not at
+   the launch (docs/FEATURE_RULES.md § 2026-09-23 読むのは開いた画面の分だけ;
+   www/sns.js § WHAT EACH PAGE READS, `lang`). So the person walks onto the
+   dictionary -- and that arrival writes nothing either. */
+await pg.evaluate(() => { window.__Q.log.length = 0; go('words'); });
+await quiet(pg);
+{
+  const arrived = await pg.evaluate(() => window.__Q.log.map(r => ({ m:r.m, u:r.u, body:r.body })));
+  const aw = arrived.filter(r => writes(r.m, r.u));
+  say(aw.length === 0, '2 arriving at the dictionary reads the language and writes nothing' +
+      (aw.length ? ' -- ' + aw.map(r => r.m + ' ' + r.u.replace(/^[a-z]+:\/\/[^/]*/, '').split('?')[0]).join(', ') : ''));
+}
 const after = await pg.evaluate(() => JSON.stringify(window.__Q.srv()));
 say(after === JSON.stringify(SRV), '2 the server holds exactly what it held before the launch');
 

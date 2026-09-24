@@ -742,7 +742,7 @@ const R = await pg.evaluate(async () => {
      stands in either. */
   try {
     window.__seed(); SET.walked = true;
-    POSTS = []; SNS_GOT = {}; snsTab = 'fo';
+    POSTS = []; PULL_GOT['feed|fo'] = 0; snsTab = 'fo';
     window.route = 'feed'; NAV = [{ r:'feed' }];
     render(); collectClasses();
   } catch (e) {}

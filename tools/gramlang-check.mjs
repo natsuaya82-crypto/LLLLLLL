@@ -244,9 +244,14 @@ await pg.goto(`http://localhost:${PORT}/`);
    (ltStart() refuses while nobody has answered, www/letters.js). Setting the
    word alone left the letters unwritten and the words unspelled, which is
    half the road and reads as the app being wrong. */
+/* The door onto a page waits for what that page reads (www/shell.js
+   § navLand, OWNER 2026-09-23 「読むのは開いた画面の分だけ」), and there is no
+   server behind this file -- the language is the one this phone holds. What
+   is asked here is what a rule writes, not the reads, so a page's answers
+   are taken as already in and a press lands where it always did. */
 const boot = async () => {
   await pg.reload();
-  await pg.evaluate(() => planTook('free'));
+  await pg.evaluate(() => { planTook('free'); window.pageWait = function (r, a, done) { done(true); }; });
 };
 
 /* ---- 1, 2, 3: it arrives, it copies, and nothing else moves ------------- */
