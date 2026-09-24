@@ -198,6 +198,8 @@ console.log('the launch: ' + boot.length + ' requests -- ' + tables(boot).join('
 console.log('the launch pages: ' + JSON.stringify(open) + ', the first screen: ' + first.r);
 say(!!open && open.slice().sort().join() === 'feed,notif',
     '1 the launch pages are the timeline and the notices (PAGE_OPEN) -- ' + JSON.stringify(open));
+/* 「アプリを開いて最初の画面 → タイムラインで」 OWNER 2026-09-24. */
+say(first.r === 'feed', '1 the app opens on the timeline -- it opened on ' + first.r);
 
 /* ---- 2. every route, arrived at through the door, with nothing answered -- */
 const routes = await pg.evaluate(() => Object.keys(PAGES));

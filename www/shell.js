@@ -209,8 +209,11 @@ function vpKbWire(){
    ボタン以外いらない」
 
    A screen is a route and at most one argument -- which word, which stage --
-   because a screen that needs two is two screens. */
-var NAV=[{r:'profile'}];
+   because a screen that needs two is two screens.
+
+   Where the trail starts is where the app opens: the timeline.
+   「アプリを開いて最初の画面 → タイムラインで」 OWNER 2026-09-24. */
+var NAV=[{r:'feed'}];
 function here(){ return NAV[NAV.length-1]; }
 function prevPage(){ return NAV.length>1? NAV[NAV.length-2] : null; }
 /* ---- THE ONE DOOR ONTO A PAGE -------------------------------------------
@@ -918,7 +921,7 @@ function navDrop(a, r){
 function goIn(r){ goTab('build'); go(r); }
 function goTab(r){ navLand([{r:r}]); }
 /* Kept because a hundred lines still read it. It is here()'s route. */
-var route='profile';
+var route='feed';
 
 /* ---- what the app IS, before any route is drawn ------------------------
    Three states, and this is the only place that says which one the app is in.
