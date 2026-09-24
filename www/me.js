@@ -95,7 +95,8 @@ function meBlank(){ return {name:'', handle:'', bio:'', pic:'', link:'', loc:'',
    Absent is not empty. An account with no `av` has not been asked yet; one
    with a face has been. */
 function meAvOf(l){
-  if(l && l.st && l.st.length) return {st:l.st};
+  var g=inkGeo(l);
+  if(g) return {st:g};
   if(l && l.ch) return {ch:l.ch};
   return null;
 }

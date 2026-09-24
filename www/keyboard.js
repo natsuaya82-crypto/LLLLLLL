@@ -1361,7 +1361,7 @@ function kbMark(key){
   var l;
   if(!kbRomOn() || !key || key.k!=='lt') return '';
   l=ltById(key.v);
-  if(!l || !((l.st && l.st.length) || l.ch)) return '';
+  if(!ltHasShape(l)) return '';
   var t=kbTyped(key.v);
   return t? '<span class="kbrm">'+esc(t)+'</span>' : '';
 }

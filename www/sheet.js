@@ -1542,7 +1542,7 @@ function shTakeIn(){
       /* The slot is there and nothing is drawn on it. inkGeo() is the one
          place that knows a letter's shape may be `sh` as well as `st`, and a
          borrowed character is a shape too. */
-      if(!inkGeo(d) && !d.ch){ d.sh = g.sh; d.via = 'write'; saveLetters(); n++; continue; }
+      if(!inkGeo(d) && !d.ch){ inkSet(d, g.sh); d.via = 'write'; saveLetters(); n++; continue; }
       /* And that digit is already somebody's work. It is not drawn over, and
          the box is not thrown away either: a SECOND digit of that value is
          added beside it. 「別に課金なんだから追加しろよなんで？」 OWNER
