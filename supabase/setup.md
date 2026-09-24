@@ -68,6 +68,29 @@ https://raw.githubusercontent.com/natsuaya82-crypto/LLLLLLL/master/supabase/sche
 
 `Success. No rows returned` が出れば通っています。
 
+### 2026-09-24 以降、**もう一度流し直して、そのあと関数を二つ置き直してください**
+
+**順番が大事です。schema.sql が先、関数が後。**
+
+1. `schema.sql` を全部貼って Run。
+2. **Actions → Supabase Deploy → `verify-plan`**、終わったら同じく **`push-send`**。
+
+この日の `schema.sql` には、二つの関数が呼ぶものが入っています ── `plan_put()`
+（verify-plan がプランを一つの文で書く）と `push_once()`（push-send が一つの行で
+一回だけ鳴らす）。**関数を先に置くと、流し直すまで verify-plan は 500 を返し、
+プランの確かめが全部失敗します。**push-send は何も鳴らしません。逆の順なら何も
+壊れません ── 古い関数は新しい schema の上でも前と同じに動きます。
+
+ほかに入っているもの（貼るだけで済みます）:
+
+- iPhone の宛先を同じアカウントが出し直しても断られない。別のアカウントがその
+  iPhone で入ると、前のアカウントの宛先はそこで外れる（`device_one()`）。
+- `slice.no` はサーバーが数える（`slice_no()`）。
+- 名前が `lang` スライスにしか無い古い言語は、その名前を `language.name` に一回
+  だけ写す。表 `schema_step` が「済んだ」を持っていて、二回目からは走らない。
+- 上に立つ人（@lingua）を言うのは `profile_admin()` 一つ。`staff_drop()` は
+  知らない @ と @lingua を断る（前は何も言わずに成功していた）。
+
 ### 2026-09-22 以降、**もう一度流し直してください**
 
 この日、**サインインしていない人からサーバーを全部隠しました**（オーナーの決定
@@ -95,7 +118,6 @@ https://raw.githubusercontent.com/natsuaya82-crypto/LLLLLLL/master/supabase/sche
 | Table Editor | `profile` `language` `publication` `prompt` `post` `quote` `react` `follow` の8つ |
 | Table Editor → `post` | 列に `reply_to` がある |
 | Table Editor → `profile` | 列に `av` がある |
-| Storage | `post-media` があり、**Public** になっている |
 | Database → Functions | `notices` と `account_delete` と `is_member` |
 | Database → Views | `follow_seen` `profile_seen` `post_seen` `language_seen` |
 | Database → Tables | `language_take`（2026-09-09 に増えました） |
@@ -369,10 +391,12 @@ node tools/google-id.mjs 123456-abcdefg.apps.googleusercontent.com
 足せるのは `staff_add()` という関数だけで、その関数は中で「訊いているのは
 権限者か」を確かめます）。
 
-**権限者は @ で決まります**（2026-09-03）。`is_admin()` が `handle = 'lingua'`
-かどうかを訊くだけで、立てたり外したりする欄はありません。`lingua` に改名する
-ことも、`lingua` から改名することもできません（`profile_rename()`）。
-`profile.admin` という欄は残っていますが、**もう誰も読みませんし、誰も書きません。**
+**権限者は @ で決まります**（2026-09-03）。どの行が権限者かを言うのは
+`profile_admin()` 一つで、`is_admin()` も `staff_drop()` もそれに訊きます。
+立てたり外したりする欄はありません。`lingua` に改名することも、`lingua` から
+改名することもできません（`profile_rename()`）。@lingua を外そうとすると
+`staff_drop()` が断ります。`profile.admin` という欄は残っていますが、
+**もう誰も読みませんし、誰も書きません。**
 
 ### 5-3. 管理画面の入り方
 

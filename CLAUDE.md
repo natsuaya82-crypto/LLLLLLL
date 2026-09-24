@@ -1446,7 +1446,7 @@ one. `kbColHas()` is the one place. What the BIN then takes is a different
 question and is not this one: `kbDelCol()` asks how much of a key is inside the
 column, and narrows it by that much, so the inset row still gives up its half.
 
-**Left and right ignore the half key; only CENTRE rounds to a whole one.**
+**Left and right ignore the half key, and so does centre.**
 「キーボードも左右寄せにするなら、ハンキーとか関係なく寄せて。」 OWNER
 2026-08-27. Right used to send the odd half to the other end so the row's first
 key landed on a whole column — which is what centring is FOR, and is not what
@@ -1482,6 +1482,25 @@ up and it was already the answer for the QWERTY's inset third row: **a row with
 the band down it and no key lit is the row saying it does not line up with the
 columns**, which is what somebody needs to know before cutting one. The drawing
 of a short row and the button that aligns one ask the same function.
+
+**The sheet has ONE coordinate, and it is `KB_COLS`.** A short row that writes no
+gaps is drawn in the middle of the sheet 「揃えて欲しい」, and `kbStart()` is the
+one place that says where its first key stands. The letter that lights a column,
+the bin that takes it, the + that puts one in, a frame a key goes into, and the
+three alignments all count in that coordinate — the alignments against the ten
+columns, never against the widest row. They used to count in three: the drawing
+centred a row, the bin and the + counted from its first key, and the alignments
+measured the widest row, so pressing a column lit one key and the bin took
+another (`docs/scope/r73-audit.md` § 2-16). Whether a short row made by hand is
+filled out to ten when it is saved — the extension draws it the width of the
+phone, the sheet in the middle — is the owner's and has not been asked. What a
+MERGE counts in is the row's own positions still, and is `docs/scope/r74-kb.md`'s.
+
+**What is selected and the step back are the screen's and the board's.**
+`kbLeft()` forgets both, and three things reach it: walking off the chapter
+(`viewLeft()`), opening another language (`viewReset()`), and arriving on
+another board (`kbNoted()`, which names a board by its language and its `id`,
+never by where it is in the list).
 
 Where a row is short from — left, centre, right — is written in **gap keys**,
 which this keyboard has had since it had a QWERTY. Nothing new is stored, and
@@ -1602,9 +1621,9 @@ a carry that ate a half, which is why those are separate claims.
 「満杯だと追加できないから」 OWNER 2026-08-27. A key can be held and dragged
 into another row, and that road asked nothing about width — a board of ten-key
 rows became one of eleven, which is the 29pt this rule exists to forbid.
-`kbCellAdd()`, the same act done by pressing an empty cell rather than by
-carrying, had asked `kbRoomIn()` from the beginning: the gate was already
-there and one road went round it. Both ask `kbRoomFor()` now. **Only across
+`kbCellPut()`, the same act done by putting a key into an empty frame rather
+than by carrying, had asked from the beginning: the gate was already there and
+one road went round it. Both ask `kbRoomFor()` now. **Only across
 rows** — inside one row the width does not change, and asking there counts the
 key twice and freezes the ordering of every full row. What a refused carry
 must do is leave the key where it was: "no row is over ten" is also true of a
