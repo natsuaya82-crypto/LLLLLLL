@@ -201,7 +201,8 @@ ceilings spoke with `alert()`.
 **And the owner has since given ten criteria that every screen is held to**
 (OWNER DECISION 2026-09-01) — system standard first, the patterns every SNS
 shares, one tap, little on a screen and wide margins, quiet animation, two or
-three colours, one or two faces, 44pt, undo rather than a confirm, and a real
+three colours, one or two faces, 44pt, a confirm before a delete (criterion 9 was undo; replaced 2026-09-24
+「確認ポップにしてください」), and a real
 phone. They are written out in full, verbatim, in `docs/FEATURE_RULES.md`
 § Owner decision log, and that entry also names **the two places this repo does
 not meet them yet** — neither of which is a session's to go and fix on its own.
