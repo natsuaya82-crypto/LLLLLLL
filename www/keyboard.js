@@ -4217,7 +4217,9 @@ FORM_OPEN.kbkey=function(a){
 };
 function kbKeyHTML(ri, ki){
   var key=kbAt(ri, ki), i, out;
-  if(!key) return '<div class="note">'+t('form.gone')+'</div>';
+  /* the key this page is about is not on the board any more -- the one
+     sentence every screen says for that, drawn by the one function */
+  if(!key) return goneBox();
   out=(key.k==='lt'? kbEditHTML(ri, ki, key) : kbEditFnHTML(key))+
     /* And the alphabet, HERE, when there is one slot to fill. Choosing which
        letter goes on a key is what somebody is doing nearly every time they
@@ -4448,7 +4450,7 @@ function kbLtGrid(ri, ki, dir){
 }
 function kbLtHTML(){
   var s=kbSlotFor;
-  if(!s) return '<div class="note">'+t('form.gone')+'</div>';
+  if(!s) return goneBox();
   return kbLtGrid(s.r, s.k, s.d);
 }
 /* ---- what has been CHOSEN on the alphabet, and the confirm over it -------

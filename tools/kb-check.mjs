@@ -3607,6 +3607,23 @@ const cmpCols = whereAll(/(?:[<>]=?\s*KB_COLS\b|\bKB_COLS\s*[<>])/g);
 const cmpRows = whereAll(/(?:[<>]=?\s*kbRowsMax\(\)|kbRowsMax\(\)\s*[<>])/g);
 const freeAsk = whereAll(/kbIsFree\(kbShow\)|KB\.kbs\[kbShow-1\]/g);
 
+/* ---- 「THE THING YOU CAME BACK FOR IS GONE」 IS DRAWN BY ONE FUNCTION ----
+   CLAUDE.md § One place names goneBox()/viewGone() for it. Every t('form.gone')
+   under www/ is counted: inside goneBox() is the drawing, handed to toast() is
+   a statement and not a box, and anything else is a second drawing of the
+   same sentence -- keyboard.js held two (docs/scope/r73-audit.md § 2-16),
+   which page-check could not see because it leaves viewGone out by name. */
+const goneOut = [];
+for (const f of fs.readdirSync(path.join(dir, '..', 'www')).filter((n) => n.endsWith('.js'))){
+  const src = fs.readFileSync(path.join(dir, '..', 'www', f), 'utf8').replace(/\/\*[\s\S]*?\*\//g, ' ');
+  for (const m of src.matchAll(/t\('form\.gone'\)/g)){
+    const fn = fnOf(src, m.index);
+    const before = src.slice(Math.max(0, m.index - 6), m.index);
+    if (fn === 'goneBox' || /toast\($/.test(before)) continue;
+    goneOut.push(f + ' ' + fn);
+  }
+}
+
 const bad = [];
 function say(ok, line){ console.log('  ' + (ok ? '' : 'FAILED  ') + line); if (!ok) bad.push(line); }
 
@@ -4585,6 +4602,9 @@ say(dupTwo.onServer <= dupOne.onServer && dupThree.onServer <= dupTwo.onServer,
     + [dupOne, dupTwo, dupThree].map((x) => x.onServer).join(', ') + ' rows');
 
 /* r74 — the surfaces */
+say(goneOut.length === 0,
+    '「that is no longer here」 is drawn by goneBox() and by nothing else under www/ ['
+    + goneOut.join(', ') + ']');
 say(cmpCols.length === 1 && cmpCols[0] === 'kbRoomFor',
     'ten across is compared in one place, kbRoomFor() [' + cmpCols.join(', ') + ']');
 say(cmpRows.length === 1 && cmpRows[0] === 'kbRoomRow',
