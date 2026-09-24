@@ -702,32 +702,38 @@ function kbQwertyLay(){ return kbFixed().lay; }
    and the only one that can push a face past the ceiling -- kbFaceRows()
    leaves room for a bar so that it never comes to that, and kb-check counts
    the rows afterwards rather than trusting this sentence. */
-function kbFacePut(face, to){
-  var rows=face.rows, i, j, k;
+function kbFaceSpot(face){
+  var rows=face && face.rows, i, j;
+  if(!rows || !rows.length) return {how:'row'};
   for(i=0;i<rows.length;i++)
     for(j=0;j<rows[i].length;j++)
       /* A WHOLE KEY of gap, and not the half key the QWERTY is inset by.
          A gap of 0.5 is not a slot somebody left empty, it is the third row's
          inset -- and a layer key half a key wide is 14pt on a 390pt phone,
          which is not a thing anybody can press. */
-      if(rows[i][j].k==='gap' && rows[i][j].w>=1){
-        k=kbKey('lay', String(to)); k.w=rows[i][j].w;
-        rows[i][j]=k;
-        return true;
-      }
+      if(rows[i][j].k==='gap' && rows[i][j].w>=1) return {how:'gap', i:i, j:j};
   for(i=rows.length-1;i>=0;i--)
     for(j=0;j<rows[i].length;j++)
-      if(rows[i][j].k==='sp' && rows[i][j].w>1){ kbBarLay(rows[i], String(to)); return true; }
+      if(rows[i][j].k==='sp' && rows[i][j].w>1) return {how:'sp', i:i};
   /* and a row of its own, which is the last resort and the only one that can
      push a face past the ceiling -- kbFaceRows() leaves a bar's worth of room
      so that it never comes to that, and kb-check counts the rows afterwards
-     rather than trusting this sentence. */
-  if(!rows.length){ rows.push([kbKey('lay', String(to))]); return true; }
-  if(kbUsed(rows[rows.length-1])+2<=KB_COLS){
-    rows[rows.length-1].unshift(kbKey('lay', String(to))); return true;
-  }
-  if(rows.length<kbRowsMax()){ rows.push([kbKey('lay', String(to))]); return true; }
-  return false;
+     rather than trusting this sentence. Ten across and the row ceiling are
+     asked of the one place each says it. */
+  if(kbRoomFor(rows[rows.length-1], 1)) return {how:'front'};
+  if(kbRoomRow(rows)) return {how:'row'};
+  return null;
+}
+function kbFacePut(face, to){
+  var at=kbFaceSpot(face), rows=face && face.rows, k;
+  if(!at) return false;
+  if(at.how==='gap'){
+    k=kbKey('lay', String(to)); k.w=rows[at.i][at.j].w;
+    rows[at.i][at.j]=k;
+  }else if(at.how==='sp') kbBarLay(rows[at.i], String(to));
+  else if(at.how==='front') rows[rows.length-1].unshift(kbKey('lay', String(to)));
+  else rows.push([kbKey('lay', String(to))]);
+  return true;
 }
 /* EVERY FACE IS REACHED AND EVERY FACE CAN BE LEFT, whatever a pattern came
    out as. One place, because a pattern is no longer one face and two: the
@@ -1561,7 +1567,7 @@ function kbRowsMax(){
    that width. Asked in one place each so a way in that forgets cannot exist:
    the dashed row at the foot, a width dropped on a cell, a width tapped into
    place, and a key made wider all come through these two. */
-function kbRoomRow(){ return kbLayer().rows.length<kbRowsMax(); }
+function kbRoomRow(rows){ return rows.length<kbRowsMax(); }
 function kbUsed(row){
   var n=0, i;
   for(i=0;i<row.length;i++) n+=kbU(row[i].w);
@@ -1575,9 +1581,6 @@ function kbUsed(row){
    sentence about ten columns. */
 function kbRoomFor(row, w){
   return !!row && kbUsed(row)+kbU(w)<=KB_COLS;
-}
-function kbRoomIn(ri, w){
-  return kbRoomFor(kbLayer().rows[ri], w);
 }
 /* A key's width in COLUMNS, and a column is half a key -- because half a key
    is a thing this keyboard has. kbFixed() insets its third row with a gap key
@@ -1740,7 +1743,6 @@ function kbCellIs(ri, at){
    that did either according to whether it was handed arguments was one name
    saying two things (docs/scope/r73-audit.md § 2-16). */
 function kbCellSel(ri, at, span){
-  if(kbIsFree(kbShow)) return;
   if(!kbEdit()) return;
   KBH={k:'f', r:ri, at:at, span:span};
   kbSel=null;
@@ -1858,7 +1860,6 @@ function kbKeyIs(ri, ki){
 }
 function kbTapKey(ri, ki){
   var rows, ui;
-  if(kbIsFree(kbShow)) return;
   if(!kbEdit()) return;
   /* The lower half of a merged key IS that key. One redirect here rather than
      a second name in the markup, so everything below -- selecting, joining,
@@ -2256,7 +2257,7 @@ function kbInsRoom(){
   var run=kbHeadRun();
   /* As many as are chosen: four columns selected is four going in, so the
      room asked for is the room for four. */
-  return KBH.k==='r'? kbRoomRow() : kbRoomCol(run.a, run.b-run.a+1);
+  return KBH.k==='r'? kbRoomRow(kbLayer().rows) : kbRoomCol(run.a, run.b-run.a+1);
 }
 function kbInsAsk(){
   if(!KBH || !kbInsRoom()) return;
@@ -2314,7 +2315,7 @@ function kbRoomCol(ci, n){
   var rows=kbLayer().rows, at=kbColRows(ci), i;
   n=n||1;
   if(!at.length) return false;
-  for(i=0;i<at.length;i++) if(kbUsed(rows[at[i]])+2*n>KB_COLS) return false;
+  for(i=0;i<at.length;i++) if(!kbRoomFor(rows[at[i]], n)) return false;
   return true;
 }
 function kbInsCol(right){
@@ -2341,7 +2342,7 @@ function kbInsCol(right){
 }
 function kbIns(down){
   var b=kbEdit(), rows, at;
-  if(!b || !KBH || KBH.k!=='r' || !kbRoomRow()) return;
+  if(!b || !KBH || KBH.k!=='r' || !kbRoomRow(kbLayer().rows)) return;
   rows=kbLayer().rows;
   at=Math.max(0, Math.min(KBH.i+(down? 1 : 0), rows.length));
   rows.splice(at, 0, [kbKey('lt', '')]);
@@ -2516,7 +2517,7 @@ function kbHTML(sel, ro){
          them (w 2.5), which is why it comes out 97pt where a QWERTY's is 39.
          And the limit does the rest: a row that already comes to ten refuses
          another key, so nothing is ever made smaller to fit something in.
-         kbRoomIn() has always said that; what was missing was the fixed
+         kbRoomFor() has always said that; what was missing was the fixed
          width for it to be true against. */
       cols=ro? 0 : KB_COLS, at, b, lead, tot, ki2, hrun;
   if(!ro){ kbNoted(); out+=kbHdrHTML(cols); }
@@ -2911,7 +2912,7 @@ function kbMoreQ(){
      (www/home.js § vBuild). 「キーボードの？は目次のキーボードの題名の横」
      OWNER 2026-09-05. That is one screen earlier than this one, which is
      where 「how do I switch this on」 is asked. */
-  if(kbIsFree(kbShow)) return '';
+  if(!kbEdit()) return '';
   return '<button class="navq"' + DO('kbMore') + ' aria-label="'+esc(t('kb.more'))+'">'+
     ICON_DOTS+'</button>';
 }
@@ -3308,7 +3309,7 @@ function kbDragTo(e){
 
      The gate was already here and this was the one road not through it --
      kbCellPut(), which is the same act done with a press instead of a finger,
-     has always asked kbRoomIn(). So this asks the same sentence rather than a
+     has always asked kbRoomFor(). So this asks the same sentence rather than a
      new one, and somebody carrying a key into a full row now finds what
      somebody pressing an empty cell in one has always found.
 
@@ -3616,7 +3617,7 @@ function kbDelCol(ca, cb){
    keyboard was on this visit.
 
    ONE PLACE records it -- kbNoted() -- rather than the thirty mutators:
-   kbDelRow, kbDelCol, kbDelKey, kbAddKey, kbSetKind, kbLtPut, the drag.
+   kbDelRow, kbDelCol, kbDelKey, kbSetKind, kbLtPut, the drag.
    A list that has to be added to by hand is a list with a hole in it, and the
    hole is a change that cannot be taken back with no way of knowing which one.
 
@@ -3836,7 +3837,7 @@ function kbRepat(i){
   var b=kbBoards();
   if(!b.length) return;
   kbShow=kbClamp(i, b.length);
-  if(kbIsFree(kbShow)) return;
+  if(!kbEdit()) return;
   openForm('kbpat:'+kbShow, t('kb.pat.set'), kbPatsHTML('kbSetPat'),
            function(){ geTiles(); });
 }
@@ -3844,8 +3845,7 @@ FORM_OPEN.kbpat=function(a){ kbRepat(parseInt(a,10)||0); };
 function kbSetPat(pat){
   var b=kbBoards(), x;
   if(KB_PATS.indexOf(pat)<0 || !b.length) return;
-  if(kbIsFree(kbShow)) return;
-  x=KB.kbs[kbShow-1];
+  x=kbEdit();
   if(!x) return;
   if(x.pat===pat){ back(); return; }
   /* 確認は自前のポップで。「標準は使わねえって言ってるだろこれも禁止や」
@@ -3856,7 +3856,7 @@ function kbSetPat(pat){
    closing over it: the ask is a screen the person stands in front of, and the
    board can have gone by the time they answer. */
 function kbSetPatGo(pat){
-  var x=KB.kbs[kbShow-1];
+  var x=kbEdit();
   if(!x) return;
   x.pat=pat; x.lay=kbPatLay(pat);
   kbLay=0; kbSel=null;
@@ -4063,22 +4063,13 @@ function kbGoLay(i){ kbLay=i; render(); }
    new row AND no new face. kbAddLay() simply did nothing, which is a + that
    can be pressed and does not work.
 
-   So the two of them are one question with one answer now. kbFacePut() is
-   where it lives, because it is the one that knows about gaps -- a flick
-   board's fourth column is gaps from its fourth row down, and that is a slot
-   sitting there on a board every one of whose rows is full. */
-function kbLayRoom(face){
-  var rows=face && face.rows, i, j;
-  if(!rows || !rows.length) return true;
-  for(i=0;i<rows.length;i++)
-    for(j=0;j<rows[i].length;j++){
-      if(rows[i][j].k==='gap' && rows[i][j].w>=1) return true;
-      if(rows[i][j].k==='sp' && rows[i][j].w>1) return true;
-    }
-  if(kbUsed(rows[rows.length-1])+2<=KB_COLS) return true;
-  return rows.length<kbRowsMax();
-}
-function kbLayPut(face, v){ return kbFacePut(face, v); }
+   So the two of them are one question with one answer now: kbFaceSpot() says
+   where the key goes, kbFacePut() puts it there, and this asks whether there
+   is anywhere at all. They answered it twice, in two orders, until
+   docs/scope/r73-audit.md § 2-16 -- a flick board's fourth column is gaps from
+   its fourth row down, and that is a slot sitting there on a board every one
+   of whose rows is full. */
+function kbLayRoom(face){ return !!kbFaceSpot(face); }
 /* NO FACE IS A DEAD END, and that is the sentence above one step further out.
    「2ページ目から戻るボタンがない」 OWNER, build #92.
 
@@ -4122,7 +4113,7 @@ function kbWayOff(){
     /* Face 0 is the way IN to the rest, so its missing key is the same hole
        seen from the other end: with nothing on it pointing anywhere, every
        page after it is unreachable rather than inescapable. */
-    if(!has) kbLayPut(b.lay[i], i===0? 1 : 0);
+    if(!has) kbFacePut(b.lay[i], i===0? 1 : 0);
   }
 }
 /* A page arrives with the way THERE and the way BACK already on it.
@@ -4145,7 +4136,7 @@ function kbAddLay(){
   from=kbClamp(kbLay, b.lay.length);
   if(!kbLayRoom(b.lay[from])) return;
   b.lay.push({rows:[[kbKey('lay', String(from)), kbKey('lt', '')]]});
-  kbLayPut(b.lay[from], b.lay.length-1);
+  kbFacePut(b.lay[from], b.lay.length-1);
   kbLay=b.lay.length-1;
   kbSel=null;
   saveKb(); render();
@@ -4202,7 +4193,7 @@ function kbPick(ri, ki){
   /* The free QWERTY has no editor, so it has no key sheet either. Its keys
      are drawn as plain spans and nothing on the screen opens this -- but a
      route can be come back to, and `form:kbkey:0:0` is a route. */
-  if(kbIsFree(kbShow)) return;
+  if(!kbEdit()) return;
   kbSel={r:ri, k:ki};
   /* ARRIVING IS ARRIVING: nothing is chosen on a screen you have just opened.
      「終わって戻ったら選択が解除されてる状態にして欲しい」OWNER 2026-09-03.
@@ -4586,21 +4577,6 @@ function kbSetKind(ri, ki, kind){
   if(kind!=='lt') key.f=['','','',''];
   if(kind!=='lt') key.v='';
   saveKb(); kbPick(ri, ki);
-}
-function kbAddKey(ri, ki, w){
-  if(!kbEdit()) return;
-  var rows=kbLayer().rows, k;
-  if(!rows[ri]) return;
-  if(!kbRoomIn(ri, w)) return;
-  k=kbKey('lt', '');
-  if(w>1) k.w=w;
-  rows[ri].splice(ki+1, 0, k);
-  saveKb();
-  /* Placed from the keyboard, the key is opened so the letter can go on it --
-     which is the next thing anybody does. Placed from the key's own sheet,
-     that sheet is closed first. */
-  if(here().r==='form') back();
-  kbPick(ri, ki+1);
 }
 /* The row that is not there yet. Pressing it with a width chosen puts that
    key in a new row; pressing it with none adds the empty row it always did. */

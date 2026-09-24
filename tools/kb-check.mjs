@@ -497,9 +497,9 @@ const r = await pg.evaluate(({ s }) => {
   }
   out.foundFull = full >= 0;
   if (full >= 0){
-    var had = kbLayer().rows[full].length;
-    kbAddKey(full, 0, 1);
-    out.colsCap = kbLayer().rows[full].length === had;
+    /* asked of the one place that says it: every road that adds a key --
+       a frame's +, a carry, a column's + -- goes through kbRoomFor() */
+    out.colsCap = !kbRoomFor(kbLayer().rows[full], 1);
   }
   /* AND THE KEY'S SCREEN NO LONGER OFFERS A WIDTH AT ALL. 「「幅」の段は
      消す」 OWNER 2026-09-06, which replaces the claim that stood here -- a
@@ -683,7 +683,7 @@ const r = await pg.evaluate(({ s }) => {
   /* ---- 6d3. a row can be added on EVERY face --------------------------
      「8列も追加できるのに行は2ページ目から追加できない」 OWNER, build #92.
 
-     kbRoomRow() and kbIns() both read kbLayer(), which is the face being
+     kbRoomRow(kbLayer().rows) and kbIns() both read kbLayer(), which is the face being
      shown, so this holds and held on the first run -- the row goes in.
      It is written down anyway because nothing said it: every claim about
      adding a row above is made on face 0, and "it works on the face the
@@ -2249,7 +2249,7 @@ const r = await pg.evaluate(({ s }) => {
      about width, so it made a row of ELEVEN on a board of tens -- and rule 19
      is what forbids eleven ("ten keys are 32 each and eleven would be 29").
      kbCellPut(), the same act done by pressing an empty cell, has always
-     asked kbRoomIn(); this was the one road not through the gate.
+     asked kbRoomFor(); this was the one road not through the gate.
 
      Nothing about it throws, and press cannot reach it: the carry is
      touchstart/touchmove/touchend with no [data-do] anywhere on it. So the
@@ -3586,6 +3586,27 @@ const swBarH = swiftNum(/barHeight:\s*CGFloat\s*=\s*([0-9.]+)/, 'barHeight');
 const swMost = swiftNum(/mostOfScreen:\s*CGFloat\s*=\s*([0-9.]+)/, 'mostOfScreen');
 const swEdge = swiftNum(/let bars = ([0-9.]+) \+ \(wantsBar/, 'the two edges');
 
+/* ---- EACH CEILING IS ANSWERED IN ONE PLACE -----------------------------
+   「横 10」 is kbRoomFor(), the row ceiling is kbRoomRow(), and 「the free
+   board is not touched」 is kbEdit(). Counted off the source with the comments
+   taken out, so a comparison written tomorrow in a new function is counted
+   tomorrow: a second place comparing against KB_COLS or kbRowsMax() is a
+   second answer to the same question (docs/scope/r73-audit.md § 2-16 found
+   three and two), and a board reached round kbEdit() is a free board that can
+   be written. */
+const KBSRC = fs.readFileSync(path.join(dir, '..', 'www', 'keyboard.js'), 'utf8')
+  .replace(/\/\*[\s\S]*?\*\//g, ' ');
+function fnOf(src, at){
+  const all = [...src.slice(0, at).matchAll(/function\s+([A-Za-z0-9_$]+)\s*\(/g)];
+  return all.length ? all[all.length - 1][1] : '(top)';
+}
+function whereAll(re){
+  return [...KBSRC.matchAll(re)].map((m) => fnOf(KBSRC, m.index));
+}
+const cmpCols = whereAll(/(?:[<>]=?\s*KB_COLS\b|\bKB_COLS\s*[<>])/g);
+const cmpRows = whereAll(/(?:[<>]=?\s*kbRowsMax\(\)|kbRowsMax\(\)\s*[<>])/g);
+const freeAsk = whereAll(/kbIsFree\(kbShow\)|KB\.kbs\[kbShow-1\]/g);
+
 const bad = [];
 function say(ok, line){ console.log('  ' + (ok ? '' : 'FAILED  ') + line); if (!ok) bad.push(line); }
 
@@ -4564,6 +4585,13 @@ say(dupTwo.onServer <= dupOne.onServer && dupThree.onServer <= dupTwo.onServer,
     + [dupOne, dupTwo, dupThree].map((x) => x.onServer).join(', ') + ' rows');
 
 /* r74 — the surfaces */
+say(cmpCols.length === 1 && cmpCols[0] === 'kbRoomFor',
+    'ten across is compared in one place, kbRoomFor() [' + cmpCols.join(', ') + ']');
+say(cmpRows.length === 1 && cmpRows[0] === 'kbRoomRow',
+    'and the row ceiling in one, kbRoomRow() [' + cmpRows.join(', ') + ']');
+say(freeAsk.length > 0 && freeAsk.every((f) => f === 'kbEdit'),
+    'and the board on the screen is reached only through kbEdit(), which is what '
+    + 'says the free QWERTY is not written [' + freeAsk.join(', ') + ']');
 say(SF.leftBefore.h && SF.leftBefore.u > 0 && !SF.leftAfter.h && SF.leftAfter.u === 0,
     'the selection and the step back are the screen’s: walked off by a tab and come back '
     + 'to, nothing is lit and there is nothing to step back to (before '
