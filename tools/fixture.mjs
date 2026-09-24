@@ -457,6 +457,9 @@ export function seed(){
                'feed|rec':1, 'feed|fo':1, 'feed|day':1 };
   /* and the open language's slices, which are what the fixture seeded */
   PULL_GOT['lang|' + langId] = 1;
+  /* and what this account has written, which is POSTS -- so the door onto
+     your own page lands as a press does (www/sns.js § askPosts) */
+  PULL_GOT['posts|' + meHandle()] = 1;
   /* AND THE PEOPLE THIS ACCOUNT FOLLOWS ARE KNOWN, because the door onto a
      list of people gets them all in one request before the screen opens
      (www/sns.js § WHAT EACH PAGE READS, `fols`). A walk renders a ROUTE, not a door,
