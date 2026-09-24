@@ -867,6 +867,10 @@ pullOn('lang',    function(ok, bad, p, a){
                   });
 pullOn('seen',    function(ok, bad, p, a){ wldSeenAsk(a, ok, bad); }, function(a){ return wldSeenGot(a); });
 pullOn('mod',     function(ok, bad){ modAsk(ok, bad); });
+/* WHO THIS ACCOUNT HAS BLOCKED, by handle (www/net.js § netBlockedRead), for
+   the one thing that still asks: whether the ... on a person says 「ブロック」
+   or 「解除」. Their posts are left out by the server and need nothing here. */
+pullOn('blocks',  function(ok, bad){ netBlockedRead(function(){ ok(1); }, bad); }, netBlockedGot);
 /* ---- WHAT EACH PAGE READS -- ONE TABLE -----------------------------------
    A row is a route and a function of its argument that answers with the
    questions the page is drawn from, as [k, a] pairs. `pull` says whether a
@@ -888,7 +892,9 @@ pageReads('feed', function(){
   if(snsFil && snsFil.q) o.push(['fil', String(snsFil.q)]);
   return o;
 }, true);
-pageReads('explore', function(){ return [['saved'], ['recent']]; }, true);
+/* The search draws people, and a person you have blocked is left out of it
+   here (snsAnsHTML) while `profile_seen` still returns them (r80-block § 保留). */
+pageReads('explore', function(){ return [['saved'], ['recent'], ['blocks']]; }, true);
 pageReads('notif',   function(){ return [['notif']]; }, true);
 pageReads('thread',  function(a){ return [['thread', String(a||'')]]; }, true);
 /* A person's page, and your own is the same page: who they are (with the two
@@ -898,7 +904,7 @@ pageReads('thread',  function(a){ return [['thread', String(a||'')]]; }, true);
 pageReads('profile', function(a){
   var h=String(a||'') || meHandle();
   if(h===meHandle()) return [['who', h], ['posts', h], ['mylangs']];
-  return [['who', h], ['posts', h]];
+  return [['who', h], ['posts', h], ['blocks']];
 }, true);
 pageReads('follows', function(a){ return [['fols', String(a||'')]]; }, true);
 pageReads('notfo',   function(a){ return [['people', String(a||'')]]; });
@@ -2007,14 +2013,14 @@ function thRails(rows, last, i){
 }
 function vThread(){
   var id=String(here().a||''), p=postById(id), ups, vis, rows, last, out='', i;
-  /* Blocked is gone, not merely absent from the list: a thread reached by an
-     old route is the one way a post could still be looked at. */
+  /* Blocked is gone, not merely absent from the list: a post of theirs this
+     phone already held, reached by an old route (postBlocked, www/post.js). */
   if(!p || postBlocked(p)) return viewGone();
   /* WHAT IS ACTUALLY DRAWN, in the order somebody sees it. Both walks answer
      with the rows that are THERE -- postShown() in www/post.js is the one
-     place that says so, and it sees blocked and taken down alike. This screen
-     used to sieve the two lists itself, and it asked only about taken down,
-     so somebody you had blocked was off the timeline and still in the thread.
+     place that says so, and it sees blocked and taken down alike -- the
+     server leaves a blocked author out of what it sends (`post_seen`,
+     r80-block), and postBlocked() is what this phone already held.
      「それ以外の会話は本ツイートとは関係ないものとする」
 
      「線で繋いでないとマジでどの投稿か分からなくなる」 OWNER 2026-09-05, and
@@ -2712,8 +2718,8 @@ function snsSetSort(k){
    one since there was a search; the timeline has one now, because a word
    chosen from the filter is the same question put to the same server. Two
    copies of "what an answer looks like" is the thing that drifts, and what
-   would drift first is who is left OUT of it -- somebody blocked has to be
-   out of both, and a second copy is a second place to remember that. */
+   would drift first is who is left OUT of it, and a second copy is a second
+   place to remember that. */
 function snsAnsHTML(q, r){
   var out='', i, ps;
   if(!String(q||'').trim()) return '';
@@ -2725,15 +2731,16 @@ function snsAnsHTML(q, r){
   if(!r) return snsWaitHTML();
   /* Could not ask, which is not the same as found nothing. */
   if(r.bad) return '<div class="note">'+esc(r.bad)+'</div>';
-  /* And out of the search too, on both sides: a person you have blocked is
-     not somebody you are looking for, and neither is what they wrote. */
+  /* A person you have blocked is not somebody you are looking for. What they
+     wrote the server leaves out (`post_seen`, r80-block); who they are it
+     still returns, because `profile_seen` is where unblocking starts
+     (r80-block § 保留), so they are left out here until that changes. */
   for(i=0;i<(r.who||[]).length;i++)
     if(!meBlocks(r.who[i].hd)) out+=snsWhoRow(r.who[i]);
   /* In the order it arrived. The order is the server's answer to `snsSort`,
      not something to be worked out again here. */
   ps=r.posts||[];
-  for(i=0;i<ps.length;i++)
-    if(!postBlocked(ps[i])) out+=postRow(ps[i]);
+  for(i=0;i<ps.length;i++) out+=postRow(ps[i]);
   return out || '<div class="note">'+esc(t('sns.nohit'))+'</div>';
 }
 /* What sits under the field: the answer where there is a word, and the words
@@ -3118,8 +3125,7 @@ function vNotif(){
   notSeen();
   /* The notices came down when the session began (§ WHAT AN OPEN ASKS FOR).
      Standing on this screen asks for nothing; pulling it asks again. */
-  var got=pullHad('notif')? (NOTES_HAVE||[]) : null;
-  var ns=(got||[]).filter(function(n){ return !meBlocks(n.hd); });
+  var ns=pullHad('notif')? (NOTES_HAVE||[]) : [];
   return '<div class="view">'+rootTop('notif')+
     '<div class="body">'+
     /* 「まだ何も無い」は答えが来てから。来るまでは待っている印を回す ──

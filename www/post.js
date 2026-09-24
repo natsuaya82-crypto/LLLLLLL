@@ -71,9 +71,12 @@ acctKeep('posts', function(){ return POSTS.length? POSTS : null; },
          function(v){ POSTS=(v && typeof v.length==='number')? v : []; }, LS_POSTS);
 /* Newest first, which is the only order a timeline has. */
 /* Whoever you have blocked is not in any list. 「ブロックは何も見えなくなる」
-   netFeed() leaves them out on the SERVER, which is the only way a block is a
-   block at all -- their posts never arrive. This is the other half: a post of
-   theirs already on this phone, in a thread, on a profile, in a search.
+   What the server sends leaves them out already -- `post_seen` asks
+   block_hides() of every author (supabase/schema.sql, r80-block) -- so no
+   answer is sieved on this phone. This is the other half, and the one the
+   server cannot reach: a post of theirs this phone ALREADY holds, brought
+   down before the block. postTake() adds to the copy and never replaces it,
+   so a timeline, a thread and a profile would go on drawing it.
 
    Never your own: `mine` is checked because a handle can be your own on a
    phone whose account changed, and a block that hid your own writing would be

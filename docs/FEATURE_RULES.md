@@ -5235,8 +5235,11 @@ and is never merged into your own」と言っている。**入らない、は二
   nowhere else to do it; and **search on the other side** — somebody blocked
   still finds the person who blocked them, since the search reads the same
   views as the feed and whether the blocked side loses the feed too is not
-  decided. The phone still filters as well (`netBlocked()`, `postBlocked()`),
-  and taking that out is `www/`'s. All three are in `docs/scope/r80-block.md`.
+  decided. The phone sieves no answer (r68-state, 2026-09-24): what is left is
+  `postBlocked()`, for a post of theirs the phone already held before the
+  block, which the server cannot reach, and the people row of the search,
+  while `profile_seen` still returns them. All three are in
+  `docs/scope/r80-block.md`.
 
 ### Decision
 - Date: 2026-08-19
