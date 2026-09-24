@@ -1233,15 +1233,27 @@ $$;
 --
 -- The handle IS the account's name and it is unique, so there is nothing to
 -- set and nothing to forge. Two people cannot both be `lingua`, and somebody
--- who renames themselves to it cannot: the UPDATE grant below does not carry
--- `handle`.
+-- who renames themselves to it cannot: `handle` is in the UPDATE grant below,
+-- and profile_rename() refuses a rename onto it or off it.
 --
 -- `profile.admin` is not dropped. It is somebody's stored row and this file
 -- does not delete data (docs/DATA_SAFETY.md); nothing reads it any more and
 -- nothing writes it.
+--
+-- THE NAME IS WRITTEN HERE AND NOWHERE ELSE. profile_admin() is the one place
+-- that says which row is the one above staff, and everything that needs to
+-- know -- is_admin() below, the three triggers, staff_drop(), the first
+-- follow -- asks it of a row. It takes the row rather than a handle so that
+-- the app can ask it too, of every row it reads: PostgREST serves a function
+-- of the table's own row as a column (`select=handle,admin:profile_admin`),
+-- which is how the staff list says which of its rows cannot be taken off.
+-- tools/rls-check.mjs counts the name in this file and wants one.
+create or replace function profile_admin(p profile) returns boolean
+language sql stable as $$ select p.handle = 'lingua' $$;
+
 create or replace function is_admin() returns boolean
 language sql stable as $$
-  select exists (select 1 from profile where id = auth.uid() and handle = 'lingua')
+  select exists (select 1 from profile p where p.id = auth.uid() and profile_admin(p))
 $$;
 
 -- profile: everyone reads, you write yourself into existence and edit yourself
@@ -2757,7 +2769,7 @@ language plpgsql set search_path = public as $$
 begin
   -- `staff` only. Who is above staff is the handle itself now (is_admin()
   -- above), so there is no flag to raise for it.
-  if new.handle = 'lingua' then
+  if profile_admin(new) then
     new.staff := true;
   end if;
   return new;
@@ -2808,7 +2820,7 @@ begin
   end if;
   -- Both directions in one sentence: with the line above holding, "one of the
   -- two is lingua" IS "onto it or off it".
-  if new.handle = 'lingua' or old.handle = 'lingua' then
+  if profile_admin(new) or profile_admin(old) then
     raise exception 'handle reserved';
   end if;
   if old.handle_at is not null
@@ -2898,7 +2910,7 @@ drop trigger if exists profile_staff_plan on profile;
 create trigger profile_staff_plan after insert or update of staff on profile
   for each row when (new.staff) execute function profile_staff_plan();
 
-update profile set staff = true where handle = 'lingua';
+update profile p set staff = true where profile_admin(p);
 
 -- ---------------------------------------------------------------------------
 -- Making somebody staff, and unmaking them
@@ -2936,16 +2948,26 @@ begin
   if not found then raise exception 'no such handle'; end if;
 end $$;
 
--- `and handle <> 'lingua'` is the whole of "the one above staff cannot be
--- taken off it". It is the one failure here that cannot be undone from inside
--- the app: an owner who is no longer the owner has no screen left to fix it
--- from. It was `and not admin` and is the @ now, for is_admin()'s reason.
+-- And taking it off is the same function the other way, in the same shape:
+-- the same match, and a handle nobody has is an error and not a silence. It
+-- matched `handle = h` exactly and said nothing when nothing matched, so
+-- `staff_drop('AYA')` returned and aya stayed staff (r63-audit SQ3, measured).
+--
+-- THE ONE ABOVE STAFF CANNOT BE TAKEN OFF IT, and says so. It is the one
+-- failure here that cannot be undone from inside the app: an owner who is no
+-- longer the owner has no screen left to fix it from. The row does not move
+-- either way; what the refusal adds is that the caller is told, which is the
+-- sentence `staff_add()` above is written after.
 create or replace function staff_drop(h text)
 returns void
 language plpgsql security definer set search_path = public as $$
+declare r profile;
 begin
   if not is_admin() then raise exception 'not admin'; end if;
-  update profile set staff = false where handle = h and h <> 'lingua';
+  select * into r from profile where lower(handle) = lower(h);
+  if not found then raise exception 'no such handle'; end if;
+  if profile_admin(r) then raise exception 'the one above staff stays staff'; end if;
+  update profile set staff = false where id = r.id;
 end $$;
 
 -- ---------------------------------------------------------------------------
@@ -2977,7 +2999,7 @@ create or replace function profile_follows() returns trigger
 language plpgsql security definer set search_path = public as $$
 declare l uuid;
 begin
-  select id into l from profile where handle = 'lingua';
+  select p.id into l from profile p where profile_admin(p);
   if l is not null and l <> new.id then
     insert into follow(follower, followed) values (new.id, l)
       on conflict do nothing;
