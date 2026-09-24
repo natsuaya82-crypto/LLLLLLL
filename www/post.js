@@ -531,7 +531,7 @@ draftsRead();
    net.js is loaded before this file (www/index.html: 3585 and 3611), so SESS
    is here to be asked. Signed out, this parks what the phone was holding,
    which is what netOut() does for the same reason. */
-postFor(SESS && SESS.uid);
+postFor(netUid());
 draftsName();
 /* Saved as it stands: the line, the meaning, whom it answers, WHOM IT IS FOR,
    the pictures with their letters still placed on them, the recording, and

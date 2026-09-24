@@ -193,10 +193,10 @@ function meFor(uid){
    two. A phone that was signed in as somebody while carrying somebody else's
    copy stayed that way until the next sign-in.
 
-   net.js is loaded before this file (www/index.html), so SESS is here to be
-   asked. Signed out, this parks whatever the phone was holding, which is the
+   net.js is loaded before this file (www/index.html), so who this is
+   (netUid) is here to be asked. Signed out, this parks whatever the phone was holding, which is the
    same thing netOut() does and is right for the same reason. */
-meFor(SESS && SESS.uid);
+meFor(netUid());
 /* Nobody is made to fill this in before they can post. With no name the
    language's name stands in, which is what it did before there were accounts
    at all -- so the screen never shows an empty space or a word invented to

@@ -2240,16 +2240,27 @@ const R = await pg.evaluate(async () => {
 
      ここで測るのは「描き直したか」ではなく **「画面が、今描いたらこうなる、
      というものになっているか」** です。render() を呼んだ結果と突き合わせます。 */
-  const rSend49 = netSend, rGet49 = netGet, rPost49 = netPost;
-  const unwire49 = () => { netSend = rSend49; netGet = rGet49; netPost = rPost49; };
-  /* サーバを一つの関数に。answer(path) が数字を返し、0 は「届かなかった」。 */
+  const rXHR49 = window.XMLHttpRequest;
+  const unwire49 = () => { window.XMLHttpRequest = rXHR49; };
+  /* サーバを一つの関数に。answer(path) が数字を返し、0 は「届かなかった」。
+     **線（XMLHttpRequest）の所に置きます** ── 窓（netSend1）の上に置くと、
+     誰もサインインしていない要求を窓が断る所を飛ばしてしまい、サーバの代わり
+     が答えてしまいます（「サインインしているかは窓だけが決める」r73 § 2-5）。 */
   const srv49 = (answer) => {
-    netSend = (method, p, body, tok, ok, bad) => {
-      const st = answer(p);
-      setTimeout(() => { st >= 200 && st < 300 ? ok(null) : bad(null, st, 'x'); }, 0);
+    window.XMLHttpRequest = function () {
+      const self = this;
+      this.readyState = 0; this.status = 0; this.responseText = '';
+      this.open = function (m, u) { self.__p = String(u).replace(/^[a-z]+:\/\/[^/]*/, ''); };
+      this.setRequestHeader = function () {};
+      this.send = function () {
+        const st = answer(self.__p);
+        setTimeout(() => {
+          self.readyState = 4; self.status = st; self.responseText = 'null';
+          if (!st) { if (self.onerror) self.onerror(); return; }
+          if (self.onreadystatechange) self.onreadystatechange();
+        }, 0);
+      };
     };
-    netGet = (p, ok, bad) => netSend('GET', p, null, null, ok, bad);
-    netPost = (p, body, tok, ok, bad) => netSend('POST', p, body, tok, ok, bad);
   };
   const settle49 = () => new Promise(r => setTimeout(r, 30));
 

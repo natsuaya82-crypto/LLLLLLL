@@ -565,7 +565,7 @@ var LTAKE=null;
 function langTakeKey(uid){ return 'lingua.take.' + String(uid||''); }
 function langTookGot(ids){
   var got=(ids && typeof ids.length==='number')? ids : null,
-      me=(typeof SESS!=='undefined' && SESS && SESS.uid)? String(SESS.uid) : '';
+      me=netUid();
   LTAKE=got;
   /* Only an ANSWER is drawn. `null` is 「nobody has said」, and writing that
      down as an empty list would turn 「I have not been told」 into 「you have
@@ -1203,7 +1203,7 @@ var LW_MINE='mine', LW_READ='read', LW_NONE='none', LW_WAIT='wait';
 function langWhose(id){
   var k=String(id||''), me, own;
   if(!k || !LANGS[k]) return LW_NONE;
-  me=(typeof SESS!=='undefined' && SESS && SESS.uid)? String(SESS.uid) : '';
+  me=netUid();
   /* NOBODY SIGNED IN IS THE WALK, and it is the one answer that needs no
      server: there is nobody to compare with, the phone is holding the
      language it is making, and the door is on the way out
@@ -1236,7 +1236,7 @@ function langMine(id){ return langWhose(id)===LW_MINE; }
    OWNER 2026-09-23 -- the wiki asks this one (www/home.js § wldPage). */
 function langTheirs(id){
   var own=langOwnOf(id),
-      me=(typeof SESS!=='undefined' && SESS && SESS.uid)? String(SESS.uid) : '';
+      me=netUid();
   return !!(own && me && own!==me);
 }
 /* AND THE OPEN LANGUAGE, ASKED BY EVERY WRITER OF ONE. True means the caller
@@ -1283,7 +1283,7 @@ function langTheirs(id){
    through. */
 function langLocked(){
   var k=String(langId||''),
-      me=(typeof SESS!=='undefined' && SESS && SESS.uid)? String(SESS.uid) : '';
+      me=netUid();
   if(!k || !LANGS[k]) return true;
   if(!me) return false;
   return !Object.prototype.hasOwnProperty.call(LOWN, k) || LOWN[k]!==me;
@@ -1499,7 +1499,7 @@ function langNew(){
      langFirst() and langMint() do not: they run before there is an account,
      which is the walk, and the door is where what it made gets one. */
   var id=langMint();
-  if(typeof SESS!=='undefined' && SESS && SESS.uid) langOwnGot(id, SESS.uid);
+  if(netUid()) langOwnGot(id, netUid());
   langStore();
   langOpen(id);
   /* AND IT STARTS WITH AN ALPHABET, ON EVERY PLAN.
@@ -2102,7 +2102,7 @@ function dlStop(){
    index, in storage, and comes back the moment they sign in again. */
 var LANG_WAIT=false;
 function langForAcct(){
-  var main, nid, me=(typeof SESS!=='undefined' && SESS && SESS.uid)? String(SESS.uid) : '';
+  var main, nid, me=netUid();
   LANG_WAIT=false;
   /* Nobody signed in: there is no account to be standing in a language of. */
   if(!me) return false;

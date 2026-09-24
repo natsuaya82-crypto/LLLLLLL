@@ -242,7 +242,7 @@ console.log('     and ' + quietRoutes.length + ' of ' + routes.length + ' routes
 /* What was not capped the day this was counted, and why: tools/load-baseline.txt,
    by table and `select`. */
 const BASE = fs.readFileSync(path.join(dir, 'load-baseline.txt'), 'utf8').split('\n')
-  .filter(l => l.trim() && l.charAt(0) !== '#').map(l => l.split('|')[0].trim());
+  .filter(l => l.trim() && l.charAt(0) !== '#' && !/^(signed-in|sess) /.test(l)).map(l => l.split('|')[0].trim());
 function readKey(u){
   const m = /[?&]select=([^&]*)/.exec(u);
   return where(u) + ' select=' + (m ? decodeURIComponent(m[1]) : '');
@@ -345,7 +345,15 @@ function readKey(u){
   }
 }
 
-/* ---- 7. the two session questions, counted in the source ------------------ */
+/* ---- 7. the two session questions, counted in the source ------------------
+   「サインインしているかは窓（netSend1）だけが決め、私が誰かは一関数が答える」
+   (r73 § 2-5). Whether anybody is signed in is asked by the window and its own
+   renewal (netSend1, netFresh, netResume) and by nothing else in www/net.js --
+   a request with nobody on it is the window's 401 and nothing more. The ones
+   that are a written rule rather than a guard are lines in
+   tools/load-baseline.txt, with the rule. And SESS is named by www/net.js
+   alone; inside it, the account's uid and token are read by netUid() and
+   netTok() and by nothing else. */
 {
   function decomment(s){
     return s.replace(/\/\*[\s\S]*?\*\//g, m => m.replace(/[^\n]/g, ' ')).replace(/(^|[^:'"\\])\/\/[^\n]*/g, '$1');
@@ -357,33 +365,47 @@ function readKey(u){
     if (last) last.end = src.length;
     return out;
   }
+  const WINDOW = ['netSend1', 'netSignedIn', 'netFresh', 'netResume'];
+  const RULE = fs.readFileSync(path.join(dir, 'load-baseline.txt'), 'utf8').split('\n')
+    .filter(l => /^signed-in /.test(l)).map(l => l.split('|')[0].replace(/^signed-in /, '').trim());
   const net = decomment(fs.readFileSync(path.join(WWW, 'net.js'), 'utf8'));
   let outside = 0;
-  const who = [];
+  const who = [], ruled = [];
   for (const f of fns(net)){
-    if (f.name === 'netSend1' || f.name === 'netSignedIn') continue;
+    if (WINDOW.indexOf(f.name) >= 0) continue;
     const n = (net.slice(f.at, f.end).match(/!\s*netSignedIn\s*\(/g) || []).length;
-    if (n){ outside += n; who.push(f.name); }
+    if (!n) continue;
+    if (RULE.indexOf(f.name) >= 0){ ruled.push(f.name); continue; }
+    outside += n; who.push(f.name);
   }
+  const rot7 = RULE.filter(r => ruled.indexOf(r) < 0);
   say(outside === 0, '7 no !netSignedIn() in www/net.js outside the window -- ' + outside +
-      (who.length ? ' (' + who.slice(0, 8).join(', ') + (who.length > 8 ? ', …' : '') + ')' : ''));
-  /* the session's own: where it is read off the disk, written, renewed,
-     ended, sent on, and who it is -- one function each */
-  const OWN = await pg.evaluate(() => (typeof SESS_OWN !== 'undefined') ? SESS_OWN.slice() : []);
-  const files = fs.readdirSync(WWW).filter(f => /\.js$/.test(f));
-  let reads = 0;
-  const where7 = [];
+      (who.length ? ' (' + who.slice(0, 8).join(', ') + (who.length > 8 ? ', …' : '') + ')' : '') +
+      '; ' + ruled.length + ' a written rule in the baseline (' + ruled.join(', ') + ')');
+  say(rot7.length === 0, '7 every signed-in line of the baseline is a function that still asks -- ' +
+      (rot7.length ? 'matching nothing: ' + rot7.join(', ') : 'all ' + RULE.length));
+  const files = fs.readdirSync(WWW).filter(f => /\.js$/.test(f) && f !== 'net.js');
+  const SESSB = fs.readFileSync(path.join(dir, 'load-baseline.txt'), 'utf8').split('\n')
+    .filter(l => /^sess /.test(l)).map(l => l.split('|')[0].replace(/^sess /, '').trim());
+  const elsewhere = [], held = [];
   for (const file of files){
-    const src = decomment(fs.readFileSync(path.join(WWW, file), 'utf8'));
-    for (const f of fns(src)){
-      if (file === 'net.js' && OWN.indexOf(f.name) >= 0) continue;
-      const n = (src.slice(f.at, f.end).match(/\bSESS\b/g) || []).length;
-      if (n){ reads += n; where7.push(file + ':' + f.name); }
-    }
+    const n = (decomment(fs.readFileSync(path.join(WWW, file), 'utf8')).match(/\bSESS\b/g) || []).length;
+    if (!n) continue;
+    if (SESSB.indexOf(file) >= 0) held.push(file); else elsewhere.push(file + ' ' + n);
   }
-  console.log('     the session\'s own functions (SESS_OWN): ' + (OWN.length ? OWN.join(', ') : 'none named'));
-  say(OWN.length > 0 && reads === 0, '7 SESS is touched by the session\'s own functions and nowhere else -- ' + reads +
-      ' in ' + where7.length + ' function(s)' + (where7.length ? ' (' + where7.slice(0, 8).join(', ') + (where7.length > 8 ? ', …' : '') + ')' : ''));
+  const rot7b = SESSB.filter(f => held.indexOf(f) < 0);
+  say(elsewhere.length === 0 && rot7b.length === 0, '7 SESS is named by www/net.js and no other file -- ' +
+      (elsewhere.length ? elsewhere.join(', ') : files.length + ' files asked') +
+      (held.length ? '; ' + held.length + ' in the baseline (' + held.join(', ') + ')' : '') +
+      (rot7b.length ? '; baseline lines matching nothing: ' + rot7b.join(', ') : ''));
+  const readers = [];
+  for (const f of fns(net)){
+    if (f.name === 'netUid' || f.name === 'netTok') continue;
+    const n = (net.slice(f.at, f.end).match(/\bSESS\.(uid|at)\b/g) || []).length;
+    if (n) readers.push(f.name + ' ' + n);
+  }
+  say(readers.length === 0, '7 the uid and the token are read by netUid() and netTok() alone -- ' +
+      (readers.length ? readers.join(', ') : 'nobody else'));
 }
 
 if (pg.__err.length) say(false, 'the page threw: ' + pg.__err.slice(0, 3).join(' | '));
