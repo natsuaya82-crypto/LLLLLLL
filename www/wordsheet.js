@@ -399,7 +399,7 @@ function wdRelHTML(k){
           (wMns(x)[0]? '<span class="relm">'+esc(wMns(x)[0])+'</span>':'')+'</button>';
       }).join('')+'</div>'
     : '<div class="note">'+t('word.'+k+'.none')+'</div>')+
-    '<button class="btn ghost" style="width:100%;margin-top:8px"' + DO('go', ["relate", k+":"+w.hw]) + '>'+ICON_LINK+t('word.'+k+'.add')+'</button>';
+    '<button class="btn ghost wide"' + DO('go', ["relate", k+":"+w.hw]) + '>'+ICON_LINK+t('word.'+k+'.add')+'</button>';
 }
 /* ---- an example ------------------------------------------------------
    A line in this language and what it means. The line is written as words
@@ -579,7 +579,7 @@ function wdNoteHTML(){
 function wdKidsHTML(){
   var w=wdW(); if(!w) return '';
   return wdFamHTML(w)+
-    (addW? '' : '<button class="btn ghost" style="width:100%;margin-top:10px"' +
+    (addW? '' : '<button class="btn ghost wide"' +
       DO('wdDerive') + '>'+t('word.derive')+'</button>');
 }
 /* ---- WHAT EVERY RENDER OF THE SHEET HAS TO DO AGAIN --------------------
@@ -959,7 +959,7 @@ function fmrAdd(hw){
 function fmrTodoHTML(w){
   var todo=fmrTodo(w);
   if(!todo.length) return '';
-  return '<button class="btn ghost" style="width:100%;margin-top:10px"' +
+  return '<button class="btn ghost wide"' +
     DO('fmrAdd', [String(w.hw)]) + '>'+ICON_ADD+
     esc(tn('fmr.todo', todo.length))+'</button>';
 }
@@ -1654,7 +1654,7 @@ function wdFormHTML(){
        the last of the word. The bar the sheet already has is where it goes --
        `openForm`'s sixth argument, the same slot the read page's 編集 is in --
        so nothing new was invented for it. Nothing else on the sheet moves. */
-    (mk? '' : '<button class="set" style="margin-top:18px;border-bottom:none"' + DO('delWord') + '>'+
+    (mk? '' : '<div class="grpsep"></div><button class="set end"' + DO('delWord') + '>'+
       '<span class="sl bad">'+t('word.del')+'</span></button>');
 }
 /* The button the sheet that MAKES a word carries. Adding is not saving: there
@@ -1904,7 +1904,7 @@ function wdViewHTML(){
     /* Made, and last changed. Both, always -- the second used to be dropped
        on the day the word was made, on the grounds that "made today, changed
        today" is one fact written twice. To the minute it is two. */
-    '<div class="wsub2" style="margin-top:18px">'+esc(t('word.made', wWhen(w.at)))+'</div>'+
+    '<div class="grpsep"></div><div class="wsub2">'+esc(t('word.made', wWhen(w.at)))+'</div>'+
     '<div class="wsub2">'+esc(t('word.up', wWhen(w.up||w.at)))+'</div>';
 }
 function openWord(hw){
@@ -2010,7 +2010,7 @@ function wdDelMn(i){ wEdit.mns.splice(i,1); wdPaint(); }
    deriving is. It is a real entry, so it can itself be derived from. */
 function wdDerive(){
   var w=findWord(openHw); if(!w) return;
-  closeSheet({target:{id:'sbg'}});
+  closeSheet();
   openAdd(w.hw);
 }
 /* The four, and the note, written onto a word -- by Save and by Add, which

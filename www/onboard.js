@@ -327,7 +327,7 @@ function obTapBox(b, hb){
    lose, and what is not covered is bright and is tappable.
 
    The hole is the lit thing AND the hand together, so the hand stands in the
-   light with it. .sbg is the sheet's own backdrop and .toast is the line the
+   light with it. .sbg is the popup's own dark and .toast is the line the
    app already pins above the tab bar; both are borrowed rather than written,
    because www/index.html belongs to another session today.
 

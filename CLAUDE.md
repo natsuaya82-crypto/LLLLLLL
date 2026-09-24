@@ -229,9 +229,10 @@ the corner; it prints how many word-only buttons are still in the corner, and
 row class rather than letting the tag decide -- a `<button>` takes the
 browser's 13.3px/normal and an `<a>` takes the body's, and the same row came
 out 49px as one and 57px as the other. No `margin-top` on a row to make a
-group either: that is one row taller than its neighbours. **`press` holds the
-first half** -- siblings of one class rendering at two type sizes -- and it
-prints how many lists it measured on every run. The `margin-top` half is prose still.
+group either: that is one row taller than its neighbours -- a group is made by
+a row that separates (`.grpsep`). **`press` holds both halves**: siblings of
+one class rendering at two type sizes, and siblings of one class that disagree
+about `margin-top`. It prints how many lists it measured on every run.
 → `docs/FEATURE_RULES.md`
 
 **Explaining.** No explanatory text in the app. A screen shows what it is and
@@ -693,11 +694,11 @@ screen named twice).
 A button carries a **name**, never code. Never write `onclick="..."` or any other
 `on*=` attribute — `act-check` fails on one anywhere, so the class cannot come back.
 That is asked of what a screen RETURNS and of `index.html`'s own shell, which
-is returned by nothing and therefore reached by no walk. The shell's two — the
-sheet's backdrop, `#sbg` and `#sheet` — are named in `SHELL_OK` in `act-check`.
-**Named, and the names have to keep matching**: an exemption left standing over
-markup that has changed fails the same as a new handler. They are the only two,
-they are the static shell rather than a screen, and nothing new joins them.
+is returned by nothing and therefore reached by no walk: everything outside
+`#app` is harvested as a screen is, and the file is read as well. **Nothing is
+exempt.** The dark behind the popup carries a name (`closeSheet`) like every
+other button, and "any `on*=`" is one pattern — `\son[a-z]+\s*=` — not a list
+of the handlers somebody thought of.
 
 ```js
 '<button' + DO('tkAdd', [w.hw]) + '>'      // -> data-do="tkAdd" data-a="[...]"

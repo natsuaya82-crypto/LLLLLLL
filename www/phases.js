@@ -630,7 +630,7 @@ function stAddOwn(){
   }
   STG.extra.push({id:'own'+(STG.extra.length+1)+'_'+WORDS.length+'_'+slots.length,
                  title:title, slots:slots, labels:labels, what:''});
-  saveStg(); closeSheet({target:{id:'sbg'}}); render(); toast(t('stg.own.added', title));
+  saveStg(); closeSheet(); render(); toast(t('stg.own.added', title));
 }
 /* Deleting one is gated too, and that is a change: it used to be open on
    every plan, on the grounds that a language which came down from a paid plan
@@ -1097,7 +1097,7 @@ function stDetailHTML(p){
   out+='<div class="sec">'+t('stg.note')+'</div>'+
     '<textarea class="ntbody" style="min-height:90px" placeholder="'+esc(t('stg.note.ph'))+'" '+
     '' + IN('stNote') + '>'+esc(keepVal(keepKey(), 'note'))+'</textarea>';
-  if(p.own) out+='<button class="set" style="margin-top:18px;border-bottom:none"' + DO('stDelOwn', [p.id]) + '>'+
+  if(p.own) out+='<div class="grpsep"></div><button class="set end"' + DO('stDelOwn', [p.id]) + '>'+
     '<span class="sl bad">'+t('stg.own.del')+'</span></button>';
   return out;
 }

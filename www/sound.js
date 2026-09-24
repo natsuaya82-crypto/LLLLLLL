@@ -212,7 +212,7 @@ function vAbugida(){
   if(!wsHasMarks())
     return '<div class="view">'+navTop('')+'<div class="body">'+
       '<div class="note">'+t('ab.notabugida')+'</div>'+
-      '<button class="btn ghost" style="width:100%;margin-top:12px"' + DO('go', ["letters"]) + '>'+
+      '<button class="btn ghost wide"' + DO('go', ["letters"]) + '>'+
       esc(t('toc.letters'))+'</button></div></div>';
   return '<div class="view">'+navTop()+'<div class="body">'+
     '<div class="segs scrollx">'+vs.map(function(x){
@@ -1262,7 +1262,7 @@ function vLetter(){
       ? '<div class="gborrow" style="margin-top:8px"><span class="gbch">'+esc(l.ch)+'</span>'+
         '<span class="gbl">'+t('glyph.borrowed')+'</span>'+
         '<button class="gbx"' + DO('ltDropChar', [lid]) + '>'+t('ch.clear')+'</button></div>'
-      : '<button class="btn ghost" style="width:100%;margin-top:8px"' + DO('openPick', [lid]) + '>'+
+      : '<button class="btn ghost wide"' + DO('openPick', [lid]) + '>'+
         t('glyph.borrow')+'</button>')+
     /* 「複製するボタンいらんやろ」 OWNER 2026-09-01. It was the way to have a
        letter called something else when this one may not be renamed -- and
@@ -1271,7 +1271,7 @@ function vLetter(){
     /* The same question the ⊖ asks, asked once (ltCanDelete, www/letters.js):
        one of the first thirty-eight has no delete anywhere. */
     (ltCanDelete(ltById(lid))
-      ? '<button class="set" style="margin-top:14px;border-bottom:none"' + DO('ltDelete', [lid]) + '>'+
+      ? '<div class="grpsep"></div><button class="set end"' + DO('ltDelete', [lid]) + '>'+
         '<span class="sl bad">'+t('glyph.del')+'</span></button>'
       : '')+
     '</div>'+

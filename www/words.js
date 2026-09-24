@@ -472,7 +472,7 @@ function wSelUndo(){
    (docs/DATA_SAFETY.md § 2). viewLeft() in www/shell.js drops it. */
 function wordsUndoHTML(){
   if(!wUndo) return '';
-  return '<div class="wsub2" style="margin-top:18px">'+
+  return '<div class="grpsep"></div><div class="wsub2">'+
       esc(t('words.sel.gone', wUndo.n))+'</div>'+
     markBtn(ICON_UNDO, t('imp.undo'), 'wSelUndo');
 }
