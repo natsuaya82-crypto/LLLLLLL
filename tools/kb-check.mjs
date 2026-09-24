@@ -3652,6 +3652,18 @@ function fnOf(src, at){
 function whereAll(re){
   return [...KBSRC.matchAll(re)].map((m) => fnOf(KBSRC, m.index));
 }
+/* ---- THE PHONE STANDS A SHORT ROW WHERE THE SHEET DOES --------------------
+   「スマホのキーボードの短い行」→「合わせて」 OWNER 2026-09-24. The extension
+   divided every row across the whole phone, so a row of five came out twice as
+   wide as the ten above it, while the sheet stood it in the middle at kbStart().
+   KeyBoardView.swift now counts in the sheet's own half columns; the number is
+   read out of it and asked to be KB_COLS, because two copies of a number in two
+   languages is the thing that drifts. Where it then puts the keys is Swift and
+   is seen on a phone, not here. */
+const KBVIEW = fs.readFileSync(
+  path.join(dir, '..', 'ios', 'App', 'LinguaKeyboard', 'KeyBoardView.swift'), 'utf8');
+const swHalf = (KBVIEW.match(/static let halfCols = ([0-9]+)/) || [])[1];
+const jsHalf = (KBSRC.match(/var KB_COLS=([0-9]+)/) || [])[1];
 const cmpCols = whereAll(/(?:[<>]=?\s*KB_COLS\b|\bKB_COLS\s*[<>])/g);
 const cmpRows = whereAll(/(?:[<>]=?\s*kbRowsMax\(\)|kbRowsMax\(\)\s*[<>])/g);
 const freeAsk = whereAll(/kbIsFree\(kbShow\)|KB\.kbs\[kbShow-1\]/g);
@@ -4711,6 +4723,9 @@ say(SF.alR && SF.alL,
     + 'against the tenth column and pushed left against the first (' + SF.alRSheet + ')');
 say(SF.cellAt === 4,
     'and a key put into a frame stands in that frame (column half ' + SF.cellAt + ', wanted 4)');
+say(!!swHalf && swHalf === jsHalf,
+    'the phone counts a row in the sheet’s half columns: KeyBoardView.swift halfCols '
+    + swHalf + ', keyboard.js KB_COLS ' + jsHalf + ' — a short row stands where kbStart() stands it');
 say(holdAll.length > 0 && holdOff.length === 0 && holdLeft.size === HOLD_LEFT.length,
     'a hold is called off at one distance: of ' + holdAll.length + ' holds under www/ that '
     + 'a moving finger calls off, every one asks HOLD_SLOP'

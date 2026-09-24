@@ -15,6 +15,14 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### 2026-09-24 スマホのキーボードの短い行は、作る画面と同じく真ん中に（r83-make D）
+
+**覆う一文**：スマホのキーボードは行を作る画面と同じ半列（`KB_COLS` = 20）で数え、十に足りない行は `kbStart()` と同じ所
+（真ん中、余りの半分は右）に、ほかの行と同じキーの幅で置く。十の行は今までどおり幅いっぱい。
+前は短い行も電話の幅いっぱいに割っていたので、五つの行のキーは上の行の倍の幅になっていた。
+`ios/App/LinguaKeyboard/KeyBoardView.swift` の `layoutSubviews()`。`kb-check` は Swift の `halfCols` が `KB_COLS` と同じことを持つ。
+位置そのものは実機でしか見られない（ここでは Swift をビルドできない）。保存される物は変わらない。
+
 ### 2026-09-24 キーや字を持って運ぶ長押しは、指が 10px 動いたら取りやめ（r83-make E）
 
 **覆う一文**：指が動いたら取りやめになる長押しは、どれも `HOLD_SLOP`（`www/shell.js`、10px、2026-09-01 の決定）で測る。

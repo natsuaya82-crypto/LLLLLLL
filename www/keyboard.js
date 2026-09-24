@@ -481,8 +481,9 @@ function kbW(per){ return (KB_COLS/per)/2; }
 /* A row padded out to the full ten with gaps at both ends -- kbAlign's centre,
    done at the moment a pattern is built. A row that comes to ten is a row the
    phone draws exactly as the sheet does, because the extension divides a row
-   by its OWN total and a gap is a key that travels. Without it a short row is
-   drawn narrow here and stretched there. */
+   by its OWN total and a gap is a key that travels. A short row is drawn in the
+   middle on both sides now (KeyBoardView.swift, OWNER 2026-09-24), so what the
+   gaps add is that they are written down: the alignments read them. */
 function kbFillRow(row){
   var tot=kbUsed(row), rem=KB_COLS-tot, lead;
   if(rem<=0) return row;
