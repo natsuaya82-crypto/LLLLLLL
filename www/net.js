@@ -2104,8 +2104,13 @@ function netLangsWalk(d, done){
    (`kind,no,at`) and the bodies asked for are only the ones that will be
    written (docs/reports/cost-2026-09-09.md 二). A kind the server has that
    this app has never heard of is still walked -- the list is the server's.
-   The `lang` slice is asked for as well where the name column is empty,
-   because the column is filled from the SERVER's copy.
+
+   THE NAME IS NOT COPIED HERE ANY MORE. Where `language.name` was empty this
+   asked for the `lang` slice and PATCHed the column from it -- a write on
+   arriving at a screen, which nobody pressed (r60 B3). The server copies it,
+   once, itself (supabase/schema.sql, r65 B3: `lang` slice -> `language.name`
+   where the column is empty, marked in `schema_step`), so the column is the
+   answer and this only reads.
 
    IT FILLS IN WHAT IS MISSING AND STOPS -- docs/DATA_SAFETY.md rule 2. A
    slice this phone is holding is left exactly as it is: it may be a minute of
@@ -2116,13 +2121,12 @@ function netLangFill(id, ok, bad){
   var nid=String(id||''), row=NET_LROW[nid] || {}, own=String(row.owner||'');
   if(!nid){ ok(0); return; }
   netSlices(nid, function(st){
-    var want=[], has={}, k;
+    var want=[], k;
     for(k in st){
       if(!Object.prototype.hasOwnProperty.call(st, k)) continue;
       if(slMine(langKeyOf(nid, k))!==null) continue;
-      want.push(k); has[k]=1;
+      want.push(k);
     }
-    if(own===netUid() && !row.name && st.lang && !has.lang) want.push('lang');
     if(!want.length){ fill({}); return; }
     netSlices(nid, fill, bad, want);
   }, bad, null, 'kind,no,at');
@@ -2146,15 +2150,6 @@ function netLangFill(id, ok, bad){
        answer may also say 「and it may be written」. A language whose row
        this walk never saw is this account's only if it was made here. */
     if(own) langOwnGot(nid, own);
-    /* AND A NAME COLUMN THAT NOBODY EVER WROTE IS FILLED FROM THE SLICE --
-       fills in what is missing and stops (a column that already says
-       something is left as it is; which of two names wins is the owner's),
-       and only on a language this account wrote (`language_edit` is
-       `owner = auth.uid()`). */
-    if(own===netUid() && !row.name && there.lang && there.lang.body)
-      netLangNamePut(nid, there.lang.body, function(){
-        langNameGot(nid, there.lang.body); render();
-      }, function(){});
     ok(1);
   }
 }
