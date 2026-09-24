@@ -888,16 +888,22 @@ const CASES = [
 
      A is writing over its own slice five times. The first write has no
      previous version to keep, so four are kept and the ceiling drops one. */
+  /* Two of the five say a number of their own, the way www/net.js sends
+     `no + 1`. 「番号はサーバーが配ります」 (docs/FEATURE_RULES.md 2026-09-04):
+     the number a slice carries is how many times the server took it, and a
+     phone that says otherwise is not believed. */
   ['A writes a keyboard onto its own language', 'ok', A, 0,
-    `insert into slice(language,kind,body) values ('${LD}','kb','["v1"]')`],
+    `insert into slice(language,kind,body,no) values ('${LD}','kb','["v1"]',7)`],
   ['and writes over it, four times',          'ok',     A, 0,
     `update slice set body='["v2"]' where language='${LD}' and kind='kb'`],
   ['…again',                                  'ok',     A, 0,
-    `update slice set body='["v3"]' where language='${LD}' and kind='kb'`],
+    `update slice set body='["v3"]', no=999 where language='${LD}' and kind='kb'`],
   ['…again',                                  'ok',     A, 0,
     `update slice set body='["v4"]' where language='${LD}' and kind='kb'`],
   ['…and again',                              'ok',     A, 0,
     `update slice set body='["v5"]' where language='${LD}' and kind='kb'`],
+  ['and its number is the server\u2019s: five writes, five', 'ok', A, 0,
+    `select 1 from slice where language='${LD}' and kind='kb' and no=5`],
   /* THE ONLY AUTOMATIC DELETION IN THIS FILE, and it is the one the DELETE
      REVIEW is about (docs/CHANGELOG.md 2026-09-09). Four previous versions
      were kept and the ceiling is three, so the oldest is gone -- and asking
