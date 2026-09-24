@@ -224,13 +224,38 @@ const PAST = (rel) => isRecord(rel) || rel === 'docs/CHANGELOG.md' || /^docs\/(?
    select (www/net.js § netReports) rather than a function anybody defines. */
 const PLATFORM = [
   // JavaScript and the browser
-  'confirm', 'alert', 'prompt', 'String', 'Symbol', 'indexOf', 'function', 'var', 'for', 'min',
+  'confirm', 'alert', 'prompt', 'String', 'Symbol', 'indexOf', 'min',
   'getBoundingClientRect', 'decode',
   // UIKit, Core Graphics, Core Text
   'advanceToNextInputMode', 'deleteBackward', 'fillPath', 'UILayoutPriority',
   // PostgreSQL, and PostgREST following a foreign key: `actor(handle)`
   'to_jsonb', 'actor',
 ]
+
+/* THE LANGUAGES' OWN WORDS, which are not names. What a sentence calls in
+   backticks is a NAME somebody defined; `if(can('letters'))` quotes a line of
+   code, and `if` is JavaScript's, not anybody's function. Every reserved word
+   of the two languages the code is written in -- JavaScript and PostgreSQL --
+   is here, whole, rather than the ones a document happened to use: a list of
+   what was needed is a list somebody has to remember to add to.
+
+   It was `function`, `var` and `for` in PLATFORM, and `if` nowhere -- `if`
+   passed because the SQL below was read with its comments in, and a comment
+   saying 「`create table if not`⏎`-- exists`」 was harvested as a table called
+   `if`. So the SQL is read with its comments out, and the words are here. */
+const WORDS = new Set([
+  // JavaScript
+  'break', 'case', 'catch', 'class', 'const', 'continue', 'debugger', 'default',
+  'delete', 'do', 'else', 'export', 'extends', 'finally', 'for', 'function', 'if',
+  'import', 'in', 'instanceof', 'let', 'new', 'return', 'super', 'switch', 'this',
+  'throw', 'try', 'typeof', 'var', 'void', 'while', 'with', 'yield', 'await', 'async',
+  // PostgreSQL
+  'all', 'and', 'any', 'array', 'as', 'asc', 'begin', 'by', 'cast', 'check',
+  'coalesce', 'create', 'desc', 'distinct', 'drop', 'end', 'exists', 'from',
+  'grant', 'group', 'having', 'insert', 'into', 'is', 'join', 'limit', 'not', 'null',
+  'on', 'or', 'order', 'references', 'returning', 'revoke', 'select', 'set',
+  'table', 'then', 'union', 'update', 'using', 'values', 'view', 'when', 'where',
+])
 
 /* What the code defines. Read loosely on purpose: a false "it is there" costs
    one stale sentence staying unnoticed, a false "it is gone" costs a red on a
@@ -253,7 +278,10 @@ const walkFiles = (dir, keep) => {
 const defined = new Set()
 const collect = (files, re) => {
   for (const f of files) {
-    for (const m of read(f).matchAll(re)) {
+    const src = /\.sql$/.test(f)
+      ? read(f).replace(/\/\*[\s\S]*?\*\//g, '').replace(/--[^\n]*/g, '')
+      : read(f)
+    for (const m of src.matchAll(re)) {
       const n = m.slice(1).find(Boolean)
       if (n) defined.add(n)
     }
@@ -286,6 +314,7 @@ for (const d of live) {
     const gone = !!m[1]
     const n = m[2]
     const at = `${d}:${lineOf(src, m.index)}`
+    if (WORDS.has(n.toLowerCase())) continue
     if (PLATFORM.indexOf(n) >= 0) { platformSeen.add(n); continue }
     if (gone) {
       struck++
