@@ -4690,10 +4690,23 @@ const R = await pg.evaluate(async () => {
     if (dels84 !== 1)
       no('84: もう一度サインアウトしたら二度落とした ── ' + dels84 + ' 回');
 
+    /* そして**押していない道でも**落ちる（r65 S4、r79）── サーバーが refresh
+       token を断った時（別の端末でアカウントが消された、など）も netOut() を
+       通るので、同じ一本が出る。前はサインアウトを押した道だけだった。 */
+    arrive(A); pushAsk();
+    await new Promise(r => setTimeout(r, 0)); await new Promise(r => setTimeout(r, 0));
+    const before84 = dels84, keepPost84 = window.netPost;
+    window.netPost = (path, body, tok, ok3, bad3) => { bad3(null, 401); };
+    netResume(function () {}, function () {});
+    window.netPost = keepPost84;
+    if (dels84 !== before84 + 1)
+      no('84: **refresh を断られて出た道で device の行が落ちない** ── 通知が、誰も' +
+         'サインインしていない端末に届き続けます');
+
     window.Capacitor = cap84; netSend = keep84;
     start();
     say('84: サインアウトはこの端末のこの人の `device` の行だけを落とす ── ' +
-        'uid と token の両方で絞り、netOut() より前に出す。' +
+        'uid と token の両方で絞り、netOut() の頭で出す ── 押した道も断られた道も。' +
         '落とす物が無ければ何も出さない（DELETE REVIEW、2026-09-22）');
   }
 
@@ -4950,7 +4963,10 @@ const R2 = { said: [], fails: [] };
   const net = fs.readFileSync(path.join(ROOT, 'net.js'), 'utf8');
   const a = net.indexOf('function netOut(){'), b = net.indexOf('\n}\n', a);
   const body = net.slice(a, b).replace(/\/\*[\s\S]*?\*\//g, '');
-  const calls = body.match(/[A-Za-z_]+(Forget|For|Drop)\(/g) || [];
+  /* `netDeviceDrop(` is the server's `device` row for the account leaving,
+     not something this phone remembers -- it is not a forget and is not
+     counted (r65 S4: every road out sends it). */
+  const calls = (body.match(/[A-Za-z_]+(Forget|For|Drop)\(/g) || []).filter(c => c !== 'netDeviceDrop(');
   if (calls.length !== 1 || calls[0] !== 'acctFor(')
     R2.fails.push('88: netOut() が「忘れる」を ' + calls.length + ' 行並べている ── ' + calls.join(' '));
   R2.said.push('88: netOut() の「忘れる」は ' + calls.length + ' 行（' + calls.join(' ') + '）── 入れ物を一行で捨てる');

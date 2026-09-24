@@ -751,6 +751,16 @@ function netTook(d){
    server is still what decides: is_member() in supabase/schema.sql reads
    `is_anonymous` off the token, whatever this file believes. */
 function netOut(){
+  /* WHERE THIS HANDSET IS REACHED FOR THE ACCOUNT THAT IS LEAVING, FIRST --
+     while the token that signs the DELETE is still in hand. It was the sign-out
+     press's alone (setSignOutGo), so the other two roads out -- a refresh the
+     server refuses, an account deleted -- left (A, token) standing and the
+     notifications kept coming to a phone nobody was signed in on (r65 S4).
+     Every road out comes through here, so the drop does too. With no signal,
+     or with a token the server no longer takes, it does not land and the
+     sign-out happens anyway; the next account registering the same token
+     takes the row over on the server (device_one). */
+  netDeviceDrop();
   SESS=null; netSave();
   /* AND EVERYTHING OF THAT ACCOUNT'S GOES WITH IT, IN ONE LINE.
      「全部アカウントだって言ってるやん おかしいだろお前一本化しろって。」
@@ -1281,8 +1291,8 @@ function netDevicePut(token){
           function(){}, function(){}, true);
 }
 /* AND STOP REACHING IT FOR SOMEBODY WHO HAS SIGNED OUT.
-   Called from setSignOutGo() BEFORE netOut(), because netOut() is where the
-   session ends and this needs the token that is ending.
+   Called at the head of netOut(), before the session ends, because this needs
+   the token that is ending -- and every road out goes through there.
 
    BOTH HALVES OF THE KEY, and that is the whole of the safety: this takes the
    row for THIS account at THIS handset and no other. Not the account's other

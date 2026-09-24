@@ -1409,12 +1409,8 @@ function setSignOut(){
   popAsk(t('set.signout.ask'), function(){ setSignOutGo(); }, t('set.signout'));
 }
 function setSignOutGo(){
-  /* BEFORE netOut(), and that order is the whole of it: this takes the
-     `device` row for the account that is leaving, at this handset, and
-     netOut() is where the session -- and the token that signs the DELETE --
-     ends. www/net.js § netDeviceDrop has both halves of the key and why.
-     It decides everything itself, so it is a call and not a condition. */
-  netDeviceDrop();
+  /* netOut() takes this handset's `device` row for the account leaving, at its
+     head, on every road out (www/net.js § netOut). */
   netOut();
   /* And the provider is told too. Lingua's tokens are not the only session
      there is: the social plugin keeps its own, and it survived this -- so the
