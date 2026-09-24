@@ -1681,7 +1681,7 @@ function obDoorHTML(){
    comes after this. 「オンボーディング→最後にログイン」 OWNER 2026-08-27. */
 function obName(){
   var e=document.getElementById('ob-name');
-  if(e) ob.name=String(e.value||'').trim();
+  if(e) ob.name=actVal(e).trim();
   langName=ob.name;
   save(); obGo(OB_IN);
 }

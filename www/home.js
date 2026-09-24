@@ -2447,7 +2447,7 @@ FORM_OPEN.name=function(){ editName(); };
 function saveName(){
   var a=document.getElementById('ln-nm');
   if(!a) return;
-  var v=String(a.value||'').replace(/^\s+|\s+$/g, '');
+  var v=actVal(a).replace(/^\s+|\s+$/g, '');
   /* 空は未設定 -- OWNER 2026-09-06. Emptying the box takes the name off, and
      what every screen then says is langNameSaid()'s. It used to be thrown
      away here, so the box closed and the old name stayed with nothing said. */

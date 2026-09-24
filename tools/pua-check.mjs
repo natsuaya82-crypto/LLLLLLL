@@ -19,8 +19,7 @@
       listener (www/act.js), `input` and `change` both, and every argument
       its receiver is handed is asked for one. None.
    B. Every read of a field's `.value` in www/ goes through actVal(), the
-      same reading. What is left in files this branch does not own is OWED,
-      and a line there that stops matching fails, so the list only shrinks.
+      same reading. None is read straight off.
    C. The composer end to end, through the real field: what a kept draft
       carries, what a post carries, and a post edited with its line untouched
       keeps the ink it was written with, byte for byte.
@@ -57,11 +56,6 @@ function strip(src) {
   }
   return out;
 }
-/* Reads of a field's value in files this branch does not own
-   (claude/leader-briefs brief-r78-sides). Each is `file: count`, and the
-   count has to be exactly what is there: fewer is progress -- lower it --
-   and more is a new road out. The fix in each is actVal(el). */
-const OWED = { 'home.js': 1, 'import.js': 1, 'onboard.js': 1, 'phases.js': 5 };
 /* Things called `.value` that are not a field, each with what it is. */
 const NOT_FIELDS = {
   'grammar.js': { r: 'a rule the grammar engine answers with; r.value is the feature it sets' }
@@ -85,13 +79,9 @@ for (const f of fs.readdirSync(ROOT).filter((x) => x.endsWith('.js')).sort()) {
     }
   });
   reads += n;
-  const owe = OWED[f] || 0;
-  if (n > owe)
+  if (n)
     fails.push('B  ' + where.join(', ') + ' -- a field read straight off `.value`, so what the Lingua ' +
                'keyboard typed leaves the field as it was typed. Read it with actVal() (www/act.js)');
-  else if (n < owe)
-    fails.push('B  OWED says www/' + f + ' reads `.value` ' + owe + ' times and it reads it ' + n +
-               ' -- lower the number');
 }
 
 /* ---- the page ------------------------------------------------------------ */
@@ -291,8 +281,7 @@ if (fails.length) {
 }
 console.log('pua: ' + A.fields + ' fields on ' + A.screens + ' screens typed into, ' +
             Object.keys(A.names).length + ' receivers handed roman and nothing else;\n' +
-            '     ' + reads + ' reads of .value outside www/act.js, ' +
-            Object.values(OWED).reduce((a, b) => a + b, 0) + ' of them owed in files this branch does not own;\n' +
+            '     ' + reads + ' reads of .value outside www/act.js;\n' +
             '     a draft carries its letters by id, a post its ink, an edit keeps the ink it was\n' +
             '     written with; a letter with no name posts; a line on a photograph breaks at a\n' +
             '     newline and spaces with the ordinary face.');

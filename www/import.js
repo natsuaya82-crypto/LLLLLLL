@@ -662,7 +662,7 @@ function impMount(){
 }
 function impScan(){
   var e=document.getElementById('f-csv');
-  impTake(e? e.value : '');
+  impTake(actVal(e));
 }
 /* Whatever came in -- typed, pasted or read off a file -- goes through the
    same door. */
