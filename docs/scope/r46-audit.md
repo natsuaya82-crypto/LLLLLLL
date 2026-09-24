@@ -266,3 +266,8 @@ const out={};
 for(const f of docs){const s=fs.readFileSync(f,"utf8");const r=/`([a-z][A-Za-z0-9_]{3,})\(\)?/g;let x;while((x=r.exec(s))){const n=x[1];if(defined.has(n)||notOurs.has(n)||!/[A-Z]/.test(n))continue;const line=s.slice(0,x.index).split("\n").length;(out[n]=out[n]||[]).push(f+":"+line);}}
 for(const k of Object.keys(out).sort())console.log(k, out[k].join(" "));
 ```
+
+## 追記（2026-09-24）：`docs/STATE.md` の古い一文
+
+`docs/STATE.md`（integ-0905）1152行「StoreKit is written, and has never run on a device.」は
+古い。オーナーによれば課金は既に動いている。STATE.md はリーダーの物なので、ここに書くだけ。
