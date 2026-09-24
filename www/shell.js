@@ -1577,10 +1577,10 @@ function tabBar(){
        The name is still said -- as the button's aria-label, because a button
        whose whole content is an aria-hidden drawing has nothing to be called
        by otherwise, and pageName() stays the one place that names a tab. */
-    /* THE PROFILE IS THE ONE TAB THAT IS NOT goTab(). It is not drawn until
-       everything on it has answered -- www/me.js § profileOpen -- and that
-       is the whole of 「全部読み込んでから開く」. Everything else on this bar
-       draws out of what is already here. */
+    /* Every tab arrives through the one door (navLand, above), which waits
+       for what that page reads. The profile's press is profileOpen(), which
+       is goTab('profile') for your own page (www/me.js), and it alone carries
+       the hold that opens the languages. */
     out+='<button class="tab'+(cur===r?' on':'')+'"' +
       (r==='profile'? DO('profileOpen', [""]) : DO('goTab', [r])) +
       (r==='profile'? ' data-hold="1"' : '')+
