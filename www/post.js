@@ -186,7 +186,57 @@ var PW={ln:'', mn:''};
    same reason `toh` is: what somebody wrote is the line, and a tag is not in
    it any more. 「#はべつで」 OWNER 2026-09-15, replacing 「タグは本文中に。」
    (2026-09-04). www/sns.js § A TAG IS NOT IN THE BODY ANY MORE. */
-function pwBlank(){ return {ln:'', mn:'', to:'', toh:'', pics:[], pr:0, tags:[]}; }
+function pwBlank(){ return {ln:'', cut:[], mn:'', to:'', toh:'', pics:[], pr:0, tags:[]}; }
+/* THE LINE BEING WRITTEN IS ONE THING: the cut (www/glyph.js § puaTyped) --
+   the line as it was typed, `{id}` where the Lingua keyboard put a letter and
+   `{t}` for the rest. `PW.ln` is its roman and is written here and nowhere
+   else, so the two cannot disagree; the field shows puaField() of it. It was
+   two -- the roman handed in as an argument and the raw line kept in a global
+   for the cut -- and the raw line was what went up as a draft (r73 §2-10). */
+function pwLine(cut){
+  var ln='', i, u, l;
+  PW.cut=cut || [];
+  for(i=0;i<PW.cut.length;i++){
+    u=PW.cut[i];
+    if(u.id===undefined){ ln+=String(u.t||''); continue; }
+    l=ltById(u.id);
+    ln+=String((l && ltName(l)) || '');
+  }
+  PW.ln=ln;
+}
+/* Whether the line has anything in it. A letter counts whether or not it has
+   a name: one with none is in the cut and not in the roman, and a line of
+   them is a line. */
+function pwLineAny(){
+  var i, u;
+  for(i=0;i<(PW.cut||[]).length;i++){
+    u=PW.cut[i];
+    if(u.id!==undefined || /\S/.test(String(u.t||''))) return true;
+  }
+  return false;
+}
+/* How long the line is: a letter is one, as it is one key and one shape. */
+function pwLineLen(){
+  var n=0, i, u;
+  for(i=0;i<(PW.cut||[]).length;i++){
+    u=PW.cut[i];
+    n+= (u.id!==undefined)? 1 : String(u.t||'').length;
+  }
+  return n;
+}
+/* The cut as it goes onto something that is kept: trimmed at both ends the
+   way the roman is, and the day's tag in its one stored spelling. */
+function pwLineKept(){
+  var out=[], i, u, c=PW.cut||[];
+  for(i=0;i<c.length;i++){
+    u=c[i];
+    out.push(u.id!==undefined? {id:u.id} : {t:dayTagStore(String(u.t||''))});
+  }
+  while(out.length && out[0].t!==undefined && !(out[0].t=out[0].t.replace(/^\s+/, ''))) out.shift();
+  while(out.length && out[out.length-1].t!==undefined &&
+        !(out[out.length-1].t=out[out.length-1].t.replace(/\s+$/, ''))) out.pop();
+  return out;
+}
 /* ---- who a post is for -------------------------------------------------
    「自分専用の日記みたいなポストとみんなに公開するポストカード選べるように」
    「誰に向けて後悔するかでしょ。自分or公開で」「公開（推奨）」
@@ -235,7 +285,7 @@ function pwSetPriv(v){
    time the composer is. */
 function pwSideHTML(){
   if(PW.ed) return '';
-  if(pwHas(String(PW.ln||'').trim()))
+  if(pwHas())
     return '<button class="pwab"' + DO('draftKeep') + ' aria-label="'+
       esc(t('post.draft.save'))+'">'+ICON_DRAFT+'</button>';
   /* THE MARK IS ALWAYS HERE, and the number is not.
@@ -269,7 +319,7 @@ function pwSidePaint(){
    things. A post with no line, no photograph and no voice is not a post.
    「なにもない時は薄い灰色、何か打ったら金にする」 OWNER 2026-09-03,
    www/shell.js § navDo. */
-function pwOn(){ return pwHas(puaRoman(String(PW.ln||'')).trim()); }
+function pwOn(){ return pwHas(); }
 /* The thing that finishes it goes in the top bar, filled, where every phone
    puts it -- not at the foot of a screen you have to scroll to. */
 function openPost(from, at){
@@ -484,7 +534,7 @@ draftsName();
    opens with none, which is a composer with no addressee -- exactly the
    screen it was written on. Nothing is removed and nothing is migrated. */
 function draftKeep(){
-  if(!PW.ln && !pwPics().length && !(PW.vo && PW.vo.f)){ toast(t('post.none')); return; }
+  if(!pwLineAny() && !pwPics().length && !(PW.vo && PW.vo.f)){ toast(t('post.none')); return; }
   /* The name it already had, if this is one that was opened again. Reusing it
      is what stops a draft opened and put back becoming two rows -- one on the
      server nobody can reach and one in front of them. */
@@ -493,7 +543,12 @@ function draftKeep(){
      carrying only the line would come back with the frame empty and the day
      it was written for gone off it. A draft written before today opens with
      none, which is the composer it was written on. Nothing is migrated. */
-  var d={id:PW.did || netUUID(), at:Date.now(), ln:dayTagStore(PW.ln), mn:PW.mn, to:PW.to,
+  /* `cut` is what a draft gained on 2026-09-24 (r78): the line as it was
+     typed, by letter id, where `ln` used to carry the private use characters
+     themselves -- numbers that mean a letter only in this alphabet's order at
+     this moment. `ln` is the roman now. A draft kept before today carries
+     none and is read the way it always was (draftOpen). */
+  var d={id:PW.did || netUUID(), at:Date.now(), ln:dayTagStore(PW.ln), cut:pwLineKept(), mn:PW.mn, to:PW.to,
          toh:PW.toh||'', pr:PW.pr||0, tags:pwTagsOut(),
          pics:pwPics(), vo:PW.vo||null, pv:!!PW.pv};
   /* THE SERVER FIRST, AND THE LIST WHEN IT HAS LANDED.
@@ -520,6 +575,21 @@ function draftKeep(){
     goTab('feed');
   }, function(dd, st, m){ netPop(dd, st, m, draftKeep); });
 }
+/* A kept draft's line as the composer holds it. One kept before 2026-09-24
+   has no `cut` and its `ln` is what the field held, private use characters
+   and all; it is read through puaTyped(), the same reading as a keystroke,
+   in this alphabet's order now -- which is the only order there is to read
+   it in, and what it was read in before. Nothing is written back. */
+function draftCut(d){
+  var c=(d && Object.prototype.toString.call(d.cut)==='[object Array]')? d.cut : null, out=[], i;
+  if(!c) c=puaTyped((d && d.ln) || '').cut;
+  for(i=0;i<c.length;i++)
+    out.push(c[i].id!==undefined? {id:c[i].id} : {t:dayTagShow(String(c[i].t||''))});
+  return out;
+}
+/* And what the list says it is: the roman -- of a draft kept before today
+   too, rather than its private use characters in a face that has none. */
+function draftLn(d){ return puaTyped((d && d.ln) || '').ln; }
 /* Opening one takes it out of the list: it is the composer again, and a draft
    that is open in two places at once is a draft about to be duplicated. */
 function draftOpen(i){
@@ -530,7 +600,8 @@ function draftOpen(i){
   draftsSave();
   if(here().r==='drafts') back();
   PW=pwBlank();
-  PW.ln=dayTagShow(d.ln||''); PW.mn=d.mn||''; PW.to=d.to||''; PW.toh=d.toh||''; PW.pr=d.pr||0;
+  pwLine(draftCut(d));
+  PW.mn=d.mn||''; PW.to=d.to||''; PW.toh=d.toh||''; PW.pr=d.pr||0;
   /* The frame as it was kept. tagsOf() is the one place that says what a
      row's tags are -- the same function the timeline's row asks -- so a draft
      and a post cannot disagree about it. */
@@ -765,14 +836,14 @@ function vDrafts(){
           (on? ICON_DOT : ICON_RING)+'</span>'+
         '<button class="dfb"' + DO('dfSelTap', [i]) + '>'+
           (d.pv? '<span class="ppv">'+ICON_LOCK+'</span>' : '')+
-          '<span class="dfl">'+esc(d.ln || d.mn || t('post.draft.empty'))+'</span>'+
+          '<span class="dfl">'+esc(draftLn(d) || d.mn || t('post.draft.empty'))+'</span>'+
           '<span class="dfw">'+esc(postWhen(d.at))+'</span></button></div>';
       continue;
     }
     out+='<div class="dfrow">'+
       '<button class="dfb"' + DO('draftOpen', [i]) + '>'+
         (d.pv? '<span class="ppv">'+ICON_LOCK+'</span>' : '')+
-        '<span class="dfl">'+esc(d.ln || d.mn || t('post.draft.empty'))+'</span>'+
+        '<span class="dfl">'+esc(draftLn(d) || d.mn || t('post.draft.empty'))+'</span>'+
         '<span class="dfw">'+esc(postWhen(d.at))+'</span></button>'+
       '</div>';
   }
@@ -795,10 +866,6 @@ FORM_OPEN.post=function(){ openPost(); };
 /* What the meaning field starts as, and what its placeholder says: the gloss
    run together. It was worked out in three places and they have to agree --
    what you are offered has to be what you get if you type nothing. */
-/* The line as the rest of the app reads it. What is in the field may be what
-   the Lingua keyboard typed, which is the private use area; everything below
-   the field works on the roman spelling. */
-function pwLn(){ return puaRoman(PW.ln); }
 /* OWNER 2026-09-05 単語はその単語の意味を 文法は並び替えた単語たちが文章として成り立つように
    What the meaning field starts as: the line said in the reader's own
    language. The dictionary says what each word means and the grammar says
@@ -808,7 +875,7 @@ function pwLn(){ return puaRoman(PW.ln); }
    leaves in the order it was typed, which is the words, and the words are
    most of what somebody needs. 「単語と文法が埋まれば埋まるだけ投稿の翻訳の
    精度が上がるっていうのが目的」 */
-function pwMn(){ return LinguaGrammarEngine.translate.toNatural(gModel(), pwLn(), uiLang()); }
+function pwMn(){ return LinguaGrammarEngine.translate.toNatural(gModel(), PW.ln, uiLang()); }
 /* The composer is TWO rows, the same two the timeline is:
    「やっぱり、タイムラインも投稿も2段で。赤文字消して。」
    「これもお題のページと合わせるんだけど」 OWNER 2026-08-28
@@ -1451,7 +1518,7 @@ function pwToHTML(to){
         '<span class="pname">'+esc(postWho(to))+'</span>'+
         '<span class="phandle">@'+esc(to.hd||'')+'</span>'+
       '</div></div>'+
-      (to.ln? '<div class="pline '+dirClass(postDir(to))+'">'+postLnHTML(to)+'</div>' : '')+
+      ((to.ln || postInkOK(to.ink))? '<div class="pline '+dirClass(postDir(to))+'">'+postLnHTML(to)+'</div>' : '')+
       (postSay(to)? '<div class="pmn">'+tagHTML(postSay(to))+'</div>' : '')+
     '</div>'+
     '</div>';
@@ -1528,7 +1595,7 @@ function pwHTML(){
          The ring is what says so before the press: past zero it counts in
          negative numbers and goes red, in front of somebody while they type. */
       lnField('pw-ln', t('post.ln.ph'), IN('pwSetLn'),
-        PW.ln, dirClass(scriptDir()))+
+        puaField(PW.cut), dirClass(scriptDir()))+
       /* The meaning sits in the same column as the line, in the same
          borderless field, because it is the second half of the same act. */
       /* Read-only when it is the day's sentence. Not disabled: a disabled
@@ -1650,8 +1717,11 @@ function pwKbGuard(){
   if(!FORM || FORM.key!=='post:') return;
   setTimeout(pwKeepKb, 0);
 }
-function pwSetLn(v){
-  PW.ln=String(v||'');
+/* `v` is the roman and `cut` the line as typed (www/act.js); the cut is the
+   one kept, and the roman is its projection (pwLine). A caller holding only
+   a string has it read the way a keystroke is. */
+function pwSetLn(v, cut){
+  pwLine(cut || puaTyped(v).cut);
   /* A line that BEGINS by naming somebody is a post TO them, and it is
      decided HERE -- once, as it is typed, in the one place the line changes.
      「@したらもう勝手にツイートがこの形式になるようにしたい」 OWNER
@@ -1677,6 +1747,25 @@ function pwSetLn(v){
   navDoPaint('pwSend', pwOn());
   pwFresh();
 }
+/* The first `k` roman characters off the front of a cut -- what pwAtHead()
+   took, counted in the roman it read. A letter goes whole. */
+function pwCutDrop(cut, k){
+  var out=[], i, u, n, l;
+  for(i=0;i<(cut||[]).length;i++){
+    u=cut[i];
+    if(k<=0){ out.push(u); continue; }
+    if(u.id!==undefined){
+      l=ltById(u.id);
+      n=String((l && ltName(l)) || '').length;
+      k-=n; if(!n) out.push(u);
+      continue;
+    }
+    n=String(u.t||'');
+    if(n.length<=k){ k-=n.length; continue; }
+    out.push({t:n.slice(k)}); k=0;
+  }
+  return out;
+}
 /* Taking the handle off the front of the line and putting it on the post.
    Only where there is no post being answered: `to` is a post somebody pressed
    reply on, and a name typed inside that is a name in what they wrote.
@@ -1687,17 +1776,18 @@ function pwSetLn(v){
    goes to the end, which is where it already was -- the head is only ever
    lifted by the character that was just typed after it. */
 function pwAtLift(){
-  var h, e;
+  var h, e, v;
   if(PW.to) return;
   h=pwAtHead(PW.ln);
   if(!h) return;
   PW.toh=h.hd;
-  PW.ln=h.ln;
+  pwLine(pwCutDrop(PW.cut, PW.ln.length-h.ln.length));
   e=document.getElementById('pw-ln');
-  if(e && e.value!==PW.ln){
-    e.value=PW.ln;
+  v=puaField(PW.cut);
+  if(e && e.value!==v){
+    e.value=v;
     if(e.setSelectionRange){
-      try{ e.setSelectionRange(PW.ln.length, PW.ln.length); }catch(err){}
+      try{ e.setSelectionRange(v.length, v.length); }catch(err){}
     }
   }
   pwToPaint();
@@ -1912,7 +2002,7 @@ function pwRingHTML(used){
     '</span>';
 }
 function pwLeftHTML(){
-  return pwRingHTML(String(PW.ln||'').length)+
+  return pwRingHTML(pwLineLen())+
     (PW.pr? '' : pwRingHTML(String(PW.mn||'').length));
 }
 /* THE CEILING, MET AT THE PRESS. True means pwSend() must stop.
@@ -1934,7 +2024,7 @@ function pwLeftHTML(){
 function pwOver(){
   var cap=postCap();
   if(!isFinite(cap)) return false;
-  return String(PW.ln||'').length>cap ||
+  return pwLineLen()>cap ||
     (!PW.pr && String(PW.mn||'').length>cap);
 }
 function pwCapStop(){
@@ -1974,9 +2064,9 @@ function pwSetMn(v){
    meaning and nothing else (the photographs and the voice were baked and
    written when the post was made), so a post being edited down to no line at
    all is fine as long as the post itself still has something on it. */
-function pwHas(ln){
+function pwHas(){
   var p;
-  if(ln) return true;
+  if(pwLineAny()) return true;
   if(PW.ed){
     p=postById(PW.ed);
     return !!(p && (postPics(p).length || postVoAt(p)));
@@ -1987,10 +2077,6 @@ function pwHas(ln){
    that there is a picture and nothing else. It is the one thing here that
    cannot happen synchronously -- an image loads -- so the rest of posting is
    below, and a bake that fails sends the photograph as it was. */
-/* The line exactly as it was typed, private use code points and all. Not
-   stored on anything: it lives from the press that sends to the ink being
-   cut. */
-var PWRAW='';
 function pwSend(){
   /* Back to roman before anything is kept. What the Lingua keyboard typed is
      private use code points and they go no further than the field: a post
@@ -2000,13 +2086,10 @@ function pwSend(){
      field showed the reader's own word (openPost); what is written down is
      the mark, because a search is a text search and ten spellings never meet
      (www/sns.js § THE TAG). */
-  var ln=dayTagStore(puaRoman(String(PW.ln||'')).trim());
-  /* The line as typed, kept for the ink cut below: what the Lingua keyboard
-     put there is the language, and what any other keyboard put there is not.
-     It is read again inside the callbacks the bake and the voice run through,
-     by which time PW may already be the next post. */
-  PWRAW=dayTagStore(String(PW.ln||'').trim());
-  if(!pwHas(ln)){ toast(t('post.none')); return; }
+  /* The roman and the ink from the ONE cut, together, now: the callbacks the
+     bake and the voice run through may find PW already the next post. */
+  var ln=dayTagStore(String(PW.ln||'').trim()), ink=postInkOf(pwLineKept());
+  if(!pwHas()){ toast(t('post.none')); return; }
   /* AND THE CEILING, WHICH IS THE ONE THING THAT CAN BE OVER NOW.
      「文字数を適正な数にしないとツイートできない」 OWNER 2026-09-15. Before
      the bake and before anything is written: a post that is going to be
@@ -2017,7 +2100,7 @@ function pwSend(){
   if(REC){ toast(t('post.vo.busy')); return; }
   /* Editing does not bake, does not write a file and does not make a post:
      it is one that exists, with two of its fields put right. */
-  if(PW.ed){ pwSaveEdit(ln); return; }
+  if(PW.ed){ pwSaveEdit(ln, ink); return; }
   /* The voice is written to the disk BEFORE the post is stored, because the
      post carries the file's name and a name pointing at nothing is a post
      that says it has a voice and has not. If the write does not happen --
@@ -2029,7 +2112,7 @@ function pwSend(){
      here. It used to be written at this line, which left the OTHER road out
      of the composer -- keeping a draft -- carrying thirty seconds of base64
      into localStorage. */
-  pwBake(function(pics){ pwSendWith(ln, pics, PW.vo||null); });
+  pwBake(function(pics){ pwSendWith(ln, ink, pics, PW.vo||null); });
 }
 /* A post that BEGINS by naming somebody is a post TO them. 「@したらもう勝手に
    ツイートがこの形式になるようにしたい」 OWNER 2026-09-07 -- the same thing
@@ -2068,12 +2151,12 @@ function pwAtHead(s){
   if(!rest) return null;
   return {hd:netHandleOf(m[0]), ln:rest};
 }
-function pwSendWith(ln, pics, vo){
+function pwSendWith(ln, ink, pics, vo){
   /* Nothing here reads the line to find out whom the post is for. That was
      the shape until 2026-09-08 and it was the same question answered twice:
      pwSetLn() takes the handle off the front as it is typed, so by the time
      anything is sent the line has not got one and `PW.toh` has. The block
-     that sliced it off `ln` and off `PWRAW` is deleted rather than left
+     that sliced it off `ln` and off the raw line is deleted rather than left
      standing -- what is read is obeyed, and two roads to one answer is the
      one thing that must not be here. */
   /* Everything a reader needs is put ON the post, now, because the reader may
@@ -2083,7 +2166,7 @@ function pwSendWith(ln, pics, vo){
   var mine={id:'p'+Date.now()+'_'+POSTS.length, at:Date.now(),
             lang:langId, lname:langName||'',
             who:meName(), hd:meHandle(), av:postAvatar(), mine:true,
-            ln:ln, ink:postInkTyped(PWRAW), dir:scriptDir(),
+            ln:ln, ink:ink, dir:scriptDir(),
             /* OWNER 2026-09-05 単語はその単語の意味を 文法は並び替えた単語たちが
                文章として成り立つように -- only to fall back on, for somebody who
                typed a line and no meaning. Not stored, see postRow. */
@@ -2262,7 +2345,7 @@ function postCut(ln){
 /* The same cut, filed so a letter used twelve times travels once. `g` is the
    shapes, `s` is the line: a number is an index into `g`, a string is itself
    -- a space, a full stop, a character somebody borrowed rather than drew. */
-/* The line as it was TYPED, cut into shapes and text.
+/* The line as it was TYPED, as the ink a post carries.
    ------------------------------------------------------------------
    postInk() below cuts the roman line with the alphabet, so every letter this
    language has a shape for becomes a shape -- whichever keyboard typed it.
@@ -2271,30 +2354,26 @@ function postCut(ln){
    language and must not arrive as it.
    「システムキーボードで打ったものが勝手に自作文字になるのはおかしい」
 
-   What the Lingua keyboard typed is a private use code point and nothing else
-   on a phone types one, so the cut is the character itself: a code point in
-   the range is that letter's strokes, and everything else -- roman, kana,
-   punctuation -- is text and stays text. A post already renders a run of text
-   as text, which is what a half-drawn alphabet has always given. */
-function postCutTyped(raw){
-  var s=String(raw||''), lts=ltPuaOrder(), cut=[], txt='', i, at;
-  for(i=0;i<s.length;i++){
-    at=s.charCodeAt(i)-PUA0;
-    if(at>=0 && at<lts.length){
-      if(txt){ cut.push({t:txt}); txt=''; }
-      cut.push({st:inkGeo(lts[at])});
-    } else txt+=s.charAt(i);
-  }
-  if(txt) cut.push({t:txt});
-  return cut;
-}
-/* And the gap its letters stand with, which is the language's at this moment
+   The typed cut already says which is which (www/glyph.js § puaTyped): a
+   letter the Lingua keyboard put there is `{id}` and becomes that letter's
+   shape NOW, the moment the post is written (rule 13); everything else is
+   text and stays text. A letter with no shape any more is its name, as text.
+
+   And the gap its letters stand with, which is the language's at this moment
    and the post's from now on (glyph.js § geSide) -- the same moment and the
    same reason as `dir`. Here only: postInk() cuts posts written before a
    language had a gap of its own, when every one stood one step apart, and a
-   post carrying no `sp` is read as exactly that. */
-function postInkTyped(raw){
-  var ink=inkOfCut(postCutTyped(raw));
+   post carrying no `sp` is read as exactly that. The line on a photograph is
+   cut here too (pwMarkCut), so the two are one cut. */
+function postInkOf(cut){
+  var c=[], i, u, l, g, ink;
+  for(i=0;i<(cut||[]).length;i++){
+    u=cut[i];
+    if(u.id===undefined){ c.push({t:String(u.t||'')}); continue; }
+    l=ltById(u.id); g=inkGeo(l);
+    c.push(g? {st:g} : {t:String((l && ltName(l)) || '')});
+  }
+  ink=inkOfCut(c);
   if(ink) ink.sp=inkSteps(SCRIPT.sp);
   return ink;
 }
@@ -2466,12 +2545,12 @@ function pwMarkHTML(){
            forever, and a line on a photograph wraps inside the picture now
            「インスタと同じようにやって」. The value goes between the tags,
            which is where a textarea keeps it. */
-        ? '<textarea class="mktx sfont mkink c'+
+        ? '<textarea class="mktx tfont mkink c'+
             Math.max(0, PW_COLS.indexOf(pwMarkCol(sel)))+'" id="mk-tx" '+
             'rows="1" placeholder="'+esc(t('post.mark.ph'))+'" '+
             'autocomplete="off" autocorrect="off" spellcheck="false" '+
             'style="top:'+(sel.y*100)+'%;left:'+(sel.x*100)+'%"' +
-            IN('pwMarkText') + '>'+esc(sel.tx||'')+'</textarea>'
+            IN('pwMarkText') + '>'+esc(puaField(pwMarkTyped(sel)))+'</textarea>'
         : '')+
       (cr? pwCutHTML() : '')+
     '</div>'+
@@ -2556,7 +2635,7 @@ function pwMarkClose(){
 /* A line nobody typed anything into is not a line. */
 function pwMarkTrim(){
   var ms=pwMarks(), i;
-  for(i=ms.length-1;i>=0;i--) if(!String(ms[i].tx||'').length) ms.splice(i, 1);
+  for(i=ms.length-1;i>=0;i--) if(!pwMarkAny(ms[i])) ms.splice(i, 1);
   pwMarkAt=-1;
 }
 function pwCutHTML(){
@@ -2616,19 +2695,19 @@ function pwMarkPaint(){
 }
 /* Typing into the field. An empty field with nothing selected makes a line;
    an empty line is removed rather than left as an invisible thing to press. */
-function pwMarkText(v){
+function pwMarkText(v, cut){
   var ms=pwMarks(), m=ms[pwMarkAt];
-  v=String(v||'');
+  v=String(v||''); cut=cut || puaTyped(v).cut;
   if(!m){
-    if(!v) return;
-    ms.push({tx:v, x:0.5, y:0.5, s:PW_MARK, c:PW_COLS[0]});
+    if(!v && !cut.length) return;
+    ms.push({tx:v, cut:cut, x:0.5, y:0.5, s:PW_MARK, c:PW_COLS[0]});
     pwMarkAt=ms.length-1;
     pwFresh(); pwMarkPaint();
     var e=document.getElementById('mk-tx');
     if(e) e.focus();
     return;
   }
-  m.tx=v;
+  m.tx=v; m.cut=cut;
   pwFresh();
   pwMarkDraw(); pwMarkFit();
 }
@@ -2679,18 +2758,39 @@ function pwMarkSize(v){
    The open alphabet, which is right: this is the making side, and it is MY
    picture and MY letters. What travels is the baked photograph. */
 function pwMarkCut(m){
-  return (m && m.tx)? postCut(m.tx) : [];
+  var ink=m? postInkOf(pwMarkTyped(m)) : null;
+  if(!ink && m && m.tx) ink={g:[], s:[String(m.tx)]};
+  return ink? postRuns(ink) : [];
 }
-/* How wide that line is, in cells of its own height. The font's own rule --
-   inkAdv() is reach(), ink plus the language's gap with half of it at each
-   end -- so the letters stand here the way they stand in its font. A
-   piece that was never drawn is text and takes a cell. */
+/* A mark's line as it was typed. `cut` since 2026-09-24; one made before
+   carries only `tx`, which is what its field held, and is read the way a
+   keystroke is. */
+function pwMarkTyped(m){
+  return (Object.prototype.toString.call(m.cut)==='[object Array]')? m.cut : puaTyped(m.tx||'').cut;
+}
+/* Whether a mark has anything on it -- a letter with no name included, which
+   is in the cut and not in `tx`. An empty one is taken off the picture. */
+function pwMarkAny(m){ return !!(m && pwMarkTyped(m).length); }
+/* How wide one piece of a mark is, in the font's units, and the ONE place
+   that says so: a shape by the font's own rule -- inkAdv() is reach(), ink
+   plus the language's gap with half of it at each end -- a space as the
+   ordinary face's space (inkSpace, which the line and the card use too), and
+   text as wide as it is in the face it is drawn in, at the size it is drawn
+   (640 of the 800-unit cell). It was 440 a character and 440 a space,
+   whatever the character. */
+var PW_MARK_TX=null;
+function pwMarkW(u){
+  var a;
+  if(u.st){ a=inkAdv(u.st, geSide()); return a? a.w : 800; }
+  if(u.sp) return inkSpace();
+  if(!u.tx) return 0;
+  if(!PW_MARK_TX) PW_MARK_TX=document.createElement('canvas').getContext('2d');
+  PW_MARK_TX.font='1000px '+cardCaps();
+  return PW_MARK_TX.measureText(String(u.tx)).width*0.64;
+}
 function pwMarkAdv(units){
-  var w=0, i, a;
-  for(i=0;i<units.length;i++){
-    if(units[i].st){ a=inkAdv(units[i].st, geSide()); w+=a? a.w : 800; }
-    else w+=String(units[i].t||'').length*440;
-  }
+  var w=0, i;
+  for(i=0;i<units.length;i++) w+=pwMarkW(units[i]);
   return w;
 }
 /* ---- a line on a photograph WRAPS -------------------------------------
@@ -2708,21 +2808,6 @@ function pwMarkAdv(units){
    centred on the point it was left at. Everything that needs to know how big
    a mark is asks these three -- the drawing, the hit box and the bake -- the
    way they already all asked pwMarkWide(). */
-/* Where a line may break. A drawn letter is a piece on its own, so a line of
-   made letters breaks between letters the way a line of Japanese does; a run
-   of ordinary text breaks at its spaces and nowhere else, so a word is not
-   cut in half. The space is kept on the end of the piece before it, which is
-   what makes it disappear at the end of a line. */
-function pwMarkAtoms(units){
-  var out=[], i, u, parts, j;
-  for(i=0;i<units.length;i++){
-    u=units[i];
-    if(u.st){ out.push({st:u.st}); continue; }
-    parts=String(u.t||'').split(/(\s+)/);
-    for(j=0;j<parts.length;j++) if(parts[j]!=='') out.push({t:parts[j]});
-  }
-  return out;
-}
 /* One cell of vertical room per line, and a quarter of one between them --
    the same 1.25 the field's own font size is worked out with. */
 var PW_MARK_LEAD=1.25;
@@ -2739,15 +2824,21 @@ var PW_MARK_EDGE=24/390;
    drew. */
 function pwMarkLines(m){
   var max=(m && m.s>0)? (1-2*PW_MARK_EDGE)*800/m.s : 0,
-      atoms=pwMarkAtoms(pwMarkCut(m)),
-      out=[], cur=[], w=0, i, aw, a;
-  for(i=0;i<atoms.length;i++){
-    a=atoms[i];
-    aw=a.st? ((inkAdv(a.st, geSide())||{w:800}).w) : String(a.t||'').length*440;
-    if(cur.length && max>0 && w+aw>max){ out.push(cur); cur=[]; w=0; }
-    cur.push(a); w+=aw;
+      units=pwMarkCut(m), out=[], cur=[], w=0, i, u, aw;
+  /* Where a line may break is postRuns()'s pieces: a drawn letter is a piece
+     on its own, so a line of made letters breaks between letters the way a
+     line of Japanese does; a run of text is a word and is not cut in half;
+     a newline somebody typed IS a break; and a space that would begin a line
+     is not drawn there. */
+  for(i=0;i<units.length;i++){
+    u=units[i];
+    if(u.br){ out.push(cur); cur=[]; w=0; continue; }
+    if(u.sp && !cur.length) continue;
+    aw=pwMarkW(u);
+    if(cur.length && max>0 && w+aw>max){ out.push(cur); cur=[]; w=0; if(u.sp) continue; }
+    cur.push(u); w+=aw;
   }
-  if(cur.length) out.push(cur);
+  if(cur.length || out.length) out.push(cur);
   return out;
 }
 /* The plate a line sits on, exactly as wide as the line 「行ごとに背景の板が
@@ -2778,19 +2869,17 @@ function pwMarkPlate(x, units, k, ox, oy){
 }
 /* One line of shapes onto a canvas, at scale k, starting at ox/oy. */
 function pwMarkRun(x, units, k, ox, oy, col){
-  var i, a, cur=ox;
+  var i, u, a, cur=ox;
   x.fillStyle=col; x.textAlign='left'; x.textBaseline='alphabetic';
   for(i=0;i<units.length;i++){
-    if(units[i].st){
-      a=inkAdv(units[i].st, geSide());
-      if(a){ inkStrokes(x, units[i].st, k, cur+a.dx*k, oy, col); cur+=a.w*k; }
-      else cur+=800*k;
-    } else {
+    u=units[i];
+    if(u.st && (a=inkAdv(u.st, geSide()))) inkStrokes(x, u.st, k, cur+a.dx*k, oy, col);
+    else if(u.tx){
       x.font=Math.round(640*k)+'px '+cardCaps();
       x.fillStyle=col;
-      x.fillText(String(units[i].t||''), cur, oy+640*k);
-      cur+=String(units[i].t||'').length*440*k;
+      x.fillText(String(u.tx), cur, oy+640*k);
     }
+    cur+=pwMarkW(u)*k;
   }
 }
 /* Not inkCanvases(): that draws every square cell in --tx, which is the
@@ -2865,7 +2954,7 @@ function pwMarkFit(){
      placeholder says what the box is for; it does not get to say how big it
      is. 44 is still the smallest a cell may be, because that is the thumb. */
   var room=Math.max(44, Math.round(m.s*bw));
-  if(!String(m.tx||'').length){
+  if(!pwMarkAny(m)){
     e.style.whiteSpace='';
     e.style.width=room+'px';
     e.style.fontSize=pwMarkPhSize(e, room)+'px';
@@ -2984,7 +3073,7 @@ function pwMarkDown(ev){
   if(i<0) return;
   pwMarkGrab=true;
   if(i!==pwMarkAt){
-    var m=pwMarks()[i], keep=m && m.tx;
+    var m=pwMarks()[i], keep=pwMarkAny(m);
     pwMarkTrim();
     pwMarkAt=pwMarks().indexOf(m);
     if(!keep) pwMarkAt=-1;
@@ -3102,11 +3191,9 @@ function pwBakeOne(pc, done){
    they were baked and written when the post was made, and swapping one for
    another is not correcting a sentence.
 
-   The ink is re-cut, and that is not a choice. A post's shapes are the line
-   already cut into letters -- change the line and the old shapes are the old
-   line. So an edited post is drawn in the alphabet as it stands at the moment
-   of the edit, which is the one place in this app where a post's shapes are
-   not the shapes it was born with. */
+   The ink is the post's own until the line is typed again (pwSaveEdit), and
+   the field opens as the post was typed (postCutOf) -- so saving a changed
+   meaning does not re-cut a line nobody touched with today's alphabet. */
 function postEdit(id){
   var p=postById(id);
   if(!p || !p.mine) return;
@@ -3151,8 +3238,40 @@ function postEdit(id){
     return;
   }
   PW=pwBlank();
-  PW.ed=p.id; PW.ln=String(p.ln||''); PW.mn=String(p.mn||'');
+  PW.ed=p.id; pwLine(postCutOf(p)); PW.mn=String(p.mn||'');
   openPost();
+}
+/* A post of mine back as the line it was typed as, so the field it is edited
+   in shows what the post shows rather than its roman (r73 §2-10: it opened
+   as roman, nothing in it was a letter any more, and saving cut every shape
+   off). Read off the post's own ink and line together: a run of text is
+   itself, and a shape is the letter of THIS alphabet whose name stands there
+   -- the one drawn that way if there is one. Only in the post's own
+   language, because that is the alphabet it was written in; anywhere it does
+   not line up it is the roman, whole, and nothing is guessed. */
+function postCutOf(p){
+  var ln=String((p && p.ln) || ''), cut=[], at=0, i, j, x, key, hit, l, n, whole=[{t:ln}];
+  if(!ln && !(p && postInkOK(p.ink))) return [];
+  if(!p || p.lang!==langId || !postInkOK(p.ink)) return ln? whole : [];
+  for(i=0;i<p.ink.s.length;i++){
+    x=p.ink.s[i];
+    if(typeof x==='string'){
+      if(ln.substr(at, x.length)!==x) return whole;
+      if(x) cut.push({t:x});
+      at+=x.length; continue;
+    }
+    key=JSON.stringify(p.ink.g[x]); hit=null;
+    for(j=0;j<LETTERS.length;j++){
+      l=LETTERS[j]; n=String(ltName(l)||'');
+      if(!inkGeo(l) || ln.substr(at, n.length)!==n) continue;
+      if(JSON.stringify(inkGeo(l))===key){ hit=l; break; }
+      if(n && (!hit || n.length>String(ltName(hit)||'').length)) hit=l;
+    }
+    if(!hit) return whole;
+    cut.push({id:hit.id});
+    at+=String(ltName(hit)||'').length;
+  }
+  return at===ln.length? cut : whole;
 }
 /* AN EDIT GOES TO THE SERVER FIRST, THE SAME AS A POST (r79).
    「SNSは全部サーバー」, and 「なら失敗して残るにするべき」 OWNER 2026-09-05.
@@ -3168,14 +3287,22 @@ function postEdit(id){
    has no row to change, so the edit is the post going up (postSend, the one
    road a post goes up by) -- what the person pressed save on is what the post
    is. */
-function pwSaveEdit(ln){
+/* The ink is the post's as it was written unless the line was typed again
+   (「The past」): then it is what was typed now, standing at the POST's own
+   gap -- the one on its ink, or none, which is one step (postSide). */
+function pwSaveEdit(ln, ink){
   var p=postById(PW.ed), mn, q, k;
   if(!p || !p.mine){ toast(t('post.gone')); PW=pwBlank(); goTab('feed'); return; }
   /* OWNER 2026-09-05 単語はその単語の意味を 文法は並び替えた単語たちが文章として成り立つように */
   mn=String(PW.mn||'').trim() || LinguaGrammarEngine.translate.toNatural(gModel(), ln, uiLang());
   q={};
   for(k in p) if(Object.prototype.hasOwnProperty.call(p, k)) q[k]=p[k];
-  q.ln=ln; q.ink=postInkTyped(PWRAW); q.mn=mn;
+  q.ln=ln; q.mn=mn;
+  if(ln===String(p.ln||'')) q.ink=p.ink;
+  else {
+    q.ink=ink;
+    if(ink){ if(p.ink && p.ink.sp!==undefined) ink.sp=p.ink.sp; else delete ink.sp; }
+  }
   q.ui=uiLang();
   q.ed=Date.now();
   pwEditPut(p, q);
@@ -3556,7 +3683,7 @@ function postDir(p){
 }
 /* What stands between two of this post's letters, asked of the POST, for the
    reason postDir() asks it: the gap is the writer's language's and was put on
-   the ink when the line was written (postInkTyped). geSide() is the open
+   the ink when the line was written (postInkOf). geSide() is the open
    language and may not be named here. A post written before a language could
    set one carries none, and stood one step apart -- inkSide() says that. */
 function postSide(p){ return inkSide(p && p.ink && p.ink.sp); }
@@ -3964,7 +4091,7 @@ function postRow(p){
          each one whether it actually clamped -- see POST_FOLD above for why
          it is measured rather than counted in characters, and why the number
          is written in here instead of sitting in the stylesheet. */
-      (p.ln? '<div class="pline '+dirClass(postDir(p))+
+      ((p.ln || postInkOK(p.ink))? '<div class="pline '+dirClass(postDir(p))+
                (postFoldable(p) && !postUnfolded(p)
                  ? ' pfold" style="-webkit-line-clamp:'+POST_FOLD+'"' : '"')+
                '>'+postLnHTML(p)+'</div>' : '')+

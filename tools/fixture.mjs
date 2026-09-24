@@ -2244,11 +2244,11 @@ export function halfDone(){
        where the same number goes red. */
     ['a post running out of room', () => {
         openPost();
-        PW.ln = Array.apply(null, {length: POST_MAX - 10}).map(() => 'a').join('');
+        pwLine(puaTyped(Array.apply(null, {length: POST_MAX - 10}).map(() => 'a').join('')).cut);
         openPost(); const h = vForm(); PW = pwBlank(); return h; }],
     ['a post past the end of the room', () => {
         openPost();
-        PW.ln = Array.apply(null, {length: POST_MAX + 5}).map(() => 'a').join('');
+        pwLine(puaTyped(Array.apply(null, {length: POST_MAX + 5}).map(() => 'a').join('')).cut);
         openPost(); const h = vForm(); PW = pwBlank(); return h; }],
     /* And a post that has been edited since it was sent, which is a mark on
        somebody's own post and on nobody else's. */
@@ -3439,18 +3439,18 @@ export function halfDone(){
        has none of -- there is no microphone on a Linux box and getUserMedia
        is never going to answer -- so what is walked is the row, in each of
        the states it can be in, which is what a thumb meets. */
-    ['a voice being recorded', () => { PW = pwBlank(); PW.ln = 'kano';
+    ['a voice being recorded', () => { PW = pwBlank(); pwLine(puaTyped('kano').cut);
         REC = {}; RECAT = (new Date()).getTime() - 7000;
         openPost(); const h = vForm(); REC = null; RECAT = 0;
         PW = pwBlank(); return h; }],
-    ['a voice recorded and not yet posted', () => { PW = pwBlank(); PW.ln = 'kano';
+    ['a voice recorded and not yet posted', () => { PW = pwBlank(); pwLine(puaTyped('kano').cut);
         PW.vo = {b64:'AA', mime:'audio/mp4', ms:7000};
         openPost(); const h = vForm(); PW = pwBlank(); return h; }],
     /* Editing your own post, which is the line and the meaning and neither
        the photographs nor the voice -- so it is the one face of the composer
        with no row of buttons under it at all. */
     ['a post being edited', () => { PW = pwBlank();
-        PW.ed = POSTS[0].id; PW.ln = POSTS[0].ln; PW.mn = POSTS[0].mn;
+        PW.ed = POSTS[0].id; pwLine(postCutOf(POSTS[0])); PW.mn = POSTS[0].mn;
         openPost(); const h = vForm(); PW = pwBlank(); return h; }],
     ['who you are, being edited', () => { openMe(); return vForm(); }],
     /* The box a list is pasted into, which is its own screen: the one before
@@ -3568,8 +3568,8 @@ export function halfDone(){
        __stemLetters(); installScriptFont();
        const raw = __twoLines();
        POSTS.unshift({ id: 'p2l', at: Date.now() - 60000, lang: langId, lname: langName,
-                       ln: puaRoman(raw), who: meName(), hd: meHandle(), mine: true, mn: '',
-                       ui: 'en', ink: postInkTyped(raw), dir: 'ltr' });
+                       ln: puaTyped(raw).ln, who: meName(), hd: meHandle(), mine: true, mn: '',
+                       ui: 'en', ink: postInkOf(puaTyped(raw).cut), dir: 'ltr' });
        window.route = 'feed'; NAV = [{ r:'feed' }];
        return vFeed(); }],
     /* The rule a form is made by. It takes an id, and the id is the one the

@@ -39,7 +39,16 @@
 var ACT={}, ACT_IN={}, ACT_KEY={};
 function act(name, fn){ ACT[name]=fn; }
 /* Something typed into: the value comes last, after whatever the markup
-   named. IN('wldSet',['where']) calls wldSet('where', <what was typed>). */
+   named. IN('wldSet',['where']) calls wldSet('where', <what was typed>).
+
+   <what was typed> is ROMAN, and after it comes the line as it was typed --
+   puaTyped() (www/glyph.js), read once per keystroke, here, for every field
+   in the app. The Lingua keyboard's private use characters go no further
+   than the field (r73 §2-10): a name, a search, a meaning, a spelling, a tag
+   and a post all get the roman, and the two things that need to know which
+   keyboard typed what -- the composer and a line on a photograph -- take the
+   cut as well. It was four receivers each converting for itself and
+   thirty-one not converting at all. */
 function actIn(name, fn){ ACT_IN[name]=fn; }
 /* Enter pressed in a field. */
 function actKey(name, fn){ ACT_KEY[name]=fn; }
@@ -82,11 +91,20 @@ function actRun(table, el, attr, extra, argAttr){
   var fn=table[el.getAttribute(attr)];
   if(!fn) return false;
   var a=actRead(el, argAttr);
-  if(extra!==undefined) a=a.concat([extra]);
+  if(extra) a=a.concat(extra);
   fn.apply(el, a);
   return true;
 }
 
+/* What a field hands its receiver: the roman, then the cut. */
+function actTyped(v){
+  var x=puaTyped(v);
+  return [x.ln, x.cut];
+}
+/* And a field read where it is SAVED rather than as it is typed -- Enter, or a
+   form that gathers its fields on the press. The same reading, so there is no
+   second road out of a field: anything that reads `.value` asks this. */
+function actVal(el){ return el? puaTyped(el.value).ln : ''; }
 /* Running a row's own name from somewhere that is not a press -- the thumb
    slid down a list of marks (www/shell.js § sliding down a list). It is
    deliberately the SAME name the row's tap carries: a row that is chosen two
@@ -116,7 +134,7 @@ function actWire(root){
   }, false);
   root.addEventListener('input', function(e){
     var el=actOf(e.target, 'data-in');
-    if(el) actRun(ACT_IN, el, 'data-in', e.target.value);
+    if(el) actRun(ACT_IN, el, 'data-in', actTyped(e.target.value));
     /* A line field is as tall as what is in it, and a field with NO NAME on
        it has nobody to say so. `.lnin` is a textarea with `overflow:hidden`,
        so a field that never grows does not scroll -- what was typed is simply
@@ -141,7 +159,7 @@ function actWire(root){
   }, false);
   root.addEventListener('change', function(e){
     var el=actOf(e.target, 'data-ch');
-    if(el) actRun(ACT_IN, el, 'data-ch', e.target.value);
+    if(el) actRun(ACT_IN, el, 'data-ch', actTyped(e.target.value));
   }, false);
   /* The composer keeps the keyboard. It is asked of post.js rather than
      decided here -- this listener knows about presses and typing, and whether

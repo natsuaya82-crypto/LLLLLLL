@@ -133,10 +133,10 @@ const R = await pg.evaluate(async () => {
   /* ---- imported letters (sh only, no st) are drawn too --------------- */
   /* A letter brought in from a PDF import carries `sh` -- a ring -- and no
      `st` at all (www/sheet.js's ltNew via 'write'). postCut() and
-     postCutTyped() used to read `l.st` by hand, so a line spelled with one
+     postInkOf() used to read `l.st` by hand, so a line spelled with one
      of these letters carried no ink: postInkOK() saw nothing on it and the
      post fell back to plain text. inkGeo(l) is the one place that already
-     knows a letter's shape is either st or sh; postCut/postCutTyped have to
+     knows a letter's shape is either st or sh; postCut/postInkOf have to
      ask it instead. */
   LETTERS.push({ id: 'lsh', sh: [[[100, 100], [700, 100], [700, 700], [100, 700]]],
                  ch: '', nm: 'zz', snd: [] });
@@ -145,10 +145,10 @@ const R = await pg.evaluate(async () => {
     fails.push('a letter imported with only sh (no st) is not drawn into a ' +
                "post's ink -- postCut() must ask inkGeo(l), not l.st");
   const shIdx = ltPuaOrder().map((l) => l.id).indexOf('lsh');
-  const typedInk = shIdx >= 0 ? postInkTyped(ltPua(shIdx)) : null;
+  const typedInk = shIdx >= 0 ? postInkOf(puaTyped(ltPua(shIdx)).cut) : null;
   if (!typedInk || !typedInk.g.length)
     fails.push('a letter imported with only sh (no st) is not drawn when ' +
-               'typed through the keyboard -- postCutTyped() must ask ' +
+               'typed through the keyboard -- postInkOf() must ask ' +
                'inkGeo(l), not l.st');
   LETTERS.pop();
 
@@ -250,7 +250,7 @@ const R = await pg.evaluate(async () => {
      0 にすると、端まで描いた線が隣とくっついて一本に繋がる」 OWNER 2026-09-23.
 
      The gap is the language's, and a post carries the one it was written
-     with (`ink.sp`, postInkTyped). So the same test a third time: change the
+     with (`ink.sp`, postInkOf). So the same test a third time: change the
      OPEN language's gap under posts that already exist, and nothing they
      draw on the card may move. Widths and places are compared, not strings:
      a gap is a width. The timeline's own line is tools/line-check.mjs's --
@@ -261,7 +261,7 @@ const R = await pg.evaluate(async () => {
   SCRIPT.sp = 1;
   const typed = ltPuaOrder().map((l, i) => ltHasShape(l) ? ltPua(i) : '').join('').slice(0, 3);
   const pNew = { id: 'pgap', at: 4, lang: langId, lname: langName, ln: 'x', who: 'Aya',
-                 hd: 'aya', mine: true, mn: '', ui: 'en', ink: postInkTyped(typed) };
+                 hd: 'aya', mine: true, mn: '', ui: 'en', ink: postInkOf(puaTyped(typed).cut) };
   POSTS.push(pNew);
   if (!pNew.ink || pNew.ink.sp !== 1)
     fails.push('a post written with the language at one step carries sp=' +

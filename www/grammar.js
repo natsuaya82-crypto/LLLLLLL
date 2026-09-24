@@ -1793,7 +1793,6 @@ function g2PolTake(which, i){
 }
 function g2PolAdd(which, w){
   var s=String(w||'').replace(/^\s+|\s+$/g, '');
-  if(typeof puaRoman==='function') s=puaRoman(s);
   if(!s) return;
   G2POL[(which==='b')? 'b' : 'a'].push(s);
 }
@@ -1830,9 +1829,9 @@ function g2PolPickHTML(which){
 }
 function g2PolPutW(which, hw){ g2PolAdd(which, hw); back(); }
 function g2PolOwn(which){
-  var e=document.getElementById('gpol-w');
-  if(!e || !e.value) return;
-  g2PolAdd(which, e.value);
+  var v=actVal(document.getElementById('gpol-w'));
+  if(!v) return;
+  g2PolAdd(which, v);
   back();
 }
 /* The save, which is the whole of 「承認」: what is written down is the
@@ -1957,7 +1956,7 @@ function nclsForm(i){
 function nclsSave(i){
   var a=document.getElementById('ncls-n'), v;
   if(!a) return;
-  v=String(a.value||'').trim();
+  v=actVal(a).trim();
   if(!v){ toast(t('g2.ncls.need')); return; }
   if(!STG.ncls) STG.ncls={names:[], of:{}};
   if(!STG.ncls.names) STG.ncls.names=[];

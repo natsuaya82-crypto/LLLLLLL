@@ -106,7 +106,7 @@ const MINE = [
      what this list is written in. Without it, a function that reads LETTERS
      could be called from below the line and this check would stay green,
      which is the hole the four-into-one opened the moment it closed.
-     postCutTyped() calls it and is ABOVE the line, where the writer still
+     puaTyped() and postInkOf() call it and are ABOVE the line, where the writer still
      exists; that is why the line is where it is. */
   'ltPuaOrder',
   /* What stands between two letters of the OPEN language (www/glyph.js §

@@ -244,7 +244,7 @@ if (!posted || posted.length !== 2)
 const card = await pg.evaluate(() => {
   const a = ltPua(0), b = ltPua(1);
   POSTS.push({ id: 'pcard2', at: 2, lang: langId, lname: langName, ln: 'x', who: 'Aya', hd: 'aya',
-               mine: true, mn: '', ui: 'en', ink: postInkTyped(a + '\n' + b) });
+               mine: true, mn: '', ui: 'en', ink: postInkOf(puaTyped(a + '\n' + b).cut) });
   CARD = { k: 'p', v: 'pcard2' };
   const real = cardInk;
   let seen = null;
@@ -286,7 +286,7 @@ for (const sp of [1, 0]) {
     const two = ltPua(0) + ltPua(0);
     POSTS = POSTS.filter((p) => p.id !== 'pjoin');
     POSTS.push({ id: 'pjoin', at: 1, lang: 'other', lname: 'Other', ln: 'x', who: 'Iri', hd: 'iri',
-                 mine: false, mn: '', ui: 'en', ink: postInkTyped(two) });
+                 mine: false, mn: '', ui: 'en', ink: postInkOf(puaTyped(two).cut) });
     go('thread', 'pjoin');
     return two;
   }, sp);
@@ -376,7 +376,7 @@ for (const sp of [0, 1, 2]) {
     const two = ltPua(2) + ltPua(2);
     POSTS = POSTS.filter((p) => p.id !== 'pdown');
     POSTS.push({ id: 'pdown', at: 1, lang: 'other', lname: 'Other', ln: 'x', who: 'Iri', hd: 'iri',
-                 mine: false, mn: '', ui: 'en', ink: postInkTyped(two), dir: 'ttb-rl' });
+                 mine: false, mn: '', ui: 'en', ink: postInkOf(puaTyped(two).cut), dir: 'ttb-rl' });
     go('thread', 'pdown');
     return two;
   }, sp);
@@ -418,7 +418,7 @@ for (const sp of [0, 1, 2])
    one glyph. Asked of what postLnHTML() actually wrote. */
 const own = await pg.evaluate(() => {
   SCRIPT.sp = 1; installScriptFont();
-  const mineInk = postInkTyped(ltPua(0));
+  const mineInk = postInkOf(puaTyped(ltPua(0)).cut);
   const theirs = { g: [[{ pts: [[100, 100], [700, 700]] }, { pts: [[700, 100], [100, 700]] }]], s: [0], sp: 1 };
   const same = { g: [mineInk.g[0]], s: [0], sp: 1 };
   const cp = (ink) => postLnHTML({ id: 'x', ln: 'x', ink }).charCodeAt(0);

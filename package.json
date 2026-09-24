@@ -29,6 +29,7 @@
     "line": "node tools/line-check.mjs",
     "load": "node tools/load-check.mjs",
     "ink": "node tools/ink-check.mjs",
+    "pua": "node tools/pua-check.mjs",
     "post": "node tools/post-check.mjs",
     "fill": "node tools/fill-check.mjs",
     "round": "node tools/round-check.mjs",

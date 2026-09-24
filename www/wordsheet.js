@@ -495,7 +495,7 @@ function wdExHTML(){
 function wdAddEx(){
   var a=document.getElementById('wd-exl');
   if(!a) return;
-  if(!String(a.value||'').trim()){ toast(t('word.ex.need')); return; }
+  if(!actVal(a).trim()){ toast(t('word.ex.need')); return; }
   wdTakeFields(); wdStore(); wdPaint();
 }
 function wdDelEx(i){
@@ -547,7 +547,7 @@ function vRelate(){
 function relNew(){
   var a=String(here().a||''), i=a.indexOf(':'), k=a.slice(0,i), hw=a.slice(i+1);
   var e=document.getElementById('rel-hw'), m=document.getElementById('rel-mn');
-  var txt=e? String(e.value||'').trim() : '', mn=m? String(m.value||'').trim() : '';
+  var txt=actVal(e).trim(), mn=actVal(m).trim();
   var sp, nw, w, on=hw? findWord(hw) : addW;
   if(!on || (k!=='syn' && k!=='ant')) return;
   if(!txt){ toast(t('toast.hw2')); return; }
@@ -754,7 +754,7 @@ function fmPick(hw, f){
 /* A label of somebody's own. It is the words they typed and it is not
    translated; what makes it theirs is the group it was written under. */
 function fmNew(hw, g){
-  var e=document.getElementById('fm-'+g), txt=e? String(e.value||'').replace(/^\s+|\s+$/g,'') : '';
+  var e=document.getElementById('fm-'+g), txt=actVal(e).replace(/^\s+|\s+$/g,'');
   if(!txt){ toast(t('toast.hw2')); return; }
   fmPick(hw, g+'~'+txt);
 }
@@ -1523,7 +1523,7 @@ function subPick(x){ wdSetSub(x); relDirty(); back(); }
 function subNew(){
   var el=document.getElementById('wd-sub'), x;
   if(!el) return;
-  x=String(el.value||'').trim();
+  x=actVal(el).trim();
   if(!x) return;
   wdSetSub(x); relDirty(); back();
 }
@@ -1979,7 +1979,7 @@ function wdTakeFields(){
   var w=wdW(), e=document.getElementById('wd-mn'),
       a=document.getElementById('wd-exl'), b=document.getElementById('wd-exg'), v, ln;
   if(e && wEdit){
-    v=String(e.value||'').trim();
+    v=actVal(e).trim();
     if(v && wEdit.mns.indexOf(v)<0) wEdit.mns.push(v);
   }
   if(w && a){
@@ -1997,10 +1997,10 @@ function wdTakeFields(){
        that has no such characters. The gloss under it was wrong for the same
        reason, because findWord() had never heard of those characters
        either. */
-    ln=puaRoman(String(a.value||'')).trim();
+    ln=actVal(a).trim();
     if(ln){
       if(!w.ex) w.ex=[];
-      w.ex.push({ln:ln, gl:String((b&&b.value)||'').trim()});
+      w.ex.push({ln:ln, gl:actVal(b).trim()});
     }
   }
 }
