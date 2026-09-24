@@ -27,7 +27,7 @@ r73 は全部洗いざらいの報告で、［測った］と［読んだ］が�
 あなたの領域: 持ち主 ── 端末に書く物は書く時に uid を持ち、持ち主の無い物は誰の物にもならない（r73 §2-7、r60 の残り）
 あなたのブランチ: claude/r79-acct
 あなたが持つファイル:
-  www/core.js www/net.js www/post.js www/sns.js www/me.js www/settings.js www/phases.js（migrateGramLang の呼び出しだけ） www/mod.js（adminStaffRow だけ） www/shell.js（KEEP の仕組み ── keepOn・keepSnap・keepAsked・keepBack） www/keyboard.js（K1 に要る所だけ） tools/keep-check.mjs
+  www/core.js www/net.js www/post.js www/sns.js www/me.js www/settings.js www/phases.js（migrateGramLang の呼び出しだけ） www/mod.js（adminStaffRow だけ） www/shell.js（KEEP の仕組み ── keepOn・keepSnap・keepAsked・keepBack） www/keyboard.js（K1 に要る所だけ） tools/keep-check.mjs www/share.js・www/store.js（SESS を直に読む一行だけ） www/onboard.js（960 行のコメントだけ）
   www/act-map.js www/i18n/*.js tools/fixture.mjs tools/acct-check.mjs tools/store-check.mjs tools/quiet-check.mjs
   tools/post-check.mjs tools/draft-check.mjs tools/word-check.mjs tools/gramlang-check.mjs、検査（要れば一本、package.json・gate.mjs）
   CLAUDE.md（規則 22・§ Online の、この変更で偽になる文） docs/DATA_MODEL.md docs/STATE.md の同じく偽になる文
@@ -148,6 +148,10 @@ r60 は取り込み済み。r60 が「まだ」「持ち物でない」「次の
 - `gramlang-check` の 5 つ: 保存で規則が 0 本（`the save writes exactly one rule: got 0`）、語順が `"OSV"` のまま、品詞・形が undefined、
   バーが「選ぶ」を出さない。原因は測って確かめること（読みでは r60 の `langLocked()`＝サーバーが持ち主を言うまで書けない、と
   上の 7「`save()` が黙って戻る」の同じ面に見えるが、確かめていない）。検査の前提を直すのかコードを直すのかは原因しだい。
+
+- `keep-check` の赤（`OWN_ROAD` の `kbUndo`・`kbRedo` の行が要らない ── r74 の変更の後、r71 が測った）。K1（12）と同じ面。
+- r71-net は取り込み済み。`docs/scope/r71-net.md` の「持ち物外で見つけたこと」: `share.js`・`store.js` が `SESS.uid` を直に読む
+  （`netUid()` に、`tools/load-baseline.txt` の行も消す）、`mod.js:18`・`onboard.js:960` の消えた名前を言うコメント。
 
 **直す物**:
 1. `lingua.langs`・`lingua.cur` が全アカウントで一つ〔r63 L4〕── 索引をアカウントで預ける（`setFor` と同じ形）。
