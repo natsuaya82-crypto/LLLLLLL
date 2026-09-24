@@ -256,8 +256,9 @@ create or replace function prefs_put(p jsonb, e jsonb default '{}'::jsonb) retur
 $$;
 
 -- ---- what ------------------------------------------------------------------
--- A language. Published or not; a language nobody published is a private
--- backup of what is on the phone.
+-- A language. Published or not; a language nobody published is its owner's
+-- and nobody else's. This row and the slices under it are where a language
+-- lives -- the phone holds a copy to look at (CLAUDE.md rule 22).
 --
 -- Deleting an account deletes this too. There is no half-deleted language
 -- with no owner waiting to be reclaimed: coming back later is what signing
@@ -271,10 +272,12 @@ $$;
 -- promise that is true.
 create table if not exists language (
   id           uuid primary key default gen_random_uuid(),
-  -- The ACCOUNT, not the person. auth.users and not profile, because a
-  -- language is made on the first launch by an anonymous account and an
-  -- anonymous account has no profile row: a handle is what a profile IS, and
-  -- a handle is the thing nobody has been asked for yet.
+  -- The ACCOUNT, not its page: auth.users and not profile. It was made
+  -- that way when a language was minted at first launch by an anonymous
+  -- account, which had no profile row. There are no anonymous accounts now
+  -- (「匿名アカウントはねえよ」, is_member() below) -- the reference stays on
+  -- auth.users because moving a foreign key under every row is a migration
+  -- nobody has asked for, and it answers the same question either way.
   --
   -- post.author stays on profile for the same reason read the other way --
   -- a post is read by other people and has to be signed.
@@ -287,10 +290,6 @@ create table if not exists language (
   published_at timestamptz,
   created_at   timestamptz not null default now()
 );
--- And on a database that already has the table, where `create table if not
--- exists` above did nothing at all. Named rather than left to the default so
--- that dropping it says which one; `if exists` on both halves so this file
--- goes on being applied twice in a row by npm run rls.
 -- ---- AND HOW THE LANGUAGE IS WRITTEN ----------------------------------
 -- 「端末に残すものないんですけど。サーバーで同じ機能になるように代替して」
 -- OWNER 2026-09-08.
@@ -1146,10 +1145,12 @@ create index if not exists promo_run_idx on promo(starts_at, ends_at);
 -- below opens exactly one door. Read them as sentences: who, may do what, to
 -- which rows.
 --
--- Anonymous accounts can read and cannot write anything at all. Supabase gives
--- an anonymous sign-in a real uid, so "not signed in" is not the test -- the
--- JWT carries is_anonymous, and that is what every writing policy checks
--- through is_member().
+-- An anonymous session cannot write anything at all. Supabase gives an
+-- anonymous sign-in a real uid, so "not signed in" is not the test -- the JWT
+-- carries is_anonymous, and that is what every writing policy checks through
+-- is_member(). Reading is the grants' question and not the policies': `anon`,
+-- which is what a request with nobody signed in arrives as, holds nothing at
+-- all (the block at the foot of this file).
 --
 -- The app does not make one any more (OWNER 2026-08-26), so this is a wall
 -- with nobody standing at it. It stays because the switch that opens that
@@ -1218,8 +1219,8 @@ alter table promo       enable row level security;
 -- switch in the Supabase dashboard, not a thing this file can see; if it is on
 -- -- today, or in a year, by somebody setting up a second project -- the
 -- endpoint answers, and what stops that session writing is this line and
--- nothing else. Ten policies stand on this function and none of them says the
--- word anonymous.
+-- nothing else. Every writing policy stands on this function and none of them
+-- says the word anonymous.
 create or replace function is_member() returns boolean
 language sql stable as $$
   select auth.uid() is not null
@@ -1290,8 +1291,9 @@ create policy profile_edit on profile for update using (is_member() and id = aut
 -- posting one are the same kind of act and ask the same thing.
 --
 -- Reading does not ask it, and that is not an oversight: a published language
--- is readable by anybody at all, including somebody with no account, which is
--- what publishing one MEANS.
+-- is readable by everybody signed in, which is what publishing one MEANS.
+-- Somebody with no session reads nothing -- that is the grants' answer, at the
+-- foot of this file, and not this policy's.
 drop policy if exists language_read on language;
 create policy language_read on language for select
   using (published_at is not null or owner = auth.uid()
@@ -1547,7 +1549,8 @@ create policy publication_make on publication for insert with check (
 --
 -- It exposes nothing new. `follow_read` is `using (true)` -- who follows whom
 -- is public, which is what a follower list IS -- and every column named here
--- is already world-readable through `profile_read`, also `using (true)`. What
+-- is already readable by everybody signed in through `profile_read`, also
+-- `using (true)`. What
 -- it does NOT carry is `staff`, `admin` and `banned_why`: they are on
 -- `profile` and readable there, and there is no reason for a view about a
 -- person's page to be the thing that hands them out.
@@ -1761,7 +1764,8 @@ grant select on post_seen to authenticated;
 
 -- post: everyone reads, you write as yourself.
 --
--- Everything is world-readable for now; locked accounts come later. When they
+-- Everything is readable by everybody signed in, for now; locked accounts come
+-- later. When they
 -- do, the read policy below is one of two places that change, and the other is
 -- the one worth knowing about in advance: a locked account needs following to
 -- be a request rather than an act, so follow grows an accepted column and its
@@ -1838,8 +1842,8 @@ create policy saved_drop on saved_search for delete using (is_member() and autho
 -- recent_search: the same four sentences, and the read is the one that
 -- matters. What somebody has been LOOKING FOR is not what they published --
 -- `profile_read` is `using (true)` and this must never be, or a history is a
--- list of every name a person typed, readable by anybody holding the
--- publishable key. Nothing would throw and every screen would be right.
+-- list of every name a person typed, readable by every account there is.
+-- Nothing would throw and every screen would be right.
 drop policy if exists recent_read on recent_search;
 create policy recent_read on recent_search for select using (is_member() and author = auth.uid());
 drop policy if exists recent_make on recent_search;
@@ -2233,7 +2237,8 @@ create policy media_drop on storage.objects for delete using (
 --
 -- It runs as whoever calls it (no `security definer`), so every row it can see
 -- is a row the policies above already let them see: react, post, profile and
--- follow are all world-readable. Nothing here opens a door; it walks through
+-- follow are all readable by everybody signed in. Nothing here opens a door;
+-- it walks through
 -- the ones that are open and puts the results in order.
 --
 -- Your own doing is not news. `actor <> auth.uid()` on each of the four, so
@@ -2375,7 +2380,7 @@ $$;
 --
 -- Read as `post_seen` reads, column for column, so the phone's netRow() does
 -- not learn a second shape. `stable` and no `security definer`: it walks the
--- same world-readable tables the timeline already walks, and post's own read
+-- same signed-in-readable tables the timeline already walks, and post's own read
 -- policy is what decides that a taken-down post is nobody's business.
 --
 -- WHAT IS NOT HERE, and both are deliberate:
@@ -2391,14 +2396,6 @@ $$;
 -- count is honest about being a count.
 -- ---------------------------------------------------------------------------
 
--- How much a post's author counts for. ONE for everybody today, and this is
--- the whole of the reason it is a function: the day there is a column saying
--- who has paid and a number saying what the mark is worth, this is the line
--- that changes, and nothing else in the file moves.
---
--- The number is NOT decided. It has not been asked of the owner, so it is not
--- invented here -- a made-up multiplier is a made-up ranking, and nobody would
--- be able to tell by looking at the app that it had been guessed.
 -- The tick the list turns on. 「4時間ごと。0 4 8 12 16 20 24 これは入れ替わら
 -- ない。」 OWNER 2026-08-28 -- so this answers the most recent of those six
 -- hours and never anything in between.
@@ -2810,6 +2807,12 @@ end $$;
 -- post_hide() is -- the caller is a normal account whose own policies do not
 -- let it read somebody else's slice_hist -- and is_staff() is asked inside,
 -- so the definer rights are not a way in.
+--
+-- STAFF, AND NOT ONLY THE ONE ABOVE THEM, on purpose. admin_counts() above
+-- asks is_admin() and these two ask is_staff(), all three from the same
+-- screen, and the owner was asked whether that was meant: 「それでいいよ」 --
+-- the counts are @lingua's alone, looking back and putting back is any
+-- staff's (docs/FEATURE_RULES.md 2026-09-23).
 --
 -- NO BODY EVER COMES BACK. A version of a 5000-word dictionary is 685 KB, and
 -- the screen shows a part's name and a date, never its contents: the operator
@@ -3300,7 +3303,7 @@ grant  insert (id, author, language, body, prompt, reply_to) on post to authenti
 -- un-liking and re-liking is a delete and an insert, and the insert is the
 -- notice.
 --
--- WHY THE `do` BLOCK, and it is the only one in this file. `net` is not part
+-- WHY THE `do` BLOCK, and why it is guarded. `net` is not part
 -- of PostgreSQL and is not part of this file: pg_net arrives when somebody
 -- turns Database -> Webhooks on in the dashboard, once
 -- (supabase/setup.md § 12). Named unconditionally, a paste into a project
