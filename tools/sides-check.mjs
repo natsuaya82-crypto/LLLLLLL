@@ -299,7 +299,9 @@ taints.delete('netFreshDone');
    because they are the language; an icon is not the language, so postFace()
    is allowed to ask what it looks like NOW instead of what it looked like
    THEN. 「アイコン変えた前の投稿が古いアイコンのまま」 OWNER 2026-09-05.
-   A reader-side copy keyed on the post's own handle -- it does not read ME. */
+   It READS ME, and that is what is allowed here -- reading, for the handle
+   that is mine. Writing is not: line-check 11 draws the timeline and two
+   cards with every save* on the page counted, and ME and SET compared. */
 taints.delete('whoOf');
 const READER = new Set(['render', 'uiLang', 't',
                         'netSend', 'netSend1', 'netFresh', 'netFreshDone',

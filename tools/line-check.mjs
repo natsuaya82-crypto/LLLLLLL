@@ -597,6 +597,100 @@ if (MYF.off.sfont)
 if (MYF.off.press !== '[true]')
   fails.push('the switch of somebody who turned it off does not read off: pressing it says ' + MYF.off.press);
 
+/* ---- 10. a line draws only what its post carries -------------------- */
+/* 「読む側が描く物・使う書体は、投稿に載っている物だけ」 (r73 §2-9). A line is
+   set in LinguaType, and that one family holds this phone's keyboard face
+   (U+E000 up) and every post's shapes (U+F8FF down). So any private use
+   character on a line is drawn with SOME shape this phone has filed -- and
+   the only ones that are the post's are the characters inkChar() handed out
+   for the shapes on it. Every `.pline` the real timeline draws is asked, the
+   fixture's posts and two of somebody else's that carry private use
+   characters as TEXT: one with no ink, one with ink and the character inside
+   a run of text. Counted over the page, so a post drawn tomorrow is asked
+   tomorrow. */
+const MINEONLY = await pg.evaluate(() => {
+  SET.myfont = true; installScriptFont();
+  const n = POSTS.length;
+  const shape = [{ pts: [[100, 100], [700, 700]] }, { pts: [[700, 100], [100, 700]] }];
+  POSTS.unshift(
+    { id: 'pua-a', at: Date.now() - 1000, lang: 'other', lname: 'V', who: 'K', hd: 'k', mine: false,
+      av: { ch: 'K' }, ln: String.fromCharCode(PUA0) + String.fromCharCode(PUA0 + 1) + ' hi', mn: 'm', ui: 'en' },
+    { id: 'pua-b', at: Date.now() - 2000, lang: 'other', lname: 'V', who: 'K', hd: 'k', mine: false,
+      av: { ch: 'K' }, ln: 'x', ink: { g: [shape], s: [0, ' ' + String.fromCharCode(0xF8FF) + String.fromCharCode(PUA0)], sp: 1 },
+      mn: 'm', ui: 'en' });
+  window.route = 'feed'; NAV = [{ r: 'feed' }]; render();
+  const out = { lines: 0, pua: 0, stray: [] };
+  document.querySelectorAll('#app .pline').forEach((el) => {
+    const row = el.closest('[data-do="postOpen"]');
+    let id = '';
+    try { id = row ? JSON.parse(row.getAttribute('data-a'))[0] : ''; } catch (e) {}
+    const p = postById(id);
+    if (!p) return;
+    out.lines++;
+    const ok = {};
+    if (postInkOK(p.ink)) p.ink.s.forEach((x) => {
+      if (typeof x === 'number') ok[inkChar(p.ink.g[x], postSide(p)).charCodeAt(0)] = 1;
+    });
+    const s = el.textContent;
+    for (let i = 0; i < s.length; i++) {
+      const c = s.charCodeAt(i);
+      if (c < 0xE000 || c > 0xF8FF) continue;
+      out.pua++;
+      if (!ok[c]) out.stray.push(id + ' U+' + c.toString(16));
+    }
+  });
+  POSTS.splice(0, POSTS.length - n);
+  return out;
+});
+if (MINEONLY.stray.length)
+  fails.push('a line drew a private use character its post carries no shape for, so it came out in ' +
+             'whatever this phone filed there -- its own keyboard or another post: ' +
+             MINEONLY.stray.slice(0, 6).join(', '));
+if (MINEONLY.lines < 3)
+  fails.push('only ' + MINEONLY.lines + ' lines were drawn on the timeline, so section 10 holds nothing');
+
+/* ---- 11. and the reading side writes nothing ------------------------ */
+/* The other half of the same sentence: 「読む側は何も書かない」. r73 measured
+   postFace -> whoOf -> postAvatar -> saveMe, a timeline render writing the
+   account. So the timeline and a card of somebody else's post and of mine
+   are drawn with EVERY save* on the page counted -- asked of the page, so a
+   save added tomorrow is counted tomorrow -- with localStorage's two writes
+   counted, and ME and SET compared byte for byte before and after. */
+const QUIET = await pg.evaluate(() => {
+  const hits = {}, wrapped = [];
+  const count = (k) => { hits[k] = (hits[k] || 0) + 1; };
+  Object.keys(window).forEach((k) => {
+    if (!/^save[A-Z]/.test(k) || typeof window[k] !== 'function') return;
+    const real = window[k];
+    window[k] = function(){ count(k); return real.apply(this, arguments); };
+    wrapped.push([k, real]);
+  });
+  const set = Storage.prototype.setItem, rm = Storage.prototype.removeItem;
+  Storage.prototype.setItem = function(k){ count('setItem ' + k); return set.apply(this, arguments); };
+  Storage.prototype.removeItem = function(k){ count('removeItem ' + k); return rm.apply(this, arguments); };
+  const meWas = JSON.stringify(ME), setWas = JSON.stringify(SET), n = POSTS.length;
+  POSTS.unshift({ id: 'q-a', at: Date.now() - 1000, lang: 'other', lname: 'V', who: 'K', hd: 'k',
+                  mine: false, ln: 'qel dross', mn: 'm', ui: 'en' });
+  try {
+    window.route = 'feed'; NAV = [{ r: 'feed' }]; render(); postLines();
+    ['q-a', POSTS[1].id].forEach((id) => {
+      CARD = { k: 'post', v: id };
+      cardPaint(document.createElement('canvas'));
+    });
+  } finally {
+    POSTS.splice(0, POSTS.length - n);
+    Storage.prototype.setItem = set; Storage.prototype.removeItem = rm;
+    wrapped.forEach(([k, real]) => { window[k] = real; });
+  }
+  return { hits, saves: wrapped.length, me: JSON.stringify(ME) === meWas,
+           set: JSON.stringify(SET) === setWas };
+});
+if (Object.keys(QUIET.hits).length || !QUIET.me || !QUIET.set)
+  fails.push('drawing the timeline and two cards wrote something -- ' +
+             JSON.stringify(QUIET.hits) + (QUIET.me ? '' : ', ME changed') + (QUIET.set ? '' : ', SET changed'));
+if (!QUIET.saves)
+  fails.push('no save* function was found on the page, so section 11 counted nothing');
+
 if (errs.length) fails.push('the page threw: ' + errs.slice(0, 3).join(' | '));
 
 await br.close();
@@ -624,4 +718,6 @@ console.log('line: typed into the composer and posted, one line comes out in the
             ' screens, every character one the face draws;\n      ' + FACE.seen.words +
             ' text nodes that are a word, none of them roman where the face draws it.\n' +
             '      Nobody-has-decided draws the dictionary in the drawn face (' + MYF.none.sfont +
-            ' words) and the switch reads on;\n      turned off, ' + MYF.off.sfont + ' and the switch reads off.');
+            ' words) and the switch reads on;\n      turned off, ' + MYF.off.sfont + ' and the switch reads off.\n' +
+            '      ' + MINEONLY.lines + ' lines on the timeline, ' + MINEONLY.pua + ' private use characters on them, every one a shape its own post carries.\n' +
+            '      The timeline and two cards drawn with ' + QUIET.saves + ' save functions watched: nothing written, ME and SET as they were.');

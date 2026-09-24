@@ -3565,13 +3565,25 @@ function postSide(p){ return inkSide(p && p.ink && p.ink.sp); }
    a space, or the end of a line. postLnHTML() sets these as the line the
    timeline shows; cardInkUnits() (www/card.js) sets them on the card.
    Neither looks at a character to decide whether it is blank.
-   A post with no ink is its text, which is a line with no shapes in it. */
+   A post with no ink is its text, which is a line with no shapes in it.
+
+   AND THE SHAPES ARE THE ONES THE POST CARRIES, AND NO OTHER. The private use
+   area is where this phone keeps shapes -- its own keyboard's from U+E000 up,
+   every post's from U+F8FF down (www/glyph.js § A LINE OF THE LANGUAGE IS
+   TEXT) -- and they are all one family, the one a line is set in. So a code
+   point from that range arriving as TEXT on a post was drawn with whatever
+   shape this phone had filed there: MY letter, or another post's. Measured
+   (r73 §2-9): somebody else's line carrying U+E000 came out in my own
+   alphabet. A post's text never legitimately holds one -- what a post carries
+   is roman and ink (rule 13) -- so a character from there is one this post
+   has no shape for, and it says so with the replacement character, which is
+   what inkChar() already says when it cannot hand a shape out. */
 function postRuns(ink){
   var out=[], i, j, x, ch, run;
   for(i=0;i<ink.s.length;i++){
     x=ink.s[i];
     if(typeof x==='number'){ out.push({st:ink.g[x]}); continue; }
-    x=String(x); run='';
+    x=String(x).replace(/[\uE000-\uF8FF]/g, '\uFFFD'); run='';
     for(j=0;j<x.length;j++){
       ch=x.charAt(j);
       if(!/\s/.test(ch)){ run+=ch; continue; }
