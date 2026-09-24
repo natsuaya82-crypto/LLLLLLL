@@ -632,6 +632,7 @@ defLang('ko', (function(){
       "post.tag.ph"      : "태그",
       "post.send"       : "올리기",
       "post.sent"       : "게시했습니다",
+      "post.send.no"    : "보내지 못했습니다",
       "post.none"       : "올릴 것이 없습니다",
       "post.del"        : "삭제",
       "post.del.q"      : "이 글을 삭제할까요?",

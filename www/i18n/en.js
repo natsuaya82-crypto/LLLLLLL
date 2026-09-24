@@ -356,6 +356,7 @@ defLang('en', (function(){
       'post.tag.ph'      : 'Tag',
       'post.send'       : 'Post',
       'post.sent'       : 'Posted',
+      'post.send.no'    : 'Could not send',
       'post.none'       : 'Nothing to post',
       'post.del'        : 'Delete',
       'post.del.q'      : 'Delete this post?',

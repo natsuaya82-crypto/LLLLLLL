@@ -441,6 +441,7 @@ defLang('de', (function(){
       "post.tag.ph"      : "Schlagwort",
       "post.send"       : "Senden",
       "post.sent"       : "Gepostet",
+      "post.send.no"    : "Senden fehlgeschlagen",
       "post.none"       : "Nichts zu senden",
       "post.del"        : "Löschen",
       "post.del.q"      : "Diesen Beitrag löschen?",

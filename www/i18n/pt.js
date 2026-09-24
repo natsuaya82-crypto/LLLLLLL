@@ -460,6 +460,7 @@ defLang('pt', (function(){
       "post.tag.ph"      : "Etiqueta",
       "post.send"       : "Publicar",
       "post.sent"       : "Publicado",
+      "post.send.no"    : "Não foi possível enviar",
       "post.none"       : "Não há nada para publicar",
       "post.del"        : "Eliminar",
       "post.del.q"      : "Eliminar esta publicação?",

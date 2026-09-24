@@ -536,8 +536,7 @@ draftsName();
    would have come back as a post to nobody. A draft written before that day
    opens with none, which is a composer with no addressee -- exactly the
    screen it was written on. Nothing is removed and nothing is migrated. */
-function draftKeep(){
-  if(!pwLineAny() && !pwPics().length && !(PW.vo && PW.vo.f)){ toast(t('post.none')); return; }
+function draftOfPW(){
   /* The name it already had, if this is one that was opened again. Reusing it
      is what stops a draft opened and put back becoming two rows -- one on the
      server nobody can reach and one in front of them. */
@@ -551,9 +550,22 @@ function draftKeep(){
      themselves -- numbers that mean a letter only in this alphabet's order at
      this moment. `ln` is the roman now. A draft kept before today carries
      none and is read the way it always was (draftOpen). */
-  var d={id:PW.did || netUUID(), at:Date.now(), ln:dayTagStore(PW.ln), cut:pwLineKept(), mn:PW.mn, to:PW.to,
-         toh:PW.toh||'', pr:PW.pr||0, tags:pwTagsOut(),
-         pics:pwPics(), vo:PW.vo||null, pv:!!PW.pv};
+  return {id:PW.did || netUUID(), at:Date.now(), ln:dayTagStore(PW.ln), cut:pwLineKept(), mn:PW.mn, to:PW.to,
+          toh:PW.toh||'', pr:PW.pr||0, tags:pwTagsOut(),
+          pics:pwPics(), vo:PW.vo||null, pv:!!PW.pv};
+}
+/* A draft goes into the list, and the composer is empty behind it. The one
+   place, for both roads in: keeping one, and a post that would not go. */
+function draftIn(d, said){
+  DRAFTS.push(d);
+  draftsSave();
+  PW=pwBlank();
+  toast(said);
+  goTab('feed');
+}
+function draftKeep(){
+  if(!pwLineAny() && !pwPics().length && !(PW.vo && PW.vo.f)){ toast(t('post.none')); return; }
+  var d=draftOfPW();
   /* THE SERVER FIRST, AND THE LIST WHEN IT HAS LANDED.
      「端末に残すものないんですけど」 OWNER 2026-09-08, and
      「保存するタイミングでエラーが起きるなら、保存されないし」 OWNER
@@ -571,12 +583,34 @@ function draftKeep(){
        that is the draft (supabase/schema.sql § keep_newer). */
     if(row && row.body) d=draftOfRow(row);
     d.up=1;
-    DRAFTS.push(d);
-    draftsSave();
-    PW=pwBlank();
-    toast(t('post.draft.kept'));
-    goTab('feed');
+    draftIn(d, t('post.draft.kept'));
   }, function(dd, st, m){ netPop(dd, st, m, draftKeep); });
+}
+/* A POST THAT DID NOT GO IS A DRAFT. 「普通に送信できませんでした。になるんじゃ
+   ないの？下書きに入るようにしよう」 OWNER 2026-09-24 -- and no button to send
+   it again: sending it again is opening the draft and sending, which is the
+   road every draft already has.
+
+   The server first, as a kept draft is. When it will not take the draft
+   either -- which is the usual reason the post did not go -- the draft is
+   kept in this account's list here with `up` 0, the state a draft written
+   before there was a server has always had: it stays in the list, and goes
+   up when it is opened and kept or sent (draftsPull). Under a NEW name when
+   it came from a draft the server holds, so the server's older row coming
+   down cannot be taken for this one and win over it -- two drafts, and
+   nothing lost. What is sent is the composer as it stands, marks unbaked,
+   because a draft is not a post. */
+function pwSendFell(said){
+  var d=draftOfPW();
+  netDraftUp(d, function(row){
+    if(row && row.body) d=draftOfRow(row);
+    d.up=1;
+    draftIn(d, said);
+  }, function(){
+    if(PW.did) d.id=netUUID();
+    d.up=0;
+    draftIn(d, said);
+  });
 }
 /* A kept draft's line as the composer holds it. One kept before 2026-09-24
    has no `cut` and its `ln` is what the field held, private use characters
@@ -2256,11 +2290,11 @@ function pwSendPost(p){
     goTab('feed');
   }, function(d, s, m){
     netSpin(false);
-    /* Answered and refused for a reason that is not the wire -- the voice's
-       file is gone (`∅`, netWhy). One sentence, and no ［再接続］: pressing
-       again would not bring the file back. */
-    if(String(m||'').indexOf('∅')>=0){ toast(netWhy(d, s, m)); return; }
-    netPop(d, s, m, function(){ pwSendPost(p); });
+    /* What went wrong, in one sentence, and the post is a draft
+       (pwSendFell). The voice's file being gone (`∅`, netWhy) is said as
+       that, because it is not the wire and sending again will not bring it
+       back; everything else is 「送信できませんでした」. */
+    pwSendFell(String(m||'').indexOf('∅')>=0? netWhy(d, s, m) : t('post.send.no'));
   });
 }
 

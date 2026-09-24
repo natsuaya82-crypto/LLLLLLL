@@ -456,6 +456,7 @@ defLang('ru', (function(){
       "post.tag.ph"      : "Метка",
       "post.send"       : "Опубликовать",
       "post.sent"       : "Опубликовано",
+      "post.send.no"    : "Не удалось отправить",
       "post.none"       : "Нечего публиковать",
       "post.del"        : "Удалить",
       "post.del.q"      : "Удалить эту запись?",

@@ -501,6 +501,7 @@ defLang('fr', (function(){
       "post.tag.ph"      : "Motclé",
       "post.send"       : "Publier",
       "post.sent"       : "Publié",
+      "post.send.no"    : "Envoi impossible",
       "post.none"       : "Rien à publier",
       "post.del"        : "Supprimer",
       "post.del.q"      : "Supprimer ce message ?",

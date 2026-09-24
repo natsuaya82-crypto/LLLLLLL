@@ -461,6 +461,7 @@ defLang('zh', (function(){
       "post.tag.ph"      : "标签",
       "post.send"       : "发布",
       "post.sent"       : "已发布",
+      "post.send.no"    : "发送失败",
       "post.none"       : "没有可发布的内容",
       "post.del"        : "删除",
       "post.del.q"      : "删除这条帖子？",

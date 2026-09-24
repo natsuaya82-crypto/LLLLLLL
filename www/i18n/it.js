@@ -453,6 +453,7 @@ defLang('it', (function(){
       "post.tag.ph"      : "Etichetta",
       "post.send"       : "Pubblica",
       "post.sent"       : "Pubblicato",
+      "post.send.no"    : "Invio non riuscito",
       "post.none"       : "Niente da pubblicare",
       "post.del"        : "Elimina",
       "post.del.q"      : "Eliminare questo post?",

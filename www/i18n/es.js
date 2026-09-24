@@ -413,6 +413,7 @@ defLang('es', (function(){
       "post.tag.ph"      : "Etiqueta",
       "post.send"       : "Publicar",
       "post.sent"       : "Publicado",
+      "post.send.no"    : "No se pudo enviar",
       "post.none"       : "No hay nada que publicar",
       "post.del"        : "Eliminar",
       "post.del.q"      : "¿Eliminar esta entrada?",

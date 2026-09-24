@@ -369,6 +369,7 @@ defLang('ja', (function(){
       'post.tag.ph'     : 'タグ',
       'post.send'       : '投稿する',
       'post.sent'       : '投稿しました',
+      'post.send.no'    : '送信できませんでした',
       'post.none'       : '書いてください',
       'post.del'        : '削除',
       'post.del.q'      : 'この投稿を消しますか？',
