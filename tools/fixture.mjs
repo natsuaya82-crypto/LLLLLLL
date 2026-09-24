@@ -707,9 +707,13 @@ export function halfDone(){
     PROMO = admH !== undefined ? [] : [{ id:'ad-1', at: Date.now() - 86400000, lang:'other', lname:'Vethi',
                ln:'qel dross', who:'Kiyo', hd:'kiyo', mine:false, av:{ch:'K'},
                mn:'the river is wide', ui:'en', ad:true }];
+    /* vFeed() and not render(): render() draws what the APP is at that
+       moment, and a walk that pressed through the onboarding before this face
+       leaves it drawing the door -- press measured the sold place as a
+       sign-in screen, so `.ppr` was worn by nothing. The other timeline faces
+       ask the view; so does this one. */
     window.route = 'feed'; NAV = [{ r:'feed' }];
-    render();
-    const h = document.getElementById('app').innerHTML;
+    const h = vFeed();
     POSTS.splice(0, POSTS.length - n);
     PROMO = wasPromo;
     ADM.on = wasAdm.on; ADM.h = wasAdm.h;
@@ -2274,20 +2278,19 @@ export function halfDone(){
             marks:[]}));
         openPost(); const h = vForm(); PW = pwBlank(); return h; }],
     /* The composer of a language written from the right, in its own font.
-       Both of those are the paid plan's and both are off in seed(), so the
-       field the line goes in has only ever been rendered left-to-right in
-       the ordinary face. They are one seed because they are one element:
-       `dirClass(scriptDir()) + (myFontOn()? ' tfont' : '')` is the whole of
-       that field's class, and the two answers meet nowhere else.
-       .tfont is LinguaType, which carries only the private use area, so
-       nothing is drawn here that the Lingua keyboard did not type -- which
-       is the rule the second face exists to keep. */
+       The direction is the paid plan's and is off in seed(), so the field
+       the line goes in has only ever been rendered left-to-right. Its face
+       is the line's own on every plan and whatever SET.myfont says -- the
+       `.pline, .pwfield #pw-ln` rule in index.html, LinguaType, which
+       carries only what the Lingua keyboard types (www/post.js § the field
+       runs the way the language does) -- so the direction is the whole of
+       what this face adds. */
     ['a line written from the right, in a font of your own', () => {
         const wasPlan = plan(), wasDir = SCRIPT.dir;
         planGot('pro'); SCRIPT.dir = 'rtl';   /* dir is 'pro' since the rename */
-        SET.myfont = true; installScriptFont();
+        installScriptFont();
         openPost(); const h = vForm();
-        PW = pwBlank(); SET.myfont = false;
+        PW = pwBlank();
         SCRIPT.dir = wasDir; planGot(wasPlan); return h; }],
     /* AND THE ONE WRITTEN DOWNWARD, THE FIRST COLUMN AT THE LEFT. Four
        directions and this is the only one no screen wore. It used to be
