@@ -27,7 +27,8 @@
      3. Every read of a list is capped: no GET without `limit=` or an `=eq.`
         on a key, and no `limit=` above NET_PAGE.
      4. A view, and viewReset(), put nothing on the wire.
-     5. The bottom of the timeline asks for the next page.
+     5. The bottom of the timeline, a person's page and a thread asks for the
+        next page.
      6. Somebody else's language: opening the page reads only the kinds the
         page draws (WLD_PAGE_KINDS) and none of a chapter's; ↓ on a chapter
         reads that chapter's kinds (WLD_DL_KIND) and nothing else, draws the
@@ -300,6 +301,17 @@ function readKey(u){
   await quiet(pg);
   const more = (await logOf(pg)).filter(x => /feed_(hot|fo)/.test(x.u) && x.body && (x.body.off || x.body.before));
   say(more.length === 1, '5 the bottom of the timeline asks for the next page -- ' + more.length + ' ask(s)');
+  /* and the two other lists a page is made of: a person's posts carry on back
+     from the oldest one held, a thread down from the newest reply */
+  for (const [r, a, re] of [['profile', 'h3', /author=eq\..*created_at=lt\./], ['thread', 'p3', /reply_to=in\..*created_at=gt\./]]){
+    await pg.evaluate(([r, a]) => { go(r, a); }, [r, a]);
+    await quiet(pg);
+    await clear(pg);
+    await pg.evaluate(() => { window.scrollTo(0, document.body.scrollHeight); window.dispatchEvent(new Event('scroll')); });
+    await quiet(pg);
+    const next = (await logOf(pg)).filter(x => /post_seen/.test(x.u) && re.test(x.u));
+    say(next.length === 1, '5 the bottom of ' + r + ' asks for the next page -- ' + next.length + ' ask(s)');
+  }
 }
 
 /* ---- 6. somebody else's language ------------------------------------------ */

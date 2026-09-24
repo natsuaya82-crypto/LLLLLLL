@@ -762,6 +762,7 @@ function pullForget(){
      after it would be worked out from a trail nobody is standing on */
   NAV_TO=null;
   DAY=null; NOTES_HAVE=null; FO_HAVE=null; SNS_NEXT={}; SNS_END={};
+  MORE_AT={}; MORE_END={};
   folForget();
   netBlockedDrop();
   WLD_HAVE={}; WLDS_HAVE={};
@@ -1089,7 +1090,7 @@ function askThread(ok, bad, person, id){
     askReplies(postById(id), id, ok, bad);
   }, bad);
 }
-function askReplies(p, id, ok, bad){
+function askReplies(p, id, ok, bad, after){
   var ids=[(p && p.sid) || id], down=postDown(id, 0, [], [id]), i, q;
   for(i=0;i<down.length;i++){
     q=down[i].p;
@@ -1098,8 +1099,26 @@ function askReplies(p, id, ok, bad){
   netReplies(ids, function(ps){
     if(!ps){ ok(0); return; }
     postTake(ps);
+    moreGot(pullKey('thread', id), ps, 1);
     ok(1);
-  }, bad);
+  }, bad, after);
+}
+/* WHERE A PAGE OF A THREAD OR OF A PERSON'S POSTS STOPPED, and whether the
+   server has run out. One table for both, keyed as the question is
+   (pullKey): `MORE_AT` is the `at` of the last post the answer carried --
+   the newest reply, because a thread reads down; the oldest post, because a
+   person's page reads back -- and `MORE_END` is set only by a SHORT answer,
+   the same three states as the timeline's (§ snsMore). A fresh first page
+   starts the list again. */
+var MORE_AT={}, MORE_END={};
+function moreGot(q, ps, down, more){
+  var i, at=more? MORE_AT[q] : 0;
+  for(i=0;i<ps.length;i++){
+    if(!ps[i].at) continue;
+    if(!at || (down? ps[i].at>at : ps[i].at<at)) at=ps[i].at;
+  }
+  if(at) MORE_AT[q]=at;
+  MORE_END[q]=ps.length<NET_PAGE;
 }
 /* WHO SOMEBODY IS -- their `profile_seen` row, with the two counts -- and, on
    somebody else's page, whether you follow each other (REL, www/me.js). Your
@@ -1118,7 +1137,7 @@ function askWho(ok, bad, person, h){
    profile's list of posts is asked for. By the account's uuid, which is on
    the row `who` already brought (`uid`) -- so it waits for that answer rather
    than turning the handle into a uuid a second time. */
-function askPosts(ok, bad, person, h){
+function askPosts(ok, bad, person, h, more){
   h=String(h||'');
   pullWait('who', h, function(){
     var uid=(h===meHandle())? netUid() : ((WHO_HAVE[h] || {}).uid || '');
@@ -1127,8 +1146,9 @@ function askPosts(ok, bad, person, h){
     netPostsBy(uid, function(ps){
       if(!ps){ ok(0); return; }
       postTake(ps);
+      moreGot(pullKey('posts', h), ps, 0, more);
       ok(1);
-    }, bad);
+    }, bad, more? new Date(more).toISOString() : null);
   });
 }
 /* THE NOTICES. The copy on the handset is replaced by whatever came back --
@@ -1199,7 +1219,7 @@ document.addEventListener('touchcancel', pullEnd, false);
    session and the timeline would simply end. `snsMoreAsk` is the one in the
    air; the end (SNS_END, `snsHits.end`) is set only by an answer that came
    back SHORT, which is the server saying it has run out. */
-var MORE_ON={feed:1, explore:1, follows:1};
+var MORE_ON={feed:1, explore:1, follows:1, profile:1, thread:1};
 var MORE_NEAR=600;
 var snsMoreAsk=false;
 function snsMoreWhere(){
@@ -1239,6 +1259,7 @@ function snsMore(){
   if(snsMoreAsk || !r) return;
   /* A list of people carries on by handle, and it is www/me.js's. */
   if(r==='follows'){ folMore(); return; }
+  if(r==='profile' || r==='thread'){ snsMoreOf(r, String(here().a||'')); return; }
   if(r==='feed'){
     if(SNS_END[snsTab] || !SNS_NEXT[snsTab]) return;
     snsMoreAsk=true;
@@ -1259,6 +1280,19 @@ function snsMore(){
     snsHits.posts=snsHits.posts.concat(more);
     render();
   }, function(d, s, m){ snsMoreAsk=false; netPop(d, s, m); }, new Date(low).toISOString());
+}
+/* A person's page carries on back from the oldest post it was handed, and a
+   thread down from the newest reply -- MORE_AT, § askReplies. */
+function snsMoreOf(r, a){
+  var k=(r==='profile')? 'posts' : 'thread', q, at;
+  if(k==='posts') a=a || meHandle();
+  q=pullKey(k, a); at=MORE_AT[q];
+  if(MORE_END[q] || !at) return;
+  function done(){ snsMoreAsk=false; render(); }
+  function fell(d, s, m){ snsMoreAsk=false; netPop(d, s, m); }
+  snsMoreAsk=true;
+  if(k==='posts') askPosts(done, fell, null, a, at);
+  else askReplies(postById(a), a, done, fell, new Date(at).toISOString());
 }
 window.addEventListener('scroll', snsMoreCheck, false);
 

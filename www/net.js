@@ -4245,9 +4245,10 @@ function netPromos(n, ok, bad){
    under, and the caller leaves it out rather than sending a local uuid the
    server has never seen.
 
-   Oldest first, because a conversation reads down. `post_read` is
-   `using (true)`, so this needs no account. */
-function netReplies(ids, ok, bad){
+   Oldest first, because a conversation reads down, and keyset on
+   `created_at` for the next page (`after`, the newest reply already held)
+   for the same reason netPostsBy() is. */
+function netReplies(ids, ok, bad, after){
   var list=[], i, s;
   for(i=0;i<(ids||[]).length;i++){
     s=String(ids[i]||'');
@@ -4256,7 +4257,9 @@ function netReplies(ids, ok, bad){
   if(!list.length){ ok([]); return; }
   netGet(NET_POST_SEL+
          '&reply_to=in.('+list.join(',')+')'+
-         '&order=created_at.asc&limit='+NET_PAGE,
+         '&order=created_at.asc'+
+         (after? '&created_at=gt.'+encodeURIComponent(String(after)) : '')+
+         '&limit='+NET_PAGE,
     function(d){
       var out=[], j;
       for(j=0;j<(d||[]).length;j++) out.push(netRow(d[j]));
