@@ -32,6 +32,22 @@ un-re-read.
 
 ---
 
+## 2026-09-24 ── r68・r78・r79・r80・r81（integ `ee2d0e9c`、ゲート全部緑（本数は npm test の最後の行）、rls 498/0 ── **ビルドの手前で止めている**）
+
+- `claude/r79-acct` ── 端末に書く物は書く時にアカウントの鍵（`lingua.<名>.<uid>`、`acctPut()`）。持ち主の無い
+  古い写しは誰の物にもしない（読まない、消さない）。キーボードの面は保存を押すまで下書き（K1）。
+- `claude/r80-block` ── ブロックした相手の物はサーバーが `block_hides()` 一つで外す（`supabase/schema.sql`）。
+  **Supabase で schema.sql を流すまで電話では効かない。**
+- `claude/r78-sides` ── 読む側は投稿に載っている物だけで描き、何も書かない。Lingua キーボードの字は欄の外へ
+  出ない（`puaTyped()`・`actVal()`、`pua-check`）。キーの画面の「確定」を消した（OWNER 2026-09-24「いらないなら
+  保存だけでいいよ」）── 押した字がそのキーに入る。
+- `claude/r68-state` ── サーバーがまだ答えていない間を無料・空・0 と読まない（`state-check`）。読めない slice は
+  空で開き、保存は「保存できませんでした」。r80 の端末側（端末でのブロックの篩いを消した）。
+- `claude/r81-checks` ── r79 の後に赤くなった検査の前提を今の形に。
+- **Android 版**（OWNER 2026-09-24）── 「まずはそのアプデ終わらせて取り掛かろう」。この更新を出してから。
+  オーナーの端末: iPhone SE2・iPhone 17・Redmi 12・Xiaomi Pad 5。Play の登録が個人か事業かは訊いている。
+- CODE CONFIRMED のみ。DEVICE CONFIRMED・OWNER CONFIRMED は無い。
+
 ## 2026-09-23 夕 ── 活用形・広告・目安の線 田・字間の画面・通知「今日のお題」・↓ の状態（integ `cf2d9408`、166 で出す ── **オーナーの Apple 側 1・2 待ち**）
 
 - `claude/r52-forms` ── **活用形は語ではなく形**（OWNER 2026-09-23）。語の上に
@@ -986,8 +1002,9 @@ Today that is `profile`, `post`, `react`, `follow`, `block`, `report`,
 `language_seen`, `prompt`, `language`, `slice`, `plan` and the RPCs. `netPush()` sends a post — its photographs and its voice with it, through
 `netUpPics()` and `netUpVoice()` into the `post-media` bucket — `netFeed()`
 reads the two timelines, `netNotices()` reads the notices, `netDraftUp()` sends
-a draft, `netLangSync()` sends and merges the language, and ~~`postCatchUp()`~~
-sends whatever this phone has that the server has not. **`lingua.posts` is a
+a draft, `netSaveUp()` sends a slice the moment it is saved, and `netLangSync()`
+puts a whole language up at the door (`netTook()`) and when one is made
+(`langNew()`). ~~`postCatchUp()`~~ is gone. **`lingua.posts` is a
 copy and not a home**: the phone keeps what works with no signal.
 
 **An account is required to read the timeline or post to it**, decided
@@ -1044,7 +1061,7 @@ On 2026-09-03 that answers: `profile` 13, `rpc` 12, `language` 8, `follow` 4,
 `profile_seen` 1, `language_seen` 1 — and the twelve `rpc` are `account_ban`
 `account_delete` `account_unban` `admin_counts` `email_taken` `feed_fo`
 `feed_hot` `notices` `post_hide` `post_show` `staff_add` `staff_drop`.
-`netLangSync()` is fired by `boot.js` at launch, and `syMerge()`
+`netLangSync()` is the door's (`netTook()`) and a new language's (`langNew()`), not the launch's, and `syMerge()`
 (`www/sync.js` ch 26) is what puts two copies together by adding both.
 
 **Still unused: `quote` and `publication`. Those two, and nothing else.**
@@ -1079,8 +1096,8 @@ Order, and where it stands:
    the licence, the date and `published_at`; **`slice` holds every slice of
    it**, one row per slice of `SLICES`, carrying exactly the string
    `localStorage` holds. `netLangRow()` makes the row, `netSlicePut()` upserts
-   a slice, `netSlices()` reads them back, and `netLangSync()` — fired from
-   `boot.js` at launch — puts the two copies together through `syMerge()`,
+   a slice, `netSlices()` reads them back, and `netLangSync()` — the door's (`netTook()`) and a new
+   language's (`langNew()`) — puts the two copies together through `syMerge()`,
    which adds both sides and lets neither win by being newer.
 4. **The plan — on the account, done.** OWNER 2026-09-01: 「課金とアカウントと
    キーボードはアカウントに結びつく」. It is **its own table and not a column on
