@@ -27,7 +27,7 @@ r73 は全部洗いざらいの報告で、［測った］と［読んだ］が�
 あなたの領域: 持ち主 ── 端末に書く物は書く時に uid を持ち、持ち主の無い物は誰の物にもならない（r73 §2-7、r60 の残り）
 あなたのブランチ: claude/r79-acct
 あなたが持つファイル:
-  www/core.js www/net.js www/post.js www/sns.js www/me.js www/settings.js www/phases.js（migrateGramLang の呼び出しだけ） www/mod.js（adminStaffRow だけ）
+  www/core.js www/net.js www/post.js www/sns.js www/me.js www/settings.js www/phases.js（migrateGramLang の呼び出しだけ） www/mod.js（adminStaffRow だけ） www/shell.js（KEEP の仕組み ── keepOn・keepSnap・keepAsked・keepBack） www/keyboard.js（K1 に要る所だけ） tools/keep-check.mjs
   www/act-map.js www/i18n/*.js tools/fixture.mjs tools/acct-check.mjs tools/store-check.mjs tools/quiet-check.mjs
   tools/post-check.mjs tools/draft-check.mjs tools/word-check.mjs tools/gramlang-check.mjs、検査（要れば一本、package.json・gate.mjs）
   CLAUDE.md（規則 22・§ Online の、この変更で偽になる文） docs/DATA_MODEL.md docs/STATE.md の同じく偽になる文
@@ -174,6 +174,13 @@ r60 は取り込み済み。r60 が「まだ」「持ち物でない」「次の
     `netSlicePut()` が `no` を送らない（サーバーが `slice_no()` で配る）、`netLangsWalk` の `netLangNamePut` の段落を消す
     （名前はサーバーが一回だけ写す）、上に立つ人をサーバーに訊く（`profile_admin` を select、`ADMIN_HANDLE` を消す、mod.js の
     `adminStaffRow()` は `r.admin` を読むだけ ── mod.js もあなたの持ち物に足す）、S4 は 8 と同じ。
+
+12. **K1 ── 保存ボタンのある画面の「いいえ」で何も戻らない**（r74 が測って止めた、`docs/scope/r74-kb.md`「止めたこと 1」を読む）。
+    覆う一文: 「保存ボタンのある画面で書いている物は、その画面の下書き。保存を押すまで slice に書かない。『いいえ』は下書きを
+    捨てるだけ」。下書きを slice に書いてから `netSaveUp()` を止める形（r74 が書いた (a)+(b)）は二つの仕組みになる ── 取らない。
+    画面が写しを編集し、保存の一か所だけが slice に書けば、`netSaveUp()` に止める一行は要らず、他の画面の保存が下書きを
+    連れて行くことも起きない。9 画面を page から集めて、書いて「いいえ」→ 開いた時の形・上がった要求 0 を数える検査。
+    キーボードの結合の「下」の座標と短い行を 10 に埋めるかはオーナー（直さない）。
 
 **オーナーへ（直さない）**: 後勝ちの粒度（r60 が「一度に送る単位ごと」に置いた ── 決定ログの Implementation status のまま）、
 未送信の投稿を送り直すボタン、下書きの声の置き場（R3）、`netDevicePut` を覆う一文の例外に入れるか。
