@@ -28,6 +28,7 @@
 import { seed } from './fixture.mjs';
 import { fileURLToPath } from 'url';
 import path from 'path';
+import fs from 'fs';
 import { chromium, LAUNCH } from './browser.mjs';
 
 const dir = path.dirname(fileURLToPath(import.meta.url));
@@ -1107,6 +1108,22 @@ say(unnamed.shares === 0 && unnamed.said === filed.no,
     'and a phone that answers but names no file opens NO share sheet and says ' +
     'so — there is nothing to offer: ' + unnamed.shares + ' offered, "' +
     unnamed.said + '"');
+/* AND WHAT THE PHONE WRITES IS NOT KEPT ON IT. 「スマホの中に保存されているもの
+   なんてないけど。それがあるのがおかしいけど。」 OWNER 2026-09-24. A sheet is
+   handed to the share sheet and the person puts it where they want it; the
+   file this app writes is only the hand-over, so it goes where iOS reclaims
+   it -- the temporary folder -- and not into Documents, which is kept, backed
+   up and shown in Files as this app's. Read off LinguaShare.swift, the one
+   place the folder is named: there is no native side on a runner to ask. */
+{
+  const sw = fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)),
+                                       '..', 'ios', 'App', 'App', 'LinguaShare.swift'), 'utf8');
+  const fn = (/private func sheets\(\)[\s\S]*?\n  \}/.exec(sw) || [''])[0];
+  say(/temporaryDirectory/.test(fn) && !/documentDirectory/.test(fn),
+      'and the file handed over is written where iOS reclaims it, not kept in Documents ' +
+      '(LinguaShare.swift sheets(): ' + (/documentDirectory/.test(fn) ? 'Documents' :
+      /temporaryDirectory/.test(fn) ? 'the temporary folder' : 'not found') + ')');
+}
 say(!torn.got && !!torn.why && torn.grew === 0,
     'and a real sheet whose strip is damaged is refused too, not read with the ' +
     'names guessed: ' + torn.grew + ' letters added');

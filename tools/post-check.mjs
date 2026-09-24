@@ -3041,6 +3041,18 @@ const R = await pg.evaluate(async () => {
                      'post that never had a voice -- so the post goes up sounding ' +
                      'like one that was never recorded');
       }
+      /* AND ONCE IT IS UP, THE PHONE'S FILE IS NOT KEPT. 「スマホの中に保存
+         されているものなんてないけど。それがあるのがおかしいけど。」 OWNER
+         2026-09-24. The server holds the recording (`vu`); the file in
+         Documents/Voices goes, and the post plays from the server. */
+      const p16 = POSTS[0];
+      if (files['v-fail-1.m4a'] !== undefined || (p16 && p16.vo && p16.vo.f))
+        fails.push('16b: the voice went up and the phone still keeps its file (' +
+                   JSON.stringify(p16 && p16.vo) + ', on disk: ' +
+                   (files['v-fail-1.m4a'] !== undefined) + ')');
+      else if (!(p16 && p16.vu) || postVoAt(p16) !== p16.vu || !postVoMs(p16))
+        fails.push('16b: with the file gone the post does not play from the server: ' +
+                   JSON.stringify({ vu: p16 && p16.vu, at: postVoAt(p16), ms: postVoMs(p16) }));
       delete files['v-fail-1.m4a'];
 
       /* ---- the voice's length travels, and a voice that is gone is said -

@@ -1407,7 +1407,16 @@ function postSend(p, ok, bad){
      next attempt sends one file instead of four. Kept here rather than after
      every upload: one write at the end of a send, against one per file, on a
      key that carries the photographs themselves. */
-  netPush(p, function(sid){ delete POST_SENDING[id]; savePosts();
+  netPush(p, function(sid){ delete POST_SENDING[id];
+             /* AND THE RECORDING IS THE SERVER'S NOW, so the file this phone
+                wrote goes and the post plays `vu` (postVoAt). 「スマホの中に
+                保存されているものなんてないけど。それがあるのがおかしいけど。」
+                OWNER 2026-09-24. Only when `vu` is on the post: a voice that
+                did not go up is a post the server has without it, and its
+                file is what sending again needs. The DELETE REVIEW is in
+                docs/CHANGELOG.md. */
+             if(p.vu && p.vo && p.vo.f){ voDropFile(p.vo.f); delete p.vo.f; }
+             savePosts();
              /* AND THE POST IT ANSWERS, WHICH HAS ONE MORE REPLY NOW. The
                 server counted it the moment the row landed; this is where the
                 phone finds out, and it is the only moment it can -- a reply

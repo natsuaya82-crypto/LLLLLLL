@@ -1118,13 +1118,14 @@ function shPics(names){
    four times and the person still could not get at the file. **Writing it
    into Documents and saying nothing is not a download.**
 
-   `LinguaShare.sheet` writes it into `Documents/Sheets/`, where iOS puts it in
-   the device backup and the Files app can show it, and it NEVER OVERWRITES --
-   the second sheet of a name is `<name> 2.pdf`. That stays exactly as it was:
-   taking it away would be docs/DATA_SAFETY.md, because a sheet already sitting
-   there may have been drawn on. `LinguaShare.shareFile` then hands that file
+   `LinguaShare.sheet` writes it into the TEMPORARY folder, which iOS empties
+   on its own -- the file is only the hand-over, and nothing of this app's is
+   kept on the phone 「スマホの中に保存されているものなんてない」 OWNER
+   2026-09-24 -- and it never overwrites while it is there: the second sheet
+   of a name is `<name> 2.pdf`. `LinguaShare.shareFile` then hands that file
    to iOS's own share sheet, which is where "Save to Files" lives and where
-   choosing the destination stops being this app's business.
+   choosing the destination stops being this app's business. Sheets an
+   earlier build wrote into `Documents/Sheets/` stay where they are.
 
    **Nothing says it was saved, and that is the point.** Once the share sheet
    is up, what somebody picks -- save, send, cancel -- never comes back here,
@@ -1132,14 +1133,6 @@ function shPics(names){
    とかやめてくんない？」 Only the ways it can fail BEFORE that speak: no
    bridge, a phone that files nothing, a refusal. Cancelling says nothing,
    because changing your mind is not a failure.
-
-   **It never overwrites and never rotates.** Each sheet is a separate piece
-   of paper, and the one already sitting there may have been opened in Files
-   and written on -- replacing it would be the app deleting what somebody
-   drew, to make room for a blank. So a second sheet of the same name is filed
-   beside the first (`<name> 2.pdf`, below) and nothing here moves anything:
-   CLAUDE.md's Data rule, where automatic deletion, pruning and cleanup are
-   forbidden unless a written spec asks for them, and none does.
 
    **What it says is the part that had to be got right.** The one way this
    chapter can hurt somebody is to say a sheet was written when none was: they

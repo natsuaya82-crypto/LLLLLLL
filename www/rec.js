@@ -21,9 +21,11 @@
    recording ends (voTook(), LinguaShare.swift `keepVoice`), and the post
    being written carries the file's NAME. When the post is sent,
    netUpVoice() (www/net.js) puts the bytes in the `post-media` bucket and
-   writes the path on the post as `vu` -- that is the copy everybody else
-   plays, through netMedia(), because the bucket answers nobody who is not
-   signed in. voRemote() tells the two kinds of name apart.
+   writes the path on the post as `vu` -- the copy everybody plays, through
+   netMedia(), because the bucket answers nobody who is not signed in. Once
+   the post has landed the file on this phone goes and the writer plays `vu`
+   too (postSend() in www/post.js, 「スマホの中に保存されているものなんてない」
+   OWNER 2026-09-24). voRemote() tells the two kinds of name apart.
 
    Two halves, and the line between them is the same line post.js has:
 
