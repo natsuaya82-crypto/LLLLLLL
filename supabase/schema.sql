@@ -375,9 +375,10 @@ language sql stable security definer set search_path = public as $$
                   where t.uid = auth.uid() and t.language = lang) $$;
 
 -- ---- what a language is made of ---------------------------------------
--- Eleven slices -- words, lines, lang, script, letters, notes, phases, talk,
--- snd, kb, wld -- and they are SLICES here for the same reason they are
--- slices in www/core.js: one row per slice and not one row per language.
+-- One row per slice, and `SLICES` in www/core.js is the list of them -- read
+-- it there rather than a count here, which said eleven while there were
+-- twelve. They are SLICES here for the same reason they are slices in
+-- www/core.js: one row per slice and not one row per language.
 --
 -- The reason is what happens with two phones. One number for a whole language
 -- means adding a word on one phone and drawing a letter on the other is a
@@ -386,15 +387,18 @@ language sql stable security definer set search_path = public as $$
 --
 -- Inside one slice the phone merges rather than overwriting -- a word added
 -- here and a word added there are both added -- so what is stored is the
--- result and not a claim about who was first. `no` goes up by one on every
--- write and is what says a phone is holding something older than the server:
--- the phone reads, merges what it has into what came back, and writes with
--- the number it read.
+-- result and not a claim about who was first. What says the phone merged
+-- against what is here is `ed.was` (keep_newer() below), not `no`.
 --
--- `body` is text and not jsonb on purpose: it is exactly the string
--- localStorage holds, which is what bkPack() already writes out to a file,
--- so there is one shape for a slice and not two that could disagree. The
--- server never looks inside it.
+-- `no` IS HOW MANY TIMES THE SERVER HAS TAKEN THIS SLICE, and the server is
+-- the one that counts. 「番号はサーバーが配ります」 (docs/FEATURE_RULES.md,
+-- 2026-09-04): slice_no() below sets it on every write, 1 for the first and
+-- one more than the row held after that, and whatever number the phone sends
+-- is not read. www/net.js still sends `no + 1`; it is thrown away here.
+--
+-- `body` is text and not jsonb on purpose: it is exactly the string the
+-- phone holds, so there is one shape for a slice and not two that could
+-- disagree. The server never looks inside it.
 create table if not exists slice (
   language   uuid not null references language(id) on delete cascade,
   kind       text not null,
@@ -405,6 +409,16 @@ create table if not exists slice (
 );
 create index if not exists slice_language_idx on slice(language);
 alter table slice add column if not exists ed jsonb not null default '{}'::jsonb;
+
+create or replace function slice_no() returns trigger
+language plpgsql as $$
+begin
+  new.no := case when tg_op = 'UPDATE' then old.no + 1 else 1 end;
+  return new;
+end $$;
+drop trigger if exists slice_no on slice;
+create trigger slice_no before insert or update on slice
+  for each row execute function slice_no();
 
 -- ---- slice_hist ---------------------------------------------------------
 -- The three versions before now, so that somebody who writes in and says
@@ -2766,11 +2780,11 @@ begin
      and h.kind = admin_restore.kind
      and h.at = admin_restore.at;
   if b is null then raise exception 'no such version'; end if;
-  update slice s set body = b, no = s.no + 1, at = now()
+  update slice s set body = b, at = now()
    where s.language = admin_restore.language and s.kind = admin_restore.kind;
   if not found then
-    insert into slice(language, kind, body, no, at)
-         values (admin_restore.language, admin_restore.kind, b, 1, now());
+    insert into slice(language, kind, body, at)
+         values (admin_restore.language, admin_restore.kind, b, now());
   end if;
 end $$;
 
