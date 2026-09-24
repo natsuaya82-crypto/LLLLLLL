@@ -56,16 +56,11 @@ var SB_KEY='sb_publishable_3FTW3G5jfBVPoc8MiXgdNw_OZk2L1-6';
    the app is named by its bundle id, which Xcode already knows. */
 var GOOGLE_IOS_ID='535150348007-i8roam4vdjjlfql5ktb4mld3v9chb6gr.apps.googleusercontent.com';
 
-/* The session belongs to this phone and to no language, so it is filed beside
-   lingua.set and lingua.me rather than under langKey(). */
-var LS_SESS='lingua.sess';
-var SESS=null;
+/* The session itself -- `LS_SESS`, `SESS`, sessRead() and netUid() -- is
+   read at the top of www/core.js, because which account this phone is has to
+   be known before anything of that account's is read. */
 function netRead(){
-  SESS=null;
-  try{
-    var s=JSON.parse(localStorage.getItem(LS_SESS)||'null');
-    if(s && s.rt) SESS=s;
-  }catch(e){}
+  sessRead();
   /* AND WHOSE SETTINGS ARE LIVE HERE. planFor() in www/core.js has the whole
      of why; what this line is, is the FIRST of the two moments a uid is
      known, and it is the earlier one.
@@ -97,9 +92,6 @@ function netSave(){
   }catch(e){}
 }
 function netSignedIn(){ return !!(SESS && SESS.rt); }
-/* WHO THIS IS -- the account's uuid, or '' with nobody signed in. The one
-   place anything outside the session's own functions learns it (r73 § 2-5). */
-function netUid(){ return (SESS && SESS.uid) || ''; }
 /* AND THE TOKEN IT IS SENT WITH, or '' with nobody signed in -- which is what
    the window (netSend1) refuses. */
 function netTok(){ return (SESS && SESS.at) || ''; }

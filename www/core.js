@@ -30,6 +30,21 @@
       of me". They still do.
    ========================================================================= */
 var LS_LANGS='lingua.langs', LS_CUR='lingua.cur', LS_S='lingua.set';
+/* The session belongs to this phone and to no language, so it is filed beside
+   lingua.set and lingua.me rather than under langKey(). */
+var LS_SESS='lingua.sess';
+var SESS=null;
+function sessRead(){
+  SESS=null;
+  try{
+    var s=JSON.parse(localStorage.getItem(LS_SESS)||'null');
+    if(s && s.rt) SESS=s;
+  }catch(e){}
+}
+sessRead();
+/* WHO THIS IS -- the account's uuid, or '' with nobody signed in. The one
+   place anything outside the session's own functions learns it (r73 § 2-5). */
+function netUid(){ return (SESS && SESS.uid) || ''; }
 /* Everything this app has ever written, and it is NOT a list.
 
    「アカウント削除で残るものねえって言ってんだろ何回言わせんだよ全部消えんだよ。」
