@@ -1002,8 +1002,13 @@ top of the private use area, `inkFaces()` adds a face for those characters to th
 `LinguaType` family (one `unicode-range` each, built by `inkFaceCSS()` — the same
 builder as the keyboard's own face), and `.pline, .pwfield #pw-ln` in `index.html`
 is the one rule for how a line is set, `pre-wrap` included. `postRuns()` in
-`post.js` is the one place that says what a space and a newline are; the line and
-the card both read it. The field, a post, a
+`post.js` is the one place that says what a space and a newline are; the line, the
+card and a line on a photograph read it. **A line draws only what its post carries**:
+a private use character arriving as TEXT on a post would be drawn with whatever this
+phone filed there — its own keyboard's letter or another post's shape — so
+`postRuns()` hands it on as U+FFFD, and **the reading side writes nothing**.
+`line-check` 10 counts every `.pline` the timeline draws and 11 counts every `save*`
+while the timeline and two cards are drawn. The field, a post, a
 quoted post, the spacing preview and the calendar are all that text. The card is a
 canvas and keeps `inkAdv()`; it takes a space as the ordinary face's (`inkSpace()`)
 and a newline as a break. `tools/line-check.mjs` photographs the field and the
@@ -1123,8 +1128,8 @@ instead — the same reason `card-check` wraps `cardInk()` rather than asking
 `cardSrc()`, and the same shape as the fault rule 12 was written after.
 
 **And the order is worked out in ONE place.** `ltPuaOrder()` in `glyph.js`,
-beside `ltPua()`, and everything that needs the order asks it — `puaRoman()`
-and `installTypeFont()` in `glyph.js`, `postCutTyped()` in `post.js`,
+beside `ltPua()`, and everything that needs the order asks it — `puaTyped()`,
+`puaField()` and `installTypeFont()` in `glyph.js`,
 `shareFace()` in `share.js`, the spacing preview in `wsys.js`; grep for the
 name rather than counting here. Its
 name is in `sides-check`'s forbidden list beside `LETTERS` itself — it reads
@@ -1244,6 +1249,17 @@ that the composer is empty behind it — otherwise the next post starts with the
 last one's letters on it.
 
 All four were made to fail before any of them was believed.
+
+**And what the Lingua keyboard typed goes no further than the field.** A private
+use code point means a letter only in this alphabet's order at this moment, so one
+stored anywhere is somebody else's letter once a letter is drawn. `puaTyped()` in
+`glyph.js` reads a field once, into the roman and the line as it was typed (letter
+ids and text); `www/act.js` hands every receiver that pair, and `actVal()` is the
+same reading for a field read on a press. The composer holds the typed line
+(`PW.cut`), a draft keeps it by id, a post's ink is cut from it when it is sent
+(`postInkOf()`), and an edit keeps the ink the post was written with unless the line
+was typed again. `pua-check` types into every field on every screen and counts what
+each receiver is handed.
 
 ### 14. What happens after the second press
 
