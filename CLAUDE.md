@@ -868,8 +868,8 @@ through and `netSaveUp()` (`www/net.js`) sends the slices that moved, one
 short read and one short write, after the typing stops. 「保存としたらオンライン
 おしまい」 OWNER 2026-09-04; before that a language went up on a LAUNCH and at
 the door and nowhere else, so an hour's writing sat on one phone until the app
-was opened again. `netLangSync()` is still the launch, and it is the same road:
-both call `netSlice1()`, which is the only thing that puts a slice up. `SLICES` in `core.js` is the list of them —
+was opened again. `netLangSync()` is the door's (`netTook()`) and a new
+language's (`langNew()`), and it is the same road: both call `netSlice1()`, which is the only thing that puts a slice up. `SLICES` in `core.js` is the list of them —
 **count them off that and not off a line here**, which has said eleven and has
 said twelve. `lingua.langs` says which languages are here and whose;
 `lingua.set` is the person's settings and belongs to no language.
