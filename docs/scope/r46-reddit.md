@@ -297,3 +297,17 @@ r/casualconlang のコメント（語根に接辞を何段も重ねて活用さ�
   `pre-wrap` が揃っている。
 
 まだ残っている物と、新しく見つけたルール違反は `docs/scope/r46-audit.md`。
+
+## リーダーへ — 書く方向は Plus（OWNER DECISION 2026-09-24）
+
+オーナー：書く方向を選ぶのは Plus。すぐ直るなら直してほしい。r/conlangs の投稿は Plus として書いた。
+
+今（`origin/integ-0905`）：
+
+- `www/core.js` 2560行 `CAN` の `dir: 'pro'` ── 動きは Pro。
+- `docs/PAID_FEATURES.md` 241行・441行も pro と書いている。
+- `www/wsys.js` 298行のコメントだけ「Setting one is `dir`, at Plus」。
+
+直す所：`CAN.dir` を `'plus'` に。PAID_FEATURES の二か所。プランのカード（`PLANS` の lines、
+i18n）に方向の行があれば、Pro から Plus へ移す。`plan-check` などで dir を pro と決めている
+所があれば合わせる。
