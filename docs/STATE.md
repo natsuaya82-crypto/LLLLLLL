@@ -767,8 +767,8 @@ Google と同じアドレスを打って二つ目のアカウントを立てて�
 - **~~`lsWipeNS()`~~ と ~~`netMember()`~~ が消えました。**前者は `lingua.` で始まる
   キーを全部持っていく関数で、**別アカウントの言語まで消していました。**
   後者は §3 に書いてある通りです。
-- **`admin` は `handle = 'lingua'` で決まります。**`ADMIN_HANDLE` が
-  `www/net.js` に、`is_admin()` が `supabase/schema.sql` に。
+- **`admin` は `handle = 'lingua'` で決まります。**handle を書いてある所は
+  `supabase/schema.sql` の `profile_admin()` 一つで、`is_admin()` もアプリの読み（`select=handle,admin:profile_admin`）もそれを訊きます。
   `profile.admin` の列は落としていませんが、誰が上かを決めるのは handle です。
 - **おすすめの刻みは 4 時間・太平洋時間**（`supabase/schema.sql`、
   `now() at time zone 'America/Los_Angeles'` を4時間で切り下げる）。

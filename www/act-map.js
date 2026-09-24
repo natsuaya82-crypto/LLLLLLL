@@ -147,7 +147,6 @@ act('pushSettings', pushSettings);
 act('kbSetKind', kbSetKind);
 act('kbSlot', kbSlot);
 act('kbLtTap', kbLtTap);
-act('kbLtPut', kbLtPut);
 act('langOpen', langOpen);
 act('langDrop', langDrop);
 act('langNew', langNew);

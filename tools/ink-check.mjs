@@ -25,9 +25,7 @@
       a thing that is not a letter and says what it is (a cut unit, the
       editor's working strokes, a font def, a glyph read off a sheet). A
       receiver nobody wrote down fails, the way store-check fails a key nobody
-      wrote down, so a new `l.st` fails the day it is written. OWED is what is
-      left in files this branch does not own; it fails when a line there no
-      longer matches, so the list cannot rot into permission.
+      wrote down, so a new `l.st` fails the day it is written.
 
       AND THE STATE: the three losses above, walked on the real app.
 
@@ -94,19 +92,8 @@ const CARRIERS = {
 };
 /* The ink block: inkGeo(), inkRings(), inkSet() in glyph.js. */
 const INK_FNS = ['inkGeo', 'inkRings', 'inkSet'];
-/* Letters read or written directly in files this branch does not own
-   (r76-lines brief: r60-up holds keyboard.js and me.js; sheet.js is nobody's
-   here). Each has to still be there -- a line that no longer matches is
-   deleted from this list, which is progress and needs nobody. */
-const OWED = [
-  ['keyboard.js', 'l', 'kbLtFace-ish: a key asks l.st for whether a letter has a face -- inkGeo(l)'],
-  ['me.js', 'l', 'meAvOf: the face made of a letter asks l.st -- inkGeo(l)'],
-  ['sheet.js', 'd', 'shTakeIn writes d.sh straight onto a letter -- inkSet(d, g.sh)'],
-];
-
 const RE = /([A-Za-z_$][\w$]*(?:\[[^\]\n]*\])?(?:\.[A-Za-z_$][\w$]*(?:\[[^\]\n]*\])?)*)\.(st|sh)\b(?!\s*\()/g;
 let sites = 0, inBlock = 0, carried = 0;
-const owedSeen = new Set();
 for (const f of fs.readdirSync(ROOT).filter((x) => x.endsWith('.js')).sort()) {
   const src = strip(fs.readFileSync(path.join(ROOT, f), 'utf8'));
   /* where each ink-block function starts and ends, by brace depth */
@@ -131,8 +118,6 @@ for (const f of fs.readdirSync(ROOT).filter((x) => x.endsWith('.js')).sort()) {
     const recv = m[1].replace(/\[[^\]]*\]/g, '[]');
     if (spans.some(([a, b]) => m.index > a && m.index < b)) { inBlock++; continue; }
     if (CARRIERS[f] && CARRIERS[f][recv]) { carried++; continue; }
-    const owe = OWED.find(([ff, r]) => ff === f && r === recv);
-    if (owe) { owedSeen.add(f + ':' + recv); continue; }
     fails.push(`A  www/${f}:${line}  ${recv}.${m[2]} -- a letter's shape is inkGeo()'s to say and inkSet()'s to write`);
   }
   /* and a call's result, which no carrier is: `ltById(x).st` is a letter */
@@ -142,8 +127,6 @@ for (const f of fs.readdirSync(ROOT).filter((x) => x.endsWith('.js')).sort()) {
     fails.push(`A  www/${f}:${src.slice(0, m.index).split('\n').length}  (...).${m[1]} -- a letter's shape is inkGeo()'s to say and inkSet()'s to write`);
   }
 }
-for (const [f, r, why] of OWED)
-  if (!owedSeen.has(f + ':' + r)) fails.push(`A  OWED names www/${f} ${r}.st/.sh and nothing there matches -- delete the line (${why})`);
 
 /* ---- the page ---------------------------------------------------------- */
 const mime = (f) => f.endsWith('.html') ? 'text/html; charset=utf-8'
@@ -257,7 +240,7 @@ say(!errs.length, 'page errors: ' + errs.join(' | '));
 await br.close();
 srv.close();
 
-console.log(`ink-check: ${sites} .st/.sh in www/ -- ${inBlock} in the ink block, ${carried} on things that are not letters, ${owedSeen.size}/${OWED.length} owed in files this branch does not own`);
+console.log(`ink-check: ${sites} .st/.sh in www/ -- ${inBlock} in the ink block, ${carried} on things that are not letters`);
 console.log(`ink-check: calendar with the drawn letters off: ${offN} shapes`);
 if (fails.length) {
   for (const f of fails) console.log('FAIL ' + f);

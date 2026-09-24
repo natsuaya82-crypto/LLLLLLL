@@ -253,10 +253,8 @@ function snsFilKey(k){
    empty list is the app saying "nobody has written that", which is
    `CLAUDE.md` § Data: 「empty」 and 「broken」 are different states.
 
-   It is where you are STANDING and not something the language has, so it
-   belongs in viewReset() beside snsTab, snsQ and snsHits. www/shell.js is
-   another session's file today and the line is not in it yet -- the leader
-   has it. Until then, switching languages leaves a word filter on. */
+   It is where you are STANDING and not something the language has, so it is
+   in viewReset() beside snsTab, snsQ and snsHits. */
 /* THE ANSWER IS THE SERVER'S. Not postAll() narrowed by a word: this file
    already says why one screen down -- 「手元で並べ替えた50件は上位50件では
    ない」 -- and a phone filtering the fifty rows it happens to hold is the

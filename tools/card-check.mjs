@@ -133,10 +133,10 @@ const R = await pg.evaluate(async () => {
   /* ---- imported letters (sh only, no st) are drawn too --------------- */
   /* A letter brought in from a PDF import carries `sh` -- a ring -- and no
      `st` at all (www/sheet.js's ltNew via 'write'). postCut() and
-     postCutTyped() used to read `l.st` by hand, so a line spelled with one
+     postInkOf() used to read `l.st` by hand, so a line spelled with one
      of these letters carried no ink: postInkOK() saw nothing on it and the
      post fell back to plain text. inkGeo(l) is the one place that already
-     knows a letter's shape is either st or sh; postCut/postCutTyped have to
+     knows a letter's shape is either st or sh; postCut/postInkOf have to
      ask it instead. */
   LETTERS.push({ id: 'lsh', sh: [[[100, 100], [700, 100], [700, 700], [100, 700]]],
                  ch: '', nm: 'zz', snd: [] });
@@ -145,10 +145,10 @@ const R = await pg.evaluate(async () => {
     fails.push('a letter imported with only sh (no st) is not drawn into a ' +
                "post's ink -- postCut() must ask inkGeo(l), not l.st");
   const shIdx = ltPuaOrder().map((l) => l.id).indexOf('lsh');
-  const typedInk = shIdx >= 0 ? postInkTyped(ltPua(shIdx)) : null;
+  const typedInk = shIdx >= 0 ? postInkOf(puaTyped(ltPua(shIdx)).cut) : null;
   if (!typedInk || !typedInk.g.length)
     fails.push('a letter imported with only sh (no st) is not drawn when ' +
-               'typed through the keyboard -- postCutTyped() must ask ' +
+               'typed through the keyboard -- postInkOf() must ask ' +
                'inkGeo(l), not l.st');
   LETTERS.pop();
 
@@ -250,7 +250,7 @@ const R = await pg.evaluate(async () => {
      0 にすると、端まで描いた線が隣とくっついて一本に繋がる」 OWNER 2026-09-23.
 
      The gap is the language's, and a post carries the one it was written
-     with (`ink.sp`, postInkTyped). So the same test a third time: change the
+     with (`ink.sp`, postInkOf). So the same test a third time: change the
      OPEN language's gap under posts that already exist, and nothing they
      draw on the card may move. Widths and places are compared, not strings:
      a gap is a width. The timeline's own line is tools/line-check.mjs's --
@@ -261,7 +261,7 @@ const R = await pg.evaluate(async () => {
   SCRIPT.sp = 1;
   const typed = ltPuaOrder().map((l, i) => ltHasShape(l) ? ltPua(i) : '').join('').slice(0, 3);
   const pNew = { id: 'pgap', at: 4, lang: langId, lname: langName, ln: 'x', who: 'Aya',
-                 hd: 'aya', mine: true, mn: '', ui: 'en', ink: postInkTyped(typed) };
+                 hd: 'aya', mine: true, mn: '', ui: 'en', ink: postInkOf(puaTyped(typed).cut) };
   POSTS.push(pNew);
   if (!pNew.ink || pNew.ink.sp !== 1)
     fails.push('a post written with the language at one step carries sp=' +
@@ -291,6 +291,31 @@ const R = await pg.evaluate(async () => {
                  loose.length + ' of ' + it.length + ' letters are wider than their ink');
   }
   SCRIPT.sp = wasSp;
+
+  /* ---- 8. a letter nobody drew is its name, not a borrowed character ---
+     「描いていない字はローマ字」 OWNER 2026-09-23. The screens say so
+     (sfontHTML, ltLineChar); the card answered with `l.ch` first, so a letter
+     somebody had borrowed `α` for and never drawn came out `α` on the picture
+     and `a` everywhere else (r73 §2-9, measured). Asked of what cardPaint()
+     actually draws, for a word of this dictionary with one of its letters
+     made undrawn and borrowed. */
+  const bw = findWord('ke'), keSp = bw ? spOf(bw) : [];
+  const keL = keSp.length ? ltById(keSp[0].l) : null;
+  if (!keL) fails.push('"ke" has no first letter to take the shape off, so section 8 holds nothing');
+  else {
+    const was = JSON.stringify(keL);
+    delete keL.st; delete keL.sh; keL.ch = 'α';
+    const it = itemsFor('w', 'ke').items;
+    const borrowed = it.filter((u) => u.tx && u.tx.indexOf('α') >= 0).length;
+    const named = it.filter((u) => u.tx && u.tx.indexOf(String(ltName(keL))) >= 0).length;
+    if (borrowed || !named)
+      fails.push('a letter nobody drew is drawn on the card as the character it borrowed (' +
+                 borrowed + ' units carry α, ' + named + ' carry its name "' + ltName(keL) +
+                 '") -- undrawn is roman (OWNER 2026-09-23)');
+    const back = JSON.parse(was);
+    Object.keys(keL).forEach((k) => { delete keL[k]; });
+    Object.keys(back).forEach((k) => { keL[k] = back[k]; });
+  }
 
   /* ---- every shape ink can arrive in -------------------------------- */
   /* postInkOK() decides, once, for the timeline and the card both. What is

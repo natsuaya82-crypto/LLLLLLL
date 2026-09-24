@@ -779,7 +779,7 @@ writer's language:
 ```
 
 `sp` is the language's `SCRIPT.sp` at the moment the line was written
-(`postInkTyped()`, which the composer and an edit both use), for the reason
+(`postInkOf()` makes it when the post is sent; an edit keeps the ink it was written with while the line is the same), for the reason
 `dir` is: the reader has neither the writer's language nor its settings, and
 the writer's own old posts must not move when they change it. **Absent means
 1** — every post written before 2026-09-23, and every post whose ink was cut by

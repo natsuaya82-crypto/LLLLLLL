@@ -519,8 +519,8 @@ var PUA0=0xE000;
 /* WHICH letters are in the typing face, and in what order.
    ------------------------------------------------------------------
    The one place that answers it. Four places were asking it separately --
-   installTypeFont built the face from this list, puaRoman read a code point
-   back out of it, postCutTyped cut a post's ink with it, and sharePua told
+   installTypeFont built the face from this list, puaTyped reads a code point
+   back out of it, puaField puts one back into a field, and sharePua told
    the keyboard what to type -- and all four had the expression written out.
 
    Four copies of a rule is four chances for one of them to drift, and the
@@ -535,23 +535,59 @@ function ltPuaOrder(){
   return ltOrder(LETTERS.filter(function(l){ return !!inkGeo(l); }));
 }
 function ltPua(i){ return String.fromCharCode(PUA0+i); }
-/* Back to roman. The private use area is what the Lingua keyboard types INTO
-   a field and it goes no further: everything downstream of the field -- the
-   gloss under the composer, findWord, the spelling engine, what is stored,
-   what a post carries -- works on the roman spelling and always has. A code
-   point nobody else's font has would be a square box on somebody else's
-   phone; the roman is readable there.
+/* WHAT A FIELD HOLDS, AS THE LANGUAGE READS IT -- and the private use area
+   goes no further than this.
+   ------------------------------------------------------------------
+   The Lingua keyboard types U+E000 upward into a field and nothing else on a
+   phone types one. Everything past the field -- the gloss, findWord, the
+   spelling engine, what is stored, what a post carries, what a search asks
+   -- works on the roman spelling and always has; a code point nobody else's
+   font has is a box on somebody else's phone, and its NUMBER means a letter
+   only in this alphabet's order at this moment, so one stored and read back
+   after a letter was drawn is somebody else's letter (r73 §2-10, measured:
+   「kth」 came back 「th」).
 
-   The order is the alphabet's, which is the order installTypeFont mapped
-   them in, so the two cannot disagree: they read the same list. */
-function puaRoman(txt){
-  var s=String(txt||''), out='', i, c, at,
-      lts=ltPuaOrder();
+   So a field's value is read HERE and nowhere else (the one delivery in
+   www/act.js), and it comes out as two things from one pass: `ln`, the roman,
+   and `cut`, the line as it was TYPED -- `{id}` where the Lingua keyboard put
+   a letter, `{t}` for everything else. The cut is what knows which keyboard
+   typed what (「Linguaキーボードで打ったやつだけ自作文字に」), and it holds a
+   letter's id rather than its number, so it means the same letter whatever
+   is drawn later. A letter with no name is in the cut and not in the roman.
+
+   A private use character that is not one of this alphabet's -- a number
+   past the end, or a post's own shape pasted in -- is no letter here, and it
+   says so with the replacement character rather than travelling on. */
+function puaTyped(txt){
+  var s=String(txt||''), lts=ltPuaOrder(), ln='', cut=[], tx='', i, c, at;
   for(i=0;i<s.length;i++){
     c=s.charCodeAt(i);
     at=c-PUA0;
-    if(at>=0 && at<lts.length) out+=(ltName(lts[at])||'');
-    else out+=s.charAt(i);
+    if(at>=0 && at<lts.length){
+      if(tx){ cut.push({t:tx}); tx=''; }
+      cut.push({id:lts[at].id});
+      ln+=(ltName(lts[at])||'');
+      continue;
+    }
+    c=(c>=0xE000 && c<=0xF8FF)? '\uFFFD' : s.charAt(i);
+    tx+=c; ln+=c;
+  }
+  if(tx) cut.push({t:tx});
+  return {ln:ln, cut:cut};
+}
+/* And back: a cut as what the field shows -- each letter the character the
+   typing face draws it with now, a letter that has no shape any more as its
+   name. The same order as puaTyped() and installTypeFont(), because all
+   three read ltPuaOrder(). */
+function puaField(cut){
+  var lts=ltPuaOrder(), out='', i, u, l, k;
+  for(i=0;i<(cut||[]).length;i++){
+    u=cut[i];
+    if(!u) continue;
+    if(u.id===undefined){ out+=String(u.t||''); continue; }
+    l=ltById(u.id);
+    k=l? lts.indexOf(l) : -1;
+    out+= k>=0? ltPua(k) : String((l && ltName(l)) || '');
   }
   return out;
 }

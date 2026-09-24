@@ -54,7 +54,7 @@
 - 例文の欄に**自作キーボードの字（U+E000〜）**を打って ＋ で確定 →
   しまわれたのは**ローマ字**（k1）。行にも `.sfont` にも PUA は 0 個、
   描けない字も 0 個。四角（NO GLYPH）は出ません。ここは
-  `www/wordsheet.js:1731` の `puaRoman()`。
+  `www/wordsheet.js:1731` の ~~`puaRoman()`~~。
 - bar の保存（`keepPress`）→ トーストが一度出る。
 
 ### 4. 文法（CHECK #9）── PASS 12 / FAIL 0
@@ -142,7 +142,7 @@ FAIL 0 の台本は、通っているのか何も見ていないのか区別が�
 
 | 戻したバグ | 赤くなった主張 |
 |---|---|
-| `www/wordsheet.js:1731` の `puaRoman()` を外す | 「しまわれた例文はローマ字」「例文の行に PUA が出ない」が FAIL。`stored:[""]`、`pua` 3 個 ── CHECK #14 の四角そのもの |
+| `www/wordsheet.js:1731` の ~~`puaRoman()`~~ を外す | 「しまわれた例文はローマ字」「例文の行に PUA が出ない」が FAIL。`stored:[""]`、`pua` 3 個 ── CHECK #14 の四角そのもの |
 | `www/keyboard.js:2714` の板の navTop に `helpQ('kb')` を足す | 「板を開くと bar に「？」が無い」が FAIL。`{r:"kb",a:"1",q:true}` |
 | `www/onboard.js:641` を `return 'in'` に | 「「忘れた」の後ろは空」「設定に戻っている」が FAIL。一回戻ると扉に立った ── CHECK #21 そのもの |
 

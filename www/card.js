@@ -225,11 +225,12 @@ function cardSpell(hw){
    asks too. And a letter nobody has drawn yet is its NAME, as it is in the
    post's cut and in the font: a spelling stored on a word names its letters
    by id and carries no sound, so falling through to the sound gave the
-   characters "undefined" on the picture. */
+   characters "undefined" on the picture. A character the letter BORROWED is
+   not drawn either: undrawn is roman 「ローマ字」 OWNER 2026-09-23, which is
+   what every screen shows for it (card-check 8). */
 function cardUnit(lid, u){
   var l=lid? ltById(lid) : ltMain(u), g=inkGeo(l), st;
   if(g) return {st:g};
-  if(l && l.ch) return {tx:l.ch};
   st=u? wsStrokes(u) : null;
   if(st && st.length) return {st:st};
   return {tx:String((l && ltName(l)) || (u && (chOf(u) || u)) || '')};

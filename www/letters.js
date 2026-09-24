@@ -1366,11 +1366,8 @@ function spSetU(st, u){
    A character that answers to no letter is dropped rather than guessed at --
    the alphabet is the whole of what can be written. */
 function spType(text){
-  /* Whatever the Lingua keyboard put in the field comes back to roman first.
-     This is the one place a typed spelling becomes the language's letters, so
-     it is the one place that has to know the private use area exists --
-     everything past here is the alphabet's own names, as it always was. */
-  text=puaRoman(text);
+  /* Roman already: a field's value reaches here through www/act.js
+     (actTyped, actVal), which is where the private use area ends. */
   var names=[], by={}, i, n, cut, out=[];
   for(i=0;i<LETTERS.length;i++){
     n=String(ltName(LETTERS[i])||'').toLowerCase();

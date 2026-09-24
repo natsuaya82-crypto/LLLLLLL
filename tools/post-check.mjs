@@ -161,7 +161,7 @@ const R = await pg.evaluate(async () => {
   const before = POSTS.length;
   SCRIPT.dir = 'rtl'; planGot('pro');        /* choosing one is Plus */
   PW = pwBlank();
-  PW.ln = 'kano tir';
+  pwLine(puaTyped('kano tir').cut);
   PW.mn = 'the mountain is seen';
   PW.pics = [{ u: blackPic,
                marks: [{ tx: 'kano', x: 0.5, y: 0.5, s: 0.5, c: PW_COLS[0] }] }];
@@ -254,7 +254,7 @@ const R = await pg.evaluate(async () => {
      composer would have been holding -- seeding it would be a check asking
      about a state the app cannot be in. */
   PW = pwBlank();
-  PW.ln = 'kano';
+  pwLine(puaTyped('kano').cut);
   RECBITS = [new Blob([new Uint8Array([0, 1, 2, 3, 4, 5])], { type: 'audio/mp4' })];
   RECAT = (new Date()).getTime() - 7200;
   voTook('audio/mp4');
@@ -350,7 +350,7 @@ const R = await pg.evaluate(async () => {
      many rows it took. Everything above this is about a post that never left
      the handset -- that one has no row to take away and goes at once, which
      is the other half of the same sentence. */
-  PW = pwBlank(); PW.ln = 'tir';
+  PW = pwBlank(); pwLine(puaTyped('tir').cut);
   pwSend();
   await new Promise(r => setTimeout(r, 200));
   const srv = POSTS[POSTS.length - 1];
@@ -402,7 +402,7 @@ const R = await pg.evaluate(async () => {
      and there ARE files, and leaving them is a file nothing points at in a
      PUBLIC bucket (docs/RISK.md § 9). Nothing throws either way -- the post
      goes off the timeline in both, and only the bucket knows the difference. */
-  PW = pwBlank(); PW.ln = 'mos';
+  PW = pwBlank(); pwLine(puaTyped('mos').cut);
   pwSend();
   await new Promise(r => setTimeout(r, 200));
   const orphan = POSTS[POSTS.length - 1];
@@ -458,7 +458,7 @@ const R = await pg.evaluate(async () => {
              likes: 0, boosts: 0, replies: 4, i_like: false, i_boost: false }]);
     }, 0);
   };
-  PW = pwBlank(); PW.to = host.id; PW.ln = 'sar';
+  PW = pwBlank(); PW.to = host.id; pwLine(puaTyped('sar').cut);
   postSend = realPostSend;             /* this section stands a server up */
   pwSend();
   await new Promise(r => setTimeout(r, 400));
@@ -596,7 +596,7 @@ const R = await pg.evaluate(async () => {
      where it is needed. */
   const par = POSTS.filter(x => !x.to)[0];
   par.hd = 'iri';
-  PW = pwBlank(); PW.to = par.id; PW.ln = 'tir';
+  PW = pwBlank(); PW.to = par.id; pwLine(puaTyped('tir').cut);
   pwSend();
   await new Promise(r => setTimeout(r, 200));
   const rep = POSTS.filter(x => x.to === par.id).pop();
@@ -829,7 +829,7 @@ const R = await pg.evaluate(async () => {
       fails.push('the composer did not take the day at all (pr=' + PW.pr +
                  ', mn=' + JSON.stringify(PW.mn) + '), so nothing below this ' +
                  'is a test of anything');
-    PW.ln = 'kano tir';                       /* somebody types their line */
+    pwLine(puaTyped('kano tir').cut);                       /* somebody types their line */
     openPost('new');                          /* an hour later, the + button */
     if (PW.pr)
       fails.push('pressing + came back to the day: PW.pr is still ' + PW.pr +
@@ -869,7 +869,7 @@ const R = await pg.evaluate(async () => {
 
     /* (a) what is typed in the frame reaches the post, in order, mark off */
     PW = pwBlank();
-    PW.ln = 'kano tir';
+    pwLine(puaTyped('kano tir').cut);
     PW.tags = ['#neko', 'ame'];
     pwSend();
     await settle();
@@ -891,7 +891,7 @@ const R = await pg.evaluate(async () => {
 
     /* (b) the fifth does not go in, and there is no fifth field to put it in */
     PW = pwBlank();
-    PW.ln = 'kano tir';
+    pwLine(puaTyped('kano tir').cut);
     PW.tags = ['a1', 'a2', 'a3', 'a4', 'a5'];
     pwSend();
     await settle();
@@ -953,7 +953,7 @@ const R = await pg.evaluate(async () => {
 
     /* (c) a `#` in the SENTENCE is the sentence. 「本文に#を打ってもそれは本文」 */
     PW = pwBlank();
-    PW.ln = 'kano #tir';
+    pwLine(puaTyped('kano #tir').cut);
     pwSend();
     await settle();
     const c = sent();
@@ -1000,7 +1000,7 @@ const R = await pg.evaluate(async () => {
         fails.push('opening the day still put the tag in the line (' +
                    JSON.stringify(PW.ln) + '), so the ring over the field counts ' +
                    'the app\'s own word against somebody\'s 280');
-      PW.ln = 'kano tir';
+      pwLine(puaTyped('kano tir').cut);
       PW.tags = (PW.tags || []).concat(['mine']);
       pwSend();
       await settle();
@@ -1124,7 +1124,7 @@ const R = await pg.evaluate(async () => {
       popped = 0;
       const n = POSTS.length;
       PW = pwBlank();
-      PW.ln = ln;
+      pwLine(puaTyped(ln).cut);
       PW.mn = mn || 'x';
       pwSend();
       await settle();
@@ -1443,7 +1443,7 @@ const R = await pg.evaluate(async () => {
     const wasDrafts = DRAFTS.slice();
     const wasPW = PW;
 
-    PW = pwBlank(); PW.ln = 'kano tir';        /* something to save */
+    PW = pwBlank(); pwLine(puaTyped('kano tir').cut);        /* something to save */
     const typed = pwAddHTML();
     if (typed.indexOf('draftKeep') < 0)
       fails.push('with a line typed, the row over the keyboard offers no way ' +
@@ -1800,7 +1800,7 @@ const R = await pg.evaluate(async () => {
     for (const n of [8, 60, 200]) {
       PW = pwBlank();
       PW.mn = 'meaning '.repeat(Math.ceil(n / 8)).slice(0, n);
-      PW.ln = 'kano tir '.repeat(Math.ceil(n / 9)).slice(0, n);
+      pwLine(puaTyped('kano tir '.repeat(Math.ceil(n / 9)).slice(0, n)).cut);
       openPost();
       render();
       await new Promise(r => requestAnimationFrame(() => r()));
@@ -2247,7 +2247,7 @@ const R = await pg.evaluate(async () => {
     if (asks())
       fails.push('an empty composer asks on the way out');
 
-    PW = pwBlank(); PW.ln = 'kano tir';
+    PW = pwBlank(); pwLine(puaTyped('kano tir').cut);
     if (!asks())
       fails.push('a line typed is thrown away by the back arrow without asking');
 
@@ -2428,7 +2428,7 @@ const R = await pg.evaluate(async () => {
     let pua = '', names = '';
     for (let i = 0; i < 3; i++) { pua += String.fromCharCode(0xE000 + i); names += ltName(lts[i]); }
     go('feed'); openPost();
-    PW.ln = pua + ' hello'; PW.mn = 'a line';
+    pwLine(puaTyped(pua + ' hello').cut); PW.mn = 'a line';
     pwSend();
     const p = POSTS.slice().sort((a, b) => (b.at || 0) - (a.at || 0))[0];
     if (String(p.ln) !== names + ' hello')
@@ -2671,7 +2671,7 @@ const R = await pg.evaluate(async () => {
     DRAFTS = [];
 
     /* it goes up, and it goes up with a name */
-    PW = pwBlank(); PW.ln = 'kano'; PW.mn = 'a mountain';
+    PW = pwBlank(); pwLine(puaTyped('kano').cut); PW.mn = 'a mountain';
     dsent = [];
     draftKeep();
     const kept = DRAFTS[DRAFTS.length - 1];
@@ -2692,7 +2692,7 @@ const R = await pg.evaluate(async () => {
        another phone, that is what the list here holds -- not what this
        phone sent (supabase/schema.sql § keep_newer, 「普通後から変えた
        ほうになる？」 OWNER 2026-09-04). */
-    PW = pwBlank(); PW.ln = 'older words';
+    PW = pwBlank(); pwLine(puaTyped('older words').cut);
     dsent = [];
     draftRow = { body: { ln: 'later words', at: Date.now() + 60000 },
                  updated_at: new Date().toISOString() };
@@ -2721,7 +2721,7 @@ const R = await pg.evaluate(async () => {
        www/rec.js writes the file the moment the recording ends now, so what
        a draft carries is `{f, ms}` and nothing else. This asks the two places
        the bytes used to reach: the key on the phone, and what went up. */
-    PW = pwBlank(); PW.ln = 'kano';
+    PW = pwBlank(); pwLine(puaTyped('kano').cut);
     PW.vo = { f: 'v-draft-1.m4a', ms: 7000 };
     dsent = [];
     draftKeep();
@@ -2753,7 +2753,7 @@ const R = await pg.evaluate(async () => {
        and what went up, and then what comes back out of draftOpen(). */
     {
       const wasN = DRAFTS.length;
-      PW = pwBlank(); PW.ln = 'kano'; PW.toh = 'jjj';
+      PW = pwBlank(); pwLine(puaTyped('kano').cut); PW.toh = 'jjj';
       dsent = [];
       draftKeep();
       const raw2 = localStorage.getItem(acctKey('drafts', ACCT_UID)) || '';
@@ -3043,7 +3043,7 @@ const R = await pg.evaluate(async () => {
          nobody else reads it). */
       rows = {}; bucket = {}; upWall = []; inserts = 0;
       POSTS = []; POST_GONE = {};
-      PW = pwBlank(); PW.ln = 'kano'; PW.pv = true;
+      PW = pwBlank(); pwLine(puaTyped('kano').cut); PW.pv = true;
       pwSend();
       await new Promise(r => setTimeout(r, 400));
       const r20 = only();
@@ -3317,7 +3317,7 @@ const R = await pg.evaluate(async () => {
                  '" in the line, addressed to "' + feed.toh +
                  '". It is not on anybody\u2019s page');
 
-    PW = pwBlank(); PW.ln = 'kano tir';
+    PW = pwBlank(); pwLine(puaTyped('kano tir').cut);
     try { closeSheet(); } catch (e) {}
     window.route = 'profile'; NAV = [{ r:'profile', a:'jjj' }];
     render();
@@ -3809,7 +3809,7 @@ const R = await pg.evaluate(async () => {
        ものです。宛先が本文の文字だった頃は、その @lingua が訳に混ざって
        画面に出ていました（OWNER 実機 143 の写真）。本文に @ が無いことと
        訳に @ が無いことは別の主張です：本文から取れていても、宛先を訳に
-       足す一行があれば戻ってきます。ink（PWRAW）も同じ理由で訊きます。 */
+       足す一行があれば戻ってきます。ink（postInkOf）も同じ理由で訊きます。 */
     {
       const wasPlan2 = plan(), wasDir2 = SCRIPT.dir;
       planGot('pro'); SCRIPT.dir = 'ttb-rl';
@@ -3862,8 +3862,8 @@ const R = await pg.evaluate(async () => {
       }
 
       /* ---- そして ink にも出ない。
-         ink は「書いた人の文字で切った一行」で、切る元は PWRAW ── 欄に
-         入っていた生の文字です。ローマ字で打つと描いた字が一つも無いので
+         ink は「書いた人の文字で切った一行」で、切る元は欄に打った通りの
+         切り方（puaTyped の cut）です。ローマ字で打つと描いた字が一つも無いので
          ink は null になり、そこに @ が無いという主張は何も言っていません。
          なので Lingua キーボードが入れるもの、つまり PUA を打たせます。 */
       {
@@ -4085,7 +4085,7 @@ const R = await pg.evaluate(async () => {
          「保存できなかった」を測っているだけになります。 */
       SESS = { at:'t', rt:'r', uid:'me' };
       netSend = (m, path, body, tok, ok2) => ok2(m === 'PATCH' ? [{ id:'row' }] : []);
-      PW = pwBlank(); PW.ln = enWord + ' kano';
+      PW = pwBlank(); pwLine(puaTyped(enWord + ' kano').cut);
       draftKeep();
       netSend = wasSendD; SESS = wasSessD;
       const kept = DRAFTS[DRAFTS.length - 1];
@@ -4371,7 +4371,7 @@ const R = await pg.evaluate(async () => {
     const was = planKnown() ? plan() : null;
     planGot('plus');
     postEdit('e1');
-    PW.ln = 'kamo'; pwSend();
+    pwLine(puaTyped('kamo').cut); pwSend();
     const patch = sentE.filter(r => r.m === 'PATCH' && r.p.indexOf('id=eq.s-e1') >= 0);
     if (!patch.length || !patch[0].body || !patch[0].body.body || patch[0].body.body.ln !== 'kamo')
       fails.push('**an edit did not go to the server** — ' + JSON.stringify(sentE));

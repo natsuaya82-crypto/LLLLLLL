@@ -707,9 +707,13 @@ export function halfDone(){
     PROMO = admH !== undefined ? [] : [{ id:'ad-1', at: Date.now() - 86400000, lang:'other', lname:'Vethi',
                ln:'qel dross', who:'Kiyo', hd:'kiyo', mine:false, av:{ch:'K'},
                mn:'the river is wide', ui:'en', ad:true }];
+    /* vFeed() and not render(): render() draws what the APP is at that
+       moment, and a walk that pressed through the onboarding before this face
+       leaves it drawing the door -- press measured the sold place as a
+       sign-in screen, so `.ppr` was worn by nothing. The other timeline faces
+       ask the view; so does this one. */
     window.route = 'feed'; NAV = [{ r:'feed' }];
-    render();
-    const h = document.getElementById('app').innerHTML;
+    const h = vFeed();
     POSTS.splice(0, POSTS.length - n);
     PROMO = wasPromo;
     ADM.on = wasAdm.on; ADM.h = wasAdm.h;
@@ -762,6 +766,13 @@ export function halfDone(){
   const __stemLetters = () => { LETTERS[0].st = __STEM[0]; LETTERS[1].st = __STEM[1]; };
   const __twoLines = () => ltPua(0) + ltPua(1) + ltPua(0) + ' ' + ltPua(1) + ltPua(0) +
                            '\n' + ltPua(0) + ltPua(0) + ltPua(1);
+  /* A word as the Lingua keyboard types it: each letter this alphabet has
+     drawn is its key, everything else the system keyboard's -- the cut a
+     field hands its receiver (www/glyph.js § puaTyped). */
+  const __kbTyped = (w) => puaTyped(w.split('').map((c) => {
+    const k = ltPuaOrder().findIndex((l) => ltName(l) === c);
+    return k >= 0 ? ltPua(k) : c;
+  }).join('')).cut;
   /* The same two, turned: a stem from the top edge of the lattice to the
      bottom, so a COLUMN of them joins at 0 the way a row of the two above
      does. 「横と縦それぞれスライドしてどう動くか」 OWNER 2026-09-23. */
@@ -2244,11 +2255,11 @@ export function halfDone(){
        where the same number goes red. */
     ['a post running out of room', () => {
         openPost();
-        PW.ln = Array.apply(null, {length: POST_MAX - 10}).map(() => 'a').join('');
+        pwLine(puaTyped(Array.apply(null, {length: POST_MAX - 10}).map(() => 'a').join('')).cut);
         openPost(); const h = vForm(); PW = pwBlank(); return h; }],
     ['a post past the end of the room', () => {
         openPost();
-        PW.ln = Array.apply(null, {length: POST_MAX + 5}).map(() => 'a').join('');
+        pwLine(puaTyped(Array.apply(null, {length: POST_MAX + 5}).map(() => 'a').join('')).cut);
         openPost(); const h = vForm(); PW = pwBlank(); return h; }],
     /* And a post that has been edited since it was sent, which is a mark on
        somebody's own post and on nobody else's. */
@@ -2267,20 +2278,19 @@ export function halfDone(){
             marks:[]}));
         openPost(); const h = vForm(); PW = pwBlank(); return h; }],
     /* The composer of a language written from the right, in its own font.
-       Both of those are the paid plan's and both are off in seed(), so the
-       field the line goes in has only ever been rendered left-to-right in
-       the ordinary face. They are one seed because they are one element:
-       `dirClass(scriptDir()) + (myFontOn()? ' tfont' : '')` is the whole of
-       that field's class, and the two answers meet nowhere else.
-       .tfont is LinguaType, which carries only the private use area, so
-       nothing is drawn here that the Lingua keyboard did not type -- which
-       is the rule the second face exists to keep. */
+       The direction is the paid plan's and is off in seed(), so the field
+       the line goes in has only ever been rendered left-to-right. Its face
+       is the line's own on every plan and whatever SET.myfont says -- the
+       `.pline, .pwfield #pw-ln` rule in index.html, LinguaType, which
+       carries only what the Lingua keyboard types (www/post.js § the field
+       runs the way the language does) -- so the direction is the whole of
+       what this face adds. */
     ['a line written from the right, in a font of your own', () => {
         const wasPlan = plan(), wasDir = SCRIPT.dir;
         planGot('pro'); SCRIPT.dir = 'rtl';   /* dir is 'pro' since the rename */
-        SET.myfont = true; installScriptFont();
+        installScriptFont();
         openPost(); const h = vForm();
-        PW = pwBlank(); SET.myfont = false;
+        PW = pwBlank();
         SCRIPT.dir = wasDir; planGot(wasPlan); return h; }],
     /* AND THE ONE WRITTEN DOWNWARD, THE FIRST COLUMN AT THE LEFT. Four
        directions and this is the only one no screen wore. It used to be
@@ -2600,17 +2610,16 @@ export function halfDone(){
                                               kbAdd('qwerty'); kbLay = 0; kbPick(0, 0);
                                               const h = vForm(); KB = null; kbShow = 0;
                                               planGot('free'); return h; }],
-    /* THE SAME KEY WITH A LETTER CHOSEN ON IT, which is a face and not a
-       state of the one above: the confirm in the bar is drawn only while
-       something is chosen -- 「何も選んでいなければ出ない」 OWNER 2026-09-03 --
-       so on every other face of this screen it is on no screen at all, and
-       act-check said so the day it went in. Built by the act, like the rest
-       of this chapter: kbLtTap() is what a finger does to a letter. */
+    /* THE SAME KEY WITH ANOTHER LETTER PRESSED ONTO IT: the letter goes onto
+       the key and is the purple one, and the square over the alphabet says so
+       (OWNER 2026-09-24 「いらないなら保存だけでいいよ」). Built by the act,
+       like the rest of this chapter: kbLtTap() is what a finger does to a
+       letter. */
     ['a key with a letter chosen for it', () => { planGot('pro'); KB = null; kbShow = 0;
                                                   kbAdd('qwerty'); kbLay = 0; kbPick(0, 0);
                                                   const a = ltOfKind('alpha');
                                                   if (a.length) kbLtTap(0, 0, -1, a[0].id);
-                                                  const h = vForm(); kbLtPick = null;
+                                                  const h = vForm();
                                                   KB = null; kbShow = 0;
                                                   planGot('free'); return h; }],
     /* AND THE SAME KEY WITH A DRAWN LETTER CHOSEN, which is the other state
@@ -2623,7 +2632,7 @@ export function halfDone(){
                                                   kbAdd('qwerty'); kbLay = 0; kbPick(0, 0);
                                                   const d = ltOfKind('alpha').filter((l) => inkGeo(l));
                                                   if (d.length) kbLtTap(0, 0, -1, d[0].id);
-                                                  const h = vForm(); kbLtPick = null;
+                                                  const h = vForm();
                                                   KB = null; kbShow = 0;
                                                   planGot('free'); return h; }],
     /* A FLICK keyboard, which is the other half of the editor and the only
@@ -3419,14 +3428,14 @@ export function halfDone(){
        once a letter is on it, the selected face with its slider and its two
        buttons is a second screen again. */
     ['letters on a photograph', () => { PW = pwBlank();
-      PW.pics = [{u:POSTS[0].pic, marks:[{tx:'kano', x:0.5, y:0.4, s:0.18, c:PW_COLS[0]}]}];
+      PW.pics = [{u:POSTS[0].pic, marks:[{tx:'kano', cut:__kbTyped('kano'), x:0.5, y:0.4, s:0.18, c:PW_COLS[0]}]}];
       pwMarkOpen(0); pwMarkAt = 0; pwTool = 'mark'; const h = sheet(pwMarkHTML());
       PW = pwBlank(); pwPicAt = -1; pwMarkAt = -1; return h; }],
     /* And the other half of the editor: the crop, with its rectangle over the
        picture. It is a mode of the same screen, so nothing renders it unless
        the walk is put into it. */
     ['cropping a photograph', () => { PW = pwBlank();
-      PW.pics = [{u:POSTS[0].pic, marks:[{tx:'kano', x:0.5, y:0.4, s:0.18, c:PW_COLS[0]}]}];
+      PW.pics = [{u:POSTS[0].pic, marks:[{tx:'kano', cut:__kbTyped('kano'), x:0.5, y:0.4, s:0.18, c:PW_COLS[0]}]}];
       pwMarkOpen(0); pwTool = 'crop'; const h = sheet(pwMarkHTML());
       PW = pwBlank(); pwPicAt = -1; pwTool = 'mark'; return h; }],
     ['a photograph with no letters on it yet', () => { PW = pwBlank();
@@ -3439,18 +3448,18 @@ export function halfDone(){
        has none of -- there is no microphone on a Linux box and getUserMedia
        is never going to answer -- so what is walked is the row, in each of
        the states it can be in, which is what a thumb meets. */
-    ['a voice being recorded', () => { PW = pwBlank(); PW.ln = 'kano';
+    ['a voice being recorded', () => { PW = pwBlank(); pwLine(puaTyped('kano').cut);
         REC = {}; RECAT = (new Date()).getTime() - 7000;
         openPost(); const h = vForm(); REC = null; RECAT = 0;
         PW = pwBlank(); return h; }],
-    ['a voice recorded and not yet posted', () => { PW = pwBlank(); PW.ln = 'kano';
+    ['a voice recorded and not yet posted', () => { PW = pwBlank(); pwLine(puaTyped('kano').cut);
         PW.vo = {b64:'AA', mime:'audio/mp4', ms:7000};
         openPost(); const h = vForm(); PW = pwBlank(); return h; }],
     /* Editing your own post, which is the line and the meaning and neither
        the photographs nor the voice -- so it is the one face of the composer
        with no row of buttons under it at all. */
     ['a post being edited', () => { PW = pwBlank();
-        PW.ed = POSTS[0].id; PW.ln = POSTS[0].ln; PW.mn = POSTS[0].mn;
+        PW.ed = POSTS[0].id; pwLine(postCutOf(POSTS[0])); PW.mn = POSTS[0].mn;
         openPost(); const h = vForm(); PW = pwBlank(); return h; }],
     ['who you are, being edited', () => { openMe(); return vForm(); }],
     /* The box a list is pasted into, which is its own screen: the one before
@@ -3568,8 +3577,8 @@ export function halfDone(){
        __stemLetters(); installScriptFont();
        const raw = __twoLines();
        POSTS.unshift({ id: 'p2l', at: Date.now() - 60000, lang: langId, lname: langName,
-                       ln: puaRoman(raw), who: meName(), hd: meHandle(), mine: true, mn: '',
-                       ui: 'en', ink: postInkTyped(raw), dir: 'ltr' });
+                       ln: puaTyped(raw).ln, who: meName(), hd: meHandle(), mine: true, mn: '',
+                       ui: 'en', ink: postInkOf(puaTyped(raw).cut), dir: 'ltr' });
        window.route = 'feed'; NAV = [{ r:'feed' }];
        return vFeed(); }],
     /* The rule a form is made by. It takes an id, and the id is the one the
