@@ -109,9 +109,11 @@ at** 「前に読み込んだ分は出て欲しい。制作も眺めたい人は
 nothing on that copy ever travels back to the server (rule 22).
 
 **And what is READ is decided by the screen** 「読むのは開いた画面の分だけ」
-OWNER 2026-09-23. The launch reads the notices and the timeline (`PAGE_OPEN`
-in `www/sns.js`); every other screen reads what it draws when it is arrived
-at, through the one door (`navLand()`, `www/shell.js`) and its row in
+OWNER 2026-09-23, 2026-09-24. The launch reads what the timeline it opens on
+needs — the notices, the timeline, today's prompt, the plan, the theme and the
+interface language 「開いた時に必要なものは読む」 (`PAGE_OPEN` in `www/sns.js`
+is the notices and the timeline today; the rest is being moved there); every
+other screen reads what it draws when it is arrived at, with a load between 「それ以外はそのページを開く前にロードを挟む」, through the one door (`navLand()`, `www/shell.js`) and its row in
 `PAGE_READS`; a view reads nothing; a list is cut at `NET_PAGE` and carries on
 at the bottom; somebody else's chapter comes down when ↓ is pressed.
 **`load-check` holds it** — it counts the launch, every route's arrival,
@@ -199,7 +201,8 @@ ceilings spoke with `alert()`.
 **And the owner has since given ten criteria that every screen is held to**
 (OWNER DECISION 2026-09-01) — system standard first, the patterns every SNS
 shares, one tap, little on a screen and wide margins, quiet animation, two or
-three colours, one or two faces, 44pt, undo rather than a confirm, and a real
+three colours, one or two faces, 44pt, a confirm before a delete (criterion 9 was undo; replaced 2026-09-24
+「確認ポップにしてください」), and a real
 phone. They are written out in full, verbatim, in `docs/FEATURE_RULES.md`
 § Owner decision log, and that entry also names **the two places this repo does
 not meet them yet** — neither of which is a session's to go and fix on its own.
