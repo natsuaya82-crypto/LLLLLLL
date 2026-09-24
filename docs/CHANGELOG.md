@@ -15,6 +15,18 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### 2026-09-24 r65 が止めた端末の側 ── 番号・名前・上に立つ人はサーバーが言う（r79-acct）
+
+- **slice の番号**：`netSlicePut()` は `no` を送らない（`slice_no()` がサーバーで配る、r65）。貯まる `slice.no` の
+  値はサーバーが決める。
+- **言語の名前の列**：`netLangFill()` は名前の列が空の時に `lang` スライスから `PATCH language` しない（画面に
+  着いただけで出る書き込みだった、r60 B3）。サーバーが一度だけ写す（r65 B3）。**schema.sql が本番に流れる前に
+  この端末が出ると、その間、列が空の言語は人から見て名前が空のまま。流す順は schema.sql が先。**
+- **上に立つ人**：自分の行と staff の一覧が `admin:profile_admin` を訊き、`NET_ADMIN`・`adminStaffRow()` は
+  その答えを読む。端末の `ADMIN_HANDLE` を消した（名前は `profile_admin()` に一回）。
+- **私が誰か**：`share.js`・`store.js` も `netUid()` で訊く。
+- **移行・削除**：無し。
+
 ### 2026-09-24 顔は描いて書かない ── 顔の無い古いアカウントに付けるのは移行（r79-acct、r73 § 2-2）
 
 - **振る舞い**：`postAvatar()` は `ME.pic`、無ければ `ME.av` を読むだけになった。前は投稿の行を描くたびに、顔の
