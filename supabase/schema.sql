@@ -982,6 +982,30 @@ create table if not exists block (
 );
 create index if not exists block_actor_idx on block(actor);
 
+-- AND THE ONE PLACE A BLOCK IS ANSWERED. 「Blocked means you see nothing of
+-- them」 OWNER 2026-08-19 (docs/FEATURE_RULES.md § Blocking) -- 「the feed
+-- (left out by the server)」, and the server did not: post_seen, feed_hot,
+-- feed_fo and notices() handed every row over and the phone threw some away.
+--
+-- Every read the app makes (a view, or a function that returns rows) asks
+-- this of each person it hands out -- the author of a post, whoever passed
+-- it on, whoever a notice is about -- and nothing else says what a block
+-- hides. tools/rls-check.mjs walks the catalogue as somebody who has blocked
+-- somebody and counts every read, so a view added tomorrow is asked tomorrow;
+-- the reads a block does not reach yet are named there (BLOCK_HELD) with
+-- the reason, and docs/scope/r80-block.md says what each is waiting on.
+--
+-- ONE WAY: it asks whether the person READING blocked `who`, never the other
+-- direction. Whether somebody who has been blocked stops seeing the person
+-- who blocked them is not decided (docs/scope/r73-audit.md § 5-6), and
+-- `block_read` above is why this can only ever answer about the reader's
+-- own rows: it runs as whoever calls it, and they read nobody else's.
+create or replace function block_hides(who uuid) returns boolean
+language sql stable as $$
+  select exists (select 1 from block b
+                  where b.actor = auth.uid() and b.blocked = who)
+$$;
+
 -- ---- where a notice goes when the app is closed ----------------------------
 -- 「通知作ろう。アップルのネイティブ通知で、フォローされた時、返信きた時みたい
 --   な感じでSNS部分であるやつ。」 OWNER 2026-09-22.
@@ -1758,8 +1782,10 @@ create view post_seen as
                   where r.post = p.id and r.kind = 'boost'
                     and r.actor = auth.uid()) as i_boost
     from post p left join profile a on a.id = p.author
-   -- and a post kept to yourself is not a row for anybody else (post_private).
-   where not post_private(p.body) or p.author = auth.uid();
+   -- and a post kept to yourself is not a row for anybody else (post_private),
+   -- and one by somebody the reader blocked is not a row for them (block_hides).
+   where (not post_private(p.body) or p.author = auth.uid())
+     and not block_hides(p.author);
 grant select on post_seen to authenticated;
 
 -- post: everyone reads, you write as yourself.
@@ -2308,7 +2334,11 @@ language sql stable as $$
               over first, and that is a name that can change between two
               readings of the same list. */
            (array_agg(ev.actor order by ev.at desc, ev.actor desc))[1:4] as few
-      from ev group by ev.kind, ev.post
+      from ev
+     /* Every notice is about the person in `actor`, and this is where they
+        are asked about, once, for all four kinds (block_hides). */
+     where not block_hides(ev.actor)
+     group by ev.kind, ev.post
   ),
   /* ---- AND THE SECOND WAY OF BEING THE SAME NOTICE ---------------------
      The owner gave two shapes and the list only ever made one of them:
@@ -2594,6 +2624,9 @@ language sql stable as $$
             from react r join post_seen v on v.id = r.post
            where r.kind = 'boost'
              and v.hidden_at is null
+             -- post_seen has already asked about who WROTE it; who passed it
+             -- on is a second person on the row and is asked here.
+             and not block_hides(r.actor)
              and r.actor in (select f.followed from follow f
                               where f.follower = auth.uid())
              and (before is null or r.created_at < before)

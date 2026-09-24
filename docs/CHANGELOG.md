@@ -15,6 +15,38 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### 2026-09-24 ブロックした相手の書いた物・した事は、サーバーが読みの一か所で外す（r80-block）
+
+**決定**：`docs/FEATURE_RULES.md` § 2026-08-19 Blocking「Blocked means you see nothing of them.
+Not a quieter timeline — gone: the feed (left out by the server), threads, profiles, search on both
+sides, and the notices.」「ブロックは何も見えなくなるでいいんじゃない」
+
+**測った（`npm run rls`、直す前）**：ブロックした人として読むと、相手の投稿と返信が `post_seen`
+（タイムライン・スレッド・人のページ・投稿の検索が読む view）に、相手の投稿が `feed_hot`・`feed_fo`
+に、相手のリポストが `feed_fo` の `by` に、相手のいいね・リポスト・返信・フォローが `notices()` に
+出ていた。サーバーは block を読んでいなかった ── 外していたのは端末（`postBlocked()` ほか）だけ。
+
+- **覆う一文**：ブロックした相手の書いた物・した事を読みが返すかは `block_hides(who)`
+  （`supabase/schema.sql`）一つが答え、アプリが読む view と表関数は、人を返す列ごとにそれを通る。
+  `tools/rls-check.mjs` が catalogue から view と引数なしの表関数を全部数え、塞いだ人として読んで
+  相手の id・@ が一つでも出れば赤 ── 明日足された読みも明日数えられる。
+- **見て変わること**：端末が既に外していたので、画面の上では変わらない。変わるのは、外すのが
+  サーバーになったこと。端末の側の外し（`netBlocked()` の読み、`postBlocked()` ほか）を消すのは
+  `www/` の持ち主の仕事で、`docs/scope/r80-block.md` に消し方を書いた。
+- **まだ外していない物（名前を挙げて数えている）**：`profile_seen`・`language_seen`・`follow_seen`
+  ── 人そのもの、その人の言語、誰が誰をフォローしているか。プロフィールを外すと**ブロックを解く道が
+  無くなる**（解くのは相手のプロフィールと投稿の「…」だけで、ブロック一覧の画面は無い）。端末の
+  「ブロック中」の印も `profile_seen` から @ を引いているので消える。どこで解くかはオーナーのもの。
+  `docs/scope/r80-block.md`。
+- **検索の両側（ブロックされた側から、ブロックした人が見えない）はまだ**：検索はタイムライン・
+  プロフィールと同じ view を読むので、view で両側にするとフィードもスレッドもプロフィールも両側に
+  なる ── それは決まっていない（r73 §5-6）。検索だけ両側にするには検索が自分の読みを持つ必要が
+  あり、それは `www/` の側。
+- **貯まる物**：無し。表も列も増えない。`block` の行はこれまでどおり。
+- **移行・削除**：無し。何も消さない。
+- **プラン**：関係ない。
+- **サーバーへの手順**：`supabase/schema.sql` を貼り直す（`supabase/setup.md`）。
+
 ### 2026-09-24 読む時は画面が決める ── 起動は通知とタイムライン、他はその画面に進んだ時、↓ は押した時（r71-net）
 
 **決定**：`docs/FEATURE_RULES.md` § 2026-09-23 読むのは開いた画面の分だけ。

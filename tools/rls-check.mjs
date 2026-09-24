@@ -131,6 +131,17 @@ const LB = 'b0000000-0000-4000-8000-00000000000b';  /* and the frozen account's 
    owner of the table below, because that is the only road there is: the
    service role, which no policy applies to. */
 const PA = '5a000000-0000-4000-8000-0000000000a1';  /* the promoted post */
+/* A BLOCK, ASKED OF EVERYTHING THE APP READS. Two accounts of their own, so
+   nothing another attempt does to A or B is standing in the answer: BK blocks
+   BD, and BD has done one of each thing a person does to somebody -- written,
+   answered, liked, passed on, followed, published a language. */
+const BK  = 'b1000000-0000-4000-8000-0000000000b1';  /* who blocks */
+const BD  = 'b1000000-0000-4000-8000-0000000000b2';  /* who is blocked */
+const BDH = 'blockd';                                  /* and BD's @ */
+const BKP = 'b1000000-0000-4000-8000-0000000000b3';  /* BK's post, which BD answers */
+const BDP = 'b1000000-0000-4000-8000-0000000000b4';  /* what BD wrote */
+const BDO = 'b1000000-0000-4000-8000-0000000000b5';  /* and BD's post before the tick */
+const BDL = 'b1000000-0000-4000-8000-0000000000b6';  /* BD's published language */
 /* A value as an SQL literal. */
 const q = (s) => "'" + String(s).replace(/'/g, "''") + "'";
 /* verify.mjs's ladder, as the array plan_put() is handed. */
@@ -551,6 +562,43 @@ const CASES = [
     `delete from block where actor='${B}'`],
   ['nobody signed in blocks',                 'denied', B, 1,
     `insert into block(actor,blocked) values ('${B}','${A}')`],
+  /* And B lifts it, which is the other half of `block_drop` and closes this
+     section: everything below reads A's posts as B, the ordinary somebody
+     else, and a block left standing would take every one of them out of B's
+     reads (block_hides in schema.sql). What a block does to a read is asked
+     of BK and BD below, who exist for that alone. */
+  ['B lifts B\u2019s own block',               'ok',     B, 0,
+    `delete from block where actor='${B}' and blocked='${A}'`],
+
+  /* --- and a block is the server's to keep, not the phone's -------------
+     「Blocked means you see nothing of them」 OWNER 2026-08-19. These are
+     only the rows; what BK can still READ of BD is asked of the catalogue
+     further down (BLOCK_HELD), because a list of the reads written out here
+     is a list nobody adds tomorrow's read to. */
+  ['BK makes BK\u2019s profile',              'ok',     BK, 0,
+    `insert into profile(id,handle) values ('${BK}','blocker')`],
+  ['BD makes BD\u2019s profile',              'ok',     BD, 0,
+    `insert into profile(id,handle) values ('${BD}','${BDH}')`],
+  ['BK writes a post',                        'ok',     BK, 0,
+    `insert into post(id,author,body) values ('${BKP}','${BK}','{}'::jsonb)`],
+  ['BD writes a post',                        'ok',     BD, 0,
+    `insert into post(id,author,body) values ('${BDP}','${BD}','{}'::jsonb)`],
+  ['BD answers BK',                           'ok',     BD, 0,
+    `insert into post(author,body,reply_to) values ('${BD}','{}'::jsonb,'${BKP}')`],
+  ['BD likes BK\u2019s post',                 'ok',     BD, 0,
+    `insert into react(post,actor,kind) values ('${BKP}','${BD}','like')`],
+  ['BD passes somebody else\u2019s post on',  'ok',     BD, 0,
+    `insert into react(post,actor,kind) values ('${PA}','${BD}','boost')`],
+  ['BD follows BK',                           'ok',     BD, 0,
+    `insert into follow(follower,followed) values ('${BD}','${BK}')`],
+  ['BK follows BD',                           'ok',     BK, 0,
+    `insert into follow(follower,followed) values ('${BK}','${BD}')`],
+  ['BD makes a language',                     'ok',     BD, 0,
+    `insert into language(id,owner,name) values ('${BDL}','${BD}','Blok')`],
+  ['and publishes it',                        'ok',     BD, 0,
+    `update language set published_at=now() where id='${BDL}'`],
+  ['BK blocks BD',                            'ok',     BK, 0,
+    `insert into block(actor,blocked) values ('${BK}','${BD}')`],
 
   /* --- a report is written and never read back by anybody using the app --- */
   ['B reports A\u2019s post',                  'ok',     B, 0,
@@ -2785,6 +2833,58 @@ begin
   execute 'set local role postgres';
   insert into _r(name, want, got) values (nm, want, got);
 end $$;
+
+-- ---- what the blocker can still read of the blocked ---------------------
+-- EVERY VIEW, AND EVERY FUNCTION THAT RETURNS ROWS AND CAN BE CALLED WITH
+-- NOTHING, out of the catalogue -- the reads the app makes, counted rather
+-- than listed, so a view added tomorrow is asked tomorrow. Each is read as the
+-- blocker twice: with the block (\`shut\`) and with it lifted for the moment
+-- (\`open\`). A row counts when the blocked person's uuid or @ is anywhere in
+-- it. \`open\` is what makes the question a question: a read that shows
+-- nothing of them even unblocked names nobody and is not part of this.
+-- -1 is a read that could not be made at all.
+create or replace function _block_read(stmt text, sub uuid) returns int
+language plpgsql as $$
+declare c int;
+begin
+  begin
+    execute 'set local role authenticated';
+    perform set_config('request.jwt.claims',
+      json_build_object('sub', sub, 'is_anonymous', false)::text, true);
+    execute stmt into c;
+  exception when others then
+    c := -1;
+  end;
+  execute 'set local role postgres';
+  return c;
+end $$;
+create or replace function _block_seen(sub uuid, them uuid, hd text)
+returns table(what text, open int, shut int) language plpgsql as $$
+declare r record; stmt text;
+begin
+  for r in
+    select c.relname::text as nm, quote_ident(c.relname) as src
+      from pg_class c join pg_namespace s on s.oid = c.relnamespace
+     where s.nspname = 'public' and c.relkind in ('v','m')
+       and c.relname not like '\\_%'
+    union all
+    select p.proname::text, quote_ident(p.proname) || '()'
+      from pg_proc p join pg_namespace s on s.oid = p.pronamespace
+     where s.nspname = 'public' and p.proretset
+       and p.pronargs = p.pronargdefaults and p.proname not like '\\_%'
+     order by 1
+  loop
+    stmt := format('select count(*)::int from %s x where row_to_json(x)::text like %L'
+                   ' or row_to_json(x)::text like %L',
+                   r.src, '%' || them || '%', '%"' || hd || '"%');
+    what := r.nm;
+    shut := _block_read(stmt, sub);
+    delete from block where actor = sub and blocked = them;
+    open := _block_read(stmt, sub);
+    insert into block(actor, blocked) values (sub, them);
+    return next;
+  end loop;
+end $$;
 `;
 
 /* The fourth field is who is asking: 0 signed in, 1 an anonymous session,
@@ -2959,7 +3059,7 @@ const sql = [
      through a policy, in the order a real account would do it -- a profile
      before a language, a language before a post -- because a row put here by
      the owner of the table would be a row no policy ever had to allow. */
-  `insert into auth.users(id) values (${q(A)}),(${q(B)}),(${q(C)}),(${q(D)}),(${q(E)}),(${q(F)}),(${q(G1)}),(${q(G2)}),(${q(G3)}),(${q(G4)}),(${q(N1)}),(${q(N2)}),(${q(N3)});`,
+  `insert into auth.users(id) values (${q(BK)}),(${q(BD)}),(${q(A)}),(${q(B)}),(${q(C)}),(${q(D)}),(${q(E)}),(${q(F)}),(${q(G1)}),(${q(G2)}),(${q(G3)}),(${q(G4)}),(${q(N1)}),(${q(N2)}),(${q(N3)});`,
   /* And one row that IS put here by the owner of the table, which the
      paragraph above says nothing else is. That is the claim being tested: no
      policy in schema.sql makes anybody staff, and the column is revoked from
@@ -3014,6 +3114,11 @@ const sql = [
      (${q(H4)}, ${q(B)}, '{}'::jsonb,        feed_slot() - interval '20 minutes'),
      (${q(H3b)},${q(B)}, '{}'::jsonb,        feed_slot() - interval '10 minutes'),
      (${q(H5)}, ${q(B)}, '{"old":1}'::jsonb, feed_slot() - interval '3 days');`,
+  /* And one of BD's, before the tick, so the list that is going round has
+     something of BD's in it to leave out (BLOCK_HELD). Older than every one
+     above and with nothing done to it, so it is last and moves none of them. */
+  `insert into post(id,author,body,created_at) values
+     (${q(BDO)}, ${q(BD)}, '{}'::jsonb, feed_slot() - interval '40 minutes');`,
   /* And what was done to them, also before the tick. F and not A: A asked to
      be deleted among the attempts above and is gone by the time this runs. */
   `insert into react(post,actor,kind,created_at) values
@@ -3079,6 +3184,8 @@ const sql = [
     `select ${q('SHAPE')}||chr(9)||${q(name)}||chr(9)||(${s});`).join('\n'),
   /* And the size of the wall, printed. Counted rather than listed, because a
      number that moves is a question and a list is a thing to maintain. */
+  `select 'BLOCK'||chr(9)||what||chr(9)||open||chr(9)||shut
+     from _block_seen(${q(BK)}, ${q(BD)}, ${q(BDH)});`,
   `select 'ANON'||chr(9)||
      (select count(*) from pg_class c join pg_namespace n on n.oid=c.relnamespace
        where n.nspname='public' and c.relkind in ('r','v','m','p','f')
@@ -3130,6 +3237,49 @@ if (wall) {
               (bad.length ? ' -- NOT all refused' :
                ' -- all refused (1 allowed by name: email_taken)'));
 }
+
+/* ---- A BLOCK IS LEFT OUT BY THE SERVER, IN EVERY READ -------------------
+   「Blocked means you see nothing of them」 OWNER 2026-08-19. block_hides()
+   in schema.sql is the one thing that answers it, and every read the app
+   makes passes what it returns about a person through it. `_block_seen`
+   above walks the catalogue, so this is every view and every row-returning
+   function there is, not a list of them: a read shows BD to BK with the block
+   lifted and nothing of BD with it on, or it is red.
+
+   HELD is the reads a block does not reach YET, by name and with the reason.
+   A name here must still show BD -- the day it stops, the line is permission
+   for nothing and has to go, which is what box-check says a stale baseline
+   line becomes. docs/scope/r80-block.md carries what each one is waiting on. */
+const BLOCK_HELD = {
+  profile_seen:  'the person themself -- unblocking is pressed on their page and nowhere else',
+  language_seen: 'what they made, drawn on their page (profile_seen reads it)',
+  follow_seen:   'who follows whom -- the unfollow a block makes reads this list',
+};
+const blockRows = out.split('\n').map((l) => l.split('\t'))
+                     .filter((r) => r.length === 4 && r[0] === 'BLOCK');
+let blockOut = 0, blockHeld = 0, blockNobody = 0;
+if (!blockRows.length) bad.push(['a block, asked of every read', 'reads', 'none were found']);
+for (const [, name, open, shut] of blockRows) {
+  const o = Number(open), s = Number(shut), held = BLOCK_HELD[name];
+  let why = '';
+  if (o < 0 || s < 0) why = 'could not be read as the blocker';
+  else if (!o) { blockNobody++; if (held) why = 'held by name and names nobody -- take it off BLOCK_HELD'; }
+  else if (held) { if (s) blockHeld++; else why = 'held by name and shows nothing of them -- take it off BLOCK_HELD'; }
+  else if (s) why = s + ' row(s) of theirs with the block on';
+  else blockOut++;
+  if (why) bad.push(['a block leaves ' + name + ' out', 'none', why]);
+  console.log((why ? '  FAIL  ' : '  ok    ') +
+              ('a block leaves ' + name + ' out').padEnd(44) +
+              (why || (held && s ? 'held: ' + held : '')));
+}
+for (const name of Object.keys(BLOCK_HELD))
+  if (!blockRows.some((r) => r[1] === name)) {
+    bad.push(['a block leaves ' + name + ' out', 'a read', 'held by name and not in the catalogue']);
+    console.log('  FAIL  ' + ('a block leaves ' + name + ' out').padEnd(44) +
+                'held by name and not in the catalogue');
+  }
+console.log(`\nblock: ${blockRows.length} reads walked as the blocker -- ${blockOut} leave them out, ` +
+            `${blockHeld} held by name, ${blockNobody} name nobody\n`);
 
 /* After the wall, because the wall's sentence is about anon and these are
    about what the file says -- a red here is not anon getting through. */
