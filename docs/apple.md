@@ -284,7 +284,7 @@ Studio の商品は作りません。
 | グループ内のレベル | 2（下） | 2 | 1（上） | 1 |
 
 **この 4 つの ID は、アプリのコードに既に書いてあります**
-（`ios/App/App/LinguaStore.swift` の `plans`）。無い商品を聞いても StoreKit は
+（`ios/App/App/LinguaStore.swift` の `ids`）。無い商品を聞いても StoreKit は
 それを返さないだけなので、**先に作った分から順に売り物として出てきます**。
 Plus を先に作れば Plus だけが並びます。
 
@@ -366,8 +366,12 @@ Connect に入れる。鍵は `ios-deploy.yml` と同じ三つの Secrets。
    文だけの変更でも審査を通る（だいたい 1 日）。
 
 文を直すのは `store/<locale>.json` を直して push → もう一度 Run workflow。
-長さの上限（副題 30・キーワード 100・宣伝文 170・説明 4000）は
-`npm run store-localize` が鍵なしで見る。サポート URL とマーケティング URL は
+Apple が断る文は `npm run store-localize` が鍵なしで先に断る（`npm test` にも
+入っている）：長さの上限（副題 30・キーワード 100・宣伝文 170・説明 4000）と、
+**文字** ── ASCII の外の記号（罫線 `─`、✓、絵文字、© ™ ● も）と NFC でない文。
+Apple は許す文字の一覧を出していないので、断られた実例から類で決めてあり、
+Apple より少し厳しい。句読点の中で Apple が断る物（† ‡）は見ていない。
+もう一度走らせると、入っている言語は上書き（PATCH）で、二つにはならない。サポート URL とマーケティング URL は
 `store/` に無い ── 今 App Store Connect にある物のまま（新しい言語には英語の
 物が写る）。
 
@@ -484,12 +488,13 @@ Connect の審査ノート欄に直接入れてください。repo に置いた�
 ## 6. 買う道はつながっています。足りないのはサーバー側です
 
 **両側とも在ります。** `ios/App/App/LinguaStore.swift` に `products` / `buy` /
-`restore` / `current` / `manage` があり、署名が通らない取引は拒み、消費した
+`restore` / `current` / `manage` があり、署名が端末で通らない取引も**わざと**
+サーバーへ送り（通るかを決めるのは `verify-plan`）、消費した
 取引は finish し、アプリを閉じている間に届く更新も `Transaction.updates` で
 見ています。プラグインは使っていません（このアプリは `@capacitor/core` を
 読み込まないので、使えません。`www/share.js` の長い注を参照）。
-`www/` 側は `www/store.js` 一枚で、`setPlan()`（`www/settings.js`）が
-`storeBuy()` の唯一の呼び出し元、`PLAN_BUY` は `true` です。
+`www/` 側は `www/store.js` 一枚で、`plBuy()`（`www/settings.js`）が
+`storeBuy()` の唯一の呼び出し元です。
 
 画面のほうも揃っています ── 三段のカード、月と年の二つのボタン、購入、
 購入を復元、サブスクリプションの管理、そして Guideline 3.1.2 の開示
@@ -539,7 +544,7 @@ repo には置いていません）。
 - ビルドが TestFlight に出てこない → GitHub Actions の run が緑か。
   緑なのに出ない → App Store Connect のメール（Apple から却下の理由が来ます）
 - 「Invalid Signature」→ `DISTRIBUTION_P12_BASE64` か
-  `APPLE_PROVISIONING_PROFILE_BASE64` の期限切れ。1 年で切れます
+  `PROVISIONING_PROFILE_BASE64`（と拡張・ウィジェットの二つ） の期限切れ。1 年で切れます
 - 「ビルド番号が既に使われています」→ run 番号は増え続けるので普通は
   起きません。起きたら誰かが手で番号を戻しています
 
@@ -642,3 +647,82 @@ iPhone が通知を許可して token をサーバーに送るところと、設
 6  GitHub → Actions → Supabase Deploy → push-send
 7  （別の作業）アプリ側が入ったビルドを実機に入れて、通知を許可する
 ```
+
+### 8. その日のお題の通知（2026-09-23）
+
+オーナーの決定（2026-09-23）：「通知なんだけど、今日のお題が変わった時にも出るように
+できる？」「時間が決まってるでしょ。アメリカ時間の0時。それに合わせるのは？」
+
+**Apple 側で増えることはありません。** 1〜4 がそのまま使えます。増えるのは
+サーバーの三つで、この順です：
+
+```
+1  Supabase → SQL Editor → schema.sql を流し直す（push_on_prompt ができる。setup.md § 12 の確かめ方で四行）
+2  Supabase → Cron → daily-prompt の Schedule を 0 7,8 * * * に（setup.md § 9-5）
+3  GitHub → Actions → Supabase Deploy → push-send（全員宛てを送れる版に置き換える）
+```
+
+2 を飛ばすと、夏（PDT）は 0 時に来ますが、**冬（11 月〜）は 23 時間遅れて前日の
+23 時に来ます**。3 を飛ばすと、行が入ってもお題の通知は一通も出ません（古い
+push-send は `prompt` の表を知らないので、`not an event` で終わります）。
+
+## 9. 広告（AdMob）── オーナーがやること（2026-09-23）
+
+アプリ側は入っています（`ios/App/App/LinguaAds.swift`、`www/sns.js`）。今は Google の
+**テスト用の ID** で動きます ── ビルドは `ios-deploy.yml` が Secret を探し、無ければテスト用を
+入れるので、下をやらなくてもビルドは通ります。**本物の広告を出すには 1〜4 が要ります。**
+（本物の ID で自分の広告を押すと、アカウントが止められます。テスト中はテスト用のままで。）
+
+### 1. AdMob に Lingua を作る（アカウント `pub-2442181569589497`）
+
+1. AdMob → アプリ → **アプリを追加** → iOS → 「App Store に公開済み」で Lingua を探す
+   → できたら **アプリ ID**（`ca-app-pub-2442181569589497~NNNNNNNNNN`）を控える。
+2. そのアプリ → 広告ユニット → **ネイティブ アドバンス** → 名前（例：`timeline`）
+   → 詳細設定で **動画を許可** → できたら **広告ユニット ID**
+   （`ca-app-pub-2442181569589497/NNNNNNNNNN`）を控える。
+3. アプリの設定 → **広告コンテンツのレーティング** を **T（ティーン）** に（アプリ側も T に
+   してある。厳しい方が採られる。jpel と同じ）。
+
+### 2. GitHub の Secrets に入れる
+
+GitHub → Settings → Secrets and variables → Actions → New repository secret を二つ：
+
+| 名前 | 中身 |
+|---|---|
+| `ADMOB_APP_ID` | 1-1 のアプリ ID（`~` の入っている方） |
+| `ADMOB_NATIVE_UNIT` | 1-2 の広告ユニット ID（`/` の入っている方） |
+
+次のビルドから本物に変わります。片方だけ入れると、もう片方はテスト用のまま。
+
+### 3. app-ads.txt
+
+App Store Connect の「マーケティング URL」（無ければサポート URL）のサイトの一番上に
+`app-ads.txt` を置く。中身は AdMob → アプリ → app-ads.txt の画面が出す一行。確認に最大 24 時間。
+
+### 4. App Store Connect の「App のプライバシー」を書き直す（§ 5 の表）
+
+AdMob の SDK が集めるもの（Google の一覧：
+https://developers.google.com/admob/ios/privacy/data-disclosure ）：
+
+- **識別子 → デバイス ID**（第三者広告、分析）── 追跡の許可が出た時の IDFA
+- **使用状況データ → 広告データ**、**製品の操作**（第三者広告、分析）
+- **位置情報 → おおよその場所**（IP アドレスから）（第三者広告）
+- **診断 → クラッシュデータ、パフォーマンスデータ**（分析）
+
+「トラッキングに使用」は **はい**（デバイス ID と広告データ）。
+
+### アプリが出す許可の画面（ATT）
+
+初めてホームのタイムラインで広告が呼ばれた時に一度だけ、iOS 自身が「追跡を許可しますか」
+を出します（jpel と同じ、まだ誰も答えていない時だけ）。断っても広告は出ます。文は
+`Info.plist` の `NSUserTrackingUsageDescription`（英語、他の説明文と同じ）。
+
+### テスト用の ID（Google の公式、iOS）
+
+| もの | ID |
+|---|---|
+| アプリ ID | `ca-app-pub-3940256099942544~1458002511` |
+| ネイティブ | `ca-app-pub-3940256099942544/3986624511` |
+| ネイティブ（動画） | `ca-app-pub-3940256099942544/2521693316` |
+
+ヨーロッパの同意画面（UMP）はまだ入っていません（`docs/BACKLOG.md`）。

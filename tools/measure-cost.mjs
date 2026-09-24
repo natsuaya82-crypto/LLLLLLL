@@ -51,8 +51,10 @@ function meter(cfg){
     localStorage.setItem('lingua.sess',
       JSON.stringify({ at:TOK, rt:'r', uid:'u', anon:false }));
     localStorage.setItem('lingua.set', JSON.stringify({ done:true }));
-    if (cfg.langs) localStorage.setItem('lingua.langs', cfg.langs);
-    if (cfg.cur) localStorage.setItem('lingua.cur', cfg.cur);
+    /* the index is the account's (`lingua.langs.<uid>`, www/core.js § ACCT) --
+       carried from the first phone's run byte for byte */
+    if (cfg.langs) localStorage.setItem('lingua.langs.u', cfg.langs);
+    if (cfg.cur) localStorage.setItem('lingua.cur.u', cfg.cur);
   } catch (e) {}
 
   function qs(u, k){
@@ -225,6 +227,9 @@ async function sliceSizes(br, n){
     eval('(' + s + ')()');
     var make = eval('(' + mk + ')');
     if (n) { WORDS.length = 0; WORDS.push.apply(WORDS, make(n)); }
+    /* the server's answer to 「who wrote it」, which a save waits for
+       (www/core.js § langLocked) -- without it nothing is written to measure */
+    langOwnGot(langId, netUid());
     langSaveAll();
     var out = {}, i, k;
     for (i = 0; i < SLICES.length; i++){
@@ -232,7 +237,7 @@ async function sliceSizes(br, n){
       out[SLICES[i]] = new Blob([String(LSL[k] || '')]).size;
     }
     return { sl: out, words: WORDS.length,
-             langs: localStorage.getItem('lingua.langs') || '' };
+             langs: localStorage.getItem('lingua.langs.u') || '' };
   }, { s: seed.toString(), mk: MAKEWORDS.toString(), n });
   await pg.close();
   return got;
@@ -249,6 +254,9 @@ async function launch(br, n, posts){
     eval('(' + s + ')()');
     var make = eval('(' + mk + ')');
     if (n) { WORDS.length = 0; WORDS.push.apply(WORDS, make(n)); }
+    /* the server's answer to 「who wrote it」, which a save waits for
+       (www/core.js § langLocked) -- without it nothing is written to measure */
+    langOwnGot(langId, netUid());
     langSaveAll();
     /* 起動のときに勝手に生まれた空の言語は落とす ── 測るのは一本ぶんです。 */
     var id2; for (id2 in LANGS) if (id2 !== langId) delete LANGS[id2];
@@ -260,8 +268,8 @@ async function launch(br, n, posts){
   const up = await a.evaluate(() => ({
     log: window.__M.log.map(r => ({ m:r.m, u:r.u, up:r.up, down:r.down })),
     sl: window.__M.sl(), lrow: window.__M.lrow(),
-    langs: localStorage.getItem('lingua.langs') || '',
-    cur: localStorage.getItem('lingua.cur') || ''
+    langs: localStorage.getItem('lingua.langs.u') || '',
+    cur: localStorage.getItem('lingua.cur.u') || ''
   }));
   await a.close();
 

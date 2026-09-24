@@ -204,7 +204,7 @@ function vSet(){
        「設定の見た目は外観モードを写真と同じようにして。Linguaの画面のスクショ
        みたいな感じ」 */
     body='<div class="thcards">'+setLookCard('light')+setLookCard('dark')+'</div>'+
-      '<button class="set" style="margin-top:14px;border-bottom:none"' +
+      '<div class="grpsep"></div><button class="set end"' +
         DO('setAuto', [SET.theme!=='system']) + '>'+
         '<span class="sl">'+t('theme.system')+'</span>'+
         swtHTML(SET.theme==='system')+'</button>'+
@@ -223,7 +223,7 @@ function vSet(){
       '<button class="set"' + DO('editName') + '><span class="sl">'+t('set.name')+'</span>'+
       '<span class="sv">'+esc(langNameSaid(langName))+ICON_GO+'</span></button>'+
       '<button class="set"' + DO('go', ["words"]) + '><span class="sl">'+t('set.count')+'</span>'+
-      '<span class="sv">'+WORDS.length+(can('words')?'':' / '+wordCap())+ICON_GO+'</span></button>'+
+      '<span class="sv">'+WORDS.length+(planNo(can('words'))? ' / '+wordCap() : '')+ICON_GO+'</span></button>'+
       '<button class="set"' + DO('go', ["letters"]) + '><span class="sl">'+t('toc.letters')+'</span>'+
       '<span class="sv">'+LETTERS.length+ICON_GO+'</span></button>'+
       /* Answered once, if ever: wsGuess() reads it off the letters, and the
@@ -243,9 +243,11 @@ function vSet(){
          has never been touched falls back to (`wldSecDl`). Nothing was
          removed from anybody's file -- what went is the second place to set
          it, which is the thing that was wrong. */
-      /* What stands between two letters (www/wsys.js § spRowHTML).
-         「置き場所は言語の設定画面」 OWNER 2026-09-23. */
-      spRowHTML()+
+      /* What stands between two letters -- a row that goes to its own page
+         (www/wsys.js § vSp). 「置き場所は言語の設定画面」「字間> … 別ページに
+         した方が見やすい。」 OWNER 2026-09-23. */
+      '<button class="set"' + DO('go', ["sp"]) + '><span class="sl">'+t('set.sp')+'</span>'+
+      '<span class="sv">'+inkSteps(SCRIPT.sp)+ICON_GO+'</span></button>'+
       '<button class="set" style="border-bottom:none"' + DO('go', ["wsys"]) + '><span class="sl">'+t('ws.kind')+'</span>'+
       '<span class="sv">'+esc(t('ws.k.'+wsys()))+ICON_GO+'</span></button>'+
       '';
@@ -500,9 +502,9 @@ function vContact(){
      one a person can ADD to, so neither fits in a wheel and both need a page.
      Three fixed words do.
 
-     `.field select` is already in the stylesheet and `obLang` in the
-     onboarding is already one, so nothing new is invented here and no CSS is
-     added. */
+     `.field select` is already in the stylesheet and the onboarding's
+     interface language is already one, so nothing new is invented here and
+     no CSS is added. */
   /* AND THE SEND IS IN THE CORNER OF THE BAR, NOT UNDER THE BODY.
      「本文が増えたらこれ見えなくなるやろ送信右上にして本文は画面全部に広がる
      ようにして。」 OWNER 2026-09-22. It was a `.btn.ghost` at the foot of the
@@ -513,11 +515,12 @@ function vContact(){
      states, the colour and nothing else (www/shell.js § navDo).
 
      `on` is contactOn() above and it is painted by hand while somebody types
-     (contactSet), because this screen is not redrawn on a keystroke. The word
-     is still the busy one while a send is in the air. */
+     (contactSet), because this screen is not redrawn on a keystroke. It is
+     the paper plane and the word is its name (OWNER 2026-09-23); while a send
+     is in the air the name is the busy one and the plane is grey. */
   return '<div class="view">'+
     navTop('', navDo(t(CONT.busy? 'ob.mail.wait' : 'contact.send'),
-                     'contactGo', null, contactOn()))+
+                     'contactGo', null, contactOn(), {icon:ICON_SEND}))+
     /* `tall` is the body that is as tall as the screen -- vSet()'s account
        room above already wears it -- and it is what lets the field below take
        what is left. */
@@ -546,7 +549,7 @@ function vContact(){
        text」and「as tall as what is left」are two different fields and doing
        both is the box growing back off the bottom of the phone.
        One rule under it and nothing else -- no frame, no corner, no panel. */
-    '<div class="field ctbody" style="margin-top:26px">'+
+    '<div class="grpsep"></div><div class="field ctbody">'+
       '<label>'+esc(t('contact.body'))+'</label>'+
       lnField('cont-b', '', IN('contactSet', ['body']), CONT.body, 'fitin')+
     '</div>'+
@@ -575,7 +578,14 @@ function setAuto(on){
   var dark=!!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
   setTheme(dark? 'dark' : 'light');
 }
-function setUi(l){ SET.ui=l; save(); netPrefsPut(); render(); }
+/* AND THE NOTICES ARE ASKED AGAIN, because what a notice SAYS is written in
+   the language the app is read in -- the answer and the record that it was
+   answered both go, and the question goes out on this press. */
+function setUi(l){
+  SET.ui=l; save(); netPrefsPut();
+  NOTES_HAVE=null; pullDrop('notif'); pullNeed('notif');
+  render();
+}
 /* Delete account: everything this phone holds, and the tokens with it.
 
    It used to empty the words, the sentences and the name and stop there, so
@@ -790,7 +800,7 @@ function wipeAll(){
    finishes at www/boot.js § bootSession(). A phone closed while the request
    was in the air has nothing to finish: the account is still there. */
 function wipeAllGo(){
-  var uid=(typeof SESS!=='undefined' && SESS && SESS.uid)? String(SESS.uid) : '';
+  var uid=netUid();
   netDropMe(function(){ netEnding(); wipeHere(uid); }, wipeStopped);
 }
 /* It did not go. Nothing on this phone has been touched, nothing was written
@@ -845,8 +855,7 @@ function wipeHere(uid){
      loses everything anyway, because everything on it is that account's.
      Writing 「and if nobody else is here, wipe the lot」 was a first draft and
      it is two behaviours where the rule has one. */
-  var wipeUid=String(uid||
-    ((typeof SESS!=='undefined' && SESS && SESS.uid)? SESS.uid : ''));
+  var wipeUid=String(uid || netUid());
   var wipeIds=lsWipeAcct(wipeUid);
   langId='';
   langFirst();
@@ -858,38 +867,16 @@ function wipeHere(uid){
      「アカウント削除で残るものねえ」 OWNER 2026-08-27.
      LANG_IO in www/core.js is the one list now. */
   langLoad();
-  /* Whom this phone belonged to, what it was carrying, and what had been
-     written and not sent. All three are the person's and none of them is a
-     slice, which is why none of them was going anywhere before today. The
-     keys are gone above; these are the copies in memory, which would
-     otherwise be written straight back out by the next save. */
-  ME={name:'', handle:'', bio:'', pic:'', link:'', loc:'', avSent:''};
-  POSTS=[]; DRAFTS=[];
-  /* the person's settings, back to what a fresh install has, and NOTHING is
-     carried over -- not the theme, not the interface language, not the plan.
-     「残るものねえ」is the whole sentence.
-
-     The plan is not on this phone at all: it is `verify-plan`'s answer about
-     the account that has just gone, and netOut() below forgets it with the
-     session (planForget(), www/core.js § PLAN). Money decides what may be
-     DONE and nothing about what exists -- here nothing exists either way, so
-     it protects nothing and costs nothing. */
-  /* The fields of SET that were this account's, gone with it -- the searches
-     they starred, how far down their notices they had read. setFor()
-     in www/core.js is the list and the one place it is written down. The
-     theme and the interface language are how this handset is set up and are
-     not anybody's belongings, so they stay.
-
-     '' rather than a uid: nobody is signed in a line below, and this is the
-     same call netOut() makes. */
-  try{ localStorage.removeItem(setParkKey(wipeUid)); }catch(e){}
-  setFor('');
+  /* Whom this phone belonged to, what it was carrying, what had been written
+     and not sent, and the fields of the settings that were theirs -- the
+     searches they starred, how far down their notices they had read -- went
+     with lsWipeAcct() above: they are the account's container (www/core.js
+     § ACCT), and emptying it is one call there rather than a list of them
+     here, which is how `recent` was left standing once. */
   /* THE PLAN IS NOT ON THIS PHONE and there is nothing here to set back.
      It was `SET.plan` and `SET.planWas` in `lingua.set`; what an account pays
      is `verify-plan`'s answer, held in memory (www/core.js § PLAN), and
      netOut() a few lines below forgets it with the session. */
-  delete SET.acct; delete SET.saved;
-  delete SET.savedUp; delete SET.notAt;
   /* AND IT OPENS ON THE DOOR, not on the walk. 「アカウント削除した後
      オンボーディングから始まるのはなぜ？」 OWNER 2026-09-03.
 
@@ -1130,14 +1117,21 @@ function plPicked(id, yr){ return !!(PLPICK && PLPICK.id===id && PLPICK.yr===!!y
 /* Whether what is picked is already paid for -- the plan in force, or one
    below it on the ladder. plBuy()'s own test, asked before the button is
    drawn instead of after it is pressed. Nothing picked is not 「held」: the
-   button is drawn disabled then, which is what it has always been. */
+   button is drawn disabled then, which is what it has always been.
+
+   THREE ANSWERS, has()'s own (www/core.js § has): `null` while nobody has
+   said what this account pays -- plan() is '' then and only then -- and then
+   there is nothing to buy and nothing to name. It answered 「not held」, and
+   a person on Pro in a tunnel was offered Plus: the 2026-09-01 double charge
+   by another road (docs/scope/r63-audit.md § 0-3). */
 function plHave(){
   var i, j;
   if(!PLPICK) return false;
   if(plan()==='free') return false;
   i=PLAN_ORDER.indexOf(plan());
   j=PLAN_ORDER.indexOf(PLPICK.id);
-  return j>=0 && i>=0 && j<=i;
+  if(i<0) return null;
+  return j>=0 && j<=i;
 }
 /* ---- and what stands where that button was -----------------------------
    「消すなら同じ場所に現在このプランです〇〇/〇〇までみたいな感じにしないと
@@ -1195,13 +1189,21 @@ function plBuy(){
   /* plHave() and not the comparison written out again: the button above is
      drawn from it and this is the same question. Two copies is the one thing
      this repo has been bitten by most -- the day one of them changes, the
-     other goes on answering the old way and nothing says so. */
-  if(plHave()){
+     other goes on answering the old way and nothing says so. Nothing goes
+     to Apple on an answer nobody gave: upStop() says 「接続できません」. */
+  var have=plHave();
+  if(!planSaid(have)){ upStop(have); return; }
+  if(have){
     popAsk(t('plan.already', planName(plan())), function(){ storeManage(); },
       t('plan.cancel'));
     return;
   }
-  setPlan(PLPICK.id, PLPICK.yr);
+  /* Pressing a card ASKS APPLE AND NOTHING ELSE. planTook() is the one
+     writer of a plan and netPlanVerify(), with verify-plan's answer, is its
+     one caller (www/core.js § PLAN). www/ is published (vercel.json), so a
+     card that wrote the plan where there is no App Store would be Pro for
+     anybody with a browser; there, storeBuy() says so and nothing moves. */
+  storeBuy(storeId(PLPICK.id, PLPICK.yr));
 }
 function planPrice(p, free){
   function term(yr){
@@ -1376,7 +1378,8 @@ function vPlans(){
        the way TO this screen. Here there is nowhere to send anybody. */
     '<div class="plgo">'+
       (storeSay()? '<div class="note">'+esc(storeSay())+'</div>' : '')+
-      (plHave()? plNow() :
+      (!planSaid(plHave())? '<div class="note">'+esc(t('net.offline'))+'</div>' :
+       plHave()? plNow() :
         '<button class="btn plbuy'+(PLPICK? ' on' : '')+'"' + DO('plBuy') +
         (PLPICK? '' : ' disabled')+' style="width:100%">'+
         esc(t('plan.buy'))+'</button>')+'</div>'+
@@ -1399,35 +1402,6 @@ function vPlans(){
       DO('storeManage') + '>'+esc(t('plan.cancel'))+'</button></div>'+
   '</div>';
 }
-/* 段は、Apple の購入が通ってから書かれる。
-   「課金もタップしたら勝手になるけど？」OWNER 2026-08-31。
-
-   `PLAN_BUY` は買う道を通すかどうかの一箇所の値で、2026-08-25 から `false`
-   でした ── その日 App Store Connect に商品が一つも無く、実機で段を試す道が
-   それしか無かったからです。そのときのコメント自身が「出荷前に true に戻す
-   こと」と書いていて、戻らないままビルド #106 が実機に出て、段のカードを
-   押しただけで Pro が付きました。
-
-   `true` です。実機では `storeBuy()` を通り、通らなければ段は動きません
-   ── そして段は**要求ではなく返事から**取られます（`storeTook()` は
-   `r.plan` を読む）ので、取り消しも保留も失敗も `free` のままです。
-
-   ブラウザには App Store が無いので `storeOn()` が false になり、そこでは
-   今までどおり手で切り替わります ── 検査もスクリーンショットもそれで歩きます。
-
-   値のまま残してあるのは行ごと消せないからではなく、`setPlan` が `storeBuy`
-   の唯一の呼び出し元だからです。消すと StoreKit 側が丸ごと dead-check に
-   落ちます。**false に戻さないこと。** false のまま App Store に出すと、
-   誰でも自分に Pro を付けられます。 */
-var PLAN_BUY=true;
-function setPlan(id, yearly){
-  if(PLAN_BUY && id!=='free' && storeOn() && storeBuy(storeId(id, yearly))) return;
-  /* planTook() and not four lines of its own: it is the one place a plan is
-     written down, wherever the word came from -- the server's answer, or this
-     hand in a browser. 2026-09-06. */
-  planTook(id);
-  toast(id==='free'? t('toast.plan.free') : t('toast.plan.other', id));
-}
 
 
 /* Signing out leaves everything where it is: the languages are on the phone
@@ -1446,12 +1420,8 @@ function setSignOut(){
   popAsk(t('set.signout.ask'), function(){ setSignOutGo(); }, t('set.signout'));
 }
 function setSignOutGo(){
-  /* BEFORE netOut(), and that order is the whole of it: this takes the
-     `device` row for the account that is leaving, at this handset, and
-     netOut() is where the session -- and the token that signs the DELETE --
-     ends. www/net.js § netDeviceDrop has both halves of the key and why.
-     It decides everything itself, so it is a call and not a condition. */
-  netDeviceDrop();
+  /* netOut() takes this handset's `device` row for the account leaving, at its
+     head, on every road out (www/net.js § netOut). */
   netOut();
   /* And the provider is told too. Lingua's tokens are not the only session
      there is: the social plugin keeps its own, and it survived this -- so the

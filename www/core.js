@@ -30,6 +30,160 @@
       of me". They still do.
    ========================================================================= */
 var LS_LANGS='lingua.langs', LS_CUR='lingua.cur', LS_S='lingua.set';
+/* The session belongs to this phone and to no language, so it is filed beside
+   lingua.set and lingua.me rather than under langKey(). */
+var LS_SESS='lingua.sess';
+var SESS=null;
+function sessRead(){
+  SESS=null;
+  try{
+    var s=JSON.parse(localStorage.getItem(LS_SESS)||'null');
+    if(s && s.rt) SESS=s;
+  }catch(e){}
+}
+sessRead();
+/* WHO THIS IS -- the account's uuid, or '' with nobody signed in. The one
+   place anything outside the session's own functions learns it (r73 § 2-5). */
+function netUid(){ return (SESS && SESS.uid) || ''; }
+/* ---- WHAT AN ACCOUNT HAS ON THIS PHONE, IN ONE PLACE ---------------------
+   「端末ごとにやることなんてねえよ」「アカウントごとってずっと言ってるよな？」
+   OWNER 2026-09-03, and CLAUDE.md § Online: 「a thing that cannot answer
+   『which account』 is a thing that must not be written down」.
+
+   ONE SENTENCE (r73 § 2-7): what is written on this phone carries the uid
+   AT THE MOMENT IT IS WRITTEN; what carries none is read by nobody and
+   becomes nobody's; and what an account has in memory is in ONE container
+   that is swapped by one call.
+
+   It used to be three mechanisms with one hole each. Every thing had a LIVE
+   key with no owner on it (`lingua.me`, `lingua.posts`, `lingua.drafts`,
+   `lingua.langs`, the account's fields of `lingua.set`) and a PARKED copy
+   under `…<uid>`, and a function per thing (meFor, postFor, setFor) moved one
+   into the other when the account changed -- and each of those, finding a
+   live copy with nobody's name on it, ADOPTED it for whoever was signing in.
+   A phone carrying a copy from before the stamp gave it to the first person
+   through the door; measured (r73 § 2-7), an old unstamped language went up
+   as that person's, published. And signing out was ten lines of 「and forget
+   this too」 in netOut(), a list somebody had to remember to add to, and
+   one was missed (r73 § 1-3).
+
+   So there is no live key and nothing to move. The key a thing is written
+   under IS `lingua.<name>.<uid>` of the account holding it (acctPut), so the
+   answer to 「whose」 is on it from the first byte, and switching accounts is
+   reading the other account's key (acctFor). With nobody signed in nothing is
+   written at all: the only thing in memory with no owner is what the walk
+   made before the door, and the door gives it to the account arriving -- the
+   one exception CLAUDE.md § Online names -- filling in only what that account
+   does not already have.
+
+   ACCT is the container: each file that holds something of an account's
+   registers it BESIDE its own global, at load -- acctKeep() for what is
+   written down, acctMem() for what is only remembered -- so a thing added
+   tomorrow is swapped tomorrow, and netOut() is one line. */
+var ACCT_UID=netUid();
+var ACCT=[];
+function acctKey(name, uid){ return 'lingua.' + name + '.' + String(uid||''); }
+function acctRaw(key){
+  var r=null;
+  try{ r=localStorage.getItem(key); }catch(e){ r=null; }
+  if(r===null) return null;
+  /* An older version wrote `lingua.cur` bare, not as JSON. */
+  try{ return JSON.parse(r); }catch(e){ return r; }
+}
+/* Written under the account in hand, or not written. A write that does not
+   land (a full phone) throws to the caller, whose saveTry() says so -- the
+   one place that answers it (§ saveTry). Nobody signed in is not a failure:
+   it is the walk, whose things live in memory until the door (CLAUDE.md
+   § Online). */
+function acctPut(name, v){
+  if(ACCT_UID) localStorage.setItem(acctKey(name, ACCT_UID), JSON.stringify(v));
+}
+/* Something written down. `now()` is what memory holds, `got(v)` puts `v` in
+   memory (`null` is 「this account has none」). `old` is the key an older
+   version wrote it under with no owner on it, and `pick(v, uid)` is what of
+   that belongs to the account the old stamp names -- acctMoved() below. */
+function acctKeep(name, now, got, old, pick){
+  var e={ name:name, now:now, got:got, old:old||'', pick:pick||null };
+  ACCT.push(e);
+  acctMoved(e);
+  got(ACCT_UID? acctRaw(acctKey(name, ACCT_UID)) : null);
+}
+/* Something only remembered: an answer the server gave this account. */
+function acctMem(forget){ ACCT.push({ forget:forget }); }
+/* THE ONE SWITCH. netTook() when a session arrives, netOut() when it goes.
+
+   From nobody to somebody is the door, and what memory holds then is the
+   walk's (nothing ownerless is ever read from the disk, so there is nothing
+   else it could be): the account's own comes first and what the walk made
+   fills what it lacks, and the result is written under the account. Any other
+   change reads the arriving account's own and nothing of the last one's. */
+function acctFor(uid){
+  var me=String(uid||''), door=!ACCT_UID && !!me, i, e, v;
+  if(me===ACCT_UID) return false;
+  ACCT_UID=me;
+  for(i=0;i<ACCT.length;i++){
+    e=ACCT[i];
+    if(e.forget){ e.forget(); continue; }
+    v=me? acctRaw(acctKey(e.name, me)) : null;
+    if(door){ v=acctFill(v, e.now()); saveTry(function(){ acctPut(e.name, v); }); }
+    e.got(v);
+  }
+  return true;
+}
+/* The account's own, with what the walk made where the account has nothing.
+   An object is filled key by key and a list is the account's if it has one:
+   nothing the account had is written over -- a copy that wins is how a copy
+   destroys somebody's work (docs/DATA_SAFETY.md). A single value is not
+   something anybody made -- it is WHERE somebody is standing (`cur`) -- and
+   the walk's is where they are now: the language they have just made. */
+function acctFill(mine, walk){
+  var out, k;
+  if(walk===null || walk===undefined || walk==='' ||
+     (typeof walk.length==='number' && !walk.length)) return mine;
+  if(typeof walk!=='object') return walk;
+  if(mine===null || mine===undefined || mine==='' ||
+     (typeof mine.length==='number' && !mine.length)) return walk;
+  if(typeof mine!=='object' || typeof mine.length==='number') return mine;
+  out={};
+  for(k in walk) if(Object.prototype.hasOwnProperty.call(walk, k)) out[k]=walk[k];
+  for(k in mine) if(Object.prototype.hasOwnProperty.call(mine, k)) out[k]=mine[k];
+  return out;
+}
+/* ---- WHAT AN OLDER VERSION LEFT WITH NO OWNER ON IT ----------------------
+   The live keys above carried their owner in ONE place: `acct` inside
+   `lingua.set` (「which account's things are live on this handset」), and
+   what it named was theirs. That is COPIED, once per thing, to that account's
+   own key -- and nothing is removed: the old key stays byte for byte and is
+   never read again. What no stamp names is nobody's and is neither read nor
+   removed (「読まない、消さない」 OWNER 2026-09-03, and 2026-09-23
+   「そもそもアプリ公開されたの昨日だから必要ない」).
+
+   The live key is the newest of that account's copies, so it is copied OVER
+   the account's parked one: the old switch read a park back when the account
+   returned and left it standing, stale, and would itself have written over
+   it at the next sign-out. Once per thing, marked in `acctMoved`
+   (SET_PHONE), because the second time the account's own key is the newer.
+   Deleting that account takes the old keys its stamp names (lsWipeAcct). */
+function acctOld(){
+  var s=acctRaw(LS_S);
+  return (s && typeof s==='object')? String(s.acct||'') : '';
+}
+function acctMoved(e){
+  var raw=acctRaw(LS_S), who, v;
+  if(!e.old || !raw || typeof raw!=='object' || !raw.acct) return;
+  who=String(raw.acct);
+  if(!raw.acctMoved || typeof raw.acctMoved.length!=='number') raw.acctMoved=[];
+  if(raw.acctMoved.indexOf(e.name)>=0) return;
+  v=acctRaw(e.old);
+  if(v!==null && e.pick) v=e.pick(v, who);
+  try{
+    if(v!==null && v!==undefined) localStorage.setItem(acctKey(e.name, who), JSON.stringify(v));
+    raw.acctMoved.push(e.name);
+    localStorage.setItem(LS_S, JSON.stringify(raw));
+  }catch(x){}
+  /* and in memory, or the next setKeep() writes the mark from before this */
+  SET.acctMoved=raw.acctMoved.slice();
+}
 /* Everything this app has ever written, and it is NOT a list.
 
    「アカウント削除で残るものねえって言ってんだろ何回言わせんだよ全部消えんだよ。」
@@ -64,16 +218,27 @@ var LS_LANGS='lingua.langs', LS_CUR='lingua.cur', LS_S='lingua.set';
    Returns the language ids it took,
    so the caller can drop those backups and no others. */
 function lsWipeAcct(uid){
-  var me=String(uid||''), ids=[], doomed=[], keys, id, i, k, j, pre;
+  var me=String(uid||''), ids=[], doomed=[], id, i, k, j, pre, idx, took;
   /* WHOSE, AND IT IS TWO QUESTIONS. A language this account WROTE is
      `language.owner` (langOwnOf), and one it TOOK is a `language_take` row
      (langTookHas) -- two facts that `LANGS[id].uid` used to answer with one
      field, which is what came apart the day a language moved between people.
      Both go: the account is being deleted, and its copies of what it pulled
      down are as much its own as what it wrote. */
-  for(id in LANGS)
-    if(Object.prototype.hasOwnProperty.call(LANGS, id) && LANGS[id] &&
-       (langOwnOf(id)===me || langTookHas(id))) ids.push(id);
+  /* WHICH LANGUAGES, ASKED OF THIS ACCOUNT'S OWN INDEX -- `lingua.langs.<uid>`
+     and `lingua.take.<uid>` (§ ACCT) -- and not of what memory holds. The
+     session has usually ENDED by the time this runs (netEndMe signs out the
+     moment the server answers, and signing out empties memory), so reading
+     LANGS found nothing and left every language of a deleted account on the
+     phone (measured, acct-check 48, r79). */
+  idx=acctRaw(acctKey('langs', me)) || {};
+  took=acctRaw(acctKey('take', me)) || [];
+  if(me && ACCT_UID===me)
+    for(id in LANGS) if(Object.prototype.hasOwnProperty.call(LANGS, id)) idx[id]=LANGS[id];
+  for(id in idx)
+    if(Object.prototype.hasOwnProperty.call(idx, id) &&
+       (langOwnOf(id)===me || took.indexOf(id)>=0 ||
+        (ACCT_UID===me && langTookHas(id)))) ids.push(id);
   /* EVERYTHING FILED UNDER THIS LANGUAGE, COUNTED RATHER THAN NAMED -- which
      is the same rewrite the uid half of this function was given below, one
      level in.
@@ -127,32 +292,35 @@ function lsWipeAcct(uid){
         doomed.push(k);
     }
   }catch(e){}
-  /* the live copies, which are this account's while it is signed in */
-  doomed.push('lingua.me'); doomed.push('lingua.posts'); doomed.push('lingua.drafts');
+  /* AND WHAT AN OLDER VERSION LEFT FOR THIS ACCOUNT WITH NO OWNER ON THE KEY
+     ITSELF -- the live keys `lingua.set`'s stamp says were theirs (§ acctMoved).
+     Counted from the container rather than named: each thing that has one
+     says what its old key is, and its `pick` says which part of it was this
+     account's. All of it is removed; part of it -- the rows of the one index
+     every account shared, the fields of `lingua.set` beside the handset's
+     setup -- is taken out and the rest written back as it was. */
+  if(me && acctOld()===me) saveTry(function(){
+    var e, v, p, k2, raw;
+    for(i=0;i<ACCT.length;i++){
+      e=ACCT[i];
+      if(!e.old || (v=acctRaw(e.old))===null) continue;
+      p=e.pick? e.pick(v, me) : v;
+      if(p===null || p===undefined) continue;
+      if(p===v || typeof p!=='object'){ doomed.push(e.old); continue; }
+      for(k2 in p) if(Object.prototype.hasOwnProperty.call(p,k2)) delete v[k2];
+      localStorage.setItem(e.old, JSON.stringify(v));
+    }
+    raw=acctRaw(LS_S);
+    if(raw && typeof raw==='object'){ delete raw.acct; localStorage.setItem(LS_S, JSON.stringify(raw)); }
+  });
   try{ for(i=0;i<doomed.length;i++) localStorage.removeItem(doomed[i]); }catch(e){}
-  /* AND WHAT IS THEIRS INSIDE `lingua.set`, which is a key this account
-     SHARES rather than one it owns -- so it is emptied of them instead of
-     removed. 「アカウント消したのに検索履歴残ってたんだけどなんで？」 OWNER
-     2026-09-04: the history was here, in the live settings, and nothing in
-     this function had ever looked inside the key.
-
-     Here and not at the call site, because this is 「one account's things,
-     gone」 and the words somebody searched for are one of their things. The
-     caller wiped the parked copy and then signed out, and signing out PARKS
-     -- so the fields were written straight back under the name of the account
-     that had just been deleted. Cleared here, there is nothing left to park:
-     setFor('') finds no owner and returns having written nothing. */
-  if(String(SET.acct||'')===me){
-    keys=setAcctKeys(null);
-    for(i=0;i<keys.length;i++) delete SET[keys[i]];
-    /* THE PLAN IS NOT HERE. It was two more words -- `SET.plan` and
-       `SET.planWas`, set to free so a deleted account's rung was off the
-       screen -- and neither is on this phone any more: what an account pays
-       is `verify-plan`'s answer, held in memory (§ PLAN), and the session
-       going takes it (planForget()). */
-    delete SET.acct;
-    setKeep();
-  }
+  if(me && String(SET.acct||'')===me) delete SET.acct;
+  /* AND WHAT IS IN MEMORY, which is the container's: the account being
+     deleted is nobody's from here, so nothing that is saved between this line
+     and the session ending can write its name back onto the disk
+     (「アカウント削除で残るものねえ」). The words somebody searched for, the
+     settings, the timeline -- all of it goes with this one call. */
+  if(me && ACCT_UID===me) acctFor('');
   langStore();
   return ids;
 }
@@ -217,9 +385,11 @@ var SLICES=['words','lines','lang','script','letters','notes','phases','talk','s
      talk    a chapter that closed. Nothing in www/ reads or writes it, and it
              is NOT deleted -- somebody's may be in it and that is the owner's
              to decide (docs/DATA_SAFETY.md § 4)
-     gram2   read and written BY LANGUAGE ID, on demand, in
-             www/grammar-engine/adapter.js. There is no global copy to go
-             stale, which is why it never belonged in the sequences above
+     gram2   a grammar model an older version kept. Nothing in www/ reads or
+             writes it any more (the adapter's load and save went on
+             2026-09-23, www/grammar.js § gModel) and it is NOT deleted --
+             what somebody has in it is theirs, and the article still offers
+             it for download beside `phases` (www/home.js § WLD_DL_KIND)
 
    The functions are named inside a function body rather than beside the key,
    because www/core.js is the FIRST script index.html loads: `ltRead` and
@@ -240,7 +410,7 @@ var LANG_IO={
   wld:    { rd:function(){ wldRead(); },  wr:function(){ saveWld(); } },
   lang:   { why:'the name, and it is the `language.name` column now (www/core.js § LNAME). Nothing writes it; langNameOld() reads it where the column has said nothing yet, and it is not deleted -- what is in it is what an older version of this app put there' },
   talk:   { why:'a chapter that closed. Nothing reads or writes it, and it is not deleted' },
-  gram2:  { why:'read by language id on demand in www/grammar-engine/adapter.js; there is no global copy' }
+  gram2:  { why:'a grammar model an older version kept. Nothing reads or writes it (the adapter\'s load and save are gone, 2026-09-23), and it is not deleted' }
 };
 /* Everything this language is, into the globals. One pass, and a function
    named by four slices is called once -- the dictionary and the lines come
@@ -438,24 +608,26 @@ function langWsysOf(id){
 var LOWN={};
 function langOwnKey(id){ return langKeyOf(String(id||''), 'owner'); }
 function langOwnGot(id, uid){
-  var k=String(id||''), v=String(uid||''), was=langOwnOf(k);
+  var k=String(id||''), v=String(uid||''),
+      was=Object.prototype.hasOwnProperty.call(LOWN, k)? LOWN[k] : '';
   if(!k) return;
   LOWN[k]=v;
   slGot(langOwnKey(k), v);
-  /* AND THE OPEN LANGUAGE HAS JUST BECOME WRITABLE, so what could not be
-     written while nobody had answered goes in now rather than on the next
-     launch. ltStart() (www/letters.js) is the one thing that tops a free
-     alphabet up to its slots and it REFUSES a language langWhose() has not
-     answered mine for -- 「未回答は書かせない」 -- which at the door is the
-     walk's own language, every time: the row is made and the owner column
-     comes back a moment after ltStart() has already run and returned.
+  /* AND THE OPEN LANGUAGE HAS JUST BECOME WRITABLE (§ langLocked), so what
+     could not be written while nobody had answered goes in now rather than on
+     the next launch -- migrateAll() below, the old shapes brought forward
+     and the free alphabet topped up (ltStart, www/letters.js). Each of them
+     refuses a language that is not writable -- which on a launch is every language until its answer is in,
+     and at the door is the walk's own language until its row is made.
 
      Not a second mechanism: it is the same call, made at the moment the fact
      it waited on becomes true, and it tops up only what is missing. Only on
-     the OPEN language, because ltStart() works on LETTERS; and only where the
-     answer MOVED, so the launch's own walk over every row does not run it
-     once per language. */
-  if(k===langId && v && v!==was && typeof ltStart==='function') ltStart();
+     the OPEN language, because they work on its globals; and only where the
+     answer is new in this run of the app, so a walk over every row does not
+     run it once per row. `was` is LOWN and never the picture: the picture is
+     not an answer, and comparing against it is what kept this from running
+     on a launch. */
+  if(k===langId && v && v!==was && typeof migrateAll==='function') slAsApp(migrateAll, []);
 }
 function langOwnOf(id){
   var k=String(id||''), p;
@@ -553,29 +725,21 @@ var LTAKE=null;
    was before: langWhose() answers LW_READ off it, every writer refuses, and
    updating or saving with no signal says 「接続できません」 rather than
    quietly working on a copy. */
-function langTakeKey(uid){ return 'lingua.take.' + String(uid||''); }
 function langTookGot(ids){
-  var got=(ids && typeof ids.length==='number')? ids : null,
-      me=(typeof SESS!=='undefined' && SESS && SESS.uid)? String(SESS.uid) : '';
+  var got=(ids && typeof ids.length==='number')? ids : null;
   LTAKE=got;
   /* Only an ANSWER is drawn. `null` is 「nobody has said」, and writing that
      down as an empty list would turn 「I have not been told」 into 「you have
      taken nothing」 on the next launch -- the two sides langWhose() exists to
      keep apart. Nothing is removed either: the picture that is there stays
      there until this account's next answer replaces it or the account goes. */
-  if(got && me) try{ localStorage.setItem(langTakeKey(me), JSON.stringify(got)); }catch(e){}
+  if(got) saveTry(function(){ acctPut('take', got); });
 }
-/* THE ONE PLACE THE PICTURE IS READ, and it is read for the account named
-   rather than for whoever wrote it. Called where a uid becomes known -- the
-   launch (netRead) and a session arriving (netTook) -- and with '' where one
-   goes (netOut), which is the same call doing the forgetting: a phone with
-   nobody on it has not been told anything. */
-function langTookFor(uid){
-  var me=String(uid||''), p=null;
-  if(me) try{ p=localStorage.getItem(langTakeKey(me)); }catch(e){ p=null; }
-  try{ p=p? JSON.parse(p) : null; }catch(e){ p=null; }
-  LTAKE=(p && typeof p.length==='number')? p : null;
-}
+/* THE PICTURE IS READ BY THE CONTAINER (§ ACCT), for the account in hand and
+   never for the one before it, and a phone with nobody on it has been told
+   nothing. */
+acctKeep('take', function(){ return LTAKE; },
+         function(v){ LTAKE=(v && typeof v.length==='number')? v : null; });
 function langTook(){ return LTAKE? LTAKE.length : null; }
 /* Whether THIS account took this language, asked by the server's id for it.
    lsWipeAcct() is what wants it: a downloaded language is written by somebody
@@ -625,6 +789,7 @@ function langTookHas(sid){
 var LMINE=null;
 function langMineGot(){ LMINE=1; }
 function langMineForget(){ LMINE=null; }
+acctMem(langMineForget);
 function langMineKnown(){ return LMINE!==null; }
 /* ---- AND WHETHER THIS PHONE IS HOLDING ANYTHING OF A LANGUAGE -----------
    「オンラインは一本化ね？」 OWNER 2026-09-04, and rule 22: the copy on this
@@ -834,7 +999,102 @@ function slGot(k, body){
     else localStorage.setItem(slGotKey(k), String(body));
   }catch(e){}
 }
-function slWr(k, v){ LSL[k]=String(v); }
+/* AND WHICH OF THEM A PERSON WROTE. 「上がるのは変わった所だけで、端末にある
+   ものを丸ごと送らない」 (docs/scope/brief-r60-up.md). The up road used to
+   send every slice that differed from what the two sides last agreed, and a
+   slice differs for reasons nobody pressed: the free alphabet topped up, a
+   migration bringing an old shape forward. Those are worked out again on
+   every load and never need to travel by themselves -- they go with the slice
+   the next time a PERSON writes it.
+
+   A write is a PERSON's when it CHANGES what this phone holds and it is not
+   made inside slAsApp(). slAsApp() is the app writing for itself: every
+   answer from the server (www/net.js hands each one over through it -- the
+   one window every answer comes through), the launch's migrations
+   (www/boot.js), and what langOpen() writes out and works over when a
+   language is opened. A depth rather than a flag, because an answer can start
+   a request whose answer lands inside it. A write of the same string is
+   nobody changing anything -- a settings save() writes the dictionary back
+   exactly as it was, and that is not a person writing the dictionary
+   (r63-audit 0-1). netSaveUpGo() and netLangSync1() send a slice that is
+   marked here AND has moved; netAgreed() takes the mark off when the two
+   sides hold the same string.
+
+   AND WHEN. The mark is the moment the person last wrote that slice, by this
+   phone's clock, because that is what goes up with it: two phones that
+   changed the same thing keep the later change (www/sync.js § syMerge,
+   supabase/schema.sql § keep_newer). */
+var LTOUCH={}, SL_APP=0;
+function slAsApp(fn, args){
+  SL_APP++;
+  try{ fn.apply(null, args); }
+  finally{ SL_APP--; }
+}
+/* ---- WHAT A SLICE IS: FOUR ANSWERS, AND THIS IS WHERE THEY ARE MADE -----
+   「"Empty" and "broken" are different states and must not share a branch」
+   (CLAUDE.md § Data). Every reader of a slice asks here, and so does the
+   merge (www/sync.js § syMerge) and what may be written over what
+   (www/net.js § netKeeps):
+
+     none    no string, or an empty one: there is nothing
+     plain   a slice that is not JSON and never was -- `lang`, the name
+     read    a slice this app understands, in the SHAPE its readers take
+     wreck   one it does not: not JSON, or JSON of a shape this slice never
+             has -- a dictionary that is `{}`, an alphabet that is `5`
+
+   It was ten readers each doing `try{JSON.parse(slRd(k)||'[]')}catch(e){}`,
+   so a wreck read as the empty default and the next save wrote the default
+   in its place (docs/scope/r73-audit.md § 2-4), and a merge that told the
+   two apart while nothing else did. `plain` and `wreck` look alike from the
+   string -- JSON.parse throws on `Shango` as on `[[[not json` -- so which one
+   it is, is a question about the SLICE and is asked of `kind`. */
+var SL_SHAPE={words:'a', lines:'a', letters:'a', notes:'a', snd:'a',
+              script:'o', phases:'o', wld:'o', kb:'o'};
+function slState(kind, s){
+  var v, want=SL_SHAPE[kind];
+  if(typeof s!=='string' || s==='') return {is:'none', v:null};
+  if(kind==='lang') return {is:'plain', v:s};
+  try{ v=JSON.parse(s); }catch(e){ return {is:'wreck', v:null}; }
+  if(v!==null && ((want==='a' && !(v instanceof Array)) ||
+                  (want==='o' && (typeof v!=='object' || v instanceof Array))))
+    return {is:'wreck', v:null};
+  return {is:'read', v:v};
+}
+/* THE OPEN LANGUAGE'S SLICE, as its readers want it: what was read, or null
+   for nothing and for a wreck alike -- the screen draws the empty language
+   either way. What is NOT alike is what happens next: a slice that could not
+   be read is marked, and slWr() will not write the default over it. */
+var LWRECK={};
+function slOpen(kind){
+  var k=langKey(kind), d=slState(kind, slRd(k));
+  if(d.is==='wreck') LWRECK[k]=1;
+  else delete LWRECK[k];
+  return d.v;
+}
+/* And the one write that may go over a wreck: the SERVER's readable answer,
+   put there by the merge (www/net.js § netKeeps) -- 「a copy it cannot parse
+   takes the server's」 (CLAUDE.md rule 22). */
+function slMend(k){ delete LWRECK[k]; }
+function slWr(k, v){
+  var s=String(v);
+  /* NOTHING IS WRITTEN OVER A SLICE THAT COULD NOT BE READ. What is in
+     memory is the empty default the reader fell to, and writing it would be
+     the app deciding that what it cannot read is nothing -- and the next
+     person's save would carry it up. It is not saved, and it says so
+     (rule 11: 「NOT SAVING IS THE SPEC. SAVING AND SAYING NOTHING IS NOT」). */
+  if(LWRECK[k]){ saveNo(); return; }
+  /* NOTHING, written by a writer -- the keyboard reset, a slice whose last
+     thing went -- is the slice taken away, and it passes the line above
+     first: kbWrite() called slRm() itself, so a keyboard that could not be
+     read was REMOVED, disk copy and all, by every langSaveAll()
+     (tools/state-check.mjs E, measured). */
+  if(v===null){ slRm(k); return; }
+  if(!SL_APP && slMine(k)!==s) LTOUCH[k]=Date.now();
+  LSL[k]=s;
+}
+function slTouched(k){ return !!LTOUCH[k]; }
+function slTouchedAt(k){ return LTOUCH[k] || 0; }
+function slSettled(k){ delete LTOUCH[k]; }
 /* Gone from memory, and both disk keys with it -- what an older version wrote
    and the picture slGot() keeps. This is the one place that REMOVES, and it is
    only ever a person deleting a language or an account (wipeLangsGo,
@@ -843,8 +1103,11 @@ function slWr(k, v){ LSL[k]=String(v); }
    くる」 wearing the migration's clothes. */
 function slRm(k){
   delete LSL[k];
+  slSettled(k);
   try{ localStorage.removeItem(k); localStorage.removeItem(slGotKey(k)); }catch(e){}
 }
+/* Which slices could not be read is about the account that read them. */
+acctMem(function(){ LWRECK={}; });
 
 /* ---- AND A SAVE THAT DID NOT LAND SAYS SO -------------------------------
    「なら失敗して残るにするべき。」
@@ -880,22 +1143,41 @@ function slRm(k){
    that rewrites itself, so a burst that fails twice says it once. */
 function saveTry(put){
   try{ put(); }
-  catch(e){ if(typeof toast==='function') toast(t('save.no')); }
+  catch(e){ saveNo(); }
 }
+function saveNo(){ if(typeof toast==='function') toast(t('save.no')); }
 
 /* Which languages are here, and which one is open. Read before anything else
-   in this file, because every other key is built out of langId. */
-try{
-  var lx=JSON.parse(localStorage.getItem(LS_LANGS)||'null');
-  if(lx && typeof lx==='object') LANGS=lx;
-}catch(e){}
-try{ langId=localStorage.getItem(LS_CUR)||''; }catch(e){}
+   in this file, because every other key is built out of langId.
 
+   THEY ARE THE ACCOUNT'S (§ ACCT). `lingua.langs` and `lingua.cur` were one
+   key each for every account that ever signed in on this phone (r63 L4), so
+   the next person's switcher started from the last one's list. They are
+   `lingua.langs.<uid>` and `lingua.cur.<uid>` now, written under the account
+   holding them; the old two are read once, for the account their stamp names
+   and only its own rows (langsOld), and are never written again. */
+acctKeep('langs', function(){ return LANGS; },
+         function(v){ LANGS=(v && typeof v==='object' && typeof v.length!=='number')? v : {}; },
+         LS_LANGS, langsOld);
+acctKeep('cur', function(){ return langId; },
+         function(v){ langId=(typeof v==='string')? v : ''; },
+         LS_CUR, function(v, who){
+           var l=acctRaw(acctKey('langs', who));
+           return (typeof v==='string' && l && l[v])? v : null;
+         });
+/* Of the old shared index, the rows that are the stamped account's: the ones
+   it WROTE (the `owner` picture, § langOwnOf) and the ones it TOOK (its own
+   `take` picture). Anybody else's row stays in the old key, read by nobody. */
+function langsOld(v, who){
+  var out={}, id, took=acctRaw(acctKey('take', who)) || [];
+  if(!v || typeof v!=='object') return null;
+  for(id in v)
+    if(Object.prototype.hasOwnProperty.call(v, id) &&
+       (langOwnOf(id)===who || took.indexOf(id)>=0)) out[id]=v[id];
+  return out;
+}
 function langStore(){
-  saveTry(function(){
-    localStorage.setItem(LS_LANGS, JSON.stringify(LANGS));
-    localStorage.setItem(LS_CUR, langId);
-  });
+  saveTry(function(){ acctPut('langs', LANGS); acctPut('cur', langId); });
 }
 /* ---- THE ONE NUMBER, ON A PHONE THAT WAS HERE BEFORE IT ------------------
    2026-09-10. Until today a language had two numbers -- `L<ms36>`, minted on
@@ -1155,7 +1437,7 @@ var LW_MINE='mine', LW_READ='read', LW_NONE='none', LW_WAIT='wait';
 function langWhose(id){
   var k=String(id||''), me, own;
   if(!k || !LANGS[k]) return LW_NONE;
-  me=(typeof SESS!=='undefined' && SESS && SESS.uid)? String(SESS.uid) : '';
+  me=netUid();
   /* NOBODY SIGNED IN IS THE WALK, and it is the one answer that needs no
      server: there is nobody to compare with, the phone is holding the
      language it is making, and the door is on the way out
@@ -1177,6 +1459,20 @@ function langWhose(id){
   return langTookHas(k)? LW_READ : LW_NONE;
 }
 function langMine(id){ return langWhose(id)===LW_MINE; }
+/* AND WHETHER IT IS SOMEBODY ELSE'S, which is not 「not mine」.
+   langWhose() has a third answer, 「not asked yet」, and a question that
+   folds it into either side draws a guess (CLAUDE.md rule 22). langLocked()
+   below folds it into 「not mine」 on purpose -- it is the door every WRITE
+   passes, and not writing until the answer is in is right there. What a
+   screen SHOWS is the other question: only the owner column having answered
+   with somebody who is not this account says a language is somebody else's.
+   「後人の言語は自分の言語じゃないからwikiページに表示させないように。」
+   OWNER 2026-09-23 -- the wiki asks this one (www/home.js § wldPage). */
+function langTheirs(id){
+  var own=langOwnOf(id),
+      me=netUid();
+  return !!(own && me && own!==me);
+}
 /* AND THE OPEN LANGUAGE, ASKED BY EVERY WRITER OF ONE. True means the caller
    must stop -- upStop()'s shape, and for the same reason: a rule that lives in
    one place and is ASKED at each road that could break it.
@@ -1198,11 +1494,34 @@ function langMine(id){ return langWhose(id)===LW_MINE; }
    those savers writes langKey(), which is the open language and nothing else.
    A saver given an id would be a second question.
 
-   AND 「まだ訊けていない」 STOPS IT TOO. Anything but LW_MINE refuses, so a
-   launch with no signal looks at what was last loaded and writes none of it
-   back -- which is the one-way road of CLAUDE.md rule 22 asked at the door
-   every save goes through. */
-function langLocked(){ return langWhose(langId)!==LW_MINE; }
+   AND 「まだ訊けていない」 STOPS IT TOO, AND THE PICTURE IS NOT AN ANSWER.
+   langWhose() is the DRAWING question and it reads langOwnOf(), which falls
+   back to the picture kept for a launch with no signal -- right for drawing,
+   and the reason this was not enough: on every launch, before the server had
+   said anything, the picture answered 「mine」, a migration saved, the picture
+   became what this phone was HOLDING, and the up road sent it. A word deleted
+   on another phone came back from this one (tools/quiet-check.mjs 2,
+   measured 2026-09-23).
+
+   So a save asks what the SERVER said, in this run of the app: LOWN, the
+   answer itself, and never slRd()'s picture -- the same two questions
+   slRd()/slMine() are for a slice. And the launch's walk writes that answer
+   only once the language's slices have landed and the open one has been read
+   in from them (www/net.js § netLangsWalk), so 「the server has said it is
+   mine」 is also 「what is on the screen is the server's」 -- one fact, not
+   two. The walk is the one language nobody has to answer for (signed out,
+   § langWhose), and one this account has just MADE has its answer written
+   the moment it is made (langNew, langForAcct). A
+   launch therefore looks at what was last loaded and writes none of it, which
+   is the one-way road of CLAUDE.md rule 22 asked at the door every save goes
+   through. */
+function langLocked(){
+  var k=String(langId||''),
+      me=netUid();
+  if(!k || !LANGS[k]) return true;
+  if(!me) return false;
+  return !Object.prototype.hasOwnProperty.call(LOWN, k) || LOWN[k]!==me;
+}
 /* ---- ONE EMPTY LANGUAGE, MADE WHERE SOMEBODY STARTS MAKING ONE ----------
    「オンラインで 1 端末に 1 アカウント、そのアカウントに結びつけられる言語数が
    決まってるんだから端末でやることねえ」 OWNER 2026-09-11
@@ -1236,34 +1555,118 @@ function langFirst(){
    version of this that only overwrote what the incoming language happens to
    have would leave the last one's words sitting behind it -- you would open
    somebody else's language and find your own dictionary in it. */
+var LSAVED='';
 function langRead(){
-  WORDS=[]; LINES=[]; langName=''; SCRIPT={g:{}, extra:[]};
-  try{ var a=JSON.parse(slRd(langKey('words'))||'[]'); if(Array.isArray(a)) WORDS=a; }catch(e){}
-  try{ var l=JSON.parse(slRd(langKey('lines'))||'[]'); if(Array.isArray(l)) LINES=l; }catch(e){}
-  langName=langNameOf(langId);
-  try{
-    var gg=JSON.parse(slRd(langKey('script'))||'null');
-    if(gg && gg.g){ SCRIPT.g=gg.g; SCRIPT.extra=gg.extra||[]; }
+  var gg;
+  WORDS=slOpen('words') || []; LINES=slOpen('lines') || [];
+  langName=langNameOf(langId); SCRIPT={g:{}, extra:[]};
+  gg=slOpen('script');
+  if(gg){
+    if(gg.g){ SCRIPT.g=gg.g; SCRIPT.extra=gg.extra||[]; }
     /* Which way the language is written. Read on its own rather than inside
        the `gg.g` branch above: a language can have a direction and no glyphs
        drawn yet, and reading it only when there are glyphs would lose it for
        exactly the person who set it first and drew second. */
-    if(gg && gg.dir) SCRIPT.dir=gg.dir;
+    if(gg.dir) SCRIPT.dir=gg.dir;
     /* And what stands between two letters, in steps (glyph.js § geSide).
        Read here or it is gone: SCRIPT is rebuilt from these lines and saved
        whole, so a field this function does not copy is a field the next save
        drops. Absent stays absent -- one step, which is what it always was. */
-    if(gg && typeof gg.sp==='number') SCRIPT.sp=gg.sp;
-  }catch(e){}
+    if(typeof gg.sp==='number') SCRIPT.sp=gg.sp;
+  }
+  /* what the language was when it was read -- save() asks it (§ langMoved) */
+  LSAVED=langShape();
 }
 langRead();
+/* HOW THIS ACCOUNT HAS THE APP SET UP, and it goes with the account.
+   -------------------------------------------------------------------------
+   「端末ごとにやることなんてねえよ」「アカウントごとってずっと言ってるよな？」
+   OWNER 2026-09-03, and 「端末に残すものないんですけど。サーバーで同じ機能に
+   なるように代替して」 OWNER 2026-09-08.
+
+   These five sat in SET_PHONE as 「how this handset is set up」, beside the
+   theme, and that sentence was wrong about all of them: signing in on a
+   second phone gave somebody the app arranged the way that PHONE happened to
+   be. `profile.prefs` is one jsonb column carrying exactly this list --
+   netPrefsPut() sends it, netMyProfile() brings it back once a session, and
+   adding a sixth setting is a name here and nothing else.
+
+   THE COPY IS STILL ON THE PHONE and is filed under the account by setFor(),
+   the way `lingua.me` is: with no signal the app is arranged the way it was
+   last seen, which is what a copy is for. What changed is which of the two is
+   the RECORD. */
+/* AND THE NOTIFICATIONS (2026-09-22, and the day's prompt 2026-09-23).
+   Which kinds they are is push-send's `PUSH`, and tools/push-check.mjs holds
+   the `push_` names here to it. Which kinds somebody wants told
+   to them is theirs and not this handset's: a person with an iPhone and an
+   iPad wants 「いいね」 off on both, and the permission -- which IS the
+   handset's -- is iOS's to hold, not ours.
+
+   THE NAMES ARE THE SERVER'S NAMES. netPrefsPut() writes `SET`'s own
+   spelling into `profile.prefs`, so `push_follow` here is `push_follow`
+   there, and the function that decides who to send to reads that one
+   word. **Absent is ON**, on both sides: nobody who has never opened the
+   room has any of these, and no default is minted -- www/push.js
+   § pushWants(). */
+/* AND HOW FAR DOWN THE NOTICES SOMEBODY HAS READ (`notAt`, r79). One time,
+   because 「最後に通知の画面を開いた時刻より新しいものを未読とする」 OWNER
+   2026-09-01 -- and its reason was that a time is the same answer whichever
+   phone it is opened on, which is only true if the time goes with the account
+   (「通知をどこまで読んだか…全部アカウントのもの」 2026-09-03). No table of
+   read notices: one number, the same column as everything above. */
+var SET_PREFS=['theme','ui','myfont','showScript','kbrom',
+               'push_follow','push_reply','push_like','push_boost','push_prompt',
+               'notAt'];
+/* WHAT IS LEFT IS THIS HANDSET'S SETUP, AND THERE IS VERY LITTLE OF IT.
+   `acct` is what an older version wrote to say which account's things were
+   live here, and it is only READ now -- by the move that copies them under
+   that account (§ acctMoved), whose mark is `acctMoved`. `doneMoved` is a
+   migration mark of a field that was this handset's; `vvkb` is a MEASUREMENT
+   of this screen and is meaningless
+   on another phone. `done` and `obback` are the onboarding's, and they are
+   here under protest -- 「セッションが無い」 cannot tell a phone out of the box
+   from one somebody signed out of, and after an account is deleted there is no
+   server left to ask (docs/reports/r8-item2-2026-09-08.md). The owner is
+   deciding that one.
+
+   `walked` is the ONE thing about the onboarding that is left here, and it is
+   here because the OWNER put it here (2026-09-09, choice A). `SET.done`
+   answered two questions with one flag: 「has this ACCOUNT been through the
+   walk」, which is the `profile` row on the server and is asked there now, and
+   「which screen does a phone with NO SESSION open on」, which nothing can
+   answer -- signed out there is nobody to ask, and after an account is
+   deleted the row is gone. Two written decisions turn on that second one
+   (「ログアウトしたら普通にログイン画面だけ出せばいいやろ」 OWNER 2026-08-26,
+   「アカウント削除した後オンボーディングから始まるのはなぜ？」 OWNER
+   2026-09-03), so it stays -- named for what it actually says, read by ONE
+   line (appIs in www/shell.js) and written by two (the door, and wipeHere).
+
+   `order`, `read`, `voice` and `script` are NOT settled: they are the
+   language-making side's, and moving them is a different question from this
+   one. docs/BACKLOG.md. `planV` was here and is gone with the plan. */
+var SET_PHONE=['acct','acctMoved','walked','obback','vvkb','doneMoved',
+               'order','read','voice','script'];
 /* Settings saved by an older version are missing whatever was added since, so
    they are laid over the defaults rather than replacing them. Written out by
-   hand because Object.assign is not ES5 and this has to run on an old phone. */
+   hand because Object.assign is not ES5 and this has to run on an old phone.
+
+   TWO KEYS, AND ONLY THE HANDSET'S SETUP IS IN `lingua.set` (§ SET_PHONE).
+   The rest is the account's and is `lingua.set.<uid>` (§ ACCT) -- read for
+   the account in hand, written the moment it is written. What an older
+   version put in `lingua.set` beside the setup is left there and not read:
+   the stamped account's copy was moved under its name (acctMoved), and
+   anything else is nobody's. */
 try{
   var s=JSON.parse(localStorage.getItem(LS_S)||'null');
-  if(s) for(var sk in s) if(Object.prototype.hasOwnProperty.call(s,sk)) SET[sk]=s[sk];
+  if(s) for(var sk in s)
+    if(Object.prototype.hasOwnProperty.call(s,sk) && SET_PHONE.indexOf(sk)>=0) SET[sk]=s[sk];
 }catch(e){}
+acctKeep('set', setMine, setGot, LS_S, function(v){
+  var out={}, k;
+  if(!v || typeof v!=='object') return null;
+  for(k in v) if(Object.prototype.hasOwnProperty.call(v,k) && SET_PHONE.indexOf(k)<0) out[k]=v[k];
+  return out;
+});
 /* ---- THE KEYCHAIN IS NOT READ, AND THERE IS NOTHING TO MIGRATE ----------
    This is where `window.__plan`, `window.__planuid` and `window.__planok`
    were taken off the native side and written into `SET`, and where
@@ -1294,9 +1697,13 @@ try{
    the row is gone.
 
    So the flag keeps the second question and is named for it. This copies the
-   old value across ONCE, on the launch after the update, and takes the old
-   name away so nothing can read it again -- what is copied is the same fact
-   under the name that says which fact it is. A phone that has never had the
+   old value across ONCE, on the launch after the update -- and COPIES: the old
+   field stays exactly where it was (a migration copies and never removes what
+   it read, CLAUDE.md § Data; it used to `delete SET.done`, r69-misc 申し送り 2).
+   Nothing reads `done` any more, so leaving it costs nothing; what said 「this
+   has been moved」 was its absence, and that is `doneMoved` now -- a mark of
+   this handset's, because what it marks (`walked`) is this handset's
+   (§ SET_PHONE). A mark belongs to whoever owns what it marks. A phone that has never had the
    old field is untouched: absent is not false, it is 「there was nothing to
    move」, and setDefaults() answers for a fresh install.
 
@@ -1304,9 +1711,13 @@ try{
    field that changed meaning is moved once, on this phone, before anything
    reads it. */
 function walkedMigrate(){
-  if(SET.done===undefined) return;
-  if(SET.walked===undefined || SET.walked===false) SET.walked=!!SET.done;
-  delete SET.done;
+  /* `done` is read off the disk where an older version left it: it is not
+     one of this handset's fields (§ SET_PHONE), so the load does not bring it
+     into SET (r79). */
+  var old=acctRaw(LS_S), done=(old && typeof old==='object')? old.done : undefined;
+  if(done===undefined || SET.doneMoved) return;
+  if(SET.walked===undefined || SET.walked===false) SET.walked=!!done;
+  SET.doneMoved=1;
   setKeep();
 }
 walkedMigrate();
@@ -1327,12 +1738,17 @@ function langOpen(id){
      one in a backup file, netLangSync() does not sync one, and the row in the
      language list is not a button. Each of those is at the place that does
      the thing. docs/DATA_MODEL.md § A language that is only read. */
-  langSaveAll();
+  /* The app's own writes (§ LTOUCH): the old language written out as it
+     stands, and the new one's top-ups and migrations. None of it is somebody
+     changing their language, so none of it goes up by itself -- it rides the
+     next thing a person saves in that slice. */
+  slAsApp(langSaveAll, []);
   langId=id; langStore();
   /* LANG_IO is the list; ltStart(), migrateKbFree() and migratePostInk() are
      not reads and stay -- one tops a free language up, two bring an older
      shape forward. */
-  langLoad(); ltStart(); migrateKbFree(); migratePostInk();
+  langLoad();
+  slAsApp(migrateAll, []);
   /* and where you were standing in the old one is not a place in this one:
      a filter left on would hide most of a dictionary you have never seen. */
   viewReset();
@@ -1396,7 +1812,7 @@ function langNew(){
      langFirst() and langMint() do not: they run before there is an account,
      which is the walk, and the door is where what it made gets one. */
   var id=langMint();
-  if(typeof SESS!=='undefined' && SESS && SESS.uid) langOwnGot(id, SESS.uid);
+  if(netUid()) langOwnGot(id, netUid());
   langStore();
   langOpen(id);
   /* AND IT STARTS WITH AN ALPHABET, ON EVERY PLAN.
@@ -1431,15 +1847,84 @@ function langNew(){
   if(typeof netLangSync==='function') netLangSync();
 }
 
+/* The dictionary, the lines and the writing -- AND the settings, which every
+   save has carried since before setKeep() existed, and which forty-odd callers
+   in files that are not this one still reach through here. The settings go
+   first and always: a language that may not be written (somebody else's, or
+   the picture before the server has answered) is no reason to lose the theme
+   somebody just chose. It used to decline both at once. */
+/* ---- EVERY OLD SHAPE BROUGHT FORWARD, AND ONLY WHERE IT CAN BE WRITTEN ----
+   One list, and three moments ask it: the launch (www/boot.js), the open
+   language becoming writable (langOwnGot above), and a language being opened
+   (langOpen). It was a list at the foot of boot.js and a shorter one here, and
+   the boot one ran while the screen was still the picture -- where langLocked()
+   refuses every save -- so migrateWorld() raised its mark and wrote nothing,
+   and the copy it was moving was never moved again (r69-misc 申し送り 1).
+
+   So the language being writable is asked ONCE, here, before anything moves;
+   a migration that cannot write does not run and raises no mark, and runs the
+   moment it can. Every one of them fills in what is missing and stops, so a
+   second run finds nothing to do. The app's own writes, always: every caller
+   wraps it in slAsApp() (§ LTOUCH). */
+function migrateAll(){
+  if(langLocked()) return;
+  /* migratePh() stood first here and is gone (2026-09-23, r73 § 2-8): it
+     wrote a guess into every word with no sounds -- a word made today has
+     none on purpose (www/wordsheet.js § addOne), and one somebody emptied
+     had its guess written back on the next launch. wPh() guesses when it
+     reads, so nothing on a screen moves. 「保存を押したときだけ、保存されて
+     いるものが変わる」 OWNER 2026-09-04. */
+  migrateMn();
+  /* and a part of speech saved as its label rather than its key */
+  migratePos();
+  migrateLetters();
+  migrateMarks();
+  migrateSndName();
+  migrateSnd();
+  migratePosts();
+  migratePostInk();
+  migrateSp();
+  /* and what the language is for, off the phone and into the language */
+  migrateWorld();
+  /* and the word order and the three positions a person chose when they were
+     the person's, into the language (www/phases.js). It stood at the top of
+     that file, outside this list -- so it ran before any answer, whether or
+     not the language could be written, and nothing held it (r73 § 2-2). Here
+     it is asked the one question every migration is. The open language's
+     stages are read again after it, because it writes the slice they were
+     read from. */
+  migrateGramLang();
+  stRead();
+  /* and the face of an account from before there was one on file (www/me.js) */
+  migrateAv();
+  /* and the free QWERTY out of the keyboard list, keeping an edited one */
+  migrateKbFree();
+  /* and a free language gets the twenty-eight slots it is allowed */
+  ltStart();
+}
+/* NOT SAVING IS THE SPEC, SAVING AND SAYING NOTHING IS NOT (rule 11).
+   A language this phone may not write -- the server has not said it is this
+   account's yet, or it is somebody else's -- is not written, and that is
+   right. It used to return here in silence, with what was typed still on the
+   screen and nowhere else, and a migration saving the language later took it
+   in as the app's own write (r60 見つけたこと). So the one sentence a save
+   that did not land says -- saveNo(), the same one saveTry() says -- is said
+   here too, when something typed is what was not written -- the language
+   differs from what it was when it was last read or written (LSAVED) --
+   because this is also the call every settings-only change makes, and those
+   did save. */
+function langShape(){ return JSON.stringify([WORDS, LINES, SCRIPT]); }
+function langMoved(){ return langShape()!==LSAVED; }
 function save(){
-  if(langLocked()) return;   /* somebody else's language: nothing is written to it */
+  setKeep();
+  if(langLocked()){ if(langId && langMoved()) saveNo(); return; }
   bkTouch();
   saveTry(function(){
     slWr(langKey('words'),JSON.stringify(WORDS));
     slWr(langKey('lines'),JSON.stringify(LINES));
     slWr(langKey('script'),JSON.stringify(SCRIPT));
-    localStorage.setItem(LS_S,JSON.stringify(setOnDisk()));
     langStore();
+    LSAVED=langShape();
   });
 }
 
@@ -1594,7 +2079,7 @@ var PLANS=[
 var FREE_LIMIT=100, PLUS_LIMIT=1000;
 function wordCap(){
   if(can('words')) return Infinity;
-  return has('plus')? PLUS_LIMIT : FREE_LIMIT;
+  return planNum(FREE_LIMIT, PLUS_LIMIT, Infinity);
 }
 /* HOW LONG A POST MAY BE. 「plusプランから無限だけど、もっと読むで開く
    Twitterと同じ方式で頑む。」 OWNER 2026-09-15.
@@ -1613,12 +2098,13 @@ function wordCap(){
    POST_MAX (www/post.js) is the free number. It is declared there because it
    is the composer's, and this is the only place the PLAN is asked about it.
 
-   Nobody-has-answered-yet reads as free, which is has()'s own posture: false
-   is 「no button」 and never 「no words」. Nothing of anybody's is lost by it
-   -- the ceiling refuses a press, it never shortens what is already written
-   (docs/PAID_FEATURES.md, docs/DATA_SAFETY.md). */
+   Nobody-has-answered-yet is `null` and not the free number (§ planNum): the
+   ring is not drawn and the press says 「接続できません」. Nothing of
+   anybody's is lost by the ceiling either way -- it refuses a press, it never
+   shortens what is already written (docs/PAID_FEATURES.md,
+   docs/DATA_SAFETY.md). */
 function postCap(){
-  return has('plus')? Infinity : POST_MAX;
+  return planNum(POST_MAX, Infinity, Infinity);
 }
 /* How many keyboards this person may have, counting the fixed QWERTY as one
    of them. 「1,1+3.無制限って言わなかったっけ？」 -- OWNER DECISION,
@@ -1640,8 +2126,7 @@ function postCap(){
    behind it. Infinity and not a big number, exactly as wordCap(). */
 var FREE_KB=1, PLUS_KB=4;
 function kbCap(){
-  if(has('pro')) return Infinity;
-  return has('plus')? PLUS_KB : FREE_KB;
+  return planNum(FREE_KB, PLUS_KB, Infinity);
 }
 /* How many languages of their own this person may have. Free 1, Plus 1,
    Pro 3 -- OWNER DECISION 2026-08-23, restated 2026-08-25「言語数はプラスは1、
@@ -1667,13 +2152,12 @@ var FREE_LANGS=1, PRO_LANGS=3;
    this phone deciding from an answer it has not been given. The plan is in
    memory (rule 22), so a launch with no signal never has one.
 
-   `null` is that state and it is not a number: langsSeen() (www/home.js) does
-   not cut on it, so nothing is folded away and no count is drawn. It does not
-   loosen the ceiling -- langStop() below refuses with 「接続できません」 before
-   the number is ever reached, which is capStop()'s and upStop()'s sentence. */
+   `null` is that state and it is not a number (§ planNum): langsSeen()
+   (www/home.js) does not cut on it, so nothing is folded away and no count is
+   drawn. It does not loosen the ceiling -- langStop() below hands it to
+   upStop(), which says 「接続できません」. */
 function langCap(){
-  if(!planKnown()) return null;
-  return has('pro')? PRO_LANGS : FREE_LANGS;
+  return planNum(FREE_LANGS, FREE_LANGS, PRO_LANGS);
 }
 /* And what it is compared against: the languages that are THIS PERSON'S.
 
@@ -1873,9 +2357,7 @@ function dlCap(){
   /* 「nobody has asked」 is not nought, exactly as langCap() above: a launch
      with no signal answered ZERO here and every language somebody had taken
      off another page was folded off the list, with 「1 hidden」 at its foot. */
-  if(!planKnown()) return null;
-  if(has('pro')) return PRO_DL;
-  return has('plus')? PLUS_DL : 0;
+  return planNum(0, PLUS_DL, PRO_DL);
 }
 /* The languages this person is READING: in the index, not theirs, and on this
    account. langAcct() is the making side's question and this is its opposite
@@ -1892,27 +2374,17 @@ function dlCount(){ return langTook(); }
    sentence: 「全部確認して飛ぶ」. Somebody already holding the biggest ceiling
    there is gets one line and no dialog, because there is nothing to fly to. */
 function dlStop(){
-  var n=dlCount();
-  /* And nobody has said what this account PAYS either, which is a second
-     unanswered question and the same sentence. It used to be reached only
-     through the count below -- with no signal there was no count at all -- and
-     the picture of the take answer (§ LTAKE, 2026-09-12) means there now is
-     one, so the plan has to be asked for in its own right or a launch with no
-     signal offers a price instead of 「接続できません」. */
-  if(!planKnown()){ toast(t('net.offline')); return true; }
-  /* NOT ASKED YET IS NOT NOUGHT AND IS NOT FULL. Nothing is refused and
-     nothing is let through on a number nobody has given: the button waits,
-     and netTakes() puts one there. The screen that presses this has already
-     asked (www/home.js § wldGet). */
-  if(n===null){ toast(t('net.offline')); return true; }
-  if(n<dlCap()) return false;
-  if(dlCap()<PRO_DL) popAsk(t('up.need'), function(){ go('plans'); });
+  /* NOT ASKED YET IS NOT NOUGHT AND IS NOT FULL, and neither is a plan nobody
+     has answered for: planFits() hands upStop() `null` for either, and that
+     is 「接続できません」. The screen that presses this has already asked
+     (www/home.js § wldGet). */
+  var ok=planFits(dlCount(), 1, dlCap());
   /* toast() and not alert(): iOS's own box is banned outright
      （「標準は使わねえって言ってるだろこれも禁止や」OWNER 2026-09-01）and
      there is nothing to ASK here -- somebody already on the top rung cannot
      be offered a bigger one, so what is left is the sentence. */
-  else toast(t('up.need'));
-  return true;
+  if(ok===false && dlCap()>=PRO_DL){ toast(t('up.need')); return true; }
+  return upStop(ok);
 }
 /* THE OPEN LANGUAGE BELONGS TO WHOEVER IS SIGNED IN.
    「ログアウトして違うアカウントでログインしても前のアカウント残ってるんだけど
@@ -1955,7 +2427,7 @@ function dlStop(){
    index, in storage, and comes back the moment they sign in again. */
 var LANG_WAIT=false;
 function langForAcct(){
-  var main, nid, me=(typeof SESS!=='undefined' && SESS && SESS.uid)? String(SESS.uid) : '';
+  var main, nid, me=netUid();
   LANG_WAIT=false;
   /* Nobody signed in: there is no account to be standing in a language of. */
   if(!me) return false;
@@ -1992,26 +2464,16 @@ function langForAcct(){
   return true;
 }
 function langStop(){
-  /* Asked BEFORE the ceiling, which is capStop()'s and upStop()'s line and is
-     here for their reason: the ceiling is worked out FROM the plan, so a
-     number measured against an answer nobody has given refuses somebody their
-     own next language -- and what it refused them with was a PRICE, offering
-     to sell what this account may already have bought. */
-  if(!planKnown()){ toast(t('net.offline')); return true; }
-  /* AND NOBODY HAS SAID WHAT THIS ACCOUNT ALREADY HAS, which is the second
-     unanswered question and the same sentence -- dlStop() below asks its two
-     the same way. The ceiling is measured against a COUNT, and the count is
-     the server's (§ LMINE): with no answer the index is a picture of rows
-     that may not exist any more, and measuring against it is what refused
-     the owner their own next language on 2026-09-15. */
-  if(!langMineKnown()){ toast(t('net.offline')); return true; }
-  if(langCount()<langCap()) return false;
-  if(langCap()<PRO_LANGS){
-    popAsk(t('up.need'), function(){ go('plans'); });
-  }
-  /* toast() and not alert(), for the reason written over dlStop() above. */
-  else toast(t('up.need'));
-  return true;
+  /* The plan and what this account already has are two unanswered questions
+     with one sentence: the ceiling is worked out FROM the plan and measured
+     against the server's COUNT (§ LMINE), and with either missing the index
+     is a picture of rows that may not exist any more -- measuring against it
+     is what refused the owner their own next language on 2026-09-15. Both
+     are `null` until answered, and planFits() hands upStop() the `null`. */
+  var ok=planFits(langCount(), 1, langCap());
+  /* Nothing bigger to buy -- see above -- and toast() for dlStop()'s reason. */
+  if(ok===false && langCap()>=PRO_LANGS){ toast(t('up.need')); return true; }
+  return upStop(ok);
 }
 /* ---- WHAT THIS ACCOUNT HAS PAID FOR, AND IT IS THE SERVER'S ANSWER ------
    「オンラインで 1 端末に 1 アカウント…誰の物か・あるか無いか・名前・公開か・
@@ -2058,23 +2520,50 @@ function planGot(p){
    OWNER 2026-09-11 -- and this is the whole of what planFor() used to do,
    which was a comparison between two words on a handset. */
 function planForget(){ PLAN=null; }
+acctMem(planForget);
 /* '' where nobody has said. Every reader goes through has() below, which is
    where the third state is answered; this is for a screen that shows the word
    and for planName(). */
 function plan(){ return PLAN || ''; }
-/* What of the settings goes to the file. All of it.
+/* What of the settings goes to `lingua.set`: this handset's setup and nothing
+   else (§ SET_PHONE). What an older version left beside it there is kept as
+   it is -- read by nobody, removed by nobody (§ acctMoved).
 
    Two lines stood here taking the plan and its owner OUT on a phone, because
-   the settings file is in the backup a PC makes and a word in it is a word
-   anybody with a cable can edit. Neither is a setting any more: what this
-   account pays is `verify-plan`'s answer, held in memory (§ PLAN), so there
-   is nothing in this file to keep out of a backup. */
+   the settings file is in the backup a PC makes. Neither is a setting any
+   more: what this account pays is `verify-plan`'s answer, held in memory
+   (§ PLAN). */
 function setOnDisk(){
+  var raw=acctRaw(LS_S), i, k;
+  if(!raw || typeof raw!=='object' || typeof raw.length==='number') raw={};
+  for(i=0;i<SET_PHONE.length;i++){
+    k=SET_PHONE[i];
+    if(SET[k]===undefined) delete raw[k]; else raw[k]=SET[k];
+  }
+  return raw;
+}
+/* And what of them is the ACCOUNT's -- everything that is not this handset's
+   setup, counted rather than named (§ ACCT: `lingua.set.<uid>`). */
+function setMine(){
   var out={}, k;
-  for(k in SET) if(Object.prototype.hasOwnProperty.call(SET,k)) out[k]=SET[k];
+  for(k in SET)
+    if(Object.prototype.hasOwnProperty.call(SET,k) && SET_PHONE.indexOf(k)<0) out[k]=SET[k];
   return out;
 }
-/* The settings, written on their own.
+/* An account's settings arriving (§ acctFor), or `null` for nobody: its own
+   laid over the defaults, and nothing of the last account's. */
+function setGot(v){
+  var d=setDefaults(), k;
+  for(k in SET)
+    if(Object.prototype.hasOwnProperty.call(SET,k) && SET_PHONE.indexOf(k)<0) delete SET[k];
+  for(k in d)
+    if(Object.prototype.hasOwnProperty.call(d,k) && SET_PHONE.indexOf(k)<0) SET[k]=d[k];
+  if(v && typeof v==='object')
+    for(k in v)
+      if(Object.prototype.hasOwnProperty.call(v,k) && SET_PHONE.indexOf(k)<0) SET[k]=v[k];
+}
+/* The settings, written on their own -- the handset's to `lingua.set`, the
+   account's under the account.
 
    save() is the LANGUAGE and the settings in one call, and it declines
    entirely when the language on screen is somebody else's -- langLocked() is
@@ -2085,7 +2574,10 @@ function setOnDisk(){
    somebody happened to be reading a published language when they changed it
    is losing it for no reason. */
 function setKeep(){
-  saveTry(function(){ localStorage.setItem(LS_S, JSON.stringify(setOnDisk())); });
+  saveTry(function(){
+    localStorage.setItem(LS_S, JSON.stringify(setOnDisk()));
+    acctPut('set', setMine());
+  });
 }
 /* ---- planKeep() IS GONE, AND SO IS THE KEYCHAIN IT WROTE TO -------------
    It put the plan into the iOS Keychain, because the settings file is in the
@@ -2097,157 +2589,6 @@ function setKeep(){
    `ios/App/App/LinguaPlan.swift` still has its own key and nothing in `www/`
    speaks to it. Taking that out is an iOS change and this branch does not
    touch `ios/` -- docs/BACKLOG.md. */
-/* HOW THIS ACCOUNT HAS THE APP SET UP, and it goes with the account.
-   -------------------------------------------------------------------------
-   「端末ごとにやることなんてねえよ」「アカウントごとってずっと言ってるよな？」
-   OWNER 2026-09-03, and 「端末に残すものないんですけど。サーバーで同じ機能に
-   なるように代替して」 OWNER 2026-09-08.
-
-   These five sat in SET_PHONE as 「how this handset is set up」, beside the
-   theme, and that sentence was wrong about all of them: signing in on a
-   second phone gave somebody the app arranged the way that PHONE happened to
-   be. `profile.prefs` is one jsonb column carrying exactly this list --
-   netPrefsPut() sends it, netPrefsPull() brings it back at a sign-in, and
-   adding a sixth setting is a name here and nothing else.
-
-   THE COPY IS STILL ON THE PHONE and is filed under the account by setFor(),
-   the way `lingua.me` is: with no signal the app is arranged the way it was
-   last seen, which is what a copy is for. What changed is which of the two is
-   the RECORD. */
-/* AND THE FOUR NOTIFICATIONS (2026-09-22). Which kinds somebody wants told
-   to them is theirs and not this handset's: a person with an iPhone and an
-   iPad wants 「いいね」 off on both, and the permission -- which IS the
-   handset's -- is iOS's to hold, not ours.
-
-   THE NAMES ARE THE SERVER'S NAMES. netPrefsPut() writes `SET`'s own
-   spelling into `profile.prefs`, so `push_follow` here is `push_follow`
-   there, and the function that decides who to send to reads that one
-   word. **Absent is ON**, on both sides: nobody who has never opened the
-   room has any of these, and no default is minted -- www/push.js
-   § pushWants(). */
-var SET_PREFS=['theme','ui','myfont','showScript','kbrom',
-               'push_follow','push_reply','push_like','push_boost'];
-/* WHAT IS LEFT IS THIS HANDSET'S SETUP, AND THERE IS VERY LITTLE OF IT.
-   `acct` says which account's things are live here -- the settings that
-   setFor() parks and hands back. It was `planUid`, because the plan copy sat
-   beside them; the plan is not on this handset any more (§ PLAN) and the
-   field is named for the one thing it still says. `wldMoved` is a
-   migration mark; `vvkb` is a MEASUREMENT of this screen and is meaningless
-   on another phone. `done` and `obback` are the onboarding's, and they are
-   here under protest -- 「セッションが無い」 cannot tell a phone out of the box
-   from one somebody signed out of, and after an account is deleted there is no
-   server left to ask (docs/reports/r8-item2-2026-09-08.md). The owner is
-   deciding that one.
-
-   `walked` is the ONE thing about the onboarding that is left here, and it is
-   here because the OWNER put it here (2026-09-09, choice A). `SET.done`
-   answered two questions with one flag: 「has this ACCOUNT been through the
-   walk」, which is the `profile` row on the server and is asked there now, and
-   「which screen does a phone with NO SESSION open on」, which nothing can
-   answer -- signed out there is nobody to ask, and after an account is
-   deleted the row is gone. Two written decisions turn on that second one
-   (「ログアウトしたら普通にログイン画面だけ出せばいいやろ」 OWNER 2026-08-26,
-   「アカウント削除した後オンボーディングから始まるのはなぜ？」 OWNER
-   2026-09-03), so it stays -- named for what it actually says, read by ONE
-   line (appIs in www/shell.js) and written by two (the door, and wipeHere).
-
-   `order`, `read`, `voice` and `script` are NOT settled: they are the
-   language-making side's, and moving them is a different question from this
-   one. docs/BACKLOG.md. `planV` was here and is gone with the plan. */
-var SET_PHONE=['acct','walked','obback','vvkb','wldMoved',
-               'order','read','voice','script'];
-/* `SET_PLAN` STOOD HERE AND IS GONE (2026-09-11). It named `plan` and
-   `planWas` -- the copy of the server's last answer about this account, and
-   the word this phone last showed -- and neither is in `lingua.set` any more:
-   what an account pays is `verify-plan`'s answer, held in memory (§ PLAN).
-   「1アカウントに1課金ですけど。他のアカウントについてくるわけねえだろ」
-   OWNER 2026-09-11.
-
-   So there is no third kind of field left and setAcctKeys() below asks ONE
-   question: everything that is not this handset's setup is an account's. */
-/* The fields of `SET` that are a PERSON's, counted rather than named. Asked of
-   a parked copy as well as of `SET` itself: a field this account has and this
-   handset has not written yet is still theirs, and reading only the live keys
-   would leave it in the file when somebody else arrives. */
-function setAcctKeys(park){
-  var out=[], k;
-  for(k in SET)
-    if(Object.prototype.hasOwnProperty.call(SET,k) &&
-       SET_PHONE.indexOf(k)<0 && out.indexOf(k)<0) out.push(k);
-  for(k in (park||{}))
-    if(Object.prototype.hasOwnProperty.call(park,k) &&
-       SET_PHONE.indexOf(k)<0 && out.indexOf(k)<0) out.push(k);
-  return out;
-}
-function setParkKey(uid){ return LS_S + '.' + String(uid||''); }
-/* Parked, not cleared -- the same shape as meFor() and postFor(). Signing
-   back in brings them all to the screen again. */
-function setFor(uid){
-  var me=String(uid||''), was=String(SET.acct||''), park, got=null, keys, i, k, d;
-  if(was===me) return false;
-  if(was){
-    d={}; keys=setAcctKeys(null);
-    for(i=0;i<keys.length;i++) d[keys[i]]=SET[keys[i]];
-    saveTry(function(){ localStorage.setItem(setParkKey(was), JSON.stringify(d)); });
-  }
-  if(me){
-    try{ park=localStorage.getItem(setParkKey(me)); }catch(e){ park=null; }
-    if(park){ try{ got=JSON.parse(park); }catch(e){ got=null; } }
-  }
-  /* Nobody was written down: what is here is this person's, the way meFor()
-     adopts an unclaimed copy. Only on the way IN. */
-  if(was){
-    keys=setAcctKeys(got);
-    for(i=0;i<keys.length;i++){
-      k=keys[i];
-      if(got && got[k]!==undefined) SET[k]=got[k];
-      /* Absent and not undefined: a field this account has never written is a
-         field it does not have, and setDefaults() answers for it everywhere
-         else.
-
-         `plan` and `planWas` were named here and are gone with the rest of
-         the plan: neither is in `lingua.set` at all now, so nothing about
-         money travels with the settings. */
-      else delete SET[k];
-    }
-  }
-  SET.acct=me;
-  setKeep();
-  return !!was;
-}
-/* A SESSION ARRIVING, AND WHAT GOES WITH IT.
-   「1アカウントに1課金ですけど。他のアカウントについてくるわけねえだろ」
-   OWNER 2026-09-02.
-
-   This used to be two things, and the first one is gone. It COMPARED the
-   account arriving against `SET.planUid` -- the account this handset's copy
-   of the plan belonged to -- and dropped the plan to free when they differed.
-   There is no copy: what an account pays is `verify-plan`'s answer, held in
-   memory (§ PLAN), and the session that arrives asks for its own. So the
-   comparison has nothing left to compare and the drop has nothing to drop.
-
-   What is left is the settings, which ARE parked per account and handed back
-   -- setFor() above -- and the plan being FORGOTTEN, because the answer in
-   memory is about the account that has just left. Nobody signing in is a
-   sign-out and forgets it too: 「nobody has asked」 is the right state for a
-   phone with nobody on it, and free would be this phone deciding. */
-function planFor(uid){
-  var me=String(uid||''), was=String(SET.acct||'');
-  /* ONLY WHEN THE ACCOUNT CHANGED. netTook() is a session ARRIVING and a
-     session being REFRESHED -- the token lasts an hour, so a launch the next
-     morning renews it -- and both come through here. Forgetting on every call
-     threw away the answer storeSync() had just been given, twenty lines into
-     the same launch: measured, and the launch after a tunnel ended holding no
-     plan at all.
-
-     `SET.acct` is which account's things are live on this handset, which is
-     the same comparison setFor() below makes for the settings. It is not a
-     fact about money and it decides nothing about money: what it answers is
-     「is this a different person」, and a different person's plan is not this
-     one's. Signing OUT forgets on its own road (netOut, www/net.js). */
-  if(me!==was) planForget();
-  return setFor(me);
-}
 /* The plans, cheapest first. The ORDER is what makes a ladder a ladder, and
    it is written down once: a level is met by the plan that names it and by
    every plan above it. 「ベーシックは自分の文字と自分のキーボード、プラスは
@@ -2309,16 +2650,39 @@ function planTook(id){
   render();
   return p;
 }
+/* THREE ANSWERS, AND THIS IS WHERE THE THIRD ONE IS MADE.
+   「未回答は free ではない」 OWNER 2026-09-11 (docs/FEATURE_RULES.md § 端末は
+   何も決めない), and CLAUDE.md § Money: 「a failed check means fewer buttons,
+   never fewer words」.
+
+   true and false are the server's answer. `null` is 「nobody has asked yet」
+   -- a launch with no signal, or the moment before verify-plan lands -- and
+   it is not false. It is falsy, so a DOOR drawn on `if(can(x))` stays shut
+   while nobody knows, which is the 「fewer buttons」 half and needs nothing
+   written anywhere else. Everything that is not a door hands the answer to
+   one of four below, and those are the only places the third state is
+   decided:
+
+     upStop(ok)          a PRESS: null is 「接続できません」, never a price
+     planNo(ok)          a SHAPE -- a list folded, the fixed QWERTY, an
+                         alphabet, left to right, no places sold: true only
+                         when the answer is in and it is no, so nobody is
+                         shown the free shape of what they paid for on an
+                         answer nobody gave
+     planSaid(ok)        a WRITE, or something handed off the phone: nothing
+                         goes until the answer is in, and planTook() calls
+                         the writer again the moment it is
+     planNum(f, p, r)    a NUMBER: null, and planFits() passes the null on
+
+   planKnown() is asked here and in planNum() and nowhere else in www/. These
+   replaced nine places that each asked it again for themselves (docs/scope/r73-audit.md § 2-3), and the ceilings that forgot
+   to: the dictionary folded to a hundred, the alphabet to its slots, the
+   grammar lost its own stages and the composer counted to 140 for somebody
+   on Pro whose answer had not come in yet. */
 function has(level){ /* level: 'plus' | 'pro' */
   var want=PLAN_ORDER.indexOf(level), got=PLAN_ORDER.indexOf(plan());
-  /* NOBODY HAS ASKED YET IS NOT A PLAN EITHER, and it is the state this
-     answers false for rather than guesses at. False here is 「no button」 and
-     never 「no words」: upStop() and capStop() below turn it into
-     「接続できません」 rather than a price, and nothing writes on it
-     (www/letters.js § ltStart). docs/PAID_FEATURES.md.
-
-     A plan nobody has heard of lands here too -- a receipt that would not
-     validate, a word from a version that spelled them differently. */
+  if(!planKnown()) return null;
+  /* A plan nobody has heard of cannot land: planGot() makes it free. */
   if(got<0) return false;
   /* And a level nobody has heard of is a typo in CAN. can() has already
      thrown on the capability by the time this runs; this is the second wall
@@ -2397,6 +2761,10 @@ var CAN={
      to prevent -- a plan name written into a screen is a question nobody can
      move between rungs without finding every place that asked it. */
   badge:   'pro',
+  /* No places sold in the timeline. 「proのみ表示なし」 OWNER 2026-09-23 --
+     the one capability that is an ABSENCE: what pro buys is the timeline
+     without them. Asked in one place, www/sns.js § THE PLACES SOLD. */
+  noads:   'pro',
   gram:    'pro',    /* a grammar stage of your own, past the fifteen there are */
   dir:     'pro'     /* choosing which way the language is written */
 };
@@ -2435,9 +2803,37 @@ function can(what){
   if(!lv) throw new Error('can: no such capability: '+what);
   return has(lv);
 }
+/* THE SHAPE, and it takes the ANSWER for upStop()'s reason below: `can()` is
+   given a literal where a check can see it. True only when the server has
+   answered and the answer is no -- see has() above. */
+function planNo(ok){ return ok===false; }
+function planSaid(ok){ return ok===true || ok===false; }
+/* THE NUMBER: one per rung, and `null` while nobody has asked. Every ceiling
+   is this with its three numbers, so no ceiling can answer the free number
+   for a plan nobody has heard, which four of them did. */
+function planNum(free, plus, pro){
+  if(!planKnown()) return null;
+  return has('pro')? pro : has('plus')? plus : free;
+}
+/* WHETHER `add` MORE FIT UNDER A CEILING, from a count and the ceiling --
+   `null` when either is missing, which is a count nobody has given
+   (langCount(), dlCount(), kbCount()) or a plan nobody has answered for. */
+function planFits(n, add, cap){
+  if(n===null || n===undefined || cap===null) return null;
+  return n+add<=cap;
+}
+/* WHAT THE CEILING COUNTS, and it is words. 「活用は数えないにしよう。無料で
+   なるべく使って欲しい。」 OWNER 2026-09-23 -- an inflection is not a word
+   (www/wordsheet.js § the forms of a word), so the only thing left to leave
+   out is an inflection stored AS a word before that day, which is still in
+   WORDS and is counted by nobody. */
+function wCountable(){
+  var n=0, i;
+  for(i=0;i<WORDS.length;i++) if(!wIsForm(WORDS[i])) n++;
+  return n;
+}
 function capOK(add){
-  add=add||1;
-  return WORDS.length+(add||1)<=wordCap();
+  return planFits(wCountable(), add||1, wordCap());
 }
 /* The ceiling, met. True means the caller must stop.
 
@@ -2458,16 +2854,7 @@ function capOK(add){
    Two strings that already exist, in all ten languages, rather than an
    eleventh: the sentence the toast said, and the word on the upgrade button.
    A new key here would have been one sentence in English and nine holes. */
-function capStop(add){
-  /* Asked BEFORE the ceiling, because the ceiling is worked out FROM the
-     plan: a number measured against an answer nobody has given refuses
-     somebody their next word, or lets one through. upStop()'s sentence,
-     for the same reason. */
-  if(!planKnown()){ toast(t('net.offline')); return true; }
-  if(capOK(add)) return false;
-  popAsk(t('up.need'), function(){ go('plans'); });
-  return true;
-}
+function capStop(add){ return upStop(capOK(add)); }
 /* THE SAME THING FOR A CAPABILITY, AND IT IS WHY EVERY PLAN SEES ONE SCREEN.
    「無料でもplusでもproでも同じ画面なのよ。でも無料から文字を足すところは
      課金のポップが出ないといけない、画面は変わらないプランで押す場所に
@@ -2506,16 +2893,19 @@ function capStop(add){
    (CLAUDE.md § 5, and dead-check refuses anything else) -- a capability read
    from a variable cannot be held by any check and a wrong one reads as free
    rather than throwing. So the caller writes `upStop(can('letters'))` and the
-   name stays where a check can see it. */
-function upStop(ok){
+   name stays where a check can see it.
+
+   `say` is the one sentence where the owner settled a different one for one
+   wall -- 「投稿の編集はplusプランからです」 (OWNER 2026-08-25, `post.editplan`,
+   www/post.js § postEdit). Absent, it is `up.need`. */
+function upStop(ok, say){
   if(ok) return false;
-  /* NOBODY HAS ASKED WHAT THIS ACCOUNT PAYS, so there is no price to offer:
-     a phone with no signal would be told to buy something it may already
-     have. 「電波が無ければ接続できません」 (docs/FEATURE_RULES.md § 端末は何も
-     決めない) -- the same sentence dlStop() has said since the download
-     ceiling became the server's count. */
-  if(!planKnown()){ toast(t('net.offline')); return true; }
-  popAsk(t('up.need'), function(){ go('plans'); });
+  /* NOBODY HAS ANSWERED -- the plan, or the count a ceiling is measured
+     against -- so there is no price to offer: a phone with no signal would be
+     told to buy something it may already have. 「電波が無ければ接続できません」
+     (docs/FEATURE_RULES.md § 端末は何も決めない). */
+  if(ok===null){ toast(t('net.offline')); return true; }
+  popAsk(t(say || 'up.need'), function(){ go('plans'); });
   return true;
 }
 
@@ -2662,8 +3052,10 @@ function wPh(w){
   if(w && w.ph && w.ph.length) return w.ph;
   return phGuess(w? w.hw : '');
 }
-/* The old reading of a Latin spelling, kept for exactly one job: giving the
-   words that predate the chart a sequence to carry from now on. */
+/* The old reading of a Latin spelling: what a word with no spelling and no
+   sounds of its own reads as, worked out when it is read (wPh) and when a
+   list is brought in (www/import.js) -- and never written onto a word by
+   anything nobody pressed (migratePh is gone, 2026-09-23). */
 function phGuess(hw){
   var s=String(hw||'').toLowerCase().replace(/[^a-z]/g,''), out=[], i=0, two;
   while(i<s.length){
@@ -2703,18 +3095,17 @@ function wKids(w){
   for(i=0;i<WORDS.length;i++) if(WORDS[i].from===k) out.push(WORDS[i]);
   return out;
 }
+/* An inflection made before 2026-09-23, when one was stored as a word of its
+   own: it has a parent and a label that is not a derivation. It stays exactly
+   where it is (docs/CHANGELOG.md 2026-09-23); this is how everything that has
+   to tell it from a word asks. fmInf() is www/wordsheet.js's -- which labels
+   are inflections is said there and nowhere else. */
+function wIsForm(w){ return !!(w && w.from && fmInf(w.fm)); }
 function wParent(w){
   if(!w || !w.from) return null;
   var i;
   for(i=0;i<WORDS.length;i++) if(String(WORDS[i].hw)===w.from) return WORDS[i];
   return null;
-}
-function migratePh(){
-  var changed=false;
-  WORDS.forEach(function(w){
-    if(!w.ph || !w.ph.length){ w.ph=phGuess(w.hw); changed=true; }
-  });
-  if(changed) save();
 }
 /* Syllables, cut out of the sounds rather than out of the letters.
    A run of consonants, then the vowels. Then the run of consonants before the

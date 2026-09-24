@@ -84,15 +84,31 @@ for (const m of css.matchAll(/:root\s*\{[^}]*\}/g)) {
 const GENERIC = ['inherit', 'initial', 'unset', 'revert', 'serif', 'sans-serif', 'monospace',
                  'cursive', 'fantasy', 'system-ui', 'ui-serif', 'ui-sans-serif',
                  'ui-monospace', 'ui-rounded', 'none', 'important'];
-for (const m of elsewhere.matchAll(/font-family\s*:\s*([^;}]+)/g)) {
-  const val = m[1].trim();
+/* The family is asked of `font-family` AND of the `font` shorthand, whose
+   family is whatever follows the size (and its /line-height). Reading only
+   `font-family` let `font:600 1rem 'Cinzel',serif` name a family anywhere in
+   the stylesheet with this check green. A shorthand that is one keyword --
+   `inherit`, or a system font like `caption` -- names no family. */
+const FONT_KEYWORD = /^(inherit|initial|unset|revert|caption|icon|menu|message-box|small-caption|status-bar)$/i;
+const familyOf = (prop, val) => {
+  const v = val.trim();
+  if (prop === 'font-family') return v;
+  if (FONT_KEYWORD.test(v.replace(/!\s*important/g, '').trim())) return null;
+  const m = v.match(/(?:^|\s)(?:[\d.]+[a-z%]*|xx-small|x-small|small|medium|large|x-large|xx-large|smaller|larger|var\([^)]*\))(?:\s*\/\s*\S+)?\s+(.+)$/i);
+  return m ? m[1].trim() : v;
+};
+let familyRules = 0;
+for (const m of elsewhere.matchAll(/(?:^|[;{\s])(font-family|font)\s*:\s*([^;}]+)/g)) {
+  const prop = m[1], val = familyOf(prop, m[2]);
+  if (val === null) continue;
+  familyRules++;
   if (/['"]/.test(val)) {
-    fails.push(`a rule sets font-family:${val} — a family may only be named on :root`);
+    fails.push(`a rule sets ${prop}:${m[2].trim()} — a family may only be named on :root`);
     continue;
   }
   const bad = val.replace(/var\(--face-[\w-]+\)/g, ' ').replace(/!\s*important/g, ' ')
                  .split(/[\s,]+/).filter(w => w && GENERIC.indexOf(w.toLowerCase()) < 0);
-  if (bad.length) fails.push(`a rule sets font-family:${val} — ${bad.join(', ')} is not a face variable`);
+  if (bad.length) fails.push(`a rule sets ${prop}:${m[2].trim()} — ${bad.join(', ')} is not a face variable`);
 }
 
 /* ---- 2. both directions on the variables ------------------------------- */

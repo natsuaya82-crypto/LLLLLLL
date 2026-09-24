@@ -282,23 +282,32 @@ function shareMapLts(t, map){
 /* And every word, under its own spelling -- which is already roman, because
    a word IS its letters and a letter's name is what it is typed as. spOf()
    is the spelling and spWord() is that spelling as text; neither is worked
-   out here. */
+   out here.
+
+   AND EVERY FORM OF EVERY WORD. 「キーボードの変換もできるように」 OWNER
+   2026-09-23: an inflection is not a word any more (www/wordsheet.js § the
+   forms of a word), so walking WORDS alone would have stopped offering aai
+   the day it stopped being one. wForms() is asked, which is the one place
+   that says what a word's forms are -- placed, old and made by a rule. */
 function shareMapWords(t, map){
-  var i, sp, j, ok, ix;
+  var i, j, fms;
   for(i=0;i<WORDS.length;i++){
-    sp=spOf(WORDS[i]);
-    if(!sp.length) continue;
-    /* Every letter checked before any slot is asked for. Reserving as we went
-       left the shapes of a dropped word's letters behind in the table -- the
-       same mistake as above, and the same reason: t.of() both looks up and
-       creates, so asking it a question is not free. */
-    ok=true;
-    for(j=0;j<sp.length;j++) if(!sp[j].l || !ltById(sp[j].l)) ok=false;
-    if(!ok) continue;
-    ix=[];
-    for(j=0;j<sp.length;j++) ix.push(t.of(sp[j].l));
-    sharePut(map, spWord(sp), ix);
+    shareMapSp(t, map, spOf(WORDS[i]));
+    fms=wForms(WORDS[i]);
+    for(j=0;j<fms.length;j++) shareMapSp(t, map, fms[j].sp||[]);
   }
+}
+function shareMapSp(t, map, sp){
+  var j, ix;
+  if(!sp.length) return;
+  /* Every letter checked before any slot is asked for. Reserving as we went
+     left the shapes of a dropped word's letters behind in the table -- the
+     same mistake as above, and the same reason: t.of() both looks up and
+     creates, so asking it a question is not free. */
+  for(j=0;j<sp.length;j++) if(!sp[j] || !sp[j].l || !ltById(sp[j].l)) return;
+  ix=[];
+  for(j=0;j<sp.length;j++) ix.push(t.of(sp[j].l));
+  sharePut(map, spWord(sp), ix);
 }
 /* Null when there is nothing to offer, so the keyboard shows no bar at all
    rather than an empty one. */
@@ -338,7 +347,7 @@ function shareConv(t){
    shipped the same face with both. */
 function shareRoman(){
   var w=langWsysOf(langId);
-  if(!can('wsys')) return false;
+  if(planNo(can('wsys'))) return false;
   if(WSYS.indexOf(w)<0) return false;
   return w==='syll' || w==='abugida' || w==='logo';
 }
@@ -444,12 +453,31 @@ function shareKbd(){
    same reason — a rule with one place to live. scriptSig() is the letters,
    verbatim, so a shape drawn a second ago is on the key. */
 function shareSig(){
+  /* WHOSE COMES FIRST, and with nobody signed in there is nothing to sign.
+     The App Group is the account's like everything else -- 「NOTHING IS THE
+     PHONE'S. EVERYTHING IS THE ACCOUNT'S」 (CLAUDE.md) -- so a sign-out or a
+     different account moves the signature even when the letters on the
+     screen have not moved yet, and sharePush() hands over what that account
+     has: nothing, or theirs. r63 § 2-1 K5. LANG_WAIT is the one place
+     that says the open language is still whoever used this phone before
+     (www/core.js § langForAcct), and that is nobody's to hand over either. */
+  var who=(netSignedIn() && !LANG_WAIT)? netUid() : '';
+  if(!who) return '';
+  /* AND WITH NO ANSWER ABOUT THE PLAN THERE IS NOTHING TO SIGN, which is a
+     third answer and not the empty one. '' means 「hand over nothing」 and
+     empties the App Group; null means 「nothing is decided」, and what the
+     phone's keyboard is already holding stays exactly where it is. Free
+     reads kbFixed() and paid reads KB, so a plan nobody has answered for
+     signed the FREE QWERTY and handed it over on every launch with no
+     signal (docs/scope/r73-audit.md § 2-3, measured). */
+  var kb=can('kb');
+  if(!planSaid(kb)) return null;
   /* The base is in here and the digits are not, because a digit IS a letter
      and scriptSig() already walks every one of them -- drawing one, naming
      one or giving one a value all move it. What it cannot see is the base
      going 12 -> 10 with every digit already drawn: no letter changes, and
      the widget would go on counting in twelve. */
-  return scriptSig()+'|'+langId+'|'+(can('kb')? 'p':'f')+'|'+
+  return who+'|'+scriptSig()+'|'+langId+'|'+(kb? 'p':'f')+'|'+
          (kbRomOn()? 'm':'-')+'|'+numBase()+'|'+JSON.stringify(KB);
 }
 /* ---- what the widgets read ---------------------------------------------
@@ -505,7 +533,7 @@ function shareWordAll(w){
   if(!sp.length) return false;
   for(i=0;i<sp.length;i++){
     l=ltById(sp[i].l);
-    if(!l || !l.st || !l.st.length) return false;
+    if(!inkGeo(l)) return false;
   }
   return true;
 }
@@ -540,7 +568,7 @@ function shareSep(){
   for(i=0;i<LETTERS.length;i++){
     l=LETTERS[i];
     if(String(ltName(l)||'')!==':') continue;
-    return {r:':', all:!!(l.st && l.st.length)};
+    return {r:':', all:!!inkGeo(l)};
   }
   return {r:':', all:false};
 }
@@ -604,15 +632,20 @@ function sharePlug(){
    waiting on it — but the one question worth answering later is "did it ever
    land", and the answer has to survive until something asks. */
 function sharePush(){
-  var sig=shareSig(), out, num, p;
-  if(sig===SHARE.sent) return;
+  var sig=shareSig(), give, p;
+  if(sig===null || sig===SHARE.sent) return;
   SHARE.sent=sig;
-  out=JSON.stringify(shareKbd());
-  num=JSON.stringify(shareWidget());
+  /* ALL THREE, EVERY TIME, AND EMPTY IS EMPTY. LinguaShare.swift writes what
+     it is handed and removes a file handed '' -- so with nobody signed in
+     the keyboard, the font and the widget are all three handed nothing, and
+     nobody's letters are left behind in the App Group. */
+  give=sig? {json:JSON.stringify(shareKbd()), font:SFONT.b64||'',
+             num:JSON.stringify(shareWidget())}
+          : {json:'', font:'', num:''};
   p=sharePlug();
   if(!p){ SHARE.how='no bridge'; return; }
   SHARE.how='sent';
-  p('LinguaShare', 'write', {json:out, font:SFONT.b64||'', num:num})['catch'](function(e){
+  p('LinguaShare', 'write', give)['catch'](function(e){
     SHARE.how='refused: '+((e && (e.message||e.errorMessage))? (e.message||e.errorMessage) : e);
   });
 }

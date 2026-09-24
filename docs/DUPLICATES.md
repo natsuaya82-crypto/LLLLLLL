@@ -37,7 +37,7 @@ grep して読み直したものです。行番号は書きません（次のコ
 ## 1. 右上の決定ボタンが三通り。一つは色が付かない ── **閉じた**
 
 `navdo` / `navq navdone` / `navq navsave` の三通りが一つになりました。
-`.navsave` はどの stylesheet にも無く、文字を描く画面の保存だけ灰色でした。
+~~`.navsave`~~ はどの stylesheet にも無く、文字を描く画面の保存だけ灰色でした。
 
 ```
 grep -rn "navsave\|navdone" www/*.js     いま出るのは、そうだったと書いた注記だけ
@@ -81,7 +81,7 @@ grep -n "capStop\|capOK" www/wordsheet.js      capOK は出ない
 
 ## 8. プラン画面への行き方が二通り。片方はシートを閉じない ── **閉じた**
 
-**一箇所は `go('plans')` です。**二つ目の名前だった `goPlans()`
+**一箇所は `go('plans')` です。**二つ目の名前だった ~~`goPlans()`~~
 （`www/wordsheet.js`）と `act-map.js` の行を消し、`DO('goPlans')` を書いて
 いた五箇所 ── `www/settings.js` `www/words.js` `www/keyboard.js`
 `www/phases.js` `www/sound.js` ── を `DO('go', ["plans"])` にしました。
@@ -131,8 +131,8 @@ grep -rn "capwarn" www/*.js      www/shell.js の一行だけ
 
 **一箇所は `emptyBox(text, sub, more, bad)`（`www/shell.js`）です。**残って
 いた五箇所 ── `www/sns.js`（`snsNone` `snsNoneFo` と凍結の表示）`www/me.js`
-`www/notes.js` ── を寄せ、`www/mod.js` の `.mnone` 六箇所も同じ箱にしました。
-`.mnone` の CSS 二行は `www/index.html` から消えています。
+`www/notes.js` ── を寄せ、`www/mod.js` の ~~`.mnone`~~ 六箇所も同じ箱にしました。
+~~`.mnone`~~ の CSS 二行は `www/index.html` から消えています。
 
 **引数は三つ増え、三つとも呼ぶ人がいます**（誰も通らない枝は作っていません）:
 
@@ -143,7 +143,7 @@ grep -rn "capwarn" www/*.js      www/shell.js の一行だけ
          赤は www/index.html に既にある .bad が付ける（CSS は足していない）
 ```
 
-**通報と運営の画面だけ見た目が変わります。**`.mnone` は余白 24px・書体も
+**通報と運営の画面だけ見た目が変わります。**~~`.mnone`~~ は余白 24px・書体も
 大きさも継承でしたが、`.empty` は 54px・見出しの書体・1.3rem。他のどの画面
 とも違って見えていたのが、同じになりました。前後のスクショ:
 
@@ -166,7 +166,7 @@ grep -rn "capwarn" www/*.js      www/shell.js の一行だけ
 回っている印で、「まだ何も無い」ではなく「まだ答えが来ていない」という
 別の状態だからです（`snsWaitHTML()` の注記がその理由を書いています）。
 
-**`.mnone` の六箇所と、赤い三つは、どの walk も通りません。**
+**~~`.mnone`~~ の六箇所と、赤い三つは、どの walk も通りません。**
 `tools/fixture.mjs` に `MODERR` も `ADREC_ERR` も `admin.rec.none` も無い
 ので、写真は面を五つ足して撮り、**足した面は commit していません**（9番 と
 同じ理由）。
@@ -222,11 +222,11 @@ npm run page
 (actor, blocked)。「in the one place that has to」と書いてあった注記も
 消えています。
 
-**三箇所目があり、畳んでいません。**`netWhoseId()` も
+**三箇所目があり、畳んでいません。**~~`netWhoseId()`~~ も
 `profile?select=id&handle=eq.` を送りますが、**失敗の意味が違います** ──
 あれは「要求が倒れた」と「その handle の行が無い」を同じ `bad` で答えます。
 `netFollow` は行が無いのを `ok()`（作る行が無いだけで、何も壊れていない）、
-倒れたのを `bad()`（画面がそう言えるように）としています。畳むと、倒れた
+倒れたのを `bad`（画面がそう言えるように）としています。畳むと、倒れた
 follow が「そんな handle は無い」として `ok()` で返り、**ボタンが起きて
 いない成功を報告します**。だから畳んでいません。**どうするかは決めごとで、
 ここでは決めません。**
@@ -274,8 +274,8 @@ npm run post
 
 ## 16. 形から新しい語を作る所が二回 ── **閉じた。二回ではなく三回でした**
 
-`fmrWord(w, m)`（`www/wordsheet.js`）。`fmrAdd()` `fmrAddAll()`
-`addFmWrite()` の三つが呼びます。三つ目の注記は「made the way fmrAdd()
+`fmrWord(w, m)`（`www/wordsheet.js`）。`fmrAdd()` と `addFmWrite()` の二つが
+呼びます（三つ目の ~~`fmrAddAll()`~~ はその後に消えた）。三つ目の注記は「made the way fmrAdd()
 makes one」と自分で言っていて、それを持っているものは何もありませんでした。
 
 ## 17. サーバーの一覧を読む所が二組 ── **閉じた**
@@ -312,7 +312,7 @@ npm run find
 ## 18. ファイルを取り込むボタンが二箇所 ── **閉じた**
 
 **一箇所は `fileInHTML(cls, inner, id, accept)`（`www/shell.js`）です。**
-`impFileHTML()`（`www/import.js`）と `shInFileHTML()`（`www/sheet.js`）は
+~~`impFileHTML()`~~（`www/import.js`）と ~~`shInFileHTML()`~~（`www/sheet.js`）は
 **両方消しました** ── 呼び側（`impGetHTML()` と `shInHTML()`）が直に呼びます。
 片方だけ残すと 8番 で消したのと同じ「二つ目の名前」になります。
 

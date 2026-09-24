@@ -481,7 +481,7 @@ function gFmRules(){
     pos=r.pos;
     k={id:'fm.'+String(r.id||i), operation:op, form:f, separator:'',
        drop:gFmDrop(r), conditions:c||{},
-       metadata:{label:fmLabel(fm), rule:String(r.id||'')}};
+       metadata:{label:fmLabel(fm), rule:String(r.id||''), fm:fm}};
     if(fmGroup(fm)==='d'){
       k.sourcePartOfSpeech=gFmPos(pos);
       k.targetPartOfSpeech=GFM_DER[fm] || null;
@@ -535,47 +535,69 @@ function gFmPos(p){
    phone share one, so the caller answers with the language's own. The engine
    is DOM-free and globals-free and this is the one place that crosses back:
    it does not know what a stage is and does not have to. */
-/* Where the model comes from, from 2026-08-26. A language that has a model of
-   its own under langKey('gram2') is read from it; every other language is
-   built from the stages exactly as before, so nothing a person has today
-   answers differently. Nothing writes that key yet -- this is the road in,
-   built before there is anything on it.
+/* WHERE THE MODEL COMES FROM: this language, every time, and nothing else.
+   The word order is orderDef(), the rules are gRules(), the inflections and
+   derivations are what the chapters say (gInfl(), gFmRules()), and the words
+   are the dictionary. Every one of them points AT the language, and a stored
+   copy of something that points at the language parts company with it the
+   first time somebody renames a word or moves a card.
 
-   TWO things are put back on every read rather than being taken from the
-   store, and it is one reason twice: they point AT the dictionary, and a
-   stored copy of something that points at the dictionary parts company with
-   it the first time somebody renames a word.
-
-     words         the dictionary itself
-     grammarRules  'hw:<headword>' -- which words are the negation and the
-                   adpositions. isMarked() in translate.js compares that
-                   string against a word id rebuilt from WORDS, so a stored
-                   rule simply stops matching. Nothing throws: the sentence
-                   still comes out, with the negation read as an ordinary
-                   noun.
+   There was a second road here: a model stored under langKey('gram2') was
+   read in place of the stages, and its inflections were ADDED to the ones
+   the chapters make. Nothing ever wrote that key -- the road was built
+   before there was anything on it -- so it was a second answer to 「what is
+   this language's word order」 waiting for the first byte to arrive. It is
+   gone (docs/CHANGELOG.md 2026-09-23). A `gram2` slice somebody has is not
+   read, not written and not removed: it stays in SLICES and travels with
+   the language as it always did.
 
    docs/FEATURES.md says the same thing from the other side -- this
    arithmetic is `current`, not `frozen`, and freezing it would be the bug. */
 function gModel(list){
-  var e=LinguaGrammarEngine, m=e.adapter.load(langId);
   /* THE CARDS, not the name they make. `id` is them run together so that three
      of them still read as one of the six on the old stage screen, and handing
      THAT to the engine is a string it reads one letter at a time: a board of
      主語 副詞 目的語 動詞 came out 'SADVOV', which is S A D V O V -- six roles
      with the verb in twice, and the demonstration under the board printed this
      language's verb twice. Nothing threw. */
-  if(!m) m=e.adapter.fromLegacy(langId, list||WORDS, {order:orderDef().seq});
-  else m.words=e.adapter.wordsOf(list||WORDS);
+  var m=LinguaGrammarEngine.adapter.fromLegacy(langId, list||WORDS, {order:orderDef().seq}),
+      fm=gFmRules();
   m.grammarRules=gRules();
-  var fm=gFmRules();
-  m.inflections=(m.inflections||[]).concat(gInfl()).concat(fm.inf);
-  m.derivations=(m.derivations||[]).concat(fm.der);
+  m.inflections=gInfl().concat(fm.inf);
+  m.derivations=fm.der;
   /* How many of somebody's rules this side could not say. Nothing shows it
      yet; it is on the model so that the screen which will show it has
      something to read, and so that "some rules did not travel" is a number
      rather than a silence. */
   m.metadata.fmLeft=fm.left;
+  m.forms=gForms(list||WORDS, fm.inf);
   return m;
+}
+/* EVERY FORM OF EVERY WORD, as the engine reads one: the spelling, the word it
+   is a form of, and what it is. An inflection is not a word since 2026-09-23
+   (www/wordsheet.js § the forms of a word), so it is not in model.words and
+   the engine would otherwise have to guess it backwards off the rules -- which
+   it cannot do for a stem that changed, and cannot do at all for an irregular.
+
+   wForms() is asked and nothing here restates it. What a form IS comes from the
+   rule of that label when the language has one, so a form read here is the same
+   inflection the engine makes forward; a label no rule makes (went, placed by
+   hand) is still its feature, which is what gFmFeat() says of a label anywhere.
+   wForms() is www/wordsheet.js's and this file is also read on its own by
+   tools/grammar-engine-check.mjs, so it is asked for rather than assumed. */
+function gForms(list, inf){
+  var out=[], i, j, k, a, w, r, g;
+  if(typeof wForms!=='function') return out;
+  for(i=0;i<list.length;i++){
+    w=list[i]; a=wForms(w);
+    for(j=0;j<a.length;j++){
+      r=null;
+      for(k=0;k<inf.length;k++) if(inf[k].metadata && inf[k].metadata.fm===a[j].fm){ r=inf[k]; break; }
+      if(!r){ g=gFmFeat(a[j].fm); r={id:'form.'+a[j].fm, feature:g[0], value:g[1], metadata:{label:fmLabel(a[j].fm), fm:a[j].fm}}; }
+      out.push({surface:a[j].hw, lemma:String(w.hw), fm:a[j].fm, inflections:[r]});
+    }
+  }
+  return out;
 }
 /* The engine's word and the dictionary's word are one word seen from two
    sides. The engine knows what part of speech it is and where it stands; only
@@ -738,7 +760,7 @@ function g2Move(key, i){
    on one page cannot pick each other's words up. */
 function g2Chip(key, i, w){
   return '<button class="seg'+(g2Lift===key+':'+i? ' on' : '')+'"' +
-    DO('g2Move', [key, i]) + '>'+esc(wOut(w.hw))+'</button>';
+    DO('g2Move', [key, i]) + '>'+sfontHTML(wOut(w.hw))+'</button>';
 }
 
 /* ---- THE BOARD THE WORD ORDER IS ARRANGED ON ---------------------------
@@ -929,7 +951,7 @@ function g2Board(c){
 function g2Demo(seq){
   var w=g2Three(seq), i, out='';
   if(!w) return '';
-  for(i=0;i<w.length;i++) out+='<span class="gor">'+esc(wOut(w[i].hw))+'</span>';
+  for(i=0;i<w.length;i++) out+='<span class="gor">'+sfontHTML(wOut(w[i].hw))+'</span>';
   return '<div class="gorder">'+out+'</div>';
 }
 /* THE SAME DEMONSTRATION, of a noun phrase. gLay() runs the real engine on a
@@ -951,7 +973,7 @@ function g2NpDemo(seq){
   if(!list.length) return '';
   list.push(n);
   w=gLay(list, 'np', seq);
-  for(i=0;i<w.length;i++) out+='<span class="gor">'+esc(wOut(w[i].hw))+'</span>';
+  for(i=0;i<w.length;i++) out+='<span class="gor">'+sfontHTML(wOut(w[i].hw))+'</span>';
   return '<div class="gorder">'+out+'</div>';
 }
 /* §14 Nouns. 「ユーザーが『りんご』『りんごたち』などを実際の言語で作る。
@@ -1012,7 +1034,7 @@ function g2Row(lab, add, side, from, to, act, arg, id){
       '<span class="psm">'+lab+'</span>'+
       (add? '<span class="psw">'+sfontHTML(add)+'</span>' : '')+
       (side? '<span class="psi">'+esc(side)+'</span>' : '')+
-      ((to || side)? '<span class="psi">'+esc(to)+'</span>' : '')+
+      ((to || side)? '<span class="psi">'+sfontHTML(to)+'</span>' : '')+
       '</button></div>';
   }
   return '<div class="fmmk">'+
@@ -1028,7 +1050,7 @@ function g2Row(lab, add, side, from, to, act, arg, id){
        leaving the span out made the row's LAST `.psi` the END rather than the
        form. Nothing on the screen changes; what changes is that the row means
        the same thing whether or not there is a word to try it on. */
-    ((to || side)? '<span class="psi">'+esc(to)+'</span>' : '')+
+    ((to || side)? '<span class="psi">'+sfontHTML(to)+'</span>' : '')+
     ICON_GO+'</button></div>';
 }
 /* ---- choosing several rules, and taking them away ----------------------
@@ -1771,7 +1793,6 @@ function g2PolTake(which, i){
 }
 function g2PolAdd(which, w){
   var s=String(w||'').replace(/^\s+|\s+$/g, '');
-  if(typeof puaRoman==='function') s=puaRoman(s);
   if(!s) return;
   G2POL[(which==='b')? 'b' : 'a'].push(s);
 }
@@ -1799,7 +1820,7 @@ function g2PolPickHTML(which){
   out='<div class="field">'+
     lnField('gpol-w', '', KD('g2PolOwn', [which])+
       ' aria-label="'+esc(t('g2.pol.own'))+'" autocapitalize="none"', '',
-      (typeof myFontOn==='function' && myFontOn())? 'tfont' : '')+'</div>';
+      myFontField())+'</div>';
   for(i=0;i<a.length;i++)
     out+='<button class="stslot has"' + DO('g2PolPutW', [which, a[i].hw]) + '>'+
       '<span class="psm">'+sfontHTML(wOut(a[i].hw))+'</span>'+
@@ -1808,9 +1829,9 @@ function g2PolPickHTML(which){
 }
 function g2PolPutW(which, hw){ g2PolAdd(which, hw); back(); }
 function g2PolOwn(which){
-  var e=document.getElementById('gpol-w');
-  if(!e || !e.value) return;
-  g2PolAdd(which, e.value);
+  var v=actVal(document.getElementById('gpol-w'));
+  if(!v) return;
+  g2PolAdd(which, v);
   back();
 }
 /* The save, which is the whole of 「承認」: what is written down is the
@@ -1928,24 +1949,21 @@ function nclsForm(i){
       lnField('ncls-n', t('g2.ncls.name'), nclsName(i), '')+'</div>'+
     '<button class="btn" style="width:100%;margin-top:6px"' + DO('nclsSave', [i]) + '>'+
       t(i<0? 'g2.ncls.add' : 'form.save')+'</button>'+
-    /* And the way out, which only a class that exists has. Words in the
-       colour everything pressable is and no box round them -- CLAUDE.md
-       § NO ROUNDED BOX. */
-    (i<0? '' :
-      '<button class="btn ghost"' + DO('nclsDel', [i]) + '>'+
-        esc(t('g2.ncls.del'))+'</button>'));
+    /* And the way out, which only a class that exists has: the bin, with no
+       box round it -- CLAUDE.md § NO ROUNDED BOX and § Shape. */
+    (i<0? '' : markBtn(ICON_BIN, t('g2.ncls.del'), 'nclsDel', [i])));
 }
 function nclsSave(i){
   var a=document.getElementById('ncls-n'), v;
   if(!a) return;
-  v=String(a.value||'').trim();
+  v=actVal(a).trim();
   if(!v){ toast(t('g2.ncls.need')); return; }
   if(!STG.ncls) STG.ncls={names:[], of:{}};
   if(!STG.ncls.names) STG.ncls.names=[];
   i=Number(i);
   if(i<0) STG.ncls.names.push(v); else STG.ncls.names[i]=v;
   stMarkSet('ncls');
-  closeSheet({target:{id:'sbg'}});
+  closeSheet();
   render();
 }
 /* DELETING ONE. It asks once, in the app's own popup -- 「標準は使わねえって
@@ -2083,8 +2101,7 @@ function g2FmsOf(id){
   if(!c || !c.pos) return out;
   /* A SECTION is about its own forms and no others, and it draws its own way
      to add one on each of their headings -- g2FmSec() -- so there is nothing
-     for g2Add() to offer. What is left for g2MakeAll() is the words those
-     rules would make, which is every form of the section at once. */
+     for g2Add() to offer. */
   if(c.fms) return c.fms;
   if(typeof FM_INF==='undefined') return out;
   for(i=0;i<FM_INF.length;i++){
@@ -2104,31 +2121,6 @@ function g2HasFm(pos, fm){
   for(i=0;i<a.length;i++)
     if(a[i] && String(a[i].fm)===fm && String(a[i].pos||'')===String(pos)) return true;
   return false;
-}
-/* The words this chapter's rules would make and this language has not got.
-   fmrTodoAll() is the one place that works that out; this only narrows it to
-   the chapter somebody is standing on. */
-function g2Todo(id){
-  var c=g2ChapBy(id), fms=g2FmsOf(id), all, out=[], i, x;
-  if(!c || !c.pos || typeof fmrTodoAll!=='function') return out;
-  all=fmrTodoAll();
-  for(i=0;i<all.length;i++){
-    x=all[i];
-    if(String(x.w.pos)!==c.pos) continue;
-    if(fms.indexOf(String(x.m.fm))<0) continue;
-    out.push(x);
-  }
-  return out;
-}
-/* And the button that makes them, only when there are some -- a button that
-   does nothing when pressed is worse than no button, which is what the row on
-   a word's page has always said. */
-function g2MakeAll(id){
-  var c=g2ChapBy(id), n=g2Todo(id).length;
-  if(!c || !c.pos || !n) return '';
-  return '<button class="btn ghost" style="width:100%;margin-top:14px"' +
-    DO('fmrAddAll', [c.pos, g2FmsOf(id)]) + '>'+ICON_ADD+
-    esc(tn('fmr.all', n))+'</button>';
 }
 function g2Add(id){
   var c=g2ChapBy(id), fms=g2FmsOf(id), i, out='';
@@ -2695,7 +2687,7 @@ function g2Page(c){
      them here would be the chapter said twice, on a page that is a part of
      it. */
   if(c.on) return c.body(c);
-  return c.body(c)+g2Add(c.id)+g2MakeAll(c.id)+
+  return c.body(c)+g2Add(c.id)+
     (c.id==='st'? '' : g2ChapEx(c.id));
 }
 

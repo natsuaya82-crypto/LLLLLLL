@@ -25,21 +25,20 @@ import ObjectiveC
 class MainViewController: CAPBridgeViewController {
   override func capacitorDidLoad() {
     bridge?.registerPluginInstance(LinguaSharePlugin())
-    bridge?.registerPluginInstance(LinguaPlanPlugin())
-    /* Registered rather than called: nothing in www/ asks it anything yet.
-       It is here because load() is where its Transaction.updates listener
-       starts, and a renewal that arrives while nothing is listening is a day
-       the app is wrong about. See the head of LinguaStore.swift. */
+    /* www/store.js asks it on every launch, and registering it here is also
+       what starts its Transaction.updates listener in load() -- a renewal
+       that arrives while nothing is listening is a day the app is wrong
+       about. See the head of LinguaStore.swift. */
     bridge?.registerPluginInstance(LinguaStorePlugin())
-    /* Registered here like the other three, and for one reason on top of
+    /* Registered here like the others, and for one reason on top of
        being reachable: load() is where it picks up a notification tapped
        from a cold launch, which AppDelegate has been holding since before
        there was a bridge. See the head of LinguaPush.swift. */
     bridge?.registerPluginInstance(LinguaPushPlugin())
-    // And the plan itself, as a script rather than as an answer to a call:
-    // what a free plan looks like is decided on the first frame, and a call
-    // comes back after it. See the head of LinguaPlan.swift.
-    LinguaPlanPlugin.inject(into: bridge?.webView)
+    /* The places in the timeline nobody has bought, filled by AdMob. Nothing
+       loads until www/sns.js asks, and it never asks on pro. See the head of
+       LinguaAds.swift. */
+    bridge?.registerPluginInstance(LinguaAdsPlugin())
     /* And the bar iOS puts over the keyboard. prepareWebView() has already
        made the WKWebView by the time this runs (CAPBridgeViewController's
        loadView(), a few lines above the capacitorDidLoad() call), so WebKit

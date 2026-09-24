@@ -78,12 +78,18 @@ var CARD_KINDS={
 
 function cardOpen(kind, key){
   CARD={k:String(kind), v:String(key), sh:CARD.sh};
+  /* A card of something that is not there any more says so, the way a screen
+     does (viewGone): no canvas, so nothing below is ever asked to draw it. */
+  /* THE SHARE IS IN THE CORNER OF THE BAR, AS THE MARK. 「右上にしてね。
+     送信も紙飛行機右上、共有も共有マークを右上。」 OWNER 2026-09-23 -- the
+     one thing this screen does is the thing every phone puts top right, and
+     navDo() is the one place the corner is drawn. A card of something gone
+     has nothing to share and no corner. */
   openForm('card:'+CARD.k+'/'+CARD.v, t('card.title'),
-    '<div class="cardbox"><canvas id="cardc" class="cardc"></canvas></div>'+
-    cardShapesHTML()+
-    '<button class="btn" style="width:100%;margin-top:18px"' + DO('cardSave') + '>'+
-      t('card.save')+'</button>',
-    cardMount);
+    cardSrc()? '<div class="cardbox"><canvas id="cardc" class="cardc"></canvas></div>'+
+    cardShapesHTML() : goneBox(),
+    cardMount,
+    cardSrc()? navDo(t('card.save'), 'cardSave', null, true, {icon:ICON_SHARE}) : '');
 }
 function cardShapesHTML(){
   if(cardSrc().kind!=='p') return '';
@@ -121,8 +127,10 @@ FORM_OPEN.card=function(rest){
 /* ---- what is on it ------------------------------------------------------
    A line in the language and what it means. A word is its spelling and its
    first meaning; a sentence is the line as written with its gloss under it.
-   A card asked for a word that is gone falls back to the newest one, because
-   an empty picture is worse than a picture of something else. */
+   A card of a post, a word or an example that is gone is null -- cardOpen()
+   then draws what every screen draws for a thing that is gone. It used to be
+   the newest word instead, signed with this person's handle, so the card of
+   somebody else's deleted post came out as my own last word. */
 function cardSrc(){
   /* The handle is whose the card is. On a post it is the post's, frozen when
      it was written; on a word or an example it is this person's, because
@@ -132,7 +140,7 @@ function cardSrc(){
      card is. Nothing to work out. */
   if(CARD.k==='p'){
     po=postById(v);
-    if(po) return cardOfPost(po);
+    return po? cardOfPost(po) : null;
   }
   if(CARD.k==='x'){
     i=String(v).indexOf('#');
@@ -143,12 +151,12 @@ function cardSrc(){
        sits on a word's page, under that word, and what came out of it was a
        short line with nothing on it to say what it was an example of -- the
        one thing the person pressing it was looking at. */
-    if(ex) return {kind:'x', of:String(w.hw||''),
-                   line:String(ex.ln||''), mn:String(ex.gl || exGloss(ex.ln) || ''),
-                   hd:hd, nm:nm, dir:scriptDir(), sd:geSide()};
+    return ex? {kind:'x', of:String(w.hw||''),
+                line:String(ex.ln||''), mn:String(ex.gl || exGloss(ex.ln) || ''),
+                hd:hd, nm:nm, dir:scriptDir(), sd:geSide()} : null;
   }
-  w=findWord(v) || WORDS[WORDS.length-1];
-  if(!w) return {kind:'w', line:'', mn:'', hd:hd, nm:nm, dir:scriptDir(), sd:geSide()};
+  w=findWord(v);
+  if(!w) return null;
   /* A word and an example are things in the language that is OPEN, so they
      run the way it runs. Only a post carries a direction of its own.
 
@@ -165,16 +173,24 @@ function cardSrc(){
 
 /* The words this one is family to, for the page: what each is called, what it
    is, and what it means. A word that has a past tense and a progressive has
-   them in the dictionary as words of their own, and a picture of the entry
-   that left them off would be a picture of the smaller half of it.
+   them as its FORMS (wForms(), www/wordsheet.js -- an inflection is not a
+   word since 2026-09-23), and a picture of the entry that left them off would
+   be a picture of the smaller half of it. A form means what its word means.
 
    Four at most. A page is a page and a verb with nine forms on it is a table.
    The root first when this word has one, because that is where the family
-   starts and it is the row a stranger needs to be told about. */
+   starts and it is the row a stranger needs to be told about; then the forms,
+   which are what the page lists first; then the words built out of it. */
 function cardFam(w){
-  var par=wParent(w), root=par||w, out=[], kids, i, x;
+  var par=wParent(w), root=par||w, out=[], fms, kids, i, x;
   if(par) out.push({lb:t('word.root'), hw:String(par.hw), mn:String(wMn(par)||'')});
-  kids=wdFamSort(wKids(root).filter(function(k){ return k!==w; }));
+  fms=wForms(root);
+  for(i=0;i<fms.length && out.length<4;i++){
+    x=fms[i];
+    if(x.hw===String(w.hw)) continue;
+    out.push({lb:fmLabel(x.fm), hw:x.hw, mn:String(wMn(root)||'')});
+  }
+  kids=wdFamSort(wKids(root).filter(function(k){ return k!==w && !wIsForm(k); }));
   for(i=0;i<kids.length && out.length<4;i++){
     x=kids[i];
     out.push({lb:fmLabel(x.fm||''), hw:String(x.hw), mn:String(wMn(x)||'')});
@@ -182,35 +198,42 @@ function cardFam(w){
   return out;
 }
 
-/* The line as things to draw, left to right: a letter's strokes, a character
-   it borrowed, or the gap between two words.
+/* A word's or an example's line as things to draw, left to right: a letter's
+   shape, a character it borrowed, a space, or the end of a line. What a space
+   and the end of a line are is postRuns()'s to say (www/post.js), through
+   cardInkUnits() -- the same answer a post's card and the timeline read. The
+   line is a line with no shapes in it yet, and each run of text between two
+   spaces is spelled out of the open dictionary here, by cardSpell(). This is
+   the making side and is supposed to be: a word and an example are the
+   language that is open. A post is never drawn this way (cardOfPost).
 
    A sound with no letter yet comes through as its own symbol rather than as
    nothing. A hole in the writing system is the truth about the language at
    that moment, and a card that quietly closed it would be the one place in
    the app that lies about how far along the work is. */
 function cardUnits(line){
-  var out=[], words=String(line||'').split(/\s+/), i, j, w, sp;
-  for(i=0;i<words.length;i++){
-    if(!words[i]) continue;
-    if(out.length) out.push({sp:true});
-    w=findWord(words[i]);
-    sp=w? spOf(w) : null;
-    if(sp && sp.length){
-      for(j=0;j<sp.length;j++) out.push(cardUnit(sp[j].l, sp[j].u));
-    } else {
-      for(j=0;j<words[i].length;j++) out.push({tx:words[i].charAt(j)});
-    }
-  }
+  return cardInkUnits({g:[], s:[String(line||'')]}, cardSpell);
+}
+function cardSpell(hw){
+  var w=findWord(hw), sp=w? spOf(w) : null, out=[], j;
+  if(!sp || !sp.length) return null;
+  for(j=0;j<sp.length;j++) out.push(cardUnit(sp[j].l, sp[j].u));
   return out;
 }
+/* A letter's shape is inkGeo()'s to say (www/glyph.js) -- strokes, or the
+   ring a letter written on paper came in as -- which is what the post's cut
+   asks too. And a letter nobody has drawn yet is its NAME, as it is in the
+   post's cut and in the font: a spelling stored on a word names its letters
+   by id and carries no sound, so falling through to the sound gave the
+   characters "undefined" on the picture. A character the letter BORROWED is
+   not drawn either: undrawn is roman 「ローマ字」 OWNER 2026-09-23, which is
+   what every screen shows for it (card-check 8). */
 function cardUnit(lid, u){
-  var l=lid? ltById(lid) : ltMain(u), st;
-  if(l && l.st && l.st.length) return {st:l.st};
-  if(l && l.ch) return {tx:l.ch};
-  st=wsStrokes(u);
+  var l=lid? ltById(lid) : ltMain(u), g=inkGeo(l), st;
+  if(g) return {st:g};
+  st=u? wsStrokes(u) : null;
   if(st && st.length) return {st:st};
-  return {tx: chOf(u) || u};
+  return {tx:String((l && ltName(l)) || (u && (chOf(u) || u)) || '')};
 }
 /* ---- the line, measured the way the font measures it ---------------------
    Each unit gets the box it stands in and where its ink sits inside it, in
@@ -846,26 +869,29 @@ function cardWord(x, W, H, S, src){
 }
 
 function cardPaint(c){
+  /* What was on it can go while the card is open -- the fonts arriving paint
+     it again -- and a card of something gone draws nothing (cardSrc). */
+  if(!cardSrc()) return;
   var sz=cardSize(), W=sz.w, H=sz.h, S=Math.min(W, H), x=c.getContext('2d');
   /* A word is a page and everything else is a card, and they have almost
      nothing in common but the ground they are drawn on. */
   if(cardSrc().kind==='w'){ c.width=W; c.height=H; cardWord(x, W, H, S, cardSrc()); return; }
   /* Two sources, and which one is not this function's to decide twice:
-     cardSrc() hands back ink or it does not, and it does not exactly when
-     there is nothing drawable on the post.
+     cardSrc() hands a post back with ink, always, and a word or an example
+     without.
 
-       ink present   cardInkUnits()  the shapes frozen onto the post. It may
-                                     NOT name the open dictionary, the drawn
-                                     letters or the writing system, and
+       a post        cardInkUnits()  the ink the post's line on the timeline
+                                     is drawn from: its shapes, or -- when
+                                     nothing on it is drawable -- its text.
+                                     It may NOT name the open dictionary, the
+                                     drawn letters or the writing system, and
                                      sides-check holds that
-       no ink        cardUnits()     a word, an example, or a post written
-                                     before a post carried its ink. These are
-                                     the open language and are supposed to be
+       word, example cardUnits()     the open language, and supposed to be
 
-     cardUnits() asks findWord() for the spelling, ltById() for the letter and
-     wsStrokes() for a shape the writing system composes -- all three mine --
-     so a card of somebody else's post built that way is that post in MY
-     alphabet. Correct only for as long as every post is mine. */
+     A post used to reach cardUnits() when it had no ink, which asks
+     findWord() for the spelling and ltById() for the letter -- all mine -- so
+     somebody else's post with no ink was drawn in MY alphabet while its line
+     on the timeline was its text. */
   var src=cardSrc(), items=src.ink? cardInkUnits(src.ink) : cardUnits(src.line);
   var kind=CARD_KINDS[src.kind] || CARD_KINDS.w;
   var dir=src.dir, vert=dir.indexOf('ttb')===0, lay, g, i;
@@ -1036,6 +1062,7 @@ function cardMount(){
 function cardSave(){
   var c=document.getElementById('cardc'), p=sharePlug(), b64;
   if(!c) return;
+  if(!cardSrc()){ toast(t('form.gone')); return; }
   if(!p){ toast(t('card.nofile')); return; }
   /* toDataURL and not toBlob: what has to go over the bridge is base64, and
      the data URL is already base64 with a header on it. A blob would be read
@@ -1063,8 +1090,8 @@ function cardBytes(c){
    shFileName() cuts one: this is pasted into a file name on the phone, and
    the handle it comes from arrives on somebody else's post.
 
-   Named after what is ON the card, which for a post is the language it was
-   written in and not the one you happen to have open. No extension -- the
+   Named after the handle ON the card: for a post, whose post it is, not
+   whoever has the phone. No extension -- the
    native side puts that on, because it is the native side that knows which
    of `<name>.png` and `<name> 2.png` it actually filed. */
 function cardFileName(){
@@ -1096,7 +1123,10 @@ function cardOfPost(po){
      holds nothing, or one whose line points at a shape that is not there,
      has ink and cannot be drawn from it -- and the timeline and the card
      asking that question separately is two answers waiting to disagree. It
-     is post.js's to answer, once, for both. */
+     is post.js's to answer, once, for both. And what the answer means is
+     the same as postLnHTML()'s: not drawable is the post's text, a line with
+     no shapes in it -- whoever wrote it, and whatever this phone's
+     dictionary happens to hold. */
   /* Both off the post. The language's name is the one it was written in, not
      whichever one this phone happens to have open. */
   /* Which way it runs comes off the post too, and for the same reason
@@ -1117,10 +1147,12 @@ function cardOfPost(po){
      tagHTML() does for every screen cannot reach here. It is done on a COPY:
      `ink.s` carries the text runs that were never drawn, and the post itself
      is never touched. */
-  return {kind:'p', line:dayTagShow(String(po.ln||'')), mn:String(po.mn||''),
+  /* What it means is what the timeline says it means: postSay(), which is the
+     day's prompt in the reader's own words where the post answers one. */
+  return {kind:'p', line:dayTagShow(String(po.ln||'')), mn:postSay(po),
           hd:String(po.hd||''), nm:langNameSaid(po.lname),
-          ink:postInkOK(po.ink)? cardInkShown(po.ink) : null, dir:postDir(po),
-          sd:postSide(po)};
+          ink:cardInkShown(postInkOK(po.ink)? po.ink : {g:[], s:[String(po.ln||'')]}),
+          dir:postDir(po), sd:postSide(po)};
 }
 /* The same ink with the day's mark said in the reader's words. A copy: the
    strokes are shared (nothing draws on them) and only the text runs are
@@ -1140,14 +1172,20 @@ function cardInkShown(ink){
    character at a time, because cardInk() draws one thing per item. A space is
    the ordinary face's space (inkSpace, in cardMeasure), and the end of a line
    is a break cardBreak() has to take. It used to be a space as well, so a post
-   written on two lines came out on the card as one. */
-function cardInkUnits(ink){
-  var out=[], rs=postRuns(ink), i, j, u;
+   written on two lines came out on the card as one.
+
+   `spell` is how a run of text becomes shapes, and only the making side
+   hands one in (cardUnits, for a word or an example). A post never does: its
+   text stays text. */
+function cardInkUnits(ink, spell){
+  var out=[], rs=postRuns(ink), i, j, u, sp;
   for(i=0;i<rs.length;i++){
     u=rs[i];
-    if(u.st) out.push({st:u.st});
-    else if(u.tx){ for(j=0;j<u.tx.length;j++) out.push({tx:u.tx.charAt(j)}); }
-    else out.push(u.br? {sp:true, br:true} : {sp:true});
+    if(u.st){ out.push({st:u.st}); continue; }
+    if(!u.tx){ out.push(u.br? {sp:true, br:true} : {sp:true}); continue; }
+    sp=spell? spell(u.tx) : null;
+    if(sp){ for(j=0;j<sp.length;j++) out.push(sp[j]); continue; }
+    for(j=0;j<u.tx.length;j++) out.push({tx:u.tx.charAt(j)});
   }
   return out;
 }

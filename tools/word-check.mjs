@@ -181,7 +181,7 @@ const R = await pg.evaluate(() => {
      `ph` is the sounds a word carries. An import writes it -- a list with a
      pronunciation column puts that column on the word (www/import.js), over
      an existing word too -- and the words that predate the chart were each
-     given one, once (`migratePh` in www/core.js).
+     were given one, once, by a migration that is gone now (r73 § 2-8).
 
      THE SHEET HAS NO FIELD FOR IT. Nobody standing on that screen can see it,
      change it or clear it, and Save was deleting it anyway: open a word, edit
@@ -190,11 +190,14 @@ const R = await pg.evaluate(() => {
      the two are different the moment somebody's own reading is not the roman
      one, which is what a pronunciation column is FOR.
 
-     And it does not come back empty, which is why nobody notices. `migratePh`
-     runs at the next launch, finds nothing there, and fills the hole with
+     And it did not come back empty, which is why nobody noticed. The next
+     launch's migration found nothing there and filled the hole with
      `phGuess(hw)` -- a machine's reading of the spelling, wearing the same
-     key. The field is not blank afterwards, it is WRONG, and only the person
-     who wrote it can tell.
+     key. The field was not blank afterwards, it was WRONG, and only the
+     person who wrote it could tell. So the launch is asked too: the real one,
+     `migrateAll()` as boot.js runs it, rather than a name for one migration
+     that can be deleted out from under this file (it was, and this check then
+     died at load and asserted nothing).
 
      CLAUDE.md § Data: nothing a person made is removed because the current
      shape does not need it. Save writes what the sheet holds; it does not get
@@ -226,7 +229,7 @@ const R = await pg.evaluate(() => {
       'no field for it, so nobody asked for it to go');
   /* And the next launch, which is where it stops looking like nothing
      happened: the hole is filled with a guess off the spelling. */
-  migratePh();
+  slAsApp(migrateAll, []);
   const after = (findWord('tira') || {}).ph;
   const afterPh = after ? after.join(' ') : '';
   out.said.push('and after the next launch it is: ' +
@@ -419,7 +422,10 @@ const R = await pg.evaluate(() => {
   const rowOf = (hw) => [].slice.call(document.querySelectorAll('#app .entry'))
     .filter(e => e.textContent.indexOf(hw) >= 0)[0] || null;
   const blank = rowOf('zolu');
-  const full  = rowOf('tira');
+  /* A WORD, which is what the list is made of. `tira` stood here, and since
+     2026-09-23 it is an inflection stored as a word -- a form of `tir`, listed
+     on that word's page and on no list (www/words.js § wordsSeen). */
+  const full  = rowOf('kano');
   const mnText = (row) => { const m = row && row.querySelector('.mn');
                             return m ? m.textContent : '(no line at all)'; };
   out.said.push('a word with no meaning shows on its row: ' + mnText(blank));
@@ -449,11 +455,14 @@ const R = await pg.evaluate(() => {
      each a screen that renders perfectly and is not the one somebody built. */
   start();
   const SUB = '\u4f7f\u5f79\u52d5\u8a5e';           /* a subclass no fixture word is in */
-  openWord('tira');
-  openEdit('tira');
+  /* `lom`, a verb that is a WORD. This was `tira`, which since 2026-09-23 is an
+     inflection stored as a word: in no list (www/words.js § wordsSeen), so a
+     list narrowed to its subclass was a list of nothing. */
+  openWord('lom');
+  openEdit('lom');
   wdSetSub(SUB);
   wdWrite();
-  const subbed = findWord('tira');
+  const subbed = findWord('lom');
   out.said.push('a subclass written on the sheet and saved is: ' +
     ((subbed && subbed.sub) ? '"' + subbed.sub + '"' : 'GONE'));
   if (!subbed || subbed.sub !== SUB)
@@ -493,7 +502,7 @@ const R = await pg.evaluate(() => {
   const nSub = wordsList().map(w => w.hw);
   out.said.push('everything ' + nAll + ', the verbs ' + nPos +
     ', that subclass ' + JSON.stringify(nSub));
-  if (!(nSub.length === 1 && nSub[0] === 'tira'))
+  if (!(nSub.length === 1 && nSub[0] === 'lom'))
     out.fails.push('narrowed to ' + JSON.stringify(SUB) + ' and the list is ' +
       JSON.stringify(nSub) + ' -- one word is in it');
   if (!(nSub.length < nPos && nPos < nAll))
@@ -506,7 +515,7 @@ const R = await pg.evaluate(() => {
       JSON.stringify(wFilLab()));
   /* And the part of speech moving takes it off, because a subclass of the
      verbs is not an answer about a noun. */
-  openEdit('tira');
+  openEdit('lom');
   wdSetPos('n');
   out.said.push('and changing the part of speech leaves the subclass: ' +
     JSON.stringify(wEdit.sub));
@@ -639,7 +648,7 @@ const R = await pg.evaluate(() => {
   /* ---- and what the Lingua keyboard typed is stored as the roman ---------
      The keyboard inserts private use code points -- U+E000 upward, one per
      drawn letter -- because that is the only thing on a phone that tells this
-     alphabet's `a` from the system QWERTY's. www/glyph.js § puaRoman is where
+     alphabet's `a` from the system QWERTY's. www/glyph.js § puaTyped is where
      they stop: everything past the field works on the roman spelling, which
      is what findWord(), exSeq() and exGloss() read.
 

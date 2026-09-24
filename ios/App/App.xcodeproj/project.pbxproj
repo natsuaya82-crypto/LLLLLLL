@@ -12,7 +12,7 @@
 		504EC3081FED79650016851F /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 504EC3071FED79650016851F /* AppDelegate.swift */; };
 		7A1C0F5E2B9D41C8A0E33026 /* MainViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A1C0F5E2B9D41C8A0E33019 /* MainViewController.swift */; };
 		7A1C0F5E2B9D41C8A0E33002 /* LinguaShare.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A1C0F5E2B9D41C8A0E33001 /* LinguaShare.swift */; };
-		7A1C0F5E2B9D41C8A0E33006 /* LinguaPlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A1C0F5E2B9D41C8A0E33005 /* LinguaPlan.swift */; };
+		7A1C0F5E2B9D41C8A0E3AD02 /* LinguaAds.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A1C0F5E2B9D41C8A0E3AD01 /* LinguaAds.swift */; };
 		7A1C0F5E2B9D41C8A0E33A06 /* LinguaPush.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A1C0F5E2B9D41C8A0E33A05 /* LinguaPush.swift */; };
 		7A1C0F5E2B9D41C8A0E33007 /* LinguaStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A1C0F5E2B9D41C8A0E33008 /* LinguaStore.swift */; };
 		7A1C0F5E2B9D41C8A0E33180 /* WidgetPoke.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A1C0F5E2B9D41C8A0E33181 /* WidgetPoke.swift */; };
@@ -67,7 +67,7 @@
 		504EC3071FED79650016851F /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		7A1C0F5E2B9D41C8A0E33019 /* MainViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainViewController.swift; sourceTree = "<group>"; };
 		7A1C0F5E2B9D41C8A0E33001 /* LinguaShare.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinguaShare.swift; sourceTree = "<group>"; };
-		7A1C0F5E2B9D41C8A0E33005 /* LinguaPlan.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinguaPlan.swift; sourceTree = "<group>"; };
+		7A1C0F5E2B9D41C8A0E3AD01 /* LinguaAds.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinguaAds.swift; sourceTree = "<group>"; };
 		7A1C0F5E2B9D41C8A0E33A05 /* LinguaPush.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinguaPush.swift; sourceTree = "<group>"; };
 		7A1C0F5E2B9D41C8A0E33008 /* LinguaStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinguaStore.swift; sourceTree = "<group>"; };
 		7A1C0F5E2B9D41C8A0E33181 /* WidgetPoke.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetPoke.swift; sourceTree = "<group>"; };
@@ -218,7 +218,7 @@
 				504EC3071FED79650016851F /* AppDelegate.swift */,
 				7A1C0F5E2B9D41C8A0E33019 /* MainViewController.swift */,
 				7A1C0F5E2B9D41C8A0E33001 /* LinguaShare.swift */,
-				7A1C0F5E2B9D41C8A0E33005 /* LinguaPlan.swift */,
+				7A1C0F5E2B9D41C8A0E3AD01 /* LinguaAds.swift */,
 				7A1C0F5E2B9D41C8A0E33A05 /* LinguaPush.swift */,
 				7A1C0F5E2B9D41C8A0E33008 /* LinguaStore.swift */,
 				7A1C0F5E2B9D41C8A0E33181 /* WidgetPoke.swift */,
@@ -426,7 +426,7 @@
 				504EC3081FED79650016851F /* AppDelegate.swift in Sources */,
 				7A1C0F5E2B9D41C8A0E33026 /* MainViewController.swift in Sources */,
 				7A1C0F5E2B9D41C8A0E33002 /* LinguaShare.swift in Sources */,
-				7A1C0F5E2B9D41C8A0E33006 /* LinguaPlan.swift in Sources */,
+				7A1C0F5E2B9D41C8A0E3AD02 /* LinguaAds.swift in Sources */,
 				7A1C0F5E2B9D41C8A0E33A06 /* LinguaPush.swift in Sources */,
 				7A1C0F5E2B9D41C8A0E33007 /* LinguaStore.swift in Sources */,
 				7A1C0F5E2B9D41C8A0E33180 /* WidgetPoke.swift in Sources */,

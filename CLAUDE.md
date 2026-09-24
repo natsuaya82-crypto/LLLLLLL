@@ -108,6 +108,15 @@ at** 「前に読み込んだ分は出て欲しい。制作も眺めたい人は
 2026-09-04. Looking is the whole of it: nothing is made, nothing is saved, and
 nothing on that copy ever travels back to the server (rule 22).
 
+**And what is READ is decided by the screen** 「読むのは開いた画面の分だけ」
+OWNER 2026-09-23. The launch reads the notices and the timeline (`PAGE_OPEN`
+in `www/sns.js`); every other screen reads what it draws when it is arrived
+at, through the one door (`navLand()`, `www/shell.js`) and its row in
+`PAGE_READS`; a view reads nothing; a list is cut at `NET_PAGE` and carries on
+at the bottom; somebody else's chapter comes down when ↓ is pressed.
+**`load-check` holds it** — it counts the launch, every route's arrival,
+every view, every GET's cap and one function per table and columns.
+
 **The onboarding is the one place making happens before there is an account,
 and that is the order the owner asked for** 「オンボーディング→最後にログイン」.
 Somebody draws a letter, is walked through the app, and names what they are
@@ -139,7 +148,7 @@ green.
 **There is one kind of account and there are no anonymous ones** 「匿名アカウント
 はねえよ」「二種類になる意味も分からないけど」. An account is somebody who
 signed in. The onboarding ends at that door and there is no way past it. Nothing
-asks a second question about what kind of account this is — `has_account()`
+asks a second question about what kind of account this is — ~~`has_account()`~~
 beside `is_member()` existed to let an anonymous one through, and there is
 nothing to let through. **The first language is the one place this is not true
 yet**: it is minted at the top of `www/core.js`, which `index.html` loads before
@@ -204,16 +213,35 @@ class comment on `.btn.ghost` has said so since it was written —
 「文字書いて四角で囲ったみたいなボタン全部やめてくれ。ダサすぎる」 — and it was
 broken three times in one afternoon: a gold pill on the frozen screen, a
 bordered strip across Home, and a gold pill on the password screen. `.btn`
-still exists and is on about thirty older screens; it is not to be reached
-for again.
+still exists on older screens; it is not to be reached for again.
+
+**And a sixth: AN OPERATION THAT HAS A MARK IS DRAWN AS THE MARK, NOT WRITTEN.**
+「送信とか共有とかもそうだけど、文字でドカンって共有とか書くの禁止してるよね？
+だから+〇とか送信なら紙飛行機マークにしてるはずなんだけど。これ禁止だから全部
+なくせや」 OWNER 2026-09-23. Send is the paper plane, share is `ICON_SHARE`,
+add is the plus, delete is the bin, edit is the pen, and undo, search, back,
+close, settings and more are the marks every phone already draws — from the
+`ICON_*` row in `www/glyph.js`, with the word on the button as its
+`aria-label`, through `t()`. **And a screen's send and share are that mark
+at the top right of the bar** 「右上にしてね。送信も紙飛行機右上、共有も共有
+マークを右上。」 OWNER 2026-09-23 — `navDo(label, name, args, on, {icon})`,
+the one place the corner is drawn. A label that is more than the verb —
+「アカウントを削除」, a row saying what goes — is a row, and an operation with
+no settled mark (sign in, next, save, done) stays a word until the owner gives
+it one. **`marks-check` holds it**: it walks every screen and face `press`
+walks and the bar over every route, and fails on a button whose whole label is
+one of those verbs in words with no mark, and on a send or a share anywhere but
+the corner; it prints how many word-only buttons are still in the corner, and
+`--list` names them and every other word-only button left.
 
 **Rows in one list are one height.** Set `font-size` and `line-height` on the
 row class rather than letting the tag decide -- a `<button>` takes the
 browser's 13.3px/normal and an `<a>` takes the body's, and the same row came
 out 49px as one and 57px as the other. No `margin-top` on a row to make a
-group either: that is one row taller than its neighbours. **`press` holds the
-first half** -- siblings of one class rendering at two type sizes -- and it
-prints how many lists it measured on every run. The `margin-top` half is prose still.
+group either: that is one row taller than its neighbours -- a group is made by
+a row that separates (`.grpsep`). **`press` holds both halves**: siblings of
+one class rendering at two type sizes, and siblings of one class that disagree
+about `margin-top`. It prints how many lists it measured on every run.
 → `docs/FEATURE_RULES.md`
 
 **Explaining.** No explanatory text in the app. A screen shows what it is and
@@ -392,16 +420,29 @@ it — the head of this file, the table below, and `docs/SESSIONS.md` twice —
 and **not one place told anybody to WRITE it**, so it belonged to nobody and
 went months out of date while every session opened with it. It said "No
 StoreKit" with `LinguaStore.swift` shipped and `storeBuy` called from
-`setPlan`; it said the Apple capability was still to do after the owner had
+~~`setPlan`~~; it said the Apple capability was still to do after the owner had
 done it. A leader read those sentences and told the owner their own finished
 work was outstanding. **It is the LEADER's file**: the leader is where every
 branch's report arrives and where the owner's decisions land, so the leader is
 the one who knows what became true today.
 
 And the same reason the corners needed `box-check`: prose does not hold a rule.
-This one is not held by anything yet — `docs/BACKLOG.md` carries what a check
-could mechanically catch (a line claiming something is absent while the code
-has it) and what it could not.
+**One part of it is held: a name a document gives is a name the code has.**
+`docs-check` counts, in every document that is not a day's record
+(`docs/CHANGELOG.md`, the handovers, the dated `CHECK-` pages, `docs/reports/`,
+`docs/scope/`): every call in backticks — `langKey()`, `can('kb')` — against
+what `www/`, `ios/`, `tools/` and `supabase/` define; every other name in
+backticks — `PLAN`, `STG.order`, `CAN.kb` — against the code with its comments
+taken out; every code file, every check named by name and every npm script against what
+git and `package.json` have; every sentence saying how many checks the gate
+has, which fails whatever the number; every OWNER date a code comment quotes,
+against the decision log; and every 【差し替え済み】 entry of the log, which
+keeps one line. So a name deleted tomorrow fails tomorrow, in every sentence
+that still names it. A sentence ABOUT something that is gone strikes it —
+~~`wldSeenHTML()`~~ — and the check fails a struck name the code still has.
+What it cannot read is a sentence claiming something that a name does not
+carry — `docs/BACKLOG.md` carries that — and `tools/docs-baseline.txt` is what
+was already stale the day each part was counted.
 
 **An owner decision is a specification, not an instruction for today.** When
 the owner settles behaviour, a threshold, a limit, the free/paid line,
@@ -506,8 +547,8 @@ backlog entry is not permission, and neither is the absence of one.
 
 ```
 npm test        # tools/gate.mjs -- the FAST ones with no browser in a row
-                # (assets, es5, grammar-engine, dead, import, sides, face, box,
-                # store, ~2s), then the SLOW ones four at a time. NOT run by a
+                # (~2s; `FAST` in tools/gate.mjs is the list), then the SLOW
+                # ones four at a time. NOT run by a
                 # session -- rule 2. How many there are is FAST.length +
                 # SLOW.length in tools/gate.mjs, and the run PRINTS it on its
                 # last line: read it off there, not off any sentence here.
@@ -526,8 +567,8 @@ output is printed whole and in list order, so a counter that moved is still visi
 **Three rules about running it, and they are the owner's.** *Once before pushing, not
 once per commit* — make the whole batch, gate it once, push; a session that gates five
 commits separately has spent half an hour proving the same thing five times.
-「全部やって完成！じゃあ全部のチェックを回す」 *While working, run the fast nine —
-they are two seconds and they catch what blanks a device.* *Watching a check fail is
+「全部やって完成！じゃあ全部のチェックを回す」 *While working, run the fast
+ones — `FAST` in `tools/gate.mjs`, two seconds, and they catch what blanks a device.* *Watching a check fail is
 one run, not a suite* — put the bug back, run the one check that holds it, watch it
 go red, take the bug out.
 
@@ -662,11 +703,11 @@ screen named twice).
 A button carries a **name**, never code. Never write `onclick="..."` or any other
 `on*=` attribute — `act-check` fails on one anywhere, so the class cannot come back.
 That is asked of what a screen RETURNS and of `index.html`'s own shell, which
-is returned by nothing and therefore reached by no walk. The shell's two — the
-sheet's backdrop, `#sbg` and `#sheet` — are named in `SHELL_OK` in `act-check`.
-**Named, and the names have to keep matching**: an exemption left standing over
-markup that has changed fails the same as a new handler. They are the only two,
-they are the static shell rather than a screen, and nothing new joins them.
+is returned by nothing and therefore reached by no walk: everything outside
+`#app` is harvested as a screen is, and the file is read as well. **Nothing is
+exempt.** The dark behind the popup carries a name (`closeSheet`) like every
+other button, and "any `on*=`" is one pattern — `\son[a-z]+\s*=` — not a list
+of the handlers somebody thought of.
 
 ```js
 '<button' + DO('tkAdd', [w.hw]) + '>'      // -> data-do="tkAdd" data-a="[...]"
@@ -708,8 +749,8 @@ every phone ever made, Apple's own keyboard included. Widening that floor to 44
 would not make a keyboard safer to type on; it would forbid a keyboard.
 **And which class is actually WORN by something.** A screen can be deleted and
 its CSS stay: `a.set` is styled under a comment naming two documents that are
-no longer anchors, and `.weave` is the sentence-weaving chapter, whose word
-appears in no `.js` file at all. `dead-check` asks this of every function and
+no longer anchors, and ~~`.weave`~~ was the sentence-weaving chapter, styled
+long after its word appeared in no `.js` file at all. `dead-check` asks this of every function and
 nothing had ever asked it of a selector — and a grep cannot, because a class is
 worn from a string built by concatenation, from `classList.add`, and from
 `index.html`'s own markup. So the PAGE is asked, from here, after every build
@@ -774,7 +815,7 @@ held three deleted chapters' worth of residue. An assignment is a mention, so a
 var written in six places and read in none passed "named somewhere other than
 its own declaration" without trouble. **A write-only global is usually not dead
 code; it is a wire with one end unattached, and the missing end is the half
-somebody would have noticed.** `wdMode` was the worked example: the sheet's
+somebody would have noticed.** ~~`wdMode`~~ was the worked example: the sheet's
 letters/sounds rail was taken out in `ae4576d` — "four screens say less" — and
 what was left behind was the variable, its setter, and **six faces in
 `tools/fixture.mjs` that set it**, so six screens were being walked in a state
@@ -783,7 +824,7 @@ the app could no longer be in.
 **And assigned but never declared**, which is the same sentence with no row to
 put it in. `mkPos='n'` and `cands=[]` sat in `viewReset()` with no `var`
 anywhere and nothing reading them — what was left of the make screen after the
-screen went — and `tq`, `tkPos` and `tcomp` were the talk chapter, which has no
+screen went — and ~~`tq`~~, ~~`tkPos`~~ and ~~`tcomp`~~ were the talk chapter, which has no
 file and no route. Assigning to an undeclared name makes a global silently, so
 nothing throws, and with no declaration there was nothing for either check
 above to be about. It catches a typo the same way: `wSrot='a'` would make a
@@ -827,11 +868,12 @@ through and `netSaveUp()` (`www/net.js`) sends the slices that moved, one
 short read and one short write, after the typing stops. 「保存としたらオンライン
 おしまい」 OWNER 2026-09-04; before that a language went up on a LAUNCH and at
 the door and nowhere else, so an hour's writing sat on one phone until the app
-was opened again. `netLangSync()` is still the launch, and it is the same road:
-both call `netSlice1()`, which is the only thing that puts a slice up. `SLICES` in `core.js` is the list of them —
+was opened again. `netLangSync()` is the door's (`netTook()`) and a new
+language's (`langNew()`), and it is the same road: both call `netSlice1()`, which is the only thing that puts a slice up. `SLICES` in `core.js` is the list of them —
 **count them off that and not off a line here**, which has said eleven and has
-said twelve. `lingua.langs` says which languages are here and whose;
-`lingua.set` is the person's settings and belongs to no language.
+said twelve. `lingua.langs.<uid>` says which languages that account has;
+`lingua.set` is this handset's setup and `lingua.set.<uid>` that account's
+settings, and neither belongs to a language.
 `langKey('words')` is the only thing that knows how a language is filed.
 
 `SLICES` in `core.js` is that list, and being *in* it is what makes a slice
@@ -853,11 +895,12 @@ the index of languages, the flat keys from before there could be more than
 one. One bug, seven times: **a list of keys, written by hand, that nobody
 remembered to add to.** So `lsWipeAcct(uid)` counts `localStorage` instead —
 no list, and a key added tomorrow is taken the day it is added. The prefix
-includes the dot, because `lingua` and `linguaX` in the same storage are
+includes the dot, because `lingua` and *linguaX* in the same storage are
 somebody else's.
 
-**And it takes THAT ACCOUNT's and no other's.** It walks the index for the
-languages carrying that stamp and takes the copies parked under that uid.
+**And it takes THAT ACCOUNT's and no other's.** It walks that account's own
+index (`lingua.langs.<uid>`) for the languages carrying its stamp and takes
+every key filed under that uid.
 The call that took the whole namespace whoever was holding the phone is
 deleted: it is what emptied the owner's languages on 2026-09-03 when a second
 account was deleted, and a function that can still be called is a function
@@ -873,23 +916,28 @@ The globals do not change. `WORDS` is the open language's dictionary, because
 the app shows one language at a time and a hundred-odd places say `WORDS`
 meaning "the one in front of me".
 
-Migration from the eight flat keys **copies**; it never removes what it read.
-It runs once, on a phone, against the only copy of something somebody spent
-months on. `migrate-check` seeds the old keys and asks what came through —
-every other check opens an empty browser, which is the one kind of phone that
-does not exist.
+The eight flat keys from before there could be more than one language
+(`lingua.words` through `lingua.talk`) are **not read and not removed**
+「もうまっさら昔のいらない」 OWNER 2026-09-03: the road that copied them was
+deleted, and a phone carrying them keeps them byte for byte. What a migration
+here still does — an older version's `lingua.<id>.<slice>` read through
+`slRd()` (rule 22) — **copies**; it never removes what it read. It runs on a
+phone, against the only copy of something somebody spent months on.
+`migrate-check` seeds the old keys and asks what came through — every other
+check opens an empty browser, which is the one kind of phone that does not
+exist.
 
 It asserts what a thing *is*, never how many there are. The app rebuilds
 letters it cannot find from the drawn glyphs, so a dropped slice comes back as
 plausible auto-generated letters with the right count and the wrong ids.
 
 Two of its assertions are `keeps` and `lacks` rather than equality, because
-the alphabet arriving is no longer the whole alphabet: `ltStart` fills a free
-language out to its twenty-eight slots, so three letters arrive and thirty-one
-are there a moment later. `keeps` says all of these, still in this order, in a
-list that may be longer; `lacks` says none of these, which is the only thing
-the empty list was ever saying. Equality would have forbidden the twenty-eight
-in the name of checking the three.
+the alphabet arriving is not the whole alphabet: `ltStart` fills a free
+language out to its slots (`ltSlotsFill()`, § What the free plan is), so three
+letters arrive and more are there a moment later. `keeps` says all of these,
+still in this order, in a list that may be longer; `lacks` says none of these,
+which is the only thing the empty list was ever saying. Equality would have
+forbidden the slots in the name of checking the three.
 
 ### 7. A list somebody already has comes in whole
 
@@ -954,12 +1002,25 @@ top of the private use area, `inkFaces()` adds a face for those characters to th
 `LinguaType` family (one `unicode-range` each, built by `inkFaceCSS()` — the same
 builder as the keyboard's own face), and `.pline, .pwfield #pw-ln` in `index.html`
 is the one rule for how a line is set, `pre-wrap` included. `postRuns()` in
-`post.js` is the one place that says what a space and a newline are; the line and
-the card both read it. The field, a post, a
+`post.js` is the one place that says what a space and a newline are; the line, the
+card and a line on a photograph read it. **A line draws only what its post carries**:
+a private use character arriving as TEXT on a post would be drawn with whatever this
+phone filed there — its own keyboard's letter or another post's shape — so
+`postRuns()` hands it on as U+FFFD, and **the reading side writes nothing**.
+`line-check` 10 counts every `.pline` the timeline draws and 11 counts every `save*`
+while the timeline and two cards are drawn. The field, a post, a
 quoted post, the spacing preview and the calendar are all that text. The card is a
 canvas and keeps `inkAdv()`; it takes a space as the ordinary face's (`inkSpace()`)
 and a newline as a break. `tools/line-check.mjs` photographs the field and the
 posted row and asks for the same ink.
+
+**Down is the same gap as across, and it is the face's.** A column is laid out by
+the face's VERTICAL advance, and the face had none, so written down every letter
+stood in the line box whatever the gap — the spacing page's column did not move
+when the slider did 「横と縦それぞれスライドしてどう動くか」. `otf5.js` writes
+vhea, vmtx and VORG from the same `reach()` and the same side as the horizontal
+advance, so the field, a post and the preview written down obey the gap all at
+once. `line-check` 6 measures a column at 0, 1 and 2, on a post and in the field.
 
 `tools/sides-check.mjs` holds the line: nothing below it may name `WORDS`, `LETTERS`,
 `STG`, `SET`, `langName`, `findWord`, `myFontOn`, `ltById`, `ME`, `meName` or their
@@ -975,7 +1036,9 @@ reply announced you were replying to yourself.
 
 - `core.js` defines `defLang()` → precedes the ten language files
 - `otf5.js` defines `LinguaFont` → precedes `glyph.js`
-- `glyph.js` ends with `installScriptFont()` and `render()` → **goes last**
+- `boot.js` calls `installScriptFont()` and `render()` — it starts the app →
+  **goes last**, after `route-map.js` and `act-map.js`, or the first screen
+  is drawn with no buttons wired. `assets-check` holds all three.
 
 Also: every `.js` under `www/` must be referenced by `index.html`, and every file
 `index.html` references must be **tracked by git** (not merely present on disk).
@@ -1065,8 +1128,10 @@ instead — the same reason `card-check` wraps `cardInk()` rather than asking
 `cardSrc()`, and the same shape as the fault rule 12 was written after.
 
 **And the order is worked out in ONE place.** `ltPuaOrder()` in `glyph.js`,
-beside `ltPua()`, and four ask it: `puaRoman()` and `installTypeFont()` in
-`glyph.js`, `postCutTyped()` in `post.js`, `shareFace()` in `share.js`. Its
+beside `ltPua()`, and everything that needs the order asks it — `puaTyped()`,
+`puaField()` and `installTypeFont()` in `glyph.js`,
+`shareFace()` in `share.js`, the spacing preview in `wsys.js`; grep for the
+name rather than counting here. Its
 name is in `sides-check`'s forbidden list beside `LETTERS` itself — it reads
 the making side, and **a function that reads the making side is a way to reach
 the making side; giving it a new name is not a way to stop being one.**
@@ -1092,9 +1157,11 @@ nowhere else. A save now goes up the moment it is made (`netSaveUp()` in
 window that closed.
 
 **And a phone whose storage is reclaimed comes back from the server.**
-`netLangsDown()` at the foot of `www/boot.js` brings down every language this
-ACCOUNT has. What it brings down it fills in and never writes over -- which is
-what `bkRestore()` used to do out of the file, with the same rule: it fills in
+`netLangsDown()` brings down which languages this ACCOUNT has, and
+`netLangFill()` (`www/net.js`) brings a language's slices down when a screen
+drawn from it is arrived at 「読むのは開いた画面の分だけ」 OWNER 2026-09-23.
+What it brings down it fills in and never writes over -- which is
+what ~~`bkRestore()`~~ used to do out of the file, with the same rule: it fills in
 what is **missing** and stops. `again-check` holds it, and holds the save
 arriving without a launch.
 
@@ -1154,14 +1221,14 @@ and cannot be drawn from it. Sixteen shapes ink can arrive in are walked, and
 every one that is not drawable comes back as the post's **text** rather than
 as a guess — repairing it would be inventing somebody else's alphabet.
 
-**A post written before a post carried its ink is redrawn from the open
-dictionary, and that is deliberate.** `migratePostInk()` cuts ink onto posts
-one language at a time, as each is opened, because a post can only be cut with
-the alphabet it was written in. Until it is cut, a post has no ink and falls to
-`cardUnits()` — which for the person's own old posts is right, and for a post
-from a language this phone does not have would be wrong. It cannot happen yet:
-every post without ink predates the timeline holding anybody else's. The day
-posts arrive from a server they must arrive with their ink already on them.
+**A post with no drawable ink is its text, on the card as on the timeline —
+whoever wrote it.** `cardPaint()` sends a post to `cardInkUnits()` and never
+to `cardUnits()`, which is for a word or an example of the open language. A
+line with not one drawn shape in it carries no ink (`inkOfCut()` answers
+`null`), and `migratePostInk()` cuts ink onto this person's own older posts
+one language at a time, as each is opened, because a post can only be cut
+with the alphabet it was written in; until then, and for anybody else's, the
+card is the text. `card-check` holds it, mine and not mine.
 
 ### 13. What a post carries is put on it when it is written
 
@@ -1182,6 +1249,17 @@ that the composer is empty behind it — otherwise the next post starts with the
 last one's letters on it.
 
 All four were made to fail before any of them was believed.
+
+**And what the Lingua keyboard typed goes no further than the field.** A private
+use code point means a letter only in this alphabet's order at this moment, so one
+stored anywhere is somebody else's letter once a letter is drawn. `puaTyped()` in
+`glyph.js` reads a field once, into the roman and the line as it was typed (letter
+ids and text); `www/act.js` hands every receiver that pair, and `actVal()` is the
+same reading for a field read on a press. The composer holds the typed line
+(`PW.cut`), a draft keeps it by id, a post's ink is cut from it when it is sent
+(`postInkOf()`), and an edit keeps the ink the post was written with unless the line
+was typed again. `pua-check` types into every field on every screen and counts what
+each receiver is handed.
 
 ### 14. What happens after the second press
 
@@ -1309,7 +1387,7 @@ that has been broken most.
 
 It is **not** "no corner in this stylesheet". `tools/box-baseline.txt` is every
 corner and border that was already there, and `box-check` prints the count on
-every run; `.btn` is on about thirty older screens. Deleting all of it
+every run; `.btn` is still worn on older screens. Deleting all of it
 is a redesign, not a check. The rule as written is about what is **added**.
 
 So `tools/box-baseline.txt` is what the stylesheet looked like the day the rule
@@ -1386,7 +1464,7 @@ one. `kbColHas()` is the one place. What the BIN then takes is a different
 question and is not this one: `kbDelCol()` asks how much of a key is inside the
 column, and narrows it by that much, so the inset row still gives up its half.
 
-**Left and right ignore the half key; only CENTRE rounds to a whole one.**
+**Left and right ignore the half key, and so does centre.**
 「キーボードも左右寄せにするなら、ハンキーとか関係なく寄せて。」 OWNER
 2026-08-27. Right used to send the odd half to the other end so the row's first
 key landed on a whole column — which is what centring is FOR, and is not what
@@ -1403,8 +1481,11 @@ frames and a half at each end. Pushed to one end — left or right — it is one
 of seven, ending in a half. **Either way every one of those frames is a key you
 can press**: the sheet is a grid of frames, an empty frame is a dotted key, and
 **pressing one SELECTS it**, the way pressing anything else on this sheet does.
-A key goes into it from the buttons over the sheet, the width of the frame it
-was. There is no such state as a blank.
+A key goes into it from the buttons over the sheet, **a key wide and never
+narrower**: 「半キーを追加できるのやめてほしい」 OWNER 2026-09-05, so a frame
+half a key wide is selected like any other and the + is down while it is
+(`kbCellFits()`); a half key already on a board stays exactly where it is.
+There is no such state as a blank.
 「エクセルと同じだって」「キーガーないところがあるのがおかしい」
 **「全部のます触ったら選択で」OWNER 2026-08-28** — and that last one settles a
 thing the sheet had two answers to: an empty frame put a key in on the press
@@ -1419,6 +1500,25 @@ up and it was already the answer for the QWERTY's inset third row: **a row with
 the band down it and no key lit is the row saying it does not line up with the
 columns**, which is what somebody needs to know before cutting one. The drawing
 of a short row and the button that aligns one ask the same function.
+
+**The sheet has ONE coordinate, and it is `KB_COLS`.** A short row that writes no
+gaps is drawn in the middle of the sheet 「揃えて欲しい」, and `kbStart()` is the
+one place that says where its first key stands. The letter that lights a column,
+the bin that takes it, the + that puts one in, a frame a key goes into, and the
+three alignments all count in that coordinate — the alignments against the ten
+columns, never against the widest row. They used to count in three: the drawing
+centred a row, the bin and the + counted from its first key, and the alignments
+measured the widest row, so pressing a column lit one key and the bin took
+another (`docs/scope/r73-audit.md` § 2-16). Whether a short row made by hand is
+filled out to ten when it is saved — the extension draws it the width of the
+phone, the sheet in the middle — is the owner's and has not been asked. What a
+MERGE counts in is the row's own positions still, and is `docs/scope/r74-kb.md`'s.
+
+**What is selected and the step back are the screen's and the board's.**
+`kbLeft()` forgets both, and three things reach it: walking off the chapter
+(`viewLeft()`), opening another language (`viewReset()`), and arriving on
+another board (`kbNoted()`, which names a board by its language and its `id`,
+never by where it is in the list).
 
 Where a row is short from — left, centre, right — is written in **gap keys**,
 which this keyboard has had since it had a QWERTY. Nothing new is stored, and
@@ -1539,9 +1639,9 @@ a carry that ate a half, which is why those are separate claims.
 「満杯だと追加できないから」 OWNER 2026-08-27. A key can be held and dragged
 into another row, and that road asked nothing about width — a board of ten-key
 rows became one of eleven, which is the 29pt this rule exists to forbid.
-`kbCellAdd()`, the same act done by pressing an empty cell rather than by
-carrying, had asked `kbRoomIn()` from the beginning: the gate was already
-there and one road went round it. Both ask `kbRoomFor()` now. **Only across
+`kbCellPut()`, the same act done by putting a key into an empty frame rather
+than by carrying, had asked from the beginning: the gate was already there and
+one road went round it. Both ask `kbRoomFor()` now. **Only across
 rows** — inside one row the width does not change, and asking there counts the
 key twice and freezes the ordering of every full row. What a refused carry
 must do is leave the key where it was: "no row is over ten" is also true of a
@@ -1594,7 +1694,8 @@ opposite page.
 
 **「ここの言語ページを公開すると単語と文字 dl できるようにするはいらない。wiki で
 できるから。」** The settings room and the article's writing face both offered
-公開, writing the same `world().hide`; the room also offered a whole-page DL
+公開, writing the same field — `language.published_at` on the server now,
+through `setWldHide()`, and `wldPubOf()` reading it; the room also offered a whole-page DL
 where the article asks it of each section. The room's two rows went and the
 article's stayed. A switch in two places writes the same field from both, so
 nothing throws and every screenshot is right — it is found by somebody turning
@@ -1617,8 +1718,8 @@ check now stands on the route.
 **§ One place, not fifteen finally has something holding it.** That section
 ends with the sentence this rule is: *"A comment saying 'this is the one place'
 is worth nothing on its own... Either a check holds the claim, or do not make
-it."* Nothing held it, and on 2026-09-01 it was broken with every one of the
-twenty-nine checks green.
+it."* Nothing held it, and on 2026-09-01 it was broken with every check in
+the gate green.
 
 `wldPage()` in `www/home.js` is the language's page — ABOUT THIS LANGUAGE, with
 Overview / Phonology / Letters / Lexicon / Grammar / Keyboard down it — and its
@@ -1626,7 +1727,7 @@ own comment is the rule written out: *"There is no separate editor screen any
 more. There were two screens with two layouts for one thing... One function
 draws both now, so a section cannot appear in one and not the other."* Then
 somebody else's published language needed drawing, and what was written was
-`wldSeenHTML()`: a **second page on the same route**, under a different name,
+~~`wldSeenHTML()`~~: a **second page on the same route**, under a different name,
 showing a different set of sections, reached by giving `about` an argument.
 
 Nothing throws. It is not a copy of `wldPage` — **a three-line sliding window
@@ -1643,7 +1744,7 @@ two pages. Nothing here reads `vAbout`'s source or restates its branch: a check
 that recomputes the thing under test is a copy of it, and a copy always agrees.
 
 **The faces are asked of the page, and that is the half that matters.** The
-reason twenty-nine checks were green is not that they were weak — it is that
+reason every check was green is not that they were weak — it is that
 **no walk had ever handed `about` an argument.** `argsOf` in `i18n-check` and
 `walkArg` in `act-check` are lists somebody has to remember to add a route to,
 and this is the one bug in `docs/DATA_SAFETY.md`'s family: *a list of keys,
@@ -1651,7 +1752,7 @@ written by hand, that nobody remembered to add to.* So `page-check` harvests
 every `data-do="go"` carrying a two-element argument out of what it has already
 rendered — the doors the app itself offers — and then gives every route two
 arguments nothing knows as well, **because a second page reached only from a
-door that has not been built yet is still a second page.** `wldSeenHTML`
+door that has not been built yet is still a second page.** ~~`wldSeenHTML`~~
 shipped before the row on a profile became pressable; a check that waited for
 the door would have waited a commit. It was the probe that caught it, both at
 `3230182` and at the branch tip.
@@ -1684,13 +1785,13 @@ the exemption's rot claim with `viewGone` renamed out from under it.
 「今ファイルもいらん。オンラインのみで行こうってことになってる今後オフライン
 対応する時にまた考えることにした」 OWNER 2026-09-04.
 
-Every one of the twelve slices used to be a `localStorage` key, written on
+Every slice in `SLICES` used to be a `localStorage` key, written on
 every save and read back at launch. **They are in memory now** — `LSL` in
 `core.js`, reached by `slRd`/`slWr`/`slRm`, keyed by the same `langKeyOf()`
 that has always said how a language is filed. What is there is what the
 RUNNING app is holding, the same kind of thing `WORDS` and `LETTERS` already
-were, one step further out. Close the app and it is gone; open it signed in
-and `netLangsDown()` brings it back.
+were, one step further out. Close the app and it is gone; open it signed in,
+arrive at a screen drawn from it, and `netLangFill()` brings it back.
 
 **There is one copy on this phone and it is READ-ONLY.**
 「前に読み込んだ分は出て欲しい。制作も眺めたい人はいるだろうし、」 OWNER
@@ -1700,14 +1801,18 @@ nothing is made on it, nothing is saved to it, and **it never goes back to the
 server. The road is one way.**
 
 **The one-way line is what stops it becoming a second answer to 「what is this
-language」.** A copy that can travel back is a copy that can win, and
-`syMerge()` (`www/sync.js`) is that bug standing in the tree today: it reads a
-copy it cannot parse as an empty one and overwrites the server's good rows with
-it (`docs/HANDOVER.md` 七章). With no road back, a copy that is wrong costs the
-copy and nothing else.
+language」.** A copy that can travel back is a copy that can win. `syMerge()`
+(`www/sync.js`) is where what this phone holds meets the server, and it tells
+wreckage from empty (`slState()` in `core.js`, the one place every reader of
+a slice asks): a copy it cannot parse takes the server's,
+and a server row it cannot parse is not written over. What keeps the picture
+off that road is `slMine()` — the up road asks it, and the picture is not in
+it. With no road back, a copy that is wrong costs the copy and nothing else.
 
-**Not built yet.** The slices are in memory only, so with no signal there is
-nothing to show today. `docs/STATE.md` says where this stands.
+**The picture is `lingua.<id>.<slice>.got`.** `slGot()` in `core.js` writes
+it the moment this phone and the server hold the same string, `slRd()` reads
+it last — after memory and after an older version's disk key — and `slMine()`
+never reads it at all, which is the whole of the one-way line.
 
 **What an older version left on the disk is still READ, and that is the
 migration.** Every phone carrying this app has `lingua.<id>.<slice>` in
@@ -1730,7 +1835,7 @@ to; after the door a save goes up the moment it is made (rule 6), so there is
 no other window. What that same decision does NOT allow is a failure that
 takes the work with it -- rule 11 above and `saveTry()` in `www/core.js`.
 
-**And `netLangsDown()` fills a language it already knows about.** It used to
+**And `netLangFill()` fills a language it already knows about.** It used to
 skip one whose id was in the index, which was right while a slice survived a
 launch and is the line that would silently empty everybody's dictionary now:
 the index is on disk and the slices are not, so every launch starts with a
@@ -1748,7 +1853,7 @@ outlives it. The owner deleted two nameless `language` rows on a real phone and
 設定→言語 went on drawing them as 「未設定」, with 「言語を追加」 refused
 because `langCount()` was counting them. `netLangsGone()` (`www/net.js`) is the
 sweep, it is **one function for this account's own languages and for the ones it
-took** — `netTakeGone()` is gone, because two mechanisms for one sentence is
+took** — ~~`netTakeGone()`~~ is gone, because two mechanisms for one sentence is
 what `CLAUDE.md` § Simple forbids — and what it takes is the **copy on this
 phone**: not one byte of any `language` row moves, `netLangDrop()` is not
 called, and a language this phone is holding something of is never touched,
@@ -1775,13 +1880,14 @@ one second later.
 
 **What is left in `localStorage` is not a language, and `store-check` prints
 how many there are on every run — read it there rather than here, because the
-number written here has already been wrong twice.** The index (`lingua.langs`,
-`lingua.cur`) is a picture of which languages this account had when the server
-last answered, and where somebody is standing — what the app asks the server
-WITH, rather than the answer. The
-session, the settings, the timeline's copy, the profile's, the picture of
-which of somebody else's this account has taken (`lingua.take.<uid>`), and the
-parked copies of each are the rest.
+number written here has already been wrong twice.** The index
+(`lingua.langs.<uid>`, `lingua.cur.<uid>`) is a picture of which languages this
+account had when the server last answered, and where somebody is standing —
+what the app asks the server WITH, rather than the answer. The session, this
+handset's setup, and each account's settings, timeline copy, profile copy and
+picture of which of somebody else's it has taken are the rest — every one of
+them but the session and the setup under `lingua.<name>.<uid>`, written there
+the moment it is written (`acctPut()`, `www/core.js` § ACCT, r79).
 
 **And the index says which and not what.** On 2026-09-08 and 09 the four
 things it was still answering moved to columns: what a language is CALLED is
@@ -1808,8 +1914,9 @@ in the index.
 memory-only, so a launch with no signal had 「not asked」 for it, and every
 language somebody had TAKEN off another page fell to 「nobody has said」 —
 their own were on the screen, out of the pictures above, and the rest had
-gone. `langTookGot()` writes the picture and `langTookFor()` reads it, filed
-under the account it is about (`lingua.take.<uid>`), so signing in as somebody
+gone. `langTookGot()` writes the picture and the account's container
+(`www/core.js` § ACCT) reads it, filed under the account it is about
+(`lingua.take.<uid>`), so signing in as somebody
 else reads that account's own and never the one before it
 （「違うアカウントでログインしてんのに前のやつ出てくるんだけど？」 OWNER
 2026-08-31). No road up, and a language that comes back this way is still only
@@ -1843,18 +1950,23 @@ wrote down.
 **Inside `lingua.set` the question is asked the OTHER WAY ROUND**, and it had
 to be: 「アカウント消したのに検索履歴残ってたんだけどなんで？…全部アカウント
 だって言ってるやん おかしいだろお前一本化しろって。」 OWNER 2026-09-04.
-`SET_ACCT` used to name the six fields that are a PERSON's, `recent` was added
+~~`SET_ACCT`~~ used to name the six fields that are a PERSON's, `recent` was added
 to `SET` a day later and never reached that list, and a deleted account's
 search history was still on the screen — **a list of keys, written by hand,
 that nobody remembered to add to**, which is the same fault `lsWipeAcct` was
 rewritten for a week earlier.
 
-**`SET_PHONE` in `core.js` names this HANDSET's own setup** — the theme, the
-interface language, the marks that a migration has run here, `planUid` — and
-**everything else in `SET` is an account's**, counted rather than named.
-`setFor(uid)` parks those on the way out and brings that account's own back on
-the way in; `lsWipeAcct(uid)` empties the live key of them and takes the parked
-one. A field added tomorrow is that account's the day it is added.
+**`SET_PHONE` in `core.js` names this HANDSET's own setup** — which account's
+things are live here, what the onboarding needs with no session to ask, a
+measurement of this screen, a migration mark, and four of the making side's
+that are not settled (`docs/BACKLOG.md`); read the array, not this line — and
+**everything else in `SET` is an account's**, counted rather than named. The
+theme and the interface language are not on it: they are the account's and
+go up in `profile.prefs` (`SET_PREFS`).
+They are written under `lingua.set.<uid>` the moment they are written, and
+`acctFor(uid)` reads that account's own when it arrives — there is no live key
+of them and nothing is parked; `lsWipeAcct(uid)` takes that key with the
+account. A field added tomorrow is that account's the day it is added.
 `tools/store-check.mjs` holds the two tables together: a field it puts on a
 road to the server may not be named as this handset's setup. `docs/BACKLOG.md`
 carries whatever is still there; read `store-check`'s own last three lines for
@@ -1890,8 +2002,12 @@ names cannot change, the keyboard can be a **QWERTY with the drawn letters
 substituted in** — `kbFixed()`, built from `LETTERS` every time it is shown,
 stored nowhere, with no editor and nothing to set.
 「キーボードもqwerty配列がそのまま自作文字に置き換わるだけ。なんの設定もできない」
-Rename one letter and the key it answers to is gone, which is why the name
-field is not on the free letter page rather than merely being discouraged.
+Rename one letter and the key it answers to is gone, which is why a slot's
+name does not change **on any plan** (decision log 2026-08-22) and
+`ltSetRoman()` refuses it rather than a screen merely hiding the field —
+except a digit typed as the name, which reaches `ltToDigit()` before the
+refusal and turns the slot into a digit (`docs/scope/r73-audit.md` § 4,
+measured; `www/letters.js` is not a document's to fix).
 
 It carries two more things. A row of digits above the QWERTY, and they are the
 person's own — `numbers.js` says a digit IS a letter, one carrying a value
@@ -1906,10 +2022,12 @@ of what it is, and it is also the order it counts in. `ltKinds()` therefore
 shows the digits room on free — what free still cannot do is ADD one, which is
 `can('letters')` and is asked at the foot of the room.
 
-And `!` and `?` are at the ends of the space bar rather than the tail of the
-third row, with the delete two keys wide, which evens the rows to ten, nine,
-and seven letters. 「これスペースデカすぎやね。！スペース？みたいにできない？」
-「デリートキーは横二つ分欲しいかも」 The digits sit above the letters rather than
+And `!` and `?` stand together at the near end of the bar along the bottom —
+`! ? space return` 「！？スペース　改行」, because a keyboard that cannot start
+a new line is one nobody can send a message on — and the delete takes the slack
+at the end of the third row, so every row is ten across and the columns line
+up. `kbFixed()` is the one place the shape is written; read it rather than a
+sum here. The digits sit above the letters rather than
 behind a switch because free is one face and stays one face:
 「2ページ目なしでqwertyの上に1〜0の数字と！？入れてこれで無料版1ページに抑えよう」
 A second face on free would have held only this row and nothing else, which is
@@ -1926,7 +2044,7 @@ Four places say it, and they say four different things:
 | `ltStart` in `letters.js` | a FREE language is topped back up on every launch — the slots by name, a digit per value of the base by value. A paid one is not, and `ltSlotsFill()` beside it is what a language of any plan is made with |
 | `kbOf` in `keyboard.js` | free reads `kbFixed()` and never `KB` |
 | `wsys()` in `wsys.js` | free is an alphabet; there is nothing to guess |
-| the screens | `vLtset` `vLetter` `vLetters` `vWsys` `vKb` each drop what free cannot use |
+| the screens | the same screen on every plan 「全部一緒」 OWNER 2026-09-04: what free cannot do is there in the same shape, and pressing it goes to the plans. `docs/HIDEFREE.md` says where each screen stands |
 
 `ltSlotsFill` **tops up**: a language that already has letters keeps every one
 of them and is given only the names it is missing, so it can run on any launch
@@ -1979,25 +2097,25 @@ it.**
 A later audit found twelve more. Six by reading the seam between the two sides:
 the root bar (`rootTop()` — the contents page and the timeline each hand-rolled
 it and had already drifted in what goes in the corner), the gloss row
-(`postGloss()` with `postGlossLine()`), what the meaning defaults to (`pwMn()`), what to call an
+(`translate.toNatural()` in `www/grammar-engine/` now, which arranges the line as well), what the meaning defaults to (`pwMn()`), what to call an
 author (`postWho()`), "nothing here yet" (`snsNone()`), and "the thing you came
 back for is gone" (`viewGone()`, five screens in four files).
 
 Six more by running a three-line sliding window over every line of `www/`,
 which is worth doing again and takes a minute to write: a letter's face
 (`ltInk()`), strokes into ink (`inkStrokes()`), the spelling page
-(`spPageHTML()`, since deleted — a reading is chosen off sounds now and no
-letter appears on that page at all), the spelling row (`spRowHTML()`, deleted
+(~~`spPageHTML()`~~, since deleted — a reading is chosen off sounds now and no
+letter appears on that page at all), the spelling row (~~`spRowHTML()`~~, deleted
 with it), an example sentence (`exRowHTML()`), and where the thumb is
 (`geXY()`).
 
-**The worst two sat under comments claiming to be the one place.** `ltFace`
+**The worst two sat under comments claiming to be the one place.** ~~`ltFace`~~
 (since deleted — the alphabet is cells now, and `ltInk` is the face)
 opened with "a letter's face, wherever one is shown" and there were five others.
 `inkStrokes` says it is "the one place that turns strokes into a shape on a
 canvas" and the glyph *editor* did not go through it — the letter under your
 finger was drawn by different code from the letter on the key, the tile and the
-card. A third, `vASpell`, carried the comment "Same page as the editor's, on the
+card. A third, ~~`vASpell`~~, carried the comment "Same page as the editor's, on the
 other list" directly above a copy of that page.
 
 A comment saying "this is the one place" is worth nothing on its own: whoever
@@ -2009,7 +2127,7 @@ you only read one. `scriptGlyphDefs()` built its glyphs from three lists that
 had each been added on a different day: the units the writing system needs
 (`wsUnits`, which only ever answers in sounds), the marks (a letter reading
 `?` is not a sound, so it could not be among them), and the names, which came
-last and as a patch — `scriptNameCodes` walked `LETTERS` to find what the
+last and as a patch — ~~`scriptNameCodes`~~ walked `LETTERS` to find what the
 letter behind each unit was called, and took only a name one character long.
 Three lists is three answers to "what letters do I have". They did not agree:
 a letter reading `?` got **two** glyphs both claiming `?`, and a letter with no
@@ -2050,8 +2168,11 @@ the font was built, the glyph for `l` was in it — and `l` came out as `l`.
 time is a dozen places agreeing that have to be found and kept found; `.sfont`
 saying `!important` is one place saying so once. `.sfont` means "this is set in
 the letters somebody drew," the whole point of the app, and nothing may quietly
-outrank it. (Not a bug and worth knowing: `SET.myfont` is off until somebody
-turns it on — with it off there is no `.sfont` at all, and roman is correct.)
+outrank it. (Worth knowing: the drawn letters are ON until somebody turns them
+off 「オンをデフォルトにしてくれ。」 OWNER 2026-09-23 — `myFontWant()` in
+`www/glyph.js` is the one place that answers it and `writes-check` holds that
+nothing else reads `SET.myfont`; `setMyFont()` is its one writer. Turned off,
+there is no `.sfont` at all, and roman is correct. `line-check` 9 holds both.)
 
 ## Names
 
@@ -2063,14 +2184,15 @@ findable — `st*` grammar stages, `ob*` onboarding, `ge*` the glyph editor,
 `share*` what leaves for the system keyboard,
 `f*` search, `v*` a view, `open*` a form, `net*` the server.
 
-`set*` is reserved for settings: it writes `SET.x`, or it builds part of the
-settings screen. It is not the English word "set". `setAbVow` wrote `abVow`
+`set*` is reserved for settings: it writes a field of `SET`, or it builds part of the
+settings screen. It is not the English word "set". ~~`setAbVow`~~ wrote `abVow`
 and never touched `SET` at all — it is `abSetVow`. Thirteen were like that.
 
 Single bare verbs are not names here. `wipe` and `choose` said nothing about
 what they acted on, in a namespace where everything is global; they are
-`wipeAll` and `setPlan`. Watch the case, too: `g*` is grammar (`gOpenOf`), so
-the glyph editor's `gbtn`/`gsnap` are `geBtn`/`geSnap`.
+`wipeAll` and ~~`setPlan`~~ (the plans page buys through `plBuy()` now).
+Watch the case, too: `g*` is grammar (`gOpenOf`), so the glyph editor's
+~~`gbtn`~~/~~`gsnap`~~ are `geBtn`/`geSnap`.
 
 Renaming an acted function means renaming it in `www/act-map.js` **twice** —
 the string and the function — and `act-check` fails on either half alone.
@@ -2101,11 +2223,12 @@ the string and the function — and `act-check` fails on either half alone.
 | `www/me.js` | who you are: the face, the name, the handle, the line about yourself (ch 20) |
 | `www/backup.js` | the one line every save passes through, and where a save reaches the server (ch 24) |
 | `www/rec.js` | the voice on a post — thirty seconds. It goes up with the post 「SNSは全部サーバー」: `netUpVoice()` (`www/net.js`) puts it in the `post-media` bucket and writes the path to `body.vu`, and `voRemote()` is how one name tells a path on the server from a file this phone recorded (ch 25) |
-| `www/sheet.js` | the sheet somebody writes a word on paper on, and the number printed on it that says which one (ch 26) |
+| `www/sheet.js` | the sheet somebody writes a word on paper on; what is printed on it is `Lingua` and the page, `n/N` (ch 26) |
 | `www/store.js` | the App Store: what `LinguaStore.swift` is asked and what comes back (ch 26) |
 | `www/sync.js` | putting a language and what this phone is holding back together — two phones can still both edit one language, so the merge stays (ch 26) |
 | `www/mod.js` | the other side of a report — what somebody with the flag sees |
 | `www/cal.js` | the calendar: a month is a word (ch 27) |
+| `www/push.js` | Apple's notifications: the one window onto `LinguaPush.swift` — the address, the switches for each kind, and what tapping one opens (ch 28) |
 | `www/net.js` | the one window onto the server, and the only place a secret could be (ch 21) |
 | `www/ipa.js`, `reading.js` | spelling → IPA, IPA → per-language respelling |
 | `www/phases.js`, `letters.js`, `wsys.js` | phonology, alphabet, writing system |
@@ -2120,8 +2243,8 @@ the string and the function — and `act-check` fails on either half alone.
 | `docs/FEATURES.md` | the registry: every feature, its status, its plan, its data, and whether the owner has decided it. Read before building anything |
 | `docs/ARCHITECTURE.md`, `DATA_MODEL.md`, `DATA_SAFETY.md`, `FEATURE_RULES.md`, `PAID_FEATURES.md`, `TESTING.md`, `CHANGELOG.md` | the rules above, in full. What is at the head of this file is the part that may not be argued with; these are the working detail |
 | `docs/keyboard.md` | how a person builds a keyboard in the app — every field of the editor, and the two ways to lock yourself out of a layer |
-| `docs/keyboard-extension.md` | the whole spec for the **Lingua keyboard**: what a person clicks in Apple's site, what the App Group carries, and what the extension may not do. It is an iOS keyboard extension by mechanism and a **Lingua-only** keyboard by purpose -- where somebody writes in their own letters is a field inside this app, not Messages, and **that is why the timeline is inside this app too**. Built now -- `ios/App/LinguaKeyboard/` holds six Swift files, and a person has typed their own letters on it on a real phone. Getting there took four failed builds with one symptom between them, and the fourth cause is the one to remember: the native bridge injects `toNative`, `nativePromise`, `nativeCallback`, `isPluginAvailable` and `withPlugin`, and nothing else. `registerPlugin` and `Plugins` are `@capacitor/core`'s, and **this app has no bundler and never loads it** -- so `Capacitor.Plugins.LinguaShare` is undefined on a phone and silently does nothing. `Capacitor.nativePromise('LinguaShare','write',…)` is the call. Three builds were spent guessing before the app was made to say on screen whether the hand-over had gone out (`kbOutSay()`); the fourth cause fell out of one screenshot. Build the status line first |
-| `docs/apple.md` | what a person does in App Store Connect — TestFlight, the two subscriptions, and the fact that no StoreKit code exists yet. Same argument as `mail.md`: none of it can live in the repo except as words |
+| `docs/keyboard-extension.md` | the whole spec for the **Lingua keyboard**: what a person clicks in Apple's site, what the App Group carries, and what the extension may not do. It is an iOS keyboard extension by mechanism and a **Lingua-only** keyboard by purpose -- where somebody writes in their own letters is a field inside this app, not Messages, and **that is why the timeline is inside this app too**. Built now -- `ios/App/LinguaKeyboard/` holds six Swift files, and a person has typed their own letters on it on a real phone. Getting there took four failed builds with one symptom between them, and the fourth cause is the one to remember: the native bridge injects `toNative`, `nativePromise`, `nativeCallback`, `isPluginAvailable` and `withPlugin`, and nothing else. `registerPlugin` and `Plugins` are `@capacitor/core`'s, and **this app has no bundler and never loads it** -- so `Capacitor.Plugins.LinguaShare` is undefined on a phone and silently does nothing. `Capacitor.nativePromise('LinguaShare','write',…)` is the call. Three builds were spent guessing before the app was made to say on screen whether the hand-over had gone out (~~`kbOutSay()`~~, since deleted); the fourth cause fell out of one screenshot. Build the status line first |
+| `docs/apple.md` | what a person does in App Store Connect — TestFlight and the two subscriptions; the StoreKit side is `ios/App/App/LinguaStore.swift`. Same argument as `mail.md`: none of it can live in the repo except as words |
 | `tools/*.mjs` | the checks; `verify-script.mjs`, `lattice-truth.mjs` etc. are font/script experiments |
 
 A new view is found automatically by the checks (they ask the page for globals named
@@ -2146,7 +2269,7 @@ moved four times, and each move is a change somebody made on purpose: it
 jumped from 2952 to 5172 the day the free plan got its twenty-eight letters,
 because every screen holding a keyboard went from a handful of keys to a
 QWERTY; it fell to 3636 the day the in-app keyboard left for the system
-extension — `kbField`, `kbTap`, `kbFlick` and the rest of what let a screen be
+extension — ~~`kbField`~~, ~~`kbTap`~~, ~~`kbFlick`~~ and the rest of what let a screen be
 typed on inside Lingua are gone, and every screen that used to carry a QWERTY
 for typing now carries only what `keyboard.js`'s editor needs. It rose to 5718
 the day a post opened onto its thread, and that one is two changes at once: the
@@ -2211,7 +2334,7 @@ merge of two branches that had diverged, so two rows next to each other in
 one way on one branch and the other way on the other, and the merge put them
 together. Nothing lost 1292 buttons.
 
-It fell to 8453 when `wdMode` and the six faces in `tools/fixture.mjs` that set
+It fell to 8453 when ~~`wdMode`~~ and the six faces in `tools/fixture.mjs` that set
 it came out — those six were being walked in a state the app could no longer be
 in — and coverage did not move: 213 of 213 names, still.
 
@@ -2259,8 +2382,8 @@ be a change somebody made on purpose.
 
 ## Working on this repo
 
-- The book is numbered: chapter 0 opens `core.js` and the highest in the tree is
-  27 (`cal.js`), each file saying its own number in its opening comment. One
+- The book is numbered: chapter 0 opens `core.js`, and each file says its own
+  number in its opening comment. One
   chapter per file — a file that grew to hold five was split along those banners,
   not along anything new. The numbering has gaps where a chapter was closed; it is
   a shelf, not a count. **Three files say 26** (`sheet.js`, `store.js`,

@@ -641,7 +641,7 @@ function impGetHTML(){
 /* And the box, on its own screen, with the one thing to do next under it. */
 function impPasteHTML(){
   return '<div class="field"><textarea id="f-csv" placeholder="'+esc(t('csv.ph'))+'"></textarea></div>'+
-    '<button class="btn ghost" style="width:100%;margin-top:12px"' + DO('impScan') + '>'+
+    '<button class="btn ghost wide"' + DO('impScan') + '>'+
       esc(t('imp.next'))+'</button>';
 }
 /* The file input is the one control in the app that cannot go through the
@@ -662,7 +662,7 @@ function impMount(){
 }
 function impScan(){
   var e=document.getElementById('f-csv');
-  impTake(e? e.value : '');
+  impTake(actVal(e));
 }
 /* Whatever came in -- typed, pasted or read off a file -- goes through the
    same door. */
@@ -719,9 +719,9 @@ function impMapHTML(){
   }
   out+='</table></div>';
   for(j=0;j<wide;j++) out+=impColRow(j, side);
-  out+='<button class="btn ghost" style="width:100%;margin-top:14px"' + DO('impStep', ["ready"]) + '>'+
+  out+='<button class="btn ghost wide"' + DO('impStep', ["ready"]) + '>'+
       esc(t('imp.next'))+'</button>'+
-    '<button class="set" style="margin-top:10px;border-bottom:none"' + DO('impAgain') + '>'+
+    '<div class="grpsep"></div><button class="set end"' + DO('impAgain') + '>'+
       '<span class="sl">'+esc(t('imp.again'))+'</span></button>';
   return out;
 }
@@ -774,9 +774,9 @@ function impReadyHTML(){
        nothing, and saying nothing is what made a list arrive as nothing at
        all. */
     (p.mute? '<div class="note">'+esc(tn('imp.mute', p.mute))+'</div>' : '')+
-    '<button class="btn ghost" style="width:100%;margin-top:14px"' + DO('doImport') + '>'+
+    '<button class="btn ghost wide"' + DO('doImport') + '>'+
       esc(t(IMP.into==='l'? 'imp.golt' : 'imp.go', n))+'</button>'+
-    '<button class="set" style="margin-top:10px;border-bottom:none"' + DO('impAgain') + '>'+
+    '<div class="grpsep"></div><button class="set end"' + DO('impAgain') + '>'+
       '<span class="sl">'+esc(t('imp.again'))+'</span></button>';
 }
 /* What pressing it would do, said before it is pressed. It follows the side

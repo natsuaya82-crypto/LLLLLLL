@@ -106,7 +106,7 @@ const MINE = [
      what this list is written in. Without it, a function that reads LETTERS
      could be called from below the line and this check would stay green,
      which is the hole the four-into-one opened the moment it closed.
-     postCutTyped() calls it and is ABOVE the line, where the writer still
+     puaTyped() and postInkOf() call it and are ABOVE the line, where the writer still
      exists; that is why the line is where it is. */
   'ltPuaOrder',
   /* What stands between two letters of the OPEN language (www/glyph.js §
@@ -299,7 +299,9 @@ taints.delete('netFreshDone');
    because they are the language; an icon is not the language, so postFace()
    is allowed to ask what it looks like NOW instead of what it looked like
    THEN. 「アイコン変えた前の投稿が古いアイコンのまま」 OWNER 2026-09-05.
-   A reader-side copy keyed on the post's own handle -- it does not read ME. */
+   It READS ME, and that is what is allowed here -- reading, for the handle
+   that is mine. Writing is not: line-check 11 draws the timeline and two
+   cards with every save* on the page counted, and ME and SET compared. */
 taints.delete('whoOf');
 const READER = new Set(['render', 'uiLang', 't',
                         'netSend', 'netSend1', 'netFresh', 'netFreshDone',

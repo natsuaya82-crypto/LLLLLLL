@@ -32,6 +32,59 @@ un-re-read.
 
 ---
 
+## 2026-09-24 ── r68・r78・r79・r80・r81（integ `ee2d0e9c`、ゲート全部緑（本数は npm test の最後の行）、rls 498/0 ── **ビルドの手前で止めている**）
+
+- `claude/r79-acct` ── 端末に書く物は書く時にアカウントの鍵（`lingua.<名>.<uid>`、`acctPut()`）。持ち主の無い
+  古い写しは誰の物にもしない（読まない、消さない）。キーボードの面は保存を押すまで下書き（K1）。
+- `claude/r80-block` ── ブロックした相手の物はサーバーが `block_hides()` 一つで外す（`supabase/schema.sql`）。
+  **Supabase で schema.sql を流すまで電話では効かない。**
+- `claude/r78-sides` ── 読む側は投稿に載っている物だけで描き、何も書かない。Lingua キーボードの字は欄の外へ
+  出ない（`puaTyped()`・`actVal()`、`pua-check`）。キーの画面の「確定」を消した（OWNER 2026-09-24「いらないなら
+  保存だけでいいよ」）── 押した字がそのキーに入る。
+- `claude/r68-state` ── サーバーがまだ答えていない間を無料・空・0 と読まない（`state-check`）。読めない slice は
+  空で開き、保存は「保存できませんでした」。r80 の端末側（端末でのブロックの篩いを消した）。
+- `claude/r81-checks` ── r79 の後に赤くなった検査の前提を今の形に。
+- **Android 版**（OWNER 2026-09-24）── 「まずはそのアプデ終わらせて取り掛かろう」。この更新を出してから。
+  オーナーの端末: iPhone SE2・iPhone 17・Redmi 12・Xiaomi Pad 5。Play の登録が個人か事業かは訊いている。
+- CODE CONFIRMED のみ。DEVICE CONFIRMED・OWNER CONFIRMED は無い。
+
+## 2026-09-23 夕 ── 活用形・広告・目安の線 田・字間の画面・通知「今日のお題」・↓ の状態（integ `cf2d9408`、166 で出す ── **オーナーの Apple 側 1・2 待ち**）
+
+- `claude/r52-forms` ── **活用形は語ではなく形**（OWNER 2026-09-23）。語の上に
+  「ラベル＋形」で持つ（原型 aa／未来形 aai）。ラベルと形が揃わないと登録できない。
+  ラベルは自分でも作れる（`i~`）。100 語／1000 語に数えない。語ページの活用一覧に出る。
+  キーボードの変換も引ける。**前に語として作られた活用形は一覧から隠すだけで消さない**
+  （`wIsForm()`、決定 B）。`forms-check`（新規）、`plan-check`・conv・grammar を更新。
+- `claude/r55-ads` ── **広告枠**（OWNER 2026-09-23「Twitterと同じ。ツイート擬態右上に
+  pr」）。投稿 10 件ごとに一枠、10 件未満なら無し、pro は無し（`can('noads')`）。
+  枠は売れる形 ── サーバーの広告行を `postRow` で描き右上に PR。売れていない枠は
+  AdMob ネイティブ（`ios/App/App/LinguaAds.swift`、GMA 13.6.0、Podfile）。
+  ID は `ios-deploy.yml` の「Inject AdMob IDs」が secrets `ADMOB_APP_ID`・
+  `ADMOB_NATIVE_UNIT` から入れ、無ければ Google のテスト ID。ATT の許可は jpel と同じ。
+  UMP（EU の同意）は BACKLOG。**実機はまだ ── 広告が実際に出るかは 166 で見る。**
+- `claude/r56-guide-sp` ── **目安の線は 田**（口＋十、点の 0・10・20 段と列、
+  コントラスト 5.04:1／暗 8.38:1、`guide-check`）。**字間は別ページ**（設定 → 言語 →
+  字間 >、横と縦の見本）。otf5.js が vhea/vmtx/VORG を書くので縦書きも字間に従う
+  （`line-check` 6）。
+- `claude/r57-store` ── `tools/store-localize.mjs --dry` が Apple の断る字を種類で
+  拒む（FAST に登録）。Store Localize は 1.0.2 で 10 言語成功（run 35871369202）。
+- `claude/r58-prompt-push` ── **通知「今日のお題」**。通知の種類は一覧一つ、`prompt`
+  を足した。Supabase の cron `daily-prompt` は `0 7,8 * * *`（ロサンゼルスの 0 時、
+  夏冬どちらも）、関数は同じ日に二度送らない。通知の部屋のスイッチは 5 つ。rls の
+  ケースを追加。
+- `claude/r59-take` ── **人の言語の ↓**（OWNER 2026-09-23）。押すと回る印、サーバーが
+  取れたと言えば ⭕☑️、断られたら ↓ に戻り「接続できません」。⭕☑️ はサーバーの答え
+  （`langWhose()`）と読み込み済みの章から（`wldTakeOf()`、home.js）。**人の言語は
+  wiki に出ない** ── 取った言語を開いていてもプロフィールの「この言語について」の行は
+  出ず、記事は開かない（`langLocked()` 一問、`wldRow()`・`wldPage()`）。`take-check`
+  （新規）。取った言語で about が回り続ける件はオーナーが「無視していい」。
+
+**166 の前にオーナーがやること**（枝 `claude/owner-todo` の OWNER-TODO.md）：
+① App ID `com.tokinets.lingua` に Push Notifications を足す ② 配布用プロファイルを
+作り直して secret `PROVISIONING_PROFILE_BASE64` に入れる。`aps-environment` が入って
+いるので、この二つの前に出すと Archive で落ちる。AdMob の本番 ID の secrets も同じ
+ファイルにある（無くてもテスト ID で出る）。
+
 ## 2026-09-23 午後 ── 一行を描く仕組みを一つに・文字を描く面の目安の線（integ `8801f35b`、ゲート 47 緑、166 で出す）
 
 - `claude/r53-line` ── **一行を描く仕組みを一つに**（OWNER 2026-09-23「片方ずつ直すのは
@@ -46,14 +99,7 @@ un-re-read.
 - `claude/r54-guides` ── **文字を描く面に目安の線三本**（OWNER 2026-09-23「aやね」、
   r/casualconlang「guide lines」から）。点の 0・10・20 段目（字体の上・中・下）に
   点より薄い横線。何も保存しない、設定も無い。`geDraw()`（glyph.js）。`guide-check`
-  （新規、ゲートに登録済み）。写真 `shots/half-*-in-the-editor-*`。**線の濃さと位置は
-  オーナーの返事待ち。**
-- **決まったが作っていない：** 活用形は辞書の語にせず 100 語に数えない（OWNER
-  2026-09-23）。重ね方の画面（A=別画面で重ねる／B=画面は作らず意味の行が読む）が
-  オーナーの返事待ちで、セッションはまだ出していない。
-- **広告：** Twitter と同じく投稿の間に動画広告を挟む形を検討中（OWNER 2026-09-23、枠を
-  売る可能性あり）。AdMob のネイティブ広告は Web の画面に差し込めないので、自前の広告枠
-  （広告を投稿の一種としてサーバーに置く、「広告」表示は必須）を提案してオーナーの返事待ち。
+  （新規、ゲートに登録済み）。写真 `shots/half-*-in-the-editor-*`。線は r56 で 田 になった（上）。
 
 ## 2026-09-23 ── 字間（integ に取り込み済み、166 で出す）
 
@@ -91,7 +137,7 @@ un-re-read.
   の `push_follow/reply/like/boost`、無いのはオン）、サインアウトで自分の token
   の行だけ落とす。`acct-check` 82〜85。**`www/net.js` はセッションが無ければ
   一本も送らない**（扉の `email_taken` と `/auth/v1/*` だけ通す）、**写真と声は
-  `netMedia()` 一箇所がセッション付きで取って objectURL**（`netMediaURL()` は
+  `netMedia()` 一箇所がセッション付きで取って objectURL**（~~`netMediaURL()`~~ は
   消えた）。写真 `shots/r48-*`。**実機は全部まだ。**
 
 **オーナーがやること（順に）**：`docs/apple.md` § 8 の 1〜6（App ID の Push、
@@ -258,7 +304,7 @@ Apple：154 は落ちている（`profile.link`、登録エラー ── どち�
 （「端末で使うものなんかないだろ」「設計ミスなんだから作り直し」OWNER
 2026-09-15）。端末の索引 `lingua.langs` は電波なしで眺める写しで、数えず・
 決めず・上らない。`netLangsGone(mine, ids)` 一つが、自分の言語も取った言語も
-「答えに無い行を端末から落とす」（`netTakeGone()` は削除）。`langCount()`／
+「答えに無い行を端末から落とす」（~~`netTakeGone()`~~ は削除）。`langCount()`／
 `langMainId()` は未回答なら `null`、`langStop()` は数を見る前に「接続できません」。
 ログアウト→ログインで名前の無い空の `language` 行がサーバーにできていた道
 （`langMineIds()` が索引を舐めて `netLangRow()` が insert）は、押して測った赤
@@ -308,7 +354,7 @@ verify-plan の `index.ts` は作業側で走らせていない（Deno 無し）
 入ったもの：`claude/r33-owner`（2026-09-12 朝のオーナー決定）── 新しい言語は
 38 字の枠で始まる（`ltSlotsFill()` を `langNew()` が段を問わず一度呼ぶ、
 `ltStart()` の段の判定はそのまま）、取った言語の答えの写し `lingua.take.<uid>`
-（アカウントの鍵、上る道なし、`langTookFor()` 一箇所）、段が訊けていない間は
+（アカウントの鍵、上る道なし、読むのはアカウントの入れ物 `ACCT` 一箇所 ── r79）、段が訊けていない間は
 天井が `null` で一覧を畳まない（`langCap()`/`dlCap()`、`langStop()`/`dlStop()` は
 数を見る前に段を訊いて「接続できません」）、ja の `g2.g.mood`「命令・条件・可能・
 義務・願望」、決定ログ 2026-09-12 の六項。**未**：「プランが終了しました」を
@@ -469,7 +515,7 @@ headless の手歩き（記録は枝 `claude/walk` と `claude/walk-words` `-sns
 browser の check は www/ を生で読むので、途中で取り込むと違うコードを検査する
 （この日 3 本赤になった原因）。
 
-## 2026-09-05 の夜 ── いまの状況（一番新しい）
+## 2026-09-05 の夜の状況
 
 **訊く一行**（sha は書かない。一日で古くなる）:
 
@@ -504,7 +550,7 @@ staff の plan は free に戻らない）が実物でも真になります。
 ### 今日、形が変わったもの ── 索引。中身は CHANGELOG
 
 - **投稿の意味欄は辞書と文法で組む。機械翻訳は無い。** `www/post.js` の `pwMn()`
-  → `LinguaGrammarEngine.translate.toNatural(model, line, lang)`。`postTr()`・
+  → `LinguaGrammarEngine.translate.toNatural(model, line, lang)`。~~`postTr()`~~・
   `TR_SEAM`・`post.tr` は削除。「単語はその単語の意味を 文法は並び替えた単語たち
   が文章として成り立つように。きかいほんやくはつかわない。」
 - 文法ページ: 語順は常に出る、規則の画面は「足す文字」と「前後」だけ、時制・相の
@@ -555,12 +601,14 @@ CODE CONFIRMED だけ。**検査の緑は証拠になりません。**
    「オーナーに確認が要る」ものではありません。**
 2. **ただし「失敗して黙って消える」は仕様ではありません。**保存がサーバーで
    失敗しても、人が作ったものは目の前に残ります。もう一度押せば送れる。
-   **着手していません** ── `www/core.js` の `save()` の catch はまだ空です。
+   `saveTry()`（`www/core.js`）が「保存できませんでした」と言い、`LSL`・`WORDS`・
+   `LETTERS` はそのまま残ります。
 3. **電波が無いときは、前に読み込んだ分を出します。見るだけです。**作れない、
    保存できない。**その写しはサーバーへ戻りません ── 片道です。**理由は
    `syMerge()`（`www/sync.js`）が壊れた写しでサーバーの正しいほうを上書きする
-   バグだからです。**着手していません。**いまスライスはメモリだけなので、電波が
-   無いと出せるものがありません。
+   バグがあったからです（今は `slState()` が壊れと空を分けます）。写しは
+   `lingua.<id>.<slice>.got` で、`slGot()` が書き `slRd()` が最後に読み、上り道の
+   `slMine()` は読みません（`www/core.js`、CLAUDE.md 規則 22）。
 4. **`ONE.md` を消しました。**承認されなかった案です。次の人が仕様として読む
    危険がありました。
 5. **オンラインは進める。パッチはオーナーが後で流します。**アプリ側は待ちません。
@@ -634,7 +682,7 @@ Google と同じアドレスを打って二つ目のアカウントを立てて�
 アプリが持っているのは秒のほうだけ。**有効期限はまだ決まっていません。**
 
 **課金は同じ iPhone でも引き継ぎません**（決定ログ `d47a578`）。**入りました**
-（2026-09-11、`claude/r18-plan`）── `planFor()` が比較する一箇所で、**印の無い
+（2026-09-11、`claude/r18-plan`）── 段はメモリだけで、アカウントが変わる一箇所（`acctFor()`、r79）が忘れる。**印の無い
 端末も例外ではありません**「1アカウントに1課金ですけど。他のアカウントについて
 くるわけねえだろ」OWNER 2026-09-11。段は設定の預け写しにも乗りません
 （`SET_PLAN`）。`acct-check` 40・40b・40c。**実機は未確認**（Keychain の往復は
@@ -693,7 +741,7 @@ Google と同じアドレスを打って二つ目のアカウントを立てて�
 - **1アドレス1アカウント**（上）。`open-check` 2b。
 - **言語にアカウントの印。**言語を作る道は全部 `SESS.uid` を押します ──
   `langNew()`、`langForAcct()`、`langSeenAdd()`、`netLangsDown()`、
-  `bkRestore()`、そして `langMigrate()` は `mig` を通して。印の無い言語を
+  ~~`bkRestore()`~~、そして ~~`langMigrate()`~~ は `mig` を通して。印の無い言語を
   自分のものと答えるのはオンボーディングの歩きの途中（`SET.done` が偽）だけで、
   扉を出た `obFinish()` がそこで印を付けます。どの iPhone かを憶える仕掛けはありません。
 - **Keychain。**読めなかった Keychain に段を書きません。`Transaction.updates` は
@@ -713,7 +761,7 @@ Google と同じアドレスを打って二つ目のアカウントを立てて�
   最後に読まれ、移行を走らせるためだけにあります。定義は `shell.js` のままです。
 - **アカウント削除が平キー八つも消す。**`LS_FLAT` は言語に id が無かった頃の
   八つ（`lingua.words` `lines` `lang` `script` `letters` `notes` `phases`
-  `talk`）で、`langMigrate()` がそこから言語へ写し、`lsWipeAcct()` が
+  `talk`）で、~~`langMigrate()`~~ がそこから言語へ写し、`lsWipeAcct()` が
   アカウントと一緒に持っていきます。**一箇所に書いて二つが読む**ので、
   片方だけ足すことができません。
 - **全角 ＠ で人が検索できる。**`netHandleOf()` が落とすのは `/^[@＠]+/` で、
@@ -732,11 +780,11 @@ Google と同じアドレスを打って二つ目のアカウントを立てて�
   最後から二つ目を答え、`swPrev()` はそれと `NAVBK` が指す画面が一致したときだけ
   絵を返します。タブを押すと `NAV` は捨てられるので、タブの画面には後ろが
   ありません。
-- **`lsWipeNS()` と `netMember()` が消えました。**前者は `lingua.` で始まる
+- **~~`lsWipeNS()`~~ と ~~`netMember()`~~ が消えました。**前者は `lingua.` で始まる
   キーを全部持っていく関数で、**別アカウントの言語まで消していました。**
   後者は §3 に書いてある通りです。
-- **`admin` は `handle = 'lingua'` で決まります。**`ADMIN_HANDLE` が
-  `www/net.js` に、`is_admin()` が `supabase/schema.sql` に。
+- **`admin` は `handle = 'lingua'` で決まります。**handle を書いてある所は
+  `supabase/schema.sql` の `profile_admin()` 一つで、`is_admin()` もアプリの読み（`select=handle,admin:profile_admin`）もそれを訊きます。
   `profile.admin` の列は落としていませんが、誰が上かを決めるのは handle です。
 - **おすすめの刻みは 4 時間・太平洋時間**（`supabase/schema.sql`、
   `now() at time zone 'America/Los_Angeles'` を4時間で切り下げる）。
@@ -839,9 +887,8 @@ Connect と DNS のダッシュボードの話なので、**済んだかどう�
 A fresh clone of `master` is the current app. **No sha is written here** — a sha
 has a shelf life of about a day.
 
-The gate is **39 checks** — twelve that need no browser and twenty-seven that do.
-Count `FAST` and `SLOW` in `tools/gate.mjs`, which is the only place the number
-lives.
+How many checks the gate has is `FAST` and `SLOW` in `tools/gate.mjs`, and the
+last line `npm test` prints — the only place the number lives.
 
 **Never write "the gate is green" here unless you watched it go green.** A
 sentence in this file claiming a green nobody saw is the failure this file
@@ -922,12 +969,13 @@ Pushing to `master` is the owner's call and is asked for each time.
 - **Accounts.** Sign up, sign in, verify, sign out, password reset, and a
   profile with a handle. `www/net.js`.
 - **The onboarding, in the owner's order** 「オンボーディング→最後にログイン」.
-  Draw one letter, be walked through the app, name the language, **then** the
-  door — `OB_DRAW=0, OB_NAME=1, OB_IN=2` in `www/onboard.js`, with `OB_TOUR=3`
-  outside the counted range because the walk is not a screen of that file.
-  There is no way past the door: 「あとで」 went on 2026-08-26 and stayed gone.
-  What the walk made before the account existed goes to the server at the
-  door — `obFinish()` calls `netLangSync()`.
+  Draw one letter, be walked through the app, see the timeline, name the
+  language, **then** the door — `OB_DRAW`, `OB_SNS`, `OB_NAME`, `OB_IN` in
+  `www/onboard.js`, with `OB_TOUR` outside the counted range because the walk
+  is not a screen of that file. There is no way past the door: 「あとで」 went
+  on 2026-08-26 and stayed gone. What the walk made before the account existed
+  goes to the server as the session arrives — `netTook()` (`www/net.js`) sends
+  first and only then asks what the account has.
 
   **`open-check` is what holds the order.** It boots from an empty
   `localStorage` and reads `#app` rather than asking `appIs()`, because
@@ -954,8 +1002,9 @@ Today that is `profile`, `post`, `react`, `follow`, `block`, `report`,
 `language_seen`, `prompt`, `language`, `slice`, `plan` and the RPCs. `netPush()` sends a post — its photographs and its voice with it, through
 `netUpPics()` and `netUpVoice()` into the `post-media` bucket — `netFeed()`
 reads the two timelines, `netNotices()` reads the notices, `netDraftUp()` sends
-a draft, `netLangSync()` sends and merges the language, and `postCatchUp()`
-sends whatever this phone has that the server has not. **`lingua.posts` is a
+a draft, `netSaveUp()` sends a slice the moment it is saved, and `netLangSync()`
+puts a whole language up at the door (`netTook()`) and when one is made
+(`langNew()`). ~~`postCatchUp()`~~ is gone. **`lingua.posts` is a
 copy and not a home**: the phone keeps what works with no signal.
 
 **An account is required to read the timeline or post to it**, decided
@@ -964,14 +1013,14 @@ app's own door when there is no session.
 
 **There is one kind of account and there are no anonymous ones**
 「匿名アカウントはねえよ」. **There is one question and it is `netSignedIn()`.**
-`netMember()` was the second one — a session that also carries a name — and with
+~~`netMember()`~~ was the second one — a session that also carries a name — and with
 no anonymous accounts it could never answer no, so it was a true question with
-nothing left to ask. It and `netAnonTok()` are **deleted**, and every one of the
+nothing left to ask. It and ~~`netAnonTok()`~~ are **deleted**, and every one of the
 twenty-eight callers asks `netSignedIn()`. Do not put either back; the comment
 above `netOut()` in `www/net.js` says why at length.
 
-There is no `netAnon()` either — the comment where it stood says so — and
-`supabase/schema.sql` **drops** `has_account()`
+There is no ~~`netAnon()`~~ either — the comment where it stood says so — and
+`supabase/schema.sql` **drops** ~~`has_account()`~~
 (`drop function if exists has_account()`), so every policy that used to ask it
 asks `is_member()` now.
 
@@ -1012,7 +1061,7 @@ On 2026-09-03 that answers: `profile` 13, `rpc` 12, `language` 8, `follow` 4,
 `profile_seen` 1, `language_seen` 1 — and the twelve `rpc` are `account_ban`
 `account_delete` `account_unban` `admin_counts` `email_taken` `feed_fo`
 `feed_hot` `notices` `post_hide` `post_show` `staff_add` `staff_drop`.
-`netLangSync()` is fired by `boot.js` at launch, and `syMerge()`
+`netLangSync()` is the door's (`netTook()`) and a new language's (`langNew()`), not the launch's, and `syMerge()`
 (`www/sync.js` ch 26) is what puts two copies together by adding both.
 
 **Still unused: `quote` and `publication`. Those two, and nothing else.**
@@ -1039,7 +1088,7 @@ Order, and where it stands:
    like, a boost, a report, a follow, a block.
    The door is the LAST step of the onboarding and there is no way past it.
    Held by `open-check` and by `migrate-check` case 7.
-2. **`is_member()` is the one question — done.** `has_account()` is dropped in
+2. **`is_member()` is the one question — done.** ~~`has_account()`~~ is dropped in
    `schema.sql`, and the `language` write policies that used to ask it ask
    `is_member()`. `language.owner` points at `auth.users` rather than
    `profile`. Held by `npm run rls`.
@@ -1047,8 +1096,8 @@ Order, and where it stands:
    the licence, the date and `published_at`; **`slice` holds every slice of
    it**, one row per slice of `SLICES`, carrying exactly the string
    `localStorage` holds. `netLangRow()` makes the row, `netSlicePut()` upserts
-   a slice, `netSlices()` reads them back, and `netLangSync()` — fired from
-   `boot.js` at launch — puts the two copies together through `syMerge()`,
+   a slice, `netSlices()` reads them back, and `netLangSync()` — the door's (`netTook()`) and a new
+   language's (`langNew()`) — puts the two copies together through `syMerge()`,
    which adds both sides and lets neither win by being newer.
 4. **The plan — on the account, done.** OWNER 2026-09-01: 「課金とアカウントと
    キーボードはアカウントに結びつく」. It is **its own table and not a column on
@@ -1056,9 +1105,9 @@ Order, and where it stands:
    **The server writes it and nobody else can.** `plan` and `purchase` are
    read-only through the API; `supabase/functions/verify-plan` reads Apple's
    signature off the transactions the phone sends and writes the row with the
-   service role. On the device `setFor()` parks the per-account settings under
-   the uid that had them, so signing in as somebody else does not inherit a
-   plan.
+   service role. On the device the plan is memory only and the account's
+   settings are written under its uid (`lingua.set.<uid>`, r79), so signing in
+   as somebody else does not inherit a plan.
 
    **The receipt IS checked, since 2026-09-06.** 「アカウントごとなんだから、
    違うアカウントで復元できるのおかしいだろ。検証して」 OWNER 2026-09-06 — a
@@ -1067,14 +1116,14 @@ Order, and where it stands:
    and it needs the owner to deploy the function and set `APPLE_ROOT_CA_G3`
    (`supabase/setup.md` § 8b); until then nobody gets a plan at all.
 5. The rest of moderation — **the tombstone in a thread (`postTomb()`), the
-   notices (`vNotif`) and the frozen state are in.** What is left is the ⋯
-   menu on a profile.
-6. Terms and privacy, under `/home/user/tokine2`, linked from Settings and not
-   from the onboarding. Not started.
+   notices (`vNotif`), the frozen state and the ⋯ on a profile (`whoMore()`,
+   `www/me.js`) are in.
+6. Terms and privacy: `DOC_TERMS` / `DOC_PRIVACY` in `www/settings.js`, drawn by
+   `docRows()` on the plans page (`planTerms()`) and on the onboarding's sign-up face.
 7. What a purchase OPENS. StoreKit is **written** ── `ios/App/App/LinguaStore.swift`,
-   `www/store.js`, and `setPlan` in `www/settings.js` is `storeBuy`'s one caller.
-   The plan now reaches the server too (item 4). **What is not done is the
-   receipt**: nothing but the phone says the purchase happened.
+   `www/store.js`, and `plBuy()` in `www/settings.js` is `storeBuy`'s one caller.
+   The plan is the server's answer: `verify-plan` checks Apple's signature on
+   the receipt (item 4).
 
 **Everything still to do that needs the server is one list**, in
 `docs/FEATURES.md` → "What is left to do online": the plan (the one with money
@@ -1119,14 +1168,13 @@ written as though it were. Read `git grep` for the repo side; ask for the rest.
 
 **StoreKit is written, and has never run on a device.** `LinguaStore.swift`
 holds the four products, `www/store.js` is the only thing in `www/` that talks
-to it, and `setPlan` in `www/settings.js` is `storeBuy`'s one caller. The owner
+to it, and `plBuy()` in `www/settings.js` is `storeBuy`'s one caller. The owner
 reports the four subscription products made in App Store Connect (2026-08-27) —
 which this repository cannot see. Asking for a product that does not exist is
 not an error: StoreKit returns nothing for it, so a missing product looks
 exactly like a button that does nothing. That is what to expect if a purchase
-does not start. The plan itself lives in the Keychain rather than in the
-settings file — `ios/App/App/LinguaPlan.swift` says why, and what it does not
-stop.
+does not start. The plan itself is not on the phone at all: it is
+`verify-plan`'s answer, held in memory (`PLAN`, `www/core.js`).
 
 **No landing page in this repository.** `vercel.json` copies `www/` into
 `public/` and serves the app itself as a static site. There is no marketing
@@ -1378,7 +1426,7 @@ under `lingua.sess`.
 | 二 版の大きさ | `slice` テーブル、`netSlicePut()` |
 | 二 直した時刻の粒度 | `docs/FEATURE_RULES.md` §「同期でぶつかったら、後から『直した』ほうが残るべき」 |
 | 三 空のキーボード | `www/keyboard.js` の `saveKb()` ── 直っています。`docs/EXPIRY.md`（`claude/keep2`・`claude/keep4`）1番 |
-| 四 戻す画面 | `bkTake()` / `bkRestore()`、`docs/RECOVERY.md` |
+| 四 戻す画面 | ~~`bkTake()`~~ / ~~`bkRestore()`~~、`docs/RECOVERY.md` |
 | 五 まとめてか一部か | 集めた先が消えました（下） |
 | 六 小さくなったら書かない | `netKeeps()` / `NET_SHRANK` |
 | 七 既定の値 | `www/phases.js:98-125` `migrateGramLang()`、`www/core.js:220` `setDefaults()` が `order:'SOV'` を入れる。`docs/EXPIRY.md`（`claude/keep4`）4番の末尾 |
@@ -1453,8 +1501,6 @@ equal and making them equal would be wrong: one rule can take three checks and
 one check can hold two rules.
 
 **How many checks there are is printed on the run's last line. Read it there.**
-Counted on 2026-09-04: master is 14 + 28 = **42**, and `claude/online` is
-14 + 27 = **41** — `backup-check` went with the file it held (§ 0-a).
 
 `tools/gate.mjs` runs the ones that need no browser first, in about two seconds,
 then the browser ones four at a time (`WIDE` is `min(4, cpus)`). Run one after
@@ -1463,7 +1509,7 @@ has re-measured since the count grew.
 
 **It is run once before pushing**, not once per commit — the owner's rule, and
 `docs/TESTING.md` has all three. While working, run the one check that holds
-what you are changing, by name, plus the six fast ones.
+what you are changing, by name, plus the fast ones (`FAST`).
 
 **GitHub Actions runs three of them** — `assets`, `es5`, `i18n`
 (`.github/workflows/i18n.yml`). A green tick on a push does not mean the gate
@@ -1559,13 +1605,11 @@ assuming a thing is waiting for you.
   which draws the same queue with the same `modRow()`. Reports keep landing in
   the table either way. **Nothing here is outstanding** — it is written down
   because "the row was deleted" and "moderation was deleted" are one grep apart.
-- **A PDF that was traced on a screen still cannot be read.** The scanned kind
-  works and has since `claude/sheet` landed. `sheet.js` sorts an arriving file
-  into four kinds and `'drawn'` — ink drawn rather than photographed — is on
-  the *cannot* side, by design and in writing: *"That is a renderer, and the
-  phone has one (PDFKit, native) while this file does not."* So
-  「上からなぞった文字のみ利用できる」 is a native-Swift job nobody holds, not
-  a rename. Said here because the file's surface makes it look done.
+- **A PDF that was traced on a screen is read through the phone's renderer.**
+  `sheet.js` sorts an arriving file into four kinds, and `'drawn'` goes to
+  `shPdfDraw()`, which asks `LinguaShare`'s `renderPdf` (PDFKit) for a picture
+  and reads that. In a browser there is no renderer and it says so
+  (`wr.pdf.drawn`). **Device unconfirmed.**
 
 **A duplicate CSS declaration is invisible to every check in the gate.** A
 second `.wldrow` overriding `border` while never mentioning `border-radius`
@@ -1606,32 +1650,22 @@ can hold two rules.
   「紙より 0.85 倍暗い」 floor the reader uses has not been checked, so a
   pencil-drawn sheet may simply not be seen. Measuring it needs a printed
   sheet and a person, not a check.
-- **RevenueCat Shipaton 2026 — whether to enter.** Recorded here on
-  2026-08-25 because it existed in one session's chat and nowhere in this
-  repository, and a fact that lives only in a chat is a fact that is about to
-  be lost. **None of it is verified against RevenueCat's own page** — it is
-  written down as the previous leader reported it, and the first thing to do
-  with it is check it:
-  entry closes 2026-09-30, and an app is disqualified unless its first public
-  release falls between 2026-08-01 and 2026-09-30. Lingua has never been
-  released publicly, so on that reading it qualifies.
-  The decision is not a technical one and is nobody's but the owner's: **is
-  there an intention to be on the App Store by 9/30?** Swapping the store
-  layer to RevenueCat's SDK is the small part — `ios/App/App/LinguaStore.swift`
-  is the only file that talks to StoreKit — and it is downstream of §7 items
-  16a and 17, neither of which any agent can do.
+- **RevenueCat Shipaton 2026 — entered.** 「shipaton だそう。9／30 までには出したい」
+  OWNER 2026-08-25 (`docs/FEATURE_RULES.md`, the Shipaton entry). The first
+  public version went live on 2026-09-22 (1.0.0 (162), § the head of this file).
 
 ### Blocks shipping the free version
 
 - **Signing in from Settings** is written and has not been opened on a phone.
-  `obBackTo`/`obReturn` in `www/onboard.js`.
+  `obReturn()` in `www/onboard.js`.
 
 Everything else on this list is done. What holds each: posts, Explore and
-Notices read the server (`netPush`, `netFeed`, `netNotices`, `postCatchUp`);
+Notices read the server (`netPush`, `netFeed`, `netNotices`, ~~`postCatchUp`~~);
 the reset mail is a six-digit code because a link has nowhere to land in a
-Capacitor app (`supabase/mail.md`, template `{{ .Token }}`); and **there is one
-free ceiling**, asked by `capStop()` at the moment a word will not fit, on the
-screen the person was typing on. `quote` and `publication` are still unused.
+Capacitor app (`supabase/mail.md`, template `{{ .Token }}`); and the ceilings
+are each asked at the moment they are met, on the screen the person is on —
+`capStop()` (a word), `langStop()` (a language), `dlStop()` (a download) and
+`upStop()`, all in `www/core.js`. `quote` and `publication` are still unused.
 
 ### Found and left alone, deliberately
 
@@ -1714,7 +1748,7 @@ known place** (`docs/apple.md` § 4 has every field):
     The code side of this is done as far as it can be here:
     `LinguaStore.swift` (`products` `buy` `restore` `current` `manage`, the
     `Transaction.updates` listener, and an id→plan map that answers with the
-    HIGHEST entitlement) and `www/store.js`, which `setPlan()` goes through on
+    HIGHEST entitlement) and `www/store.js`, which `plBuy()` goes through on
     a phone. The three things that were waiting on another session's files are
     in: Restore (**Apple requires it**), Plus's own card, and Cancel opening
     Apple's own sheet rather than setting a flag. What the screen still lacks
@@ -1729,9 +1763,9 @@ known place** (`docs/apple.md` § 4 has every field):
     serves the repo root with `cleanUrls: true`, so `/lingua/terms.html`
     redirects to `/lingua/terms` — a redirect a browser follows, not a 404.
 
-    **What is missing is the sentence in the app.** Not one of the ten
-    `www/i18n/*.js` carries an auto-renew disclosure; `set.terms` and
-    `set.privacy` are the link labels and nothing else. `claude/pay` has it.
+    **The sentence in the app is there**: `plan.renew` in every
+    `www/i18n/*.js`, drawn above `docRows()` on the plans page
+    (`www/settings.js`).
 17a. **Sandbox testing**, once the products exist: buy, then `restore` after
     deleting and reinstalling, then a renewal arriving while the app is shut,
     and — new since the middle tier — **a Plus receipt reading as Plus and not
@@ -1760,15 +1794,13 @@ anywhere in this repo.
 - **Reach the native side with `Capacitor.nativePromise` and nothing else.**
     `Capacitor.Plugins` and `Capacitor.registerPlugin` are filled by
     `@capacitor/core`, which this app does not load — there is no bundler, only
-    plain script tags. `planKeep()` asked `Capacitor.Plugins` for `LinguaPlan`
+    plain script tags. ~~`planKeep()`~~ asked `Capacitor.Plugins` for `LinguaPlan`
     and every write was the early return.
 - **A native call that fails silently is invisible to every check here.**
-    In a browser `PLAN_NATIVE` is false and the plan stays in the settings file,
-    so everything is green; on a phone `setOnDisk()` takes the plan out of that
-    file on the grounds that the Keychain holds it, and if the write never
-    landed nothing holds it at all. **Plus came back as free at the next
-    launch.** Written correctly now, and **device unconfirmed** — no check here
-    can raise it.
+    In a browser there is no native side, so everything is green whatever the
+    phone would have done. The Keychain copy of the plan that went this way is
+    gone (2026-09-11 — the plan is the server's answer now); the rule stands
+    for every native call still written.
 
 ### Waiting on a phone
 

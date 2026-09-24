@@ -327,7 +327,7 @@ function obTapBox(b, hb){
    lose, and what is not covered is bright and is tappable.
 
    The hole is the lit thing AND the hand together, so the hand stands in the
-   light with it. .sbg is the sheet's own backdrop and .toast is the line the
+   light with it. .sbg is the popup's own dark and .toast is the line the
    app already pins above the tab bar; both are borrowed rather than written,
    because www/index.html belongs to another session today.
 
@@ -711,7 +711,6 @@ function obBack(){
   if(ob.step===OB_SNS){ ob.step=OB_TOUR; GE=null; obTourGo(); return; }
   if(ob.step>0) obGo(ob.step-1);
 }
-function obLang(v){ SET.ui=v; save(); netPrefsPut(); render(); }
 
 /* ---- the door, which is not a step ------------------------------------ */
 /* Signing in is the LAST step of the onboarding and the app does not open on
@@ -947,7 +946,8 @@ function obIn(prof){
   netMyProfile(function(p){
     OBM.busy=false;
     if(p){
-      ME.name=String(p.display||''); ME.handle=String(p.handle||''); saveMe();
+      /* The profile is already on ME: netMyProfile() put it there, name and
+         @ and the rest, through meProfGot() (www/me.js). */
       OBM.mode='in';
       /* AND THE LANGUAGES THIS ACCOUNT ALREADY HAS. A profile row means this
          account has been used, so there may be languages on the server that
@@ -956,11 +956,12 @@ function obIn(prof){
          deleted, there was no way back to it.
 
          IT IS NOT ASKED FOR HERE ANY MORE, and nothing is lost by that.
-         netTook() -- which this door has already been through -- fires
-         pullBoot(), and `langs` is on PULL_OPEN (www/sns.js § WHAT AN OPEN
-         ASKS FOR). One road, from the one place that knows a session
-         arrived, instead of a call here, a second in www/boot.js, and no
-         record anywhere that either had answered. */
+         netTook() -- which this door has already been through -- asks for
+         `mylangs` itself once what the walk made has gone up
+         (www/net.js § netTook, `pullWait('mylangs', …)`). One road, from the
+         one place that knows a session arrived, instead of a call here, a
+         second in www/boot.js, and no record anywhere that either had
+         answered. */
       /* An account that already has a profile belongs to somebody who has
          been here. Sending them into the onboarding is sending them to
          draw an alphabet they already have. */
@@ -1680,7 +1681,7 @@ function obDoorHTML(){
    comes after this. 「オンボーディング→最後にログイン」 OWNER 2026-08-27. */
 function obName(){
   var e=document.getElementById('ob-name');
-  if(e) ob.name=String(e.value||'').trim();
+  if(e) ob.name=actVal(e).trim();
   langName=ob.name;
   save(); obGo(OB_IN);
 }
@@ -1931,7 +1932,6 @@ function obDone(){
   slot=obSlot();
   ob.lid = slot? ((ltSetStrokes(slot.id, st)||slot).id)
                : obIntoSlot(ltNew({ st: st }).id);
-  SET.myfont=true;
   save(); installScriptFont(); GE=null;
   obTour=0; ob.step=OB_TOUR; save(); obTourGo();
 }
@@ -1984,9 +1984,10 @@ function obFinish(){
      (docs/scope/r24-lang.md). netTook() sends first and asks afterwards now,
      and this call is gone rather than kept beside it: one road, and it is the
      earlier one. */
-  /* AND HOW THE WALK LEFT THE APP SET UP. The drawing turned `myfont` on and
-     borrowing a character turned `showScript` on, both before there was an
-     account to put them under (www/core.js § SET_PREFS). This is the same
+  /* AND HOW THE WALK LEFT THE APP SET UP. Borrowing a character turned
+     `showScript` on (the drawn letters need nothing: nobody-has-decided is
+     on, www/glyph.js § myFontWant), before there was an
+     account to put it under (www/core.js § SET_PREFS). This is the same
      moment the language goes up and for the same reason: the door is the last
      step, so it is the first time there is anywhere to send them. */
   if(typeof netPrefsPut==='function') netPrefsPut();
@@ -2189,7 +2190,7 @@ function vOb(){
        read as though the old field were still alive. */
     '<div class="obtop">'+(obPending()? '' : obDots().map(function(i){
       return '<div class="dot'+(i<=s?' on':'')+'"></div>'; }).join(''))+'</div>'+
-    '<select class="oblang" aria-label="'+esc(t('ob.lang.a'))+'"' + CH('obLang') + '>'+
+    '<select class="oblang" aria-label="'+esc(t('ob.lang.a'))+'"' + CH('setUi') + '>'+
       UI_LANGS.map(function(c){
         return '<option value="'+c+'"'+(uiLang()===c?' selected':'')+'>'+esc(LANG[c].label)+'</option>';
       }).join('')+

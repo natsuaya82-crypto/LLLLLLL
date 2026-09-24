@@ -527,9 +527,8 @@ say(still.length === 3 && still.indexOf('kanuko') !== -1,
    初めて人の目に入ります。 */
 const back2 = await pg.evaluate(() => new Promise(function(d){
   window.__MODE = 'ok';
-  /* 「次の起動」は、セッションが始まる瞬間そのもの ── 画面ではなく
-     www/sns.js § WHAT AN OPEN ASKS FOR がこれを取りに行きます。
-     PULL_OUT / PULL_GOT が「訊いている／訊けた」の記録で、二つの旗を
+  /* 「次の起動」── 最近の検索は検索の画面の読み（www/sns.js § WHAT EACH PAGE
+     READS）。PULL_OUT / PULL_GOT が「訊いている／訊けた」の記録で、二つの旗を
      この画面が持つのはやめました。 */
   PULL_OUT.recent = 0; PULL_GOT.recent = 0; SET.recent = [];
   pullNeed('recent');
@@ -559,11 +558,12 @@ async function wrote(ln, mn, mode){
     setTimeout(function(){
       openPost('');
       setTimeout(function(){
-        PW.ln = ln; PW.mn = mn;
+        pwLine([{t: ln}]); PW.mn = mn;
         pwSend();
         setTimeout(function(){
           window.__MODE = 'ok';
-          d({ here: POSTS.filter(function(p){ return p.ln === ln; }).length,
+          d({ kept: PW.ln === ln,
+              here: POSTS.filter(function(p){ return p.ln === ln; }).length,
               there: window.__POSTS.filter(function(r){
                        return (r.body || {}).ln === ln; }).length });
         }, 900);
@@ -658,17 +658,20 @@ const byWho = await pressed('aya');
 say(byWho.after.rows === 0,
     '書いた人の @ では投稿は出ない (人の検索の仕事: ' + byWho.after.rows + ' 件)');
 
-/* ---- 11. 信号が無いときに書いた投稿は、追いついてから出る -------------
+/* ---- 11. 信号が無いときに書いた投稿は、欄に残り、押せば上がって出る ------
    検索はサーバーのものです ── 手元の五十件を絞ったものは上位五十件ではない、
    とこの画面は既に書いている。だからサーバーに届いていない投稿は、書いた
    本人にも探せません。**そして、それは失われたということではありません。**
-   次にタイムラインを引いたときに追いついて上がり、そこから探せます。
+   送れなかった投稿は欄に残り（サーバーが先、2026-09-23）、もう一度押せば
+   上がって、そこから探せます。
 
    二つを分けて押さえるのは、片方だけ見ると別の結論になるからです ──
    「出ない」だけ見れば消えたように見え、「出る」だけ見れば信号の有無は
    関係ないように見えます。 */
 const w2 = await wrote('zzuquat', 'つながっていないときに書いた', 'nosignal');
-say(w2.here === 1, '出ていかなくても手元には残る (' + w2.here + ' 件)');
+say(w2.kept && w2.here === 0,
+    '出ていかなかった投稿は欄に残り、端末の一覧には入らない (欄 ' +
+    (w2.kept ? '残る' : '**空**') + '、一覧 ' + w2.here + ' 件)');
 say(w2.there === 0, 'サーバーへは出ていかなかった (' + w2.there + ' 件)');
 const before = await pg.evaluate(() => new Promise(function(d){
   window.__MODE = 'ok';
@@ -676,16 +679,19 @@ const before = await pg.evaluate(() => new Promise(function(d){
 }));
 say(before === 0,
     'まだサーバーに無いので、その場では検索に出ない (' + before + ' 件)');
-/* 次につながったとき ── タイムラインを引いた背中で追いつきます。 */
+/* 次につながったとき ── タイムラインを引いた背中では上がらない。2026-09-23
+   まではここが「追いついて上がる」で、それは postCatchUp() が答えの後ろで黙って
+   送っていたからです。OWNER 2026-09-05「保存するタイミングでエラーが起きるなら、
+   保存されない」「なら失敗して残るにするべき」── 上がるのは人が送った時。 */
 const caught = await pg.evaluate(() => new Promise(function(d){
   window.__MODE = 'ok';
-  postCatchUp();
+  pwSend();                /* the same composer, pressed again */
   setTimeout(function(){
     d(window.__POSTS.filter(function(r){
         return (r.body || {}).ln === 'zzuquat'; }).length);
-  }, 700);
+  }, 900);
 }));
-say(caught === 1, '次につながったときに追いついて上がる (' + caught + ' 件)');
+say(caught === 1, 'つながってからもう一度押せば上がる (' + caught + ' 件)');
 const back = await pressed('zzuquat');
 say(back.after.rows === 1,
     '上がったあとは検索に出る ── 何も失われていない (' + back.after.rows + ' 件)');
@@ -697,9 +703,9 @@ say(back.after.rows === 1,
    その画面がまた訊く。誰かがタイムラインを見ている間じゅう、同じ問いが
    出続けていました。何も投げず、何も間違って見えません。
 
-   そして毎回 `postCatchUp()` が走ります。`sid` がまだ返ってきていない投稿は
-   「まだ送っていない投稿」なので、最初の送信が空中にある間に同じものが何度も
-   上がり、あとで探すと二件出てきました。
+   そして毎回 `postCatchUp()` が走っていました（2026-09-23 に消えた）。`sid` が
+   まだ返ってきていない投稿は「まだ送っていない投稿」なので、最初の送信が空中に
+   ある間に同じものが何度も上がり、あとで探すと二件出てきました。
 
    だから訊いた本数を数えます。一本が正しい姿です ── 立てて、一度訊いて、
    答えが来て、止まる。**人が引っ張って訊き直す道はこれとは別**で、そちらは
@@ -707,16 +713,16 @@ say(back.after.rows === 1,
 
    訊く場所は変わりました。2026-09-05、オーナー:「画面に入った瞬間に
    サーバーへ訊きに行くのは無し。それが 1 秒遅れの正体です」── いま問いを
-   出すのはセッションが始まる瞬間で（www/sns.js § WHAT AN OPEN ASKS FOR）、
-   `vFeed()` は一本も出しません。数える理由は同じです: 答えが来て描き直され、
-   その描き直しがまた訊く、という輪がここに戻っていないこと。 */
+   出すのはその画面へ進む戸口で（www/shell.js § navLand、www/sns.js § WHAT EACH
+   PAGE READS）、`vFeed()` は一本も出しません。数える理由は同じです: 答えが来て
+   描き直され、その描き直しがまた訊く、という輪がここに戻っていないこと。 */
 const loop = await pg.evaluate(() => new Promise(function(d){
   window.__MODE = 'ok';
-  SNS_GOT = {}; snsTab = 'rec';
-  PULL_GOT.feed = 0; PULL_OUT.feed = 0;
+  snsTab = 'rec';
+  PULL_GOT['feed|rec'] = 0; PULL_OUT['feed|rec'] = 0;
   window.__ASK = [];
+  NAV = [{ r:'plans' }]; route = 'plans';
   go('feed');
-  pullBoot();
   setTimeout(function(){
     d(window.__ASK.filter(function(s){
         return s.indexOf('/rest/v1/rpc/feed_hot') === 0; }).length);

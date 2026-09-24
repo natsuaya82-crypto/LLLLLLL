@@ -52,6 +52,12 @@ import os from 'os';
 import path from 'path';
 import { execFileSync } from 'child_process';
 import { fileURLToPath } from 'url';
+/* Which tables a notice is raised from is push-send's to say, not this
+   file's: `TABLES` is every `table` in its `PUSH`, the one list of kinds. */
+import { TABLES as PUSH_TABLES } from '../supabase/functions/push-send/push.mjs';
+/* And the plans' ladder is verify-plan's to say (`ORDER`), handed to
+   plan_put() by it and here by the same name. */
+import { ORDER as PLAN_ORDER } from '../supabase/functions/verify-plan/verify.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const SCHEMA = path.join(HERE, '..', 'supabase', 'schema.sql');
@@ -74,6 +80,13 @@ const E = 'e0000000-0000-4000-8000-00000000000e';   /* whoever may add staff */
 const G4='a0000000-0000-4000-8000-0000000000a4';   /* arrives with a line about themselves */
 const P2='c0000000-0000-4000-8000-0000000000b2';  /* two more of A's posts */
 const P3='c0000000-0000-4000-8000-0000000000b3';
+/* A post kept to yourself, a reply kept to yourself, and the two replies the
+   road out is asked about -- one anybody may read and one nobody but its
+   writer may (post_private in schema.sql). */
+const PV ='c0000000-0000-4000-8000-0000000000c1';
+const PVR='c0000000-0000-4000-8000-0000000000c2';
+const RP ='c0000000-0000-4000-8000-0000000000c3';
+const RPV='c0000000-0000-4000-8000-0000000000c4';
 const G1='a0000000-0000-4000-8000-0000000000a1';   /* tries to arrive holding admin */
 const G2='a0000000-0000-4000-8000-0000000000a2';   /* tries to arrive holding staff */
 const G3='a0000000-0000-4000-8000-0000000000a3';   /* tries to arrive already banned */
@@ -113,6 +126,31 @@ const RC = 'c0000000-0000-4000-8000-0000000000d1';  /* A’s search history */
 const RC2= 'c0000000-0000-4000-8000-0000000000d2';  /* the one B tries to plant */
 const LD = 'd0000000-0000-4000-8000-00000000000d';  /* the language it makes anyway */
 const LB = 'b0000000-0000-4000-8000-00000000000b';  /* and the frozen account's */
+/* A post somebody paid to have in other people's timelines, and the place it
+   was sold -- one running, one that ran out yesterday. Both put in by the
+   owner of the table below, because that is the only road there is: the
+   service role, which no policy applies to. */
+const PA = '5a000000-0000-4000-8000-0000000000a1';  /* the promoted post */
+/* A BLOCK, ASKED OF EVERYTHING THE APP READS. Two accounts of their own, so
+   nothing another attempt does to A or B is standing in the answer: BK blocks
+   BD, and BD has done one of each thing a person does to somebody -- written,
+   answered, liked, passed on, followed, published a language. */
+const BK  = 'b1000000-0000-4000-8000-0000000000b1';  /* who blocks */
+const BD  = 'b1000000-0000-4000-8000-0000000000b2';  /* who is blocked */
+const BDH = 'blockd';                                  /* and BD's @ */
+const BKP = 'b1000000-0000-4000-8000-0000000000b3';  /* BK's post, which BD answers */
+const BDP = 'b1000000-0000-4000-8000-0000000000b4';  /* what BD wrote */
+const BDO = 'b1000000-0000-4000-8000-0000000000b5';  /* and BD's post before the tick */
+const BDL = 'b1000000-0000-4000-8000-0000000000b6';  /* BD's published language */
+/* A value as an SQL literal. */
+const q = (s) => "'" + String(s).replace(/'/g, "''") + "'";
+/* verify.mjs's ladder, as the array plan_put() is handed. */
+const LAD = 'array[' + PLAN_ORDER.map(q).join(',') + ']';
+/* An old server's account and three of its languages: OLDLANG, below. */
+const OLDN = ['9a000000-0000-4000-8000-000000000001',
+              '9b000000-0000-4000-8000-000000000001',
+              '9b000000-0000-4000-8000-000000000002',
+              '9b000000-0000-4000-8000-000000000003'];
 
 /* What Supabase already has when schema.sql is pasted into it. None of this is
    ours -- it is the ground the file is poured onto, and it is here so that the
@@ -128,6 +166,10 @@ create or replace function auth.uid() returns uuid language sql stable as $$
 do $$ begin create role anon nologin;          exception when duplicate_object then null; end $$;
 do $$ begin create role authenticated nologin; exception when duplicate_object then null; end $$;
 do $$ begin create role service_role nologin;  exception when duplicate_object then null; end $$;
+-- Supabase's service role is not under row level security at all; the two
+-- functions write with it, and that is the road plan_put() and push_once()
+-- are asked about as a fourth kind of caller below.
+alter role service_role bypassrls;
 grant usage on schema public, auth to anon, authenticated, service_role;
 grant execute on function auth.uid(), auth.jwt() to anon, authenticated, service_role;
 alter default privileges in schema public grant all on tables    to anon, authenticated, service_role;
@@ -301,6 +343,17 @@ const CASES = [
     `insert into profile(id,handle) values ('${A}','fake')`],
   ['B cannot rename A',                       'denied', B, 0,
     `update profile set display='hacked' where id='${A}'`],
+  /* --- the settings: one key at a time, on your own row (r63-audit SQ1) --- */
+  ['A sets one setting',                      'ok',     A, 0,
+    `select prefs_put('{"theme":"dark"}'::jsonb)`],
+  ['and another',                             'ok',     A, 0,
+    `select prefs_put('{"push_like":false}'::jsonb)`],
+  ['and both are there -- the second did not replace the first', 'ok', A, 0,
+    `select 1 from profile where id='${A}' and prefs->>'theme'='dark' and prefs->>'push_like'='false'`],
+  ['B sets a setting',                        'ok',     B, 0,
+    `select prefs_put('{"theme":"hacked"}'::jsonb)`],
+  ['and it landed on B, not on A',            'denied', A, 0,
+    `select 1 from profile where id='${A}' and prefs->>'theme'='hacked'`],
   ['nobody signed in reads profiles',         'ok',     B, 1, `select 1 from profile`],
   ['nobody signed in makes one',              'denied', B, 1,
     `insert into profile(id,handle) values (gen_random_uuid(),'ghost')`],
@@ -509,6 +562,43 @@ const CASES = [
     `delete from block where actor='${B}'`],
   ['nobody signed in blocks',                 'denied', B, 1,
     `insert into block(actor,blocked) values ('${B}','${A}')`],
+  /* And B lifts it, which is the other half of `block_drop` and closes this
+     section: everything below reads A's posts as B, the ordinary somebody
+     else, and a block left standing would take every one of them out of B's
+     reads (block_hides in schema.sql). What a block does to a read is asked
+     of BK and BD below, who exist for that alone. */
+  ['B lifts B\u2019s own block',               'ok',     B, 0,
+    `delete from block where actor='${B}' and blocked='${A}'`],
+
+  /* --- and a block is the server's to keep, not the phone's -------------
+     「Blocked means you see nothing of them」 OWNER 2026-08-19. These are
+     only the rows; what BK can still READ of BD is asked of the catalogue
+     further down (BLOCK_HELD), because a list of the reads written out here
+     is a list nobody adds tomorrow's read to. */
+  ['BK makes BK\u2019s profile',              'ok',     BK, 0,
+    `insert into profile(id,handle) values ('${BK}','blocker')`],
+  ['BD makes BD\u2019s profile',              'ok',     BD, 0,
+    `insert into profile(id,handle) values ('${BD}','${BDH}')`],
+  ['BK writes a post',                        'ok',     BK, 0,
+    `insert into post(id,author,body) values ('${BKP}','${BK}','{}'::jsonb)`],
+  ['BD writes a post',                        'ok',     BD, 0,
+    `insert into post(id,author,body) values ('${BDP}','${BD}','{}'::jsonb)`],
+  ['BD answers BK',                           'ok',     BD, 0,
+    `insert into post(author,body,reply_to) values ('${BD}','{}'::jsonb,'${BKP}')`],
+  ['BD likes BK\u2019s post',                 'ok',     BD, 0,
+    `insert into react(post,actor,kind) values ('${BKP}','${BD}','like')`],
+  ['BD passes somebody else\u2019s post on',  'ok',     BD, 0,
+    `insert into react(post,actor,kind) values ('${PA}','${BD}','boost')`],
+  ['BD follows BK',                           'ok',     BD, 0,
+    `insert into follow(follower,followed) values ('${BD}','${BK}')`],
+  ['BK follows BD',                           'ok',     BK, 0,
+    `insert into follow(follower,followed) values ('${BK}','${BD}')`],
+  ['BD makes a language',                     'ok',     BD, 0,
+    `insert into language(id,owner,name) values ('${BDL}','${BD}','Blok')`],
+  ['and publishes it',                        'ok',     BD, 0,
+    `update language set published_at=now() where id='${BDL}'`],
+  ['BK blocks BD',                            'ok',     BK, 0,
+    `insert into block(actor,blocked) values ('${BK}','${BD}')`],
 
   /* --- a report is written and never read back by anybody using the app --- */
   ['B reports A\u2019s post',                  'ok',     B, 0,
@@ -862,16 +952,22 @@ const CASES = [
 
      A is writing over its own slice five times. The first write has no
      previous version to keep, so four are kept and the ceiling drops one. */
+  /* Two of the five say a number of their own, the way www/net.js sends
+     `no + 1`. 「番号はサーバーが配ります」 (docs/FEATURE_RULES.md 2026-09-04):
+     the number a slice carries is how many times the server took it, and a
+     phone that says otherwise is not believed. */
   ['A writes a keyboard onto its own language', 'ok', A, 0,
-    `insert into slice(language,kind,body) values ('${LD}','kb','["v1"]')`],
+    `insert into slice(language,kind,body,no) values ('${LD}','kb','["v1"]',7)`],
   ['and writes over it, four times',          'ok',     A, 0,
     `update slice set body='["v2"]' where language='${LD}' and kind='kb'`],
   ['…again',                                  'ok',     A, 0,
-    `update slice set body='["v3"]' where language='${LD}' and kind='kb'`],
+    `update slice set body='["v3"]', no=999 where language='${LD}' and kind='kb'`],
   ['…again',                                  'ok',     A, 0,
     `update slice set body='["v4"]' where language='${LD}' and kind='kb'`],
   ['…and again',                              'ok',     A, 0,
     `update slice set body='["v5"]' where language='${LD}' and kind='kb'`],
+  ['and its number is the server\u2019s: five writes, five', 'ok', A, 0,
+    `select 1 from slice where language='${LD}' and kind='kb' and no=5`],
   /* THE ONLY AUTOMATIC DELETION IN THIS FILE, and it is the one the DELETE
      REVIEW is about (docs/CHANGELOG.md 2026-09-09). Four previous versions
      were kept and the ceiling is three, so the oldest is gone -- and asking
@@ -1007,17 +1103,29 @@ const CASES = [
   /* And put back where the claims above found it. The rows here are one
      database read in order, so a claim that leaves somebody staff is every
      later claim asking its question of a different person. */
-  ['and comes off again',                     'ok',     E, 0,
-    `select staff_drop('iri')`],
+  /* And off again the same way it went on: capitals are the same person,
+     and a handle nobody has says so. staff_drop() matched `handle = h` and
+     said nothing when nothing matched -- `staff_drop('IRI')` returned and B
+     stayed staff (r63-audit SQ3, measured). */
+  ['a handle nobody has is refused coming off too', 'denied', E, 0,
+    `select staff_drop('nobodyhasthis')`],
+  ['and comes off typed with capitals',       'ok',     E, 0,
+    `select staff_drop('IRI')`],
   ['and B is not staff after that',           'denied', E, 0,
     `select 1 from profile where handle='iri' and staff`],
   ['B cannot take staff off anybody',         'denied', B, 0,
     `select staff_drop('mod')`],
-  /* The one that cannot be undone from inside the app. The call is allowed
-     and does nothing, which is the point -- an error here would be a screen
-     saying no, and what is wanted is a row that does not move. */
-  ['the one above staff cannot be taken off it', 'ok', E, 0,
+  /* The one that cannot be undone from inside the app. Refused, and the row
+     does not move -- the next two ask the row. It used to be allowed and do
+     nothing, which is the silence staff_add() was rewritten out of. */
+  ['the one above staff cannot be taken off it', 'denied', E, 0,
     `select staff_drop('lingua')`],
+  /* And the app can ask which row that is, of the row, without knowing the
+     name: profile_admin() is a column to PostgREST. */
+  ['and any account can ask which row is above staff', 'ok', B, 0,
+    `select 1 from profile p where p.id='${E}' and profile_admin(p)`],
+  ['and it is only that row',                 'denied', B, 0,
+    `select 1 from profile p where p.id<>'${E}' and profile_admin(p)`],
   ['and is still both after trying',          'ok',     E, 0,
     `select 1 from profile where handle='lingua' and staff`],
   ['and still answers the question',          'ok',     E, 0,
@@ -1067,6 +1175,36 @@ const CASES = [
     `select post_show('${P}')`],
   ['and B sees it again',                     'ok',     B, 0,
     `select 1 from post where id='${P}'`],
+
+  /* --- a post kept to yourself is yours alone ----------------------------
+     「SNSは全部サーバー」, and the lock is what says who reads it: its writer
+     and nobody else -- not staff, who read what has been taken down, because
+     nobody can report what nobody can see. post_seen reads the table as its
+     owner, so it is asked separately: a view is only a wall if there is no
+     door beside it. */
+  ['A keeps a post to A',                     'ok',     A, 0,
+    `insert into post(id,author,body) values ('${PV}','${A}','{"pv":1,"ln":"mine"}'::jsonb)`],
+  ['A reads it',                              'ok',     A, 0,
+    `select 1 from post_seen where id='${PV}' and body ->> 'ln' = 'mine'`],
+  ['B cannot read it off the table',          'denied', B, 0,
+    `select 1 from post where id='${PV}'`],
+  ['nor through post_seen',                   'denied', B, 0,
+    `select 1 from post_seen where id='${PV}'`],
+  ['nor can staff',                           'denied', C, 0,
+    `select 1 from post_seen where id='${PV}'`],
+  ['nor staff off the table',                 'denied', C, 0,
+    `select 1 from post where id='${PV}'`],
+  ['nor somebody not signed in',              'denied', B, 1,
+    `select 1 from post_seen where id='${PV}'`],
+  /* And an answer kept to yourself does not show in the count of answers:
+     a number that counts what nobody can open says it is there. B's own
+     count of what B can read is the measure, so the claim holds whatever
+     else has answered P. */
+  ['A answers P and keeps the answer',        'ok',     A, 0,
+    `insert into post(id,author,body,reply_to) values ('${PVR}','${A}','{"pv":1}'::jsonb,'${P}')`],
+  ['and the count B is shown is what B can read', 'ok', B, 0,
+    `select 1 from post_seen v where v.id='${P}' and v.replies =
+       (select count(*) from post q where q.reply_to='${P}' and q.hidden_at is null)`],
 
   /* --- ejecting somebody, which is the half guideline 1.2 asks for -------
      Taking the post down leaves whoever wrote it free to write it again. What
@@ -1420,6 +1558,45 @@ const CASES = [
     `insert into draft(id,author,body) values ('${DR}','${A}','{\"ln\":\"secret\"}'::jsonb)`],
   ['and reads it back',                       'ok',     A, 0,
     `select 1 from draft where id='${DR}'`],
+  /* --- THE LATER EDIT WINS (keep_newer in schema.sql) --------------------
+     「普通後から変えたほうになる？」 OWNER 2026-09-04. Two phones of A's,
+     one that changed a thing at 2000 and one that changed it at 1000 and
+     connected second. What stays is the 2000 one, on every table the
+     trigger is on, and the older write lands everything it carries that is
+     not older. */
+  ['A\u2019s later phone names A "late"',     'ok',     A, 0,
+    `update profile set display='late', ed='{"display":2000}'::jsonb where id='${A}'`],
+  ['the earlier phone, connecting second, sends "early" and a line', 'ok', A, 0,
+    `update profile set display='early', bio='a line',
+            ed='{"display":1000,"bio":1000}'::jsonb where id='${A}'`],
+  ['and the name is the later one, the line the earlier phone\u2019s', 'ok', A, 0,
+    `select 1 from profile where id='${A}' and display='late' and bio='a line'
+       and (ed->>'display')::numeric = 2000`],
+  ['a setting pressed later',                 'ok',     A, 0,
+    `select prefs_put('{"theme":"dusk"}'::jsonb, '{"theme":2000}'::jsonb)`],
+  ['and one pressed earlier arriving after it is told what stands', 'ok', A, 0,
+    `select 1 where prefs_put('{"theme":"noon"}'::jsonb, '{"theme":1000}'::jsonb) ->> 'theme' = 'dusk'`],
+  ['and the row says so',                     'ok',     A, 0,
+    `select 1 from profile where id='${A}' and prefs->>'theme'='dusk'`],
+  ['a draft written later',                   'ok',     A, 0,
+    `update draft set body='{"ln":"later"}'::jsonb, ed='{"body":2000}'::jsonb where id='${DR}'`],
+  ['and an older one does not replace it',    'ok',     A, 0,
+    `update draft set body='{"ln":"older"}'::jsonb, ed='{"body":1000}'::jsonb where id='${DR}'`],
+  ['it is still the later one',               'ok',     A, 0,
+    `select 1 from draft where id='${DR}' and body->>'ln'='later'`],
+  /* And a slice, which two phones ADD to: the write says which version it
+     put itself together with, and one made against a version that has since
+     moved is refused rather than written over it (r63-audit 0-4). */
+  ['A writes notes, merged against nothing',  'ok',     A, 0,
+    `insert into slice(language,kind,body,ed) values ('${L}','notes','["a"]','{"body":1000,"was":0}'::jsonb)`],
+  ['and "was" is not kept on the row',        'ok',     A, 0,
+    `select 1 from slice where language='${L}' and kind='notes' and not (ed ? 'was')`],
+  ['another write merged against nothing is refused -- it has not seen "a"', 'denied', A, 0,
+    `update slice set body='["b"]', ed='{"body":3000,"was":0}'::jsonb where language='${L}' and kind='notes'`],
+  ['one merged against what is there lands',  'ok',     A, 0,
+    `update slice set body='["a","b"]', ed='{"body":3000,"was":1000}'::jsonb where language='${L}' and kind='notes'`],
+  ['and holds both',                          'ok',     A, 0,
+    `select 1 from slice where language='${L}' and kind='notes' and body='["a","b"]'`],
   /* The four somebody else would try. READ FIRST and not last: it is the one
      that costs somebody something even when nothing is written, and it is the
      one a `for all` policy or a `using (true)` would hand over in silence. */
@@ -1642,6 +1819,84 @@ const CASES = [
      a check constraint rather than a comment: 「空」と「壊れている」は別。 */
   ['a token that is not hex is refused',      'denied', A, 0,
     `insert into device(uid,token) values ('${A}','not a token')`],
+  /* AND THE ADDRESS IS WHOEVER IS SIGNED IN ON THAT PHONE NOW.
+     「端末ごとにやることなんてねえよ」 -- a phone is a window, and the account
+     looking through it is the one its notices are for. Two things were wrong
+     and both were measured (r63-audit S4, S5): the same account sending the
+     same token again -- which every launch does, as PostgREST's
+     merge-duplicates -- was REFUSED from the second time on, because the
+     conflict takes the update road and there is no update policy; and a
+     second account signing in on the same phone left the first one's row
+     there, so the first account's notices rang on somebody else's phone.
+
+     The first is asked in the shape PostgREST sends it, inside a `with` so
+     that 「nothing to do」 reads as a row rather than as a refusal. */
+  ['A sends the same iPhone again, as every launch does', 'ok', A, 0,
+    `with x as (insert into device(uid,token) values ('${A}','a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1')
+       on conflict (uid,token) do update set created_at = excluded.created_at
+       returning 1) select 1`],
+  ['and A has it once',                       'ok',     A, 0,
+    `select 1 from device where uid='${A}' having count(*) filter
+       (where token='a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1') = 1`],
+  ['A registers a second iPhone',             'ok',     A, 0,
+    `insert into device(uid,token) values ('${A}','a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5')`],
+  ['B signs in on A\u2019s first iPhone and registers it', 'ok', B, 0,
+    `insert into device(uid,token) values ('${B}','a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1')`],
+  ['and that iPhone is no longer A\u2019s address', 'denied', A, 0,
+    `select 1 from device where uid='${A}' and token='a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1'`],
+  ['and A\u2019s other iPhone still is',         'ok',     A, 0,
+    `select 1 from device where uid='${A}' and token='a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5'`],
+  ['B cannot put a phone on A to take it back', 'denied', B, 0,
+    `insert into device(uid,token) values ('${A}','a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1')`],
+  ['and the phone is still B\u2019s',            'ok',     B, 0,
+    `select 1 from device where uid='${B}' and token='a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1'`],
+
+  /* --- A ROW RINGS ONCE --------------------------------------------------
+     push-send could be knocked on as often as anybody liked: it asked only
+     whether the caller was the row's own actor, so B could point at B's own
+     follow of A and ring A's phone again and again (r63-audit SQ2).
+     push_once() is the record, ON THE ROW -- `rung_at` -- so it goes when the
+     row goes and a follow undone and made again is a new row that rings.
+     The service role marks it and nobody else can: a signed-in caller meets
+     the missing update policy or the column grant. */
+  ['the server marks B\u2019s follow of A rung', 'ok',  B, 3,
+    `select 1 where push_once('follow', '{"follower":"${B}","followed":"${A}"}')`],
+  ['and a second knock on that row rings nothing', 'denied', B, 3,
+    `select 1 where push_once('follow', '{"follower":"${B}","followed":"${A}"}')`],
+  ['A follows somebody',                       'ok',     A, 0,
+    `insert into follow(follower,followed) values ('${A}','${N1}')`],
+  ['B cannot mark somebody else\u2019s row rung', 'denied', B, 0,
+    `select 1 where push_once('follow', '{"follower":"${A}","followed":"${N1}"}')`],
+  ['nor can A, whose own follow it is',      'denied', A, 0,
+    `select 1 where push_once('follow', '{"follower":"${A}","followed":"${N1}"}')`],
+  ['nor somebody with no account',             'denied', B, 2,
+    `select 1 where push_once('follow', '{"follower":"${A}","followed":"${N1}"}')`],
+  ['so that row still rings once for the server', 'ok',  B, 3,
+    `select 1 where push_once('follow', '{"follower":"${A}","followed":"${N1}"}')`],
+
+  /* --- A PLAN IS WRITTEN IN ONE STATEMENT ----------------------------------
+     verify-plan read `plan`, decided `was`, and wrote -- two requests with
+     the row free between them, so two calls at once could each read the old
+     plan and one of them record the wrong one (r63-audit SQ7). plan_put()
+     compares against the row it holds the lock on. The ladder is
+     verify.mjs's `ORDER`, passed in rather than written here or there. */
+  ['the server writes a plan',                 'ok',     N1, 3,
+    `select 1 from plan_put('${N1}', 'pro', ${LAD})`],
+  ['and going down keeps what it was',         'ok',     N1, 3,
+    `select 1 from plan_put('${N1}', 'free', ${LAD})
+      where was = 'pro' and lapse_seen_at is null`],
+  ['the person closes the notice',             'ok',     N1, 3,
+    `update plan set lapse_seen_at = now() where id = '${N1}'`],
+  ['and the same plan again does not unsee it', 'ok',    N1, 3,
+    `select 1 from plan_put('${N1}', 'free', ${LAD})
+      where was = 'pro' and lapse_seen_at is not null`],
+  ['and going up clears both',                 'ok',     N1, 3,
+    `select 1 from plan_put('${N1}', 'plus', ${LAD})
+      where was is null and lapse_seen_at is null`],
+  ['B cannot write a plan through it',         'denied', B, 0,
+    `select 1 from plan_put('${B}', 'pro', ${LAD})`],
+  ['nor can somebody with no account',         'denied', B, 2,
+    `select 1 from plan_put('${B}', 'pro', ${LAD})`],
 
   /* --- AND SOMEBODY WITH NO ACCOUNT AT ALL -------------------------------
      「ちがう。そもそもサインインがない状態でできることがないはずなのにそれが
@@ -1706,6 +1961,30 @@ const CASES = [
   ['but does ask whether an address is taken',     'ok',     B, 2,
     `select 1 where email_taken('nobody@example.com') is not null`],
 
+  /* --- a place in the timeline, which is sold and not taken ---------------
+     「広告枠が売れる形にする」 OWNER 2026-09-23. `promo` in schema.sql has a
+     read policy and nothing else, so every write below is refused by the
+     policy being ABSENT -- which is the claim, and a policy added tomorrow
+     that let one through would turn one of these green. */
+  ['B sees the place that is running',            'ok',     B, 0,
+    `select 1 from promo where id=1`],
+  ['but not the one that ran out',                'denied', B, 0,
+    `select 1 from promo where id=2`],
+  ['B cannot sell himself a place',               'denied', B, 0,
+    `insert into promo(post) values ('${PA}')`],
+  ['nor put his own post in the running one',     'denied', B, 0,
+    `update promo set post='${PA}', ends_at=null where id=1`],
+  ['nor bring the one that ran out back',         'denied', B, 0,
+    `update promo set ends_at=null where id=2`],
+  ['nor take the running one down',               'denied', B, 0,
+    `delete from promo where id=1`],
+  ['the staff do not sell one either',            'denied', C, 0,
+    `insert into promo(post) values ('${PA}')`],
+  ['somebody with no account sees no place',      'denied', B, 2,
+    `select 1 from promo`],
+  ['nor sells one',                               'denied', B, 2,
+    `insert into promo(post) values ('${PA}')`],
+
   /* Deleting the account takes the drafts with it. Asked by DOING it, and
      asked as the owner of the table rather than through a policy, because
      what has to hold is that the row is GONE -- a select that returns nothing
@@ -1720,6 +1999,38 @@ const CASES = [
    off is wide open no matter what its policies say, and a table with no
    update policy is append-only precisely BECAUSE the policy is missing. */
 const SHAPE = [
+  /* ---- WHAT THE FILE DOES ONCE, IT DOES ONCE -----------------------------
+     The languages put in above, between the old shape and the new. The name
+     comes over from the slice where the column was empty; a name already
+     there is not written over; the slice stays (a copy, never a move); and
+     the one a person emptied between the two pastes stays empty. */
+  ['a language named only in its slice has the name now', `
+     select count(*) from (select 1 where not exists (select 1 from language
+       where id = '${OLDN[3]}' and name = 'Fourth')) q`, '0'],
+  ['and a name already there was not written over', `
+     select count(*) from (select 1 where not exists (select 1 from language
+       where id = '${OLDN[2]}' and name = 'Kept')) q`, '0'],
+  ['and the slice it came from is still there', `
+     select 3 - count(*) from slice where kind = 'lang'
+        and language in ('${OLDN[1]}', '${OLDN[2]}', '${OLDN[3]}')`, '0'],
+  ['and a name emptied since is not put back by the next paste', `
+     select count(*) from language where id = '${OLDN[1]}' and name <> ''`, '0'],
+  /* EVERY TABLE HAS ROW LEVEL SECURITY ON. The grants say a signed-in account
+     may touch a table at all; with row level security off, that is every row
+     of it. Counted off the catalogue, so a table added tomorrow is asked
+     tomorrow -- and the list of `enable row level security` lines in
+     schema.sql is not what anything here trusts. */
+  /* Every table push-send is knocked from carries the mark push_once()
+     writes. `PUSH` is the list, so a kind added there is asked here. */
+  ['every table a notice comes from can say it rang', `
+     select count(*) from unnest(array[${PUSH_TABLES.map(q).join(',')}]) t
+      where not exists (select 1 from information_schema.columns
+                         where table_schema = 'public' and table_name = t
+                           and column_name = 'rung_at')`, '0'],
+  ['every table has row level security on', `
+     select count(*) from pg_class c join pg_namespace n on n.oid = c.relnamespace
+      where n.nspname = 'public' and c.relkind in ('r','p')
+        and not c.relrowsecurity and c.relname not like '\\_%'`, '0'],
   /* ---- NOTHING WITHOUT A SIGN-IN, COUNTED RATHER THAN LISTED -----------
      「ちがう。そもそもサインインがない状態でできることがないはずなのにそれが
        あることを疑って言ってんの。小さい穴だけ潰しても意味ねえだろ、大きい
@@ -1816,32 +2127,33 @@ const SHAPE = [
        join pg_namespace n on n.oid = d.defaclnamespace
       where n.nspname = 'public'
         and array_to_string(d.defaclacl, ',') like '%anon=%'`, '0'],
-  /* THE ROAD OUT IS THERE, ALL THREE OF IT. The block at the foot of
-     schema.sql makes them only when Database -> Webhooks has been turned on,
-     and it is applied above once without that schema and once with it -- so
-     these three say both halves at once: the file survived the pass that had
-     nowhere to send anything, and the pass that did made all three. A missing
-     one is a kind of notice that silently never arrives, which is the one
-     thing about this feature no screen could ever show. */
-  ['a follow says so', `
-     select ((select count(*) from pg_trigger
-               where tgname='push_on_follow'
-                 and tgrelid='follow'::regclass) <> 1)::int`, '0'],
-  ['a reply says so', `
-     select ((select count(*) from pg_trigger
-               where tgname='push_on_reply'
-                 and tgrelid='post'::regclass) <> 1)::int`, '0'],
-  ['a like and a boost say so', `
-     select ((select count(*) from pg_trigger
-               where tgname='push_on_react'
-                 and tgrelid='react'::regclass) <> 1)::int`, '0'],
+  /* THE ROAD OUT IS THERE, FOR EVERY KIND. The block at the foot of
+     schema.sql makes the triggers only when Database -> Webhooks has been
+     turned on, and it is applied above once without that schema and once with
+     it -- so these say both halves at once: the file survived the pass that
+     had nowhere to send anything, and the pass that did made one for every
+     table a kind is raised from. A missing one is a kind of notice that
+     silently never arrives, which is the one thing about this feature no
+     screen could ever show.
+
+     COUNTED OFF `PUSH`, NOT LISTED HERE. The tables are read out of
+     supabase/functions/push-send/push.mjs, so a kind added there tomorrow is
+     asked for here tomorrow, and the trigger it needs is not something
+     anybody has to remember. What is asked is the FUNCTION a trigger calls,
+     not its name: a trigger named right that calls something else is not
+     the road. */
+  ...PUSH_TABLES.map((t) => ['an insert into ' + t + ' knocks on push-send', `
+     select ((select count(*) from pg_trigger g
+               join pg_proc f on f.oid = g.tgfoid
+              where g.tgrelid = '${t}'::regclass and not g.tgisinternal
+                and f.proname = 'push_ping') <> 1)::int`, '0']),
   /* AND THE ROAD CARRIES THE PERSON. Three claims and they are one sentence:
      exactly one of the two writes above went out, it carried the writer's own
      Authorization, and it said which row it was about. The one with no
      signature behind it sent nothing -- which is the door the owner closed
      on 2026-09-22. */
   ['one write went out and the unsigned one did not', `
-     select ((select count(*) from net._sent) <> 1)::int`, '0'],
+     select ((select count(*) from net._sent where body->>'table' = 'react') <> 1)::int`, '0'],
   ['and it carries the writer\u2019s own Authorization', `
      select ((select count(*) from net._sent
                where headers->>'Authorization' = 'Bearer THE-WRITERS-OWN-TOKEN')
@@ -1851,11 +2163,31 @@ const SHAPE = [
                where body->>'table' = 'react'
                  and body->'record'->>'actor' = '${F}'
                  and body->'record'->>'post' = '${H4}') <> 1)::int`, '0'],
+  ['an answer anybody may read rings the one answered', `
+     select ((select count(*) from net._sent
+               where body->>'table' = 'post' and body->'record'->>'id' = '${RP}') <> 1)::int`, '0'],
+  ['and one kept to its writer rings nobody', `
+     select ((select count(*) from net._sent
+               where body->>'table' = 'post' and body->'record'->>'id' = '${RPV}') <> 0)::int`, '0'],
   /* And no secret rode along. The whole point of taking the caller's token is
      that there is nothing in this file to steal. */
   ['and no key of ours is written into the road', `
      select ((select count(*) from net._sent
                where headers::text ~* '(service|secret|apikey|sb_)') <> 0)::int`, '0'],
+  /* AND THE DAY'S PROMPT, WHICH IS FOR EVERYBODY.
+     「通知なんだけど、今日のお題が変わった時にも出るようにできる？」 OWNER
+     2026-09-23. It rings every phone whose switch is on, so the one thing that
+     may raise it is the row daily-prompt writes with the service role key --
+     and ROAD below tries it as B, signed in, and as nobody at all, each with
+     a signature on the request so that a write that landed WOULD knock. Both
+     are refused, and what is left in the notebook is the one knock the
+     service role's own insert made, carrying its own key. */
+  ['the day’s prompt knocks once, as the one who wrote it', `
+     select ((select count(*) from net._sent
+               where body->>'table' = 'prompt'
+                 and headers->>'Authorization' = 'Bearer DAILY-PROMPTS-OWN-KEY') <> 1)::int`, '0'],
+  ['and nobody else’s attempt at one went down the road', `
+     select ((select count(*) from net._sent where body->>'table' = 'prompt') <> 1)::int`, '0'],
   /* A TOKEN IS NOT EDITED. schema.sql says so over the policies -- 「no update
      policy at all (a token does not change -- a new one is a new row and the
      old one goes)」 -- and an UPDATE policy added later would be the one road
@@ -2078,7 +2410,7 @@ const SHAPE = [
   ['and the one above staff cannot be unmade', `
      select count(*) from (select 1 where
        (select count(*) from pg_proc where proname='staff_drop'
-          and prosrc like '%where handle = h and h <> ''lingua''%') <> 1) q`, '0'],
+          and prosrc like '%if profile_admin(r) then raise%') <> 1) q`, '0'],
   /* Said the same way `staff` is said, one line down in this list: a column
      nobody signs in as may write is the only reason the functions above are
      the only road to it. */
@@ -2288,6 +2620,123 @@ const SHAPE = [
 
 /* ---- a PostgreSQL to throw away ----------------------------------------- */
 
+/* ---- AND THE FUNCTIONS, KNOCKED ON --------------------------------------
+   schema.sql is one of the two things a request from outside can reach. The
+   other is supabase/functions/, and each of those holds the service role --
+   so what IT says about who is calling is the whole of the wall in front of
+   it, and nothing above ever called one (r73-audit §2-15). 「関数は呼び手が
+   誰で何回目かを自分で確かめる」.
+
+   So every directory under supabase/functions/ with an index.ts is loaded as
+   Deno would load it -- Node strips the types -- and called three ways, with
+   a Supabase in front of it that answers the way the real one does:
+
+     nobody             no Authorization at all
+     the publishable key  what a request from an app with nobody signed in
+                        carries; Supabase's /auth/v1/user answers it with no user
+     B                  signed in, with a body that points at A's things
+
+   Refused means: nobody and the key get an answer of 400 or more and cause
+   no request but the one asking who they are; B causes nothing to leave for
+   another host (Apple, the model) and no write that names anybody but B.
+   COUNTED OFF THE DIRECTORY, so a function added tomorrow is knocked on
+   tomorrow; a function this cannot load is a failure, not a skip.
+
+   And the one thing only push-send is asked: B's own follow of A, knocked
+   twice, rings A's phone once. push_once() is what decides that, and the
+   attempts against the database ask it; this asks that push-send asks it,
+   in the right place -- after it has checked who is knocking, before Apple. */
+const FNS = path.join(HERE, '..', 'supabase', 'functions');
+const KNOCK = await (async () => {
+  const { pathToFileURL } = await import('url');
+  const { generateKeyPairSync } = await import('crypto');
+  const HOST = 'https://project.test';
+  const P8 = generateKeyPairSync('ec', { namedCurve: 'P-256' })
+    .privateKey.export({ type: 'pkcs8', format: 'pem' });
+  const ENV = {
+    SUPABASE_URL: HOST, SUPABASE_SERVICE_ROLE_KEY: 'THE-SERVICE-KEY',
+    SUPABASE_ANON_KEY: 'THE-PUBLISHABLE-KEY', APNS_KEY_ID: 'KID',
+    APPLE_TEAM_ID: 'TEAM', APNS_P8: P8, CRON_SECRET: 'THE-CRON-WORD',
+    GEMINI_API_KEY: 'THE-MODEL-KEY', APPLE_ROOT_CA_G3: 'AAAA',
+  };
+  const WHO = { 'Bearer A-TOKEN': A, 'Bearer B-TOKEN': B };
+  const UUIDS = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi;
+  let log = [];
+  const rung = {};
+  const said = (v, st) => new Response(JSON.stringify(v), { status: st || 200 });
+  /* A Supabase that answers from the request itself: a row asked for by its
+     key is that row, every account has one phone. */
+  globalThis.fetch = async (u, init) => {
+    const url = String(u), method = String((init && init.method) || 'GET');
+    const h = (init && init.headers) || {};
+    const body = init && init.body ? String(init.body) : '';
+    log.push({ url, method, body });
+    if (!url.startsWith(HOST)) return said({}, 200);
+    const p = new URL(url), eq = {};
+    for (const [k, v] of p.searchParams) if (v.startsWith('eq.')) eq[k] = v.slice(3);
+    if (p.pathname === '/auth/v1/user') {
+      const id = WHO[h.Authorization || h.authorization || ''];
+      return id ? said({ id }) : said({ msg: 'no user' }, 403);
+    }
+    if (p.pathname === '/rest/v1/rpc/push_once') {
+      const k = body; rung[k] = (rung[k] || 0) + 1; return said(rung[k] === 1);
+    }
+    if (p.pathname === '/rest/v1/rpc/plan_put') return said([JSON.parse(body)]);
+    if (method !== 'GET') return said([]);
+    const t = p.pathname.replace('/rest/v1/', '');
+    if (t === 'device') return said([{ token: 'ab'.repeat(32) }]);
+    if (t === 'profile') return said([{ prefs: {}, handle: 'someone' }]);
+    if (t === 'prompt') return said([]);
+    if (t === 'purchase') return said([]);
+    return said(Object.keys(eq).length ? [eq] : []);
+  };
+  const AT_A = JSON.stringify({ table: 'follow', record: { follower: A, followed: B },
+                                jws: ['not.a.transaction'] });
+  const call = async (serve, auth, body) => {
+    log = [];
+    const headers = { 'Content-Type': 'application/json' };
+    if (auth) headers.Authorization = auth;
+    let st;
+    try { st = (await serve(new Request(HOST + '/fn', { method: 'POST', headers, body }))).status; }
+    catch (e) { st = 'threw: ' + e.message; }
+    return { st, log };
+  };
+  const out = [];
+  const dirs = fs.readdirSync(FNS).filter((d) => fs.existsSync(path.join(FNS, d, 'index.ts')));
+  for (const d of dirs) {
+    let serve = null;
+    globalThis.Deno = { env: { get: (k) => ENV[k] }, serve: (f) => { serve = f; } };
+    try { await import(pathToFileURL(path.join(FNS, d, 'index.ts')).href); }
+    catch (e) { out.push([d + ' loads', ['it does not: ' + e.message]]); continue; }
+    if (!serve) { out.push([d + ' loads', ['it serves nothing']]); continue; }
+    for (const [who, auth] of [['nobody', ''], ['the publishable key', 'Bearer THE-PUBLISHABLE-KEY']]) {
+      const r = await call(serve, auth, AT_A);
+      const more = r.log.filter((x) => !x.url.endsWith('/auth/v1/user'));
+      out.push([d + ' refuses ' + who,
+        (typeof r.st === 'number' && r.st >= 400 ? [] : ['answered ' + r.st])
+          .concat(more.map((x) => x.method + ' ' + x.url))]);
+    }
+    const r = await call(serve, 'Bearer B-TOKEN', AT_A);
+    out.push([d + ' does nothing of A’s for B',
+      (typeof r.st === 'number' ? [] : [String(r.st)]).concat(r.log
+        .filter((x) => !x.url.startsWith(HOST) ||
+          (x.method !== 'GET' && (x.url + x.body).replace(UUIDS, (m) => m === B ? '' : 'X').includes('X')))
+        .map((x) => x.method + ' ' + x.url))]);
+    if (d === 'push-send') {
+      const mine = JSON.stringify({ table: 'follow', record: { follower: B, followed: A } });
+      let apple = 0;
+      for (let i = 0; i < 2; i++) {
+        const k = await call(serve, 'Bearer B-TOKEN', mine);
+        apple += k.log.filter((x) => x.url.startsWith('https://api.push.apple.com')).length;
+      }
+      out.push(['push-send rings B’s follow of A once, knocked twice',
+        apple === 1 ? [] : ['Apple was asked ' + apple + ' times']]);
+    }
+  }
+  out.push(['functions knocked on', dirs.length ? [] : ['none found']]);
+  return { rows: out, count: dirs.length };
+})();
+
 function bindir() {
   for (const d of (fs.existsSync('/usr/lib/postgresql')
       ? fs.readdirSync('/usr/lib/postgresql').sort().reverse()
@@ -2384,14 +2833,82 @@ begin
   execute 'set local role postgres';
   insert into _r(name, want, got) values (nm, want, got);
 end $$;
+
+-- ---- what the blocker can still read of the blocked ---------------------
+-- EVERY VIEW, AND EVERY FUNCTION THAT RETURNS ROWS AND CAN BE CALLED WITH
+-- NOTHING, out of the catalogue -- the reads the app makes, counted rather
+-- than listed, so a view added tomorrow is asked tomorrow. Each is read as the
+-- blocker twice: with the block (\`shut\`) and with it lifted for the moment
+-- (\`open\`). A row counts when the blocked person's uuid or @ is anywhere in
+-- it. \`open\` is what makes the question a question: a read that shows
+-- nothing of them even unblocked names nobody and is not part of this.
+-- -1 is a read that could not be made at all.
+create or replace function _block_read(stmt text, sub uuid) returns int
+language plpgsql as $$
+declare c int;
+begin
+  begin
+    execute 'set local role authenticated';
+    perform set_config('request.jwt.claims',
+      json_build_object('sub', sub, 'is_anonymous', false)::text, true);
+    execute stmt into c;
+  exception when others then
+    c := -1;
+  end;
+  execute 'set local role postgres';
+  return c;
+end $$;
+create or replace function _block_seen(sub uuid, them uuid, hd text)
+returns table(what text, open int, shut int) language plpgsql as $$
+declare r record; stmt text;
+begin
+  for r in
+    select c.relname::text as nm, quote_ident(c.relname) as src
+      from pg_class c join pg_namespace s on s.oid = c.relnamespace
+     where s.nspname = 'public' and c.relkind in ('v','m')
+       and c.relname not like '\\_%'
+    union all
+    select p.proname::text, quote_ident(p.proname) || '()'
+      from pg_proc p join pg_namespace s on s.oid = p.pronamespace
+     where s.nspname = 'public' and p.proretset
+       and p.pronargs = p.pronargdefaults and p.proname not like '\\_%'
+     order by 1
+  loop
+    stmt := format('select count(*)::int from %s x where row_to_json(x)::text like %L'
+                   ' or row_to_json(x)::text like %L',
+                   r.src, '%' || them || '%', '%"' || hd || '"%');
+    what := r.nm;
+    shut := _block_read(stmt, sub);
+    delete from block where actor = sub and blocked = them;
+    open := _block_read(stmt, sub);
+    insert into block(actor, blocked) values (sub, them);
+    return next;
+  end loop;
+end $$;
 `;
 
-const q = (s) => "'" + String(s).replace(/'/g, "''") + "'";
-const run = CASES.map(([name, want, who, anon, sql]) =>
+/* The fourth field is who is asking: 0 signed in, 1 an anonymous session,
+   2 nobody at all (`anon`, no claims), 3 the service role -- what the two
+   functions in supabase/functions/ write with, carrying no person. */
+const chk = ([name, want, who, anon, sql]) =>
   `select _chk(${q(name)}, ${q(want)}, ${q(sql)}, ${q(who)}, ` +
-  `${anon === 2 ? 'null' : (anon ? 'true' : 'false')}, ` +
-  `${q(anon === 2 ? 'anon' : 'authenticated')});`
-).join('\n');
+  `${anon >= 2 ? 'null' : (anon ? 'true' : 'false')}, ` +
+  `${q(anon === 3 ? 'service_role' : anon === 2 ? 'anon' : 'authenticated')});`;
+const run = CASES.map(chk).join('\n');
+
+/* THE ATTEMPTS THAT NEED A SIGNATURE ON THE REQUEST. Every case above runs
+   with no `request.headers` at all, so a trigger behind one of them would
+   have nobody to send as and would send nothing whether the write landed or
+   not -- which makes 「nothing went down the road」 true for the wrong reason.
+   These run after a signature has been put on, so a write that got through
+   is a knock in the notebook, and the SHAPE claims about `prompt` above
+   count them. */
+const ROAD = [
+  ['B cannot raise the day’s notice',      'denied', B, 0,
+    `insert into prompt(on_day,text) values (current_date + 1,'forged')`],
+  ['nor can somebody with no session',        'denied', B, 2,
+    `insert into prompt(on_day,text) values (current_date + 2,'forged')`],
+];
 
 /* OVER THE SHAPE A REAL SERVER HOLDS, AND THEN AGAIN. The file says at its
    head that the whole of it can be run again, any number of times, and that
@@ -2416,6 +2933,67 @@ const BASE = 'db93b264';   /* 2026-09-08, the last paste before `wsys` */
 const BASE_SQL = execFileSync('git', ['show', `${BASE}:supabase/schema.sql`],
                               { cwd: path.join(HERE, '..'), encoding: 'utf8' });
 const SCHEMA_SQL = fs.readFileSync(SCHEMA, 'utf8');
+
+/* ---- ONE THING IS SAID IN ONE PLACE, COUNTED OFF THE FILE -------------
+   「穴を潰すんじゃなくて同じように全体を俯瞰して穴を覆って欲しい」 OWNER
+   2026-09-22. The cover is the block at the foot of schema.sql -- anon holds
+   nothing, every function is `authenticated`'s -- and a grant or a revoke
+   that says it again about ONE object is the old hole's plug left standing
+   beside the cover. It changes nothing on the day it is written, and it is
+   what somebody copies on the day the next function is added, and from then
+   on the file answers 「who may run this」 in two places.
+
+   The same sentence the other way: nothing is DEFINED twice. A policy made
+   once and then again further down is two answers to one question, and the
+   one that runs is whichever the reader did not look at -- `media_read` was
+   `using (bucket_id = 'post-media')` in the storage section and
+   `is_member() and ...` at the foot, and the comment over the first said
+   「anybody reads」.
+
+   Asked of the SOURCE and not of the database, because the database only
+   holds the last definition -- which is exactly what hides the first -- and
+   counted rather than listed, so a function added tomorrow is asked
+   tomorrow. The one open name is the one exception, and it is named here
+   the way the wall below names it: it must match exactly once, or the
+   exemption has outlived what it was for. */
+const SAID = (() => {
+  const src = SCHEMA_SQL.replace(/--[^\n]*/g, '');
+  const stmts = src.split(';').map((s) => s.replace(/\s+/g, ' ').trim());
+  const OPEN = 'grant execute on function email_taken(text) to anon';
+  const again = stmts.filter((s) =>
+    /^(grant|revoke)\b/i.test(s) && !/\bon all (tables|sequences|functions)\b/i.test(s) &&
+    (/\bon function\b/i.test(s) || /\b(to|from)\b[^]*\banon\b/i.test(s)) && s !== OPEN);
+  const twice = [];
+  const KINDS = {
+    policy:   /create policy\s+(\w+)\s+on\s+([\w.]+)/gi,
+    function: /create (?:or replace )?function\s+([\w.]+)\s*\(/gi,
+    view:     /create (?:or replace )?view\s+([\w.]+)/gi,
+    table:    /create table (?:if not exists )?([\w.]+)/gi,
+    trigger:  /create trigger\s+(\w+)\s[^;]*?\son\s+([\w.]+)/gi,
+    bucket:   /insert into storage\.buckets\b[^;]*?values\s*\(\s*'([^']+)'/gi,
+  };
+  for (const [k, re] of Object.entries(KINDS)) {
+    const seen = {};
+    let m;
+    while ((m = re.exec(src))) {
+      const n = k + ' ' + m.slice(1).join(' on ');
+      seen[n] = (seen[n] || 0) + 1;
+    }
+    for (const n of Object.keys(seen)) if (seen[n] > 1) twice.push(n + ' x' + seen[n]);
+  }
+  /* And who is above staff is a NAME, written once: profile_admin() is where
+     it is said and everything else asks that function. It was written out
+     six times -- is_admin(), three triggers, staff_drop() and the one-time
+     update -- and the app wrote it a seventh (r63-audit M2). */
+  const named = (src.match(/'lingua'/g) || []).length;
+  return [
+    ['a grant or revoke saying the foot again', again],
+    ['who is above staff, named once', named === 1 ? [] : ['the name ' + named + ' times']],
+    ['the one open name, named once',
+     stmts.filter((s) => s === OPEN).length === 1 ? [] : ['not exactly once: ' + OPEN]],
+    ['anything defined twice', twice],
+  ];
+})();
 /* AND WHAT THE DASHBOARD MAKES, which is not PostgreSQL's and is not
    schema.sql's. pg_net (the `net` schema) arrives when somebody turns
    Database -> Webhooks on, once, by hand -- so a project can be pasted into
@@ -2426,7 +3004,7 @@ const SCHEMA_SQL = fs.readFileSync(SCHEMA, 'utf8');
    pass runs without it (so the guard at the foot of schema.sql has to skip
    the triggers and let the rest of the file land -- 2026-09-15, a paste that
    stopped part-way left nothing behind it), and the second pass runs with it
-   (so the three triggers have to be there).
+   (so every trigger `PUSH` asks for has to be there).
 
    The real one queues the request and returns. This one WRITES DOWN WHAT IT
    WAS GIVEN, because that is the claim: the road out carries the writing
@@ -2444,10 +3022,35 @@ begin
 end $$;
 `;
 
+/* AN OLD SERVER'S LANGUAGES, for the one step schema.sql takes once. Before
+   `language.name` there was the `lang` slice, and a language made then has
+   its name only there (r60-up B3). Put in by the owner of the table between
+   the old shape and the new, because that is the server the step meets: one
+   language named only in its slice, and one already named, whose slice says
+   something else and must not win.
+
+   And between the two pastes the first is EMPTIED, the way a person empties a
+   name (「空は未設定」 OWNER 2026-09-06). The file is pasted again and again;
+   a copy that ran every time would put the old name back over the person's
+   choice on the next paste, and that is the half this is here to ask. */
+const OLDLANG = `
+insert into auth.users(id) values ('${OLDN[0]}');
+insert into profile(id, handle) values ('${OLDN[0]}', 'oldnames');
+insert into language(id, owner, name) values ('${OLDN[1]}', '${OLDN[0]}', ''),
+                                             ('${OLDN[2]}', '${OLDN[0]}', 'Kept'),
+                                             ('${OLDN[3]}', '${OLDN[0]}', '');
+insert into slice(language, kind, body) values ('${OLDN[1]}', 'lang', 'Old Name'),
+                                              ('${OLDN[2]}', 'lang', 'Other'),
+                                              ('${OLDN[3]}', 'lang', 'Fourth');
+`;
+const OLDLANG_EMPTIED = `update language set name = '' where id = '${OLDN[1]}';`;
+
 const sql = [
   GROUND,
   BASE_SQL,
+  OLDLANG,
   SCHEMA_SQL,
+  OLDLANG_EMPTIED,
   PGNET,
   SCHEMA_SQL,
   HARNESS,
@@ -2456,7 +3059,7 @@ const sql = [
      through a policy, in the order a real account would do it -- a profile
      before a language, a language before a post -- because a row put here by
      the owner of the table would be a row no policy ever had to allow. */
-  `insert into auth.users(id) values (${q(A)}),(${q(B)}),(${q(C)}),(${q(D)}),(${q(E)}),(${q(F)}),(${q(G1)}),(${q(G2)}),(${q(G3)}),(${q(G4)}),(${q(N1)}),(${q(N2)}),(${q(N3)});`,
+  `insert into auth.users(id) values (${q(BK)}),(${q(BD)}),(${q(A)}),(${q(B)}),(${q(C)}),(${q(D)}),(${q(E)}),(${q(F)}),(${q(G1)}),(${q(G2)}),(${q(G3)}),(${q(G4)}),(${q(N1)}),(${q(N2)}),(${q(N3)});`,
   /* And one row that IS put here by the owner of the table, which the
      paragraph above says nothing else is. That is the claim being tested: no
      policy in schema.sql makes anybody staff, and the column is revoked from
@@ -2485,6 +3088,15 @@ const sql = [
   `insert into purchase(orig_tx,uid,product,until,env) values
      ('2000000000000001', ${q(A)}, 'com.tokinets.lingua.pro.monthly',
       now() + interval '20 days', 'Sandbox');`,
+  /* A PLACE SOLD IN THE TIMELINE, put here by the owner of the table because
+     nobody else can put one anywhere: `promo` has no insert policy at all, and
+     the operator sells a place through the service role. C writes the post --
+     C's profile is the one row above that exists before the attempts do. One
+     place is running and one ran out yesterday; the attempts are about both. */
+  `insert into post(id,author,body) values (${q(PA)}, ${q(C)}, '{"ln":"paid for"}'::jsonb);`,
+  `insert into promo(id,post,starts_at,ends_at) overriding system value values
+     (1, ${q(PA)}, now() - interval '1 day', null),
+     (2, ${q(PA)}, now() - interval '3 days', now() - interval '1 day');`,
   run,
   /* Three posts of different ages, written HERE by the owner of the table and
      not by anybody a policy lets write. That is not a shortcut around a
@@ -2502,6 +3114,11 @@ const sql = [
      (${q(H4)}, ${q(B)}, '{}'::jsonb,        feed_slot() - interval '20 minutes'),
      (${q(H3b)},${q(B)}, '{}'::jsonb,        feed_slot() - interval '10 minutes'),
      (${q(H5)}, ${q(B)}, '{"old":1}'::jsonb, feed_slot() - interval '3 days');`,
+  /* And one of BD's, before the tick, so the list that is going round has
+     something of BD's in it to leave out (BLOCK_HELD). Older than every one
+     above and with nothing done to it, so it is last and moves none of them. */
+  `insert into post(id,author,body,created_at) values
+     (${q(BDO)}, ${q(BD)}, '{}'::jsonb, feed_slot() - interval '40 minutes');`,
   /* And what was done to them, also before the tick. F and not A: A asked to
      be deleted among the attempts above and is gone by the time this runs. */
   `insert into react(post,actor,kind,created_at) values
@@ -2535,11 +3152,29 @@ const sql = [
   `select set_config('request.headers',
      '{"authorization":"Bearer THE-WRITERS-OWN-TOKEN"}', true);`,
   `insert into react(post,actor,kind) values (${q(H4)}, ${q(F)}, 'like');`,
+  /* And two answers under the same signature: one anybody may read, which
+     rings the person answered, and one kept to its writer, which rings
+     nobody -- telling somebody it exists is reading it (post_private). */
+  `select set_config('request.headers',
+     '{"authorization":"Bearer F-ANSWERS"}', true);`,
+  `insert into post(id,author,body,reply_to) values (${q(RP)},  ${q(F)}, '{}'::jsonb,        ${q(H4)});`,
+  `insert into post(id,author,body,reply_to) values (${q(RPV)}, ${q(F)}, '{"pv":1}'::jsonb, ${q(H4)});`,
   /* And the same write with nobody signed in behind it. Nothing comes out --
      there is no session to send as, and「読めなかった」と「無い」は枝を分けない
      の逆側でもある：送る相手ではなく、送る資格が無い。 */
   `select set_config('request.headers', '', true);`,
   `insert into react(post,actor,kind) values (${q(H3b)}, ${q(F)}, 'like');`,
+  /* The day's prompt, tried by somebody who is not the service role, with a
+     signature on the request -- and then written the way daily-prompt writes
+     it, by the owner of the table with the service role's key in the header
+     PostgREST would set. */
+  `select set_config('request.headers',
+     '{"authorization":"Bearer B-SIGNED-IN"}', true);`,
+  ROAD.map(chk).join('\n'),
+  `select set_config('request.headers',
+     '{"authorization":"Bearer DAILY-PROMPTS-OWN-KEY"}', true);`,
+  `insert into prompt(on_day,text) values (current_date + 10,'It rained.');`,
+  `select set_config('request.headers', '', true);`,
   `\\pset format unaligned`,
   `\\pset tuples_only on`,
   /* chr(9) rather than a backslash-t: PostgreSQL string literals are standard
@@ -2549,6 +3184,8 @@ const sql = [
     `select ${q('SHAPE')}||chr(9)||${q(name)}||chr(9)||(${s});`).join('\n'),
   /* And the size of the wall, printed. Counted rather than listed, because a
      number that moves is a question and a list is a thing to maintain. */
+  `select 'BLOCK'||chr(9)||what||chr(9)||open||chr(9)||shut
+     from _block_seen(${q(BK)}, ${q(BD)}, ${q(BDH)});`,
   `select 'ANON'||chr(9)||
      (select count(*) from pg_class c join pg_namespace n on n.oid=c.relnamespace
        where n.nspname='public' and c.relkind in ('r','v','m','p','f')
@@ -2575,7 +3212,7 @@ try {
 }
 
 const rows = out.split('\n').map((l) => l.split('\t')).filter((r) => r.length === 3);
-const want = CASES.length + SHAPE.length;
+const want = CASES.length + ROAD.length + SHAPE.length;
 if (rows.length !== want) {
   console.error(`expected ${want} answers and got ${rows.length}; psql said:\n` + out);
   process.exit(1);
@@ -2601,12 +3238,70 @@ if (wall) {
                ' -- all refused (1 allowed by name: email_taken)'));
 }
 
+/* ---- A BLOCK IS LEFT OUT BY THE SERVER, IN EVERY READ -------------------
+   「Blocked means you see nothing of them」 OWNER 2026-08-19. block_hides()
+   in schema.sql is the one thing that answers it, and every read the app
+   makes passes what it returns about a person through it. `_block_seen`
+   above walks the catalogue, so this is every view and every row-returning
+   function there is, not a list of them: a read shows BD to BK with the block
+   lifted and nothing of BD with it on, or it is red.
+
+   HELD is the reads a block does not reach YET, by name and with the reason.
+   A name here must still show BD -- the day it stops, the line is permission
+   for nothing and has to go, which is what box-check says a stale baseline
+   line becomes. docs/scope/r80-block.md carries what each one is waiting on. */
+const BLOCK_HELD = {
+  profile_seen:  'the person themself -- unblocking is pressed on their page and nowhere else',
+  language_seen: 'what they made, drawn on their page (profile_seen reads it)',
+  follow_seen:   'who follows whom -- the unfollow a block makes reads this list',
+};
+const blockRows = out.split('\n').map((l) => l.split('\t'))
+                     .filter((r) => r.length === 4 && r[0] === 'BLOCK');
+let blockOut = 0, blockHeld = 0, blockNobody = 0;
+if (!blockRows.length) bad.push(['a block, asked of every read', 'reads', 'none were found']);
+for (const [, name, open, shut] of blockRows) {
+  const o = Number(open), s = Number(shut), held = BLOCK_HELD[name];
+  let why = '';
+  if (o < 0 || s < 0) why = 'could not be read as the blocker';
+  else if (!o) { blockNobody++; if (held) why = 'held by name and names nobody -- take it off BLOCK_HELD'; }
+  else if (held) { if (s) blockHeld++; else why = 'held by name and shows nothing of them -- take it off BLOCK_HELD'; }
+  else if (s) why = s + ' row(s) of theirs with the block on';
+  else blockOut++;
+  if (why) bad.push(['a block leaves ' + name + ' out', 'none', why]);
+  console.log((why ? '  FAIL  ' : '  ok    ') +
+              ('a block leaves ' + name + ' out').padEnd(44) +
+              (why || (held && s ? 'held: ' + held : '')));
+}
+for (const name of Object.keys(BLOCK_HELD))
+  if (!blockRows.some((r) => r[1] === name)) {
+    bad.push(['a block leaves ' + name + ' out', 'a read', 'held by name and not in the catalogue']);
+    console.log('  FAIL  ' + ('a block leaves ' + name + ' out').padEnd(44) +
+                'held by name and not in the catalogue');
+  }
+console.log(`\nblock: ${blockRows.length} reads walked as the blocker -- ${blockOut} leave them out, ` +
+            `${blockHeld} held by name, ${blockNobody} name nobody\n`);
+
+/* After the wall, because the wall's sentence is about anon and these are
+   about what the file says -- a red here is not anon getting through. */
+for (const [name, found] of KNOCK.rows) {
+  if (found.length) bad.push([name, 'nothing', found.join(' | ')]);
+  console.log((found.length ? '  FAIL  ' : '  ok    ') + name.padEnd(44) +
+              (found.length ? found.join(' | ') : ''));
+}
+for (const [name, found] of SAID) {
+  if (found.length) bad.push([name, 'none', found.length + ': ' + found.join(' | ')]);
+  console.log((found.length ? '  FAIL  ' : '  ok    ') + name.padEnd(44) +
+              (found.length ? found.length + ' found where there must be none' : ''));
+}
 console.log('');
 if (bad.length) {
   console.error('somebody else got through:\n');
   for (const [n, w, g] of bad) console.error(`  ${n}\n    wanted ${w}, got ${g}\n`);
   process.exit(1);
 }
-console.log(`rls: ${CASES.length} attempts by somebody who is not the owner, ` +
+console.log(`rls: ${CASES.length + ROAD.length} attempts by somebody who is not the owner, ` +
             `none of them got through`);
 console.log(`     ${SHAPE.length} things the file cannot be without, all present`);
+console.log(`     ${SAID.length} things the file says once, each said once`);
+console.log(`     ${KNOCK.count} functions knocked on as nobody, as the publishable key and as B, ` +
+            `all refused`);

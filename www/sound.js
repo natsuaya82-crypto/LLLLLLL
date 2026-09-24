@@ -117,7 +117,8 @@ function vWsys(){
     }).join('')+
     /* Which way it is written. Here rather than in the person's settings
        because it is the language's -- one language, one answer, and it goes
-       in the backup with the rest of the language.
+       to the server with the rest of the language (`SCRIPT.dir`, the
+       `script` slice).
 
        All four are drawn on every plan. This used to show a free language
        the one direction it had, on the grounds that rows nothing can press
@@ -141,9 +142,9 @@ function vWsys(){
        Off is roman, which is what the app shows when somebody's own letters
        are not being shown, and does not need a button of its own to say so. */
     '<div class="sec">'+t('script.show')+'</div>'+
-    '<button class="set" style="border-bottom:none"' + DO('setMyFont', [!SET.myfont]) + '>'+
+    '<button class="set" style="border-bottom:none"' + DO('setMyFont', [!myFontWant()]) + '>'+
       '<span class="sl">'+esc(t('script.show.own'))+'</span>'+
-      swtHTML(!!SET.myfont)+'</button>'+
+      swtHTML(myFontWant())+'</button>'+
     '</div></div>';
 }
 /* ---- the abugida bench ------------------------------------------------
@@ -172,30 +173,37 @@ function abVowel(){
 function abSetVow(v){ abVow=v; render(); }
 /* Moving the mark moves the mark, not this one letter: it is one drawing and
    every combination is made out of it. Whole lattice steps, so what was on a
-   dot stays on a dot. */
+   dot stays on a dot. A mark written on a SHEET is rings rather than strokes
+   (inkGeo, www/glyph.js) and is moved and scaled the same way, but not put on
+   the lattice: its points are an outline somebody traced, and snapping them
+   would be a different shape. It used to ask `l.st`, so a sheet mark was
+   「no mark」 on the screen that was showing it. */
+function abMark(){
+  var g=inkGeo(ltMain(abVowel()));
+  if(!g){ toast(t('ab.nomark')); return null; }
+  return {pts:inkPts(g), snap: inkRings(g)? function(x){ return x; } : geSnap};
+}
 function abNudge(dx, dy){
-  var v=abVowel(), l=ltMain(v);
-  if(!l || !l.st || !l.st.length){ toast(t('ab.nomark')); return; }
-  var s=geStep(), i, j, p;
-  for(i=0;i<l.st.length;i++) for(j=0;j<l.st[i].pts.length;j++){
-    p=l.st[i].pts[j];
-    p[0]=geSnap(p[0]+dx*s); p[1]=geSnap(p[1]+dy*s);
+  var m=abMark(), s=geStep(), i, p;
+  if(!m) return;
+  for(i=0;i<m.pts.length;i++){
+    p=m.pts[i];
+    p[0]=m.snap(p[0]+dx*s); p[1]=m.snap(p[1]+dy*s);
   }
   saveLetters(); installScriptFont(); render();
 }
 function abScale(f){
-  var v=abVowel(), l=ltMain(v);
-  if(!l || !l.st || !l.st.length){ toast(t('ab.nomark')); return; }
-  var lo=[1e9,1e9], hi=[-1e9,-1e9], i, j, p;
-  for(i=0;i<l.st.length;i++) for(j=0;j<l.st[i].pts.length;j++){
-    p=l.st[i].pts[j];
+  var m=abMark(), lo=[1e9,1e9], hi=[-1e9,-1e9], i, p;
+  if(!m) return;
+  for(i=0;i<m.pts.length;i++){
+    p=m.pts[i];
     if(p[0]<lo[0]) lo[0]=p[0]; if(p[0]>hi[0]) hi[0]=p[0];
     if(p[1]<lo[1]) lo[1]=p[1]; if(p[1]>hi[1]) hi[1]=p[1];
   }
   var cx=(lo[0]+hi[0])/2, cy=(lo[1]+hi[1])/2;
-  for(i=0;i<l.st.length;i++) for(j=0;j<l.st[i].pts.length;j++){
-    p=l.st[i].pts[j];
-    p[0]=geSnap(cx+(p[0]-cx)*f); p[1]=geSnap(cy+(p[1]-cy)*f);
+  for(i=0;i<m.pts.length;i++){
+    p=m.pts[i];
+    p[0]=m.snap(cx+(p[0]-cx)*f); p[1]=m.snap(cy+(p[1]-cy)*f);
   }
   saveLetters(); installScriptFont(); render();
 }
@@ -204,7 +212,7 @@ function vAbugida(){
   if(!wsHasMarks())
     return '<div class="view">'+navTop('')+'<div class="body">'+
       '<div class="note">'+t('ab.notabugida')+'</div>'+
-      '<button class="btn ghost" style="width:100%;margin-top:12px"' + DO('go', ["letters"]) + '>'+
+      '<button class="btn ghost wide"' + DO('go', ["letters"]) + '>'+
       esc(t('toc.letters'))+'</button></div></div>';
   return '<div class="view">'+navTop()+'<div class="body">'+
     '<div class="segs scrollx">'+vs.map(function(x){
@@ -220,13 +228,13 @@ function vAbugida(){
             '<button' + DO('abNudge', [0, 1]) + ' aria-label="'+esc(t('ab.down'))+'">'+ICON_ARR_D+'</button>'+
             '<button' + DO('abScale', [1.25]) + '>'+t('ab.bigger')+'</button>'+
             '<button' + DO('abScale', [0.8]) + '>'+t('ab.smaller')+'</button>'+
-            ((vl && vl.sh && vl.sh.length)? '' :
+            (inkRings(inkGeo(vl))? '' :
               '<button' + DO('editGlyph', [v]) + '>'+ICON_PEN+t('ab.draw')+'</button>')+
           '</div></div>'+
         '<div class="sec">'+t('ab.every', v)+'</div>'+
         (cs.length
           ? '<div class="abgrid">'+cs.map(function(c){
-              var u=wsKey([c,v]), own=!!ltStrokes(u);
+              var u=wsKey([c,v]), own=!!inkGeo(ltMain(u));
               return '<button class="abcell'+(own?' own':'')+'"' + DO('editGlyph', [u]) + '>'+
                 '<canvas class="tc" data-r="'+esc(u)+'"></canvas>'+
                 '<span class="abu">'+esc(u)+'</span></button>';
@@ -247,9 +255,7 @@ function vAbugida(){
 var SND=[];
 /* The open language's sounds. Empty first: see langRead() in core.js. */
 function sndRead(){
-  SND=[];
-  try{ var s=JSON.parse(slRd(langKey('snd'))||'null');
-       if(s && s.length) SND=s; }catch(e){}
+  SND=slOpen('snd') || [];
 }
 sndRead();
 function saveSnd(){ if(langLocked()) return; bkTouch(); slWr(langKey('snd'), JSON.stringify(SND)); }
@@ -257,13 +263,22 @@ function saveSnd(){ if(langLocked()) return; bkTouch(); slWr(langKey('snd'), JSO
    "the sounds of the language in front of me", and they still do. */
 function addedSnd(){ return SND; }
 /* Whatever was in SET.snd belonged to whichever language was open when it was
-   written, which is this one. Copied, then taken off the settings so nothing
-   can read it again. */
+   written, which is this one. It is copied into that language, ONCE, and the
+   old copy is left exactly where it is -- CLAUDE.md § Data: a migration
+   copies and never removes what it read. migrateWorld()'s shape, for
+   migrateWorld()'s reason: a copy that ran on every launch would put this
+   language's sounds into the next one opened with none. SET.sndMoved is the
+   mark, and it sits beside SET.snd -- an account's field, parked and handed
+   back with it by setFor().
+
+   A language this launch may not write to is not marked: the copy would be
+   refused and the mark would spend it. It fills in what is missing and stops,
+   so a language already holding sounds keeps them. */
 function migrateSnd(){
-  if(SND.length || !SET.snd || !SET.snd.length) return;
-  SND=SET.snd.slice();
-  delete SET.snd;
-  saveSnd(); save();
+  if(SET.sndMoved || !SET.snd || !SET.snd.length || !langId || langLocked()) return;
+  if(!SND.length){ SND=SET.snd.slice(); saveSnd(); }
+  SET.sndMoved=1;
+  setKeep();
 }
 /* The chart is also how a letter is told what it reads, and that is a
    different thing to do with the same button, so the name it says is passed
@@ -742,7 +757,7 @@ function ltHidHTML(k){
   return capWarnHTML(t('cap.hid', n));
 }
 function ltSeen(){
-  if(can('letters')) return LETTERS;
+  if(!planNo(can('letters'))) return LETTERS;
   return LETTERS.filter(ltIsBase);
 }
 /* How many are not on screen. With no room named it is the alphabet entire,
@@ -842,13 +857,13 @@ function ltSortList(list){
   });
   return list;
 }
-/* ltDrawn() is www/letters.js's. There was a copy of it here and it was the
+/* ltHasShape() is www/letters.js's. There was a copy of it here and it was the
    shorter one: it asked for `st` and for a borrowed character and never for
    `sh`, the shape a letter arrives with off a written sheet -- so 「描いたもの」
    hid every letter that came in that way. One sentence, one place. */
 function ltFilList(list){
-  if(ltFil==='drawn') return list.filter(ltDrawn);
-  if(ltFil==='blank') return list.filter(function(l){ return !ltDrawn(l); });
+  if(ltFil==='drawn') return list.filter(ltHasShape);
+  if(ltFil==='blank') return list.filter(function(l){ return !ltHasShape(l); });
   if(ltFil==='nosnd') return list.filter(function(l){ return !ltUnits(l).length; });
   return list;
 }
@@ -998,7 +1013,7 @@ function vLtset(){
        from. Same as wordsHidHTML() in www/words.js and for the same reason:
        an alphabet that is suddenly shorter with nothing saying why is the app
        telling somebody their work is gone. It is not gone -- every letter is
-       in LETTERS, in storage, in the backup and on the server -- and paying
+       in LETTERS and in the language's `letters` slice on the server -- and paying
        again brings it straight back. */
     ltHidHTML(k)+
     ((k==='alpha' && loose.length)
@@ -1245,7 +1260,7 @@ function vLetter(){
       ? '<div class="gborrow" style="margin-top:8px"><span class="gbch">'+esc(l.ch)+'</span>'+
         '<span class="gbl">'+t('glyph.borrowed')+'</span>'+
         '<button class="gbx"' + DO('ltDropChar', [lid]) + '>'+t('ch.clear')+'</button></div>'
-      : '<button class="btn ghost" style="width:100%;margin-top:8px"' + DO('openPick', [lid]) + '>'+
+      : '<button class="btn ghost wide"' + DO('openPick', [lid]) + '>'+
         t('glyph.borrow')+'</button>')+
     /* 「複製するボタンいらんやろ」 OWNER 2026-09-01. It was the way to have a
        letter called something else when this one may not be renamed -- and
@@ -1254,7 +1269,7 @@ function vLetter(){
     /* The same question the ⊖ asks, asked once (ltCanDelete, www/letters.js):
        one of the first thirty-eight has no delete anywhere. */
     (ltCanDelete(ltById(lid))
-      ? '<button class="set" style="margin-top:14px;border-bottom:none"' + DO('ltDelete', [lid]) + '>'+
+      ? '<div class="grpsep"></div><button class="set end"' + DO('ltDelete', [lid]) + '>'+
         '<span class="sl bad">'+t('glyph.del')+'</span></button>'
       : '')+
     '</div>'+

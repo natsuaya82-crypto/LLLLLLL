@@ -56,6 +56,13 @@ const r = await pg.evaluate(({ s }) => {
     return row.map(function (k){ return k.k + ':' + k.v + ':' + (k.w || 1); }).join(' ');
   }
   function rows(){ return kbLayer().rows.map(say); }
+  /* the widest row, in half columns -- a measurement of the layout, which the
+     app no longer asks: the sheet is KB_COLS wide whatever its rows are */
+  function widest(rs){
+    var n = 0;
+    rs.forEach(function (r){ n = Math.max(n, kbUsed(r)); });
+    return n || 2;
+  }
   function units(row){
     var n = 0, x;
     for (x = 0; x < row.length; x++) n += (row[x].w || 1);
@@ -127,7 +134,7 @@ const r = await pg.evaluate(({ s }) => {
   fresh();
   var was = rows();
   out.rows = was.length;
-  out.cols = kbCols(kbLayer().rows);
+  out.cols = widest(kbLayer().rows);
   out.halves = kbLayer().rows.some(function (x){
     return x.some(function (k){ return (k.w || 1) === 0.5; });
   });
@@ -236,7 +243,7 @@ const r = await pg.evaluate(({ s }) => {
   out.shapes = [];
   KB_PATS.forEach(function (p){
     kbPatLay(p).forEach(function (face, fi){
-      var cols = kbCols(face.rows) / 2;
+      var cols = widest(face.rows) / 2;
       out.shapes.push({ pat: p + (fi ? ' face ' + (fi + 1) : ''), cols: cols,
         rows: face.rows.length, aspect: 1 / (cols * KB_ROWW),
         screen: (face.rows.length * kbRowH(KB_REF_W) + KB_BARS) / KB_REF_H });
@@ -490,9 +497,9 @@ const r = await pg.evaluate(({ s }) => {
   }
   out.foundFull = full >= 0;
   if (full >= 0){
-    var had = kbLayer().rows[full].length;
-    kbAddKey(full, 0, 1);
-    out.colsCap = kbLayer().rows[full].length === had;
+    /* asked of the one place that says it: every road that adds a key --
+       a frame's +, a carry, a column's + -- goes through kbRoomFor() */
+    out.colsCap = !kbRoomFor(kbLayer().rows[full], 1);
   }
   /* AND THE KEY'S SCREEN NO LONGER OFFERS A WIDTH AT ALL. 「「幅」の段は
      消す」 OWNER 2026-09-06, which replaces the claim that stood here -- a
@@ -676,7 +683,7 @@ const r = await pg.evaluate(({ s }) => {
   /* ---- 6d3. a row can be added on EVERY face --------------------------
      「8列も追加できるのに行は2ページ目から追加できない」 OWNER, build #92.
 
-     kbRoomRow() and kbIns() both read kbLayer(), which is the face being
+     kbRoomRow(kbLayer().rows) and kbIns() both read kbLayer(), which is the face being
      shown, so this holds and held on the first run -- the row goes in.
      It is written down anyway because nothing said it: every claim about
      adding a row above is made on face 0, and "it works on the face the
@@ -684,7 +691,7 @@ const r = await pg.evaluate(({ s }) => {
      right up until somebody makes the count board-wide.
 
      What WAS wrong on page 2 is not the function, it is the size of the thing
-     you press: the sheet was kbCols(this face's rows) columns of a fixed
+     you press: the sheet was widest(this face's rows) columns of a fixed
      width, so a face of two keys was drawn a fifth of the phone across and
      the + with it -- 60px against 320 on page one. Which is the same line as
      「フリックなのに qwerty サイズ」, so it is claimed below with it. */
@@ -724,7 +731,7 @@ const r = await pg.evaluate(({ s }) => {
     const el = document.querySelector('.kb.kbsheet .kbk:not(.cell)');
     return el ? +el.getBoundingClientRect().width.toFixed(1) : -1;
   }
-  out.narrowCols = kbCols(kbLayer().rows);
+  out.narrowCols = widest(kbLayer().rows);
   out.narrowSheet = widthOf('.kb.kbsheet');
   /* the ten-key board with one row off it. The + that used to be measured
      alongside these was the dashed key under the bottom row, and it is gone
@@ -743,7 +750,7 @@ const r = await pg.evaluate(({ s }) => {
     var w = kbLayer().rows[0][0].w || 1;
     var sheet = document.querySelector('.kb.kbsheet');
     sizes[p] = { key: keyW(), sheet: widthOf('.kb.kbsheet'),
-                 cols: kbCols(kbLayer().rows), w: w,
+                 cols: widest(kbLayer().rows), w: w,
                  kc: sheet ? parseInt(sheet.style.getPropertyValue('--kc'), 10) : -1,
                  hdr: [].slice.call(document.querySelectorAll('.kbhdr .kbcl'))
                         .map(function (b){ return b.textContent; }).join(''),
@@ -864,7 +871,7 @@ const r = await pg.evaluate(({ s }) => {
   out.insetAt = insetAt;
   out.lit = [];
   var ci;
-  for (ci = 0; ci < kbCols(kbLayer().rows) / 2; ci++){
+  for (ci = 0; ci < widest(kbLayer().rows) / 2; ci++){
     KBH = { k: 'c', i: ci }; render();
     out.lit.push(litPerRow());
   }
@@ -1017,7 +1024,7 @@ const r = await pg.evaluate(({ s }) => {
   /* and the press writes nothing even reached round the button. `disabled`
      is what a finger meets; kbCellPut() is what a name still resolves to. */
   out.cellPut = (function (){
-    var b = document.querySelector('.kbtool [data-do="kbCellAdd"]');
+    var b = document.querySelector('.kbtool [data-do="kbCellPut"]');
     if (b) b.click();
     kbCellPut();
     return !!b;
@@ -1039,7 +1046,7 @@ const r = await pg.evaluate(({ s }) => {
   var c1 = (function (){
     var es = [].slice.call(document.querySelectorAll('.kb.kbsheet .kbrow .kbk.cell')), i;
     for (i = 0; i < es.length; i++)
-      if (es[i].getAttribute('data-do') === 'kbCellAdd' && spanEl(es[i]) === 2)
+      if (es[i].getAttribute('data-do') === 'kbCellSel' && spanEl(es[i]) === 2)
         return es[i];
     return null;
   }());
@@ -1051,7 +1058,7 @@ const r = await pg.evaluate(({ s }) => {
     .map(function (b){ return b.getAttribute('data-do'); }).join(' ');
   var wholeWas = kbLayer().rows[0].length, wholeUsed = kbUsed(kbLayer().rows[0]);
   (function (){
-    var b = document.querySelector('.kbtool [data-do="kbCellAdd"]');
+    var b = document.querySelector('.kbtool [data-do="kbCellPut"]');
     if (b) b.click();
   }());
   standKb();
@@ -1096,7 +1103,7 @@ const r = await pg.evaluate(({ s }) => {
     KBH = { k: 'r', i: 0 }; kbAlign('c'); standKb();
     out.alGaps = kbLayer().rows[0].filter(function (k){ return k.k === 'gap'; }).length;
     rw = sheetRows()[0];
-    fs = [].slice.call(rw.querySelectorAll('[data-do="kbCellAdd"]'));
+    fs = [].slice.call(rw.querySelectorAll('[data-do="kbCellSel"]'));
     out.alFrames = fs.map(function (e){ return spanOf(e); }).join(',');
     /* the first frame of a written-down gap names the key it stands for, so a
        carry can read the row back off the page */
@@ -1118,7 +1125,7 @@ const r = await pg.evaluate(({ s }) => {
     /* and the bin is DOWN on a frame -- there is nothing in it to take */
     out.alBin = [].slice.call(document.querySelectorAll('.kbtool [data-do="kbCut"]'))
       .every(function (b){ return b.disabled; });
-    (document.querySelector('.kbtool [data-do="kbCellAdd"]') || { click: function (){} }).click();
+    (document.querySelector('.kbtool [data-do="kbCellPut"]') || { click: function (){} }).click();
     standKb();
     out.alSame = kbUsed(kbLayer().rows[0]) === was;
     out.alKey = kbLayer().rows[0].filter(function (k){
@@ -1782,8 +1789,21 @@ const r = await pg.evaluate(({ s }) => {
   out.vjUndo = rows().join('|') === vjWas.join('|');
   kbRedo();
   out.vjRedo = rows().join('|') === vjJoined;
-  /* h and up are still there after it has been through localStorage */
-  saveKb(); kbRead();
+  /* h and up are still there after it has been through storage -- written
+     by the page's Save */
+  function kbPageSave(){
+    /* THE BOARD'S PAGE'S SAVE (K1, r79): while that page has its draft open a
+       change is not written until Save is pressed. The buffer is found the way
+       kbDrafting() finds it; its own save is pressed rather than keepSave(),
+       whose other half is the wire and not this check's. No page open is a
+       change saveKb() writes itself. */
+    var k;
+    for (k in KEEP) if (Object.prototype.hasOwnProperty.call(KEEP, k) && KEEP[k] && KEEP[k].now === kbNow){
+      KEEP[k].save(KEEP[k].v, function (){}); return true;
+    }
+    saveKb(); return false;
+  }
+  saveKb(); kbPageSave(); kbRead();
   out.vjKept = (kbLayer().rows[0][3].h || 1) === 2 && !!kbLayer().rows[1][3].up;
   /* what the extension is handed: the rows tall, and not this side's word for
      which gap is the lower half */
@@ -2241,8 +2261,8 @@ const r = await pg.evaluate(({ s }) => {
      A key can be held and carried to another row. That road asked nothing
      about width, so it made a row of ELEVEN on a board of tens -- and rule 19
      is what forbids eleven ("ten keys are 32 each and eleven would be 29").
-     kbCellAdd(), the same act done by pressing an empty cell, has always
-     asked kbRoomIn(); this was the one road not through the gate.
+     kbCellPut(), the same act done by pressing an empty cell, has always
+     asked kbRoomFor(); this was the one road not through the gate.
 
      Nothing about it throws, and press cannot reach it: the carry is
      touchstart/touchmove/touchend with no [data-do] anywhere on it. So the
@@ -2802,14 +2822,14 @@ const r = await pg.evaluate(({ s }) => {
       }).length;
     }
     for (i = 0; i < rw.children.length; i++)
-      if (rw.children[i].getAttribute('data-do') === 'kbCellAdd' &&
+      if (rw.children[i].getAttribute('data-do') === 'kbCellSel' &&
           spanOf(rw.children[i]) === 1){ el = rw.children[i]; break; }
     out.halfFrameFound = !!el;
     if (!el) return;
     was = kbUsed(kbLayer().rows[0]); wasHalf = halves();
     el.click(); standKb();
     out.halfFrameSel = !!(KBH && KBH.k === 'f' && KBH.span === 1);
-    put = document.querySelector('.kbtool [data-do="kbCellAdd"]');
+    put = document.querySelector('.kbtool [data-do="kbCellPut"]');
     out.halfFrameDown = !put || put.disabled;
     if (put) put.click();
     standKb();
@@ -2990,7 +3010,7 @@ const r = await pg.evaluate(({ s }) => {
        column letters, which is a div too, so nth-of-type names the row above
        the one meant. It was watched picking the wrong row. */
     rw = sheetRows()[last];
-    el = rw && rw.querySelector('[data-do="kbCellAdd"]');
+    el = rw && rw.querySelector('[data-do="kbCellSel"]');
     out.seqAddCell = !!el;
     /* two presses now, and they are two different controls: the frame is
        chosen on the sheet, and the key goes in from the band over it.
@@ -2998,7 +3018,7 @@ const r = await pg.evaluate(({ s }) => {
     if (el) el.click();
     standKb();
     out.seqCellSel = !!(KBH && KBH.k === 'f');
-    tapDo('kbCellAdd');
+    tapDo('kbCellPut');
     standKb();
     n = kbLayer().rows[last].length;
     out.seqAddGrew = n >= 2;
@@ -3040,144 +3060,87 @@ const r = await pg.evaluate(({ s }) => {
   }());
   out.seqSeen = seen.join(' | ');
 
-  /* ---- the alphabet is CHOSEN from, and the bar's confirm is what writes --
-     「ここに右上に選択したら適用ボタンが確定ボタン欲しい。終わって戻ったら選択が
-     解除されてる状態にして欲しい。後選択してる紫はもう一度同じ場所触れたら解除
-     して欲しい」 OWNER 2026-09-03.
+  /* ---- a letter pressed goes onto the key, and there is no confirm -------
+     「なんのための確定？いらないなら保存だけでいいよ。」 OWNER 2026-09-24, and
+     「後選択してる紫はもう一度同じ場所触れたら解除して欲しい」 OWNER 2026-09-03.
 
-     Three sentences and one shape, so what is asked here is the shape: the
-     press REMEMBERS and one road writes. The dangerous half is the one that
-     cannot throw -- a confirm added BESIDE a press that still writes looks
-     right on the screen, saves the same letter, and is two mechanisms
-     deciding one field. So the claim that matters is the negative one:
-     choosing moves not one byte of KB, and not one byte of what is stored.
+     One road: the press puts the letter on the key, the letter already there
+     pressed again takes it off, and the purple is what is on the key. What
+     can go wrong without throwing is a second road left standing -- a choice
+     remembered somewhere and a button that writes it -- so the bar is asked
+     to be empty on every step, and the key itself is read after every press.
+     The language is written by the board's Save (K1), so a press moves the
+     board's draft and one step back, and not one byte of the slice.
 
      Read off the PAGE and driven through the real buttons, because what is
-     under test is what a finger reaches -- the bar's button is either there
-     or it is not, and only the screen can say. */
+     under test is what a finger reaches. */
   (function (){
     planGot('pro');
     function bar(){ return [].slice.call(document.querySelectorAll('.navtop .navdo')); }
     function backBtn(){ return document.querySelector('.navtop .back'); }
     function cellsOn(){ return [].slice.call(document.querySelectorAll('#lt-list .ltc')); }
-    /* the purple, read off the element rather than out of kbLtPick */
+    /* the purple, read off the element */
     function purple(){
       return cellsOn().filter(function (el){
         return /--pur/.test(el.getAttribute('style') || '');
       });
     }
-    function bytes(){ return JSON.stringify(KB); }
-    /* Every press below goes through this. A bug put back takes a button off
-       the screen, and a check that then threw would report nothing at all --
-       one crash instead of the one claim that is about that button. */
+    function idOf(el){ try { return String(JSON.parse(el.getAttribute('data-a') || '[]')[3]); } catch (e){ return ''; } }
     function tap(el){ if (el) el.click(); return !!el; }
     function stored(){ try { return slRd(langKey('kb')); } catch (e){ return null; } }
     function openKey(){ fresh(); kbShow = 1; kbLay = 0; standKb(); kbPick(0, 0); }
+    function onKey(){ return String(kbAt(0, 0).v || ''); }
+    /* the purple is exactly what is on the key: its cell when the grid has
+       it, and nothing when it does not (a key can hold a letter this grid is
+       not showing) */
+    function purpleIsKey(){
+      var p = purple(), has = cellsOn().some(function (el){ return idOf(el) === onKey(); });
+      return (onKey() && has) ? (p.length === 1 && idOf(p[0]) === onKey()) : p.length === 0;
+    }
 
-    /* ---- nothing chosen: no confirm ---------------------------------- */
     openKey();
     out.ltpGrid = cellsOn().length;
     out.ltpNoBtn = bar().length === 0;
-    out.ltpNoPurple = purple().length === 0;
+    out.ltpPurpleIsKey = purpleIsKey();
 
-    /* ---- one chosen: the confirm is there, and it is purple ----------- */
-    var was = bytes(), wasStored = stored(), wasU = KBU.u.length;
-    /* a letter that is NOT already on this key, or "it changed" is unprovable */
+    /* ---- another letter pressed: it is on the key, now ---------------- */
+    var wasKey = onKey(), wasStored = stored(), wasU = KBU.u.length;
     var lid = '', i, cs = cellsOn();
-    for (i = 0; i < cs.length; i++){
-      var a = JSON.parse(cs[i].getAttribute('data-a') || '[]');
-      if (String(a[3]) !== String(kbAt(0, 0).v)){ lid = String(a[3]); tap(cs[i]); break; }
-    }
+    for (i = 0; i < cs.length; i++)
+      if (idOf(cs[i]) !== wasKey){ lid = idOf(cs[i]); tap(cs[i]); break; }
     out.ltpPicked = !!lid;
-    out.ltpBtn = bar().length === 1;
-    out.ltpPurpleOne = purple().length === 1;
-    /* and it can be SEEN: the chosen cell is not painted what its neighbours
-       are. A class that no rule reaches is a selection nobody can see, which
-       is the fault kbPickPaint() was written after. */
+    out.ltpPut = onKey() === lid;
+    out.ltpStayed = formArg(here().a).kind === 'kbkey' && cellsOn().length > 0;
+    out.ltpNoBtnAfter = bar().length === 0;
+    out.ltpPurpleMoved = purpleIsKey() && purple().length === 1;
     (function (){
       var on = purple()[0], off = cellsOn().filter(function (el){ return el !== on; })[0];
       out.ltpSeen = !!on && !!off &&
         getComputedStyle(on).backgroundColor !== getComputedStyle(off).backgroundColor;
     }());
-
-    /* ---- AND NOT ONE BYTE HAS MOVED ---------------------------------- */
-    out.ltpNoWrite = bytes() === was;
+    out.ltpOneStep = KBU.u.length === wasU + 1;
     out.ltpNoStore = stored() === wasStored;
-    out.ltpNoStep = KBU.u.length === wasU;
-    out.ltpKeyKept = String(kbAt(0, 0).v) !== lid;
 
-    /* ---- the confirm writes it, once ---------------------------------- */
-    out.ltpConfirmed = tap(bar()[0]);
-    out.ltpPut = String(kbAt(0, 0).v) === lid;
-    out.ltpPutWrote = bytes() !== was && stored() !== wasStored;
-    out.ltpPutOneStep = KBU.u.length === wasU + 1;
-    /* AND IT IS ONE STEP BACK: the key's screen is left behind and what is in
-       front of somebody is the sheet the key is on.
-       「キー選んで確定押したらキーボード編集画面に戻ってくれ」 OWNER 2026-09-05.
-       It used to arrive on the key a second time, so getting out of a key was
-       the arrow pressed twice -- once for the key, once for the grid. */
-    out.ltpPutBack = here().r === 'kb' && String(here().a) === '1';
-    /* and the choice is spent with it: no grid, and nothing purple on one */
-    out.ltpBtnGone = cellsOn().length === 0 && purple().length === 0;
+    /* ---- the same letter again takes it off ------------------------------ */
+    tap(cellsOn().filter(function (el){ return idOf(el) === lid; })[0]);
+    out.ltpOff = onKey() === '' && purple().length === 0;
 
-    /* ---- one step back puts it back ----------------------------------- */
+    /* ---- one step back each time --------------------------------------- */
     kbUndo();
-    out.ltpUndone = String(kbAt(0, 0).v) !== lid && bytes() === was;
+    out.ltpUndo1 = onKey() === lid;
+    kbUndo();
+    out.ltpUndo2 = onKey() === wasKey;
 
-    /* ---- the same one again puts it down ------------------------------ */
-    openKey();
-    tap(cellsOn()[0]);
-    var onceOn = bar().length === 1 && purple().length === 1;
-    tap(cellsOn()[0]);                          /* the SAME cell, re-queried */
-    out.ltpOff = onceOn && bar().length === 0 && purple().length === 0;
-    /* and a DIFFERENT one moves the choice rather than putting it down --
-       the toggle written as "any press clears" passes the claim above */
-    tap(cellsOn()[0]);
-    tap(cellsOn()[1]);
-    out.ltpMoved = bar().length === 1 && purple().length === 1 &&
-                   purple()[0] === cellsOn()[1];
-
-    /* ---- leave with something chosen, and it is not there on the way back
-       「終わって戻ったら選択が解除されてる状態にして欲しい」 The way out is
-       the arrow, and the way back in is pressing the key again -- both
-       through the page, because a check that called kbPick() twice would be
-       asking a function whether it forgets rather than asking the screen. */
-    openKey();
-    var before = bytes(), storedBefore = stored();
-    tap(cellsOn()[0]);
-    var leftWith = bar().length === 1;
-    tap(backBtn());
-    /* and back IN by the road the sheet offers: pressing a key SELECTS it and
-       the button over the sheet opens it -- 「全部のます触ったら選択で」 */
-    tapKey(0, 0); tapDo('kbOpenSel');
-    out.ltpReopened = cellsOn().length > 0;
-    out.ltpForgot = leftWith && bar().length === 0 && purple().length === 0;
-    /* measured from before the letter was ever touched, so it is red for a
-       write on the press, a write on the way out, and a write on the way back
-       in alike -- 「確定を押していないものは、押していない」 */
-    out.ltpBackNoWrite = bytes() === before && stored() === storedBefore;
-
-    /* ---- choosing does not move you to another screen -------------------
-       There are two screens with this grid on them -- the key's own, and the
-       sheet for one corner -- and the sheet leaves a note saying which slot it
-       was opened for. THAT NOTE IS NOT TAKEN BACK DOWN when the sheet is left
-       by the arrow, so a moment later it says where you WERE. Walk it: open
-       the key, open the big square, come back, and choose on the key's own
-       grid. Anything reading the note there believes it is on the sheet -- and
-       repainting "the sheet" is a `go()`, so a finger that pressed a letter
-       arrives on a screen it never asked for. It cannot throw and every claim
-       above is green on it, because every claim above opens the key and stops.
-
-       This is the whole reason kbLtWhere() asks the ROUTE. */
+    /* ---- and the sheet for one slot writes that slot, and stays -------- */
     openKey();
     out.ltpSqOpened = tap(document.querySelector('.kbedit .kbec'));
     out.ltpSqSheet = formArg(here().a).kind === 'kbslot';
+    var other = cellsOn().filter(function (el){ return idOf(el) !== onKey(); })[0];
+    var want = other ? idOf(other) : '';
+    tap(other);
+    out.ltpSqPut = !!want && onKey() === want;
+    out.ltpSqStayed = formArg(here().a).kind === 'kbslot' && bar().length === 0 && purpleIsKey();
     tap(backBtn());
-    out.ltpSqBack = formArg(here().a).kind === 'kbkey';
-    tap(cellsOn()[0]);
-    out.ltpSqOnKey = formArg(here().a).kind === 'kbkey' && bar().length === 1;
-    tap(bar()[0]);
-    out.ltpSqStayed = here().r === 'kb' && cellsOn().length === 0;
   }());
 
 
@@ -3276,7 +3239,10 @@ const r = await pg.evaluate(({ s }) => {
     kbLayer().rows.forEach(function (r){ r.splice(0, 3); });
     saveKb(); standKb();
     var insW = kbLayer().rows.map(kbUsed);
-    pull('c', 0, 1);
+    /* columns e and f: a row cut short is drawn in the middle of the sheet
+       (kbStart), so it no longer stands in column a, and the + goes into the
+       rows that stand in the columns chosen -- the ones the bin takes from */
+    pull('c', 4, 5);
     kbInsCol(true); standKb();
     out.pullIns = kbLayer().rows.map(kbUsed).every(function (n, i){
       return n === insW[i] + 4 || n === insW[i];
@@ -3401,6 +3367,246 @@ const SM = await small.evaluate(({ s }) => {
 }, { s: seed.toString() });
 await small.close();
 
+/* ---- r74: the sheet's surfaces, counted rather than listed ---------------
+   docs/scope/r73-audit.md § 2-16 found every one of these by measuring, and
+   each was a hole in a surface the claims above only ever walked on a full
+   QWERTY. What is asked here is the SURFACE: every row and every column of
+   boards that are not ten across, and every screen the sheet can be left by.
+   A fresh page, so nothing the long walk above left behind is stood on. */
+const sf = await br.newPage({ viewport: { width: 390, height: 844 } });
+await sf.goto('file://' + path.join(dir, '..', 'www', 'index.html'));
+await sf.waitForSelector('#splash', { state: 'detached', timeout: 10000 });
+const SF = await sf.evaluate(({ s }) => {
+  eval('(' + s + ')()');
+  SET.walked = true; planGot('pro');
+  var out = {};
+  function board(rowsOf){
+    KB = null; kbShow = 0; kbAdd('abc'); kbLay = 0;
+    kbEdit().lay[0].rows = rowsOf();
+    saveKb(); render();
+  }
+  function lt(v, w){ var k = kbKey('lt', v); if (w) k.w = w; return k; }
+
+  /* THE SELECTION AND THE STEP BACK ARE THE SCREEN'S. Select row 1, change
+     the board, walk to the timeline by its tab and come back: nothing is lit
+     and there is nothing to step back to. */
+  board(function (){ return [[lt('a'), lt('b'), lt('c')], [lt('d'), lt('e')]]; });
+  kbHeadRow(1); kbCut();
+  kbHeadRow(0);
+  out.leftBefore = { h: !!KBH, u: KBU.u.length };
+  goTab('feed');
+  go('kb'); go('kb', String(kbShow));
+  out.leftAfter = { h: !!KBH, u: KBU.u.length };
+
+  /* AND ANOTHER LANGUAGE'S BOARD IS ANOTHER HISTORY. viewReset() is what
+     opening another language does; the board in front of you afterwards is
+     at the same place in the list and is a different board. */
+  board(function (){ return [[lt('a'), lt('b'), lt('c')]]; });
+  kbHeadRow(0); kbCut();
+  viewReset();
+  /* the other language's keyboard, as langLoad() puts it there: read, not
+     made -- kbAdd() forgets on its own, and that is not this road */
+  KB = { v: KB_V, at: 0, kbs: [{ id: 'kOtherLang_1', nm: '', pat: 'abc',
+    lay: [{ nm: '', rows: [[lt('x'), lt('y')]] }] }] };
+  kbShow = 1; kbLay = 0;
+  window.route = 'kb'; NAV = [{ r: 'kb' }, { r: 'kb', a: '1' }]; render();
+  var bSig = JSON.stringify(kbLayer().rows);
+  kbUndo();
+  out.crossSame = JSON.stringify(kbLayer().rows) === bSig;
+
+  /* ONE COORDINATE ON THE SHEET. For every column of every board below, the
+     keys that LIGHT when the column's letter is pressed are the keys the bin
+     then takes a whole key's width from -- counted over every row and every
+     column, on boards that are not ten across, so a short row is walked as
+     often as a full one. A key only half inside a column (the QWERTY's inset
+     row) gives up its half and does not light, which is CLAUDE.md rule 19's
+     own sentence, and is not counted either way. */
+  var boards = [
+    function (){ return [[lt('a'), lt('b'), lt('c'), lt('d'), lt('e'), lt('f'), lt('g'), lt('h'), lt('i'), lt('j')],
+                         [lt('X'), lt('Y')]]; },
+    function (){ return [[lt('a'), lt('b'), lt('c'), lt('d')], [lt('e'), lt('f', 2)], [lt('g')]]; },
+    function (){ return kbFixed().lay[0].rows.map(function (r){
+      return r.map(function (k, i){ var c = JSON.parse(JSON.stringify(k)); c.v = c.v || (c.k + i); return c; }); }); }
+  ];
+  var cols = 0, pairs = 0, miss = [];
+  boards.forEach(function (mk, bi){
+    board(mk);
+    var ci, lit, took, before, after, u0;
+    for (ci = 0; ci < KB_COLS / 2; ci++){
+      KBH = null; kbHeadCol(ci);
+      lit = [].slice.call(document.querySelectorAll('#kb .kbk.sel[data-r]')).map(function (el){
+        var rr = +el.getAttribute('data-r'), kk = +el.getAttribute('data-k');
+        return rr + ':' + kbLayer().rows[rr][kk].v;
+      }).sort();
+      /* the key OBJECTS, because kbDelCol() narrows a key in place and a
+         spelling can stand on two keys of one row */
+      before = kbLayer().rows.map(function (r){ return r.map(function (k){ return { k: k, v: k.v, u: kbU(k.w) }; }); });
+      u0 = KBU.u.length;
+      kbCut();
+      after = kbLayer().rows;
+      took = [];
+      before.forEach(function (r, ri){
+        r.forEach(function (o){
+          /* a gap is a frame and not a key: it is drawn as one and never lights */
+          if (o.k.k === 'gap') return;
+          var now = after[ri].indexOf(o.k) < 0 ? 0 : kbU(o.k.w);
+          if (now <= o.u - 2) took.push(ri + ':' + o.v);
+        });
+      });
+      took.sort();
+      cols++; pairs += lit.length;
+      if (lit.join() !== took.join()) miss.push('board ' + bi + ' col ' + kbCol(ci) + ' lit [' + lit + '] took [' + took + ']');
+      /* only a press that changed something left a step to take back */
+      if (KBU.u.length > u0) kbUndo();
+    }
+  });
+  out.oneCols = cols; out.oneLit = pairs; out.oneMiss = miss;
+
+  /* AND THE SAME ROWS, going in as coming out: a column put in goes into the
+     rows the bin would take it from. */
+  board(boards[0]);
+  var insMiss = [];
+  (function (){
+    var ci, a, b2, before, u0;
+    for (ci = 0; ci < KB_COLS / 2; ci++){
+      before = JSON.stringify(kbLayer().rows);
+      u0 = KBU.u.length;
+      KBH = null; kbHeadCol(ci); kbCut();
+      a = kbLayer().rows.map(function (r, i){ return JSON.stringify(r) !== JSON.stringify(JSON.parse(before)[i]); });
+      if (KBU.u.length > u0) kbUndo();
+      KBH = null; kbHeadCol(ci);
+      if (!kbInsRoom()){ continue; }
+      kbInsCol(false);
+      b2 = kbLayer().rows.map(function (r, i){ return JSON.stringify(r) !== JSON.stringify(JSON.parse(before)[i]); });
+      if (KBU.u.length > u0) kbUndo();
+      if (a.join() !== b2.join()) insMiss.push(kbCol(ci) + ' out [' + a + '] in [' + b2 + ']');
+    }
+  }());
+  out.insMiss = insMiss;
+
+  /* THE ENDS ARE THE SHEET'S ENDS. On a board whose widest row is four keys,
+     a row pushed right stands against the tenth column, and pushed left
+     against the first. */
+  board(function (){ return [[lt('a'), lt('b'), lt('c'), lt('d')], [lt('e'), lt('f')]]; });
+  KBH = null; kbHeadRow(1); kbAlign('r');
+  var rr = kbLayer().rows[1];
+  out.alR = kbStart(rr) + kbUsed(rr) === KB_COLS && rr[rr.length - 1].k !== 'gap';
+  out.alRSheet = [].slice.call(document.querySelectorAll('#kb .kbrow')[1].children)
+    .filter(function (el){ return el.classList.contains('kbk'); }).map(function (el){
+      return el.classList.contains('cell') ? '_' : 'K'; }).join('');
+  KBH = null; kbHeadRow(1); kbAlign('l');
+  rr = kbLayer().rows[1];
+  out.alL = kbStart(rr) === 0 && rr[0].k !== 'gap';
+
+  /* AND A FRAME A KEY IS PUT INTO IS WHERE THE KEY STANDS: a row pushed right
+     leaves frames on its left, and pressing one and the + puts the key in
+     THAT frame -- not in a frame counted from somewhere else. */
+  board(function (){ return [[lt('a'), lt('b'), lt('c'), lt('d')], [lt('e'), lt('f')]]; });
+  KBH = null; kbHeadRow(1); kbAlign('r');
+  KBH = null; kbCellSel(1, 4, 2); kbCellPut();
+  rr = kbLayer().rows[1];
+  (function (){
+    var x, hit = -1;
+    for (x = 0; x < rr.length; x++) if (rr[x].k === 'lt' && rr[x].v === '') hit = kbStart(rr) + kbAtOf(rr, x);
+    out.cellAt = hit;
+  }());
+
+  /* A MIGRATION ADDS AND NEVER REMOVES WHAT IT READ. A KB from before board 0
+     left storage -- no `v`, and the free QWERTY's untouched copy in front --
+     goes through migrateKbFree(). What comes out lists the boards somebody
+     made and not the copy; what is STORED still holds the copy byte for byte
+     (CLAUDE.md § Data, docs/scope/r73-audit.md § 2-8). */
+  (function (){
+    var copy = JSON.parse(JSON.stringify({ nm: '', pat: 'qwerty', lay: kbFixed().lay }));
+    var mine = { id: 'kMade_1', nm: 'mine', pat: 'abc', lay: [{ nm: '', rows: [[lt('m')]] }] };
+    KB = { kbs: [copy, mine], at: 1 };
+    kbShow = 0;
+    migrateKbFree();
+    function kbPageSave(){
+      /* THE BOARD'S PAGE'S SAVE (K1, r79): while that page has its draft open a
+         change is not written until Save is pressed. The buffer is found the way
+         kbDrafting() finds it; its own save is pressed rather than keepSave(),
+         whose other half is the wire and not this check's. No page open is a
+         change saveKb() writes itself. */
+      var k;
+      for (k in KEEP) if (Object.prototype.hasOwnProperty.call(KEEP, k) && KEEP[k] && KEEP[k].now === kbNow){
+        KEEP[k].save(KEEP[k].v, function (){}); return true;
+      }
+      saveKb(); return false;
+    }
+    kbPageSave();
+    var stored = slRd(langKey('kb')) || '';
+    out.migList = KB.kbs.map(function (b){ return b.nm || b.pat; }).join(',');
+    out.migKept = stored.indexOf(JSON.stringify(copy.lay)) >= 0;
+    out.migAt = KB.at;
+  }());
+
+  /* THE REPAIRS A SAVE MAKES ARE MADE TO THE BOARD BEING SAVED. A key on
+     board 1 carrying `h` with nothing under it, and a change made to board 2:
+     board 1 is not the one in front of anybody and not one byte of it moves
+     (docs/scope/r63-audit.md K3, measured there). */
+  (function (){
+    var tall = lt('t'); tall.h = 2;
+    KB = { v: KB_V, at: 0, kbs: [
+      { id: 'kOne_1', nm: 'one', pat: 'abc', lay: [{ nm: '', rows: [[tall, lt('u')], [lt('v')]] }] },
+      { id: 'kTwo_1', nm: 'two', pat: 'abc', lay: [{ nm: '', rows: [[lt('w'), lt('x')]] }] }] };
+    var one = JSON.stringify(KB.kbs[0]);
+    kbShow = 2; kbLay = 0;
+    window.route = 'kb'; NAV = [{ r: 'kb' }, { r: 'kb', a: '2' }]; render();
+    KBH = null; kbHeadCol(0); kbCut();
+    out.k3Two = JSON.stringify(KB.kbs[1].lay[0].rows.map(function (r){ return r.length; }));
+    out.k3One = JSON.stringify(KB.kbs[0]) === one;
+  }());
+
+  /* THE CEILING COUNTS WHAT THE SERVER SAID. Another language of this
+     account's with two keyboards in the PICTURE kept for a launch with no
+     signal, and nothing in memory: the picture is not counted. And with
+     nobody having said which languages this account has, there is no number
+     and the + says 「接続できません」 rather than a price (r63 K4). */
+  (function (){
+    planGot('plus');
+    KB = { v: KB_V, at: 0, kbs: [] };
+    LANGS['l_pic'] = { nm: 'Pic', mine: true }; langOwnGot('l_pic', 'u');
+    try { localStorage.setItem(slGotKey(langKeyOf('l_pic', 'kb')), JSON.stringify(
+      { kbs: [{ id: 'kP_1', nm: 'A', pat: 'abc', lay: [] }, { id: 'kP_2', nm: 'B', pat: 'abc', lay: [] }], at: 0 })); } catch (e) {}
+    out.k4Pic = kbCount();
+    try { localStorage.removeItem(slGotKey(langKeyOf('l_pic', 'kb'))); } catch (e) {}
+    delete LANGS['l_pic'];
+    langMineForget();
+    out.k4Unasked = kbCount();
+    var said = '', was = window.toast;
+    window.toast = function (m){ said = m; };
+    out.k4Stop = kbCapStop();
+    window.toast = was;
+    out.k4Said = said === t('net.offline');
+    out.k4Pop = popOn();
+    langMineGot();
+    planGot('pro');
+  }());
+
+  /* WITH NO ANSWER ABOUT THE PLAN, NOTHING LEAVES FOR THE PHONE'S KEYBOARD.
+     A Pro board handed over, then the plan forgotten the way a launch with no
+     signal has it, then a render: the bridge is asked for nothing, so what
+     the phone's keyboard is holding stays the person's own board rather than
+     the free QWERTY (docs/scope/r73-audit.md § 2-3, measured there). */
+  (function (){
+    var calls = [], realPlug = window.sharePlug;
+    window.sharePlug = function (){
+      return function (n, m, a){ calls.push(a); return { 'catch': function (){} }; };
+    };
+    planGot('pro');
+    KB = { v: KB_V, at: 1, kbs: [{ id: 'kPro_1', nm: 'pro', pat: 'abc', lay: [{ nm: '', rows: [[lt('p')]] }] }] };
+    SHARE.sent = null; render();
+    var n0 = calls.length;
+    planForget(); render();
+    out.shareUnasked = calls.length - n0;
+    planGot('pro'); render();
+    window.sharePlug = realPlug;
+  }());
+  return out;
+}, { s: seed.toString() });
+await sf.close();
+
 await br.close();
 
 /* ---- the two sides of the wall say the same three numbers ---------------
@@ -3428,6 +3634,44 @@ const swRowW = swiftNum(/rowPerWidth:\s*CGFloat\s*=\s*([0-9.]+)/, 'rowPerWidth')
 const swBarH = swiftNum(/barHeight:\s*CGFloat\s*=\s*([0-9.]+)/, 'barHeight');
 const swMost = swiftNum(/mostOfScreen:\s*CGFloat\s*=\s*([0-9.]+)/, 'mostOfScreen');
 const swEdge = swiftNum(/let bars = ([0-9.]+) \+ \(wantsBar/, 'the two edges');
+
+/* ---- EACH CEILING IS ANSWERED IN ONE PLACE -----------------------------
+   「横 10」 is kbRoomFor(), the row ceiling is kbRoomRow(), and 「the free
+   board is not touched」 is kbEdit(). Counted off the source with the comments
+   taken out, so a comparison written tomorrow in a new function is counted
+   tomorrow: a second place comparing against KB_COLS or kbRowsMax() is a
+   second answer to the same question (docs/scope/r73-audit.md § 2-16 found
+   three and two), and a board reached round kbEdit() is a free board that can
+   be written. */
+const KBSRC = fs.readFileSync(path.join(dir, '..', 'www', 'keyboard.js'), 'utf8')
+  .replace(/\/\*[\s\S]*?\*\//g, ' ');
+function fnOf(src, at){
+  const all = [...src.slice(0, at).matchAll(/function\s+([A-Za-z0-9_$]+)\s*\(/g)];
+  return all.length ? all[all.length - 1][1] : '(top)';
+}
+function whereAll(re){
+  return [...KBSRC.matchAll(re)].map((m) => fnOf(KBSRC, m.index));
+}
+const cmpCols = whereAll(/(?:[<>]=?\s*KB_COLS\b|\bKB_COLS\s*[<>])/g);
+const cmpRows = whereAll(/(?:[<>]=?\s*kbRowsMax\(\)|kbRowsMax\(\)\s*[<>])/g);
+const freeAsk = whereAll(/kbIsFree\(kbShow\)|KB\.kbs\[kbShow-1\]/g);
+
+/* ---- 「THE THING YOU CAME BACK FOR IS GONE」 IS DRAWN BY ONE FUNCTION ----
+   CLAUDE.md § One place names goneBox()/viewGone() for it. Every t('form.gone')
+   under www/ is counted: inside goneBox() is the drawing, handed to toast() is
+   a statement and not a box, and anything else is a second drawing of the
+   same sentence -- keyboard.js held two (docs/scope/r73-audit.md § 2-16),
+   which page-check could not see because it leaves viewGone out by name. */
+const goneOut = [];
+for (const f of fs.readdirSync(path.join(dir, '..', 'www')).filter((n) => n.endsWith('.js'))){
+  const src = fs.readFileSync(path.join(dir, '..', 'www', f), 'utf8').replace(/\/\*[\s\S]*?\*\//g, ' ');
+  for (const m of src.matchAll(/t\('form\.gone'\)/g)){
+    const fn = fnOf(src, m.index);
+    const before = src.slice(Math.max(0, m.index - 6), m.index);
+    if (fn === 'goneBox' || /toast\($/.test(before)) continue;
+    goneOut.push(f + ' ' + fn);
+  }
+}
 
 const bad = [];
 function say(ok, line){ console.log('  ' + (ok ? '' : 'FAILED  ') + line); if (!ok) bad.push(line); }
@@ -3689,7 +3933,7 @@ say(r.cellPut && r.cellTool === 'kbUndo',
 say(r.cellHalfKept,
     'so nothing goes in, reached by the button or by the name behind it ('
     + (r.cellSpan / 2) + ' of a key)');
-say(r.cellWholeSpan === 2 && r.cellWholeTool === 'kbUndo kbCellAdd',
+say(r.cellWholeSpan === 2 && r.cellWholeTool === 'kbUndo kbCellPut',
     'a row short by two keys leaves a WHOLE frame, and the + is up over it ['
     + r.cellWholeSpan + ' ' + r.cellWholeTool + ']');
 say(r.cellAdded && r.cellAddedW && r.cellNoHalf,
@@ -3848,7 +4092,7 @@ say(r.vjAlDown, 'the three alignments are down on a row with half a merge in it'
 say(r.vjAlNoop, 'and asking anyway moves nothing');
 say(r.vjUndo, 'the step back takes the merge apart again, exactly');
 say(r.vjRedo, 'and the step forward puts it back');
-say(r.vjKept, 'the merge is still there after localStorage');
+say(r.vjKept, 'the merge is still there after the page is saved and read back');
 say(r.vjSendsH, 'the extension is handed how many rows the key stands in');
 say(r.vjSendsNoUp, 'and an ordinary gap of the right width where the lower half is');
 say(r.vjRagged, 'two that do not line up are refused, and nothing moves');
@@ -3972,35 +4216,22 @@ console.log('    frames, hole by hole: ' + r.seqSeen);
    解除されてる状態にして欲しい。後選択してる紫はもう一度同じ場所触れたら解除して
    欲しい」 OWNER 2026-09-03 */
 say(r.ltpGrid > 0, 'the key opens with the alphabet under it (' + r.ltpGrid + ' letters)');
-say(r.ltpNoBtn && r.ltpNoPurple,
-    'and with nothing chosen there is no confirm in the bar');
-say(r.ltpPicked && r.ltpBtn && r.ltpPurpleOne,
-    'choose a letter and the confirm appears, on the one letter chosen');
+say(r.ltpNoBtn && r.ltpNoBtnAfter && r.ltpSqStayed,
+    'and there is no confirm in the bar, before a letter is pressed, after, or on the sheet for one slot ' +
+    '(「いらないなら保存だけでいいよ」 OWNER 2026-09-24)');
+say(r.ltpPurpleIsKey && r.ltpPurpleMoved, 'the purple is the letter on the key, before and after a press');
 say(r.ltpSeen, 'and the purple on it is a colour, not a class nothing reaches');
-say(r.ltpNoWrite && r.ltpNoStore && r.ltpKeyKept,
-    'AND NOT ONE BYTE OF KB HAS MOVED -- not in memory and not in storage ['
-    + [r.ltpNoWrite, r.ltpNoStore, r.ltpKeyKept].join(' ') + ']');
-say(r.ltpNoStep, 'and nothing has been piled onto the step back either');
-say(r.ltpConfirmed && r.ltpPut && r.ltpPutWrote, 'the confirm is what writes it ['
-    + [r.ltpConfirmed, r.ltpPut, r.ltpPutWrote].join(' ') + ']');
-say(r.ltpPutOneStep, 'and it is ONE step back, not one per letter touched');
-say(r.ltpUndone, 'which one step back takes off again');
-say(r.ltpPutBack,
-    'and the confirm is ONE step back -- the key is left behind and the sheet'
-    + ' it is on is what is in front of you');
-say(r.ltpBtnGone, 'and the choice is spent: the grid goes with it');
-say(r.ltpOff, 'touching the chosen one again puts it down, and the confirm goes');
-say(r.ltpMoved, 'while touching a DIFFERENT one moves the choice rather than clearing it');
-say(r.ltpBackNoWrite,
-    'go back without confirming and nothing was written -- what is not confirmed is not');
-say(r.ltpSqOpened && r.ltpSqSheet && r.ltpSqBack && r.ltpSqOnKey && r.ltpSqStayed,
-    'and choosing on the key\u0027s own grid takes you back to the keyboard -- even'
-    + ' after the sheet for its square has been opened and left behind [' +
-    [r.ltpSqOpened, r.ltpSqSheet, r.ltpSqBack, r.ltpSqOnKey, r.ltpSqStayed].join(' ')
-    + ']');
-say(r.ltpReopened && r.ltpForgot,
-    'and opening the key again, nothing is chosen [' +
-    [r.ltpReopened, r.ltpForgot].join(' ') + ']');
+say(r.ltpPicked && r.ltpPut && r.ltpStayed,
+    'a letter pressed is on the key at once, and the screen stays where it is [' +
+    [r.ltpPicked, r.ltpPut, r.ltpStayed].join(' ') + ']');
+say(r.ltpOneStep, 'and it is one step back');
+say(r.ltpNoStore, 'and the slice is untouched -- the board’s Save writes the language (K1)');
+say(r.ltpOff, 'pressing the letter on the key again takes it off');
+say(r.ltpUndo1 && r.ltpUndo2, 'and two steps back put the key back as it was [' +
+    [r.ltpUndo1, r.ltpUndo2].join(' ') + ']');
+say(r.ltpSqOpened && r.ltpSqSheet && r.ltpSqPut,
+    'the sheet for one slot puts the letter on that slot [' +
+    [r.ltpSqOpened, r.ltpSqSheet, r.ltpSqPut].join(' ') + ']');
 
 /* ---- the free plan's one keyboard: no editor, and it must be SEEN -------
    「無料のキーボードはqwartyに書いた文字が置き換わるだけなのにキーボード自体
@@ -4405,6 +4636,54 @@ say(dupOne.onScreen === 1 && dupTwo.onScreen === 1 && dupThree.onScreen === 1,
 say(dupTwo.onServer <= dupOne.onServer && dupThree.onServer <= dupTwo.onServer,
     'and the copies on the server stop multiplying rather than growing by one a launch: '
     + [dupOne, dupTwo, dupThree].map((x) => x.onServer).join(', ') + ' rows');
+
+/* r74 — the surfaces */
+say(SF.shareUnasked === 0,
+    'with nobody having said what plan this is, a render hands the phone’s keyboard '
+    + 'nothing — the board already there stays (' + SF.shareUnasked + ' writes)');
+say(SF.k4Pic === 0,
+    'the keyboard ceiling counts what came down from the server, not the picture kept for '
+    + 'a launch with no signal (' + SF.k4Pic + ' counted from a picture of two)');
+say(SF.k4Unasked === null && SF.k4Stop && SF.k4Said && !SF.k4Pop,
+    'and with nobody having said which languages this account has, there is no number: the '
+    + '+ says 接続できません and offers no price (' + SF.k4Unasked + ')');
+say(SF.k3One,
+    'a save repairs the board being saved and no other — a lone tall key on board 1 is '
+    + 'left exactly as it is when board 2 is changed (board 2 rows ' + SF.k3Two + ')');
+say(SF.migList === 'mine' && SF.migKept && SF.migAt === 1,
+    'a keyboard from before board 0 left storage lists only what somebody made, and the '
+    + 'old copy of the free QWERTY is still in what is stored, byte for byte — a migration '
+    + 'adds and removes nothing it read (list ' + SF.migList + ', copy kept ' + SF.migKept
+    + ', applied ' + SF.migAt + ')');
+say(goneOut.length === 0,
+    '「that is no longer here」 is drawn by goneBox() and by nothing else under www/ ['
+    + goneOut.join(', ') + ']');
+say(cmpCols.length === 1 && cmpCols[0] === 'kbRoomFor',
+    'ten across is compared in one place, kbRoomFor() [' + cmpCols.join(', ') + ']');
+say(cmpRows.length === 1 && cmpRows[0] === 'kbRoomRow',
+    'and the row ceiling in one, kbRoomRow() [' + cmpRows.join(', ') + ']');
+say(freeAsk.length > 0 && freeAsk.every((f) => f === 'kbEdit'),
+    'and the board on the screen is reached only through kbEdit(), which is what '
+    + 'says the free QWERTY is not written [' + freeAsk.join(', ') + ']');
+say(SF.leftBefore.h && SF.leftBefore.u > 0 && !SF.leftAfter.h && SF.leftAfter.u === 0,
+    'the selection and the step back are the screen’s: walked off by a tab and come back '
+    + 'to, nothing is lit and there is nothing to step back to (before '
+    + JSON.stringify(SF.leftBefore) + ', after ' + JSON.stringify(SF.leftAfter) + ')');
+say(SF.crossSame,
+    'and another language’s board is another history — a step back pressed there puts '
+    + 'nothing of the first language’s layout onto it');
+say(SF.oneMiss.length === 0,
+    'one coordinate on the sheet: over ' + SF.oneCols + ' columns of three boards that are '
+    + 'not all ten across, the keys a column lights are the keys the bin takes a whole key '
+    + 'from (' + SF.oneLit + ' lit)' + (SF.oneMiss.length ? ' — ' + SF.oneMiss.slice(0, 4).join('; ') : ''));
+say(SF.insMiss.length === 0,
+    'and a column put in goes into the rows the bin takes it from'
+    + (SF.insMiss.length ? ' — ' + SF.insMiss.slice(0, 4).join('; ') : ''));
+say(SF.alR && SF.alL,
+    'the ends are the sheet’s ends: on a board four keys wide a row pushed right stands '
+    + 'against the tenth column and pushed left against the first (' + SF.alRSheet + ')');
+say(SF.cellAt === 4,
+    'and a key put into a frame stands in that frame (column half ' + SF.cellAt + ', wanted 4)');
 
 if (bad.length){ console.error('\nkb-check: ' + bad.length + ' FAILED'); process.exit(1); }
 console.log('\nkb: pressing a row number or a column letter SELECTS it and lights it up;\n' +

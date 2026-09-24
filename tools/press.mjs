@@ -100,7 +100,7 @@ await pg.evaluate('window.__halfDone = ' + halfDone.toString());
 
 const R = await pg.evaluate(async () => {
   const out = { screens: 0, pressed: 0, threw: [], blank: [], skipped: [], names: [], never: [], mute: [],
-                small: [], big: [], bent: [], picsSeen: 0, picsSkip: [], picsAt: {}, tall: [], rowsSeen: 0, classes: [],
+                small: [], big: [], bent: [], picsSeen: 0, picsSkip: [], picsAt: {}, tall: [], gap: [], rowsSeen: 0, classes: [],
                 wide: [], widthsSeen: 0 };
   /* Apple's floor for anything a thumb has to hit is 44pt, and this file is
      already standing in front of every screen with a phone-sized viewport, so
@@ -347,7 +347,7 @@ const R = await pg.evaluate(async () => {
      broken, whatever tags they are, and content differences -- one line
      against two -- are left alone because they share their type. */
   const ROW_SLACK = 1;                              /* sub-pixel layout, not a difference */
-  const seenTall = {};
+  const seenTall = {}, seenGap = {};
   function measureRows(where){
     const parents = document.querySelectorAll('#app *');
     for (let i = 0; i < parents.length; i++) {
@@ -362,13 +362,33 @@ const R = await pg.evaluate(async () => {
         const cs = getComputedStyle(e);
         (byClass[cls] = byClass[cls] || []).push({
           tag: e.tagName, h: r.height,
-          type: cs.fontSize + '/' + cs.lineHeight
+          type: cs.fontSize + '/' + cs.lineHeight,
+          mt: cs.marginTop
         });
       }
       for (const cls in byClass) {
         const g = byClass[cls];
         if (g.length < 2) continue;
         out.rowsSeen++;
+        /* AND NO margin-top ON A ROW TO MAKE A GROUP -- the other half of the
+           same sentence in CLAUDE.md, which was prose alone until this. A row
+           pushed down from its neighbours is a row one margin taller than
+           them; a group is made by a row that separates (`.setsep`), which is
+           a different class and so is never in this comparison. Counted over
+           every list this walk measures, so a list added tomorrow is asked
+           tomorrow. */
+        const mts = {};
+        for (let j = 0; j < g.length; j++) mts[g[j].mt] = 1;
+        const mtList = Object.keys(mts);
+        if (mtList.length > 1) {
+          const km = cls + ' ' + mtList.sort().join(' ');
+          if (!seenGap[km]) {
+            seenGap[km] = 1;
+            out.gap.push(where + ': .' + cls.replace(/\s+/g, '.') + ' -- margin-top ' +
+              mtList.sort().join(' vs ') + '. A group is made by a separating row, not by ' +
+              'pushing one row down.');
+          }
+        }
         let lo = g[0], hi = g[0];
         const types = {};
         for (let j = 0; j < g.length; j++) {
@@ -722,7 +742,7 @@ const R = await pg.evaluate(async () => {
      stands in either. */
   try {
     window.__seed(); SET.walked = true;
-    POSTS = []; SNS_GOT = {}; snsTab = 'fo';
+    POSTS = []; PULL_GOT['feed|fo'] = 0; snsTab = 'fo';
     window.route = 'feed'; NAV = [{ r:'feed' }];
     render(); collectClasses();
   } catch (e) {}
@@ -1415,6 +1435,7 @@ R.wide.filter(m => !sideAllowed.has(m.split(':')[0].trim()))
     'no longer does — delete the line. A baseline that outlives what it ' +
     'described is permission nobody asked for.'));
 R.tall.forEach(m => fails.push('one list, two row heights: ' + m));
+R.gap.forEach(m => fails.push('one list, a row pushed down to make a group: ' + m));
 R.big.forEach(m => fails.push('drawn too big: ' + m));
 R.bent.forEach(m => fails.push('drawn out of shape: ' + m));
 
@@ -1428,6 +1449,8 @@ console.log('nothing off the side of a 402pt phone: ' +
                            : R.widthsSeen + ' screens measured'));
 console.log('rows in one list are one height: ' +
             (R.tall.length ? R.tall.length + ' FOUND' : R.rowsSeen + ' lists measured'));
+console.log('no row pushed down to make a group: ' +
+            (R.gap.length ? R.gap.length + ' FOUND' : R.rowsSeen + ' lists measured'));
 console.log('photographs all one box, filled, none stretched: ' +
             ((R.big.length || R.bent.length)
               ? (R.big.length + R.bent.length) + ' FOUND'

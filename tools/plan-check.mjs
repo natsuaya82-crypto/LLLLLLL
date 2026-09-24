@@ -58,6 +58,10 @@ const r = await pg.evaluate(({ s }) => {
   save();                        /* core.js's save() is what writes WORDS */
   out.paidHeld = WORDS.length;
   out.paidShown = wordsSeen().length;
+  /* The fixture's two inflections stored as words (tira, tiran) are words of
+     no list since 2026-09-23 -- they are forms of `tir` -- so what is listed
+     is every word that COUNTS, which is wCountable()'s one answer. */
+  out.paidWords = wCountable();
   var wasBytes = bytes();
 
   planGot('free');
@@ -123,6 +127,31 @@ const r = await pg.evaluate(({ s }) => {
   window.confirm = function(){ return false; };
   out.capStopped = capStop(1);
   out.capStayed = here().r === whereWas;
+
+  /* ---- 2b. an inflection is not a word, and is not counted --------------
+     「活用は数えないにしよう。無料でなるべく使って欲しい。」 OWNER 2026-09-23.
+     A free language of 99 words, one of them carrying 30 forms placed by
+     hand and 30 more stored AS words the way an inflection was before that
+     day. The ceiling is a hundred; what it counts is 99, so one more word
+     goes in. Then the plan goes up and down, and not one byte moves. */
+  var keep500 = WORDS.slice(), fmsList = [], j;
+  planGot('free');
+  WORDS.length = 0;
+  for (j = 0; j < 99; j++) WORDS.push({ hw: 'fmw' + j, mns: ['a word'], pos: 'v' });
+  for (j = 0; j < 30; j++) fmsList.push({ fm: 'i~f' + j, hw: 'fmw0x' + j, sp: [] });
+  WORDS[0].fms = fmsList;
+  for (j = 0; j < 30; j++) WORDS.push({ hw: 'fmw0y' + j, mns: ['a word'], pos: 'v', from: 'fmw0', fm: 'i~g' + j });
+  save();
+  out.fmHeld = WORDS.length;
+  out.fmForms = wForms(WORDS[0]).length;
+  out.fmRoom = capOK(1);
+  out.fmFull = capOK(2);
+  var fmWas = bytes();
+  planGot('pro'); planGot('free');
+  out.fmKept = same(fmWas, bytes());
+  WORDS.length = 0;
+  for (j = 0; j < keep500.length; j++) WORDS.push(keep500[j]);
+  save();
 
   /* ---- 3. the plan being unknown is not the same as having no data -----
      A receipt that fails, a network that is down, an answer that has not come
@@ -195,6 +224,7 @@ const r = await pg.evaluate(({ s }) => {
   out.capTop = (planGot('pro'), wordCap());
   planGot('plus');
   out.midShows = wordsSeen().length;        /* 500 words, ceiling 1000 */
+  out.midWords = wCountable();
   out.midHolds = WORDS.length;
   out.midRoom = capOK(1) === true;
   planGot('free');
@@ -379,14 +409,13 @@ const r = await pg.evaluate(({ s }) => {
   out.dblSameBought = boughtId;
   popOff();
   /* AND GOING UP STILL GOES THROUGH -- the guard is about what is held, not
-     a wall in front of the shop. In a browser there is no App Store, so
-     setPlan() writes the plan itself (storeOn() is false); what is asked is
-     therefore the plan, which is the same thing the phone ends up with. */
+     a wall in front of the shop. What going through IS is asking the App
+     Store for that product; the plan is verify-plan's to write (§ 8). */
   boughtId = '';
   planGot('plus');
   PLPICK = { id:'pro', yr:false };
   plBuy();
-  out.upPlan = plan();
+  out.upBought = boughtId;
   window.storeBuy = realBuy;
 
   /* AND THE BUTTON IS NOT THERE AT ALL FOR SOMETHING ALREADY PAID FOR.
@@ -442,6 +471,15 @@ const r = await pg.evaluate(({ s }) => {
   });
   function sentOn(p){
     var got = [], realSend = netSend, realRow = netLangRow, realSlices = netSlices;
+    /* A PERSON HAS WRITTEN EVERY SLICE. Since 2026-09-23 a save sends only
+       what a person wrote (www/core.js § LTOUCH) -- the app's own writes and
+       the picture go with nothing -- so a slice nobody wrote says nothing
+       about the plan either way. Taken off and put back as it was, which is
+       a write of every slice by somebody, on both plans alike. */
+    SLICES.forEach(function(sl){
+      var k = langKey(sl), v = slRd(k);
+      slRm(k); slWr(k, v === null ? '[]' : v);
+    });
     planGot(p);
     SESS = { at:'t', rt:'r', uid:'planner', anon:false };
     LANGS[langId].mine = true; langOwnGot(langId, 'planner');
@@ -481,13 +519,17 @@ const r = await pg.evaluate(({ s }) => {
      about its old shape: a count says 「one went」 and goes on saying it when
      the one that went is the wrong one. */
   planGot('pro');
-  var kept = setOnDisk(), dk;
+  /* TWO FILES NOW (www/core.js § SET_PHONE, § ACCT): this handset's setup in
+     `lingua.set` (setOnDisk) and the account's settings in `lingua.set.<uid>`
+     (setMine). Asked of both together, which is what SET is written as. */
+  var kept = setOnDisk(), mineSet = setMine(), dk;
+  for (dk in mineSet) if (Object.prototype.hasOwnProperty.call(mineSet, dk)) kept[dk] = mineSet[dk];
   out.diskPlanFields = [];
   for (dk in kept)
     if (Object.prototype.hasOwnProperty.call(kept, dk) &&
         /^plan/.test(dk)) out.diskPlanFields.push(dk);
   out.diskPlanFields = out.diskPlanFields.join(' ');
-  /* AND THE FILE IS WHAT `SET` IS, with nothing held back. Two lines stood
+  /* AND THE FILES ARE WHAT `SET` IS, with nothing held back. Two lines stood
      here dropping `plan` and `planUid` on a phone; there is nothing to drop,
      so a field missing from the file is a bug rather than a policy. */
   var dropped = [];
@@ -498,7 +540,8 @@ const r = await pg.evaluate(({ s }) => {
   /* AND THE WORD IS NOT WRITTEN OUT AT ALL. planGot() above set the plan to
      pro; the settings that then go to the disk must not have grown one. */
   save();
-  out.diskFileHasPlan = /\"plan/.test(String(localStorage.getItem('lingua.set') || ''));
+  out.diskFileHasPlan = /\"plan/.test(String(localStorage.getItem('lingua.set') || '') +
+                                       String(localStorage.getItem('lingua.set.' + ACCT_UID) || ''));
 
   /* ---- 7. 「プランが終了しました」 IS THE SERVER'S ANSWER AND NOT A PLAN
      MOVING ----------------------------------------------------------------
@@ -551,18 +594,31 @@ const r = await pg.evaluate(({ s }) => {
 
   /* ---- 8. the App Store, and the browser that is not one ---------------
      www/store.js is the one window onto StoreKit, and in a browser there is
-     no App Store to look through it at. What must NOT happen there is an
-     error state on the plans screen: every check walks that screen without a
-     bridge, every screenshot of it is taken without one, and a tier is tried
-     on before it is on sale. So the button goes on setting the plan by hand,
-     and storeOn() is the whole of the difference. */
+     no App Store to look through it at. The plans screen is drawn there all
+     the same -- every check walks it and every screenshot is taken of it --
+     and PRESSING it moves nothing. www/ is published (vercel.json), and a
+     card that wrote the plan where there is no App Store was Pro for anybody
+     with a browser: free -> pro on the card, pro -> free on the cancel row
+     (r63 § 2-5 S3, measured). Nothing but verify-plan's answer writes a plan,
+     and § 8b below counts that.
+
+     The REAL buttons are pressed, through the real storeBuy(): plBuy() and
+     storeManage(), from both ends of the ladder. */
   out.storeOff = storeOn() === false;
-  out.storeRefuses = storeBuy('com.tokinets.lingua.pro.monthly') === false;
+  var said8 = [], realToast8 = window.toast;
+  window.toast = function(m){ said8.push(String(m)); };
   planGot('free');
-  setPlan('pro');
-  out.byHand = plan() === 'pro';
-  setPlan('free');
-  out.byHandBack = plan() === 'free';
+  PLPICK = { id:'pro', yr:false };
+  plBuy();
+  out.cardFree = plan();
+  planGot('pro');
+  storeManage();
+  out.cancelPro = plan();
+  window.toast = realToast8;
+  PLPICK = null;
+  out.said8 = said8.join(' / ');
+  out.said8ok = said8.length === 2 && said8[0] === t('store.fail') && said8[1] === t('store.fail');
+  planGot('free');
 
   /* The product ids the app asks for are the ones the Swift sells. Two lists
      of ids is how a buy button comes to name a product App Store Connect has
@@ -1683,8 +1739,8 @@ await br.close();
 const bad = [];
 function say(ok, line){ console.log('  ' + (ok ? '' : 'FAILED  ') + line); if (!ok) bad.push(line); }
 
-say(r.paidHeld === 500 && r.paidShown === 500,
-    'the paid plan holds 500 words and lists 500 (' + r.paidHeld + ', ' + r.paidShown + ')');
+say(r.paidHeld === 500 && r.paidShown === r.paidWords && r.paidWords === 498,
+    'the paid plan holds 500 words and lists every one that is a word -- 498, less the two inflections stored as words (' + r.paidHeld + ', ' + r.paidShown + ')');
 say(r.freeHeld === 500,
     'the plan ending keeps all 500 (' + r.freeHeld + ')');
 say(r.freeShown === r.freeCap,
@@ -1704,12 +1760,22 @@ say(r.capOKfree === false && r.capOKpaid === true,
 say(r.capStopped === true, 'and adding one more is refused');
 say(r.capStayed, 'without taking the screen off anybody');
 
+say(r.fmHeld === 129 && r.fmForms === 60,
+    'a free language of 99 words holds 60 inflections -- 30 placed on a word and 30 stored as words before 2026-09-23 (held ' + r.fmHeld + ', forms ' + r.fmForms + ')');
+say(r.fmRoom === true && r.fmFull === false,
+    'and none of the 60 is counted: there is room for exactly one more word under the hundred');
+say(r.fmKept, 'and not one byte of it moved when the plan went up and came back down');
+
 say(r.emptyPlan, 'no plan at all reads as free');
 say(r.unknownCan, 'and any plan that is no rung of the ladder buys nothing -- garbage, PRO, basic, studio');
 say(r.unknownWords, 'and the words are all still there while it does');
 say(!r.unknownThrew, 'and nothing about it throws (' + (r.unknownThrew || 'nothing') + ')');
 
-say(r.canCount === 12, 'CAN names ' + r.canCount + ' capabilities');
+/* HOW MANY is CAN's to say and is read off it (CLAUDE.md rule 5: 「Read CAN」),
+   and whether the list and the price list agree is paid-check's. What is
+   asked here is only that there IS a list: the two lines under this are
+   `every`, and every one of nothing is true. */
+say(r.canCount > 0, 'CAN names ' + r.canCount + ' capabilities');
 say(r.freeAll, 'every one of them is closed on free');
 say(r.paidAll, 'and open on plus');
 say(r.canTypo, 'and a name that is not in the table throws rather than reading as free');
@@ -1755,7 +1821,9 @@ say(r.dblBought === '' && r.dblPlan === 'pro',
 say(r.dblAsked, 'and it says so rather than doing nothing');
 say(r.dblSameBought === '', 'nor is the plan already in force (' +
     (r.dblSameBought || 'nothing asked for') + ')');
-say(r.upPlan === 'pro', 'and going UP still goes through (' + r.upPlan + ')');
+say(r.upBought === 'com.tokinets.lingua.pro.monthly',
+    'and going UP still goes through — the App Store is asked for it (' +
+    (r.upBought || 'nothing asked for') + ')');
 say(!r.buyOnHeld && !r.buyOnSame,
     'and the button is not drawn at all for a rung already paid for ' +
     '(below: ' + (r.buyOnHeld ? 'drawn' : 'gone') +
@@ -1857,7 +1925,7 @@ say(r.capFree === 100, 'free counts to 100 (' + r.capFree + ')');
 say(r.capMid === 1000, 'plus counts to 1000 (' + r.capMid + ')');
 say(r.capTop === null || r.capTop === undefined || r.capTop > 1e9 || r.capTop === 'Infinity',
     'and pro has no number at all (' + r.capTop + ')');
-say(r.midShows === 500 && r.midHolds === 500,
+say(r.midShows === r.midWords && r.midHolds === 500,
     'a 500-word dictionary is all shown on plus (' + r.midShows + ')');
 say(r.midRoom, 'and there is room for another');
 say(r.freeShows2 === 100 && r.freeHolds2,
@@ -1898,8 +1966,10 @@ say(r.lapseNoEssay,
     '— the owner\'s drawing is a heading, a box to tick and 閉じる');
 
 say(r.storeOff, 'in a browser there is no App Store to ask');
-say(r.storeRefuses, 'and storeBuy() says so rather than pretending');
-say(r.byHand && r.byHandBack, 'so the plans screen still sets the plan by hand there');
+say(r.cardFree === 'free', 'and pressing a card there does not write a plan (free -> ' +
+    r.cardFree + ')');
+say(r.cancelPro === 'pro', 'nor does the cancel row (pro -> ' + r.cancelPro + ')');
+say(r.said8ok, 'both say the App Store could not be reached (' + r.said8 + ')');
 say(r.ids === 'com.tokinets.lingua.plus.monthly com.tokinets.lingua.plus.yearly ' +
              'com.tokinets.lingua.pro.monthly com.tokinets.lingua.pro.yearly',
     'the four product ids are the four LinguaStore.swift sells (' + r.ids + ')');
@@ -2078,7 +2148,6 @@ say(K['unreadable'].file.indexOf('"plan":"pro"') !== -1,
    the file, and nothing written down on this side of the bridge. */
 const IOS = path.join(dir, '..', 'ios', 'App', 'App');
 const STORE = fs.readFileSync(path.join(IOS, 'LinguaStore.swift'), 'utf8');
-const KEYC = fs.readFileSync(path.join(IOS, 'LinguaPlan.swift'), 'utf8');
 /* Comments say the words on purpose -- this change is written down in them --
    so it is the CODE that is asked. */
 const CODE = STORE.replace(/\/\*[\s\S]*?\*\//g, ' ')
@@ -2123,10 +2192,10 @@ say(/Transaction\.updates/.test(CODE) && /held\.add\(result\.jwsRepresentation\)
 /* THE KEYCHAIN IS NOT READ BY `www/` AT ALL (2026-09-11). It held the plan
    because the settings file is in the backup a PC makes; there is no word on
    this handset now -- `verify-plan` answers and the answer is in memory
-   (www/core.js § PLAN). `ios/App/App/LinguaPlan.swift` still has its own key
-   and still injects it, and nothing looks: taking the Swift out is an iOS
-   change and docs/BACKLOG.md carries it. What is held is that the WEB side
-   does not read it. */
+   (www/core.js § PLAN). The Swift that injected it is deleted too
+   (2026-09-23); that nothing on the native side is left uncalled is
+   assets-check's, which asks every plugin method as plugin and method
+   together. What is held here is that the WEB side does not read it. */
 const WWWALL = fs.readdirSync(path.join(dir, '..', 'www'))
   .filter((f) => f.endsWith('.js'))
   .map((f) => fs.readFileSync(path.join(dir, '..', 'www', f), 'utf8'))
@@ -2134,6 +2203,47 @@ const WWWALL = fs.readdirSync(path.join(dir, '..', 'www'))
 say(WWWALL.indexOf('__plan') < 0 && WWWALL.indexOf('LinguaPlan') < 0,
     'nothing under www/ reads the Keychain — the plan is the server\'s answer ' +
     'and is held in memory, so there is no word on this handset to protect');
+/* ---- 8b. WHO WRITES A PLAN, COUNTED RATHER THAN LISTED ------------------
+   「a plan decides what a person may DO」, and the word itself is
+   verify-plan's: planTook() is the one writer and netPlanVerify() is its one
+   caller (www/core.js § PLAN). That sentence was in core.js while setPlan()
+   and storeManage() were two more callers -- a comment saying 「the only
+   thing that reaches it」 over a function three things reached. So the whole
+   surface is counted: every write to PLAN, every planGot(), every planTook()
+   in every file under www/, each named by the top-level function it sits in.
+   Three pairs are the design and nothing else may appear -- a road added
+   tomorrow is red tomorrow. The fixture's own planGot() calls are in tools/
+   and are not the app. */
+{
+  const ALLOWED = ['PLAN= in planGot', 'PLAN= in planForget',
+                   'planGot( in planTook', 'planTook( in netPlanVerify'];
+  const seen = [];
+  for (const f of fs.readdirSync(path.join(dir, '..', 'www'))) {
+    if (!f.endsWith('.js')) continue;
+    const src = fs.readFileSync(path.join(dir, '..', 'www', f), 'utf8')
+      .replace(/\/\*[\s\S]*?\*\//g, (c) => c.replace(/[^\n]/g, ' '))
+      .split('\n').map((l) => (/^\s*\/\//.test(l) ? '' : l)).join('\n');
+    const tops = [];
+    for (const m of src.matchAll(/^function ([A-Za-z0-9_$]+)\s*\(/gm)) tops.push([m.index, m[1]]);
+    const inFn = (at) => { let n = '(top)'; for (const [i, nm] of tops) if (i < at) n = nm; return n; };
+    for (const [re, what] of [[/\bPLAN\s*=(?!=)/g, 'PLAN='],
+                              [/\bplanGot\(/g, 'planGot('],
+                              [/\bplanTook\(/g, 'planTook(']]) {
+      for (const m of src.matchAll(re)) {
+        const fn = inFn(m.index);
+        /* the declarations themselves are not a write */
+        if (what !== 'PLAN=' && src.slice(m.index - 9, m.index) === 'function ') continue;
+        if (what === 'PLAN=' && src.slice(m.index - 4, m.index) === 'var ') continue;
+        seen.push(what + ' in ' + fn + ' (' + f + ')');
+      }
+    }
+  }
+  const bad = seen.filter((x) => ALLOWED.indexOf(x.replace(/ \([^)]*\)$/, '')) < 0);
+  say(bad.length === 0 && seen.length > 0,
+      'a plan is written by verify-plan\u2019s answer and nothing else — ' + seen.length +
+      ' writes and calls counted across www/' +
+      (bad.length ? ', and these are not that road: ' + bad.join('; ') : ''));
+}
 /* The bound the test lowered. Read rather than waited on: twenty seconds in
    the gate would prove the same thing and cost twenty seconds.
 

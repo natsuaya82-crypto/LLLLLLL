@@ -57,8 +57,6 @@ function viewReset(){
   ipaQ=''; ipaOpen={mine:1};           /* the IPA page: its search, and what is open */
   GE=null;                             /* the glyph editor */
   kbLay=0; kbSel=null; kbSlotFor=null; /* the keyboard being built */
-  kbLtPick=null;                       /* and which letter is chosen for a key,
-                                          not yet confirmed (www/keyboard.js) */
   kbShow=0;                            /* and which of the three is on screen */
   IMP=impBlank();                      /* a list being read in */
   PW=pwBlank();                        /* a post being written */
@@ -69,19 +67,15 @@ function viewReset(){
   WMENU=false;                         /* and the one on somebody's page */
   kbWob=false;                         /* and whether the keys are wobbling */
   obTour=0;                            /* how far the walk through the app has got */
-  KBH=null;                            /* and which row, column or key is being worked on */
+  kbLeft();                            /* and the keyboard's selection and step back */
   snsQ=''; snsHits=null;               /* the search and what came back */
   snsSort='new';                       /* and newest or most answered */
   snsFil=null;                         /* and the word the feed is filtered to */
-  /* The notices, ASKED AGAIN, because what a notice SAYS is written in the
-     language the app is read in. All three moves and not one: what was
-     answered, the table's record THAT it was answered, and the question
-     itself. Dropping the record alone would leave the screen turning its mark
-     for ever -- nothing asks on the way onto a screen any more (www/sns.js
-     § WHAT AN OPEN ASKS FOR), so unless the asking happens HERE, where the
-     language actually changed, the only thing left that would ask is somebody
-     pulling the screen down. */
-  NOTES_HAVE=null; pullDrop('notif'); pullNeed('notif');
+  /* NOTHING IS READ HERE. This is where a screen forgets, and it runs when a
+     LANGUAGE is opened (langOpen, www/core.js) -- the notices were asked again
+     from this line on every one of those, which is the language somebody is
+     making and not the one the app is read in. That is setUi()'s
+     (www/settings.js), and reading is the door's (§ navLand). */
   /* And what has been typed into a field and not saved. It is where you are
      standing rather than anything a language owns, and standing in one
      language's article with the paragraph you were typing into another's
@@ -167,6 +161,11 @@ function viewLeft(from, to){
      arriving state, which tools/press.mjs stands on between faces. This one
      is one screen being walked off, which is what wUndo above is too. */
   if(from==='words' && !navHas('words')) wSel=null;
+  /* The keyboard's selection and step back, the same way round: a key's own
+     page is a screen you go DEEPER to and come back from with the key still
+     chosen, and the trail still has `kb` on it; a tab or the way back off the
+     chapter does not. www/keyboard.js § kbLeft. */
+  if(from==='kb' && !navHas('kb')) kbLeft();
 }
 
 /* ---- how much of the screen the phone's own keyboard is covering ------
@@ -214,17 +213,50 @@ function vpKbWire(){
 var NAV=[{r:'profile'}];
 function here(){ return NAV[NAV.length-1]; }
 function prevPage(){ return NAV.length>1? NAV[NAV.length-2] : null; }
+/* ---- THE ONE DOOR ONTO A PAGE -------------------------------------------
+   「開いた時は通知とタイムラインだけでしょ、そのページに進むときに読み込む
+   べき」 OWNER 2026-09-23, and 「押してから読み込みが終わるまで前の画面の
+   ままで、揃った瞬間に出る」「くるくるも出さない」 OWNER 2026-09-07.
+
+   Every move -- a press onto a page, back, a tab -- works out the trail it
+   is going to and hands it here. What the page arriving is drawn from is its
+   row in www/sns.js § WHAT EACH PAGE READS; this waits for those answers and
+   THEN moves, so the page pressed from stays on the glass until the one
+   pressed to is whole, and no view has anything to read. A page whose
+   answers are in (or which reads nothing) moves at once, in the same turn,
+   exactly as a move always did.
+
+   NAV_TO is the trail being landed. A second press while one is waiting
+   works out its trail from THAT, and wins: only the newest waiting move
+   lands.
+
+   AND A PAGE WHOSE QUESTION FELL ON THE WIRE IS NOT ARRIVED AT.
+   「そもそも通信エラーならそこにはいけないはずでしょ。途中でエラーになった
+   場合は全部ポップで良くない？」 OWNER 2026-09-05. The page pressed from
+   stays, the pop is up (netPop, through pullRun), and ［再接続］ makes this
+   same move again. A server that ANSWERED -- empty, or refusing -- is an
+   answer, and the page is arrived at and says so. */
+var NAV_TO=null;
+function navNow(){ return NAV_TO || NAV; }
+function navLand(nav){
+  var to=nav[nav.length-1];
+  NAV_TO=nav;
+  pageWait(to.r, to.a, function(went){
+    if(NAV_TO!==nav) return;
+    NAV_TO=null;
+    if(!went){ netPop(null, 0, 'page', function(){ navLand(nav); }); return; }
+    NAV=nav; route=to.r; render(); window.scrollTo(0,0);
+  });
+}
 function go(r, a){
-  var h=here();
+  var now=navNow(), h=now[now.length-1], i;
   if(h.r===r && h.a===a) return;
   /* Going back to a page already on the trail is going back, not deeper.
      Without this, contents -> words -> contents -> words piles up four
      screens and the back button walks a circle. */
-  var i;
-  for(i=NAV.length-2;i>=0;i--){
-    if(NAV[i].r===r && NAV[i].a===a){ NAV.length=i+1; route=r; render(); window.scrollTo(0,0); return; }
-  }
-  NAV.push({r:r, a:a}); route=r; render(); window.scrollTo(0,0);
+  for(i=now.length-2;i>=0;i--)
+    if(now[i].r===r && now[i].a===a){ navLand(now.slice(0, i+1)); return; }
+  navLand(now.concat([{r:r, a:a}]));
 }
 /* ---- a post half written, on the way out ------------------------------
    OWNER DECISION 2026-08-25: 「戻るをした時は確認ダイアログを入れて下書きに
@@ -398,10 +430,17 @@ function keepKey(){ return keepKeyOf(here().r, here().a); }
    may not happen while the send is still out:
    「通信エラーなら進むわけねえだろ全部」. It is optional; eight of the nine
    screens hand nothing. */
-function keepOn(key, now, save, landed){
+/* AND `drop` IS WHAT 「いいえ」 PUTS BACK, for a screen whose presses change
+   what it is holding before Save (K1, r79). A field that is typed into writes
+   nothing until Save, so 「いいえ」 letting the buffer go is the whole of it;
+   a screen that changes something by PRESSING -- the keyboard's sheet -- holds
+   that change as its draft until Save (www/keyboard.js § saveKb), and `drop`
+   is how the draft goes: the screen reads back what is written, which nothing
+   has touched. Optional; the screens that are only typed into hand nothing. */
+function keepOn(key, now, save, landed, drop){
   var k=String(key);
-  if(KEEP[k]){ KEEP[k].now=now; KEEP[k].save=save; KEEP[k].landed=landed; return; }
-  KEEP[k]={was:keepRead(now), now:now, v:{}, save:save, landed:landed};
+  if(KEEP[k]){ KEEP[k].now=now; KEEP[k].save=save; KEEP[k].landed=landed; KEEP[k].drop=drop; return; }
+  KEEP[k]={was:keepRead(now), now:now, v:{}, save:save, landed:landed, drop:drop};
 }
 /* `now()` answered as strings, which is the only thing ever compared. A
    screen hands back plain values -- a name, a note, a layout said once as
@@ -705,23 +744,43 @@ function keepPaint(){
    line in the composer, a field different from the one it opened with. What
    is held here is that there are two states and where the colour comes from.
 
-   `opts` is for the one button that is more than a word: the composer's,
-   which carries an id for its long-press timer, a lock when the post is
-   private, and the ground that goes under it. Its COLOUR is still these two
-   states and it no longer names one of its own. */
+   `opts.icon` is the operation's MARK, and when there is one it IS the
+   button: an operation every phone draws a mark for -- send, add, edit -- is
+   drawn, and `label` is what the button is called (`aria-label`) rather than
+   what it shows. 「文字でドカンって共有とか書くの禁止してるよね？」 OWNER
+   2026-09-23, CLAUDE.md § Shape, and marks-check holds it. A decide button
+   with no settled mark (save, done) is still its word.
+
+   The rest of `opts` is for the composer's: an id for its long-press timer, a
+   lock when the post is private, and the ground that goes under it. Its
+   COLOUR is still these two states and it no longer names one of its own. */
 function navDo(label, name, args, on, opts){
   var o=opts||{};
-  return '<button class="navdo'+(on? ' navon' : '')+(o.cls? ' '+o.cls : '')+'"'+
-         (o.id? ' id="'+o.id+'"' : '')+DO(name, args)+'>'+
-         (o.mark||'')+esc(label)+'</button>';
+  return '<button class="navdo'+(on? ' navon' : '')+(o.icon? ' navmk' : '')+
+         (o.cls? ' '+o.cls : '')+'"'+
+         (o.id? ' id="'+o.id+'"' : '')+DO(name, args)+
+         (o.icon? ' aria-label="'+esc(label)+'">'+(o.mark||'')+o.icon
+                 : '>'+(o.mark||'')+esc(label))+'</button>';
 }
 /* THE DELETE, at the far end of the same bar while a list is being chosen
    from. It is NOT the decide button and not a third state of it: 「右上に選択
    したら削除できるみたいな感じに」 OWNER 2026-09-01, and it is the one colour
    in this app that means a thing goes. It shares the box because it stands in
-   the same corner and a thumb is the same size either way. */
+   the same corner and a thumb is the same size either way. It is the bin and
+   the word is its name -- every list that is chosen from passes through here,
+   so every one of them is the same mark (OWNER 2026-09-23). */
 function navDel(label, name, args){
-  return '<button class="navdo navdel"'+DO(name, args)+'>'+esc(label)+'</button>';
+  return '<button class="navdo navmk navdel"'+DO(name, args)+' aria-label="'+esc(label)+'">'+
+         ICON_BIN+'</button>';
+}
+/* A MARK THAT ACTS, standing on its own in a page rather than in the bar: the
+   share under a card, the plus under a form, the bin at the foot of a row.
+   The one shape for it, so they are one size and one colour -- `.markb` in
+   www/index.html -- and the word is the name, through t(). `attrs` is what
+   the button carries beyond that (`disabled`). */
+function markBtn(icon, label, name, args, attrs){
+  return '<button class="markb"'+DO(name, args)+(attrs||'')+
+         ' aria-label="'+esc(label)+'">'+icon+'</button>';
 }
 /* AND REPAINTED WHERE IT STANDS. Typing does not redraw these screens and must
    not: a field being typed into loses the keyboard the moment the page under
@@ -782,8 +841,16 @@ function keepAsked(){
   popAsk(t('keep.q'),
     function(){ keepSave(k, null); },
     t('keep.yes'), t('keep.no'),
-    function(){ keepDrop(k); backGo(); });
+    function(){ keepNo(k); backGo(); });
   return true;
+}
+/* 「いいえ」: the buffer goes, and a screen that holds a pressed change as its
+   draft reads back what is written (§ keepOn `drop`). The buffer first, so
+   the screen reading back is not reading as a screen with a draft open. */
+function keepNo(key){
+  var b=KEEP[String(key)], drop=b && b.drop;
+  keepDrop(key);
+  if(drop) drop();
 }
 /* Going back, with nothing left to ask. It is its own function because three
    things reach it now -- the arrow, the Yes and the No -- and a second copy
@@ -794,22 +861,23 @@ function backGo(){
      there is no Done in that bar any more, and a save that landed comes down
      this road too. 「並べ替えは保存か戻るで終わる」 OWNER 2026-09-05. */
   kbWob=false;
-  if(NAV.length>1) NAV.pop(); else NAV=[{r:'profile'}];
-  route=here().r; render(); window.scrollTo(0,0);
+  var now=navNow();
+  navLand(now.length>1? now.slice(0, now.length-1) : [{r:'profile'}]);
 }
 function back(){
   if(backDraftKept()) return;
   if(keepAsked()) return;
   backGo();
 }
-/* Is this screen already behind you? go() lands on one that is by cutting the
-   trail back to it rather than pushing, so a screen that wants to finish two
-   steps up can ask first and fall back to plain back() when the answer is no.
-   Without the asking it would push a way forward to a screen you arrived
-   through, and the back button would walk deeper into the app. */
-function navHas(r, a){
+/* Is a screen of this chapter still behind you on the trail -- the question
+   viewLeft() above asks to tell walking OFF a chapter from going deeper into
+   it. By the ROUTE and not its argument: a keyboard's own page is `kb` with
+   the board's place as its argument, and a key opened from it is deeper into
+   that same chapter, so asking for the argument-less `kb` answered no and the
+   selection went on the way to the page it was selected for. */
+function navHas(r){
   var i;
-  for(i=0;i<NAV.length-1;i++) if(NAV[i].r===r && NAV[i].a===a) return true;
+  for(i=0;i<NAV.length-1;i++) if(NAV[i].r===r) return true;
   return false;
 }
 /* A form's argument is a name, and a name can change under it. Renaming a
@@ -848,7 +916,7 @@ function navDrop(a, r){
 /* Leaving the search tab for a chapter of the build tab: two moves, and the
    pair of them is one thing a row does. It was two statements inside markup. */
 function goIn(r){ goTab('build'); go(r); }
-function goTab(r){ NAV=[{r:r}]; route=r; render(); window.scrollTo(0,0); }
+function goTab(r){ navLand([{r:r}]); }
 /* Kept because a hundred lines still read it. It is here()'s route. */
 var route='profile';
 
@@ -973,48 +1041,55 @@ function appIs(){
 /* ---- every page ------------------------------------------------------
    Its numeral in the book, its name, and which tab it lives under. The back
    button says where it goes and the heading says where you are, side by
-   side: 「←目次　Ⅰ 単語」 */
+   side: 「←目次　Ⅰ 単語」
+
+   `lang` is 「this page is drawn from the language that is open」, so the
+   door onto it reads that language's slices (www/sns.js § WHAT EACH PAGE
+   READS, `lang`) -- 「その画面に進んだ時に」 OWNER 2026-09-23. A page not
+   marked is not drawn from it; the language list and the profile are drawn
+   from the rows, which are theirs. */
 var PAGES={
   feed:    {tab:'feed',    k:'tab.home'},
   explore: {tab:'explore', k:'tab.explore'},
   notif:   {tab:'notif',   k:'tab.notif'},
   profile: {tab:'profile', k:'tab.me'},
-  build:   {tab:'build', k:'tab.build'},
-  find:    {tab:'build', k:'tab.find'},
-  form:    {tab:'build'},
-  letters: {tab:'build', k:'toc.letters'},
-  kb:      {tab:'build', k:'kb.title'},
-  ltset:   {tab:'build', k:'toc.letters'},
-  letter:  {tab:'build', k:'lt.title'},
-  wsys:    {tab:'profile',  k:'ws.kind'},
-  abugida: {tab:'build', k:'ab.title'},
-  relate:  {tab:'build'},
-  fm:      {tab:'build', k:'word.fm'},
-  pos:     {tab:'build', k:'f.pos'},
-  reg:     {tab:'build', k:'word.reg'},
-  sub:     {tab:'build', k:'f.sub'},
+  build:   {lang:1, tab:'build', k:'tab.build'},
+  find:    {lang:1, tab:'build', k:'tab.find'},
+  form:    {lang:1, tab:'build'},
+  letters: {lang:1, tab:'build', k:'toc.letters'},
+  kb:      {lang:1, tab:'build', k:'kb.title'},
+  ltset:   {lang:1, tab:'build', k:'toc.letters'},
+  letter:  {lang:1, tab:'build', k:'lt.title'},
+  wsys:    {lang:1, tab:'profile',  k:'ws.kind'},
+  sp:      {lang:1, tab:'profile',  k:'set.sp'},
+  abugida: {lang:1, tab:'build', k:'ab.title'},
+  relate:  {lang:1, tab:'build'},
+  fm:      {lang:1, tab:'build', k:'word.fm'},
+  pos:     {lang:1, tab:'build', k:'f.pos'},
+  reg:     {lang:1, tab:'build', k:'word.reg'},
+  sub:     {lang:1, tab:'build', k:'f.sub'},
   follows: {tab:'profile'},
   /* The people one notice is about. Named 「フォロワー」 because that is what
      they are -- a follow notice is people who followed you -- and the word is
      already written in all ten languages, under the number on a profile. */
   notfo:   {tab:'notif', k:'me.followers'},
-  glyph:   {tab:'build'},
-  spell:   {tab:'build', k:'word.sp'},
-  words:   {tab:'build', k:'toc.words'},
-  gram:    {tab:'build', k:'toc.gram'},   /* the numeral is dropped on a single stage */
+  glyph:   {lang:1, tab:'build'},
+  spell:   {lang:1, tab:'build', k:'word.sp'},
+  words:   {lang:1, tab:'build', k:'toc.words'},
+  gram:    {lang:1, tab:'build', k:'toc.gram'},   /* the numeral is dropped on a single stage */
 
-  notes:   {tab:'build', k:'toc.notes'},
+  notes:   {lang:1, tab:'build', k:'toc.notes'},
   settings:{tab:'profile',  k:'set.title'},
   /* Saying something to whoever makes the app. A route and not a sheet:
      writing is a screen, the way choosing is. 「設定にお問合せを足して欲しい」
      OWNER 2026-09-22. */
   contact: {tab:'profile', k:'set.contact'},
-  set:     {tab:'profile'},
-  world:   {tab:'profile', k:'wld.title'},
+  set:     {lang:1, tab:'profile'},
+  world:   {lang:1, tab:'profile', k:'wld.title'},
   /* One section of the language's article. Named after the section, not
      after the chapter it sits in -- pageName() below does that for a stage
      and a letter for the same reason. */
-  wldart:  {tab:'profile', k:'wld.secs'},
+  wldart:  {lang:1, tab:'profile', k:'wld.secs'},
   about:   {tab:'profile', k:'wld.about'},
   /* Which timeline the feed is showing, chosen on a page of its own.
      「右上にフィルター作って」 OWNER 2026-08-28 -- and choosing is a screen,
@@ -1515,10 +1590,10 @@ function tabBar(){
        The name is still said -- as the button's aria-label, because a button
        whose whole content is an aria-hidden drawing has nothing to be called
        by otherwise, and pageName() stays the one place that names a tab. */
-    /* THE PROFILE IS THE ONE TAB THAT IS NOT goTab(). It is not drawn until
-       everything on it has answered -- www/me.js § profileOpen -- and that
-       is the whole of 「全部読み込んでから開く」. Everything else on this bar
-       draws out of what is already here. */
+    /* Every tab arrives through the one door (navLand, above), which waits
+       for what that page reads. The profile's press is profileOpen(), which
+       is goTab('profile') for your own page (www/me.js), and it alone carries
+       the hold that opens the languages. */
     out+='<button class="tab'+(cur===r?' on':'')+'"' +
       (r==='profile'? DO('profileOpen', [""]) : DO('goTab', [r])) +
       (r==='profile'? ' data-hold="1"' : '')+

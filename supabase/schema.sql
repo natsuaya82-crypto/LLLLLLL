@@ -223,9 +223,42 @@ alter table profile add column if not exists handle_at timestamptz;
 -- and is nobody else's business -- the view is what other people may read.
 alter table profile add column if not exists prefs jsonb not null default '{}'::jsonb;
 
+-- WHEN EACH THING ON THIS ROW WAS LAST CHANGED BY A PERSON, as the phone they
+-- changed it on tells it: field -> milliseconds. keep_newer() below is what
+-- reads it. Said here because prefs_put() writes it; `slice` and `draft` get
+-- the same column where they are made.
+alter table profile add column if not exists ed jsonb not null default '{}'::jsonb;
+
+-- AND ONE SETTING AT A TIME. A PATCH of `prefs` replaces the whole object, so
+-- a phone that changed the theme sent every setting it was holding -- and the
+-- one it was holding stale (a notification switched off on the other phone)
+-- went back on (r63-audit SQ1, measured). This lays what was sent OVER what is
+-- there: the keys sent change, every other key stays exactly as it is.
+--
+-- AS THE CALLER, so the row policy and the column grant below are what decide
+-- whose row it touches -- `id = auth.uid()` is the caller's own and nobody
+-- else's, and a caller with no session updates nothing.
+--
+-- AND EACH KEY CARRIES WHEN IT WAS PRESSED (`e`, key -> milliseconds), which
+-- goes into `profile.ed` as `prefs.<key>` -- keep_newer() below keeps a key
+-- whose press is older than the one already here. What is handed back is the
+-- settings as they now stand, so the phone that lost takes the other one's.
+drop function if exists prefs_put(jsonb);
+create or replace function prefs_put(p jsonb, e jsonb default '{}'::jsonb) returns jsonb
+  language sql security invoker set search_path = public as $$
+  update profile set prefs = coalesce(prefs, '{}'::jsonb) || coalesce(p, '{}'::jsonb),
+                     ed = coalesce(ed, '{}'::jsonb) ||
+                          coalesce((select jsonb_object_agg('prefs.' || k, v)
+                                      from jsonb_each(coalesce(e, '{}'::jsonb)) as x(k, v)),
+                                   '{}'::jsonb)
+   where id = auth.uid()
+  returning prefs;
+$$;
+
 -- ---- what ------------------------------------------------------------------
--- A language. Published or not; a language nobody published is a private
--- backup of what is on the phone.
+-- A language. Published or not; a language nobody published is its owner's
+-- and nobody else's. This row and the slices under it are where a language
+-- lives -- the phone holds a copy to look at (CLAUDE.md rule 22).
 --
 -- Deleting an account deletes this too. There is no half-deleted language
 -- with no owner waiting to be reclaimed: coming back later is what signing
@@ -239,10 +272,12 @@ alter table profile add column if not exists prefs jsonb not null default '{}'::
 -- promise that is true.
 create table if not exists language (
   id           uuid primary key default gen_random_uuid(),
-  -- The ACCOUNT, not the person. auth.users and not profile, because a
-  -- language is made on the first launch by an anonymous account and an
-  -- anonymous account has no profile row: a handle is what a profile IS, and
-  -- a handle is the thing nobody has been asked for yet.
+  -- The ACCOUNT, not its page: auth.users and not profile. It was made
+  -- that way when a language was minted at first launch by an anonymous
+  -- account, which had no profile row. There are no anonymous accounts now
+  -- (「匿名アカウントはねえよ」, is_member() below) -- the reference stays on
+  -- auth.users because moving a foreign key under every row is a migration
+  -- nobody has asked for, and it answers the same question either way.
   --
   -- post.author stays on profile for the same reason read the other way --
   -- a post is read by other people and has to be signed.
@@ -255,10 +290,6 @@ create table if not exists language (
   published_at timestamptz,
   created_at   timestamptz not null default now()
 );
--- And on a database that already has the table, where `create table if not
--- exists` above did nothing at all. Named rather than left to the default so
--- that dropping it says which one; `if exists` on both halves so this file
--- goes on being applied twice in a row by npm run rls.
 -- ---- AND HOW THE LANGUAGE IS WRITTEN ----------------------------------
 -- 「端末に残すものないんですけど。サーバーで同じ機能になるように代替して」
 -- OWNER 2026-09-08.
@@ -334,23 +365,19 @@ create index if not exists language_take_uid_idx on language_take(uid);
 -- ask the owner's own switch (`slice_dl`) beside it: a language whose words
 -- were never offered does not start offering them by going private.
 --
--- `security definer` for the reason email_taken() is: `language_take` is
--- readable by `authenticated` and by nobody else, and a policy naming the
--- table would be evaluated for `anon` too -- who may read a published
--- language's letters, and whose ask would fail on the privilege rather than
--- on the policy. It answers about auth.uid() and about nothing else, so the
--- most it can tell anybody is what they themselves took; with nobody signed
--- in auth.uid() is null and it is false.
+-- `security definer`, and it answers about auth.uid() and about nothing
+-- else, so the most it can tell anybody is what they themselves took; with
+-- nobody signed in auth.uid() is null and it is false.
 create or replace function language_took(lang uuid) returns boolean
 language sql stable security definer set search_path = public as $$
   select exists (select 1 from language_take t
                   where t.uid = auth.uid() and t.language = lang) $$;
-grant execute on function language_took(uuid) to authenticated;
 
 -- ---- what a language is made of ---------------------------------------
--- Eleven slices -- words, lines, lang, script, letters, notes, phases, talk,
--- snd, kb, wld -- and they are SLICES here for the same reason they are
--- slices in www/core.js: one row per slice and not one row per language.
+-- One row per slice, and `SLICES` in www/core.js is the list of them -- read
+-- it there rather than a count here, which said eleven while there were
+-- twelve. They are SLICES here for the same reason they are slices in
+-- www/core.js: one row per slice and not one row per language.
 --
 -- The reason is what happens with two phones. One number for a whole language
 -- means adding a word on one phone and drawing a letter on the other is a
@@ -359,15 +386,18 @@ grant execute on function language_took(uuid) to authenticated;
 --
 -- Inside one slice the phone merges rather than overwriting -- a word added
 -- here and a word added there are both added -- so what is stored is the
--- result and not a claim about who was first. `no` goes up by one on every
--- write and is what says a phone is holding something older than the server:
--- the phone reads, merges what it has into what came back, and writes with
--- the number it read.
+-- result and not a claim about who was first. What says the phone merged
+-- against what is here is `ed.was` (keep_newer() below), not `no`.
 --
--- `body` is text and not jsonb on purpose: it is exactly the string
--- localStorage holds, which is what bkPack() already writes out to a file,
--- so there is one shape for a slice and not two that could disagree. The
--- server never looks inside it.
+-- `no` IS HOW MANY TIMES THE SERVER HAS TAKEN THIS SLICE, and the server is
+-- the one that counts. 「番号はサーバーが配ります」 (docs/FEATURE_RULES.md,
+-- 2026-09-04): slice_no() below sets it on every write, 1 for the first and
+-- one more than the row held after that, and whatever number the phone sends
+-- is not read. www/net.js still sends `no + 1`; it is thrown away here.
+--
+-- `body` is text and not jsonb on purpose: it is exactly the string the
+-- phone holds, so there is one shape for a slice and not two that could
+-- disagree. The server never looks inside it.
 create table if not exists slice (
   language   uuid not null references language(id) on delete cascade,
   kind       text not null,
@@ -377,6 +407,17 @@ create table if not exists slice (
   primary key (language, kind)
 );
 create index if not exists slice_language_idx on slice(language);
+alter table slice add column if not exists ed jsonb not null default '{}'::jsonb;
+
+create or replace function slice_no() returns trigger
+language plpgsql as $$
+begin
+  new.no := case when tg_op = 'UPDATE' then old.no + 1 else 1 end;
+  return new;
+end $$;
+drop trigger if exists slice_no on slice;
+create trigger slice_no before insert or update on slice
+  for each row execute function slice_no();
 
 -- ---- slice_hist ---------------------------------------------------------
 -- The three versions before now, so that somebody who writes in and says
@@ -618,6 +659,92 @@ create table if not exists draft (
   updated_at timestamptz not null default now()
 );
 create index if not exists draft_author_idx on draft(author, updated_at desc);
+alter table draft add column if not exists ed jsonb not null default '{}'::jsonb;
+
+-- ---- THE LATER EDIT WINS ------------------------------------------------
+-- 「普通後から変えたほうになる？アプリ気になるそこ」 OWNER 2026-09-04
+-- (docs/FEATURE_RULES.md § 同期でぶつかったら、後から「直した」ほうが残るべき).
+--
+-- Two phones change the same thing. What stayed was whichever CONNECTED last,
+-- because nothing on a row said when anything on it was changed -- the server
+-- had nothing to compare. One sentence covers every place that can happen:
+--
+--   A WRITE CARRIES WHEN A PERSON MADE IT, AND THE SERVER KEEPS A THING ONLY
+--   FROM A WRITE NEWER THAN THE ONE IT IS HOLDING.
+--
+-- `ed` on each row is that record: a field (or `prefs.<key>`, one level down
+-- into a jsonb column) -> the milliseconds the phone says it was changed at.
+-- On an update, every field the write carries a time for is compared, and a
+-- field whose time is OLDER keeps what is here; its time stays the newer one.
+-- A field the write carries no time for is not compared -- an older version
+-- of the app writes none, and there is nothing to compare it with.
+--
+-- ONE MORE THING FOR A SLICE, and it is the same sentence one step earlier.
+-- A slice is a list that two phones ADD to, and the phone puts the two
+-- together before it writes (www/sync.js) -- which only works if what it put
+-- together is what is here. `ed.was` is the time it merged against; if this
+-- row has moved since, the write is refused with `stale` and the phone reads
+-- again and merges again (r63-audit 0-4: `no` was a counter nobody compared).
+-- A refusal and not a quiet keep, because a slice is written without asking for
+-- the row back (www/net.js § netSend) and a quiet keep would say nothing.
+--
+-- The time is the phone's clock. A phone whose clock is far out wins or loses
+-- by that much; nothing here can know better.
+create or replace function keep_newer() returns trigger
+language plpgsql as $$
+declare
+  o  jsonb := '{}'::jsonb;
+  n  jsonb := to_jsonb(new);
+  ed jsonb := '{}'::jsonb;
+  k  text; col text; sub text; ne numeric; oe numeric;
+begin
+  -- A first write has nothing here to be newer than; it is asked the same
+  -- questions against an empty row, so `was` is held to 「nothing」 too.
+  if tg_op = 'UPDATE' then
+    o  := to_jsonb(old);
+    ed := coalesce(o -> 'ed', '{}'::jsonb);
+  end if;
+  if (n -> 'ed') ? 'was' then
+    if coalesce(nullif(ed ->> 'body', '')::numeric, 0)
+       <> coalesce(nullif(n -> 'ed' ->> 'was', '')::numeric, 0) then
+      raise exception 'stale' using errcode = 'P0001';
+    end if;
+    n := jsonb_set(n, '{ed}', (n -> 'ed') - 'was');
+  end if;
+  for k in select jsonb_object_keys(coalesce(n -> 'ed', '{}'::jsonb)) loop
+    ne  := nullif(n -> 'ed' ->> k, '')::numeric;
+    oe  := nullif(ed ->> k, '')::numeric;
+    col := split_part(k, '.', 1);
+    sub := nullif(split_part(k, '.', 2), '');
+    if oe is not null and (ne is null or ne < oe) then
+      if sub is null then
+        n := jsonb_set(n, array[col], coalesce(o -> col, 'null'::jsonb));
+      elsif (o -> col) ? sub then
+        n := jsonb_set(n, array[col, sub], o -> col -> sub);
+      else
+        n := jsonb_set(n, array[col], coalesce(n -> col, '{}'::jsonb) - sub);
+      end if;
+    elsif ne is not null then
+      ed := jsonb_set(ed, array[k], to_jsonb(ne));
+    end if;
+  end loop;
+  n := jsonb_set(n, '{ed}', ed);
+  new := jsonb_populate_record(new, n);
+  return new;
+end
+$$;
+-- First of every trigger on the row (they run in name order), so what the
+-- others see -- slice_hist keeping the version before, profile_rename's
+-- fourteen days -- is the write as it will land.
+drop trigger if exists a_keep_newer on slice;
+create trigger a_keep_newer before insert or update on slice
+  for each row execute function keep_newer();
+drop trigger if exists a_keep_newer on draft;
+create trigger a_keep_newer before insert or update on draft
+  for each row execute function keep_newer();
+drop trigger if exists a_keep_newer on profile;
+create trigger a_keep_newer before insert or update on profile
+  for each row execute function keep_newer();
 
 -- ---- looked for, and kept -------------------------------------------------
 -- A search somebody starred. 「SNSは全部サーバー」 OWNER -- a search is
@@ -735,10 +862,10 @@ create table if not exists plan (
 -- because what the app needs is one fact and not a record: 「the段 that ended」.
 --
 --   was            the rung this account held until the answer that lowered
---                  it. Written ONLY when the plan goes DOWN, and set back to
---                  null when it goes up or stays -- 「終了」 is a fact about
---                  coming down, so a null here is 「nothing ended」 rather
---                  than 「nobody has looked」.
+--                  it. Written ONLY when the plan goes DOWN, set back to null
+--                  when it goes up, and left as it is when it stays --
+--                  「終了」 is a fact about coming down, so a null here is
+--                  「nothing ended」 rather than 「nobody has looked」.
 --   lapse_seen_at  when they said 「今後表示しない」. Null while they have not,
 --                  and null again the moment `was` is written, because a
 --                  SECOND ending is a second thing to be told about.
@@ -855,6 +982,30 @@ create table if not exists block (
 );
 create index if not exists block_actor_idx on block(actor);
 
+-- AND THE ONE PLACE A BLOCK IS ANSWERED. 「Blocked means you see nothing of
+-- them」 OWNER 2026-08-19 (docs/FEATURE_RULES.md § Blocking) -- 「the feed
+-- (left out by the server)」, and the server did not: post_seen, feed_hot,
+-- feed_fo and notices() handed every row over and the phone threw some away.
+--
+-- Every read the app makes (a view, or a function that returns rows) asks
+-- this of each person it hands out -- the author of a post, whoever passed
+-- it on, whoever a notice is about -- and nothing else says what a block
+-- hides. tools/rls-check.mjs walks the catalogue as somebody who has blocked
+-- somebody and counts every read, so a view added tomorrow is asked tomorrow;
+-- the reads a block does not reach yet are named there (BLOCK_HELD) with
+-- the reason, and docs/scope/r80-block.md says what each is waiting on.
+--
+-- ONE WAY: it asks whether the person READING blocked `who`, never the other
+-- direction. Whether somebody who has been blocked stops seeing the person
+-- who blocked them is not decided (docs/scope/r73-audit.md § 5-6), and
+-- `block_read` above is why this can only ever answer about the reader's
+-- own rows: it runs as whoever calls it, and they read nobody else's.
+create or replace function block_hides(who uuid) returns boolean
+language sql stable as $$
+  select exists (select 1 from block b
+                  where b.actor = auth.uid() and b.blocked = who)
+$$;
+
 -- ---- where a notice goes when the app is closed ----------------------------
 -- 「通知作ろう。アップルのネイティブ通知で、フォローされた時、返信きた時みたい
 --   な感じでSNS部分であるやつ。」 OWNER 2026-09-22.
@@ -886,8 +1037,8 @@ create index if not exists block_actor_idx on block(actor);
 -- Deleting the account takes it, the way it takes everything else:
 -- 「アカウント削除で残るものねえって言ってんだろ何回言わせんだよ全部消える」.
 --
--- AND THE SWITCHES ARE NOT HERE. Which of the four kinds a person wants is
--- `profile.prefs` (`push_follow`, `push_reply`, `push_like`, `push_boost`),
+-- AND THE SWITCHES ARE NOT HERE. Which kinds a person wants is
+-- `profile.prefs` (`push_` + each kind in push-send's `PUSH`),
 -- because it is the ACCOUNT's answer and not this handset's -- the same
 -- sentence the theme and the interface language are under. A column here
 -- would be the answer per phone, which is the thing 2026-09-03 took out of
@@ -979,6 +1130,38 @@ create table if not exists feedback (
 );
 create index if not exists feedback_made_idx on feedback(created_at desc);
 
+-- A SOLD PLACE IN THE TIMELINE. 「広告の形は、Twitterと同じ。ツイート擬態右上に
+-- prとつく。広告枠が売れる形にする。」 OWNER 2026-09-23.
+--
+-- A promotion and not an advert: what is sold is a POST, written by the
+-- advertiser's own account like any other, and this row says which post and
+-- for how long. That is the Twitter shape the owner named, and it is why there
+-- is no second kind of row to draw -- www/post.js draws a promoted post with
+-- the one postRow() every post goes through, with PR in its corner. A table of
+-- adverts with their own text and pictures would be a second post nobody can
+-- like, reply to or report, and a second renderer to keep looking like the
+-- first.
+--
+-- A TABLE OF ITS OWN, and not a column on `post`, for the reason `draft` is:
+-- the author may update their own post (post_edit), and an author who could
+-- set a flag on it could sell themselves a place.
+--
+-- NOBODY WRITES ONE THROUGH A POLICY. There is no insert, update or delete
+-- policy, and each is deliberate: a place in somebody else's timeline is sold
+-- by the operator, through the service role, which no policy applies to.
+--
+-- `on delete cascade`: an advertiser deleting their post takes its promotion
+-- with it, because a promotion of nothing is not a thing anybody made -- it is
+-- the operator's note about a post, and the post is what it was about.
+create table if not exists promo (
+  id         bigint generated always as identity primary key,
+  post       uuid not null references post(id) on delete cascade,
+  starts_at  timestamptz not null default now(),
+  ends_at    timestamptz,
+  created_at timestamptz not null default now()
+);
+create index if not exists promo_run_idx on promo(starts_at, ends_at);
+
 -- ---------------------------------------------------------------------------
 -- Row level security
 --
@@ -986,10 +1169,12 @@ create index if not exists feedback_made_idx on feedback(created_at desc);
 -- below opens exactly one door. Read them as sentences: who, may do what, to
 -- which rows.
 --
--- Anonymous accounts can read and cannot write anything at all. Supabase gives
--- an anonymous sign-in a real uid, so "not signed in" is not the test -- the
--- JWT carries is_anonymous, and that is what every writing policy checks
--- through is_member().
+-- An anonymous session cannot write anything at all. Supabase gives an
+-- anonymous sign-in a real uid, so "not signed in" is not the test -- the JWT
+-- carries is_anonymous, and that is what every writing policy checks through
+-- is_member(). Reading is the grants' question and not the policies': `anon`,
+-- which is what a request with nobody signed in arrives as, holds nothing at
+-- all (the block at the foot of this file).
 --
 -- The app does not make one any more (OWNER 2026-08-26), so this is a wall
 -- with nobody standing at it. It stays because the switch that opens that
@@ -1024,6 +1209,7 @@ alter table saved_search enable row level security;
 alter table recent_search enable row level security;
 alter table plan        enable row level security;
 alter table purchase    enable row level security;
+alter table promo       enable row level security;
 
 -- One question, and until 2026-08-26 there were two.
 --
@@ -1057,8 +1243,8 @@ alter table purchase    enable row level security;
 -- switch in the Supabase dashboard, not a thing this file can see; if it is on
 -- -- today, or in a year, by somebody setting up a second project -- the
 -- endpoint answers, and what stops that session writing is this line and
--- nothing else. Ten policies stand on this function and none of them says the
--- word anonymous.
+-- nothing else. Every writing policy stands on this function and none of them
+-- says the word anonymous.
 create or replace function is_member() returns boolean
 language sql stable as $$
   select auth.uid() is not null
@@ -1086,15 +1272,27 @@ $$;
 --
 -- The handle IS the account's name and it is unique, so there is nothing to
 -- set and nothing to forge. Two people cannot both be `lingua`, and somebody
--- who renames themselves to it cannot: the UPDATE grant below does not carry
--- `handle`.
+-- who renames themselves to it cannot: `handle` is in the UPDATE grant below,
+-- and profile_rename() refuses a rename onto it or off it.
 --
 -- `profile.admin` is not dropped. It is somebody's stored row and this file
 -- does not delete data (docs/DATA_SAFETY.md); nothing reads it any more and
 -- nothing writes it.
+--
+-- THE NAME IS WRITTEN HERE AND NOWHERE ELSE. profile_admin() is the one place
+-- that says which row is the one above staff, and everything that needs to
+-- know -- is_admin() below, the three triggers, staff_drop(), the first
+-- follow -- asks it of a row. It takes the row rather than a handle so that
+-- the app can ask it too, of every row it reads: PostgREST serves a function
+-- of the table's own row as a column (`select=handle,admin:profile_admin`),
+-- which is how the staff list says which of its rows cannot be taken off.
+-- tools/rls-check.mjs counts the name in this file and wants one.
+create or replace function profile_admin(p profile) returns boolean
+language sql stable as $$ select p.handle = 'lingua' $$;
+
 create or replace function is_admin() returns boolean
 language sql stable as $$
-  select exists (select 1 from profile where id = auth.uid() and handle = 'lingua')
+  select exists (select 1 from profile p where p.id = auth.uid() and profile_admin(p))
 $$;
 
 -- profile: everyone reads, you write yourself into existence and edit yourself
@@ -1117,8 +1315,9 @@ create policy profile_edit on profile for update using (is_member() and id = aut
 -- posting one are the same kind of act and ask the same thing.
 --
 -- Reading does not ask it, and that is not an oversight: a published language
--- is readable by anybody at all, including somebody with no account, which is
--- what publishing one MEANS.
+-- is readable by everybody signed in, which is what publishing one MEANS.
+-- Somebody with no session reads nothing -- that is the grants' answer, at the
+-- foot of this file, and not this policy's.
 drop policy if exists language_read on language;
 create policy language_read on language for select
   using (published_at is not null or owner = auth.uid()
@@ -1194,6 +1393,44 @@ grant select, insert, delete on language_take to authenticated;
 -- readable, never a way in.
 alter table slice enable row level security;
 alter table slice_hist enable row level security;
+
+-- ---- what this file has done once ---------------------------------------
+-- This file is pasted again and again, and nearly everything in it says what
+-- is TRUE -- saying it a second time changes nothing. A step that MOVES
+-- something is not like that: run on the tenth paste, it would do again what
+-- a person has undone since the first. So a step that must happen once writes
+-- its name here when it has happened, and asks this table before it runs.
+-- Nothing about anybody is on it: the name of a step and when it ran. Row
+-- level security with no policy, so nobody the app signs in as reads it.
+create table if not exists schema_step (
+  step text primary key,
+  at   timestamptz not null default now()
+);
+alter table schema_step enable row level security;
+
+-- THE LANGUAGE'S NAME, FROM WHERE IT USED TO BE (r60-up B3). Before the
+-- column, a language's name was the `lang` slice, and a language made then
+-- has an empty `language.name` -- which is the half everybody else reads, so
+-- to them it had no name. It was the phone's launch that copied it
+-- (`netLangsWalk` in www/net.js), which is a launch writing to the server;
+-- it is here now, once.
+--
+-- A COPY: the slice is not touched (docs/DATA_SAFETY.md -- a migration
+-- copies and never removes what it read). ONLY INTO AN EMPTY NAME: a name
+-- already there is somebody's answer. And ONCE, because an empty name is also
+-- a thing a person does on purpose -- 「空は未設定」 OWNER 2026-09-06 -- and a
+-- copy that ran on every paste would put the old name back over that.
+do $step$
+begin
+  if not exists (select 1 from schema_step where step = 'language.name from lang') then
+    update language l set name = s.body
+      from slice s
+     where s.language = l.id and s.kind = 'lang'
+       and l.name = '' and s.body <> '';
+    insert into schema_step(step) values ('language.name from lang');
+  end if;
+end
+$step$;
 
 -- Whether the OWNER of a language has said that one section of it may be taken
 -- away. 「言語ページ公開と単語や文字のdl可能は別だし」 -- publishing a page and
@@ -1336,7 +1573,8 @@ create policy publication_make on publication for insert with check (
 --
 -- It exposes nothing new. `follow_read` is `using (true)` -- who follows whom
 -- is public, which is what a follower list IS -- and every column named here
--- is already world-readable through `profile_read`, also `using (true)`. What
+-- is already readable by everybody signed in through `profile_read`, also
+-- `using (true)`. What
 -- it does NOT carry is `staff`, `admin` and `banned_why`: they are on
 -- `profile` and readable there, and there is no reason for a view about a
 -- person's page to be the thing that hands them out.
@@ -1481,6 +1719,24 @@ create view profile_seen as
     ) l on true;
 grant select on profile_seen to authenticated;
 
+-- A POST KEPT TO YOURSELF is read by the person who wrote it and by nobody
+-- else -- not a follower, not the person it answers, not staff.
+-- 「SNSは全部サーバー」 and 「NOTHING IS THE PHONE'S」 (CLAUDE.md § Online):
+-- it lived on the phone that wrote it and nowhere else until 2026-09-23, which
+-- made it the one thing somebody wrote that a lost phone took with it.
+--
+-- The mark is `body.pv`, where it has always been on the phone -- a post's
+-- fields travel in `body` (www/net.js § netBody) -- so there is no column and
+-- nothing to grant. This is the ONE place that says what the mark is, and
+-- every reader asks it: the table's read policy (post_read), post_seen, which
+-- reads the table as its owner and so has to ask for itself (the row and the
+-- count of replies), and the trigger that rings somebody when they are
+-- answered. A reader added tomorrow asks this, or it is a second answer.
+create or replace function post_private(b jsonb) returns boolean
+language sql immutable as $$
+  select coalesce(b ->> 'pv', '') not in ('', '0', 'false')
+$$;
+
 drop view if exists post_seen cascade;
 create view post_seen as
   select p.id, p.author, p.language, p.prompt, p.reply_to, p.created_at,
@@ -1513,7 +1769,8 @@ create view post_seen as
          -- table. Taken-down replies are not counted: a count that includes
          -- what nobody can open is a number with nothing behind it.
          (select count(*) from post q
-           where q.reply_to = p.id and q.hidden_at is null) as replies,
+           where q.reply_to = p.id and q.hidden_at is null
+             and not post_private(q.body)) as replies,
          -- AND WHETHER THIS READER IS ONE OF THEM, which is a different
          -- question from how many and cannot be worked out from the count.
          -- Signed out, auth.uid() is null and both are false -- correct:
@@ -1524,12 +1781,17 @@ create view post_seen as
          exists (select 1 from react r
                   where r.post = p.id and r.kind = 'boost'
                     and r.actor = auth.uid()) as i_boost
-    from post p left join profile a on a.id = p.author;
+    from post p left join profile a on a.id = p.author
+   -- and a post kept to yourself is not a row for anybody else (post_private),
+   -- and one by somebody the reader blocked is not a row for them (block_hides).
+   where (not post_private(p.body) or p.author = auth.uid())
+     and not block_hides(p.author);
 grant select on post_seen to authenticated;
 
 -- post: everyone reads, you write as yourself.
 --
--- Everything is world-readable for now; locked accounts come later. When they
+-- Everything is readable by everybody signed in, for now; locked accounts come
+-- later. When they
 -- do, the read policy below is one of two places that change, and the other is
 -- the one worth knowing about in advance: a locked account needs following to
 -- be a request rather than an act, so follow grows an accepted column and its
@@ -1547,7 +1809,9 @@ grant select on post_seen to authenticated;
 -- a view is only a wall if there is no door beside it.
 drop policy if exists post_read on post;
 create policy post_read on post for select using (
-  hidden_at is null or author = auth.uid() or is_staff()
+  (hidden_at is null or author = auth.uid() or is_staff())
+  -- and one kept to yourself is yours alone, staff included (post_private)
+  and (not post_private(body) or author = auth.uid())
 );
 drop policy if exists post_make on post;
 create policy post_make on post for insert with check (is_member() and author = auth.uid());
@@ -1604,8 +1868,8 @@ create policy saved_drop on saved_search for delete using (is_member() and autho
 -- recent_search: the same four sentences, and the read is the one that
 -- matters. What somebody has been LOOKING FOR is not what they published --
 -- `profile_read` is `using (true)` and this must never be, or a history is a
--- list of every name a person typed, readable by anybody holding the
--- publishable key. Nothing would throw and every screen would be right.
+-- list of every name a person typed, readable by every account there is.
+-- Nothing would throw and every screen would be right.
 drop policy if exists recent_read on recent_search;
 create policy recent_read on recent_search for select using (is_member() and author = auth.uid());
 drop policy if exists recent_make on recent_search;
@@ -1682,8 +1946,46 @@ begin
   if not is_member() then raise exception 'not a member'; end if;
   update plan set lapse_seen_at = now() where id = auth.uid();
 end $$;
-revoke all on function plan_lapse_seen() from public;
-grant execute on function plan_lapse_seen() to authenticated;
+
+-- AND THE ONE ROAD THE PLAN ITSELF COMES IN BY, which is verify-plan's.
+--
+-- It read the row, decided `was` and `lapse_seen_at` from what it read, and
+-- wrote -- two requests with the row free between them, so two answers
+-- arriving together could each read the old plan and one of them record the
+-- wrong one (r63-audit SQ7). This is the same decision in one statement: the
+-- conflict road holds the row it compares against. The three cases are the
+-- column comment above:
+--
+--   down   `was` is the rung it held, `lapse_seen_at` null -- a new ending
+--   up     both null -- the ending is over
+--   same   both as they are -- an unticked notice stays to be shown again
+--
+-- The ladder is handed in (verify.mjs's `ORDER`, the one list of rungs), not
+-- written here: two ladders are one more than there are. plan_staff_hold()
+-- still has the last word, because it is a trigger on the row this writes.
+--
+-- Security invoker, and that is the whole of who may call it: `plan` has no
+-- insert and no update policy, so the service role -- which row level
+-- security does not apply to -- is the one caller whose write lands.
+create or replace function plan_put(who uuid, rung text, ladder text[])
+returns setof plan
+language sql as $$
+  insert into plan as o (id, plan, at) values (who, rung, now())
+  on conflict (id) do update set
+    plan = excluded.plan,
+    at   = excluded.at,
+    was  = case
+             when array_position(ladder, excluded.plan) < array_position(ladder, o.plan)
+               then o.plan
+             when array_position(ladder, excluded.plan) > array_position(ladder, o.plan)
+               then null
+             else o.was end,
+    lapse_seen_at = case
+             when array_position(ladder, excluded.plan) <> array_position(ladder, o.plan)
+               then null
+             else o.lapse_seen_at end
+  returning o.*
+$$;
 
 -- purchase: yours to read and nobody's to write.
 --
@@ -1699,6 +2001,17 @@ grant execute on function plan_lapse_seen() to authenticated;
 drop policy if exists purchase_read on purchase;
 create policy purchase_read on purchase for select
   using (is_member() and uid = auth.uid());
+
+-- promo: everybody signed in reads the ones running NOW, and nobody writes.
+--
+-- The window is asked here rather than by the phone, so a promotion that has
+-- ended is not handed to anybody -- a phone with the wrong clock cannot draw a
+-- place that was paid for until yesterday. Nothing is said about the plan:
+-- whether a reader SEES a promotion is www/core.js's can('noads'), because a
+-- plan decides what a person may do and this row is not theirs.
+drop policy if exists promo_read on promo;
+create policy promo_read on promo for select
+  using (starts_at <= now() and (ends_at is null or ends_at > now()));
 
 -- quote: readable by everyone, because the count is the point. Written only by
 -- the author of the post it sits in -- so nobody can inflate somebody else's
@@ -1754,6 +2067,36 @@ create policy block_drop on block for delete using (is_member() and actor = auth
 -- `using (true)` anywhere below, no update policy at all (a token does not
 -- change -- a new one is a new row and the old one goes), and `uid` is
 -- refused from the outside in both directions.
+--
+-- AND THE ADDRESS OF A PHONE IS THE ACCOUNT SIGNED IN ON IT NOW.
+-- 「端末ごとにやることなんてねえよ」 OWNER 2026-09-03: a phone is a window,
+-- and whoever is looking through it is who its notices are for. device_one()
+-- is the one place that says it, on the way in:
+--   - the same account sending the same token again is nothing to do. Every
+--     launch sends it (PostgREST's merge-duplicates), and the conflict took
+--     the update road, which there is no policy for -- so from the second
+--     launch on it was refused (r63-audit S5, measured).
+--   - a token arriving for this account is no longer any other account's.
+--     Somebody who signs in on a phone somebody else left signed in takes
+--     its notices with it; before, the first account's rang there too
+--     (r63-audit S4). docs/CHANGELOG.md 2026-09-24 carries the DELETE REVIEW.
+-- Only for a row that is the caller's own. A row naming somebody else is
+-- left to the policy below, which refuses it -- so the trigger never tells
+-- anybody anything about a row that is not theirs.
+create or replace function device_one() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if new.uid is distinct from auth.uid() then return new; end if;
+  if exists (select 1 from device where uid = new.uid and token = new.token) then
+    return null;
+  end if;
+  delete from device where token = new.token and uid <> new.uid;
+  return new;
+end $$;
+drop trigger if exists device_one on device;
+create trigger device_one before insert on device
+  for each row execute function device_one();
+
 --
 -- The one thing that is not the person: supabase/functions/push-send deletes
 -- a row Apple has answered `410 Unregistered` for. That runs with the service
@@ -1844,9 +2187,9 @@ create policy follow_drop on follow for delete using (is_member() and follower =
 -- against a plain PostgreSQL. A rule that can only be checked in production is
 -- a rule nobody has checked.
 --
--- Public to read. A post is world-readable (post_read above) and a picture on
--- one is part of the post; a signed URL per picture would be a round trip per
--- picture for something anybody can already fetch by reading the post.
+-- Read by whoever is signed in, which is who reads a post (post_read above):
+-- a picture on one is part of the post. The app reads a file with the
+-- person's own token on the request, not through a public URL.
 --
 -- The letters somebody drew on a photograph are INSIDE the jpeg before it ever
 -- gets here (tools/post-check counts the pixels). Nothing about that changes:
@@ -1879,14 +2222,19 @@ exception when insufficient_privilege then
 end
 $storage$;
 
-insert into storage.buckets (id, name, public)
-values ('post-media', 'post-media', true)
+-- Not public. What makes a bucket public or not is said once, for every
+-- bucket, in the block at the foot of this file (anon holds nothing), so it
+-- is not said here: a bucket is made with Storage's own default, which is
+-- closed, and one that was made open before is closed by that block.
+insert into storage.buckets (id, name)
+values ('post-media', 'post-media')
 on conflict (id) do nothing;
 
--- Anybody reads what is in this bucket, and only this bucket.
+-- Whoever is signed in reads what is in this bucket, and only this bucket --
+-- the same sentence `post_read` is under.
 drop policy if exists media_read on storage.objects;
 create policy media_read on storage.objects for select
-  using (bucket_id = 'post-media');
+  using (is_member() and bucket_id = 'post-media');
 -- You write under your own uuid and nowhere else.
 drop policy if exists media_make on storage.objects;
 create policy media_make on storage.objects for insert with check (
@@ -1915,7 +2263,8 @@ create policy media_drop on storage.objects for delete using (
 --
 -- It runs as whoever calls it (no `security definer`), so every row it can see
 -- is a row the policies above already let them see: react, post, profile and
--- follow are all world-readable. Nothing here opens a door; it walks through
+-- follow are all readable by everybody signed in. Nothing here opens a door;
+-- it walks through
 -- the ones that are open and puts the results in order.
 --
 -- Your own doing is not news. `actor <> auth.uid()` on each of the four, so
@@ -1985,7 +2334,11 @@ language sql stable as $$
               over first, and that is a name that can change between two
               readings of the same list. */
            (array_agg(ev.actor order by ev.at desc, ev.actor desc))[1:4] as few
-      from ev group by ev.kind, ev.post
+      from ev
+     /* Every notice is about the person in `actor`, and this is where they
+        are asked about, once, for all four kinds (block_hides). */
+     where not block_hides(ev.actor)
+     group by ev.kind, ev.post
   ),
   /* ---- AND THE SECOND WAY OF BEING THE SAME NOTICE ---------------------
      The owner gave two shapes and the list only ever made one of them:
@@ -2040,7 +2393,6 @@ language sql stable as $$
    order by r.at desc
    limit lim
 $$;
-grant execute on function notices(int) to authenticated;
 
 -- ---------------------------------------------------------------------------
 -- What is going round
@@ -2058,7 +2410,7 @@ grant execute on function notices(int) to authenticated;
 --
 -- Read as `post_seen` reads, column for column, so the phone's netRow() does
 -- not learn a second shape. `stable` and no `security definer`: it walks the
--- same world-readable tables the timeline already walks, and post's own read
+-- same signed-in-readable tables the timeline already walks, and post's own read
 -- policy is what decides that a taken-down post is nobody's business.
 --
 -- WHAT IS NOT HERE, and both are deliberate:
@@ -2074,14 +2426,6 @@ grant execute on function notices(int) to authenticated;
 -- count is honest about being a count.
 -- ---------------------------------------------------------------------------
 
--- How much a post's author counts for. ONE for everybody today, and this is
--- the whole of the reason it is a function: the day there is a column saying
--- who has paid and a number saying what the mark is worth, this is the line
--- that changes, and nothing else in the file moves.
---
--- The number is NOT decided. It has not been asked of the owner, so it is not
--- invented here -- a made-up multiplier is a made-up ranking, and nobody would
--- be able to tell by looking at the app that it had been guessed.
 -- The tick the list turns on. 「4時間ごと。0 4 8 12 16 20 24 これは入れ替わら
 -- ない。」 OWNER 2026-08-28 -- so this answers the most recent of those six
 -- hours and never anything in between.
@@ -2186,6 +2530,7 @@ language sql stable as $$
       select (count(*) * 5) as pts
         from post q
        where q.reply_to = v.id and q.created_at <= feed_slot()
+         and not post_private(q.body)
     ) a on true
    /* AS THE TICK LEFT IT, on both sides: the posts that existed then, and the
       reactions that had happened by then. That is what makes the list stand
@@ -2219,7 +2564,6 @@ language sql stable as $$
    order by ((k.pts + a.pts) * feed_weight(v.author)) desc, v.created_at desc
    limit lim offset off
 $$;
-grant execute on function feed_hot(int, int) to authenticated;
 
 -- THE PEOPLE YOU FOLLOW, AND WHAT THEY PASSED ON.
 --
@@ -2280,6 +2624,9 @@ language sql stable as $$
             from react r join post_seen v on v.id = r.post
            where r.kind = 'boost'
              and v.hidden_at is null
+             -- post_seen has already asked about who WROTE it; who passed it
+             -- on is a second person on the row and is asked here.
+             and not block_hides(r.actor)
              and r.actor in (select f.followed from follow f
                               where f.follower = auth.uid())
              and (before is null or r.created_at < before)
@@ -2289,7 +2636,6 @@ language sql stable as $$
    order by z.at_key desc
    limit lim
 $$;
-grant execute on function feed_fo(int, timestamptz) to authenticated;
 
 -- ---------------------------------------------------------------------------
 -- Leaving
@@ -2312,8 +2658,6 @@ begin
   if me is null then raise exception 'not signed in'; end if;
   delete from auth.users where id = me;
 end $$;
-revoke all on function account_delete() from public;
-grant execute on function account_delete() to authenticated;
 
 -- ---------------------------------------------------------------------------
 -- Whether an address already has an account
@@ -2347,8 +2691,6 @@ language sql stable security definer set search_path = public as $$
      where lower(email) = lower(btrim(p))
   );
 $$;
-revoke all on function email_taken(text) from public;
-grant execute on function email_taken(text) to authenticated;
 
 -- ---------------------------------------------------------------------------
 -- Answering a report
@@ -2368,8 +2710,6 @@ begin
   if not is_staff() then raise exception 'not staff'; end if;
   update post set hidden_at = now(), hidden_why = reason where id = p;
 end $$;
-revoke all on function post_hide(uuid, text) from public;
-grant execute on function post_hide(uuid, text) to authenticated;
 
 -- The other direction, which is why hiding is not deleting.
 create or replace function post_show(p uuid)
@@ -2379,8 +2719,6 @@ begin
   if not is_staff() then raise exception 'not staff'; end if;
   update post set hidden_at = null, hidden_why = null where id = p;
 end $$;
-revoke all on function post_show(uuid) from public;
-grant execute on function post_show(uuid) to authenticated;
 
 -- And the third answer, which is that there was nothing wrong.
 -- 「通報で問題なかったらその通報が消せるようにしてほしい」 OWNER 2026-09-05.
@@ -2400,8 +2738,6 @@ begin
   if not is_staff() then raise exception 'not staff'; end if;
   delete from report where id = r;
 end $$;
-revoke all on function report_drop(bigint) from public;
-grant execute on function report_drop(bigint) to authenticated;
 
 -- And the same for something somebody wrote in. 「運営は消せるように。」 OWNER
 -- 2026-09-22, said about exactly this and nothing else.
@@ -2420,8 +2756,6 @@ begin
   if not is_staff() then raise exception 'not staff'; end if;
   delete from feedback where id = f;
 end $$;
-revoke all on function feedback_drop(bigint) from public;
-grant execute on function feedback_drop(bigint) to authenticated;
 
 -- Ejecting somebody, which is the other half of answering a report and is the
 -- half App Store guideline 1.2 asks for by name. Taking the post down leaves
@@ -2441,8 +2775,6 @@ begin
   if p = auth.uid() then raise exception 'not yourself'; end if;
   update profile set banned_at = now(), banned_why = reason where id = p;
 end $$;
-revoke all on function account_ban(uuid, text) from public;
-grant execute on function account_ban(uuid, text) to authenticated;
 
 create or replace function account_unban(p uuid)
 returns void
@@ -2451,8 +2783,6 @@ begin
   if not is_staff() then raise exception 'not staff'; end if;
   update profile set banned_at = null, banned_why = null where id = p;
 end $$;
-revoke all on function account_unban(uuid) from public;
-grant execute on function account_unban(uuid) to authenticated;
 
 -- ---------------------------------------------------------------------------
 -- How many of everything there is
@@ -2498,8 +2828,6 @@ begin
   ) into n;
   return n;
 end $$;
-revoke all on function admin_counts() from public;
-grant execute on function admin_counts() to authenticated;
 
 -- ---------------------------------------------------------------------------
 -- Putting somebody's language back
@@ -2512,6 +2840,12 @@ grant execute on function admin_counts() to authenticated;
 -- post_hide() is -- the caller is a normal account whose own policies do not
 -- let it read somebody else's slice_hist -- and is_staff() is asked inside,
 -- so the definer rights are not a way in.
+--
+-- STAFF, AND NOT ONLY THE ONE ABOVE THEM, on purpose. admin_counts() above
+-- asks is_admin() and these two ask is_staff(), all three from the same
+-- screen, and the owner was asked whether that was meant: 「それでいいよ」 --
+-- the counts are @lingua's alone, looking back and putting back is any
+-- staff's (docs/FEATURE_RULES.md 2026-09-23).
 --
 -- NO BODY EVER COMES BACK. A version of a 5000-word dictionary is 685 KB, and
 -- the screen shows a part's name and a date, never its contents: the operator
@@ -2540,8 +2874,6 @@ begin
   ) into out;
   return out;
 end $$;
-revoke all on function admin_hist(text) from public;
-grant execute on function admin_hist(text) to authenticated;
 
 -- AND PUTTING ONE BACK IS AN UPDATE, WHICH IS WHY THE UNDO IS FREE. The write
 -- below goes through the same slice_hist_before trigger as any other, so what
@@ -2562,15 +2894,13 @@ begin
      and h.kind = admin_restore.kind
      and h.at = admin_restore.at;
   if b is null then raise exception 'no such version'; end if;
-  update slice s set body = b, no = s.no + 1, at = now()
+  update slice s set body = b, at = now()
    where s.language = admin_restore.language and s.kind = admin_restore.kind;
   if not found then
-    insert into slice(language, kind, body, no, at)
-         values (admin_restore.language, admin_restore.kind, b, 1, now());
+    insert into slice(language, kind, body, at)
+         values (admin_restore.language, admin_restore.kind, b, now());
   end if;
 end $$;
-revoke all on function admin_restore(uuid, text, timestamptz) from public;
-grant execute on function admin_restore(uuid, text, timestamptz) to authenticated;
 
 -- ---------------------------------------------------------------------------
 -- The first one, and everybody after
@@ -2597,7 +2927,7 @@ language plpgsql set search_path = public as $$
 begin
   -- `staff` only. Who is above staff is the handle itself now (is_admin()
   -- above), so there is no flag to raise for it.
-  if new.handle = 'lingua' then
+  if profile_admin(new) then
     new.staff := true;
   end if;
   return new;
@@ -2648,7 +2978,7 @@ begin
   end if;
   -- Both directions in one sentence: with the line above holding, "one of the
   -- two is lingua" IS "onto it or off it".
-  if new.handle = 'lingua' or old.handle = 'lingua' then
+  if profile_admin(new) or profile_admin(old) then
     raise exception 'handle reserved';
   end if;
   if old.handle_at is not null
@@ -2738,7 +3068,7 @@ drop trigger if exists profile_staff_plan on profile;
 create trigger profile_staff_plan after insert or update of staff on profile
   for each row when (new.staff) execute function profile_staff_plan();
 
-update profile set staff = true where handle = 'lingua';
+update profile p set staff = true where profile_admin(p);
 
 -- ---------------------------------------------------------------------------
 -- Making somebody staff, and unmaking them
@@ -2775,22 +3105,28 @@ begin
   update profile set staff = true where lower(handle) = lower(h);
   if not found then raise exception 'no such handle'; end if;
 end $$;
-revoke all on function staff_add(text) from public;
-grant execute on function staff_add(text) to authenticated;
 
--- `and handle <> 'lingua'` is the whole of "the one above staff cannot be
--- taken off it". It is the one failure here that cannot be undone from inside
--- the app: an owner who is no longer the owner has no screen left to fix it
--- from. It was `and not admin` and is the @ now, for is_admin()'s reason.
+-- And taking it off is the same function the other way, in the same shape:
+-- the same match, and a handle nobody has is an error and not a silence. It
+-- matched `handle = h` exactly and said nothing when nothing matched, so
+-- `staff_drop('AYA')` returned and aya stayed staff (r63-audit SQ3, measured).
+--
+-- THE ONE ABOVE STAFF CANNOT BE TAKEN OFF IT, and says so. It is the one
+-- failure here that cannot be undone from inside the app: an owner who is no
+-- longer the owner has no screen left to fix it from. The row does not move
+-- either way; what the refusal adds is that the caller is told, which is the
+-- sentence `staff_add()` above is written after.
 create or replace function staff_drop(h text)
 returns void
 language plpgsql security definer set search_path = public as $$
+declare r profile;
 begin
   if not is_admin() then raise exception 'not admin'; end if;
-  update profile set staff = false where handle = h and h <> 'lingua';
+  select * into r from profile where lower(handle) = lower(h);
+  if not found then raise exception 'no such handle'; end if;
+  if profile_admin(r) then raise exception 'the one above staff stays staff'; end if;
+  update profile set staff = false where id = r.id;
 end $$;
-revoke all on function staff_drop(text) from public;
-grant execute on function staff_drop(text) to authenticated;
 
 -- ---------------------------------------------------------------------------
 -- Everybody who starts now starts out following @lingua
@@ -2821,7 +3157,7 @@ create or replace function profile_follows() returns trigger
 language plpgsql security definer set search_path = public as $$
 declare l uuid;
 begin
-  select id into l from profile where handle = 'lingua';
+  select p.id into l from profile p where profile_admin(p);
   if l is not null and l <> new.id then
     insert into follow(follower, followed) values (new.id, l)
       on conflict do nothing;
@@ -2867,11 +3203,11 @@ create trigger profile_follows after insert on profile
 -- added later is not updatable until it is added to one of these lines」 --
 -- happening to the column added the day after it was written.
 --
--- It is not a preference any more either: the four switches that say which
+-- It is not a preference any more either: the switches that say which
 -- notices reach a phone are fields of this column (2026-09-22), and a switch
 -- that cannot be written is a switch that is always on.
-revoke update on profile from anon, authenticated;
-grant  update (handle, display, av, bio, link, loc, prefs) on profile to authenticated;
+revoke update on profile from authenticated;
+grant  update (handle, display, av, bio, link, loc, prefs, ed) on profile to authenticated;
 
 -- And the same sentence about INSERT, which is not the same statement.
 --
@@ -2894,7 +3230,7 @@ grant  update (handle, display, av, bio, link, loc, prefs) on profile to authent
 --
 -- `handle` IS in the UPDATE grant, and with is_admin() reading the handle
 -- that is the road somebody would take. profile_rename() closes it.
-revoke insert on profile from anon, authenticated;
+revoke insert on profile from authenticated;
 grant  insert (id, handle, display, av, bio, link, loc) on profile to authenticated;
 
 -- ---------------------------------------------------------------------------
@@ -2911,7 +3247,7 @@ grant  insert (id, handle, display, av, bio, link, loc) on profile to authentica
 -- quietly taking a policy down with it, so if this line ever errors it is
 -- telling the truth -- something is still standing on it.
 drop function if exists has_account();
-revoke update on post from anon, authenticated;
+revoke update on post from authenticated;
 grant  update (body, language, prompt, reply_to) on post to authenticated;
 
 -- And INSERT, for the same reason as profile above. The comment over
@@ -2927,22 +3263,31 @@ grant  update (body, language, prompt, reply_to) on post to authenticated;
 -- (id, author, body, prompt, reply_to) plus `language`, which the update line
 -- above already calls the author's. created_at is left out on purpose: it
 -- defaults to now() and a client that could name it could date a post.
-revoke insert on post from anon, authenticated;
+revoke insert on post from authenticated;
 grant  insert (id, author, language, body, prompt, reply_to) on post to authenticated;
 
 -- ---------------------------------------------------------------------------
--- And the road OUT: three triggers that tell push-send something happened
+-- And the road OUT: a trigger on each table whose insert is a notice
 --
 -- 「通知作ろう。アップルのネイティブ通知で、フォローされた時、返信きた時みたい
 --   な感じでSNS部分であるやつ。」 OWNER 2026-09-22.
+-- 「通知なんだけど、今日のお題が変わった時にも出るようにできる？」
+-- 「時間が決まってるでしょ。アメリカ時間の0時。それに合わせるのは？」
+--   OWNER 2026-09-23.
 --
--- Four kinds, and they are the four `notices()` already returns -- `follow`,
--- `reply`, `like`, `boost`. There is no fifth, and these triggers are not a
--- second list of them: `react.kind` decides between `like` and `boost` the
--- same way that function does, and `post.reply_to is not null` is what a
--- reply IS there too.
+-- WHAT THE KINDS ARE IS NOT SAID HERE. It is `PUSH` in
+-- supabase/functions/push-send/push.mjs -- one entry per kind, saying which
+-- table's insert raises it, how its row is read back, and who it is for.
+-- These triggers only knock: each hands push-send the table and the row, and
+-- push-send asks that entry what it is. `follow`, `reply`, `like` and `boost`
+-- are the four `notices()` returns (`react.kind` tells the last two apart
+-- there and there), and `prompt` is the day's sentence, which is for
+-- everybody and is not a notice in the tab. tools/rls-check.mjs reads every
+-- `table` out of `PUSH` and fails on one with no trigger here, so a kind
+-- added tomorrow is an entry there and a line below, and the second is
+-- counted rather than remembered.
 --
--- THE TRIGGER CARRIES THE SIGNED-IN PERSON, AND NOTHING ELSE.
+-- THE TRIGGER CARRIES WHOEVER WROTE THE ROW, AND NOTHING ELSE.
 -- 「サインインなしで勧めるものないけど」 OWNER 2026-09-22 -- there is nothing
 -- in this app that proceeds without a sign-in, and this road is not to be the
 -- first. A trigger fires INSIDE the REST request of the person who wrote the
@@ -2956,6 +3301,17 @@ grant  insert (id, author, language, body, prompt, reply_to) on post to authenti
 -- No secret is written down here and none could be: what travels is the
 -- caller's own token, which they already hold, and it is read at the moment
 -- of the write rather than stored.
+--
+-- THE DAY'S PROMPT IS THE SAME ROAD. Its row is written by
+-- supabase/functions/daily-prompt with the service role key, through
+-- PostgREST like every other write, so that key is what is in
+-- `request.headers` and what push_ping() hands on. push-send rings EVERYBODY
+-- for that kind and nobody else can make it: the entry says its actor is the
+-- service role, and a signed-in person's token is not that key. `prompt` has
+-- no insert policy and no insert grant for anybody the app signs in as
+-- (the prompt_read policy above, the cover at the foot), so no request from
+-- a phone can reach this trigger at all -- tools/rls-check.mjs tries, as B
+-- and as anon, and watches the queue stay empty.
 --
 -- WHY THIS IS OUR OWN FUNCTION AND NOT `supabase_functions.http_request()`.
 -- That is the packaged one a Database Webhook uses, and its headers are
@@ -2980,7 +3336,7 @@ grant  insert (id, author, language, body, prompt, reply_to) on post to authenti
 -- un-liking and re-liking is a delete and an insert, and the insert is the
 -- notice.
 --
--- WHY THE `do` BLOCK, and it is the only one in this file. `net` is not part
+-- WHY THE `do` BLOCK, and why it is guarded. `net` is not part
 -- of PostgreSQL and is not part of this file: pg_net arrives when somebody
 -- turns Database -> Webhooks on in the dashboard, once
 -- (supabase/setup.md § 12). Named unconditionally, a paste into a project
@@ -2993,10 +3349,48 @@ grant  insert (id, author, language, body, prompt, reply_to) on post to authenti
 --
 -- A skipped block is not a silent one. It says so, and setup.md § 12 says to
 -- look for it -- 「空」と「壊れている」は別の状態, which is the first page of
--- CLAUDE.md. What holds the three triggers themselves is tools/rls-check.mjs,
+-- CLAUDE.md. What holds the triggers themselves is tools/rls-check.mjs,
 -- which applies this file once WITHOUT pg_net (and asks that the rest of it
--- still landed) and once WITH it (and asks that all three are there, and that
--- what goes down the road carries the writer's own Authorization).
+-- still landed) and once WITH it (and asks that every table `PUSH` names has
+-- one, and that what goes down the road carries the writer's own
+-- Authorization).
+
+-- AND A ROW RINGS ONCE. push-send asked who was knocking and whether they
+-- were the row's own actor, and nothing about whether that row had rung
+-- already -- so B could point at B's own follow of A and ring A's phone as
+-- often as B liked (r63-audit SQ2). The record is ON THE ROW, `rung_at`, for
+-- two reasons: it goes when the row goes (an account deleted leaves no record
+-- of who was rung about it), and a follow undone and made again is a new row,
+-- which rings the way it always has.
+--
+-- push_once() is the one thing that writes it, and it answers whether THIS
+-- call is the one that did -- true once per row, false after. `k` is the
+-- row's key as push.mjs reads it (`PUSH[].key`); the table and the column
+-- names go through format('%I'), so what the caller sends is never SQL.
+--
+-- Security invoker, and that is who may call it: none of these tables has an
+-- update policy that reaches this column (react, follow and prompt have none
+-- at all, and `post`'s column grant does not carry it), so the service role
+-- -- which row level security does not apply to -- is the one caller whose
+-- mark lands. A signed-in caller gets false or a refusal and marks nothing.
+-- tools/rls-check.mjs asks every table `PUSH` names for the column.
+alter table follow add column if not exists rung_at timestamptz;
+alter table post   add column if not exists rung_at timestamptz;
+alter table react  add column if not exists rung_at timestamptz;
+alter table prompt add column if not exists rung_at timestamptz;
+
+create or replace function push_once(tbl text, k jsonb) returns boolean
+language plpgsql as $$
+declare w text := ''; f text; n int;
+begin
+  for f in select jsonb_object_keys(k) loop
+    w := w || format(' and %I = %L', f, k ->> f);
+  end loop;
+  if w = '' then return false; end if;
+  execute format('update %I set rung_at = now() where rung_at is null', tbl) || w;
+  get diagnostics n = row_count;
+  return n = 1;
+end $$;
 
 -- The one place a write becomes a knock on push-send's door.
 --
@@ -3043,7 +3437,7 @@ begin
                    join pg_namespace n on n.oid = p.pronamespace
                   where n.nspname = 'net' and p.proname = 'http_post') then
     raise notice '%', 'push-send: Database -> Webhooks has not been turned on '
-      'for this project, so the three notification triggers were NOT made. '
+      'for this project, so the notification triggers were NOT made. '
       'Everything else in this file is in. See supabase/setup.md section 12, '
       'then run this file again.';
     return;
@@ -3058,13 +3452,24 @@ begin
   -- whole timeline through this road to be thrown away at the far end.
   drop trigger if exists push_on_reply on post;
   create trigger push_on_reply after insert on post
-    for each row when (new.reply_to is not null) execute function push_ping();
+    -- A reply kept to yourself rings nobody: the person answered cannot read
+    -- it, so telling them it exists is reading it (post_private).
+    for each row when (new.reply_to is not null and not post_private(new.body))
+    execute function push_ping();
 
   -- Both kinds down one trigger. `react.kind` is where like and boost are
   -- told apart and it is told apart there for notices() as well; a second
   -- trigger per kind would be that one fact written down twice.
   drop trigger if exists push_on_react on react;
   create trigger push_on_react after insert on react
+    for each row execute function push_ping();
+
+  -- The day's prompt, for everybody. After insert only: daily-prompt writes
+  -- a day's row once and does nothing when it is there, and somebody fixing
+  -- the sentence in the Table Editor (supabase/setup.md § 9-6) is an update
+  -- and rings nobody.
+  drop trigger if exists push_on_prompt on prompt;
+  create trigger push_on_prompt after insert on prompt
     for each row execute function push_ping();
 end
 $b$;
@@ -3171,21 +3576,12 @@ end
 $w$;
 
 -- A PUBLIC BUCKET IS A URL THAT NEEDS NOTHING. No policy under it is ever
--- consulted: the object is served to whoever has the link, and the link is in
--- every post. `post-media` has been public since the day it was made, which
--- means every photograph and every recording anybody put up has been readable
--- by anybody at all.
---
--- Every bucket and not this one by name -- the cover is the mechanism.
+-- consulted: the object is served to whoever has the link. So no bucket is
+-- public -- every bucket and not one by name, because the cover is the
+-- mechanism, and a bucket made open on a server before this line (as
+-- `post-media` was until 2026-09-22) is closed by it.
 update storage.buckets set public = false where public;
 
--- And the policy over the files asks who you are, the way the other two
--- already did. `using (bucket_id = 'post-media')` was every person alive;
--- this is every person signed in, which is the same sentence `post_read` is
--- under.
-drop policy if exists media_read on storage.objects;
-create policy media_read on storage.objects for select
-  using (is_member() and bucket_id = 'post-media');
 
 -- THE ONE NAME THAT STAYS OPEN, and it is the owner's.
 -- 「判断だけどこれは例外で」 OWNER DECISION 2026-09-22.

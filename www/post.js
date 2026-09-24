@@ -38,14 +38,6 @@
 
 var LS_POSTS='lingua.posts';
 var POSTS=[];
-function postRead(){
-  POSTS=[];
-  try{
-    var p=JSON.parse(localStorage.getItem(LS_POSTS)||'null');
-    if(p && p.length) POSTS=p;
-  }catch(e){}
-}
-postRead();
 /* A failed write used to be swallowed here, and it was survivable while a
    post was a line of text: a hundred of them are a few kilobytes and storage
    does not run out. A post can carry a photograph now, so it can, and a
@@ -55,7 +47,7 @@ postRead();
    It says so instead. Nothing is deleted to make room -- pruning somebody's
    own posts to fit one more is exactly what docs/DATA_SAFETY.md forbids. */
 function savePosts(){
-  try{ localStorage.setItem(LS_POSTS, JSON.stringify(POSTS)); return true; }
+  try{ acctPut('posts', POSTS); return true; }
   catch(e){ toast(t('post.full')); return false; }
 }
 /* ---- and these belong to an ACCOUNT, not to the phone --------------------
@@ -63,54 +55,28 @@ function savePosts(){
    2026-09-03, with a photograph of a brand new account whose 投稿 tab was
    full of the last one's timeline.
 
-   `lingua.posts` and `lingua.drafts` are one key each, and `pfList()` picks
+   `lingua.posts` and `lingua.drafts` were one key each, and `pfList()` picks
    your own page out of them by `p.mine` -- a flag written when the post was
    made, by whoever was signed in THEN. So the second account read the first
-   one's `mine` as its own. Nothing was wrong with the server: the timeline
-   comes down correctly. What was wrong is that a copy kept for working with
-   no signal had no owner on it.
+   one's `mine` as its own. The copy kept for working with no signal had no
+   owner on it.
 
-   www/me.js § meFor() had this exact fault in 2026-08-27 and this is its
-   answer, applied to the other two keys: the copy is PARKED under the account
-   that was holding it and the new account's park is read back. Nothing is
-   deleted -- signing back in brings everything to the screen again, which is
-   the whole of why parking rather than clearing.
-
-   An UNCLAIMED copy is adopted, the way meFor() adopts one: a phone that has
-   been posting since before this line existed carries posts with no owner,
-   and they are the person who is signing in. Only on the way IN -- signing
-   out of an unclaimed copy leaves it where it is. */
-var POSTS_UID='';
-function postParkKey(uid, k){ return 'lingua.' + k + '.' + String(uid||''); }
-function postFor(uid){
-  var want=String(uid||''), had=POSTS_UID, park, got;
-  if(want===had) return;
-  if(had){
-    try{
-      localStorage.setItem(postParkKey(had, 'posts'), JSON.stringify(POSTS));
-      localStorage.setItem(postParkKey(had, 'drafts'), JSON.stringify(DRAFTS));
-    }catch(e){}
-  }
-  /* Nobody has held these yet and there is something in them: they are the
-     account that is arriving. */
-  if(!had && want && (POSTS.length || DRAFTS.length)){
-    POSTS_UID=want; savePosts(); draftsSave(); return;
-  }
-  POSTS=[]; DRAFTS=[];
-  if(want){
-    try{ park=localStorage.getItem(postParkKey(want, 'posts')); }catch(e){ park=null; }
-    if(park){ try{ got=JSON.parse(park); if(got && got.length) POSTS=got; }catch(e){} }
-    try{ park=localStorage.getItem(postParkKey(want, 'drafts')); }catch(e){ park=null; }
-    if(park){ try{ got=JSON.parse(park); if(got && got.length) DRAFTS=got; }catch(e){} }
-  }
-  POSTS_UID=want;
-  savePosts(); draftsSave();
-}
+   It has one from the first byte now: `lingua.posts.<uid>` and
+   `lingua.drafts.<uid>`, written under the account holding them and read for
+   the account in hand (www/core.js § ACCT). The old two keys are read once,
+   for the account `lingua.set`'s stamp named (§ acctMoved), and a copy that
+   named nobody is nobody's -- it is no longer adopted by whoever signs in
+   first (r73 § 2-7). Nothing is deleted. */
+acctKeep('posts', function(){ return POSTS.length? POSTS : null; },
+         function(v){ POSTS=(v && typeof v.length==='number')? v : []; }, LS_POSTS);
 /* Newest first, which is the only order a timeline has. */
 /* Whoever you have blocked is not in any list. 「ブロックは何も見えなくなる」
-   netFeed() leaves them out on the SERVER, which is the only way a block is a
-   block at all -- their posts never arrive. This is the other half: a post of
-   theirs already on this phone, in a thread, on a profile, in a search.
+   What the server sends leaves them out already -- `post_seen` asks
+   block_hides() of every author (supabase/schema.sql, r80-block) -- so no
+   answer is sieved on this phone. This is the other half, and the one the
+   server cannot reach: a post of theirs this phone ALREADY holds, brought
+   down before the block. postTake() adds to the copy and never replaces it,
+   so a timeline, a thread and a profile would go on drawing it.
 
    Never your own: `mine` is checked because a handle can be your own on a
    phone whose account changed, and a block that hid your own writing would be
@@ -223,7 +189,57 @@ var PW={ln:'', mn:''};
    same reason `toh` is: what somebody wrote is the line, and a tag is not in
    it any more. 「#はべつで」 OWNER 2026-09-15, replacing 「タグは本文中に。」
    (2026-09-04). www/sns.js § A TAG IS NOT IN THE BODY ANY MORE. */
-function pwBlank(){ return {ln:'', mn:'', to:'', toh:'', pics:[], pr:0, tags:[]}; }
+function pwBlank(){ return {ln:'', cut:[], mn:'', to:'', toh:'', pics:[], pr:0, tags:[]}; }
+/* THE LINE BEING WRITTEN IS ONE THING: the cut (www/glyph.js § puaTyped) --
+   the line as it was typed, `{id}` where the Lingua keyboard put a letter and
+   `{t}` for the rest. `PW.ln` is its roman and is written here and nowhere
+   else, so the two cannot disagree; the field shows puaField() of it. It was
+   two -- the roman handed in as an argument and the raw line kept in a global
+   for the cut -- and the raw line was what went up as a draft (r73 §2-10). */
+function pwLine(cut){
+  var ln='', i, u, l;
+  PW.cut=cut || [];
+  for(i=0;i<PW.cut.length;i++){
+    u=PW.cut[i];
+    if(u.id===undefined){ ln+=String(u.t||''); continue; }
+    l=ltById(u.id);
+    ln+=String((l && ltName(l)) || '');
+  }
+  PW.ln=ln;
+}
+/* Whether the line has anything in it. A letter counts whether or not it has
+   a name: one with none is in the cut and not in the roman, and a line of
+   them is a line. */
+function pwLineAny(){
+  var i, u;
+  for(i=0;i<(PW.cut||[]).length;i++){
+    u=PW.cut[i];
+    if(u.id!==undefined || /\S/.test(String(u.t||''))) return true;
+  }
+  return false;
+}
+/* How long the line is: a letter is one, as it is one key and one shape. */
+function pwLineLen(){
+  var n=0, i, u;
+  for(i=0;i<(PW.cut||[]).length;i++){
+    u=PW.cut[i];
+    n+= (u.id!==undefined)? 1 : String(u.t||'').length;
+  }
+  return n;
+}
+/* The cut as it goes onto something that is kept: trimmed at both ends the
+   way the roman is, and the day's tag in its one stored spelling. */
+function pwLineKept(){
+  var out=[], i, u, c=PW.cut||[];
+  for(i=0;i<c.length;i++){
+    u=c[i];
+    out.push(u.id!==undefined? {id:u.id} : {t:dayTagStore(String(u.t||''))});
+  }
+  while(out.length && out[0].t!==undefined && !(out[0].t=out[0].t.replace(/^\s+/, ''))) out.shift();
+  while(out.length && out[out.length-1].t!==undefined &&
+        !(out[out.length-1].t=out[out.length-1].t.replace(/\s+$/, ''))) out.pop();
+  return out;
+}
 /* ---- who a post is for -------------------------------------------------
    「自分専用の日記みたいなポストとみんなに公開するポストカード選べるように」
    「誰に向けて後悔するかでしょ。自分or公開で」「公開（推奨）」
@@ -272,7 +288,7 @@ function pwSetPriv(v){
    time the composer is. */
 function pwSideHTML(){
   if(PW.ed) return '';
-  if(pwHas(String(PW.ln||'').trim()))
+  if(pwHas())
     return '<button class="pwab"' + DO('draftKeep') + ' aria-label="'+
       esc(t('post.draft.save'))+'">'+ICON_DRAFT+'</button>';
   /* THE MARK IS ALWAYS HERE, and the number is not.
@@ -306,7 +322,7 @@ function pwSidePaint(){
    things. A post with no line, no photograph and no voice is not a post.
    「なにもない時は薄い灰色、何か打ったら金にする」 OWNER 2026-09-03,
    www/shell.js § navDo. */
-function pwOn(){ return pwHas(puaRoman(String(PW.ln||'')).trim()); }
+function pwOn(){ return pwHas(); }
 /* The thing that finishes it goes in the top bar, filled, where every phone
    puts it -- not at the foot of a screen you have to scroll to. */
 function openPost(from, at){
@@ -438,7 +454,10 @@ function openPost(from, at){
        this is; whether there IS one to send is the colour, and the colour is
        www/shell.js § navDo's two states. */
     navDo(t(PW.ed? 'post.save' : 'post.send'), 'pwSend', null, pwOn(),
-          {id:'pw-go', cls:(pwPriv()? 'pv' : ''), mark:(pwPriv()? ICON_LOCK : '')}),
+          /* A send is the paper plane (CLAUDE.md § Shape, the sixth). Saving
+             an edit has no settled mark yet, so that one stays a word. */
+          {id:'pw-go', cls:(pwPriv()? 'pv' : ''), mark:(pwPriv()? ICON_LOCK : ''),
+           icon:(PW.ed? '' : ICON_SEND)}),
     true);
 }
 /* The timer, wired after the screen is drawn. Holding turns the post private
@@ -468,12 +487,8 @@ function pwHoldMount(){
    when you saved it. */
 var LS_DRAFTS='lingua.drafts';
 var DRAFTS=[];
-function draftsRead(){
-  try{ DRAFTS=JSON.parse(localStorage.getItem(LS_DRAFTS)||'[]')||[]; }catch(e){ DRAFTS=[]; }
-  if(Object.prototype.toString.call(DRAFTS)!=='[object Array]') DRAFTS=[];
-}
 function draftsSave(){
-  try{ localStorage.setItem(LS_DRAFTS, JSON.stringify(DRAFTS)); }catch(e){}
+  saveTry(function(){ acctPut('drafts', DRAFTS); });
 }
 
 /* Every draft has a name. The ones written before there was a server to put
@@ -507,24 +522,9 @@ function draftById(id){
   for(i=0;i<DRAFTS.length;i++) if(DRAFTS[i] && DRAFTS[i].id===id) return DRAFTS[i];
   return null;
 }
-draftsRead();
-/* AND ONCE AT LOAD, for the reason www/me.js gives at the foot of meFor():
-   two keys are read by two files that do not know about each other. net.js
-   reads lingua.sess when it loads and this file reads lingua.posts when it
-   loads, and nothing between them compared the two -- a phone signed in as
-   one account while holding another's posts stayed that way until the next
-   sign-in, which on a fresh account is never.
-
-   AFTER draftsRead(), and that is not tidiness. This was two lines higher for
-   an hour and it WROTE THE DRAFTS AWAY: postFor() ends by saving both, and
-   before this line DRAFTS is still the empty array it was declared as -- so
-   the save put `[]` over lingua.drafts on the first launch after the update.
-   Nothing that reads a key may run before the key is read.
-
-   net.js is loaded before this file (www/index.html: 3585 and 3611), so SESS
-   is here to be asked. Signed out, this parks what the phone was holding,
-   which is what netOut() does for the same reason. */
-postFor(SESS && SESS.uid);
+acctKeep('drafts', function(){ return DRAFTS.length? DRAFTS : null; },
+         function(v){ DRAFTS=(Object.prototype.toString.call(v)==='[object Array]')? v : []; },
+         LS_DRAFTS);
 draftsName();
 /* Saved as it stands: the line, the meaning, whom it answers, WHOM IT IS FOR,
    the pictures with their letters still placed on them, the recording, and
@@ -537,7 +537,7 @@ draftsName();
    opens with none, which is a composer with no addressee -- exactly the
    screen it was written on. Nothing is removed and nothing is migrated. */
 function draftKeep(){
-  if(!PW.ln && !pwPics().length && !(PW.vo && PW.vo.f)){ toast(t('post.none')); return; }
+  if(!pwLineAny() && !pwPics().length && !(PW.vo && PW.vo.f)){ toast(t('post.none')); return; }
   /* The name it already had, if this is one that was opened again. Reusing it
      is what stops a draft opened and put back becoming two rows -- one on the
      server nobody can reach and one in front of them. */
@@ -546,7 +546,12 @@ function draftKeep(){
      carrying only the line would come back with the frame empty and the day
      it was written for gone off it. A draft written before today opens with
      none, which is the composer it was written on. Nothing is migrated. */
-  var d={id:PW.did || netUUID(), at:Date.now(), ln:dayTagStore(PW.ln), mn:PW.mn, to:PW.to,
+  /* `cut` is what a draft gained on 2026-09-24 (r78): the line as it was
+     typed, by letter id, where `ln` used to carry the private use characters
+     themselves -- numbers that mean a letter only in this alphabet's order at
+     this moment. `ln` is the roman now. A draft kept before today carries
+     none and is read the way it always was (draftOpen). */
+  var d={id:PW.did || netUUID(), at:Date.now(), ln:dayTagStore(PW.ln), cut:pwLineKept(), mn:PW.mn, to:PW.to,
          toh:PW.toh||'', pr:PW.pr||0, tags:pwTagsOut(),
          pics:pwPics(), vo:PW.vo||null, pv:!!PW.pv};
   /* THE SERVER FIRST, AND THE LIST WHEN IT HAS LANDED.
@@ -561,7 +566,10 @@ function draftKeep(){
      typed stays in the composer, on the screen, and ［再接続］ presses Keep
      again. Nothing of anybody's is thrown away by a failure: the composer is
      untouched until the row is there. */
-  netDraftUp(d, function(){
+  netDraftUp(d, function(row){
+    /* The row as it now stands: where another phone kept this draft LATER,
+       that is the draft (supabase/schema.sql § keep_newer). */
+    if(row && row.body) d=draftOfRow(row);
     d.up=1;
     DRAFTS.push(d);
     draftsSave();
@@ -570,6 +578,21 @@ function draftKeep(){
     goTab('feed');
   }, function(dd, st, m){ netPop(dd, st, m, draftKeep); });
 }
+/* A kept draft's line as the composer holds it. One kept before 2026-09-24
+   has no `cut` and its `ln` is what the field held, private use characters
+   and all; it is read through puaTyped(), the same reading as a keystroke,
+   in this alphabet's order now -- which is the only order there is to read
+   it in, and what it was read in before. Nothing is written back. */
+function draftCut(d){
+  var c=(d && Object.prototype.toString.call(d.cut)==='[object Array]')? d.cut : null, out=[], i;
+  if(!c) c=puaTyped((d && d.ln) || '').cut;
+  for(i=0;i<c.length;i++)
+    out.push(c[i].id!==undefined? {id:c[i].id} : {t:dayTagShow(String(c[i].t||''))});
+  return out;
+}
+/* And what the list says it is: the roman -- of a draft kept before today
+   too, rather than its private use characters in a face that has none. */
+function draftLn(d){ return puaTyped((d && d.ln) || '').ln; }
 /* Opening one takes it out of the list: it is the composer again, and a draft
    that is open in two places at once is a draft about to be duplicated. */
 function draftOpen(i){
@@ -580,7 +603,8 @@ function draftOpen(i){
   draftsSave();
   if(here().r==='drafts') back();
   PW=pwBlank();
-  PW.ln=dayTagShow(d.ln||''); PW.mn=d.mn||''; PW.to=d.to||''; PW.toh=d.toh||''; PW.pr=d.pr||0;
+  pwLine(draftCut(d));
+  PW.mn=d.mn||''; PW.to=d.to||''; PW.toh=d.toh||''; PW.pr=d.pr||0;
   /* The frame as it was kept. tagsOf() is the one place that says what a
      row's tags are -- the same function the timeline's row asks -- so a draft
      and a post cannot disagree about it. */
@@ -658,11 +682,20 @@ function draftDropHere(d){
    askDrafts() (www/sns.js). So the drafts fall down the same one road every
    other screen's pull does -- the mark, the pop and ［再接続］ are pullRun()'s
    and are not written again here. */
+/* A draft as the server holds it, put back into the shape the list keeps --
+   the one place a row becomes a draft (draftsPull, and draftKeep's answer). */
+function draftOfRow(r){
+  var d={}, b=(r && r.body) || {}, k;
+  for(k in b) if(Object.prototype.hasOwnProperty.call(b, k)) d[k]=b[k];
+  d.id=r.id; d.up=1;
+  if(!d.at) d.at=Date.parse(r.updated_at) || Date.now();
+  return d;
+}
 function draftsPull(ok, bad){
   var done=ok || function(){};
   if(!netSignedIn()){ done(0); return; }
   netDrafts(function(rows){
-    var i, k, r, b, d, seen={}, keep=[], moved=false;
+    var i, r, d, had, seen={}, keep=[], moved=false;
     for(i=0;i<(rows||[]).length;i++){
       r=rows[i];
       if(!r || !r.id) continue;
@@ -671,14 +704,18 @@ function draftsPull(ok, bad){
          it was opened, and putting it back is the same post in two places,
          which is the thing tools/draft-check.mjs holds. */
       if(PW && PW.did===r.id) continue;
-      d=draftById(r.id);
-      if(d){ keep.push(d); continue; }
-      d={}; b=r.body || {};
-      for(k in b) if(Object.prototype.hasOwnProperty.call(b, k)) d[k]=b[k];
-      d.id=r.id; d.up=1;
-      if(!d.at) d.at=Date.parse(r.updated_at) || Date.now();
+      /* THE SERVER'S ROW IS THE DRAFT, and the copy here is the picture of
+         it (rule 22). This kept the copy wherever both had one, so an edit
+         made on another phone never showed here, and keeping it from here
+         put the old words back over the new ones (r63-audit A6). Nothing is
+         lost by the answer winning: a draft is kept on the server FIRST
+         (draftKeep), so the copy here never holds anything the server was
+         not given -- what is being typed lives in the composer, and the one
+         that is open is skipped above. */
+      had=draftById(r.id);
+      d=draftOfRow(r);
       keep.push(d);
-      moved=true;
+      if(!had || JSON.stringify(had)!==JSON.stringify(d)) moved=true;
     }
     /* AND WHAT THIS PHONE HAS THAT THE SERVER DOES NOT, WHICH IS TWO
        DIFFERENT THINGS.
@@ -690,19 +727,19 @@ function draftsPull(ok, bad){
        server has not got is a row somebody deleted somewhere else: the copy
        catches up and it goes off this phone. A draft that has never been up
        -- written before there was a server -- has never been anywhere else,
-       so it is sent, once, and joins the rest.
+       so it STAYS in the list, and goes up when somebody opens it and keeps it
+       (draftKeep). It was sent from here, once, off the back of this answer
+       with nobody having pressed anything -- the same road r46-audit § A6
+       found beside the keep that waits for the server.
 
        Nothing of anybody's is lost either way: the first is something they
-       deleted, and the second is on its way to where it lives. */
+       deleted, and the second is still here. */
     for(i=0;i<DRAFTS.length;i++){
       d=DRAFTS[i];
       if(!d || !d.id || seen[d.id]) continue;
       if(PW && PW.did===d.id){ keep.push(d); continue; }
       if(d.up){ moved=true; continue; }
       keep.push(d);
-      netDraftUp(d, (function(one){
-        return function(){ one.up=1; draftsSave(); };
-      })(d));
     }
     if(moved || keep.length!==DRAFTS.length){
       DRAFTS=keep;
@@ -720,9 +757,10 @@ function draftsPull(ok, bad){
 
    It is one entry in the pull table now (`drafts`, www/sns.js), so the flag,
    the mark, the pop and ［再接続］ are the table's; the uid it was keyed on is
-   pullForget(), which empties every answer when a session ends. And it is on
-   PULL_OPEN, so the drafts are in hand before this screen is opened rather
-   than a second after -- nothing is asked for on the way in. */
+   pullForget(), which empties every answer when a session ends. And it is
+   this page's row in www/sns.js § WHAT EACH PAGE READS, so the door waits
+   for the drafts and they are in hand before this screen is drawn rather
+   than a second after -- the view itself asks for nothing. */
 /* A page of its own. 「下書きはそこに入れないで。別ページに飛ぶ感じで」 A list
    at the foot of the screen you are writing on is a list under the thing it
    is about, and the two are read as one screen -- so the drafts are somewhere
@@ -801,14 +839,14 @@ function vDrafts(){
           (on? ICON_DOT : ICON_RING)+'</span>'+
         '<button class="dfb"' + DO('dfSelTap', [i]) + '>'+
           (d.pv? '<span class="ppv">'+ICON_LOCK+'</span>' : '')+
-          '<span class="dfl">'+esc(d.ln || d.mn || t('post.draft.empty'))+'</span>'+
+          '<span class="dfl">'+esc(draftLn(d) || d.mn || t('post.draft.empty'))+'</span>'+
           '<span class="dfw">'+esc(postWhen(d.at))+'</span></button></div>';
       continue;
     }
     out+='<div class="dfrow">'+
       '<button class="dfb"' + DO('draftOpen', [i]) + '>'+
         (d.pv? '<span class="ppv">'+ICON_LOCK+'</span>' : '')+
-        '<span class="dfl">'+esc(d.ln || d.mn || t('post.draft.empty'))+'</span>'+
+        '<span class="dfl">'+esc(draftLn(d) || d.mn || t('post.draft.empty'))+'</span>'+
         '<span class="dfw">'+esc(postWhen(d.at))+'</span></button>'+
       '</div>';
   }
@@ -831,10 +869,6 @@ FORM_OPEN.post=function(){ openPost(); };
 /* What the meaning field starts as, and what its placeholder says: the gloss
    run together. It was worked out in three places and they have to agree --
    what you are offered has to be what you get if you type nothing. */
-/* The line as the rest of the app reads it. What is in the field may be what
-   the Lingua keyboard typed, which is the private use area; everything below
-   the field works on the roman spelling. */
-function pwLn(){ return puaRoman(PW.ln); }
 /* OWNER 2026-09-05 単語はその単語の意味を 文法は並び替えた単語たちが文章として成り立つように
    What the meaning field starts as: the line said in the reader's own
    language. The dictionary says what each word means and the grammar says
@@ -844,7 +878,7 @@ function pwLn(){ return puaRoman(PW.ln); }
    leaves in the order it was typed, which is the words, and the words are
    most of what somebody needs. 「単語と文法が埋まれば埋まるだけ投稿の翻訳の
    精度が上がるっていうのが目的」 */
-function pwMn(){ return LinguaGrammarEngine.translate.toNatural(gModel(), pwLn(), uiLang()); }
+function pwMn(){ return LinguaGrammarEngine.translate.toNatural(gModel(), PW.ln, uiLang()); }
 /* The composer is TWO rows, the same two the timeline is:
    「やっぱり、タイムラインも投稿も2段で。赤文字消して。」
    「これもお題のページと合わせるんだけど」 OWNER 2026-08-28
@@ -955,7 +989,7 @@ var POST_PICS=4;
 function pwPics(){ if(!PW.pics) PW.pics=[]; return PW.pics; }
 function pwPicRoom(url){
   var n=0;
-  try{ n=String(localStorage.getItem(LS_POSTS)||'').length; }catch(e){}
+  try{ n=JSON.stringify(POSTS).length; }catch(e){}
   return (n + String(url||'').length) < POST_BYTES;
 }
 /* The camera. `capture` on an image field is the whole of it -- iOS opens the
@@ -1272,25 +1306,44 @@ function postSid(p, sid){
   savePosts();
 }
 /* Written here and never sent. One question, one place: a post of mine that
-   the server has no id for, and that is not kept to myself -- postCatchUp()
-   is what tries to send those, and the row is what says so on the screen.
-   「5 いります」 OWNER 2026-09-06.
+   the server has no id for -- kept to myself or not, since a private post
+   goes up too -- and the row is what says so on the screen. 「5 いります」
+   OWNER 2026-09-06.
+
+   NOTHING SENDS IT ON ITS OWN BUT THE DOOR (postUpAll below). postCatchUp()
+   used to, off the back of the next timeline answer, with nobody having
+   pressed anything -- and that is the other half of 「保存するタイミングで
+   エラーが起きるなら、保存されない」「なら失敗して残るにするべき」 OWNER
+   2026-09-05 (r46-audit § A5).
 
    It reads nothing but what is ON the post, so the reading side may ask it. */
 function postUnsent(p){
-  return !!(p && p.mine && !p.sid && !p.pv);
+  return !!(p && p.mine && !p.sid);
 }
-/* Everything already on this phone that the server has never seen.
-   「あげよう」
+/* ---- AT THE DOOR, WHAT THIS ACCOUNT WROTE AND THE SERVER HAS NOT GOT ----
+   The one moment the phone's copy goes up without a press, and it is the
+   same exception the language has: the door (www/net.js § netTook) puts what
+   is on this phone up as the account arriving. What is left here is what an
+   older version kept on this phone alone -- a post kept to yourself, which
+   was never sent, and a post whose send failed before a failed send stayed in
+   the composer. Nothing is deleted: each one is sent as it is, gets the
+   server's id (postSid), and the copy here stays.
 
-   It walks oldest first, so a thread goes up in the order it was written and
-   a reply finds its parent's `sid` already there. A few at a time: this runs
-   off the back of a timeline pull, and forty posts in one breath is a phone
-   that appears to have frozen.
-
-   Nothing is removed, nothing is rewritten, and a post that fails is simply
-   one that still has no `sid` -- so the next pull tries it again. A post kept
-   to yourself never goes, which is the same door pwSendWith() uses. */
+   One at a time and oldest first, through postSend() -- the one-send-at-a-time
+   mark is on it -- so a reply goes after the post it answers and can name it
+   (netPush reads the parent's `sid`). A send that fails leaves that post as it
+   was, saying 「未送信」, and the next is tried. */
+function postUpAll(){
+  var list=[], i;
+  for(i=0;i<POSTS.length;i++) if(postUnsent(POSTS[i])) list.push(POSTS[i]);
+  list.sort(function(a, b){ return (a.at||0)-(b.at||0); });
+  function one(k){
+    if(k>=list.length) return;
+    postSend(list[k], function(sid){ postSid(list[k], sid); one(k+1); },
+             function(){ one(k+1); });
+  }
+  one(0);
+}
 /* ---- ONE POST, ONE SEND AT A TIME --------------------------------------
    Which posts are on the wire right now, by this phone's own name for them.
 
@@ -1300,18 +1353,15 @@ function postUnsent(p){
    same post was sent again inside that window, under a new id (netPush()
    makes one per call), and it arrived twice: on the writer's timeline and on
    everybody else's, to be deleted one at a time.
-   「同じ投稿が二つ、三つと並びます」 docs/RISK.md § 5.
+   「同じ投稿が二つ、三つと並びます」 docs/RISK.md § 5. The second road it
+   raced was postCatchUp(), which is gone; ［再接続］ pressed while the first
+   send is still out is the one that is left.
 
    It is in memory and it is NOT on the post. A mark that is saved is a mark
    that survives the app being killed halfway through a send, and the post
    would then never be sent again -- which is worse than the fault it is
    fixing. Killed, this phone holds a post with no `sid`, which is exactly
-   the state postCatchUp() exists for.
-
-   BOTH ROADS OUT OF THE COMPOSER COME THROUGH HERE, and that is the whole of
-   why it is a function rather than a line in postCatchUp(). The press
-   (pwSendWith) was half of the window: somebody sends, and a timeline answer
-   lands while the photographs are still going up. */
+   a post that failed to send, and it stays one (postUnsent). */
 var POST_SENDING={};
 function postSend(p, ok, bad){
   var id=p && p.id;
@@ -1331,32 +1381,7 @@ function postSend(p, ok, bad){
                 come through here. */
              if(p.to) postCountsPull(p.to);
              ok(sid); },
-             function(d, s){ delete POST_SENDING[id]; savePosts(); bad(d, s); });
-}
-var POST_CATCH=4;
-function postCatchUp(){
-  var i, n=0, ps;
-  if(!netSignedIn()) return;
-  /* And everything the server should no longer HAVE. The files of a post
-     somebody deleted, where the bucket refused to take them -- netDropAgain()
-     in www/net.js owns the list and says why it is here. This is the moment
-     the network is known to be working, which is the whole reason the
-     sending below happens here rather than on a timer, and it is the same
-     reason for both directions. */
-  netDropAgain();
-  ps=POSTS.slice().sort(function(a, b){ return (a.at||0)-(b.at||0); });
-  for(i=0;i<ps.length && n<POST_CATCH;i++){
-    if(!postUnsent(ps[i])) continue;
-    /* Already on the wire. Read here as well as refused in postSend() so an
-       in-flight post does not eat one of the four -- postSend() is what owns
-       the answer; this is one of the places that ask it. */
-    if(POST_SENDING[ps[i].id]) continue;
-    n++;
-    /* The closure is the post, so a slow answer lands on the right one. */
-    (function(p){
-      postSend(p, function(sid){ postSid(p, sid); }, function(){});
-    })(ps[i]);
-  }
+             function(d, s, m){ delete POST_SENDING[id]; savePosts(); bad(d, s, m); });
 }
 /* ---- the badge, and the one thing on a post that is NOT frozen ----------
    One gold star beside a name, and it says the person is on Pro.
@@ -1496,7 +1521,7 @@ function pwToHTML(to){
         '<span class="pname">'+esc(postWho(to))+'</span>'+
         '<span class="phandle">@'+esc(to.hd||'')+'</span>'+
       '</div></div>'+
-      (to.ln? '<div class="pline '+dirClass(postDir(to))+'">'+postLnHTML(to)+'</div>' : '')+
+      ((to.ln || postInkOK(to.ink))? '<div class="pline '+dirClass(postDir(to))+'">'+postLnHTML(to)+'</div>' : '')+
       (postSay(to)? '<div class="pmn">'+tagHTML(postSay(to))+'</div>' : '')+
     '</div>'+
     '</div>';
@@ -1573,7 +1598,7 @@ function pwHTML(){
          The ring is what says so before the press: past zero it counts in
          negative numbers and goes red, in front of somebody while they type. */
       lnField('pw-ln', t('post.ln.ph'), IN('pwSetLn'),
-        PW.ln, dirClass(scriptDir()))+
+        puaField(PW.cut), dirClass(scriptDir()))+
       /* The meaning sits in the same column as the line, in the same
          borderless field, because it is the second half of the same act. */
       /* Read-only when it is the day's sentence. Not disabled: a disabled
@@ -1695,8 +1720,11 @@ function pwKbGuard(){
   if(!FORM || FORM.key!=='post:') return;
   setTimeout(pwKeepKb, 0);
 }
-function pwSetLn(v){
-  PW.ln=String(v||'');
+/* `v` is the roman and `cut` the line as typed (www/act.js); the cut is the
+   one kept, and the roman is its projection (pwLine). A caller holding only
+   a string has it read the way a keystroke is. */
+function pwSetLn(v, cut){
+  pwLine(cut || puaTyped(v).cut);
   /* A line that BEGINS by naming somebody is a post TO them, and it is
      decided HERE -- once, as it is typed, in the one place the line changes.
      「@したらもう勝手にツイートがこの形式になるようにしたい」 OWNER
@@ -1722,6 +1750,25 @@ function pwSetLn(v){
   navDoPaint('pwSend', pwOn());
   pwFresh();
 }
+/* The first `k` roman characters off the front of a cut -- what pwAtHead()
+   took, counted in the roman it read. A letter goes whole. */
+function pwCutDrop(cut, k){
+  var out=[], i, u, n, l;
+  for(i=0;i<(cut||[]).length;i++){
+    u=cut[i];
+    if(k<=0){ out.push(u); continue; }
+    if(u.id!==undefined){
+      l=ltById(u.id);
+      n=String((l && ltName(l)) || '').length;
+      k-=n; if(!n) out.push(u);
+      continue;
+    }
+    n=String(u.t||'');
+    if(n.length<=k){ k-=n.length; continue; }
+    out.push({t:n.slice(k)}); k=0;
+  }
+  return out;
+}
 /* Taking the handle off the front of the line and putting it on the post.
    Only where there is no post being answered: `to` is a post somebody pressed
    reply on, and a name typed inside that is a name in what they wrote.
@@ -1732,17 +1779,18 @@ function pwSetLn(v){
    goes to the end, which is where it already was -- the head is only ever
    lifted by the character that was just typed after it. */
 function pwAtLift(){
-  var h, e;
+  var h, e, v;
   if(PW.to) return;
   h=pwAtHead(PW.ln);
   if(!h) return;
   PW.toh=h.hd;
-  PW.ln=h.ln;
+  pwLine(pwCutDrop(PW.cut, PW.ln.length-h.ln.length));
   e=document.getElementById('pw-ln');
-  if(e && e.value!==PW.ln){
-    e.value=PW.ln;
+  v=puaField(PW.cut);
+  if(e && e.value!==v){
+    e.value=v;
     if(e.setSelectionRange){
-      try{ e.setSelectionRange(PW.ln.length, PW.ln.length); }catch(err){}
+      try{ e.setSelectionRange(v.length, v.length); }catch(err){}
     }
   }
   pwToPaint();
@@ -1942,8 +1990,10 @@ function pwRingHTML(used){
   var cap=postCap(), left, f;
   /* NO CEILING, NO RING. There is nothing for it to draw -- a circle that can
      never empty says only that something is being counted, which is the one
-     thing that is not true on the plan that removed the count. */
-  if(!isFinite(cap)) return '';
+     thing that is not true on the plan that removed the count. And none while
+     nobody has said which plan this is (`null`): a ring counting to the free
+     number is the free shape on an answer nobody gave. */
+  if(cap===null || !isFinite(cap)) return '';
   left=cap-used; f=left/cap;
   if(f<0) f=0;
   if(f>1) f=1;
@@ -1957,7 +2007,7 @@ function pwRingHTML(used){
     '</span>';
 }
 function pwLeftHTML(){
-  return pwRingHTML(String(PW.ln||'').length)+
+  return pwRingHTML(pwLineLen())+
     (PW.pr? '' : pwRingHTML(String(PW.mn||'').length));
 }
 /* THE CEILING, MET AT THE PRESS. True means pwSend() must stop.
@@ -1971,23 +2021,17 @@ function pwLeftHTML(){
    use. There is no new string in ten languages; `up.need` is ONE sentence for
    every ceiling and capStop()'s comment says so.
 
-   Asked BEFORE the number, exactly as capStop() does: a ceiling worked out
-   from a plan nobody has answered for would refuse somebody their post, or
-   let one through. 「接続できません」 and not a price.
+   A ceiling worked out from a plan nobody has answered for would refuse
+   somebody their post, or let one through: planFits() hands upStop() the
+   `null` and it says 「接続できません」 and not a price.
 
    BOTH ROWS, because both have the ceiling now. */
-function pwOver(){
-  var cap=postCap();
-  if(!isFinite(cap)) return false;
-  return String(PW.ln||'').length>cap ||
-    (!PW.pr && String(PW.mn||'').length>cap);
+function pwFits(){
+  var cap=postCap(), a=planFits(pwLineLen(), 0, cap);
+  if(PW.pr || !a) return a;
+  return planFits(String(PW.mn||'').length, 0, cap);
 }
-function pwCapStop(){
-  if(!pwOver()) return false;
-  if(!planKnown()){ toast(t('net.offline')); return true; }
-  popAsk(t('up.need'), function(){ go('plans'); });
-  return true;
-}
+function pwCapStop(){ return upStop(pwFits()); }
 function pwLeftPaint(){
   var e=document.getElementById('pw-left');
   if(e) e.innerHTML=pwLeftHTML();
@@ -2019,9 +2063,9 @@ function pwSetMn(v){
    meaning and nothing else (the photographs and the voice were baked and
    written when the post was made), so a post being edited down to no line at
    all is fine as long as the post itself still has something on it. */
-function pwHas(ln){
+function pwHas(){
   var p;
-  if(ln) return true;
+  if(pwLineAny()) return true;
   if(PW.ed){
     p=postById(PW.ed);
     return !!(p && (postPics(p).length || postVoAt(p)));
@@ -2032,10 +2076,6 @@ function pwHas(ln){
    that there is a picture and nothing else. It is the one thing here that
    cannot happen synchronously -- an image loads -- so the rest of posting is
    below, and a bake that fails sends the photograph as it was. */
-/* The line exactly as it was typed, private use code points and all. Not
-   stored on anything: it lives from the press that sends to the ink being
-   cut. */
-var PWRAW='';
 function pwSend(){
   /* Back to roman before anything is kept. What the Lingua keyboard typed is
      private use code points and they go no further than the field: a post
@@ -2045,13 +2085,10 @@ function pwSend(){
      field showed the reader's own word (openPost); what is written down is
      the mark, because a search is a text search and ten spellings never meet
      (www/sns.js § THE TAG). */
-  var ln=dayTagStore(puaRoman(String(PW.ln||'')).trim());
-  /* The line as typed, kept for the ink cut below: what the Lingua keyboard
-     put there is the language, and what any other keyboard put there is not.
-     It is read again inside the callbacks the bake and the voice run through,
-     by which time PW may already be the next post. */
-  PWRAW=dayTagStore(String(PW.ln||'').trim());
-  if(!pwHas(ln)){ toast(t('post.none')); return; }
+  /* The roman and the ink from the ONE cut, together, now: the callbacks the
+     bake and the voice run through may find PW already the next post. */
+  var ln=dayTagStore(String(PW.ln||'').trim()), ink=postInkOf(pwLineKept());
+  if(!pwHas()){ toast(t('post.none')); return; }
   /* AND THE CEILING, WHICH IS THE ONE THING THAT CAN BE OVER NOW.
      「文字数を適正な数にしないとツイートできない」 OWNER 2026-09-15. Before
      the bake and before anything is written: a post that is going to be
@@ -2062,7 +2099,7 @@ function pwSend(){
   if(REC){ toast(t('post.vo.busy')); return; }
   /* Editing does not bake, does not write a file and does not make a post:
      it is one that exists, with two of its fields put right. */
-  if(PW.ed){ pwSaveEdit(ln); return; }
+  if(PW.ed){ pwSaveEdit(ln, ink); return; }
   /* The voice is written to the disk BEFORE the post is stored, because the
      post carries the file's name and a name pointing at nothing is a post
      that says it has a voice and has not. If the write does not happen --
@@ -2074,7 +2111,7 @@ function pwSend(){
      here. It used to be written at this line, which left the OTHER road out
      of the composer -- keeping a draft -- carrying thirty seconds of base64
      into localStorage. */
-  pwBake(function(pics){ pwSendWith(ln, pics, PW.vo||null); });
+  pwBake(function(pics){ pwSendWith(ln, ink, pics, PW.vo||null); });
 }
 /* A post that BEGINS by naming somebody is a post TO them. 「@したらもう勝手に
    ツイートがこの形式になるようにしたい」 OWNER 2026-09-07 -- the same thing
@@ -2113,12 +2150,12 @@ function pwAtHead(s){
   if(!rest) return null;
   return {hd:netHandleOf(m[0]), ln:rest};
 }
-function pwSendWith(ln, pics, vo){
+function pwSendWith(ln, ink, pics, vo){
   /* Nothing here reads the line to find out whom the post is for. That was
      the shape until 2026-09-08 and it was the same question answered twice:
      pwSetLn() takes the handle off the front as it is typed, so by the time
      anything is sent the line has not got one and `PW.toh` has. The block
-     that sliced it off `ln` and off `PWRAW` is deleted rather than left
+     that sliced it off `ln` and off the raw line is deleted rather than left
      standing -- what is read is obeyed, and two roads to one answer is the
      one thing that must not be here. */
   /* Everything a reader needs is put ON the post, now, because the reader may
@@ -2128,7 +2165,7 @@ function pwSendWith(ln, pics, vo){
   var mine={id:'p'+Date.now()+'_'+POSTS.length, at:Date.now(),
             lang:langId, lname:langName||'',
             who:meName(), hd:meHandle(), av:postAvatar(), mine:true,
-            ln:ln, ink:postInkTyped(PWRAW), dir:scriptDir(),
+            ln:ln, ink:ink, dir:scriptDir(),
             /* OWNER 2026-09-05 単語はその単語の意味を 文法は並び替えた単語たちが
                文章として成り立つように -- only to fall back on, for somebody who
                typed a line and no meaning. Not stored, see postRow. */
@@ -2178,51 +2215,51 @@ function pwSendWith(ln, pics, vo){
      reply_to to hold. postToWho() asks the handle first, so the line over it
      reads the same as a reply's. */
   else if(PW.toh) mine.toh=PW.toh;
-  POSTS.push(mine);
-  savePosts();
-  /* It has stopped being a draft, so the row goes -- AFTER the post is
-     written and never before. The other order is somebody's writing gone on
-     the day the post itself would not go: what is on this phone now is the
-     post, which savePosts() has just put down and postCatchUp() keeps trying
-     to send, so there is nothing left for the draft to be the only copy of.
-
-     A post kept to yourself (`pv`) goes no further than this phone, and its
-     draft still goes: private is what the POST is, and the draft was never a
-     way of storing one. */
-  if(PW.did){ netDraftDrop(PW.did); PW.did=''; }
-  /* A post kept to yourself is never told to anybody. It is the one post
-     that does not go through this door at all -- not "sent and hidden",
-     which is a flag somebody else's server has to be trusted with. */
-  /* AND IT IS WAITED ON, WITH A SPINNER, AND SAID WHEN IT IS DONE.
-     「投稿した後に投稿しましたって出ないと…投稿する時もくるくる入れて欲しい」
-     OWNER 2026-09-05. It used to fire postSend() and move straight to the
-     feed with nothing on screen but the post drawn as not-yet-sent -- pwSendPost()
-     is the one place that waits for the answer, so this function only starts
-     it. The post itself is never lost either way: it is already in POSTS and
-     postCatchUp() keeps trying if the app is closed before an answer comes
-     back. 「spl流したのにまだ投稿載らんの？」 */
-  if(!mine.pv) pwSendPost(mine);
-  PW=pwBlank();
-  goTab('feed');
+  /* A post kept to yourself goes up like any other and is read by nobody but
+     you -- `pv` rides in its body and supabase/schema.sql § post_private is
+     what keeps it yours. 「SNSは全部サーバー」: it used to stay on this phone
+     alone, which made it the one thing somebody wrote that a lost phone took
+     with it. */
+  pwSendPost(mine);
 }
-/* postSend() and not netPush(): the press is one of the two roads a post goes
-   up by, and both have to be behind the same one-send-at-a-time mark or the
-   window is still open from this side.
+/* ---- THE SERVER FIRST, AND THIS PHONE WHEN IT HAS LANDED -----------------
+   「保存するタイミングでエラーが起きるなら、保存されないし」「なら失敗して残るに
+   するべき」「通信エラーなら進むわけねえだろ全部」 OWNER 2026-09-05, and
+   「投稿した後に投稿しましたって出ないと…投稿する時もくるくる入れて欲しい」.
 
-   netSpin() covers the screen while this is out, which is the whole reason it
-   is a function of its own rather than a line inside pwSendWith(): a retry
-   pressed from the popup below calls this again, on the exact post, and has
-   to spin and answer exactly the same way the first press did. */
+   The order was the other way round: the post was put into POSTS and written
+   down, its draft was taken off the server, the composer was emptied and the
+   feed shown -- and only then was it sent. So a send that failed left a post
+   on this phone that the server had never heard of (and postCatchUp() sent it
+   later, with nobody pressing anything), and the draft it came from was
+   already gone off the server (r63-audit A5 漏れ).
+
+   Now nothing moves until the row is there. The mark turns while it goes; when
+   it lands the post is written down here, its draft is taken off the server,
+   the composer empties and the feed shows it. When it does not, NOTHING has
+   moved -- what was typed is still in the composer, the draft is still a
+   draft -- and ［再接続］ sends the same post again. The draft (`PW.did`) is
+   read at the moment the send lands, which is the moment it stops being one.
+
+   postSend() and not netPush(): the one-send-at-a-time mark is on it, so a
+   ［再接続］ pressed while the first send is still out does not send twice. */
 function pwSendPost(p){
   netSpin(true);
   postSend(p, function(sid){
     netSpin(false);
+    POSTS.push(p);
     postSid(p, sid);
+    savePosts();
+    if(PW.did){ netDraftDrop(PW.did); PW.did=''; }
+    PW=pwBlank();
     toast(t('post.sent'));
+    goTab('feed');
   }, function(d, s, m){
     netSpin(false);
-    /* 通信が落ちたら何も進まない ── netPop() (www/net.js) が pullRun()
-       (sns.js) と同じ道で失敗を出し、［再接続］は同じ投稿をもう一度送る。 */
+    /* Answered and refused for a reason that is not the wire -- the voice's
+       file is gone (`∅`, netWhy). One sentence, and no ［再接続］: pressing
+       again would not bring the file back. */
+    if(String(m||'').indexOf('∅')>=0){ toast(netWhy(d, s, m)); return; }
     netPop(d, s, m, function(){ pwSendPost(p); });
   });
 }
@@ -2247,25 +2284,19 @@ function pwSendPost(p){
    here. The walk writes it at obFinish(), which is 「オンボーディングを通って
    かいたもじ」 exactly.
 
-   THE ONE LINE BELOW IS NOT A SECOND DECIDER. An account that finished the
-   walk before there was anywhere to write this has no face on file, and the
-   old walk over LETTERS is what it is wearing today -- so that is adopted,
-   once, and meAvSet() refuses every call after it. It fills in what is
-   MISSING and stops (docs/DATA_SAFETY.md rule 2); it never writes over a face
-   that exists, and nothing here removes one. The `profile` row keeps it out of the
-   walk, where the letters are still being made and obFinish() has not
-   decided yet. */
+   DRAWING DOES NOT WRITE (r79, r73 § 2-2). This used to adopt a face here, the
+   first time a row was drawn for an account that finished the walk before
+   there was anywhere to write one -- so drawing a post wrote `ME.av`, and it
+   wrote it out of LETTERS, which is whatever language is OPEN: a language
+   this account only took from somebody else gave it their letter. The
+   adoption is a migration now (migrateAv, www/me.js), run where every
+   migration is -- migrateAll(), on this account's own writable language --
+   and this is only the read. */
 function postAvatar(){
-  var i, av;
   /* A photo if there is one. It travels on the post like the letter does,
      for the same reason: whoever reads it has neither this person's camera
      roll nor their alphabet. */
   if(ME.pic) return {pic:ME.pic};
-  if(!ME.av && meRowHas()){
-    av=null;
-    for(i=0;i<LETTERS.length && !av;i++) av=meAvOf(LETTERS[i]);
-    meAvSet(av);
-  }
   return ME.av || null;
 }
 /* ---- the line, cut into the shapes it is written with -----------------
@@ -2313,7 +2344,7 @@ function postCut(ln){
 /* The same cut, filed so a letter used twelve times travels once. `g` is the
    shapes, `s` is the line: a number is an index into `g`, a string is itself
    -- a space, a full stop, a character somebody borrowed rather than drew. */
-/* The line as it was TYPED, cut into shapes and text.
+/* The line as it was TYPED, as the ink a post carries.
    ------------------------------------------------------------------
    postInk() below cuts the roman line with the alphabet, so every letter this
    language has a shape for becomes a shape -- whichever keyboard typed it.
@@ -2322,30 +2353,26 @@ function postCut(ln){
    language and must not arrive as it.
    「システムキーボードで打ったものが勝手に自作文字になるのはおかしい」
 
-   What the Lingua keyboard typed is a private use code point and nothing else
-   on a phone types one, so the cut is the character itself: a code point in
-   the range is that letter's strokes, and everything else -- roman, kana,
-   punctuation -- is text and stays text. A post already renders a run of text
-   as text, which is what a half-drawn alphabet has always given. */
-function postCutTyped(raw){
-  var s=String(raw||''), lts=ltPuaOrder(), cut=[], txt='', i, at;
-  for(i=0;i<s.length;i++){
-    at=s.charCodeAt(i)-PUA0;
-    if(at>=0 && at<lts.length){
-      if(txt){ cut.push({t:txt}); txt=''; }
-      cut.push({st:inkGeo(lts[at])});
-    } else txt+=s.charAt(i);
-  }
-  if(txt) cut.push({t:txt});
-  return cut;
-}
-/* And the gap its letters stand with, which is the language's at this moment
+   The typed cut already says which is which (www/glyph.js § puaTyped): a
+   letter the Lingua keyboard put there is `{id}` and becomes that letter's
+   shape NOW, the moment the post is written (rule 13); everything else is
+   text and stays text. A letter with no shape any more is its name, as text.
+
+   And the gap its letters stand with, which is the language's at this moment
    and the post's from now on (glyph.js § geSide) -- the same moment and the
    same reason as `dir`. Here only: postInk() cuts posts written before a
    language had a gap of its own, when every one stood one step apart, and a
-   post carrying no `sp` is read as exactly that. */
-function postInkTyped(raw){
-  var ink=inkOfCut(postCutTyped(raw));
+   post carrying no `sp` is read as exactly that. The line on a photograph is
+   cut here too (pwMarkCut), so the two are one cut. */
+function postInkOf(cut){
+  var c=[], i, u, l, g, ink;
+  for(i=0;i<(cut||[]).length;i++){
+    u=cut[i];
+    if(u.id===undefined){ c.push({t:String(u.t||'')}); continue; }
+    l=ltById(u.id); g=inkGeo(l);
+    c.push(g? {st:g} : {t:String((l && ltName(l)) || '')});
+  }
+  ink=inkOfCut(c);
   if(ink) ink.sp=inkSteps(SCRIPT.sp);
   return ink;
 }
@@ -2364,12 +2391,21 @@ function inkOfCut(cut){
 }
 /* Posts written before a post carried its author. They are all this person's,
    because there was nowhere else for one to come from. */
+/* Posts written before a post carried who wrote it. Those were this phone's
+   own -- there was no timeline of anybody else's then -- and that is only
+   still true of a post that never came from the server. One that DID came
+   with its writer on the row (netRow in www/net.js answers `mine` off
+   `author`), so a post from the server with no name in it is somebody else's
+   from an old version of the app, and it is not given this account's name
+   (r73 § 2-2: 「写しで何も決めない」). */
 function migratePosts(){
-  var i, n=0;
+  var i, p, n=0;
   for(i=0;i<POSTS.length;i++){
-    if(POSTS[i].who!==undefined) continue;
-    POSTS[i].who=meName(); POSTS[i].hd=meHandle();
-    POSTS[i].mine=true; POSTS[i].av=postAvatar();
+    p=POSTS[i];
+    if(p.who!==undefined) continue;
+    if(p.sid && !p.mine) continue;
+    p.who=meName(); p.hd=meHandle();
+    p.mine=true; p.av=postAvatar();
     n++;
   }
   if(n) savePosts();
@@ -2508,12 +2544,12 @@ function pwMarkHTML(){
            forever, and a line on a photograph wraps inside the picture now
            「インスタと同じようにやって」. The value goes between the tags,
            which is where a textarea keeps it. */
-        ? '<textarea class="mktx sfont mkink c'+
+        ? '<textarea class="mktx tfont mkink c'+
             Math.max(0, PW_COLS.indexOf(pwMarkCol(sel)))+'" id="mk-tx" '+
             'rows="1" placeholder="'+esc(t('post.mark.ph'))+'" '+
             'autocomplete="off" autocorrect="off" spellcheck="false" '+
             'style="top:'+(sel.y*100)+'%;left:'+(sel.x*100)+'%"' +
-            IN('pwMarkText') + '>'+esc(sel.tx||'')+'</textarea>'
+            IN('pwMarkText') + '>'+esc(puaField(pwMarkTyped(sel)))+'</textarea>'
         : '')+
       (cr? pwCutHTML() : '')+
     '</div>'+
@@ -2598,7 +2634,7 @@ function pwMarkClose(){
 /* A line nobody typed anything into is not a line. */
 function pwMarkTrim(){
   var ms=pwMarks(), i;
-  for(i=ms.length-1;i>=0;i--) if(!String(ms[i].tx||'').length) ms.splice(i, 1);
+  for(i=ms.length-1;i>=0;i--) if(!pwMarkAny(ms[i])) ms.splice(i, 1);
   pwMarkAt=-1;
 }
 function pwCutHTML(){
@@ -2658,19 +2694,19 @@ function pwMarkPaint(){
 }
 /* Typing into the field. An empty field with nothing selected makes a line;
    an empty line is removed rather than left as an invisible thing to press. */
-function pwMarkText(v){
+function pwMarkText(v, cut){
   var ms=pwMarks(), m=ms[pwMarkAt];
-  v=String(v||'');
+  v=String(v||''); cut=cut || puaTyped(v).cut;
   if(!m){
-    if(!v) return;
-    ms.push({tx:v, x:0.5, y:0.5, s:PW_MARK, c:PW_COLS[0]});
+    if(!v && !cut.length) return;
+    ms.push({tx:v, cut:cut, x:0.5, y:0.5, s:PW_MARK, c:PW_COLS[0]});
     pwMarkAt=ms.length-1;
     pwFresh(); pwMarkPaint();
     var e=document.getElementById('mk-tx');
     if(e) e.focus();
     return;
   }
-  m.tx=v;
+  m.tx=v; m.cut=cut;
   pwFresh();
   pwMarkDraw(); pwMarkFit();
 }
@@ -2721,18 +2757,39 @@ function pwMarkSize(v){
    The open alphabet, which is right: this is the making side, and it is MY
    picture and MY letters. What travels is the baked photograph. */
 function pwMarkCut(m){
-  return (m && m.tx)? postCut(m.tx) : [];
+  var ink=m? postInkOf(pwMarkTyped(m)) : null;
+  if(!ink && m && m.tx) ink={g:[], s:[String(m.tx)]};
+  return ink? postRuns(ink) : [];
 }
-/* How wide that line is, in cells of its own height. The font's own rule --
-   inkAdv() is reach(), ink plus the language's gap with half of it at each
-   end -- so the letters stand here the way they stand in its font. A
-   piece that was never drawn is text and takes a cell. */
+/* A mark's line as it was typed. `cut` since 2026-09-24; one made before
+   carries only `tx`, which is what its field held, and is read the way a
+   keystroke is. */
+function pwMarkTyped(m){
+  return (Object.prototype.toString.call(m.cut)==='[object Array]')? m.cut : puaTyped(m.tx||'').cut;
+}
+/* Whether a mark has anything on it -- a letter with no name included, which
+   is in the cut and not in `tx`. An empty one is taken off the picture. */
+function pwMarkAny(m){ return !!(m && pwMarkTyped(m).length); }
+/* How wide one piece of a mark is, in the font's units, and the ONE place
+   that says so: a shape by the font's own rule -- inkAdv() is reach(), ink
+   plus the language's gap with half of it at each end -- a space as the
+   ordinary face's space (inkSpace, which the line and the card use too), and
+   text as wide as it is in the face it is drawn in, at the size it is drawn
+   (640 of the 800-unit cell). It was 440 a character and 440 a space,
+   whatever the character. */
+var PW_MARK_TX=null;
+function pwMarkW(u){
+  var a;
+  if(u.st){ a=inkAdv(u.st, geSide()); return a? a.w : 800; }
+  if(u.sp) return inkSpace();
+  if(!u.tx) return 0;
+  if(!PW_MARK_TX) PW_MARK_TX=document.createElement('canvas').getContext('2d');
+  PW_MARK_TX.font='1000px '+cardCaps();
+  return PW_MARK_TX.measureText(String(u.tx)).width*0.64;
+}
 function pwMarkAdv(units){
-  var w=0, i, a;
-  for(i=0;i<units.length;i++){
-    if(units[i].st){ a=inkAdv(units[i].st, geSide()); w+=a? a.w : 800; }
-    else w+=String(units[i].t||'').length*440;
-  }
+  var w=0, i;
+  for(i=0;i<units.length;i++) w+=pwMarkW(units[i]);
   return w;
 }
 /* ---- a line on a photograph WRAPS -------------------------------------
@@ -2750,21 +2807,6 @@ function pwMarkAdv(units){
    centred on the point it was left at. Everything that needs to know how big
    a mark is asks these three -- the drawing, the hit box and the bake -- the
    way they already all asked pwMarkWide(). */
-/* Where a line may break. A drawn letter is a piece on its own, so a line of
-   made letters breaks between letters the way a line of Japanese does; a run
-   of ordinary text breaks at its spaces and nowhere else, so a word is not
-   cut in half. The space is kept on the end of the piece before it, which is
-   what makes it disappear at the end of a line. */
-function pwMarkAtoms(units){
-  var out=[], i, u, parts, j;
-  for(i=0;i<units.length;i++){
-    u=units[i];
-    if(u.st){ out.push({st:u.st}); continue; }
-    parts=String(u.t||'').split(/(\s+)/);
-    for(j=0;j<parts.length;j++) if(parts[j]!=='') out.push({t:parts[j]});
-  }
-  return out;
-}
 /* One cell of vertical room per line, and a quarter of one between them --
    the same 1.25 the field's own font size is worked out with. */
 var PW_MARK_LEAD=1.25;
@@ -2781,15 +2823,21 @@ var PW_MARK_EDGE=24/390;
    drew. */
 function pwMarkLines(m){
   var max=(m && m.s>0)? (1-2*PW_MARK_EDGE)*800/m.s : 0,
-      atoms=pwMarkAtoms(pwMarkCut(m)),
-      out=[], cur=[], w=0, i, aw, a;
-  for(i=0;i<atoms.length;i++){
-    a=atoms[i];
-    aw=a.st? ((inkAdv(a.st, geSide())||{w:800}).w) : String(a.t||'').length*440;
-    if(cur.length && max>0 && w+aw>max){ out.push(cur); cur=[]; w=0; }
-    cur.push(a); w+=aw;
+      units=pwMarkCut(m), out=[], cur=[], w=0, i, u, aw;
+  /* Where a line may break is postRuns()'s pieces: a drawn letter is a piece
+     on its own, so a line of made letters breaks between letters the way a
+     line of Japanese does; a run of text is a word and is not cut in half;
+     a newline somebody typed IS a break; and a space that would begin a line
+     is not drawn there. */
+  for(i=0;i<units.length;i++){
+    u=units[i];
+    if(u.br){ out.push(cur); cur=[]; w=0; continue; }
+    if(u.sp && !cur.length) continue;
+    aw=pwMarkW(u);
+    if(cur.length && max>0 && w+aw>max){ out.push(cur); cur=[]; w=0; if(u.sp) continue; }
+    cur.push(u); w+=aw;
   }
-  if(cur.length) out.push(cur);
+  if(cur.length || out.length) out.push(cur);
   return out;
 }
 /* The plate a line sits on, exactly as wide as the line 「行ごとに背景の板が
@@ -2820,19 +2868,17 @@ function pwMarkPlate(x, units, k, ox, oy){
 }
 /* One line of shapes onto a canvas, at scale k, starting at ox/oy. */
 function pwMarkRun(x, units, k, ox, oy, col){
-  var i, a, cur=ox;
+  var i, u, a, cur=ox;
   x.fillStyle=col; x.textAlign='left'; x.textBaseline='alphabetic';
   for(i=0;i<units.length;i++){
-    if(units[i].st){
-      a=inkAdv(units[i].st, geSide());
-      if(a){ inkStrokes(x, units[i].st, k, cur+a.dx*k, oy, col); cur+=a.w*k; }
-      else cur+=800*k;
-    } else {
+    u=units[i];
+    if(u.st && (a=inkAdv(u.st, geSide()))) inkStrokes(x, u.st, k, cur+a.dx*k, oy, col);
+    else if(u.tx){
       x.font=Math.round(640*k)+'px '+cardCaps();
       x.fillStyle=col;
-      x.fillText(String(units[i].t||''), cur, oy+640*k);
-      cur+=String(units[i].t||'').length*440*k;
+      x.fillText(String(u.tx), cur, oy+640*k);
     }
+    cur+=pwMarkW(u)*k;
   }
 }
 /* Not inkCanvases(): that draws every square cell in --tx, which is the
@@ -2907,7 +2953,7 @@ function pwMarkFit(){
      placeholder says what the box is for; it does not get to say how big it
      is. 44 is still the smallest a cell may be, because that is the thumb. */
   var room=Math.max(44, Math.round(m.s*bw));
-  if(!String(m.tx||'').length){
+  if(!pwMarkAny(m)){
     e.style.whiteSpace='';
     e.style.width=room+'px';
     e.style.fontSize=pwMarkPhSize(e, room)+'px';
@@ -3026,7 +3072,7 @@ function pwMarkDown(ev){
   if(i<0) return;
   pwMarkGrab=true;
   if(i!==pwMarkAt){
-    var m=pwMarks()[i], keep=m && m.tx;
+    var m=pwMarks()[i], keep=pwMarkAny(m);
     pwMarkTrim();
     pwMarkAt=pwMarks().indexOf(m);
     if(!keep) pwMarkAt=-1;
@@ -3144,11 +3190,9 @@ function pwBakeOne(pc, done){
    they were baked and written when the post was made, and swapping one for
    another is not correcting a sentence.
 
-   The ink is re-cut, and that is not a choice. A post's shapes are the line
-   already cut into letters -- change the line and the old shapes are the old
-   line. So an edited post is drawn in the alphabet as it stands at the moment
-   of the edit, which is the one place in this app where a post's shapes are
-   not the shapes it was born with. */
+   The ink is the post's own until the line is typed again (pwSaveEdit), and
+   the field opens as the post was typed (postCutOf) -- so saving a changed
+   meaning does not re-cut a line nobody touched with today's alphabet. */
 function postEdit(id){
   var p=postById(id);
   if(!p || !p.mine) return;
@@ -3187,26 +3231,101 @@ function postEdit(id){
      「投稿の編集はplusプランからです」. `post.editplan` is that sentence, and
      the plan is written into it rather than read off `CAN.edit`, because what
      the owner settled is this sentence and not a rule about tiers. If `edit`
-     ever moves off plus, this string moves with it. */
-  if(!can('edit')){
-    popAsk(t('post.editplan'), function(){ go('plans'); });
-    return;
-  }
+     ever moves off plus, this string moves with it.
+
+     And it is upStop() now, with that sentence handed in: this was the one
+     wall that asked on its own, so a plan nobody had answered for was told
+     「投稿の編集はplusプランからです」 and offered a price for what it may have
+     bought. upStop() says 「接続できません」 then (docs/scope/r73-audit.md
+     § 2-3, measured). */
+  if(upStop(can('edit'), 'post.editplan')) return;
   PW=pwBlank();
-  PW.ed=p.id; PW.ln=String(p.ln||''); PW.mn=String(p.mn||'');
+  PW.ed=p.id; pwLine(postCutOf(p)); PW.mn=String(p.mn||'');
   openPost();
 }
-function pwSaveEdit(ln){
-  var p=postById(PW.ed), mn;
+/* A post of mine back as the line it was typed as, so the field it is edited
+   in shows what the post shows rather than its roman (r73 §2-10: it opened
+   as roman, nothing in it was a letter any more, and saving cut every shape
+   off). Read off the post's own ink and line together: a run of text is
+   itself, and a shape is the letter of THIS alphabet whose name stands there
+   -- the one drawn that way if there is one. Only in the post's own
+   language, because that is the alphabet it was written in; anywhere it does
+   not line up it is the roman, whole, and nothing is guessed. */
+function postCutOf(p){
+  var ln=String((p && p.ln) || ''), cut=[], at=0, i, j, x, key, hit, l, n, whole=[{t:ln}];
+  if(!ln && !(p && postInkOK(p.ink))) return [];
+  if(!p || p.lang!==langId || !postInkOK(p.ink)) return ln? whole : [];
+  for(i=0;i<p.ink.s.length;i++){
+    x=p.ink.s[i];
+    if(typeof x==='string'){
+      if(ln.substr(at, x.length)!==x) return whole;
+      if(x) cut.push({t:x});
+      at+=x.length; continue;
+    }
+    key=JSON.stringify(p.ink.g[x]); hit=null;
+    for(j=0;j<LETTERS.length;j++){
+      l=LETTERS[j]; n=String(ltName(l)||'');
+      if(!inkGeo(l) || ln.substr(at, n.length)!==n) continue;
+      if(JSON.stringify(inkGeo(l))===key){ hit=l; break; }
+      if(n && (!hit || n.length>String(ltName(hit)||'').length)) hit=l;
+    }
+    if(!hit) return whole;
+    cut.push({id:hit.id});
+    at+=String(ltName(hit)||'').length;
+  }
+  return at===ln.length? cut : whole;
+}
+/* AN EDIT GOES TO THE SERVER FIRST, THE SAME AS A POST (r79).
+   「SNSは全部サーバー」, and 「なら失敗して残るにするべき」 OWNER 2026-09-05.
+   This wrote the edited line into this phone's copy and nowhere else, so the
+   post everybody else read never changed and the next answer from the server
+   put the old line back on this phone too (r60 見つけたこと).
+
+   Now the edited post is built as a COPY, the row is changed on the server
+   (netPostEdit, `post_edit` + the column grant on `body`), and only when that
+   lands is this phone's copy written and the composer emptied. When it does
+   not land nothing has moved: what was typed is still in the composer and
+   ［再接続］ sends the same edit again. A post that never reached the server
+   has no row to change, so the edit is the post going up (postSend, the one
+   road a post goes up by) -- what the person pressed save on is what the post
+   is. */
+/* The ink is the post's as it was written unless the line was typed again
+   (「The past」): then it is what was typed now, standing at the POST's own
+   gap -- the one on its ink, or none, which is one step (postSide). */
+function pwSaveEdit(ln, ink){
+  var p=postById(PW.ed), mn, q, k;
   if(!p || !p.mine){ toast(t('post.gone')); PW=pwBlank(); goTab('feed'); return; }
   /* OWNER 2026-09-05 単語はその単語の意味を 文法は並び替えた単語たちが文章として成り立つように */
   mn=String(PW.mn||'').trim() || LinguaGrammarEngine.translate.toNatural(gModel(), ln, uiLang());
-  p.ln=ln; p.ink=postInkTyped(PWRAW); p.mn=mn;
-  p.ui=uiLang();
-  p.ed=Date.now();
-  savePosts();
-  PW=pwBlank();
-  goTab('feed');
+  q={};
+  for(k in p) if(Object.prototype.hasOwnProperty.call(p, k)) q[k]=p[k];
+  q.ln=ln; q.mn=mn;
+  if(ln===String(p.ln||'')) q.ink=p.ink;
+  else {
+    q.ink=ink;
+    if(ink){ if(p.ink && p.ink.sp!==undefined) ink.sp=p.ink.sp; else delete ink.sp; }
+  }
+  q.ui=uiLang();
+  q.ed=Date.now();
+  pwEditPut(p, q);
+}
+function pwEditPut(p, q){
+  function landed(sid){
+    var k;
+    netSpin(false);
+    for(k in q) if(Object.prototype.hasOwnProperty.call(q, k)) p[k]=q[k];
+    if(sid) postSid(p, sid);
+    savePosts();
+    PW=pwBlank();
+    goTab('feed');
+  }
+  function fell(d, s, m){
+    netSpin(false);
+    netPop(d, s, m, function(){ pwEditPut(p, q); });
+  }
+  netSpin(true);
+  if(p.sid) netPostEdit(p.sid, q, function(){ landed(''); }, fell);
+  else postSend(q, landed, fell);
 }
 /* MAY THIS PERSON POST, REPLY, BOOST AND LIKE -- one question, one place.
    Signed in, and not frozen.
@@ -3467,7 +3586,13 @@ function postInkOK(ink){
     x=ink.s[i];
     if(typeof x==='string') continue;
     if(typeof x!=='number') return false;
-    if(!(x>=0 && x<ink.g.length) || !ink.g[x]) return false;
+    if(!(x>=0 && x<ink.g.length)) return false;
+    /* AND WHAT IT POINTS AT IS A SHAPE -- strokes or rings, a list with
+       something in it (www/glyph.js § inkGeo). It asked only that it was
+       there, so `{}`, `[]`, 'abc' and 5 passed, the line came out as nothing
+       and the text was not drawn either (docs/scope/r73-audit.md § 2-4,
+       measured). Somebody else wrote this post. */
+    if(Object.prototype.toString.call(ink.g[x])!=='[object Array]' || !ink.g[x].length) return false;
   }
   return true;
 }
@@ -3566,7 +3691,7 @@ function postDir(p){
 }
 /* What stands between two of this post's letters, asked of the POST, for the
    reason postDir() asks it: the gap is the writer's language's and was put on
-   the ink when the line was written (postInkTyped). geSide() is the open
+   the ink when the line was written (postInkOf). geSide() is the open
    language and may not be named here. A post written before a language could
    set one carries none, and stood one step apart -- inkSide() says that. */
 function postSide(p){ return inkSide(p && p.ink && p.ink.sp); }
@@ -3575,13 +3700,25 @@ function postSide(p){ return inkSide(p && p.ink && p.ink.sp); }
    a space, or the end of a line. postLnHTML() sets these as the line the
    timeline shows; cardInkUnits() (www/card.js) sets them on the card.
    Neither looks at a character to decide whether it is blank.
-   A post with no ink is its text, which is a line with no shapes in it. */
+   A post with no ink is its text, which is a line with no shapes in it.
+
+   AND THE SHAPES ARE THE ONES THE POST CARRIES, AND NO OTHER. The private use
+   area is where this phone keeps shapes -- its own keyboard's from U+E000 up,
+   every post's from U+F8FF down (www/glyph.js § A LINE OF THE LANGUAGE IS
+   TEXT) -- and they are all one family, the one a line is set in. So a code
+   point from that range arriving as TEXT on a post was drawn with whatever
+   shape this phone had filed there: MY letter, or another post's. Measured
+   (r73 §2-9): somebody else's line carrying U+E000 came out in my own
+   alphabet. A post's text never legitimately holds one -- what a post carries
+   is roman and ink (rule 13) -- so a character from there is one this post
+   has no shape for, and it says so with the replacement character, which is
+   what inkChar() already says when it cannot hand a shape out. */
 function postRuns(ink){
   var out=[], i, j, x, ch, run;
   for(i=0;i<ink.s.length;i++){
     x=ink.s[i];
     if(typeof x==='number'){ out.push({st:ink.g[x]}); continue; }
-    x=String(x); run='';
+    x=String(x).replace(/[\uE000-\uF8FF]/g, '\uFFFD'); run='';
     for(j=0;j<x.length;j++){
       ch=x.charAt(j);
       if(!/\s/.test(ch)){ run+=ch; continue; }
@@ -3930,6 +4067,12 @@ function postRow(p){
              acts on the post rather than describing it, so it stays where a
              thumb has learned it is whether the head came out one line or
              two, and a 44pt target sits on the line that is 44pt tall. */
+          /* PROMOTED, in the corner. 「ツイート擬態右上にprとつく」 OWNER
+             2026-09-23. It is the one thing on the row that says somebody paid
+             for it to be here, so it stands where the eye starts on the right
+             and never folds under the name. Off the POST (`ad`, put on by
+             netPromos()), because the row is read out of the row. */
+          (p.ad? '<span class="ppr">'+esc(t('post.pr'))+'</span>' : '')+
           '<span class="pmw">'+
             '<button class="pmore"' + DO('postMore', [p.id]) + ' aria-label="'+
               esc(t('post.more'))+'">'+ICON_DOTS+'</button>'+
@@ -3956,7 +4099,7 @@ function postRow(p){
          each one whether it actually clamped -- see POST_FOLD above for why
          it is measured rather than counted in characters, and why the number
          is written in here instead of sitting in the stylesheet. */
-      (p.ln? '<div class="pline '+dirClass(postDir(p))+
+      ((p.ln || postInkOK(p.ink))? '<div class="pline '+dirClass(postDir(p))+
                (postFoldable(p) && !postUnfolded(p)
                  ? ' pfold" style="-webkit-line-clamp:'+POST_FOLD+'"' : '"')+
                '>'+postLnHTML(p)+'</div>' : '')+

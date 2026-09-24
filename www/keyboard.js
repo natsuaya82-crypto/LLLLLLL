@@ -28,9 +28,10 @@
 
    That last one is the flick, and it is why one key can hold five letters. */
 
-/* A language holds up to three keyboards, and one of them is the one on the
-   phone. 「キーボード3つくらいまで作れるようにして適応推したらlinguaのキーボード
-   が入れ替わるとかできるの？ページじゃない」
+/* A person has several keyboards -- how many is kbCap() in www/core.js,
+   counted across every language they have (kbCount() below) -- and one of a
+   language's is the one on the phone. 「キーボード3つくらいまで作れるようにして
+   適応推したらlinguaのキーボードが入れ替わるとかできるの？ページじゃない」
 
    They are not layers, and the distinction is the whole of it: a LAYER is a
    face of one keyboard, reached by a key on that keyboard, the way ABC and
@@ -82,9 +83,18 @@ function kbMint(){ return {kbs:[], at:0, v:KB_V}; }
    editor is working on, and a keyboard made a moment ago may not have been
    written yet. Every other language is read through kbBoardsOf(), so one
    stored in the older single-keyboard shape counts as the one it is rather
-   than as nothing. */
+   than as nothing.
+
+   THREE STATES, langCount()'s (www/core.js § LMINE): with nobody having said
+   which languages this account has, there is no number, and null says so --
+   kbCapStop() then refuses with 「接続できません」 rather than measuring a
+   ceiling against rows that may not exist. And another language's keyboards
+   are read out of what came down from the server (slMine()), never out of the
+   picture kept for a launch with no signal: rule 22, nothing counts from the
+   copy (docs/scope/r63-audit.md K4). */
 function kbCount(){
   var n=0, id, k;
+  if(!langMineKnown()) return null;
   for(id in LANGS){
     if(!Object.prototype.hasOwnProperty.call(LANGS, id)) continue;
     /* And only this ACCOUNT's. 「じゃないとアカウント変えたら無限に言語作れる
@@ -99,7 +109,7 @@ function kbCount(){
     if(langWhose(id)!==LW_MINE) continue;
     if(id===langId){ n+=kbStored().length; continue; }
     k=null;
-    try{ k=kbBoardsOf(JSON.parse(slRd(langKeyOf(id, 'kb'))||'null')); }
+    try{ k=kbBoardsOf(JSON.parse(slMine(langKeyOf(id, 'kb'))||'null')); }
     catch(e){}
     if(k && k.kbs) n+=k.kbs.length;
   }
@@ -108,7 +118,7 @@ function kbCount(){
 /* Whether there is room for another. The fixed QWERTY is the 1 in 1 + 3: it
    is one keyboard this person has, it is not stored, and it is not counted
    once per language -- so it is added here, once, to what they built. */
-function kbRoomKb(){ return 1 + kbCount() < kbCap(); }
+function kbRoomKb(){ var n=kbCount(); return planFits(n===null? null : 1+n, 1, kbCap()); }
 /* THE CEILING OF THIS CHAPTER, MET ON THE PRESS, and it is one place.
    「＋は右下につけて／プラスは5個目以降／無料は1個目以降／ポップが出るように」
    OWNER 2026-09-04.
@@ -134,22 +144,17 @@ function kbRoomKb(){ return 1 + kbCount() < kbCap(); }
    popAsk() draws where the finger is and nothing behind it closes or moves,
    which is the shape 「全部1枚目みたいにポップ出して背景変えずに」 asks for. */
 function kbCapStop(){
-  if(upStop(can('kb'))) return true;
-  if(kbRoomKb()) return false;
-  popAsk(t('up.need'), function(){ go('plans'); });
-  return true;
+  return upStop(can('kb')) || upStop(kbRoomKb());
 }
 function kbRead(){
-  KB=null;
-  try{ KB=kbBoardsOf(JSON.parse(slRd(langKey('kb'))||'null')); }
-  catch(e){}
+  KB=kbBoardsOf(slOpen('kb'));
 }
 /* What is on the disk, whichever shape it is in. It was one keyboard --
    `{lay:[...]}` -- and it is now several, so the one becomes the first of the
    several by having its layers COPIED across. Nothing is rewritten and
-   nothing is dropped: a backup file written before this restores through the
-   same two lines, because the reader takes either shape rather than the
-   newer one only. */
+   nothing is dropped: a copy of the language written before this reads
+   through the same two lines, because the reader takes either shape rather
+   than the newer one only. */
 function kbBoardsOf(k){
   if(!k) return null;
   if(k.kbs && k.kbs.length) return kbIded(k);
@@ -316,66 +321,96 @@ kbRead();
 function kbSameLay(a, b){
   try{ return JSON.stringify(a)===JSON.stringify(b); }catch(e){ return false; }
 }
-/* ---- the free QWERTY comes out of storage ------------------------------
+/* ---- the free QWERTY comes out of the LIST --------------------------------
    Board 0 used to be a COPY of the free QWERTY, written into KB.kbs the
    first time anything on this screen was changed, and that copy was
-   editable. It is neither now: kbBoards() puts kbFree() in front and storage
+   editable. It is neither now: kbBoards() puts kbFree() in front and the list
    holds only what somebody built.
 
-   So the copy has to leave the array, and the one thing that must not happen
+   So the copy has to leave the list, and the one thing that must not happen
    is that an EDITED board 0 leaves with it. Two cases, told apart by looking
    rather than assumed:
 
      still the free QWERTY   regenerable, and board 0 is now exactly that, so
-                             the copy is redundant. It comes out and nothing
-                             is lost.
+                             the copy is not a board any more. It goes to
+                             `was0` -- in the same slice, byte for byte, and
+                             read by nothing.
      edited                  a keyboard somebody made. It stays, as an
                              ordinary board, and every index after it moves
                              by one -- KB.at included, or the keyboard on the
                              phone silently becomes its neighbour.
 
+   A MIGRATION ADDS AND NEVER REMOVES WHAT IT READ (CLAUDE.md § Data). This
+   was `kbs.shift()`, with no DELETE REVIEW -- the copy was gone from what is
+   stored the first launch after the update (docs/scope/r73-audit.md § 2-8).
+   It is kept now the way the flat keys from before there could be more than
+   one language are kept: not read, not removed.
+
    `v` says this has run. Without it the next launch would run it again and
-   take the person's own first board out of the array as though it were the
+   take the person's own first board out of the list as though it were the
    copy. */
 function migrateKbFree(){
   if(!KB || (parseInt(KB.v, 10)||0)>=KB_V) return;
   var kbs=KB.kbs||[], at=parseInt(KB.at, 10)||0;
-  if(kbs.length && kbSameLay(kbs[0].lay, kbFixed().lay)) kbs.shift();
+  if(kbs.length && kbSameLay(kbs[0].lay, kbFixed().lay)){ KB.was0=kbs[0]; kbs=kbs.slice(1); }
   else if(kbs.length) at=at+1;
   KB.kbs=kbs; KB.at=at; KB.v=KB_V;
   saveKb();
 }
-/* NO KEYBOARD AND A BROKEN KEYBOARD ARE DIFFERENT STATES, and this line put
-   them in the same one. `JSON.stringify(null)` is the four characters `null`,
-   which parse to something that is not an object -- so bkSound() read the
-   language as wreckage, bkOK() said no, and bkPush() refused to write its
-   backup FILE. Not once: from the first time somebody left that language,
-   for good. Everything they made afterwards was in no backup.
+/* NO KEYBOARD AND A BROKEN KEYBOARD ARE DIFFERENT STATES, so no keyboard is
+   written as ABSENT and never as the word null. `JSON.stringify(null)` is the
+   four characters `null`, which parse to something that is not an object --
+   a slice that reads as wreckage rather than as nothing.
 
    Every free language is that language. Free reads kbFixed(), a QWERTY built
    out of LETTERS on the way to the screen and stored nowhere, so on the free
-   plan there is no other state this can be -- and saveKb() runs from
-   langSaveAll() every time a language is left, deleted, or swapped.
+   plan there is no other state this can be.
    「無料の分も全部入らないとダメでしょ」 OWNER 2026-09-04.
 
-   So no keyboard is written as ABSENT rather than as the word null.
-   docs/DATA_SAFETY.md already had the sentence: *a slice the app has never
-   written is absent, and absent is what a restore is for* -- bkPack() skips
-   what is not there, so the file is written; netLangSync1() reads it as ''
-   and takes the server's copy down rather than pushing a null up. It reads
-   back the same either way: kbRead() turns a missing key and a stored `null`
-   into the same empty KB, which is what kbResetGo() means by clearing one.
+   docs/DATA_SAFETY.md has the sentence: *a slice the app has never written is
+   absent*. netLangSync1() reads an absent one as '' and takes the server's
+   copy down rather than pushing a null up, and kbRead() turns a missing key
+   and a stored `null` into the same empty KB, which is what kbResetGo() means
+   by clearing one. */
+/* EVERY CHANGE TO A KEYBOARD ENDS HERE, AND ON A BOARD'S PAGE IT IS THAT
+   PAGE'S DRAFT (K1, r79). The board's page has a Save in its corner (www/shell.js
+   § KEEP), and 「保存ボタンのある画面で書いている物は、その画面の下書き。保存を
+   押すまで slice に書かない。『いいえ』は下書きを捨てるだけ」. It used to write
+   the slice on every change, so a change went up 1.2 seconds later whether or
+   not Save was pressed, and 「いいえ」 on the way out put nothing back (r74
+   止めたこと 1, measured).
 
-   Fixed HERE and not in bkSound(). That function is right to refuse a null
-   where an object belongs -- one line guards script, kb, wld and gram2
-   together -- and loosening it to let this through would let real wreckage
-   through for all four. What was wrong was what this wrote. */
+   So while a board's page has its buffer open, a change is repaired, stamped
+   for the step back and drawn -- and not written. The page's Save is the one
+   place it is written (kbKeepSave -> kbWrite), and 「いいえ」 reads the
+   keyboard back from the slice, which nothing has touched (kbDraftDrop). A
+   change made from a key's own page is a change to the same board and is the
+   same draft. Nothing needs holding back from the road up: nothing was
+   written for it to take, and nothing else that calls this can take the
+   draft with it either. */
 function saveKb(){
   if(langLocked()) return;
-  kbVFix(); kbWayOff(); kbNoted(); bkTouch();
-  if(!KB) slRm(langKey('kb'));
-  else slWr(langKey('kb'), JSON.stringify(KB));
+  kbVFix(); kbWayOff(); kbNoted();
+  if(kbDrafting()) return;
+  kbWrite();
 }
+function kbWrite(){
+  if(langLocked()) return;
+  bkTouch();
+  slWr(langKey('kb'), KB? JSON.stringify(KB) : null);
+}
+/* A board's page with its buffer open -- the one buffer whose question is
+   kbNow(), on whichever board it was opened for. */
+function kbDrafting(){
+  var k;
+  for(k in KEEP)
+    if(Object.prototype.hasOwnProperty.call(KEEP, k) && KEEP[k] && KEEP[k].now===kbNow) return true;
+  return false;
+}
+/* 「いいえ」: the draft goes, and the keyboard is what the slice says it is --
+   which nothing has written since the page opened. The step back and the
+   selection were about the draft and go with it. */
+function kbDraftDrop(){ kbRead(); kbLeft(); }
 /* The layout, said once as a string. Three things ask whether it has moved --
    the step-back, the buffer the editor opened with, and the write below. */
 function kbLaySig(b){ return JSON.stringify(b.lay); }
@@ -702,32 +737,38 @@ function kbQwertyLay(){ return kbFixed().lay; }
    and the only one that can push a face past the ceiling -- kbFaceRows()
    leaves room for a bar so that it never comes to that, and kb-check counts
    the rows afterwards rather than trusting this sentence. */
-function kbFacePut(face, to){
-  var rows=face.rows, i, j, k;
+function kbFaceSpot(face){
+  var rows=face && face.rows, i, j;
+  if(!rows || !rows.length) return {how:'row'};
   for(i=0;i<rows.length;i++)
     for(j=0;j<rows[i].length;j++)
       /* A WHOLE KEY of gap, and not the half key the QWERTY is inset by.
          A gap of 0.5 is not a slot somebody left empty, it is the third row's
          inset -- and a layer key half a key wide is 14pt on a 390pt phone,
          which is not a thing anybody can press. */
-      if(rows[i][j].k==='gap' && rows[i][j].w>=1){
-        k=kbKey('lay', String(to)); k.w=rows[i][j].w;
-        rows[i][j]=k;
-        return true;
-      }
+      if(rows[i][j].k==='gap' && rows[i][j].w>=1) return {how:'gap', i:i, j:j};
   for(i=rows.length-1;i>=0;i--)
     for(j=0;j<rows[i].length;j++)
-      if(rows[i][j].k==='sp' && rows[i][j].w>1){ kbBarLay(rows[i], String(to)); return true; }
+      if(rows[i][j].k==='sp' && rows[i][j].w>1) return {how:'sp', i:i};
   /* and a row of its own, which is the last resort and the only one that can
      push a face past the ceiling -- kbFaceRows() leaves a bar's worth of room
      so that it never comes to that, and kb-check counts the rows afterwards
-     rather than trusting this sentence. */
-  if(!rows.length){ rows.push([kbKey('lay', String(to))]); return true; }
-  if(kbUsed(rows[rows.length-1])+2<=KB_COLS){
-    rows[rows.length-1].unshift(kbKey('lay', String(to))); return true;
-  }
-  if(rows.length<kbRowsMax()){ rows.push([kbKey('lay', String(to))]); return true; }
-  return false;
+     rather than trusting this sentence. Ten across and the row ceiling are
+     asked of the one place each says it. */
+  if(kbRoomFor(rows[rows.length-1], 1)) return {how:'front'};
+  if(kbRoomRow(rows)) return {how:'row'};
+  return null;
+}
+function kbFacePut(face, to){
+  var at=kbFaceSpot(face), rows=face && face.rows, k;
+  if(!at) return false;
+  if(at.how==='gap'){
+    k=kbKey('lay', String(to)); k.w=rows[at.i][at.j].w;
+    rows[at.i][at.j]=k;
+  }else if(at.how==='sp') kbBarLay(rows[at.i], String(to));
+  else if(at.how==='front') rows[rows.length-1].unshift(kbKey('lay', String(to)));
+  else rows.push([kbKey('lay', String(to))]);
+  return true;
 }
 /* EVERY FACE IS REACHED AND EVERY FACE CAN BE LEFT, whatever a pattern came
    out as. One place, because a pattern is no longer one face and two: the
@@ -951,9 +992,8 @@ function kbName(i){
 
    OWNER DECISION 2026-09-03 -- www/shell.js § KEEP. It used to call saveKb()
    on every keystroke, and saveKb() is what every change to a keyboard ends in:
-   it fixes the layout, pushes the board to the system keyboard, touches the
-   backup and takes a reading for the step-back. None of that is a name being
-   typed. The step-back itself was never wrong here -- kbNoted() compares
+   it fixes the layout, sends the language up and takes a reading for the
+   step-back. None of that is a name being typed. The step-back itself was never wrong here -- kbNoted() compares
    JSON.stringify(b.lay) and a name is not in the layout, so no keystroke ever
    stacked a step -- and now the save happens once, so one save is one write.
 
@@ -984,17 +1024,16 @@ function kbKeepOn(){
 
      `kbrom` is NOT here. It is SET -- this person's setting, on every
      language -- and netPrefsPut() sends it on the press. § D. */
-  keepOn(keepKey(), kbNow, kbKeepSave);
+  keepOn(keepKey(), kbNow, kbKeepSave, null, kbDraftDrop);
 }
-/* `lay` is not written here and must not be: the layout is already on this
-   phone by the time the button is gold -- every mutator on the sheet ends in
-   saveKb(). What the press is FOR is the wire, and keepSave() is what puts it
-   there (netSaveNow, which cancels bkTouch()'s burst so one press is one
-   send). Writing it again here would be a second answer to where a layout is
-   written down. */
+/* THE ONE PLACE A BOARD'S PAGE WRITES (K1, r79). Everything changed on the
+   page -- the layout, which keyboard goes to the phone, the name typed into
+   the buffer -- is the page's draft until here (§ saveKb), and this writes it,
+   once; keepSave() then puts it on the wire (netSaveNow). */
 function kbKeepSave(v, done){
   var b=kbEdit();
-  if(b && v.hasOwnProperty('nm')){ b.nm=String(v.nm).slice(0, 24); saveKb(); }
+  if(b && v.hasOwnProperty('nm')){ b.nm=String(v.nm).slice(0, 24); kbVFix(); kbNoted(); }
+  kbWrite();
   done(true);
 }
 function kbSetNm(v){ keepSet('nm', String(v||'').slice(0, 24)); }
@@ -1209,14 +1248,15 @@ function kbFree(){ return {nm:'', pat:'qwerty', lay:kbFixed().lay}; }
    HELP.kb's own comment quotes.
 
    `kbStored()` is NOT concatenated on free, and that is not tidiness: it is
-   what `kbOf()`'s own `!can('kb')` guard is for. Somebody who built three
+   what `kbOf()`'s own `planNo(can('kb'))` guard is for -- the free plan
+   ANSWERED, not a plan nobody has asked about. Somebody who built three
    keyboards on Plus and let the plan lapse types on the free QWERTY again --
    「plusから無料に戻った時にキーボードなくなるやろ」 -- so listing those three
    here would put a board on the screen that the phone is not typing on, one
    press from an editor this plan does not have. They are still in storage and
    nothing is deleted; they come back with the plan. */
 function kbBoards(){
-  if(!can('kb')) return [kbFree()];
+  if(planNo(can('kb'))) return [kbFree()];
   return [kbFree()].concat(kbStored());
 }
 /* Board 0 and no other. Everything that writes asks this first. */
@@ -1242,7 +1282,7 @@ function kbClamp(i, n){ return Math.max(0, Math.min(parseInt(i, 10)||0, n-1)); }
 function kbApplied(n){ return kbClamp(KB? KB.at : 0, n); }
 function kbOf(){
   var b=kbBoards();
-  if(!can('kb') || !b.length) return kbFixed();
+  if(planNo(can('kb')) || !b.length) return kbFixed();
   return b[kbApplied(b.length)];
 }
 /* And the one on the SCREEN, which is a different question the moment there
@@ -1250,7 +1290,7 @@ function kbOf(){
    other. */
 function kbBoard(){
   var b=kbBoards();
-  if(!can('kb') || !b.length) return kbFixed();
+  if(planNo(can('kb')) || !b.length) return kbFixed();
   return b[kbClamp(kbShow, b.length)];
 }
 /* Which layer is showing, which keyboard is showing, and which key is being
@@ -1315,7 +1355,7 @@ function kbMark(key){
   var l;
   if(!kbRomOn() || !key || key.k!=='lt') return '';
   l=ltById(key.v);
-  if(!l || !((l.st && l.st.length) || l.ch)) return '';
+  if(!ltHasShape(l)) return '';
   var t=kbTyped(key.v);
   return t? '<span class="kbrm">'+esc(t)+'</span>' : '';
 }
@@ -1559,9 +1599,10 @@ function kbRowsMax(){
 }
 /* Is there room for another row, and is there room in this one for a key of
    that width. Asked in one place each so a way in that forgets cannot exist:
-   the dashed row at the foot, a width dropped on a cell, a width tapped into
-   place, and a key made wider all come through these two. */
-function kbRoomRow(){ return kbLayer().rows.length<kbRowsMax(); }
+   a row put in from the +, a key put into a frame, a column put in, a key
+   carried into another row and a way to another face all come through these
+   two -- kb-check counts the comparisons. */
+function kbRoomRow(rows){ return rows.length<kbRowsMax(); }
 function kbUsed(row){
   var n=0, i;
   for(i=0;i<row.length;i++) n+=kbU(row[i].w);
@@ -1576,9 +1617,6 @@ function kbUsed(row){
 function kbRoomFor(row, w){
   return !!row && kbUsed(row)+kbU(w)<=KB_COLS;
 }
-function kbRoomIn(ri, w){
-  return kbRoomFor(kbLayer().rows[ri], w);
-}
 /* A key's width in COLUMNS, and a column is half a key -- because half a key
    is a thing this keyboard has. kbFixed() insets its third row with a gap key
    of w 0.5 at each end, and "grid-column: span 0.5" is not a thing: the
@@ -1587,18 +1625,30 @@ function kbRoomIn(ri, w){
    the end of it, and nothing throws. Counting in halves says exactly the same
    layout in whole numbers. */
 function kbU(w){ return Math.max(1, Math.round((w||1)*2)); }
-/* How wide the sheet is, in those columns: the widest row. Derived every time
-   and stored nowhere -- a keyboard made before this existed has the same
-   answer as one made after, because the answer was always in the widths. */
-function kbCols(rows){
-  var n=0, w, i, j;
-  for(i=0;i<rows.length;i++){
-    w=0;
-    for(j=0;j<rows[i].length;j++) w+=kbU(rows[i][j].w);
-    if(w>n) n=w;
-  }
-  return n||2;
+/* ---- ONE COORDINATE ON THE SHEET --------------------------------------
+   The sheet is KB_COLS half columns, always (OWNER DECISION 2026-08-26, ten
+   fixed columns), and everything that points at a column -- the letter that
+   lights it, the bin that takes it, the + that puts one in, a frame a key
+   goes into, and the three alignments -- counts in THAT coordinate and no
+   other.
+
+   A row that comes to less than ten and writes no gaps down is drawn in the
+   MIDDLE of the sheet 「揃えて欲しい」, so its first key does not stand at
+   column 0. This is where it stands, and it is the only place that says so:
+   the drawing asks it, and so does every act on a column. It used to be said
+   once, in the drawing, while the bin, the + and the frame counted from the
+   row's own first key and the alignments measured against the widest row --
+   so a column's letter lit X and the bin took a key from another row
+   (docs/scope/r73-audit.md § 2-16, measured).
+
+   A row over ten (a layout from before the ceiling, left as it is) starts at
+   the edge. */
+function kbStart(row){
+  return Math.max(0, kbLead(KB_COLS, kbUsed(row)));
 }
+/* Where a key stands on the sheet: where its row starts, and the keys before
+   it in the row. */
+function kbSheetAt(row, ki){ return kbStart(row)+kbAtOf(row, ki); }
 /* Whether a key COVERS a column, which is the question a lit column asks of
    every key on the sheet. 「半キーにしよう。その代わり縦列の選択の時では
    選ばれない。例えばaが半きーのばあい。aを選択したら他の124列目だけ選ばれて
@@ -1627,8 +1677,6 @@ function kbColHas(at, w, ci){
 var KBD=null;
 /* A key can still be held and carried -- the same gesture as the alphabet's
    tiles, on the other thing in this app that is a grid somebody arranges.
-   What went is the OTHER half of what this used to mount: the three widths
-   under the sheet, which were dragged onto a cell. A cell is pressed now.
    www/glyph.js calls this after every render and does not need to know. */
 function kbDragMount(){
   var g=document.getElementById('kb');
@@ -1644,50 +1692,35 @@ function kbDragMount(){
    とかくっつけるボタンとか押してその作業がされるようにしようよ」
    OWNER DECISION 2026-08-27.
 
-   A key used to be placed by picking one of three widths from a palette under
-   the sheet and carrying it onto a cell with a finger. Two things were wrong
-   with that and only one of them was the finger. The palette's widths were
-   1, 2 and 3 in a unit of their own, while a key on the sheet is however many
-   of the ten columns it spans -- so on a flick board the thing you picked up
-   and the thing that landed were different sizes, and nothing could say so
-   because there was nothing to compare them to.
-
-   Touching the sheet has neither problem. An empty cell IS a key's worth of
-   room, so pressing one puts a key exactly there and exactly that wide. And a
-   key is made wider by joining it to the one beside it, which cannot come out
-   at a width the row has no room for because both were already in the row.
+   An empty frame IS a key's worth of room, so a key put into it lands exactly
+   there and exactly that wide. And a key is made wider by joining it to the
+   one beside it, which cannot come out at a width the row has no room for
+   because both were already in the row.
 
    It is also the shape the sheet already had: a row is worked by pressing its
    number, a column by pressing its letter, and now a key by pressing the key.
    Press to select, and the buttons over the sheet act on whatever is selected.
    Three things, one habit -- and no exception:
    「なんで？ 結合ボタン作れよ。編集も含め全部ボタンで作業だから」 OWNER
-   2026-08-27. Pressing the key BESIDE a selected one used to join the two,
-   which was the one place on this sheet where a press did something rather
-   than choosing something -- and it was standing exactly where a second key
-   would have to be chosen 「あと複数キー選べないから」. */
+   2026-08-27. Pressing a key chooses it and nothing else, which is what
+   leaves room for a second key to be chosen 「あと複数キー選べないから」. */
 /* An empty frame of the sheet, and every one of them is one.
    「エクセルと同じだって。点線キーが入ってんの。追加するならタップまで追加ボタン。
    キーガーないところがあるのがおかしい」 OWNER DECISION 2026-08-28.
 
    The sheet is a grid of frames and a frame with no key in it is a DOTTED
    KEY -- there is no such state as a blank. A leftover of one column is half
-   a frame and is a frame all the same: pressing it puts in a key half a key
-   wide, which is a width this keyboard has had since it had a QWERTY (the
-   third row is inset by exactly that at each end).
+   a frame and is a frame all the same 「半キーも左に寄せたら右に1枠開くでしょ？
+   そういう話」: it is pressed and selected like any other, and takes no key --
+   「半キーを追加できるのやめてほしい」 OWNER 2026-09-05, kbCellFits().
 
-   It was drawn as SPACE for a day, with `can` false on the half, on the
-   grounds that a key is one key wide. That was the app deciding a frame was
-   not one because what goes in it is small, and the owner said no:
-   「半キーも左に寄せたら右に1枠開くでしょ？そういう話」
-
-   `span` is the frame's width in COLUMNS and a column is half a key, so the
-   key that goes in is span/2 wide. One number, carried from the drawing to
-   the press, so the two cannot disagree about how wide the frame was. */
+   `span` is the frame's width in COLUMNS and a column is half a key. One
+   number, carried from the drawing to the press, so the two cannot disagree
+   about how wide the frame was. */
 function kbCellHTML(ri, at, span, ki){
   return '<button class="kbk'+(ki===undefined? '' : ' gap')+' cell'+
     (kbCellIs(ri, at)? ' pick':'')+'"' +
-    DO('kbCellAdd', [ri, at, span]) +
+    DO('kbCellSel', [ri, at, span]) +
     /* The paint, because a selection nobody can see is not one. There is no
        `.kbk.pick` rule in the stylesheet -- a chosen key is painted from
        here, inline -- so a frame that wore only the class was chosen and
@@ -1723,13 +1756,11 @@ function kbCellIs(ri, at){
    the sentence at the head of CLAUDE.md § 19 and is how the row's number and
    the column's letter have always worked.
 
-   Called with NO ARGUMENTS it is the button over the sheet, acting on the
-   selection the way kbCut(), kbAlign(), kbOpenSel() and kbJoinSel() do. Two
-   controls, one act, and the arguments say which is asking -- the same shape
-   as kbIns(down) and kbInsCol(right). */
-function kbCellAdd(ri, at, span){
-  if(ri===undefined){ kbCellPut(); return; }
-  if(kbIsFree(kbShow)) return;
+   The button over the sheet is kbCellPut() below, and it is its own name:
+   selecting a frame and putting a key into it are two acts, and one name
+   that did either according to whether it was handed arguments was one name
+   saying two things (docs/scope/r73-audit.md § 2-16). */
+function kbCellSel(ri, at, span){
   if(!kbEdit()) return;
   KBH={k:'f', r:ri, at:at, span:span};
   kbSel=null;
@@ -1752,9 +1783,9 @@ function kbCellAdd(ri, at, span){
    A frame is drawn over whatever room the sheet has, counted in COLUMNS, and
    a column is half a key -- so a row pushed to one end leaves half a column
    at the other and the sheet offers a frame half a key wide. Putting a key in
-   one made a half key, which is a key nobody chose the width of: the width
-   picker on a key's own page offers 1, 2, 3 and 4 and has never offered a
-   half.
+   one made a half key, which is a key nobody chose the width of: a key is
+   made wider by joining it to the one beside it, a key at a time, and never
+   by a half.
 
    The frame is still PRESSED to be selected -- that is what pressing a frame
    is on this sheet, and every frame answers to it (「全部のます触ったら選択で」
@@ -1775,8 +1806,9 @@ function kbCellPut(){
   w=(KBH.span||2)/2;
   k=kbKey('lt', '');
   k.w=w;
-  /* the gap this frame is drawn over, if there is one */
-  at=0;
+  /* the gap this frame is drawn over, if there is one -- counted on the
+     sheet, where the frame was drawn */
+  at=kbStart(row);
   for(i=0;i<row.length;i++){
     u=kbU(row[i].w);
     if(row[i].k==='gap' && !kbShadow(row[i]) &&
@@ -1846,7 +1878,6 @@ function kbKeyIs(ri, ki){
 }
 function kbTapKey(ri, ki){
   var rows, ui;
-  if(kbIsFree(kbShow)) return;
   if(!kbEdit()) return;
   /* The lower half of a merged key IS that key. One redirect here rather than
      a second name in the markup, so everything below -- selecting, joining,
@@ -2070,30 +2101,31 @@ function kbVJoin(ri, ki){
 
    It runs from saveKb(), which is what every change to a keyboard ends in,
    and BEFORE kbNoted() inside it, so what the step back holds is the repaired
-   layout rather than a state the app never showed. Rows are walked downwards,
+   layout rather than a state the app never showed. On THE BOARD BEING SAVED
+   and no other, which is kbWayOff()'s range too: a save repairs what somebody
+   just changed, and rearranging a keyboard nobody is looking at is the thing
+   both exist to stop. It walked every board until docs/scope/r63-audit.md K3
+   measured a change to board 2 moving board 1. Rows are walked downwards,
    so a key whose `h` is dropped here is dropped before the gap under it is
    asked about. */
 function kbVFix(){
-  var i, j, rows, k, ri, ki, at, di;
-  if(!KB || !KB.kbs) return;
-  for(i=0;i<KB.kbs.length;i++){
-    if(!KB.kbs[i] || !KB.kbs[i].lay) continue;
-    for(j=0;j<KB.kbs[i].lay.length;j++){
-      rows=KB.kbs[i].lay[j].rows;
-      if(!rows) continue;
-      for(ri=0;ri<rows.length;ri++){
-        for(ki=0;ki<rows[ri].length;ki++){
-          k=rows[ri][ki];
-          at=kbAtOf(rows[ri], ki);
-          if(kbTall(k)){
-            di=kbAtKey(rows[ri+1], at);
-            if(di<0 || !kbShadow(rows[ri+1][di]) ||
-               kbU(rows[ri+1][di].w)!==kbU(k.w)) delete k.h;
-          }else if(kbShadow(k)){
-            di=kbAtKey(rows[ri-1], at);
-            if(di<0 || !kbTall(rows[ri-1][di]) ||
-               kbU(rows[ri-1][di].w)!==kbU(k.w)) delete k.up;
-          }
+  var b=kbEdit(), j, rows, k, ri, ki, at, di;
+  if(!b || !b.lay) return;
+  for(j=0;j<b.lay.length;j++){
+    rows=b.lay[j].rows;
+    if(!rows) continue;
+    for(ri=0;ri<rows.length;ri++){
+      for(ki=0;ki<rows[ri].length;ki++){
+        k=rows[ri][ki];
+        at=kbAtOf(rows[ri], ki);
+        if(kbTall(k)){
+          di=kbAtKey(rows[ri+1], at);
+          if(di<0 || !kbShadow(rows[ri+1][di]) ||
+             kbU(rows[ri+1][di].w)!==kbU(k.w)) delete k.h;
+        }else if(kbShadow(k)){
+          di=kbAtKey(rows[ri-1], at);
+          if(di<0 || !kbTall(rows[ri-1][di]) ||
+             kbU(rows[ri-1][di].w)!==kbU(k.w)) delete k.up;
         }
       }
     }
@@ -2132,8 +2164,8 @@ function kbNHTML(ri){
    so it is clear what is being worked on, and the buttons over the sheet act
    on it. 「削除は削除ボタン寄せは寄せボタンでしょ」
 
-   Where you are standing rather than anything the language has, so
-   viewReset() drops it. Pressing the same head again puts it down. */
+   Where you are standing rather than anything the language has, so it is
+   forgotten with the screen -- kbLeft() below. */
 var KBH=null;
 /* ---- A HEAD SELECTION IS A RUN -----------------------------------------
    「キーボードaおしたら縦列選択できるけどさ、そこからabcdみたいに引っ張っても
@@ -2244,7 +2276,7 @@ function kbInsRoom(){
   var run=kbHeadRun();
   /* As many as are chosen: four columns selected is four going in, so the
      room asked for is the room for four. */
-  return KBH.k==='r'? kbRoomRow() : kbRoomCol(run.a, run.b-run.a+1);
+  return KBH.k==='r'? kbRoomRow(kbLayer().rows) : kbRoomCol(run.a, run.b-run.a+1);
 }
 function kbInsAsk(){
   if(!KBH || !kbInsRoom()) return;
@@ -2274,11 +2306,11 @@ function kbInsAsk(){
    alone, so a column goes into those same rows and no others. A short row is
    short because somebody made it short.
 
-   What goes in is an empty letter slot -- what the dashed row at the foot
-   puts in, and what a pattern leaves for somebody to fill. Not a gap: a gap
-   is space, and what was asked for is a key. */
+   What goes in is an empty letter slot -- what a new row starts with, and
+   what a pattern leaves for somebody to fill. Not a gap: a gap is space, and
+   what was asked for is a key. */
 function kbColAt(row, half){
-  var at=0, i;
+  var at=kbStart(row), i;
   for(i=0;i<row.length;i++){
     if(at>=half) return i;
     at+=kbU(row[i].w);
@@ -2286,8 +2318,13 @@ function kbColAt(row, half){
   return row.length;
 }
 function kbColRows(ci){
-  var rows=kbLayer().rows, out=[], i;
-  for(i=0;i<rows.length;i++) if(kbUsed(rows[i])>ci*2) out.push(i);
+  var rows=kbLayer().rows, out=[], i, a;
+  for(i=0;i<rows.length;i++){
+    a=kbStart(rows[i]);
+    /* a row REACHES the column when a key of it stands in it -- the rows
+       kbDelCol() takes from, counted the same way */
+    if(a<ci*2+2 && a+kbUsed(rows[i])>ci*2) out.push(i);
+  }
   return out;
 }
 /* `n` columns, because a head selection is a RUN and four chosen means four
@@ -2297,20 +2334,24 @@ function kbRoomCol(ci, n){
   var rows=kbLayer().rows, at=kbColRows(ci), i;
   n=n||1;
   if(!at.length) return false;
-  for(i=0;i<at.length;i++) if(kbUsed(rows[at[i]])+2*n>KB_COLS) return false;
+  for(i=0;i<at.length;i++) if(!kbRoomFor(rows[at[i]], n)) return false;
   return true;
 }
 function kbInsCol(right){
-  var b=kbEdit(), rows, at, i, j, half, run=kbHeadRun(), n;
+  var b=kbEdit(), rows, at, i, j, k, half, run=kbHeadRun(), n;
   if(!b || !run || KBH.k!=='c') return;
   n=run.b-run.a+1;
   if(!kbRoomCol(run.a, n)) return;
   rows=kbLayer().rows;
   half=run.a*2 + (right? n*2 : 0);
   at=kbColRows(run.a);
-  for(i=0;i<at.length;i++)
-    for(j=0;j<n;j++)
-      rows[at[i]].splice(kbColAt(rows[at[i]], half), 0, kbKey('lt', ''));
+  /* where each row takes them is found ONCE, on the sheet as it was drawn:
+     a row grows with each key and is drawn afresh in the middle, so asking
+     again after the first would be asking about a row nobody pressed */
+  for(i=0;i<at.length;i++){
+    k=kbColAt(rows[at[i]], half);
+    for(j=0;j<n;j++) rows[at[i]].splice(k, 0, kbKey('lt', ''));
+  }
   /* and the selection follows the columns it was on, which have moved right
      by as many as went in on their left -- kbIns() does the same thing one
      axis over */
@@ -2320,7 +2361,7 @@ function kbInsCol(right){
 }
 function kbIns(down){
   var b=kbEdit(), rows, at;
-  if(!b || !KBH || KBH.k!=='r' || !kbRoomRow()) return;
+  if(!b || !KBH || KBH.k!=='r' || !kbRoomRow(kbLayer().rows)) return;
   rows=kbLayer().rows;
   at=Math.max(0, Math.min(KBH.i+(down? 1 : 0), rows.length));
   rows.splice(at, 0, [kbKey('lt', '')]);
@@ -2356,14 +2397,15 @@ function kbCut(){
   }
   run=kbHeadRun();
   KBH=null;
-  /* From the far end back, so that taking one out does not move the ones
-     still to go. ONE save and therefore ONE step back for one press --
-     kbDelRow() and kbDelCol() write nothing themselves for exactly this
-     reason: four columns taken by one press is one thing that happened. */
-  for(i=run.b;i>=run.a;i--){
-    if(h.k==='r') kbDelRow(i);
-    else kbDelCol(i);
-  }
+  /* ONE save and therefore ONE step back for one press -- kbDelRow() and
+     kbDelCol() write nothing themselves for exactly this reason: four columns
+     taken by one press is one thing that happened. Rows from the far end
+     back, so that taking one out does not move the ones still to go; a run
+     of columns in one pass, because a row that loses a column is drawn
+     afresh in the middle of the sheet and a second pass would be counting
+     where the first one left it (kbStart). */
+  if(h.k==='r') for(i=run.b;i>=run.a;i--) kbDelRow(i);
+  else kbDelCol(run.a, run.b);
   kbSel=null;
   saveKb(); render();
 }
@@ -2412,14 +2454,14 @@ function kbAlign(how){
   saveKb(); render();
 }
 function kbAlign1(ri, how){
-  var rows=kbLayer().rows, row=rows[ri], tot, rem, lead, tail;
+  var row=kbLayer().rows[ri], tot, rem, lead, tail;
   if(!row) return;
   /* off with the old ends */
   while(row.length && row[0].k==='gap') row.shift();
   while(row.length && row[row.length-1].k==='gap') row.pop();
   if(!row.length) return;
   tot=kbUsed(row);
-  rem=kbCols(rows)-tot;
+  rem=KB_COLS-tot;
   if(rem>0){
     /* LEFT and RIGHT put the whole leftover at one end; CENTRE splits it
        between the two. None of the three rounds anything.
@@ -2482,7 +2524,7 @@ function kbHTML(sel, ro){
          「行と列はエクセルのように数字振ったんだから、小さくなったら意味ない
          やん」「エクセルは足しても小さくならんやろ」 OWNER DECISION 2026-08-26.
 
-         The grid used to be kbCols(lay.rows) wide, so the widest row exactly
+         The grid used to be as wide as this face's widest row, so that row exactly
          filled it -- and a column was therefore a different width on every
          board and got NARROWER every time anything was added. That is not a
          spreadsheet: a column in one is a fixed width and adding one makes
@@ -2494,7 +2536,7 @@ function kbHTML(sel, ro){
          them (w 2.5), which is why it comes out 97pt where a QWERTY's is 39.
          And the limit does the rest: a row that already comes to ten refuses
          another key, so nothing is ever made smaller to fit something in.
-         kbRoomIn() has always said that; what was missing was the fixed
+         kbRoomFor() has always said that; what was missing was the fixed
          width for it to be true against. */
       cols=ro? 0 : KB_COLS, at, b, lead, tot, ki2, hrun;
   if(!ro){ kbNoted(); out+=kbHdrHTML(cols); }
@@ -2509,9 +2551,7 @@ function kbHTML(sel, ro){
     at=0;
     /* the empty half of a short row, before the keys */
     if(!ro){
-      tot=0;
-      for(ki=0;ki<row.length;ki++) tot+=kbU(row[ki].w);
-      lead=kbLead(cols, tot);
+      lead=kbStart(row);
       while(at<lead){
         b=Math.min(2, lead-at);
         out+=kbCellHTML(ri, at, b);
@@ -2891,7 +2931,7 @@ function kbMoreQ(){
      (www/home.js § vBuild). 「キーボードの？は目次のキーボードの題名の横」
      OWNER 2026-09-05. That is one screen earlier than this one, which is
      where 「how do I switch this on」 is asked. */
-  if(kbIsFree(kbShow)) return '';
+  if(!kbEdit()) return '';
   return '<button class="navq"' + DO('kbMore') + ' aria-label="'+esc(t('kb.more'))+'">'+
     ICON_DOTS+'</button>';
 }
@@ -3133,7 +3173,7 @@ function kbHeadPaint(){
     ri=parseInt(es[i].getAttribute('data-r'), 10);
     ki=parseInt(es[i].getAttribute('data-k'), 10);
     row=rows[ri]; key=row? row[ki] : null;
-    kbSelEl(es[i], !!key && kbColSel(kbAtOf(row, ki), key.w));
+    kbSelEl(es[i], !!key && kbColSel(kbSheetAt(row, ki), key.w));
   }
   band=g.querySelector('.kbband');
   run=kbHeadRun();
@@ -3242,10 +3282,9 @@ function kbLift(){
   var g=document.getElementById('kb');
   if(g) g.classList.add('moving');
   /* And the keyboard goes into the state a phone's home screen goes into
-     when an icon is held: every key wobbling with a ⊖ on its corner. It is
-     not drawn until the finger comes up -- a render() in the middle of a drag
-     takes the element being dragged out from under it.
-     「長押ししたら右上に➖出てきて消える。iPhoneのホーム画面と同じ挙動」 */
+     when an icon is held: every key wobbling. It is not drawn until the
+     finger comes up -- a render() in the middle of a drag takes the element
+     being dragged out from under it. */
   kbWob=true;
 }
 function kbDragTo(e){
@@ -3287,8 +3326,8 @@ function kbDragTo(e){
      as eleven keys each a little narrower.
 
      The gate was already here and this was the one road not through it --
-     kbCellAdd(), which is the same act done with a press instead of a finger,
-     has always asked kbRoomIn(). So this asks the same sentence rather than a
+     kbCellPut(), which is the same act done with a press instead of a finger,
+     has always asked kbRoomFor(). So this asks the same sentence rather than a
      new one, and somebody carrying a key into a full row now finds what
      somebody pressing an empty cell in one has always found.
 
@@ -3473,20 +3512,11 @@ function kbUp(e){
    backGo() (www/shell.js) is the one road off, and a save that landed goes
    down it too.
 
-   A press still SELECTS while it lasts, and that is a fix rather than a
-   choice. This state used to strip `kbTapKey` off every key, and the reason
-   written here was that a press was for the ⊖ on the key's corner -- so a key
-   that also opened its own sheet would have been two answers to one press.
-   The ⊖ came off. Nothing took its place, and the sentence justifying the
-   strip stayed, so what was left was a keyboard where **no key answered a
-   finger at all**: not to select, not to let go of a selection, and with no
-   way out but Done in the bar.
+   A press still SELECTS while it lasts:
    「キー触っても反応ないし、選択しているところと違うとこさわれば選択解除される
-   はずなのにそれもない」 OWNER 2026-08-28.
-
-   With no ⊖ there is no second answer to compete with, so a press means here
-   what it means everywhere else on this sheet: press to select, press
-   somewhere the run cannot reach to let go. A press that ENDED a carry is
+   はずなのにそれもない」 OWNER 2026-08-28. A press means here what it means
+   everywhere else on this sheet: press to select, press somewhere the run
+   cannot reach to let go. A press that ENDED a carry is
    already stopped in kbUp() -- it calls preventDefault(), which is what keeps
    a key from being selected by the finger that just put it down.
 
@@ -3570,13 +3600,16 @@ function kbDelRow(ri){
    says why. What is left is rounded back to keys, and anything that comes out
    at nothing goes.
 
-   The mutating half, writing nothing, for kbDelRow()'s reason above. */
-function kbDelCol(ci){
+   The mutating half, writing nothing, for kbDelRow()'s reason above. From
+   column `ca` to column `cb` (one column when `cb` is not given), counted on
+   the sheet where they were drawn when the bin was pressed. */
+function kbDelCol(ca, cb){
   var lay=kbEdit();
   if(!lay) return;
-  var rows=kbLayer().rows, a=(parseInt(ci, 10)||0)*2, b=a+2, i, j, row, at, u, cut, out;
+  var rows=kbLayer().rows, a=(parseInt(ca, 10)||0)*2, b, i, j, row, at, u, cut, out;
+  b=((cb===undefined)? a/2 : (parseInt(cb, 10)||0))*2+2;
   for(i=0;i<rows.length;i++){
-    row=rows[i]; at=0; out=[];
+    row=rows[i]; at=kbStart(row); out=[];
     for(j=0;j<row.length;j++){
       u=kbU(row[j].w);
       cut=Math.min(at+u, b)-Math.max(at, a);
@@ -3593,7 +3626,7 @@ function kbDelCol(ci){
    keyboard was on this visit.
 
    ONE PLACE records it -- kbNoted() -- rather than the thirty mutators:
-   kbDelRow, kbDelCol, kbDelKey, kbAddKey, kbSetKind, kbLtPut, the drag.
+   kbDelRow, kbDelCol, kbDelKey, kbSetKind, kbLtTap, the drag.
    A list that has to be added to by hand is a list with a hole in it, and the
    hole is a change that cannot be taken back with no way of knowing which one.
 
@@ -3611,40 +3644,47 @@ var KBU={id:'', cur:'', u:[], r:[]};
 function kbNoted(){
   var b=kbEdit(), id, str;
   if(!b) return;
-  id=String(kbShow);
+  /* Named by the LANGUAGE and the board's own id, never by where it is in
+     the list: board 1 of one language and board 1 of the next are two
+     keyboards, and so are the board that was deleted and the one that slid
+     into its place. docs/scope/r73-audit.md § 2-16 measured a step back
+     pressed in the second language putting the first one's layout down. */
+  id=String(langId)+'|'+String(b.id);
   str=kbLaySig(b);
   /* Another board is another history. Nothing is carried across: undoing onto
      a keyboard the layout never belonged to is not a step back, it is a
      different keyboard arriving. */
-  if(KBU.id!==id){ kbForget(); KBU.id=id; KBU.cur=str; return; }
+  if(KBU.id!==id){ kbLeft(); KBU.id=id; KBU.cur=str; return; }
   if(KBU.cur===str) return;
   KBU.u.push(KBU.cur);
   if(KBU.u.length>40) KBU.u.shift();
   KBU.cur=str;
   KBU.r=[];
 }
-/* A board is identified here by WHERE it is in the list, because that is all
-   a board has -- and a position is not an identity. Delete board 1 and make
-   another, and the new one is board 1 too, wearing the old one's history:
-   the step back would put a layout that belongs to a deleted keyboard onto a
-   keyboard that never had it. That is not a step back, it is a different
-   keyboard arriving. So making one and deleting one both forget.
+/* WHAT THE SHEET FORGETS, and it is one sentence: the selection and the step
+   back belong to the board in front of you on the screen in front of you.
+   「row 3」 means row 3 of THAT board, and a history is a history of that
+   board -- so walking off the screen (viewLeft() in www/shell.js), opening
+   another language (viewReset()), and arriving on another board (kbNoted()
+   above, which names a board by its id) are the three ways that board stops
+   being in front of you, and all three come here.
 
-   The SELECTION goes with it for the same reason and it is the same sentence:
-   "row 3" means row 3 of a board, and the board is gone. Leaving it behind
-   lights up a row of the new keyboard that nobody pressed, with the bin above
-   it up and ready. viewReset() clears it on the way to another screen; this
-   is the other way to arrive somewhere else without leaving the screen.
-
-   AND THE BUFFER THE SAVE READS, for the same sentence a third time. It is
+   It used to be two lines in two places that each said half: viewReset()
+   dropped the selection and not the history, and nothing dropped either when
+   the screen was merely walked off, so a row selected, a tab pressed and the
+   keyboard come back to found the row still lit with the bin up
+   (docs/scope/r73-audit.md § 2-16, measured). */
+function kbLeft(){ KBU={id:'', cur:'', u:[], r:[]}; KBH=null; }
+/* AND THE BUFFER THE SAVE READS, when the LIST changes under the pages. It is
    filed under the board's PAGE (kbKeepOn below), so a board deleted out from
    under a page leaves what it opened with sitting there as what the next
    board's change is measured against -- and the Save came up gold on a
    keyboard nobody had touched. Every one of them goes, not the page you are
    standing on: the boards below a deleted one all slide, so every page from
-   there down is now about a different keyboard. */
+   there down is now about a different keyboard. Making one and deleting one
+   both come here. */
 function kbForget(){
-  KBU={id:'', cur:'', u:[], r:[]}; KBH=null;
+  kbLeft();
   var k;
   for(k in KEEP) if(KEEP.hasOwnProperty(k) && k.indexOf('kb|')===0) keepDrop(k);
 }
@@ -3739,7 +3779,7 @@ function kbToolHTML(){
             '<button class="kbtb"' + DO('kbIns', [true]) +
               ' aria-label="'+esc(t('kb.row.down'))+'">'+ICON_INDN+'</button>')
       : cell
-        ? '<button class="kbtb"' + DO('kbCellAdd') +
+        ? '<button class="kbtb"' + DO('kbCellPut') +
             (kbCellFits()? '' : ' disabled') +
             ' aria-label="'+esc(t('kb.cell.add'))+'">'+ICON_ADD+'</button>'
       : key
@@ -3761,10 +3801,7 @@ function kbToolHTML(){
             ' aria-label="'+esc(t('kb.al.r'))+'">'+ICON_ALR+'</button>')+
     /* 「最大になったら+はなし」 -- down, which is what this button has always
        done when a row is as tall as it may get, and what the three beside it
-       do when nothing is selected. The toolbar keeps its shape; the dashed row
-       at the FOOT of the sheet is the one that goes away entirely, because
-       that one is drawn where a row would go rather than sitting in a row of
-       buttons. */
+       do when nothing is selected. The toolbar keeps its shape. */
     (key || cell? ''
       : '<button class="kbtb'+(ask? ' on':'')+'"' + DO('kbInsAsk') +
         (kbInsRoom()? '' : ' disabled') +
@@ -3806,7 +3843,7 @@ function kbRepat(i){
   var b=kbBoards();
   if(!b.length) return;
   kbShow=kbClamp(i, b.length);
-  if(kbIsFree(kbShow)) return;
+  if(!kbEdit()) return;
   openForm('kbpat:'+kbShow, t('kb.pat.set'), kbPatsHTML('kbSetPat'),
            function(){ geTiles(); });
 }
@@ -3814,8 +3851,7 @@ FORM_OPEN.kbpat=function(a){ kbRepat(parseInt(a,10)||0); };
 function kbSetPat(pat){
   var b=kbBoards(), x;
   if(KB_PATS.indexOf(pat)<0 || !b.length) return;
-  if(kbIsFree(kbShow)) return;
-  x=KB.kbs[kbShow-1];
+  x=kbEdit();
   if(!x) return;
   if(x.pat===pat){ back(); return; }
   /* 確認は自前のポップで。「標準は使わねえって言ってるだろこれも禁止や」
@@ -3826,7 +3862,7 @@ function kbSetPat(pat){
    closing over it: the ask is a screen the person stands in front of, and the
    board can have gone by the time they answer. */
 function kbSetPatGo(pat){
-  var x=KB.kbs[kbShow-1];
+  var x=kbEdit();
   if(!x) return;
   x.pat=pat; x.lay=kbPatLay(pat);
   kbLay=0; kbSel=null;
@@ -3952,8 +3988,8 @@ HELP.kb=function(){
       '<button class="btn" style="width:100%;margin-top:10px"' + DO('kbSettings') + '>'+
         esc(t('kb.sys.go'))+'</button>'+
       kbShot('kb-app.jpg'))+
-    (can('kb') ? '' :
-      '<div class="note" style="margin-top:16px">'+esc(t('kb.free.no'))+'</div>'+
+    (!planNo(can('kb')) ? '' :
+      '<div class="grpsep"></div><div class="note">'+esc(t('kb.free.no'))+'</div>'+
       '<div class="note">'+esc(t('kb.free.up'))+'</div>'+
       '<button class="btn ghost" style="width:100%;margin:12px 0 4px"' + DO('go', ["plans"]) + '>'+
         esc(t('kb.up.go'))+'</button>')};
@@ -4033,22 +4069,13 @@ function kbGoLay(i){ kbLay=i; render(); }
    new row AND no new face. kbAddLay() simply did nothing, which is a + that
    can be pressed and does not work.
 
-   So the two of them are one question with one answer now. kbFacePut() is
-   where it lives, because it is the one that knows about gaps -- a flick
-   board's fourth column is gaps from its fourth row down, and that is a slot
-   sitting there on a board every one of whose rows is full. */
-function kbLayRoom(face){
-  var rows=face && face.rows, i, j;
-  if(!rows || !rows.length) return true;
-  for(i=0;i<rows.length;i++)
-    for(j=0;j<rows[i].length;j++){
-      if(rows[i][j].k==='gap' && rows[i][j].w>=1) return true;
-      if(rows[i][j].k==='sp' && rows[i][j].w>1) return true;
-    }
-  if(kbUsed(rows[rows.length-1])+2<=KB_COLS) return true;
-  return rows.length<kbRowsMax();
-}
-function kbLayPut(face, v){ return kbFacePut(face, v); }
+   So the two of them are one question with one answer now: kbFaceSpot() says
+   where the key goes, kbFacePut() puts it there, and this asks whether there
+   is anywhere at all. They answered it twice, in two orders, until
+   docs/scope/r73-audit.md § 2-16 -- a flick board's fourth column is gaps from
+   its fourth row down, and that is a slot sitting there on a board every one
+   of whose rows is full. */
+function kbLayRoom(face){ return !!kbFaceSpot(face); }
 /* NO FACE IS A DEAD END, and that is the sentence above one step further out.
    「2ページ目から戻るボタンがない」 OWNER, build #92.
 
@@ -4092,7 +4119,7 @@ function kbWayOff(){
     /* Face 0 is the way IN to the rest, so its missing key is the same hole
        seen from the other end: with nothing on it pointing anywhere, every
        page after it is unreachable rather than inescapable. */
-    if(!has) kbLayPut(b.lay[i], i===0? 1 : 0);
+    if(!has) kbFacePut(b.lay[i], i===0? 1 : 0);
   }
 }
 /* A page arrives with the way THERE and the way BACK already on it.
@@ -4115,7 +4142,7 @@ function kbAddLay(){
   from=kbClamp(kbLay, b.lay.length);
   if(!kbLayRoom(b.lay[from])) return;
   b.lay.push({rows:[[kbKey('lay', String(from)), kbKey('lt', '')]]});
-  kbLayPut(b.lay[from], b.lay.length-1);
+  kbFacePut(b.lay[from], b.lay.length-1);
   kbLay=b.lay.length-1;
   kbSel=null;
   saveKb(); render();
@@ -4172,23 +4199,14 @@ function kbPick(ri, ki){
   /* The free QWERTY has no editor, so it has no key sheet either. Its keys
      are drawn as plain spans and nothing on the screen opens this -- but a
      route can be come back to, and `form:kbkey:0:0` is a route. */
-  if(kbIsFree(kbShow)) return;
+  if(!kbEdit()) return;
   kbSel={r:ri, k:ki};
-  /* ARRIVING IS ARRIVING: nothing is chosen on a screen you have just opened.
-     「終わって戻ったら選択が解除されてる状態にして欲しい」OWNER 2026-09-03.
-     This is the whole of that face of it -- there is no "on the way out" to
-     write, because coming back and opening the key again comes through here.
-     kbLtDraw() is what paints this screen WITHOUT arriving on it. */
-  kbLtPick=null;
   kbKeyForm(ri, ki);
 }
-/* The key's screen, drawn. Separated from kbPick() above for one reason: the
-   bar's confirm is part of what openForm() opens, so choosing a letter has to
-   rebuild the whole form -- and doing that through kbPick() would forget the
-   choice that had just been made. */
+/* The key's screen, drawn -- by kbPick() arriving on it, and by kbLtDraw()
+   when a letter pressed on it has gone onto the key. */
 function kbKeyForm(ri, ki){
-  openForm('kbkey:'+ri+':'+ki, t('kb.key'), kbKeyHTML(ri, ki), function(){ geTiles(); },
-           kbLtPutBtn());
+  openForm('kbkey:'+ri+':'+ki, t('kb.key'), kbKeyHTML(ri, ki), function(){ geTiles(); });
 }
 FORM_OPEN.kbkey=function(a){
   var p=String(a||'').split(':');
@@ -4196,7 +4214,9 @@ FORM_OPEN.kbkey=function(a){
 };
 function kbKeyHTML(ri, ki){
   var key=kbAt(ri, ki), i, out;
-  if(!key) return '<div class="note">'+t('form.gone')+'</div>';
+  /* the key this page is about is not on the board any more -- the one
+     sentence every screen says for that, drawn by the one function */
+  if(!key) return goneBox();
   out=(key.k==='lt'? kbEditHTML(ri, ki, key) : kbEditFnHTML(key))+
     /* And the alphabet, HERE, when there is one slot to fill. Choosing which
        letter goes on a key is what somebody is doing nearly every time they
@@ -4234,7 +4254,7 @@ function kbKeyHTML(ri, ki){
        The ◀ and ▶ that used to be here are gone too: a key is moved by holding
        it on the keyboard itself. 「長押しで編集とかスマホの編集にしてくれよ」
        What is left is the thing a sheet is for -- what this key IS. */
-    '<button class="set" style="margin-top:12px;border-bottom:none"' + DO('kbDelKey', [ri, ki]) + '>'+
+    '<div class="grpsep"></div><button class="set end"' + DO('kbDelKey', [ri, ki]) + '>'+
       '<span class="sl bad">'+t('kb.key.del')+'</span></button>';
   return out;
 }
@@ -4278,15 +4298,9 @@ function kbSlotFace(lid){
     '<span class="kbl" style="font-size:.6rem;line-height:1">'+
     esc(ltName(l)||'·')+'</span></span>';
 }
-/* WHAT THE SQUARE SHOWS IS WHAT HAS BEEN CHOSEN, when something has.
-   Choosing writes nothing until the confirm (kbLtPut below), so the square
-   read the key and the key still held what it held -- press a letter and the
-   cell went purple while the square over it went on saying the old thing, or
-   nothing at all. The purple and the square are one answer to one question
-   and it is asked in one place, kbLtAt(). */
+/* The square shows what is on the key, which is also what is purple under
+   it: a letter pressed goes onto the key at once (kbLtTap). */
 function kbSlotBtn(cls, lid, ri, ki, dir, label){
-  var p=kbLtAt(ri, ki, dir);
-  if(p) lid=p.v;
   return '<button class="kbe '+cls+(lid && ltById(lid)? '' : ' non')+'"' +
     DO('kbSlot', [ri, ki, dir]) +
     ' aria-label="'+esc(label)+'">'+kbSlotFace(lid)+'</button>';
@@ -4349,14 +4363,11 @@ function kbSheetH(){
 var kbSlotFor=null;
 function kbSlot(ri, ki, dir){
   kbSlotFor={r:ri, k:ki, d:dir};
-  /* Arriving, the same as kbPick() above and for the same sentence. */
-  kbLtPick=null;
   kbSlotForm(ri, ki, dir);
 }
 /* And the sheet, drawn -- kbKeyForm()'s twin, for kbKeyForm()'s reason. */
 function kbSlotForm(ri, ki, dir){
-  openForm('kbslot:'+ri+':'+ki+':'+dir, t('toc.letters'), kbLtHTML(), function(){ geTiles(); },
-           kbLtPutBtn());
+  openForm('kbslot:'+ri+':'+ki+':'+dir, t('toc.letters'), kbLtHTML(), function(){ geTiles(); });
 }
 FORM_OPEN.kbslot=function(a){
   var p=String(a||'').split(':');
@@ -4427,46 +4438,32 @@ function kbLtGrid(ri, ki, dir){
 }
 function kbLtHTML(){
   var s=kbSlotFor;
-  if(!s) return '<div class="note">'+t('form.gone')+'</div>';
+  if(!s) return goneBox();
   return kbLtGrid(s.r, s.k, s.d);
 }
-/* ---- what has been CHOSEN on the alphabet, and the confirm over it -------
-   「ここに右上に選択したら適用ボタンが確定ボタン欲しい。終わって戻ったら選択が
-   解除されてる状態にして欲しい。後選択してる紫はもう一度同じ場所触れたら解除
-   して欲しい」 OWNER 2026-09-03.
+/* ---- a letter onto a key ------------------------------------------------
+   「なんのための確定？いらないなら保存だけでいいよ。」 OWNER 2026-09-24, and
+   「後選択してる紫はもう一度同じ場所触れたら解除して欲しい」 OWNER 2026-09-03.
 
-   Three sentences and ONE shape. A letter used to go onto the key the instant
-   it was touched -- kbPut() wrote it, saved, and redrew. That is gone rather
-   than fenced off: a confirm added beside a press that still wrote would be
-   two mechanisms deciding one field, and CLAUDE.md's 「修正ではなく書き換え」
-   is exactly about the moment you reach to add the second one. So the press
-   REMEMBERS and nothing else, and one road writes -- kbLtPut() below, the
-   button in the bar.
+   A letter pressed goes onto the key -- or onto the one corner of a flick key
+   the sheet was opened for -- and pressing the letter already there takes it
+   off again. The purple IS what is on the key, so there is nothing chosen that
+   is not on it, and nothing to confirm. It was a choice remembered here and a
+   confirm in the bar that wrote it; that road is gone rather than kept beside
+   this one, because two roads to one field is two things deciding it.
 
-   The three sentences fall out of that one shape:
-     the confirm is here only while something is chosen  -> kbLtPutBtn()
-     touching the chosen one again puts it down          -> kbLtTap()
-     the screen opens with nothing chosen                -> kbPick(), kbSlot()
+   Written the way every change to this sheet is: saveKb(), which is one step
+   back and the board's draft (www/keyboard.js § K1) -- the language is
+   written by the board's Save and nothing else. The screen stays where it is.
 
-   And what is chosen is WHERE YOU ARE STANDING, not anything the language
-   has: no slice, no key, no property on a row -- JSON.stringify drops those
-   in silence (CLAUDE.md § 19). It is one variable, and viewReset() drops it
-   with kbSel and kbSlotFor.
-
-   {r, k, d, v} and not just the letter, because the same grid is drawn for
-   the key itself (d = -1) and for each of a flick key's four corners: a
-   choice made for one corner is not a choice made for the next. */
-var kbLtPick=null;
-/* What has been chosen FOR THIS SLOT, or null. One place, because two things
-   ask it: the purple on the cell, and the square over the alphabet that says
-   what is on the key. */
-function kbLtAt(ri, ki, dir){
-  return (kbLtPick && kbLtPick.r===ri && kbLtPick.k===ki && kbLtPick.d===dir)
-    ? kbLtPick : null;
+   `dir` is -1 for the key itself and 0-3 for a flick key's corners. */
+function kbLtOn(ri, ki, dir){
+  var key=KB? kbAt(ri, ki) : null;
+  if(!key) return '';
+  return String((dir<0? key.v : key.f[dir]) || '');
 }
 function kbLtIs(ri, ki, dir, lid){
-  var p=kbLtAt(ri, ki, dir);
-  return !!p && p.v===lid;
+  return kbLtOn(ri, ki, dir)===String(lid||'');
 }
 /* Painted the purple this chapter already paints a chosen thing -- the row's
    band, the column's band, a chosen key. kbPickPaint() is the one place that
@@ -4484,15 +4481,16 @@ function kbLtOnCSS(ri, ki, dir, lid){
 function kbLtOnInk(ri, ki, dir, lid){
   return kbLtIs(ri, ki, dir, lid)? ' style="color:inherit"' : '';
 }
-/* The confirm, in the bar, top right, where openForm() puts one. Nothing is
-   chosen -> there is no button, which is 「何も選んでいなければ出ない」. */
-function kbLtPutBtn(){
-  return kbLtPick? navDo(t('kb.lt.ok'), 'kbLtPut', null, true) : '';
-}
-/* A cell pressed. It is chosen, or -- if it is the one already chosen -- it
-   is put down again. 「もう一度同じ場所触れたら解除」 */
+/* A cell pressed: that letter onto the slot, or off it if it is the one
+   there. 「なし」 is the empty letter, so it empties the slot. */
 function kbLtTap(ri, ki, dir, lid){
-  kbLtPick=kbLtIs(ri, ki, dir, lid)? null : {r:ri, k:ki, d:dir, v:lid};
+  var key;
+  if(!kbEdit()) return;
+  key=kbAt(ri, ki);
+  if(!key) return;
+  lid=kbLtIs(ri, ki, dir, lid)? '' : String(lid||'');
+  if(dir<0) key.v=lid; else key.f[dir]=lid;
+  saveKb();
   kbLtDraw(ri, ki, dir);
 }
 /* WHICH OF THE TWO SCREENS THE ALPHABET IS ON, asked once, and asked of the
@@ -4500,44 +4498,13 @@ function kbLtTap(ri, ki, dir, lid){
    the sheet without choosing leaves it lying there -- so a letter chosen
    afterwards on the key's own screen read that note, believed it was on the
    sheet, and went back one screen too far. That was already true of the
-   press that wrote (kbPut() read the same note); deferring the write to a
-   confirm only made it easier to reach. One question, one place. */
+   press that wrote (kbPut() read the same note). One question, one place. */
 function kbLtWhere(){ return formArg(here().a).kind; }
-/* Painting the screen again, which is not arriving on it. The two openers
-   above forget the choice; this one keeps it. */
+/* Painting the screen again with what is on the key now, where it is. */
 function kbLtDraw(ri, ki, dir){
   var w=kbLtWhere();
   if(w==='kbslot') kbSlotForm(ri, ki, dir);
   else if(w==='kbkey') kbKeyForm(ri, ki);
-}
-/* And the one road that WRITES. One letter into one slot, from either screen:
-   the sheet that only holds the alphabet, and the key's own screen where it
-   sits under the key.
-
-   ONE saveKb(), so the confirm is ONE step back -- 「確定を押した一回が、戻る
-   一歩」. Choosing writes nothing and saves nothing, so no history is piled up
-   by a finger moving over the alphabet. */
-function kbLtPut(){
-  var p=kbLtPick, key;
-  if(!p) return;
-  if(!kbEdit()) return;
-  key=kbAt(p.r, p.k);
-  if(!key) return;
-  if(p.d<0) key.v=p.v; else key.f[p.d]=p.v;
-  saveKb();
-  /* THE CONFIRM IS ONE STEP BACK, from wherever it was pressed.
-     「キー選んで確定押したらキーボード編集画面に戻ってくれ」 OWNER 2026-09-05,
-     and 「確定を押した一回が、戻る一歩」 before it -- one sentence said of both
-     screens now. From the sheet for one corner, the step back is the key it
-     belongs to; from the key's own screen it is the sheet the key is on.
-
-     It used to END on the key's own screen -- kbPick() again, which is
-     arriving on it a second time. The letter was on the key and the screen
-     was still the one it had been chosen on, so getting out of a key was the
-     arrow: once for the key, and once more for the grid under it. */
-  kbLtPick=null;
-  if(kbLtWhere()==='kbslot'){ kbSlotFor=null; back(); kbPick(p.r, p.k); return; }
-  back();
 }
 /* THE FOUR THE SCREEN OFFERS AND NOTHING ELSE. 「文字／スペース／削除／改行
    の 4 つだけ」 OWNER 2026-09-06. `lay` is gone from here for the reason
@@ -4557,24 +4524,6 @@ function kbSetKind(ri, ki, kind){
   if(kind!=='lt') key.v='';
   saveKb(); kbPick(ri, ki);
 }
-function kbAddKey(ri, ki, w){
-  if(!kbEdit()) return;
-  var rows=kbLayer().rows, k;
-  if(!rows[ri]) return;
-  if(!kbRoomIn(ri, w)) return;
-  k=kbKey('lt', '');
-  if(w>1) k.w=w;
-  rows[ri].splice(ki+1, 0, k);
-  saveKb();
-  /* Placed from the keyboard, the key is opened so the letter can go on it --
-     which is the next thing anybody does. Placed from the key's own sheet,
-     that sheet is closed first. */
-  if(here().r==='form') back();
-  kbPick(ri, ki+1);
-}
-/* The row that is not there yet. Pressing it with a width chosen puts that
-   key in a new row; pressing it with none adds the empty row it always did. */
-/* A row with nothing left in it is not a row. */
 /* KEYS, and ONE step back for the press that took them. Each of these used to
    be its own kbDelKey() and so its own saveKb(), which is its own entry in the
    history -- so the bin taking four keys took four presses of the step back to
@@ -4582,7 +4531,8 @@ function kbAddKey(ri, ki, w){
    the same sentence as「巻き戻しボタンと進むボタンも入れよう」.
 
    Right to left, so the indexes of the keys not yet taken do not move under
-   it. A vertical run is in different rows, where they never would. */
+   it. A vertical run is in different rows, where they never would. A row
+   with nothing left in it is not a row, and goes with its last key. */
 function kbDelKeys(ms){
   if(!kbEdit()) return;
   var rows=kbLayer().rows, j, row;
@@ -4593,9 +4543,8 @@ function kbDelKeys(ms){
   for(j=rows.length-1;j>=0;j--) if(!rows[j].length) rows.splice(j, 1);
   if(!rows.length) rows.push([kbKey('lt', '')]);
   saveKb(); kbSel=null;
-  /* From the ⊖ the keyboard is already on screen and the wobble stays on --
-     somebody taking one key off is usually taking two. From the key's own
-     sheet there is a sheet to close. */
+  /* From the sheet the keyboard is already on screen and stays. From the
+     key's own page there is a page to close. */
   if(here().r==='form'){ back(); return; }
   render();
 }

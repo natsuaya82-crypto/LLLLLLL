@@ -126,14 +126,27 @@ const SERVER = `
       return answer([]);
     }
     if (method === 'POST' && p.indexOf('/rest/v1/slice') === 0){
+      /* ANOTHER PHONE WROTE IN BETWEEN, played once when a scenario asks for
+         it: S.between changes the row the way that phone's write would, and
+         the answer is the refusal keep_newer() gives (supabase/schema.sql).
+         WHEN the server refuses is the scenario's to say -- this does not
+         work out \`was\` again; rls-check holds that rule on the real SQL. */
+      if (S.between){
+        var bt = S.between; S.between = null; bt();
+        S.tried.push('stale');
+        setTimeout(function(){ bad({ message:'stale' }, 400, 'slice 400'); }, 0); return;
+      }
       var rows = (body instanceof Array) ? body : [body], k, r, f, hit;
       for (k = 0; k < rows.length; k++){
         r = rows[k]; hit = null;
         for (f = 0; f < S.slice.length; f++)
           if (S.slice[f].language === r.language && S.slice[f].kind === r.kind) hit = S.slice[f];
-        if (hit){ hit.body = r.body; hit.no = r.no; hit.at = r.at; }
+        /* \`ed\` without \`was\`, which the server does not keep */
+        var ed = r.ed ? { body:r.ed.body } : {};
+        if (hit){ hit.body = r.body; hit.no = r.no; hit.at = r.at; hit.ed = ed; }
         else S.slice.push({ language:r.language, kind:r.kind, body:r.body,
-                            no:r.no, at:r.at });
+                            no:r.no, at:r.at, ed:ed });
+        S.eds = S.eds || []; S.eds.push(r.kind + ':' + JSON.stringify(r.ed || null));
         S.sent.push('slice:' + r.language + ':' + r.kind);
       }
       return answer([]);
@@ -146,7 +159,7 @@ const SERVER = `
       var want = arg('language'), out = [], q;
       for (q = 0; q < S.slice.length; q++) if (S.slice[q].language === want)
         out.push({ kind:S.slice[q].kind, body:S.slice[q].body,
-                   no:S.slice[q].no, at:S.slice[q].at });
+                   no:S.slice[q].no, at:S.slice[q].at, ed:S.slice[q].ed || {} });
       return answer(out);
     }
     /* 取った言語の表 ── language_take。この人の行だけ（take_read は
@@ -184,6 +197,26 @@ const SERVER = `
      On 2026-09-02 it moved onto netSend() -- it differed by one header and by
      being outside the token renewal -- so the stub above is now the only
      transport again, and nothing extra is needed. */
+  /* AND A PERSON WALKING ONTO WHAT THEY HAVE. 「開いた時は通知とタイムライン
+     だけでしょ、そのページに進むときに読み込むべき」 OWNER 2026-09-23: the
+     list of languages is read when the list is arrived at, and what is in each
+     one when a page drawn from it is (www/sns.js § WHAT EACH PAGE READS,
+     mylangs and lang). A section that asks 「did it all come back after a
+     launch」 walks the road a person walks to see it: the list, then each
+     language's dictionary. Nothing here reads or writes on its own -- it is
+     go(), langOpen() and the door. */
+  window.__walk = async function(){
+    function nap(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
+    var ids, w, back = langId;
+    /* after a launch nobody has asked for the list yet -- the fixture's seed
+       says it was answered, and that is the seed's state, not a launch's */
+    pullDrop('mylangs');
+    NAV = [{ r:'plans' }]; route = 'plans';
+    go('langs'); await nap(250);
+    ids = Object.keys(LANGS);
+    for (w = 0; w < ids.length; w++){ langOpen(ids[w]); go('words'); await nap(200); }
+    if (back && LANGS[back] && langId !== back){ langOpen(back); go('words'); await nap(200); }
+  };
 `;
 
 /* ---- 1. two languages, one of them not open ----------------------------- */
@@ -302,7 +335,12 @@ const came = await pg.evaluate(async ({ srv, saved }) => {
   /* signing in is netTook() -- the one place that knows a session arrived */
   netTook({ access_token:'t', refresh_token:'r', user:{ id:'me' } });
   await wait(400);
+  /* AND WHAT IS IN EACH ONE COMES DOWN WHEN A PAGE DRAWN FROM IT IS ARRIVED
+     AT (docs/FEATURE_RULES.md § 2026-09-23 読むのは開いた画面の分だけ;
+     www/sns.js § WHAT EACH PAGE READS, `lang`) -- so the person opens each and
+     walks onto its dictionary, which is how its slices reach this phone. */
   var ids = Object.keys(LANGS), i, j, out = [], v, n, b;
+  for (i = 0; i < ids.length; i++){ langOpen(ids[i]); go('words'); await wait(150); }
   for (i = 0; i < ids.length; i++){
     /* WHAT CAME BACK, MEASURED OVER EVERY SLICE AND NOT OVER `words`.
        ここは `words` の長さだけを数えて「2 本以上が 2 バイトを超えている」と
@@ -347,7 +385,7 @@ say(came.langs.every(l => l.whose === 'mine'),
 
    `netTook()` fired TWO roads that each bring this account's languages down
    and each MAKE the index row: `netLangBack()` straight from it, and
-   `netLangsDown()` through `pullBoot()`. They raced. `netLangBack1()` asked
+   `netLangsDown()` through ~~`pullBoot()`~~. They raced. `netLangBack1()` asked
    the slices FIRST and made its entry in the answer, keyed by the `sid`;
    `netLangsWalk()` made its entry FIRST, keyed by a fresh `langMint()` id --
    so by the time netLangBack1()'s answer came back, `LANGS[sid]` was still
@@ -570,18 +608,19 @@ const W = await pg.evaluate(async () => {
   SET.walked = true;
   ME.name = 'Aya'; ME.handle = 'aya'; saveMe();
   /* 「NOBODY HAS ASKED YET」 IS THE WHOLE TABLE AND NOT ONE FLAG. It was
-     `SNS_GOT = {}` alone, and that stopped being the whole of it on
+     `SNS_GOT = {}` alone (gone -- the timeline is a question per tab on
+     the table now, `feed|fo`), and that stopped being the whole of it on
      2026-09-11, when the table gained 「訊けなかった」 (www/sns.js § pullSay):
      every request this page has made has fallen -- there is no server behind
      `file://` -- so the feed was quite correctly saying ［接続できません］ and
      this claim read it as 「said empty」. pullForget() is the app's own one
      place for 「this phone has been told nothing」 and it is what is meant. */
-  POSTS = []; SNS_GOT = {}; snsTab = 'fo'; pullForget();
+  POSTS = []; snsTab = 'fo'; pullForget();
   window.route = 'feed'; NAV = [{ r:'feed' }]; render();
   out.markTurns = !!document.querySelector('#app .snswait .pullrule');
   out.saidNoneWaiting = document.querySelector('#app .empty .eb') !== null;
   /* An answer that came back EMPTY is still an answer, and now it may say so. */
-  SNS_GOT['fo'] = 1; render();
+  PULL_GOT['feed|fo'] = 1; render();
   out.saysNoneAfter = document.querySelector('#app .empty .eb') !== null;
   out.markGone = !document.querySelector('#app .snswait');
   /* ---- AND THE THIRD FACE: 訊けなかった ---------------------------------
@@ -589,13 +628,13 @@ const W = await pg.evaluate(async () => {
      An answer of 0 from ten minutes ago is not a statement about a server this
      phone cannot reach now, so 「まだ何もない」 may not stand after a fall.
      It is the sentence netPop() already puts up, drawn in the body. */
-  PULL_OFF['feed'] = 1; render();
+  PULL_OFF['feed|fo'] = 1; render();
   out.offSaysOffline = ((document.querySelector('#app .empty .eb') || {}).textContent
                           === t('net.offline'));
   out.offMarkGone = !document.querySelector('#app .snswait');
   /* And an answer coming back is the end of it, without anybody clearing a
      second flag by hand. */
-  PULL_OFF['feed'] = 0; render();
+  PULL_OFF['feed|fo'] = 0; render();
   out.backToNone = ((document.querySelector('#app .empty .eb') || {}).textContent
                       === t('sns.none.fo'));
   /* ---- AND THE DAY'S SENTENCE, WHICH IS THREE FACES AND ONE ROAD ---------
@@ -618,7 +657,7 @@ const W = await pg.evaluate(async () => {
     if (fall) { bad(null, 0, 'day 0'); return; }
     ok({ id:'p1', on_day:'2026-09-02', text:'the sea', says:{ en:'the sea' } });
   };
-  DAY = null; DAY_GOT = false; PULL_GOT.day = 0; PULL_OUT.day = 0;
+  DAY = null; PULL_GOT.day = 0; PULL_OUT.day = 0;
   /* Not asked yet: the mark stands where the sentence goes, and the row is
      still a button. */
   render();
@@ -641,7 +680,7 @@ const W = await pg.evaluate(async () => {
   out.asks = asks;
   out.gotDay = !!(DAY && DAY.text);
   /* And a day the writer missed: an answer, with no sentence in it. */
-  DAY = null; DAY_GOT = true;
+  DAY = null; PULL_GOT.day = 1;
   render();
   out.plainAfterNone = !document.querySelector('#app .wrow .numwait') &&
     (document.querySelector('#app .wrow .wrt') || {}).textContent === t('post.ln.ph');
@@ -719,6 +758,10 @@ const V = await pg.evaluate(() => {
      record has three values, not two, and a route whose last ask FELL is not
      a route nobody has asked (www/sns.js § pullSay). Every request on this
      page has fallen. */
+  /* The kept words are on this screen too and are this screen's other read
+     (www/sns.js § WHAT EACH PAGE READS, `explore`) -- answered here, so the
+     mark measured is the typed words' and nothing else's. */
+  PULL_GOT.saved = 1;
   snsQ = ''; snsHits = null; SET.recent = []; pullDrop('recent'); render();
   out.recentTurns = markOn();
   PULL_GOT.recent = 1; render();
@@ -783,12 +826,24 @@ const del = await pg.evaluate(async ({ s, srv }) => {
   SET.walked = true;
   eval(srv);
   SESS = { at:'t', rt:'r', uid:'me', anon:false };
+  /* A SESSION ARRIVING (www/core.js § ACCT). The fixture's language is
+     the walk's, and this account arrives at the door with it: the
+     container forgets whose memory was (the seed's 'u') and the one
+     switch fills the arriving account from it -- the way netTook() does.
+     Without it memory is still filed under 'u' while SESS says who, and
+     every save is written for somebody else. */
+  ACCT_UID = ''; acctFor(netUid());
   function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
   for (var i in LANGS)
     if (Object.prototype.hasOwnProperty.call(LANGS, i)) langOwnGot(i, SESS.uid);
   langStore();
-  /* On the disk before anything is sent. The seed fills the globals; a slice
-     is what localStorage holds, and the sync reads it from there. */
+  /* THE SEED IS NOT SOMEBODY'S WRITING. It fills the globals, and since
+     2026-09-23 the migrations run the moment the owner answers (migrateAll,
+     www/core.js) -- migrateSp() brings the seed's spellings forward and saves
+     them, as the APP, so nothing of it counts as touched and nothing of it
+     goes up (r60: an app write never travels). These claims are about a
+     dictionary somebody wrote, so somebody writes one word first. */
+  WORDS.push({ hw:'tessa', gl:'a word somebody wrote' });
   save(); saveLetters();
 
   /* 1. the dictionary goes up, so the server is holding it */
@@ -865,6 +920,7 @@ const up2 = await pg.evaluate(async ({ s, srv }) => {
   SET.walked = true;
   eval(srv);
   SESS = { at:'t', rt:'r', uid:'me2', anon:false };
+  ACCT_UID = ''; acctFor(netUid());
   function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
   const out = {};
   /* 待つのは NET_UPMS ＋ 往復のぶん。数はコードから読む ── ここに書くと
@@ -873,7 +929,15 @@ const up2 = await pg.evaluate(async ({ s, srv }) => {
 
   var id = langId;
   LANGS[id].mine = true; langOwnGot(id, 'me2'); langStore();
-  langName = 'Save Now'; save();
+  langName = 'Save Now';
+  /* AND HERE TOO: THE SEED IS NOT SOMEBODY'S WRITING. It fills the globals, and since
+     2026-09-23 the migrations run the moment the owner answers (migrateAll,
+     www/core.js) -- migrateSp() brings the seed's spellings forward and saves
+     them, as the APP, so nothing of it counts as touched and nothing of it
+     goes up (r60: an app write never travels). These claims are about a
+     dictionary somebody wrote, so somebody writes one word first. */
+  WORDS.push({ hw:'tessa', gl:'a word somebody wrote' });
+  save();
 
   /* まず一度合わせて、両者が同じものを持っている所から始める。ここから先の
      送信だけを見たいので、記録を空にする。 */
@@ -1068,6 +1132,7 @@ async function pressSave(how){
     SET.walked = true;
     eval(srv);
     SESS = { at:'t', rt:'r', uid:'me3', anon:false };
+    ACCT_UID = ''; acctFor(netUid());
     function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
     var id = langId;
     LANGS[id].mine = true; langOwnGot(id, 'me3');
@@ -1203,6 +1268,7 @@ const seenUp = await pg.evaluate(async ({ s, srv }) => {
   SET.walked = true; setKeep();
   eval(srv);
   SESS = { at:'t', rt:'r', uid:'me3', anon:false };
+  ACCT_UID = ''; acctFor(netUid());
   ME.name = 'Aya'; ME.handle = 'aya'; saveMe();
   function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
   var id = langId;
@@ -1339,6 +1405,7 @@ const road = await pg.evaluate(async ({ srv, saved }) => {
      道から見えていれば、ここで写しがまるごと送られる。 */
   S.lang = keep.lang; S.slice = []; S.sent = [];
   SESS = { at:'t', rt:'r', uid:'me3', anon:false };
+  ACCT_UID = ''; acctFor(netUid());
   await new Promise(function(f){ netLangSync(function(){ f(); }); });
   await wait(300);
   out.sent = S.sent.filter(function(x){ return x.indexOf('slice:') === 0; });
@@ -1351,6 +1418,9 @@ const road = await pg.evaluate(async ({ srv, saved }) => {
       S.slice[i].body = JSON.stringify(
         JSON.parse(S.slice[i].body).concat([{ hw:'newer', gl:'added on another phone' }]));
   await new Promise(function(f){ netLangsDown(function(){ f(); }); });
+  /* and its slices, which come down when a page drawn from it is arrived at
+     (www/net.js § netLangFill) -- the road the answer takes now */
+  await new Promise(function(f){ netLangFill(langId, function(){ f(); }, function(){ f(); }); });
   await wait(300);
   out.words = WORDS.map(function(w){ return String(w.hw); });
   return out;
@@ -1402,7 +1472,7 @@ const loop = await pg.evaluate(async ({ srv, saved }) => {
   out.diskKeys = [];
   try{ for (var _i=0;_i<localStorage.length;_i++){ var _k=localStorage.key(_i);
     if (_k && _k.indexOf('lingua.'+langId+'.')===0) out.diskKeys.push(_k); } }catch(e){}
-  out.lslKeys = Object.keys(LSL);
+  out.lslKeys = Object.keys(LSL).filter(function(k){ return k.indexOf('lingua.' + langId + '.') === 0; });
   /* 人が一語足して保存する。 */
   WORDS.push({ hw:'tunnelword', gl:'written where there was no signal' });
   save();
@@ -1420,29 +1490,31 @@ say(loop.diskKeys.length > 0 && loop.diskKeys.every(function(k){
 say(loop.fromGot.indexOf('kelasu') >= 0,
     '（前提）そして電波なしで開いた直後、画面の語は写しから来ている（' +
     loop.fromGot.length + ' 語）');
-/* **誰も何も触っていないのに、写しが上りの道に乗っています。**
-   `docs/reports/mixed-2026-09-11.md` まとまり 9 は「人が一語足して保存すると」
-   と読んでいましたが、**保存を待つまでもありません** ── 起動が `langRead()`
-   で写しをグローバルへ読み、そのあと走る移行と `ltStart()` が、**直すものが
-   無くても** `save()` を通ります。`slWr()` は `LSL` に書き、`slMine()` は
-   それを見る。
+/* **誰も何も触っていないとき、写しは上りの道に乗らない。**
+   ここは 2026-09-23 まで、逆のことを緑として主張していました ── 起動が
+   `langRead()` で写しをグローバルへ読み、そのあと走る移行と `ltStart()` が
+   `save()` を通り、`slWr()` が `LSL` に書き、`slMine()` がそれを見る。
+   「これは報告であって、ここで直すものではない」と書いたまま、在ることを
+   主張していました。測ると、その道で別の端末で消した語が起動のたびに
+   戻っていました（tools/quiet-check.mjs 2）。
 
-   **これは報告であって、ここで直すものではありません。**どの起動の道が
-   「何も直していないのに保存する」かを決めるのは保存の道の話で、
-   `docs/scope/r31-server.md` § リーダーへ に測った結果を書いてあります。
-   下の二つが、それが何を壊して何を壊さないかです。 */
-say(loop.lslKeys.length > 0,
-    '**誰も触っていないのに、写しが上りの道に乗っている** ── 起動の移行と ' +
-    'ltStart() が、直すものが無くても save() を通る（LSL に ' +
-    JSON.stringify(loop.lslKeys.map(function(k){ return k.split('.').pop(); })) +
-    '）。まとまり 9 は「保存したら」と読んでいたが、保存を待たない');
-say(loop.mineAfter !== null && String(loop.mineAfter).indexOf('tunnelword') >= 0,
-    'そこへ一語足して保存すると、その仕事も同じ道に乗る ── ' +
-    '規則 11「失敗して残る」の側（' +
-    (loop.mineAfter === null ? '**乗らない**' : '乗る') + '）');
+   今の決まりは CLAUDE.md ルール 22「Looking is the whole of it — nothing is
+   made on it, nothing is saved to it」: 書いてよいかは、この起動でサーバーが
+   言った持ち主（`langLocked()`、www/core.js）で答えるので、答えの来ていない
+   写しには何も書かれない。一語足して保存しても取られず、電波が戻っても
+   上がらず、答えが来たら画面はサーバーの中身になる。 */
+say(loop.lslKeys.length === 0,
+    '**誰も触っていないとき、写しは上りの道に乗らない** ── 起動の移行と ' +
+    'ltStart() は写しに書かない（LSL に ' +
+    JSON.stringify(loop.lslKeys.map(function(k){ return k.split('.').pop(); })) + '）');
+say(loop.mineAfter === null || String(loop.mineAfter).indexOf('tunnelword') < 0,
+    '写しの上で一語足して保存しても、写しは書き換わらない ── ルール 22「nothing ' +
+    'is saved to it」（' + (loop.mineAfter === null ? '取られない' : '**取られた**') + '）');
 
 /* 電波が戻る。サーバーは別の iPhone が足した語を持っている ── 写しが答えを
-   上書きするなら、ここでそれが消えます。 */
+   上書きするなら、ここでそれが消えます。戻った時に走るのは降りる道 ──
+   一覧の netLangsDown() と、その言語の画面に進んだ時の netLangFill() で、
+   上り道ではない。 */
 await pg.unroute('https://*.supabase.co/**');
 const loopUp = await pg.evaluate(async ({ srv, saved }) => {
   function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
@@ -1455,23 +1527,24 @@ const loopUp = await pg.evaluate(async ({ srv, saved }) => {
       S.slice[i].body = JSON.stringify(
         JSON.parse(S.slice[i].body).concat([{ hw:'otherphone', gl:'added on another phone' }]));
   SESS = { at:'t', rt:'r', uid:'me3', anon:false };
-  await new Promise(function(f){ netLangSync(function(){ f(); }); });
-  await wait(400);
+  ACCT_UID = ''; acctFor(netUid());
+  await new Promise(function(f){ netLangsDown(function(){ f(); }); });
+  await new Promise(function(f){ netLangFill(langId, function(){ f(); }, function(){ f(); }); });
+  await wait(1600);
   var body = '';
   for (i = 0; i < S.slice.length; i++)
     if (S.slice[i].kind === 'words') body = String(S.slice[i].body);
-  return { body:body, words:WORDS.map(function(w){ return String(w.hw); }) };
+  return { body:body, sent:S.sent.slice(), words:WORDS.map(function(w){ return String(w.hw); }) };
 }, { srv: SERVER, saved: seenUp.srv });
 
-say(loopUp.body.indexOf('tunnelword') >= 0,
-    '電波が戻ると、トンネルで書いた語がサーバーに着く（' +
-    (loopUp.body.indexOf('tunnelword') >= 0 ? '着いた' : '**着いていない**') + '）');
+say(loopUp.body.indexOf('tunnelword') < 0,
+    '電波が戻っても、写しの上で書いた語はサーバーへ行かない（' +
+    (loopUp.body.indexOf('tunnelword') < 0 ? '行かない' : '**行った**') + '）');
 say(loopUp.body.indexOf('otherphone') >= 0,
-    '**そして別の iPhone の語は消えない** ── 規則 22 が禁じているのは写しが' +
-    '答えとして勝つことで、`syMerge` が両方足すのでここは越えていません（' +
+    '**そして別の iPhone の語は消えない**（' +
     (loopUp.body.indexOf('otherphone') >= 0 ? '残っている' : '**消えた**') + '）');
-say(loopUp.words.indexOf('otherphone') >= 0 && loopUp.words.indexOf('tunnelword') >= 0,
-    'そして画面にも両方ある: ' + JSON.stringify(loopUp.words));
+say(loopUp.words.indexOf('otherphone') >= 0 && loopUp.words.indexOf('tunnelword') < 0,
+    'そして画面はサーバーの中身: ' + JSON.stringify(loopUp.words));
 
 /* 「別のアカウントで入ると前の人の取った言語は出ない」は、この節ではなく
    **ファイルの最後**にあります ── 別のアカウントで立ち上げ直すので、落ちた
@@ -1501,9 +1574,12 @@ const one = await pg.evaluate(({ s, srv }) => {
   SET.walked = true;
   eval(srv);
   SESS = { at:'t', rt:'r', uid:'me3', anon:false };
+  ACCT_UID = ''; acctFor(netUid());
   var out = {}, r, pulls = [], build = [];
   for (r in PAGES) if (Object.prototype.hasOwnProperty.call(PAGES, r)){
-    if (!PULL_ON[r]) continue;
+    /* 引く画面は、読みの表の行が「引く」と言うもの（www/sns.js § WHAT EACH
+       PAGE READS の `pull`）。 */
+    if (!PAGE_PULL[r]) continue;
     pulls.push(r);
     /* 制作側かどうかは PAGES の tab が言います ── ここに一覧を書くと、
        画面が増えた日にこの check が古いほうを持ちます。 */
@@ -1555,6 +1631,7 @@ const pop = await pg.evaluate(async ({ s, srv }) => {
   SET.walked = true;
   eval(srv);
   SESS = { at:'t', rt:'r', uid:'me3', anon:false };
+  ACCT_UID = ''; acctFor(netUid());
   function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
   var id = langId;
   LANGS[id].mine = true; langOwnGot(id, 'me3');
@@ -1672,6 +1749,7 @@ const hid = await pg.evaluate(async ({ s, srv }) => {
   SET.walked = true;
   eval(srv);
   SESS = { at:'t', rt:'r', uid:'wld1', anon:false };
+  ACCT_UID = ''; acctFor(netUid());
   function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
   var id;
   for (id in LANGS)
@@ -1784,6 +1862,7 @@ const kbGrow = await pg.evaluate(async ({ s, srv }) => {
   SET.walked = true; planGot('pro'); setKeep();
   eval(srv);
   SESS = { at:'t', rt:'r', uid:'kb1', anon:false };
+  ACCT_UID = ''; acctFor(netUid());
   langRowGot(langId); langOwnGot(langId, SESS.uid); langStore(); netSave();
   var lay = kbFixed().lay; lay[0].rows = lay[0].rows.slice(0, 3);
   var board = { nm:'', pat:'qwerty', lay:lay };
@@ -1837,7 +1916,7 @@ say(kbA.n === 1 && kbB.n === 1 && kbC.n === 1,
    1. 改名で列に PATCH が飛び、**答えが戻ってから**画面の名前が動く
    2. `lang` スライスへは一文字も書かない（端末は意見を持たない）
    3. ログアウトして立ち上げなおして、写しが一本も無くても、名前は列から出る
-   4. 列が空の古い言語は、スライスの名前で**埋める**（あるものは書き換えない）
+   4. 列が空の古い言語を端末は埋めない ── サーバーが一度だけ写す（あるものは書き換えない）
 
    赤を見た形（2026-09-08）: `saveName()` を `langName=v; save();` に戻すと 1 と
    3 が赤 ── サーバーの列は古い名前のまま、写しを消した端末は 未設定。 */
@@ -1849,6 +1928,7 @@ const nmA = await pg.evaluate(async ({ s, srv }) => {
   SET.walked = true;
   eval(srv);
   SESS = { at:'t', rt:'r', uid:'nm1', anon:false };
+  ACCT_UID = ''; acctFor(netUid());
   function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
   var id;
   for (id in LANGS)
@@ -1924,6 +2004,9 @@ await pg.reload();
 await pg.waitForSelector('#splash', { state:'detached', timeout:20000 });
 const nmC = await pg.evaluate(async ({ s, srv }) => {
   localStorage.clear();
+  /* localStorage.clear() without a launch leaves memory filed under the last
+     section's account; a fresh phone is nobody until the seed signs in. */
+  SESS = null; acctFor('');
   eval('(' + s + ')()');
   SET.walked = true;
   eval(srv);
@@ -1935,23 +2018,33 @@ const nmC = await pg.evaluate(async ({ s, srv }) => {
              { language:'srvnew', kind:'lang', body:'スライスの古い名', no:1 }];
   netTook({ access_token:'t', refresh_token:'r', user:{ id:'nm2' } });
   await wait(1500);
+  /* the column is filled from the slice when that language's slices come
+     down, which is when a page drawn from it is arrived at */
+  await window.__walk();
   /* 索引の鍵はその行の id そのものです（2026-09-10、幹一本）── 突き合わせる
      ものがないので、探すのではなく引きます。 */
   function nameOfSid(sid){
     return LANGS[sid] ? langNameOf(sid) : '(no entry)';
   }
   return { col: S.lang.map(function(r){ return r.name; }),
+           patched: S.tried.filter(function(t){ return t.indexOf('PATCH /rest/v1/language') === 0; }),
            slice: S.slice.filter(function(r){ return r.kind === 'lang'; })
                          .map(function(r){ return r.body; }),
            shown: [nameOfSid('srvold'), nameOfSid('srvnew')] };
 }, { s: seed.toString(), srv: SERVER });
 
-say(nmC.col[0] === '古い名' && nmC.col[1] === 'あとからの名' &&
-    nmC.shown[0] === '古い名' && nmC.shown[1] === 'あとからの名' &&
+/* 空の列を埋めるのは端末ではなくサーバー（supabase/schema.sql、r65 B3 ──
+   `lang` スライスから一度だけ）。画面に着いただけで出る書き込みだったので、
+   端末の段は消えた（ed6036a8、r60 B3）。ここが訊くのは端末の側: 列へは何も
+   書かない、埋まっている列は触らない、スライスは一字も変わらない。
+   空の列の言語が画面で何と出るかは、サーバーが写すまでの間の話で、ここでは
+   決めない（docs/scope/r79-acct.md、r81-checks の報告）。 */
+say(nmC.patched.length === 0 && nmC.col[0] === '' && nmC.col[1] === 'あとからの名' &&
+    nmC.shown[1] === 'あとからの名' &&
     nmC.slice[0] === '古い名' && nmC.slice[1] === 'スライスの古い名',
-    '**空の列は古いスライスから埋め、埋まっている列は触らない** ── ' +
-    'language.name は ' + JSON.stringify(nmC.col) + '、画面は ' + JSON.stringify(nmC.shown) +
-    '、スライスは一字も変わらない ' + JSON.stringify(nmC.slice));
+    '**空の列は端末が埋めない（サーバーが一度だけ写す）、埋まっている列は触らない** ── ' +
+    'language への PATCH ' + nmC.patched.length + ' 件、language.name は ' + JSON.stringify(nmC.col) +
+    '、画面は ' + JSON.stringify(nmC.shown) + '、スライスは一字も変わらない ' + JSON.stringify(nmC.slice));
 
 /* ---- 前からの索引が、起動で一本の番号に写る --------------------------------
    「スパゲッティみたいにするのやめて欲しい」「太い幹を分岐させて欲しい」 OWNER
@@ -1971,11 +2064,14 @@ const OLDU = '8b1f0c2e-7a34-4c19-9d55-0a1b2c3d4e5f';
 await pg.evaluate(({ u }) => {
   localStorage.clear();
   /* 147 までが書いた索引 ── 鍵は端末の番号、サーバーの番号は `sid` の欄に。
-     二つ目は一度も上がっていない言語（`sid` が無い）。 */
-  localStorage.setItem('lingua.langs', JSON.stringify({
+     二つ目は一度も上がっていない言語（`sid` が無い）。索引はアカウントの鍵
+     （`lingua.langs.<uid>`、www/core.js § ACCT）で、起動がどのアカウントかを
+     知るのはセッションから ── 下の netTook と同じ 'idm'。 */
+  localStorage.setItem('lingua.sess', JSON.stringify({ at:'t', rt:'r', uid:'idm', anon:false }));
+  localStorage.setItem('lingua.langs.idm', JSON.stringify({
     Lold1: { mine:true, name:'Vaska', sid:u },
     Lold2: { mine:true, name:'Toko' } }));
-  localStorage.setItem('lingua.cur', 'Lold1');
+  localStorage.setItem('lingua.cur.idm', JSON.stringify('Lold1'));
   localStorage.setItem('lingua.Lold1.words', '[{"hw":"tuf"}]');
   localStorage.setItem('lingua.Lold2.words', '[{"hw":"kef"}]');
 }, { u: OLDU });
@@ -1986,7 +2082,7 @@ await pg.waitForSelector('#splash', { state:'detached', timeout:20000 });
    写しではなく fixture を見ることになります。 */
 const oneA = await pg.evaluate(({ u }) => ({
   rows: Object.keys(LANGS),
-  open: langId, cur: localStorage.getItem('lingua.cur'),
+  open: langId, cur: JSON.parse(localStorage.getItem('lingua.cur.idm') || 'null'),
   word0: WORDS[0] && WORDS[0].hw,
   upWords: slRd('lingua.' + u + '.words'),
   old1: localStorage.getItem('lingua.Lold1.words'),
@@ -2004,6 +2100,7 @@ const oneC = await pg.evaluate(async ({ srv, u }) => {
   S.slice = [];
   netTook({ access_token:'t', refresh_token:'r', user:{ id:'idm' } });
   await wait(1600);
+  await window.__walk();
   S.tried = [];
   if (LETTERS.length) LETTERS[0].g = [[[0,0],[1,1]]];
   saveLetters();
@@ -2045,10 +2142,11 @@ say(oneC.sent > 0,
    方が残り、空と空なら空です。 */
 await pg.evaluate(({ u }) => {
   localStorage.clear();
-  localStorage.setItem('lingua.langs', JSON.stringify({
+  localStorage.setItem('lingua.sess', JSON.stringify({ at:'t', rt:'r', uid:'idm', anon:false }));
+  localStorage.setItem('lingua.langs.idm', JSON.stringify({
     Lmint1: { mine:true, name:'Vaska', sid:u },   /* 148 が作った行、中身あり */
     [u]:    { mine:true } }));                    /* それ以前が残した空の行 */
-  localStorage.setItem('lingua.cur', u);
+  localStorage.setItem('lingua.cur.idm', JSON.stringify(u));
   localStorage.setItem('lingua.Lmint1.letters',
     JSON.stringify([{ id:'lt.a', ab:'a' }, { id:'lt.b', ab:'b' }]));
 }, { u: OLDU });
@@ -2097,6 +2195,10 @@ const tookA = await pg.evaluate(async ({ s, srv }) => {
   SET.walked = true;
   eval(srv);
   SESS = { at:'t', rt:'r', uid:'tk1', anon:false };
+  ACCT_UID = ''; acctFor(netUid());
+  /* a phone signed in has its session on the disk, so the launch after it
+     knows whose index to read (www/core.js § ACCT) */
+  netSave();
   function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
   var id;
   for (id in LANGS)
@@ -2150,6 +2252,7 @@ const tookB = await pg.evaluate(async ({ srv, saved, lid }) => {
               letters: slMine(langKeyOf('far-1', 'letters')) };
   netTook({ access_token:'t', refresh_token:'r', user:{ id:'tk1' } });
   await wait(1500);
+  await window.__walk();
   /* 自分の言語は、この端末が閉じる前に立っていた言語そのもの。索引は disk に
      残るので local id は生き残ります ── `sid` で引くと、行がサーバーに無い
      ときに何も見つからず、主張が「見つからなかった」で緑になります。 */
@@ -2226,6 +2329,7 @@ const goneA = await pg.evaluate(async ({ s, srv }) => {
   SET.walked = true;
   eval(srv);
   SESS = { at:'t', rt:'r', uid:'gn1', anon:false };
+  ACCT_UID = ''; acctFor(netUid());
   function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
   var id;
   for (id in LANGS)
@@ -2257,6 +2361,7 @@ const goneA = await pg.evaluate(async ({ s, srv }) => {
   /* 一度目の起動 ── 二つとも降りてきて、写しがディスクに残ります。 */
   netTook({ access_token:'t', refresh_token:'r', user:{ id:'gn1' } });
   await wait(1500);
+  await window.__walk();
   return { lid: langId, sid: mySid,
            mineWords: slMine(langKeyOf(langId, 'words')),
            /* 写しはディスク（slGot の `.got`）。開き直しても残るのはこれです。 */
@@ -2289,6 +2394,7 @@ const goneNull = await pg.evaluate(async ({ srv, saved }) => {
   function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
   netTook({ access_token:'t', refresh_token:'r', user:{ id:'gn1' } });
   await wait(1500);
+  await window.__walk();
   return { took: langTook(), row: !!LANGS['gone-1'],
            got: localStorage.getItem(langKeyOf('gone-1', 'letters') + '.got'),
            stay: !!LANGS['stay-1'] };
@@ -2321,6 +2427,7 @@ const goneB = await pg.evaluate(async ({ srv, saved, lid }) => {
               got: localStorage.getItem(langKeyOf('gone-1', 'letters') + '.got') };
   netTook({ access_token:'t', refresh_token:'r', user:{ id:'gn1' } });
   await wait(1500);
+  await window.__walk();
   var mine = LANGS[lid] ? lid : '';
   return {
     was: was,
@@ -2383,6 +2490,7 @@ const goneC = await pg.evaluate(async ({ srv, saved, lid }) => {
   var was = !!LANGS['stay-1'];
   netTook({ access_token:'t', refresh_token:'r', user:{ id:'gn1' } });
   await wait(1500);
+  await window.__walk();
   return { was: was, took: langTook(), stay: !!LANGS['stay-1'],
            letters: slRd(langKeyOf('stay-1', 'letters')),
            mineRow: !!LANGS[lid],
@@ -2423,11 +2531,17 @@ await pg.waitForSelector('#splash', { state:'detached', timeout:20000 });
 const lt42A = await pg.evaluate(({ s }) => {
   /* 前の場面が索引に残した言語ごと片づける ── ここが測るのは一つの言語です。 */
   localStorage.clear();
+  /* localStorage.clear() without a launch leaves memory filed under the last
+     section's account; a fresh phone is nobody until the seed signs in. */
+  SESS = null; acctFor('');
   eval('(' + s + ')()');
   SET.walked = true;
   var id2;
   for (id2 in LANGS)
-    if (Object.prototype.hasOwnProperty.call(LANGS, id2)) langOwnGot(id2, 'me42');
+    if (Object.prototype.hasOwnProperty.call(LANGS, id2)) langOwnGot(id2, netUid());
+  /* the account in hand (the seed's) and not 'me42': a language is written only
+     by whoever the server says wrote it (langLocked), and this is the first
+     phone putting it up. Which account the SECOND phone is, is lt42B's. */
   langStore(); save();
   /* サーバーが持っている本文は、一台目が上げたそのもの ── ここでは手で置きます。
      netLangSync() を通して置くと、起動の sync と競って NET_SYNCING で黙って
@@ -2436,18 +2550,20 @@ const lt42A = await pg.evaluate(({ s }) => {
   return { id: langId, name: langNameOf(langId) || 'Vaska', body: body, n: L.length,
            /* どの行に線が載っているか ── 数ではなく id で。数だけだと、
               この検査が一文字描く分と、消えた一行とが打ち消し合います。 */
-           drawn: L.filter(function(l){ return ltDrawn(l); })
+           drawn: L.filter(function(l){ return ltHasShape(l); })
                    .map(function(l){ return l.id; }) };
 }, { s: seed.toString() });
 
 /* 索引とセッションだけ残す ── 写し（`.got`）も、古い版がディスクに書いた鍵も
-   無い端末。localStorage.clear() のあと索引を戻すのが、その端末そのものです。 */
+   無い端末。localStorage.clear() のあと索引を戻すのが、その端末そのものです。
+   索引はアカウントの鍵（www/core.js § ACCT）で、fixture は 'u' として書いた
+   ので、下で入る 'me42' の鍵へ置きます ── その人の索引がある端末。 */
 await pg.evaluate(() => {
-  var a = localStorage.getItem('lingua.langs'), b = localStorage.getItem('lingua.cur'),
-      c = localStorage.getItem('lingua.set');
+  var who = netUid(), a = localStorage.getItem('lingua.langs.' + who),
+      b = localStorage.getItem('lingua.cur.' + who), c = localStorage.getItem('lingua.set');
   localStorage.clear();
-  if (a) localStorage.setItem('lingua.langs', a);
-  if (b) localStorage.setItem('lingua.cur', b);
+  if (a) localStorage.setItem('lingua.langs.me42', a);
+  if (b) localStorage.setItem('lingua.cur.me42', b);
   if (c) localStorage.setItem('lingua.set', c);
 });
 await pg.reload();
@@ -2467,6 +2583,7 @@ const lt42B = await pg.evaluate(async ({ srv, a }) => {
   }
   netTook({ access_token:'t', refresh_token:'r', user:{ id:'me42' } });
   await wait(900);
+  await window.__walk();
   var boot = LETTERS.length;
   langOpen(a.id);
   /* 一文字に線を引いて保存 ── 人がやる道と同じ（saveLetters → bkTouch →
@@ -2484,10 +2601,10 @@ const lt42B = await pg.evaluate(async ({ srv, a }) => {
   for (w = 0; w < a.drawn.length; w++){
     var still = null, y;
     for (y = 0; y < end.length; y++) if (end[y].id === a.drawn[w]) still = end[y];
-    if (!still || !ltDrawn(still)) lost.push(a.drawn[w]);
+    if (!still || !ltHasShape(still)) lost.push(a.drawn[w]);
   }
   return { boot: boot, n: end.length, dup: dup, lost: lost,
-           drawn: end.filter(function(l){ return ltDrawn(l); }).length,
+           drawn: end.filter(function(l){ return ltHasShape(l); }).length,
            sent: S.sent.filter(function(x){ return x.indexOf(':letters') >= 0; }).length };
 }, { srv: SERVER, a: lt42A });
 
@@ -2651,6 +2768,7 @@ const takeA = await pg.evaluate(async ({ s, srv }) => {
   langSeenAdd('tk-theirs', 'Theirs', 'somebody-else');
   netTook({ access_token:'t', refresh_token:'r', user:{ id:'tk1' } });
   await wait(1500);
+  await window.__walk();
   return { took:langTook(), read:langWhose('tk-theirs') === LW_READ,
            pic:localStorage.getItem('lingua.take.tk1') };
 }, { s: seed.toString(), srv: SERVER });
@@ -2688,6 +2806,108 @@ say(takeB.pic,
     'そして前の人の写しは消えていない ── 預けてあるだけで、戻れば戻る' +
     '（消えるのはそのアカウントを削除したとき ── lsWipeAcct が鍵の末尾の ' +
     'uid で数えて取る）');
+
+/* ---- 7. TWO PHONES, ONE THING CHANGED ON BOTH: THE LATER CHANGE STANDS ----
+   「普通後から変えたほうになる？アプリ気になるそこ」 OWNER 2026-09-04
+   (docs/FEATURE_RULES.md). Lists are still both added -- 「そりゃあ両方足すだろ」
+   -- and what cannot be added (a value, the same row changed twice) is the
+   later side's, by when a PERSON wrote it on each phone (www/net.js §
+   netSlice1, www/sync.js § syMerge, supabase/schema.sql § keep_newer).
+
+   Four things, and the real netSaveUp()/netSlice1()/syMerge() run for all of
+   them against the stub above:
+     a  a save carries when the person wrote it, and what it merged against
+     b  a write the server refuses as stale is read again and merged again,
+        so the other phone's word and this one's are both there
+     c  the other phone changed the same value LATER: that value stands, here
+        and on the server
+     d  it changed it EARLIER: this phone's goes up */
+await pg.evaluate(() => localStorage.clear());
+await pg.reload();
+await pg.waitForSelector('#splash', { state:'detached', timeout:20000 });
+
+const late = await pg.evaluate(async ({ s, srv }) => {
+  eval('(' + s + ')()');
+  SET.walked = true;
+  eval(srv);
+  SESS = { at:'t', rt:'r', uid:'me3', anon:false };
+  ACCT_UID = ''; acctFor(netUid());
+  function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
+  const settle = () => wait(NET_UPMS + 600);
+  var S = window.__SRV, id = langId, out = {};
+  function row(kind){
+    return S.slice.filter(function(x){ return x.language === id && x.kind === kind; })[0];
+  }
+  LANGS[id].mine = true; langOwnGot(id, 'me3'); langStore();
+  /* somebody writes, and it goes up and is agreed */
+  WORDS.push({ hw:'tessa', gl:'a word somebody wrote' }); SCRIPT.dir = 'ltr'; save();
+  await new Promise(function(f){ netLangSync(f); });
+  await wait(200);
+
+  /* a */
+  var before = row('words') && row('words').ed && row('words').ed.body;
+  S.eds = [];
+  var t0 = Date.now();
+  WORDS.push({ hw:'ulma', gl:'a second word' }); save();
+  await settle();
+  var sentW = (S.eds || []).filter(function(e){ return e.indexOf('words:') === 0; })[0] || '';
+  var edW = null; try { edW = JSON.parse(sentW.slice(6)); } catch (e) {}
+  out.a = { before:before, sent:edW, t0:t0 };
+
+  /* b */
+  S.tried = [];
+  S.between = function(){
+    var r = row('words'), o = JSON.parse(r.body);
+    o.push({ hw:'mikka', gl:'the SECOND phone wrote this in between' });
+    r.body = JSON.stringify(o); r.ed = { body:Date.now() }; r.at = '2099-01-01T00:00:00.000Z';
+  };
+  WORDS.push({ hw:'yonka', gl:'THIS phone wrote this' }); save();
+  await settle(); await wait(400);
+  var bw = row('words').body;
+  out.b = { stale:S.tried.indexOf('stale') >= 0,
+            both:bw.indexOf('mikka') >= 0 && bw.indexOf('yonka') >= 0,
+            /* the slice and not WORDS: a save does not read the globals
+               again after a merge, which is its own entry in docs/BACKLOG.md
+               (the note over 五 above) and not this one */
+            here:String(slRd(langKey('words')) || '').indexOf('mikka') >= 0 };
+
+  /* c: the other phone set the direction LATER than this one */
+  var rs = row('script'), o1 = JSON.parse(rs.body);
+  o1.dir = 'ttb-rl'; rs.body = JSON.stringify(o1);
+  rs.ed = { body:Date.now() + 60000 }; rs.at = '2099-01-02T00:00:00.000Z';
+  SCRIPT.dir = 'rtl'; save();
+  await settle();
+  out.c = { server:JSON.parse(row('script').body).dir,
+            here:JSON.parse(slRd(langKey('script')) || '{}').dir };
+
+  /* d: and EARLIER than this one */
+  rs = row('script'); o1 = JSON.parse(rs.body);
+  o1.dir = 'ttb-lr'; rs.body = JSON.stringify(o1);
+  rs.ed = { body:1000 }; rs.at = '2099-01-03T00:00:00.000Z';
+  SCRIPT.dir = 'rtl'; save();
+  await settle();
+  out.d = { server:JSON.parse(row('script').body).dir,
+            here:JSON.parse(slRd(langKey('script')) || '{}').dir };
+  return out;
+}, { s: seed.toString(), srv: SERVER });
+
+say(late.a.sent && late.a.sent.body >= late.a.t0 && late.a.sent.was === late.a.before,
+    '保存は「人が書いた時」と「混ぜた相手の時」を持って行く ── 送った ed ' +
+    JSON.stringify(late.a.sent) + '、書いたのは ' + late.a.t0 + ' 以降、サーバーの前の時 ' +
+    JSON.stringify(late.a.before));
+say(late.b.stale && late.b.both,
+    '**読んだ後に別の端末が書いていたら、断られて読み直し、混ぜ直す** ── stale ' +
+    (late.b.stale ? 'あり' : 'なし') + '、サーバーに二台の単語が両方 ' +
+    (late.b.both ? 'ある' : '**無い**') + '（r63-audit 0-4）');
+say(late.b.here,
+    'そして別の端末の単語はこの端末の slice にも来ている');
+say(late.c.server === 'ttb-rl' && late.c.here === 'ttb-rl',
+    '**同じ物を二台で直したら、後から直したほうが残る** ── 相手が後: サーバー ' +
+    JSON.stringify(late.c.server) + '、この端末 ' + JSON.stringify(late.c.here) +
+    '（「普通後から変えたほうになる？」OWNER 2026-09-04）');
+say(late.d.server === 'rtl' && late.d.here === 'rtl',
+    'そして相手が先なら、この端末のが上がる ── サーバー ' +
+    JSON.stringify(late.d.server) + '、この端末 ' + JSON.stringify(late.d.here));
 
 await br.close();
 if (bad.length){

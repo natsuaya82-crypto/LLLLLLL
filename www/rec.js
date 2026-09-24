@@ -13,14 +13,17 @@
    WHERE IT GOES is the whole of the design, and it was measured before any of
    it was written. Thirty seconds of AAC is about 240 KB. A photograph on a
    post is about 87 KB once it is text; a free-sized language is 25 KB. So one
-   voice is three photographs, or ten languages -- and the dictionary, the
-   alphabet, the notes and every post share one small quota in localStorage.
-   Four recordings in there and somebody's language has nowhere to be.
+   voice is three photographs, or ten languages -- too big to be text in
+   anything this app keeps as text.
 
-   So a voice is a FILE. It goes to Documents, in the folder beside the
-   language backups -- the folder iOS puts in the device backup and the Files
-   app can show -- and what goes in localStorage is the post, carrying the
-   file's NAME. 「ファイルに出す」
+   So a voice is a FILE, and never text in localStorage. 「ファイルに出す」 The
+   phone that recorded it writes it to Documents/Voices the moment the
+   recording ends (voTook(), LinguaShare.swift `keepVoice`), and the post
+   being written carries the file's NAME. When the post is sent,
+   netUpVoice() (www/net.js) puts the bytes in the `post-media` bucket and
+   writes the path on the post as `vu` -- that is the copy everybody else
+   plays, through netMedia(), because the bucket answers nobody who is not
+   signed in. voRemote() tells the two kinds of name apart.
 
    Two halves, and the line between them is the same line post.js has:
 
@@ -28,8 +31,10 @@
      thirty seconds. It reads PW, because that is what it is filling in.
 
      Below is playing one back, and a post being played is somebody else's:
-     what it needs is on the post. `p.vo` is `{f: the file's name, ms: how
-     long}` and nothing else, because a reader has no composer.
+     what it needs is on the post, because a reader has no composer: `vu`,
+     the path on the server, for everybody, and `vo` -- `{f: the file's name,
+     ms: how long}` -- on the phone that recorded it. voPlay() is handed one
+     name and plays whichever it is.
 
    There is no native side in a browser, so `voKeep` and `voRead` both answer
    "no bridge" there and every check runs against that answer. On the phone it

@@ -134,12 +134,27 @@ function wFilters(){
    doing so. `findWord()` in particular: a post's gloss, a spelling and an
    example are about words that exist, not about words that are listed, and
    filtering there would quietly change what somebody's own posts say. */
+/* AND AN INFLECTION IS NOT A WORD, so it is not in the list either.
+   「活用は活用であって単語じゃない」 OWNER 2026-09-23; that it leaves THIS list
+   is the leader's reading of those words (docs/FEATURE_RULES.md § Owner
+   decision log, the same day). What leaves is an inflection stored as a word
+   before that day, and it leaves the list only: it is still in `WORDS`, byte
+   for byte, and it is listed where it belongs -- under 活用 on the page of the
+   word it is a form of (wForms(), www/wordsheet.js).
+
+   wIsForm() (www/core.js) is what says which rows those are, and it is the
+   same answer the ceiling counts with (wCountable()) and the word's page and
+   the keyboard's conversion read through wForms(). So the hundred here and
+   the hundred the ceiling counts are the same hundred. */
 function wordsSeen(){
-  var cap=wordCap();
-  if(WORDS.length<=cap) return WORDS;
-  return WORDS.slice(0, cap);
+  var cap=wordCap(), out=[], i;
+  /* `null` is a plan nobody has answered for (www/core.js § planNum), and it
+     folds nothing: 「a failed check means fewer buttons, never fewer words」. */
+  if(cap===null) cap=Infinity;
+  for(i=0;i<WORDS.length && out.length<cap;i++) if(!wIsForm(WORDS[i])) out.push(WORDS[i]);
+  return out;
 }
-function wordsHidden(){ return WORDS.length-wordsSeen().length; }
+function wordsHidden(){ return wCountable()-wordsSeen().length; }
 /* One place decides what is on screen, so the list, the count and the button
    that says them all can never disagree about it. */
 function wordsList(){
@@ -460,10 +475,9 @@ function wSelUndo(){
    (docs/DATA_SAFETY.md § 2). viewLeft() in www/shell.js drops it. */
 function wordsUndoHTML(){
   if(!wUndo) return '';
-  return '<div class="wsub2" style="margin-top:18px">'+
+  return '<div class="grpsep"></div><div class="wsub2">'+
       esc(t('words.sel.gone', wUndo.n))+'</div>'+
-    '<button class="set" style="border-bottom:none"' + DO('wSelUndo') + '>'+
-      '<span class="sl">'+esc(t('imp.undo'))+'</span></button>';
+    markBtn(ICON_UNDO, t('imp.undo'), 'wSelUndo');
 }
 /* One entry. The word says itself when you touch it; the chevron at its edge
    opens it. Listening is what you do dozens of times on this screen and
@@ -486,7 +500,7 @@ function wordsUndoHTML(){
    it says and what it calls itself to somebody who cannot see it. That stays
    where it is, which is what makes this the shared half. */
 function wEntryLines(w, mn){
-  return '<div class="hwrow"><span class="hw">'+esc(wOut(w.hw))+'</span>'+
+  return '<div class="hwrow"><span class="hw">'+sfontHTML(wOut(w.hw))+'</span>'+
     '<span class="rd">'+esc(phIpa(wPh(w)))+'</span>'+
     /* The subclass sits INSIDE the same span as the part of speech, not in
        one beside it. `.pos` carries `margin-left:auto` -- two of them is two

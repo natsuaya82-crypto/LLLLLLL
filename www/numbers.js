@@ -54,15 +54,17 @@ function numSetBase(b){
   STG.base=(NUM_BASES.indexOf(b)>=0)? b : 10;
   saveStg(); numTopUp(); numDropBlank(); render();
 }
-/* A digit nobody has touched: no strokes, no sound, and no name anybody
-   typed. The slot itself is the app's -- numTopUp made it -- so it is the one
+/* A digit nobody has touched: no shape -- drawn, written on a sheet, or a
+   borrowed character (ltHasShape, which asks inkGeo) -- no sound, and no name
+   anybody typed. It asked `l.st` and a digit written on a sheet read as blank
+   and was deleted here when the base came down (r73 §2-12). The slot itself is the app's -- numTopUp made it -- so it is the one
    thing here that was never anybody's work. Everything else on a digit is.
 
    Not ltName(): a digit says what it is WORTH, so ltName never comes back
    empty for one and every slot read as somebody's. What a person can put on a
    digit is nm and ab, and those are the two to ask about. */
 function numBlank(l){
-  return !(l.st && l.st.length) && !(l.snd && l.snd.length) && !l.nm && !l.ab;
+  return !ltHasShape(l) && !(l.snd && l.snd.length) && !l.nm && !l.ab;
 }
 /* Counting back down. Every digit the new base cannot reach is looked at
    once: an empty slot goes, and one that has been drawn on, named or given a
@@ -218,9 +220,9 @@ function numFace(k){
   if(isNaN(v)) return '';
   l=numByVal(v);
   if(!l) return '';
-  /* Same as numSignHTML: the picture may be `sh` or `st`, and inkGeo() is the
-     one place that knows. ltHasShape() does not -- it is older than the sheet
-     -- so it is not what is asked here. */
+  /* The picture may be `sh` or `st`, and inkGeo() is the one place that
+     knows. Not ltHasShape(): that is also true of a borrowed character, which
+     is text and is the line below. */
   if(inkGeo(l)) return '<canvas class="tc numsm" data-l="'+esc(l.id)+'"></canvas>';
   if(l.ch) return '<span class="bch numsm">'+esc(l.ch)+'</span>';
   return '';
@@ -254,20 +256,15 @@ function numWordRow(l){
    § settings() has that paragraph. So a sentence is the whole of what is
    possible. */
 
-/* One sign: the shape if there is one, the character it borrows, or the roman
-   digit that stands in for one nobody drew. The shape is a character of the
-   face every line of the language is set in (www/glyph.js § A LINE OF THE
-   LANGUAGE IS TEXT), so two signs beside each other stand the way two letters
-   of a post do -- one step apart and not one cell. */
+/* One sign: what ltLineChar() makes of the digit, or its value in roman.
+   The shape is a character of the face every line of the language is set in
+   (www/glyph.js § A LINE OF THE LANGUAGE IS TEXT), so two signs beside each
+   other stand the way two letters of a post do -- one step apart and not one
+   cell. Whether it is the shape is not this function's to say. */
 function numSignHTML(v){
-  var l=numByVal(v);
-  /* inkGeo() and not `st`: a digit drawn on a SHEET carries its picture as
-     `sh` (www/sheet.js), and asking for strokes here put a roman 7 on the
-     clock beside somebody's own six. */
-  if(l && inkGeo(l))
-    return '<span class="tfont">'+inkChar(inkGeo(l), geSide())+'</span>';
-  if(l && l.ch) return '<span class="numrm">'+esc(l.ch)+'</span>';
-  return '<span class="numrm">'+esc(v.toString(36))+'</span>';
+  var c=ltLineChar(numByVal(v));
+  return c? '<span class="tfont">'+c+'</span>'
+          : '<span class="numrm">'+esc(v.toString(36))+'</span>';
 }
 /* A whole number, in this language's base. */
 function numLineHTML(n){
@@ -363,7 +360,7 @@ function numCut(s, n){
 function numMonthHTML(){
   var m=calMonthOf(new Date()), w=shareSlotWord('month.'+numLabel(m));
   if(!w || !w.hw) return '<span class="numcm">'+numLineHTML(m)+'</span>';
-  return '<span class="numcm">'+sfontHTML(w.hw)+'</span>';
+  return '<span class="numcm">'+sfontHTML(wOut(w.hw))+'</span>';
 }
 /* The name a day of the week already has, for the days the language has not
    named yet. 「ない分の言葉はmondayとかで代用しよう」
@@ -372,10 +369,10 @@ function numMonthHTML(){
    answers, not the app's -- because it is the device that will answer on the
    home screen, and a preview that used a different one would be showing a
    widget nobody is going to get.
-   Day one is a Sunday, because that is where a calendar starts and where
-   calDayOf() counts from. */
+   Day one is a Sunday, because that is where a calendar starts and it is the
+   day calDayOf() calls 1 (getDay()+1). */
 function numWdayName(i){
-  /* 1970-01-04 was a Sunday, and calDayOf() counts day one from there. */
+  /* 1970-01-04 was a Sunday: any Sunday would do, it is only asked its name. */
   var d=new Date(Date.UTC(1970, 0, 4+(i-1)));
   try{ return d.toLocaleDateString(undefined, {weekday:'short', timeZone:'UTC'}); }
   catch(e){ return numLabel(i); }
@@ -432,7 +429,7 @@ function numCalHTML(){
        the day's name down -- Mon, 月, M -- because seven of them share the
        width of the grid, and a word somebody made is no different. Two signs,
        which is what the phone's own short names come to. */
-    nm=(w && w.hw)? sfontHTML(numCut(w.hw, 2)) : esc(numCut(numWdayName(i), 3));
+    nm=(w && w.hw)? sfontHTML(wOut(numCut(w.hw, 2))) : esc(numCut(numWdayName(i), 3));
     heads+='<span class="numch'+
       (calRed(i)? ' sun':'')+(calBlue(i)? ' sat':'')+'">'+nm+'</span>';
   }

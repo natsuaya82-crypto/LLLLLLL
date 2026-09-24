@@ -15,7 +15,8 @@
    keep in step with the first is a second thing that can be wrong.
 
    Who may open it is `profile.staff`, which is set by hand in the dashboard
-   and by nothing anywhere in this app. netStaff() in www/net.js asks once. */
+   and by nothing anywhere in this app. netMyProfile() in www/net.js reads it
+   off this account's row, once a session. */
 
 /* What was read, and what went wrong reading it. Null and not [] before the
    first answer: "nothing has been asked yet" and "there are no reports" are
@@ -243,7 +244,7 @@ function vMod(){
    password it does not have would lock the owner out of their own screen. So
    the lock is only there where there is something to unlock it with. */
 var ADMIN_OK=false, ADMIN_PW='', ADMIN_BUSY=false, ADMIN_ERR='', ADMINN=null;
-var ADMINS=null, ADMIN_H='';
+var ADMINS=null, ADMINS_ERR='', ADMIN_H='';
 /* ---- putting somebody's language back -----------------------------------
    「運営が治せる仕様は欲しい。ユーザーが問い合わせてきた時に、アカウントの
    復旧ができるようにしたい、管理画面で」 OWNER 2026-09-09.
@@ -334,11 +335,13 @@ function adminLoad(){
     ADMINN=n;
     /* Who answers the reports is the third thing on this screen and the only
        one that can be changed from it, so it is asked for in the same press.
-       A list that failed to arrive is an empty list and not an error: the
-       numbers above it are already up, and one refusal that stops the whole
-       screen is a screen that is blank for the wrong reason. */
-    netStaffList(function(rows){ ADMINS=rows; adminFbk(); },
-                 function(){ ADMINS=[]; adminFbk(); });
+       A list that failed to arrive is NOT an empty list -- 「empty」 and
+       「broken」 are two states (CLAUDE.md § Data) -- so it is drawn as what
+       went wrong, in the list's place, the way FBK_ERR is. The rest of the
+       screen is drawn either way: one refusal that stops the whole screen is
+       a screen that is blank for the wrong reason. */
+    netStaffList(function(rows){ ADMINS=rows; ADMINS_ERR=''; adminFbk(); },
+                 function(d, st){ ADMINS=null; ADMINS_ERR=netWhy(d, st); adminFbk(); });
   },        function(d, st){ ADMIN_BUSY=false; ADMIN_ERR=netWhy(d, st); render(); });
 }
 /* ---- who answers the reports -------------------------------------------
@@ -366,10 +369,10 @@ function adminFbk(){
   netFeedbacks(function(rows){ FBK=rows; FBK_ERR=''; adminAsk(); },
                function(d, st){ FBK=null; FBK_ERR=netWhy(d, st); adminAsk(); });
 }
-/* One thing somebody wrote in. The kind, whose it is and when, then the words.
-   No button: there is nothing to do to one of these from here -- the schema
-   has no delete policy and no report_drop() twin, because 「what happens to
-   one after it has been read」 is not a thing anybody has decided.
+/* One thing somebody wrote in. The kind, whose it is and when, the words,
+   and the one thing the operator can do to it: take it away (fbkDrop() below,
+   feedback_drop() in supabase/schema.sql). 「運営は消せるように。」 OWNER
+   2026-09-22.
 
    `.fbk` and not `.mrep`: a card with a corner on it is the shape the owner
    took out 「角丸やめろ」, so this is a row on a line. The reports above keep
@@ -391,8 +394,7 @@ function fbkRow(r){
     /* 「運営は消せるように。」 OWNER 2026-09-22. `.ghost` and not `.bad`:
        what it takes away is the row in front of you and nothing of anybody's
        account, which is what the red on modRow()'s two buttons is for. */
-    '<button class="btn ghost"' + DO('fbkDrop', [r.id]) + '>'+
-      esc(t('admin.fb.drop'))+'</button>'+
+    markBtn(ICON_BIN, t('admin.fb.drop'), 'fbkDrop', [r.id])+
     '</div>';
 }
 /* It asks first, because it cannot be taken back -- the same shape and the
@@ -433,7 +435,7 @@ function adRecFind(){
   ADREC_BUSY=true; ADREC_ERR=''; ADREC=null; render();
   netHist(ADREC_H,
     function(d){ ADREC_BUSY=false; ADREC=d; render(); },
-    function(){ ADREC_BUSY=false; ADREC_ERR=t('net.offline'); render(); });
+    function(d, st){ ADREC_BUSY=false; ADREC_ERR=netWhy(d, st); render(); });
 }
 /* THE APP'S OWN QUESTION AND NEVER THE SYSTEM'S. confirm() is banned outright
    (CLAUDE.md § Shape) and tools/es5-check.mjs fails on the word. */
@@ -451,7 +453,7 @@ function adRecGo(sid, kind, at){
   ADREC_BUSY=true; ADREC_ERR=''; render();
   netRestore(sid, kind, at,
     function(){ ADREC_BUSY=false; adRecFind(); },
-    function(){ ADREC_BUSY=false; ADREC_ERR=t('net.offline'); render(); });
+    function(d, st){ ADREC_BUSY=false; ADREC_ERR=netWhy(d, st); render(); });
 }
 function adminStaffAdd(){
   if(ADMIN_BUSY || !ADMIN_H) return;
@@ -469,7 +471,14 @@ function adminStaffDrop(h){
    staff_drop() in schema.sql refuses to take it off, so a button there would
    be one that does nothing. Same class either way, so the rows are one
    height; what differs is whether it is pressable, which is what the rule
-   about rows is not about. */
+   about rows is not about.
+
+   WHICH ROW THAT IS, THE SERVER SAYS, in one place: profile_admin() in
+   schema.sql, which is_admin() and staff_drop() ask, handed back on each row
+   as `admin` (netStaffList, www/net.js). This read nothing but that before
+   (`profile.admin`, a column nothing writes -- @lingua drawn as a button that
+   did nothing) and then compared against a second copy of the name; it reads
+   the server's answer now (r65, r79). */
 function adminStaffRow(r){
   return r.admin
     ? '<div class="set"><span class="sl">@'+esc(r.handle)+'</span></div>'
@@ -533,8 +542,7 @@ function adRecBody(a){
       lnField('adrec-h', t('admin.rec.ph'), ' autocapitalize="none"' +
         IN('adRecSet', ['h']), ADREC_H)+'</div>'+
     (ADREC_ERR? emptyBox(ADREC_ERR, '', '', true) : '')+
-    '<button class="btn ghost"' + DO('adRecFind') +
-      (ADREC_BUSY? ' disabled':'') + '>'+esc(t('admin.rec.find'))+'</button>'+
+    markBtn(ICON_LENS, t('admin.rec.find'), 'adRecFind', null, ADREC_BUSY? ' disabled':'')+
     (ADREC
       ? ((ADREC.langs && ADREC.langs.length)
           ? ADREC.langs.map(adRecLangRow).join('')
@@ -609,6 +617,7 @@ function vAdmin(){
        buttons exist only where they are drawn, and act-check walks this route
        with no argument -- see the head of this section. */
     '<div class="set"><span class="sl">'+esc(t('admin.staff'))+'</span></div>'+
+    (ADMINS_ERR? emptyBox(ADMINS_ERR, '', '', true) : '')+
     (ADMINS||[]).map(adminStaffRow).join('')+
     /* A handle is short, but nothing stops a long one being pasted here.
        The password on the door above is NOT this -- it stays an
@@ -623,8 +632,7 @@ function vAdmin(){
        has emptied the field and said nothing anybody saw. One message, in the
        one place a failure on this screen can come from. */
     (ADMIN_ERR? emptyBox(ADMIN_ERR, '', '', true) : '')+
-    '<button class="btn ghost"' + DO('adminStaffAdd') +
-      (ADMIN_BUSY? ' disabled':'') + '>'+esc(t('admin.staff.add'))+'</button>'+
+    markBtn(ICON_ADD2, t('admin.staff.add'), 'adminStaffAdd', null, ADMIN_BUSY? ' disabled':'')+
     '</div></div>';
 }
 /* Not named vSomething: tools/act-check.mjs reads every `v[A-Z]` in the app

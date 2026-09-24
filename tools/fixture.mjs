@@ -66,6 +66,11 @@ export function seed(){
   SESS = { at: jwt({ sub:'u', email:'aya@example.com',
                      app_metadata:{ provider:'email' } }),
            rt:'r', uid:'u', anon:false };
+  /* AND WHAT THIS PHONE HOLDS IS THAT SESSION'S (www/core.js § ACCT). A
+     session put in place by hand is a session arriving, so it goes through
+     the one switch a real one does -- otherwise memory is nobody's while
+     SESS says 'u', and every save writes nowhere. */
+  acctFor(netUid());
   /* No sentence of the day, unless a face puts one there. It is server data
      and there is no network in any of these checks, so null is what the app
      really has -- and clearing it HERE rather than at the end of the two
@@ -112,7 +117,12 @@ export function seed(){
        one, and the sheet's picker is that same list. Three, so that "narrows
        to this subclass" is a different answer from "narrows to this part of
        speech" and from "everything". */
-    {hw:'tir',  ph:['t','i','r'],     mn:'to see',   mns:['to see'],   pos:'v', sub:'\u4ed6\u52d5\u8a5e', at:2},
+    /* `fms` is a form PLACED by hand (www/wordsheet.js § the forms of a
+       word): a future that no rule makes, so the word's page lists one of
+       each kind -- placed, old (tira, tiran below) and made by a rule -- and
+       the screen a placed one is opened on carries the way to take it off. */
+    {hw:'tir',  ph:['t','i','r'],     mn:'to see',   mns:['to see'],   pos:'v', sub:'\u4ed6\u52d5\u8a5e', at:2,
+     fms:[{fm:'fut', hw:'tiru', sp:[]}]},
     {hw:'mos',  ph:['m','o','s'],     mn:'tall',     mns:['tall'],     pos:'adj', at:3},
     {hw:'lom',  ph:['l','o','m'],     mn:'to fall',  mns:['to fall'],  pos:'v', sub:'\u81ea\u52d5\u8a5e', at:11},
     {hw:'sar',  ph:['s','a','r'],     mn:'river',    mns:['river'],    pos:'n', at:4},
@@ -207,7 +217,8 @@ export function seed(){
   NOTES = [{t:'note', b:'body'}];
   ME = {name:'Aya', handle:'aya', bio:'Building a language for a place that does not exist.'};
   /* 誰をフォローしているか・誰にされているかは `follow` 表の答えで、
-     FOL_HAVE がその置き場です（www/me.js § meFollowing、2026-09-09）。
+     一覧は FOL_HAVE、一人ずつの「フォローしているか・されているか」は REL が
+     置き場です（www/me.js § WHETHER YOU FOLLOW SOMEBODY、2026-09-23）。
      `ME.fo`/`ME.fr` には置きません ── もう誰も読みません。 */
   folPut(false, 'aya', ['iri','veth']); folPut(true, 'aya', ['iri']);
   /* Two posts, and the second one is the whole reason the timeline is written
@@ -377,6 +388,14 @@ export function seed(){
             a past would have nothing left to offer and the button that
             offers it would never be drawn. */
          fm:[{id:'fr1', pos:'n', fm:'pl', at:'end', drop:0, when:'',
+              add:[{l:'l1', u:'k'}]},
+            /* And a DERIVATION, which is the only kind of rule that still
+               makes a word (an inflection is a form of one since 2026-09-23).
+               No screen writes one any more -- the grammar book's sections
+               are all inflections -- so this is a rule an older language
+               carries, and the button on a word's page and the rows on the
+               new-word sheet are what it still drives. */
+            {id:'fr2', pos:'', fm:'dim', at:'end', drop:0, when:'',
               add:[{l:'l1', u:'k'}]}]};
   /* SOMETHING UNREAD, so the number on the bell is a state the walk reaches.
      `press` reported `.tabn` as styled and worn by nothing -- which is that
@@ -395,11 +414,11 @@ export function seed(){
      never again, which is a fixture that changes under the walk rather than
      one that seeds a state. Reset here, where every other field of SET is. */
   SET.notAt = 0;
-  /* And nobody else's language answered for. `wldSeenPull()` writes both, and
+  /* And nobody else's language answered for. `wldSeenAsk()` writes both, and
      they are a session's memory of what came back rather than anything stored
      -- so a face that seeds one must not leave it standing for every render
      after it. Reset where the rest of the state is. */
-  WLD_HAVE = {}; WLD_ASKED = {}; WLDS_HAVE = {}; WLDS_ASKED = {};
+  WLD_HAVE = {}; WLDS_HAVE = {};
   /* Where you are standing is the app's to say, not this file's. viewReset()
      in www/shell.js is the one list of what a screen forgets when you leave
      it; a copy here would be a second list to keep in step, and the first
@@ -435,12 +454,20 @@ export function seed(){
      the notices AND the record that they were answered, so a line written
      before it is wiped by it.
 
-     `feed` is not in here: SNS_GOT is the timeline's own record, per tab, and
-     the walks that want an answered timeline set that themselves. */
-  PULL_GOT = { saved:1, recent:1, drafts:1, notif:1, mine:1, day:1, blocks:1 };
+     The timeline is a question per tab (`feed|rec`, `feed|fo`, `feed|day`,
+     www/sns.js § askFeed), and it is answered here too: the fixture's posts
+     are what the server said. `mylangs` is the list of languages, whose
+     answer is the index this fixture seeded. */
+  PULL_GOT = { saved:1, recent:1, drafts:1, notif:1, day:1, mylangs:1,
+               'feed|rec':1, 'feed|fo':1, 'feed|day':1 };
+  /* and the open language's slices, which are what the fixture seeded */
+  PULL_GOT['lang|' + langId] = 1;
+  /* and what this account has written, which is POSTS -- so the door onto
+     your own page lands as a press does (www/sns.js § askPosts) */
+  PULL_GOT['posts|' + meHandle()] = 1;
   /* AND THE PEOPLE THIS ACCOUNT FOLLOWS ARE KNOWN, because the door onto a
      list of people gets them all in one request before the screen opens
-     (www/me.js § followsOpen, whoNeed). A walk renders a ROUTE, not a door,
+     (www/sns.js § WHAT EACH PAGE READS, `fols`). A walk renders a ROUTE, not a door,
      so without this the follow list is drawn in a state the app can no
      longer be in -- a row with '?' where a name goes, waiting for an answer
      that the screen is not allowed to be waiting for.
@@ -449,6 +476,13 @@ export function seed(){
                     bio:'', fo:2, fr:3, out:false };
   WHO_HAVE.veth = { who:'Veth', hd:'veth', av:{ch:'\u0424'}, lname:'Vethi',
                     bio:'', fo:1, fr:1, out:false };
+  /* AND YOUR OWN ROW, whose two counts are the server's (`profile_seen`) and
+     not the length of two lists this phone read (www/me.js § whoOf). */
+  WHO_HAVE.aya  = { who:'Aya',  hd:'aya',  av:null, lname:'Shango',
+                    bio:'', fo:2, fr:1, out:false };
+  /* AND WHETHER YOU FOLLOW EACH OF THEM, AND THEY YOU -- the door onto any
+     page that draws a person asks it (`rel`, www/me.js § REL). */
+  REL = { iri:{i:true, u:true}, veth:{i:true, u:false} };
 }
 
 /* The steps of the onboarding that have a second face: the writing systems to
@@ -658,6 +692,34 @@ export function obStates(){
    at all -- and press.mjs, which has to rebuild a screen before every press,
    needs the same list act-check walks or the two drift apart silently. */
 export function halfDone(){
+  /* 売れた枠を一つ入れて、タイムラインを描いて、元に戻す。上の二つの面が
+     使う ── halfDone() は文字列としてページに送られるので、ここに置く。 */
+  function fixPromo(pl, few, admH){
+    const wasPlan = plan(), wasPromo = PROMO, n = POSTS.length,
+          wasAdm = { on: ADM.on, h: ADM.h };
+    if (admH !== undefined) { ADM.on = true; ADM.h = admH ? { 0: admH } : {}; }
+    planGot(pl);
+    for (let i = 0; i < (few ? 0 : PROMO_EVERY); i++)
+      POSTS.unshift({ id:'fill-' + i, at: Date.now() - 60000 * (i + 1), lang: langId,
+                      lname:'Shango', who:'Aya', hd:'aya', mine:true,
+                      av:{st:[{pts:[[112,112],[688,112],[400,688]]}]},
+                      ln:'kano mos tir', mn:'a tall mountain is seen', ui:'en' });
+    PROMO = admH !== undefined ? [] : [{ id:'ad-1', at: Date.now() - 86400000, lang:'other', lname:'Vethi',
+               ln:'qel dross', who:'Kiyo', hd:'kiyo', mine:false, av:{ch:'K'},
+               mn:'the river is wide', ui:'en', ad:true }];
+    /* vFeed() and not render(): render() draws what the APP is at that
+       moment, and a walk that pressed through the onboarding before this face
+       leaves it drawing the door -- press measured the sold place as a
+       sign-in screen, so `.ppr` was worn by nothing. The other timeline faces
+       ask the view; so does this one. */
+    window.route = 'feed'; NAV = [{ r:'feed' }];
+    const h = vFeed();
+    POSTS.splice(0, POSTS.length - n);
+    PROMO = wasPromo;
+    ADM.on = wasAdm.on; ADM.h = wasAdm.h;
+    planGot(wasPlan);
+    return h;
+  }
   /* What the app puts round a sheet, for a seed that has changed something
      since the form opened. FORM.html is the body as it was the moment
      openForm() ran; a seed that then sets a flag or fills a field has to
@@ -704,6 +766,18 @@ export function halfDone(){
   const __stemLetters = () => { LETTERS[0].st = __STEM[0]; LETTERS[1].st = __STEM[1]; };
   const __twoLines = () => ltPua(0) + ltPua(1) + ltPua(0) + ' ' + ltPua(1) + ltPua(0) +
                            '\n' + ltPua(0) + ltPua(0) + ltPua(1);
+  /* A word as the Lingua keyboard types it: each letter this alphabet has
+     drawn is its key, everything else the system keyboard's -- the cut a
+     field hands its receiver (www/glyph.js § puaTyped). */
+  const __kbTyped = (w) => puaTyped(w.split('').map((c) => {
+    const k = ltPuaOrder().findIndex((l) => ltName(l) === c);
+    return k >= 0 ? ltPua(k) : c;
+  }).join('')).cut;
+  /* The same two, turned: a stem from the top edge of the lattice to the
+     bottom, so a COLUMN of them joins at 0 the way a row of the two above
+     does. 「横と縦それぞれスライドしてどう動くか」 OWNER 2026-09-23. */
+  const __STEMDOWN = [[{ pts:[[400,40],[400,760]] }, { pts:[[400,400],[640,400]] }],
+                      [{ pts:[[400,40],[400,760]] }, { pts:[[400,220],[180,220],[180,580],[400,580]] }]];
   const __joinPosts = (sp) => {
     POSTS.unshift({ id: 'pj', at: Date.now() - 60000, lang: 'other', lname: 'Tsagaan',
                     ln: 'abab baa', who: 'Iri', hd: 'iri', mn: 'the steppe after rain',
@@ -737,6 +811,15 @@ export function halfDone(){
        const was = PUSH_ST; PUSH_ST = 'authorized';
        window.route = 'set'; NAV = [{ r:'settings' }, { r:'set', a:'push' }];
        const h = vSet(); PUSH_ST = was; return h; }],
+    /* And with switches OFF, because a switch has two states and the room
+       above only ever draws them on -- nobody in the fixture has turned one
+       off. The day's prompt and likes, put back afterwards. */
+    ['notifications, some turned off', () => {
+       const was = PUSH_ST, p = SET.push_prompt, l = SET.push_like;
+       PUSH_ST = 'authorized'; SET.push_prompt = false; SET.push_like = false;
+       window.route = 'set'; NAV = [{ r:'settings' }, { r:'set', a:'push' }];
+       const h = vSet(); PUSH_ST = was; SET.push_prompt = p; SET.push_like = l;
+       return h; }],
     ['notifications, refused on the phone itself', () => {
        const was = PUSH_ST; PUSH_ST = 'denied';
        window.route = 'set'; NAV = [{ r:'settings' }, { r:'set', a:'push' }];
@@ -832,6 +915,22 @@ export function halfDone(){
 
        plus に上げてから描くのは、無料の 140 字はどの端末でも二、三行で
        畳まれないからです ── 畳みは有料が書けるようになった長さの話。 */
+    /* 売れた枠。「広告の形は、Twitterと同じ。ツイート擬態右上にprとつく。
+       …proのみ表示なし。」 OWNER 2026-09-23 ── 枠は PROMO_EVERY 件ごとに一つ
+       なので、それだけの投稿を前に積んでから描きます。宣伝されている投稿は
+       他人のもので、postRow() がほかの投稿と同じに描き、右上に PR が付く。
+       二つ目は同じ状態の pro で、PR の行が一つも出ないことが写る面です。 */
+    ['the timeline with a place sold in it', () => fixPromo('free')],
+    ['the same timeline on pro, with no place', () => fixPromo('pro')],
+    /* 「少ない時は出さない！」 ── 売れた広告はあるのに、投稿が PROMO_EVERY
+       件に届かないタイムライン。PR の行が出ないことが写る面。 */
+    ['a place sold, fewer posts than a place needs', () => fixPromo('free', true)],
+    /* AdMob の枠。ブラウザには本物の広告が無いので、ネイティブが「この高さ」と
+       答えた後の、空の行だけが写る（その上に iOS 側が広告を重ねる）。 */
+    ['a place AdMob fills, as the page draws it', () => fixPromo('free', false, 260)],
+    /* そして、まだ埋まっていない時 ── 広告が来る前・来なかった時の枠は高さ 0 で線も無い
+       （`.padm0`）。何も写らないのが正しい面。 */
+    ['a place AdMob has not filled', () => fixPromo('free', false, 0)],
     ['a long post folded', () => {
         const wasPlan = plan();
         planGot('plus');
@@ -977,7 +1076,21 @@ export function halfDone(){
        window.route = 'gram'; NAV = [{ r:'gram', a:id }]; stExNew = id;
        const h = vGram(); stExNew = ''; return h; }],
     ['a label of your own', () => {
-       window.route = 'fm'; NAV = [{ r:'fm', a:'tira' }]; fmNewG = 'i';
+       window.route = 'fm'; NAV = [{ r:'fm', a:'tira' }]; fmNewG = 'd';
+       const h = vFm(); fmNewG = ''; return h; }],
+    /* A FORM of a word, being written: the screen and the label it is given,
+       which is chosen off the inflection half of the same list with the row
+       for a label of one's own open at its foot. Opened on the placed form,
+       because that is the one that carries the way to take it off. */
+    ['a form being written', () => { openWfm('tir', 'fut'); return vForm(); }],
+    /* and a NEW one with both halves typed, so Save stands lit -- the state
+       「ラベルと単語がセット」 is, which nothing else here reaches */
+    ['a new form, both halves in', () => {
+       openWfm('tir', ''); keepSet('fm', 'pst'); keepSet('f', 'tirat');
+       FORM = null; return vForm(); }],
+    ['the label of a form', () => {
+       openWfm('tir', '');
+       window.route = 'fm'; NAV = [{ r:'fm', a:'#tir|' }]; fmNewG = 'i';
        const h = vFm(); fmNewG = ''; return h; }],
     /* What a word is of the word it came from, asked only of a word that HAS
        a parent
@@ -1110,6 +1223,53 @@ export function halfDone(){
        const h=vAbout();
        ABOPEN.wlddl = was;
        return h; }],
+    /* THE ↓ WHILE THE CHAPTER COMES DOWN, AND ONCE THE SERVER SAYS IT IS TAKEN.
+       「↓を押したら⭕️でダウンロード状況表示。ダウンロードしてる言語は⭕️☑️」
+       「ダウンロードは普通⭕️のメーターだろ」 OWNER 2026-09-23 -- www/home.js
+       § wldTakeOf, iconMeter. WLD_TAKING is how far the chapter has come, 0 to
+       1, or -1 where the server gave no length (the circle turns). Taken is
+       the SERVER's two answers (the owner is somebody else, a `language_take`
+       row is this account's) and the chapter in what is loaded; all three are
+       pushed here because no check has a network. */
+    ['somebody else\u2019s language page, a download going', () => {
+       const lid = __seenLang();
+       const was = ABOPEN.wlddl;
+       ABOPEN.wlddl = true; WLD_TAKING[lid + '|letters'] = 0.4;
+       window.route='about'; NAV=[{ r:'about', a:lid }];
+       const h=vAbout();
+       delete WLD_TAKING[lid + '|letters']; ABOPEN.wlddl = was;
+       return h; }],
+    ['somebody else\u2019s language page, a download going with no length', () => {
+       const lid = __seenLang();
+       const was = ABOPEN.wlddl;
+       ABOPEN.wlddl = true; WLD_TAKING[lid + '|letters'] = -1;
+       window.route='about'; NAV=[{ r:'about', a:lid }];
+       const h=vAbout();
+       delete WLD_TAKING[lid + '|letters']; ABOPEN.wlddl = was;
+       return h; }],
+    ['somebody else\u2019s language page, taken', () => {
+       const lid = __seenLang();
+       const was = ABOPEN.wlddl;
+       ABOPEN.wlddl = true;
+       LANGS[lid] = {}; langOwnGot(lid, 'somebody-else'); langTookGot([lid]);
+       slWr(langKeyOf(lid, 'letters'), WLDS_HAVE[lid].letters.body);
+       window.route='about'; NAV=[{ r:'about', a:lid }];
+       const h=vAbout();
+       slRm(langKeyOf(lid, 'letters')); delete LANGS[lid]; langTookGot([]);
+       ABOPEN.wlddl = was;
+       return h; }],
+    /* AND A TAKEN LANGUAGE OPEN, WHICH HAS NO WIKI. 「後人の言語は自分の言語
+       じゃないからwikiページに表示させないように。」 OWNER 2026-09-23. The
+       profile's row to the article is not there, and the article is not
+       drawn as yours -- www/home.js § wldPage. */
+    ['the profile with a taken language open', () => {
+       const was = langOwnOf(langId);
+       langOwnGot(langId, 'somebody-else'); langTookGot([langId]);
+       window.route='profile'; NAV=[{ r:'profile' }];
+       const h=vProfile();
+       if (was) langOwnGot(langId, was); else delete LOWN[langId];
+       langTookGot([]);
+       return h; }],
     /* AND THE SAME PAGE WITH ITS ALPHABET OPEN, which is the only face that
        draws somebody else's LETTERS at all -- every section arrives shut, so
        neither face above had ever rendered one. That is why 「人のwikiページ
@@ -1164,8 +1324,8 @@ export function halfDone(){
                            NAV=[{r:'ltset', a:'mark'}]; return vLtset(); }],
     ['a letter in the editor', () => { editGlyph('k'); window.route='glyph';
                                        NAV=[{r:'glyph', a:GE.lid}]; return vGlyph(); }],
-    /* The two faces of the editor's canvas the three guide lines have to be
-       seen in (OWNER 2026-09-23): nothing drawn yet, so the lines stand alone
+    /* The two faces of the editor's canvas the 田 guides have to be seen
+       in (OWNER 2026-09-23): nothing drawn yet, so the lines stand alone
        over the dots; and pinched in, so the lines are shown to move with the
        dots. GE is the editor's buffer and is never saved from here. */
     ['an empty letter in the editor', () => { editGlyph('k'); GE.st=[]; GE.si=-1; GE.pi=-1;
@@ -1329,7 +1489,7 @@ export function halfDone(){
         const h = vThread(); POSTS.pop(); delete mine.sid; return h; }],
     /* YOUR OWN ROW, on somebody else's followers list, on a phone holding no
        post of yours to take a name off. 「ここも？になるの謎だし」 */
-    /* AND EVERYBODY ON IT IS KNOWN, because followsOpen() (www/me.js) got
+    /* AND EVERYBODY ON IT IS KNOWN, because the door onto `follows` (www/shell.js § navLand) got
        the people in one request before this screen opened -- a row waiting
        for its own name is not a state the app can be in any more
        (「？になってあとで表示される」 OWNER 2026-09-07). Seeding WHO_HAVE is
@@ -1340,7 +1500,7 @@ export function halfDone(){
        that turned for ever is gone from this screen, so what a person with no
        followers looks like is a thing somebody has to be able to LOOK at.
        An empty list is an ANSWER -- the door does not open until it is in
-       (www/me.js § followsOpen) -- which is why this face seeds an empty
+       (www/shell.js § navLand) -- which is why this face seeds an empty
        array rather than nothing at all. */
     ['somebody else\u2019s followers list with nobody on it', () => {
         FOL_HAVE['ers:iri'] = []; FOL_ASKED['ers:iri'] = 1;
@@ -1361,7 +1521,7 @@ export function halfDone(){
         POSTS.push.apply(POSTS, was); return h; }],
     /* A PROFILE BEFORE THE COUNTS HAVE ARRIVED IS NOT A STATE ANY MORE.
        「プロフィールは、出す物を全部読み込んでから開く」 OWNER 2026-09-07 --
-       the page waits on `mine` before it opens (www/me.js § profileOpen), so
+       the page waits on its reads before it opens (www/shell.js § navLand), so
        there is no face where the two words stand without their numbers.
     /* ---- a tag, and what pressing one gives ------------------------------
        「タグは青く光るからタップしたらタグの検索になる。」 OWNER 2026-09-04.
@@ -1553,8 +1713,11 @@ export function halfDone(){
         ADMINN = { people:1284, posts:9130, langs:412, reports:1 };
         /* Two rows and they are not the same row: the one above staff is in
            the list and cannot be taken off it, so it is the one without a
-           press. A list holding only the second kind would never draw that. */
-        ADMINS = [{ id:'u9', handle:'lingua', admin:true },
+           press. A list holding only the second kind would never draw that.
+           `admin` is false on both, which is what a database built from
+           supabase/schema.sql answers -- which row is above staff is the
+           handle, not that column. */
+        ADMINS = [{ id:'u9', handle:'lingua', admin:false },
                   { id:'u1', handle:'mod', admin:false }];
         MODS = [{ id:1, why:'spam', note:'', at:Date.now()-600000,
                   who:'veth', uid:'u1', out:false, by:'aya',
@@ -1562,6 +1725,13 @@ export function halfDone(){
         window.route='admin'; NAV=[{r:'admin'}];
         const h = vAdmin();
         ADMIN_OK = false; ADMINN = keepN; ADMINS = keepS; MODS = keep; return h; }],
+    /* AND THE LIST OF WHO ANSWERS THE REPORTS, REFUSED. Not an empty list:
+       what went wrong stands in its place (www/mod.js § adminLoad). */
+    ['the admin screen, the staff list refused', () => { const keepS = ADMINS, keepE = ADMINS_ERR;
+        ADMIN_OK = true; ADMINS = null; ADMINS_ERR = netWhy(null, 0);
+        window.route='admin'; NAV=[{r:'admin'}];
+        const h = vAdmin();
+        ADMIN_OK = false; ADMINS = keepS; ADMINS_ERR = keepE; return h; }],
     /* AND THE PAGE THE FEEDBACK ROW OPENS. 「お問い合わせ→開いたらお問い合わせ
        だけの画面」 OWNER 2026-09-22 -- a face of `admin`, so the walk reaches
        it only past the door, and without this every button on it （the 消す
@@ -1696,7 +1866,7 @@ export function halfDone(){
     /* THE FACE BEFORE THE SERVER HAS ANSWERED IS GONE, and so is the state.
        「プロフィールは、出す物を全部読み込んでから開く」「くるくるも出さない」
        OWNER 2026-09-07: the page is not drawn until every answer is in
-       (www/me.js § profileOpen), so there is no such thing as a profile
+       (www/shell.js § navLand), so there is no such thing as a profile
        waiting on the server. A face for a state the app cannot be in is six
        screens walked in a shape nobody can reach. */
     /* A post kept to yourself, which is the lock beside the time, and the
@@ -1825,7 +1995,6 @@ export function halfDone(){
     ['somebody else\u2019s language', () => {
         WLD_HAVE['L1'] = { id:'L1', name:'Vethi', license:'',
                            pub:'2026-08-20T00:00:00Z', nwords:412, nletters:38 };
-        WLD_ASKED['L1'] = 1;
         WLDS_HAVE['L1'] = {
           wld: { body: JSON.stringify({
                    where:'A valley under the north ridge',
@@ -1837,7 +2006,6 @@ export function halfDone(){
                    { id:'v2', nm:'to', snd:['t'], st:[{ pts:[[112,688],[400,112],[688,688]] }] },
                    { id:'v3', nm:'ri', snd:['r'], st:[{ pts:[[300,150],[300,650]] }] }]), no:1 },
           snd: { body: JSON.stringify(['k','t','r','a','i']), no:1 } };
-        WLDS_ASKED['L1'] = 1;
         window.route='about'; NAV=[{ r:'about', a:'L1' }];
         return vAbout(); }],
     ['notices', () => { NOTES_HAVE = [
@@ -1940,21 +2108,21 @@ export function halfDone(){
        `PULL_OFF` is 「訊けなかった」 (www/sns.js § pullSay) and this is the
        face it draws. */
     ['a timeline with no signal', () => {
-        const keepP = POSTS, keepG = SNS_GOT;
-        POSTS = []; SNS_GOT = {}; PULL_OFF.feed = 1;
+        const keepP = POSTS;
+        POSTS = []; PULL_OFF['feed|rec'] = 1;
         window.route='feed'; NAV=[{r:'feed'}];
         const h = vFeed();
-        POSTS = keepP; SNS_GOT = keepG; PULL_OFF.feed = 0; return h; }],
+        POSTS = keepP; PULL_OFF['feed|rec'] = 0; return h; }],
     /* And the same screen with nothing answered and nothing fallen: the mark,
        turning, which is what an app that IS asking looks like. The two are
        next to each other on purpose -- the fault they were written after is
        that they used to be one picture. */
     ['a timeline that has not been answered yet', () => {
-        const keepP = POSTS, keepG = SNS_GOT;
-        POSTS = []; SNS_GOT = {}; PULL_OFF.feed = 0; PULL_GOT.feed = 0;
+        const keepP = POSTS;
+        POSTS = []; PULL_OFF['feed|rec'] = 0; PULL_GOT['feed|rec'] = 0;
         window.route='feed'; NAV=[{r:'feed'}];
         const h = vFeed();
-        POSTS = keepP; SNS_GOT = keepG; return h; }],
+        POSTS = keepP; PULL_GOT['feed|rec'] = 1; return h; }],
     ['a post that is only a photograph', () => {
         POSTS.push({id:'pz', at:Date.now(), lang:langId, lname:'Shango', ln:'',
                     who:'Aya', hd:'aya', mine:true, mn:'', ui:'en',
@@ -2087,11 +2255,11 @@ export function halfDone(){
        where the same number goes red. */
     ['a post running out of room', () => {
         openPost();
-        PW.ln = Array.apply(null, {length: POST_MAX - 10}).map(() => 'a').join('');
+        pwLine(puaTyped(Array.apply(null, {length: POST_MAX - 10}).map(() => 'a').join('')).cut);
         openPost(); const h = vForm(); PW = pwBlank(); return h; }],
     ['a post past the end of the room', () => {
         openPost();
-        PW.ln = Array.apply(null, {length: POST_MAX + 5}).map(() => 'a').join('');
+        pwLine(puaTyped(Array.apply(null, {length: POST_MAX + 5}).map(() => 'a').join('')).cut);
         openPost(); const h = vForm(); PW = pwBlank(); return h; }],
     /* And a post that has been edited since it was sent, which is a mark on
        somebody's own post and on nobody else's. */
@@ -2110,20 +2278,19 @@ export function halfDone(){
             marks:[]}));
         openPost(); const h = vForm(); PW = pwBlank(); return h; }],
     /* The composer of a language written from the right, in its own font.
-       Both of those are the paid plan's and both are off in seed(), so the
-       field the line goes in has only ever been rendered left-to-right in
-       the ordinary face. They are one seed because they are one element:
-       `dirClass(scriptDir()) + (myFontOn()? ' tfont' : '')` is the whole of
-       that field's class, and the two answers meet nowhere else.
-       .tfont is LinguaType, which carries only the private use area, so
-       nothing is drawn here that the Lingua keyboard did not type -- which
-       is the rule the second face exists to keep. */
+       The direction is the paid plan's and is off in seed(), so the field
+       the line goes in has only ever been rendered left-to-right. Its face
+       is the line's own on every plan and whatever SET.myfont says -- the
+       `.pline, .pwfield #pw-ln` rule in index.html, LinguaType, which
+       carries only what the Lingua keyboard types (www/post.js § the field
+       runs the way the language does) -- so the direction is the whole of
+       what this face adds. */
     ['a line written from the right, in a font of your own', () => {
         const wasPlan = plan(), wasDir = SCRIPT.dir;
         planGot('pro'); SCRIPT.dir = 'rtl';   /* dir is 'pro' since the rename */
-        SET.myfont = true; installScriptFont();
+        installScriptFont();
         openPost(); const h = vForm();
-        PW = pwBlank(); SET.myfont = false;
+        PW = pwBlank();
         SCRIPT.dir = wasDir; planGot(wasPlan); return h; }],
     /* AND THE ONE WRITTEN DOWNWARD, THE FIRST COLUMN AT THE LEFT. Four
        directions and this is the only one no screen wore. It used to be
@@ -2443,17 +2610,16 @@ export function halfDone(){
                                               kbAdd('qwerty'); kbLay = 0; kbPick(0, 0);
                                               const h = vForm(); KB = null; kbShow = 0;
                                               planGot('free'); return h; }],
-    /* THE SAME KEY WITH A LETTER CHOSEN ON IT, which is a face and not a
-       state of the one above: the confirm in the bar is drawn only while
-       something is chosen -- 「何も選んでいなければ出ない」 OWNER 2026-09-03 --
-       so on every other face of this screen it is on no screen at all, and
-       act-check said so the day it went in. Built by the act, like the rest
-       of this chapter: kbLtTap() is what a finger does to a letter. */
+    /* THE SAME KEY WITH ANOTHER LETTER PRESSED ONTO IT: the letter goes onto
+       the key and is the purple one, and the square over the alphabet says so
+       (OWNER 2026-09-24 「いらないなら保存だけでいいよ」). Built by the act,
+       like the rest of this chapter: kbLtTap() is what a finger does to a
+       letter. */
     ['a key with a letter chosen for it', () => { planGot('pro'); KB = null; kbShow = 0;
                                                   kbAdd('qwerty'); kbLay = 0; kbPick(0, 0);
                                                   const a = ltOfKind('alpha');
                                                   if (a.length) kbLtTap(0, 0, -1, a[0].id);
-                                                  const h = vForm(); kbLtPick = null;
+                                                  const h = vForm();
                                                   KB = null; kbShow = 0;
                                                   planGot('free'); return h; }],
     /* AND THE SAME KEY WITH A DRAWN LETTER CHOSEN, which is the other state
@@ -2466,7 +2632,7 @@ export function halfDone(){
                                                   kbAdd('qwerty'); kbLay = 0; kbPick(0, 0);
                                                   const d = ltOfKind('alpha').filter((l) => inkGeo(l));
                                                   if (d.length) kbLtTap(0, 0, -1, d[0].id);
-                                                  const h = vForm(); kbLtPick = null;
+                                                  const h = vForm();
                                                   KB = null; kbShow = 0;
                                                   planGot('free'); return h; }],
     /* A FLICK keyboard, which is the other half of the editor and the only
@@ -2634,7 +2800,22 @@ export function halfDone(){
     ['an empty frame of the keyboard selected', () => { planGot('pro'); KB = null; kbShow = 0;
                                                   kbAdd('qwerty'); kbLay = 0;
                                                   kbHeadCol(0); kbCut();
-                                                  kbCellAdd(0, 0, 1);
+                                                  kbCellSel(0, 0, 1);
+                                                  const h = vKb();
+                                                  KBH = null; KB = null; kbShow = 0; kbLay = 0;
+                                                  planGot('free'); return h; }],
+    /* A board narrower than the sheet, its short row pushed RIGHT and still
+       selected. Every board a pattern makes is ten across, so this is the
+       only face where the three alignments are measured against a sheet wider
+       than every row -- the right end is the tenth column, not the widest
+       row's (docs/scope/r73-audit.md § 2-16). */
+    ['a short row of a narrow keyboard pushed right', () => { planGot('pro'); KB = null; kbShow = 0;
+                                                  kbAdd('abc'); kbLay = 0;
+                                                  kbEdit().lay[0].rows = [
+                                                    [kbKey('lt', ''), kbKey('lt', ''), kbKey('lt', ''), kbKey('lt', '')],
+                                                    [kbKey('lt', ''), kbKey('lt', '')]];
+                                                  saveKb();
+                                                  kbHeadRow(1); kbAlign('r');
                                                   const h = vKb();
                                                   KBH = null; KB = null; kbShow = 0; kbLay = 0;
                                                   planGot('free'); return h; }],
@@ -3247,14 +3428,14 @@ export function halfDone(){
        once a letter is on it, the selected face with its slider and its two
        buttons is a second screen again. */
     ['letters on a photograph', () => { PW = pwBlank();
-      PW.pics = [{u:POSTS[0].pic, marks:[{tx:'kano', x:0.5, y:0.4, s:0.18, c:PW_COLS[0]}]}];
+      PW.pics = [{u:POSTS[0].pic, marks:[{tx:'kano', cut:__kbTyped('kano'), x:0.5, y:0.4, s:0.18, c:PW_COLS[0]}]}];
       pwMarkOpen(0); pwMarkAt = 0; pwTool = 'mark'; const h = sheet(pwMarkHTML());
       PW = pwBlank(); pwPicAt = -1; pwMarkAt = -1; return h; }],
     /* And the other half of the editor: the crop, with its rectangle over the
        picture. It is a mode of the same screen, so nothing renders it unless
        the walk is put into it. */
     ['cropping a photograph', () => { PW = pwBlank();
-      PW.pics = [{u:POSTS[0].pic, marks:[{tx:'kano', x:0.5, y:0.4, s:0.18, c:PW_COLS[0]}]}];
+      PW.pics = [{u:POSTS[0].pic, marks:[{tx:'kano', cut:__kbTyped('kano'), x:0.5, y:0.4, s:0.18, c:PW_COLS[0]}]}];
       pwMarkOpen(0); pwTool = 'crop'; const h = sheet(pwMarkHTML());
       PW = pwBlank(); pwPicAt = -1; pwTool = 'mark'; return h; }],
     ['a photograph with no letters on it yet', () => { PW = pwBlank();
@@ -3267,18 +3448,18 @@ export function halfDone(){
        has none of -- there is no microphone on a Linux box and getUserMedia
        is never going to answer -- so what is walked is the row, in each of
        the states it can be in, which is what a thumb meets. */
-    ['a voice being recorded', () => { PW = pwBlank(); PW.ln = 'kano';
+    ['a voice being recorded', () => { PW = pwBlank(); pwLine(puaTyped('kano').cut);
         REC = {}; RECAT = (new Date()).getTime() - 7000;
         openPost(); const h = vForm(); REC = null; RECAT = 0;
         PW = pwBlank(); return h; }],
-    ['a voice recorded and not yet posted', () => { PW = pwBlank(); PW.ln = 'kano';
+    ['a voice recorded and not yet posted', () => { PW = pwBlank(); pwLine(puaTyped('kano').cut);
         PW.vo = {b64:'AA', mime:'audio/mp4', ms:7000};
         openPost(); const h = vForm(); PW = pwBlank(); return h; }],
     /* Editing your own post, which is the line and the meaning and neither
        the photographs nor the voice -- so it is the one face of the composer
        with no row of buttons under it at all. */
     ['a post being edited', () => { PW = pwBlank();
-        PW.ed = POSTS[0].id; PW.ln = POSTS[0].ln; PW.mn = POSTS[0].mn;
+        PW.ed = POSTS[0].id; pwLine(postCutOf(POSTS[0])); PW.mn = POSTS[0].mn;
         openPost(); const h = vForm(); PW = pwBlank(); return h; }],
     ['who you are, being edited', () => { openMe(); return vForm(); }],
     /* The box a list is pasted into, which is its own screen: the one before
@@ -3331,27 +3512,53 @@ export function halfDone(){
        on no screen but the third. */
     ['a word as a card',       () => { cardOpen('w', 'kano'); return vForm(); }],
     ['a sentence as a card',   () => { findWord('kano').ex=[{ln:'kano mos tir', gl:'a tall mountain is seen'}];
-                                       cardOpen('x', 'kano#0');
-                                       const h=vForm(); delete findWord('kano').ex; return h; }],
+                                       cardOpen('x', 'kano#0'); return vForm(); }],
     ['a post as a card',       () => { cardOpen('p', 'p1'); return vForm(); }],
+    /* Somebody else's post with nothing drawable on it, in words THIS
+       dictionary happens to spell: its card is its text, as its row on the
+       timeline is -- not the post spelt out in my letters. And a card of a
+       post that is gone, which is no card. (www/card.js § cardSrc) */
+    ['somebody else\'s post with no ink, as a card', () => {
+       POSTS.unshift({ id: 'pnoink', at: Date.now() - 60000, lang: 'other', lname: 'Vethi',
+                       ln: 'kano tir\nke', who: 'Iri', hd: 'iri', mine: false, av: { ch: 'Ж' },
+                       mn: 'the mountain is seen', ui: 'en' });
+       cardOpen('p', 'pnoink'); return vForm(); }],
+    ['a card of a post that is gone', () => { cardOpen('p', 'gone'); return vForm(); }],
     /* THE GAP BETWEEN LETTERS (www/glyph.js § geSide, www/wsys.js § SP_RANGE).
        「0 にすると、端まで描いた線が隣とくっついて一本に繋がる」「スライドで
        文字間が見えるように … 最大0と2くらい」「それぞれの字間を見せてね」
-       OWNER 2026-09-23. At each of five points along the slider: the row in
-       設定 → 言語 with the language's own letters standing at that gap, and a
-       post written at it. Two letters each run a stem from the left edge of
+       OWNER 2026-09-23. At each of five points along the slider: 字間's own
+       page (「別ページにした方が見やすい」, same day), the language's own
+       letters across and down at that gap, and a post written at it. Two letters each run a stem from the left edge of
        the lattice to the right -- one with a stroke up off it, one with a
        loop under it -- so at 0 the stem is one line through the word.
        SCRIPT.sp is put back before returning (seed() does not rebuild SCRIPT);
        the preview carries its gap in its own markup, so nothing it draws
        afterwards needs it. */
     ...[0, 0.5, 1, 1.5, 2].map((v) => ['the gap between letters, the language at ' + v, () => {
-       __stemLetters(); const was = SCRIPT.sp; SCRIPT.sp = v; window.route = 'set';
-       NAV = [{ r:'settings' }, { r:'set', a:'lang' }];
-       const h = vSet(); if (was === undefined) delete SCRIPT.sp; else SCRIPT.sp = was; return h; }]),
+       __stemLetters(); const was = SCRIPT.sp; SCRIPT.sp = v; window.route = 'sp';
+       NAV = [{ r:'settings' }, { r:'set', a:'lang' }, { r:'sp' }];
+       const h = vSp(); if (was === undefined) delete SCRIPT.sp; else SCRIPT.sp = was; return h; }]),
     ...[0, 0.5, 1, 1.5, 2].map((v) => ['a post whose letters stand ' + v + ' apart', () => {
        __joinPosts(v); window.route = 'feed'; NAV = [{ r:'feed' }];
        return vFeed(); }]),
+    /* Written DOWN at 0 and at 2 -- a post, and the field it was typed
+       into. The face's vertical advance is what stands them apart
+       (www/otf5.js § vmtx); tools/line-check.mjs 6 asks it in pixels. */
+    ...[0, 2].map((v) => ['a column whose letters stand ' + v + ' apart', () => {
+       POSTS.unshift({ id: 'pjd', at: Date.now() - 60000, lang: 'other', lname: 'Tsagaan',
+                       ln: 'ababa', who: 'Iri', hd: 'iri', mn: 'the steppe after rain', ui: 'en',
+                       dir: 'ttb-rl', ink: { g: __STEMDOWN, s: [0, 1, 0, 1, 0], sp: v } });
+       window.route = 'feed'; NAV = [{ r:'feed' }];
+       return vFeed(); }]),
+    ...[0, 2].map((v) => ['a column being written at ' + v, () => {
+       const wasPlan = plan(), wasDir = SCRIPT.dir, was = SCRIPT.sp;
+       LETTERS[0].st = __STEMDOWN[0]; LETTERS[1].st = __STEMDOWN[1];
+       planGot('pro'); SCRIPT.dir = 'ttb-rl'; SCRIPT.sp = v; installScriptFont();
+       PW = pwBlank(); openPost(); pwSetLn(ltPua(0) + ltPua(1) + ltPua(0) + ltPua(1) + ltPua(0));
+       const h = vForm(); PW = pwBlank();
+       SCRIPT.dir = wasDir; if (was === undefined) delete SCRIPT.sp; else SCRIPT.sp = was;
+       planGot(wasPlan); return h; }]),
     ['a post whose letters join, as a card', () => {
        __joinPosts(0); cardOpen('p', 'pj'); return vForm(); }],
     ['the same post at one step, as a card', () => {
@@ -3370,8 +3577,8 @@ export function halfDone(){
        __stemLetters(); installScriptFont();
        const raw = __twoLines();
        POSTS.unshift({ id: 'p2l', at: Date.now() - 60000, lang: langId, lname: langName,
-                       ln: puaRoman(raw), who: meName(), hd: meHandle(), mine: true, mn: '',
-                       ui: 'en', ink: postInkTyped(raw), dir: 'ltr' });
+                       ln: puaTyped(raw).ln, who: meName(), hd: meHandle(), mine: true, mn: '',
+                       ui: 'en', ink: postInkOf(puaTyped(raw).cut), dir: 'ltr' });
        window.route = 'feed'; NAV = [{ r:'feed' }];
        return vFeed(); }],
     /* The rule a form is made by. It takes an id, and the id is the one the
@@ -3651,6 +3858,44 @@ export function halfDone(){
        window.route = 'gram'; NAV = [{ r:'gram', a:'v2:n' }];
        const h = vGram();
        WORDS.pop();
-       return h; }]
+       return h; }],
+    /* SEARCHING EVERYTHING, A SOUND PRESSED -- what that sound is in, with
+       the way back to the whole list at the head of it. No face stood here,
+       so the back row was a word nothing walked: marks-check could not see
+       it, and neither could press. Appended at the END so no index moves. */
+    ['searching everything, a sound pressed', () => {
+       fpick = { k:'s', v: addedSnd()[0] };
+       window.route = 'find'; NAV = [{ r:'find' }];
+       const h = vFind(); fpick = null; return h; }],
+    /* THE DICTIONARY OF SOMEBODY WHO NEVER TOUCHED THE SWITCH -- walked
+       past the drawing in the onboarding, drew later. 「オンをデフォルトに
+       してくれ。」 OWNER 2026-09-23: nobody-has-decided is ON. The seed says
+       `false`, which is somebody who turned it off; this is the other one.
+       Appended at the END so no index moves. */
+    ['the dictionary, nobody has touched the switch', () => {
+       const was = SET.myfont;
+       delete SET.myfont; installScriptFont();
+       window.route = 'words'; NAV = [{ r:'words' }];
+       const h = vWords(); SET.myfont = was; return h; }],
+    /* NOBODY HAS SAID WHAT THIS ACCOUNT PAYS (www/core.js § has) -- a launch
+       with no signal, or before verify-plan lands. The dictionary is past the
+       free hundred, and it is NOT folded: 「a failed check means fewer
+       buttons, never fewer words」. Appended at the END so no index moves. */
+    ['the dictionary past a hundred, nobody has said what this account pays', () => {
+       const n = WORDS.length;
+       for (let i = n; i < 130; i++) WORDS.push({ id:'w_nk_' + i, hw:'nok' + i, mns:['a word'], pos:'n' });
+       planForget();
+       window.route = 'words'; NAV = [{ r:'words' }];
+       const h = vWords(); WORDS.length = n; planGot('free'); return h; }],
+    ['the plans, nobody has said what this account pays', () => {
+       planForget(); PLPICK = PLANS[PLANS.length - 1];
+       window.route = 'plans'; NAV = [{ r:'plans' }];
+       const h = vPlans(); PLPICK = null; planGot('free'); return h; }],
+    /* SOMEBODY'S PAGE BEFORE THE TWO COUNTS CAME DOWN -- not 0 and 0. */
+    ['a person\'s page, the counts not come down', () => {
+       const w = WHO_HAVE.iri, fo = w.fo, fr = w.fr;
+       delete w.fo; delete w.fr;
+       window.route = 'profile'; NAV = [{ r:'profile', a:'iri' }];
+       const h = vProfile(); w.fo = fo; w.fr = fr; return h; }]
   ];
 }

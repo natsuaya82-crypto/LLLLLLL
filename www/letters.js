@@ -32,8 +32,7 @@
 var LETTERS=[];
 /* The open language's alphabet. Empty first: see langRead() in core.js. */
 function ltRead(){
-  LETTERS=[];
-  try{ var lt=JSON.parse(slRd(langKey('letters'))||'null'); if(lt && lt.length) LETTERS=lt; }catch(e){}
+  LETTERS=slOpen('letters') || [];
 }
 ltRead();
 function saveLetters(){ if(langLocked()) return; bkTouch(); slWr(langKey('letters'), JSON.stringify(LETTERS)); }
@@ -77,9 +76,16 @@ function ltFor(unit){
 }
 /* The one the font uses. */
 function ltMain(unit){ var a=ltFor(unit); return a.length? a[0] : null; }
-function ltStrokes(unit){ var l=ltMain(unit); return (l && l.st && l.st.length)? l.st : null; }
 function ltChar(unit){ var l=ltMain(unit); return (l && l.ch)? l.ch : ''; }
-function ltHasShape(l){ return !!(inkGeo(l) || (l && l.ch)); }
+/* WHETHER ANYBODY HAS MADE ANYTHING OF THIS LETTER -- a drawing, a shape that
+   came in on a sheet, or a character borrowed for it. It is the sentence the
+   two DELETE REVIEWs in this file already made in their own words twice
+   (「no strokes, no borrowed character, made by the app and never touched by
+   anybody」), and syPut() in www/sync.js asks it a third time when two rows
+   turn out to be one slot. One sentence, one place: an empty slot is the
+   app's, and anything else is somebody's. It was two functions with two
+   names and one body (r78-sides); this is the one. */
+function ltHasShape(l){ return !!l && (!!inkGeo(l) || !!l.ch); }
 /* What a letter LOOKS like: what was drawn, or the character it borrows, or
    whatever the caller wants for a letter that is neither yet -- a pen on the
    alphabet, its name on a spelling, nothing at all on a strip.
@@ -468,7 +474,7 @@ function migrateMarks(){
    simply one of those until somebody says otherwise. One made FOR a sound
    (ltForUnit, and an import that carries one) still arrives with it. */
 function ltNew(o){
-  var l={id:ltId(), st:(o&&o.st)||null, ch:(o&&o.ch)||'', nm:(o&&o.nm)||'',
+  var l={id:ltId(), st:null, ch:(o&&o.ch)||'', nm:(o&&o.nm)||'',
          snd:(o&&o.snd)? o.snd.slice() : [],
          /* A letter made FOR a sound arrives with an answer; one that is just
             a shape gets the app's guess as soon as it is named. */
@@ -481,7 +487,7 @@ function ltNew(o){
      why not one letter that exists today is touched and there is no
      migration. It is put on at the moment the letter arrives and is never
      worked out again from the shape afterwards. */
-  if(o && o.sh && o.sh.length) l.sh=o.sh;
+  inkSet(l, inkGeo(o));
   if(o && o.via) l.via=String(o.via);
   /* A SLOT SAYS WHICH SLOT IT IS, and ltSlotId() below is the only caller.
      Everything else a person makes is a letter of their own and takes the id
@@ -560,14 +566,6 @@ function ltSlotKey(l){
   return (nm.length===1 && LT_START.indexOf(nm)>=0)? nm : '';
 }
 function ltIsBase(l){ return !!l && !!ltSlotKey(l); }
-/* WHETHER ANYBODY HAS MADE ANYTHING OF THIS LETTER -- a drawing, a shape that
-   came in on a sheet, or a character borrowed for it. It is the sentence the
-   two DELETE REVIEWs in this file already made in their own words twice
-   (「no strokes, no borrowed character, made by the app and never touched by
-   anybody」), and syPut() in www/sync.js asks it a third time when two rows
-   turn out to be one slot. One sentence, one place: an empty slot is the
-   app's, and anything else is somebody's. */
-function ltDrawn(l){ return !!l && (!!inkGeo(l) || !!l.ch); }
 /* THE THIRTY-EIGHT, ONCE EACH.
    「だからリリース前の今は消していいから、描いてないからリリースしてから確認
    してくれ、データがないから」OWNER 2026-09-04.
@@ -729,14 +727,14 @@ function ltStart(){
      planTook() (www/core.js) calls this again the moment the answer lands, so
      nothing is lost by waiting -- it is the same call at the moment the fact
      it needs becomes true, the shape langOwnGot() has for a language's owner.
-     Above ltJoinSlots() as well: that writes too. */
-  if(!planKnown()) return;
+     Above ltJoinSlots() as well: that writes too. (www/core.js § has) */
+  var ok=can('letters');
+  if(!planSaid(ok)) return;
   /* An alphabet that doubled before the ids were steady, put back to one of
      each. Above the plan, because a paid alphabet doubled the same way and
      the free plan is not what this is about. */
   ltJoinSlots();
-  if(can('letters')) return;
-  ltSlotsFill();
+  if(planNo(ok)) ltSlotsFill();
 }
 /* What this letter reads, spelled the way a person would write it. One word
    per unit, separated by spaces, because a letter may read more than one
@@ -1019,7 +1017,7 @@ function ltSetRoman(id, sp){
      is removed and why that is not somebody's work. */
   var into=ltFreeSlot(l);
   if(into){
-    if(l.st) into.st=JSON.parse(JSON.stringify(l.st));
+    if(inkGeo(l)) inkSet(into, JSON.parse(JSON.stringify(inkGeo(l))));
     if(l.ch) into.ch=l.ch;
     if(l.snd && l.snd.length){ into.snd=l.snd.slice(); into.chose=l.chose||0; }
     LETTERS.splice(LETTERS.indexOf(l), 1);
@@ -1049,7 +1047,7 @@ function ltToDigit(id, v){
   var l=ltById(id), d;
   if(!l) return id;
   d=numByVal(v);
-  if(d && d.id!==l.id && !ltDrawn(d)) ltDel(d.id);
+  if(d && d.id!==l.id && !ltHasShape(d)) ltDel(d.id);
   delete l.ab;
   l.val=v;
   l.snd=[];
@@ -1085,7 +1083,10 @@ function ltToDigit(id, v){
    refusal leaves the letter exactly as it was. With no second argument it
    reads the letter, which is what the call at the end of ltSetRoman does. */
 function ltFreeSlot(l, nm0){
-  if(can('letters')) return null;
+  /* A slot is the free plan's, and a name nobody has answered the plan for
+     takes nobody's row (www/core.js § has): measured, a Pro letter renamed to
+     a slot's name before verify-plan answered was spliced out of LETTERS. */
+  if(!planNo(can('letters'))) return null;
   var nm=String((nm0===undefined? (l&&l.ab) : nm0)||'').toLowerCase(), i, s;
   if(!nm) return null;
   for(i=0;i<LETTERS.length;i++){
@@ -1100,20 +1101,21 @@ function ltFreeSlot(l, nm0){
        out a second time. */
     if(s===l || numIsDigit(s)) continue;
     if(ltSlotKey(s)!==nm) continue;
-    if(ltDrawn(s)) return null;
+    if(ltHasShape(s)) return null;
     return s;
   }
   return null;
 }
 function ltSetStrokes(id, st){
   var l=ltById(id); if(!l) return null;
-  if(st && st.length){ l.st=st; l.ch=''; } else l.st=null;
+  inkSet(l, st);
+  if(inkGeo(l)) l.ch='';
   saveLetters(); return l;
 }
 function ltSetChar(id, ch){
   var l=ltById(id); if(!l) return null;
   ch=String(ch||'').trim();
-  if(ch){ l.ch=ch; l.st=null; } else l.ch='';
+  if(ch){ l.ch=ch; inkSet(l, null); } else l.ch='';
   saveLetters(); return l;
 }
 /* Deleting a letter: asked for, confirmed, and left behind. ltDel() below is
@@ -1163,7 +1165,7 @@ function ltDeleteGo(id){
      Nothing else changes: the name stays, the reading stays, and sndDropLoose
      is not called because the letter has not left. */
   if(l && ltIsBase(l)){
-    delete l.st; delete l.sh; delete l.ch;
+    inkSet(l, null); delete l.ch;
     saveLetters();
     if(GE && GE.lid===id) GE=null;
     save(); installScriptFont();
@@ -1366,11 +1368,8 @@ function spSetU(st, u){
    A character that answers to no letter is dropped rather than guessed at --
    the alphabet is the whole of what can be written. */
 function spType(text){
-  /* Whatever the Lingua keyboard put in the field comes back to roman first.
-     This is the one place a typed spelling becomes the language's letters, so
-     it is the one place that has to know the private use area exists --
-     everything past here is the alphabet's own names, as it always was. */
-  text=puaRoman(text);
+  /* Roman already: a field's value reaches here through www/act.js
+     (actTyped, actVal), which is where the private use area ends. */
   var names=[], by={}, i, n, cut, out=[];
   for(i=0;i<LETTERS.length;i++){
     n=String(ltName(LETTERS[i])||'').toLowerCase();
@@ -1398,7 +1397,7 @@ function spTypeField(id, into, sp, cls){
   /* In the person's own letters, because that is what the word IS. The box
      holds the letters' names -- a to z -- and roman is what those names look
      like, not what the word looks like. 「単語の文字のところが英語なのはなぜ？」 */
-  return lnField(id, '', IN(into), spWord(sp||[]), cls+(myFontOn()? ' tfont' : ''));
+  return lnField(id, '', IN(into), spWord(sp||[]), cls+' '+myFontField());
 }
 function spWord(sp){
   var out='', i, l;

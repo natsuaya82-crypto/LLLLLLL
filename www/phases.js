@@ -72,12 +72,10 @@ var STG=stBlank();
    is the one thing that could quietly drop somebody's work on an older
    build. docs/BACKLOG.md carries it. */
 function stRead(){
+  var stgs=slOpen('phases'), k;
   STG=stBlank();
-  try{
-    var stgs=JSON.parse(slRd(langKey('phases'))||'null'), k;
-    if(stgs) for(k in STG_DEF)
-      if(Object.prototype.hasOwnProperty.call(STG_DEF, k) && stgs[k]) STG[k]=stgs[k];
-  }catch(e){}
+  if(stgs) for(k in STG_DEF)
+    if(Object.prototype.hasOwnProperty.call(STG_DEF, k) && stgs[k]) STG[k]=stgs[k];
 }
 /* ---- the word order and the three positions belong to the LANGUAGE -------
    They belonged to the phone. SET.order and SET.gpos.{adj,negp,adp} live in
@@ -229,7 +227,6 @@ function migrateGramLang(){
      `SET.gpos` are READ here and never touched -- docs/DATA_SAFETY.md rule 2
      -- so there is nothing to save. */
 }
-migrateGramLang();
 stRead();
 function saveStg(){ if(langLocked()) return; bkTouch(); slWr(langKey('phases'), JSON.stringify(STG)); }
 
@@ -422,20 +419,20 @@ function stAll(){
   /* The stages somebody added, and only while the plan that added them is
      paid for. 「課金で追加した機能は無料になったら全部隠れる」 OWNER
      2026-09-01 -- the same as the words past a hundred and the letters past
-     the free alphabet: hidden, never removed. STG.extra is untouched, it is
-     in storage, in the backup and on the server, and paying again brings
-     every one of them straight back.
+     the free alphabet: hidden, never removed. STG.extra is untouched -- it is
+     in the language's `phases` slice on the server -- and paying again
+     brings every one of them straight back.
 
      The stages the book always has are not this: they are what a free grammar
      IS, and they stay. */
-  if(can('gram'))
+  if(!planNo(can('gram')))
     for(i=0;i<STG.extra.length;i++) out.push({id:STG.extra[i].id, slots:STG.extra[i].slots||[],
                                              pos:'x', own:STG.extra[i]});
   return out;
 }
 /* How many are not on screen. The foot of the list says so, the same way the
    dictionary and the alphabet do. */
-function stHidden(){ return can('gram')? 0 : (STG.extra? STG.extra.length : 0); }
+function stHidden(){ return planNo(can('gram'))? (STG.extra? STG.extra.length : 0) : 0; }
 /* Every argument the `gram` route takes -- the stages, and the chapters of
    the chapter that is being rebuilt. Both walks ask THIS rather than keeping
    a list of their own: tools/act-check.mjs's walkArg and tools/i18n-check.mjs's
@@ -605,10 +602,9 @@ function openOwnPhase(){
       lnField('st-t', t('stg.own.title.ph'), '', '')+'</div>'+
     '<div class="field"><label>'+t('stg.own.words')+'</label>'+
       '<textarea id="st-w" class="ntbody" style="min-height:120px" placeholder="'+esc(t('stg.own.words.ph'))+'"></textarea></div>'+
-    /* This one still says what it does: it is the button that makes the
-       thing the form is for, not one more row of a list. */
-    '<button class="btn" style="width:100%;margin-top:6px"' + DO('stAddOwn') + '>'+
-      t('stg.own.add')+'</button>');
+    /* The button that makes the thing the form is for, and it is the plus
+       (OWNER 2026-09-23 -- an add is a mark, not a word). */
+    markBtn(ICON_ADD2, t('stg.own.add'), 'stAddOwn'));
 }
 FORM_OPEN.own=function(){ openOwnPhase(); };
 /* Saying yes to the stage that is off the list. stMarkSet() is what stUsed()
@@ -621,9 +617,9 @@ function stAddOwn(){
   if(upStop(can('gram'))) return;
   var a=document.getElementById('st-t'), b=document.getElementById('st-w');
   if(!a) return;
-  var title=String(a.value||'').trim();
+  var title=actVal(a).trim();
   if(!title){ toast(t('stg.own.need')); return; }
-  var lines=String((b&&b.value)||'').split('\n'), slots=[], labels={}, i, s, k=0;
+  var lines=actVal(b).split('\n'), slots=[], labels={}, i, s, k=0;
   for(i=0;i<lines.length;i++){
     s=lines[i].trim();
     if(!s) continue;
@@ -631,14 +627,14 @@ function stAddOwn(){
   }
   STG.extra.push({id:'own'+(STG.extra.length+1)+'_'+WORDS.length+'_'+slots.length,
                  title:title, slots:slots, labels:labels, what:''});
-  saveStg(); closeSheet({target:{id:'sbg'}}); render(); toast(t('stg.own.added', title));
+  saveStg(); closeSheet(); render(); toast(t('stg.own.added', title));
 }
 /* Deleting one is gated too, and that is a change: it used to be open on
    every plan, on the grounds that a language which came down from a paid plan
    still owns what it made. It still owns it -- which is exactly why it cannot
    be thrown away from a plan that cannot make another one.
    「無料に戻ったら無料の形に戻る」 A stage of somebody's own stays on the
-   list, stays in the backup, and cannot be added to or removed until the plan
+   list, stays in the language, and cannot be added to or removed until the plan
    that made it is back. Gating a delete never costs anybody anything. */
 function stDelOwn(id){
   if(upStop(can('gram'))) return;
@@ -735,11 +731,11 @@ function stAddEx(id){
      is decided, so this stays one question asked in one place: it reads the
      dictionary and the word order, and it can be put samples through in Node.
      What was typed always wins; only an empty line is filled in. */
-  var gl=String((c&&c.value)||'').trim();
-  var ln=gExLine(String(b.value||''), gl);
+  var gl=actVal(c).trim();
+  var ln=gExLine(actVal(b), gl);
   if(!ln){ toast(t('word.ex.need')); return; }
   stExPut(id, stExKept(id).concat([
-    {lb:String((a&&a.value)||'').trim(), ln:ln, gl:gl}]));
+    {lb:actVal(a).trim(), ln:ln, gl:gl}]));
 }
 function stDelEx(id, i){
   var a=stExKept(id).slice();
@@ -1064,7 +1060,7 @@ function stSlotRow(p, k){
   return '<button class="stslot'+(w?' has':'')+'"' + DO('openSlot', [p.id, k]) + '>'+
     (p.id==='count'? numFace(k) : '')+
     '<span class="psm">'+esc(stSlotLabel(p, k))+'</span>'+
-    (w ? '<span class="psw">'+esc(w.hw)+'</span>'+
+    (w ? '<span class="psw">'+sfontHTML(wOut(w.hw))+'</span>'+
          '<span class="psi">'+esc(phIpa(wPh(w)))+'</span>'
        : '<span class="psn">'+t('stg.make')+'</span>')+
     ICON_GO+'</button>';
@@ -1098,7 +1094,7 @@ function stDetailHTML(p){
   out+='<div class="sec">'+t('stg.note')+'</div>'+
     '<textarea class="ntbody" style="min-height:90px" placeholder="'+esc(t('stg.note.ph'))+'" '+
     '' + IN('stNote') + '>'+esc(keepVal(keepKey(), 'note'))+'</textarea>';
-  if(p.own) out+='<button class="set" style="margin-top:18px;border-bottom:none"' + DO('stDelOwn', [p.id]) + '>'+
+  if(p.own) out+='<div class="grpsep"></div><button class="set end"' + DO('stDelOwn', [p.id]) + '>'+
     '<span class="sl bad">'+t('stg.own.del')+'</span></button>';
   return out;
 }

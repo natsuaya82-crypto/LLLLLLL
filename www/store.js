@@ -12,10 +12,11 @@
    phone and a call through it does nothing, silently. That cost four builds
    to learn once already -- www/share.js carries the long version of it.
 
-   **In a browser there is no App Store**, and that is not an error state to
-   be drawn: the plans screen goes on setting the plan by hand there, which is
-   how every check walks it, how every screenshot is taken, and how the owner
-   tries a tier on. storeOn() is the whole of the difference.
+   **In a browser there is no App Store**, and the plans screen is drawn
+   there exactly as on a phone -- every check walks it and every screenshot
+   is taken of it. Pressing a card or the cancel row says the App Store could
+   not be reached, and the plan does not move: nothing but verify-plan's
+   answer writes one. storeOn() is the whole of the difference.
 
    What this file does NOT do, deliberately:
 
@@ -45,11 +46,9 @@ function storeOn(){ return !!storePlug(); }
    「アカウントごとなんだから、違うアカウントで復元できるのおかしいだろ。
      検証して」 OWNER 2026-09-06.
 
-   `storeTook()` was here until 2026-09-06: it read `r.plan` -- a word the
-   phone had worked out -- and wrote it down. ios/App/App/LinguaStore.swift no
-   longer answers a plan at all. Every road out of it answers
-   `jws`: the signed transactions, exactly as Apple wrote them, and the one
-   thing that reads a signature is supabase/functions/verify-plan.
+   ios/App/App/LinguaStore.swift answers no plan at all. Every road out of it
+   answers `jws`: the signed transactions, exactly as Apple wrote them, and
+   the one thing that reads a signature is supabase/functions/verify-plan.
 
    So this file's job on every road is the same two lines: take the receipts,
    hand them to netPlanVerify(), and say what came back. */
@@ -106,10 +105,10 @@ function storeSync(){
    just pressed Cancel does not need to be told they cancelled. */
 function storeBuy(id){
   var np=storePlug();
-  if(!np) return false;
-  if(!netSignedIn()){ toast(t('store.nosess')); return true; }
+  if(!np){ toast(t('store.fail')); return; }
+  if(!netSignedIn()){ toast(t('store.nosess')); return; }
   toast(t('store.wait'));
-  np('LinguaStore', 'buy', { id:String(id||''), uid:SESS.uid })
+  np('LinguaStore', 'buy', { id:String(id||''), uid:netUid() })
     .then(function(r){
       var how=(r && r.how)? String(r.how) : '';
       if(how==='cancelled') return;
@@ -133,7 +132,6 @@ function storeBuy(id){
       });
     })
     ['catch'](function(){ toast(t('store.fail')); });
-  return true;
 }
 
 /* The Restore button. Apple wants one and this is it.
@@ -207,12 +205,12 @@ function storeRestore(){
    anything: somebody may have cancelled in there, and a cancellation is
    Apple's to say. It arrives as a transaction, which goes up with the rest.
 
-   In a browser there is no sheet to open, and the plan goes back to free by
-   hand -- which is what the button under it used to do on every plan, and is
-   how a tier is tried on and taken off again while none of them is on sale. */
+   In a browser there is no sheet to open, and the plan is not this button's
+   to write -- it is verify-plan's answer and nothing else (www/core.js §
+   PLAN) -- so it says there is no App Store, the way storeBuy() does. */
 function storeManage(){
   var np=storePlug();
-  if(!np){ setPlan('free'); return; }
+  if(!np){ toast(t('store.fail')); return; }
   np('LinguaStore', 'manage', {})
     .then(function(r){ netPlanVerify(storeJws(r), storeUntilTook); })
     ['catch'](function(){ toast(t('store.fail')); });
@@ -321,24 +319,20 @@ function storeRow(id){
    and the timer are two different things, and whichever of them happens first
    does not silence the other. What DOES silence an ask is a newer one --
    STORE_N. */
-/* WHAT THIS APPLE ID ACTUALLY HOLDS, asked once when the plans screen opens.
-   「ローディングすればそんなの起きないだろ」 OWNER 2026-09-03.
-
-   Nothing called `current` before, so the screen drew the plan out of the
-   copy in the Keychain -- written the last time anything answered. On a phone
-   where that copy is behind, somebody on Pro was shown a live 「buy Plus」
-   button and Apple took the press as a downgrade.
+/* WHAT THIS APPLE ID ACTUALLY HOLDS, asked the first time the plans screen
+   opens in a launch. 「ローディングすればそんなの起きないだろ」 OWNER
+   2026-09-03: a plan drawn before the answer lands can show somebody on Pro
+   a live 「buy Plus」, and Apple takes that press as a downgrade.
    「そもそもプロの人が買えるのが意味わからないだろ」 OWNER 2026-09-03.
 
-   Asking is not enough on its own: the answer is a moment later, and drawing
-   from the stale copy in that moment is the same bug in a smaller window.
    So the screen WAITS -- the same answer the owner gave about a language
    arriving after a sign-in, and the same mark drawn for it.
 
-   One call per visit, the latch storeAsk() already uses. The receipts go to
-   netPlanVerify() and the plan comes back from the server, which is the same
-   road every other one here takes. */
-var STORE_CUR=false;   /* asked this visit */
+   ONCE PER LAUNCH: STORE_CUR goes up on the first ask and nothing puts it
+   down, so a second visit to the plans screen draws from the answer the
+   first one got. The receipts go to netPlanVerify() and the plan comes back
+   from the server, which is the same road every other one here takes. */
+var STORE_CUR=false;   /* asked in this launch */
 var STORE_GOT=false;   /* and the answer is in */
 function storeHeld(){ return !storeOn() || STORE_GOT; }
 /* AND WHEN THE PLAN IN FORCE RUNS TO. 「消すなら同じ場所に現在このプランです

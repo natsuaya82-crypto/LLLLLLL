@@ -134,17 +134,23 @@ const IDS = { LA: LA, LB: LB, LC: LC };
 
 const OLD = {
   'lingua.sess': SESSION,
-  'lingua.me': JSON.stringify({ name: 'Aya', handle: 'aya', bio: '', pic: '',
+  /* The account's own keys (`lingua.<name>.<uid>`, www/core.js § ACCT): an
+     unmarked `lingua.me` / `lingua.langs` / `lingua.cur` is nobody's since
+     r79 and is not read, so a phone signed in as 'u' holds them under 'u'. */
+  'lingua.me.u': JSON.stringify({ name: 'Aya', handle: 'aya', bio: '', pic: '',
                                 link: '', loc: '', avSent: '' }),
-  'lingua.langs': JSON.stringify({ [LA]: { name: 'Vaska', mine: true },
+  'lingua.langs.u': JSON.stringify({ [LA]: { name: 'Vaska', mine: true },
                                    [LB]: { name: 'Tosk', mine: true } }),
-  'lingua.cur': LA,
+  'lingua.cur.u': JSON.stringify(LA),
   ['lingua.' + LA + '.words']: JSON.stringify([{ hw: 'tuf', mns: ['hello'], pos: 'n' }]),
   ['lingua.' + LA + '.lang']: 'Vaska',
   ['lingua.' + LA + '.phases']: JSON.stringify(LA_PHASES),
   ['lingua.' + LB + '.words']: JSON.stringify([{ hw: 'ark', mns: ['fish'], pos: 'n' }]),
   ['lingua.' + LB + '.lang']: 'Tosk',
-  'lingua.set': JSON.stringify({ theme: 'dark', plan: 'free', done: true,
+  /* `acct` is the stamp every launch with a session wrote until r79: these
+     settings are 'u''s, so they move under 'u' (www/core.js § acctMoved).
+     Without it they name nobody and are not read. */
+  'lingua.set': JSON.stringify({ theme: 'dark', plan: 'free', done: true, acct: 'u',
                                  order: 'OSV',
                                  gpos: { adj: 'before', negp: 'before', adp: 'after' } }),
   /* AND WHOSE THE TWO LANGUAGES ARE, which the app began asking on 2026-09-08.
@@ -178,7 +184,7 @@ const OLD = {
    version of the app left, it is the road the migration walks, and it is the
    half that survives pg.reload() while memory does not.
 
-   `lingua.set`, `lingua.langs` and `lingua.cur` are NOT slices -- the person's
+   `lingua.set`, `lingua.langs.u` and `lingua.cur.u` are NOT slices -- the person's
    settings and the index -- and stay on the disk in both directions. */
 const REPORT = (ids) => {
   const slice = (id) => {
@@ -244,9 +250,27 @@ await pg.goto(`http://localhost:${PORT}/`);
    (ltStart() refuses while nobody has answered, www/letters.js). Setting the
    word alone left the letters unwritten and the words unspelled, which is
    half the road and reads as the app being wrong. */
+/* The door onto a page waits for what that page reads (www/shell.js
+   § navLand, OWNER 2026-09-23 「読むのは開いた画面の分だけ」), and there is no
+   server behind this file -- the language is the one this phone holds. What
+   is asked here is what a rule writes, not the reads, so a page's answers
+   are taken as already in and a press lands where it always did. */
+/* AND WHOSE THE LANGUAGES ARE, SAID THE SAME WAY. The `owner.got` seeds above
+   are the picture a phone keeps, and the picture decides nothing
+   (www/core.js § langLocked, r60): a language is writable when the SERVER has
+   said, in this run of the app, that it is this account's -- LOWN, which
+   langOwnGot() writes when netLangsDown() answers. There is no server here,
+   so the answer is given after every reload exactly as the plan's is. Without
+   it every language is locked, save() writes nothing, and five claims read
+   「the grammar did not move」 for the wrong reason (measured 2026-09-24,
+   r79: langLocked() true, LOWN {}). */
 const boot = async () => {
   await pg.reload();
-  await pg.evaluate(() => planTook('free'));
+  await pg.evaluate(() => {
+    planTook('free');
+    window.pageWait = function (r, a, done) { done(true); };
+    Object.keys(LANGS).forEach(function (id) { langOwnGot(id, netUid()); });
+  });
 };
 
 /* ---- 1, 2, 3: it arrives, it copies, and nothing else moves ------------- */
@@ -287,7 +311,7 @@ want('and does not mark a decision as chosen', b.touchedAdp, false);
 const c = await pg.evaluate(() => {
   const id = langMint();
   langStore();
-  localStorage.setItem('lingua.cur', id);
+  localStorage.setItem('lingua.cur.u', JSON.stringify(id));
   return id;
 });
 await boot();
@@ -312,9 +336,9 @@ await pg.evaluate((seed) => {
   const old = seed.old, ids = seed.ids;
   localStorage.clear();
   Object.keys(old).forEach((k) => localStorage.setItem(k, old[k]));
-  const langs = JSON.parse(localStorage.getItem('lingua.langs'));
+  const langs = JSON.parse(localStorage.getItem('lingua.langs.u'));
   langs[ids.LC] = { name: 'Broken', mine: true };
-  localStorage.setItem('lingua.langs', JSON.stringify(langs));
+  localStorage.setItem('lingua.langs.u', JSON.stringify(langs));
   localStorage.setItem('lingua.' + ids.LC + '.phases', '[[[not json');
 }, { old: OLD, ids: IDS });
 await boot();
@@ -534,22 +558,29 @@ const k = await pg.evaluate(() => {
 want('the line reads exactly as it was typed', k.reads, 'tuf rice');
 want('and the word this dictionary does not have is the one marked', k.marked, 'rice');
 
-/* ---- 11, 12, 13: the model comes from the store when there is one --------
-   gModel() used to build the model from the stages every time. A language
-   with a model of its own under langKey('gram2') is read from it now, and
-   this is the road in -- nothing writes that key yet.
+/* ---- 11, 12, 13: the model comes from the language, and nothing else ----
+   gModel() read a model stored under langKey('gram2') in place of the
+   stages, and ADDED its inflections to the ones the chapters make. Nothing
+   ever wrote that key; it was a second answer to 「what is this language's
+   word order」 waiting for the first byte (r63-audit § 2-4 G2). The road is
+   gone, and what somebody may have under that key is not read, not written
+   and not removed.
 
    Nothing here can throw. A model read from the wrong place still arranges a
-   sentence; it arranges it by somebody else's word order. So all three are
-   about WHICH answer came back, never about whether one did.
-
-   The middle one is the load-bearing one: `words` is put back from WORDS on
-   every read, so a stored model can never become a second, stale copy of the
-   dictionary. Adding a word is how you see that -- a copy would not grow. */
+   sentence; it arranges it by somebody else's word order. So all three ask
+   WHICH answer came back, and they ask it by putting a stored model there
+   and requiring that it change nothing -- the same model with it as
+   without, and its bytes exactly as they were put down. */
 const m = await pg.evaluate(() => {
-  /* A model of this language's own: a word order the stages do not say, and
-     an inflection, which is the thing that has nowhere else to live. */
-  slWr('lingua.' + langId + '.gram2', JSON.stringify({
+  const key = langKeyOf(langId, 'gram2');
+  const shape = (x) => JSON.stringify({ o: x.wordOrder, i: x.inflections, d: x.derivations,
+                                        r: x.grammarRules.length, w: x.words.length });
+  slRm(key);
+  const none = gModel();
+  /* A model of this language's own, as the road used to take one: a word
+     order the stages do not say, an inflection, and a word the dictionary
+     does not have. */
+  const stored = JSON.stringify({
     schema: 'lingua.grammar', version: 2, languageId: langId,
     wordOrder: ['VERB', 'SUBJECT', 'OBJECT'],
     words: [{ id: 'hw:GONE', lemma: 'GONE', meaning: 'not in the dictionary' }],
@@ -557,55 +588,31 @@ const m = await pg.evaluate(() => {
                     value: 'NOMINATIVE', operation: 'suffix',
                     form: 'ga', separator: ' ' }],
     grammarRules: []
-  }));
-  const before = gModel();
-  const had = before.words.length;
-  /* The dictionary grows. A stored copy would not. */
-  WORDS.push({ hw: 'zzznew', pos: 'n', mns: ['new'], at: 1 });
-  const after = gModel();
-  const stale = after.words.filter((w) => w.lemma === 'GONE').length;
-  const grew = after.words.filter((w) => w.lemma === 'zzznew').length;
-  WORDS.pop();
-  /* And a language with no model of its own is untouched. */
-  slRm('lingua.' + langId + '.gram2');
-  const none = gModel();
+  });
+  slWr(key, stored);
+  const had = gModel();
+  const kept = slRd(key);
+  slRm(key);
   return {
-    order: before.wordOrder.join(','), infl: before.inflections.length,
-    storedRules: before.grammarRules.length,
-    had: had, dict: WORDS.length, stale: stale, grew: grew,
-    afterCount: after.words.length,
-    noneOrder: none.wordOrder.join(','), noneInfl: none.inflections.length,
-    /* Which words are the negation is put back on every read for the same
-       reason the words are: it names them by headword. */
-    rules: none.grammarRules.length
+    none: shape(none), had: shape(had), order: had.wordOrder.join(','),
+    noneOrder: none.wordOrder.join(','),
+    stale: had.words.filter((w) => w.lemma === 'GONE').length,
+    rules: none.grammarRules.length,
+    kept: kept === stored
   };
 });
 
-want('the stored model is the one that answers', m.order, 'VERB,SUBJECT,OBJECT');
-want('and it brought the inflection nothing else can hold', m.infl, 1);
-want('its words are this dictionary, not the ones it was stored with',
-     m.had, m.dict);
-want('a word the stored model carried is not in the model that came back',
-     m.stale, 0);
-want('and a word added to the dictionary afterwards IS', m.grew, 1);
-want('so the count followed the dictionary', m.afterCount, m.dict + 1);
-
-want('a language with no model of its own answers from its stages',
-     m.noneOrder, 'OBJECT,SUBJECT,VERB');
-want('with nothing invented in the slot nobody has filled', m.noneInfl, 0);
+want('the word order is the language\'s own, stored model or not', m.order, m.noneOrder);
+want('a language answers from its stages', m.noneOrder, 'OBJECT,SUBJECT,VERB');
+want('and a stored model changes nothing about the model -- order, inflections, ' +
+     'derivations, rules, words', m.had, m.none);
+want('a word a stored model carried is not in the model', m.stale, 0);
+want('and what was stored under gram2 is still there, byte for byte', m.kept, true);
 /* NOT A NUMBER. How many rules gRules() builds is what gRules() decides, and
    writing it here would be a second answer to it -- which is exactly what went
    red the day the 助詞 stage went from three roles to seven. What is held is
-   the two things the label says: there ARE some, and a stored model comes back
-   with the same ones a model with none does. */
-want('and the rules that name words are built fresh either way',
-     m.rules > 0, true);
-/* The one the objection is about. The stored model above carries an EMPTY
-   grammarRules on purpose: a rule there says 'hw:<headword>' and would stop
-   matching the day that word was renamed, so it is rebuilt from the stages on
-   every read exactly as the words are. Empty in, the same ones out. */
-want('a model stored with no rules still comes back with the ones the stages say',
-     m.storedRules, m.rules);
+   that there ARE some. */
+want('and the rules that name words are built fresh', m.rules > 0, true);
 
 /* ---- 14-19: a mark takes a word out of the queue, wherever it stands -----
    The engine has been able to hear a case mark since the day morphology.js
@@ -1565,97 +1572,38 @@ want('and its row starts a NOUN rule', mk.secondPos, 'n');
 want('of the form that section names', mk.secondFm, 'pl');
 want('a chapter that is not a section offers no rule to write', mk.nounAdds, 0);
 
-/* ---- 99-106: the words a chapter's rules make are made from the chapter ---
-   「fmrAddAll（規則が作る語をまとめて作る）も、その章のページへ。どこにも無く
-   なると、規則を作っても語が出ません。」
+/* ---- 99-102: a chapter's rules make FORMS, and never words ----------------
+   「活用は活用であって単語じゃない」「活用は数えないにしよう」 OWNER 2026-09-23.
 
-   The rules screen that used to carry this button is being closed, so the
-   chapter is where it goes. It is narrowed to the chapter rather than moved
-   whole: standing on the verbs and having it write every noun's plural would
-   be the button doing more than the page it is on says.
+   The chapter used to carry a button that wrote every form its rules made into
+   the dictionary as a word of its own (fmrAddAll), narrowed to the chapter it
+   was pressed on. An inflection is not a word now: what a rule makes is on the
+   word's page, worked out when it is asked (wForms(), www/wordsheet.js), and
+   there is nothing left to make -- so the button went with the words it made.
 
-   Nothing here throws either way. A button that made everything would look
-   exactly right on the chapter it was pressed from -- the words it was asked
-   for ARE among the ones it made -- and the surprise is on another screen
-   entirely, which is why what is asked below is what did NOT get made. */
+   What is asked is that each rule's form arrives on its OWN part of speech's
+   words, and that drawing the chapter wrote nothing into the dictionary. */
 const all = await pg.evaluate(() => {
   const sp = (w) => w.split('').map((u) => ({ l:'', u:u }));
   const wasFm = JSON.stringify(STG.fm || []), wl = WORDS.length;
-  /* LA already has one noun, `tuf`. A second noun, so the count is a count
-     and not a one; and a verb, which is the word the noun chapter must leave
-     alone. */
   WORDS.push({ hw:'kano', pos:'n', mns:['stone'], at:1 });
   WORDS.push({ hw:'zluma', pos:'v', mns:['eat'], at:1 });
   STG.fm = [{ id:'a1', pos:'n', fm:'pl',  at:'end', drop:0, when:'', add:sp('k') },
             { id:'a2', pos:'v', fm:'pst', at:'end', drop:0, when:'', add:sp('ka') }];
-
-  const open = (id) => { window.route = 'gram';
-    NAV = [{ r:'gram', a:'v2:' + id }]; render(); };
-  const btn = () => document.querySelector('#app [data-do="fmrAddAll"]');
-  const ask = (id) => { open(id); const b = btn();
-    return b ? b.getAttribute('data-a') : ''; };
-
-  /* The SECTION the form is in, because that is where a rule of that form now
-     lives: 複数形 for the nouns' plural, 時制 for the verb's past. The chapter
-     that used to hold both -- 名詞 -- holds no rule at all and is asked about
-     below. */
-  const nBefore = ask('pl'), vBefore = ask('tense'), plainBefore = ask('n');
-  open('pl');
-  /* Said rather than left to throw. A missing button is the failure this
-     whole commit is against -- 「どこにも無くなると、規則を作っても語が出ま
-     せん」 -- and `undefined.click` names neither the screen nor the reason. */
-  if (!btn()) throw new Error('the plural chapter carries no way to make its words');
-  btn().click();
-  const spellings = WORDS.map((w) => w.hw).join(' ');
-  const madePos = WORDS.filter((w) => w.from).map((w) => w.pos + ':' + w.fm).join(' ');
-  const vKids = WORDS.filter((w) => w.from === 'zluma').map((w) => w.hw).join(' ');
-  /* and with no kind it is still everything, which is what it always was */
-  const rest = fmrTodoAll().map((x) => x.w.hw + '>' + x.m.fm).join(' ');
-
+  const forms = (hw) => wForms(findWord(hw)).map((f) => f.fm).join(' ');
+  window.route = 'gram'; NAV = [{ r:'gram', a:'v2:pl' }]; render();
+  const noun = forms('kano'), verb = forms('zluma'),
+        made = WORDS.length - wl - 2,
+        btn = document.querySelectorAll('#app [data-do="fmrAddAll"]').length;
   WORDS.length = wl;
   STG.fm = JSON.parse(wasFm);
   save();
-  return { nBefore: nBefore, vBefore: vBefore, plainBefore: plainBefore,
-           spellings: spellings,
-           madePos: madePos, vKids: vKids, rest: rest };
+  return { noun: noun, verb: verb, made: made, btn: btn };
 });
-
-/* The button carries the chapter's own answer to both questions: whose words,
-   and of which forms. Read off data-a rather than off the label, because the
-   label is a count and a count is arrived at by accident. */
-want('the plural chapter offers to make the words its rule makes',
-     all.nBefore, '["n",["pl"]]');
-/* A SECTION ASKS FOR EVERY FORM IT IS MADE OF. 時制 is six, so the button says
-   six -- pressing it on the page that says 時制 and having it make only the
-   past would be the button doing less than the page it is on says. */
-want('and the tense section offers every form it is made of', all.vBefore,
-     '["v",["prs","pst","fut","plp","prg","prf"]]');
-want('and a chapter that is not a section offers none', all.plainBefore, '');
-/* Two nouns had a plural to make and one verb had a past. Pressing on the
-   nouns makes the two, and `kano` comes back `canok` -- the word is re-spelled
-   in this language's letters, whose letter for /k/ is named c. Same round trip
-   as the one written out at 20-31; it is fmrMake()'s business and not what is
-   under test here. */
-want('pressing it makes this chapter\'s words', all.spellings,
-     'tuf kano zluma tufk canok');
-want('and every one of them is of this chapter', all.madePos, 'n:pl n:pl');
-/* The two that would have gone silently wrong. A button that made everything
-   would have made the verb's past as well, and the noun chapter it was pressed
-   from would look exactly the same afterwards -- the surprise is a screen
-   away. So what is asked is what did NOT happen.
-
-   Asked of the VERB rather than of the verb chapter's button. The button is
-   drawn from a count, and with the bug put back that count does not reach
-   zero either: the past it wrongly made has a past of its own to make
-   (docs/BACKLOG.md). The claim went green with the bug in until it was asked
-   this way instead. */
-want('and the verb was left with no past on it', all.vKids, '');
-want('and asked for with no kind it is still there too',
-     all.rest.split(' ').indexOf('zluma>pst') >= 0, true);
-/* What the noun chapter offers now is the plural of a plural -- docs/BACKLOG.md
-   「作られた語が、また作られる」. It is fmrTodo()'s and predates this button
-   moving, so it is not asserted here in either direction; what is asserted is
-   that the verb was left alone, which is this commit's whole claim. */
+want('the plural is a form of the noun', all.noun, 'pl');
+want('and the past a form of the verb, and nothing else', all.verb, 'pst');
+want('and drawing the chapter wrote no word', all.made, 0);
+want('and it offers to make none', all.btn, 0);
 
 /* ---- the noun chapter is never blank -------------------------------------
    「文法の名詞ページ見たけど、真っ暗で何もない」 OWNER 2026-09-05.
@@ -2289,8 +2237,8 @@ console.log('          somebody already has, the settings still hold their copy,
 console.log('          nothing else in a stage moves, an unreadable slice is left');
 console.log('          alone, and a language made afterwards is born with none.');
 console.log('          Changed in one language, the other one does not move.');
-console.log('          A language with a model of its own is read from it, and its');
-console.log('          words are this dictionary every time rather than a copy.');
+console.log('          The model is built from the language every time: a model');
+console.log('          stored under gram2 changes nothing, and is left as it was.');
 console.log('          A particle somebody made is a word, and a word carrying one');
 console.log('          is the doer wherever it stands.');
 console.log('          What somebody wrote on the forms page reaches the engine,');

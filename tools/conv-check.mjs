@@ -268,6 +268,24 @@ const R = await pg.evaluate(() => {
     const map = conv.map;
     const keys = Object.keys(map);
     rec.mapKeys = keys.length;
+
+    /* 12. every FORM of every word is offered as well as the word. An
+       inflection is not a word since 2026-09-23 -- 「キーボードの変換もできる
+       ように」 OWNER -- so it is not in WORDS to be walked. Asked of wForms(),
+       the app's one answer to what a word's forms are, and only of a form
+       whose letters are all letters this language has, which is the same
+       thing asked of a word. Counted, so a run where no form qualified is
+       seen rather than passing on nothing. */
+    rec.forms = 0;
+    WORDS.forEach((wd) => wForms(wd).forEach((f) => {
+      const sp = f.sp || [];
+      if (!sp.length || sp.some((x) => !x || !x.l || !ltById(x.l))) return;
+      rec.forms++;
+      const k = spWord(sp).toLowerCase();
+      if (!Object.prototype.hasOwnProperty.call(map, k))
+        fails.push(w + ': "' + k + '", the ' + f.fm + ' of ' + wd.hw +
+          ', is not offered -- a form the keyboard cannot turn into letters');
+    }));
     rec.bytes = JSON.stringify({ ink: ink, conv: conv }).length;
 
     /* 1. every index in map points at a real ink entry */
@@ -488,6 +506,75 @@ const R = await pg.evaluate(() => {
     }
   }
 
+  /* 10b. THE APP GROUP IS THE ACCOUNT'S, AND NOBODY'S IS EMPTY.
+
+     「NOTHING IS THE PHONE'S. EVERYTHING IS THE ACCOUNT'S」 (CLAUDE.md). The
+     three files the keyboard and the widget read were handed over with
+     nobody's name on them, and nothing ever took them back: signed out, or
+     another account, or an account deleted, the last person's letters stayed
+     on the keyboard and the widget (r63 § 2-1 K5, measured). LinguaShare.swift
+     writes what it is handed and removes what is handed empty, so what is
+     held here is what the REAL sharePush() hands the bridge.
+
+     Counted, not listed: whatever keys a signed-in push hands over, the push
+     for nobody hands the SAME keys, every one of them ''. A fourth file added
+     to the hand-over tomorrow is emptied tomorrow or this is red. Then the
+     three moments the account moves: signed out, the open language still the
+     last person's (LANG_WAIT), and somebody else signed in. */
+  {
+    const given = [];
+    const realCap = window.Capacitor, keepSess = JSON.parse(JSON.stringify(SESS));
+    window.Capacitor = { nativePromise: function(p, m, a){
+      if (p === 'LinguaShare' && m === 'write') given.push(a);
+      return Promise.resolve({});
+    } };
+    try {
+      SHARE.sent = null;
+      sharePush();
+      const mine = given.shift() || {};
+      const keys = Object.keys(mine).sort();
+      if (!keys.length || !keys.some((k) => mine[k]))
+        fails.push('a signed-in push handed over nothing (' + JSON.stringify(keys) +
+          ') -- the keyboard would never get the letters drawn for it');
+      SESS = null;
+      sharePush();
+      const none = given.shift();
+      if (!none)
+        fails.push('signed out, and nothing was handed to the App Group -- the ' +
+          'last account\'s ' + keys.join(', ') + ' stay on the keyboard and the widget');
+      else {
+        const nk = Object.keys(none).sort();
+        const full = nk.filter((k) => none[k] !== '');
+        if (nk.join() !== keys.join() || full.length)
+          fails.push('signed out, the App Group was handed ' + JSON.stringify(nk) +
+            ' with ' + (full.join(', ') || 'nothing') + ' still carrying bytes -- it ' +
+            'has to be the same ' + keys.length + ' keys, every one of them empty');
+      }
+      SESS = JSON.parse(JSON.stringify(keepSess));
+      sharePush();
+      given.length = 0;
+      LANG_WAIT = true;
+      sharePush();
+      const wait = given.shift();
+      if (!wait || Object.keys(wait).some((k) => wait[k] !== ''))
+        fails.push('signed in with the last person\'s language still open ' +
+          '(LANG_WAIT) and ' + (wait ? 'their letters were handed over' : 'nothing ' +
+          'was handed') + ' -- that language is not this account\'s to put there');
+      LANG_WAIT = false;
+      SESS.uid = keepSess.uid + '-other';
+      sharePush();
+      const other = given.shift();
+      if (!other || !other.json)
+        fails.push('another account signed in and nothing was handed over -- the ' +
+          'App Group stays whatever the last push left');
+    } finally {
+      window.Capacitor = realCap;
+      SESS = keepSess;
+      LANG_WAIT = false;
+      SHARE.sent = null;
+    }
+  }
+
   /* 11. the typing face carries nothing but the range it is for.
      ------------------------------------------------------------------
      CLAUDE.md rule 10 says it in those words: ".tfont is set in LinguaType,
@@ -552,6 +639,10 @@ const R = await pg.evaluate(() => {
     }
   }
 
+  if (!systems.some((x) => x.forms > 0))
+    fails.push('no writing system had a single form of a word to offer, so' +
+      ' claim 12 was asked of nothing -- the fixture has a rule making a' +
+      ' plural and a noun it reaches');
   return { fails: fails, systems: systems, listedCount: list.length,
            guessed: guessed };
 });
@@ -567,7 +658,7 @@ console.log('writing systems walked: ' + R.systems.length +
   ' (' + R.systems.map((s) => s.w).join(', ') + ')');
 R.systems.forEach((s) => {
   console.log('  ' + s.w + ':  ink ' + s.ink + '  map ' + s.mapKeys +
-    ' keys  roman layer ' + (s.roman ? 'yes' : 'no') +
+    ' keys  forms ' + (s.forms || 0) + '  roman layer ' + (s.roman ? 'yes' : 'no') +
     '  table ' + (s.bytes / 1024).toFixed(1) + ' KB');
 });
 const largest = R.systems.reduce((m, s) => Math.max(m, s.bytes), 0);
@@ -581,7 +672,7 @@ if (R.fails.length) {
   if (R.fails.length > 40) console.error('  ...and ' + (R.fails.length - 40) + ' more');
   process.exit(1);
 }
-console.log('\nall eleven claims hold, for every writing system: every map index' +
+console.log('\nall twelve claims hold, for every writing system: every map index' +
   ' resolves, max is the longest key, nothing in ink goes unreached, every' +
   ' key is lower case and unique, the roman layer appears exactly where the' +
   ' person CHOSE one and never where the app merely guessed, and wears' +
@@ -591,8 +682,10 @@ console.log('\nall eleven claims hold, for every writing system: every map index
   ' keyboard types is drawn in the letters somebody drew, and what any other' +
   ' keyboard types is not. And nothing is cut until there is something new' +
   ' to cut: the first push cuts, two pushes with nothing changed cut once,' +
-  ' and a letter redrawn cuts again. And the typing face carries nothing' +
+  ' and a letter redrawn cuts again. And what the App Group is handed is the' +
+  ' signed-in account\'s: the same keys all empty for nobody, and for a' +
+  ' language that is still the last person\'s. And the typing face carries nothing' +
   ' but the range it is for: LinguaType answers for no space, so U+0020 in' +
   ' a .tfont field falls through like every roman letter beside it, while' +
   ' LinguaScript keeps its one-cell space, which is the drawn script\'s' +
-  ' own spacing.');
+  ' own spacing. And every form of every word is offered beside the word.');

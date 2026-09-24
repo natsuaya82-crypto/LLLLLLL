@@ -127,7 +127,11 @@ function geStep(){ return (800 - GGRID.inset*2) / (GGRID.n - 1); }
    by exactly the arithmetic the making side uses. geSide() reads the OPEN
    language and is the making side's; below post.js's line a post asks
    postSide() instead, and sides-check holds that. */
-function inkSteps(sp){ return (typeof sp==='number' && isFinite(sp) && sp>=0)? sp : SP_RANGE.def; }
+/* And a value off a POST is somebody else's number: it is held to the same
+   range the slider writes (spClamp(), www/wsys.js -- SP_RANGE's one reader),
+   because `sp:50` came out 1800 wide (docs/scope/r73-audit.md § 2-4,
+   measured) and the range was written in two places, one with no top. */
+function inkSteps(sp){ return (typeof sp==='number')? spClamp(sp) : SP_RANGE.def; }
 function inkSide(sp){ return geStep()*inkSteps(sp); }
 function geSide(){ return inkSide(SCRIPT.sp); }
 /* Where the ink can reach, in font space, which is y-up from the baseline.
@@ -140,16 +144,12 @@ function geSide(){ return inkSide(SCRIPT.sp); }
    beside a letter are the same number, and neither is a screen's to decide. */
 function geInkTop(){ return Math.round(800 - (GGRID.inset - GPEN.width/2)); }
 function geInkSpan(){ return Math.round(geStep()*(GGRID.n-1) + GPEN.width); }
-/* The rows of dots the editor's three guide lines run along, top to bottom.
-   Measured off how a letter is put into the font, not chosen: LinguaFont
-   turns the square into font space as 800 - y (otf5.js), and the font's
-   ascender is geInkTop(). So a stroke on the TOP row reaches exactly the
-   ascender, a stroke on the BOTTOM row is the lowest ink can go -- the
-   baseline itself is y=800, which is off the lattice, and the ink rests the
-   inset less half a pen above it -- and the MIDDLE row is the half-way of
-   that ink span. tools/guide-check.mjs builds the font and measures all
-   three. Drawn only; nothing stores them and no letter, key, tile or card
-   carries them. */
+/* The rows and columns of dots the editor's guides run along: a 口 round
+   the lattice (the first and last row, the first and last column) and a 十
+   through its middle -- 田. 「十時に引いて口と十で引けばいいんじゃない？」
+   OWNER 2026-09-23. The same three numbers across and down, because the
+   lattice is square. Drawn only; nothing stores them and no letter, key,
+   tile or card carries them. tools/guide-check.mjs holds it. */
 function geGuideRows(){ return [0, (GGRID.n-1)/2, GGRID.n-1]; }
 function geSnap(v){
   var s=geStep(), i=Math.round((v - GGRID.inset) / s);
@@ -203,11 +203,41 @@ function scriptLetters(){ return wsUnits(); }
    letter that exists today moves and there is nothing to migrate.
 
    A stroke is an object with pts on it and a ring is a plain array of points,
-   so nothing has to be stored to tell the two apart. */
+   so nothing has to be stored to tell the two apart.
+
+   THESE THREE ARE THE ONLY THINGS THAT TOUCH `st` AND `sh` ON A LETTER.
+   「形があるか・何かは inkGeo() だけが答える」 r73 §2-12. Thirteen places asked
+   `l.st` for themselves, and to every one of them a letter off a sheet had no
+   shape: a digit written on a sheet read as blank and was deleted when the
+   base came down, a shape named into a free slot arrived without its rings,
+   and a sheet letter drawn over went on showing the sheet. inkGeo() says what
+   a letter's shape is, inkRings() which kind a shape is, and inkSet() is the
+   one writer, so "one and never both" is kept in one place rather than by
+   everybody who assigns. tools/ink-check.mjs counts every `.st` and `.sh` in
+   www/ and fails one on a letter anywhere else. */
 function inkGeo(l){
   if(!l) return null;
   if(l.sh && l.sh.length) return l.sh;
   return (l.st && l.st.length)? l.st : null;
+}
+function inkRings(g){ return !!(g && g.length && g[0] && g[0].pts===undefined); }
+/* A letter's shape becomes `g`, whichever kind it is, and the other kind
+   goes. Nothing, or an empty list, is no shape. `st` is null rather than
+   absent because that is how ltNew() has always stored a letter nobody drew. */
+function inkSet(l, g){
+  var has=!!(g && g.length);
+  l.st=(has && !inkRings(g))? g : null;
+  if(has && inkRings(g)) l.sh=g; else delete l.sh;
+}
+/* Every point of a shape, of either kind, as the arrays themselves -- so a
+   caller moving them moves the shape. */
+function inkPts(g){
+  var out=[], i, a, j;
+  for(i=0;g && i<g.length;i++){
+    a=inkRings(g)? g[i] : g[i].pts;
+    for(j=0;j<a.length;j++) out.push(a[j]);
+  }
+  return out;
 }
 /* ---- an area is the inside of a RING, and a ring gets drawn a side at a time
    On a lattice nobody draws a square in one sweep: they draw the top, then
@@ -305,7 +335,7 @@ function inkJoinFills(v){
   return grew? out : v;
 }
 function inkDef(v){
-  if(v && v.length && v[0] && v[0].pts===undefined) return {sh:v};
+  if(inkRings(v)) return {sh:v};
   return {strokes: (v && v.length)? inkJoinFills(v) : v};
 }
 
@@ -457,8 +487,7 @@ function scriptSig(){
   for(i=0;i<LETTERS.length;i++){
     l=LETTERS[i];
     s.push(l.id+':'+(l.ab||'')+':'+ltUnits(l).join('')+':'+
-           (l.st? JSON.stringify(l.st).length : 0)+':'+
-           (l.sh? JSON.stringify(l.sh).length : 0));
+           (inkRings(inkGeo(l))? 'r' : 's')+JSON.stringify(inkGeo(l)||[]).length);
   }
   /* and what the writing system composes, which is not any letter */
   scriptLetters().forEach(function(r){
@@ -494,8 +523,8 @@ var PUA0=0xE000;
 /* WHICH letters are in the typing face, and in what order.
    ------------------------------------------------------------------
    The one place that answers it. Four places were asking it separately --
-   installTypeFont built the face from this list, puaRoman read a code point
-   back out of it, postCutTyped cut a post's ink with it, and sharePua told
+   installTypeFont built the face from this list, puaTyped reads a code point
+   back out of it, puaField puts one back into a field, and sharePua told
    the keyboard what to type -- and all four had the expression written out.
 
    Four copies of a rule is four chances for one of them to drift, and the
@@ -510,23 +539,59 @@ function ltPuaOrder(){
   return ltOrder(LETTERS.filter(function(l){ return !!inkGeo(l); }));
 }
 function ltPua(i){ return String.fromCharCode(PUA0+i); }
-/* Back to roman. The private use area is what the Lingua keyboard types INTO
-   a field and it goes no further: everything downstream of the field -- the
-   gloss under the composer, findWord, the spelling engine, what is stored,
-   what a post carries -- works on the roman spelling and always has. A code
-   point nobody else's font has would be a square box on somebody else's
-   phone; the roman is readable there.
+/* WHAT A FIELD HOLDS, AS THE LANGUAGE READS IT -- and the private use area
+   goes no further than this.
+   ------------------------------------------------------------------
+   The Lingua keyboard types U+E000 upward into a field and nothing else on a
+   phone types one. Everything past the field -- the gloss, findWord, the
+   spelling engine, what is stored, what a post carries, what a search asks
+   -- works on the roman spelling and always has; a code point nobody else's
+   font has is a box on somebody else's phone, and its NUMBER means a letter
+   only in this alphabet's order at this moment, so one stored and read back
+   after a letter was drawn is somebody else's letter (r73 §2-10, measured:
+   「kth」 came back 「th」).
 
-   The order is the alphabet's, which is the order installTypeFont mapped
-   them in, so the two cannot disagree: they read the same list. */
-function puaRoman(txt){
-  var s=String(txt||''), out='', i, c, at,
-      lts=ltPuaOrder();
+   So a field's value is read HERE and nowhere else (the one delivery in
+   www/act.js), and it comes out as two things from one pass: `ln`, the roman,
+   and `cut`, the line as it was TYPED -- `{id}` where the Lingua keyboard put
+   a letter, `{t}` for everything else. The cut is what knows which keyboard
+   typed what (「Linguaキーボードで打ったやつだけ自作文字に」), and it holds a
+   letter's id rather than its number, so it means the same letter whatever
+   is drawn later. A letter with no name is in the cut and not in the roman.
+
+   A private use character that is not one of this alphabet's -- a number
+   past the end, or a post's own shape pasted in -- is no letter here, and it
+   says so with the replacement character rather than travelling on. */
+function puaTyped(txt){
+  var s=String(txt||''), lts=ltPuaOrder(), ln='', cut=[], tx='', i, c, at;
   for(i=0;i<s.length;i++){
     c=s.charCodeAt(i);
     at=c-PUA0;
-    if(at>=0 && at<lts.length) out+=(ltName(lts[at])||'');
-    else out+=s.charAt(i);
+    if(at>=0 && at<lts.length){
+      if(tx){ cut.push({t:tx}); tx=''; }
+      cut.push({id:lts[at].id});
+      ln+=(ltName(lts[at])||'');
+      continue;
+    }
+    c=(c>=0xE000 && c<=0xF8FF)? '\uFFFD' : s.charAt(i);
+    tx+=c; ln+=c;
+  }
+  if(tx) cut.push({t:tx});
+  return {ln:ln, cut:cut};
+}
+/* And back: a cut as what the field shows -- each letter the character the
+   typing face draws it with now, a letter that has no shape any more as its
+   name. The same order as puaTyped() and installTypeFont(), because all
+   three read ltPuaOrder(). */
+function puaField(cut){
+  var lts=ltPuaOrder(), out='', i, u, l, k;
+  for(i=0;i<(cut||[]).length;i++){
+    u=cut[i];
+    if(!u) continue;
+    if(u.id===undefined){ out+=String(u.t||''); continue; }
+    l=ltById(u.id);
+    k=l? lts.indexOf(l) : -1;
+    out+= k>=0? ltPua(k) : String((l && ltName(l)) || '');
   }
   return out;
 }
@@ -589,8 +654,38 @@ function installScriptFont(){
 /* Two ways to see your language in its own writing exist side by side: letters
    you borrowed from an existing script, which change the text itself, and
    letters you drew, which change only the face the same text is set in. This
-   one is the drawn one, so it is named for the font and not for the script. */
-function myFontOn(){ return !!SET.myfont && SFONT.built; }
+   one is the drawn one, so it is named for the font and not for the script.
+
+   WHETHER THE PERSON WANTS IT is myFontWant(), and it is the ONE place
+   SET.myfont is read: this, and the switch on the writing page, both ask it.
+   「オンをデフォルトにしてくれ。」 OWNER 2026-09-23 -- nobody-has-decided is
+   ON, and only a person turning it off (setMyFont(false)) is off. Somebody
+   who walked past the drawing in the onboarding and drew later used to see
+   roman, because the field was absent and absent read as off. */
+function myFontWant(){ return SET.myfont!==false; }
+function myFontOn(){ return myFontWant() && SFONT.built; }
+/* ONE LETTER ON A LINE OF THE LANGUAGE: the character of the typing face that
+   draws its shape (inkChar, at the language's gap), or '' -- which is roman,
+   and what roman is (a name, a value) is the caller's to say. Roman when the
+   drawn letters are off, and roman where nothing was drawn, a borrowed
+   character included: 「ローマ字」 OWNER 2026-09-23. The calendar's digits
+   used to decide this for themselves and drew the shape with the switch off
+   and the borrowed character where none was drawn (r73 §2-11);
+   tools/ink-check.mjs B holds it. */
+/* A FIELD a word of the language is typed into wears the typing face when the
+   drawn letters are on, so what the Lingua keyboard puts in comes out as the
+   shapes. Three fields ask it -- a spelling (spTypeField), a form of a word
+   (addFmHTML), a word for a rule (g2PolPickHTML) -- and it is written here
+   once because whether a field is set in the drawn letters at all is not
+   settled: 2026-08-13 「A field is in ordinary letters」 and 2026-09-23
+   「一行を描く仕組みを一つに」 disagree, and the post's own field wears the
+   face whatever the switch says (docs/scope/r73-audit.md § 5-14). The
+   answer, when it comes, is this line. */
+function myFontField(){ return myFontOn()? 'tfont' : ''; }
+function ltLineChar(l){
+  var g=inkGeo(l);
+  return (g && myFontWant())? inkChar(g, geSide()) : '';
+}
 /* ---- and which of the characters in front of you it can actually draw ----
    「アプリ内はみんなが見れる仕様なんだから、どこがおかしいかじゃなくて全部
    見れるように一本化」 OWNER 2026-09-06, about a row of NO GLYPH boxes on an
@@ -611,12 +706,14 @@ function myFontOn(){ return !!SET.myfont && SFONT.built; }
    character if a drawn shape carries it, else it is roman. SFONT.one and
    SFONT.seq come off the build, so this can never disagree with the file.
 
-   ONE PLACE. sfontHTML() is what every screen calls, and no screen asks
-   myFontOn() about text again: the answer is per character now, and a second
-   place asking it is a second answer. What it does not reach is a TEXTAREA --
-   the composer's line over a photograph, which cannot hold a span -- and the
-   card and the timeline, which draw ink rather than text and were never
-   asking this question. */
+   ONE PLACE FOR TEXT. sfontHTML() is what every screen calls to show a word,
+   and the answer is per character. myFontOn() is asked by three other things
+   and each is a different question: a FIELD (myFontField, below -- a textarea
+   cannot hold a span), whether a word is spelled in BORROWED characters
+   instead (wOut in www/home.js), and this. What sfontHTML does not reach is
+   the composer's line over a photograph, a textarea too, and the card, the
+   timeline and a letter on a line, which draw ink (inkChar, ltLineChar) rather
+   than this font. */
 function sfontRuns(txt){
   var s=String(txt||''), out=[], i=0, on='', off='', hit, k, q;
   if(!s) return out;
@@ -649,7 +746,7 @@ function sfontHTML(txt){
 }
 function setMyFont(v){
   SET.myfont=!!v;
-  if(SET.myfont && !SFONT.built) installScriptFont();
+  if(v && !SFONT.built) installScriptFont();
   /* AND IT GOES WITH THE ACCOUNT (www/core.js § SET_PREFS, 2026-09-09). It
      was 「how this handset is set up」, so a second phone showed somebody the
      roman letters after they had turned them off on the first. */
@@ -671,7 +768,9 @@ var GE=null;
    exactly the assumption 「音に対して文字入れるのおかしくね？」 objects to. GE.lid
    is which letter; GE.r is only what to call it on screen. */
 function newGE(lid, label){
-  var l=ltById(lid), src=(l && l.st)? l.st : [];
+  /* The editor draws strokes. A letter off a sheet is rings and opens on an
+     empty paper; what is saved there replaces it (inkSet). */
+  var l=ltById(lid), g=inkGeo(l), src=(g && !inkRings(g))? g : [];
   var r=label || ltName(l) || '';
   /* A letter opened for editing is finished work, the same as a drawing
      handed back by undo, so it opens sealed: the first press starts a new
@@ -1061,6 +1160,12 @@ var ICON_SHARE='<svg class="ic" viewBox="0 0 24 24" width="15" height="15" fill=
   'stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
   '<path d="M12 15V3"/><path d="M8.5 6.5 12 3l3.5 3.5"/>'+
   '<path d="M20 13v6.5a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 19.5V13"/></svg>';
+/* send: the paper plane. 「送信なら紙飛行機マークにしてるはずなんだけど」
+   OWNER 2026-09-23 -- an operation every phone already draws is drawn, and
+   the word is the button's aria-label (CLAUDE.md § Shape, marks-check). */
+var ICON_SEND='<svg class="ic" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" '+
+  'stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
+  '<path d="M21 3 10.5 13.5"/><path d="M21 3 14.5 21l-4-7.5L3 9.5z"/></svg>';
 /* What a post can be given: the camera, the pictures already on the phone,
    and the microphone. One plus used to stand for all three and only ever
    meant the second. 「photoボタンやめて。📷 ライブラリ マイクボタンにして」 */
@@ -1647,11 +1752,14 @@ function geNow(){ return GE? {ink:JSON.stringify(geInk(GE.st))} : {ink:''}; }
 function geKeep(){
   var keep=geInk(GE.st);
   ltSetStrokes(GE.lid, keep);
-  /* Drawing a letter is asking for your own writing. Only onboarding ever set
-     this, so every letter drawn in the letters chapter went into a font that
-     nothing had been told to use -- which is 「単語に自作文字出てこない」. */
-  if(keep.length) SET.myfont=true;
-  save(); netPrefsPut();
+  /* NOT THE SWITCH. Whether words are set in the drawn letters is
+     myFontWant(), and the switch (setMyFont) is the one place a person
+     decides it. This used to turn it on whenever a letter with ink was
+     saved, so somebody who had turned it off had it back on -- and sent to
+     their account -- the next time they drew. It is on until somebody turns
+     it off (OWNER 2026-09-23); tools/writes-check.mjs counts every writer of
+     the field and every reader. */
+  save();
   installScriptFont();
   return keep;
 }
@@ -2570,16 +2678,22 @@ function geDraw(){
   x.strokeStyle=cssVar('--goldln'); x.lineWidth=Math.max(1,k0*2.5);
   x.strokeRect(k0*3,k0*3,S-k0*6,S-k0*6);
   /* The lattice is drawn as dots, not as ruled lines: a line says "anywhere
-     along here", and that is the thing being taken away. The three lines
-     under the dots are not the lattice and say something else -- a HEIGHT to
-     aim for, not a place a point may land -- which is why they are fainter
-     than the dots rather than as strong. 「aやね」 OWNER 2026-09-23. */
-  var gs=geStep(), gi, gj, gr=geGuideRows();
-  x.strokeStyle=cssVar('--line'); x.lineWidth=Math.max(1,k0*1.5);
+     along here", and that is the thing being taken away. The 田 under the
+     dots is not the lattice and says something else -- where the square's
+     edges and middle are, not a place a point may land -- which is why it is
+     a line in --gold rather than the dots' grey. It is two canvas pixels at
+     the least: one pixel at a whole coordinate lands half on each of two and
+     comes out at half its colour. The first
+     version was --line and measured 1.1:1 against the panel: 「線がわかりにくい」
+     OWNER 2026-09-23. */
+  var gs=geStep(), gi, gj, gr=geGuideRows(), g0=GGRID.inset, g1=GGRID.inset+(GGRID.n-1)*gs;
+  x.strokeStyle=cssVar('--gold'); x.lineWidth=Math.max(2,k0*3);
   for(gi=0; gi<gr.length; gi++){
     x.beginPath();
-    x.moveTo(X(GGRID.inset), Y(GGRID.inset+gr[gi]*gs));
-    x.lineTo(X(GGRID.inset+(GGRID.n-1)*gs), Y(GGRID.inset+gr[gi]*gs));
+    x.moveTo(X(g0), Y(g0+gr[gi]*gs)); x.lineTo(X(g1), Y(g0+gr[gi]*gs));
+    x.stroke();
+    x.beginPath();
+    x.moveTo(X(g0+gr[gi]*gs), Y(g0)); x.lineTo(X(g0+gr[gi]*gs), Y(g1));
     x.stroke();
   }
   /* A lattice you cannot see is a lattice that is not there, and this surface
@@ -2774,8 +2888,9 @@ function inkCanvases(sel, floor, dflt, stOf){
    day and it showed. 「文字間おかしくね」
 
    `h` and `dy` are the same answer asked downward, which is what a script
-   that runs down the page needs and what a vmtx would be written from. otf5
-   says so itself: one formula, whichever axis it is asked about. The card
+   that runs down the page needs and what otf5 writes the face's vmtx from:
+   one formula, whichever axis it is asked about, so a column of a line
+   stands at the gap the way a row does. The card
    asks for both. A line of the language does not ask here at all -- it is
    set in the face, whose advances otf5 works out with this same `reach` --
    so a letter on the card and a letter on a line stand the same.
@@ -2999,9 +3114,6 @@ function render(){
      to be twenty-two conditions here -- a second copy of PAGES that nothing
      could check against the first. */
   var pg = PAGES[route], v = (pg && pg.view)? pg.view() : vProfile();
-  /* one attribute decides whether words are shown in roman letters or in the
-     ones you drew — the text itself never changes, only the family it is set in */
-  document.documentElement.setAttribute('data-script', myFontOn()? 'on':'off');
   /* Replacing the view resets the scroll, which threw you to the top on every
      edit, so the old offset is put back. Only within one screen, though: a
      chapter opened from the contents was being handed the offset of whatever

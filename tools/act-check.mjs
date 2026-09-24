@@ -95,7 +95,13 @@ await pg.evaluate(seed);
 await pg.evaluate('window.__obStates = ' + obStates.toString());
 await pg.evaluate('window.__halfDone = ' + halfDone.toString());
 
-const R = await pg.evaluate(() => {
+/* JavaScript in markup is ANY on…= attribute, not a list of the ones somebody
+   thought of: `onload`, `onerror` and `onanimationend` run code exactly as
+   `onclick` does, and a list of nine let them all through. One pattern, and
+   the screens and the shell below are both asked it. */
+const ON_ATTR = '\\son[a-z]+\\s*=';
+
+const R = await pg.evaluate((ON_ATTR) => {
   const out = { missing: [], dead: [], bad: [], inline: [], screens: 0,
                 seen: { do: [], in: [], kd: [] }, threw: [], routes: [], doors: [], pages: 0, placed: 0, views: 0 };
   const seenDo = {}, seenIn = {}, seenKd = {}, named = {};
@@ -143,7 +149,7 @@ const R = await pg.evaluate(() => {
     let pm;
     while ((pm = paint.exec(html))) out.inline.push(where + ': a colour in the markup -- ' + pm[1]);
     /* Any on-anything attribute at all is the old disease coming back. */
-    const inline = /\son(click|input|change|keydown|pointerdown|touchstart|submit|focus|blur)\s*=/gi;
+    const inline = new RegExp(ON_ATTR, 'gi');
     while ((m = inline.exec(html))) out.inline.push(where + ': ' + m[0].trim());
     out.screens++;
   }
@@ -262,7 +268,7 @@ const R = await pg.evaluate(() => {
      「フォロワーとかタップしても見れないし」 OWNER 2026-09-03. */
   walkArg('follows', vFollows,
           ['ing', 'ers'].concat(
-            meFollowing().concat(['nobody-at-all']).reduce(
+            folOf(false, meHandle()).concat(['nobody-at-all']).reduce(
               (o, h) => o.concat(['ing:' + h, 'ers:' + h]), [])),
           'vFollows');
   /* The people one notice is about, which is the handles the row carries
@@ -332,6 +338,14 @@ const R = await pg.evaluate(() => {
     fq = ''; fpick = null;
   } catch (e) { out.threw.push('the search tab: ' + e.message); }
 
+  /* AND WHAT IS OUTSIDE `#app`. index.html's shell is the page the screens
+     are put into and is returned by no screen -- the dark behind the popup is
+     a button there, and it is named by nothing else. Every child of <body>
+     that is not `#app` is harvested exactly as a screen is, so a name the
+     shell says is a name, and an `on…=` there is caught the same way. */
+  Array.prototype.forEach.call(document.body.children, function(el){
+    if (el.id !== 'app' && el.tagName !== 'SCRIPT') harvest('index.html shell #' + (el.id || el.className), el.outerHTML);
+  });
   /* the other direction: an entry nobody ever names */
   Object.keys(ACT).forEach(k => { if (!seenDo[k]) out.dead.push('pressed: ' + k); });
   Object.keys(ACT_IN).forEach(k => { if (!seenIn[k]) out.dead.push('typed: ' + k); });
@@ -602,7 +616,7 @@ const R = await pg.evaluate(() => {
   out.seen.kd = Object.keys(seenKd).length;
   out.have = { do: Object.keys(ACT).length, in: Object.keys(ACT_IN).length, kd: Object.keys(ACT_KEY).length };
   return out;
-});
+}, ON_ATTR);
 
 await br.close();
 srv.close();
@@ -665,37 +679,21 @@ const regSeen = {}, regTwice = [];
   }
 }
 
-/* The same statement, asked of index.html's OWN markup.
+/* The same statement, asked of index.html's OWN source.
    ------------------------------------------------------------------
-   The scan above reads what a screen RETURNED. index.html's shell is not
-   returned by anything -- it is the page the screens are put into -- so the
-   two on the sheet's backdrop were outside every walk, and CLAUDE.md said
-   `act-check` fails on one "anywhere" while nothing had ever looked there.
-
-   Named, not counted, and the names have to keep matching: an exemption
-   that matches nothing is permission for the next one, which is what
-   box-check says a stale baseline line becomes. */
-const SHELL_OK = [
-  '<div class="sbg" id="sbg" onclick="closeSheet(event)">',
-  '<div class="sheet" id="sheet" onclick="event.stopPropagation()"></div>',
-];
+   The harvest above reads the shell as the browser holds it; this reads the
+   file, so an `on…=` in markup that is taken out before the walk gets there
+   is still found. Nothing is exempt: the dark behind the popup carries a
+   name like every other button, and the bottom sheet that was the other
+   exemption is gone. */
 const shellSrc = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8')
   .replace(/<!--[\s\S]*?-->/g, '')
+  .replace(/<script[\s\S]*?<\/script>/gi, '')
   .replace(/\/\*[\s\S]*?\*\//g, '');
 const shellBad = [];
-const shellRe = /^.*\son(?:click|input|change|keydown|pointerdown|touchstart|submit|focus|blur)\s*=.*$/gim;
+const shellRe = new RegExp('^.*' + ON_ATTR + '.*$', 'gim');
 let sm;
-while ((sm = shellRe.exec(shellSrc))) {
-  const line = sm[0].trim();
-  if (SHELL_OK.indexOf(line) < 0)
-    shellBad.push('index.html: ' + line.slice(0, 120));
-}
-for (const ok of SHELL_OK) {
-  if (shellSrc.indexOf(ok) < 0)
-    shellBad.push('the exemption `' + ok.slice(0, 60) + '...` matches nothing in ' +
-                  'index.html any more. Take the line out of SHELL_OK -- an ' +
-                  'exemption matching nothing is permission for the next one.');
-}
+while ((sm = shellRe.exec(shellSrc))) shellBad.push('index.html: ' + sm[0].trim().slice(0, 120));
 
 const fails = [];
 let CLAIMS = 0;

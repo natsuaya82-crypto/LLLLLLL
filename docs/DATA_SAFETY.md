@@ -24,8 +24,9 @@ Three of these four are ordinary events, not disasters:
 
 A save goes up the moment it is made — `bkTouch()` is the one line every
 writer passes through and `netSaveUp()` (`www/net.js`) sends the slices that
-moved — and `netLangsDown()` at the foot of `www/boot.js` brings back every
-language this ACCOUNT has that this phone has not got. Sign in on any handset
+moved — `netLangsDown()` says which languages this ACCOUNT has, and
+`netLangFill()` brings one down when a screen drawn from it is arrived at
+(「読むのは開いた画面の分だけ」 OWNER 2026-09-23). Sign in on any handset
 and the language is there.
 
 **There was a third place and it is deleted.** `www/backup.js` wrote the open
@@ -56,29 +57,45 @@ the whole of it.
 ### 1. A save reaches the server, and a merge never destroys what is there
 
 `netSlice1()` in `www/net.js` is the only thing that puts a slice up, and both
-roads call it — `netSaveUp()` on every save, `netLangSync()` at launch. It
-MERGES: `syMerge()` (`www/sync.js`) adds both sides and lets neither win by
-being newer, so a word added here and a word added there are both added.
-「そりゃあ両方足すだろ」
+roads call it — `netSaveUp()` on a save a person makes, `netLangSync()` at the
+door (what the walk made). **A launch sends nothing** (2026-09-23,
+`tools/quiet-check.mjs`): until a language's slices have come down in this run
+of the app, what is on the screen is the picture, `langLocked()` refuses every
+save onto it, and a slice goes up only when a PERSON wrote it
+(`LTOUCH` in `www/core.js`) — a slice the app itself changed inside a server
+answer (the free alphabet topped up, a migration) goes with the next thing
+somebody saves in that slice and never on its own. It
+MERGES: `syMerge()` (`www/sync.js`) adds both sides, so a word added here and
+a word added there are both added 「そりゃあ両方足すだろ」 — and where the two
+disagree about ONE thing (a value, the same row changed on both, a row removed
+on one and changed on the other) **the side a person changed later keeps it**
+「普通後から変えたほうになる？」 OWNER 2026-09-04. When is `LTOUCH`'s time on
+this phone and `slice.ed` on the server.
 
 **A write that only wrote would destroy.** `slice`'s primary key is
-`(language, kind)` and `no` guards nothing, so a phone that sent what it was
-holding would take out whatever another one had added, silently. That is why
-there is one road and not a short one beside it.
+`(language, kind)`, so a phone that sent what it was holding would take out
+whatever another one had added, silently. That is why there is one road and
+not a short one beside it — and why the server refuses a write put together
+against a version that has since moved (`stale`, `keep_newer()` in
+`supabase/schema.sql`): the phone reads again and merges again.
 
 `again-check` holds it: a save arrives without a launch, only the slices that
-moved are asked for and sent, and a word deleted here stays deleted.
+moved are asked for and sent, a word deleted here stays deleted, a `stale`
+write is merged again with both phones' words kept, and the later change of
+one value stands. `rls-check` holds the server half.
 
 ### 2. A restore never overwrites a slice that is there
 
 It fills in one that is **missing** and stops. This is the one that matters:
-**the way a copy destroys somebody's work is by winning.** `netLangsDown()`
-and `netLangBack1()` both work that way — a slice already on the phone is
-stepped over, whatever the server is holding.
+**the way a copy destroys somebody's work is by winning.** `netLangFill()`
+works that way — a slice already on the phone is stepped over, whatever the
+server is holding.
 
-`langMigrate()` has the same rule for the same reason — it **copies** from the
-eight old flat keys and never removes what it read. It runs once, on a phone,
-against the only copy of something somebody spent months on. Copying costs a
+Reading what an older version left on the disk has the same rule for the same
+reason — `slMine()` (`www/core.js`) reads the old `lingua.<id>.<slice>` key,
+`slWr()` never writes there, and nothing but a person deleting a language or
+an account removes it (`slRm()`). That key can be the only copy of
+something somebody spent months on. Copying costs a
 few hundred kilobytes and cannot lose anything; moving could.
 
 ### 3. "Empty" and "broken" are not the same state
@@ -89,7 +106,7 @@ holding LESS than what is here is refused and recorded in `NET_SHRANK`, and
 the phone keeps what it had.
 
 **A slice the app has never written is not unsound. It is absent**, and absent
-is what `netLangsDown()` fills in.
+is what `netLangFill()` fills in.
 
 ### 4. Nothing is deleted because a new shape arrived
 
@@ -206,9 +223,15 @@ went away, and so is a line describing a button no screen carries any more.
 
 One deletion is outside that table on purpose, because it is not a button:
 
-- `lsWipeAcct()` taking the eight flat keys (`www/core.js`) happens under
-  `wipeAll`, which is in the table, and is written out in
+- `lsWipeAcct()` (`www/core.js`) taking that account's keys off the phone
+  happens under `wipeAll`, which is in the table, and is written out in
   `docs/DATA_MODEL.md` § what an account deletion actually takes
+- `sharePush()` emptying the App Group (`www/share.js`, `LinguaShare.swift`
+  `write`) when no account is signed in. The three files there are copies
+  rebuilt from the open language on every change, so a file handed empty is
+  a file that is not there; the DELETE REVIEW is `docs/CHANGELOG.md`
+  2026-09-23. `assets-check` counts every file the keyboard and the widget
+  read and asks that `write` answers for each one.
 
 ## Changing anything that saves
 

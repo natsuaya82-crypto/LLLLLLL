@@ -23,12 +23,6 @@
    ========================================================================= */
 
 var LS_ME='lingua.me';
-/* `avSent` is not part of who somebody is. It is the copy of the face that
-   the profile row on the server was last given, kept so netAvSync() can tell
-   "the face has moved" from "the face has never been sent" without asking the
-   server every launch. It is written by netAvSync() and read by nothing else.
-   It is here rather than in SET because it belongs to the account, and SET is
-   the person's settings and travels between them. */
 /* 何文字まで入るか。一箇所 ── OWNER DECISION, 2026-08-25。
 
    `handle` の 24 はこちらが選んだ数ではなく、サーバが持っている天井を
@@ -73,8 +67,8 @@ var ME_MAX={ name:30, handle:24, bio:160, link:100, loc:30 };
    made an account, then signed in again as themselves -- and on any phone
    where it is wrong, the wrong thing is an empty name rather than somebody
    else's. */
-var ME={name:'', handle:'', bio:'', pic:'', link:'', loc:'', avSent:'', uid:''};
-function meBlank(){ return {name:'', handle:'', bio:'', pic:'', link:'', loc:'', avSent:'', uid:''}; }
+var ME={name:'', handle:'', bio:'', pic:'', link:'', loc:'', uid:''};
+function meBlank(){ return {name:'', handle:'', bio:'', pic:'', link:'', loc:'', uid:''}; }
 /* ---- the face this account wears, WRITTEN DOWN ---------------------------
    「アイコン勝手に変わるのは何だ。最初の文字になるのはいいけど、それはオンボー
    ディングを通ってかいたもじだけで、それ以降は勝手に変えないで。ユーザーが
@@ -89,8 +83,9 @@ function meBlank(){ return {name:'', handle:'', bio:'', pic:'', link:'', loc:'',
 
    `av` IS THE ACCOUNT'S, like everything else on ME. It is parked and handed
    back with the account (meFor above), and it goes UP as the `av` of the
-   profile row -- netMakeProfile() writes that column and netAvSync() keeps it
-   level, both off this same value. There is no such thing as the phone's.
+   profile row -- netMakeProfile() writes that column at the walk's end, and
+   meFacePut() below when somebody chooses or takes off a photograph. There is
+   no such thing as the phone's.
 
    It is the SHAPE and not the letter's id, and that is the owner's sentence
    rather than a convenience: an id would be read again every time, and
@@ -100,14 +95,16 @@ function meBlank(){ return {name:'', handle:'', bio:'', pic:'', link:'', loc:'',
    Absent is not empty. An account with no `av` has not been asked yet; one
    with a face has been. */
 function meAvOf(l){
-  if(l && l.st && l.st.length) return {st:l.st};
+  var g=inkGeo(l);
+  if(g) return {st:g};
   if(l && l.ch) return {ch:l.ch};
   return null;
 }
 /* ONCE, AND THIS IS THE ONLY PLACE IT IS WRITTEN. Two moments hand it a face
-   -- the walk, at obFinish(), for somebody arriving; and postAvatar(), once,
-   for an account that finished the walk before there was anywhere to write it
-   -- and neither of them may write over an answer that already exists. That
+   -- the walk, at obFinish(), for somebody arriving; and migrateAv() below,
+   once, for an account that finished the walk before there was anywhere to
+   write it -- and neither of them may write over an answer that already
+   exists. That
    is the whole of 「それ以降は勝手に変えないで」, and it is held here rather
    than at the two call sites so there is one rule and not two. */
 function meAvSet(av){
@@ -115,15 +112,29 @@ function meAvSet(av){
   ME.av=av;
   saveMe();
 }
+/* THE FACE OF AN ACCOUNT FROM BEFORE THERE WAS ONE ON FILE: the first letter
+   with a shape on it, which is what it wore -- adopted once, and meAvSet()
+   refuses every call after it. It fills in what is MISSING and stops
+   (docs/DATA_SAFETY.md rule 2). A migration, so it runs from migrateAll()
+   (www/core.js), on this account's own language once the server has said it
+   is theirs -- drawing a row used to do it, out of whatever language was
+   open (r73 § 2-2). The `profile` row keeps it out of the walk, where the
+   letters are still being made and obFinish() has not decided yet. */
+function migrateAv(){
+  var i, av=null;
+  if(ME.av || ME.pic || !meRowHas()) return;
+  for(i=0;i<LETTERS.length && !av;i++) av=meAvOf(LETTERS[i]);
+  meAvSet(av);
+}
 function meFrom(m){
   var o=meBlank();
   if(m){ o.name=String(m.name||''); o.handle=String(m.handle||'');
          o.bio=String(m.bio||''); o.pic=String(m.pic||'');
          o.link=String(m.link||''); o.loc=String(m.loc||'');
-         o.avSent=String(m.avSent||''); o.uid=String(m.uid||'');
-         /* Two lists, and absent is not empty -- meFollowing() and
-            meFollowers() are written against that and would answer [] for a
-            list that had been turned into one. */
+         o.uid=String(m.uid||'');
+         /* Two lists from before 2026-09-09, carried through untouched and
+            read by nothing (§ WHO THIS ACCOUNT FOLLOWS). Absent is not
+            empty. */
          if(m.fo && m.fo.length) o.fo=m.fo;
          if(m.fr && m.fr.length) o.fr=m.fr;
          /* The face, and absent is not empty here either: an account with no
@@ -134,74 +145,25 @@ function meFrom(m){
          if(m.av) o.av=m.av; }
   return o;
 }
-/* Whether this copy has anything in it. Used before parking one: a blank
-   copy is not worth a key, and writing one would matter -- wipeHere() blanks
-   ME and then calls netOut(), so a park that did not ask this would write the
-   deleted person straight back out of memory, one line after lsWipeAcct() had
-   removed every trace of them. 「アカウント削除で残るものねえ」 */
+/* THE COPY IS THE ACCOUNT'S (www/core.js § ACCT): written under
+   `lingua.me.<uid>` the moment it is written, read for the account in hand
+   and never for the one before it. `lingua.me` with no owner on it is what
+   an older version wrote, and only the copy `lingua.set`'s stamp named is
+   carried across (§ acctMoved); anything else is nobody's and is not read --
+   a phone that had it no longer gives it to whoever signs in first
+   (r73 § 2-7). Nothing is deleted: signing back in reads the account's own
+   key, which was written when it was written. */
+/* Whether this copy has anything in it: an empty one is nothing the walk
+   made, so the door has nothing of it to hand over (www/core.js § acctFor). */
 function meHas(m){
   return !!(m && (m.name || m.handle || m.bio || m.pic || m.link || m.loc ||
                   m.av || (m.fo && m.fo.length) || (m.fr && m.fr.length)));
 }
-function meRead(){
-  ME=meBlank();
-  try{ ME=meFrom(JSON.parse(localStorage.getItem(LS_ME)||'null')); }catch(e){}
-}
-meRead();
 function saveMe(){
-  try{ localStorage.setItem(LS_ME, JSON.stringify(ME)); }catch(e){}
+  saveTry(function(){ acctPut('me', ME); });
 }
-/* ---- whose phone this is, right now ------------------------------------
-   Called when the session's identity changes -- signing in, signing out, and
-   a refresh that comes back naming somebody else. net.js's netTook() and
-   netOut() are the two places that know, and they are the only callers.
-
-   NOTHING IS DELETED HERE. `bio`, `link` and `loc` exist on this phone and
-   nowhere else -- netMakeProfile() sends `handle`, `display` and `av`, and
-   that is all of it -- so a sign-out that emptied them would be a loss with
-   no way back, which is the one thing `CLAUDE.md` does not allow: 「人が
-   作ったものは消さない」.
-
-   So the copy is PARKED, under this key plus the uid that owns it, and
-   handed back when that account returns. It stops being visible; it does not
-   stop existing.
-
-   lsWipeAcct(uid) removes the parked copy filed under that uid, so a parked
-   copy goes with the account when the account goes -- and only that account's.
-   bkPack() walks SLICES under langKey() and has never carried lingua.me at
-   all, so parking takes nothing out of a backup that was in one. */
-function meParkKey(uid){ return LS_ME + '.' + uid; }
-function meFor(uid){
-  var want=String(uid||''), had=String(ME.uid||''), park, got=null;
-  if(want===had) return;
-  /* Out of the way first, so nothing below can write over it. A copy with no
-     owner is not parked anywhere: there is no key to park it under, and it
-     is the one this phone has been using. */
-  if(had && meHas(ME)){
-    try{ localStorage.setItem(meParkKey(had), JSON.stringify(ME)); }catch(e){}
-  }
-  /* An unclaimed copy is adopted rather than thrown away -- see `uid` above.
-     Only when somebody is actually arriving: signing OUT of an unclaimed copy
-     leaves it unclaimed and leaves it where it is. */
-  if(!had && want && meHas(ME)){ ME.uid=want; saveMe(); return; }
-  if(want){
-    try{ park=localStorage.getItem(meParkKey(want)); }catch(e){ park=null; }
-    if(park){ try{ got=JSON.parse(park); }catch(e){ got=null; } }
-  }
-  ME=meFrom(got);
-  ME.uid=want;
-  saveMe();
-}
-/* And once at load, because the two keys are read by two files that do not
-   know about each other: net.js reads lingua.sess when it loads and this file
-   reads lingua.me when it loads, and nothing between them ever compared the
-   two. A phone that was signed in as somebody while carrying somebody else's
-   copy stayed that way until the next sign-in.
-
-   net.js is loaded before this file (www/index.html), so SESS is here to be
-   asked. Signed out, this parks whatever the phone was holding, which is the
-   same thing netOut() does and is right for the same reason. */
-meFor(SESS && SESS.uid);
+acctKeep('me', function(){ return meHas(ME)? ME : null; },
+         function(v){ ME=meFrom(v); }, LS_ME);
 /* Nobody is made to fill this in before they can post. With no name the
    language's name stands in, which is what it did before there were accounts
    at all -- so the screen never shows an empty space or a word invented to
@@ -219,8 +181,8 @@ meFor(SESS && SESS.uid);
 /* AND NEITHER LIST HAS YOU IN IT. `follow` in supabase/schema.sql carries
    `check (follower <> followed)`, so a row saying you follow yourself is a
    row the server cannot hold and the copy must not either -- 「SNSは全部
-   サーバー」. It got into the copy anyway: `ME.fo` is written by a press on
-   this phone and by meFollowsPull(), meFollow() has guarded against your own
+   サーバー」. It got into the copy anyway: `ME.fo` was written by a press on
+   this phone and by ~~`meFollowsPull()`~~, meFollow() has guarded against your own
    handle since it was written, and meHandle() falls back to the LANGUAGE'S
    name when a profile has no handle on it yet -- so the handle this phone
    answers to today is not always the one it answered to when the row went in.
@@ -253,16 +215,16 @@ function meNotMe(hs){
 
    They are the SAME memory FOL_HAVE keeps everybody else's lists in, under
    this account's own handle: one mechanism, written only by an answer from
-   the server (folPull / meFollowsPull), gone when the session goes
-   (folForget). A list somebody else's page shows and a list your own page
-   shows are the same question asked about a different handle, and there is
-   no reason for two answers to it.
+   the server (folPull), gone when the session goes (folForget). A list
+   somebody else's page shows and a list your own page shows are the same
+   question asked about a different handle, and there is no reason for two
+   answers to it -- and neither is read at a launch any more: the list is the
+   follows page's, a page at a time, and a button asks REL (§ WHETHER YOU
+   FOLLOW SOMEBODY).
 
    WHAT IS IN THE COPY IS NOT TOUCHED. `ME.fo` and `ME.fr` are still in
    `lingua.me` on every phone that has this app; they are not read, not
    written and not removed (docs/DATA_SAFETY.md). */
-function meFollowing(){ return meNotMe(folOf(false, meHandle())); }
-function meFollowers(){ return meNotMe(folOf(true, meHandle())); }
 /* HOW MANY. 「サーバーに聞く前にロードを挟み、遅れて数字が動くことを絶対に
    無くす。0 と出て1秒後に1に変わる、をしない。」 OWNER 2026-09-04.
 
@@ -281,10 +243,13 @@ function meFollowers(){ return meNotMe(folOf(true, meHandle())); }
    ask the same question and used to answer it in two places with two
    different `||0`s on the end. The space is inside it: a number and the word
    after it are one thing. */
-function meNFollowing(){ return meFollowing().length; }
-function meNFollowers(){ return meFollowers().length; }
+/* AND A COUNT NOBODY HAS GIVEN IS NOT NOUGHT. `Number(n)||0` drew 0 for a
+   count the server had not sent -- with no signal a person's page said
+   「0 フォロー中・0 フォロワー」 (docs/scope/r73-audit.md § 2-4, measured).
+   Not a number is 「not told」, and the word stands without one. */
 function meCount(n){
-  return '<b>'+esc(String(Number(n)||0))+'</b> ';
+  if(n===null || n===undefined || n==='' || !isFinite(Number(n))) return '';
+  return '<b>'+esc(String(Number(n)))+'</b> ';
 }
 /* ---- WHO YOU ARE IS THE `profile` ROW, AND NOTHING IS INVENTED FOR IT ----
    「誰の物か・あるか無いか・名前・公開か・段 ── 答えは全部サーバー」 OWNER
@@ -337,7 +302,7 @@ function meWas(){
 function meTyped(f){ return keepVal(ME_KEY, f); }
 /* Writing the five down. `v` is only the fields somebody actually touched, so
    a field nobody typed into is not written over -- which matters here because
-   netProfSync() can fill the bio, the link and the location in from the
+   netMyProfile() can fill the bio, the link and the location in from the
    account while this screen is open. */
 function meKeepPut(v){
   if(v.hasOwnProperty('name')) ME.name=String(v.name);
@@ -416,8 +381,10 @@ function meKeepSave(v, done){
 
    Nothing to send is not a failure: pressing Save with nothing moved writes
    what is already there, which is what it did before. */
-function meProfPut(v, done){
+function meProfPut(v, done, at){
   var send=null, i, k;
+  /* the press, kept across ［再接続］ so a retry is still the press it was */
+  at=at || Date.now();
   for(i=0;i<PROF_MINE.length;i++){
     k=PROF_MINE[i][0];
     if(v.hasOwnProperty(k) && String(v[k])!==String(ME[k]||'')){
@@ -426,9 +393,15 @@ function meProfPut(v, done){
     }
   }
   if(!send || typeof netProfPut!=='function'){ meKeepPut(v); done(true); return; }
-  netProfPut(send, function(){ meKeepPut(v); done(true); },
+  /* The row that comes back is what the account now says -- a field another
+     phone saved LATER is that phone's (supabase/schema.sql § keep_newer), and
+     meProfGot() is the one place a row goes on ME. */
+  netProfPut(send, at, function(row){
+      if(row) meProfGot(row); else meKeepPut(v);
+      done(true);
+    },
     function(d, st, m){
-      netPop(d, st, m, function(){ meProfPut(v, function(){}); });
+      netPop(d, st, m, function(){ meProfPut(v, function(){}, at); });
       done(false);
     });
 }
@@ -521,7 +494,7 @@ function mePicKeep(url){
   var im=new Image();
   im.onload=function(){
     var side=Math.min(im.width, im.height);
-    var c=document.createElement('canvas'), x;
+    var c=document.createElement('canvas'), x, u;
     c.width=ME_PIC; c.height=ME_PIC;
     x=c.getContext('2d');
     x.drawImage(im, (im.width-side)/2, (im.height-side)/2, side, side, 0, 0, ME_PIC, ME_PIC);
@@ -529,9 +502,9 @@ function mePicKeep(url){
        It was 0.82 here and POST_PICQ everywhere else, with nothing saying why
        -- one naked number against a named one, which is docs/DUPLICATES.md
        item 6. 「合わせていいよ」 OWNER 2026-09-04. */
-    try{ ME.pic=c.toDataURL('image/jpeg', POST_PICQ); saveMe(); }
+    try{ u=c.toDataURL('image/jpeg', POST_PICQ); }
     catch(e){ toast(t('me.pic.bad')); return; }
-    openMe();
+    meFacePut({pic:u});
   };
   im.onerror=function(){ toast(t('me.pic.bad')); };
   im.src=url;
@@ -599,7 +572,81 @@ function mePicFile(){
 }
 /* Taking it off. Not a button any more -- it is the red row of the sheet --
    so it is not in www/act-map.js: nothing on a screen names it. */
-function meDropPic(){ ME.pic=''; saveMe(); openMe(); }
+function meDropPic(){ meFacePut(ME.av || null); }
+/* ---- THE FACE, AND THE ONE ROAD IT TAKES ---------------------------------
+   「サーバーが聞くのは、人が今つくった・押したもの、そのものだけ」
+   (docs/scope/brief-r60-up.md), and 「保存するタイミングでエラーが起きるなら、
+   保存されないし」 OWNER 2026-09-05.
+
+   Choosing a photograph and taking one off are the two presses that change
+   the face, and both come here: the `av` column is sent, and the face moves
+   on this phone when the server has taken it -- meProfPut()'s shape, which
+   the name, the @ and the line about yourself already had. A face that did
+   not arrive is a face that did not change, and ［再接続］ sends it again.
+
+   What stood here was a write to the phone alone, with netAvSync() sending
+   the difference on the NEXT launch against a mark of what it had sent
+   (`avSent`). So somebody who changed their photograph was shown the old one
+   to everybody until they relaunched -- and a second phone, still holding
+   the old photograph, sent THAT on its own launch and put it back
+   (r46-audit § A1). Taking a photograph off here, it came back from there. */
+function meFacePut(av, at){
+  /* 「何か更新するならクルクルが必要」 OWNER 2026-09-12 -- the same mark
+     pwSendPost() turns while a post goes up. */
+  netSpin(true);
+  at=at || Date.now();
+  netProfPut({av:av}, at, function(row){
+      netSpin(false);
+      /* the face the account now has: a face another phone set later is it */
+      meAvGot(row? row.av : av);
+      openMe();
+    },
+    function(d, st, m){
+      netSpin(false);
+      netPop(d, st, m, function(){ meFacePut(av, at); });
+    });
+}
+/* What the server says the face is, and the one place ME is told. The `av`
+   column is the answer: a photograph where it carries one and nothing
+   otherwise, so a photograph this phone was holding that the account has
+   since replaced or taken off goes (rule 22 -- the copy is read, never kept
+   over the answer). A letter's face is written into `av` beside it, so taking
+   the photograph off gives back the face that was on file. */
+function meAvGot(av){
+  ME.pic=(av && av.pic)? String(av.pic) : '';
+  if(av && !av.pic) ME.av=av;
+  saveMe();
+}
+/* ---- THE ACCOUNT'S PROFILE, PUT ON ME -- AND THIS IS THE ONE PLACE ------
+   Three places used to do it, each with a different part: netMyProfile()
+   (the door) put the face and nothing else, obIn() (www/onboard.js) put the
+   name and the @, and netProfSync() (a launch) put the five columns of
+   PROF_MINE. So somebody signing in on a second phone had their name and @
+   and no line about themselves until they relaunched (r61-face 止めたこと 1),
+   and a copy this phone adopted from nobody (meFor) wore its own photograph
+   into the account until the next launch (r63-audit A1 漏れ 3).
+
+   A row is the whole answer: every column of PROF_MINE, and `av` through
+   meAvGot(). Returns whether anything on ME moved, so a caller that draws
+   knows whether to. */
+function meProfGot(row){
+  var moved=false, i, k, there, face;
+  if(!row) return false;
+  for(i=0;i<PROF_MINE.length;i++){
+    k=PROF_MINE[i][0];
+    if(!Object.prototype.hasOwnProperty.call(row, PROF_MINE[i][1])) continue;
+    there=String(row[PROF_MINE[i][1]]||'');
+    if(there===String(ME[k]||'')) continue;
+    ME[k]=there; moved=true;
+  }
+  if(Object.prototype.hasOwnProperty.call(row, 'av')){
+    face=String(ME.pic||'')+JSON.stringify(ME.av||null);
+    meAvGot(row.av);
+    if(face!==String(ME.pic||'')+JSON.stringify(ME.av||null)) moved=true;
+  }
+  saveMe();
+  return moved;
+}
 /* ---- what somebody types after an @ ------------------------------------
    「IDは2文字以上で登録してくださいと / このIDはもう使われていますと
      みたいに断る文章と実際に断ってほしい」OWNER, 2026-08-25
@@ -656,7 +703,8 @@ function meCard(){
         '<span class="phandle">@'+esc(meHandle())+'</span>'+
       '</div>'+
     '</div>'+
-    '<button class="meedit edit"' + DO('openMe') + '>'+esc(t('me.edit'))+'</button>'+
+    /* The pen, and the word is its name (CLAUDE.md § Shape, the sixth). */
+    markBtn(ICON_PEN, t('me.edit'), 'openMe')+
     '</div>'+
     (ME.bio? '<div class="pbio">'+esc(ME.bio)+'</div>' : '')+
     /* And where they are and their address, in the row meWhereRow() is. */
@@ -677,10 +725,10 @@ function meCard(){
        they come from somewhere else they come from somewhere else HERE and
        nowhere else. */
     '<div class="pfstats">'+
-      '<button class="pfst"' + DO('followsOpen', ["ing"]) + '>'+
-        meCount(meNFollowing())+esc(t('me.following'))+'</button>'+
-      '<button class="pfst"' + DO('followsOpen', ["ers"]) + '>'+
-        meCount(meNFollowers())+esc(t('me.followers'))+'</button>'+
+      '<button class="pfst"' + DO('go', ['follows', 'ing']) + '>'+
+        meCount(whoOf(meHandle()).fo)+esc(t('me.following'))+'</button>'+
+      '<button class="pfst"' + DO('go', ['follows', 'ers']) + '>'+
+        meCount(whoOf(meHandle()).fr)+esc(t('me.followers'))+'</button>'+
     '</div>'+
     '</div>';
 }
@@ -721,8 +769,8 @@ function meCard(){
    signal must not be told it has no account, and a handle it is already
    holding is the row it last saw.
 
-   Written by the two roads that fetch the row (netMyProfile at the door,
-   netProfSync at a launch) and by nothing else. */
+   Written by netMyProfile(), the one road that fetches the row, and by
+   nothing else. */
 var ME_ROW=null;
 function meRowGot(v){ ME_ROW=v? 1 : 0; }
 function meRowHas(){
@@ -730,19 +778,20 @@ function meRowHas(){
   return !!(typeof ME!=='undefined' && ME && ME.handle);
 }
 function meRowForget(){ ME_ROW=null; }
+acctMem(meRowForget);
 var WHO_HAVE={}, WHO_ASKED={};
-/* Asked for by the page that draws them, the way the timeline and the notices
-   ask for theirs. Never for your own: that is ME, it is on this phone, and a
-   request for it would be the app asking somebody else who you are. */
+/* Asked for by the door onto the page that draws them (`who`, www/sns.js
+   § WHAT EACH PAGE READS). */
 /* THE ASK ITSELF, and it is the only place this phone asks who somebody is.
    Nothing guards it: a person pulling the screen down is 「もう一度聞け」 and
    is never refused -- www/sns.js § pullRun says the same sentence about every
    other screen. 「他の人の画面でも更新できるようにしたい」 OWNER 2026-09-04. */
 function whoAsk(h, ok, bad){
   h=String(h||'');
-  /* Never your own: that is ME, it is on this phone, and a request for it
-     would be the app asking somebody else who you are. */
-  if(!h || h===meHandle()){ if(ok) ok(); return; }
+  /* Your own too: what you wrote about yourself is ME, but how many people
+     you follow and are followed by is the server's, on the same row it keeps
+     for everybody (`profile_seen`). */
+  if(!h){ if(ok) ok(); return; }
   WHO_ASKED[h]=1;
   netWho(h, function(p){
     /* Nobody by that name. It stays asked -- there is nothing to ask again,
@@ -798,111 +847,36 @@ function whoNeed(hs, ok, bad){
     ok();
   }, bad);
 }
-/* AND ONE PERSON'S PAGE WAITS FOR IT INSTEAD OF DRAWING WITHOUT IT. The same
-   ask again -- whoAsk() is still the only place this phone asks who somebody
-   is -- with the answer handed back rather than rendered into a page that is
-   already up. A profile is not drawn until it is whole (profileOpen below),
-   so there is no frame to guard against. */
-function whoWait(h, ok, bad){
-  if(WHO_HAVE[String(h||'')]){ ok(); return; }
-  whoAsk(h, ok, bad);
-}
-/* ---- THE ONE ROAD ONTO A PROFILE ----------------------------------------
-   「プロフィールは、出す物を全部読み込んでから開く」「押してから読み込みが
-   終わるまで前の画面のままで、揃った瞬間にプロフィールが出る」「くるくるも
-   出さない」 OWNER 2026-09-07, on a phone:
-   「開いた時フォロー中の横に数字でない。非公開の文字も出ない。全部読み込んで
-   から開くんじゃないの？」
-
-   WHAT THIS REPLACES, AND IT WAS THREE MECHANISMS FOR ONE THING. The page
-   went up at once and filled in behind itself, and each of the three things
-   on it had grown its own way of standing in for an answer that was not
-   there: the counts drew last session's list, or the word on its own where
-   there was none (b7f5bce3); the language's row was drawn out of an empty
-   WLD, so a private language said nothing beside its name; somebody else's
-   page put a turning mark where the card would be. All three are deleted.
-   The page is not drawn until it is whole, so there is nothing to stand in
-   for.
-
-   MEASURED, 2026-09-07, every answer 120ms out: the page was on the screen
-   at 164ms with neither number and no 非公開; the numbers arrived at 172ms
-   and the word at 330ms.
-
-   YOUR OWN PAGE ASKS FOR NOTHING HERE. Its three answers -- `mine`, `langs`
-   and `myposts` -- are on PULL_OPEN (www/sns.js § WHAT AN OPEN ASKS FOR), so
-   they came down at the session's own moment, under the splash, before any
-   screen was drawn. This waits on answers that are in by then, which is why
-   pressing the tab is not a pause.
-
-   SOMEBODY ELSE'S IS THE WAIT A PERSON ACTUALLY SEES. It is about one person
-   and there is nothing to ask for until their name is pressed, so it is two
-   requests: who they are, and what they have written. Until both are back
-   the screen that was pressed FROM stays exactly as it is. */
-function profileOpen(h){
-  var mine, left=1, fell=false;
+/* WHETHER THE SERVER HAS ANSWERED FOR ONE PERSON, OR FOR ALL OF A LIST --
+   the `who` and `people` questions' own record (www/sns.js). An answer of
+   「nobody by that name」 is an answer: WHO_ASKED holds it. */
+function whoGot(h){
   h=String(h||'');
-  /* TWO QUESTIONS, AND THEY ARE NOT THE SAME ONE.
-     WHOSE page it is decides what has to be in before it opens: your own is
-     the two counts, the language and your posts (§ profileReady), somebody
-     else's is who they are and what they wrote.
-     HOW you arrive is a different question and is answered by whether a
-     handle was handed in at all. No handle is the TAB and your own face on a
-     post -- both of those mean 「my page」 and throw the trail away, which is
-     what a tab does (www/shell.js § goTab). A handle is a link somebody
-     pressed inside a page -- an @ in a line, a name in a list -- and that
-     WALKS, so the arrow goes back to where they were reading.
-
-     They were one condition, and a handle that happens to be your own was
-     therefore a tab: pressing 「@aya への返信」 in a thread, on the phone
-     belonging to @aya, threw the thread away and stood you on the profile
-     tab with no way back. pfMine() already reads `here().a === meHandle()`
-     as your own page, so what is drawn is right either way -- what was wrong
-     was only the trail. Found by post-check 21. */
-  mine=(!h || h===meHandle());
-  function one(){
-    if(fell) return;
-    left--;
-    if(left>0) return;
-    if(h) go('profile', h); else goTab('profile');
-  }
-  /* 揃わなかったら画面は動かない ── netPop() (www/net.js)。［再接続］が
-     走らせるのは同じ問いで、それは名前を押したのと同じ道です。 */
-  function no(d, s, m){
-    if(fell) return;
-    fell=true;
-    netPop(d, s, m, function(){ profileOpen(h); });
-  }
-  if(mine){
-    left++; profileReady(one);
-  }else{
-    left++; whoWait(h, one, no);
-    left++; pfPosts(h, one, no);
-  }
-  one();
+  return !!(WHO_HAVE[h] || WHO_ASKED[h]);
 }
-/* WHAT YOUR OWN PAGE IS MADE OF, in one place, because two things wait for
-   it: the press above, and the SPLASH.
-   -------------------------------------------------------------------------
-   The app OPENS on the profile, so at a launch the screen it is 「pressed
-   from」 is the splash, and holding that is the same sentence at the one door
-   with no previous screen behind it. www/boot.js is the other caller.
+function whoAllGot(hs){
+  var i, h;
+  for(i=0;i<(hs||[]).length;i++){
+    h=String(hs[i]||'');
+    if(h && h!==meHandle() && !whoGot(h)) return false;
+  }
+  return true;
+}
+/* ---- THE WAY ONTO A PROFILE ---------------------------------------------
+   HOW you arrive, and nothing about what is read: that is the page's row in
+   www/sns.js § WHAT EACH PAGE READS, waited on by the one door
+   (www/shell.js § navLand) -- 「押してから読み込みが終わるまで前の画面の
+   ままで、揃った瞬間にプロフィールが出る」「くるくるも出さない」 OWNER
+   2026-09-07, now for every page and not this one alone.
 
-   Measured 2026-09-07, with the press already waiting: at a launch the page
-   was still up at 155ms carrying 0 and 0 under the two words, the numbers
-   moved at 161ms and 非公開 arrived at 309ms -- 「0 と出て1秒後に1に変わる」
-   at the one door that was not covered.
-
-   No `bad`: pullRun() owns the pop for everything on that table, and a second
-   one here would be the same failure said twice. What a failure does here is
-   stop the waiting, which is what lets the splash go up rather than sitting
-   over a screen nothing is coming to. */
-function profileReady(done){
-  var left=1;
-  function one(){ left--; if(left<=0) done(); }
-  left++; pullWait('mine', one);
-  left++; pullWait('mylangs', one);
-  left++; pullWait('myposts', one);
-  one();
+   No handle is the TAB and your own face on a post -- both mean 「my page」
+   and throw the trail away, which is what a tab does. A handle is a link
+   somebody pressed inside a page, and that WALKS, so the arrow goes back to
+   where they were reading -- a handle that happens to be your own included
+   (post-check 21). */
+function profileOpen(h){
+  h=String(h||'');
+  if(h) go('profile', h); else goTab('profile');
 }
 function whoOf(h){
   var i, p, got;
@@ -931,8 +905,11 @@ function whoOf(h){
     return {who:meName(), hd:h, av:postAvatar(), lname:langName||'', id:'me',
             bio:String(ME.bio||''),
             link:String(ME.link||''), loc:String(ME.loc||''),
-            fo:meFollowing().length,
-            fr:meFollowers().length, out:false,
+            /* The two counts are the account's own `profile_seen` row, the
+               same row somebody else's page is drawn from -- asked by the
+               door onto the page (`who`, www/sns.js § WHAT EACH PAGE READS). */
+            fo:(WHO_HAVE[h] || {}).fo,
+            fr:(WHO_HAVE[h] || {}).fr, out:false,
             /* AND IT SAYS SO. `mine` means 「this is the reader's own」 and it
                is what postBadge() asks -- so leaving it off took the mark off
                your own card the moment meCard() started asking this instead
@@ -1036,92 +1013,39 @@ function whoOf(h){
      count -- an unanswered number is not a zero, one line up. */
   return {who:'', hd:h, av:null, lname:'', bio:'', out:false, pro:false};
 }
-function meFollows(h){ return meFollowing().indexOf(String(h||''))>=0; }
-/* AND WHERE THAT LIST COMES FROM WHEN IT IS NOT THIS PHONE THAT MADE IT.
-   -------------------------------------------------------------------------
-   ME.fo was written by meFollow() and by nothing else -- a press on THIS
-   handset -- while netFollow() had been telling the server about every press
-   since follows existed. Nothing ever read it back. So the same account on a
-   second phone followed the same people and knew none of it.
+/* ---- WHETHER YOU FOLLOW SOMEBODY, AND WHETHER THEY FOLLOW YOU ----------
+   「開いた時は通知とタイムラインだけ」 OWNER 2026-09-23.
 
-   The owner has an SE2 and a 17, which is exactly the two phones that makes
-   it: every Follow button said Follow for somebody already followed, and the
-   followed timeline threw the server's own answer away against an empty list.
-
-   Once a session, and the copy is replaced rather than merged: an unfollow
-   made on the other phone is a row that is GONE, and there is no way to tell
-   a missing row from one this phone has not heard of yet by merging. The
-   server is the record -- 「SNSは全部サーバー」 -- and this is the copy
-   catching up with it.
-
-   Only a request that could not be MADE is asked again. `null` is that;
-   an empty list is an answer and means this account follows nobody. */
-/* BOTH LISTS ARE ONE ASK, AND IT GOES OUT WHEN THE APP OPENS.
-   「フォローとか0って出て1秒後に1とか数字が変わる」 OWNER 2026-09-04,
-   「全部だけど、アイコンも1秒遅れ表示」 OWNER 2026-09-05.
-
-   They were two functions with a flag each, called from four screens'
-   drawing code, and each carrying its own road to netPop(). That is the
-   四箇所 www/sns.js § pullRun spent a day taking down one screen along, and
-   it had already drifted here in the same way: one of the two swallowed a
-   fall in silence for a while, so a phone that could not reach the server
-   drew 「nobody follows you」 and said nothing.
-
-   One entry in the pull table now -- `mine` -- so the flag is PULL_OUT, the
-   answer is PULL_GOT, the fall is netPop() and ［再接続］ comes back through
-   the same door. It is on PULL_OPEN, so the question goes out at the launch
-   and not when somebody walks onto a profile.
-
-   BOTH, BEFORE EITHER IS DRAWN. The two numbers stand side by side under one
-   name, and answering them one at a time would move one of them while the
-   other was still a mark -- which is the same jump the owner is describing,
-   halved rather than fixed. So `ok` waits for the pair.
-
-   Only a request that could not be MADE is a failure. `null` is that; an
-   empty list is an answer and means this account follows nobody.
-
-   Called by askMine() (www/sns.js) and by nothing else, which is the shape
-   draftsPull() already takes: the table lives in one file and the asking
-   lives in the file it is about. www/me.js is loaded after www/sns.js, so
-   naming this function in the table directly would read it before it
-   exists. */
-function meFollowsPull(ok, bad){
-  var left=2, fell=false, was=meFollowing().join(',');
-  /* EVERY ANSWER IS A LIST. There used to be a third one -- `null`, 「the
-     account could not be looked up at all」 -- and it was carried here as
-     「nothing to draw, nothing written down」. It is gone (www/net.js §
-     netFollowRows): a list is `[]` or longer and anything else falls, so the
-     pop with ［再更新］ behind it is what a person gets instead of two counts
-     nailed to nothing for the rest of the session. */
-  function one(){
-    if(fell) return;
-    left--;
-    if(left) return;
-    /* Nothing is saved. The two lists are the server's answer and live where
-       every other account's does -- FOL_HAVE, in memory (rule 22). */
-    ok(1);
+   Both were answered out of your two WHOLE follow lists, read when the app
+   opened -- eight hundred rows so that a button could say Following. They
+   are asked now about the people on the screen and nobody else: the door
+   onto a page that draws somebody asks about them (`rel`, www/sns.js), one
+   request for all of them (netRel, www/net.js), and REL keeps the answer for
+   as long as the session does. `i` is 「you follow them」, `u` 「they follow
+   you」. A person nobody has asked about is neither -- the page drawing them
+   waited for the answer, so nothing draws a guess. */
+var REL={};
+function meFollows(h){ var r=REL[String(h||'')]; return !!(r && r.i); }
+function meFollowed(h){ var r=REL[String(h||'')]; return !!(r && r.u); }
+function relGot(hs){
+  var i, h;
+  for(i=0;i<(hs||[]).length;i++){
+    h=String(hs[i]||'');
+    if(h && h!==meHandle() && !REL[h]) return false;
   }
-  function no(d, s, m){
-    if(fell) return;
-    fell=true;
-    bad(d, s, m);
+  return true;
+}
+function relAsk(hs, ok, bad){
+  var want=[], i, h;
+  for(i=0;i<(hs||[]).length;i++){
+    h=String(hs[i]||'');
+    if(h && h!==meHandle() && !REL[h] && want.indexOf(h)<0) want.push(h);
   }
-  netFollowing(function(hs){
-    /* Somebody pressed Follow while this was in the air, and the server has
-       already taken it (meFollow() below does not move anything until it
-       has). That press is newer than this answer, so writing the older list
-       over it would take it off the screen while the server holds the right
-       one. */
-    if(meFollowing().join(',')===was) folPut(false, meHandle(), hs);
-    one();
-  }, no);
-  /* No press can move this one, which is the difference from the list above:
-     being followed is something somebody ELSE does, so there is no local
-     change to protect and the answer is simply written down. */
-  netFollowers(function(hs){
-    folPut(true, meHandle(), hs);
-    one();
-  }, no);
+  if(!want.length){ ok(); return; }
+  netRel(want, function(by){
+    for(i=0;i<want.length;i++) REL[want[i]]=by[want[i]] || {i:false, u:false};
+    ok();
+  }, bad);
 }
 /* ---- WHO YOU HAVE BLOCKED, AND IT IS THE `block` TABLE ------------------
    「端末の物で分岐して…見せる／見せない…を決める行は全部消す」 OWNER
@@ -1130,8 +1054,8 @@ function meFollowsPull(ok, bad){
    This was `ME.bl` in `lingua.me`: a list written ONLY when somebody pressed
    the row, with no road to fill it from the server. So on a second phone it
    was empty -- the timeline correctly kept the blocked person out, because
-   THAT asks `block` (netBlocked), and the ... menu offered to block them
-   again, because this asked the phone. Two answers to one question, and the
+   the server did, and the ... menu offered to block them again, because this
+   asked the phone. Two answers to one question, and the
    one a screen showed was the wrong one. `ME.fo` and `ME.fr` went the same
    way on 2026-09-09 and left this behind.
 
@@ -1167,7 +1091,7 @@ function meBlock(h){
   /* And the menu this was pressed from, closed the way every other row that
      ENDS a menu closes it -- postPin(), postDel() and openReport() each do it
      in their own first lines. Blocking takes every post of theirs out of the
-     timeline (postBlocked() in www/post.js is what filters them), so the menu
+     timeline (the server leaves them out from the next read), so the menu
      that was hanging off one of them is gone from the screen while `PMENU`
      still names the post -- and postMenuTook() then reads the next press
      anywhere as "close the menu", swallows it, and somebody has pressed
@@ -1220,12 +1144,15 @@ function meFollow(h){
     /* The row is there, or it is gone, and that is the server's answer about
        this one handle -- the same thing `i_like` is for a post. The list is
        moved by it rather than being asked for again. */
-    var fo=folOf(false, meHandle()).slice(), i=fo.indexOf(h);
-    if(on){ if(i<0) fo.push(h); }
-    else if(i>=0) fo.splice(i, 1);
-    folPut(false, meHandle(), fo);
-    /* and what their page says about them, which includes the number */
+    var r=REL[h] || {i:false, u:false};
+    REL[h]={i:on, u:r.u};
+    /* and your own list, if it has been read, is asked again when it is next
+       arrived at -- a page of it with this handle put in the middle by the
+       phone would be the phone deciding where the server files it. */
+    folDrop(false, meHandle());
+    /* and what their page and yours say, which includes the two numbers */
     whoAsk(h);
+    whoAsk(meHandle());
     render();
   }, function(d, st, m){ netPop(d, st, m, function(){ meFollow(h); }); });
 }
@@ -1264,9 +1191,9 @@ function whoMore(h){
    nowhere on their own page. It was never a fix that had stopped working: the
    card had never had one.
 
-   It costs the server nothing. Being followed is something this phone already
-   knows -- meFollowers() reads ME.fr, which meFollowsPull() has written once
-   this session -- so there is no request here and none added.
+   It costs the page nothing of its own: whether somebody follows you is
+   REL's (§ WHETHER YOU FOLLOW SOMEBODY), asked by the door onto the page
+   that draws them.
 
    No CSS either: `.whyou` and `.mehr` are both in www/index.html already,
    `.mehr` being a flex row with a gap, which is what puts this beside the
@@ -1276,11 +1203,8 @@ function whoMore(h){
    corner radius, no border, no filled panel on anything new. `.whyou` is
    already that shape and this is the same span the list wears.
 
-   AND NOT ON YOUR OWN NAME, without asking a second time: meFollowers() is
-   already the list with your own handle taken out of it (meNotMe, above, and
-   the row on 「フォロー中」 is what that is there for). A handle test here
-   would be that same question answered twice, and the two would part company
-   the day meHandle() changed under one of them.
+   AND NOT ON YOUR OWN NAME: relAsk() never asks about your own handle, so
+   REL has nothing for it.
 
    AND IT IS THE ONLY COPY NOW. snsWhoRow() (www/sns.js) wrote the same span
    out by hand and this comment said so -- that file belonged to another
@@ -1329,7 +1253,7 @@ function meWhereRow(link, loc){
   return '<div class="pbio">'+out+'</div>';
 }
 function whoBackTag(h){
-  if(meFollowers().indexOf(String(h||''))<0) return '';
+  if(!meFollowed(h)) return '';
   return '<span class="whyou">'+esc(t('me.follows.you'))+'</span>';
 }
 function whoCard(h){
@@ -1462,9 +1386,9 @@ function whoCard(h){
        holds many posts, and one of them needs an id. `.pfstats` carries the
        `position:relative` the box hangs off now; it was `.metop`. */
     '<div class="pfstats">'+
-      '<button class="pfst"' + DO('followsOpen', ['ing:'+String(h)]) + '>'+
+      '<button class="pfst"' + DO('go', ['follows', 'ing:'+String(h)]) + '>'+
         meCount(p.fo)+esc(t('me.following'))+'</button>'+
-      '<button class="pfst"' + DO('followsOpen', ['ers:'+String(h)]) + '>'+
+      '<button class="pfst"' + DO('go', ['follows', 'ers:'+String(h)]) + '>'+
         meCount(p.fr)+esc(t('me.followers'))+'</button>'+
       '<button class="pmore"' + DO('whoMore', [String(h)]) + ' aria-label="'+
         esc(t('post.more'))+'">'+ICON_DOTS+'</button>'+
@@ -1480,8 +1404,8 @@ function whoCard(h){
     '</div>';
 }
 /* Who you are on the timeline: the name, the handle, the face, the line about
-   yourself. All four are what OTHER PEOPLE see -- netAvSync() sends the face
-   and the profile row carries the rest -- so this is one of the things that
+   yourself. All four are what OTHER PEOPLE see -- the profile row carries
+   every one of them, the face included -- so this is one of the things that
    needs a name on the account, and it was the one that was not asked.
 
    obNeed() guarded the six: a post, a like, a boost, a follow, a block, a
@@ -1621,13 +1545,10 @@ FORM_OPEN.me=function(){ openMe(); };
    search screen, empty, about nobody. 「フォロー中からユーザー飛びたいのに
    飛べないけど？」 OWNER. The row is snsWhoRow() now, which has opened a
    person's page since the day it was written. */
-/* ---- somebody else's two lists ------------------------------------------
-   Your own are ME.fo and ME.fr -- on this phone, written by meFollowsPull(),
-   and shown once the server has answered for them this session rather than
-   the moment the screen opens: the copy that is already here is last
-   launch's. Nobody else's is here at all, so theirs is asked for and kept
-   the way WHO_HAVE keeps a person: once per handle, per direction, for as
-   long as the app is open.
+/* ---- a list of people, yours or somebody else's --------------------------
+   Asked for by the follows page's door a page at a time and kept the way
+   WHO_HAVE keeps a person: per handle, per direction, for as long as the
+   session is.
 
    Not merged into ME.fo/ME.fr and not written to storage. Those two are the
    ACCOUNT's, ME is what saveMe() sends to the server as who you are, and a
@@ -1658,121 +1579,93 @@ function folPut(ers, h, hs){
    account. Without it, signing in as somebody else and opening your own page
    would draw the last person's following list under your name. */
 function folForget(){
-  FOL_HAVE={}; FOL_ASKED={};
+  FOL_HAVE={}; FOL_ASKED={}; FOL_END={};
   WHO_HAVE={}; WHO_ASKED={};
+  REL={};
 }
-function folPull(ers, h, ok, bad){
+/* ONE PAGE OF A LIST. No `after` is the top of it and replaces what was
+   held; `after` is the last handle already held and the page is added under
+   it (www/net.js § netFollowRows says why it is by handle). FOL_END is set
+   only by a SHORT page -- 「could not ask」 is not the end.
+
+   Every answer is a list: `[]` or longer, and anything else falls, which
+   puts the pop up and unmarks the ask so it CAN be asked again. 「人のプロ
+   フィールからフォロワー見ようとするとずっとくるくるするんだって」 OWNER
+   2026-09-08 was the third answer, `null`, that was neither. */
+var FOL_END={};
+function folPull(ers, h, after, ok, bad){
   var k=folKey(ers, h);
   h=String(h||'');
-  if(!h){ if(ok) ok(); return; }
   FOL_ASKED[k]=1;
-  /* AN ANSWER IS WRITTEN DOWN, AND EVERY ANSWER IS A LIST.
-     「人のプロフィールからフォロワー見ようとするとずっとくるくるするんだって」
-     OWNER 2026-09-08. This used to read `if(hs) FOL_HAVE[k]=hs;` -- because
-     the ask had a THIRD answer, `null`, meaning 「could not be looked up」.
-     Nothing was written down for it, the ask stayed marked as made, and
-     vFollows() below drew a mark that turned for ever: folWait() answers at
-     once for anything already asked, so walking back in asked nothing.
-     Measured 2026-09-08 -- the screen opened, the mark turned, no pop, zero
-     requests on the second visit.
-
-     There is no third answer any more (www/net.js § netFollowRows): a list is
-     `[]` or longer, and anything else falls, which puts the pop up with
-     ［再更新］ behind it and unmarks the ask so it CAN be asked again. So an
-     empty list is written down like any other -- 「まだ誰もいない」 is a thing
-     the server said. */
   (ers? netFollowers : netFollowing)(function(hs){
-    folPut(ers, h, hs);
-    if(ok) ok(); else render();
+    FOL_END[k]=hs.length<NET_PAGE;
+    folPut(ers, h, after? folOf(ers, h).concat(hs) : hs);
+    ok(hs);
   }, function(d, s, m){
     FOL_ASKED[k]=0;
-    if(bad) bad(d, s, m);
-  }, h);
+    bad(d, s, m);
+  }, h, after);
 }
-/* And the list waited for rather than asked from a render, which is what
-   followsOpen() below wants: a list already here answers at once, and one
-   that is not is asked for once. */
-function folWait(ers, h, ok, bad){
-  if(folGot(ers, h) || FOL_ASKED[folKey(ers, h)]){ ok(); return; }
-  folPull(ers, h, ok, bad);
+/* The list is asked again the next time its page is arrived at. */
+function folDrop(ers, h){
+  var k=folKey(ers, h);
+  delete FOL_HAVE[k]; delete FOL_ASKED[k];
 }
 function folGot(ers, h){ return !!FOL_HAVE[folKey(ers, h)]; }
 function folOf(ers, h){ return FOL_HAVE[folKey(ers, h)] || []; }
-/* WHOSE LIST THIS SCREEN IS SHOWING, AND WHICH DIRECTION -- read off the
-   route's argument, in one place. 「フォロワーとかタップしても見れないし」
-   OWNER 2026-09-03 put the handle on the end of it: `ing` and `ers` alone are
+/* WHOSE LIST A FOLLOWS PAGE IS, AND WHICH DIRECTION -- read off the route's
+   argument, in one place. 「フォロワーとかタップしても見れないし」 OWNER
+   2026-09-03 put the handle on the end of it: `ing` and `ers` alone are
    yours, `ing:<handle>` and `ers:<handle>` are somebody's, split on the same
-   colon `relate` and `gram` already split theirs on (www/shell.js).
-
-   It was worked out inside vFollows() and nowhere else, which was right until
-   the pull needed the same answer -- and a second reading of one argument is
-   two answers waiting to disagree. */
-/* The argument is taken rather than read where one is handed in, because
-   followsOpen() below asks these two about an argument the app has not
-   arrived at yet -- the whole point of it is that the screen is not there. */
+   colon `relate` and `gram` already split theirs on (www/shell.js). The
+   argument is taken rather than read, because the door asks these about a
+   page the app has not arrived at yet. */
 function folWho(a){
   a=String(a===undefined? (here().a||'') : a);
   var c=a.indexOf(':');
-  return (c<0)? '' : a.slice(c+1);
+  return (c<0)? meHandle() : a.slice(c+1);
 }
 function folErs(a){
   a=String(a===undefined? (here().a||'') : a);
   var c=a.indexOf(':');
   return a.slice(0, c<0? a.length : c)==='ers';
 }
-/* ---- AND THE DOOR ONTO A LIST OF PEOPLE --------------------------------
+/* ---- WHAT A FOLLOWS PAGE READS -------------------------------------------
    「ユーザーもアイコンとか？になってあとで表示されるけど」 OWNER 2026-09-07.
-   The same shape as profileOpen() above and for the same sentence: what is on
-   the screen is asked for BEFORE the screen, and the one that was pressed
-   from stays up until it is all in.
-
-   TWO REQUESTS AND NEVER MORE, whoever is on the list: the handles (one, and
-   none at all for your own two lists -- those came down when the session
-   began), and then the people, which is whoNeed() and is one request for the
-   lot of them. It was one per row, from inside the render, and the rows drew
-   '?' until each came back. */
-function followsOpen(a){
-  a=String(a||'');
-  var ers=folErs(a), who=folWho(a), mine=(!who || who===meHandle());
-  function no(d, s, m){ netPop(d, s, m, function(){ followsOpen(a); }); }
-  function people(){
-    whoNeed(mine? (ers? meFollowers() : meFollowing()) : folOf(ers, who),
-            function(){ go('follows', a); }, no);
-  }
-  /* No `no` on the pull table: pullRun() owns the pop for everything on it. */
-  if(mine) pullWait('mine', people); else folWait(ers, who, people, no);
+   One page of the list, then the people on it and whether you follow each --
+   the handles first, then the people (whoNeed) and the relation (relAsk)
+   side by side, however long the list is -- and the door waits for all of
+   them, so no row is drawn with a '?' where a face goes. `fols` in www/sns.js § WHAT
+   EACH PAGE READS; the next page is folMore(), at the foot. */
+function folsAsk(a, ok, bad){
+  var ers=folErs(a), h=folWho(a);
+  folPull(ers, h, '', function(hs){ folPeople(hs, function(){ ok(1); }, bad); }, bad);
 }
-/* ASK AGAIN. Everything about a person is asked ONCE -- WHO_ASKED holds a
-   handle so a name that has been deleted is not asked about for ever, and the
-   two follow pulls keep one flag each for the whole session. That is right
-   for a door, which opens once, and wrong for a PULL, which is a person
-   saying 「もう一度聞け」.
-
-   「他の人の画面でも更新できるようにしたい」 OWNER 2026-09-04. It is the same
-   sentence as the counts one screen up: somebody who followed you while the
-   app was open was in neither the number nor the list until it was killed and
-   opened again 「なんか3フォロワーなのに2人しかいない」.
-
-   THE FLAG IS CLEARED AND THE PULL IS ASKED -- nothing here talks to the
-   server itself, so there is still one place each request is made from. */
-function meAgain(h){
-  h=String(h||'');
-  if(!h || h===meHandle()){
-    /* Yours, asked again. Not netWho(): what a person wrote about themselves
-       is ME and is on this phone. What the server holds about your own page
-       is the two follow lists behind its counts, and `mine` is the road to
-       them -- a person pulling is never refused, which is what pullGo()
-       means (www/sns.js § pullRun). */
-    pullGo('mine');
-    return;
-  }
-  whoAsk(h);
+function folsGot(a){
+  var ers=folErs(a), h=folWho(a), hs=folOf(ers, h);
+  return folGot(ers, h) && whoAllGot(hs) && relGot(hs);
 }
-function folAgain(ers, h){
-  h=String(h||'');
-  if(!h) return;
-  FOL_ASKED[folKey(ers, h)]=0;
-  folPull(ers, h);
+/* The people and whether you follow each, side by side: both need only the
+   handles, so neither waits for the other -- two round trips in a row, not
+   three (slow-check). */
+function folPeople(hs, ok, bad){
+  var left=2, fell=false;
+  function one(){ if(fell) return; left--; if(!left) ok(); }
+  function no(d, s, m){ if(fell) return; fell=true; bad(d, s, m); }
+  whoNeed(hs, one, no);
+  relAsk(hs, one, no);
+}
+/* AND THE NEXT PAGE, when the foot of the list comes near (www/sns.js
+   § snsMore). */
+var FOL_MORE=false;
+function folMore(){
+  var a=here().a, ers=folErs(a), h=folWho(a), k=folKey(ers, h), hs=folOf(ers, h);
+  if(FOL_MORE || FOL_END[k] || !hs.length) return;
+  FOL_MORE=true;
+  folPull(ers, h, hs[hs.length-1], function(more){
+    folPeople(more, function(){ FOL_MORE=false; render(); },
+              function(d, s, m){ FOL_MORE=false; netPop(d, s, m); });
+  }, function(d, s, m){ FOL_MORE=false; netPop(d, s, m); });
 }
 function vFollows(){
   /* WHOSE, and it is the argument's second half. 「フォロワーとかタップしても
@@ -1780,25 +1673,23 @@ function vFollows(){
      and `ers:<handle>` are somebody's -- the same colon `relate` and `gram`
      already split an argument on, because a screen is a route and at most one
      argument (www/shell.js). */
-  var ers=folErs();
-  var who=folWho();
-  var mine=(!who || who===meHandle());
-  /* Your own two lists are one ask that went out when the session began;
-     somebody else's is the one followsOpen() made on the way in. Either way
-     the door waited for it, so what is here is what the server said. */
-  var list=mine? (ers? meFollowers() : meFollowing()) : folOf(ers, who);
+  /* The door waited for one page of the list, the people on it and whether
+     you follow each (§ WHAT A FOLLOWS PAGE READS), so what is here is what
+     the server said. Your own row is never on YOUR lists (meNotMe); on
+     somebody else's it is, whenever you follow them or they you. */
+  var ers=folErs(), who=folWho();
+  var list=(who===meHandle())? meNotMe(folOf(ers, who)) : folOf(ers, who);
   return '<div class="view">'+navTop()+'<div class="body">'+
     /* NOTHING TURNS ON THIS SCREEN, AND THERE IS NOTHING TO WAIT FOR.
        「人のプロフィールからフォロワー見ようとするとずっとくるくるするんだって」
        OWNER 2026-09-08 -- and 「押してから読み込みが終わるまで前の画面のままで、
-       揃った瞬間に出る」「くるくるも出さない」 OWNER 2026-09-07, which is the
-       profile's shape (profileOpen above) and is this screen's now too.
+       揃った瞬間に出る」「くるくるも出さない」 OWNER 2026-09-07, which is
+       every page's shape now (www/shell.js § navLand).
 
        It used to draw a mark while `got` was false, which was the honest
        thing to do when a screen could be reached before its answer was in.
-       No screen can: followsOpen() is the one door, every button into
-       `follows` goes through it (www/act-map.js), and it does not go until
-       the list AND the people are here. A mark here could therefore only ever
+       No screen can: the door onto `follows` (www/shell.js § navLand) does
+       not land until the list AND the people are here. A mark here could therefore only ever
        be drawn over an answer that was never coming -- which is exactly what
        it was doing, for ever, and what a failure now puts a pop up for.
 
@@ -1809,9 +1700,9 @@ function vFollows(){
       ? list.map(function(h){
           /* Who this handle IS. The list is handles and nothing else, so
              every row was `@name` and no face, no name and nothing to press.
-             THIS SCREEN ASKS FOR NOTHING: followsOpen() above got the list
-             and the people before it went anywhere, in two requests, so
-             whoOf() has every one of them by the time this runs. */
+             THIS SCREEN ASKS FOR NOTHING: the door got the list and the
+             people before it landed, so whoOf() has every one of them by the
+             time this runs. */
           var p;
           h=String(h);
           p=whoOf(h);

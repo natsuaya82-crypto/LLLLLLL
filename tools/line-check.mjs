@@ -31,6 +31,36 @@
         them -- on a post's line and in the field; at one step they do not
      5  somebody else's shape is never one of my keyboard's code points nor
         mine for a different shape, and the same shape is the same one
+     6  written DOWN, the gap is the same gap: at 0 two letters join, at 2
+        they stand further apart than at 1, and the field and the post are
+        the same column -- a column is laid out by the face's vertical
+        advance, so this is the face's vmtx asked of the page
+     7  a word of the language is set in the letters somebody drew ONLY where
+        the font draws it. Every text node on every route and every word's
+        page whose face is LinguaScript is asked of sfontRuns(), and each
+        character has to be one the font draws -- a character reached only
+        as part of a ligature (`s` of `sh`) is a dashed box in that face.
+        The surface is COUNTED: nothing here lists which classes may wear
+        the face, so a rule added tomorrow that sets a whole string in it
+        fails tomorrow. 「一つに書き直す」 r61-face, r46-audit § B1
+     8  and the other way round: a word the font draws is never shown in
+        roman. Every text node on the same walk, and on every chapter of the
+        grammar, that IS one of the language's words is asked whether it
+        came through sfontHTML() -- a whole headword standing as one text
+        node outside `.sfont`, while sfontRuns() says the face draws some of
+        it, was written with esc(). And again with letters BORROWED for the
+        sounds, which replace the text: a headword standing as itself then
+        was written without wOut(). Counted the same way: nothing lists
+        which rows draw words. The one row that gives the spelling in roman
+        on purpose, `.wrd` under a word's head, is named, and has to be met.
+        So is the bar's title on a word's page (`.navt`): it is text, built
+        by pageName() in www/shell.js, and whether it is drawn is that
+        file's to answer -- named so that it is seen, not so that it is
+        allowed (docs/scope/r69-misc.md).
+        r69-misc, r61 「止めたこと」3
+     9  nobody-has-decided is ON: with SET.myfont absent the dictionary is set
+        in the drawn letters and the switch reads on; with it `false` neither.
+        「オンをデフォルトにしてくれ。」 OWNER 2026-09-23
 
    A browser, on its own port.
    --------------------------------------------------------------------------- */
@@ -63,7 +93,12 @@ const errs = [];
 pg.on('pageerror', (e) => errs.push(e.message));
 await pg.goto(`http://localhost:${PORT}/`);
 await pg.waitForSelector('#splash', { state: 'detached', timeout: 10000 });
-await pg.evaluate((s) => { eval('(' + s + ')()'); SET.walked = true; SET.ui = 'en'; },
+/* The door onto a page waits for what that page reads (www/shell.js
+   § navLand, OWNER 2026-09-23 「読むのは開いた画面の分だけ」) and there is no
+   server here, so go('thread') below would never land. What is measured is
+   the line, not the reads: a page's answers are taken as already in. */
+await pg.evaluate((s) => { eval('(' + s + ')()'); SET.walked = true; SET.ui = 'en';
+                           window.pageWait = function (r, a, done) { done(true); }; },
                   seed.toString());
 
 const fails = [];
@@ -175,7 +210,13 @@ await pg.evaluate((raw) => {
 const typed = await inkOf('#pw-ln');
 const sent = await pg.evaluate(() => {
   const was = POSTS.map((p) => p.id);
+  /* The server takes it. A post is written down here only once the server
+     has it (pwSendPost), this page has no server, and what is asked below is
+     the line the post carries -- not the road it travels. */
+  const realPostSend = postSend;
+  postSend = function (p, ok) { ok(''); };
   pwSend();
+  postSend = realPostSend;
   const p = POSTS.filter((q) => was.indexOf(q.id) < 0)[0];
   if (!p) return null;
   p.id = 'pline';
@@ -203,7 +244,7 @@ if (!posted || posted.length !== 2)
 const card = await pg.evaluate(() => {
   const a = ltPua(0), b = ltPua(1);
   POSTS.push({ id: 'pcard2', at: 2, lang: langId, lname: langName, ln: 'x', who: 'Aya', hd: 'aya',
-               mine: true, mn: '', ui: 'en', ink: postInkTyped(a + '\n' + b) });
+               mine: true, mn: '', ui: 'en', ink: postInkOf(puaTyped(a + '\n' + b).cut) });
   CARD = { k: 'p', v: 'pcard2' };
   const real = cardInk;
   let seen = null;
@@ -245,7 +286,7 @@ for (const sp of [1, 0]) {
     const two = ltPua(0) + ltPua(0);
     POSTS = POSTS.filter((p) => p.id !== 'pjoin');
     POSTS.push({ id: 'pjoin', at: 1, lang: 'other', lname: 'Other', ln: 'x', who: 'Iri', hd: 'iri',
-                 mine: false, mn: '', ui: 'en', ink: postInkTyped(two) });
+                 mine: false, mn: '', ui: 'en', ink: postInkOf(puaTyped(two).cut) });
     go('thread', 'pjoin');
     return two;
   }, sp);
@@ -269,6 +310,104 @@ if (!(JOIN[1].line > 0) || !(JOIN[1].field > 0))
   fails.push('at one step two letters stand with no gap (line ' + JOIN[1].line + ', field ' +
              JOIN[1].field + '), so the test above proves nothing');
 
+/* ---- 6. written DOWN, the gap is the same gap ---------------------- */
+/* 「字間> スライダーと下に横と縦それぞれスライドしてどう動くかで別ページに
+   した方が見やすい。」 OWNER 2026-09-23 -- and down, the slider moved
+   nothing: a column is laid out by the face's VERTICAL advance, and the face
+   had none, so the browser gave every letter the line box whatever the gap.
+   A letter whose stem runs from the top edge of the lattice to the bottom,
+   two of them in a column, on a post written down and in the field written
+   down, at 0, 1 and 2: the empty rows between the first ink and the last are
+   none at 0, more at 2 than at 1, and the field and the post agree. */
+const inkDown = async (sel) => {
+  await pg.evaluate(() => document.fonts.ready);
+  await pg.waitForTimeout(150);
+  const box = await pg.evaluate((sel) => {
+    const e = document.querySelector(sel);
+    if (!e) return null;
+    /* a field's text is not in the DOM, so its own box; a line's, its text */
+    let r;
+    if (e.tagName === 'TEXTAREA' || e.tagName === 'INPUT') {
+      const b = e.getBoundingClientRect();
+      r = { left: b.left + 2, top: b.top + 2, width: b.width - 4, height: b.height - 4 };
+      return { x: r.left, y: r.top, width: r.width, height: r.height };
+    }
+    const rg = document.createRange(); rg.selectNodeContents(e);
+    r = rg.getBoundingClientRect();
+    return { x: r.left - 4, y: r.top - 4, width: r.width + 8, height: r.height + 8 };
+  }, sel);
+  if (!box || !(box.width > 8) || !(box.height > 8)) return null;
+  const png = await pg.screenshot({ clip: box });
+  return pg.evaluate(async (b64) => {
+    const im = new Image();
+    await new Promise((ok) => { im.onload = ok; im.src = 'data:image/png;base64,' + b64; });
+    const c = document.createElement('canvas');
+    c.width = im.width; c.height = im.height;
+    const x = c.getContext('2d');
+    x.drawImage(im, 0, 0);
+    const d = x.getImageData(0, 0, c.width, c.height).data;
+    const bg = [d[0], d[1], d[2]];
+    const on = (i, j) => { const k = (j * c.width + i) * 4;
+      return Math.abs(d[k] - bg[0]) + Math.abs(d[k + 1] - bg[1]) + Math.abs(d[k + 2] - bg[2]) > 120; };
+    const runs = [];
+    for (let j = 0; j < c.height; j++) {
+      let n = false;
+      for (let i = 0; i < c.width && !n; i++) n = on(i, j);
+      if (!n) continue;
+      const last = runs[runs.length - 1];
+      if (last && last[1] === j - 1) last[1] = j; else runs.push([j, j]);
+    }
+    const S = window.devicePixelRatio || 1;
+    let g = 0;
+    for (let i = 1; i < runs.length; i++) g += (runs[i][0] - runs[i - 1][1] - 1);
+    return { runs: runs.length, gap: Math.round(g / S * 10) / 10,
+             tall: runs.length ? Math.round((runs[runs.length - 1][1] + 1 - runs[0][0]) / S * 10) / 10 : 0 };
+  }, png.toString('base64'));
+};
+await pg.evaluate(() => {
+  const I = GGRID.inset, R = 800 - GGRID.inset;
+  LETTERS[2].st = [{ pts: [[400, I], [400, R]] }, { pts: [[400, 400], [640, 400]] }];
+  planGot('pro'); SCRIPT.dir = 'ttb-rl';
+});
+const DOWN = {};
+for (const sp of [0, 1, 2]) {
+  const two = await pg.evaluate((sp) => {
+    SCRIPT.sp = sp; installScriptFont();
+    const two = ltPua(2) + ltPua(2);
+    POSTS = POSTS.filter((p) => p.id !== 'pdown');
+    POSTS.push({ id: 'pdown', at: 1, lang: 'other', lname: 'Other', ln: 'x', who: 'Iri', hd: 'iri',
+                 mine: false, mn: '', ui: 'en', ink: postInkOf(puaTyped(two).cut), dir: 'ttb-rl' });
+    go('thread', 'pdown');
+    return two;
+  }, sp);
+  const line = await inkDown('#app .pline');
+  await pg.evaluate((two) => {
+    PW = pwBlank(); openPost(); render();
+    const e = document.getElementById('pw-ln');
+    e.style.caretColor = 'transparent';
+    e.value = two;
+    e.dispatchEvent(new Event('input', { bubbles: true }));
+  }, two);
+  const field = await inkDown('#pw-ln');
+  DOWN[sp] = { line, field };
+  await pg.evaluate(() => { PW = pwBlank(); });
+}
+await pg.evaluate(() => { SCRIPT.sp = 1; SCRIPT.dir = 'ltr'; planGot('free'); installScriptFont(); });
+const dn = (sp, k) => (DOWN[sp][k] ? DOWN[sp][k].gap : -1);
+if (dn(0, 'line') !== 0 || dn(0, 'field') !== 0)
+  fails.push('written down, at 0 two letters drawn edge to edge do not join: ' + dn(0, 'line') +
+             'px empty on a post, ' + dn(0, 'field') + 'px in the field');
+if (!(dn(1, 'line') > 0) || !(dn(2, 'line') > dn(1, 'line')) ||
+    !(dn(1, 'field') > 0) || !(dn(2, 'field') > dn(1, 'field')))
+  fails.push('written down, the gap does not follow the setting -- px empty between two letters at 0/1/2: ' +
+             'post ' + [0, 1, 2].map((s) => dn(s, 'line')).join('/') +
+             ', field ' + [0, 1, 2].map((s) => dn(s, 'field')).join('/'));
+for (const sp of [0, 1, 2])
+  if (!DOWN[sp].line || !DOWN[sp].field || !near(DOWN[sp].line.tall, DOWN[sp].field.tall, 1) ||
+      !near(DOWN[sp].line.gap, DOWN[sp].field.gap, 1))
+    fails.push('written down at ' + sp + ', the field and the post are not the same column: post ' +
+               JSON.stringify(DOWN[sp].line) + ', field ' + JSON.stringify(DOWN[sp].field));
+
 /* ---- 5. somebody else's letters are theirs ------------------------ */
 /* Two posts at the same gap, both with the first letter at index 0 of their
    ink -- mine, drawn with my alphabet, and somebody else's, where that index
@@ -279,7 +418,7 @@ if (!(JOIN[1].line > 0) || !(JOIN[1].field > 0))
    one glyph. Asked of what postLnHTML() actually wrote. */
 const own = await pg.evaluate(() => {
   SCRIPT.sp = 1; installScriptFont();
-  const mineInk = postInkTyped(ltPua(0));
+  const mineInk = postInkOf(puaTyped(ltPua(0)).cut);
   const theirs = { g: [[{ pts: [[100, 100], [700, 700]] }, { pts: [[700, 100], [100, 700]] }]], s: [0], sp: 1 };
   const same = { g: [mineInk.g[0]], s: [0], sp: 1 };
   const cp = (ink) => postLnHTML({ id: 'x', ln: 'x', ink }).charCodeAt(0);
@@ -293,6 +432,264 @@ if (own.theirs === own.mine || (own.theirs >= own.kb[0] && own.theirs <= own.kb[
 if (own.same !== own.mine)
   fails.push('the same shape at the same gap came out as two code points (U+' +
              own.mine.toString(16) + ', U+' + own.same.toString(16) + ')');
+
+
+/* ---- 7. the drawn face goes only where it draws -------------------- */
+/* One letter typed as `sh` -- a ligature, so `s` and `h` alone are the
+   dashed box in LinguaScript -- and one drawn `a`. `has` then has exactly
+   one character the font draws. sfontHTML() says so per character; an
+   element set in the face whole says otherwise, and the two used to meet
+   on the dictionary and on a word's head. */
+const FACE = await pg.evaluate(async () => {
+  const st = [{ pts: [[112, 112], [688, 112], [400, 688]] }];
+  LETTERS = [{ id: 'F1', st: st, ch: '', nm: '', ab: 'sh', snd: ['ʃ'] },
+             { id: 'F2', st: [{ pts: [[112, 400], [688, 400]] }], ch: '', nm: '', snd: ['a'] }];
+  /* `sha` holds a slot, so a grammar chapter draws it on a row; the rest
+     are what the grammar's demonstrations and arranged rows are built of --
+     two nouns, a verb, an adjective, a particle in a slot of its own -- and
+     the verb is this month's name, so the calendar draws a word too. */
+  WORDS = [{ hw: 'has', ph: ['h', 'a', 's'], mn: 'x', pos: 'n' },
+           { hw: 'sha', ph: ['ʃ', 'a'], mn: 'y', pos: 'n', slot: 'det.a' },
+           { hw: 'asha', ph: ['a', 'ʃ', 'a'], mn: 'go', pos: 'v',
+             slot: 'month.' + numLabel(calMonthOf(new Date())) },
+           { hw: 'aa', ph: ['a', 'a'], mn: 'big', pos: 'adj' },
+           { hw: 'sa', ph: ['s', 'a'], mn: 'subject mark', pos: 'part', slot: 'part.subj' }];
+  /* An order arranged and a side said: the demonstrations draw only what
+     somebody has answered. */
+  STG.order = ['S', 'O', 'V']; STG.np = ['ADJ', 'N'];
+  STG.gpos = STG.gpos || {}; STG.gpos.adj = 'before';
+  SET.myfont = true; installScriptFont();
+  await document.fonts.load('20px ' + SFONT_FAMILY);
+  const bad = [], seen = { nodes: 0, screens: 0, words: 0, wrd: 0, navt: 0 }, roman = [];
+  /* A word of the language, exactly: findWord() folds case, and an
+     interface language's sample 「HAS」 is not the word `has`. */
+  const isHw = (x) => WORDS.some((w) => w.hw === x);
+  let look = (where) => {
+    seen.screens++;
+    const tw = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    let n;
+    while ((n = tw.nextNode())) {
+      const el = n.parentElement, s = n.nodeValue;
+      if (!el || !s.trim()) continue;
+      /* 8. a headword standing whole, outside sfontHTML()'s spans */
+      if (isHw(s.trim()) && !el.closest('.sfont') &&
+          sfontRuns(s.trim()).some((r) => r.on)) {
+        if (el.closest('.wrd')) seen.wrd++;
+        else if (el.closest('.navt')) seen.navt++;
+        else if (roman.length < 8)
+          roman.push(where + ': <' + el.tagName.toLowerCase() + ' class="' + el.className + '"> ' +
+                     JSON.stringify(s.trim()));
+      }
+      if (isHw(s.trim())) seen.words++;
+      if (getComputedStyle(el).fontFamily.indexOf(SFONT_FAMILY) !== 0) continue;
+      seen.nodes++;
+      const off = sfontRuns(s).filter((r) => !r.on && r.t.trim());
+      if (off.length && bad.length < 8)
+        bad.push(where + ': <' + el.tagName.toLowerCase() + ' class="' + el.className + '"> ' +
+                 JSON.stringify(s) + ' -- ' + off.map((r) => r.t).join(',') + ' not drawn');
+    }
+  };
+  /* Every route, every face of one that the app's own doors open (a
+     `data-do="go"` carrying an argument, harvested from what the walk has
+     rendered), and every chapter of the grammar with every target of the two
+     written per target -- all asked of the page, so a face added tomorrow
+     is walked tomorrow. */
+  const walk = () => {
+    const todo = Object.keys(PAGES).map((r) => [r]), done = {};
+    for (const c of g2Chaps())
+      for (const a of [c.id].concat(Object.keys(GPOL_TARGET).map((k) => c.id + ':' + k)))
+        if (g2ChapBy(a)) todo.push(['gram', 'v2:' + a]);
+    while (todo.length) {
+      const d = todo.shift(), k = d.join(' ');
+      if (done[k]) continue;
+      done[k] = 1;
+      try { go(d[0], d[1]); render(); } catch (e) { continue; }
+      look(k);
+      document.querySelectorAll('[data-do="go"]').forEach((b) => {
+        let a; try { a = JSON.parse(b.getAttribute('data-a') || 'null'); } catch (e) { a = null; }
+        if (a && a.length === 2 && PAGES[a[0]] && typeof a[1] === 'string') todo.push(a);
+      });
+    }
+  };
+  walk();
+  /* `xyz` has nothing the face draws. Its head is the spelling as it is,
+     so the row under it that gives the spelling again is the same word
+     twice -- that row is for a head showing something else. */
+  WORDS.push({ hw: 'xyz', ph: ['x'], mn: 'z', pos: 'n' });
+  const twice = [];
+  for (const w of WORDS) {
+    go('words'); openWord(w.hw); render(); look('word ' + w.hw);
+    const head = document.querySelector('.whw'), rd = document.querySelector('.wrd');
+    if (head && rd && !head.querySelector('.sfont') && head.textContent === rd.textContent)
+      twice.push(w.hw);
+  }
+  /* 8, the other road to the same statement: letters BORROWED for the
+     sounds replace the text (wOut()), and a headword shown as itself while
+     they are on was written without wOut(). */
+  LETTERS.forEach((l) => { if ((l.snd || [])[0]) l.ch = '\u05d0'; });
+  SET.showScript = true; SET.myfont = false;
+  const own = look, bor = [];
+  look = (where) => {
+    const tw = document.createTreeWalker(document.getElementById('app'), NodeFilter.SHOW_TEXT);
+    let n;
+    while ((n = tw.nextNode())) {
+      const el = n.parentElement, s = n.nodeValue.trim();
+      if (!el || !isHw(s) || wOut(s) === s || el.closest('.wrd') || el.closest('.navt')) continue;
+      if (bor.length < 8) bor.push(where + ': <' + el.tagName.toLowerCase() + ' class="' + el.className + '"> ' + JSON.stringify(s));
+    }
+  };
+  walk();
+  for (const w of WORDS) { go('words'); openWord(w.hw); render(); look('word ' + w.hw); }
+  look = own;
+  return { bad, seen, twice, roman: roman.concat(bor) };
+});
+if (FACE.roman.length)
+  fails.push('a word of the language is shown as its bare spelling where its letters were due -- ' +
+             'written with esc() rather than sfontHTML(wOut()):\n    ' + FACE.roman.join('\n    '));
+if (!FACE.seen.wrd)
+  fails.push("section 8 names `.wrd` as the one row that spells a word in roman on purpose, and " +
+             'no `.wrd` on the walk held one -- the exemption matches nothing and is permission');
+if (!FACE.seen.navt)
+  fails.push('section 8 names the bar title `.navt` as spelling a word in roman, and no bar on the ' +
+             'walk did -- it is drawn now: take the name out of line-check');
+if (FACE.bad.length)
+  fails.push('a word is set in the drawn face where the face does not draw it -- a dashed box ' +
+             'where the letters were:\n    ' + FACE.bad.join('\n    '));
+if (FACE.twice.length)
+  fails.push("a word's page gives its spelling twice -- the head is not in the drawn face and the " +
+             'row under it repeats it: ' + FACE.twice.join(', '));
+if (!FACE.seen.nodes)
+  fails.push('no text was set in the drawn face on any of ' + FACE.seen.screens +
+             ' screens -- the walk is not reaching the words, so section 7 holds nothing');
+
+/* ---- 9. nobody-has-decided is ON ------------------------------------ */
+/* 「オンをデフォルトにしてくれ。」 OWNER 2026-09-23. Somebody who walked past
+   the drawing in the onboarding and drew later has never touched the switch,
+   so SET.myfont is absent -- and that is on. Only a person turning it off is
+   off, and that stays off. Asked of what the dictionary and the switch on
+   the writing page actually draw, for both. */
+const MYF = await pg.evaluate(() => {
+  const was = SET.myfont, out = {};
+  const look = () => {
+    installScriptFont();
+    window.route = 'words'; NAV = [{ r: 'words' }];
+    const box = document.createElement('div'); box.innerHTML = vWords();
+    window.route = 'wsys'; NAV = [{ r: 'wsys' }];
+    const sw = document.createElement('div'); sw.innerHTML = vWsys();
+    const b = sw.querySelector('[data-do="setMyFont"]');
+    return { sfont: box.querySelectorAll('.sfont').length,
+             press: b ? b.getAttribute('data-a') : 'no switch' };
+  };
+  delete SET.myfont; out.none = look();
+  SET.myfont = false; out.off = look();
+  SET.myfont = was; installScriptFont();
+  return out;
+});
+if (!MYF.none.sfont)
+  fails.push('somebody who never touched the switch sees the dictionary in roman -- nobody-has-' +
+             'decided is ON (OWNER 2026-09-23): 0 words set in the drawn face');
+if (MYF.none.press !== '[false]')
+  fails.push('the switch reads OFF for somebody who never touched it -- pressing it would say ' +
+             MYF.none.press + ', and the first press has to be the one that turns it off');
+if (MYF.off.sfont)
+  fails.push('somebody who turned the drawn letters OFF sees them anyway: ' + MYF.off.sfont +
+             ' words set in the drawn face');
+if (MYF.off.press !== '[true]')
+  fails.push('the switch of somebody who turned it off does not read off: pressing it says ' + MYF.off.press);
+
+/* ---- 10. a line draws only what its post carries -------------------- */
+/* 「読む側が描く物・使う書体は、投稿に載っている物だけ」 (r73 §2-9). A line is
+   set in LinguaType, and that one family holds this phone's keyboard face
+   (U+E000 up) and every post's shapes (U+F8FF down). So any private use
+   character on a line is drawn with SOME shape this phone has filed -- and
+   the only ones that are the post's are the characters inkChar() handed out
+   for the shapes on it. Every `.pline` the real timeline draws is asked, the
+   fixture's posts and two of somebody else's that carry private use
+   characters as TEXT: one with no ink, one with ink and the character inside
+   a run of text. Counted over the page, so a post drawn tomorrow is asked
+   tomorrow. */
+const MINEONLY = await pg.evaluate(() => {
+  SET.myfont = true; installScriptFont();
+  const n = POSTS.length;
+  const shape = [{ pts: [[100, 100], [700, 700]] }, { pts: [[700, 100], [100, 700]] }];
+  POSTS.unshift(
+    { id: 'pua-a', at: Date.now() - 1000, lang: 'other', lname: 'V', who: 'K', hd: 'k', mine: false,
+      av: { ch: 'K' }, ln: String.fromCharCode(PUA0) + String.fromCharCode(PUA0 + 1) + ' hi', mn: 'm', ui: 'en' },
+    { id: 'pua-b', at: Date.now() - 2000, lang: 'other', lname: 'V', who: 'K', hd: 'k', mine: false,
+      av: { ch: 'K' }, ln: 'x', ink: { g: [shape], s: [0, ' ' + String.fromCharCode(0xF8FF) + String.fromCharCode(PUA0)], sp: 1 },
+      mn: 'm', ui: 'en' });
+  window.route = 'feed'; NAV = [{ r: 'feed' }]; render();
+  const out = { lines: 0, pua: 0, stray: [] };
+  document.querySelectorAll('#app .pline').forEach((el) => {
+    const row = el.closest('[data-do="postOpen"]');
+    let id = '';
+    try { id = row ? JSON.parse(row.getAttribute('data-a'))[0] : ''; } catch (e) {}
+    const p = postById(id);
+    if (!p) return;
+    out.lines++;
+    const ok = {};
+    if (postInkOK(p.ink)) p.ink.s.forEach((x) => {
+      if (typeof x === 'number') ok[inkChar(p.ink.g[x], postSide(p)).charCodeAt(0)] = 1;
+    });
+    const s = el.textContent;
+    for (let i = 0; i < s.length; i++) {
+      const c = s.charCodeAt(i);
+      if (c < 0xE000 || c > 0xF8FF) continue;
+      out.pua++;
+      if (!ok[c]) out.stray.push(id + ' U+' + c.toString(16));
+    }
+  });
+  POSTS.splice(0, POSTS.length - n);
+  return out;
+});
+if (MINEONLY.stray.length)
+  fails.push('a line drew a private use character its post carries no shape for, so it came out in ' +
+             'whatever this phone filed there -- its own keyboard or another post: ' +
+             MINEONLY.stray.slice(0, 6).join(', '));
+if (MINEONLY.lines < 3)
+  fails.push('only ' + MINEONLY.lines + ' lines were drawn on the timeline, so section 10 holds nothing');
+
+/* ---- 11. and the reading side writes nothing ------------------------ */
+/* The other half of the same sentence: 「読む側は何も書かない」. r73 measured
+   postFace -> whoOf -> postAvatar -> saveMe, a timeline render writing the
+   account. So the timeline and a card of somebody else's post and of mine
+   are drawn with EVERY save* on the page counted -- asked of the page, so a
+   save added tomorrow is counted tomorrow -- with localStorage's two writes
+   counted, and ME and SET compared byte for byte before and after. */
+const QUIET = await pg.evaluate(() => {
+  const hits = {}, wrapped = [];
+  const count = (k) => { hits[k] = (hits[k] || 0) + 1; };
+  Object.keys(window).forEach((k) => {
+    if (!/^save[A-Z]/.test(k) || typeof window[k] !== 'function') return;
+    const real = window[k];
+    window[k] = function(){ count(k); return real.apply(this, arguments); };
+    wrapped.push([k, real]);
+  });
+  const set = Storage.prototype.setItem, rm = Storage.prototype.removeItem;
+  Storage.prototype.setItem = function(k){ count('setItem ' + k); return set.apply(this, arguments); };
+  Storage.prototype.removeItem = function(k){ count('removeItem ' + k); return rm.apply(this, arguments); };
+  const meWas = JSON.stringify(ME), setWas = JSON.stringify(SET), n = POSTS.length;
+  POSTS.unshift({ id: 'q-a', at: Date.now() - 1000, lang: 'other', lname: 'V', who: 'K', hd: 'k',
+                  mine: false, ln: 'qel dross', mn: 'm', ui: 'en' });
+  try {
+    window.route = 'feed'; NAV = [{ r: 'feed' }]; render(); postLines();
+    ['q-a', POSTS[1].id].forEach((id) => {
+      CARD = { k: 'post', v: id };
+      cardPaint(document.createElement('canvas'));
+    });
+  } finally {
+    POSTS.splice(0, POSTS.length - n);
+    Storage.prototype.setItem = set; Storage.prototype.removeItem = rm;
+    wrapped.forEach(([k, real]) => { window[k] = real; });
+  }
+  return { hits, saves: wrapped.length, me: JSON.stringify(ME) === meWas,
+           set: JSON.stringify(SET) === setWas };
+});
+if (Object.keys(QUIET.hits).length || !QUIET.me || !QUIET.set)
+  fails.push('drawing the timeline and two cards wrote something -- ' +
+             JSON.stringify(QUIET.hits) + (QUIET.me ? '' : ', ME changed') + (QUIET.set ? '' : ', SET changed'));
+if (!QUIET.saves)
+  fails.push('no save* function was found on the page, so section 11 counted nothing');
 
 if (errs.length) fails.push('the page threw: ' + errs.slice(0, 3).join(' | '));
 
@@ -311,6 +708,16 @@ console.log('line: typed into the composer and posted, one line comes out in the
             '      at one step. Two letters drawn edge to edge, px empty between them --\n' +
             '      at 1: line ' + JOIN[1].line + ', field ' + JOIN[1].field +
             ';  at 0: line ' + JOIN[0].line + ', field ' + JOIN[0].field + '.\n' +
+            '      Written down, px empty between two letters at 0/1/2 -- post ' +
+            [0, 1, 2].map((s) => dn(s, 'line')).join('/') + ', field ' +
+            [0, 1, 2].map((s) => dn(s, 'field')).join('/') + '.\n' +
             "      Somebody else's letter is its own code point (U+" + own.theirs.toString(16) +
             ', mine U+' + own.mine.toString(16) + ',\n      keyboard U+' + own.kb[0].toString(16) +
-            '-' + own.kb[1].toString(16) + '), and the same shape is the same one.');
+            '-' + own.kb[1].toString(16) + '), and the same shape is the same one.\n' +
+            '      ' + FACE.seen.nodes + ' text nodes set in the drawn face across ' + FACE.seen.screens +
+            ' screens, every character one the face draws;\n      ' + FACE.seen.words +
+            ' text nodes that are a word, none of them roman where the face draws it.\n' +
+            '      Nobody-has-decided draws the dictionary in the drawn face (' + MYF.none.sfont +
+            ' words) and the switch reads on;\n      turned off, ' + MYF.off.sfont + ' and the switch reads off.\n' +
+            '      ' + MINEONLY.lines + ' lines on the timeline, ' + MINEONLY.pua + ' private use characters on them, every one a shape its own post carries.\n' +
+            '      The timeline and two cards drawn with ' + QUIET.saves + ' save functions watched: nothing written, ME and SET as they were.');

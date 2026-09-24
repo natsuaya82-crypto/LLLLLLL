@@ -25,7 +25,7 @@ Lingua の「文法」機能を根本から再設計する。
 
 現在の Lingua は、単語・文法・例文・SNS投稿 が十分に繋がっていない。
 
-現在の `grammar.js` では主に `SET.order` / `SET.gpos` / `ORDERS` / 形容詞の位置 /
+現在の `grammar.js` では主に `STG.order` / `STG.gpos`（言語ごと。`SET` から移した） / 形容詞の位置 /
 否定語の位置 / 場所表現の位置 などを設定している。
 
 しかしこの構造では、
@@ -74,7 +74,7 @@ Lingua の「文法」機能を根本から再設計する。
 ユーザーに最初から SOV / SVO / VSO などを選ばせるのではない。まず
 **「実際に自分の言語で文章を作ってみる」** ところから始める。
 
-Lingua が単語を持っている場合、`hejo` `mi` `luma` `poko` `gmd` などの実際の単語を
+Lingua が単語を持っている場合、*hejo* *mi* *luma* *poko* *gmd* などの実際の単語を
 表示する。ユーザーに「この言語では、誰が・何を・どうする、をどんな順番で並べますか？」
 と聞く。ユーザーがドラッグして SUBJECT / OBJECT / VERB と並べる。その結果 SOV を
 **自動的に導出する**。
@@ -408,11 +408,11 @@ Parser / Generator / Grammar Checker / Translation の精度が上がる。
 |---|---|---|---|
 | 1 | 文 | 語順（`order`）── 副詞・場所・時・疑問詞・コピュラ・比較の相手の位置もこの板 | ある |
 | | | 名詞句の並び（`np`）── 指示詞・数・形容詞・所有者・関係節が名詞の前か後か | **出来た**（`STG.np`・`NOUNPHRASE`/`ORDER`） |
-| | | です／ある（`cop`）── 語と、名詞の文・存在の否定と疑問 | **出来た**（`CHAP_SLOTS.cop`・位置は語順の板の `CMP`） |
+| | | です／ある（`cop`）── 語と、名詞の文・存在の否定と疑問 | **出来た**（`CHAP_SLOTS` の `cop`・位置は語順の板の `CMP`） |
 | 2 | 名詞 | 名詞の種類（`ncls`）── 性・クラス。無し／2 つ／3 つ…、名前は自由、語ごとにどれか、一致 | **出来た**（`STG.ncls`・`CLASS` の rule）。**消す道は無い** |
 | | | 複数形（`pl`） | ある |
 | | | 格の印（`n`）と 助詞（`part`）── 主語・目的語・渡す相手・所有・場所・道具・共同 | **出来た**（`part` の枠が七つ・`GCASE`） |
-| | | 冠詞・指示詞（`det`）── a／the／this／that に当たる語 | **出来た**（`CHAP_SLOTS.det`・位置は §2 の板） |
+| | | 冠詞・指示詞（`det`）── a／the／this／that に当たる語 | **出来た**（`CHAP_SLOTS` の `det`・位置は §2 の板） |
 | | | 所有（`have`） | ある |
 | 3 | 代名詞 | `pron` の六つ | ある |
 | 4 | 数詞 | `count` | ある |
@@ -533,7 +533,7 @@ Parser / Generator / Grammar Checker / Translation の精度が上がる。
 | §1 語順をドラッグで導出 | **出来た。**語を動かして並べる。六択は誰にも訊かれない |
 | §3 動詞の活用を人が定義 | **繋がった。**`gFmRules()` が `STG.fm` をエンジンの `inflection`/`derivation` にする。`zmi luma` → `zmi lumaka` |
 | §8 例文を構造として保存 | `STG.ex` は文字列。構造では持っていない |
-| §16 Migration | `SET.order` → `STG.order` はある。`gpos.negp` → 否定の Rule も（`migrateNeg()`、写すだけ）。ほかの `gpos` は **Grammar Rule への変換をしていない** |
+| §16 Migration | `SET.order` → `STG.order` はある。`gpos.negp` → 否定の Rule も（`gPolOld()` が読むときに写す、書き戻さない）。ほかの `gpos` は **Grammar Rule への変換をしていない** |
 | §18 Repository 層 | **無い**。`adapter.load/save` が直接 localStorage |
 | §21 責務分離 | 5本のまま（`derivation`/`inflection`/`parser`/`generator`/`sentence` は `morphology`と`translate`の中） |
 
@@ -571,8 +571,8 @@ Parser / Generator / Grammar Checker / Translation の精度が上がる。
 - 規則の一覧と、品詞／何の形を選ぶ二画面は閉じた（同じことを二箇所で言って
   いたので）
 
-`ORDERS`（六択）は誰にも訊かれなくなりました。**消してはいません** ──
-`orderDef()` がまだ読みます。
+~~`ORDERS`~~（六択）は消えました。語順は `STG.order` にカードの並びとして在り、
+`orderDef()` が読みます（`www/grammar.js`）。
 
 **まだ無いもの**は上の表のとおり: §9 Sentence Builder、§8 例文を構造として
 保存、§16 の Grammar Rule への変換、§18 Repository 層、§11 の言語固有情報。

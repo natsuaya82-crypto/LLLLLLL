@@ -105,6 +105,8 @@ act('upFile', upFile);
 act('upData', upData);
 act('popYes', popYes);
 act('popNo', popNo);
+/* the dark behind the popup -- index.html's shell, harvested by act-check */
+act('closeSheet', closeSheet);
 /* And the two on the popup the launch puts up when a plan has ended -- the box
    that says 「今後表示しない」 and the way out. www/settings.js § capLapseSaw;
    the tick is what sends `plan_lapse_seen`, closing without it writes nothing
@@ -116,8 +118,6 @@ act('capLapseShut', capLapseShut);
 act('keepPress', keepPress);
 act('goTab', goTab);
 act('profileOpen', profileOpen);
-act('followsOpen', followsOpen);
-act('notfoOpen', notfoOpen);
 act('kbAddLay', kbAddLay);
 act('kbDropLay', kbDropLay);
 act('kbDelKey', kbDelKey);
@@ -128,7 +128,8 @@ act('kbAlign', kbAlign);
 act('kbInsAsk', kbInsAsk);
 act('kbIns', kbIns);
 act('kbInsCol', kbInsCol);
-act('kbCellAdd', kbCellAdd);
+act('kbCellSel', kbCellSel);
+act('kbCellPut', kbCellPut);
 act('kbTapKey', kbTapKey);
 act('kbJoinSel', kbJoinSel);
 act('kbOpenSel', kbOpenSel);
@@ -146,7 +147,6 @@ act('pushSettings', pushSettings);
 act('kbSetKind', kbSetKind);
 act('kbSlot', kbSlot);
 act('kbLtTap', kbLtTap);
-act('kbLtPut', kbLtPut);
 act('langOpen', langOpen);
 act('langDrop', langDrop);
 act('langNew', langNew);
@@ -374,7 +374,7 @@ actIn('pwMarkSize', pwMarkSize);
 actIn('pwMarkText', pwMarkText);
 actIn('ltDraftName', ltDraftName);
 actIn('ltSetNote', ltSetNote);
-actIn('obLang', obLang);
+actIn('setUi', setUi);
 actIn('obMailSet', obMailSet);
 actIn('setPwSet', setPwSet);
 actIn('contactKind', contactKind);
@@ -398,10 +398,13 @@ actIn('wdSetNt', wdSetNt);
    editor, and the word a grammar stage asks for. */
 actIn('wdSetLn', wdSetLn);
 actIn('addFmSet', addFmSet);
+actIn('wfmSetF', wfmSetF);
 actIn('ipaSetQ', ipaSetQ);
 actIn('ltSetQ', ltSetQ);
 actIn('fmrSetAdd', fmrSetAdd);
 act('fmPick', fmPick);
+act('openWfm', openWfm);
+act('wfmDel', wfmDel);
 act('fmSay', fmSay);
 act('fmOpen', fmOpen);
 act('posPick', posPick);
@@ -410,7 +413,6 @@ act('subNewOpen', subNewOpen);
 /* Forms made by a rule: writing one, and asking a word for the ones it has
    not got. */
 act('fmrNew', fmrNew);
-act('fmrAddAll', fmrAddAll);
 act('openFmr', openFmr);
 act('g2SelOn', g2SelOn);
 act('g2SelOff', g2SelOff);

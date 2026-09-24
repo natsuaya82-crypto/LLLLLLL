@@ -41,15 +41,15 @@ import os from 'os';
    heavy was started for nothing. */
 const FAST = ['assets-check', 'docs-check', 'es5-check', 'grammar-engine-check', 'dead-check', 'import-check', 'sides-check',
               'face-check', 'box-check', 'css-once-check', 'store-check', 'del-check', 'paid-check',
-              'token-check', 'verify-check', 'push-check'];
+              'token-check', 'verify-check', 'push-check', 'store-localize', 'writes-check'];
 /* A browser each. The order is the order they are PRINTED in; which one runs
    when is up to the pool. */
 const SLOW = ['migrate-check', 'i18n-check', 'act-check', 'conv-check', 'card-check',
-              'word-check', 'post-check', 'fill-check', 'round-check', 'guide-check',
+              'word-check', 'forms-check', 'post-check', 'fill-check', 'round-check', 'guide-check',
               'base-check', 'kb-check', 'plan-check', 'term-check', 'sheet-check',
               'shape-check', 'draft-check', 'gramlang-check', 'world-check', 'tl-check',
-              'acct-check', 'page-check', 'dl-check', 'again-check', 'hist-check', 'open-check', 'line-check',
-              'find-check', 'keep-check', 'slow-check', 'press'];
+              'acct-check', 'page-check', 'dl-check', 'again-check', 'hist-check', 'open-check', 'line-check', 'ink-check', 'pua-check',
+              'find-check', 'keep-check', 'slow-check', 'take-check', 'quiet-check', 'marks-check', 'load-check', 'state-check', 'press'];
 const WIDE = Math.max(1, Math.min(4, (os.cpus() || []).length || 4));
 
 function run(name){

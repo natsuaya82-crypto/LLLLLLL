@@ -207,6 +207,10 @@ async function boot(pre, drive) {
    is what a real account is. */
 const SESS = JSON.stringify({ at: 'not a jwt', rt: 'a refresh token',
                               uid: '11111111-1111-4111-8111-111111111111', anon: false });
+/* What this account has on the phone is filed under it (www/core.js § ACCT):
+   the profile copy is `lingua.me.<uid>`, and one with no owner on it is read by
+   nobody. */
+const ME_KEY = 'lingua.me.11111111-1111-4111-8111-111111111111';
 
 /* ---- 1. a phone with nothing on it ------------------------------------- */
 {
@@ -462,7 +466,7 @@ const SESS = JSON.stringify({ at: 'not a jwt', rt: 'a refresh token',
      the door however this road ends. */
   const r = await boot({ 'lingua.set': JSON.stringify({ done: true }),
                          'lingua.sess': SESS,
-                         'lingua.me': JSON.stringify({ name: 'Aya', handle: 'aya' }) },
+                         [ME_KEY]: JSON.stringify({ name: 'Aya', handle: 'aya' }) },
                        () => {
                          NAV = [{ r:'settings', a:'' }];
                          go('set', 'acct'); go('set', 'pw');
@@ -516,7 +520,7 @@ const SESS = JSON.stringify({ at: 'not a jwt', rt: 'a refresh token',
 {
   const r = await boot({ 'lingua.set': JSON.stringify({ done: true }),
                          'lingua.sess': SESS,
-                         'lingua.me': JSON.stringify({ name: 'Aya', handle: 'aya' }) },
+                         [ME_KEY]: JSON.stringify({ name: 'Aya', handle: 'aya' }) },
                        () => {
                          NAV = [{ r:'settings', a:'' }];
                          go('set', 'acct'); go('set', 'pw');
@@ -572,18 +576,21 @@ const SESS = JSON.stringify({ at: 'not a jwt', rt: 'a refresh token',
 
    netMyProfile() is stood in for, because what is under test is where obIn()
    puts somebody once the row is in hand, and a headless browser has no
-   server to get one from. Everything else is the real app: the real obIn(),
-   the real goTab(), and here() read off the trail afterwards. */
+   server to get one from -- and so are the profile's own reads, which the
+   door onto it waits for (www/shell.js § navLand), for the same reason.
+   Everything else is the real app: the real obIn(), the real goTab(), and
+   here() read off the trail afterwards. */
 {
   const r = await boot({ 'lingua.set': JSON.stringify({ done: true }),
                          'lingua.sess': SESS,
-                         'lingua.me': JSON.stringify({ name: 'Aya', handle: 'aya' }) },
+                         [ME_KEY]: JSON.stringify({ name: 'Aya', handle: 'aya' }) },
                        () => {
                          SET.obback = null;
                          goTab('profile'); go('settings'); go('set', 'acct');
                          window.netMyProfile = function (ok) {
                            ok({ display: 'Aya', handle: 'aya' });
                          };
+                         window.pageWait = function (r, a, done) { done(true); };
                          window.__inLand = { from: here().r };
                          try { obIn(); }
                          catch (e) { window.__inLand.err = String(e && e.message); }
@@ -617,7 +624,7 @@ const SESS = JSON.stringify({ at: 'not a jwt', rt: 'a refresh token',
      one. */
   const r = await boot({ 'lingua.set': JSON.stringify({ done: true }),
                          'lingua.sess': SESS,
-                         'lingua.me': JSON.stringify({ name: 'Aya', handle: 'aya' }) });
+                         [ME_KEY]: JSON.stringify({ name: 'Aya', handle: 'aya' }) });
   say('signed in: appIs()=' + r.is + '  screen=' + JSON.stringify(r.text));
   if (!r.inS) no('finished and signed in: the fixture session did not take');
   if (r.is !== 'app') no('finished and signed in: appIs() said ' + r.is + ', wanted app');
@@ -877,11 +884,17 @@ const SESS = JSON.stringify({ at: 'not a jwt', rt: 'a refresh token',
 
    三本訊きます:
    1. 歩きを済ませてサインアウトした端末は**扉**で開く（文字を描く画面ではない）
-   2. 古い `done` は一度きり `walked` へ写され、`done` は消える
+   2. 古い `done` は一度きり `walked` へ写され、`done` はそのまま残る ──
+      移行は写すだけで、読んだものを消さない（CLAUDE.md § Data。消していた
+      のは r69-misc 申し送り 2）。「写した」は `doneMoved` の印が言い、印の
+      ある端末では二度写さない
    3. 新品の端末は今までどおり歩きで開く（1 番の裏 ── 上の § 1 が持っています）
 
    赤を見た形（2026-09-09）: `appIs()` の `if(!SET.walked) return 'ob'` を
-   消すと 1 が赤（歩きで開く）。`walkedMigrate()` を消すと 2 が赤。 */
+   消すと 1 が赤（歩きで開く）。`walkedMigrate()` を消すと 2 が赤。
+   2026-09-23: `delete SET.done` を戻すと 2 が赤（古い `done` が消えている）、
+   `doneMoved` の印を見ないようにすると 2 の二本目が赤（後で変わった
+   `walked` が写し直される）。 */
 {
   /* 歩きを済ませ、サインアウトした端末 ── セッションは無く、`walked` は在る。 */
   const r = await boot({ 'lingua.set': JSON.stringify({ walked: true }) });
@@ -894,21 +907,35 @@ const SESS = JSON.stringify({ at: 'not a jwt', rt: 'a refresh token',
     no('歩きを済ませた端末が、文字を描く画面から始まっている');
 }
 {
-  /* 古い版が書いた `done`。一度きり写して、古い名前は消える。 */
+  /* 古い版が書いた `done`。一度きり写して、古い名前はそのまま。 */
   const r = await boot({ 'lingua.set': JSON.stringify({ done: true }) },
                        () => { window.__mig = { walked: SET.walked,
-                                                done: SET.done,
+                                                moved: SET.doneMoved,
                                                 onDisk: localStorage.getItem('lingua.set') }; });
   const m = r.mig || {};
   if (m.walked !== true)
     no('古い `done` が `walked` へ写っていない — ' + JSON.stringify(m.walked));
-  if (m.done !== undefined)
-    no('写したのに古い `done` が残っている — ' + JSON.stringify(m.done));
-  if (String(m.onDisk || '').indexOf('"done"') >= 0)
-    no('ディスクにも古い `done` が残っている — ' + m.onDisk);
+  /* 写した古い `done` が残っていること ── ディスクで訊く。`done` は端末の
+     設定（SET_PHONE）ではなくアカウントの欄なので、サインアウトした端末の
+     メモリには誰の物としても載らない（www/core.js § ACCT）。残っているかは
+     ディスクの答えが全部。 */
+  if (String(m.onDisk || '').indexOf('"done":true') < 0)
+    no('写した古い `done` が消えている（移行は写すだけ）— ディスク ' + m.onDisk);
+  if (!m.moved)
+    no('写したことが `doneMoved` に残っていない — ' + JSON.stringify(m.moved));
   if (r.is !== 'door')
     no('古い `done` を持つ端末が扉で開かない — appIs()=' + r.is);
-  say('古い `done` は一度きり `walked` へ写り、古い名前は端末から消える');
+  say('古い `done` は一度きり `walked` へ写り、古い名前はそのまま残る');
+}
+{
+  /* 写した後で `walked` が変わった端末。古い `done` が残っていても、印が
+     あるので写し直さない。 */
+  const r = await boot({ 'lingua.set': JSON.stringify({ done: true, walked: false, doneMoved: 1 }) },
+                       () => { window.__mig = { walked: SET.walked }; });
+  const m = r.mig || {};
+  if (m.walked !== false)
+    no('写し済みの端末で古い `done` がもう一度 `walked` へ写った — ' + JSON.stringify(m.walked));
+  say('写し済みの端末では、残っている `done` をもう一度写さない');
 }
 
 await br.close();

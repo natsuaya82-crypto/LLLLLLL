@@ -93,10 +93,18 @@ if (!css.trim()) fails.push('index.html has no <style> block to read');
 /* A declaration that draws nothing is not a box. `border-radius:0` is how a
    rule TAKES a corner off something that would otherwise have one, so it is
    the opposite of a breach and must never be reported as one. */
+/* WHAT A BOX IS, said once and asked by both halves below: a corner in any of
+   its spellings -- the shorthand, one of the four long forms, or the same in
+   JavaScript's camel case -- or four sides at once. The long forms were not
+   counted until 2026-09-23: `border-top-left-radius:9px` on a new selector
+   was a new corner and this was green. */
+const CORNER = /^border(-(top|bottom)-(left|right))?-radius$/;
+const BOX = (prop) => CORNER.test(prop) || prop === 'border';
+const camel = (p) => p.replace(/[A-Z]/g, (c) => '-' + c.toLowerCase());
 const draws = (prop, val) => {
   const v = val.trim().toLowerCase().replace(/!\s*important/g, '').trim();
   if (!v) return false;
-  if (prop === 'border-radius') return !/^(0|0px|0%|none)(\s+(0|0px|0%))*$/.test(v);
+  if (CORNER.test(prop)) return !/^(0|0px|0%|none)(\s+(0|0px|0%))*$/.test(v);
   if (v === 'none' || v === '0' || v === '0px') return false;
   if (/\bnone\b/.test(v)) return false;
   if (/^0(px)?\s/.test(v)) return false;          /* border:0 solid X */
@@ -115,7 +123,7 @@ for (const m of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
     if (i < 0) continue;
     const prop = d.slice(0, i).trim().toLowerCase();
     const val = d.slice(i + 1);
-    if (prop !== 'border-radius' && prop !== 'border') continue;
+    if (!BOX(prop)) continue;
     if (!draws(prop, val)) continue;
     const key = sel + ' | ' + prop;
     found.set(key, (found.get(key) || 0) + 1);
@@ -161,20 +169,37 @@ for (const k of stale) {
 }
 
 /* ---- 3. JavaScript sets no corner and no border ----------------------- */
-for (const f of fs.readdirSync(ROOT)) {
-  if (!f.endsWith('.js')) continue;
-  const src = decomment(fs.readFileSync(path.join(ROOT, f), 'utf8'));
-  for (const m of src.matchAll(/borderRadius|border-radius/g)) {
+/* Every .js under www/, at any depth -- not the files at its top alone, which
+   left www/grammar-engine/ unread. And both kinds of box, which is what this
+   heading always said: it only ever looked for a corner. A property written
+   as `prop:value` inside a style string, or as `.style.prop = value`, in
+   either spelling, is asked the same `draws()` the stylesheet is. */
+const jsFiles = [];
+(function walk(dir) {
+  for (const f of fs.readdirSync(dir)) {
+    const p = path.join(dir, f);
+    if (fs.statSync(p).isDirectory()) walk(p);
+    else if (f.endsWith('.js')) jsFiles.push(p);
+  }
+})(ROOT);
+let jsRead = 0;
+for (const p of jsFiles) {
+  const f = path.relative(ROOT, p);
+  const src = decomment(fs.readFileSync(p, 'utf8'));
+  jsRead++;
+  const sets = /\b(border(?:-(?:top|bottom)-(?:left|right))?-radius|border(?:(?:Top|Bottom)(?:Left|Right))?Radius|border)\s*(?::|=(?!=))\s*['"]?([^;"'\n]*)/g;
+  for (const m of src.matchAll(sets)) {
+    const prop = camel(m[1]);
+    if (!draws(prop, m[2] || '1')) continue;
     const line = src.slice(0, m.index).split('\n').length;
-    fails.push(f + ':' + line + ' sets a corner from JavaScript. A style set ' +
-      'here is in no stylesheet, so the baseline above can never see it. Zero ' +
-      'is the only number that closes that.');
+    fails.push(f + ':' + line + ' sets ' + (CORNER.test(prop) ? 'a corner' : 'four sides') +
+      ' from JavaScript. A style set here is in no stylesheet, so the baseline ' +
+      'above can never see it. Zero is the only number that closes that.');
   }
 }
-
 console.log('corners and borders in index.html: ' + list.length +
   '  (baseline ' + allowed.size + ')');
-console.log('set from www/*.js: 0 — a style the stylesheet cannot see');
+console.log('set from JavaScript: 0, in ' + jsRead + ' files under www/ — a style the stylesheet cannot see');
 
 if (fails.length) {
   console.log('');

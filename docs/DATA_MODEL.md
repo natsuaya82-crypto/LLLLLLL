@@ -22,7 +22,8 @@ is the procedure.
 
 ## The language
 
-Twelve slices, filed under `lingua.<id>.<slice>`. `SLICES` in `www/core.js` is
+The slices are `slice` rows on the server, and `lingua.<id>.<slice>` names each
+in memory while the app runs (`LSL`, CLAUDE.md rule 22). `SLICES` in `www/core.js` is
 the list, and **being in that list is what makes a slice real**: `netSaveUp()`
 and `netLangSync()` walk it, so a slice outside it reaches no server;
 `wipeLangsGo()` walks it for
@@ -32,21 +33,19 @@ it once — the keyboard and the world — and neither could throw. **Count them
 off `SLICES` itself and not off this sentence**, which has said eleven and has
 said twelve.
 
-**One key under `lingua.<id>.` is not a slice**, and it is the only one:
-`lingua.<id>.bkn`, the save counter. It was a fact about the backup FILE
-rather than part of the language, and the file is gone (`CLAUDE.md` rule 11,
-2026-09-04) — so the key is written by nothing now and goes up nowhere,
-and `tools/store-check.mjs` names it as the phone's own. Being outside `SLICES`
-also puts it outside both deletes above; **whether it should be** is with the
-owner (`docs/scope/aud-data.md` § オーナーに訊くこと).
+**`lingua.<id>.bkn` is not a slice.** It was the backup FILE's save counter,
+and the file is gone (`CLAUDE.md` rule 11, 2026-09-04): nothing in the app reads
+or writes it, and a phone an older version wrote it on still has it. Whether it
+goes with the deletes above is with the owner (`docs/scope/aud-data.md`
+§ オーナーに訊くこと).
 
 **And now a third reader walks it: the server.** OWNER DECISION 2026-08-26 —
 「基本は全部サーバー管理」. Each slice is one
 row in `slice` (`supabase/schema.sql`), keyed `(language, kind)`, and `body` is
 **the exact string `localStorage` holds** — the same string `syMerge()` works
 on and the file, so a slice has one shape and not three that could drift.
-`netLangSync()` (`www/net.js`, fired from `www/boot.js`) reads, merges through
-`www/sync.js` and writes back. So being in `SLICES` now decides three things at
+`netSaveUp()` (a person's save) and `netLangSync()` (the door) read, merge
+through `www/sync.js` and write back; a launch only reads (`netLangsDown()`). So being in `SLICES` now decides three things at
 once — wipe and what goes up — and a slice added outside the list is
 missing from all three.
 
@@ -73,8 +72,8 @@ anywhere.**
 
 **And all of it goes when the account does.** OWNER DECISION 2026-08-26 —
 「アカウント消したら全部消えるに決まってる」. Not the server rows only: the
-`slice` rows, the `language` row, the bytes in Storage, **and every
-`lingua.<id>.<slice>` key on the phone**, and the language's row out of
+`slice` rows, the `language` row, the bytes in Storage, **and every key of
+that account on the phone** (`lsWipeAcct(uid)`), and the language's row out of
 `lingua.langs`. This is the one place in this file where data is removed on
 purpose, and it is allowed for the one reason `docs/DATA_SAFETY.md` does not
 forbid: **the person asked.**
@@ -84,8 +83,7 @@ the difference the hard way — deleting a second account emptied the whole
 `lingua.` namespace and took the first account's only copy of a language with
 it. `wipeAll()` (`www/settings.js`) is the button; `wipeAllGo()` reads who is
 signed in AT THE PRESS, hands that uid down both arms of `netDropMe()`, and
-`wipeHere(uid)` calls `lsWipeAcct(uid)` (`www/core.js`) and `bkDropFor(ids)`
-(`www/backup.js`). What comes off the phone is listed under **what an account
+`wipeHere(uid)` calls `lsWipeAcct(uid)` (`www/core.js`). What comes off the phone is listed under **what an account
 deletion actually takes**, below.
 
 Which of the copies is believed when they differ: **neither.** `sync.js` adds
@@ -159,6 +157,23 @@ audiences: a screen means "the one in front of me" and must never be handed an
 id it could get wrong; something that addresses a language BY ID cannot say
 `langKey()`, and the answer to that is not to let it build the string itself.
 
+**Every key an account has is `lingua.<name>.<uid>`, written under that
+account the moment it is written (r79, `www/core.js` § ACCT).** `set` (the
+account's fields of the settings), `me`, `posts`, `drafts`, `langs`, `cur`,
+`take`: each is registered with `acctKeep()` beside its own global, and
+`acctFor(uid)` — the one switch, at the door and on the way out — reads the
+arriving account's and forgets the last one's. Nothing is parked and nothing
+is moved at a switch. With nobody signed in nothing is written: the only thing
+in memory with no owner is what the walk made, and the door gives it to the
+account that arrives, filling only what that account lacks.
+**What an older version wrote with no owner on the key** — `lingua.me`,
+`lingua.posts`, `lingua.drafts`, `lingua.langs`, `lingua.cur`, and the
+account's fields inside `lingua.set` — was that account's only if the `acct`
+stamp in `lingua.set` named it. That part is copied once per thing under the
+stamped uid (`acctMoved()`, marked in `SET.acctMoved`); the old keys are left
+byte for byte and never read again; a copy no stamp names is nobody's and is
+neither read nor removed (decision log 2026-09-24).
+
 **Not a slice, and deliberately:** `lingua.set` (`SET`) is the person's
 settings and belongs to no language. It carries `planWas` — the plan the app
 last saw — so that a plan ending can be noticed however it happens and said
@@ -191,10 +206,11 @@ interface language went on working out of the copy on the handset and simply
 never arrived. Fixed and held on 2026-09-22 (`npm run rls`, five claims). All five
 were in `SET_PHONE` as 「how this handset is set up」, and that sentence was
 wrong about all five: signing in on a second phone gave somebody the app
-arranged the way that phone happened to be. `lingua.set` still holds them as
-the copy, filed under the account by `setFor()`, and what is left in
-`SET_PHONE` is `planUid`, `wldMoved`, `vvkb`, `planV`, and `done`/`obback`
-pending the decision in `docs/reports/r8-item2-2026-09-08.md`.
+arranged the way that phone happened to be. `lingua.set.<uid>` holds them as
+the copy, written under the account the moment they are written, and what is
+left in `lingua.set` is
+`SET_PHONE` in `www/core.js` is what that array names — read it there, not
+here.
 
 `lingua.me` (`ME`) is the person — the copy of their `profile` row. **Who they
 follow and who follows them are not in it**, since 2026-09-09: `ME.fo` and
@@ -267,8 +283,8 @@ That is the opposite of the draft rule above and it is not an exception to it:
 a draft is something a person MADE, and a notice is something that happened to
 them. There is nothing here to destroy by winning.
 
-**It is filed under the account**, `lingua.notices.<uid>`, the way `lingua.me`
-is parked by `meParkKey()`. Two accounts on one handset must not read each
+**It is filed under the account**, `lingua.notices.<uid>`, the way every
+account key is (`lingua.<name>.<uid>`, `www/core.js` § ACCT). Two accounts on one handset must not read each
 other's notices, and a notice names who did what to whom.
 
 **Nothing prunes it and nothing ages it out**, which is the same sentence
@@ -279,22 +295,27 @@ deleted on this handset leaves behind the list of who did what to it. Whether
 it should be taken is with the owner (`docs/scope/aud-data.md`
 § オーナーに訊くこと, Q1); what is written here is what the code does.
 
-`lingua.set` carries **`notAt`** beside it, and it is not the same kind of
+`lingua.set.<uid>` carries **`notAt`** beside it, and it is not the same kind of
 thing: it is **when the notices screen was last opened**, as a number of
 milliseconds, and it is what makes a notice unread. 「最後に通知の画面を開いた
 時刻より新しいものを未読とする」 OWNER 2026-09-01 — the count on the bell is
 how many of `NOTES_HAVE` are newer than it. It is in `SET` and not beside the
 copy because it is a fact about the PERSON and not about the notices: it
 survives the copy being replaced, and it is the one number the bell reads.
-**The server holds no read marker** — `notices()` returns eight columns and
-none of them says read — so this is the whole of what "unread" means here, by
-the owner's decision rather than for want of a column.
+**The server holds no table of read notices** — `notices()` returns eight
+columns and none of them says read — so this one number is the whole of what
+"unread" means here, by the owner's decision rather than for want of a column.
+**The number itself goes up** with the account's other settings, in
+`profile.prefs` (`SET_PREFS`, r79): the decision's Reason was that a time is
+the same answer on whichever phone it is opened, which is only true if the
+time follows the account.
 
 What is IN a draft's `body` is what the composer had in its hands, pictures and
 recording as base64 — **not** files in the media bucket. That is not a
-shortcut. `post-media` is public (`media_read` is `using (bucket_id =
-'post-media')`), so a draft's photographs put there would be readable by
-anybody holding the publishable key while the draft itself was not; and
+shortcut. `post-media` is readable by every signed-in person (`media_read` is
+`using (is_member() and bucket_id = 'post-media')`), so a draft's photographs
+put there would be readable by everybody signed in while the draft itself was
+only its author's; and
 `netMyFiles()` collects what an account deletion removes out of `post.body`
 only, so a draft owning files in the bucket would be files nothing points at.
 The bytes go up when the post does, and not before.
@@ -315,33 +336,21 @@ destroys, and because until 2026-09-03 it took the whole `lingua.` namespace
 and that is how one person's deletion erased another person's language.
 
 ```
-  every SLICES key of every language whose LANGS entry carries this uid
+  every key under lingua.<id>. -- in memory and on the disk -- of every
+    language this account wrote (langOwnOf) or took (langTookHas)
   that language's row out of LANGS
-  lingua.me.<uid>      lingua.posts.<uid>      lingua.drafts.<uid>
-  lingua.me            lingua.posts            lingua.drafts     (the live ones)
-  the eight LS_FLAT keys
+  every lingua.… key whose last part is this uid -- lingua.set.<uid>,
+    lingua.me.<uid>, lingua.posts.<uid>, lingua.drafts.<uid>,
+    lingua.langs.<uid>, lingua.cur.<uid>, lingua.take.<uid>
+  and when lingua.set's old `acct` stamp names this account: its part of the
+    old live keys (acctMoved) -- lingua.me, lingua.posts, lingua.drafts,
+    lingua.cur whole, its rows of lingua.langs and its fields of lingua.set,
+    the rest written back as it was
 ```
 
-**The eight flat keys** are `lingua.words` `lingua.lines` `lingua.lang`
-`lingua.script` `lingua.letters` `lingua.notes` `lingua.phases`
-`lingua.talk` — the dictionary a single-language build wrote before a language
-had an id. `langMigrate()` **copies** out of them and never removes
-(`docs/DATA_SAFETY.md` § 2), so after the migration they are a second copy of
-that account's dictionary answering to nobody — and `langMigrate()` reads them
-again the moment the index has no current language, which handed the next
-person to sign in on this handset the first person's words. They are that
-account's dictionary in an older spelling, so they go with it. They carry no
-uid, and that is the whole reason this is written down rather than left to the
-prefix test above.
-
-**All of that is on its way out.** OWNER 2026-09-03: 「今の状態の話平キーなんか
-いらない」 — the road is being deleted, not conditioned: `langMigrate()`,
-`LS_FLAT`, `langMigStamp()` and the `mig` mark with them, and this line of
-`lsWipeAcct()` goes when they do because there is nothing left for it to take.
-The decision is in `docs/FEATURE_RULES.md` and the branch is `claude/flat`.
-**Delete this paragraph and the `mig` row above in the same commit that lands
-it** — a description of a road nobody walks is the thing this file is being
-audited for.
+Which languages is asked of that account's own index on the disk
+(`lingua.langs.<uid>`), not of memory: the session has usually ended by the
+time this runs, and signing out empties memory (r79, `acct-check` 48).
 
 **Two things under `lingua.` are NOT taken.** They are named so that nobody
 reads the list above as complete:
@@ -350,11 +359,9 @@ reads the list above as complete:
   lingua.notices.<uid>   the notices copy      www/sns.js  notKey()
 ```
 
-`lingua.set.<uid>` — the parked settings — was on this list and is not on it
-any more: it is not `lsWipeAcct()`'s, but `wipeHere()` in `www/settings.js`
-removes it one line before it calls `setFor('')`, so it does go with the
-account. The list said otherwise and was read as the whole answer, which is
-what this file is being audited for.
+`lingua.set.<uid>` ends in the uid and is taken with the rest (r79 — it was
+removed by hand in `wipeHere()` before, beside a second road to the same
+fields).
 
 Two written rules pull opposite ways here and **nothing in this file decides
 between them**: 「アカウント削除で残るものねえ」 (OWNER 2026-08-27) says
@@ -433,18 +440,20 @@ it goes with the rest of that account's keys. **It is with the owner** —
 | 誰の | その iPhone を持っているアカウントの。`uid uuid references profile(id) on delete cascade` |
 | 何が | `token`（APNs がその**インストール**に出した宛先、hex）と `created_at`。主キーは `(uid, token)` |
 | 誰が読めるか | **本人だけ**（`is_member() and uid = auth.uid()`）。`using (true)` はどこにもありません ── 読める token は、他人の行に書き込んで鳴らせる token です |
-| 誰が書けるか | 本人が自分の `uid` で insert するときだけ。`npm run rls` が B の名前で書けないこと・A の行を読めないことを試します |
+| 誰が書けるか | 本人が自分の `uid` で insert するときだけ。同じ組を出し直すのは何もしない（毎回の起動が出す）。`npm run rls` が B の名前で書けないこと・A の行を読めないこと・出し直しが断られないことを試します |
 | 編集 | **できません。**update の policy が一つもありません ── token は変わらず、新しいのは新しい行で、古いのは消えます |
-| いつ消えるか | 本人が消したとき（通知を切る）と、**Apple が `410 Unregistered` と答えたとき**。後者は `push-send` が service role で消します ── DELETE REVIEW は `docs/CHANGELOG.md` 2026-09-22 |
+| いつ消えるか | 本人が消したとき（通知を切る）、**Apple が `410 Unregistered` と答えたとき**（`push-send` が service role で、DELETE REVIEW は `docs/CHANGELOG.md` 2026-09-22）、そして**別のアカウントがその iPhone で同じ token を登録したとき**（`device_one()`、DELETE REVIEW は `docs/CHANGELOG.md` 2026-09-24） |
 | 退会したら | `on delete cascade` で消えます |
 
-**なぜ `(uid, token)` で `token` だけではないか。**APNs の token は
-「このアプリの、この端末への、このインストール」を指していて、**人を指して
-いません**。一台の iPhone で別のアカウントにサインインすると、同じ token が
-二つ目の uid に付きます。`token` だけを主キーにすると二人目のサインインが
-一人目の行を奪い、一人目は「その電話を誰かが一度使った」というだけの理由で
-通知が止まります。**二行あるのが本当の形**で、どちらを鳴らすかは知らせの宛先
-（uid）が決めます。
+**一つの token は、一つのアカウントの物です。**APNs の token は「このアプリの、
+この端末への、このインストール」を指していて、その iPhone で今サインインして
+いるのは一人です（`lingua.sess` は「この端末はどのアカウントか」、CLAUDE.md
+§ NOTHING IS THE PHONE'S）。だから別のアカウントがその iPhone で token を登録
+すると、**前のアカウントの行はそこで外れます**（`device_one()`、
+`supabase/schema.sql`）。前は二行が並び、サインアウトせずに替わった前の人の
+通知が、今その iPhone を持っている人に届き続けました（r63-audit S4）。主キーは
+`(uid, token)` のままで、「一つの token に一人」を言うのはその関数一つです。
+既にある重なりは消していません ── 次にその token が登録された時に外れます。
 
 **どの種類か** ── `current` です。宛先は「今どこに送れるか」で、過去形の data
 ではありません。だから古い token を残しておく意味はなく、Apple が無いと言った
@@ -460,8 +469,10 @@ it goes with the rest of that account's keys. **It is with the owner** —
 
 ## The index of languages, and what is actually in it
 
-`lingua.langs` (`LANGS`) is `id -> { … }`, and `lingua.cur` (`langId`) says
-which one every global on the making side means.
+`lingua.langs.<uid>` (`LANGS`) is `id -> { … }`, and `lingua.cur.<uid>`
+(`langId`) says which one every global on the making side means — both the
+ACCOUNT's (r79, r63 L4). Until 2026-09-24 they were `lingua.langs` and
+`lingua.cur`, one key each for every account on the phone.
 
 **索引は「眺めるための写し」であって、答えではありません（2026-09-15）。**
 「端末で使うものなんかないだろ」「そもそも端末を使用するところがないんだから
@@ -492,7 +503,7 @@ which one every global on the making side means.
 （`www/net.js`）はそれを insert に**入れて**送ります ── 列は
 `default gen_random_uuid()` なので、送れば送った値になります。それまでは
 番号が二つあり、`sid` がサーバー側のもう一つでした。二つを突き合わせていた
-`nidFor()` `nidHolds()` `nidDrop()` は削除。**取った言語はダウンロードが
+~~`nidFor()`~~ ~~`nidHolds()`~~ ~~`nidDrop()`~~ は削除。**取った言語はダウンロードが
 できた日からこの形です**（`langSeenAdd()` はサーバーの id をそのまま鍵に
 します）── 作る側が読む側に追いついたということです。
 
@@ -508,7 +519,6 @@ which one every global on the making side means.
 | `mine` | **nothing, since 2026-09-11** | whether the entry was made as a language you are MAKING or one you are only READING — a boolean this phone wrote. Four functions read it and fell three different ways where the server had not spoken, and `langForAcct()` read the disagreement as 「this account has no language」 and made a second one. **Whose a language is is `language.owner` and whether this account is reading somebody else's is a `language_take` row**; `langWhose()` (`www/core.js` § langWhose) is the one place both are asked. **An entry written by an older version still carries this field and nothing reads it**; nothing removes it, because a migration copies |
 | `sid` | **nothing, since 2026-09-10** | the server's id for this language, back when a language had two numbers. The id IS that number now, so there is nothing to keep beside it. `langsOneId()` (`www/core.js`) reads this field once, on the launch that moves the entry to it, and it is the last thing that ever does — it also says the `language` row EXISTS, because `netLangRow()` wrote it at the moment it made the row and at no other moment (`LROW`, `www/core.js`) |
 | `uid` | **nothing, since 2026-09-09** | it answered TWO questions with one field: on a language somebody made it was who MADE it, and on a downloaded one it was who TOOK it (`langSeenAdd()`'s own comment said so). The two come apart the moment a language moves between people, and `dlCount()` counted the second — so the ceiling on downloads was per handset. They are two questions now and both are the server's: **who wrote it** is `language.owner` (`langOwnOf()`, `www/core.js` § LOWN) and **that this account took it** is a `language_take` row (`langTookHas()`). An entry written by an older version still carries this field and nothing reads it |
-| `mig` | `langMigrate()` (`www/core.js`), removed by `langMigStamp()` | the mark that this entry came out of the eight flat keys and is still waiting for an account to be stamped on it. `langMigrate()` runs while `core.js` is loading, before `SESS` is even declared, so there is nothing to stamp with at the moment it is made and `netRead()` does it eighteen lines later |
 
 **Count them off the writers above and off `www/core.js`, not off a number
 written here.**
@@ -524,7 +534,7 @@ lands in the same place and does not make a second copy. 「ダウンロード�
 とかやめてね。」 OWNER 2026-09-01 is the sentence that closed the gap.
 
 **そして「この端末はその答えを聞いたことがある」の写しが一枚あります** ──
-`lingua.take.<uid>`（`langTakeKey()`、`www/core.js` § LTAKE）。`language_take`
+`lingua.take.<uid>`（`acctKeep('take')`、`www/core.js` § LTAKE・§ ACCT）。`language_take`
 がその起動で答えた言語の番号の並びで、**サーバーの答えの写しであって、誰かの
 作ったものではありません**。
 
@@ -532,7 +542,7 @@ lands in the same place and does not make a second copy. 「ダウンロード�
 |---|---|
 | 鍵 | `lingua.take.<uid>` ── 末尾がアカウントの名前なので `lsWipeAcct()` が数えて取る（一覧に足す必要はない） |
 | 書く | `langTookGot()` ── 答えが来た時だけ。`null`（＝訊けていない）は書かない |
-| 読む | `langTookFor()` ── **手元のアカウントの分だけ**。起動（`netRead`）と入り（`netTook`）、出る時は `''` で忘れる |
+| 読む | アカウントの入れ物（`acctKeep('take')`・`acctFor()`）── **手元のアカウントの分だけ**。起動と入り（`netTook`）、出る時は `acctFor('')` で忘れる |
 | 上る道 | **無し。**これを送る所はどこにも無く、作ってはいけない ── 何を取ったかは `language_take` で、訊くのは `netTakes()` |
 | なぜ在るか | 「前に読み込んだの出していいよ。何か更新するならクルクルが必要」OWNER 2026-09-12。無ければ電波の無い起動で `langWhose()` が `LW_WAIT` を返し、取った言語が丸ごと消えて見える |
 
@@ -558,10 +568,9 @@ and then writes the slices it was asked for with `langKeyOf(id, kind)`.
    (It said 「the backup file」 and there is no file — `CLAUDE.md` rule 11.)
    `SLICES` is
    unchanged — it is the list of what a language is MADE of, and that is the
-   same list for every language. **`netSaveUp()` is where it is refused**
-   (`www/net.js`), on `langWhose()`,
-   with `BK.dirty` cleared so every later save does not come back to be
-   refused again. Nothing is deleted and nothing is moved: it is the FILE that
+   same list for every language. **Every writer refuses it** — each asks
+   `langLocked()` (`www/core.js`, off `langWhose()`) before it writes, so
+   nothing of it reaches `netSaveUp()`. Nothing is deleted and nothing is moved: it is the FILE that
    does not carry it, and it is not lost by being skipped, because it came
    from somewhere and can be taken again.
 3. **A partial language is a normal state, not an error.** OWNER 2026-09-01:
@@ -641,7 +650,7 @@ rule holds without an exception being needed: a download **adds**.
 
 ```js
 { hw, sp[], mns[], mn, pos, at,
-  from?, fm?, syn[]?, ant[]?, ex[]?, nt?, reg?, tags[]?, ety?, up? }
+  from?, fm?, fms[]?, syn[]?, ant[]?, ex[]?, nt?, reg?, tags[]?, ety?, up? }
 ```
 
 `hw` is the headword and `sp` is the spelling as letters — **the spelling is
@@ -667,6 +676,24 @@ not a paradigm the language declares: a language does not say which forms it
 has, and a form built out of nothing like its parent is still just a word with
 a label on it. `fm` without `from` is not a state — `wdPutExtras()` deletes it
 when the parent goes.
+
+**An inflection is not a word** (OWNER 2026-09-23, `docs/FEATURE_RULES.md`
+§ Owner decision log). `fms` is the forms somebody PLACED on this word by hand —
+`{fm, hw, sp}`, one per label, `fm` the same label codes as above and `hw`/`sp`
+the form's spelling in the same shape as the word's own. Both the label and the
+spelling or it is not written. A form a rule makes is not stored: it is worked
+out when it is asked for, and a placed form of the same label wins over it —
+that is how an irregular is written. `wForms()` in `www/wordsheet.js` is the one
+place that answers 「the forms of this word」, and every reader asks it: the
+word page, the card, the keyboard's conversion, the meaning line of a post.
+
+A word with `from` and an `fm` that is not a derivation is an **inflection made
+before 2026-09-23**, when an inflection was stored as a word of its own. It is
+left exactly as it is. `wForms()` reads it as a form of its parent wherever the
+parent has no placed form of that label, and `wCountable()` in `www/core.js`
+does not count it toward the plan's ceiling. It is **not in the dictionary list**
+either (`wordsSeen()` in `www/words.js` leaves out what `wIsForm()` names) —
+it is listed under 活用 on its parent's page, and stays in `WORDS` unchanged.
 
 A word is **current data**. A card of a word follows the letters being redrawn,
 and that is correct.
@@ -752,7 +779,7 @@ writer's language:
 ```
 
 `sp` is the language's `SCRIPT.sp` at the moment the line was written
-(`postInkTyped()`, which the composer and an edit both use), for the reason
+(`postInkOf()` makes it when the post is sent; an edit keeps the ink it was written with while the line is the same), for the reason
 `dir` is: the reader has neither the writer's language nor its settings, and
 the writer's own old posts must not move when they change it. **Absent means
 1** — every post written before 2026-09-23, and every post whose ink was cut by
@@ -826,16 +853,6 @@ somebody's, and removing what a person made because the current shape has no
 use for it is what `docs/DATA_SAFETY.md` forbids outright. It is simply
 ignored.
 
-### The reader's own words
-
-A post said again in the reader's conlang is the one thing here that is
-**current** rather than frozen, and deliberately: it is built from the
-reader's dictionary, now, so a sentence that half renders today renders whole
-next month because the dictionary grew. Freezing it would be the bug — the
-mirror image of `ink`, and correct for the same reason. `trUnits()` in
-`post.js` is above the line and touches `mn`/`tr` and never `ln` or `ink`;
-`sides-check` holds that with a named exception rather than by silence.
-
 ## What somebody looks for — two lists, never one
 
 「検索した履歴もユーザーはいらんから5個くらい検索履歴出るようにしたい」
@@ -881,20 +898,21 @@ was built as a second road into it and the decision took it out.
 round.** 「アカウント消したのに検索履歴残ってたんだけどなんで？…全部アカウント
 だって言ってるやん おかしいだろお前一本化しろって。」 OWNER 2026-09-04. The
 history was left behind on a deletion, and not because anything about it was
-special: `SET_ACCT` was a hand-written list of the fields that are an
+special: ~~`SET_ACCT`~~ was a hand-written list of the fields that are an
 account's, `recent` was added to `SET` a day after the list was last touched,
-and `setFor(uid)` walks the list. `recent_search` cascades off `profile` and so
+and ~~`setFor(uid)`~~ walked the list. `recent_search` cascades off `profile` and so
 off `auth.users`, so `account_delete()` had already taken the rows — what
 stayed was the phone's copy.
 
 **`SET_PHONE` in `www/core.js` is that list turned inside out**, and it names
-this HANDSET's own setup: the theme, the interface language, the marks that
-say a migration has run here, `planUid`. **Everything else in `SET` is an
+this HANDSET's own setup — read the array; the theme and the interface
+language are not on it, they are the account's and go up in `profile.prefs`
+(`SET_PREFS`). **Everything else in `SET` is an
 account's**, counted rather than named, so a field added tomorrow travels
 without anybody remembering — which is the whole of what went wrong. It is
-parked under `lingua.set.<uid>` when somebody signs out and read back when they
-return, the same shape as `meFor()` and `postFor()`; `lsWipeAcct()` empties the
-live key of that account's fields and takes the parked one with the rest.
+written under `lingua.set.<uid>` the moment it is written and read back when
+that account arrives, the same as every account key (`www/core.js` § ACCT,
+r79); `lsWipeAcct()` takes that key with the rest.
 `tools/store-check.mjs` holds `SET_PHONE` against its own table: a field on a
 road to the server may not be called this handset's setup.
 
@@ -946,8 +964,9 @@ See `docs/PAID_FEATURES.md`.
 plans screen draws no buy button for a rung already paid for, so the place it
 left says which plan is on and until when — 「消すなら同じ場所に現在この
 プランです〇〇/〇〇までみたいな感じにしないとわからんやろ」 OWNER 2026-09-03.
-The date comes from `Transaction.expirationDate` through `LinguaStore.current`
-and stops at `STORE_UNTIL` in `www/store.js`, which is a variable and not a
+The date is the server's: `decidePlan()` in
+`supabase/functions/verify-plan/verify.mjs` works out `until` in the same place
+as the plan, and `storeUntilTook()` puts it at `STORE_UNTIL` in `www/store.js`, which is a variable and not a
 key: it is gone when the app is closed and asked for again the next time the
 screen is opened.
 

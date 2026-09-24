@@ -38,10 +38,10 @@
 /* Something changed, so the server is told. Not at once: NET_UPMS of quiet
    inside netSaveUp() (www/net.js) is what separates 「still typing」 from
    「stopped」, and that function decides everything else -- whether there is a
-   session at all, and which of the twelve slices actually moved.
+   session, whether the language on the screen may be written (langLocked,
+   www/core.js), and which slices a person wrote and moved (§ LTOUCH).
 
-   Guarded because this file is loaded before www/net.js and www/boot.js calls
-   it on the first render, which is three script tags before netSaveUp()
-   exists. The launch has its own sync a moment later, so nothing is lost by
-   the first call doing only half of its job. */
-function bkTouch(){ if(typeof netSaveUp==='function') netSaveUp(); }
+   A launch does not call this (www/boot.js) and nothing runs a save before
+   www/net.js is loaded -- index.html puts net.js ahead of this file, and the
+   migrations that save are in boot.js, which is last. */
+function bkTouch(){ netSaveUp(); }
