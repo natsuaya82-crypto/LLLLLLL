@@ -47,14 +47,13 @@ anon: 26 relations, 77 functions, 2 buckets すべて拒否（`email_taken` の�
 6. `staff_drop()` の新しい断り（`the one above staff stays staff`）に `netWhy()` の文は無い。画面から
    @lingua の行は押せないので届かない。
 
-## 3. 止まっている物（私の持ち物ではない）
+## 3. docs-check（リーダーの追加の指示で持ち物に足した）
 
-- **`tools/docs-check.mjs` が 3ee94802 から赤。**schema.sql の宙に浮いたコメント
-  「`create table if not`⏎`-- exists`」を、docs-check の表の拾い方（コメントを外さずに
-  `create table (if not exists)? <name>` を読む）が「`if` という表」と読んでいた。その偽の定義が
-  `docs/BACKLOG.md`（107・632・2138・2909）・`docs/DUPLICATES.md:72`・`docs/RISK.md:259` の
-  `` `if(can(…))` `` のような六行を通していた。コメントは消えた文の説明で偽なので戻していない。
-  直すのは docs-check（SQL のコメントを外してから拾う、または `if` を PLATFORM に）。
+3ee94802 から赤だった。schema.sql の宙に浮いたコメント「`create table if not`⏎`-- exists`」を
+docs-check が「`if` という表」と拾っていて、その偽の定義が BACKLOG・DUPLICATES・RISK の `if(…)` 六行を
+通していた。覆う一文：バッククォートの中の呼び出しとして数えるのは名前であって、JavaScript・PostgreSQL の
+言葉ではない。SQL はコメントを外してから拾う。`WORDS`（両言語の予約語、全部）を一か所に、PLATFORM の
+`function`・`var`・`for` はそこへ移した。六行は触っていない。赤 6 → 緑を見た。
 
 ## 4. オーナーへ（直していない、決めごと）
 
