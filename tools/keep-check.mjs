@@ -412,8 +412,10 @@ const more = await pg.evaluate(() => {
   planGot('pro');
   if(kbBoards().length < 2){ KB = null; kbShow = 0; kbAdd('qwerty'); }
   goTab('build'); go('kb', '1');
-  var steps0 = KBU.u.length, saves = 0, realSaveKb = saveKb;
-  window.saveKb = function(){ saves++; return realSaveKb.apply(null, arguments); };
+  /* kbWrite() and not saveKb(): on a board's page saveKb() is the draft and
+     kbWrite() is the one write (K1, r79, www/keyboard.js § saveKb). */
+  var steps0 = KBU.u.length, saves = 0, realSaveKb = kbWrite;
+  window.kbWrite = function(){ saves++; return realSaveKb.apply(null, arguments); };
   var e = document.querySelector('.kbnm');
   ['o', 'on', 'one'].forEach(function(v){
     e.value = v; e.dispatchEvent(new Event('input', { bubbles: true }));
@@ -423,7 +425,7 @@ const more = await pg.evaluate(() => {
   keepPress();
   out.kbSavesOnSave = saves;
   out.kbName = String(kbBoards()[1].nm || '');
-  window.saveKb = realSaveKb;
+  window.kbWrite = realSaveKb;
 
   /* ---- 10b. ONE KEY, on the screen a keyboard is built on ---------------
      The layout is written into the buffer by kbKeepLay(), keyed by the BOARD
@@ -905,7 +907,7 @@ const walk = await pg.evaluate(({ s }) => {
   const seedAgain = window.__seed;
   seedAgain();
   SET.walked = true; planGot('pro');
-  const out = { stands: [], fails: [], fields: 0, presses: 0, gold: 0, refused: 0, lit: 0 };
+  const out = { stands: [], fails: [], fields: 0, presses: 0, gold: 0, refused: 0, lit: 0, noes: 0 };
 
   langRowGot(langId); langStore();
   netSend = function(method, path, body, tok, ok){
@@ -1035,11 +1037,12 @@ const walk = await pg.evaluate(({ s }) => {
        screen still to be moved onto the buffer. */
   const OWN_ROAD = {
     setMyFont:    'its own road -- SET.myfont, netPrefsPut() sends it on the press',
+    setKbRom:     'its own road -- SET.kbrom, the account\'s setting (SET_PREFS); netPrefsPut() sends it on the press',
     wldOvAdd:     'not moved yet -- a row of the article is written on the press (r14 § A)',
-    setWldSecDl:  'not moved yet -- 「may this section be taken away」 is written on the press (r14 § A)',
-    kbUndo:       'not moved yet -- the step back writes the layout (r14 § B)',
-    kbRedo:       'not moved yet -- the step forward writes the layout (r14 § B)',
-    kbAddLay:     'not moved yet -- a layer is written on the press (r14 § B)'
+    setWldSecDl:  'not moved yet -- 「may this section be taken away」 is written on the press (r14 § A)'
+    /* kbUndo, kbRedo and kbAddLay STOOD HERE and are moved (K1, r79): on a
+       board's page every change is the page's draft until its Save
+       (www/keyboard.js § saveKb). */
   };
   const roadSeen = {};
   /* WHICH FIELD A KEYSTROKE WENT INTO. Taken from the real keepSet() rather
@@ -1047,6 +1050,11 @@ const walk = await pg.evaluate(({ s }) => {
      would have to keep -- and a check that recomputes the thing under test is
      a copy of it. */
   const keepSetSaw = [];
+  /* Every road up starts at bkTouch() (www/backup.js), so a count of it is a
+     count of what was started toward the server -- claim 22. */
+  var BK_TOUCHED = 0;
+  const realBkTouch = bkTouch;
+  window.bkTouch = function(){ BK_TOUCHED++; return realBkTouch(); };
   const realKeepSet = keepSet;
   window.keepSet = function(f, v){ keepSetSaw.push(String(f)); return realKeepSet(f, v); };
 
@@ -1137,7 +1145,8 @@ const walk = await pg.evaluate(({ s }) => {
       var name = els[j].getAttribute('data-do') || els[j].getAttribute('data-ch');
       if(name === 'keepPress' || name === 'back') continue;
       flush();
-      var sigWas = nowSig(), allWas = all(), whereWas = whereAmI();
+      var sigWas = nowSig(), allWas = all(), whereWas = whereAmI(),
+          sigNow0 = JSON.stringify(keepRead((KEEP[keepKey()] || {}).now));
       try { els[j].click(); } catch(e){ try { popOff(); } catch(e2){} continue; }
       if(whereAmI() !== whereWas){ try { popOff(); } catch(e){} continue; }  /* it went somewhere */
       if(typeof popOn === 'function' && popOn()){ popOff(); continue; }      /* it asked first */
@@ -1171,6 +1180,41 @@ const walk = await pg.evaluate(({ s }) => {
                                 : ' and the screen says nothing changed' +
                                   ' -- now() does not carry what it changed'));
         else roadSeen[name] = 1;
+      }
+      /* 22 -- AND 「いいえ」 GIVES BACK WHAT THE SCREEN OPENED WITH (K1, r79).
+         「保存ボタンのある画面で書いている物は、その画面の下書き。保存を押す
+         まで slice に書かない。『いいえ』は下書きを捨てるだけ」. A press that
+         changed what the screen holds is answered the real way -- back(),
+         the question, its No -- and then: the phone holds exactly what it did
+         before the press, what the screen answers is what it answered before
+         the press, and nothing was started up the road to the server
+         (bkTouch() is where every road up starts). The keyboard wrote its
+         sheet on every press, so the No put nothing back and the change went
+         up 1.2 seconds later (r74 止めたこと 1, measured). A press on an
+         OWN_ROAD is its own write and is not asked this. */
+      if(moved && !OWN_ROAD[name]){
+        var touch0 = BK_TOUCHED;
+        try { popOff(); } catch(e){}
+        back();
+        var no22 = document.querySelector('[data-do="popNo"]');
+        if(!no22) out.fails.push(lab + ' -> ' + name + ': changed, and back() did not ask');
+        else {
+          no22.click();
+          if(all() !== allWas)
+            out.fails.push(lab + ' -> ' + name + ': 「いいえ」 and the phone is not what it held before the press');
+          /* asked of the screen OPENED AGAIN, by its own road and without
+             seeding anything: a screen that edits a copy of its own (the word
+             sheet's wEdit) makes that copy afresh when it opens, and one that
+             edits what is written (the keyboard) has to have given it back */
+          var again22 = '';
+          try { go1(); render(); again22 = JSON.stringify(keepRead((KEEP[keepKey()] || {}).now)); }
+          catch(e){ again22 = 'threw'; }
+          if(again22 !== sigNow0)
+            out.fails.push(lab + ' -> ' + name + ': 「いいえ」, and opened again the screen does not hold what it opened with');
+          if(BK_TOUCHED !== touch0)
+            out.fails.push(lab + ' -> ' + name + ': 「いいえ」 and something was started up the road to the server');
+          out.noes++;
+        }
       }
       try { popOff(); } catch(e){}
     }
@@ -1309,7 +1353,9 @@ console.log('every screen with a Save (' + walk.stands.length + '), asked of the
             ' of them changed what the screen holds and turned the corner gold; ' + walk.refused +
             ' refused the keystroke), ' + walk.presses + ' buttons pressed, ' +
             walk.gold + ' of them changed the screen and every one turned the corner gold -- ' +
-            'and every press that left it as it was left the Save grey');
+            'and every press that left it as it was left the Save grey; ' + walk.noes +
+            ' of those changes answered 「いいえ」 on the way out and each gave back what the ' +
+            'screen opened with, wrote nothing and sent nothing');
 
 r.screens.forEach((s) => {
   console.log('  ' + s.n + ' (' + s.key + ')');

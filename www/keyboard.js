@@ -378,12 +378,46 @@ function migrateKbFree(){
    copy down rather than pushing a null up, and kbRead() turns a missing key
    and a stored `null` into the same empty KB, which is what kbResetGo() means
    by clearing one. */
+/* EVERY CHANGE TO A KEYBOARD ENDS HERE, AND ON A BOARD'S PAGE IT IS THAT
+   PAGE'S DRAFT (K1, r79). The board's page has a Save in its corner (www/shell.js
+   § KEEP), and 「保存ボタンのある画面で書いている物は、その画面の下書き。保存を
+   押すまで slice に書かない。『いいえ』は下書きを捨てるだけ」. It used to write
+   the slice on every change, so a change went up 1.2 seconds later whether or
+   not Save was pressed, and 「いいえ」 on the way out put nothing back (r74
+   止めたこと 1, measured).
+
+   So while a board's page has its buffer open, a change is repaired, stamped
+   for the step back and drawn -- and not written. The page's Save is the one
+   place it is written (kbKeepSave -> kbWrite), and 「いいえ」 reads the
+   keyboard back from the slice, which nothing has touched (kbDraftDrop). A
+   change made from a key's own page is a change to the same board and is the
+   same draft. Nothing needs holding back from the road up: nothing was
+   written for it to take, and nothing else that calls this can take the
+   draft with it either. */
 function saveKb(){
   if(langLocked()) return;
-  kbVFix(); kbWayOff(); kbNoted(); bkTouch();
+  kbVFix(); kbWayOff(); kbNoted();
+  if(kbDrafting()) return;
+  kbWrite();
+}
+function kbWrite(){
+  if(langLocked()) return;
+  bkTouch();
   if(!KB) slRm(langKey('kb'));
   else slWr(langKey('kb'), JSON.stringify(KB));
 }
+/* A board's page with its buffer open -- the one buffer whose question is
+   kbNow(), on whichever board it was opened for. */
+function kbDrafting(){
+  var k;
+  for(k in KEEP)
+    if(Object.prototype.hasOwnProperty.call(KEEP, k) && KEEP[k] && KEEP[k].now===kbNow) return true;
+  return false;
+}
+/* 「いいえ」: the draft goes, and the keyboard is what the slice says it is --
+   which nothing has written since the page opened. The step back and the
+   selection were about the draft and go with it. */
+function kbDraftDrop(){ kbRead(); kbLeft(); }
 /* The layout, said once as a string. Three things ask whether it has moved --
    the step-back, the buffer the editor opened with, and the write below. */
 function kbLaySig(b){ return JSON.stringify(b.lay); }
@@ -997,17 +1031,16 @@ function kbKeepOn(){
 
      `kbrom` is NOT here. It is SET -- this person's setting, on every
      language -- and netPrefsPut() sends it on the press. § D. */
-  keepOn(keepKey(), kbNow, kbKeepSave);
+  keepOn(keepKey(), kbNow, kbKeepSave, null, kbDraftDrop);
 }
-/* `lay` is not written here and must not be: the layout is already on this
-   phone by the time the button is gold -- every mutator on the sheet ends in
-   saveKb(). What the press is FOR is the wire, and keepSave() is what puts it
-   there (netSaveNow, which cancels bkTouch()'s burst so one press is one
-   send). Writing it again here would be a second answer to where a layout is
-   written down. */
+/* THE ONE PLACE A BOARD'S PAGE WRITES (K1, r79). Everything changed on the
+   page -- the layout, which keyboard goes to the phone, the name typed into
+   the buffer -- is the page's draft until here (§ saveKb), and this writes it,
+   once; keepSave() then puts it on the wire (netSaveNow). */
 function kbKeepSave(v, done){
   var b=kbEdit();
-  if(b && v.hasOwnProperty('nm')){ b.nm=String(v.nm).slice(0, 24); saveKb(); }
+  if(b && v.hasOwnProperty('nm')){ b.nm=String(v.nm).slice(0, 24); kbVFix(); kbNoted(); }
+  kbWrite();
   done(true);
 }
 function kbSetNm(v){ keepSet('nm', String(v||'').slice(0, 24)); }
