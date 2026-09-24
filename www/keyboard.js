@@ -316,31 +316,38 @@ kbRead();
 function kbSameLay(a, b){
   try{ return JSON.stringify(a)===JSON.stringify(b); }catch(e){ return false; }
 }
-/* ---- the free QWERTY comes out of storage ------------------------------
+/* ---- the free QWERTY comes out of the LIST --------------------------------
    Board 0 used to be a COPY of the free QWERTY, written into KB.kbs the
    first time anything on this screen was changed, and that copy was
-   editable. It is neither now: kbBoards() puts kbFree() in front and storage
+   editable. It is neither now: kbBoards() puts kbFree() in front and the list
    holds only what somebody built.
 
-   So the copy has to leave the array, and the one thing that must not happen
+   So the copy has to leave the list, and the one thing that must not happen
    is that an EDITED board 0 leaves with it. Two cases, told apart by looking
    rather than assumed:
 
      still the free QWERTY   regenerable, and board 0 is now exactly that, so
-                             the copy is redundant. It comes out and nothing
-                             is lost.
+                             the copy is not a board any more. It goes to
+                             `was0` -- in the same slice, byte for byte, and
+                             read by nothing.
      edited                  a keyboard somebody made. It stays, as an
                              ordinary board, and every index after it moves
                              by one -- KB.at included, or the keyboard on the
                              phone silently becomes its neighbour.
 
+   A MIGRATION ADDS AND NEVER REMOVES WHAT IT READ (CLAUDE.md § Data). This
+   was `kbs.shift()`, with no DELETE REVIEW -- the copy was gone from what is
+   stored the first launch after the update (docs/scope/r73-audit.md § 2-8).
+   It is kept now the way the flat keys from before there could be more than
+   one language are kept: not read, not removed.
+
    `v` says this has run. Without it the next launch would run it again and
-   take the person's own first board out of the array as though it were the
+   take the person's own first board out of the list as though it were the
    copy. */
 function migrateKbFree(){
   if(!KB || (parseInt(KB.v, 10)||0)>=KB_V) return;
   var kbs=KB.kbs||[], at=parseInt(KB.at, 10)||0;
-  if(kbs.length && kbSameLay(kbs[0].lay, kbFixed().lay)) kbs.shift();
+  if(kbs.length && kbSameLay(kbs[0].lay, kbFixed().lay)){ KB.was0=kbs[0]; kbs=kbs.slice(1); }
   else if(kbs.length) at=at+1;
   KB.kbs=kbs; KB.at=at; KB.v=KB_V;
   saveKb();

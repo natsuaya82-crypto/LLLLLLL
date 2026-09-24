@@ -3554,6 +3554,23 @@ const SF = await sf.evaluate(({ s }) => {
     for (x = 0; x < rr.length; x++) if (rr[x].k === 'lt' && rr[x].v === '') hit = kbStart(rr) + kbAtOf(rr, x);
     out.cellAt = hit;
   }());
+
+  /* A MIGRATION ADDS AND NEVER REMOVES WHAT IT READ. A KB from before board 0
+     left storage -- no `v`, and the free QWERTY's untouched copy in front --
+     goes through migrateKbFree(). What comes out lists the boards somebody
+     made and not the copy; what is STORED still holds the copy byte for byte
+     (CLAUDE.md § Data, docs/scope/r73-audit.md § 2-8). */
+  (function (){
+    var copy = JSON.parse(JSON.stringify({ nm: '', pat: 'qwerty', lay: kbFixed().lay }));
+    var mine = { id: 'kMade_1', nm: 'mine', pat: 'abc', lay: [{ nm: '', rows: [[lt('m')]] }] };
+    KB = { kbs: [copy, mine], at: 1 };
+    kbShow = 0;
+    migrateKbFree();
+    var stored = slRd(langKey('kb')) || '';
+    out.migList = KB.kbs.map(function (b){ return b.nm || b.pat; }).join(',');
+    out.migKept = stored.indexOf(JSON.stringify(copy.lay)) >= 0;
+    out.migAt = KB.at;
+  }());
   return out;
 }, { s: seed.toString() });
 await sf.close();
@@ -4602,6 +4619,11 @@ say(dupTwo.onServer <= dupOne.onServer && dupThree.onServer <= dupTwo.onServer,
     + [dupOne, dupTwo, dupThree].map((x) => x.onServer).join(', ') + ' rows');
 
 /* r74 — the surfaces */
+say(SF.migList === 'mine' && SF.migKept && SF.migAt === 1,
+    'a keyboard from before board 0 left storage lists only what somebody made, and the '
+    + 'old copy of the free QWERTY is still in what is stored, byte for byte — a migration '
+    + 'adds and removes nothing it read (list ' + SF.migList + ', copy kept ' + SF.migKept
+    + ', applied ' + SF.migAt + ')');
 say(goneOut.length === 0,
     '「that is no longer here」 is drawn by goneBox() and by nothing else under www/ ['
     + goneOut.join(', ') + ']');
