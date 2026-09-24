@@ -863,10 +863,10 @@ create table if not exists plan (
 -- because what the app needs is one fact and not a record: 「the段 that ended」.
 --
 --   was            the rung this account held until the answer that lowered
---                  it. Written ONLY when the plan goes DOWN, and set back to
---                  null when it goes up or stays -- 「終了」 is a fact about
---                  coming down, so a null here is 「nothing ended」 rather
---                  than 「nobody has looked」.
+--                  it. Written ONLY when the plan goes DOWN, set back to null
+--                  when it goes up, and left as it is when it stays --
+--                  「終了」 is a fact about coming down, so a null here is
+--                  「nothing ended」 rather than 「nobody has looked」.
 --   lapse_seen_at  when they said 「今後表示しない」. Null while they have not,
 --                  and null again the moment `was` is written, because a
 --                  SECOND ending is a second thing to be told about.
@@ -1916,6 +1916,46 @@ begin
   if not is_member() then raise exception 'not a member'; end if;
   update plan set lapse_seen_at = now() where id = auth.uid();
 end $$;
+
+-- AND THE ONE ROAD THE PLAN ITSELF COMES IN BY, which is verify-plan's.
+--
+-- It read the row, decided `was` and `lapse_seen_at` from what it read, and
+-- wrote -- two requests with the row free between them, so two answers
+-- arriving together could each read the old plan and one of them record the
+-- wrong one (r63-audit SQ7). This is the same decision in one statement: the
+-- conflict road holds the row it compares against. The three cases are the
+-- column comment above:
+--
+--   down   `was` is the rung it held, `lapse_seen_at` null -- a new ending
+--   up     both null -- the ending is over
+--   same   both as they are -- an unticked notice stays to be shown again
+--
+-- The ladder is handed in (verify.mjs's `ORDER`, the one list of rungs), not
+-- written here: two ladders are one more than there are. plan_staff_hold()
+-- still has the last word, because it is a trigger on the row this writes.
+--
+-- Security invoker, and that is the whole of who may call it: `plan` has no
+-- insert and no update policy, so the service role -- which row level
+-- security does not apply to -- is the one caller whose write lands.
+create or replace function plan_put(who uuid, rung text, ladder text[])
+returns setof plan
+language sql as $$
+  insert into plan as o (id, plan, at) values (who, rung, now())
+  on conflict (id) do update set
+    plan = excluded.plan,
+    at   = excluded.at,
+    was  = case
+             when array_position(ladder, excluded.plan) < array_position(ladder, o.plan)
+               then o.plan
+             when array_position(ladder, excluded.plan) > array_position(ladder, o.plan)
+               then null
+             else o.was end,
+    lapse_seen_at = case
+             when array_position(ladder, excluded.plan) <> array_position(ladder, o.plan)
+               then null
+             else o.lapse_seen_at end
+  returning o.*
+$$;
 
 -- purchase: yours to read and nobody's to write.
 --
@@ -3278,6 +3318,43 @@ grant  insert (id, author, language, body, prompt, reply_to) on post to authenti
 -- still landed) and once WITH it (and asks that every table `PUSH` names has
 -- one, and that what goes down the road carries the writer's own
 -- Authorization).
+
+-- AND A ROW RINGS ONCE. push-send asked who was knocking and whether they
+-- were the row's own actor, and nothing about whether that row had rung
+-- already -- so B could point at B's own follow of A and ring A's phone as
+-- often as B liked (r63-audit SQ2). The record is ON THE ROW, `rung_at`, for
+-- two reasons: it goes when the row goes (an account deleted leaves no record
+-- of who was rung about it), and a follow undone and made again is a new row,
+-- which rings the way it always has.
+--
+-- push_once() is the one thing that writes it, and it answers whether THIS
+-- call is the one that did -- true once per row, false after. `k` is the
+-- row's key as push.mjs reads it (`PUSH[].key`); the table and the column
+-- names go through format('%I'), so what the caller sends is never SQL.
+--
+-- Security invoker, and that is who may call it: none of these tables has an
+-- update policy that reaches this column (react, follow and prompt have none
+-- at all, and `post`'s column grant does not carry it), so the service role
+-- -- which row level security does not apply to -- is the one caller whose
+-- mark lands. A signed-in caller gets false or a refusal and marks nothing.
+-- tools/rls-check.mjs asks every table `PUSH` names for the column.
+alter table follow add column if not exists rung_at timestamptz;
+alter table post   add column if not exists rung_at timestamptz;
+alter table react  add column if not exists rung_at timestamptz;
+alter table prompt add column if not exists rung_at timestamptz;
+
+create or replace function push_once(tbl text, k jsonb) returns boolean
+language plpgsql as $$
+declare w text := ''; f text; n int;
+begin
+  for f in select jsonb_object_keys(k) loop
+    w := w || format(' and %I = %L', f, k ->> f);
+  end loop;
+  if w = '' then return false; end if;
+  execute format('update %I set rung_at = now() where rung_at is null', tbl) || w;
+  get diagnostics n = row_count;
+  return n = 1;
+end $$;
 
 -- The one place a write becomes a knock on push-send's door.
 --
