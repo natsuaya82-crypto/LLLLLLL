@@ -204,7 +204,6 @@ defLang('de', (function(){
       "kb.new" : "Tastatur hinzufügen",
       "kb.n" : "Tastatur {0}",
       "kb.done" : "Fertig",
-      "kb.lt.ok" : "Bestätigen",
       "kb.rm" : "Diese Tastatur löschen",
       "kb.sel" : "Auswählen",
       "kb.sel.done" : "Fertig",

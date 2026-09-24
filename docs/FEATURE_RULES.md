@@ -249,6 +249,25 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Implementation status:
 ```
 
+### キーの画面 ── 押した字がそのキーに入る。確定は無い
+- Date: 2026-09-24
+- Area: キーボードのキーに何を入れるかを選ぶ画面（キーの画面と、フリックの一つの向きの字の画面）
+- Decision:
+
+  ```
+  なんのための確定？いらないなら保存だけでいいよ。
+  ```
+
+  字を押すとその字がそのキーに入る。もう一度押せば外れる。右上の「確定」は無い。
+  書くのは板の「保存」だけ（2026-09-24 r79 K1「キーボードの面は保存ボタンを押すまで下書き」）。
+- Reason: オーナーの言葉のまま上に。
+- Affected features: キーの画面（`kbLtTap()`、`www/keyboard.js`）
+- Affected data: **無し。**押すたびに変わるのは板の下書き（`saveKb()`）で、slice に書くのは保存
+- Affected docs: この項、docs/CHANGELOG.md
+- Implementation status: **実装済み（`claude/r78-sides`、2026-09-24）。**選んでいる字（~~`kbLtPick`~~）と
+  確定の道（~~`kbLtPut()`~~）は消した ── 押した字が入る道が一つ。紫はキーに今入っている字。
+  `tools/kb-check.mjs` が持つ。**CODE CONFIRMED、DEVICE 未確認。**
+
 ### 2026-09-24 【決定の読み ── オーナーの新しい言葉ではない】持ち主の無い写しは読まない、消さない
 - Date: 2026-09-24（r79-acct、リーダーの指示で書いた。**オーナーはこの日これを言っていない**）
 - Area: 端末の写しの持ち主（`www/core.js` § ACCT、`acctKeep`・`acctFor`・`acctMoved`）
@@ -2397,36 +2416,19 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Implementation status: **IMPLEMENTED** ── `profile_rename()`（`supabase/schema.sql`）が `handle_at` から
   14 日の内を断る。実機未確認。
 
-### キーの画面 ── 選んだら確定ボタン、もう一度触れば解除、戻れば選択は消える
+### キーの画面 ── もう一度触れば解除（2026-09-03、一部差し替え）
 - Date: 2026-09-03
 - Area: キーボードのキーに何を入れるかを選ぶ画面
 - Decision:
 
   ```
-  ここに右上に選択したら適用ボタンが確定ボタン欲しい。
-  終わって戻ったら選択が解除されてる状態にして欲しい
   後選択してる紫はもう一度同じ場所触れたら解除して欲しい
   ```
 
-  三つとも同じ画面の同じ一つの振る舞い:
-
-  1. **選ぶと右上に確定のボタンが出る。**何も選んでいなければ出ない
-  2. **選んでいるものをもう一度触ると解除される。**紫が消える
-  3. **その画面から戻ると、選択は残っていない。**次に開いたとき何も選ばれて
-     いない状態で始まる
-- Reason: オーナーの言葉のまま上に。三つは一つの形の三つの面 ── **選択は
-  「今この画面でしていること」であって、言語が持つものではない。**だから
-  取り消せて（2）、確定という区切りがあり（1）、画面を出れば消える（3）。
+  **選んでいるものをもう一度触ると解除される。**紫が消える
+- 差し替えた部分: 「選ぶと右上に確定のボタンが出る」と「戻れば選択は消える」── 「キーの画面 ── 押した字がそのキーに入る。確定は無い」（2026-09-24）
 - Affected features: キーの画面（`kbKeyHTML()` / `kbLtGrid()`、`www/keyboard.js`）
-- Affected data: **無し。**選択は画面の状態で、`viewReset()`（`www/shell.js`）
-  が忘れる場所。**言語にも `KB` にも何も足さない**
-- Affected docs: この項、docs/CHANGELOG.md、docs/keyboard.md
-- Implementation status: **実装済み（`claude/keysel`、2026-09-03）。**
-  `kbLtGrid()` の押しは選択を憶えるだけになり、書き込む道は `kbLtPut()` 一本。
-  紫は `kbPickPaint()`（新しい色も class も足していない）。選択は
-  `www/keyboard.js` の `kbLtPick` 一つで、画面を開くたびに空になり
-  `viewReset()` も落とす ── **保存するものは増えていない。**
-  `tools/kb-check.mjs` に 15 の主張。**CODE CONFIRMED、DEVICE 未確認。**
+- Affected data: **無し。**
 
 ### 買うボタンを消したところには、今のプランと期限を出す
 - Date: 2026-09-03

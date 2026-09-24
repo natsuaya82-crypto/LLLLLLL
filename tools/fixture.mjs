@@ -2607,17 +2607,16 @@ export function halfDone(){
                                               kbAdd('qwerty'); kbLay = 0; kbPick(0, 0);
                                               const h = vForm(); KB = null; kbShow = 0;
                                               planGot('free'); return h; }],
-    /* THE SAME KEY WITH A LETTER CHOSEN ON IT, which is a face and not a
-       state of the one above: the confirm in the bar is drawn only while
-       something is chosen -- 「何も選んでいなければ出ない」 OWNER 2026-09-03 --
-       so on every other face of this screen it is on no screen at all, and
-       act-check said so the day it went in. Built by the act, like the rest
-       of this chapter: kbLtTap() is what a finger does to a letter. */
+    /* THE SAME KEY WITH ANOTHER LETTER PRESSED ONTO IT: the letter goes onto
+       the key and is the purple one, and the square over the alphabet says so
+       (OWNER 2026-09-24 「いらないなら保存だけでいいよ」). Built by the act,
+       like the rest of this chapter: kbLtTap() is what a finger does to a
+       letter. */
     ['a key with a letter chosen for it', () => { planGot('pro'); KB = null; kbShow = 0;
                                                   kbAdd('qwerty'); kbLay = 0; kbPick(0, 0);
                                                   const a = ltOfKind('alpha');
                                                   if (a.length) kbLtTap(0, 0, -1, a[0].id);
-                                                  const h = vForm(); kbLtPick = null;
+                                                  const h = vForm();
                                                   KB = null; kbShow = 0;
                                                   planGot('free'); return h; }],
     /* AND THE SAME KEY WITH A DRAWN LETTER CHOSEN, which is the other state
@@ -2630,7 +2629,7 @@ export function halfDone(){
                                                   kbAdd('qwerty'); kbLay = 0; kbPick(0, 0);
                                                   const d = ltOfKind('alpha').filter((l) => inkGeo(l));
                                                   if (d.length) kbLtTap(0, 0, -1, d[0].id);
-                                                  const h = vForm(); kbLtPick = null;
+                                                  const h = vForm();
                                                   KB = null; kbShow = 0;
                                                   planGot('free'); return h; }],
     /* A FLICK keyboard, which is the other half of the editor and the only
