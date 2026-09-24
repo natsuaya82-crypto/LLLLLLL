@@ -29,7 +29,7 @@ r73 は全部洗いざらいの報告で、［測った］と［読んだ］が�
 あなたが持つファイル:
   www/core.js www/net.js www/post.js www/sns.js www/me.js www/settings.js www/phases.js（migrateGramLang の呼び出しだけ）
   www/act-map.js www/i18n/*.js tools/fixture.mjs tools/acct-check.mjs tools/store-check.mjs tools/quiet-check.mjs
-  tools/post-check.mjs tools/draft-check.mjs、検査（要れば一本、package.json・gate.mjs）
+  tools/post-check.mjs tools/draft-check.mjs tools/word-check.mjs tools/gramlang-check.mjs、検査（要れば一本、package.json・gate.mjs）
   CLAUDE.md（規則 22・§ Online の、この変更で偽になる文） docs/DATA_MODEL.md docs/STATE.md の同じく偽になる文
   docs/CHANGELOG.md docs/FEATURE_RULES.md（決定ログ） docs/scope/r79-acct.md
 
@@ -141,6 +141,13 @@ r60 は取り込み済み。r60 が「まだ」「持ち物でない」「次の
 
 **覆う一文（r73 §2-7）**: 「端末に書く物は書く時に uid を持つ。持ち主の無い物を読んだらそれは誰の物にもならない。
 アカウントが変わる時に忘れる物は、アカウントで引ける一つの入れ物にあり、`netOut` はそれを一行で捨てる。」
+
+**ゲートの赤（リーダーが 2026-09-24 00:10 の integ で測った。r60 を取り込む前 8784bfab は緑、後 18d93280 で赤）── 先に直す**:
+- `word-check` が読み込みで落ちる: `ReferenceError: migratePh is not defined`（r60 が `migratePh()` を消し、検査が呼んだまま）。
+  検査は一本も走っていない状態。消えた関数を呼ばない形に（何を確かめていたかは残す）。
+- `gramlang-check` の 5 つ: 保存で規則が 0 本（`the save writes exactly one rule: got 0`）、語順が `"OSV"` のまま、品詞・形が undefined、
+  バーが「選ぶ」を出さない。原因は測って確かめること（読みでは r60 の `langLocked()`＝サーバーが持ち主を言うまで書けない、と
+  上の 7「`save()` が黙って戻る」の同じ面に見えるが、確かめていない）。検査の前提を直すのかコードを直すのかは原因しだい。
 
 **直す物**:
 1. `lingua.langs`・`lingua.cur` が全アカウントで一つ〔r63 L4〕── 索引をアカウントで預ける（`setFor` と同じ形）。

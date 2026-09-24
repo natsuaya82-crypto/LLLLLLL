@@ -29,7 +29,7 @@ r73 は全部洗いざらいの報告で、［測った］と［読んだ］が�
 あなたが持つファイル:
   www/post.js www/card.js www/sns.js www/me.js www/sheet.js www/act.js（IN の配達の一か所）
   www/glyph.js（TFONT と投稿の書体を分ける所・puaRoman） www/grammar.js・www/letters.js・www/wordsheet.js（PUA を文字に戻す所だけ）
-  www/keyboard.js（1318 行あたりのキーの顔だけ） www/index.html（`.pline` の書体の CSS だけ）
+  www/keyboard.js（1318 行あたりのキーの顔だけ） www/cal.js www/numbers.js tools/sheet-check.mjs tools/press.mjs tools/css-baseline.txt www/index.html（`.pline` の書体の CSS だけ）
   www/act-map.js www/i18n/*.js tools/sides-check.mjs tools/ink-check.mjs tools/line-check.mjs tools/card-check.mjs
   tools/post-check.mjs tools/draft-check.mjs tools/fixture.mjs、検査（要れば一本、package.json・gate.mjs）
   CLAUDE.md 規則 8・12・13 の、この変更で偽になる文
@@ -140,6 +140,13 @@ r73 は全部洗いざらいの報告で、［測った］と［読んだ］が�
 ── r78 の担当 ──────────────────────────────
 **まず r73 §2-9・§2-10（全部）、`docs/scope/r76-lines.md` の「持っていないファイル ── 同じ一文でこう直す」、
 `docs/scope/r60-up.md` と `docs/scope/r79-acct.md`（あれば）を読む。** r60・r71・r79 は取り込み済み。
+
+**ゲートの赤（リーダーが 2026-09-24 00:10 の integ で測った）── 先に直す**:
+- `sheet-check`「用紙で来た数字は描いた印で描かれる: 0 pixels of ink on the clock」── r76 の取り込み前 0dc7d3c2 は緑、後で赤。
+  暦（cal.js・numbers.js）の数字が用紙の字の形を描いていない。r76 の scope（`docs/scope/r76-lines.md`）を読んで原因を測る。
+- `press`「nothing wears .edit / .ppr / .tfont」── `.edit` は r60 がプロフィールの「編集」をペンにして `.meedit.edit` を誰も着なく
+  なった。`.ppr`（投稿の広告の印）・`.tfont` は r75 の前から。画面が消えたのか、着る状態に検査が届かないのか（種を足すほうが良い）を
+  測って、どちらかに。消すなら CSS の行だけ（人の物ではない）。
 
 **覆う一文（r73）**:
 1. 「読む側が描く物・使う書体・書き込む物は、投稿に載っている物だけ。読む側は何も書かない。」
