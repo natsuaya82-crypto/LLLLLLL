@@ -213,27 +213,13 @@ function syObj(kind, mine, theirs, base, later){
   }
   return out;
 }
-/* ---- WHAT A SIDE IS, and there are FOUR answers where there were two ----
-   The one place that asks. Everything below reads its answer, and nothing
-   below opens a slice a second time.
-
-     none    no string, or an empty one: there is nothing on this side
-     plain   a slice that is not JSON and never was. `lang` is the language's
-             NAME, written straight in by www/core.js, and it is the only one
-             -- measured through langSaveAll() rather than believed: eleven of
-             the twelve read as JSON and this one does not
-     read    a slice this app understands
-     wreck   a slice it does not
-
-   `plain` and `wreck` are the two that looked alike, because from the string
-   alone they ARE alike: JSON.parse throws on `Shango` exactly as it throws on
-   `[[[not json`. Which of the two it is, is a question about the SLICE and
-   never about the string, so it is asked of `kind`. */
-function sySide(kind, s){
-  if(typeof s!=='string' || s==='') return {is:'none', v:null};
-  if(kind==='lang') return {is:'plain', v:s};
-  try{ return {is:'read', v:JSON.parse(s)}; }catch(e){ return {is:'wreck', v:null}; }
-}
+/* ---- WHAT A SIDE IS: slState() in www/core.js ---------------------------
+   none, plain, read or wreck, and it is the same four answers every reader of
+   a slice gets -- a slice the screens could not read is the slice the merge
+   cannot read, because they ask one function. It was here as sySide(), which
+   only this file asked; the ten readers each parsed for themselves. `lang` is
+   the one `plain` -- measured through langSaveAll() rather than believed:
+   eleven of the twelve read as JSON and this one does not. */
 /* One slice, as the string the store holds, put together with the server's.
 
    NOTHING ON ONE SIDE IS THE OTHER SIDE WHOLE. That is a phone that has never
@@ -271,7 +257,7 @@ function sySide(kind, s){
    tell a removal from a row it has not been told about. That is the side that
    drops nothing, which is the side to be on. */
 function syMerge(kind, mine, theirs, base, later){
-  var m=sySide(kind, mine), th=sySide(kind, theirs), c;
+  var m=slState(kind, mine), th=slState(kind, theirs), c;
   if(m.is==='none')   return (th.is==='none' || th.is==='wreck')? '' : theirs;
   if(th.is==='none')  return mine;
   if(m.is==='plain')  return (later && th.is==='plain')? theirs : mine;
@@ -282,7 +268,7 @@ function syMerge(kind, mine, theirs, base, later){
      this function and it does not have to be told apart here: this is not
      anybody's work, it is a note of what both sides already had, and a note
      that cannot be read is a merge with no note -- which drops nothing. */
-  c=sySide(kind, base); c=(c.is==='read')? c.v : null;
+  c=slState(kind, base); c=(c.is==='read')? c.v : null;
   if(syIsArr(m.v) && syIsArr(th.v))
     return JSON.stringify(syArr(kind, m.v, th.v, syIsArr(c)? c : null, later));
   if(syIsObj(m.v) && syIsObj(th.v))

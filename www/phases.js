@@ -72,12 +72,10 @@ var STG=stBlank();
    is the one thing that could quietly drop somebody's work on an older
    build. docs/BACKLOG.md carries it. */
 function stRead(){
+  var stgs=slOpen('phases'), k;
   STG=stBlank();
-  try{
-    var stgs=JSON.parse(slRd(langKey('phases'))||'null'), k;
-    if(stgs) for(k in STG_DEF)
-      if(Object.prototype.hasOwnProperty.call(STG_DEF, k) && stgs[k]) STG[k]=stgs[k];
-  }catch(e){}
+  if(stgs) for(k in STG_DEF)
+    if(Object.prototype.hasOwnProperty.call(STG_DEF, k) && stgs[k]) STG[k]=stgs[k];
 }
 /* ---- the word order and the three positions belong to the LANGUAGE -------
    They belonged to the phone. SET.order and SET.gpos.{adj,negp,adp} live in

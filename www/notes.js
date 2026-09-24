@@ -15,8 +15,7 @@
 var NOTES=[];
 /* The open language's notes. Empty first: see langRead() in core.js. */
 function ntRead(){
-  NOTES=[];
-  try{ var nt=JSON.parse(slRd(langKey('notes'))||'[]'); if(Array.isArray(nt)) NOTES=nt; }catch(e){}
+  NOTES=slOpen('notes') || [];
   ntSwipeAt=-1;               /* another language's rows are not these rows */
 }
 ntRead();

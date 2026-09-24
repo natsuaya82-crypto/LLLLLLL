@@ -144,16 +144,10 @@ function kbRoomKb(){ var n=kbCount(); return planFits(n===null? null : 1+n, 1, k
    popAsk() draws where the finger is and nothing behind it closes or moves,
    which is the shape 「全部1枚目みたいにポップ出して背景変えずに」 asks for. */
 function kbCapStop(){
-  if(upStop(can('kb'))) return true;
-  if(kbCount()===null){ toast(t('net.offline')); return true; }
-  if(kbRoomKb()) return false;
-  popAsk(t('up.need'), function(){ go('plans'); });
-  return true;
+  return upStop(can('kb')) || upStop(kbRoomKb());
 }
 function kbRead(){
-  KB=null;
-  try{ KB=kbBoardsOf(JSON.parse(slRd(langKey('kb'))||'null')); }
-  catch(e){}
+  KB=kbBoardsOf(slOpen('kb'));
 }
 /* What is on the disk, whichever shape it is in. It was one keyboard --
    `{lay:[...]}` -- and it is now several, so the one becomes the first of the
@@ -403,8 +397,7 @@ function saveKb(){
 function kbWrite(){
   if(langLocked()) return;
   bkTouch();
-  if(!KB) slRm(langKey('kb'));
-  else slWr(langKey('kb'), JSON.stringify(KB));
+  slWr(langKey('kb'), KB? JSON.stringify(KB) : null);
 }
 /* A board's page with its buffer open -- the one buffer whose question is
    kbNow(), on whichever board it was opened for. */

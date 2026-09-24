@@ -255,9 +255,7 @@ function vAbugida(){
 var SND=[];
 /* The open language's sounds. Empty first: see langRead() in core.js. */
 function sndRead(){
-  SND=[];
-  try{ var s=JSON.parse(slRd(langKey('snd'))||'null');
-       if(s && s.length) SND=s; }catch(e){}
+  SND=slOpen('snd') || [];
 }
 sndRead();
 function saveSnd(){ if(langLocked()) return; bkTouch(); slWr(langKey('snd'), JSON.stringify(SND)); }

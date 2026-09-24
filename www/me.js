@@ -243,8 +243,13 @@ function meNotMe(hs){
    ask the same question and used to answer it in two places with two
    different `||0`s on the end. The space is inside it: a number and the word
    after it are one thing. */
+/* AND A COUNT NOBODY HAS GIVEN IS NOT NOUGHT. `Number(n)||0` drew 0 for a
+   count the server had not sent -- with no signal a person's page said
+   「0 フォロー中・0 フォロワー」 (docs/scope/r73-audit.md § 2-4, measured).
+   Not a number is 「not told」, and the word stands without one. */
 function meCount(n){
-  return '<b>'+esc(String(Number(n)||0))+'</b> ';
+  if(n===null || n===undefined || n==='' || !isFinite(Number(n))) return '';
+  return '<b>'+esc(String(Number(n)))+'</b> ';
 }
 /* ---- WHO YOU ARE IS THE `profile` ROW, AND NOTHING IS INVENTED FOR IT ----
    「誰の物か・あるか無いか・名前・公開か・段 ── 答えは全部サーバー」 OWNER

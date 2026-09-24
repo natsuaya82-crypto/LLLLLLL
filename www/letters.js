@@ -32,8 +32,7 @@
 var LETTERS=[];
 /* The open language's alphabet. Empty first: see langRead() in core.js. */
 function ltRead(){
-  LETTERS=[];
-  try{ var lt=JSON.parse(slRd(langKey('letters'))||'null'); if(lt && lt.length) LETTERS=lt; }catch(e){}
+  LETTERS=slOpen('letters') || [];
 }
 ltRead();
 function saveLetters(){ if(langLocked()) return; bkTouch(); slWr(langKey('letters'), JSON.stringify(LETTERS)); }

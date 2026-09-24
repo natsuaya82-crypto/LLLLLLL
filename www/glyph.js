@@ -127,7 +127,11 @@ function geStep(){ return (800 - GGRID.inset*2) / (GGRID.n - 1); }
    by exactly the arithmetic the making side uses. geSide() reads the OPEN
    language and is the making side's; below post.js's line a post asks
    postSide() instead, and sides-check holds that. */
-function inkSteps(sp){ return (typeof sp==='number' && isFinite(sp) && sp>=0)? sp : SP_RANGE.def; }
+/* And a value off a POST is somebody else's number: it is held to the same
+   range the slider writes (spClamp(), www/wsys.js -- SP_RANGE's one reader),
+   because `sp:50` came out 1800 wide (docs/scope/r73-audit.md § 2-4,
+   measured) and the range was written in two places, one with no top. */
+function inkSteps(sp){ return (typeof sp==='number')? spClamp(sp) : SP_RANGE.def; }
 function inkSide(sp){ return geStep()*inkSteps(sp); }
 function geSide(){ return inkSide(SCRIPT.sp); }
 /* Where the ink can reach, in font space, which is y-up from the baseline.

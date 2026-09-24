@@ -1803,7 +1803,8 @@ server. The road is one way.**
 **The one-way line is what stops it becoming a second answer to 「what is this
 language」.** A copy that can travel back is a copy that can win. `syMerge()`
 (`www/sync.js`) is where what this phone holds meets the server, and it tells
-wreckage from empty (`sySide()`): a copy it cannot parse takes the server's,
+wreckage from empty (`slState()` in `core.js`, the one place every reader of
+a slice asks): a copy it cannot parse takes the server's,
 and a server row it cannot parse is not written over. What keeps the picture
 off that road is `slMine()` — the up road asks it, and the picture is not in
 it. With no road back, a copy that is wrong costs the copy and nothing else.

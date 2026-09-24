@@ -1030,8 +1030,65 @@ function slAsApp(fn, args){
   try{ fn.apply(null, args); }
   finally{ SL_APP--; }
 }
+/* ---- WHAT A SLICE IS: FOUR ANSWERS, AND THIS IS WHERE THEY ARE MADE -----
+   「"Empty" and "broken" are different states and must not share a branch」
+   (CLAUDE.md § Data). Every reader of a slice asks here, and so does the
+   merge (www/sync.js § syMerge) and what may be written over what
+   (www/net.js § netKeeps):
+
+     none    no string, or an empty one: there is nothing
+     plain   a slice that is not JSON and never was -- `lang`, the name
+     read    a slice this app understands, in the SHAPE its readers take
+     wreck   one it does not: not JSON, or JSON of a shape this slice never
+             has -- a dictionary that is `{}`, an alphabet that is `5`
+
+   It was ten readers each doing `try{JSON.parse(slRd(k)||'[]')}catch(e){}`,
+   so a wreck read as the empty default and the next save wrote the default
+   in its place (docs/scope/r73-audit.md § 2-4), and a merge that told the
+   two apart while nothing else did. `plain` and `wreck` look alike from the
+   string -- JSON.parse throws on `Shango` as on `[[[not json` -- so which one
+   it is, is a question about the SLICE and is asked of `kind`. */
+var SL_SHAPE={words:'a', lines:'a', letters:'a', notes:'a', snd:'a',
+              script:'o', phases:'o', wld:'o', kb:'o'};
+function slState(kind, s){
+  var v, want=SL_SHAPE[kind];
+  if(typeof s!=='string' || s==='') return {is:'none', v:null};
+  if(kind==='lang') return {is:'plain', v:s};
+  try{ v=JSON.parse(s); }catch(e){ return {is:'wreck', v:null}; }
+  if(v!==null && ((want==='a' && !(v instanceof Array)) ||
+                  (want==='o' && (typeof v!=='object' || v instanceof Array))))
+    return {is:'wreck', v:null};
+  return {is:'read', v:v};
+}
+/* THE OPEN LANGUAGE'S SLICE, as its readers want it: what was read, or null
+   for nothing and for a wreck alike -- the screen draws the empty language
+   either way. What is NOT alike is what happens next: a slice that could not
+   be read is marked, and slWr() will not write the default over it. */
+var LWRECK={};
+function slOpen(kind){
+  var k=langKey(kind), d=slState(kind, slRd(k));
+  if(d.is==='wreck') LWRECK[k]=1;
+  else delete LWRECK[k];
+  return d.v;
+}
+/* And the one write that may go over a wreck: the SERVER's readable answer,
+   put there by the merge (www/net.js § netKeeps) -- 「a copy it cannot parse
+   takes the server's」 (CLAUDE.md rule 22). */
+function slMend(k){ delete LWRECK[k]; }
 function slWr(k, v){
   var s=String(v);
+  /* NOTHING IS WRITTEN OVER A SLICE THAT COULD NOT BE READ. What is in
+     memory is the empty default the reader fell to, and writing it would be
+     the app deciding that what it cannot read is nothing -- and the next
+     person's save would carry it up. It is not saved, and it says so
+     (rule 11: 「NOT SAVING IS THE SPEC. SAVING AND SAYING NOTHING IS NOT」). */
+  if(LWRECK[k]){ saveNo(); return; }
+  /* NOTHING, written by a writer -- the keyboard reset, a slice whose last
+     thing went -- is the slice taken away, and it passes the line above
+     first: kbWrite() called slRm() itself, so a keyboard that could not be
+     read was REMOVED, disk copy and all, by every langSaveAll()
+     (tools/state-check.mjs E, measured). */
+  if(v===null){ slRm(k); return; }
   if(!SL_APP && slMine(k)!==s) LTOUCH[k]=Date.now();
   LSL[k]=s;
 }
@@ -1049,6 +1106,8 @@ function slRm(k){
   slSettled(k);
   try{ localStorage.removeItem(k); localStorage.removeItem(slGotKey(k)); }catch(e){}
 }
+/* Which slices could not be read is about the account that read them. */
+acctMem(function(){ LWRECK={}; });
 
 /* ---- AND A SAVE THAT DID NOT LAND SAYS SO -------------------------------
    「なら失敗して残るにするべき。」
@@ -1498,24 +1557,23 @@ function langFirst(){
    somebody else's language and find your own dictionary in it. */
 var LSAVED='';
 function langRead(){
-  WORDS=[]; LINES=[]; langName=''; SCRIPT={g:{}, extra:[]};
-  try{ var a=JSON.parse(slRd(langKey('words'))||'[]'); if(Array.isArray(a)) WORDS=a; }catch(e){}
-  try{ var l=JSON.parse(slRd(langKey('lines'))||'[]'); if(Array.isArray(l)) LINES=l; }catch(e){}
-  langName=langNameOf(langId);
-  try{
-    var gg=JSON.parse(slRd(langKey('script'))||'null');
-    if(gg && gg.g){ SCRIPT.g=gg.g; SCRIPT.extra=gg.extra||[]; }
+  var gg;
+  WORDS=slOpen('words') || []; LINES=slOpen('lines') || [];
+  langName=langNameOf(langId); SCRIPT={g:{}, extra:[]};
+  gg=slOpen('script');
+  if(gg){
+    if(gg.g){ SCRIPT.g=gg.g; SCRIPT.extra=gg.extra||[]; }
     /* Which way the language is written. Read on its own rather than inside
        the `gg.g` branch above: a language can have a direction and no glyphs
        drawn yet, and reading it only when there are glyphs would lose it for
        exactly the person who set it first and drew second. */
-    if(gg && gg.dir) SCRIPT.dir=gg.dir;
+    if(gg.dir) SCRIPT.dir=gg.dir;
     /* And what stands between two letters, in steps (glyph.js § geSide).
        Read here or it is gone: SCRIPT is rebuilt from these lines and saved
        whole, so a field this function does not copy is a field the next save
        drops. Absent stays absent -- one step, which is what it always was. */
-    if(gg && typeof gg.sp==='number') SCRIPT.sp=gg.sp;
-  }catch(e){}
+    if(typeof gg.sp==='number') SCRIPT.sp=gg.sp;
+  }
   /* what the language was when it was read -- save() asks it (§ langMoved) */
   LSAVED=langShape();
 }

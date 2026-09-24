@@ -3586,7 +3586,13 @@ function postInkOK(ink){
     x=ink.s[i];
     if(typeof x==='string') continue;
     if(typeof x!=='number') return false;
-    if(!(x>=0 && x<ink.g.length) || !ink.g[x]) return false;
+    if(!(x>=0 && x<ink.g.length)) return false;
+    /* AND WHAT IT POINTS AT IS A SHAPE -- strokes or rings, a list with
+       something in it (www/glyph.js § inkGeo). It asked only that it was
+       there, so `{}`, `[]`, 'abc' and 5 passed, the line came out as nothing
+       and the text was not drawn either (docs/scope/r73-audit.md § 2-4,
+       measured). Somebody else wrote this post. */
+    if(Object.prototype.toString.call(ink.g[x])!=='[object Array]' || !ink.g[x].length) return false;
   }
   return true;
 }

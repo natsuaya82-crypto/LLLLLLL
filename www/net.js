@@ -2412,13 +2412,22 @@ function netLangsGone(mine, ids){
    `syMerge()` in www/sync.js already adds both sides and falls back to what is
    on the phone whenever it cannot read either half, so this should never fire.
    That is exactly why it is here: it costs one comparison, and the day it
-   fires is the day something upstream changed. */
-function netKeeps(mine, put){
-  var a, b, k;
-  if(mine===null || mine==='') return true;      /* placing, not replacing */
+   fires is the day something upstream changed.
+
+   WHAT EACH SIDE IS, it asks slState() (www/core.js) -- the four answers
+   every reader of a slice gets. It used to parse for itself and measure
+   whatever it could not parse by its LENGTH, so a shorter name was refused
+   and a longer string of wreckage was let over a readable slice
+   (docs/scope/r73-audit.md § 2-4). Now: nothing unreadable goes over
+   anything; a copy on this phone that cannot be read takes the server's
+   (CLAUDE.md rule 22); a name is a name. */
+function netKeeps(kind, mine, put){
+  var s1=slState(kind, mine), s2=slState(kind, put), a, b, k;
+  if(s1.is==='none') return true;                /* placing, not replacing */
   if(put===mine) return true;
-  try{ a=JSON.parse(mine); b=JSON.parse(put); }
-  catch(e){ return String(put).length>=String(mine).length; }
+  if(s2.is==='wreck' || s2.is==='none') return false;
+  if(s1.is==='wreck' || s1.is==='plain') return true;
+  a=s1.v; b=s2.v;
   if(a instanceof Array)
     return (b instanceof Array) && b.length>=a.length;
   if(a && typeof a==='object'){
@@ -2611,7 +2620,8 @@ function netSlice1(id, sid, kind, got, done, bad, tries){
               was===null? '' : was, later);
   if(put!=='' && put!==mine){
     /* and only where it keeps everything that is already there */
-    if(netKeeps(mine, put)){
+    if(netKeeps(kind, mine, put)){
+      slMend(langKeyOf(id, kind));
       slWr(langKeyOf(id, kind), put);
       /* Something came back, so say so: the caller reads the screens again. */
       if(put===''){ done(true); return; }
