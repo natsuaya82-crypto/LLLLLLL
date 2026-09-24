@@ -3401,6 +3401,56 @@ const SM = await small.evaluate(({ s }) => {
 }, { s: seed.toString() });
 await small.close();
 
+/* ---- r74: the sheet's surfaces, counted rather than listed ---------------
+   docs/scope/r73-audit.md § 2-16 found every one of these by measuring, and
+   each was a hole in a surface the claims above only ever walked on a full
+   QWERTY. What is asked here is the SURFACE: every row and every column of
+   boards that are not ten across, and every screen the sheet can be left by.
+   A fresh page, so nothing the long walk above left behind is stood on. */
+const sf = await br.newPage({ viewport: { width: 390, height: 844 } });
+await sf.goto('file://' + path.join(dir, '..', 'www', 'index.html'));
+await sf.waitForSelector('#splash', { state: 'detached', timeout: 10000 });
+const SF = await sf.evaluate(({ s }) => {
+  eval('(' + s + ')()');
+  SET.walked = true; planGot('pro');
+  var out = {};
+  function board(rowsOf){
+    KB = null; kbShow = 0; kbAdd('abc'); kbLay = 0;
+    kbEdit().lay[0].rows = rowsOf();
+    saveKb(); render();
+  }
+  function lt(v, w){ var k = kbKey('lt', v); if (w) k.w = w; return k; }
+
+  /* THE SELECTION AND THE STEP BACK ARE THE SCREEN'S. Select row 1, change
+     the board, walk to the timeline by its tab and come back: nothing is lit
+     and there is nothing to step back to. */
+  board(function (){ return [[lt('a'), lt('b'), lt('c')], [lt('d'), lt('e')]]; });
+  kbHeadRow(1); kbCut();
+  kbHeadRow(0);
+  out.leftBefore = { h: !!KBH, u: KBU.u.length };
+  goTab('feed');
+  go('kb'); go('kb', String(kbShow));
+  out.leftAfter = { h: !!KBH, u: KBU.u.length };
+
+  /* AND ANOTHER LANGUAGE'S BOARD IS ANOTHER HISTORY. viewReset() is what
+     opening another language does; the board in front of you afterwards is
+     at the same place in the list and is a different board. */
+  board(function (){ return [[lt('a'), lt('b'), lt('c')]]; });
+  kbHeadRow(0); kbCut();
+  viewReset();
+  /* the other language's keyboard, as langLoad() puts it there: read, not
+     made -- kbAdd() forgets on its own, and that is not this road */
+  KB = { v: KB_V, at: 0, kbs: [{ id: 'kOtherLang_1', nm: '', pat: 'abc',
+    lay: [{ nm: '', rows: [[lt('x'), lt('y')]] }] }] };
+  kbShow = 1; kbLay = 0;
+  window.route = 'kb'; NAV = [{ r: 'kb' }, { r: 'kb', a: '1' }]; render();
+  var bSig = JSON.stringify(kbLayer().rows);
+  kbUndo();
+  out.crossSame = JSON.stringify(kbLayer().rows) === bSig;
+  return out;
+}, { s: seed.toString() });
+await sf.close();
+
 await br.close();
 
 /* ---- the two sides of the wall say the same three numbers ---------------
@@ -4405,6 +4455,15 @@ say(dupOne.onScreen === 1 && dupTwo.onScreen === 1 && dupThree.onScreen === 1,
 say(dupTwo.onServer <= dupOne.onServer && dupThree.onServer <= dupTwo.onServer,
     'and the copies on the server stop multiplying rather than growing by one a launch: '
     + [dupOne, dupTwo, dupThree].map((x) => x.onServer).join(', ') + ' rows');
+
+/* r74 — the surfaces */
+say(SF.leftBefore.h && SF.leftBefore.u > 0 && !SF.leftAfter.h && SF.leftAfter.u === 0,
+    'the selection and the step back are the screen’s: walked off by a tab and come back '
+    + 'to, nothing is lit and there is nothing to step back to (before '
+    + JSON.stringify(SF.leftBefore) + ', after ' + JSON.stringify(SF.leftAfter) + ')');
+say(SF.crossSame,
+    'and another language’s board is another history — a step back pressed there puts '
+    + 'nothing of the first language’s layout onto it');
 
 if (bad.length){ console.error('\nkb-check: ' + bad.length + ' FAILED'); process.exit(1); }
 console.log('\nkb: pressing a row number or a column letter SELECTS it and lights it up;\n' +

@@ -2132,8 +2132,8 @@ function kbNHTML(ri){
    so it is clear what is being worked on, and the buttons over the sheet act
    on it. 「削除は削除ボタン寄せは寄せボタンでしょ」
 
-   Where you are standing rather than anything the language has, so
-   viewReset() drops it. Pressing the same head again puts it down. */
+   Where you are standing rather than anything the language has, so it is
+   forgotten with the screen -- kbLeft() below. */
 var KBH=null;
 /* ---- A HEAD SELECTION IS A RUN -----------------------------------------
    「キーボードaおしたら縦列選択できるけどさ、そこからabcdみたいに引っ張っても
@@ -3611,40 +3611,47 @@ var KBU={id:'', cur:'', u:[], r:[]};
 function kbNoted(){
   var b=kbEdit(), id, str;
   if(!b) return;
-  id=String(kbShow);
+  /* Named by the LANGUAGE and the board's own id, never by where it is in
+     the list: board 1 of one language and board 1 of the next are two
+     keyboards, and so are the board that was deleted and the one that slid
+     into its place. docs/scope/r73-audit.md § 2-16 measured a step back
+     pressed in the second language putting the first one's layout down. */
+  id=String(langId)+'|'+String(b.id);
   str=kbLaySig(b);
   /* Another board is another history. Nothing is carried across: undoing onto
      a keyboard the layout never belonged to is not a step back, it is a
      different keyboard arriving. */
-  if(KBU.id!==id){ kbForget(); KBU.id=id; KBU.cur=str; return; }
+  if(KBU.id!==id){ kbLeft(); KBU.id=id; KBU.cur=str; return; }
   if(KBU.cur===str) return;
   KBU.u.push(KBU.cur);
   if(KBU.u.length>40) KBU.u.shift();
   KBU.cur=str;
   KBU.r=[];
 }
-/* A board is identified here by WHERE it is in the list, because that is all
-   a board has -- and a position is not an identity. Delete board 1 and make
-   another, and the new one is board 1 too, wearing the old one's history:
-   the step back would put a layout that belongs to a deleted keyboard onto a
-   keyboard that never had it. That is not a step back, it is a different
-   keyboard arriving. So making one and deleting one both forget.
+/* WHAT THE SHEET FORGETS, and it is one sentence: the selection and the step
+   back belong to the board in front of you on the screen in front of you.
+   「row 3」 means row 3 of THAT board, and a history is a history of that
+   board -- so walking off the screen (viewLeft() in www/shell.js), opening
+   another language (viewReset()), and arriving on another board (kbNoted()
+   above, which names a board by its id) are the three ways that board stops
+   being in front of you, and all three come here.
 
-   The SELECTION goes with it for the same reason and it is the same sentence:
-   "row 3" means row 3 of a board, and the board is gone. Leaving it behind
-   lights up a row of the new keyboard that nobody pressed, with the bin above
-   it up and ready. viewReset() clears it on the way to another screen; this
-   is the other way to arrive somewhere else without leaving the screen.
-
-   AND THE BUFFER THE SAVE READS, for the same sentence a third time. It is
+   It used to be two lines in two places that each said half: viewReset()
+   dropped the selection and not the history, and nothing dropped either when
+   the screen was merely walked off, so a row selected, a tab pressed and the
+   keyboard come back to found the row still lit with the bin up
+   (docs/scope/r73-audit.md § 2-16, measured). */
+function kbLeft(){ KBU={id:'', cur:'', u:[], r:[]}; KBH=null; }
+/* AND THE BUFFER THE SAVE READS, when the LIST changes under the pages. It is
    filed under the board's PAGE (kbKeepOn below), so a board deleted out from
    under a page leaves what it opened with sitting there as what the next
    board's change is measured against -- and the Save came up gold on a
    keyboard nobody had touched. Every one of them goes, not the page you are
    standing on: the boards below a deleted one all slide, so every page from
-   there down is now about a different keyboard. */
+   there down is now about a different keyboard. Making one and deleting one
+   both come here. */
 function kbForget(){
-  KBU={id:'', cur:'', u:[], r:[]}; KBH=null;
+  kbLeft();
   var k;
   for(k in KEEP) if(KEEP.hasOwnProperty(k) && k.indexOf('kb|')===0) keepDrop(k);
 }
