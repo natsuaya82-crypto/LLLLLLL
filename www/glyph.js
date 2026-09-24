@@ -672,16 +672,15 @@ function myFontOn(){ return myFontWant() && SFONT.built; }
    used to decide this for themselves and drew the shape with the switch off
    and the borrowed character where none was drawn (r73 §2-11);
    tools/ink-check.mjs B holds it. */
-/* A FIELD a word of the language is typed into wears the typing face when the
-   drawn letters are on, so what the Lingua keyboard puts in comes out as the
-   shapes. Three fields ask it -- a spelling (spTypeField), a form of a word
-   (addFmHTML), a word for a rule (g2PolPickHTML) -- and it is written here
-   once because whether a field is set in the drawn letters at all is not
-   settled: 2026-08-13 「A field is in ordinary letters」 and 2026-09-23
-   「一行を描く仕組みを一つに」 disagree, and the post's own field wears the
-   face whatever the switch says (docs/scope/r73-audit.md § 5-14). The
-   answer, when it comes, is this line. */
-function myFontField(){ return myFontOn()? 'tfont' : ''; }
+/* A FIELD a word of the language is spelt in wears the typing face when the
+   drawn letters are on, so the word shows as the shapes and what the Lingua
+   keyboard puts in comes out as the shapes too. 「綴りはローマ字でいいわけない
+   やろ」 OWNER 2026-09-24, and every such field gives this one answer:
+   spTypeField() (www/letters.js) asks it for the class and for what goes in,
+   and the word for a rule (g2PolPickHTML) asks it for the class. It asks
+   whether the TYPING face is built, because that is the face the field wears
+   -- LinguaScript is another font. pua-check F holds it, on and off. */
+function myFontField(){ return (myFontWant() && TFONT.built)? 'tfont' : ''; }
 function ltLineChar(l){
   var g=inkGeo(l);
   return (g && myFontWant())? inkChar(g, geSide()) : '';

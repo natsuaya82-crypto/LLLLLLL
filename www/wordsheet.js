@@ -204,7 +204,7 @@ var openHw='', wEdit=null;
    a word. */
 /* The same as the new-word sheet's: typed on free, pressed on the paid plan,
    and the row of letters under it either way. */
-function wdTypeHTML(){ return spTypeField('wd-ln', 'wdSetLn', wEdit.sp||[], 'whin'); }
+function wdTypeHTML(){ return spTypeField('wd-ln', IN('wdSetLn'), wEdit.sp||[], 'whin'); }
 function wdSetLn(v){
   wEdit.sp=spType(v);
   wdSync();
@@ -522,7 +522,7 @@ function vRelate(){
        So it is made here, and joined here, in one press. */
     '<div class="sec">'+t('home.write')+'</div>'+
     '<div class="row2"><div class="field">'+
-      lnField('rel-hw', t('f.spelling'), ' autocapitalize="none"', '')+'</div>'+
+      spTypeField('rel-hw', ' autocapitalize="none"', [], '', t('f.spelling'))+'</div>'+
     '<div class="field">'+
       lnField('rel-mn', t('f.meaning.ph'), '', '')+'</div></div>'+
     '<button class="btn ghost" style="width:100%;margin:8px 0 18px"' + DO('relNew') +
@@ -1082,7 +1082,7 @@ function wfmFormHTML(w, was, k){
   return wdPickRow(t('wfm.label'), fmLabel(fm)||t('word.none'),
       DO('go', ['fm', '#'+String(w.hw)+'|'+was]))+
     '<div class="sec">'+esc(t('wfm.form'))+'</div>'+
-    spTypeField('wfm-f', 'wfmSetF', spType(f), 'whin')+
+    spTypeField('wfm-f', IN('wfmSetF'), spType(f), 'whin')+
     /* The way out, and only for a form somebody placed: a form a rule makes
        is the rule's, and an old one is a word in the dictionary, which this
        screen does not delete. */
@@ -1194,8 +1194,7 @@ function addFmHTML(){
   return '<div class="sec">'+esc(t('fmr.title'))+'</div>'+
     '<div class="fmmks">'+addFms.map(function(m){
       return '<div class="fmmk"><span class="fmmkf">'+esc(fmLabel(m.fm))+'</span>'+
-        lnField('fmmk-'+m.id, '', IN('addFmSet', [m.id]), m.hw,
-                'whin '+myFontField())+
+        spTypeField('fmmk-'+m.id, IN('addFmSet', [m.id]), m.sp, 'whin')+
         '<button class="mnx"' + DO('addFmDrop', [m.id]) + ' aria-label="'+
           esc(t('fmr.off'))+'">'+ICON_MINUS+'</button></div>';
     }).join('')+'</div>';
@@ -1282,7 +1281,7 @@ function fmrFormHTML(){
   if(!r) return '';
   return '<div id="fmr-body">'+
     '<div class="sec">'+esc(t('fmr.add'))+'</div>'+
-    spTypeField('fmr-add', 'fmrSetAdd', r.add||[], 'whin')+
+    spTypeField('fmr-add', IN('fmrSetAdd'), r.add||[], 'whin')+
     fmrSegs(r.at||'end', [['end', t('fmr.end')], ['start', t('fmr.start')]], 'fmrSetAt')+
     '</div>';
 }

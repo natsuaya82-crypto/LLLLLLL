@@ -15,6 +15,17 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### 2026-09-24 単語のつづりを打つ欄は描いた字で出る（r83-make B）
+
+**覆う一文**：語をつづる欄は `spTypeField()`（`www/letters.js`）一つが描き、`myFontField()`（`www/glyph.js`）一つが
+「描いた字で出すか」を答える。出す時は欄に字の名前ではなく描いた字（`puaField()`、投稿欄と同じ読み）を入れる。
+前は `.tfont` が付いていても中身が字の名前（ローマ字）で、描いた字は一つも出ていなかった（測った: 編集画面の `kano`）。
+通る欄: 新しい語・編集（`wd-ln`）、語形（`wfm-f`）、規則が作る語形（`fmmk-*`）、規則が足す字（`fmr-add`）、
+その場で作る関係語（`rel-hw`、前は `.tfont` も無かった）。`myFontField()` は欄が着る面（`LinguaType`、`TFONT`）を訊くように。
+スイッチを切れば今までどおりローマ字。欄から出る物は act.js がローマ字に戻すので、**保存される物は変わらない**。
+`pua-check` F が面を数える（打つと `spType()` に届く欄と、`actVal()` → `spType()` と流れる欄）。
+写真 `shots/r83-B-spell-before.png` / `-after.png` / `-after-off.png`。
+
 ### 2026-09-24 自作文字のスイッチを切ると、ホーム画面のウィジェットもローマ字に（r83-make A）
 
 **覆う一文**：ウィジェットに描いた形を渡すかは `shareWidget()`（`www/share.js`）一か所が `myFontWant()` に訊く。

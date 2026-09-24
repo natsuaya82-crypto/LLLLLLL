@@ -269,6 +269,97 @@ if (E.sp.length !== 1 || E.sp[0] !== E.face)
   fails.push('E  a space on a photograph is ' + JSON.stringify(E.sp) + ' wide where the line and the ' +
              'card give it ' + E.face + ' (inkSpace)');
 
+/* ---- F. a field a spelling is typed into is set in the drawn letters ---------
+   「綴りはローマ字でいいわけないやろ」 OWNER 2026-09-24: every field a word is
+   SPELT in shows the letters somebody drew, the way the composer's line does,
+   and all of them give the same answer (myFontField(), www/glyph.js).
+
+   The surface is found, not listed. A spelling field is one whose receiver
+   cuts what was typed into letters -- spType() -- so every field on every
+   route and every face of the fixture is typed into through the real
+   listener and the ones that reach spType() are the surface. A field read
+   only on a press has no receiver to catch, so the functions under www/ that
+   call spType() are read too and every id they fetch is on it.
+
+   Asked both ways: with the drawn letters ON each wears .tfont and shows no
+   drawn letter by its roman name; switched OFF, it wears neither the face nor
+   a private use character, which would be a box. */
+const SPID = new Set();
+for (const f of fs.readdirSync(ROOT).filter((x) => x.endsWith('.js'))) {
+  const src = strip(fs.readFileSync(path.join(ROOT, f), 'utf8'));
+  const raw = fs.readFileSync(path.join(ROOT, f), 'utf8');
+  for (const m of src.matchAll(/function\s+([\w$]+)\s*\([^)]*\)\s*\{/g)) {
+    let d = 0, i = m.index + m[0].length - 1, e = i;
+    for (; e < src.length; e++) { if (src[e] === '{') d++; else if (src[e] === '}' && --d === 0) break; }
+    if (m[1] === 'spType' || !/\bspType\(/.test(src.slice(i, e))) continue;
+    /* Only the field whose value FLOWS into spType(): fetched into a name,
+       read by actVal() into another, and that one cut. The same function
+       reads the meaning beside it, and a meaning is not a spelling. */
+    const body = raw.slice(i, e), el = {}, val = {};
+    for (const g of body.matchAll(/(\w+)\s*=\s*document\.getElementById\('([\w-]+)'\)/g)) el[g[1]] = g[2];
+    for (const g of body.matchAll(/(\w+)\s*=\s*actVal\((\w+)\)/g)) if (el[g[2]]) val[g[1]] = el[g[2]];
+    for (const g of body.matchAll(/spType\((\w+)\)/g)) if (val[g[1]]) SPID.add(val[g[1]]);
+  }
+}
+const F = await pg.evaluate((ids) => {
+  const out = { found: {}, bad: [] };
+  const realSp = spType;
+  let hit = false;
+  spType = function () { hit = true; return realSp.apply(this, arguments); };
+  const app = document.getElementById('app');
+  const PUA = /[-]/;
+  const ask = (on, where) => {
+    const drawn = ltPuaOrder().map((l) => String(ltName(l) || '')).filter(Boolean);
+    app.querySelectorAll('textarea, input').forEach((el) => {
+      if (!el.id) return;
+      const v = el.value, cls = ' ' + el.className + ' ';
+      let spell = ids.indexOf(el.id) !== -1;
+      if (!spell && el.getAttribute('data-in')) {
+        hit = false;
+        try { el.value = v + ltPua(0); el.dispatchEvent(new Event('input', { bubbles: true })); } catch (e) {}
+        el.value = v;
+        spell = hit;
+      }
+      if (!spell) return;
+      out.found[el.id.replace(/-\w{6,}$/, '-*')] = 1;
+      if (on) {
+        const romanOf = puaTyped(v).cut.filter((u) => u.t !== undefined)
+          .map((u) => u.t).join(' ');
+        const shown = drawn.filter((n) => romanOf.indexOf(n) !== -1);
+        if (cls.indexOf(' tfont ') === -1) out.bad.push(where + ' #' + el.id + ' is not set in the drawn letters');
+        else if (shown.length) out.bad.push(where + ' #' + el.id + ' shows the drawn ' + shown.join(',') +
+                                            ' by name: "' + v + '"');
+      } else if (cls.indexOf(' tfont ') !== -1 || PUA.test(v)) {
+        out.bad.push(where + ' #' + el.id + ' with the drawn letters switched off still wears them: "' + v + '"');
+      }
+    });
+  };
+  /* The receivers run for real on the probe: spType() is reached through them. */
+  const walkOn = (on) => {
+    Object.keys(PAGES).forEach((r) => {
+      try { window.__seed(); SET.walked = true;
+        if (on) delete SET.myfont; else SET.myfont = false;
+        installScriptFont(); installTypeFont();
+        window.route = r; NAV = [{ r: r }]; render(); ask(on, r); } catch (e) {}
+    });
+    window.__halfDone().forEach(([label, run]) => {
+      try { window.__seed(); SET.walked = true;
+        if (on) delete SET.myfont; else SET.myfont = false;
+        installScriptFont(); installTypeFont();
+        app.innerHTML = run(); ask(on, label); } catch (e) {}
+    });
+  };
+  walkOn(true); walkOn(false);
+  spType = realSp;
+  return out;
+}, [...SPID]);
+const spFound = Object.keys(F.found).sort();
+if (spFound.length < 3)
+  fails.push('F  only ' + spFound.length + ' spelling fields were found (' + spFound.join(' ') + '), so F holds nothing');
+if (F.bad.length)
+  fails.push('F  a field a spelling is typed into does not show the drawn letters the same way as the rest: ' +
+             [...new Set(F.bad)].slice(0, 8).join(' | '));
+
 if (errs.length) fails.push('the page threw: ' + errs.slice(0, 3).join(' | '));
 await br.close();
 srv.close();
@@ -284,4 +375,6 @@ console.log('pua: ' + A.fields + ' fields on ' + A.screens + ' screens typed int
             '     ' + reads + ' reads of .value outside www/act.js;\n' +
             '     a draft carries its letters by id, a post its ink, an edit keeps the ink it was\n' +
             '     written with; a letter with no name posts; a line on a photograph breaks at a\n' +
-            '     newline and spaces with the ordinary face.');
+            '     newline and spaces with the ordinary face;\n' +
+            '     ' + spFound.length + ' spelling fields (' + spFound.join(' ') + ') show the drawn letters, and\n' +
+            '     none of them does with the switch off.');

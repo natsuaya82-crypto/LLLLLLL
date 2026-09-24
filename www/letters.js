@@ -1384,20 +1384,28 @@ function spType(text){
   for(i=0;i<cut.length;i++) out.push({l:by[cut[i]]});
   return out;
 }
-/* The field a word is typed into, wherever one is typed into.
-   Three screens have one -- the new-word sheet, the editor, and the word a
-   grammar stage asks for -- and the third differs only in holding sounds
-   rather than letters, so it builds its own. These two were the same line
-   twice. */
-function spTypeField(id, into, sp, cls){
-  /* No placeholder. The box said つづり inside itself with a heading
-     saying the same thing directly above it, which is one fact written twice
-     and the second copy sitting where the answer goes.
-     「四角のなかにつづりとか読みとか書くの消して」 */
-  /* In the person's own letters, because that is what the word IS. The box
-     holds the letters' names -- a to z -- and roman is what those names look
-     like, not what the word looks like. 「単語の文字のところが英語なのはなぜ？」 */
-  return lnField(id, '', IN(into), spWord(sp||[]), cls+' '+myFontField());
+/* THE FIELD A WORD IS SPELT IN, wherever one is -- the new-word sheet and the
+   editor, a form of a word, a form a rule makes, the letters a rule adds, and
+   a related word made on the spot. `attrs` is what the field answers to (an
+   IN(), or nothing where it is read on a press).
+
+   In the person's own letters, because that is what the word IS.
+   「単語の文字のところが英語なのはなぜ？」「綴りはローマ字でいいわけないやろ」
+   OWNER 2026-09-24. The field wore the typing face and was filled with the
+   letters' NAMES, and the typing face carries nothing but the private use
+   range -- so a word somebody had drawn every letter of came out in roman,
+   class and all. So both are decided here, together: myFontField() says
+   whether the field is set in the drawn letters, and when it is, the word
+   goes in as those letters (puaField(), the composer's own reading) and not
+   as their names. What comes back out is the roman, through act.js.
+
+   No placeholder unless the screen has no heading saying it.
+   「四角のなかにつづりとか読みとか書くの消して」 */
+function spTypeField(id, attrs, sp, cls, ph){
+  var f=myFontField(), c=[], i;
+  sp=sp||[];
+  for(i=0;i<sp.length;i++) c.push(sp[i].l? {id:sp[i].l} : {t:String(sp[i].u||'')});
+  return lnField(id, ph||'', attrs, f? puaField(c) : spWord(sp), (cls||'')+(f? ' '+f : ''));
 }
 function spWord(sp){
   var out='', i, l;
