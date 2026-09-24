@@ -261,7 +261,11 @@ const FIELDS = {
   recent:   { to: 'netRecentAdd' },
 
   /* --- and the phone's own, each for its own reason --------------------- */
-  savedUp:  { phone: 'whether this phone has sent its starred searches up ONCE. A mark about the road above, not a thing travelling on it' },
+  /* `savedUp` STOOD HERE: whether this phone had handed its ☆ up once. The
+     hand-over is gone (r79 -- 「オンラインのみ」 2026-09-04 and rule 22 over
+     「次つながった時に更新される」) and nothing writes it; a phone that has it
+     keeps it. What a phone that never handed over had is kept instead: */
+  savedWas: { phone: 'the ☆ list a phone had before `saved_search` existed and never handed over, copied ONCE when the server\'s answer is written over `saved` -- read by nothing, removed by nothing (「読まない、消さない」 2026-09-03). The account\'s, under `lingua.set.<uid>`' },
   /* `plan`, `planWas`, `planV` and `planUid` STOOD HERE AND ARE GONE
      (2026-09-11). 「オンラインで 1 端末に 1 アカウント…段 ── 答えは全部
      サーバー」 OWNER: what an account pays is `verify-plan`'s answer and it is

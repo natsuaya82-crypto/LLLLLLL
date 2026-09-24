@@ -4817,6 +4817,31 @@ const R = await pg.evaluate(async () => {
         '降りてきた値が手元に来て、別の人には付いていかない');
   }
 
+  /* ---- 90. ☆ は一度も渡さない ── 答えがその一覧、前の ☆ は写して残す（r79）
+     「オンラインのみで行こう」（2026-09-04）とルール 22 が「次つながった時に
+     更新される」より新しい。表より前から端末にあった ☆ を一度だけ上げる道を
+     消した。上げない、そして消さない。 */
+  {
+    start();
+    netOut(); arrive(A);
+    const wr90 = [], keep90 = netSend;
+    netSend = function (method, p, body, tok, ok, bad) {
+      if (String(p).indexOf('/rest/v1/saved_search') === 0 && method !== 'GET') wr90.push(method);
+      ok(method === 'GET' ? [] : {});
+    };
+    SET.saved = ['まえの星']; delete SET.savedUp; delete SET.savedWas;
+    let ok90 = false;
+    askSaved(function () { ok90 = true; }, function () {});
+    netSend = keep90;
+    if (wr90.length) no('90: 端末の ☆ をサーバーへ上げた ── ' + wr90.join(' '));
+    if (!ok90) no('90: 答えが来たのに一覧が答えにならない');
+    if (snsSaved().length) no('90: 画面の ☆ がサーバーの答えではない ── ' + JSON.stringify(snsSaved()));
+    if (JSON.stringify(SET.savedWas) !== JSON.stringify(['まえの星']))
+      no('90: 上げなかった ☆ が残っていない（読まない、消さない）── ' + JSON.stringify(SET.savedWas));
+    say('90: ☆ は一度も渡さない ── 上がった要求 ' + wr90.length + '、画面はサーバーの答え、' +
+        '前の ☆ は savedWas に写して残る');
+  }
+
   return out;
 });
 
