@@ -3316,7 +3316,7 @@ function netFollowRows(want, by, ok, bad, handle, after, among){
      (www/me.js § folPull). */
   for(i=0;i<(among||[]).length;i++) if(among[i]) l.push(encodeURIComponent(String(among[i])));
   if(among && !l.length){ ok([]); return; }
-  netGet('/rest/v1/follow_seen?select=created_at,'+want+'_handle'+q+
+  netGet('/rest/v1/follow_seen?select='+want+'_handle,created_at'+q+
          '&order=created_at.desc,'+want+'_handle.asc'+
          (after? '&or='+encodeURIComponent('(created_at.lt."'+after[0]+'",and(created_at.eq."'+
                    after[0]+'",'+want+'_handle.gt."'+after[1]+'"))') : '')+
