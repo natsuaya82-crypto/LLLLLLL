@@ -5187,7 +5187,21 @@ and is never merged into your own」と言っている。**入らない、は二
 - Affected features: the timeline, search, notices, threads
 - Affected data: `ME.bl` on the phone, `block` on the server
 - Affected docs: `docs/FEATURES.md`
-- Implementation status: implemented, **not device confirmed**
+- Implementation status: **half, on the server, and not device confirmed.**
+  What they WROTE and DID is left out by the server: `block_hides()` in
+  `supabase/schema.sql` is the one answer, and `post_seen` (the feed, threads,
+  somebody's posts, the search for posts), `feed_hot()`, `feed_fo()` (whoever
+  passed a post on, too) and `notices()` pass every person they hand out
+  through it. `rls-check` walks every view and row-returning function in the
+  catalogue as somebody who has blocked somebody (r80-block, 2026-09-24).
+  **Not yet:** their profile, their language and who they follow
+  (`profile_seen`, `language_seen`, `follow_seen` — named in `rls-check`'s
+  `BLOCK_HELD`), because unblocking is pressed on their page and there is
+  nowhere else to do it; and **search on the other side** — somebody blocked
+  still finds the person who blocked them, since the search reads the same
+  views as the feed and whether the blocked side loses the feed too is not
+  decided. The phone still filters as well (`netBlocked()`, `postBlocked()`),
+  and taking that out is `www/`'s. All three are in `docs/scope/r80-block.md`.
 
 ### Decision
 - Date: 2026-08-19
