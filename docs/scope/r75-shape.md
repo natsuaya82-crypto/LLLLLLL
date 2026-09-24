@@ -76,8 +76,13 @@ fast（assets・docs・dead・box・face・es5、pre-commit の i18n）、act（
 色の数 5、アニメーション。加えて: 行の組の空きを 14px 一つにした（10〜26px だった）、幅いっぱいのボタンの上を 10px 一つに
 （8〜14px）── 数 px の見た目の変更で、写真 `shots/r75-grp-*`。
 
-### press の今（直した後の一回）
-（下に追記）
+### press の今（直した後の一回、integ-0905 を入れた後）
+- `no row pushed down to make a group: 1 FOUND` ── keyboard.js の `.note`（やり残し 1）。持ち場の 5 組は消えた。
+- `nothing wears .ppr` / `.tfont` ── このブランチの変更ではない（post.js の広告の印、numbers.js）。一回目の run でも出ていた。
+- `buttons pressed: 19120 (284/286)`、押されていない 2 つは `closeSheet` と `saveName`。`closeSheet` は `#app` の外
+  （暗がり）にあり press は `#app` の中しか押さない ── 実物のブラウザで手で押して、文字を押しても閉じず暗がりで閉じ、
+  「いいえ」は走らないことを前後で同じと確かめた。
+- act-check は merge 後も緑。
 
 ### CODE / DEVICE / OWNER
 - CODE CONFIRMED：上の検査。
