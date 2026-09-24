@@ -1749,6 +1749,37 @@ const CASES = [
      a check constraint rather than a comment: 「空」と「壊れている」は別。 */
   ['a token that is not hex is refused',      'denied', A, 0,
     `insert into device(uid,token) values ('${A}','not a token')`],
+  /* AND THE ADDRESS IS WHOEVER IS SIGNED IN ON THAT PHONE NOW.
+     「端末ごとにやることなんてねえよ」 -- a phone is a window, and the account
+     looking through it is the one its notices are for. Two things were wrong
+     and both were measured (r63-audit S4, S5): the same account sending the
+     same token again -- which every launch does, as PostgREST's
+     merge-duplicates -- was REFUSED from the second time on, because the
+     conflict takes the update road and there is no update policy; and a
+     second account signing in on the same phone left the first one's row
+     there, so the first account's notices rang on somebody else's phone.
+
+     The first is asked in the shape PostgREST sends it, inside a `with` so
+     that 「nothing to do」 reads as a row rather than as a refusal. */
+  ['A sends the same iPhone again, as every launch does', 'ok', A, 0,
+    `with x as (insert into device(uid,token) values ('${A}','a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1')
+       on conflict (uid,token) do update set created_at = excluded.created_at
+       returning 1) select 1`],
+  ['and A has it once',                       'ok',     A, 0,
+    `select 1 from device where uid='${A}' having count(*) filter
+       (where token='a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1') = 1`],
+  ['A registers a second iPhone',             'ok',     A, 0,
+    `insert into device(uid,token) values ('${A}','a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5')`],
+  ['B signs in on A\u2019s first iPhone and registers it', 'ok', B, 0,
+    `insert into device(uid,token) values ('${B}','a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1')`],
+  ['and that iPhone is no longer A\u2019s address', 'denied', A, 0,
+    `select 1 from device where uid='${A}' and token='a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1'`],
+  ['and A\u2019s other iPhone still is',         'ok',     A, 0,
+    `select 1 from device where uid='${A}' and token='a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5'`],
+  ['B cannot put a phone on A to take it back', 'denied', B, 0,
+    `insert into device(uid,token) values ('${A}','a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1')`],
+  ['and the phone is still B\u2019s',            'ok',     B, 0,
+    `select 1 from device where uid='${B}' and token='a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1'`],
 
   /* --- AND SOMEBODY WITH NO ACCOUNT AT ALL -------------------------------
      「ちがう。そもそもサインインがない状態でできることがないはずなのにそれが
