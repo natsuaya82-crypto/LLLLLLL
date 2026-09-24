@@ -58,6 +58,8 @@
 
 ### 回した検査
 sheet・line・card・ink・post・draft・pua・word・forms・kb・act・i18n・plan（単独で、土台と同じ一つの赤）・press・速い物。
+press（全部を直した後に一度）: 緑 ── 誰も着ない class 無し、押したボタン 19368 → 19818、名前 283/285 → 282/284
+（kbLtPut が消えた分）。どちらも意図した動き。
 **全ゲートは回していない。** 土台で既に赤: docs-check・token-check・writes-check（r79 の報告どおり）、kb-check の 4 件、
 plan-check の 1 件 ── どれもこの変更の前から。
 
