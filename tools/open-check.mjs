@@ -207,6 +207,10 @@ async function boot(pre, drive) {
    is what a real account is. */
 const SESS = JSON.stringify({ at: 'not a jwt', rt: 'a refresh token',
                               uid: '11111111-1111-4111-8111-111111111111', anon: false });
+/* What this account has on the phone is filed under it (www/core.js § ACCT):
+   the profile copy is `lingua.me.<uid>`, and one with no owner on it is read by
+   nobody. */
+const ME_KEY = 'lingua.me.11111111-1111-4111-8111-111111111111';
 
 /* ---- 1. a phone with nothing on it ------------------------------------- */
 {
@@ -462,7 +466,7 @@ const SESS = JSON.stringify({ at: 'not a jwt', rt: 'a refresh token',
      the door however this road ends. */
   const r = await boot({ 'lingua.set': JSON.stringify({ done: true }),
                          'lingua.sess': SESS,
-                         'lingua.me': JSON.stringify({ name: 'Aya', handle: 'aya' }) },
+                         [ME_KEY]: JSON.stringify({ name: 'Aya', handle: 'aya' }) },
                        () => {
                          NAV = [{ r:'settings', a:'' }];
                          go('set', 'acct'); go('set', 'pw');
@@ -516,7 +520,7 @@ const SESS = JSON.stringify({ at: 'not a jwt', rt: 'a refresh token',
 {
   const r = await boot({ 'lingua.set': JSON.stringify({ done: true }),
                          'lingua.sess': SESS,
-                         'lingua.me': JSON.stringify({ name: 'Aya', handle: 'aya' }) },
+                         [ME_KEY]: JSON.stringify({ name: 'Aya', handle: 'aya' }) },
                        () => {
                          NAV = [{ r:'settings', a:'' }];
                          go('set', 'acct'); go('set', 'pw');
@@ -579,7 +583,7 @@ const SESS = JSON.stringify({ at: 'not a jwt', rt: 'a refresh token',
 {
   const r = await boot({ 'lingua.set': JSON.stringify({ done: true }),
                          'lingua.sess': SESS,
-                         'lingua.me': JSON.stringify({ name: 'Aya', handle: 'aya' }) },
+                         [ME_KEY]: JSON.stringify({ name: 'Aya', handle: 'aya' }) },
                        () => {
                          SET.obback = null;
                          goTab('profile'); go('settings'); go('set', 'acct');
@@ -620,7 +624,7 @@ const SESS = JSON.stringify({ at: 'not a jwt', rt: 'a refresh token',
      one. */
   const r = await boot({ 'lingua.set': JSON.stringify({ done: true }),
                          'lingua.sess': SESS,
-                         'lingua.me': JSON.stringify({ name: 'Aya', handle: 'aya' }) });
+                         [ME_KEY]: JSON.stringify({ name: 'Aya', handle: 'aya' }) });
   say('signed in: appIs()=' + r.is + '  screen=' + JSON.stringify(r.text));
   if (!r.inS) no('finished and signed in: the fixture session did not take');
   if (r.is !== 'app') no('finished and signed in: appIs() said ' + r.is + ', wanted app');
@@ -906,16 +910,17 @@ const SESS = JSON.stringify({ at: 'not a jwt', rt: 'a refresh token',
   /* 古い版が書いた `done`。一度きり写して、古い名前はそのまま。 */
   const r = await boot({ 'lingua.set': JSON.stringify({ done: true }) },
                        () => { window.__mig = { walked: SET.walked,
-                                                done: SET.done,
                                                 moved: SET.doneMoved,
                                                 onDisk: localStorage.getItem('lingua.set') }; });
   const m = r.mig || {};
   if (m.walked !== true)
     no('古い `done` が `walked` へ写っていない — ' + JSON.stringify(m.walked));
-  if (m.done !== true)
-    no('写した古い `done` が消えている（移行は写すだけ）— ' + JSON.stringify(m.done));
+  /* 写した古い `done` が残っていること ── ディスクで訊く。`done` は端末の
+     設定（SET_PHONE）ではなくアカウントの欄なので、サインアウトした端末の
+     メモリには誰の物としても載らない（www/core.js § ACCT）。残っているかは
+     ディスクの答えが全部。 */
   if (String(m.onDisk || '').indexOf('"done":true') < 0)
-    no('ディスクの古い `done` が消えている — ' + m.onDisk);
+    no('写した古い `done` が消えている（移行は写すだけ）— ディスク ' + m.onDisk);
   if (!m.moved)
     no('写したことが `doneMoved` に残っていない — ' + JSON.stringify(m.moved));
   if (r.is !== 'door')
