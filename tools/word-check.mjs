@@ -648,7 +648,7 @@ const R = await pg.evaluate(() => {
   /* ---- and what the Lingua keyboard typed is stored as the roman ---------
      The keyboard inserts private use code points -- U+E000 upward, one per
      drawn letter -- because that is the only thing on a phone that tells this
-     alphabet's `a` from the system QWERTY's. www/glyph.js § puaRoman is where
+     alphabet's `a` from the system QWERTY's. www/glyph.js § puaTyped is where
      they stop: everything past the field works on the roman spelling, which
      is what findWord(), exSeq() and exGloss() read.
 
