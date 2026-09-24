@@ -581,8 +581,14 @@ const free = await pg.evaluate(() => {
    six: nothing throws, the face renders, and the sign is not theirs. Asked in
    pixels, because "it emitted a canvas" is also true of one that paints
    nothing. Digit seven carries a sheet's picture by now -- the take above put
-   it there. */
+   it there.
+   Asked with the drawn letters ON, because off is roman on purpose
+   (「ローマ字」 OWNER 2026-09-23, ltLineChar(), ink-check B) and the fixture
+   arrives with them off -- this read 0 pixels for that reason alone, which is
+   the switch working, not the sign lost. */
 const sign = await pg.evaluate(async () => {
+  var mfWas = SET.myfont;
+  SET.myfont = true;
   var host = document.createElement('div');
   host.style.cssText = 'position:fixed;left:0;top:0;width:200px;font-size:40px';
   host.innerHTML = '<span id="wr-sign">' + numSignHTML(7) + '</span>';
@@ -613,6 +619,7 @@ const sign = await pg.evaluate(async () => {
     out.same = got.bits === bare.bits;
   }
   host.parentNode.removeChild(host);
+  SET.myfont = mfWas;
   return out;
 });
 
