@@ -85,7 +85,7 @@ const SERVER = `
     /* AND THE REST OF THE OPERATOR'S SCREEN, which adminLoad() asks in one
        press. S.staffDeny is the staff list being refused. */
     if (p.indexOf('/rest/v1/rpc/admin_counts') === 0) return answer({ reports:0 });
-    if (method === 'GET' && p.indexOf('/rest/v1/profile?select=id,handle&staff') === 0){
+    if (method === 'GET' && p.indexOf('/rest/v1/profile?select=id,handle,admin:profile_admin&staff') === 0){
       if (S.staffDeny) return refuse();
       return answer(S.staff || []);
     }
@@ -243,16 +243,19 @@ say(!!ask.err && ask.err !== ask.offline,
 
 /* ---- 2b. who answers the reports ---------------------------------------
    The list on the same screen. Two things, and neither can throw:
-     - which row is the account above staff is its HANDLE -- `handle =
-       'lingua'` on the server, ADMIN_HANDLE in www/net.js -- and not
-       `profile.admin`, which a database built from schema.sql answers false
-       for everybody. S.staff is exactly what such a database sends.
+     - which row is the account above staff is the SERVER's to say --
+       `admin:profile_admin` on the row, profile_admin() in
+       supabase/schema.sql -- and not a handle the phone compares
+       (~~`ADMIN_HANDLE`~~). S.staff is what that database sends.
+     - and a staff row is pressable, which is also what shows the list
+       arrived at all: with none drawn, 「@lingua is not pressable」 holds
+       of an empty list.
      - a list that was refused is not an empty list (CLAUDE.md § Data). */
 const staff = await pg.evaluate(async () => {
   const S = window.__SRV;
   function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
   const out = {};
-  S.staff = [{ id:'u9', handle:'lingua', admin:false }, { id:'u1', handle:'mod', admin:false }];
+  S.staff = [{ id:'u9', handle:'lingua', admin:true }, { id:'u1', handle:'mod', admin:false }];
   ADMIN_OK = true; ADMIN_BUSY = false; window.route = 'admin'; NAV = [{ r:'admin' }];
   adminLoad();
   await wait(150);
@@ -273,8 +276,8 @@ const staff = await pg.evaluate(async () => {
   return out;
 });
 console.log('\n  報告に答える人');
-say(!staff.lingua, '権限者の行（@lingua）は押せない ── 決めるのは handle、' +
-    'profile.admin ではない（サーバーの行は admin=false）');
+say(!staff.lingua, '権限者の行（@lingua）は押せない ── 決めるのはサーバーの ' +
+    'admin:profile_admin（端末が handle を比べるのではない）');
 say(staff.mod, 'スタッフの行は押せる（@mod）');
 say(staff.list === null,
     '断られた一覧は空の一覧ではない ── ADMINS=' + JSON.stringify(staff.list));
