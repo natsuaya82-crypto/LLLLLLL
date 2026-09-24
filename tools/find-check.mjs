@@ -558,7 +558,7 @@ async function wrote(ln, mn, mode){
     setTimeout(function(){
       openPost('');
       setTimeout(function(){
-        PW.ln = ln; PW.mn = mn;
+        pwLine([{t: ln}]); PW.mn = mn;
         pwSend();
         setTimeout(function(){
           window.__MODE = 'ok';
