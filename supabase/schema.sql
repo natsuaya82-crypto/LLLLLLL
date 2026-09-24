@@ -1946,6 +1946,36 @@ create policy block_drop on block for delete using (is_member() and actor = auth
 -- change -- a new one is a new row and the old one goes), and `uid` is
 -- refused from the outside in both directions.
 --
+-- AND THE ADDRESS OF A PHONE IS THE ACCOUNT SIGNED IN ON IT NOW.
+-- 「端末ごとにやることなんてねえよ」 OWNER 2026-09-03: a phone is a window,
+-- and whoever is looking through it is who its notices are for. device_one()
+-- is the one place that says it, on the way in:
+--   - the same account sending the same token again is nothing to do. Every
+--     launch sends it (PostgREST's merge-duplicates), and the conflict took
+--     the update road, which there is no policy for -- so from the second
+--     launch on it was refused (r63-audit S5, measured).
+--   - a token arriving for this account is no longer any other account's.
+--     Somebody who signs in on a phone somebody else left signed in takes
+--     its notices with it; before, the first account's rang there too
+--     (r63-audit S4). docs/CHANGELOG.md 2026-09-24 carries the DELETE REVIEW.
+-- Only for a row that is the caller's own. A row naming somebody else is
+-- left to the policy below, which refuses it -- so the trigger never tells
+-- anybody anything about a row that is not theirs.
+create or replace function device_one() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if new.uid is distinct from auth.uid() then return new; end if;
+  if exists (select 1 from device where uid = new.uid and token = new.token) then
+    return null;
+  end if;
+  delete from device where token = new.token and uid <> new.uid;
+  return new;
+end $$;
+drop trigger if exists device_one on device;
+create trigger device_one before insert on device
+  for each row execute function device_one();
+
+--
 -- The one thing that is not the person: supabase/functions/push-send deletes
 -- a row Apple has answered `410 Unregistered` for. That runs with the service
 -- role, which no policy applies to -- and it is written down here because a
