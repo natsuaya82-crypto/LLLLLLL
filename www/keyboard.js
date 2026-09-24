@@ -82,9 +82,18 @@ function kbMint(){ return {kbs:[], at:0, v:KB_V}; }
    editor is working on, and a keyboard made a moment ago may not have been
    written yet. Every other language is read through kbBoardsOf(), so one
    stored in the older single-keyboard shape counts as the one it is rather
-   than as nothing. */
+   than as nothing.
+
+   THREE STATES, langCount()'s (www/core.js § LMINE): with nobody having said
+   which languages this account has, there is no number, and null says so --
+   kbCapStop() then refuses with 「接続できません」 rather than measuring a
+   ceiling against rows that may not exist. And another language's keyboards
+   are read out of what came down from the server (slMine()), never out of the
+   picture kept for a launch with no signal: rule 22, nothing counts from the
+   copy (docs/scope/r63-audit.md K4). */
 function kbCount(){
   var n=0, id, k;
+  if(!langMineKnown()) return null;
   for(id in LANGS){
     if(!Object.prototype.hasOwnProperty.call(LANGS, id)) continue;
     /* And only this ACCOUNT's. 「じゃないとアカウント変えたら無限に言語作れる
@@ -99,7 +108,7 @@ function kbCount(){
     if(langWhose(id)!==LW_MINE) continue;
     if(id===langId){ n+=kbStored().length; continue; }
     k=null;
-    try{ k=kbBoardsOf(JSON.parse(slRd(langKeyOf(id, 'kb'))||'null')); }
+    try{ k=kbBoardsOf(JSON.parse(slMine(langKeyOf(id, 'kb'))||'null')); }
     catch(e){}
     if(k && k.kbs) n+=k.kbs.length;
   }
@@ -108,7 +117,7 @@ function kbCount(){
 /* Whether there is room for another. The fixed QWERTY is the 1 in 1 + 3: it
    is one keyboard this person has, it is not stored, and it is not counted
    once per language -- so it is added here, once, to what they built. */
-function kbRoomKb(){ return 1 + kbCount() < kbCap(); }
+function kbRoomKb(){ var n=kbCount(); return n!==null && 1 + n < kbCap(); }
 /* THE CEILING OF THIS CHAPTER, MET ON THE PRESS, and it is one place.
    「＋は右下につけて／プラスは5個目以降／無料は1個目以降／ポップが出るように」
    OWNER 2026-09-04.
@@ -135,6 +144,7 @@ function kbRoomKb(){ return 1 + kbCount() < kbCap(); }
    which is the shape 「全部1枚目みたいにポップ出して背景変えずに」 asks for. */
 function kbCapStop(){
   if(upStop(can('kb'))) return true;
+  if(kbCount()===null){ toast(t('net.offline')); return true; }
   if(kbRoomKb()) return false;
   popAsk(t('up.need'), function(){ go('plans'); });
   return true;

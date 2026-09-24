@@ -3588,6 +3588,32 @@ const SF = await sf.evaluate(({ s }) => {
     out.k3Two = JSON.stringify(KB.kbs[1].lay[0].rows.map(function (r){ return r.length; }));
     out.k3One = JSON.stringify(KB.kbs[0]) === one;
   }());
+
+  /* THE CEILING COUNTS WHAT THE SERVER SAID. Another language of this
+     account's with two keyboards in the PICTURE kept for a launch with no
+     signal, and nothing in memory: the picture is not counted. And with
+     nobody having said which languages this account has, there is no number
+     and the + says 「接続できません」 rather than a price (r63 K4). */
+  (function (){
+    planGot('plus');
+    KB = { v: KB_V, at: 0, kbs: [] };
+    LANGS['l_pic'] = { nm: 'Pic', mine: true }; langOwnGot('l_pic', 'u');
+    try { localStorage.setItem(slGotKey(langKeyOf('l_pic', 'kb')), JSON.stringify(
+      { kbs: [{ id: 'kP_1', nm: 'A', pat: 'abc', lay: [] }, { id: 'kP_2', nm: 'B', pat: 'abc', lay: [] }], at: 0 })); } catch (e) {}
+    out.k4Pic = kbCount();
+    try { localStorage.removeItem(slGotKey(langKeyOf('l_pic', 'kb'))); } catch (e) {}
+    delete LANGS['l_pic'];
+    langMineForget();
+    out.k4Unasked = kbCount();
+    var said = '', was = window.toast;
+    window.toast = function (m){ said = m; };
+    out.k4Stop = kbCapStop();
+    window.toast = was;
+    out.k4Said = said === t('net.offline');
+    out.k4Pop = popOn();
+    langMineGot();
+    planGot('pro');
+  }());
   return out;
 }, { s: seed.toString() });
 await sf.close();
@@ -4636,6 +4662,12 @@ say(dupTwo.onServer <= dupOne.onServer && dupThree.onServer <= dupTwo.onServer,
     + [dupOne, dupTwo, dupThree].map((x) => x.onServer).join(', ') + ' rows');
 
 /* r74 — the surfaces */
+say(SF.k4Pic === 0,
+    'the keyboard ceiling counts what came down from the server, not the picture kept for '
+    + 'a launch with no signal (' + SF.k4Pic + ' counted from a picture of two)');
+say(SF.k4Unasked === null && SF.k4Stop && SF.k4Said && !SF.k4Pop,
+    'and with nobody having said which languages this account has, there is no number: the '
+    + '+ says 接続できません and offers no price (' + SF.k4Unasked + ')');
 say(SF.k3One,
     'a save repairs the board being saved and no other — a lone tall key on board 1 is '
     + 'left exactly as it is when board 2 is changed (board 2 rows ' + SF.k3Two + ')');
