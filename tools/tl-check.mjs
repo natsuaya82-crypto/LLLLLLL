@@ -495,6 +495,58 @@ const r = await pg.evaluate(({ s }) => {
     NAV = [{ r:'feed' }]; window.route = 'feed';
   }
 
+  /* ---- 9: a follow list is newest first, and the next page carries on ----
+     「フォロー中・フォロワーの並び → フォローした新しい順で」 OWNER 2026-09-24.
+     The server here does what PostgREST does with what it is asked: it sorts
+     by the `order` the phone sent, cuts at `limit`, and honours the one
+     keyset shape the phone may send (`or=(created_at.lt…,and(created_at.eq…,
+     <col>.gt…))`) and a bare `<col>=gt.` as well. Four people followed on
+     four days, two to a page: what the list holds after two pages is the
+     four, newest first, each once. */
+  {
+    const rows = [['kai', '2026-09-01T00:00:00+00:00'], ['noa', '2026-09-04T00:00:00+00:00'],
+                  ['ami', '2026-09-03T00:00:00+00:00'], ['zed', '2026-09-02T00:00:00+00:00']];
+    const realS1 = netSend1, realS = netSend, realG = netGet, realPage = NET_PAGE;
+    netSend1 = function (m, p, b, t, ok) {
+      p = String(p);
+      if (p.indexOf('/rest/v1/follow_seen?') !== 0) { ok([], 200); return; }
+      const q = new URLSearchParams(p.split('?')[1]);
+      const col = 'followed_handle';
+      let r = rows.map((x) => ({ followed_handle: x[0], created_at: x[1] }));
+      const gt = q.get(col);
+      if (gt && gt.indexOf('gt.') === 0) r = r.filter((x) => x[col] > gt.slice(3));
+      const or = q.get('or');
+      if (or) {
+        const m2 = /created_at\.lt\."([^"]*)",and\(created_at\.eq\."([^"]*)",followed_handle\.gt\."([^"]*)"\)/.exec(or);
+        if (!m2) { ok(null, 400); return; }
+        r = r.filter((x) => x.created_at < m2[1] || (x.created_at === m2[2] && x[col] > m2[3]));
+      }
+      const ord = (q.get('order') || '').split(',').filter(Boolean).map((o) => o.split('.'));
+      r.sort((a, c) => {
+        for (const [k, d] of ord) {
+          if (a[k] < c[k]) return d === 'desc' ? 1 : -1;
+          if (a[k] > c[k]) return d === 'desc' ? -1 : 1;
+        }
+        return 0;
+      });
+      ok(r.slice(0, +(q.get('limit') || 1000)), 200);
+    };
+    netSend = function (m, p, b, t, ok, bad, up) { netSend1(m, p, b, t, ok, bad, up, true); };
+    netGet = function (p, ok, bad) { netSend('GET', p, null, '', ok, bad); };
+    NET_PAGE = 2;
+    folForget();
+    const nop = function () {};
+    folPull(false, 'aya2', '', nop, nop);
+    NAV = [{ r:'follows', a:'ing:aya2' }]; window.route = 'follows';
+    FOL_MORE = false;
+    folMore();
+    out.folOrder = folOf(false, 'aya2').join(',');
+    NET_PAGE = realPage;
+    netSend1 = realS1; netSend = realS; netGet = realG;
+    folForget(); FOL_MORE = false;
+    NAV = [{ r:'feed' }]; window.route = 'feed';
+  }
+
   /* ---- A FOLLOW AND A BLOCK ARE ONE ROW, AND THE COLUMNS ARE THE ARGUMENT
      netFollow() and netBlock() were written out twice, 1100 lines apart, and
      are netPairRow() once now (docs/DUPLICATES.md 14). Their two columns used
@@ -725,6 +777,10 @@ const PAIR_ON =
 const PAIR_OFF =
   'DELETE /rest/v1/follow?follower=eq.u&followed=eq.them | ' +
   'DELETE /rest/v1/block?actor=eq.u&blocked=eq.them';
+if (r.folOrder !== 'noa,ami,zed,kai')
+  say('a follow list, two pages of it, holds ' + JSON.stringify(r.folOrder) +
+      ' and the four were followed newest first as noa,ami,zed,kai. ' +
+      '「フォローした新しい順で」 OWNER 2026-09-24');
 if (r.pairOn !== PAIR_ON)
   say('following and blocking somebody by handle writes\n    ' + r.pairOn +
       '\n  and it has to be\n    ' + PAIR_ON +

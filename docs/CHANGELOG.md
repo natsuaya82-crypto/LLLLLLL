@@ -15,6 +15,13 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### 2026-09-24 フォロー中・フォロワーは、フォローした新しい順（r82-sns E）
+
+「フォローした新しい順で」OWNER 2026-09-24。一覧は @ の ABC 順だった。`follow.created_at`（初めからある列）を
+`follow_seen` に載せ、`created_at` の新しい順、同じ時刻は @ の順で並べる。続き（スクロール）は最後の行の
+［時刻, @］から（`netFollowRows()`・`folPull()`）。**サーバーの view が一列増える**（`supabase/schema.sql` を
+当て直す）。保存される行は変わらない。`tl-check` 9。
+
 ### 2026-09-24 アプリを開くとタイムライン（r82-sns F）
 
 「アプリを開いて最初の画面 → タイムラインで」OWNER 2026-09-24。起動の最初の画面は自分のプロフィールだった

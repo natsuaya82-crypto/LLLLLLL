@@ -3306,24 +3306,29 @@ function netFollowRows(want, by, ok, bad, handle, after, among){
      row of the list already says. Nothing here asks whether that person
      exists -- it is a second request for a sentence this app does not have,
      and the screen was reached by pressing their name. */
-  /* A PAGE AT A TIME, IN THE ORDER OF THE HANDLE. 「一覧は上限を付けて、続きは
-     スクロールで」 OWNER 2026-09-23. `follow_seen` carries no time a row was
-     made, so the one order that can be carried on from is the handle's:
-     `after` is the last handle already held (keyset, www/me.js § folPull). */
+  /* A PAGE AT A TIME, NEWEST FIRST. 「一覧は上限を付けて、続きはスクロール
+     で」 OWNER 2026-09-23, and 「フォローした新しい順で」 OWNER 2026-09-24.
+     The order is when the follow was made, and the handle under it so two
+     made in the same instant still have one order. `after` is where the last
+     page stopped, as that pair -- [time, handle] -- and the next page is
+     what comes after it in the same order (keyset). The page's own pair is
+     handed back beside the handles, for the next page to start from
+     (www/me.js § folPull). */
   for(i=0;i<(among||[]).length;i++) if(among[i]) l.push(encodeURIComponent(String(among[i])));
   if(among && !l.length){ ok([]); return; }
-  netGet('/rest/v1/follow_seen?select='+want+'_handle'+q+
-         '&order='+want+'_handle.asc'+
-         (after? '&'+want+'_handle=gt.'+encodeURIComponent(String(after)) : '')+
+  netGet('/rest/v1/follow_seen?select=created_at,'+want+'_handle'+q+
+         '&order=created_at.desc,'+want+'_handle.asc'+
+         (after? '&or='+encodeURIComponent('(created_at.lt."'+after[0]+'",and(created_at.eq."'+
+                   after[0]+'",'+want+'_handle.gt."'+after[1]+'"))') : '')+
          (among? '&'+want+'_handle=in.('+l.join(',')+')' : '')+
          '&limit='+(among? l.length : NET_PAGE),
     function(d){
-      var out=[], i, hd;
+      var out=[], i, hd, end=null;
       for(i=0;i<(d||[]).length;i++){
         hd=(d[i] && d[i][want+'_handle']) || '';
-        if(hd) out.push(String(hd));
+        if(hd){ out.push(String(hd)); end=[String(d[i].created_at||''), String(hd)]; }
       }
-      ok(out);
+      ok(out, end);
     }, bad);
 }
 function netFollowing(ok, bad, handle, after){

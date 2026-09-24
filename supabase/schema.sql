@@ -1691,9 +1691,13 @@ grant select on language_seen to authenticated;
 -- `follow_read` is `using (true)` -- who follows whom is public the way it is
 -- in every timeline -- so this view shows exactly what that policy already
 -- shows and adds nothing.
+--
+-- AND WHEN, because that is the order a list is read in: 「フォロー中・
+-- フォロワーの並び → フォローした新しい順で」 OWNER 2026-09-24. The column
+-- was on `follow` from the first day and this view left it behind.
 drop view if exists follow_seen cascade;
 create view follow_seen as
-  select f.follower, f.followed,
+  select f.follower, f.followed, f.created_at,
          a.handle as follower_handle,
          b.handle as followed_handle
     from follow f
