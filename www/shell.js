@@ -69,7 +69,7 @@ function viewReset(){
   WMENU=false;                         /* and the one on somebody's page */
   kbWob=false;                         /* and whether the keys are wobbling */
   obTour=0;                            /* how far the walk through the app has got */
-  KBH=null;                            /* and which row, column or key is being worked on */
+  kbLeft();                            /* and the keyboard's selection and step back */
   snsQ=''; snsHits=null;               /* the search and what came back */
   snsSort='new';                       /* and newest or most answered */
   snsFil=null;                         /* and the word the feed is filtered to */
@@ -167,6 +167,11 @@ function viewLeft(from, to){
      arriving state, which tools/press.mjs stands on between faces. This one
      is one screen being walked off, which is what wUndo above is too. */
   if(from==='words' && !navHas('words')) wSel=null;
+  /* The keyboard's selection and step back, the same way round: a key's own
+     page is a screen you go DEEPER to and come back from with the key still
+     chosen, and the trail still has `kb` on it; a tab or the way back off the
+     chapter does not. www/keyboard.js § kbLeft. */
+  if(from==='kb' && !navHas('kb')) kbLeft();
 }
 
 /* ---- how much of the screen the phone's own keyboard is covering ------
@@ -822,14 +827,15 @@ function back(){
   if(keepAsked()) return;
   backGo();
 }
-/* Is this screen already behind you? go() lands on one that is by cutting the
-   trail back to it rather than pushing, so a screen that wants to finish two
-   steps up can ask first and fall back to plain back() when the answer is no.
-   Without the asking it would push a way forward to a screen you arrived
-   through, and the back button would walk deeper into the app. */
-function navHas(r, a){
+/* Is a screen of this chapter still behind you on the trail -- the question
+   viewLeft() above asks to tell walking OFF a chapter from going deeper into
+   it. By the ROUTE and not its argument: a keyboard's own page is `kb` with
+   the board's place as its argument, and a key opened from it is deeper into
+   that same chapter, so asking for the argument-less `kb` answered no and the
+   selection went on the way to the page it was selected for. */
+function navHas(r){
   var i;
-  for(i=0;i<NAV.length-1;i++) if(NAV[i].r===r && NAV[i].a===a) return true;
+  for(i=0;i<NAV.length-1;i++) if(NAV[i].r===r) return true;
   return false;
 }
 /* A form's argument is a name, and a name can change under it. Renaming a

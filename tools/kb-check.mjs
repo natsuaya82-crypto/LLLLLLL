@@ -56,6 +56,13 @@ const r = await pg.evaluate(({ s }) => {
     return row.map(function (k){ return k.k + ':' + k.v + ':' + (k.w || 1); }).join(' ');
   }
   function rows(){ return kbLayer().rows.map(say); }
+  /* the widest row, in half columns -- a measurement of the layout, which the
+     app no longer asks: the sheet is KB_COLS wide whatever its rows are */
+  function widest(rs){
+    var n = 0;
+    rs.forEach(function (r){ n = Math.max(n, kbUsed(r)); });
+    return n || 2;
+  }
   function units(row){
     var n = 0, x;
     for (x = 0; x < row.length; x++) n += (row[x].w || 1);
@@ -127,7 +134,7 @@ const r = await pg.evaluate(({ s }) => {
   fresh();
   var was = rows();
   out.rows = was.length;
-  out.cols = kbCols(kbLayer().rows);
+  out.cols = widest(kbLayer().rows);
   out.halves = kbLayer().rows.some(function (x){
     return x.some(function (k){ return (k.w || 1) === 0.5; });
   });
@@ -236,7 +243,7 @@ const r = await pg.evaluate(({ s }) => {
   out.shapes = [];
   KB_PATS.forEach(function (p){
     kbPatLay(p).forEach(function (face, fi){
-      var cols = kbCols(face.rows) / 2;
+      var cols = widest(face.rows) / 2;
       out.shapes.push({ pat: p + (fi ? ' face ' + (fi + 1) : ''), cols: cols,
         rows: face.rows.length, aspect: 1 / (cols * KB_ROWW),
         screen: (face.rows.length * kbRowH(KB_REF_W) + KB_BARS) / KB_REF_H });
@@ -490,9 +497,9 @@ const r = await pg.evaluate(({ s }) => {
   }
   out.foundFull = full >= 0;
   if (full >= 0){
-    var had = kbLayer().rows[full].length;
-    kbAddKey(full, 0, 1);
-    out.colsCap = kbLayer().rows[full].length === had;
+    /* asked of the one place that says it: every road that adds a key --
+       a frame's +, a carry, a column's + -- goes through kbRoomFor() */
+    out.colsCap = !kbRoomFor(kbLayer().rows[full], 1);
   }
   /* AND THE KEY'S SCREEN NO LONGER OFFERS A WIDTH AT ALL. 「「幅」の段は
      消す」 OWNER 2026-09-06, which replaces the claim that stood here -- a
@@ -676,7 +683,7 @@ const r = await pg.evaluate(({ s }) => {
   /* ---- 6d3. a row can be added on EVERY face --------------------------
      「8列も追加できるのに行は2ページ目から追加できない」 OWNER, build #92.
 
-     kbRoomRow() and kbIns() both read kbLayer(), which is the face being
+     kbRoomRow(kbLayer().rows) and kbIns() both read kbLayer(), which is the face being
      shown, so this holds and held on the first run -- the row goes in.
      It is written down anyway because nothing said it: every claim about
      adding a row above is made on face 0, and "it works on the face the
@@ -684,7 +691,7 @@ const r = await pg.evaluate(({ s }) => {
      right up until somebody makes the count board-wide.
 
      What WAS wrong on page 2 is not the function, it is the size of the thing
-     you press: the sheet was kbCols(this face's rows) columns of a fixed
+     you press: the sheet was widest(this face's rows) columns of a fixed
      width, so a face of two keys was drawn a fifth of the phone across and
      the + with it -- 60px against 320 on page one. Which is the same line as
      「フリックなのに qwerty サイズ」, so it is claimed below with it. */
@@ -724,7 +731,7 @@ const r = await pg.evaluate(({ s }) => {
     const el = document.querySelector('.kb.kbsheet .kbk:not(.cell)');
     return el ? +el.getBoundingClientRect().width.toFixed(1) : -1;
   }
-  out.narrowCols = kbCols(kbLayer().rows);
+  out.narrowCols = widest(kbLayer().rows);
   out.narrowSheet = widthOf('.kb.kbsheet');
   /* the ten-key board with one row off it. The + that used to be measured
      alongside these was the dashed key under the bottom row, and it is gone
@@ -743,7 +750,7 @@ const r = await pg.evaluate(({ s }) => {
     var w = kbLayer().rows[0][0].w || 1;
     var sheet = document.querySelector('.kb.kbsheet');
     sizes[p] = { key: keyW(), sheet: widthOf('.kb.kbsheet'),
-                 cols: kbCols(kbLayer().rows), w: w,
+                 cols: widest(kbLayer().rows), w: w,
                  kc: sheet ? parseInt(sheet.style.getPropertyValue('--kc'), 10) : -1,
                  hdr: [].slice.call(document.querySelectorAll('.kbhdr .kbcl'))
                         .map(function (b){ return b.textContent; }).join(''),
@@ -864,7 +871,7 @@ const r = await pg.evaluate(({ s }) => {
   out.insetAt = insetAt;
   out.lit = [];
   var ci;
-  for (ci = 0; ci < kbCols(kbLayer().rows) / 2; ci++){
+  for (ci = 0; ci < widest(kbLayer().rows) / 2; ci++){
     KBH = { k: 'c', i: ci }; render();
     out.lit.push(litPerRow());
   }
@@ -1017,7 +1024,7 @@ const r = await pg.evaluate(({ s }) => {
   /* and the press writes nothing even reached round the button. `disabled`
      is what a finger meets; kbCellPut() is what a name still resolves to. */
   out.cellPut = (function (){
-    var b = document.querySelector('.kbtool [data-do="kbCellAdd"]');
+    var b = document.querySelector('.kbtool [data-do="kbCellPut"]');
     if (b) b.click();
     kbCellPut();
     return !!b;
@@ -1039,7 +1046,7 @@ const r = await pg.evaluate(({ s }) => {
   var c1 = (function (){
     var es = [].slice.call(document.querySelectorAll('.kb.kbsheet .kbrow .kbk.cell')), i;
     for (i = 0; i < es.length; i++)
-      if (es[i].getAttribute('data-do') === 'kbCellAdd' && spanEl(es[i]) === 2)
+      if (es[i].getAttribute('data-do') === 'kbCellSel' && spanEl(es[i]) === 2)
         return es[i];
     return null;
   }());
@@ -1051,7 +1058,7 @@ const r = await pg.evaluate(({ s }) => {
     .map(function (b){ return b.getAttribute('data-do'); }).join(' ');
   var wholeWas = kbLayer().rows[0].length, wholeUsed = kbUsed(kbLayer().rows[0]);
   (function (){
-    var b = document.querySelector('.kbtool [data-do="kbCellAdd"]');
+    var b = document.querySelector('.kbtool [data-do="kbCellPut"]');
     if (b) b.click();
   }());
   standKb();
@@ -1096,7 +1103,7 @@ const r = await pg.evaluate(({ s }) => {
     KBH = { k: 'r', i: 0 }; kbAlign('c'); standKb();
     out.alGaps = kbLayer().rows[0].filter(function (k){ return k.k === 'gap'; }).length;
     rw = sheetRows()[0];
-    fs = [].slice.call(rw.querySelectorAll('[data-do="kbCellAdd"]'));
+    fs = [].slice.call(rw.querySelectorAll('[data-do="kbCellSel"]'));
     out.alFrames = fs.map(function (e){ return spanOf(e); }).join(',');
     /* the first frame of a written-down gap names the key it stands for, so a
        carry can read the row back off the page */
@@ -1118,7 +1125,7 @@ const r = await pg.evaluate(({ s }) => {
     /* and the bin is DOWN on a frame -- there is nothing in it to take */
     out.alBin = [].slice.call(document.querySelectorAll('.kbtool [data-do="kbCut"]'))
       .every(function (b){ return b.disabled; });
-    (document.querySelector('.kbtool [data-do="kbCellAdd"]') || { click: function (){} }).click();
+    (document.querySelector('.kbtool [data-do="kbCellPut"]') || { click: function (){} }).click();
     standKb();
     out.alSame = kbUsed(kbLayer().rows[0]) === was;
     out.alKey = kbLayer().rows[0].filter(function (k){
@@ -2241,8 +2248,8 @@ const r = await pg.evaluate(({ s }) => {
      A key can be held and carried to another row. That road asked nothing
      about width, so it made a row of ELEVEN on a board of tens -- and rule 19
      is what forbids eleven ("ten keys are 32 each and eleven would be 29").
-     kbCellAdd(), the same act done by pressing an empty cell, has always
-     asked kbRoomIn(); this was the one road not through the gate.
+     kbCellPut(), the same act done by pressing an empty cell, has always
+     asked kbRoomFor(); this was the one road not through the gate.
 
      Nothing about it throws, and press cannot reach it: the carry is
      touchstart/touchmove/touchend with no [data-do] anywhere on it. So the
@@ -2802,14 +2809,14 @@ const r = await pg.evaluate(({ s }) => {
       }).length;
     }
     for (i = 0; i < rw.children.length; i++)
-      if (rw.children[i].getAttribute('data-do') === 'kbCellAdd' &&
+      if (rw.children[i].getAttribute('data-do') === 'kbCellSel' &&
           spanOf(rw.children[i]) === 1){ el = rw.children[i]; break; }
     out.halfFrameFound = !!el;
     if (!el) return;
     was = kbUsed(kbLayer().rows[0]); wasHalf = halves();
     el.click(); standKb();
     out.halfFrameSel = !!(KBH && KBH.k === 'f' && KBH.span === 1);
-    put = document.querySelector('.kbtool [data-do="kbCellAdd"]');
+    put = document.querySelector('.kbtool [data-do="kbCellPut"]');
     out.halfFrameDown = !put || put.disabled;
     if (put) put.click();
     standKb();
@@ -2990,7 +2997,7 @@ const r = await pg.evaluate(({ s }) => {
        column letters, which is a div too, so nth-of-type names the row above
        the one meant. It was watched picking the wrong row. */
     rw = sheetRows()[last];
-    el = rw && rw.querySelector('[data-do="kbCellAdd"]');
+    el = rw && rw.querySelector('[data-do="kbCellSel"]');
     out.seqAddCell = !!el;
     /* two presses now, and they are two different controls: the frame is
        chosen on the sheet, and the key goes in from the band over it.
@@ -2998,7 +3005,7 @@ const r = await pg.evaluate(({ s }) => {
     if (el) el.click();
     standKb();
     out.seqCellSel = !!(KBH && KBH.k === 'f');
-    tapDo('kbCellAdd');
+    tapDo('kbCellPut');
     standKb();
     n = kbLayer().rows[last].length;
     out.seqAddGrew = n >= 2;
@@ -3276,7 +3283,10 @@ const r = await pg.evaluate(({ s }) => {
     kbLayer().rows.forEach(function (r){ r.splice(0, 3); });
     saveKb(); standKb();
     var insW = kbLayer().rows.map(kbUsed);
-    pull('c', 0, 1);
+    /* columns e and f: a row cut short is drawn in the middle of the sheet
+       (kbStart), so it no longer stands in column a, and the + goes into the
+       rows that stand in the columns chosen -- the ones the bin takes from */
+    pull('c', 4, 5);
     kbInsCol(true); standKb();
     out.pullIns = kbLayer().rows.map(kbUsed).every(function (n, i){
       return n === insW[i] + 4 || n === insW[i];
@@ -3401,6 +3411,233 @@ const SM = await small.evaluate(({ s }) => {
 }, { s: seed.toString() });
 await small.close();
 
+/* ---- r74: the sheet's surfaces, counted rather than listed ---------------
+   docs/scope/r73-audit.md § 2-16 found every one of these by measuring, and
+   each was a hole in a surface the claims above only ever walked on a full
+   QWERTY. What is asked here is the SURFACE: every row and every column of
+   boards that are not ten across, and every screen the sheet can be left by.
+   A fresh page, so nothing the long walk above left behind is stood on. */
+const sf = await br.newPage({ viewport: { width: 390, height: 844 } });
+await sf.goto('file://' + path.join(dir, '..', 'www', 'index.html'));
+await sf.waitForSelector('#splash', { state: 'detached', timeout: 10000 });
+const SF = await sf.evaluate(({ s }) => {
+  eval('(' + s + ')()');
+  SET.walked = true; planGot('pro');
+  var out = {};
+  function board(rowsOf){
+    KB = null; kbShow = 0; kbAdd('abc'); kbLay = 0;
+    kbEdit().lay[0].rows = rowsOf();
+    saveKb(); render();
+  }
+  function lt(v, w){ var k = kbKey('lt', v); if (w) k.w = w; return k; }
+
+  /* THE SELECTION AND THE STEP BACK ARE THE SCREEN'S. Select row 1, change
+     the board, walk to the timeline by its tab and come back: nothing is lit
+     and there is nothing to step back to. */
+  board(function (){ return [[lt('a'), lt('b'), lt('c')], [lt('d'), lt('e')]]; });
+  kbHeadRow(1); kbCut();
+  kbHeadRow(0);
+  out.leftBefore = { h: !!KBH, u: KBU.u.length };
+  goTab('feed');
+  go('kb'); go('kb', String(kbShow));
+  out.leftAfter = { h: !!KBH, u: KBU.u.length };
+
+  /* AND ANOTHER LANGUAGE'S BOARD IS ANOTHER HISTORY. viewReset() is what
+     opening another language does; the board in front of you afterwards is
+     at the same place in the list and is a different board. */
+  board(function (){ return [[lt('a'), lt('b'), lt('c')]]; });
+  kbHeadRow(0); kbCut();
+  viewReset();
+  /* the other language's keyboard, as langLoad() puts it there: read, not
+     made -- kbAdd() forgets on its own, and that is not this road */
+  KB = { v: KB_V, at: 0, kbs: [{ id: 'kOtherLang_1', nm: '', pat: 'abc',
+    lay: [{ nm: '', rows: [[lt('x'), lt('y')]] }] }] };
+  kbShow = 1; kbLay = 0;
+  window.route = 'kb'; NAV = [{ r: 'kb' }, { r: 'kb', a: '1' }]; render();
+  var bSig = JSON.stringify(kbLayer().rows);
+  kbUndo();
+  out.crossSame = JSON.stringify(kbLayer().rows) === bSig;
+
+  /* ONE COORDINATE ON THE SHEET. For every column of every board below, the
+     keys that LIGHT when the column's letter is pressed are the keys the bin
+     then takes a whole key's width from -- counted over every row and every
+     column, on boards that are not ten across, so a short row is walked as
+     often as a full one. A key only half inside a column (the QWERTY's inset
+     row) gives up its half and does not light, which is CLAUDE.md rule 19's
+     own sentence, and is not counted either way. */
+  var boards = [
+    function (){ return [[lt('a'), lt('b'), lt('c'), lt('d'), lt('e'), lt('f'), lt('g'), lt('h'), lt('i'), lt('j')],
+                         [lt('X'), lt('Y')]]; },
+    function (){ return [[lt('a'), lt('b'), lt('c'), lt('d')], [lt('e'), lt('f', 2)], [lt('g')]]; },
+    function (){ return kbFixed().lay[0].rows.map(function (r){
+      return r.map(function (k, i){ var c = JSON.parse(JSON.stringify(k)); c.v = c.v || (c.k + i); return c; }); }); }
+  ];
+  var cols = 0, pairs = 0, miss = [];
+  boards.forEach(function (mk, bi){
+    board(mk);
+    var ci, lit, took, before, after, u0;
+    for (ci = 0; ci < KB_COLS / 2; ci++){
+      KBH = null; kbHeadCol(ci);
+      lit = [].slice.call(document.querySelectorAll('#kb .kbk.sel[data-r]')).map(function (el){
+        var rr = +el.getAttribute('data-r'), kk = +el.getAttribute('data-k');
+        return rr + ':' + kbLayer().rows[rr][kk].v;
+      }).sort();
+      /* the key OBJECTS, because kbDelCol() narrows a key in place and a
+         spelling can stand on two keys of one row */
+      before = kbLayer().rows.map(function (r){ return r.map(function (k){ return { k: k, v: k.v, u: kbU(k.w) }; }); });
+      u0 = KBU.u.length;
+      kbCut();
+      after = kbLayer().rows;
+      took = [];
+      before.forEach(function (r, ri){
+        r.forEach(function (o){
+          /* a gap is a frame and not a key: it is drawn as one and never lights */
+          if (o.k.k === 'gap') return;
+          var now = after[ri].indexOf(o.k) < 0 ? 0 : kbU(o.k.w);
+          if (now <= o.u - 2) took.push(ri + ':' + o.v);
+        });
+      });
+      took.sort();
+      cols++; pairs += lit.length;
+      if (lit.join() !== took.join()) miss.push('board ' + bi + ' col ' + kbCol(ci) + ' lit [' + lit + '] took [' + took + ']');
+      /* only a press that changed something left a step to take back */
+      if (KBU.u.length > u0) kbUndo();
+    }
+  });
+  out.oneCols = cols; out.oneLit = pairs; out.oneMiss = miss;
+
+  /* AND THE SAME ROWS, going in as coming out: a column put in goes into the
+     rows the bin would take it from. */
+  board(boards[0]);
+  var insMiss = [];
+  (function (){
+    var ci, a, b2, before, u0;
+    for (ci = 0; ci < KB_COLS / 2; ci++){
+      before = JSON.stringify(kbLayer().rows);
+      u0 = KBU.u.length;
+      KBH = null; kbHeadCol(ci); kbCut();
+      a = kbLayer().rows.map(function (r, i){ return JSON.stringify(r) !== JSON.stringify(JSON.parse(before)[i]); });
+      if (KBU.u.length > u0) kbUndo();
+      KBH = null; kbHeadCol(ci);
+      if (!kbInsRoom()){ continue; }
+      kbInsCol(false);
+      b2 = kbLayer().rows.map(function (r, i){ return JSON.stringify(r) !== JSON.stringify(JSON.parse(before)[i]); });
+      if (KBU.u.length > u0) kbUndo();
+      if (a.join() !== b2.join()) insMiss.push(kbCol(ci) + ' out [' + a + '] in [' + b2 + ']');
+    }
+  }());
+  out.insMiss = insMiss;
+
+  /* THE ENDS ARE THE SHEET'S ENDS. On a board whose widest row is four keys,
+     a row pushed right stands against the tenth column, and pushed left
+     against the first. */
+  board(function (){ return [[lt('a'), lt('b'), lt('c'), lt('d')], [lt('e'), lt('f')]]; });
+  KBH = null; kbHeadRow(1); kbAlign('r');
+  var rr = kbLayer().rows[1];
+  out.alR = kbStart(rr) + kbUsed(rr) === KB_COLS && rr[rr.length - 1].k !== 'gap';
+  out.alRSheet = [].slice.call(document.querySelectorAll('#kb .kbrow')[1].children)
+    .filter(function (el){ return el.classList.contains('kbk'); }).map(function (el){
+      return el.classList.contains('cell') ? '_' : 'K'; }).join('');
+  KBH = null; kbHeadRow(1); kbAlign('l');
+  rr = kbLayer().rows[1];
+  out.alL = kbStart(rr) === 0 && rr[0].k !== 'gap';
+
+  /* AND A FRAME A KEY IS PUT INTO IS WHERE THE KEY STANDS: a row pushed right
+     leaves frames on its left, and pressing one and the + puts the key in
+     THAT frame -- not in a frame counted from somewhere else. */
+  board(function (){ return [[lt('a'), lt('b'), lt('c'), lt('d')], [lt('e'), lt('f')]]; });
+  KBH = null; kbHeadRow(1); kbAlign('r');
+  KBH = null; kbCellSel(1, 4, 2); kbCellPut();
+  rr = kbLayer().rows[1];
+  (function (){
+    var x, hit = -1;
+    for (x = 0; x < rr.length; x++) if (rr[x].k === 'lt' && rr[x].v === '') hit = kbStart(rr) + kbAtOf(rr, x);
+    out.cellAt = hit;
+  }());
+
+  /* A MIGRATION ADDS AND NEVER REMOVES WHAT IT READ. A KB from before board 0
+     left storage -- no `v`, and the free QWERTY's untouched copy in front --
+     goes through migrateKbFree(). What comes out lists the boards somebody
+     made and not the copy; what is STORED still holds the copy byte for byte
+     (CLAUDE.md § Data, docs/scope/r73-audit.md § 2-8). */
+  (function (){
+    var copy = JSON.parse(JSON.stringify({ nm: '', pat: 'qwerty', lay: kbFixed().lay }));
+    var mine = { id: 'kMade_1', nm: 'mine', pat: 'abc', lay: [{ nm: '', rows: [[lt('m')]] }] };
+    KB = { kbs: [copy, mine], at: 1 };
+    kbShow = 0;
+    migrateKbFree();
+    var stored = slRd(langKey('kb')) || '';
+    out.migList = KB.kbs.map(function (b){ return b.nm || b.pat; }).join(',');
+    out.migKept = stored.indexOf(JSON.stringify(copy.lay)) >= 0;
+    out.migAt = KB.at;
+  }());
+
+  /* THE REPAIRS A SAVE MAKES ARE MADE TO THE BOARD BEING SAVED. A key on
+     board 1 carrying `h` with nothing under it, and a change made to board 2:
+     board 1 is not the one in front of anybody and not one byte of it moves
+     (docs/scope/r63-audit.md K3, measured there). */
+  (function (){
+    var tall = lt('t'); tall.h = 2;
+    KB = { v: KB_V, at: 0, kbs: [
+      { id: 'kOne_1', nm: 'one', pat: 'abc', lay: [{ nm: '', rows: [[tall, lt('u')], [lt('v')]] }] },
+      { id: 'kTwo_1', nm: 'two', pat: 'abc', lay: [{ nm: '', rows: [[lt('w'), lt('x')]] }] }] };
+    var one = JSON.stringify(KB.kbs[0]);
+    kbShow = 2; kbLay = 0;
+    window.route = 'kb'; NAV = [{ r: 'kb' }, { r: 'kb', a: '2' }]; render();
+    KBH = null; kbHeadCol(0); kbCut();
+    out.k3Two = JSON.stringify(KB.kbs[1].lay[0].rows.map(function (r){ return r.length; }));
+    out.k3One = JSON.stringify(KB.kbs[0]) === one;
+  }());
+
+  /* THE CEILING COUNTS WHAT THE SERVER SAID. Another language of this
+     account's with two keyboards in the PICTURE kept for a launch with no
+     signal, and nothing in memory: the picture is not counted. And with
+     nobody having said which languages this account has, there is no number
+     and the + says 「接続できません」 rather than a price (r63 K4). */
+  (function (){
+    planGot('plus');
+    KB = { v: KB_V, at: 0, kbs: [] };
+    LANGS['l_pic'] = { nm: 'Pic', mine: true }; langOwnGot('l_pic', 'u');
+    try { localStorage.setItem(slGotKey(langKeyOf('l_pic', 'kb')), JSON.stringify(
+      { kbs: [{ id: 'kP_1', nm: 'A', pat: 'abc', lay: [] }, { id: 'kP_2', nm: 'B', pat: 'abc', lay: [] }], at: 0 })); } catch (e) {}
+    out.k4Pic = kbCount();
+    try { localStorage.removeItem(slGotKey(langKeyOf('l_pic', 'kb'))); } catch (e) {}
+    delete LANGS['l_pic'];
+    langMineForget();
+    out.k4Unasked = kbCount();
+    var said = '', was = window.toast;
+    window.toast = function (m){ said = m; };
+    out.k4Stop = kbCapStop();
+    window.toast = was;
+    out.k4Said = said === t('net.offline');
+    out.k4Pop = popOn();
+    langMineGot();
+    planGot('pro');
+  }());
+
+  /* WITH NO ANSWER ABOUT THE PLAN, NOTHING LEAVES FOR THE PHONE'S KEYBOARD.
+     A Pro board handed over, then the plan forgotten the way a launch with no
+     signal has it, then a render: the bridge is asked for nothing, so what
+     the phone's keyboard is holding stays the person's own board rather than
+     the free QWERTY (docs/scope/r73-audit.md § 2-3, measured there). */
+  (function (){
+    var calls = [], realPlug = window.sharePlug;
+    window.sharePlug = function (){
+      return function (n, m, a){ calls.push(a); return { 'catch': function (){} }; };
+    };
+    planGot('pro');
+    KB = { v: KB_V, at: 1, kbs: [{ id: 'kPro_1', nm: 'pro', pat: 'abc', lay: [{ nm: '', rows: [[lt('p')]] }] }] };
+    SHARE.sent = null; render();
+    var n0 = calls.length;
+    planForget(); render();
+    out.shareUnasked = calls.length - n0;
+    planGot('pro'); render();
+    window.sharePlug = realPlug;
+  }());
+  return out;
+}, { s: seed.toString() });
+await sf.close();
+
 await br.close();
 
 /* ---- the two sides of the wall say the same three numbers ---------------
@@ -3428,6 +3665,44 @@ const swRowW = swiftNum(/rowPerWidth:\s*CGFloat\s*=\s*([0-9.]+)/, 'rowPerWidth')
 const swBarH = swiftNum(/barHeight:\s*CGFloat\s*=\s*([0-9.]+)/, 'barHeight');
 const swMost = swiftNum(/mostOfScreen:\s*CGFloat\s*=\s*([0-9.]+)/, 'mostOfScreen');
 const swEdge = swiftNum(/let bars = ([0-9.]+) \+ \(wantsBar/, 'the two edges');
+
+/* ---- EACH CEILING IS ANSWERED IN ONE PLACE -----------------------------
+   「横 10」 is kbRoomFor(), the row ceiling is kbRoomRow(), and 「the free
+   board is not touched」 is kbEdit(). Counted off the source with the comments
+   taken out, so a comparison written tomorrow in a new function is counted
+   tomorrow: a second place comparing against KB_COLS or kbRowsMax() is a
+   second answer to the same question (docs/scope/r73-audit.md § 2-16 found
+   three and two), and a board reached round kbEdit() is a free board that can
+   be written. */
+const KBSRC = fs.readFileSync(path.join(dir, '..', 'www', 'keyboard.js'), 'utf8')
+  .replace(/\/\*[\s\S]*?\*\//g, ' ');
+function fnOf(src, at){
+  const all = [...src.slice(0, at).matchAll(/function\s+([A-Za-z0-9_$]+)\s*\(/g)];
+  return all.length ? all[all.length - 1][1] : '(top)';
+}
+function whereAll(re){
+  return [...KBSRC.matchAll(re)].map((m) => fnOf(KBSRC, m.index));
+}
+const cmpCols = whereAll(/(?:[<>]=?\s*KB_COLS\b|\bKB_COLS\s*[<>])/g);
+const cmpRows = whereAll(/(?:[<>]=?\s*kbRowsMax\(\)|kbRowsMax\(\)\s*[<>])/g);
+const freeAsk = whereAll(/kbIsFree\(kbShow\)|KB\.kbs\[kbShow-1\]/g);
+
+/* ---- 「THE THING YOU CAME BACK FOR IS GONE」 IS DRAWN BY ONE FUNCTION ----
+   CLAUDE.md § One place names goneBox()/viewGone() for it. Every t('form.gone')
+   under www/ is counted: inside goneBox() is the drawing, handed to toast() is
+   a statement and not a box, and anything else is a second drawing of the
+   same sentence -- keyboard.js held two (docs/scope/r73-audit.md § 2-16),
+   which page-check could not see because it leaves viewGone out by name. */
+const goneOut = [];
+for (const f of fs.readdirSync(path.join(dir, '..', 'www')).filter((n) => n.endsWith('.js'))){
+  const src = fs.readFileSync(path.join(dir, '..', 'www', f), 'utf8').replace(/\/\*[\s\S]*?\*\//g, ' ');
+  for (const m of src.matchAll(/t\('form\.gone'\)/g)){
+    const fn = fnOf(src, m.index);
+    const before = src.slice(Math.max(0, m.index - 6), m.index);
+    if (fn === 'goneBox' || /toast\($/.test(before)) continue;
+    goneOut.push(f + ' ' + fn);
+  }
+}
 
 const bad = [];
 function say(ok, line){ console.log('  ' + (ok ? '' : 'FAILED  ') + line); if (!ok) bad.push(line); }
@@ -3689,7 +3964,7 @@ say(r.cellPut && r.cellTool === 'kbUndo',
 say(r.cellHalfKept,
     'so nothing goes in, reached by the button or by the name behind it ('
     + (r.cellSpan / 2) + ' of a key)');
-say(r.cellWholeSpan === 2 && r.cellWholeTool === 'kbUndo kbCellAdd',
+say(r.cellWholeSpan === 2 && r.cellWholeTool === 'kbUndo kbCellPut',
     'a row short by two keys leaves a WHOLE frame, and the + is up over it ['
     + r.cellWholeSpan + ' ' + r.cellWholeTool + ']');
 say(r.cellAdded && r.cellAddedW && r.cellNoHalf,
@@ -4405,6 +4680,54 @@ say(dupOne.onScreen === 1 && dupTwo.onScreen === 1 && dupThree.onScreen === 1,
 say(dupTwo.onServer <= dupOne.onServer && dupThree.onServer <= dupTwo.onServer,
     'and the copies on the server stop multiplying rather than growing by one a launch: '
     + [dupOne, dupTwo, dupThree].map((x) => x.onServer).join(', ') + ' rows');
+
+/* r74 — the surfaces */
+say(SF.shareUnasked === 0,
+    'with nobody having said what plan this is, a render hands the phone’s keyboard '
+    + 'nothing — the board already there stays (' + SF.shareUnasked + ' writes)');
+say(SF.k4Pic === 0,
+    'the keyboard ceiling counts what came down from the server, not the picture kept for '
+    + 'a launch with no signal (' + SF.k4Pic + ' counted from a picture of two)');
+say(SF.k4Unasked === null && SF.k4Stop && SF.k4Said && !SF.k4Pop,
+    'and with nobody having said which languages this account has, there is no number: the '
+    + '+ says 接続できません and offers no price (' + SF.k4Unasked + ')');
+say(SF.k3One,
+    'a save repairs the board being saved and no other — a lone tall key on board 1 is '
+    + 'left exactly as it is when board 2 is changed (board 2 rows ' + SF.k3Two + ')');
+say(SF.migList === 'mine' && SF.migKept && SF.migAt === 1,
+    'a keyboard from before board 0 left storage lists only what somebody made, and the '
+    + 'old copy of the free QWERTY is still in what is stored, byte for byte — a migration '
+    + 'adds and removes nothing it read (list ' + SF.migList + ', copy kept ' + SF.migKept
+    + ', applied ' + SF.migAt + ')');
+say(goneOut.length === 0,
+    '「that is no longer here」 is drawn by goneBox() and by nothing else under www/ ['
+    + goneOut.join(', ') + ']');
+say(cmpCols.length === 1 && cmpCols[0] === 'kbRoomFor',
+    'ten across is compared in one place, kbRoomFor() [' + cmpCols.join(', ') + ']');
+say(cmpRows.length === 1 && cmpRows[0] === 'kbRoomRow',
+    'and the row ceiling in one, kbRoomRow() [' + cmpRows.join(', ') + ']');
+say(freeAsk.length > 0 && freeAsk.every((f) => f === 'kbEdit'),
+    'and the board on the screen is reached only through kbEdit(), which is what '
+    + 'says the free QWERTY is not written [' + freeAsk.join(', ') + ']');
+say(SF.leftBefore.h && SF.leftBefore.u > 0 && !SF.leftAfter.h && SF.leftAfter.u === 0,
+    'the selection and the step back are the screen’s: walked off by a tab and come back '
+    + 'to, nothing is lit and there is nothing to step back to (before '
+    + JSON.stringify(SF.leftBefore) + ', after ' + JSON.stringify(SF.leftAfter) + ')');
+say(SF.crossSame,
+    'and another language’s board is another history — a step back pressed there puts '
+    + 'nothing of the first language’s layout onto it');
+say(SF.oneMiss.length === 0,
+    'one coordinate on the sheet: over ' + SF.oneCols + ' columns of three boards that are '
+    + 'not all ten across, the keys a column lights are the keys the bin takes a whole key '
+    + 'from (' + SF.oneLit + ' lit)' + (SF.oneMiss.length ? ' — ' + SF.oneMiss.slice(0, 4).join('; ') : ''));
+say(SF.insMiss.length === 0,
+    'and a column put in goes into the rows the bin takes it from'
+    + (SF.insMiss.length ? ' — ' + SF.insMiss.slice(0, 4).join('; ') : ''));
+say(SF.alR && SF.alL,
+    'the ends are the sheet’s ends: on a board four keys wide a row pushed right stands '
+    + 'against the tenth column and pushed left against the first (' + SF.alRSheet + ')');
+say(SF.cellAt === 4,
+    'and a key put into a frame stands in that frame (column half ' + SF.cellAt + ', wanted 4)');
 
 if (bad.length){ console.error('\nkb-check: ' + bad.length + ' FAILED'); process.exit(1); }
 console.log('\nkb: pressing a row number or a column letter SELECTS it and lights it up;\n' +

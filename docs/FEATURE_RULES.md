@@ -4503,7 +4503,7 @@ and is never merged into your own」と言っている。**入らない、は二
   stricter of the two answers.
 - Affected features: `rowHeight` / `rowPerWidth`
   (`ios/App/LinguaKeyboard/KeyboardViewController.swift`) and `kbRowsMax()`,
-  `kbRowH()`, `kbRoomRow()`, `kbLayRoom()`, `kbLayPut()`
+  `kbRowH()`, `kbRoomRow()`, `kbLayRoom()`, `kbFacePut()`
   (`www/keyboard.js`) — **nothing stored changes and no layout moves.**
   **The Swift half is NOT device confirmed**: it cannot be built or run from
   Linux. rule 19's "held on ADDING only" is unchanged and is what makes
@@ -4542,7 +4542,7 @@ and is never merged into your own」と言っている。**入らない、は二
   the ten — so it comes out **97pt where a QWERTY's is 39**, and `a` is `a` on
   both boards. And the ceiling does the rest: a row that already comes to ten
   refuses another key, so nothing is ever made smaller to fit something in.
-  `kbRoomIn()` has always said that; what was missing was a fixed width for it
+  `kbRoomFor()` has always said that; what was missing was a fixed width for it
   to be true against.
 
   **Every row a pattern builds comes to exactly ten**, with the space bar
