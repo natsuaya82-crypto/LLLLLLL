@@ -756,6 +756,7 @@ function snsEmpty(k, none, a){
    somebody else's language (www/home.js). They were forgotten by three
    functions called from two places, and the door called one of them. */
 function pullForget(){
+  PULL_GEN++;
   PULL_GOT={}; PULL_OFF={}; PULL_OUT={}; PULL_WAIT={};
   /* and a move that was waiting on them (www/shell.js § navLand): its
      waiters have just been dropped, so it would never land, and every move
@@ -767,6 +768,7 @@ function pullForget(){
   netBlockedDrop();
   WLD_HAVE={}; WLDS_HAVE={};
 }
+acctMem(pullForget);
 /* One answer forgotten: switching the language the app is read in re-asks the
    notices, because what a notice SAYS is written in that language
    (www/settings.js). */
@@ -794,8 +796,18 @@ function pullWoke(q){
   PULL_WAIT[q]=null;
   return ws || [];
 }
+/* WHICH ACCOUNT ASKED. An answer is 「what the server told THIS account」
+   (§ pullForget), and a question still in the air when the account changes
+   is the last account's: its answer or its failure landing afterwards woke
+   the NEXT account's waiters -- measured (acct-check 77, r79): a read of the
+   last session's languages failed on the wire after the door, woke the new
+   account's 「which languages」 waiter with `false`, and the phone stood
+   waiting for a list that had in fact arrived. So an ask carries the
+   generation it was made in, pullForget() moves it on, and an answer from
+   an older one is nobody's and is dropped. */
+var PULL_GEN=0;
 function pullRun(k, a, person){
-  var ask=PULL_ON[k], hav=PULL_HAS[k], q=pullKey(k, a);
+  var ask=PULL_ON[k], hav=PULL_HAS[k], q=pullKey(k, a), gen=PULL_GEN;
   if(!ask){ pullSpinOff(); return; }
   /* Already asking. The ask in the air is the one that takes the mark out. */
   if(PULL_OUT[q]) return;
@@ -803,6 +815,7 @@ function pullRun(k, a, person){
   PULL_OUT[q]=1;
   ask(function(got){
     var ws, i;
+    if(gen!==PULL_GEN) return;
     PULL_OUT[q]=0;
     pullSpinOff();
     /* An answer is the road working, so it is also the end of 「訊けなかった」
@@ -813,6 +826,7 @@ function pullRun(k, a, person){
     if(got) render();
   }, function(d, s, m){
     var ws, i, fell;
+    if(gen!==PULL_GEN) return;
     PULL_OUT[q]=0;
     pullSpinOff();
     /* 訊けなかった、と書き残す一箇所。ポップは消せるし、消えたあとも
@@ -2410,74 +2424,26 @@ function snsSameWords(a, b){
 
    ---- and what the phone kept before there was a row for it ---------------
 
-   THE FIRST ANSWER IS ADDED TO, NOT SUBSTITUTED FOR. 「制作はオフラインでも
-   可能次つながった時に更新される」 -- what somebody made without a signal goes
-   up when there is one, and a starred word is something somebody made. The
-   other reading, that the server simply wins, is the way docs/DATA_SAFETY.md
-   says a backup destroys somebody's work: by winning. So a word this phone
-   has and the server does not is UPLOADED, never read as "deleted".
+   THE ANSWER IS THE LIST. This used to hand the phone's ☆ up ONCE, on the
+   first answer after `saved_search` existed, under 「制作はオフラインでも可能
+   次つながった時に更新される」 -- a sentence two later decisions replaced:
+   「オンラインのみで行こう」 (2026-09-04) and rule 22, the copy is read-only
+   and never goes back up. The newer one stands, so the road is gone (r79):
+   nothing on this phone goes up without a press.
 
-   ONCE, and that is the half that is easy to get wrong. Union on every pull
-   means a word taken off on the other phone comes back from this one for
-   ever, and the star stops being something you can turn off. `SET.savedUp`
-   remembers that this phone has handed its copy over; after it, the answer
-   IS the copy, and a word removed elsewhere is removed here.
-
-   The flag is not what stops a word going up twice -- the difference of the
-   two lists is, and it would hold with no flag at all. What the flag decides
-   is the OTHER thing: when the server's answer is allowed to be the whole
-   truth. It is set only when every upload came back, so a phone that lost
-   its signal half way through tries again next time. */
-function snsSavedHas(a, w){
-  var i;
-  for(i=0;i<a.length;i++) if(a[i]===w) return true;
-  return false;
-}
-/* Every word up, and then say whether they all made it. Counted rather than
-   chained: they are independent rows and one refusing says nothing about the
-   next. */
-function snsSavedPush(add, done){
-  var left=add.length, ok=true, i;
-  if(!left){ done(true); return; }
-  function one(fine){
-    if(!fine) ok=false;
-    left--;
-    if(!left) done(ok);
-  }
-  for(i=0;i<add.length;i++)
-    netSearchSave(add[i],
-      function(){ one(true); },
-      function(){ one(false); });
-}
-/* ONE ENTRY IN THE TABLE, and it is asked at the open like everything else.
-   It kept a flag for 「asking」 and a flag for 「answered」, which is what
-   PULL_OUT and PULL_GOT already are, and it swallowed a fall in silence --
-   so a phone that could not reach the server drew the same empty list as one
-   whose account keeps nothing. `bad` is the road out now, and it is the same
-   road every other ask falls down. */
+   AND THE STARS THAT NEVER WENT UP ARE NOT THROWN AWAY. A phone that had not
+   handed its list over (`savedUp` absent) has in `SET.saved` stars somebody
+   made. The server's answer is written over `saved`, so that list is copied
+   first, once, to `savedWas` -- read by nothing, removed by nothing
+   (「読まない、消さない」 2026-09-03, docs/DATA_SAFETY.md: a migration copies
+   and never removes what it read). */
 function askSaved(ok, bad){
   netSearchSaved(function(rows){
-    var got=[], mine=snsSaved(), add=[], out, i;
+    var got=[], mine=snsSaved(), i;
     for(i=0;i<(rows||[]).length;i++)
       if(rows[i] && rows[i].q) got.push(String(rows[i].q));
-    /* Once handed over, the server is simply the answer -- including an
-       empty one, which is somebody having cleared them on another phone. */
-    if(SET.savedUp){
-      if(snsSameWords(got, mine)){ ok(1); return; }
-      SET.saved=got; setKeep(); ok(1);
-      return;
-    }
-    for(i=0;i<mine.length;i++)
-      if(!snsSavedHas(got, mine[i])) add.push(mine[i]);
-    /* The server's first, then the ones this phone is handing over. Nothing
-       is dropped from either side. */
-    out=got.concat(add);
-    snsSavedPush(add, function(allWent){
-      if(!allWent) return;         /* try again next launch */
-      SET.savedUp=true;
-      setKeep();
-    });
-    if(!snsSameWords(out, mine)){ SET.saved=out; setKeep(); }
+    if(!SET.savedUp && mine.length && SET.savedWas===undefined) SET.savedWas=mine.slice();
+    if(!snsSameWords(got, mine)){ SET.saved=got; setKeep(); }
     /* Drawn whatever came back: the answer itself is what turns the mark into
        a list, or into the empty space that means this account keeps none. */
     ok(1);
@@ -2875,9 +2841,11 @@ var NOTES_HAVE=null;
    this is the whole of what unread means here, and it is a decision and not a
    workaround for a missing column: 「サーバーの既読の表は要りません」.
 
-   `SET.notAt` is the number, in `lingua.set` because it is a fact about the
-   PERSON and not about the notices -- it survives the copy being replaced.
-   `docs/DATA_MODEL.md`. */
+   `SET.notAt` is the number, the ACCOUNT's (`SET_PREFS`, www/core.js): it
+   goes up in `profile.prefs` and comes back down on the next phone, so the
+   same notices are unread wherever the account is opened -- which is the
+   Reason the decision gave, and was not true while it stayed on one handset
+   (r79). `docs/DATA_MODEL.md`. */
 function notUnread(){
   var i, n=0, at=Number(SET.notAt||0), ns=NOTES_HAVE||[];
   for(i=0;i<ns.length;i++) if(Number(ns[i].at||0)>at) n++;
@@ -2886,14 +2854,16 @@ function notUnread(){
 /* Opening the screen is the reading. Written down only when something was
    actually unread: this runs on every render of the notices, and a write on
    each of them would be the settings written out to say a bell went quiet.
-   setKeep() and not save(): this is the settings and nobody's language.
+   setKeep() and not save(): this is the settings and nobody's language. And
+   netPrefsPut(), the road every account setting goes up by, so the account's
+   other phones read the same line (r79).
 
    Not writing costs nothing that matters -- a phone killed before the write
    shows the mark again, which is the side that never hides a notice. */
 function notSeen(){
   var had=notUnread();
   SET.notAt=Date.now();
-  if(had) setKeep();
+  if(had){ setKeep(); netPrefsPut(); }
 }
 /* Asked when the session begins, so the count is right on the first frame of
    whatever screen the app opened on and no screen has to ask for it. What

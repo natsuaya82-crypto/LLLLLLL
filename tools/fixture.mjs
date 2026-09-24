@@ -66,6 +66,11 @@ export function seed(){
   SESS = { at: jwt({ sub:'u', email:'aya@example.com',
                      app_metadata:{ provider:'email' } }),
            rt:'r', uid:'u', anon:false };
+  /* AND WHAT THIS PHONE HOLDS IS THAT SESSION'S (www/core.js § ACCT). A
+     session put in place by hand is a session arriving, so it goes through
+     the one switch a real one does -- otherwise memory is nobody's while
+     SESS says 'u', and every save writes nowhere. */
+  acctFor(netUid());
   /* No sentence of the day, unless a face puts one there. It is server data
      and there is no network in any of these checks, so null is what the app
      really has -- and clearing it HERE rather than at the end of the two

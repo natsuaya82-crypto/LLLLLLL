@@ -30,6 +30,160 @@
       of me". They still do.
    ========================================================================= */
 var LS_LANGS='lingua.langs', LS_CUR='lingua.cur', LS_S='lingua.set';
+/* The session belongs to this phone and to no language, so it is filed beside
+   lingua.set and lingua.me rather than under langKey(). */
+var LS_SESS='lingua.sess';
+var SESS=null;
+function sessRead(){
+  SESS=null;
+  try{
+    var s=JSON.parse(localStorage.getItem(LS_SESS)||'null');
+    if(s && s.rt) SESS=s;
+  }catch(e){}
+}
+sessRead();
+/* WHO THIS IS -- the account's uuid, or '' with nobody signed in. The one
+   place anything outside the session's own functions learns it (r73 § 2-5). */
+function netUid(){ return (SESS && SESS.uid) || ''; }
+/* ---- WHAT AN ACCOUNT HAS ON THIS PHONE, IN ONE PLACE ---------------------
+   「端末ごとにやることなんてねえよ」「アカウントごとってずっと言ってるよな？」
+   OWNER 2026-09-03, and CLAUDE.md § Online: 「a thing that cannot answer
+   『which account』 is a thing that must not be written down」.
+
+   ONE SENTENCE (r73 § 2-7): what is written on this phone carries the uid
+   AT THE MOMENT IT IS WRITTEN; what carries none is read by nobody and
+   becomes nobody's; and what an account has in memory is in ONE container
+   that is swapped by one call.
+
+   It used to be three mechanisms with one hole each. Every thing had a LIVE
+   key with no owner on it (`lingua.me`, `lingua.posts`, `lingua.drafts`,
+   `lingua.langs`, the account's fields of `lingua.set`) and a PARKED copy
+   under `…<uid>`, and a function per thing (meFor, postFor, setFor) moved one
+   into the other when the account changed -- and each of those, finding a
+   live copy with nobody's name on it, ADOPTED it for whoever was signing in.
+   A phone carrying a copy from before the stamp gave it to the first person
+   through the door; measured (r73 § 2-7), an old unstamped language went up
+   as that person's, published. And signing out was ten lines of 「and forget
+   this too」 in netOut(), a list somebody had to remember to add to, and
+   one was missed (r73 § 1-3).
+
+   So there is no live key and nothing to move. The key a thing is written
+   under IS `lingua.<name>.<uid>` of the account holding it (acctPut), so the
+   answer to 「whose」 is on it from the first byte, and switching accounts is
+   reading the other account's key (acctFor). With nobody signed in nothing is
+   written at all: the only thing in memory with no owner is what the walk
+   made before the door, and the door gives it to the account arriving -- the
+   one exception CLAUDE.md § Online names -- filling in only what that account
+   does not already have.
+
+   ACCT is the container: each file that holds something of an account's
+   registers it BESIDE its own global, at load -- acctKeep() for what is
+   written down, acctMem() for what is only remembered -- so a thing added
+   tomorrow is swapped tomorrow, and netOut() is one line. */
+var ACCT_UID=netUid();
+var ACCT=[];
+function acctKey(name, uid){ return 'lingua.' + name + '.' + String(uid||''); }
+function acctRaw(key){
+  var r=null;
+  try{ r=localStorage.getItem(key); }catch(e){ r=null; }
+  if(r===null) return null;
+  /* An older version wrote `lingua.cur` bare, not as JSON. */
+  try{ return JSON.parse(r); }catch(e){ return r; }
+}
+/* Written under the account in hand, or not written. A write that does not
+   land (a full phone) throws to the caller, whose saveTry() says so -- the
+   one place that answers it (§ saveTry). Nobody signed in is not a failure:
+   it is the walk, whose things live in memory until the door (CLAUDE.md
+   § Online). */
+function acctPut(name, v){
+  if(ACCT_UID) localStorage.setItem(acctKey(name, ACCT_UID), JSON.stringify(v));
+}
+/* Something written down. `now()` is what memory holds, `got(v)` puts `v` in
+   memory (`null` is 「this account has none」). `old` is the key an older
+   version wrote it under with no owner on it, and `pick(v, uid)` is what of
+   that belongs to the account the old stamp names -- acctMoved() below. */
+function acctKeep(name, now, got, old, pick){
+  var e={ name:name, now:now, got:got, old:old||'', pick:pick||null };
+  ACCT.push(e);
+  acctMoved(e);
+  got(ACCT_UID? acctRaw(acctKey(name, ACCT_UID)) : null);
+}
+/* Something only remembered: an answer the server gave this account. */
+function acctMem(forget){ ACCT.push({ forget:forget }); }
+/* THE ONE SWITCH. netTook() when a session arrives, netOut() when it goes.
+
+   From nobody to somebody is the door, and what memory holds then is the
+   walk's (nothing ownerless is ever read from the disk, so there is nothing
+   else it could be): the account's own comes first and what the walk made
+   fills what it lacks, and the result is written under the account. Any other
+   change reads the arriving account's own and nothing of the last one's. */
+function acctFor(uid){
+  var me=String(uid||''), door=!ACCT_UID && !!me, i, e, v;
+  if(me===ACCT_UID) return false;
+  ACCT_UID=me;
+  for(i=0;i<ACCT.length;i++){
+    e=ACCT[i];
+    if(e.forget){ e.forget(); continue; }
+    v=me? acctRaw(acctKey(e.name, me)) : null;
+    if(door){ v=acctFill(v, e.now()); saveTry(function(){ acctPut(e.name, v); }); }
+    e.got(v);
+  }
+  return true;
+}
+/* The account's own, with what the walk made where the account has nothing.
+   An object is filled key by key and a list is the account's if it has one:
+   nothing the account had is written over -- a copy that wins is how a copy
+   destroys somebody's work (docs/DATA_SAFETY.md). A single value is not
+   something anybody made -- it is WHERE somebody is standing (`cur`) -- and
+   the walk's is where they are now: the language they have just made. */
+function acctFill(mine, walk){
+  var out, k;
+  if(walk===null || walk===undefined || walk==='' ||
+     (typeof walk.length==='number' && !walk.length)) return mine;
+  if(typeof walk!=='object') return walk;
+  if(mine===null || mine===undefined || mine==='' ||
+     (typeof mine.length==='number' && !mine.length)) return walk;
+  if(typeof mine!=='object' || typeof mine.length==='number') return mine;
+  out={};
+  for(k in walk) if(Object.prototype.hasOwnProperty.call(walk, k)) out[k]=walk[k];
+  for(k in mine) if(Object.prototype.hasOwnProperty.call(mine, k)) out[k]=mine[k];
+  return out;
+}
+/* ---- WHAT AN OLDER VERSION LEFT WITH NO OWNER ON IT ----------------------
+   The live keys above carried their owner in ONE place: `acct` inside
+   `lingua.set` (「which account's things are live on this handset」), and
+   what it named was theirs. That is COPIED, once per thing, to that account's
+   own key -- and nothing is removed: the old key stays byte for byte and is
+   never read again. What no stamp names is nobody's and is neither read nor
+   removed (「読まない、消さない」 OWNER 2026-09-03, and 2026-09-23
+   「そもそもアプリ公開されたの昨日だから必要ない」).
+
+   The live key is the newest of that account's copies, so it is copied OVER
+   the account's parked one: the old switch read a park back when the account
+   returned and left it standing, stale, and would itself have written over
+   it at the next sign-out. Once per thing, marked in `acctMoved`
+   (SET_PHONE), because the second time the account's own key is the newer.
+   Deleting that account takes the old keys its stamp names (lsWipeAcct). */
+function acctOld(){
+  var s=acctRaw(LS_S);
+  return (s && typeof s==='object')? String(s.acct||'') : '';
+}
+function acctMoved(e){
+  var raw=acctRaw(LS_S), who, v;
+  if(!e.old || !raw || typeof raw!=='object' || !raw.acct) return;
+  who=String(raw.acct);
+  if(!raw.acctMoved || typeof raw.acctMoved.length!=='number') raw.acctMoved=[];
+  if(raw.acctMoved.indexOf(e.name)>=0) return;
+  v=acctRaw(e.old);
+  if(v!==null && e.pick) v=e.pick(v, who);
+  try{
+    if(v!==null && v!==undefined) localStorage.setItem(acctKey(e.name, who), JSON.stringify(v));
+    raw.acctMoved.push(e.name);
+    localStorage.setItem(LS_S, JSON.stringify(raw));
+  }catch(x){}
+  /* and in memory, or the next setKeep() writes the mark from before this */
+  SET.acctMoved=raw.acctMoved.slice();
+}
 /* Everything this app has ever written, and it is NOT a list.
 
    「アカウント削除で残るものねえって言ってんだろ何回言わせんだよ全部消えんだよ。」
@@ -64,16 +218,27 @@ var LS_LANGS='lingua.langs', LS_CUR='lingua.cur', LS_S='lingua.set';
    Returns the language ids it took,
    so the caller can drop those backups and no others. */
 function lsWipeAcct(uid){
-  var me=String(uid||''), ids=[], doomed=[], keys, id, i, k, j, pre;
+  var me=String(uid||''), ids=[], doomed=[], id, i, k, j, pre, idx, took;
   /* WHOSE, AND IT IS TWO QUESTIONS. A language this account WROTE is
      `language.owner` (langOwnOf), and one it TOOK is a `language_take` row
      (langTookHas) -- two facts that `LANGS[id].uid` used to answer with one
      field, which is what came apart the day a language moved between people.
      Both go: the account is being deleted, and its copies of what it pulled
      down are as much its own as what it wrote. */
-  for(id in LANGS)
-    if(Object.prototype.hasOwnProperty.call(LANGS, id) && LANGS[id] &&
-       (langOwnOf(id)===me || langTookHas(id))) ids.push(id);
+  /* WHICH LANGUAGES, ASKED OF THIS ACCOUNT'S OWN INDEX -- `lingua.langs.<uid>`
+     and `lingua.take.<uid>` (§ ACCT) -- and not of what memory holds. The
+     session has usually ENDED by the time this runs (netEndMe signs out the
+     moment the server answers, and signing out empties memory), so reading
+     LANGS found nothing and left every language of a deleted account on the
+     phone (measured, acct-check 48, r79). */
+  idx=acctRaw(acctKey('langs', me)) || {};
+  took=acctRaw(acctKey('take', me)) || [];
+  if(me && ACCT_UID===me)
+    for(id in LANGS) if(Object.prototype.hasOwnProperty.call(LANGS, id)) idx[id]=LANGS[id];
+  for(id in idx)
+    if(Object.prototype.hasOwnProperty.call(idx, id) &&
+       (langOwnOf(id)===me || took.indexOf(id)>=0 ||
+        (ACCT_UID===me && langTookHas(id)))) ids.push(id);
   /* EVERYTHING FILED UNDER THIS LANGUAGE, COUNTED RATHER THAN NAMED -- which
      is the same rewrite the uid half of this function was given below, one
      level in.
@@ -127,37 +292,35 @@ function lsWipeAcct(uid){
         doomed.push(k);
     }
   }catch(e){}
-  /* the live copies, which are this account's while it is signed in */
-  doomed.push('lingua.me'); doomed.push('lingua.posts'); doomed.push('lingua.drafts');
+  /* AND WHAT AN OLDER VERSION LEFT FOR THIS ACCOUNT WITH NO OWNER ON THE KEY
+     ITSELF -- the live keys `lingua.set`'s stamp says were theirs (§ acctMoved).
+     Counted from the container rather than named: each thing that has one
+     says what its old key is, and its `pick` says which part of it was this
+     account's. All of it is removed; part of it -- the rows of the one index
+     every account shared, the fields of `lingua.set` beside the handset's
+     setup -- is taken out and the rest written back as it was. */
+  if(me && acctOld()===me) saveTry(function(){
+    var e, v, p, k2, raw;
+    for(i=0;i<ACCT.length;i++){
+      e=ACCT[i];
+      if(!e.old || (v=acctRaw(e.old))===null) continue;
+      p=e.pick? e.pick(v, me) : v;
+      if(p===null || p===undefined) continue;
+      if(p===v || typeof p!=='object'){ doomed.push(e.old); continue; }
+      for(k2 in p) if(Object.prototype.hasOwnProperty.call(p,k2)) delete v[k2];
+      localStorage.setItem(e.old, JSON.stringify(v));
+    }
+    raw=acctRaw(LS_S);
+    if(raw && typeof raw==='object'){ delete raw.acct; localStorage.setItem(LS_S, JSON.stringify(raw)); }
+  });
   try{ for(i=0;i<doomed.length;i++) localStorage.removeItem(doomed[i]); }catch(e){}
-  /* AND WHAT IS THEIRS INSIDE `lingua.set`, which is a key this account
-     SHARES rather than one it owns -- so it is emptied of them instead of
-     removed. 「アカウント消したのに検索履歴残ってたんだけどなんで？」 OWNER
-     2026-09-04: the history was here, in the live settings, and nothing in
-     this function had ever looked inside the key.
-
-     Here and not at the call site, because this is 「one account's things,
-     gone」 and the words somebody searched for are one of their things. The
-     caller wiped the parked copy and then signed out, and signing out PARKS
-     -- so the fields were written straight back under the name of the account
-     that had just been deleted. Cleared here, there is nothing left to park:
-     setFor('') finds no owner and returns having written nothing. */
-  /* This account's, or nobody's -- and nobody's settings on the phone of the
-     account being deleted are that account's, by the same rule setFor()
-     adopts them by. It asked `SET.acct===me` alone, so settings that named
-     nobody survived the deletion and settings.js took four of their fields
-     off by name and left the rest (`recent`) standing (r61-face 止めたこと 2). */
-  if(String(SET.acct||'')===me || !SET.acct){
-    keys=setAcctKeys(null);
-    for(i=0;i<keys.length;i++) delete SET[keys[i]];
-    /* THE PLAN IS NOT HERE. It was two more words -- `SET.plan` and
-       `SET.planWas`, set to free so a deleted account's rung was off the
-       screen -- and neither is on this phone any more: what an account pays
-       is `verify-plan`'s answer, held in memory (§ PLAN), and the session
-       going takes it (planForget()). */
-    delete SET.acct;
-    setKeep();
-  }
+  if(me && String(SET.acct||'')===me) delete SET.acct;
+  /* AND WHAT IS IN MEMORY, which is the container's: the account being
+     deleted is nobody's from here, so nothing that is saved between this line
+     and the session ending can write its name back onto the disk
+     (「アカウント削除で残るものねえ」). The words somebody searched for, the
+     settings, the timeline -- all of it goes with this one call. */
+  if(me && ACCT_UID===me) acctFor('');
   langStore();
   return ids;
 }
@@ -562,29 +725,21 @@ var LTAKE=null;
    was before: langWhose() answers LW_READ off it, every writer refuses, and
    updating or saving with no signal says 「接続できません」 rather than
    quietly working on a copy. */
-function langTakeKey(uid){ return 'lingua.take.' + String(uid||''); }
 function langTookGot(ids){
-  var got=(ids && typeof ids.length==='number')? ids : null,
-      me=netUid();
+  var got=(ids && typeof ids.length==='number')? ids : null;
   LTAKE=got;
   /* Only an ANSWER is drawn. `null` is 「nobody has said」, and writing that
      down as an empty list would turn 「I have not been told」 into 「you have
      taken nothing」 on the next launch -- the two sides langWhose() exists to
      keep apart. Nothing is removed either: the picture that is there stays
      there until this account's next answer replaces it or the account goes. */
-  if(got && me) try{ localStorage.setItem(langTakeKey(me), JSON.stringify(got)); }catch(e){}
+  if(got) saveTry(function(){ acctPut('take', got); });
 }
-/* THE ONE PLACE THE PICTURE IS READ, and it is read for the account named
-   rather than for whoever wrote it. Called where a uid becomes known -- the
-   launch (netRead) and a session arriving (netTook) -- and with '' where one
-   goes (netOut), which is the same call doing the forgetting: a phone with
-   nobody on it has not been told anything. */
-function langTookFor(uid){
-  var me=String(uid||''), p=null;
-  if(me) try{ p=localStorage.getItem(langTakeKey(me)); }catch(e){ p=null; }
-  try{ p=p? JSON.parse(p) : null; }catch(e){ p=null; }
-  LTAKE=(p && typeof p.length==='number')? p : null;
-}
+/* THE PICTURE IS READ BY THE CONTAINER (§ ACCT), for the account in hand and
+   never for the one before it, and a phone with nobody on it has been told
+   nothing. */
+acctKeep('take', function(){ return LTAKE; },
+         function(v){ LTAKE=(v && typeof v.length==='number')? v : null; });
 function langTook(){ return LTAKE? LTAKE.length : null; }
 /* Whether THIS account took this language, asked by the server's id for it.
    lsWipeAcct() is what wants it: a downloaded language is written by somebody
@@ -634,6 +789,7 @@ function langTookHas(sid){
 var LMINE=null;
 function langMineGot(){ LMINE=1; }
 function langMineForget(){ LMINE=null; }
+acctMem(langMineForget);
 function langMineKnown(){ return LMINE!==null; }
 /* ---- AND WHETHER THIS PHONE IS HOLDING ANYTHING OF A LANGUAGE -----------
    「オンラインは一本化ね？」 OWNER 2026-09-04, and rule 22: the copy on this
@@ -928,22 +1084,41 @@ function slRm(k){
    that rewrites itself, so a burst that fails twice says it once. */
 function saveTry(put){
   try{ put(); }
-  catch(e){ if(typeof toast==='function') toast(t('save.no')); }
+  catch(e){ saveNo(); }
 }
+function saveNo(){ if(typeof toast==='function') toast(t('save.no')); }
 
 /* Which languages are here, and which one is open. Read before anything else
-   in this file, because every other key is built out of langId. */
-try{
-  var lx=JSON.parse(localStorage.getItem(LS_LANGS)||'null');
-  if(lx && typeof lx==='object') LANGS=lx;
-}catch(e){}
-try{ langId=localStorage.getItem(LS_CUR)||''; }catch(e){}
+   in this file, because every other key is built out of langId.
 
+   THEY ARE THE ACCOUNT'S (§ ACCT). `lingua.langs` and `lingua.cur` were one
+   key each for every account that ever signed in on this phone (r63 L4), so
+   the next person's switcher started from the last one's list. They are
+   `lingua.langs.<uid>` and `lingua.cur.<uid>` now, written under the account
+   holding them; the old two are read once, for the account their stamp names
+   and only its own rows (langsOld), and are never written again. */
+acctKeep('langs', function(){ return LANGS; },
+         function(v){ LANGS=(v && typeof v==='object' && typeof v.length!=='number')? v : {}; },
+         LS_LANGS, langsOld);
+acctKeep('cur', function(){ return langId; },
+         function(v){ langId=(typeof v==='string')? v : ''; },
+         LS_CUR, function(v, who){
+           var l=acctRaw(acctKey('langs', who));
+           return (typeof v==='string' && l && l[v])? v : null;
+         });
+/* Of the old shared index, the rows that are the stamped account's: the ones
+   it WROTE (the `owner` picture, § langOwnOf) and the ones it TOOK (its own
+   `take` picture). Anybody else's row stays in the old key, read by nobody. */
+function langsOld(v, who){
+  var out={}, id, took=acctRaw(acctKey('take', who)) || [];
+  if(!v || typeof v!=='object') return null;
+  for(id in v)
+    if(Object.prototype.hasOwnProperty.call(v, id) &&
+       (langOwnOf(id)===who || took.indexOf(id)>=0)) out[id]=v[id];
+  return out;
+}
 function langStore(){
-  saveTry(function(){
-    localStorage.setItem(LS_LANGS, JSON.stringify(LANGS));
-    localStorage.setItem(LS_CUR, langId);
-  });
+  saveTry(function(){ acctPut('langs', LANGS); acctPut('cur', langId); });
 }
 /* ---- THE ONE NUMBER, ON A PHONE THAT WAS HERE BEFORE IT ------------------
    2026-09-10. Until today a language had two numbers -- `L<ms36>`, minted on
@@ -1321,6 +1496,7 @@ function langFirst(){
    version of this that only overwrote what the incoming language happens to
    have would leave the last one's words sitting behind it -- you would open
    somebody else's language and find your own dictionary in it. */
+var LSAVED='';
 function langRead(){
   WORDS=[]; LINES=[]; langName=''; SCRIPT={g:{}, extra:[]};
   try{ var a=JSON.parse(slRd(langKey('words'))||'[]'); if(Array.isArray(a)) WORDS=a; }catch(e){}
@@ -1340,24 +1516,99 @@ function langRead(){
        drops. Absent stays absent -- one step, which is what it always was. */
     if(gg && typeof gg.sp==='number') SCRIPT.sp=gg.sp;
   }catch(e){}
+  /* what the language was when it was read -- save() asks it (§ langMoved) */
+  LSAVED=langShape();
 }
 langRead();
+/* HOW THIS ACCOUNT HAS THE APP SET UP, and it goes with the account.
+   -------------------------------------------------------------------------
+   「端末ごとにやることなんてねえよ」「アカウントごとってずっと言ってるよな？」
+   OWNER 2026-09-03, and 「端末に残すものないんですけど。サーバーで同じ機能に
+   なるように代替して」 OWNER 2026-09-08.
+
+   These five sat in SET_PHONE as 「how this handset is set up」, beside the
+   theme, and that sentence was wrong about all of them: signing in on a
+   second phone gave somebody the app arranged the way that PHONE happened to
+   be. `profile.prefs` is one jsonb column carrying exactly this list --
+   netPrefsPut() sends it, netMyProfile() brings it back once a session, and
+   adding a sixth setting is a name here and nothing else.
+
+   THE COPY IS STILL ON THE PHONE and is filed under the account by setFor(),
+   the way `lingua.me` is: with no signal the app is arranged the way it was
+   last seen, which is what a copy is for. What changed is which of the two is
+   the RECORD. */
+/* AND THE NOTIFICATIONS (2026-09-22, and the day's prompt 2026-09-23).
+   Which kinds they are is push-send's `PUSH`, and tools/push-check.mjs holds
+   the `push_` names here to it. Which kinds somebody wants told
+   to them is theirs and not this handset's: a person with an iPhone and an
+   iPad wants 「いいね」 off on both, and the permission -- which IS the
+   handset's -- is iOS's to hold, not ours.
+
+   THE NAMES ARE THE SERVER'S NAMES. netPrefsPut() writes `SET`'s own
+   spelling into `profile.prefs`, so `push_follow` here is `push_follow`
+   there, and the function that decides who to send to reads that one
+   word. **Absent is ON**, on both sides: nobody who has never opened the
+   room has any of these, and no default is minted -- www/push.js
+   § pushWants(). */
+/* AND HOW FAR DOWN THE NOTICES SOMEBODY HAS READ (`notAt`, r79). One time,
+   because 「最後に通知の画面を開いた時刻より新しいものを未読とする」 OWNER
+   2026-09-01 -- and its reason was that a time is the same answer whichever
+   phone it is opened on, which is only true if the time goes with the account
+   (「通知をどこまで読んだか…全部アカウントのもの」 2026-09-03). No table of
+   read notices: one number, the same column as everything above. */
+var SET_PREFS=['theme','ui','myfont','showScript','kbrom',
+               'push_follow','push_reply','push_like','push_boost','push_prompt',
+               'notAt'];
+/* WHAT IS LEFT IS THIS HANDSET'S SETUP, AND THERE IS VERY LITTLE OF IT.
+   `acct` is what an older version wrote to say which account's things were
+   live here, and it is only READ now -- by the move that copies them under
+   that account (§ acctMoved), whose mark is `acctMoved`. `doneMoved` is a
+   migration mark of a field that was this handset's; `vvkb` is a MEASUREMENT
+   of this screen and is meaningless
+   on another phone. `done` and `obback` are the onboarding's, and they are
+   here under protest -- 「セッションが無い」 cannot tell a phone out of the box
+   from one somebody signed out of, and after an account is deleted there is no
+   server left to ask (docs/reports/r8-item2-2026-09-08.md). The owner is
+   deciding that one.
+
+   `walked` is the ONE thing about the onboarding that is left here, and it is
+   here because the OWNER put it here (2026-09-09, choice A). `SET.done`
+   answered two questions with one flag: 「has this ACCOUNT been through the
+   walk」, which is the `profile` row on the server and is asked there now, and
+   「which screen does a phone with NO SESSION open on」, which nothing can
+   answer -- signed out there is nobody to ask, and after an account is
+   deleted the row is gone. Two written decisions turn on that second one
+   (「ログアウトしたら普通にログイン画面だけ出せばいいやろ」 OWNER 2026-08-26,
+   「アカウント削除した後オンボーディングから始まるのはなぜ？」 OWNER
+   2026-09-03), so it stays -- named for what it actually says, read by ONE
+   line (appIs in www/shell.js) and written by two (the door, and wipeHere).
+
+   `order`, `read`, `voice` and `script` are NOT settled: they are the
+   language-making side's, and moving them is a different question from this
+   one. docs/BACKLOG.md. `planV` was here and is gone with the plan. */
+var SET_PHONE=['acct','acctMoved','walked','obback','vvkb','doneMoved',
+               'order','read','voice','script'];
 /* Settings saved by an older version are missing whatever was added since, so
    they are laid over the defaults rather than replacing them. Written out by
-   hand because Object.assign is not ES5 and this has to run on an old phone. */
+   hand because Object.assign is not ES5 and this has to run on an old phone.
+
+   TWO KEYS, AND ONLY THE HANDSET'S SETUP IS IN `lingua.set` (§ SET_PHONE).
+   The rest is the account's and is `lingua.set.<uid>` (§ ACCT) -- read for
+   the account in hand, written the moment it is written. What an older
+   version put in `lingua.set` beside the setup is left there and not read:
+   the stamped account's copy was moved under its name (acctMoved), and
+   anything else is nobody's. */
 try{
   var s=JSON.parse(localStorage.getItem(LS_S)||'null');
-  if(s) for(var sk in s) if(Object.prototype.hasOwnProperty.call(s,sk)) SET[sk]=s[sk];
+  if(s) for(var sk in s)
+    if(Object.prototype.hasOwnProperty.call(s,sk) && SET_PHONE.indexOf(sk)>=0) SET[sk]=s[sk];
 }catch(e){}
-/* WHOSE THE COPIES ON THIS PHONE'S DISK WERE WRITTEN UNDER, read once, here,
-   before anything can change it. `SET.acct` is 「which account's things are
-   live on this handset」 (§ planFor) and every copy that is switched when an
-   account arrives -- the settings, the posts, the drafts -- is switched
-   together, so the stamp on the settings is the stamp on all of them. It has
-   to be taken now: www/net.js runs planFor() as it loads, which moves
-   SET.acct to the session before www/post.js has asked whose its copy is
-   (r63-audit L3). */
-var ACCT_DISK=String(SET.acct||'');
+acctKeep('set', setMine, setGot, LS_S, function(v){
+  var out={}, k;
+  if(!v || typeof v!=='object') return null;
+  for(k in v) if(Object.prototype.hasOwnProperty.call(v,k) && SET_PHONE.indexOf(k)<0) out[k]=v[k];
+  return out;
+});
 /* ---- THE KEYCHAIN IS NOT READ, AND THERE IS NOTHING TO MIGRATE ----------
    This is where `window.__plan`, `window.__planuid` and `window.__planok`
    were taken off the native side and written into `SET`, and where
@@ -1402,8 +1653,12 @@ var ACCT_DISK=String(SET.acct||'');
    field that changed meaning is moved once, on this phone, before anything
    reads it. */
 function walkedMigrate(){
-  if(SET.done===undefined || SET.doneMoved) return;
-  if(SET.walked===undefined || SET.walked===false) SET.walked=!!SET.done;
+  /* `done` is read off the disk where an older version left it: it is not
+     one of this handset's fields (§ SET_PHONE), so the load does not bring it
+     into SET (r79). */
+  var old=acctRaw(LS_S), done=(old && typeof old==='object')? old.done : undefined;
+  if(done===undefined || SET.doneMoved) return;
+  if(SET.walked===undefined || SET.walked===false) SET.walked=!!done;
   SET.doneMoved=1;
   setKeep();
 }
@@ -1573,20 +1828,45 @@ function migrateAll(){
   migrateSp();
   /* and what the language is for, off the phone and into the language */
   migrateWorld();
+  /* and the word order and the three positions a person chose when they were
+     the person's, into the language (www/phases.js). It stood at the top of
+     that file, outside this list -- so it ran before any answer, whether or
+     not the language could be written, and nothing held it (r73 § 2-2). Here
+     it is asked the one question every migration is. The open language's
+     stages are read again after it, because it writes the slice they were
+     read from. */
+  migrateGramLang();
+  stRead();
+  /* and the face of an account from before there was one on file (www/me.js) */
+  migrateAv();
   /* and the free QWERTY out of the keyboard list, keeping an edited one */
   migrateKbFree();
   /* and a free language gets the twenty-eight slots it is allowed */
   ltStart();
 }
+/* NOT SAVING IS THE SPEC, SAVING AND SAYING NOTHING IS NOT (rule 11).
+   A language this phone may not write -- the server has not said it is this
+   account's yet, or it is somebody else's -- is not written, and that is
+   right. It used to return here in silence, with what was typed still on the
+   screen and nowhere else, and a migration saving the language later took it
+   in as the app's own write (r60 見つけたこと). So the one sentence a save
+   that did not land says -- saveNo(), the same one saveTry() says -- is said
+   here too, when something typed is what was not written -- the language
+   differs from what it was when it was last read or written (LSAVED) --
+   because this is also the call every settings-only change makes, and those
+   did save. */
+function langShape(){ return JSON.stringify([WORDS, LINES, SCRIPT]); }
+function langMoved(){ return langShape()!==LSAVED; }
 function save(){
   setKeep();
-  if(langLocked()) return;   /* not writable: nothing is written to the language */
+  if(langLocked()){ if(langId && langMoved()) saveNo(); return; }
   bkTouch();
   saveTry(function(){
     slWr(langKey('words'),JSON.stringify(WORDS));
     slWr(langKey('lines'),JSON.stringify(LINES));
     slWr(langKey('script'),JSON.stringify(SCRIPT));
     langStore();
+    LSAVED=langShape();
   });
 }
 
@@ -2205,23 +2485,50 @@ function planGot(p){
    OWNER 2026-09-11 -- and this is the whole of what planFor() used to do,
    which was a comparison between two words on a handset. */
 function planForget(){ PLAN=null; }
+acctMem(planForget);
 /* '' where nobody has said. Every reader goes through has() below, which is
    where the third state is answered; this is for a screen that shows the word
    and for planName(). */
 function plan(){ return PLAN || ''; }
-/* What of the settings goes to the file. All of it.
+/* What of the settings goes to `lingua.set`: this handset's setup and nothing
+   else (§ SET_PHONE). What an older version left beside it there is kept as
+   it is -- read by nobody, removed by nobody (§ acctMoved).
 
    Two lines stood here taking the plan and its owner OUT on a phone, because
-   the settings file is in the backup a PC makes and a word in it is a word
-   anybody with a cable can edit. Neither is a setting any more: what this
-   account pays is `verify-plan`'s answer, held in memory (§ PLAN), so there
-   is nothing in this file to keep out of a backup. */
+   the settings file is in the backup a PC makes. Neither is a setting any
+   more: what this account pays is `verify-plan`'s answer, held in memory
+   (§ PLAN). */
 function setOnDisk(){
+  var raw=acctRaw(LS_S), i, k;
+  if(!raw || typeof raw!=='object' || typeof raw.length==='number') raw={};
+  for(i=0;i<SET_PHONE.length;i++){
+    k=SET_PHONE[i];
+    if(SET[k]===undefined) delete raw[k]; else raw[k]=SET[k];
+  }
+  return raw;
+}
+/* And what of them is the ACCOUNT's -- everything that is not this handset's
+   setup, counted rather than named (§ ACCT: `lingua.set.<uid>`). */
+function setMine(){
   var out={}, k;
-  for(k in SET) if(Object.prototype.hasOwnProperty.call(SET,k)) out[k]=SET[k];
+  for(k in SET)
+    if(Object.prototype.hasOwnProperty.call(SET,k) && SET_PHONE.indexOf(k)<0) out[k]=SET[k];
   return out;
 }
-/* The settings, written on their own.
+/* An account's settings arriving (§ acctFor), or `null` for nobody: its own
+   laid over the defaults, and nothing of the last account's. */
+function setGot(v){
+  var d=setDefaults(), k;
+  for(k in SET)
+    if(Object.prototype.hasOwnProperty.call(SET,k) && SET_PHONE.indexOf(k)<0) delete SET[k];
+  for(k in d)
+    if(Object.prototype.hasOwnProperty.call(d,k) && SET_PHONE.indexOf(k)<0) SET[k]=d[k];
+  if(v && typeof v==='object')
+    for(k in v)
+      if(Object.prototype.hasOwnProperty.call(v,k) && SET_PHONE.indexOf(k)<0) SET[k]=v[k];
+}
+/* The settings, written on their own -- the handset's to `lingua.set`, the
+   account's under the account.
 
    save() is the LANGUAGE and the settings in one call, and it declines
    entirely when the language on screen is somebody else's -- langLocked() is
@@ -2232,7 +2539,10 @@ function setOnDisk(){
    somebody happened to be reading a published language when they changed it
    is losing it for no reason. */
 function setKeep(){
-  saveTry(function(){ localStorage.setItem(LS_S, JSON.stringify(setOnDisk())); });
+  saveTry(function(){
+    localStorage.setItem(LS_S, JSON.stringify(setOnDisk()));
+    acctPut('set', setMine());
+  });
 }
 /* ---- planKeep() IS GONE, AND SO IS THE KEYCHAIN IT WROTE TO -------------
    It put the plan into the iOS Keychain, because the settings file is in the
@@ -2244,165 +2554,6 @@ function setKeep(){
    `ios/App/App/LinguaPlan.swift` still has its own key and nothing in `www/`
    speaks to it. Taking that out is an iOS change and this branch does not
    touch `ios/` -- docs/BACKLOG.md. */
-/* HOW THIS ACCOUNT HAS THE APP SET UP, and it goes with the account.
-   -------------------------------------------------------------------------
-   「端末ごとにやることなんてねえよ」「アカウントごとってずっと言ってるよな？」
-   OWNER 2026-09-03, and 「端末に残すものないんですけど。サーバーで同じ機能に
-   なるように代替して」 OWNER 2026-09-08.
-
-   These five sat in SET_PHONE as 「how this handset is set up」, beside the
-   theme, and that sentence was wrong about all of them: signing in on a
-   second phone gave somebody the app arranged the way that PHONE happened to
-   be. `profile.prefs` is one jsonb column carrying exactly this list --
-   netPrefsPut() sends it, netMyProfile() brings it back once a session, and
-   adding a sixth setting is a name here and nothing else.
-
-   THE COPY IS STILL ON THE PHONE and is filed under the account by setFor(),
-   the way `lingua.me` is: with no signal the app is arranged the way it was
-   last seen, which is what a copy is for. What changed is which of the two is
-   the RECORD. */
-/* AND THE NOTIFICATIONS (2026-09-22, and the day's prompt 2026-09-23).
-   Which kinds they are is push-send's `PUSH`, and tools/push-check.mjs holds
-   the `push_` names here to it. Which kinds somebody wants told
-   to them is theirs and not this handset's: a person with an iPhone and an
-   iPad wants 「いいね」 off on both, and the permission -- which IS the
-   handset's -- is iOS's to hold, not ours.
-
-   THE NAMES ARE THE SERVER'S NAMES. netPrefsPut() writes `SET`'s own
-   spelling into `profile.prefs`, so `push_follow` here is `push_follow`
-   there, and the function that decides who to send to reads that one
-   word. **Absent is ON**, on both sides: nobody who has never opened the
-   room has any of these, and no default is minted -- www/push.js
-   § pushWants(). */
-var SET_PREFS=['theme','ui','myfont','showScript','kbrom',
-               'push_follow','push_reply','push_like','push_boost','push_prompt'];
-/* WHAT IS LEFT IS THIS HANDSET'S SETUP, AND THERE IS VERY LITTLE OF IT.
-   `acct` says which account's things are live here -- the settings that
-   setFor() parks and hands back. It was `planUid`, because the plan copy sat
-   beside them; the plan is not on this handset any more (§ PLAN) and the
-   field is named for the one thing it still says. `doneMoved` is a
-   migration mark of a field that was this handset's; `vvkb` is a MEASUREMENT
-   of this screen and is meaningless
-   on another phone. `done` and `obback` are the onboarding's, and they are
-   here under protest -- 「セッションが無い」 cannot tell a phone out of the box
-   from one somebody signed out of, and after an account is deleted there is no
-   server left to ask (docs/reports/r8-item2-2026-09-08.md). The owner is
-   deciding that one.
-
-   `walked` is the ONE thing about the onboarding that is left here, and it is
-   here because the OWNER put it here (2026-09-09, choice A). `SET.done`
-   answered two questions with one flag: 「has this ACCOUNT been through the
-   walk」, which is the `profile` row on the server and is asked there now, and
-   「which screen does a phone with NO SESSION open on」, which nothing can
-   answer -- signed out there is nobody to ask, and after an account is
-   deleted the row is gone. Two written decisions turn on that second one
-   (「ログアウトしたら普通にログイン画面だけ出せばいいやろ」 OWNER 2026-08-26,
-   「アカウント削除した後オンボーディングから始まるのはなぜ？」 OWNER
-   2026-09-03), so it stays -- named for what it actually says, read by ONE
-   line (appIs in www/shell.js) and written by two (the door, and wipeHere).
-
-   `order`, `read`, `voice` and `script` are NOT settled: they are the
-   language-making side's, and moving them is a different question from this
-   one. docs/BACKLOG.md. `planV` was here and is gone with the plan. */
-var SET_PHONE=['acct','walked','obback','vvkb','doneMoved',
-               'order','read','voice','script'];
-/* `SET_PLAN` STOOD HERE AND IS GONE (2026-09-11). It named `plan` and
-   `planWas` -- the copy of the server's last answer about this account, and
-   the word this phone last showed -- and neither is in `lingua.set` any more:
-   what an account pays is `verify-plan`'s answer, held in memory (§ PLAN).
-   「1アカウントに1課金ですけど。他のアカウントについてくるわけねえだろ」
-   OWNER 2026-09-11.
-
-   So there is no third kind of field left and setAcctKeys() below asks ONE
-   question: everything that is not this handset's setup is an account's. */
-/* The fields of `SET` that are a PERSON's, counted rather than named. Asked of
-   a parked copy as well as of `SET` itself: a field this account has and this
-   handset has not written yet is still theirs, and reading only the live keys
-   would leave it in the file when somebody else arrives. */
-function setAcctKeys(park){
-  var out=[], k;
-  for(k in SET)
-    if(Object.prototype.hasOwnProperty.call(SET,k) &&
-       SET_PHONE.indexOf(k)<0 && out.indexOf(k)<0) out.push(k);
-  for(k in (park||{}))
-    if(Object.prototype.hasOwnProperty.call(park,k) &&
-       SET_PHONE.indexOf(k)<0 && out.indexOf(k)<0) out.push(k);
-  return out;
-}
-function setParkKey(uid){ return LS_S + '.' + String(uid||''); }
-/* Parked, not cleared -- the same shape as meFor() and postFor(). Signing
-   back in brings them all to the screen again. */
-function setFor(uid){
-  var me=String(uid||''), was=String(SET.acct||''), park, got=null, keys, i, k, d;
-  if(was===me) return false;
-  if(was){
-    d={}; keys=setAcctKeys(null);
-    for(i=0;i<keys.length;i++) d[keys[i]]=SET[keys[i]];
-    saveTry(function(){ localStorage.setItem(setParkKey(was), JSON.stringify(d)); });
-  }
-  if(me){
-    try{ park=localStorage.getItem(setParkKey(me)); }catch(e){ park=null; }
-    if(park){ try{ got=JSON.parse(park); }catch(e){ got=null; } }
-  }
-  /* WHAT THE ARRIVING ACCOUNT PARKED IS ITS OWN, whoever was written down
-     before. This asked `was` alone, so a phone whose settings named nobody --
-     after an account was deleted on it, or from before the stamp existed --
-     let somebody in and never read what they had parked, and the next
-     park wrote their empty fields over it (r63-audit L1). Only where the
-     arriving account has parked nothing AND nobody was written down is what
-     is here adopted as theirs, the way meFor() adopts an unclaimed copy. */
-  if(was || got){
-    keys=setAcctKeys(got);
-    for(i=0;i<keys.length;i++){
-      k=keys[i];
-      if(got && got[k]!==undefined) SET[k]=got[k];
-      /* Absent and not undefined: a field this account has never written is a
-         field it does not have, and setDefaults() answers for it everywhere
-         else.
-
-         `plan` and `planWas` were named here and are gone with the rest of
-         the plan: neither is in `lingua.set` at all now, so nothing about
-         money travels with the settings. */
-      else delete SET[k];
-    }
-  }
-  SET.acct=me;
-  setKeep();
-  return !!was;
-}
-/* A SESSION ARRIVING, AND WHAT GOES WITH IT.
-   「1アカウントに1課金ですけど。他のアカウントについてくるわけねえだろ」
-   OWNER 2026-09-02.
-
-   This used to be two things, and the first one is gone. It COMPARED the
-   account arriving against `SET.planUid` -- the account this handset's copy
-   of the plan belonged to -- and dropped the plan to free when they differed.
-   There is no copy: what an account pays is `verify-plan`'s answer, held in
-   memory (§ PLAN), and the session that arrives asks for its own. So the
-   comparison has nothing left to compare and the drop has nothing to drop.
-
-   What is left is the settings, which ARE parked per account and handed back
-   -- setFor() above -- and the plan being FORGOTTEN, because the answer in
-   memory is about the account that has just left. Nobody signing in is a
-   sign-out and forgets it too: 「nobody has asked」 is the right state for a
-   phone with nobody on it, and free would be this phone deciding. */
-function planFor(uid){
-  var me=String(uid||''), was=String(SET.acct||'');
-  /* ONLY WHEN THE ACCOUNT CHANGED. netTook() is a session ARRIVING and a
-     session being REFRESHED -- the token lasts an hour, so a launch the next
-     morning renews it -- and both come through here. Forgetting on every call
-     threw away the answer storeSync() had just been given, twenty lines into
-     the same launch: measured, and the launch after a tunnel ended holding no
-     plan at all.
-
-     `SET.acct` is which account's things are live on this handset, which is
-     the same comparison setFor() below makes for the settings. It is not a
-     fact about money and it decides nothing about money: what it answers is
-     「is this a different person」, and a different person's plan is not this
-     one's. Signing OUT forgets on its own road (netOut, www/net.js). */
-  if(me!==was) planForget();
-  return setFor(me);
-}
 /* The plans, cheapest first. The ORDER is what makes a ladder a ladder, and
    it is written down once: a level is met by the plan that names it and by
    every plan above it. 「ベーシックは自分の文字と自分のキーボード、プラスは

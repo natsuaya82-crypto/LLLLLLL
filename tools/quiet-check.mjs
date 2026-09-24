@@ -222,7 +222,10 @@ const DISK = {
   /* ...and what the language is for, from before it moved into the language
      (migrateWorld): moved when the language arrives, not lost to a save the
      picture refused (r69-misc 申し送り 1) */
-  'lingua.set':   JSON.stringify({ done:true, theme:'dark', saved:['tir'], savedUp:true,
+  /* `acct` is the stamp every launch with a session wrote until r79: these
+     live copies are 'u''s, so they move under 'u' (www/core.js § acctMoved);
+     without it they name nobody and are neither read nor sent. */
+  'lingua.set':   JSON.stringify({ done:true, acct:'u', theme:'dark', saved:['tir'], savedUp:true,
                                    world:{ where:'the old coast' } }),
   'lingua.langs': JSON.stringify({ 'L-1':{}, 'L-2':{} }),
   'lingua.cur':   'L-1',

@@ -2540,10 +2540,13 @@ const R = await pg.evaluate(async () => {
     };
     try {
       /* (a) an account that finished the walk before there was anywhere to
-             write this: the face it wears today is adopted, ONCE. */
+             write this: the face it wears today is adopted, ONCE -- by the
+             migration (migrateAv, www/me.js), not by drawing a row (r79:
+             drawing reads, and acct-check 93 holds that it writes nothing). */
       delete ME.av;
       ME.pic = '';
       const front = put('av-front', [[1, 1], [2, 2]]);
+      migrateAv();
       const adopted = face();
       if (adopted !== JSON.stringify({ st: front.st }))
         fails.push('an account with no face on file does not wear the one it ' +
@@ -2722,7 +2725,7 @@ const R = await pg.evaluate(async () => {
     PW.vo = { f: 'v-draft-1.m4a', ms: 7000 };
     dsent = [];
     draftKeep();
-    const rawD = localStorage.getItem('lingua.drafts') || '';
+    const rawD = localStorage.getItem(acctKey('drafts', ACCT_UID)) || '';
     let gotD = null;
     try { gotD = JSON.parse(rawD); } catch (e) { gotD = null; }
     if (rawD && gotD === null)
@@ -2753,7 +2756,7 @@ const R = await pg.evaluate(async () => {
       PW = pwBlank(); PW.ln = 'kano'; PW.toh = 'jjj';
       dsent = [];
       draftKeep();
-      const raw2 = localStorage.getItem('lingua.drafts') || '';
+      const raw2 = localStorage.getItem(acctKey('drafts', ACCT_UID)) || '';
       if (raw2.indexOf('"toh":"jjj"') < 0)
         fails.push('a draft addressed to somebody does not carry the ' +
                    'addressee on this phone, so opening it again is a post ' +
@@ -4348,6 +4351,42 @@ const R = await pg.evaluate(async () => {
     SESS = wasSess;
     POSTS = wasPosts; savePosts();
     window.route = wasRoute; NAV = wasNav;
+  }
+
+  /* ---- AN EDIT GOES TO THE SERVER FIRST (r79) --------------------------
+     「SNSは全部サーバー」「なら失敗して残るにするべき」 OWNER 2026-09-05.
+     pwSaveEdit() wrote the edited line into this phone's copy and nowhere else,
+     so everybody else went on reading the old line. Pressed for real: open
+     the edit, change the line, press the send. */
+  {
+    const wasPosts = POSTS, keepSend = netSend, sentE = [];
+    let answer = 'fall';
+    POSTS = [{ id: 'e1', sid: 's-e1', at: Date.now(), lang: langId, ln: 'kano',
+               who: 'Aya', hd: 'aya', mine: true, ui: 'en' }];
+    netSend = function (method, path, body, tok, ok, bad) {
+      if (String(path).indexOf('/rest/v1/post') === 0) sentE.push({ m: method, p: path, body: body });
+      if (answer === 'fall') { bad(null, 0, 'post 0'); return; }
+      ok([]);
+    };
+    const was = planKnown() ? plan() : null;
+    planGot('plus');
+    postEdit('e1');
+    PW.ln = 'kamo'; pwSend();
+    const patch = sentE.filter(r => r.m === 'PATCH' && r.p.indexOf('id=eq.s-e1') >= 0);
+    if (!patch.length || !patch[0].body || !patch[0].body.body || patch[0].body.body.ln !== 'kamo')
+      fails.push('**an edit did not go to the server** — ' + JSON.stringify(sentE));
+    if (POSTS[0].ln !== 'kano')
+      fails.push('an edit the server refused was written on this phone anyway — ' + POSTS[0].ln);
+    if (String(PW.ln) !== 'kamo')
+      fails.push('an edit the server refused took what was typed out of the composer');
+    popOff();
+    answer = 'ok';
+    pwSend();
+    if (POSTS[0].ln !== 'kamo')
+      fails.push('an edit the server took is not on this phone — ' + POSTS[0].ln);
+    netSend = keepSend;
+    if (was) planGot(was); else planForget();
+    POSTS = wasPosts; savePosts(); PW = pwBlank();
   }
 
   return { fails, mid: (nowLight * 100).toFixed(1), corner: (wasLight * 100).toFixed(1),

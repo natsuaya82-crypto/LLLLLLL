@@ -867,32 +867,12 @@ function wipeHere(uid){
      「アカウント削除で残るものねえ」 OWNER 2026-08-27.
      LANG_IO in www/core.js is the one list now. */
   langLoad();
-  /* Whom this phone belonged to, what it was carrying, and what had been
-     written and not sent. All three are the person's and none of them is a
-     slice, which is why none of them was going anywhere before today. The
-     keys are gone above; these are the copies in memory, which would
-     otherwise be written straight back out by the next save. */
-  ME=meBlank();
-  POSTS=[]; DRAFTS=[];
-  /* the person's settings, back to what a fresh install has, and NOTHING is
-     carried over -- not the theme, not the interface language, not the plan.
-     「残るものねえ」is the whole sentence.
-
-     The plan is not on this phone at all: it is `verify-plan`'s answer about
-     the account that has just gone, and netOut() below forgets it with the
-     session (planForget(), www/core.js § PLAN). Money decides what may be
-     DONE and nothing about what exists -- here nothing exists either way, so
-     it protects nothing and costs nothing. */
-  /* The fields of SET that were this account's, gone with it -- the searches
-     they starred, how far down their notices they had read. setFor()
-     in www/core.js is the list and the one place it is written down. The
-     theme and the interface language are how this handset is set up and are
-     not anybody's belongings, so they stay.
-
-     '' rather than a uid: nobody is signed in a line below, and this is the
-     same call netOut() makes. */
-  try{ localStorage.removeItem(setParkKey(wipeUid)); }catch(e){}
-  setFor('');
+  /* Whom this phone belonged to, what it was carrying, what had been written
+     and not sent, and the fields of the settings that were theirs -- the
+     searches they starred, how far down their notices they had read -- went
+     with lsWipeAcct() above: they are the account's container (www/core.js
+     § ACCT), and emptying it is one call there rather than a list of them
+     here, which is how `recent` was left standing once. */
   /* THE PLAN IS NOT ON THIS PHONE and there is nothing here to set back.
      It was `SET.plan` and `SET.planWas` in `lingua.set`; what an account pays
      is `verify-plan`'s answer, held in memory (www/core.js § PLAN), and
@@ -1429,12 +1409,8 @@ function setSignOut(){
   popAsk(t('set.signout.ask'), function(){ setSignOutGo(); }, t('set.signout'));
 }
 function setSignOutGo(){
-  /* BEFORE netOut(), and that order is the whole of it: this takes the
-     `device` row for the account that is leaving, at this handset, and
-     netOut() is where the session -- and the token that signs the DELETE --
-     ends. www/net.js § netDeviceDrop has both halves of the key and why.
-     It decides everything itself, so it is a call and not a condition. */
-  netDeviceDrop();
+  /* netOut() takes this handset's `device` row for the account leaving, at its
+     head, on every road out (www/net.js § netOut). */
   netOut();
   /* And the provider is told too. Lingua's tokens are not the only session
      there is: the social plugin keeps its own, and it survived this -- so the

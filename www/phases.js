@@ -229,7 +229,6 @@ function migrateGramLang(){
      `SET.gpos` are READ here and never touched -- docs/DATA_SAFETY.md rule 2
      -- so there is nothing to save. */
 }
-migrateGramLang();
 stRead();
 function saveStg(){ if(langLocked()) return; bkTouch(); slWr(langKey('phases'), JSON.stringify(STG)); }
 

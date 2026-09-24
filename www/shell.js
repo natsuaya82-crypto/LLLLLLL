@@ -432,10 +432,17 @@ function keepKey(){ return keepKeyOf(here().r, here().a); }
    may not happen while the send is still out:
    「通信エラーなら進むわけねえだろ全部」. It is optional; eight of the nine
    screens hand nothing. */
-function keepOn(key, now, save, landed){
+/* AND `drop` IS WHAT 「いいえ」 PUTS BACK, for a screen whose presses change
+   what it is holding before Save (K1, r79). A field that is typed into writes
+   nothing until Save, so 「いいえ」 letting the buffer go is the whole of it;
+   a screen that changes something by PRESSING -- the keyboard's sheet -- holds
+   that change as its draft until Save (www/keyboard.js § saveKb), and `drop`
+   is how the draft goes: the screen reads back what is written, which nothing
+   has touched. Optional; the screens that are only typed into hand nothing. */
+function keepOn(key, now, save, landed, drop){
   var k=String(key);
-  if(KEEP[k]){ KEEP[k].now=now; KEEP[k].save=save; KEEP[k].landed=landed; return; }
-  KEEP[k]={was:keepRead(now), now:now, v:{}, save:save, landed:landed};
+  if(KEEP[k]){ KEEP[k].now=now; KEEP[k].save=save; KEEP[k].landed=landed; KEEP[k].drop=drop; return; }
+  KEEP[k]={was:keepRead(now), now:now, v:{}, save:save, landed:landed, drop:drop};
 }
 /* `now()` answered as strings, which is the only thing ever compared. A
    screen hands back plain values -- a name, a note, a layout said once as
@@ -836,8 +843,16 @@ function keepAsked(){
   popAsk(t('keep.q'),
     function(){ keepSave(k, null); },
     t('keep.yes'), t('keep.no'),
-    function(){ keepDrop(k); backGo(); });
+    function(){ keepNo(k); backGo(); });
   return true;
+}
+/* 「いいえ」: the buffer goes, and a screen that holds a pressed change as its
+   draft reads back what is written (§ keepOn `drop`). The buffer first, so
+   the screen reading back is not reading as a screen with a draft open. */
+function keepNo(key){
+  var b=KEEP[String(key)], drop=b && b.drop;
+  keepDrop(key);
+  if(drop) drop();
 }
 /* Going back, with nothing left to ask. It is its own function because three
    things reach it now -- the arrow, the Yes and the No -- and a second copy

@@ -10,5 +10,3 @@ signed-in netSaveUp | 「その歩きは、作ったものがこの端末にし�
 signed-in netSaveUpGo | the same rule at the press: signed out, 「the language is on the phone and has nowhere else to be」 answers the Save button yes -- the owner's, with the line above
 signed-in netLangSync | the door's send (netTook) and the up road answer 「nothing to send」 for a phone with no account -- the same rule, the owner's
 # tools/load-check.mjs claim 7 -- a file other than www/net.js that still names SESS. `sess <file>`.
-sess share.js | shareKbd's uid, `String(SESS.uid||'')` -- not this branch's file; netUid() is the one answer (docs/scope/r71-net.md § 持ち物外)
-sess store.js | the uid handed to LinguaStore.buy, `SESS.uid` -- not this branch's file; netUid() is the one answer (docs/scope/r71-net.md § 持ち物外)

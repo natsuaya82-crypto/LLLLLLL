@@ -100,15 +100,30 @@ function meAvOf(l){
   return null;
 }
 /* ONCE, AND THIS IS THE ONLY PLACE IT IS WRITTEN. Two moments hand it a face
-   -- the walk, at obFinish(), for somebody arriving; and postAvatar(), once,
-   for an account that finished the walk before there was anywhere to write it
-   -- and neither of them may write over an answer that already exists. That
+   -- the walk, at obFinish(), for somebody arriving; and migrateAv() below,
+   once, for an account that finished the walk before there was anywhere to
+   write it -- and neither of them may write over an answer that already
+   exists. That
    is the whole of 「それ以降は勝手に変えないで」, and it is held here rather
    than at the two call sites so there is one rule and not two. */
 function meAvSet(av){
   if(ME.av || !av) return;
   ME.av=av;
   saveMe();
+}
+/* THE FACE OF AN ACCOUNT FROM BEFORE THERE WAS ONE ON FILE: the first letter
+   with a shape on it, which is what it wore -- adopted once, and meAvSet()
+   refuses every call after it. It fills in what is MISSING and stops
+   (docs/DATA_SAFETY.md rule 2). A migration, so it runs from migrateAll()
+   (www/core.js), on this account's own language once the server has said it
+   is theirs -- drawing a row used to do it, out of whatever language was
+   open (r73 § 2-2). The `profile` row keeps it out of the walk, where the
+   letters are still being made and obFinish() has not decided yet. */
+function migrateAv(){
+  var i, av=null;
+  if(ME.av || ME.pic || !meRowHas()) return;
+  for(i=0;i<LETTERS.length && !av;i++) av=meAvOf(LETTERS[i]);
+  meAvSet(av);
 }
 function meFrom(m){
   var o=meBlank();
@@ -129,74 +144,25 @@ function meFrom(m){
          if(m.av) o.av=m.av; }
   return o;
 }
-/* Whether this copy has anything in it. Used before parking one: a blank
-   copy is not worth a key, and writing one would matter -- wipeHere() blanks
-   ME and then calls netOut(), so a park that did not ask this would write the
-   deleted person straight back out of memory, one line after lsWipeAcct() had
-   removed every trace of them. 「アカウント削除で残るものねえ」 */
+/* THE COPY IS THE ACCOUNT'S (www/core.js § ACCT): written under
+   `lingua.me.<uid>` the moment it is written, read for the account in hand
+   and never for the one before it. `lingua.me` with no owner on it is what
+   an older version wrote, and only the copy `lingua.set`'s stamp named is
+   carried across (§ acctMoved); anything else is nobody's and is not read --
+   a phone that had it no longer gives it to whoever signs in first
+   (r73 § 2-7). Nothing is deleted: signing back in reads the account's own
+   key, which was written when it was written. */
+/* Whether this copy has anything in it: an empty one is nothing the walk
+   made, so the door has nothing of it to hand over (www/core.js § acctFor). */
 function meHas(m){
   return !!(m && (m.name || m.handle || m.bio || m.pic || m.link || m.loc ||
                   m.av || (m.fo && m.fo.length) || (m.fr && m.fr.length)));
 }
-function meRead(){
-  ME=meBlank();
-  try{ ME=meFrom(JSON.parse(localStorage.getItem(LS_ME)||'null')); }catch(e){}
-}
-meRead();
 function saveMe(){
-  try{ localStorage.setItem(LS_ME, JSON.stringify(ME)); }catch(e){}
+  saveTry(function(){ acctPut('me', ME); });
 }
-/* ---- whose phone this is, right now ------------------------------------
-   Called when the session's identity changes -- signing in, signing out, and
-   a refresh that comes back naming somebody else. net.js's netTook() and
-   netOut() are the two places that know, and they are the only callers.
-
-   NOTHING IS DELETED HERE. `bio`, `link` and `loc` exist on this phone and
-   nowhere else -- netMakeProfile() sends `handle`, `display` and `av`, and
-   that is all of it -- so a sign-out that emptied them would be a loss with
-   no way back, which is the one thing `CLAUDE.md` does not allow: 「人が
-   作ったものは消さない」.
-
-   So the copy is PARKED, under this key plus the uid that owns it, and
-   handed back when that account returns. It stops being visible; it does not
-   stop existing.
-
-   lsWipeAcct(uid) removes the parked copy filed under that uid, so a parked
-   copy goes with the account when the account goes -- and only that account's.
-   bkPack() walks SLICES under langKey() and has never carried lingua.me at
-   all, so parking takes nothing out of a backup that was in one. */
-function meParkKey(uid){ return LS_ME + '.' + uid; }
-function meFor(uid){
-  var want=String(uid||''), had=String(ME.uid||''), park, got=null;
-  if(want===had) return;
-  /* Out of the way first, so nothing below can write over it. A copy with no
-     owner is not parked anywhere: there is no key to park it under, and it
-     is the one this phone has been using. */
-  if(had && meHas(ME)){
-    try{ localStorage.setItem(meParkKey(had), JSON.stringify(ME)); }catch(e){}
-  }
-  /* An unclaimed copy is adopted rather than thrown away -- see `uid` above.
-     Only when somebody is actually arriving: signing OUT of an unclaimed copy
-     leaves it unclaimed and leaves it where it is. */
-  if(!had && want && meHas(ME)){ ME.uid=want; saveMe(); return; }
-  if(want){
-    try{ park=localStorage.getItem(meParkKey(want)); }catch(e){ park=null; }
-    if(park){ try{ got=JSON.parse(park); }catch(e){ got=null; } }
-  }
-  ME=meFrom(got);
-  ME.uid=want;
-  saveMe();
-}
-/* And once at load, because the two keys are read by two files that do not
-   know about each other: net.js reads lingua.sess when it loads and this file
-   reads lingua.me when it loads, and nothing between them ever compared the
-   two. A phone that was signed in as somebody while carrying somebody else's
-   copy stayed that way until the next sign-in.
-
-   net.js is loaded before this file (www/index.html), so who this is
-   (netUid) is here to be asked. Signed out, this parks whatever the phone was holding, which is the
-   same thing netOut() does and is right for the same reason. */
-meFor(netUid());
+acctKeep('me', function(){ return meHas(ME)? ME : null; },
+         function(v){ ME=meFrom(v); }, LS_ME);
 /* Nobody is made to fill this in before they can post. With no name the
    language's name stands in, which is what it did before there were accounts
    at all -- so the screen never shows an empty space or a word invented to
@@ -806,6 +772,7 @@ function meRowHas(){
   return !!(typeof ME!=='undefined' && ME && ME.handle);
 }
 function meRowForget(){ ME_ROW=null; }
+acctMem(meRowForget);
 var WHO_HAVE={}, WHO_ASKED={};
 /* Asked for by the door onto the page that draws them (`who`, www/sns.js
    § WHAT EACH PAGE READS). */

@@ -92,7 +92,7 @@ const ROADS = {
      `slMine()` for everything that sends, which does not -- so it can be
      drawn and can never be merged, sent, or preferred to an answer that has
      just arrived. */
-  'core.js:slGotKey(k)': { phone: 'what the server last said this slice was, kept so a launch with no signal draws the language instead of nothing. It belongs to the account the slice does -- filed under `lingua.<id>.<slice>`, so wipeLangsGo() takes it with the language and lsWipeAcct(), which counts the `lingua.<id>.` namespace rather than walking SLICES, takes it with the account (acct-check 66; until 2026-09-11 it walked SLICES and left the `name`/`wsys`/`owner` pictures behind, because those are columns of the `language` row and were born after that loop). It has no road UP and must not be given one: `slMine()` in www/core.js is what keeps it out of netSlice1(), netSaveUpGo() and both of the 「fills in and stops」 reads' },
+  'core.js:slGotKey(k)': { whose: 'lang', phone: 'what the server last said this slice was, kept so a launch with no signal draws the language instead of nothing. It belongs to the account the slice does -- filed under `lingua.<id>.<slice>`, so wipeLangsGo() takes it with the language and lsWipeAcct(), which counts the `lingua.<id>.` namespace rather than walking SLICES, takes it with the account (acct-check 66; until 2026-09-11 it walked SLICES and left the `name`/`wsys`/`owner` pictures behind, because those are columns of the `language` row and were born after that loop). It has no road UP and must not be given one: `slMine()` in www/core.js is what keeps it out of netSlice1(), netSaveUpGo() and both of the 「fills in and stops」 reads' },
   /* AND ONE WRITE THAT ADDS NO KEY EITHER, for the opposite reason: it is a
      key this phone already has, written down again under the language's own
      number. langsCarry() in www/core.js is the 2026-09-10 migration -- a
@@ -101,7 +101,7 @@ const ROADS = {
      removed. The destination is `lingua.<id>.<something>` with the id being
      the same language's server id, so every key it can write is a key ROADS
      already names above; what it copies keeps the road the original had. */
-  'core.js:dst': { phone: 'the same keys under the language\'s own number, written by the 2026-09-10 migration (langsCarry, www/core.js). It copies and removes nothing, and a key already holding something is never written over, so this adds no kind of key and no road: `lingua.<id>.<slice>` and its `.was` and the pictures beside them are each on the road their own row above names' },
+  'core.js:dst': { whose: 'lang', phone: 'the same keys under the language\'s own number, written by the 2026-09-10 migration (langsCarry, www/core.js). It copies and removes nothing, and a key already holding something is never written over, so this adds no kind of key and no road: `lingua.<id>.<slice>` and its `.was` and the pictures beside them are each on the road their own row above names' },
   /* AND ONE WRITE THAT ADDS NO KEY, because it is the same keys put back.
      keepSave() in www/shell.js takes a copy of the `lingua.` namespace before
      a save writes anything and writes it back when the send does not land
@@ -109,32 +109,29 @@ const ROADS = {
      touch is a key that was already on this phone a moment earlier and has
      its own row somewhere in this table. It cannot invent one: a key that is
      not in the copy is REMOVED rather than written. */
-  'shell.js:k': { phone: 'nothing of its own. It is keepBack() in www/shell.js putting the `lingua.` namespace back exactly as it was before a save that did not reach the server, so each key it writes is one of the others in this table, with the value it already had' },
-  /* the timeline */
-  'post.js:LS_POSTS':  { to: 'netPush' },
-  'post.js:LS_DRAFTS': { to: 'netDraftUp' },
-  /* the name, the @, the line about yourself and the face go up when they
-     are pressed, all through the one PATCH of the profile row (meProfPut and
-     meFacePut in www/me.js); a launch sends none of them */
-  'me.js:LS_ME':       { to: 'netProfPut' },
-  /* and the four that are the phone's, each for its own reason */
-  'core.js:LS_S':    { phone: 'the settings. Everything in them is an account\'s and is parked under `lingua.set.<uid>` by setFor() EXCEPT what `SET_PHONE` in www/core.js names; what that names is how this handset is set up -- the theme, the interface language, the marks that a migration has run here -- and follows the handset because there is nothing else for it to follow' },
-  'core.js:langTakeKey(me)': { phone: 'which of somebody else\'s languages this account had TAKEN, as the `language_take` table last answered (www/core.js § LTAKE). A picture of a server answer, filed under the account it is about -- the key ends in the uid, so lsWipeAcct() takes it by counting the namespace, and langTookFor() reads only the account in hand, never the one before it. It exists so a launch with no signal draws the languages somebody took instead of hiding them: 「前に読み込んだの出していいよ。何か更新するならクルクルが必要」 OWNER 2026-09-12. It has no road UP and must not be given one -- what this account has taken is `language_take`, netTakes() is what asks, and nothing on this phone may answer it' },
-  'core.js:LS_LANGS':{ phone: 'a picture, for looking at, of which languages this account had the last time the server answered -- 「前に読み込んだの出していいよ」 OWNER 2026-09-12. What they ARE is the `language` table, and `owner=eq.<me>` is the whole of the list: netLangsDown() REPLACES this from that answer, adding what it names and taking what it does not (www/net.js § netLangsGone, 2026-09-15). It has no road UP and must not be given one -- 「端末で使うものなんかないだろ」 OWNER 2026-09-15. Nothing counts or decides from it either: how many languages this account has is the server\'s answer and www/core.js § LMINE is where that is kept, because counting this picture is what held the owner off their own next language on a real phone' },
-  'core.js:LS_CUR':  { phone: 'which language is open -- where somebody is standing, not what they made' },
-  'net.js:LS_SESS':  { phone: 'the tokens. They are what talks to the server; they cannot be kept on it' },
-  /* もう一つの預け。meParkKey / postParkKey と同じ形で、SET のうち
-     アカウントのものだけ ── 段、その前の段、まだ送れていない段、保存した検索、
-     それを一度上げたか、通知をどこまで読んだか。テーマや表示言語はこの端末の
-     設え方なので入っていません。 */
-  'core.js:setParkKey(was)': { phone: 'another account\'s plan, starred searches and notice marker, parked while this one is signed in. They came from `plan`, `saved_search` and the notices RPC, and go back there' },
-  'me.js:meParkKey(had)': { phone: 'another account\'s `me`, parked while this one is signed in. It came from `profile` and goes back there' },
-  /* The same shape as meParkKey, one file over and for the same fault: a new
-     account\'s own page was showing the last one\'s timeline, because the copy
-     kept for working with no signal had no owner on it. Parked and not
-     deleted -- what is in it came from `post` and `draft` and goes back there
-     the moment that account signs in again. */
-  'post.js:postParkKey(had': { phone: 'another account\'s posts and drafts, parked while this one is signed in. They came from `post` and `draft` and go back there' }
+  'shell.js:k': { whose: 'same', phone: 'nothing of its own. It is keepBack() in www/shell.js putting the `lingua.` namespace back exactly as it was before a save that did not reach the server, so each key it writes is one of the others in this table, with the value it already had' },
+  /* EVERYTHING AN ACCOUNT HAS ON THIS PHONE, AND IT IS ONE ROW.
+     「端末ごとにやることなんてねえよ」「アカウントごとってずっと言ってるよな？」
+     OWNER 2026-09-03. The posts, the drafts, `me`, the account's fields of
+     the settings, the index of languages, the open one and what it took were
+     seven rows here, each a live key with no owner on it plus a PARKED copy
+     under `…<uid>` -- and a copy with no owner on it was adopted by whoever
+     signed in first (r73 § 2-7). They are written under the account the
+     moment they are written now, by one function (acctPut, www/core.js
+     § ACCT), so the key carries the uid by construction. Which of them goes
+     up, and by what road, is ACCT_ROADS below -- one row per thing an
+     account holds, counted off the `acctKeep('…')` calls in www/. */
+  'core.js:acctKey(name': { whose: 'acct', phone: 'an account\'s things, each under `lingua.<name>.<uid>` -- ACCT_ROADS below says where each one goes' },
+  /* and the same keys written once by the move from an older version, for
+     the account `lingua.set`'s stamp named (acctMoved) */
+  'core.js:acctKey(e.name': { whose: 'acct', phone: 'the move (acctMoved, www/core.js): an older version\'s live copy, written under the account its stamp named. It copies and removes nothing' },
+  /* and the one write that is not an account's: deleting an account takes its
+     part of an older version's shared key -- the rows of the one index every
+     account shared, the fields of `lingua.set` beside the handset's setup --
+     and writes the rest back exactly as it was */
+  'core.js:e.old': { whose: 'old', phone: 'an older version\'s key with the deleted account\'s part taken out and the rest -- nobody\'s, read by nobody -- written back as it was (lsWipeAcct, www/core.js)' },
+  'core.js:LS_S':    { whose: 'handset', phone: 'how this handset is set up -- exactly what `SET_PHONE` in www/core.js names and nothing else. The account\'s fields are `lingua.set.<uid>` (acctKey above); what an older version left in this key beside the setup is kept as it was and read by nobody' },
+  'net.js:LS_SESS':  { whose: 'sess', phone: 'the tokens. They are what talks to the server; they cannot be kept on it' }
   /* `sns.js:k` -- the notices, kept under the account -- STOOD HERE AND IS
      GONE. The copy was what the notices screen drew in its first frame, and
      drawing it meant drawing last session's faces and swapping them a second
@@ -182,6 +179,63 @@ for (const k of Object.keys(ROADS))
     bad.push('ROADS names `' + k + '` and nothing writes it any more — delete ' +
       'the line.');
 
+/* WHOSE EVERY KEY IS, and the answer is one of four (r73 § 2-7): an ACCOUNT's
+   -- and then it is built by acctKey(), which puts the uid on it, because
+   that is the only way a key can answer 「which account」 from its first
+   byte -- a LANGUAGE's (`lingua.<id>.…`, whose account its `owner` says),
+   this HANDSET's setup, or the SESSION, which is which account this phone
+   is. `same` is keepBack() writing a key back as it was a moment ago, and
+   `old` is an older version's key with a deleted account's part taken out.
+   A row with none of these is a thing nobody said whose it is. */
+const WHOSE = ['acct', 'lang', 'handset', 'sess', 'same', 'old'];
+const whoseN = {};
+for (const [k, road] of Object.entries(ROADS)) {
+  if (WHOSE.indexOf(road.whose) < 0) {
+    bad.push('ROADS row `' + k + '` does not say whose it is (`whose`: ' +
+      WHOSE.join(' / ') + '). 「a thing that cannot answer 『which account』 is ' +
+      'a thing that must not be written down」 CLAUDE.md § Online.');
+    continue;
+  }
+  if (road.whose === 'acct' && k.split(':')[1].indexOf('acctKey(') !== 0)
+    bad.push('ROADS row `' + k + '` says it is an account\'s and is not built ' +
+      'by acctKey() -- a key of an account\'s that does not carry its uid is ' +
+      'the copy that was adopted by whoever signed in first (r73 § 2-7).');
+  if (found.has(k)) whoseN[road.whose] = (whoseN[road.whose] || 0) + found.get(k).length;
+}
+
+/* AND WHAT EACH OF THOSE ACCOUNT KEYS IS, one row per `acctKeep('<name>'`
+   in www/ -- the container's own list (www/core.js § ACCT), read off the
+   source rather than restated, and held both ways like ROADS. */
+const ACCT_ROADS = {
+  me:     { to: 'netProfPut' },
+  posts:  { to: 'netPush' },
+  drafts: { to: 'netDraftUp' },
+  set:    { phone: 'the account\'s fields of the settings -- FIELDS below answers for each one, and the ones with a road go up by it' },
+  langs:  { phone: 'a picture, for looking at, of which languages this account had the last time the server answered -- 「前に読み込んだの出していいよ」 OWNER 2026-09-12. What they ARE is the `language` table, and `owner=eq.<me>` is the whole of the list: netLangsDown() REPLACES this from that answer (www/net.js § netLangsGone, 2026-09-15). No road UP and nothing counts from it (www/core.js § LMINE)' },
+  cur:    { phone: 'which of this account\'s languages is open -- where somebody is standing, not what they made' },
+  take:   { phone: 'which of somebody else\'s languages this account had TAKEN, as the `language_take` table last answered (www/core.js § LTAKE). A picture of a server answer so a launch with no signal draws them: 「前に読み込んだの出していいよ。何か更新するならクルクルが必要」 OWNER 2026-09-12. No road UP -- netTakes() is what asks' }
+};
+const kept = new Map();
+for (const f of files) {
+  const src = fs.readFileSync(path.join(WWW, f), 'utf8')
+    .replace(/\/\*[\s\S]*?\*\//g, '');
+  const re = /acctKeep\('([A-Za-z0-9_]+)'/g;
+  let m;
+  while ((m = re.exec(src))) kept.set(m[1], f);
+}
+for (const [n, f] of kept) {
+  const road = ACCT_ROADS[n];
+  if (!road) bad.push('`acctKeep(\'' + n + '\')` in ' + f + ' is an account\'s thing ' +
+    'kept on this phone and tools/store-check.mjs does not say where it goes -- add it ' +
+    'to ACCT_ROADS.');
+  else if (road.to && net.indexOf('function ' + road.to + '(') < 0)
+    bad.push('ACCT_ROADS says `' + n + '` goes up through ' + road.to + '() and ' +
+      'www/net.js has no such function.');
+}
+for (const n of Object.keys(ACCT_ROADS))
+  if (!kept.has(n))
+    bad.push('ACCT_ROADS names `' + n + '` and nothing keeps it any more — delete the line.');
+
 /* Every field of `SET` that anything WRITES, and where it goes. Same two
    answers as ROADS: `to` is the function in www/net.js that takes it up, and
    `phone` is a sentence saying why it is this handset's own.
@@ -207,7 +261,11 @@ const FIELDS = {
   recent:   { to: 'netRecentAdd' },
 
   /* --- and the phone's own, each for its own reason --------------------- */
-  savedUp:  { phone: 'whether this phone has sent its starred searches up ONCE. A mark about the road above, not a thing travelling on it' },
+  /* `savedUp` STOOD HERE: whether this phone had handed its ☆ up once. The
+     hand-over is gone (r79 -- 「オンラインのみ」 2026-09-04 and rule 22 over
+     「次つながった時に更新される」) and nothing writes it; a phone that has it
+     keeps it. What a phone that never handed over had is kept instead: */
+  savedWas: { phone: 'the ☆ list a phone had before `saved_search` existed and never handed over, copied ONCE when the server\'s answer is written over `saved` -- read by nothing, removed by nothing (「読まない、消さない」 2026-09-03). The account\'s, under `lingua.set.<uid>`' },
   /* `plan`, `planWas`, `planV` and `planUid` STOOD HERE AND ARE GONE
      (2026-09-11). 「オンラインで 1 端末に 1 アカウント…段 ── 答えは全部
      サーバー」 OWNER: what an account pays is `verify-plan`'s answer and it is
@@ -215,17 +273,18 @@ const FIELDS = {
      about money at all. A phone that has them keeps them and nothing reads
      them (docs/DATA_SAFETY.md rule 2); a new one never writes one.
 
-     WHICH ACCOUNT'S THINGS ARE LIVE HERE is what is left of `planUid`, under
-     the name that says so. It goes NOWHERE, and that is the answer rather
-     than a gap: signing out parks this account's settings under its uid
-     (setFor(), www/core.js) and there has to be something on the live key
-     saying whose they are, or the next person's park would be written under
-     the last person's name. It is the one question a HANDSET can be asked
-     and an account cannot -- `lingua.sess` says which account this phone IS,
-     and it is gone the moment somebody signs out, which is exactly when this
-     is needed. */
-  acct:     { phone: 'which account\'s settings are live on this handset. Not a thing anybody owns — the mark that says whose the live copy is, so signing out parks it under the right name' },
-  notAt:    { phone: 'how far down the notices somebody has read. THE SERVER HOLDS NO READ MARKER and that is a decision — 「サーバーの既読の表は要りません」, www/sns.js' },
+     WHICH ACCOUNT'S THINGS WERE LIVE HERE is what an older version wrote in
+     `acct`, and it is READ now and written by nobody: it names whose the
+     live keys with no owner on them were, and the move from that shape
+     (acctMoved, www/core.js) copies those under that account's name. Nothing
+     is parked any more -- an account's things are written under its uid the
+     moment they are written (§ ACCT). */
+  acct:     { phone: 'what an older version wrote to say whose the live copies were. Read by the move that files them under that account (acctMoved) and by the deletion of that account; written by nothing' },
+  acctMoved: { phone: 'which of an older version\'s live copies have been moved under the account `acct` named -- a migration mark, once per thing, so the move never runs a second time over a copy that has moved on since' },
+  /* How far down the notices somebody has read -- one time, not a table of
+     read notices (「サーバーの既読の表は要りません」 2026-09-01), and the
+     account's, so it goes up with the other settings (r79). */
+  notAt:    { to: 'netPrefsPut' },
   /* THE ONE THING ABOUT THE ONBOARDING THAT IS THIS HANDSET'S, and the owner
      put it here (2026-09-09, choice A). It was `done` and answered two
      questions: 「has this ACCOUNT been through」, which is the `profile` row on
@@ -263,9 +322,9 @@ const FIELDS = {
      to name each field by hand because it reads `SET.x =` off the source. */
   push_prompt: { to: 'netPrefsPut' },
   vvkb:     { phone: 'how much of THIS screen the phone\'s own keyboard covers. A measurement of one handset and meaningless on another' },
-  wldMoved: { phone: 'the mark that 「what the language is for」 has been moved out of the settings and into the language. A migration mark, and the ACCOUNT\'s like `SET.world` it marks: parked with it by setFor(), so the next account to sign in has its own moved (r73 § 2-7)' },
+  wldMoved: { phone: 'the mark that 「what the language is for」 has been moved out of the settings and into the language. A migration mark, and the ACCOUNT\'s like `SET.world` it marks: kept with it under `lingua.set.<uid>`, so the next account to sign in has its own moved (r73 § 2-7)' },
   doneMoved: { phone: 'the mark that the old `done` has been copied into `walked` (walkedMigrate, www/core.js). A migration mark -- it is what the old field\'s absence used to say, now that the migration copies and removes nothing' },
-  sndMoved: { phone: 'the mark that SET.snd -- the sounds from when there was one list per person -- has been copied into the language. A migration mark; SET.snd itself is left where it was, and this sits beside it and is parked with it by setFor()' },
+  sndMoved: { phone: 'the mark that SET.snd -- the sounds from when there was one list per person -- has been copied into the language. A migration mark; SET.snd itself is left where it was, and this sits beside it under the same account' },
   /* `wsys` STOOD HERE AS A GAP AND IS GONE (2026-09-09). It was named rather
      than blessed -- 「言語のものなのに人の設定に入っているので、公開した言語は
      書記体系を見せられない」 -- and that is what closed: it is
@@ -291,11 +350,12 @@ const FIELDS = {
    nothing here could name a field for -- is red. */
 const SET_LOADER = {
   'core.js:SET[sk]=s[sk]': true,
-  /* setFor() handing an account its own fields back. The name it writes is a
-     name it has just read out of the parked copy, so there is no field here
-     that FIELDS does not already answer for -- what could be parked is what
-     `SET` held, and every one of those is in the table. */
-  'core.js:SET[k]=got[k]': true,
+  /* setGot() handing an account its own fields -- the defaults, then what
+     `lingua.set.<uid>` holds (www/core.js § ACCT). Every name it writes is a
+     name `SET` itself holds or setDefaults() mints, and every one of those is
+     in FIELDS. */
+  'core.js:SET[k]=d[k]': true,
+  'core.js:SET[k]=v[k]': true,
   /* netMyProfile() handing this account back how it has the app set up.
      The names it writes are `SET_PREFS` in www/core.js and nothing else --
      it walks that list -- so every field it can touch is one FIELDS answers
@@ -439,6 +499,9 @@ const phone = Object.keys(ROADS).filter(k => ROADS[k].phone).length;
 const up = Object.keys(ROADS).filter(k => ROADS[k].to).length;
 const fPhone = Object.keys(FIELDS).filter(k => FIELDS[k].phone).length;
 const fUp = Object.keys(FIELDS).filter(k => FIELDS[k].to).length;
+console.log('whose every key is: ' + WHOSE.map(w => (whoseN[w] || 0) + ' ' + w).join(', ') +
+  ' — and an account\'s things: ' + kept.size + ' (' + [...kept.keys()].join(' ') +
+  '), each under its uid');
 console.log('what this phone keeps: ' + found.size + ' keys — ' + up +
             ' with a road to the server, ' + phone + ' the phone\'s own and said why');
 console.log('and inside lingua.set: ' + fields.size + ' fields — ' + fUp +

@@ -38,14 +38,6 @@
 
 var LS_POSTS='lingua.posts';
 var POSTS=[];
-function postRead(){
-  POSTS=[];
-  try{
-    var p=JSON.parse(localStorage.getItem(LS_POSTS)||'null');
-    if(p && p.length) POSTS=p;
-  }catch(e){}
-}
-postRead();
 /* A failed write used to be swallowed here, and it was survivable while a
    post was a line of text: a hundred of them are a few kilobytes and storage
    does not run out. A post can carry a photograph now, so it can, and a
@@ -55,7 +47,7 @@ postRead();
    It says so instead. Nothing is deleted to make room -- pruning somebody's
    own posts to fit one more is exactly what docs/DATA_SAFETY.md forbids. */
 function savePosts(){
-  try{ localStorage.setItem(LS_POSTS, JSON.stringify(POSTS)); return true; }
+  try{ acctPut('posts', POSTS); return true; }
   catch(e){ toast(t('post.full')); return false; }
 }
 /* ---- and these belong to an ACCOUNT, not to the phone --------------------
@@ -63,53 +55,20 @@ function savePosts(){
    2026-09-03, with a photograph of a brand new account whose 投稿 tab was
    full of the last one's timeline.
 
-   `lingua.posts` and `lingua.drafts` are one key each, and `pfList()` picks
+   `lingua.posts` and `lingua.drafts` were one key each, and `pfList()` picks
    your own page out of them by `p.mine` -- a flag written when the post was
    made, by whoever was signed in THEN. So the second account read the first
-   one's `mine` as its own. Nothing was wrong with the server: the timeline
-   comes down correctly. What was wrong is that a copy kept for working with
-   no signal had no owner on it.
+   one's `mine` as its own. The copy kept for working with no signal had no
+   owner on it.
 
-   www/me.js § meFor() had this exact fault in 2026-08-27 and this is its
-   answer, applied to the other two keys: the copy is PARKED under the account
-   that was holding it and the new account's park is read back. Nothing is
-   deleted -- signing back in brings everything to the screen again, which is
-   the whole of why parking rather than clearing.
-
-   An UNCLAIMED copy is adopted, the way meFor() adopts one: a phone that has
-   been posting since before this line existed carries posts with no owner,
-   and they are the person who is signing in. Only on the way IN -- signing
-   out of an unclaimed copy leaves it where it is. */
-/* Whose they were when they were written down -- the settings' stamp, read
-   before anything moved it (www/core.js § ACCT_DISK). It began as '' on
-   every load, so every launch found an unclaimed copy and adopted it for
-   whoever was signed in (r63-audit L3). */
-var POSTS_UID=ACCT_DISK;
-function postParkKey(uid, k){ return 'lingua.' + k + '.' + String(uid||''); }
-function postFor(uid){
-  var want=String(uid||''), had=POSTS_UID, park, got;
-  if(want===had) return;
-  if(had){
-    try{
-      localStorage.setItem(postParkKey(had, 'posts'), JSON.stringify(POSTS));
-      localStorage.setItem(postParkKey(had, 'drafts'), JSON.stringify(DRAFTS));
-    }catch(e){}
-  }
-  /* Nobody has held these yet and there is something in them: they are the
-     account that is arriving. */
-  if(!had && want && (POSTS.length || DRAFTS.length)){
-    POSTS_UID=want; savePosts(); draftsSave(); return;
-  }
-  POSTS=[]; DRAFTS=[];
-  if(want){
-    try{ park=localStorage.getItem(postParkKey(want, 'posts')); }catch(e){ park=null; }
-    if(park){ try{ got=JSON.parse(park); if(got && got.length) POSTS=got; }catch(e){} }
-    try{ park=localStorage.getItem(postParkKey(want, 'drafts')); }catch(e){ park=null; }
-    if(park){ try{ got=JSON.parse(park); if(got && got.length) DRAFTS=got; }catch(e){} }
-  }
-  POSTS_UID=want;
-  savePosts(); draftsSave();
-}
+   It has one from the first byte now: `lingua.posts.<uid>` and
+   `lingua.drafts.<uid>`, written under the account holding them and read for
+   the account in hand (www/core.js § ACCT). The old two keys are read once,
+   for the account `lingua.set`'s stamp named (§ acctMoved), and a copy that
+   named nobody is nobody's -- it is no longer adopted by whoever signs in
+   first (r73 § 2-7). Nothing is deleted. */
+acctKeep('posts', function(){ return POSTS.length? POSTS : null; },
+         function(v){ POSTS=(v && typeof v.length==='number')? v : []; }, LS_POSTS);
 /* Newest first, which is the only order a timeline has. */
 /* Whoever you have blocked is not in any list. 「ブロックは何も見えなくなる」
    netFeed() leaves them out on the SERVER, which is the only way a block is a
@@ -475,12 +434,8 @@ function pwHoldMount(){
    when you saved it. */
 var LS_DRAFTS='lingua.drafts';
 var DRAFTS=[];
-function draftsRead(){
-  try{ DRAFTS=JSON.parse(localStorage.getItem(LS_DRAFTS)||'[]')||[]; }catch(e){ DRAFTS=[]; }
-  if(Object.prototype.toString.call(DRAFTS)!=='[object Array]') DRAFTS=[];
-}
 function draftsSave(){
-  try{ localStorage.setItem(LS_DRAFTS, JSON.stringify(DRAFTS)); }catch(e){}
+  saveTry(function(){ acctPut('drafts', DRAFTS); });
 }
 
 /* Every draft has a name. The ones written before there was a server to put
@@ -514,24 +469,9 @@ function draftById(id){
   for(i=0;i<DRAFTS.length;i++) if(DRAFTS[i] && DRAFTS[i].id===id) return DRAFTS[i];
   return null;
 }
-draftsRead();
-/* AND ONCE AT LOAD, for the reason www/me.js gives at the foot of meFor():
-   two keys are read by two files that do not know about each other. net.js
-   reads lingua.sess when it loads and this file reads lingua.posts when it
-   loads, and nothing between them compared the two -- a phone signed in as
-   one account while holding another's posts stayed that way until the next
-   sign-in, which on a fresh account is never.
-
-   AFTER draftsRead(), and that is not tidiness. This was two lines higher for
-   an hour and it WROTE THE DRAFTS AWAY: postFor() ends by saving both, and
-   before this line DRAFTS is still the empty array it was declared as -- so
-   the save put `[]` over lingua.drafts on the first launch after the update.
-   Nothing that reads a key may run before the key is read.
-
-   net.js is loaded before this file (www/index.html: 3585 and 3611), so SESS
-   is here to be asked. Signed out, this parks what the phone was holding,
-   which is what netOut() does for the same reason. */
-postFor(netUid());
+acctKeep('drafts', function(){ return DRAFTS.length? DRAFTS : null; },
+         function(v){ DRAFTS=(Object.prototype.toString.call(v)==='[object Array]')? v : []; },
+         LS_DRAFTS);
 draftsName();
 /* Saved as it stands: the line, the meaning, whom it answers, WHOM IT IS FOR,
    the pictures with their letters still placed on them, the recording, and
@@ -979,7 +919,7 @@ var POST_PICS=4;
 function pwPics(){ if(!PW.pics) PW.pics=[]; return PW.pics; }
 function pwPicRoom(url){
   var n=0;
-  try{ n=String(localStorage.getItem(LS_POSTS)||'').length; }catch(e){}
+  try{ n=JSON.stringify(POSTS).length; }catch(e){}
   return (n + String(url||'').length) < POST_BYTES;
 }
 /* The camera. `capture` on an image field is the whole of it -- iOS opens the
@@ -2262,25 +2202,19 @@ function pwSendPost(p){
    here. The walk writes it at obFinish(), which is 「オンボーディングを通って
    かいたもじ」 exactly.
 
-   THE ONE LINE BELOW IS NOT A SECOND DECIDER. An account that finished the
-   walk before there was anywhere to write this has no face on file, and the
-   old walk over LETTERS is what it is wearing today -- so that is adopted,
-   once, and meAvSet() refuses every call after it. It fills in what is
-   MISSING and stops (docs/DATA_SAFETY.md rule 2); it never writes over a face
-   that exists, and nothing here removes one. The `profile` row keeps it out of the
-   walk, where the letters are still being made and obFinish() has not
-   decided yet. */
+   DRAWING DOES NOT WRITE (r79, r73 § 2-2). This used to adopt a face here, the
+   first time a row was drawn for an account that finished the walk before
+   there was anywhere to write one -- so drawing a post wrote `ME.av`, and it
+   wrote it out of LETTERS, which is whatever language is OPEN: a language
+   this account only took from somebody else gave it their letter. The
+   adoption is a migration now (migrateAv, www/me.js), run where every
+   migration is -- migrateAll(), on this account's own writable language --
+   and this is only the read. */
 function postAvatar(){
-  var i, av;
   /* A photo if there is one. It travels on the post like the letter does,
      for the same reason: whoever reads it has neither this person's camera
      roll nor their alphabet. */
   if(ME.pic) return {pic:ME.pic};
-  if(!ME.av && meRowHas()){
-    av=null;
-    for(i=0;i<LETTERS.length && !av;i++) av=meAvOf(LETTERS[i]);
-    meAvSet(av);
-  }
   return ME.av || null;
 }
 /* ---- the line, cut into the shapes it is written with -----------------
@@ -3220,17 +3154,49 @@ function postEdit(id){
   PW.ed=p.id; PW.ln=String(p.ln||''); PW.mn=String(p.mn||'');
   openPost();
 }
+/* AN EDIT GOES TO THE SERVER FIRST, THE SAME AS A POST (r79).
+   「SNSは全部サーバー」, and 「なら失敗して残るにするべき」 OWNER 2026-09-05.
+   This wrote the edited line into this phone's copy and nowhere else, so the
+   post everybody else read never changed and the next answer from the server
+   put the old line back on this phone too (r60 見つけたこと).
+
+   Now the edited post is built as a COPY, the row is changed on the server
+   (netPostEdit, `post_edit` + the column grant on `body`), and only when that
+   lands is this phone's copy written and the composer emptied. When it does
+   not land nothing has moved: what was typed is still in the composer and
+   ［再接続］ sends the same edit again. A post that never reached the server
+   has no row to change, so the edit is the post going up (postSend, the one
+   road a post goes up by) -- what the person pressed save on is what the post
+   is. */
 function pwSaveEdit(ln){
-  var p=postById(PW.ed), mn;
+  var p=postById(PW.ed), mn, q, k;
   if(!p || !p.mine){ toast(t('post.gone')); PW=pwBlank(); goTab('feed'); return; }
   /* OWNER 2026-09-05 単語はその単語の意味を 文法は並び替えた単語たちが文章として成り立つように */
   mn=String(PW.mn||'').trim() || LinguaGrammarEngine.translate.toNatural(gModel(), ln, uiLang());
-  p.ln=ln; p.ink=postInkTyped(PWRAW); p.mn=mn;
-  p.ui=uiLang();
-  p.ed=Date.now();
-  savePosts();
-  PW=pwBlank();
-  goTab('feed');
+  q={};
+  for(k in p) if(Object.prototype.hasOwnProperty.call(p, k)) q[k]=p[k];
+  q.ln=ln; q.ink=postInkTyped(PWRAW); q.mn=mn;
+  q.ui=uiLang();
+  q.ed=Date.now();
+  pwEditPut(p, q);
+}
+function pwEditPut(p, q){
+  function landed(sid){
+    var k;
+    netSpin(false);
+    for(k in q) if(Object.prototype.hasOwnProperty.call(q, k)) p[k]=q[k];
+    if(sid) postSid(p, sid);
+    savePosts();
+    PW=pwBlank();
+    goTab('feed');
+  }
+  function fell(d, s, m){
+    netSpin(false);
+    netPop(d, s, m, function(){ pwEditPut(p, q); });
+  }
+  netSpin(true);
+  if(p.sid) netPostEdit(p.sid, q, function(){ landed(''); }, fell);
+  else postSend(q, landed, fell);
 }
 /* MAY THIS PERSON POST, REPLY, BOOST AND LIKE -- one question, one place.
    Signed in, and not frozen.

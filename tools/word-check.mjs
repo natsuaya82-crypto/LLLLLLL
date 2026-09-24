@@ -181,7 +181,7 @@ const R = await pg.evaluate(() => {
      `ph` is the sounds a word carries. An import writes it -- a list with a
      pronunciation column puts that column on the word (www/import.js), over
      an existing word too -- and the words that predate the chart were each
-     given one, once (`migratePh` in www/core.js).
+     were given one, once, by a migration that is gone now (r73 § 2-8).
 
      THE SHEET HAS NO FIELD FOR IT. Nobody standing on that screen can see it,
      change it or clear it, and Save was deleting it anyway: open a word, edit
@@ -190,11 +190,14 @@ const R = await pg.evaluate(() => {
      the two are different the moment somebody's own reading is not the roman
      one, which is what a pronunciation column is FOR.
 
-     And it does not come back empty, which is why nobody notices. `migratePh`
-     runs at the next launch, finds nothing there, and fills the hole with
+     And it did not come back empty, which is why nobody noticed. The next
+     launch's migration found nothing there and filled the hole with
      `phGuess(hw)` -- a machine's reading of the spelling, wearing the same
-     key. The field is not blank afterwards, it is WRONG, and only the person
-     who wrote it can tell.
+     key. The field was not blank afterwards, it was WRONG, and only the
+     person who wrote it could tell. So the launch is asked too: the real one,
+     `migrateAll()` as boot.js runs it, rather than a name for one migration
+     that can be deleted out from under this file (it was, and this check then
+     died at load and asserted nothing).
 
      CLAUDE.md § Data: nothing a person made is removed because the current
      shape does not need it. Save writes what the sheet holds; it does not get
@@ -226,7 +229,7 @@ const R = await pg.evaluate(() => {
       'no field for it, so nobody asked for it to go');
   /* And the next launch, which is where it stops looking like nothing
      happened: the hole is filled with a guess off the spelling. */
-  migratePh();
+  slAsApp(migrateAll, []);
   const after = (findWord('tira') || {}).ph;
   const afterPh = after ? after.join(' ') : '';
   out.said.push('and after the next launch it is: ' +

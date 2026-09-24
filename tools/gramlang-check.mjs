@@ -134,17 +134,23 @@ const IDS = { LA: LA, LB: LB, LC: LC };
 
 const OLD = {
   'lingua.sess': SESSION,
-  'lingua.me': JSON.stringify({ name: 'Aya', handle: 'aya', bio: '', pic: '',
+  /* The account's own keys (`lingua.<name>.<uid>`, www/core.js § ACCT): an
+     unmarked `lingua.me` / `lingua.langs` / `lingua.cur` is nobody's since
+     r79 and is not read, so a phone signed in as 'u' holds them under 'u'. */
+  'lingua.me.u': JSON.stringify({ name: 'Aya', handle: 'aya', bio: '', pic: '',
                                 link: '', loc: '', avSent: '' }),
-  'lingua.langs': JSON.stringify({ [LA]: { name: 'Vaska', mine: true },
+  'lingua.langs.u': JSON.stringify({ [LA]: { name: 'Vaska', mine: true },
                                    [LB]: { name: 'Tosk', mine: true } }),
-  'lingua.cur': LA,
+  'lingua.cur.u': JSON.stringify(LA),
   ['lingua.' + LA + '.words']: JSON.stringify([{ hw: 'tuf', mns: ['hello'], pos: 'n' }]),
   ['lingua.' + LA + '.lang']: 'Vaska',
   ['lingua.' + LA + '.phases']: JSON.stringify(LA_PHASES),
   ['lingua.' + LB + '.words']: JSON.stringify([{ hw: 'ark', mns: ['fish'], pos: 'n' }]),
   ['lingua.' + LB + '.lang']: 'Tosk',
-  'lingua.set': JSON.stringify({ theme: 'dark', plan: 'free', done: true,
+  /* `acct` is the stamp every launch with a session wrote until r79: these
+     settings are 'u''s, so they move under 'u' (www/core.js § acctMoved).
+     Without it they name nobody and are not read. */
+  'lingua.set': JSON.stringify({ theme: 'dark', plan: 'free', done: true, acct: 'u',
                                  order: 'OSV',
                                  gpos: { adj: 'before', negp: 'before', adp: 'after' } }),
   /* AND WHOSE THE TWO LANGUAGES ARE, which the app began asking on 2026-09-08.
@@ -178,7 +184,7 @@ const OLD = {
    version of the app left, it is the road the migration walks, and it is the
    half that survives pg.reload() while memory does not.
 
-   `lingua.set`, `lingua.langs` and `lingua.cur` are NOT slices -- the person's
+   `lingua.set`, `lingua.langs.u` and `lingua.cur.u` are NOT slices -- the person's
    settings and the index -- and stay on the disk in both directions. */
 const REPORT = (ids) => {
   const slice = (id) => {
@@ -249,9 +255,22 @@ await pg.goto(`http://localhost:${PORT}/`);
    server behind this file -- the language is the one this phone holds. What
    is asked here is what a rule writes, not the reads, so a page's answers
    are taken as already in and a press lands where it always did. */
+/* AND WHOSE THE LANGUAGES ARE, SAID THE SAME WAY. The `owner.got` seeds above
+   are the picture a phone keeps, and the picture decides nothing
+   (www/core.js § langLocked, r60): a language is writable when the SERVER has
+   said, in this run of the app, that it is this account's -- LOWN, which
+   langOwnGot() writes when netLangsDown() answers. There is no server here,
+   so the answer is given after every reload exactly as the plan's is. Without
+   it every language is locked, save() writes nothing, and five claims read
+   「the grammar did not move」 for the wrong reason (measured 2026-09-24,
+   r79: langLocked() true, LOWN {}). */
 const boot = async () => {
   await pg.reload();
-  await pg.evaluate(() => { planTook('free'); window.pageWait = function (r, a, done) { done(true); }; });
+  await pg.evaluate(() => {
+    planTook('free');
+    window.pageWait = function (r, a, done) { done(true); };
+    Object.keys(LANGS).forEach(function (id) { langOwnGot(id, netUid()); });
+  });
 };
 
 /* ---- 1, 2, 3: it arrives, it copies, and nothing else moves ------------- */
@@ -292,7 +311,7 @@ want('and does not mark a decision as chosen', b.touchedAdp, false);
 const c = await pg.evaluate(() => {
   const id = langMint();
   langStore();
-  localStorage.setItem('lingua.cur', id);
+  localStorage.setItem('lingua.cur.u', JSON.stringify(id));
   return id;
 });
 await boot();
@@ -317,9 +336,9 @@ await pg.evaluate((seed) => {
   const old = seed.old, ids = seed.ids;
   localStorage.clear();
   Object.keys(old).forEach((k) => localStorage.setItem(k, old[k]));
-  const langs = JSON.parse(localStorage.getItem('lingua.langs'));
+  const langs = JSON.parse(localStorage.getItem('lingua.langs.u'));
   langs[ids.LC] = { name: 'Broken', mine: true };
-  localStorage.setItem('lingua.langs', JSON.stringify(langs));
+  localStorage.setItem('lingua.langs.u', JSON.stringify(langs));
   localStorage.setItem('lingua.' + ids.LC + '.phases', '[[[not json');
 }, { old: OLD, ids: IDS });
 await boot();

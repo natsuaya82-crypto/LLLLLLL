@@ -871,8 +871,9 @@ the door and nowhere else, so an hour's writing sat on one phone until the app
 was opened again. `netLangSync()` is the door's (`netTook()`) and a new
 language's (`langNew()`), and it is the same road: both call `netSlice1()`, which is the only thing that puts a slice up. `SLICES` in `core.js` is the list of them —
 **count them off that and not off a line here**, which has said eleven and has
-said twelve. `lingua.langs` says which languages are here and whose;
-`lingua.set` is the person's settings and belongs to no language.
+said twelve. `lingua.langs.<uid>` says which languages that account has;
+`lingua.set` is this handset's setup and `lingua.set.<uid>` that account's
+settings, and neither belongs to a language.
 `langKey('words')` is the only thing that knows how a language is filed.
 
 `SLICES` in `core.js` is that list, and being *in* it is what makes a slice
@@ -897,8 +898,9 @@ no list, and a key added tomorrow is taken the day it is added. The prefix
 includes the dot, because `lingua` and *linguaX* in the same storage are
 somebody else's.
 
-**And it takes THAT ACCOUNT's and no other's.** It walks the index for the
-languages carrying that stamp and takes the copies parked under that uid.
+**And it takes THAT ACCOUNT's and no other's.** It walks that account's own
+index (`lingua.langs.<uid>`) for the languages carrying its stamp and takes
+every key filed under that uid.
 The call that took the whole namespace whoever was holding the phone is
 deleted: it is what emptied the owner's languages on 2026-09-03 when a second
 account was deleted, and a function that can still be called is a function
@@ -1861,13 +1863,14 @@ one second later.
 
 **What is left in `localStorage` is not a language, and `store-check` prints
 how many there are on every run — read it there rather than here, because the
-number written here has already been wrong twice.** The index (`lingua.langs`,
-`lingua.cur`) is a picture of which languages this account had when the server
-last answered, and where somebody is standing — what the app asks the server
-WITH, rather than the answer. The
-session, the settings, the timeline's copy, the profile's, the picture of
-which of somebody else's this account has taken (`lingua.take.<uid>`), and the
-parked copies of each are the rest.
+number written here has already been wrong twice.** The index
+(`lingua.langs.<uid>`, `lingua.cur.<uid>`) is a picture of which languages this
+account had when the server last answered, and where somebody is standing —
+what the app asks the server WITH, rather than the answer. The session, this
+handset's setup, and each account's settings, timeline copy, profile copy and
+picture of which of somebody else's it has taken are the rest — every one of
+them but the session and the setup under `lingua.<name>.<uid>`, written there
+the moment it is written (`acctPut()`, `www/core.js` § ACCT, r79).
 
 **And the index says which and not what.** On 2026-09-08 and 09 the four
 things it was still answering moved to columns: what a language is CALLED is
@@ -1894,8 +1897,9 @@ in the index.
 memory-only, so a launch with no signal had 「not asked」 for it, and every
 language somebody had TAKEN off another page fell to 「nobody has said」 —
 their own were on the screen, out of the pictures above, and the rest had
-gone. `langTookGot()` writes the picture and `langTookFor()` reads it, filed
-under the account it is about (`lingua.take.<uid>`), so signing in as somebody
+gone. `langTookGot()` writes the picture and the account's container
+(`www/core.js` § ACCT) reads it, filed under the account it is about
+(`lingua.take.<uid>`), so signing in as somebody
 else reads that account's own and never the one before it
 （「違うアカウントでログインしてんのに前のやつ出てくるんだけど？」 OWNER
 2026-08-31). No road up, and a language that comes back this way is still only
@@ -1942,9 +1946,10 @@ that are not settled (`docs/BACKLOG.md`); read the array, not this line — and
 **everything else in `SET` is an account's**, counted rather than named. The
 theme and the interface language are not on it: they are the account's and
 go up in `profile.prefs` (`SET_PREFS`).
-`setFor(uid)` parks those on the way out and brings that account's own back on
-the way in; `lsWipeAcct(uid)` empties the live key of them and takes the parked
-one. A field added tomorrow is that account's the day it is added.
+They are written under `lingua.set.<uid>` the moment they are written, and
+`acctFor(uid)` reads that account's own when it arrives — there is no live key
+of them and nothing is parked; `lsWipeAcct(uid)` takes that key with the
+account. A field added tomorrow is that account's the day it is added.
 `tools/store-check.mjs` holds the two tables together: a field it puts on a
 road to the server may not be named as this handset's setup. `docs/BACKLOG.md`
 carries whatever is still there; read `store-check`'s own last three lines for

@@ -249,6 +249,27 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Implementation status:
 ```
 
+### 2026-09-24 【決定の読み ── オーナーの新しい言葉ではない】持ち主の無い写しは読まない、消さない
+- Date: 2026-09-24（r79-acct、リーダーの指示で書いた。**オーナーはこの日これを言っていない**）
+- Area: 端末の写しの持ち主（`www/core.js` § ACCT、`acctKeep`・`acctFor`・`acctMoved`）
+- Decision: 次の三つの書かれた決定を合わせて読んだもの。
+  1. CLAUDE.md § Online「a thing that cannot answer 『which account』 is a thing that must not be written down」
+     と「NOTHING IS THE PHONE'S. EVERYTHING IS THE ACCOUNT'S」（2026-09-03）。
+  2. 平たい鍵の前例「もうまっさら昔のいらない」（2026-09-03）── 古い形は**読まない、消さない**。
+  3. 「そもそもアプリ公開されたの昨日だから必要ない」（2026-09-23）── 印の無い写しは公開前の試しの端末にしか無い。
+  読み: 端末に書く物は書く時に uid を持つ（`lingua.<名前>.<uid>`）。`lingua.set` の古い `acct` の印が名指す
+  写しはその人の物として一度写す。**どの印も名指さない写しは誰の物にもならない** ── サインインした人に
+  渡さず、送らず、消さない。例外は歩き（オンボーディング）が作った物だけで、扉で入ってきた人の物になる
+  （CLAUDE.md § Online）。
+- Reason: 写しを「最初に入った人の物」にする道が四つあり（~~`meFor`~~・~~`postFor`~~・~~`setFor`~~・`langMineIds` の枝）、
+  古い版の言語が最初に入った人の物として公開で作られた（r73 § 2-7 で測った）。r73 はこれを「オーナーへ」と
+  していたが、上の三つで答えが出ているとリーダーが読んだ。
+- Affected features: サインイン・サインアウト・アカウント削除・起動（写しの読み込み）
+- Affected data: `CHANGELOG.md` 2026-09-24 r79-acct。人の作った物は消さない。
+- Affected docs: CLAUDE.md 規則 22・§ Online の文、DATA_MODEL.md、STATE.md
+- Implementation status: 実装（`claude/r79-acct`、CODE CONFIRMED のみ・実機未確認）。`acct-check` 86・87・88。
+  **オーナーが違うと言えば、この項は消して書き直す。**
+
 ### 2026-09-24 リーダーの監査は30分ごと ── 会話が長くなったら新しいリーダーに替える
 - Date: 2026-09-24
 - Area: リーダーの動かし方（`docs/LEADER.md` § 監査）
@@ -2139,7 +2160,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Reason: オーナーの言葉のまま上に。**リリース前で、平キーを持つ端末は
   オーナーの検証用の端末だけ。**そのデータは要らないと本人が決めた。
   残せば、読まれない道を検査が守り続けることになる。
-- Affected features: 起動（`www/core.js` の頭）、`netRead()`（`www/net.js`）
+- Affected features: 起動（`www/core.js` の頭）、~~`netRead()`~~（`www/net.js`、r79 で `sessRead()` と入れ物 `ACCT` に）
 - Affected data: **消える道であって、消すデータではない。**
 
   **これは「移行は写して、読んだものを消さない」（docs/DATA_SAFETY.md）の
@@ -2591,11 +2612,11 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Affected features: 保存するもの全部。特にアカウント削除
 - Affected data: `SET` の中の `plan` `planWas`
   `saved` `savedUp` `notAt` は、アカウントごとに `lingua.set.<uid>` へ
-  預けます（`setFor()`）。~~`planUid`~~ は「いま誰の分が載っているか」なので
+  預けます（~~`setFor()`~~ ── r79 から書く時に `lingua.set.<uid>` へ、`www/core.js` § ACCT）。~~`planUid`~~ は「いま誰の分が載っているか」なので
   預けません。
 - Affected docs: `CLAUDE.md` § Online、§ 規則22 ── 同じコミットで書き換えた
 - Implementation status: **入りました。**三つです ──
-  (1) `setFor()` が段・保存した検索・通知の位置をアカウントごとに預ける、
+  (1) ~~`setFor()`~~（r79 から入れ物 `ACCT`）が段・保存した検索・通知の位置をアカウントごとに預ける、
   (2) アカウント削除は `lsWipeAcct()` と ~~`bkDropFor()`~~ で**そのアカウントの
   ぶんだけ**（~~`lsWipeNS()`~~ と ~~`bkDropAll()`~~ は消えました）、
   (3) ~~`langOwned()`~~ は印を読む一行で、端末を憶える枝はありません。
@@ -2626,11 +2647,11 @@ the reasoning — a reason can be re-derived, a decision cannot.
   uid が合わないセッションは、サーバーの答えが来るまで free から始める。
 - Affected docs: `docs/PAID_FEATURES.md`、`docs/scope/claude-login-billing.md`
 - Implementation status: **IMPLEMENTED、形は 2026-09-11 に変わった** ── 段は端末に無く、`verify-plan` の答えが
-  メモリに一つ（`PLAN`、`www/core.js`）。Keychain も `planFor()` も無い（「端末は何も決めない」）。
+  メモリに一つ（`PLAN`、`www/core.js`）。Keychain も ~~`planFor()`~~ も無い（「端末は何も決めない」）。
 
 ### 1アカウントに1課金。印の無い端末も例外にしない
 - Date: 2026-09-11
-- Area: 段の持ち主（`planFor()`、~~`SET.planUid`~~、~~`SET_PLAN`~~、`www/core.js`）
+- Area: 段の持ち主（~~`planFor()`~~、~~`SET.planUid`~~、~~`SET_PLAN`~~、`www/core.js`）
 - Decision:
 
   ```
@@ -4959,7 +4980,7 @@ and is never merged into your own」と言っている。**入らない、は二
   eight; that is the tangle, not the untangling. **`docs/BACKLOG.md` was
   wrong to list `savePosts` and `saveMe` beside ~~`postsRead`~~** — those two are
   not a `posts*`/`post*` collision, they are `save*`, and only ~~`postsRead`~~ is
-  the thing the entry was actually about. ~~`postsRead`~~ → `postRead`.
+  the thing the entry was actually about. ~~`postsRead`~~ → ~~`postRead`~~ (r79: the posts are read by the account's container, `www/core.js` § ACCT).
 
   **(2) `gh*` in `glyph.js` is `ge*`'s and is renamed `geHint*`.** The ten
   functions are the silent demo canvas inside the glyph editor — an arrow

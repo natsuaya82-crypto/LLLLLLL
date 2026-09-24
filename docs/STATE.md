@@ -338,7 +338,7 @@ verify-plan の `index.ts` は作業側で走らせていない（Deno 無し）
 入ったもの：`claude/r33-owner`（2026-09-12 朝のオーナー決定）── 新しい言語は
 38 字の枠で始まる（`ltSlotsFill()` を `langNew()` が段を問わず一度呼ぶ、
 `ltStart()` の段の判定はそのまま）、取った言語の答えの写し `lingua.take.<uid>`
-（アカウントの鍵、上る道なし、`langTookFor()` 一箇所）、段が訊けていない間は
+（アカウントの鍵、上る道なし、読むのはアカウントの入れ物 `ACCT` 一箇所 ── r79）、段が訊けていない間は
 天井が `null` で一覧を畳まない（`langCap()`/`dlCap()`、`langStop()`/`dlStop()` は
 数を見る前に段を訊いて「接続できません」）、ja の `g2.g.mood`「命令・条件・可能・
 義務・願望」、決定ログ 2026-09-12 の六項。**未**：「プランが終了しました」を
@@ -666,7 +666,7 @@ Google と同じアドレスを打って二つ目のアカウントを立てて�
 アプリが持っているのは秒のほうだけ。**有効期限はまだ決まっていません。**
 
 **課金は同じ iPhone でも引き継ぎません**（決定ログ `d47a578`）。**入りました**
-（2026-09-11、`claude/r18-plan`）── `planFor()` が比較する一箇所で、**印の無い
+（2026-09-11、`claude/r18-plan`）── 段はメモリだけで、アカウントが変わる一箇所（`acctFor()`、r79）が忘れる。**印の無い
 端末も例外ではありません**「1アカウントに1課金ですけど。他のアカウントについて
 くるわけねえだろ」OWNER 2026-09-11。段は設定の預け写しにも乗りません
 （`SET_PLAN`）。`acct-check` 40・40b・40c。**実機は未確認**（Keychain の往復は
@@ -1088,9 +1088,9 @@ Order, and where it stands:
    **The server writes it and nobody else can.** `plan` and `purchase` are
    read-only through the API; `supabase/functions/verify-plan` reads Apple's
    signature off the transactions the phone sends and writes the row with the
-   service role. On the device `setFor()` parks the per-account settings under
-   the uid that had them, so signing in as somebody else does not inherit a
-   plan.
+   service role. On the device the plan is memory only and the account's
+   settings are written under its uid (`lingua.set.<uid>`, r79), so signing in
+   as somebody else does not inherit a plan.
 
    **The receipt IS checked, since 2026-09-06.** 「アカウントごとなんだから、
    違うアカウントで復元できるのおかしいだろ。検証して」 OWNER 2026-09-06 — a
