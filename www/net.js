@@ -996,7 +996,7 @@ function netSetPass(pass, ok, bad){
 var NET_MINE_UID='';
 function netMyProfile(ok, bad){
   var uid=netUid();
-  netGet('/rest/v1/profile?select='+profCols()+',av,prefs,ed,staff,banned_at,banned_why'+
+  netGet('/rest/v1/profile?select='+profCols()+',av,prefs,ed,staff,banned_at,banned_why,admin:profile_admin'+
          '&limit=1&id=eq.'+encodeURIComponent(uid),
          function(d){
            var p;
@@ -3625,11 +3625,6 @@ function netFeedbackSend(kind, body, ok, bad){
    already settled by the server. Every door it opens is bolted on that side
    too, so a phone that lied about this would get a screen and no data. */
 var NET_STAFF=false, NET_ADMIN=false, NET_BANNED='';
-/* The one account above staff, by name. The same word supabase/schema.sql
-   says in is_admin() and profile_first(), and the same one www/onboard.js
-   follows every new account to (OB_LINGUA) -- it is the account's NAME, so it
-   is written out rather than asked for. */
-var ADMIN_HANDLE='lingua';
 /* AND THEY ARE PUT DOWN WITH THE SESSION. netOut() clears this, and
    NET_MINE_UID with it, so the same account signing back in reads its row
    again -- which is what a guard keyed on the uid alone would refuse. */
@@ -3644,16 +3639,17 @@ acctMem(netStaffForget);
    is not a sentence anybody can act on. */
 function netStaffGot(r){
   NET_STAFF=!!(r && r.staff);
-  /* THE ONE ABOVE STAFF IS THE @ AND NOT A COLUMN.
+  /* THE ONE ABOVE STAFF IS THE @, AND THE SERVER SAYS WHICH @.
      「＠linguaのアカウントだけ管理者ページには入れる」 OWNER 2026-08-26,
-     「@で決めたんじゃないの？」 OWNER 2026-09-03. is_admin() in
-     supabase/schema.sql asks the handle, and this is the same question asked
-     from here, off the row this account already fetches. The curtain and the
-     wall are still two things: this decides whether seven taps open anything;
-     admin_counts(), staff_add() and staff_drop() each ask is_admin() on the
-     server, and that is what actually stops somebody sending their own
-     requests. */
-  NET_ADMIN=!!(r && String(r.handle||'')===ADMIN_HANDLE);
+     「@で決めたんじゃないの？」 OWNER 2026-09-03. The name is written ONCE, in
+     profile_admin() in supabase/schema.sql (r65), and is asked for as a
+     column of the row (`admin:profile_admin`) -- this compared the handle
+     against a second copy of the name here, which is the name written twice.
+     The curtain and the wall are still two things: this decides whether seven
+     taps open anything; admin_counts(), staff_add() and staff_drop() each ask
+     is_admin() on the server, and that is what actually stops somebody
+     sending their own requests. */
+  NET_ADMIN=!!(r && r.admin);
   /* The reason if there is one, and a space if there is not, so that the
      string is true-y whenever the account is banned and the screens can ask
      one question instead of two. */
@@ -3722,7 +3718,7 @@ function netHandleOf(s){
    needs no policy of its own -- what it lists is public, and what it is FOR
    is not. */
 function netStaffList(ok, bad){
-  netGet('/rest/v1/profile?select=id,handle&staff=is.true&order=handle.asc&limit='+NET_PAGE,
+  netGet('/rest/v1/profile?select=id,handle,admin:profile_admin&staff=is.true&order=handle.asc&limit='+NET_PAGE,
     function(d){ ok(d || []); }, bad);
 }
 /* The reports, newest first, each carrying the thing it is about -- because a

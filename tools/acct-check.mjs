@@ -2813,7 +2813,10 @@ const R = await pg.evaluate(async () => {
     let handle = 'lingua';
     netGet = (path, ok) => {
       if (String(path).indexOf('/rest/v1/profile?select=' + profCols()) === 0)
-        return ok([{ staff: true, handle: handle, banned_at: null, banned_why: null }]);
+        /* `admin` is the server's answer (profile_admin(), supabase/schema.sql):
+           the handle, asked once there. */
+        return ok([{ staff: true, handle: handle, banned_at: null, banned_why: null,
+                     admin: handle === 'lingua' }]);
       return ok([]);
     };
     netSend = () => {};

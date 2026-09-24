@@ -472,15 +472,14 @@ function adminStaffDrop(h){
    height; what differs is whether it is pressable, which is what the rule
    about rows is not about.
 
-   WHICH ROW THAT IS, IS THE HANDLE, and the server says it in one place:
-   profile_admin() in schema.sql, which is_admin() and staff_drop() ask. This
-   still compares against ADMIN_HANDLE in www/net.js -- the second place, and
-   it goes when netStaffList() asks for the server's answer as a column
-   (`admin:profile_admin`, docs/scope/r65-server.md). It read `profile.admin`
-   before that, a column nothing writes, false on a new database -- so
-   @lingua was drawn as a button that succeeded and changed nothing. */
+   WHICH ROW THAT IS, THE SERVER SAYS, in one place: profile_admin() in
+   schema.sql, which is_admin() and staff_drop() ask, handed back on each row
+   as `admin` (netStaffList, www/net.js). This read nothing but that before
+   (`profile.admin`, a column nothing writes -- @lingua drawn as a button that
+   did nothing) and then compared against a second copy of the name; it reads
+   the server's answer now (r65, r79). */
 function adminStaffRow(r){
-  return String(r.handle||'')===ADMIN_HANDLE
+  return r.admin
     ? '<div class="set"><span class="sl">@'+esc(r.handle)+'</span></div>'
     : '<button class="set"' + DO('adminStaffDrop', [r.handle]) + '>'+
         '<span class="sl">@'+esc(r.handle)+'</span></button>';
