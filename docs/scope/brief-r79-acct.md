@@ -27,7 +27,7 @@ r73 は全部洗いざらいの報告で、［測った］と［読んだ］が�
 あなたの領域: 持ち主 ── 端末に書く物は書く時に uid を持ち、持ち主の無い物は誰の物にもならない（r73 §2-7、r60 の残り）
 あなたのブランチ: claude/r79-acct
 あなたが持つファイル:
-  www/core.js www/net.js www/post.js www/sns.js www/me.js www/settings.js www/phases.js（migrateGramLang の呼び出しだけ）
+  www/core.js www/net.js www/post.js www/sns.js www/me.js www/settings.js www/phases.js（migrateGramLang の呼び出しだけ） www/mod.js（adminStaffRow だけ）
   www/act-map.js www/i18n/*.js tools/fixture.mjs tools/acct-check.mjs tools/store-check.mjs tools/quiet-check.mjs
   tools/post-check.mjs tools/draft-check.mjs tools/word-check.mjs tools/gramlang-check.mjs、検査（要れば一本、package.json・gate.mjs）
   CLAUDE.md（規則 22・§ Online の、この変更で偽になる文） docs/DATA_MODEL.md docs/STATE.md の同じく偽になる文
@@ -169,6 +169,11 @@ r60 は取り込み済み。r60 が「まだ」「持ち物でない」「次の
 8. S4 `netOut` が `device` の行を残す（r65-server が schema 側を持つ ── 端末側だけ）。
 9. `migrateGramLang`（phases.js）が `migrateAll` の外 ── `migrateAll` に入れて最上段の呼び出しを消す。
 10. `postAvatar()` が描くだけで `ME.av` を書く ── 描くと書くを分ける（書くのは `meAvGot` 一か所、r60）。
+
+11. **r65-server が書いて止めた net.js の側**（`docs/scope/r65-server.md` §2、r65 は取り込み済みのはず ── 無ければリーダーに言う）:
+    `netSlicePut()` が `no` を送らない（サーバーが `slice_no()` で配る）、`netLangsWalk` の `netLangNamePut` の段落を消す
+    （名前はサーバーが一回だけ写す）、上に立つ人をサーバーに訊く（`profile_admin` を select、`ADMIN_HANDLE` を消す、mod.js の
+    `adminStaffRow()` は `r.admin` を読むだけ ── mod.js もあなたの持ち物に足す）、S4 は 8 と同じ。
 
 **オーナーへ（直さない）**: 後勝ちの粒度（r60 が「一度に送る単位ごと」に置いた ── 決定ログの Implementation status のまま）、
 未送信の投稿を送り直すボタン、下書きの声の置き場（R3）、`netDevicePut` を覆う一文の例外に入れるか。
