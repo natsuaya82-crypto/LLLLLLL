@@ -3962,7 +3962,7 @@ HELP.kb=function(){
         esc(t('kb.sys.go'))+'</button>'+
       kbShot('kb-app.jpg'))+
     (can('kb') ? '' :
-      '<div class="note" style="margin-top:16px">'+esc(t('kb.free.no'))+'</div>'+
+      '<div class="grpsep"></div><div class="note">'+esc(t('kb.free.no'))+'</div>'+
       '<div class="note">'+esc(t('kb.free.up'))+'</div>'+
       '<button class="btn ghost" style="width:100%;margin:12px 0 4px"' + DO('go', ["plans"]) + '>'+
         esc(t('kb.up.go'))+'</button>')};
@@ -4236,7 +4236,7 @@ function kbKeyHTML(ri, ki){
        The ◀ and ▶ that used to be here are gone too: a key is moved by holding
        it on the keyboard itself. 「長押しで編集とかスマホの編集にしてくれよ」
        What is left is the thing a sheet is for -- what this key IS. */
-    '<button class="set" style="margin-top:12px;border-bottom:none"' + DO('kbDelKey', [ri, ki]) + '>'+
+    '<div class="grpsep"></div><button class="set end"' + DO('kbDelKey', [ri, ki]) + '>'+
       '<span class="sl bad">'+t('kb.key.del')+'</span></button>';
   return out;
 }

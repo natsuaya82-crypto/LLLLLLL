@@ -21,6 +21,16 @@
 名前の変更: `kbCellAdd` → `kbCellSel`（升を選ぶ）と `kbCellPut`（帯の ＋）。消した関数: `kbCols`、
 `kbRoomIn`、`kbAddKey`（アプリの根から届かず kb-check だけが呼んでいた）、`kbLayPut`（別名）。
 
+## リーダーの追加（2026-09-24 00:32）── press の赤「a row pushed down to make a group」
+
+`HELP.kb`（無料プランの「キーボードの設定方法」）の `.note` が `margin-top:16px` で組を作っていた
+（r75 の press の検査、`docs/scope/r75-shape.md` やり残し 1）。区切りの行 `.grpsep` に替えた。
+同じ形のキーのページの「このキーを消す」（`margin-top:12px;border-bottom:none`）も
+`.grpsep` ＋ `.set end` に。直す前の press で `1 FOUND` を見た。直した後の press は回していない。
+写真: `shots/r74-kbhelp-{before,after}-ja.png`（28px 高くなる）、`shots/r74-keydel-{before,after}-ja.png`
+（削除行が 20px 下がる）。幅いっぱいの `.btn` 2 つ（「設定を開く」「アップグレードする」）の
+margin は press が数えない形（リストの兄弟ではない）なので触っていない。
+
 ## 止めたこと（持ち物の外、または決めごと）
 
 1. **K1（保存ボタンの画面の「いいえ」）は入れていない。** 覆う一文は二つの半分でできている:
