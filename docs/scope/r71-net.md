@@ -67,7 +67,7 @@
 一つずつ、この枝の上で一回ずつ: FAST 全部（`tools/gate.mjs` の `FAST`）、`load`・`acct`・`act`・`again`・`quiet`・
 `open`・`post`・`tl`・`migrate`・`find`・`draft`・`slow`・`plan`・`push`・`verify`・`del`・`token`・`paid`・`i18n`・
 `card`・`writes`・`store`・`kb`・`world`・`conv`・`forms`・`fill`・`round`・`guide`・`base`・`term`・`shape`・`page`・
-`dl`・`ink`・`marks`・`hist`・`take`・`line`、`press`（下）。
+`dl`・`ink`・`marks`・`hist`・`take`・`line`・`press`。
 
 前提が崩れて直した検査（扉が読みを待つ／中身は netLangFill／↓ は先に読む）: `world`・`gramlang`・`hist`・
 `take`・`line`、それぞれ元のバグを戻して赤を見た。
@@ -75,6 +75,8 @@
 **integ-0905 でも同じ文で赤（この枝のではない、測った）**: `word-check`（`migratePh is not defined`）、
 `gramlang-check`（五つ ── 語順のカード・規則が一つ書かれる・品詞・形・Select）、`sheet-check`（数字の
 印が 0 ピクセル）、`keep-check`（`OWN_ROAD` の `kbUndo`・`kbRedo` の行が要らない）。
+`press` の三つ（`.edit`・`.ppr`・`.tfont` を誰も着ていない）。`press` のプロフィールの長押しは
+この枝の赤で、フィクスチャに `posts|私` の答えを足して直した（buttons pressed: 19365、283/285）。
 
 ## 保存するもの
 
