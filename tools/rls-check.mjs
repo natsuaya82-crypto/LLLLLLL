@@ -1033,17 +1033,29 @@ const CASES = [
   /* And put back where the claims above found it. The rows here are one
      database read in order, so a claim that leaves somebody staff is every
      later claim asking its question of a different person. */
-  ['and comes off again',                     'ok',     E, 0,
-    `select staff_drop('iri')`],
+  /* And off again the same way it went on: capitals are the same person,
+     and a handle nobody has says so. staff_drop() matched `handle = h` and
+     said nothing when nothing matched -- `staff_drop('IRI')` returned and B
+     stayed staff (r63-audit SQ3, measured). */
+  ['a handle nobody has is refused coming off too', 'denied', E, 0,
+    `select staff_drop('nobodyhasthis')`],
+  ['and comes off typed with capitals',       'ok',     E, 0,
+    `select staff_drop('IRI')`],
   ['and B is not staff after that',           'denied', E, 0,
     `select 1 from profile where handle='iri' and staff`],
   ['B cannot take staff off anybody',         'denied', B, 0,
     `select staff_drop('mod')`],
-  /* The one that cannot be undone from inside the app. The call is allowed
-     and does nothing, which is the point -- an error here would be a screen
-     saying no, and what is wanted is a row that does not move. */
-  ['the one above staff cannot be taken off it', 'ok', E, 0,
+  /* The one that cannot be undone from inside the app. Refused, and the row
+     does not move -- the next two ask the row. It used to be allowed and do
+     nothing, which is the silence staff_add() was rewritten out of. */
+  ['the one above staff cannot be taken off it', 'denied', E, 0,
     `select staff_drop('lingua')`],
+  /* And the app can ask which row that is, of the row, without knowing the
+     name: profile_admin() is a column to PostgREST. */
+  ['and any account can ask which row is above staff', 'ok', B, 0,
+    `select 1 from profile p where p.id='${E}' and profile_admin(p)`],
+  ['and it is only that row',                 'denied', B, 0,
+    `select 1 from profile p where p.id<>'${E}' and profile_admin(p)`],
   ['and is still both after trying',          'ok',     E, 0,
     `select 1 from profile where handle='lingua' and staff`],
   ['and still answers the question',          'ok',     E, 0,
@@ -2218,7 +2230,7 @@ const SHAPE = [
   ['and the one above staff cannot be unmade', `
      select count(*) from (select 1 where
        (select count(*) from pg_proc where proname='staff_drop'
-          and prosrc like '%where handle = h and h <> ''lingua''%') <> 1) q`, '0'],
+          and prosrc like '%if profile_admin(r) then raise%') <> 1) q`, '0'],
   /* Said the same way `staff` is said, one line down in this list: a column
      nobody signs in as may write is the only reason the functions above are
      the only road to it. */
@@ -2618,8 +2630,14 @@ const SAID = (() => {
     }
     for (const n of Object.keys(seen)) if (seen[n] > 1) twice.push(n + ' x' + seen[n]);
   }
+  /* And who is above staff is a NAME, written once: profile_admin() is where
+     it is said and everything else asks that function. It was written out
+     six times -- is_admin(), three triggers, staff_drop() and the one-time
+     update -- and the app wrote it a seventh (r63-audit M2). */
+  const named = (src.match(/'lingua'/g) || []).length;
   return [
     ['a grant or revoke saying the foot again', again],
+    ['who is above staff, named once', named === 1 ? [] : ['the name ' + named + ' times']],
     ['the one open name, named once',
      stmts.filter((s) => s === OPEN).length === 1 ? [] : ['not exactly once: ' + OPEN]],
     ['anything defined twice', twice],
