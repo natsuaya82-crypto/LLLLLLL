@@ -295,16 +295,20 @@ deleted on this handset leaves behind the list of who did what to it. Whether
 it should be taken is with the owner (`docs/scope/aud-data.md`
 § オーナーに訊くこと, Q1); what is written here is what the code does.
 
-`lingua.set` carries **`notAt`** beside it, and it is not the same kind of
+`lingua.set.<uid>` carries **`notAt`** beside it, and it is not the same kind of
 thing: it is **when the notices screen was last opened**, as a number of
 milliseconds, and it is what makes a notice unread. 「最後に通知の画面を開いた
 時刻より新しいものを未読とする」 OWNER 2026-09-01 — the count on the bell is
 how many of `NOTES_HAVE` are newer than it. It is in `SET` and not beside the
 copy because it is a fact about the PERSON and not about the notices: it
 survives the copy being replaced, and it is the one number the bell reads.
-**The server holds no read marker** — `notices()` returns eight columns and
-none of them says read — so this is the whole of what "unread" means here, by
-the owner's decision rather than for want of a column.
+**The server holds no table of read notices** — `notices()` returns eight
+columns and none of them says read — so this one number is the whole of what
+"unread" means here, by the owner's decision rather than for want of a column.
+**The number itself goes up** with the account's other settings, in
+`profile.prefs` (`SET_PREFS`, r79): the decision's Reason was that a time is
+the same answer on whichever phone it is opened, which is only true if the
+time follows the account.
 
 What is IN a draft's `body` is what the composer had in its hands, pictures and
 recording as base64 — **not** files in the media bucket. That is not a

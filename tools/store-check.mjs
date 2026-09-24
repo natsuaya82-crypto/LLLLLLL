@@ -277,7 +277,10 @@ const FIELDS = {
      moment they are written (§ ACCT). */
   acct:     { phone: 'what an older version wrote to say whose the live copies were. Read by the move that files them under that account (acctMoved) and by the deletion of that account; written by nothing' },
   acctMoved: { phone: 'which of an older version\'s live copies have been moved under the account `acct` named -- a migration mark, once per thing, so the move never runs a second time over a copy that has moved on since' },
-  notAt:    { phone: 'how far down the notices somebody has read. THE SERVER HOLDS NO READ MARKER and that is a decision — 「サーバーの既読の表は要りません」, www/sns.js' },
+  /* How far down the notices somebody has read -- one time, not a table of
+     read notices (「サーバーの既読の表は要りません」 2026-09-01), and the
+     account's, so it goes up with the other settings (r79). */
+  notAt:    { to: 'netPrefsPut' },
   /* THE ONE THING ABOUT THE ONBOARDING THAT IS THIS HANDSET'S, and the owner
      put it here (2026-09-09, choice A). It was `done` and answered two
      questions: 「has this ACCOUNT been through」, which is the `profile` row on

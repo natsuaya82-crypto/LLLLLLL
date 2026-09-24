@@ -1546,8 +1546,15 @@ langRead();
    word. **Absent is ON**, on both sides: nobody who has never opened the
    room has any of these, and no default is minted -- www/push.js
    § pushWants(). */
+/* AND HOW FAR DOWN THE NOTICES SOMEBODY HAS READ (`notAt`, r79). One time,
+   because 「最後に通知の画面を開いた時刻より新しいものを未読とする」 OWNER
+   2026-09-01 -- and its reason was that a time is the same answer whichever
+   phone it is opened on, which is only true if the time goes with the account
+   (「通知をどこまで読んだか…全部アカウントのもの」 2026-09-03). No table of
+   read notices: one number, the same column as everything above. */
 var SET_PREFS=['theme','ui','myfont','showScript','kbrom',
-               'push_follow','push_reply','push_like','push_boost','push_prompt'];
+               'push_follow','push_reply','push_like','push_boost','push_prompt',
+               'notAt'];
 /* WHAT IS LEFT IS THIS HANDSET'S SETUP, AND THERE IS VERY LITTLE OF IT.
    `acct` is what an older version wrote to say which account's things were
    live here, and it is only READ now -- by the move that copies them under

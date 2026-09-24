@@ -4788,6 +4788,35 @@ const R = await pg.evaluate(async () => {
         '匿名キーは Authorization に載らない（OWNER 2026-09-22）');
   }
 
+  /* ---- 89. 通知をどこまで読んだかはアカウントの物（r79） ----------------
+     「最後に通知の画面を開いた時刻より新しいものを未読とする」 OWNER 2026-09-01
+     ── その Reason は「時刻一つなら、どの端末で開いても同じ答え」。端末に
+     しか無ければそうならない。`profile.prefs` で上がり、次の端末で降り、
+     別のアカウントには付いていかない。 */
+  {
+    start();
+    netOut(); arrive(A);
+    const sent89 = [], keep89 = netSend;
+    netSend = function (method, p, body, tok, ok, bad) {
+      if (String(p).indexOf('/rest/v1/rpc/prefs_put') === 0) sent89.push(body);
+      ok(body && body.p ? body.p : []);
+    };
+    SET.notAt = 1000;
+    NOTES_HAVE = [{ kind: 'like', at: 5000, hd: 'x' }];
+    notSeen();
+    netSend = keep89;
+    const up89 = sent89.filter(b => b && b.p && typeof b.p.notAt === 'number');
+    if (!up89.length)
+      no('89: 通知を読んでも notAt がサーバーへ上がらない ── 端末ごとの答えのまま');
+    netPrefsGot({ notAt: 777777 });
+    if (SET.notAt !== 777777) no('89: サーバーの notAt が手元に来ない ── ' + SET.notAt);
+    netOut(); arrive(B);
+    if (SET.notAt === 777777) no('89: 前のアカウントの既読位置が次の人に付いてきた');
+    NOTES_HAVE = null;
+    say('89: 通知をどこまで読んだかはアカウントの物 ── 読んだら profile.prefs で上がり、' +
+        '降りてきた値が手元に来て、別の人には付いていかない');
+  }
+
   return out;
 });
 

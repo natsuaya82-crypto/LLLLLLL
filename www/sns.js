@@ -2889,9 +2889,11 @@ var NOTES_HAVE=null;
    this is the whole of what unread means here, and it is a decision and not a
    workaround for a missing column: 「サーバーの既読の表は要りません」.
 
-   `SET.notAt` is the number, in `lingua.set` because it is a fact about the
-   PERSON and not about the notices -- it survives the copy being replaced.
-   `docs/DATA_MODEL.md`. */
+   `SET.notAt` is the number, the ACCOUNT's (`SET_PREFS`, www/core.js): it
+   goes up in `profile.prefs` and comes back down on the next phone, so the
+   same notices are unread wherever the account is opened -- which is the
+   Reason the decision gave, and was not true while it stayed on one handset
+   (r79). `docs/DATA_MODEL.md`. */
 function notUnread(){
   var i, n=0, at=Number(SET.notAt||0), ns=NOTES_HAVE||[];
   for(i=0;i<ns.length;i++) if(Number(ns[i].at||0)>at) n++;
@@ -2900,14 +2902,16 @@ function notUnread(){
 /* Opening the screen is the reading. Written down only when something was
    actually unread: this runs on every render of the notices, and a write on
    each of them would be the settings written out to say a bell went quiet.
-   setKeep() and not save(): this is the settings and nobody's language.
+   setKeep() and not save(): this is the settings and nobody's language. And
+   netPrefsPut(), the road every account setting goes up by, so the account's
+   other phones read the same line (r79).
 
    Not writing costs nothing that matters -- a phone killed before the write
    shows the mark again, which is the side that never hides a notice. */
 function notSeen(){
   var had=notUnread();
   SET.notAt=Date.now();
-  if(had) setKeep();
+  if(had){ setKeep(); netPrefsPut(); }
 }
 /* Asked when the session begins, so the count is right on the first frame of
    whatever screen the app opened on and no screen has to ask for it. What
