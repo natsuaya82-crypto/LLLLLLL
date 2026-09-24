@@ -956,11 +956,12 @@ function obIn(prof){
          deleted, there was no way back to it.
 
          IT IS NOT ASKED FOR HERE ANY MORE, and nothing is lost by that.
-         netTook() -- which this door has already been through -- fires
-         pullBoot(), and `langs` is on PULL_OPEN (www/sns.js § WHAT AN OPEN
-         ASKS FOR). One road, from the one place that knows a session
-         arrived, instead of a call here, a second in www/boot.js, and no
-         record anywhere that either had answered. */
+         netTook() -- which this door has already been through -- asks for
+         `mylangs` itself once what the walk made has gone up
+         (www/net.js § netTook, `pullWait('mylangs', …)`). One road, from the
+         one place that knows a session arrived, instead of a call here, a
+         second in www/boot.js, and no record anywhere that either had
+         answered. */
       /* An account that already has a profile belongs to somebody who has
          been here. Sending them into the onboarding is sending them to
          draw an alphabet they already have. */

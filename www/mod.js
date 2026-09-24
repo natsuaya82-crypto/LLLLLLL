@@ -15,7 +15,8 @@
    keep in step with the first is a second thing that can be wrong.
 
    Who may open it is `profile.staff`, which is set by hand in the dashboard
-   and by nothing anywhere in this app. netStaff() in www/net.js asks once. */
+   and by nothing anywhere in this app. netMyProfile() in www/net.js reads it
+   off this account's row, once a session. */
 
 /* What was read, and what went wrong reading it. Null and not [] before the
    first answer: "nothing has been asked yet" and "there are no reports" are

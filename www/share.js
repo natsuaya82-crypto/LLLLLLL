@@ -461,7 +461,7 @@ function shareSig(){
      has: nothing, or theirs. r63 § 2-1 K5. LANG_WAIT is the one place
      that says the open language is still whoever used this phone before
      (www/core.js § langForAcct), and that is nobody's to hand over either. */
-  var who=(netSignedIn() && !LANG_WAIT)? String(SESS.uid||'') : '';
+  var who=(netSignedIn() && !LANG_WAIT)? netUid() : '';
   if(!who) return '';
   /* AND WITH NO ANSWER ABOUT THE PLAN THERE IS NOTHING TO SIGN, which is a
      third answer and not the empty one. '' means 「hand over nothing」 and

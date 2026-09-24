@@ -108,7 +108,7 @@ function storeBuy(id){
   if(!np){ toast(t('store.fail')); return; }
   if(!netSignedIn()){ toast(t('store.nosess')); return; }
   toast(t('store.wait'));
-  np('LinguaStore', 'buy', { id:String(id||''), uid:SESS.uid })
+  np('LinguaStore', 'buy', { id:String(id||''), uid:netUid() })
     .then(function(r){
       var how=(r && r.how)? String(r.how) : '';
       if(how==='cancelled') return;
