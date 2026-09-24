@@ -408,6 +408,35 @@ function readKey(u){
       (readers.length ? readers.join(', ') : 'nobody else'));
 }
 
+/* ---- 8. one read of one shape, in one place ---------------------------------
+   「テーブルごとに読む関数は一つ、列は表から」 (r73 § 2-6). Counted over
+   www/net.js with the comments out: every `/rest/v1/<table>?select=<columns>`
+   written down, and the functions it is written in. The same table read for
+   the same columns from two functions is the same question with two answers
+   waiting to differ -- seven copies of post_seen's columns had come to leave
+   the reactions off two of them. A column list kept in a constant is one
+   place however many functions read it. */
+{
+  function decomment8(s){
+    return s.replace(/\/\*[\s\S]*?\*\//g, m => m.replace(/[^\n]/g, ' ')).replace(/(^|[^:'"\\])\/\/[^\n]*/g, '$1');
+  }
+  const net = decomment8(fs.readFileSync(path.join(WWW, 'net.js'), 'utf8'));
+  const re = /^function\s+(\w+)\s*\(/mg, spans = [];
+  let m, last = null;
+  while ((m = re.exec(net))){ if (last) last.end = m.index; last = { name:m[1], at:m.index }; spans.push(last); }
+  if (last) last.end = net.length;
+  const by = {};
+  for (const f of spans){
+    const body = net.slice(f.at, f.end), q = /'\/rest\/v1\/(\w+)\?select=([^'&]*)/g;
+    let k;
+    while ((k = q.exec(body))){ const key = k[1] + ' ' + k[2]; (by[key] = by[key] || new Set()).add(f.name); }
+  }
+  const twice = Object.keys(by).filter(k => by[k].size > 1);
+  for (const k of twice) console.log('          ' + k + ' -- ' + Array.from(by[k]).join(', '));
+  say(twice.length === 0, '8 every table read for the same columns is written in one function -- ' +
+      Object.keys(by).length + ' shapes, ' + twice.length + ' written twice');
+}
+
 if (pg.__err.length) say(false, 'the page threw: ' + pg.__err.slice(0, 3).join(' | '));
 await br.close();
 console.log(bad.length ? '\nload-check: ' + bad.length + ' FAILED' : '\nload-check: ok');

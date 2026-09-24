@@ -1130,8 +1130,9 @@ function netMyProfile(ok, bad){
    can be wrong by that much; the constraint is what actually decides, and
    netWhy turns its 409 into the same sentence. */
 function netHandleFree(h, ok, bad){
-  netGet('/rest/v1/profile?select=handle&limit=1&handle=eq.'+encodeURIComponent(h),
-         function(d){ ok(!(d && d.length)); }, bad);
+  /* The same question as 「whose account is this handle」, asked of the one
+     place that sends it (netIdOf): nobody's is free. */
+  netIdOf(h, function(id){ ok(!id); }, bad);
 }
 /* And the face, which is what a notice draws when there is no post to take
    one off -- a follow has none at all. It is the same shape a post carries,
@@ -1609,6 +1610,13 @@ function netLapseSeen(){
 
    Nothing here deletes, hides or rewrites a language. A refusal leaves it
    exactly where it is, on the phone, whole. */
+/* WHETHER A `language` ROW IS THERE -- or, with no id, whether the server
+   answers at all (the cheapest question this account has, which the save
+   road puts to the wire when nothing moved). One place sends it. */
+function netLangAsk(id, ok, bad){
+  netGet('/rest/v1/language?select=id&limit=1'+(id? '&id=eq.'+encodeURIComponent(String(id)) : ''),
+         ok, bad);
+}
 function netLangRow(id, ok, bad){
   var key=String(id||''), L=LANGS[key], own, me, nm;
   /* A language this account is only READING has a row already and it is
@@ -1632,7 +1640,7 @@ function netLangRow(id, ok, bad){
   if(langRowUp(key)){
     if(own){ ok(key); return; }
     /* Up before a language recorded whose it was. The server settles it. */
-    netGet('/rest/v1/language?select=id&id=eq.'+encodeURIComponent(key),
+    netLangAsk(key,
       function(d){
         if(!(d && d.length)){ bad(null, 0, 'langrow ≠'); return; }
         langOwnGot(key, me);
@@ -2285,7 +2293,7 @@ function netLangFill(id, ok, bad){
    「nobody has said」 rather than a number worked out from the copy. */
 function netLangsDown(then, bad){
   var done=then || function(){};
-  netGet('/rest/v1/language?select=id,name,published_at,wsys,owner,created_at&owner=eq.'+
+  netGet(NET_LANG_SEL+'&owner=eq.'+
          encodeURIComponent(netUid())+'&order=created_at.asc&limit='+NET_PAGE,
     function(d){
       var rows=(d && typeof d.length==='number')? d : [], ids=[], i;
@@ -2351,7 +2359,7 @@ function netTakenDown(took){
   netLangsGone(false, ids);
   /* Nothing taken is an answer and not a reason to ask. */
   if(!ids.length) return;
-  netGet('/rest/v1/language?select=id,name,published_at,wsys,owner,created_at&id=in.('+
+  netGet(NET_LANG_SEL+'&id=in.('+
          netInList(ids)+')&limit='+ids.length,
     function(d){ netLangsWalk(d, function(){}); },
     /* A refusal changes nothing and is silent: this account's own languages
@@ -2852,7 +2860,7 @@ function netSaveUpGo(done){
      therefore the same pop and the same 再接続 as every other failed save. */
   function none(){
     if(!done) return;
-    netGet('/rest/v1/language?select=id&limit=1', function(){ done(true); }, no);
+    netLangAsk('', function(){ done(true); }, no);
   }
   /* Already going up. A second send on top of the first would race it. */
   if(NET_SYNCING){ if(done) done(true); return; }
@@ -3126,6 +3134,16 @@ function netLangSync1(id, done){
    somebody stops scrolling, so this is "enough to fill a screen and then
    some" rather than a number anybody has to be right about. */
 var NET_PAGE=50;
+/* WHAT A POST IS READ AS, written once. Seven reads of `post_seen` each wrote
+   the column list out, and two of them had left the reactions off, so a post
+   found by a search or opened from a notice arrived with no counts (r73
+   § 2-6). The columns are this one string; netRow() is the one reader of a
+   row. And what other people did to a post -- written since there were
+   reactions and read back by nobody until netRow() -- is part of it. */
+var NET_POST_SEL='/rest/v1/post_seen?select=id,author,created_at,reply_to,body,hidden_at,author_out'+
+                 ',likes,boosts,replies,i_like,i_boost';
+/* AND WHAT A LANGUAGE ROW IS READ AS, the same way (two reads). */
+var NET_LANG_SEL='/rest/v1/language?select=id,name,published_at,wsys,owner,created_at';
 /* What a row is, on the way out. `body` holds everything a reader needs and
    nothing this phone knows about itself: `mine` is a fact about the READER,
    `sid` is where the row lives, and `id` is this phone's name for it. A row
@@ -3219,11 +3237,7 @@ function netFeed(which, ok, bad, more){
      the recommended timeline works with the publishable key alone and
      somebody who has not decided yet is not asked to decide. The FOLLOWED one
      cannot: there is nobody to have followed anybody. */
-  var sel='/rest/v1/post_seen?select=id,author,created_at,reply_to,body,hidden_at,author_out'+
-          /* And what other people did to it. Written since there were
-             reactions and read back by nobody -- see netRow(). */
-          ',likes,boosts,replies,i_like,i_boost'+
-          '&order=created_at.desc&limit='+NET_PAGE;
+  var sel=NET_POST_SEL+'&order=created_at.desc&limit='+NET_PAGE;
   /* `more` is where to carry on from, and it is a different thing on the two
      sides because the two lists are in different orders.
 
@@ -3387,8 +3401,10 @@ function netFeed(which, ok, bad, more){
    whom is public the way it is in every timeline -- and signed out, with no
    handle to ask about, there is nobody to have followed anybody: the answer
    is `null`, 「could not ask」, rather than an empty list. */
-function netFollowRows(want, by, ok, bad, handle, after){
-  var h=String(handle||''), q;
+/* `among` is a list of handles the answer is narrowed to -- which of THESE
+   are in the list (www/me.js § REL asks it of the people on a page). */
+function netFollowRows(want, by, ok, bad, handle, after, among){
+  var h=String(handle||''), q, l=[], i;
   /* WHOSE, and it is the identifier that is in hand. Somebody else's list is
      asked by handle -- the only thing one person knows another by; your own
      by the uuid in the session, because that is what a session carries and a
@@ -3420,10 +3436,13 @@ function netFollowRows(want, by, ok, bad, handle, after){
      スクロールで」 OWNER 2026-09-23. `follow_seen` carries no time a row was
      made, so the one order that can be carried on from is the handle's:
      `after` is the last handle already held (keyset, www/me.js § folPull). */
+  for(i=0;i<(among||[]).length;i++) if(among[i]) l.push(encodeURIComponent(String(among[i])));
+  if(among && !l.length){ ok([]); return; }
   netGet('/rest/v1/follow_seen?select='+want+'_handle'+q+
          '&order='+want+'_handle.asc'+
          (after? '&'+want+'_handle=gt.'+encodeURIComponent(String(after)) : '')+
-         '&limit='+NET_PAGE,
+         (among? '&'+want+'_handle=in.('+l.join(',')+')' : '')+
+         '&limit='+(among? l.length : NET_PAGE),
     function(d){
       var out=[], i, hd;
       for(i=0;i<(d||[]).length;i++){
@@ -3459,28 +3478,22 @@ function netFollowers(ok, bad, handle, after){
    Following. An answer is an object by handle; a handle with neither row is
    not in it. */
 function netRel(hs, ok, bad){
-  var me=encodeURIComponent(netUid()), l=[], i, inn, by={}, left=2, fell=false;
-  for(i=0;i<(hs||[]).length;i++) if(hs[i]) l.push(encodeURIComponent(String(hs[i])));
-  if(!l.length){ ok({}); return; }
-  inn='in.('+l.join(',')+')';
-  function way(mine, theirs, key){
-    netGet('/rest/v1/follow_seen?select='+theirs+'_handle&'+mine+'=eq.'+me+
-           '&'+theirs+'_handle='+inn+'&limit='+l.length,
-      function(d){
-        var j, h;
-        if(fell) return;
-        for(j=0;j<(d||[]).length;j++){
-          h=d[j] && d[j][theirs+'_handle'];
-          if(!h) continue;
-          if(!by[h]) by[h]={i:false, u:false};
-          by[h][key]=true;
-        }
-        left--;
-        if(!left) ok(by);
-      }, function(d, s, m){ if(fell) return; fell=true; bad(d, s, m); });
+  var by={}, left=2, fell=false;
+  function way(list, key){
+    var j;
+    if(fell) return;
+    for(j=0;j<list.length;j++){
+      if(!by[list[j]]) by[list[j]]={i:false, u:false};
+      by[list[j]][key]=true;
+    }
+    left--;
+    if(!left) ok(by);
   }
-  way('follower', 'followed', 'i');
-  way('followed', 'follower', 'u');
+  function no(d, s, m){ if(fell) return; fell=true; bad(d, s, m); }
+  if(!(hs && hs.length)){ ok({}); return; }
+  /* the ones on this page whom you follow, and the ones who follow you */
+  netFollowRows('followed', 'follower', function(l){ way(l, 'i'); }, no, '', '', hs);
+  netFollowRows('follower', 'followed', function(l){ way(l, 'u'); }, no, '', '', hs);
 }
 /* ---- ONE ROW JOINING YOU TO SOMEBODY, BY HANDLE -------------------------
    A follow and a block are the same shape and were written out twice, 1100
@@ -3501,13 +3514,20 @@ function netRel(hs, ok, bad){
    uuid even though it sends this very query: it answers both of those with
    the same `bad`, so a follow whose request fell over would come back here
    as a handle nobody has, and the button would report a success that never
-   happened. Three places send `profile?select=id&handle=eq.` and this is
-   two of them; docs/DUPLICATES.md 14 says so rather than leaving it here. */
+   happened. So netIdOf() below answers the two apart, and it is the one
+   place a handle is turned into a uuid. */
+/* A HANDLE, TURNED INTO THE ACCOUNT'S UUID -- once, here (r73 § 2-6: three
+   functions sent this query). `ok('')` is 「nobody by that name」, which is an
+   answer; `bad` is a request that fell, which is not. */
+function netIdOf(handle, ok, bad){
+  netGet('/rest/v1/profile?select=id&limit=1&handle=eq.'+encodeURIComponent(String(handle||'')),
+    function(d){ ok((d && d.length && d[0].id)? String(d[0].id) : ''); }, bad);
+}
 function netPairRow(tab, mine, theirs, handle, on, ok, bad){
   if(!handle){ ok(); return; }
-  netGet('/rest/v1/profile?select=id&limit=1&handle=eq.'+encodeURIComponent(handle),
-    function(d){
-      var who=(d && d.length)? d[0].id : '', row;
+  netIdOf(handle,
+    function(who){
+      var row;
       if(!who){ ok(); return; }
       if(on){
         row={};
@@ -3649,10 +3669,9 @@ function netReport(what, why, note, ok, bad){
   if(note) row.note=String(note);
   if(what && what.post){ row.post=what.post; }
   if(what && what.handle){
-    netGet('/rest/v1/profile?select=id&limit=1&handle='+
-           'eq.'+encodeURIComponent(what.handle),
-      function(d){
-        if(d && d.length) row.who=d[0].id;
+    netIdOf(what.handle,
+      function(who){
+        if(who) row.who=who;
         if(!row.post && !row.who){ bad(null, 0); return; }
         netSend('POST', '/rest/v1/report', row, netTok(), function(){ ok(); }, bad);
       }, bad);
@@ -3807,7 +3826,7 @@ function netHandleOf(s){
    needs no policy of its own -- what it lists is public, and what it is FOR
    is not. */
 function netStaffList(ok, bad){
-  netGet('/rest/v1/profile?select=id,handle&staff=is.true&order=handle.asc',
+  netGet('/rest/v1/profile?select=id,handle&staff=is.true&order=handle.asc&limit='+NET_PAGE,
     function(d){ ok(d || []); }, bad);
 }
 /* The reports, newest first, each carrying the thing it is about -- because a
@@ -4163,13 +4182,12 @@ function netFindWho(q, ok, bad, more){
 function netPostCounts(sid, ok, bad){
   var id=String(sid||'');
   if(!id){ bad(null, 0, 'post \u2212'); return; }
-  netGet('/rest/v1/post_seen?select=id,author,created_at,reply_to,body,hidden_at,author_out'+
-         ',likes,boosts,replies,i_like,i_boost'+
+  netGet(NET_POST_SEL+
          '&id=eq.'+encodeURIComponent(id)+'&limit=1',
     function(d){ ok((d && d.length)? netRow(d[0]) : null); }, bad);
 }
 function netPostById(id, ok, bad){
-  netGet('/rest/v1/post_seen?select=id,author,created_at,reply_to,body,hidden_at,author_out'+
+  netGet(NET_POST_SEL+
          '&id=eq.'+encodeURIComponent(String(id||''))+'&limit=1',
     function(d){ ok((d && d.length)? netRow(d[0]) : null); }, bad);
 }
@@ -4196,8 +4214,7 @@ function netPromos(n, ok, bad){
     for(i=0;i<(d||[]).length;i++) if(d[i] && d[i].post) ids.push(d[i].post);
     if(!ids.length){ ok([]); return; }
     netBlocked(function(bl){
-      netGet('/rest/v1/post_seen?select=id,author,created_at,reply_to,body,hidden_at,author_out'+
-             ',likes,boosts,replies,i_like,i_boost'+
+      netGet(NET_POST_SEL+
              '&id=in.('+netInList(ids)+')&hidden_at=is.null&author_out=is.false'+
              (bl.length? '&author=not.in.('+bl.join(',')+')' : '')+
              '&limit='+ids.length,
@@ -4237,8 +4254,7 @@ function netReplies(ids, ok, bad){
     if(s && list.indexOf(s)<0) list.push(s);
   }
   if(!list.length){ ok([]); return; }
-  netGet('/rest/v1/post_seen?select=id,author,created_at,reply_to,body,hidden_at,author_out'+
-         ',likes,boosts,replies,i_like,i_boost'+
+  netGet(NET_POST_SEL+
          '&reply_to=in.('+list.join(',')+')'+
          '&order=created_at.asc&limit='+NET_PAGE,
     function(d){
@@ -4260,8 +4276,7 @@ function netReplies(ids, ok, bad){
    page gains rows while somebody is reading it, and an offset would hand
    them a post twice or step over one. */
 function netPostsBy(uid, ok, bad, more){
-  netGet('/rest/v1/post_seen?select=id,author,created_at,reply_to,body,hidden_at,author_out'+
-         ',likes,boosts,replies,i_like,i_boost'+
+  netGet(NET_POST_SEL+
          '&author=eq.'+encodeURIComponent(String(uid||''))+
          '&order=created_at.desc'+
          (more? '&created_at=lt.'+encodeURIComponent(String(more)) : '')+
@@ -4296,7 +4311,7 @@ function netFindPosts(q, ok, bad, more){
      offset for the reason netFeed()'s is: posts are written while somebody
      is reading, and an offset walked over a list that has grown hands back
      one they have already read, or steps over one they have not. */
-  netGet('/rest/v1/post_seen?select=id,author,created_at,reply_to,body,hidden_at,author_out'+
+  netGet(NET_POST_SEL+
          '&or=(body->>ln.ilike.'+like+',body->>mn.ilike.'+like+
          ',body->>lname.ilike.'+like+',body->>tags.ilike.'+tlike+')'+
          '&order=created_at.desc'+
