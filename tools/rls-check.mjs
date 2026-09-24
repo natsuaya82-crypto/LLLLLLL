@@ -128,6 +128,11 @@ const LB = 'b0000000-0000-4000-8000-00000000000b';  /* and the frozen account's 
    owner of the table below, because that is the only road there is: the
    service role, which no policy applies to. */
 const PA = '5a000000-0000-4000-8000-0000000000a1';  /* the promoted post */
+/* An old server's account and three of its languages: OLDLANG, below. */
+const OLDN = ['9a000000-0000-4000-8000-000000000001',
+              '9b000000-0000-4000-8000-000000000001',
+              '9b000000-0000-4000-8000-000000000002',
+              '9b000000-0000-4000-8000-000000000003'];
 
 /* What Supabase already has when schema.sql is pasted into it. None of this is
    ours -- it is the ground the file is poured onto, and it is here so that the
@@ -1888,6 +1893,31 @@ const CASES = [
    off is wide open no matter what its policies say, and a table with no
    update policy is append-only precisely BECAUSE the policy is missing. */
 const SHAPE = [
+  /* ---- WHAT THE FILE DOES ONCE, IT DOES ONCE -----------------------------
+     The languages put in above, between the old shape and the new. The name
+     comes over from the slice where the column was empty; a name already
+     there is not written over; the slice stays (a copy, never a move); and
+     the one a person emptied between the two pastes stays empty. */
+  ['a language named only in its slice has the name now', `
+     select count(*) from (select 1 where not exists (select 1 from language
+       where id = '${OLDN[3]}' and name = 'Fourth')) q`, '0'],
+  ['and a name already there was not written over', `
+     select count(*) from (select 1 where not exists (select 1 from language
+       where id = '${OLDN[2]}' and name = 'Kept')) q`, '0'],
+  ['and the slice it came from is still there', `
+     select 3 - count(*) from slice where kind = 'lang'
+        and language in ('${OLDN[1]}', '${OLDN[2]}', '${OLDN[3]}')`, '0'],
+  ['and a name emptied since is not put back by the next paste', `
+     select count(*) from language where id = '${OLDN[1]}' and name <> ''`, '0'],
+  /* EVERY TABLE HAS ROW LEVEL SECURITY ON. The grants say a signed-in account
+     may touch a table at all; with row level security off, that is every row
+     of it. Counted off the catalogue, so a table added tomorrow is asked
+     tomorrow -- and the list of `enable row level security` lines in
+     schema.sql is not what anything here trusts. */
+  ['every table has row level security on', `
+     select count(*) from pg_class c join pg_namespace n on n.oid = c.relnamespace
+      where n.nspname = 'public' and c.relkind in ('r','p')
+        and not c.relrowsecurity and c.relname not like '\\_%'`, '0'],
   /* ---- NOTHING WITHOUT A SIGN-IN, COUNTED RATHER THAN LISTED -----------
      「ちがう。そもそもサインインがない状態でできることがないはずなのにそれが
        あることを疑って言ってんの。小さい穴だけ潰しても意味ねえだろ、大きい
@@ -2708,10 +2738,35 @@ begin
 end $$;
 `;
 
+/* AN OLD SERVER'S LANGUAGES, for the one step schema.sql takes once. Before
+   `language.name` there was the `lang` slice, and a language made then has
+   its name only there (r60-up B3). Put in by the owner of the table between
+   the old shape and the new, because that is the server the step meets: one
+   language named only in its slice, and one already named, whose slice says
+   something else and must not win.
+
+   And between the two pastes the first is EMPTIED, the way a person empties a
+   name (「空は未設定」 OWNER 2026-09-06). The file is pasted again and again;
+   a copy that ran every time would put the old name back over the person's
+   choice on the next paste, and that is the half this is here to ask. */
+const OLDLANG = `
+insert into auth.users(id) values ('${OLDN[0]}');
+insert into profile(id, handle) values ('${OLDN[0]}', 'oldnames');
+insert into language(id, owner, name) values ('${OLDN[1]}', '${OLDN[0]}', ''),
+                                             ('${OLDN[2]}', '${OLDN[0]}', 'Kept'),
+                                             ('${OLDN[3]}', '${OLDN[0]}', '');
+insert into slice(language, kind, body) values ('${OLDN[1]}', 'lang', 'Old Name'),
+                                              ('${OLDN[2]}', 'lang', 'Other'),
+                                              ('${OLDN[3]}', 'lang', 'Fourth');
+`;
+const OLDLANG_EMPTIED = `update language set name = '' where id = '${OLDN[1]}';`;
+
 const sql = [
   GROUND,
   BASE_SQL,
+  OLDLANG,
   SCHEMA_SQL,
+  OLDLANG_EMPTIED,
   PGNET,
   SCHEMA_SQL,
   HARNESS,
