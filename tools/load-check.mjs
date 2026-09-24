@@ -203,7 +203,7 @@ say(first.r === 'feed', '1 the app opens on the timeline -- it opened on ' + fir
 
 /* ---- 2. every route, arrived at through the door, with nothing answered -- */
 const routes = await pg.evaluate(() => Object.keys(PAGES));
-const ARG = { profile:'h3', about:'L-other', thread:'p3', follows:'ers:h3', photo:'p3:0' };
+const ARG = { profile:'h3', about:'L-other', thread:'p3', follows:'ers:h3', photo:'p3:0', set:'block' };
 const byRoute = {};
 const reach = await pg.evaluate(() => typeof pageNeeds === 'function' && typeof navLand === 'function');
 say(reach, '2 there is one table of what a page reads (pageNeeds) and one door onto a page (navLand)');

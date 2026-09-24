@@ -486,6 +486,7 @@ defLang('ru', (function(){
       'notif.reply'           : "{0} ответил",
       'notif.follow'          : "{0} читает вас",
       'set.push'              : "Уведомления",
+      'set.block'             : "Заблокированные",
       'push.follow'           : "Новые подписчики",
       'push.reply'            : "Ответы",
       'push.like'             : "Оценки",

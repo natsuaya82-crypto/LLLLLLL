@@ -399,6 +399,7 @@ defLang('ja', (function(){
       'notif.reply'           : "{0} が返信",
       'notif.follow'          : "{0} がフォロー",
       'set.push'              : "通知",
+      'set.block'             : "ブロックリスト",
       'push.follow'           : "フォローされたとき",
       'push.reply'            : "返信",
       'push.like'             : "いいね",

@@ -75,6 +75,11 @@ var SETS=[
      about being reached as a person -- and it is four switches on `prefs`,
      which is the account's, so it follows somebody to their next phone. */
   {id:'push',  k:'set.push'},
+  /* Whom you have blocked, and the one place a block is lifted.
+     「ブロックの解除 → 設定に追加して非表示リストとブロックリスト」 OWNER
+     2026-09-24: a blocked person has no page to press 解除 on any more,
+     from either side (block_hides, supabase/schema.sql). */
+  {id:'block', k:'set.block'},
   {id:'data',  k:'set.data'},
   {id:'ui',    k:'set.display'}
 ];
@@ -181,6 +186,14 @@ function vSettings(){
        whoever is holding the phone that there is a staff at all. */
     '</div></div>';
 }
+/* One person you have blocked: who (snsWhoFace, the row every list of people
+   draws) and the way to lift it. Not a door onto their page -- there is no
+   page of theirs to go to while the block stands. */
+function setBlockRow(p){
+  return '<div class="whrow"><div class="whgo">'+snsWhoFace(p)+'</div>'+
+    '<button class="whfo on"' + DO('meBlock', [p.hd]) + '>'+
+      esc(t('post.unblock'))+'</button></div>';
+}
 /* What each room answers, said on its door, so most questions are answered
    without opening anything. */
 function setSummary(id, p){
@@ -251,6 +264,14 @@ function vSet(){
       '<button class="set" style="border-bottom:none"' + DO('go', ["wsys"]) + '><span class="sl">'+t('ws.kind')+'</span>'+
       '<span class="sv">'+esc(t('ws.k.'+wsys()))+ICON_GO+'</span></button>'+
       '';
+  } else if(id==='block'){
+    /* Newest first, as the server hands them (`block_seen`), each with 解除
+       where a follow list has フォロー. Pressing it is meBlock() -- the same
+       press the ... menu makes -- and the row goes when the list comes back
+       without it. */
+    body=netBlockedPeople().length
+      ? netBlockedPeople().map(setBlockRow).join('')
+      : snsEmpty('blocks', snsNone());
   } else if(id==='push'){
     /* Four rows, and the state above them when iOS has said no. www/push.js
        draws it: this file says where the room is and that file says what is

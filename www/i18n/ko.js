@@ -662,6 +662,7 @@ defLang('ko', (function(){
       'notif.reply'           : "{0} 님이 답했습니다",
       'notif.follow'          : "{0} 님이 팔로우했습니다",
       'set.push'              : "알림",
+      'set.block'             : "차단 목록",
       'push.follow'           : "팔로우",
       'push.reply'            : "답글",
       'push.like'             : "좋아요",

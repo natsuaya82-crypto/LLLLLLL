@@ -3624,10 +3624,8 @@ const R = await pg.evaluate(async () => {
     const asked71 = [];
     netGet = (path, ok2) => {
       asked71.push(String(path));
-      if (String(path).indexOf('/rest/v1/block') === 0)
-        return ok2([{ blocked: 'uid-of-iri' }]);
-      if (String(path).indexOf('/rest/v1/profile_seen') === 0)
-        return ok2([{ id: 'uid-of-iri', handle: 'iri' }]);
+      if (String(path).indexOf('/rest/v1/block_seen') === 0)
+        return ok2([{ id: 'uid-of-iri', handle: 'iri', display: 'Iri', av: null }]);
       return ok2([]);
     };
     /* 端末の古い写しは、読まれてはいけない方に置きます。 */
@@ -3637,8 +3635,13 @@ const R = await pg.evaluate(async () => {
     netGet = keepGet71;
     if (!got71 || got71 === 'FAILED' || got71.indexOf('uid-of-iri') < 0)
       no('71: block の行が降りてこない — ' + JSON.stringify(got71));
-    if (!asked71.filter((p) => p.indexOf('/rest/v1/profile_seen') === 0).length)
-      no('71: 降りた uuid の handle を訊いていない ── 画面は handle で人を知る');
+    /* 一本で、名前ごと（2026-09-24）。`profile_seen` はブロックの間に立つ人を
+       もう返さないので（block_hides、両向き）、そこへ訊きに行く二本目は無い。 */
+    if (asked71.length !== 1 || asked71[0].indexOf('/rest/v1/block_seen') !== 0)
+      no('71: ブロックした人を一本の block_seen で訊いていない — ' + JSON.stringify(asked71));
+    if (!netBlockedPeople().length || netBlockedPeople()[0].who !== 'Iri')
+      no('71: 降りた行に名前が無い ── 設定の一覧はこの行から描く — ' +
+         JSON.stringify(netBlockedPeople()));
     if (!meBlocks('iri'))
       no('71: サーバーがブロックと言っているのに、画面が知らない');
     if (meBlocks('nokori'))

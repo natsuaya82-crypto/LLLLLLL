@@ -531,6 +531,7 @@ defLang('fr', (function(){
       'notif.reply'           : "{0} a répondu",
       'notif.follow'          : "{0} vous suit",
       'set.push'              : "Notifications",
+      'set.block'             : "Comptes bloqués",
       'push.follow'           : "Nouveaux abonnés",
       'push.reply'            : "Réponses",
       'push.like'             : "J’aime",

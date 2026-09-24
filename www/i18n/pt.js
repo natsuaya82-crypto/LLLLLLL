@@ -490,6 +490,7 @@ defLang('pt', (function(){
       'notif.reply'           : "{0} respondeu",
       'notif.follow'          : "{0} começou a seguir-te",
       'set.push'              : "Notificações",
+      'set.block'             : "Contas bloqueadas",
       'push.follow'           : "Novos seguidores",
       'push.reply'            : "Respostas",
       'push.like'             : "Gostos",

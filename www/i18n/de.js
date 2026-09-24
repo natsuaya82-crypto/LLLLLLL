@@ -471,6 +471,7 @@ defLang('de', (function(){
       'notif.reply'           : "{0} hat geantwortet",
       'notif.follow'          : "{0} folgt dir",
       'set.push'              : "Mitteilungen",
+      'set.block'             : "Blockierte Konten",
       'push.follow'           : "Neue Follower",
       'push.reply'            : "Antworten",
       'push.like'             : "Gefällt mir",

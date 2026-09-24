@@ -351,7 +351,7 @@ const r = await pg.evaluate(({ s }) => {
   netWho = function (h, k) { k({ who:'Iri', hd:String(h), uid:'U-' + h }); };
   netPostsBy = function (u, k) { k([]); };
   netBlockedRead = function (ok) { ok(); };
-  const wasBlHd2 = NET_BL_HD; NET_BL_HD = NET_BL_HD || [];
+  const wasBlHd2 = NET_BL; NET_BL = NET_BL || [];
   let relAsks = 0;
   netRel = function (hs, ok) { relAsks++; const by = {}; hs.forEach(h => { by[h] = { i:false, u:true }; }); ok(by); };
   REL = {};
@@ -359,7 +359,7 @@ const r = await pg.evaluate(({ s }) => {
   go('profile', 'iri');
   out.mineOnOpen = here().r === 'profile' && meFollowed('iri');
   out.askedOnTheirs = relAsks;
-  netRel = wasRel2; netWho = wasWho2; netPostsBy = wasBy2; netBlockedRead = wasBl2; NET_BL_HD = wasBlHd2;
+  netRel = wasRel2; netWho = wasWho2; netPostsBy = wasBy2; netBlockedRead = wasBl2; NET_BL = wasBlHd2;
   REL = heldRel;
   NAV = [{ r:'feed' }]; window.route = 'feed';
 
@@ -544,6 +544,34 @@ const r = await pg.evaluate(({ s }) => {
     NET_PAGE = realPage;
     netSend1 = realS1; netSend = realS; netGet = realG;
     folForget(); FOL_MORE = false;
+    NAV = [{ r:'feed' }]; window.route = 'feed';
+  }
+
+  /* ---- 10: whom you have blocked is a list in the settings, and 解除 ----
+     「ブロックの解除 → 設定に追加して非表示リストとブロックリスト」 OWNER
+     2026-09-24. The room draws each person the server says you blocked, with
+     the press that lifts it; pressed, the block row goes (a DELETE on
+     `block`), the list is asked again, and the person is not on it. */
+  {
+    const sent = [];
+    const realS1 = netSend1, realS = netSend, realG = netGet;
+    netSend1 = function (m, p, b, t, ok) {
+      p = String(p); sent.push(m + ' ' + p);
+      if (p.indexOf('/rest/v1/profile?select=id') === 0) { ok([{ id:'U-zed' }], 200); return; }
+      ok([], 200);
+    };
+    netSend = function (m, p, b, t, ok, bad, up) { netSend1(m, p, b, t, ok, bad, up, true); };
+    netGet = function (p, ok, bad) { netSend('GET', p, null, '', ok, bad); };
+    NET_BL = [{ id:'U-zed', hd:'zed', who:'Zed', av:{ ch:'Z' } }];
+    NAV = [{ r:'settings' }, { r:'set', a:'block' }]; window.route = 'set'; render();
+    const app = document.getElementById('app');
+    out.blRow = !!app.querySelector('[data-do="meBlock"][data-a=\'["zed"]\']') &&
+                app.textContent.indexOf('@zed') >= 0;
+    const un = app.querySelector('[data-do="meBlock"]');
+    if (un) un.click();
+    out.blSent = sent.filter((x) => /^DELETE \/rest\/v1\/block\?/.test(x) || /block_seen/.test(x)).join(' | ');
+    out.blGone = here().r === 'set' && app.textContent.indexOf('@zed') < 0 && !netBlockedPeople().length;
+    netSend1 = realS1; netSend = realS; netGet = realG;
     NAV = [{ r:'feed' }]; window.route = 'feed';
   }
 
@@ -777,6 +805,12 @@ const PAIR_ON =
 const PAIR_OFF =
   'DELETE /rest/v1/follow?follower=eq.u&followed=eq.them | ' +
   'DELETE /rest/v1/block?actor=eq.u&blocked=eq.them';
+if (!r.blRow)
+  say('the settings\' list of whom you blocked does not draw @zed with 解除 on it. ' +
+      '「設定に追加して…ブロックリスト」 OWNER 2026-09-24');
+if (!/^DELETE \/rest\/v1\/block\?/.test(r.blSent || '') || !/block_seen/.test(r.blSent || '') || !r.blGone)
+  say('pressing 解除 on the settings\' list did not lift the block and come back without them: ' +
+      JSON.stringify(r.blSent) + (r.blGone ? '' : ', and @zed is still drawn'));
 if (r.folOrder !== 'noa,ami,zed,kai')
   say('a follow list, two pages of it, holds ' + JSON.stringify(r.folOrder) +
       ' and the four were followed newest first as noa,ami,zed,kai. ' +

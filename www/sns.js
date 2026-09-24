@@ -902,9 +902,7 @@ pageReads('feed', function(){
   if(snsFil && snsFil.q) o.push(['fil', String(snsFil.q)]);
   return o;
 }, true);
-/* The search draws people, and a person you have blocked is left out of it
-   here (snsAnsHTML) while `profile_seen` still returns them (r80-block § 保留). */
-pageReads('explore', function(){ return [['saved'], ['recent'], ['blocks']]; }, true);
+pageReads('explore', function(){ return [['saved'], ['recent']]; }, true);
 pageReads('notif',   function(){ return [['notif']]; }, true);
 pageReads('thread',  function(a){ return [['thread', String(a||'')]]; }, true);
 /* A person's page, and your own is the same page: who they are (with the two
@@ -914,10 +912,20 @@ pageReads('thread',  function(a){ return [['thread', String(a||'')]]; }, true);
 pageReads('profile', function(a){
   var h=String(a||'') || meHandle();
   if(h===meHandle()) return [['who', h], ['posts', h], ['mylangs']];
-  return [['who', h], ['posts', h], ['blocks']];
+  /* Nobody a block stands between has a page to arrive at (profile_seen,
+     both ways), so whom you have blocked is not this page's question -- it
+     is the settings' (www/settings.js § block). */
+  return [['who', h], ['posts', h]];
 }, true);
 pageReads('follows', function(a){ return [['fols', String(a||'')]]; }, true);
 pageReads('notfo',   function(a){ return [['people', String(a||'')]]; });
+/* The settings are one route, and one of its rooms draws whom you have
+   blocked. The rest read what the route has always read: the open language
+   (PAGES.set.lang). */
+pageReads('set',     function(a){
+  if(String(a||'')==='block') return [['blocks']];
+  return langId? [['lang', langId]] : [];
+});
 pageReads('drafts',  function(){ return [['drafts']]; }, true);
 pageReads('langs',   function(){ return [['mylangs']]; });
 /* Somebody else's language, or -- with no argument -- your own open one. */
@@ -2747,12 +2755,10 @@ function snsAnsHTML(q, r){
   if(!r) return snsWaitHTML();
   /* Could not ask, which is not the same as found nothing. */
   if(r.bad) return '<div class="note">'+esc(r.bad)+'</div>';
-  /* A person you have blocked is not somebody you are looking for. What they
-     wrote the server leaves out (`post_seen`, r80-block); who they are it
-     still returns, because `profile_seen` is where unblocking starts
-     (r80-block § 保留), so they are left out here until that changes. */
-  for(i=0;i<(r.who||[]).length;i++)
-    if(!meBlocks(r.who[i].hd)) out+=snsWhoRow(r.who[i]);
+  /* A person a block stands between is not in the answer at all -- the
+     server leaves them out of `profile_seen` and `post_seen`, both ways
+     (block_hides, supabase/schema.sql). */
+  for(i=0;i<(r.who||[]).length;i++) out+=snsWhoRow(r.who[i]);
   /* In the order it arrived. The order is the server's answer to `snsSort`,
      not something to be worked out again here. */
   ps=r.posts||[];

@@ -483,6 +483,7 @@ defLang('it', (function(){
       'notif.reply'           : "{0} ha risposto",
       'notif.follow'          : "{0} ti segue",
       'set.push'              : "Notifiche",
+      'set.block'             : "Account bloccati",
       'push.follow'           : "Nuovi follower",
       'push.reply'            : "Risposte",
       'push.like'             : "Mi piace",

@@ -443,6 +443,7 @@ defLang('es', (function(){
       'notif.reply'           : "{0} respondió",
       'notif.follow'          : "{0} te sigue",
       'set.push'              : "Notificaciones",
+      'set.block'             : "Cuentas bloqueadas",
       'push.follow'           : "Nuevos seguidores",
       'push.reply'            : "Respuestas",
       'push.like'             : "Me gusta",

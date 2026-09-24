@@ -491,6 +491,7 @@ defLang('zh', (function(){
       'notif.reply'           : "{0} 回复了",
       'notif.follow'          : "{0} 关注了你",
       'set.push'              : "通知",
+      'set.block'             : "已屏蔽的账号",
       'push.follow'           : "被关注",
       'push.reply'            : "回复",
       'push.like'             : "点赞",

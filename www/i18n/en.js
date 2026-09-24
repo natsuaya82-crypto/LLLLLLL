@@ -386,6 +386,7 @@ defLang('en', (function(){
       'notif.reply'           : "{0} replied",
       'notif.follow'          : "{0} followed you",
       'set.push'              : "Notifications",
+      'set.block'             : "Blocked accounts",
       'push.follow'           : "Followed",
       'push.reply'            : "Replies",
       'push.like'             : "Likes",

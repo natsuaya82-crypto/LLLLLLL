@@ -142,6 +142,8 @@ const BKP = 'b1000000-0000-4000-8000-0000000000b3';  /* BK's post, which BD answ
 const BDP = 'b1000000-0000-4000-8000-0000000000b4';  /* what BD wrote */
 const BDO = 'b1000000-0000-4000-8000-0000000000b5';  /* and BD's post before the tick */
 const BDL = 'b1000000-0000-4000-8000-0000000000b6';  /* BD's published language */
+const BKL = 'b1000000-0000-4000-8000-0000000000b7';  /* and BK's, for the walk the other way */
+const BKH = 'blocker';                                 /* and BK's @ */
 /* A value as an SQL literal. */
 const q = (s) => "'" + String(s).replace(/'/g, "''") + "'";
 /* verify.mjs's ladder, as the array plan_put() is handed. */
@@ -597,8 +599,21 @@ const CASES = [
     `insert into language(id,owner,name) values ('${BDL}','${BD}','Blok')`],
   ['and publishes it',                        'ok',     BD, 0,
     `update language set published_at=now() where id='${BDL}'`],
+  ['BK makes a language',                     'ok',     BK, 0,
+    `insert into language(id,owner,name) values ('${BKL}','${BK}','Blak')`],
+  ['and publishes it too',                    'ok',     BK, 0,
+    `update language set published_at=now() where id='${BKL}'`],
   ['BK blocks BD',                            'ok',     BK, 0,
     `insert into block(actor,blocked) values ('${BK}','${BD}')`],
+  /* WHOM YOU HAVE BLOCKED, BY NAME, AND TO YOU ALONE. 「設定に追加して非表示
+     リストとブロックリスト」 OWNER 2026-09-24: the list is where unblocking
+     is, now that a blocked person's page is gone from both sides. */
+  ['BK reads whom BK blocked, by name',       'ok',     BK, 0,
+    `select 1 from block_seen where handle='${BDH}'`],
+  ['BD cannot read that BD is blocked there', 'denied', BD, 0,
+    `select 1 from block_seen`],
+  ['B cannot read whom BK blocked',           'denied', B, 0,
+    `select 1 from block_seen where handle='${BDH}'`],
 
   /* --- a report is written and never read back by anybody using the app --- */
   ['B reports A\u2019s post',                  'ok',     B, 0,
@@ -2858,7 +2873,9 @@ begin
   execute 'set local role postgres';
   return c;
 end $$;
-create or replace function _block_seen(sub uuid, them uuid, hd text)
+-- \`owner\` is who made the block: the reader themself (the blocker's walk),
+-- or \`them\` (the walk of the person who was blocked).
+create or replace function _block_seen(sub uuid, them uuid, hd text, owner uuid)
 returns table(what text, open int, shut int) language plpgsql as $$
 declare r record; stmt text;
 begin
@@ -2879,9 +2896,11 @@ begin
                    r.src, '%' || them || '%', '%"' || hd || '"%');
     what := r.nm;
     shut := _block_read(stmt, sub);
-    delete from block where actor = sub and blocked = them;
+    delete from block where actor = owner
+                        and blocked = (case when owner = sub then them else sub end);
     open := _block_read(stmt, sub);
-    insert into block(actor, blocked) values (sub, them);
+    insert into block(actor, blocked)
+      values (owner, case when owner = sub then them else sub end);
     return next;
   end loop;
 end $$;
@@ -3185,7 +3204,9 @@ const sql = [
   /* And the size of the wall, printed. Counted rather than listed, because a
      number that moves is a question and a list is a thing to maintain. */
   `select 'BLOCK'||chr(9)||what||chr(9)||open||chr(9)||shut
-     from _block_seen(${q(BK)}, ${q(BD)}, ${q(BDH)});`,
+     from _block_seen(${q(BK)}, ${q(BD)}, ${q(BDH)}, ${q(BK)});`,
+  `select 'BLOCKED'||chr(9)||what||chr(9)||open||chr(9)||shut
+     from _block_seen(${q(BD)}, ${q(BK)}, ${q(BKH)}, ${q(BK)});`,
   `select 'ANON'||chr(9)||
      (select count(*) from pg_class c join pg_namespace n on n.oid=c.relnamespace
        where n.nspname='public' and c.relkind in ('r','v','m','p','f')
@@ -3250,17 +3271,22 @@ if (wall) {
    A name here must still show BD -- the day it stops, the line is permission
    for nothing and has to go, which is what box-check says a stale baseline
    line becomes. docs/scope/r80-block.md carries what each one is waiting on. */
+/* BOTH WAYS. 「ブロック → 見えなくして」 OWNER 2026-09-24: 「ブロックされた側
+   からも、こちらのタイムライン・プロフィール・通知が見えない」. So the
+   catalogue is walked twice -- as BK, who blocked (`BLOCK`), and as BD, who
+   was blocked (`BLOCKED`) -- and every read is held to the same sentence
+   both times. */
 const BLOCK_HELD = {
-  profile_seen:  'the person themself -- unblocking is pressed on their page and nowhere else',
-  language_seen: 'what they made, drawn on their page (profile_seen reads it)',
-  follow_seen:   'who follows whom -- the unfollow a block makes reads this list',
+  language_seen: 'what they made -- a language somebody TOOK would leave the list of what they have',
 };
 const blockRows = out.split('\n').map((l) => l.split('\t'))
-                     .filter((r) => r.length === 4 && r[0] === 'BLOCK');
+                     .filter((r) => r.length === 4 && (r[0] === 'BLOCK' || r[0] === 'BLOCKED'));
 let blockOut = 0, blockHeld = 0, blockNobody = 0;
-if (!blockRows.length) bad.push(['a block, asked of every read', 'reads', 'none were found']);
-for (const [, name, open, shut] of blockRows) {
-  const o = Number(open), s = Number(shut), held = BLOCK_HELD[name];
+if (!blockRows.some((r) => r[0] === 'BLOCK')) bad.push(['a block, asked of every read', 'reads', 'none were found']);
+if (!blockRows.some((r) => r[0] === 'BLOCKED')) bad.push(['a block, asked of every read by who was blocked', 'reads', 'none were found']);
+for (const [way, name0, open, shut] of blockRows) {
+  const name = way === 'BLOCKED' ? name0 + ' (to who was blocked)' : name0;
+  const o = Number(open), s = Number(shut), held = BLOCK_HELD[name0];
   let why = '';
   if (o < 0 || s < 0) why = 'could not be read as the blocker';
   else if (!o) { blockNobody++; if (held) why = 'held by name and names nobody -- take it off BLOCK_HELD'; }
@@ -3278,7 +3304,7 @@ for (const name of Object.keys(BLOCK_HELD))
     console.log('  FAIL  ' + ('a block leaves ' + name + ' out').padEnd(44) +
                 'held by name and not in the catalogue');
   }
-console.log(`\nblock: ${blockRows.length} reads walked as the blocker -- ${blockOut} leave them out, ` +
+console.log(`\nblock: ${blockRows.length} reads walked as the blocker and as who was blocked -- ${blockOut} leave them out, ` +
             `${blockHeld} held by name, ${blockNobody} name nobody\n`);
 
 /* After the wall, because the wall's sentence is about anon and these are
