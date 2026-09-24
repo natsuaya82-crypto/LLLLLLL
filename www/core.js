@@ -1084,8 +1084,9 @@ function slRm(k){
    that rewrites itself, so a burst that fails twice says it once. */
 function saveTry(put){
   try{ put(); }
-  catch(e){ if(typeof toast==='function') toast(t('save.no')); }
+  catch(e){ saveNo(); }
 }
+function saveNo(){ if(typeof toast==='function') toast(t('save.no')); }
 
 /* Which languages are here, and which one is open. Read before anything else
    in this file, because every other key is built out of langId.
@@ -1495,6 +1496,7 @@ function langFirst(){
    version of this that only overwrote what the incoming language happens to
    have would leave the last one's words sitting behind it -- you would open
    somebody else's language and find your own dictionary in it. */
+var LSAVED='';
 function langRead(){
   WORDS=[]; LINES=[]; langName=''; SCRIPT={g:{}, extra:[]};
   try{ var a=JSON.parse(slRd(langKey('words'))||'[]'); if(Array.isArray(a)) WORDS=a; }catch(e){}
@@ -1514,6 +1516,8 @@ function langRead(){
        drops. Absent stays absent -- one step, which is what it always was. */
     if(gg && typeof gg.sp==='number') SCRIPT.sp=gg.sp;
   }catch(e){}
+  /* what the language was when it was read -- save() asks it (§ langMoved) */
+  LSAVED=langShape();
 }
 langRead();
 /* HOW THIS ACCOUNT HAS THE APP SET UP, and it goes with the account.
@@ -1829,15 +1833,29 @@ function migrateAll(){
   /* and a free language gets the twenty-eight slots it is allowed */
   ltStart();
 }
+/* NOT SAVING IS THE SPEC, SAVING AND SAYING NOTHING IS NOT (rule 11).
+   A language this phone may not write -- the server has not said it is this
+   account's yet, or it is somebody else's -- is not written, and that is
+   right. It used to return here in silence, with what was typed still on the
+   screen and nowhere else, and a migration saving the language later took it
+   in as the app's own write (r60 見つけたこと). So the one sentence a save
+   that did not land says -- saveNo(), the same one saveTry() says -- is said
+   here too, when something typed is what was not written -- the language
+   differs from what it was when it was last read or written (LSAVED) --
+   because this is also the call every settings-only change makes, and those
+   did save. */
+function langShape(){ return JSON.stringify([WORDS, LINES, SCRIPT]); }
+function langMoved(){ return langShape()!==LSAVED; }
 function save(){
   setKeep();
-  if(langLocked()) return;   /* not writable: nothing is written to the language */
+  if(langLocked()){ if(langId && langMoved()) saveNo(); return; }
   bkTouch();
   saveTry(function(){
     slWr(langKey('words'),JSON.stringify(WORDS));
     slWr(langKey('lines'),JSON.stringify(LINES));
     slWr(langKey('script'),JSON.stringify(SCRIPT));
     langStore();
+    LSAVED=langShape();
   });
 }
 

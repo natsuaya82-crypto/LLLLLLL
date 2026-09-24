@@ -4842,6 +4842,29 @@ const R = await pg.evaluate(async () => {
         '前の ☆ は savedWas に写して残る');
   }
 
+  /* ---- 91. 書けない保存は黙らない（規則 11、r79） ---------------------
+     「保存しないのは仕様、黙って保存しないのは違う」。サーバーがまだ持ち主を
+     言っていない言語で一語足して保存 ── 書かれない、そして「保存できません
+     でした」。同じ時に設定だけを変えた保存は、ちゃんと書けたので何も言わない。 */
+  {
+    start();
+    const said91 = [], realToast91 = window.toast;
+    window.toast = (m) => { said91.push(String(m)); };
+    delete LOWN[langId];                           /* 答えがまだ来ていない */
+    if (!langLocked()) no('91: (前提) 言語が書ける ── 測りたい状態ではない');
+    SET.theme = 'dark'; save();
+    const quiet91 = said91.slice();
+    WORDS.push({ hw: 'unsaved91', mns: ['x'], pos: 'n', at: 1 });
+    save();
+    window.toast = realToast91;
+    WORDS.pop();
+    langOwnGot(langId, A);
+    if (quiet91.length) no('91: 設定だけの保存が「保存できませんでした」と言った ── ' + quiet91.join(' / '));
+    if (said91.indexOf(t('save.no')) < 0)
+      no('91: **書けない保存が黙って戻った** ── 打った語は画面にしか無い');
+    say('91: 書けない保存は「' + t('save.no') + '」と言う ── 設定だけの保存は言わない');
+  }
+
   return out;
 });
 
