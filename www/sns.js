@@ -3058,9 +3058,21 @@ function notRow(n){
          it. 「通知なんか真ん中に文字ないせいできもい。文字増えたら2列にすれば
          よくない？」OWNER 2026-09-01. A row is one line where there is one
          line and two where there is a post under it; the face holds the
-         height either way. */
-      ((p && (p.mn || p.ln))
-        ? '<span class="ntfp">'+esc(p.mn || p.ln)+'</span>' : '')+
+         height either way.
+
+         THE LINE, IN THE LETTERS IT WAS WRITTEN IN. 「通知の一覧の投稿の一行
+         → 書いた字で」 OWNER 2026-09-24. It was `p.mn || p.ln` as plain
+         text: the meaning, or the line in roman, while the timeline drew the
+         same post in its own shapes. It is the timeline's postLnHTML() now,
+         which reads the post and nothing else (CLAUDE.md rule 8), set as a
+         `.pline` like every other line of a language. Across the row even
+         when the post runs down the page, as the line naming whom a reply
+         answers is: a row of the notices is one line tall. The meaning is
+         what is left for a post with no line. */
+      ((p && (p.ln || postInkOK(p.ink)))
+        ? '<span class="ntfp pline '+dirClass(postDir(p)==='rtl'? 'rtl' : 'ltr')+'">'+
+            postLnHTML(p)+'</span>'
+        : (p && p.mn)? '<span class="ntfp">'+esc(p.mn)+'</span>' : '')+
     '</span>'+
     /* The post itself, small, on the right -- which is the owner's picture and
        is also the only thing on the row that says WHICH post without reading
