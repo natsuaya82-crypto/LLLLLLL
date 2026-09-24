@@ -36,9 +36,10 @@ Swift はここでビルドできない ── 変えた所を報告に書く。
 | B つづりの欄 | `spTypeField()`（letters.js）が面と中身を決める。中身が字の名前だったのが原因（測った）。fmmk・rel-hw も通す。`myFontField()` は TFONT を訊く | pua-check F | shots/r83-B-spell-before/after/after-off.png |
 | C 紙の形 | `newGE()` が `GE.under`、`geDraw()` が 0.16 で下に | fill-check 3 行 | shots/r83-C-paper-before/after/after-drawing.png |
 | D スマホの短い行 | `KeyBoardView.swift` `layoutSubviews()` が半列 20 で数え、十未満の行を `kbStart()` の位置に | kb-check（`halfCols` = `KB_COLS`）。位置そのものは実機 | 撮れない（拡張） |
+| 追加 2 段キーの真下 | `kbKeyAtSheet()` を `kbUnderOf`・`kbTapKey`・`kbSelSpread`・`kbJoinDown`・`kbVJoin`・`kbVFix`・`kbMateEl` と運ぶ二つ（`kbPlaceUnder()`）が訊く。ずれた既存の結合は保存で外れる（CHANGELOG に DELETE REVIEW） | kb-check 5 行。deep と結合の持ち運びの既存の場面は、見た目で列が揃う板に直した（前の場面は短い行が真ん中に描かれるのを数えていなかった） | 見た目は変わらない |
 | E 長押し 10px | keyboard.js `kbDragTo`・letters.js `ltDrag` を `HOLD_SLOP` に | kb-check（www/ の長押しを全部数える） | 見た目は変わらない |
 
-**持ち物外で触った物**：CLAUDE.md 規則 19 の一文（「短い行は…まだ訊いていない」を D の事に）。同じコミットで直す決まりに従った。
+**持ち物外で触った物**：CLAUDE.md 規則 19 の二文（「短い行は…まだ訊いていない」を D の事に、「結合は行の中の位置で数える」を追加の事に）。同じコミットで直す決まりに従った。
 
 **持ち物外で残した物**：
 - `www/home.js` `wldDragMove()`（言語のページの並べ替え）は縦横 8px。kb-check の `HOLD_LEFT` に名指し ── 直したら名前を消さないと赤。
