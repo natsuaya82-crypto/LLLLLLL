@@ -6,36 +6,20 @@
    app was started by the drawing editor. Nothing was wrong with the lines;
    they were in a file nobody would think to open. */
 
-/* AND THE LANGUAGE THAT IS HERE NOW IS SENT, whether or not anything is
-   changed today: an install that predates this chapter has never called a
-   save, and waiting for one would mean the copy appears only for people who
-   happened to edit something.
+/* A LAUNCH SENDS NOTHING. What stood here was bkTouch() -- 「the language
+   that is here now is sent, whether or not anything is changed today」 --
+   and before it bkRestore(). The server hears what a person makes and
+   presses, and nothing else: CLAUDE.md rule 22, and
+   docs/scope/brief-r60-up.md. What is on the screen until the server answers
+   is the picture of what was last loaded, and langLocked() (www/core.js)
+   refuses every save onto it -- so the migrations below change what is on
+   the screen and write none of it anywhere. */
 
-   What stood here was bkRestore() -- the language read back out of the file
-   in Documents, filling in whatever storage had lost. There is no file now
-   (www/backup.js says why), and what answers 「the storage was reclaimed」 is
-   netLangsDown() at the foot of this file: the languages this ACCOUNT has,
-   brought down from the server. */
-bkTouch();
-
-/* old shapes of stored things, brought forward */
-migratePh();
-migrateMn();
-/* and a part of speech saved as its label rather than its key */
-migratePos();
-migrateLetters();
-migrateMarks();
-migrateSndName();
-migrateSnd();
-migratePosts();
-migratePostInk();
-migrateSp();
-/* and what the language is for, off the phone and into the language */
-migrateWorld();
-/* and the free QWERTY out of the keyboard list, keeping an edited one */
-migrateKbFree();
-/* and a free language gets the twenty-eight slots it is allowed */
-ltStart();
+/* Old shapes of stored things, brought forward -- www/core.js § migrateAll,
+   which runs only where the language may be written and runs again the moment
+   it becomes so. On a launch signed in that is not now: what is on the screen
+   is the picture until the server answers. */
+slAsApp(migrateAll, []);
 /* the font built from whatever letters have been drawn */
 installScriptFont();
 /* and how much of the screen there is, which the keyboard changes */
@@ -89,63 +73,28 @@ function bootSession(){
      what goes up is what Apple SIGNED, and what comes back is the plan.
      「だから端末でやるわけねえだろ」 OWNER 2026-09-03. */
   storeSync();
-  /* THE TWO ROADS BETWEEN THIS PHONE AND THE SERVER, AND THEY GO IN ORDER.
-     netLangsDown() brings down the languages this ACCOUNT has that this phone
-     has not got at all -- it fills in what is missing and stops, so a phone
-     that is simply working finds nothing to do, and until it existed a
-     language was unreachable from a second phone 「前のアカウント消えたんだ
-     が？」. netLangSync() puts up what this phone has and the server has not.
-     They used to be two lines here, fired in the same moment and neither
-     waited for, and the same language came down the first road while it was
-     going up the second one.
+  /* THE LANGUAGES COME DOWN AND NOTHING GOES UP. What this account has is
+     asked from netTook()'s pullBoot() (www/sns.js § askLangs, `mylangs`),
+     which is the one place that knows a session arrived.
 
-     THE REASON IT WAITS IS NOT THE ONE THAT WAS WRITTEN HERE. It was: a
-     language that has never been up has no `sid`, so the answer comes back
-     carrying a row this phone cannot match and the same language stands twice
-     in the list. **There is no `sid`** -- a language has had one number since
-     2026-09-10 (CLAUDE.md § langMint), and that number is the row's, so the
-     answer matches by id whether or not the row was made a second ago.
-
-     It waits because this is a LAUNCH. What is on this phone was sent by the
-     session that made it, and what has moved since goes up on netSaveUp()'s
-     road; nothing here is racing anything. The one moment where the sending
-     has to come FIRST is the door -- the walk makes a language before there
-     is an account, and www/net.js § netTook sends it there before it asks
-     what the account has. That is a session ARRIVING; this is one resuming.
-
-     AND IT IS NOT ASKED FOR HERE ANY MORE. Both roads are askLangs() in
-     www/sns.js § WHAT EACH SCREEN ASKS FOR, and `langs` is on PULL_OPEN --
-     so the question goes out from netTook(), which is the one place that
-     knows a session ARRIVED, and covers a launch and somebody signing in an
-     hour later with one line instead of three (this one, and www/onboard.js
-     § obIn).
-
-     What that buys is the answer being WRITTEN DOWN. 「the language has come
-     down」 is `pullHad('mylangs')` now, so the profile can wait for it instead
-     of drawing itself without it: the row and the word beside a private
-     language come out of the `wld` slice, and a slice lives in memory
-     (rule 22). 「非公開の文字も出ない」 OWNER 2026-09-07.
-
-     THE UP ROAD IS STILL HERE, AND STILL AFTER THE DOWN ONE. It is a LAUNCH's
-     and not a session's: it writes, and what it writes is whichever language
-     is open, so firing it every time a session arrived would put the language
-     on the screen up under somebody who had just signed in -- before
-     langForAcct() has re-pointed it. acct-check 9 is that case and it went
-     red the moment the two were joined. Waiting on the answer rather than
-     being called by it is the same order in one line. */
-  pullWait('mylangs', netLangSync);
+     `pullWait('mylangs', netLangSync)` stood here: the up road, run on every
+     launch behind the answer. It merged whatever this phone was holding --
+     the disk an older version left, and the picture once a migration had
+     saved it -- into the server's rows and wrote the result back, so a word
+     deleted on another phone came back from this one on every launch.
+     Measured 2026-09-23, tools/quiet-check.mjs 1 and 2. A save goes up when a
+     person makes it (netSaveUp, www/net.js), and the door sends what the walk
+     made (netTook); there is no third road. */
   /* Whether this account answers the reports was asked here and is asked in
      netTook() (www/net.js) now -- the one place that knows a session arrived.
      This call was the whole of it, so a launch made signed out never asked and
      the door somebody then came in through never asked either. */
-  /* And the face on the profile row, which nothing updated after the account
-     was made: a notice could draw a face somebody had not worn for a month.
-     It asks the server nothing on a launch where the face has not moved --
-     the comparison is against ME.avSent, which is local. */
-  netAvSync();
-  /* And the line about themselves, which was on the phone and only there.
-     「自己紹介を見せないって選択肢を俺はいつ与えた？」 It asks before it
-     writes and takes the account's when this phone has none. */
+  /* And the profile -- the line about themselves and the face -- READ.
+     「自己紹介を見せないって選択肢を俺はいつ与えた？」 netAvSync() stood above
+     this and sent the face this phone was holding on every launch where it
+     differed from a mark of what it had sent last, so an old photograph on a
+     second phone put itself back over a new one (r46-audit § A1). The face
+     goes up when somebody chooses it (meFacePut, www/me.js). */
   netProfSync();
   /* And how this account has the app set up -- the theme, the interface
      language and the three switches about the drawn letters

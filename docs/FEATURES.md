@@ -68,7 +68,7 @@ Marked separately, because they are not the same question:
 |---|---|---|---|---|---|
 | Writing a post | shipped | yes | — | the `post` row on the server, ink frozen on write; `lingua.posts` is the copy shown with no signal, read-only (rule 22) | decided |
 | Making a second language | shipped | — | Pro | `lingua.langs` | decided — the door is on the language list in Settings (`langNew`, `www/home.js`), not on the profile 「せっていからでいいよ」. `langCount()` counts languages that are `mine` AND on this account, so reading somebody else's is not making one and signing in as somebody else does not inherit their count |
-| Timeline | shipped, **not device confirmed** | yes | — | `post` rows on the server; `lingua.posts` is the copy shown with no signal, read-only (rule 22) | decided — **an account is required to read it and to post**. 「なんでログインしてないアカウントで投稿できんの？」 The making side needed none; **2026-08-26 ended that** — 「言語はアカウントないと作れないです」. With no signal a post is not sent: it fails, says so, and stays in front of the person so pressing again sends it — it is **not** kept on the phone to go up later 「なら失敗して残るにするべき」 OWNER 2026-09-05 (`docs/FEATURE_RULES.md` decision log, 2026-09-05). **The code does not match that yet**: `postCatchUp()` (`www/post.js`) sends a post the server has no id for off the back of the next timeline answer, with nobody pressing (r46-audit A5). It does not work without an account |
+| Timeline | shipped, **not device confirmed** | yes | — | `post` rows on the server; `lingua.posts` is the copy shown with no signal, read-only (rule 22) | decided — **an account is required to read it and to post**. 「なんでログインしてないアカウントで投稿できんの？」 The making side needed none; **2026-08-26 ended that** — 「言語はアカウントないと作れないです」. With no signal a post is not sent: it fails, says so, and stays in front of the person so pressing again sends it — it is **not** kept on the phone to go up later 「なら失敗して残るにするべき」 OWNER 2026-09-05 (`docs/FEATURE_RULES.md` decision log, 2026-09-05). **The code does not match that yet**: ~~`postCatchUp()`~~ (`www/post.js`) sends a post the server has no id for off the back of the next timeline answer, with nobody pressing (r46-audit A5). It does not work without an account |
 | Timeline split — For you / Following | shipped, **not device confirmed** | yes | — | none new; the `follow` rows are the list (`FOL_HAVE`, `www/me.js`) | decided — 「フォロー中とおススメみたいに分けたい」. For you is everything, Following is who this account follows plus your own, matched on the post's frozen `hd` |
 | A post carries its own shapes (`ink`) | shipped | yes | — | on the post | decided |
 | How long a post may be | shipped 2026-09-15, **not device confirmed** | yes | Plus (no ceiling) | none new — the ceiling is a screen thing, `post.body` is unchanged | decided — 「140にしようか。」「plusプランから無限」「文字数上限突破してツイートしようとしたらポップだそう」 OWNER 2026-09-15. Free **140 on BOTH rows** (the line and what it means — the meaning had no ceiling at all until this day); Plus and Pro no ceiling. `postCap()` beside `wordCap()`; **no capability added** — everybody may post and only the number moves. No `maxlength`: you can type past it and the PRESS refuses, with the same `popAsk(t('up.need'))` four other ceilings already use, so **no new string in ten languages**. Two rings, left the line and right the meaning; none at all where there is no ceiling. **Posts already longer are never shortened.** Held by `post-check` 26 |
@@ -93,7 +93,7 @@ Marked separately, because they are not the same question:
 | A calendar of your own | shipped | **month and weekday names** | — the year is twelve months and the week seven (`CAL_MONTHS`, `CAL_WEEK`), not a setting | the names are words with `slot` on them | decided — names and numerals only, no arithmetic of anybody's own (`www/cal.js`) |
 | A post shown two ways | shipped | **both layers** | — | both frozen on the post (`ln`+`ink`, `mn`) | decided — the third layer went out with the AI (decision log, 【差し替え済み】A post shown three ways) |
 | What a post MEANS, in the reader's own words | shipped | yes | yes | `post.mn`, frozen on the post. Nothing else — there is no `tr` field written any more | decided — 「単語はその単語の意味を 文法は並び替えた単語たちが文章として成り立つように。きかいほんやくはつかわない」 OWNER 2026-09-05. `toNatural()` in `www/grammar-engine/translate.js`: each word says what the DICTIONARY says it means, and the GRAMMAR puts those meanings in an order that reads as a sentence in the reader's language. A line the engine cannot parse falls to the word-by-word gloss. **No machine translation, and no seam for one** — ~~`postTr`~~ and ~~`TR_SEAM`~~ are deleted |
-| Posts on the server | shipped, **not device confirmed** | yes | — | `post` rows | done — `netPush`/`netFeed`/`postCatchUp`. An account is required to read the timeline or post to it (decision 2026-08-18) |
+| Posts on the server | shipped, **not device confirmed** | yes | — | `post` rows | done — `netPush`/`netFeed`/~~`postCatchUp`~~. An account is required to read the timeline or post to it (decision 2026-08-18) |
 | Explore | shipped, **not device confirmed** | yes | — | — | done — people while you type, posts when you press Search; both ask the server (`netFindWho`/`netFindPosts`) |
 | **Search history — the last five words typed** | **shipped 2026-09-03**, **not device confirmed** | yes | — | **`recent_search` rows on the server (new table); `SET.recent` is the copy that works with no signal (new key)** | decided — 「検索した履歴もユーザーはいらんから5個くらい検索履歴出るようにしたい」「1件づつ消せるでいいよ」 OWNER 2026-09-03. Five, newest first, under an **empty** search field; pressing one searches it again; the ✕ on a row takes that one and there is no button that takes them all. **No row of round faces** 「人の丸い列は作らない」 — the owner's TikTok screenshot had one and it was named as the part they did not want; CLAUDE.md § Shape forbids it anyway. **A word is recorded when 🔍 is pressed and by nothing else** 「検索は🔍押したらって言ってるやん」 — never per keystroke, or the prefixes typed on the way are three more rows; the same sentence this screen already lived by 「ツイートの検索は検索ボタン押したら出てくる。それまでは人」 (2026-08-26). Opening a person off the answer was built as a second road and the decision took it out. **Not the star**: `saved_search` is a word somebody chose, this is a word they typed, and one table with a kind-column on it would let the five-item ceiling delete somebody's star |
 | Notices | shipped, **not device confirmed** | yes | — | — | done — `netNotices`, an RPC in `schema.sql` |
@@ -327,11 +327,11 @@ Built:
   `supabase/schema.sql` is `(language, kind)` primary key, `body` the exact
   string the app holds for it — so a slice has one shape and not two that
   could disagree.
-- **two phones**: `www/sync.js` (ch. 26) reads, merges and writes back, and
-  **neither side wins by being newer.** Both are added. The price of that is a
-  duplicate, never a deletion 「そりゃあ両方足すだろ」 — which is
-  `docs/DATA_SAFETY.md`'s rule, applied to the one place it would have been
-  easiest to break.
+- **two phones**: `www/sync.js` (ch. 26) reads, merges and writes back.
+  Lists are both added — the price of that is a duplicate, never a deletion
+  「そりゃあ両方足すだろ」 — and one thing changed on both is the later
+  change's 「普通後から変えたほうになる？」 OWNER 2026-09-04
+  (`docs/DATA_SAFETY.md` § 1).
 - `netLangRow()` makes the `language` row and puts its id on `LANGS[id].sid`;
   `netSlicePut()` upserts (`Prefer: resolution=merge-duplicates`);
   `netSlices()` reads them; `netLangSync()` runs the three; and a save goes up
@@ -632,9 +632,9 @@ What that means here, item by item, and most of it is **already built**:
 - **the language lives on the server.** `netLangRow()` makes the `language`
   row and keeps its id on `LANGS[id].sid`; `netSlicePut()` upserts one slice
   (`Prefer: resolution=merge-duplicates`); `netSlices()` reads them back;
-  `netLangSync()` puts the two copies together through `www/sync.js`, whose
-  rule is that **neither side wins by being newer** — both are added, and the
-  price of that is a duplicate rather than a deletion 「そりゃあ両方足すだろ」.
+  `netLangSync()` puts the two copies together through `www/sync.js`: lists
+  are both added, and the price of that is a duplicate rather than a deletion
+  「そりゃあ両方足すだろ」; one thing changed on both is the later change's.
   `www/boot.js` fires it on launch.
 - **there is no file.** The Documents backup was deleted 2026-09-04
   (`CLAUDE.md` rule 11): a save reaches the server at once.

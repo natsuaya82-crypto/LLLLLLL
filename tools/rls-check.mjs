@@ -77,6 +77,13 @@ const E = 'e0000000-0000-4000-8000-00000000000e';   /* whoever may add staff */
 const G4='a0000000-0000-4000-8000-0000000000a4';   /* arrives with a line about themselves */
 const P2='c0000000-0000-4000-8000-0000000000b2';  /* two more of A's posts */
 const P3='c0000000-0000-4000-8000-0000000000b3';
+/* A post kept to yourself, a reply kept to yourself, and the two replies the
+   road out is asked about -- one anybody may read and one nobody but its
+   writer may (post_private in schema.sql). */
+const PV ='c0000000-0000-4000-8000-0000000000c1';
+const PVR='c0000000-0000-4000-8000-0000000000c2';
+const RP ='c0000000-0000-4000-8000-0000000000c3';
+const RPV='c0000000-0000-4000-8000-0000000000c4';
 const G1='a0000000-0000-4000-8000-0000000000a1';   /* tries to arrive holding admin */
 const G2='a0000000-0000-4000-8000-0000000000a2';   /* tries to arrive holding staff */
 const G3='a0000000-0000-4000-8000-0000000000a3';   /* tries to arrive already banned */
@@ -309,6 +316,17 @@ const CASES = [
     `insert into profile(id,handle) values ('${A}','fake')`],
   ['B cannot rename A',                       'denied', B, 0,
     `update profile set display='hacked' where id='${A}'`],
+  /* --- the settings: one key at a time, on your own row (r63-audit SQ1) --- */
+  ['A sets one setting',                      'ok',     A, 0,
+    `select prefs_put('{"theme":"dark"}'::jsonb)`],
+  ['and another',                             'ok',     A, 0,
+    `select prefs_put('{"push_like":false}'::jsonb)`],
+  ['and both are there -- the second did not replace the first', 'ok', A, 0,
+    `select 1 from profile where id='${A}' and prefs->>'theme'='dark' and prefs->>'push_like'='false'`],
+  ['B sets a setting',                        'ok',     B, 0,
+    `select prefs_put('{"theme":"hacked"}'::jsonb)`],
+  ['and it landed on B, not on A',            'denied', A, 0,
+    `select 1 from profile where id='${A}' and prefs->>'theme'='hacked'`],
   ['nobody signed in reads profiles',         'ok',     B, 1, `select 1 from profile`],
   ['nobody signed in makes one',              'denied', B, 1,
     `insert into profile(id,handle) values (gen_random_uuid(),'ghost')`],
@@ -1076,6 +1094,36 @@ const CASES = [
   ['and B sees it again',                     'ok',     B, 0,
     `select 1 from post where id='${P}'`],
 
+  /* --- a post kept to yourself is yours alone ----------------------------
+     「SNSは全部サーバー」, and the lock is what says who reads it: its writer
+     and nobody else -- not staff, who read what has been taken down, because
+     nobody can report what nobody can see. post_seen reads the table as its
+     owner, so it is asked separately: a view is only a wall if there is no
+     door beside it. */
+  ['A keeps a post to A',                     'ok',     A, 0,
+    `insert into post(id,author,body) values ('${PV}','${A}','{"pv":1,"ln":"mine"}'::jsonb)`],
+  ['A reads it',                              'ok',     A, 0,
+    `select 1 from post_seen where id='${PV}' and body ->> 'ln' = 'mine'`],
+  ['B cannot read it off the table',          'denied', B, 0,
+    `select 1 from post where id='${PV}'`],
+  ['nor through post_seen',                   'denied', B, 0,
+    `select 1 from post_seen where id='${PV}'`],
+  ['nor can staff',                           'denied', C, 0,
+    `select 1 from post_seen where id='${PV}'`],
+  ['nor staff off the table',                 'denied', C, 0,
+    `select 1 from post where id='${PV}'`],
+  ['nor somebody not signed in',              'denied', B, 1,
+    `select 1 from post_seen where id='${PV}'`],
+  /* And an answer kept to yourself does not show in the count of answers:
+     a number that counts what nobody can open says it is there. B's own
+     count of what B can read is the measure, so the claim holds whatever
+     else has answered P. */
+  ['A answers P and keeps the answer',        'ok',     A, 0,
+    `insert into post(id,author,body,reply_to) values ('${PVR}','${A}','{"pv":1}'::jsonb,'${P}')`],
+  ['and the count B is shown is what B can read', 'ok', B, 0,
+    `select 1 from post_seen v where v.id='${P}' and v.replies =
+       (select count(*) from post q where q.reply_to='${P}' and q.hidden_at is null)`],
+
   /* --- ejecting somebody, which is the half guideline 1.2 asks for -------
      Taking the post down leaves whoever wrote it free to write it again. What
      a ban IS, here, is one line in is_member() -- so the thing to attack is
@@ -1428,6 +1476,45 @@ const CASES = [
     `insert into draft(id,author,body) values ('${DR}','${A}','{\"ln\":\"secret\"}'::jsonb)`],
   ['and reads it back',                       'ok',     A, 0,
     `select 1 from draft where id='${DR}'`],
+  /* --- THE LATER EDIT WINS (keep_newer in schema.sql) --------------------
+     「普通後から変えたほうになる？」 OWNER 2026-09-04. Two phones of A's,
+     one that changed a thing at 2000 and one that changed it at 1000 and
+     connected second. What stays is the 2000 one, on every table the
+     trigger is on, and the older write lands everything it carries that is
+     not older. */
+  ['A\u2019s later phone names A "late"',     'ok',     A, 0,
+    `update profile set display='late', ed='{"display":2000}'::jsonb where id='${A}'`],
+  ['the earlier phone, connecting second, sends "early" and a line', 'ok', A, 0,
+    `update profile set display='early', bio='a line',
+            ed='{"display":1000,"bio":1000}'::jsonb where id='${A}'`],
+  ['and the name is the later one, the line the earlier phone\u2019s', 'ok', A, 0,
+    `select 1 from profile where id='${A}' and display='late' and bio='a line'
+       and (ed->>'display')::numeric = 2000`],
+  ['a setting pressed later',                 'ok',     A, 0,
+    `select prefs_put('{"theme":"dusk"}'::jsonb, '{"theme":2000}'::jsonb)`],
+  ['and one pressed earlier arriving after it is told what stands', 'ok', A, 0,
+    `select 1 where prefs_put('{"theme":"noon"}'::jsonb, '{"theme":1000}'::jsonb) ->> 'theme' = 'dusk'`],
+  ['and the row says so',                     'ok',     A, 0,
+    `select 1 from profile where id='${A}' and prefs->>'theme'='dusk'`],
+  ['a draft written later',                   'ok',     A, 0,
+    `update draft set body='{"ln":"later"}'::jsonb, ed='{"body":2000}'::jsonb where id='${DR}'`],
+  ['and an older one does not replace it',    'ok',     A, 0,
+    `update draft set body='{"ln":"older"}'::jsonb, ed='{"body":1000}'::jsonb where id='${DR}'`],
+  ['it is still the later one',               'ok',     A, 0,
+    `select 1 from draft where id='${DR}' and body->>'ln'='later'`],
+  /* And a slice, which two phones ADD to: the write says which version it
+     put itself together with, and one made against a version that has since
+     moved is refused rather than written over it (r63-audit 0-4). */
+  ['A writes notes, merged against nothing',  'ok',     A, 0,
+    `insert into slice(language,kind,body,ed) values ('${L}','notes','["a"]','{"body":1000,"was":0}'::jsonb)`],
+  ['and "was" is not kept on the row',        'ok',     A, 0,
+    `select 1 from slice where language='${L}' and kind='notes' and not (ed ? 'was')`],
+  ['another write merged against nothing is refused -- it has not seen "a"', 'denied', A, 0,
+    `update slice set body='["b"]', ed='{"body":3000,"was":0}'::jsonb where language='${L}' and kind='notes'`],
+  ['one merged against what is there lands',  'ok',     A, 0,
+    `update slice set body='["a","b"]', ed='{"body":3000,"was":1000}'::jsonb where language='${L}' and kind='notes'`],
+  ['and holds both',                          'ok',     A, 0,
+    `select 1 from slice where language='${L}' and kind='notes' and body='["a","b"]'`],
   /* The four somebody else would try. READ FIRST and not last: it is the one
      that costs somebody something even when nothing is written, and it is the
      one a `for all` policy or a `using (true)` would hand over in silence. */
@@ -1884,6 +1971,12 @@ const SHAPE = [
                where body->>'table' = 'react'
                  and body->'record'->>'actor' = '${F}'
                  and body->'record'->>'post' = '${H4}') <> 1)::int`, '0'],
+  ['an answer anybody may read rings the one answered', `
+     select ((select count(*) from net._sent
+               where body->>'table' = 'post' and body->'record'->>'id' = '${RP}') <> 1)::int`, '0'],
+  ['and one kept to its writer rings nobody', `
+     select ((select count(*) from net._sent
+               where body->>'table' = 'post' and body->'record'->>'id' = '${RPV}') <> 0)::int`, '0'],
   /* And no secret rode along. The whole point of taking the caller's token is
      that there is nothing in this file to steal. */
   ['and no key of ours is written into the road', `
@@ -2605,6 +2698,13 @@ const sql = [
   `select set_config('request.headers',
      '{"authorization":"Bearer THE-WRITERS-OWN-TOKEN"}', true);`,
   `insert into react(post,actor,kind) values (${q(H4)}, ${q(F)}, 'like');`,
+  /* And two answers under the same signature: one anybody may read, which
+     rings the person answered, and one kept to its writer, which rings
+     nobody -- telling somebody it exists is reading it (post_private). */
+  `select set_config('request.headers',
+     '{"authorization":"Bearer F-ANSWERS"}', true);`,
+  `insert into post(id,author,body,reply_to) values (${q(RP)},  ${q(F)}, '{}'::jsonb,        ${q(H4)});`,
+  `insert into post(id,author,body,reply_to) values (${q(RPV)}, ${q(F)}, '{"pv":1}'::jsonb, ${q(H4)});`,
   /* And the same write with nobody signed in behind it. Nothing comes out --
      there is no session to send as, and「読めなかった」と「無い」は枝を分けない
      の逆側でもある：送る相手ではなく、送る資格が無い。 */

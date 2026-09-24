@@ -344,6 +344,13 @@ const R = await pg.evaluate(async () => {
     netGet  = (path, ok, bad) => { getted.push(path); ok([]); };
   };
   const unwire = () => { netPost = realPost; netGet = realGet; };
+  /* THE ROWS THAT WERE ABOUT THIS LANGUAGE, by its number. 「B のセッションで
+     language に POST した」 was counted as ANY row posted while B arrived --
+     and B arriving to an account the server says has no language is given one
+     at the door, whose row the door makes (www/net.js § netTook, 2026-09-23;
+     77 below is that). That row is B's own and carries B's own number; the
+     claim is about A's. */
+  const postedFor = (id) => posted.filter(p => p.body && String(p.body.id) === String(id));
   const askRow = (id) => {
     let got = '', refused = false;
     /* netLangRow() takes the id now: it used to ask about whichever language
@@ -370,9 +377,9 @@ const R = await pg.evaluate(async () => {
   let r9 = askRow(id9);
   unwire();
   if (!r9.refused) no('9: B が A の言語の行を受け取った — 番号=' + JSON.stringify(r9.got));
-  if (posted.length)
-    no('9: B のセッションで language に POST した — owner=' +
-       JSON.stringify(posted[0].body && posted[0].body.owner));
+  if (postedFor(id9).length)
+    no('9: B のセッションで A の言語を language に POST した — owner=' +
+       JSON.stringify(postedFor(id9)[0].body.owner));
   say('9: 別のアカウントは、前の人の言語をサーバへ上げない');
 
   /* 10. 一度も上がっていない言語も、前の人のものなら上げない。
@@ -387,10 +394,10 @@ const R = await pg.evaluate(async () => {
   netOut(); arrive(B);
   let r10 = askRow(id10);
   unwire();
-  if (posted.length)
+  if (postedFor(id10).length)
     no('10: A の言語が B のアカウントに作られた — owner=' +
-       JSON.stringify(posted[0].body && posted[0].body.owner) +
-       ' name=' + JSON.stringify(posted[0].body && posted[0].body.name));
+       JSON.stringify(postedFor(id10)[0].body.owner) +
+       ' name=' + JSON.stringify(postedFor(id10)[0].body.name));
   if (!r10.refused) no('10: 上がっていない他人の言語の行が受け取られた');
   say('10: 一度も上がっていない他人の言語も、上げない');
 
@@ -402,6 +409,14 @@ const R = await pg.evaluate(async () => {
   langOwnGot(langId, A);
   langStore();
   netOut(); arrive(A);
+  /* 行はまだ無い所から訊きます。`LROW` はこの実行の記憶で、前の案件が
+     この言語の行を立てたまま残っています ── それがあると netLangRow() は
+     何も送らずに「ある」と答えます。2026-09-23 まではそれでも緑でした:
+     start() の ltStart() がアプリ自身の書き込みなのに「人が触った」と数え
+     られ、arrive() の扉がその言語を上げていたからです。その道は r60 が
+     閉じた道で（docs/scope/r60-up.md）、ここが測りたいのは扉ではなく
+     netLangRow() そのものです。 */
+  delete LROW[langId];
   let r11 = askRow();
   unwire();
   if (r11.refused) no('11: 本人が自分の言語の行を断られた');
@@ -442,7 +457,7 @@ const R = await pg.evaluate(async () => {
   unwire();
   if (!getted.length) no('12: uid が無いのにサーバへ訊かなかった');
   if (!r12.refused) no('12: サーバが行を返さないのに通した');
-  if (posted.length) no('12: 断ったあとで行を作りに行った');
+  if (postedFor(id12).length) no('12: 断ったあとで行を作りに行った');
   if (langOwnOf(id12)) no('12: 持ち主でないのに書いた人を書いた');
   say('12: uid の無い言語は、サーバが持ち主を答える（他人なら断る）');
 
@@ -2167,7 +2182,7 @@ const R = await pg.evaluate(async () => {
     localStorage.setItem('lingua.me.d46b', '{"name":"B"}');
     localStorage.setItem('lingua.posts.d46b', '[{"id":"pb"}]');
   }catch(e){}
-  SET.theme = 'dark'; SET.ui = 'ja'; SET.wldMoved = true; save();
+  SET.theme = 'dark'; SET.ui = 'ja'; SET.doneMoved = 1; save();
   var wasConfirm = window.confirm; window.confirm = function(){ return true; };
   try{ wipeHere(); }catch(e){ no('46: 削除が投げた ── ' + e.message); }
   window.confirm = wasConfirm;
@@ -2181,8 +2196,11 @@ const R = await pg.evaluate(async () => {
   /* テーマと表示言語はアカウントのものになりました（2026-09-09、
      www/core.js § SET_PREFS）。だから消したアカウントと一緒に落ちるのが
      正しい ── ここで見るのは、**この端末の設え**として残るもののほうです。
-     `wldMoved` は移行の印で、どのアカウントのものでもありません。 */
-  if (SET.wldMoved !== true) no('46: この端末の移行の印まで消した');
+     `doneMoved` は移行の印で、印を付けた物（`walked`）がこの端末のものなので、
+     印もこの端末のもの。`wldMoved` はそうではありません ── 移す物
+     （`SET.world`）がアカウントのものなので、印もアカウントのもの（64 番、
+     r73 § 2-7）。 */
+  if (SET.doneMoved !== 1) no('46: この端末の移行の印まで消した');
   if (planKnown()) no('46: 消したアカウントの段が残っている — ' + plan());
   say('46: アカウント削除は、そのアカウントの言語・単語・投稿・段だけ ── '
     + '別のアカウントのものは一つも動かず、端末の設えも残る');
@@ -2530,13 +2548,13 @@ const R = await pg.evaluate(async () => {
   delete SET.__later57;
   /* そして逆向き ── **この端末の**設えは、誰が来ても動かない。テーマと
      表示言語は 2026-09-09 からアカウントのものなので、ここではない
-     （64 番がそちらを持っています）。残っているのは移行の印とこの画面の
-     測りだけです。 */
-  SET.wldMoved = true; SET.vvkb = 260; save();
+     （64 番がそちらを持っています）。残っているのはこの端末の物の移行の印
+     （`doneMoved`）とこの画面の測りです。 */
+  SET.doneMoved = 1; SET.vvkb = 260; save();
   netOut(); arrive(B);
-  if (SET.wldMoved !== true || SET.vvkb !== 260)
+  if (SET.doneMoved !== 1 || SET.vvkb !== 260)
     no('57: この端末の設え（移行の印・この画面の測り）が、人が変わって動いた ── ' +
-       SET.wldMoved + ' / ' + SET.vvkb);
+       SET.doneMoved + ' / ' + SET.vvkb);
   say('57: 一覧は数えていて並べていない ── 明日足す欄もその人のもの、端末の設えだけが残る');
 
   /* ---- 58. スタッフの @ を打って押すと、呼び出しが一回出る ---------------
@@ -2963,7 +2981,10 @@ const R = await pg.evaluate(async () => {
      たまたまなっている形**でアプリが開きます。
 
      四本訊きます:
-     1. 一つ変えると `profile.prefs` へ PATCH が飛び、五つとも載る
+     1. 一つ変えると `prefs_put()` へ、変えた一つだけが載る（2026-09-23 から。
+        前は PATCH で持っている欄を全部載せ、列を丸ごと置き換えていた ──
+        r63-audit SQ1・L2）。まだ一度も聞いていない時は持っている欄を載せ、
+        どちらでも誰も触っていない欄は作らない
      2. サインインで行が降りてきて、画面がその形になる
      3. 行が無ければ写しを触らない（「行が無い」は「何も選んでいない」ではない）
      4. `SET_PHONE` はもうこの五つを「この端末の設え」と言っていない
@@ -2975,14 +2996,26 @@ const R = await pg.evaluate(async () => {
   {
     const realSend64 = netSend, realGet64 = netGet;
     let put64 = null;
-    netSend = (method, path, body) => {
-      if (method === 'PATCH' && path.indexOf('/rest/v1/profile') === 0 &&
-          body && body.prefs) put64 = body.prefs;
+    /* 答えも返す ── 送ったものが着いた、という形で。着かないままの押しは
+       「まだ出ている押し」で、降りてきた値より新しい限り画面に残ります
+       （www/net.js § netPrefsGot）。 */
+    netSend = (method, path, body, tok, ok) => {
+      if (method === 'POST' && path.indexOf('/rest/v1/rpc/prefs_put') === 0 &&
+          body && body.p){ put64 = body.p; if (ok) ok(null); }
     };
     SET.theme = 'dark'; SET.myfont = false; SET.showScript = false;
     SET.kbrom = true;
+    /* 両側が合意した形がある時: 変えた一つだけ。 */
+    netPrefsSaw();
     setUi('ja');
-    if (!put64) no('64: 設えを変えても profile.prefs へ出ていない');
+    if (!put64) no('64: 設えを変えても prefs_put へ出ていない');
+    else if (JSON.stringify(put64) !== JSON.stringify({ ui:'ja' }))
+      no('64: 変えたのは ui 一つなのに、載ったのは ' + JSON.stringify(put64) +
+         ' ── 変えていない欄を送ると、別の端末で変えた値を上書きする');
+    /* まだ聞いていない時: 持っている欄を載せ、無い欄は作らない。 */
+    put64 = null; NET_PREFS = null;
+    netPrefsPut();
+    if (!put64) no('64: まだ聞いていない時に、設えが出ていない');
     else {
       if (put64.ui !== 'ja') no('64: 変えた欄が載っていない — ' + JSON.stringify(put64));
       /* **持っている物は全部載る。**「五つとも載る」でした ── 2026-09-22 に
@@ -3030,6 +3063,58 @@ const R = await pg.evaluate(async () => {
     for (let z = 0; z < SET_PREFS.length; z++)
       if (SET_PHONE.indexOf(SET_PREFS[z]) >= 0)
         no('64: SET_PHONE がまだ ' + SET_PREFS[z] + ' をこの端末の設えだと言っている');
+    /* AND THE LATER PRESS STANDS (supabase/schema.sql § keep_newer,
+       「普通後から変えたほうになる？」 OWNER 2026-09-04). A press carries when
+       it happened; what prefs_put() hands back is what stands, and a phone
+       whose press was older takes it. A press that has not landed gives way
+       on the way down only to a LATER time. */
+    {
+      let e64 = null;
+      const t64 = Date.now();
+      netPrefsSaw();
+      netSend = (method, path, body, tok, ok) => {
+        if (path.indexOf('/rest/v1/rpc/prefs_put') === 0){
+          e64 = body.e;
+          /* the other phone chose dusk after this press */
+          if (ok) ok({ theme:'dusk', ui:SET.ui });
+        }
+      };
+      setTheme('light');
+      if (!e64 || !(e64.theme >= t64))
+        no('64: 押した時刻が設えと一緒に出ていない — ' + JSON.stringify(e64));
+      if (SET.theme !== 'dusk')
+        no('64: **後から押された別の端末の設えが画面に来ない** — ' + SET.theme);
+      /* a press still out, and a read coming down: older gives way to it,
+         later takes it */
+      netSend = () => {};
+      setTheme('light');
+      netGet = (path, ok) => ok([{ prefs:{ theme:'noon' }, ed:{ 'prefs.theme':1000 } }]);
+      netPrefsPull();
+      if (SET.theme !== 'light')
+        no('64: まだ着いていない押しが、それより古いサーバーの値に上書きされた — ' + SET.theme);
+      netGet = (path, ok) => ok([{ prefs:{ theme:'night' }, ed:{ 'prefs.theme':Date.now() + 60000 } }]);
+      netPrefsPull();
+      if (SET.theme !== 'night')
+        no('64: 後から押されたサーバーの値が、着いていない古い押しに負けた — ' + SET.theme);
+      say('64: 設えは後から押したほうが残る ── 押した時刻が出て行き、答えと降りてきた値のうち後のものが画面に来る');
+    }
+    /* AND A MIGRATION'S MARK IS WHOEVER OWNS WHAT IT MARKS (r73 § 2-7).
+       `wldMoved` says SET.world has been moved into the language, and
+       SET.world is the account's -- so the mark is parked with it. As the
+       handset's it stayed behind for the next account, whose own `world`
+       was then never moved. */
+    {
+      SET.wldMoved = 1; setKeep();
+      setFor('uB-wld');
+      const other = SET.wldMoved;
+      setFor(A);
+      if (other)
+        no('64: 前のアカウントの「移した」印が、次に入った人にも立っている ── ' +
+           'その人の SET.world は言語へ移されない');
+      if (!SET.wldMoved)
+        no('64: 戻ってきた人の「移した」印が消えた');
+      say('64: 移行の印は、移した物と同じくアカウントの物 ── 別の人には立たず、戻れば戻る');
+    }
     netSend = realSend64; netGet = realGet64;
     SET.theme = 'system'; SET.ui = 'en'; setKeep();
     say('64: アプリの設えはアカウントのもの ── profile.prefs へ上がり、' +
@@ -3238,7 +3323,8 @@ const R = await pg.evaluate(async () => {
   {
     const sentAt = [];
     const keepPut = netProfPut, keepFree = netHandleFree;
-    netProfPut = (fields, ok) => { sentAt.push(fields); ok({}); };
+    let at67 = null;
+    netProfPut = (fields, at, ok) => { sentAt.push(fields); at67 = at; ok(fields); };
     netHandleFree = (h, ok) => ok(true);
     ME.name = 'アヤ'; ME.handle = 'aya'; ME.bio = ''; saveMe();
     meKeepSave({ name: 'アヤ改', handle: 'ayaka', bio: 'ここに一行' }, () => {});
@@ -3257,8 +3343,18 @@ const R = await pg.evaluate(async () => {
     const sent2 = sentAt.length ? sentAt[0] : {};
     if (sent2.hasOwnProperty('display') || sent2.hasOwnProperty('handle'))
       no('67: 動いていない名前と @ まで送っている — ' + JSON.stringify(sent2));
+    /* 保存を押した時刻が、送る欄と一緒に出る（後から直したほうが残る、
+       supabase/schema.sql § keep_newer）。 */
+    if (!(at67 > 0))
+      no('67: 保存を押した時刻が一緒に出ていない — ' + JSON.stringify(at67));
+    /* そして返ってきた行が ME になる ── 別の端末が後から直した名前なら、
+       それが名前。 */
+    netProfPut = (fields, at, ok) => ok(Object.assign({}, fields, { display:'後から直した名' }));
+    meKeepSave({ name: 'さきの名' }, () => {});
+    if (ME.name !== '後から直した名')
+      no('67: **後から別の端末で直した名前が、古い保存に負けた** — ' + ME.name);
     /* 送れなかったら端末にも書かない ── 保存は半分では済まない。 */
-    netProfPut = (fields, ok, bad) => bad(null, 0, 'prof −');
+    netProfPut = (fields, at, ok, bad) => bad(null, 0, 'prof −');
     ME.name = 'アヤ改'; ME.handle = 'ayaka'; saveMe();
     meKeepSave({ name: 'もどらない', handle: 'nope' }, () => {});
     if (ME.name !== 'アヤ改' || ME.handle !== 'ayaka')
@@ -4311,8 +4407,10 @@ const R = await pg.evaluate(async () => {
     netOut(); arrive(A);
     const keep82 = netSend;
     let last82 = null, calls82 = 0;
+    /* The settings go up through prefs_put() (supabase/schema.sql,
+       2026-09-23) -- one key laid over the row, not the column replaced. */
     netSend = (method, path, body, tok, ok2) => {
-      if (String(path).indexOf('/rest/v1/profile') === 0) {
+      if (String(path).indexOf('/rest/v1/rpc/prefs_put') === 0) {
         calls82++; last82 = { method: method, body: body };
       }
       if (ok2) ok2([]);
@@ -4359,9 +4457,9 @@ const R = await pg.evaluate(async () => {
         no('82: ' + k + ' を押しても prefs が上がっていない ── ' +
            (calls82 - was) + ' 回');
       else {
-        if (last82.method !== 'PATCH')
-          no('82: PATCH ではない ── ' + last82.method);
-        const pr = last82.body && last82.body.prefs;
+        if (last82.method !== 'POST')
+          no('82: prefs_put への POST ではない ── ' + last82.method);
+        const pr = last82.body && last82.body.p;
         if (!pr || pr['push_' + k] !== false)
           no('82: **上がった prefs に push_' + k + ':false が無い** ── ' +
              JSON.stringify(pr) +

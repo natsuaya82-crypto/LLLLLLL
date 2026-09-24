@@ -396,7 +396,7 @@ function netSend1(method, path, body, tok, ok, bad, up, may){
     var d=null;
     netOff(x);
     try{ d=JSON.parse(x.responseText||'null'); }catch(e){}
-    if(x.status>=200 && x.status<300){ ok(d); return; }
+    if(x.status>=200 && x.status<300){ slAsApp(ok, [d]); return; }
     /* An hour has gone by with the app open. Everything about this request is
        still right except the token on it, so it goes again with a live one.
        netFresh() answers false for a refresh token the server no longer
@@ -415,9 +415,11 @@ function netSend1(method, path, body, tok, ok, bad, up, may){
       });
       return;
     }
-    bad(d, x.status, netTag(path)+' '+x.status);
+    /* Handed over through the slice store (www/core.js § LTOUCH): what an
+       answer writes is the app's and not a person's. */
+    slAsApp(bad, [d, x.status, netTag(path)+' '+x.status]);
   };
-  x.onerror=function(){ netOff(x); bad(null, 0, netTag(path)+' 0'); };
+  x.onerror=function(){ netOff(x); slAsApp(bad, [null, 0, netTag(path)+' 0']); };
   netOn(x);
   x.send(body? JSON.stringify(body) : null);
 }
@@ -477,8 +479,10 @@ function netWhy(d, status, mark){
      落ちた話ではないので `net.offline` ではないし、状態のどれでもない。
      `−` や `≠` と同じく印で分ける。出すのは netDrop() と netLangDrop() で、
      どちらの話かは印の頭に書いてある ── 「投稿」と「言語」は別の文。 */
-  if(String(mark||'').indexOf('∅')>=0)
+  if(String(mark||'').indexOf('∅')>=0){
+    if(String(mark).indexOf('vo')===0) return t('post.vo.gone');
     return String(mark).indexOf('language')===0? t('lang.del.no') : t('post.del.no');
+  }
   if(!status) return t('net.offline') + (mark? ' ('+mark+')' : '');
   var m=(d && (d.msg || d.message || d.error_description || d.error)) || '';
   if(status===400 && /invalid login/i.test(m)) return t('net.badlogin');
@@ -778,10 +782,35 @@ function netTook(d){
        A token being REFRESHED does not come through here, so an hour passing
        does not blank it. netLangsDown() below answers it. */
     langMineForget();
+    /* AND HOW THIS ACCOUNT HAS THE APP SET UP. It was asked on a launch and
+       nowhere else, so somebody signing in on a second phone and changing one
+       setting before relaunching sent this phone's whole set over theirs
+       (r63-audit L2). Forgotten first: the last person's agreement is not
+       this one's. */
+    NET_PREFS=null; NET_PREFS_AT={};
+    netPrefsPull();
+    /* AND WHAT THIS ACCOUNT WROTE THAT THE SERVER HAS NOT GOT, sent here and
+       nowhere else without a press -- the same door the language goes up at
+       (www/post.js § postUpAll). postFor() above has just made POSTS this
+       account's own. */
+    if(typeof postUpAll==='function') postUpAll();
     LANG_WAIT=true;
     netLangSync(function(){
       if(typeof pullWait==='function') pullWait('mylangs', function(){
-        langForAcct(); render();
+        langForAcct();
+        /* AND THE ROW OF WHAT THIS DOOR HAS JUST MADE. An account the server
+           says has no language is given one here (langForAcct), and it is the
+           door that made it -- so the door makes its row, through the one
+           road that makes rows. Nothing else of it goes: it holds nothing yet,
+           and what somebody puts in it goes up when they save it. The row
+           used to appear by accident, on the free alphabet's own save riding
+           the up road; that road carries only what a person wrote now
+           (www/core.js § LTOUCH). A LAUNCH that finds no language mints one
+           too and makes no row -- that was the nameless row of 2026-09-15 --
+           and its row is made by the first save (netSaveUpGo). */
+        if(langId && !langRowUp(langId) && langMine(langId))
+          netLangRow(langId, function(){ render(); }, function(){});
+        render();
       });
     });
   }
@@ -1118,7 +1147,7 @@ function netSetPass(pass, ok, bad){
    ago. */
 function netMyProfile(ok, bad){
   if(!netSignedIn()){ bad(null, 0, 'profile −'); return; }
-  netGet('/rest/v1/profile?select=handle,display,bio,link,loc,av&limit=1&id=eq.'+
+  netGet('/rest/v1/profile?select='+profCols()+',av&limit=1&id=eq.'+
          encodeURIComponent(SESS.uid),
          function(d){
            var p=d && d.length? d[0] : null;
@@ -1127,14 +1156,10 @@ function netMyProfile(ok, bad){
               until 2026-09-09, and a flag about the phone cannot answer a
               question about the account. */
            meRowGot(!!p);
-           /* The face, read back same as the name and the handle -- signing
-              in on a second phone used to leave ME.av empty until a letter
-              was drawn or redrawn here, so the account's own icon never
-              followed it over. avSent is set to match so netAvSync() does
-              not turn straight round and PATCH back what it was just given. */
-           if(p && p.av!==undefined){
-             ME.av=p.av; ME.avSent=JSON.stringify(p.av||null); saveMe();
-           }
+           /* The whole profile, face included, put on ME in the one place
+              that does it (meProfGot, www/me.js) -- the name, the @, the line
+              about themselves, where they are, their link, and the face. */
+           if(p) meProfGot(p);
            ok(p);
          }, bad);
 }
@@ -1162,18 +1187,14 @@ function netMakeProfile(h, name, ok, bad){
      display, bio, link, loc, one literal each -- so 「which columns is a
      person's profile」 had two answers, and the day the save road grew the
      name and the @ (2026-09-11) only one of the two had them. `av` is not on
-     it: nobody types a face, and the road that keeps it level is netAvSync()
-     below. */
+     it: nobody types a face, and its road is meFacePut() (www/me.js). */
   for(i=0;i<PROF_MINE.length;i++){
     k=PROF_MINE[i][0];
     row[PROF_MINE[i][1]]=Object.prototype.hasOwnProperty.call(typed, k)?
       typed[k] : String(ME[k]||'');
   }
   netPost('/rest/v1/profile', row, SESS.at,
-          /* what was sent, so netAvSync() does not send it again on the
-             next launch for a face that has not moved */
           function(d){
-            ME.avSent=JSON.stringify(av||null); saveMe();
             /* AND THE ROW EXISTS NOW, WHICH NOTHING WROTE DOWN.
                `meRowHas()` (www/me.js § ME_ROW) is 「does this account have a
                profile row」 and appIs() (www/shell.js) answers 'door' while it
@@ -1191,31 +1212,6 @@ function netMakeProfile(h, name, ok, bad){
           },
           bad);
 }
-/* The face on the profile row, kept level with the face on the phone.
-   ------------------------------------------------------------------
-   netMakeProfile() wrote `av` once, the day the account was made, and nothing
-   ever wrote it again -- so drawing a new letter or setting a photograph
-   changed what postAvatar() answers everywhere in the app EXCEPT the little
-   face beside "somebody liked this". A notice could draw a face somebody had
-   not worn for a month.
-
-   Nothing about the timeline was wrong: a post freezes its own face when it
-   is written (rule 8), so what a reader sees on a post is right. The notice
-   is the one place that reads the profile row.
-
-   Why this is cheap, which was the reason it sat in the backlog: postAvatar()
-   answers the photograph if there is one and otherwise the FIRST letter that
-   has been drawn. It does not change when a letter is drawn -- it changes
-   when the first one is redrawn, or a photograph is set. Twice in a language's
-   life, not once per stroke. So "send it when it differs" costs one request
-   on the launches where it actually moved and none on the others.
-
-   ME.avSent is the copy that was sent, so the comparison is local. A launch
-   where nothing moved asks the server nothing at all.
-
-   Fired and not waited for, like everything else in bootSession(): the little
-   face being a launch behind is not worth making the app open slower, and
-   there is nothing on screen that depends on the answer. */
 /* What a person writes about themselves, kept the same on both sides.
    「そもそも端末に保存するもんはないぞほとんど」 OWNER 2026-09-01 -- the
    server is the record and the phone is the copy that works with no signal.
@@ -1251,13 +1247,10 @@ function netMakeProfile(h, name, ok, bad){
    fortnight and @lingua are `profile_rename()` in supabase/schema.sql, which
    answers with an exception, which arrives here as a refusal like any other.
 
-   It ASKS before it writes, where netAvSync() below compares against a mark
-   it keeps locally (`ME.avSent`). Two reasons, and the second is the one that
-   decided it: a mark would be a new field on ME, and the shape of ME is
-   www/me.js's -- meBlank() and meFrom() build it column by column, so a key
-   this file invented would be dropped on the next read and the mark would
-   never match. Asking the server costs one small request on a launch and
-   cannot go stale.
+   It ASKS rather than keeping a mark of what was last sent: asking the server
+   costs one small request on a launch and cannot go stale. The face is read
+   by the same ask (`av`, meAvGot in www/me.js) and written by its own press
+   (meFacePut) -- a launch writes none of them.
 
    THERE IS NO SIDE THAT WINS ANY MORE, BECAUSE THERE IS ONE SIDE.
    「端末に残すものないんですけど。サーバーで同じ機能になるように代替して」
@@ -1286,10 +1279,10 @@ function profCols(){
 }
 function netProfSync(){
   if(!netSignedIn() || !SESS || !SESS.uid) return;
-  netGet('/rest/v1/profile?select='+profCols()+'&limit=1&id=eq.'+
+  netGet('/rest/v1/profile?select='+profCols()+',av&limit=1&id=eq.'+
          encodeURIComponent(SESS.uid),
     function(d){
-      var row=(d && d.length)? (d[0]||{}) : {}, drew=false, i, k, there;
+      var row=(d && d.length)? (d[0]||{}) : {};
       /* AND THE SAME ANSWER THIS ASK ALREADY CARRIES: a row means this
          account has been through the walk (www/me.js § ME_ROW). */
       meRowGot(!!(d && d.length));
@@ -1299,13 +1292,10 @@ function netProfSync(){
          empty strings over the copy would be this road taking something away
          rather than bringing it. */
       if(!(d && d.length)) return;
-      for(i=0;i<PROF_MINE.length;i++){
-        k=PROF_MINE[i][0];
-        there=String(row[PROF_MINE[i][1]]||'');
-        if(there===String(ME[k]||'')) continue;
-        ME[k]=there; drew=true;
-      }
-      if(drew){ saveMe(); render(); }
+      /* The five columns and the face, put on ME in the one place that does
+         it (meProfGot, www/me.js), and read only -- a launch sends none of
+         them (r46-audit § A1). */
+      if(meProfGot(row)) render();
     }, function(){});
 }
 /* AND THE ONE PLACE THOSE THREE ARE WRITTEN. The editor waits for it: what
@@ -1313,10 +1303,20 @@ function netProfSync(){
    (www/me.js § meProfPut), which is the same sentence as the 公開 switch and
    the heart. 「保存するタイミングでエラーが起きるなら、保存されないし」
    OWNER 2026-09-05. */
-function netProfPut(fields, ok, bad){
+/* EACH FIELD CARRIES THE MOMENT IT WAS SAVED (`at`, the press), so that of
+   two phones changing the same field the later press stands
+   (supabase/schema.sql § keep_newer). `ok` is handed the row as it now is,
+   which is the answer to that -- the caller puts THAT on ME, not what it
+   sent. */
+function netProfPut(fields, at, ok, bad){
   if(!netSignedIn() || !SESS || !SESS.uid){ bad(null, 0, 'prof \u2212'); return; }
+  var o={}, ed={}, k;
+  for(k in fields) if(Object.prototype.hasOwnProperty.call(fields, k)){
+    o[k]=fields[k]; ed[k]=at;
+  }
+  o.ed=ed;
   netSend('PATCH', '/rest/v1/profile?id=eq.'+encodeURIComponent(SESS.uid),
-          fields, SESS.at, ok, bad);
+          o, SESS.at, function(d){ ok((d && d.length)? d[0] : null); }, bad);
 }
 /* HOW THIS ACCOUNT HAS THE APP SET UP, BOTH WAYS.
    -------------------------------------------------------------------------
@@ -1331,8 +1331,8 @@ function netProfPut(fields, ok, bad){
    DOWN AT A SIGN-IN AND UP WHEN ONE MOVES. A setting has to move on the
    screen the moment it is pressed -- a theme that waits for a server is a
    screen somebody presses twice -- so the press writes the copy and sends,
-   and the ROW is what the next sign-in reads. That is netAvSync()'s shape and
-   not the 公開 switch's, and the difference is what is at stake: nothing
+   and the ROW is what the next sign-in reads. That is not the 公開 switch's
+   shape, and the difference is what is at stake: nothing
    anybody made is here, and the worst a send that did not land can cost is
    the theme being what it was on the phone that last spoke.
 
@@ -1340,41 +1340,99 @@ function netProfPut(fields, ok, bad){
    function up. An account whose row has not been made yet has not chosen
    anything, and writing five defaults over the copy would be this road taking
    something away rather than bringing it. */
-function netPrefsPull(){
-  if(!netSignedIn() || !SESS || !SESS.uid) return;
-  netGet('/rest/v1/profile?select=prefs&limit=1&id=eq.'+
-         encodeURIComponent(SESS.uid),
-    function(d){
-      var row=(d && d.length)? (d[0]||{}) : null, p, i, k, drew=false;
-      if(!row) return;
-      p=row.prefs;
-      if(!p || typeof p!=='object') return;
-      for(i=0;i<SET_PREFS.length;i++){
-        k=SET_PREFS[i];
-        if(!Object.prototype.hasOwnProperty.call(p, k)) continue;
-        if(SET[k]===p[k]) continue;
-        SET[k]=p[k]; drew=true;
-      }
-      if(drew){
-        setKeep();
-        /* The theme is painted rather than drawn: applyTheme() writes the
-           attribute the stylesheet's two blocks hang off, and render() alone
-           would leave the page in the last one. */
-        if(typeof applyTheme==='function') applyTheme();
-        if(typeof installScriptFont==='function') installScriptFont();
-        render();
-      }
-    }, function(){});
-}
-function netPrefsPut(){
-  if(!netSignedIn() || !SESS || !SESS.uid) return;
+/* WHAT THE TWO SIDES LAST AGREED THE SETTINGS WERE, in memory -- the settings
+   of SET_PREFS as they stood the moment the server's answer was laid on them,
+   or the moment a send of them landed. It is the only thing that can say
+   which setting a person has just CHANGED: the callers of netPrefsPut() set a
+   field of SET and call it with no argument, and every one of them is in a
+   file that is not this one. `null` is 「not heard yet」. */
+var NET_PREFS=null;
+function netPrefsSaw(){
   var o={}, i, k;
   for(i=0;i<SET_PREFS.length;i++){
     k=SET_PREFS[i];
     if(SET[k]!==undefined) o[k]=SET[k];
   }
-  netSend('PATCH', '/rest/v1/profile?id=eq.'+encodeURIComponent(SESS.uid),
-          {prefs:o}, SESS.at, function(){}, function(){});
+  NET_PREFS=o;
+}
+function netPrefsPull(){
+  if(!netSignedIn() || !SESS || !SESS.uid) return;
+  netGet('/rest/v1/profile?select=prefs,ed&limit=1&id=eq.'+
+         encodeURIComponent(SESS.uid),
+    function(d){
+      var row=(d && d.length)? (d[0]||{}) : null;
+      if(!row) return;
+      netPrefsGot(row.prefs, row.ed);
+    }, function(){});
+}
+/* WHAT THE SERVER SAYS THE SETTINGS ARE, put on SET -- the one place. Both a
+   sign-in's read and the answer to a send come here: prefs_put() hands back
+   the settings as they stand, which is how a phone whose press was OLDER than
+   the other phone's takes the other one's (supabase/schema.sql § keep_newer).
+
+   AND A KEY PRESSED HERE THAT HAS NOT LANDED is the same question asked on the
+   way down: it stands if its press is later than the time the server holds
+   for it (`ed`, `prefs.<key>`), and gives way if the server's is later. With
+   no time from the server, the press here is the later one -- the value there
+   was put before anything said when. */
+function netPrefsGot(p, ed){
+  var i, k, w, their, drew=false;
+  if(!p || typeof p!=='object') p={};
+  if(!ed || typeof ed!=='object') ed={};
+  for(i=0;i<SET_PREFS.length;i++){
+    k=SET_PREFS[i];
+    if(!Object.prototype.hasOwnProperty.call(p, k)) continue;
+    w=NET_PREFS_AT[k];
+    their=Number(ed['prefs.'+k]) || 0;
+    if(w && w.at>=their) continue;
+    delete NET_PREFS_AT[k];
+    if(SET[k]===p[k]) continue;
+    SET[k]=p[k]; drew=true;
+  }
+  netPrefsSaw();
+  if(drew){
+    setKeep();
+    /* The theme is painted rather than drawn: applyTheme() writes the
+       attribute the stylesheet's two blocks hang off, and render() alone
+       would leave the page in the last one. */
+    if(typeof applyTheme==='function') applyTheme();
+    if(typeof installScriptFont==='function') installScriptFont();
+    render();
+  }
+}
+/* THE SETTINGS THAT MOVED, AND ONLY THOSE. This PATCHed `prefs` with every
+   setting this phone held, which replaced the column whole: a notification
+   switched off on the other phone was switched back on by this one changing
+   the theme, and a setting this phone had never heard of was taken off the
+   row (r63-audit SQ1・L2, measured). `prefs_put()` (supabase/schema.sql) lays
+   what is sent over what is there, so what goes is what differs from what the
+   two sides last agreed -- and, before anything has been heard, what this
+   phone holds, which can overwrite a key but can no longer remove one. */
+/* AND WHEN EACH ONE WAS PRESSED, which is what the server compares
+   (supabase/schema.sql § keep_newer): the moment a setting is first seen to
+   differ from what the two sides agreed, and kept until the send of that
+   value lands -- a send that failed and goes again later is still the press
+   it was, not a later one. In memory: `{v, at}` per key. */
+var NET_PREFS_AT={};
+function netPrefsPut(){
+  if(!netSignedIn() || !SESS || !SESS.uid) return;
+  var o={}, e={}, n=0, i, k, w;
+  for(i=0;i<SET_PREFS.length;i++){
+    k=SET_PREFS[i];
+    if(SET[k]===undefined) continue;
+    if(NET_PREFS && NET_PREFS[k]===SET[k]){ delete NET_PREFS_AT[k]; continue; }
+    w=NET_PREFS_AT[k];
+    if(!w || w.v!==SET[k]) w=NET_PREFS_AT[k]={v:SET[k], at:Date.now()};
+    o[k]=SET[k]; e[k]=w.at; n++;
+  }
+  if(!n) return;
+  netSend('POST', '/rest/v1/rpc/prefs_put', {p:o, e:e}, SESS.at,
+          function(d){
+            for(k in o)
+              if(Object.prototype.hasOwnProperty.call(o, k) &&
+                 NET_PREFS_AT[k] && NET_PREFS_AT[k].v===o[k]) delete NET_PREFS_AT[k];
+            netPrefsGot(d);
+          }, function(){});
 }
 /* WHERE THIS HANDSET CAN BE REACHED, UNDER THE ACCOUNT THAT IS AT IT.
    -------------------------------------------------------------------------
@@ -1428,15 +1486,6 @@ function netDeviceDrop(){
           '&token=eq.'+encodeURIComponent(NET_TOK), null, SESS.at,
           function(){}, function(){});
   NET_TOK='';
-}
-function netAvSync(){
-  if(!netSignedIn() || !SESS || !SESS.uid) return;
-  var av=postAvatar(), now=JSON.stringify(av||null);
-  if(now===ME.avSent) return;
-  netSend('PATCH', '/rest/v1/profile?id=eq.'+encodeURIComponent(SESS.uid),
-          {av:av}, SESS.at,
-          function(){ ME.avSent=now; saveMe(); },
-          function(){});
 }
 /* ---- which side of the nonce ------------------------------------------
    Supabase refuses this call when the id_token carries a nonce claim and the
@@ -2061,7 +2110,7 @@ function netInList(xs){
    「訊かなかった中身」 and 「空の中身」 are two states and must not share a
    branch (docs/DATA_SAFETY.md rule 3). */
 function netSlices(sid, ok, bad, kinds, cols){
-  netGet('/rest/v1/slice?select='+(cols || 'kind,body,no,at')+
+  netGet('/rest/v1/slice?select='+(cols || 'kind,body,no,at,ed')+
          '&language=eq.'+encodeURIComponent(sid)+
          ((kinds && kinds.length)
             ? '&kind=in.('+netInList(kinds)+')' : ''),
@@ -2069,7 +2118,10 @@ function netSlices(sid, ok, bad, kinds, cols){
       var out={}, i, r;
       for(i=0;i<(d||[]).length;i++){
         r=d[i];
-        out[r.kind]={no:r.no||0, at:String(r.at||'')};
+        /* `ed` is when a person last wrote it, on whichever phone
+           (supabase/schema.sql § keep_newer) -- 0 where nobody has said. */
+        out[r.kind]={no:r.no||0, at:String(r.at||''),
+                     ed:Number((r.ed && r.ed.body) || 0)};
         if(r.body!==undefined && r.body!==null) out[r.kind].body=String(r.body);
       }
       ok(out);
@@ -2078,7 +2130,7 @@ function netSlices(sid, ok, bad, kinds, cols){
 /* One slice, written. `Prefer: resolution=merge-duplicates` is what makes an
    insert into a table with a two-column primary key an upsert -- the phone
    does not have to know whether this slice has ever been up. */
-function netSlicePut(sid, kind, body, no, ok, bad){
+function netSlicePut(sid, kind, body, no, ed, was, ok, bad){
   /* Through netSend(), like everything else here: this is the write a
      person's work actually goes up in, and it used to open its own
      XMLHttpRequest, outside the token renewal. 「保存押せば起動されないの？」
@@ -2089,11 +2141,19 @@ function netSlicePut(sid, kind, body, no, ok, bad){
      this line sent. netSlice1() gives it to netAgreed(), and the next save
      compares against it rather than reading the dictionary back. */
   var at=(new Date()).toISOString();
+  /* AND WHEN IT WAS WRITTEN, AND WHAT IT WAS PUT TOGETHER WITH. `ed` is the
+     later of the person's own write and the server's (what went up holds
+     both); `was` is the server's time this merged against, and the server
+     refuses the write with `stale` if it has moved since (keep_newer). That
+     refusal is the one answer handed back as the third argument, so the
+     caller can tell 「read again」 from 「no signal」. */
   netSend('POST', '/rest/v1/slice',
           {language:sid, kind:kind, body:String(body||''),
-           no:(no||0)+1, at:at},
+           no:(no||0)+1, at:at, ed:{body:ed||0, was:was||0}},
           SESS && SESS.at, function(){ ok(at); },
-          function(d, st){ bad(null, st||0); }, true);
+          function(d, st){
+            bad(null, st||0, (d && d.message==='stale')? 'stale' : '');
+          }, true);
 }
 /* EVERY LANGUAGE THIS ACCOUNT HAS, BROUGHT DOWN TO THE PHONE.
    -------------------------------------------------------------------------
@@ -2180,10 +2240,6 @@ function netLangsWalk(d, done){
     var row, nid, own;
     if(i>=rows.length){
       if(made) langStore();
-      /* The OPEN language's slices came down, so what the screens are holding
-         is older than what is in the store. Read it in the way langOpen() does
-         rather than patching each global by hand. */
-      if(filled) langLoad();
       if(made || filled) render();
       done(made); return;
     }
@@ -2237,9 +2293,12 @@ function netLangsWalk(d, done){
        It was `SET.wsys` -- one answer for all of somebody's languages, on this
        handset, invisible to everybody else. */
     langWsysGot(nid, row.wsys);
-    /* AND WHO WROTE IT -- www/core.js § LOWN, where 「not asked」 is neither
-       side and is what langMine() waits for. */
-    langOwnGot(nid, own);
+    /* WHO WROTE IT IS WRITTEN IN fill() BELOW, and not here. It is also
+       「this language may be written」 (www/core.js § langLocked), and on a
+       launch that has to wait for the slices: written here, a round trip
+       before them, it opened the language while the screen was still the
+       picture, and a settings answer landing in between saved the picture as
+       this phone's own work. tools/quiet-check.mjs 2, 2026-09-23. */
     /* AND WHEN IT WAS MADE, which is the fourth column (www/core.js § LMADE).
        It is what says which of this account's languages is the MAIN one, and
        it is the same column `profile_seen.lang_id` is already ordered by --
@@ -2298,8 +2357,19 @@ function netLangsWalk(d, done){
            a moment later, reads all twelve bodies back to merge them against
            what it has just written -- netGotFor() above. */
         netAgreed(nid, k, there[k].body, there[k].at);
-        if(nid===langId) filled=true;
       }
+      /* The OPEN language's slices came down, so what the screens are holding
+         is the picture. Read it in the way langOpen() does rather than
+         patching each global by hand -- HERE, before anything else can run.
+         Read after the whole walk, as this was, there was a window of other
+         answers in which a save wrote the picture over what had just been
+         filled in. */
+      if(nid===langId){ langLoad(); filled=true; }
+      /* AND WHO WROTE IT -- www/core.js § LOWN, where 「not asked」 is
+         neither side and is what langMine() waits for. Now and not with the
+         row: the screen is the server's from this line, so this is the moment
+         the answer may also say 「and it may be written」. */
+      langOwnGot(nid, own);
       /* AND A COLUMN THAT NOBODY EVER WROTE IS FILLED FROM THE SLICE. Every
          language made before today has its name in the `lang` slice, and a
          language made before netLangRow() sent one has an EMPTY column -- so
@@ -2620,6 +2690,7 @@ function netKeeps(mine, put){
    read for -- it is on no road back up, and slMine() below is what keeps it
    off one. */
 function netAgreed(id, kind, body, at){
+  slSettled(langKeyOf(id, kind));
   try{
     if(body==='') slRm(langWasKey(id, kind));
     else slWr(langWasKey(id, kind), body);
@@ -2714,7 +2785,7 @@ function netGotFor(id, sid, kinds, ok, bad){
          CLAUDE.md 規則 11 is about. Where either half is missing this reads
          the body, which is what it did before any of this existed. */
       if(was===null || !netAtSame(id, kk, st[kk])){ need.push(kk); continue; }
-      got[kk]={body:was, no:st[kk].no, at:st[kk].at};
+      got[kk]={body:was, no:st[kk].no, at:st[kk].at, ed:st[kk].ed};
     }
     if(!need.length){ ok(got); return; }
     netSlices(sid, function(there){
@@ -2732,7 +2803,7 @@ function netGotFor(id, sid, kinds, ok, bad){
       step();
     }, bail, dunno);
   if(know.length)
-    netSlices(sid, function(rows){ st=rows; step(); }, bail, know, 'kind,no,at');
+    netSlices(sid, function(rows){ st=rows; step(); }, bail, know, 'kind,no,at,ed');
 }
 var NET_SHRANK=[];
 var NET_SYNCING=false;
@@ -2762,8 +2833,8 @@ var NET_SYNCING=false;
    that answer, and it is the file's own `ok, bad` shape rather than a new
    one. Which of the two a caller wants is the CALLER's, so both call sites
    pass one and neither can inherit a swallow it did not ask for. */
-function netSlice1(id, sid, kind, got, done, bad){
-  var mine, was, put;
+function netSlice1(id, sid, kind, got, done, bad, tries){
+  var mine, was, put, my, their, later, ed;
   /* WHAT THIS PHONE HAS THAT THE SERVER MAY NOT KNOW ABOUT, and never the
      picture kept for a launch with no signal -- slGot() in www/core.js says
      why. This is the only function that puts a slice up, so slMine() here is
@@ -2775,8 +2846,15 @@ function netSlice1(id, sid, kind, got, done, bad){
      want opposite answers. No record means no dropping, which is what
      this did before there was one. */
   was=slMine(langWasKey(id, kind));
+  /* WHICH SIDE WAS CHANGED LATER, for the one thing the two cannot both keep
+     (www/sync.js § syMerge). This phone's is when a person here last wrote
+     this slice; the server's is when anybody did, on any phone. */
+  my=slTouchedAt(langKeyOf(id, kind));
+  their=(got && got.ed) || 0;
+  later=their>my;
+  ed=later? their : my;
   put=syMerge(kind, mine===null? '' : mine, got? got.body : '',
-              was===null? '' : was);
+              was===null? '' : was, later);
   if(put!=='' && put!==mine){
     /* and only where it keeps everything that is already there */
     if(netKeeps(mine, put)){
@@ -2794,11 +2872,14 @@ function netSlice1(id, sid, kind, got, done, bad){
        agreed. Recorded here rather than after the write, because there is
        nothing to write. */
     if(got && put===got.body){ netAgreed(id, kind, put, got.at); done(true); return; }
-    netSlicePut(sid, kind, put, got? got.no : 0,
+    netSlicePut(sid, kind, put, got? got.no : 0, ed, their,
                 function(at){ netAgreed(id, kind, put, at); done(true); },
                 /* A write that did not land agreed nothing, and the record
-                   stays as it was. What happens next is the caller's. */
-                function(d, st){ bad(d, st); });
+                   stays as it was. What happens next is the caller's --
+                   unless the server said `stale` (netSliceAgain). */
+                function(d, st, m){
+                  if(m==='stale'){ netSliceAgain(id, sid, kind, done, bad, tries); return; }
+                  bad(d, st); });
     return;
   }
   /* The stamp only where the server is KNOWN to be holding `put`. An empty
@@ -2809,9 +2890,26 @@ function netSlice1(id, sid, kind, got, done, bad){
     netAgreed(id, kind, put, (got && put===got.body)? got.at : '');
     done(false); return;
   }
-  netSlicePut(sid, kind, put, got? got.no : 0,
+  netSlicePut(sid, kind, put, got? got.no : 0, ed, their,
               function(at){ netAgreed(id, kind, put, at); done(false); },
-              function(d, st){ bad(d, st); });
+              function(d, st, m){
+                if(m==='stale'){ netSliceAgain(id, sid, kind, done, bad, tries); return; }
+                bad(d, st); });
+}
+/* ANOTHER PHONE WROTE THIS SLICE BETWEEN THIS ONE READING IT AND WRITING IT
+   (the server said `stale`, supabase/schema.sql § keep_newer). What this
+   phone put together is missing whatever that was, so it is not written: the
+   slice is read again -- its body, whatever the mark said -- and put together
+   again, by the same netSlice1(). Three times and no more: a slice two phones
+   are both writing every second is a slice somebody has to be told about,
+   and the answer then is the ordinary failure. */
+function netSliceAgain(id, sid, kind, done, bad, tries){
+  var n=(tries||0)+1;
+  if(n>3){ bad(null, 0); return; }
+  netAtSet(id, kind, '');
+  netSlices(sid, function(there){
+    netSlice1(id, sid, kind, there[kind], done, bad, n);
+  }, function(d, st){ bad(d, st); }, [kind]);
 }
 /* ---- and the moment a save reaches the server --------------------------
    「保存としたらオンラインおしまい」「オンラインは一本化ね？」 OWNER 2026-09-04.
@@ -2835,7 +2933,9 @@ function netSlice1(id, sid, kind, got, done, bad){
 var NET_UPMS=1200, NET_UPT=null;
 function netSaveUp(){
   if(NET_UPT){ clearTimeout(NET_UPT); NET_UPT=null; }
-  if(!netSignedIn() || !langId || !langMine(langId)) return;
+  /* The same question every save asks (langLocked, www/core.js): whose the
+     language is, as the SERVER has said it in this run -- never the picture. */
+  if(!netSignedIn() || langLocked()) return;
   NET_UPT=setTimeout(netSaveUpGo, NET_UPMS);
 }
 /* ---- AND WHEN A PERSON PRESSED THE BUTTON, THE BUTTON WAITS ---------------
@@ -2903,9 +3003,26 @@ function netSaveUpGo(done){
   if(NET_SYNCING){ if(done) done(true); return; }
   /* No account: the language is on the phone and has nowhere else to be. */
   if(!netSignedIn()){ if(done) done(true); return; }
-  if(!id || !langMine(id)){ none(); return; }
+  /* NOT ANSWERED YET IS NOT 「NOTHING TO SEND」. On a launch the language on
+     the screen is the picture until its slices land, and langLocked()
+     (www/core.js) refuses every save onto it -- so a press in that moment
+     saved nothing, and asking the wire here would answer 「保存しました」 for
+     it. It is told what a press with no signal is told. Somebody else's
+     language is the other kind of locked: nothing of this phone's goes into
+     it, and the press is a question about the wire, as it was. */
+  if(langLocked()){
+    if(!Object.prototype.hasOwnProperty.call(LOWN, String(id||''))){
+      if(done) no(null, 0, '');
+      return;
+    }
+    none(); return;
+  }
   for(i=0;i<SLICES.length;i++){
     k=SLICES[i];
+    /* A slice a PERSON wrote (core.js § LTOUCH) and that has moved since the
+       two sides last agreed. Moved alone is not enough: the app's own
+       top-ups move a slice too, and they are not anybody's to send. */
+    if(!slTouched(langKeyOf(id, k))) continue;
     mine=slMine(langKeyOf(id, k));
     was=slMine(langWasKey(id, k));
     if((mine===null? '' : mine)!==(was===null? '' : was)) kinds.push(k);
@@ -3046,6 +3163,15 @@ function netLangSync(then){
    `langKeyOf(id, …)` and not `langKey(…)`: this is asked about a language
    that may not be the open one, which is the whole of the change. */
 function netLangSync1(id, done){
+  /* THE SLICES A PERSON WROTE, and not all twelve (www/core.js § LTOUCH) --
+     the same question the save road asks. What the walk drew and typed was
+     written by the person, signed out, and is marked; the free alphabet's
+     slots, a migration, and a slice an older version left on the disk that
+     nothing here has written (`lang`, r63-audit B3) are not, and go up only
+     with the next thing a person writes in that slice. */
+  var mine=[], i;
+  for(i=0;i<SLICES.length;i++)
+    if(slTouched(langKeyOf(id, SLICES[i]))) mine.push(SLICES[i]);
   netLangRow(id, function(sid){
     /* THE SECOND READ OF THE WHOLE LANGUAGE, and it is on every launch.
        netLangsWalk() has just brought this language down and recorded what
@@ -3054,7 +3180,8 @@ function netLangSync1(id, done){
        language, half of it for nothing. docs/reports/cost-2026-09-09.md 二.
        netGotFor() asks the marks first, so a slice the two sides already
        agree on costs nothing here. */
-    netGotFor(id, sid, SLICES, function(there){
+    if(!mine.length){ done(false); return; }
+    netGotFor(id, sid, mine, function(there){
       /* ---- ALL TWELVE AT ONCE, NOT ONE AFTER ANOTHER --------------------
          「なんか全体的に遅くない？」 OWNER 2026-09-08 (143). This was a walk:
          slice one went up, and only when its answer came back did slice two
@@ -3073,7 +3200,7 @@ function netLangSync1(id, done){
          rest are already in the air, and each one still records its own
          agreement or does not. Either way the next save sends what is still
          missing, which is what netAgreed() is for. */
-      var left=SLICES.length, moved=false, i;
+      var left=mine.length, moved=false, i;
       function step(){
         /* The last one in is the one that goes on. Each of the twelve calls
            this exactly once, whichever way it went. */
@@ -3095,8 +3222,8 @@ function netLangSync1(id, done){
            「端末に hide の存在があるわけないやろ」 OWNER 2026-09-08. */
         done(moved);
       }
-      for(i=0;i<SLICES.length;i++)
-        netSlice1(id, sid, SLICES[i], there[SLICES[i]], function(m){
+      for(i=0;i<mine.length;i++)
+        netSlice1(id, sid, mine[i], there[mine[i]], function(m){
           if(m) moved=true;
           step();
         }, /* A LAUNCH WALKS ON, and it did before `bad` existed too -- this
@@ -3157,6 +3284,12 @@ function netBody(p){
   var o={}, k, skip={id:1, sid:1, mine:1, at:1, to:1, pics:1, vo:1, li:1, bo:1, re:1,
                      down:1, out:1};
   for(k in p) if(Object.prototype.hasOwnProperty.call(p, k) && !skip[k]) o[k]=p[k];
+  /* THE VOICE'S LENGTH TRAVELS; ITS FILE ON THIS PHONE DOES NOT. `vo` was
+     skipped whole because `vo.f` names a file in this phone's Documents, and
+     the length went with it -- so every other phone showed 0:00 on every
+     recording (r63-audit R1, measured). The recording itself is `vu`, a path
+     in the bucket, and postVoAt() reads that where there is no `f`. */
+  if(p.vo && p.vo.ms) o.vo={ms:p.vo.ms};
   return o;
 }
 /* And what a row is on the way back. The server's uuid becomes the post's id,
@@ -3836,7 +3969,7 @@ function netHandleOf(s){
    is not. */
 function netStaffList(ok, bad){
   if(!netSignedIn()){ bad(null, 0); return; }
-  netGet('/rest/v1/profile?select=id,handle,admin&staff=is.true&order=handle.asc',
+  netGet('/rest/v1/profile?select=id,handle&staff=is.true&order=handle.asc',
     function(d){ ok(d || []); }, bad);
 }
 /* The reports, newest first, each carrying the thing it is about -- because a
@@ -4786,8 +4919,7 @@ function netUp(path, b64, mime, ok, bad){
 
    A picture that would not go used to be DROPPED FROM THIS POST'S LIST and
    the post went up without it, for good: the row was inserted, `sid` was
-   written onto the post, and postCatchUp() never looks again at a post that
-   has one. The bytes stayed on the phone that wrote it, so the writer went on
+   written onto the post, and nothing looks again at a post that has one. The bytes stayed on the phone that wrote it, so the writer went on
    seeing four photographs while everybody else saw three, and nothing
    anywhere said so. 「他の人の画面には三枚しか出ないことがあります」
    docs/RISK.md § 6.
@@ -4919,13 +5051,13 @@ function netPush(post, ok, bad){
      whatever happened above it: a photograph that would not upload was
      dropped from the list and the voice fell through to ok(''), the row was
      inserted, and `sid` came back and was written onto the post -- which is
-     the one thing that makes postCatchUp() stop looking at it. The post was
+     the one thing that says it has gone. The post was
      finished, missing what somebody had put on it, silently and for ever.
      docs/RISK.md § 6.
 
      A refusal here is the same state as a post written in a tunnel: no row,
-     no `sid`, the post sitting in POSTS with its bytes in hand, and
-     postCatchUp() trying it again off the back of the next timeline answer.
+     no `sid`, the post sitting in POSTS with its bytes in hand, 未送信 until
+     somebody sends it again (［再接続］).
      The second attempt sends only what is still missing -- netUpPics() writes
      the paths onto the post as they land -- so the retry is one file, not
      four. NOTHING IS DROPPED and nothing is deleted; what is refused is the
@@ -4933,12 +5065,11 @@ function netPush(post, ok, bad){
 
      The person who pressed the button is told, because pwSendWith() already
      says a failed push out loud (netWhy) and this is now one of the ways a
-     push fails. The retries behind a timeline stay quiet, which is what
-     postCatchUp() passes an empty handler for. */
+     push fails. */
   netUpPics(SESS.uid, pid, post, postPics(post), function(left, st){
     if(left){ bad(null, st); return; }
-    netUpVoice(SESS.uid, pid, post, function(vleft, vst){
-      if(vleft){ bad(null, vst); return; }
+    netUpVoice(SESS.uid, pid, post, function(vleft, vst, vm){
+      if(vleft){ bad(null, vst, vm); return; }
       /* The paths are ON the post now, so netBody() carries them up with
          everything else it carries. They were written onto the row here, and
          that was a second place holding what a post is made of. */
@@ -4967,7 +5098,12 @@ function netUpVoice(uid, pid, post, ok){
   if(post && post.vu){ ok(0, 0); return; }
   if(!vo || !vo.f){ ok(0, 0); return; }
   voRead(vo.f, function(b64){
-    if(!b64){ ok(0, 0); return; }
+    /* NOT THERE IS NOT 「NO VOICE」. A recording the post names and this phone
+       cannot read went up as a post with no voice, and nothing said so
+       (r63-audit R2). It is a send that did not happen -- with the mark
+       netWhy() turns into 「この声は見つかりません」, because it is not the
+       wire, and ［再接続］ would not bring the file back. */
+    if(!b64){ ok(1, 0, 'vo ∅'); return; }
     netUp(uid+'/'+pid+'/vo.m4a', b64, 'audio/mp4',
       function(path){ post.vu=path; ok(0, 0); },
       function(d, s){ ok(1, s||0); });
@@ -4981,13 +5117,17 @@ function netUpVoice(uid, pid, post, ok){
    copy that works with no signal -- www/post.js's DRAFTS -- and that copy is
    never the place a draft lives.
 
-   The whole of a draft goes in `body`, pictures and recording included, as
-   the composer holds them: base64 in hand. Not in the media bucket, and that
-   is not a shortcut -- `post-media` is PUBLIC (schema.sql § the bucket, and
-   media_read is `using (bucket_id = 'post-media')`), so a draft's photographs
-   put there would be readable by anybody with the publishable key while the
-   draft itself was not. The bytes go up when the post does, through
-   netUpPics() and netUpVoice(), exactly as they do today.
+   The whole of a draft goes in `body`: the photographs as base64, as the
+   composer holds them, and the recording as `{f, ms}` -- the NAME of a file
+   in this phone's Documents (「声は Documents のファイル、localStorage には
+   入れない」 2026-08-30, and the rewrite of 2026-09-03 that took the bytes
+   out of the draft). So a draft opened on another phone names a file that is
+   not there and has no voice (r63-audit R3). Whether the recording should
+   travel with the draft, and how, is two written decisions against one
+   finding and is the owner's (docs/scope/r60-up.md). Not in the media
+   bucket: that bucket holds the files of POSTS, and a draft is not one. The
+   bytes go to the bucket when the post does, through netUpPics() and
+   netUpVoice().
 
    It also means account deletion has nothing extra to reach: netMyFiles()
    below collects what to remove out of `post.body`, and a draft that owned
@@ -5002,12 +5142,17 @@ function netDraftUp(d, ok, bad){
      order is an insert that fails on the primary key every time after the
      first, and a refusal that is expected is a refusal nobody reads. Two
      requests happen once per draft; every save after it is one. */
+  /* AND WHEN IT WAS WRITTEN -- `d.at`, the keep -- so that of two phones
+     keeping the same draft the later keep stands (supabase/schema.sql §
+     keep_newer). `ok` is handed the row as it now is. */
+  row.ed={body:d.at||0};
   netSend('PATCH', '/rest/v1/draft?id=eq.'+encodeURIComponent(d.id),
-          {body:row.body, updated_at:(new Date()).toISOString()}, SESS.at,
+          {body:row.body, updated_at:(new Date()).toISOString(), ed:row.ed}, SESS.at,
     function(r){
-      if(r && r.length){ ok && ok(); return; }
+      if(r && r.length){ ok && ok(r[0]); return; }
       netSend('POST', '/rest/v1/draft', row, SESS.at,
-              function(){ ok && ok(); }, bad || function(){});
+              function(r2){ ok && ok((r2 && r2.length)? r2[0] : null); },
+              bad || function(){});
     },
     bad || function(){});
 }
@@ -5061,8 +5206,17 @@ function netMark(id, kind, on, ok, bad){
 
    The pictures and the voice in Storage go too, and they go FIRST -- a row
    deleted before its files leaves files nothing points at, and "which files
-   does nothing point at" is a question with no cheap answer. If the files will
-   not go the row still does: a post somebody asked to be gone must go. */
+   does nothing point at" is a question with no cheap answer.
+
+   AND IF THE FILES WILL NOT GO, NOTHING GOES. 「通信エラーなら進むわけねえだろ
+   全部」「なら失敗して残るにするべき」 OWNER 2026-09-05. This used to delete the
+   row anyway and keep the paths in memory, to be deleted again off the back of
+   the next timeline answer (netDropAgain) -- a deletion finishing later with
+   nobody pressing anything, and forgotten if the app was closed first
+   (r63-audit A5 漏れ). Now a refusal is the delete not happening: the post is
+   still on this phone and on the server, the pop says so, and ［再接続］ asks
+   for the same delete again. Files already gone on the first try are asked
+   for again with the rest, which the bucket answers as done. */
 /* The POST, not its id. It is called from postDel, which has already taken
    the post out of POSTS -- so postById() answered null here, sid was
    undefined, and this returned as though there had been nothing on the
@@ -5097,86 +5251,35 @@ function netMark(id, kind, on, ok, bad){
 function netDrop(p, ok, bad){
   var sid=p && p.sid;
   if(!netSignedIn()){ bad(null, 0, 'post ∅'); return; }
-  if(!sid){ netDropFiles(p, ok); return; }
+  if(!sid){ netDropFiles(p, ok, bad); return; }
   netDropFiles(p, function(){
     netSend('DELETE', '/rest/v1/post?id=eq.'+encodeURIComponent(sid),
             null, SESS.at, function(d){
               if(!d || !d.length){ bad(d, 200, 'post ∅'); return; }
               ok();
             }, bad);
-  });
+  }, bad);
 }
 /* Everything of this post's that is in the bucket. Named rather than searched
    for: the paths are on the post, and asking the bucket what is under a folder
    is a listing this does not need and a permission it does not have. */
-function netDropFiles(p, done){
+function netDropFiles(p, done, bad){
   var paths=[], i;
   for(i=0;i<((p && p.pu) || []).length;i++) if(p.pu[i]) paths.push(p.pu[i]);
   /* The small copies too. A picture is two files now, and a deletion that
-     took one of them would leave the other in a public bucket with nothing
-     pointing at it -- which is the exact thing the paragraph above is about.
-     Walked with a hole in it, because `pt` is allowed to have one. */
+     took one of them would leave the other in the bucket with nothing
+     pointing at it. Walked with a hole in it, because `pt` is allowed to
+     have one. */
   for(i=0;i<((p && p.pt) || []).length;i++) if(p.pt[i]) paths.push(p.pt[i]);
   if(p && p.vu) paths.push(p.vu);
   if(!paths.length){ done(); return; }
+  /* A refusal is the delete not happening (netDrop above) -- the post and its
+     row stay, and the files are asked for again when somebody presses again.
+     It is the author's photograph, named by the post they asked to be gone,
+     so nothing here gives up on it and nothing here tries it behind their
+     back. */
   netSend('DELETE', '/storage/v1/object/post-media', {prefixes:paths}, SESS.at,
-          function(){ done(); },
-          /* The row still goes -- the paragraph above says why and it stands.
-             What used to happen next is that the paths went with it, and what
-             was left was not litter: the bucket was PUBLIC, so anybody holding
-             the URL went on seeing the photograph of a post its author had
-             deleted, and nothing pointed at the file any more, so there was
-             nothing left to delete it with. docs/RISK.md § 9.
-
-             **The bucket is private since 2026-09-22** (§ netMedia above), so
-             the first half of that is no longer true: what is left cannot be
-             read by somebody with a URL, only by somebody with an account.
-             The second half is untouched and is the whole of why this is
-             here -- a file nothing points at is a file nobody can delete, and
-             it is the author's photograph sitting on a server after they
-             asked for it to go.
-
-             So the paths are kept and asked for again. Not a cleanup and not
-             a sweep -- these are the files of a post somebody asked to be
-             gone, named by that post, which is exactly what the DELETE REVIEW
-             in docs/CHANGELOG.md allows and nothing more. */
-          function(){ netDropKeep(paths); done(); });
-}
-/* ---- what the bucket would not take -------------------------------------
-   The paths of files a person has already asked to be deleted and the wire
-   refused. One list, no duplicates, and it goes out whole on the next moment
-   the network is known to be working -- which is the same moment
-   postCatchUp() uses and for the same reason.
-
-   IT IS IN MEMORY AND IT DOES NOT SURVIVE THE APP BEING KILLED. That is a
-   hole and it is written here rather than left to be discovered: an app
-   closed between the refusal and the next timeline is an app that has
-   forgotten which files to chase, and they stay in a public bucket with
-   nothing pointing at them. Closing it needs somewhere durable to put them --
-   a key on the phone (tools/store-check.mjs) or a row on the server
-   (supabase/schema.sql) -- and how long they may sit there before somebody
-   sweeps them is a retention question, which is the owner's. */
-var NET_DROPLEFT=[], NET_DROPPING=false;
-function netDropKeep(paths){
-  var i;
-  for(i=0;i<paths.length;i++)
-    if(NET_DROPLEFT.indexOf(paths[i])<0) NET_DROPLEFT.push(paths[i]);
-}
-function netDropAgain(){
-  var lot;
-  if(NET_DROPPING || !NET_DROPLEFT.length || !netSignedIn()) return;
-  lot=NET_DROPLEFT.slice(0, 100);
-  NET_DROPPING=true;
-  netSend('DELETE', '/storage/v1/object/post-media', {prefixes:lot}, SESS.at,
-    function(){
-      var i;
-      NET_DROPPING=false;
-      for(i=0;i<lot.length;i++) NET_DROPLEFT.splice(NET_DROPLEFT.indexOf(lot[i]), 1);
-    },
-    /* Still refused. The list is left exactly as it is and the next timeline
-       tries it again; nothing here gives up on a file somebody asked to have
-       deleted. */
-    function(){ NET_DROPPING=false; });
+          function(){ done(); }, bad);
 }
 /* ---- being deleted -----------------------------------------------------
    The one thing signing out is not. `account_delete()` in supabase/schema.sql

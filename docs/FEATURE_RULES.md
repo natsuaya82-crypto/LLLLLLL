@@ -1395,10 +1395,12 @@ the reasoning — a reason can be re-derived, a decision cannot.
   持つか（欄ごとか、スライスごとか）は決まっていません。**
 - Affected docs: この項目、`docs/EXPIRY.md` 10番、`docs/DATA_SAFETY.md`、
   `www/sync.js` の冒頭
-- Implementation status: **決定。未実装。**「後から変えたほうになる」── そのとおりで、
-  これにして」OWNER 2026-09-04。**やるのは決まりました。**保存の形が変わるので、
-  ゲートも実機確認もなしに今日のビルドには乗せません。**ビルドのあとすぐ配ります。**
-  **どの粒度で時刻を持つか（欄ごとか、スライスごとか）だけが残っています。**
+- Implementation status: **実装（2026-09-23、`claude/r60-up`）。実機未確認。**
+  書き込みは人が直した時刻を持って行き、サーバーは新しい時にだけ受け取る
+  （`supabase/schema.sql` § `keep_newer`、`www/sync.js` § `syMerge`）。
+  **粒度はオーナーが決めていない。**r60 は「一度に送る単位ごと」に置いた ──
+  言語は欄（スライス）ごと、設定は項目ごと、プロフィールは欄ごと、下書きは
+  一つごと。オーナーの確認待ち。
 
 ### バックアップの三世代は、そのまま。入っているのは制作の分だけ
 - Date: 2026-09-04
@@ -3110,7 +3112,6 @@ the reasoning — a reason can be re-derived, a decision cannot.
 
 ```
 www/net.js:1474  netPush() → :1503 netUpVoice() → post-media、道は body.vu
-www/post.js:862  netPush() ── postCatchUp() から。sid の無い過去の投稿も上げる
 www/post.js:1290 netPush() ── 投稿した瞬間
 www/net.js:1544  netDraftUp() ── www/post.js:380 と :463 から
 ```
@@ -3933,7 +3934,8 @@ instead of appearing here.
   削除ではない、という一行がそのまま理由である。**これは `docs/DATA_SAFETY.md` の
   絶対規則と衝突しない**（下）。
 - Affected features: `netDropMe()`（`www/net.js`）、`wipeAll()`（`www/settings.js`）、
-  `netLangSync()` の撃ち方（`www/boot.js`）。
+  `netLangSync()` の撃ち方（`www/boot.js` にあった。2026-09-23 から起動では撃たない ──
+  扉と人の保存だけ、`docs/scope/r60-up.md`）。
 - Affected data: **人が作ったもの全部**。ただし本人が消せと言った場合に限る。
 - Affected docs: `docs/FEATURES.md` § 8、`docs/DATA_MODEL.md`、
   `docs/PAID_FEATURES.md`、`docs/DATA_SAFETY.md`（私の持ち物ではない ── 報告に書いた）。

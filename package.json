@@ -53,6 +53,7 @@
     "page": "node tools/page-check.mjs",
     "find": "node tools/find-check.mjs",
     "slow": "node tools/slow-check.mjs",
+    "quiet": "node tools/quiet-check.mjs",
     "open": "node tools/open-check.mjs",
     "store": "node tools/store-check.mjs",
     "writes": "node tools/writes-check.mjs",

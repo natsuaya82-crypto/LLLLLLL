@@ -1592,7 +1592,7 @@ true, reopening the sheet throws away what was typed and every meaning.
 
 `netMakeProfile()` wrote `profile.av` once and nothing wrote it again, so the
 little face beside "somebody liked this" could be one somebody had not worn
-for a month. `netAvSync()` in `net.js` sends it now, from `bootSession()`.
+for a month. ~~`netAvSync()`~~ in `net.js` sends it now, from `bootSession()`.
 
 **The entry said the reason not to do it was "a second write on a path that
 has none — every letter drawn would otherwise be a request", and that this
@@ -1601,7 +1601,7 @@ from the first.** `postAvatar()` answers the photograph if there is one and
 otherwise the FIRST drawn letter, so it does not move when a letter is drawn
 — it moves when the first one is redrawn, or a photograph is set. Twice in a
 language's life. There was no frequency to decide: **send it when it differs**
-was always the whole answer, and `ME.avSent` makes the comparison local, so a
+was always the whole answer, and ~~`ME.avSent`~~ makes the comparison local, so a
 launch where nothing moved asks the server nothing.
 
 The server was already ready and nobody had noticed: `schema.sql`'s

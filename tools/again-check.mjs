@@ -126,14 +126,27 @@ const SERVER = `
       return answer([]);
     }
     if (method === 'POST' && p.indexOf('/rest/v1/slice') === 0){
+      /* ANOTHER PHONE WROTE IN BETWEEN, played once when a scenario asks for
+         it: S.between changes the row the way that phone's write would, and
+         the answer is the refusal keep_newer() gives (supabase/schema.sql).
+         WHEN the server refuses is the scenario's to say -- this does not
+         work out \`was\` again; rls-check holds that rule on the real SQL. */
+      if (S.between){
+        var bt = S.between; S.between = null; bt();
+        S.tried.push('stale');
+        setTimeout(function(){ bad({ message:'stale' }, 400, 'slice 400'); }, 0); return;
+      }
       var rows = (body instanceof Array) ? body : [body], k, r, f, hit;
       for (k = 0; k < rows.length; k++){
         r = rows[k]; hit = null;
         for (f = 0; f < S.slice.length; f++)
           if (S.slice[f].language === r.language && S.slice[f].kind === r.kind) hit = S.slice[f];
-        if (hit){ hit.body = r.body; hit.no = r.no; hit.at = r.at; }
+        /* \`ed\` without \`was\`, which the server does not keep */
+        var ed = r.ed ? { body:r.ed.body } : {};
+        if (hit){ hit.body = r.body; hit.no = r.no; hit.at = r.at; hit.ed = ed; }
         else S.slice.push({ language:r.language, kind:r.kind, body:r.body,
-                            no:r.no, at:r.at });
+                            no:r.no, at:r.at, ed:ed });
+        S.eds = S.eds || []; S.eds.push(r.kind + ':' + JSON.stringify(r.ed || null));
         S.sent.push('slice:' + r.language + ':' + r.kind);
       }
       return answer([]);
@@ -146,7 +159,7 @@ const SERVER = `
       var want = arg('language'), out = [], q;
       for (q = 0; q < S.slice.length; q++) if (S.slice[q].language === want)
         out.push({ kind:S.slice[q].kind, body:S.slice[q].body,
-                   no:S.slice[q].no, at:S.slice[q].at });
+                   no:S.slice[q].no, at:S.slice[q].at, ed:S.slice[q].ed || {} });
       return answer(out);
     }
     /* 取った言語の表 ── language_take。この人の行だけ（take_read は
@@ -787,8 +800,13 @@ const del = await pg.evaluate(async ({ s, srv }) => {
   for (var i in LANGS)
     if (Object.prototype.hasOwnProperty.call(LANGS, i)) langOwnGot(i, SESS.uid);
   langStore();
-  /* On the disk before anything is sent. The seed fills the globals; a slice
-     is what localStorage holds, and the sync reads it from there. */
+  /* THE SEED IS NOT SOMEBODY'S WRITING. It fills the globals, and since
+     2026-09-23 the migrations run the moment the owner answers (migrateAll,
+     www/core.js) -- migrateSp() brings the seed's spellings forward and saves
+     them, as the APP, so nothing of it counts as touched and nothing of it
+     goes up (r60: an app write never travels). These claims are about a
+     dictionary somebody wrote, so somebody writes one word first. */
+  WORDS.push({ hw:'tessa', gl:'a word somebody wrote' });
   save(); saveLetters();
 
   /* 1. the dictionary goes up, so the server is holding it */
@@ -873,7 +891,15 @@ const up2 = await pg.evaluate(async ({ s, srv }) => {
 
   var id = langId;
   LANGS[id].mine = true; langOwnGot(id, 'me2'); langStore();
-  langName = 'Save Now'; save();
+  langName = 'Save Now';
+  /* AND HERE TOO: THE SEED IS NOT SOMEBODY'S WRITING. It fills the globals, and since
+     2026-09-23 the migrations run the moment the owner answers (migrateAll,
+     www/core.js) -- migrateSp() brings the seed's spellings forward and saves
+     them, as the APP, so nothing of it counts as touched and nothing of it
+     goes up (r60: an app write never travels). These claims are about a
+     dictionary somebody wrote, so somebody writes one word first. */
+  WORDS.push({ hw:'tessa', gl:'a word somebody wrote' });
+  save();
 
   /* まず一度合わせて、両者が同じものを持っている所から始める。ここから先の
      送信だけを見たいので、記録を空にする。 */
@@ -1402,7 +1428,7 @@ const loop = await pg.evaluate(async ({ srv, saved }) => {
   out.diskKeys = [];
   try{ for (var _i=0;_i<localStorage.length;_i++){ var _k=localStorage.key(_i);
     if (_k && _k.indexOf('lingua.'+langId+'.')===0) out.diskKeys.push(_k); } }catch(e){}
-  out.lslKeys = Object.keys(LSL);
+  out.lslKeys = Object.keys(LSL).filter(function(k){ return k.indexOf('lingua.' + langId + '.') === 0; });
   /* 人が一語足して保存する。 */
   WORDS.push({ hw:'tunnelword', gl:'written where there was no signal' });
   save();
@@ -1420,29 +1446,30 @@ say(loop.diskKeys.length > 0 && loop.diskKeys.every(function(k){
 say(loop.fromGot.indexOf('kelasu') >= 0,
     '（前提）そして電波なしで開いた直後、画面の語は写しから来ている（' +
     loop.fromGot.length + ' 語）');
-/* **誰も何も触っていないのに、写しが上りの道に乗っています。**
-   `docs/reports/mixed-2026-09-11.md` まとまり 9 は「人が一語足して保存すると」
-   と読んでいましたが、**保存を待つまでもありません** ── 起動が `langRead()`
-   で写しをグローバルへ読み、そのあと走る移行と `ltStart()` が、**直すものが
-   無くても** `save()` を通ります。`slWr()` は `LSL` に書き、`slMine()` は
-   それを見る。
+/* **誰も何も触っていないとき、写しは上りの道に乗らない。**
+   ここは 2026-09-23 まで、逆のことを緑として主張していました ── 起動が
+   `langRead()` で写しをグローバルへ読み、そのあと走る移行と `ltStart()` が
+   `save()` を通り、`slWr()` が `LSL` に書き、`slMine()` がそれを見る。
+   「これは報告であって、ここで直すものではない」と書いたまま、在ることを
+   主張していました。測ると、その道で別の端末で消した語が起動のたびに
+   戻っていました（tools/quiet-check.mjs 2）。
 
-   **これは報告であって、ここで直すものではありません。**どの起動の道が
-   「何も直していないのに保存する」かを決めるのは保存の道の話で、
-   `docs/scope/r31-server.md` § リーダーへ に測った結果を書いてあります。
-   下の二つが、それが何を壊して何を壊さないかです。 */
-say(loop.lslKeys.length > 0,
-    '**誰も触っていないのに、写しが上りの道に乗っている** ── 起動の移行と ' +
-    'ltStart() が、直すものが無くても save() を通る（LSL に ' +
-    JSON.stringify(loop.lslKeys.map(function(k){ return k.split('.').pop(); })) +
-    '）。まとまり 9 は「保存したら」と読んでいたが、保存を待たない');
-say(loop.mineAfter !== null && String(loop.mineAfter).indexOf('tunnelword') >= 0,
-    'そこへ一語足して保存すると、その仕事も同じ道に乗る ── ' +
-    '規則 11「失敗して残る」の側（' +
-    (loop.mineAfter === null ? '**乗らない**' : '乗る') + '）');
+   今の決まりは CLAUDE.md ルール 22「Looking is the whole of it — nothing is
+   made on it, nothing is saved to it」: 書いてよいかは、この起動でサーバーが
+   言った持ち主（`langLocked()`、www/core.js）で答えるので、答えの来ていない
+   写しには何も書かれない。一語足して保存しても取られず、電波が戻っても
+   上がらず、答えが来たら画面はサーバーの中身になる。 */
+say(loop.lslKeys.length === 0,
+    '**誰も触っていないとき、写しは上りの道に乗らない** ── 起動の移行と ' +
+    'ltStart() は写しに書かない（LSL に ' +
+    JSON.stringify(loop.lslKeys.map(function(k){ return k.split('.').pop(); })) + '）');
+say(loop.mineAfter === null || String(loop.mineAfter).indexOf('tunnelword') < 0,
+    '写しの上で一語足して保存しても、写しは書き換わらない ── ルール 22「nothing ' +
+    'is saved to it」（' + (loop.mineAfter === null ? '取られない' : '**取られた**') + '）');
 
 /* 電波が戻る。サーバーは別の iPhone が足した語を持っている ── 写しが答えを
-   上書きするなら、ここでそれが消えます。 */
+   上書きするなら、ここでそれが消えます。戻った時に走るのは起動と同じ道 ──
+   この言語が降りてくる netLangsDown() で、上り道ではない。 */
 await pg.unroute('https://*.supabase.co/**');
 const loopUp = await pg.evaluate(async ({ srv, saved }) => {
   function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
@@ -1455,23 +1482,22 @@ const loopUp = await pg.evaluate(async ({ srv, saved }) => {
       S.slice[i].body = JSON.stringify(
         JSON.parse(S.slice[i].body).concat([{ hw:'otherphone', gl:'added on another phone' }]));
   SESS = { at:'t', rt:'r', uid:'me3', anon:false };
-  await new Promise(function(f){ netLangSync(function(){ f(); }); });
-  await wait(400);
+  await new Promise(function(f){ netLangsDown(function(){ f(); }); });
+  await wait(1600);
   var body = '';
   for (i = 0; i < S.slice.length; i++)
     if (S.slice[i].kind === 'words') body = String(S.slice[i].body);
-  return { body:body, words:WORDS.map(function(w){ return String(w.hw); }) };
+  return { body:body, sent:S.sent.slice(), words:WORDS.map(function(w){ return String(w.hw); }) };
 }, { srv: SERVER, saved: seenUp.srv });
 
-say(loopUp.body.indexOf('tunnelword') >= 0,
-    '電波が戻ると、トンネルで書いた語がサーバーに着く（' +
-    (loopUp.body.indexOf('tunnelword') >= 0 ? '着いた' : '**着いていない**') + '）');
+say(loopUp.body.indexOf('tunnelword') < 0,
+    '電波が戻っても、写しの上で書いた語はサーバーへ行かない（' +
+    (loopUp.body.indexOf('tunnelword') < 0 ? '行かない' : '**行った**') + '）');
 say(loopUp.body.indexOf('otherphone') >= 0,
-    '**そして別の iPhone の語は消えない** ── 規則 22 が禁じているのは写しが' +
-    '答えとして勝つことで、`syMerge` が両方足すのでここは越えていません（' +
+    '**そして別の iPhone の語は消えない**（' +
     (loopUp.body.indexOf('otherphone') >= 0 ? '残っている' : '**消えた**') + '）');
-say(loopUp.words.indexOf('otherphone') >= 0 && loopUp.words.indexOf('tunnelword') >= 0,
-    'そして画面にも両方ある: ' + JSON.stringify(loopUp.words));
+say(loopUp.words.indexOf('otherphone') >= 0 && loopUp.words.indexOf('tunnelword') < 0,
+    'そして画面はサーバーの中身: ' + JSON.stringify(loopUp.words));
 
 /* 「別のアカウントで入ると前の人の取った言語は出ない」は、この節ではなく
    **ファイルの最後**にあります ── 別のアカウントで立ち上げ直すので、落ちた
@@ -2688,6 +2714,107 @@ say(takeB.pic,
     'そして前の人の写しは消えていない ── 預けてあるだけで、戻れば戻る' +
     '（消えるのはそのアカウントを削除したとき ── lsWipeAcct が鍵の末尾の ' +
     'uid で数えて取る）');
+
+/* ---- 7. TWO PHONES, ONE THING CHANGED ON BOTH: THE LATER CHANGE STANDS ----
+   「普通後から変えたほうになる？アプリ気になるそこ」 OWNER 2026-09-04
+   (docs/FEATURE_RULES.md). Lists are still both added -- 「そりゃあ両方足すだろ」
+   -- and what cannot be added (a value, the same row changed twice) is the
+   later side's, by when a PERSON wrote it on each phone (www/net.js §
+   netSlice1, www/sync.js § syMerge, supabase/schema.sql § keep_newer).
+
+   Four things, and the real netSaveUp()/netSlice1()/syMerge() run for all of
+   them against the stub above:
+     a  a save carries when the person wrote it, and what it merged against
+     b  a write the server refuses as stale is read again and merged again,
+        so the other phone's word and this one's are both there
+     c  the other phone changed the same value LATER: that value stands, here
+        and on the server
+     d  it changed it EARLIER: this phone's goes up */
+await pg.evaluate(() => localStorage.clear());
+await pg.reload();
+await pg.waitForSelector('#splash', { state:'detached', timeout:20000 });
+
+const late = await pg.evaluate(async ({ s, srv }) => {
+  eval('(' + s + ')()');
+  SET.walked = true;
+  eval(srv);
+  SESS = { at:'t', rt:'r', uid:'me3', anon:false };
+  function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
+  const settle = () => wait(NET_UPMS + 600);
+  var S = window.__SRV, id = langId, out = {};
+  function row(kind){
+    return S.slice.filter(function(x){ return x.language === id && x.kind === kind; })[0];
+  }
+  LANGS[id].mine = true; langOwnGot(id, 'me3'); langStore();
+  /* somebody writes, and it goes up and is agreed */
+  WORDS.push({ hw:'tessa', gl:'a word somebody wrote' }); SCRIPT.dir = 'ltr'; save();
+  await new Promise(function(f){ netLangSync(f); });
+  await wait(200);
+
+  /* a */
+  var before = row('words') && row('words').ed && row('words').ed.body;
+  S.eds = [];
+  var t0 = Date.now();
+  WORDS.push({ hw:'ulma', gl:'a second word' }); save();
+  await settle();
+  var sentW = (S.eds || []).filter(function(e){ return e.indexOf('words:') === 0; })[0] || '';
+  var edW = null; try { edW = JSON.parse(sentW.slice(6)); } catch (e) {}
+  out.a = { before:before, sent:edW, t0:t0 };
+
+  /* b */
+  S.tried = [];
+  S.between = function(){
+    var r = row('words'), o = JSON.parse(r.body);
+    o.push({ hw:'mikka', gl:'the SECOND phone wrote this in between' });
+    r.body = JSON.stringify(o); r.ed = { body:Date.now() }; r.at = '2099-01-01T00:00:00.000Z';
+  };
+  WORDS.push({ hw:'yonka', gl:'THIS phone wrote this' }); save();
+  await settle(); await wait(400);
+  var bw = row('words').body;
+  out.b = { stale:S.tried.indexOf('stale') >= 0,
+            both:bw.indexOf('mikka') >= 0 && bw.indexOf('yonka') >= 0,
+            /* the slice and not WORDS: a save does not read the globals
+               again after a merge, which is its own entry in docs/BACKLOG.md
+               (the note over 五 above) and not this one */
+            here:String(slRd(langKey('words')) || '').indexOf('mikka') >= 0 };
+
+  /* c: the other phone set the direction LATER than this one */
+  var rs = row('script'), o1 = JSON.parse(rs.body);
+  o1.dir = 'ttb-rl'; rs.body = JSON.stringify(o1);
+  rs.ed = { body:Date.now() + 60000 }; rs.at = '2099-01-02T00:00:00.000Z';
+  SCRIPT.dir = 'rtl'; save();
+  await settle();
+  out.c = { server:JSON.parse(row('script').body).dir,
+            here:JSON.parse(slRd(langKey('script')) || '{}').dir };
+
+  /* d: and EARLIER than this one */
+  rs = row('script'); o1 = JSON.parse(rs.body);
+  o1.dir = 'ttb-lr'; rs.body = JSON.stringify(o1);
+  rs.ed = { body:1000 }; rs.at = '2099-01-03T00:00:00.000Z';
+  SCRIPT.dir = 'rtl'; save();
+  await settle();
+  out.d = { server:JSON.parse(row('script').body).dir,
+            here:JSON.parse(slRd(langKey('script')) || '{}').dir };
+  return out;
+}, { s: seed.toString(), srv: SERVER });
+
+say(late.a.sent && late.a.sent.body >= late.a.t0 && late.a.sent.was === late.a.before,
+    '保存は「人が書いた時」と「混ぜた相手の時」を持って行く ── 送った ed ' +
+    JSON.stringify(late.a.sent) + '、書いたのは ' + late.a.t0 + ' 以降、サーバーの前の時 ' +
+    JSON.stringify(late.a.before));
+say(late.b.stale && late.b.both,
+    '**読んだ後に別の端末が書いていたら、断られて読み直し、混ぜ直す** ── stale ' +
+    (late.b.stale ? 'あり' : 'なし') + '、サーバーに二台の単語が両方 ' +
+    (late.b.both ? 'ある' : '**無い**') + '（r63-audit 0-4）');
+say(late.b.here,
+    'そして別の端末の単語はこの端末の slice にも来ている');
+say(late.c.server === 'ttb-rl' && late.c.here === 'ttb-rl',
+    '**同じ物を二台で直したら、後から直したほうが残る** ── 相手が後: サーバー ' +
+    JSON.stringify(late.c.server) + '、この端末 ' + JSON.stringify(late.c.here) +
+    '（「普通後から変えたほうになる？」OWNER 2026-09-04）');
+say(late.d.server === 'rtl' && late.d.here === 'rtl',
+    'そして相手が先なら、この端末のが上がる ── サーバー ' +
+    JSON.stringify(late.d.server) + '、この端末 ' + JSON.stringify(late.d.here));
 
 await br.close();
 if (bad.length){

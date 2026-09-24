@@ -23,12 +23,6 @@
    ========================================================================= */
 
 var LS_ME='lingua.me';
-/* `avSent` is not part of who somebody is. It is the copy of the face that
-   the profile row on the server was last given, kept so netAvSync() can tell
-   "the face has moved" from "the face has never been sent" without asking the
-   server every launch. It is written by netAvSync() and read by nothing else.
-   It is here rather than in SET because it belongs to the account, and SET is
-   the person's settings and travels between them. */
 /* 何文字まで入るか。一箇所 ── OWNER DECISION, 2026-08-25。
 
    `handle` の 24 はこちらが選んだ数ではなく、サーバが持っている天井を
@@ -73,8 +67,8 @@ var ME_MAX={ name:30, handle:24, bio:160, link:100, loc:30 };
    made an account, then signed in again as themselves -- and on any phone
    where it is wrong, the wrong thing is an empty name rather than somebody
    else's. */
-var ME={name:'', handle:'', bio:'', pic:'', link:'', loc:'', avSent:'', uid:''};
-function meBlank(){ return {name:'', handle:'', bio:'', pic:'', link:'', loc:'', avSent:'', uid:''}; }
+var ME={name:'', handle:'', bio:'', pic:'', link:'', loc:'', uid:''};
+function meBlank(){ return {name:'', handle:'', bio:'', pic:'', link:'', loc:'', uid:''}; }
 /* ---- the face this account wears, WRITTEN DOWN ---------------------------
    「アイコン勝手に変わるのは何だ。最初の文字になるのはいいけど、それはオンボー
    ディングを通ってかいたもじだけで、それ以降は勝手に変えないで。ユーザーが
@@ -89,8 +83,9 @@ function meBlank(){ return {name:'', handle:'', bio:'', pic:'', link:'', loc:'',
 
    `av` IS THE ACCOUNT'S, like everything else on ME. It is parked and handed
    back with the account (meFor above), and it goes UP as the `av` of the
-   profile row -- netMakeProfile() writes that column and netAvSync() keeps it
-   level, both off this same value. There is no such thing as the phone's.
+   profile row -- netMakeProfile() writes that column at the walk's end, and
+   meFacePut() below when somebody chooses or takes off a photograph. There is
+   no such thing as the phone's.
 
    It is the SHAPE and not the letter's id, and that is the owner's sentence
    rather than a convenience: an id would be read again every time, and
@@ -120,7 +115,7 @@ function meFrom(m){
   if(m){ o.name=String(m.name||''); o.handle=String(m.handle||'');
          o.bio=String(m.bio||''); o.pic=String(m.pic||'');
          o.link=String(m.link||''); o.loc=String(m.loc||'');
-         o.avSent=String(m.avSent||''); o.uid=String(m.uid||'');
+         o.uid=String(m.uid||'');
          /* Two lists, and absent is not empty -- meFollowing() and
             meFollowers() are written against that and would answer [] for a
             list that had been turned into one. */
@@ -416,8 +411,10 @@ function meKeepSave(v, done){
 
    Nothing to send is not a failure: pressing Save with nothing moved writes
    what is already there, which is what it did before. */
-function meProfPut(v, done){
+function meProfPut(v, done, at){
   var send=null, i, k;
+  /* the press, kept across ［再接続］ so a retry is still the press it was */
+  at=at || Date.now();
   for(i=0;i<PROF_MINE.length;i++){
     k=PROF_MINE[i][0];
     if(v.hasOwnProperty(k) && String(v[k])!==String(ME[k]||'')){
@@ -426,9 +423,15 @@ function meProfPut(v, done){
     }
   }
   if(!send || typeof netProfPut!=='function'){ meKeepPut(v); done(true); return; }
-  netProfPut(send, function(){ meKeepPut(v); done(true); },
+  /* The row that comes back is what the account now says -- a field another
+     phone saved LATER is that phone's (supabase/schema.sql § keep_newer), and
+     meProfGot() is the one place a row goes on ME. */
+  netProfPut(send, at, function(row){
+      if(row) meProfGot(row); else meKeepPut(v);
+      done(true);
+    },
     function(d, st, m){
-      netPop(d, st, m, function(){ meProfPut(v, function(){}); });
+      netPop(d, st, m, function(){ meProfPut(v, function(){}, at); });
       done(false);
     });
 }
@@ -521,7 +524,7 @@ function mePicKeep(url){
   var im=new Image();
   im.onload=function(){
     var side=Math.min(im.width, im.height);
-    var c=document.createElement('canvas'), x;
+    var c=document.createElement('canvas'), x, u;
     c.width=ME_PIC; c.height=ME_PIC;
     x=c.getContext('2d');
     x.drawImage(im, (im.width-side)/2, (im.height-side)/2, side, side, 0, 0, ME_PIC, ME_PIC);
@@ -529,9 +532,9 @@ function mePicKeep(url){
        It was 0.82 here and POST_PICQ everywhere else, with nothing saying why
        -- one naked number against a named one, which is docs/DUPLICATES.md
        item 6. 「合わせていいよ」 OWNER 2026-09-04. */
-    try{ ME.pic=c.toDataURL('image/jpeg', POST_PICQ); saveMe(); }
+    try{ u=c.toDataURL('image/jpeg', POST_PICQ); }
     catch(e){ toast(t('me.pic.bad')); return; }
-    openMe();
+    meFacePut({pic:u});
   };
   im.onerror=function(){ toast(t('me.pic.bad')); };
   im.src=url;
@@ -599,7 +602,81 @@ function mePicFile(){
 }
 /* Taking it off. Not a button any more -- it is the red row of the sheet --
    so it is not in www/act-map.js: nothing on a screen names it. */
-function meDropPic(){ ME.pic=''; saveMe(); openMe(); }
+function meDropPic(){ meFacePut(ME.av || null); }
+/* ---- THE FACE, AND THE ONE ROAD IT TAKES ---------------------------------
+   「サーバーが聞くのは、人が今つくった・押したもの、そのものだけ」
+   (docs/scope/brief-r60-up.md), and 「保存するタイミングでエラーが起きるなら、
+   保存されないし」 OWNER 2026-09-05.
+
+   Choosing a photograph and taking one off are the two presses that change
+   the face, and both come here: the `av` column is sent, and the face moves
+   on this phone when the server has taken it -- meProfPut()'s shape, which
+   the name, the @ and the line about yourself already had. A face that did
+   not arrive is a face that did not change, and ［再接続］ sends it again.
+
+   What stood here was a write to the phone alone, with netAvSync() sending
+   the difference on the NEXT launch against a mark of what it had sent
+   (`avSent`). So somebody who changed their photograph was shown the old one
+   to everybody until they relaunched -- and a second phone, still holding
+   the old photograph, sent THAT on its own launch and put it back
+   (r46-audit § A1). Taking a photograph off here, it came back from there. */
+function meFacePut(av, at){
+  /* 「何か更新するならクルクルが必要」 OWNER 2026-09-12 -- the same mark
+     pwSendPost() turns while a post goes up. */
+  netSpin(true);
+  at=at || Date.now();
+  netProfPut({av:av}, at, function(row){
+      netSpin(false);
+      /* the face the account now has: a face another phone set later is it */
+      meAvGot(row? row.av : av);
+      openMe();
+    },
+    function(d, st, m){
+      netSpin(false);
+      netPop(d, st, m, function(){ meFacePut(av, at); });
+    });
+}
+/* What the server says the face is, and the one place ME is told. The `av`
+   column is the answer: a photograph where it carries one and nothing
+   otherwise, so a photograph this phone was holding that the account has
+   since replaced or taken off goes (rule 22 -- the copy is read, never kept
+   over the answer). A letter's face is written into `av` beside it, so taking
+   the photograph off gives back the face that was on file. */
+function meAvGot(av){
+  ME.pic=(av && av.pic)? String(av.pic) : '';
+  if(av && !av.pic) ME.av=av;
+  saveMe();
+}
+/* ---- THE ACCOUNT'S PROFILE, PUT ON ME -- AND THIS IS THE ONE PLACE ------
+   Three places used to do it, each with a different part: netMyProfile()
+   (the door) put the face and nothing else, obIn() (www/onboard.js) put the
+   name and the @, and netProfSync() (a launch) put the five columns of
+   PROF_MINE. So somebody signing in on a second phone had their name and @
+   and no line about themselves until they relaunched (r61-face 止めたこと 1),
+   and a copy this phone adopted from nobody (meFor) wore its own photograph
+   into the account until the next launch (r63-audit A1 漏れ 3).
+
+   A row is the whole answer: every column of PROF_MINE, and `av` through
+   meAvGot(). Returns whether anything on ME moved, so a caller that draws
+   knows whether to. */
+function meProfGot(row){
+  var moved=false, i, k, there, face;
+  if(!row) return false;
+  for(i=0;i<PROF_MINE.length;i++){
+    k=PROF_MINE[i][0];
+    if(!Object.prototype.hasOwnProperty.call(row, PROF_MINE[i][1])) continue;
+    there=String(row[PROF_MINE[i][1]]||'');
+    if(there===String(ME[k]||'')) continue;
+    ME[k]=there; moved=true;
+  }
+  if(Object.prototype.hasOwnProperty.call(row, 'av')){
+    face=String(ME.pic||'')+JSON.stringify(ME.av||null);
+    meAvGot(row.av);
+    if(face!==String(ME.pic||'')+JSON.stringify(ME.av||null)) moved=true;
+  }
+  saveMe();
+  return moved;
+}
 /* ---- what somebody types after an @ ------------------------------------
    「IDは2文字以上で登録してくださいと / このIDはもう使われていますと
      みたいに断る文章と実際に断ってほしい」OWNER, 2026-08-25
@@ -656,7 +733,8 @@ function meCard(){
         '<span class="phandle">@'+esc(meHandle())+'</span>'+
       '</div>'+
     '</div>'+
-    '<button class="meedit edit"' + DO('openMe') + '>'+esc(t('me.edit'))+'</button>'+
+    /* The pen, and the word is its name (CLAUDE.md § Shape, the sixth). */
+    markBtn(ICON_PEN, t('me.edit'), 'openMe')+
     '</div>'+
     (ME.bio? '<div class="pbio">'+esc(ME.bio)+'</div>' : '')+
     /* And where they are and their address, in the row meWhereRow() is. */
@@ -1480,8 +1558,8 @@ function whoCard(h){
     '</div>';
 }
 /* Who you are on the timeline: the name, the handle, the face, the line about
-   yourself. All four are what OTHER PEOPLE see -- netAvSync() sends the face
-   and the profile row carries the rest -- so this is one of the things that
+   yourself. All four are what OTHER PEOPLE see -- the profile row carries
+   every one of them, the face included -- so this is one of the things that
    needs a name on the account, and it was the one that was not asked.
 
    obNeed() guarded the six: a post, a like, a boost, a follow, a block, a

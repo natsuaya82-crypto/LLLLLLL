@@ -80,7 +80,11 @@ function savePosts(){
    been posting since before this line existed carries posts with no owner,
    and they are the person who is signing in. Only on the way IN -- signing
    out of an unclaimed copy leaves it where it is. */
-var POSTS_UID='';
+/* Whose they were when they were written down -- the settings' stamp, read
+   before anything moved it (www/core.js § ACCT_DISK). It began as '' on
+   every load, so every launch found an unclaimed copy and adopted it for
+   whoever was signed in (r63-audit L3). */
+var POSTS_UID=ACCT_DISK;
 function postParkKey(uid, k){ return 'lingua.' + k + '.' + String(uid||''); }
 function postFor(uid){
   var want=String(uid||''), had=POSTS_UID, park, got;
@@ -438,7 +442,10 @@ function openPost(from, at){
        this is; whether there IS one to send is the colour, and the colour is
        www/shell.js § navDo's two states. */
     navDo(t(PW.ed? 'post.save' : 'post.send'), 'pwSend', null, pwOn(),
-          {id:'pw-go', cls:(pwPriv()? 'pv' : ''), mark:(pwPriv()? ICON_LOCK : '')}),
+          /* A send is the paper plane (CLAUDE.md § Shape, the sixth). Saving
+             an edit has no settled mark yet, so that one stays a word. */
+          {id:'pw-go', cls:(pwPriv()? 'pv' : ''), mark:(pwPriv()? ICON_LOCK : ''),
+           icon:(PW.ed? '' : ICON_SEND)}),
     true);
 }
 /* The timer, wired after the screen is drawn. Holding turns the post private
@@ -561,7 +568,10 @@ function draftKeep(){
      typed stays in the composer, on the screen, and ［再接続］ presses Keep
      again. Nothing of anybody's is thrown away by a failure: the composer is
      untouched until the row is there. */
-  netDraftUp(d, function(){
+  netDraftUp(d, function(row){
+    /* The row as it now stands: where another phone kept this draft LATER,
+       that is the draft (supabase/schema.sql § keep_newer). */
+    if(row && row.body) d=draftOfRow(row);
     d.up=1;
     DRAFTS.push(d);
     draftsSave();
@@ -658,11 +668,20 @@ function draftDropHere(d){
    askDrafts() (www/sns.js). So the drafts fall down the same one road every
    other screen's pull does -- the mark, the pop and ［再接続］ are pullRun()'s
    and are not written again here. */
+/* A draft as the server holds it, put back into the shape the list keeps --
+   the one place a row becomes a draft (draftsPull, and draftKeep's answer). */
+function draftOfRow(r){
+  var d={}, b=(r && r.body) || {}, k;
+  for(k in b) if(Object.prototype.hasOwnProperty.call(b, k)) d[k]=b[k];
+  d.id=r.id; d.up=1;
+  if(!d.at) d.at=Date.parse(r.updated_at) || Date.now();
+  return d;
+}
 function draftsPull(ok, bad){
   var done=ok || function(){};
   if(!netSignedIn()){ done(0); return; }
   netDrafts(function(rows){
-    var i, k, r, b, d, seen={}, keep=[], moved=false;
+    var i, r, d, had, seen={}, keep=[], moved=false;
     for(i=0;i<(rows||[]).length;i++){
       r=rows[i];
       if(!r || !r.id) continue;
@@ -671,14 +690,18 @@ function draftsPull(ok, bad){
          it was opened, and putting it back is the same post in two places,
          which is the thing tools/draft-check.mjs holds. */
       if(PW && PW.did===r.id) continue;
-      d=draftById(r.id);
-      if(d){ keep.push(d); continue; }
-      d={}; b=r.body || {};
-      for(k in b) if(Object.prototype.hasOwnProperty.call(b, k)) d[k]=b[k];
-      d.id=r.id; d.up=1;
-      if(!d.at) d.at=Date.parse(r.updated_at) || Date.now();
+      /* THE SERVER'S ROW IS THE DRAFT, and the copy here is the picture of
+         it (rule 22). This kept the copy wherever both had one, so an edit
+         made on another phone never showed here, and keeping it from here
+         put the old words back over the new ones (r63-audit A6). Nothing is
+         lost by the answer winning: a draft is kept on the server FIRST
+         (draftKeep), so the copy here never holds anything the server was
+         not given -- what is being typed lives in the composer, and the one
+         that is open is skipped above. */
+      had=draftById(r.id);
+      d=draftOfRow(r);
       keep.push(d);
-      moved=true;
+      if(!had || JSON.stringify(had)!==JSON.stringify(d)) moved=true;
     }
     /* AND WHAT THIS PHONE HAS THAT THE SERVER DOES NOT, WHICH IS TWO
        DIFFERENT THINGS.
@@ -690,19 +713,19 @@ function draftsPull(ok, bad){
        server has not got is a row somebody deleted somewhere else: the copy
        catches up and it goes off this phone. A draft that has never been up
        -- written before there was a server -- has never been anywhere else,
-       so it is sent, once, and joins the rest.
+       so it STAYS in the list, and goes up when somebody opens it and keeps it
+       (draftKeep). It was sent from here, once, off the back of this answer
+       with nobody having pressed anything -- the same road r46-audit § A6
+       found beside the keep that waits for the server.
 
        Nothing of anybody's is lost either way: the first is something they
-       deleted, and the second is on its way to where it lives. */
+       deleted, and the second is still here. */
     for(i=0;i<DRAFTS.length;i++){
       d=DRAFTS[i];
       if(!d || !d.id || seen[d.id]) continue;
       if(PW && PW.did===d.id){ keep.push(d); continue; }
       if(d.up){ moved=true; continue; }
       keep.push(d);
-      netDraftUp(d, (function(one){
-        return function(){ one.up=1; draftsSave(); };
-      })(d));
     }
     if(moved || keep.length!==DRAFTS.length){
       DRAFTS=keep;
@@ -1272,25 +1295,44 @@ function postSid(p, sid){
   savePosts();
 }
 /* Written here and never sent. One question, one place: a post of mine that
-   the server has no id for, and that is not kept to myself -- postCatchUp()
-   is what tries to send those, and the row is what says so on the screen.
-   「5 いります」 OWNER 2026-09-06.
+   the server has no id for -- kept to myself or not, since a private post
+   goes up too -- and the row is what says so on the screen. 「5 いります」
+   OWNER 2026-09-06.
+
+   NOTHING SENDS IT ON ITS OWN BUT THE DOOR (postUpAll below). postCatchUp()
+   used to, off the back of the next timeline answer, with nobody having
+   pressed anything -- and that is the other half of 「保存するタイミングで
+   エラーが起きるなら、保存されない」「なら失敗して残るにするべき」 OWNER
+   2026-09-05 (r46-audit § A5).
 
    It reads nothing but what is ON the post, so the reading side may ask it. */
 function postUnsent(p){
-  return !!(p && p.mine && !p.sid && !p.pv);
+  return !!(p && p.mine && !p.sid);
 }
-/* Everything already on this phone that the server has never seen.
-   「あげよう」
+/* ---- AT THE DOOR, WHAT THIS ACCOUNT WROTE AND THE SERVER HAS NOT GOT ----
+   The one moment the phone's copy goes up without a press, and it is the
+   same exception the language has: the door (www/net.js § netTook) puts what
+   is on this phone up as the account arriving. What is left here is what an
+   older version kept on this phone alone -- a post kept to yourself, which
+   was never sent, and a post whose send failed before a failed send stayed in
+   the composer. Nothing is deleted: each one is sent as it is, gets the
+   server's id (postSid), and the copy here stays.
 
-   It walks oldest first, so a thread goes up in the order it was written and
-   a reply finds its parent's `sid` already there. A few at a time: this runs
-   off the back of a timeline pull, and forty posts in one breath is a phone
-   that appears to have frozen.
-
-   Nothing is removed, nothing is rewritten, and a post that fails is simply
-   one that still has no `sid` -- so the next pull tries it again. A post kept
-   to yourself never goes, which is the same door pwSendWith() uses. */
+   One at a time and oldest first, through postSend() -- the one-send-at-a-time
+   mark is on it -- so a reply goes after the post it answers and can name it
+   (netPush reads the parent's `sid`). A send that fails leaves that post as it
+   was, saying 「未送信」, and the next is tried. */
+function postUpAll(){
+  var list=[], i;
+  for(i=0;i<POSTS.length;i++) if(postUnsent(POSTS[i])) list.push(POSTS[i]);
+  list.sort(function(a, b){ return (a.at||0)-(b.at||0); });
+  function one(k){
+    if(k>=list.length) return;
+    postSend(list[k], function(sid){ postSid(list[k], sid); one(k+1); },
+             function(){ one(k+1); });
+  }
+  one(0);
+}
 /* ---- ONE POST, ONE SEND AT A TIME --------------------------------------
    Which posts are on the wire right now, by this phone's own name for them.
 
@@ -1300,18 +1342,15 @@ function postUnsent(p){
    same post was sent again inside that window, under a new id (netPush()
    makes one per call), and it arrived twice: on the writer's timeline and on
    everybody else's, to be deleted one at a time.
-   「同じ投稿が二つ、三つと並びます」 docs/RISK.md § 5.
+   「同じ投稿が二つ、三つと並びます」 docs/RISK.md § 5. The second road it
+   raced was postCatchUp(), which is gone; ［再接続］ pressed while the first
+   send is still out is the one that is left.
 
    It is in memory and it is NOT on the post. A mark that is saved is a mark
    that survives the app being killed halfway through a send, and the post
    would then never be sent again -- which is worse than the fault it is
    fixing. Killed, this phone holds a post with no `sid`, which is exactly
-   the state postCatchUp() exists for.
-
-   BOTH ROADS OUT OF THE COMPOSER COME THROUGH HERE, and that is the whole of
-   why it is a function rather than a line in postCatchUp(). The press
-   (pwSendWith) was half of the window: somebody sends, and a timeline answer
-   lands while the photographs are still going up. */
+   a post that failed to send, and it stays one (postUnsent). */
 var POST_SENDING={};
 function postSend(p, ok, bad){
   var id=p && p.id;
@@ -1331,32 +1370,7 @@ function postSend(p, ok, bad){
                 come through here. */
              if(p.to) postCountsPull(p.to);
              ok(sid); },
-             function(d, s){ delete POST_SENDING[id]; savePosts(); bad(d, s); });
-}
-var POST_CATCH=4;
-function postCatchUp(){
-  var i, n=0, ps;
-  if(!netSignedIn()) return;
-  /* And everything the server should no longer HAVE. The files of a post
-     somebody deleted, where the bucket refused to take them -- netDropAgain()
-     in www/net.js owns the list and says why it is here. This is the moment
-     the network is known to be working, which is the whole reason the
-     sending below happens here rather than on a timer, and it is the same
-     reason for both directions. */
-  netDropAgain();
-  ps=POSTS.slice().sort(function(a, b){ return (a.at||0)-(b.at||0); });
-  for(i=0;i<ps.length && n<POST_CATCH;i++){
-    if(!postUnsent(ps[i])) continue;
-    /* Already on the wire. Read here as well as refused in postSend() so an
-       in-flight post does not eat one of the four -- postSend() is what owns
-       the answer; this is one of the places that ask it. */
-    if(POST_SENDING[ps[i].id]) continue;
-    n++;
-    /* The closure is the post, so a slow answer lands on the right one. */
-    (function(p){
-      postSend(p, function(sid){ postSid(p, sid); }, function(){});
-    })(ps[i]);
-  }
+             function(d, s, m){ delete POST_SENDING[id]; savePosts(); bad(d, s, m); });
 }
 /* ---- the badge, and the one thing on a post that is NOT frozen ----------
    One gold star beside a name, and it says the person is on Pro.
@@ -2178,51 +2192,51 @@ function pwSendWith(ln, pics, vo){
      reply_to to hold. postToWho() asks the handle first, so the line over it
      reads the same as a reply's. */
   else if(PW.toh) mine.toh=PW.toh;
-  POSTS.push(mine);
-  savePosts();
-  /* It has stopped being a draft, so the row goes -- AFTER the post is
-     written and never before. The other order is somebody's writing gone on
-     the day the post itself would not go: what is on this phone now is the
-     post, which savePosts() has just put down and postCatchUp() keeps trying
-     to send, so there is nothing left for the draft to be the only copy of.
-
-     A post kept to yourself (`pv`) goes no further than this phone, and its
-     draft still goes: private is what the POST is, and the draft was never a
-     way of storing one. */
-  if(PW.did){ netDraftDrop(PW.did); PW.did=''; }
-  /* A post kept to yourself is never told to anybody. It is the one post
-     that does not go through this door at all -- not "sent and hidden",
-     which is a flag somebody else's server has to be trusted with. */
-  /* AND IT IS WAITED ON, WITH A SPINNER, AND SAID WHEN IT IS DONE.
-     「投稿した後に投稿しましたって出ないと…投稿する時もくるくる入れて欲しい」
-     OWNER 2026-09-05. It used to fire postSend() and move straight to the
-     feed with nothing on screen but the post drawn as not-yet-sent -- pwSendPost()
-     is the one place that waits for the answer, so this function only starts
-     it. The post itself is never lost either way: it is already in POSTS and
-     postCatchUp() keeps trying if the app is closed before an answer comes
-     back. 「spl流したのにまだ投稿載らんの？」 */
-  if(!mine.pv) pwSendPost(mine);
-  PW=pwBlank();
-  goTab('feed');
+  /* A post kept to yourself goes up like any other and is read by nobody but
+     you -- `pv` rides in its body and supabase/schema.sql § post_private is
+     what keeps it yours. 「SNSは全部サーバー」: it used to stay on this phone
+     alone, which made it the one thing somebody wrote that a lost phone took
+     with it. */
+  pwSendPost(mine);
 }
-/* postSend() and not netPush(): the press is one of the two roads a post goes
-   up by, and both have to be behind the same one-send-at-a-time mark or the
-   window is still open from this side.
+/* ---- THE SERVER FIRST, AND THIS PHONE WHEN IT HAS LANDED -----------------
+   「保存するタイミングでエラーが起きるなら、保存されないし」「なら失敗して残るに
+   するべき」「通信エラーなら進むわけねえだろ全部」 OWNER 2026-09-05, and
+   「投稿した後に投稿しましたって出ないと…投稿する時もくるくる入れて欲しい」.
 
-   netSpin() covers the screen while this is out, which is the whole reason it
-   is a function of its own rather than a line inside pwSendWith(): a retry
-   pressed from the popup below calls this again, on the exact post, and has
-   to spin and answer exactly the same way the first press did. */
+   The order was the other way round: the post was put into POSTS and written
+   down, its draft was taken off the server, the composer was emptied and the
+   feed shown -- and only then was it sent. So a send that failed left a post
+   on this phone that the server had never heard of (and postCatchUp() sent it
+   later, with nobody pressing anything), and the draft it came from was
+   already gone off the server (r63-audit A5 漏れ).
+
+   Now nothing moves until the row is there. The mark turns while it goes; when
+   it lands the post is written down here, its draft is taken off the server,
+   the composer empties and the feed shows it. When it does not, NOTHING has
+   moved -- what was typed is still in the composer, the draft is still a
+   draft -- and ［再接続］ sends the same post again. The draft (`PW.did`) is
+   read at the moment the send lands, which is the moment it stops being one.
+
+   postSend() and not netPush(): the one-send-at-a-time mark is on it, so a
+   ［再接続］ pressed while the first send is still out does not send twice. */
 function pwSendPost(p){
   netSpin(true);
   postSend(p, function(sid){
     netSpin(false);
+    POSTS.push(p);
     postSid(p, sid);
+    savePosts();
+    if(PW.did){ netDraftDrop(PW.did); PW.did=''; }
+    PW=pwBlank();
     toast(t('post.sent'));
+    goTab('feed');
   }, function(d, s, m){
     netSpin(false);
-    /* 通信が落ちたら何も進まない ── netPop() (www/net.js) が pullRun()
-       (sns.js) と同じ道で失敗を出し、［再接続］は同じ投稿をもう一度送る。 */
+    /* Answered and refused for a reason that is not the wire -- the voice's
+       file is gone (`∅`, netWhy). One sentence, and no ［再接続］: pressing
+       again would not bring the file back. */
+    if(String(m||'').indexOf('∅')>=0){ toast(netWhy(d, s, m)); return; }
     netPop(d, s, m, function(){ pwSendPost(p); });
   });
 }
@@ -2364,12 +2378,21 @@ function inkOfCut(cut){
 }
 /* Posts written before a post carried its author. They are all this person's,
    because there was nowhere else for one to come from. */
+/* Posts written before a post carried who wrote it. Those were this phone's
+   own -- there was no timeline of anybody else's then -- and that is only
+   still true of a post that never came from the server. One that DID came
+   with its writer on the row (netRow in www/net.js answers `mine` off
+   `author`), so a post from the server with no name in it is somebody else's
+   from an old version of the app, and it is not given this account's name
+   (r73 § 2-2: 「写しで何も決めない」). */
 function migratePosts(){
-  var i, n=0;
+  var i, p, n=0;
   for(i=0;i<POSTS.length;i++){
-    if(POSTS[i].who!==undefined) continue;
-    POSTS[i].who=meName(); POSTS[i].hd=meHandle();
-    POSTS[i].mine=true; POSTS[i].av=postAvatar();
+    p=POSTS[i];
+    if(p.who!==undefined) continue;
+    if(p.sid && !p.mine) continue;
+    p.who=meName(); p.hd=meHandle();
+    p.mine=true; p.av=postAvatar();
     n++;
   }
   if(n) savePosts();

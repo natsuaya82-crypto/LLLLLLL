@@ -65,43 +65,28 @@ const WRITERS = {
   'SET.saved': {
     askSaved: "the account's list arriving from the server",
     snsSaveQ: 'the person saving or unsaving a search',
-    wipeHere: 'the account deleted on a phone whose settings carry no stamp (SET.acct absent), where lsWipeAcct() takes nothing. A HAND LIST and a plug: it takes four fields and leaves `recent`. The cover is lsWipeAcct() answering for an unstamped SET (www/core.js) -- docs/scope/r61-face.md. Take this line out with it',
   },
   'SET.savedUp': {
     askSaved: "this phone's list handed to the account once",
-    wipeHere: 'the account deleted on a phone whose settings carry no stamp (SET.acct absent), where lsWipeAcct() takes nothing. A HAND LIST and a plug: it takes four fields and leaves `recent`. The cover is lsWipeAcct() answering for an unstamped SET (www/core.js) -- docs/scope/r61-face.md. Take this line out with it',
   },
   'SET.notAt': {
     notSeen: 'how far down the notices the person has read',
-    wipeHere: 'the account deleted on a phone whose settings carry no stamp (SET.acct absent), where lsWipeAcct() takes nothing. A HAND LIST and a plug: it takes four fields and leaves `recent`. The cover is lsWipeAcct() answering for an unstamped SET (www/core.js) -- docs/scope/r61-face.md. Take this line out with it',
   },
   'SET.acct': {
     setFor: 'which account these settings are, stamped as that account arrives',
     lsWipeAcct: 'that account deleted: the stamp goes with its fields',
-    wipeHere: 'the account deleted on a phone whose settings carry no stamp (SET.acct absent), where lsWipeAcct() takes nothing. A HAND LIST and a plug: it takes four fields and leaves `recent`. The cover is lsWipeAcct() answering for an unstamped SET (www/core.js) -- docs/scope/r61-face.md. Take this line out with it',
   },
   'ME.name': {
     meKeepPut: 'the profile editor -- the person deciding, written once the server has taken it',
-    obIn: "the door: the account's own answer arriving at sign-in",
     obWhoGo: 'the door: the account made, with the name that was just sent and landed',
   },
   'ME.handle': {
     meKeepPut: 'the profile editor -- the person deciding, written once the server has taken it',
-    obIn: "the door: the account's own answer arriving at sign-in",
     obWhoGo: 'the door: the account made, with the @ that was just sent and landed',
-  },
-  'ME.pic': {
-    mePicKeep: 'the person choosing a picture',
-    meDropPic: 'the person taking it off',
   },
   'ME.av': {
     meAvSet: 'the face, set once from the letter the walk drew',
-    netMyProfile: "the account's own face arriving at sign-in",
-  },
-  'ME.avSent': {
-    netMyProfile: 'what the server holds, arriving at sign-in',
-    netMakeProfile: 'what the new row was made with',
-    netAvSync: 'what was just sent',
+    meAvGot: "the account's own face as the server holds it -- at sign-in, on a launch, and once a photograph chosen or taken off has landed (r46-audit § A1)",
   },
 };
 
@@ -116,7 +101,7 @@ const DYNAMIC = {
     '(top)': 'the load: what is on the disk read in over the defaults',
     setFor: "this account's own settings brought back, the one before it parked",
     lsWipeAcct: "the account deleted: its fields taken off the live copy",
-    netPrefsPull: "the account's settings arriving from the server",
+    netPrefsGot: "the account's settings arriving from the server -- a sign-in's read, or the answer to a send (the later press stands)",
   },
   'ME': {
     '(top)': 'the load: nobody yet',
@@ -126,7 +111,7 @@ const DYNAMIC = {
     keepBack: 'a save that did not land: the snapshot from before it put back',
   },
   'ME[]': {
-    netProfSync: "the account's profile arriving at launch",
+    meProfGot: "the account's profile arriving -- at the door (netMyProfile) and on a launch (netProfSync), the one place both put it on ME",
   },
 };
 

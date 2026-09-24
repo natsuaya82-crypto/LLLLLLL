@@ -368,8 +368,7 @@ function snsSetFil(k){
 /* What has arrived, asked for whenever the timeline is looked at. The screen
    does NOT wait: it draws the posts that are here and takes an answer when
    one comes, which is what a timeline does and is the only shape that works
-   on a phone in a tunnel. The answer is whatever netFeed() brings back, and
-   postCatchUp() sends whatever this phone has that the server has not.
+   on a phone in a tunnel. The answer is whatever netFeed() brings back.
 
    A second ask while one is out is refused by pullRun() below, which holds
    that for every screen rather than each screen holding it for itself. */
@@ -381,10 +380,10 @@ function snsSetFil(k){
    anybody was looking at it -- measured at over twenty asks a second with no
    network in the way. Nothing threw and nothing looked wrong.
 
-   It also duplicated a post. Every one of those answers ran postCatchUp(),
-   and a post this phone has not got a `sid` back for yet is a post that has
-   not been sent -- so the same post went up again, and again, while the first
-   send was still in the air. A search for it afterwards found two.
+   It also duplicated a post. Every one of those answers ran postCatchUp()
+   (gone now -- a post that did not go is sent by a press), and a post this
+   phone had not got a `sid` back for yet was sent again, and again, while the
+   first send was still in the air. A search for it afterwards found two.
 
    The guard is the fact this file already keeps: `SNS_GOT[tab]` is set when
    an answer arrives, empty or not, and the body already reads it to tell
@@ -628,12 +627,11 @@ function askFeedRun(tabs, ok, bad, person){
      timeline underneath is asked for either way: it is still the list the
      word comes off onto. */
   if(person && here().r==='feed' && snsFil) snsFilFind(true);
-  /* And what this phone has that the server has not. It goes off the back of
-     a pull rather than on a timer: the moment somebody is asking for a
-     timeline is the moment the network is known to be working. ONCE, however
-     many tabs went out -- it was inside the ask and therefore ran per tab,
-     and a post sent twice is what www/sns.js § pullRun was written about. */
-  postCatchUp();
+  /* NOTHING IS SENT OFF THE BACK OF A PULL. postCatchUp() stood here and
+     sent every post this phone had that the server had not, and the files of
+     deleted posts the bucket had refused -- both with nobody pressing
+     anything (r46-audit § A5, r63-audit A5 漏れ). A post and a delete each
+     happen when they are pressed, and a refusal leaves them as they were. */
   /* And the places sold in it, in the same moment and counted in the same
      pair, so the timeline and its PR rows arrive as one render rather than a
      list that grows a row under somebody's eye. A place that could not be
@@ -2716,7 +2714,7 @@ function askSaved(ok, bad){
        empty one, which is somebody having cleared them on another phone. */
     if(SET.savedUp){
       if(snsSameWords(got, mine)){ ok(1); return; }
-      SET.saved=got; save(); ok(1);
+      SET.saved=got; setKeep(); ok(1);
       return;
     }
     for(i=0;i<mine.length;i++)
@@ -2727,9 +2725,9 @@ function askSaved(ok, bad){
     snsSavedPush(add, function(allWent){
       if(!allWent) return;         /* try again next launch */
       SET.savedUp=true;
-      save();
+      setKeep();
     });
-    if(!snsSameWords(out, mine)){ SET.saved=out; save(); }
+    if(!snsSameWords(out, mine)){ SET.saved=out; setKeep(); }
     /* Drawn whatever came back: the answer itself is what turns the mark into
        a list, or into the empty space that means this account keeps none. */
     ok(1);
@@ -2760,7 +2758,7 @@ function snsSaveQ(){
   if(had) netSearchDrop(k, function(){}, function(){});
   else    netSearchSave(k, function(){}, function(){});
   SET.saved=out;
-  save();
+  setKeep();
   render();
 }
 /* Chosen from the filter, and the timeline you were standing on is what gets
@@ -2819,7 +2817,7 @@ function askRecent(ok, bad){
     var got=[], i;
     for(i=0;i<(rows||[]).length && got.length<SNS_RECENT;i++)
       if(rows[i] && rows[i].q) got.push(String(rows[i].q));
-    if(!snsSameWords(got, snsRecent())){ SET.recent=got; save(); }
+    if(!snsSameWords(got, snsRecent())){ SET.recent=got; setKeep(); }
     ok(1);
   }, bad);
 }
@@ -2858,7 +2856,7 @@ function snsRecentAdd(q){
   netRecentAdd(k, function(){}, function(){});
   for(i=0;i<off.length;i++) netRecentDrop(off[i], function(){}, function(){});
   SET.recent=out;
-  save();
+  setKeep();
 }
 /* One word off, and only that one. There is no button that takes them all:
    「1件づつ消せるでいいよ」. */
@@ -2869,7 +2867,7 @@ function snsDropRecent(q){
   if(snsSameWords(out, a)) return;
   netRecentDrop(k, function(){}, function(){});
   SET.recent=out;
-  save();
+  setKeep();
   render();
 }
 /* Pressed: that word goes into the field and is searched for again. It is
@@ -3136,16 +3134,16 @@ function notUnread(){
   return n;
 }
 /* Opening the screen is the reading. Written down only when something was
-   actually unread: this runs on every render of the notices, and save() walks
-   the language's slices, so writing a timestamp on each of them would be a
-   dictionary written out to say a bell went quiet.
+   actually unread: this runs on every render of the notices, and a write on
+   each of them would be the settings written out to say a bell went quiet.
+   setKeep() and not save(): this is the settings and nobody's language.
 
    Not writing costs nothing that matters -- a phone killed before the write
    shows the mark again, which is the side that never hides a notice. */
 function notSeen(){
   var had=notUnread();
   SET.notAt=Date.now();
-  if(had) save();
+  if(had) setKeep();
 }
 /* Asked when the session begins, so the count is right on the first frame of
    whatever screen the app opened on and no screen has to ask for it. What

@@ -66,7 +66,7 @@
 `tools/store-check.mjs` の `ROADS` を数えて 29。内訳:
 
 - **20 か所はサーバーへの道がある**（`netSlicePut` `netPush` `netDraftUp`
-  `netAvSync` `netNotices`）。つまりサーバーに同じものがある。
+  ~~`netAvSync`~~ `netNotices`）。つまりサーバーに同じものがある。
 - **9 か所はサーバーに写しがありません。**`lingua.set`（設定）、`lingua.langs`
   （この iPhone にどの言語があるかの索引）、`lingua.cur`（今どれを開いているか）、
   `lingua.sess`（トークン）、`lingua.<id>.bkn`（バックアップファイルの通し番号）、

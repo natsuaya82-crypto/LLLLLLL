@@ -986,7 +986,7 @@ Today that is `profile`, `post`, `react`, `follow`, `block`, `report`,
 `language_seen`, `prompt`, `language`, `slice`, `plan` and the RPCs. `netPush()` sends a post — its photographs and its voice with it, through
 `netUpPics()` and `netUpVoice()` into the `post-media` bucket — `netFeed()`
 reads the two timelines, `netNotices()` reads the notices, `netDraftUp()` sends
-a draft, `netLangSync()` sends and merges the language, and `postCatchUp()`
+a draft, `netLangSync()` sends and merges the language, and ~~`postCatchUp()`~~
 sends whatever this phone has that the server has not. **`lingua.posts` is a
 copy and not a home**: the phone keeps what works with no signal.
 
@@ -1643,7 +1643,7 @@ can hold two rules.
   `obReturn()` in `www/onboard.js`.
 
 Everything else on this list is done. What holds each: posts, Explore and
-Notices read the server (`netPush`, `netFeed`, `netNotices`, `postCatchUp`);
+Notices read the server (`netPush`, `netFeed`, `netNotices`, ~~`postCatchUp`~~);
 the reset mail is a six-digit code because a link has nowhere to land in a
 Capacitor app (`supabase/mail.md`, template `{{ .Token }}`); and the ceilings
 are each asked at the moment they are met, on the screen the person is on —

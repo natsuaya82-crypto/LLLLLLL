@@ -106,6 +106,17 @@ await pg.evaluate((s) => { eval('(' + s + ')()'); SET.walked = true; SET.ui = 'e
 
 const R = await pg.evaluate(async () => {
   const fails = [];
+  /* THE SERVER TAKES THE POST, in every section that is about what a post IS
+     -- the bake, the ink, the reply, the draft it came from. A post is written
+     down here only once the server has it (pwSendPost, 2026-09-23), and this
+     page has no server; the road is answered as taken, with no number, which
+     is the state these sections were written against (a post this phone holds
+     and the server has not numbered). The ROAD itself -- refused leaves the
+     composer, pressed again goes up once -- is 15 and 16 below, on the real
+     postSend(), and find-check 11. */
+  const realPostSend = postSend;
+  const tookPost = function (p, ok) { ok(''); };
+  postSend = tookPost;
 
   /* A photograph that is black everywhere, so a white letter drawn into it is
      the only light thing there can be. A gradient would leave the answer to
@@ -448,8 +459,10 @@ const R = await pg.evaluate(async () => {
     }, 0);
   };
   PW = pwBlank(); PW.to = host.id; PW.ln = 'sar';
+  postSend = realPostSend;             /* this section stands a server up */
   pwSend();
   await new Promise(r => setTimeout(r, 400));
+  postSend = tookPost;
   if ((host.re || 0) !== wasRe)
     fails.push('a reply was sent and the PHONE counted it: `re` went ' + wasRe +
                ' -> ' + host.re + '. The count is post_seen.replies and this ' +
@@ -2433,73 +2446,66 @@ const R = await pg.evaluate(async () => {
                  'is what was typed.');
   }());
 
-  /* ---- the face on the profile row follows the face on the phone --------
-     netMakeProfile() wrote `av` once, the day the account was made, and
-     nothing ever wrote it again. So drawing a new first letter or setting a
-     photograph changed what postAvatar() answers everywhere in the app except
-     the little face beside "somebody liked this", which is the one place that
-     reads the profile row. A notice could draw a face somebody had not worn
-     for a month.
+  /* ---- the face goes up when somebody changes it, and only then ---------
+     「サーバーが聞くのは、人が今つくった・押したもの、そのものだけ」
+     (docs/scope/brief-r60-up.md, r46-audit § A1).
 
-     Nothing about the timeline was wrong -- a post freezes its own face when
-     it is written -- so this is not visible anywhere a check was looking.
-
-     Three things, and the middle one is the reason it sat in the backlog
-     rather than being fixed: sending on every change would be a request per
-     letter drawn. It is not -- postAvatar() answers the photograph, else the
-     face written down on the account (claim 18 below), which moves twice in
-     a language's life and not once per stroke -- but "it only sends when it
-     moved" has to be held or the cheap version silently becomes the expensive
-     one.
+     This held netAvSync(): on every launch, the face this phone was holding
+     went up wherever it differed from a mark of what had been sent. So a
+     photograph changed on one phone was put back by the other one's launch,
+     and a changed photograph reached everybody else only when its owner next
+     relaunched. The launch now sends nothing (tools/quiet-check.mjs); what is
+     held here is the press. Choosing a photograph and taking one off each send
+     ONE PATCH of `av`, and the face moves when the server has taken it --
+     meProfPut()'s shape. A refusal moves nothing.
 
      The requests are counted rather than the state read: what is being held
-     is what goes OUT. netSend is wrapped and answers success without a
-     server, the same way conv-check wraps LinguaFont.build. */
+     is what goes OUT. netSend is wrapped and answers without a server. */
   const realSend = netSend;
-  let sent = [];
-  netSend = function (method, path, body, tok, ok, bad) {
-    if (String(path).indexOf('/rest/v1/profile') === 0) {
-      sent.push({ method, av: JSON.stringify((body && body.av) || null) });
-      if (ok) ok(null);
-      return;
+  {
+    const wasNav = NAV, wasRoute = route;
+    const wasAv = ME.av, wasPic = ME.pic;
+    let sent = [], answer = 'ok';
+    netSend = function (method, path, body, tok, ok, bad) {
+      if (String(path).indexOf('/rest/v1/profile') === 0) {
+        sent.push({ method, av: JSON.stringify((body && body.av) || null) });
+        if (answer === 'ok') { if (ok) ok(null); }
+        else if (bad) bad(null, 0, 'profile 0');
+        return;
+      }
+      return realSend.apply(this, arguments);
+    };
+    try {
+      ME.av = { st: [{ pts: [[1, 1], [2, 2]] }] };
+      ME.pic = '';
+      meFacePut({ pic: 'data:image/jpeg;base64,AAAA' });
+      if (sent.length !== 1 || sent[0].method !== 'PATCH' ||
+          sent[0].av !== JSON.stringify({ pic: 'data:image/jpeg;base64,AAAA' }))
+        fails.push('choosing a photograph did not send it, once, as a PATCH of av: ' +
+                   JSON.stringify(sent));
+      if (ME.pic !== 'data:image/jpeg;base64,AAAA')
+        fails.push('the server took the photograph and the face on this phone did not move');
+
+      sent = [];
+      meDropPic();
+      if (sent.length !== 1 || sent[0].av !== JSON.stringify(ME.av))
+        fails.push('taking the photograph off did not send the face on file: ' +
+                   JSON.stringify(sent));
+      if (ME.pic !== '')
+        fails.push('taking the photograph off left it on this phone');
+
+      sent = []; answer = 'no';
+      meFacePut({ pic: 'data:image/jpeg;base64,BBBB' });
+      if (ME.pic !== '')
+        fails.push('a photograph the server REFUSED is on this phone anyway -- ' +
+                   '「保存するタイミングでエラーが起きるなら、保存されない」');
+      if (typeof popYes === 'function' && popOn()) popNo();
+    } finally {
+      netSend = realSend; NAV = wasNav; route = wasRoute;
+      ME.av = wasAv; ME.pic = wasPic;
+      if (!ME.av) delete ME.av;
     }
-    return realSend.apply(this, arguments);
-  };
-  try {
-    ME.avSent = '';
-    ME.pic = '';
-    sent = [];
-    netAvSync();
-    const first = sent.length;
-
-    netAvSync();                                  /* nothing moved */
-    const again = sent.length;
-
-    ME.pic = 'data:image/jpeg;base64,AAAA';       /* the face moves */
-    netAvSync();
-    const moved = sent.length;
-
-    netAvSync();                                  /* and settles again */
-    const settled = sent.length;
-
-    if (first !== 1)
-      fails.push('the face was never sent: netAvSync() made ' + first +
-                 ' requests for a profile that has never had one');
-    if (again !== first)
-      fails.push('the face was sent again with nothing changed (' + again +
-                 ' requests) -- that is a request every launch for a face ' +
-                 'that has not moved');
-    if (moved !== first + 1)
-      fails.push('the face changed and ' + (moved - again) + ' requests went ' +
-                 'out: a notice goes on drawing a face somebody has stopped ' +
-                 'wearing');
-    if (settled !== moved)
-      fails.push('after the change it kept sending (' + settled + ')');
-    if (moved > first && sent[sent.length - 1].method !== 'PATCH')
-      fails.push('the face was updated with ' + sent[sent.length - 1].method +
-                 ' rather than PATCH -- schema.sql grants update(handle, ' +
-                 'display, av), and an insert on a row that exists is a 409');
-  } finally { netSend = realSend; }
+  }
 
   /* ---- 18. the face is DECIDED ONCE, and nothing decides it again -------
      「アイコン勝手に変わるのは何だ。最初の文字になるのはいいけど、それはオン
@@ -2644,11 +2650,17 @@ const R = await pg.evaluate(async () => {
       /* An update that matched nothing, so netDraftUp() falls through to the
          insert -- which is the branch worth driving: it is the one that puts a
          draft the server has never seen on the server. */
-      if (ok) ok(method === 'PATCH' ? [] : null);
+      const idD = decodeURIComponent((/id=eq\.([^&]+)/.exec(String(path)) || [])[1] || '');
+      if (ok) ok(method === 'PATCH'
+                 ? (draftRow ? [Object.assign({ id: idD }, draftRow)] : [])
+                 : null);
       return;
     }
     return realSend.apply(this, arguments);
   };
+  /* The row the server hands back to a PATCH, when a claim wants one --
+     the draft as it stands after the write (keep_newer). */
+  let draftRow = null;
   const wasDrafts = DRAFTS.slice();
   const wasSess2 = SESS;
   try {
@@ -2671,6 +2683,26 @@ const R = await pg.evaluate(async () => {
     if (dsent.length && !dsent.some(r => r.method === 'POST'))
       fails.push('the draft was never inserted -- the update matched no row ' +
                  'and nothing followed it, so the draft exists nowhere but here');
+
+    /* AND THE LATER KEEP STANDS. A draft carries when it was kept, and
+       where the server already holds a LATER keep of the same draft from
+       another phone, that is what the list here holds -- not what this
+       phone sent (supabase/schema.sql § keep_newer, 「普通後から変えた
+       ほうになる？」 OWNER 2026-09-04). */
+    PW = pwBlank(); PW.ln = 'older words';
+    dsent = [];
+    draftRow = { body: { ln: 'later words', at: Date.now() + 60000 },
+                 updated_at: new Date().toISOString() };
+    draftKeep();
+    draftRow = null;
+    const sentEd = (dsent[0] && dsent[0].body && dsent[0].body.ed) || null;
+    if (!sentEd || !(sentEd.body > 0))
+      fails.push('a draft went up without when it was kept: ' + JSON.stringify(sentEd));
+    const keptL = DRAFTS[DRAFTS.length - 1];
+    if (!keptL || keptL.ln !== 'later words')
+      fails.push('a draft kept LATER on another phone lost to this phone\u2019s ' +
+                 'older one -- the list holds ' + JSON.stringify(keptL && keptL.ln));
+    DRAFTS.pop();
 
     /* AND NO RECORDING IS IN THE DRAFT, ANYWHERE.
        「声は Documents のファイル、localStorage には入れない」 ── the decision
@@ -2806,8 +2838,11 @@ const R = await pg.evaluate(async () => {
       fails.push('posting deleted a draft that was not the one being posted (' +
                  gone[0].path + ')');
 
-    /* and what comes down never wins. docs/DATA_SAFETY.md § 2: the way a copy
-       destroys somebody's work is by winning. */
+    /* and what comes down IS the draft -- the copy here is the picture of it
+       (rule 22). A draft is kept on the server FIRST (draftKeep), so the copy
+       never holds anything the server was not given; keeping the copy over
+       the answer is what hid an edit made on another phone and then put the
+       old words back over it (r63-audit A6). */
     DRAFTS = [{ id: 'd-keep', at: 1, ln: 'what this phone has' }];
     netSend = function (method, path, body, tok, ok, bad) {
       if (String(path).indexOf('/rest/v1/draft') === 0) {
@@ -2823,11 +2858,11 @@ const R = await pg.evaluate(async () => {
     draftsPull();
     await new Promise(r => setTimeout(r, 50));
     const keptRow = DRAFTS.filter(d => d && d.id === 'd-keep')[0];
-    if (!keptRow || keptRow.ln !== 'what this phone has')
-      fails.push('a draft that is on this phone was written over by the ' +
-                 'server\u2019s copy. Somebody may have been editing it thirty ' +
-                 'seconds ago, and the way a copy destroys what somebody wrote ' +
-                 'is by winning (docs/DATA_SAFETY.md \u00a7 2)');
+    if (!keptRow || keptRow.ln !== 'what the server has')
+      fails.push('a draft the server holds came home as this phone\u2019s older ' +
+                 'copy (' + JSON.stringify(keptRow && keptRow.ln) + '). The copy won ' +
+                 'over the answer, so an edit made on another phone is not here, and ' +
+                 'keeping it from here puts the old words back (rule 22)');
     if (DRAFTS.filter(d => d && d.id === 'd-keep').length !== 1)
       fails.push('a draft that is on this phone AND on the server came home as ' +
                  'two drafts');
@@ -2903,22 +2938,26 @@ const R = await pg.evaluate(async () => {
 
     try {
       SESS = { at: 'x', rt: 'y', uid: 'u1', anon: false };
+      postSend = realPostSend;
 
       /* ---- 15. the same post does not go to the server twice ------------
-         docs/RISK.md § 5. www/sns.js calls postCatchUp() off the back of
-         EVERY netFeed answer, and vFeed() asks for a feed on every render --
-         so on a slow wire the second answer arrives while the first post is
-         still walking its photographs up. `sid` is the only thing that says
-         「this one has gone」 and it is not written until the row lands, so
-         the same post is sent again, under a NEW id (netPush() makes one per
-         call), and the timeline holds it twice. */
+         docs/RISK.md § 5. A post goes up when somebody presses -- the send,
+         and ［再接続］ -- and on a slow wire the second press lands while the
+         first post is still walking its photographs up. `sid` is the only
+         thing that says 「this one has gone」 and it is not written until the
+         row lands, so the same post would be sent again, under a NEW id
+         (netPush() makes one per call), and the timeline would hold it twice.
+         The second road this raced was postCatchUp(), off the back of every
+         timeline answer; it is gone (r46-audit § A5), and postSend() is the
+         one door both presses come through. */
       rows = {}; bucket = {}; upWall = []; inserts = 0;
       POSTS = [{ id: 'catch-1', at: 1, mine: true, ln: 'kano',
                  pics: [blackPic, blackPic] }];
       POST_GONE = {};
-      postCatchUp();
+      const nop = () => {};
+      postSend(POSTS[0], nop, nop);
       await new Promise(r => setTimeout(r, 25));
-      postCatchUp();                       /* the second timeline answer */
+      postSend(POSTS[0], nop, nop);        /* pressed again while it is going */
       await new Promise(r => setTimeout(r, 700));
       if (inserts !== 1)
         fails.push('one post that had not gone up yet was inserted ' + inserts +
@@ -2933,16 +2972,16 @@ const R = await pg.evaluate(async () => {
       /* ---- 16. what will not go up is not lost for good ------------------
          docs/RISK.md § 6. A photograph that would not upload is dropped from
          the post’s list and the row goes up anyway; the voice does the
-         same through ok(\'\'). Then `sid` is written, and postCatchUp() never
-         looks at a post that has one -- so the photograph and the voice are
+         same through ok(\'\'). Then `sid` is written, and nothing looks at a
+         post that has one again -- so the photograph and the voice are
          gone for everybody except the phone that wrote them, which still
          holds the bytes in hand and still draws all four.
 
          What is asked here is NOT which of the two answers the app gives --
          hold the post, or carry the failure home and finish it later. That is
          the owner’s. What is asked is that ONE OF THEM HAPPENS: the wire
-         comes back, the app is given the same chance it is given for a post
-         written in a tunnel, and the server must end up holding everything
+         comes back, somebody sends it again -- the same chance a post written
+         in a tunnel is given -- and the server must end up holding everything
          the post carries. Under one row, because two is § 15. */
       rows = {}; bucket = {}; inserts = 0; patches = 0;
       files['v-fail-1.m4a'] = 'QUJDRA==';
@@ -2950,10 +2989,10 @@ const R = await pg.evaluate(async () => {
       POSTS = [{ id: 'catch-2', at: 2, mine: true, ln: 'kano',
                  pics: [blackPic, blackPic], vo: { f: 'v-fail-1.m4a', ms: 3000 } }];
       POST_GONE = {};
-      postCatchUp();
+      postSend(POSTS[0], nop, nop);
       await new Promise(r => setTimeout(r, 700));
       upWall = [];                          /* the wire comes back */
-      postCatchUp();                        /* the next timeline answer */
+      postSend(POSTS[0], nop, nop);         /* and ［再接続］ is pressed */
       await new Promise(r => setTimeout(r, 900));
       const r16 = only();
       if (!r16)
@@ -2977,7 +3016,95 @@ const R = await pg.evaluate(async () => {
       }
       delete files['v-fail-1.m4a'];
 
-      /* ---- 17. the bytes of a deleted post do not stay public ------------
+      /* ---- the voice's length travels, and a voice that is gone is said -
+         r63-audit R1: netBody() dropped `vo` whole, so every other phone
+         showed 0:00. R2: a recording this phone could not read went up as a
+         post with no voice, and nothing said so. */
+      const bodyV = netBody({ id: 'x', ln: 'k', vo: { f: 'v-here.m4a', ms: 3000 } });
+      if (!bodyV.vo || bodyV.vo.ms !== 3000 || bodyV.vo.f !== undefined)
+        fails.push('the row does not carry the voice\u2019s length, or carries this ' +
+                   'phone\u2019s file name: ' + JSON.stringify(bodyV.vo));
+      let goneV = null;
+      netUpVoice('u1', 'p-gone', { vo: { f: 'v-not-here.m4a', ms: 2000 } },
+                 function (l, st, m) { goneV = [l, m]; });
+      await new Promise(r => setTimeout(r, 100));
+      if (!goneV || goneV[0] !== 1 || String(goneV[1]).indexOf('\u2205') < 0)
+        fails.push('a recording this phone cannot read went up as a post with no ' +
+                   'voice: ' + JSON.stringify(goneV));
+
+      /* ---- 20. a post kept to yourself goes to the server -------------
+         「SNSは全部サーバー」「NOTHING IS THE PHONE'S」 -- it used to be the one
+         post pwSend() kept on this phone and never sent. It goes up like any
+         other and carries its lock in its body, where the server's
+         post_private() reads it (supabase/schema.sql; npm run rls holds that
+         nobody else reads it). */
+      rows = {}; bucket = {}; upWall = []; inserts = 0;
+      POSTS = []; POST_GONE = {};
+      PW = pwBlank(); PW.ln = 'kano'; PW.pv = true;
+      pwSend();
+      await new Promise(r => setTimeout(r, 400));
+      const r20 = only();
+      if (!r20)
+        fails.push('a post kept to yourself did not reach the server -- ' +
+                   Object.keys(rows).length + ' rows. It lives on this phone ' +
+                   'alone and a lost phone takes it');
+      else if (!(r20.body && r20.body.pv))
+        fails.push('a post kept to yourself reached the server without its ' +
+                   'lock, so everybody reads it: ' + JSON.stringify(r20.body));
+      const pv20 = POSTS.filter(x => x.pv)[0];
+      if (!pv20 || !pv20.sid)
+        fails.push('the post kept to yourself is not on this phone with the ' +
+                   'server\u2019s id on it: ' + JSON.stringify(pv20 || null));
+
+      /* ...and what an older version kept here alone goes up AT THE DOOR,
+         as the account arriving: postUpAll(), which netTook() calls and
+         nothing else does. Oldest first, so a reply can name what it
+         answers; nothing deleted; somebody else's never. */
+      rows = {}; inserts = 0; POST_GONE = {};
+      POSTS = [{ id: 'old-pv', at: 5, mine: true, ln: 'kept', pv: 1 },
+               { id: 'old-un', at: 3, mine: true, ln: 'failed' },
+               { id: 'old-up', at: 4, mine: true, ln: 'went', sid: 's-went' },
+               { id: 'theirs', at: 6, mine: false, ln: 'not mine' }];
+      postUpAll();
+      await new Promise(r => setTimeout(r, 400));
+      const went20 = Object.keys(rows).map(k => rows[k].body.ln);
+      if (went20.join(',') !== 'failed,kept')
+        fails.push('at the door the posts the server has not got went up as ' +
+                   JSON.stringify(went20) + ' and should be ["failed","kept"] -- ' +
+                   'what this account wrote and never sent, oldest first, and ' +
+                   'nothing that already went or is somebody else\u2019s');
+      if (!Object.keys(rows).some(k => rows[k].body.ln === 'kept' && rows[k].body.pv))
+        fails.push('the old post kept to yourself went up without its lock');
+      if (POSTS.length !== 4 || !postById('old-pv').sid || !postById('old-un').sid)
+        fails.push('at the door a post was lost or not given the server\u2019s ' +
+                   'id: ' + JSON.stringify(POSTS.map(x => [x.id, x.sid || ''])));
+
+      /* ---- 21. a post with no name on it is not made mine by guessing --
+         migratePosts() gives the posts written before a post carried its
+         writer this account's name -- they were all this phone's own. A post
+         that came from the SERVER says whose it is on its row (netRow's
+         `mine`, off `author`), so one of somebody else's from an old version
+         of the app must not come out wearing my name (r73 § 2-2). */
+      POSTS = [{ id: 'old-here', at: 1, ln: 'written here, long ago' },
+               { id: 's-theirs', sid: 's-theirs', at: 2, mine: false, ln: 'somebody else\u2019s' }];
+      migratePosts();
+      if (postById('s-theirs').mine || postById('s-theirs').who !== undefined)
+        fails.push('somebody else\u2019s post from the server, with no name on it, was ' +
+                   'made this account\u2019s: ' + JSON.stringify(postById('s-theirs')));
+      if (!postById('old-here').mine || postById('old-here').who === undefined)
+        fails.push('a post written on this phone before posts carried their writer ' +
+                   'was not given this account\u2019s name: ' + JSON.stringify(postById('old-here')));
+
+      /* ---- 17. a delete whose files will not go does not happen ---------
+         「通信エラーなら進むわけねえだろ全部」「なら失敗して残るにするべき」
+         OWNER 2026-09-05. This held the other shape until 2026-09-23: the row
+         went anyway and the paths were deleted again off the back of the next
+         timeline answer (netDropAgain), with nobody pressing anything
+         (r63-audit A5 漏れ). What it holds now: refused, the post is still a
+         row and still on this phone; pressed again with the wire back, the
+         files and the row are gone; and nothing of another post is touched.
+         The history of the old shape follows, kept for why the files matter. */
+      /* ---- (was) 17. the bytes of a deleted post do not stay public ------
          docs/RISK.md § 9. netDropFiles() asks the bucket to remove the
          photographs and the voice, and when that fails its handler is
          function(){ done(); } -- the row is deleted anyway, deliberately
@@ -3007,12 +3134,18 @@ const R = await pg.evaluate(async () => {
       postDel('del-1');
       if (popOn()) popYes();
       await new Promise(r => setTimeout(r, 300));
-      if (rows[del.sid])
-        fails.push('a post somebody deleted is still a row on the server. ' +
-                   'The files not going is not a reason for the post to stay');
+      if (!rows[del.sid])
+        fails.push('the bucket refused the files and the row went anyway -- the ' +
+                   'delete moved on through a failure, and the files are left ' +
+                   'with nothing pointing at them');
+      if (!POSTS.some(p => p.id === 'del-1'))
+        fails.push('the bucket refused and the post went off this phone anyway');
+      if (popOn()) popNo();
       dropWall = false;                     /* the wire comes back */
-      postCatchUp();                        /* the next timeline answer */
+      postDelGo('del-1');                   /* and it is pressed again */
       await new Promise(r => setTimeout(r, 400));
+      if (rows[del.sid])
+        fails.push('pressed again with the wire back, the row is still there');
       const left = del.pu.concat(del.pt, [del.vu]).filter(f => bucket[f] !== undefined);
       if (left.length)
         fails.push('the photographs and the voice of a deleted post are still ' +
@@ -3026,6 +3159,7 @@ const R = await pg.evaluate(async () => {
                    'nobody deleted. That is a cleanup, and docs/DATA_SAFETY.md ' +
                    'forbids one');
     } finally {
+      postSend = tookPost;
       netSend = realSend3; netUp = realUp3;
       POSTS = wasPosts3; SESS = wasSess3; POST_GONE = wasGone3; savePosts();
     }

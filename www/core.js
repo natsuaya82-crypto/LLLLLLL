@@ -142,7 +142,12 @@ function lsWipeAcct(uid){
      -- so the fields were written straight back under the name of the account
      that had just been deleted. Cleared here, there is nothing left to park:
      setFor('') finds no owner and returns having written nothing. */
-  if(String(SET.acct||'')===me){
+  /* This account's, or nobody's -- and nobody's settings on the phone of the
+     account being deleted are that account's, by the same rule setFor()
+     adopts them by. It asked `SET.acct===me` alone, so settings that named
+     nobody survived the deletion and settings.js took four of their fields
+     off by name and left the rest (`recent`) standing (r61-face 止めたこと 2). */
+  if(String(SET.acct||'')===me || !SET.acct){
     keys=setAcctKeys(null);
     for(i=0;i<keys.length;i++) delete SET[keys[i]];
     /* THE PLAN IS NOT HERE. It was two more words -- `SET.plan` and
@@ -217,9 +222,11 @@ var SLICES=['words','lines','lang','script','letters','notes','phases','talk','s
      talk    a chapter that closed. Nothing in www/ reads or writes it, and it
              is NOT deleted -- somebody's may be in it and that is the owner's
              to decide (docs/DATA_SAFETY.md § 4)
-     gram2   read and written BY LANGUAGE ID, on demand, in
-             www/grammar-engine/adapter.js. There is no global copy to go
-             stale, which is why it never belonged in the sequences above
+     gram2   a grammar model an older version kept. Nothing in www/ reads or
+             writes it any more (the adapter's load and save went on
+             2026-09-23, www/grammar.js § gModel) and it is NOT deleted --
+             what somebody has in it is theirs, and the article still offers
+             it for download beside `phases` (www/home.js § WLD_DL_KIND)
 
    The functions are named inside a function body rather than beside the key,
    because www/core.js is the FIRST script index.html loads: `ltRead` and
@@ -240,7 +247,7 @@ var LANG_IO={
   wld:    { rd:function(){ wldRead(); },  wr:function(){ saveWld(); } },
   lang:   { why:'the name, and it is the `language.name` column now (www/core.js § LNAME). Nothing writes it; langNameOld() reads it where the column has said nothing yet, and it is not deleted -- what is in it is what an older version of this app put there' },
   talk:   { why:'a chapter that closed. Nothing reads or writes it, and it is not deleted' },
-  gram2:  { why:'read by language id on demand in www/grammar-engine/adapter.js; there is no global copy' }
+  gram2:  { why:'a grammar model an older version kept. Nothing reads or writes it (the adapter\'s load and save are gone, 2026-09-23), and it is not deleted' }
 };
 /* Everything this language is, into the globals. One pass, and a function
    named by four slices is called once -- the dictionary and the lines come
@@ -438,24 +445,26 @@ function langWsysOf(id){
 var LOWN={};
 function langOwnKey(id){ return langKeyOf(String(id||''), 'owner'); }
 function langOwnGot(id, uid){
-  var k=String(id||''), v=String(uid||''), was=langOwnOf(k);
+  var k=String(id||''), v=String(uid||''),
+      was=Object.prototype.hasOwnProperty.call(LOWN, k)? LOWN[k] : '';
   if(!k) return;
   LOWN[k]=v;
   slGot(langOwnKey(k), v);
-  /* AND THE OPEN LANGUAGE HAS JUST BECOME WRITABLE, so what could not be
-     written while nobody had answered goes in now rather than on the next
-     launch. ltStart() (www/letters.js) is the one thing that tops a free
-     alphabet up to its slots and it REFUSES a language langWhose() has not
-     answered mine for -- 「未回答は書かせない」 -- which at the door is the
-     walk's own language, every time: the row is made and the owner column
-     comes back a moment after ltStart() has already run and returned.
+  /* AND THE OPEN LANGUAGE HAS JUST BECOME WRITABLE (§ langLocked), so what
+     could not be written while nobody had answered goes in now rather than on
+     the next launch -- migrateAll() below, the old shapes brought forward
+     and the free alphabet topped up (ltStart, www/letters.js). Each of them
+     refuses a language that is not writable -- which on a launch is every language until its answer is in,
+     and at the door is the walk's own language until its row is made.
 
      Not a second mechanism: it is the same call, made at the moment the fact
      it waited on becomes true, and it tops up only what is missing. Only on
-     the OPEN language, because ltStart() works on LETTERS; and only where the
-     answer MOVED, so the launch's own walk over every row does not run it
-     once per language. */
-  if(k===langId && v && v!==was && typeof ltStart==='function') ltStart();
+     the OPEN language, because they work on its globals; and only where the
+     answer is new in this run of the app, so a walk over every row does not
+     run it once per row. `was` is LOWN and never the picture: the picture is
+     not an answer, and comparing against it is what kept this from running
+     on a launch. */
+  if(k===langId && v && v!==was && typeof migrateAll==='function') slAsApp(migrateAll, []);
 }
 function langOwnOf(id){
   var k=String(id||''), p;
@@ -834,7 +843,45 @@ function slGot(k, body){
     else localStorage.setItem(slGotKey(k), String(body));
   }catch(e){}
 }
-function slWr(k, v){ LSL[k]=String(v); }
+/* AND WHICH OF THEM A PERSON WROTE. 「上がるのは変わった所だけで、端末にある
+   ものを丸ごと送らない」 (docs/scope/brief-r60-up.md). The up road used to
+   send every slice that differed from what the two sides last agreed, and a
+   slice differs for reasons nobody pressed: the free alphabet topped up, a
+   migration bringing an old shape forward. Those are worked out again on
+   every load and never need to travel by themselves -- they go with the slice
+   the next time a PERSON writes it.
+
+   A write is a PERSON's when it CHANGES what this phone holds and it is not
+   made inside slAsApp(). slAsApp() is the app writing for itself: every
+   answer from the server (www/net.js hands each one over through it -- the
+   one window every answer comes through), the launch's migrations
+   (www/boot.js), and what langOpen() writes out and works over when a
+   language is opened. A depth rather than a flag, because an answer can start
+   a request whose answer lands inside it. A write of the same string is
+   nobody changing anything -- a settings save() writes the dictionary back
+   exactly as it was, and that is not a person writing the dictionary
+   (r63-audit 0-1). netSaveUpGo() and netLangSync1() send a slice that is
+   marked here AND has moved; netAgreed() takes the mark off when the two
+   sides hold the same string.
+
+   AND WHEN. The mark is the moment the person last wrote that slice, by this
+   phone's clock, because that is what goes up with it: two phones that
+   changed the same thing keep the later change (www/sync.js § syMerge,
+   supabase/schema.sql § keep_newer). */
+var LTOUCH={}, SL_APP=0;
+function slAsApp(fn, args){
+  SL_APP++;
+  try{ fn.apply(null, args); }
+  finally{ SL_APP--; }
+}
+function slWr(k, v){
+  var s=String(v);
+  if(!SL_APP && slMine(k)!==s) LTOUCH[k]=Date.now();
+  LSL[k]=s;
+}
+function slTouched(k){ return !!LTOUCH[k]; }
+function slTouchedAt(k){ return LTOUCH[k] || 0; }
+function slSettled(k){ delete LTOUCH[k]; }
 /* Gone from memory, and both disk keys with it -- what an older version wrote
    and the picture slGot() keeps. This is the one place that REMOVES, and it is
    only ever a person deleting a language or an account (wipeLangsGo,
@@ -843,6 +890,7 @@ function slWr(k, v){ LSL[k]=String(v); }
    くる」 wearing the migration's clothes. */
 function slRm(k){
   delete LSL[k];
+  slSettled(k);
   try{ localStorage.removeItem(k); localStorage.removeItem(slGotKey(k)); }catch(e){}
 }
 
@@ -1212,11 +1260,34 @@ function langTheirs(id){
    those savers writes langKey(), which is the open language and nothing else.
    A saver given an id would be a second question.
 
-   AND 「まだ訊けていない」 STOPS IT TOO. Anything but LW_MINE refuses, so a
-   launch with no signal looks at what was last loaded and writes none of it
-   back -- which is the one-way road of CLAUDE.md rule 22 asked at the door
-   every save goes through. */
-function langLocked(){ return langWhose(langId)!==LW_MINE; }
+   AND 「まだ訊けていない」 STOPS IT TOO, AND THE PICTURE IS NOT AN ANSWER.
+   langWhose() is the DRAWING question and it reads langOwnOf(), which falls
+   back to the picture kept for a launch with no signal -- right for drawing,
+   and the reason this was not enough: on every launch, before the server had
+   said anything, the picture answered 「mine」, a migration saved, the picture
+   became what this phone was HOLDING, and the up road sent it. A word deleted
+   on another phone came back from this one (tools/quiet-check.mjs 2,
+   measured 2026-09-23).
+
+   So a save asks what the SERVER said, in this run of the app: LOWN, the
+   answer itself, and never slRd()'s picture -- the same two questions
+   slRd()/slMine() are for a slice. And the launch's walk writes that answer
+   only once the language's slices have landed and the open one has been read
+   in from them (www/net.js § netLangsWalk), so 「the server has said it is
+   mine」 is also 「what is on the screen is the server's」 -- one fact, not
+   two. The walk is the one language nobody has to answer for (signed out,
+   § langWhose), and one this account has just MADE has its answer written
+   the moment it is made (langNew, langForAcct). A
+   launch therefore looks at what was last loaded and writes none of it, which
+   is the one-way road of CLAUDE.md rule 22 asked at the door every save goes
+   through. */
+function langLocked(){
+  var k=String(langId||''),
+      me=(typeof SESS!=='undefined' && SESS && SESS.uid)? String(SESS.uid) : '';
+  if(!k || !LANGS[k]) return true;
+  if(!me) return false;
+  return !Object.prototype.hasOwnProperty.call(LOWN, k) || LOWN[k]!==me;
+}
 /* ---- ONE EMPTY LANGUAGE, MADE WHERE SOMEBODY STARTS MAKING ONE ----------
    「オンラインで 1 端末に 1 アカウント、そのアカウントに結びつけられる言語数が
    決まってるんだから端末でやることねえ」 OWNER 2026-09-11
@@ -1278,6 +1349,15 @@ try{
   var s=JSON.parse(localStorage.getItem(LS_S)||'null');
   if(s) for(var sk in s) if(Object.prototype.hasOwnProperty.call(s,sk)) SET[sk]=s[sk];
 }catch(e){}
+/* WHOSE THE COPIES ON THIS PHONE'S DISK WERE WRITTEN UNDER, read once, here,
+   before anything can change it. `SET.acct` is 「which account's things are
+   live on this handset」 (§ planFor) and every copy that is switched when an
+   account arrives -- the settings, the posts, the drafts -- is switched
+   together, so the stamp on the settings is the stamp on all of them. It has
+   to be taken now: www/net.js runs planFor() as it loads, which moves
+   SET.acct to the session before www/post.js has asked whose its copy is
+   (r63-audit L3). */
+var ACCT_DISK=String(SET.acct||'');
 /* ---- THE KEYCHAIN IS NOT READ, AND THERE IS NOTHING TO MIGRATE ----------
    This is where `window.__plan`, `window.__planuid` and `window.__planok`
    were taken off the native side and written into `SET`, and where
@@ -1308,9 +1388,13 @@ try{
    the row is gone.
 
    So the flag keeps the second question and is named for it. This copies the
-   old value across ONCE, on the launch after the update, and takes the old
-   name away so nothing can read it again -- what is copied is the same fact
-   under the name that says which fact it is. A phone that has never had the
+   old value across ONCE, on the launch after the update -- and COPIES: the old
+   field stays exactly where it was (a migration copies and never removes what
+   it read, CLAUDE.md § Data; it used to `delete SET.done`, r69-misc 申し送り 2).
+   Nothing reads `done` any more, so leaving it costs nothing; what said 「this
+   has been moved」 was its absence, and that is `doneMoved` now -- a mark of
+   this handset's, because what it marks (`walked`) is this handset's
+   (§ SET_PHONE). A mark belongs to whoever owns what it marks. A phone that has never had the
    old field is untouched: absent is not false, it is 「there was nothing to
    move」, and setDefaults() answers for a fresh install.
 
@@ -1318,9 +1402,9 @@ try{
    field that changed meaning is moved once, on this phone, before anything
    reads it. */
 function walkedMigrate(){
-  if(SET.done===undefined) return;
+  if(SET.done===undefined || SET.doneMoved) return;
   if(SET.walked===undefined || SET.walked===false) SET.walked=!!SET.done;
-  delete SET.done;
+  SET.doneMoved=1;
   setKeep();
 }
 walkedMigrate();
@@ -1341,12 +1425,17 @@ function langOpen(id){
      one in a backup file, netLangSync() does not sync one, and the row in the
      language list is not a button. Each of those is at the place that does
      the thing. docs/DATA_MODEL.md § A language that is only read. */
-  langSaveAll();
+  /* The app's own writes (§ LTOUCH): the old language written out as it
+     stands, and the new one's top-ups and migrations. None of it is somebody
+     changing their language, so none of it goes up by itself -- it rides the
+     next thing a person saves in that slice. */
+  slAsApp(langSaveAll, []);
   langId=id; langStore();
   /* LANG_IO is the list; ltStart(), migrateKbFree() and migratePostInk() are
      not reads and stay -- one tops a free language up, two bring an older
      shape forward. */
-  langLoad(); ltStart(); migrateKbFree(); migratePostInk();
+  langLoad();
+  slAsApp(migrateAll, []);
   /* and where you were standing in the old one is not a place in this one:
      a filter left on would hide most of a dictionary you have never seen. */
   viewReset();
@@ -1445,14 +1534,58 @@ function langNew(){
   if(typeof netLangSync==='function') netLangSync();
 }
 
+/* The dictionary, the lines and the writing -- AND the settings, which every
+   save has carried since before setKeep() existed, and which forty-odd callers
+   in files that are not this one still reach through here. The settings go
+   first and always: a language that may not be written (somebody else's, or
+   the picture before the server has answered) is no reason to lose the theme
+   somebody just chose. It used to decline both at once. */
+/* ---- EVERY OLD SHAPE BROUGHT FORWARD, AND ONLY WHERE IT CAN BE WRITTEN ----
+   One list, and three moments ask it: the launch (www/boot.js), the open
+   language becoming writable (langOwnGot above), and a language being opened
+   (langOpen). It was a list at the foot of boot.js and a shorter one here, and
+   the boot one ran while the screen was still the picture -- where langLocked()
+   refuses every save -- so migrateWorld() raised its mark and wrote nothing,
+   and the copy it was moving was never moved again (r69-misc 申し送り 1).
+
+   So the language being writable is asked ONCE, here, before anything moves;
+   a migration that cannot write does not run and raises no mark, and runs the
+   moment it can. Every one of them fills in what is missing and stops, so a
+   second run finds nothing to do. The app's own writes, always: every caller
+   wraps it in slAsApp() (§ LTOUCH). */
+function migrateAll(){
+  if(langLocked()) return;
+  /* migratePh() stood first here and is gone (2026-09-23, r73 § 2-8): it
+     wrote a guess into every word with no sounds -- a word made today has
+     none on purpose (www/wordsheet.js § addOne), and one somebody emptied
+     had its guess written back on the next launch. wPh() guesses when it
+     reads, so nothing on a screen moves. 「保存を押したときだけ、保存されて
+     いるものが変わる」 OWNER 2026-09-04. */
+  migrateMn();
+  /* and a part of speech saved as its label rather than its key */
+  migratePos();
+  migrateLetters();
+  migrateMarks();
+  migrateSndName();
+  migrateSnd();
+  migratePosts();
+  migratePostInk();
+  migrateSp();
+  /* and what the language is for, off the phone and into the language */
+  migrateWorld();
+  /* and the free QWERTY out of the keyboard list, keeping an edited one */
+  migrateKbFree();
+  /* and a free language gets the twenty-eight slots it is allowed */
+  ltStart();
+}
 function save(){
-  if(langLocked()) return;   /* somebody else's language: nothing is written to it */
+  setKeep();
+  if(langLocked()) return;   /* not writable: nothing is written to the language */
   bkTouch();
   saveTry(function(){
     slWr(langKey('words'),JSON.stringify(WORDS));
     slWr(langKey('lines'),JSON.stringify(LINES));
     slWr(langKey('script'),JSON.stringify(SCRIPT));
-    localStorage.setItem(LS_S,JSON.stringify(setOnDisk()));
     langStore();
   });
 }
@@ -2147,8 +2280,9 @@ var SET_PREFS=['theme','ui','myfont','showScript','kbrom',
    `acct` says which account's things are live here -- the settings that
    setFor() parks and hands back. It was `planUid`, because the plan copy sat
    beside them; the plan is not on this handset any more (§ PLAN) and the
-   field is named for the one thing it still says. `wldMoved` is a
-   migration mark; `vvkb` is a MEASUREMENT of this screen and is meaningless
+   field is named for the one thing it still says. `doneMoved` is a
+   migration mark of a field that was this handset's; `vvkb` is a MEASUREMENT
+   of this screen and is meaningless
    on another phone. `done` and `obback` are the onboarding's, and they are
    here under protest -- 「セッションが無い」 cannot tell a phone out of the box
    from one somebody signed out of, and after an account is deleted there is no
@@ -2170,7 +2304,7 @@ var SET_PREFS=['theme','ui','myfont','showScript','kbrom',
    `order`, `read`, `voice` and `script` are NOT settled: they are the
    language-making side's, and moving them is a different question from this
    one. docs/BACKLOG.md. `planV` was here and is gone with the plan. */
-var SET_PHONE=['acct','walked','obback','vvkb','wldMoved',
+var SET_PHONE=['acct','walked','obback','vvkb','doneMoved',
                'order','read','voice','script'];
 /* `SET_PLAN` STOOD HERE AND IS GONE (2026-09-11). It named `plan` and
    `planWas` -- the copy of the server's last answer about this account, and
@@ -2210,9 +2344,14 @@ function setFor(uid){
     try{ park=localStorage.getItem(setParkKey(me)); }catch(e){ park=null; }
     if(park){ try{ got=JSON.parse(park); }catch(e){ got=null; } }
   }
-  /* Nobody was written down: what is here is this person's, the way meFor()
-     adopts an unclaimed copy. Only on the way IN. */
-  if(was){
+  /* WHAT THE ARRIVING ACCOUNT PARKED IS ITS OWN, whoever was written down
+     before. This asked `was` alone, so a phone whose settings named nobody --
+     after an account was deleted on it, or from before the stamp existed --
+     let somebody in and never read what they had parked, and the next
+     park wrote their empty fields over it (r63-audit L1). Only where the
+     arriving account has parked nothing AND nobody was written down is what
+     is here adopted as theirs, the way meFor() adopts an unclaimed copy. */
+  if(was || got){
     keys=setAcctKeys(got);
     for(i=0;i<keys.length;i++){
       k=keys[i];
@@ -2691,8 +2830,10 @@ function wPh(w){
   if(w && w.ph && w.ph.length) return w.ph;
   return phGuess(w? w.hw : '');
 }
-/* The old reading of a Latin spelling, kept for exactly one job: giving the
-   words that predate the chart a sequence to carry from now on. */
+/* The old reading of a Latin spelling: what a word with no spelling and no
+   sounds of its own reads as, worked out when it is read (wPh) and when a
+   list is brought in (www/import.js) -- and never written onto a word by
+   anything nobody pressed (migratePh is gone, 2026-09-23). */
 function phGuess(hw){
   var s=String(hw||'').toLowerCase().replace(/[^a-z]/g,''), out=[], i=0, two;
   while(i<s.length){
@@ -2743,13 +2884,6 @@ function wParent(w){
   var i;
   for(i=0;i<WORDS.length;i++) if(String(WORDS[i].hw)===w.from) return WORDS[i];
   return null;
-}
-function migratePh(){
-  var changed=false;
-  WORDS.forEach(function(w){
-    if(!w.ph || !w.ph.length){ w.ph=phGuess(w.hw); changed=true; }
-  });
-  if(changed) save();
 }
 /* Syllables, cut out of the sounds rather than out of the letters.
    A run of consonants, then the vowels. Then the run of consonants before the

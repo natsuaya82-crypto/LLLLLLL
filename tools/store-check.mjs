@@ -113,9 +113,10 @@ const ROADS = {
   /* the timeline */
   'post.js:LS_POSTS':  { to: 'netPush' },
   'post.js:LS_DRAFTS': { to: 'netDraftUp' },
-  /* the face and the line about yourself go up on their own timers; the
-     handle and the display name are written when the account is made */
-  'me.js:LS_ME':       { to: 'netAvSync' },
+  /* the name, the @, the line about yourself and the face go up when they
+     are pressed, all through the one PATCH of the profile row (meProfPut and
+     meFacePut in www/me.js); a launch sends none of them */
+  'me.js:LS_ME':       { to: 'netProfPut' },
   /* and the four that are the phone's, each for its own reason */
   'core.js:LS_S':    { phone: 'the settings. Everything in them is an account\'s and is parked under `lingua.set.<uid>` by setFor() EXCEPT what `SET_PHONE` in www/core.js names; what that names is how this handset is set up -- the theme, the interface language, the marks that a migration has run here -- and follows the handset because there is nothing else for it to follow' },
   'core.js:langTakeKey(me)': { phone: 'which of somebody else\'s languages this account had TAKEN, as the `language_take` table last answered (www/core.js § LTAKE). A picture of a server answer, filed under the account it is about -- the key ends in the uid, so lsWipeAcct() takes it by counting the namespace, and langTookFor() reads only the account in hand, never the one before it. It exists so a launch with no signal draws the languages somebody took instead of hiding them: 「前に読み込んだの出していいよ。何か更新するならクルクルが必要」 OWNER 2026-09-12. It has no road UP and must not be given one -- what this account has taken is `language_take`, netTakes() is what asks, and nothing on this phone may answer it' },
@@ -262,7 +263,8 @@ const FIELDS = {
      to name each field by hand because it reads `SET.x =` off the source. */
   push_prompt: { to: 'netPrefsPut' },
   vvkb:     { phone: 'how much of THIS screen the phone\'s own keyboard covers. A measurement of one handset and meaningless on another' },
-  wldMoved: { phone: 'the mark that 「what the language is for」 has been moved out of the settings and into the language. A migration mark' },
+  wldMoved: { phone: 'the mark that 「what the language is for」 has been moved out of the settings and into the language. A migration mark, and the ACCOUNT\'s like `SET.world` it marks: parked with it by setFor(), so the next account to sign in has its own moved (r73 § 2-7)' },
+  doneMoved: { phone: 'the mark that the old `done` has been copied into `walked` (walkedMigrate, www/core.js). A migration mark -- it is what the old field\'s absence used to say, now that the migration copies and removes nothing' },
   sndMoved: { phone: 'the mark that SET.snd -- the sounds from when there was one list per person -- has been copied into the language. A migration mark; SET.snd itself is left where it was, and this sits beside it and is parked with it by setFor()' },
   /* `wsys` STOOD HERE AS A GAP AND IS GONE (2026-09-09). It was named rather
      than blessed -- 「言語のものなのに人の設定に入っているので、公開した言語は

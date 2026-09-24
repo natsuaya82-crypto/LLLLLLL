@@ -205,7 +205,13 @@ await pg.evaluate((raw) => {
 const typed = await inkOf('#pw-ln');
 const sent = await pg.evaluate(() => {
   const was = POSTS.map((p) => p.id);
+  /* The server takes it. A post is written down here only once the server
+     has it (pwSendPost), this page has no server, and what is asked below is
+     the line the post carries -- not the road it travels. */
+  const realPostSend = postSend;
+  postSend = function (p, ok) { ok(''); };
   pwSend();
+  postSend = realPostSend;
   const p = POSTS.filter((q) => was.indexOf(q.id) < 0)[0];
   if (!p) return null;
   p.id = 'pline';
