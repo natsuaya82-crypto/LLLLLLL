@@ -19,7 +19,7 @@
 // 「サインインなしで勧めるものないけど」 OWNER 2026-09-22 ── このアプリに、
 // サインインなしで進むものは一つもありません。
 //
-// 扉は二枚あり、二枚とも要ります。
+// 扉は三枚あり、三枚とも要ります。
 //
 //   一枚目 ── Supabase の JWT 検証。この函数は `--no-verify-jwt` なしで置かれ、
 //     トリガーは**行を入れた人の Authorization をそのまま持って行きます**
@@ -33,6 +33,11 @@
 //     なので、全員を鳴らせるのはお題の行を書いた daily-prompt だけです。
 //     publishable キーで叩かれた時もここで止まります ── あの鍵に user の sub
 //     はありません。
+//   三枚目 ── **その行で、まだ鳴っていないか。**二枚目が言えるのは「その人が
+//     やったこと」までで、同じ行を何度指しても通りました。行に `rung_at` を
+//     書くのは `push_once()`（supabase/schema.sql）一つで、一つの行で鳴るのは
+//     一回です。tools/rls-check.mjs が、同じ行を二回叩いて二回目が何も鳴らさない
+//     ことと、署名した人にはその印が書けないことを数えます。
 //
 // **それでも request の中身は一文字も信じません。**受け取るのは「どの表の、
 // どの行か」だけ（`pushWhat()`）で、その行を service role で**読み直し**、文面は
@@ -177,6 +182,19 @@ Deno.serve(async (req: Request) => {
      の表を一枚も読まずにここで終わります。 */
   const may = pushMay(aim, by);
   if (may) return said({ sent: 0, why: may });
+
+  /* **一つの行で鳴るのは一回。**ここまでで言えるのは「その人がやったこと」
+     までで、同じ行を指して何度叩いても毎回ここを通っていました ── B が自分の
+     フォローの行で A の iPhone を何度でも鳴らせた（r63-audit SQ2）。
+     `push_once()`（supabase/schema.sql）がその行に `rung_at` を書き、書いたのが
+     この呼び出しかどうかを答えます。**`pushMay()` の後**なのは、その人でない
+     叩きがその行の一回を使ってしまわないためです。読めなかったのは「もう
+     鳴った」ではないので、枝を分けます（CLAUDE.md 一枚目）。 */
+  const once = await fetch(`${url}/rest/v1/rpc/push_once`, {
+    method: 'POST', headers: head, body: JSON.stringify({ tbl: ev.table, k }),
+  });
+  if (!once.ok) return said({ sent: 0, why: 'could not mark: ' + (await once.text()) }, 500);
+  if ((await once.json()) !== true) return said({ sent: 0, why: 'already rung' });
 
   /* ---- 相手 ------------------------------------------------------------
      一人宛てなら、相手からは設定を、やった人からは @ を。**二人を一度に
