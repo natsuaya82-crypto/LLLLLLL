@@ -2570,6 +2570,61 @@ const BASE = 'db93b264';   /* 2026-09-08, the last paste before `wsys` */
 const BASE_SQL = execFileSync('git', ['show', `${BASE}:supabase/schema.sql`],
                               { cwd: path.join(HERE, '..'), encoding: 'utf8' });
 const SCHEMA_SQL = fs.readFileSync(SCHEMA, 'utf8');
+
+/* ---- ONE THING IS SAID IN ONE PLACE, COUNTED OFF THE FILE -------------
+   「穴を潰すんじゃなくて同じように全体を俯瞰して穴を覆って欲しい」 OWNER
+   2026-09-22. The cover is the block at the foot of schema.sql -- anon holds
+   nothing, every function is `authenticated`'s -- and a grant or a revoke
+   that says it again about ONE object is the old hole's plug left standing
+   beside the cover. It changes nothing on the day it is written, and it is
+   what somebody copies on the day the next function is added, and from then
+   on the file answers 「who may run this」 in two places.
+
+   The same sentence the other way: nothing is DEFINED twice. A policy made
+   once and then again further down is two answers to one question, and the
+   one that runs is whichever the reader did not look at -- `media_read` was
+   `using (bucket_id = 'post-media')` in the storage section and
+   `is_member() and ...` at the foot, and the comment over the first said
+   「anybody reads」.
+
+   Asked of the SOURCE and not of the database, because the database only
+   holds the last definition -- which is exactly what hides the first -- and
+   counted rather than listed, so a function added tomorrow is asked
+   tomorrow. The one open name is the one exception, and it is named here
+   the way the wall below names it: it must match exactly once, or the
+   exemption has outlived what it was for. */
+const SAID = (() => {
+  const src = SCHEMA_SQL.replace(/--[^\n]*/g, '');
+  const stmts = src.split(';').map((s) => s.replace(/\s+/g, ' ').trim());
+  const OPEN = 'grant execute on function email_taken(text) to anon';
+  const again = stmts.filter((s) =>
+    /^(grant|revoke)\b/i.test(s) && !/\bon all (tables|sequences|functions)\b/i.test(s) &&
+    (/\bon function\b/i.test(s) || /\b(to|from)\b[^]*\banon\b/i.test(s)) && s !== OPEN);
+  const twice = [];
+  const KINDS = {
+    policy:   /create policy\s+(\w+)\s+on\s+([\w.]+)/gi,
+    function: /create (?:or replace )?function\s+([\w.]+)\s*\(/gi,
+    view:     /create (?:or replace )?view\s+([\w.]+)/gi,
+    table:    /create table (?:if not exists )?([\w.]+)/gi,
+    trigger:  /create trigger\s+(\w+)\s[^;]*?\son\s+([\w.]+)/gi,
+    bucket:   /insert into storage\.buckets\b[^;]*?values\s*\(\s*'([^']+)'/gi,
+  };
+  for (const [k, re] of Object.entries(KINDS)) {
+    const seen = {};
+    let m;
+    while ((m = re.exec(src))) {
+      const n = k + ' ' + m.slice(1).join(' on ');
+      seen[n] = (seen[n] || 0) + 1;
+    }
+    for (const n of Object.keys(seen)) if (seen[n] > 1) twice.push(n + ' x' + seen[n]);
+  }
+  return [
+    ['a grant or revoke saying the foot again', again],
+    ['the one open name, named once',
+     stmts.filter((s) => s === OPEN).length === 1 ? [] : ['not exactly once: ' + OPEN]],
+    ['anything defined twice', twice],
+  ];
+})();
 /* AND WHAT THE DASHBOARD MAKES, which is not PostgreSQL's and is not
    schema.sql's. pg_net (the `net` schema) arrives when somebody turns
    Database -> Webhooks on, once, by hand -- so a project can be pasted into
@@ -2782,6 +2837,13 @@ if (wall) {
                ' -- all refused (1 allowed by name: email_taken)'));
 }
 
+/* After the wall, because the wall's sentence is about anon and these are
+   about what the file says -- a red here is not anon getting through. */
+for (const [name, found] of SAID) {
+  if (found.length) bad.push([name, 'none', found.length + ': ' + found.join(' | ')]);
+  console.log((found.length ? '  FAIL  ' : '  ok    ') + name.padEnd(44) +
+              (found.length ? found.length + ' found where there must be none' : ''));
+}
 console.log('');
 if (bad.length) {
   console.error('somebody else got through:\n');
@@ -2791,3 +2853,4 @@ if (bad.length) {
 console.log(`rls: ${CASES.length + ROAD.length} attempts by somebody who is not the owner, ` +
             `none of them got through`);
 console.log(`     ${SHAPE.length} things the file cannot be without, all present`);
+console.log(`     ${SAID.length} things the file says once, each said once`);
