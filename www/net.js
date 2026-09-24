@@ -1955,7 +1955,7 @@ function netSlices(sid, ok, bad, kinds, cols, prog){
 /* One slice, written. `Prefer: resolution=merge-duplicates` is what makes an
    insert into a table with a two-column primary key an upsert -- the phone
    does not have to know whether this slice has ever been up. */
-function netSlicePut(sid, kind, body, no, ed, was, ok, bad){
+function netSlicePut(sid, kind, body, ed, was, ok, bad){
   /* Through netSend(), like everything else here: this is the write a
      person's work actually goes up in, and it used to open its own
      XMLHttpRequest, outside the token renewal. 「保存押せば起動されないの？」
@@ -1972,9 +1972,12 @@ function netSlicePut(sid, kind, body, no, ed, was, ok, bad){
      refuses the write with `stale` if it has moved since (keep_newer). That
      refusal is the one answer handed back as the third argument, so the
      caller can tell 「read again」 from 「no signal」. */
+  /* NO `no`. Which write this is, is numbered by the server (slice_no(),
+     supabase/schema.sql, r65): a number the phone sends is not read, so
+     sending one was a second answer to the question nobody asks the phone. */
   netSend('POST', '/rest/v1/slice',
           {language:sid, kind:kind, body:String(body||''),
-           no:(no||0)+1, at:at, ed:{body:ed||0, was:was||0}},
+           at:at, ed:{body:ed||0, was:was||0}},
           netTok(), function(){ ok(at); },
           function(d, st){
             bad(null, st||0, (d && d.message==='stale')? 'stale' : '');
@@ -2628,7 +2631,7 @@ function netSlice1(id, sid, kind, got, done, bad, tries){
        agreed. Recorded here rather than after the write, because there is
        nothing to write. */
     if(got && put===got.body){ netAgreed(id, kind, put, got.at); done(true); return; }
-    netSlicePut(sid, kind, put, got? got.no : 0, ed, their,
+    netSlicePut(sid, kind, put, ed, their,
                 function(at){ netAgreed(id, kind, put, at); done(true); },
                 /* A write that did not land agreed nothing, and the record
                    stays as it was. What happens next is the caller's --
@@ -2646,7 +2649,7 @@ function netSlice1(id, sid, kind, got, done, bad, tries){
     netAgreed(id, kind, put, (got && put===got.body)? got.at : '');
     done(false); return;
   }
-  netSlicePut(sid, kind, put, got? got.no : 0, ed, their,
+  netSlicePut(sid, kind, put, ed, their,
               function(at){ netAgreed(id, kind, put, at); done(false); },
               function(d, st, m){
                 if(m==='stale'){ netSliceAgain(id, sid, kind, done, bad, tries); return; }
