@@ -2090,30 +2090,31 @@ function kbVJoin(ri, ki){
 
    It runs from saveKb(), which is what every change to a keyboard ends in,
    and BEFORE kbNoted() inside it, so what the step back holds is the repaired
-   layout rather than a state the app never showed. Rows are walked downwards,
+   layout rather than a state the app never showed. On THE BOARD BEING SAVED
+   and no other, which is kbWayOff()'s range too: a save repairs what somebody
+   just changed, and rearranging a keyboard nobody is looking at is the thing
+   both exist to stop. It walked every board until docs/scope/r63-audit.md K3
+   measured a change to board 2 moving board 1. Rows are walked downwards,
    so a key whose `h` is dropped here is dropped before the gap under it is
    asked about. */
 function kbVFix(){
-  var i, j, rows, k, ri, ki, at, di;
-  if(!KB || !KB.kbs) return;
-  for(i=0;i<KB.kbs.length;i++){
-    if(!KB.kbs[i] || !KB.kbs[i].lay) continue;
-    for(j=0;j<KB.kbs[i].lay.length;j++){
-      rows=KB.kbs[i].lay[j].rows;
-      if(!rows) continue;
-      for(ri=0;ri<rows.length;ri++){
-        for(ki=0;ki<rows[ri].length;ki++){
-          k=rows[ri][ki];
-          at=kbAtOf(rows[ri], ki);
-          if(kbTall(k)){
-            di=kbAtKey(rows[ri+1], at);
-            if(di<0 || !kbShadow(rows[ri+1][di]) ||
-               kbU(rows[ri+1][di].w)!==kbU(k.w)) delete k.h;
-          }else if(kbShadow(k)){
-            di=kbAtKey(rows[ri-1], at);
-            if(di<0 || !kbTall(rows[ri-1][di]) ||
-               kbU(rows[ri-1][di].w)!==kbU(k.w)) delete k.up;
-          }
+  var b=kbEdit(), j, rows, k, ri, ki, at, di;
+  if(!b || !b.lay) return;
+  for(j=0;j<b.lay.length;j++){
+    rows=b.lay[j].rows;
+    if(!rows) continue;
+    for(ri=0;ri<rows.length;ri++){
+      for(ki=0;ki<rows[ri].length;ki++){
+        k=rows[ri][ki];
+        at=kbAtOf(rows[ri], ki);
+        if(kbTall(k)){
+          di=kbAtKey(rows[ri+1], at);
+          if(di<0 || !kbShadow(rows[ri+1][di]) ||
+             kbU(rows[ri+1][di].w)!==kbU(k.w)) delete k.h;
+        }else if(kbShadow(k)){
+          di=kbAtKey(rows[ri-1], at);
+          if(di<0 || !kbTall(rows[ri-1][di]) ||
+             kbU(rows[ri-1][di].w)!==kbU(k.w)) delete k.up;
         }
       }
     }

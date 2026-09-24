@@ -3571,6 +3571,23 @@ const SF = await sf.evaluate(({ s }) => {
     out.migKept = stored.indexOf(JSON.stringify(copy.lay)) >= 0;
     out.migAt = KB.at;
   }());
+
+  /* THE REPAIRS A SAVE MAKES ARE MADE TO THE BOARD BEING SAVED. A key on
+     board 1 carrying `h` with nothing under it, and a change made to board 2:
+     board 1 is not the one in front of anybody and not one byte of it moves
+     (docs/scope/r63-audit.md K3, measured there). */
+  (function (){
+    var tall = lt('t'); tall.h = 2;
+    KB = { v: KB_V, at: 0, kbs: [
+      { id: 'kOne_1', nm: 'one', pat: 'abc', lay: [{ nm: '', rows: [[tall, lt('u')], [lt('v')]] }] },
+      { id: 'kTwo_1', nm: 'two', pat: 'abc', lay: [{ nm: '', rows: [[lt('w'), lt('x')]] }] }] };
+    var one = JSON.stringify(KB.kbs[0]);
+    kbShow = 2; kbLay = 0;
+    window.route = 'kb'; NAV = [{ r: 'kb' }, { r: 'kb', a: '2' }]; render();
+    KBH = null; kbHeadCol(0); kbCut();
+    out.k3Two = JSON.stringify(KB.kbs[1].lay[0].rows.map(function (r){ return r.length; }));
+    out.k3One = JSON.stringify(KB.kbs[0]) === one;
+  }());
   return out;
 }, { s: seed.toString() });
 await sf.close();
@@ -4619,6 +4636,9 @@ say(dupTwo.onServer <= dupOne.onServer && dupThree.onServer <= dupTwo.onServer,
     + [dupOne, dupTwo, dupThree].map((x) => x.onServer).join(', ') + ' rows');
 
 /* r74 — the surfaces */
+say(SF.k3One,
+    'a save repairs the board being saved and no other — a lone tall key on board 1 is '
+    + 'left exactly as it is when board 2 is changed (board 2 rows ' + SF.k3Two + ')');
 say(SF.migList === 'mine' && SF.migKept && SF.migAt === 1,
     'a keyboard from before board 0 left storage lists only what somebody made, and the '
     + 'old copy of the free QWERTY is still in what is stored, byte for byte — a migration '
