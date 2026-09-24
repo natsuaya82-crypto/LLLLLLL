@@ -1368,6 +1368,44 @@ grant select, insert, delete on language_take to authenticated;
 alter table slice enable row level security;
 alter table slice_hist enable row level security;
 
+-- ---- what this file has done once ---------------------------------------
+-- This file is pasted again and again, and nearly everything in it says what
+-- is TRUE -- saying it a second time changes nothing. A step that MOVES
+-- something is not like that: run on the tenth paste, it would do again what
+-- a person has undone since the first. So a step that must happen once writes
+-- its name here when it has happened, and asks this table before it runs.
+-- Nothing about anybody is on it: the name of a step and when it ran. Row
+-- level security with no policy, so nobody the app signs in as reads it.
+create table if not exists schema_step (
+  step text primary key,
+  at   timestamptz not null default now()
+);
+alter table schema_step enable row level security;
+
+-- THE LANGUAGE'S NAME, FROM WHERE IT USED TO BE (r60-up B3). Before the
+-- column, a language's name was the `lang` slice, and a language made then
+-- has an empty `language.name` -- which is the half everybody else reads, so
+-- to them it had no name. It was the phone's launch that copied it
+-- (`netLangsWalk` in www/net.js), which is a launch writing to the server;
+-- it is here now, once.
+--
+-- A COPY: the slice is not touched (docs/DATA_SAFETY.md -- a migration
+-- copies and never removes what it read). ONLY INTO AN EMPTY NAME: a name
+-- already there is somebody's answer. And ONCE, because an empty name is also
+-- a thing a person does on purpose -- 「空は未設定」 OWNER 2026-09-06 -- and a
+-- copy that ran on every paste would put the old name back over that.
+do $step$
+begin
+  if not exists (select 1 from schema_step where step = 'language.name from lang') then
+    update language l set name = s.body
+      from slice s
+     where s.language = l.id and s.kind = 'lang'
+       and l.name = '' and s.body <> '';
+    insert into schema_step(step) values ('language.name from lang');
+  end if;
+end
+$step$;
+
 -- Whether the OWNER of a language has said that one section of it may be taken
 -- away. 「言語ページ公開と単語や文字のdl可能は別だし」 -- publishing a page and
 -- handing a chapter over are two answers, and this is the second one.
