@@ -23,39 +23,15 @@
    a password, except that it expires, it can be revoked from the server, and
    it is worth nothing to anybody on any other site.
 
-   Reading needs no account at all. post, profile and a published language are
-   world-readable, so the timeline works with the key alone.
-
-   There is an account anyway, and nobody typed anything to get it. The first
-   launch signs in ANONYMOUSLY: a real row in auth.users, a real uid, a real
-   pair of tokens, and no identity on any of it. That is what lets everything
-   somebody makes belong to an account from the first minute without a door
-   in front of the app. 「サインイン必須にしたいけど、オンボーディングで離脱
-   されるのは防ぎたい」
-
-   So "signed in" is two questions here and they are not the same one:
-
-     netSignedIn()   there is a session. Anonymous counts.
-     netSignedIn()     the session has somebody's name on it.
-
-   The second is this phone's copy of is_member() in supabase/schema.sql,
-   which has refused an anonymous token since the day it was written -- so
-   everything other people would see is refused by the server whether or not
-   this file remembers to ask. Asking is what makes the refusal a door
-   instead of a shrug.
-
-   There is no anonymous account any more. It was one phone's refresh token
-   and nothing else -- lose the phone and nobody, including us, could prove it
-   was theirs -- and OWNER 2026-08-26 took it out: an account is asked for at
-   the door now, before anything can be made.
-
-   This used to end "and attaching one later keeps the same uid rather than
-   starting again." That was never true while the mail door posted to
-   /auth/v1/signup, which asks Supabase for a NEW user rather than for a way
-   into the one that is already there. It is netMailOtp() below now
-   -- 「1アドレス1アカウント」 OWNER 2026-09-02 -- so an address that has an
-   account lands on it whichever road it comes by. Nothing was ever lost by
-   the old shape: the app has never been released.
+   READING NEEDS AN ACCOUNT, THE SAME AS WRITING. `anon` holds nothing -- the
+   block at the foot of supabase/schema.sql -- so a request carrying the key
+   alone is refused by the server, and netSend1() below is the one place in
+   this app that asks whether anybody is signed in: signed out, every request
+   answers `401` without leaving the phone. There is one kind of account and
+   no anonymous one (OWNER 2026-08-26); it is asked for at the door, the last
+   step of the walk, and an address that has an account lands on it whichever
+   road it comes by (netMailOtp() below, 「1アドレス1アカウント」 OWNER
+   2026-09-02).
    ========================================================================= */
 
 /* =========================================================================
@@ -3233,10 +3209,9 @@ function netFeed(which, ok, bad, more){
      timeline in order to throw it away.
      「ツイートはフォロー中とおススメみたいに分けたいよね」
 
-     Reading needs no account. post_read in schema.sql is `using (true)`, so
-     the recommended timeline works with the publishable key alone and
-     somebody who has not decided yet is not asked to decide. The FOLLOWED one
-     cannot: there is nobody to have followed anybody. */
+     Both are asked as this account -- `post_read` in schema.sql is
+     `using (true)`, which is every signed-in person, and the window
+     (netSend1) refuses anybody else. */
   var sel=NET_POST_SEL+'&order=created_at.desc&limit='+NET_PAGE;
   /* `more` is where to carry on from, and it is a different thing on the two
      sides because the two lists are in different orders.
@@ -3302,11 +3277,10 @@ function netFeed(which, ok, bad, more){
             {lim:NET_PAGE, off:(parseInt(more, 10) || 0)},
             netTok(),
       function(d){
-        /* Blocked accounts are taken out here and not by the server, which is
-           the one place this list differs from the other: feed_hot() is asked
-           with the publishable key by somebody who may have no account, and
-           there is no block list to ask about when there is nobody to have
-           made one. */
+        /* Blocked accounts are taken out here and not by the server, because
+           feed_hot() in schema.sql does not take them out. The SQL that would
+           is written in docs/scope/r71-net.md for r65-server, which owns that
+           file. */
         netBlocked(function(bl){
           var out=[], i, j, skip={};
           for(i=0;i<bl.length;i++) skip[bl[i]]=1;
@@ -3366,10 +3340,9 @@ function netFeed(which, ok, bad, more){
    ME.fo has always held. The uuid is turned back here, where the request
    already is, rather than by every screen that draws a button.
 
-   Reading a follow needs no account (`follow_read` is `using (true)`): who
-   follows whom is public, the way it is in every timeline. Signed out there
-   is nobody to have followed anybody, and the answer is `null` -- could not
-   ask -- rather than an empty list. */
+   Who follows whom is open to every signed-in person (`follow_read` is
+   `using (true)`), the way it is in every timeline; signed out, the window
+   refuses it (netSend1) like every other read. */
 /* WHOSE LISTS THESE ARE, which was always「mine」and could not be anything
    else. 「当たり前だけどsnsとして機能してない」 OWNER 2026-09-01.
 
@@ -3397,10 +3370,8 @@ function netFeed(which, ok, bad, more){
    road: it is the same view, the same filter, and the identifier that is in
    hand.
 
-   Reading needs no account -- `follow_read` is `using (true)`, who follows
-   whom is public the way it is in every timeline -- and signed out, with no
-   handle to ask about, there is nobody to have followed anybody: the answer
-   is `null`, 「could not ask」, rather than an empty list. */
+   `follow_read` is `using (true)` -- every signed-in person -- and signed
+   out the window refuses it (netSend1) like every other read. */
 /* `among` is a list of handles the answer is narrowed to -- which of THESE
    are in the list (www/me.js § REL asks it of the people on a page). */
 function netFollowRows(want, by, ok, bad, handle, after, among){
@@ -3979,9 +3950,9 @@ function netCounts(ok, bad){
    know and the posts you already have, which is the one search nobody needs.
    Both of these ask the server. 「必要なものは全部オンラインまとめてやる」
 
-   Reading needs no account -- `profile_read` and `post_read` in schema.sql
-   are both `using (true)` -- so nothing here is gated, and the timeline's own
-   door is what decides whether somebody gets this far.
+   `profile_read` and `post_read` in schema.sql are both `using (true)` --
+   every signed-in person -- and the window (netSend1) refuses anybody else,
+   so nothing here asks again.
 
    `*` either side is PostgREST's `ilike`, which is case-insensitive and is
    the only kind of matching a person typing a name expects. The three
@@ -4160,8 +4131,8 @@ function netFindWho(q, ok, bad, more){
 
    `post_seen` and netRow() are the same view and the same reader the timeline
    and the search already use, so what comes back is a post like any other and
-   nothing here decides what one looks like. Reading needs no account --
-   `post_read` in schema.sql is `using (true)`. */
+   nothing here decides what one looks like. `post_read` in schema.sql is
+   `using (true)`, every signed-in person. */
 /* HOW MANY, AND WHETHER YOU ARE ONE OF THEM -- ONE POST, ASKED AGAIN.
    -------------------------------------------------------------------------
    「端末に残すものないんですけど。サーバーで同じ機能になるように代替して」
@@ -4358,8 +4329,7 @@ function netFindPosts(q, ok, bad, more){
    `when` is a column name and goes into the path, so it is this file's own
    literal at each call and never anything a person typed.
 
-   Signed out is `[]` and not a fall: there is no account to have starred or
-   typed anything, which is an answer. */
+   Signed out, the window refuses it (netSend1) like every other read. */
 function netWordRows(tab, when, ok, bad){
   netGet('/rest/v1/'+tab+'?select=id,q,'+when+'&order='+when+'.desc'+
          '&limit='+NET_PAGE,
