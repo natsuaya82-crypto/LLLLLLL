@@ -62,6 +62,20 @@
 - 写真: `shots/r71-before-dl-going-ja.png`・`r71-before-dl-taken-ja.png`・`r71-after-dl-meter-ja.png`・
   `r71-after-dl-turning-ja.png`・`r71-after-dl-taken-ja.png`。続きの読み込みは画面の形を変えていない。
 
+## 回した検査（全ゲートは回していない）
+
+一つずつ、この枝の上で一回ずつ: FAST 全部（`tools/gate.mjs` の `FAST`）、`load`・`acct`・`act`・`again`・`quiet`・
+`open`・`post`・`tl`・`migrate`・`find`・`draft`・`slow`・`plan`・`push`・`verify`・`del`・`token`・`paid`・`i18n`・
+`card`・`writes`・`store`・`kb`・`world`・`conv`・`forms`・`fill`・`round`・`guide`・`base`・`term`・`shape`・`page`・
+`dl`・`ink`・`marks`・`hist`・`take`・`line`、`press`（下）。
+
+前提が崩れて直した検査（扉が読みを待つ／中身は netLangFill／↓ は先に読む）: `world`・`gramlang`・`hist`・
+`take`・`line`、それぞれ元のバグを戻して赤を見た。
+
+**integ-0905 でも同じ文で赤（この枝のではない、測った）**: `word-check`（`migratePh is not defined`）、
+`gramlang-check`（五つ ── 語順のカード・規則が一つ書かれる・品詞・形・Select）、`sheet-check`（数字の
+印が 0 ピクセル）、`keep-check`（`OWN_ROAD` の `kbUndo`・`kbRedo` の行が要らない）。
+
 ## 保存するもの
 
 変わらない。読む時と読む量だけ。消す物は無い（`draftsPull` の掃除には触っていない ── 下の「オーナーへ」）。
