@@ -15,6 +15,14 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### 2026-09-24 自作文字のスイッチを切ると、ホーム画面のウィジェットもローマ字に（r83-make A）
+
+**覆う一文**：ウィジェットに描いた形を渡すかは `shareWidget()`（`www/share.js`）一か所が `myFontWant()` に訊く。
+切れていれば数字の形は一つも渡さず（時計はどの位置もローマ数字）、月・曜の名は `all:false`（綴りをそのまま）、区切りも `:`。
+スイッチは App Group に渡す署名（`shareSig()`）にも入り、切り替えるとウィジェットの物が書き直される。
+Swift（`ios/App/LinguaWidget/`）は変えていない ── 形が無い時にローマ字へ落ちる道がもう一つあり、それを通る。
+`base-check` が持つ。写真は `shots/r83-A-widget-before.png` / `-after.png`（右端の列と三つ目の暦）。保存される物は変わらない。
+
 ### 2026-09-24 スマホのキーボードの短い行は、作る画面と同じく真ん中に（r83-make D）
 
 **覆う一文**：スマホのキーボードは行を作る画面と同じ半列（`KB_COLS` = 20）で数え、十に足りない行は `kbStart()` と同じ所

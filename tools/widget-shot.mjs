@@ -106,6 +106,10 @@ await pg.waitForSelector('#splash', { state: 'detached', timeout: 10000 });
 const CASES = await pg.evaluate(({ s, D, M }) => {
   eval('(' + s + ')()');
   SET.walked = true; planGot('pro');
+  /* The fixture turns the drawn letters off, and the widget follows that
+     switch (OWNER 2026-09-24) -- so every case is taken with it ON, and the
+     one case below that is about the switch turns it off. */
+  delete SET.myfont;
   const O = GGRID.inset, K = geStep();
   const put = (v, shape) => {
     const l = numByVal(v);
@@ -167,6 +171,11 @@ const CASES = await pg.evaluate(({ s, D, M }) => {
   for (let i = 1; i <= calWeek(); i++) word(i, 'wday.' + i, 'day ' + i);
   saveLetters(); save(); installScriptFont();
   out.calendar = shareWidget();
+  /* The same calendar with the switch for the drawn letters turned off:
+     「合わせて」 OWNER 2026-09-24 -- the home screen goes roman with the app. */
+  SET.myfont = false;
+  out.off = shareWidget();
+  delete SET.myfont;
   /* The face itself, so the page below can set those words in it. It is the
      app's own build of the drawn shapes -- the same bytes the App Group gets
      -- and not this file's idea of what they look like. */
@@ -478,10 +487,12 @@ function html(cases, dark) {
     + col('none', 'nothing drawn yet')
     + col('base12', 'counting in twelve')
     + col('base2', 'counting in two')
+    + col('off', 'drawn letters switched off')
     + '</div>'
     + `<div style="display:flex;gap:26px;align-items:flex-start;margin-top:30px">`
     + cal('calendar', 329, 155, false, 'calendar, medium')
     + cal('calendar', 329, 345, true, 'calendar, large')
+    + cal('off', 329, 155, false, 'calendar, drawn letters switched off')
     + '</div>'
     + `<div style="display:flex;flex-direction:column;gap:22px;margin-top:30px">`
     + strip(cases.drawn, 'one to twelve, counting in ten \u2014 so 10, 11 and 12 are two signs each')

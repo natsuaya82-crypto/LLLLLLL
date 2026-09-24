@@ -478,7 +478,8 @@ function shareSig(){
      going 12 -> 10 with every digit already drawn: no letter changes, and
      the widget would go on counting in twelve. */
   return who+'|'+scriptSig()+'|'+langId+'|'+(kb? 'p':'f')+'|'+
-         (kbRomOn()? 'm':'-')+'|'+numBase()+'|'+JSON.stringify(KB);
+         (kbRomOn()? 'm':'-')+'|'+numBase()+'|'+(myFontWant()? 'o':'-')+'|'+
+         JSON.stringify(KB);
 }
 /* ---- what the widgets read ---------------------------------------------
    A second file in the same App Group, and a second program after the
@@ -541,12 +542,12 @@ function shareWordAll(w){
    The spelling, and whether the font will have every letter of it. Absent
    when nobody has made that month, which the widget reads as "say the number
    instead". */
-function shareSlotWords(id, n){
+function shareSlotWords(id, n, own){
   var out={}, i, w;
   for(i=1;i<=n;i++){
     w=shareSlotWord(id+'.'+numLabel(i));
     if(!w || !w.hw) continue;
-    out[String(i)]={r:String(w.hw), all:shareWordAll(w)};
+    out[String(i)]={r:String(w.hw), all:own && shareWordAll(w)};
   }
   return out;
 }
@@ -563,24 +564,31 @@ function shareSlotWord(key){
    language that went and made one, and that is exactly when it should be
    theirs. Same shape as a month's name: the spelling, and whether the font
    has it. 「初期は : 自作言語あるなら変える」 */
-function shareSep(){
+function shareSep(own){
   var i, l;
   for(i=0;i<LETTERS.length;i++){
     l=LETTERS[i];
     if(String(ltName(l)||'')!==':') continue;
-    return {r:':', all:!!inkGeo(l)};
+    return {r:':', all:own && !!inkGeo(l)};
   }
   return {r:':', all:false};
 }
+/* The switch for the drawn letters is the widget's too. 「合わせて」 OWNER
+   2026-09-24. Off, the app sets every word in roman, so the home screen is
+   handed no shape: no digit, which the widget already reads as "a roman one
+   here", and no name the font is said to have, which it already reads as
+   "set the spelling plainly". Asked here once, and nothing on the Swift side
+   has to know there is a switch. */
 function shareWidget(){
+  var own=myFontWant();
   return {v:1, box:SHARE_BOX, base:numBase(), lang:langId, name:langName,
-          dg:shareNums(),
+          dg:own? shareNums() : {},
           /* and the calendar: whatever names have been made for the twelve
              months and the seven days. How many there are is not sent,
              because it is not the language's to say -- www/cal.js. */
-          mon:shareSlotWords('month', calMonths()),
-          wd:shareSlotWords('wday', calWeek()),
-          sep:shareSep()};
+          mon:shareSlotWords('month', calMonths(), own),
+          wd:shareSlotWords('wday', calWeek(), own),
+          sep:shareSep(own)};
 }
 /* Whether there is a native side at all, and the one way to reach it.
 
