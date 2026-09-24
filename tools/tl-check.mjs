@@ -343,9 +343,15 @@ const r = await pg.evaluate(({ s }) => {
      (www/sns.js § WHAT EACH PAGE READS, `who`, which asks REL for them). So
      what is read here is that road: arriving at somebody's page with the
      relation unknown sends the question, once. */
-  const wasRel2 = netRel, wasWho2 = netWho, wasBy2 = netPostsBy;
+  /* the door onto somebody's page also reads who this account has blocked
+     (`blocks`, r68) -- answered here like the other two (an earlier screen's
+     ask is still in the air on this fake wire), or the page waits on a read
+     this check is not about */
+  const wasRel2 = netRel, wasWho2 = netWho, wasBy2 = netPostsBy, wasBl2 = netBlockedRead;
   netWho = function (h, k) { k({ who:'Iri', hd:String(h), uid:'U-' + h }); };
   netPostsBy = function (u, k) { k([]); };
+  netBlockedRead = function (ok) { ok(); };
+  const wasBlHd2 = NET_BL_HD; NET_BL_HD = NET_BL_HD || [];
   let relAsks = 0;
   netRel = function (hs, ok) { relAsks++; const by = {}; hs.forEach(h => { by[h] = { i:false, u:true }; }); ok(by); };
   REL = {};
@@ -353,7 +359,7 @@ const r = await pg.evaluate(({ s }) => {
   go('profile', 'iri');
   out.mineOnOpen = here().r === 'profile' && meFollowed('iri');
   out.askedOnTheirs = relAsks;
-  netRel = wasRel2; netWho = wasWho2; netPostsBy = wasBy2;
+  netRel = wasRel2; netWho = wasWho2; netPostsBy = wasBy2; netBlockedRead = wasBl2; NET_BL_HD = wasBlHd2;
   REL = heldRel;
   NAV = [{ r:'feed' }]; window.route = 'feed';
 
