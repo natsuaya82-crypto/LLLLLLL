@@ -15,6 +15,14 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### 2026-09-24 紙から取り込んだ字を描き直す時、紙の形が下に薄く出る（r83-make C）
+
+**覆う一文**：字の編集画面（`newGE()`・`geDraw()`、`www/glyph.js`）は、開いた字が紙から来た形（輪郭）なら
+それを `GE.under` に持ち、格子の上・描いた線の下に、字の色を薄く（0.16）して `inkStrokes()` で描く。
+前は空の紙で開き、紙の形は見えなかった。敷いた形は線ではない ── 描かれた物にも保存される物にも入らず、
+保存すれば今までどおり描いた線が紙の形に替わる（`inkSet()`）。`fill-check` が画素で持つ。
+写真 `shots/r83-C-paper-before.png` / `-after.png` / `-after-drawing.png`。
+
 ### 2026-09-24 単語のつづりを打つ欄は描いた字で出る（r83-make B）
 
 **覆う一文**：語をつづる欄は `spTypeField()`（`www/letters.js`）一つが描き、`myFontField()`（`www/glyph.js`）一つが

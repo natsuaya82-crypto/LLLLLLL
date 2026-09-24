@@ -226,6 +226,43 @@ const r = await pg.evaluate(async ({s}) => {
   out.green = cssVar('--fill') || '';
   return out;
 }, { s: seed.toString() });
+
+/* ---- a letter off paper is drawn over, with the paper under it ------------
+   「紙に描いた字を描き直す時」→「薄くして欲しい」 OWNER 2026-09-24. A letter
+   written on a sheet and brought in is a SHAPE (rings), and the editor draws
+   strokes -- so it opened on an empty paper, and redrawing it meant drawing
+   from memory. The shape is laid under the paper, faintly, through the real
+   geDraw(): the editor is opened on a letter with no shape and on the same
+   letter with a sheet shape, and the two canvases are compared. And it is
+   UNDER, not ink: nothing of it is in what is drawn or what is saved. */
+const u = await pg.evaluate(({ s }) => {
+  eval('(' + s + ')()');
+  SET.walked = true; SET.theme = 'light';
+  makeNeed = function(){ return true; };
+  const ring = [[[200, 200], [600, 200], [600, 600], [200, 600]], [[300, 300], [300, 500], [500, 500], [500, 300]]];
+  const l = LETTERS.filter((x) => !inkGeo(x))[0];
+  const shot = () => {
+    GE = null; editLetter(l.id); render(); geDraw();
+    const c = document.getElementById('gcanv');
+    return c ? { d: Array.from(c.getContext('2d').getImageData(0, 0, c.width, c.height).data), w: c.width } : null;
+  };
+  inkSet(l, []);
+  const a = shot();
+  inkSet(l, ring);
+  const b = shot();
+  const out = { n: 0, alpha: [], st: GE ? GE.st.length : -1, ink: GE ? JSON.stringify(geInk(GE.st)) : '' };
+  if (!a || !b) return out;
+  for (let i = 0; i < a.d.length; i += 4) {
+    if (a.d[i] !== b.d[i] || a.d[i + 1] !== b.d[i + 1] || a.d[i + 2] !== b.d[i + 2] || a.d[i + 3] !== b.d[i + 3]) {
+      out.n++;
+      if (a.d[i + 3] === 0) out.alpha.push(b.d[i + 3]);
+    }
+  }
+  out.alpha.sort((p, q) => p - q);
+  out.mid = out.alpha.length ? out.alpha[out.alpha.length >> 1] : -1;
+  out.area = a.w * a.w;
+  return out;
+}, { s: seed.toString() });
 await br.close();
 
 var bad = [];
@@ -273,5 +310,10 @@ say(r.leftInk === r.leftWant,
 say(r.leftGone, 'and the editor is not still holding a second copy of it');
 say(!!r.green, 'the editor has a colour of its own for an area: ' + r.green);
 
+say(u.n > u.area * 0.05,
+    'a letter off a sheet opens with its shape under the paper: ' + u.n + ' of ' + u.area +
+    ' pixels differ from the same letter with no shape');
+say(u.mid > 0 && u.mid < 128, 'and faintly: the paper shape is ' + u.mid + '/255 where nothing else is');
+say(u.st === 0 && u.ink === '[]', 'and it is under the drawing, not in it: nothing is drawn and nothing would be written (' + u.st + ' strokes)');
 if (bad.length) { console.error('\nfill: ' + bad.length + ' failed'); process.exit(1); }
 console.log('\nfill: an area is drawn, is not invented, and survives being saved.');

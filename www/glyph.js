@@ -768,7 +768,9 @@ var GE=null;
    is which letter; GE.r is only what to call it on screen. */
 function newGE(lid, label){
   /* The editor draws strokes. A letter off a sheet is rings and opens on an
-     empty paper; what is saved there replaces it (inkSet). */
+     empty paper, with those rings laid UNDER it, faintly, to draw over
+     (`under`, geDraw) -- 「薄くして欲しい」 OWNER 2026-09-24. They are not
+     ink: what is saved there replaces them (inkSet). */
   var l=ltById(lid), g=inkGeo(l), src=(g && !inkRings(g))? g : [];
   var r=label || ltName(l) || '';
   /* A letter opened for editing is finished work, the same as a drawing
@@ -776,6 +778,7 @@ function newGE(lid, label){
      stroke instead of picking up the last one you drew last time. Only what
      is drawn in this sitting, before the finger comes up, can be grabbed. */
   return { lid:lid, r:r, st:JSON.parse(JSON.stringify(src)),
+           under:(g && inkRings(g))? g : null,
            /* WHAT IT OPENED WITH. The button in the corner is grey until this
               stops being true of what is on the paper -- 「なにもない時は薄い
               灰色、何か打ったら金にする」 OWNER 2026-09-03, www/shell.js
@@ -2733,6 +2736,14 @@ function geDraw(){
      origin it is handed is where 0 of the square falls once the window has
      been scrolled to geOrg(). At z=1 that is pad, as it always was. */
   var org=geOrg(), ix=pad-org[0]*k, iy=pad-org[1]*k;
+  /* The paper a letter came in on, under everything drawn now, in the
+     letter's own colour made faint -- the way tracing paper shows what is
+     beneath it. Through inkStrokes, so it is the shape the letter had. */
+  if(GE.under){
+    x.globalAlpha=0.16;
+    inkStrokes(x, GE.under, k, ix, iy, cssVar('--tx'));
+    x.globalAlpha=1;
+  }
   inkStrokes(x, GE.st, k, ix, iy, cssVar('--tx'));
   if(area.length) inkStrokes(x, area, k, ix, iy, cssVar('--fill'));
 
