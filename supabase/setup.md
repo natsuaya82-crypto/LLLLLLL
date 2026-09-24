@@ -90,6 +90,9 @@ https://raw.githubusercontent.com/natsuaya82-crypto/LLLLLLL/master/supabase/sche
   だけ写す。表 `schema_step` が「済んだ」を持っていて、二回目からは走らない。
 - 上に立つ人（@lingua）を言うのは `profile_admin()` 一つ。`staff_drop()` は
   知らない @ と @lingua を断る（前は何も言わずに成功していた）。
+- ブロックした相手の投稿・返信・リポスト・通知はサーバーが外す。答えるのは
+  `block_hides()` 一つで、`post_seen`・`feed_hot()`・`feed_fo()`・`notices()` が
+  それを通る。流す前も端末が外しているので、画面の上では何も変わりません。
 
 ### 2026-09-22 以降、**もう一度流し直してください**
 

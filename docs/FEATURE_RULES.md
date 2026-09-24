@@ -269,6 +269,19 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Affected docs: CLAUDE.md 規則 22・§ Online の文、DATA_MODEL.md、STATE.md
 - Implementation status: 実装（`claude/r79-acct`、CODE CONFIRMED のみ・実機未確認）。`acct-check` 86・87・88。
   **オーナーが違うと言えば、この項は消して書き直す。**
+
+### 2026-09-24 リーダーの監査は30分ごと ── 会話が長くなったら新しいリーダーに替える
+- Date: 2026-09-24
+- Area: リーダーの動かし方（`docs/LEADER.md` § 監査）
+- Decision: 「30分にするのと新リーダー立てるから引き継ぎ書書いて」
+  監査は20分ごとから30分ごとに。リーダーは短い引き継ぎ書で替わる。
+- Reason: 上限の減りが速い（「上限ひっかかるのめちゃくちゃ早くなってね」）。起きるたびに
+  リーダーの会話（約52万トークン）を全部読み直していた。
+- Affected features: 無し（アプリの外）
+- Affected data: 無し
+- Affected docs: `docs/LEADER.md` § 監査（同じコミットで書き換えた）
+- Implementation status: 入った。
+
 ### 2026-09-23 読むのは開いた画面の分だけ ── 起動は通知とタイムライン、他はその画面に進んだ時、ダウンロードは押した時
 - Date: 2026-09-23
 - Area: サーバーから読む全部（`www/net.js` の GET と RPC、起動 `www/boot.js`、人の言語のページ ~~`wldSlicesPull()`~~ `www/home.js`）
@@ -5207,7 +5220,21 @@ and is never merged into your own」と言っている。**入らない、は二
 - Affected features: the timeline, search, notices, threads
 - Affected data: `ME.bl` on the phone, `block` on the server
 - Affected docs: `docs/FEATURES.md`
-- Implementation status: implemented, **not device confirmed**
+- Implementation status: **half, on the server, and not device confirmed.**
+  What they WROTE and DID is left out by the server: `block_hides()` in
+  `supabase/schema.sql` is the one answer, and `post_seen` (the feed, threads,
+  somebody's posts, the search for posts), `feed_hot()`, `feed_fo()` (whoever
+  passed a post on, too) and `notices()` pass every person they hand out
+  through it. `rls-check` walks every view and row-returning function in the
+  catalogue as somebody who has blocked somebody (r80-block, 2026-09-24).
+  **Not yet:** their profile, their language and who they follow
+  (`profile_seen`, `language_seen`, `follow_seen` — named in `rls-check`'s
+  `BLOCK_HELD`), because unblocking is pressed on their page and there is
+  nowhere else to do it; and **search on the other side** — somebody blocked
+  still finds the person who blocked them, since the search reads the same
+  views as the feed and whether the blocked side loses the feed too is not
+  decided. The phone still filters as well (`netBlocked()`, `postBlocked()`),
+  and taking that out is `www/`'s. All three are in `docs/scope/r80-block.md`.
 
 ### Decision
 - Date: 2026-08-19
