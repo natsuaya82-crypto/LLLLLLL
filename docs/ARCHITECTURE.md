@@ -141,7 +141,8 @@ So, the order:
 
 ```
   the server        is the record          language + slice rows
-  LSL (memory)      is what the app holds  filled by netLangsDown() at launch,
+  LSL (memory)      is what the app holds  filled by netLangFill() when a
+                                           screen drawn from it is arrived at,
                                            written as you type, sent by
                                            netSaveUp() -- and gone when the
                                            app closes 「オンラインのみで行こう」
@@ -190,8 +191,9 @@ for real.
 ```
 
 **There is nothing off to one side** (`CLAUDE.md` rule 11): a save reaches
-the server at once, and `netLangsDown()` at the foot of `www/boot.js` is what a
-phone whose storage was reclaimed comes back from.
+the server at once, and `netLangFill()` (`www/net.js`) — asked by the door
+onto any screen drawn from the language (`PAGES`' `lang:1`) — is what a phone
+whose storage was reclaimed comes back from.
 
 and, once, in the other direction:
 

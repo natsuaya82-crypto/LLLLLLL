@@ -2254,7 +2254,7 @@ function setKeep(){
    theme, and that sentence was wrong about all of them: signing in on a
    second phone gave somebody the app arranged the way that PHONE happened to
    be. `profile.prefs` is one jsonb column carrying exactly this list --
-   netPrefsPut() sends it, netPrefsPull() brings it back at a sign-in, and
+   netPrefsPut() sends it, netMyProfile() brings it back once a session, and
    adding a sixth setting is a name here and nothing else.
 
    THE COPY IS STILL ON THE PHONE and is filed under the account by setFor(),

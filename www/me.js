@@ -330,7 +330,7 @@ function meWas(){
 function meTyped(f){ return keepVal(ME_KEY, f); }
 /* Writing the five down. `v` is only the fields somebody actually touched, so
    a field nobody typed into is not written over -- which matters here because
-   netProfSync() can fill the bio, the link and the location in from the
+   netMyProfile() can fill the bio, the link and the location in from the
    account while this screen is open. */
 function meKeepPut(v){
   if(v.hasOwnProperty('name')) ME.name=String(v.name);
@@ -797,8 +797,8 @@ function meCard(){
    signal must not be told it has no account, and a handle it is already
    holding is the row it last saw.
 
-   Written by the two roads that fetch the row (netMyProfile at the door,
-   netProfSync at a launch) and by nothing else. */
+   Written by netMyProfile(), the one road that fetches the row, and by
+   nothing else. */
 var ME_ROW=null;
 function meRowGot(v){ ME_ROW=v? 1 : 0; }
 function meRowHas(){

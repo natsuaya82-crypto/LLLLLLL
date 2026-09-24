@@ -693,8 +693,8 @@ function netTook(d){
      して」 OWNER 2026-09-09.
 
      The second road is DELETED rather than stopped by a condition (CLAUDE.md
-     § Simple), so `mylangs` is the whole of it -- www/sns.js § askLangs, on
-     PULL_OPEN, fired by pullBoot() at the foot of this function. pullWait()
+     § Simple), so `mylangs` is the whole of it -- www/sns.js § askLangs,
+     asked by the pullWait() at the foot of this function. pullWait()
      is www/boot.js's own idiom for 「when the languages have come down」 and
      it runs its waiter whether the answer arrived or was refused, which is
      exactly what netLangBack() did with `done(false)`. */
@@ -3459,9 +3459,9 @@ function netFollowing(ok, bad, handle, after){
    -------------------------------------------------------------------------
    「フォローされてもフォロワー1って増えないのはなぜ？」 OWNER 2026-08-28.
 
-   Because nobody was counting. `ME.fr` in www/me.js is READ by meFollowers()
-   and filled in from localStorage by meFrom(), and **no line in www/ has ever
-   written it** -- so the number under a profile was the length of a list that
+   Because nobody was counting. `ME.fr` in www/me.js was read by
+   ~~meFollowers()~~ and filled in from localStorage by meFrom(), and **no
+   line in www/ ever wrote it** -- so the number under a profile was the length of a list that
    started empty and stayed empty. Every `follow` request in this file asked
    `follower=eq.<me>` ("who I follow"); not one asked the reverse.
 

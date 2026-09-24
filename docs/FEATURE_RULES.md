@@ -263,7 +263,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Affected features: 起動、全部のタブと画面、人の言語のダウンロード
 - Affected data: 無し（読む時が変わるだけ。保存する物は変えない）
 - Affected docs: CLAUDE.md（直す session が一文を足す）
-- Implementation status: 未実装。2026-09-23 夜に測った起動時の読み込みは 22 本（リーダー、偽のサーバーで）。
+- Implementation status: 実装（`claude/r71-net`、CODE CONFIRMED のみ・実機未確認）。起動は `PAGE_OPEN`（通知とタイムライン）と最初の画面の分とセッション（token・プラン・アカウントの行）で 13 本（同じ偽のサーバーで、前は 21〜24 本）。画面は `navLand()`（`www/shell.js`）一つの扉が `PAGE_READS`（`www/sns.js`）の分を読み終えてから出る。一覧は `NET_PAGE`（50、仮）で切り、タイムライン・検索・フォロー・人の投稿・スレッドは底で続き。人の言語は開くとページに描く分（wld・snd・script・letters）だけ、章は ↓ で ⭕ のメーター→⭕☑️。`load-check` が持つ。
 ### 2026-09-23 一行を描く仕組みを一つにする ── 入力欄も投稿も同じ仕組みで描く
 - Date: 2026-09-23
 - Area: 言語の一行を描く所（`inkChar()` `inkFaces()` `inkAdv()` `www/glyph.js`、`postRuns()` `www/post.js`、`.pline, .pwfield #pw-ln` `www/index.html`）

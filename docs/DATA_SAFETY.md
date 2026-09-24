@@ -24,8 +24,9 @@ Three of these four are ordinary events, not disasters:
 
 A save goes up the moment it is made — `bkTouch()` is the one line every
 writer passes through and `netSaveUp()` (`www/net.js`) sends the slices that
-moved — and `netLangsDown()` at the foot of `www/boot.js` brings back every
-language this ACCOUNT has that this phone has not got. Sign in on any handset
+moved — `netLangsDown()` says which languages this ACCOUNT has, and
+`netLangFill()` brings one down when a screen drawn from it is arrived at
+(「読むのは開いた画面の分だけ」 OWNER 2026-09-23). Sign in on any handset
 and the language is there.
 
 **There was a third place and it is deleted.** `www/backup.js` wrote the open
@@ -86,7 +87,7 @@ one value stands. `rls-check` holds the server half.
 ### 2. A restore never overwrites a slice that is there
 
 It fills in one that is **missing** and stops. This is the one that matters:
-**the way a copy destroys somebody's work is by winning.** `netLangsDown()`
+**the way a copy destroys somebody's work is by winning.** `netLangFill()`
 works that way — a slice already on the phone is stepped over, whatever the
 server is holding.
 
@@ -105,7 +106,7 @@ holding LESS than what is here is refused and recorded in `NET_SHRANK`, and
 the phone keeps what it had.
 
 **A slice the app has never written is not unsound. It is absent**, and absent
-is what `netLangsDown()` fills in.
+is what `netLangFill()` fills in.
 
 ### 4. Nothing is deleted because a new shape arrived
 
