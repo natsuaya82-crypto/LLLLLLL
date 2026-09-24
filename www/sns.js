@@ -768,6 +768,7 @@ function pullForget(){
   netBlockedDrop();
   WLD_HAVE={}; WLDS_HAVE={};
 }
+acctMem(pullForget);
 /* One answer forgotten: switching the language the app is read in re-asks the
    notices, because what a notice SAYS is written in that language
    (www/settings.js). */

@@ -163,7 +163,16 @@ const R = await pg.evaluate(async () => {
   const start = () => {
     window.__seed(); SET.walked = true;
     wipeParked();
+    /* THE FIXTURE'S LANGUAGE IS WHAT THE WALK MADE, and the door hands it to
+       A. Signing out empties the account's index in memory (www/core.js
+       § ACCT, r79) -- the index is the account's now, not the phone's -- so
+       the fixture's language is put back as what nobody's memory holds, which
+       is exactly the walk: made before there was an account, given to the one
+       that arrives. Before r79 it simply survived the sign-out and the door
+       ADOPTED it, which is the road r79 took out. */
+    const seedL = LANGS, seedId = langId;
     netOut();
+    LANGS = seedL; langId = seedId;
     /* サーバーが「この言語はこの人が書いた」と答えた所から始めます ──
        セッションが着く前に。2026-09-11 から `langForAcct()` はサーバーの
        答え（`langOwnOf()`）だけを読むので、答えが入っていない状態で
@@ -1462,6 +1471,12 @@ const R = await pg.evaluate(async () => {
   const goFol = (h) => {
     WHO_HAVE = {}; WHO_ASKED = {}; FOL_HAVE = {}; FOL_ASKED = {};
     popOff(); NET_AGAIN = [];
+    /* 立っているのは読み終わったタイムライン。タイムラインの待ちの印は
+       タイムライン自身のもので（読む前は待つ、r71）、ここで測るのはフォロワー
+       の一覧のくるくる。A の投稿は A の鍵にあり（www/core.js § ACCT）、この
+       案件の A は投稿を持たないので、読み終わったと言っておかないとタイムライン
+       の待ちがそのまま映ります（測った、r79）。 */
+    PULL_GOT[pullKey('feed', snsTab)] = 1; PULL_OUT[pullKey('feed', snsTab)] = 0;
     NAV = [{ r: 'feed' }]; window.route = 'feed'; render();
     go('follows', 'ers:' + h);
     return document.getElementById('app').innerHTML;
@@ -1624,8 +1639,9 @@ const R = await pg.evaluate(async () => {
 
   /* ---- 32. 言語の一覧に、他人のアカウントの言語が出ない ----------------
      「あと違うアカウントでログインしてんのに前のやつ出てくるんだけど？」
-     LANGS は端末のもので、サインアウトしても残ります。だからこの一覧は
-     **前のアカウントの言語を、次に入った人に見せていました。**
+     LANGS は端末のもので、サインアウトしても残っていました。だからこの一覧は
+     **前のアカウントの言語を、次に入った人に見せていました。**今は索引そのものが
+     アカウントの物（`lingua.langs.<uid>`）で、B の手元に A の行はありません。
 
      **消してはいません。**入り直せば元どおり出ます ── ここで押さえるのは
      その両方です。そして `docs/DATA_SAFETY.md`「短い一覧は削除ではない」に
@@ -1647,11 +1663,23 @@ const R = await pg.evaluate(async () => {
   langNameGot('La', '自分の');
   langNameGot('Lb', '他人の1');
   langNameGot('Lc', '他人の2');
+  langStore();
   const asA2 = vLangs();
+  /* B ARRIVES TO B'S OWN INDEX (www/core.js § ACCT, r79). The index was one
+     key for every account on the phone, so B used to be handed A's rows and
+     this list filtered them out; it is `lingua.langs.<uid>` now, and A's rows
+     are not in B's hands at all. B's own come from B's key. */
   netOut(); arrive(B);
-  langId = 'Lb';
+  const leakB = !!(LANGS['La'] || LANGS['Lb'] || LANGS['Lc']);
+  LANGS = { 'Lb': { mine: true }, 'Lc': { mine: true } };
+  langId = 'Lb'; langStore();
   const asB2 = vLangs();
+  /* and A's come back when A does -- nothing was removed */
+  netOut(); arrive(A);
+  const backA = !!(LANGS['La'] && LANGS['Lb'] && LANGS['Lc']);
   LANGS = keepL2; langId = keepId2; langName = keepNm2;
+  if (leakB) no('32: B が入った時、A の索引が B の手元にある');
+  if (!backA) no('32: A が戻った時、A の索引が戻らない');
 
   if (asA2.indexOf('自分の') < 0) no('32: 自分の言語が一覧から消えた');
   if (asA2.indexOf('他人の1') >= 0) no('32: A の一覧に B の言語が出ている');
@@ -1741,15 +1769,19 @@ const R = await pg.evaluate(async () => {
      一番古いのは二番目の `Ly`。並びで開く版なら `Lx` が開いて緑になります。
      日付は `langMadeGot()` で入れます。`netLangsWalk()` が行を降ろすときに
      通る道そのもので、検査が自分で並べ直しているのではありません。 */
+  /* 一度も入ったことの無いアカウント（'u73'）で。B は 33 番で自分の言語に
+     立ったので、B が戻れば B の立っていた所に戻ります（`lingua.cur.<B>`） ──
+     それは正しく、ここで測りたい「その人の物が開いていない時」ではない。
+     三本はサーバーが降ろしたその人の索引（`lingua.langs.<uid>`）に置きます。 */
   netOut();
-  LANGS = { 'Lx': {}, 'Ly': {}, 'Lz': {}, 'La': {} };
-  langOwnGot('Lx', B); langOwnGot('Ly', B); langOwnGot('Lz', B);
+  localStorage.setItem(acctKey('langs', 'u73'),
+    JSON.stringify({ 'Lx': {}, 'Ly': {}, 'Lz': {} }));
+  langOwnGot('Lx', 'u73'); langOwnGot('Ly', 'u73'); langOwnGot('Lz', 'u73');
   langOwnGot('La', A);
   langMadeGot('Lx', '2026-06-06T00:00:00Z');
   langMadeGot('Ly', '2026-01-01T00:00:00Z');   /* 一番古い ＝ 主言語 */
   langMadeGot('Lz', '2026-09-09T00:00:00Z');
-  langId = 'La'; langName = 'A の言語';
-  arrive(B);
+  arrive('u73');
   langForAcct();
   if (langId !== 'Ly')
     no('73: サインイン直後に開いたのが主言語ではない（' + langId + ' ≠ Ly）');
@@ -1833,13 +1865,14 @@ const R = await pg.evaluate(async () => {
   start();
   const keepL35 = LANGS, keepId35 = langId, keepNm35 = langName;
   const w35 = [{ hw: 'aaa', ph: ['a'], mn: 'A のことば', mns: ['A のことば'], pos: 'n' }];
+
+  /* 歩きの途中 ── まだ誰もサインインしていない。訊く相手がいないので、
+     作ったものはその場の人のもの。歩きはサインインの前なので、言語もその時に
+     作る（メモリの中、誰の鍵にも書かれない ── www/core.js § ACCT）。 */
+  netOut(); SET.walked = false;
   LANGS = { 'Lu': { name: 'A が圏外で作った', mine: true } };   /* 印が無い */
   langId = 'Lu'; langName = 'A が圏外で作った';
   try { slWr(langKeyOf('Lu', 'words'), JSON.stringify(w35)); } catch (e) {}
-
-  /* 歩きの途中 ── まだ誰もサインインしていない。訊く相手がいないので、
-     作ったものはその場の人のもの。 */
-  netOut(); SET.walked = false;
   if (langWhose('Lu') !== LW_MINE) no('35: 歩きの途中で、作ったものが自分のでない');
 
   /* 扉。サインインは済んで、まだ何も送っていない ── ここで印の無い言語は
@@ -1869,8 +1902,10 @@ const R = await pg.evaluate(async () => {
   netOut(); arrive(A);
   if (langWhose('Lu') === LW_MINE) no('35: 印の無い言語が、次に入った人のものになっている');
 
-  /* そして何も消えていない。 */
-  if (!LANGS.Lu) no('35: 印の無い言語が索引から消えた');
+  /* そして何も消えていない ── 歩きの言語は扉を通った B の索引にある
+     （`lingua.langs.<B>`）。A の手元には無い（A の扉ではない）。 */
+  if (!(acctRaw(acctKey('langs', B)) || {}).Lu) no('35: 印の無い言語が索引から消えた');
+  if (LANGS.Lu) no('35: 歩きの言語が、扉を通っていない A の索引にある');
   if (!slRd(langKeyOf('Lu', 'words')))
     no('35: 印の無い言語の単語が消えた ── 隠すのであって消すのではない');
 
@@ -1905,14 +1940,16 @@ const R = await pg.evaluate(async () => {
   planGot('pro');
   const keepL36 = LANGS, keepId36 = langId, keepNm36 = langName;
   LANGS = { 'La': { name: '自分の', mine: true } }; langOwnGot('La', A);
-  langId = 'La'; langName = '自分の';
+  langId = 'La'; langName = '自分の'; langStore();
   netOut();                                   /* サインアウトした人 */
   planGot('pro');
-  const before36 = Object.keys(LANGS).length;
+  /* サインアウトした手元は誰のものでもない（A の索引は A の鍵に残る）──
+     ここで見るのは「＋ を押しても、その手元が何も変わらない」。 */
+  const before36 = Object.keys(LANGS).length, id36 = langId;
   langNew();
   if (Object.keys(LANGS).length !== before36)
     no('36: サインアウトしているのに ＋ で言語ができた');
-  if (langId !== 'La') no('36: サインアウトしているのに ＋ で言語が切り替わった');
+  if (langId !== id36) no('36: サインアウトしているのに ＋ で言語が切り替わった');
   /* 断るだけではなく、扉へ送ること。断って何も起きない＋は、原因も出口も
      無い画面です。`obDoor()` は戻り先を憶え、**それが扉が開いている印**
      です ── 2026-09-09（オーナーの A）まで `SET.done` を下ろして扉を出して
@@ -1934,8 +1971,9 @@ const R = await pg.evaluate(async () => {
   arrive(A);
   planGot('pro');
   if (langStop()) no('36: 上限のほうで止まっている ── この検査が測りたいものではない');
+  const in36 = Object.keys(LANGS).length;
   langNew();
-  if (Object.keys(LANGS).length !== before36 + 1)
+  if (Object.keys(LANGS).length !== in36 + 1)
     no('36: サインインしているのに ＋ で言語ができない');
   LANGS = keepL36; langId = keepId36; langName = keepNm36;
   planGot('free');
@@ -2043,8 +2081,8 @@ const R = await pg.evaluate(async () => {
     no('40: 印の無い端末の段が、入った人に付いてきた — ' + plan());
   say('40: 持ち主の書かれていない端末も例外ではない ── 段は付いてこない');
 
-  /* 40b. **段は設定の預け写しに乗らない。**`setFor()` は別のアカウントが
-     入るとき、この人の設定を `lingua.set.<uid>` に預けます。段がそこに入る
+  /* 40b. **段は設定の預け写しに乗らない。**アカウントの設定は書く時に
+     `lingua.set.<uid>` に書かれます（`www/core.js` § ACCT）。段がそこに入る
      ことは、もう仕組みとして起こりません（`SET` に段が無い）── **この主張は
      それが本当にそうであることの歯止め**で、段を `SET` に戻した日に赤に
      なります。 */
@@ -2055,7 +2093,7 @@ const R = await pg.evaluate(async () => {
   arrive(B);
   let park40 = null;
   try { park40 = JSON.parse(localStorage.getItem('lingua.set.' + A) || 'null'); } catch (e) { park40 = null; }
-  if (!park40) no('40b: 預け写しそのものが無い — setFor() が預けていない');
+  if (!park40) no('40b: A の設定が A の鍵に無い — 書く時に uid を持っていない');
   else {
     const money40 = Object.keys(park40).filter((k) => /^plan/.test(k));
     if (money40.length)
@@ -2064,14 +2102,15 @@ const R = await pg.evaluate(async () => {
   say('40b: 段は設定の預け写しに乗らない ── 端末に段の欄が一つも無い');
 
   /* 41. **起動して憶えているセッションを読んだ瞬間に、前の人の段を忘れる。**
-     `netRead()` は `www/net.js` が読み込まれた瞬間で、`www/boot.js` より三つ
-     前です。ここで忘れないと、B の起動が A の段のまま最初の一枚を描きます。 */
+     セッションを読むのは `www/core.js` の頭の `sessRead()` で、そのアカウントの
+     物は入れ物（`ACCT`）が読む ── 起動はその二つ。ここで忘れないと、B の起動が
+     A の段のまま最初の一枚を描きます。 */
   start();
   netOut();
   planGot('pro');
   localStorage.setItem('lingua.sess', JSON.stringify(
     { at: 'not a jwt', rt: 'a refresh token', uid: B }));
-  netRead();
+  sessRead(); acctFor(netUid());
   if (planKnown())
     no('41: 憶えているセッションを読んでも、前の人の段が残っている — ' + plan());
   netOut();
@@ -2182,11 +2221,12 @@ const R = await pg.evaluate(async () => {
      あとも読み直されていなかった。 */
   start();
   netOut(); arrive('d46a');
-  LANGS = { La46: { name:'A の言語', mine:true },
-            Lb46: { name:'B の言語', mine:true } };
+  /* B の言語は B の索引にある（`lingua.langs.<uid>`、www/core.js § ACCT）。 */
+  LANGS = { La46: { name:'A の言語', mine:true } };
   langOwnGot('La46', 'd46a'); langOwnGot('Lb46', 'd46b');
   langId = 'La46'; langStore();
   try{
+    localStorage.setItem(acctKey('langs', 'd46b'), JSON.stringify({ Lb46: { name:'B の言語', mine:true } }));
     slWr(langKeyOf('La46','words'), '[{"hw":"a"}]');
     slWr(langKeyOf('Lb46','words'), '[{"hw":"b"}]');
     localStorage.setItem('lingua.me.d46b', '{"name":"B"}');
@@ -2199,7 +2239,8 @@ const R = await pg.evaluate(async () => {
 
   if (LANGS.La46) no('46: 消したアカウントの言語が索引に残っている');
   if (slRd(langKeyOf('La46','words'))) no('46: 消したアカウントの単語が残っている');
-  if (!LANGS.Lb46) no('46: **別のアカウントの言語が消えた** ── これが起きたことです');
+  if (!(acctRaw(acctKey('langs', 'd46b')) || {}).Lb46)
+    no('46: **別のアカウントの言語が消えた** ── これが起きたことです');
   if (!slRd(langKeyOf('Lb46','words'))) no('46: 別のアカウントの単語が消えた');
   if (!localStorage.getItem('lingua.me.d46b')) no('46: 別のアカウントのプロフィールが消えた');
   if (!localStorage.getItem('lingua.posts.d46b')) no('46: 別のアカウントの投稿が消えた');
@@ -3126,14 +3167,14 @@ const R = await pg.evaluate(async () => {
     }
     /* AND A MIGRATION'S MARK IS WHOEVER OWNS WHAT IT MARKS (r73 § 2-7).
        `wldMoved` says SET.world has been moved into the language, and
-       SET.world is the account's -- so the mark is parked with it. As the
+       SET.world is the account's -- so the mark is kept under it. As the
        handset's it stayed behind for the next account, whose own `world`
        was then never moved. */
     {
       SET.wldMoved = 1; setKeep();
-      setFor('uB-wld');
+      acctFor('uB-wld');
       const other = SET.wldMoved;
-      setFor(A);
+      acctFor(A);
       if (other)
         no('64: 前のアカウントの「移した」印が、次に入った人にも立っている ── ' +
            'その人の SET.world は言語へ移されない');
@@ -3909,7 +3950,11 @@ const R = await pg.evaluate(async () => {
     start();
     netOut();
     const keepL77 = LANGS, keepId77 = langId, keepNAV77 = NAV;
-    LANGS = {}; langId = ''; langStore();
+    /* 新規登録した account は、この端末が一度も持ったことの無い uid ──
+       索引はアカウントの物（www/core.js § ACCT）なので、A を使うと前の
+       案件の A の索引が扉で戻ってきます（測った、r79）。 */
+    const U77 = '77777777-7777-4777-8777-777777777777';
+    LANGS = {}; langId = '';
     NET_SYNCING = false;
     for (const k of Object.keys(LPUB)) delete LPUB[k];
 
@@ -3927,11 +3972,11 @@ const R = await pg.evaluate(async () => {
       if (url === '/rest/v1/language') { setTimeout(() => ok([]), 0); return; }
       if (url === '/rest/v1/slice') { setTimeout(() => ok(method === 'GET' ? [] : {}), 0); return; }
       if (url === '/rest/v1/profile') {
-        setTimeout(() => ok([{ id: A, handle: 'aya77', display: 'Aya' }]), 0); return;
+        setTimeout(() => ok([{ id: U77, handle: 'aya77', display: 'Aya' }]), 0); return;
       }
       setTimeout(() => ok([]), 0);
     };
-    netTook({ access_token: 'not a jwt', refresh_token: 'a refresh token', user: { id: A } });
+    netTook({ access_token: 'not a jwt', refresh_token: 'a refresh token', user: { id: U77 } });
     /* 行の POST が出るまで ── ここまでで言語は mint されて開いています。 */
     for (let i = 0; i < 120 && !rowOk77; i++) await nap(25);
 
@@ -4009,15 +4054,12 @@ const R = await pg.evaluate(async () => {
     const press78 = async (profile, ui) => {
       start();
       netOut();
-      /* **表示言語は B の預かりに置きます。**`SET.ui` は account のもの
-         （`SET_PREFS`）で、入ってくる account の `setFor(B)` が B の預かりを
-         持ってきて上書きします ── `netOut()` は `SET.acct` を A のままにする
-         ので、ここで `SET.ui` に置いた物は A の預かりへ行って捨てられます。
-         **押して measure してそう出ました**（`SET.acct` が A のまま、
-         `obGaveName()` の時には `SET.ui` が B の `en` に戻っている）。
-         B の預かりが無ければ `setFor()` は account の鍵を全部落とすので、
-         `ui` だけの預かりを作っても他は同じ落ち方をします。 */
-      localStorage.setItem(setParkKey(B), JSON.stringify({ ui: ui || 'en' }));
+      /* **表示言語は B の鍵に置きます。**`SET.ui` は account のもの
+         （`SET_PREFS`）で、入ってくる B の `lingua.set.<B>` が先に来ます
+         （`www/core.js` § acctFor ── 扉では B の物が勝ち、歩きの物は B に無い
+         所だけを埋める）。ここで B の鍵に `ui` だけを置くのは、面ごとの表示
+         言語を B の物として持たせるため。 */
+      localStorage.setItem(acctKey('set', B), JSON.stringify({ ui: ui || 'en' }));
       OBM.nm = 'left over in memory'; OBM.hd = 'leftover'; OBM.mode = 'in';
       window.Capacitor = { Plugins: { SocialLogin: {
         initialize: () => Promise.resolve(),
@@ -4749,9 +4791,98 @@ const R = await pg.evaluate(async () => {
   return out;
 });
 
+/* ---- 86-89. 端末に書く物は書く時に uid を持つ（r79、r73 § 2-7） ----------
+   覆う一文: 端末に書く物は書く時に uid を持つ。持ち主の無い物を読んだら
+   それは誰の物にもならない。アカウントが変わる時に忘れる物は、アカウントで
+   引ける一つの入れ物（`ACCT`、www/core.js）にあり、`netOut` はそれを一行で
+   捨てる。
+
+   印の無い写しは起動の時に読まれる（ページが読み込まれた時）ので、ここは
+   本物の読み込みで測ります ── 種を撒いてページを読み直し、サーバーへ出た
+   要求を**線の所（ページの外、`pg.route`）で全部**数えます。窓（netSend1・
+   netUp・netMedia）の上に置くと、明日足された窓が数えられないので。 */
+const phone = async (disk, quiet) => {
+  const sent = [];
+  await pg.route('https://iimwukyyasbybfrirhsf.supabase.co/**', (route) => {
+    const rq = route.request(), u = new URL(rq.url());
+    sent.push(rq.method() + ' ' + u.pathname + u.search + ' ' + (rq.postData() || ''));
+    if (u.pathname === '/auth/v1/token')
+      return route.fulfill({ status: 200, contentType: 'application/json',
+        body: JSON.stringify({ access_token: 'h.e30.s', refresh_token: 'r2', user: { id: 'me1' } }) });
+    /* 電波の無い所で開いた端末 ── 言語の一覧に答えが無ければ、写しを片付けない
+       （www/net.js § netLangsGone）ので、写った索引がそのまま見える。 */
+    if (quiet && u.pathname.indexOf('/rest/v1/language') === 0) return route.abort();
+    return route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
+  });
+  await pg.evaluate((d) => { localStorage.clear(); for (const k in d) localStorage.setItem(k, d[k]); }, disk);
+  await pg.reload();
+  await pg.waitForTimeout(1500);
+  const got = await pg.evaluate((keys) => {
+    const now = {}; for (const k of keys) now[k] = localStorage.getItem(k);
+    return { me: ME.name + '|' + ME.handle, posts: POSTS.map(p => p.id),
+             langs: Object.keys(LANGS), cur: langId, acct: ACCT_UID, now: now,
+             moved: localStorage.getItem('lingua.me.me1'),
+             screen: document.getElementById('app').innerText };
+  }, Object.keys(disk));
+  await pg.unroute('https://iimwukyyasbybfrirhsf.supabase.co/**');
+  return { sent, got };
+};
+const OLD = {
+  'lingua.sess': JSON.stringify({ at: 'h.e30.s', rt: 'r', uid: 'me1' }),
+  'lingua.me': JSON.stringify({ name: 'Oldname', handle: 'oldhandle' }),
+  'lingua.posts': JSON.stringify([{ id: 'p-old-86', ln: 'an old line', mine: true, at: 1 }]),
+  'lingua.drafts': JSON.stringify([{ id: 'd-old-86', ln: 'an old draft' }]),
+  'lingua.langs': JSON.stringify({ '86868686-8686-4686-8686-868686868686': { name: 'Oldtongue' } }),
+  'lingua.cur': '86868686-8686-4686-8686-868686868686',
+  'lingua.86868686-8686-4686-8686-868686868686.words': JSON.stringify([{ hw: 'oldword', mns: ['old'] }]),
+  'lingua.86868686-8686-4686-8686-868686868686.owner.got': 'me1'
+};
+const R2 = { said: [], fails: [] };
+{
+  /* 86. 印の無い写し（`lingua.set` に `acct` が無い）がある端末で me1 が起動 ──
+     何も読まれず、何も送られず、何も消されない。 */
+  const ph = await phone(Object.assign({}, OLD, { 'lingua.set': JSON.stringify({ walked: true }) }));
+  const leak = ph.sent.filter(x => /86868686-8686-4686-8686-868686868686|p-old-86|d-old-86|Oldname|oldhandle|oldword/.test(x));
+  if (leak.length)
+    R2.fails.push('86: **印の無い写しがサーバーへ出た** ── ' + leak.join(' / '));
+  if (ph.got.me.indexOf('oldhandle') >= 0 || ph.got.posts.indexOf('p-old-86') >= 0 ||
+      ph.got.langs.indexOf('86868686-8686-4686-8686-868686868686') >= 0)
+    R2.fails.push('86: 印の無い写しが入ってきた人の物になった ── ' + JSON.stringify(ph.got));
+  if (/Oldname|oldhandle|an old line|Oldtongue/.test(ph.got.screen))
+    R2.fails.push('86: 印の無い写しが画面に出ている');
+  for (const k of Object.keys(OLD))
+    if (ph.got.now[k] !== OLD[k] && k !== 'lingua.sess')
+      R2.fails.push('86: 印の無い写しが書き換えられた（読まない、消さない）── ' + k);
+  R2.said.push('86: 印の無い写しは誰の物にもならない ── 送った要求 ' + ph.sent.length +
+               ' 本のうち、その写しを運んだもの ' + leak.length + ' 本、画面に出た物 0、書き換えた鍵 0');
+
+  /* 87. 同じ写しで、`lingua.set` の印が me1 を名指している端末 ── それは me1 の物
+     なので、me1 の鍵へ写る（元の鍵は一文字も動かない）。 */
+  const ph2 = await phone(Object.assign({}, OLD, { 'lingua.set': JSON.stringify({ walked: true, acct: 'me1', theme: 'dark' }) }), true);
+  if (ph2.got.me.indexOf('oldhandle') < 0) R2.fails.push('87: 印の付いた写しが、印の人に写らない（me）── ' + ph2.got.me);
+  if (ph2.got.posts.indexOf('p-old-86') < 0) R2.fails.push('87: 印の付いた写しが、印の人に写らない（posts）');
+  if (ph2.got.langs.indexOf('86868686-8686-4686-8686-868686868686') < 0) R2.fails.push('87: 印の人が書いた言語が、その人の索引に写らない ── ' + JSON.stringify(ph2.got.langs));
+  for (const k of Object.keys(OLD))
+    if (k !== 'lingua.sess' && ph2.got.now[k] !== OLD[k])
+      R2.fails.push('87: 写したのに元の鍵が変わった ── ' + k);
+  R2.said.push('87: 印の付いた写しはその人の鍵へ写る ── 元の鍵は一文字も動かない');
+}
+/* 88. `netOut` の「忘れる」は一行 ── 本文からコメントを外して、`…Forget(`・
+   `…For(`・`…Drop(` の呼び出しを数える。`acctFor('')` 一つだけ。 */
+{
+  const net = fs.readFileSync(path.join(ROOT, 'net.js'), 'utf8');
+  const a = net.indexOf('function netOut(){'), b = net.indexOf('\n}\n', a);
+  const body = net.slice(a, b).replace(/\/\*[\s\S]*?\*\//g, '');
+  const calls = body.match(/[A-Za-z_]+(Forget|For|Drop)\(/g) || [];
+  if (calls.length !== 1 || calls[0] !== 'acctFor(')
+    R2.fails.push('88: netOut() が「忘れる」を ' + calls.length + ' 行並べている ── ' + calls.join(' '));
+  R2.said.push('88: netOut() の「忘れる」は ' + calls.length + ' 行（' + calls.join(' ') + '）── 入れ物を一行で捨てる');
+}
+
 await br.close();
 srv.close();
 
+R.said = R.said.concat(R2.said); R.fails = R.fails.concat(R2.fails);
 for (const s of R.said) console.log('  ' + s);
 if (R.fails.length) {
   console.error('');

@@ -157,6 +157,23 @@ audiences: a screen means "the one in front of me" and must never be handed an
 id it could get wrong; something that addresses a language BY ID cannot say
 `langKey()`, and the answer to that is not to let it build the string itself.
 
+**Every key an account has is `lingua.<name>.<uid>`, written under that
+account the moment it is written (r79, `www/core.js` § ACCT).** `set` (the
+account's fields of the settings), `me`, `posts`, `drafts`, `langs`, `cur`,
+`take`: each is registered with `acctKeep()` beside its own global, and
+`acctFor(uid)` — the one switch, at the door and on the way out — reads the
+arriving account's and forgets the last one's. Nothing is parked and nothing
+is moved at a switch. With nobody signed in nothing is written: the only thing
+in memory with no owner is what the walk made, and the door gives it to the
+account that arrives, filling only what that account lacks.
+**What an older version wrote with no owner on the key** — `lingua.me`,
+`lingua.posts`, `lingua.drafts`, `lingua.langs`, `lingua.cur`, and the
+account's fields inside `lingua.set` — was that account's only if the `acct`
+stamp in `lingua.set` named it. That part is copied once per thing under the
+stamped uid (`acctMoved()`, marked in `SET.acctMoved`); the old keys are left
+byte for byte and never read again; a copy no stamp names is nobody's and is
+neither read nor removed (decision log 2026-09-24).
+
 **Not a slice, and deliberately:** `lingua.set` (`SET`) is the person's
 settings and belongs to no language. It carries `planWas` — the plan the app
 last saw — so that a plan ending can be noticed however it happens and said
@@ -189,8 +206,9 @@ interface language went on working out of the copy on the handset and simply
 never arrived. Fixed and held on 2026-09-22 (`npm run rls`, five claims). All five
 were in `SET_PHONE` as 「how this handset is set up」, and that sentence was
 wrong about all five: signing in on a second phone gave somebody the app
-arranged the way that phone happened to be. `lingua.set` still holds them as
-the copy, filed under the account by `setFor()`, and what is left in
+arranged the way that phone happened to be. `lingua.set.<uid>` holds them as
+the copy, written under the account the moment they are written, and what is
+left in `lingua.set` is
 `SET_PHONE` in `www/core.js` is what that array names — read it there, not
 here.
 
@@ -265,8 +283,8 @@ That is the opposite of the draft rule above and it is not an exception to it:
 a draft is something a person MADE, and a notice is something that happened to
 them. There is nothing here to destroy by winning.
 
-**It is filed under the account**, `lingua.notices.<uid>`, the way `lingua.me`
-is parked by `meParkKey()`. Two accounts on one handset must not read each
+**It is filed under the account**, `lingua.notices.<uid>`, the way every
+account key is (`lingua.<name>.<uid>`, `www/core.js` § ACCT). Two accounts on one handset must not read each
 other's notices, and a notice names who did what to whom.
 
 **Nothing prunes it and nothing ages it out**, which is the same sentence
@@ -317,10 +335,18 @@ and that is how one person's deletion erased another person's language.
   every key under lingua.<id>. -- in memory and on the disk -- of every
     language this account wrote (langOwnOf) or took (langTookHas)
   that language's row out of LANGS
-  every lingua.… key whose last part is this uid
-  lingua.me            lingua.posts            lingua.drafts     (the live ones)
-  this account's fields inside lingua.set
+  every lingua.… key whose last part is this uid -- lingua.set.<uid>,
+    lingua.me.<uid>, lingua.posts.<uid>, lingua.drafts.<uid>,
+    lingua.langs.<uid>, lingua.cur.<uid>, lingua.take.<uid>
+  and when lingua.set's old `acct` stamp names this account: its part of the
+    old live keys (acctMoved) -- lingua.me, lingua.posts, lingua.drafts,
+    lingua.cur whole, its rows of lingua.langs and its fields of lingua.set,
+    the rest written back as it was
 ```
+
+Which languages is asked of that account's own index on the disk
+(`lingua.langs.<uid>`), not of memory: the session has usually ended by the
+time this runs, and signing out empties memory (r79, `acct-check` 48).
 
 **Two things under `lingua.` are NOT taken.** They are named so that nobody
 reads the list above as complete:
@@ -329,11 +355,9 @@ reads the list above as complete:
   lingua.notices.<uid>   the notices copy      www/sns.js  notKey()
 ```
 
-`lingua.set.<uid>` — the parked settings — was on this list and is not on it
-any more: it is not `lsWipeAcct()`'s, but `wipeHere()` in `www/settings.js`
-removes it one line before it calls `setFor('')`, so it does go with the
-account. The list said otherwise and was read as the whole answer, which is
-what this file is being audited for.
+`lingua.set.<uid>` ends in the uid and is taken with the rest (r79 — it was
+removed by hand in `wipeHere()` before, beside a second road to the same
+fields).
 
 Two written rules pull opposite ways here and **nothing in this file decides
 between them**: 「アカウント削除で残るものねえ」 (OWNER 2026-08-27) says
@@ -441,8 +465,10 @@ it goes with the rest of that account's keys. **It is with the owner** —
 
 ## The index of languages, and what is actually in it
 
-`lingua.langs` (`LANGS`) is `id -> { … }`, and `lingua.cur` (`langId`) says
-which one every global on the making side means.
+`lingua.langs.<uid>` (`LANGS`) is `id -> { … }`, and `lingua.cur.<uid>`
+(`langId`) says which one every global on the making side means — both the
+ACCOUNT's (r79, r63 L4). Until 2026-09-24 they were `lingua.langs` and
+`lingua.cur`, one key each for every account on the phone.
 
 **索引は「眺めるための写し」であって、答えではありません（2026-09-15）。**
 「端末で使うものなんかないだろ」「そもそも端末を使用するところがないんだから
@@ -504,7 +530,7 @@ lands in the same place and does not make a second copy. 「ダウンロード�
 とかやめてね。」 OWNER 2026-09-01 is the sentence that closed the gap.
 
 **そして「この端末はその答えを聞いたことがある」の写しが一枚あります** ──
-`lingua.take.<uid>`（`langTakeKey()`、`www/core.js` § LTAKE）。`language_take`
+`lingua.take.<uid>`（`acctKeep('take')`、`www/core.js` § LTAKE・§ ACCT）。`language_take`
 がその起動で答えた言語の番号の並びで、**サーバーの答えの写しであって、誰かの
 作ったものではありません**。
 
@@ -512,7 +538,7 @@ lands in the same place and does not make a second copy. 「ダウンロード�
 |---|---|
 | 鍵 | `lingua.take.<uid>` ── 末尾がアカウントの名前なので `lsWipeAcct()` が数えて取る（一覧に足す必要はない） |
 | 書く | `langTookGot()` ── 答えが来た時だけ。`null`（＝訊けていない）は書かない |
-| 読む | `langTookFor()` ── **手元のアカウントの分だけ**。起動（`netRead`）と入り（`netTook`）、出る時は `''` で忘れる |
+| 読む | アカウントの入れ物（`acctKeep('take')`・`acctFor()`）── **手元のアカウントの分だけ**。起動と入り（`netTook`）、出る時は `acctFor('')` で忘れる |
 | 上る道 | **無し。**これを送る所はどこにも無く、作ってはいけない ── 何を取ったかは `language_take` で、訊くのは `netTakes()` |
 | なぜ在るか | 「前に読み込んだの出していいよ。何か更新するならクルクルが必要」OWNER 2026-09-12。無ければ電波の無い起動で `langWhose()` が `LW_WAIT` を返し、取った言語が丸ごと消えて見える |
 
@@ -870,7 +896,7 @@ round.** 「アカウント消したのに検索履歴残ってたんだけど�
 history was left behind on a deletion, and not because anything about it was
 special: ~~`SET_ACCT`~~ was a hand-written list of the fields that are an
 account's, `recent` was added to `SET` a day after the list was last touched,
-and `setFor(uid)` walks the list. `recent_search` cascades off `profile` and so
+and ~~`setFor(uid)`~~ walked the list. `recent_search` cascades off `profile` and so
 off `auth.users`, so `account_delete()` had already taken the rows — what
 stayed was the phone's copy.
 
@@ -880,9 +906,9 @@ language are not on it, they are the account's and go up in `profile.prefs`
 (`SET_PREFS`). **Everything else in `SET` is an
 account's**, counted rather than named, so a field added tomorrow travels
 without anybody remembering — which is the whole of what went wrong. It is
-parked under `lingua.set.<uid>` when somebody signs out and read back when they
-return, the same shape as `meFor()` and `postFor()`; `lsWipeAcct()` empties the
-live key of that account's fields and takes the parked one with the rest.
+written under `lingua.set.<uid>` the moment it is written and read back when
+that account arrives, the same as every account key (`www/core.js` § ACCT,
+r79); `lsWipeAcct()` takes that key with the rest.
 `tools/store-check.mjs` holds `SET_PHONE` against its own table: a field on a
 road to the server may not be called this handset's setup.
 

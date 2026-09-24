@@ -58,33 +58,9 @@ var GOOGLE_IOS_ID='535150348007-i8roam4vdjjlfql5ktb4mld3v9chb6gr.apps.googleuser
 
 /* The session itself -- `LS_SESS`, `SESS`, sessRead() and netUid() -- is
    read at the top of www/core.js, because which account this phone is has to
-   be known before anything of that account's is read. */
-function netRead(){
-  sessRead();
-  /* AND WHOSE SETTINGS ARE LIVE HERE. planFor() in www/core.js has the whole
-     of why; what this line is, is the FIRST of the two moments a uid is
-     known, and it is the earlier one.
-
-     It used to matter for the PLAN: a word was in `SET` by now -- the
-     Keychain injected it ahead of core.js -- and capLapse() compared it
-     against the last plan this phone saw, synchronously, long before
-     netResume() came back, so a launch by somebody who was not the buyer had
-     to be answered here. There is no word: the plan is `verify-plan`'s
-     answer, in memory (www/core.js § PLAN), and nobody-has-asked is where a
-     launch starts. What is left is the settings, which ARE parked per
-     account, and forgetting a plan that belonged to whoever was here
-     before. */
-  planFor(netUid());
-  /* AND WHICH OF SOMEBODY ELSE'S THIS ACCOUNT HAD TAKEN, as of the last time
-     the server said so. The picture is this account's (www/core.js
-     § langTakeKey) and a launch with no signal never gets to ask, so without
-     this line every language somebody took off another page is LW_WAIT and is
-     not drawn -- their own are there, out of the `owner` picture, and the rest
-     have gone. 「前に読み込んだの出していいよ」 OWNER 2026-09-12.
-     netTakes() replaces it the moment the answer lands. */
-  langTookFor(netUid());
-}
-netRead();
+   be known before anything of that account's is read; everything that
+   account has on this phone is then read for it by the container there
+   (§ ACCT), each thing as its own file loads. */
 function netSave(){
   try{
     if(SESS) localStorage.setItem(LS_SESS, JSON.stringify(SESS));
@@ -609,38 +585,17 @@ function netTook(d){
             existed before anonymous sign-in did was a real one. */
          anon:false };
   netSave();
-  /* And who the phone belongs to now. lingua.me is a separate key from
-     lingua.sess and used to survive this entirely, so the account that
-     arrived here inherited the last one's name, handle, face, line about
-     itself and follow list. meFor() parks the old copy and fetches this
-     account's own; it deletes nothing. www/me.js has the whole of why.
-
-     Here rather than at the five call sites because this is the one place
-     that knows what a session is made of -- the same reason `anon` is
-     decided here. */
-  meFor(netUid());
-  /* AND THE POSTS AND THE DRAFTS, for the same reason and by the same road.
+  /* AND EVERYTHING THIS PHONE HOLDS OF AN ACCOUNT IS NOW THIS ONE'S.
      「アカウント新規作成してんのにまた前のアカウント残ってんだけど」 OWNER
-     2026-09-03: a new account's own page was full of the last one's timeline,
-     because `lingua.posts` is one key for the phone and `pfList()` picks your
-     page out of it by a `mine` flag written by whoever was signed in then.
-     www/post.js § postFor() parks and reads back; nothing is deleted. */
-  if(typeof postFor==='function') postFor(netUid());
-  /* AND WHAT THIS ACCOUNT PAID FOR, which is not what the PHONE paid for.
-     「Xは違うアカウントだと課金も引き継がれない」 OWNER 2026-09-02. Here for
-     the same reason meFor() is here: this is the one place that knows a
-     session arrived, and netRead() above is the other moment a uid becomes
-     known. planFor() in www/core.js says what the three answers are.
-
-     No render() of its own, the same as meFor(): every road into this
-     function draws afterwards -- obIn() on the way in, bootSession() on a
-     refresh -- and netPlanSync(), a moment later, renders when the account's
-     answer moves the plan again. */
-  planFor(netUid());
-  /* AND WHAT THAT ACCOUNT HAD TAKEN, by the same road and for the same
-     reason: this picture is the arriving account's, and the one before it is
-     not read. Replaced by netTakes() a moment later. */
-  langTookFor(netUid());
+     2026-09-03 -- the name, the face, the posts, the drafts, the settings,
+     the list of languages, what it took and what it pays were each switched
+     by a line of their own here, and each of those lines adopted a copy that
+     named nobody for whoever came through the door. www/core.js § acctFor is
+     the one switch now: the arriving account's own is read, the last one's
+     answers are forgotten, and what the walk made fills in only what this
+     account does not already have. A token being renewed is the same account
+     and changes nothing. */
+  acctFor(netUid());
   /* AND THE LANGUAGE ON SCREEN. `meFor()` above swapped who the phone says
      it is; this swaps what it is showing. Twice, and the two are different
      moments -- see langForAcct() in www/core.js. Now, without minting,
@@ -727,25 +682,13 @@ function netTook(d){
      empty list, which asks the server exactly what a browser asks. */
   if(netCame && typeof storeSync==='function') storeSync();
   if(netCame){
-    /* AND EVERY ANSWER THE SERVER GAVE BEFORE THIS SESSION ARRIVED.
-       www/sns.js § pullForget is 「every answer is forgotten when the session
-       is」, and netOut() is one half of that sentence; a session ARRIVING is
-       the other. A LAUNCH whose stored token the server refuses reaches the
-       door with answers standing for a session that was never valid
-       (migrate-check 7), and `mylangs` answering out of that record is what
-       left LANG_WAIT true for ever with no language open. BEFORE netLangSync()
-       below, which is what the waiter hangs off. */
-    if(typeof pullForget==='function') pullForget();
-    /* AND NOBODY HAS ASKED WHICH LANGUAGES THIS ACCOUNT HAS -- the last
-       one's answer is not theirs (www/core.js § LMINE). */
-    langMineForget();
-    /* AND HOW THIS ACCOUNT HAS THE APP SET UP: the last person's is not this
-       one's. netMyProfile() below brings this account's. */
-    NET_PREFS=null; NET_PREFS_AT={};
+    /* Every answer the server gave before this session arrived was
+       forgotten by acctFor() above: a session arriving after nobody is
+       always a switch, because nothing else empties SESS (netOut). */
     /* AND WHAT THIS ACCOUNT WROTE THAT THE SERVER HAS NOT GOT, sent here and
        nowhere else without a press -- the same door the language goes up at
-       (www/post.js § postUpAll). postFor() above has just made POSTS this
-       account's own. */
+       (www/post.js § postUpAll). acctFor() above has just made POSTS this
+       account's own, so what is sent is this account's and nobody else's. */
     if(typeof postUpAll==='function') postUpAll();
     LANG_WAIT=true;
     netLangSync(function(){
@@ -809,58 +752,27 @@ function netTook(d){
    `is_anonymous` off the token, whatever this file believes. */
 function netOut(){
   SESS=null; netSave();
-  /* Signed out is nobody's phone, so the name comes off the screen the same
-     moment the session does. Parked, not erased -- signing back in brings it
-     back, and wipeAll() has already blanked ME by the time it reaches here,
-     so nothing is written back out over a deleted account. */
-  meFor('');
-  /* And the timeline this phone was holding goes with the name. Parked under
-     the account that had it, not thrown away. */
-  if(typeof postFor==='function') postFor('');
-  /* And every answer the server gave this account (www/sns.js § pullForget)
-     -- the table, who follows whom (this account's own two lists among them,
-     keyed by handle, and a handle is not an account), the block list, and the
-     pages of other languages. They are that account's, and the next person
-     to sign in on this phone must ask for their own. */
-  /* And every photograph and voice fetched for that account. They were
-     fetched with their token and the next person must ask with their own --
-     and a `0` in that table 「asked and did not come」 is that account's
-     answer too, so signing in again is a phone that tries. */
-  netMediaForget();
-  if(typeof pullForget==='function') pullForget();
-  /* And whether the account that has just gone had a profile row. It is that
-     account's answer and the next person must not be read by it. */
-  if(typeof meRowForget==='function') meRowForget();
-  /* AND WHAT THAT ACCOUNT PAID. `verify-plan` answered it about them, and a
-     phone with nobody on it holding a plan is 「the plan is the handset's」
-     said in one line (www/core.js § PLAN). 「まだ訊けていない」 is what a
-     signed-out phone knows, and the next person asks for their own. */
-  planForget();
-  /* AND WHAT THAT ACCOUNT HAD TAKEN. The same call with nobody named, which
-     is 「this phone has not been told anything」 -- the picture itself is not
-     removed, the way meFor() parks rather than erases, so signing back in
-     shows them again. */
-  langTookFor('');
-  /* AND WHICH LANGUAGES THAT ACCOUNT HAD. A phone with nobody on it has been
-     told nothing, and the index left on the disk is a picture to look at
-     rather than an answer to count (www/core.js § LMINE). Nothing is removed
-     -- signing back in asks again and the list comes back. */
-  langMineForget();
-  /* AND WHETHER THIS ACCOUNT ANSWERS THE REPORTS, WHICH IS THE SAME SENTENCE.
-     NET_STAFF, NET_ADMIN and NET_BANNED are three facts about the account that
-     has just gone, and nothing here put them down -- so the seven taps on the
-     settings heading stayed armed for whoever signed in next.
-     netStaffForget() is the one place that says so. */
-  netStaffForget();
+  /* AND EVERYTHING OF THAT ACCOUNT'S GOES WITH IT, IN ONE LINE.
+     「全部アカウントだって言ってるやん おかしいだろお前一本化しろって。」
+     OWNER 2026-09-04 -- the name, the face, the
+     timeline, the drafts, the settings, the list of languages, what it took
+     and what it pays, and every answer the server gave it: the photographs,
+     who it follows, its block list, whether it answers the reports. This was
+     ten lines of 「and forget this too」, a list somebody had to remember to
+     add to, and one had been missed (r73 § 1-3). Each of those things is in
+     the container now (www/core.js § ACCT), registered beside its own global,
+     so a thing added tomorrow goes tomorrow. Nothing is erased: what is on the
+     disk is under that account's name and comes back when it signs in. */
+  acctFor('');
   /* THE LANGUAGE IS NOT TOUCHED HERE, AND THAT IS THE SAFE DIRECTION.
      A slice is in memory now (CLAUDE.md rule 22), so it was tempting to empty
      the store on the way out -- 「what this phone is holding is the signed-in
      account's」. It would destroy a language that has never reached the
      server: somebody who made one with no signal and signed out would have
      nothing left anywhere, and 「人が作ったものは消さない」 is the rule that
-     outranks tidiness. Nothing leaks by leaving it: `LANGS[id].uid` is what
-     every list asks, so another account's language is filtered out of the
-     next person's screens exactly as it was before today. */
+     outranks tidiness. Nothing leaks by leaving it: the index of languages
+     is the account's (§ ACCT) and goes with it, so nothing on the next
+     person's screens names a language of the last one's. */
   /* AND THE SCREEN, HERE, BECAUSE THIS IS WHERE A SESSION ENDS.
      「2端末で同じアカウントにログインしてても、片方が消したら、もう片方も確実に
      消えるように。ログアウトさせて、新しいアカウント作ったら、もうひと端末も
@@ -1313,6 +1225,9 @@ function netPrefsGot(p, ed){
    value lands -- a send that failed and goes again later is still the press
    it was, not a later one. In memory: `{v, at}` per key. */
 var NET_PREFS_AT={};
+/* Both are what the server and this phone last agreed about THIS account's
+   settings, so the next account starts from nothing (www/core.js § ACCT). */
+acctMem(function(){ NET_PREFS=null; NET_PREFS_AT={}; });
 function netPrefsPut(){
   var o={}, e={}, n=0, i, k, w;
   for(i=0;i<SET_PREFS.length;i++){
@@ -2962,7 +2877,16 @@ function netSaveUpGo(done){
    language is somebody else's is asked exactly as it was -- and a language
    with no owner at all is still sent, because the walk is precisely the case
    where nobody has said whose it is and the insert is the road to the answer.
-   The comment above says why at length and none of it changes. */
+
+   AND THE WALK'S IS THE ONLY ONE THAT CAN BE HERE WITH NO OWNER (r73 § 2-7).
+   This used to send anything nobody had claimed -- measured, an old
+   version's language with no stamp went up as whoever signed in first, and
+   published. It cannot reach this list now: `LANGS` is the account's own
+   index (www/core.js § ACCT), an older shared index is read only for the rows
+   its stamped account wrote or took, and every language an account makes is
+   stamped the moment it is made (langNew, langForAcct). What is left with no
+   owner is what the walk made before the door, and that is the exception
+   CLAUDE.md § Online names. */
 function langMineIds(){
   var out=[], id, own, me=String(netUid()||'');
   if(langId && langHeld(langId) &&
@@ -3704,6 +3628,7 @@ var ADMIN_HANDLE='lingua';
 function netStaffForget(){
   NET_STAFF=false; NET_ADMIN=false; NET_BANNED=''; NET_MINE_UID='';
 }
+acctMem(netStaffForget);
 /* Three things off this account's own row (netMyProfile, the one reader):
    whether it answers the reports, whether it decides who does, and whether
    it has been ejected. The last is not something the app could work out
@@ -4562,6 +4487,7 @@ function netMediaForget(){
       try{ URL.revokeObjectURL(NET_MED[p]); }catch(e){}
   NET_MED={};
 }
+acctMem(netMediaForget);
 /* A post's name before the post exists. The row's id is made HERE rather than
    by the server, because the pictures have to be uploaded under it and an id
    that arrives after the upload would mean uploading twice or moving files.

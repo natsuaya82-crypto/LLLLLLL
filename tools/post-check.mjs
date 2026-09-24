@@ -2722,7 +2722,7 @@ const R = await pg.evaluate(async () => {
     PW.vo = { f: 'v-draft-1.m4a', ms: 7000 };
     dsent = [];
     draftKeep();
-    const rawD = localStorage.getItem('lingua.drafts') || '';
+    const rawD = localStorage.getItem(acctKey('drafts', ACCT_UID)) || '';
     let gotD = null;
     try { gotD = JSON.parse(rawD); } catch (e) { gotD = null; }
     if (rawD && gotD === null)
@@ -2753,7 +2753,7 @@ const R = await pg.evaluate(async () => {
       PW = pwBlank(); PW.ln = 'kano'; PW.toh = 'jjj';
       dsent = [];
       draftKeep();
-      const raw2 = localStorage.getItem('lingua.drafts') || '';
+      const raw2 = localStorage.getItem(acctKey('drafts', ACCT_UID)) || '';
       if (raw2.indexOf('"toh":"jjj"') < 0)
         fails.push('a draft addressed to somebody does not carry the ' +
                    'addressee on this phone, so opening it again is a post ' +
