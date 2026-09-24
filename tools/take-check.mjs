@@ -69,6 +69,10 @@ const r = await pg.evaluate(({ s }) => {
   /* ---- the press, the wait, the answer -------------------------------- */
   wldGet(lid, 'letters');
   out.going = rows();
+  /* the chapter comes down first -- ↓ reads that chapter's slices and
+     nothing else (OWNER 2026-09-23 「ダウンロードってそれが普通じゃないの？」) */
+  var chapter = function(){ return [{ kind:'letters', body:WLDS_HAVE[lid].letters.body, no:1 }]; };
+  wire.get.ok(chapter());
   wire.send.ok([]);                             /* the row went in */
   wire.get.ok([{ language: lid }]);             /* and the takes say so */
   out.done = rows();
@@ -78,6 +82,7 @@ const r = await pg.evaluate(({ s }) => {
   var toasts = [], wasToast = window.toast;
   window.toast = function(m){ toasts.push(m); };
   wldGet(lid, 'letters');
+  wire.get.ok(chapter());
   wire.send.bad(null, 0, 'x');
   window.toast = wasToast;
   out.refused = rows();
