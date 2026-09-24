@@ -762,6 +762,13 @@ export function halfDone(){
   const __stemLetters = () => { LETTERS[0].st = __STEM[0]; LETTERS[1].st = __STEM[1]; };
   const __twoLines = () => ltPua(0) + ltPua(1) + ltPua(0) + ' ' + ltPua(1) + ltPua(0) +
                            '\n' + ltPua(0) + ltPua(0) + ltPua(1);
+  /* A word as the Lingua keyboard types it: each letter this alphabet has
+     drawn is its key, everything else the system keyboard's -- the cut a
+     field hands its receiver (www/glyph.js § puaTyped). */
+  const __kbTyped = (w) => puaTyped(w.split('').map((c) => {
+    const k = ltPuaOrder().findIndex((l) => ltName(l) === c);
+    return k >= 0 ? ltPua(k) : c;
+  }).join('')).cut;
   /* The same two, turned: a stem from the top edge of the lattice to the
      bottom, so a COLUMN of them joins at 0 the way a row of the two above
      does. 「横と縦それぞれスライドしてどう動くか」 OWNER 2026-09-23. */
@@ -3419,14 +3426,14 @@ export function halfDone(){
        once a letter is on it, the selected face with its slider and its two
        buttons is a second screen again. */
     ['letters on a photograph', () => { PW = pwBlank();
-      PW.pics = [{u:POSTS[0].pic, marks:[{tx:'kano', x:0.5, y:0.4, s:0.18, c:PW_COLS[0]}]}];
+      PW.pics = [{u:POSTS[0].pic, marks:[{tx:'kano', cut:__kbTyped('kano'), x:0.5, y:0.4, s:0.18, c:PW_COLS[0]}]}];
       pwMarkOpen(0); pwMarkAt = 0; pwTool = 'mark'; const h = sheet(pwMarkHTML());
       PW = pwBlank(); pwPicAt = -1; pwMarkAt = -1; return h; }],
     /* And the other half of the editor: the crop, with its rectangle over the
        picture. It is a mode of the same screen, so nothing renders it unless
        the walk is put into it. */
     ['cropping a photograph', () => { PW = pwBlank();
-      PW.pics = [{u:POSTS[0].pic, marks:[{tx:'kano', x:0.5, y:0.4, s:0.18, c:PW_COLS[0]}]}];
+      PW.pics = [{u:POSTS[0].pic, marks:[{tx:'kano', cut:__kbTyped('kano'), x:0.5, y:0.4, s:0.18, c:PW_COLS[0]}]}];
       pwMarkOpen(0); pwTool = 'crop'; const h = sheet(pwMarkHTML());
       PW = pwBlank(); pwPicAt = -1; pwTool = 'mark'; return h; }],
     ['a photograph with no letters on it yet', () => { PW = pwBlank();
