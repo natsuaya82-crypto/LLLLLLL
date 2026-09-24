@@ -1837,6 +1837,8 @@ function migrateAll(){
      read from. */
   migrateGramLang();
   stRead();
+  /* and the face of an account from before there was one on file (www/me.js) */
+  migrateAv();
   /* and the free QWERTY out of the keyboard list, keeping an edited one */
   migrateKbFree();
   /* and a free language gets the twenty-eight slots it is allowed */

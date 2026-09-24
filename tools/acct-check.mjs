@@ -4878,6 +4878,26 @@ const R = await pg.evaluate(async () => {
     say('91: 書けない保存は「' + t('save.no') + '」と言う ── 設定だけの保存は言わない');
   }
 
+  /* ---- 93. 顔は描いて書かない（r79、r73 § 2-2） -----------------------
+     postAvatar() は投稿の行を描くたびに、顔の無いアカウントへ開いている言語の
+     字から顔を書いていた。描くのは読むだけ、書くのは移行（migrateAv）で、
+     自分の書ける言語でだけ。 */
+  {
+    start();
+    ME.av = null; ME.pic = '';
+    const disk93 = localStorage.getItem(acctKey('me', ACCT_UID));
+    postRow({ id: 'p93', at: 1, mine: true, who: meName(), hd: meHandle(), ln: 'ka' });
+    postAvatar();
+    if (ME.av) no('93: **行を描いただけで顔が書かれた** ── ' + JSON.stringify(ME.av).slice(0, 60));
+    if (localStorage.getItem(acctKey('me', ACCT_UID)) !== disk93)
+      no('93: 行を描いただけで lingua.me.<uid> が書き換わった');
+    if (meRowHas() && LETTERS.some(function (l) { return !!meAvOf(l); })) {
+      slAsApp(migrateAll, []);
+      if (!ME.av) no('93: 顔の無い古いアカウントに、移行が顔を付けない');
+    }
+    say('93: 顔は描いて書かない ── 行を描いても ME.av もディスクも動かず、付けるのは移行（自分の言語）');
+  }
+
   return out;
 });
 

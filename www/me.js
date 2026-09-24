@@ -100,15 +100,30 @@ function meAvOf(l){
   return null;
 }
 /* ONCE, AND THIS IS THE ONLY PLACE IT IS WRITTEN. Two moments hand it a face
-   -- the walk, at obFinish(), for somebody arriving; and postAvatar(), once,
-   for an account that finished the walk before there was anywhere to write it
-   -- and neither of them may write over an answer that already exists. That
+   -- the walk, at obFinish(), for somebody arriving; and migrateAv() below,
+   once, for an account that finished the walk before there was anywhere to
+   write it -- and neither of them may write over an answer that already
+   exists. That
    is the whole of 「それ以降は勝手に変えないで」, and it is held here rather
    than at the two call sites so there is one rule and not two. */
 function meAvSet(av){
   if(ME.av || !av) return;
   ME.av=av;
   saveMe();
+}
+/* THE FACE OF AN ACCOUNT FROM BEFORE THERE WAS ONE ON FILE: the first letter
+   with a shape on it, which is what it wore -- adopted once, and meAvSet()
+   refuses every call after it. It fills in what is MISSING and stops
+   (docs/DATA_SAFETY.md rule 2). A migration, so it runs from migrateAll()
+   (www/core.js), on this account's own language once the server has said it
+   is theirs -- drawing a row used to do it, out of whatever language was
+   open (r73 § 2-2). The `profile` row keeps it out of the walk, where the
+   letters are still being made and obFinish() has not decided yet. */
+function migrateAv(){
+  var i, av=null;
+  if(ME.av || ME.pic || !meRowHas()) return;
+  for(i=0;i<LETTERS.length && !av;i++) av=meAvOf(LETTERS[i]);
+  meAvSet(av);
 }
 function meFrom(m){
   var o=meBlank();

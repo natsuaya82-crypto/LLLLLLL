@@ -2202,25 +2202,19 @@ function pwSendPost(p){
    here. The walk writes it at obFinish(), which is 「オンボーディングを通って
    かいたもじ」 exactly.
 
-   THE ONE LINE BELOW IS NOT A SECOND DECIDER. An account that finished the
-   walk before there was anywhere to write this has no face on file, and the
-   old walk over LETTERS is what it is wearing today -- so that is adopted,
-   once, and meAvSet() refuses every call after it. It fills in what is
-   MISSING and stops (docs/DATA_SAFETY.md rule 2); it never writes over a face
-   that exists, and nothing here removes one. The `profile` row keeps it out of the
-   walk, where the letters are still being made and obFinish() has not
-   decided yet. */
+   DRAWING DOES NOT WRITE (r79, r73 § 2-2). This used to adopt a face here, the
+   first time a row was drawn for an account that finished the walk before
+   there was anywhere to write one -- so drawing a post wrote `ME.av`, and it
+   wrote it out of LETTERS, which is whatever language is OPEN: a language
+   this account only took from somebody else gave it their letter. The
+   adoption is a migration now (migrateAv, www/me.js), run where every
+   migration is -- migrateAll(), on this account's own writable language --
+   and this is only the read. */
 function postAvatar(){
-  var i, av;
   /* A photo if there is one. It travels on the post like the letter does,
      for the same reason: whoever reads it has neither this person's camera
      roll nor their alphabet. */
   if(ME.pic) return {pic:ME.pic};
-  if(!ME.av && meRowHas()){
-    av=null;
-    for(i=0;i<LETTERS.length && !av;i++) av=meAvOf(LETTERS[i]);
-    meAvSet(av);
-  }
   return ME.av || null;
 }
 /* ---- the line, cut into the shapes it is written with -----------------

@@ -2540,10 +2540,13 @@ const R = await pg.evaluate(async () => {
     };
     try {
       /* (a) an account that finished the walk before there was anywhere to
-             write this: the face it wears today is adopted, ONCE. */
+             write this: the face it wears today is adopted, ONCE -- by the
+             migration (migrateAv, www/me.js), not by drawing a row (r79:
+             drawing reads, and acct-check 93 holds that it writes nothing). */
       delete ME.av;
       ME.pic = '';
       const front = put('av-front', [[1, 1], [2, 2]]);
+      migrateAv();
       const adopted = face();
       if (adopted !== JSON.stringify({ st: front.st }))
         fails.push('an account with no face on file does not wear the one it ' +
