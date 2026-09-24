@@ -572,8 +572,10 @@ const SESS = JSON.stringify({ at: 'not a jwt', rt: 'a refresh token',
 
    netMyProfile() is stood in for, because what is under test is where obIn()
    puts somebody once the row is in hand, and a headless browser has no
-   server to get one from. Everything else is the real app: the real obIn(),
-   the real goTab(), and here() read off the trail afterwards. */
+   server to get one from -- and so are the profile's own reads, which the
+   door onto it waits for (www/shell.js § navLand), for the same reason.
+   Everything else is the real app: the real obIn(), the real goTab(), and
+   here() read off the trail afterwards. */
 {
   const r = await boot({ 'lingua.set': JSON.stringify({ done: true }),
                          'lingua.sess': SESS,
@@ -584,6 +586,7 @@ const SESS = JSON.stringify({ at: 'not a jwt', rt: 'a refresh token',
                          window.netMyProfile = function (ok) {
                            ok({ display: 'Aya', handle: 'aya' });
                          };
+                         window.pageWait = function (r, a, done) { done(true); };
                          window.__inLand = { from: here().r };
                          try { obIn(); }
                          catch (e) { window.__inLand.err = String(e && e.message); }

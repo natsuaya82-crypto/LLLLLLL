@@ -268,7 +268,7 @@ const R = await pg.evaluate((ON_ATTR) => {
      「フォロワーとかタップしても見れないし」 OWNER 2026-09-03. */
   walkArg('follows', vFollows,
           ['ing', 'ers'].concat(
-            meFollowing().concat(['nobody-at-all']).reduce(
+            folOf(false, meHandle()).concat(['nobody-at-all']).reduce(
               (o, h) => o.concat(['ing:' + h, 'ers:' + h]), [])),
           'vFollows');
   /* The people one notice is about, which is the handles the row carries

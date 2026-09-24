@@ -3188,8 +3188,8 @@ const R = await pg.evaluate(async () => {
         id:'', n:1, more:[] }];
     PULL_GOT.notif = 1;
     /* AND THE ANSWERS ARE LET BACK AFTER THE PRESS. Both doors off this row
-       ask who these people are before they open anything (www/me.js §
-       whoNeed, § notfoOpen -- OWNER 2026-09-07 「全部読み込んでから開く」),
+       ask who these people are before they open anything (www/shell.js §
+       navLand, `people` and `who` -- OWNER 2026-09-07 「全部読み込んでから開く」),
        so a press with nothing answering lands nowhere and the row reads as a
        door that does not work. It is not: it is a door that is waiting. */
     const wasWho18 = WHO_HAVE, wasAsk18 = WHO_ASKED;
@@ -3209,7 +3209,7 @@ const R = await pg.evaluate(async () => {
     netGet = function (p2, ok, bad) { netSend('GET', p2, null, '', ok, bad); };
     const pressRow = (i) => {
       WHO_HAVE = {}; WHO_ASKED = {};
-      PULL_GOT.mine = 1; PULL_GOT.mylangs = 1; PULL_GOT.myposts = 1;
+      PULL_GOT.mylangs = 1;
       window.route = 'notif'; NAV = [{ r:'notif' }];
       app.innerHTML = vNotif();
       const rows = app.querySelectorAll('.ntf');

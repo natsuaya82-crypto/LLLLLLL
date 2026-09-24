@@ -543,7 +543,7 @@ want('and the session is not an anonymous one', s5.anon, false);
    pullWait('mylangs', …), and langForAcct() will not open or mint a language
    until the server has answered (www/core.js § LMINE) -- which only
    netLangsDown() writes. 7d above is a launch whose stored token the server
-   REFUSES: netRead() puts SESS back before the refresh answers, pullBoot()
+   REFUSES: netRead() puts SESS back before the refresh answers, the launch
    asks as that account, and the answers land and write PULL_GOT. Left
    standing across the door, that record answers pullWait() at once and
    refuses pullNeed(), so the one road that writes langMineGot() never runs

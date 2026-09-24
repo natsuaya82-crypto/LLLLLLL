@@ -409,7 +409,7 @@ await measure('profile', () => {
 
 await measure('follows', () => {
   WHO_HAVE = {}; WHO_ASKED = {}; FOL_HAVE = {}; FOL_ASKED = {};
-  followsOpen('ers:iri');
+  go('follows', 'ers:iri');
 });
 
 await measure('notif', () => {

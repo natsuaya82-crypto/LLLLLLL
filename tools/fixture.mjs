@@ -212,7 +212,8 @@ export function seed(){
   NOTES = [{t:'note', b:'body'}];
   ME = {name:'Aya', handle:'aya', bio:'Building a language for a place that does not exist.'};
   /* 誰をフォローしているか・誰にされているかは `follow` 表の答えで、
-     FOL_HAVE がその置き場です（www/me.js § meFollowing、2026-09-09）。
+     一覧は FOL_HAVE、一人ずつの「フォローしているか・されているか」は REL が
+     置き場です（www/me.js § WHETHER YOU FOLLOW SOMEBODY、2026-09-23）。
      `ME.fo`/`ME.fr` には置きません ── もう誰も読みません。 */
   folPut(false, 'aya', ['iri','veth']); folPut(true, 'aya', ['iri']);
   /* Two posts, and the second one is the whole reason the timeline is written
@@ -408,11 +409,11 @@ export function seed(){
      never again, which is a fixture that changes under the walk rather than
      one that seeds a state. Reset here, where every other field of SET is. */
   SET.notAt = 0;
-  /* And nobody else's language answered for. `wldSeenPull()` writes both, and
+  /* And nobody else's language answered for. `wldSeenAsk()` writes both, and
      they are a session's memory of what came back rather than anything stored
      -- so a face that seeds one must not leave it standing for every render
      after it. Reset where the rest of the state is. */
-  WLD_HAVE = {}; WLD_ASKED = {}; WLDS_HAVE = {}; WLDS_ASKED = {};
+  WLD_HAVE = {}; WLDS_HAVE = {};
   /* Where you are standing is the app's to say, not this file's. viewReset()
      in www/shell.js is the one list of what a screen forgets when you leave
      it; a copy here would be a second list to keep in step, and the first
@@ -448,12 +449,17 @@ export function seed(){
      the notices AND the record that they were answered, so a line written
      before it is wiped by it.
 
-     `feed` is not in here: SNS_GOT is the timeline's own record, per tab, and
-     the walks that want an answered timeline set that themselves. */
-  PULL_GOT = { saved:1, recent:1, drafts:1, notif:1, mine:1, day:1, blocks:1 };
+     The timeline is a question per tab (`feed|rec`, `feed|fo`, `feed|day`,
+     www/sns.js § askFeed), and it is answered here too: the fixture's posts
+     are what the server said. `mylangs` is the list of languages, whose
+     answer is the index this fixture seeded. */
+  PULL_GOT = { saved:1, recent:1, drafts:1, notif:1, day:1, mylangs:1,
+               'feed|rec':1, 'feed|fo':1, 'feed|day':1 };
+  /* and the open language's slices, which are what the fixture seeded */
+  PULL_GOT['lang|' + langId] = 1;
   /* AND THE PEOPLE THIS ACCOUNT FOLLOWS ARE KNOWN, because the door onto a
      list of people gets them all in one request before the screen opens
-     (www/me.js § followsOpen, whoNeed). A walk renders a ROUTE, not a door,
+     (www/sns.js § WHAT EACH PAGE READS, `fols`). A walk renders a ROUTE, not a door,
      so without this the follow list is drawn in a state the app can no
      longer be in -- a row with '?' where a name goes, waiting for an answer
      that the screen is not allowed to be waiting for.
@@ -462,6 +468,13 @@ export function seed(){
                     bio:'', fo:2, fr:3, out:false };
   WHO_HAVE.veth = { who:'Veth', hd:'veth', av:{ch:'\u0424'}, lname:'Vethi',
                     bio:'', fo:1, fr:1, out:false };
+  /* AND YOUR OWN ROW, whose two counts are the server's (`profile_seen`) and
+     not the length of two lists this phone read (www/me.js § whoOf). */
+  WHO_HAVE.aya  = { who:'Aya',  hd:'aya',  av:null, lname:'Shango',
+                    bio:'', fo:2, fr:1, out:false };
+  /* AND WHETHER YOU FOLLOW EACH OF THEM, AND THEY YOU -- the door onto any
+     page that draws a person asks it (`rel`, www/me.js § REL). */
+  REL = { iri:{i:true, u:true}, veth:{i:true, u:false} };
 }
 
 /* The steps of the onboarding that have a second face: the writing systems to
@@ -1191,16 +1204,26 @@ export function halfDone(){
        const h=vAbout();
        ABOPEN.wlddl = was;
        return h; }],
-    /* THE ↓ WHILE ITS PUT IS OUT, AND ONCE THE SERVER SAYS IT IS TAKEN.
+    /* THE ↓ WHILE THE CHAPTER COMES DOWN, AND ONCE THE SERVER SAYS IT IS TAKEN.
        「↓を押したら⭕️でダウンロード状況表示。ダウンロードしてる言語は⭕️☑️」
-       OWNER 2026-09-23 -- www/home.js § wldTakeOf. Taken is the SERVER's two
-       answers (the owner is somebody else, a `language_take` row is this
-       account's) and the chapter in what is loaded; all three are pushed here
-       because no check has a network. */
+       「ダウンロードは普通⭕️のメーターだろ」 OWNER 2026-09-23 -- www/home.js
+       § wldTakeOf, iconMeter. WLD_TAKING is how far the chapter has come, 0 to
+       1, or -1 where the server gave no length (the circle turns). Taken is
+       the SERVER's two answers (the owner is somebody else, a `language_take`
+       row is this account's) and the chapter in what is loaded; all three are
+       pushed here because no check has a network. */
     ['somebody else\u2019s language page, a download going', () => {
        const lid = __seenLang();
        const was = ABOPEN.wlddl;
-       ABOPEN.wlddl = true; WLD_TAKING[lid + '|letters'] = 1;
+       ABOPEN.wlddl = true; WLD_TAKING[lid + '|letters'] = 0.4;
+       window.route='about'; NAV=[{ r:'about', a:lid }];
+       const h=vAbout();
+       delete WLD_TAKING[lid + '|letters']; ABOPEN.wlddl = was;
+       return h; }],
+    ['somebody else\u2019s language page, a download going with no length', () => {
+       const lid = __seenLang();
+       const was = ABOPEN.wlddl;
+       ABOPEN.wlddl = true; WLD_TAKING[lid + '|letters'] = -1;
        window.route='about'; NAV=[{ r:'about', a:lid }];
        const h=vAbout();
        delete WLD_TAKING[lid + '|letters']; ABOPEN.wlddl = was;
@@ -1447,7 +1470,7 @@ export function halfDone(){
         const h = vThread(); POSTS.pop(); delete mine.sid; return h; }],
     /* YOUR OWN ROW, on somebody else's followers list, on a phone holding no
        post of yours to take a name off. 「ここも？になるの謎だし」 */
-    /* AND EVERYBODY ON IT IS KNOWN, because followsOpen() (www/me.js) got
+    /* AND EVERYBODY ON IT IS KNOWN, because the door onto `follows` (www/shell.js § navLand) got
        the people in one request before this screen opened -- a row waiting
        for its own name is not a state the app can be in any more
        (「？になってあとで表示される」 OWNER 2026-09-07). Seeding WHO_HAVE is
@@ -1458,7 +1481,7 @@ export function halfDone(){
        that turned for ever is gone from this screen, so what a person with no
        followers looks like is a thing somebody has to be able to LOOK at.
        An empty list is an ANSWER -- the door does not open until it is in
-       (www/me.js § followsOpen) -- which is why this face seeds an empty
+       (www/shell.js § navLand) -- which is why this face seeds an empty
        array rather than nothing at all. */
     ['somebody else\u2019s followers list with nobody on it', () => {
         FOL_HAVE['ers:iri'] = []; FOL_ASKED['ers:iri'] = 1;
@@ -1479,7 +1502,7 @@ export function halfDone(){
         POSTS.push.apply(POSTS, was); return h; }],
     /* A PROFILE BEFORE THE COUNTS HAVE ARRIVED IS NOT A STATE ANY MORE.
        「プロフィールは、出す物を全部読み込んでから開く」 OWNER 2026-09-07 --
-       the page waits on `mine` before it opens (www/me.js § profileOpen), so
+       the page waits on its reads before it opens (www/shell.js § navLand), so
        there is no face where the two words stand without their numbers.
     /* ---- a tag, and what pressing one gives ------------------------------
        「タグは青く光るからタップしたらタグの検索になる。」 OWNER 2026-09-04.
@@ -1824,7 +1847,7 @@ export function halfDone(){
     /* THE FACE BEFORE THE SERVER HAS ANSWERED IS GONE, and so is the state.
        「プロフィールは、出す物を全部読み込んでから開く」「くるくるも出さない」
        OWNER 2026-09-07: the page is not drawn until every answer is in
-       (www/me.js § profileOpen), so there is no such thing as a profile
+       (www/shell.js § navLand), so there is no such thing as a profile
        waiting on the server. A face for a state the app cannot be in is six
        screens walked in a shape nobody can reach. */
     /* A post kept to yourself, which is the lock beside the time, and the
@@ -1953,7 +1976,6 @@ export function halfDone(){
     ['somebody else\u2019s language', () => {
         WLD_HAVE['L1'] = { id:'L1', name:'Vethi', license:'',
                            pub:'2026-08-20T00:00:00Z', nwords:412, nletters:38 };
-        WLD_ASKED['L1'] = 1;
         WLDS_HAVE['L1'] = {
           wld: { body: JSON.stringify({
                    where:'A valley under the north ridge',
@@ -1965,7 +1987,6 @@ export function halfDone(){
                    { id:'v2', nm:'to', snd:['t'], st:[{ pts:[[112,688],[400,112],[688,688]] }] },
                    { id:'v3', nm:'ri', snd:['r'], st:[{ pts:[[300,150],[300,650]] }] }]), no:1 },
           snd: { body: JSON.stringify(['k','t','r','a','i']), no:1 } };
-        WLDS_ASKED['L1'] = 1;
         window.route='about'; NAV=[{ r:'about', a:'L1' }];
         return vAbout(); }],
     ['notices', () => { NOTES_HAVE = [
@@ -2068,21 +2089,21 @@ export function halfDone(){
        `PULL_OFF` is 「訊けなかった」 (www/sns.js § pullSay) and this is the
        face it draws. */
     ['a timeline with no signal', () => {
-        const keepP = POSTS, keepG = SNS_GOT;
-        POSTS = []; SNS_GOT = {}; PULL_OFF.feed = 1;
+        const keepP = POSTS;
+        POSTS = []; PULL_OFF['feed|rec'] = 1;
         window.route='feed'; NAV=[{r:'feed'}];
         const h = vFeed();
-        POSTS = keepP; SNS_GOT = keepG; PULL_OFF.feed = 0; return h; }],
+        POSTS = keepP; PULL_OFF['feed|rec'] = 0; return h; }],
     /* And the same screen with nothing answered and nothing fallen: the mark,
        turning, which is what an app that IS asking looks like. The two are
        next to each other on purpose -- the fault they were written after is
        that they used to be one picture. */
     ['a timeline that has not been answered yet', () => {
-        const keepP = POSTS, keepG = SNS_GOT;
-        POSTS = []; SNS_GOT = {}; PULL_OFF.feed = 0; PULL_GOT.feed = 0;
+        const keepP = POSTS;
+        POSTS = []; PULL_OFF['feed|rec'] = 0; PULL_GOT['feed|rec'] = 0;
         window.route='feed'; NAV=[{r:'feed'}];
         const h = vFeed();
-        POSTS = keepP; SNS_GOT = keepG; return h; }],
+        POSTS = keepP; PULL_GOT['feed|rec'] = 1; return h; }],
     ['a post that is only a photograph', () => {
         POSTS.push({id:'pz', at:Date.now(), lang:langId, lname:'Shango', ln:'',
                     who:'Aya', hd:'aya', mine:true, mn:'', ui:'en',

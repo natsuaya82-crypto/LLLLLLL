@@ -1,0 +1,6 @@
+# tools/load-check.mjs claim 3 -- a read of a list with no cap, the day each was counted.
+# One line per read: the table and its `select`, a bar, and why it is not capped yet.
+# Taking a line out is progress and needs nobody; putting one in is a diff on this file.
+# A line that matches no read any more fails the check (it would be permission that rotted).
+rest/v1/block select=blocked | what every timeline is filtered by -- a cap would let the blocked back in; the server has to leave them out (supabase/schema.sql, r65-server; docs/scope/r71-net.md § SQL)
+rest/v1/draft select=id,body,updated_at | draftsPull() takes a draft the answer does not name off this phone -- a page of 50 would take the rest; which of them is the owner's (docs/scope/r71-net.md § オーナーへ)

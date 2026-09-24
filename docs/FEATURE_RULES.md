@@ -251,7 +251,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
 
 ### 2026-09-23 読むのは開いた画面の分だけ ── 起動は通知とタイムライン、他はその画面に進んだ時、ダウンロードは押した時
 - Date: 2026-09-23
-- Area: サーバーから読む全部（`www/net.js` の GET と RPC、起動 `www/boot.js`、人の言語のページ `wldSlicesPull()` `www/home.js`）
+- Area: サーバーから読む全部（`www/net.js` の GET と RPC、起動 `www/boot.js`、人の言語のページ ~~`wldSlicesPull()`~~ `www/home.js`）
 - Decision:
   「開いた時は通知とタイムラインだけでしょ、そのページに進むときに読み込むべきなぜ一括なの？そこも直せ」
   「ダウンロードってそれが普通じゃないの？」（押した時に落とす）

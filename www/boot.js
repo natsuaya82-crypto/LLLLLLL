@@ -73,33 +73,14 @@ function bootSession(){
      what goes up is what Apple SIGNED, and what comes back is the plan.
      「だから端末でやるわけねえだろ」 OWNER 2026-09-03. */
   storeSync();
-  /* THE LANGUAGES COME DOWN AND NOTHING GOES UP. What this account has is
-     asked from netTook()'s pullBoot() (www/sns.js § askLangs, `mylangs`),
-     which is the one place that knows a session arrived.
-
-     `pullWait('mylangs', netLangSync)` stood here: the up road, run on every
-     launch behind the answer. It merged whatever this phone was holding --
-     the disk an older version left, and the picture once a migration had
-     saved it -- into the server's rows and wrote the result back, so a word
-     deleted on another phone came back from this one on every launch.
-     Measured 2026-09-23, tools/quiet-check.mjs 1 and 2. A save goes up when a
-     person makes it (netSaveUp, www/net.js), and the door sends what the walk
-     made (netTook); there is no third road. */
-  /* Whether this account answers the reports was asked here and is asked in
-     netTook() (www/net.js) now -- the one place that knows a session arrived.
-     This call was the whole of it, so a launch made signed out never asked and
-     the door somebody then came in through never asked either. */
-  /* And the profile -- the line about themselves and the face -- READ.
-     「自己紹介を見せないって選択肢を俺はいつ与えた？」 netAvSync() stood above
-     this and sent the face this phone was holding on every launch where it
-     differed from a mark of what it had sent last, so an old photograph on a
-     second phone put itself back over a new one (r46-audit § A1). The face
-     goes up when somebody chooses it (meFacePut, www/me.js). */
-  netProfSync();
-  /* And how this account has the app set up -- the theme, the interface
-     language and the three switches about the drawn letters
-     (www/core.js § SET_PREFS). */
-  netPrefsPull();
+  /* NOTHING ELSE IS READ HERE. What a session reads -- this account's own
+     row (the settings, the profile, whether it answers reports) and the two
+     launch pages -- is netTook()'s (www/net.js), the one place that knows a
+     session arrived; what a screen reads is its door's (www/shell.js
+     § navLand). The profile and the settings were read from these lines as
+     well, a second road to one row (r73 § 1-1). And nothing goes UP: a save
+     goes up when a person makes it (netSaveUp, www/net.js), and the door
+     sends what the walk made (netTook). */
 }
 /* A session that is still good comes back here and nothing is asked. What
    used to be in the `bad` half was netAnon(): no session, so make one, without
@@ -146,14 +127,13 @@ render();
    nothing can say 「it ended」 -- www/core.js § 「プランが終了しました」 and
    docs/scope/r31-server.md § オーナーへ. */
 /* AND THE SPLASH COMES DOWN WHEN THE SCREEN UNDER IT IS WHOLE.
-   「プロフィールは、出す物を全部読み込んでから開く」「押してから読み込みが
-   終わるまで前の画面のままで、揃った瞬間にプロフィールが出る」 OWNER
+   「押してから読み込みが終わるまで前の画面のままで、揃った瞬間に出る」 OWNER
    2026-09-07.
 
-   The app opens ON the profile, so the splash is that screen's 「前の画面」 --
-   the one door into it with nothing behind it. profileReady() (www/me.js) is
-   the same three answers the press waits for, asked in one place so the two
-   roads cannot come to differ.
+   The splash is the first screen's 「前の画面」 -- the one door with nothing
+   behind it -- so it waits on the same answers the door onto that screen
+   waits on: its row in www/sns.js § WHAT EACH PAGE READS, asked through the
+   same pageWait(), so the two roads cannot come to differ.
 
    IT CAN ONLY MAKE THE SPLASH LATER THAN 900ms AND NEVER LATER THAN 4000.
    www/index.html holds both ends: splashDone() shuts it on the LATER of the
@@ -164,6 +144,6 @@ render();
    Signed out there is nothing to wait for -- the app opens on the door, and
    www/onboard.js draws it. */
 if(window.splashDone){
-  if(here().r==='profile' && netSignedIn()) profileReady(splashDone);
+  if(netSignedIn()) pageWait(here().r, here().a, splashDone);
   else splashDone();
 }

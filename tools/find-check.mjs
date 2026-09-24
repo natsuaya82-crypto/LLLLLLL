@@ -527,9 +527,8 @@ say(still.length === 3 && still.indexOf('kanuko') !== -1,
    初めて人の目に入ります。 */
 const back2 = await pg.evaluate(() => new Promise(function(d){
   window.__MODE = 'ok';
-  /* 「次の起動」は、セッションが始まる瞬間そのもの ── 画面ではなく
-     www/sns.js § WHAT AN OPEN ASKS FOR がこれを取りに行きます。
-     PULL_OUT / PULL_GOT が「訊いている／訊けた」の記録で、二つの旗を
+  /* 「次の起動」── 最近の検索は検索の画面の読み（www/sns.js § WHAT EACH PAGE
+     READS）。PULL_OUT / PULL_GOT が「訊いている／訊けた」の記録で、二つの旗を
      この画面が持つのはやめました。 */
   PULL_OUT.recent = 0; PULL_GOT.recent = 0; SET.recent = [];
   pullNeed('recent');
@@ -714,16 +713,16 @@ say(back.after.rows === 1,
 
    訊く場所は変わりました。2026-09-05、オーナー:「画面に入った瞬間に
    サーバーへ訊きに行くのは無し。それが 1 秒遅れの正体です」── いま問いを
-   出すのはセッションが始まる瞬間で（www/sns.js § WHAT AN OPEN ASKS FOR）、
-   `vFeed()` は一本も出しません。数える理由は同じです: 答えが来て描き直され、
-   その描き直しがまた訊く、という輪がここに戻っていないこと。 */
+   出すのはその画面へ進む戸口で（www/shell.js § navLand、www/sns.js § WHAT EACH
+   PAGE READS）、`vFeed()` は一本も出しません。数える理由は同じです: 答えが来て
+   描き直され、その描き直しがまた訊く、という輪がここに戻っていないこと。 */
 const loop = await pg.evaluate(() => new Promise(function(d){
   window.__MODE = 'ok';
-  SNS_GOT = {}; snsTab = 'rec';
-  PULL_GOT.feed = 0; PULL_OUT.feed = 0;
+  snsTab = 'rec';
+  PULL_GOT['feed|rec'] = 0; PULL_OUT['feed|rec'] = 0;
   window.__ASK = [];
+  NAV = [{ r:'plans' }]; route = 'plans';
   go('feed');
-  pullBoot();
   setTimeout(function(){
     d(window.__ASK.filter(function(s){
         return s.indexOf('/rest/v1/rpc/feed_hot') === 0; }).length);

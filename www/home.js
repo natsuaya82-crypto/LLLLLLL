@@ -1354,6 +1354,23 @@ var ICON_DL='<svg class="ic" viewBox="0 0 24 24" width="14" height="14" fill="no
 var ICON_TOOK='<svg class="ic" viewBox="0 0 24 24" width="14" height="14" fill="none" '+
   'stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" '+
   'aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.2l2.8 2.8L16 9.6"/></svg>';
+/* AND WHILE IT COMES DOWN, THE SAME CIRCLE FILLING. 「ダウンロードは普通⭕️の
+   メーターだろ」 OWNER 2026-09-23 -- and 「進みが取れない時は ⭕ が回る」: a
+   server that does not say how long the answer is gives no fraction, so the
+   circle is drawn a quarter open and turns, on `.pullrule.go`, the one
+   animation the app has for 「今きいているところ」. `f` is 0 to 1, or -1.
+   The arc is the stroke's own dash, set as an attribute of the drawing -- no
+   style from here (CLAUDE.md rule 18). */
+var WLD_RING=2*Math.PI*9;
+function iconMeter(f){
+  var on=(f<0)? WLD_RING*0.75 : Math.max(0, Math.min(1, f))*WLD_RING;
+  var svg='<svg class="ic" viewBox="0 0 24 24" width="14" height="14" fill="none" '+
+    'stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true">'+
+    '<circle cx="12" cy="12" r="9" opacity=".25"/>'+
+    '<circle cx="12" cy="12" r="9" stroke-dasharray="'+on.toFixed(2)+' '+WLD_RING.toFixed(2)+'" '+
+    'transform="rotate(-90 12 12)"/></svg>';
+  return (f<0)? '<span class="numwait"><span class="pullrule go">'+svg+'</span></span>' : svg;
+}
 /* ---- the overview is the person's own list now -------------------------
    「メモじゃなくて概要に好きに追加したいこと並べればいいやん」 OWNER 2026-08-25.
    Four fixed facts and one box called 「メモ」 was what this page had; what it
@@ -1643,14 +1660,17 @@ function wldGetRow(sec, lid){
      It used to say the row needed no plan because downloading letters and a
      keyboard was free; that was 2026-08-19 and 「plusからです」 OWNER
      2026-09-02 replaced it. `CAN.dl` is `plus` and has been since. */
-  var st=wldTakeOf(lid, sec.r), nm='<span class="sl">'+esc(wldSecNm(sec))+'</span>';
+  var st=wldTakeOf(lid, sec.r), nm='<span class="sl">'+esc(wldSecNm(sec))+'</span>',
+      k=String(lid||'')+'|'+sec.r;
   /* A state and not a control, and it says which: role="status" while it
-     turns, role="img" once it is the tick -- a name with no role reads as
-     something to press (press-check). */
+     comes down, role="img" once it is the tick -- a name with no role reads
+     as something to press (press-check). `data-meter` is what the progress
+     paints into without drawing the page again (wldMeterPaint). */
   if(st==='wait') return '<div class="set" aria-busy="true">'+nm+
-    '<span class="sv" role="status" aria-label="'+esc(t('wld.taking'))+'">'+snsWaitWord()+'</span></div>';
+    '<span class="sv wldmeter" role="status" data-meter="'+esc(k)+'" aria-label="'+
+      esc(t('wld.taking'))+'">'+iconMeter(WLD_TAKING[k])+'</span></div>';
   if(st==='took') return '<div class="set">'+nm+
-    '<span class="sv" role="img" aria-label="'+esc(t('wld.took'))+'">'+ICON_TOOK+'</span></div>';
+    '<span class="sv wldgot" role="img" aria-label="'+esc(t('wld.took'))+'">'+ICON_TOOK+'</span></div>';
   return '<button class="set"' + DO('wldGet', [String(lid||''), sec.r]) + '>'+nm+
     '<span class="sv">'+ICON_DL+'</span></button>';
 }
@@ -1667,11 +1687,12 @@ function wldGetRow(sec, lid){
    netLangsWalk() brought down for a language taken before this launch).
    WLD_TAKING is the one thing held here, and it is only 「a put is out for
    the chapter that was pressed」: set by the press, cleared by the answer,
-   whichever answer it is. The other rows stay what they were. */
+   whichever answer it is -- and while the chapter is coming down it is how
+   far it has come (iconMeter). The other rows stay what they were. */
 var WLD_TAKING={};
 function wldTakeOf(lid, r){
   var id=String(lid||''), kinds=wldDlKind(r)||[], i;
-  if(WLD_TAKING[id+'|'+r]) return 'wait';
+  if(Object.prototype.hasOwnProperty.call(WLD_TAKING, id+'|'+r)) return 'wait';
   if(langWhose(id)!==LW_READ) return 'dl';
   for(i=0;i<kinds.length;i++)
     if(slMine(langKeyOf(id, kinds[i]))!==null) return 'took';
@@ -1690,72 +1711,70 @@ function wldTakeOf(lid, r){
    renamed or counted differently -- docs/FEATURES.md § 4 and the decision log
    both say a download is never merged into what somebody made.
 
-   The slices are already here: wldSlicesPull() fetched them to draw the page,
-   so this asks that map rather than the network. A second request would be a
-   second answer to 「what is in their language」, and the two could disagree
-   in the second between the page being drawn and the button being pressed. */
+   AND IT COMES DOWN WHEN IT IS PRESSED. 「ダウンロードってそれが普通じゃない
+   の？」 OWNER 2026-09-23. The page read every slice of somebody's language
+   the moment it was opened -- the whole dictionary to draw a page that shows
+   a count of it -- and ↓ only copied what was already here. Now the page
+   reads what it draws (WLD_PAGE_KINDS) and ↓ asks the server for this
+   chapter's kinds and nothing else, with the ⭕ filling while it comes
+   (iconMeter), then records the take and turns into ⭕☑️ when the server
+   says so. A chapter that came down is what the server held at the press. */
 function wldGet(lid, r){
-  var id=String(lid||''), kinds=wldDlKind(r), m=WLDS_HAVE[id], seen=wldSeen(id),
-      got=[], i, o;
+  var id=String(lid||''), kinds=wldDlKind(r), seen=wldSeen(id), k=id+'|'+r;
   if(!id || !kinds || !kinds.length) return;
+  /* Already coming down. */
+  if(Object.prototype.hasOwnProperty.call(WLD_TAKING, k)) return;
   /* WHETHER, AND THEN HOW MANY. 「plusからです」「plusは1つproは3つ」OWNER
-     2026-09-02. Both asked here, in the one place a download happens, and in
-     that order: the plan is the door and the ceiling is the room. Neither
-     asks anything of a language already taken -- a plan that ends leaves
-     every downloaded language where it is, readable, which is the head of
-     docs/PAID_FEATURES.md.
-
-     A chapter of a language ALREADY taken does not meet the ceiling again:
-     it is not another language, it is more of one that is already counted. */
+     2026-09-02. The plan is the door and the ceiling is the room, asked here
+     in the one place a download happens. A chapter of a language this
+     account is ALREADY reading does not meet the ceiling again: it is not
+     another language, it is more of one already counted -- and langWhose()
+     (www/core.js) is the server's answer to that, not this phone's index. */
   if(upStop(can('dl'))) return;
-  /* A language this account is ALREADY reading does not meet the ceiling
-     again: it is not another language, it is more of one already counted.
-     `LANGS[id]` -- 「is it in this phone's index」 -- said that, and the index
-     is the phone's: the last account's downloads are in it too, so their
-     languages let this one past the ceiling. langWhose() (www/core.js) is
-     the question with the server's answer in it. */
   if(langWhose(id)!==LW_READ && dlStop()) return;
-  /* Nothing to take is not a failure to report: the page is drawn from the
-     same map, so a row can only be on screen when the answers are in. */
-  if(!m) return;
-  /* EVERY SLICE THE SECTION IS, OR NONE OF THEM. The grammar is `phases` and
-     `gram2`, and half a chapter written down is worse than none: it would sit
-     in the index looking like a grammar somebody could open. So they are
-     gathered first and written after. A slice the owner never wrote is not a
-     missing half -- it is a language with nothing of that kind in it -- so an
-     empty body is skipped rather than refusing the lot. */
-  for(i=0;i<kinds.length;i++){
-    o=m[kinds[i]];
-    if(o && o.body) got.push([kinds[i], o.body]);
-  }
-  if(!got.length) return;
-  /* The index row FIRST, so a slice can never be in storage under a language
-     the index does not know -- that is a set of keys nothing can find, which
-     is the leftovers bug langKeyOf() exists to prevent. */
-  langSeenAdd(id, seen? seen.name : '', seen? seen.owner : '');
-  try{
-    for(i=0;i<got.length;i++) slWr(langKeyOf(id, got[i][0]), got[i][1]);
-  }catch(e){ return; }
-  /* AND THAT THIS ACCOUNT TOOK IT, which is a row on the server and not a
-     stamp on this phone's index (www/net.js § netTakePut). The ceiling on
-     downloads counts those rows, so a phone that wrote its own stamp counted
-     per handset: the same account on a second phone started at nought.
-     Fired and not waited for -- the chapter is already here and the count
-     it moves is asked for again by the answer. */
-  /* WAITED FOR NOW, on the screen: the row turns until the server answers
-     and then says which answer it was (wldTakeOf() above). A refusal is
-     「接続できません」, the sentence every send that did not land already says,
-     and the row is a ↓ again because the server did not say otherwise. */
-  if(seen && seen.owner && typeof netTakePut==='function'){
-    WLD_TAKING[id+'|'+r]=1;
-    netTakePut(id, function(){ delete WLD_TAKING[id+'|'+r]; render(); },
-      function(){ delete WLD_TAKING[id+'|'+r]; toast(t('net.offline')); render(); });
-  }
-  /* Its name came down with the row and langSeenAdd() above has already
-     recorded it. It used to be written into the `lang` slice as well, so that
-     the index and the language could not drift; there is one answer now and
-     it is `language.name` (www/core.js § LNAME). */
+  WLD_TAKING[k]=-1;
   render();
+  netSlices(id, function(m){
+    var got=[], i, o;
+    /* EVERY SLICE THE CHAPTER IS, OR NONE OF THEM. The grammar is `phases`
+       and `gram2`, and half a chapter written down is worse than none. A
+       slice the owner never wrote is a language with nothing of that kind in
+       it, so an empty body is skipped rather than refusing the lot. */
+    for(i=0;i<kinds.length;i++){
+      o=m[kinds[i]];
+      if(o && o.body) got.push([kinds[i], o.body]);
+    }
+    if(!got.length){ delete WLD_TAKING[k]; render(); return; }
+    /* The index row FIRST, so a slice can never be in storage under a
+       language the index does not know. */
+    langSeenAdd(id, seen? seen.name : '', seen? seen.owner : '');
+    try{
+      for(i=0;i<got.length;i++) slWr(langKeyOf(id, got[i][0]), got[i][1]);
+    }catch(e){ delete WLD_TAKING[k]; render(); return; }
+    /* AND THAT THIS ACCOUNT TOOK IT, which is a row on the server and not a
+       stamp on this phone's index (www/net.js § netTakePut) -- the ceiling
+       counts those rows. The circle turns until the server answers, and a
+       refusal is 「接続できません」 with the row a ↓ again. */
+    WLD_TAKING[k]=-1;
+    wldMeterPaint(k);
+    if(!(seen && seen.owner)){ delete WLD_TAKING[k]; render(); return; }
+    netTakePut(id, function(){ delete WLD_TAKING[k]; render(); },
+      function(){ delete WLD_TAKING[k]; toast(t('net.offline')); render(); });
+  }, function(d, s, m){
+    delete WLD_TAKING[k];
+    render();
+    netPop(d, s, m, function(){ wldGet(lid, r); });
+  }, kinds, null, function(f){
+    WLD_TAKING[k]=f;
+    wldMeterPaint(k);
+  });
+}
+/* How far it has come, painted into the one row rather than drawing the page
+   again for every piece of the answer that arrives. */
+function wldMeterPaint(k){
+  var els=document.querySelectorAll('#app [data-meter]'), i;
+  for(i=0;i<els.length;i++)
+    if(els[i].getAttribute('data-meter')===k) els[i].innerHTML=iconMeter(WLD_TAKING[k]);
 }
 /* A heading that folds, and it is the only kind this page has now. It used to
    sit beside `.abts`, an <h2> -- a button and an h2 as siblings in one list
@@ -1832,16 +1851,28 @@ function abField(k, v){
 
    Asked once per language. Only a request that could not be MADE is asked
    again, which is the shape whoAsk() already takes. */
-var WLD_HAVE={}, WLD_ASKED={};
-function wldSeenPull(lid){
+/* WHAT THE PAGE IS DRAWN FROM, READ BY THE DOOR ONTO IT (`seen`, www/sns.js
+   § WHAT EACH PAGE READS): the row, and the slices the page itself draws --
+   the overview, the sounds, which way it is written, and the alphabet. Not a
+   chapter's: the dictionary, the grammar and the keyboard come down when ↓
+   is pressed (wldGet). 「その画面に描く分だけ読む」 OWNER 2026-09-23.
+
+   `null` from language_seen is a refusal and is not an empty language -- the
+   page says nothing rather than drawing a language with no words in it -- and
+   it is an answer, so it is kept (hasOwnProperty) and not asked again. */
+var WLD_PAGE_KINDS=['wld', 'snd', 'script', 'letters'];
+var WLD_HAVE={}, WLDS_HAVE={};
+function wldSeenAsk(lid, ok, bad){
+  var id=String(lid||''), left=2, fell=false;
+  function one(){ if(fell) return; left--; if(!left) ok(1); }
+  function no(d, s, m){ if(fell) return; fell=true; bad(d, s, m); }
+  if(!id){ ok(0); return; }
+  netLangSeen(id, function(L){ WLD_HAVE[id]=L || null; one(); }, no);
+  netSlices(id, function(m){ WLDS_HAVE[id]=m || {}; one(); }, no, WLD_PAGE_KINDS);
+}
+function wldSeenGot(lid){
   var id=String(lid||'');
-  if(!id || WLD_ASKED[id]) return;
-  WLD_ASKED[id]=1;
-  netLangSeen(id, function(L){
-    if(!L) return;
-    WLD_HAVE[id]=L;
-    render();
-  }, function(){ WLD_ASKED[id]=0; });
+  return Object.prototype.hasOwnProperty.call(WLD_HAVE, id) && !!WLDS_HAVE[id];
 }
 function wldSeen(lid){ return WLD_HAVE[String(lid||'')] || null; }
 /* THE ARGUMENT IS WHOSE. With none this is your own article, drawn from the
@@ -1850,17 +1881,13 @@ function wldSeen(lid){ return WLD_HAVE[String(lid||'')] || null; }
    door to this page was shut until now: it drew `world()`, `LETTERS` and
    `langName`, so pressing somebody else's language showed them mine.
 
-   What is drawn is what `language_seen` counts: the name, how many words, how
-   many letters, and the day it was opened. **The dictionary does not move** --
-   `slice_read` keeps `words` shut to everybody, and a number is not a word.
+   What is drawn is what `language_seen` counts and the slices the page
+   draws; the door read both (wldSeenAsk). **The dictionary does not move**
+   until ↓ is pressed, and a number is not a word.
    「言語ページ公開と単語や文字のdl可能は別だし」 */
 function vAbout(){
   var a=String(here().a||'');
   if(!a) return wldPage(false);
-  /* Both: the row says the language is published and gives it its name, and
-     the slices are what the page is made of. */
-  wldSeenPull(a);
-  wldSlicesPull(a);
   return wldPage(false, wldSeenOf(a), a);
 }
 /* Named for the world and not for the view. The checks find a screen by its
@@ -1901,22 +1928,6 @@ function abInkMount(){
     var l=ls[parseInt(c.getAttribute('data-i'), 10)];
     return l? inkGeo(l) : null;
   });
-}
-/* The slices of somebody else's language. `slice_read` opens exactly five of
-   them on a published one -- wld, script, snd, letters, kb -- and refuses the
-   dictionary and the grammar to everybody, which is why nothing here asks for
-   words and nothing here could show them.
-   「言語ページ公開と単語や文字のdl可能は別だし」 */
-var WLDS_HAVE={}, WLDS_ASKED={};
-function wldSlicesPull(lid){
-  var id=String(lid||'');
-  if(!id || WLDS_ASKED[id]) return;
-  WLDS_ASKED[id]=1;
-  netSlices(id, function(m){
-    if(!m) return;
-    WLDS_HAVE[id]=m;
-    render();
-  }, function(){ WLDS_ASKED[id]=0; });
 }
 /* One slice, read back into what it was. A slice holds exactly the string
    localStorage holds, so this is the same JSON.parse the app does on its own

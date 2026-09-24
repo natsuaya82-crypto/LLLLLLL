@@ -578,7 +578,14 @@ function setAuto(on){
   var dark=!!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
   setTheme(dark? 'dark' : 'light');
 }
-function setUi(l){ SET.ui=l; save(); netPrefsPut(); render(); }
+/* AND THE NOTICES ARE ASKED AGAIN, because what a notice SAYS is written in
+   the language the app is read in -- the answer and the record that it was
+   answered both go, and the question goes out on this press. */
+function setUi(l){
+  SET.ui=l; save(); netPrefsPut();
+  NOTES_HAVE=null; pullDrop('notif'); pullNeed('notif');
+  render();
+}
 /* Delete account: everything this phone holds, and the tokens with it.
 
    It used to empty the words, the sentences and the name and stop there, so

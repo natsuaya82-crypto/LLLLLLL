@@ -442,12 +442,12 @@ const R = await pg.evaluate(() => {
        different rows and, for its first moment, the waiting face -- a face
        with no answer in it yet is still a screen with words on it. */
     r === 'follows' ? [null, 'ing', 'ers',
-                       'ing:' + (meFollowing()[0] || 'iri'),
-                       'ers:' + (meFollowing()[0] || 'iri'),
+                       'ing:' + (folOf(false, meHandle())[0] || 'iri'),
+                       'ers:' + (folOf(false, meHandle())[0] || 'iri'),
                        'ers:nobody-at-all'] :
     /* The people one notice is about -- the handles off the row, joined by
        commas. `null` is the face nothing routes to and is a screen anyway. */
-    r === 'notfo' ? [null, meFollowing().slice(0, 2).join(',')] :
+    r === 'notfo' ? [null, folOf(false, meHandle()).slice(0, 2).join(',')] :
     [null];
   /* The sheets are opened, not routed. openWord needs a headword; the rest
      take nothing. */
@@ -619,14 +619,14 @@ const R = await pg.evaluate(() => {
      languages.
 
      It had never come up because no screen the mirror RENDERED had a person
-     on it: vFollows draws the waiting mark here (its list is behind
-     pullHad('mine')), and the timeline's rows are posts. The list of the
+     on it: vFollows draws the list the door read (www/shell.js § navLand),
+     and the timeline's rows are posts. The list of the
      people one notice names has nothing to wait for -- the handles arrive in
      the route's argument -- so it is the first screen to draw one.
 
      Read off the fixture rather than listed by name, so somebody seeded
      tomorrow is data tomorrow. */
-  meFollowing().concat(meFollowers(), [meHandle(), meName()]).forEach(learn);
+  folOf(false, meHandle()).concat(folOf(true, meHandle()), [meHandle(), meName()]).forEach(learn);
   try { postAll().forEach(p => { learn(p.hd); learn(p.who); }); } catch (e) {}
   (NOTES_HAVE || []).forEach(n => {
     learn(n.hd); learn(n.who);

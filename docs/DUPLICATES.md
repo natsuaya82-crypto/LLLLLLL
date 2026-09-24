@@ -222,7 +222,7 @@ npm run page
 (actor, blocked)。「in the one place that has to」と書いてあった注記も
 消えています。
 
-**三箇所目があり、畳んでいません。**`netWhoseId()` も
+**三箇所目があり、畳んでいません。**~~`netWhoseId()`~~ も
 `profile?select=id&handle=eq.` を送りますが、**失敗の意味が違います** ──
 あれは「要求が倒れた」と「その handle の行が無い」を同じ `bad` で答えます。
 `netFollow` は行が無いのを `ok()`（作る行が無いだけで、何も壊れていない）、
