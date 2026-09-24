@@ -292,6 +292,31 @@ const R = await pg.evaluate(async () => {
   }
   SCRIPT.sp = wasSp;
 
+  /* ---- 8. a letter nobody drew is its name, not a borrowed character ---
+     「描いていない字はローマ字」 OWNER 2026-09-23. The screens say so
+     (sfontHTML, ltLineChar); the card answered with `l.ch` first, so a letter
+     somebody had borrowed `α` for and never drawn came out `α` on the picture
+     and `a` everywhere else (r73 §2-9, measured). Asked of what cardPaint()
+     actually draws, for a word of this dictionary with one of its letters
+     made undrawn and borrowed. */
+  const bw = findWord('ke'), keSp = bw ? spOf(bw) : [];
+  const keL = keSp.length ? ltById(keSp[0].l) : null;
+  if (!keL) fails.push('"ke" has no first letter to take the shape off, so section 8 holds nothing');
+  else {
+    const was = JSON.stringify(keL);
+    delete keL.st; delete keL.sh; keL.ch = 'α';
+    const it = itemsFor('w', 'ke').items;
+    const borrowed = it.filter((u) => u.tx && u.tx.indexOf('α') >= 0).length;
+    const named = it.filter((u) => u.tx && u.tx.indexOf(String(ltName(keL))) >= 0).length;
+    if (borrowed || !named)
+      fails.push('a letter nobody drew is drawn on the card as the character it borrowed (' +
+                 borrowed + ' units carry α, ' + named + ' carry its name "' + ltName(keL) +
+                 '") -- undrawn is roman (OWNER 2026-09-23)');
+    const back = JSON.parse(was);
+    Object.keys(keL).forEach((k) => { delete keL[k]; });
+    Object.keys(back).forEach((k) => { keL[k] = back[k]; });
+  }
+
   /* ---- every shape ink can arrive in -------------------------------- */
   /* postInkOK() decides, once, for the timeline and the card both. What is
      asserted here is the boundary and NOT a repair: a post whose ink is
