@@ -366,18 +366,13 @@ create index if not exists language_take_uid_idx on language_take(uid);
 -- ask the owner's own switch (`slice_dl`) beside it: a language whose words
 -- were never offered does not start offering them by going private.
 --
--- `security definer` for the reason email_taken() is: `language_take` is
--- readable by `authenticated` and by nobody else, and a policy naming the
--- table would be evaluated for `anon` too -- who may read a published
--- language's letters, and whose ask would fail on the privilege rather than
--- on the policy. It answers about auth.uid() and about nothing else, so the
--- most it can tell anybody is what they themselves took; with nobody signed
--- in auth.uid() is null and it is false.
+-- `security definer`, and it answers about auth.uid() and about nothing
+-- else, so the most it can tell anybody is what they themselves took; with
+-- nobody signed in auth.uid() is null and it is false.
 create or replace function language_took(lang uuid) returns boolean
 language sql stable security definer set search_path = public as $$
   select exists (select 1 from language_take t
                   where t.uid = auth.uid() and t.language = lang) $$;
-grant execute on function language_took(uuid) to authenticated;
 
 -- ---- what a language is made of ---------------------------------------
 -- Eleven slices -- words, lines, lang, script, letters, notes, phases, talk,
@@ -1857,8 +1852,6 @@ begin
   if not is_member() then raise exception 'not a member'; end if;
   update plan set lapse_seen_at = now() where id = auth.uid();
 end $$;
-revoke all on function plan_lapse_seen() from public;
-grant execute on function plan_lapse_seen() to authenticated;
 
 -- purchase: yours to read and nobody's to write.
 --
@@ -2030,9 +2023,9 @@ create policy follow_drop on follow for delete using (is_member() and follower =
 -- against a plain PostgreSQL. A rule that can only be checked in production is
 -- a rule nobody has checked.
 --
--- Public to read. A post is world-readable (post_read above) and a picture on
--- one is part of the post; a signed URL per picture would be a round trip per
--- picture for something anybody can already fetch by reading the post.
+-- Read by whoever is signed in, which is who reads a post (post_read above):
+-- a picture on one is part of the post. The app reads a file with the
+-- person's own token on the request, not through a public URL.
 --
 -- The letters somebody drew on a photograph are INSIDE the jpeg before it ever
 -- gets here (tools/post-check counts the pixels). Nothing about that changes:
@@ -2065,14 +2058,19 @@ exception when insufficient_privilege then
 end
 $storage$;
 
-insert into storage.buckets (id, name, public)
-values ('post-media', 'post-media', true)
+-- Not public. What makes a bucket public or not is said once, for every
+-- bucket, in the block at the foot of this file (anon holds nothing), so it
+-- is not said here: a bucket is made with Storage's own default, which is
+-- closed, and one that was made open before is closed by that block.
+insert into storage.buckets (id, name)
+values ('post-media', 'post-media')
 on conflict (id) do nothing;
 
--- Anybody reads what is in this bucket, and only this bucket.
+-- Whoever is signed in reads what is in this bucket, and only this bucket --
+-- the same sentence `post_read` is under.
 drop policy if exists media_read on storage.objects;
 create policy media_read on storage.objects for select
-  using (bucket_id = 'post-media');
+  using (is_member() and bucket_id = 'post-media');
 -- You write under your own uuid and nowhere else.
 drop policy if exists media_make on storage.objects;
 create policy media_make on storage.objects for insert with check (
@@ -2226,7 +2224,6 @@ language sql stable as $$
    order by r.at desc
    limit lim
 $$;
-grant execute on function notices(int) to authenticated;
 
 -- ---------------------------------------------------------------------------
 -- What is going round
@@ -2406,7 +2403,6 @@ language sql stable as $$
    order by ((k.pts + a.pts) * feed_weight(v.author)) desc, v.created_at desc
    limit lim offset off
 $$;
-grant execute on function feed_hot(int, int) to authenticated;
 
 -- THE PEOPLE YOU FOLLOW, AND WHAT THEY PASSED ON.
 --
@@ -2476,7 +2472,6 @@ language sql stable as $$
    order by z.at_key desc
    limit lim
 $$;
-grant execute on function feed_fo(int, timestamptz) to authenticated;
 
 -- ---------------------------------------------------------------------------
 -- Leaving
@@ -2499,8 +2494,6 @@ begin
   if me is null then raise exception 'not signed in'; end if;
   delete from auth.users where id = me;
 end $$;
-revoke all on function account_delete() from public;
-grant execute on function account_delete() to authenticated;
 
 -- ---------------------------------------------------------------------------
 -- Whether an address already has an account
@@ -2534,8 +2527,6 @@ language sql stable security definer set search_path = public as $$
      where lower(email) = lower(btrim(p))
   );
 $$;
-revoke all on function email_taken(text) from public;
-grant execute on function email_taken(text) to authenticated;
 
 -- ---------------------------------------------------------------------------
 -- Answering a report
@@ -2555,8 +2546,6 @@ begin
   if not is_staff() then raise exception 'not staff'; end if;
   update post set hidden_at = now(), hidden_why = reason where id = p;
 end $$;
-revoke all on function post_hide(uuid, text) from public;
-grant execute on function post_hide(uuid, text) to authenticated;
 
 -- The other direction, which is why hiding is not deleting.
 create or replace function post_show(p uuid)
@@ -2566,8 +2555,6 @@ begin
   if not is_staff() then raise exception 'not staff'; end if;
   update post set hidden_at = null, hidden_why = null where id = p;
 end $$;
-revoke all on function post_show(uuid) from public;
-grant execute on function post_show(uuid) to authenticated;
 
 -- And the third answer, which is that there was nothing wrong.
 -- 「通報で問題なかったらその通報が消せるようにしてほしい」 OWNER 2026-09-05.
@@ -2587,8 +2574,6 @@ begin
   if not is_staff() then raise exception 'not staff'; end if;
   delete from report where id = r;
 end $$;
-revoke all on function report_drop(bigint) from public;
-grant execute on function report_drop(bigint) to authenticated;
 
 -- And the same for something somebody wrote in. 「運営は消せるように。」 OWNER
 -- 2026-09-22, said about exactly this and nothing else.
@@ -2607,8 +2592,6 @@ begin
   if not is_staff() then raise exception 'not staff'; end if;
   delete from feedback where id = f;
 end $$;
-revoke all on function feedback_drop(bigint) from public;
-grant execute on function feedback_drop(bigint) to authenticated;
 
 -- Ejecting somebody, which is the other half of answering a report and is the
 -- half App Store guideline 1.2 asks for by name. Taking the post down leaves
@@ -2628,8 +2611,6 @@ begin
   if p = auth.uid() then raise exception 'not yourself'; end if;
   update profile set banned_at = now(), banned_why = reason where id = p;
 end $$;
-revoke all on function account_ban(uuid, text) from public;
-grant execute on function account_ban(uuid, text) to authenticated;
 
 create or replace function account_unban(p uuid)
 returns void
@@ -2638,8 +2619,6 @@ begin
   if not is_staff() then raise exception 'not staff'; end if;
   update profile set banned_at = null, banned_why = null where id = p;
 end $$;
-revoke all on function account_unban(uuid) from public;
-grant execute on function account_unban(uuid) to authenticated;
 
 -- ---------------------------------------------------------------------------
 -- How many of everything there is
@@ -2685,8 +2664,6 @@ begin
   ) into n;
   return n;
 end $$;
-revoke all on function admin_counts() from public;
-grant execute on function admin_counts() to authenticated;
 
 -- ---------------------------------------------------------------------------
 -- Putting somebody's language back
@@ -2727,8 +2704,6 @@ begin
   ) into out;
   return out;
 end $$;
-revoke all on function admin_hist(text) from public;
-grant execute on function admin_hist(text) to authenticated;
 
 -- AND PUTTING ONE BACK IS AN UPDATE, WHICH IS WHY THE UNDO IS FREE. The write
 -- below goes through the same slice_hist_before trigger as any other, so what
@@ -2756,8 +2731,6 @@ begin
          values (admin_restore.language, admin_restore.kind, b, 1, now());
   end if;
 end $$;
-revoke all on function admin_restore(uuid, text, timestamptz) from public;
-grant execute on function admin_restore(uuid, text, timestamptz) to authenticated;
 
 -- ---------------------------------------------------------------------------
 -- The first one, and everybody after
@@ -2962,8 +2935,6 @@ begin
   update profile set staff = true where lower(handle) = lower(h);
   if not found then raise exception 'no such handle'; end if;
 end $$;
-revoke all on function staff_add(text) from public;
-grant execute on function staff_add(text) to authenticated;
 
 -- `and handle <> 'lingua'` is the whole of "the one above staff cannot be
 -- taken off it". It is the one failure here that cannot be undone from inside
@@ -2976,8 +2947,6 @@ begin
   if not is_admin() then raise exception 'not admin'; end if;
   update profile set staff = false where handle = h and h <> 'lingua';
 end $$;
-revoke all on function staff_drop(text) from public;
-grant execute on function staff_drop(text) to authenticated;
 
 -- ---------------------------------------------------------------------------
 -- Everybody who starts now starts out following @lingua
@@ -3057,7 +3026,7 @@ create trigger profile_follows after insert on profile
 -- It is not a preference any more either: the switches that say which
 -- notices reach a phone are fields of this column (2026-09-22), and a switch
 -- that cannot be written is a switch that is always on.
-revoke update on profile from anon, authenticated;
+revoke update on profile from authenticated;
 grant  update (handle, display, av, bio, link, loc, prefs, ed) on profile to authenticated;
 
 -- And the same sentence about INSERT, which is not the same statement.
@@ -3081,7 +3050,7 @@ grant  update (handle, display, av, bio, link, loc, prefs, ed) on profile to aut
 --
 -- `handle` IS in the UPDATE grant, and with is_admin() reading the handle
 -- that is the road somebody would take. profile_rename() closes it.
-revoke insert on profile from anon, authenticated;
+revoke insert on profile from authenticated;
 grant  insert (id, handle, display, av, bio, link, loc) on profile to authenticated;
 
 -- ---------------------------------------------------------------------------
@@ -3098,7 +3067,7 @@ grant  insert (id, handle, display, av, bio, link, loc) on profile to authentica
 -- quietly taking a policy down with it, so if this line ever errors it is
 -- telling the truth -- something is still standing on it.
 drop function if exists has_account();
-revoke update on post from anon, authenticated;
+revoke update on post from authenticated;
 grant  update (body, language, prompt, reply_to) on post to authenticated;
 
 -- And INSERT, for the same reason as profile above. The comment over
@@ -3114,7 +3083,7 @@ grant  update (body, language, prompt, reply_to) on post to authenticated;
 -- (id, author, body, prompt, reply_to) plus `language`, which the update line
 -- above already calls the author's. created_at is left out on purpose: it
 -- defaults to now() and a client that could name it could date a post.
-revoke insert on post from anon, authenticated;
+revoke insert on post from authenticated;
 grant  insert (id, author, language, body, prompt, reply_to) on post to authenticated;
 
 -- ---------------------------------------------------------------------------
@@ -3390,21 +3359,12 @@ end
 $w$;
 
 -- A PUBLIC BUCKET IS A URL THAT NEEDS NOTHING. No policy under it is ever
--- consulted: the object is served to whoever has the link, and the link is in
--- every post. `post-media` has been public since the day it was made, which
--- means every photograph and every recording anybody put up has been readable
--- by anybody at all.
---
--- Every bucket and not this one by name -- the cover is the mechanism.
+-- consulted: the object is served to whoever has the link. So no bucket is
+-- public -- every bucket and not one by name, because the cover is the
+-- mechanism, and a bucket made open on a server before this line (as
+-- `post-media` was until 2026-09-22) is closed by it.
 update storage.buckets set public = false where public;
 
--- And the policy over the files asks who you are, the way the other two
--- already did. `using (bucket_id = 'post-media')` was every person alive;
--- this is every person signed in, which is the same sentence `post_read` is
--- under.
-drop policy if exists media_read on storage.objects;
-create policy media_read on storage.objects for select
-  using (is_member() and bucket_id = 'post-media');
 
 -- THE ONE NAME THAT STAYS OPEN, and it is the owner's.
 -- 「判断だけどこれは例外で」 OWNER DECISION 2026-09-22.
