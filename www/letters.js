@@ -728,14 +728,14 @@ function ltStart(){
      planTook() (www/core.js) calls this again the moment the answer lands, so
      nothing is lost by waiting -- it is the same call at the moment the fact
      it needs becomes true, the shape langOwnGot() has for a language's owner.
-     Above ltJoinSlots() as well: that writes too. */
-  if(!planKnown()) return;
+     Above ltJoinSlots() as well: that writes too. (www/core.js § has) */
+  var ok=can('letters');
+  if(!planSaid(ok)) return;
   /* An alphabet that doubled before the ids were steady, put back to one of
      each. Above the plan, because a paid alphabet doubled the same way and
      the free plan is not what this is about. */
   ltJoinSlots();
-  if(can('letters')) return;
-  ltSlotsFill();
+  if(planNo(ok)) ltSlotsFill();
 }
 /* What this letter reads, spelled the way a person would write it. One word
    per unit, separated by spaces, because a letter may read more than one
@@ -1084,7 +1084,10 @@ function ltToDigit(id, v){
    refusal leaves the letter exactly as it was. With no second argument it
    reads the letter, which is what the call at the end of ltSetRoman does. */
 function ltFreeSlot(l, nm0){
-  if(can('letters')) return null;
+  /* A slot is the free plan's, and a name nobody has answered the plan for
+     takes nobody's row (www/core.js § has): measured, a Pro letter renamed to
+     a slot's name before verify-plan answered was spliced out of LETTERS. */
+  if(!planNo(can('letters'))) return null;
   var nm=String((nm0===undefined? (l&&l.ab) : nm0)||'').toLowerCase(), i, s;
   if(!nm) return null;
   for(i=0;i<LETTERS.length;i++){

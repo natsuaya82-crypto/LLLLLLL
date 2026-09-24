@@ -427,14 +427,14 @@ function stAll(){
 
      The stages the book always has are not this: they are what a free grammar
      IS, and they stay. */
-  if(can('gram'))
+  if(!planNo(can('gram')))
     for(i=0;i<STG.extra.length;i++) out.push({id:STG.extra[i].id, slots:STG.extra[i].slots||[],
                                              pos:'x', own:STG.extra[i]});
   return out;
 }
 /* How many are not on screen. The foot of the list says so, the same way the
    dictionary and the alphabet do. */
-function stHidden(){ return can('gram')? 0 : (STG.extra? STG.extra.length : 0); }
+function stHidden(){ return planNo(can('gram'))? (STG.extra? STG.extra.length : 0) : 0; }
 /* Every argument the `gram` route takes -- the stages, and the chapters of
    the chapter that is being rebuilt. Both walks ask THIS rather than keeping
    a list of their own: tools/act-check.mjs's walkArg and tools/i18n-check.mjs's

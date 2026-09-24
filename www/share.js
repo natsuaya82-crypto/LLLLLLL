@@ -347,7 +347,7 @@ function shareConv(t){
    shipped the same face with both. */
 function shareRoman(){
   var w=langWsysOf(langId);
-  if(!can('wsys')) return false;
+  if(planNo(can('wsys'))) return false;
   if(WSYS.indexOf(w)<0) return false;
   return w==='syll' || w==='abugida' || w==='logo';
 }
@@ -470,13 +470,14 @@ function shareSig(){
      reads kbFixed() and paid reads KB, so a plan nobody has answered for
      signed the FREE QWERTY and handed it over on every launch with no
      signal (docs/scope/r73-audit.md § 2-3, measured). */
-  if(!planKnown()) return null;
+  var kb=can('kb');
+  if(!planSaid(kb)) return null;
   /* The base is in here and the digits are not, because a digit IS a letter
      and scriptSig() already walks every one of them -- drawing one, naming
      one or giving one a value all move it. What it cannot see is the base
      going 12 -> 10 with every digit already drawn: no letter changes, and
      the widget would go on counting in twelve. */
-  return who+'|'+scriptSig()+'|'+langId+'|'+(can('kb')? 'p':'f')+'|'+
+  return who+'|'+scriptSig()+'|'+langId+'|'+(kb? 'p':'f')+'|'+
          (kbRomOn()? 'm':'-')+'|'+numBase()+'|'+JSON.stringify(KB);
 }
 /* ---- what the widgets read ---------------------------------------------

@@ -381,13 +381,23 @@ function snsSetFil(k){
    filling it from AdMob is waiting on the owner's choice
    (docs/scope/r55-ads.md).
 
-   can('noads') is the one place that decides whether there are places at all,
+   snsAdsOff() is the one place that decides whether there are places at all,
    and it is asked twice for one reason: a pro account is not asked for
    promotions it will never be shown, and one that has just become pro does
-   not go on seeing the list it was handed before. */
+   not go on seeing the list it was handed before.
+
+   AND NONE WHILE NOBODY HAS SAID WHAT THIS ACCOUNT PAYS. Places are drawn
+   only on an ANSWER that the account lacks `noads` (planNo, www/core.js
+   § has). They were drawn on 「nobody has asked」 too, so somebody on Pro
+   with no answer yet was shown ads -- and AdMob's start asks App Tracking
+   Transparency, which iOS lets an app ask ONCE per install
+   (docs/scope/r63-audit.md § 0-3). Whether a free account with no answer
+   yet should see them is the owner's; this leans to not asking, which is
+   the one of the two that cannot be undone the other way. */
 var PROMO=[], PROMO_EVERY=10;
+function snsAdsOff(){ return !planNo(can('noads')); }
 function snsPromoAsk(done){
-  if(can('noads')){ PROMO=[]; admDrop(); done(0); return; }
+  if(snsAdsOff()){ PROMO=[]; admDrop(); done(0); return; }
   admStart();
   netPromos(Math.ceil(NET_PAGE/PROMO_EVERY),
             function(ps){ PROMO=ps || []; done(1); },
@@ -398,7 +408,7 @@ function snsPromoAsk(done){
    drawn by postRow() -- it is an empty row the ad is laid over natively. */
 function snsWithPromo(list){
   var out=[], i, k=0;
-  if(can('noads')) return list;
+  if(snsAdsOff()) return list;
   for(i=0;i<list.length;i++){
     out.push(list[i]);
     if((i+1)%PROMO_EVERY===0){
@@ -425,7 +435,7 @@ function snsRow(x){ return (x && x.adm!==undefined)? admSlotHTML(x.adm) : postRo
    the way storeOn() is store.js's. In a browser ADM.on stays false and no
    place is drawn at all -- an empty row is not a thing to show anybody.
 
-   can('noads') is asked before EVERY call that could draw, and `place`
+   snsAdsOff() is asked before EVERY call that could draw, and `place`
    carries the answer to the native side, which takes every ad down on
    `on:false` -- the last line jpel's adsDisabled is, put where the drawing is. */
 var ADM={on:false, h:{}, asked:{}, raf:0, last:'', loop:false};
@@ -439,7 +449,7 @@ function admCall(m, o, ok, bad){
                                    function(e){ if(bad) bad(e); });
 }
 function admStart(){
-  if(ADM.on || !admPlug() || can('noads')) return;
+  if(ADM.on || !admPlug() || snsAdsOff()) return;
   ADM.on=true;
   admCall('start', {}, function(){ admSoon(); });
   admWatch();
@@ -465,7 +475,7 @@ function admPlace(){
   var els, out=[], i, r, k, sx, sy, cover, msg, same;
   ADM.raf=0;
   if(!ADM.on) return;
-  if(can('noads')){ admDrop(); return; }
+  if(snsAdsOff()){ admDrop(); return; }
   els=document.querySelectorAll('.padm');
   sx=window.pageXOffset || 0; sy=window.pageYOffset || 0;
   for(i=0;i<els.length;i++){
@@ -475,7 +485,7 @@ function admPlace(){
     if(ADM.h[k]) out.push({k:k, x:r.left+sx, y:r.top+sy, w:Math.round(r.width)});
   }
   cover=admCover();
-  msg={on:!can('noads'), slots:out, holes:cover.holes, over:cover.over};
+  msg={on:!snsAdsOff(), slots:out, holes:cover.holes, over:cover.over};
   same=JSON.stringify(msg);
   if(same===ADM.last) return;
   ADM.last=same;

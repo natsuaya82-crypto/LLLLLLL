@@ -3876,6 +3876,26 @@ export function halfDone(){
        const was = SET.myfont;
        delete SET.myfont; installScriptFont();
        window.route = 'words'; NAV = [{ r:'words' }];
-       const h = vWords(); SET.myfont = was; return h; }]
+       const h = vWords(); SET.myfont = was; return h; }],
+    /* NOBODY HAS SAID WHAT THIS ACCOUNT PAYS (www/core.js § has) -- a launch
+       with no signal, or before verify-plan lands. The dictionary is past the
+       free hundred, and it is NOT folded: 「a failed check means fewer
+       buttons, never fewer words」. Appended at the END so no index moves. */
+    ['the dictionary past a hundred, nobody has said what this account pays', () => {
+       const n = WORDS.length;
+       for (let i = n; i < 130; i++) WORDS.push({ id:'w_nk_' + i, hw:'nok' + i, mns:['a word'], pos:'n' });
+       planForget();
+       window.route = 'words'; NAV = [{ r:'words' }];
+       const h = vWords(); WORDS.length = n; planGot('free'); return h; }],
+    ['the plans, nobody has said what this account pays', () => {
+       planForget(); PLPICK = PLANS[PLANS.length - 1];
+       window.route = 'plans'; NAV = [{ r:'plans' }];
+       const h = vPlans(); PLPICK = null; planGot('free'); return h; }],
+    /* SOMEBODY'S PAGE BEFORE THE TWO COUNTS CAME DOWN -- not 0 and 0. */
+    ['a person\'s page, the counts not come down', () => {
+       const w = WHO_HAVE.iri, fo = w.fo, fr = w.fr;
+       delete w.fo; delete w.fr;
+       window.route = 'profile'; NAV = [{ r:'profile', a:'iri' }];
+       const h = vProfile(); w.fo = fo; w.fr = fr; return h; }]
   ];
 }

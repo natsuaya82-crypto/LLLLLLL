@@ -60,11 +60,21 @@ OWNER 2026-09-06。「だから端末でやるわけねえだろ」OWNER 2026-09
 
 **そして三つ目の状態が要る。**「まだ訊けていない」は `free` ではない。倒せば、
 それが失った日の形そのものになる ── 電波の無い起動で、払った人が無料の姿の
-アプリを開く。だから `planKnown()` が偽のあいだ：
+アプリを開く。だから `planKnown()` が偽のあいだ、`can()` と `has()` は
+**`null`** を返す（偽ではない）。偽のように働くので `if(can(x))` で描くドアは
+閉じたまま ── 「fewer buttons」の半分はそれだけで足りる。それ以外は `can()` の
+答えを次の四つのどれかに渡し、答えの無い時に何をするかはこの四つ
+（`www/core.js` § has）だけが決める（r68-state、2026-09-24。九か所がそれぞれ
+`planKnown()` を訊き直していた形を消した）：
 
-- `can()` と `has()` は偽（＝ボタンは出るが、押せば下記）
-- `upStop()` と `capStop()` は**「接続できません」**と言って止まる。値段の頁へ
-  送るのは、**訊けた上で足りないとき**だけ
+- 押す所は `upStop(ok)`：`null` は**「接続できません」**。値段の頁へ送るのは、
+  **訊けた上で足りないとき**だけ。天井（`capStop()` ほか）も `planFits()` の
+  答えを渡すのでここを通る
+- 形（一覧を畳む・固定の QWERTY・アルファベット・左から右・広告の場所）は
+  `planNo(ok)`：**訊けた上で「無い」ときだけ**無料の形。訊けていない間は
+  作った物の形のまま ── 一覧は Pro と同じ長さ
+- 書く所・端末の外へ渡す所は `planSaid(ok)`：答えが来るまで何もしない
+- 数（天井）は `planNum(free, plus, pro)`：`null`。畳まない、輪を描かない
 - `ltStart()`（`www/letters.js`）は**一字も書かない** ── 無料の 38 字を、
   払った人の字の上に書くのはこの状態です。答えが届いた瞬間に `planTook()` が
   同じ呼び出しを一度する。**`langNew()` から呼ぶ `ltSlotsFill()` は別で、
@@ -191,8 +201,9 @@ Forbidden, without exception:
 **"The plan is unknown" and "this person has no data" are not the same thing
 and must never share a branch.** A failed entitlement check means *fewer
 buttons*, never *fewer words*. A check that has not answered is not the free
-plan either — `planKnown()` is false, a ceiling says 「接続できません」, and
-every byte stays where it is (§ 三つ目の状態 above, 2026-09-11).
+plan either — `planKnown()` is false, `can()` and every ceiling answer `null`,
+a ceiling says 「接続できません」, no list is folded, and every byte stays where
+it is (§ 三つ目の状態 above, 2026-09-11; `state-check` holds it).
 
 **The buttons half was turned over by the owner on 2026-08-25, and the words
 half was not.** 「だいたい無料で使えないやつは表示させていいよ。課金させる

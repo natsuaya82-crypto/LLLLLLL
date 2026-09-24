@@ -118,7 +118,7 @@ function kbCount(){
 /* Whether there is room for another. The fixed QWERTY is the 1 in 1 + 3: it
    is one keyboard this person has, it is not stored, and it is not counted
    once per language -- so it is added here, once, to what they built. */
-function kbRoomKb(){ var n=kbCount(); return n!==null && 1 + n < kbCap(); }
+function kbRoomKb(){ var n=kbCount(); return planFits(n===null? null : 1+n, 1, kbCap()); }
 /* THE CEILING OF THIS CHAPTER, MET ON THE PRESS, and it is one place.
    「＋は右下につけて／プラスは5個目以降／無料は1個目以降／ポップが出るように」
    OWNER 2026-09-04.
@@ -1255,14 +1255,15 @@ function kbFree(){ return {nm:'', pat:'qwerty', lay:kbFixed().lay}; }
    HELP.kb's own comment quotes.
 
    `kbStored()` is NOT concatenated on free, and that is not tidiness: it is
-   what `kbOf()`'s own `!can('kb')` guard is for. Somebody who built three
+   what `kbOf()`'s own `planNo(can('kb'))` guard is for -- the free plan
+   ANSWERED, not a plan nobody has asked about. Somebody who built three
    keyboards on Plus and let the plan lapse types on the free QWERTY again --
    「plusから無料に戻った時にキーボードなくなるやろ」 -- so listing those three
    here would put a board on the screen that the phone is not typing on, one
    press from an editor this plan does not have. They are still in storage and
    nothing is deleted; they come back with the plan. */
 function kbBoards(){
-  if(!can('kb')) return [kbFree()];
+  if(planNo(can('kb'))) return [kbFree()];
   return [kbFree()].concat(kbStored());
 }
 /* Board 0 and no other. Everything that writes asks this first. */
@@ -1288,7 +1289,7 @@ function kbClamp(i, n){ return Math.max(0, Math.min(parseInt(i, 10)||0, n-1)); }
 function kbApplied(n){ return kbClamp(KB? KB.at : 0, n); }
 function kbOf(){
   var b=kbBoards();
-  if(!can('kb') || !b.length) return kbFixed();
+  if(planNo(can('kb')) || !b.length) return kbFixed();
   return b[kbApplied(b.length)];
 }
 /* And the one on the SCREEN, which is a different question the moment there
@@ -1296,7 +1297,7 @@ function kbOf(){
    other. */
 function kbBoard(){
   var b=kbBoards();
-  if(!can('kb') || !b.length) return kbFixed();
+  if(planNo(can('kb')) || !b.length) return kbFixed();
   return b[kbClamp(kbShow, b.length)];
 }
 /* Which layer is showing, which keyboard is showing, and which key is being
@@ -3994,7 +3995,7 @@ HELP.kb=function(){
       '<button class="btn" style="width:100%;margin-top:10px"' + DO('kbSettings') + '>'+
         esc(t('kb.sys.go'))+'</button>'+
       kbShot('kb-app.jpg'))+
-    (can('kb') ? '' :
+    (!planNo(can('kb')) ? '' :
       '<div class="grpsep"></div><div class="note">'+esc(t('kb.free.no'))+'</div>'+
       '<div class="note">'+esc(t('kb.free.up'))+'</div>'+
       '<button class="btn ghost" style="width:100%;margin:12px 0 4px"' + DO('go', ["plans"]) + '>'+

@@ -148,6 +148,9 @@ function wFilters(){
    the hundred the ceiling counts are the same hundred. */
 function wordsSeen(){
   var cap=wordCap(), out=[], i;
+  /* `null` is a plan nobody has answered for (www/core.js § planNum), and it
+     folds nothing: 「a failed check means fewer buttons, never fewer words」. */
+  if(cap===null) cap=Infinity;
   for(i=0;i<WORDS.length && out.length<cap;i++) if(!wIsForm(WORDS[i])) out.push(WORDS[i]);
   return out;
 }
