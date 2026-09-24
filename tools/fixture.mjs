@@ -2762,7 +2762,7 @@ export function halfDone(){
     ['an empty frame of the keyboard selected', () => { planGot('pro'); KB = null; kbShow = 0;
                                                   kbAdd('qwerty'); kbLay = 0;
                                                   kbHeadCol(0); kbCut();
-                                                  kbCellAdd(0, 0, 1);
+                                                  kbCellSel(0, 0, 1);
                                                   const h = vKb();
                                                   KBH = null; KB = null; kbShow = 0; kbLay = 0;
                                                   planGot('free'); return h; }],

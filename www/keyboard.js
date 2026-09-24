@@ -1699,7 +1699,7 @@ function kbDragMount(){
 function kbCellHTML(ri, at, span, ki){
   return '<button class="kbk'+(ki===undefined? '' : ' gap')+' cell'+
     (kbCellIs(ri, at)? ' pick':'')+'"' +
-    DO('kbCellAdd', [ri, at, span]) +
+    DO('kbCellSel', [ri, at, span]) +
     /* The paint, because a selection nobody can see is not one. There is no
        `.kbk.pick` rule in the stylesheet -- a chosen key is painted from
        here, inline -- so a frame that wore only the class was chosen and
@@ -1735,12 +1735,11 @@ function kbCellIs(ri, at){
    the sentence at the head of CLAUDE.md § 19 and is how the row's number and
    the column's letter have always worked.
 
-   Called with NO ARGUMENTS it is the button over the sheet, acting on the
-   selection the way kbCut(), kbAlign(), kbOpenSel() and kbJoinSel() do. Two
-   controls, one act, and the arguments say which is asking -- the same shape
-   as kbIns(down) and kbInsCol(right). */
-function kbCellAdd(ri, at, span){
-  if(ri===undefined){ kbCellPut(); return; }
+   The button over the sheet is kbCellPut() below, and it is its own name:
+   selecting a frame and putting a key into it are two acts, and one name
+   that did either according to whether it was handed arguments was one name
+   saying two things (docs/scope/r73-audit.md § 2-16). */
+function kbCellSel(ri, at, span){
   if(kbIsFree(kbShow)) return;
   if(!kbEdit()) return;
   KBH={k:'f', r:ri, at:at, span:span};
@@ -3308,7 +3307,7 @@ function kbDragTo(e){
      as eleven keys each a little narrower.
 
      The gate was already here and this was the one road not through it --
-     kbCellAdd(), which is the same act done with a press instead of a finger,
+     kbCellPut(), which is the same act done with a press instead of a finger,
      has always asked kbRoomIn(). So this asks the same sentence rather than a
      new one, and somebody carrying a key into a full row now finds what
      somebody pressing an empty cell in one has always found.
@@ -3770,7 +3769,7 @@ function kbToolHTML(){
             '<button class="kbtb"' + DO('kbIns', [true]) +
               ' aria-label="'+esc(t('kb.row.down'))+'">'+ICON_INDN+'</button>')
       : cell
-        ? '<button class="kbtb"' + DO('kbCellAdd') +
+        ? '<button class="kbtb"' + DO('kbCellPut') +
             (kbCellFits()? '' : ' disabled') +
             ' aria-label="'+esc(t('kb.cell.add'))+'">'+ICON_ADD+'</button>'
       : key

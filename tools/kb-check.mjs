@@ -1024,7 +1024,7 @@ const r = await pg.evaluate(({ s }) => {
   /* and the press writes nothing even reached round the button. `disabled`
      is what a finger meets; kbCellPut() is what a name still resolves to. */
   out.cellPut = (function (){
-    var b = document.querySelector('.kbtool [data-do="kbCellAdd"]');
+    var b = document.querySelector('.kbtool [data-do="kbCellPut"]');
     if (b) b.click();
     kbCellPut();
     return !!b;
@@ -1046,7 +1046,7 @@ const r = await pg.evaluate(({ s }) => {
   var c1 = (function (){
     var es = [].slice.call(document.querySelectorAll('.kb.kbsheet .kbrow .kbk.cell')), i;
     for (i = 0; i < es.length; i++)
-      if (es[i].getAttribute('data-do') === 'kbCellAdd' && spanEl(es[i]) === 2)
+      if (es[i].getAttribute('data-do') === 'kbCellSel' && spanEl(es[i]) === 2)
         return es[i];
     return null;
   }());
@@ -1058,7 +1058,7 @@ const r = await pg.evaluate(({ s }) => {
     .map(function (b){ return b.getAttribute('data-do'); }).join(' ');
   var wholeWas = kbLayer().rows[0].length, wholeUsed = kbUsed(kbLayer().rows[0]);
   (function (){
-    var b = document.querySelector('.kbtool [data-do="kbCellAdd"]');
+    var b = document.querySelector('.kbtool [data-do="kbCellPut"]');
     if (b) b.click();
   }());
   standKb();
@@ -1103,7 +1103,7 @@ const r = await pg.evaluate(({ s }) => {
     KBH = { k: 'r', i: 0 }; kbAlign('c'); standKb();
     out.alGaps = kbLayer().rows[0].filter(function (k){ return k.k === 'gap'; }).length;
     rw = sheetRows()[0];
-    fs = [].slice.call(rw.querySelectorAll('[data-do="kbCellAdd"]'));
+    fs = [].slice.call(rw.querySelectorAll('[data-do="kbCellSel"]'));
     out.alFrames = fs.map(function (e){ return spanOf(e); }).join(',');
     /* the first frame of a written-down gap names the key it stands for, so a
        carry can read the row back off the page */
@@ -1125,7 +1125,7 @@ const r = await pg.evaluate(({ s }) => {
     /* and the bin is DOWN on a frame -- there is nothing in it to take */
     out.alBin = [].slice.call(document.querySelectorAll('.kbtool [data-do="kbCut"]'))
       .every(function (b){ return b.disabled; });
-    (document.querySelector('.kbtool [data-do="kbCellAdd"]') || { click: function (){} }).click();
+    (document.querySelector('.kbtool [data-do="kbCellPut"]') || { click: function (){} }).click();
     standKb();
     out.alSame = kbUsed(kbLayer().rows[0]) === was;
     out.alKey = kbLayer().rows[0].filter(function (k){
@@ -2248,7 +2248,7 @@ const r = await pg.evaluate(({ s }) => {
      A key can be held and carried to another row. That road asked nothing
      about width, so it made a row of ELEVEN on a board of tens -- and rule 19
      is what forbids eleven ("ten keys are 32 each and eleven would be 29").
-     kbCellAdd(), the same act done by pressing an empty cell, has always
+     kbCellPut(), the same act done by pressing an empty cell, has always
      asked kbRoomIn(); this was the one road not through the gate.
 
      Nothing about it throws, and press cannot reach it: the carry is
@@ -2809,14 +2809,14 @@ const r = await pg.evaluate(({ s }) => {
       }).length;
     }
     for (i = 0; i < rw.children.length; i++)
-      if (rw.children[i].getAttribute('data-do') === 'kbCellAdd' &&
+      if (rw.children[i].getAttribute('data-do') === 'kbCellSel' &&
           spanOf(rw.children[i]) === 1){ el = rw.children[i]; break; }
     out.halfFrameFound = !!el;
     if (!el) return;
     was = kbUsed(kbLayer().rows[0]); wasHalf = halves();
     el.click(); standKb();
     out.halfFrameSel = !!(KBH && KBH.k === 'f' && KBH.span === 1);
-    put = document.querySelector('.kbtool [data-do="kbCellAdd"]');
+    put = document.querySelector('.kbtool [data-do="kbCellPut"]');
     out.halfFrameDown = !put || put.disabled;
     if (put) put.click();
     standKb();
@@ -2997,7 +2997,7 @@ const r = await pg.evaluate(({ s }) => {
        column letters, which is a div too, so nth-of-type names the row above
        the one meant. It was watched picking the wrong row. */
     rw = sheetRows()[last];
-    el = rw && rw.querySelector('[data-do="kbCellAdd"]');
+    el = rw && rw.querySelector('[data-do="kbCellSel"]');
     out.seqAddCell = !!el;
     /* two presses now, and they are two different controls: the frame is
        chosen on the sheet, and the key goes in from the band over it.
@@ -3005,7 +3005,7 @@ const r = await pg.evaluate(({ s }) => {
     if (el) el.click();
     standKb();
     out.seqCellSel = !!(KBH && KBH.k === 'f');
-    tapDo('kbCellAdd');
+    tapDo('kbCellPut');
     standKb();
     n = kbLayer().rows[last].length;
     out.seqAddGrew = n >= 2;
@@ -3547,7 +3547,7 @@ const SF = await sf.evaluate(({ s }) => {
      THAT frame -- not in a frame counted from somewhere else. */
   board(function (){ return [[lt('a'), lt('b'), lt('c'), lt('d')], [lt('e'), lt('f')]]; });
   KBH = null; kbHeadRow(1); kbAlign('r');
-  KBH = null; kbCellAdd(1, 4, 2); kbCellPut();
+  KBH = null; kbCellSel(1, 4, 2); kbCellPut();
   rr = kbLayer().rows[1];
   (function (){
     var x, hit = -1;
@@ -3846,7 +3846,7 @@ say(r.cellPut && r.cellTool === 'kbUndo',
 say(r.cellHalfKept,
     'so nothing goes in, reached by the button or by the name behind it ('
     + (r.cellSpan / 2) + ' of a key)');
-say(r.cellWholeSpan === 2 && r.cellWholeTool === 'kbUndo kbCellAdd',
+say(r.cellWholeSpan === 2 && r.cellWholeTool === 'kbUndo kbCellPut',
     'a row short by two keys leaves a WHOLE frame, and the + is up over it ['
     + r.cellWholeSpan + ' ' + r.cellWholeTool + ']');
 say(r.cellAdded && r.cellAddedW && r.cellNoHalf,

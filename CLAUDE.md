@@ -1591,9 +1591,9 @@ a carry that ate a half, which is why those are separate claims.
 「満杯だと追加できないから」 OWNER 2026-08-27. A key can be held and dragged
 into another row, and that road asked nothing about width — a board of ten-key
 rows became one of eleven, which is the 29pt this rule exists to forbid.
-`kbCellAdd()`, the same act done by pressing an empty cell rather than by
-carrying, had asked `kbRoomIn()` from the beginning: the gate was already
-there and one road went round it. Both ask `kbRoomFor()` now. **Only across
+`kbCellPut()`, the same act done by putting a key into an empty frame rather
+than by carrying, had asked from the beginning: the gate was already there and
+one road went round it. Both ask `kbRoomFor()` now. **Only across
 rows** — inside one row the width does not change, and asking there counts the
 key twice and freezes the ordering of every full row. What a refused carry
 must do is leave the key where it was: "no row is over ten" is also true of a
