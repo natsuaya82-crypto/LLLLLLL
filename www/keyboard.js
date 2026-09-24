@@ -1587,18 +1587,30 @@ function kbRoomIn(ri, w){
    the end of it, and nothing throws. Counting in halves says exactly the same
    layout in whole numbers. */
 function kbU(w){ return Math.max(1, Math.round((w||1)*2)); }
-/* How wide the sheet is, in those columns: the widest row. Derived every time
-   and stored nowhere -- a keyboard made before this existed has the same
-   answer as one made after, because the answer was always in the widths. */
-function kbCols(rows){
-  var n=0, w, i, j;
-  for(i=0;i<rows.length;i++){
-    w=0;
-    for(j=0;j<rows[i].length;j++) w+=kbU(rows[i][j].w);
-    if(w>n) n=w;
-  }
-  return n||2;
+/* ---- ONE COORDINATE ON THE SHEET --------------------------------------
+   The sheet is KB_COLS half columns, always (OWNER DECISION 2026-08-26, ten
+   fixed columns), and everything that points at a column -- the letter that
+   lights it, the bin that takes it, the + that puts one in, a frame a key
+   goes into, and the three alignments -- counts in THAT coordinate and no
+   other.
+
+   A row that comes to less than ten and writes no gaps down is drawn in the
+   MIDDLE of the sheet 「揃えて欲しい」, so its first key does not stand at
+   column 0. This is where it stands, and it is the only place that says so:
+   the drawing asks it, and so does every act on a column. It used to be said
+   once, in the drawing, while the bin, the + and the frame counted from the
+   row's own first key and the alignments measured against the widest row --
+   so a column's letter lit X and the bin took a key from another row
+   (docs/scope/r73-audit.md § 2-16, measured).
+
+   A row over ten (a layout from before the ceiling, left as it is) starts at
+   the edge. */
+function kbStart(row){
+  return Math.max(0, kbLead(KB_COLS, kbUsed(row)));
 }
+/* Where a key stands on the sheet: where its row starts, and the keys before
+   it in the row. */
+function kbSheetAt(row, ki){ return kbStart(row)+kbAtOf(row, ki); }
 /* Whether a key COVERS a column, which is the question a lit column asks of
    every key on the sheet. 「半キーにしよう。その代わり縦列の選択の時では
    選ばれない。例えばaが半きーのばあい。aを選択したら他の124列目だけ選ばれて
@@ -1775,8 +1787,9 @@ function kbCellPut(){
   w=(KBH.span||2)/2;
   k=kbKey('lt', '');
   k.w=w;
-  /* the gap this frame is drawn over, if there is one */
-  at=0;
+  /* the gap this frame is drawn over, if there is one -- counted on the
+     sheet, where the frame was drawn */
+  at=kbStart(row);
   for(i=0;i<row.length;i++){
     u=kbU(row[i].w);
     if(row[i].k==='gap' && !kbShadow(row[i]) &&
@@ -2278,7 +2291,7 @@ function kbInsAsk(){
    puts in, and what a pattern leaves for somebody to fill. Not a gap: a gap
    is space, and what was asked for is a key. */
 function kbColAt(row, half){
-  var at=0, i;
+  var at=kbStart(row), i;
   for(i=0;i<row.length;i++){
     if(at>=half) return i;
     at+=kbU(row[i].w);
@@ -2286,8 +2299,13 @@ function kbColAt(row, half){
   return row.length;
 }
 function kbColRows(ci){
-  var rows=kbLayer().rows, out=[], i;
-  for(i=0;i<rows.length;i++) if(kbUsed(rows[i])>ci*2) out.push(i);
+  var rows=kbLayer().rows, out=[], i, a;
+  for(i=0;i<rows.length;i++){
+    a=kbStart(rows[i]);
+    /* a row REACHES the column when a key of it stands in it -- the rows
+       kbDelCol() takes from, counted the same way */
+    if(a<ci*2+2 && a+kbUsed(rows[i])>ci*2) out.push(i);
+  }
   return out;
 }
 /* `n` columns, because a head selection is a RUN and four chosen means four
@@ -2301,16 +2319,20 @@ function kbRoomCol(ci, n){
   return true;
 }
 function kbInsCol(right){
-  var b=kbEdit(), rows, at, i, j, half, run=kbHeadRun(), n;
+  var b=kbEdit(), rows, at, i, j, k, half, run=kbHeadRun(), n;
   if(!b || !run || KBH.k!=='c') return;
   n=run.b-run.a+1;
   if(!kbRoomCol(run.a, n)) return;
   rows=kbLayer().rows;
   half=run.a*2 + (right? n*2 : 0);
   at=kbColRows(run.a);
-  for(i=0;i<at.length;i++)
-    for(j=0;j<n;j++)
-      rows[at[i]].splice(kbColAt(rows[at[i]], half), 0, kbKey('lt', ''));
+  /* where each row takes them is found ONCE, on the sheet as it was drawn:
+     a row grows with each key and is drawn afresh in the middle, so asking
+     again after the first would be asking about a row nobody pressed */
+  for(i=0;i<at.length;i++){
+    k=kbColAt(rows[at[i]], half);
+    for(j=0;j<n;j++) rows[at[i]].splice(k, 0, kbKey('lt', ''));
+  }
   /* and the selection follows the columns it was on, which have moved right
      by as many as went in on their left -- kbIns() does the same thing one
      axis over */
@@ -2356,14 +2378,15 @@ function kbCut(){
   }
   run=kbHeadRun();
   KBH=null;
-  /* From the far end back, so that taking one out does not move the ones
-     still to go. ONE save and therefore ONE step back for one press --
-     kbDelRow() and kbDelCol() write nothing themselves for exactly this
-     reason: four columns taken by one press is one thing that happened. */
-  for(i=run.b;i>=run.a;i--){
-    if(h.k==='r') kbDelRow(i);
-    else kbDelCol(i);
-  }
+  /* ONE save and therefore ONE step back for one press -- kbDelRow() and
+     kbDelCol() write nothing themselves for exactly this reason: four columns
+     taken by one press is one thing that happened. Rows from the far end
+     back, so that taking one out does not move the ones still to go; a run
+     of columns in one pass, because a row that loses a column is drawn
+     afresh in the middle of the sheet and a second pass would be counting
+     where the first one left it (kbStart). */
+  if(h.k==='r') for(i=run.b;i>=run.a;i--) kbDelRow(i);
+  else kbDelCol(run.a, run.b);
   kbSel=null;
   saveKb(); render();
 }
@@ -2412,14 +2435,14 @@ function kbAlign(how){
   saveKb(); render();
 }
 function kbAlign1(ri, how){
-  var rows=kbLayer().rows, row=rows[ri], tot, rem, lead, tail;
+  var row=kbLayer().rows[ri], tot, rem, lead, tail;
   if(!row) return;
   /* off with the old ends */
   while(row.length && row[0].k==='gap') row.shift();
   while(row.length && row[row.length-1].k==='gap') row.pop();
   if(!row.length) return;
   tot=kbUsed(row);
-  rem=kbCols(rows)-tot;
+  rem=KB_COLS-tot;
   if(rem>0){
     /* LEFT and RIGHT put the whole leftover at one end; CENTRE splits it
        between the two. None of the three rounds anything.
@@ -2482,7 +2505,7 @@ function kbHTML(sel, ro){
          「行と列はエクセルのように数字振ったんだから、小さくなったら意味ない
          やん」「エクセルは足しても小さくならんやろ」 OWNER DECISION 2026-08-26.
 
-         The grid used to be kbCols(lay.rows) wide, so the widest row exactly
+         The grid used to be as wide as this face's widest row, so that row exactly
          filled it -- and a column was therefore a different width on every
          board and got NARROWER every time anything was added. That is not a
          spreadsheet: a column in one is a fixed width and adding one makes
@@ -2509,9 +2532,7 @@ function kbHTML(sel, ro){
     at=0;
     /* the empty half of a short row, before the keys */
     if(!ro){
-      tot=0;
-      for(ki=0;ki<row.length;ki++) tot+=kbU(row[ki].w);
-      lead=kbLead(cols, tot);
+      lead=kbStart(row);
       while(at<lead){
         b=Math.min(2, lead-at);
         out+=kbCellHTML(ri, at, b);
@@ -3133,7 +3154,7 @@ function kbHeadPaint(){
     ri=parseInt(es[i].getAttribute('data-r'), 10);
     ki=parseInt(es[i].getAttribute('data-k'), 10);
     row=rows[ri]; key=row? row[ki] : null;
-    kbSelEl(es[i], !!key && kbColSel(kbAtOf(row, ki), key.w));
+    kbSelEl(es[i], !!key && kbColSel(kbSheetAt(row, ki), key.w));
   }
   band=g.querySelector('.kbband');
   run=kbHeadRun();
@@ -3570,13 +3591,16 @@ function kbDelRow(ri){
    says why. What is left is rounded back to keys, and anything that comes out
    at nothing goes.
 
-   The mutating half, writing nothing, for kbDelRow()'s reason above. */
-function kbDelCol(ci){
+   The mutating half, writing nothing, for kbDelRow()'s reason above. From
+   column `ca` to column `cb` (one column when `cb` is not given), counted on
+   the sheet where they were drawn when the bin was pressed. */
+function kbDelCol(ca, cb){
   var lay=kbEdit();
   if(!lay) return;
-  var rows=kbLayer().rows, a=(parseInt(ci, 10)||0)*2, b=a+2, i, j, row, at, u, cut, out;
+  var rows=kbLayer().rows, a=(parseInt(ca, 10)||0)*2, b, i, j, row, at, u, cut, out;
+  b=((cb===undefined)? a/2 : (parseInt(cb, 10)||0))*2+2;
   for(i=0;i<rows.length;i++){
-    row=rows[i]; at=0; out=[];
+    row=rows[i]; at=kbStart(row); out=[];
     for(j=0;j<row.length;j++){
       u=kbU(row[j].w);
       cut=Math.min(at+u, b)-Math.max(at, a);

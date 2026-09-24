@@ -56,6 +56,13 @@ const r = await pg.evaluate(({ s }) => {
     return row.map(function (k){ return k.k + ':' + k.v + ':' + (k.w || 1); }).join(' ');
   }
   function rows(){ return kbLayer().rows.map(say); }
+  /* the widest row, in half columns -- a measurement of the layout, which the
+     app no longer asks: the sheet is KB_COLS wide whatever its rows are */
+  function widest(rs){
+    var n = 0;
+    rs.forEach(function (r){ n = Math.max(n, kbUsed(r)); });
+    return n || 2;
+  }
   function units(row){
     var n = 0, x;
     for (x = 0; x < row.length; x++) n += (row[x].w || 1);
@@ -127,7 +134,7 @@ const r = await pg.evaluate(({ s }) => {
   fresh();
   var was = rows();
   out.rows = was.length;
-  out.cols = kbCols(kbLayer().rows);
+  out.cols = widest(kbLayer().rows);
   out.halves = kbLayer().rows.some(function (x){
     return x.some(function (k){ return (k.w || 1) === 0.5; });
   });
@@ -236,7 +243,7 @@ const r = await pg.evaluate(({ s }) => {
   out.shapes = [];
   KB_PATS.forEach(function (p){
     kbPatLay(p).forEach(function (face, fi){
-      var cols = kbCols(face.rows) / 2;
+      var cols = widest(face.rows) / 2;
       out.shapes.push({ pat: p + (fi ? ' face ' + (fi + 1) : ''), cols: cols,
         rows: face.rows.length, aspect: 1 / (cols * KB_ROWW),
         screen: (face.rows.length * kbRowH(KB_REF_W) + KB_BARS) / KB_REF_H });
@@ -684,7 +691,7 @@ const r = await pg.evaluate(({ s }) => {
      right up until somebody makes the count board-wide.
 
      What WAS wrong on page 2 is not the function, it is the size of the thing
-     you press: the sheet was kbCols(this face's rows) columns of a fixed
+     you press: the sheet was widest(this face's rows) columns of a fixed
      width, so a face of two keys was drawn a fifth of the phone across and
      the + with it -- 60px against 320 on page one. Which is the same line as
      「フリックなのに qwerty サイズ」, so it is claimed below with it. */
@@ -724,7 +731,7 @@ const r = await pg.evaluate(({ s }) => {
     const el = document.querySelector('.kb.kbsheet .kbk:not(.cell)');
     return el ? +el.getBoundingClientRect().width.toFixed(1) : -1;
   }
-  out.narrowCols = kbCols(kbLayer().rows);
+  out.narrowCols = widest(kbLayer().rows);
   out.narrowSheet = widthOf('.kb.kbsheet');
   /* the ten-key board with one row off it. The + that used to be measured
      alongside these was the dashed key under the bottom row, and it is gone
@@ -743,7 +750,7 @@ const r = await pg.evaluate(({ s }) => {
     var w = kbLayer().rows[0][0].w || 1;
     var sheet = document.querySelector('.kb.kbsheet');
     sizes[p] = { key: keyW(), sheet: widthOf('.kb.kbsheet'),
-                 cols: kbCols(kbLayer().rows), w: w,
+                 cols: widest(kbLayer().rows), w: w,
                  kc: sheet ? parseInt(sheet.style.getPropertyValue('--kc'), 10) : -1,
                  hdr: [].slice.call(document.querySelectorAll('.kbhdr .kbcl'))
                         .map(function (b){ return b.textContent; }).join(''),
@@ -864,7 +871,7 @@ const r = await pg.evaluate(({ s }) => {
   out.insetAt = insetAt;
   out.lit = [];
   var ci;
-  for (ci = 0; ci < kbCols(kbLayer().rows) / 2; ci++){
+  for (ci = 0; ci < widest(kbLayer().rows) / 2; ci++){
     KBH = { k: 'c', i: ci }; render();
     out.lit.push(litPerRow());
   }
@@ -3276,7 +3283,10 @@ const r = await pg.evaluate(({ s }) => {
     kbLayer().rows.forEach(function (r){ r.splice(0, 3); });
     saveKb(); standKb();
     var insW = kbLayer().rows.map(kbUsed);
-    pull('c', 0, 1);
+    /* columns e and f: a row cut short is drawn in the middle of the sheet
+       (kbStart), so it no longer stands in column a, and the + goes into the
+       rows that stand in the columns chosen -- the ones the bin takes from */
+    pull('c', 4, 5);
     kbInsCol(true); standKb();
     out.pullIns = kbLayer().rows.map(kbUsed).every(function (n, i){
       return n === insW[i] + 4 || n === insW[i];
@@ -3447,6 +3457,103 @@ const SF = await sf.evaluate(({ s }) => {
   var bSig = JSON.stringify(kbLayer().rows);
   kbUndo();
   out.crossSame = JSON.stringify(kbLayer().rows) === bSig;
+
+  /* ONE COORDINATE ON THE SHEET. For every column of every board below, the
+     keys that LIGHT when the column's letter is pressed are the keys the bin
+     then takes a whole key's width from -- counted over every row and every
+     column, on boards that are not ten across, so a short row is walked as
+     often as a full one. A key only half inside a column (the QWERTY's inset
+     row) gives up its half and does not light, which is CLAUDE.md rule 19's
+     own sentence, and is not counted either way. */
+  var boards = [
+    function (){ return [[lt('a'), lt('b'), lt('c'), lt('d'), lt('e'), lt('f'), lt('g'), lt('h'), lt('i'), lt('j')],
+                         [lt('X'), lt('Y')]]; },
+    function (){ return [[lt('a'), lt('b'), lt('c'), lt('d')], [lt('e'), lt('f', 2)], [lt('g')]]; },
+    function (){ return kbFixed().lay[0].rows.map(function (r){
+      return r.map(function (k, i){ var c = JSON.parse(JSON.stringify(k)); c.v = c.v || (c.k + i); return c; }); }); }
+  ];
+  var cols = 0, pairs = 0, miss = [];
+  boards.forEach(function (mk, bi){
+    board(mk);
+    var ci, lit, took, before, after, u0;
+    for (ci = 0; ci < KB_COLS / 2; ci++){
+      KBH = null; kbHeadCol(ci);
+      lit = [].slice.call(document.querySelectorAll('#kb .kbk.sel[data-r]')).map(function (el){
+        var rr = +el.getAttribute('data-r'), kk = +el.getAttribute('data-k');
+        return rr + ':' + kbLayer().rows[rr][kk].v;
+      }).sort();
+      /* the key OBJECTS, because kbDelCol() narrows a key in place and a
+         spelling can stand on two keys of one row */
+      before = kbLayer().rows.map(function (r){ return r.map(function (k){ return { k: k, v: k.v, u: kbU(k.w) }; }); });
+      u0 = KBU.u.length;
+      kbCut();
+      after = kbLayer().rows;
+      took = [];
+      before.forEach(function (r, ri){
+        r.forEach(function (o){
+          /* a gap is a frame and not a key: it is drawn as one and never lights */
+          if (o.k.k === 'gap') return;
+          var now = after[ri].indexOf(o.k) < 0 ? 0 : kbU(o.k.w);
+          if (now <= o.u - 2) took.push(ri + ':' + o.v);
+        });
+      });
+      took.sort();
+      cols++; pairs += lit.length;
+      if (lit.join() !== took.join()) miss.push('board ' + bi + ' col ' + kbCol(ci) + ' lit [' + lit + '] took [' + took + ']');
+      /* only a press that changed something left a step to take back */
+      if (KBU.u.length > u0) kbUndo();
+    }
+  });
+  out.oneCols = cols; out.oneLit = pairs; out.oneMiss = miss;
+
+  /* AND THE SAME ROWS, going in as coming out: a column put in goes into the
+     rows the bin would take it from. */
+  board(boards[0]);
+  var insMiss = [];
+  (function (){
+    var ci, a, b2, before, u0;
+    for (ci = 0; ci < KB_COLS / 2; ci++){
+      before = JSON.stringify(kbLayer().rows);
+      u0 = KBU.u.length;
+      KBH = null; kbHeadCol(ci); kbCut();
+      a = kbLayer().rows.map(function (r, i){ return JSON.stringify(r) !== JSON.stringify(JSON.parse(before)[i]); });
+      if (KBU.u.length > u0) kbUndo();
+      KBH = null; kbHeadCol(ci);
+      if (!kbInsRoom()){ continue; }
+      kbInsCol(false);
+      b2 = kbLayer().rows.map(function (r, i){ return JSON.stringify(r) !== JSON.stringify(JSON.parse(before)[i]); });
+      if (KBU.u.length > u0) kbUndo();
+      if (a.join() !== b2.join()) insMiss.push(kbCol(ci) + ' out [' + a + '] in [' + b2 + ']');
+    }
+  }());
+  out.insMiss = insMiss;
+
+  /* THE ENDS ARE THE SHEET'S ENDS. On a board whose widest row is four keys,
+     a row pushed right stands against the tenth column, and pushed left
+     against the first. */
+  board(function (){ return [[lt('a'), lt('b'), lt('c'), lt('d')], [lt('e'), lt('f')]]; });
+  KBH = null; kbHeadRow(1); kbAlign('r');
+  var rr = kbLayer().rows[1];
+  out.alR = kbStart(rr) + kbUsed(rr) === KB_COLS && rr[rr.length - 1].k !== 'gap';
+  out.alRSheet = [].slice.call(document.querySelectorAll('#kb .kbrow')[1].children)
+    .filter(function (el){ return el.classList.contains('kbk'); }).map(function (el){
+      return el.classList.contains('cell') ? '_' : 'K'; }).join('');
+  KBH = null; kbHeadRow(1); kbAlign('l');
+  rr = kbLayer().rows[1];
+  out.alL = kbStart(rr) === 0 && rr[0].k !== 'gap';
+
+  /* AND A FRAME A KEY IS PUT INTO IS WHERE THE KEY STANDS: a row pushed right
+     leaves frames on its left, and pressing one and the + puts the key in
+     THAT frame -- not in a frame counted from somewhere else. */
+  board(function (){ return [[lt('a'), lt('b'), lt('c'), lt('d')], [lt('e'), lt('f')]]; });
+  KBH = null; kbHeadRow(1); kbAlign('r');
+  KBH = null; kbCellAdd(1, 4, 2); kbCellPut();
+  rr = kbLayer().rows[1];
+  (function (){
+    var x, hit = -1;
+    for (x = 0; x < rr.length; x++) if (rr[x].k === 'lt' && rr[x].v === '') hit = kbStart(rr) + kbAtOf(rr, x);
+    out.cellAt = hit;
+  }());
   return out;
 }, { s: seed.toString() });
 await sf.close();
@@ -4464,6 +4571,18 @@ say(SF.leftBefore.h && SF.leftBefore.u > 0 && !SF.leftAfter.h && SF.leftAfter.u 
 say(SF.crossSame,
     'and another language’s board is another history — a step back pressed there puts '
     + 'nothing of the first language’s layout onto it');
+say(SF.oneMiss.length === 0,
+    'one coordinate on the sheet: over ' + SF.oneCols + ' columns of three boards that are '
+    + 'not all ten across, the keys a column lights are the keys the bin takes a whole key '
+    + 'from (' + SF.oneLit + ' lit)' + (SF.oneMiss.length ? ' — ' + SF.oneMiss.slice(0, 4).join('; ') : ''));
+say(SF.insMiss.length === 0,
+    'and a column put in goes into the rows the bin takes it from'
+    + (SF.insMiss.length ? ' — ' + SF.insMiss.slice(0, 4).join('; ') : ''));
+say(SF.alR && SF.alL,
+    'the ends are the sheet’s ends: on a board four keys wide a row pushed right stands '
+    + 'against the tenth column and pushed left against the first (' + SF.alRSheet + ')');
+say(SF.cellAt === 4,
+    'and a key put into a frame stands in that frame (column half ' + SF.cellAt + ', wanted 4)');
 
 if (bad.length){ console.error('\nkb-check: ' + bad.length + ' FAILED'); process.exit(1); }
 console.log('\nkb: pressing a row number or a column letter SELECTS it and lights it up;\n' +

@@ -2766,6 +2766,21 @@ export function halfDone(){
                                                   const h = vKb();
                                                   KBH = null; KB = null; kbShow = 0; kbLay = 0;
                                                   planGot('free'); return h; }],
+    /* A board narrower than the sheet, its short row pushed RIGHT and still
+       selected. Every board a pattern makes is ten across, so this is the
+       only face where the three alignments are measured against a sheet wider
+       than every row -- the right end is the tenth column, not the widest
+       row's (docs/scope/r73-audit.md § 2-16). */
+    ['a short row of a narrow keyboard pushed right', () => { planGot('pro'); KB = null; kbShow = 0;
+                                                  kbAdd('abc'); kbLay = 0;
+                                                  kbEdit().lay[0].rows = [
+                                                    [kbKey('lt', ''), kbKey('lt', ''), kbKey('lt', ''), kbKey('lt', '')],
+                                                    [kbKey('lt', ''), kbKey('lt', '')]];
+                                                  saveKb();
+                                                  kbHeadRow(1); kbAlign('r');
+                                                  const h = vKb();
+                                                  KBH = null; KB = null; kbShow = 0; kbLay = 0;
+                                                  planGot('free'); return h; }],
     /* and a column, which lights up and can be cut but has no slack to align */
     ['a column of the keyboard selected', () => { planGot('pro'); KB = null; kbShow = 0;
                                                   kbAdd('qwerty'); kbLay = 0; kbHeadCol(2);
