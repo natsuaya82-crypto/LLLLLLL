@@ -3294,7 +3294,7 @@ function kbDragTo(e){
   if(!KBD) return;
   var dx=p.clientX-KBD.x, dy=p.clientY-KBD.y;
   if(!KBD.on){
-    if(dx*dx+dy*dy>144){ clearTimeout(KBD.timer); KBD=null; }
+    if(dx*dx+dy*dy>HOLD_SLOP*HOLD_SLOP){ clearTimeout(KBD.timer); KBD=null; }
     return;
   }
   e.preventDefault();

@@ -3673,6 +3673,33 @@ for (const f of fs.readdirSync(path.join(dir, '..', 'www')).filter((n) => n.ends
   }
 }
 
+/* ---- A HOLD IS CALLED OFF AT ONE DISTANCE ---------------------------------
+   「キーを持って運ぶ長押しの判定」→「あわせて」（10px） OWNER 2026-09-24, and
+   the 10 is the owner's of 2026-09-01: HOLD_SLOP in www/shell.js. A key held on
+   the sheet was called off at 12px and a letter held in the alphabet at 12, so
+   one thumb resting the same way held on one screen and scrolled on another.
+   The surface is every hold under www/ that is called off by the finger moving
+   -- a squared distance, or a distance on each axis, compared with anything --
+   and each has to be compared with HOLD_SLOP. Counted off the source with the
+   comments out, so a hold written tomorrow is counted tomorrow.
+
+   HOLD_LEFT is the one hold r83-make could not reach: the language page's rows
+   (www/home.js, another session's file) are called off at 8px on each axis.
+   It is named rather than passed, and a name matching nothing fails -- an
+   exemption left standing after the line is fixed is permission. */
+const HOLD_LEFT = ['home.js wldDragMove'];
+const holdOff = [], holdAll = [], holdLeft = new Set();
+for (const f of fs.readdirSync(path.join(dir, '..', 'www')).filter((n) => n.endsWith('.js'))){
+  const src = fs.readFileSync(path.join(dir, '..', 'www', f), 'utf8').replace(/\/\*[\s\S]*?\*\//g, ' ');
+  const re = /(\w+)\*\1\s*\+\s*(\w+)\*\2\s*[<>]=?\s*([^;)]+)|Math\.abs\(p\.client[XY][^)]*\)\s*[<>]=?\s*([^|&;)]+)/g;
+  for (const m of src.matchAll(re)){
+    const fn = fnOf(src, m.index);
+    holdAll.push(f + ' ' + fn);
+    if (HOLD_LEFT.indexOf(f + ' ' + fn) !== -1){ holdLeft.add(f + ' ' + fn); continue; }
+    if (!/^\s*HOLD_SLOP\s*\*\s*HOLD_SLOP\s*$|^\s*HOLD_SLOP\s*$/.test(m[3] || m[4] || '')) holdOff.push(f + ' ' + fn + ' (' + (m[3] || m[4]).trim() + ')');
+  }
+}
+
 const bad = [];
 function say(ok, line){ console.log('  ' + (ok ? '' : 'FAILED  ') + line); if (!ok) bad.push(line); }
 
@@ -4684,6 +4711,12 @@ say(SF.alR && SF.alL,
     + 'against the tenth column and pushed left against the first (' + SF.alRSheet + ')');
 say(SF.cellAt === 4,
     'and a key put into a frame stands in that frame (column half ' + SF.cellAt + ', wanted 4)');
+say(holdAll.length > 0 && holdOff.length === 0 && holdLeft.size === HOLD_LEFT.length,
+    'a hold is called off at one distance: of ' + holdAll.length + ' holds under www/ that '
+    + 'a moving finger calls off, every one asks HOLD_SLOP'
+    + ' (' + HOLD_LEFT.length + ' named as not yet: ' + HOLD_LEFT.join(', ') + ')'
+    + (holdOff.length ? ' — ' + holdOff.join('; ') : '')
+    + (holdLeft.size < HOLD_LEFT.length ? ' — a name in HOLD_LEFT matches nothing any more: take it out' : ''));
 
 if (bad.length){ console.error('\nkb-check: ' + bad.length + ' FAILED'); process.exit(1); }
 console.log('\nkb: pressing a row number or a column letter SELECTS it and lights it up;\n' +

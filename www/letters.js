@@ -334,7 +334,7 @@ function ltDrag(e){
   if(!p) return;
   var dx=p.clientX-LTD.x, dy=p.clientY-LTD.y;
   if(!LTD.on){
-    if(dx*dx+dy*dy>144){ clearTimeout(LTD.timer); LTD=null; }
+    if(dx*dx+dy*dy>HOLD_SLOP*HOLD_SLOP){ clearTimeout(LTD.timer); LTD=null; }
     return;
   }
   /* the page does not scroll while a letter is being carried */

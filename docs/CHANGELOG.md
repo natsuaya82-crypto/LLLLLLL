@@ -15,6 +15,13 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### 2026-09-24 キーや字を持って運ぶ長押しは、指が 10px 動いたら取りやめ（r83-make E）
+
+**覆う一文**：指が動いたら取りやめになる長押しは、どれも `HOLD_SLOP`（`www/shell.js`、10px、2026-09-01 の決定）で測る。
+キーボードのキー（`kbDragTo()`）と字母の字（`ltDrag()`）は 12px だった。`kb-check` が `www/` の全部を数える。
+言語のページの並べ替え（`www/home.js` `wldDragMove()`、縦横 8px）は r83 の持ち物外で、`kb-check` の `HOLD_LEFT` に名指しで残した。
+保存される物は変わらない。
+
 ### 2026-09-24 プランをまだ訊けていない間は、無料の形にならない ── 一覧は畳まない、値段を言わない、広告を出さない（r68-state、r73 § 2-3）
 
 **覆う一文**：`PLAN` が null の間、プランを訊く所はどれも切らない・書かない・端末の外へ渡さない・値段を言わない。
