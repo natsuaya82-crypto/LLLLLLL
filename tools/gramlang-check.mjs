@@ -249,9 +249,22 @@ await pg.goto(`http://localhost:${PORT}/`);
    server behind this file -- the language is the one this phone holds. What
    is asked here is what a rule writes, not the reads, so a page's answers
    are taken as already in and a press lands where it always did. */
+/* AND WHOSE THE LANGUAGES ARE, SAID THE SAME WAY. The `owner.got` seeds above
+   are the picture a phone keeps, and the picture decides nothing
+   (www/core.js § langLocked, r60): a language is writable when the SERVER has
+   said, in this run of the app, that it is this account's -- LOWN, which
+   langOwnGot() writes when netLangsDown() answers. There is no server here,
+   so the answer is given after every reload exactly as the plan's is. Without
+   it every language is locked, save() writes nothing, and five claims read
+   「the grammar did not move」 for the wrong reason (measured 2026-09-24,
+   r79: langLocked() true, LOWN {}). */
 const boot = async () => {
   await pg.reload();
-  await pg.evaluate(() => { planTook('free'); window.pageWait = function (r, a, done) { done(true); }; });
+  await pg.evaluate(() => {
+    planTook('free');
+    window.pageWait = function (r, a, done) { done(true); };
+    Object.keys(LANGS).forEach(function (id) { langOwnGot(id, netUid()); });
+  });
 };
 
 /* ---- 1, 2, 3: it arrives, it copies, and nothing else moves ------------- */
