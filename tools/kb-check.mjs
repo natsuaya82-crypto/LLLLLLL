@@ -3614,6 +3614,26 @@ const SF = await sf.evaluate(({ s }) => {
     langMineGot();
     planGot('pro');
   }());
+
+  /* WITH NO ANSWER ABOUT THE PLAN, NOTHING LEAVES FOR THE PHONE'S KEYBOARD.
+     A Pro board handed over, then the plan forgotten the way a launch with no
+     signal has it, then a render: the bridge is asked for nothing, so what
+     the phone's keyboard is holding stays the person's own board rather than
+     the free QWERTY (docs/scope/r73-audit.md § 2-3, measured there). */
+  (function (){
+    var calls = [], realPlug = window.sharePlug;
+    window.sharePlug = function (){
+      return function (n, m, a){ calls.push(a); return { 'catch': function (){} }; };
+    };
+    planGot('pro');
+    KB = { v: KB_V, at: 1, kbs: [{ id: 'kPro_1', nm: 'pro', pat: 'abc', lay: [{ nm: '', rows: [[lt('p')]] }] }] };
+    SHARE.sent = null; render();
+    var n0 = calls.length;
+    planForget(); render();
+    out.shareUnasked = calls.length - n0;
+    planGot('pro'); render();
+    window.sharePlug = realPlug;
+  }());
   return out;
 }, { s: seed.toString() });
 await sf.close();
@@ -4662,6 +4682,9 @@ say(dupTwo.onServer <= dupOne.onServer && dupThree.onServer <= dupTwo.onServer,
     + [dupOne, dupTwo, dupThree].map((x) => x.onServer).join(', ') + ' rows');
 
 /* r74 — the surfaces */
+say(SF.shareUnasked === 0,
+    'with nobody having said what plan this is, a render hands the phone’s keyboard '
+    + 'nothing — the board already there stays (' + SF.shareUnasked + ' writes)');
 say(SF.k4Pic === 0,
     'the keyboard ceiling counts what came down from the server, not the picture kept for '
     + 'a launch with no signal (' + SF.k4Pic + ' counted from a picture of two)');

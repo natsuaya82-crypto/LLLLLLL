@@ -463,6 +463,14 @@ function shareSig(){
      (www/core.js § langForAcct), and that is nobody's to hand over either. */
   var who=(netSignedIn() && !LANG_WAIT)? String(SESS.uid||'') : '';
   if(!who) return '';
+  /* AND WITH NO ANSWER ABOUT THE PLAN THERE IS NOTHING TO SIGN, which is a
+     third answer and not the empty one. '' means 「hand over nothing」 and
+     empties the App Group; null means 「nothing is decided」, and what the
+     phone's keyboard is already holding stays exactly where it is. Free
+     reads kbFixed() and paid reads KB, so a plan nobody has answered for
+     signed the FREE QWERTY and handed it over on every launch with no
+     signal (docs/scope/r73-audit.md § 2-3, measured). */
+  if(!planKnown()) return null;
   /* The base is in here and the digits are not, because a digit IS a letter
      and scriptSig() already walks every one of them -- drawing one, naming
      one or giving one a value all move it. What it cannot see is the base
@@ -624,7 +632,7 @@ function sharePlug(){
    land", and the answer has to survive until something asks. */
 function sharePush(){
   var sig=shareSig(), give, p;
-  if(sig===SHARE.sent) return;
+  if(sig===null || sig===SHARE.sent) return;
   SHARE.sent=sig;
   /* ALL THREE, EVERY TIME, AND EMPTY IS EMPTY. LinguaShare.swift writes what
      it is handed and removes a file handed '' -- so with nobody signed in
