@@ -246,7 +246,8 @@ Plus < Pro` needs nobody told which is which.
 | `letters` add / name / delete | — | yes | yes |
 | `wsys` a writing system that is not an alphabet | — | yes | yes |
 | `snd` choose the sound, not the letter's own | — | yes | yes |
-| `kb` a keyboard of your own | 1, the fixed QWERTY | no ceiling | no ceiling |
+| keyboards you build, out of any character | no ceiling | no ceiling | no ceiling |
+| `kb` a letter you drew, on a keyboard you built | — | yes | yes |
 | `dl` a chapter of somebody else's language | — | **yes** | yes |
 | `edit` editing a post you have sent | — | **yes** | yes |
 | words | 100 | 1000 | no ceiling — `words` |
@@ -254,7 +255,7 @@ Plus < Pro` needs nobody told which is which.
 | how many DL'd languages | **0** | **1** | **3** |
 | `gram` `dir` `data` `file` `badge` | — | — | yes |
 
-Six of those ten rows are a DOOR, which is a name in `CAN`, and four are a
+Seven of those eleven rows are a DOOR, which is a name in `CAN`, and four are a
 NUMBER, which is a function beside `wordCap()`. The four numbers are the ones
 this file has had wrong most often, so they are written once, machine-read,
 in § The four numbers below.
@@ -277,11 +278,19 @@ when it answered nothing — a browser, a screenshot, or a product not yet made
 in App Store Connect. When that happens the screen says so, in `storeSay()`,
 between the prices and the button that buys.
 
-**`kb` is Plus's, and it has no number on Plus or Pro** — 「Plus ── キーボード
-無制限」「Pro ── キーボード無制限」 OWNER 2026-09-24 (r46). Free 1, the fixed
-QWERTY, **counted as a pool across languages** rather than per language: three
-languages were nine keyboards while ~~`KB_MAX`~~ was three per language, on a plan
-that sells three.
+**Anybody builds keyboards, and `kb` is the drawn letter on one** — 「既存の
+文字ならどこでも使えるでしょ？ユニコードあるわけだし」「それは無料でできる。
+キーボードカスタマイズアプリとしても使える」 OWNER 2026-09-25. On every plan a
+keyboard is built out of any character there is — a slot holds a character
+(`kbCh()` in `www/keyboard.js`) or a letter of the language — with no ceiling
+on how many (`kbCap()` is `Infinity` on all three; it is still a function of
+the plan because `null` is the answer while nobody has asked). What Plus adds
+is **the letter somebody drew** on a key of one: asked where a drawn letter is
+pressed onto a key (`kbLtTap()`) and where a pattern is laid (`kbPatLay()`,
+which lays the letters' NAMES as characters on free). The fixed QWERTY wears the
+drawn letters on every plan, because it is what the free plan is, and a key
+that already holds a drawn letter keeps it whatever the plan becomes — the
+refusal is on the press.
 
 **`dl` is Plus's, and its numbers are the owner's of 2026-09-02.**
 
@@ -422,15 +431,11 @@ buttons, never fewer words, and every byte where it was. The phone keeps the
 language as it was last loaded, read-only (`CLAUDE.md` rule 22); a server that
 stops answering is a person who can still look at their language.
 
-`CAN.kb` is the DOOR — may this person lay a keyboard out at all — and
-`kbCap()` in `core.js` is the number, beside `wordCap()` and for the same
-reason: a constant was one fact while there was one paid tier and is three
-facts now. `kbCount()` in `keyboard.js` is what it is compared against, and it
-reads every language rather than the open one. **The door and its number are
-one statement and did not land apart**: opening `can('kb')` while ~~`KB_MAX`~~
-still handed out three would have given Plus a number the owner never said.
-`plan-check` holds all seven claims, and three of them were watched failing
-with the bug put back.
+`CAN.kb` is the drawn letter on a keyboard somebody built, and `kbCap()` in
+`core.js` is how many keyboards — `Infinity` on every plan since 2026-09-25,
+beside `wordCap()` so that a number, the day one comes back, has one place.
+`kbCount()` in `keyboard.js` is what it is compared against, and it reads every
+language rather than the open one. `plan-check` and `kb-check` hold both.
 
 `CAN` in `www/core.js` names every capability, and `can('x')` is the only way
 to ask. `has()` names a *plan* and is `core.js`'s alone. `tools/dead-check.mjs`
@@ -442,7 +447,7 @@ a `can()` given anything but a literal, and a `has()` anywhere else.
 |---|---|---|
 | `letters` | plus | adding, naming and deleting a letter |
 | `wsys` | plus | a writing system that is not an alphabet |
-| `kb` | plus | a keyboard of your own instead of the fixed QWERTY |
+| `kb` | plus | a letter you drew, on a key of a keyboard you built. Building one is every plan's |
 | `dl` | plus | taking a chapter of somebody else's language. How many is `dlCap()` |
 | `snd` | plus | choosing a sound, rather than taking the letter's own |
 | `edit` | plus | editing a post you have already sent |
@@ -487,7 +492,6 @@ fails when this block and that file disagree.
 ```
 FREE_LIMIT   100     the free dictionary
 PLUS_LIMIT   1000    Plus's dictionary. Pro has none -- that is can('words')
-FREE_KB      1       the fixed QWERTY, counted as one
 FREE_LANGS   1       languages of your own. Plus is the same number
 PRO_LANGS    3
 PLUS_DL      1       languages downloaded, which is a second ceiling
@@ -591,9 +595,11 @@ somebody who is about to pay, so Studio is out until the seam has something
 behind it, and what it opened went with it.
 
 ```
-  free    draw your own letters. 100 words. One language
-  plus    build it yourself. 1000 words. Four keyboards. One download
-  pro     no ceiling on the words or the keyboards. Three languages,
+  free    draw your own letters. 100 words. One language. Keyboards of
+          any characters
+  plus    build it yourself. 1000 words. Your letters on your keyboards.
+          One download
+  pro     no ceiling on the words. Three languages,
           three downloads, the grammar, the direction, the file roads
 ```
 

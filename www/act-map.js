@@ -351,6 +351,7 @@ act('wipeAll', wipeAll);
 /* ---- typed into, or chosen ---------------------------------------------- */
 actIn('impSetRole', impSetRole);
 actIn('kbSetNm', kbSetNm);
+actIn('kbChPut', kbChPut);
 actIn('meSetName', meSetName);
 actIn('pkSetCh', pkSetCh);
 actIn('adminSet', adminSet);

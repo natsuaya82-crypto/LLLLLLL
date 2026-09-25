@@ -1976,7 +1976,7 @@ const r = await pg.evaluate(({ s }) => {
         press: document.querySelectorAll('#kb [data-do]').length
       };
     }
-    out.freeNoEditor = !can('kb');
+    kbShow = 0; out.freeNoEditor = kbEdit() === null;
     var withLt = face('0');
     out.freeRows = withLt.rows;
     out.freeKeys = withLt.keys;
@@ -2069,11 +2069,13 @@ const r = await pg.evaluate(({ s }) => {
        the press always pops. Pressed as a finger presses it, and answered
        yes the way a person does -- popYes() runs what the pop was handed and
        nothing is stubbed. */
+    /* 「キーボードは誰でも作れる」 OWNER 2026-09-25: there is no ceiling on
+       this plan any more, so the + opens the five patterns and asks nothing. */
     out.freeFabPressed = !!fab;
     if (fab) fab.click();
     out.freeFabAsked = popOn();
-    if (popOn()) popYes();
-    out.freeFabToPlans = here().r === 'plans';
+    out.freeFabToPats = here().r === 'form' && String(here().a || '').indexOf('kbnew') === 0 &&
+      document.querySelectorAll('[data-do="kbAdd"]').length === 5;
     /* AND NO BOARD WAS MADE. */
     out.freeFabWroteNothing = KB === null && kbStored().length === 0;
     out.freeBoardsStillOne = kbBoards().length === 1;
@@ -2133,17 +2135,53 @@ const r = await pg.evaluate(({ s }) => {
        is the person answering it, and nothing is stubbed: popYes() runs what
        upStop() handed popAsk(). Without this both claims read the screen from
        before the answer and fail on a door that is working. */
+    /* ---- AND ON THIS PLAN A BUILT KEYBOARD WEARS CHARACTERS -------------
+       「既存の文字ならどこでも使えるでしょ？ユニコードあるわけだし」「それは
+       無料でできる」、自分で描いた文字を置いたキーボードは Plus OWNER
+       2026-09-25. So the + goes through, the pattern is laid, and every letter
+       key on it carries the letter's NAME as a character (kbCh) and not the
+       letter -- asked of every slot, because one letter id left on is one
+       drawn letter on a free keyboard. */
     NAV = [{ r: 'kb' }];
     kbNew();
-    if (popOn()) popYes();
-    out.freeNewToPlans = here().r === 'plans';
-
+    out.freeNewNoPop = !popOn();
+    popOff();
     NAV = [{ r: 'kb' }];
     KB = null;
     kbAdd('qwerty');
+    out.freeAddMade = kbStored().length === 1;
+    var fk = kbStored().length ? kbStored()[0] : null, fIds = 0, fChs = 0, fA = '';
+    if (fk) fk.lay.forEach(function (f){ f.rows.forEach(function (row){ row.forEach(function (k){
+      if (k.k !== 'lt') return;
+      [k.v].concat(k.f || []).forEach(function (v){
+        if (!v) return;
+        if (kbCh(v)) fChs++; else if (ltById(v)) fIds++;
+      });
+      if (kbCh(k.v) === 'a') fA = k.v;
+    }); }); });
+    out.freeAddIds = fIds; out.freeAddChs = fChs; out.freeAddA = fA;
+    /* a drawn letter pressed onto a key of it is the plans screen, and the
+       key keeps what it had */
+    kbShow = 1; kbLay = 0;
+    var fr = 0, fi = 0;
+    while (fr < kbLayer().rows.length && kbLayer().rows[fr][fi].k !== 'lt') fr++;
+    var fWas = kbLayer().rows[fr][fi].v, fLt = LETTERS.filter(function (l){ return ltById(l.id); })[0];
+    kbLtTap(fr, fi, -1, fLt.id);
+    out.freeLtAsked = popOn();
     if (popOn()) popYes();
-    out.freeAddToPlans = here().r === 'plans';
-    out.freeAddWroteNothing = KB === null;
+    out.freeLtToPlans = here().r === 'plans';
+    out.freeLtKept = kbStored()[0].lay[0].rows[fr][fi].v === fWas;
+    popOff();
+    /* and a character typed goes on, and crosses to the phone as itself */
+    kbShow = 1; kbLay = 0;
+    kbChPut(fr, fi, -1, 'あ');
+    var fKey = kbStored()[0].lay[0].rows[fr][fi];
+    out.freeChOn = fKey.v === '=あ';
+    var fSh = shareKey(fKey);
+    out.freeChShare = !!fSh && fSh.t === 'あ' && fSh.k === 'lt' && !fSh.st;
+    kbChPut(fr, fi, -1, '');
+    out.freeChOff = kbStored()[0].lay[0].rows[fr][fi].v === '';
+    KB = null; kbShow = 0;
     popOff();
 
     /* ---- THE WAY INTO SETTINGS IS ON THE FIRST STEP AND ON THE THIRD -----
@@ -2242,6 +2280,10 @@ const r = await pg.evaluate(({ s }) => {
 
   fresh();
   planGot('free');
+  /* board 0 by name: the QWERTY every plan types on and the one that wears
+     the drawn letters on free. fresh() lands on a board it built, and on
+     free a built board wears characters (OWNER 2026-09-25). */
+  kbShow = 0; NAV = [{ r: 'kb', a: '0' }];
   var kl = LETTERS.filter(function(l){ return String(l.ab||'') === 'a'; })[0];
   out.midWays = [];
   [ ['straight',    [{pts:[[400,120],[400,680]]}]],
@@ -4360,7 +4402,7 @@ say(r.ltpSqOpened && r.ltpSqSheet && r.ltpSqPut,
 /* ---- the free plan's one keyboard: no editor, and it must be SEEN -------
    「無料のキーボードはqwartyに書いた文字が置き換わるだけなのにキーボード自体
    消えてる」 OWNER 2026-09-01, build #106 */
-say(r.freeNoEditor, 'the free plan has no keyboard editor');
+say(r.freeNoEditor, 'board 0, the QWERTY the free plan types on, has no editor');
 say(r.freeRows === 5 && r.freeKeys === 43,
     'and it has a keyboard all the same -- the QWERTY, drawn (' +
     r.freeRows + ' rows, ' + r.freeKeys + ' keys)');
@@ -4373,11 +4415,18 @@ say(r.freeBareRows > 0 && r.freeBareRows === r.freeRows &&
     + ' missing leaves its key wearing the roman character rather than taking'
     + ' the key away with it');
 say(r.freeNoUpsell, 'and no Upgrade stands under it -- the keyboard there is not for sale');
-say(r.freeNewToPlans,
-    'the upgrade is offered where a keyboard is ADDED: the door goes to the plans screen');
-say(r.freeAddToPlans && r.freeAddWroteNothing,
-    'and so does the act that writes one, which writes nothing on the way ['
-    + [r.freeAddToPlans, r.freeAddWroteNothing].join(' ') + ']');
+say(r.freeNewNoPop && r.freeAddMade,
+    'anybody may build a keyboard: the free + asks nothing and the pattern is made ['
+    + [r.freeNewNoPop, r.freeAddMade].join(' ') + ']');
+say(r.freeAddIds === 0 && r.freeAddChs > 0 && r.freeAddA === '=a',
+    'and on the free plan it wears the letters\' NAMES, never a drawn letter ('
+    + r.freeAddChs + ' characters, ' + r.freeAddIds + ' letters, a -> ' + r.freeAddA + ')');
+say(r.freeLtAsked && r.freeLtToPlans && r.freeLtKept,
+    'a drawn letter pressed onto a key of it is the plans screen, and the key keeps what it had ['
+    + [r.freeLtAsked, r.freeLtToPlans, r.freeLtKept].join(' ') + ']');
+say(r.freeChOn && r.freeChShare && r.freeChOff,
+    'a character typed goes onto the key, crosses to the phone as itself, and an empty box takes it off ['
+    + [r.freeChOn, r.freeChShare, r.freeChOff].join(' ') + ']');
 
 /* ---- and the chapter is a LIST on the free plan too ---------------------
    「キーボードの画面無料だと何で1個なの？一覧が並ばないの？無料も有料も同じ
@@ -4412,13 +4461,13 @@ say(r.freeFab && r.freeFabRight >= 0 && r.freeFabRight <= 40 &&
     r.freeFabBottom >= 0,
     'and it is at the bottom right (' + r.freeFabRight + 'px from the right, '
     + r.freeFabBottom + 'px up from the bottom)');
-say(r.freeFabPressed && r.freeFabAsked && r.freeFabToPlans,
-    'pressing it asks -- the ceiling is 1 and board 0 is already there -- and'
-    + ' the yes is the plans screen [' +
-    [r.freeFabPressed, r.freeFabAsked, r.freeFabToPlans].join(' ') + ']');
+say(r.freeFabPressed && !r.freeFabAsked && r.freeFabToPats,
+    'pressing it asks nothing -- anybody may build a keyboard -- and opens the'
+    + ' five patterns [' +
+    [r.freeFabPressed, r.freeFabAsked, r.freeFabToPats].join(' ') + ']');
 say(r.freeFabWroteNothing && r.freeBoardsStillOne,
-    'AND THE LANGUAGE STILL HOLDS ONE BOARD -- the pop is what the screen'
-    + ' says, not what KB has [' +
+    'AND THE LANGUAGE STILL HOLDS ONE BOARD -- opening the patterns is not'
+    + ' choosing one [' +
     [r.freeFabWroteNothing, r.freeBoardsStillOne].join(' ') + ']');
 
 /* ---- the paid list is the same list, and the + is the same + -------------

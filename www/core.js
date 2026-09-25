@@ -2147,21 +2147,28 @@ function postCap(){
   return planNum(POST_MAX, Infinity, Infinity);
 }
 /* How many keyboards this person may have, counting the fixed QWERTY as one
-   of them. Free 1 -- the QWERTY -- and no ceiling on Plus or Pro: 「Plus ──
-   キーボード無制限」「Pro ── キーボード無制限」 OWNER 2026-09-24 (r46,
-   docs/FEATURE_RULES.md), replacing 「1,1+3.無制限」 of 2026-08-23.
+   of them. No ceiling on any plan: 「既存の文字ならどこでも使えるでしょ？
+   ユニコードあるわけだし」「それは無料でできる。キーボードカスタマイズアプリと
+   しても使える」 OWNER 2026-09-25 -- anybody may build keyboards, as many as
+   they like, out of any character there is. Plus and Pro were already
+   Infinity (OWNER 2026-09-24); the free 1 went with this decision.
 
    **It is a pool across languages** -- kbCount() in www/keyboard.js counts
-   every language rather than the open one -- and on the one plan with a
-   number that number is the fixed QWERTY, which is counted once.
+   every language rather than the open one -- so the day a number comes back
+   it is one number here.
 
-   No capability is added for the ceiling. `CAN.kb` is the DOOR -- may this
-   person lay a keyboard out at all -- and it opens at plus; how many is a
-   number, and a capability that is really a number is a price with nothing
-   behind it. Infinity and not a big number, exactly as wordCap(). */
-var FREE_KB=1;
+   Still a function of the plan and not a constant, because `null` is the
+   answer while nobody has asked -- the + says 「接続できません」 then rather
+   than making a keyboard against a plan nobody has heard (§ planNum).
+
+   No constant for it: a ceiling nobody has is not a number, and a number
+   written down is one `tools/paid-check.mjs` holds against the price list.
+
+   No capability is added for the ceiling. `CAN.kb` below is a different
+   question -- may a letter somebody DREW go on a key of a keyboard they
+   built. */
 function kbCap(){
-  return planNum(FREE_KB, Infinity, Infinity);
+  return planNum(Infinity, Infinity, Infinity);
 }
 /* How many languages of their own this person may have. Free 1, Plus 1,
    Pro 3 -- OWNER DECISION 2026-08-23, restated 2026-08-25「言語数はプラスは1、
@@ -2779,11 +2786,14 @@ var CAN={
   file:    'pro',    /* a list brought in as a file rather than a paste */
   letters: 'plus',   /* adding, naming and deleting a letter */
   wsys:    'plus',   /* a writing system that is not an alphabet */
-  /* A keyboard of your own, laid out key by key, instead of the fixed QWERTY.
-     The DOOR only: how many is kbCap() above, and the two landed together on
-     purpose -- a door opened without its number would have handed plus the
-     three the old KB_MAX gave out, which is neither number the owner said.
-     「1,1+3.無制限って言わなかったっけ？」 */
+  /* A letter somebody DREW, on a key of a keyboard they built. 「自分で描いた
+     文字を置いたキーボード」は Plus OWNER 2026-09-25. Building a keyboard is
+     not asked here -- it is on every plan, out of any character there is
+     (kbChPut() in www/keyboard.js) -- and neither is the free QWERTY, which
+     wears the drawn letters on every plan because it is what the free plan IS.
+     It is asked where a drawn letter goes ONTO a key (kbLtTap()) and where a
+     pattern is laid (kbPatLay()), and nowhere else: a key that already holds
+     one keeps it whatever the plan becomes. */
   kb:      'plus',
   /* Taking a chapter of somebody else's language. 「plusからです」OWNER
      2026-09-02, which replaces 「Downloading a keyboard or an alphabet is

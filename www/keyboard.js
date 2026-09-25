@@ -144,7 +144,7 @@ function kbRoomKb(){ var n=kbCount(); return planFits(n===null? null : 1+n, 1, k
    popAsk() draws where the finger is and nothing behind it closes or moves,
    which is the shape 「全部1枚目みたいにポップ出して背景変えずに」 asks for. */
 function kbCapStop(){
-  return upStop(can('kb')) || upStop(kbRoomKb());
+  return upStop(kbRoomKb());
 }
 function kbRead(){
   KB=kbBoardsOf(slOpen('kb'));
@@ -414,6 +414,24 @@ function kbLaySig(b){ return JSON.stringify(b.lay); }
    count on the same order. */
 var KB_DIRS=['up', 'right', 'down', 'left'];
 function kbKey(k, v){ return {w:1, k:k, v:v||'', f:['','','','']}; }
+/* WHAT A SLOT HOLDS: a letter of the language, or a character.
+   「既存の文字ならどこでも使えるでしょ？ユニコードあるわけだし」 OWNER
+   2026-09-25 -- a key may type any character there is, on every plan, and a
+   letter somebody DREW is what Plus adds (can('kb'), www/core.js).
+
+   A slot -- `v`, or one of the four in `f` -- is a letter's id or a character
+   with KB_CH in front of it. A letter's id always begins with `l` (ltId() in
+   www/letters.js), so the two can never be read as each other; and a letter
+   that has since been deleted stays a dangling id, drawn `·` and handed over
+   as nothing, exactly as before -- it does not turn into its id typed out.
+
+   kbCh() is the one place that reads it and kbChSlot() the one that writes
+   it. Nothing new goes to the phone's keyboard: a character crosses as a face
+   carrying `t` and nothing else, which KeyBoardView.swift already draws and
+   types (shareKey() in www/share.js). */
+var KB_CH='=';
+function kbCh(v){ v=String(v||''); return v.charAt(0)===KB_CH? v.slice(1) : ''; }
+function kbChSlot(c){ c=String(c||''); return c? KB_CH+c : ''; }
 /* Nothing, taking up room. A row is laid out by dividing the width among the
    keys in it, so the only way to inset a row -- which is what the third row
    of every phone keyboard is -- is a key that is not a key. It draws nothing
@@ -774,11 +792,38 @@ function kbLinkFaces(lay){
   return lay;
 }
 function kbPatLay(pat){
-  if(pat==='qwerty') return kbLinkFaces(kbQwertyLay());
-  if(pat==='flick')  return kbLinkFaces(kbFlickLay());
-  if(pat==='chart')  return kbLinkFaces(kbChartLay());
-  if(pat==='abc')    return kbLinkFaces(kbAbcLay());
-  return kbLinkFaces(kbTapLay());
+  var lay;
+  if(pat==='qwerty') lay=kbQwertyLay();
+  else if(pat==='flick') lay=kbFlickLay();
+  else if(pat==='chart') lay=kbChartLay();
+  else if(pat==='abc')   lay=kbAbcLay();
+  else lay=kbTapLay();
+  lay=kbLinkFaces(lay);
+  /* ON THE FREE PLAN A PATTERN ARRIVES WEARING THE LETTERS' NAMES, as
+     characters. The drawn letter on a key of a keyboard somebody built is
+     Plus (can('kb'), OWNER 2026-09-25), and a pattern is the same five
+     arrangements on every plan -- so the pattern is laid once, here, and on
+     free each letter goes on as what it is called: `a` as `a`, a digit as its
+     digit. The same keyboard with the shapes taken off, rather than a second
+     set of five. A plan nobody has answered for lays the letters: nothing is
+     made then anyway (kbCapStop()), and the picture of a pattern is drawn. */
+  if(planNo(can('kb'))) kbLayPlain(lay);
+  return lay;
+}
+function kbLayPlain(lay){
+  var i, j, k, d, key;
+  for(i=0;i<lay.length;i++)
+    for(j=0;j<lay[i].rows.length;j++)
+      for(k=0;k<lay[i].rows[j].length;k++){
+        key=lay[i].rows[j][k];
+        if(key.k!=='lt') continue;
+        key.v=kbLtPlain(key.v);
+        delete key.t;
+        if(key.f) for(d=0;d<4;d++) key.f[d]=kbLtPlain(key.f[d]);
+      }
+}
+function kbLtPlain(v){
+  return (v && ltById(v))? kbChSlot(kbTyped(v)) : String(v||'');
 }
 /* A PATTERN ARRIVES WEARING THE LETTERS, and kbPatLay() above is the one
    place that puts them there.
@@ -1240,7 +1285,6 @@ function kbFree(){ return {nm:'', pat:'qwerty', lay:kbFixed().lay}; }
    press from an editor this plan does not have. They are still in storage and
    nothing is deleted; they come back with the plan. */
 function kbBoards(){
-  if(planNo(can('kb'))) return [kbFree()];
   return [kbFree()].concat(kbStored());
 }
 /* Board 0 and no other. Everything that writes asks this first. */
@@ -1266,7 +1310,6 @@ function kbClamp(i, n){ return Math.max(0, Math.min(parseInt(i, 10)||0, n-1)); }
 function kbApplied(n){ return kbClamp(KB? KB.at : 0, n); }
 function kbOf(){
   var b=kbBoards();
-  if(planNo(can('kb')) || !b.length) return kbFixed();
   return b[kbApplied(b.length)];
 }
 /* And the one on the SCREEN, which is a different question the moment there
@@ -1274,7 +1317,6 @@ function kbOf(){
    other. */
 function kbBoard(){
   var b=kbBoards();
-  if(planNo(can('kb')) || !b.length) return kbFixed();
   return b[kbClamp(kbShow, b.length)];
 }
 /* Which layer is showing, which keyboard is showing, and which key is being
@@ -1370,6 +1412,7 @@ function kbFace(key, src){
   if(key.k==='gap') return '';
   if(key.k==='lay') return kbLayFace(parseInt(key.v, 10)||0, src);
   if(key.k==='rom') return '<span class="kbl">'+esc(key.v)+'</span>';
+  if(kbCh(key.v)) return '<span class="kbl">'+esc(kbCh(key.v))+'</span>';
   var l=src? kbSrcLt(src, key.v) : ltById(key.v);
   if(!l) return '<span class="kbl">·</span>';
   /* midink: on a key the shape stands in the middle of the square rather
@@ -1422,7 +1465,8 @@ function kbFlicks(key, slots){
   if(!key || !key.f || key.k!=='lt') return '';
   for(i=0;i<4;i++){
     l=key.f[i]? ltById(key.f[i]) : null;
-    if(l) out+='<span class="kbf kbf'+KB_DIRS[i]+'">'+ltInk(l, esc(ltName(l)||'·'), 'midink')+'</span>';
+    if(kbCh(key.f[i])) out+='<span class="kbf kbf'+KB_DIRS[i]+'">'+esc(kbCh(key.f[i]))+'</span>';
+    else if(l) out+='<span class="kbf kbf'+KB_DIRS[i]+'">'+ltInk(l, esc(ltName(l)||'·'), 'midink')+'</span>';
     else if(slots) out+='<span class="kbf kbfx kbf'+KB_DIRS[i]+'">·</span>';
   }
   return out;
@@ -2876,7 +2920,7 @@ function vKb(){
               ? navDel(t('kb.sel.del'), 'kbSelDel')
               : '')+
            navDo(t('kb.sel.done'), 'kbSelOff', null, true))
-        : ((!can('kb') || langLocked())? ''
+        : ((kbBoards().length<2 || langLocked())? ''
             : navDo(t('kb.sel'), 'kbSelOn', null, true))))+
       /* AND NOT THE SWITCH. 「一覧の『キーに文字を表示』のスイッチを消す」
          OWNER 2026-09-06. kbSysHTML() is on every keyboard's own page, which
@@ -3982,12 +4026,7 @@ HELP.kb=function(){
     kbStepHTML(3, t('kb.step3'),
       '<button class="btn" style="width:100%;margin-top:10px"' + DO('kbSettings') + '>'+
         esc(t('kb.sys.go'))+'</button>'+
-      kbShot('kb-app.jpg'))+
-    (!planNo(can('kb')) ? '' :
-      '<div class="grpsep"></div><div class="note">'+esc(t('kb.free.no'))+'</div>'+
-      '<div class="note">'+esc(t('kb.free.up'))+'</div>'+
-      '<button class="btn ghost" style="width:100%;margin:12px 0 4px"' + DO('go', ["plans"]) + '>'+
-        esc(t('kb.up.go'))+'</button>')};
+      kbShot('kb-app.jpg'))};
 };
 /* What is left on the screen: the one line that is a setting rather than an
    explanation. Free has it too, and free is exactly the case it is for -- a
@@ -4282,6 +4321,7 @@ function kbKeyHTML(ri, ki){
    small only when there is a shape over it to be small under. */
 function kbSlotFace(lid){
   var l=lid? ltById(lid) : null, ink;
+  if(kbCh(lid)) return '<span class="kbl">'+esc(kbCh(lid))+'</span>';
   if(!l) return '<span class="kbsx">'+ICON_ADD+'</span>';
   ink=ltInk(l, '', 'midink');
   if(!ink) return '<span class="kbl">'+esc(ltName(l)||'·')+'</span>';
@@ -4296,7 +4336,7 @@ function kbSlotFace(lid){
 /* The square shows what is on the key, which is also what is purple under
    it: a letter pressed goes onto the key at once (kbLtTap). */
 function kbSlotBtn(cls, lid, ri, ki, dir, label){
-  return '<button class="kbe '+cls+(lid && ltById(lid)? '' : ' non')+'"' +
+  return '<button class="kbe '+cls+(lid && (ltById(lid) || kbCh(lid))? '' : ' non')+'"' +
     DO('kbSlot', [ri, ki, dir]) +
     ' aria-label="'+esc(label)+'">'+kbSlotFace(lid)+'</button>';
 }
@@ -4421,7 +4461,7 @@ function kbLtGrid(ri, ki, dir){
     }).join('')+'</div>';
   }
   ltReList=cells;
-  return ltViewRow()+
+  return kbChHTML(ri, ki, dir)+ltViewRow()+
     /* "Nothing in this slot" is a choice like any other, so it is CHOSEN like
        any other and waits for the same confirm. Leaving it applying on the
        press would be the thing that must not happen -- two mechanisms writing
@@ -4484,9 +4524,43 @@ function kbLtTap(ri, ki, dir, lid){
   key=kbAt(ri, ki);
   if(!key) return;
   lid=kbLtIs(ri, ki, dir, lid)? '' : String(lid||'');
+  /* Taking one OFF is on every plan -- it is emptying a slot. Putting a drawn
+     letter ON is Plus, met on the press like every other door (OWNER
+     2026-09-25, can('kb') in www/core.js). */
+  if(lid && upStop(can('kb'))) return;
   if(dir<0) key.v=lid; else key.f[dir]=lid;
   saveKb();
   kbLtDraw(ri, ki, dir);
+}
+/* A CHARACTER onto the slot: whatever was typed, on every plan.
+   「既存の文字ならどこでも使えるでしょ？ユニコードあるわけだし」 OWNER
+   2026-09-25. What is typed in the box over the alphabet goes onto the key when
+   the box is left or Enter is pressed, and an empty box empties the slot.
+
+   It arrives as the roman (act.js hands every receiver puaTyped()'s reading),
+   so a letter typed on the Lingua keyboard goes on as its name and never as a
+   private use code point -- rule 13: that code point means a letter only in
+   this alphabet's order at this moment. */
+function kbChPut(ri, ki, dir, ln){
+  var key, v;
+  if(!kbEdit()) return;
+  key=kbAt(ri, ki);
+  if(!key) return;
+  v=kbChSlot(String(ln||'').slice(0, KB_CH_MAX));
+  if(kbLtOn(ri, ki, dir)===v) return;
+  /* `t` is what a key of the QWERTY pattern TYPES, put there by kbFix() for
+     the letter it was laid with -- a character on the key types itself, so
+     that is no longer true of it. */
+  if(dir<0){ key.v=v; delete key.t; } else key.f[dir]=v;
+  saveKb();
+  kbLtDraw(ri, ki, dir);
+}
+var KB_CH_MAX=8;
+function kbChHTML(ri, ki, dir){
+  return '<input class="lnin" value="'+esc(kbCh(kbLtOn(ri, ki, dir)))+'" '+
+    'maxlength="'+KB_CH_MAX+'" autocomplete="off" autocapitalize="off" '+
+    'placeholder="'+esc(t('kb.ch'))+'" aria-label="'+esc(t('kb.ch'))+'"'+
+    CH('kbChPut', [ri, ki, dir]) + '>';
 }
 /* WHICH OF THE TWO SCREENS THE ALPHABET IS ON, asked once, and asked of the
    ROUTE. kbSlotFor is a note the sheet leaves for itself, and backing out of

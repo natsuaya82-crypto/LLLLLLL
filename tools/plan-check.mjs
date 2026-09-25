@@ -687,47 +687,35 @@ const r = await pg.evaluate(({ s }) => {
 
   planGot('free');
 
-  /* ---- 7b. a ceiling met is a way to the plans screen, not a dead end ---
-     「そのプランでできることできないことで UI 自体に変更がない方が良くない？」
-     OWNER DECISION 2026-08-25. The keyboard ceiling said its sentence with a
-     toast and stopped, which is a sentence about a plan with no way to the
-     thing it is about. capStop() was already the right shape; this is the
-     other one. */
-  /* ON FREE, which is the one plan with a number: the QWERTY is its one
-     keyboard, so it is full before anything is built. */
+  /* ---- 7b. no ceiling on keyboards, on any plan --------------------------
+     「既存の文字ならどこでも使えるでしょ？ユニコードあるわけだし」「それは
+     無料でできる。キーボードカスタマイズアプリとしても使える」 OWNER
+     2026-09-25. Free was full at its one keyboard, the QWERTY; it has no
+     number now. What is asked is that the pool never fills on free and that
+     the + goes straight through there -- a pop left over from the old
+     ceiling would be the plans screen in front of something free.
+
+     BOUNDED, for the reason this block has always been bounded: kbRoomKb()
+     is the app answering, and a loop that waits on it is a renderer the
+     browser kills with nothing said. So it pushes a fixed number and asks. */
   planGot('free');
   KB = { kbs: [], at: 0 };
-  /* BOUNDED, and the bound is not tidiness -- it is the difference between a
-     check that FAILS and a check that says nothing at all.
-
-     `kbRoomKb()` is the app answering, and an app that stops answering `false`
-     turns this line into a loop that fills the renderer until the browser
-     kills it. That is what it did: `npm run plan` ran for two minutes and
-     forty-six seconds and ended in `Target crashed` naming line 33 -- an
-     evaluate five hundred lines long -- with no claim, no counter and no
-     name in it. Every one of the eighty claims below was silent, including
-     the ones that were fine.
-
-     So it stops at a number no ceiling in this file comes near, and the two
-     claims underneath are what report it. A check that hangs says less than
-     a check that goes red. */
   var kbSpin = 0;
-  while (kbRoomKb() && kbSpin++ < 60) KB.kbs.push({ nm:'', pat:'qwerty', lay: kbFixed().lay });
+  while (kbSpin++ < 12) KB.kbs.push({ nm:'', pat:'qwerty', lay: kbFixed().lay });
   saveKb();
-  out.kbSpun = kbSpin;
-  out.kbAtCeiling = !kbRoomKb();
   out.kbPoolCount = kbCount();
+  out.kbFreeRoom = kbRoomKb() === true;
   var kbWas = kbBoards().length;
-  /* said no: nobody is moved, and no keyboard is made */
   go('kb');
-  /* Every ceiling says the same sentence and names no number
-     （「この機能を使用するにはアップグレードしてください」OWNER 2026-09-06). */
   out.upNeed = t('up.need');
-  out.kbAsked = askPop(function(){ kbAdd('qwerty'); });
-  out.kbSaidNo = kbBoards().length === kbWas && here().r === 'kb';
-  /* said yes: the plans screen, which is the thing the sentence is about */
-  yesPop(function(){ kbAdd('qwerty'); });
-  out.kbSaidYes = here().r === 'plans' && kbBoards().length === kbWas;
+  kbAdd('qwerty');
+  out.kbFreeNoPop = !popOn();
+  out.kbFreeMade = kbBoards().length === kbWas + 1;
+  popOff();
+  /* kbAdd() lands on the board it made, and a board's page is a draft until
+     its Save -- so that page and its draft go, or every road below this is
+     asked 「leave without saving?」 first */
+  KEEP = {}; NAV = [{ r: 'kb' }]; route = 'kb';
   KB = null; saveKb();
   planGot('free');
 
@@ -1870,11 +1858,12 @@ say(r.midUp && r.midNotTop, 'plus meets its own rung and not the one above it');
 say(r.topHasMid, 'and pro meets plus\'s -- a ladder, not three equals signs');
 say(r.freeNoMid, 'while free meets neither');
 
-say(r.kbFree === 1 && (r.kbMid === null || r.kbMid === undefined || r.kbMid > 1e9 || r.kbMid === 'Infinity'),
-    'free has one keyboard, plus has no ceiling (' + r.kbFree + ' ' + r.kbMid + ')');
+say((r.kbFree === null || r.kbFree > 1e9 || r.kbFree === 'Infinity') &&
+    (r.kbMid === null || r.kbMid === undefined || r.kbMid > 1e9 || r.kbMid === 'Infinity'),
+    'free has no ceiling on keyboards, and neither has plus (' + r.kbFree + ' ' + r.kbMid + ')');
 say(r.kbTop === null || r.kbTop === undefined || r.kbTop > 1e9 || r.kbTop === 'Infinity',
     'and pro has no ceiling on them (' + r.kbTop + ')');
-say(r.kbDoor, 'the door and the number moved together: free cannot lay one out, plus and pro can');
+say(r.kbDoor, 'a drawn letter on a keyboard somebody built: not on free, on plus and pro');
 say(r.kbHere === 1 && r.kbRoomHere, 'one keyboard built here leaves room for more');
 say(r.kbPool === 3 && r.kbRoomPool === true,
     'two more in ANOTHER language are counted in the pool, and plus is not filled up by them (' +
@@ -1917,14 +1906,10 @@ say(r.heldRestore && r.heldManage,
 say(r.bdgRowPro !== '' && r.bdgRowFree === '',
     'the price list still marks the Pro row, read on free -- a plan carrying it is not the same question');
 
-say(r.kbSpun < 60,
-    'the keyboard pool can be FILLED at all — a ceiling that never arrives is ' +
-    'a loop, and a loop here is a renderer the browser kills with nothing said ' +
-    '(' + r.kbSpun + ' pushed, pool counts ' + r.kbPoolCount + ')');
-say(r.kbAtCeiling, 'free is full at its one keyboard, the QWERTY');
-say(r.kbSaidNo, 'and the next one asks rather than telling -- no is no, and nobody is moved');
-say(r.kbAsked === r.upNeed, 'the sentence is the one upgrade line and names no number (' + (r.kbAsked || 'nothing') + ')');
-say(r.kbSaidYes, 'and yes goes to the plans screen, still without making one');
+say(r.kbFreeRoom,
+    'free has no ceiling on keyboards either -- ' + r.kbPoolCount + ' built and still room');
+say(r.kbFreeNoPop && r.kbFreeMade,
+    'and the next one is made without asking [' + [r.kbFreeNoPop, r.kbFreeMade].join(' ') + ']');
 
 say(r.langFree === 1 && r.langMid === 1 && r.langTop === 3,
     'free and plus hold one language, pro holds three (' +
@@ -1935,7 +1920,7 @@ say(r.doorOnFree, 'the way to make one is drawn on free -- a closed door is show
 say(r.freeSaidNo, 'pressed on free it asks rather than telling -- no is no, and nobody is moved');
 say(r.freeAsked === r.upNeed, 'the sentence is the one upgrade line and names no number (' + (r.freeAsked || 'nothing') + ')');
 say(r.freeMadeNone && r.freeWent && r.freeSaidNothing,
-    'and yes goes to the plans screen, still without making one');
+    'and yes goes to the plans screen, still without making one [' + [r.freeMadeNone, r.freeWent, r.freeSaidNothing].join(' ') + ']');
 say(r.proMade && r.proOpened, 'pressed on pro it is made and opened');
 say(r.proEmpty, 'and it arrives empty rather than carrying the last one\'s words');
 say(r.proLts === 38,
