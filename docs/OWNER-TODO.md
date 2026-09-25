@@ -38,7 +38,7 @@
 | 5 | Supabase：schema.sql を流し直す（4 の後） | 止まっている：流すとエラー（下の「リーダーへ」）。直った schema.sql を待つ |
 | 12 | GitHub：verify-plan を置き直す（5 の後。逆だと購入の確かめが 500） | 待ち：5 |
 | 6 | GitHub：push-send を置く（3・5・12 の後） | 待ち：5・12 |
-| 7 | Supabase：Cron `daily-prompt` の時刻 | まだ |
+| 7 | Supabase：Cron `daily-prompt` の時刻 | 済み（2026-09-25） |
 | 8 | AdMob：アプリ登録・広告ユニット・Secrets・app-ads.txt | まだ |
 | 9 | App Store Connect：App のプライバシー | まだ |
 | 10 | 166 を実機で見る | 待ち：166 が届くまで（1・2 の後） |
