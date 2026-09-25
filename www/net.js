@@ -3327,16 +3327,26 @@ function netFollowRows(want, by, ok, bad, handle, after, among){
      (www/me.js § folPull). */
   for(i=0;i<(among||[]).length;i++) if(among[i]) l.push(encodeURIComponent(String(among[i])));
   if(among && !l.length){ ok([]); return; }
-  netGet('/rest/v1/follow_seen?select='+want+'_handle,created_at'+q+
-         '&order=created_at.desc,'+want+'_handle.asc'+
+  netPplPage('/rest/v1/follow_seen', want+'_handle',
+             q+(among? '&'+want+'_handle=in.('+l.join(',')+')' : ''),
+             after, among? l.length : NET_PAGE, ok, bad);
+}
+/* ONE PAGE OF A LIST OF PEOPLE, newest first -- the handles, and where the
+   page stopped as [time, handle] for the next one to start after (keyset).
+   `at` is the view the list is read off, written out whole where it is
+   called so `grep rest/v1/` names it (NET_PPL_AT), `col` the column holding
+   the handle, `where` what narrows it. The follows lists are this, and so are
+   who liked a post and who passed it on (netReacters). */
+function netPplPage(at, col, where, after, lim, ok, bad){
+  netGet(at+'?select='+col+',created_at'+where+
+         '&order=created_at.desc,'+col+'.asc'+
          (after? '&or='+encodeURIComponent('(created_at.lt."'+after[0]+'",and(created_at.eq."'+
-                   after[0]+'",'+want+'_handle.gt."'+after[1]+'"))') : '')+
-         (among? '&'+want+'_handle=in.('+l.join(',')+')' : '')+
-         '&limit='+(among? l.length : NET_PAGE),
+                   after[0]+'",'+col+'.gt."'+after[1]+'"))') : '')+
+         '&limit='+lim,
     function(d){
       var out=[], i, hd, end=null;
       for(i=0;i<(d||[]).length;i++){
-        hd=(d[i] && d[i][want+'_handle']) || '';
+        hd=(d[i] && d[i][col]) || '';
         if(hd){ out.push(String(hd)); end=[String(d[i].created_at||''), String(hd)]; }
       }
       ok(out, end);
