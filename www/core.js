@@ -2768,7 +2768,7 @@ var CAN={
   dl:      'plus',
   /* The font file of the letters somebody drew, out of the app through the
      share sheet. 「フォントの書き出しはそれでいいよ」 OWNER 2026-09-25, Plus --
-     down from Pro (2026-09-24), where it had not been built. kbFontOut() in
+     down from Pro (2026-09-24), where it had not been built. ltFontOut() in
      www/keyboard.js is the one place it is asked. */
   font:    'plus',
   snd:     'plus',   /* choosing a sound, rather than taking the letter's own */

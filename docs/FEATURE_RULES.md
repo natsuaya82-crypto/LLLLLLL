@@ -268,7 +268,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
 
 ### 2026-09-25 フォントの書き出しは文字の画面の右上（1.0.3）
 - Date: 2026-09-25
-- Area: フォントの書き出し（`kbFontOut()`）、文字の画面（`vLetters()` in `www/sound.js`）
+- Area: フォントの書き出し（`ltFontOut()`）、文字の画面（`vLetters()` in `www/sound.js`）
 - Decision: フォントの書き出しのマーク（共有のマーク）は、文字の画面の右上に置く。キーボードの一覧の画面からは外す。Plus のまま。
 - Reason: オーナーの言葉「フォントは文字なんだから文字から書き出しのマークつけないとダメでは？」。
 - Affected features: 文字の画面、キーボードの一覧の画面。
@@ -348,7 +348,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Affected features: ~~`CAN.kb`~~ と ~~`kbCap()`~~（キーボードの扉と数）は問いが無くなる ── 消す。フォントの書き出し（新しい、Plus）。
 - Affected data: 無料の人が作ったキーボードが増える（今の `kb` の slice）。何も消さない。
 - Affected docs: この項、`docs/PAID_FEATURES.md`、`docs/FEATURES.md`、`docs/keyboard.md`、CLAUDE.md の「What the free plan is」。
-- Implementation status: r95-kbfont（`claude/r95-kbfont`）── キーボード（段を訊かない、`=文字` の枠と「文字を入力」の欄）とフォントの書き出し（Plus、`kbFontOut()`）は入った・コード確認、実機未確認。手書きは r96。
+- Implementation status: r95-kbfont（`claude/r95-kbfont`）── キーボード（段を訊かない、`=文字` の枠と「文字を入力」の欄）とフォントの書き出し（Plus、`ltFontOut()`）は入った・コード確認、実機未確認。手書きは r96。
 
 ### 2026-09-25 キーボードは誰でも作れる、自作文字のキーボードとフォントの書き出しは Plus から【差し替え済み】→ 2026-09-25「キーボードはプランで分けない」
 

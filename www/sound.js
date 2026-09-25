@@ -788,8 +788,8 @@ function vLetters(){
     /* THE FONT, OUT: the share mark, in the corner a share stands in
        (「共有も共有マークを右上」 OWNER 2026-09-23), on the letters -- 「フォントは
        文字なんだから文字から書き出しのマークつけないとダメでは？」 OWNER
-       2026-09-25. It was on the list of keyboards. kbFontOut(). */
-    navTop('', navDo(t('kb.font'), 'kbFontOut', null, false, {icon:ICON_SHARE}))+
+       2026-09-25. It was on the list of keyboards. ltFontOut(). */
+    navTop('', navDo(t('kb.font'), 'ltFontOut', null, false, {icon:ICON_SHARE}))+
     '<div class="body">'+
     (wsHasMarks()
       ? '<button class="trow"' + DO('go', ["abugida"]) + ' style="margin-top:6px">'+
@@ -833,13 +833,13 @@ function vLetters(){
    whatever file it wrote. Nothing is said when the sheet is up, for the
    reason cardSave() gives (www/card.js): what somebody then chooses is not
    answered, and must not be guessed at. */
-function kbFontOut(){
+function ltFontOut(){
   var p;
   if(upStop(can('font'))) return;
   if(!SFONT.b64){ toast(t('kb.font.none')); return; }
   p=sharePlug();
   if(!p){ toast(t('card.nofile')); return; }
-  p('LinguaShare', 'sheet', {name:kbFontName(), ext:'otf', b64:SFONT.b64})
+  p('LinguaShare', 'sheet', {name:ltFontName(), ext:'otf', b64:SFONT.b64})
     .then(function(r){
       if(!(r && r.file)){ toast(t('card.nofile')); return; }
       return p('LinguaShare', 'shareFile', {file:String(r.file)});
@@ -850,7 +850,7 @@ function kbFontOut(){
    on the phone may safely carry -- sheet() takes it as it comes. No
    extension; the native side puts that on, because it knows which of
    `<name>.otf` and `<name> 2.otf` it filed. */
-function kbFontName(){
+function ltFontName(){
   var n=String(langName||'').replace(/[^\w \-]/g, '').replace(/\s+/g, ' ').replace(/^ +| +$/g, '');
   return n? n.slice(0, 40) : 'Lingua';
 }

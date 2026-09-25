@@ -3713,7 +3713,7 @@ const SF = await sf.evaluate(({ s }) => {
 
   /* ---- THE FONT, OUT: the bytes LinguaFont.build made, and nothing else ----
      「フォントの書き出しはそれでいいよ」 Plus, OWNER 2026-09-25. The bridge is
-     stood in for with one that answers at once, so what kbFontOut() handed
+     stood in for with one that answers at once, so what ltFontOut() handed
      over can be read in the same turn: which plugin, which method, and the
      bytes. The bytes are held against what LinguaFont.build RETURNED -- the
      writer is wrapped rather than asked again, because a check that builds a
@@ -3733,7 +3733,7 @@ const SF = await sf.evaluate(({ s }) => {
       var fontOf = function (f){ return f && f.base64(); };
       out.foBuilt = built.length > 0 && !!SFONT.b64 && fontOf(built[0]) === SFONT.b64;
       calls.length = 0;
-      kbFontOut();
+      ltFontOut();
       var sh = calls[0] || [], sf = calls[1] || [];
       out.foSheet = sh[0] === 'LinguaShare' && sh[1] === 'sheet' && sh[2] && sh[2].ext === 'otf';
       out.foSame = !!(sh[2] && sh[2].b64) && sh[2].b64 === fontOf(built[0]);
@@ -3742,14 +3742,14 @@ const SF = await sf.evaluate(({ s }) => {
       /* on free: the upgrade pop, and nothing crosses the bridge */
       calls.length = 0; popOff();
       planGot('free');
-      kbFontOut();
+      ltFontOut();
       out.foFreePop = popOn();
       out.foFreeNothing = calls.length === 0;
       popOff();
       /* nothing drawn is no font, and no file is handed over */
       planGot('plus');
       var wasB64 = SFONT.b64; SFONT.b64 = ''; calls.length = 0;
-      kbFontOut();
+      ltFontOut();
       out.foNoneNothing = calls.length === 0;
       SFONT.b64 = wasB64;
     } finally {
