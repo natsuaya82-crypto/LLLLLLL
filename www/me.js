@@ -1072,9 +1072,15 @@ function meBlocking(){
 function meBlocks(h){ return meBlocking().indexOf(String(h||''))>=0; }
 /* And whom you have muted, the same road with the other table's name on it
    (www/net.js § NET_PPL). 「人をミュートできる」 OWNER 2026-09-25. */
+/* By the @ or by the account's id -- a row of the list carries both, and a
+   post names its author by the one and whoever passed it on by the other
+   (`by`, www/net.js § netRow). */
 function meMutes(h){
-  return (typeof netPplHandles==='function') &&
-         netPplHandles('mute').indexOf(String(h||''))>=0;
+  var l=(typeof netPpl==='function')? netPpl('mute') : [], i;
+  h=String(h||'');
+  if(!h) return false;
+  for(i=0;i<l.length;i++) if(l[i].hd===h || l[i].id===h) return true;
+  return false;
 }
 /* Blocking somebody stops following them. Keeping a follow to somebody you
    have blocked is a list that says two opposite things, and the one the

@@ -624,6 +624,14 @@ const r = await pg.evaluate(({ s }) => {
     POSTS.push({ id:'mu-1', hd:'yun', who:'Yun', ln:'mu', at:Date.now(), mine:false });
     out.muFeed = postAll().some((p) => p.id === 'mu-1');
     out.muKept = postKept().some((p) => p.id === 'mu-1');
+    /* and what Yun passed on, somebody else's and your own: off the timeline
+       by the id on `by` (OWNER 2026-09-25), and the same post passed on by
+       somebody not muted stays */
+    POSTS.push({ id:'mu-2', hd:'kiyo', who:'Kiyo', ln:'mu', at:Date.now(), mine:false, by:'U-yun' });
+    POSTS.push({ id:'mu-3', hd:'aya', who:'Aya', ln:'mu', at:Date.now(), mine:true, by:'U-yun' });
+    POSTS.push({ id:'mu-4', hd:'kiyo', who:'Kiyo', ln:'mu', at:Date.now(), mine:false, by:'U-iri' });
+    out.muBoosts = ['mu-2', 'mu-3', 'mu-4'].map((id) => postAll().some((p) => p.id === id) ? 1 : 0).join('');
+    POSTS = POSTS.filter((p) => ['mu-2', 'mu-3', 'mu-4'].indexOf(p.id) < 0);
     /* and the word on the ... of their post */
     window.route = 'feed'; NAV = [{ r:'feed' }];
     const mh = postMenuHTML({ id:'mu-1', hd:'yun', mine:false });
@@ -885,6 +893,10 @@ if (r.muFeed || !r.muKept)
   say('a muted person\'s post this phone holds is ' + (r.muFeed ? 'still on the timeline' : 'off it') +
       ' and ' + (r.muKept ? 'on' : 'OFF') + ' their page -- off the one and on the other. ' +
       '「ミュートした人の投稿はタイムラインに出ない」');
+if (r.muBoosts !== '001')
+  say('what a muted person passed on is off the timeline, somebody else\'s post and your own, and the ' +
+      'same post passed on by somebody else stays -- ' + JSON.stringify(r.muBoosts) + ' (want 001). ' +
+      '「その人がリポストした投稿も出さない」');
 if (!r.muWord)
   say('the ... on a muted person\'s post does not offer ミュート解除');
 if (r.folOrder !== 'noa,ami,zed,kai')
