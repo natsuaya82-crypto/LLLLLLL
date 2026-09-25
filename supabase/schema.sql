@@ -449,6 +449,17 @@ create table if not exists slice_hist (
 );
 create index if not exists slice_hist_at_idx on slice_hist(language, kind, at desc);
 
+-- WHICH SAVE A VERSION BELONGS TO. 「言語を前に戻す →『3つ前、まるごと』」
+-- OWNER 2026-09-24: a version is the WHOLE LANGUAGE as it was before one save,
+-- and one save is several rows of `slice` (the kinds that moved), written by
+-- separate requests. So the phone numbers each save (`press`, one uuid per
+-- netSaveNow() in www/net.js) and puts it on every row that save writes; the
+-- trigger below writes onto the version it keeps the number of the save that
+-- REPLACED it. A row written before this carries none and is a version of its
+-- own, named by its time -- nothing old is dropped or renumbered.
+alter table slice add column if not exists press uuid;
+alter table slice_hist add column if not exists press uuid;
+
 -- THE ONLY AUTOMATIC DELETION IN THIS FILE, and its DELETE REVIEW is in
 -- docs/CHANGELOG.md 2026-09-09. What it removes is a copy of a previous
 -- version; the row somebody is actually holding (`slice`) is never touched by
@@ -493,8 +504,13 @@ begin
                  where language = old.language and kind = old.kind and at = v_at)
   loop v_at := v_at + interval '1 microsecond'; end loop;
 
-  insert into slice_hist(language, kind, body, at)
-       values (old.language, old.kind, old.body, v_at);
+  -- The save that replaced it, when there was one. A write that did not
+  -- carry a number leaves the row's old one standing, and that is not the
+  -- save that replaced it -- so it is taken only where it moved.
+  insert into slice_hist(language, kind, body, at, press)
+       values (old.language, old.kind, old.body, v_at,
+               case when tg_op = 'UPDATE' and new.press is distinct from old.press
+                    then new.press end);
 
   delete from slice_hist h
    where h.language = old.language and h.kind = old.kind
@@ -2879,10 +2895,32 @@ end $$;
 -- staff's (docs/FEATURE_RULES.md 2026-09-23).
 --
 -- NO BODY EVER COMES BACK. A version of a 5000-word dictionary is 685 KB, and
--- the screen shows a part's name and a date, never its contents: the operator
--- is restoring on the person's word, not reading their language. So the list
--- carries (language, kind, at) and admin_restore() is told which of those to
--- put back.
+-- the screen shows a date, never its contents: the operator is restoring on
+-- the person's word, not reading their language. So the list carries
+-- (language, v, at) and admin_restore_lang() is told which version to put back.
+--
+-- A LANGUAGE'S VERSIONS ARE ITS SAVES, THE THREE NEWEST.
+-- 「言語を前に戻す →『3つ前、まるごと』」 OWNER 2026-09-24. A version is named by
+-- its save's number, or by its time where it carries none (see `press` above),
+-- and it is dated by when that save landed. Three and no more: the history
+-- keeps three rows per kind, and one save moves a kind once, so the three
+-- newest saves are the three every kind can still answer for -- a fourth
+-- would be put back out of rows the ceiling has already dropped.
+--
+-- Security INVOKER, so called directly it reads slice_hist as the caller --
+-- which is nobody but staff (slice_hist_read); the two below are definer and
+-- ask is_staff() first.
+create or replace function slice_versions(lang uuid)
+returns table(v text, at timestamptz)
+language sql stable set search_path = public as $$
+  select coalesce(h.press::text, 'at:' || h.at::text) as v, max(h.at) as at
+    from slice_hist h
+   where h.language = lang
+   group by 1
+   order by 2 desc
+   limit 3
+$$;
+
 create or replace function admin_hist(handle text)
 returns jsonb
 language plpgsql security definer set search_path = public as $$
@@ -2897,41 +2935,51 @@ begin
                                         order by l.created_at)
                          from language l where l.owner = who), '[]'::jsonb),
     'hist',  coalesce((select jsonb_agg(jsonb_build_object(
-                                'language', h.language, 'kind', h.kind, 'at', h.at)
-                                        order by h.at desc)
-                         from slice_hist h
-                         join language l on l.id = h.language
+                                'language', l.id, 'v', sv.v, 'at', sv.at)
+                                        order by sv.at desc)
+                         from language l, lateral slice_versions(l.id) sv
                         where l.owner = who), '[]'::jsonb)
   ) into out;
   return out;
 end $$;
 
--- AND PUTTING ONE BACK IS AN UPDATE, WHICH IS WHY THE UNDO IS FREE. The write
--- below goes through the same slice_hist_before trigger as any other, so what
--- was there a moment ago becomes a version at the moment it is replaced --
--- the operator can walk a restore back the same way they made it. Nothing
--- special is written and there is no second road.
---
--- The version is named by its timestamp because that is what the screen
--- shows. A timestamp that names nothing restores nothing and says so.
-create or replace function admin_restore(language uuid, kind text, at timestamptz)
+-- AND PUTTING ONE BACK IS THE WHOLE LANGUAGE, IN ONE SAVE OF ITS OWN.
+-- For every kind: the first version kept at or after the moment that save
+-- landed is what the kind was just before it; a kind with none has not moved
+-- since, and is left as it is. A kind that did not exist yet is not taken
+-- away -- nothing here deletes. The writes carry one new number, so what
+-- was there a moment ago becomes ONE version, and the operator can walk the
+-- restore back the same way. A version outside the three newest names
+-- nothing and restores nothing, and says so.
+create or replace function admin_restore_lang(language uuid, v text)
 returns void
 language plpgsql security definer set search_path = public as $$
-declare b text;
+declare t timestamptz; r uuid := gen_random_uuid(); k text; b text;
 begin
   if not is_staff() then raise exception 'not staff'; end if;
-  select h.body into b from slice_hist h
-   where h.language = admin_restore.language
-     and h.kind = admin_restore.kind
-     and h.at = admin_restore.at;
-  if b is null then raise exception 'no such version'; end if;
-  update slice s set body = b, at = now()
-   where s.language = admin_restore.language and s.kind = admin_restore.kind;
-  if not found then
-    insert into slice(language, kind, body, at)
-         values (admin_restore.language, admin_restore.kind, b, now());
-  end if;
+  if not exists (select 1 from slice_versions(admin_restore_lang.language) s
+                  where s.v = admin_restore_lang.v)
+  then raise exception 'no such version'; end if;
+  select min(h.at) into t from slice_hist h
+   where h.language = admin_restore_lang.language
+     and coalesce(h.press::text, 'at:' || h.at::text) = admin_restore_lang.v;
+  for k in select distinct h.kind from slice_hist h
+            where h.language = admin_restore_lang.language and h.at >= t
+  loop
+    select h.body into b from slice_hist h
+     where h.language = admin_restore_lang.language and h.kind = k and h.at >= t
+     order by h.at asc limit 1;
+    update slice s set body = b, at = now(), press = r
+     where s.language = admin_restore_lang.language and s.kind = k;
+    if not found then
+      insert into slice(language, kind, body, at, press)
+           values (admin_restore_lang.language, k, b, now(), r);
+    end if;
+  end loop;
 end $$;
+-- One kind at a time is gone: a language put back a part at a time is one no
+-- save ever made -- the words from Tuesday under Friday's letters.
+drop function if exists admin_restore(uuid, text, timestamptz);
 
 -- ---------------------------------------------------------------------------
 -- The first one, and everybody after
