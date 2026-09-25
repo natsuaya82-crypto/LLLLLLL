@@ -749,7 +749,9 @@ name and a button is not the only way in. **There is no `write` capability** —
 is, and a second name at the same rung would be two answers to one question.
 
 **The way out to the phone is built.** `LinguaShare.sheet` writes the PDF into
-`Documents/Sheets/`, never overwriting; `LinguaShare.renderPdf` draws a page
+the temporary folder (`sheets()`), never overwriting, only for as long as it
+takes to hand it over; what an earlier build left in `Documents/Sheets/` is
+removed at launch (`shDropOld()`, 2026-09-25). `LinguaShare.renderPdf` draws a page
 back into a picture with **PDFKit**, because `CGContext.drawPDFPage` does not
 draw annotations and iOS Markup saves every stroke as one. Neither has been on
 a phone.
@@ -861,8 +863,8 @@ Decided:
   「普通に共有画面みたいなやつから保存してそこでファイルに保存させてくれ」
   OWNER 2026-08-27, on a build where the write had worked four times over and
   the person still could not get at the file — writing into Documents and
-  saying nothing is not a download. `LinguaShare.sheet` still files it under
-  `Documents/Sheets/` and still never overwrites; `LinguaShare.shareFile` then
+  saying nothing is not a download. `LinguaShare.sheet` files it in the
+  temporary folder and never overwrites; `LinguaShare.shareFile` then
   hands that file to iOS's own share sheet, where "Save to Files" lives.
   **Nothing says it was saved** — once the sheet is up, save, send and cancel
   never come back to the app, so any sentence about it would be a guess.
