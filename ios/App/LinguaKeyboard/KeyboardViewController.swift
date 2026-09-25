@@ -9,13 +9,21 @@
 import UIKit
 
 final class KeyboardViewController: UIInputViewController,
-                                    KeyBoardViewDelegate, CandidateBarDelegate {
+                                    KeyBoardViewDelegate, CandidateBarDelegate,
+                                    HandPadDelegate {
   private var board: Board?
   private var layerNo = 0
   private var body: UIView?
   private var bar: CandidateBar?
   private var height: NSLayoutConstraint?
   private var compose: Compose?
+  /// hand.js with the letters already prepared -- made the first time the
+  /// handwriting face is shown, forgotten with the board (viewWillAppear).
+  private var reader: Hand?
+  /// What the bar offers after something was written on the handwriting
+  /// face, until one is pressed or something else is typed. Nil means the
+  /// bar is Compose's, as it is on every other face.
+  private var handPicks: [Candidate]?
 
   /// A row is a KEY tall, and a key is a tenth of the phone wide — so the
   /// height follows the width and a key keeps its shape on every phone.
@@ -108,8 +116,49 @@ final class KeyboardViewController: UIInputViewController,
     let kb = KeyBoardView(lay: lay, box: CGFloat(b.box), drop: drop,
                           mark: (b.mark ?? 1) != 0)
     kb.delegate = self
+    if (lay.hand ?? 0) > 0 { return handFace(kb, lay: lay, board: b) }
     place(kb, rows: CGFloat(lay.rows.count), bar: compose != nil,
           box: CGFloat(b.box))
+    paintBar()
+  }
+
+  /// The handwriting face: a pad to write on, and the face's own rows under
+  /// it -- the way back, the space and the delete, whatever the person left
+  /// there. How many rows tall the pad is is `hand` on the face, worked out by
+  /// kbHandRows() in www/keyboard.js -- the one place that says it, so the app's
+  /// sheet and this keyboard draw the same face.
+  private func handFace(_ kb: KeyBoardView, lay: Layer, board b: Board) {
+    if reader == nil { reader = Hand(inks: (b.hand ?? []).map { $0.st }) }
+    let own = CGFloat(max(1, lay.rows.count))
+    let rows = own + CGFloat(max(1, lay.hand ?? 1))
+    let wrap = UIView()
+    let pad = HandPad()
+    pad.delegate = self
+    pad.translatesAutoresizingMaskIntoConstraints = false
+    kb.translatesAutoresizingMaskIntoConstraints = false
+    wrap.addSubview(pad)
+    wrap.addSubview(kb)
+    NSLayoutConstraint.activate([
+      pad.leadingAnchor.constraint(equalTo: wrap.leadingAnchor),
+      pad.trailingAnchor.constraint(equalTo: wrap.trailingAnchor),
+      pad.topAnchor.constraint(equalTo: wrap.topAnchor),
+      pad.bottomAnchor.constraint(equalTo: kb.topAnchor),
+      kb.leadingAnchor.constraint(equalTo: wrap.leadingAnchor),
+      kb.trailingAnchor.constraint(equalTo: wrap.trailingAnchor),
+      kb.bottomAnchor.constraint(equalTo: wrap.bottomAnchor),
+      kb.heightAnchor.constraint(equalTo: wrap.heightAnchor, multiplier: own / rows),
+    ])
+    /* The bar always, here: it is where what was written is offered. */
+    place(wrap, rows: rows, bar: true, box: CGFloat(b.box))
+    paintBar()
+  }
+
+  /// What was written is offered on the bar, nearest first; nothing goes in
+  /// until one is pressed. 「候補は何個か出して選ぶ形やな」 OWNER 2026-09-25.
+  func pad(_ p: HandPad, wrote strokes: [[CGPoint]]) {
+    guard let r = reader, let faces = board?.hand else { return }
+    let picks = r.nearest(strokes).filter { $0 >= 0 && $0 < faces.count }
+    handPicks = picks.isEmpty ? nil : picks.map { Candidate(faces: [faces[$0]]) }
     paintBar()
   }
 
@@ -224,13 +273,17 @@ final class KeyboardViewController: UIInputViewController,
   }
 
   private func paintBar() {
-    guard let bar = bar, let c = compose else { return }
-    bar.show(picks: c.candidates())
+    guard let bar = bar else { return }
+    if let h = handPicks { bar.show(picks: h); return }
+    bar.show(picks: compose?.candidates() ?? [])
   }
 
   // ---- the finger ---------------------------------------------------------
 
   func keyboard(_ v: KeyBoardView, didPress key: Key, face: Face?) {
+    // A key pressed while the bar is offering what was written is a letter
+    // not chosen: the offer goes, and the key does what it does.
+    if handPicks != nil { handPicks = nil; paintBar() }
     // A flick is a press with a different letter, so it goes through the
     // same door rather than a second one beside it -- kbFlick() in
     // www/keyboard.js, same argument.
@@ -305,7 +358,17 @@ final class KeyboardViewController: UIInputViewController,
     paintBar()
   }
 
-  func bar(_ b: CandidateBar, didPick c: Candidate) { commit(c) }
+  /// A handwriting pick goes in the way a key does -- a letter of the
+  /// person's own -- and the bar is Compose's again. Anything else on the bar
+  /// is Compose's own and is committed as it always was.
+  func bar(_ b: CandidateBar, didPick c: Candidate) {
+    if handPicks != nil, let f = c.faces.first {
+      handPicks = nil
+      typed(f.t, face: f)
+      return
+    }
+    commit(c)
+  }
 
   /// Put a candidate in. On the letter side the buffer is already in the
   /// document, so it comes back out first -- one press per character, which
@@ -331,6 +394,8 @@ final class KeyboardViewController: UIInputViewController,
   override func viewWillAppear(_ animated: Bool) {
     super.viewWillAppear(animated)
     compose = nil
+    reader = nil
+    handPicks = nil
     build()
   }
 }

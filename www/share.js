@@ -390,8 +390,16 @@ function shareRomLay(back){
 /* The whole of it: this language's keyboard, drawn, with nothing in it that
    points at anything back here. */
 function shareKbd(){
-  var b=kbOf(), lay=[], i, t=shareTable(), conv=shareConv(t), out;
-  for(i=0;i<b.lay.length;i++) lay.push({rows:shareRows(b.lay[i])});
+  var b=kbOf(), lay=[], i, t=shareTable(), conv=shareConv(t), out, f, hand=false;
+  for(i=0;i<b.lay.length;i++){
+    f={rows:shareRows(b.lay[i])};
+    /* The handwriting face crosses as the face it is plus how many rows tall
+       the pad above its rows is (HandPad.swift) -- kbHandRows(), the one place
+       that says it, so the sheet in the app and the phone draw one face.
+       kbAddLay('hand') is where a face becomes one. */
+    if(b.lay[i].hand){ f.hand=kbHandRows(b, i); hand=true; }
+    lay.push(f);
+  }
   /* And the roman face after them, with a key on the person's FIRST face to
      reach it -- otherwise a writing system that needs conversion would have a
      face nothing goes to. The key wears the number, because a roman face is
@@ -408,7 +416,9 @@ function shareKbd(){
      Applying the free QWERTY on a syllabary means typing on the free QWERTY,
      which is what applying it says. */
   var rom=-1;
-  if(conv && shareRoman() && !kbIsFree(kbApplied(kbBoards().length))){
+  /* Nor on a handwriting keyboard, which is handwriting and nothing else
+     「手書きを選択したら手書きだけでしょ」 OWNER 2026-09-25. */
+  if(conv && shareRoman() && !kbIsFree(kbApplied(kbBoards().length)) && !kbIsHand(b)){
     lay.push(shareRomLay(0));
     rom=lay.length-1;
     if(lay[0] && lay[0].rows.length)
@@ -444,6 +454,25 @@ function shareKbd(){
      whether to draw it. */
   out.mark=kbRomOn()? 1 : 0;
   if(conv){ out.ink=t.ink; out.conv=conv; }
+  if(hand) out.hand=shareHand();
+  return out;
+}
+/* What the handwriting face chooses among: every letter of the language that
+   has a shape, as the face its key would wear -- shareFace(), so the shape a
+   finger is compared with is the shape on the key, and what goes in is what
+   the key types. Nothing new is worked out for it; the keyboard is handed
+   what it already knows how to draw and to type, once per letter.
+
+   Every drawn letter and not only the ones on some key: 「その言語の自作文字の
+   中から一番近い字」 OWNER 2026-09-25 -- a letter nobody put on a key can
+   still be written. ltPuaOrder() is the list of letters that have a shape
+   (glyph.js), the same list the private use code points are handed out in.
+
+   Only on a board that has a handwriting face, so a keyboard without one is
+   handed exactly the file it was handed before. */
+function shareHand(){
+  var lts=ltPuaOrder(), out=[], i;
+  for(i=0;i<lts.length;i++) out.push(shareFace(lts[i].id));
   return out;
 }
 

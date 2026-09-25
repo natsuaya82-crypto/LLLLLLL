@@ -20,10 +20,29 @@ var MARK_APPLE='<svg class="mk" viewBox="0 0 16 20" width="17" height="17" fill=
   '<path d="M13.29 10.6c.02-2.02 1.65-2.99 1.72-3.04-.94-1.37-2.4-1.56-2.92-1.58-1.24-.13-2.42.73-3.05.73-.63 0-1.6-.71-2.63-.69-1.35.02-2.6.79-3.29 2-1.4 2.43-.36 6.03 1 8 .67.96 1.46 2.04 2.5 2 1-.04 1.38-.65 2.59-.65 1.21 0 1.55.65 2.61.63 1.08-.02 1.76-.98 2.42-1.95.76-1.11 1.07-2.19 1.09-2.25-.02-.01-2.09-.8-2.11-3.18z"/>'+
   '<path d="M11.35 4.63c.55-.67.92-1.6.82-2.53-.79.03-1.75.53-2.32 1.2-.51.58-.96 1.53-.84 2.43.88.07 1.79-.45 2.34-1.1z"/></svg>';
 
-/* The scripts a character can be taken from. The inventories are written as
-   escapes because they are code points, not copy: nothing here is translated,
-   and spelled out they would read as untranslated text. Names live in 3.6. */
+/* THE KINDS A CHARACTER CAN BE TAKEN FROM, and the one place they are written.
+   「字の種類の一覧も一か所にだけ書き、どこから開いても同じものを読む」 OWNER
+   2026-09-25 (docs/FEATURE_RULES.md「字を選ぶ画面は一つ」): a letter's
+   「既存文字から選ぶ」 and a key of the keyboard (pkKindsHTML() in www/home.js)
+   and the onboarding's borrowing (obBorrowHTML() below) all read this list.
+   「どんな言語でも対応できる選択肢」 -- so the Latin letters with their marks,
+   Latin's extensions, the IPA, digits, marks and punctuation, the kana and
+   emoji stand in front of the fifteen scripts that were here first. Kanji later.
+
+   The inventories are written as escapes because they are code points, not
+   copy: nothing here is translated, and spelled out they would read as
+   untranslated text. Names are `ws.<id>`, through t(). A kind's characters are
+   read through wsChars() and nothing else -- `sp` says the space is the first
+   of them, since the space is also what `ch` is written apart with. */
 var WORLD_SCRIPTS = [
+  {id:"latin",pv:"ABC",ch:"A B C D E F G H I J K L M N O P Q R S T U V W X Y Z a b c d e f g h i j k l m n o p q r s t u v w x y z"},
+  {id:"latinacc",pv:"\u00c0\u00c1\u00c2",ch:"\u00c0 \u00c1 \u00c2 \u00c3 \u00c4 \u00c5 \u00c6 \u00c7 \u00c8 \u00c9 \u00ca \u00cb \u00cc \u00cd \u00ce \u00cf \u00d0 \u00d1 \u00d2 \u00d3 \u00d4 \u00d5 \u00d6 \u00d8 \u00d9 \u00da \u00db \u00dc \u00dd \u00de \u00df \u00e0 \u00e1 \u00e2 \u00e3 \u00e4 \u00e5 \u00e6 \u00e7 \u00e8 \u00e9 \u00ea \u00eb \u00ec \u00ed \u00ee \u00ef \u00f0 \u00f1 \u00f2 \u00f3 \u00f4 \u00f5 \u00f6 \u00f8 \u00f9 \u00fa \u00fb \u00fc \u00fd \u00fe \u00ff"},
+  {id:"latinext",pv:"\u0100\u0101\u0102",ch:"\u0100 \u0101 \u0102 \u0103 \u0104 \u0105 \u0106 \u0107 \u010c \u010d \u010e \u010f \u0110 \u0111 \u0112 \u0113 \u0116 \u0117 \u0118 \u0119 \u011a \u011b \u011e \u011f \u0122 \u0123 \u0126 \u0127 \u012a \u012b \u012e \u012f \u0130 \u0131 \u0136 \u0137 \u013b \u013c \u0141 \u0142 \u0143 \u0144 \u0145 \u0146 \u0147 \u0148 \u014a \u014b \u014c \u014d \u0150 \u0151 \u0152 \u0153 \u0158 \u0159 \u015a \u015b \u015e \u015f \u0160 \u0161 \u0162 \u0163 \u0164 \u0165 \u016a \u016b \u016e \u016f \u0170 \u0171 \u0172 \u0173 \u0174 \u0175 \u0176 \u0177 \u0178 \u0179 \u017a \u017b \u017c \u017d \u017e \u018f \u0259 \u0190 \u025b \u0186 \u0254 \u01b7 \u0292 \u0192 \u01c2 \u01c0 \u01c1 \u01c3"},
+  {id:"ipa",pv:"\u0250\u0251\u0252",ch:"\u0250 \u0251 \u0252 \u0253 \u0255 \u0256 \u0257 \u0258 \u0259 \u025a \u025b \u025c \u025e \u025f \u0260 \u0261 \u0262 \u0263 \u0264 \u0265 \u0266 \u0267 \u0268 \u026a \u026b \u026c \u026d \u026e \u026f \u0270 \u0271 \u0272 \u0273 \u0274 \u0275 \u0276 \u0278 \u0279 \u027a \u027b \u027d \u027e \u0280 \u0281 \u0282 \u0283 \u0284 \u0288 \u0289 \u028a \u028b \u028c \u028d \u028e \u028f \u0290 \u0291 \u0292 \u0294 \u0295 \u0298 \u0299 \u029b \u029c \u029d \u029f \u02a1 \u02a2 \u03b2 \u03b8 \u03c7 \u02d0 \u02c8 \u02cc"},
+  {id:"digit",pv:"012",ch:"0 1 2 3 4 5 6 7 8 9"},
+  {id:"symbol",pv:"!?.",sp:1,ch:"! ? . , : ; ' \u0022 ( ) [ ] { } < > / \u005c | - _ + = * & % $ # @ ^ ~ ` \u00a1 \u00bf \u00ab \u00bb \u201e \u201c \u201d \u2018 \u2019 \u2026 \u2014 \u2013 \u00b7 \u2022 \u00a7 \u00b6 \u00a9 \u00ae \u2122 \u00b0 \u00b1 \u00d7 \u00f7 \u2260 \u2248 \u2264 \u2265 \u221e \u221a \u20ac \u00a3 \u00a5 \u00a2 \u2190 \u2192 \u2191 \u2193 \u2605 \u2606 \u25cb \u25cf \u25ce \u25a1 \u25a0 \u25b3 \u25b2 \u266a \u2665 \u203b \u3001 \u3002 \u300c \u300d \u300e \u300f \u3010 \u3011 \u30fb \u30fc \u301c"},
+  {id:"hiragana",pv:"\u3042\u3044\u3046",ch:"\u3042 \u3044 \u3046 \u3048 \u304a \u304b \u304d \u304f \u3051 \u3053 \u3055 \u3057 \u3059 \u305b \u305d \u305f \u3061 \u3064 \u3066 \u3068 \u306a \u306b \u306c \u306d \u306e \u306f \u3072 \u3075 \u3078 \u307b \u307e \u307f \u3080 \u3081 \u3082 \u3084 \u3086 \u3088 \u3089 \u308a \u308b \u308c \u308d \u308f \u3092 \u3093 \u304c \u304e \u3050 \u3052 \u3054 \u3056 \u3058 \u305a \u305c \u305e \u3060 \u3062 \u3065 \u3067 \u3069 \u3070 \u3073 \u3076 \u3079 \u307c \u3071 \u3074 \u3077 \u307a \u307d \u3041 \u3043 \u3045 \u3047 \u3049 \u3063 \u3083 \u3085 \u3087"},
+  {id:"katakana",pv:"\u30a2\u30a4\u30a6",ch:"\u30a2 \u30a4 \u30a6 \u30a8 \u30aa \u30ab \u30ad \u30af \u30b1 \u30b3 \u30b5 \u30b7 \u30b9 \u30bb \u30bd \u30bf \u30c1 \u30c4 \u30c6 \u30c8 \u30ca \u30cb \u30cc \u30cd \u30ce \u30cf \u30d2 \u30d5 \u30d8 \u30db \u30de \u30df \u30e0 \u30e1 \u30e2 \u30e4 \u30e6 \u30e8 \u30e9 \u30ea \u30eb \u30ec \u30ed \u30ef \u30f2 \u30f3 \u30ac \u30ae \u30b0 \u30b2 \u30b4 \u30b6 \u30b8 \u30ba \u30bc \u30be \u30c0 \u30c2 \u30c5 \u30c7 \u30c9 \u30d0 \u30d3 \u30d6 \u30d9 \u30dc \u30d1 \u30d4 \u30d7 \u30da \u30dd \u30a1 \u30a3 \u30a5 \u30a7 \u30a9 \u30c3 \u30e3 \u30e5 \u30e7 \u30f4"},
   {id:"runic",pv:"\u16a0\u16a2\u16a6\u16a8\u16b1",ch:"\u16a0 \u16a2 \u16a6 \u16a8 \u16b1 \u16b2 \u16b7 \u16b9 \u16ba \u16be \u16c1 \u16c3 \u16c7 \u16c8 \u16c9 \u16ca \u16cf \u16d2 \u16d6 \u16d7 \u16da \u16dc \u16de \u16df"},
   {id:"ogham",pv:"\u1681\u1682\u1683",ch:"\u1681 \u1682 \u1683 \u1684 \u1685 \u1686 \u1687 \u1688 \u1689 \u168a \u168b \u168c \u168d \u168e \u168f \u1690 \u1691 \u1692 \u1693 \u1694 \u1695 \u1696 \u1697 \u1698 \u1699 \u169a"},
   {id:"phoenician",pv:"\ud802\udd00\ud802\udd01\ud802\udd02",ch:"\ud802\udd00 \ud802\udd01 \ud802\udd02 \ud802\udd03 \ud802\udd04 \ud802\udd05 \ud802\udd06 \ud802\udd07 \ud802\udd08 \ud802\udd09 \ud802\udd0a \ud802\udd0b \ud802\udd0c \ud802\udd0d \ud802\udd0e \ud802\udd0f \ud802\udd10 \ud802\udd11 \ud802\udd12 \ud802\udd13 \ud802\udd14 \ud802\udd15"},
@@ -38,8 +57,20 @@ var WORLD_SCRIPTS = [
   {id:"geez",pv:"\u1200\u1208\u1210",ch:"\u1200 \u1201 \u1202 \u1203 \u1204 \u1205 \u1206 \u1208 \u1209 \u120a \u120b \u120c \u120d \u120e \u1210 \u1211 \u1212 \u1213 \u1214 \u1215 \u1216 \u1218 \u1219 \u121a \u121b \u121c \u121d \u121e \u1220 \u1221 \u1222 \u1223 \u1224 \u1225 \u1226 \u1228 \u1229 \u122a \u122b \u122c \u122d \u122e \u1230 \u1231 \u1232 \u1233 \u1234 \u1235 \u1236"},
   {id:"arabic",pv:"\u0627\u0628\u062a\u062b",ch:"\u0627 \u0628 \u062a \u062b \u062c \u062d \u062e \u062f \u0630 \u0631 \u0632 \u0633 \u0634 \u0635 \u0636 \u0637 \u0638 \u0639 \u063a \u0641 \u0642 \u0643 \u0644 \u0645 \u0646 \u0647 \u0648 \u064a"},
   {id:"thai",pv:"\u0e01\u0e02\u0e04",ch:"\u0e01 \u0e02 \u0e03 \u0e04 \u0e05 \u0e06 \u0e07 \u0e08 \u0e09 \u0e0a \u0e0b \u0e0c \u0e0d \u0e0e \u0e0f \u0e10 \u0e11 \u0e12 \u0e13 \u0e14 \u0e15 \u0e16 \u0e17 \u0e18 \u0e19 \u0e1a \u0e1b \u0e1c \u0e1d \u0e1e \u0e1f \u0e20 \u0e21 \u0e22 \u0e23 \u0e25 \u0e27 \u0e28 \u0e29 \u0e2a \u0e2b \u0e2c \u0e2d \u0e2e"},
-  {id:"hangul",pv:"\u3131\u3134\u3137",ch:"\u3131 \u3134 \u3137 \u3139 \u3141 \u3142 \u3145 \u3147 \u3148 \u314a \u314b \u314c \u314d \u314e \u314f \u3151 \u3153 \u3155 \u3157 \u315b \u315c \u3160 \u3161 \u3163"}
+  {id:"hangul",pv:"\u3131\u3134\u3137",ch:"\u3131 \u3134 \u3137 \u3139 \u3141 \u3142 \u3145 \u3147 \u3148 \u314a \u314b \u314c \u314d \u314e \u314f \u3151 \u3153 \u3155 \u3157 \u315b \u315c \u3160 \u3161 \u3163"},
+  {id:"emoji",pv:"\ud83d\ude00\ud83d\ude02\ud83d\ude0a",ch:"\ud83d\ude00 \ud83d\ude02 \ud83d\ude0a \ud83d\ude0d \ud83d\ude0e \ud83d\ude22 \ud83d\ude21 \ud83d\ude34 \ud83e\udd14 \ud83d\udc4d \ud83d\udc4e \ud83d\udc4f \ud83d\ude4f \ud83d\udcaa \ud83d\udc40 \u2764 \ud83d\udc94 \u2b50 \ud83d\udd25 \ud83d\udca7 \ud83c\udf19 \u2600 \ud83c\udf08 \ud83c\udf38 \ud83c\udf33 \ud83c\udf4e \ud83c\udf5e \ud83d\udc31 \ud83d\udc36 \ud83d\udc26 \ud83d\udc1f \ud83c\udfb5 \ud83c\udf89 \ud83c\udf81 \u2728 \ud83d\udca1 \ud83d\udd11 \u26a1 \u2744 \u2705 \u274c \u2753 \u2757"}
 ];
+function wsChars(w){
+  return (w && w.sp? [' '] : []).concat(w? String(w.ch).split(' ') : []);
+}
+/* What a character looks like on a tile: itself, and the space as the mark
+   every keyboard's space key is drawn with, since a space is nothing to see. */
+function wsFace(ch){ return ch===' '? '\u2423' : String(ch); }
+function wsKind(id){
+  var i;
+  for(i=0;i<WORLD_SCRIPTS.length;i++) if(WORLD_SCRIPTS[i].id===id) return WORLD_SCRIPTS[i];
+  return null;
+}
 
 /* ---- Onboarding -------------------------------------------------------
    Three steps: the door, one letter drawn, the name.
@@ -699,7 +730,7 @@ function obBack(){
     return;
   }
   if(ob.step===OB_DRAW && ob.mode==='borrow'){
-    if(ob.pick){ ob.pick=''; render(); return; }      /* out of one script, back to the fifteen */
+    if(ob.pick){ ob.pick=''; render(); return; }      /* out of one kind, back to the list of them */
     ob.mode='draw'; render(); window.scrollTo(0,0); return;
   }
   /* Out of the name is back INTO the walk, at the stop it was left on -- not
@@ -1847,7 +1878,7 @@ function obSnsHTML(){
      until then this is that line, run once the page exists. */
   setTimeout(function(){ if(typeof postLines==='function') postLines(); }, 0);
   /* The real page goes in `.obscroll` -- the onboarding's own scrolling box,
-     the one the fifteen scripts to borrow from sit in. Without it the page is
+     the one the kinds to borrow from sit in. Without it the page is
      a full-height `.view` and the foot under it is pushed out of `.ob`, which
      is overflow:hidden: the button that ends this step sat at y=1487 on an
      844-tall phone, with nothing to scroll. It was on the page and could not
@@ -2131,7 +2162,7 @@ function obPv(w){
        'Noto Sans JP' on it, so a script was measured in one font and shown
        in another. */
     x.font='24px '+cssVar('--face-ui', 'sans-serif');
-    var miss=x.measureText('￿￿').width/2, chars=w.ch.split(' '), got=[];
+    var miss=x.measureText('￿￿').width/2, chars=wsChars(w), got=[];
     for(var i=0;i<chars.length && got.length<3;i++){
       var ch=chars[i], wd=x.measureText(ch).width;
       if(wd>0 && Math.abs(wd-miss)>0.5) got.push(ch);
@@ -2143,14 +2174,14 @@ function obPv(w){
 }
 
 function obBorrowHTML(){
-  var w=null; WORLD_SCRIPTS.forEach(function(x){ if(x.id===ob.pick) w=x; });
+  var w=wsKind(ob.pick);
   if(w) return '<div class="mid obleft">'+
     '<h2 class="obh">'+esc(t('ws.'+w.id))+'</h2>'+
     '<p class="obsub">'+t('ob.borrow.take')+'</p>'+
-    '<div class="obchars">'+w.ch.split(' ').map(function(ch){
-      return '<button class="obchb"' + DO('obTakeCh', [ch]) + '>'+esc(ch)+'</button>';
+    '<div class="obchars">'+wsChars(w).map(function(ch){
+      return '<button class="obchb"' + DO('obTakeCh', [ch]) + '>'+esc(wsFace(ch))+'</button>';
     }).join('')+'</div></div>';
-  /* Two columns, because fifteen rows do not fit on a phone and a first
+  /* Two columns, because two dozen rows do not fit on a phone and a first
      screen that scrolls is a first screen that has already lost. Each row
      shows a few of its own characters under the name: "Phoenician" tells you
      nothing you can picture, and three of its letters tell you everything. */

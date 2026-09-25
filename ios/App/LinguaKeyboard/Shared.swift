@@ -102,6 +102,12 @@ struct Key: Decodable {
 
 struct Layer: Decodable {
   let rows: [[Key]]
+  /// On the handwriting face, how many rows tall the pad to write on above
+  /// these rows is (HandPad.swift; kbHandRows() in www/keyboard.js says the
+  /// number). Absent on every other face and on every face written
+  /// before there was one. `var` with a default so a Layer can still be made
+  /// with rows alone (KeyboardViewController.show) and is still decoded.
+  var hand: Int? = nil
 }
 
 struct Board: Decodable {
@@ -136,6 +142,10 @@ struct Board: Decodable {
   /// syllabary's board carries the person's own letters AND a roman face.
   /// shareKbd() puts it last and is the only thing that knows where that is.
   let rom: Int?
+  /// Every letter of the language that has a shape, as the face a key would
+  /// wear -- what the handwriting face chooses among (hand.js). Only on a
+  /// board that has a handwriting face; absent everywhere else.
+  let hand: [Face]?
 }
 
 enum Shared {
