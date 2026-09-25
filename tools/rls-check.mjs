@@ -168,6 +168,13 @@ create or replace function auth.uid() returns uuid language sql stable as $$
 do $$ begin create role anon nologin;          exception when duplicate_object then null; end $$;
 do $$ begin create role authenticated nologin; exception when duplicate_object then null; end $$;
 do $$ begin create role service_role nologin;  exception when duplicate_object then null; end $$;
+-- Supabase's own administrator, and the SQL editor is NOT it: the editor
+-- runs as postgres, which is not a superuser there and is not a member of
+-- this role. It has standing default privileges handing anon what it makes,
+-- and those are not postgres's to change -- EDITOR below pastes as somebody
+-- who is exactly that.
+do $$ begin create role supabase_admin nologin; exception when duplicate_object then null; end $$;
+do $$ begin create role sql_editor nologin;     exception when duplicate_object then null; end $$;
 -- Supabase's service role is not under row level security at all; the two
 -- functions write with it, and that is the road plan_put() and push_once()
 -- are asked about as a fourth kind of caller below.
@@ -3206,6 +3213,36 @@ insert into slice(language, kind, body) values ('${OLDN[1]}', 'lang', 'Old Name'
 `;
 const OLDLANG_EMPTIED = `update language set name = '' where id = '${OLDN[1]}';`;
 
+/* PASTED BY SOMEBODY WHO IS NOT A SUPERUSER. Everything above is applied as
+   this check's own `postgres`, which is a superuser and may change anybody's
+   default privileges -- and Supabase's SQL editor may not. So schema.sql's
+   foot said 「for role supabase_admin」 on the owner's server and stopped
+   there, 2026-09-25 (42501, permission denied to change default privileges),
+   with every run of this check green. The block that says who anon may not
+   be handed tomorrow's tables is run again here as `sql_editor`, with
+   supabase_admin holding a standing grant to anon as it does on Supabase;
+   it has to go through. What stays behind is Supabase's to say, and is taken
+   off again after, as the superuser, so the claim about tomorrow is still
+   asked of the whole catalogue below. */
+const FOOT = (function(){
+  const at = SCHEMA_SQL.indexOf('do $w$\ndeclare r record;');
+  const end = SCHEMA_SQL.indexOf('\n$w$;', at);
+  if (at < 0 || end < 0) {
+    console.error('schema.sql has no default-privilege block at its foot for EDITOR to paste');
+    process.exit(1);
+  }
+  return SCHEMA_SQL.slice(at, end + 5);
+})();
+const EDITOR = `
+grant usage, create on schema public, storage to sql_editor;
+alter default privileges for role supabase_admin in schema public grant all on tables to anon;
+set role sql_editor;
+${FOOT}
+reset role;
+alter default privileges for role supabase_admin in schema public revoke all on tables from anon;
+revoke usage, create on schema public, storage from sql_editor;
+`;
+
 const sql = [
   GROUND,
   BASE_SQL,
@@ -3214,6 +3251,7 @@ const sql = [
   OLDLANG_EMPTIED,
   PGNET,
   SCHEMA_SQL,
+  EDITOR,
   HARNESS,
   'begin;',
   /* The only seeding there is. Everything else below is done BY somebody,

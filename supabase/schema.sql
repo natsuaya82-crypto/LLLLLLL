@@ -3707,10 +3707,13 @@ begin
      `alter default privileges` with no `for role` is about the current user
      only. On Supabase's SQL editor that is `postgres`; on a project where
      something else made them it is that. So it is said for every role that
-     actually HAS a standing grant to anon in this schema, read out of the
-     catalogue rather than guessed -- `for role supabase_admin` written by
-     hand fails outright on a database where that role does not exist, and a
-     statement that errors here takes the block with it. */
+     actually HAS a standing grant to anon in this schema AND whose defaults
+     this user may change -- itself, or a role it is a member of -- read out
+     of the catalogue rather than guessed. `supabase_admin` has such a grant
+     on every Supabase project and is not the editor's to change: asking
+     anyway failed the whole paste on the owner's server (2026-09-25, 42501),
+     and what it makes is Supabase's own, not a table this file creates.
+     tools/rls-check.mjs pastes this block as a non-superuser (EDITOR). */
   execute 'alter default privileges in schema public revoke all on tables    from anon';
   execute 'alter default privileges in schema public revoke all on sequences from anon';
   execute 'alter default privileges in schema public revoke all on functions from anon';
@@ -3720,6 +3723,7 @@ begin
       join pg_namespace n on n.oid = d.defaclnamespace
      where n.nspname in ('public', 'storage')
        and array_to_string(d.defaclacl, ',') like '%anon=%'
+       and pg_has_role(current_user, d.defaclrole, 'MEMBER')
   loop
     execute format(
       'alter default privileges for role %I in schema public  revoke all on tables    from anon', r.who);
