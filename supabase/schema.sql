@@ -1806,6 +1806,29 @@ create view follow_seen as
    where not block_hides(f.follower) and not block_hides(f.followed);
 grant select on follow_seen to authenticated;
 
+-- ---- who liked a post, and who passed it on, by name -----------------------
+-- 「リツイートといいねした人長押しで見れるようにしたい」 OWNER 2026-09-25
+-- (docs/FEATURE_RULES.md § 2026-09-25 いいね・リポストした人の一覧…). The
+-- list is drawn the way the follows lists are -- one page of handles, newest
+-- first, and the people on it asked for by handle (www/me.js § fol*) -- so
+-- this is follow_seen's shape: the row with the name the phone speaks, and
+-- the time it is ordered by.
+--
+-- `react_read` is `using (true)`, so this shows no more than the table does.
+-- What it leaves out is what a list of people leaves out: somebody a block
+-- stands between, either way, and -- the owner's word for 「not in the lists
+-- you scroll」 -- somebody the reader has muted (block_hides, mute_hides).
+-- And no list at all for a post by somebody a block stands between
+-- (post_blocks): the post is not there to hold.
+drop view if exists react_seen cascade;
+create view react_seen as
+  select r.post, r.kind, r.created_at, a.handle as actor_handle
+    from react r
+    join profile a on a.id = r.actor
+   where not block_hides(r.actor) and not mute_hides(r.actor)
+     and not post_blocks(r.post);
+grant select on react_seen to authenticated;
+
 drop view if exists profile_seen cascade;
 create view profile_seen as
   select p.id, p.handle, p.display, p.av, p.bio, p.link, p.loc, p.banned_at,

@@ -583,8 +583,19 @@ const CASES = [
      \u300c\u4eba\u3092\u30df\u30e5\u30fc\u30c8\u3067\u304d\u308b\u2026\uff08\u30d6\u30ed\u30c3\u30af\u3068\u306f\u5225\uff09\u300d OWNER 2026-09-25. B mutes A
      and lifts it again before the section closes, so everything below still
      reads A's posts as the ordinary somebody else. */
+  /* and A likes A's own post, so the list of who liked it has A on it */
+  ['A likes P, for the list of who liked it', 'ok',     A, 0,
+    `insert into react(post,actor,kind) values ('${P}','${A}','like')`],
+  ['B finds A among who liked P',             'ok',     B, 0,
+    `select 1 from react_seen where post='${P}' and kind='like' and actor_handle='aya'`],
   ['B mutes A',                               'ok',     B, 0,
     `insert into mute(actor,muted) values ('${B}','${A}')`],
+  /* 「ブロック・ミュートの外し」 r94: a muted person is not in the list of who
+     liked a post -- to the one who muted them, and to nobody else's loss. */
+  ['B no longer finds A among who liked P',   'denied', B, 0,
+    `select 1 from react_seen where post='${P}' and actor_handle='aya'`],
+  ['and C still does',                        'ok',     C, 0,
+    `select 1 from react_seen where post='${P}' and actor_handle='aya'`],
   ['B reads whom B muted, by name',           'ok',     B, 0,
     `select 1 from mute_seen where id='${A}'`],
   ['A cannot read that A is muted',           'denied', A, 0,
@@ -605,6 +616,10 @@ const CASES = [
     `select 1 from post_seen where id='${P}' and muted`],
   ['B lifts the mute',                        'ok',     B, 0,
     `delete from mute where actor='${B}' and muted='${A}'`],
+  ['and B finds A among who liked P again',   'ok',     B, 0,
+    `select 1 from react_seen where post='${P}' and actor_handle='aya'`],
+  ['A takes the like back',                   'ok',     A, 0,
+    `delete from react where post='${P}' and actor='${A}' and kind='like'`],
 
   /* --- and a block is the server's to keep, not the phone's -------------
      「Blocked means you see nothing of them」 OWNER 2026-08-19. These are
