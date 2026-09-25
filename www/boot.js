@@ -79,7 +79,7 @@ function bootSession(){
      session arrived; what a screen reads is its door's (www/shell.js
      § navLand). The profile and the settings were read from these lines as
      well, a second road to one row (r73 § 1-1). And nothing goes UP: a save
-     goes up when a person makes it (netSaveUp, www/net.js), and the door
+     goes up when a person makes it (netSaveNow, www/net.js, from the press), and the door
      sends what the walk made (netTook). */
 }
 /* A session that is still good comes back here and nothing is asked. What

@@ -119,7 +119,7 @@ function addOne(){
      「電波なしならクルクル回るやろ」.
 
      This wrote the word, said 「追加しました」 and opened its page, with not
-     one request sent -- the send is bkTouch()'s 1.2-second burst, behind a
+     one request sent -- the send was a 1.2-second burst, behind a
      person who had already left. Measured with the radio off on 2026-09-11:
      `WORDS=2` and the word's page on the screen, `WORDS=1` after a relaunch.
      CLAUDE.md 規則 11: 「保存しないのが仕様、保存して黙るのはだめ」 -- the pop
@@ -127,7 +127,7 @@ function addOne(){
      things at once.
 
      IT IS THE SAME ROAD NINE SAVE BUTTONS ALREADY TAKE and not a second one:
-     netSaveNow() (www/net.js) is netSaveUp() with the wait put back on, and
+     netSaveNow() (www/net.js) is the one road up and it answers the press, and
      keepSnap()/keepBack() (www/shell.js) is how this phone goes back to
      before the press. Nothing new is written here; this button joins them.
 
@@ -153,13 +153,20 @@ function addOne(){
      way. With the draft still standing, that render draws the sheet instead
      of falling into vForm's catch. */
   snap=keepSnap();
-  WORDS.push(w);
-  syn.forEach(function(o){ wRelToggle(hw, 'syn', o); });
-  ant.forEach(function(o){ wRelToggle(hw, 'ant', o); });
-  /* And the forms, after the word they are of is in the dictionary: each of
-     them points at it by name. */
-  made=addFmWrite(hw);
-  save();
+  /* THE ADD IS THIS SHEET'S SAVE, so it writes the way a Save does -- through
+     keepWrite() (www/shell.js), which is the one moment a screen with a Save
+     behind it on the trail is not a draft. The sheet can be reached from one
+     that has (a word's own sheet), and without this the word would be held
+     as that screen's draft and 「追加しました」 said over nothing sent. */
+  keepWrite(function(){
+    WORDS.push(w);
+    syn.forEach(function(o){ wRelToggle(hw, 'syn', o); });
+    ant.forEach(function(o){ wRelToggle(hw, 'ant', o); });
+    /* And the forms, after the word they are of is in the dictionary: each
+       of them points at it by name. */
+    made=addFmWrite(hw);
+    save();
+  });
   netSaveNow(function(up){
     /* 届かなかった。だから何も起きなかった。 */
     if(!up){ keepBack(snap); return; }

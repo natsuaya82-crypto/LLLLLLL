@@ -55,7 +55,7 @@ Marked separately, because they are not the same question:
 | Import a word list | shipped | paste | `file`: a file | slice `words` | decided |
 | **write — letters brought in on a sheet** | **in progress** — the road is in (`www/sheet.js`, ch 26, `npm run sheet`) and **so is the plan gate**; the drawing is not | — | **Pro**, and it is `file` that says so — the door (`fileInHTML()` in `www/shell.js`) and `shTakeIn()` both ask `can('file')`, which is Pro. There is no `write` capability and there is not going to be one | slice `letters`: `lt.sh` and `lt.via` | partial |
 | Export CSV | shipped | — | `data` | none | decided |
-| Backup to Documents / Restore from Documents | **deleted 2026-09-04** — the server is the only copy that counts and a save reaches it at once (`netSaveUp()`, `www/net.js`); a phone whose storage is reclaimed fills back from it (`netLangsDown()`), filling in what is missing and stopping | — | — | none | decided — 「今ファイルもいらん。オンラインのみで行こう」 OWNER 2026-09-04; `CLAUDE.md` rule 11 |
+| Backup to Documents / Restore from Documents | **deleted 2026-09-04** — the server is the only copy that counts and a save reaches it when Save is pressed (`netSaveNow()`, `www/net.js`); a phone whose storage is reclaimed fills back from it (`netLangsDown()`), filling in what is missing and stopping | — | — | none | decided — 「今ファイルもいらん。オンラインのみで行こう」 OWNER 2026-09-04; `CLAUDE.md` rule 11 |
 | How many languages of your own | shipped | 1 | Plus 1, Pro 3 | `LANGS`; `langCap()` / `langCount()` / `langStop()` in `www/core.js` | decided — 「言語数はプラスは1、プロは3」 2026-08-25. A ceiling now shortens the LIST as well (`langsSeen()`), and the open language is always on it |
 | Word suggestions | **lifted** | — | — | none | the chips and their daily three went out with Studio; `makeWord()` in `www/reading.js` stays and is used everywhere else |
 | The conversation — the last chapter | **lifted** | — | — | slice `talk` kept | out until the hosted model is in. See the note on `PLANS` in `www/core.js` |
@@ -335,7 +335,7 @@ Built:
 - `netLangRow()` makes the `language` row and puts its id on `LANGS[id].sid`;
   `netSlicePut()` upserts (`Prefer: resolution=merge-duplicates`);
   `netSlices()` reads them; `netLangSync()` runs the three; and a save goes up
-  the moment it is made — `netSaveUp()`, from `bkTouch()` (CLAUDE.md rule 6).
+  when Save is pressed — `netSaveNow()`, from `keepSave()` or `bkTouch()` (CLAUDE.md rule 6).
 
 `SLICES` in `www/core.js` is the list of slices; name one rather than counting
 them.
@@ -667,8 +667,7 @@ What that means here, item by item, and most of it is **already built**:
   **The language: NOT per-open — and that is all that has been said.** The
   owner named what it is not. What it IS is **open**, and writing a positive
   rule here would be turning a negation into a decision nobody made. A save
-  goes up the moment it is made (`netSaveUp()` from `bkTouch()`, CLAUDE.md
-  rule 6), so nothing waits for a clock. **Ask before building an interval.**
+  goes up when Save is pressed (`netSaveNow()`, CLAUDE.md rule 6), so nothing waits for a clock. **Ask before building an interval.**
 
 **The onboarding ends at the door.** `OB_DRAW`, `OB_SNS`, `OB_NAME`, `OB_IN` in
 `www/onboard.js`, with the walk outside the count, and `OB_IN` is the door —

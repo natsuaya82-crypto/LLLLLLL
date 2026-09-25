@@ -431,7 +431,7 @@ await measure('save', () => {
   langRowGot(langId);
   LANGS[langId].uid = 'u';
   /* One word typed and saved, which is the road every write takes:
-     save() → bkTouch() → netSaveUp(), with the wait taken off it. */
+     save() → bkTouch() → netSaveNow(), the one send. */
   WORDS.push({ w: 'kefu', m: 'stone' });
   save();
   netSaveNow(function () {});

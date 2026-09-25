@@ -152,7 +152,7 @@ const r = await pg.evaluate(async ({ s, sid }) => {
      THIS account's rows」 -- which is the stronger half of it anyway, and
      it was never asked before today.
 
-     Asked by opening it, because netSaveUp() sends the OPEN language. If the
+     Asked by opening it, because netSaveNow() sends the OPEN language. If the
      app refuses to open it, that is an answer too and is recorded. */
   var was = langId;
   var opened = false;
@@ -164,7 +164,7 @@ const r = await pg.evaluate(async ({ s, sid }) => {
     netSend = function(m, p, b, tk, ok, bd){ sent.push(m + ' ' + p); if (bd) bd(null, 0); };
     /* the save a person makes by having it on the screen at all */
     bkTouch();
-    netSaveUpGo();                    /* the wait is not what is under test */
+    netSaveNow();                    /* the wait is not what is under test */
     netSend = realSend;
     out.pushRefused = sent.length === 0;
     out.pushHow = sent.join(' | ');
@@ -388,7 +388,7 @@ console.log('    [opens=' + r.opens + ' pushRefused=' + r.pushRefused + ']');
 say(!r.opens || r.pushRefused === true,
     'and a save does not send it up into THIS account’s rows, even while it ' +
     'is the language on the screen — 「入らん」: ' +
-    (r.opens ? (r.pushRefused ? 'netSaveUp sent nothing'
+    (r.opens ? (r.pushRefused ? 'netSaveNow sent nothing'
                               : 'IT SENT ' + r.pushHow)
              : 'it cannot be opened, which is the same answer'));
 say(r.opens, 'a downloaded language is one you SWITCH TO — the row in the ' +

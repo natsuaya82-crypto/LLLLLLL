@@ -961,7 +961,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
 
 ### 同じものを何度も運ばない ── 保存の写しを返さない・送る前の読みを無くす・起動の二度読みを一度に
 - Date: 2026-09-09
-- Area: 保存の道（`netSlicePut` / `netSaveUp`）、起動の道
+- Area: 保存の道（`netSlicePut` / ~~`netSaveUp`~~、今は `netSaveNow`）、起動の道
 - Decision: `docs/reports/cost-2026-09-09.md` の三つを直す「これもやって」。
   5,000 語の人の保存一回 2.6 MB → 0.9 MB 以下、起動一回 1.9 MB → 1.0 MB 以下。
   $25 で 763 人 → 1,846 人。**二台目が同じ言語を編集した時に片方が消える形には

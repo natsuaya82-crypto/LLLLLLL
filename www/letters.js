@@ -35,7 +35,7 @@ function ltRead(){
   LETTERS=slOpen('letters') || [];
 }
 ltRead();
-function saveLetters(){ if(langLocked()) return; bkTouch(); slWr(langKey('letters'), JSON.stringify(LETTERS)); }
+function saveLetters(){ if(!langWrites()) return; bkTouch(); slWr(langKey('letters'), JSON.stringify(LETTERS)); }
 
 /* ---- moving the old shape of things over ------------------------------
    Everything drawn before this ran was stored under its sound, which is

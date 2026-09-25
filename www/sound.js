@@ -258,7 +258,7 @@ function sndRead(){
   SND=slOpen('snd') || [];
 }
 sndRead();
-function saveSnd(){ if(langLocked()) return; bkTouch(); slWr(langKey('snd'), JSON.stringify(SND)); }
+function saveSnd(){ if(!langWrites()) return; bkTouch(); slWr(langKey('snd'), JSON.stringify(SND)); }
 /* The one sound inventory anything reads. 35 places say addedSnd() meaning
    "the sounds of the language in front of me", and they still do. */
 function addedSnd(){ return SND; }

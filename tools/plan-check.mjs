@@ -456,12 +456,12 @@ const r = await pg.evaluate(({ s }) => {
      day they need it.
 
      THIS USED TO ASK THE BACKUP FILE, and there is no file (www/backup.js,
-     2026-09-04). The road a language leaves this phone by is netSaveUp(), so
+     2026-09-04). The road a language leaves this phone by is netSaveNow(), so
      that is the road asked -- and it is the stronger question, because the
      file was one handset's and the server is the copy that outlives it.
 
      Every slice has something in it first, and nothing has been agreed yet:
-     netSaveUp() sends a slice only where it differs from what the two sides
+     netSaveNow() sends a slice only where it differs from what the two sides
      last agreed, and an absent slice has nothing to say. The one this exists
      for is exactly that -- the keyboard was in no backup at all for a while,
      and a count went on saying the right number while it was. */
@@ -490,7 +490,7 @@ const r = await pg.evaluate(({ s }) => {
        from inside it, so a stub that only records stops after the first one */
     netSend = function(m, path, b, tok, ok){ if (b && b.kind) got.push(b.kind); if (ok) ok(); };
     NET_SYNCING = false;
-    netSaveUpGo();
+    netSaveNow();
     netSend = realSend; netLangRow = realRow; netSlices = realSlices;
     NET_SYNCING = false;
     /* what was sent has just been agreed, so a second call would have nothing

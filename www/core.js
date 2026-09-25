@@ -507,7 +507,7 @@ function langNameSaid(nm){ return String(nm||'') || t('langs.untitled'); }
    never come down, so a list with no picture behind it is a list of 未設定.
    It goes through slGot(), the one writer of `lingua.<id>.<...>.got`, and it
    is kept out of every road up by the same mechanism the slices are: slWr()
-   is never called on this key, so slMine() cannot see it and netSaveUpGo(),
+   is never called on this key, so slMine() cannot see it and netSaveNow(),
    netSlice1() and both 「fills in and stops」 reads never find it. */
 var LNAME={};
 function langNameKey(id){ return langKeyOf(String(id||''), 'name'); }
@@ -654,7 +654,7 @@ function langOwnOf(id){
    said this session (CLAUDE.md rule 22), a picture on the disk so a launch
    with no signal can still put the list in order, and NO ROAD UP -- slGot()
    is the one writer, so slMine() cannot see it and netSlice1(),
-   netSaveUpGo() and both 「fills in and stops」 reads never find it.
+   netSaveNow() and both 「fills in and stops」 reads never find it.
 
    EMPTY IS 「NOBODY HAS SAID」 AND NOT 「OLDEST」. A language minted on this
    phone has no row yet, so it has no date -- and it is the NEWEST thing here,
@@ -1016,7 +1016,7 @@ function slGot(k, body){
    a request whose answer lands inside it. A write of the same string is
    nobody changing anything -- a settings save() writes the dictionary back
    exactly as it was, and that is not a person writing the dictionary
-   (r63-audit 0-1). netSaveUpGo() and netLangSync1() send a slice that is
+   (r63-audit 0-1). netSaveNow() and netLangSync1() send a slice that is
    marked here AND has moved; netAgreed() takes the mark off when the two
    sides hold the same string.
 
@@ -1522,6 +1522,46 @@ function langLocked(){
   if(!me) return false;
   return !Object.prototype.hasOwnProperty.call(LOWN, k) || LOWN[k]!==me;
 }
+/* ---- WHETHER THE OPEN LANGUAGE IS WRITTEN NOW -- THE ONE DOOR ------------
+   「保存がサーバーに上がる時 →『保存を押したら』」「取ってきた言語を編集できるか
+   →『できない』」 OWNER 2026-09-24.
+
+   Every writer of the language asks this and nothing else -- the seven in
+   LANG_IO above, and kbWrite() under saveKb(). Two answers are no:
+
+   - langLocked() above: somebody else's language, taken to READ, or one the
+     server has not answered about yet. Nothing of this phone's goes into it.
+   - keepDrafting() (www/shell.js § KEEP): a screen with a Save is on the
+     trail, so what is pressed there is that screen's DRAFT. It stays in the
+     globals the screen draws from, the slice is not written, and the Save
+     writes it (keepSave) -- 「いいえ」 puts back the language as it was when
+     the screen opened (keepNo, langHeldBack below). This was the keyboard's alone (K1,
+     r79, kbDrafting()); it is every screen's now, and kbDrafting() is gone.
+
+   typeof, because core.js is read before shell.js and nothing written here
+   runs a writer before both are in. */
+function langWrites(){
+  if(langLocked()) return false;
+  return !(typeof keepDrafting==='function' && keepDrafting());
+}
+/* ---- AND WHAT A DRAFT IS MEASURED FROM ------------------------------------
+   The language as the globals hold it, said once as a string, and put back.
+   A screen with a Save keeps this when it opens (keepOn, www/shell.js), and
+   「いいえ」 puts exactly that back -- not the slices: a screen reached from
+   another screen with a Save is standing on that one's draft, and reading
+   the slices would take the draft behind it away too. keepSnap() holds it
+   for the same reason, so a Save that did not land leaves the draft on the
+   screen. The nine globals are the nine the writers in LANG_IO write. */
+function langHold(){
+  return JSON.stringify([WORDS, LINES, SCRIPT, LETTERS, NOTES, STG, SND, KB, WLD]);
+}
+function langHeldBack(h){
+  var a;
+  try{ a=JSON.parse(h); }catch(e){ return; }
+  if(!a || a.length!==9) return;
+  WORDS=a[0]; LINES=a[1]; SCRIPT=a[2]; LETTERS=a[3]; NOTES=a[4];
+  STG=a[5]; SND=a[6]; KB=a[7]; WLD=a[8];
+}
 /* ---- ONE EMPTY LANGUAGE, MADE WHERE SOMEBODY STARTS MAKING ONE ----------
    「オンラインで 1 端末に 1 アカウント、そのアカウントに結びつけられる言語数が
    決まってるんだから端末でやることねえ」 OWNER 2026-09-11
@@ -1917,7 +1957,7 @@ function langShape(){ return JSON.stringify([WORDS, LINES, SCRIPT]); }
 function langMoved(){ return langShape()!==LSAVED; }
 function save(){
   setKeep();
-  if(langLocked()){ if(langId && langMoved()) saveNo(); return; }
+  if(!langWrites()){ if(langLocked() && langId && langMoved()) saveNo(); return; }
   bkTouch();
   saveTry(function(){
     slWr(langKey('words'),JSON.stringify(WORDS));

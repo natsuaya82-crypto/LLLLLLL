@@ -1796,13 +1796,16 @@ const r = await pg.evaluate(({ s }) => {
      by the page's Save */
   function kbPageSave(){
     /* THE BOARD'S PAGE'S SAVE (K1, r79): while that page has its draft open a
-       change is not written until Save is pressed. The buffer is found the way
-       kbDrafting() finds it; its own save is pressed rather than keepSave(),
-       whose other half is the wire and not this check's. No page open is a
-       change saveKb() writes itself. */
-    var k;
+       change is not written until Save is pressed. The board's buffer is the
+       one whose question is kbNow(); its own save is pressed rather than
+       keepSave(), whose other half is the wire and not this check's -- inside
+       keepWrite() (www/shell.js), the moment a Save writes, which is the one
+       moment a screen with a Save is not a draft (§ keepDrafting). No page
+       open is a change saveKb() writes itself. */
+    var k, b;
     for (k in KEEP) if (Object.prototype.hasOwnProperty.call(KEEP, k) && KEEP[k] && KEEP[k].now === kbNow){
-      KEEP[k].save(KEEP[k].v, function (){}); return true;
+      b = KEEP[k];
+      keepWrite(function (){ b.save(b.v, function (){}); }); return true;
     }
     saveKb(); return false;
   }
@@ -3587,13 +3590,15 @@ const SF = await sf.evaluate(({ s }) => {
     migrateKbFree();
     function kbPageSave(){
       /* THE BOARD'S PAGE'S SAVE (K1, r79): while that page has its draft open a
-         change is not written until Save is pressed. The buffer is found the way
-         kbDrafting() finds it; its own save is pressed rather than keepSave(),
-         whose other half is the wire and not this check's. No page open is a
-         change saveKb() writes itself. */
-      var k;
+         change is not written until Save is pressed. The board's buffer is the
+         one whose question is kbNow(); its own save is pressed inside
+         keepWrite() (www/shell.js), the one moment a screen with a Save is not
+         a draft, rather than keepSave(), whose other half is the wire. No page
+         open is a change saveKb() writes itself. */
+      var k, b;
       for (k in KEEP) if (Object.prototype.hasOwnProperty.call(KEEP, k) && KEEP[k] && KEEP[k].now === kbNow){
-        KEEP[k].save(KEEP[k].v, function (){}); return true;
+        b = KEEP[k];
+        keepWrite(function (){ b.save(b.v, function (){}); }); return true;
       }
       saveKb(); return false;
     }

@@ -386,7 +386,7 @@ function vSet(){
     /* NO 「ON THIS PHONE」 LIST. It showed the backup files in Documents --
        the generations, newest first, each with the save number it carried --
        and there are no files. 「今ファイルもいらん」 OWNER 2026-09-04: a
-       language is on the server the moment it is saved (netSaveUp() in
+       language is on the server the moment it is saved (netSaveNow() in
        www/net.js), so what that list answered is not a question this app
        has any more. www/backup.js says the whole of it. */
     body='<div class="sec">'+t('set.data')+'</div>'+
