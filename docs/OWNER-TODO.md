@@ -13,7 +13,7 @@
 
 | # | 何 | 状態 |
 |---|---|---|
-| S-A | RevenueCat：プロジェクトとアプリを作る → App Store Connect とつなぐ → 商品 4 つ → Entitlement と Offering → 公開 SDK キー（「appl_」）をリーダーへ。**キーが来ないとビルドが出せない** | まだ |
+| S-A | RevenueCat：プロジェクトとアプリを作る → App Store Connect とつなぐ → 商品 4 つ → Entitlement と Offering → 公開 SDK キー（「appl_」）をリーダーへ。**キーが来ないとビルドが出せない** | 途中：A-1・A-2 済み。A-3 の前に App Store Connect API キーを入れている |
 | S-B | Devpost で Shipaton 2026 に参加登録 | まだ |
 | S-C | App Store Connect で審査員用のコード（オファーコード）を用意 | まだ |
 | S-D | RevenueCat 入りのビルドが届いたら、実機で一回買う → 審査に出す（審査 1〜2 日。早いほど安全） | 待ち：S-A |
@@ -100,6 +100,8 @@ Ship Kit・Discord は任意。やるならここで聞く。
 
 ## リーダーへ（オーナーから届いたもの）
 
+
+- **2026-09-25 オーナー「いやいるわ」**：RevenueCat に **App Store Connect API キー**（チームキー、App Manager）を入れる。2026-09-02 の決定「App Store Connect のキーは作らない」（docs/FEATURES.md § 8、docs/FEATURE_RULES.md）はこれで置き換え。決定ログの直しはリーダーの仕事。
 - 2026-09-25：ユーザー @bluestevie64 が @lingua の投稿（Sep 23「Anything hard to use?」）に返信
   「Im unable to see other people's replies on posts」。オーナーのスクショでは、その投稿の返信数は **2** なのに、
   スレッドに出ている返信は **1 件**（@bluestevie64 のもの）だけ。原因はまだ誰も見ていない。
