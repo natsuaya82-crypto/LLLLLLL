@@ -448,7 +448,7 @@ const NOT_OURS = [
   'URLRequest', 'CGContext', 'CALayer', 'setMarkedText', 'UITextInputMode',
   'resourceValues', 'NSPrivacyAccessedAPITypes',
   // what apple.md's privacy section says is NOT in the app (the absence is the sentence)
-  'IDFA', 'advertisingIdentifier', 'ASIdentifierManager', 'AdSupport', 'Firebase', 'GoogleAnalytics',
+  'IDFA', 'Firebase', 'GoogleAnalytics',
   'FBSDK', 'amplitude', 'mixpanel', 'Sentry', 'appsflyer',
   // the browser
   'DecompressionStream', 'geolocation', 'getCurrentPosition',
