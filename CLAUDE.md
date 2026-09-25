@@ -173,18 +173,24 @@ screen you would otherwise have gone to**; and explaining. The keyboard
 chapter had all four at once. 「丸パッチ無限横並び、同じページに情報量詰め込み、
 ページ遷移型にせず下からひょいって出すやつ、無駄に説明をするやつ、この辺禁止」
 
-**A FIFTH: THE SYSTEM'S OWN DIALOG IS BANNED — WITH ONE THING IT IS FOR.**
+**A FIFTH: THE SYSTEM'S OWN DIALOG IS BANNED — WITH TWO THINGS IT IS FOR.**
 「標準は使わねえって言ってるだろこれも禁止や」「禁止事項入れろ」 OWNER
 2026-09-01. `confirm()`, `alert()` and `prompt()` — none of them, anywhere.
 The reason is one line: 「iPhoneのやつ使ってるsnsないしな」.
 
-**The one thing it is for is the two or three lines that ask whether to change
+**The first thing it is for is the two or three lines that ask whether to change
 or remove the thing under your finger, and it is iOS's own.**
 「アイコンをタップした時にiPhone標準の写真を選ぶか、削除するか出てくるやつで
 いいだろ」 OWNER 2026-09-01, and 「タップしたらios標準出して」 again on
 2026-09-03 when this was put to them a second time. The profile picture is
-that, and it is the only one. `UIAlertController` is how it is drawn, so it
-lives in `ios/` and cannot be reached from `www/`.
+that. `UIAlertController` is how it is drawn, so it lives in `ios/` and cannot
+be reached from `www/`.
+
+**The second is the App Store's own request for a rating** 「評価のやつつけよう」
+OWNER 2026-09-25 (1.0.3) — Apple's review prompt, drawn by iOS, which decides
+itself whether to show it and shows it at most three times a year. When it is
+asked for is the owner's (`docs/FEATURE_RULES.md` § Owner decision log,
+2026-09-25). Those two, and nothing else.
 
 **A sheet that stands in for a SCREEN is still banned** — a screen's worth of
 work lifted from the bottom because nobody wanted to make a page. And **a

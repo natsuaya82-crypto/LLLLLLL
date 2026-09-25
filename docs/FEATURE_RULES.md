@@ -249,6 +249,22 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Implementation status:
 ```
 
+### 2026-09-25 カテゴリはグラフィック&デザイン、App Store の評価のお願いを出す、キーワードを見直す（1.0.3）
+- Date: 2026-09-25
+- Area: App Store の掲載（`store/`、App Store Connect の App 情報）、システム標準のダイアログ（CLAUDE.md § Shape の五つ目）
+- Decision:
+  - **主カテゴリはグラフィック&デザイン。** 1.0.3 の版と一緒に App Store Connect で変える。
+  - **App Store の評価のお願い（iOS 自身が出すもの）を出す。** システム標準のダイアログの例外は、プロフィール画像とこれの二つ。
+    出すかどうかと回数（年三回まで）は iOS が決める。**いつ頼むかはオーナーが決める ── まだ。**
+  - **キーワードを見直す。** アプリ名にある語は重ねず、自分の字を作りたい人が打つ狭い語にする。文言はオーナーが見て決める ── 案は出した、まだ。
+  - 全部 1.0.3 から。
+- Reason: オーナーの言葉「グラフィックデザインにしよう。」「評価のやつつけよう。キーワードも見直して欲しい」「1.0.3からね」。
+  3日で約100件のダウンロードで、ランキングに入らない。
+- Affected features: 評価のお願い（新しい、`ios/` と `www/` から呼ぶ一か所）。
+- Affected data: 無し。
+- Affected docs: この項、CLAUDE.md § Shape の五つ目、2026-09-01 の標準ダイアログの項、`store/*.json` の keywords。
+- Implementation status: 未。
+
 ### 2026-09-25 キーボードはプランで分けない ── 置ける字は自作文字と既存の文字、差は自作文字をいくつ作れるかだけ（1.0.3）
 - Date: 2026-09-25
 - Area: キーボード（`www/keyboard.js`、`CAN`）、システムのキーボード（`ios/App/LinguaKeyboard/`）、フォントの書き出し
@@ -2909,8 +2925,9 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - **アクションシートの narrowing は取り消していません。**この項は一度それも
   取り消したものとして書かれていましたが、**2026-09-03 にオーナーが同じことを
   もう一度言いました**:「タップしたらios標準出して」。指の下にある一つのものを
-  変えるか消すかを訊く、iOS 自身の二〜三行 ── プロフィール画像がそれで、
-  それだけです。`www/mod.js` ではなく `ios/` の `UIAlertController`。
+  変えるか消すかを訊く、iOS 自身の二〜三行 ── プロフィール画像がそれです。
+  もう一つは App Store の評価のお願い（2026-09-25「評価のお願い」の項）で、
+  その二つだけです。`www/mod.js` ではなく `ios/` の `UIAlertController`。
 - Implementation status: **入りました（2026-09-03）。**`www/` から
   `confirm()` `alert()` `prompt()` は消えていて、`tools/es5-check.mjs` が
   止めます。言語の名前は `openForm()`、上限の言い切りは `toast()`、
