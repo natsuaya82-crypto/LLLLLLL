@@ -19,9 +19,14 @@
    route, a view or a read added tomorrow is counted tomorrow.
 
    THE CLAIMS.
-     1. The launch pages are the timeline and the notices (`PAGE_OPEN`), and a
-        launch reads nothing but what those two and the first screen read on
-        arrival, plus the session itself (SESSION below).
+     1. What a launch reads is the owner's list, all of it and nothing past it:
+        「開いた時に必要なものは読む」 -- the notices, the timeline, today's
+        prompt, the plan, the theme and the interface language (OWNER
+        2026-09-24, OPEN_READS below). The timeline and the notices are the launch
+        pages (`PAGE_OPEN`, today's prompt is the timeline's own row); the plan
+        is `verify-plan` and the theme and the language are this account's
+        `profile` row. Nothing is read past those, the first screen's and the
+        token.
      2. Every route arrived at through the door reads what its row says and
         nothing else -- printed, route by route, with the tables it asked.
      3. Every read of a list is capped: no GET without `limit=` or an `=eq.`
@@ -59,9 +64,18 @@ function say(ok, line){ console.log('  ' + (ok ? 'ok      ' : 'FAILED  ') + line
    account pays (`verify-plan`, 「段は起動とサインインで訊く」 OWNER
    2026-09-11), this account's own `profile` row (the theme and the interface
    language are drawn before any screen, and whether the account is frozen or
-   answers reports), and where this handset can be reached (`device`). Whether
-   these belong to a launch at all is the owner's -- r73 § 5-1. */
+   answers reports), and where this handset can be reached (`device`). The
+   plan and the profile row are on the owner's launch list as well (OPEN_READS
+   below, 2026-09-24). */
 const SESSION = /^(auth\/v1\/|functions\/v1\/verify-plan$|rest\/v1\/profile$|rest\/v1\/device$)/;
+/* 「開いた時にタイムラインに行くなら、今日のお題も読むべきだし、プランもそう。
+   テーマと言語も。開いた時に必要なものは読む」 OWNER 2026-09-24. Each of the
+   five, and the read that answers it. */
+const OPEN_READS = [['the notices', /^rest\/v1\/rpc\/notices$/],
+                ['the timeline', /^rest\/v1\/rpc\/feed_/],
+                ['today\'s prompt', /^rest\/v1\/prompt$/],
+                ['the plan', /^functions\/v1\/verify-plan$/],
+                ['the theme and the interface language', /^rest\/v1\/profile$/]];
 
 /* ---- a server with more rows than any screen should want ---------------- */
 function wire(cfg){
@@ -198,10 +212,18 @@ console.log('the launch: ' + boot.length + ' requests -- ' + tables(boot).join('
 console.log('the launch pages: ' + JSON.stringify(open) + ', the first screen: ' + first.r);
 say(!!open && open.slice().sort().join() === 'feed,notif',
     '1 the launch pages are the timeline and the notices (PAGE_OPEN) -- ' + JSON.stringify(open));
+{
+  const read = tables(boot), missing = OPEN_READS.filter(([, re]) => !read.some((t) => re.test(t)));
+  say(missing.length === 0, '1 a launch reads all five things the owner named -- ' +
+      OPEN_READS.map(([n]) => n).join(', ') +
+      (missing.length ? ' -- NOT READ: ' + missing.map(([n]) => n).join(', ') : ''));
+}
+/* 「アプリを開いて最初の画面 → タイムラインで」 OWNER 2026-09-24. */
+say(first.r === 'feed', '1 the app opens on the timeline -- it opened on ' + first.r);
 
 /* ---- 2. every route, arrived at through the door, with nothing answered -- */
 const routes = await pg.evaluate(() => Object.keys(PAGES));
-const ARG = { profile:'h3', about:'L-other', thread:'p3', follows:'ers:h3', photo:'p3:0' };
+const ARG = { profile:'h3', about:'L-other', thread:'p3', follows:'ers:h3', photo:'p3:0', set:'block' };
 const byRoute = {};
 const reach = await pg.evaluate(() => typeof pageNeeds === 'function' && typeof navLand === 'function');
 say(reach, '2 there is one table of what a page reads (pageNeeds) and one door onto a page (navLand)');

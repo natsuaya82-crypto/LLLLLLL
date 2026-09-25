@@ -75,6 +75,16 @@ var SETS=[
      about being reached as a person -- and it is four switches on `prefs`,
      which is the account's, so it follows somebody to their next phone. */
   {id:'push',  k:'set.push'},
+  /* Whom you have blocked, and the one place a block is lifted.
+     「ブロックの解除 → 設定に追加して非表示リストとブロックリスト」 OWNER
+     2026-09-24: a blocked person has no page to press 解除 on any more,
+     from either side (block_hides, supabase/schema.sql). */
+  /* And whom you have muted, the list a mute is lifted from. 「設定の「非表示
+     リスト」がミュートした人の一覧で、そこから解除する」 OWNER 2026-09-25,
+     beside the block list and before it, in the order the owner named the
+     two (「非表示リストとブロックリスト」 2026-09-24). */
+  {id:'mute',  k:'set.mute'},
+  {id:'block', k:'set.block'},
   {id:'data',  k:'set.data'},
   {id:'ui',    k:'set.display'}
 ];
@@ -181,6 +191,18 @@ function vSettings(){
        whoever is holding the phone that there is a staff at all. */
     '</div></div>';
 }
+/* One person you have blocked: who (snsWhoFace, the row every list of people
+   draws) and the way to lift it. Not a door onto their page -- there is no
+   page of theirs to go to while the block stands. */
+function setBlockRow(p){ return setPplRow(p, 'meBlock', 'post.unblock'); }
+/* One person you have muted, and the way to lift it. A muted person's page IS
+   there, but this row is the list, and the list is where a mute is lifted. */
+function setMuteRow(p){ return setPplRow(p, 'meMute', 'post.unmute'); }
+function setPplRow(p, press, k){
+  return '<div class="whrow"><div class="whgo">'+snsWhoFace(p)+'</div>'+
+    '<button class="whfo on"' + DO(press, [p.hd]) + '>'+
+      esc(t(k))+'</button></div>';
+}
 /* What each room answers, said on its door, so most questions are answered
    without opening anything. */
 function setSummary(id, p){
@@ -251,6 +273,20 @@ function vSet(){
       '<button class="set" style="border-bottom:none"' + DO('go', ["wsys"]) + '><span class="sl">'+t('ws.kind')+'</span>'+
       '<span class="sv">'+esc(t('ws.k.'+wsys()))+ICON_GO+'</span></button>'+
       '';
+  } else if(id==='block'){
+    /* Newest first, as the server hands them (`block_seen`), each with 解除
+       where a follow list has フォロー. Pressing it is meBlock() -- the same
+       press the ... menu makes -- and the row goes when the list comes back
+       without it. */
+    body=netPpl('block').length
+      ? netPpl('block').map(setBlockRow).join('')
+      : snsEmpty('blocks', snsNone());
+  } else if(id==='mute'){
+    /* The same list with the other table's name: `mute_seen`, newest first,
+       each with ミュート解除 (meMute(), the press the ... menu makes). */
+    body=netPpl('mute').length
+      ? netPpl('mute').map(setMuteRow).join('')
+      : snsEmpty('mutes', snsNone());
   } else if(id==='push'){
     /* Four rows, and the state above them when iOS has said no. www/push.js
        draws it: this file says where the room is and that file says what is
@@ -365,7 +401,7 @@ function vSet(){
     /* NO 「ON THIS PHONE」 LIST. It showed the backup files in Documents --
        the generations, newest first, each with the save number it carried --
        and there are no files. 「今ファイルもいらん」 OWNER 2026-09-04: a
-       language is on the server the moment it is saved (netSaveUp() in
+       language is on the server the moment it is saved (netSaveNow() in
        www/net.js), so what that list answered is not a question this app
        has any more. www/backup.js says the whole of it. */
     body='<div class="sec">'+t('set.data')+'</div>'+
@@ -1031,7 +1067,7 @@ function planMark(key){
           'plan.free.4':TAB_ICON.feed,
           'plan.plus.1':ICON_ADD,  'plan.plus.2':ICON_SPK,  'plan.plus.3':ICON_LTR,
           'plan.plus.4':ICON_LINE, 'plan.plus.5':ICON_KEYS,
-          'plan.pro.1':ICON_TICK,  'plan.pro.2':ICON_LINE,  'plan.pro.3':ICON_KEYS,
+          'plan.pro.1':ICON_TICK,  'plan.pro.2':ICON_LINE,
           'plan.pro.4':TAB_ICON.build, 'plan.pro.5':ICON_SHARE,
           'plan.badge':MARK_PLUS };
   return m[key] || ICON_TICK;

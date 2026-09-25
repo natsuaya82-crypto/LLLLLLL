@@ -79,7 +79,7 @@ function bootSession(){
      session arrived; what a screen reads is its door's (www/shell.js
      § navLand). The profile and the settings were read from these lines as
      well, a second road to one row (r73 § 1-1). And nothing goes UP: a save
-     goes up when a person makes it (netSaveUp, www/net.js), and the door
+     goes up when a person makes it (netSaveNow, www/net.js, from the press), and the door
      sends what the walk made (netTook). */
 }
 /* A session that is still good comes back here and nothing is asked. What
@@ -120,6 +120,14 @@ actWire(document.getElementById('sbg'));
    pinned to the bottom is above it rather than behind it */
 vpKbWire();
 render();
+/* AND WHAT AN EARLIER VERSION LEFT IN Documents GOES -- the sheets whole, the
+   recordings that nothing on this phone names any more. 「前の版でスマホに
+   残った用紙と声のファイル → 消す」 OWNER 2026-09-25. After the screen is up
+   and not before it, so a launch waits on none of it; with no bridge (a
+   browser) both are nothing. www/sheet.js § shDropOld, www/rec.js § voSweep,
+   and the DELETE REVIEW in docs/CHANGELOG.md 2026-09-25. */
+shDropOld();
+voSweep();
 /* 「プランが終了しました」 STOOD HERE and is not said any more. capLapse()
    compared the plan against a word in `lingua.set`, and there is no word on
    this phone: what an account pays is `verify-plan`'s answer, in memory

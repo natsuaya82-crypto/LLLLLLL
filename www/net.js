@@ -661,7 +661,7 @@ function netTook(d){
      before this), and the hour running out renews the one that is running. A
      launch sends on its own road, after the list -- www/boot.js § bootSession,
      `pullWait('mylangs', netLangSync)` -- and what moves while the app is open
-     goes up on netSaveUp()'s. This is the moment neither of those covers, and
+     goes up on the press that made it (netSaveNow). This is the moment neither of those covers, and
      it is the one the walk needs.
 
      Without it the hour running out re-sent all twelve slices of every
@@ -699,7 +699,7 @@ function netTook(d){
            door that made it -- so the door makes its row, through the one
            road that makes rows. A LAUNCH that finds no language mints one
            too and makes no row -- that was the nameless row of 2026-09-15 --
-           and its row is made by the first save (netSaveUpGo). */
+           and its row is made by the first save (netSaveNow). */
         if(langId && !langRowUp(langId) && langMine(langId))
           netLangRow(langId, function(){ render(); }, function(){});
         render();
@@ -1975,9 +1975,13 @@ function netSlicePut(sid, kind, body, ed, was, ok, bad){
   /* NO `no`. Which write this is, is numbered by the server (slice_no(),
      supabase/schema.sql, r65): a number the phone sends is not read, so
      sending one was a second answer to the question nobody asks the phone. */
+  /* AND WHICH SAVE THIS IS (NET_PRESS below). Every row one save writes
+     carries the same number, so the history on the server can say what the
+     WHOLE language was before that save -- 「言語を前に戻す →『3つ前、まるごと』」
+     OWNER 2026-09-24, supabase/schema.sql § slice_hist. */
   netSend('POST', '/rest/v1/slice',
           {language:sid, kind:kind, body:String(body||''),
-           at:at, ed:{body:ed||0, was:was||0}},
+           at:at, ed:{body:ed||0, was:was||0}, press:NET_PRESS},
           netTok(), function(){ ok(at); },
           function(d, st){
             bad(null, st||0, (d && d.message==='stale')? 'stale' : '');
@@ -2488,7 +2492,7 @@ function netAtSame(id, kind, row){
 }
 /* ---- WHAT THE SERVER IS HOLDING FOR THESE SLICES, WITHOUT CARRYING BACK
    THE ONES IT ALREADY AGREES WITH -----------------------------------------
-   Both roads that put a slice up -- a save (netSaveUpGo) and a launch
+   Both roads that put a slice up -- a save (netSaveNow) and a launch
    (netLangSync1) -- have to hand netSlice1() what the server has, and both
    read every BODY to do it. That is 877 KB to add one word of 0.14 KB, and
    at a launch it is the whole language read a SECOND time, right behind
@@ -2579,7 +2583,7 @@ var NET_SYNCING=false;
    because the road was written inside a walk over all twelve.
 
    It is lifted out rather than copied. netLangSync1() below calls it twelve
-   times and netSaveUp() calls it for the slices that moved, and there is ONE
+   times and netSaveNow() calls it for the slices that moved, and there is ONE
    road: merge, keep, write, agree. A second function that only wrote would be
    the phone overwriting whatever another one had added -- `slice`'s primary
    key is (language, kind) and `no` is a counter that guards nothing, so an
@@ -2676,57 +2680,50 @@ function netSliceAgain(id, sid, kind, done, bad, tries){
   }, function(d, st){ bad(d, st); }, [kind]);
 }
 /* ---- and the moment a save reaches the server --------------------------
-   「保存としたらオンラインおしまい」「オンラインは一本化ね？」 OWNER 2026-09-04.
+   「保存がサーバーに上がる時 →『保存を押したら』」 OWNER 2026-09-24,
+   replacing 「保存としたらオンラインおしまい」 (2026-09-04) as the answer to
+   WHEN. A save goes up because a person PRESSED something, and at no other
+   moment: the Save in the corner of a screen that has one (www/shell.js
+   § keepSave, which waits for the answer), or the press itself on a screen
+   that has none -- a word deleted from the list, a letter slot added
+   (bkTouch, www/backup.js, which does not wait).
+
+   IT USED TO BE A BURST. Every save started a timer, NET_UPMS of quiet was
+   what separated 「still typing」 from 「stopped」, and the language went up
+   1.2 seconds after the last stroke whether or not anybody had pressed Save
+   -- so a drawing somebody then said 「いいえ」 to had already gone. The timer
+   is gone and so is netSaveUp(); a screen with a Save holds what is pressed
+   on it as its draft until the Save (www/core.js § langWrites).
 
    WHICH SLICES MOVED IS ASKED OF WHAT IS ALREADY WRITTEN DOWN, and not of the
-   caller. bkTouch() is called by seven save functions with no argument -- it
-   has always been 「something changed」 and nothing more -- so this compares
-   each slice against `langWasKey`, which is what this phone and the server
-   last agreed it was. A slice equal to that has nothing to say. That record
-   is kept for the merge above and is exactly the question being asked here,
-   so nothing new is stored to answer it.
+   caller. Each slice is compared against `langWasKey`, which is what this
+   phone and the server last agreed it was. A slice equal to that has nothing
+   to say. That record is kept for the merge above and is exactly the
+   question being asked here, so nothing new is stored to answer it.
 
-   ONE BURST IS ONE SEND. Every letter drawn and every word added calls a
-   save, and NET_UPMS of quiet is what separates 「still typing」 from
-   「stopped」. Not zero: a person adding ten words would otherwise open ten
-   requests, and the tenth would be racing the first.
-
-   Fired and never waited for, like everything else here. Nobody is shown a
-   spinner for a save -- the language is on this phone the moment it is
-   written, and this is the copy that outlives the phone catching up. */
-var NET_UPMS=1200, NET_UPT=null;
-function netSaveUp(){
-  if(NET_UPT){ clearTimeout(NET_UPT); NET_UPT=null; }
-  /* The same question every save asks (langLocked, www/core.js): whose the
-     language is, as the SERVER has said it in this run -- never the picture. */
-  if(!netSignedIn() || langLocked()) return;
-  NET_UPT=setTimeout(netSaveUpGo, NET_UPMS);
-}
-/* ---- AND WHEN A PERSON PRESSED THE BUTTON, THE BUTTON WAITS ---------------
-   「後通信なくても文字書いて保存できたけど、これって消えない？
-     普通ボタン押したら通信できませんになるはずだよね？」 OWNER 2026-09-05.
-
-   They are right, and it is the same road with the wait taken off it. Above
-   is the burst: every letter drawn and every word typed calls save(), and
-   NET_UPMS of quiet is what separates 「still typing」 from 「stopped」.
-   Nobody presses anything for those and nobody is waiting for an answer.
-
-   A SAVE BUTTON IS NOT A BURST. Somebody pressed it and is standing there.
-   Pressed on 2026-09-05: Save on the drawing screen moved the screen and said
-   「保存しました」 with not one request yet sent -- the send was 1.2 seconds
-   behind a person who had already left, and the pop, when it came, was over a
-   screen they were no longer on. 「通信エラーなら進むわけねえだろ全部」.
-
-   So this is the same netSaveUpGo() and NOT a second road up: the timer is
-   dropped, the send happens now, and `done` is told whether it landed. There
-   is one place a slice goes up and this does not become the second one. */
-function netSaveNow(done){
-  if(NET_UPT){ clearTimeout(NET_UPT); NET_UPT=null; }
-  netSaveUpGo(done);
+   ONE SEND AT A TIME, AND A PRESS IS NEVER DROPPED. A press that arrives
+   while a send is in the air is QUEUED (NET_NEXT) and runs the moment the
+   first lands or falls -- it used to answer done(true) and send nothing, so a
+   second press inside the round trip was 「保存しました」 for slices that had
+   not moved. netLangSync() below shares the one flag and hands over the same
+   way. */
+var NET_NEXT=null;
+/* ONE NUMBER PER SAVE: minted where a send starts (here, and netLangSync()
+   below), and put on every slice that send writes (netSlicePut). */
+var NET_PRESS=null;
+function netSaveNext(){
+  var ws=NET_NEXT;
+  if(!ws || NET_SYNCING) return;
+  NET_NEXT=null;
+  netSaveNow(function(ok){
+    var i;
+    for(i=0;i<ws.length;i++) if(ws[i]) ws[i](ok);
+  });
 }
 /* `done(ok)` when anybody asked for one, and `done` is also how this function
-   tells the two callers apart: the burst above passes none and is nobody's
-   question, netSaveNow() passes one and is a person standing in front of a
+   tells the two callers apart: a press on a screen with no Save passes none
+   (bkTouch, www/backup.js) and nobody is waiting on it; the Save in a corner
+   passes one (keepSave, www/shell.js) and is a person standing in front of a
    button they have just pressed.
 
    THE ANSWER TO A PRESS IS THE WIRE AND NOTHING ELSE.
@@ -2735,8 +2732,8 @@ function netSaveNow(done){
 
    Every way out of here used to say `done(true)` -- a slice that had not
    moved, a language that is not this account's to write -- on the grounds
-   that those are not a network being down. That reasoning is right about the
-   burst and wrong about a press: it is the difference between 「there was
+   that those are not a network being down. That reasoning is right about a
+   press nobody waits on and wrong about a Save: it is the difference between 「there was
    nothing to send」 and 「it is saved」, and the button says the second one.
    With the phone in flight mode the profile screen therefore saved, said so,
    and went back, having touched nothing.
@@ -2747,13 +2744,13 @@ function netSaveNow(done){
    asks -- either by sending what moved, or, when nothing moved, by putting
    the smallest question this account has to the server through none() below
    and letting the answer stand for the press. */
-function netSaveUpGo(done){
+function netSaveNow(done){
   var id=langId, kinds=[], i, k, mine, was;
-  NET_UPT=null;
   function no(d, s, m){
     NET_SYNCING=false;
-    netPop(d, s, m, netSaveUpGo);
+    netPop(d, s, m, netSaveNow);
     if(done) done(false);
+    netSaveNext();
   }
   /* Nothing to send, and somebody pressed. The wire is the question, so the
      wire is asked: one row of one column, the cheapest thing this account can
@@ -2763,8 +2760,10 @@ function netSaveUpGo(done){
     if(!done) return;
     netLangAsk('', function(){ done(true); }, no);
   }
-  /* Already going up. A second send on top of the first would race it. */
-  if(NET_SYNCING){ if(done) done(true); return; }
+  /* Already going up. A second send on top of the first would race it, so
+     this one waits its turn (§ NET_NEXT above) rather than answering for a
+     send it did not make. */
+  if(NET_SYNCING){ (NET_NEXT=NET_NEXT||[]).push(done||null); return; }
   /* No account: the language is on the phone and has nowhere else to be. */
   if(!netSignedIn()){ if(done) done(true); return; }
   /* NOT ANSWERED YET IS NOT 「NOTHING TO SEND」. On a launch the language on
@@ -2793,6 +2792,7 @@ function netSaveUpGo(done){
   }
   if(!kinds.length){ none(); return; }
   NET_SYNCING=true;
+  NET_PRESS=uuid4();
   netLangRow(id, function(sid){
     /* Only the slices that moved, and of those only the bodies the server
        has changed since this phone last agreed -- netGotFor() above is the
@@ -2820,6 +2820,7 @@ function netSaveUpGo(done){
         if(fell || --left) return;
         NET_SYNCING=false;
         if(done) done(true);
+        netSaveNext();
       }
       function stop(d, s2){
         if(fell) return;
@@ -2926,8 +2927,9 @@ function netLangSync(then){
   if(!ids.length){ done(false); return; }
   NET_SYNCING=true;
   function next(){
-    if(at>=ids.length){ NET_SYNCING=false; done(moved); return; }
+    if(at>=ids.length){ NET_SYNCING=false; done(moved); netSaveNext(); return; }
     var id=ids[at]; at++;
+    NET_PRESS=uuid4();
     netLangSync1(id, function(m){ if(m) moved=true; next(); });
   }
   next();
@@ -3052,6 +3054,13 @@ var NET_PAGE=50;
    reactions and read back by nobody until netRow() -- is part of it. */
 var NET_POST_SEL='/rest/v1/post_seen?select=id,author,created_at,reply_to,body,hidden_at,author_out'+
                  ',likes,boosts,replies,i_like,i_boost';
+/* AND THE LISTS A MUTE LEAVES OUT ASK FOR IT, in these words and no others.
+   「ミュートした人の投稿はタイムラインに出ない」 OWNER 2026-09-25, and the
+   leader's reading of it: the timelines, a thread and a search. A person's
+   own page does not ask it (netPostsBy), nor does a post opened by its id --
+   what somebody wrote is still theirs to show. `muted` is the server's
+   answer (supabase/schema.sql § mute_hides); this only asks for it. */
+var NET_UNMUTED='&muted=is.false';
 /* AND WHAT A LANGUAGE ROW IS READ AS, the same way (two reads). */
 var NET_LANG_SEL='/rest/v1/language?select=id,name,published_at,wsys,owner,created_at';
 /* What a row is, on the way out. `body` holds everything a reader needs and
@@ -3197,7 +3206,9 @@ function netFeed(which, ok, bad, more){
   if(which==='day'){
     var pid=(typeof dayId==='function')? dayId() : 0;
     if(!pid){ ok(null); return; }
-    pull('&prompt=eq.'+encodeURIComponent(String(pid)));
+    /* and nobody this account has muted (`post_seen.muted`) -- 今日のお題
+       is a timeline, and a mute is 「not in the timeline」. */
+    pull('&prompt=eq.'+encodeURIComponent(String(pid))+NET_UNMUTED);
     return;
   }
   /* What is going round, which is one question the server answers -- the
@@ -3306,24 +3317,29 @@ function netFollowRows(want, by, ok, bad, handle, after, among){
      row of the list already says. Nothing here asks whether that person
      exists -- it is a second request for a sentence this app does not have,
      and the screen was reached by pressing their name. */
-  /* A PAGE AT A TIME, IN THE ORDER OF THE HANDLE. 「一覧は上限を付けて、続きは
-     スクロールで」 OWNER 2026-09-23. `follow_seen` carries no time a row was
-     made, so the one order that can be carried on from is the handle's:
-     `after` is the last handle already held (keyset, www/me.js § folPull). */
+  /* A PAGE AT A TIME, NEWEST FIRST. 「一覧は上限を付けて、続きはスクロール
+     で」 OWNER 2026-09-23, and 「フォローした新しい順で」 OWNER 2026-09-24.
+     The order is when the follow was made, and the handle under it so two
+     made in the same instant still have one order. `after` is where the last
+     page stopped, as that pair -- [time, handle] -- and the next page is
+     what comes after it in the same order (keyset). The page's own pair is
+     handed back beside the handles, for the next page to start from
+     (www/me.js § folPull). */
   for(i=0;i<(among||[]).length;i++) if(among[i]) l.push(encodeURIComponent(String(among[i])));
   if(among && !l.length){ ok([]); return; }
-  netGet('/rest/v1/follow_seen?select='+want+'_handle'+q+
-         '&order='+want+'_handle.asc'+
-         (after? '&'+want+'_handle=gt.'+encodeURIComponent(String(after)) : '')+
+  netGet('/rest/v1/follow_seen?select='+want+'_handle,created_at'+q+
+         '&order=created_at.desc,'+want+'_handle.asc'+
+         (after? '&or='+encodeURIComponent('(created_at.lt."'+after[0]+'",and(created_at.eq."'+
+                   after[0]+'",'+want+'_handle.gt."'+after[1]+'"))') : '')+
          (among? '&'+want+'_handle=in.('+l.join(',')+')' : '')+
          '&limit='+(among? l.length : NET_PAGE),
     function(d){
-      var out=[], i, hd;
+      var out=[], i, hd, end=null;
       for(i=0;i<(d||[]).length;i++){
         hd=(d[i] && d[i][want+'_handle']) || '';
-        if(hd) out.push(String(hd));
+        if(hd){ out.push(String(hd)); end=[String(d[i].created_at||''), String(hd)]; }
       }
-      ok(out);
+      ok(out, end);
     }, bad);
 }
 function netFollowing(ok, bad, handle, after){
@@ -3420,87 +3436,97 @@ function netPairRow(tab, mine, theirs, handle, on, ok, bad){
    it. `block_read` in schema.sql answers with YOUR rows only -- being blocked
    is not something a person is told. */
 function netBlock(handle, on, ok, bad){
-  /* The copy above is now wrong whichever way this goes. */
-  netBlockedDrop();
+  /* The copy below is now wrong whichever way this goes. */
+  netPplDrop('block');
   netPairRow('block', 'actor', 'blocked', handle, on, ok, bad);
 }
-/* WHO YOU HAVE BLOCKED, BY HANDLE, for the one thing on this phone that still
-   asks: which word the ... menu puts on the row, 「ブロック」 or 「解除」.
+/* ---- not reading somebody -----------------------------------------------
+   「人をミュートできる…（ブロックとは別）」 OWNER 2026-09-25. The same row as
+   a block with the other name on it, and it keeps nobody out: `mute` in
+   schema.sql is one way and the person on the other end is told nothing.
+   What it does is the server's -- `post_seen.muted`, which the lists that
+   leave a muted person out ask for (netFeed's day, netReplies, netFindPosts;
+   feed_hot() and feed_fo() on the server). */
+function netMute(handle, on, ok, bad){
+  netPplDrop('mute');
+  netPairRow('mute', 'actor', 'muted', handle, on, ok, bad);
+}
+/* WHOM YOU HAVE BLOCKED, for the two things on this phone that ask: the list
+   in the settings where a block is lifted (「設定に追加して非表示リストと
+   ブロックリスト」 OWNER 2026-09-24), and which word the ... menu puts on a
+   row, 「ブロック」 or 「解除」.
 
-   It was a list of uuids too, and every timeline was filtered through it --
-   netFeed() and netPromos() waited for it and took the rows out after the
-   answer came. The server does that now: `post_seen`, `feed_fo()` and
-   `notices()` ask block_hides() (supabase/schema.sql, r80-block), so what a
-   block keeps out never arrives, and the uuid copy had nothing left to do.
-
-   `block` is keyed by uuid -- that is what a row about an account IS -- and a
-   SCREEN knows a person by their HANDLE, so the handles come off
-   `profile_seen` for the ids that came back. When `profile_seen` leaves the
-   blocked out too (r80-block § 保留), this is rewritten with it.
+   ONE REQUEST. `block_seen` (supabase/schema.sql) is your rows of `block`
+   with the name, the face and the @ on each, newest first -- the same list
+   the settings draws. It was two: the uuids off `block`, then their handles
+   off `profile_seen`, and `profile_seen` no longer answers for somebody a
+   block stands between (block_hides, both ways, 2026-09-24).
 
    It was `ME.bl` on the phone, written only when somebody pressed the row and
    with no road to fill it from the server -- so on a second phone it was
    empty, and the menu offered to block somebody who was already blocked.
    「NOTHING IS THE PHONE'S. EVERYTHING IS THE ACCOUNT'S.」
 
-   Asked once, at the open, through the pull table (`blocks`, www/sns.js), and
-   again after a block or an unblock. `null` is 「not asked」. */
-var NET_BL_HD=null, NET_BL_WAIT=null;
-/* The handles, for a screen. `null` (not asked) answers as none: a button
+   Asked when a page that draws it is arrived at, through the pull table
+   (`blocks`, www/sns.js), and again after a block or an unblock. `null` is
+   「not asked」.
+
+   ONE LIST OF PEOPLE PER TABLE, AND ONE CODE FOR ALL OF THEM. The key is the
+   table (`block`), and NET_PPL_AT says which view it is read through --
+   written out whole, so `grep rest/v1` over this file still names every
+   table the app asks for (CLAUDE.md, the head). Everything below is about
+   「a list of people this account did something to」 and nothing about what
+   the something was. */
+var NET_PPL={}, NET_PPL_WAIT={};
+var NET_PPL_AT={ block:'/rest/v1/block_seen', mute:'/rest/v1/mute_seen' };
+/* The people, for a screen. `null` (not asked) answers as none: a button
    that said 「blocked」 before the list came down would be this phone saying
    something the server has not said. */
-function netBlockedHandles(){ return NET_BL_HD || []; }
-function netBlockedGot(){ return NET_BL_HD!==null; }
-/* ONE REQUEST, HOWEVER MANY ARE WAITING ON IT. The open and a block pressed
-   in the same moment would otherwise put the identical question twice.
-   `NET_BL_WAIT` exists only while a request is out, and everybody holding a
-   place in it is answered from the one reply. */
-function netBlockedRead(ok, bad){
+function netPpl(k){ return NET_PPL[k] || []; }
+function netPplHandles(k){
+  var out=[], i, l=netPpl(k);
+  for(i=0;i<l.length;i++) out.push(l[i].hd);
+  return out;
+}
+function netPplGot(k){ return !!NET_PPL[k]; }
+/* ONE REQUEST, HOWEVER MANY ARE WAITING ON IT. The arrival and a block
+   pressed in the same moment would otherwise put the identical question
+   twice. `NET_PPL_WAIT[k]` exists only while a request is out, and everybody
+   holding a place in it is answered from the one reply. */
+function netPplRead(k, ok, bad){
   var i, who;
-  if(NET_BL_WAIT){ NET_BL_WAIT.push({ok:ok, bad:bad}); return; }
-  NET_BL_WAIT=[{ok:ok, bad:bad}];
+  if(NET_PPL_WAIT[k]){ NET_PPL_WAIT[k].push({ok:ok, bad:bad}); return; }
+  NET_PPL_WAIT[k]=[{ok:ok, bad:bad}];
   /* WHO IT WAS ASKED FOR, held while the answer is out. Signing out with this
      in the air would otherwise let the old account's list land afterwards and
      be kept as the new one's -- the same shape netTook() guards meFor() and
      postFor() against, one file over. The waiters are still answered, with
      none, because a caller left hanging is worse than a caller told nothing. */
   who=netUid();
-  function done(ids, hd){
-    var w=NET_BL_WAIT, j;
-    NET_BL_WAIT=null;
-    if(netSignedIn() && netUid()===who) NET_BL_HD=hd;
-    else ids=[];
-    for(j=0;j<w.length;j++) w[j].ok(ids);
-  }
-  netGet('/rest/v1/block?select=blocked&actor=eq.'+encodeURIComponent(who),
+  netGet(NET_PPL_AT[k]+'?select=id,handle,display,av&order=created_at.desc',
     function(d){
-      var out=[];
-      for(i=0;i<(d||[]).length;i++) if(d[i] && d[i].blocked) out.push(d[i].blocked);
-      /* AND WHAT THOSE IDS ARE CALLED. `profile_seen` is the row a person is
-         drawn from everywhere else in this file. The waiters are answered
-         either way: a handle that does not come back -- a deleted account, a
-         row a policy refuses -- is one this app cannot name, and the block is
-         still a block on the server. */
-      if(!out.length){ done(out, []); return; }
-      netGet('/rest/v1/profile_seen?select=id,handle&id=in.('+netInList(out)+')',
-        function(pd){
-          var hd=[], j;
-          for(j=0;j<(pd||[]).length;j++)
-            if(pd[j] && pd[j].handle) hd.push(String(pd[j].handle));
-          done(out, hd);
-        },
-        function(){ done(out, []); });
+      var w=NET_PPL_WAIT[k], rows=[], ids=[], j, r;
+      NET_PPL_WAIT[k]=null;
+      for(j=0;j<(d||[]).length;j++){
+        r=d[j];
+        if(!r || !r.id || !r.handle) continue;
+        rows.push({id:String(r.id), hd:String(r.handle), who:String(r.display||''), av:r.av||null});
+        ids.push(String(r.id));
+      }
+      if(netSignedIn() && netUid()===who) NET_PPL[k]=rows;
+      else ids=[];
+      for(j=0;j<w.length;j++) w[j].ok(ids);
     },
     function(d, s, m){
-      var w=NET_BL_WAIT;
-      NET_BL_WAIT=null;
+      var w=NET_PPL_WAIT[k];
+      NET_PPL_WAIT[k]=null;
       for(i=0;i<w.length;i++) w[i].bad(d, s, m);
     });
 }
 /* Blocking or unblocking somebody makes the copy wrong, and it is the one
    thing that can; so does signing out. Dropped rather than re-asked: meBlock()
    asks again when the row lands. */
-function netBlockedDrop(){ NET_BL_HD=null; }
+function netPplDrop(k){ NET_PPL[k]=null; }
 /* Something is wrong with this post, or with this person. Written and never
    read back: there is no select policy on `report` at all, so nobody using
    the app can read one -- not the person who wrote it and not the person it
@@ -4096,7 +4122,7 @@ function netReplies(ids, ok, bad, after){
   }
   if(!list.length){ ok([]); return; }
   netGet(NET_POST_SEL+
-         '&reply_to=in.('+list.join(',')+')'+
+         '&reply_to=in.('+list.join(',')+')'+NET_UNMUTED+
          '&order=created_at.asc'+
          (after? '&created_at=gt.'+encodeURIComponent(String(after)) : '')+
          '&limit='+NET_PAGE,
@@ -4156,7 +4182,7 @@ function netFindPosts(q, ok, bad, more){
      one they have already read, or steps over one they have not. */
   netGet(NET_POST_SEL+
          '&or=(body->>ln.ilike.'+like+',body->>mn.ilike.'+like+
-         ',body->>lname.ilike.'+like+',body->>tags.ilike.'+tlike+')'+
+         ',body->>lname.ilike.'+like+',body->>tags.ilike.'+tlike+')'+NET_UNMUTED+
          '&order=created_at.desc'+
          (more? '&created_at=lt.'+encodeURIComponent(String(more)) : '')+
          '&limit='+NET_PAGE,
@@ -5111,14 +5137,15 @@ function netNotices(ok, bad){
    復旧ができるようにしたい、管理画面で」「3 で実装して」 OWNER 2026-09-09.
 
    Two calls and they are the whole of it, in the shape netStaffAdd() and
-   netStaffDrop() above are: the door is admin_hist() and admin_restore() in
+   netStaffDrop() above are: the door is admin_hist() and admin_restore_lang() in
    supabase/schema.sql, which ask is_staff() inside themselves, and these are
    a screen for that door rather than the door.
 
    NO BODY EVER COMES DOWN. A version of a 5000-word dictionary is 685 KB and
-   the screen shows a part's name and a date -- the operator is restoring on
-   what the person told them, not reading their language. So what comes back
-   is (language, kind, at), and a restore is told which of those to put back.
+   the screen shows a date -- the operator is restoring on what the person
+   told them, not reading their language. So what comes back is (language, v,
+   at) -- a version is the whole language before one save, the three newest --
+   and a restore is told which version to put back.
 
    AND THERE IS NO NEW ROAD DOWN TO THE PERSON'S PHONE. A restore lands on
    `slice` and reaches them the way everything on `slice` reaches them:
@@ -5142,8 +5169,8 @@ function netHist(handle, ok, bad){
       }
       for(i=0;i<hs.length;i++){
         r=hs[i];
-        if(r && r.language && r.kind)
-          hist.push({sid:String(r.language), kind:String(r.kind),
+        if(r && r.language && r.v)
+          hist.push({sid:String(r.language), v:String(r.v),
                      at:String(r.at||''), ms:Date.parse(r.at)||0});
       }
       /* 「そんな人はいません」 and 「その人には版がありません」 are two
@@ -5151,10 +5178,13 @@ function netHist(handle, ok, bad){
       ok({who:(d && d.who)? String(d.who) : '', langs:langs, hist:hist});
     }, bad);
 }
-function netRestore(sid, kind, at, ok, bad){
+/* THE WHOLE LANGUAGE, as it was before one save -- 「3つ前、まるごと」 OWNER
+   2026-09-24. `v` is the version as admin_hist() named it; which rows that
+   means and what each kind was is the server's (admin_restore_lang). */
+function netRestore(sid, v, ok, bad){
   ok=ok||function(){}; bad=bad||function(){};
-  if(!sid || !kind || !at){ bad(null, 0); return; }
-  netSend('POST', '/rest/v1/rpc/admin_restore',
-          {language:sid, kind:kind, at:at}, netTok(),
+  if(!sid || !v){ bad(null, 0); return; }
+  netSend('POST', '/rest/v1/rpc/admin_restore_lang',
+          {language:sid, v:v}, netTok(),
           function(){ ok(); }, bad);
 }

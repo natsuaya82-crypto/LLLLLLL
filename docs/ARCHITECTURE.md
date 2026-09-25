@@ -58,7 +58,7 @@ locked door but `langLocked()` (`www/core.js`), asked at every saver.
 
 | thing | the truth is | read by |
 |---|---|---|
-| a language's words, letters, script, keyboard, world | **the `slice` rows on the server, and nowhere else.** `LSL` in `www/core.js` holds them under `lingua.<id>.<slice>` while the app is RUNNING — memory, not this phone's disk 「今ファイルもいらん。オンラインのみで行こう」 OWNER 2026-09-04 | globals loaded on `langOpen()`; `netSaveUp()` sends a save, `netLangsDown()` brings a language back |
+| a language's words, letters, script, keyboard, world | **the `slice` rows on the server, and nowhere else.** `LSL` in `www/core.js` holds them under `lingua.<id>.<slice>` while the app is RUNNING — memory, not this phone's disk 「今ファイルもいらん。オンラインのみで行こう」 OWNER 2026-09-04 | globals loaded on `langOpen()`; `netSaveNow()` sends a save, `netLangsDown()` brings a language back |
 | the timeline — a post, its photographs, its voice, reactions, follows, blocks, reports | **the server**, with `lingua.posts.<uid>` as the copy that survives a bad network 「SNSは全部サーバー」 | `POSTS` (`www/post.js`) |
 | what was written and not sent | **the `draft` rows on the server**, with `lingua.drafts.<uid>` as the copy | `DRAFTS` (`www/post.js`) |
 | the person — the handle, the display name, the profile picture | **the `profile` row on the server**, with `lingua.me.<uid>` as the copy | `ME` (`www/me.js`) |
@@ -143,8 +143,8 @@ So, the order:
   the server        is the record          language + slice rows
   LSL (memory)      is what the app holds  filled by netLangFill() when a
                                            screen drawn from it is arrived at,
-                                           written as you type, sent by
-                                           netSaveUp() -- and gone when the
+                                           held as a draft until Save, sent
+                                           by netSaveNow() -- and gone when the
                                            app closes 「オンラインのみで行こう」
 ```
 
@@ -183,7 +183,7 @@ for real.
   a global (WORDS, LETTERS, KB, WLD, …)
       ↓  save() / saveLetters() / saveKb() / saveWld() / …
   localStorage,  lingua.<id>.<slice>        ← the working copy, never the home
-      ↓  netSlice1() — netSaveUp() on every save, netLangSync() at launch,
+      ↓  netSlice1() — netSaveNow() on every save, netLangSync() at launch,
       ↓  both through syMerge() (www/sync.js)
   the `slice` rows on the server            ← the record
       ↓  and back down the same way, both sides added and neither made to win

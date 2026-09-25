@@ -119,7 +119,7 @@ function addOne(){
      「電波なしならクルクル回るやろ」.
 
      This wrote the word, said 「追加しました」 and opened its page, with not
-     one request sent -- the send is bkTouch()'s 1.2-second burst, behind a
+     one request sent -- the send was a 1.2-second burst, behind a
      person who had already left. Measured with the radio off on 2026-09-11:
      `WORDS=2` and the word's page on the screen, `WORDS=1` after a relaunch.
      CLAUDE.md 規則 11: 「保存しないのが仕様、保存して黙るのはだめ」 -- the pop
@@ -127,7 +127,7 @@ function addOne(){
      things at once.
 
      IT IS THE SAME ROAD NINE SAVE BUTTONS ALREADY TAKE and not a second one:
-     netSaveNow() (www/net.js) is netSaveUp() with the wait put back on, and
+     netSaveNow() (www/net.js) is the one road up and it answers the press, and
      keepSnap()/keepBack() (www/shell.js) is how this phone goes back to
      before the press. Nothing new is written here; this button joins them.
 
@@ -153,13 +153,20 @@ function addOne(){
      way. With the draft still standing, that render draws the sheet instead
      of falling into vForm's catch. */
   snap=keepSnap();
-  WORDS.push(w);
-  syn.forEach(function(o){ wRelToggle(hw, 'syn', o); });
-  ant.forEach(function(o){ wRelToggle(hw, 'ant', o); });
-  /* And the forms, after the word they are of is in the dictionary: each of
-     them points at it by name. */
-  made=addFmWrite(hw);
-  save();
+  /* THE ADD IS THIS SHEET'S SAVE, so it writes the way a Save does -- through
+     keepWrite() (www/shell.js), which is the one moment a screen with a Save
+     behind it on the trail is not a draft. The sheet can be reached from one
+     that has (a word's own sheet), and without this the word would be held
+     as that screen's draft and 「追加しました」 said over nothing sent. */
+  keepWrite(function(){
+    WORDS.push(w);
+    syn.forEach(function(o){ wRelToggle(hw, 'syn', o); });
+    ant.forEach(function(o){ wRelToggle(hw, 'ant', o); });
+    /* And the forms, after the word they are of is in the dictionary: each
+       of them points at it by name. */
+    made=addFmWrite(hw);
+    save();
+  });
   netSaveNow(function(up){
     /* 届かなかった。だから何も起きなかった。 */
     if(!up){ keepBack(snap); return; }
@@ -204,7 +211,7 @@ var openHw='', wEdit=null;
    a word. */
 /* The same as the new-word sheet's: typed on free, pressed on the paid plan,
    and the row of letters under it either way. */
-function wdTypeHTML(){ return spTypeField('wd-ln', 'wdSetLn', wEdit.sp||[], 'whin'); }
+function wdTypeHTML(){ return spTypeField('wd-ln', IN('wdSetLn'), wEdit.sp||[], 'whin'); }
 function wdSetLn(v){
   wEdit.sp=spType(v);
   wdSync();
@@ -522,7 +529,7 @@ function vRelate(){
        So it is made here, and joined here, in one press. */
     '<div class="sec">'+t('home.write')+'</div>'+
     '<div class="row2"><div class="field">'+
-      lnField('rel-hw', t('f.spelling'), ' autocapitalize="none"', '')+'</div>'+
+      spTypeField('rel-hw', ' autocapitalize="none"', [], '', t('f.spelling'))+'</div>'+
     '<div class="field">'+
       lnField('rel-mn', t('f.meaning.ph'), '', '')+'</div></div>'+
     '<button class="btn ghost" style="width:100%;margin:8px 0 18px"' + DO('relNew') +
@@ -1082,7 +1089,7 @@ function wfmFormHTML(w, was, k){
   return wdPickRow(t('wfm.label'), fmLabel(fm)||t('word.none'),
       DO('go', ['fm', '#'+String(w.hw)+'|'+was]))+
     '<div class="sec">'+esc(t('wfm.form'))+'</div>'+
-    spTypeField('wfm-f', 'wfmSetF', spType(f), 'whin')+
+    spTypeField('wfm-f', IN('wfmSetF'), spType(f), 'whin')+
     /* The way out, and only for a form somebody placed: a form a rule makes
        is the rule's, and an old one is a word in the dictionary, which this
        screen does not delete. */
@@ -1194,8 +1201,7 @@ function addFmHTML(){
   return '<div class="sec">'+esc(t('fmr.title'))+'</div>'+
     '<div class="fmmks">'+addFms.map(function(m){
       return '<div class="fmmk"><span class="fmmkf">'+esc(fmLabel(m.fm))+'</span>'+
-        lnField('fmmk-'+m.id, '', IN('addFmSet', [m.id]), m.hw,
-                'whin '+myFontField())+
+        spTypeField('fmmk-'+m.id, IN('addFmSet', [m.id]), m.sp, 'whin')+
         '<button class="mnx"' + DO('addFmDrop', [m.id]) + ' aria-label="'+
           esc(t('fmr.off'))+'">'+ICON_MINUS+'</button></div>';
     }).join('')+'</div>';
@@ -1282,7 +1288,7 @@ function fmrFormHTML(){
   if(!r) return '';
   return '<div id="fmr-body">'+
     '<div class="sec">'+esc(t('fmr.add'))+'</div>'+
-    spTypeField('fmr-add', 'fmrSetAdd', r.add||[], 'whin')+
+    spTypeField('fmr-add', IN('fmrSetAdd'), r.add||[], 'whin')+
     fmrSegs(r.at||'end', [['end', t('fmr.end')], ['start', t('fmr.start')]], 'fmrSetAt')+
     '</div>';
 }

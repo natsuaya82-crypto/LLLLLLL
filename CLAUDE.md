@@ -99,7 +99,8 @@ sns tabs and the composer never asked who you were, while every write in
 you could write a post that went nowhere. Reading the timeline and posting to
 it both need an account now, **and so does making a language** 「言語はアカウント
 ないと作れないです」「ログインした人しか書けないけど」. The server is where a
-language lives, and a save reaches it the moment it is made. **Making and
+language lives, and a save reaches it when Save is pressed 「保存を押したら」
+OWNER 2026-09-24. **Making and
 saving need a signal** 「オンラインのみで行こうってことになってる今後オフライン
 対応する時にまた考えることにした」 OWNER 2026-09-04: with none there is nothing
 to send, and 「電波が無いときはログインできない」 is what a screen says about
@@ -111,8 +112,11 @@ nothing on that copy ever travels back to the server (rule 22).
 **And what is READ is decided by the screen** 「読むのは開いた画面の分だけ」
 OWNER 2026-09-23, 2026-09-24. The launch reads what the timeline it opens on
 needs — the notices, the timeline, today's prompt, the plan, the theme and the
-interface language 「開いた時に必要なものは読む」 (`PAGE_OPEN` in `www/sns.js`
-is the notices and the timeline today; the rest is being moved there); every
+interface language 「開いた時に必要なものは読む」 — the notices and the timeline
+with today's prompt are the launch pages (`PAGE_OPEN` in `www/sns.js`), the
+plan is `storeSync()` and the theme and the language are this account's
+`profile` row (`netMyProfile()`), and `load-check` holds that all five are read
+and nothing past them; every
 other screen reads what it draws when it is arrived at, with a load between 「それ以外はそのページを開く前にロードを挟む」, through the one door (`navLand()`, `www/shell.js`) and its row in
 `PAGE_READS`; a view reads nothing; a list is cut at `NET_PAGE` and carries on
 at the bottom; somebody else's chapter comes down when ↓ is pressed.
@@ -866,12 +870,17 @@ anybody noticed.
 Storage is per language. **The record is the `slice` rows on the server**;
 `lingua.<id>.<slice>` names the slice in the MEMORY store (`LSL` in
 `core.js`, rule 22) — it is not a key on this phone's disk and has not been
-one since 2026-09-04. **A save goes up the moment it is made** — `bkTouch()` is the one place all seven writers pass
-through and `netSaveUp()` (`www/net.js`) sends the slices that moved, one
-short read and one short write, after the typing stops. 「保存としたらオンライン
-おしまい」 OWNER 2026-09-04; before that a language went up on a LAUNCH and at
-the door and nowhere else, so an hour's writing sat on one phone until the app
-was opened again. `netLangSync()` is the door's (`netTook()`) and a new
+one since 2026-09-04. **A save goes up when a person presses Save**
+「保存がサーバーに上がる時 →『保存を押したら』」 OWNER 2026-09-24. On a screen
+with a Save, what is pressed is that screen's DRAFT — every writer asks
+`langWrites()` (`www/core.js`), which says no while `keepDrafting()`
+(`www/shell.js`) — and the Save writes it and sends it, waiting for the
+answer (`keepSave()`); 「いいえ」 puts the language back as the screen opened
+(`langHeldBack()`). On a screen with no Save the press is the save:
+`bkTouch()`, the one place all seven writers pass through, sends once the
+press has finished. `netSaveNow()` (`www/net.js`) is the one send, the slices
+that moved, one short read and one short write; nothing goes up because
+typing stopped — there is no timer. `keep-check` holds both halves. `netLangSync()` is the door's (`netTook()`) and a new
 language's (`langNew()`), and it is the same road: both call `netSlice1()`, which is the only thing that puts a slice up. `SLICES` in `core.js` is the list of them —
 **count them off that and not off a line here**, which has said eleven and has
 said twelve. `lingua.langs.<uid>` says which languages that account has;
@@ -880,7 +889,7 @@ settings, and neither belongs to a language.
 `langKey('words')` is the only thing that knows how a language is filed.
 
 `SLICES` in `core.js` is that list, and being *in* it is what makes a slice
-**go up**: `netSaveUp()` and `netLangSync()` both walk it, so a slice outside
+**go up**: `netSaveNow()` and `netLangSync()` both walk it, so a slice outside
 it reaches no server. Two were outside it. The **keyboard** is the language's
 — built in the app, filed under `langKey('kb')` beside the words — and was
 kept nowhere but this handset; and **what the language is for** sat in `SET`,
@@ -1141,7 +1150,8 @@ the making side; giving it a new name is not a way to stop being one.**
 
 ### 11. A language is never lost
 
-**THE SERVER IS THE ONLY COPY THAT COUNTS, and a save reaches it at once.**
+**THE SERVER IS THE ONLY COPY THAT COUNTS, and a save reaches it when Save is
+pressed** 「保存を押したら」 OWNER 2026-09-24.
 「オンラインは一本化ね？」「保存としたらオンラインおしまい」「今ファイルもいらん。
 オンラインのみで行こうってことになってる今後オフライン対応する時にまた考える
 ことにした」 OWNER 2026-09-04.
@@ -1155,9 +1165,9 @@ it called. `docs/CHANGELOG.md` 2026-09-04 carries the DELETE REVIEW.
 **What made it removable is rule 6, not a decision to care less.** The file
 existed because a language went up twice a session -- at launch and at the
 door -- so there were hours when an afternoon's work was on one handset and
-nowhere else. A save now goes up the moment it is made (`netSaveUp()` in
-`www/net.js`, from `bkTouch()`), so the window the file was covering is the
-window that closed.
+nowhere else. A save now goes up on the press that makes it (`netSaveNow()`
+in `www/net.js`, rule 6), so the window the file was covering is the window
+that closed.
 
 **And a phone whose storage is reclaimed comes back from the server.**
 `netLangsDown()` brings down which languages this ACCOUNT has, and
@@ -1512,10 +1522,15 @@ three alignments all count in that coordinate — the alignments against the ten
 columns, never against the widest row. They used to count in three: the drawing
 centred a row, the bin and the + counted from its first key, and the alignments
 measured the widest row, so pressing a column lit one key and the bin took
-another (`docs/scope/r73-audit.md` § 2-16). Whether a short row made by hand is
-filled out to ten when it is saved — the extension draws it the width of the
-phone, the sheet in the middle — is the owner's and has not been asked. What a
-MERGE counts in is the row's own positions still, and is `docs/scope/r74-kb.md`'s.
+another (`docs/scope/r73-audit.md` § 2-16). **The phone stands a short row
+where the sheet does** 「合わせて」 OWNER 2026-09-24: `KeyBoardView.swift` counts
+in the same half columns (`halfCols`, which `kb-check` asks is `KB_COLS`) and puts
+a row short of ten at `kbStart()`, a key as wide as on every other row. **A
+MERGE counts in it too** 「直して」 OWNER 2026-09-24: the key under a key is the
+one the sheet draws under it (`kbKeyAtSheet()`), for choosing down, pressing a
+lower half, joining, `kbVFix()` and carrying a pair or a run, and a merge that
+was joined the old way and does not line up on the sheet comes apart on the next
+save (DELETE REVIEW in `docs/CHANGELOG.md`).
 
 **What is selected and the step back are the screen's and the board's.**
 `kbLeft()` forgets both, and three things reach it: walking off the chapter
@@ -1834,8 +1849,9 @@ the fallback on the next launch.
 and that is the spec.** 「保存するタイミングでエラーが起きるなら、保存され
 ないし。そう言うもんじゃないの？」 OWNER 2026-09-05. The window is the
 onboarding walk, which makes a language before there is an account to send it
-to; after the door a save goes up the moment it is made (rule 6), so there is
-no other window. What that same decision does NOT allow is a failure that
+to; and after the door, a DRAFT — what is pressed on a screen with a Save
+before Save is pressed (rule 6). Closing the app with a draft open loses the
+draft, which is what not pressing Save means. What that same decision does NOT allow is a failure that
 takes the work with it -- rule 11 above and `saveTry()` in `www/core.js`.
 
 **And `netLangFill()` fills a language it already knows about.** It used to

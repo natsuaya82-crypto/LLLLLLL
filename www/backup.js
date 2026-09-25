@@ -20,9 +20,9 @@
    The file answered 「what is left when nothing else is」, and that question
    had an answer because a save reached the server twice a session -- at
    launch and at the door -- so there were hours when the only copy of an
-   afternoon's work was this handset. **A save now goes up the moment it is
-   made**, which is what took the question away rather than what ignored it.
-   docs/CHANGELOG.md 2026-09-04 carries the DELETE REVIEW.
+   afternoon's work was this handset. **A save now goes up on the press that
+   makes it**, which is what took the question away rather than what ignored
+   it. docs/CHANGELOG.md 2026-09-04 carries the DELETE REVIEW.
 
    WHAT IS LEFT IS THE ONE LINE THE FILE WAS EVER REACHED BY. Seven save
    functions call bkTouch() -- exactly the seven writers in LANG_IO -- and it
@@ -35,13 +35,30 @@
    is seven files, six of them another session's, for a word.
    ========================================================================= */
 
-/* Something changed, so the server is told. Not at once: NET_UPMS of quiet
-   inside netSaveUp() (www/net.js) is what separates 「still typing」 from
-   「stopped」, and that function decides everything else -- whether there is a
-   session, whether the language on the screen may be written (langLocked,
-   www/core.js), and which slices a person wrote and moved (§ LTOUCH).
+/* Something changed, so the server is told -- BY THE PRESS THAT CHANGED IT.
+   「保存がサーバーに上がる時 →『保存を押したら』」 OWNER 2026-09-24.
+
+   It used to be a burst: NET_UPMS of quiet after the last change, whether or
+   not anybody pressed anything, so a letter drawn and then answered 「いいえ」
+   had already gone up. There are two kinds of press now and no third:
+
+   - On a screen with a Save, nothing reaches here before the Save: every
+     writer asks langWrites() (www/core.js) and a screen with a Save on the
+     trail is a draft. The Save writes and sends itself, and waits for the
+     answer (keepSave, www/shell.js) -- KEEP_BUSY is that moment, so nothing
+     is sent twice from here.
+   - Everywhere else the press IS the save -- a word deleted from the list, a
+     letter slot added, a row dragged. It is sent once the press has
+     finished, so a press that calls three writers is one send and not three,
+     and nobody waits for it: a send that does not land says so through
+     netPop() (www/net.js), exactly as before.
 
    A launch does not call this (www/boot.js) and nothing runs a save before
    www/net.js is loaded -- index.html puts net.js ahead of this file, and the
-   migrations that save are in boot.js, which is last. */
-function bkTouch(){ netSaveUp(); }
+   migrations that save are in boot.js, which is last. What they write is the
+   app's (slAsApp, www/core.js § LTOUCH) and netSaveNow() does not send it. */
+var BK_SEND=null;
+function bkTouch(){
+  if(BK_SEND || KEEP_BUSY) return;
+  BK_SEND=setTimeout(function(){ BK_SEND=null; netSaveNow(); }, 0);
+}

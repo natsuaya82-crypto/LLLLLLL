@@ -243,7 +243,7 @@ Plus < Pro` needs nobody told which is which.
 | `letters` add / name / delete | — | yes | yes |
 | `wsys` a writing system that is not an alphabet | — | yes | yes |
 | `snd` choose the sound, not the letter's own | — | yes | yes |
-| `kb` a keyboard of your own | 1, the fixed QWERTY | **1 + 3 = 4** | no ceiling |
+| `kb` a keyboard of your own | 1, the fixed QWERTY | no ceiling | no ceiling |
 | `dl` a chapter of somebody else's language | — | **yes** | yes |
 | `edit` editing a post you have sent | — | **yes** | yes |
 | words | 100 | 1000 | no ceiling — `words` |
@@ -275,9 +275,9 @@ when it answered nothing — a browser, a screenshot, or a product not yet made
 in App Store Connect. When that happens the screen says so, in `storeSay()`,
 between the prices and the button that buys.
 
-**`kb` is Plus's, and its number landed in the same commit** — 2026-08-23.
-「1,1+3.無制限って言わなかったっけ？」 Free 1, Plus 1 + 3 = 4, Pro no ceiling,
-and **counted as a pool across languages** rather than per language: three
+**`kb` is Plus's, and it has no number on Plus or Pro** — 「Plus ── キーボード
+無制限」「Pro ── キーボード無制限」 OWNER 2026-09-24 (r46). Free 1, the fixed
+QWERTY, **counted as a pool across languages** rather than per language: three
 languages were nine keyboards while ~~`KB_MAX`~~ was three per language, on a plan
 that sells three.
 
@@ -487,7 +487,6 @@ fails when this block and that file disagree.
 FREE_LIMIT   100     the free dictionary
 PLUS_LIMIT   1000    Plus's dictionary. Pro has none -- that is can('words')
 FREE_KB      1       the fixed QWERTY, counted as one
-PLUS_KB      4       1 + 3. Pro has none
 FREE_LANGS   1       languages of your own. Plus is the same number
 PRO_LANGS    3
 PLUS_DL      1       languages downloaded, which is a second ceiling

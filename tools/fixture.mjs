@@ -460,6 +460,13 @@ export function seed(){
      answer is the index this fixture seeded. */
   PULL_GOT = { saved:1, recent:1, drafts:1, notif:1, day:1, mylangs:1,
                'feed|rec':1, 'feed|fo':1, 'feed|day':1 };
+  /* AND WHOM THIS ACCOUNT HAS BLOCKED (`block_seen`, www/net.js §
+     netPplRead) -- one person nobody else in the fixture is, so the
+     settings' list has a row to draw and a 解除 to press. */
+  NET_PPL.block = [{ id:'U-zed', hd:'zed', who:'Zed', av:{ ch:'Z' } }];
+  /* AND WHOM IT HAS MUTED (`mute_seen`), one more person nobody else is, so
+     the 非表示リスト has a row and a ミュート解除 to press. */
+  NET_PPL.mute = [{ id:'U-yun', hd:'yun', who:'Yun', av:{ ch:'Y' } }];
   /* and the open language's slices, which are what the fixture seeded */
   PULL_GOT['lang|' + langId] = 1;
   /* and what this account has written, which is POSTS -- so the door onto
@@ -1563,14 +1570,14 @@ export function halfDone(){
     ['what you can do about somebody else', () => { window.route='feed'; NAV=[{r:'feed'}];
                               postMore('p2');
                               const h = vFeed(); PMENU = ''; return h; }],
-    /* ブロックしている一覧はサーバーの `block` です（2026-09-11）── `ME.bl`
-       ではありません。`NET_BL_HD` は netBlockedRead() が降ろす handle の側で、
-       この検査は網を張らないので押します。 */
-    ['and the same, already blocked', () => { const was = NET_BL_HD;
-                              NET_BL_HD = ['iri'];
+    /* ブロックしている一覧はサーバーの `block_seen` です（2026-09-24）── `ME.bl`
+       ではありません。`NET_PPL.block` は netPplRead() が降ろす人の行で、
+       この検査は網を張らないので置きます。 */
+    ['and the same, already blocked', () => { const was = NET_PPL.block;
+                              NET_PPL.block = [{ id:'U-iri', hd:'iri', who:'Iri', av:{ ch:'\u0416' } }];
                               window.route='feed'; NAV=[{r:'feed'}];
                               postMore('p2');
-                              const h = vFeed(); NET_BL_HD = was; PMENU = ''; return h; }],
+                              const h = vFeed(); NET_PPL.block = was; PMENU = ''; return h; }],
     /* The five reasons. It is a form and nothing walks to it. */
     ['saying what is wrong with a post', () => { openReport('p2', 'iri');
                               const h = vForm(); rpFor = null; return h; }],
@@ -1595,6 +1602,18 @@ export function halfDone(){
                                          window.route = 'profile';
                                          NAV = [{ r: 'profile', a: 'iri' }];
                                          return vProfile(); }],
+    /* And the same page with Iri muted: the posts are still on it (a mute is
+       off the timeline, not gone) and the row on the menu has turned. */
+    ["somebody else's page, muted, with the menu open",
+                                 () => { const was = NET_PPL.mute;
+                                         NET_PPL.mute = [{ id:'U-iri', hd:'iri', who:'Iri', av:{ ch:'\u0416' } }];
+                                         WMENU = true;
+                                         WHO_HAVE['iri'] = { who:'Iri', hd:'iri',
+                                             av:{ch:'Ж'}, lname:'Vethi', bio:'',
+                                             fo:2, fr:3, out:false };
+                                         window.route = 'profile';
+                                         NAV = [{ r: 'profile', a: 'iri' }];
+                                         const h = vProfile(); NET_PPL.mute = was; return h; }],
     /* Frozen, which is said on the page the app opens on and nowhere else --
        no notice, and the three sns tabs stay open. */
     ['home, for an account that has been frozen',

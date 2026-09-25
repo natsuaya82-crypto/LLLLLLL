@@ -228,7 +228,7 @@ function migrateGramLang(){
      -- so there is nothing to save. */
 }
 stRead();
-function saveStg(){ if(langLocked()) return; bkTouch(); slWr(langKey('phases'), JSON.stringify(STG)); }
+function saveStg(){ if(!langWrites()) return; bkTouch(); slWr(langKey('phases'), JSON.stringify(STG)); }
 
 /* The stages, in the order they open each other up. `slots` are the words the
    stage cannot do without. There was a `feats` beside it -- the decisions from

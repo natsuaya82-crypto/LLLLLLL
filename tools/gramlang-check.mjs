@@ -811,7 +811,7 @@ const g2 = await pg.evaluate(() => {
      check stands up no server. Answered yes here and put back at the end, so
      what is being asked about is the board and not the wire. */
   const realNet = window.netSaveNow;
-  window.netSaveNow = (cb) => cb(true);
+  window.netSaveNow = (cb) => { if (cb) cb(true); };
 
   /* Nobody has arranged anything yet. A block above this one presses the old
      六択 on the stage screen, so the mark is already standing when this starts
@@ -1865,7 +1865,7 @@ const polar = await pg.evaluate(() => {
   /* The save goes up before it goes down (www/shell.js § keepSave) and there
      is no server behind this file. */
   const realNet = window.netSaveNow;
-  window.netSaveNow = (cb) => cb(true);
+  window.netSaveNow = (cb) => { if (cb) cb(true); };
   /* Nothing written yet, and the copy of the old gpos already made -- what
      this block is about is the writing, and the copy is the block after it. */
   STG.gr = []; STG.grm = '1'; G2POL = { at:'', a:[], b:[] };

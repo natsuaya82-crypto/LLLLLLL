@@ -164,12 +164,25 @@ final class KeyBoardView: UIView {
     let gap: CGFloat = 3
     let rowH = (bounds.height - gap * CGFloat(rows.count + 1)) / CGFloat(rows.count)
     var y = gap
+    // One column of the app's sheet, and the gap after it. A column is half a
+    // key, as it is in the app, so a row of ten keys comes out exactly as the
+    // proportional division always drew it.
+    let col = (bounds.width - gap) / CGFloat(KeyBoardView.halfCols)
     for row in rows {
+      let units = row.reduce(0) { $0 + KeyBoardView.halfUnits($1.key.width) }
       let total = row.reduce(CGFloat(0)) { $0 + $1.key.width }
       let free = bounds.width - gap * CGFloat(row.count + 1)
-      var x = gap
+      // A row short of ten stands where the app's sheet stands it -- kbStart()
+      // in www/keyboard.js, the middle, with the odd half on the right -- at
+      // the width a key is on every other row. 「合わせて」 OWNER 2026-09-24.
+      // It used to be divided across the whole phone, so five keys came out
+      // twice as wide as the five on the row above. A row of ten or more
+      // divides the phone as it always did.
+      let short = units < KeyBoardView.halfCols
+      var x = short ? gap + col * CGFloat((KeyBoardView.halfCols - units) / 2) : gap
       for v in row {
-        let w = free * (v.key.width / total)
+        let w = short ? col * CGFloat(KeyBoardView.halfUnits(v.key.width)) - gap
+                      : free * (v.key.width / total)
         // A key joined to the one under it covers that row too, and the gap
         // between the two rows as well -- otherwise it stops 3 points short
         // and the merge reads as two keys with a seam. The row below still
@@ -184,6 +197,12 @@ final class KeyBoardView: UIView {
       y += rowH + gap
     }
   }
+
+  /// The app's sheet is KB_COLS half columns across (www/keyboard.js), and a
+  /// key's width in them is kbU(): half a key at the least, rounded to a half.
+  /// kb-check reads this number out of this file and asks it is KB_COLS.
+  static let halfCols = 20
+  static func halfUnits(_ w: CGFloat) -> Int { max(1, Int((w * 2).rounded())) }
 
   private func keyAt(_ p: CGPoint) -> KeyView? {
     for row in rows { for v in row where v.frame.contains(p) { return v } }

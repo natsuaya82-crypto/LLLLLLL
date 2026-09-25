@@ -142,6 +142,8 @@ const BKP = 'b1000000-0000-4000-8000-0000000000b3';  /* BK's post, which BD answ
 const BDP = 'b1000000-0000-4000-8000-0000000000b4';  /* what BD wrote */
 const BDO = 'b1000000-0000-4000-8000-0000000000b5';  /* and BD's post before the tick */
 const BDL = 'b1000000-0000-4000-8000-0000000000b6';  /* BD's published language */
+const BKL = 'b1000000-0000-4000-8000-0000000000b7';  /* and BK's, for the walk the other way */
+const BKH = 'blocker';                                 /* and BK's @ */
 /* A value as an SQL literal. */
 const q = (s) => "'" + String(s).replace(/'/g, "''") + "'";
 /* verify.mjs's ladder, as the array plan_put() is handed. */
@@ -570,6 +572,33 @@ const CASES = [
   ['B lifts B\u2019s own block',               'ok',     B, 0,
     `delete from block where actor='${B}' and blocked='${A}'`],
 
+  /* --- a mute is yours, goes one way, and keeps nobody out --------------
+     \u300c\u4eba\u3092\u30df\u30e5\u30fc\u30c8\u3067\u304d\u308b\u2026\uff08\u30d6\u30ed\u30c3\u30af\u3068\u306f\u5225\uff09\u300d OWNER 2026-09-25. B mutes A
+     and lifts it again before the section closes, so everything below still
+     reads A's posts as the ordinary somebody else. */
+  ['B mutes A',                               'ok',     B, 0,
+    `insert into mute(actor,muted) values ('${B}','${A}')`],
+  ['B reads whom B muted, by name',           'ok',     B, 0,
+    `select 1 from mute_seen where id='${A}'`],
+  ['A cannot read that A is muted',           'denied', A, 0,
+    `select 1 from mute_seen`],
+  ['A cannot read B\u2019s mutes',              'denied', A, 0,
+    `select 1 from mute where actor='${B}'`],
+  ['A cannot mute in B\u2019s name',           'denied', A, 0,
+    `insert into mute(actor,muted) values ('${B}','${C}')`],
+  ['A cannot lift B\u2019s mute',              'denied', A, 0,
+    `delete from mute where actor='${B}'`],
+  ['nobody signed in mutes',                  'denied', B, 1,
+    `insert into mute(actor,muted) values ('${B}','${C}')`],
+  ['A\u2019s post says it is muted, to B',      'ok',     B, 0,
+    `select 1 from post_seen where id='${P}' and muted`],
+  ['and still reaches B\u2019s own read of it', 'ok',     B, 0,
+    `select 1 from post_seen where id='${P}'`],
+  ['and says nothing of the kind to C',       'denied', C, 0,
+    `select 1 from post_seen where id='${P}' and muted`],
+  ['B lifts the mute',                        'ok',     B, 0,
+    `delete from mute where actor='${B}' and muted='${A}'`],
+
   /* --- and a block is the server's to keep, not the phone's -------------
      「Blocked means you see nothing of them」 OWNER 2026-08-19. These are
      only the rows; what BK can still READ of BD is asked of the catalogue
@@ -597,8 +626,61 @@ const CASES = [
     `insert into language(id,owner,name) values ('${BDL}','${BD}','Blok')`],
   ['and publishes it',                        'ok',     BD, 0,
     `update language set published_at=now() where id='${BDL}'`],
+  ['BK makes a language',                     'ok',     BK, 0,
+    `insert into language(id,owner,name) values ('${BKL}','${BK}','Blak')`],
+  ['and publishes it too',                    'ok',     BK, 0,
+    `update language set published_at=now() where id='${BKL}'`],
   ['BK blocks BD',                            'ok',     BK, 0,
     `insert into block(actor,blocked) values ('${BK}','${BD}')`],
+  /* WHOM YOU HAVE BLOCKED, BY NAME, AND TO YOU ALONE. 「設定に追加して非表示
+     リストとブロックリスト」 OWNER 2026-09-24: the list is where unblocking
+     is, now that a blocked person's page is gone from both sides. */
+  ['BK reads whom BK blocked, by name',       'ok',     BK, 0,
+    `select 1 from block_seen where handle='${BDH}'`],
+  ['BD cannot read that BD is blocked there', 'denied', BD, 0,
+    `select 1 from block_seen`],
+  ['B cannot read whom BK blocked',           'denied', B, 0,
+    `select 1 from block_seen where handle='${BDH}'`],
+  /* NOTHING IS DONE ACROSS IT, EITHER WAY. 「ブロックされた側 → いいね・返信・
+     フォローもできず、通知も来ない（サーバーで止める）」 OWNER 2026-09-25. A
+     refused row is also a push nobody gets: push-send rings on these rows
+     arriving (supabase/functions/push-send/push.mjs § PUSH). */
+  ['BD cannot pass BK’s post on',         'denied', BD, 0,
+    `insert into react(post,actor,kind) values ('${BKP}','${BD}','boost')`],
+  ['BD cannot answer BK',                     'denied', BD, 0,
+    `insert into post(author,body,reply_to) values ('${BD}','{}'::jsonb,'${BKP}')`],
+  ['nor edit a post into an answer to BK',    'denied', BD, 0,
+    `update post set reply_to='${BKP}' where id='${BDP}'`],
+  ['BD stops following BK',                   'ok',     BD, 0,
+    `delete from follow where follower='${BD}' and followed='${BK}'`],
+  ['and cannot follow BK again',              'denied', BD, 0,
+    `insert into follow(follower,followed) values ('${BD}','${BK}')`],
+  ['BK cannot like BD’s post either',     'denied', BK, 0,
+    `insert into react(post,actor,kind) values ('${BDP}','${BK}','like')`],
+  ['BD still answers somebody else',          'ok',     BD, 0,
+    `insert into post(author,body,reply_to) values ('${BD}','{}'::jsonb,'${P}')`],
+  /* WHAT THEY PUBLISHED, both ways. 「ブロックした相手の公開言語 → 言語の一覧・
+     検索・人のページから見えない」 OWNER 2026-09-25. The walk further down
+     counts this too; these say it by name. */
+  ['BK does not see BD’s published language', 'denied', BK, 0,
+    `select 1 from language_seen where id='${BDL}'`],
+  ['BD does not see BK’s published language', 'denied', BD, 0,
+    `select 1 from language_seen where id='${BKL}'`],
+  /* AND ONE BK TOOK BEFORE THE BLOCK IS STILL READ, which is not a decision:
+     what a block does to a language somebody took has not been asked
+     (docs/scope/r85-block.md), so this holds that nothing moved. The take is
+     made with the block lifted and dropped again at the end, so the walk
+     below counts a block and nothing else. */
+  ['BK lifts the block for a moment',         'ok',     BK, 0,
+    `delete from block where actor='${BK}' and blocked='${BD}'`],
+  ['BK takes BD’s language',              'ok',     BK, 0,
+    `insert into language_take(uid,language) values ('${BK}','${BDL}')`],
+  ['BK blocks BD again',                      'ok',     BK, 0,
+    `insert into block(actor,blocked) values ('${BK}','${BD}')`],
+  ['BK still reads the language BK took',     'ok',     BK, 0,
+    `select 1 from language_seen where id='${BDL}'`],
+  ['BK lets go of it',                        'ok',     BK, 0,
+    `delete from language_take where uid='${BK}' and language='${BDL}'`],
 
   /* --- a report is written and never read back by anybody using the app --- */
   ['B reports A\u2019s post',                  'ok',     B, 0,
@@ -958,14 +1040,24 @@ const CASES = [
      phone that says otherwise is not believed. */
   ['A writes a keyboard onto its own language', 'ok', A, 0,
     `insert into slice(language,kind,body,no) values ('${LD}','kb','["v1"]',7)`],
-  ['and writes over it, four times',          'ok',     A, 0,
-    `update slice set body='["v2"]' where language='${LD}' and kind='kb'`],
-  ['…again',                                  'ok',     A, 0,
-    `update slice set body='["v3"]', no=999 where language='${LD}' and kind='kb'`],
-  ['…again',                                  'ok',     A, 0,
-    `update slice set body='["v4"]' where language='${LD}' and kind='kb'`],
-  ['…and again',                              'ok',     A, 0,
-    `update slice set body='["v5"]' where language='${LD}' and kind='kb'`],
+  ['and its dictionary, already there, says w1', 'ok',   A, 0,
+    `update slice set body='["w1"]' where language='${LD}' and kind='words'`],
+  /* FOUR SAVES, EACH WITH ITS NUMBER (\`press\`, www/net.js § netSaveNow).
+     The first moves both kinds, the third moves both again, the other two
+     the keyboard alone -- 「3つ前、まるごと」 OWNER 2026-09-24 is about the
+     LANGUAGE, so the versions below are counted by save and not by kind. */
+  ['save 1 writes over both',                 'ok',     A, 0,
+    `update slice set body='["v2"]', press='00000000-0000-4000-8000-000000000001' where language='${LD}' and kind='kb'`],
+  ['…both',                                   'ok',     A, 0,
+    `update slice set body='["w2"]', press='00000000-0000-4000-8000-000000000001' where language='${LD}' and kind='words'`],
+  ['save 2, the keyboard',                    'ok',     A, 0,
+    `update slice set body='["v3"]', no=999, press='00000000-0000-4000-8000-000000000002' where language='${LD}' and kind='kb'`],
+  ['save 3, both',                            'ok',     A, 0,
+    `update slice set body='["v4"]', press='00000000-0000-4000-8000-000000000003' where language='${LD}' and kind='kb'`],
+  ['…both',                                   'ok',     A, 0,
+    `update slice set body='["w3"]', press='00000000-0000-4000-8000-000000000003' where language='${LD}' and kind='words'`],
+  ['save 4, the keyboard',                    'ok',     A, 0,
+    `update slice set body='["v5"]', press='00000000-0000-4000-8000-000000000004' where language='${LD}' and kind='kb'`],
   ['and its number is the server\u2019s: five writes, five', 'ok', A, 0,
     `select 1 from slice where language='${LD}' and kind='kb' and no=5`],
   /* THE ONLY AUTOMATIC DELETION IN THIS FILE, and it is the one the DELETE
@@ -981,6 +1073,18 @@ const CASES = [
     `select 1 where (select count(*) from slice_hist
                       where language='${LD}' and kind='kb'
                         and body in ('["v2"]','["v3"]','["v4"]')) = 3`],
+  /* AND EACH KEEPS THE NUMBER OF THE SAVE THAT REPLACED IT. */
+  ['a version carries the save that replaced it', 'ok',  C, 0,
+    `select 1 from slice_hist where language='${LD}' and kind='kb'
+        and body='["v3"]' and press='00000000-0000-4000-8000-000000000003'`],
+  /* AND THE LANGUAGE HAS THREE VERSIONS: its three newest saves, whatever
+     each moved. Save 1 is still in the history (the dictionary's row) and
+     is the fourth, which is not one. */
+  ['staff sees the language\u2019s three newest saves', 'ok', C, 0,
+    `select 1 where (select string_agg(v, ',' order by at desc) from slice_versions('${LD}'))
+                    = '00000000-0000-4000-8000-000000000004,00000000-0000-4000-8000-000000000003,00000000-0000-4000-8000-000000000002'`],
+  ['and the author sees none of it',          'ok',     A, 0,
+    `select 1 where (select count(*) from slice_versions('${LD}')) = 0`],
   /* AND NOBODY BUT STAFF READS THEM. The author's own previous versions are
      the operator's to see and not the author's -- a date beside every version
      is a record of when that person changed their mind, and no screen in the
@@ -1010,26 +1114,38 @@ const CASES = [
   ['nor can somebody with no account',        'denied', B, 1,
     `select admin_hist('iri')`],
   ['B cannot put a version back',             'denied', B, 0,
-    `select admin_restore('${LD}','kb',
-       (select max(at) from slice where language='${LD}' and kind='kb'))`],
+    `select admin_restore_lang('${LD}','00000000-0000-4000-8000-000000000002')`],
   ['nor can somebody with no account',        'denied', B, 1,
+    `select admin_restore_lang('${LD}','00000000-0000-4000-8000-000000000002')`],
+  ['nor A, whose language it is',             'denied', A, 0,
+    `select admin_restore_lang('${LD}','00000000-0000-4000-8000-000000000002')`],
+  ['and the one part at a time is gone',      'denied', C, 0,
     `select admin_restore('${LD}','kb', now())`],
-  /* AND STAFF CAN, WHICH IS THE WHOLE FEATURE. */
+  /* AND STAFF CAN, WHICH IS THE WHOLE FEATURE -- and not a fourth. */
   ['staff lists them',                        'ok',     C, 0,
     `select admin_hist('iri')`],
-  ['staff puts the oldest kept version back', 'ok',     C, 0,
-    `select admin_restore('${LD}','kb',
-       (select min(at) from slice_hist
-         where language='${LD}' and kind='kb'))`],
+  ['staff cannot go back four saves',         'denied', C, 0,
+    `select admin_restore_lang('${LD}','00000000-0000-4000-8000-000000000001')`],
+  ['staff puts the language back to before save 2', 'ok', C, 0,
+    `select admin_restore_lang('${LD}','00000000-0000-4000-8000-000000000002')`],
   /* Asked as A and not as staff: staff may read the VERSIONS and has no
      business reading somebody's unpublished language, which is what the two
-     claims a hundred lines above already say. */
-  ['and the slice IS that version now',       'ok',     A, 0,
+     claims a hundred lines above already say. BOTH kinds are as they were
+     before save 2: the keyboard from the version save 2 replaced, and the
+     dictionary from the one save 3 replaced -- it did not move in save 2. */
+  ['and the keyboard IS that version now',    'ok',     A, 0,
     `select 1 from slice where language='${LD}' and kind='kb' and body='["v2"]'`],
-  /* AND UNDOING THE UNDO. Putting a version back is an update, so the trigger
-     kept what was there a moment before -- the operator can walk it back. */
-  ['and what was there before the restore is a version now', 'ok', C, 0,
-    `select 1 from slice_hist where language='${LD}' and kind='kb' and body='["v5"]'`],
+  ['and so is the dictionary, the whole language at once', 'ok', A, 0,
+    `select 1 from slice where language='${LD}' and kind='words' and body='["w2"]'`],
+  /* AND UNDOING THE UNDO. Putting a version back is one save of its own, so
+     the trigger kept what was there a moment before, both kinds under one
+     number -- the newest version, which the operator can walk back. */
+  ['and what was there before the restore is ONE version now', 'ok', C, 0,
+    `select 1 where (select count(distinct press) from slice_hist
+                      where language='${LD}' and body in ('["v5"]','["w3"]')) = 1
+              and (select v from slice_versions('${LD}') limit 1)
+                  = (select press::text from slice_hist
+                      where language='${LD}' and body='["v5"]')`],
   /* AND A LANGUAGE GOING TAKES ITS VERSIONS. */
   ['A deletes that language',                 'ok',     A, 0,
     `delete from language where id='${LD}'`],
@@ -2858,7 +2974,9 @@ begin
   execute 'set local role postgres';
   return c;
 end $$;
-create or replace function _block_seen(sub uuid, them uuid, hd text)
+-- \`owner\` is who made the block: the reader themself (the blocker's walk),
+-- or \`them\` (the walk of the person who was blocked).
+create or replace function _block_seen(sub uuid, them uuid, hd text, owner uuid)
 returns table(what text, open int, shut int) language plpgsql as $$
 declare r record; stmt text;
 begin
@@ -2879,9 +2997,11 @@ begin
                    r.src, '%' || them || '%', '%"' || hd || '"%');
     what := r.nm;
     shut := _block_read(stmt, sub);
-    delete from block where actor = sub and blocked = them;
+    delete from block where actor = owner
+                        and blocked = (case when owner = sub then them else sub end);
     open := _block_read(stmt, sub);
-    insert into block(actor, blocked) values (sub, them);
+    insert into block(actor, blocked)
+      values (owner, case when owner = sub then them else sub end);
     return next;
   end loop;
 end $$;
@@ -3185,7 +3305,9 @@ const sql = [
   /* And the size of the wall, printed. Counted rather than listed, because a
      number that moves is a question and a list is a thing to maintain. */
   `select 'BLOCK'||chr(9)||what||chr(9)||open||chr(9)||shut
-     from _block_seen(${q(BK)}, ${q(BD)}, ${q(BDH)});`,
+     from _block_seen(${q(BK)}, ${q(BD)}, ${q(BDH)}, ${q(BK)});`,
+  `select 'BLOCKED'||chr(9)||what||chr(9)||open||chr(9)||shut
+     from _block_seen(${q(BD)}, ${q(BK)}, ${q(BKH)}, ${q(BK)});`,
   `select 'ANON'||chr(9)||
      (select count(*) from pg_class c join pg_namespace n on n.oid=c.relnamespace
        where n.nspname='public' and c.relkind in ('r','v','m','p','f')
@@ -3250,17 +3372,21 @@ if (wall) {
    A name here must still show BD -- the day it stops, the line is permission
    for nothing and has to go, which is what box-check says a stale baseline
    line becomes. docs/scope/r80-block.md carries what each one is waiting on. */
+/* BOTH WAYS. 「ブロック → 見えなくして」 OWNER 2026-09-24: 「ブロックされた側
+   からも、こちらのタイムライン・プロフィール・通知が見えない」. So the
+   catalogue is walked twice -- as BK, who blocked (`BLOCK`), and as BD, who
+   was blocked (`BLOCKED`) -- and every read is held to the same sentence
+   both times. */
 const BLOCK_HELD = {
-  profile_seen:  'the person themself -- unblocking is pressed on their page and nowhere else',
-  language_seen: 'what they made, drawn on their page (profile_seen reads it)',
-  follow_seen:   'who follows whom -- the unfollow a block makes reads this list',
 };
 const blockRows = out.split('\n').map((l) => l.split('\t'))
-                     .filter((r) => r.length === 4 && r[0] === 'BLOCK');
+                     .filter((r) => r.length === 4 && (r[0] === 'BLOCK' || r[0] === 'BLOCKED'));
 let blockOut = 0, blockHeld = 0, blockNobody = 0;
-if (!blockRows.length) bad.push(['a block, asked of every read', 'reads', 'none were found']);
-for (const [, name, open, shut] of blockRows) {
-  const o = Number(open), s = Number(shut), held = BLOCK_HELD[name];
+if (!blockRows.some((r) => r[0] === 'BLOCK')) bad.push(['a block, asked of every read', 'reads', 'none were found']);
+if (!blockRows.some((r) => r[0] === 'BLOCKED')) bad.push(['a block, asked of every read by who was blocked', 'reads', 'none were found']);
+for (const [way, name0, open, shut] of blockRows) {
+  const name = way === 'BLOCKED' ? name0 + ' (to who was blocked)' : name0;
+  const o = Number(open), s = Number(shut), held = BLOCK_HELD[name0];
   let why = '';
   if (o < 0 || s < 0) why = 'could not be read as the blocker';
   else if (!o) { blockNobody++; if (held) why = 'held by name and names nobody -- take it off BLOCK_HELD'; }
@@ -3278,7 +3404,7 @@ for (const name of Object.keys(BLOCK_HELD))
     console.log('  FAIL  ' + ('a block leaves ' + name + ' out').padEnd(44) +
                 'held by name and not in the catalogue');
   }
-console.log(`\nblock: ${blockRows.length} reads walked as the blocker -- ${blockOut} leave them out, ` +
+console.log(`\nblock: ${blockRows.length} reads walked as the blocker and as who was blocked -- ${blockOut} leave them out, ` +
             `${blockHeld} held by name, ${blockNobody} name nobody\n`);
 
 /* After the wall, because the wall's sentence is about anon and these are

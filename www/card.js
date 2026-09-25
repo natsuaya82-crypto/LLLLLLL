@@ -1033,8 +1033,8 @@ function cardMount(){
    www/wordsheet.js's CSV shipped exactly the same mechanism and
    www/sheet.js's PDF is what replaced it: the native side writes the file and
    iOS's own UIActivityViewController hands it over. This is that road, and it
-   is the same one -- LinguaShare.sheet() files the bytes under
-   Documents/Sheets and answers with the name it filed them under, and
+   is the same one -- LinguaShare.sheet() files the bytes in the temporary
+   folder (sheets(), 2026-09-24) and answers with the name it filed them under, and
    shareFile() puts that file into the share sheet.
 
    Two things about it are load-bearing.

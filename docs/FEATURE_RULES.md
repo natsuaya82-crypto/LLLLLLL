@@ -249,57 +249,86 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Implementation status:
 ```
 
-### 2026-09-24 オーナーの答え（確認事項 40 項への返事）
+### 2026-09-25 タブで出る時の保存・Pro の上限・ブロックと取った言語・ミュートの広さ
+- Date: 2026-09-25
+- Area: 保存ボタンのある画面、Pro の上限、ブロック、ミュート
+- Decision:
+  - **保存ボタンのある画面を下のタブで出る時**: 戻るで出る時と同じく「保存しますか？」と訊く。
+  - **Pro で上限（言語3つ・ダウンロード3つ）に達した時**: 追加そのものをできなくする ── ＋のある所から＋を消す。
+    「アップグレードが必要です」のポップは出さない（Pro の上にプランは無い）。
+  - **ブロックする前にその人から取った言語**: 残す（一覧に残り、読める）。
+  - **ミュートした人**: その人が書いた投稿に加えて、その人がリポストした投稿と、その人からの通知（いいね・返信など）も出さない。
+- Reason: オーナーの言葉「1 イエス」「追加自体できなくすればいい。＋があるところからプラスをなくすだけ」「言語は残していいんちゃう」「消そう」。
+- Affected data: 無し（見せ方だけ。ミュートの表は r85 のまま）。
+- Affected docs: この項、`docs/STATE.md` 4a。
+- Implementation status: 未。r88 で出す。
+
+### 2026-09-25 ミュート・ブロックの残り・サインインの着地・前の版のファイル
+- Date: 2026-09-25
+- Area: 設定の非表示リスト、ブロック、サインイン後の画面、スマホに残ったファイル
+- Decision:
+  - **ミュート**: 人をミュートできる。ミュートした人の投稿はタイムラインに出ない（ブロックとは別）。
+    設定の「非表示リスト」がミュートした人の一覧で、そこから解除する。
+  - **サインインし直した時の画面**: プロフィール（開いた時の最初の画面はタイムライン）。
+  - **ブロックした相手の公開言語**: 言語の一覧・検索・人のページから見えない。
+  - **ブロックされた側**: こちらが見えないので、いいね・返信・フォローもできず、通知も来ない（サーバーで止める）。
+  - **前の版でスマホに残った用紙と声のファイル**: 消す（DELETE REVIEW を CHANGELOG に）。
+- Reason: オーナーの言葉。
+- Affected data: ミュートの表（新しい）、`block_hides()` の範囲、スマホの用紙と声のファイル（消す）。
+- Affected docs: この項、`docs/STATE.md`、Documents の文（`docs/FEATURES.md`・`docs/RECOVERY.md`、直す session が）。
+- Implementation status: **実装（`claude/r85-block`、2026-09-25）。CODE CONFIRMED のみ。**
+  ミュート ── `mute` 表・`mute_seen`・`post_seen.muted`、おすすめ・フォロー中・今日のお題・スレッド・投稿の検索から
+  外れ、その人のページには出る。設定の「非表示リスト」。サインインし直した時の着地 ── もうプロフィールだった
+  （`open-check` 3e で測った、コードは変えていない）。ブロックした相手の公開言語 ── `language_seen` で外す（両向き）、
+  取った言語は外さない（決めていない）。ブロックの間の いいね・リポスト・返信・フォロー ── 書く側で断る、通知もそれで
+  鳴らない。前の版の用紙と声 ── 起動で消す（`Documents/Sheets` 全部、`Documents/Voices` は誰も名指さない物）。
+  残り・訊くことは `docs/scope/r85-block.md`。
+
+### 2026-09-24 画面・タイムライン・キーボード・保存・お金
 - Date: 2026-09-24
 - Area: 下の各項
-- Decision: オーナーの答えをそのまま右に、リーダーが訊いた問いを左に。
-  - 写真に字を置く画面の字の後ろの黒い帯 →「黒い帯いらない」
-  - 字を描いていない人の投稿のカード（大文字・広い字間）→「いいよ」（今のまま）
-  - 設定の自作文字のスイッチを切った時のホーム画面のウィジェット →「合わせて」（ウィジェットもスイッチに従う）
-  - 単語のつづりを打つ欄 →「綴りはローマ字でいいわけないやろ」（描いた字で出す）
-  - 通知の一覧の投稿の一行 →「書いた字で」
-  - 紙に描いた字を描き直す時 →「薄くして欲しい」（紙の形を下に薄く敷く）
-  - 字を四角で囲ったボタン 9 か所 →「いやいい」（今のまま）
-  - 説明っぽい文 →「いやいい」（今のまま）
-  - 字だけのボタン（サインイン・次へ・保存・完了）→「それはいいよ」（字のまま）
-  - スマホのキーボードの短い行 →「合わせて」（作る画面と同じく真ん中に寄せる）
-  - キーを持って運ぶ長押しの判定 →「あわせて」（10px）
-  - ブロック →「見えなくして」（ブロックされた側からも、こちらのタイムライン・プロフィール・通知が見えない）
-  - ブロックの解除 →「設定に追加して非表示リストとブロックリスト」
-  - フォロー中・フォロワーの並び →「フォローした新しい順で」
-  - 一覧を一度に読む数 50 →「いいよ」
-  - アプリを開いて最初の画面 →「タイムラインで」
-  - 送れなかった投稿 →「普通に送信できませんでした。になるんじゃないの？下書きに入るようにしよう」
-  - 下書きの上限 →「いらん」
-  - 非公開の投稿をアカウントに →「もちろん」
-  - 通知をどこまで読んだかをアカウントに →「いいよ」
-  - 2 台で直した時は後から保存した方 →「はい」
-  - 言語を前に戻す →「3つ前、まるごと」（戻せるのは 3 つ前まで、戻す時は言語まるごと）
-  - アカウント削除でスマホに残る物 →「スマホの中に保存されているものなんてないけど。それがあるのがおかしいけど。」
-  - 持ち主の分からない古いデータは誰の物にもしない →「うん」
-  - 壊れて読めない部分は空で開き保存は「保存できませんでした」→「うん」
-  - 取ってきた言語を編集できるか →「できない」
-  - 保存がサーバーに上がる時 →「保存を押したら」
-  - 開いた時に読むもの →「開いた時にタイムラインに行くなら、今日のお題も読むべきだし、プランもそう。テーマと言語も。
-    開いた時に必要なものは読む。それ以外はそのページを開く前にロードを挟む」
-  - プランが分からない間の広告 →「うん広告は今まだ作らないでいいよ」
-  - プランを下げた時のキーボード・Plus のカードの書き方 →「四十六の報告見て」（下の r46 の決定: Plus も Pro もキーボード無制限）
-  - 上限に達した時の文 →「他に合わせて」
-  - 消す前の「○○を消しますか？」の窓 17 か所（単語・活用形・単語のまとめ消し・文字・文法の規則と分類と自分の段・メモ・
-    下書き・投稿・キーボード 5・言語の削除・アカウントの削除）を「すぐ消して取り消し」にするか →「よくないです。確認ポップにしてください。」
-    **今のまま確認の窓を出す。** 2026-09-01 の十の基準の 9「削除→Undo」はこれで置き換わった（その項に印を付けた）。
-  - 行の組の間隔（`r75-grp-*`）→「うん」／昔の版で自動で増えた文字 →「はい」（消さずに残す）／
-    2 段をつないだキーを見た目どおりに →「直して」（ずれた既存のつなぎは外れる）／スマホに残る声と用紙 →「うん」
-  - スタッフを外した直後の「無料・終了」→「うん」
-  - 子どもの購入を親が承認した時 →「すぐ」
-  - 開業届 →「出してない」（Android は個人で登録、テスター 12 人・14 日）
-- Reason: オーナーの言葉のまま。
-- Affected features: 各項。
-- Affected data: ブロック（schema.sql）、フォローの時刻、非公開の投稿、言語の版、スマホの中の声と用紙。直す session が CHANGELOG に。
-- Affected docs: この項。**書き換えた決まり:** 2026-09-23「起動は通知とタイムラインだけ」は、上の「開いた時に読むもの」で
-  置き換わった（CLAUDE.md § Online の一文も同じコミットで直した）。「保存を押した時」「3 つ前・まるごと」「取ってきた言語は
-  編集できない」と食い違う古い項は、直す session がその項を消して書き直す。
-- Implementation status: 未。r82〜 の session に出す。
+- Decision:
+  - **写真に字を置く画面**: 字の後ろに黒い帯は付けない。
+  - **字を描いていない人の投稿のカード**: 大文字・広い字間のまま。
+  - **ホーム画面のウィジェット**: 設定の自作文字のスイッチに従う（切ればローマ字）。
+  - **単語のつづりの欄**: 描いた字で出す。
+  - **通知の一覧の投稿の一行**: 描いた字で出す。
+  - **紙に描いた字を描き直す時**: 紙の形を下に薄く敷く。
+  - **字を囲ったボタン 9 か所・説明っぽい文・字だけのボタン（サインイン・次へ・保存・完了）**: 今のまま。
+  - **行の組の間隔**: 14px・10px にそろえた今の形。
+  - **消す前の「○○を消しますか？」**: 確認の窓を出す（17 か所とも今のまま）。十の基準の 9「削除→Undo」はこれで置き換え。
+  - **スマホのキーボードの短い行**: 作る画面と同じく真ん中。
+  - **2段をつないだキーの「真下」**: 画面に見えるとおりに数える。見た目で真下でない既存のつなぎは外れる。
+  - **キーを運ぶ長押し**: ほかの長押しと同じ 10px。
+  - **ブロック**: ブロックされた側からも、こちらのタイムライン・プロフィール・通知が見えない。解除は設定のブロックリスト。
+  - **フォロー中・フォロワー**: フォローした新しい順。一覧は一度に 50 件。
+  - **アプリを開いた最初の画面**: タイムライン。
+  - **送れなかった投稿**: 「送信できませんでした」と出して下書きに入る。送り直しボタンは無い。下書きの数に上限は無い。
+  - **非公開の投稿・通知をどこまで読んだか**: アカウントに保存する。
+  - **2台で同じ物を直した時**: 後から保存した方が残る。
+  - **言語を前に戻す**: 3つ前まで。戻す時は言語まるごと。
+  - **スマホに残る物**: 無い。上げた声・手渡した用紙は残さない。
+  - **持ち主の分からない古いデータ**: 誰の物にもしない（読まない、消さない）。
+  - **壊れて読めない部分**: 空で開き、保存は「保存できませんでした」。
+  - **昔の版で自動で増えた文字**: 消さずに残す（公開したので「リリース前なら消してよい」は使えない）。
+  - **ほかの人から取ってきた言語**: 編集できない。
+  - **保存がサーバーに上がる時**: 保存を押した時。
+  - **開いた時に読む物**: 通知・タイムライン・今日のお題・プラン・テーマと言語。それ以外の画面は開く前にロードを挟む。
+  - **広告**: 今は作らない。
+  - **上限に達した時の文**: ほかの上限の文と同じ形。
+  - **スタッフを外した直後の「無料・終了」**: そのまま。
+  - **子どもの購入を親が承認した時**: すぐ有料にする。
+  - **Android**: 今の更新が終わってから作る。開業届は今は出さない（出すまでは Google Play は個人で登録）。
+- Reason: オーナーの言葉。
+- Affected data: ブロック（schema.sql）、フォローの時刻、言語の版、スマホの声・用紙、2段キーのつなぎ（DELETE REVIEW は CHANGELOG）。
+- Affected docs: CLAUDE.md（起動で読む物・十の基準の 9 を直した）。この決定と食い違う古い項は、実装する session が消して書き直す。
+- Implementation status: 画面・タイムライン・キーボードの分は入った（r82・r83）。r84（`claude/r84-save`、CODE CONFIRMED のみ）:
+  **保存を押した時** ── 入った（`langWrites()`・`keepDrafting()`・`netSaveNow()`、`keep-check` 23）。
+  **取ってきた言語** ── 入った（`dl-check` が全部の画面を押す）。**開いた時に読む物** ── 測ると五つとも既に読んでいた、
+  `load-check` 1 が数える。**親が承認した購入** ── 入った（`Transaction.updates` → `linguastore`、`plan-check`、Swift は未ビルド）。
+  **上限の文** ── `up.need` 一つのまま、Plus のキーボードは無制限（`plan-check`・`kb-check`）。
+  **言語を前に戻す** ── 入った（保存の番号 `slice.press`、`admin_restore_lang()`、運営の画面は版三つ。`npm run rls`・
+  `hist-check`・`again-check`）。**schema.sql をアプリより先に流すこと。**
 
 ### 2026-09-24 キーボードのプランとフォントの書き出し（r46 の申し送り）
 - Date: 2026-09-24
@@ -308,7 +337,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
   Plus ── キーボード無制限、自分で描いた文字を自由に配置できる。Pro ── キーボード無制限、フォントのファイル書き出しを追加。
 - Reason: キーボードを売りにする。Reddit で、自分の文字をフォントにして Procreate やパソコンで使いたい声があった。
 - Affected docs: `docs/scope/r46-reddit.md`（`claude/r46-reddit`）。
-- Implementation status: 未。**まだ訊いていないこと:** 「既存の文字」の範囲、書き出す形式と取り出し方、今 Plus で 4 つ作っている人への見せ方。
+- Implementation status: **Plus のキーボード無制限は実装（`claude/r84-save`、2026-09-25）** ── `kbCap()` は無料 1・Plus と Pro は `Infinity`、~~`PLUS_KB`~~ は消した。Plus のカードの行 `plan.plus.5` は「キーボードは無制限」、Pro のカードの同じ行（~~`plan.pro.3`~~）は Plus に含まれるので消した。`plan-check`・`kb-check`。CODE CONFIRMED のみ。**残り（未・まだ訊いていないこと）:** 無料の「既存の文字で自由に配置したキーボード」と「既存の文字」の範囲、Pro のフォントの書き出し（形式と取り出し方）。
 
 ### キーの画面 ── 押した字がそのキーに入る。確定は無い
 - Date: 2026-09-24
@@ -440,7 +469,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
 
 ### 2026-09-23 管理画面の「数」は @lingua だけ、「履歴」と「戻す」はスタッフ全員 ── 今のままでいい
 - Date: 2026-09-23
-- Area: 管理画面（`www/mod.js`）、`supabase/schema.sql` の `admin_counts`（`is_admin()`）・`admin_hist` と `admin_restore`（`is_staff()`）
+- Area: 管理画面（`www/mod.js`）、`supabase/schema.sql` の `admin_counts`（`is_admin()`）・`admin_hist` と `admin_restore_lang`（`is_staff()`、2026-09-25 から言語まるごと）
 - Decision: 「それでいいよ」
   集計の「数」は @lingua 本人だけ、言語の過去の版を見て戻す「履歴」「戻す」はスタッフなら誰でも。門が違うのは意図どおり。
 - Reason: オーナーがそう決めた（`docs/scope/r63-audit.md` §2-7 SQ6 の問いへの答え）。
@@ -961,7 +990,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
 
 ### 同じものを何度も運ばない ── 保存の写しを返さない・送る前の読みを無くす・起動の二度読みを一度に
 - Date: 2026-09-09
-- Area: 保存の道（`netSlicePut` / `netSaveUp`）、起動の道
+- Area: 保存の道（`netSlicePut` / ~~`netSaveUp`~~、今は `netSaveNow`）、起動の道
 - Decision: `docs/reports/cost-2026-09-09.md` の三つを直す「これもやって」。
   5,000 語の人の保存一回 2.6 MB → 0.9 MB 以下、起動一回 1.9 MB → 1.0 MB 以下。
   $25 で 763 人 → 1,846 人。**二台目が同じ言語を編集した時に片方が消える形には
@@ -989,8 +1018,9 @@ the reasoning — a reason can be re-derived, a decision cannot.
     **残し方は回数：部分（slice）ごとに直前 3 版**「回数じゃね」「3 で
     実装して」（2026-09-09）。日数ではない ── 人が増えても一人あたりの上限が
     変わらないから。管理画面（7 回タップ、@lingua）に、handle で探す → その
-    人の言語 → 部分ごとの版（最大 3、日時）→ 戻す。戻すと、それまでの「今」
-    も版の一つになる。`docs/RECOVERY.md` 案A の形。**SQL の流し直しあり。**
+    人の言語 → **言語の版（3 つ前まで、日時）→ 言語まるごと戻す**（「言語を前に
+    戻す →『3つ前、まるごと』」2026-09-24。部分ごとに戻す形はこれで書き直した）。
+    戻すと、それまでの「今」も版の一つになる。`docs/RECOVERY.md` 案A の形。**SQL の流し直しあり。**
     合わせて「$25 で何人持つか」を測った数字で出す（`claude/r10-measure`）。
 - Affected features: ♡、古い言語、管理画面
 - Affected data: ♡は保存されるものが増えない（画面の一時状態だけ）。復旧は
@@ -1799,7 +1829,8 @@ the reasoning — a reason can be re-derived, a decision cannot.
   消さない、書き換えない、足すだけ。そうすると「どっちが勝つか」は番号で
   決まり、「戻す」は「◯番に戻す」だけになり、壊れたものが上書きする事故が
   構造的に起きなくなります。**オーナーが既に決めた二つ ──「人が作ったものに
-  期限は無い」「後から変えたほうが残る」── を両方満たす形がこれです。**
+  期限は無い」（2026-09-24 に「3 つ前まで」で差し替え）「後から変えたほうが残る」
+  ── を両方満たす形がこれです。**
 
   **積むのはサーバーです。ファイルではありません。**ファイルはその iPhone と
   一緒に無くなり、運営側から見えず、全部の版を置くには小さすぎます。
@@ -1810,7 +1841,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
   土台がそれです。`supabase/setup.md` には**一言も書かれていません**（0 件）。
 - Affected features: 保存・同期・バックアップ・復元・運営側の復旧
 - Affected data: **増えます。**版が積まれる分。五千語の言語で保存一回 685 KB。
-  **その数字は「人が作ったものに期限は無い」の項目で承知のうえと決めています**
+  **残すのは 3 つ前まで**（「3つ前、まるごと」2026-09-24）
 - Affected docs: この項目、`docs/DATA_SAFETY.md`、`docs/RECOVERY.md`、
   `docs/EXPIRY.md`、`docs/ARCHITECTURE.md`、`supabase/setup.md`
 - Implementation status: **設計から。`claude/one` がコードを一行も変えずに
@@ -2014,26 +2045,8 @@ the reasoning — a reason can be re-derived, a decision cannot.
 ### 【差し替え済み 2026-09-15】お題は #今日のお題。十言語ぶんで、どの言語で書かれていても同じ一つ（2026-09-04）
 - 差し替えた決定: 「タグは別の枠。本文の外、翻訳の下、最大 4 つ」（2026-09-15）
 
-### 上限のポップは Pro を言う。Plus は飛ばす
-- Date: 2026-09-04
-- Area: 上限に当たったときのポップの文（十言語ぶん）
-- Decision:
-
-  ```
-  proなら無制限で使用できます
-
-  でいいんじゃない？plusよりもproは売りたいよね
-  ```
-
-- Reason: 無料でキーボードの＋を押したときのポップが「Pro なら無制限です」と
-  言い、間にある Plus を飛ばしていた。**それでよい、というのがオーナーの答え
-  です。**Plus より Pro を売りたいので、ポップは Pro を言う。
-  **これは「一番近い段を案内する」より優先します。**
-- Affected features: 上限のポップを出す全部の口
-- Affected data: 無し。文だけ
-- Affected docs: この項目
-- Implementation status: `claude/kbfree2` に配布。**「Pro なら無制限です。」を
-  「Pro なら無制限で使用できます。」に。十言語ぶん。**
+### 【差し替え済み 2026-09-24】上限のポップは Pro を言う。Plus は飛ばす（2026-09-04）
+- 差し替えた決定: 「上限に達した時の文 →『他に合わせて』」（2026-09-24 オーナーの答え）── 上限のポップは `up.need` 一つ
 
 ### ＋は右下。上限を越えて押したときにポップが出る。無料に空の枠は並べない
 - Date: 2026-09-04
@@ -2071,7 +2084,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Implementation status: **2026-09-23 に照合していない。**名指していた ~~`kbSlots()`~~ と ~~`freeSlots`~~ は
   コードに無く、`kbSlotsShown()`（`www/keyboard.js`）がある。
 
-  数は既に `www/core.js:791` に一つずつ在ります ── `FREE_KB=1`、`PLUS_KB=4`、
+  数は既に `www/core.js:791` に一つずつ在ります ── `FREE_KB=1`、~~`PLUS_KB=4`~~（2026-09-24 に消えた）、
   Pro は `kbCap()` で無制限。**新しい数を書かないこと。**
 
   **無料に編集は要りません。**無料の board 0 は QWERTY そのもので、
@@ -2104,29 +2117,8 @@ the reasoning — a reason can be re-derived, a decision cannot.
   ポップから「アップグレード」でプランへ行き、戻ってきたときに立っているのも、
   ポップを出したその画面である（`docs/DUPLICATES.md` 8番はこれで決まる）。
 
-### 人が作ったものに期限は無い。バグで消えた分はずっと戻せる
-- Date: 2026-09-04
-- Area: 保存されるもの全部。とくに復旧の履歴（`supabase/schema.sql`）
-- Decision:
-
-  ```
-  そもそもバグで消えるなら一生残るはずだよね？自分で消してるわけじゃないし
-  基本一生残るよな
-  2016年のTwitterアカウントいまろぐいんしてもみれる
-  ```
-
-- Reason: 自分で消したのでなければ、消える理由が無い。何年も前のものが
-  そのまま開けるのが当たり前で、この app もそうである。
-- Affected features: 復旧（`docs/RECOVERY.md` 案A）。スライスの前の版を残す表に、
-  **期限も掃除の仕組みも作らない。**
-- Affected data: `slice` の前の版。増える一方になる。一語足すたびにその時点の
-  単語ぜんぶが一行残るので、五千語の言語で一回 685 KB。数字は承知のうえ。
-- Affected docs: `docs/RECOVERY.md`、`docs/DATA_SAFETY.md`、`docs/STATE.md`
-- Implementation status: `claude/rec2` が実装中
-
-  **CLAUDE.md の「Data」が元から同じことを言っている** ── automatic deletion,
-  pruning and cleanup are forbidden unless a written spec asks for them。
-  この決定はそれを、期間を訊かれたその場で言い直したもの。
+### 【差し替え済み 2026-09-24】人が作ったものに期限は無い。バグで消えた分はずっと戻せる（2026-09-04）
+- 差し替えた決定: 「言語を前に戻す →『3つ前、まるごと』」（2026-09-24）── 戻せるのは 3 つ前まで
 
 ### 【差し替え済み 2026-09-04】無料でも有料と同じ数の枠が並ぶ。二つ目以降は押すとプランへ（2026-09-03）
 - 差し替えた決定: 「＋は右下。上限を越えて押したときにポップが出る。無料に空の枠は並べない」（2026-09-04）
@@ -5261,19 +5253,18 @@ and is never merged into your own」と言っている。**入らない、は二
 - Affected data: new server tables; on the phone, a downloaded keyboard and a
   downloaded language are new slices and are **not** the person's own
 - Affected docs: `docs/FEATURES.md`, `docs/PAID_FEATURES.md`, `CLAUDE.md`
-  6. **A downloaded keyboard is edited as it stands** — the download IS the
-     copy, so there is nothing to copy again. But **the letters that can be
-     put on its keys are the downloader's own**: it is somebody else's
-     keyboard and this is somebody else's alphabet, and the two do not mix.
-     「dl自体が複製なんだからそのままで良くね？でも人の言語だから当てられる文字は
-     dlした人の言語だけ」
+  6. **取ってきた言語は、キーボードも含めて編集できない（読むだけ）。**
+     「取ってきた言語を編集できるか →『できない』」OWNER 2026-09-24。書き手は
+     全部 `langWrites()`（`www/core.js`）一つを訊き、`langLocked()` がその言語で
+     はいと答える。`dl-check` が、取った言語の全部の画面の全部のボタンを押して、
+     何も作られず、どの章も動かないことを持つ。
 - Implementation status: **取る側は入りました。**`can('dl')`（`www/core.js` の
   `CAN`）と `dlCap()`（Plus 1・Pro 3、無料は 0）、`dlCount()`、`dlStop()`。
   押すと本当に着地することを `tools/dl-check.mjs` が持ちます ── 記事の見た目
   ではなく storage を訊きます（`LANGS[id].mine` が false、~~`bkPack()`~~ は運ばない、
   `netLangSync()` は走らない）。「ダウンロードボタン押しても言語追加されない
   けど？」OWNER 2026-09-01 が、その検査が書かれた理由です。
-  6 番（落としたキーボードに当てられる文字は落とした人のもの）はまだです。
+  6 番は 2026-09-24 の答えで書き直した（上）。
 
 ### Decision
 - Date: 2026-08-19
@@ -5283,26 +5274,31 @@ and is never merged into your own」と言っている。**入らない、は二
   sides, and the notices. 「ブロックは何も見えなくなるでいいんじゃない」
 - Reason: a block that only thins a feed is a block somebody keeps meeting.
 - Affected features: the timeline, search, notices, threads
-- Affected data: `ME.bl` on the phone, `block` on the server
+- Affected data: `block` on the server (`ME.bl` on the phone is not read, not
+  written and not deleted)
 - Affected docs: `docs/FEATURES.md`
-- Implementation status: **half, on the server, and not device confirmed.**
-  What they WROTE and DID is left out by the server: `block_hides()` in
-  `supabase/schema.sql` is the one answer, and `post_seen` (the feed, threads,
-  somebody's posts, the search for posts), `feed_hot()`, `feed_fo()` (whoever
-  passed a post on, too) and `notices()` pass every person they hand out
-  through it. `rls-check` walks every view and row-returning function in the
-  catalogue as somebody who has blocked somebody (r80-block, 2026-09-24).
-  **Not yet:** their profile, their language and who they follow
-  (`profile_seen`, `language_seen`, `follow_seen` — named in `rls-check`'s
-  `BLOCK_HELD`), because unblocking is pressed on their page and there is
-  nowhere else to do it; and **search on the other side** — somebody blocked
-  still finds the person who blocked them, since the search reads the same
-  views as the feed and whether the blocked side loses the feed too is not
-  decided. The phone sieves no answer (r68-state, 2026-09-24): what is left is
-  `postBlocked()`, for a post of theirs the phone already held before the
-  block, which the server cannot reach, and the people row of the search,
-  while `profile_seen` still returns them. All three are in
-  `docs/scope/r80-block.md`.
+- Implementation status: **on the server, BOTH WAYS, and not device
+  confirmed.** 「ブロックされた側からも見えない」 OWNER 2026-09-24 and the
+  2026-09-25 entry above. `block_hides()` in `supabase/schema.sql` is the one
+  answer and asks whether there is a block between the reader and a person,
+  whoever made it. Every read passes what it hands out through it: `post_seen`
+  (the feed, threads, somebody's posts, the search for posts), `feed_hot()`,
+  `feed_fo()` (whoever passed a post on, too), `notices()`, `profile_seen` (a
+  page and the search for people), `follow_seen`, and `language_seen` (their
+  published language — a language somebody TOOK before the block still reads,
+  because what a block does to that is not decided; `docs/scope/r85-block.md`).
+  `rls-check` walks every view and row-returning function as the one who
+  blocked and as the one blocked, and `BLOCK_HELD` is empty. **Nothing is done
+  across it either** (2026-09-25): `react_make`, `post_make`/`post_edit` (an
+  answer) and `follow_make` refuse a row aimed at somebody a block stands
+  between (`post_blocks()`, `block_hides()`), so no notice rings either —
+  push-send rings only on those rows arriving. A block is lifted from the
+  settings' ブロックリスト (`block_seen`). What the phone keeps is
+  `postBlocked()`, for a post of theirs it already held before the block. Not
+  the same thing as a mute, which is one way and keeps nobody out (2026-09-25).
+  `language_read` and `slice_read` — the `language` table and the slices read
+  straight — still answer 「published」 without asking about a block;
+  `docs/scope/r85-block.md`.
 
 ### Decision
 - Date: 2026-08-19

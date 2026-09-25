@@ -19,7 +19,7 @@ function ntRead(){
   ntSwipeAt=-1;               /* another language's rows are not these rows */
 }
 ntRead();
-function saveNotes(){ if(langLocked()) return; bkTouch(); slWr(langKey('notes'), JSON.stringify(NOTES)); }
+function saveNotes(){ if(!langWrites()) return; bkTouch(); slWr(langKey('notes'), JSON.stringify(NOTES)); }
 
 /* The first line of a note stands in for a title when there is none, the way
    a paper notebook does. Cut short, because a row is a row. */

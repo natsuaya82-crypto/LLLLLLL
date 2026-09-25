@@ -449,6 +449,17 @@ create table if not exists slice_hist (
 );
 create index if not exists slice_hist_at_idx on slice_hist(language, kind, at desc);
 
+-- WHICH SAVE A VERSION BELONGS TO. 「言語を前に戻す →『3つ前、まるごと』」
+-- OWNER 2026-09-24: a version is the WHOLE LANGUAGE as it was before one save,
+-- and one save is several rows of `slice` (the kinds that moved), written by
+-- separate requests. So the phone numbers each save (`press`, one uuid per
+-- netSaveNow() in www/net.js) and puts it on every row that save writes; the
+-- trigger below writes onto the version it keeps the number of the save that
+-- REPLACED it. A row written before this carries none and is a version of its
+-- own, named by its time -- nothing old is dropped or renumbered.
+alter table slice add column if not exists press uuid;
+alter table slice_hist add column if not exists press uuid;
+
 -- THE ONLY AUTOMATIC DELETION IN THIS FILE, and its DELETE REVIEW is in
 -- docs/CHANGELOG.md 2026-09-09. What it removes is a copy of a previous
 -- version; the row somebody is actually holding (`slice`) is never touched by
@@ -493,8 +504,13 @@ begin
                  where language = old.language and kind = old.kind and at = v_at)
   loop v_at := v_at + interval '1 microsecond'; end loop;
 
-  insert into slice_hist(language, kind, body, at)
-       values (old.language, old.kind, old.body, v_at);
+  -- The save that replaced it, when there was one. A write that did not
+  -- carry a number leaves the row's old one standing, and that is not the
+  -- save that replaced it -- so it is taken only where it moved.
+  insert into slice_hist(language, kind, body, at, press)
+       values (old.language, old.kind, old.body, v_at,
+               case when tg_op = 'UPDATE' and new.press is distinct from old.press
+                    then new.press end);
 
   delete from slice_hist h
    where h.language = old.language and h.kind = old.kind
@@ -970,9 +986,9 @@ create table if not exists follow (
 -- other person's posts have to stop arriving, and that is a question the
 -- timeline asks the server.
 --
--- It is one-directional and it is nobody's business but yours. `block_read`
--- below answers with YOUR rows only -- being blocked is not something a
--- person is told, because telling them is how a block becomes an argument.
+-- The ROW is nobody's business but yours. `block_read` below answers with
+-- YOUR rows only -- the list of whom somebody blocked is not something the
+-- person on it is handed. What a block DOES goes both ways (block_hides).
 create table if not exists block (
   actor      uuid not null references profile(id) on delete cascade,
   blocked    uuid not null references profile(id) on delete cascade,
@@ -995,15 +1011,72 @@ create index if not exists block_actor_idx on block(actor);
 -- the reads a block does not reach yet are named there (BLOCK_HELD) with
 -- the reason, and docs/scope/r80-block.md says what each is waiting on.
 --
--- ONE WAY: it asks whether the person READING blocked `who`, never the other
--- direction. Whether somebody who has been blocked stops seeing the person
--- who blocked them is not decided (docs/scope/r73-audit.md § 5-6), and
--- `block_read` above is why this can only ever answer about the reader's
--- own rows: it runs as whoever calls it, and they read nobody else's.
+-- BOTH WAYS. 「ブロック → 見えなくして」 OWNER 2026-09-24: somebody who has
+-- been blocked does not see the timeline, the page or the notices of the
+-- person who blocked them either. So it asks whether there is a block
+-- between the reader and `who`, whichever of the two made it.
+--
+-- `security definer`, because the other direction is a row the reader cannot
+-- read (`block_read` is the blocker's alone) and must not be able to. It
+-- answers one yes-or-no about auth.uid() and `who` and hands out no row.
+-- A person who calls it straight can learn that somebody blocked them --
+-- which is also what their page vanishing tells them; the decision is what
+-- costs that, not this function.
 create or replace function block_hides(who uuid) returns boolean
-language sql stable as $$
+language sql stable security definer set search_path = public as $$
   select exists (select 1 from block b
-                  where b.actor = auth.uid() and b.blocked = who)
+                  where (b.actor = auth.uid() and b.blocked = who)
+                     or (b.actor = who and b.blocked = auth.uid()))
+$$;
+
+-- AND NOTHING IS DONE TO SOMEBODY A BLOCK STANDS BETWEEN. 「ブロックされた
+-- 側 → こちらが見えないので、いいね・返信・フォローもできず、通知も来ない
+-- （サーバーで止める）」 OWNER 2026-09-25. Every write that is aimed AT a
+-- person asks block_hides() of that person in its policy: a follow of them
+-- (follow_make), a like or a pass-on of their post (react_make), and an
+-- answer to their post, written or edited into one (post_make, post_edit).
+-- This is the post's half: whoever wrote post `p`. `security definer`
+-- because the post may be one the writer cannot read (post_read), and it
+-- hands out one yes-or-no, as block_hides() does.
+--
+-- It is also why supabase/functions/push-send asks nothing about a block:
+-- every kind it rings for is one of those rows arriving, and a row that is
+-- refused rings nobody.
+create or replace function post_blocks(p uuid) returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (select 1 from post x where x.id = p and block_hides(x.author))
+$$;
+
+-- ---- not reading somebody, without keeping them away -----------------------
+-- 「人をミュートできる。ミュートした人の投稿はタイムラインに出ない（ブロック
+-- とは別）」 OWNER 2026-09-25. A mute is the other shape of `block` and the
+-- difference is the whole of it: it goes ONE way, and it keeps nobody out.
+-- The person muted still sees you, still follows, likes and answers you, and
+-- is never told; you simply stop being handed what they write in the lists
+-- you scroll -- the timelines, a thread, a search.
+--
+-- The row is yours alone, read and written, the way `block` is: who somebody
+-- has stopped reading is nobody else's business, and least of all the
+-- person's on the other end of it. Deleting either account takes the row.
+create table if not exists mute (
+  actor      uuid not null references profile(id) on delete cascade,
+  muted      uuid not null references profile(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (actor, muted),
+  check (actor <> muted)
+);
+
+-- AND THE ONE PLACE A MUTE IS ANSWERED, beside block_hides() and in its
+-- shape: one yes-or-no about the reader and `who`. `post_seen` carries it as
+-- a column (`muted`) rather than leaving the row out, because a mute is NOT
+-- 「see nothing of them」: their own page still shows what they wrote, and
+-- only the lists that decision names ask for `muted=is.false` -- feed_hot()
+-- and feed_fo() below, and the day's list, a thread and a search in
+-- www/net.js. `security definer` for the reason block_hides() is.
+create or replace function mute_hides(who uuid) returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (select 1 from mute m
+                  where m.actor = auth.uid() and m.muted = who)
 $$;
 
 -- ---- where a notice goes when the app is closed ----------------------------
@@ -1201,6 +1274,7 @@ alter table react       enable row level security;
 alter table prompt      enable row level security;
 alter table follow      enable row level security;
 alter table block       enable row level security;
+alter table mute        enable row level security;
 alter table device      enable row level security;
 alter table report      enable row level security;
 alter table feedback    enable row level security;
@@ -1640,8 +1714,15 @@ create view language_seen as
    -- (language_took() above): the article a taker opens is drawn off this
    -- view, so a row withheld here is the same empty screen the policy was
    -- opened to stop.
-   where l.published_at is not null or l.owner = auth.uid()
-      or language_took(l.id);
+   --
+   -- AND A PUBLISHED LANGUAGE A BLOCK STANDS BETWEEN IS NOT A ROW, both ways
+   -- (block_hides): 「ブロックした相手の公開言語 → 言語の一覧・検索・人のページ
+   -- から見えない」 OWNER 2026-09-25. Being published is what the block takes
+   -- away. What somebody TOOK is not asked here -- whether a block takes a
+   -- language out of the list of what a person has is not decided
+   -- (docs/scope/r85-block.md), so that row stays what it was.
+   where l.owner = auth.uid() or language_took(l.id)
+      or (l.published_at is not null and not block_hides(l.owner));
 grant select on language_seen to authenticated;
 
 -- AND THE LANGUAGE BESIDE THE PERSON, IN THE SAME ANSWER.
@@ -1691,14 +1772,20 @@ grant select on language_seen to authenticated;
 -- `follow_read` is `using (true)` -- who follows whom is public the way it is
 -- in every timeline -- so this view shows exactly what that policy already
 -- shows and adds nothing.
+--
+-- AND WHEN, because that is the order a list is read in: 「フォロー中・
+-- フォロワーの並び → フォローした新しい順で」 OWNER 2026-09-24. The column
+-- was on `follow` from the first day and this view left it behind.
 drop view if exists follow_seen cascade;
 create view follow_seen as
-  select f.follower, f.followed,
+  select f.follower, f.followed, f.created_at,
          a.handle as follower_handle,
          b.handle as followed_handle
     from follow f
     join profile a on a.id = f.follower
-    join profile b on b.id = f.followed;
+    join profile b on b.id = f.followed
+   -- a row naming somebody a block stands between is not a row (block_hides)
+   where not block_hides(f.follower) and not block_hides(f.followed);
 grant select on follow_seen to authenticated;
 
 drop view if exists profile_seen cascade;
@@ -1716,8 +1803,38 @@ create view profile_seen as
        where ls.owner = p.id
        order by ls.created_at asc
        limit 1
-    ) l on true;
+    ) l on true
+   -- a person a block stands between is nobody, both ways (block_hides)
+   where not block_hides(p.id);
 grant select on profile_seen to authenticated;
+
+-- ---- whom you have blocked, by name ---------------------------------------
+-- 「ブロックの解除 → 設定に追加して非表示リストとブロックリスト」 OWNER
+-- 2026-09-24. A blocked person's page is gone from both sides (profile_seen
+-- above), so the list in the settings is where a block is lifted, and this
+-- is what it draws: YOUR rows and the name on each.
+--
+-- It runs as its owner, so `block_read` is not what keeps it yours -- the
+-- `where` is. rls-check: 「BD cannot read that BD is blocked there」.
+drop view if exists block_seen cascade;
+create view block_seen as
+  select b.blocked as id, p.handle, p.display, p.av, b.created_at
+    from block b
+    join profile p on p.id = b.blocked
+   where b.actor = auth.uid();
+grant select on block_seen to authenticated;
+
+-- ---- whom you have muted, by name -----------------------------------------
+-- 「設定の「非表示リスト」がミュートした人の一覧で、そこから解除する」 OWNER
+-- 2026-09-25. block_seen's shape, for the same reason and with the same
+-- `where` keeping it yours. rls-check: 「MD cannot read that MD is muted」.
+drop view if exists mute_seen cascade;
+create view mute_seen as
+  select m.muted as id, p.handle, p.display, p.av, m.created_at
+    from mute m
+    join profile p on p.id = m.muted
+   where m.actor = auth.uid();
+grant select on mute_seen to authenticated;
 
 -- A POST KEPT TO YOURSELF is read by the person who wrote it and by nobody
 -- else -- not a follower, not the person it answers, not staff.
@@ -1780,7 +1897,11 @@ create view post_seen as
                     and r.actor = auth.uid()) as i_like,
          exists (select 1 from react r
                   where r.post = p.id and r.kind = 'boost'
-                    and r.actor = auth.uid()) as i_boost
+                    and r.actor = auth.uid()) as i_boost,
+         -- AND WHETHER THE READER HAS MUTED WHOEVER WROTE IT (mute_hides).
+         -- A column and not a `where`: the lists that leave a muted person
+         -- out ask for it, and their own page does not.
+         mute_hides(p.author) as muted
     from post p left join profile a on a.id = p.author
    -- and a post kept to yourself is not a row for anybody else (post_private),
    -- and one by somebody the reader blocked is not a row for them (block_hides).
@@ -1814,10 +1935,14 @@ create policy post_read on post for select using (
   and (not post_private(body) or author = auth.uid())
 );
 drop policy if exists post_make on post;
-create policy post_make on post for insert with check (is_member() and author = auth.uid());
+create policy post_make on post for insert with check (
+  is_member() and author = auth.uid()
+  -- not an answer to somebody a block stands between (post_blocks)
+  and (reply_to is null or not post_blocks(reply_to)));
 drop policy if exists post_edit on post;
 create policy post_edit on post for update
-  using (is_member() and author = auth.uid()) with check (author = auth.uid());
+  using (is_member() and author = auth.uid())
+  with check (author = auth.uid() and (reply_to is null or not post_blocks(reply_to)));
 drop policy if exists post_drop on post;
 create policy post_drop on post for delete using (is_member() and author = auth.uid());
 
@@ -2037,7 +2162,7 @@ drop policy if exists react_read on react;
 create policy react_read on react for select using (true);
 drop policy if exists react_make on react;
 create policy react_make on react for insert
-  with check (is_member() and actor = auth.uid());
+  with check (is_member() and actor = auth.uid() and not post_blocks(post));
 drop policy if exists react_drop on react;
 create policy react_drop on react for delete using (is_member() and actor = auth.uid());
 
@@ -2057,6 +2182,15 @@ create policy block_make on block for insert
   with check (is_member() and actor = auth.uid());
 drop policy if exists block_drop on block;
 create policy block_drop on block for delete using (is_member() and actor = auth.uid());
+
+-- mute: YOURS and nobody else's, in every direction, for block's reason.
+drop policy if exists mute_read on mute;
+create policy mute_read on mute for select using (actor = auth.uid());
+drop policy if exists mute_make on mute;
+create policy mute_make on mute for insert
+  with check (is_member() and actor = auth.uid());
+drop policy if exists mute_drop on mute;
+create policy mute_drop on mute for delete using (is_member() and actor = auth.uid());
 
 -- device: YOURS and nobody else's, in every direction -- the same four lines
 -- block is under, and for a harder reason.
@@ -2158,7 +2292,7 @@ drop policy if exists follow_read on follow;
 create policy follow_read on follow for select using (true);
 drop policy if exists follow_make on follow;
 create policy follow_make on follow for insert
-  with check (is_member() and follower = auth.uid());
+  with check (is_member() and follower = auth.uid() and not block_hides(followed));
 drop policy if exists follow_drop on follow;
 create policy follow_drop on follow for delete using (is_member() and follower = auth.uid());
 
@@ -2561,6 +2695,8 @@ language sql stable as $$
         somebody chose to read and a thread is theirs to say; feed_fo() below
         keeps them, and so does the day's list. */
      and v.reply_to is null
+     -- and nobody the reader has muted (post_seen.muted)
+     and not v.muted
    order by ((k.pts + a.pts) * feed_weight(v.author)) desc, v.created_at desc
    limit lim offset off
 $$;
@@ -2616,6 +2752,7 @@ language sql stable as $$
           select v.*, null::uuid as by, v.created_at as at_key
             from post_seen v
            where v.hidden_at is null
+             and not v.muted
              and v.author in (select f.followed from follow f
                                where f.follower = auth.uid())
              and (before is null or v.created_at < before)
@@ -2624,6 +2761,8 @@ language sql stable as $$
             from react r join post_seen v on v.id = r.post
            where r.kind = 'boost'
              and v.hidden_at is null
+             -- a muted person's post is not handed on by somebody else either
+             and not v.muted
              -- post_seen has already asked about who WROTE it; who passed it
              -- on is a second person on the row and is asked here.
              and not block_hides(r.actor)
@@ -2848,10 +2987,32 @@ end $$;
 -- staff's (docs/FEATURE_RULES.md 2026-09-23).
 --
 -- NO BODY EVER COMES BACK. A version of a 5000-word dictionary is 685 KB, and
--- the screen shows a part's name and a date, never its contents: the operator
--- is restoring on the person's word, not reading their language. So the list
--- carries (language, kind, at) and admin_restore() is told which of those to
--- put back.
+-- the screen shows a date, never its contents: the operator is restoring on
+-- the person's word, not reading their language. So the list carries
+-- (language, v, at) and admin_restore_lang() is told which version to put back.
+--
+-- A LANGUAGE'S VERSIONS ARE ITS SAVES, THE THREE NEWEST.
+-- 「言語を前に戻す →『3つ前、まるごと』」 OWNER 2026-09-24. A version is named by
+-- its save's number, or by its time where it carries none (see `press` above),
+-- and it is dated by when that save landed. Three and no more: the history
+-- keeps three rows per kind, and one save moves a kind once, so the three
+-- newest saves are the three every kind can still answer for -- a fourth
+-- would be put back out of rows the ceiling has already dropped.
+--
+-- Security INVOKER, so called directly it reads slice_hist as the caller --
+-- which is nobody but staff (slice_hist_read); the two below are definer and
+-- ask is_staff() first.
+create or replace function slice_versions(lang uuid)
+returns table(v text, at timestamptz)
+language sql stable set search_path = public as $$
+  select coalesce(h.press::text, 'at:' || h.at::text) as v, max(h.at) as at
+    from slice_hist h
+   where h.language = lang
+   group by 1
+   order by 2 desc
+   limit 3
+$$;
+
 create or replace function admin_hist(handle text)
 returns jsonb
 language plpgsql security definer set search_path = public as $$
@@ -2866,41 +3027,51 @@ begin
                                         order by l.created_at)
                          from language l where l.owner = who), '[]'::jsonb),
     'hist',  coalesce((select jsonb_agg(jsonb_build_object(
-                                'language', h.language, 'kind', h.kind, 'at', h.at)
-                                        order by h.at desc)
-                         from slice_hist h
-                         join language l on l.id = h.language
+                                'language', l.id, 'v', sv.v, 'at', sv.at)
+                                        order by sv.at desc)
+                         from language l, lateral slice_versions(l.id) sv
                         where l.owner = who), '[]'::jsonb)
   ) into out;
   return out;
 end $$;
 
--- AND PUTTING ONE BACK IS AN UPDATE, WHICH IS WHY THE UNDO IS FREE. The write
--- below goes through the same slice_hist_before trigger as any other, so what
--- was there a moment ago becomes a version at the moment it is replaced --
--- the operator can walk a restore back the same way they made it. Nothing
--- special is written and there is no second road.
---
--- The version is named by its timestamp because that is what the screen
--- shows. A timestamp that names nothing restores nothing and says so.
-create or replace function admin_restore(language uuid, kind text, at timestamptz)
+-- AND PUTTING ONE BACK IS THE WHOLE LANGUAGE, IN ONE SAVE OF ITS OWN.
+-- For every kind: the first version kept at or after the moment that save
+-- landed is what the kind was just before it; a kind with none has not moved
+-- since, and is left as it is. A kind that did not exist yet is not taken
+-- away -- nothing here deletes. The writes carry one new number, so what
+-- was there a moment ago becomes ONE version, and the operator can walk the
+-- restore back the same way. A version outside the three newest names
+-- nothing and restores nothing, and says so.
+create or replace function admin_restore_lang(language uuid, v text)
 returns void
 language plpgsql security definer set search_path = public as $$
-declare b text;
+declare t timestamptz; r uuid := gen_random_uuid(); k text; b text;
 begin
   if not is_staff() then raise exception 'not staff'; end if;
-  select h.body into b from slice_hist h
-   where h.language = admin_restore.language
-     and h.kind = admin_restore.kind
-     and h.at = admin_restore.at;
-  if b is null then raise exception 'no such version'; end if;
-  update slice s set body = b, at = now()
-   where s.language = admin_restore.language and s.kind = admin_restore.kind;
-  if not found then
-    insert into slice(language, kind, body, at)
-         values (admin_restore.language, admin_restore.kind, b, now());
-  end if;
+  if not exists (select 1 from slice_versions(admin_restore_lang.language) s
+                  where s.v = admin_restore_lang.v)
+  then raise exception 'no such version'; end if;
+  select min(h.at) into t from slice_hist h
+   where h.language = admin_restore_lang.language
+     and coalesce(h.press::text, 'at:' || h.at::text) = admin_restore_lang.v;
+  for k in select distinct h.kind from slice_hist h
+            where h.language = admin_restore_lang.language and h.at >= t
+  loop
+    select h.body into b from slice_hist h
+     where h.language = admin_restore_lang.language and h.kind = k and h.at >= t
+     order by h.at asc limit 1;
+    update slice s set body = b, at = now(), press = r
+     where s.language = admin_restore_lang.language and s.kind = k;
+    if not found then
+      insert into slice(language, kind, body, at, press)
+           values (admin_restore_lang.language, k, b, now(), r);
+    end if;
+  end loop;
 end $$;
+-- One kind at a time is gone: a language put back a part at a time is one no
+-- save ever made -- the words from Tuesday under Friday's letters.
+drop function if exists admin_restore(uuid, text, timestamptz);
 
 -- ---------------------------------------------------------------------------
 -- The first one, and everybody after

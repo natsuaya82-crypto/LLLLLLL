@@ -939,12 +939,12 @@ const R = await pg.evaluate(async () => {
   const realSend2 = netSend;
   let feedCall = '';
   /* ブロックの一覧は、セッションが始まった一回で手元に来ています
-     （www/net.js § netBlocked、2026-09-05）── タイムラインを引くたびに
+     （www/net.js § netPplRead、2026-09-05）── タイムラインを引くたびに
      訊いていたのをやめ、一本先に出しておく形にしました。ここで空にして
      おくのは、タイムラインが訊かれる時の実際の状態がこれだからです。
      置かないと、arrive() が出した本物の問い合わせが空中にある間に
      netFeed() の返事が待ち行列に入り、この検査は同期で読みます。 */
-  NET_BL = [];
+  NET_PPL.block = [];
   netGet = (path, ok) => ok([]);
   netSend = (method, path, body, tok, ok2) => {
     feedCall = path;
@@ -1039,7 +1039,7 @@ const R = await pg.evaluate(async () => {
   netOut(); arrive(A);
   let sentBody = null, sentPath = '';
   /* 23 と同じ理由 ── ブロックの一覧は起動の一回で手元にあります。 */
-  NET_BL = [];
+  NET_PPL.block = [];
   netGet = (path, ok) => ok([]);
   netSend = (method, path, body, tok, ok2) => {
     sentPath = path; sentBody = body;
@@ -3616,29 +3616,32 @@ const R = await pg.evaluate(async () => {
   {
     netOut(); arrive(A);
     /* 前の案件の `arrive()` が本物の XHR を出していて、答えが来ないまま
-       `NET_BL_WAIT` が立っています ── 立っていると netBlockedRead() は列に
+       `NET_PPL_WAIT.block` が立っています ── 立っていると netPplRead() は列に
        並ぶだけで戻るので、この案件が測りたい road に入れません（30d と
        `NET_SYNCING` の同じ形）。 */
-    netBlockedDrop(); NET_BL_WAIT = null;
+    netPplDrop('block'); NET_PPL_WAIT.block = null;
     const keepGet71 = netGet;
     const asked71 = [];
     netGet = (path, ok2) => {
       asked71.push(String(path));
-      if (String(path).indexOf('/rest/v1/block') === 0)
-        return ok2([{ blocked: 'uid-of-iri' }]);
-      if (String(path).indexOf('/rest/v1/profile_seen') === 0)
-        return ok2([{ id: 'uid-of-iri', handle: 'iri' }]);
+      if (String(path).indexOf('/rest/v1/block_seen') === 0)
+        return ok2([{ id: 'uid-of-iri', handle: 'iri', display: 'Iri', av: null }]);
       return ok2([]);
     };
     /* 端末の古い写しは、読まれてはいけない方に置きます。 */
     ME.bl = ['nokori']; saveMe();
     let got71 = null;
-    netBlockedRead((ids) => { got71 = ids; }, () => { got71 = 'FAILED'; });
+    netPplRead('block', (ids) => { got71 = ids; }, () => { got71 = 'FAILED'; });
     netGet = keepGet71;
     if (!got71 || got71 === 'FAILED' || got71.indexOf('uid-of-iri') < 0)
       no('71: block の行が降りてこない — ' + JSON.stringify(got71));
-    if (!asked71.filter((p) => p.indexOf('/rest/v1/profile_seen') === 0).length)
-      no('71: 降りた uuid の handle を訊いていない ── 画面は handle で人を知る');
+    /* 一本で、名前ごと（2026-09-24）。`profile_seen` はブロックの間に立つ人を
+       もう返さないので（block_hides、両向き）、そこへ訊きに行く二本目は無い。 */
+    if (asked71.length !== 1 || asked71[0].indexOf('/rest/v1/block_seen') !== 0)
+      no('71: ブロックした人を一本の block_seen で訊いていない — ' + JSON.stringify(asked71));
+    if (!netPpl('block').length || netPpl('block')[0].who !== 'Iri')
+      no('71: 降りた行に名前が無い ── 設定の一覧はこの行から描く — ' +
+         JSON.stringify(netPpl('block')));
     if (!meBlocks('iri'))
       no('71: サーバーがブロックと言っているのに、画面が知らない');
     if (meBlocks('nokori'))
@@ -3647,7 +3650,7 @@ const R = await pg.evaluate(async () => {
       no('71: 一覧に端末の古い写しが混ざっている — ' + JSON.stringify(meBlocking()));
     /* 訊いていないうちは「ブロックしていない」── この端末が、サーバーの
        言っていないことを言わない。 */
-    netBlockedDrop();
+    netPplDrop('block');
     if (meBlocks('iri'))
       no('71: まだ訊いていないのに、ブロックしていると言っている');
     ME.bl = []; saveMe();

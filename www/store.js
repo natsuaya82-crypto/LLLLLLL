@@ -90,6 +90,14 @@ function storeSync(){
     .then(function(r){ netPlanVerify(storeJws(r), storeUntilTook); })
     ['catch'](function(){ netPlanVerify([], storeUntilTook); });
 }
+/* AND WHENEVER THE APP STORE SAYS SOMETHING ARRIVED. 「子どもの購入を親が承認
+   した時 →『すぐ』」 OWNER 2026-09-24. Ask To Buy answers `pending` on the
+   press (storeBuy below); the approval arrives later, at `Transaction.updates`
+   in ios/App/App/LinguaStore.swift, which tells the page with this event. It
+   is the launch's own question asked again -- the same storeSync(), so the
+   receipts go up and the plan is the server's answer -- and not a second
+   road to a plan. */
+window.addEventListener('linguastore', storeSync);
 
 /* Buy one, by product id.
 

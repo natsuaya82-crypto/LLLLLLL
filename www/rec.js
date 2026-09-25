@@ -21,9 +21,11 @@
    recording ends (voTook(), LinguaShare.swift `keepVoice`), and the post
    being written carries the file's NAME. When the post is sent,
    netUpVoice() (www/net.js) puts the bytes in the `post-media` bucket and
-   writes the path on the post as `vu` -- that is the copy everybody else
-   plays, through netMedia(), because the bucket answers nobody who is not
-   signed in. voRemote() tells the two kinds of name apart.
+   writes the path on the post as `vu` -- the copy everybody plays, through
+   netMedia(), because the bucket answers nobody who is not signed in. Once
+   the post has landed the file on this phone goes and the writer plays `vu`
+   too (postSend() in www/post.js, 「スマホの中に保存されているものなんてない」
+   OWNER 2026-09-24). voRemote() tells the two kinds of name apart.
 
    Two halves, and the line between them is the same line post.js has:
 
@@ -261,6 +263,68 @@ function voDropFile(f){
   var p=sharePlug();
   if(!p || !f) return;
   p('LinguaShare', 'dropVoice', {name:String(f)})['catch'](function(){});
+}
+/* WHAT AN EARLIER VERSION LEFT IN Documents/Voices GOES, AND NOTHING ELSE.
+   「前の版でスマホに残った用紙と声のファイル → 消す」 OWNER 2026-09-25, and
+   the leader's reading of it: every file there that no draft and no post
+   whose voice has not gone up names. Until 2026-09-24 a post that went up
+   kept its recording on the phone; those are the files this takes.
+
+   WHAT IS KEPT IS ASKED OF EVERY COPY ON THIS PHONE, not of the account
+   signed in: a draft of another account on this handset, and a post of
+   theirs that could not send, are that person's voice and are waiting for
+   them. So every key under `lingua.drafts` and `lingua.posts` is read -- for
+   the names on it and nothing else -- the ones with no owner on them
+   included, which are not read for anything else and must not have their
+   voice taken from under them (CLAUDE.md § the flat keys). The live copies
+   are asked too (DRAFTS, POSTS, the composer).
+
+   A COPY THAT CANNOT BE READ STOPS THE WHOLE OF IT. What a broken draft
+   names cannot be known, and 「names nothing」 is the answer that deletes --
+   so `null`, and voSweep() sends nothing (docs/DATA_SAFETY.md: empty and
+   broken are different states).
+
+   The Swift side is LinguaShare.swift `sweepVoices`, and it also leaves any
+   file newer than the moment this was asked -- one recorded in the second
+   between the ask and the answer. The DELETE REVIEW is in docs/CHANGELOG.md
+   2026-09-25. */
+function voSweepKeep(){
+  var keep=[], i, k, l, bad=false;
+  function name(p, isDraft){
+    var f=p && p.vo && p.vo.f;
+    if(!f || voRemote(f)) return;
+    /* A post whose voice is on the server (`vu`) has nothing waiting on its
+       file. A draft always has: it has not been sent. */
+    if(!isDraft && p.vu) return;
+    if(keep.indexOf(String(f))<0) keep.push(String(f));
+  }
+  function list(v, isDraft){
+    var j;
+    if(!v) return;
+    if(typeof v.length!=='number'){ bad=true; return; }
+    for(j=0;j<v.length;j++) name(v[j], isDraft);
+  }
+  try{
+    for(i=0;i<localStorage.length;i++){
+      k=String(localStorage.key(i)||'');
+      var d=(k==='lingua.drafts' || k.indexOf('lingua.drafts.')===0),
+          q=(k==='lingua.posts'  || k.indexOf('lingua.posts.')===0);
+      if(!d && !q) continue;
+      try{ l=JSON.parse(localStorage.getItem(k)); }catch(e){ bad=true; continue; }
+      list(l, d);
+    }
+  }catch(e){ return null; }
+  list(typeof DRAFTS!=='undefined'? DRAFTS : null, true);
+  list(typeof POSTS!=='undefined'? POSTS : null, false);
+  if(typeof PW!=='undefined' && PW) name(PW, true);
+  return bad? null : keep;
+}
+function voSweep(){
+  var p=sharePlug(), keep;
+  if(!p) return;
+  keep=voSweepKeep();
+  if(keep===null) return;
+  p('LinguaShare', 'sweepVoices', {keep:keep, before:Date.now()})['catch'](function(){});
 }
 /* Whether this voice is on the disk or on the server. A name made by voName()
    is `v` and digits and an extension and never holds a slash; a path in

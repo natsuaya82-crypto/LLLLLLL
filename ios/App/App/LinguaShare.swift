@@ -26,6 +26,8 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
     CAPPluginMethod(name: "keepVoice", returnType: CAPPluginReturnPromise),
     CAPPluginMethod(name: "voice", returnType: CAPPluginReturnPromise),
     CAPPluginMethod(name: "dropVoice", returnType: CAPPluginReturnPromise),
+    CAPPluginMethod(name: "sweepVoices", returnType: CAPPluginReturnPromise),
+    CAPPluginMethod(name: "dropOldSheets", returnType: CAPPluginReturnPromise),
     CAPPluginMethod(name: "pickPhoto", returnType: CAPPluginReturnPromise),
     CAPPluginMethod(name: "ask", returnType: CAPPluginReturnPromise),
     CAPPluginMethod(name: "audio", returnType: CAPPluginReturnPromise),
@@ -105,25 +107,27 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
 
   // ---- the paper -------------------------------------------------------
   //
-  // www/sheet.js (chapter 26) builds the PDF bytes; this writes them down.
-  // Documents and not the App Group: the App Group is how two programs of
-  // this app talk (write above), and Documents is where the
-  // person's own work lives -- iOS puts it in the device backup and, with
-  // UIFileSharingEnabled, the Files app can show it. A sheet is paper: it is
-  // a thing somebody prints, writes on, and hands back.
+  // www/sheet.js (chapter 26) builds the PDF bytes; this writes them down
+  // for as long as it takes to hand them over (shareFile below), and no
+  // longer. 「スマホの中に保存されているものなんてないけど。それがあるのが
+  // おかしいけど。」 OWNER 2026-09-24: the person puts the sheet where they
+  // want it from the share sheet, so the file this app writes is only the
+  // hand-over. It goes in the TEMPORARY folder, which iOS empties on its own
+  // and does not back up -- not Documents, which is kept, backed up and shown
+  // in Files as this app's.
   //
-  // A sheet is not filed against a language and every write would carry
-  // the same name, so this NEVER OVERWRITES: a
-  // sheet already sitting in Documents may have been written on -- opened in
-  // Files, marked up with a pencil, saved in place -- and that is somebody's
-  // own work. `<name> 2.pdf` and on. Nothing here removes anything.
+  // What an earlier build left in Documents/Sheets goes, folder and all
+  // (dropOldSheets below): 「前の版でスマホに残った用紙と声のファイル →
+  // 消す」 OWNER 2026-09-25, DELETE REVIEW in docs/CHANGELOG.md 2026-09-25.
+  //
+  // Every write of a name would carry the same name, so this still never
+  // overwrites while one is being handed over: `<name> 2.pdf` and on.
 
   static let sheetDir = "Sheets"
 
   private func sheets() throws -> URL {
-    let docs = try FileManager.default.url(for: .documentDirectory, in: .userDomainMask,
-                                           appropriateFor: nil, create: true)
-    let dir = docs.appendingPathComponent(Self.sheetDir, isDirectory: true)
+    let dir = FileManager.default.temporaryDirectory
+      .appendingPathComponent(Self.sheetDir, isDirectory: true)
     if !FileManager.default.fileExists(atPath: dir.path) {
       try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
     }
@@ -186,13 +190,11 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
   /// share sheet is where iOS puts "Save to Files", and choosing where it goes
   /// is the person's, not this app's.
   ///
-  /// It does NOT replace the write. sheet() still files the PDF under
-  /// Documents/Sheets and still never overwrites -- taking that away would be
-  /// docs/DATA_SAFETY.md, and a sheet somebody already drew on lives there.
-  /// This hands over the file that is already on disk.
+  /// It does NOT replace the write. sheet() files the PDF in the temporary
+  /// folder first, and this hands over the file that is there.
   ///
-  /// A name, not a path and not bytes, because Documents is the person's own
-  /// folder and the Files app puts other things in it.
+  /// A name, not a path and not bytes: the folder is this app's, and a name
+  /// with no slash in it can only ever mean a file inside it.
   ///
   /// **The popover is not optional.** On iPad a UIActivityViewController with
   /// no sourceView is a crash, not a layout problem, and this is a Universal
@@ -278,15 +280,19 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
 
   // ---- the voice on a post ------------------------------------------------
   //
-  // Documents again, and the same argument as the language backups: thirty
-  // seconds of AAC is about 240 KB, which is ten free-sized languages, and
-  // localStorage is where the languages live. So a recording is a file and
-  // the post carries its name. www/rec.js (chapter 25) is the other half.
+  // Documents, and only until the post it is on has gone up: thirty seconds
+  // of AAC is about 240 KB, too big to be text in localStorage, so a
+  // recording is a file and the post being written carries its name. When
+  // the post lands, the server holds the recording and the file goes
+  // (postSend() in www/post.js, 「スマホの中に保存されているものなんてない」
+  // OWNER 2026-09-24). www/rec.js (chapter 25) is the other half.
   //
-  // One of these three deletes, and it deletes exactly one file: the one a
-  // post being deleted names. 「投稿消した声も消していいよ」 Nothing walks this
-  // folder, nothing removes a file for being unreferenced, and nothing runs
-  // on launch — see the DELETE REVIEW in docs/CHANGELOG.md.
+  // dropVoice deletes exactly one file: the one a post names -- a post being
+  // deleted, a post that has gone up, or a recording taken off the post being
+  // written. sweepVoices is the other, and the only thing that walks this
+  // folder: at launch, what an earlier build left (OWNER 2026-09-25) -- every
+  // file the web side does NOT name as still waiting on it. Both DELETE
+  // REVIEWs are in docs/CHANGELOG.md.
 
   static let voiceDir = "Voices"
 
@@ -347,6 +353,61 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
       if FileManager.default.fileExists(atPath: url.path) {
         try FileManager.default.removeItem(at: url)
       }
+      call.resolve()
+    } catch {
+      call.reject(error.localizedDescription)
+    }
+  }
+
+  /// What an earlier build left here, and nothing else. `keep` is every name
+  /// a draft or an unsent post on this phone still points at
+  /// (voSweepKeep() in www/rec.js); `before` is when that was asked, in ms.
+  ///
+  /// NO LIST IS NOT AN EMPTY LIST. A call without `keep` would read as
+  /// 「nothing is waiting」, which is the answer that takes everything -- so
+  /// it is refused, and so is a call without `before`. A file newer than
+  /// `before` was recorded after the list was made and is left. Only this
+  /// folder is read, and it is never made here: no folder is nothing to do.
+  @objc func sweepVoices(_ call: CAPPluginCall) {
+    guard let names = call.options["keep"] as? [String] else {
+      call.reject("no list of what to keep"); return
+    }
+    guard let ms = call.getDouble("before") else {
+      call.reject("no time to keep newer files from"); return
+    }
+    let keep = Set(names)
+    let cutoff = Date(timeIntervalSince1970: ms / 1000)
+    let fm = FileManager.default
+    do {
+      let docs = try fm.url(for: .documentDirectory, in: .userDomainMask,
+                            appropriateFor: nil, create: false)
+      let dir = docs.appendingPathComponent(Self.voiceDir, isDirectory: true)
+      guard fm.fileExists(atPath: dir.path) else { call.resolve(["dropped": 0]); return }
+      var dropped = 0
+      for name in try fm.contentsOfDirectory(atPath: dir.path) where !keep.contains(name) {
+        let url = dir.appendingPathComponent(name)
+        let at = (try? fm.attributesOfItem(atPath: url.path)[.modificationDate]) as? Date
+        guard let made = at, made < cutoff else { continue }
+        try fm.removeItem(at: url)
+        dropped += 1
+      }
+      call.resolve(["dropped": dropped])
+    } catch {
+      call.reject(error.localizedDescription)
+    }
+  }
+
+  /// Documents/Sheets, whole. Nothing has written there since sheets() moved
+  /// to the temporary folder (2026-09-24), so what is in it is what an earlier
+  /// build kept after handing a sheet or a card over. Nothing else in
+  /// Documents is touched, and no folder is nothing to do.
+  @objc func dropOldSheets(_ call: CAPPluginCall) {
+    let fm = FileManager.default
+    do {
+      let docs = try fm.url(for: .documentDirectory, in: .userDomainMask,
+                            appropriateFor: nil, create: false)
+      let dir = docs.appendingPathComponent(Self.sheetDir, isDirectory: true)
+      if fm.fileExists(atPath: dir.path) { try fm.removeItem(at: dir) }
       call.resolve()
     } catch {
       call.reject(error.localizedDescription)

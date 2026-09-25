@@ -691,6 +691,46 @@ if (Object.keys(QUIET.hits).length || !QUIET.me || !QUIET.set)
 if (!QUIET.saves)
   fails.push('no save* function was found on the page, so section 11 counted nothing');
 
+/* ---- 12. a notice draws the post's line the way the timeline does ---- */
+/* 「通知の一覧の投稿の一行 → 書いた字で」 OWNER 2026-09-24. The row under a
+   notice was `p.mn || p.ln` as plain text -- the meaning, or the line in roman
+   -- while the timeline drew the same post in its own shapes. Every `.ntf`
+   the real notices screen draws for a post with a line is asked: it carries
+   a `.pline`, and what is in it is what the timeline's postLnHTML() gives for
+   that post, character for character. One of the two is somebody else's post
+   with its shapes on it, so the answer has private use characters in it. */
+const NOTE = await pg.evaluate(() => {
+  SET.myfont = true; installScriptFont();
+  const was = NOTES_HAVE;
+  NOTES_HAVE = [{ kind: 'like', at: Date.now() - 1000, hd: 'iri', who: 'Iri', av: { ch: 'K' }, id: 'p2', n: 1, more: [] },
+                { kind: 'reply', at: Date.now() - 2000, hd: 'iri', who: 'Iri', av: { ch: 'K' }, id: 'p1', n: 1, more: [] }];
+  const out = { rows: 0, pua: 0, bad: [] };
+  try {
+    window.route = 'notif'; NAV = [{ r: 'notif' }]; render();
+    document.querySelectorAll('#app .ntf').forEach((row) => {
+      let id = '';
+      try { id = JSON.parse(row.getAttribute('data-a'))[0]; } catch (e) {}
+      const p = postById(id);
+      if (!p || !(p.ln || postInkOK(p.ink))) return;
+      out.rows++;
+      const d = document.createElement('div');
+      d.innerHTML = postLnHTML(p);
+      const want = d.textContent, el = row.querySelector('.pline'),
+            got = el ? el.textContent : null;
+      if (got !== want) out.bad.push(id + ': ' + JSON.stringify(got) + ' and the timeline draws ' + JSON.stringify(want));
+      for (let i = 0; got && i < got.length; i++)
+        if (got.charCodeAt(i) >= 0xE000 && got.charCodeAt(i) <= 0xF8FF) out.pua++;
+    });
+  } finally { NOTES_HAVE = was; }
+  return out;
+});
+if (NOTE.bad.length)
+  fails.push('a notice drew its post\'s line as something other than the line the timeline draws ' +
+             '(「書いた字で」 OWNER 2026-09-24): ' + NOTE.bad.join('; '));
+if (NOTE.rows < 2 || !NOTE.pua)
+  fails.push('section 12 saw ' + NOTE.rows + ' notices about a post and ' + NOTE.pua +
+             ' drawn letters, so it holds nothing');
+
 if (errs.length) fails.push('the page threw: ' + errs.slice(0, 3).join(' | '));
 
 await br.close();

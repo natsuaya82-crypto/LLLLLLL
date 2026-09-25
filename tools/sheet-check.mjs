@@ -28,6 +28,7 @@
 import { seed } from './fixture.mjs';
 import { fileURLToPath } from 'url';
 import path from 'path';
+import fs from 'fs';
 import { chromium, LAUNCH } from './browser.mjs';
 
 const dir = path.dirname(fileURLToPath(import.meta.url));
@@ -1107,6 +1108,44 @@ say(unnamed.shares === 0 && unnamed.said === filed.no,
     'and a phone that answers but names no file opens NO share sheet and says ' +
     'so — there is nothing to offer: ' + unnamed.shares + ' offered, "' +
     unnamed.said + '"');
+/* AND WHAT THE PHONE WRITES IS NOT KEPT ON IT. 「スマホの中に保存されているもの
+   なんてないけど。それがあるのがおかしいけど。」 OWNER 2026-09-24. A sheet is
+   handed to the share sheet and the person puts it where they want it; the
+   file this app writes is only the hand-over, so it goes where iOS reclaims
+   it -- the temporary folder -- and not into Documents, which is kept, backed
+   up and shown in Files as this app's. Read off LinguaShare.swift, the one
+   place the folder is named: there is no native side on a runner to ask. */
+{
+  const sw = fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)),
+                                       '..', 'ios', 'App', 'App', 'LinguaShare.swift'), 'utf8');
+  const fn = (/private func sheets\(\)[\s\S]*?\n  \}/.exec(sw) || [''])[0];
+  say(/temporaryDirectory/.test(fn) && !/documentDirectory/.test(fn),
+      'and the file handed over is written where iOS reclaims it, not kept in Documents ' +
+      '(LinguaShare.swift sheets(): ' + (/documentDirectory/.test(fn) ? 'Documents' :
+      /temporaryDirectory/.test(fn) ? 'the temporary folder' : 'not found') + ')');
+}
+/* AND WHAT AN EARLIER BUILD LEFT GOES -- THE ONE FOLDER, AND NOTHING WAITING.
+   「前の版でスマホに残った用紙と声のファイル → 消す」 OWNER 2026-09-25. The
+   web side's half is post-check 16c; this is the native half, read off the
+   Swift because there is no native side on a runner: dropOldSheets takes
+   Documents/Sheets and nothing wider, and sweepVoices refuses a call with no
+   list (no list is not an empty list), leaves every name on it, and leaves
+   a file newer than the ask. */
+{
+  const sw = fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)),
+                                       '..', 'ios', 'App', 'App', 'LinguaShare.swift'), 'utf8');
+  const drop = (/@objc func dropOldSheets\([\s\S]*?\n  \}/.exec(sw) || [''])[0];
+  const sweep = (/@objc func sweepVoices\([\s\S]*?\n  \}/.exec(sw) || [''])[0];
+  say(/documentDirectory/.test(drop) && /Self\.sheetDir/.test(drop) && !/temporaryDirectory/.test(drop) &&
+      (drop.match(/removeItem/g) || []).length === 1,
+      'an earlier build\'s sheets go: Documents/Sheets and nothing else (LinguaShare.swift dropOldSheets' +
+      (drop ? '' : ' not found') + ')');
+  say(/guard let names = call\.options\["keep"\] as\? \[String\] else \{\s*call\.reject/.test(sweep) &&
+      /where !keep\.contains\(name\)/.test(sweep) && /made < cutoff/.test(sweep) &&
+      /Self\.voiceDir/.test(sweep) && /create: false/.test(sweep),
+      'and a recording goes only when nothing names it and it is older than the ask -- a call with ' +
+      'no list is refused (LinguaShare.swift sweepVoices' + (sweep ? '' : ' not found') + ')');
+}
 say(!torn.got && !!torn.why && torn.grew === 0,
     'and a real sheet whose strip is damaged is refused too, not read with the ' +
     'names guessed: ' + torn.grew + ' letters added');

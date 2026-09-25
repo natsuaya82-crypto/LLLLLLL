@@ -40,7 +40,7 @@ const r = await pg.evaluate(async ({ s }) => {
   /* The send is the server's and there is none here: a save that did not land
      is taken back (keepBack), which would make every claim below about a
      refusal. Everything else about the press is the real one. */
-  netSaveNow = function (cb) { cb(true); };
+  netSaveNow = function (cb) { if (cb) cb(true); };
   /* What a refused save goes back to is what was WRITTEN (keepBack), and the
      fixture puts its rules and words in memory without writing them -- so a
      refusal would take the rules away with it, which no phone can be in. */

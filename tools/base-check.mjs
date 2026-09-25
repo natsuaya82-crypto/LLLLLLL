@@ -136,6 +136,10 @@ const r = await pg.evaluate(({s}) => {
             sp:[{l:numByVal(10).id}, {l:'l5'}]};
   WORDS.push(mw);
 
+  /* The fixture turns the drawn letters off; the widget follows that switch
+     (below), so what goes out with it ON is asked with it on. */
+  var mfWas = SET.myfont;
+  delete SET.myfont;
   var w = shareWidget();
   out.wMonKey = Object.keys(w.mon).sort().join(' ');
   out.wMonR   = w.mon['3'] && w.mon['3'].r;
@@ -155,6 +159,20 @@ const r = await pg.evaluate(({s}) => {
   out.wBlank  = Object.prototype.hasOwnProperty.call(w.dg, '13');
   out.wFresh  = Object.prototype.hasOwnProperty.call(w.dg, '0');
   out.wKeys   = Object.keys(w.dg).sort().join(' ');
+  /* The switch for the drawn letters turned off, and the widget follows it.
+     「合わせて」 OWNER 2026-09-24. With it off the app sets every word in
+     roman, so the widget is handed no shape at all: no digit (it falls back
+     to a roman one in every position), and no name the font is said to have
+     every letter of. And the signature moves, or a phone already holding the
+     drawn widget would go on holding it. */
+  var sigOn = shareSig();
+  SET.myfont = false;
+  var wOff = shareWidget();
+  out.offDg   = Object.keys(wOff.dg).join(' ');
+  out.offMon  = !!(wOff.mon['3'] && wOff.mon['3'].all);
+  out.offMonR = wOff.mon['3'] && wOff.mon['3'].r;
+  out.offSig  = shareSig() !== sigOn;
+  if (mfWas === undefined) delete SET.myfont; else SET.myfont = mfWas;
 
   /* ---- a shape, named after a slot, moves INTO the slot -------------------
      On a plan whose alphabet is fixed. 「aが自作文字に変わる瞬間みたいなの
@@ -524,6 +542,9 @@ say(r.wMonKey === '3', 'only the months somebody named go out (' + r.wMonKey + '
 say(r.wMonR === 'Tuvel', 'with the roman spelling, always (' + r.wMonR + ')');
 say(r.wMonAll, 'and that the font will have every letter of it');
 say(!r.wMonHole, 'one undrawn letter and it says so, so the widget sets the word plainly');
+say(r.offDg === '', 'with the drawn letters switched off the widget is handed no digit, so every one is roman (' + r.offDg + ')');
+say(!r.offMon && r.offMonR === 'Tuvel', 'and a month’s name goes out as its roman spelling, set plainly (' + r.offMonR + ')');
+say(r.offSig, 'and turning the switch moves what is handed over, so the widget is written again');
 say(r.wSep === ':', 'the clock is told what goes between the hours and the minutes (' + r.wSep + ')');
 say(!r.wSepAll, 'and that nobody drew one, so it is a plain colon');
 

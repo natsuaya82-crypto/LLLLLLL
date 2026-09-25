@@ -16,11 +16,12 @@
    What is asked here is the half no database can answer:
 
      1. the recovery screen draws that person's languages, and one language's
-        parts with their versions — newest first, and a part with none is not
-        a row
+        VERSIONS — each the whole language before one save, the three newest,
+        newest first, one row each and no part names (「言語を前に戻す →
+        『3つ前、まるごと』」 OWNER 2026-09-24); a language with none has no row
      2. pressing a version ASKS FIRST (the app's own popup — confirm() is
-        banned) and only 「戻す」 sends admin_restore, carrying the exact
-        (language, kind, at) that was on the row
+        banned) and only 「戻す」 sends admin_restore_lang, carrying the exact
+        (language, v) that was on the row
      3. **THE ROAD BACK TO THE PERSON'S PHONE, WHICH IS ONE ROAD.** A restore
         lands on `slice`; it reaches them through netLangsWalk() on their next
         launch and through nothing else. The slices are in memory (rule 22),
@@ -70,16 +71,18 @@ const SERVER = `
                         return { id:l.id, name:l.name }; }),
                       hist:S.hist.slice(0) });
     }
-    if (p.indexOf('/rest/v1/rpc/admin_restore') === 0){
+    /* A version is named by v; what each kind was before that save is
+       the server's arithmetic (admin_restore_lang, held by npm run rls), so
+       the shelf just carries the bodies a version stands for. */
+    if (p.indexOf('/rest/v1/rpc/admin_restore_lang') === 0){
       if (S.deny) return refuse();
-      var i, h = null;
+      var i, h = null, kk;
       for (i = 0; i < S.hist.length; i++)
-        if (S.hist[i].language === body.language && S.hist[i].kind === body.kind &&
-            S.hist[i].at === body.at) h = S.hist[i];
+        if (S.hist[i].language === body.language && S.hist[i].v === body.v) h = S.hist[i];
       if (!h) return refuse();
-      for (i = 0; i < S.slice.length; i++)
-        if (S.slice[i].language === h.language && S.slice[i].kind === h.kind)
-          S.slice[i].body = h.body;
+      for (kk in h.bodies) for (i = 0; i < S.slice.length; i++)
+        if (S.slice[i].language === h.language && S.slice[i].kind === kk)
+          S.slice[i].body = h.bodies[kk];
       return answer(null);
     }
     /* AND THE REST OF THE OPERATOR'S SCREEN, which adminLoad() asks in one
@@ -126,18 +129,17 @@ const scr = await pg.evaluate(async ({ s, srv }) => {
 
   S.lang = [{ id:'L1', owner:'them', name:'Kano' },
             { id:'L2', owner:'them', name:'Nen' }];
-  /* Three versions of the dictionary and one of the keyboard, newest first --
-     which is the order admin_hist() gives them (`order by h.at desc` in
-     supabase/schema.sql). THE SCREEN DOES NOT SORT THEM AGAIN: what order
-     versions come in is the server's answer and there is one place it is
-     decided. What is asked here is that the screen KEEPS that order while it
-     groups them by part, which a regrouping bug is exactly what would break.
-     The keyboard's one version sits in the middle of the dictionary's on
-     purpose, so a screen that merely printed the list in order would fail. */
-  S.hist = [{ language:'L1', kind:'words', at:'2026-09-09T04:20:00Z', body:'[]' },
-            { language:'L1', kind:'words', at:'2026-09-09T03:10:00Z', body:'[]' },
-            { language:'L1', kind:'kb',    at:'2026-09-07T11:00:00Z', body:'[]' },
-            { language:'L1', kind:'words', at:'2026-09-08T22:05:00Z', body:'[]' }];
+  /* The language's three versions, newest first -- the order admin_hist()
+     gives them (`order by sv.at desc`, supabase/schema.sql). THE SCREEN DOES
+     NOT SORT OR GROUP THEM AGAIN: which versions there are and in what order
+     is the server's answer. One comes in a slightly odd order on purpose
+     (22:05 on the 8th after 03:10 on the 9th) so a screen that sorted by
+     itself would be caught, and one row of another language is in the list
+     so a screen that forgot to pick the language would be. */
+  S.hist = [{ language:'L1', v:'p3', at:'2026-09-09T04:20:00Z', bodies:{} },
+            { language:'L1', v:'p2', at:'2026-09-09T03:10:00Z', bodies:{} },
+            { language:'L3', v:'q1', at:'2026-09-08T23:00:00Z', bodies:{} },
+            { language:'L1', v:'p1', at:'2026-09-08T22:05:00Z', bodies:{} }];
 
   ADMIN_OK = true; ADREC = null; ADREC_H = 'veth'; ADREC_ERR = '';
   window.route = 'admin'; NAV = [{ r:'admin' }, { r:'admin', a:'rec' }];
@@ -157,12 +159,14 @@ const scr = await pg.evaluate(async ({ s, srv }) => {
   NAV = [{ r:'admin' }, { r:'admin', a:'rec' }, { r:'admin', a:'rec:L1' }];
   const one = vAdmin();
   out.parts = one.split('data-do="adRecPick"').length - 1;
-  /* Newest first, and the part with no version is not a row at all. */
+  /* Newest first, as the server said, and nothing of L3's. */
   out.order = one.indexOf('04:20') < one.indexOf('03:10') &&
-              one.indexOf('03:10') < one.indexOf('22:05');
-  /* And grouped: the keyboard's one version is under its own heading, after
-     all three of the dictionary's, however the list arrived. */
-  out.grouped = one.indexOf('22:05') < one.indexOf('11:00');
+              one.indexOf('03:10') < one.indexOf('22:05') && one.indexOf('23:00') < 0;
+  /* AND NO PART IS NAMED. A version is the whole language, so a heading
+     over some of the rows would be the screen saying there are parts to
+     choose between -- which is what it said until 2026-09-25. Asked of the
+     rows' class: every `.set` on the face is a version or nothing. */
+  out.grouped = (one.split('class="set"').length - 1) === out.parts;
   out.rowsOfL2 = (function(){
     NAV = [{ r:'admin' }, { r:'admin', a:'rec:L2' }];
     const two = vAdmin();
@@ -178,11 +182,10 @@ say(scr.asked.length === 1 && scr.asked[0] === 'veth',
 say(scr.langs, 'その人の言語が並ぶ ── Kano と Nen');
 say(scr.door, '一つ押すと同じルートの別の面へ（admin / rec:L1）── ' +
     '新しいルートは登録していない');
-say(scr.parts === 4, '部分ごとに版が並ぶ ── 単語 3、キーボード 1 で 4 行（' +
+say(scr.parts === 3, '言語の版が三つ並ぶ ── 版はその保存の前の言語まるごと（' +
     scr.parts + '）');
-say(scr.order, 'サーバーの順を保つ ── 新しい版が上（04:20 → 03:10 → 22:05）');
-say(scr.grouped, '部分ごとにまとまる ── 途中に混ざって来たキーボードの版が' +
-    '単語三つの後ろに来る');
+say(scr.order, 'サーバーの順を保つ ── 新しい版が上（04:20 → 03:10 → 22:05）、ほかの言語の版は出ない');
+say(scr.grouped, '部分の見出しは無い ── 行は全部が版（「3つ前、まるごと」）');
 say(scr.rowsOfL2 === 0,
     '版の無い言語は行が無い ── 押せない行を一つも描かない（' + scr.rowsOfL2 + '）');
 
@@ -190,28 +193,34 @@ say(scr.rowsOfL2 === 0,
 const ask = await pg.evaluate(async ({ srv }) => {
   const S = window.__SRV;
   function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
-  S.slice = [{ language:'L1', kind:'words', body:'["いまの姿"]' }];
-  S.hist = [{ language:'L1', kind:'words', at:'2026-09-09T03:10:00Z',
-              body:'["もどした姿"]' }];
+  S.slice = [{ language:'L1', kind:'words', body:'["いまの姿"]' },
+             { language:'L1', kind:'kb',    body:'["いまの鍵"]' }];
+  S.hist = [{ language:'L1', v:'p2', at:'2026-09-09T03:10:00Z',
+              bodies:{ words:'["もどした姿"]', kb:'["もどした鍵"]' } }];
   S.calls = [];
   const out = {};
 
   /* Pressed, then answered NO. Nothing may have gone out. */
-  adRecPick('L1', 'words', '2026-09-09T03:10:00Z');
+  adRecPick('L1', 'p2');
   out.popped = !!(document.getElementById('pop') &&
                   document.getElementById('pop').classList.contains('on'));
   popNo();
   await wait(60);
   out.sentAfterNo = S.calls.filter(function(c){ return c.p.indexOf('admin_restore') >= 0; }).length;
 
-  /* And now YES. */
-  adRecPick('L1', 'words', '2026-09-09T03:10:00Z');
+  /* And now YES -- pressed on the ROW, the way the operator does. */
+  NAV = [{ r:'admin' }, { r:'admin', a:'rec' }, { r:'admin', a:'rec:L1' }];
+  ADREC = { who:'them', langs:[{ id:'L1', name:'Kano' }],
+            hist:[{ sid:'L1', v:'p2', at:'2026-09-09T03:10:00Z', ms:Date.parse('2026-09-09T03:10:00Z') }] };
+  window.route = 'admin'; render();
+  const row = document.querySelector('[data-do="adRecPick"]');
+  if (row) row.click();
   popYes();
   await wait(120);
   const r = S.calls.filter(function(c){ return c.p.indexOf('admin_restore') >= 0; });
   out.sent = r.length;
   out.body = r.length ? r[0].body : null;
-  out.slice = S.slice[0].body;
+  out.slice = S.slice[0].body + S.slice[1].body;
   /* And the list is asked for again, so the undo the server just made is a row
      on the screen rather than something the operator has to go and find. */
   out.reasked = S.calls.filter(function(c){ return c.p.indexOf('admin_hist') >= 0; }).length;
@@ -219,7 +228,7 @@ const ask = await pg.evaluate(async ({ srv }) => {
   /* And a refusal from the server is what the screen says, rather than a
      restore that quietly did not happen. */
   S.deny = true; S.calls = [];
-  adRecPick('L1', 'words', '2026-09-09T03:10:00Z');
+  adRecPick('L1', 'p2');
   popYes();
   await wait(120);
   out.err = String(ADREC_ERR || '');
@@ -230,12 +239,13 @@ const ask = await pg.evaluate(async ({ srv }) => {
 
 console.log('\n  戻す前に訊く');
 say(ask.popped, '版を押すとこのアプリ自身のポップが出る ── 標準の confirm() は禁止');
-say(ask.sentAfterNo === 0, '「いいえ」で admin_restore は一度も出ない（' +
+say(ask.sentAfterNo === 0, '「いいえ」で admin_restore_lang は一度も出ない（' +
     ask.sentAfterNo + '）');
-say(ask.sent === 1 && ask.body && ask.body.language === 'L1' &&
-    ask.body.kind === 'words' && ask.body.at === '2026-09-09T03:10:00Z',
-    '「戻す」で押した行そのものが出る（' + JSON.stringify(ask.body) + '）');
-say(ask.slice === '["もどした姿"]', 'サーバーの slice がその版になる');
+say(ask.sent === 1 && ask.body && ask.body.language === 'L1' && ask.body.v === 'p2' &&
+    !('kind' in ask.body),
+    '「戻す」で押した行の版そのものが出る ── 言語と版だけで、部分は無い（' +
+    JSON.stringify(ask.body) + '）');
+say(ask.slice === '["もどした姿"]["もどした鍵"]', 'サーバーの言語がまるごとその版になる ── 単語も鍵も');
 say(ask.reasked >= 1, '戻したあと一覧を訊き直す ── 戻すのを戻せる行が出る');
 say(!!ask.err && ask.err !== ask.offline,
     '断られたら画面がサーバーの答えを言う ── 「接続できません」ではない（' +

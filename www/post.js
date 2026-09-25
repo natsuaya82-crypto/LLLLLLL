@@ -82,6 +82,14 @@ acctKeep('posts', function(){ return POSTS.length? POSTS : null; },
    phone whose account changed, and a block that hid your own writing would be
    the worst possible reading of it. */
 function postBlocked(p){ return !!(p && !p.mine && meBlocks(p.hd)); }
+/* Written by somebody this account has muted. 「ミュートした人の投稿は
+   タイムラインに出ない（ブロックとは別）」 OWNER 2026-09-25 -- off the lists
+   you scroll and NOT gone, which is postOut()'s shape and not postBlocked()'s:
+   their page still shows it (postKept), a post opened by its id still opens.
+   The server leaves them out of every list it answers (`post_seen.muted`,
+   www/net.js § NET_UNMUTED); this is the half it cannot reach, a post of
+   theirs this phone was already holding when the mute was pressed. */
+function postMuted(p){ return !!(p && !p.mine && meMutes(p.hd)); }
 /* Somebody else's post that has been taken down is not a row in a timeline.
    It is kept -- a thread that had one in it has to be able to say so -- and
    postTomb() is what a thread draws for it. Your OWN stays where it is,
@@ -108,7 +116,7 @@ function postKept(){
     .sort(function(a, b){ return (b.at||0)-(a.at||0); });
 }
 function postAll(){
-  return postKept().filter(function(p){ return !postOut(p); });
+  return postKept().filter(function(p){ return !postOut(p) && !postMuted(p); });
 }
 /* Written by an account that has been frozen. Off the timeline and NOT gone:
    the post is still there, on that account's own page, for whoever goes
@@ -536,8 +544,7 @@ draftsName();
    would have come back as a post to nobody. A draft written before that day
    opens with none, which is a composer with no addressee -- exactly the
    screen it was written on. Nothing is removed and nothing is migrated. */
-function draftKeep(){
-  if(!pwLineAny() && !pwPics().length && !(PW.vo && PW.vo.f)){ toast(t('post.none')); return; }
+function draftOfPW(){
   /* The name it already had, if this is one that was opened again. Reusing it
      is what stops a draft opened and put back becoming two rows -- one on the
      server nobody can reach and one in front of them. */
@@ -551,9 +558,22 @@ function draftKeep(){
      themselves -- numbers that mean a letter only in this alphabet's order at
      this moment. `ln` is the roman now. A draft kept before today carries
      none and is read the way it always was (draftOpen). */
-  var d={id:PW.did || netUUID(), at:Date.now(), ln:dayTagStore(PW.ln), cut:pwLineKept(), mn:PW.mn, to:PW.to,
-         toh:PW.toh||'', pr:PW.pr||0, tags:pwTagsOut(),
-         pics:pwPics(), vo:PW.vo||null, pv:!!PW.pv};
+  return {id:PW.did || netUUID(), at:Date.now(), ln:dayTagStore(PW.ln), cut:pwLineKept(), mn:PW.mn, to:PW.to,
+          toh:PW.toh||'', pr:PW.pr||0, tags:pwTagsOut(),
+          pics:pwPics(), vo:PW.vo||null, pv:!!PW.pv};
+}
+/* A draft goes into the list, and the composer is empty behind it. The one
+   place, for both roads in: keeping one, and a post that would not go. */
+function draftIn(d, said){
+  DRAFTS.push(d);
+  draftsSave();
+  PW=pwBlank();
+  toast(said);
+  goTab('feed');
+}
+function draftKeep(){
+  if(!pwLineAny() && !pwPics().length && !(PW.vo && PW.vo.f)){ toast(t('post.none')); return; }
+  var d=draftOfPW();
   /* THE SERVER FIRST, AND THE LIST WHEN IT HAS LANDED.
      「端末に残すものないんですけど」 OWNER 2026-09-08, and
      「保存するタイミングでエラーが起きるなら、保存されないし」 OWNER
@@ -571,12 +591,34 @@ function draftKeep(){
        that is the draft (supabase/schema.sql § keep_newer). */
     if(row && row.body) d=draftOfRow(row);
     d.up=1;
-    DRAFTS.push(d);
-    draftsSave();
-    PW=pwBlank();
-    toast(t('post.draft.kept'));
-    goTab('feed');
+    draftIn(d, t('post.draft.kept'));
   }, function(dd, st, m){ netPop(dd, st, m, draftKeep); });
+}
+/* A POST THAT DID NOT GO IS A DRAFT. 「普通に送信できませんでした。になるんじゃ
+   ないの？下書きに入るようにしよう」 OWNER 2026-09-24 -- and no button to send
+   it again: sending it again is opening the draft and sending, which is the
+   road every draft already has.
+
+   The server first, as a kept draft is. When it will not take the draft
+   either -- which is the usual reason the post did not go -- the draft is
+   kept in this account's list here with `up` 0, the state a draft written
+   before there was a server has always had: it stays in the list, and goes
+   up when it is opened and kept or sent (draftsPull). Under a NEW name when
+   it came from a draft the server holds, so the server's older row coming
+   down cannot be taken for this one and win over it -- two drafts, and
+   nothing lost. What is sent is the composer as it stands, marks unbaked,
+   because a draft is not a post. */
+function pwSendFell(said){
+  var d=draftOfPW();
+  netDraftUp(d, function(row){
+    if(row && row.body) d=draftOfRow(row);
+    d.up=1;
+    draftIn(d, said);
+  }, function(){
+    if(PW.did) d.id=netUUID();
+    d.up=0;
+    draftIn(d, said);
+  });
 }
 /* A kept draft's line as the composer holds it. One kept before 2026-09-24
    has no `cut` and its `ln` is what the field held, private use characters
@@ -1373,7 +1415,16 @@ function postSend(p, ok, bad){
      next attempt sends one file instead of four. Kept here rather than after
      every upload: one write at the end of a send, against one per file, on a
      key that carries the photographs themselves. */
-  netPush(p, function(sid){ delete POST_SENDING[id]; savePosts();
+  netPush(p, function(sid){ delete POST_SENDING[id];
+             /* AND THE RECORDING IS THE SERVER'S NOW, so the file this phone
+                wrote goes and the post plays `vu` (postVoAt). 「スマホの中に
+                保存されているものなんてないけど。それがあるのがおかしいけど。」
+                OWNER 2026-09-24. Only when `vu` is on the post: a voice that
+                did not go up is a post the server has without it, and its
+                file is what sending again needs. The DELETE REVIEW is in
+                docs/CHANGELOG.md. */
+             if(p.vu && p.vo && p.vo.f){ voDropFile(p.vo.f); delete p.vo.f; }
+             savePosts();
              /* AND THE POST IT ANSWERS, WHICH HAS ONE MORE REPLY NOW. The
                 server counted it the moment the row landed; this is where the
                 phone finds out, and it is the only moment it can -- a reply
@@ -2256,11 +2307,11 @@ function pwSendPost(p){
     goTab('feed');
   }, function(d, s, m){
     netSpin(false);
-    /* Answered and refused for a reason that is not the wire -- the voice's
-       file is gone (`∅`, netWhy). One sentence, and no ［再接続］: pressing
-       again would not bring the file back. */
-    if(String(m||'').indexOf('∅')>=0){ toast(netWhy(d, s, m)); return; }
-    netPop(d, s, m, function(){ pwSendPost(p); });
+    /* What went wrong, in one sentence, and the post is a draft
+       (pwSendFell). The voice's file being gone (`∅`, netWhy) is said as
+       that, because it is not the wire and sending again will not bring it
+       back; everything else is 「送信できませんでした」. */
+    pwSendFell(String(m||'').indexOf('∅')>=0? netWhy(d, s, m) : t('post.send.no'));
   });
 }
 
@@ -2840,32 +2891,6 @@ function pwMarkLines(m){
   if(cur.length || out.length) out.push(cur);
   return out;
 }
-/* The plate a line sits on, exactly as wide as the line 「行ごとに背景の板が
-   ある。文字幅ぴったりの黒い板。行の長さで板の幅も変わる」 -- read off the
-   picture the owner sent of Instagram, 2026-08-28.
-
-   **The colour is named in the stylesheet and is not a new one.**
-   `--mkplate` is the dark ground's value, declared in index.html's two theme
-   blocks as the same colour in both -- 「Every colour lives in these two
-   blocks and nowhere else; the views only ever touch the variables.」
-
-   It does not follow the theme, and that is the point: **a photograph has no
-   theme.** The plate lies on somebody's picture rather than on the app's
-   ground, so a person reading in the light theme may put letters on a dark
-   photograph and the other way round. Following the theme would be following
-   the wrong thing, and Instagram does not either.
-
-   The letters keep the colour somebody picked from the eight -- the plate
-   goes behind them and changes nothing about them.
-
-   A cell tall, because that is what a line of this is: `k` is the cell over
-   800, so 800k is one cell. */
-function pwMarkPlate(x, units, k, ox, oy){
-  var w=pwMarkAdv(units)*k;
-  if(w<=0) return;
-  x.fillStyle=cssVar('--mkplate');
-  x.fillRect(ox, oy, w, 800*k);
-}
 /* One line of shapes onto a canvas, at scale k, starting at ox/oy. */
 function pwMarkRun(x, units, k, ox, oy, col){
   var i, u, a, cur=ox;
@@ -2925,8 +2950,6 @@ function pwMarkDraw(){
     W=Math.max(1, Math.round(H*(pwMarkWide(m)/m.s)));
     c.width=W; c.height=Math.max(1, Math.round(pwMarkTall(m)*bw*dpr));
     for(j=0;j<u.length;j++){
-      pwMarkPlate(c.getContext('2d'), u[j], H/800,
-        (W-H*(pwMarkAdv(u[j])/800))/2, j*H*PW_MARK_LEAD);
       pwMarkRun(c.getContext('2d'), u[j], H/800,
         (W-H*(pwMarkAdv(u[j])/800))/2, j*H*PW_MARK_LEAD, cssVar(pwMarkCol(m)));
     }
@@ -3168,9 +3191,6 @@ function pwBakeOne(pc, done){
          photograph that is not the one somebody arranged. */
       k=(m.s*c.width)/800;
       for(j=0;j<st.length;j++){
-        pwMarkPlate(x, st[j], k,
-          m.x*c.width-(pwMarkAdv(st[j])*k)/2,
-          m.y*c.height-(pwMarkTall(m)*c.width)/2+j*m.s*c.width*PW_MARK_LEAD);
         pwMarkRun(x, st[j], k,
           m.x*c.width-(pwMarkAdv(st[j])*k)/2,
           m.y*c.height-(pwMarkTall(m)*c.width)/2+j*m.s*c.width*PW_MARK_LEAD,
@@ -3840,7 +3860,7 @@ function postDown(id, d, out, seen){
     seen.push(ks[i].id);
     /* Same as the walk above: the row goes and the answers to it stay. A
        reply to somebody you blocked was written by somebody else. */
-    if(postShown(ks[i])) out.push({p:ks[i], d:d});
+    if(postShown(ks[i]) && !postMuted(ks[i])) out.push({p:ks[i], d:d});
     postDown(ks[i].id, d+1, out, seen);
   }
   return out;
@@ -4362,6 +4382,8 @@ function postMenuHTML(p){
   var h=String(p.hd||'');
   if(!p.mine)
     return '<span class="pmenu" data-pm="1">'+
+      '<button class="pmi"' + DO('meMute', [h]) + '>'+ICON_SPK+
+        '<span>'+esc(t(meMutes(h)? 'post.unmute' : 'post.mute'))+'</span></button>'+
       '<button class="pmi"' + DO('meBlock', [h]) + '>'+ICON_BLOCK+
         '<span>'+esc(t(meBlocks(h)? 'post.unblock' : 'post.block'))+'</span></button>'+
       '<button class="pmi bad"' + DO('openReport', [p.id, h]) + '>'+ICON_FLAG+

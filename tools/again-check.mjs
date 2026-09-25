@@ -148,6 +148,7 @@ const SERVER = `
                             no:r.no, at:r.at, ed:ed });
         S.eds = S.eds || []; S.eds.push(r.kind + ':' + JSON.stringify(r.ed || null));
         S.sent.push('slice:' + r.language + ':' + r.kind);
+        S.presses = S.presses || []; S.presses.push(r.press || null);
       }
       return answer([]);
     }
@@ -913,8 +914,12 @@ say(del.afterSync.length === del.afterDelete.length,
    毎回 685 KB になる。動いていなければ何も送らないこと。そして署名が
    無ければ何も送らず、何も失わないこと。
 
-   `netSend` の下の偽サーバーは上のものをそのまま使う。`netSaveUp` も
-   `netSlices` も本物が走る。 */
+   `netSend` の下の偽サーバーは上のものをそのまま使う。`netSaveNow` も
+   `netSlices` も本物が走る。
+
+   **保存を押したら**（OWNER 2026-09-24）── ここの保存は、保存のある画面に
+   立たずに save() を呼ぶので、押した一回が送る形（bkTouch()、www/backup.js）。
+   溜めは無い：待つのは往復のぶんだけ。 */
 const up2 = await pg.evaluate(async ({ s, srv }) => {
   eval('(' + s + ')()');
   SET.walked = true;
@@ -923,9 +928,8 @@ const up2 = await pg.evaluate(async ({ s, srv }) => {
   ACCT_UID = ''; acctFor(netUid());
   function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
   const out = {};
-  /* 待つのは NET_UPMS ＋ 往復のぶん。数はコードから読む ── ここに書くと
-     片方だけ動いたときに黙って通る。 */
-  const settle = () => wait(NET_UPMS + 400);
+  /* 待つのは往復のぶん。溜め（NET_UPMS）は 2026-09-25 に消えた。 */
+  const settle = () => wait(400);
 
   var id = langId;
   LANGS[id].mine = true; langOwnGot(id, 'me2'); langStore();
@@ -973,11 +977,47 @@ const up2 = await pg.evaluate(async ({ s, srv }) => {
   await settle();
   out.sentIdle = window.__SRV.sent.slice();
 
-  /* 三. 一続きに打っても、送るのは一度。十回保存して一回。 */
+  /* 三. 一回の押しの中で十回保存しても、送るのは一度。 */
   window.__SRV.sent = [];
   for (var n = 0; n < 10; n++){ WORDS.push({ hw:'burst' + n, gl:'x' }); save(); }
   await settle();
   out.sentBurst = window.__SRV.sent.slice();
+
+  /* 三c. 一回の保存は一つの番号 ── その回が書く章は全部同じ press を持ち、
+     次の保存は別の番号（「言語を前に戻す →『3つ前、まるごと』」 OWNER
+     2026-09-24、supabase/schema.sql § slice_hist が版をそれで束ねる）。 */
+  window.__SRV.presses = [];
+  WORDS.push({ hw:'twokinds', gl:'x' }); save();
+  if (LETTERS[0]) LETTERS[0].st = [{ pts:[[100,100],[700,700]] }];
+  saveLetters();
+  await settle();
+  out.pressOne = window.__SRV.presses.slice();
+  window.__SRV.presses = [];
+  WORDS.push({ hw:'nextsave', gl:'x' }); save();
+  await settle();
+  out.pressTwo = window.__SRV.presses.slice();
+
+  /* 三b. 送っている最中の押しは落とさない ── 先の送りが終わってから送る
+     （NET_NEXT、www/net.js）。前は done(true) と答えて何も送らなかったので、
+     往復の間に押した二つ目は「保存しました」と言われて手元に残った。
+     送りの最中は、旗を立てて作る ── 偽のサーバーの答えの速さに寄りかかる
+     と、最中が本当に在ったかどうか分からない。 */
+  window.__SRV.sent = [];
+  NET_SYNCING = true;
+  WORDS.push({ hw:'queued', gl:'pressed while a send was in the air' });
+  save();
+  await settle();
+  out.sentWhileBusy = window.__SRV.sent.slice();
+  NET_SYNCING = false;
+  netSaveNext();
+  await settle();
+  out.queuedOnServer = (function(){
+    var S = window.__SRV, sid = id, i;
+    for (i = 0; i < S.slice.length; i++)
+      if (S.slice[i].language === sid && S.slice[i].kind === 'words')
+        return S.slice[i].body.indexOf('queued') >= 0;
+    return false;
+  })();
 
   /* 五. 二台目が同じ言語を書いていたら、中身を読みに行く。
      ここを間違えると片方の単語が黙って消えます ── 保存が中身を読まなくなった
@@ -1094,6 +1134,15 @@ say(up2.keptAllThree,
     '控えを無くしたあとのも' + (up2.keptAllThree ? '' : '**消えた**'));
 say(up2.sentIdle.length === 0,
     '何も動いていない保存は、何も送らない: ' + JSON.stringify(up2.sentIdle));
+say(up2.sentWhileBusy.length === 0 && up2.queuedOnServer,
+    '送っている最中の押しは落とさない ── 最中には何も出さず、先の送りが終わって' +
+    'から送る（最中 ' + up2.sentWhileBusy.length + ' 件、あとで ' +
+    (up2.queuedOnServer ? '届いた' : '**届いていない**') + '）');
+say(up2.pressOne.length >= 2 && !!up2.pressOne[0] &&
+    up2.pressOne.every(function(x){ return x === up2.pressOne[0]; }) &&
+    up2.pressTwo.length >= 1 && !!up2.pressTwo[0] && up2.pressTwo[0] !== up2.pressOne[0],
+    '一回の保存が書く章は全部同じ番号を持ち、次の保存は別の番号（' +
+    JSON.stringify(up2.pressOne) + ' → ' + JSON.stringify(up2.pressTwo) + '）');
 say(up2.sentBurst.length === 1,
     '続けて十回保存しても送るのは一度 ── 一続きは一回（' +
     up2.sentBurst.length + ' 件）');
@@ -1109,8 +1158,8 @@ say(up2.sentOut.length === 0 && up2.keptOut,
    **上の四つは「届く」だけを訊いていて、届かなかったときを訊いていなかった。**
    それが 2026-09-05 に実機で出た形です ── 電波の無いところで文字を書いて保存を
    押すと、画面はレターの一覧へ進み、「保存しました」と出て、要求はその 1.2 秒
-   後にはじめて出て行きました。保存は netSaveUp() の溜め（NET_UPMS）で、押した
-   ボタンはその結果を一度も訊いていませんでした。
+   後にはじめて出て行きました。保存は溜め（NET_UPMS、2026-09-25 に消えた）で、
+   押したボタンはその結果を一度も訊いていませんでした。
 
    **ここは押します。**関数を呼ぶのではなく、画面に立って、バーの保存を
    クリックします ── 訊いているのは「ボタンが何をするか」で、関数が何をするか
@@ -1177,9 +1226,9 @@ async function pressSave(how){
   }, { s: seed.toString(), srv: SERVER, how });
   if (!set.hasBtn) return Object.assign(set, { noButton:true });
   await pg.click('[data-do="keepPress"]');
-  /* 溜めの時間より長く待つ。ここで通るなら、押した瞬間に出て行っています ──
-     NET_UPMS をコードから読むので、溜めが変わってもこの検査は付いていきます。 */
-  await pg.waitForTimeout(await pg.evaluate(() => NET_UPMS + 900));
+  /* 往復のぶんだけ待つ。溜めは無い（2026-09-25）ので、ここで通るなら押した
+     瞬間に出て行っています。 */
+  await pg.waitForTimeout(900);
   return await pg.evaluate(({ lid, ink, was }) => ({
     screen: JSON.stringify(NAV[NAV.length - 1]),
     pop: popOn(),
@@ -1229,7 +1278,7 @@ say(sv.down.inkHeld && sv.slice.inkHeld,
     (sv.down.inkHeld ? '在る' : '**消えた**') + '、POST だけ ' +
     (sv.slice.inkHeld ? '在る' : '**消えた**') + '）');
 say(sv.down.tried.length > 0 && sv.slice.tried.length > 0,
-    '押した瞬間に出て行く ── 溜め（NET_UPMS）を待たずに（通信ごと ' +
+    '押した瞬間に出て行く ── 溜めは無い（通信ごと ' +
     sv.down.tried.length + ' 件、POST だけ ' + sv.slice.tried.length + ' 件）');
 say(sv.up.screen.indexOf('glyph') < 0 && !sv.up.pop && !!sv.up.toast,
     'そして電波があれば今までどおり進む ── レターの一覧へ戻り、保存したと言う' +
@@ -2104,7 +2153,7 @@ const oneC = await pg.evaluate(async ({ srv, u }) => {
   S.tried = [];
   if (LETTERS.length) LETTERS[0].g = [[[0,0],[1,1]]];
   saveLetters();
-  await wait(NET_UPMS + 600);
+  await wait(600);
   var out = { mine: langMine(langId), lock: langLocked(),
               open: langId, letters: LETTERS.length,
               sent: S.tried.filter(function(t){ return t.indexOf('POST /rest/v1/slice') === 0; }).length };
@@ -2586,11 +2635,11 @@ const lt42B = await pg.evaluate(async ({ srv, a }) => {
   await window.__walk();
   var boot = LETTERS.length;
   langOpen(a.id);
-  /* 一文字に線を引いて保存 ── 人がやる道と同じ（saveLetters → bkTouch →
-     netSaveUp）。溜め（NET_UPMS）より長く待ちます。 */
+  /* 一文字に線を引いて保存 ── 保存のある画面に立たずに書く道（saveLetters →
+     bkTouch → netSaveNow）。溜めは無いので、往復のぶんだけ待ちます。 */
   if (LETTERS[0]) LETTERS[0].st = [{ pts:[[200,600],[400,200],[600,600]] }];
   saveLetters();
-  await wait(NET_UPMS + 1200);
+  await wait(1200);
   var end = srvL(), names = {}, dup = [], i, nm;
   for (i = 0; i < end.length; i++){
     nm = String(ltName(end[i]) || '');
@@ -2637,7 +2686,7 @@ const addOff = await pg.evaluate(async ({ s, srv }) => {
   eval(srv);
   SESS = { at:'t', rt:'r', uid:'me3', anon:false };
   function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
-  const settle = () => wait(NET_UPMS + 600);
+  const settle = () => wait(600);
   const out = {};
   var id = langId;
   LANGS[id].mine = true; langOwnGot(id, 'me3'); langStore();
@@ -2667,7 +2716,7 @@ const addOff = await pg.evaluate(async ({ s, srv }) => {
   var pops = 0, realPop = netPop;
   netPop = function(d, st, m, ag){ pops++; return realPop(d, st, m, ag); };
   var saves = [], realNow = netSaveNow;
-  netSaveNow = function(dn){ return realNow(function(up){ saves.push(up); dn(up); }); };
+  netSaveNow = function(dn){ return realNow(function(up){ saves.push(up); if(dn) dn(up); }); };
   window.__SRV.down = true;
   paper('tupira');
   addOne();
@@ -2814,7 +2863,7 @@ say(takeB.pic,
    later side's, by when a PERSON wrote it on each phone (www/net.js §
    netSlice1, www/sync.js § syMerge, supabase/schema.sql § keep_newer).
 
-   Four things, and the real netSaveUp()/netSlice1()/syMerge() run for all of
+   Four things, and the real netSaveNow()/netSlice1()/syMerge() run for all of
    them against the stub above:
      a  a save carries when the person wrote it, and what it merged against
      b  a write the server refuses as stale is read again and merged again,
@@ -2833,7 +2882,7 @@ const late = await pg.evaluate(async ({ s, srv }) => {
   SESS = { at:'t', rt:'r', uid:'me3', anon:false };
   ACCT_UID = ''; acctFor(netUid());
   function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
-  const settle = () => wait(NET_UPMS + 600);
+  const settle = () => wait(600);
   var S = window.__SRV, id = langId, out = {};
   function row(kind){
     return S.slice.filter(function(x){ return x.language === id && x.kind === kind; })[0];
