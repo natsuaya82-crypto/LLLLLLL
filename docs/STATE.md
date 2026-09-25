@@ -70,10 +70,8 @@ schema.sql の 42501 の直し。**RevenueCat の Swift はこのビルドで初
 - `claude/r55-ads` ── **広告枠**（OWNER 2026-09-23「Twitterと同じ。ツイート擬態右上に
   pr」）。投稿 10 件ごとに一枠、10 件未満なら無し、pro は無し（`can('noads')`）。
   枠は売れる形 ── サーバーの広告行を `postRow` で描き右上に PR。売れていない枠は
-  AdMob ネイティブ（`ios/App/App/LinguaAds.swift`、GMA 13.6.0、Podfile）。
-  ID は `ios-deploy.yml` の「Inject AdMob IDs」が secrets `ADMOB_APP_ID`・
-  `ADMOB_NATIVE_UNIT` から入れ、無ければ Google のテスト ID。ATT の許可は jpel と同じ。
-  UMP（EU の同意）は BACKLOG。**実機はまだ ── 広告が実際に出るかは 166 で見る。**
+  AdMob ネイティブだった。**2026-09-25（r93）に今はまだ出さないことになり、広告の行・AdMob・追跡の問いを
+  ビルドから外した**（審査が BINARY_INDICATES_APP_TRACKS_USERS で断ったため。戻し方は決定ログ 2026-09-25）。
 - `claude/r56-guide-sp` ── **目安の線は 田**（口＋十、点の 0・10・20 段と列、
   コントラスト 5.04:1／暗 8.38:1、`guide-check`）。**字間は別ページ**（設定 → 言語 →
   字間 >、横と縦の見本）。otf5.js が vhea/vmtx/VORG を書くので縦書きも字間に従う

@@ -249,17 +249,20 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Implementation status:
 ```
 
-### 2026-09-25 広告は出さない ── AdMob も、売れる広告枠も、追跡の問いも無い
+### 2026-09-25 広告は入れる。今はまだ出さない
 - Date: 2026-09-25
 - Area: ホームのタイムライン（`www/sns.js`）、`CAN`（`www/core.js`）、iOS（`ios/App/`）、`.github/workflows/ios-deploy.yml`
-- Decision: 「広告出さないよ？」── **広告は出さない。** タイムラインに広告の行は無い（AdMob も、売った枠も）。
-  アプリは App Tracking Transparency を訊かず、広告の SDK を持たない。Pro の「広告なし」は無い（広告が無いので）。
+- Decision: 「出さないっていうか入れるけどまだ今は出さないよって話なんだけど」── **広告は入れる。今はまだ出さない。**
+  広告の形（2026-09-23: Twitter と同じ、投稿に擬態して右上に PR、売れる枠、Pro は無し）は生きている。今のビルドには
+  広告の行も広告の SDK も追跡の問いも無い。出す日に、外した物（下）を戻し、App Privacy で追跡を申告する。
 - Reason: オーナーの言葉。審査への提出が二回 BINARY_INDICATES_APP_TRACKS_USERS で断られた（AdMob と ATT が入っていて、App Privacy は「追跡しない」）。
 - Affected features: ホームのタイムライン、プラン（~~`CAN.noads`~~ が無くなる）
 - Affected data: 無し。サーバーの `promo` は消さない ── アプリが読まなくなるだけ（`docs/CHANGELOG.md` 2026-09-25）
 - Affected docs: `docs/CHANGELOG.md`、`docs/PAID_FEATURES.md`、`docs/apple.md`、`docs/scope/r93-noads.md`
 - Implementation status: r93-noads。~~`LinguaAds.swift`~~・Google-Mobile-Ads-SDK・Info.plist の AdMob と ATT の鍵・workflow の差し込みを消し、
-  `www/` から広告の行と `promo` を読む所を外した。戻ったら `assets-check` が赤。
+  `www/` から広告の行と `promo` を読む所を外した。戻ったら `assets-check` が赤。**出す日に戻す物**は
+  コミット `35076603`（www）と `63d7091b`（iOS）の親にある ── `git revert` の二つと App Privacy の申告と `assets-check` の
+  その一行を消すこと。
 
 ### 2026-09-25 タブで出る時の保存・Pro の上限・ブロックと取った言語・ミュートの広さと印
 - Date: 2026-09-25

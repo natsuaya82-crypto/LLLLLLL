@@ -19,10 +19,10 @@ The order is the order to do them in.
 
 ## EEA・イギリス・スイスで個人向けの広告を出すには同意の画面（UMP）が要ります（2026-09-23、r55）
 
-AdMob は入った（`ios/App/App/LinguaAds.swift`）が、Google の同意の画面（User
+AdMob は入っていた（~~`LinguaAds.swift`~~、2026-09-25 にビルドから外した ── 広告を出す日に戻す）が、Google の同意の画面（User
 Messaging Platform）は入れていない ── 土台にした jpel に無いため（リーダー
 2026-09-23）。無い間、その地域では個人向けでない広告しか出ない。入れるなら
-`LinguaAds.swift` の `start` の前に UMP の同意を取り、AdMob の管理画面で
+戻した LinguaAds.swift の `start` の前に UMP の同意を取り、AdMob の管理画面で
 「プライバシーとメッセージ」を作る。https://support.google.com/admob/answer/13554116
 
 ## `www/img/` を見る check がありません（2026-09-18、r44 が測った）
