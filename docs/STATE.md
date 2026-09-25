@@ -1220,12 +1220,16 @@ under `lingua.sess`.
 2. **アカウント削除でサーバーに残る物** ── 投稿の通報の記録・公開の記録・問い合わせは、名前だけ外れて行が残る。
    投稿に付けた写真と声のファイルもサーバーに残る。全部消すか。（スマホに残る物は 9/25 の決定で消すことになった）
 3. **音を選ぶ所の、横にスクロールする丸いボタンの列** ── 一覧の形に直すか。
+4. **保存ボタンのある画面を、下のタブで出た時** ── 左上の戻るで出ると「保存しますか？」と訊くが、タブで出ると
+   訊かない。書きかけはそのまま残り、次にどこかで保存を押した時に一緒に保存される。タブで出る時も訊くか。
+5. **Pro で上限（言語3つ・ダウンロード3つ）に達した時の文** ── 今は「この機能を使うにはアップグレードが必要です」と
+   出るが、Pro より上のプランは無い。この文のままか、別の文にするか。
 
 ### 9月上旬から残っていて、今のコードで測り直してから訊くもの
-4. **消えるのを防ぐ「小さくなったら書かない」守り** ── 版が3つ前まで残るようになったら外してよいか。
-5. **一度も触っていない設定** ── 既定の値を「その人の答え」として書くか、空のままにするか。
-6. **★を50件より多く付けている人** ── 51件目より古い★が画面から消え、続きへ行く道が無い。
-7. **まれに起きる二つ** ── 検索の履歴が一つ消えることがある／同じ言語が一覧に二つ並ぶことがある。
+6. **消えるのを防ぐ「小さくなったら書かない」守り** ── 版が3つ前まで残るようになったら外してよいか。
+7. **一度も触っていない設定** ── 既定の値を「その人の答え」として書くか、空のままにするか。
+8. **★を50件より多く付けている人** ── 51件目より古い★が画面から消え、続きへ行く道が無い。
+9. **まれに起きる二つ** ── 検索の履歴が一つ消えることがある／同じ言語が一覧に二つ並ぶことがある。
 
 ## 4b. More than one session at a time
 
@@ -1414,10 +1418,10 @@ can hold two rules.
 ### Open, and the owner's
 
 - **How many keyboards a plan buys — settled and implemented.**
-  Free 1 language and the fixed QWERTY; Plus 1 language and 4 keyboards pooled;
-  Pro 3 languages and no ceiling. In the code: `CAN.kb` is `'plus'` (the DOOR),
-  `kbCap()` is the NUMBER — `FREE_KB=1`, `PLUS_KB=4`, `Infinity` on pro — and it
-  is a pool **across languages**, counted by `kbCount()`. `KB_MAX` is gone;
+  Free 1 language and the fixed QWERTY; Plus 1 language and no keyboard ceiling
+  (r84, 2026-09-24); Pro 3 languages and no ceiling. In the code: `CAN.kb` is
+  `'plus'` (the DOOR), `kbCap()` is the NUMBER — `FREE_KB=1`, `Infinity` on Plus
+  and Pro — counted by `kbCount()` across languages. `KB_MAX` is gone;
   a number that is three facts is a function. The language ceiling is
   `langCap()` — `FREE_LANGS=1`, `PRO_LANGS=3`, and Plus is deliberately the same
   as free. `edit` and `badge` are both in `CAN` now.
