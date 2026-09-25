@@ -289,8 +289,9 @@ nothing in the keyboard asks a plan. There is no capability and no ceiling for
 it, and the ones there were (~~`CAN.kb`~~, ~~`kbCap()`~~) are deleted.
 
 **`font` is Plus's** — 「フォントの書き出しはそれでいいよ」 OWNER 2026-09-25,
-down from Pro (2026-09-24), where it had not been built. The share mark on the
-keyboard list hands the font of the drawn letters (`SFONT.b64`, the bytes
+down from Pro (2026-09-24), where it had not been built. The share mark at the
+top right of the letters screen (「フォントは文字なんだから文字から」 OWNER
+2026-09-25) hands the font of the drawn letters (`SFONT.b64`, the bytes
 `LinguaFont.build` made) to iOS's share sheet as an `.otf` — `kbFontOut()`.
 
 **`dl` is Plus's, and its numbers are the owner's of 2026-09-02.**
