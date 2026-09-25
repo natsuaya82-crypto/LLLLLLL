@@ -1302,7 +1302,7 @@ const r = await pg.evaluate(({ s }) => {
   kbTapKey(0, 3); standKb();
   var tool2 = vKb();
   out.twoJoinBtn = tool2.indexOf('data-do="kbJoinSel"') >= 0;
-  out.twoNoOpen = tool2.indexOf('data-do="kbOpenSel"') < 0;
+  out.twoPen = tool2.indexOf('data-do="kbOpenSel"') >= 0;
   out.twoBinUp = tool2.indexOf('data-do="kbCut"') >= 0;
   /* three chosen: the join is drawn and DOWN -- two of three is not a choice
      the button gets to make */
@@ -2160,25 +2160,82 @@ const r = await pg.evaluate(({ s }) => {
       if (kbCh(k.v) === 'a') fA = k.v;
     }); }); });
     out.freeAddIds = fIds; out.freeAddChs = fChs; out.freeAddA = fA;
-    /* a drawn letter pressed onto a key of it goes on, and asks nothing */
-    kbShow = 1; kbLay = 0;
+    /* The Save, pressed. keepSave() holds one press at a time until the send
+       it makes has answered, and several are pressed here in one turn -- so
+       the send answers at once, that it landed. What is under test is what the
+       Save WRITES onto the keys, not the network. */
+    window.__kbSave = function (){
+      var real = window.netSaveNow;
+      window.netSaveNow = function (cb){ if (cb) cb(true); };
+      /* and a real send from an earlier claim may still be out, holding the
+         one-press-at-a-time latch for a reply that is not coming here */
+      KEEP_BUSY = false;
+      try { keepPress(); } finally { window.netSaveNow = real; }
+    };
+    /* a drawn letter CHOSEN for a key of it is chosen and not written; the
+       Save in the corner writes it and asks nothing about a plan.
+       「文字選んだらすぐ入るんじゃなくて右上の確定押したら」 OWNER 2026-09-25 */
+    kbShow = 1; kbLay = 0; KBH = null;
+    NAV = [{ r: 'kb', a: '1' }]; route = 'kb';
     var fr = 0, fi = 0;
     while (fr < kbLayer().rows.length && kbLayer().rows[fr][fi].k !== 'lt') fr++;
     var fWas = kbLayer().rows[fr][fi].v, fLt = LETTERS.filter(function (l){ return ltById(l.id) && l.id !== fWas; })[0];
-    kbLtTap(fr, fi, -1, fLt.id);
+    var tg1 = 'k.' + fr + '.' + fi + '.-1';
+    pkKind(tg1, 'own'); pkTake(tg1, fLt.id);
+    out.freeLtNotYet = kbStored()[0].lay[0].rows[fr][fi].v === fWas && pkPicks()[0] === fLt.id;
+    window.__kbSave();
     out.freeLtAsked = popOn();
     out.freeLtOn = kbStored()[0].lay[0].rows[fr][fi].v === fLt.id;
     popOff();
-    /* and a character goes on, and crosses to the phone as itself */
-    kbShow = 1; kbLay = 0;
-    kbChPut(fr, fi, -1, 'あ');
+    /* and a character goes on the same way, and crosses to the phone as itself */
+    NAV = [{ r: 'kb', a: '1' }]; route = 'kb';
+    pkKind(tg1, 'hiragana'); pkTake(tg1, kbChSlot('あ'));
+    out.freeChNotYet = kbStored()[0].lay[0].rows[fr][fi].v === fLt.id;
+    window.__kbSave();
     var fKey = kbStored()[0].lay[0].rows[fr][fi];
     out.freeChOn = fKey.v === '=あ';
     var fSh = shareKey(fKey);
     out.freeChShare = !!fSh && fSh.t === 'あ' && fSh.k === 'lt' && !fSh.st;
-    /* pressed again, it comes off -- there is no 「なし」 */
-    kbChPut(fr, fi, -1, 'あ');
+    /* chosen again it is let go of, and the Save empties the key -- there is
+       no 「なし」 */
+    NAV = [{ r: 'kb', a: '1' }]; route = 'kb';
+    pkKind(tg1, 'hiragana'); pkTake(tg1, kbChSlot('あ')); window.__kbSave();
     out.freeChOff = kbStored()[0].lay[0].rows[fr][fi].v === '';
+    popOff();
+    /* THREE KEYS, THREE CHARACTERS, IN THE ORDER THE KEYS WERE SELECTED, AND
+       ONE STEP BACK. 「選択した順に右上に小さく①②とかついてその順に選択した
+       文字がキーに入る」 OWNER 2026-09-25. Selected 2, 3, 1 -- a run that grew
+       at both ends, so the order is not the order across -- the sheet wears
+       ①②③ on them in that order, the pen is up, and the three characters go
+       onto 2, 3 and 1. */
+    NAV = [{ r: 'kb', a: '1' }]; route = 'kb'; KBH = null; kbSel = null;
+    var mr = 0;
+    while (mr < kbLayer().rows.length && !(kbLayer().rows[mr].length > 3 &&
+           kbLayer().rows[mr][1].k === 'lt' && kbLayer().rows[mr][2].k === 'lt' && kbLayer().rows[mr][3].k === 'lt')) mr++;
+    var mWas = [1, 2, 3].map(function (i){ return kbLayer().rows[mr][i].v; });
+    kbTapKey(mr, 2); kbTapKey(mr, 3); kbTapKey(mr, 1);
+    document.getElementById('app').innerHTML = vKb();
+    var nth = function (i){ var b = document.querySelector('#app .kbk[data-r="' + mr + '"][data-k="' + i + '"]');
+                            return b ? String(b.textContent || '') : ''; };
+    out.multiMarks = nth(2).indexOf('\u2460') >= 0 && nth(3).indexOf('\u2461') >= 0 && nth(1).indexOf('\u2462') >= 0;
+    out.multiPen = !!document.querySelector('#app [data-do="kbOpenSel"]');
+    kbOpenSel();
+    var tgN = formArg(here().a).rest;
+    out.multiList = formArg(here().a).kind === 'pickn' && document.createElement('div') &&
+      (function (){ var d = document.createElement('div'); d.innerHTML = FORM.html;
+                    return d.querySelectorAll('[data-do="pkKind"]').length === WORLD_SCRIPTS.length + 1; }());
+    pkKind(tgN, 'hiragana');
+    pkTake(tgN, kbChSlot('か')); pkTake(tgN, kbChSlot('き')); pkTake(tgN, kbChSlot('く'));
+    out.multiNotYet = [1, 2, 3].map(function (i){ return kbLayer().rows[mr][i].v; }).join('|') === mWas.join('|');
+    var mU = KBU.u.length;
+    window.__kbSave();
+    out.multiIn = kbLayer().rows[mr][2].v + ' ' + kbLayer().rows[mr][3].v + ' ' + kbLayer().rows[mr][1].v;
+    out.multiOrder = out.multiIn === '=か =き =く';
+    out.multiOneStep = KBU.u.length === mU + 1;
+    out.multiBoard = (NAV[NAV.length - 1] || {}).r === 'kb' || (NAV[NAV.length - 2] || {}).r === 'kb';
+    kbUndo();
+    out.multiUndo = [1, 2, 3].map(function (i){ return kbLayer().rows[mr][i].v; }).join('|') === mWas.join('|');
+    popOff(); KBH = null;
     /* AND IT IS CHOSEN FROM THE KINDS, THE SAME LIST AS A LETTER'S.
        「既存文字から選ぶとキーの画面は同一のものを使おう」「字の入力または
        貼り付けいらん」「なし消して」 OWNER 2026-09-25. No box on the sheet,
@@ -2201,7 +2258,9 @@ const r = await pg.evaluate(({ s }) => {
     document.getElementById('app').innerHTML = vForm();
     var spT = document.querySelector('#app [data-do="pkTake"][aria-label="' + t('kb.sp') + '"]');
     if (spT) spT.click();
-    out.freeSpaceOn = kbStored()[0].lay[0].rows[fr][fi].v === '= ';
+    out.freeSpaceNotYet = kbStored()[0].lay[0].rows[fr][fi].v !== '= ';
+    window.__kbSave();
+    out.freeSpaceOn = out.freeSpaceNotYet && kbStored()[0].lay[0].rows[fr][fi].v === '= ';
     KB = null; kbShow = 0;
     popOff();
 
@@ -2730,11 +2789,11 @@ const r = await pg.evaluate(({ s }) => {
       return m.map(function (x){ return x.replace(/.*>/, ''); });
     }
     ltSort = 'own'; ltFil = 'all';
-    var all = kbLtGrid(0, 0, -1);
+    var all = kbLtGrid('k.0.0.-1');
     out.ltRow = /class="wfilrow"/.test(all);
     out.ltAll = cells(all);
-    ltFil = 'drawn';  out.ltDrawn = cells(kbLtGrid(0, 0, -1));
-    ltFil = 'blank';  out.ltBlank = cells(kbLtGrid(0, 0, -1));
+    ltFil = 'drawn';  out.ltDrawn = cells(kbLtGrid('k.0.0.-1'));
+    ltFil = 'blank';  out.ltBlank = cells(kbLtGrid('k.0.0.-1'));
     /* drawn and blank are the two halves of the same alphabet, so they add
        back up to it -- a count on its own would pass a grid that answered
        the same list to every filter as long as it was shorter. */
@@ -2755,7 +2814,7 @@ const r = await pg.evaluate(({ s }) => {
        `new` does not, and the two orders differ because an order exists. */
     var alph = ltOrder(ltOfKind('alpha'));
     if (alph.length > 1) ltMove('alpha', alph[alph.length - 1].id, 0);
-    var own = names(kbLtGrid(0, 0, -1));
+    var own = names(kbLtGrid('k.0.0.-1'));
     /* `new` and not `abc`, and the reason is worth keeping: this fixture's
        alphabet IS a to z, so sorting it alphabetically is the order it was
        already in and a claim built on `abc` passes whether the sort is asked
@@ -2763,7 +2822,7 @@ const r = await pg.evaluate(({ s }) => {
        check catching its own proxy. `new` is the order they were made in and
        is genuinely a different order on this alphabet. */
     ltSort = 'new';
-    var other = names(kbLtGrid(0, 0, -1));
+    var other = names(kbLtGrid('k.0.0.-1'));
     out.ltSame = own.length === other.length;
     out.ltOwnHead = own.slice(0, 8).join(' ');
     out.ltNewHead = other.slice(0, 8).join(' ');
@@ -2772,7 +2831,7 @@ const r = await pg.evaluate(({ s }) => {
       own.slice().sort().join(' ') === other.slice().sort().join(' ');
     /* and the sheet that only holds the alphabet asks the same thing */
     ltSort = 'own'; ltFil = 'blank';
-    out.ltSheet = cells(kbLtGrid(0, 0, -1)) === out.ltBlank;
+    out.ltSheet = cells(kbLtGrid('k.0.0.-1')) === out.ltBlank;
     ltSort = wasS; ltFil = wasF;
   }());
 
@@ -2801,28 +2860,28 @@ const r = await pg.evaluate(({ s }) => {
     }
     out.qOdd = odd ? { name: ltName(odd), snd: oddU } : null;
     function cells(h){ return (String(h).match(/class="ltc"/g) || []).length; }
-    out.qAll = cells(kbLtGrid(0, 0, -1));
-    out.qBox = /id="lt-q"/.test(kbLtGrid(0, 0, -1));
+    out.qAll = cells(kbLtGrid('k.0.0.-1'));
+    out.qBox = /id="lt-q"/.test(kbLtGrid('k.0.0.-1'));
     /* by NAME */
     ltQ = String(ltName(alpha[0]) || '');
-    out.qByName = cells(kbLtGrid(0, 0, -1));
+    out.qByName = cells(kbLtGrid('k.0.0.-1'));
     /* by SOUND -- the letter it belongs to comes back, and it could not have
        come back by name */
     if (odd){
       ltQ = oddU;
-      out.qBySound = cells(kbLtGrid(0, 0, -1));
+      out.qBySound = cells(kbLtGrid('k.0.0.-1'));
       /* the trailing `<` of the match goes too -- keeping it made every name
          miss, and the claim went red on the check rather than on the app */
-      out.qSoundNames = (String(kbLtGrid(0, 0, -1)).match(/class="ltcn"[^>]*>([^<]*)</g) || [])
+      out.qSoundNames = (String(kbLtGrid('k.0.0.-1')).match(/class="ltcn"[^>]*>([^<]*)</g) || [])
         .map(function (x){ return x.replace(/.*>/, '').replace(/<$/, ''); });
       out.qSoundIsIt = out.qSoundNames.indexOf(String(ltName(odd))) >= 0;
     }
     /* nothing answers to it -> the empty state, not the whole alphabet */
     ltQ = 'zzqqxx';
-    out.qNone = cells(kbLtGrid(0, 0, -1));
+    out.qNone = cells(kbLtGrid('k.0.0.-1'));
     /* and clearing gives all of them back */
     ltQ = '';
-    out.qBack = cells(kbLtGrid(0, 0, -1)) === out.qAll;
+    out.qBack = cells(kbLtGrid('k.0.0.-1')) === out.qAll;
 
     /* ---- the FIELD survives being typed into ---------------------------
        This is the whole reason ltPaint() exists rather than render(): the box
@@ -3203,6 +3262,8 @@ const r = await pg.evaluate(({ s }) => {
   (function (){
     planGot('pro');
     function bar(){ return [].slice.call(document.querySelectorAll('.navtop .navdo')); }
+    function gold(){ var b = document.querySelector('.navtop [data-do="keepPress"]');
+                     return !b ? 'none' : (b.className.indexOf('navon') >= 0 ? 'gold' : 'grey'); }
     function backBtn(){ return document.querySelector('.navtop .back'); }
     function cellsOn(){ return [].slice.call(document.querySelectorAll('#lt-list .ltc')); }
     /* the purple, read off the element */
@@ -3211,7 +3272,8 @@ const r = await pg.evaluate(({ s }) => {
         return /--pur/.test(el.getAttribute('style') || '');
       });
     }
-    function idOf(el){ try { return String(JSON.parse(el.getAttribute('data-a') || '[]')[3]); } catch (e){ return ''; } }
+    /* the value a cell chooses is the last thing it carries: pkTake(tg, v) */
+    function idOf(el){ try { var a = JSON.parse(el.getAttribute('data-a') || '[]'); return String(a[a.length - 1]); } catch (e){ return ''; } }
     function tap(el){ if (el) el.click(); return !!el; }
     function stored(){ try { return slRd(langKey('kb')); } catch (e){ return null; } }
     /* The key's page carries the kinds, the language's own letters first
@@ -3233,38 +3295,44 @@ const r = await pg.evaluate(({ s }) => {
 
     openKey();
     out.ltpGrid = cellsOn().length;
-    out.ltpNoBtn = bar().length === 0;
+    out.ltpNoBtn = gold() === 'grey';
     out.ltpPurpleIsKey = purpleIsKey();
 
-    /* ---- another letter pressed: it is on the key, now ---------------- */
+    /* ---- another letter pressed: CHOSEN, and the key has not moved -------
+       「文字選んだらすぐ入るんじゃなくて右上の確定押したら文字が入った
+       キーボード設定の画面に戻る」 OWNER 2026-09-25 */
     var wasKey = onKey(), wasStored = stored(), wasU = KBU.u.length;
     var lid = '', i, cs = cellsOn();
     for (i = 0; i < cs.length; i++)
       if (idOf(cs[i]) !== wasKey){ lid = idOf(cs[i]); tap(cs[i]); break; }
     out.ltpPicked = !!lid;
-    out.ltpPut = onKey() === lid;
+    out.ltpNotYet = onKey() === wasKey && KBU.u.length === wasU;
     out.ltpStayed = formArg(here().a).kind === 'pickk' && cellsOn().length > 0;
-    out.ltpNoBtnAfter = bar().length === 0;
-    out.ltpPurpleMoved = purpleIsKey() && purple().length === 1;
+    out.ltpNoBtnAfter = gold() === 'gold';
+    out.ltpPurpleMoved = purple().length === 1 && idOf(purple()[0]) === lid;
     (function (){
       var on = purple()[0], off = cellsOn().filter(function (el){ return el !== on; })[0];
       out.ltpSeen = !!on && !!off &&
         getComputedStyle(on).backgroundColor !== getComputedStyle(off).backgroundColor;
     }());
-    out.ltpOneStep = KBU.u.length === wasU + 1;
-    out.ltpNoStore = stored() === wasStored;
-
-    /* ---- the same letter again takes it off ------------------------------ */
+    /* a slip: pressed again it is let go of, and the key still has not moved */
     tap(cellsOn().filter(function (el){ return idOf(el) === lid; })[0]);
-    out.ltpOff = onKey() === '' && purple().length === 0;
+    out.ltpOff = onKey() === wasKey && purple().length === 0;
+    /* chosen again, and the Save puts it on -- one step back */
+    tap(cellsOn().filter(function (el){ return idOf(el) === lid; })[0]);
+    window.__kbSave();
+    out.ltpPut = onKey() === lid;
+    out.ltpOneStep = KBU.u.length === wasU + 1;
+    out.ltpNoStore = stored() !== wasStored;
 
-    /* ---- one step back each time --------------------------------------- */
+    /* ---- one step back ------------------------------------------------- */
     kbUndo();
-    out.ltpUndo1 = onKey() === lid;
-    kbUndo();
-    out.ltpUndo2 = onKey() === wasKey;
+    out.ltpUndo1 = onKey() === wasKey;
+    out.ltpUndo2 = true;
+    popOff();
 
-    /* ---- and the sheet for one slot writes that slot, and stays -------- */
+    /* ---- and the page for one slot chooses for that slot, and the Save puts
+       it on ------------------------------------------------------------- */
     fresh(); kbShow = 1; kbLay = 0; standKb(); kbPick(0, 0);
     out.ltpSqOpened = tap(document.querySelector('.kbedit .kbec'));
     out.ltpSqSheet = formArg(here().a).kind === 'kbslot' && !!ownRow();
@@ -3272,8 +3340,10 @@ const r = await pg.evaluate(({ s }) => {
     var other = cellsOn().filter(function (el){ return idOf(el) !== onKey(); })[0];
     var want = other ? idOf(other) : '';
     tap(other);
+    out.ltpSqStayed = formArg(here().a).kind === 'pickk' && onKey() !== want && purple().length === 1;
+    window.__kbSave();
     out.ltpSqPut = !!want && onKey() === want;
-    out.ltpSqStayed = formArg(here().a).kind === 'pickk' && bar().length === 0 && purpleIsKey();
+    popOff();
     tap(backBtn());
   }());
 
@@ -4199,8 +4269,8 @@ say(r.underIsCol && r.selDown,
     'DOWN is the key at this one\'s column in the next row, not index i of it');
 say(r.oneOpenBtn && r.oneNoJoin && r.keyBinUp,
     'ONE key chosen: its page and the bin, and no join -- joining is about two');
-say(r.twoJoinBtn && r.twoNoOpen && r.twoBinUp,
-    'TWO chosen: join and the bin, and no page -- a page is about one key');
+say(r.twoJoinBtn && r.twoPen && r.twoBinUp,
+    'TWO chosen: join, the bin, and the pen -- 「複数キーでも鉛筆マーク」 OWNER 2026-09-25');
 say(r.threeJoinDown, 'THREE chosen: the join is down, not guessing which two');
 say(r.downHasOne && r.downAtOne,
     'the downward join is down at ONE chosen, even where a key is lined up under it');
@@ -4429,22 +4499,21 @@ console.log('    frames, hole by hole: ' + r.seqSeen);
    解除されてる状態にして欲しい。後選択してる紫はもう一度同じ場所触れたら解除して
    欲しい」 OWNER 2026-09-03 */
 say(r.ltpOwnFirst && r.ltpGrid > 0, 'the key opens with the kinds, its own letters first, and that row is the alphabet (' + r.ltpGrid + ' letters)');
-say(r.ltpNoBtn && r.ltpNoBtnAfter && r.ltpSqStayed,
-    'and there is no confirm in the bar, before a letter is pressed, after, or on the page for one slot ' +
-    '(「いらないなら保存だけでいいよ」 OWNER 2026-09-24)');
-say(r.ltpPurpleIsKey && r.ltpPurpleMoved, 'the purple is the letter on the key, before and after a press');
+say(r.ltpNoBtn && r.ltpNoBtnAfter,
+    'the Save in the corner is grey until a letter is chosen and gold once one is ' +
+    '(「右上の確定押したら」 OWNER 2026-09-25)');
+say(r.ltpPurpleIsKey && r.ltpPurpleMoved, 'the purple is the letter on the key, and then the letter chosen');
 say(r.ltpSeen, 'and the purple on it is a colour, not a class nothing reaches');
-say(r.ltpPicked && r.ltpPut && r.ltpStayed,
-    'a letter pressed is on the key at once, and the screen stays where it is [' +
-    [r.ltpPicked, r.ltpPut, r.ltpStayed].join(' ') + ']');
-say(r.ltpOneStep, 'and it is one step back');
-say(r.ltpNoStore, 'and the slice is untouched -- the board’s Save writes the language (K1)');
-say(r.ltpOff, 'pressing the letter on the key again takes it off');
-say(r.ltpUndo1 && r.ltpUndo2, 'and two steps back put the key back as it was [' +
-    [r.ltpUndo1, r.ltpUndo2].join(' ') + ']');
-say(r.ltpSqOpened && r.ltpSqSheet && r.ltpSqPut,
-    'the page for one slot carries the kinds, and puts the letter on that slot [' +
-    [r.ltpSqOpened, r.ltpSqSheet, r.ltpSqPut].join(' ') + ']');
+say(r.ltpPicked && r.ltpNotYet && r.ltpStayed,
+    'a letter pressed is chosen and NOT on the key yet, and the screen stays where it is [' +
+    [r.ltpPicked, r.ltpNotYet, r.ltpStayed].join(' ') + ']');
+say(r.ltpOff, 'pressing the chosen letter again lets it go, and the key has still not moved');
+say(r.ltpPut && r.ltpOneStep, 'the Save puts it on, as one step back');
+say(r.ltpNoStore, 'and the Save is a Save: it writes the keyboard into the language (the KEEP road, www/shell.js)');
+say(r.ltpUndo1, 'and one step back puts the key back as it was');
+say(r.ltpSqOpened && r.ltpSqSheet && r.ltpSqStayed && r.ltpSqPut,
+    'the page for one slot carries the kinds, chooses for that slot, and the Save puts it on [' +
+    [r.ltpSqOpened, r.ltpSqSheet, r.ltpSqStayed, r.ltpSqPut].join(' ') + ']');
 
 /* ---- the free plan's one keyboard: no editor, and it must be SEEN -------
    「無料のキーボードはqwartyに書いた文字が置き換わるだけなのにキーボード自体
@@ -4468,15 +4537,23 @@ say(r.freeNewNoPop && r.freeAddMade,
 say(r.freeAddIds > 0 && r.freeAddChs === 0,
     'and on the free plan it wears the language\'s own letters, as on every plan ('
     + r.freeAddIds + ' letters, ' + r.freeAddChs + ' characters)');
-say(!r.freeLtAsked && r.freeLtOn,
-    'a drawn letter pressed onto a key of it goes on, and nothing asks about a plan ['
-    + [r.freeLtAsked, r.freeLtOn].join(' ') + ']');
+say(r.freeLtNotYet && !r.freeLtAsked && r.freeLtOn,
+    'a drawn letter chosen for a key is not on it until the Save, then it is, and nothing asks about a plan ['
+    + [r.freeLtNotYet, r.freeLtAsked, r.freeLtOn].join(' ') + ']');
+say(r.freeChNotYet, 'a character pressed on its page does not change the key by itself');
+say(r.multiMarks && r.multiPen && r.multiList,
+    'three keys selected wear \u2460\u2461\u2462 in the order selected, the pen is up, and it opens the kinds for all three ['
+    + [r.multiMarks, r.multiPen, r.multiList].join(' ') + ']');
+say(r.multiNotYet && r.multiOrder && r.multiOneStep && r.multiBoard,
+    'three characters chosen go onto the three keys in that order on the Save, as one step, and land on the board ['
+    + [r.multiNotYet, r.multiIn, r.multiOneStep, r.multiBoard].join(' ') + ']');
+say(r.multiUndo, 'and one step back puts all three back');
 say(r.freeSheetNoBox && r.freeKeyPageKinds && r.freeSpaceOn,
     'a character is chosen from the kinds: no box on the sheet, the key\'s page carries the kinds with its own letters first, '
     + 'and the space on the symbols\' page goes onto the key [' +
     [r.freeSheetNoBox, r.freeKeyPageKinds, r.freeSpaceOn].join(' ') + ']');
 say(r.freeChOn && r.freeChShare && r.freeChOff,
-    'a character goes onto the key, crosses to the phone as itself, and pressed again comes off ['
+    'a character goes onto the key on the Save, crosses to the phone as itself, and chosen again and saved comes off ['
     + [r.freeChOn, r.freeChShare, r.freeChOff].join(' ') + ']');
 
 /* ---- and the chapter is a LIST on the free plan too ---------------------

@@ -2585,15 +2585,15 @@ export function halfDone(){
                                               kbAdd('qwerty'); kbLay = 0; kbPick(0, 0);
                                               const h = vForm(); KB = null; kbShow = 0;
                                               planGot('free'); return h; }],
-    /* THE SAME KEY WITH ANOTHER LETTER PRESSED ONTO IT: the letter goes onto
-       the key and is the purple one, and the square over the alphabet says so
-       (OWNER 2026-09-24 「いらないなら保存だけでいいよ」). Built by the act,
-       like the rest of this chapter: kbLtTap() is what a finger does to a
-       letter. */
+    /* THE SAME KEY WITH ANOTHER LETTER PUT ON IT: the square over the kinds
+       says so. Built by the act that writes a key -- kbSlotsPut(), which the
+       Save on a page of characters calls (OWNER 2026-09-25 「右上の確定押し
+       たら」). */
     ['a key with a letter chosen for it', () => { planGot('pro'); KB = null; kbShow = 0;
-                                                  kbAdd('qwerty'); kbLay = 0; kbPick(0, 0);
+                                                  kbAdd('qwerty'); kbLay = 0;
                                                   const a = ltOfKind('alpha');
-                                                  if (a.length) kbLtTap(0, 0, -1, a[0].id);
+                                                  if (a.length) kbSlotsPut([{ ri:0, ki:0 }], -1, [a[0].id]);
+                                                  kbPick(0, 0);
                                                   const h = vForm();
                                                   KB = null; kbShow = 0;
                                                   planGot('free'); return h; }],
@@ -2604,12 +2604,26 @@ export function halfDone(){
        else. Both, because the fault is nearly always in the one nobody
        photographed. */
     ['a key with a drawn letter chosen for it', () => { planGot('pro'); KB = null; kbShow = 0;
-                                                  kbAdd('qwerty'); kbLay = 0; kbPick(0, 0);
+                                                  kbAdd('qwerty'); kbLay = 0;
                                                   const d = ltOfKind('alpha').filter((l) => inkGeo(l));
-                                                  if (d.length) kbLtTap(0, 0, -1, d[0].id);
+                                                  if (d.length) kbSlotsPut([{ ri:0, ki:0 }], -1, [d[0].id]);
+                                                  kbPick(0, 0);
                                                   const h = vForm();
                                                   KB = null; kbShow = 0;
                                                   planGot('free'); return h; }],
+    /* SEVERAL KEYS, in the order they were selected: ①②③ on the sheet, and
+       a page of characters with two of the three chosen -- numbered, and the
+       Save gold (OWNER 2026-09-25 「選択した順に右上に小さく①②」). */
+    ['three keys selected, in order', () => { planGot('pro'); KB = null; kbShow = 0;
+        kbAdd('qwerty'); kbLay = 0; window.route = 'kb'; NAV = [{ r:'kb', a:'1' }];
+        kbTapKey(1, 2); kbTapKey(1, 3); kbTapKey(1, 1);
+        const h = vKb(); KBH = null; KB = null; kbShow = 0; planGot('free'); return h; }],
+    ['characters chosen for three keys', () => { planGot('pro'); KB = null; kbShow = 0;
+        kbAdd('qwerty'); kbLay = 0; window.route = 'kb'; NAV = [{ r:'kb', a:'1' }];
+        const tg = 'n.1_2,1_3,1_1';
+        pkKind(tg, 'hiragana'); pkTake(tg, kbChSlot('\u304b')); pkTake(tg, kbChSlot('\u304d'));
+        const h = vForm(); keepDrop(keepKey()); KBH = null; KB = null; kbShow = 0;
+        planGot('free'); return h; }],
     /* A FLICK keyboard, which is the other half of the editor and the only
        one that has corners. kbSlotsShown() is true when the board's pattern
        is 'flick' or when a key already carries something in one of its four,

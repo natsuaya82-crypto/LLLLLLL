@@ -313,16 +313,26 @@ function closeSheet(){
    their own (pkKind). The kinds are WORLD_SCRIPTS and nothing else.
 
    Who the character is FOR is the only thing that differs, and it travels in
-   the route as `tg`: a letter, 'l.'+lid, or one slot of a key,
+   the route as `tg`: a letter, 'l.'+lid; one slot of a key,
    'k.'+row+'.'+key+'.'+dir (dir -1 for the key itself, 0-3 for a flick
-   corner, kbSlot()'s numbering). A key's list starts with the language's own
+   corner, kbSlot()'s numbering); or several keys, in the order they were
+   selected, 'n.'+row+'_'+key+','+... (「選択した順に…その順に選択した文字が
+   キーに入る」 OWNER 2026-09-25). A key's list starts with the language's own
    letters, which only a key can hold. */
 function pkTo(tg){
-  var s=String(tg||''), p;
+  var s=String(tg||''), p, ks, i, q;
   if(s.slice(0, 2)==='l.') return {lid:s.slice(2)};
+  if(s.slice(0, 2)==='n.'){
+    ks=[]; p=s.slice(2).split(',');
+    for(i=0;i<p.length;i++){
+      q=p[i].split('_');
+      if(q.length===2) ks.push({ri:parseInt(q[0], 10)||0, ki:parseInt(q[1], 10)||0});
+    }
+    return ks.length? {keys:ks, dir:-1} : null;
+  }
   p=s.split('.');
   if(p[0]==='k' && p.length===4)
-    return {ri:parseInt(p[1], 10)||0, ki:parseInt(p[2], 10)||0, dir:parseInt(p[3], 10)};
+    return {keys:[{ri:parseInt(p[1], 10)||0, ki:parseInt(p[2], 10)||0}], dir:parseInt(p[3], 10)};
   return null;
 }
 /* THE KINDS ARE A LIST, one row each, and a row goes to its page -- it does
@@ -332,7 +342,7 @@ function pkTo(tg){
 function pkKindsHTML(tg){
   var to=pkTo(tg), rows='';
   if(!to) return '';
-  if(to.lid===undefined)
+  if(to.keys)
     rows+='<button class="set"' + DO('pkKind', [tg, 'own']) + '>'+
       '<span class="pkpv"></span><span class="sl">'+esc(t('pk.own'))+'</span></button>';
   return rows+WORLD_SCRIPTS.map(function(w){
@@ -341,10 +351,17 @@ function pkKindsHTML(tg){
       '<span class="sl">'+esc(t('ws.'+w.id))+'</span></button>';
   }).join('');
 }
-/* One kind's characters, on a page. For a letter the press is a choice the
-   bar's Save writes (below); for a key it goes onto the key the way a drawn
-   letter does (kbChPut). The language's own letters are the keyboard's page
-   (kbLtGrid). */
+/* The kinds on a page of their own, for several keys at once: a key's page
+   is about one key, and what several have in common is what goes on them. */
+function pkList(tg){
+  if(!pkTo(tg)) return;
+  openForm('pickn:'+tg, t('kb.key'), pkKindsHTML(tg));
+}
+FORM_OPEN.pickn=function(a){ pkList(String(a||'')); };
+/* One kind's characters, on a page. A press CHOOSES and the Save in the
+   corner writes -- for a letter (pkKeepSave) and for keys (kbSlotsPut()) alike:
+   「文字選んだらすぐ入るんじゃなくて右上の確定押したら」 OWNER 2026-09-25.
+   The language's own letters are the keyboard's page (kbLtGrid). */
 function pkKind(tg, kind){
   var to=pkTo(tg), w=wsKind(kind), key='pickk:'+tg+':'+kind, own=(kind==='own');
   if(!to || (!own && !w)) return;
@@ -352,38 +369,92 @@ function pkKind(tg, kind){
     if(own || !ltById(to.lid)) return;
     pkKeepOn(key, to.lid);
   }
+  else pkKeysKeepOn(key, to);
   openForm(key, own? t('pk.own') : t('ws.'+kind),
-    own? kbLtGrid(to.ri, to.ki, to.dir) : pkCharsHTML(tg, to, w),
+    own? kbLtGrid(tg) : pkCharsHTML(tg, to, w),
     own? function(){ geTiles(); } : null);
 }
 FORM_OPEN.pickk=function(a){
   var s=String(a||''), i=s.lastIndexOf(':');
   if(i>0) pkKind(s.slice(0, i), s.slice(i+1));
 };
-/* What a character already is to this screen: the letter's own (what has
-   been chosen, or what it wears), or what the key's slot holds. A character
-   another letter wears is dimmed rather than hidden -- which letter has it is
-   worth seeing -- and a key has no such thing: two keys may type one. */
+/* What the keys' page has chosen so far: slot values, in order -- a letter's
+   id or `=` and a character (kbChSlot()). What it opens with is what a single
+   key holds, so the character on it is marked and pressing it again takes it
+   off; several keys open with nothing chosen. */
+function pkKeysWas(to){
+  var v;
+  if(to.keys.length!==1) return [];
+  v=kbLtOn(to.keys[0].ri, to.keys[0].ki, to.dir);
+  return v? [v] : [];
+}
+function pkKeysKeepOn(route, to){
+  var k=keepKeyOf('form', route), b=KEEP[k];
+  if(!kbEdit()) return;
+  /* A buffer outlives its page (www/shell.js § KEEP), and the keys can move
+     while it waits -- a step back, another page of characters saved onto
+     them -- so what it opened with is taken again on the way in, unless
+     something has been chosen on it since, which is the person's and stays. */
+  if(b && !Object.prototype.hasOwnProperty.call(b.v, 'v')) keepDrop(k);
+  keepOn(k,
+         function(){ return {v:JSON.stringify(pkKeysWas(to))}; },
+         function(v, done){
+           var list=v.hasOwnProperty('v')? pkParse(v.v) : pkKeysWas(to);
+           kbSlotsPut(to.keys, to.dir, list);
+           done(true);
+         });
+}
+function pkParse(s){
+  var a;
+  try{ a=JSON.parse(String(s||'[]')); }catch(e){ a=[]; }
+  return (a && a.length!==undefined)? a : [];
+}
+/* The draft of the page stood on. */
+function pkPicks(){ return pkParse(keepVal(keepKey(), 'v')); }
+/* The small number on a chosen thing when there are keys to number:
+   kbNth(), top right. Nothing here is a border or a corner (CLAUDE.md § 18). */
+function pkNthHTML(i){
+  return '<span style="position:absolute;top:2px;right:4px;font-size:.62rem;line-height:1">'+kbNth(i)+'</span>';
+}
+/* What a character already is to this screen. For a letter: the letter's own
+   (what has been chosen, or what it wears), with a character another letter
+   wears dimmed rather than hidden -- which letter has it is worth seeing. For
+   keys: what this page has chosen, numbered when there is more than one key;
+   two keys may type one character, so nothing is dimmed. */
 function pkCharsHTML(tg, to, w){
-  var cur=(to.lid!==undefined)? pkKept(to.lid, here().a) : kbCh(kbLtOn(to.ri, to.ki, to.dir)),
-      taken=(to.lid!==undefined)? chTaken() : {};
+  var isLt=(to.lid!==undefined), cur=isLt? pkKept(to.lid, here().a) : '',
+      picks=isLt? [] : pkPicks(), many=!isLt && to.keys.length>1,
+      taken=isLt? chTaken() : {};
   /* A page now, not a fold: `.pkchars` in www/index.html still carries the
      fold's own height and scroll box, and that file is another session's
      this week -- so the page says here that it is as tall as its characters.
      Nothing here is a border or a corner (CLAUDE.md § 18). */
   return '<div class="pkchars" style="max-height:none;overflow:visible;border-bottom:0">'+wsChars(w).map(function(ch){
-    var used=taken[ch] && taken[ch]!==to.lid;
-    return '<button class="pkch'+(used?' had':'')+(ch===cur?' cur':'')+'"' + DO('pkTake', [tg, ch]) +
-      (ch===' '? ' aria-label="'+esc(t('kb.sp'))+'"' : '')+'>'+esc(wsFace(ch))+'</button>';
+    var x=isLt? ch : kbChSlot(ch), at=isLt? -1 : picks.indexOf(x),
+        used=taken[ch] && taken[ch]!==to.lid, on=isLt? ch===cur : at>=0;
+    return '<button class="pkch'+(used?' had':'')+(on?' cur':'')+'"' + DO('pkTake', [tg, x]) +
+      (many && on? ' style="position:relative"' : '')+
+      (ch===' '? ' aria-label="'+esc(t('kb.sp'))+'"' : '')+'>'+esc(wsFace(ch))+
+      (many && on? pkNthHTML(at) : '')+'</button>';
   }).join('')+'</div>';
 }
-/* A character pressed: chosen, or -- pressed again -- let go of, which is
-   what 「なし」 was for and why it is not needed. */
-function pkTake(tg, ch){
-  var to=pkTo(tg);
+/* A press: chosen, or -- pressed again -- let go of, which is what 「なし」
+   was for and why it is not needed. For keys, one key takes one choice and a
+   second press moves it; several take one each, in order, and a press past
+   the last key is not taken. Nothing is written: the Save in the corner is
+   what writes (above). */
+function pkTake(tg, x){
+  var to=pkTo(tg), list, i;
   if(!to) return;
-  if(to.lid!==undefined) keepSet('ch', pkKept(to.lid, here().a)===String(ch)? '' : String(ch));
-  else kbChPut(to.ri, to.ki, to.dir, ch);
+  x=String(x||'');
+  if(to.lid!==undefined) keepSet('ch', pkKept(to.lid, here().a)===x? '' : x);
+  else{
+    list=pkPicks(); i=list.indexOf(x);
+    if(i>=0) list.splice(i, 1);
+    else if(to.keys.length===1) list=[x];
+    else if(list.length<to.keys.length) list.push(x);
+    keepSet('v', JSON.stringify(list));
+  }
   formAgain();
 }
 /* The page being stood on, drawn again from its route -- after a press that
