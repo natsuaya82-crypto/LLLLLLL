@@ -249,6 +249,16 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Implementation status:
 ```
 
+### 2026-09-25 フォントの書き出しは文字の画面の右上（1.0.3）
+- Date: 2026-09-25
+- Area: フォントの書き出し（`kbFontOut()`）、文字の画面（`vLetters()` in `www/sound.js`）
+- Decision: フォントの書き出しのマーク（共有のマーク）は、文字の画面の右上に置く。キーボードの一覧の画面からは外す。Plus のまま。
+- Reason: オーナーの言葉「フォントは文字なんだから文字から書き出しのマークつけないとダメでは？」。
+- Affected features: 文字の画面、キーボードの一覧の画面。
+- Affected data: 無し。
+- Affected docs: この項、`docs/keyboard.md`、2026-09-25「キーボードはプランで分けない」のフォントの書き出しの行。
+- Implementation status: 未。r96。
+
 ### 2026-09-25 投稿の画面は揺れない ── 上のバーと道具の行は固定、中身だけがスライド、キーボードの分だけ画面を縮める（1.0.3）
 - Date: 2026-09-25
 - Area: 投稿の画面（`www/post.js`、`.view.fit`）、キーボードの出入り（`vvFit()`・`vpKbWire()`・`--vvtop`・`--vvkb` in `www/shell.js`、`ios/App/App/`）
