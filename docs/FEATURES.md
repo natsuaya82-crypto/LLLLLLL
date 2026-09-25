@@ -586,8 +586,8 @@ Decided, and in:
   `upStop(can('dl'))` in `www/home.js`
 - **how many**: Free 0, Plus 1, Pro 3 — `dlCap()`, a ceiling of its own that
   `langCap()` cannot see. `dlStop()` is the refusal, and somebody already on
-  the top rung gets a sentence rather than a dialog, because there is nothing
-  to fly to
+  the top rung is shown no ↓ at all (`dlFull()`), because there is nothing to
+  fly to 「追加自体できなくすればいい」 OWNER 2026-09-25
 - the thing you get **does not join your language. You switch to it.**
   `langSeenAdd()` puts a row in the index, and `language.owner` says whose it is
 - it **cannot be edited**, and the reason is not tidiness:
