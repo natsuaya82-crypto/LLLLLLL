@@ -42,11 +42,11 @@
 | 1 | Apple：App ID に Push Notifications | 済み（2026-09-25） |
 | 2 | Apple：配布プロファイル作り直し → GitHub Secret 差し替え → リーダーに「済んだ」 | 済み（2026-09-25） |
 | 11 | Supabase：今日のお題が 9/20 で止まっている理由を見る（2 の次に） | 済み（2026-09-25）：見る前に直っていた。アプリで 24 日のお題が出ている（オーナー 2026-09-25 11:59 JST）。原因は見ていない |
-| 3 | Apple：APNs の鍵 → GitHub Secrets 二つ | 途中：`APNS_P8` は入っている。`APNS_KEY_ID` が GitHub の Secrets に無い（Actions run #4 の印字） |
+| 3 | Apple：APNs の鍵 → GitHub Secrets 二つ | 済み（2026-09-25。`APNS_KEY_ID` は run #4 の後に入れ直した） |
 | 4 | Supabase：Webhooks を ON | 済み（2026-09-25）：Integrations → Database Webhooks が Installed |
 | 5 | Supabase：schema.sql を流し直す（4 の後） | 済み（2026-09-25、a64fd723 の版で Success） |
 | 12 | GitHub：verify-plan を置き直す（5 の後。逆だと購入の確かめが 500） | 済み（2026-09-25、Actions run #3、integ-0905 から。オーナーが押した #2 は master からで古い版だったが、#3 が上書き） |
-| 6 | GitHub：push-send を置く（3・5・12 の後） | 待ち：3 の `APNS_KEY_ID`（run #4 はそれで止まった） |
+| 6 | GitHub：push-send を置く（3・5・12 の後） | 済み（2026-09-25、Actions run #5、integ-0905 から。鍵を Supabase に入れる段・置く段・401 の確かめが緑） |
 | 7 | Supabase：Cron `daily-prompt` の時刻 | 済み（2026-09-25） |
 | 8 | AdMob：アプリ登録・広告ユニット・Secrets・app-ads.txt | 今はやらない（オーナー 2026-09-25） |
 | 9 | App Store Connect：App のプライバシー | 今はやらない（オーナー 2026-09-25「広告は今は出さない」） |
