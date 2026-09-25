@@ -380,9 +380,10 @@ cut onto its keys, needing no alphabet and no dictionary on the other side.
 That is what a download has to be, and it is the same argument rule 8 makes
 about a post.
 
-A downloaded keyboard is edited as it stands — the download is the copy. What
-cannot be mixed is the alphabet: the letters that go on its keys are the
-downloader's own.
+A downloaded keyboard is not edited, and nor is anything else of a taken
+language — it is read 「取ってきた言語を編集できるか →『できない』」 OWNER
+2026-09-24. Every writer asks `langWrites()` (`www/core.js`), and `dl-check`
+presses every button on every screen of a taken language.
 
 **This section is 2026-08-19 and § 10 below is 2026-08-25. They are not the same
 thing and they do not agree.** This one is somebody taking somebody else's

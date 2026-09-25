@@ -803,6 +803,7 @@ function newGE(lid, label){
 function editGlyph(unit){
   if(!makeNeed()) return;
   var l=ltForUnit(unit);
+  if(!l) return;
   geOpen(l.id, unit);
 }
 /* From the letters chapter: draw this letter, whatever it reads. */

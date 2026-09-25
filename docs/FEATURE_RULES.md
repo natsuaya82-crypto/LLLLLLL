@@ -5243,19 +5243,18 @@ and is never merged into your own」と言っている。**入らない、は二
 - Affected data: new server tables; on the phone, a downloaded keyboard and a
   downloaded language are new slices and are **not** the person's own
 - Affected docs: `docs/FEATURES.md`, `docs/PAID_FEATURES.md`, `CLAUDE.md`
-  6. **A downloaded keyboard is edited as it stands** — the download IS the
-     copy, so there is nothing to copy again. But **the letters that can be
-     put on its keys are the downloader's own**: it is somebody else's
-     keyboard and this is somebody else's alphabet, and the two do not mix.
-     「dl自体が複製なんだからそのままで良くね？でも人の言語だから当てられる文字は
-     dlした人の言語だけ」
+  6. **取ってきた言語は、キーボードも含めて編集できない（読むだけ）。**
+     「取ってきた言語を編集できるか →『できない』」OWNER 2026-09-24。書き手は
+     全部 `langWrites()`（`www/core.js`）一つを訊き、`langLocked()` がその言語で
+     はいと答える。`dl-check` が、取った言語の全部の画面の全部のボタンを押して、
+     何も作られず、どの章も動かないことを持つ。
 - Implementation status: **取る側は入りました。**`can('dl')`（`www/core.js` の
   `CAN`）と `dlCap()`（Plus 1・Pro 3、無料は 0）、`dlCount()`、`dlStop()`。
   押すと本当に着地することを `tools/dl-check.mjs` が持ちます ── 記事の見た目
   ではなく storage を訊きます（`LANGS[id].mine` が false、~~`bkPack()`~~ は運ばない、
   `netLangSync()` は走らない）。「ダウンロードボタン押しても言語追加されない
   けど？」OWNER 2026-09-01 が、その検査が書かれた理由です。
-  6 番（落としたキーボードに当てられる文字は落とした人のもの）はまだです。
+  6 番は 2026-09-24 の答えで書き直した（上）。
 
 ### Decision
 - Date: 2026-08-19

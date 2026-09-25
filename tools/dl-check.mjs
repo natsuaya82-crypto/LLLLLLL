@@ -193,6 +193,12 @@ const r = await pg.evaluate(async ({ s, sid }) => {
     SND.push('zz');
     KB = KB || {}; KB.kbs = (KB.kbs || []).concat([{ pat:'qwerty', lay:[] }]);
     WLD = WLD || {}; WLD.where = 'sneaked in';
+    /* AND THE SLICES, WHICH ARE IN MEMORY (CLAUDE.md rule 22, LSL). This
+       asked localStorage alone, where no slice has been written since
+       2026-09-04 -- so a saver that wrote the language would have left every
+       key of it byte for byte where it was and been counted as refusing. */
+    var slBefore = {}, si;
+    for (si = 0; si < SLICES.length; si++) slBefore[SLICES[si]] = slRd(langKeyOf(sid, SLICES[si]));
     save(); saveLetters(); saveNotes(); saveStg(); saveSnd(); saveKb(); saveWld();
     out.wroteAnyway = [];
     for (ki = 0; ki < localStorage.length; ki++){
@@ -200,7 +206,12 @@ const r = await pg.evaluate(async ({ s, sid }) => {
       if (kk && kk.indexOf('lingua.') === 0 &&
           localStorage.getItem(kk) !== keysBefore[kk]) out.wroteAnyway.push(kk);
     }
+    for (si = 0; si < SLICES.length; si++)
+      if (slRd(langKeyOf(sid, SLICES[si])) !== slBefore[SLICES[si]]) out.wroteAnyway.push('slice ' + SLICES[si]);
     out.savers = 7;
+    /* the globals the savers were handed back, so the walk below starts from
+       what the language IS */
+    langLoad();
 
     /* And the ways IN are not drawn either. A refusal at the storage door on
        its own is worse than no door: the screen would say it worked. */
@@ -224,6 +235,62 @@ const r = await pg.evaluate(async ({ s, sid }) => {
         });
       } catch (e) { out.doorsUp.push(r + ': threw ' + (e && e.message)); }
     });
+
+    /* ---- AND NOTHING ON ANY SCREEN CHANGES IT ------------------------------
+       「取ってきた言語を編集できるか →『できない』」 OWNER 2026-09-24. The
+       doors above are the ones somebody thought of; this is the SURFACE --
+       every route PAGES has, every button its screen draws, pressed once each
+       with the question answered yes, in this language. Asked of what a
+       person would have MADE: how many words, letters, notes, keyboards and
+       sounds it holds, and every slice of it. A press that makes something in
+       memory is a thing on the screen that no save will keep, which is the
+       fault this guards (it was one: a sound with no letter made a letter on
+       the alphabet page, r84-save, measured). */
+    function made(){
+      return [WORDS.length, LETTERS.length, NOTES.length,
+              (KB && KB.kbs) ? KB.kbs.length : 0, SND.length].join(',');
+    }
+    var sliceSig = function(){ var o = '', q; for (q = 0; q < SLICES.length; q++) o += slRd(langKeyOf(sid, SLICES[q])) + '|'; return o; };
+    var realNetSend = netSend;
+    netSend = function(m, p, b, tk, ok, bd){ if (bd) bd(null, 0); };
+    /* EVERY CHAPTER OF IT, as somebody who took all four has it -- the ↓
+       above took the letters alone, and a screen with nothing of its chapter
+       draws nothing to press. Sounds no letter writes yet are the ones the
+       alphabet page offers to make a letter for. Put straight into the slices
+       (slWr asks nobody; it is the writers that ask) and read in. */
+    slWr(langKeyOf(sid, 'snd'), JSON.stringify(['a', 'k', 'n']));
+    slWr(langKeyOf(sid, 'words'), JSON.stringify([{ hw:'qa', mn:'theirs' }, { hw:'qak', mn:'two' }]));
+    slWr(langKeyOf(sid, 'notes'), JSON.stringify([{ t:'n1', b:'b' }]));
+    slWr(langKeyOf(sid, 'kb'), JSON.stringify({ kbs:[{ id:'kx', nm:'K', pat:'qwerty', lay: kbFixed().lay }], at:0 }));
+    langLoad();
+    var made0 = made(), slice0 = sliceSig(), seen = {}, pressed = 0;
+    out.madeBy = [];
+    Object.keys(PAGES).forEach(function(rt){
+      function stand(){ try { popOff(); } catch (e) {} NAV = [{ r: rt }]; window.route = rt;
+                        if (langId !== sid) langOpen(sid); render(); }
+      try { stand(); } catch (e) { return; }
+      var els = document.querySelectorAll('#app [data-do], .navtop [data-do]'), list = [], q;
+      for (q = 0; q < els.length; q++) list.push([els[q].getAttribute('data-do'), els[q].getAttribute('data-a')]);
+      list.forEach(function(p){
+        var key = rt + ' ' + p[0] + ' ' + (p[1] || '');
+        if (seen[key]) return; seen[key] = 1;
+        try {
+          stand();
+          var sel = '[data-do="' + p[0] + '"]' +
+                    (p[1] !== null ? '[data-a=\'' + p[1].replace(/'/g, "\\'") + '\']' : ':not([data-a])');
+          var el = document.querySelector(sel); if (!el) return;
+          pressed++;
+          el.click();
+          if (popOn()) popYes();
+          if (langId === sid && made() !== made0){ out.madeBy.push(key); langLoad(); }
+        } catch (e) {}
+      });
+    });
+    netSend = realNetSend;
+    if (langId !== sid) langOpen(sid);
+    out.surfacePressed = pressed;
+    out.surfaceRoutes = Object.keys(PAGES).length;
+    out.surfaceSlices = sliceSig() === slice0;
 
     langOpen(was);
   }
@@ -402,6 +469,12 @@ say(!r.opens || (r.doorsUp && r.doorsUp.length === 0),
     'and no way in is drawn on any of its screens — a refusal at the storage ' +
     'door alone would show the word and lose it' +
     ((r.doorsUp && r.doorsUp.length) ? ' (' + r.doorsUp.join(' ') + ')' : ''));
+say(!r.opens || (r.madeBy && r.madeBy.length === 0 && r.surfaceSlices),
+    'and on every route (' + r.surfaceRoutes + '), every button its screen draws pressed ' +
+    'and answered yes (' + r.surfacePressed + '), nothing is made in it and not one slice ' +
+    'of it moves — 「取ってきた言語は編集できない」' +
+    ((r.madeBy && r.madeBy.length) ? ' (made by: ' + r.madeBy.join(' | ') + ')' : '') +
+    (r.surfaceSlices ? '' : ' (a slice moved)'));
 say(r.stillTheirs,
     'and what landed is still theirs after all of that — byte for byte the ' +
     'body the server sent, not this phone’s alphabet written over it');
