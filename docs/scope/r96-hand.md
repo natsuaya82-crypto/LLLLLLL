@@ -33,53 +33,43 @@ CSS が要れば止めて報告。見た目・置き場所・待つ時間など�
 
 ---
 
-# 報告（2026-09-25）
+# 報告（2026-09-25、最終）
 
-## 何を、どのファイルで
+## 1. 手書きのキーボード（オーナーの答え 2026-09-25 で作り直した）
 
-- **手書きの面**（`www/keyboard.js`）: 面のタブの＋の横に「手書き」。`kbAddLay('hand')` が `hand:1` の面を足す
-  （戻るキー・空白・削除の一行、元の面の最後の行の頭に行きのキー。一板に一枚、`kbHandAt()`）。
-  シートでは面の行の上に書く場所（`kbPadHTML()`）。書く場所の行数は `kbHandRows()` 一か所。
-- **渡す物**（`www/share.js`）: 手書きの面がある板だけ、`keyboard.json` に `hand`（描いた字の `shareFace()` 一覧、
-  `ltPuaOrder()` の順）と面の `hand`（行数）。無い板のファイルは変わらない。
-- **近さ**（`ios/App/LinguaKeyboard/hand.js`、新）: `handDist()` が唯一の測り方 ── 32×32 に長い辺で合わせて真ん中、
-  傾きを 0.3 まで戻し、互いの一番近い点までの距離の二乗の平均を両向き。`handNear()` が一番近い番号。
-- **拡張**（`HandPad.swift` 新、`KeyboardViewController.swift`、`Shared.swift`、`project.pbxproj`）: 面に `hand` があれば、
-  上に書く場所・下に面の行。指を離して 0.6 秒で `hand.js`（JavaScriptCore）に聞き、キーと同じ `typed()` で入れる。
-  hand.js は拡張の Resources、HandPad.swift は Sources。
-- **検査** `tools/hand-check.mjs`（FAST、`npm run hand`）: 同じ hand.js を Node で。26 字（otf5 の `glyphContours` と glyph.js の
-  `GPEN`）を、ずらす・縮める・揺らす・回す・傾ける・潰す・書き順と向きを変える・一画ずつずらす・全部同時、で各 156 回。
-  位置・大きさ・書き順は全部正解が条件、崩し一種ずつは 95%、全部同時は 90%（この線は検査の物で、私が置いた）。
-  今の数: 崩しは 154〜156/156、全部同時 146/156。Resources に hand.js があることも見る。
-- i18n 十言語の末尾に `kb.lay.hand`。docs: keyboard.md・keyboard-extension.md・FEATURES.md・CHANGELOG（コードより先）。
+- 手書きは**キーボードの型**（`KB_PATS` の `hand`、`kbHandLay()`）。一面だけ: 書く場所＋空白・削除・改行。面の＋は出さない。
+- 書いて 0.6 秒で、その言語の描いた字の近い順 8 つ（`HAND_PICKS`）を**候補のバー**に並べ、押した字を `typed()` で入れる。
+- 近さは `ios/App/LinguaKeyboard/hand.js` の `handDist()` 一つ、並べるのは `handRank()`。拡張は JavaScriptCore（`HandPad.swift` の `Hand`）。
+- 書く場所に点線の四角と十字（拡張・編集画面・型と一覧の絵）。
+- `keyboard.json`: 手書きの板の面に `hand`（書く場所の行数、`kbHandRows()`）、板に `hand`（描いた字の顔）。ローマ字の面は付けない。
+- 検査 `tools/hand-check.mjs`（FAST）: 26 字 × 9 通りの書き方 × 6 回。候補の中に書いた字 1404/1404、一番目は崩し一種 154〜156/156・全部同時 146/156。
+  赤を見た: 片道の測り方／位置合わせ無し／Resources から外す／傾き戻し無し／並びを逆に。
 
-## 試したこと（CODE CONFIRMED）
+## 2. 字を選ぶ画面は一つ（リーダーの指示）
 
-- 赤を見た: ①測り方を片道に → 3 本赤 ②位置・大きさの合わせを外す → 9 本赤（6/156）③hand.js を Resources から外す → 赤
-  ④傾き戻しを外す → イタリック 147/156 で赤。全部戻して緑。
-- FAST 19 本とも緑（取り込みの後も）。pre-commit の i18n 十言語緑。
-- 本物のアプリで「手書き」を押した: 面が 2 に増え、`shareKbd()` が面 2 に `hand:4`、`hand` に描いた字 5 つ（全部に形と PUA）。
-  写真: `shots/r96-kb-{before,hand,after}{,-dark}.png`（コミット済み）。
+- 種類は `WORLD_SCRIPTS` 一か所（24 種、字は `wsChars()`）。文字の「既存文字から選ぶ」・キーの画面・オンボーディングが同じ物を読む。
+- `pkKindsHTML()`（一覧、キーの時は先頭に自作文字）→ `pkKind()`（種類のページ、route `pickk`）→ `pkTake()`（押すと選ぶ、もう一度で外す）。
+- 消した: 字の入力欄、キーの画面の「なし」、編集画面の「文字を入力」欄（`kbChOnHTML`・`kbChHTML`・`KB_CH_MAX`）、`pkSwitch`・`ltTakeChar`・`pkSetCh`。
+- 持ち物外だが直した: `tools/kb-check.mjs`・`keep-check.mjs`・`fixture.mjs`（消した関数を名指ししていた）、`i18n-check.mjs`（種類の字を表から覚える）。
+  赤を見た: キーの一覧から自作文字の行を外す → kb-check 10 本赤。
+
+## 3. フォントの書き出しは文字の画面の右上（リーダーの指示）
+
+- 共有のマークを `vLetters()` の右上へ、キーボードの一覧から外した。Plus のまま。
+- 別々のコミット: 移動（振る舞い）→ 関数を sound.js へ移すだけ → 改名 `ltFontOut`・`ltFontName`。
+
+## 回した検査
+
+FAST 全部、hand・kb・keep・act・conv・i18n を一回ずつ（書き換えた検査がある所だけ）。**ゲート全部は回していない。**
 
 ## 試していないこと
 
-- **Swift は一行もビルドしていない**（Linux）。実機で要る確認: ビルドが通る／手書きの面に行って書くと字が入る／
-  JavaScriptCore が拡張の中で hand.js を読める（Bundle と JSContext）／高さが他の面と揃う／ダークモードの線の色／
-  フルアクセス無しでも動く。
-- SLOW の検査（press・act・kb・conv など）は回していない（リーダーの物）。press は「手書き」も押すはず。
-- fixture に手書きの面の顔は無い（`tools/fixture.mjs` は持ち物外）── 写真は scratchpad の使い捨てスクリプトで撮った。
-
-## オーナーに訊くこと
-
-1. 一番近い字を**一つ入れる**形にした。候補を何個か出して選ぶ形にするか。
-2. 指を離して**0.6 秒**で読む。この待ちでよいか。
-3. 行き来のキーは面の番号（「2」）を着ている。手書きの印にするか。「手書き」ボタンは印が決まっていないので字のまま。
-4. 書く場所は背景無し・枠無し。書いた線は 4pt。見た目はこれでよいか。
-5. 手書きの面は一板に一枚、戻るキー・空白・削除だけ（改行は無し）。これでよいか。
+- **Swift は一行もビルドしていない。** 実機: ビルド／手書きで候補が出て押すと入る／JavaScriptCore が hand.js を読める／高さ／ダークの線／フルアクセス無し。
+- 字を選ぶ画面・フォントの書き出しは画面の写真まで（`shots/r96-*.png`）。
 
 ## リーダーへ
 
-- 取り込んだ `integ-0905` の決定「字を選ぶ画面は一つ」の Implementation status が「**r96 が手書きの前にやる**」。
-  私への指示に無く、`openPick()` の側（文字・オンボーディング）は持ち物外なので**手を付けていない**。territory を切って指示を。
-- `docs-check` は `ios/` の `.swift` の `func` しか定義として読まないので、docs で `handNear()` と書くと落ちる（括弧無しで書いた）。
-- 決定ログの手書きの行の Implementation status は持ち物外なので直していない。
+- `www/index.html` の `.pkchars` は「その場で開く」形の高さ上限とスクロールを持ったまま。今は `pkCharsHTML()` が要素に上限を外す指定を書いている。
+  index.html が空いたら規則の方を直して、その指定を消すこと。`.pkown`・`#own-ch` の CSS はもう誰も着ていない。
+- `docs-check` は `ios/` の `.js` の関数を定義として読まない（docs で `handRank()` と書くと落ちる）。
+- 決定ログの Implementation status（手書き・字を選ぶ画面・フォントの書き出し）は直していない。
