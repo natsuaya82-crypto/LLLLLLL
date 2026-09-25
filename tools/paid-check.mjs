@@ -23,7 +23,7 @@
    1. the capability table in PAID_FEATURES names exactly the capabilities
       `CAN` has, at exactly the levels `CAN` gives them
    2. § The four numbers carries exactly the ceiling constants `core.js`
-      declares -- FREE_LIMIT, PLUS_LIMIT, FREE_KB, FREE_LANGS,
+      declares -- FREE_LIMIT, PLUS_LIMIT, FREE_LANGS,
       PRO_LANGS, PLUS_DL, PRO_DL
 
    Nothing here decides what a level or a number OUGHT to be. Those are the
@@ -116,7 +116,7 @@ if (wrong.length)
    Eight constants, declared once in core.js and written out once in the
    document. A number that is two facts is what wordCap() exists to say, and
    a number in two FILES is the thing that drifts. */
-const NUMS = ['FREE_LIMIT', 'PLUS_LIMIT', 'FREE_KB',
+const NUMS = ['FREE_LIMIT', 'PLUS_LIMIT',
               'FREE_LANGS', 'PRO_LANGS', 'PLUS_DL', 'PRO_DL'];
 const block = DOC.match(/## The four numbers[\s\S]*?```\n([\s\S]*?)```/);
 if (!block){

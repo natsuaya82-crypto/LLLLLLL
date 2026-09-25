@@ -1608,34 +1608,8 @@ const R = await pg.evaluate(async () => {
   LANGS = keepL30d; langId = keepId30d; langName = keepNm30d; langStore();
   say('30d: 言語を一つ消すのは、その一つだけ ── ほかの言語も投稿も下書きも動かず、サーバーからも消える');
 
-  /* ---- 31. キーボードのプールも、そのアカウントのぶん -------------------
-     「じゃないとアカウント変えたら無限に言語作れるやん」OWNER 2026-09-01。
-     langCount() と同じ穴が kbCount() にもありました ── LANGS は端末のもので
-     サインアウトしても残るので、**他人の言語のキーボードで、この人が作れる
-     プールが埋まります。**
-
-     訊くのは `langWhose()` 一箇所です（2026-09-11）── `langMine()`
-     `langOwned()` `langAcct()` の三つが同じ問いに三通りに落ちていたのを
-     一本にしました。まだ誰のものとも言われていない言語のキーボードは
-     数えません ── 答えの無い数で天井を測ると、次の一枚を断ります。 */
-  start();
-  netOut(); arrive(A);
-  const keepKbLangs = LANGS, keepKbId = langId;
-  LANGS = {};
-  LANGS['Lmine']  = { name: '自分', mine: true };
-  LANGS['Ltheirs']= { name: '他人', mine: true };
-  langOwnGot('Lmine', A); langOwnGot('Ltheirs', B);
-  langId = 'Lmine';
-  slWr(langKeyOf('Lmine', 'kb'),
-    JSON.stringify({ kbs: [{ rows: [] }] }));
-  slWr(langKeyOf('Ltheirs', 'kb'),
-    JSON.stringify({ kbs: [{ rows: [] }, { rows: [] }] }));
-  kbRead();
-  const mineOnly = kbCount();
-  LANGS = keepKbLangs; langId = keepKbId; kbRead();
-  if (mineOnly !== 1)
-    no('31: 他人の言語のキーボードが数に入っている — ' + mineOnly + '（自分のは1つ）');
-  say('31: キーボードのプールは、そのアカウントの言語のぶんだけ');
+  /* ---- 31. （消えた）キーボードのプール ──「キーボードはプランで分けない」
+     OWNER 2026-09-25。数える天井が無くなったので、数える物も無い。 */
 
   /* ---- 32. 言語の一覧に、他人のアカウントの言語が出ない ----------------
      「あと違うアカウントでログインしてんのに前のやつ出てくるんだけど？」
@@ -2138,7 +2112,7 @@ const R = await pg.evaluate(async () => {
   const realAsk43 = window.popAsk, realToast43 = window.toast;
   window.popAsk = (msg) => { said43.push('ask'); };
   window.toast = (msg) => { said43.push('toast:' + msg); };
-  const stopped43 = upStop(can('kb'));
+  const stopped43 = upStop(can('font'));
   window.popAsk = realAsk43; window.toast = realToast43;
   if (!stopped43) no('43: 訊けていないのに通した');
   if (said43.filter((x) => x === 'ask').length)
@@ -2149,7 +2123,7 @@ const R = await pg.evaluate(async () => {
   planGot('free');
   const said43b = [];
   window.popAsk = (msg) => { said43b.push('ask'); };
-  upStop(can('kb'));
+  upStop(can('font'));
   window.popAsk = realAsk43;
   if (!said43b.length)
     no('43: 訊けていて足りないのに、値段の頁へ送らない');

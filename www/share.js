@@ -144,7 +144,11 @@ function shareKey(key){
   var o, i, f, any, l;
   if(!key) return null;
   if(key.k==='lt'){
-    o=shareFace(key.v);
+    /* A character on the key types itself and wears itself -- the same face
+       a `rom` key crosses as, and KeyBoardView.swift draws and types `t`
+       whatever the key is. kbCh() in www/keyboard.js is what tells a
+       character from a letter. */
+    o=kbCh(key.v)? {t:kbCh(key.v)} : shareFace(key.v);
     /* What the KEY types, when the key says. kbFix() used to put the a-z
        character that found the letter here, which meant the free QWERTY typed
        roman while a keyboard somebody built typed the private use area --
@@ -179,7 +183,8 @@ function shareKey(key){
   if(key.k==='lt' && key.f){
     f=[]; any=false;
     for(i=0;i<4;i++){
-      if(key.f[i] && ltById(key.f[i])){ f.push(shareFace(key.f[i])); any=true; }
+      if(kbCh(key.f[i])){ f.push({t:kbCh(key.f[i])}); any=true; }
+      else if(key.f[i] && ltById(key.f[i])){ f.push(shareFace(key.f[i])); any=true; }
       else f.push(null);
     }
     if(any) o.f=f;
@@ -467,10 +472,15 @@ function shareSig(){
      third answer and not the empty one. '' means 「hand over nothing」 and
      empties the App Group; null means 「nothing is decided」, and what the
      phone's keyboard is already holding stays exactly where it is. Free
-     reads kbFixed() and paid reads KB, so a plan nobody has answered for
+     read kbFixed() and paid read KB, so a plan nobody has answered for
      signed the FREE QWERTY and handed it over on every launch with no
-     signal (docs/scope/r73-audit.md § 2-3, measured). */
-  var kb=can('kb');
+     signal (docs/scope/r73-audit.md § 2-3, measured).
+
+     What the plan still moves in the file is the writing system -- free is
+     an alphabet (wsys() in www/wsys.js), and the conversion face and table
+     follow it -- so that is the question asked. The keyboard itself is the
+     same on every plan now (kbOf(), OWNER 2026-09-25). */
+  var kb=can('wsys');
   if(!planSaid(kb)) return null;
   /* The base is in here and the digits are not, because a digit IS a letter
      and scriptSig() already walks every one of them -- drawing one, naming

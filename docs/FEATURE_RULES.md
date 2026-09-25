@@ -281,10 +281,10 @@ the reasoning — a reason can be re-derived, a decision cannot.
   「キーボード画面で追加する時に選べるのは自作文字範囲、もしくは既存文字全て」「無料でもキーボード自体は好きにカスタマイズできるけど、
   自作文字は作れる範囲が決まってるから、キーボードに縛りを入れなくても勝手にそうなる」「フォントの書き出しはそれでいいよ」
   「後手書き追加しよう」「これも1.0.3に入れよう」。
-- Affected features: `CAN.kb` と `kbCap()`（キーボードの扉と数）は問いが無くなる ── 消す。フォントの書き出し（新しい、Plus）。
+- Affected features: ~~`CAN.kb`~~ と ~~`kbCap()`~~（キーボードの扉と数）は問いが無くなる ── 消す。フォントの書き出し（新しい、Plus）。
 - Affected data: 無料の人が作ったキーボードが増える（今の `kb` の slice）。何も消さない。
 - Affected docs: この項、`docs/PAID_FEATURES.md`、`docs/FEATURES.md`、`docs/keyboard.md`、CLAUDE.md の「What the free plan is」。
-- Implementation status: 未。r95 がコード本体から書き直す、手書きは r96。
+- Implementation status: r95-kbfont（`claude/r95-kbfont`）── キーボード（段を訊かない、`=文字` の枠と「文字を入力」の欄）とフォントの書き出し（Plus、`kbFontOut()`）は入った・コード確認、実機未確認。手書きは r96。
 
 ### 2026-09-25 キーボードは誰でも作れる、自作文字のキーボードとフォントの書き出しは Plus から【差し替え済み】→ 2026-09-25「キーボードはプランで分けない」
 
@@ -2154,7 +2154,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
   コードに無く、`kbSlotsShown()`（`www/keyboard.js`）がある。
 
   数は既に `www/core.js:791` に一つずつ在ります ── `FREE_KB=1`、~~`PLUS_KB=4`~~（2026-09-24 に消えた）、
-  Pro は `kbCap()` で無制限。**新しい数を書かないこと。**
+  Pro は ~~`kbCap()`~~ で無制限。**新しい数を書かないこと。**
 
   **無料に編集は要りません。**無料の board 0 は QWERTY そのもので、
   編集する物がありません。開く矢印も編集ボタンも出さない。
@@ -2688,7 +2688,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
   いました ── 辞書も文字もキーボードも、B の一覧に B の言語として。何も
   throw しません。
 - Affected features: 言語一覧（`vLangs`）、言語の上限（`langCount`）、
-  キーボードのプール（`kbCount`）、DL の数（`dlCount`）、
+  キーボードのプール（~~`kbCount`~~）、DL の数（`dlCount`）、
   サーバーへの送信（`netLangRow`）
 - Affected data: **保存するものは減りません。**印の無い言語は索引にも
   `lingua.<id>.*` にもバックアップにもそのまま残ります。変わるのは、それを
@@ -4801,10 +4801,10 @@ and is never merged into your own」と言っている。**入らない、は二
   holds this for keyboards already.
 - Affected docs: `docs/PAID_FEATURES.md`, `docs/FEATURES.md`.
 - Implementation status: **the keyboards are built** (2026-08-23,
-  `claude/save`): `kbCap()` in `www/core.js`, `kbCount()` / `kbRoomKb()` in
-  `www/keyboard.js`, `CAN.kb` at `plus`, ~~`KB_MAX`~~ gone. Held by `plan-check`.
+  `claude/save`): ~~`kbCap()`~~ in `www/core.js`, ~~`kbCount()`~~ / ~~`kbRoomKb()`~~ in
+  `www/keyboard.js`, ~~`CAN.kb`~~ at `plus`, ~~`KB_MAX`~~ gone. Held by `plan-check`.
   **The language ceiling, `can('edit')` and `can('badge')` are all built now** --
-  `langCap()` beside `kbCap()` in `www/core.js` (1 / 1 / 3, with `langStop()`
+  `langCap()` beside ~~`kbCap()`~~ in `www/core.js` (1 / 1 / 3, with `langStop()`
   as the refusal), `CAN.edit` at `plus` with `postEdit()` asking `can('edit')`,
   and `CAN.badge` at `pro` with `postBadge()` asking `can('badge')` instead of
   reading `plan()`. `dl` was added on 2026-09-02.
@@ -4877,19 +4877,19 @@ and is never merged into your own」と言っている。**入らない、は二
   thing, so there is one answer in this file again.
 - Affected features: ~~`KB_MAX`~~ in `www/keyboard.js` — a per-language constant
   today, a per-plan number counted across languages from now — and
-  `CAN.kb`, which moves from `plus` to `basic`.
+  ~~`CAN.kb`~~, which moves from `plus` to `basic`.
 - Affected data: none. Somebody over the ceiling keeps every keyboard and
   simply cannot add another. ~~`backup-check`~~ holds that already.
 - Affected docs: `docs/PAID_FEATURES.md`, `docs/BACKLOG.md`.
 - Implementation status: **built, 2026-08-23, `claude/save`.** It was deferred
   because `www/keyboard.js` was another branch's; that branch has not touched
   the file since 2026-08-15 and no live branch is in it, which was checked
-  before starting rather than after a merge failed. `kbCap()` sits beside
-  `wordCap()` in `www/core.js` (1 / 4 / Infinity), `kbCount()` in
+  before starting rather than after a merge failed. ~~`kbCap()`~~ sits beside
+  `wordCap()` in `www/core.js` (1 / 4 / Infinity), ~~`kbCount()`~~ in
   `www/keyboard.js` sums the built keyboards across `LANGS` -- the open
   language from memory, every other one through `kbBoardsOf()` so an older
-  single-keyboard file counts as the one it is -- `kbRoomKb()` adds the QWERTY
-  as the 1 in 1 + 3, and `CAN.kb` moved to `plus` in the same commit. ~~`KB_MAX`~~
+  single-keyboard file counts as the one it is -- ~~`kbRoomKb()`~~ adds the QWERTY
+  as the 1 in 1 + 3, and ~~`CAN.kb`~~ moved to `plus` in the same commit. ~~`KB_MAX`~~
   is gone. Seven claims in `plan-check`; three bugs put back and watched.
 
 ### Decision
@@ -5624,7 +5624,7 @@ for.
 - Affected data: none by itself
 - Affected docs: FEATURES.md, PAID_FEATURES.md
 - Implementation status: **段の扉は全部入っています。**`CAN` の全部と、数で答える
-  三つ（`wordCap()` `kbCap()` `dlCap()`）。フリックとキーの自由配置もキーボードの
+  三つ（`wordCap()` ~~`kbCap()`~~ `dlCap()`）。フリックとキーの自由配置もキーボードの
   編集画面にあります。いくつ扉があるかはここに書きません ── 書けば次に増えた日に
   古くなるので、`npm run dead` が毎回数えて出します。
   **クラウドはどの段にも属しません** ── `netLangSync()` は段を訊きません。

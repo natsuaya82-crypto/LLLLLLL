@@ -48,10 +48,12 @@ Marked separately, because they are not the same question:
 | Numbers — a digit is a letter with a value | shipped | yes | — | slice `letters` | decided |
 | What the language is for (the world) | shipped | yes | — | slice `wld` | decided |
 | **AI に相談 — ChatGPT を本文入りで開く** | **planned — 一行も入っていません**。ChatGPT を開く関数も文字列も `www/` に無く、それを持つ検査もありません | yes — アプリは生成せず鍵も持たない。開く先はその人のアカウント | — | none | **partial** — 相手は ChatGPT だけ・ボタンは常に「AIに相談」は decided (2026-08-28)。**本文の文面と候補の数は open** — `docs/reports/ask-2026-08-27.md` §4 |
-| Keyboard layout built in the app | shipped | fixed QWERTY, nothing to set | `kb`: your own | slice `kb` | decided |
-| Keyboard: flick, four directions per key | shipped | — | `kb` | slice `kb` | decided |
-| Keyboard: any letter on any key, any position, rows and layers | shipped | — | `kb` | slice `kb` | decided |
+| Keyboard layout built in the app | shipped | yes — the fixed QWERTY, and as many more as you like | — | slice `kb` | decided — 「キーボードはプランで分けない」 2026-09-25 |
+| Keyboard: flick, four directions per key | shipped | yes | — | slice `kb` | decided — 2026-09-25 |
+| Keyboard: any letter on any key, any position, rows and layers | shipped | yes — the drawn letters there are (free: the slots) | — | slice `kb` | decided — 2026-09-25 |
+| Keyboard: any existing character on a key, typed or pasted on the editor with the key selected (`kbChOnHTML()`) | code confirmed (r95), not on a device | yes | — | slice `kb` (a slot holds `=` + the character, `kbCh()`) | decided — 2026-09-25 |
 | Font built on the device (OTF) | shipped | yes | — | none (derived) | decided |
+| Font file out of the app (.otf, the share sheet) | code confirmed (r95), not on a device | — | `font`: Plus | none — a file in the app's tmp folder, handed to iOS (`kbFontOut()`) | decided — 2026-09-25 |
 | Import a word list | shipped | paste | `file`: a file | slice `words` | decided |
 | **write — letters brought in on a sheet** | **in progress** — the road is in (`www/sheet.js`, ch 26, `npm run sheet`) and **so is the plan gate**; the drawing is not | — | **Pro**, and it is `file` that says so — the door (`fileInHTML()` in `www/shell.js`) and `shTakeIn()` both ask `can('file')`, which is Pro. There is no `write` capability and there is not going to be one | slice `letters`: `lt.sh` and `lt.via` | partial |
 | Export CSV | shipped | — | `data` | none | decided |

@@ -2067,14 +2067,14 @@ function planName(id){
 }
 var PLANS=[
   {id:'free', name:'Free', mo:'plan.price.free', yr:'plan.price.free', off:'',
-   lines:['plan.free.1','plan.free.2','plan.free.3','plan.free.4']},
+   lines:['plan.free.1','plan.free.2','plan.free.3','plan.free.5','plan.free.4']},
   /* The middle rung. Its price is here and its subscription is not in App
      Store Connect yet, which is not a hole: StoreKit returns nothing for a
      product that does not exist, so the card is on the screen and the button
      does nothing until the product is made. What is NOT allowed is the other
      way round -- a product on sale that the app does not name. */
   {id:'plus', name:'Plus', mo:'plan.price.plus', yr:'plan.price.plus.yr', off:'17',
-   lines:['plan.plus.1','plan.plus.2','plan.plus.3','plan.plus.4','plan.plus.5',
+   lines:['plan.plus.1','plan.plus.2','plan.plus.3','plan.plus.4','plan.plus.7',
           'plan.plus.6']},
   /* Pro opens with "everything in Plus, and:" rather than repeating the lines
      above it. Three pages that each list everything are three pages somebody
@@ -2124,10 +2124,9 @@ function wordCap(){
 /* HOW LONG A POST MAY BE. 「plusプランから無限だけど、もっと読むで開く
    Twitterと同じ方式で頑む。」 OWNER 2026-09-15.
 
-   The same shape as wordCap() above, and NO CAPABILITY IS ADDED -- kbCap()
-   says why two functions down: everybody may post, and the only thing a plan
-   changes here is a NUMBER, so a capability would be a price with nothing
-   behind it.
+   The same shape as wordCap() above, and NO CAPABILITY IS ADDED: everybody
+   may post, and the only thing a plan changes here is a NUMBER, so a
+   capability would be a price with nothing behind it.
 
    It answers for BOTH fields of the composer, the line and what it means.
    「文字数制限つけても翻訳でアホみたいに文字書けばいいわけでしょ？それに困るのよ」
@@ -2145,23 +2144,6 @@ function wordCap(){
    docs/DATA_SAFETY.md). */
 function postCap(){
   return planNum(POST_MAX, Infinity, Infinity);
-}
-/* How many keyboards this person may have, counting the fixed QWERTY as one
-   of them. Free 1 -- the QWERTY -- and no ceiling on Plus or Pro: 「Plus ──
-   キーボード無制限」「Pro ── キーボード無制限」 OWNER 2026-09-24 (r46,
-   docs/FEATURE_RULES.md), replacing 「1,1+3.無制限」 of 2026-08-23.
-
-   **It is a pool across languages** -- kbCount() in www/keyboard.js counts
-   every language rather than the open one -- and on the one plan with a
-   number that number is the fixed QWERTY, which is counted once.
-
-   No capability is added for the ceiling. `CAN.kb` is the DOOR -- may this
-   person lay a keyboard out at all -- and it opens at plus; how many is a
-   number, and a capability that is really a number is a price with nothing
-   behind it. Infinity and not a big number, exactly as wordCap(). */
-var FREE_KB=1;
-function kbCap(){
-  return planNum(FREE_KB, Infinity, Infinity);
 }
 /* How many languages of their own this person may have. Free 1, Plus 1,
    Pro 3 -- OWNER DECISION 2026-08-23, restated 2026-08-25「言語数はプラスは1、
@@ -2779,17 +2761,16 @@ var CAN={
   file:    'pro',    /* a list brought in as a file rather than a paste */
   letters: 'plus',   /* adding, naming and deleting a letter */
   wsys:    'plus',   /* a writing system that is not an alphabet */
-  /* A keyboard of your own, laid out key by key, instead of the fixed QWERTY.
-     The DOOR only: how many is kbCap() above, and the two landed together on
-     purpose -- a door opened without its number would have handed plus the
-     three the old KB_MAX gave out, which is neither number the owner said.
-     「1,1+3.無制限って言わなかったっけ？」 */
-  kb:      'plus',
   /* Taking a chapter of somebody else's language. 「plusからです」OWNER
      2026-09-02, which replaces 「Downloading a keyboard or an alphabet is
      free」 (docs/FEATURES.md § 4, 2026-08-19). How many is dlCap() above, and
      the two landed together -- see the comment there for why. */
   dl:      'plus',
+  /* The font file of the letters somebody drew, out of the app through the
+     share sheet. 「フォントの書き出しはそれでいいよ」 OWNER 2026-09-25, Plus --
+     down from Pro (2026-09-24), where it had not been built. kbFontOut() in
+     www/keyboard.js is the one place it is asked. */
+  font:    'plus',
   snd:     'plus',   /* choosing a sound, rather than taking the letter's own */
   /* Editing a post you have already sent. 「ツイートの編集も課金から」
      「課金からはベーシックからってことね プラスならプラスっていうから」
@@ -2857,7 +2838,7 @@ function planNum(free, plus, pro){
 }
 /* WHETHER `add` MORE FIT UNDER A CEILING, from a count and the ceiling --
    `null` when either is missing, which is a count nobody has given
-   (langCount(), dlCount(), kbCount()) or a plan nobody has answered for. */
+   (langCount(), dlCount()) or a plan nobody has answered for. */
 function planFits(n, add, cap){
   if(n===null || n===undefined || cap===null) return null;
   return n+add<=cap;

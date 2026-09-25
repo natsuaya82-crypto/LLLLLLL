@@ -1272,9 +1272,9 @@ back naming it, this is the paragraph it is about.
 pool **across languages**, not per language. `docs/FEATURE_RULES.md` said both
 things on the same day; it says this one in both places now.
 
-**Built, 2026-08-23.** `kbCap()` beside `wordCap()` in `www/core.js`
-(1 / 4 / Infinity), `kbCount()` in `www/keyboard.js` summing across `LANGS`,
-`kbRoomKb()` adding the QWERTY as the 1 in 1 + 3, and `CAN.kb` moved to `plus`
+**Built, 2026-08-23.** ~~`kbCap()`~~ beside `wordCap()` in `www/core.js`
+(1 / 4 / Infinity), ~~`kbCount()`~~ in `www/keyboard.js` summing across `LANGS`,
+~~`kbRoomKb()`~~ adding the QWERTY as the 1 in 1 + 3, and ~~`CAN.kb`~~ moved to `plus`
 **in the same commit** — a door opened without its number would have given
 Plus the three ~~`KB_MAX`~~ handed out. ~~`KB_MAX`~~ is gone.
 
@@ -1333,7 +1333,7 @@ same four, and Pro has no ceiling. It matters only to a person who was on Pro
 and came back down, and there the answer is the one that is already law: fewer
 buttons, never fewer words.
 
-**What this unblocks, and what it costs.** `CAN.kb` moves from `'pro'` to
+**What this unblocks, and what it costs.** ~~`CAN.kb`~~ moves from `'pro'` to
 `'plus'`; ~~`KB_MAX`~~ stops being a per-language 3 and becomes a per-plan pool (4,
 then no ceiling); `edit` and `badge` join `CAN`; and a language ceiling appears
 **where none exists at all today** — anybody may make any number of languages
