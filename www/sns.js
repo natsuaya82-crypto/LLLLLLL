@@ -2160,7 +2160,7 @@ function snsWhoRow(p, full){
       ? '<button class="whgo"' + DO('profileOpen', [""]) + '>'+inner+'</button>'
       : '<button class="whgo"' + DO('profileOpen', [h]) + '>'+inner+'</button>')+
     (p.mine? ''
-      : '<button class="whfo'+(on? ' on' : '')+'"' + DO('meFollow', [h]) + '>'+
+      : '<button class="whfo'+(on? ' on' : '')+'"' + DO('meFollowPress', [h]) + '>'+
           esc(t(on? 'me.unfollow' : 'me.follow'))+'</button>')+
     '</div>';
 }

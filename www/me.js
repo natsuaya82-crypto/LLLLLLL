@@ -1187,6 +1187,19 @@ function meFollow(h){
     render();
   }, function(d, st, m){ netPop(d, st, m, function(){ meFollow(h); }); });
 }
+/* AND THE PRESS, which asks before a follow is taken back. 「フォロー解除は
+   開錠しますか？みたいなポップ」 OWNER 2026-09-25, in postDel()'s shape
+   (www/post.js). The press is this; meFollow() is the act, and what reaches
+   it without a person pressing Follow -- a block dropping the follow
+   (mePplPress), the onboarding following @lingua, ［再接続］ -- is not asked. */
+function meFollowPress(h){
+  h=String(h||'');
+  if(meFollows(h)){
+    popAsk(t('me.unfollow.q', h), function(){ meFollow(h); }, t('pop.undo'));
+    return;
+  }
+  meFollow(h);
+}
 /* The same card as your own, in the same order, with Follow where Edit is.
    「他人のプロフィールは基本自分が見えてるのと同じ感じ」
 
@@ -1333,7 +1346,7 @@ function whoCard(h){
        to press below a menu you did not. Now the row reads the same way on
        both cards, and the ... is off it entirely -- see the counts below. */
     '<button class="meedit'+(on?' on':'')+'"' +
-      DO('meFollow', [String(h)]) + '>'+
+      DO('meFollowPress', [String(h)]) + '>'+
       esc(t(on? 'me.unfollow' : 'me.follow'))+'</button>'+
     '</div>'+
     (p.bio? '<div class="pbio">'+esc(p.bio)+'</div>' : '')+

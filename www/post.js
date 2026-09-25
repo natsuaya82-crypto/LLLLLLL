@@ -4331,12 +4331,24 @@ function postLike(id){
     function(){ postCountsPull(id, function(){ delete PMARK[k]; }); },
     function(){ delete PMARK[k]; render(); });
 }
+/* TAKING A REPOST BACK IS ASKED FIRST. 「リツイート解除とかフォロー解除は
+   開錠しますか？みたいなポップつけて欲しい」 OWNER 2026-09-25 -- the same
+   popAsk() and the same shape as deleting a post (postDel), with 解除 where
+   削除 is. Putting one up is not asked. postBoostGo() is the send, and its
+   ［再接続］ sends again without asking: the question was answered. */
 function postBoost(id){
   var p=postById(id);
   if(!p || !postMay()) return;
-  netMark(id, 'boost', !postIBoost(p),
+  if(postIBoost(p)){
+    popAsk(t('post.unboost.q'), function(){ postBoostGo(id, false); }, t('pop.undo'));
+    return;
+  }
+  postBoostGo(id, true);
+}
+function postBoostGo(id, on){
+  netMark(id, 'boost', on,
     function(){ postCountsPull(id); },
-    function(d, st, m){ netPop(d, st, m, function(){ postBoost(id); }); });
+    function(d, st, m){ netPop(d, st, m, function(){ postBoostGo(id, on); }); });
 }
 /* Replying opens the same screen a post is written on, holding on to what it
    is a reply TO. */

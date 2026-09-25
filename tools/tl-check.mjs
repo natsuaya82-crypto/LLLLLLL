@@ -704,6 +704,39 @@ const r = await pg.evaluate(({ s }) => {
     p.at = was;
   }
 
+  /* ---- 12: r94 -- taking a repost or a follow back is asked first ---------
+     「リツイート解除とかフォロー解除は開錠しますか？みたいなポップ」 OWNER
+     2026-09-25. Asked at the WIRE: while the question is up nothing has gone,
+     the yes sends the DELETE, and putting one up (the first press) is not
+     asked at all. */
+  {
+    const sent = [];
+    const realS1 = netSend1, realS = netSend, realG = netGet;
+    netSend1 = function (m, p, b, t, ok) {
+      p = String(p);
+      if (p.indexOf('/rest/v1/profile?select=id') === 0) { ok([{ id:'U-iri' }], 200); return; }
+      sent.push(m + ' ' + p.split('?')[0]); ok([], 200);
+    };
+    netSend = function (m, p, b, t, ok, bad, up) { netSend1(m, p, b, t, ok, bad, up, true); };
+    netGet = function (p, ok, bad) { netSend('GET', p, null, '', ok, bad); };
+    const p = postById('p2'), was = { sid:p.sid, iboost:p.iboost };
+    p.sid = 'SRV-b'; p.iboost = true;
+    popOff(); postBoost('p2');
+    out.ubAsked = popOn(); out.ubBefore = sent.join(' | ');
+    popYes(); out.ubAfter = sent.join(' | ');
+    sent.length = 0; p.iboost = false; popOff(); postBoost('p2');
+    out.bNoAsk = !popOn() ? sent.join(' | ') : '(asked)';
+    p.sid = was.sid; p.iboost = was.iboost;
+    const relWas = REL.iri;
+    sent.length = 0; REL.iri = { i:true, u:false }; popOff(); meFollowPress('iri');
+    out.ufAsked = popOn(); out.ufBefore = sent.join(' | ');
+    popYes(); out.ufAfter = sent.join(' | ');
+    sent.length = 0; REL.iri = { i:false, u:false }; popOff(); meFollowPress('iri');
+    out.fNoAsk = !popOn() ? sent.join(' | ') : '(asked)';
+    REL.iri = relWas; popOff();
+    netSend1 = realS1; netSend = realS; netGet = realG;
+  }
+
   return out;
 }, { s: seed.toString() });
 
@@ -950,6 +983,17 @@ if (r.whenRow !== r.whenShort)
   say('11: the same post as a row on the timeline says 「' + r.whenRow + '」 and ' +
       'the timeline says 「' + r.whenShort + '」 -- only the thread\u2019s own post ' +
       'is told whole.');
+if (!r.ubAsked || r.ubBefore || !/DELETE \/rest\/v1\/react/.test(r.ubAfter))
+  say('12: taking a repost back — asked: ' + r.ubAsked + ', sent before the answer: 「' +
+      r.ubBefore + '」, after the yes: 「' + r.ubAfter + '」. It has to ask, send nothing ' +
+      'while it asks, and send the DELETE on the yes.');
+if (!/POST \/rest\/v1\/react/.test(r.bNoAsk))
+  say('12: putting a repost up asked or sent nothing: 「' + r.bNoAsk + '」');
+if (!r.ufAsked || r.ufBefore || !/DELETE \/rest\/v1\/follow/.test(r.ufAfter))
+  say('12: unfollowing — asked: ' + r.ufAsked + ', sent before the answer: 「' +
+      r.ufBefore + '」, after the yes: 「' + r.ufAfter + '」.');
+if (!/POST \/rest\/v1\/follow/.test(r.fNoAsk))
+  say('12: following asked or sent nothing: 「' + r.fNoAsk + '」');
 console.log('a follow and a block are one row written by one function, and ' +
             'the columns are its argument: ' + r.pairOn);
 console.log('nobody is a 「?」 that becomes a name: a post carries its writer ' +
