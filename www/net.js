@@ -1975,9 +1975,13 @@ function netSlicePut(sid, kind, body, ed, was, ok, bad){
   /* NO `no`. Which write this is, is numbered by the server (slice_no(),
      supabase/schema.sql, r65): a number the phone sends is not read, so
      sending one was a second answer to the question nobody asks the phone. */
+  /* AND WHICH SAVE THIS IS (NET_PRESS below). Every row one save writes
+     carries the same number, so the history on the server can say what the
+     WHOLE language was before that save -- 「言語を前に戻す →『3つ前、まるごと』」
+     OWNER 2026-09-24, supabase/schema.sql § slice_hist. */
   netSend('POST', '/rest/v1/slice',
           {language:sid, kind:kind, body:String(body||''),
-           at:at, ed:{body:ed||0, was:was||0}},
+           at:at, ed:{body:ed||0, was:was||0}, press:NET_PRESS},
           netTok(), function(){ ok(at); },
           function(d, st){
             bad(null, st||0, (d && d.message==='stale')? 'stale' : '');
@@ -2704,6 +2708,9 @@ function netSliceAgain(id, sid, kind, done, bad, tries){
    not moved. netLangSync() below shares the one flag and hands over the same
    way. */
 var NET_NEXT=null;
+/* ONE NUMBER PER SAVE: minted where a send starts (here, and netLangSync()
+   below), and put on every slice that send writes (netSlicePut). */
+var NET_PRESS=null;
 function netSaveNext(){
   var ws=NET_NEXT;
   if(!ws || NET_SYNCING) return;
@@ -2785,6 +2792,7 @@ function netSaveNow(done){
   }
   if(!kinds.length){ none(); return; }
   NET_SYNCING=true;
+  NET_PRESS=uuid4();
   netLangRow(id, function(sid){
     /* Only the slices that moved, and of those only the bodies the server
        has changed since this phone last agreed -- netGotFor() above is the
@@ -2921,6 +2929,7 @@ function netLangSync(then){
   function next(){
     if(at>=ids.length){ NET_SYNCING=false; done(moved); netSaveNext(); return; }
     var id=ids[at]; at++;
+    NET_PRESS=uuid4();
     netLangSync1(id, function(m){ if(m) moved=true; next(); });
   }
   next();
@@ -5100,14 +5109,15 @@ function netNotices(ok, bad){
    復旧ができるようにしたい、管理画面で」「3 で実装して」 OWNER 2026-09-09.
 
    Two calls and they are the whole of it, in the shape netStaffAdd() and
-   netStaffDrop() above are: the door is admin_hist() and admin_restore() in
+   netStaffDrop() above are: the door is admin_hist() and admin_restore_lang() in
    supabase/schema.sql, which ask is_staff() inside themselves, and these are
    a screen for that door rather than the door.
 
    NO BODY EVER COMES DOWN. A version of a 5000-word dictionary is 685 KB and
-   the screen shows a part's name and a date -- the operator is restoring on
-   what the person told them, not reading their language. So what comes back
-   is (language, kind, at), and a restore is told which of those to put back.
+   the screen shows a date -- the operator is restoring on what the person
+   told them, not reading their language. So what comes back is (language, v,
+   at) -- a version is the whole language before one save, the three newest --
+   and a restore is told which version to put back.
 
    AND THERE IS NO NEW ROAD DOWN TO THE PERSON'S PHONE. A restore lands on
    `slice` and reaches them the way everything on `slice` reaches them:
@@ -5131,8 +5141,8 @@ function netHist(handle, ok, bad){
       }
       for(i=0;i<hs.length;i++){
         r=hs[i];
-        if(r && r.language && r.kind)
-          hist.push({sid:String(r.language), kind:String(r.kind),
+        if(r && r.language && r.v)
+          hist.push({sid:String(r.language), v:String(r.v),
                      at:String(r.at||''), ms:Date.parse(r.at)||0});
       }
       /* 「そんな人はいません」 and 「その人には版がありません」 are two
@@ -5140,10 +5150,13 @@ function netHist(handle, ok, bad){
       ok({who:(d && d.who)? String(d.who) : '', langs:langs, hist:hist});
     }, bad);
 }
-function netRestore(sid, kind, at, ok, bad){
+/* THE WHOLE LANGUAGE, as it was before one save -- 「3つ前、まるごと」 OWNER
+   2026-09-24. `v` is the version as admin_hist() named it; which rows that
+   means and what each kind was is the server's (admin_restore_lang). */
+function netRestore(sid, v, ok, bad){
   ok=ok||function(){}; bad=bad||function(){};
-  if(!sid || !kind || !at){ bad(null, 0); return; }
-  netSend('POST', '/rest/v1/rpc/admin_restore',
-          {language:sid, kind:kind, at:at}, netTok(),
+  if(!sid || !v){ bad(null, 0); return; }
+  netSend('POST', '/rest/v1/rpc/admin_restore_lang',
+          {language:sid, v:v}, netTok(),
           function(){ ok(); }, bad);
 }

@@ -31,9 +31,8 @@ shots/ に。全ゲートは回さない（リーダー）。schema.sql を変�
 
 ## B. 言語を前に戻す ── 測ったことと、止めた所
 
-**止めた。**戻す画面は `www/mod.js`（運営の画面、`adRecParts()`・`adRecPick()`）で、この枝の持ち物に無い。
-版の数え方を変えると画面の形が変わるので、サーバーだけ変えて画面を残すと、画面が嘘を描く。
-**持ち物に `www/mod.js`（と `tools/hist-check.mjs`・`tools/rls-check.mjs`）を足してもらえれば、下の形で書く。**
+**書いた（2026-09-25、リーダーが持ち物に `www/mod.js`・`tools/hist-check.mjs`・`tools/rls-check.mjs`・
+`supabase/schema.sql` を足した）。**形は下の案のとおり。報告はこの節の終わり。
 
 ### 今の版の仕組み（測った）
 
@@ -63,7 +62,23 @@ shots/ に。全ゲートは回さない（リーダー）。schema.sql を変�
    全部の kind を一度に書き戻す。画面は言語 → 版（3 つ、日時）→ 戻す。
 4. 番号の無い古い行（今までの版）は、時刻が一つずつ違うので一つずつ別の保存として並ぶ ── 消さない。
 
-**オーナーに訊くこと:** 無い（形は決定どおり）。**リーダーに:** `www/mod.js` を持たせるか、別の session に出すか。
+**オーナーに訊くこと:** 無い（形は決定どおり）。
+
+### B の報告
+
+**CODE CONFIRMED のみ。**実機・オーナーは無い。
+
+- `supabase/schema.sql`: slice_hist の節に `slice.press`・`slice_hist.press`、trigger が置き換えた保存の番号を版に。
+  戻す節（同じ機能なのでここも触った）に `slice_versions()`（invoker、新しい 3 つ）、`admin_hist()` は言語の版を返す、
+  `admin_restore_lang()` が言語まるごと、`admin_restore()` は drop。
+- `www/net.js`: `NET_PRESS`（一回の送りに一つ、`uuid4()`）を `netSlicePut()` が載せる。`netHist()`・`netRestore()` は版で。
+- `www/mod.js`: `adRecParts()` は版の行だけ（部分の見出しを消した）、`adRecPick()`・`adRecGo()` は (言語, 版)。
+- `www/i18n/*.js`: 部分の名前 `sl.*` 12 個 × 10 言語を消した（この画面だけが使っていた）。
+- 検査: `npm run rls` 緑（513）、部分ごとに戻す形で赤。`hist-check` 緑、前の画面で赤。`again-check` の「一回の保存は
+  一つの番号」、番号を外して赤。act・i18n・速い検査は緑。
+- 写真: `shots/r84-B-rec-before.png`（部分ごと）、`shots/r84-B-rec-after.png`（版三つ）。
+- **順番**: schema.sql をアプリのビルドより先に。列が無いと保存が全部断られる（`supabase/setup.md` に書いた）。
+- rls-check は CASES の版の所だけ（前の `admin_restore` の行を `admin_restore_lang` に書き換え、足した）。
 
 ## 報告
 
@@ -73,7 +88,7 @@ shots/ に。全ゲートは回さない（リーダー）。schema.sql を変�
 | 項 | 何をした | 検査（赤を見た） | 写真 |
 |---|---|---|---|
 | A 保存を押したら | 1.2 秒の溜め（`netSaveUp`・`NET_UPMS`）を消し、送りは `netSaveNow()` 一本。書き手は全部 `langWrites()`、保存のある画面が道筋にある間は下書き（`keepDrafting()`）── 保存が書いて送り、いいえは開いた時の形（`langHold()`/`langHeldBack()`）。保存の無い画面は押しが保存（`bkTouch()`）。送っている最中の押しは待って送る（`NET_NEXT`） | keep-check 23（78 件）・22・C、again-check（最中の押し）。3 回 | 見た目は変わらない |
-| B 3 つ前・まるごと | **未。**測った（kind ごとに 3 版・kind ごとに戻す）。決定ログの「期限は無い」「部分ごとに戻す」を書き直した。画面 `www/mod.js` が持ち物外で止めた。形の案は上 § B | ── | ── |
+| B 3 つ前・まるごと | 入った（2026-09-25 に持ち物が足された）── 上 § B の報告 | rls・hist・again。3 回 | shots/r84-B-rec-before/after.png |
 | C 取った言語は読むだけ | 全部の画面（41）の全部のボタン（165）を押して測った。字の無い音から字を作る一つ（`ltForUnit`）を閉じた。dl-check の「書き手が断る」は `localStorage` しか見ておらず盲目だった ── メモリも見る | dl-check 2 つ。2 回 | 見た目は変わらない |
 | D 開いた時に読む物 | 測ると五つとも既に読んでいた。load-check 1 が五つを訊く（前は「オーナーの物」として許していただけ）。CLAUDE.md・`PAGE_OPEN` の文 | load-check 1。1 回 | ── |
 | E 親の承認はすぐ | `Transaction.updates` が届いた物を取っておいた後にページへ `linguastore` を投げ、`store.js` が起動と同じ `storeSync()` | plan-check 2 つ（入れる前に赤）。**Swift は未ビルド** | ── |
@@ -89,7 +104,6 @@ shots/ に。全ゲートは回さない（リーダー）。schema.sql を変�
 
 ### リーダーに
 
-- B は `www/mod.js`（と `tools/hist-check.mjs`、schema を変えるので `npm run rls`）を持たせてもらえれば書ける。
 - 持ち物の外を直した所（その変更が嘘にした文だけ）: `docs/PAID_FEATURES.md`（F）、`docs/ARCHITECTURE.md`・`DATA_MODEL.md`・
   `DATA_SAFETY.md`・`FEATURES.md`・`STATE.md`（A・B・C の `netSaveUp` と「すぐ上がる」の文）。
 - `docs/STATE.md:1419` の `PLUS_KB=4` はリーダーの章なので触っていない（F で消えた名前）。
