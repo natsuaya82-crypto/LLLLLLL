@@ -148,6 +148,7 @@ const SERVER = `
                             no:r.no, at:r.at, ed:ed });
         S.eds = S.eds || []; S.eds.push(r.kind + ':' + JSON.stringify(r.ed || null));
         S.sent.push('slice:' + r.language + ':' + r.kind);
+        S.presses = S.presses || []; S.presses.push(r.press || null);
       }
       return answer([]);
     }
@@ -982,6 +983,20 @@ const up2 = await pg.evaluate(async ({ s, srv }) => {
   await settle();
   out.sentBurst = window.__SRV.sent.slice();
 
+  /* 三c. 一回の保存は一つの番号 ── その回が書く章は全部同じ press を持ち、
+     次の保存は別の番号（「言語を前に戻す →『3つ前、まるごと』」 OWNER
+     2026-09-24、supabase/schema.sql § slice_hist が版をそれで束ねる）。 */
+  window.__SRV.presses = [];
+  WORDS.push({ hw:'twokinds', gl:'x' }); save();
+  if (LETTERS[0]) LETTERS[0].st = [{ pts:[[100,100],[700,700]] }];
+  saveLetters();
+  await settle();
+  out.pressOne = window.__SRV.presses.slice();
+  window.__SRV.presses = [];
+  WORDS.push({ hw:'nextsave', gl:'x' }); save();
+  await settle();
+  out.pressTwo = window.__SRV.presses.slice();
+
   /* 三b. 送っている最中の押しは落とさない ── 先の送りが終わってから送る
      （NET_NEXT、www/net.js）。前は done(true) と答えて何も送らなかったので、
      往復の間に押した二つ目は「保存しました」と言われて手元に残った。
@@ -1123,6 +1138,11 @@ say(up2.sentWhileBusy.length === 0 && up2.queuedOnServer,
     '送っている最中の押しは落とさない ── 最中には何も出さず、先の送りが終わって' +
     'から送る（最中 ' + up2.sentWhileBusy.length + ' 件、あとで ' +
     (up2.queuedOnServer ? '届いた' : '**届いていない**') + '）');
+say(up2.pressOne.length >= 2 && !!up2.pressOne[0] &&
+    up2.pressOne.every(function(x){ return x === up2.pressOne[0]; }) &&
+    up2.pressTwo.length >= 1 && !!up2.pressTwo[0] && up2.pressTwo[0] !== up2.pressOne[0],
+    '一回の保存が書く章は全部同じ番号を持ち、次の保存は別の番号（' +
+    JSON.stringify(up2.pressOne) + ' → ' + JSON.stringify(up2.pressTwo) + '）');
 say(up2.sentBurst.length === 1,
     '続けて十回保存しても送るのは一度 ── 一続きは一回（' +
     up2.sentBurst.length + ' 件）');

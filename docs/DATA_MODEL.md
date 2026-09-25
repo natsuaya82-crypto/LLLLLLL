@@ -385,7 +385,8 @@ it goes with the rest of that account's keys. **It is with the owner** —
 | 誰が書けるか | 誰も。insert / update / delete の policy が一つもなく、trigger（definer）が唯一の道です |
 | いつ増えるか | `slice` の行が update / delete される直前。中身が本当に変わったときだけです（`netSlice1()` は送るものが無ければ送らないので） |
 | いつ消えるか | **4 版目が積まれた瞬間、一番古い版が消えます。**これがこのファイルで唯一の自動削除で、DELETE REVIEW は `docs/CHANGELOG.md` 2026-09-09 |
-| 戻す道 | RPC `admin_restore(language, kind, at)`。update なので trigger がその瞬間の「今」を版に写します ── **戻すのを戻せます** |
+| 何を束ねるか | `press` ── その版を置き換えた保存の番号（`netSaveNow()` が一回の送りに一つ作り、その回の全部の行に載せる）。**言語の版はこの番号一つ**で、番号の無い古い行はその時刻が名前（`slice_versions()`、新しい 3 つ） |
+| 戻す道 | RPC `admin_restore_lang(language, v)`。**言語まるごと**、その保存の前の形に ──「3つ前、まるごと」OWNER 2026-09-24。部分ごとに戻す ~~`admin_restore()`~~ は消した。書き戻しは一回の保存なので、その瞬間の「今」が一つの版になります ── **戻すのを戻せます** |
 
 `at` は**その版が「今」でなくなった時刻**で、書かれた時刻ではありません。
 `slice` 自身の `at` を使っていたときは、平の `update` がその列に触らないので

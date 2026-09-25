@@ -439,8 +439,8 @@ function adRecFind(){
 }
 /* THE APP'S OWN QUESTION AND NEVER THE SYSTEM'S. confirm() is banned outright
    (CLAUDE.md § Shape) and tools/es5-check.mjs fails on the word. */
-function adRecPick(sid, kind, at){
-  popAsk(t('admin.rec.sure'), function(){ adRecGo(sid, kind, at); },
+function adRecPick(sid, v){
+  popAsk(t('admin.rec.sure'), function(){ adRecGo(sid, v); },
          t('admin.rec.yes'));
 }
 /* AND THE LIST IS ASKED FOR AGAIN AFTERWARDS, because putting a version back
@@ -448,10 +448,10 @@ function adRecPick(sid, kind, at){
    moment ago -- so the undo is a row on this screen the instant the restore
    lands. Asked of the server rather than worked out here: what the versions
    are is the server's answer and there is one place it comes from. */
-function adRecGo(sid, kind, at){
+function adRecGo(sid, v){
   if(ADREC_BUSY) return;
   ADREC_BUSY=true; ADREC_ERR=''; render();
-  netRestore(sid, kind, at,
+  netRestore(sid, v,
     function(){ ADREC_BUSY=false; adRecFind(); },
     function(d, st){ ADREC_BUSY=false; ADREC_ERR=netWhy(d, st); render(); });
 }
@@ -512,26 +512,21 @@ function adRecWhen(ms){
   return plDate(ms)+' '+(h<10?'0':'')+h+':'+(m<10?'0':'')+m;
 }
 function adRecVerRow(v){
-  return '<button class="set"' + DO('adRecPick', [v.sid, v.kind, v.at]) + '>'+
+  return '<button class="set"' + DO('adRecPick', [v.sid, v.v]) + '>'+
     '<span class="sl">'+esc(adRecWhen(v.ms))+'</span></button>';
 }
-/* THE PARTS OF ONE LANGUAGE, IN `SLICES`' OWN ORDER, and only the ones that
-   have a version. Walking SLICES rather than what came back is what keeps the
-   order the same from one ask to the next; a part with nothing behind it is
-   not a row, because a row saying nothing is a row somebody presses. */
+/* THE VERSIONS OF ONE LANGUAGE, AND A VERSION IS THE WHOLE LANGUAGE.
+   「言語を前に戻す →『3つ前、まるごと』」 OWNER 2026-09-24. It was the parts,
+   each under its own heading with its own dates, and a press put ONE part
+   back -- the words from Tuesday under Friday's letters, a language no save
+   ever made. What came back is the language's three newest saves, newest
+   first (admin_hist(), supabase/schema.sql), and this keeps that order: which
+   versions there are and in what order is the server's answer. A language with
+   none has no row, because a row saying nothing is a row somebody presses. */
 function adRecParts(sid){
-  var out='', i, j, k, v, rows, hist=(ADREC && ADREC.hist)? ADREC.hist : [];
-  for(i=0;i<SLICES.length;i++){
-    k=SLICES[i]; rows=[];
-    for(j=0;j<hist.length;j++){
-      v=hist[j];
-      if(v.sid===sid && v.kind===k) rows.push(v);
-    }
-    if(!rows.length) continue;
-    out+='<div class="set"><span class="sl">'+esc(t('sl.'+k))+'</span></div>'+
-         rows.map(adRecVerRow).join('');
-  }
-  return out || emptyBox(t('admin.rec.none'));
+  var rows=[], i, hist=(ADREC && ADREC.hist)? ADREC.hist : [];
+  for(i=0;i<hist.length;i++) if(hist[i].sid===sid) rows.push(hist[i]);
+  return rows.length? rows.map(adRecVerRow).join('') : emptyBox(t('admin.rec.none'));
 }
 /* THE WHOLE OF THE RECOVERY FACE, as a fragment: vAdmin() is what returns the
    page, so this route still has one drawer. `a` is 'rec' or 'rec:<language>'. */

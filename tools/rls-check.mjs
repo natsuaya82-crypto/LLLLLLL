@@ -1040,14 +1040,24 @@ const CASES = [
      phone that says otherwise is not believed. */
   ['A writes a keyboard onto its own language', 'ok', A, 0,
     `insert into slice(language,kind,body,no) values ('${LD}','kb','["v1"]',7)`],
-  ['and writes over it, four times',          'ok',     A, 0,
-    `update slice set body='["v2"]' where language='${LD}' and kind='kb'`],
-  ['…again',                                  'ok',     A, 0,
-    `update slice set body='["v3"]', no=999 where language='${LD}' and kind='kb'`],
-  ['…again',                                  'ok',     A, 0,
-    `update slice set body='["v4"]' where language='${LD}' and kind='kb'`],
-  ['…and again',                              'ok',     A, 0,
-    `update slice set body='["v5"]' where language='${LD}' and kind='kb'`],
+  ['and its dictionary, already there, says w1', 'ok',   A, 0,
+    `update slice set body='["w1"]' where language='${LD}' and kind='words'`],
+  /* FOUR SAVES, EACH WITH ITS NUMBER (\`press\`, www/net.js § netSaveNow).
+     The first moves both kinds, the third moves both again, the other two
+     the keyboard alone -- 「3つ前、まるごと」 OWNER 2026-09-24 is about the
+     LANGUAGE, so the versions below are counted by save and not by kind. */
+  ['save 1 writes over both',                 'ok',     A, 0,
+    `update slice set body='["v2"]', press='00000000-0000-4000-8000-000000000001' where language='${LD}' and kind='kb'`],
+  ['…both',                                   'ok',     A, 0,
+    `update slice set body='["w2"]', press='00000000-0000-4000-8000-000000000001' where language='${LD}' and kind='words'`],
+  ['save 2, the keyboard',                    'ok',     A, 0,
+    `update slice set body='["v3"]', no=999, press='00000000-0000-4000-8000-000000000002' where language='${LD}' and kind='kb'`],
+  ['save 3, both',                            'ok',     A, 0,
+    `update slice set body='["v4"]', press='00000000-0000-4000-8000-000000000003' where language='${LD}' and kind='kb'`],
+  ['…both',                                   'ok',     A, 0,
+    `update slice set body='["w3"]', press='00000000-0000-4000-8000-000000000003' where language='${LD}' and kind='words'`],
+  ['save 4, the keyboard',                    'ok',     A, 0,
+    `update slice set body='["v5"]', press='00000000-0000-4000-8000-000000000004' where language='${LD}' and kind='kb'`],
   ['and its number is the server\u2019s: five writes, five', 'ok', A, 0,
     `select 1 from slice where language='${LD}' and kind='kb' and no=5`],
   /* THE ONLY AUTOMATIC DELETION IN THIS FILE, and it is the one the DELETE
@@ -1063,6 +1073,18 @@ const CASES = [
     `select 1 where (select count(*) from slice_hist
                       where language='${LD}' and kind='kb'
                         and body in ('["v2"]','["v3"]','["v4"]')) = 3`],
+  /* AND EACH KEEPS THE NUMBER OF THE SAVE THAT REPLACED IT. */
+  ['a version carries the save that replaced it', 'ok',  C, 0,
+    `select 1 from slice_hist where language='${LD}' and kind='kb'
+        and body='["v3"]' and press='00000000-0000-4000-8000-000000000003'`],
+  /* AND THE LANGUAGE HAS THREE VERSIONS: its three newest saves, whatever
+     each moved. Save 1 is still in the history (the dictionary's row) and
+     is the fourth, which is not one. */
+  ['staff sees the language\u2019s three newest saves', 'ok', C, 0,
+    `select 1 where (select string_agg(v, ',' order by at desc) from slice_versions('${LD}'))
+                    = '00000000-0000-4000-8000-000000000004,00000000-0000-4000-8000-000000000003,00000000-0000-4000-8000-000000000002'`],
+  ['and the author sees none of it',          'ok',     A, 0,
+    `select 1 where (select count(*) from slice_versions('${LD}')) = 0`],
   /* AND NOBODY BUT STAFF READS THEM. The author's own previous versions are
      the operator's to see and not the author's -- a date beside every version
      is a record of when that person changed their mind, and no screen in the
@@ -1092,26 +1114,38 @@ const CASES = [
   ['nor can somebody with no account',        'denied', B, 1,
     `select admin_hist('iri')`],
   ['B cannot put a version back',             'denied', B, 0,
-    `select admin_restore('${LD}','kb',
-       (select max(at) from slice where language='${LD}' and kind='kb'))`],
+    `select admin_restore_lang('${LD}','00000000-0000-4000-8000-000000000002')`],
   ['nor can somebody with no account',        'denied', B, 1,
+    `select admin_restore_lang('${LD}','00000000-0000-4000-8000-000000000002')`],
+  ['nor A, whose language it is',             'denied', A, 0,
+    `select admin_restore_lang('${LD}','00000000-0000-4000-8000-000000000002')`],
+  ['and the one part at a time is gone',      'denied', C, 0,
     `select admin_restore('${LD}','kb', now())`],
-  /* AND STAFF CAN, WHICH IS THE WHOLE FEATURE. */
+  /* AND STAFF CAN, WHICH IS THE WHOLE FEATURE -- and not a fourth. */
   ['staff lists them',                        'ok',     C, 0,
     `select admin_hist('iri')`],
-  ['staff puts the oldest kept version back', 'ok',     C, 0,
-    `select admin_restore('${LD}','kb',
-       (select min(at) from slice_hist
-         where language='${LD}' and kind='kb'))`],
+  ['staff cannot go back four saves',         'denied', C, 0,
+    `select admin_restore_lang('${LD}','00000000-0000-4000-8000-000000000001')`],
+  ['staff puts the language back to before save 2', 'ok', C, 0,
+    `select admin_restore_lang('${LD}','00000000-0000-4000-8000-000000000002')`],
   /* Asked as A and not as staff: staff may read the VERSIONS and has no
      business reading somebody's unpublished language, which is what the two
-     claims a hundred lines above already say. */
-  ['and the slice IS that version now',       'ok',     A, 0,
+     claims a hundred lines above already say. BOTH kinds are as they were
+     before save 2: the keyboard from the version save 2 replaced, and the
+     dictionary from the one save 3 replaced -- it did not move in save 2. */
+  ['and the keyboard IS that version now',    'ok',     A, 0,
     `select 1 from slice where language='${LD}' and kind='kb' and body='["v2"]'`],
-  /* AND UNDOING THE UNDO. Putting a version back is an update, so the trigger
-     kept what was there a moment before -- the operator can walk it back. */
-  ['and what was there before the restore is a version now', 'ok', C, 0,
-    `select 1 from slice_hist where language='${LD}' and kind='kb' and body='["v5"]'`],
+  ['and so is the dictionary, the whole language at once', 'ok', A, 0,
+    `select 1 from slice where language='${LD}' and kind='words' and body='["w2"]'`],
+  /* AND UNDOING THE UNDO. Putting a version back is one save of its own, so
+     the trigger kept what was there a moment before, both kinds under one
+     number -- the newest version, which the operator can walk back. */
+  ['and what was there before the restore is ONE version now', 'ok', C, 0,
+    `select 1 where (select count(distinct press) from slice_hist
+                      where language='${LD}' and body in ('["v5"]','["w3"]')) = 1
+              and (select v from slice_versions('${LD}') limit 1)
+                  = (select press::text from slice_hist
+                      where language='${LD}' and body='["v5"]')`],
   /* AND A LANGUAGE GOING TAKES ITS VERSIONS. */
   ['A deletes that language',                 'ok',     A, 0,
     `delete from language where id='${LD}'`],

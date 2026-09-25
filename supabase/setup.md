@@ -179,8 +179,15 @@ https://raw.githubusercontent.com/natsuaya82-crypto/LLLLLLL/master/supabase/sche
    削除で、DELETE REVIEW は `docs/CHANGELOG.md` 2026-09-09 にあります。**
    読めるのは `is_staff()` だけ、insert / update / delete の policy は一つも
    ありません。戻す道は `admin_hist(handle)` と
-   `admin_restore(language, kind, at)` の二つで、どちらも中で `is_staff()` を
-   訊きます。**版は流した時点より後の書き込みから積まれます** ── 流した直後は
+   `admin_restore_lang(language, v)` の二つで、どちらも中で `is_staff()` を
+   訊きます。**戻すのは言語まるごと、新しい 3 つの保存のどれかの前へ**
+   （「3つ前、まるごと」2026-09-24）。保存は `slice.press` に番号を持ち、
+   版はその番号で束ねます。
+
+   **2026-09-25 の版（r84-save B）は、アプリより先に流すこと。**アプリは
+   保存の一行ごとに `press` を送るので、この列が無いサーバーには**保存が
+   一つも通りません**（PostgREST が知らない列で断る）。順番は、SQL を流す →
+   アプリのビルド。**版は流した時点より後の書き込みから積まれます** ── 流した直後は
    版ゼロで、それは正しい状態です。アプリ側は一行も変わっていません
    （`netSlicePut()` はそのまま）。**この項目だけはアプリが 404 を受け取る
    類のものではありません** ── 流さなくても今までどおり動き、復旧の画面だけが
