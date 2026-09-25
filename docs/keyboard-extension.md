@@ -143,6 +143,8 @@ ios/App/
     KeyBoardView.swift                ← キーの並びと当たり判定・フリック
     Compose.swift                     ← 打っているが未確定のもの（変換・綴り候補）
     CandidateBar.swift                ← キーの上の1本のバー。Compose を描くだけ
+    HandPad.swift                     ← 手書きの面の書く場所と、hand.js を JavaScriptCore で動かす Hand
+    hand.js                           ← どの字に一番近いか（handDist・handNear）。Resources。検査は tools/hand-check.mjs
     GlyphView.swift                   ← 1文字を Core Graphics で描く
     Shared.swift                      ← App Group から JSON を読む。Face/Key/Layer/Board/Conv
 ios/App/App.xcodeproj/project.pbxproj ← 手で編集（後述）
@@ -156,12 +158,14 @@ www/
                                          書き出し＋フォントのシステム登録
 ```
 
-**Swift ファイルは6つ**です。`Compose.swift` と `CandidateBar.swift` は
+**Swift ファイルは7つ**と、JavaScript が一つ（`hand.js`）です。`Compose.swift` と `CandidateBar.swift` は
 §14 の変換（ピンイン式）のためのもので — バーと溜まりは、変換のある書き方でも
 アルファベットでも同じ機械が動くので、1ファイルです（§14参照）。
 
-**6つとも `project.pbxproj` の Sources ビルドフェーズに入っています**
-（`assets-check` がそれを見ています）。**ここに書けるのはそこまでです。**
+**7つとも `project.pbxproj` の Sources ビルドフェーズに入っています**
+（`assets-check` がそれを見ています）。`hand.js` は拡張の Resources ビルドフェーズに
+入っています（`hand-check` がそれを見ています）── Sources ではありません。Swift では
+なく、拡張の中で JavaScriptCore が読むファイルです。**ここに書けるのはそこまでです。**
 ビルドが回ったか、通ったかは GitHub Actions の履歴にしかなく、このリポジトリ
 からは読めません。**「コードがある」「ビルドが通った」「実機で打てた」は
 三つの別の主張です。**（§12参照）
@@ -260,6 +264,13 @@ LinguaScript.otf   その言語のフォント（フォントのシステム登�
 | `aw` | **文字が**1行に並ぶときに取る幅（`box` 単位）。`inkAdv` の答え。形が無ければ付かない |
 | `dx` | その中でインクが始まる位置（`box` 単位）。`aw` と対 |
 | `f` | フリック 上・右・下・左。無い向きは `null`。全部無ければ `f` ごと無し |
+
+手書きの面がある板の時だけ、あと二つ載ります（無い板のファイルは今までと一バイトも変わりません）:
+
+| 鍵 | 意味 |
+|---|---|
+| 面の `hand` | その面が手書きの面で、面の行の上に書く場所が何行ぶんあるか。`kbHandRows()`（`www/keyboard.js`）が一か所で決める |
+| 板の `hand` | その言語の形のある字、全部。一つずつキーと同じ顔（`shareFace()`）── 書いた線と比べる形（`st`）と、入れる字（`t`） |
 
 `w` と `aw` は別物です。キーと、そのキーが着ている面は、このファイルでは
 1つのオブジェクトなので、幅が2つあって名前を分ける必要がありました。
@@ -418,6 +429,25 @@ build()（毎回、全部作り直す。層の切替もこれ一本）
 **中身は Compose が決め、バー自身は何も判断しません。** 左に固定で今の溜まり、
 右にスクロールする候補（`CandidateCell`、各候補は正方形のグリフを横に
 並べたもの）。候補をタップで `didPick` を発火します。
+
+### HandPad（手書き）
+
+**書いてあります。実機ではまだ誰も動かしていません。** OWNER 2026-09-25
+「後手書き追加しよう」。面の `hand` があれば、`KeyboardViewController` はその面を
+**上に書く場所（`HandPad`）、下に面の行**で描きます。高さは面の行と `hand` の行を
+足した行数で、他の面と同じ上限（画面の半分）に収まります。
+
+- 指で書いて、指を離して `HandPad.pause`（0.6 秒）何もしなければ、書いた線を
+  `hand.js` の `handNear` に渡す。返ってきた番号の字（板の `hand` の一つ）を、
+  キーを押したのと同じ `typed()` で入れる。だから候補のバーもキーの時と同じに動く
+- **どの字に近いかは Swift に書かない。** `hand.js` を拡張に同梱し、`JSContext` で
+  動かす（`Hand`）。同じファイルを `tools/hand-check.mjs` が Node で動かして、ずらした・
+  崩した線で正しい字が選ばれるかを数える。Swift に二つ目を書くと、二つが黙って
+  食い違う ── 形を切ってから渡すのと同じ理由（§5）
+- 比べ方: 両方を 32×32 の升に、大きい方の辺で合わせて真ん中に描き、傾きを
+  （0.3 まで）戻し、互いの一番近い点までの距離の二乗の平均を両向き足す（`hand.js` の `handDist`）。
+  位置・大きさ・書き順・線の向きは効かない
+- `hand.js` が無い・動かない時は何も入らない（当て推量で入れない）
 
 ### GlyphView
 
