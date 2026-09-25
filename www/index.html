@@ -3429,8 +3429,9 @@ button.spbig{display:block;width:100%;background:none;border:0;padding:0;font:in
 .pkclear{width:100%;min-height:44px;margin-bottom:12px;padding:8px;border:1px solid var(--line);border-radius:9px;
   background:transparent;color:var(--txm);font:inherit;font-size:.86rem;cursor:pointer}
 .pkpv{font-size:.9rem;color:var(--gold);min-width:2em}
-.pkchars{display:grid;grid-template-columns:repeat(auto-fill,minmax(44px,1fr));gap:6px;padding:10px 0;
-  border-bottom:1px solid var(--line);max-height:34dvh;overflow-y:auto;-webkit-overflow-scrolling:touch}
+/* The characters of one kind, on that kind's own page (www/home.js §
+   pkCharsHTML): as tall as its characters, and the page scrolls. */
+.pkchars{display:grid;grid-template-columns:repeat(auto-fill,minmax(44px,1fr));gap:6px;padding:10px 0}
 .pkch{min-width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid var(--line);
   border-radius:8px;background:var(--bg);color:var(--tx);font-size:1.15rem;cursor:pointer;padding:0}
 .pkch.had{opacity:.28}

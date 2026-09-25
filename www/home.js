@@ -425,11 +425,7 @@ function pkCharsHTML(tg, to, w){
   var isLt=(to.lid!==undefined), cur=isLt? pkKept(to.lid, here().a) : '',
       picks=isLt? [] : pkPicks(), many=!isLt && to.keys.length>1,
       taken=isLt? chTaken() : {};
-  /* A page now, not a fold: `.pkchars` in www/index.html still carries the
-     fold's own height and scroll box, and that file is another session's
-     this week -- so the page says here that it is as tall as its characters.
-     Nothing here is a border or a corner (CLAUDE.md § 18). */
-  return '<div class="pkchars" style="max-height:none;overflow:visible;border-bottom:0">'+wsChars(w).map(function(ch){
+  return '<div class="pkchars">'+wsChars(w).map(function(ch){
     var x=isLt? ch : kbChSlot(ch), at=isLt? -1 : picks.indexOf(x),
         used=taken[ch] && taken[ch]!==to.lid, on=isLt? ch===cur : at>=0;
     return '<button class="pkch'+(used?' had':'')+(on?' cur':'')+'"' + DO('pkTake', [tg, x]) +
