@@ -217,6 +217,8 @@ const evalled = (names) => {
     toast: (x) => { world.said.push('say:' + x); },
     t: (k) => k,
     postById: () => null,
+    /* asks the answered or quoted post's numbers again (www/post.js) */
+    postCountsUnder: () => {},
     savePosts: () => {}, render: () => {}, back: () => {},
     here: () => ({ r: 'feed' }), voDropFile: () => {}
   };

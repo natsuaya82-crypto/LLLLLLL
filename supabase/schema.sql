@@ -1954,8 +1954,20 @@ create view post_seen as
          -- count the reactions it was handed, and it is handed none.
          (select count(*) from react r
            where r.post = p.id and r.kind = 'like')  as likes,
+         -- AND A QUOTE IS A REPOST. 「リツイートと同じ数の数え方で足して
+         -- っていい」 OWNER 2026-09-26: the number beside the repost mark is
+         -- the reposts and the quotes together, and no number of quotes on
+         -- its own is drawn. This is the one place it is counted -- the
+         -- timeline, a thread and a person's page all read this column, and
+         -- the feeds below hand it on as it is. A quote is a post, so it is
+         -- asked of `post` as the replies are just below, on the same terms:
+         -- one taken down or kept to its author is not a repost anybody can
+         -- open. Who reposted (react_seen) is still the `react` rows alone.
          (select count(*) from react r
-           where r.post = p.id and r.kind = 'boost') as boosts,
+           where r.post = p.id and r.kind = 'boost')
+       + (select count(*) from post q
+           where q.quote_of = p.id and q.hidden_at is null
+             and not post_private(q.body)) as boosts,
          -- A reply is a post, so this is the same question asked of the same
          -- table. Taken-down replies are not counted: a count that includes
          -- what nobody can open is a number with nothing behind it.

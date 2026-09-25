@@ -1273,8 +1273,9 @@ function postTake(ps){
    later answer must not move them -- that is docs/DATA_SAFETY.md, and it is
    the difference between a copy catching up and a copy winning.
 
-   These five are the server's own arithmetic: it counts `react` rows and it
-   knows whether one of them is yours. 「SNSは全部サーバー」. `undefined` is
+   These five are the server's own arithmetic: it counts `react` rows (and
+   the quotes, which are reposts -- post_seen.boosts) and it knows whether
+   one of them is yours. 「SNSは全部サーバー」. `undefined` is
    not an answer -- netRow() leaves the field off where the server said
    nothing rather than sending a 0 -- so a row that did not carry them leaves
    what is here alone. */
@@ -1442,12 +1443,12 @@ function postSend(p, ok, bad){
                 docs/CHANGELOG.md. */
              if(p.vu && p.vo && p.vo.f){ voDropFile(p.vo.f); delete p.vo.f; }
              savePosts();
-             /* AND THE POST IT ANSWERS, WHICH HAS ONE MORE REPLY NOW. The
+             /* AND THE POST IT ANSWERS OR QUOTES, WHICH HAS ONE MORE NOW. The
                 server counted it the moment the row landed; this is where the
-                phone finds out, and it is the only moment it can -- a reply
-                sent from the composer and a reply caught up hours later both
-                come through here. */
-             if(p.to) postCountsPull(p.to);
+                phone finds out, and it is the only moment it can -- a post
+                sent from the composer and one caught up hours later both come
+                through here. */
+             postCountsUnder(p);
              ok(sid); },
              function(d, s, m){ delete POST_SENDING[id]; savePosts(); bad(d, s, m); });
 }
@@ -4414,6 +4415,15 @@ function postCountsPull(id, done){
     render();
   }, function(){ if(done){ done(); render(); } });
 }
+/* THE POSTS WHOSE NUMBERS THIS ONE IS IN. A reply is one of the replies of
+   the post it answers (`post_seen.replies`), and a quote is one of the
+   reposts of the post it quotes (`post_seen.boosts` -- 「リツイートと同じ数の
+   数え方で足していい」 OWNER 2026-09-26). When it lands and when it goes,
+   those are asked again; this is the one place that says which they are. */
+function postCountsUnder(p){
+  if(p && p.to) postCountsPull(p.to);
+  if(p && p.qt) postCountsPull(p.qt);
+}
 /* A LIKE LIGHTS AT ONCE, AND GOES OUT IF IT DID NOT ARRIVE.
    -------------------------------------------------------------------------
    「Twitter もその仕様なはず。ハート押して 1 つくやん？サーバー飛んでないなら
@@ -4691,7 +4701,7 @@ function postDelGo(id){
   });
 }
 function postDelDone(gone){
-  var i, to=gone.to||'';
+  var i;
   for(i=0;i<POSTS.length;i++) if(POSTS[i]===gone){ POSTS.splice(i, 1); break; }
   /* Under both names, for the reason postTake() gives about `have`: this
      phone knows it as the id it wrote, and the timeline hands it back wearing
@@ -4702,10 +4712,10 @@ function postDelDone(gone){
   POST_GONE[gone.id]=1;
   if(gone.sid) POST_GONE[gone.sid]=1;
   /* 「リプライ消したのに数字1のまま」 was this phone keeping the count. It
-     does not keep one now -- `post_seen.replies` is the answer and the row
-     has just gone -- so the post that was answered is asked again rather than
-     having one taken off a copy. */
-  if(to) postCountsPull(to);
+     does not keep one now -- `post_seen.replies` and `boosts` are the answer
+     and the row has just gone -- so the post that was answered or quoted is
+     asked again rather than having one taken off a copy. */
+  postCountsUnder(gone);
   savePosts();
   if(gone.vo && gone.vo.f) voDropFile(gone.vo.f);
   toast(t('post.del.ok'));
