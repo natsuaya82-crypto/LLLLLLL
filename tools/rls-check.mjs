@@ -168,6 +168,13 @@ create or replace function auth.uid() returns uuid language sql stable as $$
 do $$ begin create role anon nologin;          exception when duplicate_object then null; end $$;
 do $$ begin create role authenticated nologin; exception when duplicate_object then null; end $$;
 do $$ begin create role service_role nologin;  exception when duplicate_object then null; end $$;
+-- Supabase's own administrator, and the SQL editor is NOT it: the editor
+-- runs as postgres, which is not a superuser there and is not a member of
+-- this role. It has standing default privileges handing anon what it makes,
+-- and those are not postgres's to change -- EDITOR below pastes as somebody
+-- who is exactly that.
+do $$ begin create role supabase_admin nologin; exception when duplicate_object then null; end $$;
+do $$ begin create role sql_editor nologin;     exception when duplicate_object then null; end $$;
 -- Supabase's service role is not under row level security at all; the two
 -- functions write with it, and that is the road plan_put() and push_once()
 -- are asked about as a fourth kind of caller below.
@@ -630,6 +637,22 @@ const CASES = [
     `insert into language(id,owner,name) values ('${BKL}','${BK}','Blak')`],
   ['and publishes it too',                    'ok',     BK, 0,
     `update language set published_at=now() where id='${BKL}'`],
+  /* An article that lets the dictionary go, and a dictionary, on each: the
+     three roads a language is read by are asked below, and the slice road is
+     two -- the five kinds the article is drawn from, and the three `slice_dl`
+     opens. */
+  ['BD writes BD’s article, dictionary open', 'ok',  BD, 0,
+    `insert into slice(language,kind,body) values ('${BDL}','wld','{"dl":true}')`],
+  ['and BD’s dictionary',                     'ok',  BD, 0,
+    `insert into slice(language,kind,body) values ('${BDL}','words','[1]')`],
+  ['BK writes BK’s article, dictionary open', 'ok',  BK, 0,
+    `insert into slice(language,kind,body) values ('${BKL}','wld','{"dl":true}')`],
+  ['and BK’s dictionary',                     'ok',  BK, 0,
+    `insert into slice(language,kind,body) values ('${BKL}','words','[1]')`],
+  ['B reads BD’s published language',         'ok',  B, 0,
+    `select 1 from language where id='${BDL}'`],
+  ['and its dictionary',                      'ok',  B, 0,
+    `select 1 from slice where language='${BDL}' and kind='words'`],
   ['BK blocks BD',                            'ok',     BK, 0,
     `insert into block(actor,blocked) values ('${BK}','${BD}')`],
   /* WHOM YOU HAVE BLOCKED, BY NAME, AND TO YOU ALONE. 「設定に追加して非表示
@@ -666,6 +689,24 @@ const CASES = [
     `select 1 from language_seen where id='${BDL}'`],
   ['BD does not see BK’s published language', 'denied', BD, 0,
     `select 1 from language_seen where id='${BKL}'`],
+  /* AND NOT BY ANY OTHER ROAD. `language_seen` is one of three: the table
+     itself and its slices answer the same question, and they answered it
+     without the block until lang_readable() was the one place it is asked
+     (r87). The count of the roads is further down (LANG_READ). */
+  ['BK does not read BD’s language row',      'denied', BK, 0,
+    `select 1 from language where id='${BDL}'`],
+  ['BD does not read BK’s language row',      'denied', BD, 0,
+    `select 1 from language where id='${BKL}'`],
+  ['BK does not read BD’s article',           'denied', BK, 0,
+    `select 1 from slice where language='${BDL}' and kind='wld'`],
+  ['BD does not read BK’s article',           'denied', BD, 0,
+    `select 1 from slice where language='${BKL}' and kind='wld'`],
+  ['BK does not read BD’s dictionary',        'denied', BK, 0,
+    `select 1 from slice where language='${BDL}' and kind='words'`],
+  ['BD does not read BK’s dictionary',        'denied', BD, 0,
+    `select 1 from slice where language='${BKL}' and kind='words'`],
+  ['BD still reads BD’s own, all of it',      'ok',     BD, 0,
+    `select 1 from slice where language='${BDL}' and kind='words'`],
   /* AND ONE BK TOOK BEFORE THE BLOCK IS STILL READ, which is not a decision:
      what a block does to a language somebody took has not been asked
      (docs/scope/r85-block.md), so this holds that nothing moved. The take is
@@ -679,6 +720,10 @@ const CASES = [
     `insert into block(actor,blocked) values ('${BK}','${BD}')`],
   ['BK still reads the language BK took',     'ok',     BK, 0,
     `select 1 from language_seen where id='${BDL}'`],
+  ['and its row',                             'ok',     BK, 0,
+    `select 1 from language where id='${BDL}'`],
+  ['and its dictionary',                      'ok',     BK, 0,
+    `select 1 from slice where language='${BDL}' and kind='words'`],
   ['BK lets go of it',                        'ok',     BK, 0,
     `delete from language_take where uid='${BK}' and language='${BDL}'`],
 
@@ -2457,11 +2502,14 @@ const SHAPE = [
      select count(*) from pg_policies
       where tablename='slice' and cmd='SELECT'
         and coalesce(qual,'') not like '%owner = auth.uid()%'`, '0'],
-  /* And the published door, which is what the About page is read through. */
+  /* And the published door, which is what the About page is read through.
+     It is lang_readable()'s, which the policy asks (LANG_READ counts that), so
+     it is asked of the function. */
   ['and published is what opens the other one', `
-     select count(*) from pg_policies
-      where tablename='slice' and cmd='SELECT'
-        and coalesce(qual,'') not like '%published_at%'`, '0'],
+     select count(*) from (select 1) x
+      where not exists (select 1 from pg_proc
+                         where proname='lang_readable'
+                           and prosrc like '%published_at%')`, '0'],
   /* AND IT IS NOT A BLANKET. Publishing a page opens the page -- \u300c\u8a00\u8a9e\u30da\u30fc\u30b8
      \u516c\u958b\u3068\u5358\u8a9e\u3084\u6587\u5b57\u306edl\u53ef\u80fd\u306f\u5225\u3060\u3057\u300d -- so the policy names the kinds it
      opens, and a policy that stopped naming any would be publishing handing
@@ -3165,6 +3213,36 @@ insert into slice(language, kind, body) values ('${OLDN[1]}', 'lang', 'Old Name'
 `;
 const OLDLANG_EMPTIED = `update language set name = '' where id = '${OLDN[1]}';`;
 
+/* PASTED BY SOMEBODY WHO IS NOT A SUPERUSER. Everything above is applied as
+   this check's own `postgres`, which is a superuser and may change anybody's
+   default privileges -- and Supabase's SQL editor may not. So schema.sql's
+   foot said 「for role supabase_admin」 on the owner's server and stopped
+   there, 2026-09-25 (42501, permission denied to change default privileges),
+   with every run of this check green. The block that says who anon may not
+   be handed tomorrow's tables is run again here as `sql_editor`, with
+   supabase_admin holding a standing grant to anon as it does on Supabase;
+   it has to go through. What stays behind is Supabase's to say, and is taken
+   off again after, as the superuser, so the claim about tomorrow is still
+   asked of the whole catalogue below. */
+const FOOT = (function(){
+  const at = SCHEMA_SQL.indexOf('do $w$\ndeclare r record;');
+  const end = SCHEMA_SQL.indexOf('\n$w$;', at);
+  if (at < 0 || end < 0) {
+    console.error('schema.sql has no default-privilege block at its foot for EDITOR to paste');
+    process.exit(1);
+  }
+  return SCHEMA_SQL.slice(at, end + 5);
+})();
+const EDITOR = `
+grant usage, create on schema public, storage to sql_editor;
+alter default privileges for role supabase_admin in schema public grant all on tables to anon;
+set role sql_editor;
+${FOOT}
+reset role;
+alter default privileges for role supabase_admin in schema public revoke all on tables from anon;
+revoke usage, create on schema public, storage from sql_editor;
+`;
+
 const sql = [
   GROUND,
   BASE_SQL,
@@ -3173,6 +3251,7 @@ const sql = [
   OLDLANG_EMPTIED,
   PGNET,
   SCHEMA_SQL,
+  EDITOR,
   HARNESS,
   'begin;',
   /* The only seeding there is. Everything else below is done BY somebody,
@@ -3308,6 +3387,24 @@ const sql = [
      from _block_seen(${q(BK)}, ${q(BD)}, ${q(BDH)}, ${q(BK)});`,
   `select 'BLOCKED'||chr(9)||what||chr(9)||open||chr(9)||shut
      from _block_seen(${q(BD)}, ${q(BK)}, ${q(BKH)}, ${q(BK)});`,
+  /* EVERY ROAD A LANGUAGE IS READ BY, out of the catalogue (LANG_READ below):
+     each SELECT policy on `language` and `slice`, and each view built on
+     either -- a view runs with its owner's rights, so its own `where` is the
+     only thing between a reader and the table. */
+  `select 'LANGREAD'||chr(9)||'policy '||tablename||'.'||policyname||chr(9)||
+          (coalesce(qual,'') like '%lang_readable(%')||chr(9)||'-'
+     from pg_policies
+    where schemaname='public' and tablename in ('language','slice')
+      and cmd in ('SELECT','ALL');`,
+  `select distinct 'LANGREAD'||chr(9)||'view '||v.relname||chr(9)||
+          (pg_get_viewdef(v.oid) like '%lang_readable(%')||chr(9)||'-'
+     from pg_depend d
+     join pg_rewrite w on w.oid = d.objid
+     join pg_class v on v.oid = w.ev_class
+     join pg_namespace n on n.oid = v.relnamespace
+    where d.refobjid in ('public.language'::regclass, 'public.slice'::regclass)
+      and v.relkind in ('v','m') and n.nspname='public'
+      and v.relname not like '\\_%';`,
   `select 'ANON'||chr(9)||
      (select count(*) from pg_class c join pg_namespace n on n.oid=c.relnamespace
        where n.nspname='public' and c.relkind in ('r','v','m','p','f')
@@ -3406,6 +3503,27 @@ for (const name of Object.keys(BLOCK_HELD))
   }
 console.log(`\nblock: ${blockRows.length} reads walked as the blocker and as who was blocked -- ${blockOut} leave them out, ` +
             `${blockHeld} held by name, ${blockNobody} name nobody\n`);
+
+/* ---- WHO MAY READ A LANGUAGE IS ASKED IN ONE PLACE -----------------------
+   「ブロックした相手の公開言語は見えない（両向き）」 OWNER 2026-09-25. The
+   question was written three times -- `language_read`, `language_seen` and
+   `slice_read` -- and only the view asked about a block, so the table and its
+   slices handed the language over anyway. lang_readable() in schema.sql is
+   the one answer now; this counts the roads rather than naming them, so a
+   policy or a view added tomorrow that reads a language its own way is red
+   tomorrow. (Which KINDS of slice a readable language hands over is a
+   different question and stays in `slice_read`.) */
+const langRoads = out.split('\n').map((l) => l.split('\t'))
+                     .filter((r) => r.length === 4 && r[0] === 'LANGREAD');
+if (!langRoads.length) bad.push(['who may read a language', 'roads', 'none were found']);
+for (const [, road, asks] of langRoads) {
+  const ok = asks === 'true';
+  if (!ok) bad.push([road + ' asks lang_readable()', 'yes', 'asks its own question']);
+  console.log((ok ? '  ok    ' : '  FAIL  ') + (road + ' asks lang_readable()').padEnd(44) +
+              (ok ? '' : 'asks its own question'));
+}
+console.log(`\nlanguage: ${langRoads.length} roads a language is read by, ` +
+            `${langRoads.filter((r) => r[2] === 'true').length} ask lang_readable()\n`);
 
 /* After the wall, because the wall's sentence is about anon and these are
    about what the file says -- a red here is not anon getting through. */

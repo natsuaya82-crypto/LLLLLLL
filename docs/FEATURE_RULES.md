@@ -5286,9 +5286,13 @@ and is never merged into your own」と言っている。**入らない、は二
   whoever made it. Every read passes what it hands out through it: `post_seen`
   (the feed, threads, somebody's posts, the search for posts), `feed_hot()`,
   `feed_fo()` (whoever passed a post on, too), `notices()`, `profile_seen` (a
-  page and the search for people), `follow_seen`, and `language_seen` (their
-  published language — a language somebody TOOK before the block still reads,
-  because what a block does to that is not decided; `docs/scope/r85-block.md`).
+  page and the search for people), and `follow_seen`. **Their published
+  language is refused by every road it is read by** — the `language` table,
+  `language_seen` and the slices — because all three ask one function,
+  `lang_readable()`, and it is the only place 「who may read this language」
+  is answered; `rls-check` counts the roads (LANG_READ). A language somebody
+  TOOK before the block still reads, because what a block does to that is not
+  decided (`docs/scope/r85-block.md`).
   `rls-check` walks every view and row-returning function as the one who
   blocked and as the one blocked, and `BLOCK_HELD` is empty. **Nothing is done
   across it either** (2026-09-25): `react_make`, `post_make`/`post_edit` (an
@@ -5298,9 +5302,6 @@ and is never merged into your own」と言っている。**入らない、は二
   settings' ブロックリスト (`block_seen`). What the phone keeps is
   `postBlocked()`, for a post of theirs it already held before the block. Not
   the same thing as a mute, which is one way and keeps nobody out (2026-09-25).
-  `language_read` and `slice_read` — the `language` table and the slices read
-  straight — still answer 「published」 without asking about a block;
-  `docs/scope/r85-block.md`.
 
 ### Decision
 - Date: 2026-08-19

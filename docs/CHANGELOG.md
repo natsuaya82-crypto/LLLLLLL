@@ -15,6 +15,18 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### 2026-09-25 ブロックした相手の公開言語は、どの道からも読めない（r87-langread）
+
+「ブロックした相手の公開言語は見えない（両向き）」OWNER 2026-09-25。r85 は `language_seen` だけを直し、
+`language` 表と slice を直に読むと、ブロックの間でも相手の公開言語が読めた（アプリはそこから他人の言語を探さない
+ので画面には出ていなかった）。
+
+- 「この人はこの言語を読めるか」を `lang_readable()`（`supabase/schema.sql`）一つに書き、`language_read`・
+  `language_seen`・`slice_read` の三か所がそれを訊く。三か所に別々に書かれていた条件は消した。
+- 自分の言語・取った言語（`language_take`）は今まで通り読める。slice のどの種類が降りるか（記事の五種類、
+  `slice_dl` の三種類、持ち主は全部）も変わらない。
+- 保存する物・動かす物・消す物: 無し。サーバーの読みの条件だけ。
+
 ### 2026-09-25 前の版が残した用紙と声のファイルを消す（r85-block E）
 
 「前の版でスマホに残った用紙と声のファイル → 消す（DELETE REVIEW を CHANGELOG に）」OWNER 2026-09-25。
