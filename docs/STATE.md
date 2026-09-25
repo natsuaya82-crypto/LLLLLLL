@@ -1234,7 +1234,7 @@ under `lingua.sess`.
 保存の時（保存を押したら）は 2026-09-24 の決定ログで答えが出たので消した。
 
 ### 今日（9/24〜25）の作業から出て、まだ訊いていないもの
-1. **Plus の自作文字のキーボードの数** ── 今は無制限（2026-09-24）。上限（〇〇個まで）を付けるか。
+1. **手書きのキーボードの近さの測り方** ── 一番近い字を一つ入れるか、候補を何個か出して選ばせるか（まだ訊いていない、r96 が形を出す）。
 2. **アカウント削除でサーバーに残る物** ── 投稿の通報の記録・公開の記録・問い合わせは、名前だけ外れて行が残る。
    投稿に付けた写真と声のファイルもサーバーに残る。全部消すか。（スマホに残る物は 9/25 の決定で消すことになった）
 3. **音を選ぶ所の、横にスクロールする丸いボタンの列** ── 一覧の形に直すか。
@@ -1431,12 +1431,10 @@ can hold two rules.
 
 ### Open, and the owner's
 
-- **How many keyboards a plan buys — settled and implemented.**
-  Free 1 language and the fixed QWERTY; Plus 1 language and no keyboard ceiling
-  (r84, 2026-09-24); Pro 3 languages and no ceiling. In the code: `CAN.kb` is
-  `'plus'` (the DOOR), `kbCap()` is the NUMBER — `FREE_KB=1`, `Infinity` on Plus
-  and Pro — counted by `kbCount()` across languages. `KB_MAX` is gone;
-  a number that is three facts is a function. The language ceiling is
+- **Keyboards are not divided by plan (1.0.3, r95).** Every plan builds as
+  many as it likes, and a key carries a drawn letter or any existing character,
+  typed straight in on the editor. What differs is how many drawn letters there
+  are; the font file export is `can('font')`, Plus. The language ceiling is
   `langCap()` — `FREE_LANGS=1`, `PRO_LANGS=3`, and Plus is deliberately the same
   as free. `edit` and `badge` are both in `CAN` now.
 - **The price of Pro is decided.** The four products and their prices are in

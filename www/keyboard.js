@@ -28,8 +28,8 @@
 
    That last one is the flick, and it is why one key can hold five letters. */
 
-/* A person has several keyboards -- how many is kbCap() in www/core.js,
-   counted across every language they have (kbCount() below) -- and one of a
+/* A person has several keyboards -- as many as they like, on every plan
+   (「キーボードはプランで分けない」 OWNER 2026-09-25) -- and one of a
    language's is the one on the phone. 「キーボード3つくらいまで作れるようにして
    適応推したらlinguaのキーボードが入れ替わるとかできるの？ページじゃない」
 
@@ -71,81 +71,6 @@ var KB_V=2;
    `{kbs:[], at:0}` out by hand, which is three places to remember a field in
    and three that did not. */
 function kbMint(){ return {kbs:[], at:0, v:KB_V}; }
-/* How many keyboards this person has BUILT, across every language they have.
-
-   KB_MAX was a constant here and a per-language one: three in this language,
-   three more in the next, nine on a plan that sells three. The ceiling is on
-   the person -- 「1,1+3.無制限って言わなかったっけ？」, counted as a pool
-   across languages -- so the count has to leave the open language, and
-   kbCap() in core.js is the number it is compared against.
-
-   The open one is read from memory and not from the disk: KB is what the
-   editor is working on, and a keyboard made a moment ago may not have been
-   written yet. Every other language is read through kbBoardsOf(), so one
-   stored in the older single-keyboard shape counts as the one it is rather
-   than as nothing.
-
-   THREE STATES, langCount()'s (www/core.js § LMINE): with nobody having said
-   which languages this account has, there is no number, and null says so --
-   kbCapStop() then refuses with 「接続できません」 rather than measuring a
-   ceiling against rows that may not exist. And another language's keyboards
-   are read out of what came down from the server (slMine()), never out of the
-   picture kept for a launch with no signal: rule 22, nothing counts from the
-   copy (docs/scope/r63-audit.md K4). */
-function kbCount(){
-  var n=0, id, k;
-  if(!langMineKnown()) return null;
-  for(id in LANGS){
-    if(!Object.prototype.hasOwnProperty.call(LANGS, id)) continue;
-    /* And only this ACCOUNT's. 「じゃないとアカウント変えたら無限に言語作れる
-       やん」 OWNER 2026-09-01 -- the same sentence langCount() answers in
-       www/core.js, and this counter had the same hole: LANGS is the PHONE's,
-       it survives signing out, so somebody else's languages on this phone
-       filled up the pool of keyboards this person may build. langWhose()
-       (www/core.js) is the one place that says whose a language is, and a
-       keyboard in one nobody has answered for is not counted either: a
-       ceiling measured against languages the server has not spoken about
-       refuses somebody their next keyboard. */
-    if(langWhose(id)!==LW_MINE) continue;
-    if(id===langId){ n+=kbStored().length; continue; }
-    k=null;
-    try{ k=kbBoardsOf(JSON.parse(slMine(langKeyOf(id, 'kb'))||'null')); }
-    catch(e){}
-    if(k && k.kbs) n+=k.kbs.length;
-  }
-  return n;
-}
-/* Whether there is room for another. The fixed QWERTY is the 1 in 1 + 3: it
-   is one keyboard this person has, it is not stored, and it is not counted
-   once per language -- so it is added here, once, to what they built. */
-function kbRoomKb(){ var n=kbCount(); return planFits(n===null? null : 1+n, 1, kbCap()); }
-/* THE CEILING OF THIS CHAPTER, MET ON THE PRESS, and it is one place.
-   「＋は右下につけて／プラスは5個目以降／無料は1個目以降／ポップが出るように」
-   OWNER 2026-09-04.
-
-   It was two questions asked a screen apart. kbNew() asked the DOOR --
-   upStop(can('kb')) -- and kbAdd() asked the NUMBER, so Plus at four
-   keyboards opened the five patterns, let somebody choose one, and refused
-   after the choice: a chooser for a thing that could not be made. Nothing
-   threw and nothing was written, which is why it stood.
-
-   Both are here now and both are met at the press. Free stops on the door,
-   which is the same pop every other + in this app gives 「音もキーボードも
-   単語も+を押したらそのまま課金のポップが出るだけでしょ？増やすを潰す」 OWNER
-   2026-09-01. Plus stops on the number, and the number is kbCap() rather than
-   one written down here. Pro's ceiling is Infinity, so neither can fire.
-
-   AND NOTHING IS HIDDEN FOR EITHER OF THEM 「課金からフリーの隠すルールも
-   全部に適応ささてね」 OWNER 2026-09-04. What a plan cannot do is not drawn as
-   an empty frame or a grey row -- it is said on the press. The + is on the
-   list on every plan and looks the same on all of them; the only difference
-   is what happens after it is pressed.
-
-   popAsk() draws where the finger is and nothing behind it closes or moves,
-   which is the shape 「全部1枚目みたいにポップ出して背景変えずに」 asks for. */
-function kbCapStop(){
-  return upStop(can('kb')) || upStop(kbRoomKb());
-}
 function kbRead(){
   KB=kbBoardsOf(slOpen('kb'));
 }
@@ -414,6 +339,25 @@ function kbLaySig(b){ return JSON.stringify(b.lay); }
    count on the same order. */
 var KB_DIRS=['up', 'right', 'down', 'left'];
 function kbKey(k, v){ return {w:1, k:k, v:v||'', f:['','','','']}; }
+/* WHAT A SLOT HOLDS: a letter of the language, or a character.
+   「キーボード画面で追加する時に選べるのは自作文字範囲、もしくは既存文字全て」
+   OWNER 2026-09-25 -- on every plan. What a plan changes is how many letters
+   there are to draw, and so how many there are to put on a key; the keyboard
+   itself asks nothing (「キーボードに縛りを入れなくても勝手にそうなる」).
+
+   A slot -- `v`, or one of the four in `f` -- is a letter's id or a character
+   with KB_CH in front of it. A letter's id always begins with `l` (ltId() in
+   www/letters.js), so the two can never be read as each other; and a letter
+   that has since been deleted stays a dangling id, drawn `·` and handed over
+   as nothing, exactly as before -- it does not turn into its id typed out.
+
+   kbCh() is the one place that reads it and kbChSlot() the one that writes
+   it. Nothing new goes to the phone's keyboard: a character crosses as a face
+   carrying `t` and nothing else, which KeyBoardView.swift already draws and
+   types (shareKey() in www/share.js). */
+var KB_CH='=';
+function kbCh(v){ v=String(v||''); return v.charAt(0)===KB_CH? v.slice(1) : ''; }
+function kbChSlot(c){ c=String(c||''); return c? KB_CH+c : ''; }
 /* Nothing, taking up room. A row is laid out by dividing the width among the
    keys in it, so the only way to inset a row -- which is what the third row
    of every phone keyboard is -- is a key that is not a key. It draws nothing
@@ -832,12 +776,6 @@ function kbHasFlick(){
    the one under somebody's thumb away from them mid-sentence. */
 function kbAdd(pat){
   if(KB_PATS.indexOf(pat)<0) return;
-  /* Asked here as well as on the door. kbNew() is a door and a door is a
-     look; the act that WRITES a keyboard has to refuse on its own, the way
-     kbEdit() refuses board 0 for all thirty mutators rather than trusting the
-     buttons to be down. Both the door and the ceiling are one function
-     (kbCapStop above), so the two roads cannot come to answer differently. */
-  if(kbCapStop()) return;
   /* Storage holds only the ones the person built. The free QWERTY is board 0
      and is not among them, so the first one made here is the SECOND board. */
   if(!KB) KB=kbMint();
@@ -1231,16 +1169,9 @@ function kbFree(){ return {nm:'', pat:'qwerty', lay:kbFixed().lay}; }
    against 「無料でもplusでもproでも同じ画面なのよ」 OWNER 2026-09-01, which
    HELP.kb's own comment quotes.
 
-   `kbStored()` is NOT concatenated on free, and that is not tidiness: it is
-   what `kbOf()`'s own `planNo(can('kb'))` guard is for -- the free plan
-   ANSWERED, not a plan nobody has asked about. Somebody who built three
-   keyboards on Plus and let the plan lapse types on the free QWERTY again --
-   「plusから無料に戻った時にキーボードなくなるやろ」 -- so listing those three
-   here would put a board on the screen that the phone is not typing on, one
-   press from an editor this plan does not have. They are still in storage and
-   nothing is deleted; they come back with the plan. */
+   And the boards somebody built are listed on every plan: 「キーボードはプラン
+   で分けない」 OWNER 2026-09-25. */
 function kbBoards(){
-  if(planNo(can('kb'))) return [kbFree()];
   return [kbFree()].concat(kbStored());
 }
 /* Board 0 and no other. Everything that writes asks this first. */
@@ -1266,7 +1197,6 @@ function kbClamp(i, n){ return Math.max(0, Math.min(parseInt(i, 10)||0, n-1)); }
 function kbApplied(n){ return kbClamp(KB? KB.at : 0, n); }
 function kbOf(){
   var b=kbBoards();
-  if(planNo(can('kb')) || !b.length) return kbFixed();
   return b[kbApplied(b.length)];
 }
 /* And the one on the SCREEN, which is a different question the moment there
@@ -1274,7 +1204,6 @@ function kbOf(){
    other. */
 function kbBoard(){
   var b=kbBoards();
-  if(planNo(can('kb')) || !b.length) return kbFixed();
   return b[kbClamp(kbShow, b.length)];
 }
 /* Which layer is showing, which keyboard is showing, and which key is being
@@ -1370,6 +1299,7 @@ function kbFace(key, src){
   if(key.k==='gap') return '';
   if(key.k==='lay') return kbLayFace(parseInt(key.v, 10)||0, src);
   if(key.k==='rom') return '<span class="kbl">'+esc(key.v)+'</span>';
+  if(kbCh(key.v)) return '<span class="kbl">'+esc(kbCh(key.v))+'</span>';
   var l=src? kbSrcLt(src, key.v) : ltById(key.v);
   if(!l) return '<span class="kbl">·</span>';
   /* midink: on a key the shape stands in the middle of the square rather
@@ -1422,7 +1352,8 @@ function kbFlicks(key, slots){
   if(!key || !key.f || key.k!=='lt') return '';
   for(i=0;i<4;i++){
     l=key.f[i]? ltById(key.f[i]) : null;
-    if(l) out+='<span class="kbf kbf'+KB_DIRS[i]+'">'+ltInk(l, esc(ltName(l)||'·'), 'midink')+'</span>';
+    if(kbCh(key.f[i])) out+='<span class="kbf kbf'+KB_DIRS[i]+'">'+esc(kbCh(key.f[i]))+'</span>';
+    else if(l) out+='<span class="kbf kbf'+KB_DIRS[i]+'">'+ltInk(l, esc(ltName(l)||'·'), 'midink')+'</span>';
     else if(slots) out+='<span class="kbf kbfx kbf'+KB_DIRS[i]+'">·</span>';
   }
   return out;
@@ -2790,11 +2721,8 @@ function kbListHTML(){
        -- 「編集不可でそのアカウントに切り替えたらダウンロードした人の言語が
        使える」 OWNER 2026-09-02. */
     /* ON EVERY PLAN, and at the bottom right where every other + is
-       「＋は右下につけて」 OWNER 2026-09-04. It used to be drawn only while
-       kbRoomKb() was true -- never on free -- so the one thing both lists were
-       meant to share was the one thing free did not have. The ceiling is met
-       on the press instead (kbCapStop), which is where this app already meets
-       every other one. */
+       「＋は右下につけて」 OWNER 2026-09-04. There is no ceiling behind it
+       on any plan (OWNER 2026-09-25). */
     ((!KBSEL && !langLocked())
       ? '<button class="fab"' + DO('kbNew') + ' aria-label="'+esc(t('kb.new'))+'">'+
           ICON_ADD2+'</button>'
@@ -2876,8 +2804,11 @@ function vKb(){
               ? navDel(t('kb.sel.del'), 'kbSelDel')
               : '')+
            navDo(t('kb.sel.done'), 'kbSelOff', null, true))
-        : ((!can('kb') || langLocked())? ''
-            : navDo(t('kb.sel'), 'kbSelOn', null, true))))+
+        : ((kbBoards().length<2 || langLocked())? ''
+            : navDo(t('kb.sel'), 'kbSelOn', null, true))+
+          /* THE FONT, OUT: the share mark, in the corner a share stands in
+             (「共有も共有マークを右上」 OWNER 2026-09-23). kbFontOut(). */
+          navDo(t('kb.font'), 'kbFontOut', null, false, {icon:ICON_SHARE})))+
       /* AND NOT THE SWITCH. 「一覧の『キーに文字を表示』のスイッチを消す」
          OWNER 2026-09-06. kbSysHTML() is on every keyboard's own page, which
          is where the keys it changes are drawn, so a second copy of it here
@@ -2909,6 +2840,7 @@ function vKb(){
   return '<div class="view">'+navTop('', kbMoreQ())+'<div class="body">'+
     kbNameHTML(now)+
     kbToolHTML()+
+    kbChOnHTML()+
     kbHTML(kbSel)+
     kbLaysHTML()+
     /* The one control whose whole job is to change how a key LOOKS, on the
@@ -3807,16 +3739,48 @@ function kbToolHTML(){
     (ask? '' : kbTb('kbCut', ICON_BIN, t('kb.cut'), !KBH || cell))+
     '</div>';
 }
+/* THE FONT OF THE DRAWN LETTERS, OUT OF THE APP. 「フォントの書き出しはそれで
+   いいよ」「フォントの書き出しを求める声多いんよな」 OWNER 2026-09-25 -- Plus
+   (can('font')), and on free the press is the same upgrade pop every other
+   closed door gives.
+
+   What goes out is SFONT.b64: the bytes LinguaFont.build made for the letters
+   as they are now, the same font the app itself is set in -- render() keeps it
+   in step with the letters (www/glyph.js), so there is nothing to build here
+   and no second font that could come out different. Nothing drawn is no font,
+   and that is said rather than handing over an empty file.
+
+   It leaves by the road the card and the sheet already take: LinguaShare's
+   sheet() files it in the app's own temporary folder as `<name>.otf`, and
+   shareFile() puts iOS's share sheet up with it -- Save to Files, AirDrop,
+   Mail. No Swift of its own: that road takes any extension and hands over
+   whatever file it wrote. Nothing is said when the sheet is up, for the
+   reason cardSave() gives (www/card.js): what somebody then chooses is not
+   answered, and must not be guessed at. */
+function kbFontOut(){
+  var p;
+  if(upStop(can('font'))) return;
+  if(!SFONT.b64){ toast(t('kb.font.none')); return; }
+  p=sharePlug();
+  if(!p){ toast(t('card.nofile')); return; }
+  p('LinguaShare', 'sheet', {name:kbFontName(), ext:'otf', b64:SFONT.b64})
+    .then(function(r){
+      if(!(r && r.file)){ toast(t('card.nofile')); return; }
+      return p('LinguaShare', 'shareFile', {file:String(r.file)});
+    })
+    ['catch'](function(){ toast(t('card.nofile')); });
+}
+/* What the file is called: the language's name, cut down to what a file name
+   on the phone may safely carry -- sheet() takes it as it comes. No
+   extension; the native side puts that on, because it knows which of
+   `<name>.otf` and `<name> 2.otf` it filed. */
+function kbFontName(){
+  var n=String(langName||'').replace(/[^\w \-]/g, '').replace(/\s+/g, ' ').replace(/^ +| +$/g, '');
+  return n? n.slice(0, 40) : 'Lingua';
+}
 /* Making another is choosing a pattern again, on a screen of its own rather
    than a row that pushes the keyboard off the page. */
 function kbNew(){
-  /* The ceiling, met on the press, and it is the SAME answer every other +
-     in the app gives. It used to open a screen of its own -- the five
-     arrangements drawn, each a way to the plans page -- and that is a
-     different screen for the free plan, which is the thing being taken out
-     everywhere else: 「なんでプロの画面から使えって言ってんのに別の画面が
-     出るの？」 OWNER 2026-09-01. */
-  if(kbCapStop()) return;
   openForm('kbnew', t('kb.new'), kbPatsHTML('kbAdd'), function(){ geTiles(); });
 }
 FORM_OPEN.kbnew=function(){ kbNew(); };
@@ -3982,12 +3946,7 @@ HELP.kb=function(){
     kbStepHTML(3, t('kb.step3'),
       '<button class="btn" style="width:100%;margin-top:10px"' + DO('kbSettings') + '>'+
         esc(t('kb.sys.go'))+'</button>'+
-      kbShot('kb-app.jpg'))+
-    (!planNo(can('kb')) ? '' :
-      '<div class="grpsep"></div><div class="note">'+esc(t('kb.free.no'))+'</div>'+
-      '<div class="note">'+esc(t('kb.free.up'))+'</div>'+
-      '<button class="btn ghost" style="width:100%;margin:12px 0 4px"' + DO('go', ["plans"]) + '>'+
-        esc(t('kb.up.go'))+'</button>')};
+      kbShot('kb-app.jpg'))};
 };
 /* What is left on the screen: the one line that is a setting rather than an
    explanation. Free has it too, and free is exactly the case it is for -- a
@@ -4282,6 +4241,7 @@ function kbKeyHTML(ri, ki){
    small only when there is a shape over it to be small under. */
 function kbSlotFace(lid){
   var l=lid? ltById(lid) : null, ink;
+  if(kbCh(lid)) return '<span class="kbl">'+esc(kbCh(lid))+'</span>';
   if(!l) return '<span class="kbsx">'+ICON_ADD+'</span>';
   ink=ltInk(l, '', 'midink');
   if(!ink) return '<span class="kbl">'+esc(ltName(l)||'·')+'</span>';
@@ -4296,7 +4256,7 @@ function kbSlotFace(lid){
 /* The square shows what is on the key, which is also what is purple under
    it: a letter pressed goes onto the key at once (kbLtTap). */
 function kbSlotBtn(cls, lid, ri, ki, dir, label){
-  return '<button class="kbe '+cls+(lid && ltById(lid)? '' : ' non')+'"' +
+  return '<button class="kbe '+cls+(lid && (ltById(lid) || kbCh(lid))? '' : ' non')+'"' +
     DO('kbSlot', [ri, ki, dir]) +
     ' aria-label="'+esc(label)+'">'+kbSlotFace(lid)+'</button>';
 }
@@ -4384,10 +4344,9 @@ function kbSlotsShown(key){
    選ぶのキツくね？」.
 
    This laid the whole alphabet out, every letter, always. Thirty-eight is a
-   glance and the free plan never reaches this screen at all -- board 0 has no
-   editor -- so the list this actually draws is the PAID one, which is the
-   only one that grows: three hundred letters is three hundred tiles to find
-   one in with your eyes.
+   glance -- the free alphabet -- and the paid one is the one that grows:
+   three hundred letters is three hundred tiles to find one in with your
+   eyes.
 
    The same list is already drawn one chapter over, on vLtset, and that page
    has had an order and a filter since 「これ並び替え、絞り込み追加しよう。
@@ -4421,7 +4380,10 @@ function kbLtGrid(ri, ki, dir){
     }).join('')+'</div>';
   }
   ltReList=cells;
-  return ltViewRow()+
+  /* A corner of a flick key has no place on the sheet to be typed into, so
+     its box is here, on the corner's own page. The key itself is typed into
+     on the sheet (kbChOnHTML). */
+  return (dir>=0? kbChHTML(ri, ki, dir) : '')+ltViewRow()+
     /* "Nothing in this slot" is a choice like any other, so it is CHOSEN like
        any other and waits for the same confirm. Leaving it applying on the
        press would be the thing that must not happen -- two mechanisms writing
@@ -4488,6 +4450,50 @@ function kbLtTap(ri, ki, dir, lid){
   saveKb();
   kbLtDraw(ri, ki, dir);
 }
+/* A CHARACTER onto the slot: whatever was typed, on every plan.
+   「既存の文字ならどこでも使えるでしょ？ユニコードあるわけだし」 OWNER
+   2026-09-25. What is typed in the box over the alphabet goes onto the key when
+   the box is left or Enter is pressed, and an empty box empties the slot.
+
+   It arrives as the roman (act.js hands every receiver puaTyped()'s reading),
+   so a letter typed on the Lingua keyboard goes on as its name and never as a
+   private use code point -- rule 13: that code point means a letter only in
+   this alphabet's order at this moment. */
+function kbChPut(ri, ki, dir, ln){
+  var key, v;
+  if(!kbEdit()) return;
+  key=kbAt(ri, ki);
+  if(!key) return;
+  v=kbChSlot(String(ln||'').slice(0, KB_CH_MAX));
+  if(kbLtOn(ri, ki, dir)===v) return;
+  /* `t` is what a key of the QWERTY pattern TYPES, put there by kbFix() for
+     the letter it was laid with -- a character on the key types itself, so
+     that is no longer true of it. */
+  if(dir<0){ key.v=v; delete key.t; } else key.f[dir]=v;
+  saveKb();
+  kbLtDraw(ri, ki, dir);
+}
+var KB_CH_MAX=8;
+/* ON THE SHEET, FOR THE KEY THAT IS SELECTED. 「既存の文字はキーボードの編集
+   画面でキーを押してそのまま入れる ── 打つ・貼る。文字の画面を通さない」
+   OWNER 2026-09-25. Press a key and type or paste: what is typed goes onto
+   that key when the box is left or Enter is pressed. A drawn letter is the
+   other thing a key can hold, and it is chosen on the key's page (the pencil),
+   because a drawn letter is registered on the letters' screen first. Only a
+   letter key: space, delete and return are what they are. */
+function kbChOnHTML(){
+  var key;
+  if(!KBH || KBH.k!=='k' || !kbEdit()) return '';
+  key=kbAt(KBH.r, KBH.i);
+  if(!key || key.k!=='lt') return '';
+  return kbChHTML(KBH.r, KBH.i, -1);
+}
+function kbChHTML(ri, ki, dir){
+  return '<input class="lnin" value="'+esc(kbCh(kbLtOn(ri, ki, dir)))+'" '+
+    'maxlength="'+KB_CH_MAX+'" autocomplete="off" autocapitalize="off" '+
+    'placeholder="'+esc(t('kb.ch'))+'" aria-label="'+esc(t('kb.ch'))+'"'+
+    CH('kbChPut', [ri, ki, dir]) + '>';
+}
 /* WHICH OF THE TWO SCREENS THE ALPHABET IS ON, asked once, and asked of the
    ROUTE. kbSlotFor is a note the sheet leaves for itself, and backing out of
    the sheet without choosing leaves it lying there -- so a letter chosen
@@ -4500,6 +4506,7 @@ function kbLtDraw(ri, ki, dir){
   var w=kbLtWhere();
   if(w==='kbslot') kbSlotForm(ri, ki, dir);
   else if(w==='kbkey') kbKeyForm(ri, ki);
+  else render();
 }
 /* THE FOUR THE SCREEN OFFERS AND NOTHING ELSE. 「文字／スペース／削除／改行
    の 4 つだけ」 OWNER 2026-09-06. `lay` is gone from here for the reason

@@ -25,7 +25,6 @@ count docs/STATE.md ゲート 41 本
 count docs/STATE.md ゲートは 44 本
 count docs/STATE.md 検査 8 本
 file docs/STATE.md backup-check.mjs
-name docs/STATE.md KB_MAX
 name docs/STATE.md LS_FLAT
 name docs/STATE.md SET_PLAN
 name docs/STATE.md TR_SEAM

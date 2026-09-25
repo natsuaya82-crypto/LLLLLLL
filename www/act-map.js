@@ -147,6 +147,7 @@ act('pushSettings', pushSettings);
 act('kbSetKind', kbSetKind);
 act('kbSlot', kbSlot);
 act('kbLtTap', kbLtTap);
+act('kbFontOut', kbFontOut);
 act('langOpen', langOpen);
 act('langDrop', langDrop);
 act('langNew', langNew);
@@ -355,6 +356,7 @@ act('wipeAll', wipeAll);
 /* ---- typed into, or chosen ---------------------------------------------- */
 actIn('impSetRole', impSetRole);
 actIn('kbSetNm', kbSetNm);
+actIn('kbChPut', kbChPut);
 actIn('meSetName', meSetName);
 actIn('pkSetCh', pkSetCh);
 actIn('adminSet', adminSet);

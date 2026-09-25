@@ -173,18 +173,24 @@ screen you would otherwise have gone to**; and explaining. The keyboard
 chapter had all four at once. 「丸パッチ無限横並び、同じページに情報量詰め込み、
 ページ遷移型にせず下からひょいって出すやつ、無駄に説明をするやつ、この辺禁止」
 
-**A FIFTH: THE SYSTEM'S OWN DIALOG IS BANNED — WITH ONE THING IT IS FOR.**
+**A FIFTH: THE SYSTEM'S OWN DIALOG IS BANNED — WITH TWO THINGS IT IS FOR.**
 「標準は使わねえって言ってるだろこれも禁止や」「禁止事項入れろ」 OWNER
 2026-09-01. `confirm()`, `alert()` and `prompt()` — none of them, anywhere.
 The reason is one line: 「iPhoneのやつ使ってるsnsないしな」.
 
-**The one thing it is for is the two or three lines that ask whether to change
+**The first thing it is for is the two or three lines that ask whether to change
 or remove the thing under your finger, and it is iOS's own.**
 「アイコンをタップした時にiPhone標準の写真を選ぶか、削除するか出てくるやつで
 いいだろ」 OWNER 2026-09-01, and 「タップしたらios標準出して」 again on
 2026-09-03 when this was put to them a second time. The profile picture is
-that, and it is the only one. `UIAlertController` is how it is drawn, so it
-lives in `ios/` and cannot be reached from `www/`.
+that. `UIAlertController` is how it is drawn, so it lives in `ios/` and cannot
+be reached from `www/`.
+
+**The second is the App Store's own request for a rating** 「評価のやつつけよう」
+OWNER 2026-09-25 (1.0.3) — Apple's review prompt, drawn by iOS, which decides
+itself whether to show it and shows it at most three times a year. When it is
+asked for is the owner's (`docs/FEATURE_RULES.md` § Owner decision log,
+2026-09-25). Those two, and nothing else.
 
 **A sheet that stands in for a SCREEN is still banned** — a screen's worth of
 work lifted from the bottom because nobody wanted to make a page. And **a
@@ -437,9 +443,9 @@ And the same reason the corners needed `box-check`: prose does not hold a rule.
 **One part of it is held: a name a document gives is a name the code has.**
 `docs-check` counts, in every document that is not a day's record
 (`docs/CHANGELOG.md`, the handovers, the dated `CHECK-` pages, `docs/reports/`,
-`docs/scope/`): every call in backticks — `langKey()`, `can('kb')` — against
+`docs/scope/`): every call in backticks — `langKey()`, `can('font')` — against
 what `www/`, `ios/`, `tools/` and `supabase/` define; every other name in
-backticks — `PLAN`, `STG.order`, `CAN.kb` — against the code with its comments
+backticks — `PLAN`, `STG.order`, `CAN.font` — against the code with its comments
 taken out; every code file, every check named by name and every npm script against what
 git and `package.json` have; every sentence saying how many checks the gate
 has, which fails whatever the number; every OWNER date a code comment quotes,
@@ -838,7 +844,7 @@ above to be about. It catches a typo the same way: `wSrot='a'` would make a
 second global and leave the sort where it was.
 
 **And what money buys, which is the same sentence a third time.** `CAN` in
-`core.js` names every capability a plan opens, and `can('kb')` is the
+`core.js` names every capability a plan opens, and `can('font')` is the
 only way to ask. **This line does not list them**: every version of it that did
 went stale, in both directions — a name that was not a capability, and
 capabilities left off while checks and a rung of the plans page ran on them.
@@ -2017,10 +2023,13 @@ launch that topped one up would put back what somebody took away.
 
 That is not a restriction bolted onto the app; it is what makes the rest of the
 free plan possible. Because the letters are exactly a-z, `!` and `?`, and their
-names cannot change, the keyboard can be a **QWERTY with the drawn letters
+names cannot change, the first keyboard is a **QWERTY with the drawn letters
 substituted in** — `kbFixed()`, built from `LETTERS` every time it is shown,
-stored nowhere, with no editor and nothing to set.
-「キーボードもqwerty配列がそのまま自作文字に置き換わるだけ。なんの設定もできない」
+stored nowhere. **Keyboards are not divided by plan** (OWNER 2026-09-25,
+1.0.3): anybody may build more, and a key carries either a drawn letter of the
+language or any existing character. Free's drawn letters are the slots, so
+the slots are the only limit a free keyboard meets 「自作文字は作れる範囲が
+決まってるから、キーボードに縛りを入れなくても勝手にそうなる」.
 Rename one letter and the key it answers to is gone, which is why a slot's
 name does not change **on any plan** (decision log 2026-08-22) and
 `ltSetRoman()` refuses it rather than a screen merely hiding the field —
@@ -2061,7 +2070,7 @@ Four places say it, and they say four different things:
 | where | what it says |
 |---|---|
 | `ltStart` in `letters.js` | a FREE language is topped back up on every launch — the slots by name, a digit per value of the base by value. A paid one is not, and `ltSlotsFill()` beside it is what a language of any plan is made with |
-| `kbOf` in `keyboard.js` | free reads `kbFixed()` and never `KB` |
+| `kbOf` in `keyboard.js` | the first board is `kbFixed()`; the others are `KB`, on every plan (1.0.3) |
 | `wsys()` in `wsys.js` | free is an alphabet; there is nothing to guess |
 | the screens | the same screen on every plan 「全部一緒」 OWNER 2026-09-04: what free cannot do is there in the same shape, and pressing it goes to the plans. `docs/HIDEFREE.md` says where each screen stands |
 

@@ -249,34 +249,91 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Implementation status:
 ```
 
-### 2026-09-25 既存の文字はキーボードの編集画面で直に、手書きのキーボード
+### 2026-09-25 フォントの書き出しは文字の画面の右上（1.0.3）
 - Date: 2026-09-25
-- Area: キーボードの編集画面（`www/keyboard.js`）、システムのキーボード（`ios/App/LinguaKeyboard/`）
-- Decision:
-  - **既存の文字**（Unicode のどの字でも）は、キーボードの編集画面でキーを押してそのまま入れる（打つ・貼る）。文字の画面を通さない。
-    **自作文字**だけが文字の画面で描いて登録し、キーボードではそれを選んで置く。
-  - **手書きのキーボード**を足す: キーボードの面に指で書くと、その言語の自作文字の中から一番近い字が入る。
-- Reason: オーナーの言葉「自作文字を登録する時だけ、文字登録画面が必要で、既存文字を使う時はキーボード編集画面から好きに編集できるのは？」
-  「後手書き追加しよう」、手書きは「1」（手書きのキーボード）。
-- Affected data: 無し（手書きは読むだけ）。
-- Affected docs: この項。
-- Implementation status: 一つ目は r95 に。手書きのキーボードは未 ── **1.0.3 に入れる**（「これも1.0.3に入れよう」）。プランはオーナーに訊いている。
+- Area: フォントの書き出し（`kbFontOut()`）、文字の画面（`vLetters()` in `www/sound.js`）
+- Decision: フォントの書き出しのマーク（共有のマーク）は、文字の画面の右上に置く。キーボードの一覧の画面からは外す。Plus のまま。
+- Reason: オーナーの言葉「フォントは文字なんだから文字から書き出しのマークつけないとダメでは？」。
+- Affected features: 文字の画面、キーボードの一覧の画面。
+- Affected data: 無し。
+- Affected docs: この項、`docs/keyboard.md`、2026-09-25「キーボードはプランで分けない」のフォントの書き出しの行。
+- Implementation status: 未。r96。
 
-### 2026-09-25 キーボードは誰でも作れる、自作文字のキーボードとフォントの書き出しは Plus から（1.0.3）
+### 2026-09-25 投稿の画面は揺れない ── 上のバーと道具の行は固定、中身だけがスライド、キーボードの分だけ画面を縮める（1.0.3）
 - Date: 2026-09-25
-- Area: プラン（`CAN.kb` ほか）、キーボードを作る画面（`www/keyboard.js`）、フォントの書き出し
+- Area: 投稿の画面（`www/post.js`、`.view.fit`）、キーボードの出入り（`vvFit()`・`vpKbWire()`・`--vvtop`・`--vvkb` in `www/shell.js`、`ios/App/App/`）
 - Decision:
-  - **無料**: 既存の文字（Unicode のどの文字でも）で、キーボードを好きに作れる ── キーボードのカスタマイズのアプリとしても使える。
-    最初からある自作文字の QWERTY はそのまま。
-  - **Plus**: 自分で描いた文字を置いたキーボード、と **フォントのファイルの書き出し**（OTF、iPhone の共有画面から渡す）。
-  - Pro の「フォントの書き出し」（2026-09-24）は Plus に下りる ── まだ作られていないので、失う人はいない。
-  - 1.0.3 に入れる。
-- Reason: オーナーの言葉「既存の文字ならどこでも使えるでしょ？ユニコードあるわけだし」「それは無料でできる。キーボードカスタマイズアプリとしても使える」
-  「フォントの書き出しはそれでいいよ」「1.0.3で」「フォントの書き出しを求める声多いんよな」。
-- Affected features: `CAN.kb` の意味（無料でも作れる、自作文字を置くのが Plus）、フォントの書き出し（新しい）。
-- Affected data: 無料の人が作ったキーボードが増える（今の `kb` の slice に入る）。何も消さない。
-- Affected docs: この項、`docs/PAID_FEATURES.md`、`docs/FEATURES.md`、`docs/STATE.md` 4a の 1。
-- Implementation status: 未。Plus の自作文字のキーボードの数（上限を付けるか）はオーナーが決めていない（今は無制限、2026-09-24）。
+  - 上のバー（戻る・送信）とカメラなどの道具の行は位置を固定。その間の中身（一行・意味・タグ）だけが板になってスライドする。
+  - キーボードが出たら、アプリ側（Swift）で画面の高さをキーボードの上までに縮める。iOS が画面を押し上げる余地と、キーボードが出ている間に
+    見えている範囲が上下にずれる余地を無くす。画面の端で弾む動きも止める。
+  - 押し上げやずれを JavaScript で後から追いかけて戻す仕組み（`--vvtop`、キーボードの高さを覚えておく `vvKbMax`・`SET.vvkb` など）は消す。
+- Reason: オーナーの言葉「投稿画面のガタガタがウザすぎる。これ前から行っても治らないのはなぜ？」「←の戻る画面はスクロールに関係ないやん」
+  「一番上と、カメラとかあるやつは位置固定して、中身だけ板にしてスライドできるようにするのは？」
+  「ガタガタするのはキーボードが出た後に画面を上下に早く揺らした時なんだよな」「それでお願い。」（実機）。
+- Affected features: 投稿の画面、同じ `.view.fit` を使うメモの画面、キーボードの上に付くもの全部。
+- Affected data: 端末の設定の `SET.vvkb`（キーボードの高さの測り）を読まなくなる。消すかどうかは DELETE REVIEW で。
+- Affected docs: この項、`www/index.html` と `www/shell.js` の該当の注記（書き直す）。
+- Implementation status: 未。r94 が終わってから一つのセッションで。実機で揺らして確かめるまで直ったと言わない。
+
+### 2026-09-25 字を選ぶ画面は一つ ── 既存文字から選ぶとキーの画面は同じ物、種類を増やす、押したらその種類のページ（1.0.3）
+- Date: 2026-09-25
+- Area: 字を選ぶ画面（文字の「既存文字から選ぶ」＝`openPick()`、キーボードのキーの画面、`WORLD_SCRIPTS`）
+- Decision:
+  - **文字の「既存文字から選ぶ」とキーボードのキーの画面は同じ一つの画面を使う。** 別々に書かない（直書き禁止）。
+    字の種類の一覧も一か所にだけ書き、どこから開いても同じものを読む。キーの画面ではその一覧の先頭に「自作文字」が付く。
+  - **種類を大きく増やす**: どの言語にも対応できるように ── ø・å・ä のような記号付きのラテン文字、ラテン文字の拡張、記号（スペースを含む）など。
+    漢字は後で。
+  - **種類の行を押したら、その種類の字のページへ移る。** その場で下に開く形はやめる。
+  - **「字を入力または貼り付け」の欄は消す。** キーの画面の「なし」も消す。
+  - キーボードの編集画面に r95 が足した「文字を入力」欄は消す。
+- Reason: オーナーの言葉「そもそもキーの編集ボタン押したら、文字選択できたやん。なんで勝手に追加するの？」
+  「なし消して。スペースキーを記号のとこに追加すればいい」「種類の文字はそもそも、文字書くところの既存文字を当てるのところにあるやつ全部でしょ」
+  「字の入力または貼り付けいらん。その代わり文字かなりいっぱい入れよう oの射線とかaになんかついてるやつとかどんな言語でも対応できる選択肢を作ろう。
+  漢字はむずいから後で 押したら勝手にそのページに飛ぶ。記号追加で。」「既存文字から選ぶとキーの画面は同一のものを使おう。直書き禁止で」。
+- Affected features: 文字の「既存文字から選ぶ」、キーの画面、キーボードの編集画面の入力欄（消す）、オンボーディングの「既存の文字から選択」（同じ一覧を読む）。
+- Affected data: 無し（文字が借りた字・キーに載る字の持ち方は今のまま）。
+- Affected docs: この項、`docs/keyboard.md`、2026-09-25「キーボードはプランで分けない」の既存の文字の行。
+- Implementation status: 未。r96 が手書きの前にやる。
+
+### 2026-09-25 カテゴリはグラフィック&デザイン、App Store の評価のお願いを出す、キーワードを見直す（1.0.3）
+- Date: 2026-09-25
+- Area: App Store の掲載（`store/`、App Store Connect の App 情報）、システム標準のダイアログ（CLAUDE.md § Shape の五つ目）
+- Decision:
+  - **主カテゴリはグラフィック&デザイン。** 1.0.3 の版と一緒に App Store Connect で変える。
+  - **App Store の評価のお願い（iOS 自身が出すもの）を出す。** システム標準のダイアログの例外は、プロフィール画像とこれの二つ。
+    出すかどうかと回数（年三回まで）は iOS が決める。**頼むのはアプリを開いた五回目。**
+  - **キーワードを見直す。** アプリ名にある語は重ねず、自分の字を作りたい人が打つ狭い語にする（オリジナル文字・自作文字・フォント作成・手書き・暗号・ルーン など）。10 言語は `store/*.json`。
+  - 全部 1.0.3 から。
+- Reason: オーナーの言葉「グラフィックデザインにしよう。」「評価のやつつけよう。キーワードも見直して欲しい」「1.0.3からね」
+  「cやね」（開いた五回目）「いいと思う！」（キーワードの案）。
+  3日で約100件のダウンロードで、ランキングに入らない。
+- Affected features: 評価のお願い（新しい、`ios/` と `www/` から呼ぶ一か所）。
+- Affected data: 無し。
+- Affected docs: この項、CLAUDE.md § Shape の五つ目、2026-09-01 の標準ダイアログの項、`store/*.json` の keywords。
+- Implementation status: キーワードは `store/*.json` に入った（App Store Connect へは 1.0.3 の版と一緒に送る）。カテゴリと評価のお願いは未。
+
+### 2026-09-25 キーボードはプランで分けない ── 置ける字は自作文字と既存の文字、差は自作文字をいくつ作れるかだけ（1.0.3）
+- Date: 2026-09-25
+- Area: キーボード（`www/keyboard.js`、`CAN`）、システムのキーボード（`ios/App/LinguaKeyboard/`）、フォントの書き出し
+- Decision:
+  - **キーボードはプランで分けない。** 無料でも全部の機能で好きに作れる（キーボードのカスタマイズのアプリとしても使える）。
+  - **キーに置ける字は二種類**: その言語の自作文字と、既存の文字（Unicode のどの字でも）。既存の文字はキーの画面の
+    種類の一覧から選ぶ（2026-09-25「字を選ぶ画面は一つ」の項）── 文字の画面を通さない。自作文字だけが文字の画面で描いて登録する。
+  - **無料と Plus の差は、自作文字をいくつ作れるかだけ。** 無料の自作文字は a〜z・!・?・0〜9 の決まった枠（`ltSlotsFill()`）なので、
+    キーボードに置ける自作文字も自然にそれだけになる。キーボードの側に縛りは入れない。
+  - **フォントのファイルの書き出しは Plus**（OTF、iPhone の共有画面から渡す）。
+  - **手書きのキーボード**: キーボードの面に指で書くと、その言語の自作文字の中から一番近い字が入る。プランで分けない。
+  - 全部 1.0.3。
+- Reason: オーナーの言葉「無料も全部キーボード編集できるようになったでしょ？」「無料は自作文字は従来のa-z!?1-0」
+  「キーボード画面で追加する時に選べるのは自作文字範囲、もしくは既存文字全て」「無料でもキーボード自体は好きにカスタマイズできるけど、
+  自作文字は作れる範囲が決まってるから、キーボードに縛りを入れなくても勝手にそうなる」「フォントの書き出しはそれでいいよ」
+  「後手書き追加しよう」「これも1.0.3に入れよう」。
+- Affected features: ~~`CAN.kb`~~ と ~~`kbCap()`~~（キーボードの扉と数）は問いが無くなる ── 消す。フォントの書き出し（新しい、Plus）。
+- Affected data: 無料の人が作ったキーボードが増える（今の `kb` の slice）。何も消さない。
+- Affected docs: この項、`docs/PAID_FEATURES.md`、`docs/FEATURES.md`、`docs/keyboard.md`、CLAUDE.md の「What the free plan is」。
+- Implementation status: r95-kbfont（`claude/r95-kbfont`）── キーボード（段を訊かない、`=文字` の枠と「文字を入力」の欄）とフォントの書き出し（Plus、`kbFontOut()`）は入った・コード確認、実機未確認。手書きは r96。
+
+### 2026-09-25 キーボードは誰でも作れる、自作文字のキーボードとフォントの書き出しは Plus から【差し替え済み】→ 2026-09-25「キーボードはプランで分けない」
 
 ### 2026-09-25 投稿の見た目 ── 意味の行を出さずに投稿できる、本文は Twitter の大きさ、意味はその 0.8 倍（1.0.3）
 - Date: 2026-09-25
@@ -419,7 +476,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
   **言語を前に戻す** ── 入った（保存の番号 `slice.press`、`admin_restore_lang()`、運営の画面は版三つ。`npm run rls`・
   `hist-check`・`again-check`）。**schema.sql をアプリより先に流すこと。**
 
-### 2026-09-24 キーボードのプランとフォントの書き出し（r46 の申し送り）【差し替え済み】→ 2026-09-25「キーボードは誰でも作れる、自作文字のキーボードとフォントの書き出しは Plus から」
+### 2026-09-24 キーボードのプランとフォントの書き出し（r46 の申し送り）【差し替え済み】→ 2026-09-25「キーボードはプランで分けない」
 
 ### キーの画面 ── 押した字がそのキーに入る。確定は無い
 - Date: 2026-09-24
@@ -2150,7 +2207,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
   コードに無く、`kbSlotsShown()`（`www/keyboard.js`）がある。
 
   数は既に `www/core.js:791` に一つずつ在ります ── `FREE_KB=1`、~~`PLUS_KB=4`~~（2026-09-24 に消えた）、
-  Pro は `kbCap()` で無制限。**新しい数を書かないこと。**
+  Pro は ~~`kbCap()`~~ で無制限。**新しい数を書かないこと。**
 
   **無料に編集は要りません。**無料の board 0 は QWERTY そのもので、
   編集する物がありません。開く矢印も編集ボタンも出さない。
@@ -2684,7 +2741,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
   いました ── 辞書も文字もキーボードも、B の一覧に B の言語として。何も
   throw しません。
 - Affected features: 言語一覧（`vLangs`）、言語の上限（`langCount`）、
-  キーボードのプール（`kbCount`）、DL の数（`dlCount`）、
+  キーボードのプール（~~`kbCount`~~）、DL の数（`dlCount`）、
   サーバーへの送信（`netLangRow`）
 - Affected data: **保存するものは減りません。**印の無い言語は索引にも
   `lingua.<id>.*` にもバックアップにもそのまま残ります。変わるのは、それを
@@ -2921,8 +2978,9 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - **アクションシートの narrowing は取り消していません。**この項は一度それも
   取り消したものとして書かれていましたが、**2026-09-03 にオーナーが同じことを
   もう一度言いました**:「タップしたらios標準出して」。指の下にある一つのものを
-  変えるか消すかを訊く、iOS 自身の二〜三行 ── プロフィール画像がそれで、
-  それだけです。`www/mod.js` ではなく `ios/` の `UIAlertController`。
+  変えるか消すかを訊く、iOS 自身の二〜三行 ── プロフィール画像がそれです。
+  もう一つは App Store の評価のお願い（2026-09-25「評価のお願い」の項）で、
+  その二つだけです。`www/mod.js` ではなく `ios/` の `UIAlertController`。
 - Implementation status: **入りました（2026-09-03）。**`www/` から
   `confirm()` `alert()` `prompt()` は消えていて、`tools/es5-check.mjs` が
   止めます。言語の名前は `openForm()`、上限の言い切りは `toast()`、
@@ -4796,10 +4854,10 @@ and is never merged into your own」と言っている。**入らない、は二
   holds this for keyboards already.
 - Affected docs: `docs/PAID_FEATURES.md`, `docs/FEATURES.md`.
 - Implementation status: **the keyboards are built** (2026-08-23,
-  `claude/save`): `kbCap()` in `www/core.js`, `kbCount()` / `kbRoomKb()` in
-  `www/keyboard.js`, `CAN.kb` at `plus`, ~~`KB_MAX`~~ gone. Held by `plan-check`.
+  `claude/save`): ~~`kbCap()`~~ in `www/core.js`, ~~`kbCount()`~~ / ~~`kbRoomKb()`~~ in
+  `www/keyboard.js`, ~~`CAN.kb`~~ at `plus`, ~~`KB_MAX`~~ gone. Held by `plan-check`.
   **The language ceiling, `can('edit')` and `can('badge')` are all built now** --
-  `langCap()` beside `kbCap()` in `www/core.js` (1 / 1 / 3, with `langStop()`
+  `langCap()` beside ~~`kbCap()`~~ in `www/core.js` (1 / 1 / 3, with `langStop()`
   as the refusal), `CAN.edit` at `plus` with `postEdit()` asking `can('edit')`,
   and `CAN.badge` at `pro` with `postBadge()` asking `can('badge')` instead of
   reading `plan()`. `dl` was added on 2026-09-02.
@@ -4872,19 +4930,19 @@ and is never merged into your own」と言っている。**入らない、は二
   thing, so there is one answer in this file again.
 - Affected features: ~~`KB_MAX`~~ in `www/keyboard.js` — a per-language constant
   today, a per-plan number counted across languages from now — and
-  `CAN.kb`, which moves from `plus` to `basic`.
+  ~~`CAN.kb`~~, which moves from `plus` to `basic`.
 - Affected data: none. Somebody over the ceiling keeps every keyboard and
   simply cannot add another. ~~`backup-check`~~ holds that already.
 - Affected docs: `docs/PAID_FEATURES.md`, `docs/BACKLOG.md`.
 - Implementation status: **built, 2026-08-23, `claude/save`.** It was deferred
   because `www/keyboard.js` was another branch's; that branch has not touched
   the file since 2026-08-15 and no live branch is in it, which was checked
-  before starting rather than after a merge failed. `kbCap()` sits beside
-  `wordCap()` in `www/core.js` (1 / 4 / Infinity), `kbCount()` in
+  before starting rather than after a merge failed. ~~`kbCap()`~~ sits beside
+  `wordCap()` in `www/core.js` (1 / 4 / Infinity), ~~`kbCount()`~~ in
   `www/keyboard.js` sums the built keyboards across `LANGS` -- the open
   language from memory, every other one through `kbBoardsOf()` so an older
-  single-keyboard file counts as the one it is -- `kbRoomKb()` adds the QWERTY
-  as the 1 in 1 + 3, and `CAN.kb` moved to `plus` in the same commit. ~~`KB_MAX`~~
+  single-keyboard file counts as the one it is -- ~~`kbRoomKb()`~~ adds the QWERTY
+  as the 1 in 1 + 3, and ~~`CAN.kb`~~ moved to `plus` in the same commit. ~~`KB_MAX`~~
   is gone. Seven claims in `plan-check`; three bugs put back and watched.
 
 ### Decision
@@ -5619,7 +5677,7 @@ for.
 - Affected data: none by itself
 - Affected docs: FEATURES.md, PAID_FEATURES.md
 - Implementation status: **段の扉は全部入っています。**`CAN` の全部と、数で答える
-  三つ（`wordCap()` `kbCap()` `dlCap()`）。フリックとキーの自由配置もキーボードの
+  三つ（`wordCap()` ~~`kbCap()`~~ `dlCap()`）。フリックとキーの自由配置もキーボードの
   編集画面にあります。いくつ扉があるかはここに書きません ── 書けば次に増えた日に
   古くなるので、`npm run dead` が毎回数えて出します。
   **クラウドはどの段にも属しません** ── `netLangSync()` は段を訊きません。

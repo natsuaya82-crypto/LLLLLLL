@@ -1976,7 +1976,7 @@ const r = await pg.evaluate(({ s }) => {
         press: document.querySelectorAll('#kb [data-do]').length
       };
     }
-    out.freeNoEditor = !can('kb');
+    kbShow = 0; out.freeNoEditor = kbEdit() === null;
     var withLt = face('0');
     out.freeRows = withLt.rows;
     out.freeKeys = withLt.keys;
@@ -2045,11 +2045,11 @@ const r = await pg.evaluate(({ s }) => {
     document.getElementById('app').innerHTML = vKb();
 
     /* ---- THE + IS ON THIS PLAN'S LIST, AND IT IS THE SAME + -------------
-       「＋は右下につけて」「無料は1個目以降」 OWNER 2026-09-04. It was drawn
-       only while kbRoomKb() was true, which is never on this plan, so the one
-       thing both lists were meant to share was the one thing free did not
-       have -- and the frames stood in for it. The + is unconditional now and
-       the ceiling is met on the PRESS, which is what every other + in this
+       「＋は右下につけて」 OWNER 2026-09-04. It was once drawn only while
+       this plan had room, which it never did, so the one thing both lists
+       were meant to share was the one thing free did not have -- and the
+       frames stood in for it. The + is unconditional, and what the press
+       meets is the same on every plan, which is what every other + in this
        app already does 「音もキーボードも単語も+を押したらそのまま課金のポップ
        が出るだけでしょ？」 OWNER 2026-09-01.
 
@@ -2069,11 +2069,13 @@ const r = await pg.evaluate(({ s }) => {
        the press always pops. Pressed as a finger presses it, and answered
        yes the way a person does -- popYes() runs what the pop was handed and
        nothing is stubbed. */
+    /* 「キーボードは誰でも作れる」 OWNER 2026-09-25: there is no ceiling on
+       this plan any more, so the + opens the five patterns and asks nothing. */
     out.freeFabPressed = !!fab;
     if (fab) fab.click();
     out.freeFabAsked = popOn();
-    if (popOn()) popYes();
-    out.freeFabToPlans = here().r === 'plans';
+    out.freeFabToPats = here().r === 'form' && String(here().a || '').indexOf('kbnew') === 0 &&
+      document.querySelectorAll('[data-do="kbAdd"]').length === 5;
     /* AND NO BOARD WAS MADE. */
     out.freeFabWroteNothing = KB === null && kbStored().length === 0;
     out.freeBoardsStillOne = kbBoards().length === 1;
@@ -2133,17 +2135,67 @@ const r = await pg.evaluate(({ s }) => {
        is the person answering it, and nothing is stubbed: popYes() runs what
        upStop() handed popAsk(). Without this both claims read the screen from
        before the answer and fail on a door that is working. */
+    /* ---- AND ON THIS PLAN A KEYBOARD IS BUILT THE SAME WAY -------------
+       「キーボードはプランで分けない」「キーボード画面で追加する時に選べるの
+       は自作文字範囲、もしくは既存文字全て」 OWNER 2026-09-25. So the + goes
+       through, the pattern is laid with the language's own letters -- the
+       same as on Plus, asked of every slot -- a drawn letter pressed onto a
+       key goes on, and a character typed goes on beside them. */
     NAV = [{ r: 'kb' }];
     kbNew();
-    if (popOn()) popYes();
-    out.freeNewToPlans = here().r === 'plans';
-
+    out.freeNewNoPop = !popOn();
+    popOff();
     NAV = [{ r: 'kb' }];
     KB = null;
     kbAdd('qwerty');
-    if (popOn()) popYes();
-    out.freeAddToPlans = here().r === 'plans';
-    out.freeAddWroteNothing = KB === null;
+    out.freeAddMade = kbStored().length === 1;
+    var fk = kbStored().length ? kbStored()[0] : null, fIds = 0, fChs = 0, fA = '';
+    if (fk) fk.lay.forEach(function (f){ f.rows.forEach(function (row){ row.forEach(function (k){
+      if (k.k !== 'lt') return;
+      [k.v].concat(k.f || []).forEach(function (v){
+        if (!v) return;
+        if (kbCh(v)) fChs++; else if (ltById(v)) fIds++;
+      });
+      if (kbCh(k.v) === 'a') fA = k.v;
+    }); }); });
+    out.freeAddIds = fIds; out.freeAddChs = fChs; out.freeAddA = fA;
+    /* a drawn letter pressed onto a key of it goes on, and asks nothing */
+    kbShow = 1; kbLay = 0;
+    var fr = 0, fi = 0;
+    while (fr < kbLayer().rows.length && kbLayer().rows[fr][fi].k !== 'lt') fr++;
+    var fWas = kbLayer().rows[fr][fi].v, fLt = LETTERS.filter(function (l){ return ltById(l.id) && l.id !== fWas; })[0];
+    kbLtTap(fr, fi, -1, fLt.id);
+    out.freeLtAsked = popOn();
+    out.freeLtOn = kbStored()[0].lay[0].rows[fr][fi].v === fLt.id;
+    popOff();
+    /* and a character typed goes on, and crosses to the phone as itself */
+    kbShow = 1; kbLay = 0;
+    kbChPut(fr, fi, -1, 'あ');
+    var fKey = kbStored()[0].lay[0].rows[fr][fi];
+    out.freeChOn = fKey.v === '=あ';
+    var fSh = shareKey(fKey);
+    out.freeChShare = !!fSh && fSh.t === 'あ' && fSh.k === 'lt' && !fSh.st;
+    kbChPut(fr, fi, -1, '');
+    out.freeChOff = kbStored()[0].lay[0].rows[fr][fi].v === '';
+    /* AND IT IS TYPED ON THE SHEET: the key selected, the box under the
+       tools, a character typed and the box left -- the way a finger does it,
+       through the one delegated listener. 「既存の文字はキーボードの編集画面
+       でキーを押してそのまま入れる」 OWNER 2026-09-25. The key's own page has
+       no box for the key; that page is for a drawn letter. */
+    kbShow = 1; kbLay = 0; KBH = null;
+    NAV = [{ r: 'kb', a: '1' }]; route = 'kb';
+    document.getElementById('app').innerHTML = vKb();
+    out.freeSheetNoBox = !document.querySelector('[data-ch="kbChPut"]');
+    KBH = { k: 'k', r: fr, i: fi };
+    document.getElementById('app').innerHTML = vKb();
+    var fBox = document.querySelector('#app [data-ch="kbChPut"]');
+    out.freeSheetBox = !!fBox;
+    if (fBox){ fBox.value = 'ç'; fBox.dispatchEvent(new Event('change', { bubbles: true })); }
+    out.freeSheetTyped = kbStored()[0].lay[0].rows[fr][fi].v === '=ç';
+    KBH = null;
+    var kpage = document.createElement('div'); kpage.innerHTML = kbKeyHTML(fr, fi);
+    out.freeKeyPageNoBox = !kpage.querySelector('[data-ch="kbChPut"]');
+    KB = null; kbShow = 0;
     popOff();
 
     /* ---- THE WAY INTO SETTINGS IS ON THE FIRST STEP AND ON THE THIRD -----
@@ -2175,14 +2227,14 @@ const r = await pg.evaluate(({ s }) => {
      happens AFTER the press: room left opens the patterns, the ceiling asks.
 
      The ceiling was asked one screen too late. kbNew() looked only at the
-     DOOR -- upStop(can('kb')) -- so Plus at four keyboards opened the five
+     DOOR -- whether this plan could build one at all -- so Plus at four keyboards opened the five
      patterns, let somebody choose one, and only then said no: a chooser for
      a thing that could not be made. Nothing threw and nothing was written,
-     which is why it sat there.
+     which is why it sat there. There is no ceiling on any plan now
+     (「キーボードはプランで分けない」 OWNER 2026-09-25).
 
      Built on Pro and then read on Plus, because kbAdd() is the only thing
-     that writes a board and the pool it fills is the person's rather than
-     the language's (kbCount()). */
+     that writes a board. */
   (function (){
     var wasPlan = plan(), wasKB = KB, wasShow = kbShow, wasNav = NAV,
         wasRoute = route;
@@ -2204,7 +2256,6 @@ const r = await pg.evaluate(({ s }) => {
     built(2);
     var a = list('plus');
     out.plusListRows = a.rows; out.plusBoards = a.boards;
-    out.plusCount = kbCount();
     out.plusFab = !!a.fab && a.fab.getAttribute('data-do') === 'kbNew';
     if (a.fab) a.fab.click();
     out.plusRoomAsked = popOn();
@@ -2242,6 +2293,10 @@ const r = await pg.evaluate(({ s }) => {
 
   fresh();
   planGot('free');
+  /* board 0 by name: the QWERTY every plan types on and the one that wears
+     the drawn letters on free. fresh() lands on a board it built, and on
+     free a built board wears characters (OWNER 2026-09-25). */
+  kbShow = 0; NAV = [{ r: 'kb', a: '0' }];
   var kl = LETTERS.filter(function(l){ return String(l.ab||'') === 'a'; })[0];
   out.midWays = [];
   [ ['straight',    [{pts:[[400,120],[400,680]]}]],
@@ -3642,30 +3697,51 @@ const SF = await sf.evaluate(({ s }) => {
     out.k3One = JSON.stringify(KB.kbs[0]) === one;
   }());
 
-  /* THE CEILING COUNTS WHAT THE SERVER SAID. Another language of this
-     account's with two keyboards in the PICTURE kept for a launch with no
-     signal, and nothing in memory: the picture is not counted. And with
-     nobody having said which languages this account has, there is no number
-     and the + says 「接続できません」 rather than a price (r63 K4). */
+
+  /* ---- THE FONT, OUT: the bytes LinguaFont.build made, and nothing else ----
+     「フォントの書き出しはそれでいいよ」 Plus, OWNER 2026-09-25. The bridge is
+     stood in for with one that answers at once, so what kbFontOut() handed
+     over can be read in the same turn: which plugin, which method, and the
+     bytes. The bytes are held against what LinguaFont.build RETURNED -- the
+     writer is wrapped rather than asked again, because a check that builds a
+     second font to compare with is a copy of the thing under test, and a copy
+     always agrees (CLAUDE.md rule 10). */
   (function (){
-    planGot('plus');
-    KB = { v: KB_V, at: 0, kbs: [] };
-    LANGS['l_pic'] = { nm: 'Pic', mine: true }; langOwnGot('l_pic', 'u');
-    try { localStorage.setItem(slGotKey(langKeyOf('l_pic', 'kb')), JSON.stringify(
-      { kbs: [{ id: 'kP_1', nm: 'A', pat: 'abc', lay: [] }, { id: 'kP_2', nm: 'B', pat: 'abc', lay: [] }], at: 0 })); } catch (e) {}
-    out.k4Pic = kbCount();
-    try { localStorage.removeItem(slGotKey(langKeyOf('l_pic', 'kb'))); } catch (e) {}
-    delete LANGS['l_pic'];
-    langMineForget();
-    out.k4Unasked = kbCount();
-    var said = '', was = window.toast;
-    window.toast = function (m){ said = m; };
-    out.k4Stop = kbCapStop();
-    window.toast = was;
-    out.k4Said = said === t('net.offline');
-    out.k4Pop = popOn();
-    langMineGot();
-    planGot('pro');
+    var realBuild = LinguaFont.build, built = [], calls = [], wasCap = window.Capacitor;
+    LinguaFont.build = function (){ var f = realBuild.apply(this, arguments); built.push(f); return f; };
+    function now(v){ return { then: function (f){ return now(f ? f(v) : v); },
+                              'catch': function (){ return now(v); } }; }
+    window.Capacitor = { nativePromise: function (pl, m, a){
+      calls.push([pl, m, a]);
+      return now(m === 'sheet' ? { file: 'Font.otf' } : { shown: true }); } };
+    try {
+      planGot('plus');
+      installScriptFont();
+      var fontOf = function (f){ return f && f.base64(); };
+      out.foBuilt = built.length > 0 && !!SFONT.b64 && fontOf(built[0]) === SFONT.b64;
+      calls.length = 0;
+      kbFontOut();
+      var sh = calls[0] || [], sf = calls[1] || [];
+      out.foSheet = sh[0] === 'LinguaShare' && sh[1] === 'sheet' && sh[2] && sh[2].ext === 'otf';
+      out.foSame = !!(sh[2] && sh[2].b64) && sh[2].b64 === fontOf(built[0]);
+      out.foShared = sf[0] === 'LinguaShare' && sf[1] === 'shareFile' && sf[2] && sf[2].file === 'Font.otf';
+      out.foName = sh[2] ? sh[2].name : '';
+      /* on free: the upgrade pop, and nothing crosses the bridge */
+      calls.length = 0; popOff();
+      planGot('free');
+      kbFontOut();
+      out.foFreePop = popOn();
+      out.foFreeNothing = calls.length === 0;
+      popOff();
+      /* nothing drawn is no font, and no file is handed over */
+      planGot('plus');
+      var wasB64 = SFONT.b64; SFONT.b64 = ''; calls.length = 0;
+      kbFontOut();
+      out.foNoneNothing = calls.length === 0;
+      SFONT.b64 = wasB64;
+    } finally {
+      LinguaFont.build = realBuild; window.Capacitor = wasCap; popOff(); planGot('pro');
+    }
   }());
 
   /* WITH NO ANSWER ABOUT THE PLAN, NOTHING LEAVES FOR THE PHONE'S KEYBOARD.
@@ -4360,7 +4436,7 @@ say(r.ltpSqOpened && r.ltpSqSheet && r.ltpSqPut,
 /* ---- the free plan's one keyboard: no editor, and it must be SEEN -------
    「無料のキーボードはqwartyに書いた文字が置き換わるだけなのにキーボード自体
    消えてる」 OWNER 2026-09-01, build #106 */
-say(r.freeNoEditor, 'the free plan has no keyboard editor');
+say(r.freeNoEditor, 'board 0, the QWERTY the free plan types on, has no editor');
 say(r.freeRows === 5 && r.freeKeys === 43,
     'and it has a keyboard all the same -- the QWERTY, drawn (' +
     r.freeRows + ' rows, ' + r.freeKeys + ' keys)');
@@ -4373,11 +4449,22 @@ say(r.freeBareRows > 0 && r.freeBareRows === r.freeRows &&
     + ' missing leaves its key wearing the roman character rather than taking'
     + ' the key away with it');
 say(r.freeNoUpsell, 'and no Upgrade stands under it -- the keyboard there is not for sale');
-say(r.freeNewToPlans,
-    'the upgrade is offered where a keyboard is ADDED: the door goes to the plans screen');
-say(r.freeAddToPlans && r.freeAddWroteNothing,
-    'and so does the act that writes one, which writes nothing on the way ['
-    + [r.freeAddToPlans, r.freeAddWroteNothing].join(' ') + ']');
+say(r.freeNewNoPop && r.freeAddMade,
+    'anybody may build a keyboard: the free + asks nothing and the pattern is made ['
+    + [r.freeNewNoPop, r.freeAddMade].join(' ') + ']');
+say(r.freeAddIds > 0 && r.freeAddChs === 0,
+    'and on the free plan it wears the language\'s own letters, as on every plan ('
+    + r.freeAddIds + ' letters, ' + r.freeAddChs + ' characters)');
+say(!r.freeLtAsked && r.freeLtOn,
+    'a drawn letter pressed onto a key of it goes on, and nothing asks about a plan ['
+    + [r.freeLtAsked, r.freeLtOn].join(' ') + ']');
+say(r.freeSheetNoBox && r.freeSheetBox && r.freeSheetTyped && r.freeKeyPageNoBox,
+    'a character is typed on the sheet: the box is there while a key is selected, what is typed goes onto it, '
+    + 'and the key\'s own page has no box for it [' +
+    [r.freeSheetNoBox, r.freeSheetBox, r.freeSheetTyped, r.freeKeyPageNoBox].join(' ') + ']');
+say(r.freeChOn && r.freeChShare && r.freeChOff,
+    'a character typed goes onto the key, crosses to the phone as itself, and an empty box takes it off ['
+    + [r.freeChOn, r.freeChShare, r.freeChOff].join(' ') + ']');
 
 /* ---- and the chapter is a LIST on the free plan too ---------------------
    「キーボードの画面無料だと何で1個なの？一覧が並ばないの？無料も有料も同じ
@@ -4412,13 +4499,13 @@ say(r.freeFab && r.freeFabRight >= 0 && r.freeFabRight <= 40 &&
     r.freeFabBottom >= 0,
     'and it is at the bottom right (' + r.freeFabRight + 'px from the right, '
     + r.freeFabBottom + 'px up from the bottom)');
-say(r.freeFabPressed && r.freeFabAsked && r.freeFabToPlans,
-    'pressing it asks -- the ceiling is 1 and board 0 is already there -- and'
-    + ' the yes is the plans screen [' +
-    [r.freeFabPressed, r.freeFabAsked, r.freeFabToPlans].join(' ') + ']');
+say(r.freeFabPressed && !r.freeFabAsked && r.freeFabToPats,
+    'pressing it asks nothing -- anybody may build a keyboard -- and opens the'
+    + ' five patterns [' +
+    [r.freeFabPressed, r.freeFabAsked, r.freeFabToPats].join(' ') + ']');
 say(r.freeFabWroteNothing && r.freeBoardsStillOne,
-    'AND THE LANGUAGE STILL HOLDS ONE BOARD -- the pop is what the screen'
-    + ' says, not what KB has [' +
+    'AND THE LANGUAGE STILL HOLDS ONE BOARD -- opening the patterns is not'
+    + ' choosing one [' +
     [r.freeFabWroteNothing, r.freeBoardsStillOne].join(' ') + ']');
 
 /* ---- the paid list is the same list, and the + is the same + -------------
@@ -4426,7 +4513,7 @@ say(r.freeFabWroteNothing && r.freeBoardsStillOne,
    what happens AFTER the press, and nothing else. */
 say(r.plusListRows === r.plusBoards && r.plusListRows === 3,
     'Plus with two built draws three rows and no frames (' + r.plusListRows +
-    ' rows, ' + r.plusBoards + ' boards, ' + r.plusCount + ' in the pool)');
+    ' rows, ' + r.plusBoards + ' boards)');
 say(r.plusFab && r.plusRoomOpens && !r.plusRoomAsked,
     'and with room left the + opens the patterns rather than asking ['
     + [r.plusFab, r.plusRoomOpens, r.plusRoomAsked].join(' ') + ']');
@@ -4765,12 +4852,14 @@ say(dupTwo.onServer <= dupOne.onServer && dupThree.onServer <= dupTwo.onServer,
 say(SF.shareUnasked === 0,
     'with nobody having said what plan this is, a render hands the phone’s keyboard '
     + 'nothing — the board already there stays (' + SF.shareUnasked + ' writes)');
-say(SF.k4Pic === 0,
-    'the keyboard ceiling counts what came down from the server, not the picture kept for '
-    + 'a launch with no signal (' + SF.k4Pic + ' counted from a picture of two)');
-say(SF.k4Unasked === null && SF.k4Stop && SF.k4Said && !SF.k4Pop,
-    'and with nobody having said which languages this account has, there is no number: the '
-    + '+ says 接続できません and offers no price (' + SF.k4Unasked + ')');
+say(SF.foBuilt && SF.foSheet && SF.foSame,
+    'the font goes out as an .otf, byte for byte what LinguaFont.build made [' +
+    [SF.foBuilt, SF.foSheet, SF.foSame].join(' ') + ']');
+say(SF.foShared, 'and the file it wrote is the one handed to the share sheet (' + SF.foName + ')');
+say(SF.foFreePop && SF.foFreeNothing,
+    'on free the press is the upgrade pop, and nothing crosses the bridge [' +
+    [SF.foFreePop, SF.foFreeNothing].join(' ') + ']');
+say(SF.foNoneNothing, 'and with nothing drawn there is no file to hand over');
 say(SF.k3One,
     'a save repairs the board being saved and no other — a lone tall key on board 1 is '
     + 'left exactly as it is when board 2 is changed (board 2 rows ' + SF.k3Two + ')');
