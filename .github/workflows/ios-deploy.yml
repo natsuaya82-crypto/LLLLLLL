@@ -71,22 +71,6 @@ jobs:
           sed -i '' "s/__APPLE_TEAM_ID__/${APPLE_TEAM_ID}/g" ios/App/App.xcodeproj/project.pbxproj || \
           sed -i "s/__APPLE_TEAM_ID__/${APPLE_TEAM_ID}/g" ios/App/App.xcodeproj/project.pbxproj
 
-      # AdMob のアプリ ID と広告ユニット ID を Secret から Info.plist へ
-      # （__ADMOB_APP_ID__ と __ADMOB_NATIVE_UNIT__）。Secret が無い間は Google の
-      # テスト用 ID を入れる ── プレースホルダのまま出すと、アプリは起動した瞬間に
-      # SDK が落とし、ビルド 86 と同じく Apple にも断られる。docs/apple.md § 9。
-      - name: Inject AdMob IDs
-        env:
-          ADMOB_APP_ID: ${{ secrets.ADMOB_APP_ID }}
-          ADMOB_NATIVE_UNIT: ${{ secrets.ADMOB_NATIVE_UNIT }}
-        run: |
-          APP="${ADMOB_APP_ID:-ca-app-pub-3940256099942544~1458002511}"
-          UNIT="${ADMOB_NATIVE_UNIT:-ca-app-pub-3940256099942544/3986624511}"
-          P=ios/App/App/Info.plist
-          sed -i '' "s#__ADMOB_APP_ID__#${APP}#g; s#__ADMOB_NATIVE_UNIT__#${UNIT}#g" "$P" || \
-          sed -i "s#__ADMOB_APP_ID__#${APP}#g; s#__ADMOB_NATIVE_UNIT__#${UNIT}#g" "$P"
-          if grep -q '__ADMOB_' "$P"; then echo "AdMob の ID が入っていません"; exit 1; fi
-
       - name: Install Apple Distribution Certificate
         uses: apple-actions/import-codesign-certs@v3
         with:
