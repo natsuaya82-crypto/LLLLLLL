@@ -2800,6 +2800,11 @@ var CAN={
      free」 (docs/FEATURES.md § 4, 2026-08-19). How many is dlCap() above, and
      the two landed together -- see the comment there for why. */
   dl:      'plus',
+  /* The font file of the letters somebody drew, out of the app through the
+     share sheet. 「フォントの書き出しはそれでいいよ」 OWNER 2026-09-25, Plus --
+     down from Pro (2026-09-24), where it had not been built. kbFontOut() in
+     www/keyboard.js is the one place it is asked. */
+  font:    'plus',
   snd:     'plus',   /* choosing a sound, rather than taking the letter's own */
   /* Editing a post you have already sent. 「ツイートの編集も課金から」
      「課金からはベーシックからってことね プラスならプラスっていうから」

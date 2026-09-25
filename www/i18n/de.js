@@ -185,6 +185,8 @@ defLang('de', (function(){
       "kb.sys.no" : "Einstellungen ließen sich nicht öffnen",
       "kb.rom"               : "Ein Buchstabe auf jeder Taste",
       "kb.ch" : "Zeichen eingeben",
+      "kb.font" : "Schrift exportieren",
+      "kb.font.none" : "Noch nichts gezeichnet",
       "kb.reset"               : "Neu anfangen",
       "kb.pat.set" : "Anordnung",
       "kb.pat.q" : "Die Anordnung zu ändern löscht die auf dieser Tastatur eingerichteten Zeichen und Tasten.",

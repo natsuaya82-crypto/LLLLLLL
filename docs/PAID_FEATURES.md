@@ -248,6 +248,7 @@ Plus < Pro` needs nobody told which is which.
 | `snd` choose the sound, not the letter's own | — | yes | yes |
 | keyboards you build, out of any character | no ceiling | no ceiling | no ceiling |
 | `kb` a letter you drew, on a keyboard you built | — | yes | yes |
+| `font` the font file of the letters you drew | — | **yes** | yes |
 | `dl` a chapter of somebody else's language | — | **yes** | yes |
 | `edit` editing a post you have sent | — | **yes** | yes |
 | words | 100 | 1000 | no ceiling — `words` |
@@ -255,7 +256,7 @@ Plus < Pro` needs nobody told which is which.
 | how many DL'd languages | **0** | **1** | **3** |
 | `gram` `dir` `data` `file` `badge` | — | — | yes |
 
-Seven of those eleven rows are a DOOR, which is a name in `CAN`, and four are a
+Eight of those twelve rows are a DOOR, which is a name in `CAN`, and four are a
 NUMBER, which is a function beside `wordCap()`. The four numbers are the ones
 this file has had wrong most often, so they are written once, machine-read,
 in § The four numbers below.
@@ -291,6 +292,11 @@ which lays the letters' NAMES as characters on free). The fixed QWERTY wears the
 drawn letters on every plan, because it is what the free plan is, and a key
 that already holds a drawn letter keeps it whatever the plan becomes — the
 refusal is on the press.
+
+**`font` is Plus's** — 「フォントの書き出しはそれでいいよ」 OWNER 2026-09-25,
+down from Pro (2026-09-24), where it had not been built. The share mark on the
+keyboard list hands the font of the drawn letters (`SFONT.b64`, the bytes
+`LinguaFont.build` made) to iOS's share sheet as an `.otf` — `kbFontOut()`.
 
 **`dl` is Plus's, and its numbers are the owner's of 2026-09-02.**
 
@@ -448,6 +454,7 @@ a `can()` given anything but a literal, and a `has()` anywhere else.
 | `letters` | plus | adding, naming and deleting a letter |
 | `wsys` | plus | a writing system that is not an alphabet |
 | `kb` | plus | a letter you drew, on a key of a keyboard you built. Building one is every plan's |
+| `font` | plus | the font file of the letters you drew, through the share sheet |
 | `dl` | plus | taking a chapter of somebody else's language. How many is `dlCap()` |
 | `snd` | plus | choosing a sound, rather than taking the letter's own |
 | `edit` | plus | editing a post you have already sent |
@@ -597,8 +604,8 @@ behind it, and what it opened went with it.
 ```
   free    draw your own letters. 100 words. One language. Keyboards of
           any characters
-  plus    build it yourself. 1000 words. Your letters on your keyboards.
-          One download
+  plus    build it yourself. 1000 words. Your letters on your keyboards,
+          and their font. One download
   pro     no ceiling on the words. Three languages,
           three downloads, the grammar, the direction, the file roads
 ```

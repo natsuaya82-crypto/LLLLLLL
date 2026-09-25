@@ -205,6 +205,8 @@ defLang('zh', (function(){
       "kb.sys.no" : "设置打不开",
       "kb.rom"               : "每个键上显示字母",
       "kb.ch" : "输入字符",
+      "kb.font" : "导出字体",
+      "kb.font.none" : "还没有画任何字",
       "kb.reset"               : "重新开始",
       "kb.pat.set" : "排列",
       "kb.pat.q" : "更改排列会删除在当前键盘上设置的文字和按键。",

@@ -197,6 +197,8 @@ defLang('it', (function(){
       "kb.sys.no" : "Impossibile aprire Impostazioni",
       "kb.rom"               : "Una lettera su ogni tasto",
       "kb.ch" : "Digita un carattere",
+      "kb.font" : "Esporta il font",
+      "kb.font.none" : "Ancora niente di disegnato",
       "kb.reset"               : "Ricomincia",
       "kb.pat.set" : "Disposizione",
       "kb.pat.q" : "Cambiare la disposizione elimina le lettere e i tasti impostati su questa tastiera.",

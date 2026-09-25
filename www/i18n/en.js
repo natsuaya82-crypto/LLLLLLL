@@ -99,6 +99,8 @@ defLang('en', (function(){
       "kb.sys.no" : "Settings would not open",
       "kb.rom"               : "A letter on each key",
       "kb.ch" : "Type a character",
+      "kb.font" : "Export the font",
+      "kb.font.none" : "Nothing is drawn yet",
       "kb.reset"               : "Start over",
       'kb.pat.set' : "Arrangement",
       'kb.pat.q' : "Changing the arrangement deletes the letters and keys set on this keyboard.",

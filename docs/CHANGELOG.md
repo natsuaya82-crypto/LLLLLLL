@@ -15,6 +15,18 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### 2026-09-25 フォントの書き出し ── 描いた字の .otf を iPhone の共有画面から（Plus、r95-kbfont）
+
+OWNER 2026-09-25「フォントの書き出しはそれでいいよ」（Pro から Plus へ。まだ作られていなかった）。**実機未確認。**
+
+- キーボードの一覧のバーの右上に共有の印。押すと、描いた字のフォント（アプリ自身が着ている `LinguaScript`、
+  `LinguaFont.build` が作ったバイトそのまま）が `<言語の名前>.otf` として iOS の共有画面に出る（ファイルに保存・AirDrop・メール）。
+- 無料で押すと「アップグレード」のポップ、はいでプランの画面。一字も描いていなければ「描いた字がありません」。
+- `CAN` に `font`（plus）。新しい Swift は無い ── カードと用紙が通る `LinguaShare` の `sheet`（拡張子 `otf`）と
+  `shareFile` をそのまま使う。
+- **保存する物**: 端末の一時フォルダ（`tmp/Sheets`）に `.otf` を一つ書く。カードの PNG・用紙の PDF と同じ置き場で、
+  片付けるのは iOS（アプリは消さない）。アカウントの物・サーバーの物は何も動かない。
+
 ### 2026-09-25 キーボードは誰でも作れる ── どの文字でも。描いた字を置くのは Plus（r95-kbfont）
 
 OWNER 2026-09-25（`docs/FEATURE_RULES.md` 2026-09-25 キーボードは誰でも作れる）。**実機未確認。**

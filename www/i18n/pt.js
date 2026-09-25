@@ -204,6 +204,8 @@ defLang('pt', (function(){
       "kb.sys.no" : "Não foi possível abrir os Ajustes",
       "kb.rom"               : "Uma letra em cada tecla",
       "kb.ch" : "Digite um caractere",
+      "kb.font" : "Exportar a fonte",
+      "kb.font.none" : "Nada foi desenhado ainda",
       "kb.reset"               : "Recomeçar",
       "kb.pat.set" : "Disposição",
       "kb.pat.q" : "Mudar a disposição apaga as letras e teclas definidas neste teclado.",

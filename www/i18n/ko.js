@@ -376,6 +376,8 @@ defLang('ko', (function(){
       "kb.sys.no" : "설정을 열 수 없습니다",
       "kb.rom"               : "각 키에 글자 표시",
       "kb.ch" : "문자 입력",
+      "kb.font" : "폰트 내보내기",
+      "kb.font.none" : "아직 그린 글자가 없습니다",
       "kb.reset"               : "처음부터 다시",
       "kb.pat.set" : "배열",
       "kb.pat.q" : "배열을 바꾸면 현재 키보드에 설정한 문자와 키가 삭제됩니다.",

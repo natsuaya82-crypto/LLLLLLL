@@ -245,6 +245,8 @@ defLang('fr', (function(){
       "kb.sys.no" : "Impossible d’ouvrir les Réglages",
       "kb.rom"               : "Une lettre sur chaque touche",
       "kb.ch" : "Saisir un caractère",
+      "kb.font" : "Exporter la police",
+      "kb.font.none" : "Rien n’est encore dessiné",
       "kb.reset"               : "Recommencer",
       "kb.pat.set" : "Disposition",
       "kb.pat.q" : "Changer la disposition supprime les lettres et les touches définies sur ce clavier.",

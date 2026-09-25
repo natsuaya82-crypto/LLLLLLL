@@ -3710,6 +3710,52 @@ const SF = await sf.evaluate(({ s }) => {
     planGot('pro');
   }());
 
+  /* ---- THE FONT, OUT: the bytes LinguaFont.build made, and nothing else ----
+     「フォントの書き出しはそれでいいよ」 Plus, OWNER 2026-09-25. The bridge is
+     stood in for with one that answers at once, so what kbFontOut() handed
+     over can be read in the same turn: which plugin, which method, and the
+     bytes. The bytes are held against what LinguaFont.build RETURNED -- the
+     writer is wrapped rather than asked again, because a check that builds a
+     second font to compare with is a copy of the thing under test, and a copy
+     always agrees (CLAUDE.md rule 10). */
+  (function (){
+    var realBuild = LinguaFont.build, built = [], calls = [], wasCap = window.Capacitor;
+    LinguaFont.build = function (){ var f = realBuild.apply(this, arguments); built.push(f); return f; };
+    function now(v){ return { then: function (f){ return now(f ? f(v) : v); },
+                              'catch': function (){ return now(v); } }; }
+    window.Capacitor = { nativePromise: function (pl, m, a){
+      calls.push([pl, m, a]);
+      return now(m === 'sheet' ? { file: 'Font.otf' } : { shown: true }); } };
+    try {
+      planGot('plus');
+      installScriptFont();
+      var fontOf = function (f){ return f && f.base64(); };
+      out.foBuilt = built.length > 0 && !!SFONT.b64 && fontOf(built[0]) === SFONT.b64;
+      calls.length = 0;
+      kbFontOut();
+      var sh = calls[0] || [], sf = calls[1] || [];
+      out.foSheet = sh[0] === 'LinguaShare' && sh[1] === 'sheet' && sh[2] && sh[2].ext === 'otf';
+      out.foSame = !!(sh[2] && sh[2].b64) && sh[2].b64 === fontOf(built[0]);
+      out.foShared = sf[0] === 'LinguaShare' && sf[1] === 'shareFile' && sf[2] && sf[2].file === 'Font.otf';
+      out.foName = sh[2] ? sh[2].name : '';
+      /* on free: the upgrade pop, and nothing crosses the bridge */
+      calls.length = 0; popOff();
+      planGot('free');
+      kbFontOut();
+      out.foFreePop = popOn();
+      out.foFreeNothing = calls.length === 0;
+      popOff();
+      /* nothing drawn is no font, and no file is handed over */
+      planGot('plus');
+      var wasB64 = SFONT.b64; SFONT.b64 = ''; calls.length = 0;
+      kbFontOut();
+      out.foNoneNothing = calls.length === 0;
+      SFONT.b64 = wasB64;
+    } finally {
+      LinguaFont.build = realBuild; window.Capacitor = wasCap; popOff(); planGot('pro');
+    }
+  }());
+
   /* WITH NO ANSWER ABOUT THE PLAN, NOTHING LEAVES FOR THE PHONE'S KEYBOARD.
      A Pro board handed over, then the plan forgotten the way a launch with no
      signal has it, then a render: the bridge is asked for nothing, so what
@@ -4817,6 +4863,14 @@ say(SF.shareUnasked === 0,
 say(SF.k4Pic === 0,
     'the keyboard ceiling counts what came down from the server, not the picture kept for '
     + 'a launch with no signal (' + SF.k4Pic + ' counted from a picture of two)');
+say(SF.foBuilt && SF.foSheet && SF.foSame,
+    'the font goes out as an .otf, byte for byte what LinguaFont.build made [' +
+    [SF.foBuilt, SF.foSheet, SF.foSame].join(' ') + ']');
+say(SF.foShared, 'and the file it wrote is the one handed to the share sheet (' + SF.foName + ')');
+say(SF.foFreePop && SF.foFreeNothing,
+    'on free the press is the upgrade pop, and nothing crosses the bridge [' +
+    [SF.foFreePop, SF.foFreeNothing].join(' ') + ']');
+say(SF.foNoneNothing, 'and with nothing drawn there is no file to hand over');
 say(SF.k4Unasked === null && SF.k4Stop && SF.k4Said && !SF.k4Pop,
     'and with nobody having said which languages this account has, there is no number: the '
     + '+ says 接続できません and offers no price (' + SF.k4Unasked + ')');

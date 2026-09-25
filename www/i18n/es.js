@@ -157,6 +157,8 @@ defLang('es', (function(){
       "kb.sys.no" : "No se pudieron abrir los Ajustes",
       "kb.rom"               : "Una letra en cada tecla",
       "kb.ch" : "Escribe un carácter",
+      "kb.font" : "Exportar la fuente",
+      "kb.font.none" : "Aún no hay nada dibujado",
       "kb.reset"               : "Empezar de nuevo",
       "kb.pat.set" : "Disposición",
       "kb.pat.q" : "Cambiar la disposición borra las letras y teclas configuradas en este teclado.",
