@@ -989,8 +989,9 @@ the reasoning — a reason can be re-derived, a decision cannot.
     **残し方は回数：部分（slice）ごとに直前 3 版**「回数じゃね」「3 で
     実装して」（2026-09-09）。日数ではない ── 人が増えても一人あたりの上限が
     変わらないから。管理画面（7 回タップ、@lingua）に、handle で探す → その
-    人の言語 → 部分ごとの版（最大 3、日時）→ 戻す。戻すと、それまでの「今」
-    も版の一つになる。`docs/RECOVERY.md` 案A の形。**SQL の流し直しあり。**
+    人の言語 → **言語の版（3 つ前まで、日時）→ 言語まるごと戻す**（「言語を前に
+    戻す →『3つ前、まるごと』」2026-09-24。部分ごとに戻す形はこれで書き直した）。
+    戻すと、それまでの「今」も版の一つになる。`docs/RECOVERY.md` 案A の形。**SQL の流し直しあり。**
     合わせて「$25 で何人持つか」を測った数字で出す（`claude/r10-measure`）。
 - Affected features: ♡、古い言語、管理画面
 - Affected data: ♡は保存されるものが増えない（画面の一時状態だけ）。復旧は
@@ -1799,7 +1800,8 @@ the reasoning — a reason can be re-derived, a decision cannot.
   消さない、書き換えない、足すだけ。そうすると「どっちが勝つか」は番号で
   決まり、「戻す」は「◯番に戻す」だけになり、壊れたものが上書きする事故が
   構造的に起きなくなります。**オーナーが既に決めた二つ ──「人が作ったものに
-  期限は無い」「後から変えたほうが残る」── を両方満たす形がこれです。**
+  期限は無い」（2026-09-24 に「3 つ前まで」で差し替え）「後から変えたほうが残る」
+  ── を両方満たす形がこれです。**
 
   **積むのはサーバーです。ファイルではありません。**ファイルはその iPhone と
   一緒に無くなり、運営側から見えず、全部の版を置くには小さすぎます。
@@ -1810,7 +1812,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
   土台がそれです。`supabase/setup.md` には**一言も書かれていません**（0 件）。
 - Affected features: 保存・同期・バックアップ・復元・運営側の復旧
 - Affected data: **増えます。**版が積まれる分。五千語の言語で保存一回 685 KB。
-  **その数字は「人が作ったものに期限は無い」の項目で承知のうえと決めています**
+  **残すのは 3 つ前まで**（「3つ前、まるごと」2026-09-24）
 - Affected docs: この項目、`docs/DATA_SAFETY.md`、`docs/RECOVERY.md`、
   `docs/EXPIRY.md`、`docs/ARCHITECTURE.md`、`supabase/setup.md`
 - Implementation status: **設計から。`claude/one` がコードを一行も変えずに
@@ -2086,29 +2088,8 @@ the reasoning — a reason can be re-derived, a decision cannot.
   ポップから「アップグレード」でプランへ行き、戻ってきたときに立っているのも、
   ポップを出したその画面である（`docs/DUPLICATES.md` 8番はこれで決まる）。
 
-### 人が作ったものに期限は無い。バグで消えた分はずっと戻せる
-- Date: 2026-09-04
-- Area: 保存されるもの全部。とくに復旧の履歴（`supabase/schema.sql`）
-- Decision:
-
-  ```
-  そもそもバグで消えるなら一生残るはずだよね？自分で消してるわけじゃないし
-  基本一生残るよな
-  2016年のTwitterアカウントいまろぐいんしてもみれる
-  ```
-
-- Reason: 自分で消したのでなければ、消える理由が無い。何年も前のものが
-  そのまま開けるのが当たり前で、この app もそうである。
-- Affected features: 復旧（`docs/RECOVERY.md` 案A）。スライスの前の版を残す表に、
-  **期限も掃除の仕組みも作らない。**
-- Affected data: `slice` の前の版。増える一方になる。一語足すたびにその時点の
-  単語ぜんぶが一行残るので、五千語の言語で一回 685 KB。数字は承知のうえ。
-- Affected docs: `docs/RECOVERY.md`、`docs/DATA_SAFETY.md`、`docs/STATE.md`
-- Implementation status: `claude/rec2` が実装中
-
-  **CLAUDE.md の「Data」が元から同じことを言っている** ── automatic deletion,
-  pruning and cleanup are forbidden unless a written spec asks for them。
-  この決定はそれを、期間を訊かれたその場で言い直したもの。
+### 【差し替え済み 2026-09-24】人が作ったものに期限は無い。バグで消えた分はずっと戻せる（2026-09-04）
+- 差し替えた決定: 「言語を前に戻す →『3つ前、まるごと』」（2026-09-24）── 戻せるのは 3 つ前まで
 
 ### 【差し替え済み 2026-09-04】無料でも有料と同じ数の枠が並ぶ。二つ目以降は押すとプランへ（2026-09-03）
 - 差し替えた決定: 「＋は右下。上限を越えて押したときにポップが出る。無料に空の枠は並べない」（2026-09-04）
