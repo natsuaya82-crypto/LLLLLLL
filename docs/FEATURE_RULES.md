@@ -302,7 +302,12 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Reason: オーナーの言葉。
 - Affected data: ブロック（schema.sql）、フォローの時刻、言語の版、スマホの声・用紙、2段キーのつなぎ（DELETE REVIEW は CHANGELOG）。
 - Affected docs: CLAUDE.md（起動で読む物・十の基準の 9 を直した）。この決定と食い違う古い項は、実装する session が消して書き直す。
-- Implementation status: 画面・タイムライン・キーボードの分は入った（r82・r83）。保存・版・取った言語・起動・購入・上限の文は r84。
+- Implementation status: 画面・タイムライン・キーボードの分は入った（r82・r83）。r84（`claude/r84-save`、CODE CONFIRMED のみ）:
+  **保存を押した時** ── 入った（`langWrites()`・`keepDrafting()`・`netSaveNow()`、`keep-check` 23）。
+  **取ってきた言語** ── 入った（`dl-check` が全部の画面を押す）。**開いた時に読む物** ── 測ると五つとも既に読んでいた、
+  `load-check` 1 が数える。**親が承認した購入** ── 入った（`Transaction.updates` → `linguastore`、`plan-check`、Swift は未ビルド）。
+  **上限の文** ── `up.need` 一つのまま、Plus のキーボードは無制限（`plan-check`・`kb-check`）。
+  **言語を前に戻す** ── **未**。測って止めた（戻す画面 `www/mod.js` が持ち物に無い）、形の案は `docs/scope/r84-save.md` § B。
 
 ### 2026-09-24 キーボードのプランとフォントの書き出し（r46 の申し送り）
 - Date: 2026-09-24

@@ -64,3 +64,34 @@ shots/ に。全ゲートは回さない（リーダー）。schema.sql を変�
 4. 番号の無い古い行（今までの版）は、時刻が一つずつ違うので一つずつ別の保存として並ぶ ── 消さない。
 
 **オーナーに訊くこと:** 無い（形は決定どおり）。**リーダーに:** `www/mod.js` を持たせるか、別の session に出すか。
+
+## 報告
+
+**CODE CONFIRMED のみ。**DEVICE・OWNER は無い。全ゲートは回していない（リーダー）。直した物はどれも、前の形に戻して
+検査が赤になるのを見た。
+
+| 項 | 何をした | 検査（赤を見た） | 写真 |
+|---|---|---|---|
+| A 保存を押したら | 1.2 秒の溜め（`netSaveUp`・`NET_UPMS`）を消し、送りは `netSaveNow()` 一本。書き手は全部 `langWrites()`、保存のある画面が道筋にある間は下書き（`keepDrafting()`）── 保存が書いて送り、いいえは開いた時の形（`langHold()`/`langHeldBack()`）。保存の無い画面は押しが保存（`bkTouch()`）。送っている最中の押しは待って送る（`NET_NEXT`） | keep-check 23（78 件）・22・C、again-check（最中の押し）。3 回 | 見た目は変わらない |
+| B 3 つ前・まるごと | **未。**測った（kind ごとに 3 版・kind ごとに戻す）。決定ログの「期限は無い」「部分ごとに戻す」を書き直した。画面 `www/mod.js` が持ち物外で止めた。形の案は上 § B | ── | ── |
+| C 取った言語は読むだけ | 全部の画面（41）の全部のボタン（165）を押して測った。字の無い音から字を作る一つ（`ltForUnit`）を閉じた。dl-check の「書き手が断る」は `localStorage` しか見ておらず盲目だった ── メモリも見る | dl-check 2 つ。2 回 | 見た目は変わらない |
+| D 開いた時に読む物 | 測ると五つとも既に読んでいた。load-check 1 が五つを訊く（前は「オーナーの物」として許していただけ）。CLAUDE.md・`PAGE_OPEN` の文 | load-check 1。1 回 | ── |
+| E 親の承認はすぐ | `Transaction.updates` が届いた物を取っておいた後にページへ `linguastore` を投げ、`store.js` が起動と同じ `storeSync()` | plan-check 2 つ（入れる前に赤）。**Swift は未ビルド** | ── |
+| F 上限の文 | Plus のキーボードを無制限（`PLUS_KB` を消した）、Plus のカードの行、Pro の同じ行を消した。上限のポップは `up.need` 一つ（2026-09-04「Pro を言う」は差し替え済み） | kb-check（前の 4 で赤）・plan-check・paid-check | shots/r84-F-plans-before/after.png（Plus のカードは横に隠れて写っていない） |
+
+### オーナーに訊くこと
+
+1. **保存のある画面からタブで出た時** ── 「戻る」なら「保存しますか？」と訊くが、タブで出ると訊かない。その時の下書きは
+   画面の大域に残り、次に別の画面で押した保存がその章を書く時に一緒に上がる。タブでも訊くか。
+2. **Pro で言語 3 つ・ダウンロード 3 つに達した時** ── 今は「この機能を使うにはアップグレードが必要です」（`up.need`）と
+   出る。Pro の上には段が無いので、その文は嘘になる。「他に合わせて」の「他」がこの文なら今のまま、違う文にするなら
+   その文を。
+
+### リーダーに
+
+- B は `www/mod.js`（と `tools/hist-check.mjs`、schema を変えるので `npm run rls`）を持たせてもらえれば書ける。
+- 持ち物の外を直した所（その変更が嘘にした文だけ）: `docs/PAID_FEATURES.md`（F）、`docs/ARCHITECTURE.md`・`DATA_MODEL.md`・
+  `DATA_SAFETY.md`・`FEATURES.md`・`STATE.md`（A・B・C の `netSaveUp` と「すぐ上がる」の文）。
+- `docs/STATE.md:1419` の `PLUS_KB=4` はリーダーの章なので触っていない（F で消えた名前）。
+- 全ゲートは回していない。回した検査: keep・again・kb・dl・plan・paid・load・gramlang・forms・slow・fill・quiet・import・
+  word・acct・state・draft・world・take・open・migrate・i18n と速い検査全部 ── 緑。press は回していない。
