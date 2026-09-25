@@ -1596,21 +1596,36 @@ async function till(page, fn, ms){
   try{ await page.waitForFunction(fn, null, { timeout: ms || 5000 }); return true; }
   catch(e){ return false; }
 }
+/* THE PHONE IS SEEDED ONCE, FROM OUT HERE, AND NOT BY A DOCUMENT ASKING
+   WHETHER IT IS THE FIRST. This was an init script that wrote the seed
+   `if (!localStorage.getItem('lingua.set'))` -- and an init script runs at the
+   top of every document, the reloads below included. Measured 2026-09-25
+   (docs/scope/r90-plan.md): Chromium, on a reloaded file:// page, answers that
+   read EMPTY 23 to 35 times in 300 with the keys still there, idle or loaded.
+   The seed then went in again over the phone the check had just changed --
+   `__off` back on, the hour-old token back -- so the launch after the tunnel
+   was a second tunnel and never asked. That was the red of the whole gate.
+
+   So the storage is written from a file:// page that is not the app (the
+   tools directory's listing: same origin, nothing runs), and the app is
+   arrived at after it. Nothing reads storage to decide whether to write it,
+   and a reload finds the phone exactly as the last document left it. */
 async function boot(page, seed){
   await page.addInitScript(BOOTWIRE);
   await page.addInitScript((s) => {
     window.__plan = s.had;
     window.__planok = 1;
-    if (!localStorage.getItem('lingua.set')) {
-      localStorage.setItem('lingua.set', JSON.stringify(
-        { plan:s.had, planWas:s.was, planV:2, done:true }));
-      localStorage.setItem('lingua.sess', JSON.stringify(
-        { at:'OLD', rt:'r', uid:'me', anon:false }));
-      localStorage.setItem('__srv', s.srv);
-      if (s.sw) localStorage.setItem('__sw', s.sw);
-      if (s.ss) localStorage.setItem('__ss', '1');
-      if (s.off) localStorage.setItem('__off', '1');
-    }
+  }, seed);
+  await page.goto('file://' + dir + '/');
+  await page.evaluate((s) => {
+    localStorage.setItem('lingua.set', JSON.stringify(
+      { plan:s.had, planWas:s.was, planV:2, done:true }));
+    localStorage.setItem('lingua.sess', JSON.stringify(
+      { at:'OLD', rt:'r', uid:'me', anon:false }));
+    localStorage.setItem('__srv', s.srv);
+    if (s.sw) localStorage.setItem('__sw', s.sw);
+    if (s.ss) localStorage.setItem('__ss', '1');
+    if (s.off) localStorage.setItem('__off', '1');
   }, seed);
   await page.goto('file://' + path.join(dir, '..', 'www', 'index.html'));
   await page.waitForFunction(() => typeof window.plan === 'function');
