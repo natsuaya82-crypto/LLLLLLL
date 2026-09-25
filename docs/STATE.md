@@ -36,8 +36,9 @@ un-re-read.
 
 - `claude/r79-acct` ── 端末に書く物は書く時にアカウントの鍵（`lingua.<名>.<uid>`、`acctPut()`）。持ち主の無い
   古い写しは誰の物にもしない（読まない、消さない）。キーボードの面は保存を押すまで下書き（K1）。
-- `claude/r80-block` ── ブロックした相手の物はサーバーが `block_hides()` 一つで外す（`supabase/schema.sql`）。
-  **Supabase で schema.sql を流すまで電話では効かない。**
+- `claude/r80-block`・`claude/r85-block` ── ブロックした相手の物はサーバーが `block_hides()` 一つで外す
+  （両向き、公開言語も、書く側でもいいね・リポスト・返信・フォローを断る）。ミュートは `mute` 表と
+  `mute_hides()`、設定の「非表示リスト」。**Supabase で schema.sql を流すまで電話では効かない。**
 - `claude/r78-sides` ── 読む側は投稿に載っている物だけで描き、何も書かない。Lingua キーボードの字は欄の外へ
   出ない（`puaTyped()`・`actVal()`、`pua-check`）。キーの画面の「確定」を消した（OWNER 2026-09-24「いらないなら
   保存だけでいいよ」）── 押した字がそのキーに入る。
@@ -375,7 +376,7 @@ verify-plan の答えをメモリに一つ（`PLAN`／`planGot()`／`planForget(
 CHANGELOG 2026-09-11）、「まだ訊けていない」は無料ではない三つ目の状態
 （`planKnown()`、押せば「接続できません」、`ltStart()` は書かない、`wsys()` は
 列で答える）、誰の言語かは `langWhose()` 一箇所、language の行を写しから作らない、
-入り直しは profile の行、名前と @ は profile の行、ブロックは `block` 表一本
+入り直しは profile の行、名前と @ は profile の行、ブロックは `block` 表・ミュートは `mute` 表
 （`ME.bl` は読まない）、起動ごとの `langFirst()` を消した、名詞の章の三行目。
 **入っていない**：写しがグローバルの階で上りの道に乗る件（r31 が測っただけ、
 `docs/scope/r31-server.md` § リーダーへ）。オーナーの決めごと三つ（「プランが
@@ -997,9 +998,11 @@ Pushing to `master` is the owner's call and is asked for each time.
 grep -n "rest/v1" www/net.js          # what the app actually asks the server for
 ```
 
-Today that is `profile`, `post`, `react`, `follow`, `block`, `report`,
-`draft`, `saved_search`, `recent_search`, `post_seen`, `profile_seen`,
-`language_seen`, `prompt`, `language`, `slice`, `plan` and the RPCs. `netPush()` sends a post — its photographs and its voice with it, through
+Run it rather than trusting a list here; on 2026-09-25 it named `profile`, `post`,
+`react`, `report`, `draft`, `saved_search`, `recent_search`, `post_seen`,
+`profile_seen`, `follow_seen`, `block_seen`, `mute_seen`, `language_seen`,
+`language_take`, `prompt`, `language`, `slice`, `plan`, `device`, `feedback`,
+`promo` and the RPCs. `netPush()` sends a post — its photographs and its voice with it, through
 `netUpPics()` and `netUpVoice()` into the `post-media` bucket — `netFeed()`
 reads the two timelines, `netNotices()` reads the notices, `netDraftUp()` sends
 a draft, `netSaveNow()` sends a slice when Save is pressed, and `netLangSync()`
@@ -1224,12 +1227,16 @@ under `lingua.sess`.
    訊かない。書きかけはそのまま残り、次にどこかで保存を押した時に一緒に保存される。タブで出る時も訊くか。
 5. **Pro で上限（言語3つ・ダウンロード3つ）に達した時の文** ── 今は「この機能を使うにはアップグレードが必要です」と
    出るが、Pro より上のプランは無い。この文のままか、別の文にするか。
+6. **ブロックした相手から前に取った言語** ── ブロックの後も自分の言語の一覧に残って読める。外すか、残すか。
+7. **ミュートのマーク** ── 今は普通のスピーカーのマークを仮に使っている。斜線の入ったスピーカーにするか。
+8. **ミュートした人の、タイムライン以外** ── その人が書いた投稿はタイムラインから消えるが、その人が回した（リポストした）
+   他人の投稿と、その人からの通知（いいね・返信）は出る。これも消すか。
 
 ### 9月上旬から残っていて、今のコードで測り直してから訊くもの
-6. **消えるのを防ぐ「小さくなったら書かない」守り** ── 版が3つ前まで残るようになったら外してよいか。
-7. **一度も触っていない設定** ── 既定の値を「その人の答え」として書くか、空のままにするか。
-8. **★を50件より多く付けている人** ── 51件目より古い★が画面から消え、続きへ行く道が無い。
-9. **まれに起きる二つ** ── 検索の履歴が一つ消えることがある／同じ言語が一覧に二つ並ぶことがある。
+9. **消えるのを防ぐ「小さくなったら書かない」守り** ── 版が3つ前まで残るようになったら外してよいか。
+10. **一度も触っていない設定** ── 既定の値を「その人の答え」として書くか、空のままにするか。
+11. **★を50件より多く付けている人** ── 51件目より古い★が画面から消え、続きへ行く道が無い。
+12. **まれに起きる二つ** ── 検索の履歴が一つ消えることがある／同じ言語が一覧に二つ並ぶことがある。
 
 ## 4b. More than one session at a time
 
