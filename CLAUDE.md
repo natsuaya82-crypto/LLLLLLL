@@ -2017,10 +2017,13 @@ launch that topped one up would put back what somebody took away.
 
 That is not a restriction bolted onto the app; it is what makes the rest of the
 free plan possible. Because the letters are exactly a-z, `!` and `?`, and their
-names cannot change, the keyboard can be a **QWERTY with the drawn letters
+names cannot change, the first keyboard is a **QWERTY with the drawn letters
 substituted in** — `kbFixed()`, built from `LETTERS` every time it is shown,
-stored nowhere, with no editor and nothing to set.
-「キーボードもqwerty配列がそのまま自作文字に置き換わるだけ。なんの設定もできない」
+stored nowhere. **Keyboards are not divided by plan** (OWNER 2026-09-25,
+1.0.3): anybody may build more, and a key carries either a drawn letter of the
+language or any existing character. Free's drawn letters are the slots, so
+the slots are the only limit a free keyboard meets 「自作文字は作れる範囲が
+決まってるから、キーボードに縛りを入れなくても勝手にそうなる」.
 Rename one letter and the key it answers to is gone, which is why a slot's
 name does not change **on any plan** (decision log 2026-08-22) and
 `ltSetRoman()` refuses it rather than a screen merely hiding the field —
@@ -2061,7 +2064,7 @@ Four places say it, and they say four different things:
 | where | what it says |
 |---|---|
 | `ltStart` in `letters.js` | a FREE language is topped back up on every launch — the slots by name, a digit per value of the base by value. A paid one is not, and `ltSlotsFill()` beside it is what a language of any plan is made with |
-| `kbOf` in `keyboard.js` | free reads `kbFixed()` and never `KB` |
+| `kbOf` in `keyboard.js` | the first board is `kbFixed()`; the others are `KB`, on every plan (1.0.3) |
 | `wsys()` in `wsys.js` | free is an alphabet; there is nothing to guess |
 | the screens | the same screen on every plan 「全部一緒」 OWNER 2026-09-04: what free cannot do is there in the same shape, and pressing it goes to the plans. `docs/HIDEFREE.md` says where each screen stands |
 
