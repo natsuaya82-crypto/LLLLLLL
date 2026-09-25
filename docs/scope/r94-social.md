@@ -44,3 +44,23 @@ notices、react/follow の読みの view）、`supabase/functions/push-send/*`�
   （通知タブ）は `notices()` と `www/sns.js` で出る。
 - `tools/press.mjs`、`docs/STATE.md`、`CLAUDE.md`。
 - 引用の数を出すか・どこに出すか（決まっていない）。リポストの数に引用は入らない（別の表）。
+
+---
+
+# 報告（2026-09-25）
+
+## 何を、どのファイルで
+
+| コミット | 何 |
+|---|---|
+| `8887fa5c` | scope 宣言（この紙） |
+| `0cf523a3` | D（最初の形）: スレッドで開いた投稿の頭の時刻を詳しい日時に。**後で決定が変わった ── 下の D2** |
+| `d4421137` | C: `postBoost()` は取り消す時だけ `popAsk('post.unboost.q')`、送るのは `postBoostGo()`。フォローの押しは `meFollowPress()`（外す時だけ `me.unfollow.q`）、行いは `meFollow()` のまま ── ブロックが外すフォロー・オンボーディングの @lingua・［再接続］は訊かない。`act-map` の `meFollow` → `meFollowPress`。i18n 三つ×10 |
+| `ea3061cc` | リファクタ: `data-hold` は行いの表の名前を持ち、`holdStart()` が `actRun(ACT, el, 'data-hold')`（`data-a` も同じ要素の物）。プロフィールのタブは `holdLangs`（前と同じ行き先）。`act-check` が `hold` を押す名前として数える |
+| `f1f4b698` | サーバー A: `react_seen`（`follow_seen` の形: post・kind・created_at・actor_handle、`block_hides` 両向き・`mute_hides`・`post_blocks` で外す）。`rls-check` 五行 |
+| `658caf9d` | リファクタ: 人の一覧の一ページ（keyset）を `netPplPage()` に、`netFollowRows()` がそれを呼ぶ |
+| `8fdceacb` | A: 一覧の鍵をルートの引数に（`folList()`: `ing[:h]` `ers[:h]` に `like:<sid>` `boost:<sid>`）、`folPull(L, …)`・`folsAsk`・`folsGot`・`folMore` がそれを読む。`vReacts()` と `vFollows()` は `folPage()` 一つで描く。ルート `reacts`（`PAGES`・`route-map`・`pageReads` は `fols`・`MORE_ON`・`snsMore`・`pageName`）。`netReacters()`。ハート・リポストに `data-hold`（`postHoldLikes`・`postHoldBoosts`、sid があり数が 0 でない時だけ）。`folGot` は呼ぶ所が無くなって消した。i18n 四つ×10。fixture 三面 |
+| `8d8cf2c0` `54787183` | CHANGELOG（コードの前に）: `post.quote_of`、写しの `qt`・`qp`、下書きの `qt` |
+| `8ed7d0ae` | サーバー B: `post.quote_of uuid`（外部キー無し）＋索引、`post_make` が `post_blocks(quote_of)`、`grant insert` に列（update には無し）、`post_seen.quote_of`・`quoted`（今の元の投稿、消えた・非表示・凍結・非公開・ブロックは null）、`feed_hot`・`feed_fo` に同じ二列（`feed_fo` も名前で drop）、`notices()` に `quote` の枝。`rls-check` 十三行 |
+| `52a02005` | B: リポストの印 → `popAsk('', リポスト, 引用)`（sid の無い投稿は今まで通り）。`postQuote()` → 投稿画面、`PW.qt`。`netPush` が `quote_of`、`netBody` は `qt`・`qp` を運ばない、`netRow` が `quoted` → `qp`、`NET_POST_SEL` に二列、`postFresh` が `qp`。`postQuoteHTML()` 一つでタイムラインの行（押すと元の投稿）と投稿画面。下書きに `qt`。`openPost('new')` は `qt` も落とす。通知の `quote`（リポストの印、`notif.quote`）。`popAsk` は問いが空なら行を描かない。CSS `.pqt`（左の一本の線、枠・角丸なし）。i18n 四つ×10。fixture 三面 |
+| `12206b6c` | integ-0905 を取り込む |
