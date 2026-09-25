@@ -88,8 +88,13 @@ function postBlocked(p){ return !!(p && !p.mine && meBlocks(p.hd)); }
    their page still shows it (postKept), a post opened by its id still opens.
    The server leaves them out of every list it answers (`post_seen.muted`,
    www/net.js § NET_UNMUTED); this is the half it cannot reach, a post of
-   theirs this phone was already holding when the mute was pressed. */
-function postMuted(p){ return !!(p && !p.mine && meMutes(p.hd)); }
+   theirs this phone was already holding when the mute was pressed.
+
+   AND WHAT THEY PASSED ON, whoever wrote it -- your own included.
+   「その人がリポストした投稿も出さない」 OWNER 2026-09-25. feed_fo() leaves
+   those out on the server (mute_hides on the booster); `by` is the one who
+   passed a post on, and it is asked here by the same function. */
+function postMuted(p){ return !!p && ((!p.mine && meMutes(p.hd)) || meMutes(p.by)); }
 /* Somebody else's post that has been taken down is not a row in a timeline.
    It is kept -- a thread that had one in it has to be able to say so -- and
    postTomb() is what a thread draws for it. Your OWN stays where it is,
@@ -4382,7 +4387,7 @@ function postMenuHTML(p){
   var h=String(p.hd||'');
   if(!p.mine)
     return '<span class="pmenu" data-pm="1">'+
-      '<button class="pmi"' + DO('meMute', [h]) + '>'+ICON_SPK+
+      '<button class="pmi"' + DO('meMute', [h]) + '>'+(meMutes(h)? ICON_MUTE : ICON_SPK)+
         '<span>'+esc(t(meMutes(h)? 'post.unmute' : 'post.mute'))+'</span></button>'+
       '<button class="pmi"' + DO('meBlock', [h]) + '>'+ICON_BLOCK+
         '<span>'+esc(t(meBlocks(h)? 'post.unblock' : 'post.block'))+'</span></button>'+

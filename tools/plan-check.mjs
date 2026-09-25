@@ -905,18 +905,47 @@ const r = await pg.evaluate(({ s }) => {
   out.fourthKeptAll = threeIds.every(function(x){ return !!LANGS[x]; });
   out.fourthKeptBytes = same(bytesThree, bytes());
 
-  /* And on the plan that buys the most, where a price list answers nothing,
-     it says the sentence instead of moving anybody -- a toast rather than a
-     pop, because there is nothing to fly to. The sentence itself is the one
-     every ceiling says（「この機能を使用するにはアップグレードしてください」
-     OWNER 2026-09-06). */
+  /* And on the plan that buys the most, there is nothing to buy: the + is
+     not drawn at all 「追加自体できなくすればいい。＋があるところからプラスを
+     なくすだけ」 OWNER 2026-09-25 -- this used to ask for the upgrade line, and
+     that is what the decision took away. And a langNew() reached anyway (no
+     road draws one) makes nothing, moves nobody, and says nothing. */
   planGot('pro');
   go('langs');
-  toastClear();
+  out.topNoPlus = vLangs().indexOf('langNew') === -1;
+  toastClear(); popOff();
   langNew();
   out.topRefused = langCount() === 3;
-  out.topSaid = toastSays();
+  out.topSaid = toastSays() + (popOn() ? popSaid() : '');
+  popOff();
   out.topStayed = here().r === 'langs';
+  /* and with one of the three gone from the count, the + is back: it is the
+     ceiling that took it, not the plan */
+  var keepCount = langCount;
+  window.langCount = function(){ return 2; };
+  out.topPlusUnder = vLangs().indexOf('langNew') !== -1;
+  window.langCount = keepCount;
+
+  /* THE SAME FOR A DOWNLOAD: the ↓ on a chapter of a language not taken yet.
+     Pro at three taken draws no ↓ and dlStop() says nothing; Pro at two draws
+     it; Plus at its one draws it and the press asks the one upgrade line --
+     free and plus are not moved by this decision. */
+  var dlSec = { r:'kb', nm:'kb' };
+  var dlWas = langTook() === null ? null : LTAKE.slice();
+  langTookGot(['t1', 't2', 't3']);
+  out.dlTopNoArrow = wldGetRow(dlSec, 'l_fourth').indexOf('wldGet') === -1;
+  toastClear(); popOff();
+  out.dlTopStops = dlStop() === true;
+  out.dlTopSaid = toastSays() + (popOn() ? popSaid() : '');
+  popOff();
+  langTookGot(['t1', 't2']);
+  out.dlTopUnder = wldGetRow(dlSec, 'l_fourth').indexOf('wldGet') !== -1;
+  planGot('plus');
+  langTookGot(['t1']);
+  out.dlPlusArrow = wldGetRow(dlSec, 'l_fourth').indexOf('wldGet') !== -1;
+  out.dlPlusAsked = askPop(function(){ dlStop(); });
+  langTookGot(dlWas);
+  planGot('pro');
 
   /* ---- and on pro the three are ALL drawn, oldest first ----------------
      The other side of the same fold. A list that happened to be in the right
@@ -1935,9 +1964,18 @@ say(r.fourthKeptAll && r.fourthKeptBytes,
     'and being refused took none of the three away -- the same three ids, the same bytes');
 say(r.topRefused && r.topStayed,
     'on the plan that buys the most the fourth is refused without moving anybody');
-say(r.topSaid === r.upNeed,
-    'and it says the one upgrade line too -- every ceiling says the same sentence (' +
+say(r.topNoPlus && r.topPlusUnder,
+    '**pro で 3 本に達すると ＋ が無い**（OWNER 2026-09-25）── 2 本なら出る');
+say(r.topSaid === '',
+    'and a langNew() reached anyway says nothing -- no upgrade line on the top plan (' +
     (r.topSaid || 'nothing said') + ')');
+say(r.dlTopNoArrow && r.dlTopUnder,
+    '**pro で 3 つ取ると、取っていない言語の章に ↓ が無い** ── 2 つなら出る');
+say(r.dlTopStops && r.dlTopSaid === '',
+    'and dlStop() on the top plan full refuses and says nothing (' + (r.dlTopSaid || 'nothing said') + ')');
+say(r.dlPlusArrow && r.dlPlusAsked === r.upNeed,
+    'plus at its one download still draws the ↓ and the press asks the one upgrade line (' +
+    (r.dlPlusAsked || 'nothing') + ')');
 
 say(r.proShowsAll && r.proOldestFirst,
     '**pro なら古い順に 3 本** ── all three drawn, oldest first (at ' +
