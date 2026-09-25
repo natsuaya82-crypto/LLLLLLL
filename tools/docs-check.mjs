@@ -467,7 +467,7 @@ const NOT_OURS = [
   // the documents' own words for a state (CLAUDE.md § Five states)
   'IMPLEMENTED', 'SPEC', 'VERIFIED', 'CONNECT',
   // files that live outside this repository: in the App Group, on the web site
-  'keyboard.json', 'widget.json', 'terms.html', 'privacy.html', 'app-ads.txt',
+  'keyboard.json', 'widget.json', 'terms.html', 'privacy.html',
 ]
 const notOursSeen = new Set()
 const ENGLISH_CHECK = ['re-check'] // the verb, not a tool

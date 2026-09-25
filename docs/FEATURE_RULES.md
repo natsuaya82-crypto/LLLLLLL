@@ -258,7 +258,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Affected features: ホームのタイムライン、プラン（~~`CAN.noads`~~ が無くなる）
 - Affected data: 無し。サーバーの `promo` は消さない ── アプリが読まなくなるだけ（`docs/CHANGELOG.md` 2026-09-25）
 - Affected docs: `docs/CHANGELOG.md`、`docs/PAID_FEATURES.md`、`docs/apple.md`、`docs/scope/r93-noads.md`
-- Implementation status: r93-noads。`LinguaAds.swift`・Google-Mobile-Ads-SDK・Info.plist の AdMob と ATT の鍵・workflow の差し込みを消し、
+- Implementation status: r93-noads。~~`LinguaAds.swift`~~・Google-Mobile-Ads-SDK・Info.plist の AdMob と ATT の鍵・workflow の差し込みを消し、
   `www/` から広告の行と `promo` を読む所を外した。戻ったら `assets-check` が赤。
 
 ### 2026-09-25 タブで出る時の保存・Pro の上限・ブロックと取った言語・ミュートの広さと印
