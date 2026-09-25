@@ -160,21 +160,20 @@ var FORM_OPEN={};   /* what rebuilds it when you arrive by the back button */
    its bar of tabs, and let the keyboard carry its own header off the top of
    the phone -- while a comment two files away said otherwise.
 
-   AND IT SAYS WHICH SCREEN IT IS ONE OF. Two forms ask for it and they want
-   two different heights:
+   AND IT SAYS WHICH SCREEN IT IS ONE OF. Both are the whole of what the
+   phone shows -- which ends at the top of the keyboard, because the app
+   itself is made shorter by the keyboard (`keepStill()`,
+   MainViewController.swift) -- and they differ only at the foot:
 
-     true     the height the phone has with the KEYBOARD UP (`--vvmin`). The
-              composer, which has a bar and a row of pictures under the field
-              -- laid out to anything taller and they slide down the phone
-              every time the keyboard goes 「キーボードをおろしても位置は
-              動かない」.
-     'full'   the whole screen, keyboard or no keyboard 「キーボードかんがえ
-              ないでいいから。画面全部にしてほしい」 OWNER 2026-09-05. The
-              note, which has nothing under the body: a keyboard covers the
-              foot of it and covers nothing anybody was looking at.
+     true     the composer: a bar, the board that slides, and the row of
+              tools under it, which therefore sits on the keyboard
+              「投稿画面は揺れない」 2026-09-25.
+     'full'   the note, which has nothing under the body 「キーボードかんがえ
+              ないでいいから。画面全部にしてほしい」 OWNER 2026-09-05, so its
+              foot keeps the home bar's room and nothing else.
 
-   It is one word rather than a second flag because it is one question -- how
-   tall is this one screen -- and a form answers it once. */
+   It is one word rather than a second flag because it is one question -- what
+   stands at the foot of this one screen -- and a form answers it once. */
 function openForm(key, title, html, mount, right, fit){
   FORM={key:key, title:title, html:html, mount:mount||null, right:right||'',
         fit:fit? (fit==='full'? 'full' : true) : false};
