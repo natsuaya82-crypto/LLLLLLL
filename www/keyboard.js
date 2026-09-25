@@ -2816,10 +2816,7 @@ function vKb(){
               : '')+
            navDo(t('kb.sel.done'), 'kbSelOff', null, true))
         : ((kbBoards().length<2 || langLocked())? ''
-            : navDo(t('kb.sel'), 'kbSelOn', null, true))+
-          /* THE FONT, OUT: the share mark, in the corner a share stands in
-             (「共有も共有マークを右上」 OWNER 2026-09-23). kbFontOut(). */
-          navDo(t('kb.font'), 'kbFontOut', null, false, {icon:ICON_SHARE})))+
+            : navDo(t('kb.sel'), 'kbSelOn', null, true))))+
       /* AND NOT THE SWITCH. 「一覧の『キーに文字を表示』のスイッチを消す」
          OWNER 2026-09-06. kbSysHTML() is on every keyboard's own page, which
          is where the keys it changes are drawn, so a second copy of it here

@@ -785,7 +785,11 @@ function ltKindRow(k){
 }
 function vLetters(){
   return '<div class="view">'+
-    navTop()+
+    /* THE FONT, OUT: the share mark, in the corner a share stands in
+       (「共有も共有マークを右上」 OWNER 2026-09-23), on the letters -- 「フォントは
+       文字なんだから文字から書き出しのマークつけないとダメでは？」 OWNER
+       2026-09-25. It was on the list of keyboards. kbFontOut(). */
+    navTop('', navDo(t('kb.font'), 'kbFontOut', null, false, {icon:ICON_SHARE}))+
     '<div class="body">'+
     (wsHasMarks()
       ? '<button class="trow"' + DO('go', ["abugida"]) + ' style="margin-top:6px">'+
