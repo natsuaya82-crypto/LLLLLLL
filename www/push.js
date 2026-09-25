@@ -67,7 +67,7 @@ function pushPlug(){
    `profile.prefs` -- netPrefsPut() writes `SET`'s own names, so there is one
    spelling and not two. `prompt` is the day's sentence
    (OWNER 2026-09-23), for everybody at US Pacific midnight. */
-var PUSH_KINDS=['follow','reply','like','boost','prompt'];
+var PUSH_KINDS=['follow','reply','quote','like','boost','prompt'];
 
 /* Whether one kind is wanted. **ABSENT IS ON**, and it is the server's rule
    rather than a second one written here: somebody who has never opened this
@@ -147,6 +147,7 @@ function pushSw(k){
      every one of. */
   if(n==='follow')      SET.push_follow=on;
   else if(n==='reply')  SET.push_reply=on;
+  else if(n==='quote')  SET.push_quote=on;
   else if(n==='like')   SET.push_like=on;
   else if(n==='boost')  SET.push_boost=on;
   else if(n==='prompt') SET.push_prompt=on;

@@ -509,6 +509,7 @@ defLang('zh', (function(){
       'set.mute'             : "已隐藏的账号",
       'push.follow'           : "被关注",
       'push.reply'            : "回复",
+      'push.quote'            : "引用",
       'push.like'             : "点赞",
       'push.boost'            : "转发",
       'push.prompt'           : "今日话题",

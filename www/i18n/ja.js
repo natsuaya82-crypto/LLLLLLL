@@ -417,6 +417,7 @@ defLang('ja', (function(){
       'set.mute'             : "非表示リスト",
       'push.follow'           : "フォローされたとき",
       'push.reply'            : "返信",
+      'push.quote'            : "引用",
       'push.like'             : "いいね",
       'push.boost'            : "リポスト",
       'push.prompt'           : "今日のお題",

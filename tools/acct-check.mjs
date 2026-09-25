@@ -4521,7 +4521,8 @@ const R = await pg.evaluate(async () => {
 
     /* そしてもう一度押せば戻る ── スイッチであって、一度きりの宣言ではない。 */
     {
-      const r = open82()[2];                       /* いいね */
+      /* by name and not by row: a kind added in the middle moves the rows (r94) */
+      const r = open82()[PUSH_KINDS.indexOf('like')];
       if (r) r.click();
       if (SET.push_like !== true)
         no('82: もう一度押しても戻らない ── SET.push_like=' +

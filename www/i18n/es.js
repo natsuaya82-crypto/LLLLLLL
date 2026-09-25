@@ -461,6 +461,7 @@ defLang('es', (function(){
       'set.mute'             : "Cuentas silenciadas",
       'push.follow'           : "Nuevos seguidores",
       'push.reply'            : "Respuestas",
+      'push.quote'            : "Citas",
       'push.like'             : "Me gusta",
       'push.boost'            : "Republicaciones",
       'push.prompt'           : "Tema de hoy",

@@ -504,6 +504,7 @@ defLang('ru', (function(){
       'set.mute'             : "Скрытые",
       'push.follow'           : "Новые подписчики",
       'push.reply'            : "Ответы",
+      'push.quote'            : "Цитаты",
       'push.like'             : "Оценки",
       'push.boost'            : "Репосты",
       'push.prompt'           : "Тема дня",

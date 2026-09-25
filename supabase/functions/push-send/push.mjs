@@ -19,8 +19,8 @@
    ことが分かるのは、切ったはずの通知が鳴った日か、許可したのに一通も来ない日で、
    どちらも人が気づくまで誰も知りません。
 
-   種類は下の `PUSH` が一箇所です。`follow` `reply` `like` `boost` の四つは
-   `supabase/schema.sql` の `notices()` が返すのと同じ四つで、五つ目の
+   種類は下の `PUSH` が一箇所です。`follow` `reply` `quote` `like` `boost` の五つは
+   `supabase/schema.sql` の `notices()` が返すのと同じ五つで、六つ目の
    `prompt` は通知タブには出ない、その日のお題です（OWNER 2026-09-23）。
    --------------------------------------------------------------------------- */
 
@@ -54,8 +54,15 @@ export const PUSH = [
   { kind: 'follow', table: 'follow', cols: 'follower,followed',
     key: { follower: UUID, followed: UUID }, parent: null,
     to: (r) => r.followed, from: (r) => r.follower, post: () => null, fill: 'handle' },
+  /* 返信と引用は同じ `post` の行から来るので、**鍵に何への投稿かを入れて
+     見分けます** ── 返信は `reply_to` が、引用は `quote_of` が uuid の行。
+     `id` だけだった間は `post` の行は全部「返信」と読まれていました（r94）。 */
   { kind: 'reply', table: 'post', cols: 'id,author,reply_to',
-    key: { id: UUID }, parent: 'reply_to',
+    key: { id: UUID, reply_to: UUID }, parent: 'reply_to',
+    to: (r, p) => p.author, from: (r) => r.author, post: (r) => r.id, fill: 'handle' },
+  /* 「引用されたら元の人に通知」 OWNER 2026-09-25。開く先はその引用。 */
+  { kind: 'quote', table: 'post', cols: 'id,author,quote_of',
+    key: { id: UUID, quote_of: UUID }, parent: 'quote_of',
     to: (r, p) => p.author, from: (r) => r.author, post: (r) => r.id, fill: 'handle' },
   { kind: 'like', table: 'react', cols: 'post,actor,kind',
     key: { post: UUID, actor: UUID, kind: 'like' }, parent: 'post',
@@ -80,9 +87,9 @@ export const LANGS = ['en', 'es', 'pt', 'fr', 'de', 'it', 'ru', 'zh', 'ko', 'ja'
 export const TOPIC = 'com.tokinets.lingua';
 
 /* ---- 文面 ---------------------------------------------------------------
-   **これは二つ目の置き場です。**四種類 × 十言語の同じ文が
+   **これは二つ目の置き場です。**五種類 × 十言語の同じ文が
    `www/i18n/{en,…,ja}.js` の `notif.like` `notif.boost` `notif.reply`
-   `notif.follow` にあり、この函数は Deno で動くので **`www/` を読めません**
+   `notif.quote` `notif.follow` にあり、この函数は Deno で動くので **`www/` を読めません**
    ── `ios/App/LinguaKeyboard/Shared.swift` の `Say` が同じ理由で同じことを
    しています。
 
@@ -95,34 +102,34 @@ export const TOPIC = 'com.tokinets.lingua';
    `docs/DUPLICATES.md` に載せる一件です。 */
 export const SAY = {
   en: { like: '{0} liked this',      boost: '{0} reposted this',
-        reply: '{0} replied',        follow: '{0} followed you',
+        reply: '{0} replied', quote: '{0} quoted your post',        follow: '{0} followed you',
         prompt: 'Today’s prompt: {0}' },
   es: { like: 'A {0} le gustó',      boost: '{0} lo compartió',
-        reply: '{0} respondió',      follow: '{0} te sigue',
+        reply: '{0} respondió', quote: '{0} citó tu publicación',      follow: '{0} te sigue',
         prompt: 'Tema de hoy: {0}' },
   pt: { like: '{0} gostou',          boost: '{0} republicou',
-        reply: '{0} respondeu',      follow: '{0} começou a seguir-te',
+        reply: '{0} respondeu', quote: '{0} citou a sua publicação',      follow: '{0} começou a seguir-te',
         prompt: 'Tema de hoje: {0}' },
   fr: { like: '{0} a aimé',          boost: '{0} a republié',
-        reply: '{0} a répondu',      follow: '{0} vous suit',
+        reply: '{0} a répondu', quote: '{0} a cité votre message',      follow: '{0} vous suit',
         prompt: 'Sujet du jour : {0}' },
   de: { like: '{0} gefällt das',     boost: '{0} hat das geteilt',
-        reply: '{0} hat geantwortet', follow: '{0} folgt dir',
+        reply: '{0} hat geantwortet', quote: '{0} hat deinen Beitrag zitiert', follow: '{0} folgt dir',
         prompt: 'Thema des Tages: {0}' },
   it: { like: 'A {0} piace',         boost: '{0} l’ha ripubblicato',
-        reply: '{0} ha risposto',    follow: '{0} ti segue',
+        reply: '{0} ha risposto', quote: '{0} ha citato il tuo post',    follow: '{0} ti segue',
         prompt: 'Tema di oggi: {0}' },
   ru: { like: '{0} оценил это',      boost: '{0} поделился этим',
-        reply: '{0} ответил',        follow: '{0} читает вас',
+        reply: '{0} ответил', quote: '{0} цитирует вашу запись',        follow: '{0} читает вас',
         prompt: 'Тема дня: {0}' },
   zh: { like: '{0} 点了赞',           boost: '{0} 转发了',
-        reply: '{0} 回复了',          follow: '{0} 关注了你',
+        reply: '{0} 回复了', quote: '{0} 引用了你的帖子',          follow: '{0} 关注了你',
         prompt: '今日话题：{0}' },
   ko: { like: '{0} 님이 좋아합니다',   boost: '{0} 님이 다시 올렸습니다',
-        reply: '{0} 님이 답했습니다',  follow: '{0} 님이 팔로우했습니다',
+        reply: '{0} 님이 답했습니다', quote: '{0} 님이 인용했습니다',  follow: '{0} 님이 팔로우했습니다',
         prompt: '오늘의 주제: {0}' },
   ja: { like: '{0} がいいね',         boost: '{0} がリポスト',
-        reply: '{0} が返信',          follow: '{0} がフォロー',
+        reply: '{0} が返信', quote: '{0} が引用',          follow: '{0} がフォロー',
         prompt: '今日のお題：{0}' },
 };
 

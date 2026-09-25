@@ -680,6 +680,7 @@ defLang('ko', (function(){
       'set.mute'             : "숨김 목록",
       'push.follow'           : "팔로우",
       'push.reply'            : "답글",
+      'push.quote'            : "인용",
       'push.like'             : "좋아요",
       'push.boost'            : "다시 올리기",
       'push.prompt'           : "오늘의 주제",

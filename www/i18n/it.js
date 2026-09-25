@@ -501,6 +501,7 @@ defLang('it', (function(){
       'set.mute'             : "Account silenziati",
       'push.follow'           : "Nuovi follower",
       'push.reply'            : "Risposte",
+      'push.quote'            : "Citazioni",
       'push.like'             : "Mi piace",
       'push.boost'            : "Ripubblicazioni",
       'push.prompt'           : "Tema di oggi",

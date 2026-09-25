@@ -404,6 +404,7 @@ defLang('en', (function(){
       'set.mute'             : "Muted accounts",
       'push.follow'           : "Followed",
       'push.reply'            : "Replies",
+      'push.quote'            : "Quotes",
       'push.like'             : "Likes",
       'push.boost'            : "Reposts",
       'push.prompt'           : "Today’s prompt",

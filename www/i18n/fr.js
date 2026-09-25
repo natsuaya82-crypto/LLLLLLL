@@ -549,6 +549,7 @@ defLang('fr', (function(){
       'set.mute'             : "Comptes masqués",
       'push.follow'           : "Nouveaux abonnés",
       'push.reply'            : "Réponses",
+      'push.quote'            : "Citations",
       'push.like'             : "J’aime",
       'push.boost'            : "Republications",
       'push.prompt'           : "Sujet du jour",

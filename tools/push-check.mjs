@@ -69,14 +69,19 @@ const hook = (table, record) => ({ type: 'INSERT', schema: 'public', table, reco
 say('follow は二つの uid',
     JSON.stringify(pushWhat(hook('follow', { follower: B, followed: A, created_at: 'x' }))),
     JSON.stringify({ table: 'follow', key: { follower: B, followed: A } }));
-say('post は id 一つ',
-    JSON.stringify(pushWhat(hook('post', { id: Q, author: B, body: { line: 'ほげ' } }))),
-    JSON.stringify({ table: 'post', key: { id: Q } }));
+say('返信は id と何への返信か',
+    JSON.stringify(pushWhat(hook('post', { id: Q, author: B, reply_to: P, quote_of: null, body: { line: 'ほげ' } }))),
+    JSON.stringify({ table: 'post', key: { id: Q, reply_to: P } }));
+say('引用は id と何の引用か ── 返信と取り違えない',
+    JSON.stringify(pushWhat(hook('post', { id: Q, author: B, reply_to: null, quote_of: P }))),
+    JSON.stringify({ table: 'post', key: { id: Q, quote_of: P } }));
+say('どちらでもない投稿は何でもない',
+    pushWhat(hook('post', { id: Q, author: B, reply_to: null, quote_of: null })), 'null');
 say('react は投稿と人と種類',
     JSON.stringify(pushWhat(hook('react', { post: P, actor: B, kind: 'boost' }))),
     JSON.stringify({ table: 'react', key: { post: P, actor: B, kind: 'boost' } }));
 say('知らない表は捨てる', pushWhat(hook('profile', { id: A })), 'null');
-say('uuid でない鍵は捨てる', pushWhat(hook('post', { id: '../../etc' })), 'null');
+say('uuid でない鍵は捨てる', pushWhat(hook('post', { id: '../../etc', reply_to: P })), 'null');
 say('react の知らない kind は捨てる',
     pushWhat(hook('react', { post: P, actor: B, kind: 'hug' })), 'null');
 say('body が無ければ捨てる', pushWhat(null), 'null');
@@ -118,6 +123,12 @@ say('返信の相手は返された投稿を書いた人', rep.to + ' ' + rep.fr
     A + ' ' + B + ' reply');
 say('返信の開く先はその返信', rep.post, Q);
 say('親の行が無ければ何も起きない', pushTo('post', { id: Q, author: B, reply_to: P }, null), 'null');
+
+const quo = pushTo('post', { id: Q, author: B, quote_of: P }, { id: P, author: A }) || {};
+say('引用の相手は引用された投稿を書いた人', quo.to + ' ' + quo.from + ' ' + quo.kind,
+    A + ' ' + B + ' quote');
+say('引用の開く先はその引用', quo.post, Q);
+say('引用の文面', line(pushPlan(quo, WHO, DEV, B)), '@iri が引用');
 
 const lik = pushTo('react', { post: P, actor: B, kind: 'like' }, { id: P, author: A }) || {};
 say('いいねの相手は投稿を書いた人', lik.to + ' ' + lik.from + ' ' + lik.kind,
@@ -374,7 +385,7 @@ console.log('push: 種類は PUSH が一箇所、www/ の手書きはそれと�
 
 /* ---- そのほか、名前が合っていること ---------------------------------- */
 console.log('push: 語と topic');
-say('通知タブの四つ、そしてお題', KINDS.join(','), 'follow,reply,like,boost,prompt');
+say('通知タブの五つ、そしてお題', KINDS.join(','), 'follow,reply,quote,like,boost,prompt');
 say('topic は bundle id', TOPIC, 'com.tokinets.lingua');
 say('知らない種類は送らない',
     pushPlan({ kind: 'hug', to: A, from: B, post: null }, WHO, DEV, B).send, 'false');

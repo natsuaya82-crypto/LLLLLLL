@@ -508,6 +508,7 @@ defLang('pt', (function(){
       'set.mute'             : "Contas silenciadas",
       'push.follow'           : "Novos seguidores",
       'push.reply'            : "Respostas",
+      'push.quote'            : "Citações",
       'push.like'             : "Gostos",
       'push.boost'            : "Republicações",
       'push.prompt'           : "Tema de hoje",

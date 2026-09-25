@@ -3716,14 +3716,21 @@ begin
   create trigger push_on_follow after insert on follow
     for each row execute function push_ping();
 
-  -- Only the ones that answer something. A post that answers nothing is not a
-  -- notice for anybody, and a trigger that fired for every post would put the
-  -- whole timeline through this road to be thrown away at the far end.
+  -- Only the ones that answer something or quote something (r94). A post
+  -- that does neither is not a notice for anybody, and a trigger that fired
+  -- for every post would put the whole timeline through this road to be
+  -- thrown away at the far end. ONE trigger for both, the way `react` has one
+  -- for like and boost: which of the two a row is, is push-send's `PUSH` to
+  -- say (the key carries `reply_to` or `quote_of`), and a second trigger here
+  -- would be that fact written down twice. `push_on_reply` was its name while
+  -- a reply was all it rang for, and is dropped on a server that has it.
   drop trigger if exists push_on_reply on post;
-  create trigger push_on_reply after insert on post
-    -- A reply kept to yourself rings nobody: the person answered cannot read
-    -- it, so telling them it exists is reading it (post_private).
-    for each row when (new.reply_to is not null and not post_private(new.body))
+  drop trigger if exists push_on_post on post;
+  create trigger push_on_post after insert on post
+    -- A post kept to yourself rings nobody: the person answered or quoted
+    -- cannot read it, so telling them it exists is reading it (post_private).
+    for each row when ((new.reply_to is not null or new.quote_of is not null)
+                       and not post_private(new.body))
     execute function push_ping();
 
   -- Both kinds down one trigger. `react.kind` is where like and boost are

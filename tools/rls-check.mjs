@@ -87,6 +87,9 @@ const PV ='c0000000-0000-4000-8000-0000000000c1';
 const PVR='c0000000-0000-4000-8000-0000000000c2';
 const RP ='c0000000-0000-4000-8000-0000000000c3';
 const RPV='c0000000-0000-4000-8000-0000000000c4';
+const QP ='c0000000-0000-4000-8000-0000000000c5';   /* a quote anybody may read */
+const QPV='c0000000-0000-4000-8000-0000000000c6';   /* one kept to its writer */
+const NP ='c0000000-0000-4000-8000-0000000000c7';   /* a post that answers and quotes nothing */
 const G1='a0000000-0000-4000-8000-0000000000a1';   /* tries to arrive holding admin */
 const G2='a0000000-0000-4000-8000-0000000000a2';   /* tries to arrive holding staff */
 const G3='a0000000-0000-4000-8000-0000000000a3';   /* tries to arrive already banned */
@@ -2409,6 +2412,16 @@ const SHAPE = [
   ['and one kept to its writer rings nobody', `
      select ((select count(*) from net._sent
                where body->>'table' = 'post' and body->'record'->>'id' = '${RPV}') <> 0)::int`, '0'],
+  ['a quote anybody may read rings the one quoted', `
+     select ((select count(*) from net._sent
+               where body->>'table' = 'post' and body->'record'->>'id' = '${QP}'
+                 and body->'record'->>'quote_of' = '${H4}') <> 1)::int`, '0'],
+  ['and one kept to its writer rings nobody either', `
+     select ((select count(*) from net._sent
+               where body->>'table' = 'post' and body->'record'->>'id' = '${QPV}') <> 0)::int`, '0'],
+  ['and a post that answers and quotes nothing rings nobody', `
+     select ((select count(*) from net._sent
+               where body->>'table' = 'post' and body->'record'->>'id' = '${NP}') <> 0)::int`, '0'],
   /* And no secret rode along. The whole point of taking the caller's token is
      that there is nothing in this file to steal. */
   ['and no key of ours is written into the road', `
@@ -3437,6 +3450,10 @@ const sql = [
      '{"authorization":"Bearer F-ANSWERS"}', true);`,
   `insert into post(id,author,body,reply_to) values (${q(RP)},  ${q(F)}, '{}'::jsonb,        ${q(H4)});`,
   `insert into post(id,author,body,reply_to) values (${q(RPV)}, ${q(F)}, '{"pv":1}'::jsonb, ${q(H4)});`,
+  /* and the same for a quote (r94), and a post that is neither */
+  `insert into post(id,author,body,quote_of) values (${q(QP)},  ${q(F)}, '{}'::jsonb,        ${q(H4)});`,
+  `insert into post(id,author,body,quote_of) values (${q(QPV)}, ${q(F)}, '{"pv":1}'::jsonb, ${q(H4)});`,
+  `insert into post(id,author,body) values (${q(NP)}, ${q(F)}, '{}'::jsonb);`,
   /* And the same write with nobody signed in behind it. Nothing comes out --
      there is no session to send as, and「読めなかった」と「無い」は枝を分けない
      の逆側でもある：送る相手ではなく、送る資格が無い。 */

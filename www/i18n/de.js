@@ -489,6 +489,7 @@ defLang('de', (function(){
       'set.mute'             : "Stummgeschaltete Konten",
       'push.follow'           : "Neue Follower",
       'push.reply'            : "Antworten",
+      'push.quote'            : "Zitate",
       'push.like'             : "Gefällt mir",
       'push.boost'            : "Geteilte Beiträge",
       'push.prompt'           : "Thema des Tages",
