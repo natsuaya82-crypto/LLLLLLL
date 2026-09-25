@@ -73,14 +73,23 @@ const r = await pg.evaluate(async ({ s, sid }) => {
     kb:      { body: JSON.stringify({ boards:[] }), no: 1 }
   };
   var calls = [];
-  netSlices = function(id, ok){ calls.push(['slices', id]); setTimeout(function(){ ok(THEIRS); }, 0); };
+  /* EVERY ANSWER THESE STUBS OWE IS COUNTED, so a claim can start after the
+     last one has landed (settle(), below). The walk over every screen is one
+     synchronous loop, so the answers it asks for all arrive AFTER it -- and
+     one of them is netLangFill() putting the server's `wld` into this
+     language, which landed inside the sync claim's window on some runs and
+     not others (r86, measured: the write was fill() in www/net.js every
+     time, never netLangSync()). */
+  var owed = 0;
+  function later(fn){ owed++; setTimeout(function(){ owed--; fn(); }, 0); }
+  netSlices = function(id, ok){ calls.push(['slices', id]); later(function(){ ok(THEIRS); }); };
   /* `owner` は「書いた人」で、2026-09-09 から行に載っています
      （supabase/schema.sql § language_seen）。これが無いと、降ろした言語は
      「まだ誰の物か聞いていない」になって画面に出ません。 */
   netLangSeen = function(id, ok){ calls.push(['seen', id]);
-    setTimeout(function(){ ok({ id:id, owner:'them-uid', name:'Shango',
+    later(function(){ ok({ id:id, owner:'them-uid', name:'Shango',
                                 license:'', pub:'2026-08-01',
-                                nwords:12, nletters:5 }); }, 0); };
+                                nwords:12, nletters:5 }); }); };
   /* そして「取った言語」の表。行は `language_take` で（www/net.js §
      netTakes）、数はサーバーが数えます ── `null` は「まだ訊いていない」で、
      dlStop() はそこで待ちます。ここは訊いた結果を置いておく形。 */
@@ -93,6 +102,8 @@ const r = await pg.evaluate(async ({ s, sid }) => {
   netSignedIn = function(){ return true; };
 
   function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
+  /* until nothing is owed -- an answer can ask again, so it loops */
+  async function settle(){ do { await wait(0); } while (owed); }
 
   /* ---- what the person already has, before any of this ---------------- */
   var mineId = langId;
@@ -308,6 +319,13 @@ const r = await pg.evaluate(async ({ s, sid }) => {
      its letters with this person's twenty-eight slots and nobody typed a
      thing. Asked after the attempt above, whichever way it went. */
   out.stillTheirs = slRd(langKeyOf(sid, 'letters')) === THEIRS.letters.body;
+  /* Nothing the walk asked for may land inside the window below: a slice
+     that moves there is counted against netLangSync(), and so is a sync
+     that is still NET_SYNCING from the walk and answers without running. */
+  await settle();
+  var busy = Date.now();
+  while (NET_SYNCING && Date.now() - busy < 5000) await wait(20);
+  out.syncBusy = NET_SYNCING;
   out.syncRefused = await new Promise(function(f){
     var wasId = langId;
     /* uid, the way langSeenAdd() puts one on: a language with no stamp
@@ -325,7 +343,10 @@ const r = await pg.evaluate(async ({ s, sid }) => {
        A put is somebody else's language being WRITTEN on the server; a
        changed slice is their copy on this phone being merged into -- and
        syMerge adds both sides, so a merge is an edit. */
+    var ended = false;
     function end(){
+      /* the answer and the ceiling can both arrive; the first one decides */
+      if (ended) return; ended = true;
       netSlicePut = oldPut; langId = wasId;
       var moved = '';
       for (var j = 0; j < SLICES.length; j++)
@@ -333,7 +354,7 @@ const r = await pg.evaluate(async ({ s, sid }) => {
           moved = SLICES[j];
       out.syncPut = ran.join(',');
       out.syncMoved = moved;
-      f(ran.length === 0 && moved === '');
+      f(!out.syncBusy && ran.length === 0 && moved === '');
     }
     netLangSync(function(){ end(); });
     setTimeout(end, 400);
@@ -483,7 +504,8 @@ say(r.syncRefused,
     'pass would put something into a language somebody else wrote' +
     ((r.syncPut || r.syncMoved)
       ? ' (it put `' + (r.syncPut || '—') + '` and moved `' + (r.syncMoved || '—') + '`)'
-      : ''));
+      : '') +
+    (r.syncBusy ? ' (a sync was still running, so this one never asked)' : ''));
 
 say(r.caps && r.caps.free.door === false && r.caps.free.cap === 0,
     'the free plan cannot download at all — 「plusからです」');
