@@ -1650,10 +1650,11 @@ function wldDlKind(r){
    is the section's own -- 「文字」「キーボード」 -- because that is what it is;
    nothing here invents a word for downloading. */
 function wldGetRow(sec, lid){
-  /* NO PLAN IS ASKED HERE, because the press asks. wldGet() puts
+  /* THE PRESS ASKS THE PLAN, because a closed door is drawn. wldGet() puts
      upStop(can('dl')) and dlStop() in front of the download -- the door and
-     the ceiling -- so asking again while drawing the row would be the same
-     question in two places.
+     the ceiling. The one thing the row asks is dlFull(), and dlStop() asks
+     the same function: on the top plan with the ceiling met there is no door
+     to draw (OWNER 2026-09-25).
 
      It used to say the row needed no plan because downloading letters and a
      keyboard was free; that was 2026-08-19 and 「plusからです」 OWNER
@@ -1669,6 +1670,10 @@ function wldGetRow(sec, lid){
       esc(t('wld.taking'))+'">'+iconMeter(WLD_TAKING[k])+'</span></div>';
   if(st==='took') return '<div class="set">'+nm+
     '<span class="sv wldgot" role="img" aria-label="'+esc(t('wld.took'))+'">'+ICON_TOOK+'</span></div>';
+  /* A language not taken yet, on the top plan with the ceiling met: nothing
+     to take and nothing to buy, so the chapter is its name and no ↓
+     (www/core.js § FULL ON THE TOP RUNG). */
+  if(langWhose(lid)!==LW_READ && dlFull()) return '<div class="set">'+nm+'</div>';
   return '<button class="set"' + DO('wldGet', [String(lid||''), sec.r]) + '>'+nm+
     '<span class="sv">'+ICON_DL+'</span></button>';
 }
@@ -2630,11 +2635,13 @@ document.addEventListener('touchcancel', langSwUp, false);
    page rather than a copy of it. That is the reading docs/FEATURE_RULES.md
    offered on 2026-08-25 and would not settle on its own; the owner settled it.
 
-   It is drawn on every plan, including the one that cannot press it: a closed
-   door is shown rather than hidden. 「だいたい無料で使えないやつは表示させて
-   いいよ。課金させる動線を減らしたくない」 What happens on the press is
-   langStop()'s, in core.js, and is not asked here -- a screen that both drew
-   the door and decided whether it opens would be two places holding one rule.
+   It is drawn on a plan that cannot press it: a closed door is shown rather
+   than hidden, because there is a bigger plan behind it. 「だいたい無料で使え
+   ないやつは表示させていいよ。課金させる動線を減らしたくない」 What happens on
+   the press is langStop()'s, in core.js. The one plan with nothing behind the
+   door is the top one with the ceiling met, and there it is not drawn at all
+   「＋があるところからプラスをなくすだけ」 OWNER 2026-09-25 -- langFull(),
+   which langStop() asks too, so the draw and the press are one function.
 
    A row and not a button of its own shape: it is the last row of a list, and
    rows in one list are one height. Same tag, same class, same two spans as
@@ -2643,6 +2650,9 @@ document.addEventListener('touchcancel', langSwUp, false);
    tile with a + in it and the words beside it, which is where 「アカウントを
    追加」 sits in the app this is modelled on. */
 function langAddRow(){
+  /* On the top plan with the ceiling met there is nothing to add and nothing
+     to buy, so there is no + (www/core.js § FULL ON THE TOP RUNG). */
+  if(langFull()) return '';
   return '<button class="lgrow"' + DO('langNew') + '>'+
     '<span class="pav lgav lgadd">'+ICON_ADD+'</span>'+
     '<span class="lgn">'+esc(t('langs.new'))+'</span></button>';
