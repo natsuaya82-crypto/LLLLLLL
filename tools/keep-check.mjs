@@ -57,10 +57,10 @@
     15  and with the wire REFUSING, Yes does not leave: the person is still on
         their screen, the pop says why, and what they typed is still in the
         field. 「通信エラーなら進むわけねえだろ全部」
-    14  a bottom tab is not an answer. Walking off a screen with something typed
-        on it and coming back finds it still there, still unsaved, with the
-        Save still in the bar AND STILL GOLD -- nothing is thrown away without
-        somebody having said so
+    14  a bottom tab asks the same question as back (OWNER 2026-09-25): off a
+        changed screen it asks and stays, No lands on the tab with nothing
+        written, Yes lands on the tab with it written -- and from a page
+        deeper than the changed screen, the tab asks about that screen
 
    AND THEN EVERY SCREEN THAT HAS A SAVE, ASKED OF THE PAGE. Everything above
    is about eight screens named in a list and about the one thing TYPED on
@@ -485,9 +485,9 @@ const more = await pg.evaluate(() => {
      say no. It is a buffer now like the other nine.
 
      The bottom tab is the claim to read twice. What is being kept here is
-     somebody's hand rather than a line of typing, so a promise kept on eight
-     screens and broken on this one is the one that costs a letter -- geOpen()
-     builds the drawing back out of the buffer.
+     somebody's hand rather than a line of typing, so a question asked on
+     eight screens and not on this one is the one that costs a letter: a tab
+     off a drawn-on letter asks, as back does (OWNER 2026-09-25).
 
      Not typed into: strokes are pushed and geTools() is what the app calls
      when the pen comes up. That is the road a finger takes. */
@@ -509,17 +509,19 @@ const more = await pg.evaluate(() => {
   glDraw();
   out.glDrawn = glBtn();
   out.glWroteWhileDrawing = glStored() !== glWas;
-  goTab('build'); render();
-  editLetter(glid); render();
-  out.glTabKept = geInk(GE.st).length;
-  out.glTabBtn = glBtn();
+  var glTabAsked = 0, glPop0 = popAsk;
+  popAsk = function(){ glTabAsked++; };
+  goTab('build');
+  popAsk = glPop0;
+  out.glTabAsked = glTabAsked;
+  out.glTabStayed = here().r === 'glyph';
   var glAsked = 0, glNo = null, glPop = popAsk;
   popAsk = function(q, y, yl, nl, n){ glAsked++; glNo = n; };
   back();
   popAsk = glPop;
   out.glAsked = glAsked;
   out.glStayed = here().r === 'glyph';
-  glNo();
+  if(glNo) glNo();
   out.glNoLeft = here().r !== 'glyph';
   out.glNoWrote = glStored() !== glWas;
   editLetter(glid); render();
@@ -633,27 +635,54 @@ const more = await pg.evaluate(() => {
   out.bothShapes = fired;
   out.fieldsMissing = missing.filter(function(x){ return x; });
 
-  /* ---- 14. a bottom tab throws nothing away -----------------------------
-     A tab is not one of the three places a buffer is let go (a save, a No,
-     viewReset). So this is not "the question is asked on a tab press too" --
-     it is that there is nothing to ask about: what was typed is still in the
-     field when you come back to it. */
-  viewReset();
+  /* ---- 14. a bottom tab asks, the same as back -------------------------
+     「保存ボタンのある画面を下のタブで出る時: 戻るで出る時と同じく『保存しますか？』
+     と訊く」 OWNER 2026-09-25. This claim used to say the opposite -- that a
+     tab is not an answer and the typing waits for you -- and it was replaced,
+     not kept beside this. Pressed on the REAL tab button, because the
+     question is asked by the one door every move comes through (navLand,
+     www/shell.js) and a check that called back() would be asking the arrow. */
+  function tabPress(r){
+    var b = document.querySelector('.tabbar [data-do="goTab"][data-a=\'["' + r + '"]\']');
+    if(b) b.click();
+    return !!b;
+  }
+  function meType(v){
+    var e = document.querySelector('#me-nm');
+    if(e){ e.value = v; e.dispatchEvent(new Event('input', { bubbles: true })); }
+  }
+  viewReset(); popOff();
+  var name14 = String(ME.name || '');
   goTab('profile'); openMe();
-  var e5 = document.querySelector('#me-nm');
-  e5.value = 'Wandered'; e5.dispatchEvent(new Event('input', { bubbles: true }));
-  goTab('build'); go('words');
-  out.tabAskedOff = popOn();
-  popOff();
+  var at14 = here().r + '|' + here().a;
+  meType('Wandered');
+  out.tabFound = tabPress('build');
+  out.tabAsked = popOn();
+  out.tabStayed = (here().r + '|' + here().a) === at14;
+  var no14 = document.querySelector('#pop [data-do="popNo"]');
+  if(no14) no14.click();
+  out.tabNoLanded = here().r;
+  out.tabNoStored = String(ME.name || '');
+  out.tabNoLeft = keepDirty('form|me:');
   goTab('profile'); openMe();
-  var e6 = document.querySelector('#me-nm');
-  out.tabKept = e6 ? String(e6.value || '') : '';
-  /* Written out rather than through saveBtn()/saveOn(): this is a second
-     pg.evaluate and those two live in the first one's scope. */
-  var tabB = document.querySelector('.navtop [data-do="keepPress"]');
-  out.tabBtn = !!tabB;
-  out.tabGold = !!tabB && tabB.classList.contains('navon');
-  out.tabStored = String(ME.name || '');
+  meType('Wandered');
+  tabPress('build');
+  var yes14 = document.querySelector('#pop [data-do="popYes"]');
+  if(yes14) yes14.click();
+  out.tabYesLanded = here().r;
+  out.tabYesStored = String(ME.name || '');
+  out.tabName0 = name14;
+  /* And a tab takes the whole trail: from a screen DEEPER than the one
+     with something typed on it, the one being left is asked about. */
+  viewReset(); popOff();
+  goTab('build'); go('letter', LETTERS[0].id);
+  var e14 = document.querySelector('#lt-nt');
+  if(e14){ e14.value = 'under the chart'; e14.dispatchEvent(new Event('input', { bubbles: true })); }
+  openSnd(LETTERS[0].id);
+  out.tabDeepOn = here().r + '|' + here().a;
+  tabPress('feed');
+  out.tabDeepAsked = popOn();
+  popOff(); viewReset();
 
   /* ---- 13. an @ the server refuses stays on the screen -------------------
      netHandleFree() is what the profile asks. Answered no here, which is what
@@ -1272,8 +1301,8 @@ if(!more.kbAsked) fails.push('back off a changed keyboard asked nothing');
 if(more.glArrive !== 'grey') fails.push('the drawing screen opened with its Save ' + more.glArrive);
 if(more.glDrawn !== 'gold') fails.push('a stroke drawn left the Save ' + more.glDrawn);
 if(more.glWroteWhileDrawing) fails.push('drawing wrote the letter with nobody having saved');
-if(more.glTabKept !== 2) fails.push('a bottom tab lost the drawing: ' + more.glTabKept + ' strokes came back');
-if(more.glTabBtn !== 'gold') fails.push('coming back to a drawing left the Save ' + more.glTabBtn);
+if(more.glTabAsked !== 1) fails.push('a bottom tab off a drawing asked ' + more.glTabAsked + ' times, not once');
+if(!more.glTabStayed) fails.push('a bottom tab left the drawing while the question was up');
 if(more.glAsked !== 1) fails.push('back off a changed drawing asked ' + more.glAsked + ' times');
 if(!more.glStayed) fails.push('back off a changed drawing left the screen while the question was up');
 if(!more.glNoLeft) fails.push('No did not leave the drawing screen');
@@ -1317,11 +1346,16 @@ if(more.fieldsMissing.length) fails.push('fields not on their screens: ' + more.
 if(more.bothShapes.length) fails.push('typing still wrote through: ' + more.bothShapes.join(', '));
 if(!more.refusedHere) fails.push('a refused @ went back anyway');
 if(more.refusedHandle === 'takenname') fails.push('a refused @ was written down');
-if(more.tabAskedOff) fails.push('a bottom tab put the question up');
-if(more.tabKept !== 'Wandered') fails.push('a bottom tab threw away what was typed: ' + JSON.stringify(more.tabKept));
-if(!more.tabBtn) fails.push('coming back to a screen with typing on it had no Save in the bar');
-if(!more.tabGold) fails.push('coming back to a screen with typing on it, the Save was not gold');
-if(more.tabStored === 'Wandered') fails.push('a bottom tab saved what was typed');
+if(!more.tabFound) fails.push('no build tab in the bar to press');
+if(!more.tabAsked) fails.push('a bottom tab off a changed screen asked nothing');
+if(!more.tabStayed) fails.push('a bottom tab left while the question was up');
+if(more.tabNoLanded !== 'build') fails.push('No on a tab did not land on the tab: ' + more.tabNoLanded);
+if(more.tabNoStored === 'Wandered') fails.push('No on a tab wrote what was typed');
+if(more.tabNoLeft) fails.push('No on a tab kept the typing to go up with the next Save');
+if(more.tabYesLanded !== 'build') fails.push('Yes on a tab did not land on the tab: ' + more.tabYesLanded);
+if(more.tabYesStored !== 'Wandered') fails.push('Yes on a tab did not write it: ' + JSON.stringify(more.tabYesStored));
+if(more.tabDeepOn.indexOf('form|snd:') !== 0) fails.push('the sound chart did not open over the letter: ' + more.tabDeepOn);
+if(!more.tabDeepAsked) fails.push('a tab from a page deeper than a changed screen asked nothing');
 if(!more.freeLeft) fails.push('an @ the server allowed did not go back');
 if(more.freeHandle !== 'freename') fails.push('an @ the server allowed was not written down');
 for(const d of r.dead){
@@ -1393,7 +1427,7 @@ console.log('the keyboard, one key: deleting a board lands on the list, and the 
             'walked into after it keeps ' + more.kbBufs + ' buffer with the Save grey; ' +
             'a row taken turns it gold and the arrow asks');
 console.log('the letter being drawn: grey on arrival, gold on a stroke, nothing written until ' +
-            'Yes; a bottom tab kept the drawing, No let it go and wrote nothing, Yes wrote it ' +
+            'Yes; a bottom tab asked and stayed, No let it go and wrote nothing, Yes wrote it ' +
             'and said so once');
 console.log('the word order board: the Save stood there grey, a card moved turned it gold, ' +
             'and nothing was written until it was pressed (STG.order was still ' +
@@ -1403,8 +1437,8 @@ console.log('a note opens to be read (' + more.ntReadKey + '): 編集 in the cor
 console.log('viewReset(): lets what was typed go');
 console.log('one shape only: ' + more.bothShapes.length + " of the app's nine save functions " +
             'fired while somebody was typing');
-console.log('a bottom tab: threw nothing away and asked nothing -- ' +
-            'what was typed was still in the field on the way back');
+console.log('a bottom tab: asked as back does -- No landed on the tab with nothing written, ' +
+            'Yes landed on it with the name written, and a tab from the sound chart asked about the letter under it');
 console.log('the @: refused stays put (' + more.refusedHandle + '), allowed goes (' +
             more.freeHandle + ')');
 console.log('no wire: the Yes stayed on the screen, said why, and kept what was typed');

@@ -857,6 +857,17 @@ const CASES = [
        where f.id='${P}' and f.at_key = (select r.created_at from react r
                                           where r.post='${P}' and r.actor='${B}'
                                             and r.kind='boost')`],
+  /* AND NOT FROM SOMEBODY MUTED, whoever wrote it. 「その人がリポストした投稿
+     も出さない」 OWNER 2026-09-25. A mutes B, still following; what B passed
+     on stops reaching A, and comes back when the mute is lifted. */
+  ['A mutes B, and still follows',            'ok',     A, 0,
+    `insert into mute(actor,muted) values ('${A}','${B}')`],
+  ['what a muted B passed on does not reach A', 'denied', A, 0,
+    `select 1 from feed_fo(50, null) where id='${P}' and by='${B}'`],
+  ['A lifts the mute of B',                   'ok',     A, 0,
+    `delete from mute where actor='${A}' and muted='${B}'`],
+  ['and what B passed on reaches A again',    'ok',     A, 0,
+    `select 1 from feed_fo(50, null) where id='${P}' and by='${B}'`],
   /* Somebody who follows nobody is handed nobody's timeline, which is what an
      empty following feed IS. */
   ['C follows nobody and gets nothing',       'denied', C, 0,
@@ -1475,6 +1486,25 @@ const CASES = [
      worked when there were two would be a fold that hid single notices. */
   ['one person is a notice that says one',    'ok',     A, 0,
     `select 1 from notices(50) where kind='boost' and post='${P}' and n = 1`],
+  /* AND NOTHING FROM SOMEBODY MUTED. 「その人からの通知（いいね・返信など）も
+     出さない」 OWNER 2026-09-25. A mutes F: the like on P is B's alone, and
+     no row names F -- asked of every kind at once, because the one place the
+     person on a notice is asked about is one `where` in notices(). Lifted
+     again, so everything below counts F as before. */
+  ['A mutes F',                               'ok',     A, 0,
+    `insert into mute(actor,muted) values ('${A}','${F}')`],
+  ['a muted F’s like is not in A’s notices', 'ok', A, 0,
+    `select 1 from notices(50) where kind='like' and post='${P}' and n = 1
+       and hd = (select handle from profile where id='${B}')`],
+  ['and no notice of any kind names F',       'denied', A, 0,
+    `select 1 from notices(50)
+      where hd = (select handle from profile where id='${F}')
+         or more @> jsonb_build_array(jsonb_build_object(
+              'hd', (select handle from profile where id='${F}')))`],
+  ['A lifts the mute of F',                   'ok',     A, 0,
+    `delete from mute where actor='${A}' and muted='${F}'`],
+  ['and F’s like is counted again',      'ok',     A, 0,
+    `select 1 from notices(50) where kind='like' and post='${P}' and n = 2`],
 
   /* --- and the OTHER way of being the same notice ------------------------
      The owner gave two shapes and the list only ever made one of them:

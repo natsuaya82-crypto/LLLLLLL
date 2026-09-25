@@ -3504,8 +3504,8 @@ function kbUp(e){
    2026-09-05. A Done was a third way off a screen that already has two --
    the Save in the corner and the arrow beside it -- and it did nothing
    either of those does not do. The wobbling ends where the screen does:
-   backGo() (www/shell.js) is the one road off, and a save that landed goes
-   down it too.
+   navLand() (www/shell.js) is the one door off -- back, a tab, and a save
+   that landed all go through it.
 
    A press still SELECTS while it lasts:
    「キー触っても反応ないし、選択しているところと違うとこさわれば選択解除される
@@ -3515,7 +3515,7 @@ function kbUp(e){
    already stopped in kbUp() -- it calls preventDefault(), which is what keeps
    a key from being selected by the finger that just put it down.
 
-   Where you are standing, so backGo() and viewReset() drop it. */
+   Where you are standing, so navLand() and viewReset() drop it. */
 var kbWob=false;
 /* The layout, read back off the screen. The keys moved in the page while the
    finger was down and the language is told once, here -- the same way the

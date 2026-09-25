@@ -943,6 +943,12 @@ var ICON_SPK='<svg class="ic" viewBox="0 0 24 24" width="15" height="15" fill="n
   'stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" '+
   'aria-hidden="true"><path d="M4 9.5h3.2L12 5.4v13.2L7.2 14.5H4Z"/>'+
   '<path d="M15.6 9.2a4 4 0 0 1 0 5.6"/><path d="M18.2 6.6a7.6 7.6 0 0 1 0 10.8"/></svg>';
+/* The same speaker with a red line across it: somebody already muted.
+   「もうミュートしている人の時は、その絵に赤い斜線を入れて『ミュート中』と分かる
+   ように」 OWNER 2026-09-25. The line is --bad, the red of both theme blocks in
+   www/index.html, named on the line itself so the speaker keeps the row's grey. */
+var ICON_MUTE=ICON_SPK.replace('</svg>',
+  '<path d="M3.5 3.5l17 17" style="stroke:var(--bad)"/></svg>');
 var ICON_BACK='<svg class="ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" '+
   'stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
   '<path d="M20 12H4.6"/><path d="M10.5 5.5 4 12l6.5 6.5"/></svg>';

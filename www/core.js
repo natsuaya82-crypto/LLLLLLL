@@ -2405,21 +2405,31 @@ function dlCap(){
    `language_take` is the table and netTakes() (www/net.js) is what asks.
    `null` is 「not asked」 and dlStop() is what waits for it. */
 function dlCount(){ return langTook(); }
+/* ---- FULL ON THE TOP RUNG, AND THEN THERE IS NO + ---------------------
+   「追加自体できなくすればいい。＋があるところからプラスをなくすだけ」
+   OWNER 2026-09-25. Pro is the top plan, so a ceiling met on it has nothing
+   to sell: the thing that adds -- the + under 「自分の言語」, the ↓ on a
+   chapter of a language not taken yet -- is not drawn, and there is no
+   「アップグレードが必要です」 about a plan that does not exist.
+
+   ONE QUESTION, and the row that draws the mark and the stop behind it both
+   ask it -- the draw deciding one way and the press another is two answers.
+   Free and Plus are not this: their + is drawn and the press offers the
+   plans (upStop). `null` -- the count or the plan not answered -- is not
+   full, and the stop says 「接続できません」 for it. */
+function planTopFull(n, cap){ return has('pro') && planFits(n, 1, cap)===false; }
+function langFull(){ return planTopFull(langCount(), langCap()); }
+function dlFull(){ return planTopFull(dlCount(), dlCap()); }
 /* The ceiling on downloads, met. langStop()'s shape exactly, and the same
-   sentence: 「全部確認して飛ぶ」. Somebody already holding the biggest ceiling
-   there is gets one line and no dialog, because there is nothing to fly to. */
+   sentence: 「全部確認して飛ぶ」. */
 function dlStop(){
   /* NOT ASKED YET IS NOT NOUGHT AND IS NOT FULL, and neither is a plan nobody
      has answered for: planFits() hands upStop() `null` for either, and that
      is 「接続できません」. The screen that presses this has already asked
-     (www/home.js § wldGet). */
-  var ok=planFits(dlCount(), 1, dlCap());
-  /* toast() and not alert(): iOS's own box is banned outright
-     （「標準は使わねえって言ってるだろこれも禁止や」OWNER 2026-09-01）and
-     there is nothing to ASK here -- somebody already on the top rung cannot
-     be offered a bigger one, so what is left is the sentence. */
-  if(ok===false && dlCap()>=PRO_DL){ toast(t('up.need')); return true; }
-  return upStop(ok);
+     (www/home.js § wldGet). Full on the top rung has no ↓ to press (§ FULL
+     ON THE TOP RUNG), so it refuses with nothing to say. */
+  if(dlFull()) return true;
+  return upStop(planFits(dlCount(), 1, dlCap()));
 }
 /* THE OPEN LANGUAGE BELONGS TO WHOEVER IS SIGNED IN.
    「ログアウトして違うアカウントでログインしても前のアカウント残ってるんだけど
@@ -2505,10 +2515,9 @@ function langStop(){
      is a picture of rows that may not exist any more -- measuring against it
      is what refused the owner their own next language on 2026-09-15. Both
      are `null` until answered, and planFits() hands upStop() the `null`. */
-  var ok=planFits(langCount(), 1, langCap());
-  /* Nothing bigger to buy -- see above -- and toast() for dlStop()'s reason. */
-  if(ok===false && langCap()>=PRO_LANGS){ toast(t('up.need')); return true; }
-  return upStop(ok);
+  /* Full on the top rung has no + to press (§ FULL ON THE TOP RUNG). */
+  if(langFull()) return true;
+  return upStop(planFits(langCount(), 1, langCap()));
 }
 /* ---- WHAT THIS ACCOUNT HAS PAID FOR, AND IT IS THE SERVER'S ANSWER ------
    「オンラインで 1 端末に 1 アカウント…誰の物か・あるか無いか・名前・公開か・

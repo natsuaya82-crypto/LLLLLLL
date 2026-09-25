@@ -238,11 +238,28 @@ function prevPage(){ return NAV.length>1? NAV[NAV.length-2] : null; }
    場合は全部ポップで良くない？」 OWNER 2026-09-05. The page pressed from
    stays, the pop is up (netPop, through pullRun), and ［再接続］ makes this
    same move again. A server that ANSWERED -- empty, or refusing -- is an
-   answer, and the page is arrived at and says so. */
+   answer, and the page is arrived at and says so.
+
+   AND A SCREEN WITH A SAVE IS NOT LEFT WITHOUT BEING ASKED, BY ANY ROAD.
+   「保存ボタンのある画面を下のタブで出る時: 戻るで出る時と同じく『保存しますか？』
+   と訊く」 OWNER 2026-09-25. The question was back()'s alone, so a tab threw
+   the trail away past it and the draft stayed in the globals, to go up with
+   whatever the next screen's Save wrote. It is asked HERE because this is the
+   one door every move comes through -- back, a tab, the profile tab's hold,
+   and go() to a page already behind you -- and what is asked is the one thing
+   all of them share: a screen with something unsaved on it is being taken off
+   the trail (keepAsked, § KEEP). Going deeper keeps it on the trail and asks
+   nothing, which is the letter and the sound chart being one draft.
+
+   And leaving ends the keyboard's wobble: it is a state of a screen you are
+   standing ON (www/keyboard.js § kbWob) -- 「並べ替えは保存か戻るで終わる」
+   OWNER 2026-09-05 -- and a save that landed leaves through here too. */
 var NAV_TO=null;
 function navNow(){ return NAV_TO || NAV; }
 function navLand(nav){
   var to=nav[nav.length-1];
+  if(keepAsked(nav)) return;
+  if(!navKeeps(nav, here())) kbWob=false;
   NAV_TO=nav;
   pageWait(to.r, to.a, function(went){
     if(NAV_TO!==nav) return;
@@ -250,6 +267,13 @@ function navLand(nav){
     if(!went){ netPop(null, 0, 'page', function(){ navLand(nav); }); return; }
     NAV=nav; route=to.r; render(); window.scrollTo(0,0);
   });
+}
+/* Is this screen -- a route AND its argument -- still on that trail. */
+function navKeeps(nav, e){
+  var i;
+  for(i=0;i<nav.length;i++)
+    if(nav[i].r===e.r && String(nav[i].a||'')===String(e.a||'')) return true;
+  return false;
 }
 function go(r, a){
   var now=navNow(), h=now[now.length-1], i;
@@ -374,9 +398,11 @@ function backAnswer(keep){
    is the failure this whole change exists to remove.
 
    Nothing is dropped by walking away. A buffer is let go in exactly three
-   places -- a save that landed, a No, and viewReset(). A bottom tab is not
-   one of them, so pressing one and coming back finds the field as it was
-   left. Nothing is ever thrown away without somebody having said so.
+   places -- a save that landed, a No, and viewReset(). Walking OFF a screen
+   with something changed on it -- back, a bottom tab, any road -- asks first
+   (navLand, keepAsked), so nothing is ever thrown away without somebody
+   having said so. Going deeper is not walking off, and coming back finds the
+   field as it was left.
 
    And CHANGED is measured against what the field held when the screen opened,
    value by value, as strings. Type a letter and rub it out and the screen is
@@ -427,8 +453,8 @@ function keepKey(){ return keepKeyOf(here().r, here().a); }
    Only the three functions are taken again, because each is a fresh closure
    over a screen that may have been rebuilt around it. */
 /* `landed` is for the one screen that has something to DO once the save is
-   up, and it is not a second answer to where a save ends -- backGo() below is
-   still the only one, and 「保存しました」 is keepSave()'s one line for all
+   up, and it is not a second answer to where a save ends -- keepSave() below
+   is still the only one, and 「保存しました」 is keepSave()'s one line for all
    nine. The letter being drawn plays its own sound as it is put away, which
    may not happen while the send is still out:
    「通信エラーなら進むわけねえだろ全部」. It is optional; eight of the nine
@@ -647,7 +673,10 @@ function keepBack(snap){
      exactly where it was, and pressing again writes it again. */
   langHeldBack(snap.lang);
 }
-function keepSave(key, done){
+/* `to` is the move the save was asked on the way into -- a tab, or back --
+   and it is where a save that landed goes. The corner's Save hands none and
+   goes back one page (backTo). */
+function keepSave(key, done, to){
   var b=KEEP[String(key)], snap;
   if(!b || !b.save){ if(done) done(true); return; }
   if(KEEP_BUSY) return;
@@ -697,6 +726,12 @@ function keepSave(key, done){
          from what was typed alone: a screen's changes are not all typed any
          more (§ keepOn above), so levelling the typed half would leave the
          Save gold over a keyboard that had just been written down. */
+      /* What the screen has to say about a save that LANDED goes FIRST, so
+         that the mark below is taken from the screen as it is once it has
+         said it: the drawing screen lets its letter go here (geKeepSaid), and
+         a mark taken before that would call the screen changed the moment it
+         was left, and the way off would ask about a save that had landed. */
+      if(up && b.landed) b.landed();
       if(up && KEEP[String(key)]===b){
         b.v={};
         b.was=keepNow(key);
@@ -725,9 +760,6 @@ function keepSave(key, done){
          A save that did NOT land goes nowhere: netPop() is up over the screen
          saying why, what was typed is still in the field, and pressing again
          sends it again. */
-      /* And what the screen has to say about a save that LANDED, before it
-         goes. Nothing decides where it goes but the line under it. */
-      if(up && b.landed) b.landed();
       /* AND IT SAYS SO. 「保存したら下に小さく『保存しました』。今は黙って前の
          画面に戻る」 OWNER 2026-09-06. A screen that writes something down and
          slides away without a word leaves somebody looking at the page behind
@@ -744,7 +776,7 @@ function keepSave(key, done){
          And only when it LANDED. A save that did not is netPop()'s to speak
          about, and 「保存できませんでした」 is the sentence it already has. */
       if(up) toast(t('keep.saved'));
-      if(up){ keepPaint(); backGo(); }
+      if(up){ keepPaint(); navLand(to || backTo()); }
       if(done) done(!!up);
     });
   });
@@ -875,14 +907,25 @@ function keepPress(){ keepSave(keepKey(), null); }
    asking were made and thrown away in one afternoon (CLAUDE.md § shape). Yes
    writes and then goes; No lets the typing go and goes anyway 「いいえなら
    そのまま戻る」; the scrim is neither and leaves you where you are. */
-function keepAsked(){
-  var k=keepKey();
-  if(!keepDirty(k)) return false;
-  popAsk(t('keep.q'),
-    function(){ keepSave(k, null); },
-    t('keep.yes'), t('keep.no'),
-    function(){ keepNo(k); backGo(); });
-  return true;
+/* What is asked about is every screen the move takes OFF the trail, nearest
+   first: back takes one, a tab takes all of them. A key's page left by a tab
+   takes its board with it, and the board's draft is the one being left. The
+   answer lands the same move -- Yes when the save has landed (keepSave), No
+   straight away -- and landing it asks again, so a second screen with
+   something unsaved on it behind the first is asked about in its turn. */
+function keepAsked(nav){
+  var i, k;
+  for(i=NAV.length-1;i>=0;i--){
+    if(navKeeps(nav, NAV[i])) continue;
+    k=keepKeyOf(NAV[i].r, NAV[i].a);
+    if(!keepDirty(k)) continue;
+    popAsk(t('keep.q'),
+      function(){ keepSave(k, null, nav); },
+      t('keep.yes'), t('keep.no'),
+      function(){ keepNo(k); navLand(nav); });
+    return true;
+  }
+  return false;
 }
 /* 「いいえ」: the buffer goes, and the draft with it -- the language is put
    back as it was when the screen opened (`held`, langHeldBack in
@@ -895,22 +938,16 @@ function keepNo(key){
   if(b) langHeldBack(b.held);
   if(drop) drop();
 }
-/* Going back, with nothing left to ask. It is its own function because three
-   things reach it now -- the arrow, the Yes and the No -- and a second copy
-   of these two lines is a second answer to where back goes. */
-function backGo(){
-  /* And the keyboard stops wobbling. It is a state of a screen you are
-     standing ON (www/keyboard.js § kbWob), so leaving is what ends it --
-     there is no Done in that bar any more, and a save that landed comes down
-     this road too. 「並べ替えは保存か戻るで終わる」 OWNER 2026-09-05. */
-  kbWob=false;
+/* Where back goes: one page back, or the profile when there is nowhere. It
+   is its own function because two things ask it -- the arrow, and a save
+   that landed -- and a second copy is a second answer to where back goes. */
+function backTo(){
   var now=navNow();
-  navLand(now.length>1? now.slice(0, now.length-1) : [{r:'profile'}]);
+  return now.length>1? now.slice(0, now.length-1) : [{r:'profile'}];
 }
 function back(){
   if(backDraftKept()) return;
-  if(keepAsked()) return;
-  backGo();
+  navLand(backTo());
 }
 /* Is a screen of this chapter still behind you on the trail -- the question
    viewLeft() above asks to tell walking OFF a chapter from going deeper into
@@ -958,7 +995,7 @@ function navDrop(a, r){
    throws the trail away rather than stacking three tabs on top of it. */
 /* Leaving the search tab for a chapter of the build tab: two moves, and the
    pair of them is one thing a row does. It was two statements inside markup. */
-function goIn(r){ goTab('build'); go(r); }
+function goIn(r){ navLand([{r:'build'}, {r:r}]); }
 function goTab(r){ navLand([{r:r}]); }
 /* Kept because a hundred lines still read it. It is here()'s route. */
 var route='feed';
@@ -1727,7 +1764,7 @@ function holdStart(e){
   p=holdAt(e); holdX=p.x; holdY=p.y;
   holdT=setTimeout(function(){
     holdT=null; HELD=true; heldAt=Date.now();
-    goTab('profile'); go('langs');
+    navLand([{r:'profile'}, {r:'langs'}]);
   }, HOLD_MS);
 }
 /* Moved far enough to be going somewhere rather than resting. Under the

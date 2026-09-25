@@ -1102,7 +1102,9 @@ create table if not exists mute (
 -- 「see nothing of them」: their own page still shows what they wrote, and
 -- only the lists that decision names ask for `muted=is.false` -- feed_hot()
 -- and feed_fo() below, and the day's list, a thread and a search in
--- www/net.js. `security definer` for the reason block_hides() is.
+-- www/net.js. What they PASSED ON and what they DID TO YOU are asked of this
+-- function by the person on the row: feed_fo()'s boost branch and notices()
+-- (OWNER 2026-09-25). `security definer` for the reason block_hides() is.
 create or replace function mute_hides(who uuid) returns boolean
 language sql stable security definer set search_path = public as $$
   select exists (select 1 from mute m
@@ -2486,8 +2488,11 @@ language sql stable as $$
            (array_agg(ev.actor order by ev.at desc, ev.actor desc))[1:4] as few
       from ev
      /* Every notice is about the person in `actor`, and this is where they
-        are asked about, once, for all four kinds (block_hides). */
+        are asked about, once, for all four kinds: somebody blocked, and
+        somebody muted -- 「その人からの通知（いいね・返信など）も出さない」
+        OWNER 2026-09-25 (block_hides, mute_hides). */
      where not block_hides(ev.actor)
+       and not mute_hides(ev.actor)
      group by ev.kind, ev.post
   ),
   /* ---- AND THE SECOND WAY OF BEING THE SAME NOTICE ---------------------
@@ -2780,8 +2785,11 @@ language sql stable as $$
              -- a muted person's post is not handed on by somebody else either
              and not v.muted
              -- post_seen has already asked about who WROTE it; who passed it
-             -- on is a second person on the row and is asked here.
+             -- on is a second person on the row and is asked here -- blocked,
+             -- and muted: 「その人がリポストした投稿も出さない」 OWNER
+             -- 2026-09-25, whoever wrote the post.
              and not block_hides(r.actor)
+             and not mute_hides(r.actor)
              and r.actor in (select f.followed from follow f
                               where f.follower = auth.uid())
              and (before is null or r.created_at < before)
