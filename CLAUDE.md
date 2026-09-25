@@ -1512,10 +1512,15 @@ three alignments all count in that coordinate — the alignments against the ten
 columns, never against the widest row. They used to count in three: the drawing
 centred a row, the bin and the + counted from its first key, and the alignments
 measured the widest row, so pressing a column lit one key and the bin took
-another (`docs/scope/r73-audit.md` § 2-16). Whether a short row made by hand is
-filled out to ten when it is saved — the extension draws it the width of the
-phone, the sheet in the middle — is the owner's and has not been asked. What a
-MERGE counts in is the row's own positions still, and is `docs/scope/r74-kb.md`'s.
+another (`docs/scope/r73-audit.md` § 2-16). **The phone stands a short row
+where the sheet does** 「合わせて」 OWNER 2026-09-24: `KeyBoardView.swift` counts
+in the same half columns (`halfCols`, which `kb-check` asks is `KB_COLS`) and puts
+a row short of ten at `kbStart()`, a key as wide as on every other row. **A
+MERGE counts in it too** 「直して」 OWNER 2026-09-24: the key under a key is the
+one the sheet draws under it (`kbKeyAtSheet()`), for choosing down, pressing a
+lower half, joining, `kbVFix()` and carrying a pair or a run, and a merge that
+was joined the old way and does not line up on the sheet comes apart on the next
+save (DELETE REVIEW in `docs/CHANGELOG.md`).
 
 **What is selected and the step back are the screen's and the board's.**
 `kbLeft()` forgets both, and three things reach it: walking off the chapter

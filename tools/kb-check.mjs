@@ -1326,7 +1326,9 @@ const r = await pg.evaluate(({ s }) => {
   if (d2){ kbTapKey(d2.r, d2.i); standKb(); }
   out.downStops = kbSelKeys().length === 2;
   /* THREE lined up downward, which the pattern does not give -- so the two
-     gaps come off row 2 and the three rows line up. Only then does the
+     half gaps on row 2 become one whole gap at its end and the three rows line
+     up. Only taking them off is not enough: a row short of ten is drawn in the
+     middle, half a key in, exactly where the gaps held it (kbStart). Only then does the
      downward join's "exactly two" have a case to answer: without such a board
      the direction test masks it, and taking the count out leaves every claim
      green. Watched exactly that. The board is left behind, so the claims after
@@ -1335,6 +1337,7 @@ const r = await pg.evaluate(({ s }) => {
   (function (){
     var r2 = kbLayer().rows[2], j2;
     for (j2 = r2.length - 1; j2 >= 0; j2--) if (r2[j2].k === 'gap') r2.splice(j2, 1);
+    r2.push(kbGap(1));
     saveKb(); render();
   }());
   kbTapKey(0, 0); standKb();
@@ -1855,6 +1858,38 @@ const r = await pg.evaluate(({ s }) => {
   saveKb();
   out.vjClean = JSON.stringify(kbEdit().lay).indexOf('"h":') < 0 &&
     JSON.stringify(kbEdit().lay).indexOf('"up":') < 0;
+
+  /* ---- 6b. "under" is where the sheet DRAWS it ---------------------------
+     「直して」 OWNER 2026-09-24 (r74-kb.md やり残し 3). A row short of ten is
+     drawn in the middle (kbStart), so the key under a key is the one standing
+     at the same column of the SHEET -- not the one at the same place counted
+     from each row's own first key. Row 1 cut to eight keys starts one key in:
+     under row 0's fourth key (sheet column 6) is row 1's third. */
+  fresh();
+  kbLayer().rows[1].splice(8, 2); saveKb();
+  out.ukUsed = kbUsed(kbLayer().rows[1]);
+  var uk = kbUnderOf(0, 3);
+  out.ukUnder = uk ? uk.r + ':' + uk.i : 'none';
+  KBH = { k: 'k', r: 0, i: 3, n: 2, d: 'y' };
+  out.ukDownOk = kbJoinDown();
+  out.ukDid = kbVJoin(0, 3);
+  out.ukShadowAt = kbLayer().rows[1].map(function (k, i) { return kbShadow(k) ? i : -1; })
+    .filter(function (i) { return i >= 0; }).join(',');
+  out.ukSame = out.ukShadowAt !== '' &&
+    kbSheetAt(kbLayer().rows[0], 3) === kbSheetAt(kbLayer().rows[1], +out.ukShadowAt);
+  /* the lower half pressed is the key above it on the sheet */
+  kbTapKey(1, 2);
+  out.ukTap = KBH ? KBH.r + ':' + KBH.i : 'none';
+  /* a merge written the old way -- the first key of each row, which on these
+     two rows are a key apart on the sheet -- is taken apart by the next save.
+     DELETE REVIEW in docs/CHANGELOG.md: the owner said the ones that do not
+     line up come apart. */
+  fresh();
+  kbLayer().rows[1].splice(8, 2);
+  kbLayer().rows[0][0].h = 2;
+  kbLayer().rows[1][0] = kbGap(kbLayer().rows[1][0].w); kbLayer().rows[1][0].up = 1;
+  saveKb();
+  out.ukOld = (kbLayer().rows[0][0].h || 1) === 1 && !kbLayer().rows[1][0].up;
 
   /* ---- 7. and the two buttons say whether there is anywhere to go ------ */
   fresh();
@@ -2510,25 +2545,38 @@ const r = await pg.evaluate(({ s }) => {
           if (kbVJoin(r, k)){ made = true; at = { r: r, k: k }; }
       return at;
     }
-    /* where the tall key is, and whether its other half is under it */
+    /* where the tall key is, and whether its other half is under it on the
+       SHEET -- the column each is drawn at (kbSheetAt), which is what "under"
+       means since 2026-09-24 */
     function pairAt(){
-      var rows = kbLayer().rows, ri, ki, a, di;
+      var rows = kbLayer().rows, ri, ki, a, dn, j, whole;
       for (ri = 0; ri < rows.length; ri++)
         for (ki = 0; ki < rows[ri].length; ki++)
           if (kbTall(rows[ri][ki])){
-            a = kbAtOf(rows[ri], ki);
-            di = kbAtKey(rows[ri + 1] || [], a);
-            return { row: ri, col: a,
-                     whole: di >= 0 && kbShadow(rows[ri + 1][di]) &&
-                            kbU(rows[ri + 1][di].w) === kbU(rows[ri][ki].w) };
+            a = kbSheetAt(rows[ri], ki);
+            dn = rows[ri + 1] || [];
+            whole = false;
+            for (j = 0; j < dn.length; j++)
+              if (kbShadow(dn[j]) && kbSheetAt(dn, j) === a &&
+                  kbU(dn[j].w) === kbU(rows[ri][ki].w)) whole = true;
+            return { row: ri, col: a, whole: whole };
           }
       return null;
+    }
+    /* room in rows 2 and 3 for the pair, and the SAME room, so the two rows
+       are drawn from the same column and a key in one has a key under it in
+       the other: row 3 loses its delete (three keys wide), row 2 its two half
+       gaps and two letters -- seven keys each */
+    function room23(){
+      var r2 = kbLayer().rows[2], r3 = kbLayer().rows[3], j;
+      for (j = r2.length - 1; j >= 0; j--) if (r2[j].k === 'gap') r2.splice(j, 1);
+      r2.pop(); r2.pop(); r3.pop();
     }
     var p0 = pairUp();
     out.pairMade = !!p0;
     if (p0){
       /* room in the two rows it is going to -- the pattern's rows are full */
-      kbLayer().rows[2].pop(); kbLayer().rows[2].pop(); kbLayer().rows[3].pop();
+      room23();
       saveKb(); render();
       var pWas = JSON.stringify(kbLayer().rows.map(say));
       out.pairBefore = pairAt();
@@ -2543,12 +2591,26 @@ const r = await pg.evaluate(({ s }) => {
 
       /* grabbing the BOTTOM half carries it too */
       var p1 = pairUp();
-      kbLayer().rows[2].pop(); kbLayer().rows[2].pop(); kbLayer().rows[3].pop();
+      room23();
       saveKb(); render();
-      var under = kbAtKey(kbLayer().rows[p1.r + 1], kbAtOf(kbLayer().rows[p1.r], p1.k));
+      var under = kbUnderOf(p1.r, p1.k);
+      under = under ? under.i : -1;
       drag(p1.r + 1, under, 2, 0);
       var byLow = pairAt();
       out.pairByLow = !!byLow && byLow.row === 2 && byLow.whole;
+
+      /* and on two rows of DIFFERENT lengths the lower half goes where the
+         sheet draws under the upper one. Row 2 of seven keys, row 3 of five:
+         once the pair is in, row 2 starts one key in and row 3 two, so the
+         upper half dropped second in row 2 has row 3's FIRST key under it --
+         counted from each row's own start it would be row 3's second, and the
+         save would take the pair apart. */
+      pairUp();
+      room23(); kbLayer().rows[3].pop(); kbLayer().rows[3].pop();
+      saveKb(); render();
+      drag(0, 0, 2, 1);
+      var pOff = pairAt();
+      out.pairOffRow = !!pOff && pOff.row === 2 && pOff.whole;
 
       /* the LAST row has no row under it, so nothing lands there -- and the
          pair stays where it was rather than losing a half.
@@ -3652,6 +3714,18 @@ function fnOf(src, at){
 function whereAll(re){
   return [...KBSRC.matchAll(re)].map((m) => fnOf(KBSRC, m.index));
 }
+/* ---- THE PHONE STANDS A SHORT ROW WHERE THE SHEET DOES --------------------
+   「スマホのキーボードの短い行」→「合わせて」 OWNER 2026-09-24. The extension
+   divided every row across the whole phone, so a row of five came out twice as
+   wide as the ten above it, while the sheet stood it in the middle at kbStart().
+   KeyBoardView.swift now counts in the sheet's own half columns; the number is
+   read out of it and asked to be KB_COLS, because two copies of a number in two
+   languages is the thing that drifts. Where it then puts the keys is Swift and
+   is seen on a phone, not here. */
+const KBVIEW = fs.readFileSync(
+  path.join(dir, '..', 'ios', 'App', 'LinguaKeyboard', 'KeyBoardView.swift'), 'utf8');
+const swHalf = (KBVIEW.match(/static let halfCols = ([0-9]+)/) || [])[1];
+const jsHalf = (KBSRC.match(/var KB_COLS=([0-9]+)/) || [])[1];
 const cmpCols = whereAll(/(?:[<>]=?\s*KB_COLS\b|\bKB_COLS\s*[<>])/g);
 const cmpRows = whereAll(/(?:[<>]=?\s*kbRowsMax\(\)|kbRowsMax\(\)\s*[<>])/g);
 const freeAsk = whereAll(/kbIsFree\(kbShow\)|KB\.kbs\[kbShow-1\]/g);
@@ -3670,6 +3744,33 @@ for (const f of fs.readdirSync(path.join(dir, '..', 'www')).filter((n) => n.ends
     const before = src.slice(Math.max(0, m.index - 6), m.index);
     if (fn === 'goneBox' || /toast\($/.test(before)) continue;
     goneOut.push(f + ' ' + fn);
+  }
+}
+
+/* ---- A HOLD IS CALLED OFF AT ONE DISTANCE ---------------------------------
+   「キーを持って運ぶ長押しの判定」→「あわせて」（10px） OWNER 2026-09-24, and
+   the 10 is the owner's of 2026-09-01: HOLD_SLOP in www/shell.js. A key held on
+   the sheet was called off at 12px and a letter held in the alphabet at 12, so
+   one thumb resting the same way held on one screen and scrolled on another.
+   The surface is every hold under www/ that is called off by the finger moving
+   -- a squared distance, or a distance on each axis, compared with anything --
+   and each has to be compared with HOLD_SLOP. Counted off the source with the
+   comments out, so a hold written tomorrow is counted tomorrow.
+
+   HOLD_LEFT is the one hold r83-make could not reach: the language page's rows
+   (www/home.js, another session's file) are called off at 8px on each axis.
+   It is named rather than passed, and a name matching nothing fails -- an
+   exemption left standing after the line is fixed is permission. */
+const HOLD_LEFT = ['home.js wldDragMove'];
+const holdOff = [], holdAll = [], holdLeft = new Set();
+for (const f of fs.readdirSync(path.join(dir, '..', 'www')).filter((n) => n.endsWith('.js'))){
+  const src = fs.readFileSync(path.join(dir, '..', 'www', f), 'utf8').replace(/\/\*[\s\S]*?\*\//g, ' ');
+  const re = /(\w+)\*\1\s*\+\s*(\w+)\*\2\s*[<>]=?\s*([^;)]+)|Math\.abs\(p\.client[XY][^)]*\)\s*[<>]=?\s*([^|&;)]+)/g;
+  for (const m of src.matchAll(re)){
+    const fn = fnOf(src, m.index);
+    holdAll.push(f + ' ' + fn);
+    if (HOLD_LEFT.indexOf(f + ' ' + fn) !== -1){ holdLeft.add(f + ' ' + fn); continue; }
+    if (!/^\s*HOLD_SLOP\s*\*\s*HOLD_SLOP\s*$|^\s*HOLD_SLOP\s*$/.test(m[3] || m[4] || '')) holdOff.push(f + ' ' + fn + ' (' + (m[3] || m[4]).trim() + ')');
   }
 }
 
@@ -3873,6 +3974,7 @@ say(r.liftHit,
     r.liftHitN + ' of ' + r.liftN + ' out of the hit test)');
 
 say(r.pairMade, 'two keys can be merged into one that is two rows tall');
+say(r.pairOffRow, 'and carried onto two rows of different lengths, the lower half lands where the sheet draws it under the upper');
 say(r.pairMoved, 'and carrying it takes it to the row it was carried to' +
     (r.pairAfter ? ' (row ' + r.pairAfter.row + ')' : ''));
 say(r.pairWhole, 'with BOTH halves -- same column, the row under it, same width');
@@ -4684,6 +4786,23 @@ say(SF.alR && SF.alL,
     + 'against the tenth column and pushed left against the first (' + SF.alRSheet + ')');
 say(SF.cellAt === 4,
     'and a key put into a frame stands in that frame (column half ' + SF.cellAt + ', wanted 4)');
+say(!!swHalf && swHalf === jsHalf,
+    'the phone counts a row in the sheet’s half columns: KeyBoardView.swift halfCols '
+    + swHalf + ', keyboard.js KB_COLS ' + jsHalf + ' — a short row stands where kbStart() stands it');
+say(r.ukUsed === 16 && r.ukUnder === '1:2',
+    'under a key is what the sheet draws under it: on a row of ten over a row of eight, '
+    + 'under the fourth key is the third (' + r.ukUnder + ', row of ' + r.ukUsed + ' half columns)');
+say(r.ukDownOk && r.ukDid && r.ukShadowAt === '2' && r.ukSame,
+    'and the two join there: the lower half stands at the same column of the sheet '
+    + '(shadow at ' + r.ukShadowAt + ')');
+say(r.ukTap === '0:3', 'pressing the lower half chooses the key above it on the sheet (' + r.ukTap + ')');
+say(r.ukOld, 'a merge counted the old way, which the sheet does not draw as one, comes apart on the next save');
+say(holdAll.length > 0 && holdOff.length === 0 && holdLeft.size === HOLD_LEFT.length,
+    'a hold is called off at one distance: of ' + holdAll.length + ' holds under www/ that '
+    + 'a moving finger calls off, every one asks HOLD_SLOP'
+    + ' (' + HOLD_LEFT.length + ' named as not yet: ' + HOLD_LEFT.join(', ') + ')'
+    + (holdOff.length ? ' — ' + holdOff.join('; ') : '')
+    + (holdLeft.size < HOLD_LEFT.length ? ' — a name in HOLD_LEFT matches nothing any more: take it out' : ''));
 
 if (bad.length){ console.error('\nkb-check: ' + bad.length + ' FAILED'); process.exit(1); }
 console.log('\nkb: pressing a row number or a column letter SELECTS it and lights it up;\n' +

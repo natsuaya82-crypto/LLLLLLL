@@ -481,8 +481,9 @@ function kbW(per){ return (KB_COLS/per)/2; }
 /* A row padded out to the full ten with gaps at both ends -- kbAlign's centre,
    done at the moment a pattern is built. A row that comes to ten is a row the
    phone draws exactly as the sheet does, because the extension divides a row
-   by its OWN total and a gap is a key that travels. Without it a short row is
-   drawn narrow here and stretched there. */
+   by its OWN total and a gap is a key that travels. A short row is drawn in the
+   middle on both sides now (KeyBoardView.swift, OWNER 2026-09-24), so what the
+   gaps add is that they are written down: the alignments read them. */
 function kbFillRow(row){
   var tot=kbUsed(row), rem=KB_COLS-tot, lead;
   if(rem<=0) return row;
@@ -1852,7 +1853,7 @@ function kbSelN(){ return (KBH && KBH.n) || 1; }
 function kbUnderOf(ri, ki){
   var rows=kbLayer().rows, di;
   if(!rows[ri] || !rows[ri][ki] || !rows[ri+1]) return null;
-  di=kbAtKey(rows[ri+1], kbAtOf(rows[ri], ki));
+  di=kbKeyAtSheet(rows[ri+1], kbSheetAt(rows[ri], ki));
   return di<0? null : {r:ri+1, i:di};
 }
 /* Every key of the selection, first to last. One list, so nothing has to work
@@ -1884,7 +1885,7 @@ function kbTapKey(ri, ki){
      the bin -- is about the key somebody pressed. */
   rows=kbLayer().rows;
   if(rows[ri] && kbShadow(rows[ri][ki])){
-    ui=kbAtKey(rows[ri-1], kbAtOf(rows[ri], ki));
+    ui=kbKeyAtSheet(rows[ri-1], kbSheetAt(rows[ri], ki));
     if(ui<0) return;
     ri=ri-1; ki=ui;
   }
@@ -1982,7 +1983,7 @@ function kbJoinDown(){
   up=rows[KBH.r]; dn=rows[KBH.r+1];
   if(!up || !dn || !up[KBH.i]) return false;
   if(kbTall(up[KBH.i]) || kbShadow(up[KBH.i])) return false;
-  di=kbAtKey(dn, kbAtOf(up, KBH.i));
+  di=kbKeyAtSheet(dn, kbSheetAt(up, KBH.i));
   if(di<0 || kbU(dn[di].w)!==kbU(up[KBH.i].w)) return false;
   return !kbTall(dn[di]) && !kbShadow(dn[di]);
 }
@@ -2059,6 +2060,32 @@ function kbAtKey(row, at){
   }
   return -1;
 }
+/* WHICH KEY STANDS AT A COLUMN OF THE SHEET -- where it is drawn, kbStart()
+   and all. 「直して」 OWNER 2026-09-24: the key "under" a key is the one the
+   sheet draws under it. It was counted from each row's own first key, so on
+   two rows of different lengths the key under a key was a key to one side of
+   it (docs/scope/r74-kb.md やり残し 3). Every "under" asks this: choosing
+   down, pressing a lower half, joining, the repair on a save, and carrying a
+   pair or a run down. */
+function kbKeyAtSheet(row, at){
+  return row? kbAtKey(row, at-kbStart(row)) : -1;
+}
+/* Where a key of width `w` goes in the row `below` (a row of the page) so it
+   stands under `el` in `top`, counting both rows as they will be once it is
+   in -- a key going into a row moves where that row starts. The index in the
+   page's row, or -1 where the row has no break there. */
+function kbPlaceUnder(top, el, below, w){
+  var at=0, i, k, bl=kbRowOf(below), sheet, st;
+  for(i=0;i<top.children.length;i++){
+    if(top.children[i]===el) break;
+    k=kbKeyOfEl(top.children[i]);
+    if(k) at+=kbU(k.w);
+  }
+  sheet=kbStart(kbRowOf(top))+at;
+  st=Math.max(0, kbLead(KB_COLS, kbUsed(bl)+kbU(w)));
+  at=sheet-st;
+  return (at===kbUsed(bl))? below.children.length : kbAtKey(bl, at);
+}
 /* Whether anything in this row is half of a merge. The three alignments are
    down on such a row: where a merged pair goes when the row it is in is
    pushed left or right is the OWNER's, and has not been asked. Moving one
@@ -2084,7 +2111,7 @@ function kbVJoin(ri, ki){
   up=rows[ri]; dn=rows[ri+1];
   if(!up || !dn || !up[ki]) return false;
   if(kbTall(up[ki]) || kbShadow(up[ki])) return false;
-  di=kbAtKey(dn, kbAtOf(up, ki));
+  di=kbKeyAtSheet(dn, kbSheetAt(up, ki));
   if(di<0 || kbU(dn[di].w)!==kbU(up[ki].w)) return false;
   if(kbTall(dn[di]) || kbShadow(dn[di])) return false;
   up[ki].h=2;
@@ -2117,13 +2144,13 @@ function kbVFix(){
     for(ri=0;ri<rows.length;ri++){
       for(ki=0;ki<rows[ri].length;ki++){
         k=rows[ri][ki];
-        at=kbAtOf(rows[ri], ki);
+        at=kbSheetAt(rows[ri], ki);
         if(kbTall(k)){
-          di=kbAtKey(rows[ri+1], at);
+          di=kbKeyAtSheet(rows[ri+1], at);
           if(di<0 || !kbShadow(rows[ri+1][di]) ||
              kbU(rows[ri+1][di].w)!==kbU(k.w)) delete k.h;
         }else if(kbShadow(k)){
-          di=kbAtKey(rows[ri-1], at);
+          di=kbKeyAtSheet(rows[ri-1], at);
           if(di<0 || !kbTall(rows[ri-1][di]) ||
              kbU(rows[ri-1][di].w)!==kbU(k.w)) delete k.up;
         }
@@ -3085,12 +3112,12 @@ function kbMateEl(el){
   ki=parseInt(el.getAttribute('data-k'), 10);
   k=kbAt(ri, ki);
   if(!k || !rows[ri]) return null;
-  at=kbAtOf(rows[ri], ki);
+  at=kbSheetAt(rows[ri], ki);
   if(kbTall(k)) wr=ri+1;
   else if(kbShadow(k)) wr=ri-1;
   else return null;
   if(!rows[wr]) return null;
-  di=kbAtKey(rows[wr], at);
+  di=kbKeyAtSheet(rows[wr], at);
   if(di<0) return null;
   return g.querySelector('.kbk[data-r="'+wr+'"][data-k="'+di+'"]');
 }
@@ -3294,7 +3321,7 @@ function kbDragTo(e){
   if(!KBD) return;
   var dx=p.clientX-KBD.x, dy=p.clientY-KBD.y;
   if(!KBD.on){
-    if(dx*dx+dy*dy>144){ clearTimeout(KBD.timer); KBD=null; }
+    if(dx*dx+dy*dy>HOLD_SLOP*HOLD_SLOP){ clearTimeout(KBD.timer); KBD=null; }
     return;
   }
   e.preventDefault();
@@ -3380,7 +3407,7 @@ function kbDragTo(e){
    for one, four times over. */
 function kbRunMove(row, over){
   var ms=KBD.run, g=document.getElementById('kb'),
-      els=[], back=[], tgt=[], i, e, k, at, di, ref, r0, dir=kbSelD();
+      els=[], back=[], tgt=[], i, e, k, di, ref, r0, dir=kbSelD();
   if(!g || !ms || !ms.length) return false;
   for(i=0;i<ms.length;i++){
     e=g.querySelector('.kbk[data-r="'+ms[i].r+'"][data-k="'+ms[i].i+'"]');
@@ -3408,14 +3435,9 @@ function kbRunMove(row, over){
     }else if(dir==='x'){
       tgt[i].insertBefore(els[i], els[i-1].nextSibling);
     }else{
-      /* the same column as the one above it, which is what a run DOWN is */
-      at=0;
-      for(var j=0;j<tgt[0].children.length;j++){
-        if(tgt[0].children[j]===els[0]) break;
-        k=kbKeyOfEl(tgt[0].children[j]);
-        if(k) at+=kbU(k.w);
-      }
-      di=(at===kbUsed(kbRowOf(tgt[i])))? tgt[i].children.length : kbAtKey(kbRowOf(tgt[i]), at);
+      /* the same column of the sheet as the one above it, which is what a
+         run DOWN is */
+      di=kbPlaceUnder(tgt[0], els[0], tgt[i], back[i].w);
       if(di<0) return putBack();
       ref=tgt[i].children[di] || null;
       tgt[i].insertBefore(els[i], ref);
@@ -3438,7 +3460,7 @@ function kbPairMove(row, over, w){
   var tall=KBD.el, mate=KBD.mate,
       tallRow=tall.parentNode, tallNext=tall.nextSibling,
       mateRow=mate.parentNode, mateNext=mate.nextSibling,
-      under, kids, a=-1, b=-1, i, at, below, di, ref, kk;
+      under, kids, a=-1, b=-1, i, di, ref;
   function putBack(){
     tallRow.insertBefore(tall, tallNext);
     mateRow.insertBefore(mate, mateNext);
@@ -3454,21 +3476,11 @@ function kbPairMove(row, over, w){
   for(i=0;i<kids.length;i++){ if(kids[i]===tall) a=i; if(kids[i]===over) b=i; }
   if(b<0) return putBack();
   row.insertBefore(tall, (a>=0 && b>a)? over.nextSibling : over);
-  /* where the top half now starts, and the same column in the row below. A
-     row whose keys do not break there cannot hold the other half -- which is
-     kbVJoin()'s own rule ("same column, same width"), asked before the move
-     rather than repaired after it. */
-  /* asked of each ELEMENT and not of kbRowOf(row)[i] -- that list leaves out
-     anything standing for nothing, so its i stops matching the page's i the
-     moment a row holds an empty cell. Watched: it threw. */
-  at=0;
-  for(i=0;i<row.children.length;i++){
-    if(row.children[i]===tall) break;
-    kk=kbKeyOfEl(row.children[i]);
-    if(kk) at+=kbU(kk.w);
-  }
-  below=kbRowOf(under);
-  di=(at===kbUsed(below))? below.length : kbAtKey(below, at);
+  /* where the top half now stands on the sheet, and the same column in the
+     row below (kbPlaceUnder). A row whose keys do not break there cannot hold
+     the other half -- which is kbVJoin()'s own rule ("same column, same
+     width"), asked before the move rather than repaired after it. */
+  di=kbPlaceUnder(row, tall, under, w);
   if(di<0) return putBack();
   ref=under.children[di] || null;
   under.insertBefore(mate, ref);
