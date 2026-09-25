@@ -105,7 +105,7 @@ public class LinguaStorePlugin: CAPPlugin, CAPBridgedPlugin, PurchasesDelegate {
   /// EMPTY IS A REAL ANSWER: nobody has made the RevenueCat app yet. `ready`
   /// is what it turns off -- prices, buying and restoring then fail the way a
   /// store that cannot be reached fails, and `current` still answers.
-  static let apiKey = ""
+  static let apiKey = "appl_dYvQRvDlzlmJqngUBzGmjJpNJOZ"
 
   /// Whether there is a RevenueCat to ask. `Purchases.shared` TRAPS when
   /// `configure` was never called, so every road that uses it asks this first.
