@@ -228,6 +228,12 @@ const want = (label, got, expected) => {
 
 const br = await chromium.launch(LAUNCH);
 const pg = await br.newPage();
+/* NOTHING LEAVES THIS MACHINE. The seed carries a session, so a launch does
+   what a signed-in launch does and asks the server -- and SB_URL is the real
+   one. Refused the moment it is asked, which is what a phone with no signal
+   is told, rather than whenever a network nobody controls gets round to it
+   (r92: that wait decided whether this file was red). */
+await pg.route((u) => u.hostname !== 'localhost', (r) => r.abort());
 await pg.goto(`http://localhost:${PORT}/`);
 
 /* ---- AND WHAT THIS ACCOUNT PAYS, WHICH IS NOT ON THE DISK ---------------
@@ -264,13 +270,34 @@ await pg.goto(`http://localhost:${PORT}/`);
    it every language is locked, save() writes nothing, and five claims read
    「the grammar did not move」 for the wrong reason (measured 2026-09-24,
    r79: langLocked() true, LOWN {}). */
+/* AND NOTHING IS STILL GOING UP WHEN A STAGE PRESSES. While a send is out
+   NET_SYNCING is up, a Save pressed then waits its turn behind it
+   (www/net.js § NET_NEXT) with KEEP_BUSY up, and the next Save pressed is
+   refused -- a press while one is going up is a second press
+   (www/shell.js § keepSave). That is the app as specified. What it made of
+   this file was a race: a stage's write reached bkTouch() (www/backup.js),
+   which sent it up through the real window to the real SB_URL; `mk` pressed
+   Save while that was out and was queued; `polar` pressed ~60ms later, and
+   whether the network had answered by then was whether every negation rule
+   read null (measured r92, docs/scope/r92-gramlang.md).
+
+   So THE ONE WINDOW IS FAKED, once, after every boot, for every stage:
+   netSend1() is what every road to the server goes through (www/net.js), and
+   here it answers on the spot -- a language row this account knows, and
+   nothing else -- so a send is over before the press that made it returns.
+   What the launch had already sent before this was in place is refused by
+   the route above, and the boot is over when that has come back. */
 const boot = async () => {
   await pg.reload();
   await pg.evaluate(() => {
     planTook('free');
     window.pageWait = function (r, a, done) { done(true); };
     Object.keys(LANGS).forEach(function (id) { langOwnGot(id, netUid()); });
+    window.netSend1 = function (method, path, body, tok, ok) {
+      ok(String(path).indexOf('/rest/v1/language?') === 0 ? [{ id: 'srv-known' }] : []);
+    };
   });
+  await pg.waitForFunction(() => !NET_SYNCING && !KEEP_BUSY);
 };
 
 /* ---- 1, 2, 3: it arrives, it copies, and nothing else moves ------------- */
@@ -807,11 +834,6 @@ const g2 = await pg.evaluate(() => {
   };
   const saveBtn = () => document.querySelector('.navtop [data-do="keepPress"]');
   const gold = () => { const b = saveBtn(); return !!b && b.classList.contains('navon'); };
-  /* The save goes up before it goes down (www/shell.js § keepSave), and this
-     check stands up no server. Answered yes here and put back at the end, so
-     what is being asked about is the board and not the wire. */
-  const realNet = window.netSaveNow;
-  window.netSaveNow = (cb) => { if (cb) cb(true); };
 
   /* Nobody has arranged anything yet. A block above this one presses the old
      六択 on the stage screen, so the mark is already standing when this starts
@@ -889,7 +911,6 @@ const g2 = await pg.evaluate(() => {
                   h: Math.round(document.querySelector('[data-gord="on"]')
                        .getBoundingClientRect().height) };
 
-  window.netSaveNow = realNet;
   keepDrop(keepKeyOf('gram', 'v2:order'));
   WORDS.length = wl;
   STG.order = was;
@@ -1490,13 +1511,11 @@ const mk = await pg.evaluate(() => {
   WORDS.push({ hw:'zluma', pos:'v', mns:['eat'], at:1 });
   STG.fm = [];
   fmrDraft = null;
-  /* ONE WINDOW IS FAKED and everything over it runs for real, which is what
-     keep-check does for the same reason: a save is not saved until it is up
-     (www/shell.js § keepSave) and there is no server behind this file. */
+  /* The one window is faked for the whole file (§ boot above) and
+     everything over it runs for real, which is what keep-check does for the
+     same reason: a save is not saved until it is up (www/shell.js
+     § keepSave). */
   langRowGot(langId); langStore();
-  netSend = function (method, path, body, tok, ok, bad) {
-    ok(String(path).indexOf('/rest/v1/language?') === 0 ? [{ id: 'srv-known' }] : []);
-  };
   const open = (id) => { window.route = 'gram';
     NAV = [{ r:'gram', a:'v2:' + id }]; render(); };
   /* Found by what it WRITES rather than by what it is called: this check runs
@@ -1862,10 +1881,6 @@ const polar = await pg.evaluate(() => {
   WORDS.push({ hw:'zke',   pos:'pro',  mns:['I'],   at:1 });
   WORDS.push({ hw:'zluma', pos:'v',    mns:['eat'], at:1 });
   WORDS.push({ hw:'znak',  pos:'part', mns:['not'], at:1, slot:'neg.not' });
-  /* The save goes up before it goes down (www/shell.js § keepSave) and there
-     is no server behind this file. */
-  const realNet = window.netSaveNow;
-  window.netSaveNow = (cb) => { if (cb) cb(true); };
   /* Nothing written yet, and the copy of the old gpos already made -- what
      this block is about is the writing, and the copy is the block after it. */
   STG.gr = []; STG.grm = '1'; G2POL = { at:'', a:[], b:[] };
@@ -1978,7 +1993,6 @@ const polar = await pg.evaluate(() => {
   saveBtn().click();
   const nounGone = !gPolFind('NEGATION', 'NOUN');
 
-  window.netSaveNow = realNet;
   WORDS.length = wl;
   STG.gr = JSON.parse(wasGr); STG.grm = wasGrm; G2POL = { at:'', a:[], b:[] };
   return { vDoors: vDoors, impDoors: impDoors, copDoors: copDoors,
