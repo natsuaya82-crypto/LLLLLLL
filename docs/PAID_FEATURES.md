@@ -120,8 +120,11 @@ CLAUDE.md が禁じている三番目の規則 ── 何も止めていない�
 を、`assets-check` が `project.pbxproj` を読むのと同じ。今読んでいるのは
 **段の語が `LinguaStore.swift` に一つも無いこと**、Keychain に書かないこと、
 ~~`best()`~~／~~`entitledPlan()`~~ が無いこと、四本の道が全部 `jws` を返すこと、
-`appAccountToken` が付くこと、アカウント無しの購入を断ること、
-`Transaction.updates` に来たものを取っておくこと。
+買う前に RevenueCat をサインイン中のアカウントに logIn して読み戻すこと（それが
+`appAccountToken` になる）、アカウント無しの購入を断ること、買う・復元は
+RevenueCat の `Purchases` を通り StoreKit 直の買う・復元・聞き手・finish が
+一つも無いこと、公開キーが一か所で、空でも落ちないこと、返金が届くように各商品の
+`Transaction.latest(for:)` を上げること、Podfile に RevenueCat が在ること。
 
 **署名そのもの**は `tools/verify-check.mjs` が持つ ── 自分で作った P-256 の鎖で
 署名した取引を、函数が実際に使う一枚（`supabase/functions/verify-plan/verify.mjs`）
@@ -667,7 +670,8 @@ Where each of the three lives, and none of them is new:
 | the two links | `docRows()` — `DOC_TERMS` and `DOC_PRIVACY`, the same two published pages the account room links to |
 
 **The price is not repeated in the sentence and `plan.renew` carries no `{0}`.**
-What somebody is charged is Apple's fact and arrives as `displayPrice`; a price
+What somebody is charged is Apple's fact and arrives as `localizedPriceString`
+(RevenueCat's name for the App Store's own formatted price); a price
 built into a translated string is a number ten files would have to go on
 agreeing about. `www/store.js` is at length about why there is only ever one.
 
@@ -770,10 +774,16 @@ backup, and the ceiling putting somebody on a price list mid-word.
 ## What the App Store is wired to
 
 **Both halves are in.** `ios/App/App/LinguaStore.swift` has `products`, `buy`,
-`restore`, `current` and `manage`, refuses an `.unverified` transaction,
-finishes what it consumes and watches `Transaction.updates` for a renewal that
-arrives while the app is shut; it writes nothing down — what it hands over is
-what Apple signed, and `verify-plan` answers the plan. **`www/store.js` is the
+`restore`, `current` and `manage`. **Buying, restoring and hearing about a
+transaction that arrives later go through RevenueCat's `Purchases`** (Shipaton
+2026, `docs/FEATURE_RULES.md` 2026-08-25): RevenueCat finishes what it
+consumes, listens where `Transaction.updates` is, and its delegate tells the
+page (`linguastore`). What goes up is still what Apple SIGNED — read off
+StoreKit's `currentEntitlements` and each product's `Transaction.latest(for:)`, because
+RevenueCat does not hand the JWS out — and `verify-plan` answers the plan. It
+writes nothing down. The public key is `apiKey` in that file; while it is empty,
+prices, buying and restoring fail as a store that cannot be reached, and
+`current` still answers. **`www/store.js` is the
 one window onto it** — the way `net.js` is the one window onto the server — and
 `plBuy()` in `www/settings.js` is `storeBuy()`'s only caller.
 
