@@ -201,9 +201,13 @@ for (const [file, mark] of [['post.js', MARK], ['card.js', CARD_MARK]]) {
    meBlocks -- the one thing that menu asks, and the only reason it is on this
    list. It reads whether I have blocked this handle. Both names are here
    because the check names the callee: postMenuHTML for the row that opens the
-   menu, meBlocks for the menu that asks. */
+   menu, meBlocks for the menu that asks.
 
-const ALLOW = new Set(['trHTML', 'trBtnHTML', 'postBadge', 'postMenuHTML', 'meBlocks']);
+   meMutes -- the same question about the other row on that menu, 「ミュート」
+   or 「ミュート解除」 (OWNER 2026-09-25). It is about my account and draws
+   nothing into the post, for meBlocks's reason. */
+
+const ALLOW = new Set(['trHTML', 'trBtnHTML', 'postBadge', 'postMenuHTML', 'meBlocks', 'meMutes']);
 
 const bodies = {};
 for (const f of fs.readdirSync(WWW).filter((x) => x.endsWith('.js')).sort()) {

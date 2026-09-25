@@ -213,6 +213,7 @@ act('openMe', openMe);
 act('mePicAsk', mePicAsk);
 act('meFollow', meFollow);
 act('meBlock', meBlock);
+act('meMute', meMute);
 act('openPost', openPost);
 act('openReport', openReport);
 act('reportGo', reportGo);

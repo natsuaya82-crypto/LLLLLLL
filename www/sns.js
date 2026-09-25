@@ -773,7 +773,7 @@ function pullForget(){
   DAY=null; NOTES_HAVE=null; FO_HAVE=null; SNS_NEXT={}; SNS_END={};
   MORE_AT={}; MORE_END={};
   folForget();
-  netPplDrop('block');
+  netPplDrop('block'); netPplDrop('mute');
   WLD_HAVE={}; WLDS_HAVE={};
 }
 acctMem(pullForget);
@@ -882,6 +882,11 @@ pullOn('mod',     function(ok, bad){ modAsk(ok, bad); });
    or 「解除」. Their posts are left out by the server and need nothing here. */
 pullOn('blocks',  function(ok, bad){ netPplRead('block', function(){ ok(1); }, bad); },
        function(){ return netPplGot('block'); });
+/* AND WHOM IT HAS MUTED, for the list in the settings and for the word on
+   the ... of somebody's page -- 「ミュート」 or 「ミュート解除」. A muted
+   person's page is still there, which is where that word is read. */
+pullOn('mutes',   function(ok, bad){ netPplRead('mute', function(){ ok(1); }, bad); },
+       function(){ return netPplGot('mute'); });
 /* ---- WHAT EACH PAGE READS -- ONE TABLE -----------------------------------
    A row is a route and a function of its argument that answers with the
    questions the page is drawn from, as [k, a] pairs. `pull` says whether a
@@ -915,16 +920,18 @@ pageReads('profile', function(a){
   if(h===meHandle()) return [['who', h], ['posts', h], ['mylangs']];
   /* Nobody a block stands between has a page to arrive at (profile_seen,
      both ways), so whom you have blocked is not this page's question -- it
-     is the settings' (www/settings.js § block). */
-  return [['who', h], ['posts', h]];
+     is the settings' (www/settings.js § block). Whom you have MUTED is: a
+     muted person's page is there, and its ... says which way the press goes. */
+  return [['who', h], ['posts', h], ['mutes']];
 }, true);
 pageReads('follows', function(a){ return [['fols', String(a||'')]]; }, true);
 pageReads('notfo',   function(a){ return [['people', String(a||'')]]; });
-/* The settings are one route, and one of its rooms draws whom you have
-   blocked. The rest read what the route has always read: the open language
-   (PAGES.set.lang). */
+/* The settings are one route, and two of its rooms draw people: whom you
+   have blocked and whom you have muted. The rest read what the route has
+   always read: the open language (PAGES.set.lang). */
 pageReads('set',     function(a){
   if(String(a||'')==='block') return [['blocks']];
+  if(String(a||'')==='mute')  return [['mutes']];
   return langId? [['lang', langId]] : [];
 });
 pageReads('drafts',  function(){ return [['drafts']]; }, true);

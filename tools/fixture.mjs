@@ -464,6 +464,9 @@ export function seed(){
      netPplRead) -- one person nobody else in the fixture is, so the
      settings' list has a row to draw and a 解除 to press. */
   NET_PPL.block = [{ id:'U-zed', hd:'zed', who:'Zed', av:{ ch:'Z' } }];
+  /* AND WHOM IT HAS MUTED (`mute_seen`), one more person nobody else is, so
+     the 非表示リスト has a row and a ミュート解除 to press. */
+  NET_PPL.mute = [{ id:'U-yun', hd:'yun', who:'Yun', av:{ ch:'Y' } }];
   /* and the open language's slices, which are what the fixture seeded */
   PULL_GOT['lang|' + langId] = 1;
   /* and what this account has written, which is POSTS -- so the door onto
@@ -1599,6 +1602,18 @@ export function halfDone(){
                                          window.route = 'profile';
                                          NAV = [{ r: 'profile', a: 'iri' }];
                                          return vProfile(); }],
+    /* And the same page with Iri muted: the posts are still on it (a mute is
+       off the timeline, not gone) and the row on the menu has turned. */
+    ["somebody else's page, muted, with the menu open",
+                                 () => { const was = NET_PPL.mute;
+                                         NET_PPL.mute = [{ id:'U-iri', hd:'iri', who:'Iri', av:{ ch:'\u0416' } }];
+                                         WMENU = true;
+                                         WHO_HAVE['iri'] = { who:'Iri', hd:'iri',
+                                             av:{ch:'Ж'}, lname:'Vethi', bio:'',
+                                             fo:2, fr:3, out:false };
+                                         window.route = 'profile';
+                                         NAV = [{ r: 'profile', a: 'iri' }];
+                                         const h = vProfile(); NET_PPL.mute = was; return h; }],
     /* Frozen, which is said on the page the app opens on and nowhere else --
        no notice, and the three sns tabs stay open. */
     ['home, for an account that has been frozen',

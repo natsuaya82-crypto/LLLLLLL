@@ -3045,6 +3045,13 @@ var NET_PAGE=50;
    reactions and read back by nobody until netRow() -- is part of it. */
 var NET_POST_SEL='/rest/v1/post_seen?select=id,author,created_at,reply_to,body,hidden_at,author_out'+
                  ',likes,boosts,replies,i_like,i_boost';
+/* AND THE LISTS A MUTE LEAVES OUT ASK FOR IT, in these words and no others.
+   「ミュートした人の投稿はタイムラインに出ない」 OWNER 2026-09-25, and the
+   leader's reading of it: the timelines, a thread and a search. A person's
+   own page does not ask it (netPostsBy), nor does a post opened by its id --
+   what somebody wrote is still theirs to show. `muted` is the server's
+   answer (supabase/schema.sql § mute_hides); this only asks for it. */
+var NET_UNMUTED='&muted=is.false';
 /* AND WHAT A LANGUAGE ROW IS READ AS, the same way (two reads). */
 var NET_LANG_SEL='/rest/v1/language?select=id,name,published_at,wsys,owner,created_at';
 /* What a row is, on the way out. `body` holds everything a reader needs and
@@ -3190,7 +3197,9 @@ function netFeed(which, ok, bad, more){
   if(which==='day'){
     var pid=(typeof dayId==='function')? dayId() : 0;
     if(!pid){ ok(null); return; }
-    pull('&prompt=eq.'+encodeURIComponent(String(pid)));
+    /* and nobody this account has muted (`post_seen.muted`) -- 今日のお題
+       is a timeline, and a mute is 「not in the timeline」. */
+    pull('&prompt=eq.'+encodeURIComponent(String(pid))+NET_UNMUTED);
     return;
   }
   /* What is going round, which is one question the server answers -- the
@@ -3421,6 +3430,17 @@ function netBlock(handle, on, ok, bad){
   /* The copy below is now wrong whichever way this goes. */
   netPplDrop('block');
   netPairRow('block', 'actor', 'blocked', handle, on, ok, bad);
+}
+/* ---- not reading somebody -----------------------------------------------
+   「人をミュートできる…（ブロックとは別）」 OWNER 2026-09-25. The same row as
+   a block with the other name on it, and it keeps nobody out: `mute` in
+   schema.sql is one way and the person on the other end is told nothing.
+   What it does is the server's -- `post_seen.muted`, which the lists that
+   leave a muted person out ask for (netFeed's day, netReplies, netFindPosts;
+   feed_hot() and feed_fo() on the server). */
+function netMute(handle, on, ok, bad){
+  netPplDrop('mute');
+  netPairRow('mute', 'actor', 'muted', handle, on, ok, bad);
 }
 /* WHOM YOU HAVE BLOCKED, for the two things on this phone that ask: the list
    in the settings where a block is lifted (「設定に追加して非表示リストと
@@ -4090,7 +4110,7 @@ function netReplies(ids, ok, bad, after){
   }
   if(!list.length){ ok([]); return; }
   netGet(NET_POST_SEL+
-         '&reply_to=in.('+list.join(',')+')'+
+         '&reply_to=in.('+list.join(',')+')'+NET_UNMUTED+
          '&order=created_at.asc'+
          (after? '&created_at=gt.'+encodeURIComponent(String(after)) : '')+
          '&limit='+NET_PAGE,
@@ -4150,7 +4170,7 @@ function netFindPosts(q, ok, bad, more){
      one they have already read, or steps over one they have not. */
   netGet(NET_POST_SEL+
          '&or=(body->>ln.ilike.'+like+',body->>mn.ilike.'+like+
-         ',body->>lname.ilike.'+like+',body->>tags.ilike.'+tlike+')'+
+         ',body->>lname.ilike.'+like+',body->>tags.ilike.'+tlike+')'+NET_UNMUTED+
          '&order=created_at.desc'+
          (more? '&created_at=lt.'+encodeURIComponent(String(more)) : '')+
          '&limit='+NET_PAGE,
