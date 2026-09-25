@@ -1031,6 +1031,38 @@ language sql stable security definer set search_path = public as $$
   select exists (select 1 from post x where x.id = p and block_hides(x.author))
 $$;
 
+-- ---- not reading somebody, without keeping them away -----------------------
+-- 「人をミュートできる。ミュートした人の投稿はタイムラインに出ない（ブロック
+-- とは別）」 OWNER 2026-09-25. A mute is the other shape of `block` and the
+-- difference is the whole of it: it goes ONE way, and it keeps nobody out.
+-- The person muted still sees you, still follows, likes and answers you, and
+-- is never told; you simply stop being handed what they write in the lists
+-- you scroll -- the timelines, a thread, a search.
+--
+-- The row is yours alone, read and written, the way `block` is: who somebody
+-- has stopped reading is nobody else's business, and least of all the
+-- person's on the other end of it. Deleting either account takes the row.
+create table if not exists mute (
+  actor      uuid not null references profile(id) on delete cascade,
+  muted      uuid not null references profile(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (actor, muted),
+  check (actor <> muted)
+);
+
+-- AND THE ONE PLACE A MUTE IS ANSWERED, beside block_hides() and in its
+-- shape: one yes-or-no about the reader and `who`. `post_seen` carries it as
+-- a column (`muted`) rather than leaving the row out, because a mute is NOT
+-- 「see nothing of them」: their own page still shows what they wrote, and
+-- only the lists that decision names ask for `muted=is.false` -- feed_hot()
+-- and feed_fo() below, and the day's list, a thread and a search in
+-- www/net.js. `security definer` for the reason block_hides() is.
+create or replace function mute_hides(who uuid) returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (select 1 from mute m
+                  where m.actor = auth.uid() and m.muted = who)
+$$;
+
 -- ---- where a notice goes when the app is closed ----------------------------
 -- 「通知作ろう。アップルのネイティブ通知で、フォローされた時、返信きた時みたい
 --   な感じでSNS部分であるやつ。」 OWNER 2026-09-22.
@@ -1226,6 +1258,7 @@ alter table react       enable row level security;
 alter table prompt      enable row level security;
 alter table follow      enable row level security;
 alter table block       enable row level security;
+alter table mute        enable row level security;
 alter table device      enable row level security;
 alter table report      enable row level security;
 alter table feedback    enable row level security;
@@ -1775,6 +1808,18 @@ create view block_seen as
    where b.actor = auth.uid();
 grant select on block_seen to authenticated;
 
+-- ---- whom you have muted, by name -----------------------------------------
+-- 「設定の「非表示リスト」がミュートした人の一覧で、そこから解除する」 OWNER
+-- 2026-09-25. block_seen's shape, for the same reason and with the same
+-- `where` keeping it yours. rls-check: 「MD cannot read that MD is muted」.
+drop view if exists mute_seen cascade;
+create view mute_seen as
+  select m.muted as id, p.handle, p.display, p.av, m.created_at
+    from mute m
+    join profile p on p.id = m.muted
+   where m.actor = auth.uid();
+grant select on mute_seen to authenticated;
+
 -- A POST KEPT TO YOURSELF is read by the person who wrote it and by nobody
 -- else -- not a follower, not the person it answers, not staff.
 -- 「SNSは全部サーバー」 and 「NOTHING IS THE PHONE'S」 (CLAUDE.md § Online):
@@ -1836,7 +1881,11 @@ create view post_seen as
                     and r.actor = auth.uid()) as i_like,
          exists (select 1 from react r
                   where r.post = p.id and r.kind = 'boost'
-                    and r.actor = auth.uid()) as i_boost
+                    and r.actor = auth.uid()) as i_boost,
+         -- AND WHETHER THE READER HAS MUTED WHOEVER WROTE IT (mute_hides).
+         -- A column and not a `where`: the lists that leave a muted person
+         -- out ask for it, and their own page does not.
+         mute_hides(p.author) as muted
     from post p left join profile a on a.id = p.author
    -- and a post kept to yourself is not a row for anybody else (post_private),
    -- and one by somebody the reader blocked is not a row for them (block_hides).
@@ -2117,6 +2166,15 @@ create policy block_make on block for insert
   with check (is_member() and actor = auth.uid());
 drop policy if exists block_drop on block;
 create policy block_drop on block for delete using (is_member() and actor = auth.uid());
+
+-- mute: YOURS and nobody else's, in every direction, for block's reason.
+drop policy if exists mute_read on mute;
+create policy mute_read on mute for select using (actor = auth.uid());
+drop policy if exists mute_make on mute;
+create policy mute_make on mute for insert
+  with check (is_member() and actor = auth.uid());
+drop policy if exists mute_drop on mute;
+create policy mute_drop on mute for delete using (is_member() and actor = auth.uid());
 
 -- device: YOURS and nobody else's, in every direction -- the same four lines
 -- block is under, and for a harder reason.
@@ -2621,6 +2679,8 @@ language sql stable as $$
         somebody chose to read and a thread is theirs to say; feed_fo() below
         keeps them, and so does the day's list. */
      and v.reply_to is null
+     -- and nobody the reader has muted (post_seen.muted)
+     and not v.muted
    order by ((k.pts + a.pts) * feed_weight(v.author)) desc, v.created_at desc
    limit lim offset off
 $$;
@@ -2676,6 +2736,7 @@ language sql stable as $$
           select v.*, null::uuid as by, v.created_at as at_key
             from post_seen v
            where v.hidden_at is null
+             and not v.muted
              and v.author in (select f.followed from follow f
                                where f.follower = auth.uid())
              and (before is null or v.created_at < before)
@@ -2684,6 +2745,8 @@ language sql stable as $$
             from react r join post_seen v on v.id = r.post
            where r.kind = 'boost'
              and v.hidden_at is null
+             -- a muted person's post is not handed on by somebody else either
+             and not v.muted
              -- post_seen has already asked about who WROTE it; who passed it
              -- on is a second person on the row and is asked here.
              and not block_hides(r.actor)

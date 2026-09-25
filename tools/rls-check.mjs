@@ -572,6 +572,33 @@ const CASES = [
   ['B lifts B\u2019s own block',               'ok',     B, 0,
     `delete from block where actor='${B}' and blocked='${A}'`],
 
+  /* --- a mute is yours, goes one way, and keeps nobody out --------------
+     \u300c\u4eba\u3092\u30df\u30e5\u30fc\u30c8\u3067\u304d\u308b\u2026\uff08\u30d6\u30ed\u30c3\u30af\u3068\u306f\u5225\uff09\u300d OWNER 2026-09-25. B mutes A
+     and lifts it again before the section closes, so everything below still
+     reads A's posts as the ordinary somebody else. */
+  ['B mutes A',                               'ok',     B, 0,
+    `insert into mute(actor,muted) values ('${B}','${A}')`],
+  ['B reads whom B muted, by name',           'ok',     B, 0,
+    `select 1 from mute_seen where id='${A}'`],
+  ['A cannot read that A is muted',           'denied', A, 0,
+    `select 1 from mute_seen`],
+  ['A cannot read B\u2019s mutes',              'denied', A, 0,
+    `select 1 from mute where actor='${B}'`],
+  ['A cannot mute in B\u2019s name',           'denied', A, 0,
+    `insert into mute(actor,muted) values ('${B}','${C}')`],
+  ['A cannot lift B\u2019s mute',              'denied', A, 0,
+    `delete from mute where actor='${B}'`],
+  ['nobody signed in mutes',                  'denied', B, 1,
+    `insert into mute(actor,muted) values ('${B}','${C}')`],
+  ['A\u2019s post says it is muted, to B',      'ok',     B, 0,
+    `select 1 from post_seen where id='${P}' and muted`],
+  ['and still reaches B\u2019s own read of it', 'ok',     B, 0,
+    `select 1 from post_seen where id='${P}'`],
+  ['and says nothing of the kind to C',       'denied', C, 0,
+    `select 1 from post_seen where id='${P}' and muted`],
+  ['B lifts the mute',                        'ok',     B, 0,
+    `delete from mute where actor='${B}' and muted='${A}'`],
+
   /* --- and a block is the server's to keep, not the phone's -------------
      「Blocked means you see nothing of them」 OWNER 2026-08-19. These are
      only the rows; what BK can still READ of BD is asked of the catalogue
