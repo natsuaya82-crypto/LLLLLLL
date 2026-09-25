@@ -79,6 +79,11 @@ var SETS=[
      「ブロックの解除 → 設定に追加して非表示リストとブロックリスト」 OWNER
      2026-09-24: a blocked person has no page to press 解除 on any more,
      from either side (block_hides, supabase/schema.sql). */
+  /* And whom you have muted, the list a mute is lifted from. 「設定の「非表示
+     リスト」がミュートした人の一覧で、そこから解除する」 OWNER 2026-09-25,
+     beside the block list and before it, in the order the owner named the
+     two (「非表示リストとブロックリスト」 2026-09-24). */
+  {id:'mute',  k:'set.mute'},
   {id:'block', k:'set.block'},
   {id:'data',  k:'set.data'},
   {id:'ui',    k:'set.display'}
@@ -189,10 +194,14 @@ function vSettings(){
 /* One person you have blocked: who (snsWhoFace, the row every list of people
    draws) and the way to lift it. Not a door onto their page -- there is no
    page of theirs to go to while the block stands. */
-function setBlockRow(p){
+function setBlockRow(p){ return setPplRow(p, 'meBlock', 'post.unblock'); }
+/* One person you have muted, and the way to lift it. A muted person's page IS
+   there, but this row is the list, and the list is where a mute is lifted. */
+function setMuteRow(p){ return setPplRow(p, 'meMute', 'post.unmute'); }
+function setPplRow(p, press, k){
   return '<div class="whrow"><div class="whgo">'+snsWhoFace(p)+'</div>'+
-    '<button class="whfo on"' + DO('meBlock', [p.hd]) + '>'+
-      esc(t('post.unblock'))+'</button></div>';
+    '<button class="whfo on"' + DO(press, [p.hd]) + '>'+
+      esc(t(k))+'</button></div>';
 }
 /* What each room answers, said on its door, so most questions are answered
    without opening anything. */
@@ -269,9 +278,15 @@ function vSet(){
        where a follow list has フォロー. Pressing it is meBlock() -- the same
        press the ... menu makes -- and the row goes when the list comes back
        without it. */
-    body=netBlockedPeople().length
-      ? netBlockedPeople().map(setBlockRow).join('')
+    body=netPpl('block').length
+      ? netPpl('block').map(setBlockRow).join('')
       : snsEmpty('blocks', snsNone());
+  } else if(id==='mute'){
+    /* The same list with the other table's name: `mute_seen`, newest first,
+       each with ミュート解除 (meMute(), the press the ... menu makes). */
+    body=netPpl('mute').length
+      ? netPpl('mute').map(setMuteRow).join('')
+      : snsEmpty('mutes', snsNone());
   } else if(id==='push'){
     /* Four rows, and the state above them when iOS has said no. www/push.js
        draws it: this file says where the room is and that file says what is

@@ -572,6 +572,33 @@ const CASES = [
   ['B lifts B\u2019s own block',               'ok',     B, 0,
     `delete from block where actor='${B}' and blocked='${A}'`],
 
+  /* --- a mute is yours, goes one way, and keeps nobody out --------------
+     \u300c\u4eba\u3092\u30df\u30e5\u30fc\u30c8\u3067\u304d\u308b\u2026\uff08\u30d6\u30ed\u30c3\u30af\u3068\u306f\u5225\uff09\u300d OWNER 2026-09-25. B mutes A
+     and lifts it again before the section closes, so everything below still
+     reads A's posts as the ordinary somebody else. */
+  ['B mutes A',                               'ok',     B, 0,
+    `insert into mute(actor,muted) values ('${B}','${A}')`],
+  ['B reads whom B muted, by name',           'ok',     B, 0,
+    `select 1 from mute_seen where id='${A}'`],
+  ['A cannot read that A is muted',           'denied', A, 0,
+    `select 1 from mute_seen`],
+  ['A cannot read B\u2019s mutes',              'denied', A, 0,
+    `select 1 from mute where actor='${B}'`],
+  ['A cannot mute in B\u2019s name',           'denied', A, 0,
+    `insert into mute(actor,muted) values ('${B}','${C}')`],
+  ['A cannot lift B\u2019s mute',              'denied', A, 0,
+    `delete from mute where actor='${B}'`],
+  ['nobody signed in mutes',                  'denied', B, 1,
+    `insert into mute(actor,muted) values ('${B}','${C}')`],
+  ['A\u2019s post says it is muted, to B',      'ok',     B, 0,
+    `select 1 from post_seen where id='${P}' and muted`],
+  ['and still reaches B\u2019s own read of it', 'ok',     B, 0,
+    `select 1 from post_seen where id='${P}'`],
+  ['and says nothing of the kind to C',       'denied', C, 0,
+    `select 1 from post_seen where id='${P}' and muted`],
+  ['B lifts the mute',                        'ok',     B, 0,
+    `delete from mute where actor='${B}' and muted='${A}'`],
+
   /* --- and a block is the server's to keep, not the phone's -------------
      「Blocked means you see nothing of them」 OWNER 2026-08-19. These are
      only the rows; what BK can still READ of BD is asked of the catalogue
@@ -614,6 +641,46 @@ const CASES = [
     `select 1 from block_seen`],
   ['B cannot read whom BK blocked',           'denied', B, 0,
     `select 1 from block_seen where handle='${BDH}'`],
+  /* NOTHING IS DONE ACROSS IT, EITHER WAY. 「ブロックされた側 → いいね・返信・
+     フォローもできず、通知も来ない（サーバーで止める）」 OWNER 2026-09-25. A
+     refused row is also a push nobody gets: push-send rings on these rows
+     arriving (supabase/functions/push-send/push.mjs § PUSH). */
+  ['BD cannot pass BK’s post on',         'denied', BD, 0,
+    `insert into react(post,actor,kind) values ('${BKP}','${BD}','boost')`],
+  ['BD cannot answer BK',                     'denied', BD, 0,
+    `insert into post(author,body,reply_to) values ('${BD}','{}'::jsonb,'${BKP}')`],
+  ['nor edit a post into an answer to BK',    'denied', BD, 0,
+    `update post set reply_to='${BKP}' where id='${BDP}'`],
+  ['BD stops following BK',                   'ok',     BD, 0,
+    `delete from follow where follower='${BD}' and followed='${BK}'`],
+  ['and cannot follow BK again',              'denied', BD, 0,
+    `insert into follow(follower,followed) values ('${BD}','${BK}')`],
+  ['BK cannot like BD’s post either',     'denied', BK, 0,
+    `insert into react(post,actor,kind) values ('${BDP}','${BK}','like')`],
+  ['BD still answers somebody else',          'ok',     BD, 0,
+    `insert into post(author,body,reply_to) values ('${BD}','{}'::jsonb,'${P}')`],
+  /* WHAT THEY PUBLISHED, both ways. 「ブロックした相手の公開言語 → 言語の一覧・
+     検索・人のページから見えない」 OWNER 2026-09-25. The walk further down
+     counts this too; these say it by name. */
+  ['BK does not see BD’s published language', 'denied', BK, 0,
+    `select 1 from language_seen where id='${BDL}'`],
+  ['BD does not see BK’s published language', 'denied', BD, 0,
+    `select 1 from language_seen where id='${BKL}'`],
+  /* AND ONE BK TOOK BEFORE THE BLOCK IS STILL READ, which is not a decision:
+     what a block does to a language somebody took has not been asked
+     (docs/scope/r85-block.md), so this holds that nothing moved. The take is
+     made with the block lifted and dropped again at the end, so the walk
+     below counts a block and nothing else. */
+  ['BK lifts the block for a moment',         'ok',     BK, 0,
+    `delete from block where actor='${BK}' and blocked='${BD}'`],
+  ['BK takes BD’s language',              'ok',     BK, 0,
+    `insert into language_take(uid,language) values ('${BK}','${BDL}')`],
+  ['BK blocks BD again',                      'ok',     BK, 0,
+    `insert into block(actor,blocked) values ('${BK}','${BD}')`],
+  ['BK still reads the language BK took',     'ok',     BK, 0,
+    `select 1 from language_seen where id='${BDL}'`],
+  ['BK lets go of it',                        'ok',     BK, 0,
+    `delete from language_take where uid='${BK}' and language='${BDL}'`],
 
   /* --- a report is written and never read back by anybody using the app --- */
   ['B reports A\u2019s post',                  'ok',     B, 0,
@@ -3311,7 +3378,6 @@ if (wall) {
    was blocked (`BLOCKED`) -- and every read is held to the same sentence
    both times. */
 const BLOCK_HELD = {
-  language_seen: 'what they made -- a language somebody TOOK would leave the list of what they have',
 };
 const blockRows = out.split('\n').map((l) => l.split('\t'))
                      .filter((r) => r.length === 4 && (r[0] === 'BLOCK' || r[0] === 'BLOCKED'));

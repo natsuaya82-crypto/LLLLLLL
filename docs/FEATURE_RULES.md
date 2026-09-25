@@ -262,7 +262,13 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Reason: オーナーの言葉。
 - Affected data: ミュートの表（新しい）、`block_hides()` の範囲、スマホの用紙と声のファイル（消す）。
 - Affected docs: この項、`docs/STATE.md`、Documents の文（`docs/FEATURES.md`・`docs/RECOVERY.md`、直す session が）。
-- Implementation status: 未。r84 の後に r85 で出す。
+- Implementation status: **実装（`claude/r85-block`、2026-09-25）。CODE CONFIRMED のみ。**
+  ミュート ── `mute` 表・`mute_seen`・`post_seen.muted`、おすすめ・フォロー中・今日のお題・スレッド・投稿の検索から
+  外れ、その人のページには出る。設定の「非表示リスト」。サインインし直した時の着地 ── もうプロフィールだった
+  （`open-check` 3e で測った、コードは変えていない）。ブロックした相手の公開言語 ── `language_seen` で外す（両向き）、
+  取った言語は外さない（決めていない）。ブロックの間の いいね・リポスト・返信・フォロー ── 書く側で断る、通知もそれで
+  鳴らない。前の版の用紙と声 ── 起動で消す（`Documents/Sheets` 全部、`Documents/Voices` は誰も名指さない物）。
+  残り・訊くことは `docs/scope/r85-block.md`。
 
 ### 2026-09-24 画面・タイムライン・キーボード・保存・お金
 - Date: 2026-09-24
@@ -5254,26 +5260,31 @@ and is never merged into your own」と言っている。**入らない、は二
   sides, and the notices. 「ブロックは何も見えなくなるでいいんじゃない」
 - Reason: a block that only thins a feed is a block somebody keeps meeting.
 - Affected features: the timeline, search, notices, threads
-- Affected data: `ME.bl` on the phone, `block` on the server
+- Affected data: `block` on the server (`ME.bl` on the phone is not read, not
+  written and not deleted)
 - Affected docs: `docs/FEATURES.md`
-- Implementation status: **half, on the server, and not device confirmed.**
-  What they WROTE and DID is left out by the server: `block_hides()` in
-  `supabase/schema.sql` is the one answer, and `post_seen` (the feed, threads,
-  somebody's posts, the search for posts), `feed_hot()`, `feed_fo()` (whoever
-  passed a post on, too) and `notices()` pass every person they hand out
-  through it. `rls-check` walks every view and row-returning function in the
-  catalogue as somebody who has blocked somebody (r80-block, 2026-09-24).
-  **Not yet:** their profile, their language and who they follow
-  (`profile_seen`, `language_seen`, `follow_seen` — named in `rls-check`'s
-  `BLOCK_HELD`), because unblocking is pressed on their page and there is
-  nowhere else to do it; and **search on the other side** — somebody blocked
-  still finds the person who blocked them, since the search reads the same
-  views as the feed and whether the blocked side loses the feed too is not
-  decided. The phone sieves no answer (r68-state, 2026-09-24): what is left is
-  `postBlocked()`, for a post of theirs the phone already held before the
-  block, which the server cannot reach, and the people row of the search,
-  while `profile_seen` still returns them. All three are in
-  `docs/scope/r80-block.md`.
+- Implementation status: **on the server, BOTH WAYS, and not device
+  confirmed.** 「ブロックされた側からも見えない」 OWNER 2026-09-24 and the
+  2026-09-25 entry above. `block_hides()` in `supabase/schema.sql` is the one
+  answer and asks whether there is a block between the reader and a person,
+  whoever made it. Every read passes what it hands out through it: `post_seen`
+  (the feed, threads, somebody's posts, the search for posts), `feed_hot()`,
+  `feed_fo()` (whoever passed a post on, too), `notices()`, `profile_seen` (a
+  page and the search for people), `follow_seen`, and `language_seen` (their
+  published language — a language somebody TOOK before the block still reads,
+  because what a block does to that is not decided; `docs/scope/r85-block.md`).
+  `rls-check` walks every view and row-returning function as the one who
+  blocked and as the one blocked, and `BLOCK_HELD` is empty. **Nothing is done
+  across it either** (2026-09-25): `react_make`, `post_make`/`post_edit` (an
+  answer) and `follow_make` refuse a row aimed at somebody a block stands
+  between (`post_blocks()`, `block_hides()`), so no notice rings either —
+  push-send rings only on those rows arriving. A block is lifted from the
+  settings' ブロックリスト (`block_seen`). What the phone keeps is
+  `postBlocked()`, for a post of theirs it already held before the block. Not
+  the same thing as a mute, which is one way and keeps nobody out (2026-09-25).
+  `language_read` and `slice_read` — the `language` table and the slices read
+  straight — still answer 「published」 without asking about a block;
+  `docs/scope/r85-block.md`.
 
 ### Decision
 - Date: 2026-08-19

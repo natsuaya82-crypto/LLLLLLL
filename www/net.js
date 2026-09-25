@@ -3054,6 +3054,13 @@ var NET_PAGE=50;
    reactions and read back by nobody until netRow() -- is part of it. */
 var NET_POST_SEL='/rest/v1/post_seen?select=id,author,created_at,reply_to,body,hidden_at,author_out'+
                  ',likes,boosts,replies,i_like,i_boost';
+/* AND THE LISTS A MUTE LEAVES OUT ASK FOR IT, in these words and no others.
+   「ミュートした人の投稿はタイムラインに出ない」 OWNER 2026-09-25, and the
+   leader's reading of it: the timelines, a thread and a search. A person's
+   own page does not ask it (netPostsBy), nor does a post opened by its id --
+   what somebody wrote is still theirs to show. `muted` is the server's
+   answer (supabase/schema.sql § mute_hides); this only asks for it. */
+var NET_UNMUTED='&muted=is.false';
 /* AND WHAT A LANGUAGE ROW IS READ AS, the same way (two reads). */
 var NET_LANG_SEL='/rest/v1/language?select=id,name,published_at,wsys,owner,created_at';
 /* What a row is, on the way out. `body` holds everything a reader needs and
@@ -3199,7 +3206,9 @@ function netFeed(which, ok, bad, more){
   if(which==='day'){
     var pid=(typeof dayId==='function')? dayId() : 0;
     if(!pid){ ok(null); return; }
-    pull('&prompt=eq.'+encodeURIComponent(String(pid)));
+    /* and nobody this account has muted (`post_seen.muted`) -- 今日のお題
+       is a timeline, and a mute is 「not in the timeline」. */
+    pull('&prompt=eq.'+encodeURIComponent(String(pid))+NET_UNMUTED);
     return;
   }
   /* What is going round, which is one question the server answers -- the
@@ -3427,9 +3436,20 @@ function netPairRow(tab, mine, theirs, handle, on, ok, bad){
    it. `block_read` in schema.sql answers with YOUR rows only -- being blocked
    is not something a person is told. */
 function netBlock(handle, on, ok, bad){
-  /* The copy above is now wrong whichever way this goes. */
-  netBlockedDrop();
+  /* The copy below is now wrong whichever way this goes. */
+  netPplDrop('block');
   netPairRow('block', 'actor', 'blocked', handle, on, ok, bad);
+}
+/* ---- not reading somebody -----------------------------------------------
+   「人をミュートできる…（ブロックとは別）」 OWNER 2026-09-25. The same row as
+   a block with the other name on it, and it keeps nobody out: `mute` in
+   schema.sql is one way and the person on the other end is told nothing.
+   What it does is the server's -- `post_seen.muted`, which the lists that
+   leave a muted person out ask for (netFeed's day, netReplies, netFindPosts;
+   feed_hot() and feed_fo() on the server). */
+function netMute(handle, on, ok, bad){
+  netPplDrop('mute');
+  netPairRow('mute', 'actor', 'muted', handle, on, ok, bad);
 }
 /* WHOM YOU HAVE BLOCKED, for the two things on this phone that ask: the list
    in the settings where a block is lifted (「設定に追加して非表示リストと
@@ -3449,56 +3469,64 @@ function netBlock(handle, on, ok, bad){
 
    Asked when a page that draws it is arrived at, through the pull table
    (`blocks`, www/sns.js), and again after a block or an unblock. `null` is
-   「not asked」. */
-var NET_BL=null, NET_BL_WAIT=null;
+   「not asked」.
+
+   ONE LIST OF PEOPLE PER TABLE, AND ONE CODE FOR ALL OF THEM. The key is the
+   table (`block`), and NET_PPL_AT says which view it is read through --
+   written out whole, so `grep rest/v1` over this file still names every
+   table the app asks for (CLAUDE.md, the head). Everything below is about
+   「a list of people this account did something to」 and nothing about what
+   the something was. */
+var NET_PPL={}, NET_PPL_WAIT={};
+var NET_PPL_AT={ block:'/rest/v1/block_seen', mute:'/rest/v1/mute_seen' };
 /* The people, for a screen. `null` (not asked) answers as none: a button
    that said 「blocked」 before the list came down would be this phone saying
    something the server has not said. */
-function netBlockedPeople(){ return NET_BL || []; }
-function netBlockedHandles(){
-  var out=[], i;
-  for(i=0;i<netBlockedPeople().length;i++) out.push(netBlockedPeople()[i].hd);
+function netPpl(k){ return NET_PPL[k] || []; }
+function netPplHandles(k){
+  var out=[], i, l=netPpl(k);
+  for(i=0;i<l.length;i++) out.push(l[i].hd);
   return out;
 }
-function netBlockedGot(){ return NET_BL!==null; }
+function netPplGot(k){ return !!NET_PPL[k]; }
 /* ONE REQUEST, HOWEVER MANY ARE WAITING ON IT. The arrival and a block
    pressed in the same moment would otherwise put the identical question
-   twice. `NET_BL_WAIT` exists only while a request is out, and everybody
+   twice. `NET_PPL_WAIT[k]` exists only while a request is out, and everybody
    holding a place in it is answered from the one reply. */
-function netBlockedRead(ok, bad){
+function netPplRead(k, ok, bad){
   var i, who;
-  if(NET_BL_WAIT){ NET_BL_WAIT.push({ok:ok, bad:bad}); return; }
-  NET_BL_WAIT=[{ok:ok, bad:bad}];
+  if(NET_PPL_WAIT[k]){ NET_PPL_WAIT[k].push({ok:ok, bad:bad}); return; }
+  NET_PPL_WAIT[k]=[{ok:ok, bad:bad}];
   /* WHO IT WAS ASKED FOR, held while the answer is out. Signing out with this
      in the air would otherwise let the old account's list land afterwards and
      be kept as the new one's -- the same shape netTook() guards meFor() and
      postFor() against, one file over. The waiters are still answered, with
      none, because a caller left hanging is worse than a caller told nothing. */
   who=netUid();
-  netGet('/rest/v1/block_seen?select=id,handle,display,av&order=created_at.desc',
+  netGet(NET_PPL_AT[k]+'?select=id,handle,display,av&order=created_at.desc',
     function(d){
-      var w=NET_BL_WAIT, rows=[], ids=[], j, r;
-      NET_BL_WAIT=null;
+      var w=NET_PPL_WAIT[k], rows=[], ids=[], j, r;
+      NET_PPL_WAIT[k]=null;
       for(j=0;j<(d||[]).length;j++){
         r=d[j];
         if(!r || !r.id || !r.handle) continue;
         rows.push({id:String(r.id), hd:String(r.handle), who:String(r.display||''), av:r.av||null});
         ids.push(String(r.id));
       }
-      if(netSignedIn() && netUid()===who) NET_BL=rows;
+      if(netSignedIn() && netUid()===who) NET_PPL[k]=rows;
       else ids=[];
       for(j=0;j<w.length;j++) w[j].ok(ids);
     },
     function(d, s, m){
-      var w=NET_BL_WAIT;
-      NET_BL_WAIT=null;
+      var w=NET_PPL_WAIT[k];
+      NET_PPL_WAIT[k]=null;
       for(i=0;i<w.length;i++) w[i].bad(d, s, m);
     });
 }
 /* Blocking or unblocking somebody makes the copy wrong, and it is the one
    thing that can; so does signing out. Dropped rather than re-asked: meBlock()
    asks again when the row lands. */
-function netBlockedDrop(){ NET_BL=null; }
+function netPplDrop(k){ NET_PPL[k]=null; }
 /* Something is wrong with this post, or with this person. Written and never
    read back: there is no select policy on `report` at all, so nobody using
    the app can read one -- not the person who wrote it and not the person it
@@ -4094,7 +4122,7 @@ function netReplies(ids, ok, bad, after){
   }
   if(!list.length){ ok([]); return; }
   netGet(NET_POST_SEL+
-         '&reply_to=in.('+list.join(',')+')'+
+         '&reply_to=in.('+list.join(',')+')'+NET_UNMUTED+
          '&order=created_at.asc'+
          (after? '&created_at=gt.'+encodeURIComponent(String(after)) : '')+
          '&limit='+NET_PAGE,
@@ -4154,7 +4182,7 @@ function netFindPosts(q, ok, bad, more){
      one they have already read, or steps over one they have not. */
   netGet(NET_POST_SEL+
          '&or=(body->>ln.ilike.'+like+',body->>mn.ilike.'+like+
-         ',body->>lname.ilike.'+like+',body->>tags.ilike.'+tlike+')'+
+         ',body->>lname.ilike.'+like+',body->>tags.ilike.'+tlike+')'+NET_UNMUTED+
          '&order=created_at.desc'+
          (more? '&created_at=lt.'+encodeURIComponent(String(more)) : '')+
          '&limit='+NET_PAGE,

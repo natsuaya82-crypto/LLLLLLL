@@ -347,11 +347,11 @@ const r = await pg.evaluate(({ s }) => {
      (`blocks`, r68) -- answered here like the other two (an earlier screen's
      ask is still in the air on this fake wire), or the page waits on a read
      this check is not about */
-  const wasRel2 = netRel, wasWho2 = netWho, wasBy2 = netPostsBy, wasBl2 = netBlockedRead;
+  const wasRel2 = netRel, wasWho2 = netWho, wasBy2 = netPostsBy, wasBl2 = netPplRead;
   netWho = function (h, k) { k({ who:'Iri', hd:String(h), uid:'U-' + h }); };
   netPostsBy = function (u, k) { k([]); };
-  netBlockedRead = function (ok) { ok(); };
-  const wasBlHd2 = NET_BL; NET_BL = NET_BL || [];
+  netPplRead = function (k, ok) { ok(); };
+  const wasBlHd2 = NET_PPL.block; NET_PPL.block = NET_PPL.block || [];
   let relAsks = 0;
   netRel = function (hs, ok) { relAsks++; const by = {}; hs.forEach(h => { by[h] = { i:false, u:true }; }); ok(by); };
   REL = {};
@@ -359,7 +359,7 @@ const r = await pg.evaluate(({ s }) => {
   go('profile', 'iri');
   out.mineOnOpen = here().r === 'profile' && meFollowed('iri');
   out.askedOnTheirs = relAsks;
-  netRel = wasRel2; netWho = wasWho2; netPostsBy = wasBy2; netBlockedRead = wasBl2; NET_BL = wasBlHd2;
+  netRel = wasRel2; netWho = wasWho2; netPostsBy = wasBy2; netPplRead = wasBl2; NET_PPL.block = wasBlHd2;
   REL = heldRel;
   NAV = [{ r:'feed' }]; window.route = 'feed';
 
@@ -562,7 +562,7 @@ const r = await pg.evaluate(({ s }) => {
     };
     netSend = function (m, p, b, t, ok, bad, up) { netSend1(m, p, b, t, ok, bad, up, true); };
     netGet = function (p, ok, bad) { netSend('GET', p, null, '', ok, bad); };
-    NET_BL = [{ id:'U-zed', hd:'zed', who:'Zed', av:{ ch:'Z' } }];
+    NET_PPL.block = [{ id:'U-zed', hd:'zed', who:'Zed', av:{ ch:'Z' } }];
     NAV = [{ r:'settings' }, { r:'set', a:'block' }]; window.route = 'set'; render();
     const app = document.getElementById('app');
     out.blRow = !!app.querySelector('[data-do="meBlock"][data-a=\'["zed"]\']') &&
@@ -570,7 +570,67 @@ const r = await pg.evaluate(({ s }) => {
     const un = app.querySelector('[data-do="meBlock"]');
     if (un) un.click();
     out.blSent = sent.filter((x) => /^DELETE \/rest\/v1\/block\?/.test(x) || /block_seen/.test(x)).join(' | ');
-    out.blGone = here().r === 'set' && app.textContent.indexOf('@zed') < 0 && !netBlockedPeople().length;
+    out.blGone = here().r === 'set' && app.textContent.indexOf('@zed') < 0 && !netPpl('block').length;
+    netSend1 = realS1; netSend = realS; netGet = realG;
+    NAV = [{ r:'feed' }]; window.route = 'feed';
+  }
+
+  /* ---- 10b: whom you have muted, the same list, and what a mute leaves out --
+     「人をミュートできる。ミュートした人の投稿はタイムラインに出ない（ブロック
+     とは別）。設定の「非表示リスト」がミュートした人の一覧で、そこから解除
+     する」 OWNER 2026-09-25. Four things: the room draws them with the press
+     that lifts it, and the press takes the `mute` row and asks again; the
+     day's list, a thread and a search ASK the server to leave them out and a
+     person's page does not; the copy this phone holds leaves them off the
+     timeline and keeps them on their page; the ... says which way it goes. */
+  {
+    const sent = [];
+    const realS1 = netSend1, realS = netSend, realG = netGet, realDay = window.dayId;
+    netSend1 = function (m, p, b, t, ok) {
+      p = String(p); sent.push(m + ' ' + p);
+      if (p.indexOf('/rest/v1/profile?select=id') === 0) { ok([{ id:'U-yun' }], 200); return; }
+      ok([], 200);
+    };
+    netSend = function (m, p, b, t, ok, bad, up) { netSend1(m, p, b, t, ok, bad, up, true); };
+    netGet = function (p, ok, bad) { netSend('GET', p, null, '', ok, bad); };
+    NET_PPL.mute = [{ id:'U-yun', hd:'yun', who:'Yun', av:{ ch:'Y' } }];
+    /* A person's page asks `mutes` when it is arrived at, and the walk above
+       arrived at several with the wire real -- that request never answers
+       here, so it is still standing and a read would only queue behind it
+       (acct-check 71 clears `block` for the same reason). */
+    NET_PPL_WAIT.mute = null;
+    NAV = [{ r:'settings' }, { r:'set', a:'mute' }]; window.route = 'set'; render();
+    const app = document.getElementById('app');
+    out.muRow = !!app.querySelector('[data-do="meMute"][data-a=\'["yun"]\']') &&
+                app.textContent.indexOf('@yun') >= 0;
+    const un = app.querySelector('[data-do="meMute"]');
+    if (un) un.click();
+    out.muSent = sent.filter((x) => /^DELETE \/rest\/v1\/mute\?/.test(x) || /mute_seen/.test(x)).join(' | ');
+    out.muGone = here().r === 'set' && app.textContent.indexOf('@yun') < 0 && !netPpl('mute').length;
+    /* what is asked, list by list */
+    sent.length = 0;
+    const nop = function () {};
+    window.dayId = function () { return 7; };
+    netFeed('day', nop, nop);
+    netReplies(['p-root'], nop, nop);
+    netFindPosts('neko', nop, nop);
+    const asks = sent.slice();
+    sent.length = 0;
+    netPostsBy('U-yun', nop, nop);
+    out.muAsks = asks.map((x) => /muted=is\.false/.test(x) ? 1 : 0).join('');
+    out.muPage = sent.length === 1 && !/muted=/.test(sent[0]);
+    /* the copy this phone holds */
+    NET_PPL.mute = [{ id:'U-yun', hd:'yun', who:'Yun', av:{ ch:'Y' } }];
+    POSTS.push({ id:'mu-1', hd:'yun', who:'Yun', ln:'mu', at:Date.now(), mine:false });
+    out.muFeed = postAll().some((p) => p.id === 'mu-1');
+    out.muKept = postKept().some((p) => p.id === 'mu-1');
+    /* and the word on the ... of their post */
+    window.route = 'feed'; NAV = [{ r:'feed' }];
+    const mh = postMenuHTML({ id:'mu-1', hd:'yun', mine:false });
+    out.muWord = mh.indexOf(esc(t('post.unmute'))) >= 0 && mh.indexOf('data-do="meMute"') >= 0;
+    POSTS = POSTS.filter((p) => p.id !== 'mu-1');
+    NET_PPL.mute = null;
+    window.dayId = realDay;
     netSend1 = realS1; netSend = realS; netGet = realG;
     NAV = [{ r:'feed' }]; window.route = 'feed';
   }
@@ -811,6 +871,22 @@ if (!r.blRow)
 if (!/^DELETE \/rest\/v1\/block\?/.test(r.blSent || '') || !/block_seen/.test(r.blSent || '') || !r.blGone)
   say('pressing 解除 on the settings\' list did not lift the block and come back without them: ' +
       JSON.stringify(r.blSent) + (r.blGone ? '' : ', and @zed is still drawn'));
+if (!r.muRow)
+  say('the settings\' 非表示リスト does not draw @yun with ミュート解除 on it. ' +
+      '「設定の「非表示リスト」がミュートした人の一覧」 OWNER 2026-09-25');
+if (!/^DELETE \/rest\/v1\/mute\?/.test(r.muSent || '') || !/mute_seen/.test(r.muSent || '') || !r.muGone)
+  say('pressing ミュート解除 on the 非表示リスト did not lift the mute and come back without them: ' +
+      JSON.stringify(r.muSent) + (r.muGone ? '' : ', and @yun is still drawn'));
+if (r.muAsks !== '111' || !r.muPage)
+  say('a mute is left out by the day\'s list, a thread and a search and NOT by a person\'s page -- ' +
+      'asked with muted=is.false: ' + JSON.stringify(r.muAsks) + ' (want 111), their page ' +
+      (r.muPage ? 'does not ask' : 'asks it too'));
+if (r.muFeed || !r.muKept)
+  say('a muted person\'s post this phone holds is ' + (r.muFeed ? 'still on the timeline' : 'off it') +
+      ' and ' + (r.muKept ? 'on' : 'OFF') + ' their page -- off the one and on the other. ' +
+      '「ミュートした人の投稿はタイムラインに出ない」');
+if (!r.muWord)
+  say('the ... on a muted person\'s post does not offer ミュート解除');
 if (r.folOrder !== 'noa,ami,zed,kai')
   say('a follow list, two pages of it, holds ' + JSON.stringify(r.folOrder) +
       ' and the four were followed newest first as noa,ami,zed,kai. ' +

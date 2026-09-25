@@ -1059,7 +1059,7 @@ function relAsk(hs, ok, bad){
    one a screen showed was the wrong one. `ME.fo` and `ME.fr` went the same
    way on 2026-09-09 and left this behind.
 
-   netBlockedHandles() (www/net.js) is the answer now -- the same road, the
+   netPplHandles('block') (www/net.js) is the answer now -- the same road, the
    same moment, the same 「not asked」 -- so a button says blocked when the
    server says so and on every phone this account signs in on.
 
@@ -1067,9 +1067,15 @@ function relAsk(hs, ok, bad){
    handset that has this app; it is not read, not written and not deleted
    (docs/DATA_SAFETY.md rule 2). */
 function meBlocking(){
-  return (typeof netBlockedHandles==='function')? netBlockedHandles() : [];
+  return (typeof netPplHandles==='function')? netPplHandles('block') : [];
 }
 function meBlocks(h){ return meBlocking().indexOf(String(h||''))>=0; }
+/* And whom you have muted, the same road with the other table's name on it
+   (www/net.js § NET_PPL). 「人をミュートできる」 OWNER 2026-09-25. */
+function meMutes(h){
+  return (typeof netPplHandles==='function') &&
+         netPplHandles('mute').indexOf(String(h||''))>=0;
+}
 /* Blocking somebody stops following them. Keeping a follow to somebody you
    have blocked is a list that says two opposite things, and the one the
    timeline reads would decide which is true. */
@@ -1081,13 +1087,18 @@ function meBlocks(h){ return meBlocking().indexOf(String(h||''))>=0; }
 
    A refusal puts the pop up and changes nothing, and its ［再接続］ is this
    same press. */
-function meBlock(h){
+function meBlock(h){ mePplPress('block', h); }
+/* A MUTE IS THE SAME PRESS, ON THE OTHER TABLE. 「ミュート（ボタンの置き場は
+   ブロックと同じ所）」 -- the row sits beside 「ブロック」 on both menus, the
+   list is `mute_seen`, and what differs is only what the server does with it
+   (www/net.js § netMute). It does not stop a follow: a mute keeps nobody out. */
+function meMute(h){ mePplPress('mute', h); }
+function mePplPress(k, h){
   h=String(h||'');
   if(!h || h===meHandle()) return;
   /* Blocking is a row on the server with your uid on it, so it asks who you
      are first. */
   if(!obNeed()) return;
-  var on=!meBlocks(h);
   /* And the menu this was pressed from, closed the way every other row that
      ENDS a menu closes it -- postPin(), postDel() and openReport() each do it
      in their own first lines. Blocking takes every post of theirs out of the
@@ -1105,15 +1116,29 @@ function meBlock(h){
      already closes the two as one pair. */
   PMENU=''; WMENU=false;
   render();
-  netBlock(h, on, function(){
-    /* The list this phone was holding is gone (netBlock() drops it), so the
-       screen has nothing to draw from until it is asked again. One road, and
-       it is the one the open uses. */
-    netBlockedRead(function(){
-      if(on && meFollows(h)) meFollow(h);
+  /* WHICH WAY IS ASKED OF THE LIST, AND A LIST NOBODY HAS ASKED FOR IS ASKED
+     FIRST. 「not asked」 reads as none (netPpl), so pressing on a page that
+     had not read it would have sent a second row for somebody already on it
+     -- refused by the key, and a pop saying a thing went wrong when nothing
+     had. */
+  if(!netPplGot(k)){
+    netPplRead(k, function(){ mePplPress(k, h); },
+      function(d, s, m){ netPop(d, s, m, function(){ mePplPress(k, h); }); });
+    return;
+  }
+  var on=netPplHandles(k).indexOf(h)<0;
+  function landed(){
+    /* The list this phone was holding is gone (netPplDrop()), so the screen
+       has nothing to draw from until it is asked again. One road, and it is
+       the one the open uses. */
+    netPplRead(k, function(){
+      if(k==='block' && on && meFollows(h)) meFollow(h);
       render();
     }, function(){ render(); });
-  }, function(d, s, m){ netPop(d, s, m, function(){ meBlock(h); }); });
+  }
+  function fell(d, s, m){ netPop(d, s, m, function(){ mePplPress(k, h); }); }
+  if(k==='mute') netMute(h, on, landed, fell);
+  else netBlock(h, on, landed, fell);
 }
 /* Following and unfollowing, in one place. The list is what this phone knows
    and netFollow() is what the server is told -- not waited on, the way a like
@@ -1394,6 +1419,8 @@ function whoCard(h){
         esc(t('post.more'))+'">'+ICON_DOTS+'</button>'+
       (WMENU
         ? '<span class="pmenu" data-pm="1">'+
+          '<button class="pmi"' + DO('meMute', [String(h)]) + '>'+ICON_SPK+
+            '<span>'+esc(t(meMutes(h)? 'post.unmute' : 'post.mute'))+'</span></button>'+
           '<button class="pmi"' + DO('meBlock', [String(h)]) + '>'+ICON_BLOCK+
             '<span>'+esc(t(meBlocks(h)? 'post.unblock' : 'post.block'))+'</span></button>'+
           '<button class="pmi bad"' + DO('openReport', ["", String(h)]) + '>'+ICON_FLAG+
@@ -1570,7 +1597,7 @@ function folPut(ers, h, hs){
   FOL_ASKED[k]=1;
 }
 /* AND EVERY ONE OF THEM IS THE SIGNED-IN ACCOUNT'S. netOut() (www/net.js)
-   calls this beside netBlockedDrop() and pullForget(), and for the same
+   calls this beside netPplDrop() and pullForget(), and for the same
    sentence: these are answers the server gave THIS account, and the next
    person to sign in on this phone must ask for their own.
 

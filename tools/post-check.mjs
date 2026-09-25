@@ -263,6 +263,13 @@ const R = await pg.evaluate(async () => {
       return Promise.resolve({});
     }
     if (method === 'dropVoice') { delete files[arg.name]; return Promise.resolve({}); }
+    /* The launch's sweep, stood up as LinguaShare.swift does it minus the
+       clock (sheet-check reads that half): every file the list does not
+       name goes. */
+    if (method === 'sweepVoices') {
+      for (const f of Object.keys(files)) if ((arg.keep || []).indexOf(f) < 0) delete files[f];
+      return Promise.resolve({});
+    }
     if (method === 'voice') {
       return files[arg.name] ? Promise.resolve({ b64: files[arg.name] })
                              : Promise.reject(new Error('no voice'));
@@ -3054,6 +3061,47 @@ const R = await pg.evaluate(async () => {
         fails.push('16b: with the file gone the post does not play from the server: ' +
                    JSON.stringify({ vu: p16 && p16.vu, at: postVoAt(p16), ms: postVoMs(p16) }));
       delete files['v-fail-1.m4a'];
+
+      /* ---- 16c. what an earlier version left goes, and what is waiting stays -
+         「前の版でスマホに残った用紙と声のファイル → 消す」 OWNER 2026-09-25;
+         the leader: 「下書き・送れなかった投稿の vo.f が指すファイルは一つも
+         消さない」. Two accounts' copies and the key with no owner on it, a
+         sent post (its voice is `vu`) and a file nothing names. Then a copy
+         that cannot be read, which must stop the sweep whole. */
+      {
+        const keys = ['lingua.drafts.U-one', 'lingua.drafts', 'lingua.posts.U-two'];
+        const was = keys.map((k) => localStorage.getItem(k));
+        const wasP = POSTS, wasD = DRAFTS;
+        POSTS = []; DRAFTS = [];
+        for (const f of ['v-draft.m4a', 'v-draft-flat.m4a', 'v-unsent.m4a', 'v-sent.m4a', 'v-orphan.m4a'])
+          files[f] = 'AAEC';
+        localStorage.setItem('lingua.drafts.U-one', JSON.stringify([{ id: 'd1', vo: { f: 'v-draft.m4a', ms: 1 } }]));
+        localStorage.setItem('lingua.drafts', JSON.stringify([{ id: 'd0', vo: { f: 'v-draft-flat.m4a', ms: 1 } }]));
+        localStorage.setItem('lingua.posts.U-two', JSON.stringify([
+          { id: 'q1', vo: { f: 'v-unsent.m4a', ms: 1 } },
+          { id: 'q2', vo: { f: 'v-sent.m4a', ms: 1 }, vu: 'U-two/q2/vo.m4a' }]));
+        said.length = 0;
+        voSweep();
+        await new Promise(r => setTimeout(r, 50));
+        const left = ['v-draft.m4a', 'v-draft-flat.m4a', 'v-unsent.m4a', 'v-sent.m4a', 'v-orphan.m4a']
+          .filter((f) => files[f] !== undefined).join(',');
+        if (left !== 'v-draft.m4a,v-draft-flat.m4a,v-unsent.m4a')
+          fails.push('16c: after the launch\'s sweep the files left are ' + JSON.stringify(left) +
+                     ' -- every draft\'s voice and every unsent post\'s stay, and the one that went up ' +
+                     'and the one nothing names go');
+        /* a copy that cannot be read: nothing is sent at all */
+        for (const f of ['v-sent.m4a', 'v-orphan.m4a']) files[f] = 'AAEC';
+        localStorage.setItem('lingua.drafts.U-one', '{not a list');
+        said.length = 0;
+        voSweep();
+        await new Promise(r => setTimeout(r, 50));
+        if (said.some((x) => x.m === 'sweepVoices') || files['v-orphan.m4a'] === undefined)
+          fails.push('16c: a draft copy that cannot be read did not stop the sweep -- what it names ' +
+                     'cannot be known, and 「names nothing」 is the answer that deletes');
+        keys.forEach((k, i) => { if (was[i] === null) localStorage.removeItem(k); else localStorage.setItem(k, was[i]); });
+        for (const f of ['v-draft.m4a', 'v-draft-flat.m4a', 'v-unsent.m4a', 'v-sent.m4a', 'v-orphan.m4a']) delete files[f];
+        POSTS = wasP; DRAFTS = wasD;
+      }
 
       /* ---- the voice's length travels, and a voice that is gone is said -
          r63-audit R1: netBody() dropped `vo` whole, so every other phone

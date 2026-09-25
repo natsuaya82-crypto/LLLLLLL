@@ -82,6 +82,14 @@ acctKeep('posts', function(){ return POSTS.length? POSTS : null; },
    phone whose account changed, and a block that hid your own writing would be
    the worst possible reading of it. */
 function postBlocked(p){ return !!(p && !p.mine && meBlocks(p.hd)); }
+/* Written by somebody this account has muted. 「ミュートした人の投稿は
+   タイムラインに出ない（ブロックとは別）」 OWNER 2026-09-25 -- off the lists
+   you scroll and NOT gone, which is postOut()'s shape and not postBlocked()'s:
+   their page still shows it (postKept), a post opened by its id still opens.
+   The server leaves them out of every list it answers (`post_seen.muted`,
+   www/net.js § NET_UNMUTED); this is the half it cannot reach, a post of
+   theirs this phone was already holding when the mute was pressed. */
+function postMuted(p){ return !!(p && !p.mine && meMutes(p.hd)); }
 /* Somebody else's post that has been taken down is not a row in a timeline.
    It is kept -- a thread that had one in it has to be able to say so -- and
    postTomb() is what a thread draws for it. Your OWN stays where it is,
@@ -108,7 +116,7 @@ function postKept(){
     .sort(function(a, b){ return (b.at||0)-(a.at||0); });
 }
 function postAll(){
-  return postKept().filter(function(p){ return !postOut(p); });
+  return postKept().filter(function(p){ return !postOut(p) && !postMuted(p); });
 }
 /* Written by an account that has been frozen. Off the timeline and NOT gone:
    the post is still there, on that account's own page, for whoever goes
@@ -3852,7 +3860,7 @@ function postDown(id, d, out, seen){
     seen.push(ks[i].id);
     /* Same as the walk above: the row goes and the answers to it stay. A
        reply to somebody you blocked was written by somebody else. */
-    if(postShown(ks[i])) out.push({p:ks[i], d:d});
+    if(postShown(ks[i]) && !postMuted(ks[i])) out.push({p:ks[i], d:d});
     postDown(ks[i].id, d+1, out, seen);
   }
   return out;
@@ -4374,6 +4382,8 @@ function postMenuHTML(p){
   var h=String(p.hd||'');
   if(!p.mine)
     return '<span class="pmenu" data-pm="1">'+
+      '<button class="pmi"' + DO('meMute', [h]) + '>'+ICON_SPK+
+        '<span>'+esc(t(meMutes(h)? 'post.unmute' : 'post.mute'))+'</span></button>'+
       '<button class="pmi"' + DO('meBlock', [h]) + '>'+ICON_BLOCK+
         '<span>'+esc(t(meBlocks(h)? 'post.unblock' : 'post.block'))+'</span></button>'+
       '<button class="pmi bad"' + DO('openReport', [p.id, h]) + '>'+ICON_FLAG+
