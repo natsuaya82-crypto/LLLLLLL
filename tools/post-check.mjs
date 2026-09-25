@@ -104,8 +104,17 @@ await pg.waitForSelector('#splash', { state: 'detached', timeout: 10000 });
 await pg.evaluate((s) => { eval('(' + s + ')()'); SET.walked = true; SET.ui = 'en'; },
                   seed.toString());
 
+await pg.exposeFunction('__screenTo',
+  (h) => pg.setViewportSize({ width: 390, height: h }));
 const R = await pg.evaluate(async () => {
   const fails = [];
+  /* A KEYBOARD IS A SMALLER SCREEN. The phone ends the web view at the top of
+     the keyboard (ios/App/App/MainViewController.swift § keepStill), so a
+     keyboard of k on this 390x844 is this page at 844 - k and nothing else.
+     `__screenTo` is the viewport, set from outside the page (below). */
+  const frame = () => new Promise(r => requestAnimationFrame(() =>
+                                       requestAnimationFrame(() => r())));
+  const screenTo = async (h) => { await window.__screenTo(h); await frame(); };
   /* THE SERVER TAKES THE POST, in every section that is about what a post IS
      -- the bake, the ink, the reply, the draft it came from. A post is written
      down here only once the server has it (pwSendPost, 2026-09-23), and this
@@ -1526,9 +1535,9 @@ const R = await pg.evaluate(async () => {
   /* ---- where the screen ends, for 11d and 11d2 ----------------------
      The bottom of the box somebody writes in is not the bottom of what they
      can see. Three things end this screen and the nearest one wins: the box
-     itself, the row of pictures fixed over the keyboard (opaque, z-index 20),
-     and the foot of `.view.fit`, which is --vvmin tall and below which there
-     is no phone. Naming which one it was is the whole use of the answer --
+     itself, the row of pictures standing on the keyboard (opaque), and the
+     foot of `.view.fit`, which is the top of the keyboard and below which
+     there is no screen. Naming which one it was is the whole use of the answer --
      a field under the fold of its own box and a field behind the row of
      pictures are two bugs and two fixes. */
   const floorOf = (box) => {
@@ -1556,34 +1565,22 @@ const R = await pg.evaluate(async () => {
   };
 
   /* ---- 11d. on a reply, the person's own side still fits two fields ---
-     The composer is laid out to --vvmin, which is the smallest the visible
-     part has been -- that is, the screen with the keyboard up. A reply puts
-     two more things in that box: who you are answering, and the post itself.
-     What gave way was the part somebody is writing in.
+     A reply puts two more things on the screen: who you are answering, and
+     the post itself. What gave way was the part somebody is writing in.
      「返信のところ自分の狭すぎやろ、、、もっと広くしてくれ」
 
-     Measured rather than read. --vvmin is set here to a real one: 300 is an
-     ordinary Japanese keyboard on an ordinary phone, and it is the number the
-     rule above this one in index.html was already written against. */
+     Measured rather than read, on a screen of 300 -- an ordinary Japanese
+     keyboard on an ordinary phone, which is what is left above it. A keyboard
+     is a smaller screen now (`screenTo`, the head of this block). */
   {
     const wasPW = PW;
-    const root = document.documentElement;
-    const hadMin = root.style.getPropertyValue('--vvmin');
-    const hadKb = root.style.getPropertyValue('--vvkb');
-    /* --vvkb as well, and not --vvmin on its own. The row of pictures is
-       fixed to `bottom:var(--vvkb)` -- that is what puts it ON the keyboard
-       -- so a screen given a keyboard's worth of --vvmin and no --vvkb has
-       its row at the foot of the 844px window instead, 544px below the
-       screen it is supposed to be standing on. Half a phone measures nothing:
-       the row is what the box somebody writes in has to clear. */
-    root.style.setProperty('--vvmin', '300px');
-    root.style.setProperty('--vvkb', '544px');
+    await screenTo(300);
 
     const other = POSTS.filter(q => q.id !== p.id)[0] || p;
     PW = pwBlank(); PW.to = other.id;
     openPost();
     render();
-    await new Promise(r => requestAnimationFrame(() => r()));
+    await frame();
 
     const scroll = document.querySelector('.view.fit .pwscroll');
     const quote  = document.querySelector('.view.fit .pwqs');
@@ -1606,10 +1603,7 @@ const R = await pg.evaluate(async () => {
                      'the field somebody is looking at is the one that gave way');
       }
     }
-    if (hadMin) root.style.setProperty('--vvmin', hadMin);
-    else root.style.removeProperty('--vvmin');
-    if (hadKb) root.style.setProperty('--vvkb', hadKb);
-    else root.style.removeProperty('--vvkb');
+    await screenTo(844);
     PW = wasPW;
   }
 
@@ -1657,7 +1651,7 @@ const R = await pg.evaluate(async () => {
 
      AND THE RECTANGLE IT IS ASKED AGAINST IS THE SCREEN, WHICH IT WAS NOT.
      This compared the meaning to `.pwscroll`'s box and stopped there, and
-     being inside that box does not mean being on the phone: `.pwscroll` had a
+     being inside that box does not mean being on the phone: `.pwscroll` has a
      min-height, `.body` is overflow:hidden, and a box held open past the foot
      of the body simply hangs off the bottom of the screen with the meaning
      obediently inside it. It passed. Measured on master at 320x568 with the
@@ -1674,16 +1668,15 @@ const R = await pg.evaluate(async () => {
 
        the box       `.pwscroll` -- it is there but wants scrolling, and there
                      is no scrollbar on a phone to say so
-       the row       `.pwbar` is fixed to the keyboard and paints a background
+       the row       `.pwbar` stands on the keyboard and paints a background
                      over whatever is beneath it
-       the screen    `.view.fit` is --vvmin tall and nothing below it exists
+       the screen    `.view.fit` ends at the keyboard and nothing below it
+                     exists
 
      A floor of `min()` rather than three checks: the shallowest one is the
      one that is true, and reporting the other two after it is noise. */
   {
-    const wasPW = PW, root = document.documentElement;
-    const hadMin = root.style.getPropertyValue('--vvmin');
-    const hadKb  = root.style.getPropertyValue('--vvkb');
+    const wasPW = PW;
     const wasPlan = plan(), wasDir = SCRIPT.dir;
     /* A column is what money buys (`CAN.dir` is 'pro'), so free is the one
        plan where this case cannot be reached at all. Asking for it on the
@@ -1691,10 +1684,9 @@ const R = await pg.evaluate(async () => {
     planGot('pro');
     const other = POSTS.filter(q => q.id !== p.id)[0] || p;
 
-    /* 260 is the smallest a phone leaves: the extension caps a keyboard at
-       0.55 of the screen, and 0.45 of an SE's 568 is 255. 508 is a 390x844
-       with the system keyboard up, which is where this was measured when it
-       looked fine.
+    /* What is left above the keyboard. 260 is the smallest a phone leaves:
+       0.45 of an SE's 568 is 255. 508 is a 390x844 with the system keyboard
+       up, which is where this was measured when it looked fine.
 
        308 IS A PHONE THE OWNER HOLDS, and the other three are not. An iPhone
        SE2 is 320x568 and its system keyboard is 260, so 308 is what the
@@ -1704,18 +1696,17 @@ const R = await pg.evaluate(async () => {
        380 is invisible to both. `press` measures one 402pt device, so nothing
        else in the gate stands on the small phone at all. */
     for (const vv of [260, 308, 380, 508]) {
+      await screenTo(vv);
       for (const dir of ['ltr', 'ttb-rl']) {
         for (const reply of [false, true]) {
           for (const pic of [false, true]) {
-            root.style.setProperty('--vvmin', vv + 'px');
-            root.style.setProperty('--vvkb', (844 - vv) + 'px');
             SCRIPT.dir = dir;
             PW = pwBlank();
             if (reply) PW.to = other.id;
             if (pic && p.pic) PW.pics = [p.pic];
             openPost();
             render();
-            await new Promise(r => requestAnimationFrame(() => r()));
+            await frame();
 
             const scroll = document.querySelector('.view.fit .pwscroll');
             const mn = document.getElementById('pw-mn');
@@ -1747,10 +1738,7 @@ const R = await pg.evaluate(async () => {
     }
 
     planGot(wasPlan); SCRIPT.dir = wasDir; PW = wasPW;
-    if (hadMin) root.style.setProperty('--vvmin', hadMin);
-    else root.style.removeProperty('--vvmin');
-    if (hadKb) root.style.setProperty('--vvkb', hadKb);
-    else root.style.removeProperty('--vvkb');
+    await screenTo(844);
   }
 
   /* ---- 11c2. the composer keeps its keyboard, and nothing else does ----
@@ -1849,260 +1837,124 @@ const R = await pg.evaluate(async () => {
     PW = wasPW;
   }
 
-  /* ---- 11d2. the row over the keyboard ends up ON the keyboard ---------
-     「本体は動かず、道具の行だけキーボードの直上に付いてくる」 OWNER
-     2026-09-06 through the leader, which REPLACES 「2枚目が正解なのに1枚目
-     みたいにまだガチャガチャうごくのうざい」 OWNER 2026-08-27 for the row.
+  /* ---- 11d2. NOTHING ON THE COMPOSER MOVES, AND THE BOARD SLIDES -------
+     「一番上と、カメラとかあるやつは位置固定して、中身だけ板にしてスライド
+     できるようにするのは？」「それでお願い。」 OWNER 2026-09-25, after
+     「ガタガタするのはキーボードが出た後に画面を上下に早く揺らした時なんだ
+     よな」 on a real phone -- docs/FEATURE_RULES.md, 2026-09-25 投稿の画面は
+     揺れない. It carries 「入力位置もタップしても動かない」 OWNER 2026-09-22
+     with it: that is the same screen asked of a tap.
 
-     What that older sentence bought was a row that did not move at all once
-     a keyboard had been measured, and the price was measured on a phone: the
-     remembered number is the DEEPEST of the launch, so a person who types in
-     Japanese (380) and then in roman (336) had the row standing 44px clear
-     of the keyboard for the rest of the session. The row follows the live
-     number now.
+     A KEYBOARD IS A SMALLER SCREEN. The phone ends the web view at the top
+     of the keyboard (ios/App/App/MainViewController.swift § keepStill), so
+     what a keyboard does to the page is exactly what `screenTo()` does here:
+     the viewport gets shorter, nothing lays anything over it, and nothing is
+     lifted. That is asked with the real viewport rather than a stand-in for
+     one, because a stand-in answered by the code under test is a copy of it.
 
-     SO THE MOVING IS NOT ASKED ABOUT AND THE RESTING PLACE IS. How many
-     values iOS sends on the way up is the phone's business, and a check that
-     counted them was holding the old rule under the new one's name. What is
-     held is where everything IS once the keyboard has stopped: the row's
-     bottom edge on the keyboard's top edge, and the body of the composer
-     exactly where it was without one.
+     What has to hold, at 336 (roman), 380 (Japanese), 336 again, and down:
 
-     THE BODY IS THE HEAD OF THE COMPOSER -- the face and the line somebody
-     writes in. The MEANING is not claimed to stand still and does not:
-     measured, 390x844 with a 336 keyboard, `#pw-mn` moves 741..787 ->
-     405..451, exactly the keyboard's height, because it hangs at the foot of
-     `.pwscroll` and the scroll area is what gets shorter. That is the page
-     being shorter rather than the composer being dragged, and writing a
-     claim that says otherwise would be a check disagreeing with the screen.
+       the bar     back and send stand where they stood with no keyboard
+       the head    the face and the line somebody writes in stand still too
+                   -- the field staying put is what the broken screen also
+                   did (iOS lifted the page precisely so the focused field
+                   would not move), so it is asked WITH the bar and the row
+       the row     its foot is the foot of the screen, which is the top of
+                   the keyboard -- ON it, not floating and not under it --
+                   and switching keyboards moves it with them
+       the page    has nothing under the screen to be flicked through: its
+                   scroll height is the screen and it is not scrolled
 
-     `.view.fit .pwbar` hangs off `--vvkb`, which vvFit() recomputes on every
-     `resize` and every `scroll` visualViewport sends. On the frame a field
-     takes focus there is no number yet -- `innerHeight - height` is 0, the
-     same answer as no keyboard at all -- so a row placed on that would sit
-     UNDER the keyboard and then leap. The remembered number covers exactly
-     that window, and it is still claimed below.
-
-     visualViewport is replaced with one this check can drive. That is the
-     only way to ask this on a Linux runner: a headless browser has no soft
-     keyboard, so nothing here ever sends the events a phone sends. What is
-     held is vvFit()'s answer to each value -- how many values a real iPhone
-     sends, and when, is the phone's business and is not knowable from here.
-
-     The ramp is fed twice on purpose: once to make a launch that has
-     measured a keyboard, and once to ask where everything ends up on the
-     second one. */
+     And the board: holding more than it has room for, what is on it slides
+     by exactly as far as the board is slid, and the bar and the row do not. */
   {
-    const wasPW = PW, root = document.documentElement;
-    const hadKb = root.style.getPropertyValue('--vvkb');
-    const KB = 336;                       /* a JP keyboard on a 390x844 */
-    const real = Object.getOwnPropertyDescriptor(window, 'visualViewport');
-    const fake = { height: window.innerHeight, offsetTop: 0,
-                   addEventListener: function () {}, removeEventListener: function () {} };
-    Object.defineProperty(window, 'visualViewport',
-      { configurable: true, get: function () { return fake; } });
-
-    const field = () => document.querySelector('.view.fit .lnin') ||
-                        document.querySelector('.view.fit input, .view.fit textarea');
-    const barTop = () => {
-      const b = document.querySelector('.pwbar');
-      return b ? Math.round(b.getBoundingClientRect().top) : null;
-    };
-    const barBottom = () => {
-      const b = document.querySelector('.pwbar');
-      return b ? Math.round(b.getBoundingClientRect().bottom) : null;
-    };
-    /* The head of the composer: the face, and the line somebody writes in.
-       Read as a string so two of them can be compared as one thing and the
-       failure can print what moved. */
-    const body = () => ['.view.fit .pwtop .pav', '#pw-ln'].map((sel) => {
+    const wasPW = PW;
+    const rect = (sel) => {
       const e = document.querySelector(sel);
-      if (!e) return sel + ':none';
+      if (!e) return null;
       const b = e.getBoundingClientRect();
-      return sel + ':' + Math.round(b.top) + ',' + Math.round(b.bottom) +
-             ',' + Math.round(b.left) + ',' + Math.round(b.right);
-    }).join(' ');
-    const ramp = [0.08, 0.22, 0.41, 0.6, 0.78, 0.92, 1];
-    const open = () => {
-      PW = pwBlank(); openPost(); render();
-      const f = field(); if (f) f.focus();
-      fake.height = window.innerHeight; fake.offsetTop = 0; vvFit();
-      const seen = [barTop()];
-      for (const fr of ramp) {
-        fake.height = Math.round(window.innerHeight - KB * fr);
-        vvFit(); seen.push(barTop());
-      }
-      return seen;
+      return Math.round(b.top) + '..' + Math.round(b.bottom);
     };
-    const shut = () => {
-      const f = field(); if (f) f.blur();
-      document.body.focus();
-      fake.height = window.innerHeight; fake.offsetTop = 0; vvFit();
-    };
-
-    const first = open();
-    const settled = first[first.length - 1];
-    shut();
-    const down = barTop();
-    /* WHERE THE BODY IS WITH NO KEYBOARD, read on the same screen the ramp is
-       about to be fed to.
-
-       THE FIELD IS BLURRED BY HAND HERE, and it has to be: the composer takes
-       focus as it opens, vvTyping() is then true, and --vvkb answers with the
-       REMEMBERED height even though no keyboard is up. Read without this, the
-       "no keyboard" snapshot is the keyboard-up one, the comparison below is
-       a value against itself, and it passes with the body nailed to the
-       keyboard -- which is what it did until it was watched failing. */
-    PW = pwBlank(); openPost(); render();
-    if (document.activeElement && document.activeElement.blur)
-      document.activeElement.blur();
-    fake.height = window.innerHeight; fake.offsetTop = 0; vvFit();
-    const kbSaid = root.style.getPropertyValue('--vvkb');
-    if (kbSaid !== '0px')
-      fails.push('the composer with no keyboard up says --vvkb is ' + kbSaid +
-                 ', so what follows is not a reading of a screen without one');
-    const bodyDown = body();
-    const second = open();
-
-    /* THE ROW ENDS UP ON THE KEYBOARD. Its bottom edge is the keyboard's top
-       edge, which on a 390x844 with a 336 keyboard is 508. Not "it did not
-       move": where it stands. */
-    const kbTop = window.innerHeight - KB;
-    const rest = barBottom();
-    if (rest !== kbTop)
-      fails.push('with the keyboard all the way up the row over it ends at ' +
-                 rest + ' and the keyboard begins at ' + kbTop + '. It is ' +
-                 (rest > kbTop ? 'under the keyboard' : 'floating ' +
-                  (kbTop - rest) + 'px above it') + ', and the row is meant to ' +
-                 'be standing ON it');
-    /* AND THE BODY IS WHERE IT WAS. Only the row follows the keyboard; the
-       face and the line somebody writes in do not move at all. */
-    const bodyUp = body();
-    /* A selector that matches nothing answers the same twice and would make
-       the claim below vacuous. */
-    if (bodyUp.indexOf(':none') >= 0)
-      fails.push('the composer drew no head to measure (' + bodyUp + '), so ' +
-                 'the claim about the body not moving is about nothing');
-    if (bodyUp !== bodyDown)
-      fails.push('the keyboard came up and the head of the composer moved ' +
-                 'with it: ' + bodyDown + ' became ' + bodyUp + '. Only the ' +
-                 'row of tools follows a keyboard');
-    /* AND IT IS ON THE KEYBOARD BEFORE iOS SAYS ANYTHING. On the frame a
-       field takes focus there is no number to read, and a row placed on that
-       nothing sits at the foot of the page under the keyboard -- which is
-       the frame the owner photographed with no row on it. */
-    if (second[0] !== settled)
-      fails.push('the row over the keyboard starts at ' + second[0] + ' and ' +
-                 'ends at ' + settled + ', so it is drawn under the keyboard ' +
-                 'until the viewport reports -- which is the frame the owner ' +
-                 'photographed with no row on it');
-    /* and it still comes back down: a row welded to the last keyboard would
-       pass everything above and hang in the middle of a screen with none. */
-    if (down === null || down <= settled)
-      fails.push('with the keyboard down and nothing focused the row is at ' +
-                 down + ', not at the foot of the screen. It is welded to a ' +
-                 'keyboard that is not there');
-    /* iOS lifts the page to clear the focused field; the keyboard has not
-       moved, so the row has to come down by exactly that much to stay on it. */
-    fake.height = window.innerHeight - KB; fake.offsetTop = 0; vvFit();
-    const flat = barTop();
-    fake.offsetTop = 40; vvFit();
-    const lifted = barTop();
-    if (lifted !== flat + 40)
-      fails.push('iOS scrolled the page up by 40 and the row moved by ' +
-                 (lifted - flat) + ' in the page instead of 40, so it is no ' +
-                 'longer on the keyboard while the page is held up');
-
-    /* ---- NOTHING ON THE COMPOSER MOVES WHEN THE FIELD IS TAPPED --------
-       「そもそも画面はスクロールできないようにして欲しいんだけど、そうすれば
-       ズレすら無くなるはずなのになんで？」「キーボードはそこで止める。入力
-       位置もタップしても動かないそれでいいやん。」 OWNER 2026-09-22, after
-       two photographs of 新しい投稿 on build 162: the composer as it opens,
-       and the same screen after the owner's own tap on the line field, with
-       everything under the field gone.
-
-       THE ANSWER TO 「なんで？」 IS THAT THE DOCUMENT WAS ALREADY LOCKED AND
-       THE THING THAT MOVES IS NOT THE DOCUMENT. `html.fitlock` puts
-       `overflow:hidden` on the page while a one-screen form is open
-       (shell.js § tabPaint), and that is what stopped the drag. A TAP is not
-       a drag: WebKit lifts the LAYOUT VIEWPORT to reveal the field it has
-       just focused, `overflow:hidden` does not forbid that, and nothing in
-       JavaScript can refuse it -- `preventScroll` is an option on a
-       programmatic focus (pwKeepKb, which is why the screen it OPENS on is
-       right), and a finger on a textarea does not go through it.
-
-       So the screen is held still by being pinned to the part that can be
-       SEEN: `.view.fit` is `position:fixed` at `top:var(--vvtop)`, and
-       `--vvtop` is that lift. What was missing is that the box's HEIGHT
-       belonged to the same sentence -- it was `100dvh`, a whole page, while
-       starting `--vvtop` down the page -- so the box hung exactly `--vvtop`
-       past the foot and everything laid out against that foot hung with it.
-       Measured, 390x844, a 380pt keyboard: the visible window came down by N
-       and the meaning came down by 2N, and past N=114 it was under the
-       keyboard, the tags with it.
-
-       ASKED IN SCREEN COORDINATES, which is the only frame the owner is in.
-       A rect in the page is not an answer: the page is what moved. What has
-       to hold still is where a thing sits inside the part you can see, so
-       every reading here has the lift taken out of it.
-
-       Asked of the FIELD, the BAR and the MEANING together: the field alone
-       staying put is what the broken screen already did -- iOS lifts the page
-       precisely so the focused field does not move -- so a check on it alone
-       would have been green with the bug in. */
-    {
-      const lift = (sel) => {
-        const e = sel.charAt(0) === '#' ? document.getElementById(sel.slice(1))
-                                        : document.querySelector(sel);
-        if (!e) return null;
-        const r = e.getBoundingClientRect();
-        /* the page's own lift taken out: where it sits on the SCREEN */
-        return Math.round(r.top) - fake.offsetTop;
-      };
-      const read = () => ({ ln: lift('#pw-ln'), mn: lift('#pw-mn'),
-                            bar: lift('.pwbar') });
-
-      PW = pwBlank(); openPost(); render();
-      fake.height = window.innerHeight - KB; fake.offsetTop = 0; vvFit();
-      const before = read();
-      Object.keys(before).forEach((k) => {
-        if (before[k] === null)
-          fails.push('the composer drew no ' + k + ' to measure, so the ' +
-            'claim that it does not move is about nothing');
-      });
-      /* every lift a tap can produce, not one: WebKit hands over a different
-         number for a different field and a different keyboard, and a screen
-         that holds still at 40 and not at 200 is a screen that moves. */
-      [20, 40, 80, 120, 200, 300].forEach((N) => {
-        fake.offsetTop = N; vvFit();
-        const now = read();
-        Object.keys(before).forEach((k) => {
-          if (before[k] === null || now[k] === null) return;
-          if (now[k] !== before[k])
-            fails.push('iOS lifted the page ' + N + 'px to reveal the field ' +
-              'and the ' + k + ' moved ' + (now[k] - before[k]) + 'px on the ' +
-              'screen (' + before[k] + ' -> ' + now[k] + '). Nothing on the ' +
-              'composer may move when the field is tapped. 「入力位置も' +
-              'タップしても動かない」 OWNER 2026-09-22. .view.fit is pinned ' +
-              'to var(--vvtop) and has to be the page LESS that lift: ' +
-              'height:calc(100dvh - var(--vvtop, 0px))');
-        });
-      });
-      fake.offsetTop = 0; vvFit();
-      /* and the document itself never scrolled -- html.fitlock, the half that
-         was already there and is not the half that was broken. */
-      const st = document.scrollingElement ? document.scrollingElement.scrollTop : 0;
-      if (st !== 0)
-        fails.push('the document under the composer scrolled to ' + st +
-          '. A one-screen form locks the page (html.fitlock), so nothing ' +
-          'there may move at all');
+    const read = () => ({
+      bar:  rect('.view.fit .navtop'),
+      head: rect('.view.fit .pwtop .pav') + ' ' + rect('#pw-ln'),
+      row:  rect('.view.fit .pwbar')
+    });
+    PW = pwBlank(); openPost(); render(); await frame();
+    const was = read();
+    ['bar', 'head', 'row'].forEach((k) => {
+      if (was[k] === null || String(was[k]).indexOf('null') >= 0)
+        fails.push('the composer drew no ' + k + ' to measure (' + was[k] +
+                   '), so the claim that it does not move is about nothing');
+    });
+    for (const KB of [336, 380, 336, 0]) {
+      await screenTo(844 - KB);
+      const H = window.innerHeight, now = read(), on = KB ? 'with a ' + KB +
+        ' keyboard up' : 'with the keyboard down again';
+      if (now.bar !== was.bar)
+        fails.push('the bar with back and send moved ' + on + ': ' + was.bar +
+                   ' became ' + now.bar + '. 「一番上と、カメラとかあるやつは' +
+                   '位置固定」 OWNER 2026-09-25');
+      if (now.head !== was.head)
+        fails.push('the face and the line moved ' + on + ': ' + was.head +
+                   ' became ' + now.head);
+      const rb = document.querySelector('.view.fit .pwbar');
+      const foot = rb ? Math.round(rb.getBoundingClientRect().bottom) : null;
+      if (foot !== H)
+        fails.push('the row of tools ends at ' + foot + ' ' + on + ', and the ' +
+                   'screen -- which ends where the keyboard begins -- ends at ' +
+                   H + '. It is meant to stand ON the keyboard');
+      const mn = document.getElementById('pw-mn');
+      if (mn && rb && mn.getBoundingClientRect().bottom >
+                      rb.getBoundingClientRect().top + 1)
+        fails.push('the meaning is behind the row of tools ' + on);
+      const se = document.scrollingElement || document.documentElement;
+      if (se.scrollTop !== 0 || se.scrollHeight > H + 1)
+        fails.push('the page under the composer has room to move ' + on +
+                   ' (scrolled ' + se.scrollTop + ', ' + se.scrollHeight +
+                   ' tall on a screen of ' + H + '). A flick moves that room, ' +
+                   'which is the shaking the owner felt');
     }
-    if (real) Object.defineProperty(window, 'visualViewport', real);
-    else delete window.visualViewport;
-    const f = field(); if (f) f.blur();
-    document.body.focus();
-    if (hadKb) root.style.setProperty('--vvkb', hadKb);
-    else root.style.removeProperty('--vvkb');
+
+    /* 260 is the smallest a phone leaves, and there the board holds less
+       than the line, the switch, the meaning and the tags are at their
+       smallest -- which is when it has to slide. A long line or meaning is
+       not that case: each field scrolls inside itself (www/index.html §
+       .view.fit), so the board keeps its measured shape. */
+    await screenTo(260);
+    PW = pwBlank(); openPost(); render(); await frame();
+    const board = document.querySelector('.view.fit .pwscroll');
+    const more = board ? board.scrollHeight - board.clientHeight : 0;
+    if (!board) fails.push('the composer drew no board to slide');
+    else if (more < 8)
+      fails.push('on a screen of 260 the board holds ' + board.clientHeight +
+                 ' of ' + board.scrollHeight + ' and has nothing to slide: ' +
+                 'what does not fit is cut off. 「中身だけ板にしてスライド' +
+                 'できるように」 OWNER 2026-09-25');
+    else {
+      /* a box that is `overflow:hidden` scrolls from here and not under a
+         finger, so what it is is asked as well as where it goes */
+      const oy = getComputedStyle(board).overflowY;
+      if (oy !== 'auto' && oy !== 'scroll')
+        fails.push('the board is overflow-y:' + oy + ', so a finger cannot ' +
+                   'slide it: what does not fit is cut off');
+      const by = Math.min(20, more);
+      const b0 = read(), l0 = document.getElementById('pw-ln').getBoundingClientRect().top;
+      board.scrollTop = by;
+      await frame();
+      const b1 = read(), l1 = document.getElementById('pw-ln').getBoundingClientRect().top;
+      if (Math.round(l0 - l1) !== by)
+        fails.push('the board was slid ' + by + ' and the line on it moved ' +
+                   Math.round(l0 - l1) + ': what is on the board is not on the board');
+      if (b1.bar !== b0.bar || b1.row !== b0.row)
+        fails.push('the board was slid and the bar or the row went with it: ' +
+                   b0.bar + ' / ' + b0.row + ' became ' + b1.bar + ' / ' + b1.row);
+      const se = document.scrollingElement || document.documentElement;
+      if (se.scrollTop !== 0)
+        fails.push('sliding the board scrolled the page under it to ' + se.scrollTop);
+    }
+    await screenTo(844);
+    const f = document.activeElement; if (f && f.blur) f.blur();
     PW = wasPW;
   }
 
@@ -4482,6 +4334,26 @@ const R = await pg.evaluate(async () => {
 await br.close();
 srv.close();
 
+/* AND NOTHING CHASES THE KEYBOARD. 11d2 holds where everything stands on a
+   screen the keyboard has made shorter; this holds that nothing in www/ is
+   measuring the keyboard to move things by hand -- the road that shook
+   (2026-09-25 投稿の画面は揺れない). `visualViewport` is what that road
+   read, and `--vvtop` `--vvkb` `--vvmin` `--vvh` and `--kb` are what it
+   wrote. Asked of the code with the comments taken out, so the sentences
+   that say why they are gone do not count as the thing coming back. */
+{
+  const files = ['index.html'].concat(fs.readdirSync(ROOT).filter((n) => n.endsWith('.js')));
+  for (const f of files) {
+    const src = fs.readFileSync(path.join(ROOT, f), 'utf8')
+      .replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ' '));
+    const m = /visualViewport|--vv(top|kb|min|h)\b|var\(--kb\)|'--kb'/.exec(src);
+    if (m)
+      R.fails.push('www/' + f + ':' + src.slice(0, m.index).split('\n').length +
+        ' has `' + m[0] + '`. The phone ends the screen at the keyboard ' +
+        '(MainViewController.swift § keepStill); a page that measures the ' +
+        'keyboard and moves things after it is the road that shook');
+  }
+}
 if (R.fails.length) {
   console.error('\npost: ' + R.fails.length +
                 ' thing' + (R.fails.length > 1 ? 's' : '') +

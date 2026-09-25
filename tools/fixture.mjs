@@ -1904,6 +1904,11 @@ export function halfDone(){
     ['the composer, replying to somebody', () => {
         PW = pwBlank(); PW.to = 'p1'; openPost('reply');
         const h = vForm(); PW = pwBlank(); return h; }],
+    /* and with the meaning switched off: the switch alone at the end of the
+       meaning's row (www/post.js § pwHTML, r97) */
+    ['the composer, replying, the meaning off', () => {
+        PW = pwBlank(); PW.to = 'p1'; PW.nm = 1; openPost('reply');
+        const h = vForm(); PW = pwBlank(); return h; }],
     /* AND QUOTING (r94 B): the post under the field, small. */
     ['the composer, quoting somebody', () => {
         const p = postById('p2'); p.sid = 'SRV-2';

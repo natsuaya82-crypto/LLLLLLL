@@ -2584,13 +2584,13 @@ const R = await pg.evaluate(async () => {
   delete SET.__later57;
   /* そして逆向き ── **この端末の**設えは、誰が来ても動かない。テーマと
      表示言語は 2026-09-09 からアカウントのものなので、ここではない
-     （64 番がそちらを持っています）。残っているのはこの端末の物の移行の印
-     （`doneMoved`）とこの画面の測りです。 */
-  SET.doneMoved = 1; SET.vvkb = 260; save();
+     （64 番がそちらを持っています）。ここで押すのはこの端末の物の移行の印
+     （`doneMoved`）です。この画面の測り（`vvkb`）もここにありましたが、
+     2026-09-25 から誰も書かず読まない欄です（www/core.js § SET_PHONE）。 */
+  SET.doneMoved = 1; save();
   netOut(); arrive(B);
-  if (SET.doneMoved !== 1 || SET.vvkb !== 260)
-    no('57: この端末の設え（移行の印・この画面の測り）が、人が変わって動いた ── ' +
-       SET.doneMoved + ' / ' + SET.vvkb);
+  if (SET.doneMoved !== 1)
+    no('57: この端末の設え（移行の印）が、人が変わって動いた ── ' + SET.doneMoved);
   say('57: 一覧は数えていて並べていない ── 明日足す欄もその人のもの、端末の設えだけが残る');
 
   /* ---- 58. スタッフの @ を打って押すと、呼び出しが一回出る ---------------
@@ -4877,6 +4877,38 @@ const R = await pg.evaluate(async () => {
       if (!ME.av) no('93: 顔の無い古いアカウントに、移行が顔を付けない');
     }
     say('93: 顔は描いて書かない ── 行を描いても ME.av もディスクも動かず、付けるのは移行（自分の言語）');
+  }
+
+  /* ---- 94. App Store の評価のお願いは、そのアカウントが開いた五回目に一度
+     「評価のやつつけよう」「cやね」（開いた五回目） OWNER 2026-09-25。数える
+     のは rateOpen()（www/core.js）一か所で、数はアカウントの物（SET.opened、
+     lingua.set.<uid>）── 端末の物ではない。iOS への頼みは本物の口
+     （Capacitor.nativePromise）を差し替えて数えます。 */
+  {
+    start();
+    const wasCap = window.Capacitor, asked94 = [];
+    /* 答えの来ない口: 何を繋いでも自分を返す（storeSync も同じ口を使う） */
+    const never = { then: function () { return never; }, catch: function () { return never; } };
+    window.Capacitor = { nativePromise: function (plug, what) {
+      if (what === 'review') asked94.push(plug + '.' + what + '@' + SET.opened);
+      return never;
+    } };
+    netOut(); arrive(A);
+    for (let i = 0; i < 6; i++) rateOpen();
+    if (asked94.join(' ') !== 'LinguaStore.review@5')
+      no('94: 六回開いて、評価のお願いは五回目に一度のはず ── ' +
+         (asked94.join(' ') || '一度も頼んでいない'));
+    netOut(); arrive(B);
+    if (SET.opened !== undefined)
+      no('94: **A の開いた数が B に渡っている** ── ' + SET.opened +
+         '。数はアカウントの物');
+    rateOpen();
+    if (asked94.length !== 1) no('94: B の一回目で頼んだ ── ' + asked94.join(' '));
+    netOut(); arrive(A);
+    if (SET.opened !== 6)
+      no('94: A に戻ると A の数（6）のはず ── ' + SET.opened);
+    window.Capacitor = wasCap;
+    say('94: 評価のお願いは開いた五回目に一度、数はアカウントの物（A 6、B 1）');
   }
 
   return out;

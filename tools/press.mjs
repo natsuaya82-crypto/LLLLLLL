@@ -724,8 +724,8 @@ const R = await pg.evaluate(async () => {
   /* AND ONE REAL RENDER OF A ONE-SCREEN FORM. Everything above puts a view's
      HTML into #app, so render() -- and tabPaint() with it -- never runs for a
      form that is `fit`. What that misses is the class the DOCUMENT wears
-     while one is open (`html.fitlock`, which stops the page rubber-banding
-     under a screen pinned to the visual viewport): worn by <html>, set by
+     while one is open (`html.fitlock`, which gives the page under a one-screen
+     form nothing to scroll or bounce): worn by <html>, set by
      render(), and invisible to a walk that never calls render(). It was
      reported here as a rule nothing wears, which is the check saying "add the
      seed" -- this is the seed. */

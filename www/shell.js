@@ -168,34 +168,6 @@ function viewLeft(from, to){
   if(from==='kb' && !navHas('kb')) kbLeft();
 }
 
-/* ---- how much of the screen the phone's own keyboard is covering ------
-   This app has no Capacitor keyboard plugin, so WKWebView does not resize
-   when the keyboard comes up: it lays a keyboard over the page and leaves
-   `position:fixed` exactly where it was. Anything pinned to the bottom of the
-   screen is then behind it -- which is every field on the photograph editor,
-   and the field is the whole point of that screen.
-
-   `visualViewport` is what the browser knows about it, and the difference
-   between the window and the visible part of it IS the keyboard. It goes into
-   one custom property, and the screens that pin something to the bottom add
-   it to their offset. One listener, one number, and nothing native. */
-function vpKbWire(){
-  var vv=window.visualViewport;
-  if(!vv || !vv.addEventListener) return;
-  var set=function(){
-    var h=Math.max(0, Math.round(window.innerHeight-vv.height-vv.offsetTop));
-    document.documentElement.style.setProperty('--kb', h+'px');
-    /* The photograph is one of the things that gets out of the way, so it is
-       narrower with a keyboard up than without one -- and every letter on it
-       is a fraction of its width. They are drawn again at the width it now
-       is, or the line is the size it was on the bigger picture. */
-    if(document.getElementById('mk-box')){ pwMarkDraw(); pwMarkFit(); }
-  };
-  vv.addEventListener('resize', set);
-  vv.addEventListener('scroll', set);
-  set();
-}
-
 /* ---- where you are, and what you came through ------------------------
    Every screen used to be reached by setting one global to a string, and
    every back button was hard-wired to a particular screen. So the word
@@ -1868,173 +1840,6 @@ document.addEventListener('touchend',    slideEnd,   false);
 document.addEventListener('touchcancel', slideEnd,   false);
 document.addEventListener('click',       slideEat,   true);
 
-/* ---- how much of the screen the page can actually see ------------------
-   The software keyboard does not shrink `100dvh`. It slides OVER the page, so
-   a screen sized to the viewport is a screen whose foot is behind the
-   keyboard from the moment somebody starts typing -- which is the only moment
-   the composer is being looked at. 「キーボード込みでに決まってるやん」
-
-   `visualViewport` is the only thing that knows, and it is the one place that
-   asks: everything else reads `--vvh`. Where there is no visualViewport there
-   is no software keyboard sliding over anything either, and the fallback is
-   what this was.
-
-   `--tabgap` is the room the bar at the foot needs. It is fixed to the LAYOUT
-   viewport, so with the keyboard up it is behind the keyboard and there is
-   nothing to leave room for -- leaving it anyway costs sixty points of a
-   screen that has just lost half its height. */
-/* THERE IS NO 「the smallest the visible part has been」 ANY MORE, and that is
-   the whole of what changed here. A one-screen form used to be laid out to
-   it -- a guess of 55% of the phone, only ever lowered -- and the guess is a
-   height no keyboard has: measured on a 390x844, a roman keyboard leaves 508
-   and the box was 464, so 44px belonged to neither and the row of tools hung
-   outside the box it was the last child of. A phone has more than one
-   keyboard and they are not the same height, so there is no one number a
-   screen can be laid out to.
-
-   The composer is the whole phone now (`.view.fit` in index.html, the r4-sns
-   block), and the only thing that follows the keyboard is the row of tools,
-   through `--vvkb` below. 「投稿画面は動かない」 OWNER 2026-09-06.
-
-   `vvWas` is still the screen this was measured on and `vvKbMax` is still the
-   deepest keyboard seen here, which is what puts the row in the right place on
-   the frame a field is focused. */
-var vvWas=0, vvKbMax=0;
-/* Is there a keyboard, or is one on its way? Nothing on a phone answers that
-   in advance -- `visualViewport` says how much is hidden AFTER iOS has
-   finished moving it, and a field being focused is what brought the keyboard
-   up in the first place. So this is the question asked, and it is asked of
-   the page rather than of a screen name: `--vvkb` is read by one rule
-   (`.view.fit .pwbar`) and by nothing else. */
-function vvTyping(){
-  var e=document.activeElement;
-  if(!e) return false;
-  return e.nodeName==='INPUT' || e.nodeName==='TEXTAREA' || !!e.isContentEditable;
-}
-function vvFit(){
-  var v=window.visualViewport, h=v? v.height : window.innerHeight;
-  /* 120 rather than 0: a phone's address bar sliding away is also a change of
-     height and is not a keyboard. */
-  var up=(window.innerHeight-h)>120;
-  var d=document.documentElement.style;
-  /* A phone that turned, or a window somebody dragged, is a different screen
-     and the old smallest means nothing on it. */
-  if(window.innerHeight!==vvWas){ vvWas=window.innerHeight; vvKbMax=0; }
-  /* AND WHAT THIS PHONE'S KEYBOARD WAS LAST TIME. 「返信の画面固定してるはず
-     なのに鬼動くけど？」 OWNER 2026-09-01.
-
-     The paragraph above says the first keyboard of a launch still rises with
-     the layout, because how tall a keyboard this phone has is not knowable
-     before one has been up. It is knowable: it was measured on this phone,
-     the last time one was up, and a keyboard does not change size between two
-     launches of the same app. So the measurement is kept -- in SET, which is
-     the settings and one of the three things that are the phone's
-     (CLAUDE.md), and NEVER in a language.
-
-     Kept against the height of the screen it was measured on, and read back
-     only when that matches: a phone that turned, or the app in a window
-     somebody dragged, is a different screen and last night's number means
-     nothing on it. That is the same test the line above already makes. */
-  if(!vvKbMax && SET.vvkb && SET.vvkb.on===window.innerHeight && SET.vvkb.kb)
-    vvKbMax=SET.vvkb.kb;
-  d.setProperty('--vvh', h+'px');
-  /* Where the visible part STARTS. iOS scrolls the layout viewport to lift a
-     focused field clear of the keyboard, and a screen pinned to the document
-     goes up with it -- so the bar carrying Post left the top of the phone.
-     A one-screen form is pinned to this instead. */
-  d.setProperty('--vvtop', (v? v.offsetTop : 0)+'px');
-  /* HOW TALL THE KEYBOARD IS, which is the one thing nothing here measured.
-     「Aaとかがキーボードの上に引っ付いてる形なんだけど、それをカメラとか
-     フォルダのマークでやって欲しい」 OWNER 2026-08-25, with a picture of
-     Twitter's row.
-
-     The row was the last child of a box laid out to a guess, so it sat on the
-     foot of THAT -- which is where the keyboard was the last time one was up,
-     and is not the keyboard. What is left over below the visible part is the
-     keyboard itself, and a row pinned to that rides up and down with it.
-
-     WHAT IS MEASURED IS NOT WHAT IS TRUE WHILE THE KEYBOARD IS MOVING, and
-     that is the whole of the bug the owner photographed.
-     「2枚目が正解なのに1枚目みたいにまだガチャガチャうごくのうざい。
-     写真とかは固定でしょ？」 OWNER 2026-08-27, two photographs a second
-     apart: no row in the first, the row in the second, one screen.
-
-     Measured, at 390x844 with a 336pt keyboard: while the keyboard is rising
-     and the viewport has not been told yet, `innerHeight - h` is 0 -- which
-     is the same answer as no keyboard at all -- so the row sat at bottom:0,
-     UNDER the keyboard. That is the first photograph. Then the value arrives
-     and it leaps 336px. And every intermediate value iOS hands over on the
-     way moves it again, one position per event, which is the shaking.
-
-     X's row does not do this because it is stuck to the keyboard natively
-     (`inputAccessoryView`), and we took that road away today -- `hideForm-
-     AccessoryBar()` in MainViewController.swift. So the height has to be
-     REMEMBERED instead: the deepest reading of this launch, on this screen.
-     A keyboard is a property of the phone and does not change size between
-     two openings of the same composer, so once it has been seen once the row
-     can be put in the right place on the frame the field is focused -- before
-     iOS has said anything -- and every value that arrives afterwards is
-     smaller than the one already in use and moves nothing.
-
-     The first keyboard of a launch still rises with it: how tall a keyboard
-     this phone has is not knowable before one has been up, and guessing it
-     would be a number nobody measured. It only ever grows, so it does not
-     shake on the way.
-
-     It is `vvTyping()` and not this measurement that decides whether there is
-     a keyboard at all, because the measurement says 0 both when the keyboard
-     is down and when it is half way up.
-
-     What is remembered is the KEYBOARD, and what is written out is where the
-     TOP OF IT is in the page -- and those are two numbers, which the one line
-     this replaced had as one. `offsetTop` is how far iOS has scrolled the
-     page up to clear the focused field; the keyboard has not moved, the page
-     under it has, so the row has to come down by exactly that much to stay on
-     it. Measured with the page lifted 40: the keyboard is still 336 tall and
-     its top is 296 up from the foot of the page. Remembering the number with
-     the scroll already taken out of it would have frozen the row 40 clear of
-     the keyboard for as long as iOS held the page up. */
-  /* THE LIVE HEIGHT WHERE THERE IS ONE, and the remembered one only for the
-     moment before there is. 「道具の行だけはキーボードの直上に live で追随」
-     OWNER 2026-09-06 through the leader.
-
-     It was the remembered one for the whole of the time a field had focus,
-     and the remembered one is the DEEPEST this launch -- so a phone has two
-     keyboards and the row was placed against the taller of them. Measured,
-     390x844, one focus session: roman 336 puts the row at 455..508 and the
-     keyboard's top edge is 508, right; the Japanese keyboard 380 puts it at
-     411..464 against 464, right; going back to roman leaves it at 411..464
-     against 508 -- 44px of nothing under it, for the rest of the session.
-
-     `kb` is 0 both when there is no keyboard and while one is on its way up,
-     which is the whole reason the memory exists: on the frame a field is
-     focused there is nothing to read, and a row at 0 would sit under the
-     keyboard and then leap. So the memory answers exactly that window and
-     nothing else, and the moment iOS says a number the row follows it. */
-  var off=(v? v.offsetTop : 0);
-  var kb=Math.max(0, window.innerHeight - h);
-  if(kb>vvKbMax){ vvKbMax=kb; vvKeep(); }
-  d.setProperty('--vvkb',
-    Math.max(0,(kb>0? kb : (vvTyping()? vvKbMax : 0)) - off)+'px');
-  d.setProperty('--tabgap', up? '10px' : 'calc(var(--tabh) + 10px)');
-}
-/* Written when the number GROWS and not on every event: this runs on every
-   resize and scroll of the visual viewport, which is many a second while a
-   keyboard is moving. Two numbers and the screen they were measured on. */
-function vvKeep(){
-  var was=SET.vvkb;
-  if(was && was.on===window.innerHeight && was.kb===vvKbMax) return;
-  SET.vvkb={on:window.innerHeight, kb:vvKbMax};
-  save();
-}
-function vvMount(){
-  vvFit();
-  if(window.visualViewport){
-    window.visualViewport.addEventListener('resize', vvFit, false);
-    window.visualViewport.addEventListener('scroll', vvFit, false);
-  }
-  window.addEventListener('resize', vvFit, false);
-}
 /* ---- going back without reaching for the corner -------------------------
    The way back is a button in the top-left corner, which on a phone held in
    one hand is the one place a thumb cannot get to. Every screen keeps it --
@@ -2273,21 +2078,12 @@ function tabPaint(){
      けど本気で揺らせば上から下まで揺れるんだけどなんで固定してないの？」 OWNER
      2026-09-01.
 
-     `.view.fit` is `position:fixed` and pinned to `--vvtop`, which is
-     `visualViewport.offsetTop` -- how far iOS has scrolled the LAYOUT viewport
-     to lift the focused field over the keyboard. A fixed element on iOS is
-     positioned against the layout viewport, so it goes up with it, and
-     `--vvtop` is what brings it back down.
-
-     What was left out is the DRAG: pull the page and iOS rubber-bands the
-     layout viewport, `offsetTop` changes on every frame of it, and this
-     screen chases the number one event behind. That is the shaking, and it
-     is the whole screen because the whole screen is the fixed element.
-
-     So the document is locked while a one-screen form is open: nothing to
-     rubber-band, `offsetTop` stays where the keyboard put it, and the screen
-     stops moving. What scrolls inside it -- the quoted post, the field -- is
-     unaffected: they scroll in their own boxes and always did. */
+     The screen is one fixed box the size of what can be seen -- the phone
+     ends the web view at the top of the keyboard (ios/App/App/
+     MainViewController.swift § keepStill) -- so the document under it has
+     nothing to show and is locked while it is open: nothing to scroll and
+     nothing to bounce. What moves inside it moves in its own box: the board
+     somebody writes on and the quoted post (www/index.html § .view.fit). */
   if(one) document.documentElement.className+=
     (document.documentElement.className.indexOf('fitlock')>=0? '' : ' fitlock');
   else document.documentElement.className=

@@ -54,10 +54,17 @@ const paid = argv.indexOf('--paid') >= 0;
 const mine = argv.indexOf('--myfont') >= 0;
 const li = argv.indexOf('--lang');
 const uiLang = li >= 0 ? argv[li + 1] : 'en';
+/* --kb N: the phone with a keyboard N tall up. The phone ends the screen at
+   the top of the keyboard (ios/App/App/MainViewController.swift § keepStill),
+   so that is this page at 844 - N; and a keyboard is up because a field has
+   focus, so the first field on the screen is given it. */
+const ki = argv.indexOf('--kb');
+const kbUp = ki >= 0 ? Number(argv[ki + 1]) || 0 : 0;
 /* everything that is not a flag, and not the word after --lang. li is -1 when
    there is no --lang, and li + 1 is then 0, which silently ate whichever
    screen was asked for first. */
-const named = argv.filter((a, i) => !a.startsWith('--') && !(li >= 0 && i === li + 1));
+const named = argv.filter((a, i) => !a.startsWith('--') && !(li >= 0 && i === li + 1) &&
+                                    !(ki >= 0 && i === ki + 1));
 
 const srv = http.createServer((q, r) => {
   const f = path.join(WWW, q.url === '/' ? 'index.html' : q.url.split('?')[0]);
@@ -73,7 +80,7 @@ fs.mkdirSync(OUT, { recursive: true });
 /* A phone, not a desktop window: this is a Capacitor app and a screen that
    only holds together at 1200 px wide is not a screen anyone will see. */
 const br = await chromium.launch(LAUNCH);
-const pg = await br.newPage({ viewport: { width: 390, height: 844 },
+const pg = await br.newPage({ viewport: { width: 390, height: 844 - kbUp },
                               deviceScaleFactor: 2 });
 await pg.goto(`http://localhost:${PORT}/`);
 /* index.html holds a splash over everything for the later of 900 ms and the
@@ -256,6 +263,10 @@ for (const spec of shots) {
       }, { r, a });
   if (err) { console.error(`  ${spec} threw: ${err}`); continue; }
   await pg.waitForTimeout(120);            /* fonts and any transition settle */
+  if (kbUp) await pg.evaluate(() => {
+    const e = document.querySelector('#app textarea, #app input:not([type=hidden]):not([type=file]):not([type=range]):not([type=checkbox])');
+    if (e) try { e.focus({ preventScroll: true }); } catch (x) { e.focus(); }
+  });
   /* THERE IS NO SERVER BEHIND THIS FILE, so anything the screen asks for fails
      and netPop() puts 「接続できません」 over the middle of the picture. That is
      the app being right about the network and has nothing to do with the screen
@@ -298,6 +309,7 @@ for (const spec of shots) {
   const name = (hd ? 'half-' + hdLabel[Number(hd[1])]
                    : spec.charAt(2) === '@' ? 'ob-' + obLabel[Number(ob[1])]
                                             : spec.replace(/[:/#]+/g, '-')) +
+               (kbUp ? '-kb' + kbUp : '') +
                (dark ? '-dark' : '') +
                (uiLang === 'en' ? '' : '-' + uiLang) + '.png';
   const file = path.join(OUT, name);

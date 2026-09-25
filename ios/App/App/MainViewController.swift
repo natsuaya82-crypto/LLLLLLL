@@ -40,15 +40,94 @@ class MainViewController: CAPBridgeViewController {
        loadView(), a few lines above the capacitorDidLoad() call), so WebKit
        is loaded and the class below is registered. */
     hideFormAccessoryBar()
+    keepStill()
+  }
+
+  /* ---- THE SCREEN IS WHAT IS ABOVE THE KEYBOARD ----------------------------
+     「投稿画面のガタガタがウザすぎる」「ガタガタするのはキーボードが出た後に
+     画面を上下に早く揺らした時なんだよな」 OWNER 2026-09-25 (docs/
+     FEATURE_RULES.md, 2026-09-25 投稿の画面は揺れない).
+
+     WebKit's own answer to a keyboard is to leave the web view the size it
+     was, lay the keyboard over it, give the page's scroll view room at the
+     foot as tall as the keyboard, and scroll the page up to show the field.
+     That room is what a finger shaking the screen moves through, and the page
+     was chasing it from JavaScript one event behind -- which is the shaking.
+
+     So WebKit is not told about the keyboard at all: the four notifications
+     it listens for are taken off it, the same thing @capacitor/keyboard does
+     for its `native` resize. What it is given instead is a smaller view --
+     this view's foot is set to the top of the keyboard, in the keyboard's own
+     animation -- so what the page can see IS the screen, there is no room at
+     the foot to scroll into, and nothing is left for anybody to chase.
+     `removeObserver` and a frame are public API; nothing private is touched.
+
+     The root view of this controller IS the WKWebView (CAPBridgeViewController
+     .loadView, `view = webView`), so it is that view's frame. The window lays
+     its root view out to its own bounds again on a turn of the phone, so
+     viewDidLayoutSubviews puts the foot back where the keyboard says.
+
+     Only a keyboard along the foot counts. One that stops short of the bottom
+     -- an iPad's floating one -- covers no strip of the page to give up. */
+  private var kbCover: CGFloat = 0
+
+  private func keepStill() {
+    guard let web = webView else { return }
+    let nc = NotificationCenter.default
+    for name in [UIResponder.keyboardWillShowNotification,
+                 UIResponder.keyboardWillHideNotification,
+                 UIResponder.keyboardWillChangeFrameNotification,
+                 UIResponder.keyboardDidChangeFrameNotification] {
+      nc.removeObserver(web, name: name, object: nil)
+    }
+    /* Capacitor already turns the bounce off (CAPBridgeViewController,
+       `bounces = false`); said again here because this is the one place that
+       says the page does not move. */
+    web.scrollView.bounces = false
+    web.scrollView.alwaysBounceVertical = false
+    nc.addObserver(self, selector: #selector(kbMove(_:)),
+                   name: UIResponder.keyboardWillChangeFrameNotification, object: nil)
+    nc.addObserver(self, selector: #selector(kbMove(_:)),
+                   name: UIResponder.keyboardWillHideNotification, object: nil)
+  }
+
+  @objc private func kbMove(_ note: Notification) {
+    guard let win = view.window, let info = note.userInfo else { return }
+    var cover: CGFloat = 0
+    if note.name != UIResponder.keyboardWillHideNotification,
+       let end = (info[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue)?.cgRectValue {
+      let r = win.screen.coordinateSpace.convert(end, to: win.coordinateSpace)
+      if r.intersects(win.bounds) && r.maxY >= win.bounds.maxY - 1 {
+        cover = max(0, win.bounds.maxY - r.minY)
+      }
+    }
+    if cover == kbCover { return }
+    kbCover = cover
+    let dur = (info[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double) ?? 0.25
+    let curve = (info[UIResponder.keyboardAnimationCurveUserInfoKey] as? UInt) ?? 7
+    UIView.animate(withDuration: dur, delay: 0,
+                   options: [UIView.AnimationOptions(rawValue: curve << 16), .beginFromCurrentState],
+                   animations: { self.kbFit() })
+  }
+
+  private func kbFit() {
+    guard let win = view.window else { return }
+    var f = win.bounds
+    f.size.height = max(0, win.bounds.height - kbCover)
+    if view.frame != f { view.frame = f }
+  }
+
+  override func viewDidLayoutSubviews() {
+    super.viewDidLayoutSubviews()
+    kbFit()
   }
 
   /* The `∧ ∨ ✓` strip over the keyboard. 「チェック▼▲みたいなところはいらない
      から消して。」「あとカメラとかマイクのやつはキーボードの上に絶対に貼り付けて
-     くれ。」OWNER 2026-08-26 -- and those are one fix, not two. The camera row
-     is already pinned to `bottom: var(--vvkb)` (www/index.html), and --vvkb is
-     what is left under the visual viewport, which is the keyboard AND this
-     strip. Take the strip away and the row lands on the keys. Nothing in www/
-     changes.
+     くれ。」OWNER 2026-08-26 -- and those are one fix, not two. The row of
+     tools is the foot of the web view, and the web view ends where the
+     keyboard starts (keepStill above) -- which is the top of this strip while
+     it is there. Take the strip away and the row lands on the keys.
 
      **There is no public way to do this and it is worth saying so plainly.**
      The strip is not ours -- it is nothing in the app's HTML or CSS. It is the

@@ -278,19 +278,19 @@ the reasoning — a reason can be re-derived, a decision cannot.
 
 ### 2026-09-25 投稿の画面は揺れない ── 上のバーと道具の行は固定、中身だけがスライド、キーボードの分だけ画面を縮める（1.0.3）
 - Date: 2026-09-25
-- Area: 投稿の画面（`www/post.js`、`.view.fit`）、キーボードの出入り（`vvFit()`・`vpKbWire()`・`--vvtop`・`--vvkb` in `www/shell.js`、`ios/App/App/`）
+- Area: 投稿の画面（`www/post.js`、`.view.fit`）、キーボードの出入り（~~`vvFit()`~~・~~`vpKbWire()`~~・`--vvtop`・`--vvkb` in `www/shell.js`、`ios/App/App/`）
 - Decision:
   - 上のバー（戻る・送信）とカメラなどの道具の行は位置を固定。その間の中身（一行・意味・タグ）だけが板になってスライドする。
   - キーボードが出たら、アプリ側（Swift）で画面の高さをキーボードの上までに縮める。iOS が画面を押し上げる余地と、キーボードが出ている間に
     見えている範囲が上下にずれる余地を無くす。画面の端で弾む動きも止める。
-  - 押し上げやずれを JavaScript で後から追いかけて戻す仕組み（`--vvtop`、キーボードの高さを覚えておく `vvKbMax`・`SET.vvkb` など）は消す。
+  - 押し上げやずれを JavaScript で後から追いかけて戻す仕組み（`--vvtop`、キーボードの高さを覚えておく ~~`vvKbMax`~~・~~`SET.vvkb`~~ など）は消す。
 - Reason: オーナーの言葉「投稿画面のガタガタがウザすぎる。これ前から行っても治らないのはなぜ？」「←の戻る画面はスクロールに関係ないやん」
   「一番上と、カメラとかあるやつは位置固定して、中身だけ板にしてスライドできるようにするのは？」
   「ガタガタするのはキーボードが出た後に画面を上下に早く揺らした時なんだよな」「それでお願い。」（実機）。
 - Affected features: 投稿の画面、同じ `.view.fit` を使うメモの画面、キーボードの上に付くもの全部。
-- Affected data: 端末の設定の `SET.vvkb`（キーボードの高さの測り）を読まなくなる。消すかどうかは DELETE REVIEW で。
+- Affected data: 端末の設定の ~~`SET.vvkb`~~（キーボードの高さの測り）を読まなくなる。消すかどうかは DELETE REVIEW で。
 - Affected docs: この項、`www/index.html` と `www/shell.js` の該当の注記（書き直す）。
-- Implementation status: 未。r94 が終わってから一つのセッションで。実機で揺らして確かめるまで直ったと言わない。
+- Implementation status: **IMPLEMENTED（CODE CONFIRMED のみ、実機未確認）** r97-still ── `keepStill()`（`ios/App/App/MainViewController.swift`）、`.view.fit`（`www/index.html`）、`post-check` 11d2。実機で揺らして確かめるまで直ったと言わない。
 
 ### 2026-09-25 字を選ぶ画面は一つ ── 既存文字から選ぶとキーの画面は同じ物、種類を増やす、押したらその種類のページ（1.0.3）
 - Date: 2026-09-25
@@ -327,7 +327,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Affected features: 評価のお願い（新しい、`ios/` と `www/` から呼ぶ一か所）。
 - Affected data: 無し。
 - Affected docs: この項、CLAUDE.md § Shape の五つ目、2026-09-01 の標準ダイアログの項、`store/*.json` の keywords。
-- Implementation status: キーワードは `store/*.json` に入った（App Store Connect へは 1.0.3 の版と一緒に送る）。カテゴリと評価のお願いは未。
+- Implementation status: キーワードは `store/*.json` に入った（App Store Connect へは 1.0.3 の版と一緒に送る）。評価のお願いは **IMPLEMENTED（CODE CONFIRMED のみ、実機未確認）** r97-still ── `rateOpen()`（`www/core.js`、数は `SET.opened`、アカウントの物）、`LinguaStore` の `review`、`acct-check` 94。カテゴリは App Store Connect で（未）。
 
 ### 2026-09-25 キーボードはプランで分けない ── 置ける字は自作文字と既存の文字、差は自作文字をいくつ作れるかだけ（1.0.3）
 - Date: 2026-09-25
@@ -766,7 +766,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
 ### 2026-09-22 投稿画面は、欄をタップしても何も動かない
 - Date: 2026-09-22
 - Area: 一画面フォーム（`.view.fit`、`www/index.html` の r4-sns の節）と
-  `--vvtop`（`www/shell.js` `vvFit()`）
+  `--vvtop`（`www/shell.js` ~~`vvFit()`~~）
 - Decision:（原文のまま）「そもそも画面はスクロールできないようにして欲しい
   んだけど、そうすればズレすら無くなるはずなのになんで？」「キーボードは
   そこで止める。入力位置もタップしても動かないそれでいいやん。」

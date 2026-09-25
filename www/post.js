@@ -1711,24 +1711,35 @@ function pwHTML(){
       /* The same ceiling as the line and refused in the same place, which is
          the press. Nothing here either: postCap() is asked once, in pwSend(),
          about both rows. */
-      /* AND THE SWITCH FOR IT, on a row of its own where the meaning starts,
-         and staying there when the field goes (pwMnOff). The word, because
-         「意味」 has no mark every phone draws, in the colour of what is on
-         while it is on. Not in the bar under the field: that bar is exactly
-         full on a 320 phone with nothing added (measured 320/320), and the
-         switch in it pushed the last ring off -- 411/390 as a word and a
-         switch, 348/320 as the word alone. Not on the day's prompt, and not
-         while a post that exists is edited -- that keeps what it has. */
-      ((PW.pr || PW.ed)? '' :
-        '<div class="pwmnrow"><button class="pwmnsw'+(pwMnOff()? '' : ' on')+'" aria-pressed="'+
-          (pwMnOff()? 'false' : 'true')+'"'+DO('pwMnSw')+'>'+esc(t('post.mn.sw'))+'</button></div>')+
-      /* Not there at all while the meaning is switched off (pwMnOff): the
-         screen is the line and nothing under it, which is a post anywhere
-         else. What was typed into it stays in PW.mn and comes back with the
-         switch; it is not sent. */
+      /* THE MEANING AND ITS SWITCH ARE ONE ROW: the field on the left, the
+         switch at the right end, and the switch alone at the right end while
+         the meaning is off (pwMnOff). 「自分の言語で一行と意味がこのページで
+         見れるように」 OWNER 2026-08-26 is the floor under the board, and that
+         floor is two fields -- the line and the meaning (www/index.html §
+         .view.fit, 104). The switch on a row of its own made it three, and on
+         a reply at 260 or 308 of screen the meaning was pushed under the
+         board's foot. Standing on the meaning's row, the switch takes no
+         height the meaning did not already have, so nothing belonging to the
+         meaning can push the meaning off the screen.
+
+         The word, because 「意味」 has no mark every phone draws, in the colour
+         of what is on while it is on. Not in the bar under the field: that bar
+         is exactly full on a 320 phone with nothing added (measured 320/320).
+         Not on the day's prompt, and not while a post that exists is edited
+         -- that keeps what it has.
+
+         Not there at all while the meaning is switched off: the screen is the
+         line and nothing under it, which is a post anywhere else. What was
+         typed into it stays in PW.mn and comes back with the switch; it is not
+         sent. */
+      '<div class="pwmnrow">'+
       (pwMnOff()? '' :
-      lnField('pw-mn', pwMn() || t('post.mn'),
-        (PW.pr? ' readonly' : '')+IN('pwSetMn'), PW.mn, 'pwmn'))+
+        lnField('pw-mn', pwMn() || t('post.mn'),
+          (PW.pr? ' readonly' : '')+IN('pwSetMn'), PW.mn, 'pwmn'))+
+      ((PW.pr || PW.ed)? '' :
+        '<button class="pwmnsw'+(pwMnOff()? '' : ' on')+'" aria-pressed="'+
+          (pwMnOff()? 'false' : 'true')+'"'+DO('pwMnSw')+'>'+esc(t('post.mn.sw'))+'</button>')+
+      '</div>'+
       /* AND THE TAGS, UNDER THE MEANING -- the same place the post puts them
          (postRow), so what is being written and what was written read in one
          order: the line, what it means, and what it is filed under.
@@ -1777,19 +1788,13 @@ function pwFocusLn(){
 /* ---- the keyboard is up the whole time this screen is ------------------
    OWNER 2026-08-25「投稿開いたらキーボードが自動で出て下ろせないが正解」.
 
-   Two things came out of one cause. The row of pictures floated in the middle
-   of the screen when the composer opened, because it is laid out to `--vvmin`
-   -- the smallest the visible part has been -- and until a keyboard has
-   actually been up that is a GUESS (55%). Nothing focused the field, so on a
-   phone the guess was what you saw until you tapped.
+   The field is focused from the moment the screen exists, so the keyboard
+   is up from the first frame somebody sees, and the row of tools is on it
+   from then on (www/index.html § .view.fit) -- there is no screen of this
+   composer with the keyboard down for anything to be laid out to.
 
-   With the field focused from the moment the screen exists there is no moment
-   the guess is used, and the answer to "where does the row go when the
-   keyboard is down" is that it never is.
-
-   `preventScroll` because iOS otherwise scrolls the layout viewport to lift
-   the field, and this screen is pinned to the visual viewport instead -- the
-   two together took the bar off the top of the phone. */
+   `preventScroll` because the screen is one fixed box and there is nothing
+   under it to scroll to the field (www/index.html § .view.fit). */
 function pwKeepKb(){
   if(!FORM || FORM.key!=='post:') return;
   if(here().r!=='form' || here().a!=='post:') return;
@@ -3097,6 +3102,17 @@ function pwMarkMount(){
   box.onpointermove=pwMarkMove;
   box.onpointerup=pwMarkUp;
   box.onpointercancel=pwMarkUp;
+}
+/* The picture is as wide as the screen leaves it, and a keyboard coming up
+   leaves it less: the phone ends the screen at the top of the keyboard
+   (ios/App/App/MainViewController.swift § keepStill), and every letter on the
+   picture is a fraction of its width. So they are drawn again at the width it
+   now is, or the line is the size it was on the bigger picture. www/boot.js
+   wires it once. */
+function pwMarkWire(){
+  window.addEventListener('resize', function(){
+    if(document.getElementById('mk-box')){ pwMarkDraw(); pwMarkFit(); }
+  }, false);
 }
 /* What the finger has hold of: a letter, a corner of the crop, or the crop
    itself. One listener on the stage decides, because a finger that leaves a

@@ -91,6 +91,7 @@ public class LinguaStorePlugin: CAPPlugin, CAPBridgedPlugin, PurchasesDelegate {
     CAPPluginMethod(name: "restore", returnType: CAPPluginReturnPromise),
     CAPPluginMethod(name: "current", returnType: CAPPluginReturnPromise),
     CAPPluginMethod(name: "manage", returnType: CAPPluginReturnPromise),
+    CAPPluginMethod(name: "review", returnType: CAPPluginReturnPromise),
   ]
 
   /// RevenueCat's PUBLIC SDK key for this app -- the one that begins `appl_`,
@@ -438,6 +439,28 @@ public class LinguaStorePlugin: CAPPlugin, CAPBridgedPlugin, PurchasesDelegate {
       } catch {
         call.reject("manage: \(error.localizedDescription)")
       }
+    }
+  }
+
+  /// The App Store's own request for a rating. 「評価のやつつけよう」
+  /// 「cやね」（開いた五回目） OWNER 2026-09-25 -- docs/FEATURE_RULES.md,
+  /// 2026-09-25 カテゴリはグラフィック&デザイン、App Store の評価のお願い.
+  /// WHEN it is asked is www/core.js § rateOpen, the one place that counts;
+  /// WHETHER anything appears is iOS's (at most three times a year, never in
+  /// TestFlight's way that a person can rely on), so this answers only that
+  /// it asked. Drawn by iOS -- one of the two system dialogs CLAUDE.md
+  /// § Shape allows.
+  @objc func review(_ call: CAPPluginCall) {
+    Task { @MainActor in
+      guard let scene = self.bridge?.viewController?.view?.window?.windowScene else {
+        call.reject("no window"); return
+      }
+      if #available(iOS 16.0, *) {
+        AppStore.requestReview(in: scene)
+      } else {
+        SKStoreReviewController.requestReview(in: scene)
+      }
+      call.resolve(["asked": true])
     }
   }
 }
