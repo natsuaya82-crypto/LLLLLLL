@@ -15,6 +15,12 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### 2026-09-25 プランの画面の行を今に（r95-kbfont）
+
+- 無料に「どの文字でもキーボード（無制限）」。Plus の「キーボードは無制限」は「自作文字のキーボード」に、
+  Plus に「フォントの書き出し（OTF）」。Pro の行は変わらない（書き出しの行は元から無い）。十言語。
+- 保存する物は無い。
+
 ### 2026-09-25 フォントの書き出し ── 描いた字の .otf を iPhone の共有画面から（Plus、r95-kbfont）
 
 OWNER 2026-09-25「フォントの書き出しはそれでいいよ」（Pro から Plus へ。まだ作られていなかった）。**実機未確認。**

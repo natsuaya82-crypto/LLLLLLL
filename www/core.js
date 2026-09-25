@@ -2067,7 +2067,7 @@ function planName(id){
 }
 var PLANS=[
   {id:'free', name:'Free', mo:'plan.price.free', yr:'plan.price.free', off:'',
-   lines:['plan.free.1','plan.free.2','plan.free.3','plan.free.4']},
+   lines:['plan.free.1','plan.free.2','plan.free.3','plan.free.5','plan.free.4']},
   /* The middle rung. Its price is here and its subscription is not in App
      Store Connect yet, which is not a hole: StoreKit returns nothing for a
      product that does not exist, so the card is on the screen and the button
@@ -2075,7 +2075,7 @@ var PLANS=[
      way round -- a product on sale that the app does not name. */
   {id:'plus', name:'Plus', mo:'plan.price.plus', yr:'plan.price.plus.yr', off:'17',
    lines:['plan.plus.1','plan.plus.2','plan.plus.3','plan.plus.4','plan.plus.5',
-          'plan.plus.6']},
+          'plan.plus.7','plan.plus.6']},
   /* Pro opens with "everything in Plus, and:" rather than repeating the lines
      above it. Three pages that each list everything are three pages somebody
      has to compare word by word; the ladder is the thing being sold and it
