@@ -45,20 +45,29 @@ async function main(){
   if (build.attributes.processingState !== 'VALID')
     throw new Error(`build ${BUILD} is ${build.attributes.processingState}; wait until Apple has finished processing it`);
 
+  /* One submission at a time. One already with Apple (waiting, in review,
+     issues) stops this. One still being put together (READY_FOR_REVIEW --
+     made, not yet sent, which is what a refused item leaves behind) is the
+     one this run uses: making a second would be refused by Apple anyway. */
   const open = (await call('GET', `/reviewSubmissions?filter[app]=${app.id}&filter[platform]=IOS&filter[state]=READY_FOR_REVIEW,WAITING_FOR_REVIEW,IN_REVIEW,UNRESOLVED_ISSUES`)).data;
-  if (open.length) throw new Error(`a review submission is already open (${open.map((s) => s.attributes.state).join(', ')}) -- nothing sent`);
+  const sent = open.filter((s) => s.attributes.state !== 'READY_FOR_REVIEW');
+  if (sent.length) throw new Error(`a review submission is already with Apple (${sent.map((s) => s.attributes.state).join(', ')}) -- nothing sent`);
+  const draft = open.find((s) => s.attributes.state === 'READY_FOR_REVIEW');
 
-  if (DRY) { console.log(`dry run: would attach build ${BUILD} to ${VERSION} and submit it`); return; }
+  if (DRY) { console.log(`dry run: would attach build ${BUILD} to ${VERSION} and submit it${draft ? ` (in the unsent submission ${draft.id})` : ''}`); return; }
 
   await call('PATCH', `/appStoreVersions/${ver.id}/relationships/build`, { data: { type: 'builds', id: build.id } });
   console.log(`attached build ${BUILD} to ${VERSION}`);
 
-  const sub = (await call('POST', '/reviewSubmissions', { data: { type: 'reviewSubmissions',
+  const sub = draft || (await call('POST', '/reviewSubmissions', { data: { type: 'reviewSubmissions',
     attributes: { platform: 'IOS' },
     relationships: { app: { data: { type: 'apps', id: app.id } } } } })).data;
-  await call('POST', '/reviewSubmissionItems', { data: { type: 'reviewSubmissionItems',
-    relationships: { reviewSubmission: { data: { type: 'reviewSubmissions', id: sub.id } },
-                     appStoreVersion: { data: { type: 'appStoreVersions', id: ver.id } } } } });
+  if (draft) console.log(`using the unsent submission ${draft.id}`);
+  const items = (await call('GET', `/reviewSubmissions/${sub.id}/items`)).data;
+  if (!items.length)
+    await call('POST', '/reviewSubmissionItems', { data: { type: 'reviewSubmissionItems',
+      relationships: { reviewSubmission: { data: { type: 'reviewSubmissions', id: sub.id } },
+                       appStoreVersion: { data: { type: 'appStoreVersions', id: ver.id } } } } });
   const done = (await call('PATCH', `/reviewSubmissions/${sub.id}`, { data: { type: 'reviewSubmissions', id: sub.id,
     attributes: { submitted: true } } })).data;
   console.log(`submitted for review: ${done.id}  state ${done.attributes.state}`);
