@@ -1029,6 +1029,36 @@ language sql stable security definer set search_path = public as $$
                      or (b.actor = who and b.blocked = auth.uid()))
 $$;
 
+-- WHO MAY READ A LANGUAGE, AND THE ONE PLACE IT IS ANSWERED. Three roads read
+-- a language -- the `language` table (`language_read`), the view the article
+-- and the lists are drawn off (`language_seen`), and its slices
+-- (`slice_read`) -- and each used to write the sentence out on its own. Only
+-- the view asked about a block, so the table and the slices handed over the
+-- published language of somebody a block stands between. 「ブロックした相手の
+-- 公開言語は見えない（両向き）」 OWNER 2026-09-25. All three ask this now,
+-- and tools/rls-check.mjs counts the roads (LANG_READ): a policy or a view on
+-- either table that does not ask it is red.
+--
+-- Yours; one you TOOK, whatever it says now and whoever stands between you
+-- (language_took() above -- what a block does to a taken language has not
+-- been decided, docs/scope/r85-block.md, so it reads as it did); or
+-- published, with no block between you and its owner either way.
+--
+-- `security definer`, because it is asked FROM the `language` policy and reads
+-- `language`: under the reader's rights that is the policy asking itself. It
+-- answers one yes-or-no about auth.uid() and one language and hands out no
+-- row; with nobody signed in auth.uid() is null and only a published language
+-- with nobody blocking answers yes -- and anon holds no grant to ask.
+-- WHICH SLICES of a readable language come down is `slice_read`'s, not this.
+create or replace function lang_readable(lang uuid) returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (select 1 from language l
+                  where l.id = lang
+                    and (l.owner = auth.uid() or language_took(l.id)
+                         or (l.published_at is not null
+                             and not block_hides(l.owner))))
+$$;
+
 -- AND NOTHING IS DONE TO SOMEBODY A BLOCK STANDS BETWEEN. 「ブロックされた
 -- 側 → こちらが見えないので、いいね・返信・フォローもできず、通知も来ない
 -- （サーバーで止める）」 OWNER 2026-09-25. Every write that is aimed AT a
@@ -1378,8 +1408,8 @@ drop policy if exists profile_edit on profile;
 create policy profile_edit on profile for update using (is_member() and id = auth.uid())
                                               with check (id = auth.uid());
 
--- language: a published one is readable by anyone; an unpublished one only by
--- the person who owns it. Only the owner ever writes.
+-- language: who may read one is lang_readable() above, and nothing here says it
+-- again. Only the owner ever writes.
 --
 -- is_member(), the same question posting asks. 「言語はアカウントないと作れない
 -- です」「ログインした人しか書けないけど」 -- OWNER 2026-08-26. It used to be
@@ -1394,13 +1424,11 @@ create policy profile_edit on profile for update using (is_member() and id = aut
 -- foot of this file, and not this policy's.
 drop policy if exists language_read on language;
 create policy language_read on language for select
-  using (published_at is not null or owner = auth.uid()
-         -- AND SOMEBODY WHO TOOK IT, whatever it says now. The launch asks
-         -- `language?id=in.(…)` for the rows of what this account has taken
-         -- (netTakenDown in www/net.js), so a row refused here is a language
-         -- with no name, no writing system and nothing said about it -- and
-         -- that is what a taker saw the day the owner unpublished it.
-         or language_took(id));
+  -- Somebody who took it reads the row whatever it says now: the launch asks
+  -- `language?id=in.(…)` for the rows of what this account has taken
+  -- (netTakenDown in www/net.js), and a row refused here is a language with
+  -- no name, no writing system and nothing said about it.
+  using (lang_readable(id));
 drop policy if exists language_make on language;
 create policy language_make on language for insert
   with check (is_member() and owner = auth.uid());
@@ -1544,34 +1572,31 @@ create policy slice_hist_read on slice_hist for select
 
 drop policy if exists slice_read on slice;
 create policy slice_read on slice for select
+  -- WHETHER the language may be read at all is lang_readable() above -- yours,
+  -- taken (「非公開にしたら新規 dl だけできないだけ」 OWNER 2026-09-09), or
+  -- published with no block between -- and it is asked once, first. What
+  -- follows is only WHICH slices of it come down.
   using (
+    lang_readable(language)
+    and (
     exists (select 1 from language l
              where l.id = language and l.owner = auth.uid())
-    -- What the ARTICLE is drawn from. Open on a published language, because
-    -- the page cannot be read otherwise.
-    --
-    -- AND SOMEBODY WHO TOOK IT KEEPS READING IT, published or not
-    -- (language_took() above): 「非公開にしたら新規 dl だけできないだけ」
-    -- OWNER 2026-09-09.
-    or (kind in ('wld', 'script', 'snd', 'letters', 'kb')
-        and exists (select 1 from language l
-                     where l.id = language
-                       and (l.published_at is not null or language_took(l.id))))
+    -- What the ARTICLE is drawn from, because the page cannot be read
+    -- otherwise.
+    or kind in ('wld', 'script', 'snd', 'letters', 'kb')
     -- And what may be TAKEN: 「あとdlは単語文字文法キーボード全部のはずだよね？」
     -- OWNER 2026-09-02. The dictionary and the grammar were refused to everybody
     -- but their owner, so two of the four ↓ could never have landed. They are
     -- open now on a published language AND only where its owner's own switch
     -- says so -- WLD_DL_KIND in www/home.js is the other half of this list, and
     -- the grammar is two slices because a grammar is.
-    -- The taker keeps these two on the SAME second answer and not on a wider
+    -- The taker keeps these on the SAME second answer and not on a wider
     -- one: a language whose dictionary was never offered does not start
     -- offering it by going private.
     or (kind in ('words', 'phases', 'gram2')
-        and exists (select 1 from language l
-                     where l.id = language
-                       and (l.published_at is not null or language_took(l.id)))
         and slice_dl(language,
                      case kind when 'words' then 'words' else 'gram' end))
+    )
   );
 drop policy if exists slice_make on slice;
 create policy slice_make on slice for insert
@@ -1674,9 +1699,9 @@ create policy publication_make on publication for insert with check (
 -- slice.** If that is not wanted, delete the two `slice_count` lines and the
 -- column goes; nothing else depends on them.
 --
--- Reading is `language_read`'s sentence, written out again because a VIEW
--- runs with the definer's rights and would otherwise hand out every
--- unpublished language in the table.
+-- Reading is lang_readable(), asked by the view because a VIEW runs with the
+-- definer's rights and would otherwise hand out every unpublished language in
+-- the table.
 create or replace function slice_count(b text) returns int
 language plpgsql immutable as $$
 begin
@@ -1710,19 +1735,10 @@ create view language_seen as
          slice_count((select s.body from slice s
                        where s.language = l.id and s.kind = 'letters')) as nletters
     from language l
-   -- `language_read`'s sentence, and that includes somebody who took it
-   -- (language_took() above): the article a taker opens is drawn off this
-   -- view, so a row withheld here is the same empty screen the policy was
-   -- opened to stop.
-   --
-   -- AND A PUBLISHED LANGUAGE A BLOCK STANDS BETWEEN IS NOT A ROW, both ways
-   -- (block_hides): 「ブロックした相手の公開言語 → 言語の一覧・検索・人のページ
-   -- から見えない」 OWNER 2026-09-25. Being published is what the block takes
-   -- away. What somebody TOOK is not asked here -- whether a block takes a
-   -- language out of the list of what a person has is not decided
-   -- (docs/scope/r85-block.md), so that row stays what it was.
-   where l.owner = auth.uid() or language_took(l.id)
-      or (l.published_at is not null and not block_hides(l.owner));
+   -- lang_readable() above, the same question `language_read` asks: a view
+   -- runs with its owner's rights, so this `where` is the whole of what stands
+   -- between a reader and the table.
+   where lang_readable(l.id);
 grant select on language_seen to authenticated;
 
 -- AND THE LANGUAGE BESIDE THE PERSON, IN THE SAME ANSWER.
