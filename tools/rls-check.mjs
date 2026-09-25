@@ -614,6 +614,24 @@ const CASES = [
     `select 1 from block_seen`],
   ['B cannot read whom BK blocked',           'denied', B, 0,
     `select 1 from block_seen where handle='${BDH}'`],
+  /* NOTHING IS DONE ACROSS IT, EITHER WAY. 「ブロックされた側 → いいね・返信・
+     フォローもできず、通知も来ない（サーバーで止める）」 OWNER 2026-09-25. A
+     refused row is also a push nobody gets: push-send rings on these rows
+     arriving (supabase/functions/push-send/push.mjs § PUSH). */
+  ['BD cannot pass BK’s post on',         'denied', BD, 0,
+    `insert into react(post,actor,kind) values ('${BKP}','${BD}','boost')`],
+  ['BD cannot answer BK',                     'denied', BD, 0,
+    `insert into post(author,body,reply_to) values ('${BD}','{}'::jsonb,'${BKP}')`],
+  ['nor edit a post into an answer to BK',    'denied', BD, 0,
+    `update post set reply_to='${BKP}' where id='${BDP}'`],
+  ['BD stops following BK',                   'ok',     BD, 0,
+    `delete from follow where follower='${BD}' and followed='${BK}'`],
+  ['and cannot follow BK again',              'denied', BD, 0,
+    `insert into follow(follower,followed) values ('${BD}','${BK}')`],
+  ['BK cannot like BD’s post either',     'denied', BK, 0,
+    `insert into react(post,actor,kind) values ('${BDP}','${BK}','like')`],
+  ['BD still answers somebody else',          'ok',     BD, 0,
+    `insert into post(author,body,reply_to) values ('${BD}','{}'::jsonb,'${P}')`],
   /* WHAT THEY PUBLISHED, both ways. 「ブロックした相手の公開言語 → 言語の一覧・
      検索・人のページから見えない」 OWNER 2026-09-25. The walk further down
      counts this too; these say it by name. */

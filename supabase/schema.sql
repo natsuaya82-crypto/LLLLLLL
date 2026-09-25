@@ -1013,6 +1013,24 @@ language sql stable security definer set search_path = public as $$
                      or (b.actor = who and b.blocked = auth.uid()))
 $$;
 
+-- AND NOTHING IS DONE TO SOMEBODY A BLOCK STANDS BETWEEN. 「ブロックされた
+-- 側 → こちらが見えないので、いいね・返信・フォローもできず、通知も来ない
+-- （サーバーで止める）」 OWNER 2026-09-25. Every write that is aimed AT a
+-- person asks block_hides() of that person in its policy: a follow of them
+-- (follow_make), a like or a pass-on of their post (react_make), and an
+-- answer to their post, written or edited into one (post_make, post_edit).
+-- This is the post's half: whoever wrote post `p`. `security definer`
+-- because the post may be one the writer cannot read (post_read), and it
+-- hands out one yes-or-no, as block_hides() does.
+--
+-- It is also why supabase/functions/push-send asks nothing about a block:
+-- every kind it rings for is one of those rows arriving, and a row that is
+-- refused rings nobody.
+create or replace function post_blocks(p uuid) returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (select 1 from post x where x.id = p and block_hides(x.author))
+$$;
+
 -- ---- where a notice goes when the app is closed ----------------------------
 -- 「通知作ろう。アップルのネイティブ通知で、フォローされた時、返信きた時みたい
 --   な感じでSNS部分であるやつ。」 OWNER 2026-09-22.
@@ -1852,10 +1870,14 @@ create policy post_read on post for select using (
   and (not post_private(body) or author = auth.uid())
 );
 drop policy if exists post_make on post;
-create policy post_make on post for insert with check (is_member() and author = auth.uid());
+create policy post_make on post for insert with check (
+  is_member() and author = auth.uid()
+  -- not an answer to somebody a block stands between (post_blocks)
+  and (reply_to is null or not post_blocks(reply_to)));
 drop policy if exists post_edit on post;
 create policy post_edit on post for update
-  using (is_member() and author = auth.uid()) with check (author = auth.uid());
+  using (is_member() and author = auth.uid())
+  with check (author = auth.uid() and (reply_to is null or not post_blocks(reply_to)));
 drop policy if exists post_drop on post;
 create policy post_drop on post for delete using (is_member() and author = auth.uid());
 
@@ -2075,7 +2097,7 @@ drop policy if exists react_read on react;
 create policy react_read on react for select using (true);
 drop policy if exists react_make on react;
 create policy react_make on react for insert
-  with check (is_member() and actor = auth.uid());
+  with check (is_member() and actor = auth.uid() and not post_blocks(post));
 drop policy if exists react_drop on react;
 create policy react_drop on react for delete using (is_member() and actor = auth.uid());
 
@@ -2196,7 +2218,7 @@ drop policy if exists follow_read on follow;
 create policy follow_read on follow for select using (true);
 drop policy if exists follow_make on follow;
 create policy follow_make on follow for insert
-  with check (is_member() and follower = auth.uid());
+  with check (is_member() and follower = auth.uid() and not block_hides(followed));
 drop policy if exists follow_drop on follow;
 create policy follow_drop on follow for delete using (is_member() and follower = auth.uid());
 
