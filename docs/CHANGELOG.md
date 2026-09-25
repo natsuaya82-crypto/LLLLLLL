@@ -15,6 +15,32 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### 2026-09-25 買う・復元・後から届く購入は RevenueCat SDK を通る（r91-rc）
+
+Shipaton 2026（`docs/FEATURE_RULES.md` 2026-08-25）と OWNER 2026-09-25 の「お願い」。
+**Swift は未ビルド・実機未確認。**
+
+- 買う（`buy`）・復元（`restore`）・親が承認した購入のように後から届く物は、
+  `ios/App/App/LinguaStore.swift` から StoreKit を直接呼ばず、RevenueCat の `Purchases` を通る。
+  StoreKit 直の `product.purchase`・`AppStore.sync()`・`Transaction.updates` の聞き手・`finish()` は消した
+  （RevenueCat が同じ事をするので、二つ残すと取引を二者が取り合う）。解約の画面（`manage`）は買う道ではなく
+  Apple 自身のシートを開くだけなので、StoreKit の `AppStore.showManageSubscriptions` のまま。
+- **段を決めるのは今までどおり `verify-plan`。** サーバーに上がるのは Apple が署名した取引（JWS）で、
+  端末はそれを StoreKit の `Transaction.currentEntitlements` と、四つの商品それぞれの
+  `Transaction.latest(for:)` から読む ── RevenueCat SDK は JWS を外に出さない（`StoreTransaction.jwsRepresentation`
+  は `internal`、5.91.0 の原典で確かめた）。`latest(for:)` は取り消された取引も返すので、返金は
+  「アプリが開いている間に届いた物を取っておく」形より広く、開き直した後でもサーバーに届く。
+- **誰の購入か（`appAccountToken`）は変わらない。** RevenueCat は appUserID が UUID なら、それを
+  `appAccountToken` として付けて買う（`PurchasesOrchestrator.swift` 846 行）。買う前に `logIn(uid)` し、
+  RevenueCat の appUserID がサインイン中の uid になっていなければ買わない。
+- **新しく外に出る物:** サインイン中のアカウントの uid（RevenueCat の App User ID として）と、購入の履歴が
+  RevenueCat のサーバーに渡る。売上とアナリティクスを RevenueCat で見る（2026-09-02）ための物。
+  この端末に新しく保存する物・動かす物・消す物: 無し。サーバー（`purchase`・`plan` 表）も変わらない。
+- 公開キーは `LinguaStore.swift` の `apiKey` 一か所で、今は空。空の間は、値段・買う・復元は
+  今の「App Store につながりませんでした」になり、`current`（起動の問い）は StoreKit の署名だけで今までどおり
+  答える ── 既に払っている人の段は落ちない。
+- `www/store.js`: 復元が uid を渡す（RevenueCat の `logIn` のため）。ほかの受け渡しの形は同じ。
+
 ### 2026-09-25 「…」のミュートの行の印 ── ミュート中は赤い斜線（r88-mute2 D）
 
 「もうミュートしている人の時は、その絵に赤い斜線を入れて『ミュート中』と分かるように」OWNER 2026-09-25。
