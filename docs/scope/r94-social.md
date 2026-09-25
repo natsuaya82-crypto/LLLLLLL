@@ -76,6 +76,11 @@ notices、react/follow の読みの view）、`supabase/functions/push-send/*`�
 | `8f428cda` | CHANGELOG: 意味を切った投稿（`nm`）、時刻の置き場 |
 | `ac0c9774` | E1・E3: 投稿画面の下の帯に「意味」の切り替え（`pwMnSw`、`pwMnOff()` 一つが欄・輪・上限・送る時を答える、今日のお題と編集では出さない）。切った投稿は `mn` 空・`nm:1`、`postSay()` は何も答えない（タイムライン・スレッド・引用・カード）。下書きは `nm` を持つ。`.pmn`・`.lnin.pwmn` を `.75rem`（15px の 0.8 倍） |
 | `78151f77` | integ-0905 を取り込む（CHANGELOG の頭で両方の項を残す） |
+| `67cc32bb` | 持ち物を足す（リーダー 17:22）: E2 の glyph.js、引用のプッシュの push.js・SET_PREFS・push-send・トリガー |
+| `4b3cd43d` | E2: `inkFaceCSS()` が同じ字を `LinguaType`（今のまま）と `LinguaLine`（`size-adjust` を `--ink-over`）の二つの規則で出す。`.pline`・投稿画面の行は `--face-line` で 15px、行の高さは描いた字の分。引用・返信先・通知の行は各自の大きさを `--ink-over` で割る。`line-check` 12 |
+| `29e71cd4` | 直し: E1 の切り替えが投稿画面の帯を画面の外へ押していた（測った: 帯は 320 で何も足さずに 320/320、語と切り替えで 411/390）── 帯から出して意味の欄の頭の行に一語（`post.mn.sw`）、オン金・オフ灰。`tl-check` 15 に帯の幅 |
+| `c9f69000` | CHANGELOG: 引用の通知と `push_quote` |
+| `1b4557ba` | 引用の iPhone の通知: `PUSH` の reply の鍵に `reply_to`・新しい `quote`（鍵 `quote_of`）、`SAY` 十言語、トリガーは `push_on_post` 一つ（`push_on_reply` を書き直し、非公開は鳴らない）、`PUSH_KINDS`・`pushSw()`・`SET_PREFS` の `push_quote`・`push.quote` 十言語。`store-check` に欄、`acct-check` 82 はいいねの行を名前で探す |
 
 ## 振る舞い
 
@@ -83,25 +88,28 @@ notices、react/follow の読みの view）、`supabase/functions/push-send/*`�
 - **B** 誰もリポストしていない投稿の印を押すと「リポスト／引用」（問いの行は無く、二つの答えだけ。外側を押すと何もしない）。引用 → 投稿画面、下に元の投稿が小さく。送ると行に `quote_of`。タイムラインでは本文の下に元の投稿が小さく（左に一本の線、押すと元のスレッド）、元が消えた・非表示・凍結・非公開・ブロックの時は「この投稿は表示できません」。元の人の通知タブに「〇〇 が引用」（リポストの印）。
 - **C** リポストの取り消しとフォローの解除（プロフィールのボタン・人の一覧のボタン）は「リポストを解除しますか？」「@〇〇 のフォローを解除しますか？」［解除］［閉じる］。付ける方は訊かない。ブロックがフォローを外す時は訊かない。
 - **D** スレッドで開いた投稿: 名前の横は「2時間」のまま、本文の下の右に「2026年9月25日 14:51」（言語ごとの並び、`when.full`）。
-- **E** 投稿画面の「意味」を切ると意味の欄が消え、その投稿は意味を持たない。意味の行の字は前より小さい（12px 相当）。
+- **E** 投稿画面の意味の欄の頭の「意味」を押すと灰になり、意味の欄が消え、その投稿は意味を持たない。投稿の行の普通の文字は 15px（前は 20.8px）、描いた字は前と同じ大きさ、意味の行は 12px。
+- **B の通知** 引用されると iPhone に「@〇〇 が引用」、押すとその引用。設定の通知の部屋に「引用」のスイッチ。
 
 ## 保存する物
 
 - サーバー: `post.quote_of uuid`（外部キー無し、索引あり、insert の列だけ）。ビュー `react_seen`、`post_seen` に `quote_of`・`quoted`、`feed_hot`・`feed_fo` に同じ二列、`notices()` に `quote`。**本番の SQL Editor に schema.sql を貼る必要がある**（オーナー／リーダー）。
+- `profile.prefs.push_quote`（無いのはオン）。
 - 投稿の `body`: 意味を切った投稿は `nm:1`・`mn:''`。下書きの `body`: `qt`・`nm`。端末の写し: `qt`・`qp`（`qp` は上がらない）。消す物・移す物は無い。前からある投稿・下書きはそのまま読める。
 
 ## 回した検査
 
 - 速い物（`FAST` の 18 本）: コミットのたび、全部緑。`i18n-check` は pre-commit が毎回回した（10 言語全部）。
 - `tl-check`: 11（D2）・12（C）・13（A、本物の `holdStart`・`navLand`、線の上）・14（B）・15（E）を足し、それぞれ**バグを戻して赤を見た**。最後の取り込みの後も緑。
-- `npm run rls`: 緑、581 回。`react_seen` の `mute_hides`、`post_make` の引用の断り、`quoted` の `block_hides` を抜いて赤を見た（catalogue のブロックの歩きも赤になった）。
+- `line-check` 12（E2）: `size-adjust` を抜いて赤（描いた字 11.9px 対 16.5px）。`push-check`（141）: reply の鍵を id だけに戻して赤（五つ）。`acct-check`: 全部緑、`pushSw()` の quote の行を消して赤。`tl-check` 15 の帯の幅: 切り替えを帯に戻して赤（422/390）。
+- `npm run rls`: 緑、581 回。引用の通知のトリガーを返信だけに戻して赤（「引用が鳴る」）。`react_seen` の `mute_hides`、`post_make` の引用の断り、`quoted` の `block_hides` を抜いて赤を見た（catalogue のブロックの歩きも赤になった）。
 - `act-check`（42/42 ルート、289/289 名前）・`load-check`・`draft-check`・`post-check`: 一回ずつ緑。`act-check` は `hold` を読むのを外して赤を見た。
 - **`press` は回し切っていない**（15 分の上限の途中でリーダーの指示で止めた）。長押しの本物の指の検査は `press` だけなので、取り込み後の全ゲートで見てほしい。
 
 ## CODE / DEVICE / OWNER
 
-- **CODE CONFIRMED**: A・B（通知タブまで）・C・D2・E1・E3。
-- **DEVICE CONFIRMED**: 無し。実機は未。特に長押し（iOS の本物の指）、`popAsk` の二択、`toLocaleString` の日本語の年月日。
+- **CODE CONFIRMED**: A・B（通知タブと iPhone の通知の組み立てまで）・C・D2・E1・E2・E3。
+- **DEVICE CONFIRMED**: 無し。実機は未。特に長押し（iOS の本物の指）、`popAsk` の二択、`toLocaleString` の日本語の年月日、**`size-adjust`**（iOS 17 から。16 以前は描いた字も 15px になる）、引用の通知が本当に届くか（本番に schema.sql と push-send が要る）。
 - **OWNER CONFIRMED**: 無し。写真（下）を見てもらう。
 
 ## 写真（`shots/r94/`、コミット済み）
@@ -110,17 +118,19 @@ notices、react/follow の読みの view）、`supabase/functions/push-send/*`�
 - 引用: 選ぶポップ `4-after-choose.png`、投稿画面 `4-after-composer-quote.png`、タイムライン（引用と「表示できません」）`4-after-timeline-quote.png`、前 `0-before-feed.png` `0-before-composer-reply.png`
 - 解除の確認: `2-after-unboost-ask.png` `2-after-unfollow-ask.png`、前 `0-before-profile-iri.png`
 - 詳しい時刻: 今の形 `5-after-thread-time-under-body.png`、前 `1-before-thread-full-time.png`（`1-after-thread-full-time.png` は置き換えられた最初の形）
-- 意味: 投稿画面 前 `6-before-composer.png`、オン `6-after-composer-meaning-on.png`、オフ `6-after-composer-meaning-off.png`、タイムライン（意味なし・あり、小さくなった意味、自作文字と普通の文字が混ざった行）`6-after-feed-meaning-on-off.png`
+- 意味: 投稿画面 前 `6-before-composer.png`、オン `6-after-composer-meaning-on.png`、オフ `6-after-composer-meaning-off.png`、タイムライン（意味なし・あり）`6-after-feed-meaning-on-off.png`
+- 本文の大きさ（E2、自作文字と普通の文字が混ざった行）: 前 `7-before-feed.png` `7-before-thread.png` `7-before-composer.png`、後 `7-after-feed.png` `7-after-thread.png` `7-after-composer.png`
+- 通知の設定: 前 `8-before-set-push.png`、後 `8-after-set-push.png`、引用をオフ `8-after-set-push-quote-off.png`
 
 ## 止めた物・訊くこと
 
-1. **E2（本文の普通の文字だけ Twitter の大きさに、自作文字は今のまま）は持ち物外で止めた。** 行は一つの face（`LinguaType` → `-apple-system`）で、普通の文字だけ小さくする形は `LinguaType` の `@font-face` に `size-adjust`（例: 行を 15px にして自作文字の face を 138%）を付けること ── その face を作るのは `www/glyph.js` の `inkFaceCSS()`・`installTypeFont()`。`-apple-system` は `@font-face` の `local()` で名指せず、`font-size-adjust` は自作文字の face も x-height で変えてしまう。`www/glyph.js` を持たせてもらえれば `.pline` と二箇所で済む（`line-check` を通す）。**今は意味だけ 12px になり、本文 20.8px との比が 0.58 に見える** ── E2 と一緒に出すかはリーダーの判断。
-2. **引用の iPhone のプッシュ通知は足していない。** 種類を足すと設定の通知の部屋の行（`www/push.js` の `PUSH_KINDS`・`pushSw()`）と `SET_PREFS`（`www/core.js`）が要り、`push-check` がその三つが揃うことを数える。持ち物外。足す時は `push.mjs` の `PUSH` に `{kind:'quote', table:'post', key:{id, quote_of}, parent:'quote_of'}` と、`reply` の鍵にも `reply_to` を足して見分けること（今は `post` の行は全部 `reply` と読まれる）、`schema.sql` の `push_on_reply` と同じトリガーを `quote_of is not null` で。
+1. E2 と引用の iPhone の通知は、持ち物を足してもらって実装した（上）。E2 は `size-adjust` を `LinguaType` そのものに付けると `.tfont` の欄（辞書など）の描いた字まで大きくなるので、同じ字を `LinguaLine` という二つ目の規則でも出し、投稿の行だけがそれを着る。行の高さは描いた字に合わせた（`1.7em × --ink-over`）── 普通の文字だけの行は Twitter より行間が広い。詰めるかはオーナーに。
+2. **本番**: `schema.sql`（`quote_of`・`react_seen`・`post_seen`・`notices`・`push_on_post`）と `push-send` の配り直しが要る。オーナーの物、触っていない。
 3. 決めていない所（作った形）: 引用の数はどこにも出していない（リポストの数に引用は入らない）。ミュートした人の投稿を引用した物の中身は出る。引用の中の写真・声は出さない（名前・時刻・一行・意味だけ）。意味の切り替えはその投稿だけ（覚えない、開くたびにオン）。引用の通知の印はリポストの印（引用の絵は `www/glyph.js` に無い）。「解除しますか？」は「リポストを解除しますか？」「@〇〇 のフォローを解除しますか？」、はいの語は「解除」。
 4. **`tl-check` 10b の直し**: 途中、13 が本物の時間を待つ形だった時、10b が空にした `NET_PPL_WAIT.mute` の下で飛んだままの読みが落ちて投げた。13 の方を「時計を取って即座に動かす」形に直し、10b は元のまま。
 
 ## リーダーの指示が間違っていた所
 
 - 「引用は schema.sql に列」── その通り。ただ `quote` という表が既にある（語の引用、`quote(post, language, word)`）ので、列は `quote_of` にした。
-- 「元の人に通知（notices と push の種類を一つ足す ── push-send の種類の表も）」── push の方は `www/push.js`・`www/core.js` が要り、持ち物に無かった（上の 2）。
-- E2 の「CSS で」── 上の 1。
+- 「元の人に通知（push の種類）」と E2 は最初の持ち物に無いファイルが要った ── 足してもらって実装済み。
+- `claude/r96-hand` が `www/core.js` と `www/act-map.js` を触っている（`fc809057`）。core.js は `SET_PREFS` の一行だけ、act-map は r94 の名前が五つ（`meFollowPress` `holdLangs` `postHoldLikes` `postHoldBoosts` `pwMnSw`）── 取り込みの時に。

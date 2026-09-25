@@ -365,7 +365,11 @@ the reasoning — a reason can be re-derived, a decision cannot.
   「投稿の文字が高いからTwitterと同じサイズにして欲しい。翻訳部分はそれの0.8倍くらい」。
 - Affected data: 投稿に「意味を出さない」の印が一つ増える。オフの投稿は意味を持たない。
 - Affected docs: この項。
-- Implementation status: 未。r94 に足して 1.0.3 に。両方の状態（意味あり・なし）の写真をオーナーへ。
+- Implementation status: **実装（`claude/r94-social`、2026-09-25）。CODE CONFIRMED のみ。** 切り替え ── 投稿画面の
+  意味の欄の頭の行に「意味」の一語（`pwMnOff()` 一つが欄・輪・上限・送る時を答える、切った投稿は `mn` 空・`nm:1`、
+  `postSay()` が何も答えない）。本文 ── `.pline` は 15px、描いた字は `LinguaLine`（`inkFaceCSS()` が同じ字に
+  `size-adjust` を `--ink-over` だけ）で今の大きさ（`line-check` 12）。意味 ── `.pmn` は 12px（15 の 0.8 倍）。
+  写真は `shots/r94/6-*`・`7-*`、`tl-check` 15。
 
 ### 2026-09-25 いいね・リポストした人の一覧、引用リポスト、解除の確認、投稿の詳しい時刻（1.0.3）
 - Date: 2026-09-25
@@ -386,7 +390,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
   一覧 ── `data-hold` が名前を持つ形に（`holdStart()`）、ハート・リポストの長押しが `reacts` の画面、フォロー一覧と
   同じ仕組み（`folList()`、`www/me.js`）、読むのは `react_seen`（ブロック両向き・ミュートを外す、`npm run rls`）。
   引用 ── `post.quote_of`（外部キー無し）、`post_seen.quoted`、`notices()` の `quote`、`postQuoteHTML()`（`tl-check` 14）。
-  **iPhone のプッシュ通知は鳴らない**（種類を足すと `www/push.js`・`www/core.js` が要る、持ち物外）。
+  iPhone の通知も鳴る（push の種類 `quote`、返信と引用は行の鍵で見分ける、トリガーは `push_on_post` 一つ、`push-check`）。
   解除の確認 ── `postBoost()`・`meFollowPress()`（`tl-check` 12）。詳しい時刻 ── 本文の下の右に `postWhenFull()`、
   名前の横はそのまま（`tl-check` 11）。残り・訊くことは `docs/scope/r94-social.md`。
 
