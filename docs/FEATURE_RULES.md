@@ -263,7 +263,12 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Reason: オーナーの言葉「1 イエス」「追加自体できなくすればいい。＋があるところからプラスをなくすだけ」「言語は残していいんちゃう」「消そう」。
 - Affected data: 無し（見せ方だけ。ミュートの表は r85 のまま）。
 - Affected docs: この項、`docs/STATE.md` 4a。
-- Implementation status: 未。r88 で出す。
+- Implementation status: **実装（`claude/r88-mute2`、2026-09-25）。CODE CONFIRMED のみ。**
+  タブで出る時 ── 訊く所を `navLand()`（`www/shell.js`）一つに、戻る・タブ・長押し・前の画面への `go()` が同じ問い
+  （`keep-check` 14）。Pro の上限 ── `planTopFull()`（`www/core.js`）を行と stop が訊き、＋・↓ を描かない（`plan-check`）。
+  ブロックと取った言語 ── 残す（r85 から変えていない、コードは触っていない）。ミュートの広さ ── `feed_fo()` のリポストの枝と
+  `notices()` が `mute_hides()`（`npm run rls`）、手元の写しは `postMuted()`（`tl-check` 10b）。**iPhone のプッシュ通知は
+  まだ鳴る**（push-send は持ち物の外）。印 ── `ICON_MUTE`（`tl-check` 10b）。残りは `docs/scope/r88-mute2.md`。
 
 ### 2026-09-25 ミュート・ブロックの残り・サインインの着地・前の版のファイル
 - Date: 2026-09-25
