@@ -1676,7 +1676,7 @@ function tabBar(){
        the hold that opens the languages. */
     out+='<button class="tab'+(cur===r?' on':'')+'"' +
       (r==='profile'? DO('profileOpen', [""]) : DO('goTab', [r])) +
-      (r==='profile'? ' data-hold="1"' : '')+
+      (r==='profile'? ' data-hold="holdLangs"' : '')+
       ' aria-label="'+esc(pageName(r))+'">'+TAB_ICON[r]+
       /* A NUMBER AND NOT A DISC. Rule 18 -- nothing new gets a corner radius,
          a border or a filled panel -- and the owner asked for 数字, not for a
@@ -1764,9 +1764,16 @@ function holdStart(e){
   p=holdAt(e); holdX=p.x; holdY=p.y;
   holdT=setTimeout(function(){
     holdT=null; HELD=true; heldAt=Date.now();
-    navLand([{r:'profile'}, {r:'langs'}]);
+    actRun(ACT, el, 'data-hold');
   }, HOLD_MS);
 }
+/* WHAT A HOLD DOES IS ITS NAME. `data-hold` carries a name from the action
+   table the way `data-do` does, and the element's own `data-a` is handed to
+   it -- so a heart held and a heart pressed are about the same post. It was
+   `data-hold="1"` with the one thing a hold could do written into
+   holdStart(), which was true while there was one; the likes and reposts of
+   a post are held as well now (www/post.js § postAct, r94). */
+function holdLangs(){ navLand([{r:'profile'}, {r:'langs'}]); }
 /* Moved far enough to be going somewhere rather than resting. Under the
    radius nothing happens at all -- not a reset of the timer, which would be
    a hold that a slowly sliding thumb could keep alive forever. */

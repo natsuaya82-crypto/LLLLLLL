@@ -110,7 +110,9 @@ const R = await pg.evaluate((ON_ATTR) => {
      the JSON they were written as. */
   function harvest(where, html){
     let m, lastDo = '';
-    const attr = /\sdata-(do2?|in|ch|kd|a|b)="([^"]*)"/g;
+    /* `hold` is a name as `do` is: a thing held runs it (holdStart(),
+       www/shell.js), so it resolves or it is missing, the same way. */
+    const attr = /\sdata-(do2?|hold|in|ch|kd|a|b)="([^"]*)"/g;
     while ((m = attr.exec(html))) {
       const k = m[1];
       /* the browser has already turned &quot; back into " for us? no — this is
@@ -127,7 +129,7 @@ const R = await pg.evaluate((ON_ATTR) => {
         } catch (e) { out.bad.push(where + ': ' + v); }
         continue;
       }
-      if (k === 'do' || k === 'do2') {
+      if (k === 'do' || k === 'do2' || k === 'hold') {
         seenDo[v] = 1;
         lastDo = v;
         if (!ACT[v]) out.missing.push(where + ': pressed -> ' + v);

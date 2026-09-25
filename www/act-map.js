@@ -212,6 +212,7 @@ act('openMe', openMe);
    どちらになるかはシートが答えるので、名前はここ一つ。 */
 act('mePicAsk', mePicAsk);
 act('meFollowPress', meFollowPress);
+act('holdLangs', holdLangs);
 act('meBlock', meBlock);
 act('meMute', meMute);
 act('openPost', openPost);
