@@ -1310,7 +1310,8 @@ defLang('es', (function(){
       "cal.d.5" : "Jueves",
       "cal.d.6" : "Viernes",
       "cal.d.7" : "Sábado",
-      "plan.renew" : "Se renueva automáticamente hasta que la canceles."
+      "plan.renew" : "Se renueva automáticamente hasta que la canceles.",
+      "kb.lay.hand" : "Escritura a mano"
     }
   };
 })());

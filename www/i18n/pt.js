@@ -1357,7 +1357,8 @@ defLang('pt', (function(){
       "cal.d.5" : "Quinta-feira",
       "cal.d.6" : "Sexta-feira",
       "cal.d.7" : "Sábado",
-      "plan.renew" : "Renova automaticamente até você cancelar."
+      "plan.renew" : "Renova automaticamente até você cancelar.",
+      "kb.lay.hand" : "Escrita à mão"
     }
   };
 })());

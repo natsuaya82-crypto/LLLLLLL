@@ -1283,7 +1283,8 @@ defLang('en', (function(){
          it. What somebody is charged comes from the App Store in their own
          currency (storeCost() in www/store.js), and a price built into a
          translated sentence is a price ten files have to agree about. */
-      "plan.renew" : "Renews automatically until you cancel."
+      "plan.renew" : "Renews automatically until you cancel.",
+      "kb.lay.hand" : "Handwriting"
     }
   };
 })());

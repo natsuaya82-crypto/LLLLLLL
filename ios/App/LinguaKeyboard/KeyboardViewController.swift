@@ -9,13 +9,17 @@
 import UIKit
 
 final class KeyboardViewController: UIInputViewController,
-                                    KeyBoardViewDelegate, CandidateBarDelegate {
+                                    KeyBoardViewDelegate, CandidateBarDelegate,
+                                    HandPadDelegate {
   private var board: Board?
   private var layerNo = 0
   private var body: UIView?
   private var bar: CandidateBar?
   private var height: NSLayoutConstraint?
   private var compose: Compose?
+  /// hand.js with the letters already prepared -- made the first time the
+  /// handwriting face is shown, forgotten with the board (viewWillAppear).
+  private var reader: Hand?
 
   /// A row is a KEY tall, and a key is a tenth of the phone wide — so the
   /// height follows the width and a key keeps its shape on every phone.
@@ -108,9 +112,50 @@ final class KeyboardViewController: UIInputViewController,
     let kb = KeyBoardView(lay: lay, box: CGFloat(b.box), drop: drop,
                           mark: (b.mark ?? 1) != 0)
     kb.delegate = self
+    if (lay.hand ?? 0) > 0 { return handFace(kb, lay: lay, board: b) }
     place(kb, rows: CGFloat(lay.rows.count), bar: compose != nil,
           box: CGFloat(b.box))
     paintBar()
+  }
+
+  /// The handwriting face: a pad to write on, and the face's own rows under
+  /// it -- the way back, the space and the delete, whatever the person left
+  /// there. How many rows tall the pad is is `hand` on the face, worked out by
+  /// kbHandRows() in www/keyboard.js -- the one place that says it, so the app's
+  /// sheet and this keyboard draw the same face.
+  private func handFace(_ kb: KeyBoardView, lay: Layer, board b: Board) {
+    if reader == nil { reader = Hand(inks: (b.hand ?? []).map { $0.st }) }
+    let own = CGFloat(max(1, lay.rows.count))
+    let rows = own + CGFloat(max(1, lay.hand ?? 1))
+    let wrap = UIView()
+    let pad = HandPad()
+    pad.delegate = self
+    pad.translatesAutoresizingMaskIntoConstraints = false
+    kb.translatesAutoresizingMaskIntoConstraints = false
+    wrap.addSubview(pad)
+    wrap.addSubview(kb)
+    NSLayoutConstraint.activate([
+      pad.leadingAnchor.constraint(equalTo: wrap.leadingAnchor),
+      pad.trailingAnchor.constraint(equalTo: wrap.trailingAnchor),
+      pad.topAnchor.constraint(equalTo: wrap.topAnchor),
+      pad.bottomAnchor.constraint(equalTo: kb.topAnchor),
+      kb.leadingAnchor.constraint(equalTo: wrap.leadingAnchor),
+      kb.trailingAnchor.constraint(equalTo: wrap.trailingAnchor),
+      kb.bottomAnchor.constraint(equalTo: wrap.bottomAnchor),
+      kb.heightAnchor.constraint(equalTo: wrap.heightAnchor, multiplier: own / rows),
+    ])
+    place(wrap, rows: rows, bar: compose != nil, box: CGFloat(b.box))
+    paintBar()
+  }
+
+  /// What was written goes in as the letter it is nearest to, through the same
+  /// door as a key -- a letter of the person's own, so it goes in at once and
+  /// the bar offers to finish the word.
+  func pad(_ p: HandPad, wrote strokes: [[CGPoint]]) {
+    guard let r = reader, let faces = board?.hand else { return }
+    let i = r.nearest(strokes)
+    guard i >= 0, i < faces.count else { return }
+    typed(faces[i].t, face: faces[i])
   }
 
   /// Something to say, and a way OFF this keyboard.
@@ -331,6 +376,7 @@ final class KeyboardViewController: UIInputViewController,
   override func viewWillAppear(_ animated: Bool) {
     super.viewWillAppear(animated)
     compose = nil
+    reader = nil
     build()
   }
 }

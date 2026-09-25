@@ -1526,7 +1526,8 @@ defLang('ko', (function(){
       "cal.d.5" : "목요일",
       "cal.d.6" : "금요일",
       "cal.d.7" : "토요일",
-      "plan.renew" : "해지할 때까지 자동으로 갱신됩니다."
+      "plan.renew" : "해지할 때까지 자동으로 갱신됩니다.",
+      "kb.lay.hand" : "손글씨"
     }
   };
 })());

@@ -1356,7 +1356,8 @@ defLang('zh', (function(){
       "cal.d.5" : "星期四",
       "cal.d.6" : "星期五",
       "cal.d.7" : "星期六",
-      "plan.renew" : "订阅会自动续期，直到你取消。"
+      "plan.renew" : "订阅会自动续期，直到你取消。",
+      "kb.lay.hand" : "手写"
     }
   };
 })());

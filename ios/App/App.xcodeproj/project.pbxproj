@@ -23,6 +23,8 @@
 		A084ECDBA7D38E1E42DFC39D /* Pods_App.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AF277DCFFFF123FFC6DF26C7 /* Pods_App.framework */; };
 		7A1C0F5E2B9D41C8A0E33024 /* Compose.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A1C0F5E2B9D41C8A0E33017 /* Compose.swift */; };
 		7A1C0F5E2B9D41C8A0E33025 /* CandidateBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A1C0F5E2B9D41C8A0E33018 /* CandidateBar.swift */; };
+		7A1C0F5E2B9D41C8A0E33304 /* HandPad.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A1C0F5E2B9D41C8A0E33303 /* HandPad.swift */; };
+		7A1C0F5E2B9D41C8A0E33302 /* hand.js in Resources */ = {isa = PBXBuildFile; fileRef = 7A1C0F5E2B9D41C8A0E33301 /* hand.js */; };
 		7A1C0F5E2B9D41C8A0E33020 /* Shared.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A1C0F5E2B9D41C8A0E33013 /* Shared.swift */; };
 		7A1C0F5E2B9D41C8A0E33021 /* GlyphView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A1C0F5E2B9D41C8A0E33014 /* GlyphView.swift */; };
 		7A1C0F5E2B9D41C8A0E33022 /* KeyBoardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A1C0F5E2B9D41C8A0E33015 /* KeyBoardView.swift */; };
@@ -84,6 +86,8 @@
 		7A1C0F5E2B9D41C8A0E33012 /* LinguaKeyboard.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = LinguaKeyboard.entitlements; sourceTree = "<group>"; };
 		7A1C0F5E2B9D41C8A0E33017 /* Compose.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Compose.swift; sourceTree = "<group>"; };
 		7A1C0F5E2B9D41C8A0E33018 /* CandidateBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CandidateBar.swift; sourceTree = "<group>"; };
+		7A1C0F5E2B9D41C8A0E33303 /* HandPad.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HandPad.swift; sourceTree = "<group>"; };
+		7A1C0F5E2B9D41C8A0E33301 /* hand.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = hand.js; sourceTree = "<group>"; };
 		7A1C0F5E2B9D41C8A0E33013 /* Shared.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared.swift; sourceTree = "<group>"; };
 		7A1C0F5E2B9D41C8A0E33014 /* GlyphView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlyphView.swift; sourceTree = "<group>"; };
 		7A1C0F5E2B9D41C8A0E33015 /* KeyBoardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyBoardView.swift; sourceTree = "<group>"; };
@@ -173,6 +177,8 @@
 				7A1C0F5E2B9D41C8A0E33014 /* GlyphView.swift */,
 				7A1C0F5E2B9D41C8A0E33017 /* Compose.swift */,
 				7A1C0F5E2B9D41C8A0E33018 /* CandidateBar.swift */,
+				7A1C0F5E2B9D41C8A0E33303 /* HandPad.swift */,
+				7A1C0F5E2B9D41C8A0E33301 /* hand.js */,
 				7A1C0F5E2B9D41C8A0E33013 /* Shared.swift */,
 				7A1C0F5E2B9D41C8A0E33011 /* Info.plist */,
 				7A1C0F5E2B9D41C8A0E33202 /* PrivacyInfo.xcprivacy */,
@@ -366,6 +372,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				7A1C0F5E2B9D41C8A0E33203 /* PrivacyInfo.xcprivacy in Resources */,
+				7A1C0F5E2B9D41C8A0E33302 /* hand.js in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -439,6 +446,7 @@
 				7A1C0F5E2B9D41C8A0E33021 /* GlyphView.swift in Sources */,
 				7A1C0F5E2B9D41C8A0E33024 /* Compose.swift in Sources */,
 				7A1C0F5E2B9D41C8A0E33025 /* CandidateBar.swift in Sources */,
+				7A1C0F5E2B9D41C8A0E33304 /* HandPad.swift in Sources */,
 				7A1C0F5E2B9D41C8A0E33020 /* Shared.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

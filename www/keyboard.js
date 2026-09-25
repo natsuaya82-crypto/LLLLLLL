@@ -2481,6 +2481,7 @@ function kbHTML(sel, ro){
          width for it to be true against. */
       cols=ro? 0 : KB_COLS, at, b, lead, tot, ki2, hrun;
   if(!ro){ kbNoted(); out+=kbHdrHTML(cols); }
+  if(lay.hand) out+=kbPadHTML(kbHandRows(kbBoard(), Math.min(kbLay, kbBoard().lay.length-1)));
   for(ri=0;ri<lay.rows.length;ri++){
     row=lay.rows[ri];
     /* The row's number: the editor is a sheet you point at, and 3b is what
@@ -2899,7 +2900,13 @@ function kbLaysHTML(){
        nothing, which is the same thing as a button that does nothing. */
     (kbLayRoom(b.lay[Math.min(kbLay, n-1)])
       ? '<button class="seg add"' + DO('kbAddLay') + ' aria-label="'+esc(t('kb.lay.add'))+'">'+
-        ICON_ADD+'</button>'
+        ICON_ADD+'</button>'+
+        /* and the handwriting face, by the same road and under the same
+           condition, while this board has none. A word and not a mark:
+           nothing has been settled as the mark for handwriting. */
+        (kbHandAt(b)<0
+          ? '<button class="seg"' + DO('kbAddLay', ['hand']) + '>'+esc(t('kb.lay.hand'))+'</button>'
+          : '')
       : '')+
     /* Beside the faces, and only when there is more than one -- the way to be
        rid of the only face is to delete the keyboard. It takes the face being
@@ -4090,16 +4097,54 @@ function kbWayOff(){
    a key to 1 on the first, a key to 0 on the second. This is that, for a face
    somebody adds. Nothing is overwritten -- the key goes IN at the front of a
    row, or into a row of its own. */
-function kbAddLay(){
+/* And the HANDWRITING face is added by the same road, because it is a face
+   like any other: reached by a key, left by a key, taken away by the x
+   beside the tabs. 「後手書き追加しよう」 OWNER 2026-09-25. What makes it
+   one is `hand:1` on the face, and what it arrives with is the bottom bar --
+   the way back, the space and the delete -- because on the phone the rest of
+   it is somewhere to write (ios/App/LinguaKeyboard/HandPad.swift), and a
+   face you can write on and not leave is the dead end kbWayOff() is about. */
+function kbAddLay(kind){
   var b=kbEdit(), from;
   if(!b) return;
   from=kbClamp(kbLay, b.lay.length);
   if(!kbLayRoom(b.lay[from])) return;
-  b.lay.push({rows:[[kbKey('lay', String(from)), kbKey('lt', '')]]});
+  if(kind==='hand'){
+    if(kbHandAt(b)>=0) return;
+    b.lay.push({hand:1, rows:[kbBarLay(kbBar(2), String(from))]});
+  }
+  else b.lay.push({rows:[[kbKey('lay', String(from)), kbKey('lt', '')]]});
   kbFacePut(b.lay[from], b.lay.length-1);
   kbLay=b.lay.length-1;
   kbSel=null;
   saveKb(); render();
+}
+/* The pad, on the sheet: as many rows tall as it is on the phone, with the
+   mark of a hand's line in the middle and nothing else -- it is where the
+   finger goes, and on the sheet there is nothing on it to press or change. */
+var ICON_HANDW='<svg class="ic" viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" '+
+  'stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
+  '<path d="M3 16c2-5 4-8 5-7s-2 8 0 8 4-9 6-9-1 7 1 7 3-3 6-4"/></svg>';
+function kbPadHTML(n){
+  return '<div class="kbpad" style="height:calc(var(--kh, 44px) * '+n+' + var(--kbrg, 5px) * '+(n-1)+');'+
+    'display:flex;align-items:center;justify-content:center;color:var(--txm)">'+ICON_HANDW+'</div>';
+}
+/* Which face of a board is the handwriting one, or -1. One to a board: a
+   second would be the same pad twice. */
+function kbHandAt(b){
+  var i;
+  for(i=0;b && b.lay && i<b.lay.length;i++) if(b.lay[i].hand) return i;
+  return -1;
+}
+/* How many rows tall the pad on a handwriting face is: whatever makes the
+   face as tall as the tallest face of its keyboard, so going to it and back
+   does not make the keyboard jump, and never under two. The ONE place --
+   share.js hands this number to the phone as the face's `hand`, and the
+   sheet here draws the same number, so the two draw one face. */
+function kbHandRows(b, i){
+  var own=b.lay[i].rows.length, most=0, j;
+  for(j=0;j<b.lay.length;j++) most=Math.max(most, b.lay[j].rows.length);
+  return Math.max(2, most-own);
 }
 /* And taking one away, which could be added and never removed -- a face built
    by accident stayed for the life of the keyboard.

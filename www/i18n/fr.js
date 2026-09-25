@@ -1398,7 +1398,8 @@ defLang('fr', (function(){
       "cal.d.5" : "Jeudi",
       "cal.d.6" : "Vendredi",
       "cal.d.7" : "Samedi",
-      "plan.renew" : "Renouvellement automatique jusqu'à résiliation."
+      "plan.renew" : "Renouvellement automatique jusqu'à résiliation.",
+      "kb.lay.hand" : "Écriture manuscrite"
     }
   };
 })());

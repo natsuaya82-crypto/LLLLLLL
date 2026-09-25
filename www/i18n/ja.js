@@ -1266,7 +1266,8 @@ defLang('ja', (function(){
       "cal.d.5" : "木曜",
       "cal.d.6" : "金曜",
       "cal.d.7" : "土曜",
-      "plan.renew" : "解約するまで自動更新されます。"
+      "plan.renew" : "解約するまで自動更新されます。",
+      "kb.lay.hand" : "手書き"
     }
   };
 })());
