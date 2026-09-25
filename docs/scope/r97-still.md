@@ -21,3 +21,13 @@
 
 `origin/claude/r96-hand` が `project.pbxproj`（+8）、`www/core.js`（`CAN` のコメント一行）、`www/act-map.js`、`www/i18n/*.js` を持つ。
 pbxproj は Sources の行が隣り合う所で衝突し得る。core.js はこちらが触る所と離れている。
+
+---
+
+# 報告（2026-09-25）
+
+- A: `keepStill()`（`MainViewController.swift`）でキーボードの分だけ WKWebView を縮める。`.view.fit` は三段（バー／板／道具の行）。
+  追いかける JS は消した。`post-check` 11d2 と「追いかける JS が無い」は赤を見た（4 通り）。写真 `shots/r97-*`。
+- B: `rateOpen()`（`www/core.js`）、`LinguaStore.review`、`acct-check` 94（赤を 2 通り見た）。
+- 前からの赤: `post-check` の「意味が箱の下」四つは `integ-0905` のままでも赤（260/308 の返信、意味の切り替えの行 44px）。
+- 実機で見ること・オーナーに訊くことは、リーダーへの報告に書いた。
