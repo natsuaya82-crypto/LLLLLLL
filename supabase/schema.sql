@@ -1647,8 +1647,15 @@ create view language_seen as
    -- (language_took() above): the article a taker opens is drawn off this
    -- view, so a row withheld here is the same empty screen the policy was
    -- opened to stop.
-   where l.published_at is not null or l.owner = auth.uid()
-      or language_took(l.id);
+   --
+   -- AND A PUBLISHED LANGUAGE A BLOCK STANDS BETWEEN IS NOT A ROW, both ways
+   -- (block_hides): 「ブロックした相手の公開言語 → 言語の一覧・検索・人のページ
+   -- から見えない」 OWNER 2026-09-25. Being published is what the block takes
+   -- away. What somebody TOOK is not asked here -- whether a block takes a
+   -- language out of the list of what a person has is not decided
+   -- (docs/scope/r85-block.md), so that row stays what it was.
+   where l.owner = auth.uid() or language_took(l.id)
+      or (l.published_at is not null and not block_hides(l.owner));
 grant select on language_seen to authenticated;
 
 -- AND THE LANGUAGE BESIDE THE PERSON, IN THE SAME ANSWER.
