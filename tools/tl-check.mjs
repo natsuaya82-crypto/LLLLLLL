@@ -800,6 +800,35 @@ const r = await pg.evaluate(({ s }) => {
     netSend1 = realS1; netSend = realS; netGet = realG;
   }
 
+  /* ---- 15: r94 E -- the meaning switched off ------------------------------
+     「意味をオフにした場合はTwitterと同じように投稿できる」 OWNER 2026-09-25.
+     Off: the composer has no meaning field and the switch says so; the post
+     goes up with no meaning and the mark `nm`, and draws no meaning row. The
+     day's prompt has no switch. A draft keeps it. */
+  {
+    const realSend = window.pwSendPost;
+    let sentPost = null;
+    window.pwSendPost = function (p) { sentPost = p; };
+    PW = pwBlank(); PW.ln = 'kano'; PW.cut = []; PW.mn = 'a mountain';
+    openPost();
+    const on = (typeof FORM !== 'undefined' && FORM && FORM.html) || '';
+    out.mnOnField = on.indexOf('id="pw-mn"') >= 0 && on.indexOf('data-do="pwMnSw"') >= 0;
+    pwMnSw();
+    const off = FORM.html || '';
+    out.mnOffField = off.indexOf('id="pw-mn"') < 0 && /class="pwmnsw" aria-pressed="false"/.test(off);
+    out.mnDraft = draftOfPW().nm;
+    pwSendWith('kano', null, [], null);
+    out.mnSent = sentPost ? JSON.stringify({ mn:sentPost.mn, nm:sentPost.nm }) : '(nothing sent)';
+    window.pwSendPost = realSend;
+    const div = document.createElement('div');
+    div.innerHTML = postRow({ id:'nm-1', hd:'aya', who:'Aya', ln:'kano', mn:'kept by mistake', nm:1, at:Date.now() });
+    out.mnRow = !div.querySelector('.pmn');
+    PW = pwBlank(); PW.pr = 7; PW.mn = 'the day';
+    openPost();
+    out.mnDay = (FORM.html || '').indexOf('data-do="pwMnSw"') < 0;
+    PW = pwBlank(); NAV = [{ r:'feed' }]; window.route = 'feed'; render();
+  }
+
   return out;
 }, { s: seed.toString() });
 
@@ -1159,6 +1188,15 @@ if (!r.qDrawn || r.qGone !== r.qGoneWant || !r.qPlain)
       '」, one that quotes nothing has none: ' + r.qPlain);
 if (!r.qNotice)
   say('14: a notice of the kind quote does not say 「' + 'notif.quote' + '」.');
+if (!r.mnOnField || !r.mnOffField || r.mnDraft !== 1)
+  say('15: the meaning switch -- on, the field and the switch: ' + r.mnOnField + '; off, no field and ' +
+      'the switch saying off: ' + r.mnOffField + '; a draft keeps it: ' + r.mnDraft);
+if (r.mnSent !== JSON.stringify({ mn:'', nm:1 }))
+  say('15: a post with the meaning off went as ' + r.mnSent + ' -- no meaning, and nm.');
+if (!r.mnRow)
+  say('15: a post marked nm still draws a meaning row.');
+if (!r.mnDay)
+  say('15: the day\u2019s prompt offers the meaning switch -- its meaning is the prompt.');
 console.log('a follow and a block are one row written by one function, and ' +
             'the columns are its argument: ' + r.pairOn);
 console.log('nobody is a 「?」 that becomes a name: a post carries its writer ' +

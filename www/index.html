@@ -931,7 +931,7 @@ canvas.pkc{width:34px;height:34px;display:block}
 .numcc.on,.numcc.on.sun,.numcc.on.sat{color:var(--bg)}
 .numcn{position:relative}
 .numsep{display:inline-block;padding:0 .1em;opacity:.55}
-.pmn{font-size:1.0rem;line-height:1.5;color:var(--txs);margin-top:8px}
+.pmn{font-size:.75rem;line-height:1.5;color:var(--txs);margin-top:8px}
 /* WHAT A POST IS FILED UNDER, under the translation.
    「リプライトゥー@〇〇のサイズ感で翻訳の下で最大4つまで別枠で入れられると
    かは？」 OWNER 2026-09-15 ── 字の大きさは「@〇〇 への返信」の行と同じ物、
@@ -1095,7 +1095,7 @@ canvas.pkc{width:34px;height:34px;display:block}
 .pwring.bad .pwrt{stroke:var(--bad)}
 .pwring .pwleft{margin-top:0}
 .pwring.bad .pwleft{color:var(--bad)}
-.lnin.pwmn{margin-top:10px;font-size:1.02rem;color:var(--txs)}
+.lnin.pwmn{margin-top:10px;font-size:.75rem;color:var(--txs)}
 /* タグの枠 ── 本文の入れ物とは別。「#はべつで」 OWNER 2026-09-15。
    投稿の行（`.ptags`）と同じ .84rem で、同じ順（本文／翻訳／タグ）に並びます。
 
@@ -1540,6 +1540,10 @@ html.fitlock, html.fitlock body{height:100%;overflow:hidden;overscroll-behavior:
 /* 輪が二つ並ぶので、この器が間を持ちます ── 「左側本文の輪右が翻訳の輪」
    OWNER 2026-09-15。一つしか無い段（お題の意味は readonly）でも、無い段
    （plus は天井が無いので輪も無い）でも、同じ一行で正しく出ます。 */
+/* The meaning, on or off (www/post.js § pwMnOff): the word and the switch,
+   no box. */
+.pwmnsw{flex:0 0 auto;display:inline-flex;align-items:center;gap:8px;min-height:44px;
+        padding:0 4px;background:none;border:0;font-size:.82rem;color:var(--txs)}
 .pwbleft{margin-left:auto;padding-right:6px;font-size:.82rem;color:var(--txm);
          display:inline-flex;align-items:center;gap:14px}
 /* ---------- the letters ----------

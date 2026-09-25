@@ -202,7 +202,15 @@ var PW={ln:'', mn:''};
    same reason `toh` is: what somebody wrote is the line, and a tag is not in
    it any more. 「#はべつで」 OWNER 2026-09-15, replacing 「タグは本文中に。」
    (2026-09-04). www/sns.js § A TAG IS NOT IN THE BODY ANY MORE. */
-function pwBlank(){ return {ln:'', cut:[], mn:'', to:'', toh:'', qt:'', pics:[], pr:0, tags:[]}; }
+function pwBlank(){ return {ln:'', cut:[], mn:'', to:'', toh:'', qt:'', nm:0, pics:[], pr:0, tags:[]}; }
+/* THE MEANING IS SWITCHED OFF. 「投稿画面の前にトグル置いて意味を非表示にする」
+   「意味をオフにした場合はTwitterと同じように投稿できる」 OWNER 2026-09-25
+   (docs/FEATURE_RULES.md § 2026-09-25 投稿の見た目). The one question: the
+   field, its ring, its ceiling and the send all ask this. Never on the day's
+   prompt -- there the meaning IS the prompt, and it is what makes two
+   hundred alphabets readable at once. */
+function pwMnOff(){ return !!PW.nm && !PW.pr; }
+function pwMnSw(){ PW.nm=PW.nm? 0 : 1; pwFresh(); render(); }
 /* THE LINE BEING WRITTEN IS ONE THING: the cut (www/glyph.js § puaTyped) --
    the line as it was typed, `{id}` where the Lingua keyboard put a letter and
    `{t}` for the rest. `PW.ln` is its roman and is written here and nowhere
@@ -402,7 +410,7 @@ function openPost(from, at){
      Set once, and only on a composer that has nothing in it: pressing the row
      with a half-written post open would otherwise throw away what was there. */
   if(from==='day' && DAY && !PW.pr && !PW.ln && !PW.mn){
-    PW.pr=DAY.id;
+    PW.pr=DAY.id; PW.nm=0;
     PW.mn=daySay();
     /* AND THE TAG GOES IN THE FRAME, AT THE FRONT OF IT.
        「#はべつで」 OWNER 2026-09-15.
@@ -565,7 +573,7 @@ function draftOfPW(){
      none and is read the way it always was (draftOpen). */
   /* `qt` (r94): a quote kept as a draft opens again quoting the same post. */
   return {id:PW.did || netUUID(), at:Date.now(), ln:dayTagStore(PW.ln), cut:pwLineKept(), mn:PW.mn, to:PW.to,
-          toh:PW.toh||'', qt:PW.qt||'', pr:PW.pr||0, tags:pwTagsOut(),
+          toh:PW.toh||'', qt:PW.qt||'', nm:PW.nm? 1 : 0, pr:PW.pr||0, tags:pwTagsOut(),
           pics:pwPics(), vo:PW.vo||null, pv:!!PW.pv};
 }
 /* A draft goes into the list, and the composer is empty behind it. The one
@@ -652,7 +660,7 @@ function draftOpen(i){
   if(here().r==='drafts') back();
   PW=pwBlank();
   pwLine(draftCut(d));
-  PW.mn=d.mn||''; PW.to=d.to||''; PW.toh=d.toh||''; PW.qt=d.qt||''; PW.pr=d.pr||0;
+  PW.mn=d.mn||''; PW.to=d.to||''; PW.toh=d.toh||''; PW.qt=d.qt||''; PW.nm=d.nm? 1 : 0; PW.pr=d.pr||0;
   /* The frame as it was kept. tagsOf() is the one place that says what a
      row's tags are -- the same function the timeline's row asks -- so a draft
      and a post cannot disagree about it. */
@@ -1191,6 +1199,12 @@ function pwAddHTML(){
             esc(t('post.lib'))+'">'+ICON_LIB+'</button>'
         : '')+
       pwVoAddHTML()+
+      /* AND THE MEANING, ON OR OFF (pwMnOff). A word and a switch, because
+         「意味」 has no mark every phone draws. Not on the day's prompt, and
+         not while a post that exists is edited -- that keeps what it has. */
+      ((PW.pr || PW.ed)? '' :
+        '<button class="pwmnsw" aria-pressed="'+(pwMnOff()? 'false' : 'true')+'"'+DO('pwMnSw')+'>'+
+          esc(t('post.mn'))+swtHTML(!pwMnOff())+'</button>')+
       /* Beside the microphone. The span is always here so pwSidePaint() has
          something to patch; it collapses only while a posted thing is being
          edited, which is the one state drafts have nothing to do with. */
@@ -1703,8 +1717,13 @@ function pwHTML(){
       /* The same ceiling as the line and refused in the same place, which is
          the press. Nothing here either: postCap() is asked once, in pwSend(),
          about both rows. */
+      /* Not there at all while the meaning is switched off (pwMnOff): the
+         screen is the line and nothing under it, which is a post anywhere
+         else. What was typed into it stays in PW.mn and comes back with the
+         switch; it is not sent. */
+      (pwMnOff()? '' :
       lnField('pw-mn', pwMn() || t('post.mn'),
-        (PW.pr? ' readonly' : '')+IN('pwSetMn'), PW.mn, 'pwmn')+
+        (PW.pr? ' readonly' : '')+IN('pwSetMn'), PW.mn, 'pwmn'))+
       /* AND THE TAGS, UNDER THE MEANING -- the same place the post puts them
          (postRow), so what is being written and what was written read in one
          order: the line, what it means, and what it is filed under.
@@ -2075,7 +2094,7 @@ function pwRingHTML(used){
 }
 function pwLeftHTML(){
   return pwRingHTML(pwLineLen())+
-    (PW.pr? '' : pwRingHTML(String(PW.mn||'').length));
+    ((PW.pr || pwMnOff())? '' : pwRingHTML(String(PW.mn||'').length));
 }
 /* THE CEILING, MET AT THE PRESS. True means pwSend() must stop.
 
@@ -2095,7 +2114,7 @@ function pwLeftHTML(){
    BOTH ROWS, because both have the ceiling now. */
 function pwFits(){
   var cap=postCap(), a=planFits(pwLineLen(), 0, cap);
-  if(PW.pr || !a) return a;
+  if(PW.pr || pwMnOff() || !a) return a;
   return planFits(String(PW.mn||'').length, 0, cap);
 }
 function pwCapStop(){ return upStop(pwFits()); }
@@ -2236,7 +2255,10 @@ function pwSendWith(ln, ink, pics, vo){
             /* OWNER 2026-09-05 単語はその単語の意味を 文法は並び替えた単語たちが
                文章として成り立つように -- only to fall back on, for somebody who
                typed a line and no meaning. Not stored, see postRow. */
-            mn:String(PW.mn||'').trim() || LinguaGrammarEngine.translate.toNatural(gModel(), ln, uiLang()),
+            /* and with the meaning switched off, none, and the post says so
+               (`nm`) -- nothing is kept of what was in the field */
+            mn:pwMnOff()? '' :
+               (String(PW.mn||'').trim() || LinguaGrammarEngine.translate.toNatural(gModel(), ln, uiLang())),
             pr:PW.pr||0,
             ui:uiLang(), li:0, bo:0, re:0};
   /* If the letters made the files too big for what is left, the PHOTOGRAPHS
@@ -2262,6 +2284,7 @@ function pwSendWith(ln, ink, pics, vo){
      Documents; what is in localStorage is this. */
   if(vo && vo.f) mine.vo={f:vo.f, ms:vo.ms||0};
   if(PW.pv) mine.pv=1;
+  if(pwMnOff()) mine.nm=1;
   /* WHAT IT QUOTES: the server's id, which is what goes up (quote_of), and
      until the timeline answers, the post as this phone holds it, so the
      quote is drawn the moment it is sent. The server's answer replaces it
@@ -2517,7 +2540,9 @@ function migratePostInk(){
    carries it, and otherwise the one the author typed. Never empty -- a line
    nobody can read is not a post. */
 function postSay(p){
-  if(!p) return '';
+  /* a post written with the meaning switched off has none, wherever it is
+     drawn -- the timeline, a thread, a quote, the card (OWNER 2026-09-25) */
+  if(!p || p.nm) return '';
   var u=uiLang(), d;
   /* The day's sentence is the app's own words, not the writer's, and the
      server holds it in all ten languages -- so an answer to today's prompt is
@@ -3285,7 +3310,7 @@ function postEdit(id){
      § 2-3, measured). */
   if(upStop(can('edit'), 'post.editplan')) return;
   PW=pwBlank();
-  PW.ed=p.id; pwLine(postCutOf(p)); PW.mn=String(p.mn||'');
+  PW.ed=p.id; pwLine(postCutOf(p)); PW.mn=String(p.mn||''); PW.nm=p.nm? 1 : 0;
   openPost();
 }
 /* A post of mine back as the line it was typed as, so the field it is edited
@@ -3341,7 +3366,7 @@ function pwSaveEdit(ln, ink){
   var p=postById(PW.ed), mn, q, k;
   if(!p || !p.mine){ toast(t('post.gone')); PW=pwBlank(); goTab('feed'); return; }
   /* OWNER 2026-09-05 単語はその単語の意味を 文法は並び替えた単語たちが文章として成り立つように */
-  mn=String(PW.mn||'').trim() || LinguaGrammarEngine.translate.toNatural(gModel(), ln, uiLang());
+  mn=p.nm? '' : (String(PW.mn||'').trim() || LinguaGrammarEngine.translate.toNatural(gModel(), ln, uiLang()));
   q={};
   for(k in p) if(Object.prototype.hasOwnProperty.call(p, k)) q[k]=p[k];
   q.ln=ln; q.mn=mn;

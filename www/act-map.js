@@ -215,6 +215,7 @@ act('meFollowPress', meFollowPress);
 act('holdLangs', holdLangs);
 act('postHoldLikes', postHoldLikes);
 act('postHoldBoosts', postHoldBoosts);
+act('pwMnSw', pwMnSw);
 act('meBlock', meBlock);
 act('meMute', meMute);
 act('openPost', openPost);
