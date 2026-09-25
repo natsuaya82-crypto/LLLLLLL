@@ -947,7 +947,13 @@ function pagePull(){
   for(i=0;i<need.length;i++) pullGo(need[i][0], need[i][1]);
 }
 /* ---- AND WHAT A LAUNCH READS ---------------------------------------------
-   「開いた時は通知とタイムラインだけでしょ」 OWNER 2026-09-23. The two pages
+   「開いた時に必要なものは読む」 OWNER 2026-09-24, replacing 「開いた時は通知と
+   タイムラインだけでしょ」 of 2026-09-23: the notices, the timeline, today's
+   prompt, the plan, the theme and the interface language. The first three are
+   these two pages (the prompt is the timeline's own row above); the plan is
+   storeSync() (www/boot.js) and the theme and the language are this account's
+   own row (netMyProfile, www/net.js § netTook), both asked when a session
+   arrives. tools/load-check.mjs holds all five. The two pages
    whose reads go out when a session arrives, under the splash -- and the
    page the session arrived ON, which is the screen in front of the person
    (the one a launch opens on, or the one the door hands them to) and is
