@@ -765,33 +765,17 @@ the reasoning — a reason can be re-derived, a decision cannot.
 
 ### 2026-09-22 投稿画面は、欄をタップしても何も動かない
 - Date: 2026-09-22
-- Area: 一画面フォーム（`.view.fit`、`www/index.html` の r4-sns の節）と
-  `--vvtop`（`www/shell.js` ~~`vvFit()`~~）
+- Area: 一画面フォーム（`.view.fit`）
 - Decision:（原文のまま）「そもそも画面はスクロールできないようにして欲しい
   んだけど、そうすればズレすら無くなるはずなのになんで？」「キーボードは
   そこで止める。入力位置もタップしても動かないそれでいいやん。」
-- **「なんで？」への答え（測った）**：ページはもう止まっていました。
-  `html.fitlock` の `overflow:hidden` が**引っぱり**を止めていて、それは
-  効いています。動いていたのはページではなく、**WebKit が焦点の欄を見せる
-  ために持ち上げるレイアウトビューポート**で、`overflow:hidden` はそれを
-  禁じず、JavaScript からも断れません（`preventScroll` は**プログラムからの**
-  focus の選択肢で、指でのタップは通りません）。
-- Decision as implemented: 持ち上げは**引き算**する。箱は `top:var(--vvtop)`
-  で留まっているのだから、高さは**ページ引く `--vvtop`**。
-  `.view.fit{height:calc(100dvh - var(--vvtop, 0px))}`。
-- **第二の仕組みは足していません。**`--vvtop` 一つに、箱の始まりと高さの
-  両方を言わせただけです（`CLAUDE.md` § シンプル ── 書き換えであって
-  継ぎ足しではない）。`--vvtop` の読み手は今も `.view.fit` 一箇所だけです。
-- 測った（390x844、キーボード 380pt）：持ち上げ N に対し、見えている窓は N
-  下がり、**意味は 2N 下がって**いました。画面の座標では意味だけが N 動き、
-  **欄と道具の行は壊れている間も止まっていました** ── iOS はまさに焦点の欄が
-  動かないように持ち上げるので。
+- Decision as implemented: 2026-09-25「投稿の画面は揺れない」── アプリの画面を
+  キーボードの分だけ縮める（`keepStill()`、MainViewController.swift）。
+  iOS が画面を持ち上げる余地が無いので、欄をタップしても何も動かない。
 - Affected features: 新しい投稿・返信・ノート（`.view.fit.fitfull` も同じ箱）
 - Affected data: **無し**
-- Affected docs: `docs/CHANGELOG.md` 2026-09-22
 - Implementation status: IMPLEMENTED（`post-check` §「NOTHING ON THE COMPOSER
-  MOVES」が画面の座標で欄・道具の行・意味を訊く。赤を見てから直した）。
-  **実機未確認**
+  MOVES」）。**実機未確認**
 
 ### 2026-09-22 縦書きの欄は字を立てる ── 142 の `mixed` を取り消す
 - Date: 2026-09-22

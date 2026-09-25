@@ -2167,6 +2167,21 @@ code points on it — `ltCodes()`. What is left for the writing system to say is
 the one thing that is genuinely not a letter: a syllable an abugida composes
 out of a base and a vowel mark, which nobody drew as one shape.
 
+**Choosing a character is one screen.** 「既存文字から選ぶとキーの画面は同一の
+ものを使おう。直書き禁止で」 OWNER 2026-09-25. A letter borrowing an existing
+character, a key of a keyboard and the onboarding open the same picker —
+`pkKindsHTML()` lists the kinds, `pkKind()` is a kind's page — and the kinds
+are written once, in `WORLD_SCRIPTS`. A key's page has 自作文字 at the head of
+the same list and nothing else of its own.
+
+**And the keyboard is answered once, by the phone.** The app itself is made
+shorter by the keyboard (`keepStill()`, `ios/App/App/MainViewController.swift`),
+so what the screen shows ends at the top of the keyboard and nothing in
+JavaScript measures the keyboard or chases it. 「投稿画面のガタガタがウザすぎる」
+OWNER 2026-09-25 was the last of a line of fixes that each measured the
+keyboard after iOS had moved the page and moved it back one event late; they
+are deleted, not kept beside it.
+
 Not everything that repeats is duplication. `cffNum` and `csNum` in `otf5.js`
 encode the same integers to different byte forms because that is what CFF
 specifies. Merging them would be inventing a rule, not finding one.
