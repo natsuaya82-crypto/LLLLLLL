@@ -144,7 +144,7 @@ ios/App/
     Compose.swift                     ← 打っているが未確定のもの（変換・綴り候補）
     CandidateBar.swift                ← キーの上の1本のバー。Compose を描くだけ
     HandPad.swift                     ← 手書きの面の書く場所と、hand.js を JavaScriptCore で動かす Hand
-    hand.js                           ← どの字に一番近いか（handDist・handNear）。Resources。検査は tools/hand-check.mjs
+    hand.js                           ← どの字に近いか（handDist・handRank）。Resources。検査は tools/hand-check.mjs
     GlyphView.swift                   ← 1文字を Core Graphics で描く
     Shared.swift                      ← App Group から JSON を読む。Face/Key/Layer/Board/Conv
 ios/App/App.xcodeproj/project.pbxproj ← 手で編集（後述）
@@ -433,21 +433,25 @@ build()（毎回、全部作り直す。層の切替もこれ一本）
 ### HandPad（手書き）
 
 **書いてあります。実機ではまだ誰も動かしていません。** OWNER 2026-09-25
-「後手書き追加しよう」。面の `hand` があれば、`KeyboardViewController` はその面を
-**上に書く場所（`HandPad`）、下に面の行**で描きます。高さは面の行と `hand` の行を
-足した行数で、他の面と同じ上限（画面の半分）に収まります。
+「後手書き追加しよう」「候補は何個か出して選ぶ形」「手書きを選択したら手書きだけでしょ」。
+手書きは**キーボードの型の一つ**で、一面だけのキーボードです。その面の `hand` があれば、
+`KeyboardViewController` は面を**上に書く場所（`HandPad`）、下に面の行（空白・削除・改行）**で描きます。
+高さは面の行と `hand` の行を足した行数（`kbHandRows()` が普通のキーボードの行数に揃える）。
 
+- 書く場所には点線の**四角と十字**（目安。読むのには使わない）
 - 指で書いて、指を離して `HandPad.pause`（0.6 秒）何もしなければ、書いた線を
-  `hand.js` の `handNear` に渡す。返ってきた番号の字（板の `hand` の一つ）を、
-  キーを押したのと同じ `typed()` で入れる。だから候補のバーもキーの時と同じに動く
+  `hand.js` の `handRank` に渡す。返ってきた近い順の字（板の `hand` から、`HAND_PICKS` 個まで）を
+  **キーの上の候補のバーに並べる**。押した字を、キーを押したのと同じ `typed()` で入れる。
+  そのあとバーは今までどおり（単語の続きの候補）に戻る。キーを押しても候補は消える
+- 比べる相手は**その言語の形のある自作文字だけ**。既存の文字は形を持っていないので候補に出ない
 - **どの字に近いかは Swift に書かない。** `hand.js` を拡張に同梱し、`JSContext` で
   動かす（`Hand`）。同じファイルを `tools/hand-check.mjs` が Node で動かして、ずらした・
-  崩した線で正しい字が選ばれるかを数える。Swift に二つ目を書くと、二つが黙って
-  食い違う ── 形を切ってから渡すのと同じ理由（§5）
+  崩した線で、書いた字が一番目に来るか・候補の中にあるかを数える。Swift に二つ目を書くと、
+  二つが黙って食い違う ── 形を切ってから渡すのと同じ理由（§5）
 - 比べ方: 両方を 32×32 の升に、大きい方の辺で合わせて真ん中に描き、傾きを
   （0.3 まで）戻し、互いの一番近い点までの距離の二乗の平均を両向き足す（`hand.js` の `handDist`）。
   位置・大きさ・書き順・線の向きは効かない
-- `hand.js` が無い・動かない時は何も入らない（当て推量で入れない）
+- `hand.js` が無い・動かない時は何も出ない（当て推量で出さない）
 
 ### GlyphView
 
