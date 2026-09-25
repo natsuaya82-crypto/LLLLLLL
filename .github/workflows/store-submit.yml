@@ -1,0 +1,40 @@
+# 一つのビルドを「提出準備中」の版に付けて、審査に出す（tools/store-submit.mjs）。
+# 「やっといて」OWNER 2026-09-25。オーナーにターミナルは無いので Actions で押す。
+#
+# 鍵は ios-deploy.yml と同じ三つの Secrets。版の文は store-localize.yml が入れる。
+name: Store Submit
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: '出す版（提出準備中のもの。例 1.0.2）'
+        required: true
+        default: '1.0.2'
+      build:
+        description: '付けるビルド番号（例 166）'
+        required: true
+      dry:
+        description: '何をするかを言うだけで、付けも出しもしない'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  submit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: 付けて審査に出す
+        env:
+          ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          ASC_KEY_ID: ${{ secrets.IOS_KEY_ID }}
+          ASC_PRIVATE_KEY: ${{ secrets.IOS_API_KEY }}
+        run: |
+          ARGS="--version ${{ inputs.version }} --build ${{ inputs.build }}"
+          if [ "${{ inputs.dry }}" = "true" ]; then ARGS="$ARGS --dry"; fi
+          node tools/store-submit.mjs $ARGS
