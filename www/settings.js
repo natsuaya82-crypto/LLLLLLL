@@ -269,8 +269,8 @@ function vSet(){
        where a follow list has フォロー. Pressing it is meBlock() -- the same
        press the ... menu makes -- and the row goes when the list comes back
        without it. */
-    body=netBlockedPeople().length
-      ? netBlockedPeople().map(setBlockRow).join('')
+    body=netPpl('block').length
+      ? netPpl('block').map(setBlockRow).join('')
       : snsEmpty('blocks', snsNone());
   } else if(id==='push'){
     /* Four rows, and the state above them when iOS has said no. www/push.js

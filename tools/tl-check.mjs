@@ -347,11 +347,11 @@ const r = await pg.evaluate(({ s }) => {
      (`blocks`, r68) -- answered here like the other two (an earlier screen's
      ask is still in the air on this fake wire), or the page waits on a read
      this check is not about */
-  const wasRel2 = netRel, wasWho2 = netWho, wasBy2 = netPostsBy, wasBl2 = netBlockedRead;
+  const wasRel2 = netRel, wasWho2 = netWho, wasBy2 = netPostsBy, wasBl2 = netPplRead;
   netWho = function (h, k) { k({ who:'Iri', hd:String(h), uid:'U-' + h }); };
   netPostsBy = function (u, k) { k([]); };
-  netBlockedRead = function (ok) { ok(); };
-  const wasBlHd2 = NET_BL; NET_BL = NET_BL || [];
+  netPplRead = function (k, ok) { ok(); };
+  const wasBlHd2 = NET_PPL.block; NET_PPL.block = NET_PPL.block || [];
   let relAsks = 0;
   netRel = function (hs, ok) { relAsks++; const by = {}; hs.forEach(h => { by[h] = { i:false, u:true }; }); ok(by); };
   REL = {};
@@ -359,7 +359,7 @@ const r = await pg.evaluate(({ s }) => {
   go('profile', 'iri');
   out.mineOnOpen = here().r === 'profile' && meFollowed('iri');
   out.askedOnTheirs = relAsks;
-  netRel = wasRel2; netWho = wasWho2; netPostsBy = wasBy2; netBlockedRead = wasBl2; NET_BL = wasBlHd2;
+  netRel = wasRel2; netWho = wasWho2; netPostsBy = wasBy2; netPplRead = wasBl2; NET_PPL.block = wasBlHd2;
   REL = heldRel;
   NAV = [{ r:'feed' }]; window.route = 'feed';
 
@@ -562,7 +562,7 @@ const r = await pg.evaluate(({ s }) => {
     };
     netSend = function (m, p, b, t, ok, bad, up) { netSend1(m, p, b, t, ok, bad, up, true); };
     netGet = function (p, ok, bad) { netSend('GET', p, null, '', ok, bad); };
-    NET_BL = [{ id:'U-zed', hd:'zed', who:'Zed', av:{ ch:'Z' } }];
+    NET_PPL.block = [{ id:'U-zed', hd:'zed', who:'Zed', av:{ ch:'Z' } }];
     NAV = [{ r:'settings' }, { r:'set', a:'block' }]; window.route = 'set'; render();
     const app = document.getElementById('app');
     out.blRow = !!app.querySelector('[data-do="meBlock"][data-a=\'["zed"]\']') &&
@@ -570,7 +570,7 @@ const r = await pg.evaluate(({ s }) => {
     const un = app.querySelector('[data-do="meBlock"]');
     if (un) un.click();
     out.blSent = sent.filter((x) => /^DELETE \/rest\/v1\/block\?/.test(x) || /block_seen/.test(x)).join(' | ');
-    out.blGone = here().r === 'set' && app.textContent.indexOf('@zed') < 0 && !netBlockedPeople().length;
+    out.blGone = here().r === 'set' && app.textContent.indexOf('@zed') < 0 && !netPpl('block').length;
     netSend1 = realS1; netSend = realS; netGet = realG;
     NAV = [{ r:'feed' }]; window.route = 'feed';
   }

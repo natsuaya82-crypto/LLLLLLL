@@ -773,7 +773,7 @@ function pullForget(){
   DAY=null; NOTES_HAVE=null; FO_HAVE=null; SNS_NEXT={}; SNS_END={};
   MORE_AT={}; MORE_END={};
   folForget();
-  netBlockedDrop();
+  netPplDrop('block');
   WLD_HAVE={}; WLDS_HAVE={};
 }
 acctMem(pullForget);
@@ -877,10 +877,11 @@ pullOn('lang',    function(ok, bad, p, a){
                   });
 pullOn('seen',    function(ok, bad, p, a){ wldSeenAsk(a, ok, bad); }, function(a){ return wldSeenGot(a); });
 pullOn('mod',     function(ok, bad){ modAsk(ok, bad); });
-/* WHO THIS ACCOUNT HAS BLOCKED, by handle (www/net.js § netBlockedRead), for
+/* WHO THIS ACCOUNT HAS BLOCKED, by handle (www/net.js § netPplRead), for
    the one thing that still asks: whether the ... on a person says 「ブロック」
    or 「解除」. Their posts are left out by the server and need nothing here. */
-pullOn('blocks',  function(ok, bad){ netBlockedRead(function(){ ok(1); }, bad); }, netBlockedGot);
+pullOn('blocks',  function(ok, bad){ netPplRead('block', function(){ ok(1); }, bad); },
+       function(){ return netPplGot('block'); });
 /* ---- WHAT EACH PAGE READS -- ONE TABLE -----------------------------------
    A row is a route and a function of its argument that answers with the
    questions the page is drawn from, as [k, a] pairs. `pull` says whether a

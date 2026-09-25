@@ -3418,8 +3418,8 @@ function netPairRow(tab, mine, theirs, handle, on, ok, bad){
    it. `block_read` in schema.sql answers with YOUR rows only -- being blocked
    is not something a person is told. */
 function netBlock(handle, on, ok, bad){
-  /* The copy above is now wrong whichever way this goes. */
-  netBlockedDrop();
+  /* The copy below is now wrong whichever way this goes. */
+  netPplDrop('block');
   netPairRow('block', 'actor', 'blocked', handle, on, ok, bad);
 }
 /* WHOM YOU HAVE BLOCKED, for the two things on this phone that ask: the list
@@ -3440,56 +3440,61 @@ function netBlock(handle, on, ok, bad){
 
    Asked when a page that draws it is arrived at, through the pull table
    (`blocks`, www/sns.js), and again after a block or an unblock. `null` is
-   「not asked」. */
-var NET_BL=null, NET_BL_WAIT=null;
+   「not asked」.
+
+   ONE LIST OF PEOPLE PER TABLE, AND ONE CODE FOR ALL OF THEM. The key is the
+   table (`block`), and the view it is read through is that name and `_seen`
+   (`block_seen`). Everything below is about 「a list of people this account
+   did something to」 and nothing about what the something was. */
+var NET_PPL={}, NET_PPL_WAIT={};
 /* The people, for a screen. `null` (not asked) answers as none: a button
    that said 「blocked」 before the list came down would be this phone saying
    something the server has not said. */
-function netBlockedPeople(){ return NET_BL || []; }
-function netBlockedHandles(){
-  var out=[], i;
-  for(i=0;i<netBlockedPeople().length;i++) out.push(netBlockedPeople()[i].hd);
+function netPpl(k){ return NET_PPL[k] || []; }
+function netPplHandles(k){
+  var out=[], i, l=netPpl(k);
+  for(i=0;i<l.length;i++) out.push(l[i].hd);
   return out;
 }
-function netBlockedGot(){ return NET_BL!==null; }
+function netPplGot(k){ return !!NET_PPL[k]; }
 /* ONE REQUEST, HOWEVER MANY ARE WAITING ON IT. The arrival and a block
    pressed in the same moment would otherwise put the identical question
-   twice. `NET_BL_WAIT` exists only while a request is out, and everybody
+   twice. `NET_PPL_WAIT[k]` exists only while a request is out, and everybody
    holding a place in it is answered from the one reply. */
-function netBlockedRead(ok, bad){
+function netPplRead(k, ok, bad){
   var i, who;
-  if(NET_BL_WAIT){ NET_BL_WAIT.push({ok:ok, bad:bad}); return; }
-  NET_BL_WAIT=[{ok:ok, bad:bad}];
+  if(NET_PPL_WAIT[k]){ NET_PPL_WAIT[k].push({ok:ok, bad:bad}); return; }
+  NET_PPL_WAIT[k]=[{ok:ok, bad:bad}];
   /* WHO IT WAS ASKED FOR, held while the answer is out. Signing out with this
      in the air would otherwise let the old account's list land afterwards and
      be kept as the new one's -- the same shape netTook() guards meFor() and
      postFor() against, one file over. The waiters are still answered, with
      none, because a caller left hanging is worse than a caller told nothing. */
   who=netUid();
-  netGet('/rest/v1/block_seen?select=id,handle,display,av&order=created_at.desc',
+  netGet('/rest/v1/'+k+'_seen?select=id,handle,display,av&order=created_at.desc',
     function(d){
-      var w=NET_BL_WAIT, rows=[], ids=[], j, r;
-      NET_BL_WAIT=null;
+      var w=NET_PPL_WAIT[k], rows=[], ids=[], j, r;
+      NET_PPL_WAIT[k]=null;
       for(j=0;j<(d||[]).length;j++){
         r=d[j];
         if(!r || !r.id || !r.handle) continue;
         rows.push({id:String(r.id), hd:String(r.handle), who:String(r.display||''), av:r.av||null});
         ids.push(String(r.id));
       }
-      if(netSignedIn() && netUid()===who) NET_BL=rows;
+      if(netSignedIn() && netUid()===who) NET_PPL[k]=rows;
       else ids=[];
       for(j=0;j<w.length;j++) w[j].ok(ids);
     },
     function(d, s, m){
-      var w=NET_BL_WAIT;
-      NET_BL_WAIT=null;
+      var w=NET_PPL_WAIT[k];
+      NET_PPL_WAIT[k]=null;
       for(i=0;i<w.length;i++) w[i].bad(d, s, m);
     });
 }
 /* Blocking or unblocking somebody makes the copy wrong, and it is the one
    thing that can; so does signing out. Dropped rather than re-asked: meBlock()
    asks again when the row lands. */
-function netBlockedDrop(){ NET_BL=null; }
+function netPplDrop(k){ NET_PPL[k]=null; }
 /* Something is wrong with this post, or with this person. Written and never
    read back: there is no select policy on `report` at all, so nobody using
    the app can read one -- not the person who wrote it and not the person it

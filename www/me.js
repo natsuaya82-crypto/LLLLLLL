@@ -1059,7 +1059,7 @@ function relAsk(hs, ok, bad){
    one a screen showed was the wrong one. `ME.fo` and `ME.fr` went the same
    way on 2026-09-09 and left this behind.
 
-   netBlockedHandles() (www/net.js) is the answer now -- the same road, the
+   netPplHandles('block') (www/net.js) is the answer now -- the same road, the
    same moment, the same 「not asked」 -- so a button says blocked when the
    server says so and on every phone this account signs in on.
 
@@ -1067,7 +1067,7 @@ function relAsk(hs, ok, bad){
    handset that has this app; it is not read, not written and not deleted
    (docs/DATA_SAFETY.md rule 2). */
 function meBlocking(){
-  return (typeof netBlockedHandles==='function')? netBlockedHandles() : [];
+  return (typeof netPplHandles==='function')? netPplHandles('block') : [];
 }
 function meBlocks(h){ return meBlocking().indexOf(String(h||''))>=0; }
 /* Blocking somebody stops following them. Keeping a follow to somebody you
@@ -1109,7 +1109,7 @@ function meBlock(h){
     /* The list this phone was holding is gone (netBlock() drops it), so the
        screen has nothing to draw from until it is asked again. One road, and
        it is the one the open uses. */
-    netBlockedRead(function(){
+    netPplRead('block', function(){
       if(on && meFollows(h)) meFollow(h);
       render();
     }, function(){ render(); });
@@ -1570,7 +1570,7 @@ function folPut(ers, h, hs){
   FOL_ASKED[k]=1;
 }
 /* AND EVERY ONE OF THEM IS THE SIGNED-IN ACCOUNT'S. netOut() (www/net.js)
-   calls this beside netBlockedDrop() and pullForget(), and for the same
+   calls this beside netPplDrop() and pullForget(), and for the same
    sentence: these are answers the server gave THIS account, and the next
    person to sign in on this phone must ask for their own.
 
