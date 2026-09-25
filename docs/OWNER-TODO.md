@@ -40,9 +40,9 @@
 | 11 | Supabase：今日のお題が 9/20 で止まっている理由を見る（2 の次に） | 済み（2026-09-25）：見る前に直っていた。アプリで 24 日のお題が出ている（オーナー 2026-09-25 11:59 JST）。原因は見ていない |
 | 3 | Apple：APNs の鍵 → GitHub Secrets 二つ | 済み（2026-09-25） |
 | 4 | Supabase：Webhooks を ON | 済み（2026-09-25）：Integrations → Database Webhooks が Installed |
-| 5 | Supabase：schema.sql を流し直す（4 の後） | まだ（直った版 a64fd723 が integ-0905 に入った） |
-| 12 | GitHub：verify-plan を置き直す（5 の後。逆だと購入の確かめが 500） | 待ち：5 |
-| 6 | GitHub：push-send を置く（3・5・12 の後） | 待ち：5・12 |
+| 5 | Supabase：schema.sql を流し直す（4 の後） | 済み（2026-09-25、a64fd723 の版で Success） |
+| 12 | GitHub：verify-plan を置き直す（5 の後。逆だと購入の確かめが 500） | まだ |
+| 6 | GitHub：push-send を置く（3・5・12 の後） | 待ち：12 |
 | 7 | Supabase：Cron `daily-prompt` の時刻 | 済み（2026-09-25） |
 | 8 | AdMob：アプリ登録・広告ユニット・Secrets・app-ads.txt | 今はやらない（オーナー 2026-09-25） |
 | 9 | App Store Connect：App のプライバシー | 今はやらない（オーナー 2026-09-25「広告は今は出さない」） |
