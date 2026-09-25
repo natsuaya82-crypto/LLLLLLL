@@ -7,6 +7,97 @@
 手順の元：docs/apple.md § 8・§ 9、supabase/setup.md § 2・§ 9-5・§ 12、
 .github/workflows/supabase-deploy.yml（integ-0905 46280fcb で読んだもの）。
 
+## ★ 最優先：Shipaton 2026（締め切り 日本時間 10/1（水）15:45 ＝ 米国太平洋時間 9/30 23:45）
+
+オーナーの指示「オーナーがやることに投げて」（2026-09-25、リーダー経由）。上から順番に。
+
+| # | 何 | 状態 |
+|---|---|---|
+| S-A | RevenueCat：プロジェクトとアプリを作る → App Store Connect とつなぐ → 商品 4 つ → Entitlement と Offering → 公開 SDK キー（「appl_」）をリーダーへ。**キーが来ないとビルドが出せない** | まだ |
+| S-B | Devpost で Shipaton 2026 に参加登録 | まだ |
+| S-C | App Store Connect で審査員用のコード（オファーコード）を用意 | まだ |
+| S-D | RevenueCat 入りのビルドが届いたら、実機で一回買う → 審査に出す（審査 1〜2 日。早いほど安全） | 待ち：S-A |
+| S-E | Devpost に提出（説明・デモ動画・App Store の URL・アイコン・スクショ・S-C のコード） | 待ち：S-A |
+| S-F | 参加特典 Ship Kit・Discord（任意） | 任意 |
+
+### S-A RevenueCat
+
+画面の名前は RevenueCat の今の画面と違うことがある。違ったらスクショを送る。
+
+**A-1 プロジェクトとアプリを作る**
+1. https://app.revenuecat.com/ にログイン（アカウントが無ければ Sign up）
+2. **Create new project** → 名前 `Lingua` → 作成
+3. そのプロジェクトで **Apps**（または Project settings → Apps）→ **+ New** → **App Store** を選ぶ
+4. **App name**：`Lingua`、**App Bundle ID**：`com.tokinets.lingua`（そのまま）
+5. まだ保存しない。同じ画面の「In-App Purchase Key」の欄を A-2 で埋める
+
+**A-2 App Store Connect とつなぐ（In-App Purchase キー）**
+1. 別のタブで https://appstoreconnect.apple.com/access/integrations/api/subs を開く
+   （開かなければ App Store Connect → **ユーザとアクセス** → 上の **統合** → 左の **アプリ内課金**）
+2. **＋**（または「アプリ内課金キーを生成」）→ 名前 「RevenueCat」 → **生成**
+3. **ダウンロード**（`SubscriptionKey_XXXXXXXXXX.p8`。**一度しか落とせない**）
+4. 画面の **キー ID** と、上に出ている **Issuer ID** を控える
+5. RevenueCat の画面に戻り、`.p8` を上げ、**Key ID** と **Issuer ID** を入れる → **Save**
+6. RevenueCat が App 用共有シークレット（App-Specific Shared Secret）も求めてきたら：
+   App Store Connect → アプリ → Lingua → 左の **App 情報** → **App 用共有シークレット** → **管理** → **生成** → コピーして RevenueCat に貼る
+
+**A-3 商品を 4 つ登録する（ID はこのまま。1 文字も変えない）**
+1. RevenueCat → **Product catalog** → **Products** → **+ New**（App Store の中から選ぶ画面が出たら、そこから選ぶ）
+2. 次の 4 つを一つずつ：
+   - `com.tokinets.lingua.plus.monthly`
+   - `com.tokinets.lingua.plus.yearly`
+   - `com.tokinets.lingua.pro.monthly`
+   - `com.tokinets.lingua.pro.yearly`
+
+**A-4 Entitlement を 2 つ作る（名前は小文字で、このまま）**
+1. **Product catalog** → **Entitlements** → **+ New**
+2. Identifier `plus` → 作成 → 開いて **Attach** → `…plus.monthly` と `…plus.yearly` を入れる
+3. もう一度 **+ New** → Identifier `pro` → 作成 → **Attach** → `…pro.monthly` と `…pro.yearly` を入れる
+   - ⚠ `Plus`・`PRO` のように大文字にすると、買った人に何も付かない（アプリがこの綴りで読む。claude/rc の LinguaStore.swift）
+
+**A-5 Offering を作る**
+1. **Product catalog** → **Offerings** → **+ New** → Identifier `default` → 作成
+2. 開いて **Packages** → **+ New** で 4 つ入れる：
+   - Monthly（「$rc_monthly」）→ `…plus.monthly`
+   - Annual（「$rc_annual」）→ `…plus.yearly`
+   - Custom 「pro_monthly」 → `…pro.monthly`
+   - Custom 「pro_yearly」 → `…pro.yearly`
+3. この Offering が **Current**（既定）になっていることを見る
+
+**A-6 公開 SDK キーをリーダーへ**
+1. **Project settings** → **API keys**
+2. **Public app-specific API keys** の Lingua（App Store）の行の、**「appl_」 で始まるキー**をコピー
+   - ⚠ 「sk_」 で始まる **Secret key は渡さない・どこにも貼らない**
+3. リーダーのセッションに 「appl_…」 を送る（公開キーなのでアプリの中に入るもの。送って大丈夫）
+
+### S-B Devpost に参加登録
+
+1. https://devpost.com/ にサインアップ（英語。13 歳以上）
+2. 検索で `Shipaton 2026` → ハッカソンのページ → **Join hackathon**（または Register for this hackathon）
+3. 質問が出たら英語で答えて登録
+
+### S-C 審査員用のコード
+
+Apple は 2026 年から、アプリ内課金の「プロモーションコード」を新しく作れなくしたという情報がある（まだ確かめていない）。
+代わりに **オファーコード**（サブスクを無料で一定期間使えるコード）を作る。
+1. App Store Connect → アプリ → Lingua → 左の **サブスクリプション** → グループを開く → Pro の月額など（審査員が全部の機能を見られる方）
+2. **サブスクリプションの価格** の下の **オファーコード** → **作成**（名前 `shipaton-judges`、無料・1 か月など）
+3. **カスタムコード** か **1 回限りのコード** を作り、控える（S-E で Devpost に書く）
+- 画面が違う・作れない時はスクショをこのセッションへ
+
+### S-D 実機で一回買う → 審査に出す
+
+RevenueCat 入りのビルドが TestFlight に来たら、ここで手順を送る（Sandbox で買う → 審査に出す）。
+
+### S-E Devpost に提出
+
+必要なもの：機能の説明（英語、リーダーが下書き）、デモ動画（オーナーの手元。実機、YouTube か Vimeo に公開、2 分以内、許可の無い音楽・他社商標なし）、App Store の URL、1024×1024 アイコンと 1179×2556 の枠なしスクショ 1 枚以上（リーダーが用意）、S-C のコード。
+揃ったら、ここで提出画面の手順を送る。
+
+### S-F 任意
+
+Ship Kit・Discord は任意。やるならここで聞く。
+
 ## リーダーへ（オーナーから届いたもの）
 
 - 2026-09-25：ユーザー @bluestevie64 が @lingua の投稿（Sep 23「Anything hard to use?」）に返信
