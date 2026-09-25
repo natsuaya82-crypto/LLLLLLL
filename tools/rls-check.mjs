@@ -636,6 +636,17 @@ const CASES = [
     `insert into post(id,author,body) values ('${BDP}','${BD}','{}'::jsonb)`],
   ['BD answers BK',                           'ok',     BD, 0,
     `insert into post(author,body,reply_to) values ('${BD}','{}'::jsonb,'${BKP}')`],
+  /* A QUOTE (r94): a post carrying `quote_of`, written by its author, and
+     the person quoted is told -- in notices(), as the kind `quote`. */
+  ['BD quotes BK',                            'ok',     BD, 0,
+    `insert into post(author,body,quote_of) values ('${BD}','{}'::jsonb,'${BKP}')`],
+  ['and BK is told BD quoted',                'ok',     BK, 0,
+    `select 1 from notices() where kind='quote' and hd='${BDH}'`],
+  ['and a quote carries what it quotes, as it is', 'ok', B, 0,
+    `select 1 from post_seen where author='${BD}' and quote_of='${BKP}'
+                                and (quoted->>'id')='${BKP}'`],
+  ['a quote is not edited into quoting something else', 'denied', BD, 0,
+    `update post set quote_of='${P}' where author='${BD}' and quote_of='${BKP}'`],
   ['BD likes BK\u2019s post',                 'ok',     BD, 0,
     `insert into react(post,actor,kind) values ('${BKP}','${BD}','like')`],
   ['BD passes somebody else\u2019s post on',  'ok',     BD, 0,
@@ -687,6 +698,29 @@ const CASES = [
     `insert into react(post,actor,kind) values ('${BKP}','${BD}','boost')`],
   ['BD cannot answer BK',                     'denied', BD, 0,
     `insert into post(author,body,reply_to) values ('${BD}','{}'::jsonb,'${BKP}')`],
+  ['nor quote BK',                            'denied', BD, 0,
+    `insert into post(author,body,quote_of) values ('${BD}','{}'::jsonb,'${BKP}')`],
+  ['nor BK quote BD',                         'denied', BK, 0,
+    `insert into post(author,body,quote_of) values ('${BK}','{}'::jsonb,'${BDP}')`],
+  /* and what somebody else quoted of BD reaches BK as a quote of nothing
+     they can see: the id, and no post under it */
+  ['B quotes BD',                             'ok',     B, 0,
+    `insert into post(author,body,quote_of) values ('${B}','{}'::jsonb,'${BDP}')`],
+  ['BK reads B’s quote with nothing under it', 'ok', BK, 0,
+    `select 1 from post_seen where author='${B}' and quote_of='${BDP}' and quoted is null`],
+  ['while B reads what B quoted',             'ok',     B, 0,
+    `select 1 from post_seen where author='${B}' and quote_of='${BDP}' and quoted is not null`],
+  /* and a quote whose post was DELETED still says it was a quote: there is no
+     foreign key to take the id away (schema.sql § quote_of) */
+  ['B writes a post to quote',                'ok',     B, 0,
+    `insert into post(id,author,body) values ('e9400000-0000-4000-8000-0000000000e1','${B}','{}'::jsonb)`],
+  ['and quotes it',                           'ok',     B, 0,
+    `insert into post(id,author,body,quote_of) values ('e9400000-0000-4000-8000-0000000000e2','${B}','{}'::jsonb,'e9400000-0000-4000-8000-0000000000e1')`],
+  ['and deletes the post quoted',             'ok',     B, 0,
+    `delete from post where id='e9400000-0000-4000-8000-0000000000e1'`],
+  ['and the quote is still a quote, of nothing', 'ok',  C, 0,
+    `select 1 from post_seen where id='e9400000-0000-4000-8000-0000000000e2'
+       and quote_of='e9400000-0000-4000-8000-0000000000e1' and quoted is null`],
   ['nor edit a post into an answer to BK',    'denied', BD, 0,
     `update post set reply_to='${BKP}' where id='${BDP}'`],
   ['BD stops following BK',                   'ok',     BD, 0,

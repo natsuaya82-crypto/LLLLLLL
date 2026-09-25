@@ -623,6 +623,22 @@ create index if not exists post_language_idx on post(language, created_at desc);
 alter table post add column if not exists reply_to uuid references post(id) on delete set null;
 create index if not exists post_reply_idx on post(reply_to, created_at) where reply_to is not null;
 
+-- What this QUOTES. 「引用リツイート追加しない？」 OWNER 2026-09-25
+-- (docs/FEATURE_RULES.md § 2026-09-25 いいね・リポストした人の一覧…). A quote
+-- is a post of its own with somebody else's under it, and what is under it is
+-- drawn from the server AS IT IS NOW (post_seen.quoted) -- so the post
+-- carries the id and nothing of the other post's words.
+--
+-- NO FOREIGN KEY, and that is the reason it is a bare uuid. `on delete set
+-- null` would turn a quote whose post was deleted back into an ordinary post,
+-- and a reader would no longer be told 「この投稿は表示できません」 -- the one
+-- thing the owner asked for about a quote that has lost its post. The id
+-- stays; post_seen.quoted is null for it, as it is for one a block hides.
+-- Written once, when the quote is sent: it is in the `grant insert` at the
+-- foot of this file and not in the `grant update`.
+alter table post add column if not exists quote_of uuid;
+create index if not exists post_quote_idx on post(quote_of, created_at) where quote_of is not null;
+
 -- Taken down, rather than deleted. Three reasons, and the third is the one
 -- that decided it: a deletion cannot be undone when the report turns out to be
 -- wrong; the reports about it point at a row that has to still be there; and
@@ -1900,6 +1916,23 @@ create view post_seen as
   select p.id, p.author, p.language, p.prompt, p.reply_to, p.created_at,
          p.hidden_at,
          (a.banned_at is not null) as author_out,
+         -- WHAT IT QUOTES, AS THAT POST IS NOW. The id is the quote's own; the
+         -- post under it is read here, by the reader, every time: a quote of
+         -- a post since deleted, taken down, frozen with its account, kept to
+         -- its author, or written by somebody a block stands between is
+         -- `quoted` null -- 「この投稿は表示できません」 OWNER 2026-09-25 -- and
+         -- the id is still there to say it was a quote. The conditions are
+         -- this view's own `where` below, with the two a row here only marks
+         -- (taken down, frozen) asked as well, because a post under a post
+         -- has nowhere to wear the mark.
+         p.quote_of,
+         (select jsonb_build_object('id', q.id, 'author', q.author,
+                                    'created_at', q.created_at, 'body', q.body)
+            from post q join profile qa on qa.id = q.author
+           where q.id = p.quote_of
+             and q.hidden_at is null and qa.banned_at is null
+             and (not post_private(q.body) or q.author = auth.uid())
+             and not block_hides(q.author)) as quoted,
          case when p.hidden_at is null or p.author = auth.uid() or is_staff()
               then p.body else '{}'::jsonb end as body,
          -- WHAT OTHER PEOPLE DID TO IT.
@@ -1978,8 +2011,10 @@ create policy post_read on post for select using (
 drop policy if exists post_make on post;
 create policy post_make on post for insert with check (
   is_member() and author = auth.uid()
-  -- not an answer to somebody a block stands between (post_blocks)
-  and (reply_to is null or not post_blocks(reply_to)));
+  -- not an answer to somebody a block stands between, nor a quote of them
+  -- (post_blocks)
+  and (reply_to is null or not post_blocks(reply_to))
+  and (quote_of is null or not post_blocks(quote_of)));
 drop policy if exists post_edit on post;
 create policy post_edit on post for update
   using (is_member() and author = auth.uid())
@@ -2497,6 +2532,14 @@ language sql stable as $$
       join post ps on ps.id = q.reply_to
      where ps.author = auth.uid() and q.author <> auth.uid()
     union all
+    -- a post of yours QUOTED (r94), and the notice opens the quote, the way a
+    -- reply's opens the reply. Read under the reader's rights, so a quote
+    -- kept to its author is not handed over (post_read).
+    select 'quote', q.created_at, q.author, q.id
+      from post q
+      join post ps on ps.id = q.quote_of
+     where ps.author = auth.uid() and q.author <> auth.uid()
+    union all
     select 'follow', f.created_at, f.follower, null::uuid
       from follow f
      where f.followed = auth.uid()
@@ -2692,11 +2735,14 @@ returns table (id uuid, author uuid, language uuid, prompt bigint,
                -- function on the phone turns a row from EITHER list into a
                -- post, so a column added to one is a column added to both.
                likes bigint, boosts bigint, replies bigint,
-               i_like boolean, i_boost boolean)
+               i_like boolean, i_boost boolean,
+               -- and what it quotes, as post_seen has it (r94)
+               quote_of uuid, quoted jsonb)
 language sql stable as $$
   select v.id, v.author, v.language, v.prompt, v.reply_to, v.created_at,
          v.hidden_at, v.author_out, v.body,
-         v.likes, v.boosts, v.replies, v.i_like, v.i_boost
+         v.likes, v.boosts, v.replies, v.i_like, v.i_boost,
+         v.quote_of, v.quoted
     from post_seen v
     left join lateral (
       select coalesce(sum(case r.kind when 'like'  then 1
@@ -2777,6 +2823,9 @@ $$;
 --
 -- Hidden posts are left out on BOTH sides. A boost of something taken down is
 -- not a way back to it.
+-- Dropped by name first, as feed_hot() is: its return type gained the quote's
+-- two columns (r94) and `create or replace function` refuses to change one.
+drop function if exists feed_fo(int, timestamptz);
 create or replace function feed_fo(lim int default 50,
                                    before timestamptz default null)
 returns table (id uuid, author uuid, language uuid, prompt bigint,
@@ -2784,11 +2833,13 @@ returns table (id uuid, author uuid, language uuid, prompt bigint,
                author_out boolean, body jsonb,
                likes bigint, boosts bigint, replies bigint,
                i_like boolean, i_boost boolean,
+               quote_of uuid, quoted jsonb,
                by uuid, at_key timestamptz)
 language sql stable as $$
   select z.id, z.author, z.language, z.prompt, z.reply_to, z.created_at,
          z.hidden_at, z.author_out, z.body,
          z.likes, z.boosts, z.replies, z.i_like, z.i_boost,
+         z.quote_of, z.quoted,
          z.by, z.at_key
     from (
       select distinct on (q.id) q.*
@@ -3482,7 +3533,7 @@ grant  update (body, language, prompt, reply_to) on post to authenticated;
 -- above already calls the author's. created_at is left out on purpose: it
 -- defaults to now() and a client that could name it could date a post.
 revoke insert on post from authenticated;
-grant  insert (id, author, language, body, prompt, reply_to) on post to authenticated;
+grant  insert (id, author, language, body, prompt, reply_to, quote_of) on post to authenticated;
 
 -- ---------------------------------------------------------------------------
 -- And the road OUT: a trigger on each table whose insert is a notice
