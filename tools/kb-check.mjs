@@ -2177,6 +2177,24 @@ const r = await pg.evaluate(({ s }) => {
     out.freeChShare = !!fSh && fSh.t === 'あ' && fSh.k === 'lt' && !fSh.st;
     kbChPut(fr, fi, -1, '');
     out.freeChOff = kbStored()[0].lay[0].rows[fr][fi].v === '';
+    /* AND IT IS TYPED ON THE SHEET: the key selected, the box under the
+       tools, a character typed and the box left -- the way a finger does it,
+       through the one delegated listener. 「既存の文字はキーボードの編集画面
+       でキーを押してそのまま入れる」 OWNER 2026-09-25. The key's own page has
+       no box for the key; that page is for a drawn letter. */
+    kbShow = 1; kbLay = 0; KBH = null;
+    NAV = [{ r: 'kb', a: '1' }]; route = 'kb';
+    document.getElementById('app').innerHTML = vKb();
+    out.freeSheetNoBox = !document.querySelector('[data-ch="kbChPut"]');
+    KBH = { k: 'k', r: fr, i: fi };
+    document.getElementById('app').innerHTML = vKb();
+    var fBox = document.querySelector('#app [data-ch="kbChPut"]');
+    out.freeSheetBox = !!fBox;
+    if (fBox){ fBox.value = 'ç'; fBox.dispatchEvent(new Event('change', { bubbles: true })); }
+    out.freeSheetTyped = kbStored()[0].lay[0].rows[fr][fi].v === '=ç';
+    KBH = null;
+    var kpage = document.createElement('div'); kpage.innerHTML = kbKeyHTML(fr, fi);
+    out.freeKeyPageNoBox = !kpage.querySelector('[data-ch="kbChPut"]');
     KB = null; kbShow = 0;
     popOff();
 
@@ -4440,6 +4458,10 @@ say(r.freeAddIds > 0 && r.freeAddChs === 0,
 say(!r.freeLtAsked && r.freeLtOn,
     'a drawn letter pressed onto a key of it goes on, and nothing asks about a plan ['
     + [r.freeLtAsked, r.freeLtOn].join(' ') + ']');
+say(r.freeSheetNoBox && r.freeSheetBox && r.freeSheetTyped && r.freeKeyPageNoBox,
+    'a character is typed on the sheet: the box is there while a key is selected, what is typed goes onto it, '
+    + 'and the key\'s own page has no box for it [' +
+    [r.freeSheetNoBox, r.freeSheetBox, r.freeSheetTyped, r.freeKeyPageNoBox].join(' ') + ']');
 say(r.freeChOn && r.freeChShare && r.freeChOff,
     'a character typed goes onto the key, crosses to the phone as itself, and an empty box takes it off ['
     + [r.freeChOn, r.freeChShare, r.freeChOff].join(' ') + ']');

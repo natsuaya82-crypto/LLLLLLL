@@ -2840,6 +2840,7 @@ function vKb(){
   return '<div class="view">'+navTop('', kbMoreQ())+'<div class="body">'+
     kbNameHTML(now)+
     kbToolHTML()+
+    kbChOnHTML()+
     kbHTML(kbSel)+
     kbLaysHTML()+
     /* The one control whose whole job is to change how a key LOOKS, on the
@@ -4379,7 +4380,10 @@ function kbLtGrid(ri, ki, dir){
     }).join('')+'</div>';
   }
   ltReList=cells;
-  return kbChHTML(ri, ki, dir)+ltViewRow()+
+  /* A corner of a flick key has no place on the sheet to be typed into, so
+     its box is here, on the corner's own page. The key itself is typed into
+     on the sheet (kbChOnHTML). */
+  return (dir>=0? kbChHTML(ri, ki, dir) : '')+ltViewRow()+
     /* "Nothing in this slot" is a choice like any other, so it is CHOSEN like
        any other and waits for the same confirm. Leaving it applying on the
        press would be the thing that must not happen -- two mechanisms writing
@@ -4470,6 +4474,20 @@ function kbChPut(ri, ki, dir, ln){
   kbLtDraw(ri, ki, dir);
 }
 var KB_CH_MAX=8;
+/* ON THE SHEET, FOR THE KEY THAT IS SELECTED. 「既存の文字はキーボードの編集
+   画面でキーを押してそのまま入れる ── 打つ・貼る。文字の画面を通さない」
+   OWNER 2026-09-25. Press a key and type or paste: what is typed goes onto
+   that key when the box is left or Enter is pressed. A drawn letter is the
+   other thing a key can hold, and it is chosen on the key's page (the pencil),
+   because a drawn letter is registered on the letters' screen first. Only a
+   letter key: space, delete and return are what they are. */
+function kbChOnHTML(){
+  var key;
+  if(!KBH || KBH.k!=='k' || !kbEdit()) return '';
+  key=kbAt(KBH.r, KBH.i);
+  if(!key || key.k!=='lt') return '';
+  return kbChHTML(KBH.r, KBH.i, -1);
+}
 function kbChHTML(ri, ki, dir){
   return '<input class="lnin" value="'+esc(kbCh(kbLtOn(ri, ki, dir)))+'" '+
     'maxlength="'+KB_CH_MAX+'" autocomplete="off" autocapitalize="off" '+
@@ -4488,6 +4506,7 @@ function kbLtDraw(ri, ki, dir){
   var w=kbLtWhere();
   if(w==='kbslot') kbSlotForm(ri, ki, dir);
   else if(w==='kbkey') kbKeyForm(ri, ki);
+  else render();
 }
 /* THE FOUR THE SCREEN OFFERS AND NOTHING ELSE. 「文字／スペース／削除／改行
    の 4 つだけ」 OWNER 2026-09-06. `lay` is gone from here for the reason

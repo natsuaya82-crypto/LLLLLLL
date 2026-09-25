@@ -437,9 +437,9 @@ And the same reason the corners needed `box-check`: prose does not hold a rule.
 **One part of it is held: a name a document gives is a name the code has.**
 `docs-check` counts, in every document that is not a day's record
 (`docs/CHANGELOG.md`, the handovers, the dated `CHECK-` pages, `docs/reports/`,
-`docs/scope/`): every call in backticks — `langKey()`, `can('kb')` — against
+`docs/scope/`): every call in backticks — `langKey()`, `can('font')` — against
 what `www/`, `ios/`, `tools/` and `supabase/` define; every other name in
-backticks — `PLAN`, `STG.order`, `CAN.kb` — against the code with its comments
+backticks — `PLAN`, `STG.order`, `CAN.font` — against the code with its comments
 taken out; every code file, every check named by name and every npm script against what
 git and `package.json` have; every sentence saying how many checks the gate
 has, which fails whatever the number; every OWNER date a code comment quotes,
@@ -838,7 +838,7 @@ above to be about. It catches a typo the same way: `wSrot='a'` would make a
 second global and leave the sort where it was.
 
 **And what money buys, which is the same sentence a third time.** `CAN` in
-`core.js` names every capability a plan opens, and `can('kb')` is the
+`core.js` names every capability a plan opens, and `can('font')` is the
 only way to ask. **This line does not list them**: every version of it that did
 went stale, in both directions — a name that was not a capability, and
 capabilities left off while checks and a rung of the plans page ran on them.
