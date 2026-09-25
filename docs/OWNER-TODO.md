@@ -12,7 +12,7 @@
 | # | 何 | 状態 |
 |---|---|---|
 | 1 | Apple：App ID に Push Notifications | 済み（2026-09-25） |
-| 2 | Apple：配布プロファイル作り直し → GitHub Secret 差し替え → リーダーに「済んだ」 | まだ |
+| 2 | Apple：配布プロファイル作り直し → GitHub Secret 差し替え → リーダーに「済んだ」 | 済み（2026-09-25） |
 | 11 | Supabase：今日のお題が 9/20 で止まっている理由を見る（2 の次に） | まだ |
 | 3 | Apple：APNs の鍵 → GitHub Secrets 二つ | まだ |
 | 4 | Supabase：Webhooks を ON | まだ |
