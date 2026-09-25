@@ -71,6 +71,9 @@ function bootSession(){
      what goes up is what Apple SIGNED, and what comes back is the plan.
      「だから端末でやるわけねえだろ」 OWNER 2026-09-03. */
   storeSync();
+  /* And this is an opening of the app by this account -- the fifth asks the
+     App Store for a rating (www/core.js § rateOpen). */
+  rateOpen();
   /* NOTHING ELSE IS READ HERE. What a session reads -- this account's own
      row (the settings, the profile, whether it answers reports) and the two
      launch pages -- is netTook()'s (www/net.js), the one place that knows a

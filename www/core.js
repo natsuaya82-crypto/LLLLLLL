@@ -2609,6 +2609,30 @@ function setKeep(){
     acctPut('set', setMine());
   });
 }
+/* ---- THE APP STORE'S REQUEST FOR A RATING, ON THE FIFTH OPENING ---------
+   「評価のやつつけよう」「cやね」（開いた五回目） OWNER 2026-09-25 --
+   docs/FEATURE_RULES.md, 2026-09-25 カテゴリはグラフィック&デザイン、App
+   Store の評価のお願い. This is the one place that counts.
+
+   An opening is a launch that arrives signed in (www/boot.js § bootSession,
+   which runs after netTook() has made `SET` this account's), so the count is
+   the ACCOUNT's -- `SET.opened`, filed under `lingua.set.<uid>` like every
+   field of `SET` that `SET_PHONE` does not name -- and not the phone's
+   (CLAUDE.md, NOTHING IS THE PHONE'S). It goes to no server: a launch sends
+   nothing (www/boot.js), which is why it is written with setKeep() and not
+   save(), whose tail sends the language.
+
+   On the fifth it asks iOS, once. Whether anything is drawn, and how often
+   in a year, is iOS's; nothing here counts past that. */
+var RATE_AT=5;
+function rateOpen(){
+  var n=(parseInt(SET.opened, 10) || 0)+1;
+  SET.opened=n;
+  setKeep();
+  if(n!==RATE_AT) return;
+  var np=storePlug();
+  if(np) np('LinguaStore', 'review', {}).then(null, function(){});
+}
 /* ---- planKeep() IS GONE, AND SO IS THE KEYCHAIN IT WROTE TO -------------
    It put the plan into the iOS Keychain, because the settings file is in the
    backup a PC makes and a word in an editable file is a word anybody can

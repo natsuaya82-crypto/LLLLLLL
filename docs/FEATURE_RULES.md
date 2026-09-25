@@ -327,7 +327,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Affected features: 評価のお願い（新しい、`ios/` と `www/` から呼ぶ一か所）。
 - Affected data: 無し。
 - Affected docs: この項、CLAUDE.md § Shape の五つ目、2026-09-01 の標準ダイアログの項、`store/*.json` の keywords。
-- Implementation status: キーワードは `store/*.json` に入った（App Store Connect へは 1.0.3 の版と一緒に送る）。カテゴリと評価のお願いは未。
+- Implementation status: キーワードは `store/*.json` に入った（App Store Connect へは 1.0.3 の版と一緒に送る）。評価のお願いは **IMPLEMENTED（CODE CONFIRMED のみ、実機未確認）** r97-still ── `rateOpen()`（`www/core.js`、数は `SET.opened`、アカウントの物）、`LinguaStore` の `review`、`acct-check` 94。カテゴリは App Store Connect で（未）。
 
 ### 2026-09-25 キーボードはプランで分けない ── 置ける字は自作文字と既存の文字、差は自作文字をいくつ作れるかだけ（1.0.3）
 - Date: 2026-09-25

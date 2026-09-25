@@ -15,6 +15,18 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### 2026-09-25 App Store の評価のお願い ── 開いた五回目（r97-still、1.0.3）
+
+`docs/FEATURE_RULES.md` 2026-09-25 カテゴリはグラフィック&デザイン、App Store の評価のお願いを出す…。**実機未確認。**
+
+- サインインした状態でアプリを開いた（起動した）五回目に、iOS 自身の評価のお願いを頼む
+  （`LinguaStore` の `review`、iOS 16 からは `AppStore.requestReview`、15 は `SKStoreReviewController`）。
+  出すかどうかと年の回数は iOS が決める。数えるのは `rateOpen()`（`www/core.js`）一か所、呼ぶのは
+  `bootSession()`（`www/boot.js`）。バックグラウンドから戻るのは数えない。
+
+**保存する物**: `SET.opened`（開いた回数、数字一つ）。アカウントの設定として `lingua.set.<uid>` に入る。
+サーバーへは行かない（起動は何も送らない）。消す物は無い。前からあるアカウントは 0 から数える。
+
 ### 2026-09-25 投稿の画面は揺れない ── 画面はキーボードの上で終わる（r97-still、1.0.3）
 
 `docs/FEATURE_RULES.md` 2026-09-25 投稿の画面は揺れない。**実機未確認** ── Swift はここでビルドできない。
