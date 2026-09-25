@@ -1849,9 +1849,9 @@ say(r.paidAll, 'and open on plus');
 say(r.canTypo, 'and a name that is not in the table throws rather than reading as free');
 
 say(r.rungs.free === '', 'free opens nothing (' + (r.rungs.free || 'nothing') + ')');
-say(r.rungs.plus === 'dl edit kb letters snd wsys',
-    'plus opens a keyboard, its own letters, its own sounds, a writing system ' +
-    'and editing a post it has sent (' + r.rungs.plus + ')');
+say(r.rungs.plus === 'dl edit font kb letters snd wsys',
+    'plus opens its drawn letters on a keyboard and their font, its own letters, its own sounds, ' +
+    'a writing system and editing a post it has sent (' + r.rungs.plus + ')');
 say(r.rungs.pro.split(' ').length === r.canCount,
     'pro opens all ' + r.canCount + ' (' + r.rungs.pro.split(' ').length + ')');
 say(r.midUp && r.midNotTop, 'plus meets its own rung and not the one above it');
