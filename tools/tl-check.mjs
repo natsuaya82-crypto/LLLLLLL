@@ -536,7 +536,7 @@ const r = await pg.evaluate(({ s }) => {
     NET_PAGE = 2;
     folForget();
     const nop = function () {};
-    folPull(false, 'aya2', '', nop, nop);
+    folPull(folList('ing:aya2'), '', nop, nop);
     NAV = [{ r:'follows', a:'ing:aya2' }]; window.route = 'follows';
     FOL_MORE = false;
     folMore();
@@ -684,11 +684,245 @@ const r = await pg.evaluate(({ s }) => {
     netSend1 = realS1; netSend = realS; netGet = realG;
   }
 
+  /* ---- 11: r94 -- the post a thread is opened on says WHEN, whole --------
+     「ツイートの詳細時刻出るようにして欲しい」「詳しい時刻はツイートの右下あたり
+     に入れて欲しいTwitterと同じ形。2hとかはそのままで」 OWNER 2026-09-25. The
+     head keeps 「2h」 / the short date on every row, the thread's own post
+     included; under that post's body, and under no other, the year, the day
+     and the time. Read off what is DRAWN, not off postWhenFull(). */
+  {
+    const p = postById('p2'), was = p.at;
+    p.at = new Date(2025, 2, 4, 15, 7).getTime();
+    NAV = [{ r:'feed' }, { r:'thread', a:'p2' }]; window.route = 'thread'; render();
+    const app = document.getElementById('app');
+    const foc = app.querySelector('.pfoc');
+    out.whenFoc = foc && foc.querySelector('.pwhen') ? foc.querySelector('.pwhen').textContent : '(no focus row)';
+    out.whenFull = foc && foc.querySelector('.pwhenf') ? foc.querySelector('.pwhenf').textContent : '(none)';
+    out.whenFullN = app.querySelectorAll('.pwhenf').length;
+    NAV = [{ r:'feed' }]; window.route = 'feed'; render();
+    const row = [].slice.call(app.querySelectorAll('.post')).filter((e) =>
+      (e.getAttribute('data-a') || '').indexOf('"p2"') >= 0)[0];
+    out.whenRow = row && row.querySelector('.pwhen') ? row.querySelector('.pwhen').textContent : '(no row)';
+    out.whenRowFull = app.querySelectorAll('.pwhenf').length;
+    out.whenShort = postWhen(p.at);
+    p.at = was;
+  }
+
+  /* ---- 12: r94 -- taking a repost or a follow back is asked first ---------
+     「リツイート解除とかフォロー解除は開錠しますか？みたいなポップ」 OWNER
+     2026-09-25. Asked at the WIRE: while the question is up nothing has gone,
+     the yes sends the DELETE, and putting one up (the first press) is not
+     asked at all. */
+  {
+    const sent = [];
+    const realS1 = netSend1, realS = netSend, realG = netGet;
+    netSend1 = function (m, p, b, t, ok) {
+      p = String(p);
+      if (p.indexOf('/rest/v1/profile?select=id') === 0) { ok([{ id:'U-iri' }], 200); return; }
+      sent.push(m + ' ' + p.split('?')[0]); ok([], 200);
+    };
+    netSend = function (m, p, b, t, ok, bad, up) { netSend1(m, p, b, t, ok, bad, up, true); };
+    netGet = function (p, ok, bad) { netSend('GET', p, null, '', ok, bad); };
+    const p = postById('p2'), was = { sid:p.sid, iboost:p.iboost };
+    p.sid = 'SRV-b'; p.iboost = true;
+    popOff(); postBoost('p2');
+    out.ubAsked = popOn(); out.ubBefore = sent.join(' | ');
+    popYes(); out.ubAfter = sent.join(' | ');
+    /* putting one up asks WHICH (r94 B, 14 below) and asks nothing about
+       undoing: its yes is the repost */
+    sent.length = 0; p.iboost = false; popOff(); postBoost('p2'); popYes();
+    out.bNoAsk = sent.join(' | ');
+    p.sid = was.sid; p.iboost = was.iboost;
+    const relWas = REL.iri;
+    sent.length = 0; REL.iri = { i:true, u:false }; popOff(); meFollowPress('iri');
+    out.ufAsked = popOn(); out.ufBefore = sent.join(' | ');
+    popYes(); out.ufAfter = sent.join(' | ');
+    sent.length = 0; REL.iri = { i:false, u:false }; popOff(); meFollowPress('iri');
+    out.fNoAsk = !popOn() ? sent.join(' | ') : '(asked)';
+    REL.iri = relWas; popOff();
+    netSend1 = realS1; netSend = realS; netGet = realG;
+  }
+
+  /* ---- 14: r94 -- a quote ---------------------------------------------
+     「リポストの印を押すと『リポスト／引用』。引用は投稿の画面が開き、元の投稿
+     が下に小さく付く。投稿は元の投稿の id を持つ。元が消えた・ブロックで見えない
+     時は『この投稿は表示できません』。引用されたら元の人に通知」 OWNER
+     2026-09-25. At the wire where it goes up, and off what is drawn. */
+  {
+    const sent = [];
+    const realS1 = netSend1, realS = netSend, realG = netGet;
+    netSend1 = function (m, p, b, t, ok) {
+      p = String(p); sent.push({ m:m, p:p.split('?')[0], b:b }); ok([{ id:'SRV-new' }], 200);
+    };
+    netSend = function (m, p, b, t, ok, bad, up) { netSend1(m, p, b, t, ok, bad, up, true); };
+    netGet = function (p, ok, bad) { netSend('GET', p, null, '', ok, bad); };
+    const p = postById('p2'), was = { sid:p.sid, iboost:p.iboost };
+    p.sid = 'SRV-2'; p.iboost = false;
+    NAV = [{ r:'feed' }]; window.route = 'feed'; render();
+    /* the choice, and nothing goes while it is asked */
+    popOff(); postBoost('p2');
+    const pop = document.getElementById('pop');
+    out.qChoice = popOn() && pop.textContent.indexOf(t('post.repost')) >= 0 &&
+                  pop.textContent.indexOf(t('post.quote')) >= 0 && !sent.length;
+    /* 引用: the composer, holding the server's name, with the post under it */
+    popNo();
+    out.qForm = JSON.stringify(here()) + ' qt=' + PW.qt;
+    const fh = (typeof FORM !== 'undefined' && FORM && FORM.html) || '';
+    out.qFormShows = fh.indexOf('class="pqt"') >= 0 && fh.indexOf('@iri') >= 0;
+    /* and sent: the row carries quote_of, and the body carries neither half */
+    PW.ln = 'kano'; PW.cut = []; sent.length = 0;
+    netPush({ id:'pq-x', at:Date.now(), ln:'kano', qt:'SRV-2', qp:postQuoteCopy(p) }, function () {}, function () {});
+    const row = sent.filter((x) => x.m === 'POST' && x.p === '/rest/v1/post')[0];
+    out.qRow = row ? JSON.stringify({ quote_of:row.b.quote_of, qt:row.b.body.qt, qp:row.b.body.qp }) : '(no row)';
+    PW = pwBlank(); NAV = [{ r:'feed' }]; window.route = 'feed';
+    /* read back: what the server says the quoted post is, or that there is none */
+    const a = netRow({ id:'SRV-a', created_at:'2026-09-25T00:00:00Z', body:{ ln:'mos' },
+                       quote_of:'SRV-2', quoted:{ id:'SRV-2', created_at:'2026-09-24T00:00:00Z',
+                                                  body:{ ln:'qel', hd:'iri', who:'Iri' } } });
+    const b = netRow({ id:'SRV-b', created_at:'2026-09-25T00:00:00Z', body:{ ln:'mos' },
+                       quote_of:'SRV-gone', quoted:null });
+    const c = netRow({ id:'SRV-c', created_at:'2026-09-25T00:00:00Z', body:{ ln:'mos' } });
+    out.qRead = [a.qt, a.qp && a.qp.hd, b.qt, String(b.qp), String('qt' in c)].join(',');
+    /* drawn */
+    const div = document.createElement('div');
+    div.innerHTML = postRow(Object.assign({ id:'SRV-a', hd:'aya', who:'Aya' }, a));
+    out.qDrawn = !!div.querySelector('.pqt') && div.querySelector('.pqt').textContent.indexOf('@iri') >= 0 &&
+                 div.querySelector('.pqt').getAttribute('data-do') === 'postOpen';
+    div.innerHTML = postRow(Object.assign({ id:'SRV-b', hd:'aya', who:'Aya' }, b));
+    out.qGone = div.querySelector('.pqgone') ? div.querySelector('.pqgone').textContent : '(none)';
+    out.qGoneWant = t('post.quote.gone');
+    div.innerHTML = postRow(Object.assign({ id:'SRV-c', hd:'aya', who:'Aya' }, c));
+    out.qPlain = !div.querySelector('.pqt');
+    /* the notice */
+    out.qNotice = notRow({ kind:'quote', hd:'kai', who:'Kai', n:1, np:1, at:Date.now() })
+                    .indexOf(esc(t('notif.quote', '@kai').replace('@kai', ''))) >= 0 ? 1 : 0;
+    p.sid = was.sid; p.iboost = was.iboost; popOff();
+    netSend1 = realS1; netSend = realS; netGet = realG;
+  }
+
+  /* ---- 15: r94 E -- the meaning switched off ------------------------------
+     「意味をオフにした場合はTwitterと同じように投稿できる」 OWNER 2026-09-25.
+     Off: the composer has no meaning field and the switch says so; the post
+     goes up with no meaning and the mark `nm`, and draws no meaning row. The
+     day's prompt has no switch. A draft keeps it. */
+  {
+    const realSend = window.pwSendPost;
+    let sentPost = null;
+    window.pwSendPost = function (p) { sentPost = p; };
+    PW = pwBlank(); PW.ln = 'kano'; PW.cut = []; PW.mn = 'a mountain';
+    openPost();
+    const on = (typeof FORM !== 'undefined' && FORM && FORM.html) || '';
+    render();
+    const bar = document.querySelector('.pwbar');
+    out.mnBar = bar ? bar.scrollWidth + '/' + bar.clientWidth : '(no bar)';
+    out.mnOnField = on.indexOf('id="pw-mn"') >= 0 && on.indexOf('data-do="pwMnSw"') >= 0;
+    pwMnSw();
+    const off = FORM.html || '';
+    out.mnOffField = off.indexOf('id="pw-mn"') < 0 && /class="pwmnsw" aria-pressed="false"/.test(off);
+    out.mnDraft = draftOfPW().nm;
+    pwSendWith('kano', null, [], null);
+    out.mnSent = sentPost ? JSON.stringify({ mn:sentPost.mn, nm:sentPost.nm }) : '(nothing sent)';
+    window.pwSendPost = realSend;
+    const div = document.createElement('div');
+    div.innerHTML = postRow({ id:'nm-1', hd:'aya', who:'Aya', ln:'kano', mn:'kept by mistake', nm:1, at:Date.now() });
+    out.mnRow = !div.querySelector('.pmn');
+    PW = pwBlank(); PW.pr = 7; PW.mn = 'the day';
+    openPost();
+    out.mnDay = (FORM.html || '').indexOf('data-do="pwMnSw"') < 0;
+    PW = pwBlank(); NAV = [{ r:'feed' }]; window.route = 'feed'; render();
+  }
+
   return out;
 }, { s: seed.toString() });
 
+/* ---- 13: r94 -- holding the heart or the repost opens who pressed them ---
+   「リツイートといいねした人長押しで見れるようにしたい」 OWNER 2026-09-25. The
+   real gesture (a touch held past HOLD_MS), the real door (navLand waits for
+   the list and the people), and the list read off `react_seen` for that post
+   and that kind -- asked at the wire. The hold is only on a post the server
+   has, with somebody on the list. */
+Object.assign(r, await pg.evaluate(() => {
+  const out = {};
+  const wire = [];
+  const realS1 = netSend1, realS = netSend, realG = netGet;
+  netSend1 = function (m, p, b, t, ok) {
+    p = String(p); wire.push(p);
+    ok(p.indexOf('/rest/v1/react_seen?') === 0
+         ? [{ actor_handle:'kai', created_at:'2026-09-25T02:00:00Z' },
+            { actor_handle:'noa', created_at:'2026-09-25T01:00:00Z' }]
+         : p.indexOf('/rest/v1/profile_seen?') === 0
+         ? [{ id:'u1', handle:'kai', display:'Kai', av:null, fo:1, fr:2 },
+            { id:'u2', handle:'noa', display:'Noa', av:null, fo:0, fr:0 }]
+         : [], 200);
+  };
+  netSend = function (m, p, b, t, ok, bad, up) { netSend1(m, p, b, t, ok, bad, up, true); };
+  netGet = function (p, ok, bad) { netSend('GET', p, null, '', ok, bad); };
+  const p = postById('p2'), was = { sid:p.sid, nboost:p.nboost };
+  p.sid = 'SRV-h';
+  NAV = [{ r:'feed' }]; window.route = 'feed'; render();
+  const app = document.getElementById('app');
+  const acts = (id) => [].slice.call(app.querySelectorAll('.post')).filter((e) =>
+    (e.getAttribute('data-a') || '').indexOf('"' + id + '"') >= 0)[0];
+  const holdOf = (id, fn) => { const e = acts(id) && acts(id).querySelector('[data-do="' + fn + '"]');
+                               return e ? (e.getAttribute('data-hold') || '') : '(no button)'; };
+  out.hLike = holdOf('p2', 'postLike');
+  out.hBoost = holdOf('p2', 'postBoost');
+  p.sid = undefined; render();
+  out.hNoSid = holdOf('p2', 'postLike');
+  p.sid = 'SRV-h'; p.nboost = 0; render();
+  out.hZero = holdOf('p2', 'postBoost');
+  p.nboost = was.nboost; render();
+  /* and held, for real */
+  const heart = acts('p2').querySelector('[data-do="postLike"]');
+  const rc = heart.getBoundingClientRect();
+  const T = (type) => {
+    const tt = new Touch({ identifier:1, target:heart, clientX:rc.left + rc.width / 2, clientY:rc.top + rc.height / 2 });
+    heart.dispatchEvent(new TouchEvent(type, { bubbles:true, cancelable:true,
+      touches: type === 'touchend' ? [] : [tt], changedTouches:[tt] }));
+  };
+  const likedWas = postILike(p);
+  wire.length = 0;
+  /* The hold's own timer is taken as it is set and run at once: this asks
+     where a hold LANDS, and how long a thumb must stay is press's to hold
+     (tools/press.mjs § held). Waiting for real here would leave the page to
+     whatever the walks above left in the air. */
+  const realST = window.setTimeout;
+  let timer = null;
+  window.setTimeout = function (fn, ms) { if (ms === HOLD_MS) { timer = fn; return 1; } return realST.apply(window, arguments); };
+  T('touchstart');
+  window.setTimeout = realST;
+  out.hTimer = !!timer;
+  if (timer) timer();
+  T('touchend');
+  out.hWhere = JSON.stringify(here());
+  out.hAsk = wire.filter((x) => x.indexOf('/rest/v1/react_seen?') === 0).join(' | ');
+  out.hRows = ['@kai', '@noa'].map((h) => app.textContent.indexOf(h) >= 0 ? 1 : 0).join('');
+  out.hTitle = document.querySelector('.navtop') ? document.querySelector('.navtop').textContent : '';
+  out.hLiked = postILike(p) === likedWas;
+  out.hWant = t('post.likers');
+  p.sid = was.sid;
+  netSend1 = realS1; netSend = realS; netGet = realG;
+  NAV = [{ r:'feed' }]; window.route = 'feed'; render();
+  return out;
+}));
+
 const fails = [];
 const say = (m) => fails.push(m);
+if (r.hLike !== 'postHoldLikes' || r.hBoost !== 'postHoldBoosts')
+  say('13: a post the server has, with likes and reposts, carries holds 「' + r.hLike + '」 and 「' +
+      r.hBoost + '」 on its heart and its repost -- they have to be postHoldLikes and postHoldBoosts.');
+if (r.hNoSid !== '' || r.hZero !== '')
+  say('13: a hold that goes nowhere is drawn: on a post the server does not have 「' + r.hNoSid +
+      '」, with nobody on the list 「' + r.hZero + '」.');
+if (r.hWhere !== JSON.stringify({ r:'reacts', a:'like:SRV-h' }) || r.hRows !== '11' ||
+    !/post=eq\.SRV-h/.test(r.hAsk) || !/kind=eq\.like/.test(r.hAsk) || r.hTitle.indexOf(r.hWant) < 0)
+  say('13: holding the heart landed on ' + r.hWhere + ', asked 「' + r.hAsk + '」, drew the two ' +
+      'people 「' + r.hRows + '」 under 「' + r.hTitle + '」 -- it has to open who liked THAT post, ' +
+      'read off react_seen, with them on it.');
+if (!r.hLiked)
+  say('13: holding the heart also pressed it -- a hold is not a like.');
+if (!r.hTimer)
+  say('13: touching the heart started no hold (no HOLD_MS timer was set).');
 
 if (!r.threadByLocal)
   say('the thread of your own post does not carry the answer that came back ' +
@@ -922,6 +1156,54 @@ if (r.pairOff !== PAIR_OFF)
       '\n  The same two columns in the same roles, or the row taken away is ' +
       'somebody else\u2019s.');
 
+if (!/2025/.test(r.whenFull) || !/07/.test(r.whenFull) || r.whenFullN !== 1)
+  say('11: under the post a thread is opened on it says 「' + r.whenFull + '」 (' + r.whenFullN +
+      ' on the screen) -- once, under that post, with the year, the day and the time it was ' +
+      'written (2025-03-04 15:07).');
+if (r.whenFoc !== r.whenShort || r.whenRow !== r.whenShort || r.whenRowFull)
+  say('11: the head says 「' + r.whenFoc + '」 on the thread\u2019s post and 「' + r.whenRow +
+      '」 on the timeline, and the timeline says 「' + r.whenShort + '」 -- the 2h stays where it is ' +
+      '(OWNER 2026-09-25), and the timeline has no whole date (' + r.whenRowFull + ').');
+if (!r.ubAsked || r.ubBefore || !/DELETE \/rest\/v1\/react/.test(r.ubAfter))
+  say('12: taking a repost back — asked: ' + r.ubAsked + ', sent before the answer: 「' +
+      r.ubBefore + '」, after the yes: 「' + r.ubAfter + '」. It has to ask, send nothing ' +
+      'while it asks, and send the DELETE on the yes.');
+if (!/POST \/rest\/v1\/react/.test(r.bNoAsk))
+  say('12: putting a repost up asked or sent nothing: 「' + r.bNoAsk + '」');
+if (!r.ufAsked || r.ufBefore || !/DELETE \/rest\/v1\/follow/.test(r.ufAfter))
+  say('12: unfollowing — asked: ' + r.ufAsked + ', sent before the answer: 「' +
+      r.ufBefore + '」, after the yes: 「' + r.ufAfter + '」.');
+if (!/POST \/rest\/v1\/follow/.test(r.fNoAsk))
+  say('12: following asked or sent nothing: 「' + r.fNoAsk + '」');
+if (!r.qChoice)
+  say('14: pressing the repost of a post nobody has reposted did not put up 「' + 'リポスト／引用' +
+      '」 with nothing sent.');
+if (r.qForm !== JSON.stringify({ r:'form', a:'post:' }) + ' qt=SRV-2' || !r.qFormShows)
+  say('14: 引用 opened ' + r.qForm + ' (the post under the field: ' + r.qFormShows + ') -- it has to be ' +
+      'the composer holding the server\u2019s name for the post, with the post small under it.');
+if (r.qRow !== JSON.stringify({ quote_of:'SRV-2' }))
+  say('14: a quote went up as ' + r.qRow + ' -- quote_of on the row, and neither qt nor qp in the body.');
+if (r.qRead !== 'SRV-2,iri,SRV-gone,null,false')
+  say('14: a row read back as 「' + r.qRead + '」 -- the id, the post as the server has it, null where ' +
+      'there is none, and nothing on a post that quotes nothing.');
+if (!r.qDrawn || r.qGone !== r.qGoneWant || !r.qPlain)
+  say('14: drawn -- the post under a quote ' + r.qDrawn + ', one that is gone says 「' + r.qGone +
+      '」, one that quotes nothing has none: ' + r.qPlain);
+if (!r.qNotice)
+  say('14: a notice of the kind quote does not say 「' + 'notif.quote' + '」.');
+if (!r.mnOnField || !r.mnOffField || r.mnDraft !== 1)
+  say('15: the meaning switch -- on, the field and the switch: ' + r.mnOnField + '; off, no field and ' +
+      'the switch saying off: ' + r.mnOffField + '; a draft keeps it: ' + r.mnDraft);
+if (r.mnSent !== JSON.stringify({ mn:'', nm:1 }))
+  say('15: a post with the meaning off went as ' + r.mnSent + ' -- no meaning, and nm.');
+if (!r.mnRow)
+  say('15: a post marked nm still draws a meaning row.');
+{ const [sw, cw] = String(r.mnBar).split('/').map(Number);
+  if (!(sw <= cw))
+    say('15: the composer\u2019s bar with the meaning switch on the screen is ' + r.mnBar +
+        ' -- the last of it is off the phone.'); }
+if (!r.mnDay)
+  say('15: the day\u2019s prompt offers the meaning switch -- its meaning is the prompt.');
 console.log('a follow and a block are one row written by one function, and ' +
             'the columns are its argument: ' + r.pairOn);
 console.log('nobody is a 「?」 that becomes a name: a post carries its writer ' +

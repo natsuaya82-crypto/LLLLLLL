@@ -1450,6 +1450,32 @@ export function halfDone(){
                      to:'SRV-1', toh:'aya' });
         window.route='thread'; NAV=[{r:'thread', a:'p1'}];
         const h = vThread(); POSTS.pop(); delete mine.sid; return h; }],
+    /* AND ONE OPENED ON SOMEBODY ELSE'S POST, which is the one that says when:
+       p1 is yours and has never gone up, so its head says 未送信 and the
+       whole date the thread's own post carries (r94 D, OWNER 2026-09-25)
+       was on no walk and in no picture. */
+    ['a thread opened on somebody else\u2019s post', () => {
+        window.route='thread'; NAV=[{r:'feed'}, {r:'thread', a:'p2'}];
+        return vThread(); }],
+    /* AND A POST THE SERVER HAS, with likes and reposts on it: the heart and
+       the repost are HELD there, which opens who pressed them (r94 A). No
+       fixture post carries a `sid` (see p2), so without this face no walk
+       draws a hold on either and act-check calls both names unreached. */
+    ['a post the server has, whose heart and repost are held', () => {
+        const p = postById('p2'); p.sid = 'SRV-2';
+        window.route='feed'; NAV=[{r:'feed'}];
+        const h = vFeed(); delete p.sid; return h; }],
+    /* and what holding the heart opens: who liked it, newest first, the same
+       rows as a follows list (www/me.js § folList). Left where it puts it so
+       shot.mjs photographs it. */
+    ['who liked a post', () => {
+        FOL_HAVE['like:SRV-2'] = ['iri', 'veth']; FOL_ASKED['like:SRV-2'] = 1;
+        window.route='reacts'; NAV=[{r:'feed'}, {r:'reacts', a:'like:SRV-2'}];
+        return vReacts(); }],
+    ['who reposted a post, nobody left on it', () => {
+        FOL_HAVE['boost:SRV-2'] = []; FOL_ASKED['boost:SRV-2'] = 1;
+        window.route='reacts'; NAV=[{r:'feed'}, {r:'reacts', a:'boost:SRV-2'}];
+        return vReacts(); }],
     /* YOUR OWN ROW, on somebody else's followers list, on a phone holding no
        post of yours to take a name off. 「ここも？になるの謎だし」 */
     /* AND EVERYBODY ON IT IS KNOWN, because the door onto `follows` (www/shell.js § navLand) got
@@ -1878,6 +1904,26 @@ export function halfDone(){
     ['the composer, replying to somebody', () => {
         PW = pwBlank(); PW.to = 'p1'; openPost('reply');
         const h = vForm(); PW = pwBlank(); return h; }],
+    /* AND QUOTING (r94 B): the post under the field, small. */
+    ['the composer, quoting somebody', () => {
+        const p = postById('p2'); p.sid = 'SRV-2';
+        PW = pwBlank(); PW.qt = 'SRV-2'; openPost();
+        const h = vForm(); PW = pwBlank(); delete p.sid; return h; }],
+    /* and a quote on the timeline, with the post under it as the server has
+       it -- and one whose post is gone, which says so (OWNER 2026-09-25) */
+    ['a quote on the timeline', () => {
+        const q = postQuoteCopy(postById('p2')); q.sid = 'SRV-2';
+        POSTS.unshift({ id:'pq1', sid:'SRV-q1', at:Date.now()-300000, lang:langId, lname:'Shango',
+                        ln:'kano', mn:'look at this', who:'Aya', hd:'aya', mine:true, ui:'en',
+                        av:{st:[{pts:[[112,112],[688,112],[400,688]]}]}, qt:'SRV-2', qp:q });
+        window.route='feed'; NAV=[{r:'feed'}];
+        const h = vFeed(); POSTS.shift(); return h; }],
+    ['a quote whose post is gone', () => {
+        POSTS.unshift({ id:'pq2', sid:'SRV-q2', at:Date.now()-300000, lang:langId, lname:'Shango',
+                        ln:'mos', mn:'this was something', who:'Aya', hd:'aya', mine:true, ui:'en',
+                        av:{st:[{pts:[[112,112],[688,112],[400,688]]}]}, qt:'SRV-gone', qp:null });
+        window.route='feed'; NAV=[{r:'feed'}];
+        const h = vFeed(); POSTS.shift(); return h; }],
     /* Drafts, which are only drawn once there are some. */
     ['the composer with drafts saved', () => {
         DRAFTS = [{at:Date.now(), ln:'kano', mn:'a mountain', to:'', pics:[], vo:null, pv:false},

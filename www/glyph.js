@@ -2976,8 +2976,26 @@ function inkFaceCSS(defs, side){
   for(i=0;i<defs.length;i++) cs.push('U+'+defs[i].roman.charCodeAt(0).toString(16).toUpperCase());
   /* `block`: while the face is loading its letters are held back rather than
      drawn as boxes, which a data URL makes a frame at most. */
-  return "@font-face{font-family:'LinguaType';src:url("+f.dataUrl()+") format('opentype');"+
-         'unicode-range:'+cs.join(',')+';font-display:block;}';
+  var src="src:url("+f.dataUrl()+") format('opentype');"+
+          'unicode-range:'+cs.join(',')+';font-display:block;';
+  /* AND THE SAME LETTERS AGAIN, AS A LINE OF A POST SETS THEM. 「投稿の文字が
+     高いからTwitterと同じサイズにして欲しい」「自作文字の表示サイズはちょうど
+     いいんやけど、既存文字はでかい」 OWNER 2026-09-25. A line is one face with
+     the ordinary one falling through under it, so the only thing that makes
+     the ordinary letters smaller and leaves the drawn ones where they are is
+     the drawn face standing larger than the size the line is set at:
+     `size-adjust`, by `--ink-over` (www/index.html :root), which is the one
+     number that says how much. It is a second family and not LinguaType
+     itself, because LinguaType is also every `.tfont` field in the app, and
+     the decision is about a post's line. One font, one builder, two rules. */
+  return "@font-face{font-family:'LinguaType';"+src+'}'+
+         "@font-face{font-family:'LinguaLine';"+src+
+           'size-adjust:'+Math.round(inkOver()*10000)/100+'%;}';
+}
+/* How much larger a drawn letter stands on a line than an ordinary one. */
+function inkOver(){
+  var v=parseFloat(cssVar('--ink-over', '1'));
+  return (v>0)? v : 1;
 }
 var INKCP={at:{}, top:0xF8FF, wait:[]};
 /* One shape at one gap, as the character that draws it. Nothing is read but

@@ -1655,7 +1655,7 @@ langRead();
    (「通知をどこまで読んだか…全部アカウントのもの」 2026-09-03). No table of
    read notices: one number, the same column as everything above. */
 var SET_PREFS=['theme','ui','myfont','showScript','kbrom',
-               'push_follow','push_reply','push_like','push_boost','push_prompt',
+               'push_follow','push_reply','push_quote','push_like','push_boost','push_prompt',
                'notAt'];
 /* WHAT IS LEFT IS THIS HANDSET'S SETUP, AND THERE IS VERY LITTLE OF IT.
    `acct` is what an older version wrote to say which account's things were

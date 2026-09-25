@@ -87,6 +87,9 @@ const PV ='c0000000-0000-4000-8000-0000000000c1';
 const PVR='c0000000-0000-4000-8000-0000000000c2';
 const RP ='c0000000-0000-4000-8000-0000000000c3';
 const RPV='c0000000-0000-4000-8000-0000000000c4';
+const QP ='c0000000-0000-4000-8000-0000000000c5';   /* a quote anybody may read */
+const QPV='c0000000-0000-4000-8000-0000000000c6';   /* one kept to its writer */
+const NP ='c0000000-0000-4000-8000-0000000000c7';   /* a post that answers and quotes nothing */
 const G1='a0000000-0000-4000-8000-0000000000a1';   /* tries to arrive holding admin */
 const G2='a0000000-0000-4000-8000-0000000000a2';   /* tries to arrive holding staff */
 const G3='a0000000-0000-4000-8000-0000000000a3';   /* tries to arrive already banned */
@@ -583,8 +586,19 @@ const CASES = [
      \u300c\u4eba\u3092\u30df\u30e5\u30fc\u30c8\u3067\u304d\u308b\u2026\uff08\u30d6\u30ed\u30c3\u30af\u3068\u306f\u5225\uff09\u300d OWNER 2026-09-25. B mutes A
      and lifts it again before the section closes, so everything below still
      reads A's posts as the ordinary somebody else. */
+  /* and A likes A's own post, so the list of who liked it has A on it */
+  ['A likes P, for the list of who liked it', 'ok',     A, 0,
+    `insert into react(post,actor,kind) values ('${P}','${A}','like')`],
+  ['B finds A among who liked P',             'ok',     B, 0,
+    `select 1 from react_seen where post='${P}' and kind='like' and actor_handle='aya'`],
   ['B mutes A',                               'ok',     B, 0,
     `insert into mute(actor,muted) values ('${B}','${A}')`],
+  /* 「ブロック・ミュートの外し」 r94: a muted person is not in the list of who
+     liked a post -- to the one who muted them, and to nobody else's loss. */
+  ['B no longer finds A among who liked P',   'denied', B, 0,
+    `select 1 from react_seen where post='${P}' and actor_handle='aya'`],
+  ['and C still does',                        'ok',     C, 0,
+    `select 1 from react_seen where post='${P}' and actor_handle='aya'`],
   ['B reads whom B muted, by name',           'ok',     B, 0,
     `select 1 from mute_seen where id='${A}'`],
   ['A cannot read that A is muted',           'denied', A, 0,
@@ -605,6 +619,10 @@ const CASES = [
     `select 1 from post_seen where id='${P}' and muted`],
   ['B lifts the mute',                        'ok',     B, 0,
     `delete from mute where actor='${B}' and muted='${A}'`],
+  ['and B finds A among who liked P again',   'ok',     B, 0,
+    `select 1 from react_seen where post='${P}' and actor_handle='aya'`],
+  ['A takes the like back',                   'ok',     A, 0,
+    `delete from react where post='${P}' and actor='${A}' and kind='like'`],
 
   /* --- and a block is the server's to keep, not the phone's -------------
      「Blocked means you see nothing of them」 OWNER 2026-08-19. These are
@@ -621,6 +639,17 @@ const CASES = [
     `insert into post(id,author,body) values ('${BDP}','${BD}','{}'::jsonb)`],
   ['BD answers BK',                           'ok',     BD, 0,
     `insert into post(author,body,reply_to) values ('${BD}','{}'::jsonb,'${BKP}')`],
+  /* A QUOTE (r94): a post carrying `quote_of`, written by its author, and
+     the person quoted is told -- in notices(), as the kind `quote`. */
+  ['BD quotes BK',                            'ok',     BD, 0,
+    `insert into post(author,body,quote_of) values ('${BD}','{}'::jsonb,'${BKP}')`],
+  ['and BK is told BD quoted',                'ok',     BK, 0,
+    `select 1 from notices() where kind='quote' and hd='${BDH}'`],
+  ['and a quote carries what it quotes, as it is', 'ok', B, 0,
+    `select 1 from post_seen where author='${BD}' and quote_of='${BKP}'
+                                and (quoted->>'id')='${BKP}'`],
+  ['a quote is not edited into quoting something else', 'denied', BD, 0,
+    `update post set quote_of='${P}' where author='${BD}' and quote_of='${BKP}'`],
   ['BD likes BK\u2019s post',                 'ok',     BD, 0,
     `insert into react(post,actor,kind) values ('${BKP}','${BD}','like')`],
   ['BD passes somebody else\u2019s post on',  'ok',     BD, 0,
@@ -672,6 +701,29 @@ const CASES = [
     `insert into react(post,actor,kind) values ('${BKP}','${BD}','boost')`],
   ['BD cannot answer BK',                     'denied', BD, 0,
     `insert into post(author,body,reply_to) values ('${BD}','{}'::jsonb,'${BKP}')`],
+  ['nor quote BK',                            'denied', BD, 0,
+    `insert into post(author,body,quote_of) values ('${BD}','{}'::jsonb,'${BKP}')`],
+  ['nor BK quote BD',                         'denied', BK, 0,
+    `insert into post(author,body,quote_of) values ('${BK}','{}'::jsonb,'${BDP}')`],
+  /* and what somebody else quoted of BD reaches BK as a quote of nothing
+     they can see: the id, and no post under it */
+  ['B quotes BD',                             'ok',     B, 0,
+    `insert into post(author,body,quote_of) values ('${B}','{}'::jsonb,'${BDP}')`],
+  ['BK reads B’s quote with nothing under it', 'ok', BK, 0,
+    `select 1 from post_seen where author='${B}' and quote_of='${BDP}' and quoted is null`],
+  ['while B reads what B quoted',             'ok',     B, 0,
+    `select 1 from post_seen where author='${B}' and quote_of='${BDP}' and quoted is not null`],
+  /* and a quote whose post was DELETED still says it was a quote: there is no
+     foreign key to take the id away (schema.sql § quote_of) */
+  ['B writes a post to quote',                'ok',     B, 0,
+    `insert into post(id,author,body) values ('e9400000-0000-4000-8000-0000000000e1','${B}','{}'::jsonb)`],
+  ['and quotes it',                           'ok',     B, 0,
+    `insert into post(id,author,body,quote_of) values ('e9400000-0000-4000-8000-0000000000e2','${B}','{}'::jsonb,'e9400000-0000-4000-8000-0000000000e1')`],
+  ['and deletes the post quoted',             'ok',     B, 0,
+    `delete from post where id='e9400000-0000-4000-8000-0000000000e1'`],
+  ['and the quote is still a quote, of nothing', 'ok',  C, 0,
+    `select 1 from post_seen where id='e9400000-0000-4000-8000-0000000000e2'
+       and quote_of='e9400000-0000-4000-8000-0000000000e1' and quoted is null`],
   ['nor edit a post into an answer to BK',    'denied', BD, 0,
     `update post set reply_to='${BKP}' where id='${BDP}'`],
   ['BD stops following BK',                   'ok',     BD, 0,
@@ -2360,6 +2412,16 @@ const SHAPE = [
   ['and one kept to its writer rings nobody', `
      select ((select count(*) from net._sent
                where body->>'table' = 'post' and body->'record'->>'id' = '${RPV}') <> 0)::int`, '0'],
+  ['a quote anybody may read rings the one quoted', `
+     select ((select count(*) from net._sent
+               where body->>'table' = 'post' and body->'record'->>'id' = '${QP}'
+                 and body->'record'->>'quote_of' = '${H4}') <> 1)::int`, '0'],
+  ['and one kept to its writer rings nobody either', `
+     select ((select count(*) from net._sent
+               where body->>'table' = 'post' and body->'record'->>'id' = '${QPV}') <> 0)::int`, '0'],
+  ['and a post that answers and quotes nothing rings nobody', `
+     select ((select count(*) from net._sent
+               where body->>'table' = 'post' and body->'record'->>'id' = '${NP}') <> 0)::int`, '0'],
   /* And no secret rode along. The whole point of taking the caller's token is
      that there is nothing in this file to steal. */
   ['and no key of ours is written into the road', `
@@ -3388,6 +3450,10 @@ const sql = [
      '{"authorization":"Bearer F-ANSWERS"}', true);`,
   `insert into post(id,author,body,reply_to) values (${q(RP)},  ${q(F)}, '{}'::jsonb,        ${q(H4)});`,
   `insert into post(id,author,body,reply_to) values (${q(RPV)}, ${q(F)}, '{"pv":1}'::jsonb, ${q(H4)});`,
+  /* and the same for a quote (r94), and a post that is neither */
+  `insert into post(id,author,body,quote_of) values (${q(QP)},  ${q(F)}, '{}'::jsonb,        ${q(H4)});`,
+  `insert into post(id,author,body,quote_of) values (${q(QPV)}, ${q(F)}, '{"pv":1}'::jsonb, ${q(H4)});`,
+  `insert into post(id,author,body) values (${q(NP)}, ${q(F)}, '{}'::jsonb);`,
   /* And the same write with nobody signed in behind it. Nothing comes out --
      there is no session to send as, and「読めなかった」と「無い」は枝を分けない
      の逆側でもある：送る相手ではなく、送る資格が無い。 */

@@ -315,6 +315,7 @@ const FIELDS = {
      has never opened the room has none of these. */
   push_follow: { to: 'netPrefsPut' },
   push_reply:  { to: 'netPrefsPut' },
+  push_quote:  { to: 'netPrefsPut' },
   push_like:   { to: 'netPrefsPut' },
   push_boost:  { to: 'netPrefsPut' },
   /* And the day's prompt (OWNER 2026-09-23). The kinds are push-send's

@@ -202,7 +202,15 @@ var PW={ln:'', mn:''};
    same reason `toh` is: what somebody wrote is the line, and a tag is not in
    it any more. 「#はべつで」 OWNER 2026-09-15, replacing 「タグは本文中に。」
    (2026-09-04). www/sns.js § A TAG IS NOT IN THE BODY ANY MORE. */
-function pwBlank(){ return {ln:'', cut:[], mn:'', to:'', toh:'', pics:[], pr:0, tags:[]}; }
+function pwBlank(){ return {ln:'', cut:[], mn:'', to:'', toh:'', qt:'', nm:0, pics:[], pr:0, tags:[]}; }
+/* THE MEANING IS SWITCHED OFF. 「投稿画面の前にトグル置いて意味を非表示にする」
+   「意味をオフにした場合はTwitterと同じように投稿できる」 OWNER 2026-09-25
+   (docs/FEATURE_RULES.md § 2026-09-25 投稿の見た目). The one question: the
+   field, its ring, its ceiling and the send all ask this. Never on the day's
+   prompt -- there the meaning IS the prompt, and it is what makes two
+   hundred alphabets readable at once. */
+function pwMnOff(){ return !!PW.nm && !PW.pr; }
+function pwMnSw(){ PW.nm=PW.nm? 0 : 1; pwFresh(); render(); }
 /* THE LINE BEING WRITTEN IS ONE THING: the cut (www/glyph.js § puaTyped) --
    the line as it was typed, `{id}` where the Lingua keyboard put a letter and
    `{t}` for the rest. `PW.ln` is its roman and is written here and nowhere
@@ -384,7 +392,7 @@ function openPost(from, at){
        being about the day must not still be filed under it. Every other tag
        stays -- those were typed, and this button is not a delete. */
     if(PW.ed) PW=pwBlank();
-    else { PW.to=''; PW.toh='';
+    else { PW.to=''; PW.toh=''; PW.qt='';
            if(PW.pr){ PW.pr=0; PW.mn=''; PW.tags=pwTagsNoDay(); } }
   }
   /* Opened from the day's sentence, and that is the only OTHER argument this
@@ -402,7 +410,7 @@ function openPost(from, at){
      Set once, and only on a composer that has nothing in it: pressing the row
      with a half-written post open would otherwise throw away what was there. */
   if(from==='day' && DAY && !PW.pr && !PW.ln && !PW.mn){
-    PW.pr=DAY.id;
+    PW.pr=DAY.id; PW.nm=0;
     PW.mn=daySay();
     /* AND THE TAG GOES IN THE FRAME, AT THE FRONT OF IT.
        「#はべつで」 OWNER 2026-09-15.
@@ -563,8 +571,9 @@ function draftOfPW(){
      themselves -- numbers that mean a letter only in this alphabet's order at
      this moment. `ln` is the roman now. A draft kept before today carries
      none and is read the way it always was (draftOpen). */
+  /* `qt` (r94): a quote kept as a draft opens again quoting the same post. */
   return {id:PW.did || netUUID(), at:Date.now(), ln:dayTagStore(PW.ln), cut:pwLineKept(), mn:PW.mn, to:PW.to,
-          toh:PW.toh||'', pr:PW.pr||0, tags:pwTagsOut(),
+          toh:PW.toh||'', qt:PW.qt||'', nm:PW.nm? 1 : 0, pr:PW.pr||0, tags:pwTagsOut(),
           pics:pwPics(), vo:PW.vo||null, pv:!!PW.pv};
 }
 /* A draft goes into the list, and the composer is empty behind it. The one
@@ -651,7 +660,7 @@ function draftOpen(i){
   if(here().r==='drafts') back();
   PW=pwBlank();
   pwLine(draftCut(d));
-  PW.mn=d.mn||''; PW.to=d.to||''; PW.toh=d.toh||''; PW.pr=d.pr||0;
+  PW.mn=d.mn||''; PW.to=d.to||''; PW.toh=d.toh||''; PW.qt=d.qt||''; PW.nm=d.nm? 1 : 0; PW.pr=d.pr||0;
   /* The frame as it was kept. tagsOf() is the one place that says what a
      row's tags are -- the same function the timeline's row asks -- so a draft
      and a post cannot disagree about it. */
@@ -1280,6 +1289,9 @@ function postFresh(p){
   /* And whether it has been taken down or its author frozen, which are the
      other two facts about a post that are not the author's to write. */
   put('down'); put('out');
+  /* And the post a quote has under it, which is the server's reading of
+     somebody else's post today and not what this post's author wrote (r94). */
+  put('qp');
   return moved;
 }
 /* HOW MANY, AND WHETHER YOU ARE ONE OF THEM. THE SERVER COUNTS AND NOTHING
@@ -1699,8 +1711,24 @@ function pwHTML(){
       /* The same ceiling as the line and refused in the same place, which is
          the press. Nothing here either: postCap() is asked once, in pwSend(),
          about both rows. */
+      /* AND THE SWITCH FOR IT, on a row of its own where the meaning starts,
+         and staying there when the field goes (pwMnOff). The word, because
+         「意味」 has no mark every phone draws, in the colour of what is on
+         while it is on. Not in the bar under the field: that bar is exactly
+         full on a 320 phone with nothing added (measured 320/320), and the
+         switch in it pushed the last ring off -- 411/390 as a word and a
+         switch, 348/320 as the word alone. Not on the day's prompt, and not
+         while a post that exists is edited -- that keeps what it has. */
+      ((PW.pr || PW.ed)? '' :
+        '<div class="pwmnrow"><button class="pwmnsw'+(pwMnOff()? '' : ' on')+'" aria-pressed="'+
+          (pwMnOff()? 'false' : 'true')+'"'+DO('pwMnSw')+'>'+esc(t('post.mn.sw'))+'</button></div>')+
+      /* Not there at all while the meaning is switched off (pwMnOff): the
+         screen is the line and nothing under it, which is a post anywhere
+         else. What was typed into it stays in PW.mn and comes back with the
+         switch; it is not sent. */
+      (pwMnOff()? '' :
       lnField('pw-mn', pwMn() || t('post.mn'),
-        (PW.pr? ' readonly' : '')+IN('pwSetMn'), PW.mn, 'pwmn')+
+        (PW.pr? ' readonly' : '')+IN('pwSetMn'), PW.mn, 'pwmn'))+
       /* AND THE TAGS, UNDER THE MEANING -- the same place the post puts them
          (postRow), so what is being written and what was written read in one
          order: the line, what it means, and what it is filed under.
@@ -1711,6 +1739,13 @@ function pwHTML(){
          Nothing of `p.tags` is read or written on that road, so a post edited
          keeps its tags exactly as they were. */
       (PW.ed? '' : pwTagsHTML())+
+      /* AND WHAT IT QUOTES, small, under what is being written -- 「引用は
+         投稿の画面が開き、元の投稿が下に小さく付く」 OWNER 2026-09-25. The
+         same drawing the timeline gives it (postQuoteHTML), not pressable
+         here: this screen is for writing. The post is the one this phone is
+         holding; one it is not holding is drawn as nothing rather than as
+         「表示できません」, which would be saying something nobody was asked. */
+      (PW.qt? postQuoteHTML({qt:PW.qt, qp:postById(PW.qt) || undefined}, false) : '')+
       '</div></div>'+
     '</div>'+
     /* The bar. It is the last thing in the form and the only thing that does
@@ -2064,7 +2099,7 @@ function pwRingHTML(used){
 }
 function pwLeftHTML(){
   return pwRingHTML(pwLineLen())+
-    (PW.pr? '' : pwRingHTML(String(PW.mn||'').length));
+    ((PW.pr || pwMnOff())? '' : pwRingHTML(String(PW.mn||'').length));
 }
 /* THE CEILING, MET AT THE PRESS. True means pwSend() must stop.
 
@@ -2084,7 +2119,7 @@ function pwLeftHTML(){
    BOTH ROWS, because both have the ceiling now. */
 function pwFits(){
   var cap=postCap(), a=planFits(pwLineLen(), 0, cap);
-  if(PW.pr || !a) return a;
+  if(PW.pr || pwMnOff() || !a) return a;
   return planFits(String(PW.mn||'').length, 0, cap);
 }
 function pwCapStop(){ return upStop(pwFits()); }
@@ -2225,7 +2260,10 @@ function pwSendWith(ln, ink, pics, vo){
             /* OWNER 2026-09-05 単語はその単語の意味を 文法は並び替えた単語たちが
                文章として成り立つように -- only to fall back on, for somebody who
                typed a line and no meaning. Not stored, see postRow. */
-            mn:String(PW.mn||'').trim() || LinguaGrammarEngine.translate.toNatural(gModel(), ln, uiLang()),
+            /* and with the meaning switched off, none, and the post says so
+               (`nm`) -- nothing is kept of what was in the field */
+            mn:pwMnOff()? '' :
+               (String(PW.mn||'').trim() || LinguaGrammarEngine.translate.toNatural(gModel(), ln, uiLang())),
             pr:PW.pr||0,
             ui:uiLang(), li:0, bo:0, re:0};
   /* If the letters made the files too big for what is left, the PHOTOGRAPHS
@@ -2251,6 +2289,16 @@ function pwSendWith(ln, ink, pics, vo){
      Documents; what is in localStorage is this. */
   if(vo && vo.f) mine.vo={f:vo.f, ms:vo.ms||0};
   if(PW.pv) mine.pv=1;
+  if(pwMnOff()) mine.nm=1;
+  /* WHAT IT QUOTES: the server's id, which is what goes up (quote_of), and
+     until the timeline answers, the post as this phone holds it, so the
+     quote is drawn the moment it is sent. The server's answer replaces it
+     (postFresh) -- what is drawn under a quote is the post as it is now. */
+  if(PW.qt){
+    mine.qt=PW.qt;
+    var qo=postById(PW.qt);
+    if(qo) mine.qp=postQuoteCopy(qo);
+  }
   if(PW.to){
     mine.to=PW.to;
     var up=postById(PW.to);
@@ -2497,7 +2545,9 @@ function migratePostInk(){
    carries it, and otherwise the one the author typed. Never empty -- a line
    nobody can read is not a post. */
 function postSay(p){
-  if(!p) return '';
+  /* a post written with the meaning switched off has none, wherever it is
+     drawn -- the timeline, a thread, a quote, the card (OWNER 2026-09-25) */
+  if(!p || p.nm) return '';
   var u=uiLang(), d;
   /* The day's sentence is the app's own words, not the writer's, and the
      server holds it in all ten languages -- so an answer to today's prompt is
@@ -3265,7 +3315,7 @@ function postEdit(id){
      § 2-3, measured). */
   if(upStop(can('edit'), 'post.editplan')) return;
   PW=pwBlank();
-  PW.ed=p.id; pwLine(postCutOf(p)); PW.mn=String(p.mn||'');
+  PW.ed=p.id; pwLine(postCutOf(p)); PW.mn=String(p.mn||''); PW.nm=p.nm? 1 : 0;
   openPost();
 }
 /* A post of mine back as the line it was typed as, so the field it is edited
@@ -3321,7 +3371,7 @@ function pwSaveEdit(ln, ink){
   var p=postById(PW.ed), mn, q, k;
   if(!p || !p.mine){ toast(t('post.gone')); PW=pwBlank(); goTab('feed'); return; }
   /* OWNER 2026-09-05 単語はその単語の意味を 文法は並び替えた単語たちが文章として成り立つように */
-  mn=String(PW.mn||'').trim() || LinguaGrammarEngine.translate.toNatural(gModel(), ln, uiLang());
+  mn=p.nm? '' : (String(PW.mn||'').trim() || LinguaGrammarEngine.translate.toNatural(gModel(), ln, uiLang()));
   q={};
   for(k in p) if(Object.prototype.hasOwnProperty.call(p, k)) q[k]=p[k];
   q.ln=ln; q.mn=mn;
@@ -3418,6 +3468,24 @@ function postWhen(at){
         ? {month:'short', day:'numeric'}
         : {year:'numeric', month:'short', day:'numeric'});
   }catch(e){ return t('when.d', Math.floor(s/86400)); }
+}
+/* AND THE WHOLE OF IT, under the post a thread is opened on (postRow).
+   「ツイートの詳細時刻出るようにして欲しい」 OWNER 2026-09-25
+   (docs/FEATURE_RULES.md § 2026-09-25 いいね・リポストした人の一覧…). Every
+   head keeps postWhen(); this is the one post somebody came to read.
+
+   The date and the time are the phone's own, in the interface language, the
+   way postWhen() already asks for a date; how the two are put side by side is
+   `when.full`, because 「3:04 PM · Sep 25, 2026」 and 「2026年9月25日 15:04」 are
+   two orders and not one. The year is always there -- this is the one place
+   that says exactly when. */
+function postWhenFull(at){
+  var d=new Date(at||0);
+  try{
+    return t('when.full',
+             d.toLocaleDateString(uiLang(), {year:'numeric', month:'short', day:'numeric'}),
+             d.toLocaleTimeString(uiLang(), {hour:'numeric', minute:'2-digit'}));
+  }catch(e){ return postWhen(at); }
 }
 /* All of it comes off the post. Renaming yourself does not rewrite old posts,
    which is the price of a timeline that can hold anybody else's. */
@@ -3570,8 +3638,11 @@ function postFaces(){
     return PFACE[c.getAttribute('data-p')] || null;
   });
 }
-function postAct(fn, id, icon, n, on){
-  return '<button class="pact'+(on? ' on':'')+'"' + DO(fn, [id]) + '>'+icon+
+/* `hold` is what holding it does (www/shell.js § holdStart): the heart and
+   the repost open who pressed them. */
+function postAct(fn, id, icon, n, on, hold){
+  return '<button class="pact'+(on? ' on':'')+'"' + DO(fn, [id]) +
+    (hold? ' data-hold="'+hold+'"' : '')+'>'+icon+
     '<span class="pn">'+(n? String(n) : '')+'</span></button>';
 }
 /* The line, drawn. Each letter is the shape the post carries, so a post in a
@@ -4203,6 +4274,16 @@ function postRow(p){
       /* The voice, and it is below the meaning for the same reason the
          pictures are: it is what the post CARRIES, not what it says. */
       postVoHTML(p)+
+      /* AND WHAT IT QUOTES, under everything it carries and over the
+         buttons: somebody else's post, small, as the server has it now. */
+      postQuoteHTML(p, true)+
+      /* AND WHEN, WHOLE, under the body of the post a thread is opened on --
+         「詳しい時刻はツイートの右下あたりに入れて欲しいTwitterと同じ形。2hとか
+         はそのままで」 OWNER 2026-09-25. The head keeps 「2h」 on every row,
+         this one included; the year, the day and the time are one line here,
+         on the right, over the buttons. A post that has not gone up has no
+         time to tell (its head says 未送信). */
+      ((foc && !postUnsent(p))? '<div class="pwhenf">'+esc(postWhenFull(p.at))+'</div>' : '')+
       /* Three layers, and there is no fourth.
 
            the writer's own letters      ln + ink
@@ -4234,8 +4315,14 @@ function postRow(p){
            anywhere, so being frozen does not take it away. */
         (postMay()
           ? postAct('postReply', p.id, ICON_REPLY, postNReply(p), false)+
-            postAct('postBoost', p.id, ICON_BOOST, postNBoost(p), postIBoost(p))+
-            postAct('postLike',  p.id, ICON_HEART, postNLike(p),  postILike(p))
+            /* HELD, who pressed them. 「リツイートといいねした人長押しで見れる
+               ようにしたい」 OWNER 2026-09-25. Only on a post the server has
+               (`sid`) with somebody on the list: a hold that goes nowhere is a
+               gesture that does nothing. */
+            postAct('postBoost', p.id, ICON_BOOST, postNBoost(p), postIBoost(p),
+                    (p.sid && postNBoost(p))? 'postHoldBoosts' : '')+
+            postAct('postLike',  p.id, ICON_HEART, postNLike(p),  postILike(p),
+                    (p.sid && postNLike(p))? 'postHoldLikes' : '')
           : '')+
         /* On every post, not only your own. The comment that used to be here
            said a card is drawn out of a dictionary and a set of letters, so it
@@ -4250,6 +4337,38 @@ function postRow(p){
         postAct('postCard', p.id, ICON_SHARE, 0, false)+
       '</div>'+
     '</div></div>';
+}
+/* THE POST UNDER A QUOTE, small. 「元の投稿が下に小さく付く」「元が消えた・
+   ブロックで見えない時は『この投稿は表示できません』」 OWNER 2026-09-25.
+
+   Read off the post and nothing else (rule 8): `qt` is the id it was
+   written with, `qp` what the server says that post is today -- null when
+   there is nothing it will show this reader, undefined when nobody has
+   asked, which draws nothing. Who wrote it, when, the line in its own
+   letters and what it means; no photographs, no buttons. Pressed, it is
+   the way to that post (`press`, the timeline's; the composer's is not).
+
+   No box: a line down its left side, which is what rule 18 leaves -- one
+   side is a line (`.pqt` in www/index.html). */
+function postQuoteHTML(p, press){
+  var q=p && p.qp;
+  if(!p || !p.qt || q===undefined) return '';
+  if(!q) return '<div class="pqt pqgone">'+esc(t('post.quote.gone'))+'</div>';
+  return '<div class="pqt"'+(press? DO('postOpen', [q.sid || q.id], true) : '')+'>'+
+    '<div class="pqth"><span class="pname">'+esc(postWho(q))+'</span>'+
+      (q.hd? '<span class="phandle">@'+esc(q.hd)+'</span>' : '')+
+      '<span class="pwhen">'+esc(postWhen(q.at))+'</span></div>'+
+    ((q.ln || postInkOK(q.ink))? '<div class="pline '+dirClass(postDir(q))+'">'+postLnHTML(q)+'</div>' : '')+
+    (postSay(q)? '<div class="pmn">'+esc(postSay(q))+'</div>' : '')+
+  '</div>';
+}
+/* What a quote carries of the post it quotes, the moment it is sent: the post
+   as this phone holds it, without a quote of its own under it -- a quote is
+   drawn one deep. */
+function postQuoteCopy(q){
+  var o={}, k;
+  for(k in q) if(Object.prototype.hasOwnProperty.call(q, k) && k!=='qp' && k!=='qt') o[k]=q[k];
+  return o;
 }
 /* WHAT A POST'S NUMBERS ARE, ASKED AGAIN AFTER SOMEBODY MOVED ONE.
    -------------------------------------------------------------------------
@@ -4313,12 +4432,47 @@ function postLike(id){
     function(){ postCountsPull(id, function(){ delete PMARK[k]; }); },
     function(){ delete PMARK[k]; render(); });
 }
+/* TAKING A REPOST BACK IS ASKED FIRST. 「リツイート解除とかフォロー解除は
+   開錠しますか？みたいなポップつけて欲しい」 OWNER 2026-09-25 -- the same
+   popAsk() and the same shape as deleting a post (postDel), with 解除 where
+   削除 is. Putting one up is not asked. postBoostGo() is the send, and its
+   ［再接続］ sends again without asking: the question was answered. */
+/* AND PUTTING ONE UP IS A CHOICE: 「リポストを押すと『リポスト／引用』」
+   OWNER 2026-09-25. Two words and nothing over them -- the question is the
+   two answers -- and the dark around the pop is the third, which is neither.
+   A post that has not gone up cannot be quoted (a quote carries the
+   server's id), and a repost of one sends nothing (netMark), as before. */
 function postBoost(id){
   var p=postById(id);
   if(!p || !postMay()) return;
-  netMark(id, 'boost', !postIBoost(p),
+  if(postIBoost(p)){
+    popAsk(t('post.unboost.q'), function(){ postBoostGo(id, false); }, t('pop.undo'));
+    return;
+  }
+  if(!p.sid){ postBoostGo(id, true); return; }
+  popAsk('', function(){ postBoostGo(id, true); }, t('post.repost'),
+         t('post.quote'), function(){ postQuote(id); });
+}
+/* A QUOTE opens the screen a post is written on, the way a reply does, with
+   the post under it (pwHTML). What it holds is the server's name for it. */
+function postQuote(id){
+  var p=postById(id);
+  if(!p || !p.sid || !postMay()) return;
+  PW=pwBlank(); PW.qt=p.sid;
+  openPost();
+}
+function postBoostGo(id, on){
+  netMark(id, 'boost', on,
     function(){ postCountsPull(id); },
-    function(d, st, m){ netPop(d, st, m, function(){ postBoost(id); }); });
+    function(d, st, m){ netPop(d, st, m, function(){ postBoostGo(id, on); }); });
+}
+/* Who liked it, and who passed it on: the post's two lists (www/me.js
+   § folList), by the server's name for it. */
+function postHoldLikes(id){ postReacts(id, 'like'); }
+function postHoldBoosts(id){ postReacts(id, 'boost'); }
+function postReacts(id, kind){
+  var p=postById(id);
+  if(p && p.sid) go('reacts', kind+':'+p.sid);
 }
 /* Replying opens the same screen a post is written on, holding on to what it
    is a reply TO. */

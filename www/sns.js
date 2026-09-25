@@ -712,6 +712,8 @@ pageReads('profile', function(a){
   return [['who', h], ['posts', h], ['mutes']];
 }, true);
 pageReads('follows', function(a){ return [['fols', String(a||'')]]; }, true);
+/* who liked a post, or passed it on: the same list, read off the post (r94) */
+pageReads('reacts',  function(a){ return [['fols', String(a||'')]]; }, true);
 pageReads('notfo',   function(a){ return [['people', String(a||'')]]; });
 /* The settings are one route, and two of its rooms draw people: whom you
    have blocked and whom you have muted. The rest read what the route has
@@ -1056,7 +1058,7 @@ document.addEventListener('touchcancel', pullEnd, false);
    session and the timeline would simply end. `snsMoreAsk` is the one in the
    air; the end (SNS_END, `snsHits.end`) is set only by an answer that came
    back SHORT, which is the server saying it has run out. */
-var MORE_ON={feed:1, explore:1, follows:1, profile:1, thread:1};
+var MORE_ON={feed:1, explore:1, follows:1, reacts:1, profile:1, thread:1};
 var MORE_NEAR=600;
 var snsMoreAsk=false;
 function snsMoreWhere(){
@@ -1095,7 +1097,7 @@ function snsMore(){
   var r=snsMoreWhere(), q, low=0, i, ps;
   if(snsMoreAsk || !r) return;
   /* A list of people carries on by handle, and it is www/me.js's. */
-  if(r==='follows'){ folMore(); return; }
+  if(r==='follows' || r==='reacts'){ folMore(); return; }
   if(r==='profile' || r==='thread'){ snsMoreOf(r, String(here().a||'')); return; }
   if(r==='feed'){
     if(SNS_END[snsTab] || !SNS_NEXT[snsTab]) return;
@@ -2160,7 +2162,7 @@ function snsWhoRow(p, full){
       ? '<button class="whgo"' + DO('profileOpen', [""]) + '>'+inner+'</button>'
       : '<button class="whgo"' + DO('profileOpen', [h]) + '>'+inner+'</button>')+
     (p.mine? ''
-      : '<button class="whfo'+(on? ' on' : '')+'"' + DO('meFollow', [h]) + '>'+
+      : '<button class="whfo'+(on? ' on' : '')+'"' + DO('meFollowPress', [h]) + '>'+
           esc(t(on? 'me.unfollow' : 'me.follow'))+'</button>')+
     '</div>';
 }
@@ -2840,7 +2842,8 @@ function notGo(n){
 }
 function notRow(n){
   var k=String(n.kind||''), p=postById(n.id), pics=p? postPics(p) : [], ic=
-    k==='like'? ICON_HEART : k==='boost'? ICON_BOOST :
+    /* a quote wears the repost's mark: it is one, with words (r94) */
+    k==='like'? ICON_HEART : (k==='boost' || k==='quote')? ICON_BOOST :
     k==='reply'? ICON_REPLY : k==='follow'? ICON_ADD : ICON_LINE;
   return '<div class="ntf"'+notGo(n)+'>'+
     /* THE KIND, NAMESPACED. It was `class="ntfi '+k+'"`, so a notice about a

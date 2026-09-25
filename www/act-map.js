@@ -212,7 +212,11 @@ act('openMe', openMe);
 /* 画像を触ったとき ── iPhone 標準のアクションシート。写真を選ぶ／削除の
    どちらになるかはシートが答えるので、名前はここ一つ。 */
 act('mePicAsk', mePicAsk);
-act('meFollow', meFollow);
+act('meFollowPress', meFollowPress);
+act('holdLangs', holdLangs);
+act('postHoldLikes', postHoldLikes);
+act('postHoldBoosts', postHoldBoosts);
+act('pwMnSw', pwMnSw);
 act('meBlock', meBlock);
 act('meMute', meMute);
 act('openPost', openPost);

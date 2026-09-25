@@ -3053,7 +3053,7 @@ var NET_PAGE=50;
    row. And what other people did to a post -- written since there were
    reactions and read back by nobody until netRow() -- is part of it. */
 var NET_POST_SEL='/rest/v1/post_seen?select=id,author,created_at,reply_to,body,hidden_at,author_out'+
-                 ',likes,boosts,replies,i_like,i_boost';
+                 ',likes,boosts,replies,i_like,i_boost,quote_of,quoted';
 /* AND THE LISTS A MUTE LEAVES OUT ASK FOR IT, in these words and no others.
    「ミュートした人の投稿はタイムラインに出ない」 OWNER 2026-09-25, and the
    leader's reading of it: the timelines, a thread and a search. A person's
@@ -3073,8 +3073,10 @@ var NET_LANG_SEL='/rest/v1/language?select=id,name,published_at,wsys,owner,creat
    photograph goes up as the post without it rather than as most of a megabyte
    of base64 in a jsonb column. */
 function netBody(p){
+  /* `qt` is a column (quote_of, netPush) and `qp` is the server's answer
+     about somebody else's post (netRow) -- neither is this post's body. */
   var o={}, k, skip={id:1, sid:1, mine:1, at:1, to:1, pics:1, vo:1, li:1, bo:1, re:1,
-                     down:1, out:1};
+                     down:1, out:1, qt:1, qp:1};
   for(k in p) if(Object.prototype.hasOwnProperty.call(p, k) && !skip[k]) o[k]=p[k];
   /* THE VOICE'S LENGTH TRAVELS; ITS FILE ON THIS PHONE DOES NOT. `vo` was
      skipped whole because `vo.f` names a file in this phone's Documents, and
@@ -3143,6 +3145,15 @@ function netRow(r){
      first when it means the second is the app inventing a fact. */
   if(r.by) p.by=String(r.by);
   if(r.at_key) p.arrived=Date.parse(r.at_key) || p.at;
+  /* WHAT IT QUOTES, AS THE SERVER HAS IT NOW (r94). `qt` is the id the quote
+     was written with; `qp` is that post read by this reader today, or null
+     when there is none to read -- deleted, taken down, or behind a block
+     (post_seen.quoted) -- which is drawn as 「この投稿は表示できません」.
+     Absent on a post that quotes nothing. */
+  if(r.quote_of){
+    p.qt=String(r.quote_of);
+    p.qp=r.quoted? netRow(r.quoted) : null;
+  }
   return p;
 }
 function netFeed(which, ok, bad, more){
@@ -3327,20 +3338,41 @@ function netFollowRows(want, by, ok, bad, handle, after, among){
      (www/me.js § folPull). */
   for(i=0;i<(among||[]).length;i++) if(among[i]) l.push(encodeURIComponent(String(among[i])));
   if(among && !l.length){ ok([]); return; }
-  netGet('/rest/v1/follow_seen?select='+want+'_handle,created_at'+q+
-         '&order=created_at.desc,'+want+'_handle.asc'+
+  netPplPage('/rest/v1/follow_seen', want+'_handle',
+             q+(among? '&'+want+'_handle=in.('+l.join(',')+')' : ''),
+             after, among? l.length : NET_PAGE, ok, bad);
+}
+/* ONE PAGE OF A LIST OF PEOPLE, newest first -- the handles, and where the
+   page stopped as [time, handle] for the next one to start after (keyset).
+   `at` is the view the list is read off, written out whole where it is
+   called so `grep rest/v1/` names it (NET_PPL_AT), `col` the column holding
+   the handle, `where` what narrows it. The follows lists are this, and so are
+   who liked a post and who passed it on (netReacters). */
+function netPplPage(at, col, where, after, lim, ok, bad){
+  netGet(at+'?select='+col+',created_at'+where+
+         '&order=created_at.desc,'+col+'.asc'+
          (after? '&or='+encodeURIComponent('(created_at.lt."'+after[0]+'",and(created_at.eq."'+
-                   after[0]+'",'+want+'_handle.gt."'+after[1]+'"))') : '')+
-         (among? '&'+want+'_handle=in.('+l.join(',')+')' : '')+
-         '&limit='+(among? l.length : NET_PAGE),
+                   after[0]+'",'+col+'.gt."'+after[1]+'"))') : '')+
+         '&limit='+lim,
     function(d){
       var out=[], i, hd, end=null;
       for(i=0;i<(d||[]).length;i++){
-        hd=(d[i] && d[i][want+'_handle']) || '';
+        hd=(d[i] && d[i][col]) || '';
         if(hd){ out.push(String(hd)); end=[String(d[i].created_at||''), String(hd)]; }
       }
       ok(out, end);
     }, bad);
+}
+/* WHO LIKED A POST, OR PASSED IT ON -- one page, newest first, the same
+   page the follows lists are (netPplPage). 「リツイートといいねした人長押しで
+   見れるようにしたい」 OWNER 2026-09-25. `sid` is the server's name for the
+   post; `react_seen` (supabase/schema.sql) has already left out whoever a
+   block stands between and whoever this account has muted. */
+function netReacters(kind, sid, ok, bad, after){
+  netPplPage('/rest/v1/react_seen', 'actor_handle',
+             '&post=eq.'+encodeURIComponent(String(sid||''))+
+             '&kind=eq.'+encodeURIComponent(String(kind||'')),
+             after, NET_PAGE, ok, bad);
 }
 function netFollowing(ok, bad, handle, after){
   netFollowRows('followed', 'follower', ok, bad, handle, after);
@@ -4740,6 +4772,9 @@ function netPush(post, ok, bad){
     up=postById(post.to);
     if(up && up.sid) row.reply_to=up.sid;
   }
+  /* And what it quotes, which is already the server's name: only a post that
+     has gone up can be quoted (postQuote). */
+  if(post.qt) row.quote_of=post.qt;
   /* The bytes first, the row after, because the row carries where the bytes
      went. The other order is a post that exists with pictures it cannot name
      until a second request lands -- and a second request is a second thing

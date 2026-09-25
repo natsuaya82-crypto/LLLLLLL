@@ -1149,6 +1149,9 @@ var PAGES={
   reg:     {lang:1, tab:'build', k:'word.reg'},
   sub:     {lang:1, tab:'build', k:'f.sub'},
   follows: {tab:'profile'},
+  /* who liked a post, or passed it on -- the post's own list, under the
+     timeline where a post is (thread, photo) */
+  reacts:  {tab:'feed'},
   /* The people one notice is about. Named 「フォロワー」 because that is what
      they are -- a follow notice is people who followed you -- and the word is
      already written in all ten languages, under the number on a profile. */
@@ -1274,6 +1277,9 @@ function pageName(r, a){
      reached from. Nothing new is added. */
   if(r==='follows')
     return t(String(a||'').split(':')[0]==='ers'? 'me.followers' : 'me.following');
+  /* and the post's two lists, named by the argument the same way */
+  if(r==='reacts')
+    return t(String(a||'').split(':')[0]==='boost'? 'post.boosters' : 'post.likers');
   /* Somebody else's language names itself, the way a letter and a stage above
      do. Its own name until the answer lands, and the screen's name until then. */
   if(r==='about' && a){
@@ -1676,7 +1682,7 @@ function tabBar(){
        the hold that opens the languages. */
     out+='<button class="tab'+(cur===r?' on':'')+'"' +
       (r==='profile'? DO('profileOpen', [""]) : DO('goTab', [r])) +
-      (r==='profile'? ' data-hold="1"' : '')+
+      (r==='profile'? ' data-hold="holdLangs"' : '')+
       ' aria-label="'+esc(pageName(r))+'">'+TAB_ICON[r]+
       /* A NUMBER AND NOT A DISC. Rule 18 -- nothing new gets a corner radius,
          a border or a filled panel -- and the owner asked for 数字, not for a
@@ -1764,9 +1770,16 @@ function holdStart(e){
   p=holdAt(e); holdX=p.x; holdY=p.y;
   holdT=setTimeout(function(){
     holdT=null; HELD=true; heldAt=Date.now();
-    navLand([{r:'profile'}, {r:'langs'}]);
+    actRun(ACT, el, 'data-hold');
   }, HOLD_MS);
 }
+/* WHAT A HOLD DOES IS ITS NAME. `data-hold` carries a name from the action
+   table the way `data-do` does, and the element's own `data-a` is handed to
+   it -- so a heart held and a heart pressed are about the same post. It was
+   `data-hold="1"` with the one thing a hold could do written into
+   holdStart(), which was true while there was one; the likes and reposts of
+   a post are held as well now (www/post.js § postAct, r94). */
+function holdLangs(){ navLand([{r:'profile'}, {r:'langs'}]); }
 /* Moved far enough to be going somewhere rather than resting. Under the
    radius nothing happens at all -- not a reset of the timer, which would be
    a hold that a slowly sliding thumb could keep alive forever. */
@@ -2394,7 +2407,9 @@ var POP_STAY=null;
 function popStay(paint){ POP_STAY=paint; paint(); }
 function popTurn(){ if(POP_STAY) POP_STAY(); else popOff(); }
 function popAsk(msg, yes, yesWord, noWord, no){
-  if(!popPaint('<div class="popm">'+esc(msg)+'</div>'+
+  /* A question that is only its answers -- 「リポスト／引用」 -- has no line
+     over them, rather than an empty one. */
+  if(!popPaint((msg? '<div class="popm">'+esc(msg)+'</div>' : '')+
     '<button class="btn ghost"' + DO('popYes') + '>'+esc(yesWord||t('up.cta'))+'</button>'+
     '<button class="btn ghost popno"' + DO('popNo') + '>'+esc(noWord||t('pop.no'))+'</button>'))
     /* no DOM to draw on: do nothing rather than act unasked */
