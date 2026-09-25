@@ -1344,6 +1344,39 @@ const buy = await pg.evaluate(async () => {
   planGot('free');
   return out;
 });
+/* ---- AND A PURCHASE SOMEBODY ELSE APPROVED ARRIVES NOW ------------------
+   「子どもの購入を親が承認した時 →『すぐ』」 OWNER 2026-09-24. Ask To Buy
+   answers `pending` on the press, and the approval arrives later at
+   `Transaction.updates` in ios/App/App/LinguaStore.swift -- which KEPT it for
+   the next launch's `current`, so a child whose parent said yes stayed free
+   until the app was closed and opened again.
+
+   The native side now says so to the page (`linguastore`, a window event --
+   there is no @capacitor/core to listen through), and the page answers it
+   with the same storeSync() a launch runs: the receipts go up, and the plan
+   is the server's answer. Asked here on the page by dispatching that event,
+   with no reload; the Swift half is read out of the source further down. */
+const ask = await pg.evaluate(async () => {
+  var out = {}, realVerify = window.netPlanVerify, asked = [];
+  window.Capacitor = { nativePromise: function (plug, m) {
+    asked.push(plug + '.' + m);
+    return Promise.resolve({ jws: ['APPROVED'] });
+  } };
+  window.netPlanVerify = function (list, then) {
+    out.sent = (list || []).join(',');
+    then(planTook('plus'));
+  };
+  planGot('free');
+  window.dispatchEvent(new Event('linguastore'));
+  await new Promise(function (r) { setTimeout(r, 0); });
+  await new Promise(function (r) { setTimeout(r, 0); });
+  out.asked = asked.join(' ');
+  out.rung = plan();
+  window.netPlanVerify = realVerify;
+  delete window.Capacitor;
+  planGot('free');
+  return out;
+});
 /* ---- THE KEYCHAIN IS NOT READ, AND A LAUNCH HOLDS NO PLAN ---------------
    The plan USED to live in the Keychain on a phone -- ios/App/App/
    LinguaPlan.swift -- and www/core.js read it out of `window.__plan`,
@@ -2165,6 +2198,13 @@ say(!/LinguaPlanPlugin\.set/.test(CODE) && !/writeDown/.test(CODE),
 say(!/func best\(/.test(CODE) && !/entitledPlan/.test(CODE),
     'the ladder and the walk that used to pick a rung here are gone, not ' +
     'narrowed');
+say(ask.asked === 'LinguaStore.current' && ask.sent === 'APPROVED' && ask.rung === 'plus',
+    'a purchase approved while the app is open is the plan at once — the window ' +
+    'event asks `current`, sends what Apple signed, and takes the answer, with no ' +
+    'reload [' + [ask.asked, ask.sent, ask.rung].join(' ') + ']');
+say(/for await result in Transaction\.updates[\s\S]*?dispatchEvent\(new Event\('linguastore'\)\)/.test(CODE),
+    'and LinguaStore.swift tells the page for every transaction that arrives at ' +
+    'Transaction.updates (`linguastore`)');
 /* What it DOES answer, on every road out. Four roads and one shape: a list of
    what Apple signed, which is the only thing the server can read. */
 const ROADS = ['buy', 'restore', 'current', 'manage'];
