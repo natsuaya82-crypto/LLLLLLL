@@ -268,7 +268,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Affected features: `CAN.kb` と `kbCap()`（キーボードの扉と数）は問いが無くなる ── 消す。フォントの書き出し（新しい、Plus）。
 - Affected data: 無料の人が作ったキーボードが増える（今の `kb` の slice）。何も消さない。
 - Affected docs: この項、`docs/PAID_FEATURES.md`、`docs/FEATURES.md`、`docs/keyboard.md`、CLAUDE.md の「What the free plan is」。
-- Implementation status: 未。r95 がコード本体から書き直す、手書きは r96。
+- Implementation status: r95-kbfont（`claude/r95-kbfont`）── キーボード（段を訊かない、`=文字` の枠と「文字を入力」の欄）とフォントの書き出し（Plus、`kbFontOut()`）は入った・コード確認、実機未確認。手書きは r96。
 
 ### 2026-09-25 キーボードは誰でも作れる、自作文字のキーボードとフォントの書き出しは Plus から【差し替え済み】→ 2026-09-25「キーボードはプランで分けない」
 
