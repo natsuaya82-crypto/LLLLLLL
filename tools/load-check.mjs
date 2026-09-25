@@ -138,7 +138,6 @@ function wire(cfg){
     }
     if (p === '/rest/v1/follow_seen') return rows(function(i){ return { followed_handle:'h' + i, follower_handle:'h' + i }; }, u);
     if (p === '/rest/v1/draft') return rows(function(i){ return { id:'d' + i, body:{ ln:'d' + i }, updated_at:'2026-09-01T00:00:00Z' }; }, u);
-    if (p === '/rest/v1/promo') return rows(function(i){ return { post:'p' + i }; }, u);
     if (p === '/rest/v1/post_seen') return rows(post, u);
     /* a take is remembered, so the answer to 「which did this account take」
        says so after ↓ -- the app waits for the server's word before ⭕☑️ */

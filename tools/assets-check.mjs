@@ -393,8 +393,8 @@ if (existsSync(IOS)) {
 // `LinguaShare.write` is called -- the plugin injected the Keychain's plan on
 // every launch with this line reading 「every one of them named by www/」
 // (r63 § 2-5 S1). So a plugin's jsName has to be written in a file of www/,
-// and THAT file has to name the method. A wrapper like admCall('start') for
-// 'LinguaAds' is the same file naming both, which is what it is.
+// and THAT file has to name the method. A wrapper that takes the method as an
+// argument is the same file naming both, which is what it is.
 const NATIVE = /CAPPluginMethod\(name:\s*"([A-Za-z0-9_]+)"/g
 const wwwFiles = referenced
   .filter((r) => r.endsWith('.js'))
@@ -516,6 +516,43 @@ for (const n of gateNames) {
     note(`tools/${n}.mjs is in the gate and no npm script runs it on its own. ` +
          `CLAUDE.md tells a session to run the ONE check that holds a change; ` +
          `this one has no name to run it by.`)
+}
+
+/* ------------------------------------------- the app tracks nobody, and shows no ad
+   「広告出さないよ？」 OWNER 2026-09-25 (docs/FEATURE_RULES.md). App Privacy
+   says Lingua does not track, and Apple reads the BINARY against that: an ad
+   SDK, the App Tracking Transparency question or the ad networks' list in
+   Info.plist is 「your binary indicates that your app tracks users」, and the
+   submission is refused -- twice, for build 167, with every check green,
+   because nothing here asked. No red tick shows it; an email from Apple does.
+
+   So it is one statement over the whole of what ships, not a list of what
+   was taken out: no file git tracks under ios/, www/, the workflows or
+   package.json names an ad or tracking SDK or the question, and every
+   PrivacyInfo.xcprivacy says NSPrivacyTracking false. A file added tomorrow
+   is read tomorrow. */
+{
+  const TRACKS = /GoogleMobileAds|Google-Mobile-Ads|\bGAD[A-Z]\w*|admob|LinguaAds|AppTrackingTransparency|ATTrackingManager|NSUserTracking|SKAdNetwork|AdSupport|ASIdentifierManager|advertisingIdentifier|FBAudienceNetwork|AppLovin|UnityAds/i
+  const shipped = execFileSync('git', ['ls-files', 'ios', 'www', '.github/workflows', 'package.json'], { cwd: ROOT, encoding: 'utf8' })
+    .split('\n').filter((f) => f && /\.(swift|m|h|plist|xcprivacy|pbxproj|js|html|json|yml|yaml)$|(^|\/)Podfile(\.lock)?$/.test(f))
+  let read = 0, noTrack = 0
+  for (const f of shipped) {
+    let src
+    try { src = readFileSync(join(ROOT, f), 'utf8') } catch (e) { continue }
+    read++
+    src.split('\n').forEach((line, i) => {
+      const m = TRACKS.exec(line)
+      if (m) note(`${f}:${i + 1} names \`${m[0]}\`. Lingua shows no ad and tracks nobody ` +
+                  `(OWNER 2026-09-25) -- an ad or tracking SDK in the binary is what Apple ` +
+                  `refused build 167 for (BINARY_INDICATES_APP_TRACKS_USERS). Take it out.`)
+    })
+    if (f.endsWith('PrivacyInfo.xcprivacy')) {
+      if (/<key>NSPrivacyTracking<\/key>\s*<false\/>/.test(src)) noTrack++
+      else note(`${f} does not say NSPrivacyTracking false. App Privacy says Lingua does not track.`)
+    }
+  }
+  if (!noTrack) note('no PrivacyInfo.xcprivacy was found -- the tracking check read nothing, which is not the same as it holding')
+  console.log(`no ads: ${read} shipped files read, none naming an ad or tracking SDK; ${noTrack} privacy manifests, each NSPrivacyTracking false`)
 }
 
 if (problems.length) {

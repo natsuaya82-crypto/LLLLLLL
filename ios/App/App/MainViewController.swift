@@ -35,10 +35,6 @@ class MainViewController: CAPBridgeViewController {
        from a cold launch, which AppDelegate has been holding since before
        there was a bridge. See the head of LinguaPush.swift. */
     bridge?.registerPluginInstance(LinguaPushPlugin())
-    /* The places in the timeline nobody has bought, filled by AdMob. Nothing
-       loads until www/sns.js asks, and it never asks on pro. See the head of
-       LinguaAds.swift. */
-    bridge?.registerPluginInstance(LinguaAdsPlugin())
     /* And the bar iOS puts over the keyboard. prepareWebView() has already
        made the WKWebView by the time this runs (CAPBridgeViewController's
        loadView(), a few lines above the capacitorDidLoad() call), so WebKit

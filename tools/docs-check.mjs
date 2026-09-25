@@ -443,12 +443,12 @@ for (const n of defined) declared.add(n)
    one the code now has, is taken off. */
 const NOT_OURS = [
   // Apple
-  'UserDefaults', 'URLSession', 'UIPasteboard', 'openURL', 'PortraitUpsideDown', 'GADAdLoader',
+  'UserDefaults', 'URLSession', 'UIPasteboard', 'openURL', 'PortraitUpsideDown',
   'CLLocation', 'SecAddSharedWebCredential', 'decidePolicyFor', 'createWebViewWith',
   'URLRequest', 'CGContext', 'CALayer', 'setMarkedText', 'UITextInputMode',
   'resourceValues', 'NSPrivacyAccessedAPITypes',
   // what apple.md's privacy section says is NOT in the app (the absence is the sentence)
-  'IDFA', 'advertisingIdentifier', 'ASIdentifierManager', 'AdSupport', 'Firebase', 'GoogleAnalytics',
+  'IDFA', 'Firebase', 'GoogleAnalytics',
   'FBSDK', 'amplitude', 'mixpanel', 'Sentry', 'appsflyer',
   // the browser
   'DecompressionStream', 'geolocation', 'getCurrentPosition',
@@ -467,7 +467,7 @@ const NOT_OURS = [
   // the documents' own words for a state (CLAUDE.md § Five states)
   'IMPLEMENTED', 'SPEC', 'VERIFIED', 'CONNECT',
   // files that live outside this repository: in the App Group, on the web site
-  'keyboard.json', 'widget.json', 'terms.html', 'privacy.html', 'app-ads.txt',
+  'keyboard.json', 'widget.json', 'terms.html', 'privacy.html',
 ]
 const notOursSeen = new Set()
 const ENGLISH_CHECK = ['re-check'] // the verb, not a tool

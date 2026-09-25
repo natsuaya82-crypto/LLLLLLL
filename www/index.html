@@ -715,16 +715,6 @@ canvas.pkc{width:34px;height:34px;display:block}
    positioned against, so nothing is measured or placed by hand -- it moves
    with the post it belongs to. 「画面遷移じゃなくて投稿の横にメニュー出てきて欲しい」 */
 .pmw{margin-left:auto;flex:0 0 auto;position:relative;display:inline-flex}
-/* PR, in the corner a promoted post is read from. 「ツイート擬態右上にprとつく」
-   OWNER 2026-09-23. Words and nothing round them -- no box, no border -- and
-   it takes the push to the right edge from the ... so the two sit together. */
-.ppr{margin-left:auto;flex:0 0 auto;align-self:center;color:var(--txs);font-size:.8rem}
-.ppr + .pmw{margin-left:0}
-/* A place AdMob fills: an empty row of a post's width, as tall as the ad the
-   native side laid over it (www/sns.js § AdMob). Nothing is drawn in it here,
-   and until an ad has come it is no height and no line. */
-.post.padm{padding:0}
-.post.padm0{border-bottom-width:0}
 .pmore{flex:0 0 auto;min-width:44px;min-height:44px;margin-right:-12px;
        background:none;border:0;color:var(--txm);
        display:inline-flex;align-items:center;justify-content:center}

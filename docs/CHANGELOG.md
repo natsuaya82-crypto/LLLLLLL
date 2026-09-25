@@ -15,6 +15,22 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### 2026-09-25 広告と追跡を外した ── AdMob も、売れる広告枠も無い（r93-noads）
+
+OWNER 2026-09-25「広告出さないよ？」（`docs/FEATURE_RULES.md` 2026-09-25 広告は出さない）。
+App Store の審査への提出が二回、Apple に「Your binary indicates that your app tracks users」で断られた ──
+AdMob と App Tracking Transparency が入っていて、App Privacy は「追跡しない」だったから。
+**Swift は未ビルド・実機未確認。**
+
+- ホームのタイムラインに、十件ごとの広告の行（売った枠の投稿と、AdMob の枠）がもう出ない。
+  右上に PR の付いた投稿は、どの画面にも来ない。
+- アプリは「トラッキングを許可しますか」を訊かない。広告の SDK（Google-Mobile-Ads-SDK）は入っていない。
+  `ios/App/App/LinguaAds.swift`、Info.plist の `GADApplicationIdentifier`・広告ユニット・
+  `NSUserTrackingUsageDescription`・`SKAdNetworkItems`、ビルドの「Inject AdMob IDs」は消した。
+- Pro のプランから「広告なし」の力（`CAN` の一つ）が無くなった。画面に出ていた行は無かった。
+- **保存している物は何も動かない。** サーバーの `promo` の表は消さない ── アプリが読まなくなるだけ
+  （`supabase/schema.sql` は変えていない）。端末に新しく書く物・消す物も無い。
+
 ### 2026-09-25 買う・復元・後から届く購入は RevenueCat SDK を通る（r91-rc）
 
 Shipaton 2026（`docs/FEATURE_RULES.md` 2026-08-25）と OWNER 2026-09-25 の「お願い」。
