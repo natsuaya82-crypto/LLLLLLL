@@ -3472,10 +3472,13 @@ function netMute(handle, on, ok, bad){
    「not asked」.
 
    ONE LIST OF PEOPLE PER TABLE, AND ONE CODE FOR ALL OF THEM. The key is the
-   table (`block`), and the view it is read through is that name and `_seen`
-   (`block_seen`). Everything below is about 「a list of people this account
-   did something to」 and nothing about what the something was. */
+   table (`block`), and NET_PPL_AT says which view it is read through --
+   written out whole, so `grep rest/v1` over this file still names every
+   table the app asks for (CLAUDE.md, the head). Everything below is about
+   「a list of people this account did something to」 and nothing about what
+   the something was. */
 var NET_PPL={}, NET_PPL_WAIT={};
+var NET_PPL_AT={ block:'/rest/v1/block_seen', mute:'/rest/v1/mute_seen' };
 /* The people, for a screen. `null` (not asked) answers as none: a button
    that said 「blocked」 before the list came down would be this phone saying
    something the server has not said. */
@@ -3500,7 +3503,7 @@ function netPplRead(k, ok, bad){
      postFor() against, one file over. The waiters are still answered, with
      none, because a caller left hanging is worse than a caller told nothing. */
   who=netUid();
-  netGet('/rest/v1/'+k+'_seen?select=id,handle,display,av&order=created_at.desc',
+  netGet(NET_PPL_AT[k]+'?select=id,handle,display,av&order=created_at.desc',
     function(d){
       var w=NET_PPL_WAIT[k], rows=[], ids=[], j, r;
       NET_PPL_WAIT[k]=null;
