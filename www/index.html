@@ -1572,7 +1572,6 @@ html.fitlock, html.fitlock body{height:100%;overflow:hidden;overscroll-behavior:
 .spbig{display:flex;align-items:center;justify-content:center;height:96px;font-size:2.4rem;
        margin-bottom:14px;color:var(--tx)}
 .spbig canvas.tc{width:80px;height:80px;display:block}
-.phk.own{border-color:var(--goldln)}
 /* A label on an example, so a pair reads as a comparison. It was a 5px
    rounded outline around two or three characters -- a box drawn round a word,
    which is the shape the rule at the head of this file is about. The gold and
@@ -3427,10 +3426,6 @@ button.spbig{display:block;width:100%;background:none;border:0;padding:0;font:in
 .btn.signin .mk{flex-shrink:0}
 
 .psn{font-family:var(--face-mono);font-size:.82rem;color:var(--txm)}
-.pkown{display:flex;gap:8px;align-items:center;margin-bottom:10px}
-/* .btn is flex:1 so a row of them shares the width; one beside a field is
-   not sharing anything and shrank to the width of its word and grew tall. */
-.pkown .btn{flex:0 0 auto;min-width:88px}
 .pkclear{width:100%;min-height:44px;margin-bottom:12px;padding:8px;border:1px solid var(--line);border-radius:9px;
   background:transparent;color:var(--txm);font:inherit;font-size:.86rem;cursor:pointer}
 .pkpv{font-size:.9rem;color:var(--gold);min-width:2em}
@@ -3440,17 +3435,6 @@ button.spbig{display:block;width:100%;background:none;border:0;padding:0;font:in
   border-radius:8px;background:var(--bg);color:var(--tx);font-size:1.15rem;cursor:pointer;padding:0}
 .pkch.had{opacity:.28}
 .pkch.cur{border-color:var(--gold);color:var(--gold)}
-/* The field a script's own characters are typed into. It was written twice,
-   four lines apart: the second block won the corner, the padding and the type
-   size, so the first looked dead -- and `min-height:44px` was in the first one
-   and nowhere else. The 44pt floor is the whole reason the first block could
-   not be deleted, and nothing said so. One block now, carrying what each of
-   the two actually contributed. `.own` is the one that is typed in rather
-   than chosen from, so it reads from the left. */
-.scin{width:100%;min-width:0;min-height:44px;background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:5px 7px;
-  color:var(--tx);font:inherit;font-size:1.05rem;text-align:center;outline:none}
-.scin:focus{border-color:var(--gold)}
-.scin.own{text-align:left}
 .capwarn{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;margin:2px 0 14px;padding:12px 14px;
   border:1px solid var(--goldln);border-radius:10px;background:transparent;color:var(--txm);font:inherit;font-size:.88rem;cursor:pointer}
 /* The 「go and see the plans」 tail on a ceiling's row. It was written in two
