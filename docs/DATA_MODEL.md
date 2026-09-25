@@ -24,7 +24,7 @@ is the procedure.
 
 The slices are `slice` rows on the server, and `lingua.<id>.<slice>` names each
 in memory while the app runs (`LSL`, CLAUDE.md rule 22). `SLICES` in `www/core.js` is
-the list, and **being in that list is what makes a slice real**: `netSaveUp()`
+the list, and **being in that list is what makes a slice real**: `netSaveNow()`
 and `netLangSync()` walk it, so a slice outside it reaches no server;
 `wipeLangsGo()` walks it for
 one id and `lsWipeAcct()` walks it for every language an account has, so a
@@ -44,7 +44,7 @@ goes with the deletes above is with the owner (`docs/scope/aud-data.md`
 row in `slice` (`supabase/schema.sql`), keyed `(language, kind)`, and `body` is
 **the exact string `localStorage` holds** — the same string `syMerge()` works
 on and the file, so a slice has one shape and not three that could drift.
-`netSaveUp()` (a person's save) and `netLangSync()` (the door) read, merge
+`netSaveNow()` (a person's save) and `netLangSync()` (the door) read, merge
 through `www/sync.js` and write back; a launch only reads (`netLangsDown()`). So being in `SLICES` now decides three things at
 once — wipe and what goes up — and a slice added outside the list is
 missing from all three.
@@ -143,7 +143,7 @@ original is gone — and `docs/BACKLOG.md` carries them.
 | `letters` | `LETTERS` | the alphabet | array |
 | `notes` | `NOTES` | the notebook | array |
 | `phases` | `STG` | grammar stages, `fm` — the rules a form is made by (`docs/FEATURES.md`) — and the calendar's two numbers, `months` and `week` (`www/cal.js`) | object |
-| `talk` | — | the conversation. **Its screen and its global are both gone** — there is no `TALK` in `www/`, and nothing in the app reads or writes this. The slice stays in `SLICES`, `netSaveUp()` still sends the text up under its own name, and it still comes back down: a screen going away is not a reason for somebody's conversation to be deleted | array |
+| `talk` | — | the conversation. **Its screen and its global are both gone** — there is no `TALK` in `www/`, and nothing in the app reads or writes this. The slice stays in `SLICES`, `netSaveNow()` still sends the text up under its own name, and it still comes back down: a screen going away is not a reason for somebody's conversation to be deleted | array |
 | `snd` | `SND` | the sound inventory | array |
 | `kb` | `KB` | the keyboards this language's owner **built**, and which one is applied. The free QWERTY is not among them: it is board 0, rebuilt from `kbFixed()` every time it is asked for, so it cannot go stale and cannot be edited. `v:2` says `migrateKbFree()` has taken the old copy of it out of the array | object |
 | `gram2` | — | the grammar engine's v2 model (`www/grammar-engine/`). **`gModel()` in `www/grammar.js` reads it**; nothing writes it yet, so every language today falls to `fromLegacy()` and answers exactly as before. What it holds when it is written is **everything except the dictionary and the rules that name words** — `words` is rebuilt from `WORDS` on every read and `grammarRules` from the stages, because both point AT the dictionary and a stored copy would part company with it the first time somebody renamed a word. `adapter.save` still has no caller. It is in `SLICES` from the day the key existed rather than the day the first caller does, which is the whole lesson of the keyboard and the world: a slice joins the list BEFORE anything writes to it, or the first thing written is the thing that never reaches the server. It sits **beside** `phases` and does not replace it — a migration copies and never removes | object |
@@ -570,7 +570,7 @@ and then writes the slices it was asked for with `langKeyOf(id, kind)`.
    unchanged — it is the list of what a language is MADE of, and that is the
    same list for every language. **Every writer refuses it** — each asks
    `langLocked()` (`www/core.js`, off `langWhose()`) before it writes, so
-   nothing of it reaches `netSaveUp()`. Nothing is deleted and nothing is moved: it is the FILE that
+   nothing of it reaches `netSaveNow()`. Nothing is deleted and nothing is moved: it is the FILE that
    does not carry it, and it is not lost by being skipped, because it came
    from somewhere and can be taken again.
 3. **A partial language is a normal state, not an error.** OWNER 2026-09-01:

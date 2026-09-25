@@ -35,11 +35,14 @@
 //    already paid for is how "Restore" became a button on every paid app
 //    rather than something done automatically. `restore` is that button.
 //
-//    It does not tell the web view by itself. There is no @capacitor/core in
-//    this app -- www/share.js says why, at length -- so there is no
-//    addListener on the JavaScript side to notify. A transaction that arrives
-//    with nobody in the app is KEPT (`pending` below) and goes out with the
-//    next `current`, which www asks on every launch.
+//    It does not decide what a transaction that arrives on its own means. It
+//    is KEPT (`held` below) and goes out with the next `current`, and the
+//    page is TOLD it arrived -- a window event, `linguastore`, because there
+//    is no @capacitor/core in this app (www/share.js says why) and so no
+//    addListener to notify. www/store.js answers the event with the same
+//    `current` a launch asks. 「子どもの購入を親が承認した時 →『すぐ』」
+//    OWNER 2026-09-24: an Ask To Buy approval is the plan while the app is
+//    open, not at the next launch.
 //
 //    It writes nothing down. The plan is verify-plan's answer, held in memory
 //    by www/core.js § PLAN and nowhere on this phone; a writer here would be
@@ -48,6 +51,7 @@
 import Foundation
 import Capacitor
 import StoreKit
+import WebKit
 
 @objc(LinguaStorePlugin)
 public class LinguaStorePlugin: CAPPlugin, CAPBridgedPlugin {
@@ -110,13 +114,22 @@ public class LinguaStorePlugin: CAPPlugin, CAPBridgedPlugin {
   }
 
   override public func load() {
-    watch = Task.detached {
+    watch = Task.detached { [weak self] in
       for await result in Transaction.updates {
         /* finish() is what tells the App Store to stop redelivering this.
            Not finishing is the classic StoreKit bug: everything works, and
            the same transaction arrives at every launch forever. */
         if case .verified(let t) = result { await t.finish() }
         await Self.held.add(result.jwsRepresentation)
+        /* And the page is told, so that what it means is asked NOW -- an
+           approval from a parent, a purchase on another device, a refund.
+           Kept first, so the `current` this starts carries it. A page that
+           is not loaded yet misses the event and loses nothing: the launch
+           asks `current` anyway. */
+        await MainActor.run {
+          self?.bridge?.webView?.evaluateJavaScript(
+            "window.dispatchEvent(new Event('linguastore'))", completionHandler: nil)
+        }
       }
     }
   }

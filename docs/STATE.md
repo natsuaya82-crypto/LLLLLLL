@@ -622,7 +622,7 @@ git merge-base --is-ancestor origin/claude/online origin/master && echo IN || ec
 ```
 
 - **保存を押した瞬間にサーバーへ行きます。**前は起動と扉の二回だけでした
-  （`netSaveUp()` を `bkTouch()` から）。
+  （~~`netSaveUp()`~~ ── 2026-09-25 から `netSaveNow()`、保存を押した時）。
 - **バックアップのファイルが無くなりました。**書く側、読む側、設定の一覧、
   Swift ごと。**`tools/backup-check.mjs` も丸ごと消えました。**
 - **言語の写しは iPhone のディスクにありません。**スライスはメモリ（`LSL`）。
@@ -1002,7 +1002,7 @@ Today that is `profile`, `post`, `react`, `follow`, `block`, `report`,
 `language_seen`, `prompt`, `language`, `slice`, `plan` and the RPCs. `netPush()` sends a post — its photographs and its voice with it, through
 `netUpPics()` and `netUpVoice()` into the `post-media` bucket — `netFeed()`
 reads the two timelines, `netNotices()` reads the notices, `netDraftUp()` sends
-a draft, `netSaveUp()` sends a slice the moment it is saved, and `netLangSync()`
+a draft, `netSaveNow()` sends a slice when Save is pressed, and `netLangSync()`
 puts a whole language up at the door (`netTook()`) and when one is made
 (`langNew()`). ~~`postCatchUp()`~~ is gone. **`lingua.posts` is a
 copy and not a home**: the phone keeps what works with no signal.
@@ -1040,7 +1040,7 @@ groping at:
 one function now (`bkTouch`), and the writing, the three generations, the list
 on the settings screen and the Swift behind it are deleted. 「制作はオフライン
 でも可能　次つながった時に更新される」 — making and saving need a signal, and a
-save reaches the server the moment it is made. With no signal what the app shows
+save reaches the server when Save is pressed 「保存を押したら」 OWNER 2026-09-24. With no signal what the app shows
 is what was loaded before, to look at (`CLAUDE.md` rule 22). **What still
 stands:** always in sync, on every plan; **making a language still needs an
 account**; deleting the account takes the languages with it; the SNS side does

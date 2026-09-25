@@ -386,7 +386,7 @@ function vSet(){
     /* NO 「ON THIS PHONE」 LIST. It showed the backup files in Documents --
        the generations, newest first, each with the save number it carried --
        and there are no files. 「今ファイルもいらん」 OWNER 2026-09-04: a
-       language is on the server the moment it is saved (netSaveUp() in
+       language is on the server the moment it is saved (netSaveNow() in
        www/net.js), so what that list answered is not a question this app
        has any more. www/backup.js says the whole of it. */
     body='<div class="sec">'+t('set.data')+'</div>'+
@@ -1052,7 +1052,7 @@ function planMark(key){
           'plan.free.4':TAB_ICON.feed,
           'plan.plus.1':ICON_ADD,  'plan.plus.2':ICON_SPK,  'plan.plus.3':ICON_LTR,
           'plan.plus.4':ICON_LINE, 'plan.plus.5':ICON_KEYS,
-          'plan.pro.1':ICON_TICK,  'plan.pro.2':ICON_LINE,  'plan.pro.3':ICON_KEYS,
+          'plan.pro.1':ICON_TICK,  'plan.pro.2':ICON_LINE,
           'plan.pro.4':TAB_ICON.build, 'plan.pro.5':ICON_SHARE,
           'plan.badge':MARK_PLUS };
   return m[key] || ICON_TICK;

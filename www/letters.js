@@ -35,7 +35,7 @@ function ltRead(){
   LETTERS=slOpen('letters') || [];
 }
 ltRead();
-function saveLetters(){ if(langLocked()) return; bkTouch(); slWr(langKey('letters'), JSON.stringify(LETTERS)); }
+function saveLetters(){ if(!langWrites()) return; bkTouch(); slWr(langKey('letters'), JSON.stringify(LETTERS)); }
 
 /* ---- moving the old shape of things over ------------------------------
    Everything drawn before this ran was stored under its sound, which is
@@ -1220,6 +1220,13 @@ function ltDel(id){
 function ltForUnit(unit){
   var l=ltMain(unit);
   if(l) return l;
+  /* NOT IN A LANGUAGE THAT MAY NOT BE WRITTEN. 「取ってきた言語を編集できるか
+     →『できない』」 OWNER 2026-09-24: a sound with no letter on somebody
+     else's alphabet made a letter here -- in memory only, since the writer
+     refused it (langWrites, www/core.js), so it was on the screen and gone
+     on the next launch. Nothing is made; the caller gets none. dl-check holds
+     every press on every screen of a taken language. */
+  if(langLocked()) return null;
   return ltNew({snd:[unit]});
 }
 /* Everything the two chapters count. */

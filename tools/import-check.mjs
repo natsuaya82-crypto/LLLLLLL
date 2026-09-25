@@ -436,9 +436,12 @@ const LTREG = 'var localStorage={getItem:function(){return null;},removeItem:fun
               'function langKey(k){ return String(k); }\n' +
               'function bkTouch(){}\n' +
               /* Whether the open language may be written to -- www/core.js, and
-                 there is no open language here. False is 「it is yours」, which
-                 is what every other harness in this file assumes. */
+                 there is no open language here. 「It is yours, and nothing is
+                 a draft」, which is what every other harness in this file
+                 assumes: langLocked() for the doors, langWrites() for the
+                 writers (the one gate, 2026-09-25). */
               'function langLocked(){ return false; }\n' +
+              'function langWrites(){ return true; }\n' +
               'var LETTERS=[];\n';
 let LT;
 try {

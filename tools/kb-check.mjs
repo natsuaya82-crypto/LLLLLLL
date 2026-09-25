@@ -1796,13 +1796,16 @@ const r = await pg.evaluate(({ s }) => {
      by the page's Save */
   function kbPageSave(){
     /* THE BOARD'S PAGE'S SAVE (K1, r79): while that page has its draft open a
-       change is not written until Save is pressed. The buffer is found the way
-       kbDrafting() finds it; its own save is pressed rather than keepSave(),
-       whose other half is the wire and not this check's. No page open is a
-       change saveKb() writes itself. */
-    var k;
+       change is not written until Save is pressed. The board's buffer is the
+       one whose question is kbNow(); its own save is pressed rather than
+       keepSave(), whose other half is the wire and not this check's -- inside
+       keepWrite() (www/shell.js), the moment a Save writes, which is the one
+       moment a screen with a Save is not a draft (§ keepDrafting). No page
+       open is a change saveKb() writes itself. */
+    var k, b;
     for (k in KEEP) if (Object.prototype.hasOwnProperty.call(KEEP, k) && KEEP[k] && KEEP[k].now === kbNow){
-      KEEP[k].save(KEEP[k].v, function (){}); return true;
+      b = KEEP[k];
+      keepWrite(function (){ b.save(b.v, function (){}); }); return true;
     }
     saveKb(); return false;
   }
@@ -2208,17 +2211,18 @@ const r = await pg.evaluate(({ s }) => {
     popOff();
     out.plusRoomOpens = here().r === 'form' && String(here().a) === 'kbnew';
 
-    /* three built -- 1 + 3 is the whole of Plus, so the next one is the fifth
-       and the + is where it is refused */
+    /* three built, so four with the QWERTY -- which was the whole of Plus
+       until 「Plus ── キーボード無制限」 OWNER 2026-09-24 (r46). The fifth
+       goes through exactly as Pro's does: no pop, and a board is made. */
     built(3);
     var b = list('plus');
     out.plusFullRows = b.rows; out.plusFullFab = !!b.fab;
     if (b.fab) b.fab.click();
     out.plusFullAsked = popOn();
-    if (popOn()) popYes();
-    out.plusFullToPlans = here().r === 'plans';
-    out.plusFullWroteNothing = kbStored().length === 3;
     popOff();
+    var pat5 = document.querySelector('[data-do="kbAdd"]');
+    if (pat5) pat5.click();
+    out.plusFullAdded = kbStored().length === 4;
 
     /* and Pro has no ceiling to meet, so the same + goes straight through */
     built(1);
@@ -3586,13 +3590,15 @@ const SF = await sf.evaluate(({ s }) => {
     migrateKbFree();
     function kbPageSave(){
       /* THE BOARD'S PAGE'S SAVE (K1, r79): while that page has its draft open a
-         change is not written until Save is pressed. The buffer is found the way
-         kbDrafting() finds it; its own save is pressed rather than keepSave(),
-         whose other half is the wire and not this check's. No page open is a
-         change saveKb() writes itself. */
-      var k;
+         change is not written until Save is pressed. The board's buffer is the
+         one whose question is kbNow(); its own save is pressed inside
+         keepWrite() (www/shell.js), the one moment a screen with a Save is not
+         a draft, rather than keepSave(), whose other half is the wire. No page
+         open is a change saveKb() writes itself. */
+      var k, b;
       for (k in KEEP) if (Object.prototype.hasOwnProperty.call(KEEP, k) && KEEP[k] && KEEP[k].now === kbNow){
-        KEEP[k].save(KEEP[k].v, function (){}); return true;
+        b = KEEP[k];
+        keepWrite(function (){ b.save(b.v, function (){}); }); return true;
       }
       saveKb(); return false;
     }
@@ -4411,10 +4417,10 @@ say(r.plusFab && r.plusRoomOpens && !r.plusRoomAsked,
 say(r.plusFullRows === 4 && r.plusFullFab,
     'at four the list is four rows and the + is still there ('
     + r.plusFullRows + ' rows, + ' + r.plusFullFab + ')');
-say(r.plusFullAsked && r.plusFullToPlans && r.plusFullWroteNothing,
-    'and THE FIFTH is where it asks -- the yes is the plans screen and'
-    + ' nothing was written [' + [r.plusFullAsked, r.plusFullToPlans,
-    r.plusFullWroteNothing].join(' ') + ']');
+say(!r.plusFullAsked && r.plusFullAdded,
+    'and THE FIFTH goes through on Plus too -- no pop, and it is made'
+    + ' (Plus keyboards without a limit, OWNER 2026-09-24) [' +
+    [r.plusFullAsked, r.plusFullAdded].join(' ') + ']');
 say(r.proFab && !r.proAsked && r.proAdded,
     'Pro has no ceiling to meet, so its + never asks [' +
     [r.proFab, r.proAsked, r.proAdded].join(' ') + ']');

@@ -907,7 +907,7 @@ const walk = await pg.evaluate(({ s }) => {
   const seedAgain = window.__seed;
   seedAgain();
   SET.walked = true; planGot('pro');
-  const out = { stands: [], fails: [], fields: 0, presses: 0, gold: 0, refused: 0, lit: 0, noes: 0 };
+  const out = { stands: [], fails: [], fields: 0, presses: 0, gold: 0, refused: 0, lit: 0, noes: 0, yeses: 0 };
 
   langRowGot(langId); langStore();
   netSend = function(method, path, body, tok, ok){
@@ -1037,12 +1037,11 @@ const walk = await pg.evaluate(({ s }) => {
        screen still to be moved onto the buffer. */
   const OWN_ROAD = {
     setMyFont:    'its own road -- SET.myfont, netPrefsPut() sends it on the press',
-    setKbRom:     'its own road -- SET.kbrom, the account\'s setting (SET_PREFS); netPrefsPut() sends it on the press',
-    wldOvAdd:     'not moved yet -- a row of the article is written on the press (r14 § A)',
-    setWldSecDl:  'not moved yet -- 「may this section be taken away」 is written on the press (r14 § A)'
-    /* kbUndo, kbRedo and kbAddLay STOOD HERE and are moved (K1, r79): on a
-       board's page every change is the page's draft until its Save
-       (www/keyboard.js § saveKb). */
+    setKbRom:     'its own road -- SET.kbrom, the account\'s setting (SET_PREFS); netPrefsPut() sends it on the press'
+    /* kbUndo, kbRedo and kbAddLay STOOD HERE and are moved (K1, r79), and
+       wldOvAdd and setWldSecDl after them (r84-save): on a screen with a Save
+       every press is that screen's draft until its Save -- www/shell.js
+       § keepDrafting, which is every screen's and not the keyboard's. */
   };
   const roadSeen = {};
   /* WHICH FIELD A KEYSTROKE WENT INTO. Taken from the real keepSet() rather
@@ -1215,6 +1214,29 @@ const walk = await pg.evaluate(({ s }) => {
             out.fails.push(lab + ' -> ' + name + ': 「いいえ」 and something was started up the road to the server');
           out.noes++;
         }
+        /* 23 -- AND THE SAVE WRITES IT. 「保存がサーバーに上がる時 →『保存を
+           押したら』」 OWNER 2026-09-24: what is pressed on a screen with a
+           Save is its draft (www/shell.js § keepDrafting) and is not written
+           until the Save -- so the Save has to be what writes it, whichever
+           slice the press moved. The same press again, then the Save in the
+           corner with the wire answering yes, and the phone has to hold
+           something it did not. Put back afterwards (keepSnap/keepBack, the
+           app's own road back) so the walk goes on from where it was. */
+        if(stand(go1)){
+          var e23 = acts()[j];
+          if(e23 && (e23.getAttribute('data-do') || e23.getAttribute('data-ch')) === name){
+            var snap23 = keepSnap(), all23 = all(), realSN = window.netSaveNow;
+            window.netSaveNow = function(cb){ if(cb) cb(true); };
+            try { e23.click(); try { popOff(); } catch(e){} keepSave(keepKey(), null); } catch(e){}
+            window.netSaveNow = realSN;
+            if(all() === all23)
+              out.fails.push(lab + ' -> ' + name + ': changed, and the Save wrote nothing -- the draft never reached the language');
+            keepBack(snap23);
+            for(var kk23 in KEEP) if(Object.prototype.hasOwnProperty.call(KEEP, kk23)) keepDrop(kk23);
+            try { popOff(); } catch(e){}
+            out.yeses++;
+          }
+        }
       }
       try { popOff(); } catch(e){}
     }
@@ -1355,7 +1377,8 @@ console.log('every screen with a Save (' + walk.stands.length + '), asked of the
             walk.gold + ' of them changed the screen and every one turned the corner gold -- ' +
             'and every press that left it as it was left the Save grey; ' + walk.noes +
             ' of those changes answered 「いいえ」 on the way out and each gave back what the ' +
-            'screen opened with, wrote nothing and sent nothing');
+            'screen opened with, wrote nothing and sent nothing, and ' + walk.yeses +
+            ' of them pressed again and Saved wrote the language');
 
 r.screens.forEach((s) => {
   console.log('  ' + s.n + ' (' + s.key + ')');

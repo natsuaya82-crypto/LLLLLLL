@@ -6,7 +6,6 @@ rest/v1/block_seen select=id,handle,display,av | whom you have blocked, drawn wh
 rest/v1/draft select=id,body,updated_at | draftsPull() takes a draft the answer does not name off this phone -- a page of 50 would take the rest; which of them is the owner's (docs/scope/r71-net.md § オーナーへ)
 # tools/load-check.mjs claim 7 -- a function in www/net.js that asks whether anybody is signed in,
 # and it is a written rule rather than a guard the window already is. `signed-in <function>`.
-signed-in netSaveUp | 「その歩きは、作ったものがこの端末にしかない唯一の窓」 (CLAUDE.md § Online): the walk's language is saved before the door, and nothing goes up until it -- r73 § 2-5 says this sentence is against § Online, which makes it the owner's (docs/scope/r71-net.md § オーナーへ)
-signed-in netSaveUpGo | the same rule at the press: signed out, 「the language is on the phone and has nowhere else to be」 answers the Save button yes -- the owner's, with the line above
+signed-in netSaveNow | 「その歩きは、作ったものがこの端末にしかない唯一の窓」 (CLAUDE.md § Online) at the press: signed out, 「the language is on the phone and has nowhere else to be」 answers the Save button yes -- the walk's language goes up at the door -- r73 § 2-5 says this sentence is against § Online, which makes it the owner's (docs/scope/r71-net.md § オーナーへ)
 signed-in netLangSync | the door's send (netTook) and the up road answer 「nothing to send」 for a phone with no account -- the same rule, the owner's
 # tools/load-check.mjs claim 7 -- a file other than www/net.js that still names SESS. `sess <file>`.

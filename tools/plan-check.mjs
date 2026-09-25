@@ -232,14 +232,15 @@ const r = await pg.evaluate(({ s }) => {
   out.freeHolds2 = WORDS.length === capWas;
 
   /* ---- 4b. and how many keyboards -------------------------------------
-     「1,1+3.無制限って言わなかったっけ？」 -- free 1, plus 1 + 3, pro none,
-     and **counted as a pool across languages**. That last clause is the
+     Free 1 -- the QWERTY -- and no ceiling on Plus or Pro: 「Plus ──
+     キーボード無制限」 OWNER 2026-09-24 (r46), replacing 「1,1+3.無制限」 of
+     2026-08-23. And **counted as a pool across languages**. That last clause is the
      whole of why this is here: KB_MAX was three PER LANGUAGE, so three
      languages were nine keyboards on a plan that sells three, and nothing
      about it threw -- every keyboard rendered, installed and typed.
 
-     Two of the three numbers are also a promise on the plans screen. Plus's
-     card sells four keyboards and Pro's sells no limit, and until this
+     The number is also a promise on the plans screen. Plus's card sells no
+     limit, and until 2026-08-23
      CAN.kb was 'pro': plus bought a card that said four and got none, and
      pro's "no limit" was three. A paid screen promising what the app cannot
      do is the app lying to somebody who is about to pay.                  */
@@ -252,8 +253,8 @@ const r = await pg.evaluate(({ s }) => {
 
   /* The pool. A second language is written straight into localStorage the
      way another language on this phone would be, with two keyboards in it,
-     and then this language is asked whether it has room. On plus the answer
-     has to be no: one QWERTY plus two over there plus one here is four. */
+     and then this language is asked whether it has room. The pool is still
+     counted across languages; on plus there is no number for it to fill. */
   planGot('plus');
   KB = { kbs: [{ nm:'', pat:'qwerty', lay: kbFixed().lay }], at: 0 };
   saveKb();
@@ -275,7 +276,7 @@ const r = await pg.evaluate(({ s }) => {
     { kbs: [{ nm:'A', pat:'qwerty', lay: kbFixed().lay },
             { nm:'B', pat:'qwerty', lay: kbFixed().lay }], at: 0 }));
   out.kbPool = kbCount();                        /* 3 */
-  out.kbRoomPool = kbRoomKb();                   /* 1 + 3 < 4 -> no */
+  out.kbRoomPool = kbRoomKb();                   /* no ceiling -> yes */
   out.kbPoolTop = (planGot('pro'), kbRoomKb());/* no ceiling -> yes */
   /* A language stored in the older single-keyboard shape is one keyboard and
      not nothing: kbBoardsOf() reads either shape, and counting only the new
@@ -455,12 +456,12 @@ const r = await pg.evaluate(({ s }) => {
      day they need it.
 
      THIS USED TO ASK THE BACKUP FILE, and there is no file (www/backup.js,
-     2026-09-04). The road a language leaves this phone by is netSaveUp(), so
+     2026-09-04). The road a language leaves this phone by is netSaveNow(), so
      that is the road asked -- and it is the stronger question, because the
      file was one handset's and the server is the copy that outlives it.
 
      Every slice has something in it first, and nothing has been agreed yet:
-     netSaveUp() sends a slice only where it differs from what the two sides
+     netSaveNow() sends a slice only where it differs from what the two sides
      last agreed, and an absent slice has nothing to say. The one this exists
      for is exactly that -- the keyboard was in no backup at all for a while,
      and a count went on saying the right number while it was. */
@@ -489,7 +490,7 @@ const r = await pg.evaluate(({ s }) => {
        from inside it, so a stub that only records stops after the first one */
     netSend = function(m, path, b, tok, ok){ if (b && b.kind) got.push(b.kind); if (ok) ok(); };
     NET_SYNCING = false;
-    netSaveUpGo();
+    netSaveNow();
     netSend = realSend; netLangRow = realRow; netSlices = realSlices;
     NET_SYNCING = false;
     /* what was sent has just been agreed, so a second call would have nothing
@@ -692,7 +693,9 @@ const r = await pg.evaluate(({ s }) => {
      toast and stopped, which is a sentence about a plan with no way to the
      thing it is about. capStop() was already the right shape; this is the
      other one. */
-  planGot('plus');
+  /* ON FREE, which is the one plan with a number: the QWERTY is its one
+     keyboard, so it is full before anything is built. */
+  planGot('free');
   KB = { kbs: [], at: 0 };
   /* BOUNDED, and the bound is not tidiness -- it is the difference between a
      check that FAILS and a check that says nothing at all.
@@ -1341,6 +1344,39 @@ const buy = await pg.evaluate(async () => {
   planGot('free');
   return out;
 });
+/* ---- AND A PURCHASE SOMEBODY ELSE APPROVED ARRIVES NOW ------------------
+   「子どもの購入を親が承認した時 →『すぐ』」 OWNER 2026-09-24. Ask To Buy
+   answers `pending` on the press, and the approval arrives later at
+   `Transaction.updates` in ios/App/App/LinguaStore.swift -- which KEPT it for
+   the next launch's `current`, so a child whose parent said yes stayed free
+   until the app was closed and opened again.
+
+   The native side now says so to the page (`linguastore`, a window event --
+   there is no @capacitor/core to listen through), and the page answers it
+   with the same storeSync() a launch runs: the receipts go up, and the plan
+   is the server's answer. Asked here on the page by dispatching that event,
+   with no reload; the Swift half is read out of the source further down. */
+const ask = await pg.evaluate(async () => {
+  var out = {}, realVerify = window.netPlanVerify, asked = [];
+  window.Capacitor = { nativePromise: function (plug, m) {
+    asked.push(plug + '.' + m);
+    return Promise.resolve({ jws: ['APPROVED'] });
+  } };
+  window.netPlanVerify = function (list, then) {
+    out.sent = (list || []).join(',');
+    then(planTook('plus'));
+  };
+  planGot('free');
+  window.dispatchEvent(new Event('linguastore'));
+  await new Promise(function (r) { setTimeout(r, 0); });
+  await new Promise(function (r) { setTimeout(r, 0); });
+  out.asked = asked.join(' ');
+  out.rung = plan();
+  window.netPlanVerify = realVerify;
+  delete window.Capacitor;
+  planGot('free');
+  return out;
+});
 /* ---- THE KEYCHAIN IS NOT READ, AND A LAUNCH HOLDS NO PLAN ---------------
    The plan USED to live in the Keychain on a phone -- ios/App/App/
    LinguaPlan.swift -- and www/core.js read it out of `window.__plan`,
@@ -1790,14 +1826,14 @@ say(r.midUp && r.midNotTop, 'plus meets its own rung and not the one above it');
 say(r.topHasMid, 'and pro meets plus\'s -- a ladder, not three equals signs');
 say(r.freeNoMid, 'while free meets neither');
 
-say(r.kbFree === 1 && r.kbMid === 4, 'free has one keyboard, plus has 1 + 3 (' +
-    r.kbFree + ' ' + r.kbMid + ')');
+say(r.kbFree === 1 && (r.kbMid === null || r.kbMid === undefined || r.kbMid > 1e9 || r.kbMid === 'Infinity'),
+    'free has one keyboard, plus has no ceiling (' + r.kbFree + ' ' + r.kbMid + ')');
 say(r.kbTop === null || r.kbTop === undefined || r.kbTop > 1e9 || r.kbTop === 'Infinity',
     'and pro has no ceiling on them (' + r.kbTop + ')');
 say(r.kbDoor, 'the door and the number moved together: free cannot lay one out, plus and pro can');
 say(r.kbHere === 1 && r.kbRoomHere, 'one keyboard built here leaves room for more');
-say(r.kbPool === 3 && r.kbRoomPool === false,
-    'two more in ANOTHER language fill the plan up -- the ceiling is a pool across languages (' +
+say(r.kbPool === 3 && r.kbRoomPool === true,
+    'two more in ANOTHER language are counted in the pool, and plus is not filled up by them (' +
     r.kbPool + ')');
 say(r.kbPoolTop === true, 'and pro is not filled up by them');
 say(r.kbPoolOld === 2,
@@ -1841,8 +1877,8 @@ say(r.kbSpun < 60,
     'the keyboard pool can be FILLED at all — a ceiling that never arrives is ' +
     'a loop, and a loop here is a renderer the browser kills with nothing said ' +
     '(' + r.kbSpun + ' pushed, pool counts ' + r.kbPoolCount + ')');
-say(r.kbAtCeiling, 'plus fills up at four keyboards');
-say(r.kbSaidNo, 'and the fourth-and-one asks rather than telling -- no is no, and nobody is moved');
+say(r.kbAtCeiling, 'free is full at its one keyboard, the QWERTY');
+say(r.kbSaidNo, 'and the next one asks rather than telling -- no is no, and nobody is moved');
 say(r.kbAsked === r.upNeed, 'the sentence is the one upgrade line and names no number (' + (r.kbAsked || 'nothing') + ')');
 say(r.kbSaidYes, 'and yes goes to the plans screen, still without making one');
 
@@ -2162,6 +2198,13 @@ say(!/LinguaPlanPlugin\.set/.test(CODE) && !/writeDown/.test(CODE),
 say(!/func best\(/.test(CODE) && !/entitledPlan/.test(CODE),
     'the ladder and the walk that used to pick a rung here are gone, not ' +
     'narrowed');
+say(ask.asked === 'LinguaStore.current' && ask.sent === 'APPROVED' && ask.rung === 'plus',
+    'a purchase approved while the app is open is the plan at once — the window ' +
+    'event asks `current`, sends what Apple signed, and takes the answer, with no ' +
+    'reload [' + [ask.asked, ask.sent, ask.rung].join(' ') + ']');
+say(/for await result in Transaction\.updates[\s\S]*?dispatchEvent\(new Event\('linguastore'\)\)/.test(CODE),
+    'and LinguaStore.swift tells the page for every transaction that arrives at ' +
+    'Transaction.updates (`linguastore`)');
 /* What it DOES answer, on every road out. Four roads and one shape: a list of
    what Apple signed, which is the only thing the server can read. */
 const ROADS = ['buy', 'restore', 'current', 'manage'];

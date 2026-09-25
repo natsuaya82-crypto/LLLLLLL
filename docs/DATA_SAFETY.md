@@ -22,9 +22,10 @@ Three of these four are ordinary events, not disasters:
 オンラインのみで行こうってことになってる今後オフライン対応する時にまた考える
 ことにした」 OWNER 2026-09-04.
 
-A save goes up the moment it is made — `bkTouch()` is the one line every
-writer passes through and `netSaveUp()` (`www/net.js`) sends the slices that
-moved — `netLangsDown()` says which languages this ACCOUNT has, and
+A save goes up when Save is pressed 「保存を押したら」 OWNER 2026-09-24 — on a
+screen with a Save its draft goes up with the Save (`keepSave()`), and on a
+screen with none the press is the save (`bkTouch()`, the one line every writer
+passes through); `netSaveNow()` (`www/net.js`) sends the slices that moved — `netLangsDown()` says which languages this ACCOUNT has, and
 `netLangFill()` brings one down when a screen drawn from it is arrived at
 (「読むのは開いた画面の分だけ」 OWNER 2026-09-23). Sign in on any handset
 and the language is there.
@@ -57,7 +58,7 @@ the whole of it.
 ### 1. A save reaches the server, and a merge never destroys what is there
 
 `netSlice1()` in `www/net.js` is the only thing that puts a slice up, and both
-roads call it — `netSaveUp()` on a save a person makes, `netLangSync()` at the
+roads call it — `netSaveNow()` on a save a person makes, `netLangSync()` at the
 door (what the walk made). **A launch sends nothing** (2026-09-23,
 `tools/quiet-check.mjs`): until a language's slices have come down in this run
 of the app, what is on the screen is the picture, `langLocked()` refuses every
@@ -125,7 +126,7 @@ had paid.
 When a plan ends the dictionary screen lists the first hundred words and no
 more (`docs/PAID_FEATURES.md` § when a plan ends). That is allowed and the rule
 above is untouched: `WORDS` is not written, `save()` writes every word,
-`netSaveUp()` sends every word, and `findWord()` finds every word. One list on
+`netSaveNow()` sends every word, and `findWord()` finds every word. One list on
 one screen is shorter.
 
 It is in this file because it is the one thing in the app that **looks** like a
@@ -252,7 +253,7 @@ somewhere:
 ```
 
 `tools/again-check.mjs` holds them, against a server made of two arrays behind
-`netSend()` — so `netSaveUp()`, `netSlices()` and the merge all run for real.
+`netSend()` — so `netSaveNow()`, `netSlices()` and the merge all run for real.
 
 **Every one of its failures was made to happen before it was believed.** Do the
 same for anything added to it.

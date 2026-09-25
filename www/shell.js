@@ -433,17 +433,16 @@ function keepKey(){ return keepKeyOf(here().r, here().a); }
    may not happen while the send is still out:
    「通信エラーなら進むわけねえだろ全部」. It is optional; eight of the nine
    screens hand nothing. */
-/* AND `drop` IS WHAT 「いいえ」 PUTS BACK, for a screen whose presses change
-   what it is holding before Save (K1, r79). A field that is typed into writes
-   nothing until Save, so 「いいえ」 letting the buffer go is the whole of it;
-   a screen that changes something by PRESSING -- the keyboard's sheet -- holds
-   that change as its draft until Save (www/keyboard.js § saveKb), and `drop`
-   is how the draft goes: the screen reads back what is written, which nothing
-   has touched. Optional; the screens that are only typed into hand nothing. */
+/* AND `drop` IS WHAT ELSE 「いいえ」 FORGETS. What was pressed on a screen with
+   a Save is its draft and is never written before the Save (§ keepDrafting
+   below), so 「いいえ」 reading the language back is the whole of putting it
+   back, for every screen (keepNo). `drop` is the rest of a screen's own
+   state that was about the draft -- the keyboard's step back and selection
+   (kbLeft). Optional; the other screens hand nothing. */
 function keepOn(key, now, save, landed, drop){
   var k=String(key);
   if(KEEP[k]){ KEEP[k].now=now; KEEP[k].save=save; KEEP[k].landed=landed; KEEP[k].drop=drop; return; }
-  KEEP[k]={was:keepRead(now), now:now, v:{}, save:save, landed:landed, drop:drop};
+  KEEP[k]={was:keepRead(now), now:now, v:{}, save:save, landed:landed, drop:drop, held:langHold()};
 }
 /* `now()` answered as strings, which is the only thing ever compared. A
    screen hands back plain values -- a name, a note, a layout said once as
@@ -518,12 +517,47 @@ function keepLevel(){
   for(k in KEEP){
     if(!Object.prototype.hasOwnProperty.call(KEEP, k)) continue;
     KEEP[k].was=keepNow(k);
+    /* and what 「いいえ」 would put back: the language is written now, so
+       there is no draft left behind any of them */
+    KEEP[k].held=langHold();
   }
 }
 /* Let go of. It is a buffer and nothing else: no slice is written, nothing
    stored moves. docs/DATA_SAFETY.md -- 「いいえ」 discards what was being
    typed and cannot reach what was already saved. */
 function keepDrop(key){ delete KEEP[String(key)]; }
+/* ---- WHAT IS PRESSED ON A SCREEN WITH A SAVE IS THAT SCREEN'S DRAFT --------
+   「保存がサーバーに上がる時 →『保存を押したら』」 OWNER 2026-09-24, and the
+   shape is the keyboard's (K1, r79): 「保存ボタンのある画面で書いている物は、
+   その画面の下書き。保存を押すまで slice に書かない。『いいえ』は下書きを捨てる
+   だけ」.
+
+   A draft is open while a screen holding a buffer is ON THE TRAIL -- the one
+   in front, or one behind it that it was reached from: a key's page is
+   deeper than its board's, and the sound chart deeper than its letter, and a
+   change made there is the same draft. Not while a buffer merely exists: a
+   buffer outlives its screen (it is what brings typing back), and a list
+   reached after it is not somebody's draft.
+
+   What it holds back is the WRITE, and only that: every writer asks
+   langWrites() (www/core.js), which asks this. The screen draws from the
+   globals, so what was pressed is on it; the slice is what the language was
+   when the screen opened. While the Save itself is writing (KEEP_BUSY) there
+   is no draft -- that is the moment it stops being one. */
+/* And the moment it is not: a press that IS a save, on a screen whose Save is
+   not the corner's (the new word's Add, www/wordsheet.js § addOne). What it
+   writes is written; what it sends is its own to send. */
+function keepWrite(fn){
+  var was=KEEP_BUSY;
+  KEEP_BUSY=true;
+  try{ fn(); } finally{ KEEP_BUSY=was; }
+}
+function keepDrafting(){
+  var i;
+  if(KEEP_BUSY) return false;
+  for(i=0;i<NAV.length;i++) if(KEEP[keepKeyOf(NAV[i].r, NAV[i].a)]) return true;
+  return false;
+}
 /* Write it. `done` is told whether it LANDED, because one of these can be
    refused by somebody who is not this phone: the @ is unique on the server
    and may already be taken. A save that did not land must not be followed by
@@ -571,7 +605,7 @@ var KEEP_BUSY=false;
    never touched here, so the fields still hold it and pressing again sends it
    again. 「打ったものは欄に残る」. */
 function keepSnap(){
-  var snap={lsl:{}, ls:{}, set:'', me:'', langs:''}, k, i;
+  var snap={lsl:{}, ls:{}, set:'', me:'', langs:'', lang:langHold()}, k, i;
   for(k in LSL) if(Object.prototype.hasOwnProperty.call(LSL,k)) snap.lsl[k]=LSL[k];
   try{
     for(i=0;i<localStorage.length;i++){
@@ -608,6 +642,10 @@ function keepBack(snap){
   try{ LANGS=JSON.parse(snap.langs); }catch(e){}
   if(snap.me && typeof ME!=='undefined'){ try{ ME=JSON.parse(snap.me); }catch(e){} }
   langLoad();
+  /* and the draft that was on the screen when Save was pressed, which the
+     slices never held (§ keepDrafting): a Save that did not land leaves it
+     exactly where it was, and pressing again writes it again. */
+  langHeldBack(snap.lang);
 }
 function keepSave(key, done){
   var b=KEEP[String(key)], snap;
@@ -630,15 +668,14 @@ function keepSave(key, done){
        above takes that back when the send does not land -- 「先にサーバー
        じゃないの？」 OWNER 2026-09-06.
        What it never did was ask whether the server heard -- the copy went up
-       on netSaveUp()'s 1.2-second burst timer, behind a person who had
-       already been told 「saved」 and sent back a screen. Nine screens
+       on a 1.2-second burst timer (deleted 2026-09-25), behind a person who
+       had already been told 「saved」 and sent back a screen. Nine screens
        register a buffer here, so that was nine buttons lying in the same
        way, and it is one road rather than nine: this function is the only
        caller of `b.save` there is.
 
-       netSaveNow() (www/net.js) is the SAME road up as the burst with the
-       wait taken off it -- the send happens on the press and answers whether
-       it landed. It is not reached before net.js is loaded, so the check is
+       netSaveNow() (www/net.js) is the one road up -- the send happens on
+       the press and answers whether it landed. It is not reached before net.js is loaded, so the check is
        for the order of the script tags in www/index.html and nothing else.
 
        WHAT IS TYPED IS NOT TAKEN BACK when it does not land. The buffer is
@@ -847,12 +884,15 @@ function keepAsked(){
     function(){ keepNo(k); backGo(); });
   return true;
 }
-/* 「いいえ」: the buffer goes, and a screen that holds a pressed change as its
-   draft reads back what is written (§ keepOn `drop`). The buffer first, so
-   the screen reading back is not reading as a screen with a draft open. */
+/* 「いいえ」: the buffer goes, and the draft with it -- the language is put
+   back as it was when the screen opened (`held`, langHeldBack in
+   www/core.js); the slices were never written (§ keepDrafting). `drop` is what the screen forgets besides the language
+   (the keyboard's step back and selection). The buffer first, so the screen
+   reading back is not reading as a screen with a draft open. */
 function keepNo(key){
   var b=KEEP[String(key)], drop=b && b.drop;
   keepDrop(key);
+  if(b) langHeldBack(b.held);
   if(drop) drop();
 }
 /* Going back, with nothing left to ask. It is its own function because three

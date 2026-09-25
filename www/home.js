@@ -889,7 +889,7 @@ function migrateWorld(){
   if(got) saveWld();
   save();
 }
-function saveWld(){ if(langLocked()) return; bkTouch(); slWr(langKey('wld'), JSON.stringify(WLD)); }
+function saveWld(){ if(!langWrites()) return; bkTouch(); slWr(langKey('wld'), JSON.stringify(WLD)); }
 function world(){ return WLD; }
 /* 用途 -- the five 「物語 / 種族 / 土地 / 実際に話す / 試す」 -- came off both
    screens: 「編集画面の謎のその5択なに？いらんやろ」 OWNER 2026-08-25. What each

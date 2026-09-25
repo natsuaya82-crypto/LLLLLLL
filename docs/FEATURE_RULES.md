@@ -302,7 +302,12 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Reason: オーナーの言葉。
 - Affected data: ブロック（schema.sql）、フォローの時刻、言語の版、スマホの声・用紙、2段キーのつなぎ（DELETE REVIEW は CHANGELOG）。
 - Affected docs: CLAUDE.md（起動で読む物・十の基準の 9 を直した）。この決定と食い違う古い項は、実装する session が消して書き直す。
-- Implementation status: 画面・タイムライン・キーボードの分は入った（r82・r83）。保存・版・取った言語・起動・購入・上限の文は r84。
+- Implementation status: 画面・タイムライン・キーボードの分は入った（r82・r83）。r84（`claude/r84-save`、CODE CONFIRMED のみ）:
+  **保存を押した時** ── 入った（`langWrites()`・`keepDrafting()`・`netSaveNow()`、`keep-check` 23）。
+  **取ってきた言語** ── 入った（`dl-check` が全部の画面を押す）。**開いた時に読む物** ── 測ると五つとも既に読んでいた、
+  `load-check` 1 が数える。**親が承認した購入** ── 入った（`Transaction.updates` → `linguastore`、`plan-check`、Swift は未ビルド）。
+  **上限の文** ── `up.need` 一つのまま、Plus のキーボードは無制限（`plan-check`・`kb-check`）。
+  **言語を前に戻す** ── **未**。測って止めた（戻す画面 `www/mod.js` が持ち物に無い）、形の案は `docs/scope/r84-save.md` § B。
 
 ### 2026-09-24 キーボードのプランとフォントの書き出し（r46 の申し送り）
 - Date: 2026-09-24
@@ -311,7 +316,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
   Plus ── キーボード無制限、自分で描いた文字を自由に配置できる。Pro ── キーボード無制限、フォントのファイル書き出しを追加。
 - Reason: キーボードを売りにする。Reddit で、自分の文字をフォントにして Procreate やパソコンで使いたい声があった。
 - Affected docs: `docs/scope/r46-reddit.md`（`claude/r46-reddit`）。
-- Implementation status: 未。**まだ訊いていないこと:** 「既存の文字」の範囲、書き出す形式と取り出し方、今 Plus で 4 つ作っている人への見せ方。
+- Implementation status: **Plus のキーボード無制限は実装（`claude/r84-save`、2026-09-25）** ── `kbCap()` は無料 1・Plus と Pro は `Infinity`、~~`PLUS_KB`~~ は消した。Plus のカードの行 `plan.plus.5` は「キーボードは無制限」、Pro のカードの同じ行（~~`plan.pro.3`~~）は Plus に含まれるので消した。`plan-check`・`kb-check`。CODE CONFIRMED のみ。**残り（未・まだ訊いていないこと）:** 無料の「既存の文字で自由に配置したキーボード」と「既存の文字」の範囲、Pro のフォントの書き出し（形式と取り出し方）。
 
 ### キーの画面 ── 押した字がそのキーに入る。確定は無い
 - Date: 2026-09-24
@@ -964,7 +969,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
 
 ### 同じものを何度も運ばない ── 保存の写しを返さない・送る前の読みを無くす・起動の二度読みを一度に
 - Date: 2026-09-09
-- Area: 保存の道（`netSlicePut` / `netSaveUp`）、起動の道
+- Area: 保存の道（`netSlicePut` / ~~`netSaveUp`~~、今は `netSaveNow`）、起動の道
 - Decision: `docs/reports/cost-2026-09-09.md` の三つを直す「これもやって」。
   5,000 語の人の保存一回 2.6 MB → 0.9 MB 以下、起動一回 1.9 MB → 1.0 MB 以下。
   $25 で 763 人 → 1,846 人。**二台目が同じ言語を編集した時に片方が消える形には
@@ -992,8 +997,9 @@ the reasoning — a reason can be re-derived, a decision cannot.
     **残し方は回数：部分（slice）ごとに直前 3 版**「回数じゃね」「3 で
     実装して」（2026-09-09）。日数ではない ── 人が増えても一人あたりの上限が
     変わらないから。管理画面（7 回タップ、@lingua）に、handle で探す → その
-    人の言語 → 部分ごとの版（最大 3、日時）→ 戻す。戻すと、それまでの「今」
-    も版の一つになる。`docs/RECOVERY.md` 案A の形。**SQL の流し直しあり。**
+    人の言語 → **言語の版（3 つ前まで、日時）→ 言語まるごと戻す**（「言語を前に
+    戻す →『3つ前、まるごと』」2026-09-24。部分ごとに戻す形はこれで書き直した）。
+    戻すと、それまでの「今」も版の一つになる。`docs/RECOVERY.md` 案A の形。**SQL の流し直しあり。**
     合わせて「$25 で何人持つか」を測った数字で出す（`claude/r10-measure`）。
 - Affected features: ♡、古い言語、管理画面
 - Affected data: ♡は保存されるものが増えない（画面の一時状態だけ）。復旧は
@@ -1802,7 +1808,8 @@ the reasoning — a reason can be re-derived, a decision cannot.
   消さない、書き換えない、足すだけ。そうすると「どっちが勝つか」は番号で
   決まり、「戻す」は「◯番に戻す」だけになり、壊れたものが上書きする事故が
   構造的に起きなくなります。**オーナーが既に決めた二つ ──「人が作ったものに
-  期限は無い」「後から変えたほうが残る」── を両方満たす形がこれです。**
+  期限は無い」（2026-09-24 に「3 つ前まで」で差し替え）「後から変えたほうが残る」
+  ── を両方満たす形がこれです。**
 
   **積むのはサーバーです。ファイルではありません。**ファイルはその iPhone と
   一緒に無くなり、運営側から見えず、全部の版を置くには小さすぎます。
@@ -1813,7 +1820,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
   土台がそれです。`supabase/setup.md` には**一言も書かれていません**（0 件）。
 - Affected features: 保存・同期・バックアップ・復元・運営側の復旧
 - Affected data: **増えます。**版が積まれる分。五千語の言語で保存一回 685 KB。
-  **その数字は「人が作ったものに期限は無い」の項目で承知のうえと決めています**
+  **残すのは 3 つ前まで**（「3つ前、まるごと」2026-09-24）
 - Affected docs: この項目、`docs/DATA_SAFETY.md`、`docs/RECOVERY.md`、
   `docs/EXPIRY.md`、`docs/ARCHITECTURE.md`、`supabase/setup.md`
 - Implementation status: **設計から。`claude/one` がコードを一行も変えずに
@@ -2017,26 +2024,8 @@ the reasoning — a reason can be re-derived, a decision cannot.
 ### 【差し替え済み 2026-09-15】お題は #今日のお題。十言語ぶんで、どの言語で書かれていても同じ一つ（2026-09-04）
 - 差し替えた決定: 「タグは別の枠。本文の外、翻訳の下、最大 4 つ」（2026-09-15）
 
-### 上限のポップは Pro を言う。Plus は飛ばす
-- Date: 2026-09-04
-- Area: 上限に当たったときのポップの文（十言語ぶん）
-- Decision:
-
-  ```
-  proなら無制限で使用できます
-
-  でいいんじゃない？plusよりもproは売りたいよね
-  ```
-
-- Reason: 無料でキーボードの＋を押したときのポップが「Pro なら無制限です」と
-  言い、間にある Plus を飛ばしていた。**それでよい、というのがオーナーの答え
-  です。**Plus より Pro を売りたいので、ポップは Pro を言う。
-  **これは「一番近い段を案内する」より優先します。**
-- Affected features: 上限のポップを出す全部の口
-- Affected data: 無し。文だけ
-- Affected docs: この項目
-- Implementation status: `claude/kbfree2` に配布。**「Pro なら無制限です。」を
-  「Pro なら無制限で使用できます。」に。十言語ぶん。**
+### 【差し替え済み 2026-09-24】上限のポップは Pro を言う。Plus は飛ばす（2026-09-04）
+- 差し替えた決定: 「上限に達した時の文 →『他に合わせて』」（2026-09-24 オーナーの答え）── 上限のポップは `up.need` 一つ
 
 ### ＋は右下。上限を越えて押したときにポップが出る。無料に空の枠は並べない
 - Date: 2026-09-04
@@ -2074,7 +2063,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Implementation status: **2026-09-23 に照合していない。**名指していた ~~`kbSlots()`~~ と ~~`freeSlots`~~ は
   コードに無く、`kbSlotsShown()`（`www/keyboard.js`）がある。
 
-  数は既に `www/core.js:791` に一つずつ在ります ── `FREE_KB=1`、`PLUS_KB=4`、
+  数は既に `www/core.js:791` に一つずつ在ります ── `FREE_KB=1`、~~`PLUS_KB=4`~~（2026-09-24 に消えた）、
   Pro は `kbCap()` で無制限。**新しい数を書かないこと。**
 
   **無料に編集は要りません。**無料の board 0 は QWERTY そのもので、
@@ -2107,29 +2096,8 @@ the reasoning — a reason can be re-derived, a decision cannot.
   ポップから「アップグレード」でプランへ行き、戻ってきたときに立っているのも、
   ポップを出したその画面である（`docs/DUPLICATES.md` 8番はこれで決まる）。
 
-### 人が作ったものに期限は無い。バグで消えた分はずっと戻せる
-- Date: 2026-09-04
-- Area: 保存されるもの全部。とくに復旧の履歴（`supabase/schema.sql`）
-- Decision:
-
-  ```
-  そもそもバグで消えるなら一生残るはずだよね？自分で消してるわけじゃないし
-  基本一生残るよな
-  2016年のTwitterアカウントいまろぐいんしてもみれる
-  ```
-
-- Reason: 自分で消したのでなければ、消える理由が無い。何年も前のものが
-  そのまま開けるのが当たり前で、この app もそうである。
-- Affected features: 復旧（`docs/RECOVERY.md` 案A）。スライスの前の版を残す表に、
-  **期限も掃除の仕組みも作らない。**
-- Affected data: `slice` の前の版。増える一方になる。一語足すたびにその時点の
-  単語ぜんぶが一行残るので、五千語の言語で一回 685 KB。数字は承知のうえ。
-- Affected docs: `docs/RECOVERY.md`、`docs/DATA_SAFETY.md`、`docs/STATE.md`
-- Implementation status: `claude/rec2` が実装中
-
-  **CLAUDE.md の「Data」が元から同じことを言っている** ── automatic deletion,
-  pruning and cleanup are forbidden unless a written spec asks for them。
-  この決定はそれを、期間を訊かれたその場で言い直したもの。
+### 【差し替え済み 2026-09-24】人が作ったものに期限は無い。バグで消えた分はずっと戻せる（2026-09-04）
+- 差し替えた決定: 「言語を前に戻す →『3つ前、まるごと』」（2026-09-24）── 戻せるのは 3 つ前まで
 
 ### 【差し替え済み 2026-09-04】無料でも有料と同じ数の枠が並ぶ。二つ目以降は押すとプランへ（2026-09-03）
 - 差し替えた決定: 「＋は右下。上限を越えて押したときにポップが出る。無料に空の枠は並べない」（2026-09-04）
@@ -5264,19 +5232,18 @@ and is never merged into your own」と言っている。**入らない、は二
 - Affected data: new server tables; on the phone, a downloaded keyboard and a
   downloaded language are new slices and are **not** the person's own
 - Affected docs: `docs/FEATURES.md`, `docs/PAID_FEATURES.md`, `CLAUDE.md`
-  6. **A downloaded keyboard is edited as it stands** — the download IS the
-     copy, so there is nothing to copy again. But **the letters that can be
-     put on its keys are the downloader's own**: it is somebody else's
-     keyboard and this is somebody else's alphabet, and the two do not mix.
-     「dl自体が複製なんだからそのままで良くね？でも人の言語だから当てられる文字は
-     dlした人の言語だけ」
+  6. **取ってきた言語は、キーボードも含めて編集できない（読むだけ）。**
+     「取ってきた言語を編集できるか →『できない』」OWNER 2026-09-24。書き手は
+     全部 `langWrites()`（`www/core.js`）一つを訊き、`langLocked()` がその言語で
+     はいと答える。`dl-check` が、取った言語の全部の画面の全部のボタンを押して、
+     何も作られず、どの章も動かないことを持つ。
 - Implementation status: **取る側は入りました。**`can('dl')`（`www/core.js` の
   `CAN`）と `dlCap()`（Plus 1・Pro 3、無料は 0）、`dlCount()`、`dlStop()`。
   押すと本当に着地することを `tools/dl-check.mjs` が持ちます ── 記事の見た目
   ではなく storage を訊きます（`LANGS[id].mine` が false、~~`bkPack()`~~ は運ばない、
   `netLangSync()` は走らない）。「ダウンロードボタン押しても言語追加されない
   けど？」OWNER 2026-09-01 が、その検査が書かれた理由です。
-  6 番（落としたキーボードに当てられる文字は落とした人のもの）はまだです。
+  6 番は 2026-09-24 の答えで書き直した（上）。
 
 ### Decision
 - Date: 2026-08-19
