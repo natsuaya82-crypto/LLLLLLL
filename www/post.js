@@ -1711,24 +1711,35 @@ function pwHTML(){
       /* The same ceiling as the line and refused in the same place, which is
          the press. Nothing here either: postCap() is asked once, in pwSend(),
          about both rows. */
-      /* AND THE SWITCH FOR IT, on a row of its own where the meaning starts,
-         and staying there when the field goes (pwMnOff). The word, because
-         「意味」 has no mark every phone draws, in the colour of what is on
-         while it is on. Not in the bar under the field: that bar is exactly
-         full on a 320 phone with nothing added (measured 320/320), and the
-         switch in it pushed the last ring off -- 411/390 as a word and a
-         switch, 348/320 as the word alone. Not on the day's prompt, and not
-         while a post that exists is edited -- that keeps what it has. */
-      ((PW.pr || PW.ed)? '' :
-        '<div class="pwmnrow"><button class="pwmnsw'+(pwMnOff()? '' : ' on')+'" aria-pressed="'+
-          (pwMnOff()? 'false' : 'true')+'"'+DO('pwMnSw')+'>'+esc(t('post.mn.sw'))+'</button></div>')+
-      /* Not there at all while the meaning is switched off (pwMnOff): the
-         screen is the line and nothing under it, which is a post anywhere
-         else. What was typed into it stays in PW.mn and comes back with the
-         switch; it is not sent. */
+      /* THE MEANING AND ITS SWITCH ARE ONE ROW: the field on the left, the
+         switch at the right end, and the switch alone at the right end while
+         the meaning is off (pwMnOff). 「自分の言語で一行と意味がこのページで
+         見れるように」 OWNER 2026-08-26 is the floor under the board, and that
+         floor is two fields -- the line and the meaning (www/index.html §
+         .view.fit, 104). The switch on a row of its own made it three, and on
+         a reply at 260 or 308 of screen the meaning was pushed under the
+         board's foot. Standing on the meaning's row, the switch takes no
+         height the meaning did not already have, so nothing belonging to the
+         meaning can push the meaning off the screen.
+
+         The word, because 「意味」 has no mark every phone draws, in the colour
+         of what is on while it is on. Not in the bar under the field: that bar
+         is exactly full on a 320 phone with nothing added (measured 320/320).
+         Not on the day's prompt, and not while a post that exists is edited
+         -- that keeps what it has.
+
+         Not there at all while the meaning is switched off: the screen is the
+         line and nothing under it, which is a post anywhere else. What was
+         typed into it stays in PW.mn and comes back with the switch; it is not
+         sent. */
+      '<div class="pwmnrow">'+
       (pwMnOff()? '' :
-      lnField('pw-mn', pwMn() || t('post.mn'),
-        (PW.pr? ' readonly' : '')+IN('pwSetMn'), PW.mn, 'pwmn'))+
+        lnField('pw-mn', pwMn() || t('post.mn'),
+          (PW.pr? ' readonly' : '')+IN('pwSetMn'), PW.mn, 'pwmn'))+
+      ((PW.pr || PW.ed)? '' :
+        '<button class="pwmnsw'+(pwMnOff()? '' : ' on')+'" aria-pressed="'+
+          (pwMnOff()? 'false' : 'true')+'"'+DO('pwMnSw')+'>'+esc(t('post.mn.sw'))+'</button>')+
+      '</div>'+
       /* AND THE TAGS, UNDER THE MEANING -- the same place the post puts them
          (postRow), so what is being written and what was written read in one
          order: the line, what it means, and what it is filed under.
