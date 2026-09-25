@@ -14,7 +14,7 @@
 | # | 何 | 状態 |
 |---|---|---|
 | S-A | RevenueCat：プロジェクトとアプリを作る → App Store Connect とつなぐ → 商品 4 つ → Entitlement と Offering → 公開 SDK キー（「appl_」）をリーダーへ | 済み（2026-09-25）：アプリ内課金キー・App Store Connect API キー・商品 4 つ・Entitlement「plus」「pro」（各 2 商品）・Offering「default」（4 パッケージ）。公開 SDK キーはオーナーがリーダーのセッションに送った |
-| S-B | Devpost で Shipaton 2026 に参加登録 | まだ |
+| S-B | Devpost で Shipaton 2026 に参加登録 | 済み（2026-09-25） |
 | S-C | App Store Connect で審査員用のコード（オファーコード）を用意 | まだ |
 | S-D | RevenueCat 入りのビルドが届いたら、実機で一回買う → 審査に出す（審査 1〜2 日。早いほど安全） | 待ち：RevenueCat 入りのビルド |
 | S-E | Devpost に提出（説明・デモ動画・App Store の URL・アイコン・スクショ・S-C のコード） | 待ち：S-D とリーダーの下書き・画像 |
@@ -78,7 +78,7 @@
 
 ### S-C 審査員用のコード
 
-Apple は 2026 年から、アプリ内課金の「プロモーションコード」を新しく作れなくしたという情報がある（まだ確かめていない）。
+Apple は 2026-03-26 から、アプリ内課金の「プロモーションコード」を新しく作れなくした（Apple Developer News と 9to5Mac で確かめた）。
 代わりに **オファーコード**（サブスクを無料で一定期間使えるコード）を作る。
 1. App Store Connect → アプリ → Lingua → 左の **サブスクリプション** → グループを開く → Pro の月額など（審査員が全部の機能を見られる方）
 2. **サブスクリプションの価格** の下の **オファーコード** → **作成**（名前 `shipaton-judges`、無料・1 か月など）
