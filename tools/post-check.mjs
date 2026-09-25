@@ -203,6 +203,30 @@ const R = await pg.evaluate(async () => {
     fails.push('the posted picture is byte-for-byte the one that was chosen, ' +
                'so pwBake() did not run');
 
+  /* ---- 2b. the letter goes in and NOTHING ELSE does ----------------- */
+  /* 「黒い帯いらない」 OWNER 2026-09-24. A white letter on a photograph that
+     is white everywhere: what comes out is still white everywhere, because
+     the only thing put on a picture is the letter. A plate behind the line
+     is a dark block in a white file, and that is what this counts. */
+  {
+    const whitePic = (() => {
+      const c = document.createElement('canvas');
+      c.width = 400; c.height = 400;
+      const x = c.getContext('2d');
+      x.fillStyle = '#fff'; x.fillRect(0, 0, 400, 400);
+      return c.toDataURL('image/jpeg', 0.9);
+    })();
+    const baked = await new Promise((r) => pwBakeOne({ u: whitePic,
+      marks: [{ tx: 'kano', x: 0.5, y: 0.5, s: 0.5, c: PW_COLS[0] }] }, r));
+    const dark = 1 - await lightShare(baked);
+    if (baked === whitePic)
+      fails.push('2b: the mark was never baked, so nothing here is a test');
+    else if (dark > 0.002)
+      fails.push('2b: a white letter on a white photograph came out ' +
+                 (dark * 100).toFixed(1) + '% dark. Something was drawn behind ' +
+                 'the line -- 「黒い帯いらない」 OWNER 2026-09-24');
+  }
+
   /* ---- 3. the marks themselves do not travel ------------------------ */
   if (p.marks !== undefined || (p.pics && p.pics.some((x) => typeof x !== 'string')))
     fails.push('the post carries `marks`. Letters on a picture are baked in, ' +
@@ -3017,6 +3041,18 @@ const R = await pg.evaluate(async () => {
                      'post that never had a voice -- so the post goes up sounding ' +
                      'like one that was never recorded');
       }
+      /* AND ONCE IT IS UP, THE PHONE'S FILE IS NOT KEPT. 「スマホの中に保存
+         されているものなんてないけど。それがあるのがおかしいけど。」 OWNER
+         2026-09-24. The server holds the recording (`vu`); the file in
+         Documents/Voices goes, and the post plays from the server. */
+      const p16 = POSTS[0];
+      if (files['v-fail-1.m4a'] !== undefined || (p16 && p16.vo && p16.vo.f))
+        fails.push('16b: the voice went up and the phone still keeps its file (' +
+                   JSON.stringify(p16 && p16.vo) + ', on disk: ' +
+                   (files['v-fail-1.m4a'] !== undefined) + ')');
+      else if (!(p16 && p16.vu) || postVoAt(p16) !== p16.vu || !postVoMs(p16))
+        fails.push('16b: with the file gone the post does not play from the server: ' +
+                   JSON.stringify({ vu: p16 && p16.vu, at: postVoAt(p16), ms: postVoMs(p16) }));
       delete files['v-fail-1.m4a'];
 
       /* ---- the voice's length travels, and a voice that is gone is said -

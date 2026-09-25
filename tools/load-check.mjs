@@ -198,10 +198,12 @@ console.log('the launch: ' + boot.length + ' requests -- ' + tables(boot).join('
 console.log('the launch pages: ' + JSON.stringify(open) + ', the first screen: ' + first.r);
 say(!!open && open.slice().sort().join() === 'feed,notif',
     '1 the launch pages are the timeline and the notices (PAGE_OPEN) -- ' + JSON.stringify(open));
+/* 「アプリを開いて最初の画面 → タイムラインで」 OWNER 2026-09-24. */
+say(first.r === 'feed', '1 the app opens on the timeline -- it opened on ' + first.r);
 
 /* ---- 2. every route, arrived at through the door, with nothing answered -- */
 const routes = await pg.evaluate(() => Object.keys(PAGES));
-const ARG = { profile:'h3', about:'L-other', thread:'p3', follows:'ers:h3', photo:'p3:0' };
+const ARG = { profile:'h3', about:'L-other', thread:'p3', follows:'ers:h3', photo:'p3:0', set:'block' };
 const byRoute = {};
 const reach = await pg.evaluate(() => typeof pageNeeds === 'function' && typeof navLand === 'function');
 say(reach, '2 there is one table of what a page reads (pageNeeds) and one door onto a page (navLand)');

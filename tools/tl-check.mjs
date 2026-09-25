@@ -351,7 +351,7 @@ const r = await pg.evaluate(({ s }) => {
   netWho = function (h, k) { k({ who:'Iri', hd:String(h), uid:'U-' + h }); };
   netPostsBy = function (u, k) { k([]); };
   netBlockedRead = function (ok) { ok(); };
-  const wasBlHd2 = NET_BL_HD; NET_BL_HD = NET_BL_HD || [];
+  const wasBlHd2 = NET_BL; NET_BL = NET_BL || [];
   let relAsks = 0;
   netRel = function (hs, ok) { relAsks++; const by = {}; hs.forEach(h => { by[h] = { i:false, u:true }; }); ok(by); };
   REL = {};
@@ -359,7 +359,7 @@ const r = await pg.evaluate(({ s }) => {
   go('profile', 'iri');
   out.mineOnOpen = here().r === 'profile' && meFollowed('iri');
   out.askedOnTheirs = relAsks;
-  netRel = wasRel2; netWho = wasWho2; netPostsBy = wasBy2; netBlockedRead = wasBl2; NET_BL_HD = wasBlHd2;
+  netRel = wasRel2; netWho = wasWho2; netPostsBy = wasBy2; netBlockedRead = wasBl2; NET_BL = wasBlHd2;
   REL = heldRel;
   NAV = [{ r:'feed' }]; window.route = 'feed';
 
@@ -491,6 +491,86 @@ const r = await pg.evaluate(({ s }) => {
     walk('ntf', () => go('notfo', 'kai,noa'));
     folPut(false, meHandle(), heldPair.fo);
     WHO_HAVE = {}; WHO_ASKED = {};
+    netSend1 = realS1; netSend = realS; netGet = realG;
+    NAV = [{ r:'feed' }]; window.route = 'feed';
+  }
+
+  /* ---- 9: a follow list is newest first, and the next page carries on ----
+     「フォロー中・フォロワーの並び → フォローした新しい順で」 OWNER 2026-09-24.
+     The server here does what PostgREST does with what it is asked: it sorts
+     by the `order` the phone sent, cuts at `limit`, and honours the one
+     keyset shape the phone may send (`or=(created_at.lt…,and(created_at.eq…,
+     <col>.gt…))`) and a bare `<col>=gt.` as well. Four people followed on
+     four days, two to a page: what the list holds after two pages is the
+     four, newest first, each once. */
+  {
+    const rows = [['kai', '2026-09-01T00:00:00+00:00'], ['noa', '2026-09-04T00:00:00+00:00'],
+                  ['ami', '2026-09-03T00:00:00+00:00'], ['zed', '2026-09-02T00:00:00+00:00']];
+    const realS1 = netSend1, realS = netSend, realG = netGet, realPage = NET_PAGE;
+    netSend1 = function (m, p, b, t, ok) {
+      p = String(p);
+      if (p.indexOf('/rest/v1/follow_seen?') !== 0) { ok([], 200); return; }
+      const q = new URLSearchParams(p.split('?')[1]);
+      const col = 'followed_handle';
+      let r = rows.map((x) => ({ followed_handle: x[0], created_at: x[1] }));
+      const gt = q.get(col);
+      if (gt && gt.indexOf('gt.') === 0) r = r.filter((x) => x[col] > gt.slice(3));
+      const or = q.get('or');
+      if (or) {
+        const m2 = /created_at\.lt\."([^"]*)",and\(created_at\.eq\."([^"]*)",followed_handle\.gt\."([^"]*)"\)/.exec(or);
+        if (!m2) { ok(null, 400); return; }
+        r = r.filter((x) => x.created_at < m2[1] || (x.created_at === m2[2] && x[col] > m2[3]));
+      }
+      const ord = (q.get('order') || '').split(',').filter(Boolean).map((o) => o.split('.'));
+      r.sort((a, c) => {
+        for (const [k, d] of ord) {
+          if (a[k] < c[k]) return d === 'desc' ? 1 : -1;
+          if (a[k] > c[k]) return d === 'desc' ? -1 : 1;
+        }
+        return 0;
+      });
+      ok(r.slice(0, +(q.get('limit') || 1000)), 200);
+    };
+    netSend = function (m, p, b, t, ok, bad, up) { netSend1(m, p, b, t, ok, bad, up, true); };
+    netGet = function (p, ok, bad) { netSend('GET', p, null, '', ok, bad); };
+    NET_PAGE = 2;
+    folForget();
+    const nop = function () {};
+    folPull(false, 'aya2', '', nop, nop);
+    NAV = [{ r:'follows', a:'ing:aya2' }]; window.route = 'follows';
+    FOL_MORE = false;
+    folMore();
+    out.folOrder = folOf(false, 'aya2').join(',');
+    NET_PAGE = realPage;
+    netSend1 = realS1; netSend = realS; netGet = realG;
+    folForget(); FOL_MORE = false;
+    NAV = [{ r:'feed' }]; window.route = 'feed';
+  }
+
+  /* ---- 10: whom you have blocked is a list in the settings, and 解除 ----
+     「ブロックの解除 → 設定に追加して非表示リストとブロックリスト」 OWNER
+     2026-09-24. The room draws each person the server says you blocked, with
+     the press that lifts it; pressed, the block row goes (a DELETE on
+     `block`), the list is asked again, and the person is not on it. */
+  {
+    const sent = [];
+    const realS1 = netSend1, realS = netSend, realG = netGet;
+    netSend1 = function (m, p, b, t, ok) {
+      p = String(p); sent.push(m + ' ' + p);
+      if (p.indexOf('/rest/v1/profile?select=id') === 0) { ok([{ id:'U-zed' }], 200); return; }
+      ok([], 200);
+    };
+    netSend = function (m, p, b, t, ok, bad, up) { netSend1(m, p, b, t, ok, bad, up, true); };
+    netGet = function (p, ok, bad) { netSend('GET', p, null, '', ok, bad); };
+    NET_BL = [{ id:'U-zed', hd:'zed', who:'Zed', av:{ ch:'Z' } }];
+    NAV = [{ r:'settings' }, { r:'set', a:'block' }]; window.route = 'set'; render();
+    const app = document.getElementById('app');
+    out.blRow = !!app.querySelector('[data-do="meBlock"][data-a=\'["zed"]\']') &&
+                app.textContent.indexOf('@zed') >= 0;
+    const un = app.querySelector('[data-do="meBlock"]');
+    if (un) un.click();
+    out.blSent = sent.filter((x) => /^DELETE \/rest\/v1\/block\?/.test(x) || /block_seen/.test(x)).join(' | ');
+    out.blGone = here().r === 'set' && app.textContent.indexOf('@zed') < 0 && !netBlockedPeople().length;
     netSend1 = realS1; netSend = realS; netGet = realG;
     NAV = [{ r:'feed' }]; window.route = 'feed';
   }
@@ -725,6 +805,16 @@ const PAIR_ON =
 const PAIR_OFF =
   'DELETE /rest/v1/follow?follower=eq.u&followed=eq.them | ' +
   'DELETE /rest/v1/block?actor=eq.u&blocked=eq.them';
+if (!r.blRow)
+  say('the settings\' list of whom you blocked does not draw @zed with 解除 on it. ' +
+      '「設定に追加して…ブロックリスト」 OWNER 2026-09-24');
+if (!/^DELETE \/rest\/v1\/block\?/.test(r.blSent || '') || !/block_seen/.test(r.blSent || '') || !r.blGone)
+  say('pressing 解除 on the settings\' list did not lift the block and come back without them: ' +
+      JSON.stringify(r.blSent) + (r.blGone ? '' : ', and @zed is still drawn'));
+if (r.folOrder !== 'noa,ami,zed,kai')
+  say('a follow list, two pages of it, holds ' + JSON.stringify(r.folOrder) +
+      ' and the four were followed newest first as noa,ami,zed,kai. ' +
+      '「フォローした新しい順で」 OWNER 2026-09-24');
 if (r.pairOn !== PAIR_ON)
   say('following and blocking somebody by handle writes\n    ' + r.pairOn +
       '\n  and it has to be\n    ' + PAIR_ON +

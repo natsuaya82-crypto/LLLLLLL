@@ -105,25 +105,27 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
 
   // ---- the paper -------------------------------------------------------
   //
-  // www/sheet.js (chapter 26) builds the PDF bytes; this writes them down.
-  // Documents and not the App Group: the App Group is how two programs of
-  // this app talk (write above), and Documents is where the
-  // person's own work lives -- iOS puts it in the device backup and, with
-  // UIFileSharingEnabled, the Files app can show it. A sheet is paper: it is
-  // a thing somebody prints, writes on, and hands back.
+  // www/sheet.js (chapter 26) builds the PDF bytes; this writes them down
+  // for as long as it takes to hand them over (shareFile below), and no
+  // longer. 「スマホの中に保存されているものなんてないけど。それがあるのが
+  // おかしいけど。」 OWNER 2026-09-24: the person puts the sheet where they
+  // want it from the share sheet, so the file this app writes is only the
+  // hand-over. It goes in the TEMPORARY folder, which iOS empties on its own
+  // and does not back up -- not Documents, which is kept, backed up and shown
+  // in Files as this app's.
   //
-  // A sheet is not filed against a language and every write would carry
-  // the same name, so this NEVER OVERWRITES: a
-  // sheet already sitting in Documents may have been written on -- opened in
-  // Files, marked up with a pencil, saved in place -- and that is somebody's
-  // own work. `<name> 2.pdf` and on. Nothing here removes anything.
+  // Sheets written into Documents/Sheets by an earlier build stay exactly
+  // where they are: one may have been opened in Files and written on, and
+  // nothing here removes anything (docs/CHANGELOG.md 2026-09-24).
+  //
+  // Every write of a name would carry the same name, so this still never
+  // overwrites while one is being handed over: `<name> 2.pdf` and on.
 
   static let sheetDir = "Sheets"
 
   private func sheets() throws -> URL {
-    let docs = try FileManager.default.url(for: .documentDirectory, in: .userDomainMask,
-                                           appropriateFor: nil, create: true)
-    let dir = docs.appendingPathComponent(Self.sheetDir, isDirectory: true)
+    let dir = FileManager.default.temporaryDirectory
+      .appendingPathComponent(Self.sheetDir, isDirectory: true)
     if !FileManager.default.fileExists(atPath: dir.path) {
       try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
     }
@@ -186,13 +188,11 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
   /// share sheet is where iOS puts "Save to Files", and choosing where it goes
   /// is the person's, not this app's.
   ///
-  /// It does NOT replace the write. sheet() still files the PDF under
-  /// Documents/Sheets and still never overwrites -- taking that away would be
-  /// docs/DATA_SAFETY.md, and a sheet somebody already drew on lives there.
-  /// This hands over the file that is already on disk.
+  /// It does NOT replace the write. sheet() files the PDF in the temporary
+  /// folder first, and this hands over the file that is there.
   ///
-  /// A name, not a path and not bytes, because Documents is the person's own
-  /// folder and the Files app puts other things in it.
+  /// A name, not a path and not bytes: the folder is this app's, and a name
+  /// with no slash in it can only ever mean a file inside it.
   ///
   /// **The popover is not optional.** On iPad a UIActivityViewController with
   /// no sourceView is a crash, not a layout problem, and this is a Universal
@@ -278,15 +278,18 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
 
   // ---- the voice on a post ------------------------------------------------
   //
-  // Documents again, and the same argument as the language backups: thirty
-  // seconds of AAC is about 240 KB, which is ten free-sized languages, and
-  // localStorage is where the languages live. So a recording is a file and
-  // the post carries its name. www/rec.js (chapter 25) is the other half.
+  // Documents, and only until the post it is on has gone up: thirty seconds
+  // of AAC is about 240 KB, too big to be text in localStorage, so a
+  // recording is a file and the post being written carries its name. When
+  // the post lands, the server holds the recording and the file goes
+  // (postSend() in www/post.js, 「スマホの中に保存されているものなんてない」
+  // OWNER 2026-09-24). www/rec.js (chapter 25) is the other half.
   //
   // One of these three deletes, and it deletes exactly one file: the one a
-  // post being deleted names. 「投稿消した声も消していいよ」 Nothing walks this
-  // folder, nothing removes a file for being unreferenced, and nothing runs
-  // on launch — see the DELETE REVIEW in docs/CHANGELOG.md.
+  // post names -- a post being deleted, a post that has gone up, or a
+  // recording taken off the post being written. Nothing walks this folder,
+  // nothing removes a file for being unreferenced, and nothing runs on
+  // launch — see the DELETE REVIEW in docs/CHANGELOG.md.
 
   static let voiceDir = "Voices"
 

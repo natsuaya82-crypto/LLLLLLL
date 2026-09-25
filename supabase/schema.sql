@@ -970,9 +970,9 @@ create table if not exists follow (
 -- other person's posts have to stop arriving, and that is a question the
 -- timeline asks the server.
 --
--- It is one-directional and it is nobody's business but yours. `block_read`
--- below answers with YOUR rows only -- being blocked is not something a
--- person is told, because telling them is how a block becomes an argument.
+-- The ROW is nobody's business but yours. `block_read` below answers with
+-- YOUR rows only -- the list of whom somebody blocked is not something the
+-- person on it is handed. What a block DOES goes both ways (block_hides).
 create table if not exists block (
   actor      uuid not null references profile(id) on delete cascade,
   blocked    uuid not null references profile(id) on delete cascade,
@@ -995,15 +995,22 @@ create index if not exists block_actor_idx on block(actor);
 -- the reads a block does not reach yet are named there (BLOCK_HELD) with
 -- the reason, and docs/scope/r80-block.md says what each is waiting on.
 --
--- ONE WAY: it asks whether the person READING blocked `who`, never the other
--- direction. Whether somebody who has been blocked stops seeing the person
--- who blocked them is not decided (docs/scope/r73-audit.md § 5-6), and
--- `block_read` above is why this can only ever answer about the reader's
--- own rows: it runs as whoever calls it, and they read nobody else's.
+-- BOTH WAYS. 「ブロック → 見えなくして」 OWNER 2026-09-24: somebody who has
+-- been blocked does not see the timeline, the page or the notices of the
+-- person who blocked them either. So it asks whether there is a block
+-- between the reader and `who`, whichever of the two made it.
+--
+-- `security definer`, because the other direction is a row the reader cannot
+-- read (`block_read` is the blocker's alone) and must not be able to. It
+-- answers one yes-or-no about auth.uid() and `who` and hands out no row.
+-- A person who calls it straight can learn that somebody blocked them --
+-- which is also what their page vanishing tells them; the decision is what
+-- costs that, not this function.
 create or replace function block_hides(who uuid) returns boolean
-language sql stable as $$
+language sql stable security definer set search_path = public as $$
   select exists (select 1 from block b
-                  where b.actor = auth.uid() and b.blocked = who)
+                  where (b.actor = auth.uid() and b.blocked = who)
+                     or (b.actor = who and b.blocked = auth.uid()))
 $$;
 
 -- ---- where a notice goes when the app is closed ----------------------------
@@ -1691,14 +1698,20 @@ grant select on language_seen to authenticated;
 -- `follow_read` is `using (true)` -- who follows whom is public the way it is
 -- in every timeline -- so this view shows exactly what that policy already
 -- shows and adds nothing.
+--
+-- AND WHEN, because that is the order a list is read in: 「フォロー中・
+-- フォロワーの並び → フォローした新しい順で」 OWNER 2026-09-24. The column
+-- was on `follow` from the first day and this view left it behind.
 drop view if exists follow_seen cascade;
 create view follow_seen as
-  select f.follower, f.followed,
+  select f.follower, f.followed, f.created_at,
          a.handle as follower_handle,
          b.handle as followed_handle
     from follow f
     join profile a on a.id = f.follower
-    join profile b on b.id = f.followed;
+    join profile b on b.id = f.followed
+   -- a row naming somebody a block stands between is not a row (block_hides)
+   where not block_hides(f.follower) and not block_hides(f.followed);
 grant select on follow_seen to authenticated;
 
 drop view if exists profile_seen cascade;
@@ -1716,8 +1729,26 @@ create view profile_seen as
        where ls.owner = p.id
        order by ls.created_at asc
        limit 1
-    ) l on true;
+    ) l on true
+   -- a person a block stands between is nobody, both ways (block_hides)
+   where not block_hides(p.id);
 grant select on profile_seen to authenticated;
+
+-- ---- whom you have blocked, by name ---------------------------------------
+-- 「ブロックの解除 → 設定に追加して非表示リストとブロックリスト」 OWNER
+-- 2026-09-24. A blocked person's page is gone from both sides (profile_seen
+-- above), so the list in the settings is where a block is lifted, and this
+-- is what it draws: YOUR rows and the name on each.
+--
+-- It runs as its owner, so `block_read` is not what keeps it yours -- the
+-- `where` is. rls-check: 「BD cannot read that BD is blocked there」.
+drop view if exists block_seen cascade;
+create view block_seen as
+  select b.blocked as id, p.handle, p.display, p.av, b.created_at
+    from block b
+    join profile p on p.id = b.blocked
+   where b.actor = auth.uid();
+grant select on block_seen to authenticated;
 
 -- A POST KEPT TO YOURSELF is read by the person who wrote it and by nobody
 -- else -- not a follower, not the person it answers, not staff.

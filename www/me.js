@@ -1579,26 +1579,28 @@ function folPut(ers, h, hs){
    account. Without it, signing in as somebody else and opening your own page
    would draw the last person's following list under your name. */
 function folForget(){
-  FOL_HAVE={}; FOL_ASKED={}; FOL_END={};
+  FOL_HAVE={}; FOL_ASKED={}; FOL_END={}; FOL_AFTER={};
   WHO_HAVE={}; WHO_ASKED={};
   REL={};
 }
 /* ONE PAGE OF A LIST. No `after` is the top of it and replaces what was
-   held; `after` is the last handle already held and the page is added under
-   it (www/net.js § netFollowRows says why it is by handle). FOL_END is set
-   only by a SHORT page -- 「could not ask」 is not the end.
+   held; `after` is where the last page stopped -- FOL_AFTER, the [time,
+   handle] the server handed back with it -- and the page is added under it
+   (www/net.js § netFollowRows, newest first). FOL_END is set only by a SHORT
+   page -- 「could not ask」 is not the end.
 
    Every answer is a list: `[]` or longer, and anything else falls, which
    puts the pop up and unmarks the ask so it CAN be asked again. 「人のプロ
    フィールからフォロワー見ようとするとずっとくるくるするんだって」 OWNER
    2026-09-08 was the third answer, `null`, that was neither. */
-var FOL_END={};
+var FOL_END={}, FOL_AFTER={};
 function folPull(ers, h, after, ok, bad){
   var k=folKey(ers, h);
   h=String(h||'');
   FOL_ASKED[k]=1;
-  (ers? netFollowers : netFollowing)(function(hs){
+  (ers? netFollowers : netFollowing)(function(hs, end){
     FOL_END[k]=hs.length<NET_PAGE;
+    if(end) FOL_AFTER[k]=end;
     folPut(ers, h, after? folOf(ers, h).concat(hs) : hs);
     ok(hs);
   }, function(d, s, m){
@@ -1660,9 +1662,9 @@ function folPeople(hs, ok, bad){
 var FOL_MORE=false;
 function folMore(){
   var a=here().a, ers=folErs(a), h=folWho(a), k=folKey(ers, h), hs=folOf(ers, h);
-  if(FOL_MORE || FOL_END[k] || !hs.length) return;
+  if(FOL_MORE || FOL_END[k] || !hs.length || !FOL_AFTER[k]) return;
   FOL_MORE=true;
-  folPull(ers, h, hs[hs.length-1], function(more){
+  folPull(ers, h, FOL_AFTER[k], function(more){
     folPeople(more, function(){ FOL_MORE=false; render(); },
               function(d, s, m){ FOL_MORE=false; netPop(d, s, m); });
   }, function(d, s, m){ FOL_MORE=false; netPop(d, s, m); });

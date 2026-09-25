@@ -460,6 +460,10 @@ export function seed(){
      answer is the index this fixture seeded. */
   PULL_GOT = { saved:1, recent:1, drafts:1, notif:1, day:1, mylangs:1,
                'feed|rec':1, 'feed|fo':1, 'feed|day':1 };
+  /* AND WHOM THIS ACCOUNT HAS BLOCKED (`block_seen`, www/net.js §
+     netBlockedRead) -- one person nobody else in the fixture is, so the
+     settings' list has a row to draw and a 解除 to press. */
+  NET_BL = [{ id:'U-zed', hd:'zed', who:'Zed', av:{ ch:'Z' } }];
   /* and the open language's slices, which are what the fixture seeded */
   PULL_GOT['lang|' + langId] = 1;
   /* and what this account has written, which is POSTS -- so the door onto
@@ -1563,14 +1567,14 @@ export function halfDone(){
     ['what you can do about somebody else', () => { window.route='feed'; NAV=[{r:'feed'}];
                               postMore('p2');
                               const h = vFeed(); PMENU = ''; return h; }],
-    /* ブロックしている一覧はサーバーの `block` です（2026-09-11）── `ME.bl`
-       ではありません。`NET_BL_HD` は netBlockedRead() が降ろす handle の側で、
-       この検査は網を張らないので押します。 */
-    ['and the same, already blocked', () => { const was = NET_BL_HD;
-                              NET_BL_HD = ['iri'];
+    /* ブロックしている一覧はサーバーの `block_seen` です（2026-09-24）── `ME.bl`
+       ではありません。`NET_BL` は netBlockedRead() が降ろす人の行で、
+       この検査は網を張らないので置きます。 */
+    ['and the same, already blocked', () => { const was = NET_BL;
+                              NET_BL = [{ id:'U-iri', hd:'iri', who:'Iri', av:{ ch:'\u0416' } }];
                               window.route='feed'; NAV=[{r:'feed'}];
                               postMore('p2');
-                              const h = vFeed(); NET_BL_HD = was; PMENU = ''; return h; }],
+                              const h = vFeed(); NET_BL = was; PMENU = ''; return h; }],
     /* The five reasons. It is a form and nothing walks to it. */
     ['saying what is wrong with a post', () => { openReport('p2', 'iri');
                               const h = vForm(); rpFor = null; return h; }],

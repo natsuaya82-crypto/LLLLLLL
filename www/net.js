@@ -3306,24 +3306,29 @@ function netFollowRows(want, by, ok, bad, handle, after, among){
      row of the list already says. Nothing here asks whether that person
      exists -- it is a second request for a sentence this app does not have,
      and the screen was reached by pressing their name. */
-  /* A PAGE AT A TIME, IN THE ORDER OF THE HANDLE. 「一覧は上限を付けて、続きは
-     スクロールで」 OWNER 2026-09-23. `follow_seen` carries no time a row was
-     made, so the one order that can be carried on from is the handle's:
-     `after` is the last handle already held (keyset, www/me.js § folPull). */
+  /* A PAGE AT A TIME, NEWEST FIRST. 「一覧は上限を付けて、続きはスクロール
+     で」 OWNER 2026-09-23, and 「フォローした新しい順で」 OWNER 2026-09-24.
+     The order is when the follow was made, and the handle under it so two
+     made in the same instant still have one order. `after` is where the last
+     page stopped, as that pair -- [time, handle] -- and the next page is
+     what comes after it in the same order (keyset). The page's own pair is
+     handed back beside the handles, for the next page to start from
+     (www/me.js § folPull). */
   for(i=0;i<(among||[]).length;i++) if(among[i]) l.push(encodeURIComponent(String(among[i])));
   if(among && !l.length){ ok([]); return; }
-  netGet('/rest/v1/follow_seen?select='+want+'_handle'+q+
-         '&order='+want+'_handle.asc'+
-         (after? '&'+want+'_handle=gt.'+encodeURIComponent(String(after)) : '')+
+  netGet('/rest/v1/follow_seen?select='+want+'_handle,created_at'+q+
+         '&order=created_at.desc,'+want+'_handle.asc'+
+         (after? '&or='+encodeURIComponent('(created_at.lt."'+after[0]+'",and(created_at.eq."'+
+                   after[0]+'",'+want+'_handle.gt."'+after[1]+'"))') : '')+
          (among? '&'+want+'_handle=in.('+l.join(',')+')' : '')+
          '&limit='+(among? l.length : NET_PAGE),
     function(d){
-      var out=[], i, hd;
+      var out=[], i, hd, end=null;
       for(i=0;i<(d||[]).length;i++){
         hd=(d[i] && d[i][want+'_handle']) || '';
-        if(hd) out.push(String(hd));
+        if(hd){ out.push(String(hd)); end=[String(d[i].created_at||''), String(hd)]; }
       }
-      ok(out);
+      ok(out, end);
     }, bad);
 }
 function netFollowing(ok, bad, handle, after){
@@ -3424,37 +3429,40 @@ function netBlock(handle, on, ok, bad){
   netBlockedDrop();
   netPairRow('block', 'actor', 'blocked', handle, on, ok, bad);
 }
-/* WHO YOU HAVE BLOCKED, BY HANDLE, for the one thing on this phone that still
-   asks: which word the ... menu puts on the row, 「ブロック」 or 「解除」.
+/* WHOM YOU HAVE BLOCKED, for the two things on this phone that ask: the list
+   in the settings where a block is lifted (「設定に追加して非表示リストと
+   ブロックリスト」 OWNER 2026-09-24), and which word the ... menu puts on a
+   row, 「ブロック」 or 「解除」.
 
-   It was a list of uuids too, and every timeline was filtered through it --
-   netFeed() and netPromos() waited for it and took the rows out after the
-   answer came. The server does that now: `post_seen`, `feed_fo()` and
-   `notices()` ask block_hides() (supabase/schema.sql, r80-block), so what a
-   block keeps out never arrives, and the uuid copy had nothing left to do.
-
-   `block` is keyed by uuid -- that is what a row about an account IS -- and a
-   SCREEN knows a person by their HANDLE, so the handles come off
-   `profile_seen` for the ids that came back. When `profile_seen` leaves the
-   blocked out too (r80-block § 保留), this is rewritten with it.
+   ONE REQUEST. `block_seen` (supabase/schema.sql) is your rows of `block`
+   with the name, the face and the @ on each, newest first -- the same list
+   the settings draws. It was two: the uuids off `block`, then their handles
+   off `profile_seen`, and `profile_seen` no longer answers for somebody a
+   block stands between (block_hides, both ways, 2026-09-24).
 
    It was `ME.bl` on the phone, written only when somebody pressed the row and
    with no road to fill it from the server -- so on a second phone it was
    empty, and the menu offered to block somebody who was already blocked.
    「NOTHING IS THE PHONE'S. EVERYTHING IS THE ACCOUNT'S.」
 
-   Asked once, at the open, through the pull table (`blocks`, www/sns.js), and
-   again after a block or an unblock. `null` is 「not asked」. */
-var NET_BL_HD=null, NET_BL_WAIT=null;
-/* The handles, for a screen. `null` (not asked) answers as none: a button
+   Asked when a page that draws it is arrived at, through the pull table
+   (`blocks`, www/sns.js), and again after a block or an unblock. `null` is
+   「not asked」. */
+var NET_BL=null, NET_BL_WAIT=null;
+/* The people, for a screen. `null` (not asked) answers as none: a button
    that said 「blocked」 before the list came down would be this phone saying
    something the server has not said. */
-function netBlockedHandles(){ return NET_BL_HD || []; }
-function netBlockedGot(){ return NET_BL_HD!==null; }
-/* ONE REQUEST, HOWEVER MANY ARE WAITING ON IT. The open and a block pressed
-   in the same moment would otherwise put the identical question twice.
-   `NET_BL_WAIT` exists only while a request is out, and everybody holding a
-   place in it is answered from the one reply. */
+function netBlockedPeople(){ return NET_BL || []; }
+function netBlockedHandles(){
+  var out=[], i;
+  for(i=0;i<netBlockedPeople().length;i++) out.push(netBlockedPeople()[i].hd);
+  return out;
+}
+function netBlockedGot(){ return NET_BL!==null; }
+/* ONE REQUEST, HOWEVER MANY ARE WAITING ON IT. The arrival and a block
+   pressed in the same moment would otherwise put the identical question
+   twice. `NET_BL_WAIT` exists only while a request is out, and everybody
+   holding a place in it is answered from the one reply. */
 function netBlockedRead(ok, bad){
   var i, who;
   if(NET_BL_WAIT){ NET_BL_WAIT.push({ok:ok, bad:bad}); return; }
@@ -3465,31 +3473,19 @@ function netBlockedRead(ok, bad){
      postFor() against, one file over. The waiters are still answered, with
      none, because a caller left hanging is worse than a caller told nothing. */
   who=netUid();
-  function done(ids, hd){
-    var w=NET_BL_WAIT, j;
-    NET_BL_WAIT=null;
-    if(netSignedIn() && netUid()===who) NET_BL_HD=hd;
-    else ids=[];
-    for(j=0;j<w.length;j++) w[j].ok(ids);
-  }
-  netGet('/rest/v1/block?select=blocked&actor=eq.'+encodeURIComponent(who),
+  netGet('/rest/v1/block_seen?select=id,handle,display,av&order=created_at.desc',
     function(d){
-      var out=[];
-      for(i=0;i<(d||[]).length;i++) if(d[i] && d[i].blocked) out.push(d[i].blocked);
-      /* AND WHAT THOSE IDS ARE CALLED. `profile_seen` is the row a person is
-         drawn from everywhere else in this file. The waiters are answered
-         either way: a handle that does not come back -- a deleted account, a
-         row a policy refuses -- is one this app cannot name, and the block is
-         still a block on the server. */
-      if(!out.length){ done(out, []); return; }
-      netGet('/rest/v1/profile_seen?select=id,handle&id=in.('+netInList(out)+')',
-        function(pd){
-          var hd=[], j;
-          for(j=0;j<(pd||[]).length;j++)
-            if(pd[j] && pd[j].handle) hd.push(String(pd[j].handle));
-          done(out, hd);
-        },
-        function(){ done(out, []); });
+      var w=NET_BL_WAIT, rows=[], ids=[], j, r;
+      NET_BL_WAIT=null;
+      for(j=0;j<(d||[]).length;j++){
+        r=d[j];
+        if(!r || !r.id || !r.handle) continue;
+        rows.push({id:String(r.id), hd:String(r.handle), who:String(r.display||''), av:r.av||null});
+        ids.push(String(r.id));
+      }
+      if(netSignedIn() && netUid()===who) NET_BL=rows;
+      else ids=[];
+      for(j=0;j<w.length;j++) w[j].ok(ids);
     },
     function(d, s, m){
       var w=NET_BL_WAIT;
@@ -3500,7 +3496,7 @@ function netBlockedRead(ok, bad){
 /* Blocking or unblocking somebody makes the copy wrong, and it is the one
    thing that can; so does signing out. Dropped rather than re-asked: meBlock()
    asks again when the row lands. */
-function netBlockedDrop(){ NET_BL_HD=null; }
+function netBlockedDrop(){ NET_BL=null; }
 /* Something is wrong with this post, or with this person. Written and never
    read back: there is no select policy on `report` at all, so nobody using
    the app can read one -- not the person who wrote it and not the person it

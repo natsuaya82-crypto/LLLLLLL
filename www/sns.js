@@ -902,9 +902,7 @@ pageReads('feed', function(){
   if(snsFil && snsFil.q) o.push(['fil', String(snsFil.q)]);
   return o;
 }, true);
-/* The search draws people, and a person you have blocked is left out of it
-   here (snsAnsHTML) while `profile_seen` still returns them (r80-block § 保留). */
-pageReads('explore', function(){ return [['saved'], ['recent'], ['blocks']]; }, true);
+pageReads('explore', function(){ return [['saved'], ['recent']]; }, true);
 pageReads('notif',   function(){ return [['notif']]; }, true);
 pageReads('thread',  function(a){ return [['thread', String(a||'')]]; }, true);
 /* A person's page, and your own is the same page: who they are (with the two
@@ -914,10 +912,20 @@ pageReads('thread',  function(a){ return [['thread', String(a||'')]]; }, true);
 pageReads('profile', function(a){
   var h=String(a||'') || meHandle();
   if(h===meHandle()) return [['who', h], ['posts', h], ['mylangs']];
-  return [['who', h], ['posts', h], ['blocks']];
+  /* Nobody a block stands between has a page to arrive at (profile_seen,
+     both ways), so whom you have blocked is not this page's question -- it
+     is the settings' (www/settings.js § block). */
+  return [['who', h], ['posts', h]];
 }, true);
 pageReads('follows', function(a){ return [['fols', String(a||'')]]; }, true);
 pageReads('notfo',   function(a){ return [['people', String(a||'')]]; });
+/* The settings are one route, and one of its rooms draws whom you have
+   blocked. The rest read what the route has always read: the open language
+   (PAGES.set.lang). */
+pageReads('set',     function(a){
+  if(String(a||'')==='block') return [['blocks']];
+  return langId? [['lang', langId]] : [];
+});
 pageReads('drafts',  function(){ return [['drafts']]; }, true);
 pageReads('langs',   function(){ return [['mylangs']]; });
 /* Somebody else's language, or -- with no argument -- your own open one. */
@@ -2345,8 +2353,22 @@ function snsGo(){
    Your own row has neither: you cannot follow yourself, and the chevron is
    not needed to say where your own name goes. */
 function snsWhoRow(p, full){
-  var h=String(p.hd||''), on=meFollows(h);
-  var inner='<span class="pav">'+postFace(p)+'</span>'+
+  var h=String(p.hd||''), on=meFollows(h), inner=snsWhoFace(p, full);
+  return '<div class="whrow">'+
+    (p.mine
+      ? '<button class="whgo"' + DO('profileOpen', [""]) + '>'+inner+'</button>'
+      : '<button class="whgo"' + DO('profileOpen', [h]) + '>'+inner+'</button>')+
+    (p.mine? ''
+      : '<button class="whfo'+(on? ' on' : '')+'"' + DO('meFollow', [h]) + '>'+
+          esc(t(on? 'me.unfollow' : 'me.follow'))+'</button>')+
+    '</div>';
+}
+/* WHO A ROW IS ABOUT -- the face, the name and the @ -- in one place, for
+   every list of people: the follows, the search, and whom you have blocked
+   (www/settings.js). */
+function snsWhoFace(p, full){
+  var h=String(p.hd||'');
+  return '<span class="pav">'+postFace(p)+'</span>'+
     '<span class="whb">'+
       /* 「フォローされています」の札は**名前の行**、@ の行ではありません。
          「Follows you は @ の横ではなく名前の横」OWNER 2026-09-08、実機 143。
@@ -2375,14 +2397,6 @@ function snsWhoRow(p, full){
       (full && p.bio? '<span class="pbio">'+esc(p.bio)+'</span>' : '')+
     '</span>'+
     (p.lname? '<span class="plangtag">'+esc(p.lname)+'</span>' : '');
-  return '<div class="whrow">'+
-    (p.mine
-      ? '<button class="whgo"' + DO('profileOpen', [""]) + '>'+inner+'</button>'
-      : '<button class="whgo"' + DO('profileOpen', [h]) + '>'+inner+'</button>')+
-    (p.mine? ''
-      : '<button class="whfo'+(on? ' on' : '')+'"' + DO('meFollow', [h]) + '>'+
-          esc(t(on? 'me.unfollow' : 'me.follow'))+'</button>')+
-    '</div>';
 }
 /* ---- the words somebody keeps ------------------------------------------
    「検索ページで言葉を⭐️で保存、絞り込みから選ぶとその言葉で検索し直す」
@@ -2741,12 +2755,10 @@ function snsAnsHTML(q, r){
   if(!r) return snsWaitHTML();
   /* Could not ask, which is not the same as found nothing. */
   if(r.bad) return '<div class="note">'+esc(r.bad)+'</div>';
-  /* A person you have blocked is not somebody you are looking for. What they
-     wrote the server leaves out (`post_seen`, r80-block); who they are it
-     still returns, because `profile_seen` is where unblocking starts
-     (r80-block § 保留), so they are left out here until that changes. */
-  for(i=0;i<(r.who||[]).length;i++)
-    if(!meBlocks(r.who[i].hd)) out+=snsWhoRow(r.who[i]);
+  /* A person a block stands between is not in the answer at all -- the
+     server leaves them out of `profile_seen` and `post_seen`, both ways
+     (block_hides, supabase/schema.sql). */
+  for(i=0;i<(r.who||[]).length;i++) out+=snsWhoRow(r.who[i]);
   /* In the order it arrived. The order is the server's answer to `snsSort`,
      not something to be worked out again here. */
   ps=r.posts||[];
@@ -3058,9 +3070,21 @@ function notRow(n){
          it. 「通知なんか真ん中に文字ないせいできもい。文字増えたら2列にすれば
          よくない？」OWNER 2026-09-01. A row is one line where there is one
          line and two where there is a post under it; the face holds the
-         height either way. */
-      ((p && (p.mn || p.ln))
-        ? '<span class="ntfp">'+esc(p.mn || p.ln)+'</span>' : '')+
+         height either way.
+
+         THE LINE, IN THE LETTERS IT WAS WRITTEN IN. 「通知の一覧の投稿の一行
+         → 書いた字で」 OWNER 2026-09-24. It was `p.mn || p.ln` as plain
+         text: the meaning, or the line in roman, while the timeline drew the
+         same post in its own shapes. It is the timeline's postLnHTML() now,
+         which reads the post and nothing else (CLAUDE.md rule 8), set as a
+         `.pline` like every other line of a language. Across the row even
+         when the post runs down the page, as the line naming whom a reply
+         answers is: a row of the notices is one line tall. The meaning is
+         what is left for a post with no line. */
+      ((p && (p.ln || postInkOK(p.ink)))
+        ? '<span class="ntfp pline '+dirClass(postDir(p)==='rtl'? 'rtl' : 'ltr')+'">'+
+            postLnHTML(p)+'</span>'
+        : (p && p.mn)? '<span class="ntfp">'+esc(p.mn)+'</span>' : '')+
     '</span>'+
     /* The post itself, small, on the right -- which is the owner's picture and
        is also the only thing on the row that says WHICH post without reading
