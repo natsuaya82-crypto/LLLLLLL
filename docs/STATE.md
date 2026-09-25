@@ -1431,12 +1431,10 @@ can hold two rules.
 
 ### Open, and the owner's
 
-- **How many keyboards a plan buys — settled and implemented.**
-  Free 1 language and the fixed QWERTY; Plus 1 language and no keyboard ceiling
-  (r84, 2026-09-24); Pro 3 languages and no ceiling. In the code: `CAN.kb` is
-  `'plus'` (the DOOR), `kbCap()` is the NUMBER — `FREE_KB=1`, `Infinity` on Plus
-  and Pro — counted by `kbCount()` across languages. `KB_MAX` is gone;
-  a number that is three facts is a function. The language ceiling is
+- **Keyboards are not divided by plan (1.0.3, r95).** Every plan builds as
+  many as it likes, and a key carries a drawn letter or any existing character,
+  typed straight in on the editor. What differs is how many drawn letters there
+  are; the font file export is `can('font')`, Plus. The language ceiling is
   `langCap()` — `FREE_LANGS=1`, `PRO_LANGS=3`, and Plus is deliberately the same
   as free. `edit` and `badge` are both in `CAN` now.
 - **The price of Pro is decided.** The four products and their prices are in
