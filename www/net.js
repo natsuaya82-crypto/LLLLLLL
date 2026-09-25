@@ -3053,7 +3053,7 @@ var NET_PAGE=50;
    row. And what other people did to a post -- written since there were
    reactions and read back by nobody until netRow() -- is part of it. */
 var NET_POST_SEL='/rest/v1/post_seen?select=id,author,created_at,reply_to,body,hidden_at,author_out'+
-                 ',likes,boosts,replies,i_like,i_boost';
+                 ',likes,boosts,replies,i_like,i_boost,quote_of,quoted';
 /* AND THE LISTS A MUTE LEAVES OUT ASK FOR IT, in these words and no others.
    「ミュートした人の投稿はタイムラインに出ない」 OWNER 2026-09-25, and the
    leader's reading of it: the timelines, a thread and a search. A person's
@@ -3073,8 +3073,10 @@ var NET_LANG_SEL='/rest/v1/language?select=id,name,published_at,wsys,owner,creat
    photograph goes up as the post without it rather than as most of a megabyte
    of base64 in a jsonb column. */
 function netBody(p){
+  /* `qt` is a column (quote_of, netPush) and `qp` is the server's answer
+     about somebody else's post (netRow) -- neither is this post's body. */
   var o={}, k, skip={id:1, sid:1, mine:1, at:1, to:1, pics:1, vo:1, li:1, bo:1, re:1,
-                     down:1, out:1};
+                     down:1, out:1, qt:1, qp:1};
   for(k in p) if(Object.prototype.hasOwnProperty.call(p, k) && !skip[k]) o[k]=p[k];
   /* THE VOICE'S LENGTH TRAVELS; ITS FILE ON THIS PHONE DOES NOT. `vo` was
      skipped whole because `vo.f` names a file in this phone's Documents, and
@@ -3143,6 +3145,15 @@ function netRow(r){
      first when it means the second is the app inventing a fact. */
   if(r.by) p.by=String(r.by);
   if(r.at_key) p.arrived=Date.parse(r.at_key) || p.at;
+  /* WHAT IT QUOTES, AS THE SERVER HAS IT NOW (r94). `qt` is the id the quote
+     was written with; `qp` is that post read by this reader today, or null
+     when there is none to read -- deleted, taken down, or behind a block
+     (post_seen.quoted) -- which is drawn as 「この投稿は表示できません」.
+     Absent on a post that quotes nothing. */
+  if(r.quote_of){
+    p.qt=String(r.quote_of);
+    p.qp=r.quoted? netRow(r.quoted) : null;
+  }
   return p;
 }
 function netFeed(which, ok, bad, more){
@@ -4761,6 +4772,9 @@ function netPush(post, ok, bad){
     up=postById(post.to);
     if(up && up.sid) row.reply_to=up.sid;
   }
+  /* And what it quotes, which is already the server's name: only a post that
+     has gone up can be quoted (postQuote). */
+  if(post.qt) row.quote_of=post.qt;
   /* The bytes first, the row after, because the row carries where the bytes
      went. The other order is a post that exists with pictures it cannot name
      until a second request lands -- and a second request is a second thing

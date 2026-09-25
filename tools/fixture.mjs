@@ -1904,6 +1904,26 @@ export function halfDone(){
     ['the composer, replying to somebody', () => {
         PW = pwBlank(); PW.to = 'p1'; openPost('reply');
         const h = vForm(); PW = pwBlank(); return h; }],
+    /* AND QUOTING (r94 B): the post under the field, small. */
+    ['the composer, quoting somebody', () => {
+        const p = postById('p2'); p.sid = 'SRV-2';
+        PW = pwBlank(); PW.qt = 'SRV-2'; openPost();
+        const h = vForm(); PW = pwBlank(); delete p.sid; return h; }],
+    /* and a quote on the timeline, with the post under it as the server has
+       it -- and one whose post is gone, which says so (OWNER 2026-09-25) */
+    ['a quote on the timeline', () => {
+        const q = postQuoteCopy(postById('p2')); q.sid = 'SRV-2';
+        POSTS.unshift({ id:'pq1', sid:'SRV-q1', at:Date.now()-300000, lang:langId, lname:'Shango',
+                        ln:'kano', mn:'look at this', who:'Aya', hd:'aya', mine:true, ui:'en',
+                        av:{st:[{pts:[[112,112],[688,112],[400,688]]}]}, qt:'SRV-2', qp:q });
+        window.route='feed'; NAV=[{r:'feed'}];
+        const h = vFeed(); POSTS.shift(); return h; }],
+    ['a quote whose post is gone', () => {
+        POSTS.unshift({ id:'pq2', sid:'SRV-q2', at:Date.now()-300000, lang:langId, lname:'Shango',
+                        ln:'mos', mn:'this was something', who:'Aya', hd:'aya', mine:true, ui:'en',
+                        av:{st:[{pts:[[112,112],[688,112],[400,688]]}]}, qt:'SRV-gone', qp:null });
+        window.route='feed'; NAV=[{r:'feed'}];
+        const h = vFeed(); POSTS.shift(); return h; }],
     /* Drafts, which are only drawn once there are some. */
     ['the composer with drafts saved', () => {
         DRAFTS = [{at:Date.now(), ln:'kano', mn:'a mountain', to:'', pics:[], vo:null, pv:false},

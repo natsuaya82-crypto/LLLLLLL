@@ -202,7 +202,7 @@ var PW={ln:'', mn:''};
    same reason `toh` is: what somebody wrote is the line, and a tag is not in
    it any more. 「#はべつで」 OWNER 2026-09-15, replacing 「タグは本文中に。」
    (2026-09-04). www/sns.js § A TAG IS NOT IN THE BODY ANY MORE. */
-function pwBlank(){ return {ln:'', cut:[], mn:'', to:'', toh:'', pics:[], pr:0, tags:[]}; }
+function pwBlank(){ return {ln:'', cut:[], mn:'', to:'', toh:'', qt:'', pics:[], pr:0, tags:[]}; }
 /* THE LINE BEING WRITTEN IS ONE THING: the cut (www/glyph.js § puaTyped) --
    the line as it was typed, `{id}` where the Lingua keyboard put a letter and
    `{t}` for the rest. `PW.ln` is its roman and is written here and nowhere
@@ -384,7 +384,7 @@ function openPost(from, at){
        being about the day must not still be filed under it. Every other tag
        stays -- those were typed, and this button is not a delete. */
     if(PW.ed) PW=pwBlank();
-    else { PW.to=''; PW.toh='';
+    else { PW.to=''; PW.toh=''; PW.qt='';
            if(PW.pr){ PW.pr=0; PW.mn=''; PW.tags=pwTagsNoDay(); } }
   }
   /* Opened from the day's sentence, and that is the only OTHER argument this
@@ -563,8 +563,9 @@ function draftOfPW(){
      themselves -- numbers that mean a letter only in this alphabet's order at
      this moment. `ln` is the roman now. A draft kept before today carries
      none and is read the way it always was (draftOpen). */
+  /* `qt` (r94): a quote kept as a draft opens again quoting the same post. */
   return {id:PW.did || netUUID(), at:Date.now(), ln:dayTagStore(PW.ln), cut:pwLineKept(), mn:PW.mn, to:PW.to,
-          toh:PW.toh||'', pr:PW.pr||0, tags:pwTagsOut(),
+          toh:PW.toh||'', qt:PW.qt||'', pr:PW.pr||0, tags:pwTagsOut(),
           pics:pwPics(), vo:PW.vo||null, pv:!!PW.pv};
 }
 /* A draft goes into the list, and the composer is empty behind it. The one
@@ -651,7 +652,7 @@ function draftOpen(i){
   if(here().r==='drafts') back();
   PW=pwBlank();
   pwLine(draftCut(d));
-  PW.mn=d.mn||''; PW.to=d.to||''; PW.toh=d.toh||''; PW.pr=d.pr||0;
+  PW.mn=d.mn||''; PW.to=d.to||''; PW.toh=d.toh||''; PW.qt=d.qt||''; PW.pr=d.pr||0;
   /* The frame as it was kept. tagsOf() is the one place that says what a
      row's tags are -- the same function the timeline's row asks -- so a draft
      and a post cannot disagree about it. */
@@ -1280,6 +1281,9 @@ function postFresh(p){
   /* And whether it has been taken down or its author frozen, which are the
      other two facts about a post that are not the author's to write. */
   put('down'); put('out');
+  /* And the post a quote has under it, which is the server's reading of
+     somebody else's post today and not what this post's author wrote (r94). */
+  put('qp');
   return moved;
 }
 /* HOW MANY, AND WHETHER YOU ARE ONE OF THEM. THE SERVER COUNTS AND NOTHING
@@ -1711,6 +1715,13 @@ function pwHTML(){
          Nothing of `p.tags` is read or written on that road, so a post edited
          keeps its tags exactly as they were. */
       (PW.ed? '' : pwTagsHTML())+
+      /* AND WHAT IT QUOTES, small, under what is being written -- 「引用は
+         投稿の画面が開き、元の投稿が下に小さく付く」 OWNER 2026-09-25. The
+         same drawing the timeline gives it (postQuoteHTML), not pressable
+         here: this screen is for writing. The post is the one this phone is
+         holding; one it is not holding is drawn as nothing rather than as
+         「表示できません」, which would be saying something nobody was asked. */
+      (PW.qt? postQuoteHTML({qt:PW.qt, qp:postById(PW.qt) || undefined}, false) : '')+
       '</div></div>'+
     '</div>'+
     /* The bar. It is the last thing in the form and the only thing that does
@@ -2251,6 +2262,15 @@ function pwSendWith(ln, ink, pics, vo){
      Documents; what is in localStorage is this. */
   if(vo && vo.f) mine.vo={f:vo.f, ms:vo.ms||0};
   if(PW.pv) mine.pv=1;
+  /* WHAT IT QUOTES: the server's id, which is what goes up (quote_of), and
+     until the timeline answers, the post as this phone holds it, so the
+     quote is drawn the moment it is sent. The server's answer replaces it
+     (postFresh) -- what is drawn under a quote is the post as it is now. */
+  if(PW.qt){
+    mine.qt=PW.qt;
+    var qo=postById(PW.qt);
+    if(qo) mine.qp=postQuoteCopy(qo);
+  }
   if(PW.to){
     mine.to=PW.to;
     var up=postById(PW.to);
@@ -4224,6 +4244,9 @@ function postRow(p){
       /* The voice, and it is below the meaning for the same reason the
          pictures are: it is what the post CARRIES, not what it says. */
       postVoHTML(p)+
+      /* AND WHAT IT QUOTES, under everything it carries and over the
+         buttons: somebody else's post, small, as the server has it now. */
+      postQuoteHTML(p, true)+
       /* Three layers, and there is no fourth.
 
            the writer's own letters      ln + ink
@@ -4277,6 +4300,38 @@ function postRow(p){
         postAct('postCard', p.id, ICON_SHARE, 0, false)+
       '</div>'+
     '</div></div>';
+}
+/* THE POST UNDER A QUOTE, small. 「元の投稿が下に小さく付く」「元が消えた・
+   ブロックで見えない時は『この投稿は表示できません』」 OWNER 2026-09-25.
+
+   Read off the post and nothing else (rule 8): `qt` is the id it was
+   written with, `qp` what the server says that post is today -- null when
+   there is nothing it will show this reader, undefined when nobody has
+   asked, which draws nothing. Who wrote it, when, the line in its own
+   letters and what it means; no photographs, no buttons. Pressed, it is
+   the way to that post (`press`, the timeline's; the composer's is not).
+
+   No box: a line down its left side, which is what rule 18 leaves -- one
+   side is a line (`.pqt` in www/index.html). */
+function postQuoteHTML(p, press){
+  var q=p && p.qp;
+  if(!p || !p.qt || q===undefined) return '';
+  if(!q) return '<div class="pqt pqgone">'+esc(t('post.quote.gone'))+'</div>';
+  return '<div class="pqt"'+(press? DO('postOpen', [q.sid || q.id], true) : '')+'>'+
+    '<div class="pqth"><span class="pname">'+esc(postWho(q))+'</span>'+
+      (q.hd? '<span class="phandle">@'+esc(q.hd)+'</span>' : '')+
+      '<span class="pwhen">'+esc(postWhen(q.at))+'</span></div>'+
+    ((q.ln || postInkOK(q.ink))? '<div class="pline '+dirClass(postDir(q))+'">'+postLnHTML(q)+'</div>' : '')+
+    (postSay(q)? '<div class="pmn">'+esc(postSay(q))+'</div>' : '')+
+  '</div>';
+}
+/* What a quote carries of the post it quotes, the moment it is sent: the post
+   as this phone holds it, without a quote of its own under it -- a quote is
+   drawn one deep. */
+function postQuoteCopy(q){
+  var o={}, k;
+  for(k in q) if(Object.prototype.hasOwnProperty.call(q, k) && k!=='qp' && k!=='qt') o[k]=q[k];
+  return o;
 }
 /* WHAT A POST'S NUMBERS ARE, ASKED AGAIN AFTER SOMEBODY MOVED ONE.
    -------------------------------------------------------------------------
@@ -4345,6 +4400,11 @@ function postLike(id){
    popAsk() and the same shape as deleting a post (postDel), with 解除 where
    削除 is. Putting one up is not asked. postBoostGo() is the send, and its
    ［再接続］ sends again without asking: the question was answered. */
+/* AND PUTTING ONE UP IS A CHOICE: 「リポストを押すと『リポスト／引用』」
+   OWNER 2026-09-25. Two words and nothing over them -- the question is the
+   two answers -- and the dark around the pop is the third, which is neither.
+   A post that has not gone up cannot be quoted (a quote carries the
+   server's id), and a repost of one sends nothing (netMark), as before. */
 function postBoost(id){
   var p=postById(id);
   if(!p || !postMay()) return;
@@ -4352,7 +4412,17 @@ function postBoost(id){
     popAsk(t('post.unboost.q'), function(){ postBoostGo(id, false); }, t('pop.undo'));
     return;
   }
-  postBoostGo(id, true);
+  if(!p.sid){ postBoostGo(id, true); return; }
+  popAsk('', function(){ postBoostGo(id, true); }, t('post.repost'),
+         t('post.quote'), function(){ postQuote(id); });
+}
+/* A QUOTE opens the screen a post is written on, the way a reply does, with
+   the post under it (pwHTML). What it holds is the server's name for it. */
+function postQuote(id){
+  var p=postById(id);
+  if(!p || !p.sid || !postMay()) return;
+  PW=pwBlank(); PW.qt=p.sid;
+  openPost();
 }
 function postBoostGo(id, on){
   netMark(id, 'boost', on,

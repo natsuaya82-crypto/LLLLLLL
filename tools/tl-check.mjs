@@ -724,8 +724,10 @@ const r = await pg.evaluate(({ s }) => {
     popOff(); postBoost('p2');
     out.ubAsked = popOn(); out.ubBefore = sent.join(' | ');
     popYes(); out.ubAfter = sent.join(' | ');
-    sent.length = 0; p.iboost = false; popOff(); postBoost('p2');
-    out.bNoAsk = !popOn() ? sent.join(' | ') : '(asked)';
+    /* putting one up asks WHICH (r94 B, 14 below) and asks nothing about
+       undoing: its yes is the repost */
+    sent.length = 0; p.iboost = false; popOff(); postBoost('p2'); popYes();
+    out.bNoAsk = sent.join(' | ');
     p.sid = was.sid; p.iboost = was.iboost;
     const relWas = REL.iri;
     sent.length = 0; REL.iri = { i:true, u:false }; popOff(); meFollowPress('iri');
@@ -734,6 +736,63 @@ const r = await pg.evaluate(({ s }) => {
     sent.length = 0; REL.iri = { i:false, u:false }; popOff(); meFollowPress('iri');
     out.fNoAsk = !popOn() ? sent.join(' | ') : '(asked)';
     REL.iri = relWas; popOff();
+    netSend1 = realS1; netSend = realS; netGet = realG;
+  }
+
+  /* ---- 14: r94 -- a quote ---------------------------------------------
+     「リポストの印を押すと『リポスト／引用』。引用は投稿の画面が開き、元の投稿
+     が下に小さく付く。投稿は元の投稿の id を持つ。元が消えた・ブロックで見えない
+     時は『この投稿は表示できません』。引用されたら元の人に通知」 OWNER
+     2026-09-25. At the wire where it goes up, and off what is drawn. */
+  {
+    const sent = [];
+    const realS1 = netSend1, realS = netSend, realG = netGet;
+    netSend1 = function (m, p, b, t, ok) {
+      p = String(p); sent.push({ m:m, p:p.split('?')[0], b:b }); ok([{ id:'SRV-new' }], 200);
+    };
+    netSend = function (m, p, b, t, ok, bad, up) { netSend1(m, p, b, t, ok, bad, up, true); };
+    netGet = function (p, ok, bad) { netSend('GET', p, null, '', ok, bad); };
+    const p = postById('p2'), was = { sid:p.sid, iboost:p.iboost };
+    p.sid = 'SRV-2'; p.iboost = false;
+    NAV = [{ r:'feed' }]; window.route = 'feed'; render();
+    /* the choice, and nothing goes while it is asked */
+    popOff(); postBoost('p2');
+    const pop = document.getElementById('pop');
+    out.qChoice = popOn() && pop.textContent.indexOf(t('post.repost')) >= 0 &&
+                  pop.textContent.indexOf(t('post.quote')) >= 0 && !sent.length;
+    /* 引用: the composer, holding the server's name, with the post under it */
+    popNo();
+    out.qForm = JSON.stringify(here()) + ' qt=' + PW.qt;
+    const fh = (typeof FORM !== 'undefined' && FORM && FORM.html) || '';
+    out.qFormShows = fh.indexOf('class="pqt"') >= 0 && fh.indexOf('@iri') >= 0;
+    /* and sent: the row carries quote_of, and the body carries neither half */
+    PW.ln = 'kano'; PW.cut = []; sent.length = 0;
+    netPush({ id:'pq-x', at:Date.now(), ln:'kano', qt:'SRV-2', qp:postQuoteCopy(p) }, function () {}, function () {});
+    const row = sent.filter((x) => x.m === 'POST' && x.p === '/rest/v1/post')[0];
+    out.qRow = row ? JSON.stringify({ quote_of:row.b.quote_of, qt:row.b.body.qt, qp:row.b.body.qp }) : '(no row)';
+    PW = pwBlank(); NAV = [{ r:'feed' }]; window.route = 'feed';
+    /* read back: what the server says the quoted post is, or that there is none */
+    const a = netRow({ id:'SRV-a', created_at:'2026-09-25T00:00:00Z', body:{ ln:'mos' },
+                       quote_of:'SRV-2', quoted:{ id:'SRV-2', created_at:'2026-09-24T00:00:00Z',
+                                                  body:{ ln:'qel', hd:'iri', who:'Iri' } } });
+    const b = netRow({ id:'SRV-b', created_at:'2026-09-25T00:00:00Z', body:{ ln:'mos' },
+                       quote_of:'SRV-gone', quoted:null });
+    const c = netRow({ id:'SRV-c', created_at:'2026-09-25T00:00:00Z', body:{ ln:'mos' } });
+    out.qRead = [a.qt, a.qp && a.qp.hd, b.qt, String(b.qp), String('qt' in c)].join(',');
+    /* drawn */
+    const div = document.createElement('div');
+    div.innerHTML = postRow(Object.assign({ id:'SRV-a', hd:'aya', who:'Aya' }, a));
+    out.qDrawn = !!div.querySelector('.pqt') && div.querySelector('.pqt').textContent.indexOf('@iri') >= 0 &&
+                 div.querySelector('.pqt').getAttribute('data-do') === 'postOpen';
+    div.innerHTML = postRow(Object.assign({ id:'SRV-b', hd:'aya', who:'Aya' }, b));
+    out.qGone = div.querySelector('.pqgone') ? div.querySelector('.pqgone').textContent : '(none)';
+    out.qGoneWant = t('post.quote.gone');
+    div.innerHTML = postRow(Object.assign({ id:'SRV-c', hd:'aya', who:'Aya' }, c));
+    out.qPlain = !div.querySelector('.pqt');
+    /* the notice */
+    out.qNotice = notRow({ kind:'quote', hd:'kai', who:'Kai', n:1, np:1, at:Date.now() })
+                    .indexOf(esc(t('notif.quote', '@kai').replace('@kai', ''))) >= 0 ? 1 : 0;
+    p.sid = was.sid; p.iboost = was.iboost; popOff();
     netSend1 = realS1; netSend = realS; netGet = realG;
   }
 
@@ -1080,6 +1139,22 @@ if (!r.ufAsked || r.ufBefore || !/DELETE \/rest\/v1\/follow/.test(r.ufAfter))
       r.ufBefore + '」, after the yes: 「' + r.ufAfter + '」.');
 if (!/POST \/rest\/v1\/follow/.test(r.fNoAsk))
   say('12: following asked or sent nothing: 「' + r.fNoAsk + '」');
+if (!r.qChoice)
+  say('14: pressing the repost of a post nobody has reposted did not put up 「' + 'リポスト／引用' +
+      '」 with nothing sent.');
+if (r.qForm !== JSON.stringify({ r:'form', a:'post:' }) + ' qt=SRV-2' || !r.qFormShows)
+  say('14: 引用 opened ' + r.qForm + ' (the post under the field: ' + r.qFormShows + ') -- it has to be ' +
+      'the composer holding the server\u2019s name for the post, with the post small under it.');
+if (r.qRow !== JSON.stringify({ quote_of:'SRV-2' }))
+  say('14: a quote went up as ' + r.qRow + ' -- quote_of on the row, and neither qt nor qp in the body.');
+if (r.qRead !== 'SRV-2,iri,SRV-gone,null,false')
+  say('14: a row read back as 「' + r.qRead + '」 -- the id, the post as the server has it, null where ' +
+      'there is none, and nothing on a post that quotes nothing.');
+if (!r.qDrawn || r.qGone !== r.qGoneWant || !r.qPlain)
+  say('14: drawn -- the post under a quote ' + r.qDrawn + ', one that is gone says 「' + r.qGone +
+      '」, one that quotes nothing has none: ' + r.qPlain);
+if (!r.qNotice)
+  say('14: a notice of the kind quote does not say 「' + 'notif.quote' + '」.');
 console.log('a follow and a block are one row written by one function, and ' +
             'the columns are its argument: ' + r.pairOn);
 console.log('nobody is a 「?」 that becomes a name: a post carries its writer ' +

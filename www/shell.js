@@ -2407,7 +2407,9 @@ var POP_STAY=null;
 function popStay(paint){ POP_STAY=paint; paint(); }
 function popTurn(){ if(POP_STAY) POP_STAY(); else popOff(); }
 function popAsk(msg, yes, yesWord, noWord, no){
-  if(!popPaint('<div class="popm">'+esc(msg)+'</div>'+
+  /* A question that is only its answers -- 「リポスト／引用」 -- has no line
+     over them, rather than an empty one. */
+  if(!popPaint((msg? '<div class="popm">'+esc(msg)+'</div>' : '')+
     '<button class="btn ghost"' + DO('popYes') + '>'+esc(yesWord||t('up.cta'))+'</button>'+
     '<button class="btn ghost popno"' + DO('popNo') + '>'+esc(noWord||t('pop.no'))+'</button>'))
     /* no DOM to draw on: do nothing rather than act unasked */

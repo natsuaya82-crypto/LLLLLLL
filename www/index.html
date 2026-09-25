@@ -744,6 +744,14 @@ canvas.pkc{width:34px;height:34px;display:block}
    ── pwToPaint() が打っている最中に埋めるので、器は先に置いてあります
    （www/post.js § pwHTML）。空の器が一行ぶんの余白として残らないように。 */
 .pto:empty{display:none}
+/* The post under a quote (r94, www/post.js § postQuoteHTML): smaller, and a
+   line down its left side -- one side is a line, not a box (rule 18). */
+.pqt{margin:10px 0 2px;padding:2px 0 2px 12px;border-left:2px solid var(--line);
+     font-size:.9rem;color:var(--txs)}
+.pqth{display:flex;gap:6px;align-items:baseline;overflow:hidden;white-space:nowrap}
+.pqt .pline{font-size:1rem;margin-top:2px}
+.pqt .pmn{margin-top:2px}
+.pqgone{color:var(--txm)}
 /* ---------- a report, read ----------
    One card per report, and the reason is the small grey line: what a person
    reading these is looking at is what was SAID, not the five words the app

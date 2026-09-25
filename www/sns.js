@@ -2842,7 +2842,8 @@ function notGo(n){
 }
 function notRow(n){
   var k=String(n.kind||''), p=postById(n.id), pics=p? postPics(p) : [], ic=
-    k==='like'? ICON_HEART : k==='boost'? ICON_BOOST :
+    /* a quote wears the repost's mark: it is one, with words (r94) */
+    k==='like'? ICON_HEART : (k==='boost' || k==='quote')? ICON_BOOST :
     k==='reply'? ICON_REPLY : k==='follow'? ICON_ADD : ICON_LINE;
   return '<div class="ntf"'+notGo(n)+'>'+
     /* THE KIND, NAMESPACED. It was `class="ntfi '+k+'"`, so a notice about a
