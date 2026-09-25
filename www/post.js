@@ -3439,10 +3439,10 @@ function postWhen(at){
         : {year:'numeric', month:'short', day:'numeric'});
   }catch(e){ return t('when.d', Math.floor(s/86400)); }
 }
-/* AND THE WHOLE OF IT, on the post a thread is opened on. 「ツイートの詳細時刻
-   出るようにして欲しい」 OWNER 2026-09-25 (docs/FEATURE_RULES.md § 2026-09-25
-   いいね・リポストした人の一覧…). The timeline's rows keep postWhen(): this is
-   the one post somebody came to read, and 「2h」 is not when it was written.
+/* AND THE WHOLE OF IT, under the post a thread is opened on (postRow).
+   「ツイートの詳細時刻出るようにして欲しい」 OWNER 2026-09-25
+   (docs/FEATURE_RULES.md § 2026-09-25 いいね・リポストした人の一覧…). Every
+   head keeps postWhen(); this is the one post somebody came to read.
 
    The date and the time are the phone's own, in the interface language, the
    way postWhen() already asks for a date; how the two are put side by side is
@@ -4099,7 +4099,7 @@ function postRow(p){
                gone up. 「5 いります」 OWNER 2026-09-06. It goes the moment
                the sid lands, because that is a redraw of this row. */
             '<span class="pwhen">'+
-              esc(postUnsent(p)? t('post.unsent') : foc? postWhenFull(p.at) : postWhen(p.at))+'</span>'+
+              esc(postUnsent(p)? t('post.unsent') : postWhen(p.at))+'</span>'+
             /* Kept to yourself, then edited. OWNER 2026-08-25:「🔑と編集済み
                逆にしたら終わりかな」-- asked for the other way round first and
                swapped after looking at it. The two are not the same kind of
@@ -4247,6 +4247,13 @@ function postRow(p){
       /* AND WHAT IT QUOTES, under everything it carries and over the
          buttons: somebody else's post, small, as the server has it now. */
       postQuoteHTML(p, true)+
+      /* AND WHEN, WHOLE, under the body of the post a thread is opened on --
+         「詳しい時刻はツイートの右下あたりに入れて欲しいTwitterと同じ形。2hとか
+         はそのままで」 OWNER 2026-09-25. The head keeps 「2h」 on every row,
+         this one included; the year, the day and the time are one line here,
+         on the right, over the buttons. A post that has not gone up has no
+         time to tell (its head says 未送信). */
+      ((foc && !postUnsent(p))? '<div class="pwhenf">'+esc(postWhenFull(p.at))+'</div>' : '')+
       /* Three layers, and there is no fourth.
 
            the writer's own letters      ln + ink

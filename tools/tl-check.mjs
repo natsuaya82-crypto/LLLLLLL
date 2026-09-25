@@ -685,21 +685,25 @@ const r = await pg.evaluate(({ s }) => {
   }
 
   /* ---- 11: r94 -- the post a thread is opened on says WHEN, whole --------
-     「ツイートの詳細時刻出るようにして欲しい」 OWNER 2026-09-25. The post the
-     thread is about carries the year, the day and the time; the same post as
-     a row on the timeline keeps 「2h」 / the short date. Read off what is
-     DRAWN, the `.pwhen` of each, and not off postWhenFull(). */
+     「ツイートの詳細時刻出るようにして欲しい」「詳しい時刻はツイートの右下あたり
+     に入れて欲しいTwitterと同じ形。2hとかはそのままで」 OWNER 2026-09-25. The
+     head keeps 「2h」 / the short date on every row, the thread's own post
+     included; under that post's body, and under no other, the year, the day
+     and the time. Read off what is DRAWN, not off postWhenFull(). */
   {
     const p = postById('p2'), was = p.at;
     p.at = new Date(2025, 2, 4, 15, 7).getTime();
     NAV = [{ r:'feed' }, { r:'thread', a:'p2' }]; window.route = 'thread'; render();
     const app = document.getElementById('app');
-    const foc = app.querySelector('.pfoc .pwhen');
-    out.whenFoc = foc ? foc.textContent : '(no focus row)';
+    const foc = app.querySelector('.pfoc');
+    out.whenFoc = foc && foc.querySelector('.pwhen') ? foc.querySelector('.pwhen').textContent : '(no focus row)';
+    out.whenFull = foc && foc.querySelector('.pwhenf') ? foc.querySelector('.pwhenf').textContent : '(none)';
+    out.whenFullN = app.querySelectorAll('.pwhenf').length;
     NAV = [{ r:'feed' }]; window.route = 'feed'; render();
     const row = [].slice.call(app.querySelectorAll('.post')).filter((e) =>
       (e.getAttribute('data-a') || '').indexOf('"p2"') >= 0)[0];
     out.whenRow = row && row.querySelector('.pwhen') ? row.querySelector('.pwhen').textContent : '(no row)';
+    out.whenRowFull = app.querySelectorAll('.pwhenf').length;
     out.whenShort = postWhen(p.at);
     p.at = was;
   }
@@ -1120,14 +1124,14 @@ if (r.pairOff !== PAIR_OFF)
       '\n  The same two columns in the same roles, or the row taken away is ' +
       'somebody else\u2019s.');
 
-if (!/2025/.test(r.whenFoc) || !/07/.test(r.whenFoc))
-  say('11: the post a thread is opened on says 「' + r.whenFoc + '」 -- it has to ' +
-      'say the year, the day and the time it was written (2025-03-04 15:07), ' +
-      'not how long ago.');
-if (r.whenRow !== r.whenShort)
-  say('11: the same post as a row on the timeline says 「' + r.whenRow + '」 and ' +
-      'the timeline says 「' + r.whenShort + '」 -- only the thread\u2019s own post ' +
-      'is told whole.');
+if (!/2025/.test(r.whenFull) || !/07/.test(r.whenFull) || r.whenFullN !== 1)
+  say('11: under the post a thread is opened on it says 「' + r.whenFull + '」 (' + r.whenFullN +
+      ' on the screen) -- once, under that post, with the year, the day and the time it was ' +
+      'written (2025-03-04 15:07).');
+if (r.whenFoc !== r.whenShort || r.whenRow !== r.whenShort || r.whenRowFull)
+  say('11: the head says 「' + r.whenFoc + '」 on the thread\u2019s post and 「' + r.whenRow +
+      '」 on the timeline, and the timeline says 「' + r.whenShort + '」 -- the 2h stays where it is ' +
+      '(OWNER 2026-09-25), and the timeline has no whole date (' + r.whenRowFull + ').');
 if (!r.ubAsked || r.ubBefore || !/DELETE \/rest\/v1\/react/.test(r.ubAfter))
   say('12: taking a repost back — asked: ' + r.ubAsked + ', sent before the answer: 「' +
       r.ubBefore + '」, after the yes: 「' + r.ubAfter + '」. It has to ask, send nothing ' +

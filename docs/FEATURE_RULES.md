@@ -308,7 +308,13 @@ the reasoning — a reason can be re-derived, a decision cannot.
   「詳しい時刻はツイートの右下あたりに入れて欲しいTwitterと同じ形。2hとかはそのままで」。
 - Affected data: 引用は投稿に元の投稿の id を持つ（新しい列）。一覧は今の react・follow から読む。
 - Affected docs: この項、`docs/STATE.md`。
-- Implementation status: 未。1.0.2 の審査の後、1.0.3 に。
+- Implementation status: **実装（`claude/r94-social`、2026-09-25）。CODE CONFIRMED のみ。**
+  一覧 ── `data-hold` が名前を持つ形に（`holdStart()`）、ハート・リポストの長押しが `reacts` の画面、フォロー一覧と
+  同じ仕組み（`folList()`、`www/me.js`）、読むのは `react_seen`（ブロック両向き・ミュートを外す、`npm run rls`）。
+  引用 ── `post.quote_of`（外部キー無し）、`post_seen.quoted`、`notices()` の `quote`、`postQuoteHTML()`（`tl-check` 14）。
+  **iPhone のプッシュ通知は鳴らない**（種類を足すと `www/push.js`・`www/core.js` が要る、持ち物外）。
+  解除の確認 ── `postBoost()`・`meFollowPress()`（`tl-check` 12）。詳しい時刻 ── 本文の下の右に `postWhenFull()`、
+  名前の横はそのまま（`tl-check` 11）。残り・訊くことは `docs/scope/r94-social.md`。
 
 ### 2026-09-25 広告は入れる。今はまだ出さない
 - Date: 2026-09-25
