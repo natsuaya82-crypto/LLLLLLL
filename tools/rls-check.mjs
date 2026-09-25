@@ -630,6 +630,22 @@ const CASES = [
     `insert into language(id,owner,name) values ('${BKL}','${BK}','Blak')`],
   ['and publishes it too',                    'ok',     BK, 0,
     `update language set published_at=now() where id='${BKL}'`],
+  /* An article that lets the dictionary go, and a dictionary, on each: the
+     three roads a language is read by are asked below, and the slice road is
+     two -- the five kinds the article is drawn from, and the three `slice_dl`
+     opens. */
+  ['BD writes BD’s article, dictionary open', 'ok',  BD, 0,
+    `insert into slice(language,kind,body) values ('${BDL}','wld','{"dl":true}')`],
+  ['and BD’s dictionary',                     'ok',  BD, 0,
+    `insert into slice(language,kind,body) values ('${BDL}','words','[1]')`],
+  ['BK writes BK’s article, dictionary open', 'ok',  BK, 0,
+    `insert into slice(language,kind,body) values ('${BKL}','wld','{"dl":true}')`],
+  ['and BK’s dictionary',                     'ok',  BK, 0,
+    `insert into slice(language,kind,body) values ('${BKL}','words','[1]')`],
+  ['B reads BD’s published language',         'ok',  B, 0,
+    `select 1 from language where id='${BDL}'`],
+  ['and its dictionary',                      'ok',  B, 0,
+    `select 1 from slice where language='${BDL}' and kind='words'`],
   ['BK blocks BD',                            'ok',     BK, 0,
     `insert into block(actor,blocked) values ('${BK}','${BD}')`],
   /* WHOM YOU HAVE BLOCKED, BY NAME, AND TO YOU ALONE. 「設定に追加して非表示
@@ -666,6 +682,24 @@ const CASES = [
     `select 1 from language_seen where id='${BDL}'`],
   ['BD does not see BK’s published language', 'denied', BD, 0,
     `select 1 from language_seen where id='${BKL}'`],
+  /* AND NOT BY ANY OTHER ROAD. `language_seen` is one of three: the table
+     itself and its slices answer the same question, and they answered it
+     without the block until lang_readable() was the one place it is asked
+     (r87). The count of the roads is further down (LANG_READ). */
+  ['BK does not read BD’s language row',      'denied', BK, 0,
+    `select 1 from language where id='${BDL}'`],
+  ['BD does not read BK’s language row',      'denied', BD, 0,
+    `select 1 from language where id='${BKL}'`],
+  ['BK does not read BD’s article',           'denied', BK, 0,
+    `select 1 from slice where language='${BDL}' and kind='wld'`],
+  ['BD does not read BK’s article',           'denied', BD, 0,
+    `select 1 from slice where language='${BKL}' and kind='wld'`],
+  ['BK does not read BD’s dictionary',        'denied', BK, 0,
+    `select 1 from slice where language='${BDL}' and kind='words'`],
+  ['BD does not read BK’s dictionary',        'denied', BD, 0,
+    `select 1 from slice where language='${BKL}' and kind='words'`],
+  ['BD still reads BD’s own, all of it',      'ok',     BD, 0,
+    `select 1 from slice where language='${BDL}' and kind='words'`],
   /* AND ONE BK TOOK BEFORE THE BLOCK IS STILL READ, which is not a decision:
      what a block does to a language somebody took has not been asked
      (docs/scope/r85-block.md), so this holds that nothing moved. The take is
@@ -679,6 +713,10 @@ const CASES = [
     `insert into block(actor,blocked) values ('${BK}','${BD}')`],
   ['BK still reads the language BK took',     'ok',     BK, 0,
     `select 1 from language_seen where id='${BDL}'`],
+  ['and its row',                             'ok',     BK, 0,
+    `select 1 from language where id='${BDL}'`],
+  ['and its dictionary',                      'ok',     BK, 0,
+    `select 1 from slice where language='${BDL}' and kind='words'`],
   ['BK lets go of it',                        'ok',     BK, 0,
     `delete from language_take where uid='${BK}' and language='${BDL}'`],
 
@@ -2457,11 +2495,14 @@ const SHAPE = [
      select count(*) from pg_policies
       where tablename='slice' and cmd='SELECT'
         and coalesce(qual,'') not like '%owner = auth.uid()%'`, '0'],
-  /* And the published door, which is what the About page is read through. */
+  /* And the published door, which is what the About page is read through.
+     It is lang_readable()'s, which the policy asks (LANG_READ counts that), so
+     it is asked of the function. */
   ['and published is what opens the other one', `
-     select count(*) from pg_policies
-      where tablename='slice' and cmd='SELECT'
-        and coalesce(qual,'') not like '%published_at%'`, '0'],
+     select count(*) from (select 1) x
+      where not exists (select 1 from pg_proc
+                         where proname='lang_readable'
+                           and prosrc like '%published_at%')`, '0'],
   /* AND IT IS NOT A BLANKET. Publishing a page opens the page -- \u300c\u8a00\u8a9e\u30da\u30fc\u30b8
      \u516c\u958b\u3068\u5358\u8a9e\u3084\u6587\u5b57\u306edl\u53ef\u80fd\u306f\u5225\u3060\u3057\u300d -- so the policy names the kinds it
      opens, and a policy that stopped naming any would be publishing handing
@@ -3308,6 +3349,24 @@ const sql = [
      from _block_seen(${q(BK)}, ${q(BD)}, ${q(BDH)}, ${q(BK)});`,
   `select 'BLOCKED'||chr(9)||what||chr(9)||open||chr(9)||shut
      from _block_seen(${q(BD)}, ${q(BK)}, ${q(BKH)}, ${q(BK)});`,
+  /* EVERY ROAD A LANGUAGE IS READ BY, out of the catalogue (LANG_READ below):
+     each SELECT policy on `language` and `slice`, and each view built on
+     either -- a view runs with its owner's rights, so its own `where` is the
+     only thing between a reader and the table. */
+  `select 'LANGREAD'||chr(9)||'policy '||tablename||'.'||policyname||chr(9)||
+          (coalesce(qual,'') like '%lang_readable(%')||chr(9)||'-'
+     from pg_policies
+    where schemaname='public' and tablename in ('language','slice')
+      and cmd in ('SELECT','ALL');`,
+  `select distinct 'LANGREAD'||chr(9)||'view '||v.relname||chr(9)||
+          (pg_get_viewdef(v.oid) like '%lang_readable(%')||chr(9)||'-'
+     from pg_depend d
+     join pg_rewrite w on w.oid = d.objid
+     join pg_class v on v.oid = w.ev_class
+     join pg_namespace n on n.oid = v.relnamespace
+    where d.refobjid in ('public.language'::regclass, 'public.slice'::regclass)
+      and v.relkind in ('v','m') and n.nspname='public'
+      and v.relname not like '\\_%';`,
   `select 'ANON'||chr(9)||
      (select count(*) from pg_class c join pg_namespace n on n.oid=c.relnamespace
        where n.nspname='public' and c.relkind in ('r','v','m','p','f')
@@ -3406,6 +3465,27 @@ for (const name of Object.keys(BLOCK_HELD))
   }
 console.log(`\nblock: ${blockRows.length} reads walked as the blocker and as who was blocked -- ${blockOut} leave them out, ` +
             `${blockHeld} held by name, ${blockNobody} name nobody\n`);
+
+/* ---- WHO MAY READ A LANGUAGE IS ASKED IN ONE PLACE -----------------------
+   「ブロックした相手の公開言語は見えない（両向き）」 OWNER 2026-09-25. The
+   question was written three times -- `language_read`, `language_seen` and
+   `slice_read` -- and only the view asked about a block, so the table and its
+   slices handed the language over anyway. lang_readable() in schema.sql is
+   the one answer now; this counts the roads rather than naming them, so a
+   policy or a view added tomorrow that reads a language its own way is red
+   tomorrow. (Which KINDS of slice a readable language hands over is a
+   different question and stays in `slice_read`.) */
+const langRoads = out.split('\n').map((l) => l.split('\t'))
+                     .filter((r) => r.length === 4 && r[0] === 'LANGREAD');
+if (!langRoads.length) bad.push(['who may read a language', 'roads', 'none were found']);
+for (const [, road, asks] of langRoads) {
+  const ok = asks === 'true';
+  if (!ok) bad.push([road + ' asks lang_readable()', 'yes', 'asks its own question']);
+  console.log((ok ? '  ok    ' : '  FAIL  ') + (road + ' asks lang_readable()').padEnd(44) +
+              (ok ? '' : 'asks its own question'));
+}
+console.log(`\nlanguage: ${langRoads.length} roads a language is read by, ` +
+            `${langRoads.filter((r) => r[2] === 'true').length} ask lang_readable()\n`);
 
 /* After the wall, because the wall's sentence is about anon and these are
    about what the file says -- a red here is not anon getting through. */
