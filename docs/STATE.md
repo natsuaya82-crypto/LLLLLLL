@@ -32,6 +32,14 @@ un-re-read.
 
 ---
 
+## 2026-09-25 ── 1.0.2（ビルド 167）を審査に出した（11:53 UTC、WAITING_FOR_REVIEW）
+
+166 は審査への提出を Apple に二回断られた（BINARY_INDICATES_APP_TRACKS_USERS ── AdMob と追跡の問いが入って
+いて App Privacy は「追跡しない」）。広告は「入れる、今はまだ出さない」（決定ログ 2026-09-25）に合わせて r93 が
+AdMob と追跡をビルドから外し、ゲート全部緑（master `ab743766`）でビルド 167 を出し、`tools/store-submit.mjs`
+（Actions「Store Submit」）で 1.0.2 に付けて出した。新機能の文は 1.0.1（162）からの差分で 10 言語
+（`store/<locale>.json`、Actions「Store Localize」で入れた）。**RevenueCat 入りの課金は実機でまだ誰も押していない。**
+
 ## 2026-09-25 ── ビルド 166 を出した（master `06d3f6a4`、ゲート全部緑、rls 562/0）
 
 オーナーの「ゲート回してグリーンならすぐビルド出して」で 2026-09-25 08:13 UTC に出した（`ios-deploy.yml`、
