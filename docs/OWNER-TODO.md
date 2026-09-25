@@ -17,7 +17,7 @@
 | S-B | Devpost で Shipaton 2026 に参加登録 | 済み（2026-09-25） |
 | S-C | App Store Connect で審査員用のコード（オファーコード）を用意 | 済み（2026-09-25）：Pro 月額のオファーコード「shipaton-judges」、無料、カスタムコード LINGUASHIPATON、上限 500、有効期限 2026-10-31 |
 | S-D | RevenueCat 入りのビルドが届いたら、実機で一回買う → 審査に出す（審査 1〜2 日。早いほど安全） | 待ち：RevenueCat 入りのビルド |
-| S-E | Devpost に提出（説明・デモ動画・App Store の URL・アイコン・スクショ・S-C のコード） | 待ち：S-D とリーダーの下書き・画像 |
+| S-E | Devpost に提出（説明・デモ動画・App Store の URL・アイコン・スクショ・S-C のコード） | 待ち：S-D とリーダーの下書き・画像。デモ動画は上げた（2026-09-25）：https://youtu.be/vTJZd48xOOM （長さ・中身はこのセッションでは見ていない） |
 | S-F | 参加特典 Ship Kit・Discord（任意） | 任意 |
 
 ### S-A RevenueCat
