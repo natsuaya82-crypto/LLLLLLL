@@ -807,7 +807,7 @@ Google と同じアドレスを打って二つ目のアカウントを立てて�
 
 ### 走っているセッション ── 2026-09-03
 
-`claude/rc`（RevenueCat、公開キー待ち）が未取り込み。
+RevenueCat は `claude/r91-rc` で入った（2026-09-25、公開キーも入った、Swift は未ビルド）。
 保存のポップは決定だけあって未着手です（決定ログ `9bbd83d3`）。
 
 **この二行を信じないでください。**枝が取り込まれているかは名前からもこの行
@@ -1170,7 +1170,7 @@ line above says one of those is done, it is because the OWNER said so, on the
 date given — it is not something anybody verified from here, and it must not be
 written as though it were. Read `git grep` for the repo side; ask for the rest.
 
-**StoreKit is written, and has never run on a device.** `LinguaStore.swift`
+**Purchases go through the RevenueCat SDK (r91, 2026-09-25) and have never run on a device.** Buying and restoring are RevenueCat's; reading what is owned for `verify-plan` is still StoreKit, read-only, because RevenueCat does not hand out the signed receipt. `LinguaStore.swift`
 holds the four products, `www/store.js` is the only thing in `www/` that talks
 to it, and `plBuy()` in `www/settings.js` is `storeBuy`'s one caller. The owner
 reports the four subscription products made in App Store Connect (2026-08-27) —
@@ -1526,7 +1526,7 @@ known place** (`docs/apple.md` § 4 has every field):
     number Apple rounded to. `docs/apple.md` § 4.
 
     **Changing a price here needs no change in the app**, and that is new
-    since 2026-08-23: the plans screen shows `displayPrice` as the App Store
+    since 2026-08-23: the plans screen shows `localizedPriceString` as the App Store
     gives it, and works the yearly saving out from the two amounts rather than
     from the 17 on `PLANS`, because Apple rounds each storefront separately
     and 17% off in dollars is not 17% off in yen. The `$4.99` in `www/i18n` is

@@ -332,7 +332,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Implementation status: 画面・タイムライン・キーボードの分は入った（r82・r83）。r84（`claude/r84-save`、CODE CONFIRMED のみ）:
   **保存を押した時** ── 入った（`langWrites()`・`keepDrafting()`・`netSaveNow()`、`keep-check` 23）。
   **取ってきた言語** ── 入った（`dl-check` が全部の画面を押す）。**開いた時に読む物** ── 測ると五つとも既に読んでいた、
-  `load-check` 1 が数える。**親が承認した購入** ── 入った（`Transaction.updates` → `linguastore`、`plan-check`、Swift は未ビルド）。
+  `load-check` 1 が数える。**親が承認した購入** ── 入った（RevenueCat の知らせ → `linguastore`、r91、`plan-check`、Swift は未ビルド）。
   **上限の文** ── `up.need` 一つのまま、Plus のキーボードは無制限（`plan-check`・`kb-check`）。
   **言語を前に戻す** ── 入った（保存の番号 `slice.press`、`admin_restore_lang()`、運営の画面は版三つ。`npm run rls`・
   `hist-check`・`again-check`）。**schema.sql をアプリより先に流すこと。**
@@ -6006,7 +6006,7 @@ for.
 - Affected data: none. A price is not stored anywhere in this app
 - Affected docs: apple.md § 4, CHANGELOG, STATE
 - Implementation status: nothing to implement, and that is the point. The
-  screen shows `displayPrice` as the App Store gives it and works the yearly
+  screen shows `localizedPriceString` as RevenueCat hands over the App Store's price and works the yearly
   saving out from the two amounts, so **a price changed in the dashboard needs
   no change in the app** — and rounding each country separately, which makes
   the saving differ by country, is exactly the case that would have been wrong
