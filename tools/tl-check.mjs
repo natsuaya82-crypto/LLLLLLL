@@ -636,6 +636,10 @@ const r = await pg.evaluate(({ s }) => {
     window.route = 'feed'; NAV = [{ r:'feed' }];
     const mh = postMenuHTML({ id:'mu-1', hd:'yun', mine:false });
     out.muWord = mh.indexOf(esc(t('post.unmute'))) >= 0 && mh.indexOf('data-do="meMute"') >= 0;
+    /* and its mark: the speaker with the red line for somebody muted, the
+       plain speaker for somebody not (OWNER 2026-09-25) */
+    const nh = postMenuHTML({ id:'mu-5', hd:'kiyo', mine:false });
+    out.muMark = mh.indexOf(ICON_MUTE) >= 0 && nh.indexOf(ICON_SPK) >= 0 && nh.indexOf(ICON_MUTE) < 0;
     POSTS = POSTS.filter((p) => p.id !== 'mu-1');
     NET_PPL.mute = null;
     window.dayId = realDay;
@@ -899,6 +903,9 @@ if (r.muBoosts !== '001')
       '「その人がリポストした投稿も出さない」');
 if (!r.muWord)
   say('the ... on a muted person\'s post does not offer ミュート解除');
+if (!r.muMark)
+  say('the ... does not draw the speaker with the red line for somebody muted and the plain speaker ' +
+      'for somebody not -- 「その絵に赤い斜線を入れて『ミュート中』と分かるように」');
 if (r.folOrder !== 'noa,ami,zed,kai')
   say('a follow list, two pages of it, holds ' + JSON.stringify(r.folOrder) +
       ' and the four were followed newest first as noa,ami,zed,kai. ' +

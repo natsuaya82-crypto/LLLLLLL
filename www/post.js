@@ -4387,7 +4387,7 @@ function postMenuHTML(p){
   var h=String(p.hd||'');
   if(!p.mine)
     return '<span class="pmenu" data-pm="1">'+
-      '<button class="pmi"' + DO('meMute', [h]) + '>'+ICON_SPK+
+      '<button class="pmi"' + DO('meMute', [h]) + '>'+(meMutes(h)? ICON_MUTE : ICON_SPK)+
         '<span>'+esc(t(meMutes(h)? 'post.unmute' : 'post.mute'))+'</span></button>'+
       '<button class="pmi"' + DO('meBlock', [h]) + '>'+ICON_BLOCK+
         '<span>'+esc(t(meBlocks(h)? 'post.unblock' : 'post.block'))+'</span></button>'+

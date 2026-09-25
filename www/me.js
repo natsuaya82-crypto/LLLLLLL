@@ -1425,7 +1425,7 @@ function whoCard(h){
         esc(t('post.more'))+'">'+ICON_DOTS+'</button>'+
       (WMENU
         ? '<span class="pmenu" data-pm="1">'+
-          '<button class="pmi"' + DO('meMute', [String(h)]) + '>'+ICON_SPK+
+          '<button class="pmi"' + DO('meMute', [String(h)]) + '>'+(meMutes(h)? ICON_MUTE : ICON_SPK)+
             '<span>'+esc(t(meMutes(h)? 'post.unmute' : 'post.mute'))+'</span></button>'+
           '<button class="pmi"' + DO('meBlock', [String(h)]) + '>'+ICON_BLOCK+
             '<span>'+esc(t(meBlocks(h)? 'post.unblock' : 'post.block'))+'</span></button>'+
