@@ -731,6 +731,37 @@ if (NOTE.rows < 2 || !NOTE.pua)
   fails.push('section 12 saw ' + NOTE.rows + ' notices about a post and ' + NOTE.pua +
              ' drawn letters, so it holds nothing');
 
+/* ---- 12. the ordinary letters are Twitter's size, the drawn ones where they were
+   「投稿の文字が高いからTwitterと同じサイズにして欲しい」「自作文字の表示サイズは
+   ちょうどいいんやけど、既存文字はでかい」 OWNER 2026-09-25. Measured on the posted
+   line: the size it is set at, and a drawn letter on it against the same letter
+   in LinguaType at the 1.3rem a line was set at before -- read off the page, not
+   off --ink-over. */
+const SIZE = await pg.evaluate(async () => {
+  go('thread', 'pline'); render();
+  if (typeof inkFaces === 'function') inkFaces();
+  await document.fonts.ready;
+  const line = document.querySelector('#app .pline');
+  if (!line) return null;
+  const ord = parseFloat(getComputedStyle(line).fontSize);
+  let ch = '';
+  for (const c of line.textContent) { const n = c.charCodeAt(0); if (n >= 0xE000 && n <= 0xF8FF) { ch = c; break; } }
+  if (!ch) return { ord: ord, ch: 0 };
+  const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
+  await document.fonts.load((1.3 * rem) + "px 'LinguaType'", ch);
+  await document.fonts.load(ord + "px 'LinguaLine'", ch);
+  const w = (fam, px) => { const s = document.createElement('span');
+    s.style.font = px + 'px ' + fam; s.style.whiteSpace = 'pre'; s.textContent = ch;
+    document.body.appendChild(s); const r = s.getBoundingClientRect().width; s.remove(); return r; };
+  return { ord: ord, ch: ch.charCodeAt(0), inLine: w("'LinguaLine'", ord), was: w("'LinguaType'", 1.3 * rem) };
+});
+if (!SIZE || SIZE.ord !== 15)
+  fails.push('12: the ordinary letters of a posted line are set at ' + (SIZE && SIZE.ord) +
+             'px -- Twitter\u2019s is 15 (OWNER 2026-09-25)');
+else if (!SIZE.ch || Math.abs(SIZE.inLine - SIZE.was) > 0.6)
+  fails.push('12: a drawn letter on the line is ' + (SIZE.inLine || 0).toFixed(1) + 'px across and ' +
+             'the same letter at the size a line was is ' + (SIZE.was || 0).toFixed(1) + 'px -- the drawn ' +
+             'letters stay where they were while the ordinary ones get smaller');
 if (errs.length) fails.push('the page threw: ' + errs.slice(0, 3).join(' | '));
 
 await br.close();
@@ -760,4 +791,6 @@ console.log('line: typed into the composer and posted, one line comes out in the
             '      Nobody-has-decided draws the dictionary in the drawn face (' + MYF.none.sfont +
             ' words) and the switch reads on;\n      turned off, ' + MYF.off.sfont + ' and the switch reads off.\n' +
             '      ' + MINEONLY.lines + ' lines on the timeline, ' + MINEONLY.pua + ' private use characters on them, every one a shape its own post carries.\n' +
-            '      The timeline and two cards drawn with ' + QUIET.saves + ' save functions watched: nothing written, ME and SET as they were.');
+            '      The timeline and two cards drawn with ' + QUIET.saves + ' save functions watched: nothing written, ME and SET as they were.\n' +
+            '      A posted line is set at ' + SIZE.ord + 'px, and a drawn letter on it is ' + SIZE.inLine.toFixed(1) +
+            'px across -- ' + SIZE.was.toFixed(1) + 'px at the size a line was.');

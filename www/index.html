@@ -93,6 +93,12 @@ html[data-theme="light"], .thmini.light{
      what the Lingua keyboard inserted is drawn and everything else falls
      through to the ordinary face below it. */
   --face-type:'LinguaType',var(--face-ui);
+  /* A line of a post: the same letters, standing --ink-over times the size
+     the line is set at (www/glyph.js § inkFaceCSS), so the ordinary letters
+     are Twitter's 15px and the drawn ones are where they were at 1.3rem.
+     OWNER 2026-09-25. Everything that sets a line divides by it. */
+  --face-line:'LinguaLine',var(--face-ui);
+  --ink-over:1.3867;
 }
 :root{--tabh:calc(env(safe-area-inset-bottom,0) + 66px)}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -749,7 +755,7 @@ canvas.pkc{width:34px;height:34px;display:block}
 .pqt{margin:10px 0 2px;padding:2px 0 2px 12px;border-left:2px solid var(--line);
      font-size:.9rem;color:var(--txs)}
 .pqth{display:flex;gap:6px;align-items:baseline;overflow:hidden;white-space:nowrap}
-.pqt .pline{font-size:1rem;margin-top:2px}
+.pqt .pline{font-size:calc(1rem / var(--ink-over));margin-top:2px}
 .pqt .pmn{margin-top:2px}
 .pqgone{color:var(--txm)}
 /* When the thread's own post was written, whole, under its body on the right
@@ -832,7 +838,8 @@ canvas.pkc{width:34px;height:34px;display:block}
    field already is, and it is what keeps a newline on the post.
    Drawn letters stand at their full height on this line, so 1.45 put the
    rows of a two-line post against each other. 「ここつまりすぎてる」 */
-.pline,.pwfield #pw-ln{font-family:var(--face-type);font-size:1.3rem;line-height:1.7;
+.pline,.pwfield #pw-ln{font-family:var(--face-line);font-size:.9375rem;
+       line-height:calc(1.7em * var(--ink-over));
        white-space:pre-wrap;word-break:normal;overflow-wrap:break-word}
 .pline{color:var(--tx);margin-top:6px}
 /* ---------- which way a line runs ----------
@@ -2241,7 +2248,7 @@ a.set{text-decoration:none}
 .pwq .pav{width:26px;height:26px}
 .pwq .pname{font-size:.82rem}
 .pwq .phandle{font-size:.78rem}
-.pwq .pline{font-size:.88rem}
+.pwq .pline{font-size:calc(.88rem / var(--ink-over))}
 .pwq .pmn{margin-top:1px;font-size:.78rem;color:var(--txm)}
 /* What money buys that anybody can see, beside a name. One mark, in gold,
    and it says Pro. 「plusとstudioでそれぞれTwitterの青バッチみたいなやつ
@@ -2976,6 +2983,7 @@ a.set{text-decoration:none}
 /* There when there is something to read and absent when there is not -- see
    notRow(). It was reserved empty to hold every row to one height, and an
    empty line under a one-line sentence is what the owner was looking at. */
+.ntfp.pline{font-size:calc(.88rem / var(--ink-over))}
 .ntfp{color:var(--txm);font-size:.88rem;
       overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* A post kept to yourself, beside the time. */
