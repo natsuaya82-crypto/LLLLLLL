@@ -113,8 +113,10 @@ function openNoteEdit(i){
        題名が空のときに一行目が題名になるのは ntHead() が元から読んでいる形。
 
        下端まで、は openForm の 'full' ── 一画面の高さを画面全部に取る面で、
-       投稿画面の `--vvmin`(キーボードが上がったときの高さ、390x844 では
-       464px) ではない方 (www/home.js § openForm)。 */
+       下に道具の行を持たない方 (www/home.js § openForm)。画面全部とは
+       キーボードの上まで ── キーボードが出ると iPhone の側が画面をそこで
+       終わらせる (ios/App/App/MainViewController.swift § keepStill) ので、
+       本文の下端はいつもキーボードの真上 (www/index.html § .view.fit)。 */
     '<div class="field ntform">'+
       lnField('nt-t', t('notes.t'), IN('ntSetT'), ntTyped(k, 't'), 'ntt')+
       '<textarea id="nt-b" class="ntbody" placeholder="'+esc(t('notes.b.ph'))+'"'+

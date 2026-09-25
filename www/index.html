@@ -1252,6 +1252,15 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
           -webkit-backdrop-filter:blur(16px) saturate(190%);
           backdrop-filter:blur(16px) saturate(190%)}
 }
+/* WHILE SOMETHING IS BEING TYPED, THE FOOT OF THE APP IS NOT DRAWN -- the
+   bar of tabs, the round + over it, and the buttons that stand on it. The
+   screen ends at the top of the keyboard now (`.view.fit`, and
+   ios/App/App/MainViewController.swift § keepStill), so anything pinned to
+   the foot would be standing on the keys, where before this it was behind
+   them. This keeps them where somebody typing has always had them: out of
+   sight until the keyboard goes. Asked of the field that has focus rather
+   than of the keyboard, because the page is told nothing about a keyboard. */
+html:has(input:focus, textarea:focus, [contenteditable]:focus) :is(.tabbar, .fab, .barfix){display:none}
 /* The mark alone. 「下タブにホームとかつけるのやめない？」 The label went
    beside the icon first, which pushed it off centre, then under it, which is
    what a phone's bottom bar is -- and it is still five words across a bar
@@ -1287,81 +1296,47 @@ span.numsm{font-size:1.1rem;line-height:26px;text-align:center;color:var(--tx)}
    you were about to press was somewhere you had to go and find.
    「この中に1画面収めてうごかないようにしてほしい」
 
-   The field takes what is left after everything under it has had its height,
-   and scrolls inside itself rather than growing -- which is why lnFit()
-   leaves a `fitin` field alone. */
-/* Pinned to the part of the page that can actually be SEEN, not to the
-   document. iOS does not shrink the page for the keyboard -- it slides the
-   keyboard over it and then scrolls the layout viewport up to put the focused
-   field above it, which carries the bar with Post on it off the top of the
-   screen. --vvtop is visualViewport.offsetTop, so the screen stays where it
-   is whether the keyboard is up or down, and the bar does not move when it
-   goes down. 「上のポストと戻るボタンは画面上部に固定で動かない」 */
-/* THE COMPOSER IS THE WHOLE PHONE, AND ONLY THE ROW OF TOOLS FOLLOWS THE
-   KEYBOARD. 「投稿画面は画像3枚目の位置で固定して。意味とかタップすると動く
-   し…縦書きでも横書きでもその位置固定で。Twitterの投稿画面は動きません」
-   OWNER 2026-09-06.
+   THREE BANDS, AND ONLY THE MIDDLE ONE MOVES.
+   「一番上と、カメラとかあるやつは位置固定して、中身だけ板にしてスライド
+   できるようにするのは？」「それでお願い。」 OWNER 2026-09-25 (docs/
+   FEATURE_RULES.md, 2026-09-25 投稿の画面は揺れない).
 
-   It was `--vvmin` tall -- the smallest the visible part had ever been, which
-   is what the phone has with its TALLEST keyboard up. Two keyboards are two
-   heights, and the box was laid out to one of them: measured on a 390x844,
-   the roman keyboard's top is at 508 and the box ended at 464, so there were
-   44px of screen that belonged to neither, with the row of tools hanging
-   outside the box it was the last child of. Switch to the Japanese keyboard
-   and the numbers meet; switch back and they part again.
+     the bar     back and send, at the top of the screen
+     the board   the line, the meaning, the tags -- `.pwscroll`, the one thing
+                 that scrolls, inside itself
+     the row     the camera and the rest, `.pwbar`, the last thing in the flow
 
-   So the box is the phone. It is one number, it is the same number with a
-   keyboard up and with one down, and nothing in it moves when a keyboard
-   changes size. What has to move is the row of tools, because it sits ON the
-   keyboard, and it does that already: `bottom:var(--vvkb)` reads the live
-   height. The FLOW stops where that row starts and nothing in it scrolls, and
-   both of those are said where they were already said -- `.view.fit .body`'s
-   padding and `.view.fit .pwscroll`'s overflow, below.
-   「日本語キーボードで意味の行が隠れるなら、道具の行の上に意味の行も一緒に
-   寄せる」
+   THE SCREEN IS WHAT IS ABOVE THE KEYBOARD, and that is said by the phone,
+   not by this file. `keepStill()` in ios/App/App/MainViewController.swift
+   takes WebKit's own handling of the keyboard away and sets the foot of the
+   web view to the top of the keyboard, in the keyboard's own animation. So
+   `top:0;bottom:0` IS the part anybody can see, the row -- the last child of
+   a box that ends there -- is on the keys, and the page has no room at the
+   foot to be lifted or dragged through. There is no number here for the
+   keyboard and nothing in JavaScript measuring one.
 
-   AND IT IS THE PAGE LESS THE LIFT, because the box STARTS at that lift.
-   「そもそも画面はスクロールできないようにして欲しいんだけど、そうすれば
-   ズレすら無くなるはずなのになんで？」「キーボードはそこで止める。入力位置も
-   タップしても動かないそれでいいやん。」 OWNER 2026-09-22.
+   It used to be the other way round: the web view stayed the size of the
+   phone, iOS laid the keyboard over it and lifted the page, and this box
+   chased the lift from JavaScript one event behind -- which is what shook
+   when somebody flicked the screen with the keyboard up. 「ガタガタするのは
+   キーボードが出た後に画面を上下に早く揺らした時なんだよな」 That road is
+   deleted, not kept beside this one.
 
-   The answer to 「なんで？」 is that the document was already locked and the
-   thing that moves is not the document. `html.fitlock` is `overflow:hidden`
-   on the page while this is open, and that is what stopped the DRAG. A TAP
-   is not a drag: WebKit lifts the LAYOUT viewport to reveal the field it has
-   just focused, `overflow:hidden` does not forbid that, and nothing in
-   JavaScript can refuse it -- `preventScroll` is an option on a PROGRAMMATIC
-   focus, which is why the frame this screen OPENS on was always right
-   (`pwKeepKb`), and a finger on a textarea does not go through it.
-
-   So the lift is not fought, it is subtracted, and in ONE place: this box is
-   pinned to `--vvtop` and is the page LESS `--vvtop`. It was `100dvh` -- a
-   whole page, beginning a lift down the page -- so it hung exactly that far
-   past the foot, and everything laid out against the foot hung with it.
-   Measured, 390x844 with a 380 keyboard: the visible window came down by the
-   lift and the MEANING came down by twice it, so past 114 the meaning was
-   under the keyboard and the tags with it. The line and the row of tools held
-   still throughout, which is why nobody saw it -- iOS lifts the page
-   precisely so the focused field does not move.
-
-   `post-check` § NOTHING ON THE COMPOSER MOVES asks it in SCREEN
-   coordinates, of the line, the row and the meaning together. */
-.view.fit{position:fixed;left:0;right:0;top:var(--vvtop,0px);
-   height:100vh;height:calc(100dvh - var(--vvtop, 0px));
+   `post-check` § NOTHING ON THE COMPOSER MOVES asks it with the viewport
+   actually made smaller, which is what a keyboard is now. */
+.view.fit{position:fixed;left:0;right:0;top:0;bottom:0;
    display:flex;flex-direction:column;overflow:hidden}
 /* THE DOCUMENT DOES NOT MOVE WHILE A ONE-SCREEN FORM IS OPEN. www/shell.js
-   § tabPaint puts this on, and the whole of why is written there: a drag
-   rubber-bands the layout viewport, `--vvtop` chases it one event behind, and
-   what shakes is the whole screen because the whole screen is one fixed box.
-   `overscroll-behavior:none` is what stops the rubber-band; the height and
-   the overflow are what stop an ordinary scroll under it. */
+   § tabPaint puts this on. The screen is one fixed box, so the document under
+   it has nothing to show, and this says it has nothing to scroll or bounce
+   either -- a finger on the bar or the row moves nothing. */
 html.fitlock, html.fitlock body{height:100%;overflow:hidden;overscroll-behavior:none}
 /* AND THE OTHER KIND OF ONE SCREEN, which is now a difference of ONE LINE.
    「キーボードかんがえないでいいから。画面全部にしてほしい」 OWNER 2026-09-05,
-   about the note. Both kinds are the whole phone -- `.view.fit` above says
-   why the composer became one too -- so the height is not restated here. What is left is the foot: a note has nothing under the
-   body, so it keeps no room for a row of tools it does not have and lets the
-   keyboard cover a page nobody was reading at the bottom of.
+   about the note. Both kinds are the whole screen above the keyboard -- the
+   rule above -- so the height is not restated here. What is left is the
+   foot: a note has nothing under the body, so it keeps only the home
+   indicator's room, which is nothing while a keyboard is up.
 
    www/home.js § openForm is where a form says which of the two it is; nothing
    here decides it. */
@@ -1370,35 +1345,6 @@ html.fitlock, html.fitlock body{height:100%;overflow:hidden;overscroll-behavior:
    tabs: a screen that is one screen has nowhere else to be, and where you
    are is not a question anybody is asking while they write a post.
    「投稿画面にはホーム画面とかの下タブは要らない」 */
-/* The body holds two children and gives all the slack to the first: what is
-   being written scrolls, and the bar under it does not. */
-/* The row of pictures is pinned to the keyboard now and is out of the flow,
-   so what scrolls has to clear it -- and what it has to clear is exactly the
-   row's own box, which is the rule twenty lines down said back in one place.
-   「投稿打つ時、文字と写真とかの帯の間に謎の隙間があるから直して欲しい」
-   OWNER 2026-08-28.
-
-   It was `safe-area + 62`, and the row is 53: `min-height:52px` plus the
-   `border-top:1px` above it. Two numbers for one fact, and they had drifted
-   by ten. Worse, the safe area was added TWICE -- the row subtracts what the
-   keyboard already covers (`max(0, safe - vvkb)`, the rule below), and this
-   one added the whole inset regardless, so with a keyboard up on a notched
-   phone the whole 34px was reserved for a home indicator the keyboard was
-   already sitting on top of.
-
-   Measured at 390x844, from the foot of what scrolls to the top of the row:
-
-     safe=0   keyboard down    9px -> 0
-     safe=0   keyboard up      9px -> 0
-     safe=34  keyboard down    9px -> 0
-     safe=34  keyboard up     43px -> 0    <- the photograph the owner sent
-
-   The two halves of `.pwbar`'s height are declared together below, so the 53
-   here is those two added up and nothing else. */
-/* AND THE KEYBOARD ITSELF, which is `.view.fit` above:
-   the box is the whole phone now, so what the flow has to clear is the row AND
-   whatever the keyboard is covering. It used to be the row alone, because the
-   box was already cut short to a guess at a keyboard. */
 /* ⑩ 「なんか空白がきもい」 OWNER 2026-08-28、実機ビルド #106、写真つき。
    バーの下から、プロフィール画像と一行目の行までが空いていました。`.body` の
    上の余白 10px と、`.pwtop` と一行目の下の 6px ずつ ── 合わせて 22px が、
@@ -1409,29 +1355,22 @@ html.fitlock, html.fitlock body{height:100%;overflow:hidden;overscroll-behavior:
      402x874  行の上端 70 -> 60   一行目と意味のあいだ 16 -> 12
      320x568  行の上端 70 -> 60   一行目と意味のあいだ 16 -> 12
    意味の欄の 10px は動かしていません ── 2026-08-26 に測って決めた数で、
-   返信画面の 104px の内訳がその 10 を数えています。 */
+   返信画面の 104px の内訳がその 10 を数えています。
+
+   The foot is 0: the row of tools is IN the body, its last child, and the
+   home indicator's room is the row's own (`.view.fit .pwbar` below). */
 .view.fit .body{flex:1;min-height:0;display:flex;flex-direction:column;
-   padding-top:0;
-   padding-bottom:calc(var(--vvkb,0px) + 53px +
-     max(0px, calc(env(safe-area-inset-bottom,0px) - var(--vvkb,0px))));
-   overflow:hidden}
-/* Everything you are writing, and it is the part that scrolls -- so the line
-   can be as long as it likes and the photographs under it move down with it,
-   the way they do on Twitter. 「文字が増えたら画像が下にいく仕様にして」
-   Before this the field was the only thing that could stretch, so it took the
-   whole screen and the strip of photographs sat under the fold. */
+   padding-top:0;padding-bottom:0;overflow:hidden}
 /* THE FLOOR UNDER THE BOX SOMEBODY WRITES IN, and it has been four numbers.
 
    `flex:1` with a zero basis means this takes what is LEFT after the things
-   that do not grow -- the bar with Post on it, the strip over the keyboard,
+   that do not grow -- the bar with Post on it, the row over the keyboard,
    the quoted post on a reply -- and with `min-height:0` "what is left" is
-   allowed to be nothing. Measured on the reply composer with the phone's
-   keyboard up (--vvmin 300): the field came out 49% visible, sliced flat
-   across the middle. At --vvmin 260 it was 0% -- the line you are typing into
-   was not on the screen at all -- and `.pwbar`'s border-top sits exactly on
-   that clip edge, so what is left looks like a hairline drawn through the row.
-   So: 44, one row of writing. Then 88, because what is being written here is
-   TWO fields and one row is by construction not enough
+   allowed to be nothing. Measured on the reply composer with 300 of screen
+   above the keyboard: the field came out 49% visible, sliced flat across the
+   middle. At 260 it was 0% -- the line you are typing into was not on the
+   screen at all. So: 44, one row of writing. Then 88, because what is being
+   written here is TWO fields and one row is by construction not enough
    （「返信のところ自分の狭すぎやろ、、、もっと広くしてくれ」）. Then 162 once,
    said in one place instead of two, because the box you write in is two
    fields whether or not this is a reply -- the line 44, that row's 6, the
@@ -1441,37 +1380,32 @@ html.fitlock, html.fitlock body{height:100%;overflow:hidden;overscroll-behavior:
    on `.pwtop` a vertical line cannot ask what it is inside. */
 /* 104 AND NOT 162, and the difference is the owner's small phone.
 
-   162 was the line 44, the meaning 10+44, the foot 6, and the floor a column
-   needs -- measured on a 390, where there is room for all of it. A 320x568
+   162 was measured on a 390, where there is room for all of it. A 320x568
    with the keyboard up leaves 308, and by the time the line saying who is
    being answered, the quoted post and the row of pictures have had theirs
    there is not 162 left. A floor that cannot be met is not a floor, it is an
-   overflow: the box was held open past the bottom of a `.body` that is
-   overflow:hidden, so the field somebody types the MEANING into was on the
-   phone with no way to reach it. 「投稿の返信画面みづらいや」
+   overflow. 「投稿の返信画面みづらいや」
 
    104 is the two fields and nothing else -- the line 44, the gap 10, the
    meaning 46, and the 4 the meaning's own box ends on -- which is
    「自分の言語で一行と意味がこのページで見れるように」 OWNER 2026-08-26 and is
    the smallest this may be without breaking it. 100 was tried and is 4px
-   short: the meaning is 46 tall and does not end where it ends. What
-   used to be in the other 58 is a column's floor (96, the vertical rule
-   below): a line that runs DOWN the page still asks for it, and on a 320 it
-   scrolls inside this box rather than pushing it off the screen.
+   short: the meaning is 46 tall and does not end where it ends. A line that
+   runs DOWN the page scrolls inside this box rather than pushing it off the
+   screen.
 
    The quoted post gives its room up first, which costs nothing -- it scrolls
    inside itself and says so in its own rule -- and the person's own side of
    the screen is the point of the screen. 「相手の投稿は小さく固定、その下から
-   自分が打てるようにしてくれ」 Measured, keyboard up: 320x568 gives the quote
-   44 and this 100 -- the line and the meaning both whole, neither of them
-   behind the row of pictures -- and 402x874 gives the quote its whole 76 and
-   this 298. */
-/* AND IT DOES NOT SCROLL. 「意味とかタップすると動く」 OWNER 2026-09-06:
-   pressing the meaning could carry the whole column up under the bar, because
-   this was the one box on the screen that could move. Nothing here has to
-   scroll now -- the flow stops at the row of tools (the padding above), so
-   what is in it is what fits. */
-.view.fit .pwscroll{flex:1;min-width:0;min-height:104px;overflow:hidden;
+   自分が打てるようにしてくれ」 */
+/* AND IT IS THE BOARD. 「中身だけ板にしてスライドできるように」 OWNER
+   2026-09-25: the bar and the row stand still and what is between them
+   slides, inside itself, when it is longer than the room -- `contain`, so a
+   board at its end hands nothing on to the page behind it. What fits does
+   not move at all: a box with nothing past its foot has nowhere to scroll. */
+.view.fit .pwscroll{flex:1;min-width:0;min-height:104px;
+   overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;
+   -webkit-overflow-scrolling:touch;
    display:flex;flex-direction:column}
 .view.fit .pwqs{flex:0 1 auto;min-height:0}
 .view.fit .pwtop{flex:1 1 auto;min-height:0;margin-bottom:2px}
@@ -1489,12 +1423,9 @@ html.fitlock, html.fitlock body{height:100%;overflow:hidden;overscroll-behavior:
    WIDTH is what runs out. Capped at the column and scrolling inside itself --
    without the cap a long line walked off the side of the phone.
    「縦書きの時文字数突破したら画面外にいくけどありえないから」 */
-/* A line that runs DOWN the page. `230` was the broken number: it was measured
-   on a composer with nothing quoted above it, where `.pwscroll` starts at 70 --
-   in a reply it starts at 242. The column asked for `vvmin - 230` and the box
-   held `vvmin - 300`, so the meaning was pushed out by the difference, and the
-   difference grows with the screen. It asks its parent now instead of asking
-   the viewport.
+/* A line that runs DOWN the page asks its parent for its height rather than
+   the viewport: a column that asked for a share of the whole screen came out
+   taller than the box it sits in, by more the bigger the phone.
 
    AND IT TAKES WHAT IS THERE RATHER THAN ASKING FOR 96. 96 was the floor a
    column stays readable at -- four characters; at 44 it collapses and reads as
@@ -1513,36 +1444,25 @@ html.fitlock, html.fitlock body{height:100%;overflow:hidden;overscroll-behavior:
    height:auto;flex:1 1 auto;min-height:0;
    max-width:100%;overflow:auto}
 /* The one thing that does not scroll: the row that adds a photograph or a
-   voice, and how much of the line is left. It is the last child of the form,
-   so it sits on the keyboard whatever is above it.
-   「写真と音声とかのボタンはTwitterと同じようにキーボード上に固定して」 */
+   voice, and how much of the line is left.
+   「写真と音声とかのボタンはTwitterと同じようにキーボード上に固定して」
+
+   Its height is `min-height:52px` plus the `border-top:1px` over it, 53, and
+   the room between the board and the row is none: the board ends where the
+   row begins because they are two children of one column.
+   「投稿打つ時、文字と写真とかの帯の間に謎の隙間があるから直して欲しい」
+   OWNER 2026-08-28. */
 .pwbar{flex:0 0 auto;display:flex;align-items:center;gap:10px;
    padding:6px 2px 0;border-top:1px solid var(--line);min-height:52px}
-/* ON THE KEYBOARD, not on the foot of the box. `--vvkb` is what is left over
-   below the visible part, which IS the keyboard, so a row pinned to it rides
-   up and down with it -- which is what Twitter's Aa row does and is what was
-   asked for. Being the last child of a `--vvmin`-tall box put it where the
-   keyboard WAS, and with no keyboard up yet that height is a guess (55%), so
-   the row floated in the middle of the screen.
-   The 24px each side is `.body`'s own padding, which this no longer sits
-   inside; the background is there because the line above it has to have
-   something to be a line ON while the page scrolls under it.
+/* ON THE KEYBOARD, because it is the foot of a screen that ends where the
+   keyboard starts (`.view.fit` above). 「カメラとかの下のやつキーボードに
+   ひっつけろって言ってんのに引っ付いてないし」 OWNER 2026-08-26.
 
-   The room under it is the home indicator's, and only while there is nothing
-   else down there. `env(safe-area-inset-bottom)` is a property of the PHONE,
-   not of what is on screen: it is 34px on a notched iPhone whether or not a
-   keyboard is up. So with the keyboard up the row was pushed 34px clear of
-   it, to leave room for a home indicator the keyboard was already covering --
-   and that gap, plus iOS's own accessory bar under it, is what the row was
-   floating on. 「カメラとかの下のやつキーボードにひっつけろって言ってんのに
-   引っ付いてないし」 OWNER 2026-08-26, on the second time of asking.
-
-   Subtracting --vvkb is exact rather than a guess at a number: with no
-   keyboard it is 0 and the whole inset stands, and the moment anything is
-   down there the inset is eaten by exactly as much as is covered. */
-.view.fit .pwbar{position:fixed;left:0;right:0;bottom:var(--vvkb,0px);
-   z-index:20;
-   padding:6px 24px max(0px, calc(env(safe-area-inset-bottom,0px) - var(--vvkb,0px)));
+   The room under it is the home indicator's, and `env(safe-area-inset-
+   bottom)` gives it exactly while there is nothing else down there: it is the
+   part of the WEB VIEW the indicator overlaps, and with a keyboard up the web
+   view stops above the keyboard and overlaps nothing, so it is 0. */
+.view.fit .pwbar{padding-bottom:env(safe-area-inset-bottom,0px);
    background:var(--bg)}
 /* 輪が二つ並ぶので、この器が間を持ちます ── 「左側本文の輪右が翻訳の輪」
    OWNER 2026-09-15。一つしか無い段（お題の意味は readonly）でも、無い段
@@ -2666,7 +2586,7 @@ a.set{text-decoration:none}
 /* The letter's colour, along the foot above the alphabet, where a phone puts
    a colour picker. */
 .mkcols{position:absolute;left:0;right:0;
-        bottom:calc(env(safe-area-inset-bottom,0) + 12px + var(--kb));
+        bottom:calc(env(safe-area-inset-bottom,0) + 12px);
         display:flex;align-items:center;gap:6px;padding:0 12px;
         overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
 .mkcols::-webkit-scrollbar{display:none}
@@ -2677,9 +2597,6 @@ a.set{text-decoration:none}
    has always been, and one of the two works on almost any picture. They do
    not follow the theme -- a letter drawn into a JPEG keeps its colour on
    somebody else's phone whatever their theme is. */
-/* How much of the screen the phone's keyboard is covering. vpKbWire() in
-   shell.js writes it; anything pinned to the bottom of the screen adds it. */
-:root{--kb:0px}
 :root{--mk0:#ffffff;--mk1:#000000;--mk2:#e5484d;--mk3:#f5a524;
       --mk4:#30a46c;--mk5:#3b82f6;--mk6:#a855f7;--mk7:#c9a86a}
 .mksw{width:26px;height:26px;border-radius:50%;
@@ -2694,7 +2611,7 @@ a.set{text-decoration:none}
    way to say otherwise that every webview this has to run in agrees about, so
    it is a horizontal one turned on its side -- which is what the width being
    the height means. */
-.mkslide{position:absolute;left:0;top:calc(50% - var(--kb) / 2);
+.mkslide{position:absolute;left:0;top:50%;
          width:44px;height:200px;
          transform:translateY(-50%);display:flex;align-items:center;
          justify-content:center}

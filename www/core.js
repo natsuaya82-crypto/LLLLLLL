@@ -1661,9 +1661,13 @@ var SET_PREFS=['theme','ui','myfont','showScript','kbrom',
    `acct` is what an older version wrote to say which account's things were
    live here, and it is only READ now -- by the move that copies them under
    that account (§ acctMoved), whose mark is `acctMoved`. `doneMoved` is a
-   migration mark of a field that was this handset's; `vvkb` is a MEASUREMENT
-   of this screen and is meaningless
-   on another phone. `done` and `obback` are the onboarding's, and they are
+   migration mark of a field that was this handset's. `vvkb` was here -- a
+   measurement of this screen's keyboard -- and is not named any more: the
+   phone ends the screen at the keyboard itself (2026-09-25, ios/App/App/
+   MainViewController.swift § keepStill). A phone that has it keeps it in
+   `lingua.set` byte for byte, because the lines below read and write only
+   the fields this list names; whether it goes is the owner's -- the DELETE
+   REVIEW in docs/CHANGELOG.md 2026-09-25. `done` and `obback` are the onboarding's, and they are
    here under protest -- 「セッションが無い」 cannot tell a phone out of the box
    from one somebody signed out of, and after an account is deleted there is no
    server left to ask (docs/reports/r8-item2-2026-09-08.md). The owner is
@@ -1684,7 +1688,7 @@ var SET_PREFS=['theme','ui','myfont','showScript','kbrom',
    `order`, `read`, `voice` and `script` are NOT settled: they are the
    language-making side's, and moving them is a different question from this
    one. docs/BACKLOG.md. `planV` was here and is gone with the plan. */
-var SET_PHONE=['acct','acctMoved','walked','obback','vvkb','doneMoved',
+var SET_PHONE=['acct','acctMoved','walked','obback','doneMoved',
                'order','read','voice','script'];
 /* Settings saved by an older version are missing whatever was added since, so
    they are laid over the defaults rather than replacing them. Written out by

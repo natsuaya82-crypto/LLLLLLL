@@ -1777,19 +1777,13 @@ function pwFocusLn(){
 /* ---- the keyboard is up the whole time this screen is ------------------
    OWNER 2026-08-25「投稿開いたらキーボードが自動で出て下ろせないが正解」.
 
-   Two things came out of one cause. The row of pictures floated in the middle
-   of the screen when the composer opened, because it is laid out to `--vvmin`
-   -- the smallest the visible part has been -- and until a keyboard has
-   actually been up that is a GUESS (55%). Nothing focused the field, so on a
-   phone the guess was what you saw until you tapped.
+   The field is focused from the moment the screen exists, so the keyboard
+   is up from the first frame somebody sees, and the row of tools is on it
+   from then on (www/index.html § .view.fit) -- there is no screen of this
+   composer with the keyboard down for anything to be laid out to.
 
-   With the field focused from the moment the screen exists there is no moment
-   the guess is used, and the answer to "where does the row go when the
-   keyboard is down" is that it never is.
-
-   `preventScroll` because iOS otherwise scrolls the layout viewport to lift
-   the field, and this screen is pinned to the visual viewport instead -- the
-   two together took the bar off the top of the phone. */
+   `preventScroll` because the screen is one fixed box and there is nothing
+   under it to scroll to the field (www/index.html § .view.fit). */
 function pwKeepKb(){
   if(!FORM || FORM.key!=='post:') return;
   if(here().r!=='form' || here().a!=='post:') return;
@@ -3097,6 +3091,17 @@ function pwMarkMount(){
   box.onpointermove=pwMarkMove;
   box.onpointerup=pwMarkUp;
   box.onpointercancel=pwMarkUp;
+}
+/* The picture is as wide as the screen leaves it, and a keyboard coming up
+   leaves it less: the phone ends the screen at the top of the keyboard
+   (ios/App/App/MainViewController.swift § keepStill), and every letter on the
+   picture is a fraction of its width. So they are drawn again at the width it
+   now is, or the line is the size it was on the bigger picture. www/boot.js
+   wires it once. */
+function pwMarkWire(){
+  window.addEventListener('resize', function(){
+    if(document.getElementById('mk-box')){ pwMarkDraw(); pwMarkFit(); }
+  }, false);
 }
 /* What the finger has hold of: a letter, a corner of the crop, or the crop
    itself. One listener on the stage decides, because a finger that leaves a

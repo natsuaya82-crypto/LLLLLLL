@@ -22,8 +22,6 @@
 slAsApp(migrateAll, []);
 /* the font built from whatever letters have been drawn */
 installScriptFont();
-/* and how much of the screen there is, which the keyboard changes */
-vvMount();
 swMount();
 /* The session, resumed. The token in hand lasts an hour, so a launch the next
    morning has one that is already dead; this trades the refresh token for a
@@ -116,9 +114,10 @@ actWire(document.getElementById('tabs'));
    2026-09-01. Nothing threw and press-check was green -- it presses what is
    inside `#app`, and this is the one button that is not. */
 actWire(document.getElementById('sbg'));
-/* and how much of the screen the phone's keyboard is covering, so a field
-   pinned to the bottom is above it rather than behind it */
-vpKbWire();
+/* and the letters on a photograph, drawn again when the screen changes
+   width under them -- which a keyboard coming up does (www/post.js §
+   pwMarkWire) */
+pwMarkWire();
 render();
 /* AND WHAT AN EARLIER VERSION LEFT IN Documents GOES -- the sheets whole, the
    recordings that nothing on this phone names any more. 「前の版でスマホに

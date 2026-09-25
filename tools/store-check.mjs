@@ -322,7 +322,13 @@ const FIELDS = {
      `PUSH`; tools/push-check.mjs holds `SET_PREFS` to it, and this table has
      to name each field by hand because it reads `SET.x =` off the source. */
   push_prompt: { to: 'netPrefsPut' },
-  vvkb:     { phone: 'how much of THIS screen the phone\'s own keyboard covers. A measurement of one handset and meaningless on another' },
+  /* `vvkb` STOOD HERE AND IS GONE (2026-09-25). It was how much of this
+     screen the keyboard covered, measured by the page; the phone ends the
+     screen at the keyboard itself now (ios/App/App/MainViewController.swift
+     § keepStill) and nothing writes or reads it. A phone that has it keeps
+     it in `lingua.set` as it was -- the settings are read and written by
+     `SET_PHONE`'s names alone, and it is not one -- and whether it goes is
+     the DELETE REVIEW in docs/CHANGELOG.md 2026-09-25. */
   wldMoved: { phone: 'the mark that 「what the language is for」 has been moved out of the settings and into the language. A migration mark, and the ACCOUNT\'s like `SET.world` it marks: kept with it under `lingua.set.<uid>`, so the next account to sign in has its own moved (r73 § 2-7)' },
   doneMoved: { phone: 'the mark that the old `done` has been copied into `walked` (walkedMigrate, www/core.js). A migration mark -- it is what the old field\'s absence used to say, now that the migration copies and removes nothing' },
   sndMoved: { phone: 'the mark that SET.snd -- the sounds from when there was one list per person -- has been copied into the language. A migration mark; SET.snd itself is left where it was, and this sits beside it under the same account' },
