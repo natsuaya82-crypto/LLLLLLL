@@ -2168,33 +2168,39 @@ const r = await pg.evaluate(({ s }) => {
     out.freeLtAsked = popOn();
     out.freeLtOn = kbStored()[0].lay[0].rows[fr][fi].v === fLt.id;
     popOff();
-    /* and a character typed goes on, and crosses to the phone as itself */
+    /* and a character goes on, and crosses to the phone as itself */
     kbShow = 1; kbLay = 0;
     kbChPut(fr, fi, -1, 'あ');
     var fKey = kbStored()[0].lay[0].rows[fr][fi];
     out.freeChOn = fKey.v === '=あ';
     var fSh = shareKey(fKey);
     out.freeChShare = !!fSh && fSh.t === 'あ' && fSh.k === 'lt' && !fSh.st;
-    kbChPut(fr, fi, -1, '');
+    /* pressed again, it comes off -- there is no 「なし」 */
+    kbChPut(fr, fi, -1, 'あ');
     out.freeChOff = kbStored()[0].lay[0].rows[fr][fi].v === '';
-    /* AND IT IS TYPED ON THE SHEET: the key selected, the box under the
-       tools, a character typed and the box left -- the way a finger does it,
-       through the one delegated listener. 「既存の文字はキーボードの編集画面
-       でキーを押してそのまま入れる」 OWNER 2026-09-25. The key's own page has
-       no box for the key; that page is for a drawn letter. */
+    /* AND IT IS CHOSEN FROM THE KINDS, THE SAME LIST AS A LETTER'S.
+       「既存文字から選ぶとキーの画面は同一のものを使おう」「字の入力または
+       貼り付けいらん」「なし消して」 OWNER 2026-09-25. No box on the sheet,
+       selected or not; the key's page carries the kinds with the language's
+       own letters first; the space is a character on the symbols' page, and
+       pressing its tile -- through the one delegated listener -- puts it on. */
     kbShow = 1; kbLay = 0; KBH = null;
     NAV = [{ r: 'kb', a: '1' }]; route = 'kb';
     document.getElementById('app').innerHTML = vKb();
-    out.freeSheetNoBox = !document.querySelector('[data-ch="kbChPut"]');
+    out.freeSheetNoBox = !document.querySelector('#app input[data-ch]');
     KBH = { k: 'k', r: fr, i: fi };
     document.getElementById('app').innerHTML = vKb();
-    var fBox = document.querySelector('#app [data-ch="kbChPut"]');
-    out.freeSheetBox = !!fBox;
-    if (fBox){ fBox.value = 'ç'; fBox.dispatchEvent(new Event('change', { bubbles: true })); }
-    out.freeSheetTyped = kbStored()[0].lay[0].rows[fr][fi].v === '=ç';
+    out.freeSheetNoBox = out.freeSheetNoBox && !document.querySelector('#app input[data-ch]');
     KBH = null;
     var kpage = document.createElement('div'); kpage.innerHTML = kbKeyHTML(fr, fi);
-    out.freeKeyPageNoBox = !kpage.querySelector('[data-ch="kbChPut"]');
+    var kinds = kpage.querySelectorAll('[data-do="pkKind"]');
+    out.freeKeyPageKinds = kinds.length === WORLD_SCRIPTS.length + 1 &&
+      JSON.parse(kinds[0].getAttribute('data-a'))[1] === 'own' && !kpage.querySelector('input');
+    pkKind('k.' + fr + '.' + fi + '.-1', 'symbol');
+    document.getElementById('app').innerHTML = vForm();
+    var spT = document.querySelector('#app [data-do="pkTake"][aria-label="' + t('kb.sp') + '"]');
+    if (spT) spT.click();
+    out.freeSpaceOn = kbStored()[0].lay[0].rows[fr][fi].v === '= ';
     KB = null; kbShow = 0;
     popOff();
 
@@ -2765,9 +2771,7 @@ const r = await pg.evaluate(({ s }) => {
       own.slice().sort().join(' ') === other.slice().sort().join(' ');
     /* and the sheet that only holds the alphabet asks the same thing */
     ltSort = 'own'; ltFil = 'blank';
-    kbSlotFor = { r: 0, k: 0, d: -1 };
-    out.ltSheet = cells(kbLtHTML()) === out.ltBlank;
-    kbSlotFor = null;
+    out.ltSheet = cells(kbLtGrid(0, 0, -1)) === out.ltBlank;
     ltSort = wasS; ltFil = wasF;
   }());
 
@@ -3209,7 +3213,14 @@ const r = await pg.evaluate(({ s }) => {
     function idOf(el){ try { return String(JSON.parse(el.getAttribute('data-a') || '[]')[3]); } catch (e){ return ''; } }
     function tap(el){ if (el) el.click(); return !!el; }
     function stored(){ try { return slRd(langKey('kb')); } catch (e){ return null; } }
-    function openKey(){ fresh(); kbShow = 1; kbLay = 0; standKb(); kbPick(0, 0); }
+    /* The key's page carries the kinds, the language's own letters first
+       (「既存文字から選ぶとキーの画面は同一のものを使おう」 OWNER 2026-09-25),
+       and the letters are that row's page -- so opening a key to choose a
+       letter is the key and then that row, pressed. */
+    function ownRow(){ return document.querySelector('#app [data-do="pkKind"]'); }
+    function openKey(){ fresh(); kbShow = 1; kbLay = 0; standKb(); kbPick(0, 0);
+                        out.ltpOwnFirst = !!ownRow() && JSON.parse(ownRow().getAttribute('data-a'))[1] === 'own';
+                        tap(ownRow()); }
     function onKey(){ return String(kbAt(0, 0).v || ''); }
     /* the purple is exactly what is on the key: its cell when the grid has
        it, and nothing when it does not (a key can hold a letter this grid is
@@ -3231,7 +3242,7 @@ const r = await pg.evaluate(({ s }) => {
       if (idOf(cs[i]) !== wasKey){ lid = idOf(cs[i]); tap(cs[i]); break; }
     out.ltpPicked = !!lid;
     out.ltpPut = onKey() === lid;
-    out.ltpStayed = formArg(here().a).kind === 'kbkey' && cellsOn().length > 0;
+    out.ltpStayed = formArg(here().a).kind === 'pickk' && cellsOn().length > 0;
     out.ltpNoBtnAfter = bar().length === 0;
     out.ltpPurpleMoved = purpleIsKey() && purple().length === 1;
     (function (){
@@ -3253,14 +3264,15 @@ const r = await pg.evaluate(({ s }) => {
     out.ltpUndo2 = onKey() === wasKey;
 
     /* ---- and the sheet for one slot writes that slot, and stays -------- */
-    openKey();
+    fresh(); kbShow = 1; kbLay = 0; standKb(); kbPick(0, 0);
     out.ltpSqOpened = tap(document.querySelector('.kbedit .kbec'));
-    out.ltpSqSheet = formArg(here().a).kind === 'kbslot';
+    out.ltpSqSheet = formArg(here().a).kind === 'kbslot' && !!ownRow();
+    tap(ownRow());
     var other = cellsOn().filter(function (el){ return idOf(el) !== onKey(); })[0];
     var want = other ? idOf(other) : '';
     tap(other);
     out.ltpSqPut = !!want && onKey() === want;
-    out.ltpSqStayed = formArg(here().a).kind === 'kbslot' && bar().length === 0 && purpleIsKey();
+    out.ltpSqStayed = formArg(here().a).kind === 'pickk' && bar().length === 0 && purpleIsKey();
     tap(backBtn());
   }());
 
@@ -4089,7 +4101,7 @@ say(r.ltSplits, 'and the filter narrows them: ' + r.ltAll + ' letters, ' +
 say(r.ltSame && r.ltSorted,
     'and the order moves the same letters rather than a different set [own: ' +
     r.ltOwnHead + ' | new: ' + r.ltNewHead + ']');
-say(r.ltSheet, 'and the sheet that holds only the alphabet answers the same list');
+say(r.ltSheet, 'and the own letters\' page of the kinds answers the same list');
 say(r.qBox, 'the letters are searched too, from a box that is always on the screen');
 say(r.qByName > 0 && r.qByName < r.qAll,
     'a name narrows them: ' + r.qAll + ' letters to ' + r.qByName);
@@ -4415,9 +4427,9 @@ console.log('    frames, hole by hole: ' + r.seqSeen);
    「ここに右上に選択したら適用ボタンが確定ボタン欲しい。終わって戻ったら選択が
    解除されてる状態にして欲しい。後選択してる紫はもう一度同じ場所触れたら解除して
    欲しい」 OWNER 2026-09-03 */
-say(r.ltpGrid > 0, 'the key opens with the alphabet under it (' + r.ltpGrid + ' letters)');
+say(r.ltpOwnFirst && r.ltpGrid > 0, 'the key opens with the kinds, its own letters first, and that row is the alphabet (' + r.ltpGrid + ' letters)');
 say(r.ltpNoBtn && r.ltpNoBtnAfter && r.ltpSqStayed,
-    'and there is no confirm in the bar, before a letter is pressed, after, or on the sheet for one slot ' +
+    'and there is no confirm in the bar, before a letter is pressed, after, or on the page for one slot ' +
     '(「いらないなら保存だけでいいよ」 OWNER 2026-09-24)');
 say(r.ltpPurpleIsKey && r.ltpPurpleMoved, 'the purple is the letter on the key, before and after a press');
 say(r.ltpSeen, 'and the purple on it is a colour, not a class nothing reaches');
@@ -4430,7 +4442,7 @@ say(r.ltpOff, 'pressing the letter on the key again takes it off');
 say(r.ltpUndo1 && r.ltpUndo2, 'and two steps back put the key back as it was [' +
     [r.ltpUndo1, r.ltpUndo2].join(' ') + ']');
 say(r.ltpSqOpened && r.ltpSqSheet && r.ltpSqPut,
-    'the sheet for one slot puts the letter on that slot [' +
+    'the page for one slot carries the kinds, and puts the letter on that slot [' +
     [r.ltpSqOpened, r.ltpSqSheet, r.ltpSqPut].join(' ') + ']');
 
 /* ---- the free plan's one keyboard: no editor, and it must be SEEN -------
@@ -4458,12 +4470,12 @@ say(r.freeAddIds > 0 && r.freeAddChs === 0,
 say(!r.freeLtAsked && r.freeLtOn,
     'a drawn letter pressed onto a key of it goes on, and nothing asks about a plan ['
     + [r.freeLtAsked, r.freeLtOn].join(' ') + ']');
-say(r.freeSheetNoBox && r.freeSheetBox && r.freeSheetTyped && r.freeKeyPageNoBox,
-    'a character is typed on the sheet: the box is there while a key is selected, what is typed goes onto it, '
-    + 'and the key\'s own page has no box for it [' +
-    [r.freeSheetNoBox, r.freeSheetBox, r.freeSheetTyped, r.freeKeyPageNoBox].join(' ') + ']');
+say(r.freeSheetNoBox && r.freeKeyPageKinds && r.freeSpaceOn,
+    'a character is chosen from the kinds: no box on the sheet, the key\'s page carries the kinds with its own letters first, '
+    + 'and the space on the symbols\' page goes onto the key [' +
+    [r.freeSheetNoBox, r.freeKeyPageKinds, r.freeSpaceOn].join(' ') + ']');
 say(r.freeChOn && r.freeChShare && r.freeChOff,
-    'a character typed goes onto the key, crosses to the phone as itself, and an empty box takes it off ['
+    'a character goes onto the key, crosses to the phone as itself, and pressed again comes off ['
     + [r.freeChOn, r.freeChShare, r.freeChOff].join(' ') + ']');
 
 /* ---- and the chapter is a LIST on the free plan too ---------------------

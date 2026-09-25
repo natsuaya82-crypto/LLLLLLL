@@ -647,6 +647,11 @@ const R = await pg.evaluate(() => {
      different question. Learned from the table rather than exempted by name,
      so an example added there is covered the day it is added. */
   Object.keys(IPA_IN).forEach(k => IPA_IN[k].forEach(x => learn(x[1])));
+  /* And the characters on offer to borrow or to put on a key -- a kind's
+     characters are the characters themselves (the Latin kind is A to Z), not
+     copy, and WORLD_SCRIPTS is the one list of them (www/onboard.js).
+     Learned from the list, so a kind added there is covered the day it is. */
+  WORLD_SCRIPTS.forEach(w => wsChars(w).forEach(ch => learn(ch)));
   /* And the names the device already has for the days of the week, which is
      what a calendar column falls back to when the language has not named that
      day yet. The widget asks iOS for them and the preview asks the browser;

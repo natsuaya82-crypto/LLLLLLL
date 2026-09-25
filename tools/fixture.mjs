@@ -2683,7 +2683,7 @@ export function halfDone(){
                                            kbAdd('qwerty'); kbLay = 0; kbSetKind(0, 0, 'lay');
                                            const h = vForm(); KB = null; kbShow = 0;
                                            planGot('free'); return h; }],
-    ['the alphabet, for one slot of a key', () => { planGot('pro'); KB = null; kbShow = 0;
+    ['the kinds, for one slot of a key', () => { planGot('pro'); KB = null; kbShow = 0;
                                                     kbAdd('qwerty'); kbLay = 0; kbSlot(0, 0, -1);
                                                     const h = vForm(); KB = null; kbShow = 0;
                                                     kbSlotFor = null;
@@ -3137,9 +3137,9 @@ export function halfDone(){
        wears, and a second wearer somewhere else is a mask, not a test. */
     ['characters on offer',      () => { const w = WORLD_SCRIPTS[0];
                                          const l = ltById('l1');
-                                         if (l) l.ch = w.ch.split(' ')[1];
-                                         openPick('l1'); pkScript = w.id;
-                                         return sheet(FORM.html + pkCharsHTML()); }],
+                                         if (l) l.ch = wsChars(w)[1];
+                                         pkKind('l.l1', w.id);
+                                         return vForm(); }],
     /* The same sheet for a letter that already has one borrowed. Taking it
        back off is the only thing on the sheet that depends on there being
        something there -- www/home.js pkclear -- so on a bare letter it is on
@@ -3219,11 +3219,11 @@ export function halfDone(){
     /* THE CHARACTER PICKER, BOTH STATES OF IT. Pressing a character chooses
        it and the Save in the corner writes it (www/home.js § PRESSING A
        CHARACTER CHOOSES) -- it used to write the letter and take the screen
-       away under the thumb. So: opened, with the Save grey and no tile
-       marked, and a tile pressed, with the tile marked, the box holding it
-       and the Save gold. The fold is opened first because the grid is not
-       drawn until a script is chosen. Both put the buffer back, so the two
-       faces do not read each other's.
+       away under the thumb. So: the list of kinds as it opens, with the Save
+       grey, and a kind's page with a tile pressed, the tile marked and the
+       Save gold. The tiles are on the kind's own page (pkKind), so that is
+       the page the second face stands on. Each drops its own buffer, so the
+       two faces do not read each other's.
 
        THE BUFFER IS LET GO OF ON THE WAY IN AND NOT ON THE WAY OUT. A face
        returns its html and the shell is rendered around it afterwards; a
@@ -3233,26 +3233,34 @@ export function halfDone(){
         /* 「接続できません」 from a face before this one rides on the scrim and
            is not part of this screen. */
         popOff();
-        pkScript = WORLD_SCRIPTS[0].id;
         keepDrop(keepKeyOf('form', 'pick:l1'));
         openPick('l1'); return vForm(); }],
     ['the character picker, one character pressed', () => {
         popOff();
-        const w = WORLD_SCRIPTS[0]; pkScript = w.id;
-        keepDrop(keepKeyOf('form', 'pick:l1'));
-        openPick('l1'); ltTakeChar('l1', w.ch.split(' ')[0]);
+        const w = WORLD_SCRIPTS[0], key = 'pickk:l.l1:' + w.id;
+        keepDrop(keepKeyOf('form', key));
+        pkKind('l.l1', w.id); pkTake('l.l1', wsChars(w)[0]);
         return vForm(); }],
+    /* The symbols, which is the one kind that starts with the space: the
+       tile that wears U+2423 and says 「スペース」 to a screen reader. */
+    ['the characters of a kind, with the space', () => {
+        popOff(); pkKind('l.l1', 'symbol'); return vForm(); }],
+    /* And a key's own list, which starts with the language's own letters --
+       the one row only a key has -- and that row's page. */
+    ['the kinds for a key, and its own letters', () => { planGot('pro'); KB = null; kbShow = 0;
+        kbAdd('qwerty'); kbLay = 0; pkKind('k.0.0.-1', 'own');
+        const h = vForm(); KB = null; kbShow = 0; planGot('free'); return h; }],
     /* A character another letter has already taken. The picker dims it rather
        than hiding it, because which letter has it is worth seeing -- and
        chTaken() is empty in a language that has borrowed nothing, so the dim
        face is on no screen. www/home.js had. */
     ['a character another letter has taken', () => {
-        const w = WORLD_SCRIPTS[0]; pkScript = w.id;
-        const ch = w.ch.split(' ')[0];
+        const w = WORLD_SCRIPTS[0];
+        const ch = wsChars(w)[0];
         const other = LETTERS.filter(l => l.id !== 'l1')[0];
         const was = other ? other.ch : '';
         if (other) other.ch = ch;
-        openPick('l1'); const h = vForm();
+        pkKind('l.l1', w.id); const h = vForm();
         if (other) other.ch = was; return h; }],
     /* A language with its page turned off. The word that says so sits beside
        the name and nowhere else -- www/home.js wldoff -- and hide is absent

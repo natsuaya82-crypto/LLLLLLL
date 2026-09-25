@@ -138,9 +138,6 @@ function wOut(word){ return (scriptOn() && !myFontOn()) ? inScript(word) : Strin
 /* Which sound the picker is currently open for. */
 /* Both pickers use the sheet the app already has: it is sized to the phone
    column, scrolls on its own, and leaves the page underneath untouched. */
-/* Nothing is expanded to begin with — the characters of a script appear only
-   when you ask for that script, and tapping it again folds them away. */
-var pkScript = '';
 /* ---- a form is a page --------------------------------------------------
    Everything you fill in used to slide up from the bottom over the screen you
    were on: a word, a note, a stage's word, the piece of sound a grammar
@@ -306,63 +303,113 @@ function closeSheet(){
   if(popOn()){ popOff(); return; }
   if(here().r==='form') back();
 }
-function pkSwitch(id){
-  pkScript = (pkScript===id ? '' : id);           /* tap again to fold away */
-  var e=document.getElementById('pk-list'); if(e) e.innerHTML=pkListHTML(); }
-/* THE SCRIPTS ARE A LIST, one row each, and the open one has its characters
-   under it. They were a row of boxed chips scrolled sideways -- fifteen of
-   them, 1537px of them across a 354px screen -- which is two things CLAUDE.md
-   § Shape bans at once: 「丸パッチ無限横並び」, and a box round a word.
-   「数が多ければリスト」. The row is the app's ordinary `.set` row, so nothing
-   here draws a shape of its own. This is the one place the list is drawn;
-   pkSwitch() asks it again rather than moving classes around by hand. */
-function pkListHTML(){
-  return WORLD_SCRIPTS.map(function(w){
-    var on=(w.id===pkScript);
-    return '<button class="set"' + DO('pkSwitch', [w.id]) + '>'+
-        '<span class="pkpv">'+esc(w.pv.slice(0,2))+'</span>'+
-        '<span class="sl'+(on?' on':'')+'">'+esc(t('ws.'+w.id))+'</span></button>'+
-      (on? '<div class="pkchars" id="pk-chars">'+pkCharsHTML()+'</div>' : '');
-  }).join('');
-}
-var pkFor='';
-function pkCharsHTML(){
-  if(!pkScript) return '';
-  var w=null; WORLD_SCRIPTS.forEach(function(x){ if(x.id===pkScript) w=x; });
-  if(!w) return '';
-  /* The letter's own character, read off the LETTER. chOf() takes a sound
-     unit -- ltChar() walks LETTERS for one that reads it -- and pkFor is a
-     letter id, so this asked which letter reads the sound `l1` and was told
-     nothing, always. The grid never marked the character the letter already
-     had. openPick() four lines up reads it correctly, which is why the field
-     and the Clear button were right and only the grid was wrong.
+/* ---- choosing a character: ONE screen, from anywhere ----------------
+   「既存文字から選ぶとキーの画面は同一のものを使おう。直書き禁止で」 OWNER
+   2026-09-25 (docs/FEATURE_RULES.md「字を選ぶ画面は一つ」). A letter's
+   「既存文字から選ぶ」 and a key of the keyboard used to be two screens with
+   two lists -- the scripts folded open under their rows here, a box to type
+   or paste into over both, and 「なし」 on the key's -- and they are this one:
+   the kinds, as rows (pkKindsHTML), and a kind's characters on a page of
+   their own (pkKind). The kinds are WORLD_SCRIPTS and nothing else.
 
-     Found by press-check reporting that nothing wears `.cur`: the plans
-     screen wore the same class on something else until today, and a second
-     wearer somewhere else masks this exactly. */
-  var cur=pkKept(pkFor), taken=chTaken();
-  return w.ch.split(' ').map(function(ch){
-    var used=taken[ch] && taken[ch]!==pkFor;
-    return '<button class="pkch'+(used?' had':'')+(ch===cur?' cur':'')+'"' + DO('ltTakeChar', [pkFor, ch]) + '>'+esc(ch)+'</button>';
+   Who the character is FOR is the only thing that differs, and it travels in
+   the route as `tg`: a letter, 'l.'+lid, or one slot of a key,
+   'k.'+row+'.'+key+'.'+dir (dir -1 for the key itself, 0-3 for a flick
+   corner, kbSlot()'s numbering). A key's list starts with the language's own
+   letters, which only a key can hold. */
+function pkTo(tg){
+  var s=String(tg||''), p;
+  if(s.slice(0, 2)==='l.') return {lid:s.slice(2)};
+  p=s.split('.');
+  if(p[0]==='k' && p.length===4)
+    return {ri:parseInt(p[1], 10)||0, ki:parseInt(p[2], 10)||0, dir:parseInt(p[3], 10)};
+  return null;
+}
+/* THE KINDS ARE A LIST, one row each, and a row goes to its page -- it does
+   not fold open under itself any more (「押したら勝手にそのページに飛ぶ」).
+   They were a row of boxed chips scrolled sideways once, which CLAUDE.md
+   § Shape bans twice over; the row is the app's ordinary `.set` row. */
+function pkKindsHTML(tg){
+  var to=pkTo(tg), rows='';
+  if(!to) return '';
+  if(to.lid===undefined)
+    rows+='<button class="set"' + DO('pkKind', [tg, 'own']) + '>'+
+      '<span class="pkpv"></span><span class="sl">'+esc(t('pk.own'))+'</span></button>';
+  return rows+WORLD_SCRIPTS.map(function(w){
+    return '<button class="set"' + DO('pkKind', [tg, w.id]) + '>'+
+      '<span class="pkpv">'+esc(w.pv.slice(0, 2))+'</span>'+
+      '<span class="sl">'+esc(t('ws.'+w.id))+'</span></button>';
   }).join('');
 }
+/* One kind's characters, on a page. For a letter the press is a choice the
+   bar's Save writes (below); for a key it goes onto the key the way a drawn
+   letter does (kbChPut). The language's own letters are the keyboard's page
+   (kbLtGrid). */
+function pkKind(tg, kind){
+  var to=pkTo(tg), w=wsKind(kind), key='pickk:'+tg+':'+kind, own=(kind==='own');
+  if(!to || (!own && !w)) return;
+  if(to.lid!==undefined){
+    if(own || !ltById(to.lid)) return;
+    pkKeepOn(key, to.lid);
+  }
+  openForm(key, own? t('pk.own') : t('ws.'+kind),
+    own? kbLtGrid(to.ri, to.ki, to.dir) : pkCharsHTML(tg, to, w),
+    own? function(){ geTiles(); } : null);
+}
+FORM_OPEN.pickk=function(a){
+  var s=String(a||''), i=s.lastIndexOf(':');
+  if(i>0) pkKind(s.slice(0, i), s.slice(i+1));
+};
+/* What a character already is to this screen: the letter's own (what has
+   been chosen, or what it wears), or what the key's slot holds. A character
+   another letter wears is dimmed rather than hidden -- which letter has it is
+   worth seeing -- and a key has no such thing: two keys may type one. */
+function pkCharsHTML(tg, to, w){
+  var cur=(to.lid!==undefined)? pkKept(to.lid, here().a) : kbCh(kbLtOn(to.ri, to.ki, to.dir)),
+      taken=(to.lid!==undefined)? chTaken() : {};
+  /* A page now, not a fold: `.pkchars` in www/index.html still carries the
+     fold's own height and scroll box, and that file is another session's
+     this week -- so the page says here that it is as tall as its characters.
+     Nothing here is a border or a corner (CLAUDE.md § 18). */
+  return '<div class="pkchars" style="max-height:none;overflow:visible;border-bottom:0">'+wsChars(w).map(function(ch){
+    var used=taken[ch] && taken[ch]!==to.lid;
+    return '<button class="pkch'+(used?' had':'')+(ch===cur?' cur':'')+'"' + DO('pkTake', [tg, ch]) +
+      (ch===' '? ' aria-label="'+esc(t('kb.sp'))+'"' : '')+'>'+esc(wsFace(ch))+'</button>';
+  }).join('')+'</div>';
+}
+/* A character pressed: chosen, or -- pressed again -- let go of, which is
+   what 「なし」 was for and why it is not needed. */
+function pkTake(tg, ch){
+  var to=pkTo(tg);
+  if(!to) return;
+  if(to.lid!==undefined) keepSet('ch', pkKept(to.lid, here().a)===String(ch)? '' : String(ch));
+  else kbChPut(to.ri, to.ki, to.dir, ch);
+  formAgain();
+}
+/* The page being stood on, drawn again from its route -- after a press that
+   changed what it shows. */
+function formAgain(){
+  var s=formArg(here().a), f=FORM_OPEN[s.kind];
+  if(here().r==='form' && f) f(s.rest); else render();
+}
+/* A letter's own list. The box to type or paste into is gone
+   (「字の入力または貼り付けいらん」): the kinds are the way in. Taking the
+   character off again stays, because a letter's shape is one or the other
+   and this is how it goes back to what was drawn. */
 function openPick(lid){
-  var l=ltById(lid);
+  var l=ltById(lid), cur;
   /* No such letter, no picker. openSnd() has said this since it was written
      and this had not: it opened a page headed 「A character for ""」 over a
-     grid that chose a character for nobody, and registered no buffer, so the
+     list that chose a character for nobody, and registered no buffer, so the
      bar had no Save either. A door onto nothing is viewGone()'s to answer. */
   if(!l) return;
-  pkFor=lid;
   /* The buffer before the form, so navTop()'s keepBtnHTML() has one to draw
      a Save from -- www/shell.js § KEEP. */
-  pkKeepOn(lid);
-  var cur=pkKept(lid);
+  pkKeepOn('pick:'+lid, lid);
+  cur=pkKept(lid, 'pick:'+lid);
   openForm('pick:'+lid, t('ch.for', ltName(l)||t('lt.untitled')),
-    '<div class="pkown"><input class="scin own" id="own-ch" maxlength="4" value="'+esc(cur)+'" placeholder="'+esc(t('script.own.ph'))+'" autocomplete="off" '+
-      '' + IN('pkSetCh') + '></div>'+
-    (cur? '<button class="pkclear"' + DO('ltTakeChar', [lid, ""]) + '>'+t('ch.clear')+'</button>':'')+
-    '<div id="pk-list">'+pkListHTML()+'</div>');
+    (cur? '<button class="pkclear"' + DO('pkTake', ['l.'+lid, cur]) + '>'+t('ch.clear')+'</button>':'')+
+    pkKindsHTML('l.'+lid));
 }
 FORM_OPEN.pick=function(x){ openPick(x); };
 /* ---- PRESSING A CHARACTER CHOOSES; THE BAR SAVES ----------------------
@@ -378,50 +425,36 @@ FORM_OPEN.pick=function(x){ openPick(x); };
    nothing to press to undo it. The box beside it was the same write said a
    second way: type a character, press 「Use」, and it was done.
 
-   ONE FIELD AND ONE ROAD. `ch` is what this screen is choosing, and the box,
-   the tiles and 「No character」 all set it. The 「Use」 button is gone with
-   the write it was -- a box that remembers what is typed in it has nothing
-   for a second button to do, and two buttons that both write is the shape
-   this replaces. The Save in the corner is what writes.
+   ONE FIELD AND ONE ROAD. `ch` is what this screen is choosing, and the
+   tiles and 「No character」 set it (pkTake). The Save in the corner is what
+   writes. The list and a kind's page are two routes, so each is handed its
+   own buffer -- pkKeepOn() takes the route -- and both write the one field.
 
    THE STROKES ARE NOT THROWN AWAY UNTIL IT IS PRESSED, which is the part of
    this worth having: a letter has one shape, drawn or borrowed, so choosing
    a borrowed one deletes what was drawn (ltSetChar, www/letters.js). That
    used to happen under a thumb. */
-function pkKeepOn(lid){
+function pkKeepOn(route, lid){
   var l=ltById(lid);
   /* Not in somebody else's language: saveLetters() refuses one, so a buffer
      here would put a Save in the bar that could not write. */
   if(!l || langLocked()) return;
-  keepOn(keepKeyOf('form', 'pick:'+lid),
+  keepOn(keepKeyOf('form', route),
          function(){
            var one=ltById(lid);
            return {ch:(one && one.ch)||''};
          },
          function(v, done){ pkKeepSave(lid, v); done(true); });
 }
-/* What the box holds and which tile is marked: what has been chosen, or what
-   the letter wears. The second clause is the one screen there is no buffer
-   for -- somebody else's language, where there is nothing to choose and the
-   character their letter wears still has to be shown. */
-function pkKept(lid){
-  var s=keepVal(keepKeyOf('form', 'pick:'+lid), 'ch'), one;
+/* What has been chosen on this page, or what the letter wears. The second
+   clause is the one screen there is no buffer for -- somebody else's
+   language, where there is nothing to choose and the character their letter
+   wears still has to be shown. */
+function pkKept(lid, route){
+  var s=keepVal(keepKeyOf('form', route), 'ch'), one;
   if(s) return s;
   one=ltById(lid);
   return (langLocked() && one && one.ch)? one.ch : '';
-}
-/* Typed into the box. It does not rebuild the screen -- a field being typed
-   into loses the keyboard the moment the page under it is replaced -- so the
-   mark under the tiles catches up on the next render and the corner catches
-   up now, which keepSet() does by itself. */
-function pkSetCh(v){ keepSet('ch', String(v||'')); }
-/* pkFor is a letter's id. A borrowed character is one of the two shapes a
-   letter can have, so taking one is choosing that letter's shape. The empty
-   string is 「No character」 and is the same choice said the other way. */
-function ltTakeChar(lid, ch){
-  pkFor=String(lid);
-  keepSet('ch', String(ch||''));
-  openPick(pkFor);
 }
 /* And the write, which is everything the press used to do. It is reached
    from one place, keepSave() in www/shell.js, and that is the Save.

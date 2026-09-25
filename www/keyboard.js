@@ -2841,7 +2841,6 @@ function vKb(){
   return '<div class="view">'+navTop('', kbMoreQ())+'<div class="body">'+
     kbNameHTML(now)+
     kbToolHTML()+
-    kbChOnHTML()+
     kbHTML(kbSel)+
     kbLaysHTML()+
     /* The one control whose whole job is to change how a key LOOKS, on the
@@ -4202,7 +4201,7 @@ function kbPick(ri, ki){
   kbSel={r:ri, k:ki};
   kbKeyForm(ri, ki);
 }
-/* The key's screen, drawn -- by kbPick() arriving on it, and by kbLtDraw()
+/* The key's screen, drawn -- by kbPick() arriving on it, and by formAgain()
    when a letter pressed on it has gone onto the key. */
 function kbKeyForm(ri, ki){
   openForm('kbkey:'+ri+':'+ki, t('kb.key'), kbKeyHTML(ri, ki), function(){ geTiles(); });
@@ -4217,14 +4216,15 @@ function kbKeyHTML(ri, ki){
      sentence every screen says for that, drawn by the one function */
   if(!key) return goneBox();
   out=(key.k==='lt'? kbEditHTML(ri, ki, key) : kbEditFnHTML(key))+
-    /* And the alphabet, HERE, when there is one slot to fill. Choosing which
-       letter goes on a key is what somebody is doing nearly every time they
-       open this, and it was three screens down: press the key, press the
-       middle square, then the letters. On a board that flicks the five slots
-       have to be chosen between first, so there it stays where it was.
+    /* And what can go on it, HERE, when there is one slot to fill: the kinds
+       of character, the language's own letters first -- the same list a
+       letter's 「既存文字から選ぶ」 draws (pkKindsHTML() in www/home.js,
+       「既存文字から選ぶとキーの画面は同一のものを使おう」 OWNER 2026-09-25).
+       On a board that flicks the five slots have to be chosen between first,
+       so there it is one screen further, on the slot's own page.
        「キーボード設定まじでやりにくい」 */
     ((key.k==='lt' && !kbSlotsShown(key))
-      ? '<div class="kbltin">'+kbLtGrid(ri, ki, -1)+'</div>' : '')+
+      ? '<div class="kbltin">'+pkKindsHTML('k.'+ri+'.'+ki+'.-1')+'</div>' : '')+
     /* FOUR, AND THE SAME FOUR ON EVERY KEY. 「「押したとき」は文字／スペース／
        削除／改行 の 4 つだけ（層は消す）」「削除や改行を置けるキーが決まって
        いるのはおかしい ── 全キーで選べるように」 OWNER 2026-09-06.
@@ -4258,7 +4258,7 @@ function kbKeyHTML(ri, ki){
   return out;
 }
 /* One slot -- the key itself or one of its corners -- and the letter in it.
-   Pressing it opens the alphabet to choose from, which is why both are the
+   Pressing it opens the kinds to choose from, which is why both are the
    same row: they hold the same kind of thing. */
 /* THE KEY, drawn the size of a hand, with its five slots where they actually
    are on it. 「だからキーボードをカスタマイズする画面がゴミだって言ってんだろ」
@@ -4359,7 +4359,7 @@ function kbSheetW(){
 function kbSheetH(){
   return 'calc(var(--kbw) * '+KB_ROWW+')';
 }
-/* Which slot the alphabet is being opened for. */
+/* Which slot the kinds are being opened for. */
 var kbSlotFor=null;
 function kbSlot(ri, ki, dir){
   kbSlotFor={r:ri, k:ki, d:dir};
@@ -4380,7 +4380,8 @@ FORM_OPEN.kbslot=function(a){
 function kbSlotsShown(key){
   return kbHasFlick() || !!(key && key.f && (key.f[0]||key.f[1]||key.f[2]||key.f[3]));
 }
-/* The alphabet, as a grid, for one slot. `dir` is -1 for the key itself and
+/* The language's own letters, as a grid, for one slot -- the first row of
+   the kinds (pkKind(), www/home.js). `dir` is -1 for the key itself and
    0..3 for a corner -- the same numbering kbSlot() uses, because it is the
    same slot.
 
@@ -4425,23 +4426,16 @@ function kbLtGrid(ri, ki, dir){
     }).join('')+'</div>';
   }
   ltReList=cells;
-  /* A corner of a flick key has no place on the sheet to be typed into, so
-     its box is here, on the corner's own page. The key itself is typed into
-     on the sheet (kbChOnHTML). */
-  return (dir>=0? kbChHTML(ri, ki, dir) : '')+ltViewRow()+
-    /* "Nothing in this slot" is a choice like any other, so it is CHOSEN like
-       any other and waits for the same confirm. Leaving it applying on the
-       press would be the thing that must not happen -- two mechanisms writing
-       one field, one of them still 「触ったら効く」. */
-    '<button class="btn ghost" style="width:100%;margin:10px 0'+
-      kbLtOnPaint(ri, ki, dir, "")+'"' +
-      DO('kbLtTap', [ri, ki, dir, ""]) + '>'+t('kb.empty')+'</button>'+
-    '<div id="lt-list">'+cells()+'</div>';
+  /* No box to type into and no 「なし」: a character that is not one of the
+     language's own is chosen from its kind's page, and a slot is emptied by
+     pressing what is on it again (kbLtTap). 「なし消して」「字の入力または
+     貼り付けいらん」 OWNER 2026-09-25. */
+  return ltViewRow()+'<div id="lt-list">'+cells()+'</div>';
 }
 function kbLtHTML(){
   var s=kbSlotFor;
   if(!s) return goneBox();
-  return kbLtGrid(s.r, s.k, s.d);
+  return pkKindsHTML('k.'+s.r+'.'+s.k+'.'+s.d);
 }
 /* ---- a letter onto a key ------------------------------------------------
    「なんのための確定？いらないなら保存だけでいいよ。」 OWNER 2026-09-24, and
@@ -4474,9 +4468,6 @@ function kbLtIs(ri, ki, dir, lid){
    wears, carry their own greys -- so they are told to take the cell's. What
    IS drawn stays its own ink, because that is the letter. Nothing here is a
    border or a corner (CLAUDE.md § 18). */
-function kbLtOnPaint(ri, ki, dir, lid){
-  return kbLtIs(ri, ki, dir, lid)? kbPickPaint() : '';
-}
 function kbLtOnCSS(ri, ki, dir, lid){
   return kbLtIs(ri, ki, dir, lid)? ' style="'+kbPickPaint().slice(1)+'"' : '';
 }
@@ -4484,7 +4475,7 @@ function kbLtOnInk(ri, ki, dir, lid){
   return kbLtIs(ri, ki, dir, lid)? ' style="color:inherit"' : '';
 }
 /* A cell pressed: that letter onto the slot, or off it if it is the one
-   there. 「なし」 is the empty letter, so it empties the slot. */
+   there -- which is how a slot is emptied. */
 function kbLtTap(ri, ki, dir, lid){
   var key;
   if(!kbEdit()) return;
@@ -4493,65 +4484,30 @@ function kbLtTap(ri, ki, dir, lid){
   lid=kbLtIs(ri, ki, dir, lid)? '' : String(lid||'');
   if(dir<0) key.v=lid; else key.f[dir]=lid;
   saveKb();
-  kbLtDraw(ri, ki, dir);
+  /* and the page stood on drawn again from its own route -- the key's, a
+     slot's, or the own letters' (formAgain(), www/home.js) */
+  formAgain();
 }
-/* A CHARACTER onto the slot: whatever was typed, on every plan.
-   「既存の文字ならどこでも使えるでしょ？ユニコードあるわけだし」 OWNER
-   2026-09-25. What is typed in the box over the alphabet goes onto the key when
-   the box is left or Enter is pressed, and an empty box empties the slot.
+/* A CHARACTER onto the slot, from a kind's page (pkTake(), www/home.js), on
+   every plan. 「既存の文字ならどこでも使えるでしょ？ユニコードあるわけだし」
+   OWNER 2026-09-25. Pressing the one already there takes it off, the way a
+   drawn letter comes off (kbLtTap).
 
-   It arrives as the roman (act.js hands every receiver puaTyped()'s reading),
-   so a letter typed on the Lingua keyboard goes on as its name and never as a
-   private use code point -- rule 13: that code point means a letter only in
-   this alphabet's order at this moment. */
-function kbChPut(ri, ki, dir, ln){
+   A character from the kinds is never a private use code point -- rule 13:
+   that code point means a letter only in this alphabet's order at this
+   moment. */
+function kbChPut(ri, ki, dir, ch){
   var key, v;
   if(!kbEdit()) return;
   key=kbAt(ri, ki);
   if(!key) return;
-  v=kbChSlot(String(ln||'').slice(0, KB_CH_MAX));
-  if(kbLtOn(ri, ki, dir)===v) return;
+  v=kbChSlot(String(ch||''));
+  if(kbLtOn(ri, ki, dir)===v) v='';
   /* `t` is what a key of the QWERTY pattern TYPES, put there by kbFix() for
      the letter it was laid with -- a character on the key types itself, so
      that is no longer true of it. */
   if(dir<0){ key.v=v; delete key.t; } else key.f[dir]=v;
   saveKb();
-  kbLtDraw(ri, ki, dir);
-}
-var KB_CH_MAX=8;
-/* ON THE SHEET, FOR THE KEY THAT IS SELECTED. 「既存の文字はキーボードの編集
-   画面でキーを押してそのまま入れる ── 打つ・貼る。文字の画面を通さない」
-   OWNER 2026-09-25. Press a key and type or paste: what is typed goes onto
-   that key when the box is left or Enter is pressed. A drawn letter is the
-   other thing a key can hold, and it is chosen on the key's page (the pencil),
-   because a drawn letter is registered on the letters' screen first. Only a
-   letter key: space, delete and return are what they are. */
-function kbChOnHTML(){
-  var key;
-  if(!KBH || KBH.k!=='k' || !kbEdit()) return '';
-  key=kbAt(KBH.r, KBH.i);
-  if(!key || key.k!=='lt') return '';
-  return kbChHTML(KBH.r, KBH.i, -1);
-}
-function kbChHTML(ri, ki, dir){
-  return '<input class="lnin" value="'+esc(kbCh(kbLtOn(ri, ki, dir)))+'" '+
-    'maxlength="'+KB_CH_MAX+'" autocomplete="off" autocapitalize="off" '+
-    'placeholder="'+esc(t('kb.ch'))+'" aria-label="'+esc(t('kb.ch'))+'"'+
-    CH('kbChPut', [ri, ki, dir]) + '>';
-}
-/* WHICH OF THE TWO SCREENS THE ALPHABET IS ON, asked once, and asked of the
-   ROUTE. kbSlotFor is a note the sheet leaves for itself, and backing out of
-   the sheet without choosing leaves it lying there -- so a letter chosen
-   afterwards on the key's own screen read that note, believed it was on the
-   sheet, and went back one screen too far. That was already true of the
-   press that wrote (kbPut() read the same note). One question, one place. */
-function kbLtWhere(){ return formArg(here().a).kind; }
-/* Painting the screen again with what is on the key now, where it is. */
-function kbLtDraw(ri, ki, dir){
-  var w=kbLtWhere();
-  if(w==='kbslot') kbSlotForm(ri, ki, dir);
-  else if(w==='kbkey') kbKeyForm(ri, ki);
-  else render();
 }
 /* THE FOUR THE SCREEN OFFERS AND NOTHING ELSE. 「文字／スペース／削除／改行
    の 4 つだけ」 OWNER 2026-09-06. `lay` is gone from here for the reason

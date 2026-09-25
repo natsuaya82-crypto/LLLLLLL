@@ -72,7 +72,6 @@ defLang('en', (function(){
       "kb.dir.right"               : "Right",
       "kb.dir.down"               : "Down",
       "kb.dir.left"               : "Left",
-      "kb.empty"               : "Empty",
       "kb.row.ins" : "Add a row here",
       "kb.row.up" : "Above this row",
       "kb.row.down" : "Below this row",
@@ -98,7 +97,6 @@ defLang('en', (function(){
       "kb.sys.go" : "Open Settings",
       "kb.sys.no" : "Settings would not open",
       "kb.rom"               : "A letter on each key",
-      "kb.ch" : "Type a character",
       "kb.font" : "Export the font",
       "kb.font.none" : "Nothing is drawn yet",
       "kb.reset"               : "Start over",
@@ -268,7 +266,6 @@ defLang('en', (function(){
       "set.signin.done" : "Signed in",
       "set.signout.done" : "Signed out",
       "ob.tagline"                : "Make a language of your own.",
-      "script.own.ph"             : "Paste or type a character",
       "up.cta"                    : "Upgrade",
       "up.need"                   : "You need to upgrade to use this feature",
       "pop.no"                  : "Close",
@@ -1284,7 +1281,17 @@ defLang('en', (function(){
          currency (storeCost() in www/store.js), and a price built into a
          translated sentence is a price ten files have to agree about. */
       "plan.renew" : "Renews automatically until you cancel.",
-      "kb.lay.hand" : "Handwriting"
+      "kb.lay.hand" : "Handwriting",
+      "pk.own" : "Your letters",
+      "ws.latin" : "Latin",
+      "ws.latinacc" : "Latin with marks",
+      "ws.latinext" : "Latin, extended",
+      "ws.ipa" : "IPA",
+      "ws.digit" : "Digits",
+      "ws.symbol" : "Symbols",
+      "ws.hiragana" : "Hiragana",
+      "ws.katakana" : "Katakana",
+      "ws.emoji" : "Emoji"
     }
   };
 })());
