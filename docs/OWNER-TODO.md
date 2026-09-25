@@ -14,6 +14,18 @@
   スレッドに出ている返信は **1 件**（@bluestevie64 のもの）だけ。原因はまだ誰も見ていない。
 - 2026-09-25：Supabase の Webhooks の場所が変わっている。`supabase/setup.md` § 12 と `docs/apple.md` § 8-5 の「Database → Webhooks」は、今の画面では **Integrations → Database Webhooks**（`/database/hooks` は 404）。
 
+- **2026-09-25：schema.sql（integ-0905 ca7bd432 の版）が本番の SQL Editor で落ちる。オーナーは 5 で止まっている。**
+  ```
+  ERROR: 42501: permission denied to change default privileges
+  CONTEXT: SQL statement "alter default privileges for role supabase_admin in schema public  revoke all on tables    from anon"
+  PL/pgSQL function inline_code_block line 22 at EXECUTE
+  ```
+  場所は schema.sql の一番下、anon を閉じる `do $w$` の中の loop（`pg_default_acl` から読んだ役ごとに
+  `alter default privileges for role %I …` を打つ所）。SQL Editor は postgres で動いていて、
+  supabase_admin（Supabase の役の名前） の既定の権限は postgres には変えられない。rls-check の PostgreSQL には supabase_admin の
+  既定の権限が無いので、そこでは通る。直すのはリーダー側。直ったら、オーナーは 5 を最初からやり直す。
+  流した時にエラーの前の部分がサーバーに残ったかどうかは、まだ確かめていない。
+
 ## 一覧
 
 | # | 何 | 状態 |
@@ -23,9 +35,9 @@
 | 11 | Supabase：今日のお題が 9/20 で止まっている理由を見る（2 の次に） | 済み（2026-09-25）：見る前に直っていた。アプリで 24 日のお題が出ている（オーナー 2026-09-25 11:59 JST）。原因は見ていない |
 | 3 | Apple：APNs の鍵 → GitHub Secrets 二つ | 済み（2026-09-25） |
 | 4 | Supabase：Webhooks を ON | 済み（2026-09-25）：Integrations → Database Webhooks が Installed |
-| 5 | Supabase：schema.sql を流し直す（4 の後） | まだ |
-| 12 | GitHub：verify-plan を置き直す（5 の後。逆だと購入の確かめが 500） | まだ |
-| 6 | GitHub：push-send を置く（3・5・12 の後） | まだ |
+| 5 | Supabase：schema.sql を流し直す（4 の後） | 止まっている：流すとエラー（下の「リーダーへ」）。直った schema.sql を待つ |
+| 12 | GitHub：verify-plan を置き直す（5 の後。逆だと購入の確かめが 500） | 待ち：5 |
+| 6 | GitHub：push-send を置く（3・5・12 の後） | 待ち：5・12 |
 | 7 | Supabase：Cron `daily-prompt` の時刻 | まだ |
 | 8 | AdMob：アプリ登録・広告ユニット・Secrets・app-ads.txt | まだ |
 | 9 | App Store Connect：App のプライバシー | まだ |
