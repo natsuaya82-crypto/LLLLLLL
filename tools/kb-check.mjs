@@ -3455,14 +3455,30 @@ const SF = await sf.evaluate(({ s }) => {
 
   /* THE SELECTION AND THE STEP BACK ARE THE SCREEN'S. Select row 1, change
      the board, walk to the timeline by its tab and come back: nothing is lit
-     and there is nothing to step back to. */
-  board(function (){ return [[lt('a'), lt('b'), lt('c')], [lt('d'), lt('e')]]; });
-  kbHeadRow(1); kbCut();
-  kbHeadRow(0);
-  out.leftBefore = { h: !!KBH, u: KBU.u.length };
-  goTab('feed');
-  go('kb'); go('kb', String(kbShow));
-  out.leftAfter = { h: !!KBH, u: KBU.u.length };
+     and there is nothing to step back to.
+
+     The board was changed and not saved, so the tab ASKS first -- 「タブで
+     出る時も戻ると同じ『保存しますか？』」 OWNER 2026-09-25, one door
+     (navLand(), www/shell.js). It is walked off by BOTH answers, because
+     either one is leaving: 「いいえ」, and 「はい」 with the send landing (the
+     same stub keep-check uses -- a file:// page has no server). */
+  function walkedOff(answer){
+    board(function (){ return [[lt('a'), lt('b'), lt('c')], [lt('d'), lt('e')]]; });
+    kbHeadRow(1); kbCut();
+    kbHeadRow(0);
+    var r = { before: { h: !!KBH, u: KBU.u.length } }, realSN = window.netSaveNow;
+    window.netSaveNow = function (cb){ if (cb) cb(true); };
+    goTab('feed');
+    r.asked = popOn();
+    if (answer) popYes(); else popNo();
+    window.netSaveNow = realSN;
+    r.on = here().r;
+    go('kb'); go('kb', String(kbShow));
+    r.after = { h: !!KBH, u: KBU.u.length };
+    return r;
+  }
+  out.leftNo = walkedOff(false);
+  out.leftYes = walkedOff(true);
 
   /* AND ANOTHER LANGUAGE'S BOARD IS ANOTHER HISTORY. viewReset() is what
      opening another language does; the board in front of you afterwards is
@@ -4773,10 +4789,13 @@ say(cmpRows.length === 1 && cmpRows[0] === 'kbRoomRow',
 say(freeAsk.length > 0 && freeAsk.every((f) => f === 'kbEdit'),
     'and the board on the screen is reached only through kbEdit(), which is what '
     + 'says the free QWERTY is not written [' + freeAsk.join(', ') + ']');
-say(SF.leftBefore.h && SF.leftBefore.u > 0 && !SF.leftAfter.h && SF.leftAfter.u === 0,
-    'the selection and the step back are the screen’s: walked off by a tab and come back '
-    + 'to, nothing is lit and there is nothing to step back to (before '
-    + JSON.stringify(SF.leftBefore) + ', after ' + JSON.stringify(SF.leftAfter) + ')');
+[['いいえ', SF.leftNo], ['はい', SF.leftYes]].forEach(([word, L]) => {
+  say(L.before.h && L.before.u > 0 && L.asked && L.on === 'feed' && !L.after.h && L.after.u === 0,
+      'the selection and the step back are the screen’s: walked off by a tab — asked, '
+      + 'answered 「' + word + '」 — and come back to, nothing is lit and there is nothing '
+      + 'to step back to (before ' + JSON.stringify(L.before) + ', asked ' + L.asked
+      + ', on ' + L.on + ', after ' + JSON.stringify(L.after) + ')');
+});
 say(SF.crossSame,
     'and another language’s board is another history — a step back pressed there puts '
     + 'nothing of the first language’s layout onto it');
