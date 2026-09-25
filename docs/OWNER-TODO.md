@@ -7,13 +7,19 @@
 手順の元：docs/apple.md § 8・§ 9、supabase/setup.md § 2・§ 9-5・§ 12、
 .github/workflows/supabase-deploy.yml（integ-0905 46280fcb で読んだもの）。
 
+## リーダーへ（オーナーから届いたもの）
+
+- 2026-09-25：ユーザー @bluestevie64 が @lingua の投稿（Sep 23「Anything hard to use?」）に返信
+  「Im unable to see other people's replies on posts」。オーナーのスクショでは、その投稿の返信数は **2** なのに、
+  スレッドに出ている返信は **1 件**（@bluestevie64 のもの）だけ。原因はまだ誰も見ていない。
+
 ## 一覧
 
 | # | 何 | 状態 |
 |---|---|---|
 | 1 | Apple：App ID に Push Notifications | 済み（2026-09-25） |
 | 2 | Apple：配布プロファイル作り直し → GitHub Secret 差し替え → リーダーに「済んだ」 | 済み（2026-09-25） |
-| 11 | Supabase：今日のお題が 9/20 で止まっている理由を見る（2 の次に） | まだ |
+| 11 | Supabase：今日のお題が 9/20 で止まっている理由を見る（2 の次に） | 済み（2026-09-25）：見る前に直っていた。アプリで 24 日のお題が出ている（オーナー 2026-09-25 11:59 JST）。原因は見ていない |
 | 3 | Apple：APNs の鍵 → GitHub Secrets 二つ | まだ |
 | 4 | Supabase：Webhooks を ON | まだ |
 | 5 | Supabase：schema.sql を流し直す（4 の後） | まだ |
