@@ -577,6 +577,13 @@ const R = await pg.evaluate(() => {
      「例文の＋を押しても反応しない」 OWNER 2026-09-06. Three acts in a row, so
      it belongs here and not in press-check. */
   openAdd('');
+  /* openAdd() is go() to `form add:`, which is already on the trail from the
+     scene above, so it is going BACK -- past kano, written by wdWrite() and
+     never by the Save press that levels the sheet (keepSave(), www/shell.js
+     § KEEP). Leaving a sheet with something unsaved on it asks, by every
+     road (OWNER 2026-09-25, navLand()); nothing below is about kano, so it is
+     answered 「いいえ」 and the move goes on. keep-check holds the question. */
+  if (popOn()) popNo();
   wdSetLn('zunn');
   document.getElementById('wd-mn').value = 'the first meaning';
   wdMnOpen();
