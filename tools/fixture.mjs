@@ -1457,6 +1457,25 @@ export function halfDone(){
     ['a thread opened on somebody else\u2019s post', () => {
         window.route='thread'; NAV=[{r:'feed'}, {r:'thread', a:'p2'}];
         return vThread(); }],
+    /* AND A POST THE SERVER HAS, with likes and reposts on it: the heart and
+       the repost are HELD there, which opens who pressed them (r94 A). No
+       fixture post carries a `sid` (see p2), so without this face no walk
+       draws a hold on either and act-check calls both names unreached. */
+    ['a post the server has, whose heart and repost are held', () => {
+        const p = postById('p2'); p.sid = 'SRV-2';
+        window.route='feed'; NAV=[{r:'feed'}];
+        const h = vFeed(); delete p.sid; return h; }],
+    /* and what holding the heart opens: who liked it, newest first, the same
+       rows as a follows list (www/me.js § folList). Left where it puts it so
+       shot.mjs photographs it. */
+    ['who liked a post', () => {
+        FOL_HAVE['like:SRV-2'] = ['iri', 'veth']; FOL_ASKED['like:SRV-2'] = 1;
+        window.route='reacts'; NAV=[{r:'feed'}, {r:'reacts', a:'like:SRV-2'}];
+        return vReacts(); }],
+    ['who reposted a post, nobody left on it', () => {
+        FOL_HAVE['boost:SRV-2'] = []; FOL_ASKED['boost:SRV-2'] = 1;
+        window.route='reacts'; NAV=[{r:'feed'}, {r:'reacts', a:'boost:SRV-2'}];
+        return vReacts(); }],
     /* YOUR OWN ROW, on somebody else's followers list, on a phone holding no
        post of yours to take a name off. 「ここも？になるの謎だし」 */
     /* AND EVERYBODY ON IT IS KNOWN, because the door onto `follows` (www/shell.js § navLand) got

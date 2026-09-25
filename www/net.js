@@ -3352,6 +3352,17 @@ function netPplPage(at, col, where, after, lim, ok, bad){
       ok(out, end);
     }, bad);
 }
+/* WHO LIKED A POST, OR PASSED IT ON -- one page, newest first, the same
+   page the follows lists are (netPplPage). 「リツイートといいねした人長押しで
+   見れるようにしたい」 OWNER 2026-09-25. `sid` is the server's name for the
+   post; `react_seen` (supabase/schema.sql) has already left out whoever a
+   block stands between and whoever this account has muted. */
+function netReacters(kind, sid, ok, bad, after){
+  netPplPage('/rest/v1/react_seen', 'actor_handle',
+             '&post=eq.'+encodeURIComponent(String(sid||''))+
+             '&kind=eq.'+encodeURIComponent(String(kind||'')),
+             after, NET_PAGE, ok, bad);
+}
 function netFollowing(ok, bad, handle, after){
   netFollowRows('followed', 'follower', ok, bad, handle, after);
 }

@@ -1610,8 +1610,8 @@ function folKey(ers, h){ return (ers? 'ers:' : 'ing:') + String(h||''); }
 /* An answer, written down. One place, because three write here now -- the
    pull for somebody else's list, the pull for this account's two, and a
    Follow the server has taken. */
-function folPut(ers, h, hs){
-  var k=folKey(ers, h);
+function folPut(ers, h, hs){ folSet(folKey(ers, h), hs); }
+function folSet(k, hs){
   FOL_HAVE[k]=hs || [];
   FOL_ASKED[k]=1;
 }
@@ -1640,26 +1640,41 @@ function folForget(){
    フィールからフォロワー見ようとするとずっとくるくるするんだって」 OWNER
    2026-09-08 was the third answer, `null`, that was neither. */
 var FOL_END={}, FOL_AFTER={};
-function folPull(ers, h, after, ok, bad){
-  var k=folKey(ers, h);
-  h=String(h||'');
+function folPull(L, after, ok, bad){
+  var k=L.k;
   FOL_ASKED[k]=1;
-  (ers? netFollowers : netFollowing)(function(hs, end){
+  L.ask(function(hs, end){
     FOL_END[k]=hs.length<NET_PAGE;
     if(end) FOL_AFTER[k]=end;
-    folPut(ers, h, after? folOf(ers, h).concat(hs) : hs);
+    folSet(k, after? (FOL_HAVE[k] || []).concat(hs) : hs);
     ok(hs);
   }, function(d, s, m){
     FOL_ASKED[k]=0;
     bad(d, s, m);
-  }, h, after);
+  }, after);
+}
+/* WHICH LIST AN ARGUMENT NAMES, AND WHERE IT IS READ FROM -- the one place.
+   A list of people is ONE thing whoever it is about: a page of handles,
+   newest first, carried on at the foot, and the people on it asked for
+   before the screen opens. The follows lists are `ing[:handle]` and
+   `ers[:handle]`; who liked a post and who passed it on are `like:<post>`
+   and `boost:<post>` (r94, 「リツイートといいねした人長押しで見れるように」
+   OWNER 2026-09-25) -- the same list, read off a different view. `k` is what
+   it is kept under, `ask` the page read. */
+function folList(a){
+  a=String(a===undefined? (here().a||'') : a);
+  var c=a.indexOf(':'), w=a.slice(0, c<0? a.length : c), x=(c<0)? '' : a.slice(c+1), ers;
+  if(w==='like' || w==='boost')
+    return {k:w+':'+x, ask:function(ok, bad, after){ netReacters(w, x, ok, bad, after); }};
+  ers=(w==='ers'); x=x || meHandle();
+  return {k:folKey(ers, x),
+          ask:function(ok, bad, after){ (ers? netFollowers : netFollowing)(ok, bad, x, after); }};
 }
 /* The list is asked again the next time its page is arrived at. */
 function folDrop(ers, h){
   var k=folKey(ers, h);
   delete FOL_HAVE[k]; delete FOL_ASKED[k];
 }
-function folGot(ers, h){ return !!FOL_HAVE[folKey(ers, h)]; }
 function folOf(ers, h){ return FOL_HAVE[folKey(ers, h)] || []; }
 /* WHOSE LIST A FOLLOWS PAGE IS, AND WHICH DIRECTION -- read off the route's
    argument, in one place. 「フォロワーとかタップしても見れないし」 OWNER
@@ -1686,12 +1701,11 @@ function folErs(a){
    them, so no row is drawn with a '?' where a face goes. `fols` in www/sns.js § WHAT
    EACH PAGE READS; the next page is folMore(), at the foot. */
 function folsAsk(a, ok, bad){
-  var ers=folErs(a), h=folWho(a);
-  folPull(ers, h, '', function(hs){ folPeople(hs, function(){ ok(1); }, bad); }, bad);
+  folPull(folList(a), '', function(hs){ folPeople(hs, function(){ ok(1); }, bad); }, bad);
 }
 function folsGot(a){
-  var ers=folErs(a), h=folWho(a), hs=folOf(ers, h);
-  return folGot(ers, h) && whoAllGot(hs) && relGot(hs);
+  var k=folList(a).k, hs=FOL_HAVE[k] || [];
+  return !!FOL_HAVE[k] && whoAllGot(hs) && relGot(hs);
 }
 /* The people and whether you follow each, side by side: both need only the
    handles, so neither waits for the other -- two round trips in a row, not
@@ -1707,10 +1721,10 @@ function folPeople(hs, ok, bad){
    § snsMore). */
 var FOL_MORE=false;
 function folMore(){
-  var a=here().a, ers=folErs(a), h=folWho(a), k=folKey(ers, h), hs=folOf(ers, h);
+  var L=folList(), k=L.k, hs=FOL_HAVE[k] || [];
   if(FOL_MORE || FOL_END[k] || !hs.length || !FOL_AFTER[k]) return;
   FOL_MORE=true;
-  folPull(ers, h, FOL_AFTER[k], function(more){
+  folPull(L, FOL_AFTER[k], function(more){
     folPeople(more, function(){ FOL_MORE=false; render(); },
               function(d, s, m){ FOL_MORE=false; netPop(d, s, m); });
   }, function(d, s, m){ FOL_MORE=false; netPop(d, s, m); });
@@ -1727,6 +1741,21 @@ function vFollows(){
      somebody else's it is, whenever you follow them or they you. */
   var ers=folErs(), who=folWho();
   var list=(who===meHandle())? meNotMe(folOf(ers, who)) : folOf(ers, who);
+  return folPage(list, t(ers? 'me.followers.none' : 'me.following.none'));
+}
+/* WHO LIKED A POST, OR PASSED IT ON: the same list and the same rows as the
+   follows page (folList above), newest first. `like:<post>` or
+   `boost:<post>`. You are on it when you are one of them -- the list says
+   who pressed, and you pressed. */
+function vReacts(){
+  var a=String(here().a||'');
+  return folPage(FOL_HAVE[folList(a).k] || [],
+                 t(a.indexOf('boost:')===0? 'post.boosters.none' : 'post.likers.none'));
+}
+/* A list of people, drawn. One function, because the follows lists and who
+   liked a post show the same thing -- a person -- and drawing them twice is
+   how they drift apart. */
+function folPage(list, none){
   return '<div class="view">'+navTop()+'<div class="body">'+
     /* NOTHING TURNS ON THIS SCREEN, AND THERE IS NOTHING TO WAIT FOR.
        「人のプロフィールからフォロワー見ようとするとずっとくるくるするんだって」
@@ -1765,6 +1794,6 @@ function vFollows(){
              label and the line about themselves. */
           return snsWhoRow(p, true);
         }).join('')
-      : '<div class="note">'+esc(t(ers? 'me.followers.none' : 'me.following.none'))+'</div>')+
+      : '<div class="note">'+esc(none)+'</div>')+
     '</div></div>';
 }

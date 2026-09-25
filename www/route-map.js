@@ -64,6 +64,7 @@ page('pos',      vPos);
 page('reg',      vReg);
 page('sub',      vSub);
 page('follows',  vFollows);
+page('reacts',   vReacts);
 page('notfo',    vNotfo);
 page('glyph',    vGlyph);
 page('words',    vWords);

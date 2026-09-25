@@ -536,7 +536,7 @@ const r = await pg.evaluate(({ s }) => {
     NET_PAGE = 2;
     folForget();
     const nop = function () {};
-    folPull(false, 'aya2', '', nop, nop);
+    folPull(folList('ing:aya2'), '', nop, nop);
     NAV = [{ r:'follows', a:'ing:aya2' }]; window.route = 'follows';
     FOL_MORE = false;
     folMore();
@@ -740,8 +740,94 @@ const r = await pg.evaluate(({ s }) => {
   return out;
 }, { s: seed.toString() });
 
+/* ---- 13: r94 -- holding the heart or the repost opens who pressed them ---
+   「リツイートといいねした人長押しで見れるようにしたい」 OWNER 2026-09-25. The
+   real gesture (a touch held past HOLD_MS), the real door (navLand waits for
+   the list and the people), and the list read off `react_seen` for that post
+   and that kind -- asked at the wire. The hold is only on a post the server
+   has, with somebody on the list. */
+Object.assign(r, await pg.evaluate(() => {
+  const out = {};
+  const wire = [];
+  const realS1 = netSend1, realS = netSend, realG = netGet;
+  netSend1 = function (m, p, b, t, ok) {
+    p = String(p); wire.push(p);
+    ok(p.indexOf('/rest/v1/react_seen?') === 0
+         ? [{ actor_handle:'kai', created_at:'2026-09-25T02:00:00Z' },
+            { actor_handle:'noa', created_at:'2026-09-25T01:00:00Z' }]
+         : p.indexOf('/rest/v1/profile_seen?') === 0
+         ? [{ id:'u1', handle:'kai', display:'Kai', av:null, fo:1, fr:2 },
+            { id:'u2', handle:'noa', display:'Noa', av:null, fo:0, fr:0 }]
+         : [], 200);
+  };
+  netSend = function (m, p, b, t, ok, bad, up) { netSend1(m, p, b, t, ok, bad, up, true); };
+  netGet = function (p, ok, bad) { netSend('GET', p, null, '', ok, bad); };
+  const p = postById('p2'), was = { sid:p.sid, nboost:p.nboost };
+  p.sid = 'SRV-h';
+  NAV = [{ r:'feed' }]; window.route = 'feed'; render();
+  const app = document.getElementById('app');
+  const acts = (id) => [].slice.call(app.querySelectorAll('.post')).filter((e) =>
+    (e.getAttribute('data-a') || '').indexOf('"' + id + '"') >= 0)[0];
+  const holdOf = (id, fn) => { const e = acts(id) && acts(id).querySelector('[data-do="' + fn + '"]');
+                               return e ? (e.getAttribute('data-hold') || '') : '(no button)'; };
+  out.hLike = holdOf('p2', 'postLike');
+  out.hBoost = holdOf('p2', 'postBoost');
+  p.sid = undefined; render();
+  out.hNoSid = holdOf('p2', 'postLike');
+  p.sid = 'SRV-h'; p.nboost = 0; render();
+  out.hZero = holdOf('p2', 'postBoost');
+  p.nboost = was.nboost; render();
+  /* and held, for real */
+  const heart = acts('p2').querySelector('[data-do="postLike"]');
+  const rc = heart.getBoundingClientRect();
+  const T = (type) => {
+    const tt = new Touch({ identifier:1, target:heart, clientX:rc.left + rc.width / 2, clientY:rc.top + rc.height / 2 });
+    heart.dispatchEvent(new TouchEvent(type, { bubbles:true, cancelable:true,
+      touches: type === 'touchend' ? [] : [tt], changedTouches:[tt] }));
+  };
+  const likedWas = postILike(p);
+  wire.length = 0;
+  /* The hold's own timer is taken as it is set and run at once: this asks
+     where a hold LANDS, and how long a thumb must stay is press's to hold
+     (tools/press.mjs § held). Waiting for real here would leave the page to
+     whatever the walks above left in the air. */
+  const realST = window.setTimeout;
+  let timer = null;
+  window.setTimeout = function (fn, ms) { if (ms === HOLD_MS) { timer = fn; return 1; } return realST.apply(window, arguments); };
+  T('touchstart');
+  window.setTimeout = realST;
+  out.hTimer = !!timer;
+  if (timer) timer();
+  T('touchend');
+  out.hWhere = JSON.stringify(here());
+  out.hAsk = wire.filter((x) => x.indexOf('/rest/v1/react_seen?') === 0).join(' | ');
+  out.hRows = ['@kai', '@noa'].map((h) => app.textContent.indexOf(h) >= 0 ? 1 : 0).join('');
+  out.hTitle = document.querySelector('.navtop') ? document.querySelector('.navtop').textContent : '';
+  out.hLiked = postILike(p) === likedWas;
+  out.hWant = t('post.likers');
+  p.sid = was.sid;
+  netSend1 = realS1; netSend = realS; netGet = realG;
+  NAV = [{ r:'feed' }]; window.route = 'feed'; render();
+  return out;
+}));
+
 const fails = [];
 const say = (m) => fails.push(m);
+if (r.hLike !== 'postHoldLikes' || r.hBoost !== 'postHoldBoosts')
+  say('13: a post the server has, with likes and reposts, carries holds 「' + r.hLike + '」 and 「' +
+      r.hBoost + '」 on its heart and its repost -- they have to be postHoldLikes and postHoldBoosts.');
+if (r.hNoSid !== '' || r.hZero !== '')
+  say('13: a hold that goes nowhere is drawn: on a post the server does not have 「' + r.hNoSid +
+      '」, with nobody on the list 「' + r.hZero + '」.');
+if (r.hWhere !== JSON.stringify({ r:'reacts', a:'like:SRV-h' }) || r.hRows !== '11' ||
+    !/post=eq\.SRV-h/.test(r.hAsk) || !/kind=eq\.like/.test(r.hAsk) || r.hTitle.indexOf(r.hWant) < 0)
+  say('13: holding the heart landed on ' + r.hWhere + ', asked 「' + r.hAsk + '」, drew the two ' +
+      'people 「' + r.hRows + '」 under 「' + r.hTitle + '」 -- it has to open who liked THAT post, ' +
+      'read off react_seen, with them on it.');
+if (!r.hLiked)
+  say('13: holding the heart also pressed it -- a hold is not a like.');
+if (!r.hTimer)
+  say('13: touching the heart started no hold (no HOLD_MS timer was set).');
 
 if (!r.threadByLocal)
   say('the thread of your own post does not carry the answer that came back ' +

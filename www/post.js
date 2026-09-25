@@ -3588,8 +3588,11 @@ function postFaces(){
     return PFACE[c.getAttribute('data-p')] || null;
   });
 }
-function postAct(fn, id, icon, n, on){
-  return '<button class="pact'+(on? ' on':'')+'"' + DO(fn, [id]) + '>'+icon+
+/* `hold` is what holding it does (www/shell.js § holdStart): the heart and
+   the repost open who pressed them. */
+function postAct(fn, id, icon, n, on, hold){
+  return '<button class="pact'+(on? ' on':'')+'"' + DO(fn, [id]) +
+    (hold? ' data-hold="'+hold+'"' : '')+'>'+icon+
     '<span class="pn">'+(n? String(n) : '')+'</span></button>';
 }
 /* The line, drawn. Each letter is the shape the post carries, so a post in a
@@ -4252,8 +4255,14 @@ function postRow(p){
            anywhere, so being frozen does not take it away. */
         (postMay()
           ? postAct('postReply', p.id, ICON_REPLY, postNReply(p), false)+
-            postAct('postBoost', p.id, ICON_BOOST, postNBoost(p), postIBoost(p))+
-            postAct('postLike',  p.id, ICON_HEART, postNLike(p),  postILike(p))
+            /* HELD, who pressed them. 「リツイートといいねした人長押しで見れる
+               ようにしたい」 OWNER 2026-09-25. Only on a post the server has
+               (`sid`) with somebody on the list: a hold that goes nowhere is a
+               gesture that does nothing. */
+            postAct('postBoost', p.id, ICON_BOOST, postNBoost(p), postIBoost(p),
+                    (p.sid && postNBoost(p))? 'postHoldBoosts' : '')+
+            postAct('postLike',  p.id, ICON_HEART, postNLike(p),  postILike(p),
+                    (p.sid && postNLike(p))? 'postHoldLikes' : '')
           : '')+
         /* On every post, not only your own. The comment that used to be here
            said a card is drawn out of a dictionary and a set of letters, so it
@@ -4349,6 +4358,14 @@ function postBoostGo(id, on){
   netMark(id, 'boost', on,
     function(){ postCountsPull(id); },
     function(d, st, m){ netPop(d, st, m, function(){ postBoostGo(id, on); }); });
+}
+/* Who liked it, and who passed it on: the post's two lists (www/me.js
+   § folList), by the server's name for it. */
+function postHoldLikes(id){ postReacts(id, 'like'); }
+function postHoldBoosts(id){ postReacts(id, 'boost'); }
+function postReacts(id, kind){
+  var p=postById(id);
+  if(p && p.sid) go('reacts', kind+':'+p.sid);
 }
 /* Replying opens the same screen a post is written on, holding on to what it
    is a reply TO. */

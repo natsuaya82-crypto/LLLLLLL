@@ -1149,6 +1149,9 @@ var PAGES={
   reg:     {lang:1, tab:'build', k:'word.reg'},
   sub:     {lang:1, tab:'build', k:'f.sub'},
   follows: {tab:'profile'},
+  /* who liked a post, or passed it on -- the post's own list, under the
+     timeline where a post is (thread, photo) */
+  reacts:  {tab:'feed'},
   /* The people one notice is about. Named 「フォロワー」 because that is what
      they are -- a follow notice is people who followed you -- and the word is
      already written in all ten languages, under the number on a profile. */
@@ -1274,6 +1277,9 @@ function pageName(r, a){
      reached from. Nothing new is added. */
   if(r==='follows')
     return t(String(a||'').split(':')[0]==='ers'? 'me.followers' : 'me.following');
+  /* and the post's two lists, named by the argument the same way */
+  if(r==='reacts')
+    return t(String(a||'').split(':')[0]==='boost'? 'post.boosters' : 'post.likers');
   /* Somebody else's language names itself, the way a letter and a stage above
      do. Its own name until the answer lands, and the screen's name until then. */
   if(r==='about' && a){
