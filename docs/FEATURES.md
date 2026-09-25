@@ -51,7 +51,7 @@ Marked separately, because they are not the same question:
 | Keyboard layout built in the app | shipped | yes — the fixed QWERTY, and as many more as you like | — | slice `kb` | decided — 「キーボードはプランで分けない」 2026-09-25 |
 | Keyboard: flick, four directions per key | shipped | yes | — | slice `kb` | decided — 2026-09-25 |
 | Keyboard: any letter on any key, any position, rows and layers | shipped | yes — the drawn letters there are (free: the slots) | — | slice `kb` | decided — 2026-09-25 |
-| Keyboard: any existing character on a key, typed or pasted on the editor with the key selected (`kbChOnHTML()`) | code confirmed (r95), not on a device | yes | — | slice `kb` (a slot holds `=` + the character, `kbCh()`) | decided — 2026-09-25 |
+| Keyboard: any existing character on a key, chosen from the kinds of character on the key's page -- the same list as a letter's 「既存文字から選ぶ」 (`pkKindsHTML()`) | code confirmed (r96), not on a device | yes | — | slice `kb` (a slot holds `=` + the character, `kbCh()`) | decided — 2026-09-25 |
 | Keyboard: a handwriting face -- write with a finger and the nearest drawn letter of the language goes in (`kbAddLay('hand')`, `HandPad.swift`, `hand.js`) | code confirmed (r96), not on a device | yes | — | slice `kb` (a face carries `hand:1`); App Group `keyboard.json` carries `hand` | decided — 「キーボードはプランで分けない」 2026-09-25 |
 | Font built on the device (OTF) | shipped | yes | — | none (derived) | decided |
 | Font file out of the app (.otf, the share sheet) | code confirmed (r95), not on a device | — | `font`: Plus | none — a file in the app's tmp folder, handed to iOS (`kbFontOut()`) | decided — 2026-09-25 |
