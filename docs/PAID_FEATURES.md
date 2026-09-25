@@ -70,7 +70,7 @@ OWNER 2026-09-06。「だから端末でやるわけねえだろ」OWNER 2026-09
 - 押す所は `upStop(ok)`：`null` は**「接続できません」**。値段の頁へ送るのは、
   **訊けた上で足りないとき**だけ。天井（`capStop()` ほか）も `planFits()` の
   答えを渡すのでここを通る
-- 形（一覧を畳む・固定の QWERTY・アルファベット・左から右・広告の場所）は
+- 形（一覧を畳む・固定の QWERTY・アルファベット・左から右）は
   `planNo(ok)`：**訊けた上で「無い」ときだけ**無料の形。訊けていない間は
   作った物の形のまま ── 一覧は Pro と同じ長さ
 - 書く所・端末の外へ渡す所は `planSaid(ok)`：答えが来るまで何もしない
@@ -253,9 +253,8 @@ Plus < Pro` needs nobody told which is which.
 | languages on the account | **1** | **1** | **3** |
 | how many DL'd languages | **0** | **1** | **3** |
 | `gram` `dir` `data` `file` `badge` | — | — | yes |
-| `noads` no PR rows in the home timeline | — (PR rows shown) | — (PR rows shown) | yes |
 
-Seven of those eleven rows are a DOOR, which is a name in `CAN`, and four are a
+Six of those ten rows are a DOOR, which is a name in `CAN`, and four are a
 NUMBER, which is a function beside `wordCap()`. The four numbers are the ones
 this file has had wrong most often, so they are written once, machine-read,
 in § The four numbers below.
@@ -453,7 +452,6 @@ a `can()` given anything but a literal, and a `has()` anywhere else.
 | `badge` | pro | the mark beside your name |
 | `gram` | pro | a grammar stage of your own, past the fifteen |
 | `dir` | pro | choosing which way the language is written. **Reading one is free** |
-| `noads` | pro | a home timeline with no places sold in it — no PR rows, promoted posts or AdMob. 「proのみ表示なし」 OWNER 2026-09-23. It is the one capability that is an absence, and it takes nothing away from anybody's language |
 
 **Read the number off `CAN` rather than off this line.** `npm run dead` prints
 what it counted on every run — "what money buys: N capabilities in CAN" — and

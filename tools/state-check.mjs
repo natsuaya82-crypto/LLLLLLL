@@ -25,9 +25,8 @@
       a letter past the slots, a stage of its own -- every list is exactly as
       long with no answer as on Pro.
    C. Every screen drawn with no answer, through the view and through
-      render(): no save*, nothing to LinguaShare, no AdMob. Every button on
-      every view, form and the tab bar pressed: no go('plans'), no price
-      asked, no AdMob.
+      render(): no save*, nothing to LinguaShare. Every button on every
+      view, form and the tab bar pressed: no go('plans'), no price asked.
 
    WHAT IT DOES NOT HOLD, said so silence is not read as a check: the faces
    tools/fixture.mjs holds (halfDone). Each is made by DOING something -- a
@@ -87,7 +86,7 @@ await pg.waitForSelector('#splash', { state: 'detached', timeout: 10000 });
 await pg.evaluate('window.__seed = ' + seed.toString());
 
 const R = await pg.evaluate(() => {
-  const out = { A: [], Anames: 0, B: [], Bnames: 0, C: [], every: [], screens: 0, pressed: 0, saves: {}, share: 0, adm: 0,
+  const out = { A: [], Anames: 0, B: [], Bnames: 0, C: [], every: [], screens: 0, pressed: 0, saves: {}, share: 0,
                 plans: 0, price: 0 };
   window.confirm = () => false; window.alert = () => {}; window.prompt = () => null;
 
@@ -158,8 +157,6 @@ const R = await pg.evaluate(() => {
   window.sharePlug = function(){
     return function(p, m){ if (counting && p === 'LinguaShare') out.share++; return Promise.resolve({}); };
   };
-  const adm0 = window.admStart;
-  window.admStart = function(){ if (counting) out.adm++; return adm0.apply(this, arguments); };
   const go0 = window.go;
   const goW = function(r){ if (counting && r === 'plans') out.plans++; return go0.apply(this, arguments); };
   window.go = goW; ACT.go = goW;
@@ -189,13 +186,12 @@ const R = await pg.evaluate(() => {
     build: () => { fresh(); unset(); on(); window.route = 'feed'; NAV = [{ r: 'feed' }]; show(tabBar()); } });
 
   const buttons = () => Array.prototype.slice.call(document.getElementById('app').querySelectorAll('[data-do]'));
-  /* What one drawing did: every writer called, LinguaShare, AdMob. */
-  const tally = () => JSON.parse(JSON.stringify({ s: out.saves, share: out.share, adm: out.adm }));
+  /* What one drawing did: every writer called, LinguaShare. */
+  const tally = () => JSON.parse(JSON.stringify({ s: out.saves, share: out.share }));
   const delta = (a, b) => {
     const o = {};
     Object.keys(b.s).forEach((k) => { const d = b.s[k] - (a.s[k] || 0); if (d) o[k] = d; });
     if (b.share - a.share) o.LinguaShare = b.share - a.share;
-    if (b.adm - a.adm) o.AdMob = b.adm - a.adm;
     return o;
   };
   /* Drawn twice, on Pro and with no answer, and what is counted is what the
@@ -240,13 +236,13 @@ const R = await pg.evaluate(() => {
         /* The row that IS the way to the price list -- settings' 「プラン」 --
            is a person going there; what is counted is every other road. */
         const door = els[b].getAttribute('data-do') === 'go' && /plans/.test(els[b].getAttribute('data-a') || '');
-        const was = [out.plans, out.price, out.adm].join();
+        const was = [out.plans, out.price].join();
         counting = true;
         try { els[b].click(); } catch (e) {}
         if (door) { out.plans--; out.door = (out.door || 0) + 1; }
         counting = false;
         out.pressed++;
-        if ([out.plans, out.price, out.adm].join() !== was)
+        if ([out.plans, out.price].join() !== was)
           window.__st.said.push(sc.label + ' -> ' + els[b].getAttribute('data-do'));
       }
     } };
@@ -262,8 +258,8 @@ for (let i = 0; i < R.nScreens; i++) {
   if (dt > 20000) console.log('  (slow: screen ' + i + ', ' + n + ' buttons, ' + dt + 'ms)');
 }
 const P = await pg.evaluate(() => ({ pressed: window.__st.out.pressed, said: window.__st.said,
-  plans: window.__st.out.plans, price: window.__st.out.price, adm: window.__st.out.adm }));
-R.pressed = P.pressed; R.pressSaid = P.said; R.plans = P.plans; R.price = P.price; R.adm = P.adm;
+  plans: window.__st.out.plans, price: window.__st.out.price }));
+R.pressed = P.pressed; R.pressSaid = P.said; R.plans = P.plans; R.price = P.price;
 console.log('  (pressed in ' + Math.round((Date.now() - T0) / 1000) + 's)');
 
 
@@ -277,10 +273,10 @@ say(!R.B.length, 'every list is as long with no answer as on Pro -- fewer button
 console.log('C. ' + R.screens + ' screens drawn and ' + R.pressed + ' buttons pressed with no answer');
 if (R.every.length) console.log('   written on every plan by drawing alone (r73 § 2-2, not this check):\n     ' +
                                 R.every.join('\n     '));
-say(!R.C.length, 'with no answer, drawing one writes, hands to LinguaShare and starts AdMob no more than on Pro' +
+say(!R.C.length, 'with no answer, drawing one writes and hands to LinguaShare no more than on Pro' +
     (R.C.length ? '\n            ' + R.C.join('\n            ') : ''));
-say(!R.pressSaid.length, 'pressing one goes to no price list, asks no price and starts no AdMob (' +
-    R.plans + ' go plans, ' + R.price + ' prices, ' + R.adm + ' AdMob)' +
+say(!R.pressSaid.length, 'pressing one goes to no price list and asks no price (' +
+    R.plans + ' go plans, ' + R.price + ' prices)' +
     (R.pressSaid.length ? '\n            ' + R.pressSaid.slice(0, 20).join('\n            ') : ''));
 say(!priced.length, 'a price is offered by upStop() alone -- no other file calls go(\'plans\') or asks one' +
     (priced.length ? ' -- also ' + priced.join(', ') : ''));

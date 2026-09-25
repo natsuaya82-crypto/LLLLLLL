@@ -364,203 +364,6 @@ function snsSetFil(k){
 
    A second ask while one is out is refused by pullRun() below, which holds
    that for every screen rather than each screen holding it for itself. */
-/* ---- THE PLACES SOLD IN THE TIMELINE -------------------------------------
-   「広告の形は、Twitterと同じ。ツイート擬態右上にprとつく。広告枠が売れる形に
-   する。今は売る人いないからadmobを流す。proのみ表示なし。」 OWNER 2026-09-23.
-
-   A place is a promoted POST (supabase/schema.sql § promo), so it is drawn by
-   postRow() like every other row and carries PR in its corner. It is kept
-   here and not in POSTS: a promotion is a place in the home timeline, and a
-   post put into POSTS would also be in the search, the recommended list and
-   the copy this phone keeps.
-
-   PROMO_EVERY is how many posts stand before each place: 「10で。少ない時は
-   出さない！」 OWNER 2026-09-23. Both halves are this one number -- a place
-   comes after the tenth post, the twentieth, and so on, so a timeline of
-   fewer than ten has none. A place with nothing sold in it draws nothing:
-   filling it from AdMob is waiting on the owner's choice
-   (docs/scope/r55-ads.md).
-
-   snsAdsOff() is the one place that decides whether there are places at all,
-   and it is asked twice for one reason: a pro account is not asked for
-   promotions it will never be shown, and one that has just become pro does
-   not go on seeing the list it was handed before.
-
-   AND NONE WHILE NOBODY HAS SAID WHAT THIS ACCOUNT PAYS. Places are drawn
-   only on an ANSWER that the account lacks `noads` (planNo, www/core.js
-   § has). They were drawn on 「nobody has asked」 too, so somebody on Pro
-   with no answer yet was shown ads -- and AdMob's start asks App Tracking
-   Transparency, which iOS lets an app ask ONCE per install
-   (docs/scope/r63-audit.md § 0-3). Whether a free account with no answer
-   yet should see them is the owner's; this leans to not asking, which is
-   the one of the two that cannot be undone the other way. */
-var PROMO=[], PROMO_EVERY=10;
-function snsAdsOff(){ return !planNo(can('noads')); }
-function snsPromoAsk(done){
-  if(snsAdsOff()){ PROMO=[]; admDrop(); done(0); return; }
-  admStart();
-  netPromos(Math.ceil(NET_PAGE/PROMO_EVERY),
-            function(ps){ PROMO=ps || []; done(1); },
-            function(){ done(0); });
-}
-/* The places, in order: the k-th place is PROMO[k] while there are promoted
-   posts, and AdMob's k-th after that. `{adm:k}` is not a post and is not
-   drawn by postRow() -- it is an empty row the ad is laid over natively. */
-function snsWithPromo(list){
-  var out=[], i, k=0;
-  if(snsAdsOff()) return list;
-  for(i=0;i<list.length;i++){
-    out.push(list[i]);
-    if((i+1)%PROMO_EVERY===0){
-      if(k<PROMO.length) out.push(PROMO[k]);
-      else if(ADM.on) out.push({adm:k});
-      k++;
-    }
-  }
-  return out;
-}
-function snsRow(x){ return (x && x.adm!==undefined)? admSlotHTML(x.adm) : postRow(x); }
-/* ---- AND WHAT FILLS A PLACE NOBODY BOUGHT: AdMob -------------------------
-   「今は売る人いないからadmobを流す」 OWNER 2026-09-23.
-
-   An AdMob ad is drawn by Google's own views on the native side
-   (ios/App/App/LinguaAds.swift): its text and pictures may not be drawn in
-   HTML. So a place is an empty `.padm` row, as tall as the ad the native
-   side laid out, and the ad is put over it there. What this half does is
-   say, after anything on the page moves, where each row is on the PAGE and
-   what the app keeps fixed on the SCREEN -- the native side follows the
-   scroll by itself, so nothing here runs while a finger is moving.
-
-   Only on a phone: `Capacitor.nativePromise` is the whole of the difference,
-   the way storeOn() is store.js's. In a browser ADM.on stays false and no
-   place is drawn at all -- an empty row is not a thing to show anybody.
-
-   snsAdsOff() is asked before EVERY call that could draw, and `place`
-   carries the answer to the native side, which takes every ad down on
-   `on:false` -- the last line jpel's adsDisabled is, put where the drawing is. */
-var ADM={on:false, h:{}, asked:{}, raf:0, last:'', loop:false};
-function admPlug(){
-  return (window.Capacitor && Capacitor.nativePromise)? Capacitor.nativePromise : null;
-}
-function admCall(m, o, ok, bad){
-  var np=admPlug();
-  if(!np){ if(bad) bad(); return; }
-  np('LinguaAds', m, o || {}).then(function(r){ if(ok) ok(r || {}); },
-                                   function(e){ if(bad) bad(e); });
-}
-function admStart(){
-  if(ADM.on || !admPlug() || snsAdsOff()) return;
-  ADM.on=true;
-  admCall('start', {}, function(){ admSoon(); });
-  admWatch();
-}
-function admDrop(){
-  if(!ADM.on) return;
-  ADM.on=false; ADM.h={}; ADM.asked={}; ADM.last='';
-  admCall('drop', {});
-}
-/* The row. Nothing is in it: until the native side says how tall its ad is,
-   it is no height and no line (`padm0`), so a place with no ad is nothing. */
-function admSlotHTML(k){
-  var h=ADM.h[k] || 0;
-  return '<div class="post padm'+(h? '' : ' padm0')+'" data-adm="'+k+'"'+
-         ' style="height:'+h+'px"></div>';
-}
-/* Once per frame at most, however many things moved in it. */
-function admSoon(){
-  if(!ADM.on || ADM.raf) return;
-  ADM.raf=requestAnimationFrame(admPlace);
-}
-function admPlace(){
-  var els, out=[], i, r, k, sx, sy, cover, msg, same;
-  ADM.raf=0;
-  if(!ADM.on) return;
-  if(snsAdsOff()){ admDrop(); return; }
-  els=document.querySelectorAll('.padm');
-  sx=window.pageXOffset || 0; sy=window.pageYOffset || 0;
-  for(i=0;i<els.length;i++){
-    k=parseInt(els[i].getAttribute('data-adm'), 10);
-    r=els[i].getBoundingClientRect();
-    admLoad(k, Math.round(r.width));
-    if(ADM.h[k]) out.push({k:k, x:r.left+sx, y:r.top+sy, w:Math.round(r.width)});
-  }
-  cover=admCover();
-  msg={on:!snsAdsOff(), slots:out, holes:cover.holes, over:cover.over};
-  same=JSON.stringify(msg);
-  if(same===ADM.last) return;
-  ADM.last=same;
-  admCall('place', msg);
-}
-function admLoad(k, w){
-  if(!w || ADM.asked[k]===w) return;
-  ADM.asked[k]=w;
-  admCall('load', {k:k, w:w, look:admLook(), label:t('post.pr')},
-    function(r){
-      var h=Math.ceil(Number(r.h) || 0), els, i;
-      if(!h || h===ADM.h[k]) return;
-      ADM.h[k]=h;
-      els=document.querySelectorAll('.padm[data-adm="'+k+'"]');
-      for(i=0;i<els.length;i++){
-        els[i].style.height=h+'px';
-        els[i].className='post padm';
-      }
-      admSoon();
-    },
-    /* No fill: the place stays nothing. Asked again only when the width
-       changes, which is a new row rather than the same one refused twice. */
-    function(){});
-}
-/* WHAT STANDS OVER THE TIMELINE, counted rather than listed: every child of
-   the body, and every bar, that is fixed or sticky and can be seen. One that
-   covers the whole screen (a sheet's backdrop, a question, the turning mark)
-   hides the ads; anything smaller is cut out of them, for drawing and for
-   touches -- so a fixed thing added tomorrow is cut out tomorrow.
-   `pointer-events` is asked beside opacity because a thing fading IN is at
-   opacity 0 on the frame its class changes, and already takes presses. */
-function admCover(){
-  var els=[], kids=document.body.children, bars=document.querySelectorAll('.navtop'),
-      holes=[], over=false, vw=window.innerWidth, vh=window.innerHeight, i, cs, r;
-  for(i=0;i<kids.length;i++) els.push(kids[i]);
-  for(i=0;i<bars.length;i++) els.push(bars[i]);
-  for(i=0;i<els.length;i++){
-    cs=getComputedStyle(els[i]);
-    if(cs.position!=='fixed' && cs.position!=='sticky') continue;
-    if(cs.display==='none' || cs.visibility==='hidden') continue;
-    if(!(parseFloat(cs.opacity)>0) && cs.pointerEvents==='none') continue;
-    r=els[i].getBoundingClientRect();
-    if(r.width<=0 || r.height<=0 || r.bottom<=0 || r.top>=vh || r.right<=0 || r.left>=vw) continue;
-    if(r.width>=vw && r.height>=vh){ over=true; continue; }
-    holes.push({x:r.left, y:r.top, w:r.width, h:r.height});
-  }
-  return {holes:holes, over:over};
-}
-/* The page's own colours, so the ad row wears the theme every post does. */
-function admLook(){
-  var p=document.createElement('span'), out={}, k,
-      names={fg:'--tx', sub:'--txs', mute:'--txm', acc:'--gold', bg:'--bg', line:'--line'};
-  document.body.appendChild(p);
-  for(k in names){
-    p.style.color='var('+names[k]+')';
-    out[k]=getComputedStyle(p).color;
-  }
-  document.body.removeChild(p);
-  return out;
-}
-/* After anything on the page moves -- a render, a sheet or a toast coming or
-   going, the window turning -- asked once a frame while ads are on, and the
-   native side is told only when the answer is different. Scrolling changes
-   nothing here: rows are given in PAGE coordinates, so a finger moving the
-   timeline sends nothing and the native side follows the scroll by itself. */
-function admWatch(){
-  function tick(){
-    if(!ADM.on){ ADM.loop=false; return; }
-    admSoon();
-    requestAnimationFrame(tick);
-  }
-  if(ADM.loop) return;
-  ADM.loop=true;
-  requestAnimationFrame(tick);
-}
 /* THE TIMELINE'S ASK, ONE TAB AT A TIME. It writes the answer down and says
    whether one came; the mark, the pop, the 再接続 and the render are
    pullRun()'s. `tab` is what the question is about -- 'rec', 'fo' or 'day' --
@@ -570,31 +373,15 @@ function admWatch(){
    navLand). A pull asks the one you are looking at, 「TLの更新ならTLだけ」
    OWNER 2026-09-05.
 
-   And the places sold in it, on the first page and counted in the same pair,
-   so the timeline and its PR rows arrive as one render. A place that could
-   not be asked is not a timeline that could not be: it answers `one`, never
-   `no`. And the word the feed is filtered to is its own question (`fil`),
-   read by the same door. */
+   And the word the feed is filtered to is its own question (`fil`), read by
+   the same door. */
 function askFeed(ok, bad, person, tab){
-  var left=2, drew=0, fell=false;
   tab=tab || snsTab;
-  function one(got){
-    if(fell) return;
-    if(got) drew=1;
-    left--;
-    if(!left) ok(drew);
-  }
-  function no(d, s, m){
-    if(fell) return;
-    fell=true;
-    bad(d, s, m);
-  }
-  snsPromoAsk(one);
   /* The day's answers are the posts carrying today's id, so the id is
      waited for first -- it is its own question (`day`) and the feed's row
      asks it too, so this is almost always already in. */
-  if(tab==='day') pullWait('day', null, function(){ askFeed1('day', one, no); });
-  else askFeed1(tab, one, no);
+  if(tab==='day') pullWait('day', null, function(){ askFeed1('day', ok, bad); });
+  else askFeed1(tab, ok, bad);
 }
 /* ONE PAGE OF ONE TAB. `more` is where to carry on from, and SNS_NEXT is what
    the last answer said that is -- a count for おすすめ (it is in score order,
@@ -1404,7 +1191,7 @@ function vFeed(){
       : snsFil
       ? snsAnsHTML(snsFil.q, snsFil.r)
       : list.length
-      ? snsWithPromo(list).map(snsRow).join('')
+      ? list.map(postRow).join('')
       /* Two different emptinesses. Nothing at all is a timeline that has not
          started; nothing HERE, with posts on the other tab, is a person who
          has not followed anybody yet, and telling them "nothing has been

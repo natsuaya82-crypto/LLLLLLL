@@ -4059,39 +4059,6 @@ function netPostById(id, ok, bad){
          '&id=eq.'+encodeURIComponent(String(id||''))+'&limit=1',
     function(d){ ok((d && d.length)? netRow(d[0]) : null); }, bad);
 }
-/* THE PLACES SOLD IN THE TIMELINE, as the posts they promote.
-   「広告の形は、Twitterと同じ。ツイート擬態右上にprとつく。」 OWNER 2026-09-23.
-
-   `promo` (supabase/schema.sql) hands over only what is running now -- the
-   window is the server's, not this phone's clock. A promoted post is an
-   ordinary post, so it comes back through netRow() like every other and is
-   drawn by the one postRow(); `ad` is the only thing added, and it is what
-   puts PR in its corner.
-
-   Two questions, because `promo` points at a post by id and a view is not a
-   foreign key PostgREST can walk. A post taken down, or written by an account
-   that is frozen, is not a place anybody may be sold: both are left out by the
-   question rather than hidden after it arrives. Whoever this account has
-   blocked is left out by `post_seen` itself -- a block is a block whether or
-   not somebody paid. */
-/* `n` is how many places the page being drawn has (www/sns.js
-   § snsPromoAsk) -- a place comes after every PROMO_EVERY posts, so a page of
-   NET_PAGE posts has that many and no more is asked for. */
-function netPromos(n, ok, bad){
-  netGet('/rest/v1/promo?select=post&order=id.desc&limit='+n, function(d){
-    var ids=[], i;
-    for(i=0;i<(d||[]).length;i++) if(d[i] && d[i].post) ids.push(d[i].post);
-    if(!ids.length){ ok([]); return; }
-    netGet(NET_POST_SEL+
-           '&id=in.('+netInList(ids)+')&hidden_at=is.null&author_out=is.false'+
-           '&limit='+ids.length,
-      function(ps){
-        var out=[], j, p;
-        for(j=0;j<(ps||[]).length;j++){ p=netRow(ps[j]); p.ad=true; out.push(p); }
-        ok(out);
-      }, bad);
-  }, bad);
-}
 /* THE ANSWERS TO POSTS THAT ARE ON THE SCREEN.
    -------------------------------------------------------------------------
    「ここ更新ないから見れないし」「他の人の画面でも更新できるようにしたい」
