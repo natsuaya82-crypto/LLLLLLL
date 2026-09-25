@@ -4420,6 +4420,14 @@ and is never merged into your own」と言っている。**入らない、は二
   will need re-pointing, not rewriting: **money decides what may be DONE and
   nothing about what exists** stays true through the swap or the swap is wrong.
 - Affected data: none. A subscription is not a slice.
+- Implementation status: **written, not built** (r91-rc, 2026-09-25). Buying,
+  restoring and a purchase that arrives later go through RevenueCat's
+  `Purchases`; the StoreKit calls that did the same are gone. What goes up to
+  `verify-plan` is still what Apple signed, read off StoreKit, because the SDK
+  does not hand the JWS out. The public key is the empty `apiKey` in
+  `LinguaStore.swift` until the owner makes the RevenueCat app
+  (`docs/apple.md` § 6b). `plan-check` reads the file. Swift not compiled,
+  nothing pressed on a device.
 
 ### Decision
 - Date: 2026-08-25
