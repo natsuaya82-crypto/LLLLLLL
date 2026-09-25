@@ -2208,17 +2208,18 @@ const r = await pg.evaluate(({ s }) => {
     popOff();
     out.plusRoomOpens = here().r === 'form' && String(here().a) === 'kbnew';
 
-    /* three built -- 1 + 3 is the whole of Plus, so the next one is the fifth
-       and the + is where it is refused */
+    /* three built, so four with the QWERTY -- which was the whole of Plus
+       until 「Plus ── キーボード無制限」 OWNER 2026-09-24 (r46). The fifth
+       goes through exactly as Pro's does: no pop, and a board is made. */
     built(3);
     var b = list('plus');
     out.plusFullRows = b.rows; out.plusFullFab = !!b.fab;
     if (b.fab) b.fab.click();
     out.plusFullAsked = popOn();
-    if (popOn()) popYes();
-    out.plusFullToPlans = here().r === 'plans';
-    out.plusFullWroteNothing = kbStored().length === 3;
     popOff();
+    var pat5 = document.querySelector('[data-do="kbAdd"]');
+    if (pat5) pat5.click();
+    out.plusFullAdded = kbStored().length === 4;
 
     /* and Pro has no ceiling to meet, so the same + goes straight through */
     built(1);
@@ -4411,10 +4412,10 @@ say(r.plusFab && r.plusRoomOpens && !r.plusRoomAsked,
 say(r.plusFullRows === 4 && r.plusFullFab,
     'at four the list is four rows and the + is still there ('
     + r.plusFullRows + ' rows, + ' + r.plusFullFab + ')');
-say(r.plusFullAsked && r.plusFullToPlans && r.plusFullWroteNothing,
-    'and THE FIFTH is where it asks -- the yes is the plans screen and'
-    + ' nothing was written [' + [r.plusFullAsked, r.plusFullToPlans,
-    r.plusFullWroteNothing].join(' ') + ']');
+say(!r.plusFullAsked && r.plusFullAdded,
+    'and THE FIFTH goes through on Plus too -- no pop, and it is made'
+    + ' (Plus keyboards without a limit, OWNER 2026-09-24) [' +
+    [r.plusFullAsked, r.plusFullAdded].join(' ') + ']');
 say(r.proFab && !r.proAsked && r.proAdded,
     'Pro has no ceiling to meet, so its + never asks [' +
     [r.proFab, r.proAsked, r.proAdded].join(' ') + ']');

@@ -308,7 +308,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
   Plus ── キーボード無制限、自分で描いた文字を自由に配置できる。Pro ── キーボード無制限、フォントのファイル書き出しを追加。
 - Reason: キーボードを売りにする。Reddit で、自分の文字をフォントにして Procreate やパソコンで使いたい声があった。
 - Affected docs: `docs/scope/r46-reddit.md`（`claude/r46-reddit`）。
-- Implementation status: 未。**まだ訊いていないこと:** 「既存の文字」の範囲、書き出す形式と取り出し方、今 Plus で 4 つ作っている人への見せ方。
+- Implementation status: **Plus のキーボード無制限は実装（`claude/r84-save`、2026-09-25）** ── `kbCap()` は無料 1・Plus と Pro は `Infinity`、~~`PLUS_KB`~~ は消した。Plus のカードの行 `plan.plus.5` は「キーボードは無制限」、Pro のカードの同じ行（~~`plan.pro.3`~~）は Plus に含まれるので消した。`plan-check`・`kb-check`。CODE CONFIRMED のみ。**残り（未・まだ訊いていないこと）:** 無料の「既存の文字で自由に配置したキーボード」と「既存の文字」の範囲、Pro のフォントの書き出し（形式と取り出し方）。
 
 ### キーの画面 ── 押した字がそのキーに入る。確定は無い
 - Date: 2026-09-24
@@ -2014,26 +2014,8 @@ the reasoning — a reason can be re-derived, a decision cannot.
 ### 【差し替え済み 2026-09-15】お題は #今日のお題。十言語ぶんで、どの言語で書かれていても同じ一つ（2026-09-04）
 - 差し替えた決定: 「タグは別の枠。本文の外、翻訳の下、最大 4 つ」（2026-09-15）
 
-### 上限のポップは Pro を言う。Plus は飛ばす
-- Date: 2026-09-04
-- Area: 上限に当たったときのポップの文（十言語ぶん）
-- Decision:
-
-  ```
-  proなら無制限で使用できます
-
-  でいいんじゃない？plusよりもproは売りたいよね
-  ```
-
-- Reason: 無料でキーボードの＋を押したときのポップが「Pro なら無制限です」と
-  言い、間にある Plus を飛ばしていた。**それでよい、というのがオーナーの答え
-  です。**Plus より Pro を売りたいので、ポップは Pro を言う。
-  **これは「一番近い段を案内する」より優先します。**
-- Affected features: 上限のポップを出す全部の口
-- Affected data: 無し。文だけ
-- Affected docs: この項目
-- Implementation status: `claude/kbfree2` に配布。**「Pro なら無制限です。」を
-  「Pro なら無制限で使用できます。」に。十言語ぶん。**
+### 【差し替え済み 2026-09-24】上限のポップは Pro を言う。Plus は飛ばす（2026-09-04）
+- 差し替えた決定: 「上限に達した時の文 →『他に合わせて』」（2026-09-24 オーナーの答え）── 上限のポップは `up.need` 一つ
 
 ### ＋は右下。上限を越えて押したときにポップが出る。無料に空の枠は並べない
 - Date: 2026-09-04
@@ -2071,7 +2053,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Implementation status: **2026-09-23 に照合していない。**名指していた ~~`kbSlots()`~~ と ~~`freeSlots`~~ は
   コードに無く、`kbSlotsShown()`（`www/keyboard.js`）がある。
 
-  数は既に `www/core.js:791` に一つずつ在ります ── `FREE_KB=1`、`PLUS_KB=4`、
+  数は既に `www/core.js:791` に一つずつ在ります ── `FREE_KB=1`、~~`PLUS_KB=4`~~（2026-09-24 に消えた）、
   Pro は `kbCap()` で無制限。**新しい数を書かないこと。**
 
   **無料に編集は要りません。**無料の board 0 は QWERTY そのもので、

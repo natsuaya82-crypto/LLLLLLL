@@ -2049,7 +2049,7 @@ var PLANS=[
      (「アプリ内に説明書くの禁止」): plan.pro.6 / plan.pro.7 / plan.plus.6.
      Plus's own languages are Free's one, so there is no line for them. */
   {id:'pro',  name:'Pro',  mo:'plan.price.pro', yr:'plan.price.pro.yr', off:'17',
-   lines:['plan.pro.1','plan.pro.2','plan.pro.3','plan.pro.4','plan.pro.5',
+   lines:['plan.pro.1','plan.pro.2','plan.pro.4','plan.pro.5',
           'plan.pro.6','plan.pro.7','plan.badge']},
 ];
 /* Studio is not here. What it sold was the hosted model -- the conversation
@@ -2107,26 +2107,21 @@ function postCap(){
   return planNum(POST_MAX, Infinity, Infinity);
 }
 /* How many keyboards this person may have, counting the fixed QWERTY as one
-   of them. 「1,1+3.無制限って言わなかったっけ？」 -- OWNER DECISION,
-   2026-08-23: free 1, plus 1 + 3, pro no ceiling.
+   of them. Free 1 -- the QWERTY -- and no ceiling on Plus or Pro: 「Plus ──
+   キーボード無制限」「Pro ── キーボード無制限」 OWNER 2026-09-24 (r46,
+   docs/FEATURE_RULES.md), replacing 「1,1+3.無制限」 of 2026-08-23.
 
-   The same shape as wordCap() above and for the same reason: it was KB_MAX,
-   a constant, which was one fact while there was one paid tier and is three
-   facts now. A number that is three facts is a function.
-
-   **It is a pool across languages**, and that is not this function's half of
-   it -- kbCount() in www/keyboard.js is what counts, and it counts every
-   language rather than the open one. The ceiling is on the person, not on
-   each language: three languages would otherwise be nine keyboards on a plan
-   that sells three.
+   **It is a pool across languages** -- kbCount() in www/keyboard.js counts
+   every language rather than the open one -- and on the one plan with a
+   number that number is the fixed QWERTY, which is counted once.
 
    No capability is added for the ceiling. `CAN.kb` is the DOOR -- may this
    person lay a keyboard out at all -- and it opens at plus; how many is a
    number, and a capability that is really a number is a price with nothing
    behind it. Infinity and not a big number, exactly as wordCap(). */
-var FREE_KB=1, PLUS_KB=4;
+var FREE_KB=1;
 function kbCap(){
-  return planNum(FREE_KB, PLUS_KB, Infinity);
+  return planNum(FREE_KB, Infinity, Infinity);
 }
 /* How many languages of their own this person may have. Free 1, Plus 1,
    Pro 3 -- OWNER DECISION 2026-08-23, restated 2026-08-25「言語数はプラスは1、
