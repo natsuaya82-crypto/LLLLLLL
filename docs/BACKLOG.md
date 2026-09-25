@@ -8,6 +8,14 @@ refactor, a feature and a rename never arrive in the same diff.
 The order is the order to do them in.
 
 
+## press の「a word, read」は二つ目のボタンから押されていない（2026-09-26、リーダーが測った）
+
+`press` は面を作り直してから押す。「a word, read」の一つ目の押し（編集を開く）が `form:edit:kano` の KEEP を置き、
+`seed()` はそれを消さないので、二度目の作り直しで `navLand()` → `keepAsked()` → `wdSigEdit()` が空の `wEdit` を読んで投げる。
+press はそれを「could not be built」と数えるだけで赤にしない。1.0.2（`ab743766`）から同じ。アプリの側の問いは
+「KEEP に居る画面の now() が、その画面の物がもう無い時に何を答えるか」で、`seed()` に KEEP を足すのは検査の側の継ぎ足し。
+どちらを直すかを決めてから。
+
 ## 過去に「穴を潰した」所を「面を覆う」形に置き換える掃除（2026-09-22、オーナー）
 
 「基本的に穴を潰すんじゃなくて同じように全体を俯瞰して穴を覆って欲しい。今までも
