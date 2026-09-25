@@ -3083,6 +3083,24 @@ export function halfDone(){
     ['the abugida bench', () => { planGot('pro'); langWsysGot(langId, 'abugida');
         window.route = 'abugida'; NAV = [{r:'abugida'}];
         const h = vAbugida(); planGot('free'); langWsysGot(langId, ''); return h; }],
+    /* THE BENCH WITH A SYLLABLE SOMEBODY DREW AS ONE SHAPE. A cell wears
+       `.own` only then (sound.js, inkGeo(ltMain(u))), and no face had one:
+       the class was reported as worn by nothing once the picker's input,
+       which also wore `.own`, went (r96). The shape is a copy of a letter the
+       fixture already drew, on a letter reading the first cell's syllable,
+       and it is taken off again. */
+    ['the abugida bench, a syllable drawn as one shape', () => { planGot('pro');
+        langWsysGot(langId, 'abugida');
+        window.route = 'abugida'; NAV = [{r:'abugida'}];
+        const box = document.createElement('div'); box.innerHTML = vAbugida();
+        const cell = box.querySelector('.abcell');
+        const u = cell ? JSON.parse(cell.getAttribute('data-a'))[0] : '';
+        const inked = LETTERS.filter((l) => inkGeo(l))[0];
+        const made = u && inked ? JSON.parse(JSON.stringify(inked)) : null;
+        if (made) { made.id = 'fx-own'; made.snd = [u]; made.nm = u; LETTERS.unshift(made); }
+        const h = vAbugida();
+        LETTERS = LETTERS.filter((l) => l.id !== 'fx-own');
+        planGot('free'); langWsysGot(langId, ''); return h; }],
     ['the five kinds of writing', () => { planGot('pro');
         window.route = 'wsys'; NAV = [{r:'wsys'}];
         const h = vWsys(); planGot('free'); return h; }],
