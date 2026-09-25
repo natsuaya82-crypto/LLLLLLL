@@ -2255,9 +2255,9 @@ say(ask.asked === 'LinguaStore.current' && ask.sent === 'APPROVED' && ask.rung =
     'a purchase approved while the app is open is the plan at once — the window ' +
     'event asks `current`, sends what Apple signed, and takes the answer, with no ' +
     'reload [' + [ask.asked, ask.sent, ask.rung].join(' ') + ']');
-say(/for await result in Transaction\.updates[\s\S]*?dispatchEvent\(new Event\('linguastore'\)\)/.test(CODE),
-    'and LinguaStore.swift tells the page for every transaction that arrives at ' +
-    'Transaction.updates (`linguastore`)');
+say(/receivedUpdated customerInfo[\s\S]*?dispatchEvent\(new Event\('linguastore'\)\)/.test(CODE),
+    'and LinguaStore.swift tells the page whenever RevenueCat hears a transaction ' +
+    'arrive on its own (`linguastore`, from its delegate)');
 /* What it DOES answer, on every road out. Four roads and one shape: a list of
    what Apple signed, which is the only thing the server can read. */
 const ROADS = ['buy', 'restore', 'current', 'manage'];
@@ -2271,20 +2271,62 @@ say(/jwsRepresentation/.test(CODE) && !/case \.unverified: return nil/.test(CODE
     'a receipt the DEVICE could not verify goes up too — the server reads the ' +
     'same signature, and dropping it here was the weaker of two answers ' +
     'winning');
-/* The binding, which is the owner's sentence of 2026-09-06 in one line of
-   Swift. Both halves: the token goes on, and a buy with no account is
-   refused rather than made without one. */
-say(/\.appAccountToken\(who\)/.test(CODE),
-    'a purchase carries the account that made it — appAccountToken, which ' +
-    'Apple signs into every transaction of that subscription');
+/* The binding, which is the owner's sentence of 2026-09-06. RevenueCat puts
+   the app user id on a StoreKit 2 purchase as `appAccountToken` when it is a
+   UUID (PurchasesOrchestrator.swift, purchases-ios 5.91.0), so the binding is
+   now: log RevenueCat in as the account, READ BACK that it took, and only
+   then buy -- and a buy with no account is refused rather than made. */
+say(/func signedAs\(/.test(CODE) && /Purchases\.shared\.logIn\(/.test(CODE) &&
+    /return Purchases\.shared\.appUserID\.lowercased\(\) == me/.test(CODE),
+    'RevenueCat is logged in as the signed-in account, and that is read back ' +
+    'rather than trusted — it is what becomes appAccountToken');
+say(/guard await Self\.signedAs\(uid\)[\s\S]*?Purchases\.shared\.purchase\(product:/.test(CODE),
+    'and a purchase is made only after that took — a buy on the account signed ' +
+    'in before is a purchase bound to them');
 say(/UUID\(uuidString: uid\)/.test(CODE) && /call\.reject\("not signed in"\)/.test(CODE),
     'and a buy with no account on it is refused, not made anyway — a ' +
     'purchase with no token belongs to whoever verifies it first');
-/* And a refund, which is the one thing `currentEntitlements` will not carry:
-   it arrives at the listener and has to be kept until somebody asks. */
-say(/Transaction\.updates/.test(CODE) && /held\.add\(result\.jwsRepresentation\)/.test(CODE),
-    'what arrives with nobody in the app is KEPT — a refund reaches the ' +
-    'server no other way');
+/* Shipaton 2026: the SDK powers the purchase, it does not watch one. And one
+   mechanism, not two (CLAUDE.md § Simple): nothing left in the file buys,
+   restores, listens to the queue or finishes a transaction through StoreKit,
+   because RevenueCat does all four and two of anything on that queue fight. */
+say(/Purchases\.shared\.purchase\(product:/.test(CODE) &&
+    /Purchases\.shared\.restorePurchases\(\)/.test(CODE) &&
+    /Configuration\.Builder\(withAPIKey: Self\.apiKey\)\s*\.with\(storeKitVersion: \.storeKit2\)/.test(CODE),
+    'buying and restoring go through RevenueCat (Purchases.purchase, ' +
+    'restorePurchases), configured for StoreKit 2 by name — its StoreKit 2 road ' +
+    'is the one that puts appAccountToken on');
+const SK = ['\\.purchase\\(options:', 'AppStore\\.sync\\(', 'Transaction\\.updates', '\\.finish\\(\\)']
+  .filter((x) => new RegExp(x).test(CODE));
+say(SK.length === 0,
+    'and nothing buys, restores, listens or finishes through StoreKit beside it ' +
+    '(' + SK.join(' ') + ')');
+/* The key is one line, and an empty one crashes nothing: `Purchases.shared`
+   traps when `configure` was never called, so every road that uses it asks
+   `ready` first -- and `current`, which only reads StoreKit, answers anyway. */
+const KEYS = CODE.match(/static let apiKey = "[^"]*"/g) || [];
+say(KEYS.length === 1,
+    'the RevenueCat public key is written in one place (' + KEYS.length + ')');
+const USES = (CODE.match(/Purchases\.shared\.(purchase|restorePurchases|products|logIn)\(/g) || []).length;
+const GUARDS = ['products', 'buy', 'restore'].filter((f) =>
+  new RegExp('func ' + f + '\\(_ call: CAPPluginCall\\) \\{[\\s\\S]*?guard Self\\.ready else').test(CODE));
+say(GUARDS.length === 3 && USES > 0 && !/func current\([^)]*\) \{[^}]*Purchases/.test(CODE),
+    'and every road that asks RevenueCat asks `ready` first, while `current` ' +
+    'does not ask RevenueCat at all [' + GUARDS.join(' ') + ']');
+const POD = fs.readFileSync(path.join(dir, '..', 'ios', 'App', 'Podfile'), 'utf8');
+say(/^\s*pod 'RevenueCat', '\d+\.\d+\.\d+'/m.test(POD),
+    'and the Podfile carries the RevenueCat pod at an exact version');
+/* And a refund, which is the one thing `currentEntitlements` will not carry.
+   RevenueCat has the update queue now, so it is asked of `latest(for:)`, once
+   per product, on every road out -- a revoked transaction is still the latest. */
+say(/for id in ids \{[\s\S]*?StoreKit\.Transaction\.latest\(for: id\)/.test(CODE),
+    'a refund still reaches the server — the latest transaction of every ' +
+    'product goes up with the receipts, revoked or not');
+/* Restore carries the account too, for RevenueCat's own record of it. */
+const STOREJS = fs.readFileSync(path.join(dir, '..', 'www', 'store.js'), 'utf8');
+say(/'LinguaStore', 'restore', \{ uid:netUid\(\) \}/.test(STOREJS) &&
+    /func restore\([\s\S]*?call\.getString\("uid"\)[\s\S]*?signedAs\(uid\)/.test(CODE),
+    'and restore carries the signed-in account down to RevenueCat');
 /* THE KEYCHAIN IS NOT READ BY `www/` AT ALL (2026-09-11). It held the plan
    because the settings file is in the backup a PC makes; there is no word on
    this handset now -- `verify-plan` answers and the answer is in memory

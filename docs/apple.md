@@ -284,8 +284,8 @@ Studio の商品は作りません。
 | グループ内のレベル | 2（下） | 2 | 1（上） | 1 |
 
 **この 4 つの ID は、アプリのコードに既に書いてあります**
-（`ios/App/App/LinguaStore.swift` の `ids`）。無い商品を聞いても StoreKit は
-それを返さないだけなので、**先に作った分から順に売り物として出てきます**。
+（`ios/App/App/LinguaStore.swift` の `ids`）。無い商品を聞いても RevenueCat
+（その下の App Store）はそれを返さないだけなので、**先に作った分から順に売り物として出てきます**。
 Plus を先に作れば Plus だけが並びます。
 
 製品 ID は**あとから変えられません**。上のもので問題なければそのままで、
@@ -330,8 +330,8 @@ USD 4.99 を基準にすると日本は 1,500 円あたりになります。
 17 は実機では使われません。
 
 **アプリ側は何も知りません。** 画面に出るのは `LinguaStore.products` が返す
-`displayPrice` — その人の通貨で、その地域の書式で、Apple が組み立てた文字列
-です。年額が何％安いかも、Apple が返した数値から計算します。**Apple は国ごとに
+`localizedPriceString`（RevenueCat が App Store から受け取る値段の文字列）—
+その人の通貨で、その地域の書式で、Apple が組み立てた文字列です。年額が何％安いかも、Apple が返した数値から計算します。**Apple は国ごとに
 別々に丸めるので、ドルで 17% 引きの年額は円では 17% 引きではありません**。
 `www/i18n` に書いてある `$4.99` はブラウザとスクリーンショット用の控えで、
 実機では上書きされます。
@@ -488,10 +488,11 @@ Connect の審査ノート欄に直接入れてください。repo に置いた�
 ## 6. 買う道はつながっています。足りないのはサーバー側です
 
 **両側とも在ります。** `ios/App/App/LinguaStore.swift` に `products` / `buy` /
-`restore` / `current` / `manage` があり、署名が端末で通らない取引も**わざと**
-サーバーへ送り（通るかを決めるのは `verify-plan`）、消費した
-取引は finish し、アプリを閉じている間に届く更新も `Transaction.updates` で
-見ています。プラグインは使っていません（このアプリは `@capacitor/core` を
+`restore` / `current` / `manage` があります。**買う・復元・後から届く更新
+（親の承認など）は RevenueCat の SDK を通ります**（Shipaton 2026、2026-09-25）
+── finish も、アプリを閉じている間に届く更新を聞くのも RevenueCat です。
+サーバーへ送るのは今までどおり Apple が署名した取引で、署名が端末で通らない
+取引も**わざと**送ります（通るかを決めるのは `verify-plan`）。プラグインは使っていません（このアプリは `@capacitor/core` を
 読み込まないので、使えません。`www/share.js` の長い注を参照）。
 `www/` 側は `www/store.js` 一枚で、`plBuy()`（`www/settings.js`）が
 `storeBuy()` の唯一の呼び出し元です。
@@ -527,15 +528,59 @@ repo には置いていません）。
 
 - **TestFlight で配って中身を見てもらうのは、今のままで問題ありません。**
 - **商品 4 つは App Store Connect に在ります**（OWNER 2026-09-06「2あるやんけ」）。
-  StoreKit は値段を返せるので、画面が打ち込みの数字に落ちることはありません。
+  RevenueCat の公開キーが入れば値段を返せるので、画面が打ち込みの数字に落ちる
+  ことはありません。**キーが空の間は、値段・購入・復元が「App Store に
+  つながりませんでした」になります**（既に払っている人の段は落ちません）。
 
-コードとして残っている作業はありません。**実機で一度も走っていない**のが
+コードとして残っている作業は、公開キーの一行だけです（§ 6b）。**実機で一度も走っていない**のが
 残っているものです ── 買う／同じアカウントで復元して付く／別のアカウントで
 復元して付かない、の三つはサンドボックスでしか答えが出ません。
 
-**そちらでやることは 4 節（商品 4 つ）と、`supabase/setup.md` § verify-plan
-（函数の deploy と `APPLE_ROOT_CA_G3`）です。** 作った商品から順に
+**そちらでやることは 4 節（商品 4 つ）と、6b 節（RevenueCat）と、
+`supabase/setup.md` § verify-plan（函数の deploy と `APPLE_ROOT_CA_G3`）です。** 作った商品から順に
 アプリに出てくるので、Plus を先に作っても問題ありません。
+
+---
+
+## 6b. RevenueCat ── オーナーがやること（2026-09-25）
+
+買う・復元・後から届く購入は **RevenueCat の SDK** を通ります（Shipaton 2026 の
+条件）。アプリ側は入っていて、**足りないのは公開キーの一行だけ**です。キーが空の
+間は、値段・購入・復元が「App Store につながりませんでした」になります。
+
+1. **プロジェクトとアプリ。** RevenueCat でプロジェクトを作り、App Store の
+   アプリを足す。Bundle ID は `com.tokinets.lingua`。
+2. **App Store Connect とつなぐ。** どちらも RevenueCat のアプリの設定に入れます
+   （repo には置きません）。
+   - **In-App Purchase Key**: App Store Connect → ユーザとアクセス → 統合 →
+     アプリ内課金 で鍵を作り、`.p8` と Key ID と Issuer ID を RevenueCat へ。
+     10 節の「もう要りません」は**アプリの中で売上を見る鍵**の話で、これとは別物です。
+   - **App 用共有シークレット**: App Store Connect → アプリ → App 情報 →
+     App 用共有シークレット を作り、RevenueCat へ貼る。
+3. **商品・entitlement・offering。**
+   - 商品: 4 節の 4 つの製品 ID をそのまま（取り込めば出てきます）。
+   - entitlement: `plus`（Plus の月・年）と `pro`（Pro の月・年）。
+   - offering: `default` に 4 つ。
+   アプリは製品 ID で直接訊き、**段を決めるのはサーバー（`verify-plan`）**なので、
+   entitlement と offering はアプリの答えを変えません ── RevenueCat の画面で
+   誰がどの段かを見るための物です。
+4. **公開キーを取る。** Project settings → API keys の、appl_ で始まる方。
+   リーダーに渡してください。入る所は `ios/App/App/LinguaStore.swift` の
+   `static let apiKey = ""` の一行です（公開キーは秘密ではないので repo に
+   直接書きます。sk_ で始まる秘密キーは**どこにも入れません**）。
+5. **見ておくこと。**
+   - 「復元の振る舞い（Restore behavior）」の設定は、**誰がどの段になるかを変え
+     ません** ── 購入はそれを買った Lingua のアカウントに Apple の署名で結び付いて
+     いて、それを読むのはサーバーです。変わるのは RevenueCat の画面での見え方だけ。
+   - 「App のプライバシー」（5 節）の**購入**と**ユーザー ID**は RevenueCat にも
+     渡ります（uid が RevenueCat の App User ID）。売上とアナリティクスを
+     RevenueCat で見る（2026-09-02）ので、その二つの**目的**に「アナリティクス」
+     を足すかどうかはオーナーが決めること。
+
+- [ ] RevenueCat にアプリを作った
+- [ ] In-App Purchase Key と共有シークレットを入れた
+- [ ] 4 商品・`plus`／`pro`・`default` を作った
+- [ ] appl_ のキーをリーダーに渡した
 
 ---
 

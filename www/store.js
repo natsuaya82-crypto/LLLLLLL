@@ -4,8 +4,9 @@
 
 /* ==== 26. what money actually buys, bought ==============================
 
-   The one window onto StoreKit, the way net.js is the one window onto the
-   server. Nothing else in www/ may talk to `LinguaStore`.
+   The one window onto the App Store -- LinguaStore.swift, with RevenueCat
+   under it -- the way net.js is the one window onto the server. Nothing else
+   in www/ may talk to `LinguaStore`.
 
    `Capacitor.nativePromise` and NOT `Capacitor.Plugins`: this app has no
    bundler and never loads @capacitor/core, so `Plugins` is undefined on a
@@ -92,8 +93,9 @@ function storeSync(){
 }
 /* AND WHENEVER THE APP STORE SAYS SOMETHING ARRIVED. 「子どもの購入を親が承認
    した時 →『すぐ』」 OWNER 2026-09-24. Ask To Buy answers `pending` on the
-   press (storeBuy below); the approval arrives later, at `Transaction.updates`
-   in ios/App/App/LinguaStore.swift, which tells the page with this event. It
+   press (storeBuy below); the approval arrives later, RevenueCat hears it,
+   and its delegate in ios/App/App/LinguaStore.swift tells the page with this
+   event. It
    is the launch's own question asked again -- the same storeSync(), so the
    receipts go up and the plan is the server's answer -- and not a second
    road to a plan. */
@@ -102,7 +104,8 @@ window.addEventListener('linguastore', storeSync);
 /* Buy one, by product id.
 
    IT NEEDS AN ACCOUNT, and that is the decision of 2026-09-06 rather than a
-   guard somebody added. The uid goes down to StoreKit as `appAccountToken`,
+   guard somebody added. The uid goes down to RevenueCat, which puts it on the
+   purchase as `appAccountToken` (ios/App/App/LinguaStore.swift says where),
    Apple carries it inside every transaction of that subscription for as long
    as it lives, and the server refuses it for anybody else. A purchase made
    with no account on it is a purchase belonging to whoever verifies it first.
@@ -143,10 +146,12 @@ function storeBuy(id){
 }
 
 /* The Restore button. Apple wants one and this is it.
-   With StoreKit 2 restoring is mostly reading what this Apple ID already
-   holds -- `current` would answer the same -- but `restore` is the one road
-   that calls AppStore.sync(), which is what a person who has just reinstalled
-   on a new phone actually needs, and it is the road a reviewer looks for.
+   Restoring is mostly reading what this Apple ID already holds -- `current`
+   would answer the same -- but `restore` is the one road that asks the App
+   Store to refresh (RevenueCat's restore), which is what a person who has just
+   reinstalled on a new phone actually needs, and it is the road a reviewer
+   looks for. The uid goes with it so RevenueCat files the restore under the
+   account that pressed; the answer is still the server's.
 
    IT RESTORES ONTO THE ACCOUNT THAT IS SIGNED IN. 「アカウントごとなんだから、
    違うアカウントで復元できるのおかしいだろ」 OWNER 2026-09-06. Nothing in www
@@ -187,7 +192,7 @@ function storeRestore(){
   toast(t('store.wait'));
   clearTimeout(STRT);
   STRT=setTimeout(function(){ say(t('store.fail')); }, STORE_WAIT);
-  np('LinguaStore', 'restore', {})
+  np('LinguaStore', 'restore', { uid:netUid() })
     .then(function(r){
       netPlanVerify(storeJws(r), function(p, d){
         if(!p){ say(t('store.fail')); return; }

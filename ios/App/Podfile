@@ -20,6 +20,10 @@ target 'App' do
   # AdMob, for the places in the timeline nobody has bought
   # (App/LinguaAds.swift). The version jpel's @capacitor-community/admob 8 pins.
   pod 'Google-Mobile-Ads-SDK', '13.6.0'
+  # RevenueCat, which buys, restores and hears about a purchase that arrives
+  # later (App/LinguaStore.swift). Shipaton 2026, docs/FEATURE_RULES.md
+  # 2026-08-25. An exact version, the way the line above is.
+  pod 'RevenueCat', '5.91.0'
 end
 
 post_install do |installer|
