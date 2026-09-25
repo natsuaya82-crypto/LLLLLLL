@@ -443,7 +443,7 @@ for (const n of defined) declared.add(n)
    one the code now has, is taken off. */
 const NOT_OURS = [
   // Apple
-  'UserDefaults', 'URLSession', 'UIPasteboard', 'openURL', 'PortraitUpsideDown', 'GADAdLoader',
+  'UserDefaults', 'URLSession', 'UIPasteboard', 'openURL', 'PortraitUpsideDown',
   'CLLocation', 'SecAddSharedWebCredential', 'decidePolicyFor', 'createWebViewWith',
   'URLRequest', 'CGContext', 'CALayer', 'setMarkedText', 'UITextInputMode',
   'resourceValues', 'NSPrivacyAccessedAPITypes',

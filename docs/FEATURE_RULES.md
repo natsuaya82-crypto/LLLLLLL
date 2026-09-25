@@ -249,6 +249,18 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Implementation status:
 ```
 
+### 2026-09-25 広告は出さない ── AdMob も、売れる広告枠も、追跡の問いも無い
+- Date: 2026-09-25
+- Area: ホームのタイムライン（`www/sns.js`）、`CAN`（`www/core.js`）、iOS（`ios/App/`）、`.github/workflows/ios-deploy.yml`
+- Decision: 「広告出さないよ？」── **広告は出さない。** タイムラインに広告の行は無い（AdMob も、売った枠も）。
+  アプリは App Tracking Transparency を訊かず、広告の SDK を持たない。Pro の「広告なし」は無い（広告が無いので）。
+- Reason: オーナーの言葉。審査への提出が二回 BINARY_INDICATES_APP_TRACKS_USERS で断られた（AdMob と ATT が入っていて、App Privacy は「追跡しない」）。
+- Affected features: ホームのタイムライン、プラン（~~`CAN.noads`~~ が無くなる）
+- Affected data: 無し。サーバーの `promo` は消さない ── アプリが読まなくなるだけ（`docs/CHANGELOG.md` 2026-09-25）
+- Affected docs: `docs/CHANGELOG.md`、`docs/PAID_FEATURES.md`、`docs/apple.md`、`docs/scope/r93-noads.md`
+- Implementation status: r93-noads。`LinguaAds.swift`・Google-Mobile-Ads-SDK・Info.plist の AdMob と ATT の鍵・workflow の差し込みを消し、
+  `www/` から広告の行と `promo` を読む所を外した。戻ったら `assets-check` が赤。
+
 ### 2026-09-25 タブで出る時の保存・Pro の上限・ブロックと取った言語・ミュートの広さと印
 - Date: 2026-09-25
 - Area: 保存ボタンのある画面、Pro の上限、ブロック、ミュート
@@ -529,25 +541,8 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Implementation status: r52-forms。「語の活用」は `wForms()` 一か所。前からの活用語は**辞書の一覧から外す**（B）── オーナーの言葉「活用は活用であって単語じゃない」からリーダーが B と読んだ（2026-09-23）。データは一つも消さない・移さない。語ページの活用一覧に出て、100語にも数えない。一覧から外す条件は `wIsForm()` 一か所（数え方・`wForms()`・変換と同じ答え）
 - Not decided: 接辞の重ね掛け（未来＋仮定＋受動）── r46 の話の残り、この枝ではしない
 
-### 2026-09-23 広告は Twitter と同じ形 ── 投稿に擬態して右上に PR、枠は売れる形、今は AdMob、pro は無し
-- Date: 2026-09-23
-- Area: ホームのタイムライン（`www/sns.js` `vFeed()`）、投稿の頭（`www/post.js` `postRow()`）、`supabase/schema.sql` の `promo`、`CAN.noads`
-- Decision: 言葉どおり ──
-  「広告の形は、Twitterと同じ。ツイート擬態右上にprとつく。広告枠が売れる形にする。今は売る人いないからadmobを流す。proのみ表示なし。」
-  同じ日の前の言葉 ──「Twitterみたいに間に動画広告みたいな」「広告枠は今後売る可能性もあるTwitterと同じ形だよ？admobで動画流せんの？ツイート擬態で」
-  - 広告はタイムラインの中の一行で、投稿と同じ見た目、右上に **PR**。
-  - 枠は**売れる**形 ── 売った広告はサーバーが持つ行（`promo` = どの投稿を・いつまで）。
-  - 売る相手がいない間は **AdMob** で埋める（動画可）。
-  - **pro は表示なし**。plus と free は表示あり。
-  - 頻度（同じ日、後から）：「10で。少ない時は出さない！」── **10 件おきに 1 件。投稿が 10 件より少ない時は出さない。**
-    `PROMO_EVERY`（`www/sns.js`）の一つの定数で、10 件目・20 件目…の後に入るので、10 件未満には枠が無い。
-- Reason: オーナーの言葉のとおり。
-- Affected features: ホームのタイムライン。探索・検索・プロフィールには枠を入れていない（Twitter と同じ ── 決まっていないので既定として報告済み）
-- Affected data: 新しいテーブル `promo`（運営だけが書く）。人の作った物は何も動かない
-- Affected docs: `docs/CHANGELOG.md`、`docs/PAID_FEATURES.md`、`docs/apple.md`、`docs/scope/r55-ads.md`
-- Implementation status: r55-ads。売れた枠（`promo`）、PR、`can('noads')`、10 件おき、そして AdMob（`ios/App/App/LinguaAds.swift`）。
-  作り方は `docs/scope/r55-ads.md`。jpel と同じく Teen まで・ATT は未回答の時だけ・表示の直前で pro を見る。
-  **ATT の許可の画面は iOS 自身が出す物で、`www/` の `confirm()` `alert()` `prompt()` の禁止とは別物**。UMP は入れていない（`docs/BACKLOG.md`）。
+### 【差し替え済み 2026-09-25】広告は Twitter と同じ形 ── 投稿に擬態して右上に PR、枠は売れる形、今は AdMob、pro は無し（2026-09-23）
+- 差し替えた決定: 「広告は出さない ── AdMob も、売れる広告枠も、追跡の問いも無い」（2026-09-25）
 
 ### 2026-09-23 今日のお題が変わった時にも通知 ── アメリカ太平洋時間の 0 時、切り替えは五つ目のスイッチ
 - Date: 2026-09-23
@@ -4744,8 +4739,8 @@ and is never merged into your own」と言っている。**入らない、は二
   `langCap()` beside `kbCap()` in `www/core.js` (1 / 1 / 3, with `langStop()`
   as the refusal), `CAN.edit` at `plus` with `postEdit()` asking `can('edit')`,
   and `CAN.badge` at `pro` with `postBadge()` asking `can('badge')` instead of
-  reading `plan()`. `dl` was added on 2026-09-02. `noads` は 「広告は Twitter と同じ形 ── 投稿に擬態して右上に PR、枠は売れる形、今は AdMob、pro は無し」（2026-09-23） で
-  `CAN` に入り、pro に付く。
+  reading `plan()`. `dl` was added on 2026-09-02.
+  広告の `CAN`（pro の「広告なし」）は 「広告は出さない ── AdMob も、売れる広告枠も、追跡の問いも無い」（2026-09-25） で無くなった。
 
   **数えるのはアカウントです。**「は？端末の話なんかしてねえだろ」「だから端末で
   やるわけねえだろ」 OWNER 2026-09-03。この app に「端末ごと」という単位は
@@ -4858,26 +4853,17 @@ and is never merged into your own」と言っている。**入らない、は二
   | `dir` which way it is written | — | — | yes |
   | `data` CSV out, and the cloud | — | — | yes |
   | `file` a list brought in as a file | — | — | yes |
-  | `noads` | — | — | **yes** |
 
-  **`noads`**: 「6いまはいい」（2026-09-03）の方は【差し替え済み 2026-09-23】──
-  差し替えた決定: 「広告は Twitter と同じ形 ── 投稿に擬態して右上に PR、枠は売れる形、今は AdMob、pro は無し」（2026-09-23）。`CAN.noads` は pro。
+  広告の行（どのプランに広告が出るか）は【差し替え済み 2026-09-25】── 差し替えた決定: 「広告は出さない ── AdMob も、売れる広告枠も、追跡の問いも無い」（2026-09-25）。
 
   **`words` and `kb` are the two that stop being yes/no.** Everything else in
   that table is a door; those two are a number, and the number is the plan's.
   `can()` cannot answer them alone any more.
 
-  **Ads are on Free AND Basic. Plus is what has none.**
-  「ベーシックも広告表示させるよ？＋から広告非表示で考えてた」
-
-  **No banner. The ad sits IN the timeline, wearing a post.**
-  「バナーはつけない。ツイート擬態」
-
 - Reason: the ladder reads in one line — Free is your own shapes for a–z,
-  Basic is your own letters and your own keyboard, Plus is everything and no
-  ads. "Remove the ads" is a reason to buy that everybody understands without
-  being told what a syllabary is.
-- Affected features: `CAN` (a third level, and a new `noads`), `FREE_LIMIT`
+  Basic is your own letters and your own keyboard, Plus is everything.
+  (The half about ads went with 「広告は出さない」 2026-09-25.)
+- Affected features: `CAN` (a third level, and a new ~~`noads`~~), `FREE_LIMIT`
   and ~~`KB_MAX`~~ (constants today, per-plan from now), ~~`capLapse()`~~ (one road
   today — "back to free" — two from now), the plans screen, StoreKit.
 - Affected data: none. Nothing about a plan may change what is stored:
@@ -4909,47 +4895,10 @@ and is never merged into your own」と言っている。**入らない、は二
     `dead-check` refuses a capability nothing asks for.
   - The language ceiling does not exist at all yet.
 
-  Plus's prices are in `www/i18n/*.js` already; Basic's are nowhere. The
-  leader's proposed order is **Basic first, ads second** — Basic needs no
-  native code at all, and until the ladder exists there is nowhere for
-  somebody who wants the ads gone to go.
+  Plus's prices are in `www/i18n/*.js` already; Basic's are nowhere.
 
-### Decision
-- Date: 2026-08-23
-- Area: How the ad is built, and the one thing that turned out not to be true
-- Decision: The ad is **AdMob Native Advanced**, read by Swift, with the
-  MATERIALS handed to the web side, and **Lingua draws the row itself** in the
-  shape a post has. Not a banner, not an SDK-drawn card.
-- Reason: measured against `natsuaya82-crypto/jjjj`, which already ships ads,
-  rather than guessed.
-
-  What carries over: the AdMob account and its ad unit ids, the ATT call, the
-  initialisation, and one shape worth copying outright — ~~`adsDisabled`~~ is
-  checked **immediately before display**, not only at the call sites, because
-  a save loading asynchronously can otherwise let an ad appear for somebody
-  who has already paid.
-
-  What does NOT carry over: **jjjj is Vite + React and Lingua has no
-  bundler.** jjjj says `await import('@capacitor-community/admob')`; Lingua
-  cannot. That is smaller than it looks — `Capacitor.nativePromise('X',
-  'method', …)` reaches a registered native plugin without the JS wrapper,
-  which `LinguaShare` and `LinguaPlan` both learned the hard way.
-
-  **But `@capacitor-community/admob` 8.1.0 has no native ads at all.** Its
-  dist carries banner, interstitial, reward, reward-interstitial and app-open
-  and nothing else — checked by fetching the package, not from memory. So the
-  Native Advanced reader is ours to write: `GADAdLoader` in Swift, materials
-  out through `nativePromise`.
-
-  The word that says what it is: 【差し替え済み 2026-09-23】── 差し替えた決定:
-  「広告は Twitter と同じ形 ── 投稿に擬態して右上に PR、枠は売れる形、今は AdMob、pro は無し」（2026-09-23）（右上に PR）。
-- Affected features: a new `LinguaAds` on the native side; the feed inserting
-  a row every N posts; `press` (an ad row must carry no button of ours).
-- Affected data: none.
-- Affected docs: `docs/apple.md` (a second AdMob app, ATT, the privacy
-  manifest).
-- Implementation status: **IMPLEMENTED** ── `ios/App/App/LinguaAds.swift` が素材を読み、
-  行はタイムラインが描く（2026-09-23 の項の状況を見ること）。
+### 【差し替え済み 2026-09-25】広告の作り方 ── AdMob Native Advanced を Swift が読む（2026-08-23）
+- 差し替えた決定: 「広告は出さない ── AdMob も、売れる広告枠も、追跡の問いも無い」（2026-09-25）
 
 ### Decision
 - Date: 2026-08-22
