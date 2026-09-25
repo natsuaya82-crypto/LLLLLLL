@@ -1124,8 +1124,8 @@ function shPics(names){
    2026-09-24 -- and it never overwrites while it is there: the second sheet
    of a name is `<name> 2.pdf`. `LinguaShare.shareFile` then hands that file
    to iOS's own share sheet, which is where "Save to Files" lives and where
-   choosing the destination stops being this app's business. Sheets an
-   earlier build wrote into `Documents/Sheets/` stay where they are.
+   choosing the destination stops being this app's business. What an earlier
+   build left in `Documents/Sheets/` is taken by shDropOld() below.
 
    **Nothing says it was saved, and that is the point.** Once the share sheet
    is up, what somebody picks -- save, send, cancel -- never comes back here,
@@ -1146,6 +1146,20 @@ function shPics(names){
    every other path, and nothing but a name is read as a sheet on the phone.
    No bridge, a rejection, or an answer with no name in it all say the same
    thing, because to a person they are the same thing -- it is not there. */
+/* WHAT AN EARLIER BUILD LEFT IN Documents/Sheets GOES. 「前の版でスマホに
+   残った用紙と声のファイル → 消す」 OWNER 2026-09-25. Since 2026-09-24 a
+   sheet and a card are written to the temporary folder and handed over from
+   there (LinguaShare.swift `sheets()`), so nothing writes into
+   `Documents/Sheets` any more and everything in it is what an earlier build
+   kept after the hand-over. The folder goes whole; nothing outside it is
+   touched. Asked once at the launch (www/boot.js); after the first, there is
+   no folder and nothing happens. The DELETE REVIEW is in docs/CHANGELOG.md
+   2026-09-25. */
+function shDropOld(){
+  var p=sharePlug();
+  if(!p) return;
+  p('LinguaShare', 'dropOldSheets', {})['catch'](function(){});
+}
 function shMake(){
   var s = shState(), names = shNames(s.names), pdf, b64, p;
   if(!names.length){ toast(t('wr.none')); return; }
