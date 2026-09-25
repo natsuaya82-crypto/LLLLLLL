@@ -1657,13 +1657,14 @@ say(one.build.length === 0 && one.glyphPull === '',
     (one.glyphPull ? '**' + one.glyphPull + '**' : '無し') +
     '（「描いている途中でくるくるが出て線が途切れる」OWNER 2026-09-06）' +
     (one.build.length ? '、**' + one.build.join(' ') + ' が引ける**' : ''));
-/* 引くのはこの八つで、八つとも決定です ── 六つは 2026-09-04/05 の
+/* 引くのはこの九つで、九つとも決定です ── 六つは 2026-09-04/05 の
    「ここ更新ないから見れないし」「他の人の画面でも更新できるようにしたい」、
-   follows は数の裏の二つの一覧、mod は通報の一覧。名前で訊くのは、この表が
-   放っておくと育つからで、九つ目が黙って入っていたらそれは決定ではなく誰かの
-   判断です。 */
+   follows は数の裏の二つの一覧、reacts はハートとリポストの数の裏の一覧
+   （2026-09-25「いいね・リポストした人の一覧」、follows と同じ仕組み）、mod は
+   通報の一覧。名前で訊くのは、この表が放っておくと育つからで、十個目が黙って
+   入っていたらそれは決定ではなく誰かの判断です。 */
 const PULL_ROUTES = ['drafts', 'explore', 'feed', 'follows', 'mod', 'notif',
-                     'profile', 'thread'];
+                     'profile', 'reacts', 'thread'];
 say(one.pulls.join(' ') === PULL_ROUTES.join(' ') && one.feedPull === 'feed',
     'そして引くのは SNS の ' + PULL_ROUTES.length + ' 画面だけで、その画面は ' +
     '本当に引く（' + one.pulls.join(' ') + ' ／ タイムラインに立った指の先は ' +

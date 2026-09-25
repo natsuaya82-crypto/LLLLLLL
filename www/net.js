@@ -3526,9 +3526,14 @@ function netPplGot(k){ return !!NET_PPL[k]; }
    twice. `NET_PPL_WAIT[k]` exists only while a request is out, and everybody
    holding a place in it is answered from the one reply. */
 function netPplRead(k, ok, bad){
-  var i, who;
+  var i, who, w;
   if(NET_PPL_WAIT[k]){ NET_PPL_WAIT[k].push({ok:ok, bad:bad}); return; }
-  NET_PPL_WAIT[k]=[{ok:ok, bad:bad}];
+  /* THE ANSWER IS FOR THE WAITERS OF ITS OWN REQUEST. `w` is that request's
+     list, held by the answer rather than looked up again when it lands: the
+     key is only cleared if it is still this request's, and the list answered
+     is the one this request was asked for, whatever has happened to the key
+     in between. */
+  w=NET_PPL_WAIT[k]=[{ok:ok, bad:bad}];
   /* WHO IT WAS ASKED FOR, held while the answer is out. Signing out with this
      in the air would otherwise let the old account's list land afterwards and
      be kept as the new one's -- the same shape netTook() guards meFor() and
@@ -3537,8 +3542,8 @@ function netPplRead(k, ok, bad){
   who=netUid();
   netGet(NET_PPL_AT[k]+'?select=id,handle,display,av&order=created_at.desc',
     function(d){
-      var w=NET_PPL_WAIT[k], rows=[], ids=[], j, r;
-      NET_PPL_WAIT[k]=null;
+      var rows=[], ids=[], j, r;
+      if(NET_PPL_WAIT[k]===w) NET_PPL_WAIT[k]=null;
       for(j=0;j<(d||[]).length;j++){
         r=d[j];
         if(!r || !r.id || !r.handle) continue;
@@ -3550,8 +3555,7 @@ function netPplRead(k, ok, bad){
       for(j=0;j<w.length;j++) w[j].ok(ids);
     },
     function(d, s, m){
-      var w=NET_PPL_WAIT[k];
-      NET_PPL_WAIT[k]=null;
+      if(NET_PPL_WAIT[k]===w) NET_PPL_WAIT[k]=null;
       for(i=0;i<w.length;i++) w[i].bad(d, s, m);
     });
 }
