@@ -260,7 +260,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
   「後手書き追加しよう」、手書きは「1」（手書きのキーボード）。
 - Affected data: 無し（手書きは読むだけ）。
 - Affected docs: この項。
-- Implementation status: 一つ目は r95 に。手書きのキーボードは未 ── プランと入れる版をオーナーに訊いている。
+- Implementation status: 一つ目は r95 に。手書きのキーボードは未 ── **1.0.3 に入れる**（「これも1.0.3に入れよう」）。プランはオーナーに訊いている。
 
 ### 2026-09-25 キーボードは誰でも作れる、自作文字のキーボードとフォントの書き出しは Plus から（1.0.3）
 - Date: 2026-09-25
