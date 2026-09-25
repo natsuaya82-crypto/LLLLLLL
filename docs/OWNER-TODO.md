@@ -12,6 +12,7 @@
 - 2026-09-25：ユーザー @bluestevie64 が @lingua の投稿（Sep 23「Anything hard to use?」）に返信
   「Im unable to see other people's replies on posts」。オーナーのスクショでは、その投稿の返信数は **2** なのに、
   スレッドに出ている返信は **1 件**（@bluestevie64 のもの）だけ。原因はまだ誰も見ていない。
+- 2026-09-25：Supabase の Webhooks の場所が変わっている。`supabase/setup.md` § 12 と `docs/apple.md` § 8-5 の「Database → Webhooks」は、今の画面では **Integrations → Database Webhooks**（`/database/hooks` は 404）。
 
 ## 一覧
 
@@ -21,7 +22,7 @@
 | 2 | Apple：配布プロファイル作り直し → GitHub Secret 差し替え → リーダーに「済んだ」 | 済み（2026-09-25） |
 | 11 | Supabase：今日のお題が 9/20 で止まっている理由を見る（2 の次に） | 済み（2026-09-25）：見る前に直っていた。アプリで 24 日のお題が出ている（オーナー 2026-09-25 11:59 JST）。原因は見ていない |
 | 3 | Apple：APNs の鍵 → GitHub Secrets 二つ | 済み（2026-09-25） |
-| 4 | Supabase：Webhooks を ON | まだ |
+| 4 | Supabase：Webhooks を ON | 済み（2026-09-25）：Integrations → Database Webhooks が Installed |
 | 5 | Supabase：schema.sql を流し直す（4 の後） | まだ |
 | 12 | GitHub：verify-plan を置き直す（5 の後。逆だと購入の確かめが 500） | まだ |
 | 6 | GitHub：push-send を置く（3・5・12 の後） | まだ |
@@ -142,8 +143,8 @@ curl -X POST "https://iimwukyyasbybfrirhsf.supabase.co/functions/v1/daily-prompt
 **何のため：** 通知のトリガーが使う pg_net を入れる。これが無いと通知は一通も出ない。
 
 1. supabase.com → Lingua のプロジェクト
-2. 左の **Database** → **Webhooks**
-3. **Enable webhooks** を押す
+2. 左の **Integrations** → **Database Webhooks**（2026-09-25 時点。Database → Webhooks は 404 だった）
+3. **Enable webhooks** を押す（Installed と出ていれば済み）
 4. **それだけ。**画面で Webhook を作らない（Create a new hook は押さない）
 
 **終わったら見えるもの：** Webhooks の画面が「有効にする」ボタンではなく一覧の画面になる。
