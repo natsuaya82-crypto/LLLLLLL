@@ -417,6 +417,7 @@ defLang('es', (function(){
       "post.none"       : "No hay nada que publicar",
       "post.del"        : "Eliminar",
       "post.del.q"      : "¿Eliminar esta entrada?",
+      "post.mn.sw"      : "Sentido",
       "post.repost"     : "Republicar",
       "post.quote"      : "Citar",
       "post.quote.gone" : "Esta publicación no está disponible.",

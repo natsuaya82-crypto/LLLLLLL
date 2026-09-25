@@ -636,6 +636,7 @@ defLang('ko', (function(){
       "post.none"       : "올릴 것이 없습니다",
       "post.del"        : "삭제",
       "post.del.q"      : "이 글을 삭제할까요?",
+      "post.mn.sw"      : "의미",
       "post.repost"     : "리포스트",
       "post.quote"      : "인용",
       "post.quote.gone" : "이 글은 표시할 수 없습니다.",

@@ -360,6 +360,7 @@ defLang('en', (function(){
       'post.none'       : 'Nothing to post',
       'post.del'        : 'Delete',
       'post.del.q'      : 'Delete this post?',
+      'post.mn.sw'      : 'Meaning',
       'post.repost'     : 'Repost',
       'post.quote'      : 'Quote',
       'post.quote.gone' : 'This post is unavailable.',

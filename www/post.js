@@ -1199,12 +1199,6 @@ function pwAddHTML(){
             esc(t('post.lib'))+'">'+ICON_LIB+'</button>'
         : '')+
       pwVoAddHTML()+
-      /* AND THE MEANING, ON OR OFF (pwMnOff). A word and a switch, because
-         「意味」 has no mark every phone draws. Not on the day's prompt, and
-         not while a post that exists is edited -- that keeps what it has. */
-      ((PW.pr || PW.ed)? '' :
-        '<button class="pwmnsw" aria-pressed="'+(pwMnOff()? 'false' : 'true')+'"'+DO('pwMnSw')+'>'+
-          esc(t('post.mn'))+swtHTML(!pwMnOff())+'</button>')+
       /* Beside the microphone. The span is always here so pwSidePaint() has
          something to patch; it collapses only while a posted thing is being
          edited, which is the one state drafts have nothing to do with. */
@@ -1717,6 +1711,17 @@ function pwHTML(){
       /* The same ceiling as the line and refused in the same place, which is
          the press. Nothing here either: postCap() is asked once, in pwSend(),
          about both rows. */
+      /* AND THE SWITCH FOR IT, on a row of its own where the meaning starts,
+         and staying there when the field goes (pwMnOff). The word, because
+         「意味」 has no mark every phone draws, in the colour of what is on
+         while it is on. Not in the bar under the field: that bar is exactly
+         full on a 320 phone with nothing added (measured 320/320), and the
+         switch in it pushed the last ring off -- 411/390 as a word and a
+         switch, 348/320 as the word alone. Not on the day's prompt, and not
+         while a post that exists is edited -- that keeps what it has. */
+      ((PW.pr || PW.ed)? '' :
+        '<div class="pwmnrow"><button class="pwmnsw'+(pwMnOff()? '' : ' on')+'" aria-pressed="'+
+          (pwMnOff()? 'false' : 'true')+'"'+DO('pwMnSw')+'>'+esc(t('post.mn.sw'))+'</button></div>')+
       /* Not there at all while the meaning is switched off (pwMnOff): the
          screen is the line and nothing under it, which is a post anywhere
          else. What was typed into it stays in PW.mn and comes back with the

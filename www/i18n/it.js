@@ -457,6 +457,7 @@ defLang('it', (function(){
       "post.none"       : "Niente da pubblicare",
       "post.del"        : "Elimina",
       "post.del.q"      : "Eliminare questo post?",
+      "post.mn.sw"      : "Senso",
       "post.repost"     : "Ripubblica",
       "post.quote"      : "Cita",
       "post.quote.gone" : "Questo post non è disponibile.",

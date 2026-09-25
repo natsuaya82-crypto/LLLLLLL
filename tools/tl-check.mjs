@@ -812,6 +812,9 @@ const r = await pg.evaluate(({ s }) => {
     PW = pwBlank(); PW.ln = 'kano'; PW.cut = []; PW.mn = 'a mountain';
     openPost();
     const on = (typeof FORM !== 'undefined' && FORM && FORM.html) || '';
+    render();
+    const bar = document.querySelector('.pwbar');
+    out.mnBar = bar ? bar.scrollWidth + '/' + bar.clientWidth : '(no bar)';
     out.mnOnField = on.indexOf('id="pw-mn"') >= 0 && on.indexOf('data-do="pwMnSw"') >= 0;
     pwMnSw();
     const off = FORM.html || '';
@@ -1195,6 +1198,10 @@ if (r.mnSent !== JSON.stringify({ mn:'', nm:1 }))
   say('15: a post with the meaning off went as ' + r.mnSent + ' -- no meaning, and nm.');
 if (!r.mnRow)
   say('15: a post marked nm still draws a meaning row.');
+{ const [sw, cw] = String(r.mnBar).split('/').map(Number);
+  if (!(sw <= cw))
+    say('15: the composer\u2019s bar with the meaning switch on the screen is ' + r.mnBar +
+        ' -- the last of it is off the phone.'); }
 if (!r.mnDay)
   say('15: the day\u2019s prompt offers the meaning switch -- its meaning is the prompt.');
 console.log('a follow and a block are one row written by one function, and ' +

@@ -373,6 +373,7 @@ defLang('ja', (function(){
       'post.none'       : '書いてください',
       'post.del'        : '削除',
       'post.del.q'      : 'この投稿を消しますか？',
+      'post.mn.sw'      : '意味',
       'post.repost'     : 'リポスト',
       'post.quote'      : '引用',
       'post.quote.gone' : 'この投稿は表示できません',

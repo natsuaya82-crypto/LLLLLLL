@@ -460,6 +460,7 @@ defLang('ru', (function(){
       "post.none"       : "Нечего публиковать",
       "post.del"        : "Удалить",
       "post.del.q"      : "Удалить эту запись?",
+      "post.mn.sw"      : "Смысл",
       "post.repost"     : "Репост",
       "post.quote"      : "Цитировать",
       "post.quote.gone" : "Эта запись недоступна.",

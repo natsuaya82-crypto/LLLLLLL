@@ -445,6 +445,7 @@ defLang('de', (function(){
       "post.none"       : "Nichts zu senden",
       "post.del"        : "Löschen",
       "post.del.q"      : "Diesen Beitrag löschen?",
+      "post.mn.sw"      : "Sinn",
       "post.repost"     : "Teilen",
       "post.quote"      : "Zitieren",
       "post.quote.gone" : "Dieser Beitrag ist nicht verfügbar.",

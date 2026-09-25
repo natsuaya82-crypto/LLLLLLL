@@ -465,6 +465,7 @@ defLang('zh', (function(){
       "post.none"       : "没有可发布的内容",
       "post.del"        : "删除",
       "post.del.q"      : "删除这条帖子？",
+      "post.mn.sw"      : "意思",
       "post.repost"     : "转发",
       "post.quote"      : "引用",
       "post.quote.gone" : "无法显示这条帖子。",

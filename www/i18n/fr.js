@@ -505,6 +505,7 @@ defLang('fr', (function(){
       "post.none"       : "Rien à publier",
       "post.del"        : "Supprimer",
       "post.del.q"      : "Supprimer ce message ?",
+      "post.mn.sw"      : "Sens",
       "post.repost"     : "Republier",
       "post.quote"      : "Citer",
       "post.quote.gone" : "Ce message n’est pas disponible.",
