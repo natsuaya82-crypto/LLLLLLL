@@ -246,8 +246,7 @@ Plus < Pro` needs nobody told which is which.
 | `letters` add / name / delete | — | yes | yes |
 | `wsys` a writing system that is not an alphabet | — | yes | yes |
 | `snd` choose the sound, not the letter's own | — | yes | yes |
-| keyboards you build, out of any character | no ceiling | no ceiling | no ceiling |
-| `kb` a letter you drew, on a keyboard you built | — | yes | yes |
+| keyboards — built, of drawn letters or any character | yes | yes | yes |
 | `font` the font file of the letters you drew | — | **yes** | yes |
 | `dl` a chapter of somebody else's language | — | **yes** | yes |
 | `edit` editing a post you have sent | — | **yes** | yes |
@@ -256,10 +255,10 @@ Plus < Pro` needs nobody told which is which.
 | how many DL'd languages | **0** | **1** | **3** |
 | `gram` `dir` `data` `file` `badge` | — | — | yes |
 
-Eight of those twelve rows are a DOOR, which is a name in `CAN`, and four are a
-NUMBER, which is a function beside `wordCap()`. The four numbers are the ones
-this file has had wrong most often, so they are written once, machine-read,
-in § The four numbers below.
+Seven of those eleven rows are a DOOR, which is a name in `CAN`, three are a
+NUMBER, which is a function beside `wordCap()`, and the keyboards are neither
+— every plan, no number. The numbers are the ones this file has had wrong most
+often, so they are written once, machine-read, in § The four numbers below.
 
 **The words ceiling is a number, not a door.** `wordCap()` is the one place
 that says it — `Infinity` on Pro, a thousand on Plus, `FREE_LIMIT` below
@@ -279,19 +278,15 @@ when it answered nothing — a browser, a screenshot, or a product not yet made
 in App Store Connect. When that happens the screen says so, in `storeSay()`,
 between the prices and the button that buys.
 
-**Anybody builds keyboards, and `kb` is the drawn letter on one** — 「既存の
-文字ならどこでも使えるでしょ？ユニコードあるわけだし」「それは無料でできる。
-キーボードカスタマイズアプリとしても使える」 OWNER 2026-09-25. On every plan a
-keyboard is built out of any character there is — a slot holds a character
-(`kbCh()` in `www/keyboard.js`) or a letter of the language — with no ceiling
-on how many (`kbCap()` is `Infinity` on all three; it is still a function of
-the plan because `null` is the answer while nobody has asked). What Plus adds
-is **the letter somebody drew** on a key of one: asked where a drawn letter is
-pressed onto a key (`kbLtTap()`) and where a pattern is laid (`kbPatLay()`,
-which lays the letters' NAMES as characters on free). The fixed QWERTY wears the
-drawn letters on every plan, because it is what the free plan is, and a key
-that already holds a drawn letter keeps it whatever the plan becomes — the
-refusal is on the press.
+**Keyboards are not divided by plan** — 「キーボードはプランで分けない」
+「キーボード画面で追加する時に選べるのは自作文字範囲、もしくは既存文字全て」
+「自作文字は作れる範囲が決まってるから、キーボードに縛りを入れなくても勝手に
+そうなる」 OWNER 2026-09-25. On every plan, as many keyboards as somebody likes,
+and a key holds either a letter of the language or any existing character
+(`kbCh()` in `www/keyboard.js`). What a plan changes is how many letters there
+are to draw — free has the slots — and so how many there are to put on a key;
+nothing in the keyboard asks a plan. There is no capability and no ceiling for
+it, and the ones there were (~~`CAN.kb`~~, ~~`kbCap()`~~) are deleted.
 
 **`font` is Plus's** — 「フォントの書き出しはそれでいいよ」 OWNER 2026-09-25,
 down from Pro (2026-09-24), where it had not been built. The share mark on the
@@ -319,8 +314,8 @@ plusからっていう決定事項あんのになんで聞いてくんの？」
 `mine` and has never seen a download, `dlCount()` counts `mine` false and has
 never seen a language somebody made. Filling one leaves the other where it was.
 
-`CAN.dl` and `dlCap()` landed together on 2026-09-02, which is the rule `kb`
-set: a door opened with no number behind it hands Plus whatever the code
+`CAN.dl` and `dlCap()` landed together on 2026-09-02, which is the rule the
+keyboard's door set while it had one: a door opened with no number behind it hands Plus whatever the code
 happened to allow, and that is neither number the owner said. The caller is
 `www/home.js` — `upStop(can('dl'))` and `dlStop()` in front of the download.
 
@@ -437,12 +432,6 @@ buttons, never fewer words, and every byte where it was. The phone keeps the
 language as it was last loaded, read-only (`CLAUDE.md` rule 22); a server that
 stops answering is a person who can still look at their language.
 
-`CAN.kb` is the drawn letter on a keyboard somebody built, and `kbCap()` in
-`core.js` is how many keyboards — `Infinity` on every plan since 2026-09-25,
-beside `wordCap()` so that a number, the day one comes back, has one place.
-`kbCount()` in `keyboard.js` is what it is compared against, and it reads every
-language rather than the open one. `plan-check` and `kb-check` hold both.
-
 `CAN` in `www/core.js` names every capability, and `can('x')` is the only way
 to ask. `has()` names a *plan* and is `core.js`'s alone. `tools/dead-check.mjs`
 refuses a capability nothing asks for (a price with nothing behind it), a
@@ -453,7 +442,6 @@ a `can()` given anything but a literal, and a `has()` anywhere else.
 |---|---|---|
 | `letters` | plus | adding, naming and deleting a letter |
 | `wsys` | plus | a writing system that is not an alphabet |
-| `kb` | plus | a letter you drew, on a key of a keyboard you built. Building one is every plan's |
 | `font` | plus | the font file of the letters you drew, through the share sheet |
 | `dl` | plus | taking a chapter of somebody else's language. How many is `dlCap()` |
 | `snd` | plus | choosing a sound, rather than taking the letter's own |
@@ -513,7 +501,7 @@ number and the composer is where it is worn. The block above is the list
 `paid-check` reads out of `core.js`, so a constant that does not live there
 does not belong in it; a line here is what says it exists.
 
-**No capability was added for it**, for the reason `kbCap()` gives: everybody
+**No capability was added for it**: everybody
 may post, and the only thing a plan changes is a number. A capability that is
 really a number is a price with nothing behind it.
 
@@ -525,8 +513,8 @@ PRESS and never by the keystroke (`pwCapStop()`), so what refuses somebody is
 `popAsk(t('up.need'))` and the plans screen — the same one sentence and the
 same shape as every other ceiling here.
 
-`kbCount()` in `www/keyboard.js`, `langCount()` and `dlCount()` in `core.js`
-are what those are compared against, and all three count **across languages**:
+`langCount()` and `dlCount()` in `core.js`
+are what those are compared against, and both count **across languages**:
 the ceiling is on the ACCOUNT, not on each language and not on a phone —
 「は？端末の話なんかしてねえだろ」 OWNER 2026-09-03. `langWhose()` is where
 the account is asked.
@@ -604,8 +592,8 @@ behind it, and what it opened went with it.
 ```
   free    draw your own letters. 100 words. One language. Keyboards of
           any characters
-  plus    build it yourself. 1000 words. Your letters on your keyboards,
-          and their font. One download
+  plus    build it yourself. 1000 words. The font of your letters.
+          One download
   pro     no ceiling on the words. Three languages,
           three downloads, the grammar, the direction, the file roads
 ```

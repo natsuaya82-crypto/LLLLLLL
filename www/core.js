@@ -2074,8 +2074,8 @@ var PLANS=[
      does nothing until the product is made. What is NOT allowed is the other
      way round -- a product on sale that the app does not name. */
   {id:'plus', name:'Plus', mo:'plan.price.plus', yr:'plan.price.plus.yr', off:'17',
-   lines:['plan.plus.1','plan.plus.2','plan.plus.3','plan.plus.4','plan.plus.5',
-          'plan.plus.7','plan.plus.6']},
+   lines:['plan.plus.1','plan.plus.2','plan.plus.3','plan.plus.4','plan.plus.7',
+          'plan.plus.6']},
   /* Pro opens with "everything in Plus, and:" rather than repeating the lines
      above it. Three pages that each list everything are three pages somebody
      has to compare word by word; the ladder is the thing being sold and it
@@ -2124,10 +2124,9 @@ function wordCap(){
 /* HOW LONG A POST MAY BE. 「plusプランから無限だけど、もっと読むで開く
    Twitterと同じ方式で頑む。」 OWNER 2026-09-15.
 
-   The same shape as wordCap() above, and NO CAPABILITY IS ADDED -- kbCap()
-   says why two functions down: everybody may post, and the only thing a plan
-   changes here is a NUMBER, so a capability would be a price with nothing
-   behind it.
+   The same shape as wordCap() above, and NO CAPABILITY IS ADDED: everybody
+   may post, and the only thing a plan changes here is a NUMBER, so a
+   capability would be a price with nothing behind it.
 
    It answers for BOTH fields of the composer, the line and what it means.
    「文字数制限つけても翻訳でアホみたいに文字書けばいいわけでしょ？それに困るのよ」
@@ -2145,30 +2144,6 @@ function wordCap(){
    docs/DATA_SAFETY.md). */
 function postCap(){
   return planNum(POST_MAX, Infinity, Infinity);
-}
-/* How many keyboards this person may have, counting the fixed QWERTY as one
-   of them. No ceiling on any plan: 「既存の文字ならどこでも使えるでしょ？
-   ユニコードあるわけだし」「それは無料でできる。キーボードカスタマイズアプリと
-   しても使える」 OWNER 2026-09-25 -- anybody may build keyboards, as many as
-   they like, out of any character there is. Plus and Pro were already
-   Infinity (OWNER 2026-09-24); the free 1 went with this decision.
-
-   **It is a pool across languages** -- kbCount() in www/keyboard.js counts
-   every language rather than the open one -- so the day a number comes back
-   it is one number here.
-
-   Still a function of the plan and not a constant, because `null` is the
-   answer while nobody has asked -- the + says 「接続できません」 then rather
-   than making a keyboard against a plan nobody has heard (§ planNum).
-
-   No constant for it: a ceiling nobody has is not a number, and a number
-   written down is one `tools/paid-check.mjs` holds against the price list.
-
-   No capability is added for the ceiling. `CAN.kb` below is a different
-   question -- may a letter somebody DREW go on a key of a keyboard they
-   built. */
-function kbCap(){
-  return planNum(Infinity, Infinity, Infinity);
 }
 /* How many languages of their own this person may have. Free 1, Plus 1,
    Pro 3 -- OWNER DECISION 2026-08-23, restated 2026-08-25「言語数はプラスは1、
@@ -2786,15 +2761,6 @@ var CAN={
   file:    'pro',    /* a list brought in as a file rather than a paste */
   letters: 'plus',   /* adding, naming and deleting a letter */
   wsys:    'plus',   /* a writing system that is not an alphabet */
-  /* A letter somebody DREW, on a key of a keyboard they built. 「自分で描いた
-     文字を置いたキーボード」は Plus OWNER 2026-09-25. Building a keyboard is
-     not asked here -- it is on every plan, out of any character there is
-     (kbChPut() in www/keyboard.js) -- and neither is the free QWERTY, which
-     wears the drawn letters on every plan because it is what the free plan IS.
-     It is asked where a drawn letter goes ONTO a key (kbLtTap()) and where a
-     pattern is laid (kbPatLay()), and nowhere else: a key that already holds
-     one keeps it whatever the plan becomes. */
-  kb:      'plus',
   /* Taking a chapter of somebody else's language. 「plusからです」OWNER
      2026-09-02, which replaces 「Downloading a keyboard or an alphabet is
      free」 (docs/FEATURES.md § 4, 2026-08-19). How many is dlCap() above, and
@@ -2872,7 +2838,7 @@ function planNum(free, plus, pro){
 }
 /* WHETHER `add` MORE FIT UNDER A CEILING, from a count and the ceiling --
    `null` when either is missing, which is a count nobody has given
-   (langCount(), dlCount(), kbCount()) or a plan nobody has answered for. */
+   (langCount(), dlCount()) or a plan nobody has answered for. */
 function planFits(n, add, cap){
   if(n===null || n===undefined || cap===null) return null;
   return n+add<=cap;

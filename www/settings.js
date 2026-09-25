@@ -1066,7 +1066,7 @@ function planMark(key){
   var m={ 'plan.free.1':ICON_PEN,  'plan.free.2':ICON_LINE, 'plan.free.3':ICON_KEYS,
           'plan.free.4':TAB_ICON.feed, 'plan.free.5':ICON_KEYS,
           'plan.plus.1':ICON_ADD,  'plan.plus.2':ICON_SPK,  'plan.plus.3':ICON_LTR,
-          'plan.plus.4':ICON_LINE, 'plan.plus.5':ICON_KEYS, 'plan.plus.7':ICON_SHARE,
+          'plan.plus.4':ICON_LINE, 'plan.plus.7':ICON_SHARE,
           'plan.pro.1':ICON_TICK,  'plan.pro.2':ICON_LINE,
           'plan.pro.4':TAB_ICON.build, 'plan.pro.5':ICON_SHARE,
           'plan.badge':MARK_PLUS };

@@ -175,7 +175,7 @@ const r = await pg.evaluate(({ s }) => {
   ['', null, undefined, 0, 'garbage', 'pro ', 'PRO', 'basic', 'studio'].forEach(function(v){
     planGot(v);
     out.unknownWords = out.unknownWords && WORDS.length === 500;
-    out.unknownCan = out.unknownCan && can('kb') === false && has('pro') === false;
+    out.unknownCan = out.unknownCan && can('letters') === false && has('pro') === false;
     try { has('pro'); capOK(1); wordsSeen(); } catch (e) { out.unknownThrew = String(e); }
   });
   planGot('free');
@@ -231,64 +231,10 @@ const r = await pg.evaluate(({ s }) => {
   out.freeShows2 = wordsSeen().length;
   out.freeHolds2 = WORDS.length === capWas;
 
-  /* ---- 4b. and how many keyboards -------------------------------------
-     Free 1 -- the QWERTY -- and no ceiling on Plus or Pro: 「Plus ──
-     キーボード無制限」 OWNER 2026-09-24 (r46), replacing 「1,1+3.無制限」 of
-     2026-08-23. And **counted as a pool across languages**. That last clause is the
-     whole of why this is here: KB_MAX was three PER LANGUAGE, so three
-     languages were nine keyboards on a plan that sells three, and nothing
-     about it threw -- every keyboard rendered, installed and typed.
-
-     The number is also a promise on the plans screen. Plus's card sells no
-     limit, and until 2026-08-23
-     CAN.kb was 'pro': plus bought a card that said four and got none, and
-     pro's "no limit" was three. A paid screen promising what the app cannot
-     do is the app lying to somebody who is about to pay.                  */
-  out.kbFree = (planGot('free'), kbCap());
-  out.kbMid  = (planGot('plus'), kbCap());
-  out.kbTop  = (planGot('pro'),  kbCap());
-  out.kbDoor = (planGot('free'), can('kb')) === false &&
-               (planGot('plus'), can('kb')) === true &&
-               (planGot('pro'),  can('kb')) === true;
-
-  /* The pool. A second language is written straight into localStorage the
-     way another language on this phone would be, with two keyboards in it,
-     and then this language is asked whether it has room. The pool is still
-     counted across languages; on plus there is no number for it to fill. */
-  planGot('plus');
-  KB = { kbs: [{ nm:'', pat:'qwerty', lay: kbFixed().lay }], at: 0 };
-  saveKb();
-  out.kbHere = kbCount();                        /* 1, in the open language */
-  out.kbRoomHere = kbRoomKb();                   /* 1 + 1 < 4 -> yes */
-  /* uid, for the reason tools/fixture.mjs stamps its own: a language with
-     no uid belongs to nobody once SET.walked is true (langOwned), so an
-     unstamped one seeded here is not in this person's ceiling at all --
-     which is the thing this claim is about. */
-  /* 誰が書いたかはサーバーの列で、`langOwnOf()` が訊きます
-     （www/core.js § LOWN、2026-09-09）。索引の `uid` はもう読みません。 */
-  LANGS['l_other'] = { nm: 'Other', mine: true }; langOwnGot('l_other', 'u');
-  /* そして向こうの二枚は違う板でなければならない。id 以外が一バイト違わない
-     板は 2026-09-07 から一枚です（www/keyboard.js § kbIded、「消していい。
-     そもそも増殖させるな」OWNER）── ここが同じ板を二枚置いていたので、この
-     主張は「二枚ぶん埋まる」と言いながら一枚ぶんを数えていました。プールは
-     人が作った keyboard の数なので、違う二枚で訊きます。 */
-  slWr(langKeyOf('l_other', 'kb'), JSON.stringify(
-    { kbs: [{ nm:'A', pat:'qwerty', lay: kbFixed().lay },
-            { nm:'B', pat:'qwerty', lay: kbFixed().lay }], at: 0 }));
-  out.kbPool = kbCount();                        /* 3 */
-  out.kbRoomPool = kbRoomKb();                   /* no ceiling -> yes */
-  out.kbPoolTop = (planGot('pro'), kbRoomKb());/* no ceiling -> yes */
-  /* A language stored in the older single-keyboard shape is one keyboard and
-     not nothing: kbBoardsOf() reads either shape, and counting only the new
-     one would hand somebody a free keyboard for every language they made
-     before this. */
-  slWr(langKeyOf('l_other', 'kb'), JSON.stringify(
-    { lay: kbFixed().lay }));
-  out.kbPoolOld = kbCount();                     /* 2 */
-  delete LANGS['l_other'];
-  slRm(langKeyOf('l_other', 'kb'));
-  KB = null; saveKb();
-  planGot('free');
+  /* ---- 4b. keyboards are not divided by plan ------------------------------
+     「キーボードはプランで分けない」 OWNER 2026-09-25: no door and no number
+     on any plan, so there is nothing here to ask a plan about. 7b below asks
+     that the free + goes straight through. */
 
   /* ---- 4e. editing a post you have sent, and the mark beside a name ----
      Two capabilities that were in the app before they were in CAN.
@@ -695,16 +641,14 @@ const r = await pg.evaluate(({ s }) => {
      the + goes straight through there -- a pop left over from the old
      ceiling would be the plans screen in front of something free.
 
-     BOUNDED, for the reason this block has always been bounded: kbRoomKb()
-     is the app answering, and a loop that waits on it is a renderer the
-     browser kills with nothing said. So it pushes a fixed number and asks. */
+     Twelve built first, so the next one is asked for well past any number
+     a ceiling ever had here. */
   planGot('free');
   KB = { kbs: [], at: 0 };
   var kbSpin = 0;
   while (kbSpin++ < 12) KB.kbs.push({ nm:'', pat:'qwerty', lay: kbFixed().lay });
   saveKb();
-  out.kbPoolCount = kbCount();
-  out.kbFreeRoom = kbRoomKb() === true;
+  out.kbPoolCount = kbStored().length;
   var kbWas = kbBoards().length;
   go('kb');
   out.upNeed = t('up.need');
@@ -1849,8 +1793,8 @@ say(r.paidAll, 'and open on plus');
 say(r.canTypo, 'and a name that is not in the table throws rather than reading as free');
 
 say(r.rungs.free === '', 'free opens nothing (' + (r.rungs.free || 'nothing') + ')');
-say(r.rungs.plus === 'dl edit font kb letters snd wsys',
-    'plus opens its drawn letters on a keyboard and their font, its own letters, its own sounds, ' +
+say(r.rungs.plus === 'dl edit font letters snd wsys',
+    'plus opens the font of its drawn letters, its own letters, its own sounds, ' +
     'a writing system and editing a post it has sent (' + r.rungs.plus + ')');
 say(r.rungs.pro.split(' ').length === r.canCount,
     'pro opens all ' + r.canCount + ' (' + r.rungs.pro.split(' ').length + ')');
@@ -1858,19 +1802,6 @@ say(r.midUp && r.midNotTop, 'plus meets its own rung and not the one above it');
 say(r.topHasMid, 'and pro meets plus\'s -- a ladder, not three equals signs');
 say(r.freeNoMid, 'while free meets neither');
 
-say((r.kbFree === null || r.kbFree > 1e9 || r.kbFree === 'Infinity') &&
-    (r.kbMid === null || r.kbMid === undefined || r.kbMid > 1e9 || r.kbMid === 'Infinity'),
-    'free has no ceiling on keyboards, and neither has plus (' + r.kbFree + ' ' + r.kbMid + ')');
-say(r.kbTop === null || r.kbTop === undefined || r.kbTop > 1e9 || r.kbTop === 'Infinity',
-    'and pro has no ceiling on them (' + r.kbTop + ')');
-say(r.kbDoor, 'a drawn letter on a keyboard somebody built: not on free, on plus and pro');
-say(r.kbHere === 1 && r.kbRoomHere, 'one keyboard built here leaves room for more');
-say(r.kbPool === 3 && r.kbRoomPool === true,
-    'two more in ANOTHER language are counted in the pool, and plus is not filled up by them (' +
-    r.kbPool + ')');
-say(r.kbPoolTop === true, 'and pro is not filled up by them');
-say(r.kbPoolOld === 2,
-    'a language stored in the older one-keyboard shape counts as the one it is');
 
 say(r.penOnFree, 'the pencil is drawn on the free plan -- a closed door is shown, not hidden');
 say(r.editFreeNoPW && r.editFreeSaidNo,
@@ -1906,10 +1837,9 @@ say(r.heldRestore && r.heldManage,
 say(r.bdgRowPro !== '' && r.bdgRowFree === '',
     'the price list still marks the Pro row, read on free -- a plan carrying it is not the same question');
 
-say(r.kbFreeRoom,
-    'free has no ceiling on keyboards either -- ' + r.kbPoolCount + ' built and still room');
 say(r.kbFreeNoPop && r.kbFreeMade,
-    'and the next one is made without asking [' + [r.kbFreeNoPop, r.kbFreeMade].join(' ') + ']');
+    'free with ' + r.kbPoolCount + ' keyboards built makes the next one without asking [' +
+    [r.kbFreeNoPop, r.kbFreeMade].join(' ') + ']');
 
 say(r.langFree === 1 && r.langMid === 1 && r.langTop === 3,
     'free and plus hold one language, pro holds three (' +
