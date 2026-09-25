@@ -1308,7 +1308,7 @@ defLang('es', (function(){
       "cal.d.6" : "Viernes",
       "cal.d.7" : "Sábado",
       "plan.renew" : "Se renueva automáticamente hasta que la canceles.",
-      "kb.lay.hand" : "Escritura a mano",
+      "kb.pat.hand" : "Escritura a mano",
       "pk.own" : "Tus letras",
       "ws.latin" : "Latino",
       "ws.latinacc" : "Latino con diacríticos",

@@ -1354,7 +1354,7 @@ defLang('zh', (function(){
       "cal.d.6" : "星期五",
       "cal.d.7" : "星期六",
       "plan.renew" : "订阅会自动续期，直到你取消。",
-      "kb.lay.hand" : "手写",
+      "kb.pat.hand" : "手写",
       "pk.own" : "自创文字",
       "ws.latin" : "拉丁字母",
       "ws.latinacc" : "带符号的拉丁字母",

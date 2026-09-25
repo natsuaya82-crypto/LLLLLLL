@@ -3,7 +3,7 @@
    OWNER 2026-09-25「後手書き追加しよう」: a finger writes on the keyboard and
    the nearest of the language's own drawn letters goes in. Which one is
    nearest is ios/App/LinguaKeyboard/hand.js -- handDist() is the one measure
-   and handNear() the one choice -- and the keyboard extension runs that file
+   and handRank() the one ordering -- and the keyboard extension runs that file
    in JavaScriptCore. This runs THE SAME FILE in Node, so what is counted
    here is what the phone does.
 
@@ -16,7 +16,10 @@
    them, and then made worse: moved and resized (which must never matter),
    and then wobbled, turned, slanted, squashed, written in another order and
    in the other direction, with each stroke a little off where it belongs.
-   Every one is counted, per kind. Where it was only moved, resized or written
+   Every one is counted, per kind, twice: whether the letter written is the
+   FIRST the bar offers, and whether it is among the HAND_PICKS the bar offers
+   at all (「候補は何個か出して選ぶ形」 OWNER 2026-09-25) -- that second one
+   has to be every time, whatever was done to the writing. Where it was only moved, resized or written
    in another order, every one has to come back as the letter it was -- none of
    those may make any difference at all. Where it was made worse, a floor:
    FLOOR_ONE of each kind alone and FLOOR_ALL of all of them at once. Those two
@@ -137,30 +140,36 @@ const ALL = (s) => {
 
 const ROUNDS = 6, FLOOR_ONE = 0.95, FLOOR_ALL = 0.9;
 const missed = [];
+let offered = 0, offeredOf = 0;
 function count(label, f, floor){
-  let hit = 0, n = 0;
+  let hit = 0, n = 0, inBar = 0;
   for (let r = 0; r < ROUNDS; r++) for (let i = 0; i < names.length; i++){
-    const got = H.handNear(prep, f(trace(ABC[names[i]])));
+    const rank = H.handRank(prep, f(trace(ABC[names[i]])));
+    const got = rank.length ? rank[0] : -1;
     n++;
+    if (rank.indexOf(i) >= 0) inBar++;
     if (got === i) hit++;
     else missed.push(label + ': ' + names[i] + ' came back ' + (got < 0 ? 'nothing' : names[got]));
   }
-  say(hit >= n * floor, label + ': ' + hit + '/' + n + ' the letter written' +
-      (floor < 1 ? ' (at least ' + Math.ceil(n * floor) + ')' : ''));
+  offered += inBar; offeredOf += n;
+  say(hit >= n * floor, label + ': ' + hit + '/' + n + ' the letter written first' +
+      (floor < 1 ? ' (at least ' + Math.ceil(n * floor) + ')' : '') + ', ' + inBar + '/' + n + ' in the bar');
 }
 const EXACT = ['moved and resized', 'another order, the other way round'];
 count('as drawn', (s) => s, 1);
 for (const k of Object.keys(KINDS)) count(k, KINDS[k], EXACT.indexOf(k) >= 0 ? 1 : FLOOR_ONE);
 count('all of those at once', ALL, FLOOR_ALL);
+say(offered === offeredOf, 'the letter written is among the ' + H.HAND_PICKS + ' the bar offers every time: ' + offered + '/' + offeredOf);
+say(H.handRank(prep, trace(ABC.o)).length === Math.min(H.HAND_PICKS, names.length), 'the bar is offered ' + H.HAND_PICKS + ', nearest first');
 if (missed.length) console.log('  ' + missed.slice(0, 12).join('\n  ') + (missed.length > 12 ? '\n  ...' : ''));
 
 /* Nothing written, and nothing to choose from, are both "no letter" -- never
    the first one. */
-say(H.handNear(prep, []) === -1, 'nothing written chooses nothing');
-say(H.handNear(H.handPrep([null, null]), trace(ABC.l)) === -1, 'no drawn letter to choose from chooses nothing');
+say(H.handRank(prep, []).length === 0, 'nothing written offers nothing');
+say(H.handRank(H.handPrep([null, null]), trace(ABC.l)).length === 0, 'no drawn letter to choose from offers nothing');
 /* A face with no shape is skipped, not chosen: a letter nobody drew. */
 const holey = H.handPrep([null].concat(inks));
-say(H.handNear(holey, trace(ABC.o)) === names.indexOf('o') + 1, 'a letter with no shape is passed over');
+say(H.handRank(holey, trace(ABC.o))[0] === names.indexOf('o') + 1 && H.handRank(holey, trace(ABC.o), 99).indexOf(0) < 0, 'a letter with no shape is passed over, and never offered');
 
 /* The file counted is the file the phone has. */
 const pbx = fs.readFileSync('ios/App/App.xcodeproj/project.pbxproj', 'utf8');

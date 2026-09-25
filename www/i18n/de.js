@@ -1337,7 +1337,7 @@ defLang('de', (function(){
       "cal.d.6" : "Freitag",
       "cal.d.7" : "Samstag",
       "plan.renew" : "Verlängert sich automatisch, bis du kündigst.",
-      "kb.lay.hand" : "Handschrift",
+      "kb.pat.hand" : "Handschrift",
       "pk.own" : "Deine Buchstaben",
       "ws.latin" : "Lateinisch",
       "ws.latinacc" : "Lateinisch mit Zeichen",

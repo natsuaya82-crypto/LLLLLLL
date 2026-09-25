@@ -102,6 +102,7 @@ const r = await pg.evaluate(({ s }) => {
     out.roadRepat = !!document.querySelector('[data-do="kbRepat"]');
     if (!out.roadRepat) return;
     document.querySelector('[data-do="kbRepat"]').click();
+    out.roadPatsN = KB_PATS.length;
     out.roadPats = [].slice.call(document.querySelectorAll('[data-do="kbSetPat"]'))
       .map(function (b){ return JSON.parse(b.getAttribute('data-a'))[0]; });
     el = [].slice.call(document.querySelectorAll('[data-do="kbSetPat"]'))
@@ -2070,12 +2071,12 @@ const r = await pg.evaluate(({ s }) => {
        yes the way a person does -- popYes() runs what the pop was handed and
        nothing is stubbed. */
     /* 「キーボードは誰でも作れる」 OWNER 2026-09-25: there is no ceiling on
-       this plan any more, so the + opens the five patterns and asks nothing. */
+       this plan any more, so the + opens every pattern and asks nothing. */
     out.freeFabPressed = !!fab;
     if (fab) fab.click();
     out.freeFabAsked = popOn();
     out.freeFabToPats = here().r === 'form' && String(here().a || '').indexOf('kbnew') === 0 &&
-      document.querySelectorAll('[data-do="kbAdd"]').length === 5;
+      document.querySelectorAll('[data-do="kbAdd"]').length === KB_PATS.length;
     /* AND NO BOARD WAS MADE. */
     out.freeFabWroteNothing = KB === null && kbStored().length === 0;
     out.freeBoardsStillOne = kbBoards().length === 1;
@@ -3893,8 +3894,8 @@ say(r.roadOnBoard === '1',
     + r.roadOnBoard + ')');
 say(r.roadDots, 'and the \u22ef is on that screen');
 say(r.roadRepat, 'and it opens the way to change the arrangement');
-say(r.roadFlick && (r.roadPats || []).length === 5,
-    'which offers all five patterns [' + (r.roadPats || []).join(' ') + ']');
+say(r.roadFlick && (r.roadPats || []).length === r.roadPatsN,
+    'which offers every pattern [' + (r.roadPats || []).join(' ') + ']');
 say(r.roadPat === 'flick', 'and choosing one changes the keyboard (' + r.roadPat + ')');
 say(r.roadRow === '2.5,2.5,2.5,2.5',
     'to four keys of two and a half columns, which is what goes to the phone ('

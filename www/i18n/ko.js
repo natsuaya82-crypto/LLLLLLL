@@ -1524,7 +1524,7 @@ defLang('ko', (function(){
       "cal.d.6" : "금요일",
       "cal.d.7" : "토요일",
       "plan.renew" : "해지할 때까지 자동으로 갱신됩니다.",
-      "kb.lay.hand" : "손글씨",
+      "kb.pat.hand" : "손글씨",
       "pk.own" : "내 글자",
       "ws.latin" : "라틴 문자",
       "ws.latinacc" : "기호가 붙은 라틴 문자",

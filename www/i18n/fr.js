@@ -1396,7 +1396,7 @@ defLang('fr', (function(){
       "cal.d.6" : "Vendredi",
       "cal.d.7" : "Samedi",
       "plan.renew" : "Renouvellement automatique jusqu'à résiliation.",
-      "kb.lay.hand" : "Écriture manuscrite",
+      "kb.pat.hand" : "Écriture manuscrite",
       "pk.own" : "Tes lettres",
       "ws.latin" : "Latin",
       "ws.latinacc" : "Latin avec diacritiques",

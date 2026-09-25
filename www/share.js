@@ -416,7 +416,9 @@ function shareKbd(){
      Applying the free QWERTY on a syllabary means typing on the free QWERTY,
      which is what applying it says. */
   var rom=-1;
-  if(conv && shareRoman() && !kbIsFree(kbApplied(kbBoards().length))){
+  /* Nor on a handwriting keyboard, which is handwriting and nothing else
+     「手書きを選択したら手書きだけでしょ」 OWNER 2026-09-25. */
+  if(conv && shareRoman() && !kbIsFree(kbApplied(kbBoards().length)) && !kbIsHand(b)){
     lay.push(shareRomLay(0));
     rom=lay.length-1;
     if(lay[0] && lay[0].rows.length)

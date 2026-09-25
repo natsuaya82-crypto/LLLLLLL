@@ -17,12 +17,16 @@
 
    ES5 on purpose, like everything under www/: JavaScriptCore on the oldest
    phone the keyboard runs on is not a place to find out otherwise. Nothing
-   here touches a DOM, a timer or a global besides the four functions. */
+   here touches a DOM, a timer or a global of anybody else's. */
 
 /* The square both sides are drawn into, and the margin inside it. 32 is
    enough to tell a letter's parts apart and small enough that a hundred and
    eighty letters are prepared in a few milliseconds. */
 var HAND_N = 32, HAND_PAD = 2;
+/* How many the bar offers at once. The bar scrolls, so this is how many are
+   worth scrolling to rather than how many fit. A judgement, and the owner's
+   to change. */
+var HAND_PICKS = 8;
 
 /* How far a writing may lean and still be read upright: the most slant
    handShear() takes back out. A letter that IS a slant -- a `/` beside a `|`
@@ -180,18 +184,22 @@ function handPrep(inks){
     out.push(inks[i] && inks[i].length ? handShape(handGridInk(inks[i])) : null);
   return out;
 }
-/* Which of them the strokes are nearest to: its index in what handPrep()
-   was given, or -1 when there is nothing to choose from or nothing written. */
-function handNear(prep, strokes){
-  var me = handShape(handGridPen(strokes || [])), best = -1, bd = Infinity, i, d;
-  if (!me) return -1;
+/* Which of them the strokes are nearest to, nearest first: up to `n` indexes
+   into what handPrep() was given, for the bar to offer (「候補は何個か出して
+   選ぶ形」 OWNER 2026-09-25). Empty when there is nothing to choose from or
+   nothing written; a letter with no shape is never among them. */
+function handRank(prep, strokes, n){
+  if (n === undefined) n = HAND_PICKS;
+  var me = handShape(handGridPen(strokes || [])), all = [], i, d;
+  if (!me) return [];
   for (i = 0; i < prep.length; i++){
     d = handDist(me, prep[i]);
-    if (d < bd){ bd = d; best = i; }
+    if (d < Infinity) all.push({i: i, d: d});
   }
-  return best;
+  all.sort(function (a, b){ return a.d - b.d || a.i - b.i; });
+  return all.slice(0, Math.max(0, n || 0)).map(function (x){ return x.i; });
 }
 
 if (typeof module !== 'undefined' && module.exports)
-  module.exports = {handPrep: handPrep, handNear: handNear, handDist: handDist,
+  module.exports = {HAND_PICKS: HAND_PICKS, handPrep: handPrep, handRank: handRank, handDist: handDist,
                     handShape: handShape, handGridInk: handGridInk, handGridPen: handGridPen};

@@ -1281,7 +1281,7 @@ defLang('en', (function(){
          currency (storeCost() in www/store.js), and a price built into a
          translated sentence is a price ten files have to agree about. */
       "plan.renew" : "Renews automatically until you cancel.",
-      "kb.lay.hand" : "Handwriting",
+      "kb.pat.hand" : "Handwriting",
       "pk.own" : "Your letters",
       "ws.latin" : "Latin",
       "ws.latinacc" : "Latin with marks",

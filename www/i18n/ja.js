@@ -1264,7 +1264,7 @@ defLang('ja', (function(){
       "cal.d.6" : "金曜",
       "cal.d.7" : "土曜",
       "plan.renew" : "解約するまで自動更新されます。",
-      "kb.lay.hand" : "手書き",
+      "kb.pat.hand" : "手書き",
       "pk.own" : "自作文字",
       "ws.latin" : "ラテン文字",
       "ws.latinacc" : "記号付きのラテン文字",

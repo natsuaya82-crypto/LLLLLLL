@@ -1355,7 +1355,7 @@ defLang('pt', (function(){
       "cal.d.6" : "Sexta-feira",
       "cal.d.7" : "Sábado",
       "plan.renew" : "Renova automaticamente até você cancelar.",
-      "kb.lay.hand" : "Escrita à mão",
+      "kb.pat.hand" : "Escrita à mão",
       "pk.own" : "Suas letras",
       "ws.latin" : "Latino",
       "ws.latinacc" : "Latino com diacríticos",
