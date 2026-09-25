@@ -86,7 +86,6 @@ defLang('ja', (function(){
       "kb.dir.right"               : "右",
       "kb.dir.down"               : "下",
       "kb.dir.left"               : "左",
-      "kb.empty"               : "なし",
       "kb.row.ins" : "ここに行を足す",
       "kb.row.up" : "この行の上",
       "kb.row.down" : "この行の下",
@@ -112,7 +111,6 @@ defLang('ja', (function(){
       "kb.sys.go" : "設定を開く",
       "kb.sys.no" : "設定を開けませんでした",
       "kb.rom"               : "キーに文字を表示",
-      "kb.ch" : "文字を入力",
       "kb.font" : "フォントを書き出す",
       "kb.font.none" : "描いた字がありません",
       "kb.reset"               : "最初から組み直す",
@@ -284,7 +282,6 @@ defLang('ja', (function(){
       "set.signin.done" : "ログインしました",
       "set.signout.done" : "ログアウトしました",
       "ob.tagline"                : '自分のことばを、つくる。',
-      "script.own.ph"             : "字を入力または貼り付け",
       "up.cta"                    : "アップグレード",
       "up.need"                   : "この機能を使うにはアップグレードが必要です",
       "pop.no"                  : "閉じる",
@@ -1280,7 +1277,18 @@ defLang('ja', (function(){
       "cal.d.5" : "木曜",
       "cal.d.6" : "金曜",
       "cal.d.7" : "土曜",
-      "plan.renew" : "解約するまで自動更新されます。"
+      "plan.renew" : "解約するまで自動更新されます。",
+      "kb.pat.hand" : "手書き",
+      "pk.own" : "自作文字",
+      "ws.latin" : "ラテン文字",
+      "ws.latinacc" : "記号付きのラテン文字",
+      "ws.latinext" : "ラテン文字（拡張）",
+      "ws.ipa" : "国際音声記号",
+      "ws.digit" : "数字",
+      "ws.symbol" : "記号",
+      "ws.hiragana" : "ひらがな",
+      "ws.katakana" : "カタカナ",
+      "ws.emoji" : "絵文字"
     }
   };
 })());

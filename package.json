@@ -42,6 +42,7 @@
     "term": "node tools/term-check.mjs",
     "gramlang": "node tools/gramlang-check.mjs",
     "kb": "node tools/kb-check.mjs",
+    "hand": "node tools/hand-check.mjs",
     "shape": "node tools/shape-check.mjs",
     "sheet": "node tools/sheet-check.mjs",
     "draft": "node tools/draft-check.mjs",

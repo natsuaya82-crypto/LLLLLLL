@@ -268,7 +268,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
 
 ### 2026-09-25 フォントの書き出しは文字の画面の右上（1.0.3）
 - Date: 2026-09-25
-- Area: フォントの書き出し（`kbFontOut()`）、文字の画面（`vLetters()` in `www/sound.js`）
+- Area: フォントの書き出し（`ltFontOut()`）、文字の画面（`vLetters()` in `www/sound.js`）
 - Decision: フォントの書き出しのマーク（共有のマーク）は、文字の画面の右上に置く。キーボードの一覧の画面からは外す。Plus のまま。
 - Reason: オーナーの言葉「フォントは文字なんだから文字から書き出しのマークつけないとダメでは？」。
 - Affected features: 文字の画面、キーボードの一覧の画面。
@@ -348,7 +348,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Affected features: ~~`CAN.kb`~~ と ~~`kbCap()`~~（キーボードの扉と数）は問いが無くなる ── 消す。フォントの書き出し（新しい、Plus）。
 - Affected data: 無料の人が作ったキーボードが増える（今の `kb` の slice）。何も消さない。
 - Affected docs: この項、`docs/PAID_FEATURES.md`、`docs/FEATURES.md`、`docs/keyboard.md`、CLAUDE.md の「What the free plan is」。
-- Implementation status: r95-kbfont（`claude/r95-kbfont`）── キーボード（段を訊かない、`=文字` の枠と「文字を入力」の欄）とフォントの書き出し（Plus、`kbFontOut()`）は入った・コード確認、実機未確認。手書きは r96。
+- Implementation status: r95-kbfont（`claude/r95-kbfont`）── キーボード（段を訊かない、`=文字` の枠と「文字を入力」の欄）とフォントの書き出し（Plus、`ltFontOut()`）は入った・コード確認、実機未確認。手書きは r96。
 
 ### 2026-09-25 キーボードは誰でも作れる、自作文字のキーボードとフォントの書き出しは Plus から【差し替え済み】→ 2026-09-25「キーボードはプランで分けない」
 
@@ -499,24 +499,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
 
 ### 2026-09-24 キーボードのプランとフォントの書き出し（r46 の申し送り）【差し替え済み】→ 2026-09-25「キーボードはプランで分けない」
 
-### キーの画面 ── 押した字がそのキーに入る。確定は無い
-- Date: 2026-09-24
-- Area: キーボードのキーに何を入れるかを選ぶ画面（キーの画面と、フリックの一つの向きの字の画面）
-- Decision:
-
-  ```
-  なんのための確定？いらないなら保存だけでいいよ。
-  ```
-
-  字を押すとその字がそのキーに入る。もう一度押せば外れる。右上の「確定」は無い。
-  書くのは板の「保存」だけ（2026-09-24 r79 K1「キーボードの面は保存ボタンを押すまで下書き」）。
-- Reason: オーナーの言葉のまま上に。
-- Affected features: キーの画面（`kbLtTap()`、`www/keyboard.js`）
-- Affected data: **無し。**押すたびに変わるのは板の下書き（`saveKb()`）で、slice に書くのは保存
-- Affected docs: この項、docs/CHANGELOG.md
-- Implementation status: **実装済み（`claude/r78-sides`、2026-09-24）。**選んでいる字（~~`kbLtPick`~~）と
-  確定の道（~~`kbLtPut()`~~）は消した ── 押した字が入る道が一つ。紫はキーに今入っている字。
-  `tools/kb-check.mjs` が持つ。**CODE CONFIRMED、DEVICE 未確認。**
+### 2026-09-24 キーの画面 ── 押した字がそのキーに入る。確定は無い【差し替え済み】→ 2026-09-25「複数のキーに一度に字を入れる」
 
 ### 2026-09-24 【決定の読み ── オーナーの新しい言葉ではない】持ち主の無い写しは読まない、消さない
 - Date: 2026-09-24（r79-acct、リーダーの指示で書いた。**オーナーはこの日これを言っていない**）

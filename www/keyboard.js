@@ -540,7 +540,11 @@ function kbDefault(){
    A pattern is a starting point and it is meant to be pulled apart, which is
    why the board remembers which one it was made from and nothing reads that
    back except the screen, to say so. */
-var KB_PATS=['qwerty', 'flick', 'tap', 'chart', 'abc'];
+/* And HANDWRITING, which is a keyboard of its own and not a page of another:
+   「手書きを選択したら手書きだけでしょ」 OWNER 2026-09-25. One face, marked
+   `hand` -- somewhere to write (ios/App/LinguaKeyboard/HandPad.swift) over
+   one row of space, delete and return 「改行も入れてあげたら」. */
+var KB_PATS=['qwerty', 'flick', 'tap', 'chart', 'abc', 'hand'];
 /* Ten to a row, which is what a row of a phone keyboard holds. */
 /* Twelve keys, four directions on each. One key holds five letters, so a
    language of sixty is one face -- which is the whole argument for a flick
@@ -717,7 +721,13 @@ function kbLinkFaces(lay){
   }
   return lay;
 }
+function kbHandLay(){
+  var sp=kbKey('sp'), d=kbKey('del'), r=kbKey('ret');
+  d.w=2; r.w=2; sp.w=(KB_COLS/2)-d.w-r.w;
+  return [{hand:1, rows:[[sp, d, r]]}];
+}
 function kbPatLay(pat){
+  if(pat==='hand')   return kbHandLay();
   if(pat==='qwerty') return kbLinkFaces(kbQwertyLay());
   if(pat==='flick')  return kbLinkFaces(kbFlickLay());
   if(pat==='chart')  return kbLinkFaces(kbChartLay());
@@ -1792,7 +1802,7 @@ function kbKeyIs(ri, ki){
   return false;
 }
 function kbTapKey(ri, ki){
-  var rows, ui;
+  var rows, ui, next;
   if(!kbEdit()) return;
   /* The lower half of a merged key IS that key. One redirect here rather than
      a second name in the markup, so everything below -- selecting, joining,
@@ -1803,7 +1813,28 @@ function kbTapKey(ri, ki){
     if(ui<0) return;
     ri=ri-1; ki=ui;
   }
-  kbSelTo(kbSelSpread(ri, ki));
+  next=kbSelSpread(ri, ki);
+  /* AND IN WHAT ORDER. 「選択した順に右上に小さく①②」 OWNER 2026-09-25: the
+     run is still a start and a length (kbSelKeys()), and beside it, the keys
+     in the order they were pressed. A run that is new starts the order; a run
+     that grew adds this key to the end of it; one that stood keeps it. */
+  if(next && next!==KBH) next.o=(next.n>1? kbSelOrder() : []).concat([{r:ri, i:ki}]);
+  kbSelTo(next);
+}
+/* The selected keys in the order they were selected -- or, where something
+   else has since moved the selection (a carry, a join) and the order no longer
+   names exactly the keys selected, first to last. */
+function kbSelOrder(){
+  var ms=kbSelKeys(), o=(KBH && KBH.o) || [], j;
+  if(o.length!==ms.length) return ms;
+  for(j=0;j<o.length;j++) if(!kbKeyIs(o[j].r, o[j].i)) return ms;
+  return o;
+}
+/* Where a key stands in that order, or -1. */
+function kbSelNth(ri, ki){
+  var o=kbSelOrder(), j;
+  for(j=0;j<o.length;j++) if(o[j].r===ri && o[j].i===ki) return j;
+  return -1;
 }
 /* What the selection BECOMES when this key is pressed. Three answers and no
    fourth: it is already in the run and the run stands; it lengthens the run at
@@ -2361,7 +2392,17 @@ function kbJoinSel(){
   if(kbJoinRight()) kbJoin(KBH.r, KBH.i);
   else if(kbJoinDown()) kbVJoin(KBH.r, KBH.i);
 }
-function kbOpenSel(){ if(KBH && KBH.k==='k') kbPick(KBH.r, KBH.i); }
+/* One key: its page, which says what the key is and carries the kinds.
+   More than one: straight to the kinds, for all of them in the order they
+   were selected -- a key's page is about one key, and what several keys
+   have in common is only what goes on them. */
+function kbOpenSel(){
+  var o;
+  if(!KBH || KBH.k!=='k') return;
+  if(kbSelN()===1){ kbPick(KBH.r, KBH.i); return; }
+  o=kbSelOrder().map(function(m){ return m.r+'_'+m.i; });
+  pkList('n.'+o.join(','));
+}
 /* ---- where the slack in a row goes -------------------------------------
    「エクセルみたいに中央寄せとかのボタン置けば？行とか列選択して中央寄せ
    すればそこだけ中央寄せになるとか。」
@@ -2481,6 +2522,7 @@ function kbHTML(sel, ro){
          width for it to be true against. */
       cols=ro? 0 : KB_COLS, at, b, lead, tot, ki2, hrun;
   if(!ro){ kbNoted(); out+=kbHdrHTML(cols); }
+  if(lay.hand) out+=kbPadHTML(kbHandRows(kbBoard(), Math.min(kbLay, kbBoard().lay.length-1)));
   for(ri=0;ri<lay.rows.length;ri++){
     row=lay.rows[ri];
     /* The row's number: the editor is a sheet you point at, and 3b is what
@@ -2557,7 +2599,8 @@ function kbHTML(sel, ro){
             (ro? '' : kbPickCSS(ri, ki))+'" '+
           'data-r="'+ri+'" data-k="'+ki+'"'+
           DO('kbTapKey', [ri, ki]) + '>'+kbFlicks(key, slots)+
-          '<span class="kbc">'+kbFace(key)+'</span>'+kbMark(key)+'</button>';
+          '<span class="kbc">'+kbFace(key)+'</span>'+kbMark(key)+
+          ((kbSelN()>1 && kbKeyIs(ri, ki))? pkNthHTML(kbSelNth(ri, ki)) : '')+'</button>';
     }
     /* and the other half, after them. A row of a keyboard built from a
        pattern comes to the same total as the widest and has neither. */
@@ -2805,10 +2848,7 @@ function vKb(){
               : '')+
            navDo(t('kb.sel.done'), 'kbSelOff', null, true))
         : ((kbBoards().length<2 || langLocked())? ''
-            : navDo(t('kb.sel'), 'kbSelOn', null, true))+
-          /* THE FONT, OUT: the share mark, in the corner a share stands in
-             (「共有も共有マークを右上」 OWNER 2026-09-23). kbFontOut(). */
-          navDo(t('kb.font'), 'kbFontOut', null, false, {icon:ICON_SHARE})))+
+            : navDo(t('kb.sel'), 'kbSelOn', null, true))))+
       /* AND NOT THE SWITCH. 「一覧の『キーに文字を表示』のスイッチを消す」
          OWNER 2026-09-06. kbSysHTML() is on every keyboard's own page, which
          is where the keys it changes are drawn, so a second copy of it here
@@ -2840,7 +2880,6 @@ function vKb(){
   return '<div class="view">'+navTop('', kbMoreQ())+'<div class="body">'+
     kbNameHTML(now)+
     kbToolHTML()+
-    kbChOnHTML()+
     kbHTML(kbSel)+
     kbLaysHTML()+
     /* The one control whose whole job is to change how a key LOOKS, on the
@@ -2897,7 +2936,9 @@ function kbLaysHTML(){
     /* and no + when there is nowhere on this face to put the key that would
        reach the new one. A page nothing can get to is a page that does
        nothing, which is the same thing as a button that does nothing. */
-    (kbLayRoom(b.lay[Math.min(kbLay, n-1)])
+    /* and none at all on a handwriting keyboard, which is handwriting and
+       nothing else 「手書きを選択したら手書きだけでしょ」 */
+    (kbLayRoom(b.lay[Math.min(kbLay, n-1)]) && !kbIsHand(b)
       ? '<button class="seg add"' + DO('kbAddLay') + ' aria-label="'+esc(t('kb.lay.add'))+'">'+
         ICON_ADD+'</button>'
       : '')+
@@ -2940,7 +2981,7 @@ function kbPatsHTML(act){
    keys or thirty small ones. At that size a drawn glyph is a smudge, and a
    smudge of somebody's alphabet is worse than an honest block. */
 function kbMiniHTML(lay){
-  var rows=(lay && lay[0] && lay[0].rows)? lay[0].rows : [], out='', i, j, k, fl;
+  var rows=(lay && lay[0] && lay[0].rows)? lay[0].rows : [], out=kbPadSmall(lay, 'kbmr'), i, j, k, fl;
   for(i=0;i<rows.length;i++){
     out+='<span class="kbmr">';
     for(j=0;j<rows[i].length;j++){
@@ -2961,7 +3002,7 @@ function kbMiniHTML(lay){
 
    It is a picture and nothing in it is pressable: the tile is the button. */
 function kbShotHTML(lay, src){
-  var rows=(lay && lay[0] && lay[0].rows)? lay[0].rows : [], out='', i, j, k;
+  var rows=(lay && lay[0] && lay[0].rows)? lay[0].rows : [], out=kbPadSmall(lay, 'kbsr'), i, j, k;
   for(i=0;i<rows.length;i++){
     out+='<span class="kbsr">';
     for(j=0;j<rows[i].length;j++){
@@ -3553,7 +3594,7 @@ function kbDelCol(ca, cb){
    keyboard was on this visit.
 
    ONE PLACE records it -- kbNoted() -- rather than the thirty mutators:
-   kbDelRow, kbDelCol, kbDelKey, kbSetKind, kbLtTap, the drag.
+   kbDelRow, kbDelCol, kbDelKey, kbSetKind, kbSlotsPut, the drag.
    A list that has to be added to by hand is a list with a hole in it, and the
    hole is a change that cannot be taken back with no way of knowing which one.
 
@@ -3710,14 +3751,16 @@ function kbToolHTML(){
             (kbCellFits()? '' : ' disabled') +
             ' aria-label="'+esc(t('kb.cell.add'))+'">'+ICON_ADD+'</button>'
       : key
-        /* KEYS are selected, and WHICH buttons is how many.
-           「編集ボタンは1キー選択時のみ」 OWNER 2026-08-27 -- a key's page is
-           about one key, and offering it over four would have to pick one.
-           Joining is the other way round: it is about two, so it stands where
-           the edit button does when there is only one. */
-        ? (kbSelN()===1
-            ? '<button class="kbtb"' + DO('kbOpenSel') +
-                ' aria-label="'+esc(t('kb.key.open'))+'">'+ICON_KEYSET+'</button>'
+        /* KEYS are selected. The pen is up for one or for several
+           (「複数キーでも鉛筆マークつくようにして」 OWNER 2026-09-25, which
+           replaces 「編集ボタンは1キー選択時のみ」 of 2026-08-27); joining is
+           about two, so it stands beside the pen once there is more than one. */
+        ? '<button class="kbtb"' + DO('kbOpenSel') +
+            ' aria-label="'+esc(t('kb.key.open'))+'">'+ICON_KEYSET+'</button>'+
+          /* and with more than one, the pen still -- 「複数キーでも鉛筆マーク
+             つくようにして」 OWNER 2026-09-25 -- where it opens the kinds for
+             all of them at once (kbOpenSel). */
+          (kbSelN()===1? ''
             : '<button class="kbtb"' + DO('kbJoinSel') + (kbJoinable()? '' : ' disabled') +
                 ' aria-label="'+esc(t('kb.key.join'))+'">'+ICON_JOIN+'</button>')
         : '<button class="kbtb"' + DO('kbAlign', ["l"]) + (al? '' : ' disabled') +
@@ -3738,45 +3781,6 @@ function kbToolHTML(){
        did something. */
     (ask? '' : kbTb('kbCut', ICON_BIN, t('kb.cut'), !KBH || cell))+
     '</div>';
-}
-/* THE FONT OF THE DRAWN LETTERS, OUT OF THE APP. 「フォントの書き出しはそれで
-   いいよ」「フォントの書き出しを求める声多いんよな」 OWNER 2026-09-25 -- Plus
-   (can('font')), and on free the press is the same upgrade pop every other
-   closed door gives.
-
-   What goes out is SFONT.b64: the bytes LinguaFont.build made for the letters
-   as they are now, the same font the app itself is set in -- render() keeps it
-   in step with the letters (www/glyph.js), so there is nothing to build here
-   and no second font that could come out different. Nothing drawn is no font,
-   and that is said rather than handing over an empty file.
-
-   It leaves by the road the card and the sheet already take: LinguaShare's
-   sheet() files it in the app's own temporary folder as `<name>.otf`, and
-   shareFile() puts iOS's share sheet up with it -- Save to Files, AirDrop,
-   Mail. No Swift of its own: that road takes any extension and hands over
-   whatever file it wrote. Nothing is said when the sheet is up, for the
-   reason cardSave() gives (www/card.js): what somebody then chooses is not
-   answered, and must not be guessed at. */
-function kbFontOut(){
-  var p;
-  if(upStop(can('font'))) return;
-  if(!SFONT.b64){ toast(t('kb.font.none')); return; }
-  p=sharePlug();
-  if(!p){ toast(t('card.nofile')); return; }
-  p('LinguaShare', 'sheet', {name:kbFontName(), ext:'otf', b64:SFONT.b64})
-    .then(function(r){
-      if(!(r && r.file)){ toast(t('card.nofile')); return; }
-      return p('LinguaShare', 'shareFile', {file:String(r.file)});
-    })
-    ['catch'](function(){ toast(t('card.nofile')); });
-}
-/* What the file is called: the language's name, cut down to what a file name
-   on the phone may safely carry -- sheet() takes it as it comes. No
-   extension; the native side puts that on, because it knows which of
-   `<name>.otf` and `<name> 2.otf` it filed. */
-function kbFontName(){
-  var n=String(langName||'').replace(/[^\w \-]/g, '').replace(/\s+/g, ' ').replace(/^ +| +$/g, '');
-  return n? n.slice(0, 40) : 'Lingua';
 }
 /* Making another is choosing a pattern again, on a screen of its own rather
    than a row that pushes the keyboard off the page. */
@@ -4101,6 +4105,44 @@ function kbAddLay(){
   kbSel=null;
   saveKb(); render();
 }
+/* The pad, on the sheet: as many rows tall as it is on the phone, with the
+   same square and cross the phone draws on it 「四角形と十字」 -- it is where
+   the finger goes, and on the sheet there is nothing on it to press. */
+function kbPadSvg(){
+  /* One screen pixel at every size -- the sheet's pad and the thumbnail on
+     the list are the same drawing a tenth of the size apart. */
+  var ln=' vector-effect="non-scaling-stroke"';
+  return '<svg viewBox="0 0 100 100" style="height:86%;aspect-ratio:1" fill="none" stroke="currentColor" '+
+    'stroke-width="1" stroke-dasharray="3 3" aria-hidden="true">'+
+    '<rect x="1" y="1" width="98" height="98"'+ln+'/><path d="M50 1V99M1 50H99"'+ln+'/></svg>';
+}
+function kbPadHTML(n){
+  return '<div class="kbpad" style="height:calc(var(--kh, 44px) * '+n+' + var(--kbrg, 5px) * '+(n-1)+');'+
+    'display:flex;align-items:center;justify-content:center;color:var(--txm)">'+kbPadSvg()+'</div>';
+}
+/* And the same pad on the two small pictures of a keyboard -- the five to
+   choose from, and the one on the list -- as tall as it is rows, drawn in the
+   picture's own row element so it takes a row's share of the height. */
+function kbPadSmall(lay, cls){
+  var n;
+  if(!lay || !lay[0] || !lay[0].hand) return '';
+  n=kbHandRows({lay:lay}, 0);
+  /* `.kbmr` is a row of a fixed 13px with 3 between, and `.kbsr` a share of a
+     fixed height -- so the one is given n rows of height and the other n
+     shares. Both numbers are the stylesheet's. */
+  return '<span class="'+cls+'" style="'+(cls==='kbmr'? 'height:'+(n*16-3)+'px' : 'flex:'+n)+
+    ';justify-content:center;align-items:center;color:var(--txm)">'+kbPadSvg()+'</span>';
+}
+/* A handwriting keyboard: its one face is somewhere to write. Asked by what
+   the board IS -- `pat` -- rather than by what a face happens to carry. */
+function kbIsHand(b){ return !!b && b.pat==='hand'; }
+/* How many rows tall the pad is: whatever makes the face as tall as a
+   keyboard may be (kbRowsMax()), and never under two. The ONE place --
+   share.js hands this number to the phone as the face's `hand`, and the
+   sheet here draws the same number, so the two draw one face. */
+function kbHandRows(b, i){
+  return Math.max(2, kbRowsMax()-b.lay[i].rows.length);
+}
 /* And taking one away, which could be added and never removed -- a face built
    by accident stayed for the life of the keyboard.
    「キーボードの2層目作ったあといらなくなっても消せない」
@@ -4157,7 +4199,7 @@ function kbPick(ri, ki){
   kbSel={r:ri, k:ki};
   kbKeyForm(ri, ki);
 }
-/* The key's screen, drawn -- by kbPick() arriving on it, and by kbLtDraw()
+/* The key's screen, drawn -- by kbPick() arriving on it, and by formAgain()
    when a letter pressed on it has gone onto the key. */
 function kbKeyForm(ri, ki){
   openForm('kbkey:'+ri+':'+ki, t('kb.key'), kbKeyHTML(ri, ki), function(){ geTiles(); });
@@ -4172,14 +4214,15 @@ function kbKeyHTML(ri, ki){
      sentence every screen says for that, drawn by the one function */
   if(!key) return goneBox();
   out=(key.k==='lt'? kbEditHTML(ri, ki, key) : kbEditFnHTML(key))+
-    /* And the alphabet, HERE, when there is one slot to fill. Choosing which
-       letter goes on a key is what somebody is doing nearly every time they
-       open this, and it was three screens down: press the key, press the
-       middle square, then the letters. On a board that flicks the five slots
-       have to be chosen between first, so there it stays where it was.
+    /* And what can go on it, HERE, when there is one slot to fill: the kinds
+       of character, the language's own letters first -- the same list a
+       letter's 「既存文字から選ぶ」 draws (pkKindsHTML() in www/home.js,
+       「既存文字から選ぶとキーの画面は同一のものを使おう」 OWNER 2026-09-25).
+       On a board that flicks the five slots have to be chosen between first,
+       so there it is one screen further, on the slot's own page.
        「キーボード設定まじでやりにくい」 */
     ((key.k==='lt' && !kbSlotsShown(key))
-      ? '<div class="kbltin">'+kbLtGrid(ri, ki, -1)+'</div>' : '')+
+      ? '<div class="kbltin">'+pkKindsHTML('k.'+ri+'.'+ki+'.-1')+'</div>' : '')+
     /* FOUR, AND THE SAME FOUR ON EVERY KEY. 「「押したとき」は文字／スペース／
        削除／改行 の 4 つだけ（層は消す）」「削除や改行を置けるキーが決まって
        いるのはおかしい ── 全キーで選べるように」 OWNER 2026-09-06.
@@ -4213,7 +4256,7 @@ function kbKeyHTML(ri, ki){
   return out;
 }
 /* One slot -- the key itself or one of its corners -- and the letter in it.
-   Pressing it opens the alphabet to choose from, which is why both are the
+   Pressing it opens the kinds to choose from, which is why both are the
    same row: they hold the same kind of thing. */
 /* THE KEY, drawn the size of a hand, with its five slots where they actually
    are on it. 「だからキーボードをカスタマイズする画面がゴミだって言ってんだろ」
@@ -4253,8 +4296,8 @@ function kbSlotFace(lid){
     '<span class="kbl" style="font-size:.6rem;line-height:1">'+
     esc(ltName(l)||'·')+'</span></span>';
 }
-/* The square shows what is on the key, which is also what is purple under
-   it: a letter pressed goes onto the key at once (kbLtTap). */
+/* The square shows what is on the key -- what the Save on a page of
+   characters put there (kbSlotsPut). */
 function kbSlotBtn(cls, lid, ri, ki, dir, label){
   return '<button class="kbe '+cls+(lid && (ltById(lid) || kbCh(lid))? '' : ' non')+'"' +
     DO('kbSlot', [ri, ki, dir]) +
@@ -4314,7 +4357,7 @@ function kbSheetW(){
 function kbSheetH(){
   return 'calc(var(--kbw) * '+KB_ROWW+')';
 }
-/* Which slot the alphabet is being opened for. */
+/* Which slot the kinds are being opened for. */
 var kbSlotFor=null;
 function kbSlot(ri, ki, dir){
   kbSlotFor={r:ri, k:ki, d:dir};
@@ -4335,7 +4378,8 @@ FORM_OPEN.kbslot=function(a){
 function kbSlotsShown(key){
   return kbHasFlick() || !!(key && key.f && (key.f[0]||key.f[1]||key.f[2]||key.f[3]));
 }
-/* The alphabet, as a grid, for one slot. `dir` is -1 for the key itself and
+/* The language's own letters, as a grid, for one slot -- the first row of
+   the kinds (pkKind(), www/home.js). `dir` is -1 for the key itself and
    0..3 for a corner -- the same numbering kbSlot() uses, because it is the
    same slot.
 
@@ -4362,152 +4406,99 @@ function kbSlotsShown(key){
 
    The ltOrder() that used to wrap this was a second sort over a sorted list:
    ltOfKind('alpha') ends in ltOrder() itself. */
-function kbLtGrid(ri, ki, dir){
+function kbLtGrid(tg){
+  var to=pkTo(tg), many=!!to && !!to.keys && to.keys.length>1;
   /* The cells alone, so typing in the search repaints them without rebuilding
      the field being typed into -- ltPaint() calls this, and vLtset leaves the
-     same kind of function behind. Both screens put them in #lt-list. */
+     same kind of function behind. Both screens put them in #lt-list.
+
+     What is CHOSEN is this page's draft (pkPicks()), painted the purple this
+     chapter paints a chosen thing (kbPickPaint(), the one place that says
+     what that purple is), and numbered when there are keys to number. The
+     name under a letter and the pen on one nobody drew take the cell's colour
+     there; what IS drawn stays its own ink, because that is the letter.
+     Nothing here is a border or a corner (CLAUDE.md § 18). */
   function cells(){
-    var ls=ltPickList(ltOfKind('alpha'));
+    var ls=ltPickList(ltOfKind('alpha')), picks=pkPicks();
     if(!ls.length) return '<div class="note">'+t('lt.none')+'</div>';
     return '<div class="ltgrid">'+ls.map(function(l){
-      return '<button class="ltc"'+kbLtOnCSS(ri, ki, dir, l.id) +
-        DO('kbLtTap', [ri, ki, dir, l.id]) + ' aria-label="'+
+      var at=picks.indexOf(l.id), on=at>=0, ink=on? ' style="color:inherit"' : '';
+      return '<button class="ltc"'+(on? ' style="position:relative;'+kbPickPaint().slice(1)+'"' : '') +
+        DO('pkTake', [tg, l.id]) + ' aria-label="'+
         esc(ltName(l)||t('lt.reads.none'))+'">'+
-        '<span class="ltcf">'+ltInk(l, '<span class="nol"'+
-          kbLtOnInk(ri, ki, dir, l.id)+'>'+ICON_PEN+'</span>')+'</span>'+
-        '<span class="ltcn"'+kbLtOnInk(ri, ki, dir, l.id)+'>'+
-        esc(ltName(l)||t('lt.reads.none'))+'</span></button>';
+        '<span class="ltcf">'+ltInk(l, '<span class="nol"'+ink+'>'+ICON_PEN+'</span>')+'</span>'+
+        '<span class="ltcn"'+ink+'>'+esc(ltName(l)||t('lt.reads.none'))+'</span>'+
+        (on && many? pkNthHTML(at) : '')+'</button>';
     }).join('')+'</div>';
   }
   ltReList=cells;
-  /* A corner of a flick key has no place on the sheet to be typed into, so
-     its box is here, on the corner's own page. The key itself is typed into
-     on the sheet (kbChOnHTML). */
-  return (dir>=0? kbChHTML(ri, ki, dir) : '')+ltViewRow()+
-    /* "Nothing in this slot" is a choice like any other, so it is CHOSEN like
-       any other and waits for the same confirm. Leaving it applying on the
-       press would be the thing that must not happen -- two mechanisms writing
-       one field, one of them still 「触ったら効く」. */
-    '<button class="btn ghost" style="width:100%;margin:10px 0'+
-      kbLtOnPaint(ri, ki, dir, "")+'"' +
-      DO('kbLtTap', [ri, ki, dir, ""]) + '>'+t('kb.empty')+'</button>'+
-    '<div id="lt-list">'+cells()+'</div>';
+  /* No box to type into and no 「なし」: a character that is not one of the
+     language's own is chosen from its kind's page, and a slot is emptied by
+     pressing what is chosen again and confirming. 「なし消して」「字の入力
+     または貼り付けいらん」 OWNER 2026-09-25. */
+  return ltViewRow()+'<div id="lt-list">'+cells()+'</div>';
 }
 function kbLtHTML(){
   var s=kbSlotFor;
   if(!s) return goneBox();
-  return kbLtGrid(s.r, s.k, s.d);
+  return pkKindsHTML('k.'+s.r+'.'+s.k+'.'+s.d);
 }
-/* ---- a letter onto a key ------------------------------------------------
-   「なんのための確定？いらないなら保存だけでいいよ。」 OWNER 2026-09-24, and
-   「後選択してる紫はもう一度同じ場所触れたら解除して欲しい」 OWNER 2026-09-03.
+/* ---- what goes onto the keys, and when ----------------------------------
+   「文字選んだらすぐ入るんじゃなくて右上の確定押したら文字が入ったキーボード
+   設定の画面に戻る これで。1つの場合も一緒。じゃないと誤タップで直す時スト
+   レスになる」 OWNER 2026-09-25 -- which replaces 「なんのための確定？いらない
+   なら保存だけでいいよ。」 of 2026-09-24, where a press wrote at once.
 
-   A letter pressed goes onto the key -- or onto the one corner of a flick key
-   the sheet was opened for -- and pressing the letter already there takes it
-   off again. The purple IS what is on the key, so there is nothing chosen that
-   is not on it, and nothing to confirm. It was a choice remembered here and a
-   confirm in the bar that wrote it; that road is gone rather than kept beside
-   this one, because two roads to one field is two things deciding it.
+   A press on the page that offers characters CHOOSES (pkTake(), www/home.js):
+   it goes into that page's draft and nothing on the keys moves. The Save in
+   the corner -- the KEEP road every screen with a Save already takes, not a
+   confirm of this chapter's own -- is what puts them on, all at once, here.
 
-   Written the way every change to this sheet is: saveKb(), which is one step
-   back and the board's draft (www/keyboard.js § K1) -- the language is
-   written by the board's Save and nothing else. The screen stays where it is.
+   「編集でキー分文字選んだら一括で設定できるように…選択した順に右上に小さく
+   ①②…その順に選択した文字がキーに入る」: `keys` are the selected keys in the
+   order they were selected (kbSelOrder()), and the Nth character chosen goes
+   onto the Nth key. ONE saveKb(), so it is one step back however many keys
+   moved. A key with nothing chosen for it is left as it is; on a single key,
+   choosing nothing -- the character on it pressed off -- empties it.
 
-   `dir` is -1 for the key itself and 0-3 for a flick key's corners. */
+   `dir` is -1 for the key itself and 0-3 for a flick key's corners. A value is
+   a slot's own: a letter's id, or `=` and a character (kbChSlot()). */
 function kbLtOn(ri, ki, dir){
   var key=KB? kbAt(ri, ki) : null;
   if(!key) return '';
   return String((dir<0? key.v : key.f[dir]) || '');
 }
-function kbLtIs(ri, ki, dir, lid){
-  return kbLtOn(ri, ki, dir)===String(lid||'');
-}
-/* Painted the purple this chapter already paints a chosen thing -- the row's
-   band, the column's band, a chosen key. kbPickPaint() is the one place that
-   says what that purple is, so a cell and a key cannot come to wear two.
-   The name under the letter, and the pen a letter with nothing drawn on it
-   wears, carry their own greys -- so they are told to take the cell's. What
-   IS drawn stays its own ink, because that is the letter. Nothing here is a
-   border or a corner (CLAUDE.md § 18). */
-function kbLtOnPaint(ri, ki, dir, lid){
-  return kbLtIs(ri, ki, dir, lid)? kbPickPaint() : '';
-}
-function kbLtOnCSS(ri, ki, dir, lid){
-  return kbLtIs(ri, ki, dir, lid)? ' style="'+kbPickPaint().slice(1)+'"' : '';
-}
-function kbLtOnInk(ri, ki, dir, lid){
-  return kbLtIs(ri, ki, dir, lid)? ' style="color:inherit"' : '';
-}
-/* A cell pressed: that letter onto the slot, or off it if it is the one
-   there. 「なし」 is the empty letter, so it empties the slot. */
-function kbLtTap(ri, ki, dir, lid){
-  var key;
+function kbSlotsPut(keys, dir, vals){
+  var i, key, v;
   if(!kbEdit()) return;
-  key=kbAt(ri, ki);
-  if(!key) return;
-  lid=kbLtIs(ri, ki, dir, lid)? '' : String(lid||'');
-  if(dir<0) key.v=lid; else key.f[dir]=lid;
+  for(i=0;i<keys.length;i++){
+    if(keys.length>1 && i>=vals.length) break;
+    key=kbAt(keys[i].ri, keys[i].ki);
+    if(!key) continue;
+    v=String(vals[i]||'');
+    if(dir>=0){ key.f[dir]=v; continue; }
+    /* `t` is what a key of the QWERTY pattern TYPES, put there by kbFix()
+       for the letter it was laid with -- and it is true of that letter only,
+       so whatever goes on the key instead takes it with it. */
+    if(key.v!==v) delete key.t;
+    key.v=v;
+  }
   saveKb();
-  kbLtDraw(ri, ki, dir);
+  kbSel=null;
+  kbToBoard();
 }
-/* A CHARACTER onto the slot: whatever was typed, on every plan.
-   「既存の文字ならどこでも使えるでしょ？ユニコードあるわけだし」 OWNER
-   2026-09-25. What is typed in the box over the alphabet goes onto the key when
-   the box is left or Enter is pressed, and an empty box empties the slot.
-
-   It arrives as the roman (act.js hands every receiver puaTyped()'s reading),
-   so a letter typed on the Lingua keyboard goes on as its name and never as a
-   private use code point -- rule 13: that code point means a letter only in
-   this alphabet's order at this moment. */
-function kbChPut(ri, ki, dir, ln){
-  var key, v;
-  if(!kbEdit()) return;
-  key=kbAt(ri, ki);
-  if(!key) return;
-  v=kbChSlot(String(ln||'').slice(0, KB_CH_MAX));
-  if(kbLtOn(ri, ki, dir)===v) return;
-  /* `t` is what a key of the QWERTY pattern TYPES, put there by kbFix() for
-     the letter it was laid with -- a character on the key types itself, so
-     that is no longer true of it. */
-  if(dir<0){ key.v=v; delete key.t; } else key.f[dir]=v;
-  saveKb();
-  kbLtDraw(ri, ki, dir);
+/* AND THE SAVE LANDS ON THE BOARD. keepSave() ends every Save one page back
+   (www/shell.js), and one page back from a kind of character is the list of
+   kinds -- so the trail is cut here to the board the keys are on, and one
+   page back from this page is the keyboard being edited. */
+function kbToBoard(){
+  var i, j=-1;
+  for(i=0;i<NAV.length-1;i++) if(NAV[i].r==='kb') j=i;
+  if(j>=0 && j<NAV.length-2) NAV=NAV.slice(0, j+1).concat([NAV[NAV.length-1]]);
 }
-var KB_CH_MAX=8;
-/* ON THE SHEET, FOR THE KEY THAT IS SELECTED. 「既存の文字はキーボードの編集
-   画面でキーを押してそのまま入れる ── 打つ・貼る。文字の画面を通さない」
-   OWNER 2026-09-25. Press a key and type or paste: what is typed goes onto
-   that key when the box is left or Enter is pressed. A drawn letter is the
-   other thing a key can hold, and it is chosen on the key's page (the pencil),
-   because a drawn letter is registered on the letters' screen first. Only a
-   letter key: space, delete and return are what they are. */
-function kbChOnHTML(){
-  var key;
-  if(!KBH || KBH.k!=='k' || !kbEdit()) return '';
-  key=kbAt(KBH.r, KBH.i);
-  if(!key || key.k!=='lt') return '';
-  return kbChHTML(KBH.r, KBH.i, -1);
-}
-function kbChHTML(ri, ki, dir){
-  return '<input class="lnin" value="'+esc(kbCh(kbLtOn(ri, ki, dir)))+'" '+
-    'maxlength="'+KB_CH_MAX+'" autocomplete="off" autocapitalize="off" '+
-    'placeholder="'+esc(t('kb.ch'))+'" aria-label="'+esc(t('kb.ch'))+'"'+
-    CH('kbChPut', [ri, ki, dir]) + '>';
-}
-/* WHICH OF THE TWO SCREENS THE ALPHABET IS ON, asked once, and asked of the
-   ROUTE. kbSlotFor is a note the sheet leaves for itself, and backing out of
-   the sheet without choosing leaves it lying there -- so a letter chosen
-   afterwards on the key's own screen read that note, believed it was on the
-   sheet, and went back one screen too far. That was already true of the
-   press that wrote (kbPut() read the same note). One question, one place. */
-function kbLtWhere(){ return formArg(here().a).kind; }
-/* Painting the screen again with what is on the key now, where it is. */
-function kbLtDraw(ri, ki, dir){
-  var w=kbLtWhere();
-  if(w==='kbslot') kbSlotForm(ri, ki, dir);
-  else if(w==='kbkey') kbKeyForm(ri, ki);
-  else render();
-}
+/* The Nth in an order, as the small mark on a key and on a character chosen
+   for it: ① to ⑳, and the plain number after that. */
+function kbNth(i){ return i<20? String.fromCharCode(0x2460+i) : String(i+1); }
 /* THE FOUR THE SCREEN OFFERS AND NOTHING ELSE. 「文字／スペース／削除／改行
    の 4 つだけ」 OWNER 2026-09-06. `lay` is gone from here for the reason
    written over the buttons in kbKeyHTML(): a board that already carries one

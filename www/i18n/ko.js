@@ -349,7 +349,6 @@ defLang('ko', (function(){
       "kb.dir.right"               : "오른쪽",
       "kb.dir.down"               : "아래",
       "kb.dir.left"               : "왼쪽",
-      "kb.empty"               : "없음",
       "kb.row.ins" : "여기에 행 추가",
       "kb.row.up" : "이 행 위에",
       "kb.row.down" : "이 행 아래에",
@@ -375,7 +374,6 @@ defLang('ko', (function(){
       "kb.sys.go" : "설정 열기",
       "kb.sys.no" : "설정을 열 수 없습니다",
       "kb.rom"               : "각 키에 글자 표시",
-      "kb.ch" : "문자 입력",
       "kb.font" : "폰트 내보내기",
       "kb.font.none" : "아직 그린 글자가 없습니다",
       "kb.reset"               : "처음부터 다시",
@@ -547,7 +545,6 @@ defLang('ko', (function(){
       "set.signin.done" : "로그인되었습니다",
       "set.signout.done" : "로그아웃했습니다",
       "ob.tagline"                : "당신의 언어에 새로운 빛깔을.",
-      "script.own.ph"             : "글자를 붙여넣거나 입력",
       "up.cta"                    : "업그레이드",
       "up.need"                   : "이 기능을 사용하려면 업그레이드가 필요합니다",
       "pop.no"                  : "닫기",
@@ -1540,7 +1537,18 @@ defLang('ko', (function(){
       "cal.d.5" : "목요일",
       "cal.d.6" : "금요일",
       "cal.d.7" : "토요일",
-      "plan.renew" : "해지할 때까지 자동으로 갱신됩니다."
+      "plan.renew" : "해지할 때까지 자동으로 갱신됩니다.",
+      "kb.pat.hand" : "손글씨",
+      "pk.own" : "내 글자",
+      "ws.latin" : "라틴 문자",
+      "ws.latinacc" : "기호가 붙은 라틴 문자",
+      "ws.latinext" : "라틴 문자(확장)",
+      "ws.ipa" : "국제 음성 기호",
+      "ws.digit" : "숫자",
+      "ws.symbol" : "기호",
+      "ws.hiragana" : "히라가나",
+      "ws.katakana" : "가타카나",
+      "ws.emoji" : "이모지"
     }
   };
 })());

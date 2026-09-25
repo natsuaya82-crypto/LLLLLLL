@@ -130,7 +130,6 @@ defLang('es', (function(){
       "kb.dir.right"               : "Derecha",
       "kb.dir.down"               : "Abajo",
       "kb.dir.left"               : "Izquierda",
-      "kb.empty"               : "Vacío",
       "kb.row.ins" : "Añadir una fila aquí",
       "kb.row.up" : "Encima de esta fila",
       "kb.row.down" : "Debajo de esta fila",
@@ -156,7 +155,6 @@ defLang('es', (function(){
       "kb.sys.go" : "Abrir Ajustes",
       "kb.sys.no" : "No se pudieron abrir los Ajustes",
       "kb.rom"               : "Una letra en cada tecla",
-      "kb.ch" : "Escribe un carácter",
       "kb.font" : "Exportar la fuente",
       "kb.font.none" : "Aún no hay nada dibujado",
       "kb.reset"               : "Empezar de nuevo",
@@ -328,7 +326,6 @@ defLang('es', (function(){
       "set.signin.done" : "Sesión iniciada",
       "set.signout.done" : "Sesión cerrada",
       "ob.tagline"                : "Dale nuevos colores a tus palabras.",
-      "script.own.ph"             : "Pega o escribe un carácter",
       "up.cta"                    : "Mejorar",
       "up.need"                   : "Necesitas mejorar tu plan para usar esta función",
       "pop.no"                  : "Cerrar",
@@ -1324,7 +1321,18 @@ defLang('es', (function(){
       "cal.d.5" : "Jueves",
       "cal.d.6" : "Viernes",
       "cal.d.7" : "Sábado",
-      "plan.renew" : "Se renueva automáticamente hasta que la canceles."
+      "plan.renew" : "Se renueva automáticamente hasta que la canceles.",
+      "kb.pat.hand" : "Escritura a mano",
+      "pk.own" : "Tus letras",
+      "ws.latin" : "Latino",
+      "ws.latinacc" : "Latino con diacríticos",
+      "ws.latinext" : "Latino extendido",
+      "ws.ipa" : "AFI",
+      "ws.digit" : "Números",
+      "ws.symbol" : "Símbolos",
+      "ws.hiragana" : "Hiragana",
+      "ws.katakana" : "Katakana",
+      "ws.emoji" : "Emoji"
     }
   };
 })());

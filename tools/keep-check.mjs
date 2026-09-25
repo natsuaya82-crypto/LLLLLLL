@@ -743,30 +743,30 @@ const more = await pg.evaluate(() => {
   popOff(); viewReset();
 
   /* ---- THE CHARACTER PICKER, WHICH THE WALK CANNOT REACH ---------------
-     The grid of a world's characters is folded away until a script is chosen
-     (pkSwitch), and the walk at the foot of this file rebuilds the screen
-     before every press -- so it can open that fold or press a tile, never
-     both, and the press this screen is ABOUT was reached by nothing. It is
-     two presses, so it is written here.
+     The characters are a kind's own page (pkKind, www/home.js), and the walk
+     at the foot of this file rebuilds the screen before every press -- so it
+     can reach that page or press a tile, never both, and the press this
+     screen is ABOUT was reached by nothing. It is two presses, so it is
+     written here.
 
      What it used to do on the tile: give the letter the character, throw away
      the strokes it had been drawn with, switch the person's 「show the
      script」 on, send that, rebuild the font, and LEAVE the screen
      (www/home.js § PRESSING A CHARACTER CHOOSES). */
   popOff(); viewReset();
-  goTab('build'); pkScript = ''; openPick(LETTERS[0].id); render();
+  goTab('build'); openPick(LETTERS[0].id);
+  pkKind('l.' + LETTERS[0].id, WORLD_SCRIPTS[0].id); render();
   out.pkArrive = navOn();
   out.pkWas = String(ltById(LETTERS[0].id).ch || '');
   out.pkHadStrokes = !!(ltById(LETTERS[0].id).st || []).length;
-  pkSwitch(WORLD_SCRIPTS[0].id);
-  var pkt = document.querySelector('#pk-chars .pkch');
+  var pkt = document.querySelector('.pkchars .pkch');
   out.pkTile = pkt ? String(pkt.textContent || '') : '';
   if(pkt) pkt.click();
   out.pkGold = navOn();
   /* 「打ったら覚える、ボタンが書く」 -- the tile wrote nothing. */
   out.pkWroteOnPress = String(ltById(LETTERS[0].id).ch || '');
   out.pkStrokesOnPress = !!(ltById(LETTERS[0].id).st || []).length;
-  out.pkStayed = whereAmI2() === 'form|pick:' + LETTERS[0].id;
+  out.pkStayed = whereAmI2() === 'form|pickk:l.' + LETTERS[0].id + ':' + WORLD_SCRIPTS[0].id;
   keepPress();
   out.pkWroteOnSave = String(ltById(LETTERS[0].id).ch || '');
   out.pkStrokesOnSave = !!(ltById(LETTERS[0].id).st || []).length;

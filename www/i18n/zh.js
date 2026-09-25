@@ -178,7 +178,6 @@ defLang('zh', (function(){
       "kb.dir.right"               : "右",
       "kb.dir.down"               : "下",
       "kb.dir.left"               : "左",
-      "kb.empty"               : "空",
       "kb.row.ins" : "在此添加一行",
       "kb.row.up" : "在此行上方",
       "kb.row.down" : "在此行下方",
@@ -204,7 +203,6 @@ defLang('zh', (function(){
       "kb.sys.go" : "打开设置",
       "kb.sys.no" : "设置打不开",
       "kb.rom"               : "每个键上显示字母",
-      "kb.ch" : "输入字符",
       "kb.font" : "导出字体",
       "kb.font.none" : "还没有画任何字",
       "kb.reset"               : "重新开始",
@@ -376,7 +374,6 @@ defLang('zh', (function(){
       "set.signin.done" : "已登录",
       "set.signout.done" : "已退出",
       "ob.tagline"                : "为你的语言添上新的色彩。",
-      "script.own.ph"             : "粘贴或输入一个字",
       "up.cta"                    : "升级",
       "up.need"                   : "使用此功能需要升级套餐",
       "pop.no"                  : "关闭",
@@ -1370,7 +1367,18 @@ defLang('zh', (function(){
       "cal.d.5" : "星期四",
       "cal.d.6" : "星期五",
       "cal.d.7" : "星期六",
-      "plan.renew" : "订阅会自动续期，直到你取消。"
+      "plan.renew" : "订阅会自动续期，直到你取消。",
+      "kb.pat.hand" : "手写",
+      "pk.own" : "自创文字",
+      "ws.latin" : "拉丁字母",
+      "ws.latinacc" : "带符号的拉丁字母",
+      "ws.latinext" : "拉丁字母（扩展）",
+      "ws.ipa" : "国际音标",
+      "ws.digit" : "数字",
+      "ws.symbol" : "符号",
+      "ws.hiragana" : "平假名",
+      "ws.katakana" : "片假名",
+      "ws.emoji" : "表情符号"
     }
   };
 })());

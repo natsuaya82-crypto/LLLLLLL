@@ -218,7 +218,6 @@ defLang('fr', (function(){
       "kb.dir.right"               : "Droite",
       "kb.dir.down"               : "Bas",
       "kb.dir.left"               : "Gauche",
-      "kb.empty"               : "Vide",
       "kb.row.ins" : "Ajouter une ligne ici",
       "kb.row.up" : "Au-dessus de cette ligne",
       "kb.row.down" : "En dessous de cette ligne",
@@ -244,7 +243,6 @@ defLang('fr', (function(){
       "kb.sys.go" : "Ouvrir les Réglages",
       "kb.sys.no" : "Impossible d’ouvrir les Réglages",
       "kb.rom"               : "Une lettre sur chaque touche",
-      "kb.ch" : "Saisir un caractère",
       "kb.font" : "Exporter la police",
       "kb.font.none" : "Rien n’est encore dessiné",
       "kb.reset"               : "Recommencer",
@@ -416,7 +414,6 @@ defLang('fr', (function(){
       "set.signin.done" : "Connecté",
       "set.signout.done" : "Déconnecté",
       "ob.tagline"                : "Donnez de nouvelles couleurs à vos mots.",
-      "script.own.ph"             : "Collez ou saisissez un caractère",
       "up.cta"                    : "Passer à Plus",
       "up.need"                   : "Cette fonctionnalité nécessite un forfait supérieur",
       "pop.no"                  : "Fermer",
@@ -1412,7 +1409,18 @@ defLang('fr', (function(){
       "cal.d.5" : "Jeudi",
       "cal.d.6" : "Vendredi",
       "cal.d.7" : "Samedi",
-      "plan.renew" : "Renouvellement automatique jusqu'à résiliation."
+      "plan.renew" : "Renouvellement automatique jusqu'à résiliation.",
+      "kb.pat.hand" : "Écriture manuscrite",
+      "pk.own" : "Tes lettres",
+      "ws.latin" : "Latin",
+      "ws.latinacc" : "Latin avec diacritiques",
+      "ws.latinext" : "Latin étendu",
+      "ws.ipa" : "API",
+      "ws.digit" : "Chiffres",
+      "ws.symbol" : "Symboles",
+      "ws.hiragana" : "Hiragana",
+      "ws.katakana" : "Katakana",
+      "ws.emoji" : "Émojis"
     }
   };
 })());
