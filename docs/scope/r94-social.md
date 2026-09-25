@@ -36,6 +36,14 @@ notices、react/follow の読みの view）、`supabase/functions/push-send/*`�
 `docs/FEATURE_RULES.md`（その決定の Implementation status の行だけ）、`docs/CHANGELOG.md`、この紙、
 `www/index.html`（新しい画面・引用の枠の CSS だけ、角丸・枠線なし）。
 
+## 足された持ち物（リーダー 2026-09-25 17:22）
+
+- E2: `www/glyph.js`（`inkFaceCSS()`・`installTypeFont()` の `LinguaType` の face）と `www/index.html` の `.pline`。
+- 引用の iPhone の通知: `www/push.js`（`PUSH_KINDS`・`pushSw()`）、`www/core.js`（`SET_PREFS` のその一行だけ）、
+  `supabase/functions/push-send/*`、`supabase/schema.sql` の push のトリガー、`tools/push-check.mjs`。
+- `git log --all`: `www/glyph.js`・`www/push.js` に他の枝は無し。`www/core.js` と `www/act-map.js` は
+  `claude/r96-hand` が触っている（`fc809057` 改名）── core.js は `SET_PREFS` の一行だけ、取り込みはリーダーの物。
+
 ## 変えない物
 
 - `www/push.js`・`www/core.js` ── 持っていない。**引用の iPhone の通知は、種類を一つ足すと設定の
