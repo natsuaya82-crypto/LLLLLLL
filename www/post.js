@@ -3419,6 +3419,24 @@ function postWhen(at){
         : {year:'numeric', month:'short', day:'numeric'});
   }catch(e){ return t('when.d', Math.floor(s/86400)); }
 }
+/* AND THE WHOLE OF IT, on the post a thread is opened on. 「ツイートの詳細時刻
+   出るようにして欲しい」 OWNER 2026-09-25 (docs/FEATURE_RULES.md § 2026-09-25
+   いいね・リポストした人の一覧…). The timeline's rows keep postWhen(): this is
+   the one post somebody came to read, and 「2h」 is not when it was written.
+
+   The date and the time are the phone's own, in the interface language, the
+   way postWhen() already asks for a date; how the two are put side by side is
+   `when.full`, because 「3:04 PM · Sep 25, 2026」 and 「2026年9月25日 15:04」 are
+   two orders and not one. The year is always there -- this is the one place
+   that says exactly when. */
+function postWhenFull(at){
+  var d=new Date(at||0);
+  try{
+    return t('when.full',
+             d.toLocaleDateString(uiLang(), {year:'numeric', month:'short', day:'numeric'}),
+             d.toLocaleTimeString(uiLang(), {hour:'numeric', minute:'2-digit'}));
+  }catch(e){ return postWhen(at); }
+}
 /* All of it comes off the post. Renaming yourself does not rewrite old posts,
    which is the price of a timeline that can hold anybody else's. */
 /* The face the post carries, drawn from the shape ON it. A letter of the
@@ -4058,7 +4076,7 @@ function postRow(p){
                gone up. 「5 いります」 OWNER 2026-09-06. It goes the moment
                the sid lands, because that is a redraw of this row. */
             '<span class="pwhen">'+
-              esc(postUnsent(p)? t('post.unsent') : postWhen(p.at))+'</span>'+
+              esc(postUnsent(p)? t('post.unsent') : foc? postWhenFull(p.at) : postWhen(p.at))+'</span>'+
             /* Kept to yourself, then edited. OWNER 2026-08-25:「🔑と編集済み
                逆にしたら終わりかな」-- asked for the other way round first and
                swapped after looking at it. The two are not the same kind of

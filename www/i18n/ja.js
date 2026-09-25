@@ -380,6 +380,7 @@ defLang('ja', (function(){
       'when.m'          : '{0}分',
       'when.h'          : '{0}時間',
       'when.d'          : '{0}日',
+      'when.full'       : '{0} {1}',
       'sns.none'        : 'まだ何もない',
       'sns.none.fo'     : "フォローしている人はまだ書いていない",
       'feed.rec'        : "おすすめ",

@@ -643,6 +643,7 @@ defLang('ko', (function(){
       "when.m"          : "{0}분",
       "when.h"          : "{0}시간",
       "when.d"          : "{0}일",
+      "when.full"       : "{0} {1}",
       "sns.none"        : "아직 아무것도 없습니다",
       "sns.none.fo"     : "팔로우한 사람이 아직 쓴 글이 없습니다",
       "feed.rec"        : "추천",

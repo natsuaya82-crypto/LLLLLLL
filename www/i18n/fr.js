@@ -512,6 +512,7 @@ defLang('fr', (function(){
       "when.m"          : "{0} min",
       "when.h"          : "{0} h",
       "when.d"          : "{0} j",
+      "when.full"       : "{0} à {1}",
       "sns.none"        : "Rien pour l'instant",
       "sns.none.fo"     : "Personne que vous suivez n’a encore écrit",
       "feed.rec"        : "Pour vous",

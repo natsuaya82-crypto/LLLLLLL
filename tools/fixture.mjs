@@ -1450,6 +1450,13 @@ export function halfDone(){
                      to:'SRV-1', toh:'aya' });
         window.route='thread'; NAV=[{r:'thread', a:'p1'}];
         const h = vThread(); POSTS.pop(); delete mine.sid; return h; }],
+    /* AND ONE OPENED ON SOMEBODY ELSE'S POST, which is the one that says when:
+       p1 is yours and has never gone up, so its head says 未送信 and the
+       whole date the thread's own post carries (r94 D, OWNER 2026-09-25)
+       was on no walk and in no picture. */
+    ['a thread opened on somebody else\u2019s post', () => {
+        window.route='thread'; NAV=[{r:'feed'}, {r:'thread', a:'p2'}];
+        return vThread(); }],
     /* YOUR OWN ROW, on somebody else's followers list, on a phone holding no
        post of yours to take a name off. 「ここも？になるの謎だし」 */
     /* AND EVERYBODY ON IT IS KNOWN, because the door onto `follows` (www/shell.js § navLand) got

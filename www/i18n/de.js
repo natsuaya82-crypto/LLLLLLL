@@ -452,6 +452,7 @@ defLang('de', (function(){
       "when.m"          : "{0} Min.",
       "when.h"          : "{0} Std.",
       "when.d"          : "{0} T.",
+      "when.full"       : "{0}, {1}",
       "sns.none"        : "Noch nichts hier",
       "sns.none.fo"     : "Noch niemand, dem du folgst, hat geschrieben",
       "feed.rec"        : "Für dich",

@@ -367,6 +367,7 @@ defLang('en', (function(){
       'when.m'          : '{0}m',
       'when.h'          : '{0}h',
       'when.d'          : '{0}d',
+      'when.full'       : '{1} · {0}',
       'sns.none'        : 'Nothing here yet',
       'sns.none.fo'     : "Nobody you follow has written yet",
       'feed.rec'        : "For you",

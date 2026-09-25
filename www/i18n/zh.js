@@ -472,6 +472,7 @@ defLang('zh', (function(){
       "when.m"          : "{0}分钟",
       "when.h"          : "{0}小时",
       "when.d"          : "{0}天",
+      "when.full"       : "{0} {1}",
       "sns.none"        : "这里还什么都没有",
       "sns.none.fo"     : "你关注的人还没有写过",
       "feed.rec"        : "推荐",

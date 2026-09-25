@@ -471,6 +471,7 @@ defLang('pt', (function(){
       "when.m"          : "{0} min",
       "when.h"          : "{0} h",
       "when.d"          : "{0} d",
+      "when.full"       : "{0}, {1}",
       "sns.none"        : "Ainda não há nada",
       "sns.none.fo"     : "Ninguém que você segue escreveu ainda",
       "feed.rec"        : "Para você",

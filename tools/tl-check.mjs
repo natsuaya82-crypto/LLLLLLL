@@ -684,6 +684,26 @@ const r = await pg.evaluate(({ s }) => {
     netSend1 = realS1; netSend = realS; netGet = realG;
   }
 
+  /* ---- 11: r94 -- the post a thread is opened on says WHEN, whole --------
+     「ツイートの詳細時刻出るようにして欲しい」 OWNER 2026-09-25. The post the
+     thread is about carries the year, the day and the time; the same post as
+     a row on the timeline keeps 「2h」 / the short date. Read off what is
+     DRAWN, the `.pwhen` of each, and not off postWhenFull(). */
+  {
+    const p = postById('p2'), was = p.at;
+    p.at = new Date(2025, 2, 4, 15, 7).getTime();
+    NAV = [{ r:'feed' }, { r:'thread', a:'p2' }]; window.route = 'thread'; render();
+    const app = document.getElementById('app');
+    const foc = app.querySelector('.pfoc .pwhen');
+    out.whenFoc = foc ? foc.textContent : '(no focus row)';
+    NAV = [{ r:'feed' }]; window.route = 'feed'; render();
+    const row = [].slice.call(app.querySelectorAll('.post')).filter((e) =>
+      (e.getAttribute('data-a') || '').indexOf('"p2"') >= 0)[0];
+    out.whenRow = row && row.querySelector('.pwhen') ? row.querySelector('.pwhen').textContent : '(no row)';
+    out.whenShort = postWhen(p.at);
+    p.at = was;
+  }
+
   return out;
 }, { s: seed.toString() });
 
@@ -922,6 +942,14 @@ if (r.pairOff !== PAIR_OFF)
       '\n  The same two columns in the same roles, or the row taken away is ' +
       'somebody else\u2019s.');
 
+if (!/2025/.test(r.whenFoc) || !/07/.test(r.whenFoc))
+  say('11: the post a thread is opened on says 「' + r.whenFoc + '」 -- it has to ' +
+      'say the year, the day and the time it was written (2025-03-04 15:07), ' +
+      'not how long ago.');
+if (r.whenRow !== r.whenShort)
+  say('11: the same post as a row on the timeline says 「' + r.whenRow + '」 and ' +
+      'the timeline says 「' + r.whenShort + '」 -- only the thread\u2019s own post ' +
+      'is told whole.');
 console.log('a follow and a block are one row written by one function, and ' +
             'the columns are its argument: ' + r.pairOn);
 console.log('nobody is a 「?」 that becomes a name: a post carries its writer ' +

@@ -424,6 +424,7 @@ defLang('es', (function(){
       "when.m"          : "{0} min",
       "when.h"          : "{0} h",
       "when.d"          : "{0} d",
+      "when.full"       : "{0}, {1}",
       "sns.none"        : "Aún no hay nada",
       "sns.none.fo"     : "Todavía no ha escrito nadie a quien sigues",
       "feed.rec"        : "Para ti",

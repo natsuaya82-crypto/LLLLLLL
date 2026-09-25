@@ -464,6 +464,7 @@ defLang('it', (function(){
       "when.m"          : "{0} min",
       "when.h"          : "{0} h",
       "when.d"          : "{0} g",
+      "when.full"       : "{0}, {1}",
       "sns.none"        : "Ancora niente",
       "sns.none.fo"     : "Nessuno che segui ha ancora scritto",
       "feed.rec"        : "Per te",
