@@ -2841,10 +2841,10 @@ var CAN={
      press, and every post already changed stays changed. */
   edit:    'plus',
   /* The mark beside your name. 「バッチはplusから」 -- Plus in the old three
-     names, which is Pro in these. postBadge() already showed it only there
-     and read plan() to find out, which is the one thing this table is here
-     to prevent -- a plan name written into a screen is a question nobody can
-     move between rungs without finding every place that asked it. */
+     names, which is Pro in these. Nothing on the phone GATES it: whoever
+     wears it is the server's answer about them (badge_of(), which says this
+     rung again as badge_rung() -- tools/rls-check.mjs holds the two equal),
+     and the plans page asks canRung('badge') for which row carries it. */
   badge:   'pro',
   gram:    'pro',    /* a grammar stage of your own, past the fifteen there are */
   dir:     'pro'     /* choosing which way the language is written */
@@ -2883,6 +2883,17 @@ function can(what){
      this catches it if the check is ever wrong. */
   if(!lv) throw new Error('can: no such capability: '+what);
   return has(lv);
+}
+/* WHICH RUNG OPENS A CAPABILITY -- a fact about the price list, not about
+   whoever is holding the phone. can() asks 「may I」; this asks 「which plan
+   is it」, which is what a row of the plans page is. The mark is the case:
+   whether somebody WEARS it is the server's answer about them
+   (supabase/schema.sql § badge_of, www/post.js § postBadge), and the rung
+   that wears it is still this table's -- asked here, by name, like can(). */
+function canRung(what){
+  var lv=CAN[what];
+  if(!lv) throw new Error('canRung: no such capability: '+what);
+  return lv;
 }
 /* THE SHAPE, and it takes the ANSWER for upStop()'s reason below: `can()` is
    given a literal where a check can see it. True only when the server has

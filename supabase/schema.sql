@@ -1845,9 +1845,57 @@ create view react_seen as
      and not post_blocks(r.post);
 grant select on react_seen to authenticated;
 
+-- ---- whether somebody wears the mark, and the one place it is answered ------
+-- 「課金者にちゃんと投稿とかプロフィールにダイヤ見えるようになってる？」
+-- 「入れるよ？」 OWNER 2026-09-26. The mark was drawn by the phone that wrote
+-- the post and nowhere else, because the plan is private (plan_read is the
+-- owner's alone) and no row anybody else reads carried an answer.
+--
+-- ONE BOOLEAN IS PUBLISHED AND NOTHING ELSE. Not the rung, not the product,
+-- not the date: free and plus both answer false. The mark exists to be seen,
+-- what somebody pays does not.
+--
+-- THE RUNG IS THE `plan` ROW'S, because that is where a rung is decided --
+-- verify-plan from the purchases, and plan_staff_hold() for staff -- and a
+-- second product-to-rung table here would be a second ladder. What is asked
+-- of `purchase` is only whether the row has OUTLIVED what paid for it: a
+-- plan row is rewritten when its owner's phone calls verify-plan, so somebody
+-- who cancels and never opens the app again would otherwise wear the mark
+-- for ever, which is the one thing 「バッジは消える」 forbids. So the row
+-- counts while a purchase of theirs is still running (`until` ahead, nothing
+-- revoked), or while they are staff -- the other road a row becomes Pro,
+-- which has no purchase to outlive.
+--
+-- KNOWN LIMIT: somebody whose Pro ran out while a Plus of theirs is still
+-- running wears the mark until their phone next calls verify-plan and the row
+-- comes down to plus. Telling those apart here needs the product table, and
+-- that is verify.mjs's (PRODUCTS).
+--
+-- Which rung wears it is www/core.js's `CAN.badge`, and badge_rung() says it
+-- again in the only language this file has -- tools/rls-check.mjs reads both
+-- and fails when they differ.
+--
+-- `security definer`, because it reads `plan` and `purchase`, whose read
+-- policies are their owner's alone, and must: it hands out one yes-or-no and
+-- no row. anon holds no grant to ask (the foot of this file).
+create or replace function badge_rung()
+returns text language sql immutable as $$ select 'pro'::text $$;
+
+create or replace function badge_of(who uuid) returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (
+    select 1 from plan pl
+     where pl.id = who and pl.plan = badge_rung()
+       and (exists (select 1 from profile s where s.id = who and s.staff)
+            or exists (select 1 from purchase u
+                        where u.uid = who and u.revoked is null
+                          and (u.until is null or u.until > now()))))
+$$;
+
 drop view if exists profile_seen cascade;
 create view profile_seen as
   select p.id, p.handle, p.display, p.av, p.bio, p.link, p.loc, p.banned_at,
+         badge_of(p.id) as badge,
          (select count(*) from follow f where f.follower = p.id) as fo,
          (select count(*) from follow f where f.followed = p.id) as fr,
          l.id                          as lang_id,
@@ -1916,6 +1964,12 @@ create view post_seen as
   select p.id, p.author, p.language, p.prompt, p.reply_to, p.created_at,
          p.hidden_at,
          (a.banned_at is not null) as author_out,
+         -- WHETHER WHOEVER WROTE IT WEARS THE MARK, NOW (badge_of above). Not
+         -- on the post's body: everything there is past tense on purpose, and
+         -- a mark stamped on at the moment of writing would stay on somebody
+         -- who cancelled -- 「バッジは消える」. So it is asked here, of the
+         -- author as they are today, on every read.
+         badge_of(p.author) as badge,
          -- WHAT IT QUOTES, AS THAT POST IS NOW. The id is the quote's own; the
          -- post under it is read here, by the reader, every time: a quote of
          -- a post since deleted, taken down, frozen with its account, kept to
@@ -1927,7 +1981,8 @@ create view post_seen as
          -- has nowhere to wear the mark.
          p.quote_of,
          (select jsonb_build_object('id', q.id, 'author', q.author,
-                                    'created_at', q.created_at, 'body', q.body)
+                                    'created_at', q.created_at, 'body', q.body,
+                                    'badge', badge_of(q.author))
             from post q join profile qa on qa.id = q.author
            where q.id = p.quote_of
              and q.hidden_at is null and qa.banned_at is null
@@ -2651,8 +2706,8 @@ $$;
 --   Nothing. Both of the halves that were open on 2026-08-28 have been
 --   answered and are in: the list stands still between ticks (feed_hot()
 --   below, and the note inside it), and the blue mark is worth four
---   (feed_paid_weight()). What is still missing is the COLUMN the mark would
---   be read off, and feed_weight() says what happens on the day it lands.
+--   (feed_paid_weight()), multiplied onto whoever badge_of() says wears it
+--   (feed_weight()).
 --
 -- `off` and not a timestamp for the continuation: this list is ordered by a
 -- score, and a score is not something you can ask for "the ones after". A
@@ -2705,32 +2760,15 @@ returns numeric language sql immutable as $$ select 4::numeric $$;
 
 -- And whether an account carries the mark, which is what the four multiplies.
 --
--- IT IS NOBODY, TODAY. No column in this file says who has paid, so this
--- answers one for everybody and the ranking is the reactions alone.
--- www/post.js's postBadge() draws the mark only for `p.mine` and reads
--- can('badge') -- this phone's own plan -- so the only thing that knows is a
--- phone, and a phone that could TELL the server it had paid is an app where
--- anybody marks themselves.
---
--- Asked of the row AS JSONB rather than by naming the column. That is the one
--- odd line in this file and it is deliberate: `to_jsonb(p) ->> 'paid'` is
--- NULL where there is no such column and the boolean where there is, so this
--- begins working the day the column is added and not one edit later. Naming
--- the column instead could not be written at all today -- the function would
--- not compile -- and returning a bare 1 would be a line somebody has to
--- remember to come back to, in a file nobody opens except when something is
--- wrong.
---
--- The column, when it comes: `paid boolean not null default false`, shut the
--- way `staff` is -- kept out of the `grant insert (...)` and
--- `grant update (...)` lines at the foot of this file, so nobody can arrive
--- holding it or write it onto themselves -- and set by the server receiving
--- Apple's signed notice. Nothing on a phone ever writes it.
+-- badge_of(), and nothing else. 「青パッチ＝課金した人の印」 and 「青パッチの
+-- 倍率」 (docs/FEATURE_RULES.md § 2026-08-28) put the four ON THE MARK, so the
+-- account that wears it on a post is the account whose posts are multiplied --
+-- one answer to 「who wears it」, read by the timeline and by this ordering
+-- alike. Whether a rung that does not wear the mark is multiplied as well has
+-- not been decided, so it is not.
 create or replace function feed_weight(who uuid)
 returns numeric language sql stable as $$
-  select case when coalesce((to_jsonb(p) ->> 'paid')::boolean, false)
-              then feed_paid_weight() else 1::numeric end
-    from profile p where p.id = who
+  select case when badge_of(who) then feed_paid_weight() else 1::numeric end
 $$;
 
 -- Dropped by name first, because the return type gains columns below and
@@ -2749,12 +2787,14 @@ returns table (id uuid, author uuid, language uuid, prompt bigint,
                likes bigint, boosts bigint, replies bigint,
                i_like boolean, i_boost boolean,
                -- and what it quotes, as post_seen has it (r94)
-               quote_of uuid, quoted jsonb)
+               quote_of uuid, quoted jsonb,
+               -- and whether the author wears the mark (post_seen.badge)
+               badge boolean)
 language sql stable as $$
   select v.id, v.author, v.language, v.prompt, v.reply_to, v.created_at,
          v.hidden_at, v.author_out, v.body,
          v.likes, v.boosts, v.replies, v.i_like, v.i_boost,
-         v.quote_of, v.quoted
+         v.quote_of, v.quoted, v.badge
     from post_seen v
     left join lateral (
       select coalesce(sum(case r.kind when 'like'  then 1
@@ -2849,13 +2889,13 @@ returns table (id uuid, author uuid, language uuid, prompt bigint,
                author_out boolean, body jsonb,
                likes bigint, boosts bigint, replies bigint,
                i_like boolean, i_boost boolean,
-               quote_of uuid, quoted jsonb,
+               quote_of uuid, quoted jsonb, badge boolean,
                by uuid, by_name text, by_hd text, at_key timestamptz)
 language sql stable as $$
   select z.id, z.author, z.language, z.prompt, z.reply_to, z.created_at,
          z.hidden_at, z.author_out, z.body,
          z.likes, z.boosts, z.replies, z.i_like, z.i_boost,
-         z.quote_of, z.quoted,
+         z.quote_of, z.quoted, z.badge,
          z.by, bp.display, bp.handle, z.at_key
     from (
       select distinct on (q.id) q.*
@@ -2918,13 +2958,13 @@ returns table (id uuid, author uuid, language uuid, prompt bigint,
                author_out boolean, body jsonb,
                likes bigint, boosts bigint, replies bigint,
                i_like boolean, i_boost boolean,
-               quote_of uuid, quoted jsonb,
+               quote_of uuid, quoted jsonb, badge boolean,
                by uuid, by_name text, by_hd text, at_key timestamptz)
 language sql stable as $$
   select z.id, z.author, z.language, z.prompt, z.reply_to, z.created_at,
          z.hidden_at, z.author_out, z.body,
          z.likes, z.boosts, z.replies, z.i_like, z.i_boost,
-         z.quote_of, z.quoted,
+         z.quote_of, z.quoted, z.badge,
          z.by, bp.display, bp.handle, z.at_key
     from (
       select distinct on (q.id) q.*

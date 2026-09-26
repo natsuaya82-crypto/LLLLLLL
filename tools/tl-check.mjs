@@ -262,16 +262,20 @@ const r = await pg.evaluate(({ s }) => {
     netFollowers = realFollowers; netRel = realRel;
   }
 
-  /* ---- and the mark on your own name stays where it was ----------------
+  /* ---- and the mark on your own name is your own ROW's -----------------
      One place says whether a name wears it (postBadge), and your own card
-     started asking it through whoOf() -- so whoOf() has to say the row is
-     yours or the mark quietly leaves the one screen it worked on. */
-  const wasPlan = plan();
-  planGot('pro');
+     asks it through whoOf() -- off your own `profile_seen` row, the same
+     column somebody else's page is drawn from, and never off your plan
+     (「課金者にちゃんと…ダイヤ見えるようになってる？」 OWNER 2026-09-26). */
+  const wasPlan = plan(), mh = meHandle(), wasRow = WHO_HAVE[mh];
   NAV = [{ r:'profile', a:'' }];
-  out.proMark = meCard().indexOf('bdgw') >= 0;
+  WHO_HAVE[mh] = Object.assign({}, wasRow || {}, { badge:true });
   planGot('free');
+  out.proMark = meCard().indexOf('bdgw') >= 0;
+  WHO_HAVE[mh] = Object.assign({}, wasRow || {}, { badge:false });
+  planGot('pro');
   out.freeMark = meCard().indexOf('bdgw') >= 0;
+  if (wasRow === undefined) delete WHO_HAVE[mh]; else WHO_HAVE[mh] = wasRow;
   planGot(wasPlan);
 
   /* ---- 5: the two counts on a card -------------------------------------
@@ -1121,10 +1125,11 @@ if (r.followersAskedAgain !== 1)
       'stands still until the app is killed.');
 
 if (!r.proMark)
-  say('the mark is off your own profile on Pro. One place says whether a ' +
-      'name wears it and whoOf() has to say the row is yours.');
+  say('the mark is off your own profile with your own row saying you wear it. ' +
+      'One place says whether a name wears it and whoOf() has to read the row.');
 if (r.freeMark)
-  say('and it is on it on the free plan.');
+  say('and it is on your own profile with your row saying no, because your ' +
+      'plan is Pro -- the second road, which only ever worked on one phone.');
 if (r.filRows.indexOf('day') < 0)
   say('the filter page offers ' + r.filRows.join(' ') + ' — 「#今日のお題」 is ' +
       'one of the answers to 「what am I looking at」 (OWNER 2026-09-06).');

@@ -540,7 +540,8 @@ deleted.** Those are two halves of one sentence and neither may be dropped.
 | the writing system | an alphabet | `wsys()`, `www/wsys.js` |
 | the keyboard | the fixed QWERTY, in the app and on the phone | `kbOf()`, `www/keyboard.js` |
 | the direction | left→right | `setScriptDir()`, `www/wsys.js` |
-| CSV, file import, the sheet, the badge | gone, as they always were on free | `can()` on the press |
+| CSV, file import, the sheet | gone, as they always were on free | `can()` on the press |
+| the badge | off everybody's screen once no purchase is running under the plan row — the server's answer, not this phone's | `badge_of()`, `supabase/schema.sql`; `postBadge()` off the row, `www/post.js` |
 
 **WHICH ONE the language row keeps is the owner's, and it is the oldest.**
 「無料はそもそも1つの言語しか出ないやろ。一番最初に作ってた作り込んでた言語だけ

@@ -177,18 +177,7 @@ for (const [file, mark] of [['post.js', MARK], ['card.js', CARD_MARK]]) {
    it starts from a natural sentence the author already confirmed and
    re-expresses it in mine, so the guessing is about my vocabulary and I am
    the one who can see it is wrong. It touches `mn`/`tr` and never `ln` or
-   `ink`.
-
-   postBadge -- the one thing on a post that is deliberately NOT frozen. Every
-   other thing a post carries is past tense on purpose; a badge says what is
-   true NOW, because somebody who cancelled must stop wearing it
-   (「バッジは消える」). So it cannot be stamped on at the moment of writing,
-   which means it cannot come off the post, and this phone can answer it for
-   exactly one person. postBadge() therefore returns nothing at all unless
-   `p.mine` -- somebody else's post gets no badge rather than a guessed one,
-   until there is a server to ask. The exception is about TIME rather than
-   about language, which is why it is a second sentence and not an extra name
-   on the first one. */
+   `ink`. */
 
 /* postMenuHTML -- the ... menu, which is not part of the post. Everything else
    below this line answers "what does this post say"; the menu answers "what
@@ -207,7 +196,7 @@ for (const [file, mark] of [['post.js', MARK], ['card.js', CARD_MARK]]) {
    or 「ミュート解除」 (OWNER 2026-09-25). It is about my account and draws
    nothing into the post, for meBlocks's reason. */
 
-const ALLOW = new Set(['trHTML', 'trBtnHTML', 'postBadge', 'postMenuHTML', 'meBlocks', 'meMutes']);
+const ALLOW = new Set(['trHTML', 'trBtnHTML', 'postMenuHTML', 'meBlocks', 'meMutes']);
 
 const bodies = {};
 for (const f of fs.readdirSync(WWW).filter((x) => x.endsWith('.js')).sort()) {

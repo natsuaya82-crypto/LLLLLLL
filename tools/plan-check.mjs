@@ -310,14 +310,18 @@ const r = await pg.evaluate(({ s }) => {
   out.editPlusOpens = PW.ed === 'p_plan' && PW.ln === 'kano mos';
   PW = pwBlank(); PMENU = '';
 
-  /* The mark. Free none, Plus none, Pro one -- and never on somebody else's
-     post whatever plan they are on, because this phone can only answer the
-     question for the person holding it. */
-  var theirs = { id: 'p_them', at: 1, mine: false, hd: 'iri', who: 'Iri', ln: 'x' };
+  /* The mark. THE READER'S PLAN PUTS IT ON NOTHING -- not on your own post
+     on Pro, not on anybody's. Whether a name wears it is the server's answer
+     about that person, carried on the row (`badge`, www/post.js § postBadge);
+     「課金者にちゃんと投稿とかプロフィールにダイヤ見えるようになってる？」
+     OWNER 2026-09-26. So a post carrying no answer is bare on every rung, and
+     somebody else's post carrying yes wears it read on free. */
+  var theirs = { id: 'p_them', at: 1, mine: false, hd: 'iri', who: 'Iri', ln: 'x',
+                 badge: true };
   planGot('free'); out.bdgFree = postBadge(myPost);
   planGot('plus'); out.bdgMid  = postBadge(myPost);
   planGot('pro');  out.bdgTop  = postBadge(myPost);
-  out.bdgTheirs = postBadge(theirs);
+  planGot('free'); out.bdgTheirs = postBadge(theirs);
   /* The price list is the other question and keeps answering it: the Pro row
      carries the mark for everybody, including somebody reading it on free. */
   planGot('free');
@@ -1825,9 +1829,10 @@ say(r.editFreeWent, 'and yes goes to the plans screen, still without a composer'
 say(r.editFreeKept, 'and the post it was pressed on is not changed by being refused');
 say(r.editPlusOpens, 'on plus it opens, carrying the post it was pressed on');
 
-say(r.bdgFree === '' && r.bdgMid === '', 'no mark beside the name on free or plus');
-say(r.bdgTop !== '', 'and one on pro (' + (r.bdgTop ? 'drawn' : 'nothing') + ')');
-say(r.bdgTheirs === '', 'never on somebody else\'s post, whatever plan this phone is on');
+say(r.bdgFree === '' && r.bdgMid === '' && r.bdgTop === '',
+    'the reader\'s plan puts no mark on a post whose row says nothing -- free, plus, pro (' +
+    [r.bdgFree, r.bdgMid, r.bdgTop].map(x => x ? 'drawn' : 'none').join(' ') + ')');
+say(r.bdgTheirs !== '', 'and somebody else\'s post whose row says yes wears it, read on free');
 say(r.dblBought === '' && r.dblPlan === 'pro',
     'a plan BELOW the one in force is not bought again (' +
     (r.dblBought || 'nothing asked for') + ', still ' + r.dblPlan + ')');

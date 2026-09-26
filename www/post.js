@@ -1334,6 +1334,9 @@ function postFresh(p){
   /* And the post a quote has under it, which is the server's reading of
      somebody else's post today and not what this post's author wrote (r94). */
   put('qp');
+  /* And whether its author wears the mark today (post_seen.badge) -- a fact
+     about now, so it is the server's to move, like the counts. */
+  put('badge');
   return moved;
 }
 /* HOW MANY, AND WHETHER YOU ARE ONE OF THEM. THE SERVER COUNTS AND NOTHING
@@ -1494,78 +1497,45 @@ function postSend(p, ok, bad){
              function(d, s, m){ delete POST_SENDING[id]; savePosts(); bad(d, s, m); });
 }
 /* ---- the badge, and the one thing on a post that is NOT frozen ----------
-   One gold star beside a name, and it says the person is on Pro.
+   One mark beside a name, and it says the person wears it -- the rung is
+   `CAN.badge` in core.js, and the server says it again (badge_rung()).
 
    Everything else a post carries is past tense on purpose: the name, the
    handle, the face, the language's name, the shapes. Renaming yourself does
    not rewrite old posts, and that is the whole of rule 8.
 
    A badge is the opposite and the owner said so: 「バッジは消える」. It says
-   what is true NOW -- this person pays now -- so it cannot be stamped onto a
+   what is true NOW -- this person pays now -- so it is not stamped onto a
    post at the moment of writing, or somebody who cancelled last year would
-   still be wearing it on everything they ever wrote.
-
-   Which means it cannot come off the post, and this phone can only answer it
-   for one person: the one holding the phone. So a post that is not this
-   person's own gets NO badge, whatever plan its author is on. That is not a
-   gap to be filled in with a guess -- it is the honest answer until a server
-   can be asked, and the day it can, the answer arrives with the author and
-   this function is where it lands.
+   still be wearing it on everything they ever wrote. It ARRIVES WITH the
+   post instead: `post_seen.badge` is the server's answer about the author
+   today (supabase/schema.sql § badge_of), netBadgeOn() in www/net.js puts it
+   on the row, and postFresh() moves it when the next read says otherwise.
 
    tools/sides-check.mjs allows postBadge() below the line by name, with this
-   paragraph as the reason. It is the second exception in that file and the
-   first one that is about time rather than about language. */
+   paragraph as the reason. */
 /* The mark itself, in one place, because two screens draw it to answer two
    different questions and only the picture is shared. The plans screen asks
    "does THIS PLAN carry the mark" -- a fact about a price list, true of the
-   Pro row whoever is reading it. A post asks "does the person holding this
-   phone have it", which is a capability and goes through can(). */
+   Pro row whoever is reading it. A post or a person asks "does THIS PERSON
+   wear it", and that is what the row they arrived on says. */
 function badgeMark(){
   return '<span class="bdgw" aria-hidden="true">'+MARK_PLUS+'</span>';
 }
 function planBadge(id){
-  if(id==='pro') return badgeMark();
-  return '';
+  return (id===canRung('badge'))? badgeMark() : '';
 }
-/* THE MARK, AND IT IS ON ONE PHONE IN THE WORLD.
-   「後相手の画面にパッチ映らないけど？プロなのに」 OWNER 2026-09-04.
+/* THE MARK, OFF WHAT THE POST OR THE PERSON CARRIED, AND NOTHING ELSE.
+   「課金者にちゃんと投稿とかプロフィールにダイヤ見えるようになってる？」
+   「入れるよ？」 OWNER 2026-09-26.
 
-   Both questions here are about the READER -- `p.mine` is 「is this post
-   mine」 and `can('badge')` is 「is MY plan Pro」 -- so the author is the only
-   person who ever sees it. That is rule 8, and it is NOT fixed by freezing
-   the answer onto the post when it is written: sides-check says in as many
-   words why this one is exempt from the freezing rule -- a badge says what is
-   true NOW, because somebody who cancels has to stop wearing it
-   「バッジは消える」. A stamped one would go on wearing it for ever.
-
-   SO THE ANSWER HAS TO COME FROM THE SERVER AND IT IS NOT THERE TO COME FROM.
-   The plan is a table of its own and is deliberately private
-   (supabase/schema.sql § plan: 「A `plan` column there would have published
-   every person's tier to every...」), `profile_seen` does not carry it and
-   `post_seen` does not either. There is no request in www/net.js that could
-   answer this and no column for one to read.
-
-   THE DRAWING IS ALREADY WAITING ON A PERSON'S PAGE and is deliberately not
-   here yet. whoCard() in www/me.js draws whatever whoOf() says about the
-   person, and whoOf() passes `pro` through the way it passes `lid` and
-   `lpub` -- so the day `profile_seen` carries the column, that screen is
-   right with no second change. The TIMELINE is a different question, because
-   a row is a post and not a person: it wants the same boolean on `post_seen`
-   and netRow() putting it on the row, and then these two lines are replaced
-   by `p.pro` alone.
-
-   Nothing is bolted on here in the meantime. A second road to one answer is
-   what CLAUDE.md forbids first, and reading `p.pro` today would be a road
-   nothing writes; taking the two lines out today would take the mark off the
-   author's own timeline and put it nowhere. So it stands as it is and the
-   report says what is missing: ONE BOOLEAN, in two views. */
+   It asked `p.mine` and `can('badge')` -- two facts about the READER -- so the
+   author was the only person in the world who ever saw it. Your own post and
+   your own page come back down the same road as everybody else's now, so
+   there is no branch for 「mine」: a post you just wrote wears it once the
+   server has answered for it, like the counts. */
 function postBadge(p){
-  if(!p || !p.mine) return '';
-  /* can('badge') and not plan(). It answered the same thing on the day this
-     changed and will not the first time the mark moves a rung -- which is
-     the whole of why CAN exists. The rung is `badge` in core.js and nowhere
-     else, and it is Pro. */
-  return can('badge')? badgeMark() : '';
+  return (p && p.badge)? badgeMark() : '';
 }
 /* There was a preview under the field: the line you were typing, drawn again
    in the letters you drew. It was written before the keyboard was, and the

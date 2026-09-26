@@ -238,7 +238,7 @@ export function seed(){
               line carries ink at all. Two letters, used four times between
               them, and the space between the words is text. */
            {id:'p2', at:Date.now()-7200000, lang:'other', lname:'Vethi', ln:'qel dross',
-            who:'Iri', hd:'iri', mine:false, av:{ch:'Ж'},
+            who:'Iri', hd:'iri', mine:false, av:{ch:'Ж'}, badge:true,
             /* AND THE NUMBERS THE SERVER COUNTED. 「端末に残すものないんです
                けど」 OWNER 2026-09-08 ── 数は `post_seen` のもので、端末は
                一つも持ちません。だからサーバーが答えた投稿だけが数を出せる。
@@ -291,7 +291,7 @@ export function seed(){
               is shown, and it is on the reply because the post it answers
               may not be on the phone reading it. */
            {id:'p3', at:Date.now()-1800000, lang:'other', lname:'Vethi',
-            ln:'qel', who:'Iri', hd:'iri', mine:false, av:{ch:'Ж'},
+            ln:'qel', who:'Iri', hd:'iri', mine:false, av:{ch:'Ж'}, badge:true,
             ink:{g:[[{pts:[[150,650],[400,150],[650,650]]}]], s:[0]},
             mn:'yes, that is the one', ui:'en',
             to:'p1', toh:'aya', re:1},
@@ -321,7 +321,7 @@ export function seed(){
               fourth, which is where the indent stops, and p7 is the answer
               under it that makes p6 draw its line. */
            {id:'p5', at:Date.now()-800000, lang:'other', lname:'Vethi',
-            ln:'qel', who:'Iri', hd:'iri', mine:false, av:{ch:'\u0416'},
+            ln:'qel', who:'Iri', hd:'iri', mine:false, av:{ch:'\u0416'}, badge:true,
             mn:'the one with the white stones', ui:'en',
             to:'p4', toh:'aya'},
            {id:'p6', at:Date.now()-700000, lang:langId, lname:'Shango',
@@ -330,7 +330,7 @@ export function seed(){
             mn:'that is the one', ui:'en',
             to:'p5', toh:'iri'},
            {id:'p7', at:Date.now()-600000, lang:'other', lname:'Vethi',
-            ln:'qel', who:'Iri', hd:'iri', mine:false, av:{ch:'\u0416'},
+            ln:'qel', who:'Iri', hd:'iri', mine:false, av:{ch:'\u0416'}, badge:true,
             mn:'I will go tomorrow', ui:'en',
             to:'p6', toh:'aya'}];
   LETTERS = [{id:'l1', st:[{pts:[[112,112],[688,112],[400,688]]}], ch:'', nm:'', snd:['k']},
@@ -479,8 +479,12 @@ export function seed(){
      longer be in -- a row with '?' where a name goes, waiting for an answer
      that the screen is not allowed to be waiting for.
      「ユーザーもアイコンとか？になってあとで表示されるけど」 OWNER 2026-09-07. */
+  /* Iri WEARS THE MARK and Veth and you do not -- the server's answer about
+     each of them today (`badge`, supabase/schema.sql § badge_of), on Iri's
+     posts above and on Iri's row here. A walk with nobody else wearing it is
+     the state in which a mark drawn only on your own phone looks right. */
   WHO_HAVE.iri  = { who:'Iri',  hd:'iri',  av:{ch:'\u0416'}, lname:'Vethi',
-                    bio:'', fo:2, fr:3, out:false };
+                    bio:'', fo:2, fr:3, out:false, badge:true };
   WHO_HAVE.veth = { who:'Veth', hd:'veth', av:{ch:'\u0424'}, lname:'Vethi',
                     bio:'', fo:1, fr:1, out:false };
   /* AND YOUR OWN ROW, whose two counts are the server's (`profile_seen`) and
@@ -1446,7 +1450,7 @@ export function halfDone(){
         const mine = postById('p1'); mine.sid = 'SRV-1';
         POSTS.push({ id:'SRV-9', sid:'SRV-9', at:Date.now(), lang:langId,
                      lname:'Vethi', ln:'qel tir', mn:'and the rest of it',
-                     ui:'en', who:'Iri', hd:'iri', mine:false, av:{ch:'\u0416'},
+                     ui:'en', who:'Iri', hd:'iri', mine:false, av:{ch:'\u0416'}, badge:true,
                      to:'SRV-1', toh:'aya' });
         window.route='thread'; NAV=[{r:'thread', a:'p1'}];
         const h = vThread(); POSTS.pop(); delete mine.sid; return h; }],
@@ -2142,17 +2146,19 @@ export function halfDone(){
         snsHits = { q:'iri', who:[], posts:[], bad:t('net.offline') };
         window.route='explore'; NAV=[{r:'explore'}];
         const h = vExplore(); snsQ = ''; snsHits = null; return h; }],
-    /* The badge, which only exists on a paid plan -- so a walk on the free
-       plan never draws one, and free is what these walks run on. Both plans,
-       and both places it shows: beside a name on a profile and beside a name
-       on a post. The row that sells it is the other way round: it is there
-       only while nobody has bought anything. */
-    ['the profile of somebody on Plus', () => { planGot('pro');
+    /* The mark on YOUR OWN name, which comes back the same road as
+       everybody's: your own `profile_seen` row and your own posts' rows say
+       so, and your plan says nothing (www/post.js § postBadge). Iri wears it
+       on every face; these are the two where you do too. */
+    ['your own profile, wearing the mark', () => {
+        const was = WHO_HAVE.aya.badge; WHO_HAVE.aya.badge = true;
         window.route='profile'; NAV=[{r:'profile'}];
-        const h = vProfile(); planGot('free'); return h; }],
-    ['the timeline of somebody on Plus', () => { planGot('pro');
+        const h = vProfile(); WHO_HAVE.aya.badge = was; return h; }],
+    ['your own timeline, wearing the mark', () => {
+        const mine = POSTS.filter(p => p.mine);
+        mine.forEach(p => { p.badge = true; });
         window.route='feed'; NAV=[{r:'feed'}];
-        const h = vFeed(); planGot('free'); return h; }],
+        const h = vFeed(); mine.forEach(p => { delete p.badge; }); return h; }],
     /* A post with no line: a photograph on its own, and a voice on its own.
        A post was a LINE or nothing until 「文字無しでもポストできるように
        できない？」, so every walk before this had a line on every post and
@@ -2197,7 +2203,7 @@ export function halfDone(){
        one that has a row the app refuses to move any further right. */
     ['a thread past the indent', () => {
         POSTS.push({id:'pr5', at:Date.now()-500000, lang:'other', lname:'Vethi',
-                    ln:'qel', who:'Iri', hd:'iri', mine:false, av:{ch:'Ж'},
+                    ln:'qel', who:'Iri', hd:'iri', mine:false, av:{ch:'Ж'}, badge:true,
                     mn:'the village', ui:'en', to:'p4', toh:'aya'},
                    {id:'pr6', at:Date.now()-400000, lang:langId, lname:'Shango',
                     ln:'tir', who:'Aya', hd:'aya', mine:true,
@@ -2219,7 +2225,7 @@ export function halfDone(){
                     ln:'dross', who:'Veth', hd:'veth', mine:false, av:{ch:'V'},
                     mn:'or the other one', ui:'en', to:'p3', toh:'iri'},
                    {id:'pb2', at:Date.now()-600000, lang:'other', lname:'Vethi',
-                    ln:'qel tir', who:'Iri', hd:'iri', mine:false, av:{ch:'\u0416'},
+                    ln:'qel tir', who:'Iri', hd:'iri', mine:false, av:{ch:'\u0416'}, badge:true,
                     mn:'and the rest of it', ui:'en', to:'p4', toh:'aya'},
                    {id:'pb3', at:Date.now()-500000, lang:langId, lname:'Shango',
                     ln:'kano', who:'Aya', hd:'aya', mine:true,
