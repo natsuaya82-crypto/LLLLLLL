@@ -1972,9 +1972,17 @@ function swMove(e){
     swLive=true;
     swW=window.innerWidth||1;
     var el=swLayer();
+    /* And it stands where it was left. The picture is the whole page, and
+       drawn from its top it was the top of the timeline behind a thumb
+       that then let go onto post forty -- the page jumped the moment it
+       arrived 「一旦前の位置に0.5秒くらい出てポンって戻る」 OWNER
+       2026-09-26. Where it stood is the trail's `y` (§ navLand), the same
+       number back() is about to put the page at, so the two agree -- set once
+       the layer is shown, because a box with display:none has no scroll. */
     if(el) el.innerHTML=p;
     document.documentElement.classList.remove('swgo');
     document.documentElement.classList.add('swon');
+    if(el) el.scrollTop=NAV[NAV.length-2].y||0;
   }
   if(e.cancelable) e.preventDefault();
   swDraw(Math.max(0, Math.min(swW, dx*swWay)));
@@ -2007,8 +2015,19 @@ function swEnd(e){
   swDraw(go? swW : 0);
   setTimeout(function(){
     swClear();
-    if(go) back();
+    if(go){ swSeen=true; back(); }
   }, 230);
+}
+/* The screen a swipe let go onto has been on view for the whole of the
+   swipe, so it does not arrive again: render() draws it without the
+   entrance fade, which dropped it to a third and brought it back the
+   moment the thumb let go. swFresh() is what render() (www/glyph.js) asks
+   whether a screen is arriving, and it answers for one render and no more. */
+var swSeen=false;
+function swFresh(same){
+  var seen=swSeen;
+  swSeen=false;
+  return !same && !seen;
 }
 /* ---- putting the keyboard down -----------------------------------------
    「投稿画面は下させるな、投稿画面以外は絶対下させろって話」 OWNER 2026-08-27.

@@ -23,6 +23,8 @@
     10    a redraw of the screen you are on does not move it
     11    the composer's 「下書きに？」 answered, and the page under it is
           where it was (backAnswer goes through the door too)
+    12    the screen behind a left-edge swipe is the page where it was left
+    13    and the page let go onto does not fade in a second time
 
    Run: node tools/scroll-check.mjs
         node tools/scroll-check.mjs --shot r108-after   (also photographs, in
@@ -157,6 +159,29 @@ say(inPost.nav === 'feed > form:post:' && asked2.nav === 'feed > form:post:' &&
     dropped.nav === 'feed' && dropped.y === 1300,
     "the composer's question answered and back on the timeline at " + dropped.y,
     { inPost, asked2, dropped });
+
+/* 12, 13: the swipe. The screen behind the thumb is the page as it was
+   left, not its top, and the page let go onto does not fade in again --
+   「一旦前の位置に0.5秒くらい出てポンって戻る」 OWNER 2026-09-26. */
+await act(() => goTab('feed'));
+await act(() => window.scrollTo(0, 1600));
+await act(() => go('thread', 'X3'));
+await pg.mouse.move(5, 400); await pg.mouse.down();
+for (let x = 20; x <= 200; x += 20) { await pg.mouse.move(x, 402); await pg.waitForTimeout(16); }
+const behind = await pg.evaluate(() => {
+  const l = document.getElementById('swprev');
+  return { top: l.scrollTop, shown: getComputedStyle(l).display };
+});
+say(behind.shown === 'block' && behind.top === 1600,
+    'the screen behind a swipe stands where it was left -- ' + behind.top, behind);
+await pg.mouse.up();
+await pg.waitForTimeout(260);
+const landed = await pg.evaluate(() => ({
+  y: Math.round(window.scrollY),
+  op: getComputedStyle(document.querySelector('#app .view')).opacity,
+}));
+say(landed.y === 1600 && landed.op === '1',
+    'let go onto it: at ' + landed.y + ', opacity ' + landed.op + ' (no second arrival)', landed);
 
 say(errs.length === 0, 'nothing threw', errs);
 await br.close();

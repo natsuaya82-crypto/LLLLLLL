@@ -3210,7 +3210,7 @@ function render(){
   if(RENDERED!==route || RENDERED_A!==arg) navKeep(RENDERED, app.innerHTML);
   RENDERED=route; RENDERED_A=arg;
   /* the entrance animation belongs to arriving, not to redrawing */
-  app.setAttribute('data-fresh', same ? '0' : '1');
+  app.setAttribute('data-fresh', swFresh(same) ? '1' : '0');
   app.innerHTML=v;
   window.scrollTo(0, y);
   renderMount();
