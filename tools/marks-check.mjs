@@ -67,7 +67,8 @@ await pg.evaluate('window.__halfDone = ' + halfDone.toString());
 const R = await pg.evaluate(() => {
   window.confirm = () => false; window.alert = () => {}; window.prompt = () => null;
   const found = {};          /* act + text -> { act, text, keys, at } */
-  let looked = 0, screens = 0;
+  const unswitched = {};     /* act -> { act, text, at } */
+  let looked = 0, screens = 0, switches = 0;
 
   /* The interface's own English, as the words a button shows. Markup comes
      off and {0} becomes anything, so a label carrying a count still matches. */
@@ -103,6 +104,16 @@ const R = await pg.evaluate(() => {
          itself, less the arrow back. */
       const corner = !!(e.closest('.navtop') && !e.classList.contains('back'));
       const marked = !!e.querySelector('svg, img, canvas');
+      /* A YES OR A NO IS THE SWITCH. 「意味オンオフは ⭕️のトグルにしよう」
+         OWNER 2026-09-26 -- the composer's meaning was 「意味」 written out
+         and coloured gold while on, which no MARKED word catches because it
+         is not a verb. What says a button is an on/off is aria-pressed, and
+         every one of them wears the settings screen's .swt (swtHTML). */
+      if (e.hasAttribute('aria-pressed')) {
+        switches++;
+        if (!e.querySelector('.swt') && !unswitched[act])
+          unswitched[act] = { act, text: norm(e.textContent), at: where };
+      }
       /* What the button is called: its words, or its aria-label when it is a
          mark. Both are the interface's English, so both classify the same. */
       const name = marked ? norm(e.getAttribute('aria-label') || '') : norm(e.textContent);
@@ -160,7 +171,8 @@ const R = await pg.evaluate(() => {
   tryDo('tab bar', () => { window.__seed(); SET.walked = true; render(); });
 
   const ja = strOf('ja');
-  return { screens, looked, found: Object.keys(found).sort().map(k => {
+  return { screens, looked, switches, unswitched: Object.keys(unswitched).map(k => unswitched[k]),
+    found: Object.keys(found).sort().map(k => {
     const f = found[k]; f.ja = f.keys.map(x => norm(ja[x] || '')).filter(Boolean)[0] || '';
     return f; }) };
 });
@@ -201,6 +213,9 @@ const bad = words.filter(f => kind(f.text)).map(f =>
 R.found.filter(f => (kind(f.text) === 'send' || kind(f.text) === 'share') && !f.corner).forEach(f =>
   bad.push('  FAIL  ' + f.act + ' ("' + f.text + '") is a ' + kind(f.text) + ' in the page on ' + f.at +
            ' -- a send or a share is the mark at the top right of the bar'));
+R.unswitched.forEach(f =>
+  bad.push('  FAIL  ' + f.act + ' is an on/off (aria-pressed) drawn as "' + f.text + '" on ' + f.at +
+           ' -- a yes or a no is the switch, swtHTML()'));
 const rest = words.filter(f => !kind(f.text));
 /* The corner in words, counted and printed and not failed: what goes there
    when an operation has no settled mark (Save, Done, Select) is the owner's
@@ -216,7 +231,8 @@ if (LIST) {
 }
 console.log('marks: ' + R.screens + ' screens, ' + R.looked + ' buttons looked at, ' +
             words.length + ' word-only, ' + rest.length + ' of them with no settled mark, ' +
-            cornerWords.length + ' of those in the corner of the bar');
+            cornerWords.length + ' of those in the corner of the bar; ' +
+            R.switches + ' on/offs, every one the switch');
 if (bad.length) {
   bad.forEach(l => console.log(l));
   console.log('marks: FAIL -- ' + bad.length);

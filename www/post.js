@@ -1722,8 +1722,10 @@ function pwHTML(){
          height the meaning did not already have, so nothing belonging to the
          meaning can push the meaning off the screen.
 
-         The word, because 「意味」 has no mark every phone draws, in the colour
-         of what is on while it is on. Not in the bar under the field: that bar
+         A SWITCH, the settings screen's own (swtHTML, www/shell.js), and the
+         word only as its aria-label. 「意味オンオフは ⭕️のトグルにしよう」
+         OWNER 2026-09-26 -- it was 「意味」 written out, which is an operation
+         written as a word. Not in the bar under the field: that bar
          is exactly full on a 320 phone with nothing added (measured 320/320).
          Not on the day's prompt, and not while a post that exists is edited
          -- that keeps what it has.
@@ -1737,8 +1739,9 @@ function pwHTML(){
         lnField('pw-mn', pwMn() || t('post.mn'),
           (PW.pr? ' readonly' : '')+IN('pwSetMn'), PW.mn, 'pwmn'))+
       ((PW.pr || PW.ed)? '' :
-        '<button class="pwmnsw'+(pwMnOff()? '' : ' on')+'" aria-pressed="'+
-          (pwMnOff()? 'false' : 'true')+'"'+DO('pwMnSw')+'>'+esc(t('post.mn.sw'))+'</button>')+
+        '<button class="pwmnsw" aria-pressed="'+(pwMnOff()? 'false' : 'true')+
+          '" aria-label="'+esc(t('post.mn.sw'))+'"'+DO('pwMnSw')+'>'+
+          swtHTML(!pwMnOff())+'</button>')+
       '</div>'+
       /* AND THE TAGS, UNDER THE MEANING -- the same place the post puts them
          (postRow), so what is being written and what was written read in one
