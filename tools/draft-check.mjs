@@ -155,7 +155,7 @@ const R = await pg.evaluate(() => {
   /* Back goes back one page. draftKeep() ends by going to the feed, which is
      what the Save-a-draft button does; the composer here was opened from the
      profile, so the feed would mean the trail was thrown away. */
-  if (JSON.stringify(here()) !== '{"r":"profile"}')
+  if (here().r !== 'profile' || here().a !== undefined)
     out.fails.push('backing out of the composer landed on ' + JSON.stringify(here()) +
       ' and the composer was opened from the profile -- back goes back one page');
 
@@ -186,7 +186,7 @@ const R = await pg.evaluate(() => {
     out.fails.push('pressing outside the popup left the question up');
   if (DRAFTS.length !== 0)
     out.fails.push('pressing outside the popup put ' + DRAFTS.length + ' thing(s) in the drafts');
-  if (JSON.stringify(here()) !== '{"r":"form","a":"post:"}')
+  if (here().r !== 'form' || here().a !== 'post:')
     out.fails.push('pressing outside the popup left the composer anyway -- it is now on ' +
       JSON.stringify(here()));
   if (PW.ln !== LN)
@@ -216,7 +216,7 @@ const R = await pg.evaluate(() => {
   if (PW.ln || PW.mn)
     out.fails.push('answering no left the post in the composer: ' +
       JSON.stringify({ ln: PW.ln, mn: PW.mn }));
-  if (JSON.stringify(here()) !== '{"r":"profile"}')
+  if (here().r !== 'profile' || here().a !== undefined)
     out.fails.push('answering no landed on ' + JSON.stringify(here()) +
       ' and not one page back');
 
@@ -233,7 +233,9 @@ const R = await pg.evaluate(() => {
   const onMarks = JSON.stringify(here());
   back();
   asked = popOn() ? 1 : 0;                                /* what .mkr and .mkdone do */
-  const afterDone = JSON.stringify(here());
+  /* A screen is its route and its argument; `y` on the trail is where it was
+     scrolled to (r108), not which screen it is. */
+  const afterDone = JSON.stringify({ r: here().r, a: here().a });
   out.said.push('Done on the photograph editor: asked ' + asked + ', drafts ' +
     DRAFTS.length + ', landed on ' + afterDone);
   if (onMarks.indexOf('marks') < 0)
