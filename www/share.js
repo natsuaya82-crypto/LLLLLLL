@@ -354,7 +354,7 @@ function shareRoman(){
   var w=langWsysOf(langId);
   if(planNo(can('wsys'))) return false;
   if(WSYS.indexOf(w)<0) return false;
-  return w==='syll' || w==='abugida' || w==='logo';
+  return w==='syll' || w==='abugida' || w==='block' || w==='logo';
 }
 /* The face you spell on. Not the person's letters -- the q of QWERTY, there
    to spell with, and what it spells is looked up rather than inserted.

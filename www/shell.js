@@ -1115,6 +1115,8 @@ var PAGES={
   wsys:    {lang:1, tab:'profile',  k:'ws.kind'},
   sp:      {lang:1, tab:'profile',  k:'set.sp'},
   abugida: {lang:1, tab:'build', k:'ab.title'},
+  blk:     {lang:1, tab:'build', k:'blk.title'},
+  blkv:    {lang:1, tab:'build', k:'blk.title'},
   relate:  {lang:1, tab:'build'},
   fm:      {lang:1, tab:'build', k:'word.fm'},
   pos:     {lang:1, tab:'build', k:'f.pos'},
@@ -1194,6 +1196,8 @@ function pageName(r, a){
   }
   /* One of the three lists is named after which one it is. */
   if(r==='ltset') return t(LT_KIND[a] || 'lt.all');
+  /* A vowel's cut is named after the vowel. */
+  if(r==='blkv' && a) return String(a);
   if(r==='letter'){
     var pl=(typeof ltById==='function')? ltById(a) : null;
     return (pl? ltName(pl) : '') || t('lt.untitled');

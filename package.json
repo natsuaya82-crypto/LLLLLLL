@@ -35,6 +35,7 @@
     "fill": "node tools/fill-check.mjs",
     "round": "node tools/round-check.mjs",
     "guide": "node tools/guide-check.mjs",
+    "block": "node tools/block-check.mjs",
     "base": "node tools/base-check.mjs",
     "word": "node tools/word-check.mjs",
     "plan": "node tools/plan-check.mjs",

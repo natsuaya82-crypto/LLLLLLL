@@ -356,7 +356,7 @@ const R = await pg.evaluate(() => {
        which is exactly the kind this check exists for. */
     /* The writing system says a roman face is NEEDED; the keyboard says
        whether it may be added. Both, and they are two different sentences. */
-    const needsRoman = (w0 === 'syll' || w0 === 'abugida' || w0 === 'logo') && !onFree;
+    const needsRoman = (w0 === 'syll' || w0 === 'abugida' || w0 === 'block' || w0 === 'logo') && !onFree;
     if (onFree && kbd.lay.length !== 1)
       fails.push(w + ': the free QWERTY went out with ' + kbd.lay.length +
         ' faces. It has one, it has no editor, and nothing may add a page to it');
