@@ -2269,15 +2269,30 @@ const R = await pg.evaluate(async () => {
       this.setRequestHeader = function () {};
       this.send = function () {
         const st = answer(self.__p);
+        inFlight49++;
         setTimeout(() => {
           self.readyState = 4; self.status = st; self.responseText = 'null';
-          if (!st) { if (self.onerror) self.onerror(); return; }
-          if (self.onreadystatechange) self.onreadystatechange();
+          try {
+            if (!st) { if (self.onerror) self.onerror(); return; }
+            if (self.onreadystatechange) self.onreadystatechange();
+          } finally { inFlight49--; }
         }, 0);
       };
     };
   };
-  const settle49 = () => new Promise(r => setTimeout(r, 30));
+  /* 待つのは「サーバの代わりが答え終わり、次の要求が来なくなるまで」で、決まった
+     時間ではない。削除は一続きの要求（投稿の一覧 → 下書きの一覧 → バケツの
+     ファイル → account_delete）で、30ms を二回と決めて待っていたときは、一続きが
+     一段伸びた日（r100、下書きの一覧）から半分ほどの回で削除の途中で見に行って
+     いた ── 48 番の赤は削除の不具合ではなく、検査が早く見ていた。 */
+  let inFlight49 = 0;
+  const settle49 = async () => {
+    let quiet = 0;
+    for (let i = 0; i < 300 && quiet < 3; i++) {
+      await new Promise(r => setTimeout(r, 10));
+      quiet = inFlight49 ? 0 : quiet + 1;
+    }
+  };
 
   const D = '44444444-4444-4444-8444-444444444444';
   const seedD49 = () => {
