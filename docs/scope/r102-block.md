@@ -22,7 +22,7 @@
 `www/wsys.js`・`www/sound.js`（文字の画面・一文字の画面・組み合わせの型の画面）・`www/glyph.js`（必要な所だけ）・
 `www/share.js`（変換の層が要る書き方の一覧に block）・`www/shell.js`（`PAGES` に行を足すだけ）・`www/act-map.js`・
 `www/route-map.js`・`www/i18n/*.js`（書き方・文字の鍵のそばだけ）・`tools/fixture.mjs`・新しい検査と `tools/gate.mjs`・
-`package.json`（その検査の script）・`docs/CHANGELOG.md`・`docs/FEATURE_RULES.md`（決定の実装状況）・このファイル・`shots/r102/`。
+`www/core.js`（`langRead()` が `script` スライスの欄を全部持つように、それだけ）・`package.json`（その検査の script）・`docs/CHANGELOG.md`・`docs/FEATURE_RULES.md`（決定の実装状況）・このファイル・`shots/r102/`。
 
 ## 触らないもの
 `www/words.js` と辞書の画面（r101）、`www/index.html`、`ios/`、`supabase/`、他の人のブランチ。
