@@ -3,6 +3,7 @@
 ブランチ `claude/r98-count`（`integ-0905` から）。決定ログ `docs/FEATURE_RULES.md` 2026-09-26「1.0.3 の残りの答え」。
 
 ## 持ち物（これ以外は触らない）
+- `www/store.js`、`tools/plan-check.mjs`（リーダーの追加 2026-09-26）
 - `supabase/schema.sql` ── `post_seen.boosts` の数え方一か所
 - `tools/rls-check.mjs`、`tools/tl-check.mjs`
 - `www/net.js`・`www/post.js`（数を読む所だけ、要れば）
@@ -40,8 +41,19 @@
   呼び出しを外して 3 of 3 の赤を確認。
 - `docs/CHANGELOG.md` 2026-09-26 に DELETE REVIEW の決定（消す）を足した。2026-09-25 の項は書き換えていない。
 
+### C.（追加）購入の後の表示はサーバーの答え
+- `www/store.js`: `storeSaid(p, want, r, d)` 一つに書き直した。「〇〇になりました」はサーバーの答え `p` が押したプラン
+  以上（`PLAN_ORDER` で比べる、この関数の一行だけ）の時だけ、押したプランの名前で。それ以外は復元と同じ
+  `store.none` ＋ `storeWhyNone()` の数字。購入（`storeBuy`）も復元（`storeRestore`）もこれを呼び、文は一つ。
+  押したプランが分からない古いネイティブは、復元と同じくサーバーの答えの名前で言う。
+- `has()` は使えなかった（`dead-check`: `has()` は core.js の外で呼ばない）ので、`PLAN_ORDER` で比べている。
+- `plan-check`: 「Pro を押してサーバーが free → 『になりました』を出さず復元の文と数字、プランは free のまま」
+  「Pro を押してサーバーが Plus → Pro とは言わない」。直す前のコードで二つとも赤（「Pro is on」）を見てから直した。
+  `term-check` も緑。i18n の鍵は増えていない（既存の `toast.plan.other`・`store.none` だけ）。
+- 見た目: 知らせの文が失敗の時に変わるだけで、画面は変わらない。スクショは撮っていない。
+
 ### 回した物
-FAST のうち assets docs es5 dead sides store writes del（と pre-commit の全部）、`rls`、`tl`、`migrate`。ゲート全体は回していない。
+FAST のうち assets docs es5 dead sides store writes del（と pre-commit の全部）、`rls`、`tl`、`migrate`、`plan`、`term`。ゲート全体は回していない。
 
 ### リーダーへ
 - `docs/FEATURE_RULES.md` 2026-09-26 の Implementation status「未（消すのと数え方）」は、持ち物の外なので直していない。
