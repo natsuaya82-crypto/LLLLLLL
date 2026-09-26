@@ -4135,24 +4135,30 @@ function netReplies(ids, ok, bad, after){
       ok(out);
     }, bad);
 }
-/* WHAT ONE PERSON HAS WRITTEN. The other half of the same sentence: their
-   page drew whatever this account happened to be holding of theirs, which is
-   whatever the timeline had swept up, and there was no way to ask for the
-   rest or for anything newer. 「他の人の画面でも更新できるようにしたい」
+/* WHAT ONE PERSON HAS WRITTEN AND PASSED ON. Their page drew whatever this
+   account happened to be holding of theirs, which is whatever the timeline had
+   swept up, and there was no way to ask for the rest or for anything newer.
+   「他の人の画面でも更新できるようにしたい」
 
-   By the account's UUID, which `author` is keyed on and which the person's
-   `profile_seen` row already carries (`uid`, netWhoRow) -- so the page that
-   asks for both asks the handle once (www/sns.js § askPosts).
+   And what they reposted is on it, among what they wrote, dated by the
+   repost: 「リツイートとか引用したやつって自分の投稿に載らないのはなぜ？」
+   OWNER 2026-09-26. A repost is a row in `react` and not a post, so reading
+   `post_seen?author=` could never have it. It is one question to the server
+   -- posts_by() in supabase/schema.sql, feed_fo()'s shape for one person --
+   and not two reads mixed here: a phone that merged two lists would be
+   deciding the order and the page edge on its own.
 
-   Newest first and keyset on `created_at`, the same as netFindPosts(): a
-   page gains rows while somebody is reading it, and an offset would hand
-   them a post twice or step over one. */
+   By the account's UUID, which the person's `profile_seen` row already
+   carries (`uid`, netWhoRow) -- so the page that asks for both asks the
+   handle once (www/sns.js § askPosts).
+
+   Newest first and keyset on `at_key`, when it reached this page, as
+   netFeed()'s followed list is: a page gains rows while somebody is reading
+   it, and an offset would hand them a post twice or step over one. */
 function netPostsBy(uid, ok, bad, more){
-  netGet(NET_POST_SEL+
-         '&author=eq.'+encodeURIComponent(String(uid||''))+
-         '&order=created_at.desc'+
-         (more? '&created_at=lt.'+encodeURIComponent(String(more)) : '')+
-         '&limit='+NET_PAGE,
+  netSend('POST', '/rest/v1/rpc/posts_by',
+          {who:String(uid||''), lim:NET_PAGE, before:more? String(more) : null},
+          netTok(),
     function(d){
       var out=[], i;
       for(i=0;i<(d||[]).length;i++) out.push(netRow(d[i]));

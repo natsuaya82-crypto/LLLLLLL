@@ -1859,6 +1859,25 @@ export function halfDone(){
            in no picture. */
         const was = folOf(false, 'aya'); folPut(false, 'aya', []);
         const h = vProfile(); folPut(false, 'aya', was); NAV=[{r:'profile'}]; return h; }],
+    /* AND WHAT THEY PASSED ON IS ON THEIR PAGE, at the time they passed it on
+       「リツイートとか引用したやつって自分の投稿に載らないのはなぜ？」 OWNER
+       2026-09-26. Which post and when is the server's answer to the page
+       (PF_BOOST, www/sns.js § askPosts); the post itself is somebody else's,
+       written long before. Your own page and somebody else's. */
+    ['the profile, posts, with one passed on', () => { pfTab='posts';
+        POSTS.push({id:'pbo1', sid:'pbo1', at:Date.now()-9e8, lang:langId, lname:'Tovi',
+                    ln:'mosa relu', who:'Veth', hd:'veth', mine:false, mn:'the river', ui:'en'});
+        PF_BOOST={ aya:{ pbo1:Date.now() } };
+        window.route='profile'; NAV=[{r:'profile'}];
+        const h=vProfile(); POSTS.pop(); PF_BOOST={}; return h; }],
+    ['somebody else\'s profile, with one passed on', () => { pfTab='posts';
+        WHO_HAVE['iri'] = { who:'Iri', hd:'iri', av:{ch:'Ж'}, lname:'Vethi',
+                             bio:'', fo:2, fr:3, out:false };
+        POSTS.push({id:'pbo1', sid:'pbo1', at:Date.now()-9e8, lang:langId, lname:'Tovi',
+                    ln:'mosa relu', who:'Veth', hd:'veth', mine:false, mn:'the river', ui:'en'});
+        PF_BOOST={ iri:{ pbo1:Date.now() } };
+        window.route='profile'; NAV=[{r:'profile', a:'iri'}];
+        const h=vProfile(); POSTS.pop(); PF_BOOST={}; NAV=[{r:'profile'}]; return h; }],
     ['somebody else\'s profile, followed', () => { folPut(false, 'aya', ['iri']);
         WHO_HAVE['iri'] = { who:'Iri', hd:'iri', av:{ch:'Ж'}, lname:'Vethi',
                              bio:'', fo:2, fr:3, out:false };

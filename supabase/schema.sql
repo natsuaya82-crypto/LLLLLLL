@@ -2886,6 +2886,65 @@ language sql stable as $$
    limit lim
 $$;
 
+-- ONE PERSON'S PAGE: WHAT THEY WROTE AND WHAT THEY PASSED ON.
+--
+-- 「リツイートとか引用したやつって自分の投稿に載らないのはなぜ？」 OWNER
+-- 2026-09-26 -- X's shape: a person's page carries their reposts among their
+-- posts, dated by when they reposted. It is feed_fo() above with the follow
+-- list replaced by one person, and the columns are feed_fo()'s column for
+-- column, so netRow() reads a row from either list the one way.
+--
+-- What they WROTE is post_seen as it stands, and not muted-filtered: a mute
+-- is not 「see nothing of them」, and their own page still shows what they
+-- wrote (§ mute_hides). A block and a post kept to yourself are post_seen's
+-- own `where`.
+--
+-- What they PASSED ON is feed_fo()'s boost branch, the same sentence: not a
+-- taken-down post, not a post by somebody the reader muted, and not when the
+-- one who passed it on is behind a block or a mute of the reader's.
+--
+-- `who` has no default, so the block walk in tools/rls-check.mjs (which
+-- calls what takes no argument) does not reach this; its cases do.
+drop function if exists posts_by(uuid, int, timestamptz);
+create or replace function posts_by(who uuid, lim int default 50,
+                                    before timestamptz default null)
+returns table (id uuid, author uuid, language uuid, prompt bigint,
+               reply_to uuid, created_at timestamptz, hidden_at timestamptz,
+               author_out boolean, body jsonb,
+               likes bigint, boosts bigint, replies bigint,
+               i_like boolean, i_boost boolean,
+               quote_of uuid, quoted jsonb,
+               by uuid, at_key timestamptz)
+language sql stable as $$
+  select z.id, z.author, z.language, z.prompt, z.reply_to, z.created_at,
+         z.hidden_at, z.author_out, z.body,
+         z.likes, z.boosts, z.replies, z.i_like, z.i_boost,
+         z.quote_of, z.quoted,
+         z.by, z.at_key
+    from (
+      select distinct on (q.id) q.*
+        from (
+          select v.*, null::uuid as by, v.created_at as at_key
+            from post_seen v
+           where v.author = who
+             and (before is null or v.created_at < before)
+          union all
+          select v.*, r.actor as by, r.created_at as at_key
+            from react r join post_seen v on v.id = r.post
+           where r.kind = 'boost'
+             and r.actor = who
+             and v.hidden_at is null
+             and not v.muted
+             and not block_hides(r.actor)
+             and not mute_hides(r.actor)
+             and (before is null or r.created_at < before)
+        ) q
+       order by q.id, q.at_key desc
+    ) z
+   order by z.at_key desc
+   limit lim
+$$;
+
 -- ---------------------------------------------------------------------------
 -- Leaving
 --

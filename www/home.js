@@ -619,7 +619,21 @@ function pfList(){
      asked the one way. Two lists asking two different questions is how one
      post came to be on both. */
   mine=mine.filter(function(p){ return !postToWho(p); });
-  mine.sort(function(a, b){ return (b.pin?1:0)-(a.pin?1:0); });
+  /* AND WHAT THEY PASSED ON, among what they wrote, at the time they passed
+     it on 「リツイートとか引用したやつって自分の投稿に載らないのはなぜ？」
+     OWNER 2026-09-26. Which posts, and when, is the server's answer to this
+     page (pfBoosts(), www/sns.js) -- the same post is passed on by several
+     people at several times, so the time is the page's and not the post's. */
+  var bo=pfBoosts(pfMine()? meHandle() : h), at={}, i, id, q;
+  for(i=0;i<mine.length;i++) at[mine[i].id]=mine[i].at;
+  for(id in bo){
+    if(!Object.prototype.hasOwnProperty.call(bo, id)) continue;
+    q=postById(id);
+    if(!postShown(q)) continue;
+    if(at[q.id]===undefined) mine.push(q);
+    at[q.id]=Math.max(at[q.id] || 0, bo[id]);
+  }
+  mine.sort(function(a, b){ return ((b.pin?1:0)-(a.pin?1:0)) || (at[b.id]-at[a.id]); });
   return mine;
 }
 /* The three lists, in the order they stand in. ONE list: the row of buttons

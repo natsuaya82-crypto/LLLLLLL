@@ -839,6 +839,43 @@ const r = await pg.evaluate(({ s }) => {
     netSend1 = realS1; netSend = realS; netGet = realG;
   }
 
+  /* ---- 14c: what somebody passed on is on their page --------------------
+     「リツイートとか引用したやつって自分の投稿に載らないのはなぜ？」 OWNER
+     2026-09-26. The page asks ONE question (posts_by(), held by rls-check)
+     and the answer carries what was written and what was passed on; what is
+     asked here is that the 投稿 list draws the pass, among what was written,
+     at the time it was passed on -- and that the next page carries on from
+     the pass's time, not from when the passed-on post was written. The real
+     netPostsBy() and askPosts() run; only the wire is answered here. */
+  {
+    const realS1 = netSend1, realS = netSend, realG = netGet, realPW = pullWait;
+    const me = netUid(), h = meHandle(), n0 = POSTS.length;
+    let asked = '';
+    netSend1 = function (m, path, b, t, ok) {
+      path = String(path);
+      if (m === 'POST' && path === '/rest/v1/rpc/posts_by') {
+        asked = String(b && b.who);
+        ok([{ id:'PB-r', author:'U-iri', created_at:'2026-09-10T00:00:00Z',
+              body:{ ln:'theirs', hd:'iri', who:'Iri' }, by:me, at_key:'2026-09-25T00:00:00Z' },
+            { id:'PB-w', author:me, created_at:'2026-09-20T00:00:00Z',
+              body:{ ln:'mine', hd:h, who:'Aya' }, by:null, at_key:'2026-09-20T00:00:00Z' }], 200);
+        return;
+      }
+      ok([], 200);
+    };
+    netSend = function (m, path, b, t, ok, bad, up) { netSend1(m, path, b, t, ok, bad, up, true); };
+    netGet = function (path, ok, bad) { netSend('GET', path, null, '', ok, bad); };
+    pullWait = function (k, a, done) { done(true); };
+    askPosts(function () {}, function () {}, null, h);
+    NAV = [{ r:'profile', a:'' }]; pfTab = 'posts';
+    const ids = pfList().map((p) => p.id);
+    out.pbAsked = asked === me;
+    out.pbOrder = ids.indexOf('PB-r') + ',' + ids.indexOf('PB-w');
+    out.pbMore = MORE_AT[pullKey('posts', h)] === Date.parse('2026-09-20T00:00:00Z');
+    POSTS.splice(n0, POSTS.length - n0); PF_BOOST = {}; MORE_AT = {}; MORE_END = {};
+    netSend1 = realS1; netSend = realS; netGet = realG; pullWait = realPW;
+  }
+
   /* ---- 15: r94 E -- the meaning switched off ------------------------------
      「意味をオフにした場合はTwitterと同じように投稿できる」 OWNER 2026-09-25.
      Off: the composer has no meaning field and the switch says so; the post
@@ -1235,6 +1272,14 @@ if (!/^4->5 /.test(String(r.qCount)))
       ' -- one quote is one more on that number (post_seen.boosts), and the phone asks for it again ' +
       'when a quote lands (postCountsUnder).');
 else console.log('14b: one quote is one more repost on the post it quotes: ' + r.qCount);
+{ const [ri, wi] = String(r.pbOrder).split(',').map(Number);
+  if (!r.pbAsked || ri < 0 || wi < 0 || !(ri < wi) || !r.pbMore)
+    say('14c: a person\u2019s page -- asked posts_by() for that account: ' + r.pbAsked +
+        '; the pass and the written post stand at ' + r.pbOrder + ' in 投稿 (the pass is ' +
+        'on the list, and above the older post it was passed on after); the next page ' +
+        'carries on from the pass\u2019s time: ' + r.pbMore + '. 「リツイートとか引用したやつって' +
+        '自分の投稿に載らないのはなぜ？」');
+  else console.log('14c: what somebody passed on is on their page, at the time it was passed on: ' + r.pbOrder); }
 if (!r.mnOnField || !r.mnOffField || r.mnDraft !== 1)
   say('15: the meaning switch -- on, the field and the switch: ' + r.mnOnField + '; off, no field and ' +
       'the switch saying off: ' + r.mnOffField + '; a draft keeps it: ' + r.mnDraft);

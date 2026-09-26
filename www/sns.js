@@ -557,7 +557,7 @@ function pullForget(){
      waiters have just been dropped, so it would never land, and every move
      after it would be worked out from a trail nobody is standing on */
   NAV_TO=null;
-  DAY=null; NOTES_HAVE=null; FO_HAVE=null; SNS_NEXT={}; SNS_END={};
+  DAY=null; NOTES_HAVE=null; FO_HAVE=null; PF_BOOST={}; SNS_NEXT={}; SNS_END={};
   MORE_AT={}; MORE_END={};
   folForget();
   netPplDrop('block'); netPplDrop('mute');
@@ -951,10 +951,14 @@ function askReplies(p, id, ok, bad, after){
    starts the list again. */
 var MORE_AT={}, MORE_END={};
 function moreGot(q, ps, down, more){
-  var i, at=more? MORE_AT[q] : 0;
+  var i, t2, at=more? MORE_AT[q] : 0;
+  /* WHEN IT REACHED THE LIST, which is the post's own time for everything
+     but a repost on somebody's page -- that is dated by the repost (netRow,
+     `arrived`), and the server pages by the same time. */
   for(i=0;i<ps.length;i++){
-    if(!ps[i].at) continue;
-    if(!at || (down? ps[i].at>at : ps[i].at<at)) at=ps[i].at;
+    t2=ps[i].arrived || ps[i].at;
+    if(!t2) continue;
+    if(!at || (down? t2>at : t2<at)) at=t2;
   }
   if(at) MORE_AT[q]=at;
   MORE_END[q]=ps.length<NET_PAGE;
@@ -972,6 +976,12 @@ function askWho(ok, bad, person, h){
   whoAsk(h, one, no);
   relAsk([h], one, no);
 }
+/* WHAT EACH PERSON'S PAGE WAS TOLD THEY PASSED ON: handle -> post id ->
+   when. Only the server's answer (posts_by() in supabase/schema.sql) writes
+   it, the way FO_HAVE is the followed timeline's answer; pfList()
+   (www/home.js) reads it through pfBoosts(). */
+var PF_BOOST={};
+function pfBoosts(h){ return PF_BOOST[String(h||'')] || {}; }
 /* WHAT ONE PERSON HAS WRITTEN, a page at a time, and it is the one place a
    profile's list of posts is asked for. By the account's uuid, which is on
    the row `who` already brought (`uid`) -- so it waits for that answer rather
@@ -983,7 +993,16 @@ function askPosts(ok, bad, person, h, more){
     /* Nobody by that name is nothing to read, and nothing to draw. */
     if(!uid){ ok(0); return; }
     netPostsBy(uid, function(ps){
+      var have, i;
       if(!ps){ ok(0); return; }
+      /* WHAT THEY PASSED ON, and when -- a post's own `at` is when somebody
+         wrote it, and the same post is passed on by several people at
+         several times, so the time is this page's and not the post's. A
+         later page is the rest of one answer; a first page starts it again. */
+      have=more? (PF_BOOST[h] || {}) : {};
+      for(i=0;i<ps.length;i++)
+        if(ps[i] && ps[i].id && ps[i].by) have[ps[i].id]=ps[i].arrived || ps[i].at;
+      PF_BOOST[h]=have;
       postTake(ps);
       moreGot(pullKey('posts', h), ps, 0, more);
       ok(1);

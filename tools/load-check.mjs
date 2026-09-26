@@ -108,7 +108,7 @@ function wire(cfg){
     var p = u.replace(/^[a-z]+:\/\/[^/]*/, '').split('?')[0];
     if (p === '/auth/v1/token' || p === '/auth/v1/user') return { access_token:TOK, refresh_token:'r', user:{ id:'me1' }, id:'me1' };
     if (p === '/functions/v1/verify-plan') return { plan:'plus' };
-    if (p === '/rest/v1/rpc/feed_fo' || p === '/rest/v1/rpc/feed_hot'){
+    if (p === '/rest/v1/rpc/feed_fo' || p === '/rest/v1/rpc/feed_hot' || p === '/rest/v1/rpc/posts_by'){
       var lim = (body && body.lim) || N, o = [], i;
       for (i = 0; i < Math.min(lim, N); i++) o.push(post(i + ((body && body.off) || 0)));
       return o;
@@ -324,13 +324,18 @@ function readKey(u){
   say(more.length === 1, '5 the bottom of the timeline asks for the next page -- ' + more.length + ' ask(s)');
   /* and the two other lists a page is made of: a person's posts carry on back
      from the oldest one held, a thread down from the newest reply */
-  for (const [r, a, re] of [['profile', 'h3', /author=eq\..*created_at=lt\./], ['thread', 'p3', /reply_to=in\..*created_at=gt\./]]){
+  /* a person's page is one question, posts_by(), carrying on from `before`
+     (what they wrote and what they passed on, one list) */
+  const PAGE_MORE = {
+    profile: (x) => /rpc\/posts_by/.test(x.u) && x.body && x.body.before,
+    thread:  (x) => /post_seen/.test(x.u) && /reply_to=in\..*created_at=gt\./.test(x.u) };
+  for (const [r, a] of [['profile', 'h3'], ['thread', 'p3']]){
     await pg.evaluate(([r, a]) => { go(r, a); }, [r, a]);
     await quiet(pg);
     await clear(pg);
     await pg.evaluate(() => { window.scrollTo(0, document.body.scrollHeight); window.dispatchEvent(new Event('scroll')); });
     await quiet(pg);
-    const next = (await logOf(pg)).filter(x => /post_seen/.test(x.u) && re.test(x.u));
+    const next = (await logOf(pg)).filter(PAGE_MORE[r]);
     say(next.length === 1, '5 the bottom of ' + r + ' asks for the next page -- ' + next.length + ' ask(s)');
   }
 }
