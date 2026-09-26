@@ -264,7 +264,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Affected features: キーボードの編集画面、字を選ぶ画面。
 - Affected data: 無し（キーの持ち方は今のまま）。
 - Affected docs: この項、`docs/keyboard.md`。
-- Implementation status: 未。r96（字を選ぶ画面の直しと一緒に）。
+- Implementation status: 実装（r96、integ-0905、CODE CONFIRMED のみ）。
 
 ### 2026-09-25 フォントの書き出しは文字の画面の右上（1.0.3）
 - Date: 2026-09-25
@@ -274,7 +274,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Affected features: 文字の画面、キーボードの一覧の画面。
 - Affected data: 無し。
 - Affected docs: この項、`docs/keyboard.md`、2026-09-25「キーボードはプランで分けない」のフォントの書き出しの行。
-- Implementation status: 未。r96。
+- Implementation status: 実装（r96、integ-0905、CODE CONFIRMED のみ）。
 
 ### 2026-09-26 他の道具の強いところを全部入れる ── 単語の自動生成・語源の系統図・字を組み合わせた一マス・SVG の書き出し・「?」の中の使い方（1.0.3）
 - Date: 2026-09-26
@@ -294,7 +294,9 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Affected docs: この項、CLAUDE.md「A chapter that is closed」（Make の段を書き直した）。
 - Implementation status: 字を組み合わせた一マス（書き方 `block`、`SCRIPT.blk`）と SVG の書き出し（文字ぜんぶ・一文字）は r102
   （`claude/r102-block`）── コード確認、実機未確認。SVG は指示どおり**文字**を書き出す形で、この項の「一行を自分の字で SVG」は
-  まだ作っていない（`docs/scope/r102-block.md`）。単語の自動生成・語源は r101。「?」の中の使い方は r103（`claude/r103-help`、`docs/scope/r103-help.md`）── コード確認、実機未確認。
+  まだ作っていない（`docs/scope/r102-block.md`、オーナーに訊いている）。単語の自動生成（`vGen`・`vGenSyl`、`STG.syl`）と語源の系統図
+  （`vEty`、単語の `from`）は r101（`docs/scope/r101-gen.md`）── コード確認、実機未確認。「?」の中の使い方は r103（`docs/scope/r103-help.md`）
+  ── コード確認、実機未確認。三つとも integ-0905 に入っている。
 
 ### 2026-09-26 プロフィールに自分のリポストも出す（1.0.3）
 - Date: 2026-09-26
@@ -304,7 +306,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Reason: オーナーの言葉「リツイートとか引用したやつって自分の投稿に載らないのはなぜ？」「進めて。1.0.3へ」。
 - Affected features: プロフィール。
 - Affected data: 無し（読み方だけ）。
-- Implementation status: 未。
+- Implementation status: 実装（r100、`posts_by()`、integ-0905、CODE CONFIRMED のみ）。本番の `schema.sql` を貼り直すまでプロフィールには出ない。
 
 ### 2026-09-26 ルールの洗い出しへの答え ── 角丸の残りはそのまま、マークの無い字はそのまま、端末に何も残さない
 - Date: 2026-09-26
@@ -320,7 +322,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
   「5 サーバーでしょ。端末に持たせるものはないって」「消していいよ」（設定の四つ）。
 - Affected features: 録音（`www/rec.js`）、シート（`www/sheet.js`）。
 - Affected data: 端末に残っていた録音の写しと書き出したシートの一時ファイル（DELETE REVIEW を CHANGELOG に先に）。
-- Implementation status: 未（録音とシート）。
+- Implementation status: 実装（r100、integ-0905、CODE CONFIRMED のみ）。
 
 ### 2026-09-26 投稿の本文を長押しで選んでコピーできる（1.0.3）
 - Date: 2026-09-26
@@ -332,7 +334,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Reason: オーナーの言葉「投稿の文章を長押しして選択とかできないの？」「自作文字はコピーしたらアプリ内だとその文字になるの？」「そうしましょう」「1.0.3でいいよ」。
 - Affected features: スレッドの投稿、投稿画面・返信の欄への貼り付け。
 - Affected data: 無し（コピーの中身だけ、何も保存しない）。
-- Implementation status: 未。r99（意味のトグルの後）。
+- Implementation status: 実装（r99、integ-0905、CODE CONFIRMED のみ）。
 
 ### 2026-09-26 意味のオン・オフは丸いトグル、意訳は欄の中身として入る（1.0.3）
 - Date: 2026-09-26
@@ -345,7 +347,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
   「意味オンオフは ⭕️のトグルにしよう。さっきの消せるやつは忘れて」「でも意訳をプレスホルダーで入れるんじゃなくてちゃんとした文字で入れて欲しい」「7はそれでいいよ」。
 - Affected features: 投稿画面、返信、引用。
 - Affected data: 投稿の `mn` は欄の中身そのもの（今も同じ）。
-- Implementation status: 未。
+- Implementation status: 実装（r99 A・B・C、integ-0905、CODE CONFIRMED のみ）。
 
 ### 2026-09-26 1.0.3 の残りの答え ── キーボードの高さの測りは消す、評価は起動だけ数える、引用はリポストの数に入る、ミュートした人の引用元も出す
 - Date: 2026-09-26
@@ -358,7 +360,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Reason: オーナーの言葉「1 消す」「2 数えない」「5 リツイートと同じ数の数え方で足してっていい」「6 出していいよ」。
 - Affected features: 起動時の設定の読み、リポストの数（サーバーの数え方）。
 - Affected data: 端末の設定の一項目を消す（その端末のアカウントの設定の写しの中）。サーバーの行は何も消さない。
-- Implementation status: 未（消すのと数え方）。二と六は今の形のまま。
+- Implementation status: 実装（r98、integ-0905、CODE CONFIRMED のみ）。二と六は今の形のまま。
 
 ### 2026-09-25 投稿の画面は揺れない ── 上のバーと道具の行は固定、中身だけがスライド、キーボードの分だけ画面を縮める（1.0.3）
 - Date: 2026-09-25
@@ -394,7 +396,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Affected features: 文字の「既存文字から選ぶ」、キーの画面、キーボードの編集画面の入力欄（消す）、オンボーディングの「既存の文字から選択」（同じ一覧を読む）。
 - Affected data: 無し（文字が借りた字・キーに載る字の持ち方は今のまま）。
 - Affected docs: この項、`docs/keyboard.md`、2026-09-25「キーボードはプランで分けない」の既存の文字の行。
-- Implementation status: 未。r96 が手書きの前にやる。
+- Implementation status: 実装（r96、integ-0905、CODE CONFIRMED のみ）。
 
 ### 2026-09-25 カテゴリはグラフィック&デザイン、App Store の評価のお願いを出す、キーワードを見直す（1.0.3）
 - Date: 2026-09-25

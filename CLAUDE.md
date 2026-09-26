@@ -1091,7 +1091,7 @@ version of this check made exactly that mistake.
 ### 10. The conversion table holds the claims made about it
 
 `www/share.js` builds two things for a writing system where the unit you TYPE and
-the unit you WRITE differ — a syllabary, an abugida, a logography: `ink`, every
+the unit you WRITE differ — a syllabary, an abugida, a block of letters, a logography: `ink`, every
 shape the extension can draw, written out once, and `conv`, a table from a roman
 spelling to the numbers in `ink`. The comments on `shareTable()`, `shareConv()` and
 section 14 of `docs/keyboard-extension.md` made seven claims about that pair in
@@ -1105,7 +1105,7 @@ is the one place' is worth nothing on its own... Either a check holds the claim,
 do not make it." Nothing held these seven, so `tools/conv-check.mjs` does: it boots
 the real app, seeds the fixture `act-check` and `press` share, sets the paid plan,
 and for every writing system `WSYS` lists — asked of the page, not written out in
-the check, so a sixth kind is walked the day it is added — calls the real
+the check, so a seventh kind is walked the day it is added — calls the real
 `shareKbd()` and checks them against what came back. **It holds more than those
 seven now and its own last line is the list** — the seven the prose made, the
 eighth below, and a ninth that came out of splitting one of them: the roman layer
