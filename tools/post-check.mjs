@@ -4427,6 +4427,104 @@ const R = await pg.evaluate(async () => {
     POSTS = wasPosts; savePosts(); PW = pwBlank();
   }
 
+  /* ---- WHAT A COPY OF A POST CARRIES (r99) ------------------------------
+     「自作文字はコピーしたらアプリ内だとその文字になるの？」「そうしましょう」
+     OWNER 2026-09-26. The real copy and paste events are fired, with a real
+     DataTransfer, on the real thread page.
+       c1  my own post: the roman spelling, and its letters by id beside it
+       c2  pasted into the composer, those are my letters -- the cut holds ids
+       c3  somebody else's post: the spelling and nothing else, and pasted in
+           it is text, not my letters, even with the same shapes on it
+       c4  half a word of somebody else's post is the whole word's spelling
+       c5  only the post the thread is opened on can be selected
+       c6  no private use character reaches the clipboard, in any case */
+  {
+    const wasPosts = POSTS, wasNav = NAV.slice(), wasRoute = window.route;
+    const lts = ltPuaOrder();
+    if (lts.length < 3)
+      fails.push('c: the fixture has ' + lts.length + ' drawn letters, so nothing about ' +
+                 'copying a post’s letters is a test of anything');
+    const pua = String.fromCharCode(0xE000, 0xE001) + ' ' + String.fromCharCode(0xE002) + ' hi';
+    PW = pwBlank(); pwLine(puaTyped(pua).cut);
+    const cut0 = PW.cut.slice(), ln0 = PW.ln, ink0 = postInkOf(PW.cut);
+    PW = pwBlank();
+    const mine = { id: 'cp-me', at: Date.now(), lang: langId, ln: ln0, ink: ink0, mn: 'a hill',
+                   who: 'Me', hd: 'me', mine: true, ui: 'en' };
+    /* in the language I have open -- a language I took, say: the worst case */
+    const them = { id: 'cp-them', at: Date.now() - 1, lang: langId, ln: ln0, ink: ink0,
+                   mn: 'a hill', who: 'Bob', hd: 'bob', mine: false, ui: 'en' };
+    POSTS = [mine, them];
+    const PUA = /[-]/;
+    const stand = (id) => { window.route = 'thread'; NAV = [{ r: 'thread', a: id }]; render(); postLines(); };
+    const copyOf = (pick) => {
+      const row = document.querySelector('.post.pfoc');
+      const r = document.createRange();
+      pick(r, row);
+      const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r);
+      const dt = new DataTransfer();
+      document.dispatchEvent(new ClipboardEvent('copy', { clipboardData: dt, bubbles: true, cancelable: true }));
+      sel.removeAllRanges();
+      return { text: dt.getData('text/plain'), cut: dt.getData(PUA_CLIP), dt };
+    };
+    const all = (r, row) => { r.setStartBefore(row.querySelector('.pline')); r.setEndAfter(row.querySelector('.pmn')); };
+    const pasteIn = (dt) => {
+      PW = pwBlank(); openPost('new'); render();
+      const f = document.getElementById('pw-ln');
+      f.focus();
+      f.dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true }));
+      return PW.cut;
+    };
+    /* c1 */
+    stand('cp-me');
+    const c1 = copyOf(all);
+    if (c1.text !== ln0 + '\na hill')
+      fails.push('c1: a copy of my own post says ' + JSON.stringify(c1.text) + ', not its ' +
+                 'spelling and its meaning ' + JSON.stringify(ln0 + '\na hill'));
+    let got1 = null; try { got1 = JSON.parse(c1.cut); } catch (e) {}
+    const ids0 = cut0.filter(u => u.id !== undefined).map(u => u.id).join(',');
+    if (!got1 || got1.cut.filter(u => u.id !== undefined).map(u => u.id).join(',') !== ids0)
+      fails.push('c1: a copy of my own post does not carry its letters by id -- ' + JSON.stringify(c1.cut));
+    /* c2 */
+    const pc = pasteIn(c1.dt);
+    if (pc.filter(u => u.id !== undefined).map(u => u.id).join(',') !== ids0)
+      fails.push('c2: my own post pasted into the composer is not my letters -- the cut is ' +
+                 JSON.stringify(pc));
+    /* c3 */
+    stand('cp-them');
+    const c3 = copyOf(all);
+    if (c3.text !== ln0 + '\na hill' || c3.cut)
+      fails.push('c3: a copy of somebody else’s post is ' + JSON.stringify(c3) +
+                 ' -- the spelling and nothing that makes it my letters');
+    const pt = pasteIn(c3.dt);
+    if (pt.some(u => u.id !== undefined))
+      fails.push('c3: somebody else’s post pasted into the composer came out in MY letters -- ' +
+                 JSON.stringify(pt) + '. Their shape is not made mine');
+    /* c4: the first character of the line, which is the first shape of a
+       two-shape word */
+    stand('cp-them');
+    const w0 = ln0.split(' ')[0];
+    const c4 = copyOf((r, row) => { const t = row.querySelector('.pline').firstChild; r.setStart(t, 0); r.setEnd(t, 1); });
+    if (c4.text !== w0)
+      fails.push('c4: half a word of somebody else’s post copied as ' + JSON.stringify(c4.text) +
+                 ', not the word’s spelling ' + JSON.stringify(w0));
+    /* c5 */
+    stand('cp-me');
+    const us = (sel) => { const e = document.querySelector(sel); return e ? getComputedStyle(e).userSelect || getComputedStyle(e).webkitUserSelect : '(none drawn)'; };
+    if (us('.post.pfoc .pline') !== 'text' || us('.post.pfoc .pmn') !== 'text')
+      fails.push('c5: the post a thread is opened on cannot be selected -- ' + us('.post.pfoc .pline'));
+    window.route = 'feed'; NAV = [{ r: 'feed' }]; render();
+    if (us('.post .pline') === 'text')
+      fails.push('c5: a row of the timeline can be selected');
+    /* c6 */
+    [c1, c3, c4].forEach((c, i) => {
+      if (PUA.test(c.text) || PUA.test(c.cut))
+        fails.push('c6: a private use character reached the clipboard (' + ['c1', 'c3', 'c4'][i] + '): ' +
+                   JSON.stringify(c.text + ' | ' + c.cut));
+    });
+    POSTS = wasPosts; savePosts(); PW = pwBlank();
+    NAV = wasNav; window.route = wasRoute;
+  }
+
   return { fails, mid: (nowLight * 100).toFixed(1), corner: (wasLight * 100).toFixed(1),
            bytes: Math.round(String(out[0] || '').length / 1024),
            thumb: Math.round(small.length / 1024), full: Math.round(big.length / 1024),
