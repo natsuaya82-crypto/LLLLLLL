@@ -78,7 +78,7 @@ function openAdd(from){
   openForm('add:'+addFrom,
     (addFrom? t('add.title.from', addFrom) : t('add.title')),
     '<div id="wd-body">'+wdFormHTML()+'</div>',
-    wdMount, wdSaveBtn());
+    wdMount, helpQ('word')+wdSaveBtn());
 }
 FORM_OPEN.add=function(from){ openAdd(from||''); };
 function addOne(){
@@ -274,7 +274,7 @@ function spAdd(sym){
 }
 function vSpell(){
   var sp=(wEdit&&wEdit.sp)||[];
-  return '<div class="view">'+navTop('')+'<div class="body">'+
+  return '<div class="view">'+navTop('', helpQ('spell'))+'<div class="body">'+
     '<div class="whd"><span class="whw">'+sfontHTML(spWord(sp))+'</span>'+
       '<button class="play"' + DO('sayPh', [spPh(sp)]) + ' aria-label="'+
         esc(t('f.listen'))+'">'+ICON_SPK+'</button></div>'+
@@ -527,7 +527,7 @@ function vRelate(){
   var on=(k==='from')? (w.from? [String(w.from)] : []) : wRel(w,k),
       list=wordsSeen().filter(function(x){ return x!==w && !(k==='from' && wDescends(x, w)); })
     .sort(function(x,y){ return String(x.hw).localeCompare(String(y.hw)); });
-  return '<div class="view">'+navTop()+'<div class="body">'+
+  return '<div class="view">'+navTop('', helpQ('rel'))+'<div class="body">'+
     /* A word that means the same as this one is very often a word that does
        not exist yet -- that is WHY it is being written -- and the picker
        offered the dictionary and nothing else, so the answer to "what means
@@ -1973,12 +1973,43 @@ function wdViewHTML(){
     '<div class="grpsep"></div><div class="wsub2">'+esc(t('word.made', wWhen(w.at)))+'</div>'+
     '<div class="wsub2">'+esc(t('word.up', wWhen(w.up||w.at)))+'</div>';
 }
+/* The `?` of a word's page, the sheet it is written on, and the three pages
+   that sheet opens onto (OWNER 2026-09-26 「？の中に描きまくろう」). */
+HELP.word=function(){
+  return {t:t('toc.words'), h:
+    helpMark(ICON_PEN, t('word.edit'), t('hp.w1.1.d'))+
+    helpStep(1, t('hp.w1.2'), t('hp.w1.2.d'))+
+    helpStep(2, t('hp.w1.3'), t('hp.w1.3.d'))+
+    helpStep(3, t('hp.w1.4'), t('hp.w1.4.d'))+
+    helpStep(4, t('hp.save'), t('hp.save.d'))+
+    helpMark('', t('ety.title'), t('hp.w1.ety.d'))+
+    helpMark('', t('card.title'), t('hp.w1.card.d'))};
+};
+HELP.ety=function(){
+  return {t:t('ety.title'), h:
+    helpPara(t('hp.et.p'))+
+    helpStep(1, t('hp.et.1'), t('hp.et.1.d'))+
+    helpStep(2, t('hp.et.2'), t('hp.et.2.d'))+
+    helpStep(3, t('hp.et.3'), t('hp.et.3.d'))+
+    helpPara(t('hp.et.p2'))};
+};
+HELP.spell=function(){
+  return {t:t('word.sp'), h:
+    helpStep(1, t('hp.spl.1'), t('hp.spl.1.d'))+
+    helpMark(ICON_SPK, t('f.listen'), t('hp.spl.2.d'))};
+};
+HELP.rel=function(){
+  return {t:t('word.family'), h:
+    helpStep(1, t('hp.rl.1'), t('hp.rl.1.d'))+
+    helpStep(2, t('hp.rl.2'), t('hp.rl.2.d'))+
+    helpPara(t('hp.rl.p'))};
+};
 function openWord(hw){
   var w=findWord(hw); if(!w) return;
   openHw=w.hw; addW=null; wEdit=null;
   openForm('word:'+w.hw, wOut(w.hw), '<div id="wd-view">'+wdViewHTML()+'</div>',
            function(){ geTiles(); },
-           navDo(t('word.edit'), 'openEdit', [w.hw], true, {icon:ICON_PEN}));
+           helpQ('word')+navDo(t('word.edit'), 'openEdit', [w.hw], true, {icon:ICON_PEN}));
 }
 /* The same sheet a new word is written on, opened on one that exists. */
 function openEdit(hw){
@@ -1990,7 +2021,7 @@ function openEdit(hw){
   /* No button in the corner. navTop() puts one there when something on the
      sheet has been changed and not before -- www/shell.js § KEEP. */
   openForm('edit:'+w.hw, wOut(w.hw), '<div id="wd-body">'+wdFormHTML()+'</div>',
-           wdMount);
+           wdMount, helpQ('word'));
 }
 FORM_OPEN.edit=function(hw){ openEdit(hw); };
 FORM_OPEN.word=function(hw){ openWord(hw); };
@@ -2237,6 +2268,6 @@ function vEty(){
       seen.push(k); rows.push(etyRowHTML(k, depth, false)); down(k, depth+1);
     });
   })(w, up.length+1);
-  return '<div class="view">'+navTop()+'<div class="body"><div class="wdrows">'+
+  return '<div class="view">'+navTop('', helpQ('ety'))+'<div class="body"><div class="wdrows">'+
     rows.join('')+'</div></div></div>';
 }

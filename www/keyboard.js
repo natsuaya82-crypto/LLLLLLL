@@ -3950,7 +3950,23 @@ HELP.kb=function(){
     kbStepHTML(3, t('kb.step3'),
       '<button class="btn" style="width:100%;margin-top:10px"' + DO('kbSettings') + '>'+
         esc(t('kb.sys.go'))+'</button>'+
-      kbShot('kb-app.jpg'))};
+      kbShot('kb-app.jpg'))+
+    /* AND HOW ONE IS BUILT, under the same mark. 「？の中に描きまくろう」 OWNER
+       2026-09-26. The mark stays where 2026-09-06 put it -- this list, one
+       mark in one place -- so the editor's own marks are drawn here beside
+       what each does, rather than a second `?` on a board's page. */
+    '<div class="sec" style="margin-top:26px">'+esc(t('hp.kb.ed'))+'</div>'+
+    helpStep(1, t('kb.new'), t('hp.kb.1.d'))+
+    helpStep(2, t('hp.kb.2'), t('hp.kb.2.d'))+
+    helpStep(3, t('hp.kb.3'), t('hp.kb.3.d'))+
+    helpStep(4, t('kb.apply'), t('hp.kb.4.d'))+
+    helpMark(ICON_KEYSET, t('kb.key.open'), t('hp.kb.set.d'))+
+    helpMark(ICON_JOIN, t('kb.key.join'), t('hp.kb.join.d'))+
+    helpMark(ICON_ALL+ICON_ALC+ICON_ALR, t('hp.kb.al'), t('hp.kb.al.d'))+
+    helpMark(ICON_ADD, t('hp.kb.add'), t('hp.kb.add.d'))+
+    helpMark(ICON_BIN, t('kb.cut'), t('hp.kb.cut.d'))+
+    helpMark(ICON_UNDO+ICON_REDO, t('hp.kb.undo'), t('hp.kb.undo.d'))+
+    helpPara(t('hp.kb.hold'))};
 };
 /* What is left on the screen: the one line that is a setting rather than an
    explanation. Free has it too, and free is exactly the case it is for -- a

@@ -883,18 +883,11 @@ function shPages(n){ return n > 0 ? Math.ceil(n / shPerPage()) : 0; }
 if(typeof HELP !== 'undefined'){
   HELP.wr = function(){
     return {t:t('wr.help'), h:
-      shStep(1, t('wr.s1'), t('wr.s1.d'))+
-      shStep(2, t('wr.s2'), t('wr.s2.d'))+
-      shStep(3, t('wr.s3'), t('wr.s3.d'))+
-      shStep(4, t('wr.s4'), t('wr.s4.d'))};
+      helpStep(1, t('wr.s1'), t('wr.s1.d'))+
+      helpStep(2, t('wr.s2'), t('wr.s2.d'))+
+      helpStep(3, t('wr.s3'), t('wr.s3.d'))+
+      helpStep(4, t('wr.s4'), t('wr.s4.d'))};
   };
-}
-/* One step: its number, what is done, and the one line that says how. The
-   number is written here rather than into the string, so no translation can
-   put the steps out of order or lose one. */
-function shStep(n, title, body){
-  return '<div class="sec">'+n+'. '+esc(title)+'</div>'+
-    '<div class="note">'+esc(body)+'</div>';
 }
 function openWrite(){
   openForm('write:', t('wr.title'), shRoomHTML(), null, shQ());

@@ -470,10 +470,18 @@ function spClamp(v){
    will look like, because it is the same thing. Across is the language's own
    way across and down its own way down, where it has one; otherwise left to
    right, and the first column on the right. */
+/* The spacing's `?` (OWNER 2026-09-26 「？の中に描きまくろう」). */
+HELP.sp=function(){
+  return {t:t('set.sp'), h:
+    helpPara(t('hp.sp.p'))+
+    helpStep(1, t('hp.sp.1'), t('hp.sp.1.d'))+
+    helpStep(2, t('hp.sp.2'), t('hp.sp.2.d'))+
+    helpPara(t('hp.sp.p2'))};
+};
 function vSp(){
   var v=inkSteps(SCRIPT.sp), d=SCRIPT.dir,
       hz=(d==='rtl')? 'rtl' : 'ltr', vt=(d==='ttb-lr')? 'ttb-lr' : 'ttb-rl';
-  return '<div class="view">'+navTop('')+'<div class="body">'+
+  return '<div class="view">'+navTop('', helpQ('sp'))+'<div class="body">'+
     /* Styled here rather than in index.html, which is not this page's to
        touch. The slider is the 44pt a thumb needs. */
     '<div class="set" style="padding:2px 2px 3px">'+

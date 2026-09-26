@@ -218,6 +218,31 @@ function vForm(){
    `HELP.kb = function(){ ... }`, in the file the screen lives in, returning
    the title and the body. Nothing here knows what a keyboard is. */
 var HELP={};
+/* WHAT A HELP BODY IS MADE OF, written once. 「？の中に描きまくろう」 OWNER
+   2026-09-26: every screen that makes something says how it is used behind
+   its `?`, in short paragraphs and numbered steps, with a mark drawn where
+   the screen draws one. Three shapes and every HELP body is built of them, so
+   a step looks the same on every screen and nobody writes the number into a
+   translation (a language could lose a step or put two out of order).
+     helpPara(s)            -- a paragraph
+     helpStep(n, title, s)  -- `n. title` and, under it, how
+     helpMark(icon, name, s) -- one of the screen's marks (ICON_*), and what
+                               it does; `icon` is '' where the screen's
+                               button is a word, so the help draws no mark
+                               the screen does not
+   `s` may be '' and is then left out. */
+/* A paragraph stands apart from what is above it; the line under a step or a
+   mark is that step's own and sits under it with no gap. Two paragraphs in a
+   row ran together as one otherwise. */
+function helpNote(s){ return s? '<div class="note">'+esc(s)+'</div>' : ''; }
+function helpPara(s){ return s? '<div class="note" style="margin-top:14px">'+esc(s)+'</div>' : ''; }
+function helpStep(n, title, s){
+  return '<div class="sec">'+n+'. '+esc(title)+'</div>'+helpNote(s);
+}
+function helpMark(icon, name, s){
+  return '<div class="sec">'+(icon? '<span style="display:inline-flex;vertical-align:-3px;margin-right:9px">'+
+    icon+'</span>' : '')+esc(name)+'</div>'+helpNote(s);
+}
 /* HOW THE MARK OPENS, written once: helpQ() builds it and helpQCut() below
    finds it again in whatever a screen handed the bar. Two places matching a
    string by hand is two places that drift. */
@@ -1207,7 +1232,7 @@ function vWldArt(){
   /* Both fields are typed into a buffer, so it has to exist before they are
      drawn out of it. */
   wldArtKeepOn(one);
-  return '<div class="view">'+navTop('')+'<div class="body">'+
+  return '<div class="view">'+navTop('', helpQ('wld'))+'<div class="body">'+
     '<div class="field"><input id="wldart-t" value="'+esc(wldArtOne(one.id, 't'))+'" '+
       'placeholder="'+esc(t('wld.art.t.ph'))+'"' + IN('wldArtT') + '></div>'+
     '<textarea class="ntbody" style="min-height:260px" placeholder="'+esc(t('wld.art.b.ph'))+'" '+
@@ -2174,8 +2199,8 @@ function wldOpen(){
    drawn by two functions and the gate went red on rule 21. The frame is a
    piece wldPage() puts in; wldPage() is what draws this route. */
 function wldFrame(body, ed, mine){
-  return navTop('', (!ed && mine && !langLocked())?
-      navDo(t('wld.edit'), 'go', ["world"], true, {icon:ICON_PEN}) : '')+
+  return navTop('', helpQ('wld')+((!ed && mine && !langLocked())?
+      navDo(t('wld.edit'), 'go', ["world"], true, {icon:ICON_PEN}) : ''))+
     '<div class="body">'+body+'</div>';
 }
 function wldPage(ed, L, lid){
@@ -2523,6 +2548,16 @@ function wldPage(ed, L, lid){
 }
 /* What making this language public means, behind the `?` in the bar rather
    than as a sentence on the screen. 「showの横に？つけて他と同じ感じで」 */
+/* The language's page, both faces and one section of it (wldFrame(),
+   vWldArt()). OWNER 2026-09-26 「？の中に描きまくろう」. */
+HELP.wld=function(){
+  return {t:t('wld.about'), h:
+    helpPara(t('hp.wk.p'))+
+    helpStep(1, t('hp.wk.1'), t('hp.wk.1.d'))+
+    helpStep(2, t('hp.wk.2'), t('hp.wk.2.d'))+
+    helpStep(3, t('wld.shown'), t('hp.wk.3.d'))+
+    helpStep(4, t('wld.dl.can'), t('hp.wk.4.d'))};
+};
 HELP.pub=function(){
   return {t:t('wld.public'), h:
     '<div class="sec">'+esc(t('wld.public'))+'</div>'+

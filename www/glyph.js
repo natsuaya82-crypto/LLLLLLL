@@ -2621,8 +2621,10 @@ function geHelpRow(n, name, desc){
 }
 HELP.glyph=function(){
   return {t:t('glyph.help.t'), h:
-    '<div class="note">'+esc(t('glyph.help.draw'))+'</div>'+
-    '<div class="note">'+esc(t('glyph.help.zoom'))+'</div>'+
+    helpStep(1, t('hp.gl.1'), t('glyph.help.draw'))+
+    helpStep(2, t('hp.gl.2'), t('hp.gl.2.d'))+
+    helpStep(3, t('hp.save'), t('hp.gl.3.d'))+
+    helpPara(t('glyph.help.zoom'))+
     geHelpRow('undo',   t('glyph.undo'),   t('glyph.undo.d'))+
     geHelpRow('redo',   t('glyph.redo'),   t('glyph.redo.d'))+
     geHelpRow('fill',   t('glyph.fill'),   t('glyph.fill.d'))+

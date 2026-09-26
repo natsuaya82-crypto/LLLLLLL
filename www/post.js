@@ -466,6 +466,7 @@ function openPost(from, at){
      written into the field before the screen is (pwMnFollow) */
   pwMnFollow();
   openForm('post:', t(PW.ed? 'post.edit' : 'post.new'), pwHTML(), pwKeepKb,
+    helpQ('post')+
     /* Held rather than tapped: 「postボタン長押しで、自分専用の日記みたいなポスト
        とみんなに公開するポストカード選べるように」 A long press is a second
        thing one button can be, and the delegated listener only knows about
@@ -484,6 +485,16 @@ function openPost(from, at){
            icon:(PW.ed? '' : ICON_SEND)}),
     true);
 }
+/* The composer's `?` (OWNER 2026-09-26 「？の中に描きまくろう」). */
+HELP.post=function(){
+  return {t:t('post.new'), h:
+    helpStep(1, t('hp.ps.1'), t('hp.ps.1.d'))+
+    helpStep(2, t('post.mn'), t('hp.ps.2.d'))+
+    helpStep(3, t('hp.ps.3'), t('hp.ps.3.d'))+
+    helpMark(ICON_MIC, t('post.vo'), t('hp.ps.4.d'))+
+    helpMark(ICON_SEND, t('hp.ps.5'), t('hp.ps.5.d'))+
+    helpMark(ICON_DRAFT, t('post.draft.save'), t('hp.ps.dr.d'))};
+};
 /* The timer, wired after the screen is drawn. Holding turns the post private
    or public again; letting go early does nothing, and the press that follows
    is swallowed so a hold never also sends. */
