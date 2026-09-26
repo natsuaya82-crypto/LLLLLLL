@@ -262,11 +262,11 @@ Deno.serve(async (req: Request) => {
   try { jwt = await apnsJwt(kid, team, p8); }
   catch (e) { return said({ why: 'APNS_P8 will not read: ' + (e as Error).message }, 500); }
 
-  const sent: { uid: string; token: string; status: number }[] = [];
+  const sent: { uid: string; token: string; status: number; reason: string }[] = [];
   for (const one_ of sends) {
     const body = JSON.stringify(one_.payload);
     for (const token of one_.to) {
-      let status = 0;
+      let status = 0, reason = '';
       try {
         const r = await fetch(APNS + token, {
           method: 'POST',
@@ -280,13 +280,17 @@ Deno.serve(async (req: Request) => {
           body: body,
         });
         status = r.status;
-        await r.text();
+        /* Apple が断った時は理由を一語で返す（{"reason":"InvalidProviderToken"}
+           など）。数字だけでは 403 の五つの理由を分けられないので、それを
+           `left` に載せる ── net._http_response で読める。 */
+        const txt = await r.text();
+        try { reason = (JSON.parse(txt) || {}).reason || ''; } catch (_) { reason = ''; }
       } catch (e) {
         /* 届かなかった。**token は消しません** ── 「読めなかった」と「無い」は
            枝を分けない（CLAUDE.md 一枚目）。 */
         status = 0;
       }
-      sent.push({ uid: one_.uid, token: token, status: status });
+      sent.push({ uid: one_.uid, token: token, status: status, reason: reason });
     }
   }
 
@@ -307,6 +311,7 @@ Deno.serve(async (req: Request) => {
     sent: sent.filter((s) => s.status === 200).length,
     tried: sent.length,
     dropped: gone.length,
-    left: sent.filter((s) => s.status !== 200).map((s) => s.status),
+    left: sent.filter((s) => s.status !== 200)
+              .map((s) => s.reason ? s.status + ' ' + s.reason : s.status),
   });
 });
