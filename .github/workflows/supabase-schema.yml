@@ -1,0 +1,80 @@
+# 本番の Supabase に SQL を流す／読む。オーナーが外にいてスマホしか無い時に、
+# 大きい supabase/schema.sql を SQL Editor へ貼れない（OWNER 2026-09-26「今熊本
+# いるから全て選択できない」「やりましょう」）。貼る代わりに、このボタンが
+# Supabase の管理 API（POST /v1/projects/{ref}/database/query）へ送る。
+#
+# 要る鍵は Supabase Deploy と同じ一つ：repo の Secrets の SUPABASE_ACCESS_TOKEN。
+#
+#   check  ── 読むだけ。通知の道（Webhooks・トリガー・宛先の数・push-send の
+#             答え十件）と、schema の新しさの印を Actions の記録に出す。
+#             何も書かない。
+#   apply  ── supabase/schema.sql を丸ごと流す（何度流しても同じになる作り）。
+#             流した後に check と同じものを出す。本番を書き換えるので、押すのは
+#             オーナーか、オーナーが「押して」と言った時だけ。
+name: Supabase Schema
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'check（読むだけ）か apply（schema.sql を流す）'
+        required: true
+        default: check
+        type: choice
+        options:
+          - check
+          - apply
+
+env:
+  PROJECT_REF: iimwukyyasbybfrirhsf
+  SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 鍵があるか
+        run: |
+          test -n "$SUPABASE_ACCESS_TOKEN" || {
+            echo "GitHub の Secrets に SUPABASE_ACCESS_TOKEN がありません"; exit 1; }
+
+      - name: schema.sql を流す（apply の時だけ）
+        if: inputs.action == 'apply'
+        run: |
+          jq -Rs '{query: .}' supabase/schema.sql > q.json
+          CODE=$(curl -s -o out.json -w '%{http_code}' -X POST \
+            "https://api.supabase.com/v1/projects/$PROJECT_REF/database/query" \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            -H "Content-Type: application/json" --data @q.json)
+          echo "HTTP $CODE"; head -c 2000 out.json; echo
+          case "$CODE" in 2*) ;; *) exit 1 ;; esac
+
+      - name: 読む（通知の道と schema の新しさ）
+        run: |
+          cat > check.sql <<'SQL'
+          select 'webhooks' as what,
+                 (select count(*) from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+                   where n.nspname='net' and p.proname='http_post')::text as value
+          union all
+          select 'triggers', string_agg(tgname, ',' order by tgname) from pg_trigger where tgname like 'push_on_%'
+          union all
+          select 'posts_by', (select count(*) from pg_proc where proname='posts_by')::text
+          union all
+          select 'devices', count(*)::text from device
+          union all
+          select 'calls_24h', count(*)::text from net._http_response where created > now() - interval '24 hours'
+          union all
+          select 'push ' || to_char(created, 'MM-DD HH24:MI'), status_code::text || ' ' || left(coalesce(content,''), 200)
+            from (select created, status_code, content from net._http_response
+                   order by created desc limit 10) r;
+          SQL
+          jq -Rs '{query: .}' check.sql > q.json
+          CODE=$(curl -s -o out.json -w '%{http_code}' -X POST \
+            "https://api.supabase.com/v1/projects/$PROJECT_REF/database/query" \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            -H "Content-Type: application/json" --data @q.json)
+          echo "HTTP $CODE"
+          jq -r '.[] | "\(.what)\t\(.value)"' out.json 2>/dev/null || cat out.json
+          case "$CODE" in 2*) ;; *) exit 1 ;; esac
