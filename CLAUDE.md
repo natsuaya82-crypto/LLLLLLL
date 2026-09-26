@@ -2092,11 +2092,10 @@ back — otherwise
 is not what you meant. The abugida bench needs `SET.wsys` too: it is reached
 only from a door that only exists while the writing is an abugida.
 
-## Two chapters that are closed
+## A chapter that is closed
 
-Neither is a gap waiting to be filled. Both were a second place for something
-that already had one, and both are in git if the argument turns out to be
-wrong.
+It is not a gap waiting to be filled. It was a second place for something
+that already had one, and it is in git if the argument turns out to be wrong.
 
 **Sound.** There was a chapter for the language's inventory beside the chapter
 for its letters, and a letter's sound was a fact reachable from either.
@@ -2106,11 +2105,10 @@ pressing a symbol puts it on that letter — which is the only way it ever
 joined the language. `SND` is still the ninth slice under `langKey('snd')`,
 because the spelling engine reads it; it is no longer a place you go.
 
-**Make.** A screen that generated eight candidate words. Its only door was one
-button on the dictionary, and the button was reported as not working
-「まとめて押してんのに作成できないけど？」. Deleting the button would have left a
-screen nothing could reach and every check still green, which is rule 5 one
-step further out, so the screen went with it.
+**Making words is open again, as a new chapter** 「単語自動生成もやるか」 OWNER
+2026-09-26 (1.0.3): the language's sounds and syllable shapes make words that
+fit, and a chosen one goes into the dictionary. It is built as its own screen
+with a door that works — not the old Make screen brought back.
 
 ## One place, not fifteen
 
