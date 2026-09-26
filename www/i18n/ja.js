@@ -1225,6 +1225,8 @@ defLang('ja', (function(){
       'post.gone'             : "この投稿はもうありません",
       'post.thread'           : "スレッド",
       'post.re.to'            : "{0} への返信",
+      'post.rp'            : "{0}がリポスト",
+      'post.rp.me'         : "あなたがリポスト",
       'post.re.off'            : '宛先を外す',
       'word.edit'       : '編集',
       'word.del'        : "単語の削除",

@@ -1315,6 +1315,8 @@ defLang('zh', (function(){
       'post.gone'             : "这条动态已经没有了",
       'post.thread'           : "对话",
       'post.re.to'            : "回复 {0}",
+      'post.rp'            : "{0} 转发了",
+      'post.rp.me'         : "你转发了",
       'post.re.off'            : '移除收件人',
       "word.edit"        : "编辑",
       "word.del"         : "删除词",

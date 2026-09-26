@@ -1867,7 +1867,7 @@ export function halfDone(){
     ['the profile, posts, with one passed on', () => { pfTab='posts';
         POSTS.push({id:'pbo1', sid:'pbo1', at:Date.now()-9e8, lang:langId, lname:'Tovi',
                     ln:'mosa relu', who:'Veth', hd:'veth', mine:false, mn:'the river', ui:'en'});
-        PF_BOOST={ aya:{ pbo1:Date.now() } };
+        PF_BOOST={ aya:{ pbo1:{ at:Date.now(), n:'Aya', h:'aya', me:true } } };
         window.route='profile'; NAV=[{r:'profile'}];
         const h=vProfile(); POSTS.pop(); PF_BOOST={}; return h; }],
     ['somebody else\'s profile, with one passed on', () => { pfTab='posts';
@@ -1875,7 +1875,7 @@ export function halfDone(){
                              bio:'', fo:2, fr:3, out:false };
         POSTS.push({id:'pbo1', sid:'pbo1', at:Date.now()-9e8, lang:langId, lname:'Tovi',
                     ln:'mosa relu', who:'Veth', hd:'veth', mine:false, mn:'the river', ui:'en'});
-        PF_BOOST={ iri:{ pbo1:Date.now() } };
+        PF_BOOST={ iri:{ pbo1:{ at:Date.now(), n:'Iri', h:'iri', me:false } } };
         window.route='profile'; NAV=[{r:'profile', a:'iri'}];
         const h=vProfile(); POSTS.pop(); PF_BOOST={}; NAV=[{r:'profile'}]; return h; }],
     ['somebody else\'s profile, followed', () => { folPut(false, 'aya', ['iri']);
@@ -2246,9 +2246,16 @@ export function halfDone(){
        twice, and the second time is when it is EMPTY -- somebody who has not
        followed anybody yet, which is everybody on their first day and is a
        different sentence from "nothing has been written". */
+    /* and one of them passed on by @iri, as feed_fo() answers it -- 「〇〇が
+       リポスト」 under the name (OWNER 2026-09-26) is the followed list's */
     ['the timeline, following', () => { snsTab = 'fo';
+        POSTS.push({id:'fbo1', sid:'fbo1', at:Date.now()-9e8, lang:langId, lname:'Tovi',
+                    ln:'mosa relu', who:'Veth', hd:'veth', mine:false, mn:'the river', ui:'en'});
+        const keepFo = FO_HAVE; FO_HAVE = {};
+        POSTS.forEach((p) => { if (p.mine || p.hd === 'iri' || p.hd === 'veth') FO_HAVE[p.id] = 1; });
+        FO_HAVE.fbo1 = { n:'Iri', h:'iri', me:false };
         window.route='feed'; NAV=[{r:'feed'}];
-        const h = vFeed(); snsTab = 'rec'; return h; }],
+        const h = vFeed(); POSTS.pop(); FO_HAVE = keepFo; snsTab = 'rec'; return h; }],
     ['the timeline, following nobody', () => { snsTab = 'fo';
         const keep = folOf(false, 'aya'); folPut(false, 'aya', []);
         window.route='feed'; NAV=[{r:'feed'}];

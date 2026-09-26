@@ -4182,6 +4182,48 @@ function postAvHTML(p){
 function ptoHTML(hd){
   return esc(t('post.re.to', '\u0001')).replace('\u0001', atHTML(hd));
 }
+/* 「〇〇がリポスト」 UNDER THE AUTHOR'S NAME. 「vethの名前の下に〇〇がリポスト
+   って入れよう」 OWNER 2026-09-26.
+
+   Whether a post is a repost is not a fact about the POST, it is a fact about
+   the LIST it is standing in: the followed timeline shows it because
+   somebody passed it on, somebody's page because they did, and おすすめ
+   shows the same post because it is a post. The post itself is ONE copy that
+   every list shares (postTake()), so what netRow() says about who passed it
+   on is taken OFF the row as it arrives -- postRpOff() -- and kept by the
+   list that asked (FO_HAVE and PF_BOOST, www/sns.js). The list then hands
+   postRow() a row that carries it -- postRp() -- and a row from any other
+   list carries nothing, so nothing is drawn.
+
+   `rp` is { n: their display name, h: their handle, me: whether it was you },
+   as the server answered it (feed_fo()/posts_by() `by_name` `by_hd`). Read
+   off the row and nothing else, rule 8. */
+function postRpOff(p){
+  var rp=p && p.rp;
+  if(p) delete p.rp;
+  return rp || null;
+}
+function postRp(p, rp){
+  var q={}, k;
+  if(!rp || typeof rp!=='object') return p;
+  for(k in p) if(Object.prototype.hasOwnProperty.call(p, k)) q[k]=p[k];
+  q.rp=rp;
+  return q;
+}
+function postRpHTML(rp){
+  /* A row that says who by uuid alone -- a server whose feed_fo() does not
+     answer `by_name` `by_hd` yet -- names nobody, and 「がリポスト」 with
+     nobody in front of it is not drawn. */
+  if(!rp.me && !rp.n && !rp.h) return '';
+  var who=rp.me? t('post.rp.me') : t('post.rp', rp.n || '@'+rp.h);
+  /* The road to that person is the face's road (profileOpen(), www/me.js):
+     their handle, or your own page. The 44pt is `.pto .ptag`'s sum on this
+     line's type -- 11 + 23 + 11 with the same 11 given back -- so the line
+     stays 23 tall. Grey, like the line it wears: it is a label on the post. */
+  return '<div class="pto"><span style="display:inline-flex;align-items:center;gap:4px;'+
+    'padding:11px 0;margin:-11px 0"' + DO('profileOpen', [rp.me? '' : String(rp.h || '')]) + '>'+
+    ICON_BOOST+esc(who)+'</span></div>';
+}
 function postRow(p){
   var foc=(postFocus()===p.id), to=postToWho(p);
   return '<div class="post'+(foc? ' pfoc':'')+'"'+(foc? '' : DO('postOpen', [p.id]))+'>'+
@@ -4345,6 +4387,7 @@ function postRow(p){
          replies in it -- a reply sitting between two posts that have nothing
          to do with it has to say what it is, and the id it carries says
          nothing to anybody's eye. */
+      (p.rp? postRpHTML(p.rp) : '')+
       (to? '<div class="pto">'+ptoHTML(to)+'</div>' : '')+
       /* It used to be text wearing MY font, and only ever on my own post,
          because my font is the font of MY language and putting it on

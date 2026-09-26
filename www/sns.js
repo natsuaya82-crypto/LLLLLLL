@@ -180,7 +180,9 @@ function snsMine(p){
    everything on a phone with no signal. Neither covers the other's half. */
 function snsList(){
   var all=postAll();
-  if(snsTab==='fo') return all.filter(snsMine);
+  if(snsTab==='fo') return all.filter(snsMine).map(function(p){
+    return postRp(p, FO_HAVE && FO_HAVE[p.id]);
+  });
   /* AND THE THIRD IS ONE DAY'S. 「絞り込みに「#今日のお題」を足す。その行を
      選ぶと、その日のお題に答えた投稿だけ」 OWNER 2026-09-06.
 
@@ -401,7 +403,7 @@ function askFeed1(which, ok, bad, more){
        to rather than written over. */
     if(which==='fo'){
       have=more? (FO_HAVE || {}) : {};
-      for(i=0;i<ps.length;i++) if(ps[i] && ps[i].id) have[ps[i].id]=1;
+      for(i=0;i<ps.length;i++) if(ps[i] && ps[i].id) have[ps[i].id]=postRpOff(ps[i]) || 1;
       FO_HAVE=have;
     }
     for(i=0;i<ps.length;i++){
@@ -977,7 +979,7 @@ function askWho(ok, bad, person, h){
   relAsk([h], one, no);
 }
 /* WHAT EACH PERSON'S PAGE WAS TOLD THEY PASSED ON: handle -> post id ->
-   when. Only the server's answer (posts_by() in supabase/schema.sql) writes
+   who and when (`rp`, www/net.js § netRow, with `at`). Only the server's answer (posts_by() in supabase/schema.sql) writes
    it, the way FO_HAVE is the followed timeline's answer; pfList()
    (www/home.js) reads it through pfBoosts(). */
 var PF_BOOST={};
@@ -993,15 +995,17 @@ function askPosts(ok, bad, person, h, more){
     /* Nobody by that name is nothing to read, and nothing to draw. */
     if(!uid){ ok(0); return; }
     netPostsBy(uid, function(ps){
-      var have, i;
+      var have, i, rp;
       if(!ps){ ok(0); return; }
       /* WHAT THEY PASSED ON, and when -- a post's own `at` is when somebody
          wrote it, and the same post is passed on by several people at
          several times, so the time is this page's and not the post's. A
          later page is the rest of one answer; a first page starts it again. */
       have=more? (PF_BOOST[h] || {}) : {};
-      for(i=0;i<ps.length;i++)
-        if(ps[i] && ps[i].id && ps[i].by) have[ps[i].id]=ps[i].arrived || ps[i].at;
+      for(i=0;i<ps.length;i++){
+        rp=ps[i] && ps[i].id && postRpOff(ps[i]);
+        if(rp){ rp.at=ps[i].arrived || ps[i].at; have[ps[i].id]=rp; }
+      }
       PF_BOOST[h]=have;
       postTake(ps);
       moreGot(pullKey('posts', h), ps, 0, more);

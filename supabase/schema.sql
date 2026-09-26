@@ -2822,6 +2822,10 @@ $$;
 --             whole difference between a post and a boost on a timeline, and
 --             a row that did not say would be the app deciding it did not
 --             matter
+--   `by_name`, `by_hd`  that person's display name and handle as they are
+--             NOW, from `profile` -- 「〇〇がリポスト」 under the author's name
+--             (OWNER 2026-09-26) is drawn off the row, and a uuid is not a
+--             name. Null when `by` is
 --   `at_key`  what to sort and page by: WHEN IT REACHED YOU. For a boost that
 --             is when it was boosted, not when it was written -- a five year
 --             old post passed on this morning belongs at this morning, and
@@ -2846,13 +2850,13 @@ returns table (id uuid, author uuid, language uuid, prompt bigint,
                likes bigint, boosts bigint, replies bigint,
                i_like boolean, i_boost boolean,
                quote_of uuid, quoted jsonb,
-               by uuid, at_key timestamptz)
+               by uuid, by_name text, by_hd text, at_key timestamptz)
 language sql stable as $$
   select z.id, z.author, z.language, z.prompt, z.reply_to, z.created_at,
          z.hidden_at, z.author_out, z.body,
          z.likes, z.boosts, z.replies, z.i_like, z.i_boost,
          z.quote_of, z.quoted,
-         z.by, z.at_key
+         z.by, bp.display, bp.handle, z.at_key
     from (
       select distinct on (q.id) q.*
         from (
@@ -2882,6 +2886,7 @@ language sql stable as $$
         ) q
        order by q.id, q.at_key desc
     ) z
+    left join profile bp on bp.id = z.by
    order by z.at_key desc
    limit lim
 $$;
@@ -2914,13 +2919,13 @@ returns table (id uuid, author uuid, language uuid, prompt bigint,
                likes bigint, boosts bigint, replies bigint,
                i_like boolean, i_boost boolean,
                quote_of uuid, quoted jsonb,
-               by uuid, at_key timestamptz)
+               by uuid, by_name text, by_hd text, at_key timestamptz)
 language sql stable as $$
   select z.id, z.author, z.language, z.prompt, z.reply_to, z.created_at,
          z.hidden_at, z.author_out, z.body,
          z.likes, z.boosts, z.replies, z.i_like, z.i_boost,
          z.quote_of, z.quoted,
-         z.by, z.at_key
+         z.by, bp.display, bp.handle, z.at_key
     from (
       select distinct on (q.id) q.*
         from (
@@ -2941,6 +2946,7 @@ language sql stable as $$
         ) q
        order by q.id, q.at_key desc
     ) z
+    left join profile bp on bp.id = z.by
    order by z.at_key desc
    limit lim
 $$;

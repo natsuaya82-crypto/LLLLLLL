@@ -1485,6 +1485,8 @@ defLang('ko', (function(){
       'post.gone'             : "이 글은 이제 없습니다",
       'post.thread'           : "스레드",
       'post.re.to'            : "{0}에게 보내는 답글",
+      'post.rp'            : "{0}님이 재게시함",
+      'post.rp.me'         : "내가 재게시함",
       'post.re.off'            : '받는 사람 제거',
       "word.edit"        : "편집",
       "word.del"         : "단어 삭제",

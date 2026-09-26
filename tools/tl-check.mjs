@@ -872,8 +872,54 @@ const r = await pg.evaluate(({ s }) => {
     out.pbAsked = asked === me;
     out.pbOrder = ids.indexOf('PB-r') + ',' + ids.indexOf('PB-w');
     out.pbMore = MORE_AT[pullKey('posts', h)] === Date.parse('2026-09-20T00:00:00Z');
+    /* 14d, on the same answer: my own page says 「あなたがリポスト」 on the
+       pass and nothing on what I wrote */
+    { const rows = pfList(), me1 = t('post.rp.me');
+      out.rpPfMe = rows.map(postRow).join('').split(me1).length - 1;
+      out.rpPfW = rows.filter((p) => p.id === 'PB-w').map(postRow).join('').indexOf(me1) >= 0; }
     POSTS.splice(n0, POSTS.length - n0); PF_BOOST = {}; MORE_AT = {}; MORE_END = {};
     netSend1 = realS1; netSend = realS; netGet = realG; pullWait = realPW;
+  }
+
+  /* ---- 14d: 「〇〇がリポスト」 under the author's name -------------------
+     「vethの名前の下に〇〇がリポストって入れよう」 OWNER 2026-09-26. The real
+     askFeed1('fo') runs and only the wire is answered: one row Iri passed on
+     (Veth wrote it) and one Iri wrote. The mark is the LIST's -- the followed
+     timeline draws it on the pass and nowhere else, おすすめ draws the same
+     post without it, and the one copy of the post every list shares carries
+     none (postRpOff(), www/post.js). */
+  {
+    const realS1 = netSend1, realS = netSend, realG = netGet;
+    const n0 = POSTS.length, keepFo = FO_HAVE;
+    netSend1 = function (m, path, b, t2, ok) {
+      if (m === 'POST' && String(path) === '/rest/v1/rpc/feed_fo') {
+        ok([{ id:'RP-b', author:'U-veth', created_at:'2026-09-10T00:00:00Z',
+              body:{ ln:'rpb', hd:'veth', who:'Veth', lname:'Tovi' },
+              by:'U-iri', by_name:'Iri', by_hd:'iri', at_key:'2026-09-25T00:00:00Z' },
+            { id:'RP-w', author:'U-iri', created_at:'2026-09-20T00:00:00Z',
+              body:{ ln:'rpw', hd:'iri', who:'Iri', lname:'Vethi' },
+              by:null, at_key:'2026-09-20T00:00:00Z' }], 200);
+        return;
+      }
+      ok([], 200);
+    };
+    netSend = function (m, path, b, t2, ok, bad, up) { netSend1(m, path, b, t2, ok, bad, up, true); };
+    netGet = function (path, ok, bad) { netSend('GET', path, null, '', ok, bad); };
+    askFeed1('fo', function () {}, function () {});
+    const mark = t('post.rp', 'Iri');
+    const drawn = (list) => list.filter((p) => /^RP-/.test(p.id)).map(postRow).join('');
+    snsTab = 'fo';
+    const fo = drawn(snsList());
+    out.rpFo = fo.split(mark).length - 1;
+    out.rpFoW = drawn(snsList().filter((p) => p.id === 'RP-w')).indexOf(mark) >= 0;
+    /* the row Veth wrote: its face goes to @veth, so a road to @iri on it is
+       the mark's */
+    out.rpFoGo = /data-do="profileOpen"[^>]*iri/.test(drawn(snsList().filter((p) => p.id === 'RP-b')));
+    snsTab = 'rec';
+    out.rpRec = drawn(snsList()).split(mark).length - 1;
+    out.rpCopy = postById('RP-b') ? ('rp' in postById('RP-b')) : '(not taken)';
+    POSTS.splice(n0, POSTS.length - n0); FO_HAVE = keepFo;
+    netSend1 = realS1; netSend = realS; netGet = realG;
   }
 
   /* ---- 15: r94 E -- the meaning switched off ------------------------------
@@ -1280,6 +1326,15 @@ else console.log('14b: one quote is one more repost on the post it quotes: ' + r
         'carries on from the pass\u2019s time: ' + r.pbMore + '. 「リツイートとか引用したやつって' +
         '自分の投稿に載らないのはなぜ？」');
   else console.log('14c: what somebody passed on is on their page, at the time it was passed on: ' + r.pbOrder); }
+if (r.rpFo !== 1 || r.rpFoW || !r.rpFoGo || r.rpRec !== 0 || r.rpCopy !== false ||
+    r.rpPfMe !== 1 || r.rpPfW)
+  say('14d: 「〇〇がリポスト」 -- on the followed timeline, drawn on the pass ' + r.rpFo +
+      ' time(s) (want 1), on the post Iri wrote: ' + r.rpFoW + ', pressing it goes to @iri: ' +
+      r.rpFoGo + '; おすすめ draws the same post with it ' + r.rpRec + ' time(s) (want 0); ' +
+      'the shared copy carries it: ' + r.rpCopy + '; my page says 「' + 'post.rp.me' + '」 ' +
+      r.rpPfMe + ' time(s) (want 1), on what I wrote: ' + r.rpPfW +
+      '. 「vethの名前の下に〇〇がリポストって入れよう」');
+else console.log('14d: 〇〇がリポスト under the name, on the pass and nowhere else: fo 1, rec 0, my page 1');
 if (!r.mnOnField || !r.mnOffField || r.mnDraft !== 1)
   say('15: the meaning switch -- on, the field and the switch: ' + r.mnOnField + '; off, no field and ' +
       'the switch saying off: ' + r.mnOffField + '; a draft keeps it: ' + r.mnDraft);
