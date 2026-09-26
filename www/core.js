@@ -1664,10 +1664,8 @@ var SET_PREFS=['theme','ui','myfont','showScript','kbrom',
    migration mark of a field that was this handset's. `vvkb` was here -- a
    measurement of this screen's keyboard -- and is not named any more: the
    phone ends the screen at the keyboard itself (2026-09-25, ios/App/App/
-   MainViewController.swift § keepStill). A phone that has it keeps it in
-   `lingua.set` byte for byte, because the lines below read and write only
-   the fields this list names; whether it goes is the owner's -- the DELETE
-   REVIEW in docs/CHANGELOG.md 2026-09-25. `done` and `obback` are the onboarding's, and they are
+   MainViewController.swift § keepStill), and it is taken off the phone at
+   launch (§ setVvkbDrop, OWNER 2026-09-26). `done` and `obback` are the onboarding's, and they are
    here under protest -- 「セッションが無い」 cannot tell a phone out of the box
    from one somebody signed out of, and after an account is deleted there is no
    server left to ask (docs/reports/r8-item2-2026-09-08.md). The owner is
@@ -1700,6 +1698,30 @@ var SET_PHONE=['acct','acctMoved','walked','obback','doneMoved',
    version put in `lingua.set` beside the setup is left there and not read:
    the stamped account's copy was moved under its name (acctMoved), and
    anything else is nobody's. */
+/* THE KEYBOARD'S MEASUREMENT GOES, ONCE, BEFORE ANYTHING READS THE SETTINGS.
+   `vvkb` was how much of this screen the keyboard covered, and nothing reads
+   or writes it since the phone ends the screen at the keyboard itself
+   (2026-09-25, ios/App/App/MainViewController.swift § keepStill). 「1 消す」
+   OWNER 2026-09-26 -- the DELETE REVIEW is docs/CHANGELOG.md 2026-09-25. It
+   is a measurement, not something anybody made. It sits in `lingua.set`,
+   where an older version wrote it, and in an account's `lingua.set.<uid>`
+   where acctMoved() copied it; both are taken off here, on every launch,
+   and a copy that does not have it is not written at all. Nothing else in
+   either copy is touched. */
+function setVvkbDrop(){
+  var keys=[], i, k, v;
+  try{ for(i=0;i<localStorage.length;i++) keys.push(localStorage.key(i)); }catch(e){ return; }
+  for(i=0;i<keys.length;i++){
+    k=String(keys[i]);
+    if(k!==LS_S && k.indexOf(LS_S+'.')!==0) continue;
+    v=acctRaw(k);
+    if(!v || typeof v!=='object' || typeof v.length==='number' ||
+       !Object.prototype.hasOwnProperty.call(v,'vvkb')) continue;
+    delete v.vvkb;
+    try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){}
+  }
+}
+setVvkbDrop();
 try{
   var s=JSON.parse(localStorage.getItem(LS_S)||'null');
   if(s) for(var sk in s)
