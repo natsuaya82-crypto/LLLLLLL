@@ -88,7 +88,13 @@ jobs:
           union all
           select 'push ' || to_char(created, 'MM-DD HH24:MI'), status_code::text || ' ' || left(coalesce(content,''), 200)
             from (select created, status_code, content from net._http_response
-                   order by created desc limit 10) r;
+                   order by created desc limit 10) r
+          union all
+          select 'slice ' || to_char(at, 'MM-DD HH24:MI:SS'), kind || ' no=' || no || ' len=' || length(body) || ' lang=' || left(language::text, 8)
+            from (select at, kind, no, body, language from slice order by at desc limit 15) s
+          union all
+          select 'lang ' || to_char(created_at, 'MM-DD HH24:MI'), left(id::text, 8) || ' ' || coalesce(name, '-') || ' ' || coalesce(wsys, '-')
+            from (select created_at, id, name, wsys from language order by created_at desc limit 8) l;
           SQL
           jq -Rs '{query: .}' check.sql > q.json
           CODE=$(curl -s -o out.json -w '%{http_code}' -X POST \
