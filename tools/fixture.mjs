@@ -1909,6 +1909,17 @@ export function halfDone(){
     ['the composer, replying, the meaning off', () => {
         PW = pwBlank(); PW.to = 'p1'; PW.nm = 1; openPost('reply');
         const h = vForm(); PW = pwBlank(); return h; }],
+    /* THE MEANING IS TEXT IN THE FIELD (r99): what the app wrote for the
+       line, and then what somebody wrote over it (www/post.js § pwMnFollow) */
+    ['the composer, the meaning the app wrote', () => {
+        PW = pwBlank(); openPost('new'); pwSetLn('kano tir');
+        FORM.html = pwHTML();
+        const h = vForm(); PW = pwBlank(); return h; }],
+    ['the composer, the meaning written by hand', () => {
+        PW = pwBlank(); openPost('new'); pwSetLn('kano'); pwSetMn('a mountain, far off');
+        pwSetLn('kano tir');
+        FORM.html = pwHTML();
+        const h = vForm(); PW = pwBlank(); return h; }],
     /* AND QUOTING (r94 B): the post under the field, small. */
     ['the composer, quoting somebody', () => {
         const p = postById('p2'); p.sid = 'SRV-2';

@@ -874,9 +874,12 @@ const R = await pg.evaluate(async () => {
     if (PW.pr)
       fails.push('pressing + came back to the day: PW.pr is still ' + PW.pr +
                  '. The + button is an ordinary post every time');
-    if (PW.mn)
+    /* and the meaning is the line's own again -- the app's text in the
+       field, following the line (pwMnFollow, r99) -- never the day's */
+    if (PW.mn === DAY.says || PW.mn !== pwMn())
       fails.push('pressing + left the day’s words in the meaning (' +
-                 JSON.stringify(PW.mn) + '). Under `pr` that field is readonly, ' +
+                 JSON.stringify(PW.mn) + ', where the line would say ' +
+                 JSON.stringify(pwMn()) + '). Under `pr` that field is readonly, ' +
                  'so nobody typed it and it is not theirs to keep');
     if (PW.ln !== 'kano tir')
       fails.push('pressing + threw away the line somebody typed (' +
@@ -2114,7 +2117,8 @@ const R = await pg.evaluate(async () => {
       return q;
     };
 
-    PW = pwBlank(); PW.mn = 'the mountain is seen';
+    /* typed: a hand on the field is PW.mh (www/post.js § pwMnFollow) */
+    PW = pwBlank(); PW.mn = 'the mountain is seen'; PW.mh = 1;
     if (!asks())
       fails.push('a meaning typed on its own is thrown away by the back arrow ' +
                  'without asking. It is somebody’s words in a field they typed ' +
@@ -3740,9 +3744,8 @@ const R = await pg.evaluate(async () => {
        dirClass() を付ける、行そのものに付ける）、どれも一行で書けてどれも
        赤くならずに通ってしまいます。ページに訊きます。
 
-       二つ目は翻訳。意味の欄が空のとき、そこに出るのは pwMn() ── 本文を
-       読者の言葉で言い直したもの ── で、送るときに落とす意味も同じ関数の
-       ものです。宛先が本文の文字だった頃は、その @lingua が訳に混ざって
+       二つ目は翻訳。意味の欄に字として入るのは pwMn() ── 本文を
+       読者の言葉で言い直したもの ── で、送る意味はその欄の中身です。宛先が本文の文字だった頃は、その @lingua が訳に混ざって
        画面に出ていました（OWNER 実機 143 の写真）。本文に @ が無いことと
        訳に @ が無いことは別の主張です：本文から取れていても、宛先を訳に
        足す一行があれば戻ってきます。ink（postInkOf）も同じ理由で訊きます。 */
@@ -3776,17 +3779,16 @@ const R = await pg.evaluate(async () => {
           fails.push('the @handle over the composer is drawn ' + wm2(b2) +
                      ' when the language is written downward');
       }
-      /* 訳・意味に @ が無い。欄の placeholder は本物の pwMn() が入れます。 */
+      /* 訳・意味に @ が無い。欄の中身は本物の pwMn() が入れます（r99）。 */
       if (String(pwMn()).indexOf('@') >= 0)
         fails.push('the translation under the composer reads "' + pwMn() +
                    '", with the addressee in it. 「本文に＠入れちゃうと翻訳' +
                    'にも出ちゃうやん？」 The handle is whom the post is FOR ' +
                    'and is not a word anybody wrote');
       const mnf = document.getElementById('pw-mn');
-      if (mnf && String(mnf.getAttribute('placeholder') || '').indexOf('@') >= 0)
-        fails.push('the meaning field under the composer offers "' +
-                   mnf.getAttribute('placeholder') + '", with the addressee ' +
-                   'in it');
+      if (mnf && String(mnf.value || '').indexOf('@') >= 0)
+        fails.push('the meaning field under the composer holds "' +
+                   mnf.value + '", with the addressee in it');
       /* そして送った投稿の意味にも。 */
       const nV = POSTS.length;
       pwSend();
@@ -4322,6 +4324,106 @@ const R = await pg.evaluate(async () => {
       fails.push('an edit the server took is not on this phone — ' + POSTS[0].ln);
     netSend = keepSend;
     if (was) planGot(was); else planForget();
+    POSTS = wasPosts; savePosts(); PW = pwBlank();
+  }
+
+  /* ---- THE MEANING IS TEXT IN THE FIELD, AND A HAND STOPS IT (r99) ------
+     「意訳をプレスホルダーで入れるんじゃなくてちゃんとした文字で入れて欲しい」
+     「意味オンオフは ⭕️のトグルにしよう」 OWNER 2026-09-26.
+       m1  pwMn() is the field's VALUE, not its placeholder, and follows the
+           line as it is typed
+       m2  a hand on the field stops it: the line typed again leaves the
+           meaning where the hand put it, and that is what goes up
+       m3  the switch off sends no meaning (mn '', nm 1) -- and the switch is
+           the settings screen's (.swt), with no word on it
+       m4  the field emptied by hand and the switch on sends '' -- the field,
+           and nothing given to it at the moment of sending
+       m5  a reply and a draft follow the same way, asked of the same flag */
+  {
+    const wasPosts = POSTS, keepSend = netSend;
+    netSend = function (m, p, b, tok, ok) { ok([]); };
+    const lastSent = () => POSTS[POSTS.length - 1] || {};
+    const field = () => document.getElementById('pw-mn');
+    const lineIs = (v) => { const f = document.getElementById('pw-ln'); if (f) f.value = v; pwSetLn(v); };
+    /* m1 */
+    PW = pwBlank(); openPost('new'); render();
+    lineIs('kano');
+    const a1 = pwMn();
+    if (!a1)
+      fails.push('m1: pwMn() says nothing for "kano" in the fixture, so nothing ' +
+                 'about the meaning following the line is a test of anything');
+    if (!field() || field().value !== a1)
+      fails.push('m1: the meaning field holds ' + JSON.stringify(field() && field().value) +
+                 ' after "kano" was typed, not pwMn() (' + JSON.stringify(a1) + '). ' +
+                 '「プレスホルダーで入れるんじゃなくてちゃんとした文字で」');
+    if (field() && field().getAttribute('placeholder') === a1)
+      fails.push('m1: the translation is still the placeholder of the meaning field');
+    lineIs('kano tir');
+    if (PW.mn !== pwMn() || (field() && field().value !== pwMn()))
+      fails.push('m1: the meaning did not follow the line from "kano" to ' +
+                 '"kano tir" -- field ' + JSON.stringify(field() && field().value) +
+                 ', PW.mn ' + JSON.stringify(PW.mn) + ', pwMn ' + JSON.stringify(pwMn()));
+    /* m2 */
+    pwSetMn('my own words');
+    lineIs('kano');
+    if (PW.mn !== 'my own words' || (field() && field().value !== 'my own words'))
+      fails.push('m2: somebody wrote the meaning themselves and the next ' +
+                 'keystroke on the line wrote over it -- ' + JSON.stringify(PW.mn));
+    let n0 = POSTS.length;
+    pwSend();
+    if (POSTS.length !== n0 + 1 || lastSent().mn !== 'my own words')
+      fails.push('m2: the post went up meaning ' + JSON.stringify(lastSent().mn) +
+                 ', not what was in the field');
+    /* m3 */
+    PW = pwBlank(); openPost('new'); render();
+    lineIs('kano');
+    const sw = document.querySelector('.pwmnsw');
+    if (!sw || !sw.querySelector('.swt') || String(sw.textContent || '').trim())
+      fails.push('m3: the meaning’s switch is not the settings screen’s ' +
+                 '(.swt) with no word on it -- ' + (sw ? JSON.stringify(sw.outerHTML) : 'no .pwmnsw'));
+    if (sw && !sw.getAttribute('aria-label'))
+      fails.push('m3: the meaning’s switch has no aria-label');
+    pwMnSw();
+    const sw2 = document.querySelector('.pwmnsw .swt');
+    if (!sw2 || /\bon\b/.test(sw2.className))
+      fails.push('m3: pressed off, the switch is still drawn on');
+    n0 = POSTS.length;
+    pwSend();
+    if (POSTS.length !== n0 + 1 || lastSent().mn !== '' || lastSent().nm !== 1)
+      fails.push('m3: the meaning switched off went up as ' +
+                 JSON.stringify({ mn: lastSent().mn, nm: lastSent().nm }));
+    /* m4 */
+    PW = pwBlank(); openPost('new'); render();
+    lineIs('kano'); pwSetMn('');
+    n0 = POSTS.length;
+    pwSend();
+    if (POSTS.length !== n0 + 1 || lastSent().mn !== '')
+      fails.push('m4: the meaning emptied by hand went up as ' +
+                 JSON.stringify(lastSent().mn) + ' -- something was given to it ' +
+                 'at the moment of sending, which is a second answer to what it means');
+    /* m5 */
+    PW = pwBlank(); PW.to = 'p1'; openPost('reply'); render();
+    lineIs('kano tir');
+    if (!field() || field().value !== pwMn() || !pwMn())
+      fails.push('m5: a reply’s meaning did not follow its line -- ' +
+                 JSON.stringify(field() && field().value));
+    PW = pwBlank(); pwLine(puaTyped('kano').cut); pwMnFollow();
+    const dAuto = draftOfPW();
+    PW = pwBlank(); pwLine(puaTyped('kano').cut); pwSetMn('kept by hand');
+    const dHand = draftOfPW();
+    const wasDr = DRAFTS;
+    DRAFTS = [dAuto, dHand];
+    draftOpen(0); render(); lineIs('kano tir');
+    if (PW.mn !== pwMn())
+      fails.push('m5: a draft whose meaning was the app’s did not follow its ' +
+                 'line when it was opened again -- ' + JSON.stringify(PW.mn));
+    PW = pwBlank();
+    draftOpen(0); render(); lineIs('kano tir');
+    if (PW.mn !== 'kept by hand')
+      fails.push('m5: a draft whose meaning somebody wrote was written over when ' +
+                 'it was opened again -- ' + JSON.stringify(PW.mn));
+    DRAFTS = wasDr;
+    netSend = keepSend;
     POSTS = wasPosts; savePosts(); PW = pwBlank();
   }
 

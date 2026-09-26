@@ -202,7 +202,7 @@ var PW={ln:'', mn:''};
    same reason `toh` is: what somebody wrote is the line, and a tag is not in
    it any more. 「#はべつで」 OWNER 2026-09-15, replacing 「タグは本文中に。」
    (2026-09-04). www/sns.js § A TAG IS NOT IN THE BODY ANY MORE. */
-function pwBlank(){ return {ln:'', cut:[], mn:'', to:'', toh:'', qt:'', nm:0, pics:[], pr:0, tags:[]}; }
+function pwBlank(){ return {ln:'', cut:[], mn:'', mh:0, to:'', toh:'', qt:'', nm:0, pics:[], pr:0, tags:[]}; }
 /* THE MEANING IS SWITCHED OFF. 「投稿画面の前にトグル置いて意味を非表示にする」
    「意味をオフにした場合はTwitterと同じように投稿できる」 OWNER 2026-09-25
    (docs/FEATURE_RULES.md § 2026-09-25 投稿の見た目). The one question: the
@@ -393,7 +393,7 @@ function openPost(from, at){
        stays -- those were typed, and this button is not a delete. */
     if(PW.ed) PW=pwBlank();
     else { PW.to=''; PW.toh=''; PW.qt='';
-           if(PW.pr){ PW.pr=0; PW.mn=''; PW.tags=pwTagsNoDay(); } }
+           if(PW.pr){ PW.pr=0; PW.mn=''; PW.mh=0; PW.tags=pwTagsNoDay(); } }
   }
   /* Opened from the day's sentence, and that is the only OTHER argument this
      takes.
@@ -462,6 +462,9 @@ function openPost(from, at){
      than trusting that nobody arrived here another way. The feed is where
      the door is. */
   if(!netSignedIn()){ go('feed'); return; }
+  /* a post, a reply, a quote and a draft all arrive here: the meaning is
+     written into the field before the screen is (pwMnFollow) */
+  pwMnFollow();
   openForm('post:', t(PW.ed? 'post.edit' : 'post.new'), pwHTML(), pwKeepKb,
     /* Held rather than tapped: 「postボタン長押しで、自分専用の日記みたいなポスト
        とみんなに公開するポストカード選べるように」 A long press is a second
@@ -660,7 +663,8 @@ function draftOpen(i){
   if(here().r==='drafts') back();
   PW=pwBlank();
   pwLine(draftCut(d));
-  PW.mn=d.mn||''; PW.to=d.to||''; PW.toh=d.toh||''; PW.qt=d.qt||''; PW.nm=d.nm? 1 : 0; PW.pr=d.pr||0;
+  PW.to=d.to||''; PW.toh=d.toh||''; PW.qt=d.qt||''; PW.nm=d.nm? 1 : 0; PW.pr=d.pr||0;
+  pwMnKept(d.mn);
   /* The frame as it was kept. tagsOf() is the one place that says what a
      row's tags are -- the same function the timeline's row asks -- so a draft
      and a post cannot disagree about it. */
@@ -935,6 +939,32 @@ FORM_OPEN.post=function(){ openPost(); };
    most of what somebody needs. 「単語と文法が埋まれば埋まるだけ投稿の翻訳の
    精度が上がるっていうのが目的」 */
 function pwMn(){ return LinguaGrammarEngine.translate.toNatural(gModel(), PW.ln, uiLang()); }
+/* THE MEANING IS WHAT IS IN THE FIELD, AND THE APP WRITES IT THERE AS TEXT.
+   「意訳をプレスホルダーで入れるんじゃなくてちゃんとした文字で入れて欲しい」
+   OWNER 2026-09-26. `pwMn()` goes INTO the field -- characters somebody can
+   change -- and follows the line as it is typed until somebody puts a hand
+   on the field; from the first character they change, it is theirs and
+   nothing here touches it again.
+
+   `PW.mh` is that one question -- has a hand been on the meaning -- and it
+   is answered here and nowhere else: pwSetMn() sets it, pwMnKept() works it
+   out for a meaning that was kept (a draft, a post being edited), and every
+   composer -- a post, a reply, a quote, a draft -- asks pwMnFollow(). The
+   day's prompt is not followed: there the meaning is the day's (`pr`).
+
+   What goes up is the field and nothing else (pwSendWith, pwSaveEdit). There
+   used to be a second answer -- an empty field was given pwMn() at the
+   moment of sending -- and two answers to 「what does this post mean」 is
+   what this replaced. */
+function pwMnFollow(){ if(!PW.pr && !PW.mh) PW.mn=pwMn(); }
+/* A kept meaning is the machine's when it is exactly what the machine would
+   write for this line, or nothing (a draft from before the meaning was
+   text); anything else a hand wrote. Nothing new is stored for it. */
+function pwMnKept(mn){
+  PW.mn=String(mn||'');
+  PW.mh=(PW.mn && PW.mn!==pwMn())? 1 : 0;
+  pwMnFollow();
+}
 /* The composer is TWO rows, the same two the timeline is:
    「やっぱり、タイムラインも投稿も2段で。赤文字消して。」
    「これもお題のページと合わせるんだけど」 OWNER 2026-08-28
@@ -950,9 +980,9 @@ function pwMn(){ return LinguaGrammarEngine.translate.toNatural(gModel(), PW.ln,
    places, and the day's-sentence row (`dayRow()` in sns.js) is those two
    rows as well -- what is written, and the line under it.
 
-   The red went with the row that carried it. What fills the meaning field's
-   placeholder, and the meaning a post falls back to, is `pwMn()` above --
-   the line said in the reader's own words and the reader's own order. */
+   The red went with the row that carried it. What the app writes into the
+   meaning field is `pwMn()` above (pwMnFollow) -- the line said in the
+   reader's own words and the reader's own order. */
 /* ---- a photograph on a post -------------------------------------------
 
    The long edge, and how hard it is squeezed. A photograph is stored as text
@@ -1723,8 +1753,10 @@ function pwHTML(){
          height the meaning did not already have, so nothing belonging to the
          meaning can push the meaning off the screen.
 
-         The word, because 「意味」 has no mark every phone draws, in the colour
-         of what is on while it is on. Not in the bar under the field: that bar
+         A SWITCH, the settings screen's own (swtHTML, www/shell.js), and the
+         word only as its aria-label. 「意味オンオフは ⭕️のトグルにしよう」
+         OWNER 2026-09-26 -- it was 「意味」 written out, which is an operation
+         written as a word. Not in the bar under the field: that bar
          is exactly full on a 320 phone with nothing added (measured 320/320).
          Not on the day's prompt, and not while a post that exists is edited
          -- that keeps what it has.
@@ -1735,11 +1767,12 @@ function pwHTML(){
          sent. */
       '<div class="pwmnrow">'+
       (pwMnOff()? '' :
-        lnField('pw-mn', pwMn() || t('post.mn'),
+        lnField('pw-mn', t('post.mn'),
           (PW.pr? ' readonly' : '')+IN('pwSetMn'), PW.mn, 'pwmn'))+
       ((PW.pr || PW.ed)? '' :
-        '<button class="pwmnsw'+(pwMnOff()? '' : ' on')+'" aria-pressed="'+
-          (pwMnOff()? 'false' : 'true')+'"'+DO('pwMnSw')+'>'+esc(t('post.mn.sw'))+'</button>')+
+        '<button class="pwmnsw" aria-pressed="'+(pwMnOff()? 'false' : 'true')+
+          '" aria-label="'+esc(t('post.mn.sw'))+'"'+DO('pwMnSw')+'>'+
+          swtHTML(!pwMnOff())+'</button>')+
       '</div>'+
       /* AND THE TAGS, UNDER THE MEANING -- the same place the post puts them
          (postRow), so what is being written and what was written read in one
@@ -1835,8 +1868,11 @@ function pwSetLn(v, cut){
      same decision made once, and the screen is the answer.
      「文字数に含ませたくないのよ」 OWNER 2026-09-08. */
   pwAtLift();
+  /* the meaning follows the line into the field (pwMnFollow) -- written
+     into it by hand, because nothing redraws this screen while it is typed */
+  pwMnFollow();
   var m=document.getElementById('pw-mn');
-  if(m) m.setAttribute('placeholder', pwMn());
+  if(m && m.value!==PW.mn){ m.value=PW.mn; lnGrow('pw-mn'); }
   lnGrow('pw-ln');
   pwLeftPaint();
   pwSidePaint();
@@ -2139,14 +2175,12 @@ function pwLeftPaint(){
    meaning being editable in ANY of those is the day not working. */
 function pwSetMn(v){
   if(PW.pr) return;
-  PW.mn=String(v||'');
+  PW.mn=String(v||''); PW.mh=1;
   pwFresh();
   /* The second ring, patched by hand for the reason the first one is: nothing
      redraws this screen while it is being typed into. */
   pwLeftPaint();
 }
-/* Posting. The meaning is what was typed, or the gloss run together if
-   nothing was -- never empty, because a line nobody can read is not a post. */
 /* Whether there is anything to post. It was: a line, or nothing. So a
    photograph with somebody's own letters drawn onto it -- which is most of
    what this app is for -- could not be posted on its own, and neither could
@@ -2263,13 +2297,9 @@ function pwSendWith(ln, ink, pics, vo){
             lang:langId, lname:langName||'',
             who:meName(), hd:meHandle(), av:postAvatar(), mine:true,
             ln:ln, ink:ink, dir:scriptDir(),
-            /* OWNER 2026-09-05 単語はその単語の意味を 文法は並び替えた単語たちが
-               文章として成り立つように -- only to fall back on, for somebody who
-               typed a line and no meaning. Not stored, see postRow. */
-            /* and with the meaning switched off, none, and the post says so
-               (`nm`) -- nothing is kept of what was in the field */
-            mn:pwMnOff()? '' :
-               (String(PW.mn||'').trim() || LinguaGrammarEngine.translate.toNatural(gModel(), ln, uiLang())),
+            /* the field, and nothing else (pwMnFollow) -- and with the
+               meaning switched off, none, and the post says so (`nm`) */
+            mn:pwMnOff()? '' : String(PW.mn||'').trim(),
             pr:PW.pr||0,
             ui:uiLang(), li:0, bo:0, re:0};
   /* If the letters made the files too big for what is left, the PHOTOGRAPHS
@@ -3332,7 +3362,7 @@ function postEdit(id){
      § 2-3, measured). */
   if(upStop(can('edit'), 'post.editplan')) return;
   PW=pwBlank();
-  PW.ed=p.id; pwLine(postCutOf(p)); PW.mn=String(p.mn||''); PW.nm=p.nm? 1 : 0;
+  PW.ed=p.id; pwLine(postCutOf(p)); PW.nm=p.nm? 1 : 0; pwMnKept(p.mn);
   openPost();
 }
 /* A post of mine back as the line it was typed as, so the field it is edited
@@ -3387,8 +3417,8 @@ function postCutOf(p){
 function pwSaveEdit(ln, ink){
   var p=postById(PW.ed), mn, q, k;
   if(!p || !p.mine){ toast(t('post.gone')); PW=pwBlank(); goTab('feed'); return; }
-  /* OWNER 2026-09-05 単語はその単語の意味を 文法は並び替えた単語たちが文章として成り立つように */
-  mn=p.nm? '' : (String(PW.mn||'').trim() || LinguaGrammarEngine.translate.toNatural(gModel(), ln, uiLang()));
+  /* the field, and nothing else (pwMnFollow) */
+  mn=p.nm? '' : String(PW.mn||'').trim();
   q={};
   for(k in p) if(Object.prototype.hasOwnProperty.call(p, k)) q[k]=p[k];
   q.ln=ln; q.mn=mn;
