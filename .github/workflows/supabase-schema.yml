@@ -63,7 +63,7 @@ jobs:
               -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
               --data-urlencode "iso_timestamp_start=$S" --data-urlencode "iso_timestamp_end=$E" \
               --data-urlencode "sql=$1" > out.json
-            jq -c '.result[]? ' out.json 2>/dev/null || cat out.json; echo
+            head -c 6000 out.json; echo
           }
           echo '== 断られた要求'
           q "select datetime(timestamp) as t, request.method as m, request.path as p, request.search as s, response.status_code as c from edge_logs cross join unnest(metadata) as md cross join unnest(md.request) as request cross join unnest(md.response) as response where response.status_code >= 400 order by timestamp desc limit 60"
