@@ -1982,9 +1982,10 @@ that nobody remembered to add to**, which is the same fault `lsWipeAcct` was
 rewritten for a week earlier.
 
 **`SET_PHONE` in `core.js` names this HANDSET's own setup** — which account's
-things are live here, what the onboarding needs with no session to ask, a
-measurement of this screen, a migration mark, and four of the making side's
-that are not settled (`docs/BACKLOG.md`); read the array, not this line — and
+things are live here, what the onboarding needs with no session to ask, and
+migration marks; read the array, not this line. What is taken OFF the
+settings is `SET_GONE` beside it, one list and one function
+(`setGoneDrop()`) — and
 **everything else in `SET` is an account's**, counted rather than named. The
 theme and the interface language are not on it: they are the account's and
 go up in `profile.prefs` (`SET_PREFS`).

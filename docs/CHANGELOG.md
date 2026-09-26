@@ -15,6 +15,39 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### 2026-09-26 端末の設定に残る四つ（`order` `script` `read` `voice`）を消す（r100-prof、1.0.3）
+
+`docs/FEATURE_RULES.md` 2026-09-26「ルールの洗い出しへの答え」「消していいよ」（設定の四つ）。**実機未確認。**
+画面に見える変化は無い。
+
+#### DELETE REVIEW
+
+- 決定: **消す**（オーナー「消していいよ」）。
+- 何を: 設定の四つの欄だけ ── `lingua.set` の中（この端末の設え、`SET_PHONE` に名があった所）と、各アカウントの
+  `lingua.set.<uid>` の中（`acctMoved` の一回きりの写しが写した所）。
+  - `order` ── 語順。言語に段（`phases`）が出来る前の、端末に一つの答え。`migrateGramLang()`（`www/phases.js`）が
+    古い版の言語へ写すためだけに読んでいた。
+  - `script` ── ローマ字 → 借りた字。`LETTERS` が出来る前の形。`migrateLetters()`（`www/letters.js`）が字を作るため
+    だけに読んでいた。
+  - `read` `voice` ── `setDefaults()` が作り、`www/` の誰も読まない。
+- 移行の読みも消す: `migrateGramLang()` の語順の一行と、`migrateLetters()` の `SET.script` の半分。どちらも「言語が
+  端末にあった頃の古い版」から言語へ写す道で、言語はサーバーにある（CLAUDE.md rule 22）。`migrateGramLang()` の
+  三つの位置（`SET.gpos`）の写しと、`migrateLetters()` の `SCRIPT.g` の写しは指示の外なので残す。
+- どこで: `SET_GONE`（`www/core.js`）が消す欄の一覧、`setGoneDrop()` がその一つの消し方。r98 の `setVvkbDrop()` を
+  これに書き直した（二つ目の消し方は作らない）── `vvkb` は一覧の一行になる。起動の時、設定を読む前に、`lingua.set` と
+  `lingua.set.` で始まる鍵を一つずつ見て、一覧の欄を持つ物だけその欄を取って書き戻す。持っていない写しは書かない。
+  `setDefaults()` と `SET_PHONE` から四つの名を外す（新しく作られない）。
+- 消さない物: 同じ写しの他の欄は一字も動かさない（`gpos` を含む）。`lingua.set` と `lingua.set.<uid>` 以外の鍵は
+  見ない。言語の `phases`・`letters` の中身は触らない（前に写された語順・字はそのまま）。サーバーの行は何も消さない
+  （四つとも `SET_PREFS` ではなく、上がっていない）。
+- 戻せるか: 戻せない。`order` と `script` は、古い版の言語がまだ一度もこの版で開かれていない端末では、写される前に
+  消える ── オーナーの「電波の無い時に作って一度も上がっていない古い言語は、特別に扱わない」がその場合の答え。
+- 検査: `migrate-check` ──「設定の写しのうち消す欄を持つ物 0」、メモリの `SET` にも無い、他の欄と設定でない鍵は
+  そのまま。`gramlang-check` ── 端末の古い `SET.order` はどの言語にも写らず、設定にも残らない。`store-check` は
+  四つの行を消した。
+
+**保存する物**: 増えない。四欄減る。
+
 ### 2026-09-26 購入の後の「〇〇になりました」はサーバーの答えが届いた時だけ（r98-count、1.0.3）
 
 **実機未確認。** 購入の後、サーバー（`verify-plan`）の答えが押したプラン以上の時だけ「（押したプラン）になりました」。

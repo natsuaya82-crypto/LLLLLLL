@@ -4104,7 +4104,7 @@ instead of appearing here.
 - Implementation status: **書いた。** 同じ日に六箇所掃除した ──
   ゲートの本数（TESTING.md、17→26）、`CAN` の一覧（無い能力 `tr` が載り
   `edit` `badge` が抜けていた）、Studio、`localStorage` が唯一の置き場、
-  語順の `SET.order`、そして「アカウント無しでも言語は作れる」。
+  語順の ~~`SET.order`~~、そして「アカウント無しでも言語は作れる」。
 
 ### Decision
 - Date: 2026-08-26 (同日、三つめ)
