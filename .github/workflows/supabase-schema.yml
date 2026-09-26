@@ -59,7 +59,7 @@ jobs:
         run: |
           S=$(date -u -d '6 hours ago' +%Y-%m-%dT%H:%M:%SZ); E=$(date -u +%Y-%m-%dT%H:%M:%SZ)
           q(){
-            curl -s -G "https://api.supabase.com/v1/projects/$PROJECT_REF/analytics/endpoints/logs.all" \
+            curl -s -G "https://api.supabase.com/v1/projects/$PROJECT_REF/analytics/endpoints/logs" \
               -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
               --data-urlencode "iso_timestamp_start=$S" --data-urlencode "iso_timestamp_end=$E" \
               --data-urlencode "sql=$1" > out.json
