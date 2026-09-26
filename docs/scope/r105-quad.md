@@ -27,3 +27,64 @@
 
 ## 触らないもの
 `www/index.html`、`ios/`、`supabase/`、書き出しの画面（`vLtOut`、r104 のまま）、他の人のブランチ。ゲートは回さない。
+
+---
+
+# 報告（2026-09-26）
+
+コミット: `edcf3eff` scope → `c838c14b` CHANGELOG（先に） → `c35ed4df` 本体（コード・検査・写真） → `4d9d66f3` docs（決定ログ・偽になった文）。
+`origin/integ-0905` は取り込み済み（`30dc13d4` から動いておらず「Already up to date」）。
+
+## ファイルと理由
+
+| ファイル | 何を・なぜ |
+|---|---|
+| `www/wsys.js` | `wsParts()` を書き直し: 部品は `{s, at}`、初声・母音は `at` null（動かさない）、終声は `[0,1]`（左下）・`[1,1]`（右下）。`wsInto(g, at)` が終声を動かす一か所: 形が上半分だけなら半マス下、`[1,1]` で左半分だけなら半マス右も。動かさない部品は同じオブジェクトを返す。`wsStrokes()` から `type`（見本用）を外した。`WS_BLK_CUTS`・`wsBlkOf`・`wsBlkSet`・`wsBlkVowOf`・`WS_BLK`・`wsBlockBoxes` は消した。組まない: 終声の後の母音、終声三つ以上、五字以上。 |
+| `www/sound.js` | `ltCutRows()`・`ltCutPick()`・`blkPv`・`blkPvs`・`blkCons` と `vLetter` の行を消した。`HELP.letter` から組み合わせの段を外した（描く画面の「?」へ移した）。 |
+| `www/glyph.js` | `HELP.glyph` に組み合わせの時だけの段（四つのどこかに描く・終わりの子音・四つまで）── 田の字のある画面で言う。 |
+| `www/letters.js` | 一文字のページの KEEP から `cut` を外した（r104 より前の形に戻した）。 |
+| `www/act-map.js` | `ltCutPick` を外した。 |
+| `www/i18n/*.js`（10 言語） | `blk.h`・`blk.lr`・`blk.tb`・`blk.q`・`hp.bk.p2` を消し、`hp.bk.p`・`.1`・`.1.d`・`.2`・`.2.d`・`.3`・`.3.d` を今の形に、`hp.lt.ab.d` から置き方の文を外した。 |
+| `tools/fixture.mjs` | 「組み合わせの母音の文字のページ」の面を消した（その面にしか無いボタンが無くなった）。 |
+| `tools/block-check.mjs` | 1〜5 を書き直し（下）。6（SVG）は今のまま。 |
+| docs | `CHANGELOG.md`（先に）、`FEATURE_RULES.md`（新しい一項、r104 の項を【差し替え済み】一行、「他の道具…」の二行）、`DATA_MODEL.md`（`blk` は読まれない）、`FEATURES.md`（一行）。 |
+
+## 挙動
+
+- 組み合わせの一マスは、描いた字をそのまま重ねる。左上に描いた k と右上に描いた a の ka は左右に並ぶ（`after-block-words`）。
+  縮めないので、前（区画に縮めていた頃）より字が大きい。
+- 終声: n を左上に描いていれば kan で左下へ、kant の t は右下へ。下半分に描いた終声は動かない。二つ目が真ん中をまたいで描かれていれば下へだけ動く。
+- 母音の文字のページに置き方の行は無い（`after-letter-a`、前 `before-letter-a`）。
+- 描く画面の「?」に組み合わせの使い方（組み合わせの時だけ、`after-help-glyph`）。
+- **区画いっぱいに描いた字どうしは重なる** ── 前の置き方で描いた字は描き直しが要ることがある。字そのものは一画も変わらない。
+
+## 保存
+
+新しく保存する物は無い。消す物も無い。`SCRIPT.blk` は読まなくなるだけで、`langRead()` が知らない欄を残すので次の保存でも落ちない（block-check で確かめた）。
+
+## 確かめたこと（CODE CONFIRMED のみ）
+
+- `npm run block` 緑（全行）。**赤を三つ見た**: (a) 終声を動かさない → 4 行赤、(b) 下半分に描いた終声も動かす → 1 行赤、
+  (c) 前の `wsys.js`（区画に縮める）に戻す → 14 行赤。どれも戻して緑。
+- アブギダ: 前と後で、組む単位ぜんぶの `wsStrokes()` の JSON が一字違わず同じ、アブギダの台と単語の一覧の写真が **差 0 画素**（1316640・2330640 画素）。
+- pre-commit（fast 全部＋i18n、10 言語、73 画面）緑、docs-check 緑。
+- ゲートは回していない。act-check・press・page-check は走らせていない ── fixture の面が一つ減ったので、リーダーのゲートで見てほしい。
+
+## 確かめていないこと
+
+実機（DEVICE CONFIRMED 無し）。OWNER CONFIRMED 無し。フォント・キーボードに組んだマスが乗るのは block-check の 4 行目（フォントに渡る形）まで。
+
+## 写真（`shots/r105/`、日本語、ライト、有料。k・a・n・t は上半分、o は下半分に描いた状態）
+
+写真は `tools/shot.mjs` ではなく同じ `seed()` を使う使い捨ての台本で撮った ── 字を四分の一に描いた状態と書き方 `block` は shot.mjs の route だけでは作れない。
+- `before-/after-block-words`（組んだ語の一覧: 前は縮んだ小さなマス、後は描いた大きさ）
+- `before-/after-glyph-k`・`-glyph-a`（描く画面: 左上に子音、右上に母音）
+- `before-/after-letter-a`（母音の文字のページ: 前は置き方の三行、後は無い）
+- `before-/after-help-glyph`（描く画面の「?」: 後は組み合わせの段）
+- `before-/after-abugida-bench`・`-abugida-words`（差 0 画素）
+
+## 知っていること・訊くこと
+
+1. 「半マス」は描く四角の格子（`GGRID.inset` の内側）の半分。終声を動かす判定は「形がまるごと上半分（左半分）にあるか」── 決めた規則で、オーナーの数ではない。
+2. 母音を下半分に描いた字（o）と終声が重なる音節（kon）は、終声が左下へ下りて母音と重なる。そのまま重ねている（描き方の問題として扱い、コードでは避けていない）。
+3. `ios/App/LinguaKeyboard/Compose.swift` のコメント（書き方の数）は範囲外で触っていない（r102 と同じ）。
