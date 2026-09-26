@@ -4135,24 +4135,30 @@ function netReplies(ids, ok, bad, after){
       ok(out);
     }, bad);
 }
-/* WHAT ONE PERSON HAS WRITTEN. The other half of the same sentence: their
-   page drew whatever this account happened to be holding of theirs, which is
-   whatever the timeline had swept up, and there was no way to ask for the
-   rest or for anything newer. 「他の人の画面でも更新できるようにしたい」
+/* WHAT ONE PERSON HAS WRITTEN AND PASSED ON. Their page drew whatever this
+   account happened to be holding of theirs, which is whatever the timeline had
+   swept up, and there was no way to ask for the rest or for anything newer.
+   「他の人の画面でも更新できるようにしたい」
 
-   By the account's UUID, which `author` is keyed on and which the person's
-   `profile_seen` row already carries (`uid`, netWhoRow) -- so the page that
-   asks for both asks the handle once (www/sns.js § askPosts).
+   And what they reposted is on it, among what they wrote, dated by the
+   repost: 「リツイートとか引用したやつって自分の投稿に載らないのはなぜ？」
+   OWNER 2026-09-26. A repost is a row in `react` and not a post, so reading
+   `post_seen?author=` could never have it. It is one question to the server
+   -- posts_by() in supabase/schema.sql, feed_fo()'s shape for one person --
+   and not two reads mixed here: a phone that merged two lists would be
+   deciding the order and the page edge on its own.
 
-   Newest first and keyset on `created_at`, the same as netFindPosts(): a
-   page gains rows while somebody is reading it, and an offset would hand
-   them a post twice or step over one. */
+   By the account's UUID, which the person's `profile_seen` row already
+   carries (`uid`, netWhoRow) -- so the page that asks for both asks the
+   handle once (www/sns.js § askPosts).
+
+   Newest first and keyset on `at_key`, when it reached this page, as
+   netFeed()'s followed list is: a page gains rows while somebody is reading
+   it, and an offset would hand them a post twice or step over one. */
 function netPostsBy(uid, ok, bad, more){
-  netGet(NET_POST_SEL+
-         '&author=eq.'+encodeURIComponent(String(uid||''))+
-         '&order=created_at.desc'+
-         (more? '&created_at=lt.'+encodeURIComponent(String(more)) : '')+
-         '&limit='+NET_PAGE,
+  netSend('POST', '/rest/v1/rpc/posts_by',
+          {who:String(uid||''), lim:NET_PAGE, before:more? String(more) : null},
+          netTok(),
     function(d){
       var out=[], i;
       for(i=0;i<(d||[]).length;i++) out.push(netRow(d[i]));
@@ -4834,6 +4840,13 @@ function netUpVoice(uid, pid, post, ok){
   var vo=post && post.vo;
   if(post && post.vu){ ok(0, 0); return; }
   if(!vo || !vo.f){ ok(0, 0); return; }
+  /* ALREADY ON THE SERVER, which is every recording made since 2026-09-26
+     (www/rec.js § voKeep): the path IS the post's voice, and nothing is sent
+     twice. `vo` becomes the length alone -- a new object, so the composer's
+     own `PW.vo` still names it if the row is refused -- and a post that has
+     gone up names its recording only as `vu`, so nothing that throws a post
+     away later takes the bytes out from under it (voDropFile). */
+  if(voRemote(vo.f)){ post.vu=String(vo.f); post.vo={ms:vo.ms}; ok(0, 0); return; }
   voRead(vo.f, function(b64){
     /* NOT THERE IS NOT 「NO VOICE」. A recording the post names and this phone
        cannot read went up as a post with no voice, and nothing said so
@@ -4855,20 +4868,15 @@ function netUpVoice(uid, pid, post, ok){
    never the place a draft lives.
 
    The whole of a draft goes in `body`: the photographs as base64, as the
-   composer holds them, and the recording as `{f, ms}` -- the NAME of a file
-   in this phone's Documents (「声は Documents のファイル、localStorage には
-   入れない」 2026-08-30, and the rewrite of 2026-09-03 that took the bytes
-   out of the draft). So a draft opened on another phone names a file that is
-   not there and has no voice (r63-audit R3). Whether the recording should
-   travel with the draft, and how, is two written decisions against one
-   finding and is the owner's (docs/scope/r60-up.md). Not in the media
-   bucket: that bucket holds the files of POSTS, and a draft is not one. The
-   bytes go to the bucket when the post does, through netUpPics() and
-   netUpVoice().
+   composer holds them, and the recording as `{f, ms}` -- the PATH of the
+   voice in the `post-media` bucket, where it went the moment it was
+   recorded (www/rec.js § voKeep, 「録音は投稿・下書きと一緒にサーバー」
+   OWNER 2026-09-26). So a draft opened on another phone has its voice. A
+   draft kept by an earlier version may still name a file in this phone's
+   Documents; that one plays here only, and goes up with the post.
 
-   It also means account deletion has nothing extra to reach: netMyFiles()
-   below collects what to remove out of `post.body`, and a draft that owned
-   files in the bucket would be files nothing pointed at.
+   And account deletion reaches it: netDropMe() below reads the drafts as
+   well as the posts, and netMyFiles() takes the voice's path out of either.
 
    The id is the phone's -- netUUID(), the way netPush() names a post -- so a
    draft written with no signal already has the name it will go up under. */
@@ -5044,14 +5052,21 @@ function netDropMe(ok, bad){
      copy of it gone. The token is what says whose account this is; without one
      there is nothing to delete and nothing to claim. The mark is the same
      shape as netSetPass()'s a few hundred lines up. */
+  /* What the posts put in the bucket, and what the drafts did -- a voice is
+     in the bucket from the moment it is recorded, so a draft that is never
+     posted owns one (www/rec.js § voKeep). */
   netGet('/rest/v1/post?select=body&author=eq.'+encodeURIComponent(netUid()),
-    function(d){ netDropMine(netMyFiles(d), function(){ netEndMe(ok, bad); }); },
+    function(d){
+      netGet('/rest/v1/draft?select=body',
+        function(dr){ netDropMine(netMyFiles((d || []).concat(dr || [])), function(){ netEndMe(ok, bad); }); },
+        function(){ netDropMine(netMyFiles(d), function(){ netEndMe(ok, bad); }); });
+    },
     /* The listing failed, and the account still goes. Somebody who asked to
        be deleted must be deleted; a photograph left behind is a smaller wrong
        than an account that would not die because the network was bad. */
     function(){ netEndMe(ok, bad); });
 }
-/* Every path a post of mine put in the bucket. The paths are ON the post --
+/* Every path a post or a draft of mine put in the bucket. The paths are ON the post --
    netBody() sends them up with it -- so this reads them back rather than
    asking the bucket what is under a folder, which is a listing that does not
    recurse and would have to be walked a level at a time. */
@@ -5062,6 +5077,9 @@ function netMyFiles(rows){
     pu=b.pu || [];
     for(j=0;j<pu.length;j++) if(pu[j]) out.push(String(pu[j]));
     if(b.vu) out.push(String(b.vu));
+    /* a draft's voice, or a post's that has not become `vu` yet: a path on
+       the server, never the name of a file on a phone */
+    if(b.vo && b.vo.f && voRemote(b.vo.f) && out.indexOf(String(b.vo.f))<0) out.push(String(b.vo.f));
   }
   return out;
 }

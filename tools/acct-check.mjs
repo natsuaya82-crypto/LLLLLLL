@@ -5031,6 +5031,89 @@ const R2 = { said: [], fails: [] };
   R2.said.push('92: 起動の移行 ' + defs.length + ' 本は全部 migrateAll() から ── 一番上から呼ぶもの ' + top.length);
 }
 
+/* ---- 95. アカウントを削除したら、そのアカウントの物は端末に一つも残らない
+   ── 声のファイルも（r100、OWNER 2026-09-26）。
+   「アカウントを削除した時に端末に残る物は無い」「5 サーバーでしょ。端末に
+   持たせるものはないって」。録音は録った瞬間にバケットへ行き（www/rec.js
+   § voKeep）、端末には何も書かない。残り得るのは前の版が Documents/Voices に
+   書いた物だけで、それは下書き・未送信の投稿が名指ししている間だけ置かれる。
+
+   ここは本物の削除の道を通します（wipeAllGo → netDropMe → netEndMe →
+   wipeHere）。電話の側は立てた偽物で、Swift の sweepVoices と同じ約束（名指し
+   されない、時刻より前の物を消す）だけを持ちます。数えるのは:
+     - 録音が端末に何も書かないこと（keepVoice を一度も頼まない）
+     - 削除の後、消したアカウントだけが名指ししていた声のファイルが 0
+     - 別のアカウントの下書きが名指しする声は残る
+     - 削除がバケットから下書きの声も消す（netDropMe が下書きも読む） */
+{
+  /* 86-89 は本物の読み込みでページを読み直しているので、種はもう一度 */
+  await pg.evaluate('window.__seed = ' + seed.toString());
+  const r95 = await pg.evaluate(async () => {
+    window.__seed(); SET.walked = true;
+    const U = '93939395-9395-4959-8959-959595959595';
+    const V = '94949494-9494-4949-8949-949494949494';
+    const disk = {}, said = [];
+    window.Capacitor = { nativePromise: (pl, m, a) => {
+      said.push(m);
+      if (m === 'dropVoice') delete disk[a.name];
+      if (m === 'sweepVoices')
+        for (const f of Object.keys(disk))
+          if ((a.keep || []).indexOf(f) < 0 && disk[f] < a.before) delete disk[f];
+      return Promise.resolve({});
+    } };
+    const wasS = netSend, wasG = netGet, wasUp = netUp, gone = [], ups = [];
+    const srvVo = U + '/v95/vo.m4a';
+    netUp = function (path, b64, mime, ok) { ups.push(path); ok(path); };
+    netGet = function (path, ok) {
+      if (path.indexOf('/rest/v1/draft') === 0) ok([{ body: { vo: { f: srvVo, ms: 1 } } }]);
+      else ok([]);
+    };
+    netSend = function (m, path, body, tok, ok) {
+      if (m === 'DELETE' && String(path).indexOf('/storage/v1/object/post-media') === 0)
+        gone.push.apply(gone, (body && body.prefixes) || []);
+      setTimeout(function () { ok([]); }, 0);
+    };
+    /* 別のアカウント V の下書きが、前の版の声を名指ししている */
+    localStorage.setItem('lingua.drafts.' + V,
+      JSON.stringify([{ id: 'd95v', ln: 'v', vo: { f: 'v95-other.m4a', ms: 1 } }]));
+    disk['v95-other.m4a'] = 1;
+    /* U が着いて、前の版の声を名指しする下書きと未送信の投稿を持っている */
+    netOut();
+    netTook({ access_token: 'x', refresh_token: 'r', user: { id: U } });
+    disk['v95-draft.m4a'] = 1; disk['v95-post.m4a'] = 1;
+    DRAFTS.push({ id: 'd95u', ln: 'u', vo: { f: 'v95-draft.m4a', ms: 1 } }); draftsSave();
+    POSTS.push({ id: 'p95u', ln: 'u', mine: true, at: 1, vo: { f: 'v95-post.m4a', ms: 1 } }); savePosts();
+    /* 録音 ── 端末に何も書かない */
+    PW = pwBlank();
+    RECBITS = [new Blob([new Uint8Array([1, 2, 3])], { type: 'audio/mp4' })];
+    RECAT = Date.now() - 2000;
+    voTook('audio/mp4');
+    await new Promise(r => setTimeout(r, 300));
+    const recKept = said.filter(m => m === 'keepVoice').length;
+    const recUp = ups.length, recPath = PW.vo && PW.vo.f;
+    PW = pwBlank();
+    /* 本物の削除 */
+    wipeAllGo();
+    await new Promise(r => setTimeout(r, 600));
+    netSend = wasS; netGet = wasG; netUp = wasUp;
+    delete window.Capacitor;
+    return { recKept, recUp, recPath, left: Object.keys(disk).filter(f => f !== 'v95-other.m4a'),
+             other: !!disk['v95-other.m4a'], gone, srvVo, U };
+  });
+  if (r95.recKept) R2.fails.push('95: 録音が端末に声を書いた（keepVoice ' + r95.recKept + ' 回）');
+  if (r95.recUp !== 1 || String(r95.recPath || '').indexOf(r95.U + '/') !== 0)
+    R2.fails.push('95: 録音がバケットへ行っていない ── ' + r95.recUp + ' 回、' + JSON.stringify(r95.recPath));
+  if (r95.left.length)
+    R2.fails.push('95: **アカウントを削除した後、そのアカウントの声のファイルが端末に残っている** ── ' +
+                  r95.left.join(' '));
+  if (!r95.other) R2.fails.push('95: 別のアカウントの下書きの声まで消えた');
+  if (r95.gone.indexOf(r95.srvVo) < 0)
+    R2.fails.push('95: 削除がバケットから下書きの声を消していない ── ' + JSON.stringify(r95.gone));
+  R2.said.push('95: 録音は端末に書かず（' + r95.recKept + '）バケットへ、削除の後に残った声のファイル ' +
+               r95.left.length + '、別のアカウントの物は残る: ' + r95.other +
+               '、下書きの声をバケットから: ' + (r95.gone.indexOf(r95.srvVo) >= 0));
+}
+
 await br.close();
 srv.close();
 

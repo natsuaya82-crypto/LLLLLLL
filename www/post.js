@@ -3397,6 +3397,112 @@ function postCutOf(p){
   }
   return at===ln.length? cut : whole;
 }
+/* ---- COPYING WHAT A POST SAYS -------------------------------------------
+   「投稿の文章を長押しして選択とかできないの？」「自作文字はコピーしたら
+   アプリ内だとその文字になるの？」「そうしましょう」 OWNER 2026-09-26
+   (docs/FEATURE_RULES.md § 投稿の本文を長押しで選んでコピーできる).
+
+   Only the post a thread is opened on can be selected (`.post.pfoc` in
+   www/index.html); a row of the timeline is a thing you press and scroll.
+   What is copied is decided HERE and nowhere else, and two things are true of
+   every answer:
+
+     * the text is ROMAN. What a line is drawn with is private use characters
+       -- this post's shapes from U+F8FF down -- and one of those anywhere
+       outside this page is a box, or somebody else's letter (rule 13). So a
+       copy never carries what the page shows: it carries the spelling.
+     * a post of mine, in the language that is open, ALSO carries its letters
+       by id (PUA_CLIP, www/glyph.js), which is what puaPaste() puts back into
+       a field of this app as the letters they are. Anybody else's post
+       carries nothing but the spelling -- their shape is not made mine.
+
+   A shape's spelling is the letter's name on my own post (postCutOf). On
+   anybody else's the post carries its line and its shapes but not which
+   part of the line each shape is, so a word with a shape in it is copied
+   whole -- its spelling, rather than a guess at half of it. */
+function postCopyTab(p, el){
+  var ink=postInkOK(p.ink)? p.ink : {g:[], s:[String(p.ln||'')]}, side=postSide(p),
+      ids=[], cut, tab=[], w=0, inw=false, i, j, x, ch, words, shw={};
+  cut=(p.mine && p.lang===langId && postInkOK(p.ink))? postCutOf(p) : [];
+  for(i=0;i<cut.length;i++) if(cut[i].id!==undefined) ids.push(cut[i].id);
+  for(i=0;i<ink.s.length;i++){
+    x=ink.s[i];
+    if(typeof x==='number'){
+      inw=true; shw[w]=1;
+      ch=inkChar(ink.g[x], side);
+      if(ch) tab.push({ch:ch, w:w, id:ids.length? ids.shift() : undefined, sh:1});
+      continue;
+    }
+    x=String(x).replace(/[-]/g, '�');
+    for(j=0;j<x.length;j++){
+      ch=x.charAt(j);
+      if(/\s/.test(ch)){ if(inw){ w++; inw=false; } tab.push({ch:ch, t:ch, w:-1}); continue; }
+      inw=true;
+      tab.push({ch:ch, t:ch, w:w});
+    }
+  }
+  words=String(p.ln||'').match(/\S+/g) || [];
+  /* the table has to BE the line on the page, character for character, and
+     my letters have to have been found for every shape -- anything else is
+     the whole line's spelling, not a guess */
+  if(el && tab.map(function(e){ return e.ch; }).join('')!==el.textContent) return null;
+  return {tab:tab, words:(words.length===(inw? w+1 : w))? words : null, shw:shw,
+          own:(ids.length===0 && cut.length && tab.every(function(e){ return !e.sh || e.id!==undefined; }))};
+}
+/* The characters of `el` a selection covers, as [from, to), or null. */
+function postSelIn(el, r){
+  var q, a=0, b;
+  if(!el || !r.intersectsNode(el)) return null;
+  q=document.createRange(); q.selectNodeContents(el);
+  b=q.toString().length;
+  if(r.compareBoundaryPoints(Range.START_TO_START, q)>0){
+    q.setEnd(r.startContainer, r.startOffset); a=q.toString().length; q.selectNodeContents(el);
+  }
+  if(r.compareBoundaryPoints(Range.END_TO_END, q)<0){
+    q.setEnd(r.endContainer, r.endOffset); b=q.toString().length;
+  }
+  return a<b? [a, b] : null;
+}
+function postCopy(e){
+  var id=postFocus(), p=id? postById(id) : null, row, sel, r, ln, mn, at, T, i, u, rom='', cut=[],
+      done={}, l, txt;
+  if(!p || !e || !e.clipboardData || !window.getSelection) return;
+  row=document.querySelector('.post.pfoc');
+  sel=window.getSelection();
+  if(!row || !sel.rangeCount || sel.isCollapsed) return;
+  r=sel.getRangeAt(0);
+  if(!r.intersectsNode(row)) return;
+  ln=row.querySelector('.pline'); mn=row.querySelector('.pmn');
+  at=postSelIn(ln, r);
+  if(at){
+    T=postCopyTab(p, ln);
+    if(!T) rom=String(p.ln||'');
+    else for(i=at[0];i<at[1];i++){
+      u=T.tab[i];
+      if(T.own){
+        if(u.id!==undefined){ l=ltById(u.id); cut.push({id:u.id}); rom+=String((l && ltName(l))||''); }
+        else { cut.push({t:u.t}); rom+=u.t; }
+        continue;
+      }
+      if(u.w>=0 && T.shw[u.w]){
+        if(!done[u.w]) rom+= T.words? T.words[u.w] : String(p.ln||'');
+        done[u.w]=1;
+        if(!T.words) break;
+        continue;
+      }
+      rom+=u.t;
+    }
+  }
+  at=postSelIn(mn, r);
+  txt=at? mn.textContent.slice(at[0], at[1]) : '';
+  if(!rom && !txt) return;
+  if(rom && txt){ rom+='\n'; cut.push({t:'\n'}); }
+  rom+=txt; if(txt) cut.push({t:txt});
+  e.clipboardData.setData('text/plain', rom);
+  if(T && T.own) e.clipboardData.setData(PUA_CLIP, JSON.stringify({lang:langId, cut:cut}));
+  e.preventDefault();
+}
+document.addEventListener('copy', postCopy, false);
 /* AN EDIT GOES TO THE SERVER FIRST, THE SAME AS A POST (r79).
    「SNSは全部サーバー」, and 「なら失敗して残るにするべき」 OWNER 2026-09-05.
    This wrote the edited line into this phone's copy and nowhere else, so the

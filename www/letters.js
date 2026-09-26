@@ -40,7 +40,9 @@ function saveLetters(){ if(!langWrites()) return; bkTouch(); slWr(langKey('lette
 /* ---- moving the old shape of things over ------------------------------
    Everything drawn before this ran was stored under its sound, which is
    exactly a letter that reads one unit. Nothing is lost and nothing has to
-   be redrawn. Borrowed characters come across the same way. */
+   be redrawn. The borrowed characters that sat in `SET.script` are not read:
+   that field is taken off the phone (www/core.js § SET_GONE, OWNER
+   2026-09-26). */
 var LT_SEQ=0;
 function ltId(){
   LT_SEQ++;
@@ -48,16 +50,10 @@ function ltId(){
 }
 function migrateLetters(){
   if(LETTERS.length) return;
-  var moved=0, k, m;
+  var moved=0, k;
   for(k in SCRIPT.g){
     if(!SCRIPT.g[k] || !SCRIPT.g[k].length) continue;
     LETTERS.push({id:ltId(), st:SCRIPT.g[k], ch:'', nm:'', snd:[k]});
-    moved++;
-  }
-  m=(SET.script||{});
-  for(k in m){
-    if(!m[k]) continue;
-    LETTERS.push({id:ltId(), st:null, ch:m[k], nm:'', snd:[k]});
     moved++;
   }
   if(moved) saveLetters();

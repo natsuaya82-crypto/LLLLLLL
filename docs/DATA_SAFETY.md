@@ -145,24 +145,20 @@ the whole of their trust in the app. So:
 is quietly short and says nothing is indistinguishable from data that is gone,
 and it will be reported as data that is gone.
 
-## A voice is a file, and nothing tidies files away
+## A voice is a file on the server, and nothing of it is kept on the phone
 
-A post can carry thirty seconds of somebody's own voice. The bytes go up with
-the post; **the recorder writes a file in `Documents/Voices/` first**, so
-nothing depends on there being a signal at the moment somebody speaks, and the
-post carries the name — `post.vo = {f, ms}`. Three things follow about that
-file, and none of them is optional:
+A post can carry thirty seconds of somebody's own voice. **It goes into the
+`post-media` bucket the moment the recording ends** (`voKeep()`, `www/rec.js`)
+and the post or draft being written carries the path — `vo = {f, ms}`.
+「録音は投稿・下書きと一緒にサーバーにある」「端末に持たせるものはない」 OWNER
+2026-09-26. Nothing is written on the phone, so a draft opened on another phone
+has its voice, and a post that is sent makes the same path its `vu`
+(`netUpVoice()`), with nothing sent twice. Recording needs a signal; one that
+cannot go up is 「録音を保存できませんでした」 and nothing is kept.
 
-- **The file is written before the post is stored.** A name on a post that
-  points at nothing is a post claiming a voice it does not have. If the write
-  is refused — no bridge, no room — the post is made **without** one and says
-  so. What somebody typed is never lost because a microphone was.
-- **A name is never written over.** `keepVoice` refuses a file that already
-  exists rather than replacing it. Every recording is given a fresh name, so a
-  collision is a bug, and the answer to a bug is not to overwrite a voice.
-- **A voice file is removed by three things and by nothing else, and every one
-  of them is somebody taking that recording away by hand.** `voDropFile()` in
-  `www/rec.js` is the only road to `dropVoice`, and it has three callers:
+- **A voice is removed by somebody taking that recording away**, and
+  `voDropFile()` in `www/rec.js` is the one road — from the bucket for a path,
+  from `Documents/Voices` for a file an earlier version wrote:
 
   ```
     postDelGo    www/post.js   the post it was on is deleted   「投稿消した声も消していいよ」
@@ -170,24 +166,18 @@ file, and none of them is optional:
     voDrop       www/rec.js    the recording is taken off in the composer
   ```
 
-  In all three the file's name comes off the thing being deleted and from
-  nowhere else. **Nothing walks that folder**, nothing removes a file because
-  nothing points at it, and nothing tidies up on launch. The post is removed
-  first and the file second — a file that cannot be removed must not leave the
-  post standing.
+  A post that has gone up names its voice only as `vu`, so none of these takes
+  a sent post's recording out from under it except deleting that post.
+- **What an earlier version left in `Documents/Voices`** is read while a draft
+  or an unsent post names it, and swept when nothing on the phone does
+  (`voSweep()`: at the launch, and when an account is deleted — after that
+  account's copies are gone). DELETE REVIEWs in `docs/CHANGELOG.md`
+  2026-09-25 and 2026-09-26.
+- **Deleting an account takes its voices from the bucket** — the posts' and the
+  drafts' (`netDropMe()`).
 
-  **Only the first has its DELETE REVIEW written.** `postDelGo`'s is in
-  `docs/CHANGELOG.md` under 「投稿消した声も消していいよ」. The other two
-  arrived on 2026-09-03 with the owner's decision quoted
-  （「声は投稿上で再生できるよね？下書き消した時にはいらなくない？」）and no
-  block — so the decision is made and the record required by the DELETE REVIEW
-  below is missing. Written here rather than left to be noticed again.
-
-**A posted voice is on the server**: `netUpVoice()` puts it in the `post-media`
-bucket with the post it belongs to. The file this phone recorded stays in
-Documents, which is what iOS puts in the device backup, so a recording made
-with no signal survives until it can go up. **A voice is the post's rather than
-the language's**, so nothing about a slice carries one.
+**A voice is the post's rather than the language's**, so nothing about a slice
+carries one.
 
 ## DELETE REVIEW
 

@@ -97,8 +97,8 @@ function stRead(){
    whether a decision was TOUCHED, has been the language's all along while the
    value it marks was the phone's.
 
-   This COPIES. SET.order and SET.gpos are read and left exactly where they
-   are -- docs/DATA_SAFETY.md rule 2, and langMigrate()'s own argument: it
+   This COPIES. SET.gpos is read and left exactly where it is (the word
+   order, SET.order, is no longer read: www/core.js § SET_GONE) -- docs/DATA_SAFETY.md rule 2, and langMigrate()'s own argument: it
    runs once, on a phone, against the only copy of something somebody spent
    months on, and copying a few hundred bytes cannot lose anything where
    moving them could.
@@ -115,7 +115,7 @@ function stRead(){
    WHICH LANGUAGES THIS IS ABOUT, AND IT IS NOT 「every one in the index」.
    -----------------------------------------------------------------------
    That is what it used to ask and it is the wrong question, because the
-   index goes on filling up. `SET.order` is what the PHONE answered before a
+   index goes on filling up. `SET.gpos` is what the PHONE answered before a
    language could answer for itself, so the languages it belongs to are the
    ones that were LIVING UNDER IT -- and a language made since was never
    under it and is born with none 「新しく作った言語は語順を持たずに生まれる」.
@@ -155,11 +155,6 @@ function langUnderSet(id){
   return false;
 }
 function migrateGramLang(){
-  /* What the APP put in the settings, as against what a person put there.
-     Read off setDefaults() in www/core.js rather than written out here, so
-     there is one place that says it: a second copy of 'SOV' in this file is
-     a copy that goes on saying 'SOV' the day the default changes. */
-  var appOrder=setDefaults().order;
   var id, key, raw, o, g, k, v;
   for(id in LANGS){
     if(!Object.prototype.hasOwnProperty.call(LANGS, id)) continue;
@@ -172,40 +167,17 @@ function migrateGramLang(){
       if(!o || typeof o!=='object' ||
          Object.prototype.toString.call(o)==='[object Array]') continue;
     }
-    /* Only an answer this app could have given is copied. Anything else in
-       there is not a word order, and the screen has been showing the default
-       for it all along.
+    /* THE WORD ORDER IS NOT COPIED ANY MORE. `SET.order` was the phone's one
+       answer from before a language had a stage, and it is taken off the
+       phone at launch (www/core.js § SET_GONE, 「消していいよ」 OWNER
+       2026-09-26): a language lives on the server (CLAUDE.md rule 22), so
+       an older version's language that this road never reached is not
+       special-cased. A language it DID reach keeps the order it was given.
 
-       AND ONLY AN ANSWER A PERSON GAVE. setDefaults() puts `order:'SOV'` into
-       the settings of everybody alive, so this used to write 'SOV' onto every
-       language of everybody who has never once opened the word-order stage --
-       a value the app itself put there, filed under the language as though
-       somebody had answered it.
-       「普通にアプリが入れる仕様なんて誰も頼んでないけど」OWNER 2026-09-04:
-       what nobody was asked for is not written down, and a field nobody
-       touched stays empty.
-
-       Nothing on any screen moves. orderDef() in www/grammar.js answers 'SOV'
-       for an empty field, which is the same page it drew before, and whether
-       anybody CHOSE it is STG.set's question and always was. What changes is
-       that the slice stays ABSENT -- which is what a restore is for, the same
-       argument as the `{}` two blocks down.
-
-       It does not narrow the other way. A person who chose one of the six
-       still has it copied onto every language they already have: that is
-       OWNER 2026-08-25 「言語ごとですよ？」, it is what every one of their
-       screens shows today, and taking it away would be this app changing a
-       word order under somebody -- the opposite mistake in the same place.
-       'SOV' chosen by hand is the one case that cannot be told from the
-       default, and it costs nothing: the field is empty and the screen says
-       SOV either way.
-
-       The three positions have no such value to guard against. Nothing in
-       www/ writes SET.gpos any more -- GPOS_DEF is read at the moment a
-       screen asks and is put nowhere -- so what is here is what a person
-       pressed, and it is copied as it always was. */
-    if(o.order===undefined && SET.order!==appOrder &&
-       orderSeq(SET.order).join('')===SET.order) o.order=SET.order;
+       The three positions have no such decision on them and are copied as
+       they always were. Nothing in www/ writes SET.gpos any more -- GPOS_DEF
+       is read at the moment a screen asks and is put nowhere -- so what is
+       here is what a person pressed. */
     if(o.gpos===undefined){
       g={};
       for(k in GPOS_DEF) if(Object.prototype.hasOwnProperty.call(GPOS_DEF, k)){
@@ -220,13 +192,13 @@ function migrateGramLang(){
        states, the way empty and broken are: an absent slice is what
        netLangsDown() fills in, and one written here is a slice it steps over
        for good. So this language keeps having none. */
-    if(raw===null && o.order===undefined && o.gpos===undefined) continue;
+    if(raw===null && o.gpos===undefined) continue;
     slWr(key, JSON.stringify(o));
   }
   /* AND NOTHING IS WRITTEN BACK TO THE SETTINGS. This wrote them at the foot
      to save `SET.gramLang`; with the mark gone it wrote them out unchanged,
-     behind a catch with nothing in it, on every launch. `SET.order` and
-     `SET.gpos` are READ here and never touched -- docs/DATA_SAFETY.md rule 2
+     behind a catch with nothing in it, on every launch. `SET.gpos` is
+     READ here and never touched -- docs/DATA_SAFETY.md rule 2
      -- so there is nothing to save. */
 }
 stRead();

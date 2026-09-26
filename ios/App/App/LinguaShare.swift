@@ -23,7 +23,6 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
   public let jsName = "LinguaShare"
   public let pluginMethods: [CAPPluginMethod] = [
     CAPPluginMethod(name: "write", returnType: CAPPluginReturnPromise),
-    CAPPluginMethod(name: "keepVoice", returnType: CAPPluginReturnPromise),
     CAPPluginMethod(name: "voice", returnType: CAPPluginReturnPromise),
     CAPPluginMethod(name: "dropVoice", returnType: CAPPluginReturnPromise),
     CAPPluginMethod(name: "sweepVoices", returnType: CAPPluginReturnPromise),
@@ -222,6 +221,14 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
           return
         }
         let vc = UIActivityViewController(activityItems: [url], applicationActivities: nil)
+        // AND IT GOES WHEN THE SHARE SHEET CLOSES, whatever was chosen --
+        // saved, sent or cancelled. The file was only ever the hand-over:
+        // 「書き出したシートは渡したら端末に残さない」 OWNER 2026-09-26. iOS has
+        // finished with it by the time this is called (it copies what it
+        // saves or sends). A second attempt writes a new one.
+        vc.completionWithItemsHandler = { _, _, _, _ in
+          try? FileManager.default.removeItem(at: url)
+        }
         if let pop = vc.popoverPresentationController {
           pop.sourceView = host.view
           pop.sourceRect = CGRect(x: host.view.bounds.midX, y: host.view.bounds.midY,
@@ -316,27 +323,6 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
     return try voices().appendingPathComponent(name)
   }
 
-  @objc func keepVoice(_ call: CAPPluginCall) {
-    let name = call.getString("name") ?? ""
-    let b64 = call.getString("b64") ?? ""
-    guard !b64.isEmpty else { call.reject("nothing to keep"); return }
-    do {
-      guard let url = try voiceAt(name) else { call.reject("bad name"); return }
-      guard let bytes = Data(base64Encoded: b64) else { call.reject("not base64"); return }
-      // Never over one that is there: a name is made fresh for every
-      // recording, so a collision is a bug and the answer to a bug is not to
-      // write over somebody's voice.
-      guard !FileManager.default.fileExists(atPath: url.path) else {
-        call.reject("a voice by that name is already here"); return
-      }
-      try bytes.write(to: url,
-        options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
-      call.resolve()
-    } catch {
-      call.reject(error.localizedDescription)
-    }
-  }
-
   /// The one file a deleted post named, and nothing else. It takes a name
   /// rather than looking for anything: this method cannot be asked "which
   /// voices are unused", because that is the question that turns a delete
@@ -397,10 +383,14 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
     }
   }
 
-  /// Documents/Sheets, whole. Nothing has written there since sheets() moved
-  /// to the temporary folder (2026-09-24), so what is in it is what an earlier
-  /// build kept after handing a sheet or a card over. Nothing else in
-  /// Documents is touched, and no folder is nothing to do.
+  /// Documents/Sheets and the temporary Sheets/, whole. Nothing has written
+  /// into Documents since sheets() moved to the temporary folder
+  /// (2026-09-24), so what is in it is what an earlier build kept after
+  /// handing a sheet or a card over; and a file in the temporary one is a
+  /// hand-over the app was closed in the middle of, since shareFile() removes
+  /// its file when the share sheet closes (2026-09-26). Asked at the launch
+  /// and when an account is deleted (www/sheet.js § shDropOld). Nothing else in
+  /// either folder's parent is touched, and no folder is nothing to do.
   @objc func dropOldSheets(_ call: CAPPluginCall) {
     let fm = FileManager.default
     do {
@@ -408,6 +398,8 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
                             appropriateFor: nil, create: false)
       let dir = docs.appendingPathComponent(Self.sheetDir, isDirectory: true)
       if fm.fileExists(atPath: dir.path) { try fm.removeItem(at: dir) }
+      let tmp = fm.temporaryDirectory.appendingPathComponent(Self.sheetDir, isDirectory: true)
+      if fm.fileExists(atPath: tmp.path) { try fm.removeItem(at: tmp) }
       call.resolve()
     } catch {
       call.reject(error.localizedDescription)

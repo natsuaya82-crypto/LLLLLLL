@@ -579,6 +579,25 @@ function puaTyped(txt){
   if(tx) cut.push({t:tx});
   return {ln:ln, cut:cut};
 }
+/* PASTED, the letters come back as letters. A copy of my own post carries
+   its line by letter id under PUA_CLIP (www/post.js § postCopy) beside the
+   roman; pasted into a field of this app, in the language it was written in,
+   it goes in as what the Lingua keyboard would have typed -- puaField() of
+   it -- so the field reads it with puaTyped() like anything typed. Any other
+   paste is the browser's own, roman and all. The id travels, never the code
+   point: the number means a letter only in this order at this moment. */
+var PUA_CLIP='text/x-lingua-cut';
+function puaPaste(e){
+  var el=e && e.target, d=e && e.clipboardData, raw='', x;
+  if(!d || !el || (el.tagName!=='TEXTAREA' && el.tagName!=='INPUT')) return;
+  try{ raw=d.getData(PUA_CLIP); }catch(err){ raw=''; }
+  if(!raw) return;
+  try{ x=JSON.parse(raw); }catch(err){ return; }
+  if(!x || x.lang!==langId || !x.cut || !x.cut.length) return;
+  e.preventDefault();
+  document.execCommand('insertText', false, puaField(x.cut));
+}
+document.addEventListener('paste', puaPaste, false);
 /* And back: a cut as what the field shows -- each letter the character the
    typing face draws it with now, a letter that has no shape any more as its
    name. The same order as puaTyped() and installTypeFont(), because all

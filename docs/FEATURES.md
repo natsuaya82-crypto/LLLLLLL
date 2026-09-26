@@ -132,8 +132,8 @@ chapter left empty drops out of the sentence rather than breaking it; no screen
 asks it for a post.
 
 Word order is `STG.order` — it belongs to the LANGUAGE, not the phone.
-`SET.order` was the old flat key and `migrateGramLang()` in `www/phases.js`
-copied it across. **The six are gone.**
+~~`SET.order`~~ was the old flat key; it is taken off the phone
+(`SET_GONE`, `www/core.js`, 2026-09-26) and nothing copies it any more. **The six are gone.**
 「俺も選ばせたくないし、文章書いてたらsvoが基本でも助詞があるかもしれない」
 (2026-08-26, relayed) — a sentence with a particle in it is not described by
 one of six letter-triples. It is a BOARD of cards now (`g2Board()` in
