@@ -1993,14 +1993,24 @@ const nmA = await pg.evaluate(async ({ s, srv }) => {
   /* 人が押すのはこれ一つ ── **画面の保存ボタン**です。netLangRename() を直に
      呼ぶと、押す道（saveName）が端末に書いて済ませていても緑になります。
      ここは screen を通します。押した「瞬間」に名前が変わってはいけません。 */
+  /* 待つのは「欄が出るまで」「答えが戻るまで」で、決まった時間ではない ──
+     60ms と決めて待っていた時、ゲートの四つ並びの重さの下で欄が出る前に
+     見に行き、「欄が開いていない」と赤になった（単独では毎回緑）。 */
+  function until(f){
+    return new Promise(function(done){
+      var n = 0;
+      (function look(){ if (f() || ++n > 300) done(); else setTimeout(look, 10); })();
+    });
+  }
   editName();
-  await wait(60);
+  await until(function(){ return document.getElementById('ln-nm'); });
   var box = document.getElementById('ln-nm');
   if (!box) return { err:'ln-nm が無い ── 改名の欄が開いていない' };
   box.value = 'リングア語';
   saveName();
   var atOnce = langNameOf(langId);
-  await wait(300);
+  await until(function(){ return langNameOf(langId) !== atOnce; });
+  await wait(30);
   return { err:'', atOnce: atOnce, now: langNameOf(langId), global: langName,
            col: S.lang.map(function(r){ return r.name; }),
            /* スライスは一文字も書かれない */
