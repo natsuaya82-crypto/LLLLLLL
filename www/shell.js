@@ -45,6 +45,7 @@ function viewReset(){
      -- an accident of where the screens are, not a rule, and not what
      「データ消えるのだけはありえない」 may rest on. */
   wUndo=null;
+  GEN=null;                            /* the words the app made up */
   fq=''; fpick=null;                   /* the find screen */
   abVow='';                            /* the abugida editor */
   ltSort='own'; ltFil='all'; ltQ='';   /* the alphabet's order, filter and search */
@@ -936,9 +937,12 @@ function navHas(r){
    word tells everything pointing at that word its new name; the trail is one
    of the things pointing at it. Nothing else is touched -- this is a rename,
    not a jump. */
-function navRename(a, to){
-  var i;
-  for(i=0;i<NAV.length;i++) if(NAV[i].r==='form' && NAV[i].a===a) NAV[i].a=to;
+/* `r` is the route, as navDrop() below takes it, and a form when it is left
+   out: a word's tree (`ety`) names the word too, and was left asking for the
+   old name. */
+function navRename(a, to, r){
+  var i, want=r||'form';
+  for(i=0;i<NAV.length;i++) if(NAV[i].r===want && NAV[i].a===a) NAV[i].a=to;
 }
 /* And a name can stop being anything at all. A screen whose argument names a
    thing that has been deleted is not a screen to be put back down on, so it
@@ -1131,6 +1135,12 @@ var PAGES={
   glyph:   {lang:1, tab:'build'},
   spell:   {lang:1, tab:'build', k:'word.sp'},
   words:   {lang:1, tab:'build', k:'toc.words'},
+  /* Words the app makes up, and the shapes it makes them in -- both off the
+     dictionary (www/words.js § vGen). And where one word came from, as a tree
+     (www/wordsheet.js § vEty), off a word's page. 2026-09-26. */
+  gen:     {lang:1, tab:'build', k:'gen.title'},
+  gensyl:  {lang:1, tab:'build', k:'gen.syl'},
+  ety:     {lang:1, tab:'build', k:'ety.title'},
   gram:    {lang:1, tab:'build', k:'toc.gram'},   /* the numeral is dropped on a single stage */
 
   notes:   {lang:1, tab:'build', k:'toc.notes'},
@@ -1190,7 +1200,7 @@ function pageName(r, a){
   }
   if(r==='relate'){
     var rk=String(a||'').split(':')[0];
-    return (rk==='syn'||rk==='ant')? t('word.'+rk+'.add') : t('toc.words');
+    return (rk==='syn'||rk==='ant'||rk==='from')? t('word.'+rk+'.add') : t('toc.words');
   }
   /* One of the three lists is named after which one it is. */
   if(r==='ltset') return t(LT_KIND[a] || 'lt.all');

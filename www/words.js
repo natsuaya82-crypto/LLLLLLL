@@ -272,7 +272,12 @@ function vWords(){
             puts it. */
          navDo(t('words.sel.done'), 'wSelOff', null, true))
       : (langLocked()? ''
-          : navDo(t('words.sel'), 'wSelOn', null, true)))+
+          /* The way to the words the app makes up (vGen below). A word and
+             not a mark: making up a word has no mark every phone draws, and
+             an operation with no settled mark stays a word until the owner
+             gives it one (CLAUDE.md § Shape). */
+          : navDo(t('gen.door'), 'go', ['gen'], true)+
+            navDo(t('words.sel'), 'wSelOn', null, true)))+
     '<div class="chead">'+
     /* The cross is always in the page and hidden until there is something to
        clear: typing repaints the list, not the header, so one conjured up by
@@ -445,7 +450,7 @@ function wSelDelGo(){
   save();
   /* The trail names words, and every one of these is gone from it -- the same
      two screens `delWord` drops for the one word it takes. */
-  for(i=0;i<hws.length;i++){ navDrop('edit:'+hws[i]); navDrop('word:'+hws[i]); }
+  for(i=0;i<hws.length;i++){ navDrop('edit:'+hws[i]); navDrop('word:'+hws[i]); navDrop(hws[i], 'ety'); }
   wUndo=keep; wSel=null;
   render();
 }
@@ -579,3 +584,80 @@ function entryHTML(w){
     '</div>';
 }
 
+
+/* ---- words the app makes up (1.0.3) --------------------------------------
+   「単語自動生成もやるか。足そう」 OWNER 2026-09-26. A new chapter, not the old
+   Make screen back: a handful of words made of this language's sounds in its
+   syllable shapes (www/assist.js § genWords), and pressing one opens the
+   sheet a word is added on with that spelling already in it -- the one road
+   a word goes into the dictionary by, so the meaning, the part of speech and
+   the ceiling are asked there and nowhere else.
+
+   What was made is kept while the screen is being looked at, so coming back
+   from the sheet finds the same list; viewReset() forgets it, and so does
+   another language (`id`). */
+var GEN=null, GEN_N=8;
+function genList(){
+  if(!GEN || GEN.id!==langId) GEN={id:langId, ws:genWords(GEN_N)};
+  return GEN.ws;
+}
+function genAgain(){ GEN=null; render(); }
+/* A shape as the interface language writes it: C and V are a consonant and a
+   vowel, and not every language calls them that (German writes K). */
+function genShapeLab(s){
+  var out='', i;
+  for(i=0;i<s.length;i++) out+=t(s.charAt(i)==='V'? 'gen.v' : 'gen.c');
+  return out;
+}
+function vGen(){
+  var ws=genList(), sh=genShapes();
+  return '<div class="view">'+
+    navTop('', langLocked()? '' : navDo(t('gen.again'), 'genAgain', null, true))+
+    '<div class="body">'+
+    '<button class="set"'+DO('go', ['gensyl'])+'>'+
+      '<span class="sl">'+esc(t('gen.syl'))+'</span>'+
+      '<span class="sv">'+esc(sh.length? sh.map(genShapeLab).join(' \u00b7 ') : t('word.none'))+ICON_GO+'</span></button>'+
+    (ws.length
+      ? '<div class="wdrows">'+ws.map(function(g, i){
+          return '<button class="wdrow"'+DO('genTake', [i])+'>'+
+            '<span class="wdroww">'+sfontHTML(wOut(g.hw))+'</span>'+
+            '<span class="wdrowm">'+esc(phIpa(g.seq))+'</span></button>';
+        }).join('')+'</div>'
+      : '<div class="note">'+esc(t('gen.none'))+'</div>')+
+    '</div></div>';
+}
+/* Onto the sheet, with the spelling in it. openAdd() is asked first and may
+   refuse (no account, the ceiling): then nothing is written and you are
+   still here. */
+function genTake(i){
+  var g=GEN && GEN.ws[i];
+  if(!g) return;
+  addW=null;
+  openAdd('');
+  if(!addW || here().r!=='form') return;
+  wEdit.sp=JSON.parse(JSON.stringify(g.sp));
+  wdSync(); relDirty(); render();
+}
+/* The language's syllable shapes, chosen. A shape is on or off; the first
+   press on a language that has chosen none starts from the shapes its
+   dictionary is already in, which are the ones this list shows ticked. */
+function vGenSyl(){
+  var on=genShapes();
+  return '<div class="view">'+navTop()+'<div class="body">'+
+    GEN_SHAPES.map(function(s){
+      var has=on.indexOf(s)>=0;
+      return '<button class="set"'+DO('genSylSet', [s])+'>'+
+        '<span class="sl'+(has? ' on' : '')+'">'+esc(genShapeLab(s))+'</span>'+
+        (has? '<span class="sv">'+ICON_TICK+'</span>' : '')+'</button>';
+    }).join('')+
+    '</div></div>';
+}
+/* The last one stays: none chosen is what reading the dictionary means, so
+   taking it off would put the shapes back that were being taken off. */
+function genSylSet(s){
+  var on=genShapes().slice(), i=on.indexOf(s);
+  if(!langWrites() || GEN_SHAPES.indexOf(s)<0 || (i>=0 && on.length<2)) return;
+  if(i>=0) on.splice(i,1); else on.push(s);
+  STG.syl=GEN_SHAPES.filter(function(x){ return on.indexOf(x)>=0; });
+  GEN=null; saveStg(); render();
+}

@@ -63,6 +63,8 @@ Marked separately, because they are not the same question:
 | Word suggestions | **lifted** | — | — | none | the chips and their daily three went out with Studio; `makeWord()` in `www/reading.js` stays and is used everywhere else |
 | The conversation — the last chapter | **lifted** | — | — | slice `talk` kept | out until the hosted model is in. See the note on `PLANS` in `www/core.js` |
 | Forms made by a rule | shipped | yes | yes | `STG.fm` | decided — a rule offers, it does not declare. Nothing is made until asked, and what comes out is an ordinary word |
+| Words made up for the dictionary -- the language's sounds (what its letters write) in its syllable shapes, a candidate pressed opens the add sheet with its spelling (`vGen`, `genWords()`) | code confirmed (r101), not on a device | yes | yes | slice `phases` (`STG.syl`, the shapes); a word added is slice `words` | decided — 「単語自動生成もやるか」 2026-09-26; no ceiling, every plan (not decided either way) |
+| Where a word came from, chosen on the edit sheet, and a family tree off the word's page (`vEty`) | code confirmed (r101), not on a device | yes | yes | slice `words` (`from`, the parent's spelling as a value, kept when the parent is deleted) | decided — 「語源の系統図」 2026-09-26 |
 | A word shares as a page from a dictionary | shipped | yes | yes | none | decided — 1080×1350, senses numbered, the family, an example, the origin |
 
 ## The reading side
@@ -693,7 +695,6 @@ Not gaps. Both are in git if the argument turns out to be wrong.
 | Feature | Status | Why |
 |---|---|---|
 | A page for the sound inventory | deprecated | the sound belongs to the letter; it is a sheet opened from the letter now |
-| "Make" — generate eight candidate words | deprecated | its only door was a button that did not work; deleting the button would have left an unreachable screen |
 | In-app keyboard for typing | deprecated | a keyboard belongs on the phone, not in one app. The editor that *builds* one stayed |
 
 ## When something changes here

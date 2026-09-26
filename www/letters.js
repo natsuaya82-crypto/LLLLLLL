@@ -1525,6 +1525,7 @@ function wRename(old, hw){
      here" with the word saved perfectly under its new name. */
   navRename('word:'+old, 'word:'+hw);
   navRename('edit:'+old, 'edit:'+hw);
+  navRename(old, hw, 'ety');
 }
 /* The spelling of a word that has none: cut it the way its writing system
    would, and ask which letter writes each piece. */

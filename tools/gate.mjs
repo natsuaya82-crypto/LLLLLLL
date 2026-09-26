@@ -45,7 +45,7 @@ const FAST = ['assets-check', 'docs-check', 'es5-check', 'grammar-engine-check',
 /* A browser each. The order is the order they are PRINTED in; which one runs
    when is up to the pool. */
 const SLOW = ['migrate-check', 'i18n-check', 'act-check', 'conv-check', 'card-check',
-              'word-check', 'forms-check', 'post-check', 'fill-check', 'round-check', 'guide-check',
+              'word-check', 'gen-check', 'forms-check', 'post-check', 'fill-check', 'round-check', 'guide-check',
               'base-check', 'kb-check', 'plan-check', 'term-check', 'sheet-check',
               'shape-check', 'draft-check', 'gramlang-check', 'world-check', 'tl-check',
               'acct-check', 'page-check', 'dl-check', 'again-check', 'hist-check', 'open-check', 'line-check', 'ink-check', 'pua-check',

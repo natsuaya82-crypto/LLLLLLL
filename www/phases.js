@@ -55,7 +55,9 @@
    a person saves a rule, and by nothing else: this file's own stRead() used
    to write them and that is what made a launch send the slice up and a
    failed save move the phone (www/grammar.js の §16 Migration). */
-var STG_DEF={done:{}, notes:{}, set:{}, extra:[], rules:{}, ex:{}, fm:[], order:'', np:[], gpos:{}, ncls:{}, gr:[], grm:''};
+/* `syl` is the language's syllable shapes -- 'CV', 'CVC' -- which the
+   generate screen makes words in (www/assist.js § genShapes, 2026-09-26). */
+var STG_DEF={done:{}, notes:{}, set:{}, extra:[], rules:{}, ex:{}, fm:[], order:'', np:[], gpos:{}, ncls:{}, gr:[], grm:'', syl:[]};
 function stBlank(){
   var out={}, k, v;
   for(k in STG_DEF) if(Object.prototype.hasOwnProperty.call(STG_DEF, k)){
