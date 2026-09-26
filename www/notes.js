@@ -287,6 +287,14 @@ function ntSelDelGo(){
   saveNotes();
   render();
 }
+/* The notebook's `?` (OWNER 2026-09-26 「？の中に描きまくろう」). */
+HELP.notes=function(){
+  return {t:t('toc.notes'), h:
+    helpPara(t('hp.nt.p'))+
+    helpMark(ICON_ADD, t('notes.new'), t('hp.nt.1.d'))+
+    helpStep(1, t('hp.nt.2'), t('hp.nt.2.d'))+
+    helpStep(2, t('hp.nt.3'), t('hp.nt.3.d'))};
+};
 function vNotes(){
   /* Newest first: a notebook is read from the end. */
   var found=ntFound(), rows='';
@@ -314,13 +322,13 @@ function vNotes(){
         '</button></div>';
   });
   return '<div class="view">'+
-    navTop('', NTSEL
+    navTop('', helpQ('notes')+(NTSEL
       ? ((ntSelList().length
             ? navDel(t('notes.sel.del'), 'ntSelDel')
             : '')+
          navDo(t('notes.sel.done'), 'ntSelOff', null, true))
       : (langLocked()? ''
-           : navDo(t('notes.sel'), 'ntSelOn', null, true)))+
+           : navDo(t('notes.sel'), 'ntSelOn', null, true))))+
     '<div class="body">'+
     '<div class="note" style="margin-bottom:12px">'+t('notes.note')+'</div>'+
     (found.length

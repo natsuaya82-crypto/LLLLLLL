@@ -47,6 +47,9 @@ function wsHelpRow(name, eg){
 }
 HELP.wsys=function(){
   return {t:t('ws.kind'), h:
+    helpStep(1, t('hp.ws.1'), t('hp.ws.1.d'))+
+    helpStep(2, t('hp.save'), t('hp.ws.2.d'))+
+    '<div class="sec">'+esc(t('ws.kind'))+'</div>'+
     WSYS.map(function(k){
       return wsHelpRow(t('ws.k.'+k), t('ws.k.'+k+'.eg'));
     }).join('')+
@@ -59,6 +62,60 @@ HELP.wsys=function(){
     DIRS.map(function(k){
       return wsHelpRow(t('dir.'+k), t('dir.'+k+'.eg'));
     }).join('')};
+};
+/* THE REST OF THIS CHAPTER'S `?`. 「？の中に描きまくろう」 OWNER 2026-09-26:
+   how each screen is used, behind its mark and nowhere on the screen. Built
+   of www/home.js's helpPara/helpStep/helpMark, like every HELP body. */
+HELP.letters=function(){
+  return {t:t('toc.letters'), h:
+    helpPara(t('hp.lt.p'))+
+    helpStep(1, t('hp.lt.1'), t('hp.lt.1.d'))+
+    helpStep(2, t('hp.lt.2'), t('hp.lt.2.d'))+
+    helpStep(3, t('hp.lt.3'), t('hp.lt.3.d'))+
+    helpMark(ICON_SHARE, t('lt.out'), t('hp.lt.out.d'))+
+    helpMark('', t('wr.title'), t('hp.lt.wr.d'))+
+    helpPara(t('hp.lt.ab.d'))};
+};
+HELP.ltset=function(){
+  return {t:t('toc.letters'), h:
+    helpPara(t('hp.ls.p'))+
+    helpStep(1, t('hp.ls.1'), t('hp.ls.1.d'))+
+    helpStep(2, t('hp.ls.2'), t('hp.ls.2.d'))+
+    helpStep(3, t('hp.ls.3'), t('hp.ls.3.d'))+
+    helpMark(ICON_ADD, t('lt.new'), t('hp.ls.add.d'))+
+    helpMark(ICON_SORT, t('hp.ls.sort'), t('hp.ls.sort.d'))+
+    helpPara(t('hp.ls.base'))};
+};
+HELP.letter=function(){
+  return {t:t('lt.title'), h:
+    helpStep(1, t('hp.l1.1'), t('hp.l1.1.d'))+
+    helpStep(2, t('hp.l1.2'), t('hp.l1.2.d'))+
+    helpStep(3, t('hp.l1.3'), t('hp.l1.3.d'))+
+    helpStep(4, t('hp.l1.4'), t('hp.l1.4.d'))+
+    helpStep(5, t('hp.save'), t('hp.save.d'))+
+    helpMark('', t('glyph.borrow'), t('hp.l1.borrow.d'))+
+    helpMark(ICON_SHARE, t('lt.out.svg'), t('hp.l1.svg.d'))};
+};
+HELP.abugida=function(){
+  return {t:t('ab.title'), h:
+    helpPara(t('hp.ab.p'))+
+    helpStep(1, t('hp.ab.1'), t('hp.ab.1.d'))+
+    helpStep(2, t('ab.draw'), t('hp.ab.2.d'))+
+    helpStep(3, t('hp.ab.3'), t('hp.ab.3.d'))};
+};
+HELP.blk=function(){
+  return {t:t('blk.title'), h:
+    helpPara(t('hp.bk.p'))+
+    helpStep(1, t('hp.bk.1'), t('hp.bk.1.d'))+
+    helpStep(2, t('hp.bk.2'), t('hp.bk.2.d'))+
+    helpStep(3, t('hp.bk.3'), t('hp.bk.3.d'))+
+    helpPara(t('hp.bk.p2'))};
+};
+HELP.snd=function(){
+  return {t:t('toc.sound'), h:
+    helpStep(1, t('hp.sd.1'), t('hp.sd.1.d'))+
+    helpStep(2, t('hp.save'), t('hp.save.d'))+
+    helpPara(t('hp.sd.p'))};
 };
 /* ---- PRESSING A ROW CHOOSES; THE BAR SAVES -----------------------------
    「保存ボタンがデフォルトなんだから保存がないのがおかしい」 OWNER
@@ -214,7 +271,7 @@ function vAbugida(){
       '<div class="note">'+t('ab.notabugida')+'</div>'+
       '<button class="btn ghost wide"' + DO('go', ["letters"]) + '>'+
       esc(t('toc.letters'))+'</button></div></div>';
-  return '<div class="view">'+navTop()+'<div class="body">'+
+  return '<div class="view">'+navTop('', helpQ('abugida'))+'<div class="body">'+
     '<div class="segs scrollx">'+vs.map(function(x){
       return '<button class="seg'+(x===v?' on':'')+'"' + DO('abSetVow', [x]) + '>'+esc(x)+'</button>';
     }).join('')+'</div>'+
@@ -281,7 +338,7 @@ function blkPvs(v, type, one){
 function vBlk(){
   var vs=wsVows();
   if(wsys()!=='block') return viewGone();
-  return '<div class="view">'+navTop('')+'<div class="body">'+
+  return '<div class="view">'+navTop('', helpQ('blk'))+'<div class="body">'+
     (vs.length
       ? '<div class="toc">'+vs.map(function(v){
           return '<button class="trow"' + DO('go', ['blkv', v]) + '>'+
@@ -302,7 +359,7 @@ function vBlkv(){
   if(!langLocked())
     keepOn(keepKey(), function(){ return {cut:wsBlkOf(v)}; },
            function(o, done){ blkKeepSave(v, o, done); });
-  return '<div class="view">'+navTop('')+'<div class="body">'+
+  return '<div class="view">'+navTop('', helpQ('blk'))+'<div class="body">'+
     WS_BLK_CUTS.map(function(k){
       return '<button class="set"' + DO('blkPick', [k]) + '>'+
         '<span class="sl">'+esc(t('blk.'+k))+'</span>'+
@@ -577,7 +634,7 @@ function openSnd(lid){
      a Save from -- www/shell.js § KEEP. */
   sndKeepOn(lid);
   openForm('snd:'+lid, ltName(l)||t('lt.untitled'),
-    ipaPickHTML('ltTakeSnd', sndKept(lid)));
+    ipaPickHTML('ltTakeSnd', sndKept(lid)), null, helpQ('snd'));
 }
 FORM_OPEN.snd=function(lid){ openSnd(lid); };
 /* ---- PRESSING A SYMBOL CHOOSES; THE BAR SAVES --------------------------
@@ -867,7 +924,7 @@ function vLetters(){
        2026-09-25. It was on the list of keyboards. ltFontOut().
        And the same mark is where the letters leave as SVG -- 「svgも足そう」
        OWNER 2026-09-26 -- so it asks which: ltOutAsk(). */
-    navTop('', navDo(t('lt.out'), 'ltOutAsk', null, false, {icon:ICON_SHARE}))+
+    navTop('', helpQ('letters')+navDo(t('lt.out'), 'ltOutAsk', null, false, {icon:ICON_SHARE}))+
     '<div class="body">'+
     (wsHasMarks()
       ? '<button class="trow"' + DO('go', ["abugida"]) + ' style="margin-top:6px">'+
@@ -1188,10 +1245,10 @@ function vLtset(){
     /* The same Done as the keyboard's, through the one place that builds it.
        Both wore `navq navdone`, which was this button spelled a second way.
        www/shell.js § navDo. */
-    navTop('',
+    navTop('', helpQ('ltset')+(
            ltWob
              ? navDo(t('kb.done'), 'ltWobEnd', null, true)
-             : '')+
+             : ''))+
     '<div class="body">'+
     (pick? ltViewRow() : '')+
     /* How many digits there are is what the base IS, and this is the room
@@ -1409,7 +1466,7 @@ function vLetter(){
        And the letter, out, as SVG: the share mark in the corner a share
        stands in, beside the Save. Only on a letter with a shape -- there is
        nothing to put in the file otherwise. ltSvgOne(). */
-    navTop('', inkGeo(l)? navDo(t('lt.out.svg'), 'ltSvgOne', [lid], false, {icon:ICON_SHARE}) : '')+'<div class="body">'+
+    navTop('', helpQ('letter')+(inkGeo(l)? navDo(t('lt.out.svg'), 'ltSvgOne', [lid], false, {icon:ICON_SHARE}) : ''))+'<div class="body">'+
     /* The letter itself, first and big. A page about one letter that does not
        show it is a page of three buttons about nothing, and "draw it again"
        on a screen with nothing on it says nothing. A letter with no shape yet

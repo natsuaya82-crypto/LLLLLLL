@@ -1087,6 +1087,16 @@ function stDetailHTML(p){
    and travelled with the language for three days with nothing able to write
    it; g2Board() asks g2Side('negp', ...) now, which is the same row the
    describing word and the place word are arranged with. */
+/* The grammar's `?`, on the book and on a chapter of it -- a section has its
+   own (www/grammar.js § g2HelpOf). OWNER 2026-09-26 「？の中に描きまくろう」. */
+HELP.gram=function(){
+  return {t:t('toc.gram'), h:
+    helpPara(t('hp.gr.p'))+
+    helpStep(1, t('hp.gr.1'), t('hp.gr.1.d'))+
+    helpStep(2, t('hp.gr.2'), t('hp.gr.2.d'))+
+    helpStep(3, t('hp.gr.3'), t('hp.gr.3.d'))+
+    helpPara(t('hp.gr.p2'))};
+};
 function vGram(){
   var gOpen=gOpenOf();
   var p;
@@ -1106,7 +1116,7 @@ function vGram(){
   var b=(gOpen && gOpen.indexOf('book:')===0)? g2BookBy(gOpen.slice(5)) : null;
   if(b && !g2BookSecs(b.id).length) b=null;
   if(b)
-    return '<div class="view">'+navTop()+
+    return '<div class="view">'+navTop('', helpQ('gram'))+
       '<div class="body">'+g2BookPage(b)+'</div></div>';
   /* The `?` in the bar, and the whole of what a chapter has to say is behind
      it -- 「説明禁止の代わりに？を儲けてるからね？」 OWNER 2026-09-05.
@@ -1117,7 +1127,7 @@ function vGram(){
       '<div class="body">'+g2Page(c)+'</div></div>';
   p = gOpen? stBy(gOpen) : null;
   return '<div class="view">'+
-    navTop()+
+    navTop('', p? '' : helpQ('gram'))+
     '<div class="body">'+
     (p? stDetailHTML(p) : stListHTML())+
     '</div></div>';

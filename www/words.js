@@ -259,7 +259,7 @@ function vWords(){
        mode to come out of are always something to do, and 「なにもない時は
        薄い灰色」 is about a button with nothing behind it, which none of
        these ever is. */
-    navTop('', wSel
+    navTop('', helpQ('words')+(wSel
       ? ((wSelList().length
             ? navDel(t('words.sel.del'), 'wSelDel')
             : '')+
@@ -277,7 +277,7 @@ function vWords(){
              an operation with no settled mark stays a word until the owner
              gives it one (CLAUDE.md § Shape). */
           : navDo(t('gen.door'), 'go', ['gen'], true)+
-            navDo(t('words.sel'), 'wSelOn', null, true)))+
+            navDo(t('words.sel'), 'wSelOn', null, true))))+
     '<div class="chead">'+
     /* The cross is always in the page and hidden until there is something to
        clear: typing repaints the list, not the header, so one conjured up by
@@ -609,10 +609,29 @@ function genShapeLab(s){
   for(i=0;i<s.length;i++) out+=t(s.charAt(i)==='V'? 'gen.v' : 'gen.c');
   return out;
 }
+/* The `?` of the dictionary and of the words it makes up, both faces
+   (OWNER 2026-09-26 「？の中に描きまくろう」). */
+HELP.words=function(){
+  return {t:t('toc.words'), h:
+    helpPara(t('hp.wd.p'))+
+    helpMark(ICON_ADD, t('home.write'), t('hp.wd.add.d'))+
+    helpPara(t('hp.wd.open'))+
+    helpMark(ICON_LENS, t('words.search'), t('hp.wd.find'))+
+    helpMark('', t('gen.door'), t('hp.wd.gen.d'))+
+    helpMark('', t('words.sel'), t('hp.wd.sel.d'))};
+};
+HELP.gen=function(){
+  return {t:t('gen.title'), h:
+    helpPara(t('hp.gn.p'))+
+    helpStep(1, t('hp.gn.1'), t('hp.gn.1.d'))+
+    helpStep(2, t('hp.gn.2'), t('hp.gn.2.d'))+
+    helpStep(3, t('hp.gn.3'), t('hp.gn.3.d'))+
+    helpPara(t('hp.gn.p2'))};
+};
 function vGen(){
   var ws=genList(), sh=genShapes();
   return '<div class="view">'+
-    navTop('', langLocked()? '' : navDo(t('gen.again'), 'genAgain', null, true))+
+    navTop('', helpQ('gen')+(langLocked()? '' : navDo(t('gen.again'), 'genAgain', null, true)))+
     '<div class="body">'+
     '<button class="set"'+DO('go', ['gensyl'])+'>'+
       '<span class="sl">'+esc(t('gen.syl'))+'</span>'+
@@ -643,7 +662,7 @@ function genTake(i){
    dictionary is already in, which are the ones this list shows ticked. */
 function vGenSyl(){
   var on=genShapes();
-  return '<div class="view">'+navTop()+'<div class="body">'+
+  return '<div class="view">'+navTop('', helpQ('gen'))+'<div class="body">'+
     GEN_SHAPES.map(function(s){
       var has=on.indexOf(s)>=0;
       return '<button class="set"'+DO('genSylSet', [s])+'>'+
