@@ -16,16 +16,17 @@
    voice is three photographs, or ten languages -- too big to be text in
    anything this app keeps as text.
 
-   So a voice is a FILE, and never text in localStorage. 「ファイルに出す」 The
-   phone that recorded it writes it to Documents/Voices the moment the
-   recording ends (voTook(), LinguaShare.swift `keepVoice`), and the post
-   being written carries the file's NAME. When the post is sent,
-   netUpVoice() (www/net.js) puts the bytes in the `post-media` bucket and
-   writes the path on the post as `vu` -- the copy everybody plays, through
-   netMedia(), because the bucket answers nobody who is not signed in. Once
-   the post has landed the file on this phone goes and the writer plays `vu`
-   too (postSend() in www/post.js, 「スマホの中に保存されているものなんてない」
-   OWNER 2026-09-24). voRemote() tells the two kinds of name apart.
+   So a voice is a FILE, and never text in localStorage -- and the file is
+   ON THE SERVER from the moment the recording ends. 「5 サーバーでしょ。
+   端末に持たせるものはないって」 OWNER 2026-09-26: voTook() puts the bytes
+   in the `post-media` bucket (voKeep()), and the post or the draft being
+   written carries the PATH. A draft opened on another phone has its voice,
+   and a post that is sent makes that same path its `vu` (netUpVoice() in
+   www/net.js) -- the copy everybody plays, through netMedia(), because the
+   bucket answers nobody who is not signed in. Nothing is written on this
+   phone. What an earlier version wrote into Documents/Voices is still READ
+   (voRead) and swept (voSweep); voRemote() tells the two kinds of name
+   apart.
 
    Two halves, and the line between them is the same line post.js has:
 
@@ -34,13 +35,12 @@
 
      Below is playing one back, and a post being played is somebody else's:
      what it needs is on the post, because a reader has no composer: `vu`,
-     the path on the server, for everybody, and `vo` -- `{f: the file's name,
-     ms: how long}` -- on the phone that recorded it. voPlay() is handed one
-     name and plays whichever it is.
+     the path on the server, for everybody, and `vo` -- `{f, ms: how long}`
+     -- while it is being written. voPlay() is handed one name and plays
+     whichever it is.
 
-   There is no native side in a browser, so `voKeep` and `voRead` both answer
-   "no bridge" there and every check runs against that answer. On the phone it
-   is ios/App/App/LinguaShare.swift, `keepVoice` and `voice`. */
+   There is no native side in a browser, so `voRead` answers "no bridge"
+   there. On the phone it is ios/App/App/LinguaShare.swift, `voice`. */
 
 /* ---- what a voice is --------------------------------------------------- */
 
@@ -153,28 +153,20 @@ function voTick(){
   if(e) e.innerHTML=esc(voLen(voRecMs()));
 }
 function voRecMs(){ return RECAT? ((new Date()).getTime()-RECAT) : 0; }
-/* What came back, WRITTEN TO THE DISK HERE and named from here on.
+/* What came back, PUT ON THE SERVER HERE and named from here on.
    -------------------------------------------------------------------------
-   「声は Documents のファイル、`localStorage` には入れない」 ── the decision
-   of 2026-08-30, and it was broken by the drafts. This used to hold the
-   recording in memory as base64 until the post was SENT, which is right for a
-   post and wrong for the other road out of the composer: draftKeep() wrote
-   `PW.vo` straight into `lingua.drafts`, so thirty seconds of audio went into
-   localStorage and up to the server inside the draft's body. draftsSave()
-   swallows its exception, so a phone that hit the storage limit stopped
-   saving drafts SILENTLY -- somebody writes, presses keep, and the draft is
-   not there.
+   The recording is never held as base64 past this function, and it is never
+   written on this phone: 「端末に持たせるものはないって」 OWNER 2026-09-26.
+   It goes up the moment it ends (voKeep()), and `PW.vo` is `{f: the path in the
+   bucket, ms}` from then on -- the same thing a draft carries and the same
+   thing a post carries until it is sent. A draft kept here and opened on
+   another phone has its voice, which the name of a file on this phone never
+   gave it (r63-audit R3).
 
-   So the file is written the moment the recording ends, and `PW.vo` is
-   `{f, ms}` from then on -- the same thing a post carries and the same thing
-   a draft carries. There is one road for a voice now instead of two, and no
-   base64 is held anywhere after this function returns. pwSend() no longer
-   writes a file (there is nothing left to write) and voPlayPW() is gone --
-   the composer plays with voPlay(), which is what plays every other voice.
-
-   A write that fails says so HERE rather than at the send. Nothing is kept:
-   a recording that is not on the disk is not a recording, and 「保存した
-   つもり」 is the fault this whole change is about. */
+   A send that fails says so HERE rather than at the post. Nothing is kept:
+   a recording that is not on the server is not a recording, and 「保存した
+   つもり」 is the fault the drafts' rewrite of 2026-09-03 was about. Making
+   needs a signal (CLAUDE.md § Online). */
 function voTook(mime){
   var bits=RECBITS, ms=Math.min(voRecMs(), VO_MS), b, r;
   RECBITS=null; RECAT=0;
@@ -197,8 +189,8 @@ function voTook(mime){
   r.readAsDataURL(b);
 }
 /* Taking it off the post being written, and the file goes with it. It is
-   written the moment it is recorded now, so this removes both or the disk
-   fills up with recordings nobody kept. */
+   put on the server the moment it is recorded, so this removes both or the
+   bucket fills up with recordings nobody kept. */
 function voDrop(){
   voPlayOff();
   if(PW && PW.vo && PW.vo.f) voDropFile(PW.vo.f);
@@ -236,32 +228,45 @@ function pwVoRowHTML(){
     esc(t('post.vo'))+'">'+ICON_MIC+'</button>';
 }
 
-/* ---- the disk ----------------------------------------------------------
-   Two calls and nothing else. The name is made here rather than in Swift so
-   that what the post carries and what is on the disk are one string decided
-   in one place. */
+/* ---- where a voice goes ---------------------------------------------------
+   The name is made here, so what the post carries and what is in the bucket
+   are one string decided in one place. `<uid>/<name>/vo.<ext>`: the first
+   folder is the account, which is the whole of the bucket's write rule
+   (supabase/schema.sql § media_make), and the shape is a post's
+   (`<author>/<post>/vo.m4a`), so voRemote() reads it as the server's. */
 function voName(mime){
-  return 'v'+(new Date()).getTime()+String(Math.floor(Math.random()*1e6))+voExt(mime);
+  return 'v'+(new Date()).getTime()+String(Math.floor(Math.random()*1e6));
 }
 function voKeep(vo, done){
-  var p=sharePlug(), name;
-  if(!p || !vo || !vo.b64){ done(null); return; }
-  name=voName(vo.mime);
-  p('LinguaShare', 'keepVoice', {name:name, b64:vo.b64})
-    .then(function(){ done({f:name, ms:vo.ms}); })
-    ['catch'](function(){ done(null); });
+  if(!vo || !vo.b64 || !netSignedIn()){ done(null); return; }
+  netUp(netUid()+'/'+voName(vo.mime)+'/vo'+voExt(vo.mime), vo.b64, vo.mime,
+    function(path){ done({f:path, ms:vo.ms}); },
+    function(){ done(null); });
 }
-/* The one file a post being deleted names. 「投稿消した声も消していいよ」
-   Given a name and never asked to find one: "which voices does nothing point
-   at" is the question that turns a delete into a cleanup, and this cannot be
-   asked it. The DELETE REVIEW is in docs/CHANGELOG.md.
+/* The one voice something being thrown away names -- a draft, a post, the
+   one in the composer. 「投稿消した声も消していいよ」「声は投稿上で再生
+   できるよね？下書き消した時にはいらなくない？」 Given a name and never asked
+   to find one: "which voices does nothing point at" is the question that
+   turns a delete into a cleanup, and this cannot be asked it. The DELETE
+   REVIEWs are in docs/CHANGELOG.md.
 
-   It is not waited on and it cannot fail loudly. The post is already gone by
+   A path on the server goes from the bucket; a name on this phone (what an
+   earlier version wrote) goes from Documents/Voices. A post that has gone up
+   no longer names its voice here -- netUpVoice() moved it to `vu` -- so a
+   post's own recording is never taken by this after it is sent.
+
+   It is not waited on and it cannot fail loudly. The thing is already gone by
    the time this runs, which is the right order: a file that will not go must
    not leave the post standing. */
 function voDropFile(f){
-  var p=sharePlug();
-  if(!p || !f) return;
+  var p;
+  if(!f) return;
+  if(voRemote(f)){
+    if(netSignedIn()) netDropMine([String(f)], function(){});
+    return;
+  }
+  p=sharePlug();
+  if(!p) return;
   p('LinguaShare', 'dropVoice', {name:String(f)})['catch'](function(){});
 }
 /* WHAT AN EARLIER VERSION LEFT IN Documents/Voices GOES, AND NOTHING ELSE.

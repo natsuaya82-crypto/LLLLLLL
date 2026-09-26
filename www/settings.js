@@ -893,6 +893,18 @@ function wipeHere(uid){
      it is two behaviours where the rule has one. */
   var wipeUid=String(uid || netUid());
   var wipeIds=lsWipeAcct(wipeUid);
+  /* AND WHAT IS ON THE PHONE OUTSIDE ITS STORAGE, which is files an earlier
+     version wrote: a voice a draft or an unsent post of this account named
+     (www/rec.js § voSweep), and a sheet left in the middle of a hand-over
+     (www/sheet.js § shDropOld). 「アカウントを削除した時に端末に残る物は
+     無い」 OWNER 2026-09-26. HERE, after lsWipeAcct() -- the sweep keeps what
+     any copy on this phone still names, so it has to run once this account's
+     copies are gone, and what another account's drafts name is still named
+     and stays. Not on the sign-out: netEndMe() signs out before this runs,
+     when this account's drafts are still on the disk (acct-check 95,
+     measured). */
+  voSweep();
+  shDropOld();
   langId='';
   langFirst();
   /* AND ALL TEN, NOT FIVE. This named five of them by hand, so `KB` and `WLD`

@@ -2266,7 +2266,7 @@ the string and the function — and `act-check` fails on either half alone.
 | `www/post.js` | a post, and the line the two sides do not cross (ch 19) |
 | `www/me.js` | who you are: the face, the name, the handle, the line about yourself (ch 20) |
 | `www/backup.js` | the one line every save passes through, and where a save reaches the server (ch 24) |
-| `www/rec.js` | the voice on a post — thirty seconds. It goes up with the post 「SNSは全部サーバー」: `netUpVoice()` (`www/net.js`) puts it in the `post-media` bucket and writes the path to `body.vu`, and `voRemote()` is how one name tells a path on the server from a file this phone recorded (ch 25) |
+| `www/rec.js` | the voice on a post — thirty seconds. It goes into the `post-media` bucket the moment it is recorded (`voKeep()`) and nothing is written on the phone 「端末に持たせるものはない」; a draft carries the path, and `netUpVoice()` (`www/net.js`) makes it the post's `body.vu`. `voRemote()` is how one name tells a path on the server from a file an earlier version recorded (ch 25) |
 | `www/sheet.js` | the sheet somebody writes a word on paper on; what is printed on it is `Lingua` and the page, `n/N` (ch 26) |
 | `www/store.js` | the App Store: what `LinguaStore.swift` is asked and what comes back (ch 26) |
 | `www/sync.js` | putting a language and what this phone is holding back together — two phones can still both edit one language, so the merge stays (ch 26) |
