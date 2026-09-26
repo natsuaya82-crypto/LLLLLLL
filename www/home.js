@@ -218,6 +218,19 @@ function vForm(){
    `HELP.kb = function(){ ... }`, in the file the screen lives in, returning
    the title and the body. Nothing here knows what a keyboard is. */
 var HELP={};
+/* WHAT A HELP BODY IS MADE OF, written once. 「？の中に描きまくろう」 OWNER
+   2026-09-26: every screen that makes something says how it is used behind
+   its `?`, in short paragraphs and numbered steps, with a mark drawn where
+   the screen draws one. Three shapes and every HELP body is built of them, so
+   a step looks the same on every screen and nobody writes the number into a
+   translation (a language could lose a step or put two out of order).
+     helpPara(s)            -- a paragraph
+     helpStep(n, title, s)  -- `n. title` and, under it, how
+   `s` may be '' and is then left out. */
+function helpPara(s){ return s? '<div class="note">'+esc(s)+'</div>' : ''; }
+function helpStep(n, title, s){
+  return '<div class="sec">'+n+'. '+esc(title)+'</div>'+helpPara(s);
+}
 /* HOW THE MARK OPENS, written once: helpQ() builds it and helpQCut() below
    finds it again in whatever a screen handed the bar. Two places matching a
    string by hand is two places that drift. */
