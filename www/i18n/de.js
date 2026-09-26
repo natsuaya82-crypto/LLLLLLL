@@ -1298,6 +1298,8 @@ defLang('de', (function(){
       'post.gone'             : "Diesen Beitrag gibt es nicht mehr",
       'post.thread'           : "Thread",
       'post.re.to'            : "Antwort an {0}",
+      'post.rp'            : "{0} hat geteilt",
+      'post.rp.me'         : "Du hast geteilt",
       'post.re.off'            : 'Empfänger entfernen',
       "word.edit"        : "Bearbeiten",
       "word.del"         : "Wort löschen",

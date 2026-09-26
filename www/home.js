@@ -658,10 +658,11 @@ function pfList(){
     q=postById(id);
     if(!postShown(q)) continue;
     if(at[q.id]===undefined) mine.push(q);
-    at[q.id]=Math.max(at[q.id] || 0, bo[id]);
+    at[q.id]=Math.max(at[q.id] || 0, bo[id].at);
   }
   mine.sort(function(a, b){ return ((b.pin?1:0)-(a.pin?1:0)) || (at[b.id]-at[a.id]); });
-  return mine;
+  /* and the ones it passed on say so 「〇〇がリポスト」 (www/post.js § postRp) */
+  return mine.map(function(p){ return postRp(p, bo[p.id]); });
 }
 /* The three lists, in the order they stand in. ONE list: the row of buttons
    is built from it and the swipe below walks it, so a fourth list added here

@@ -3144,6 +3144,13 @@ function netRow(r){
      does not answer that question」 are different, and a row claiming the
      first when it means the second is the app inventing a fact. */
   if(r.by) p.by=String(r.by);
+  /* And by NAME, as the server has that person now (feed_fo()/posts_by(),
+     `by_name` `by_hd`): 「〇〇がリポスト」 under the author's name, OWNER
+     2026-09-26. Which LIST it is a repost on is that list's to keep --
+     postRp() in www/post.js -- because this row is folded into the one copy
+     of the post every list shares. */
+  if(r.by) p.rp={ n:String(r.by_name || ''), h:String(r.by_hd || ''),
+                  me:!!(netUid() && r.by===netUid()) };
   if(r.at_key) p.arrived=Date.parse(r.at_key) || p.at;
   /* WHAT IT QUOTES, AS THE SERVER HAS IT NOW (r94). `qt` is the id the quote
      was written with; `qp` is that post read by this reader today, or null

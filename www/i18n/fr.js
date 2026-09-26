@@ -1357,6 +1357,8 @@ defLang('fr', (function(){
       'post.gone'             : "Ce post n’existe plus",
       'post.thread'           : "Fil",
       'post.re.to'            : "En réponse à {0}",
+      'post.rp'            : "{0} a republié",
+      'post.rp.me'         : "Vous avez republié",
       'post.re.off'            : 'Retirer le destinataire',
       "word.edit"        : "Modifier",
       "word.del"         : "Supprimer le mot",

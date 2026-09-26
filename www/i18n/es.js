@@ -1269,6 +1269,8 @@ defLang('es', (function(){
       'post.gone'             : "Esa publicación ya no está",
       'post.thread'           : "Hilo",
       'post.re.to'            : "Respondiendo a {0}",
+      'post.rp'            : "{0} republicó",
+      'post.rp.me'         : "Republicaste",
       'post.re.off'            : 'Quitar destinatario',
       "word.edit"        : "Editar",
       "word.del"         : "Borrar la palabra",

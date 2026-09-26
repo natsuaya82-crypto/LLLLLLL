@@ -897,6 +897,10 @@ const CASES = [
     `select 1 from feed_fo(50, null) where id='${P}'`],
   ['and it says who passed it on',            'ok',     A, 0,
     `select 1 from feed_fo(50, null) where id='${P}' and by='${B}'`],
+  /* and WHO, by name: 「〇〇がリポスト」 under the author (OWNER 2026-09-26)
+     is drawn off the row, and a uuid is not a name. */
+  ['and it names who passed it on',           'ok',     A, 0,
+    `select 1 from feed_fo(50, null) where id='${P}' and by_hd='iri'`],
   /* Dated by the BOOST and not by the post -- a five year old thing passed on
      this morning belongs at this morning. Asserted as equality against the
      react row, because everything in this file runs in ONE transaction and
@@ -940,6 +944,8 @@ const CASES = [
     `insert into react(post,actor,kind) values ('${P}','${B}','boost')`],
   ['C finds it on B\u2019s page',              'ok',     C, 0,
     `select 1 from posts_by('${B}', 50, null) where id='${P}' and by='${B}'`],
+  ['and names B on it',                       'ok',     C, 0,
+    `select 1 from posts_by('${B}', 50, null) where id='${P}' and by_hd='iri'`],
   ['dated by the passing on',                 'ok',     C, 0,
     `select 1 from posts_by('${B}', 50, null) f
        where f.id='${P}' and f.at_key = (select r.created_at from react r
@@ -949,6 +955,8 @@ const CASES = [
     `select 1 from posts_by('${A}', 50, null) where id='${P}' and by is not null`],
   ['A\u2019s page has it as what A wrote',     'ok',     C, 0,
     `select 1 from posts_by('${A}', 50, null) where id='${P}' and by is null`],
+  ['and names nobody on it',                  'denied', C, 0,
+    `select 1 from posts_by('${A}', 50, null) where id='${P}' and by_hd is not null`],
   /* A mute of the one who passed it on takes the pass off, as feed_fo()'s
      does; what B WROTE stays on B's page, which is what a mute is. */
   ['C mutes B',                               'ok',     C, 0,
