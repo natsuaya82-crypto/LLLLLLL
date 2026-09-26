@@ -3244,6 +3244,23 @@ export function halfDone(){
         openSlot('greet','yes'); return vForm(); }],
     ['synonyms to choose from',  () => { window.route='relate'; NAV=[{r:'relate', a:'syn:kano'}];
                                          return vRelate(); }],
+    /* Where a word came from, chosen on the same list, and the tree that
+       walks it up and down (2026-09-26). The tree is given a grandchild,
+       because a family of one generation is the family list over again. */
+    ['the word it came from, to choose', () => { window.route='relate'; NAV=[{r:'relate', a:'from:tiror'}];
+                                                 return vRelate(); }],
+    ['a word\'s family tree', () => {
+        WORDS.push({ hw:'tirorin', ph:['t','i','r','o','r','i','n'], mns:['little watcher'],
+                     pos:'n', from:'tiror', at:20 });
+        window.route='ety'; NAV=[{r:'ety', a:'tiror'}];
+        const h = vEty(); WORDS.pop(); return h; }],
+    /* The parent deleted: the spelling it came from, down, on the tree and on
+       the word's own page. */
+    ['a word whose origin was deleted', () => {
+        const keep = WORDS.slice();
+        WORDS = WORDS.filter(w => w.hw !== 'tir');
+        window.route='ety'; NAV=[{r:'ety', a:'tiror'}];
+        const h = vEty(); WORDS = keep; return h; }],
     /* One of them is the letter's own, which is the only state that wears
        .cur. It went unwalked for as long as the plans screen happened to wear
        the same class on something else -- `press` reports a class nothing

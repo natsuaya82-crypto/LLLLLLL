@@ -3179,8 +3179,13 @@ function wKids(w){
    own: it has a parent and a label that is not a derivation. It stays exactly
    where it is (docs/CHANGELOG.md 2026-09-23); this is how everything that has
    to tell it from a word asks. fmInf() is www/wordsheet.js's -- which labels
-   are inflections is said there and nowhere else. */
-function wIsForm(w){ return !!(w && w.from && fmInf(w.fm)); }
+   are inflections is said there and nowhere else.
+
+   A form OF a word that is in the dictionary: it is listed on that word's
+   page (wForms) and nowhere else. A parent that has been deleted leaves the
+   child its `from` (wDrop, CLAUDE.md § The past) and no page to be listed on,
+   so the child is a word again, in the list, rather than in nobody's. */
+function wIsForm(w){ return !!(w && w.from && fmInf(w.fm) && wParent(w)); }
 function wParent(w){
   if(!w || !w.from) return null;
   var i;

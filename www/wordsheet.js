@@ -514,11 +514,18 @@ function vRelate(){
   var a=String(here().a||''), i=a.indexOf(':'), k=a.slice(0,i), hw=a.slice(i+1);
   /* No headword is the word being made: the picker is the same picker, and
      what it ticks is that draft's list. */
-  var w=(k==='syn'||k==='ant')? (hw? findWord(hw) : addW) : null;
+  /* `from` is the one word this word came from (2026-09-26), chosen on the
+     same list. Only of a word that exists: the sheet a word is made on gets
+     its parent from the word it was derived from (openAdd). */
+  var w=(k==='syn'||k==='ant')? (hw? findWord(hw) : addW)
+       : (k==='from' && hw)? findWord(hw) : null;
   if(!w) return viewGone();
   /* The dictionary as it is browsed, for the same reason the search is:
-     picking a word is picking one off the list. */
-  var on=wRel(w,k), list=wordsSeen().filter(function(x){ return x!==w; })
+     picking a word is picking one off the list. A word cannot come from
+     itself or from anything that came from it -- that is a ring, and a tree
+     has none. */
+  var on=(k==='from')? (w.from? [String(w.from)] : []) : wRel(w,k),
+      list=wordsSeen().filter(function(x){ return x!==w && !(k==='from' && wDescends(x, w)); })
     .sort(function(x,y){ return String(x.hw).localeCompare(String(y.hw)); });
   return '<div class="view">'+navTop()+'<div class="body">'+
     /* A word that means the same as this one is very often a word that does
@@ -538,7 +545,8 @@ function vRelate(){
       ? list.map(function(x){
           var has=on.indexOf(x.hw)>=0;
           return '<div class="entry'+(has?' on':'')+'">'+
-            '<button class="ebody"' + DO('wRelToggle', [hw, k, x.hw]) + '>'+
+            '<button class="ebody"' + (k==='from'? DO('wFromSet', [hw, x.hw])
+                                                 : DO('wRelToggle', [hw, k, x.hw])) + '>'+
             '<div class="hwrow"><span class="hw">'+sfontHTML(wOut(x.hw))+'</span>'+
             '<span class="pos">'+esc(posLabel(x.pos))+'</span></div>'+
             '<div class="mn">'+esc(wMns(x)[0]||t('words.addmn'))+'</div></button>'+
@@ -556,7 +564,7 @@ function relNew(){
   var e=document.getElementById('rel-hw'), m=document.getElementById('rel-mn');
   var txt=actVal(e).trim(), mn=actVal(m).trim();
   var sp, nw, w, on=hw? findWord(hw) : addW;
-  if(!on || (k!=='syn' && k!=='ant')) return;
+  if(!on || (k!=='syn' && k!=='ant' && k!=='from')) return;
   if(!txt){ toast(t('toast.hw2')); return; }
   sp=spType(txt); nw=spWord(sp);
   if(!nw){ toast(t('toast.hw2')); return; }
@@ -569,8 +577,33 @@ function relNew(){
   }
   /* saves and redraws, and does nothing at all if the two are already joined
      -- so pressing this twice does not take the relation back off again */
+  if(k==='from'){
+    if(on.from!==findWord(nw).hw) wFromSet(hw, nw);
+    else { save(); relDirty(); render(); }
+    return;
+  }
   if(wRel(on, k).indexOf(findWord(nw).hw)<0) wRelToggle(hw, k, nw);
   else { save(); relDirty(); render(); }
+}
+/* The word this one came from, set -- or taken off, when it is the one
+   already set. The spelling is written on the word as a value (CLAUDE.md
+   § The past), which is what `from` has always been. */
+function wFromSet(hw, other){
+  var w=findWord(hw), p=findWord(other);
+  if(!w || !p || p===w || wDescends(p, w)) return;
+  if(w.from===String(p.hw)) delete w.from; else w.from=String(p.hw);
+  save(); relDirty(); render();
+}
+/* Whether `x` came, by any number of steps, from `w`. A `from` naming no word
+   ends the walk, and so does a word met twice -- a ring in somebody's old
+   data is a thing to stop at, not to go round. */
+function wDescends(x, w){
+  var cur=x, seen=[];
+  while(cur && seen.indexOf(cur)<0){
+    if(cur===w) return true;
+    seen.push(cur); cur=wParent(cur);
+  }
+  return false;
 }
 /* Staged in wEdit, on both sheets, because both have one now -- and the note
    went into the draft while wdPutExtras() read it out of wEdit, so a note
@@ -1395,6 +1428,14 @@ function wWhen(ms){
    it stands; `›` says you are going somewhere. They go somewhere, so it is the
    settings row the rest of the app already uses -- what it is, what it says
    now, and the mark for a page. */
+/* The word this one came from, on the sheet: its spelling in the letters it
+   is written in, and the list it is chosen on. */
+function wdFromRowHTML(){
+  var f=wdFrom();
+  return '<button class="set"'+DO('go', ["relate", "from:"+openHw])+'>'+
+    '<span class="sl">'+esc(t('word.from'))+'</span>'+
+    '<span class="sv">'+(f? sfontHTML(wOut(f)) : esc(t('word.none')))+ICON_GO+'</span></button>';
+}
 function wdPickRow(label, val, doAttr){
   return '<button class="set"'+doAttr+'>'+
     '<span class="sl">'+esc(label)+'</span>'+
@@ -1620,6 +1661,7 @@ function wdFormHTML(){
     '<div style="margin-top:22px">'+
       wdPickRow(t('f.pos'), posLabel(wEdit.pos), DO('go', ["pos"]))+
       wdSubHTML()+
+      (mk? '' : wdFromRowHTML())+
       (wdFrom()? wdFmHTML() : '')+
       wdRegHTML()+
     '</div>'+
@@ -1697,13 +1739,20 @@ function wdSaveBtn(){
 
    `mn` is not in the signature: it is the first meaning, written from `mns` by
    saveWord(), so it would be the same fact counted twice. */
-function wdSig(sp, mns, pos, sub, reg, tags, ety, nt){
+/* AND WHAT THE SHEET CHOOSES ON A LIST OF ITS OWN. What means the same, what
+   means the opposite and what it came from are chosen on the relate page and
+   written onto the WORD, not onto wEdit -- so a sheet holding them measured
+   as a sheet holding nothing: leaving asked nothing, and what was chosen
+   stayed in memory, unsaved, to ride the next save anywhere. They are the
+   word's own three fields, read off it here. */
+function wdSig(sp, mns, pos, sub, reg, tags, ety, nt, w){
   return JSON.stringify([sp||[], mns||[], pos||'', String(sub||''), reg||'',
-                         tags||[], String(ety||''), String(nt||'')]);
+                         tags||[], String(ety||''), String(nt||''),
+                         (w && w.syn)||[], (w && w.ant)||[], String((w && w.from)||'')]);
 }
 function wdSigEdit(){
   return wdSig(wEdit.sp, wEdit.mns, wEdit.pos, wEdit.sub, wEdit.reg,
-               wEdit.tags, wEdit.ety, wEdit.nt);
+               wEdit.tags, wEdit.ety, wEdit.nt, findWord(openHw));
 }
 /* THE SHEET, SAID ONCE. It is asked rather than told: whatever is on wEdit
    at this moment is what the screen is holding, so a meaning added, a tag
@@ -1807,6 +1856,14 @@ function wdFamSort(kids){
    made the middle of a word page look like something to be worked on rather
    than something to read. 「その四角で加工系やめない？」 Pressing it opens that
    word, which is the whole reason the family is here. */
+/* A word named and not there -- a parent deleted after its child was made.
+   The same row, down: there is no page to open. */
+function wdGoneRowHTML(hw, depth){
+  return '<button class="wdrow" disabled'+etyPad(depth)+'>'+
+    (depth? '<span class="wdrowf">\u2514</span>' : '')+
+    '<span class="wdroww">'+sfontHTML(wOut(hw))+'</span>'+
+    '<span class="wdrowm"></span></button>';
+}
 function wdRowHTML(x, fm){
   /* The word is set in the letters it is written in, like every other place
      the app shows a word of this language. It was not, so a word drawn in
@@ -1836,9 +1893,12 @@ function wdFamGroupHTML(label, list, labelled){
 function wdFamHTML(w){
   var par=wParent(w), root=par||w, kids;
   kids=wdFamSort(wKids(root).filter(function(x){ return x!==w && !wIsForm(x); }));
-  if(!par && !kids.length) return '';
+  if(!par && !w.from && !kids.length) return '';
   return '<div class="wdrows">'+
-    (par? wdFamGroupHTML(t('word.root'), [par], false) : '')+
+    (par? wdFamGroupHTML(t('word.root'), [par], false)
+        /* a parent that has been deleted: the spelling the word was made
+           from, which is still true, and nothing to walk to */
+        : w.from? '<div class="wdrowg">'+esc(t('word.root'))+'</div>'+wdGoneRowHTML(w.from, 0) : '')+
     wdFamGroupHTML(t('word.fm.der'), wdFamOf(kids,'d'), true)+
     wdFamGroupHTML('',               wdFamOf(kids,''),  true)+
     '</div>';
@@ -1894,7 +1954,7 @@ function wdViewHTML(){
         }).join('')+'</div>'
       : '<div class="note">'+esc(t('words.addmn'))+'</div>')+
     wfmSecHTML(w)+
-    wdSecHTML(t('word.family'), wdFamHTML(w)+fmrTodoHTML(w))+
+    wdSecHTML(t('word.family'), wdFamHTML(w)+etyDoorHTML(w)+fmrTodoHTML(w))+
     wdSecHTML(t('word.syn'), wdRelsHTML(w,'syn'))+
     wdSecHTML(t('word.ant'), wdRelsHTML(w,'ant'))+
     wdSecHTML(ICON_LINE+t('word.ex'), ex.length
@@ -2083,20 +2143,22 @@ function wdWrite(){
 /* Taking one word out of the language, and leaving nothing pointing at it.
    It was the body of `delWord` and is its own function because it is about to
    be done to more than one word at a time: two places doing this five ways
-   would be two answers to what a deleted word leaves behind, and the one that
-   was not read would be the one that left a `from` pointing at nothing.
+   would be two answers to what a deleted word leaves behind.
 
    It does not confirm, does not save, does not touch the trail and does not
    redraw -- those are the deleting SCREEN's, and they are done once however
    many words go. `wRename` in `www/letters.js` is the same set of pointers
-   read the other way round; this is the one place they are cut. */
+   read the other way round; this is the one place they are cut.
+
+   A child's `from` is NOT one of them. It is the spelling the child was made
+   from, written on the child when it was made -- a value, not a way to reach
+   the parent -- so the parent going changes nothing about where the child
+   came from (CLAUDE.md § The past, 2026-09-26). The family and the tree draw
+   a `from` with no word behind it as the spelling alone. */
 function wDrop(hw){
   var gone=String(hw), w=findWord(gone);
   if(!w) return;
   WORDS=WORDS.filter(function(x){return x!==w;});
-  /* its children keep their own life; they simply stop pointing at a parent
-     that is not there */
-  WORDS.forEach(function(x){ if(x.from===gone) delete x.from; });
   /* and nothing is left pointing at a word that has gone */
   WORDS.forEach(function(x){
     ['syn','ant'].forEach(function(k){
@@ -2120,10 +2182,61 @@ function delWordGo(){
      which then has nothing to show. Both of its screens come off the trail,
      so you are put back down wherever you were before you opened it -- the
      dictionary, or the word you reached it from. */
-  navDrop('edit:'+gone); navDrop('word:'+gone);
+  navDrop('edit:'+gone); navDrop('word:'+gone); navDrop(gone, 'ety');
   render(); toast(t('toast.deleted', gone));
 }
 
 /* Bringing a list IN is chapter 17, www/import.js: it grew a reader for
    every shape a list arrives in and stopped fitting under this heading. */
 
+
+/* ---- where a word came from, as a tree (1.0.3) ---------------------------
+   「語源の系統図」 OWNER 2026-09-26. Up the `from`s to the first word that
+   came from nothing, then this word, then everything that came from it, and
+   from that, indented a step each. A `from` naming no word is its spelling
+   and the end of the way up (wDrop, CLAUDE.md § The past). An inflection
+   stored as a word is one of its parent's forms and is on that word's page,
+   not here -- the same line the family draws (wdFamHTML). */
+function etyKids(w){
+  return wdFamSort(wKids(w).filter(function(x){ return !wIsForm(x); }));
+}
+function etyDoorHTML(w){
+  if(!w.from && !etyKids(w).length) return '';
+  return '<button class="set"'+DO('go', ['ety', String(w.hw)])+'>'+
+    '<span class="sl">'+esc(t('ety.title'))+'</span>'+
+    '<span class="sv">'+ICON_GO+'</span></button>';
+}
+function etyPad(depth){ return depth? ' style="padding-left:'+(2+depth*20)+'px"' : ''; }
+function etyRowHTML(x, depth, here){
+  var fm=x.from? String(x.fm||'') : '';
+  return '<button class="wdrow"'+DO('openWord', [x.hw])+etyPad(depth)+
+    (here? ' aria-current="true"' : '')+'>'+
+    (depth? '<span class="wdrowf">\u2514</span>' : '')+
+    (fm? '<span class="wdrowf">'+esc(fmLabel(fm))+'</span>' : '')+
+    '<span class="wdroww">'+(here? '<b>' : '')+sfontHTML(wOut(x.hw))+(here? '</b>' : '')+'</span>'+
+    '<span class="wdrowm">'+esc(wMn(x)||t('sent.nomean'))+'</span></button>';
+}
+function vEty(){
+  var w=findWord(String(here().a||'')), up=[], seen=[w], rows=[], cur, p, i;
+  if(!w) return viewGone();
+  /* up: each entry a word, or the spelling a deleted one had */
+  cur=w;
+  while(cur && cur.from){
+    p=wParent(cur);
+    if(!p){ up.push(String(cur.from)); break; }
+    if(seen.indexOf(p)>=0) break;
+    seen.push(p); up.push(p); cur=p;
+  }
+  for(i=up.length-1;i>=0;i--)
+    rows.push(typeof up[i]==='string'? wdGoneRowHTML(up[i], up.length-1-i)
+                                      : etyRowHTML(up[i], up.length-1-i, false));
+  rows.push(etyRowHTML(w, up.length, true));
+  (function down(x, depth){
+    etyKids(x).forEach(function(k){
+      if(seen.indexOf(k)>=0) return;
+      seen.push(k); rows.push(etyRowHTML(k, depth, false)); down(k, depth+1);
+    });
+  })(w, up.length+1);
+  return '<div class="view">'+navTop()+'<div class="body"><div class="wdrows">'+
+    rows.join('')+'</div></div></div>';
+}

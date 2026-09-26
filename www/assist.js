@@ -52,3 +52,78 @@ function asOrder(list){
   var all=ipaAll();
   return list.slice().sort(function(a,b){ return all.indexOf(a)-all.indexOf(b); });
 }
+
+/* ---- words, made up for the dictionary (1.0.3) --------------------------
+   「単語自動生成もやるか。足そう」 OWNER 2026-09-26. The generate screen
+   (www/words.js § vGen) asks for a handful of words and the person picks one.
+
+   What a word is MADE of here is the two things the owner named: the
+   language's sounds and its syllable shapes.
+
+   The sounds are the ones its LETTERS write, not the whole inventory -- a
+   word is its letters (www/letters.js § a word is its letters), so a sound no
+   letter writes is a word nobody can spell. Every candidate is spelled
+   through spOf(), the same road a word with no spelling takes, and one with a
+   position no letter answers is thrown away rather than shown.
+
+   The shapes are the language's: STG.syl, chosen on the screen beside this
+   one (vGenSyl). A language that has chosen none is read off its dictionary
+   -- the shapes its words are already cut into (phCut) -- and nothing is
+   written for that; a language with no words and no shapes gets no
+   candidates, and the screen says so. */
+var GEN_SHAPES=['V','CV','VC','CVC','CCV','CVCC','CCVC'];
+function genShapes(){
+  var own=(STG.syl||[]).filter(function(s){ return GEN_SHAPES.indexOf(s)>=0; }), seen={}, out=[];
+  if(own.length) return own;
+  WORDS.forEach(function(w){
+    phCut(wPh(w)).forEach(function(p){
+      var s, i;
+      if(!p.nu.length) return;
+      s=''; for(i=0;i<p.on.length;i++) s+='C';
+      s+='V'; for(i=0;i<p.co.length;i++) s+='C';
+      if(GEN_SHAPES.indexOf(s)>=0 && !seen[s]){ seen[s]=1; out.push(s); }
+    });
+  });
+  return GEN_SHAPES.filter(function(s){ return !!seen[s]; });
+}
+function genSounds(){
+  var all=ipaAll(), seen={}, out={c:[], v:[]};
+  LETTERS.forEach(function(l){
+    ltUnits(l).forEach(function(u){
+      uSplit(u).forEach(function(s){
+        if(seen[s] || all.indexOf(s)<0) return;
+        seen[s]=1; (ipaIsVowel(s)? out.v : out.c).push(s);
+      });
+    });
+  });
+  return out;
+}
+/* n words, each {seq, sp, hw}: its sounds, its letters, its spelling. None
+   sounds like a word the dictionary has (taken()) or like another of the n. */
+function genWords(n){
+  var sh=genShapes(), S=genSounds(), tk=taken(), out=[], tries=0, lens=[1,2,2,3],
+      seq, shape, nsyl, sp, hw, i, j, ok;
+  function one(a){ return a[Math.floor(Math.random()*a.length)]; }
+  if(!S.c.length) sh=sh.filter(function(s){ return s.indexOf('C')<0; });
+  if(!sh.length || !S.v.length) return out;
+  while(out.length<n && tries<n*80){
+    tries++;
+    nsyl=one(lens); seq=[];
+    for(i=0;i<nsyl;i++){
+      shape=one(sh);
+      for(j=0;j<shape.length;j++) seq.push(shape.charAt(j)==='V'? one(S.v) : one(S.c));
+    }
+    if(tk[seq.join('')]) continue;
+    /* spOf() writes each position's sound on it; where that is what its
+       letter reads anyway it is agreement, not a sound change, and comes
+       off (spSetU) */
+    sp=spOf({ph:seq}); ok=sp.length>0;
+    for(i=0;i<sp.length;i++){ if(!sp[i].l) ok=false; else spSetU(sp[i], sp[i].u); }
+    if(!ok) continue;
+    hw=spWord(sp);
+    if(!hw || findWord(hw)) continue;
+    tk[seq.join('')]=1;
+    out.push({seq:seq, sp:sp, hw:hw});
+  }
+  return out;
+}
