@@ -94,7 +94,16 @@ HELP.letter=function(){
     helpStep(4, t('hp.l1.4'), t('hp.l1.4.d'))+
     helpStep(5, t('hp.save'), t('hp.save.d'))+
     helpMark('', t('glyph.borrow'), t('hp.l1.borrow.d'))+
-    helpMark(ICON_SHARE, t('lt.out.svg'), t('hp.l1.svg.d'))};
+    helpMark(ICON_SHARE, t('lt.out.svg'), t('hp.l1.svg.d'))+
+    /* A block's placement is chosen on a vowel's own page, so how it works
+       is said here, and only while the writing is a block. */
+    (wsys()==='block'
+      ? helpPara(t('hp.bk.p'))+
+        helpStep(1, t('hp.bk.1'), t('hp.bk.1.d'))+
+        helpStep(2, t('hp.bk.2'), t('hp.bk.2.d'))+
+        helpStep(3, t('hp.bk.3'), t('hp.bk.3.d'))+
+        helpPara(t('hp.bk.p2'))
+      : '')};
 };
 HELP.abugida=function(){
   return {t:t('ab.title'), h:
@@ -102,14 +111,6 @@ HELP.abugida=function(){
     helpStep(1, t('hp.ab.1'), t('hp.ab.1.d'))+
     helpStep(2, t('ab.draw'), t('hp.ab.2.d'))+
     helpStep(3, t('hp.ab.3'), t('hp.ab.3.d'))};
-};
-HELP.blk=function(){
-  return {t:t('blk.title'), h:
-    helpPara(t('hp.bk.p'))+
-    helpStep(1, t('hp.bk.1'), t('hp.bk.1.d'))+
-    helpStep(2, t('hp.bk.2'), t('hp.bk.2.d'))+
-    helpStep(3, t('hp.bk.3'), t('hp.bk.3.d'))+
-    helpPara(t('hp.bk.p2'))};
 };
 HELP.snd=function(){
   return {t:t('toc.sound'), h:
@@ -303,15 +304,15 @@ function vAbugida(){
 }
 /* ---- how a block's square is cut ---------------------------------------
    「組み合わせてやるのも作ろう」 OWNER 2026-09-26. A block puts a syllable's
-   letters into one square, and the vowel decides the cut -- beside what comes
-   before it, or under it (wsBlkOf(), www/wsys.js). So the language's vowels
-   are a list, and pressing one is its page, where the two cuts are the rows:
-   choosing is a screen and changing is the screen you arrive at.
+   letters into one square, and the vowel decides the cut (wsBlkOf(),
+   www/wsys.js). It is chosen on the vowel's own letter page -- 「それは文字の
+   ページの文字設定の時に作れれば良くない？」 OWNER 2026-09-26 -- as three
+   rows under the letter, each drawn as what it makes, and the page's Save
+   writes it with the rest of the letter (ltKeepOn(), www/letters.js).
 
-   Every cut is drawn as what it makes: the first consonant somebody drew with
-   this vowel, and with a second one under it -- the square with no final and
-   the square with one. Those are the whole of the four shapes a block has. */
-var WS_BLK_CUTS=['lr', 'tb'];
+   Every cut is drawn with the first consonant somebody drew and this vowel,
+   and with the finals under it -- one for side by side and one over the
+   other, two for the four quarters, which is the shape only it has. */
 /* The consonants a preview is made with: the first two that have a shape,
    the one twice where only one has, and the language's first where none has. */
 function blkCons(){
@@ -330,52 +331,25 @@ function blkPv(unit, type){
 }
 /* The square with no final and the square with one; `one` is the first
    alone, for a row of a list, which has the room for one picture. */
-function blkPvs(v, type, one){
+function blkPvs(v, type){
   var c=blkCons();
   if(!c.length) return '';
-  return blkPv(wsKey([c[0], v]), type)+(one? '' : blkPv(wsKey([c[0], v, c[1]]), type));
+  return blkPv(wsKey([c[0], v]), type)+
+    blkPv(wsKey([c[0], v, c[1]].concat(type==='q'? [c[1]] : [])), type);
 }
-function vBlk(){
-  var vs=wsVows();
-  if(wsys()!=='block') return viewGone();
-  return '<div class="view">'+navTop('', helpQ('blk'))+'<div class="body">'+
-    (vs.length
-      ? '<div class="toc">'+vs.map(function(v){
-          return '<button class="trow"' + DO('go', ['blkv', v]) + '>'+
-            '<span class="rn"></span><span class="rt">'+esc(v)+'</span>'+
-            '<span class="lead"></span><span class="rv">'+blkPvs(v, wsBlkOf(v), 1)+esc(t('blk.'+wsBlkOf(v)))+'</span>'+ICON_GO+'</button>';
-        }).join('')+'</div>'
-      : '<div class="note">'+t('ab.novow')+'</div>')+
-    '</div></div>';
-}
-/* A vowel's page: the two cuts, the chosen one ticked, and the Save in the
-   bar writes it -- the same KEEP every screen with a choice on it holds
-   (wsKeepOn() above, www/shell.js § KEEP). Not in somebody else's language:
-   save() refuses one, so a Save there could not write. */
-function blkV(){ return String(here().a||''); }
-function vBlkv(){
-  var v=blkV();
-  if(wsys()!=='block' || wsVows().indexOf(v)<0) return viewGone();
-  if(!langLocked())
-    keepOn(keepKey(), function(){ return {cut:wsBlkOf(v)}; },
-           function(o, done){ blkKeepSave(v, o, done); });
-  return '<div class="view">'+navTop('', helpQ('blk'))+'<div class="body">'+
+/* The three rows on a vowel's page, the one in the draft ticked. */
+function ltCutRows(v, lid){
+  var now=keepVal(keepKeyOf('letter', lid), 'cut') || wsBlkOf(v);
+  return '<div class="sec">'+t('blk.h')+'</div>'+
     WS_BLK_CUTS.map(function(k){
-      return '<button class="set"' + DO('blkPick', [k]) + '>'+
+      return '<button class="set"' + DO('ltCutPick', [k]) + '>'+
         '<span class="sl">'+esc(t('blk.'+k))+'</span>'+
-        '<span class="sv">'+blkPvs(v, k)+
-        ((keepVal(keepKey(), 'cut') || wsBlkOf(v))===k? ICON_TICK : '')+'</span></button>';
-    }).join('')+
-    '</div></div>';
+        '<span class="sv">'+blkPvs(v, k)+(now===k? ICON_TICK : '')+'</span></button>';
+    }).join('');
 }
-function blkPick(k){
+function ltCutPick(k){
   if(WS_BLK_CUTS.indexOf(k)<0) return;
   keepSet('cut', k); render();
-}
-function blkKeepSave(v, o, done){
-  if(o.hasOwnProperty('cut')) wsBlkSet(v, String(o.cut));
-  save(); installScriptFont();
-  done(true);
 }
 /* ---- the language's sounds --------------------------------------------
    Which sounds a language uses is the language's, and it was the person's:
@@ -923,20 +897,15 @@ function vLetters(){
        文字なんだから文字から書き出しのマークつけないとダメでは？」 OWNER
        2026-09-25. It was on the list of keyboards. ltFontOut().
        And the same mark is where the letters leave as SVG -- 「svgも足そう」
-       OWNER 2026-09-26 -- so it asks which: ltOutAsk(). */
-    navTop('', helpQ('letters')+navDo(t('lt.out'), 'ltOutAsk', null, false, {icon:ICON_SHARE}))+
+       OWNER 2026-09-26 -- so it goes to the screen that says which, vLtOut();
+       a pop was asked instead and taken off 「そのポップでフォントとsvg出すのは
+       やめてくれ」 OWNER 2026-09-26. */
+    navTop('', helpQ('letters')+navDo(t('lt.out'), 'go', ['ltout'], false, {icon:ICON_SHARE}))+
     '<div class="body">'+
     (wsHasMarks()
       ? '<button class="trow"' + DO('go', ["abugida"]) + ' style="margin-top:6px">'+
           '<span class="rn"></span><span class="rt">'+esc(t('ab.title'))+'</span>'+
           '<span class="lead"></span><span class="rv">'+wsCons().length+' × '+wsVows().length+'</span>'+ICON_GO+'</button>'
-      : '')+
-    /* A block's cuts, the way an abugida's bench is reached: a row at the
-       head of the chapter, only while the writing is a block. */
-    (wsys()==='block'
-      ? '<button class="trow"' + DO('go', ["blk"]) + ' style="margin-top:6px">'+
-          '<span class="rn"></span><span class="rt">'+esc(t('blk.title'))+'</span>'+
-          '<span class="lead"></span><span class="rv">'+wsVows().length+'</span>'+ICON_GO+'</button>'
       : '')+
     '<div class="toc">'+ltKinds().map(ltKindRow).join('')+
     /* And the way in from somewhere else. A letter is made by tracing the
@@ -996,11 +965,15 @@ function ltFontName(){
   var n=String(langName||'').replace(/[^\w \-]/g, '').replace(/\s+/g, ' ').replace(/^ +| +$/g, '');
   return n? n.slice(0, 40) : 'Lingua';
 }
-/* WHICH ONE LEAVES. The letters leave by one mark, as a font or as SVG, and
-   the mark asks -- a question that is only its answers, the shape
-   「リポスト／引用」 is asked in (popAsk(), www/shell.js). */
-function ltOutAsk(){
-  popAsk('', ltFontOut, t('lt.out.font'), t('lt.out.svg'), ltSvgOut);
+/* WHICH ONE LEAVES: a screen of two rows, and pressing one is the export --
+   the font (Plus, the gate is inside ltFontOut()) or SVG (every plan).
+   「カードはいらん。文字書いた後の書き出し。」 OWNER 2026-09-26: the letters,
+   not a line. */
+function vLtOut(){
+  return '<div class="view">'+navTop('')+'<div class="body">'+
+    '<button class="set"' + DO('ltFontOut') + '><span class="sl">'+esc(t('lt.out.font'))+'</span></button>'+
+    '<button class="set"' + DO('ltSvgOut') + '><span class="sl">'+esc(t('lt.out.svg'))+'</span></button>'+
+    '</div></div>';
 }
 /* THE DRAWN LETTERS AS SVG. 「svgも足そう」 OWNER 2026-09-26. Every plan: a
    plan decides what somebody may do, and where the line would go for this is
@@ -1507,6 +1480,8 @@ function vLetter(){
        wants to remember. It is free text and the app never reads it -- it is
        the person's note about their own letter.
        「標語文字の人は意味を持たせたいだろうから、メモ欄追加してもいいかも」 */
+    /* How this vowel's square is cut, while the writing is a block. */
+    (wsBlkVowOf(l)? ltCutRows(wsBlkVowOf(l), lid) : '')+
     '<div class="sec">'+t('lt.note')+'</div>'+
     lnField('lt-nt', '', IN('ltSetNote'), keepVal(keepKeyOf('letter', lid), 'nt'), 'ntin')+
     (l.ch

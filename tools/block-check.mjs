@@ -10,7 +10,10 @@
 
    1. THE SQUARE. In a block the pieces of a syllable stand where the cut puts
       them: side by side (ka), side by side over the final (kan), one over the
-      other (ko), and one over the other over the final (kon). Asked of where
+      other (ko), one over the other over the final (kon), and the square in
+      four, 田 (kant, and kan with its one final in the left quarter alone).
+      Four parts at most: a syllable of five letters is not put together.
+      「4分割までで作れればいいんちゃう？」 OWNER 2026-09-26. Asked of where
       the ink IS -- every point of a piece inside its part -- and never of the
       boxes wsBlockBoxes() answers, because a check that asks the function
       under test is a copy of it.
@@ -20,11 +23,13 @@
       the same objects, which is what it was before it shared the mechanism.
    4. THE FONT CARRIES IT: LinguaFont.build is handed the square for a
       syllable a word says, under the unit's own glyph name.
-   5. THE CUT IS KEPT: chosen on a vowel's page, saved by the Save in the bar,
+   5. THE CUT IS KEPT: chosen on the vowel's own letter page (the list and
+      the vowel screen it replaced are gone), saved by the Save in the bar,
       and still there after the language is read back out of its slice --
       langRead() used to copy four fields of `script` by name and drop the
       rest.
-   6. SVG: the share mark on the letters asks font or SVG, and SVG hands the
+   6. SVG: the share mark on the letters goes to the export screen -- no pop
+      「そのポップでフォントとsvg出すのはやめてくれ」 -- and SVG there hands the
       share sheet a file with one group per drawn letter, each a path inside
       its own square, and nothing else; one letter's page hands over that
       letter alone.
@@ -53,6 +58,7 @@ const r = await pg.evaluate(async ({s}) => {
   inkSet(ltMain('a'), [{pts:[[400,112],[400,688]]}]);
   inkSet(ltMain('o'), [{pts:[[112,400],[688,400]], rd:1}]);
   inkSet(ltMain('n'), [{pts:[[112,112],[112,688],[688,688]]}]);
+  inkSet(ltMain('t'), [{pts:[[112,112],[688,112]]}]);
 
   /* the part of the square each piece's ink stands in */
   function span(st){
@@ -62,7 +68,7 @@ const r = await pg.evaluate(async ({s}) => {
     return {x0:x0, x1:x1, y0:y0, y1:y1};
   }
   function pieces(unit, n){
-    var st = wsStrokes(unit) || [], ls = [K.length, 1, 1], o = [], i = 0;
+    var st = wsStrokes(unit) || [], ls = [K.length, 1, 1, 1], o = [], i = 0;
     for (var j = 0; j < n; j++){ o.push(span(st.slice(i, i+ls[j]))); i += ls[j]; }
     return { n: st.length, p: o, st: st };
   }
@@ -72,7 +78,12 @@ const r = await pg.evaluate(async ({s}) => {
   out.ka = pieces('ka', 2); out.kan = pieces('kan', 3);
   out.ko = pieces('ko', 2); out.kon = pieces('kon', 3);
   out.oflag = out.ko.st[1] && out.ko.st[1].rd === 1;
-  wsBlkSet('o', 'lr');
+  wsBlkSet('a', 'q');
+  out.qa = pieces('ka', 2); out.qan = pieces('kan', 3); out.qant = pieces('kant', 4);
+  wsBlkSet('o', 'lr'); wsBlkSet('a', 'lr');
+  /* asked side by side: 田 would refuse it on its own shape, and what is
+     held here is the four for every cut */
+  out.five = wsStrokes('knant');
 
   /* 3 -- an abugida */
   langWsysGot(langId, 'abugida');
@@ -93,16 +104,24 @@ const r = await pg.evaluate(async ({s}) => {
   /* 5 -- the cut, chosen, saved and read back */
   var realSN = window.netSaveNow;
   window.netSaveNow = function(cb){ if (cb) cb(true); };
-  window.route = 'blk'; NAV = [{ r:'blk' }]; render();
-  out.listRows = document.querySelectorAll('#app [data-do="go"]').length;
-  go('blkv', 'o'); render();
-  var tb = document.querySelector('#app [data-do="blkPick"][data-a*="tb"]');
-  out.tbRow = !!tb;
-  if (tb) tb.click();
-  var sv = document.querySelector('.navtop [data-do="keepPress"]');
-  out.dirty = !!(sv && sv.classList.contains('navon'));
-  if (sv) sv.click();
+  out.gone = !PAGES.blk && !PAGES.blkv;
+  function cutOn(k){
+    window.route = 'letter'; NAV = [{ r:'letters' }, { r:'letter', a: ltMain('o').id }]; render();
+    var row = document.querySelector('#app [data-do="ltCutPick"][data-a*="' + k + '"]');
+    var rows = document.querySelectorAll('#app [data-do="ltCutPick"]').length;
+    if (row) row.click();
+    var sv = document.querySelector('.navtop [data-do="keepPress"]');
+    var lit = !!(sv && sv.classList.contains('navon'));
+    if (sv) sv.click();
+    return { row: !!row, rows: rows, lit: lit };
+  }
+  out.cutQ = cutOn('q');
   await new Promise(function(f){ setTimeout(f, 50); });
+  out.keptQ = wsBlkOf('o');
+  out.cutTb = cutOn('tb');
+  await new Promise(function(f){ setTimeout(f, 50); });
+  window.route = 'letter'; NAV = [{ r:'letters' }, { r:'letter', a: ltMain('k').id }]; render();
+  out.consRows = document.querySelectorAll('#app [data-do="ltCutPick"]').length;
   window.netSaveNow = realSN;
   out.kept = wsBlkOf('o');
   langRead();
@@ -131,12 +150,15 @@ const r = await pg.evaluate(async ({s}) => {
     });
   }
   window.route = 'letters'; NAV = [{ r:'letters' }]; render();
-  var mk = document.querySelector('.navtop [data-do="ltOutAsk"]');
+  var mk = document.querySelector('.navtop [data-do="go"][data-a*="ltout"]');
   out.mark = !!mk;
   if (mk) mk.click();
-  var no = document.querySelector('#pop [data-do="popNo"]');
-  out.askSvg = no ? no.textContent : '';
-  if (no) no.click();
+  render();
+  out.at = here().r;
+  out.pop = typeof popOn === 'function' && popOn();
+  out.outRows = [].slice.call(document.querySelectorAll('#app [data-do="ltFontOut"], #app [data-do="ltSvgOut"]')).map(function(b){ return b.textContent; });
+  var svg = document.querySelector('#app [data-do="ltSvgOut"]');
+  if (svg) svg.click();
   await new Promise(function(f){ setTimeout(f, 50); });
   out.drawn = ltPuaOrder().map(ltName);
   out.all = read(file(0));
@@ -168,13 +190,27 @@ say(r.ko.n === 2 && r.ko.p[0].y1 < M && r.ko.p[1].y0 > M,
     'ko: a vowel cut under -- the consonant over it -- ' + q(r.ko));
 say(r.kon.n === 3 && r.kon.p[0].y1 < r.kon.p[1].y0 && r.kon.p[1].y1 < r.kon.p[2].y0,
     'kon: consonant, vowel, final, one under another -- ' + q(r.kon));
+say(r.qa.n === 2 && r.qa.p[0].x1 < M && r.qa.p[1].x0 > M && r.qa.p[0].y1 === 688,
+    'ka in four: nothing under it, so it is side by side -- ' + q(r.qa));
+say(r.qan.n === 3 && r.qan.p[0].x1 < M && r.qan.p[0].y1 < M && r.qan.p[1].x0 > M && r.qan.p[1].y1 < M &&
+    r.qan.p[2].x1 < M && r.qan.p[2].y0 > M,
+    'kan in four: consonant top left, vowel top right, the one final in the left quarter alone -- ' + q(r.qan));
+say(r.qant.n === 4 && r.qant.p[2].x1 < M && r.qant.p[2].y0 > M && r.qant.p[3].x0 > M && r.qant.p[3].y0 > M &&
+    r.qant.p[0].y1 < M && r.qant.p[1].x0 > M && r.qant.p[1].y1 < M,
+    'kant in four: 田, each letter in its own quarter -- ' + q(r.qant));
+say(r.five === null, 'a syllable of five letters is not put together (' + JSON.stringify(r.five && r.five.length) + ')');
 say(r.oflag, 'a piece keeps what its strokes carry (the round on o), only moved');
 say(r.ab, 'an abugida\'s letter is the consonant\'s strokes and then the mark\'s, the same objects as before');
 say(r.fontHanded && r.font, 'the font is handed the square for ka under the unit\'s own glyph');
-say(r.listRows > 0 && r.tbRow && r.dirty, 'the cuts: a vowel\'s page, the other cut pressed, the Save lit');
+say(r.gone, 'the list of cuts and the vowel screen are gone -- one road');
+say(r.cutQ.rows === 3 && r.cutQ.row && r.cutQ.lit, 'the vowel o\'s letter page: three cuts, 田 pressed, the Save lit');
+say(r.keptQ === 'q', 'saved: o is cut in four (' + r.keptQ + ')');
+say(r.cutTb.row && r.cutTb.lit, 'and then under, pressed and saved on the same page');
 say(r.kept === 'tb', 'saved: o is cut under (' + r.kept + ')');
+say(r.consRows === 0, 'a consonant\'s page has no cut on it (' + r.consRows + ')');
 say(r.reread === 'tb' && /"o":"tb"/.test(r.sliceHas), 'and read back out of the slice it is still under (' + r.reread + ', ' + r.sliceHas + ')');
-say(r.mark && /SVG/.test(r.askSvg), 'the share mark on the letters asks, and SVG is an answer (' + r.askSvg + ')');
+say(r.mark && r.at === 'ltout' && !r.pop, 'the share mark on the letters goes to the export screen, and nothing pops (' + r.at + ')');
+say(r.outRows.length === 2 && /SVG/.test(r.outRows[1]), 'it is two rows, font and SVG (' + r.outRows.join(' / ') + ')');
 say(!!r.all && r.all.length === r.drawn.length && r.all.length > 0,
     'SVG: one group per drawn letter -- ' + (r.all ? r.all.length : 'no file') + ' of ' + r.drawn.length);
 say(!!r.all && r.all.every(g => g.inside) && r.all.every((g, i) => g.at[0] === (i % 8) * 800 && g.at[1] === Math.floor(i / 8) * 800),
@@ -186,4 +222,4 @@ say(r.oneMark && !!r.one && r.one.length === 1 && r.one[0].title === r.oneName &
 say(!errs.length, 'nothing threw' + (errs.length ? ' -- ' + errs.join(' | ') : ''));
 
 if (bad.length) { console.error('\nblock: ' + bad.length + ' failed'); process.exit(1); }
-console.log('\nblock: four squares, an abugida unchanged, the font, the cut kept, and SVG out.');
+console.log('\nblock: seven squares, five letters refused, an abugida unchanged, the font, the cut kept on the vowel\'s page, and SVG out.');
