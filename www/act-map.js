@@ -286,7 +286,6 @@ act('snsClearQ', snsClearQ);
 act('pkKind', pkKind);
 act('sayPh', sayPh);
 act('abSetVow', abSetVow);
-act('ltCutPick', ltCutPick);
 act('pkTake', pkTake);
 act('openFil', openFil);
 act('wordsSetFil', wordsSetFil);

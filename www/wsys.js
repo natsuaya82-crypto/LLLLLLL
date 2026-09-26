@@ -259,17 +259,13 @@ function wsUnits(){
    syllable's letters side by side and one over another in one square, the
    way 한 is ㅎ, ㅏ and ㄴ. 「組み合わせてやるのも作ろう」 OWNER 2026-09-26.
 
-   It is ONE mechanism: a unit is a list of PIECES, each a letter and the part
-   of the square it stands in (wsParts), and the shape is every piece drawn
-   into its part (wsStrokes). An abugida's pieces both stand in the whole
-   square -- the mark was drawn where it goes -- so its shape is the two
-   stroke lists one after the other, exactly as it always was. A block's
-   pieces are shrunk into the parts its square is cut into (wsBlockBoxes).
-
-   The pen is not shrunk with them: the font sweeps every stroke with the one
-   pen (GPEN), so a letter drawn into a quarter of the square is the same
-   weight as a letter drawn into all of it, which is what a block script
-   looks like on paper. */
+   It is ONE mechanism: a unit is a list of PIECES, each a letter and where
+   it stands (wsParts), and the shape is every piece drawn where it stands
+   (wsStrokes). Both writing systems draw a piece where it was drawn -- an
+   abugida's mark was drawn where it goes, and a block's letter was drawn in
+   the quarter of the square it goes in -- so the shape is the stroke lists
+   one after the other. The one piece that moves is a block's final, into the
+   lower row (wsInto). Nothing is shrunk. */
 
 /* A unit, as the sounds it is spelt with. A unit is those sounds run
    together (wsKey), and a sound can be more than one character -- tʃ -- so it
@@ -289,76 +285,29 @@ function wsSeq(unit){
   }
   return out;
 }
-/* How a vowel's square is cut, one of three: `lr`, the vowel beside what
-   comes before it (ㅏ); `tb`, the vowel under it (ㅗ); `q`, the square cut in
-   four like 田, the vowel beside and the finals in the two quarters under.
-   「4分割までで作れればいいんちゃう？」 OWNER 2026-09-26. The language's, in
-   the `script` slice beside the direction and the gap: `SCRIPT.blk` names the
-   vowels that are not `lr`, and a vowel it does not name -- or names with a
-   value this build does not know -- goes beside. */
-var WS_BLK_CUTS=['lr', 'tb', 'q'];
-function wsBlkOf(v){
-  var k=SCRIPT.blk && SCRIPT.blk[v];
-  return (k && WS_BLK_CUTS.indexOf(k)>0)? k : 'lr';
-}
-function wsBlkSet(v, k){
-  var m={}, x;
-  for(x in SCRIPT.blk||{}) if(Object.prototype.hasOwnProperty.call(SCRIPT.blk, x)) m[x]=SCRIPT.blk[x];
-  if(WS_BLK_CUTS.indexOf(k)>0) m[v]=k; else delete m[v];
-  SCRIPT.blk=m;
-}
-/* The vowel a letter's page chooses the cut for: the first vowel of the
-   language the letter reads, while the writing is a block, or ''. */
-function wsBlkVowOf(l){
-  var vs, i;
-  if(!l || wsys()!=='block') return '';
-  vs=wsVows();
-  for(i=0;i<(l.snd||[]).length;i++) if(vs.indexOf(l.snd[i])>=0) return l.snd[i];
-  return '';
-}
-/* The parts of the square a syllable stands in, in the order of its sounds,
-   as [x, y, w, h] in fractions of the lattice, or null when the syllable
-   does not fit the cut. Rows down, each row cut across:
+/* What a unit is put together from: [{s: sound, at}], or null when this
+   writing system does not put this unit together.
 
-     lr    onset and vowel in one row          ㅎㅏ
-     tb    onset over vowel                    ㅎ / ㅗ
-     and a row underneath for the finals, in either      ㄴ
-     q     onset and vowel in one row, and under them two quarters, the
-           finals from the left -- one final stands in the left quarter
-           alone. With no final it is lr.        ㄷㅏ / ㄹㄱ
+   A block's square is the drawing square, already cut in four by the guide
+   the letter was drawn on (田). 「せっかく4つに区切ってるから、それうまく利用
+   しない？そうすれば置き場所指定しなくても入れるやん？」 OWNER 2026-09-26. So
+   every piece stands where it was DRAWN, as large as it was drawn: a
+   consonant drawn in the top left and a vowel drawn in the top right are
+   side by side, and nobody chooses a cut. The finals are the one exception,
+   because they are drawn in the square like any letter and the square's own
+   place for them is underneath: `at` names the quarter a final belongs in --
+   [0, 1] the lower left for the first, [1, 1] the lower right for the
+   second -- and wsInto() is what moves it there. Every other piece has `at`
+   null and is not moved.
 
-   A square is cut into four parts at most, so a syllable of more letters
-   than that is not put together (wsParts). The final row of lr and tb is
-   lower than the others and there is a gap between two parts; both are a
-   look, not a rule anybody has given (docs/scope/r102-block.md). */
-var WS_BLK={gap:0.06, low:0.7};
-function wsBlockBoxes(on, nu, co, type){
-  var q=(type==='q'), rows=(type==='tb')? [on, nu, co] : [on.concat(nu), co],
-      use=[], i, j, n, sum=0, y=0, h, w, out=[], g=WS_BLK.gap;
-  if(q && (rows[0].length>2 || co.length>2)) return null;
-  for(i=0;i<rows.length;i++){
-    if(!rows[i].length) continue;
-    n=(q && i>0)? 2 : rows[i].length;
-    use.push({n:n, k:rows[i].length, wt:(!q && i===rows.length-1 && co.length && i>0)? WS_BLK.low : 1});
-  }
-  for(i=0;i<use.length;i++) sum+=use[i].wt;
-  for(i=0;i<use.length;i++){
-    h=(1-g*(use.length-1))*use[i].wt/sum;
-    w=(1-g*(use[i].n-1))/use[i].n;
-    for(j=0;j<use[i].k;j++) out.push([j*(w+g), y, w, h]);
-    y+=h+g;
-  }
-  return out;
-}
-/* What a unit is put together from: [{s: sound, box}], or null when this
-   writing system does not put this unit together. `type` is for a preview
-   of a cut the language has not been given yet; nothing else passes it. */
-function wsParts(unit, type){
-  var k=wsys(), seq=wsSeq(unit), on=[], nu=[], co=[], i, box, out=[];
+   Not put together: a vowel after a final, a third final, and more than
+   four letters -- the square has four quarters. */
+function wsParts(unit){
+  var k=wsys(), seq=wsSeq(unit), on=[], nu=[], co=[], i, out=[];
   if(seq.length<2) return null;
   if(k==='abugida'){
     if(seq.length!==2 || ipaIsVowel(seq[0]) || !ipaIsVowel(seq[1])) return null;
-    return [{s:seq[0], box:null}, {s:seq[1], box:null}];
+    return [{s:seq[0], at:null}, {s:seq[1], at:null}];
   }
   if(k!=='block') return null;
   for(i=0;i<seq.length;i++){
@@ -366,25 +315,32 @@ function wsParts(unit, type){
     else if(nu.length) co.push(seq[i]);
     else on.push(seq[i]);
   }
-  if(!nu.length || seq.length>4) return null;
-  box=wsBlockBoxes(on, nu, co, type || wsBlkOf(nu[0]));
-  if(!box) return null;
-  seq=on.concat(nu).concat(co);
-  for(i=0;i<seq.length;i++) out.push({s:seq[i], box:box[i]});
+  if(!nu.length || seq.length>4 || co.length>2) return null;
+  on.concat(nu).forEach(function(x){ out.push({s:x, at:null}); });
+  co.forEach(function(x, j){ out.push({s:x, at:[j, 1]}); });
   return out;
 }
-/* A shape drawn into a part of the square. A box of null is the whole
-   square, and the shape is handed back as it is -- the same objects, so an
-   abugida's letter is byte for byte what it was. */
-function wsInto(g, box){
-  var a=GGRID.inset, S=800-2*a;
-  function at(p){ return [Math.round(a+(box[0]+(p[0]-a)/S*box[2])*S), Math.round(a+(box[1]+(p[1]-a)/S*box[3])*S)]; }
-  if(!box) return g;
+/* A shape moved into the quarter `at` names. It moves by half the square,
+   down for the lower row and right for the right column, and only where the
+   shape stands wholly in the other half -- a final already drawn low stays
+   where it was drawn, and one drawn across the middle is not pushed off the
+   square. A piece that does not move is handed back as it is: the same
+   objects, so an abugida's letter is byte for byte what it was. */
+function wsInto(g, at){
+  var a=GGRID.inset, S=800-2*a, mid=400, x1=-1e9, y1=-1e9, dx, dy, rings;
+  if(!at) return g;
+  rings=inkRings(g);
+  g.forEach(function(x){ (rings? x : x.pts).forEach(function(p){
+    if(p[0]>x1) x1=p[0]; if(p[1]>y1) y1=p[1]; }); });
+  dx=(at[0]===1 && x1<=mid)? Math.round(S/2) : 0;
+  dy=(at[1]===1 && y1<=mid)? Math.round(S/2) : 0;
+  if(!dx && !dy) return g;
+  function mv(p){ return [p[0]+dx, p[1]+dy]; }
   return g.map(function(x){
-    if(inkRings(g)) return x.map(at);
+    if(rings) return x.map(mv);
     var c={}, f;
     for(f in x) if(Object.prototype.hasOwnProperty.call(x, f)) c[f]=x[f];
-    c.pts=x.pts.map(at);
+    c.pts=x.pts.map(mv);
     return c;
   });
 }
@@ -393,16 +349,16 @@ function wsInto(g, box){
    kinds are not one shape (inkRings) -- and a unit whose first piece has no
    shape has none. A mark with no drawing, or a vowel of a block nobody drew
    yet, leaves the rest standing, as it always did for an abugida. */
-function wsStrokes(unit, type){
+function wsStrokes(unit){
   var own=inkGeo(ltMain(unit)), parts, i, g, out=null, rings;
-  if(own && !type) return own;
-  parts=wsParts(unit, type);
-  if(!parts) return own || null;
+  if(own) return own;
+  parts=wsParts(unit);
+  if(!parts) return null;
   for(i=0;i<parts.length;i++){
     g=inkGeo(ltMain(parts[i].s));
     if(!i){ if(!g) return null; rings=inkRings(g); out=[]; }
     if(!g || inkRings(g)!==rings) continue;
-    out=out.concat(wsInto(g, parts[i].box));
+    out=out.concat(wsInto(g, parts[i].at));
   }
   return out;
 }

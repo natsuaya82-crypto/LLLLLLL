@@ -3131,12 +3131,6 @@ export function halfDone(){
         const h = vAbugida();
         LETTERS = LETTERS.filter((l) => l.id !== 'fx-own');
         planGot('free'); langWsysGot(langId, ''); return h; }],
-    /* A BLOCK: a vowel's own letter page, where how its square is cut is
-       chosen -- the only door to it, and only while the writing is a block,
-       which is itself paid. */
-    ['a vowel\'s letter page in a block', () => { planGot('pro'); langWsysGot(langId, 'block');
-        window.route = 'letter'; NAV = [{r:'letters'}, {r:'letter', a:ltMain('o').id}];
-        const h = vLetter(); planGot('free'); langWsysGot(langId, ''); return h; }],
     ['the five kinds of writing', () => { planGot('pro');
         window.route = 'wsys'; NAV = [{r:'wsys'}];
         const h = vWsys(); planGot('free'); return h; }],
