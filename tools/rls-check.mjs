@@ -147,6 +147,22 @@ const BDO = 'b1000000-0000-4000-8000-0000000000b5';  /* and BD's post before the
 const BDL = 'b1000000-0000-4000-8000-0000000000b6';  /* BD's published language */
 const BKL = 'b1000000-0000-4000-8000-0000000000b7';  /* and BK's, for the walk the other way */
 const BKH = 'blocker';                                 /* and BK's @ */
+/* WHO WEARS THE MARK (badge_of), and who stopped. Seeded by the owner of the
+   table, because `plan` and `purchase` have no road in through the API. */
+const XL = '7b000000-0000-4000-8000-000000000001';  /* Pro, and it ran out */
+const XR = '7b000000-0000-4000-8000-000000000002';  /* Pro, and Apple took it back */
+const XU = '7b000000-0000-4000-8000-000000000003';  /* Plus, running */
+const XLP= '7b000000-0000-4000-8000-000000000011';  /* what XL wrote */
+const XUP= '7b000000-0000-4000-8000-000000000013';  /* XU quoting A */
+/* Which rung wears the mark is www/core.js's CAN.badge, and badge_rung() in
+   schema.sql says it again in SQL. Read here so the two cannot drift. */
+const CAN_BADGE = (function(){
+  const src = fs.readFileSync(path.join(HERE, '..', 'www', 'core.js'), 'utf8');
+  const at = src.indexOf('var CAN={');
+  const m = at < 0 ? null : /\bbadge:\s*'([a-z]+)'/.exec(src.slice(at, src.indexOf('};', at)));
+  if (!m) { console.error('www/core.js has no CAN.badge for badge_rung() to agree with'); process.exit(1); }
+  return m[1];
+})();
 /* A value as an SQL literal. */
 const q = (s) => "'" + String(s).replace(/'/g, "''") + "'";
 /* verify.mjs's ladder, as the array plan_put() is handed. */
@@ -2090,6 +2106,55 @@ const CASES = [
     `select 1 from purchase where uid='${A}'`],
   ['nor write one',                           'denied', B, 1,
     `insert into purchase(orig_tx,uid) values ('2000000000000010','${B}')`],
+  /* --- AND THE ONE THING ABOUT IT THAT IS EVERYBODY'S: THE MARK ----------
+     「課金者にちゃんと投稿とかプロフィールにダイヤ見えるようになってる？」
+     OWNER 2026-09-26. badge_of() publishes one boolean -- the rows above say
+     B still reads nothing ELSE of what A pays. Asked as B, of every road a
+     post or a person comes back on. */
+  /* XU quotes A's post, through the policy, so the quote can be asked about. */
+  ['XU quotes A\u2019s post',                   'ok',     XU, 0,
+    `insert into post(id,author,body,quote_of) values ('${XUP}','${XU}','{}'::jsonb,'${P}')`],
+  ['B sees the mark on A\u2019s page',        'ok',     B, 0,
+    `select 1 from profile_seen where id='${A}' and badge`],
+  ['and on A\u2019s post',                     'ok',     B, 0,
+    `select 1 from post_seen where id='${P}' and badge`],
+  ['and on A\u2019s page of posts',            'ok',     B, 0,
+    `select 1 from posts_by('${A}') where id='${P}' and badge`],
+  ['and on A\u2019s post inside a quote of it', 'ok',    B, 0,
+    `select 1 from post_seen where id='${XUP}' and (quoted->>'badge')::boolean`],
+  ['and staff wear it, with no purchase',      'ok',     B, 0,
+    `select 1 from profile_seen where id='${C}' and badge`],
+  ['nobody who pays nothing wears it',         'denied', A, 0,
+    `select 1 from profile_seen where id='${B}' and badge`],
+  ['nor somebody on a rung below it',          'denied', B, 0,
+    `select 1 from profile_seen where id='${XU}' and badge`],
+  ['nor on their post',                        'denied', B, 0,
+    `select 1 from post_seen where id='${XUP}' and badge`],
+  ['it comes off when the purchase ran out',   'denied', B, 0,
+    `select 1 from profile_seen where id='${XL}' and badge`],
+  ['and off what they wrote',                  'denied', B, 0,
+    `select 1 from post_seen where id='${XLP}' and badge`],
+  ['and when Apple took it back',              'denied', B, 0,
+    `select 1 from profile_seen where id='${XR}' and badge`],
+  ['your own comes back the same road',        'ok',     A, 0,
+    `select 1 from profile_seen where id='${A}' and badge`],
+  /* AND NOBODY PUTS IT ON: not on somebody else, not on themselves. */
+  ['B cannot run XL\u2019s purchase on',       'denied', B, 0,
+    `update purchase set until = now() + interval '30 days' where uid='${XL}'`],
+  ['nor XL their own',                         'denied', XL, 0,
+    `update purchase set until = now() + interval '30 days' where uid='${XL}'`],
+  ['nor lift the revoke',                      'denied', XR, 0,
+    `update purchase set revoked = null where uid='${XR}'`],
+  ['nor make themselves staff to wear it',     'denied', B, 0,
+    `update profile set staff = true where id='${B}'`],
+  ['so XL is still not wearing it',            'denied', B, 0,
+    `select 1 from profile_seen where id='${XL}' and badge`],
+  ['nor B',                                    'denied', B, 0,
+    `select 1 from profile_seen where id='${B}' and badge`],
+  ['nor can B take A\u2019s off',              'denied', B, 0,
+    `update purchase set revoked = now() where uid='${A}'`],
+  ['and A is still wearing it',                'ok',     B, 0,
+    `select 1 from profile_seen where id='${A}' and badge`],
   /* --- WHERE THE NOTICES GO --------------------------------------------
      「通知作ろう。アップルのネイティブ通知で」 OWNER 2026-09-22.
 
@@ -2881,11 +2946,30 @@ const SHAPE = [
      of a list with plenty to be wrong with. */
   ['nothing written since the tick is in it', `
      select count(*) from feed_hot(500) where created_at > feed_slot()`, '0'],
-  /* Nobody carries the blue mark yet -- there is no column to carry it -- so
-     today's ranking is the reactions and nothing else. A multiplier that had
-     quietly begun applying to somebody would show up on no screen anywhere. */
-  ['nobody carries the mark today', `
-     select count(*) from profile where feed_weight(id) <> 1`, '0'],
+  /* THE FOUR FALLS ON WHOEVER WEARS THE MARK AND ON NOBODY ELSE -- badge_of(),
+     the same answer the timeline draws (「青パッチの倍率」, 2026-08-28). A
+     multiplier applying to somebody without the mark, or missing somebody
+     with it, would show up on no screen anywhere. And somebody does wear it
+     here, or this would be a claim about nobody. */
+  ['the mark is multiplied and nothing else is', `
+     select count(*) from profile
+      where feed_weight(id) <> case when badge_of(id) then feed_paid_weight() else 1 end`, '0'],
+  ['and somebody here wears it', `
+     select count(*) from (select 1 where not exists
+       (select 1 from profile where badge_of(id))) q`, '0'],
+  /* WHICH RUNG WEARS IT is www/core.js's CAN.badge, said again here in SQL. */
+  ['badge_rung() is CAN.badge', `
+     select count(*) from (select 1 where badge_rung() <> ${q(CAN_BADGE)}) q`, '0'],
+  /* AND NOTHING BUT THE BOOLEAN LEAVES. Every column of every view, counted out
+     of the catalogue, so a view added tomorrow is asked tomorrow: none of them
+     may carry the rung, the product, the date, the revoke, the environment or
+     the transaction -- what somebody pays is plan_read's and purchase_read's. */
+  ['no view hands out what somebody pays', `
+     select count(*) from information_schema.columns c
+       join information_schema.views v
+         on v.table_schema = c.table_schema and v.table_name = c.table_name
+      where c.table_schema = 'public'
+        and c.column_name in ('plan', 'was', 'product', 'until', 'revoked', 'env', 'orig_tx')`, '0'],
   /* And what it is worth on the day there is one: X's published figure for a
      post shown to people who do not follow whoever wrote it. */
   ['and the mark is worth four when there is one', `
@@ -3443,6 +3527,22 @@ const sql = [
   `insert into purchase(orig_tx,uid,product,until,env) values
      ('2000000000000001', ${q(A)}, 'com.tokinets.lingua.pro.monthly',
       now() + interval '20 days', 'Sandbox');`,
+  /* And three more who paid, for the mark: one whose Pro ran out, one whose
+     Pro Apple took back, and one on Plus. The plan rows still say what they
+     said when each phone last called verify-plan -- which is the case the
+     mark has to come off in without that phone. */
+  `insert into auth.users(id) values (${q(XL)}),(${q(XR)}),(${q(XU)});`,
+  `insert into profile(id,handle) values
+     (${q(XL)},'lapsed'),(${q(XR)},'revoked'),(${q(XU)},'plusone');`,
+  `insert into plan(id,plan) values (${q(XL)},'pro'),(${q(XR)},'pro'),(${q(XU)},'plus');`,
+  `insert into purchase(orig_tx,uid,product,until,revoked,env) values
+     ('2000000000000021', ${q(XL)}, 'com.tokinets.lingua.pro.monthly',
+      now() - interval '1 day', null, 'Sandbox'),
+     ('2000000000000022', ${q(XR)}, 'com.tokinets.lingua.pro.yearly',
+      now() + interval '200 days', now() - interval '1 day', 'Sandbox'),
+     ('2000000000000023', ${q(XU)}, 'com.tokinets.lingua.plus.monthly',
+      now() + interval '20 days', null, 'Sandbox');`,
+  `insert into post(id,author,body) values (${q(XLP)}, ${q(XL)}, '{"ln":"lapsed"}'::jsonb);`,
   /* A PLACE SOLD IN THE TIMELINE, put here by the owner of the table because
      nobody else can put one anywhere: `promo` has no insert policy at all, and
      the operator sells a place through the service role. C writes the post --
