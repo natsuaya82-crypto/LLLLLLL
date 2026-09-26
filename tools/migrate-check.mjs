@@ -785,52 +785,62 @@ want('the sounds in the settings reach the open language', sn.snd, 'k,t,a');
 want('and are still in the settings afterwards', sn.kept, 'k,t,a');
 want('and the copy is marked as made', sn.mark, 1);
 
-/* ---- the keyboard's measurement is taken off every copy of the settings --
-   「1 消す」 OWNER 2026-09-26 (DELETE REVIEW docs/CHANGELOG.md 2026-09-25).
-   `vvkb` sat in `lingua.set`, where an older version wrote it, and in an
-   account's `lingua.set.<uid>`, where acctMoved() copied it. setVvkbDrop()
-   in www/core.js takes it off at launch, before the settings are read. It is
-   COUNTED across every settings copy on the phone, not asked of one: the one
-   nobody checked is where it would have stayed. And nothing beside it moves
-   -- the setup, another account's settings, a key that is not settings. */
+/* ---- what the owner said goes is taken off every copy of the settings ---
+   「1 消す」 (`vvkb`) and 「消していいよ」 (`order` `script` `read` `voice`)
+   OWNER 2026-09-26 (DELETE REVIEWs docs/CHANGELOG.md 2026-09-25, 2026-09-26).
+   They sat in `lingua.set`, where an older version wrote them, and in an
+   account's `lingua.set.<uid>`, where acctMoved() copied them. setGoneDrop()
+   in www/core.js takes them off at launch, before the settings are read.
+   The five are written out HERE, as the owner named them, and not read off
+   `SET_GONE`: a name dropped from that list would be a list that agrees with
+   itself. It is COUNTED across every settings copy on the phone, not asked
+   of one: the one nobody checked is where it would have stayed. And nothing
+   beside them moves -- the setup, `gpos` (not one of them), another
+   account's settings, a key that is not settings. */
+const GONE = ['vvkb', 'order', 'script', 'read', 'voice'];
 await pg.evaluate(() => {
   localStorage.clear();
   localStorage.setItem('lingua.set', JSON.stringify(
-    { theme: 'dark', walked: true, vvkb: { on: 844, kb: 336 } }));
+    { theme: 'dark', walked: true, vvkb: { on: 844, kb: 336 }, order: 'OSV',
+      read: 'both', voice: '', script: { a: 'а' },
+      gpos: { adj: 'before' } }));
   localStorage.setItem('lingua.set.u-two', JSON.stringify(
-    { theme: 'light', vvkb: { on: 667, kb: 260 } }));
-  localStorage.setItem('lingua.sets', JSON.stringify({ vvkb: 1 }));
+    { theme: 'light', vvkb: { on: 667, kb: 260 }, order: 'VSO', script: false }));
+  localStorage.setItem('lingua.sets', JSON.stringify({ vvkb: 1, order: 'SOV' }));
 });
 await oldPhone();
 await pg.reload();
 await settle();
-const vk = await pg.evaluate(() => {
-  var n = 0, k, v, i, all = {};
+const vk = await pg.evaluate((gone) => {
+  var n = 0, k, v, i, j, all = {}, mem = 0;
   for (i = 0; i < localStorage.length; i++) {
     k = localStorage.key(i);
     if (k !== 'lingua.set' && k.indexOf('lingua.set.') !== 0) continue;
     try { v = JSON.parse(localStorage.getItem(k)); } catch (e) { v = null; }
     all[k] = v;
-    if (v && typeof v === 'object' && Object.prototype.hasOwnProperty.call(v, 'vvkb')) n++;
+    if (v && typeof v === 'object')
+      for (j = 0; j < gone.length; j++) if (Object.prototype.hasOwnProperty.call(v, gone[j])) n++;
   }
+  for (j = 0; j < gone.length; j++) if (Object.prototype.hasOwnProperty.call(SET, gone[j])) mem++;
   return {
-    left: n, copies: Object.keys(all).length,
+    left: n, copies: Object.keys(all).length, inMem: mem,
     walked: all['lingua.set'] && all['lingua.set'].walked,
+    gpos: all['lingua.set'] && all['lingua.set'].gpos && all['lingua.set'].gpos.adj,
     two: all['lingua.set.u-two'] && all['lingua.set.u-two'].theme,
     mine: all['lingua.set.u-old'] && all['lingua.set.u-old'].theme,
-    inMem: Object.prototype.hasOwnProperty.call(SET, 'vvkb'),
     other: localStorage.getItem('lingua.sets')
   };
-});
-want('no copy of the settings still holds the keyboard\'s measurement', vk.left, 0);
+}, GONE);
+want('no copy of the settings still holds a field that goes', vk.left, 0);
 want('and there were three copies to look in', vk.copies, 3);
-want('and the settings in memory do not have it either', vk.inMem, false);
-want('the handset\'s setup beside it is untouched', vk.walked, true);
+want('and the settings in memory do not have one either', vk.inMem, 0);
+want('the handset\'s setup beside them is untouched', vk.walked, true);
+want('and a field that is not one of them stays', vk.gpos, 'before');
 want('another account\'s settings keep what they had', vk.two, 'light');
 want('the stamped account\'s own were still moved under it', vk.mine, 'dark');
-want('and a key that is not the settings is not touched', vk.other, '{"vvkb":1}');
-console.log('the keyboard\'s measurement: ' + vk.left + ' of ' + vk.copies +
-            ' copies of the settings still hold it');
+want('and a key that is not the settings is not touched', vk.other, '{"vvkb":1,"order":"SOV"}');
+console.log('what the owner said goes (' + GONE.join(' ') + '): ' + vk.left +
+            ' left across ' + vk.copies + ' copies of the settings, ' + vk.inMem + ' in memory');
 
 /* ---- a pronunciation somebody brought in is not replaced by a guess -----
    CLAUDE.md § Data: *a migration COPIES and never removes what it read*.
@@ -1070,7 +1080,9 @@ const g1b = await gramOf();
 want('the word order nobody typed is not written onto the language', g1b.a, null);
 want('nor onto the other one', g1b.g, null);
 want('absent, so a restore can still fill that in too', g1b.aThere, false);
-want('and the settings still say what they said', g1b.setOrder, 'SOV');
+/* and the settings do not hold it at all any more: `order` is taken off
+   the phone at launch (www/core.js § SET_GONE, OWNER 2026-09-26) */
+want('and the word order is not in the settings any more', g1b.setOrder, undefined);
 want('and the screen answers with the same word order it always did', g1b.shows, 'SOV');
 want('with nothing marked as chosen', g1b.chose, false);
 
@@ -1081,12 +1093,19 @@ want('a settings file from before there was a word order writes none either', g1
 want('nor onto the other one', g1c.g, null);
 want('and that screen answers with SOV as well', g1c.shows, 'SOV');
 
-/* 2, 3. the three roads that DO copy something are untouched by that. */
+/* 2. AN ORDER ON THE PHONE GOES ONTO NO LANGUAGE ANY MORE. `SET.order` is
+      taken off at launch (www/core.js § SET_GONE) and migrateGramLang()
+      does not read it: 「消していいよ」 OWNER 2026-09-26, and an older
+      version's language this road never reached is not special-cased
+      (docs/CHANGELOG.md 2026-09-26, DELETE REVIEW). */
 await GLANGS(JSON.stringify({ order: 'VSO' }));
 await twice();
 const g2 = await gramOf();
-want('an order the person chose is still copied onto the language', g2.a, '{"order":"VSO"}');
-want('onto every language, not just the open one', g2.g, '{"order":"VSO"}');
+want('an order left on the phone is not copied onto the language', g2.a, null);
+want('nor onto the other one', g2.g, null);
+want('and it is not in the settings either', g2.setOrder, undefined);
+
+/* 3. the road that DOES still copy -- the three positions -- is untouched. */
 
 await GLANGS(JSON.stringify({ order: 'ZZZ', gpos: { adj: 'before' } }));
 await twice();

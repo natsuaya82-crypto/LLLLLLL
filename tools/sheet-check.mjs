@@ -1124,11 +1124,11 @@ say(unnamed.shares === 0 && unnamed.said === filed.no,
       '(LinguaShare.swift sheets(): ' + (/documentDirectory/.test(fn) ? 'Documents' :
       /temporaryDirectory/.test(fn) ? 'the temporary folder' : 'not found') + ')');
 }
-/* AND WHAT AN EARLIER BUILD LEFT GOES -- THE ONE FOLDER, AND NOTHING WAITING.
+/* AND WHAT A HAND-OVER LEFT GOES -- THE TWO FOLDERS, AND NOTHING WAITING.
    「前の版でスマホに残った用紙と声のファイル → 消す」 OWNER 2026-09-25. The
    web side's half is post-check 16c; this is the native half, read off the
    Swift because there is no native side on a runner: dropOldSheets takes
-   Documents/Sheets and nothing wider, and sweepVoices refuses a call with no
+   the two Sheets folders and nothing wider, and sweepVoices refuses a call with no
    list (no list is not an empty list), leaves every name on it, and leaves
    a file newer than the ask. */
 {
@@ -1136,10 +1136,19 @@ say(unnamed.shares === 0 && unnamed.said === filed.no,
                                        '..', 'ios', 'App', 'App', 'LinguaShare.swift'), 'utf8');
   const drop = (/@objc func dropOldSheets\([\s\S]*?\n  \}/.exec(sw) || [''])[0];
   const sweep = (/@objc func sweepVoices\([\s\S]*?\n  \}/.exec(sw) || [''])[0];
-  say(/documentDirectory/.test(drop) && /Self\.sheetDir/.test(drop) && !/temporaryDirectory/.test(drop) &&
-      (drop.match(/removeItem/g) || []).length === 1,
-      'an earlier build\'s sheets go: Documents/Sheets and nothing else (LinguaShare.swift dropOldSheets' +
-      (drop ? '' : ' not found') + ')');
+  /* 「書き出したシートは渡したら端末に残さない」 OWNER 2026-09-26: the
+     temporary `Sheets/` goes too (a hand-over the app was closed in), and the
+     file handed over goes when the share sheet closes. Each folder by
+     `Self.sheetDir` and nothing wider: two removals, both of that folder. */
+  const share = (/@objc func shareFile\([\s\S]*?\n  \}/.exec(sw) || [''])[0];
+  say(/documentDirectory/.test(drop) && /temporaryDirectory/.test(drop) &&
+      (drop.match(/appendingPathComponent\(Self\.sheetDir/g) || []).length === 2 &&
+      (drop.match(/removeItem/g) || []).length === 2,
+      'what a hand-over left goes: Documents/Sheets and the temporary Sheets/, and nothing else ' +
+      '(LinguaShare.swift dropOldSheets' + (drop ? '' : ' not found') + ')');
+  say(/completionWithItemsHandler\s*=\s*\{[^}]*removeItem\(at: url\)/.test(share),
+      'and the file handed over goes when the share sheet closes, whatever was chosen ' +
+      '(LinguaShare.swift shareFile' + (share ? '' : ' not found') + ')');
   say(/guard let names = call\.options\["keep"\] as\? \[String\] else \{\s*call\.reject/.test(sweep) &&
       /where !keep\.contains\(name\)/.test(sweep) && /made < cutoff/.test(sweep) &&
       /Self\.voiceDir/.test(sweep) && /create: false/.test(sweep),

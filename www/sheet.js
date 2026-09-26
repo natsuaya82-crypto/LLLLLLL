@@ -1118,13 +1118,15 @@ function shPics(names){
    four times and the person still could not get at the file. **Writing it
    into Documents and saying nothing is not a download.**
 
-   `LinguaShare.sheet` writes it into the TEMPORARY folder, which iOS empties
-   on its own -- the file is only the hand-over, and nothing of this app's is
-   kept on the phone 「スマホの中に保存されているものなんてない」 OWNER
-   2026-09-24 -- and it never overwrites while it is there: the second sheet
-   of a name is `<name> 2.pdf`. `LinguaShare.shareFile` then hands that file
-   to iOS's own share sheet, which is where "Save to Files" lives and where
-   choosing the destination stops being this app's business. What an earlier
+   `LinguaShare.sheet` writes it into the TEMPORARY folder -- the file is
+   only the hand-over, and nothing of this app's is kept on the phone
+   「スマホの中に保存されているものなんてない」 OWNER 2026-09-24 -- and it
+   never overwrites while it is there: the second sheet of a name is
+   `<name> 2.pdf`. `LinguaShare.shareFile` then hands that file to iOS's own
+   share sheet, which is where "Save to Files" lives and where choosing the
+   destination stops being this app's business, and removes it when the
+   share sheet closes, whatever was chosen 「書き出したシートは渡したら端末に
+   残さない」 OWNER 2026-09-26. What an earlier
    build left in `Documents/Sheets/` is taken by shDropOld() below.
 
    **Nothing says it was saved, and that is the point.** Once the share sheet
@@ -1146,20 +1148,23 @@ function shPics(names){
    every other path, and nothing but a name is read as a sheet on the phone.
    No bridge, a rejection, or an answer with no name in it all say the same
    thing, because to a person they are the same thing -- it is not there. */
-/* WHAT AN EARLIER BUILD LEFT IN Documents/Sheets GOES. 「前の版でスマホに
-   残った用紙と声のファイル → 消す」 OWNER 2026-09-25. Since 2026-09-24 a
-   sheet and a card are written to the temporary folder and handed over from
-   there (LinguaShare.swift `sheets()`), so nothing writes into
-   `Documents/Sheets` any more and everything in it is what an earlier build
-   kept after the hand-over. The folder goes whole; nothing outside it is
-   touched. Asked once at the launch (www/boot.js); after the first, there is
-   no folder and nothing happens. The DELETE REVIEW is in docs/CHANGELOG.md
-   2026-09-25. */
+/* WHAT IS LEFT OF A HAND-OVER GOES. 「前の版でスマホに残った用紙と声の
+   ファイル → 消す」 OWNER 2026-09-25, and 「書き出したシートは渡したら端末に
+   残さない」 OWNER 2026-09-26. Since 2026-09-24 a sheet and a card are written
+   to the temporary folder and handed over from there (LinguaShare.swift
+   `sheets()`), and since 2026-09-26 removed from it when the share sheet
+   closes -- so what is in `Documents/Sheets` is what an earlier build kept,
+   and what is in the temporary `Sheets/` is a hand-over the app was closed
+   in the middle of. Both folders go whole; nothing outside them is
+   touched. Asked at the launch (www/boot.js) and when an account is deleted
+   (www/settings.js § wipeHere). The DELETE REVIEWs are in docs/CHANGELOG.md
+   2026-09-25 and 2026-09-26. */
 function shDropOld(){
   var p=sharePlug();
   if(!p) return;
   p('LinguaShare', 'dropOldSheets', {})['catch'](function(){});
 }
+
 function shMake(){
   var s = shState(), names = shNames(s.names), pdf, b64, p;
   if(!names.length){ toast(t('wr.none')); return; }

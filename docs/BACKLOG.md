@@ -270,19 +270,11 @@ gate に入っていません ── 落ちるものが無いためです。
 **OWNER 2026-09-09「いらん」── 作らない。**
 
 
-## `SET` に残った四つ（`order` `read` `voice` `script`）と `planV` は動かしていません（2026-09-09）
+## `SET` に残った四つ（`order` `read` `voice` `script`）── **済**（2026-09-26）
 
-設えの五つ（テーマ・表示言語・自作フォント・自作文字・キーボードのローマ字面）は
-`profile.prefs` へ移りました。`SET_PHONE` に残っているうち、次の五つは
-**別の質問**なので触っていません。
-
-- `order` `script` ── 移行の**元**です。`phases.js` と `letters.js` が読んで
-  言語の中へ写し、そのまま立たせてあります（`docs/DATA_SAFETY.md` 第2則）。
-  動かす前に「移行が全部済んだか」を言えるようにする必要があります。
-- `read` `voice` ── `store-check` が GAP と書いているとおり、**`www/` の
-  どこも読んでいません**。消すなら DELETE REVIEW です。
-- `planV` ── 段の側。段は `plan` 表と verify-plan が答えていて、そこは
-  この枝の受け持ちではありません。
+「消していいよ」OWNER 2026-09-26。`SET_GONE`（`www/core.js`）が起動の時に端末の設定の写しから消し、
+`migrateGramLang()` の語順と `migrateLetters()` の ~~`SET.script`~~ の読みも消した（DELETE REVIEW は
+`docs/CHANGELOG.md` 2026-09-26）。`planV` はプランと一緒に既に無い。
 
 `done` と `obback` は 2 番の保留待ちです（`docs/reports/r8-item2-2026-09-08.md`）。
 
@@ -1853,7 +1845,8 @@ about — and is in the repo. It is not a check and is not in the gate.
 ## 語順と三つの位置が、言語ではなく端末に付いていた ── **済**
 
 **語順と三つの位置は言語のものです。**`STG.order` / `STG.gpos` に入り、
-`migrateGramLang()`（`www/phases.js`）が `SET.order` / `SET.gpos` から写します。
+`migrateGramLang()`（`www/phases.js`）が `SET.gpos` から写します。~~`SET.order`~~ は
+2026-09-26 に端末から消え（`SET_GONE`、`www/core.js`）、写されません。
 **印はありません** ── `SET.gramLang` は 2026-09-05 に外れ、写す相手は
 「この端末のディスクに素のスライス鍵がある言語」になりました（`langUnderSet()`）。
 `master` に在ります。
@@ -2209,7 +2202,7 @@ www/i18n/en.js` に該当なし）。だからこのダイアログは「Upgrade
 **その枝はまだ `master` に入っていない**（`master..origin/claude/grammar2`
 = 7）。入った日にこれが起きる。
 
-cd61ec4 の移行が `SET.order` / `SET.gpos`（端末に一つ）を
+cd61ec4 の移行が ~~`SET.order`~~ / `SET.gpos`（端末に一つ）を
 `STG.order` / `STG.gpos`（言語ごと）へ写したとき、**値だけを配って
 `STG.set`（「この段は人が触った」という印）は触らなかった。**
 

@@ -24,11 +24,13 @@
    wrong one.
 
    What it checks
-     1. it arrives          every language the person has carries the word
-                            order and the positions that were on the phone,
-                            including one that has no stage of its own yet
-     2. it copies           SET.order and SET.gpos are still there afterwards,
-                            unchanged. A migration never removes what it read
+     1. it arrives          every language the person has carries the
+                            positions that were on the phone, including one
+                            that has no stage of its own yet -- and the word
+                            order the phone held reaches none of them and is
+                            gone from the settings (SET_GONE, OWNER 2026-09-26)
+     2. it copies           SET.gpos is still there afterwards, unchanged. A
+                            migration never removes what it read
      3. nothing else moves  done / notes / set / extra / rules / ex / fm of a
                             stage come back byte for byte
      4. twice               a second launch changes nothing further
@@ -89,7 +91,12 @@ const srv = http.createServer((q, r) => {
    there to add a key to. `set` inside the stage slice is deliberately filled:
    which decisions were TOUCHED has been the language's all along and must
    come out the other side untouched. */
-const LA_PHASES = { done: { greet: true }, notes: { neg: 'a note' },
+/* `order` is ON the worked-on language's own stage: the phone's `SET.order`
+   is not copied any more (www/core.js § SET_GONE, OWNER 2026-09-26), so a
+   language's word order is what the language says. The seed below still
+   carries one in `lingua.set`, which is what an older phone has -- and
+   claim 1 asks that it reaches no language and is gone from the settings. */
+const LA_PHASES = { order: 'OSV', done: { greet: true }, notes: { neg: 'a note' },
                     set: { order: 1, negp: 1 }, extra: [],
                     rules: { neg: 'a rule' }, ex: { neg: [{ lb: 'a', ln: 'x', gl: 'b' }] },
                     fm: [] };
@@ -309,14 +316,14 @@ await boot();
 const a = await pg.evaluate(REPORT, IDS);
 
 want('the worked-on language carries the word order', a.aOrder, 'OSV');
-want('and the language with no stage of its own carries it too', a.bOrder, 'OSV');
+want('the phone\'s old word order reaches no language', a.bOrder, undefined);
 want('the negation position arrives', a.aNegp, 'before');
 want('on the second language as well', a.bNegp, 'before');
 want('and so does one that was left at the default', a.aAdp, 'after');
 want('the open language reads it in', a.stgOrder, 'OSV');
 want('and its positions', a.stgNegp, 'before');
 
-want('the settings still say the word order', a.setOrder, 'OSV');
+want('and the settings no longer hold it', a.setOrder, undefined);
 want('and still say the position', a.setNegp, 'before');
 
 want('what was finished is still finished', a.aDone, true);
@@ -331,7 +338,7 @@ want('and nothing new was marked as chosen', a.touchedAdp, false);
 await boot();
 const b = await pg.evaluate(REPORT, IDS);
 want('a second launch leaves the word order where it is', b.aOrder, 'OSV');
-want('and the other language too', b.bOrder, 'OSV');
+want('and the other language still has none', b.bOrder, undefined);
 want('and does not mark a decision as chosen', b.touchedAdp, false);
 
 /* ---- 5: a language made afterwards is born with neither ----------------- */
@@ -399,8 +406,8 @@ const f = await pg.evaluate((ids) => {
     aReads: orderDef().id, aNegp: gPos('negp'),
     aStored: aSet && aSet.order, aStoredNegp: aSet && aSet.gpos && aSet.gpos.negp,
     bStored: (JSON.parse(slRd('lingua.' + ids.LB + '.phases') || '{}')).order,
-    /* And the person's settings are not written to any more: they still say
-       what they said before the move, and nothing goes back through them. */
+    /* And the person's settings are not written back through: the word
+       order is not in them (SET_GONE) and nothing puts it there. */
     personOrder: person && person.order,
     aTouched: !!STG.set.order, aTouchedAdj: !!STG.set.adj
   };
@@ -419,7 +426,7 @@ want('the other language still says its own order', f.aReads, 'OSV');
 want('and its own position', f.aNegp, 'before');
 want('which is still what its file says', f.aStored, 'OSV');
 want('all of it', f.aStoredNegp, 'before');
-want('the settings are left saying what they said', f.personOrder, 'OSV');
+want('and the settings still do not hold a word order', f.personOrder, undefined);
 want('and what was chosen in one is not chosen in the other', f.aTouchedAdj, false);
 
 /* ---- 8: a default nobody chose is not lit -------------------------------

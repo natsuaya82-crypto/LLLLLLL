@@ -254,27 +254,26 @@ const R = await pg.evaluate(async () => {
     fails.push('the composer still holds the post that was just sent, so the ' +
                'next one starts with the last one\'s letters on it');
 
-  /* ---- 6. the voice: the file goes out, its NAME comes back ---------- */
-  /* There is no native side on a runner, so one is stood up here and asked
-     what it was told to do. That is the whole of what can be held from this
-     side of the bridge -- and it is the half that decides.
+  /* ---- 6. the voice: it goes to the SERVER, and its PATH comes back ---
+     「録音は投稿・下書きと一緒にサーバーにある」「端末に持たせるものはない」
+     OWNER 2026-09-26. The recording goes up the moment it ends (www/rec.js
+     § voKeep) and nothing is written on this phone. There is no native side
+     on a runner, so one is stood up here and asked what it was told to do --
+     and what is held is that it was told NOTHING about keeping a voice. The
+     upload is answered at the one window a file goes up through (netUp), and
+     a bucket DELETE at netSend, which is how 7c below reads it.
 
      A recording is not made either: getUserMedia is never going to answer on
-     a Linux box. What is driven is everything downstream of it, which is
-     where the design lives. */
+     a Linux box. What is driven is everything downstream of it. */
   const said = [];
+  /* What an EARLIER version left on the phone is still read, dropped and
+     swept (sections 16 and on), so the stand-in keeps a disk for it. */
   const files = {};
   window.Capacitor = { nativePromise: (plug, method, arg) => {
     said.push({ m: method, a: arg });
-    if (method === 'keepVoice') {
-      if (files[arg.name]) return Promise.reject(new Error('already here'));
-      files[arg.name] = arg.b64;
-      return Promise.resolve({});
-    }
     if (method === 'dropVoice') { delete files[arg.name]; return Promise.resolve({}); }
-    /* The launch's sweep, stood up as LinguaShare.swift does it minus the
-       clock (sheet-check reads that half): every file the list does not
-       name goes. */
+    /* The sweep, stood up as LinguaShare.swift does it minus the clock
+       (sheet-check reads that half): every file the list does not name goes. */
     if (method === 'sweepVoices') {
       for (const f of Object.keys(files)) if ((arg.keep || []).indexOf(f) < 0) delete files[f];
       return Promise.resolve({});
@@ -285,14 +284,9 @@ const R = await pg.evaluate(async () => {
     }
     return Promise.resolve({});
   } };
+  const wasUp = netUp, ups = [];
+  netUp = function (path, b64, mime, ok) { ups.push({ path: path, b64: b64 }); ok(path); };
 
-  /* THE WHOLE ROAD, FROM THE RECORDING ENDING.
-     The file is written when the recorder stops now, not when the post is
-     sent (www/rec.js § voTook). That is what took the base64 out of the
-     drafts: the composer never holds bytes, so neither road out of it can
-     carry any. So this drives the recorder rather than seeding what the
-     composer would have been holding -- seeding it would be a check asking
-     about a state the app cannot be in. */
   PW = pwBlank();
   pwLine(puaTyped('kano').cut);
   RECBITS = [new Blob([new Uint8Array([0, 1, 2, 3, 4, 5])], { type: 'audio/mp4' })];
@@ -300,82 +294,81 @@ const R = await pg.evaluate(async () => {
   voTook('audio/mp4');
   await new Promise(r => setTimeout(r, 300));
 
-  const kept = said.filter(x => x.m === 'keepVoice');
-  if (kept.length !== 1)
-    fails.push('the recording ending asked the phone to keep a voice ' +
-               kept.length + ' times, and once is what it should be');
-  if (!PW.vo || !PW.vo.f)
-    fails.push('the composer is holding no voice FILE after the recording ' +
-               'ended, so nothing points at what was just written');
+  if (said.some(x => x.m === 'keepVoice'))
+    fails.push('the recording ending asked the PHONE to keep a voice. Nothing is ' +
+               'kept on the phone -- 「端末に持たせるものはない」');
+  if (ups.length !== 1)
+    fails.push('the recording ending went up ' + ups.length + ' times, and once ' +
+               'is what it should be');
+  const upPath = ups[0] && ups[0].path;
+  if (upPath && upPath.indexOf(netUid() + '/') !== 0)
+    fails.push('the recording went up as ' + JSON.stringify(upPath) + ', not under ' +
+               'this account -- the bucket refuses a file anywhere else');
+  if (!PW.vo || PW.vo.f !== upPath || !voRemote(PW.vo.f))
+    fails.push('the composer names ' + JSON.stringify(PW.vo && PW.vo.f) + ' and the ' +
+               'recording went up as ' + JSON.stringify(upPath));
   if (PW.vo && PW.vo.b64 !== undefined)
     fails.push('the composer is still holding the BYTES. That is what put ' +
                'thirty seconds of audio into lingua.drafts');
-  if (kept[0] && PW.vo && PW.vo.f !== kept[0].a.name)
-    fails.push('the composer names a file that was not the one written');
 
   pwSend();
   await new Promise(r => setTimeout(r, 300));
   const v = POSTS[POSTS.length - 1];
+  const vPath = v && (v.vu || (v.vo && v.vo.f));
 
-  if (said.filter(x => x.m === 'keepVoice').length !== 1)
-    fails.push('sending wrote the file a SECOND time -- one recording, one file');
-  if (!v || !v.vo || !v.vo.f)
-    fails.push('the post carries no voice at all, so the recording went to a ' +
-               'file and nothing points at it');
+  if (ups.length !== 1)
+    fails.push('sending put the recording up a SECOND time -- one recording, one file');
+  if (!v || !vPath)
+    fails.push('the post carries no voice at all');
   else {
-    if (kept[0] && v.vo.f !== kept[0].a.name)
-      fails.push('the post names ' + JSON.stringify(v.vo.f) + ' and the file that ' +
-                 'was written is ' + JSON.stringify(kept[0].a.name) + '. A name ' +
-                 'pointing at nothing is a post claiming a voice it does not have');
-    if (!(v.vo.ms > 7000 && v.vo.ms <= 7400))
-      fails.push('the post says the recording is ' + v.vo.ms + 'ms and it is 7200');
-    if (v.vo.b64 !== undefined || String(JSON.stringify(v)).indexOf('AAEC') >= 0)
-      fails.push('the BYTES of the recording are on the post, which is 240 KB of ' +
-                 'audio in the localStorage the whole language lives in. The post ' +
-                 'carries a name; the bytes are a file');
+    if (vPath !== upPath)
+      fails.push('the post names ' + JSON.stringify(vPath) + ' and the recording ' +
+                 'went up as ' + JSON.stringify(upPath));
+    if (!(v.vo && v.vo.ms > 7000 && v.vo.ms <= 7400))
+      fails.push('the post says the recording is ' + (v.vo && v.vo.ms) + 'ms and it is 7200');
+    if ((v.vo && v.vo.b64 !== undefined) || String(JSON.stringify(v)).indexOf('AAEC') >= 0)
+      fails.push('the BYTES of the recording are on the post. The post carries a ' +
+                 'path; the bytes are in the bucket');
   }
 
-  /* ---- 7. deleting the post deletes that one file ------------------- */
-  /* 「投稿消した声も消していいよ」 -- and the DELETE REVIEW in
-     docs/CHANGELOG.md says exactly one file, named by the post being
-     deleted, and nothing else touched. Both halves are asked. */
-  const other = POSTS.filter(x => x.vo && x !== v).map(x => x.vo.f);
-  /* The question is the app's own popup now, not the system's -- 「標準は使わ
-     ねえって言ってるだろこれも禁止や」 OWNER 2026-09-01. Stubbing
-     window.confirm answered a question nobody asks any more, so nothing was
-     deleted and every claim under this read a post that is still there. */
+  /* ---- 7. deleting the post takes that one voice out of the bucket ----
+     「投稿消した声も消していいよ」 -- exactly the one this post named, and
+     nothing asked of the phone (there is no file on it). */
+  const wasSend7 = netSend, gone7 = [];
+  netSend = function (method, path, body, tok, ok2) {
+    if (method === 'DELETE' && String(path).indexOf('/storage/v1/object/post-media') === 0)
+      gone7.push.apply(gone7, (body && body.prefixes) || []);
+    setTimeout(function () { ok2([]); }, 0);
+  };
+  const other = POSTS.filter(x => x !== v).map(x => x.vu || (x.vo && x.vo.f)).filter(Boolean);
   said.length = 0;
   postDel(v ? v.id : '');
   if (popOn()) popYes();
-
-  const dropped = said.filter(x => x.m === 'dropVoice').map(x => x.a.name);
-  if (v && v.vo) {
-    if (dropped.length !== 1 || dropped[0] !== v.vo.f)
-      fails.push('deleting a post asked the phone to drop ' +
-                 JSON.stringify(dropped) + ' and the post named ' +
-                 JSON.stringify(v.vo.f) + '. One file, the one this post named');
-    if (files[v.vo.f] !== undefined)
-      fails.push("the voice file of a deleted post is still on the disk");
-  }
+  await new Promise(r => setTimeout(r, 120));
+  if (v && vPath && gone7.indexOf(vPath) < 0)
+    fails.push('deleting a post took ' + JSON.stringify(gone7) + ' out of the bucket ' +
+               'and the post named ' + JSON.stringify(vPath));
   for (const f of other)
-    if (dropped.indexOf(f) >= 0)
-      fails.push('deleting one post dropped ' + JSON.stringify(f) + ' as well, ' +
-                 'which belongs to a post nobody deleted. That is a cleanup, and ' +
-                 'a cleanup is what docs/DATA_SAFETY.md forbids');
+    if (gone7.indexOf(f) >= 0)
+      fails.push('deleting one post took ' + JSON.stringify(f) + ' as well, which ' +
+                 'belongs to a post nobody deleted');
+  if (said.some(x => x.m === 'dropVoice'))
+    fails.push('deleting a post asked the phone to drop a file, and there is none');
   if (POSTS.some(x => v && x.id === v.id))
     fails.push('the post itself is still on the timeline after postDel()');
 
-  /* And a post with no voice must not ask for a file to be dropped at all --
-     a name of '' or undefined reaching the phone is a delete with no target. */
-  const plain = POSTS.filter(x => !x.vo)[0];
-  said.length = 0;
+  /* And a post with no voice takes no voice out of anywhere. */
+  const plain = POSTS.filter(x => !x.vo && !x.vu && !x.sid)[0];
+  gone7.length = 0; said.length = 0;
   if (plain) {
     postDel(plain.id);
     if (popOn()) popYes();
-    if (said.some(x => x.m === 'dropVoice'))
-      fails.push('deleting a post that never had a voice still asked the phone ' +
-                 'to drop one');
+    await new Promise(r => setTimeout(r, 120));
+    if (said.some(x => x.m === 'dropVoice') || gone7.some(x => /\/vo\.[a-z0-9]+$/.test(x)))
+      fails.push('deleting a post that never had a voice still took one: ' +
+                 JSON.stringify(gone7));
   }
+  netSend = wasSend7; netUp = wasUp;
 
   /* ---- 7b. a post the SERVER has goes only when the row goes ---------
      「消えるのはサーバーから消えた時だけ」(www/post.js § postDelGo). A DELETE

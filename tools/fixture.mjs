@@ -165,8 +165,8 @@ export function seed(){
      writes SET.x -- a theme, a reading mode, a writing system -- was
      otherwise still in force on every screen built after it, so the walk was
      covering one arrangement of the app and calling it all of them. */
-  SET.theme='system'; planGot('free'); SET.walked=true; SET.order='SOV';
-  SET.read='both'; SET.voice=''; SET.ui='en'; SET.script=false;
+  SET.theme='system'; planGot('free'); SET.walked=true;
+  SET.ui='en';
   SET.myfont=false; SET.gpos=''; SET.myfont=false;
   /* 書記体系は言語のもの ── `language.wsys`（www/core.js § LWSYS、2026-09-09）。 */
   langWsysGot(langId, '');
@@ -1859,6 +1859,25 @@ export function halfDone(){
            in no picture. */
         const was = folOf(false, 'aya'); folPut(false, 'aya', []);
         const h = vProfile(); folPut(false, 'aya', was); NAV=[{r:'profile'}]; return h; }],
+    /* AND WHAT THEY PASSED ON IS ON THEIR PAGE, at the time they passed it on
+       「リツイートとか引用したやつって自分の投稿に載らないのはなぜ？」 OWNER
+       2026-09-26. Which post and when is the server's answer to the page
+       (PF_BOOST, www/sns.js § askPosts); the post itself is somebody else's,
+       written long before. Your own page and somebody else's. */
+    ['the profile, posts, with one passed on', () => { pfTab='posts';
+        POSTS.push({id:'pbo1', sid:'pbo1', at:Date.now()-9e8, lang:langId, lname:'Tovi',
+                    ln:'mosa relu', who:'Veth', hd:'veth', mine:false, mn:'the river', ui:'en'});
+        PF_BOOST={ aya:{ pbo1:Date.now() } };
+        window.route='profile'; NAV=[{r:'profile'}];
+        const h=vProfile(); POSTS.pop(); PF_BOOST={}; return h; }],
+    ['somebody else\'s profile, with one passed on', () => { pfTab='posts';
+        WHO_HAVE['iri'] = { who:'Iri', hd:'iri', av:{ch:'Ж'}, lname:'Vethi',
+                             bio:'', fo:2, fr:3, out:false };
+        POSTS.push({id:'pbo1', sid:'pbo1', at:Date.now()-9e8, lang:langId, lname:'Tovi',
+                    ln:'mosa relu', who:'Veth', hd:'veth', mine:false, mn:'the river', ui:'en'});
+        PF_BOOST={ iri:{ pbo1:Date.now() } };
+        window.route='profile'; NAV=[{r:'profile', a:'iri'}];
+        const h=vProfile(); POSTS.pop(); PF_BOOST={}; NAV=[{r:'profile'}]; return h; }],
     ['somebody else\'s profile, followed', () => { folPut(false, 'aya', ['iri']);
         WHO_HAVE['iri'] = { who:'Iri', hd:'iri', av:{ch:'Ж'}, lname:'Vethi',
                              bio:'', fo:2, fr:3, out:false };
@@ -3877,13 +3896,14 @@ export function halfDone(){
        OSV. It opens from g2Stored() now, which is what this language has
        SAVED and nothing else, so a language nobody has answered for comes out
        with the lines empty and every card in the tray. Both the leak and the
-       default that replaced it are gone from the picture; what this face still
-       holds is that the phone's old SET.order does not arrive on the board. */
+       default that replaced it are gone from the picture. The phone's
+       SET.order is not read at all any more (www/core.js § SET_GONE, OWNER
+       2026-09-26); what this face still holds is that the positions the
+       phone carries do not arrive on the board either. */
     ['§14 語順、a language just made on a phone that had one', () => {
        const wasLangs = JSON.parse(JSON.stringify(LANGS));
        const wasId = langId, wasStg = JSON.parse(JSON.stringify(STG));
-       const wasOrder = SET.order, wasGpos = SET.gpos;
-       SET.order = 'OSV';
+       const wasGpos = SET.gpos;
        SET.gpos = { adj:'before', negp:'before', adp:'after' };
        const id = langMint();
        LANGS[id].name = 'Tosk';
@@ -3892,7 +3912,7 @@ export function halfDone(){
        window.route = 'gram'; NAV = [{ r:'gram', a:'v2:order' }];
        const h = vGram();
        delete LANGS[id]; LANGS = wasLangs;
-       SET.order = wasOrder; SET.gpos = wasGpos;
+       SET.gpos = wasGpos;
        langId = wasId; STG = wasStg;
        return h; }],
     /* 写しの無い iPhone で辞書を開いたところ ── 単語が一つも無く、サーバーは

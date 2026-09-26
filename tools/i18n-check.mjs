@@ -478,12 +478,13 @@ const R = await pg.evaluate(() => {
     ob.step = 0; ob.mode = 'draw'; ob.pick = ''; OBM.mode = 'in'; SET.obback = null;
     SET.walked = true;
 
-    /* every screen, under every plan and every reading mode, empty and full */
+    /* every screen, under every plan, empty and full. There were three
+       reading modes (`SET.read`) here as well; nothing in www/ reads it and it
+       is taken off the phone (www/core.js § SET_GONE, OWNER 2026-09-26), so
+       the three walks were the same walk three times. */
     ['free','pro'].forEach(p => {
       planGot(p);
-      ['ipa','kana','both'].forEach(rm => {
-        SET.read = rm;
-        [false, true].forEach(empty => {
+      [false, true].forEach(empty => {
           const keep = WORDS, keepL = LINES;
           if (empty) { WORDS = []; LINES = []; }
           views.forEach((v, i) => {
@@ -492,14 +493,13 @@ const R = await pg.evaluate(() => {
                than leaving whatever the last opened form left behind */
             argsOf(routes[i]).forEach(a => {
               route = routes[i]; NAV = [{ r: route, a: a }];
-              try { window[v](); } catch (e) { out.miss.push(c + ' ' + v + (a ? ':' + a : '') + ' threw (' + p + '/' + rm + '/' + (empty ? 'empty' : 'full') + '): ' + e.message); }
+              try { window[v](); } catch (e) { out.miss.push(c + ' ' + v + (a ? ':' + a : '') + ' threw (' + p + '/' + (empty ? 'empty' : 'full') + '): ' + e.message); }
             });
           });
           WORDS = keep; LINES = keepL;
-        });
       });
     });
-    planGot('free'); SET.read = 'both';
+    planGot('free');
 
     /* The search tab has three faces and only one of them is what a plain
        render gives you: the rest, a list of results, and what one pressed

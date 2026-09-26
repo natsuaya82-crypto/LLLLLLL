@@ -53,7 +53,7 @@ Lingua の「文法」機能を根本から再設計する。
 
 既存の文法ページを少し改修するだけではない。**「Grammar v2」を新しく設計する。**
 
-`SET.order` / `SET.gpos` / `WORDS` / `grammar.js` などは**参考にする**。ただし
+~~`SET.order`~~ / `SET.gpos` / `WORDS` / `grammar.js` などは**参考にする**。ただし
 **新しい設計を既存データ構造に合わせて歪めない。** 必要なら既存データ構造を変更する。
 
 既存データは 旧データ → Migration → Grammar v2 という形で移行する。
@@ -61,7 +61,7 @@ Lingua の「文法」機能を根本から再設計する。
 
 ## 2. 現在の Grammar Page
 
-`ORDERS = [SOV, SVO, VSO, VOS, OVS, OSV]` があり `SET.order` を保存している。
+`ORDERS = [SOV, SVO, VSO, VOS, OVS, OSV]` があり ~~`SET.order`~~ を保存している。
 `SET.gpos` で `adj` / `negp` / `adp` の位置を管理している。
 
 つまり現在は「SOVか？」「形容詞は前か後か？」「否定語はどこか？」という設定中心。
@@ -533,7 +533,7 @@ Parser / Generator / Grammar Checker / Translation の精度が上がる。
 | §1 語順をドラッグで導出 | **出来た。**語を動かして並べる。六択は誰にも訊かれない |
 | §3 動詞の活用を人が定義 | **繋がった。**`gFmRules()` が `STG.fm` をエンジンの `inflection`/`derivation` にする。`zmi luma` → `zmi lumaka` |
 | §8 例文を構造として保存 | `STG.ex` は文字列。構造では持っていない |
-| §16 Migration | `SET.order` → `STG.order` はある。`gpos.negp` → 否定の Rule も（`gPolOld()` が読むときに写す、書き戻さない）。ほかの `gpos` は **Grammar Rule への変換をしていない** |
+| §16 Migration | ~~`SET.order`~~ → `STG.order` はある。`gpos.negp` → 否定の Rule も（`gPolOld()` が読むときに写す、書き戻さない）。ほかの `gpos` は **Grammar Rule への変換をしていない** |
 | §18 Repository 層 | **無い**。`adapter.load/save` が直接 localStorage |
 | §21 責務分離 | 5本のまま（`derivation`/`inflection`/`parser`/`generator`/`sentence` は `morphology`と`translate`の中） |
 

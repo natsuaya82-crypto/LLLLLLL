@@ -858,8 +858,7 @@ function langDropHere(id){
    wiped -- and the second copy was written out by hand and did not have the
    same keys in it. */
 function setDefaults(){
-  return {theme:'system', acct:'', walked:false, order:'SOV', read:'both',
-          voice:'', ui:'', script:false};
+  return {theme:'system', acct:'', walked:false, ui:''};
 }
 /* The writing system. `g` maps a romanisation to the strokes drawn for it;
    `extra` holds letters the person added by hand that no word uses yet, so a
@@ -1665,7 +1664,7 @@ var SET_PREFS=['theme','ui','myfont','showScript','kbrom',
    measurement of this screen's keyboard -- and is not named any more: the
    phone ends the screen at the keyboard itself (2026-09-25, ios/App/App/
    MainViewController.swift § keepStill), and it is taken off the phone at
-   launch (§ setVvkbDrop, OWNER 2026-09-26). `done` and `obback` are the onboarding's, and they are
+   launch (§ SET_GONE, OWNER 2026-09-26). `done` and `obback` are the onboarding's, and they are
    here under protest -- 「セッションが無い」 cannot tell a phone out of the box
    from one somebody signed out of, and after an account is deleted there is no
    server left to ask (docs/reports/r8-item2-2026-09-08.md). The owner is
@@ -1683,11 +1682,9 @@ var SET_PREFS=['theme','ui','myfont','showScript','kbrom',
    2026-09-03), so it stays -- named for what it actually says, read by ONE
    line (appIs in www/shell.js) and written by two (the door, and wipeHere).
 
-   `order`, `read`, `voice` and `script` are NOT settled: they are the
-   language-making side's, and moving them is a different question from this
-   one. docs/BACKLOG.md. `planV` was here and is gone with the plan. */
-var SET_PHONE=['acct','acctMoved','walked','obback','doneMoved',
-               'order','read','voice','script'];
+   `planV` was here and is gone with the plan; `order`, `read`, `voice` and
+   `script` were here and are taken off the phone (§ SET_GONE). */
+var SET_PHONE=['acct','acctMoved','walked','obback','doneMoved'];
 /* Settings saved by an older version are missing whatever was added since, so
    they are laid over the defaults rather than replacing them. Written out by
    hand because Object.assign is not ES5 and this has to run on an old phone.
@@ -1698,30 +1695,42 @@ var SET_PHONE=['acct','acctMoved','walked','obback','doneMoved',
    version put in `lingua.set` beside the setup is left there and not read:
    the stamped account's copy was moved under its name (acctMoved), and
    anything else is nobody's. */
-/* THE KEYBOARD'S MEASUREMENT GOES, ONCE, BEFORE ANYTHING READS THE SETTINGS.
-   `vvkb` was how much of this screen the keyboard covered, and nothing reads
-   or writes it since the phone ends the screen at the keyboard itself
-   (2026-09-25, ios/App/App/MainViewController.swift § keepStill). 「1 消す」
-   OWNER 2026-09-26 -- the DELETE REVIEW is docs/CHANGELOG.md 2026-09-25. It
-   is a measurement, not something anybody made. It sits in `lingua.set`,
-   where an older version wrote it, and in an account's `lingua.set.<uid>`
-   where acctMoved() copied it; both are taken off here, on every launch,
-   and a copy that does not have it is not written at all. Nothing else in
-   either copy is touched. */
-function setVvkbDrop(){
-  var keys=[], i, k, v;
+/* WHAT IS TAKEN OFF THE PHONE'S SETTINGS, AND IT IS ONE LIST AND ONE WAY.
+   Fields of `SET` that nothing reads any more and that the owner said go:
+     vvkb    how much of this screen the keyboard covered -- the phone ends the
+             screen at the keyboard itself (2026-09-25, ios/App/App/
+             MainViewController.swift § keepStill). 「1 消す」 OWNER 2026-09-26
+     order   the word order from before a language had a stage of its own,
+     script  roman -> a borrowed character from before LETTERS existed --
+             both only ever read to copy an older version's language across,
+             and a language lives on the server (CLAUDE.md rule 22)
+     read    minted by setDefaults() and read by nobody
+     voice   the same
+   「消していいよ」 OWNER 2026-09-26 for the last four. The DELETE REVIEWs are
+   docs/CHANGELOG.md 2026-09-25 and 2026-09-26. None of them is something
+   anybody made. They sit in `lingua.set`, where an older version wrote them,
+   and in an account's `lingua.set.<uid>` where acctMoved() copied them; both
+   are taken off here, on every launch, BEFORE anything reads the settings,
+   and a copy that has none of them is not written at all. Nothing else in
+   either copy is touched. A field that is to go is a name added here, and
+   nothing else -- there is no second way to take one off. */
+var SET_GONE=['vvkb','order','script','read','voice'];
+function setGoneDrop(){
+  var keys=[], i, j, k, v, hit;
   try{ for(i=0;i<localStorage.length;i++) keys.push(localStorage.key(i)); }catch(e){ return; }
   for(i=0;i<keys.length;i++){
     k=String(keys[i]);
     if(k!==LS_S && k.indexOf(LS_S+'.')!==0) continue;
     v=acctRaw(k);
-    if(!v || typeof v!=='object' || typeof v.length==='number' ||
-       !Object.prototype.hasOwnProperty.call(v,'vvkb')) continue;
-    delete v.vvkb;
+    if(!v || typeof v!=='object' || typeof v.length==='number') continue;
+    hit=false;
+    for(j=0;j<SET_GONE.length;j++)
+      if(Object.prototype.hasOwnProperty.call(v, SET_GONE[j])){ delete v[SET_GONE[j]]; hit=true; }
+    if(!hit) continue;
     try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){}
   }
 }
-setVvkbDrop();
+setGoneDrop();
 try{
   var s=JSON.parse(localStorage.getItem(LS_S)||'null');
   if(s) for(var sk in s)

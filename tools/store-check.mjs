@@ -130,10 +130,10 @@ const ROADS = {
      account shared, the fields of `lingua.set` beside the handset's setup --
      and writes the rest back exactly as it was */
   'core.js:e.old': { whose: 'old', phone: 'an older version\'s key with the deleted account\'s part taken out and the rest -- nobody\'s, read by nobody -- written back as it was (lsWipeAcct, www/core.js)' },
-  /* and the settings written back without the keyboard's measurement
-     (setVvkbDrop, OWNER 2026-09-26) -- `lingua.set` and each
-     `lingua.set.<uid>`, one field fewer, nothing else moved */
-  'core.js:k': { whose: 'same', phone: 'nothing of its own. It is setVvkbDrop() in www/core.js writing `lingua.set` and each account\'s `lingua.set.<uid>` back with `vvkb` -- a measurement of this screen\'s keyboard that nothing reads since 2026-09-25 -- taken out and every other field as it was, so each key it writes is `LS_S` or `acctKey(name` above (DELETE REVIEW docs/CHANGELOG.md 2026-09-25, 「1 消す」 OWNER 2026-09-26)' },
+  /* and the settings written back without what is taken off them
+     (SET_GONE, www/core.js -- OWNER 2026-09-26) -- `lingua.set` and each
+     `lingua.set.<uid>`, those fields fewer, nothing else moved */
+  'core.js:k': { whose: 'same', phone: 'nothing of its own. It is setGoneDrop() in www/core.js writing `lingua.set` and each account\'s `lingua.set.<uid>` back with the fields `SET_GONE` names -- read by nothing -- taken out and every other field as it was, so each key it writes is `LS_S` or `acctKey(name` above (DELETE REVIEWs docs/CHANGELOG.md 2026-09-25 and 2026-09-26, 「1 消す」「消していいよ」 OWNER 2026-09-26)' },
   'core.js:LS_S':    { whose: 'handset', phone: 'how this handset is set up -- exactly what `SET_PHONE` in www/core.js names and nothing else. The account\'s fields are `lingua.set.<uid>` (acctKey above); what an older version left in this key beside the setup is kept as it was and read by nobody' },
   'net.js:LS_SESS':  { whose: 'sess', phone: 'the tokens. They are what talks to the server; they cannot be kept on it' }
   /* `sns.js:k` -- the notices, kept under the account -- STOOD HERE AND IS
@@ -326,12 +326,11 @@ const FIELDS = {
      `PUSH`; tools/push-check.mjs holds `SET_PREFS` to it, and this table has
      to name each field by hand because it reads `SET.x =` off the source. */
   push_prompt: { to: 'netPrefsPut' },
-  /* `vvkb` STOOD HERE AND IS GONE (2026-09-25). It was how much of this
-     screen the keyboard covered, measured by the page; the phone ends the
-     screen at the keyboard itself now (ios/App/App/MainViewController.swift
-     § keepStill) and nothing writes or reads it. A phone that has it has it
-     taken off at launch -- setVvkbDrop() in www/core.js, 「1 消す」 OWNER
-     2026-09-26, the DELETE REVIEW in docs/CHANGELOG.md 2026-09-25. */
+  /* `vvkb` STOOD HERE AND IS GONE (2026-09-25), and so did `order`,
+     `script`, `read` and `voice` (2026-09-26): nothing writes or reads any of
+     them, and a phone that has them has them taken off at launch --
+     `SET_GONE` in www/core.js, 「1 消す」「消していいよ」 OWNER 2026-09-26,
+     the DELETE REVIEWs in docs/CHANGELOG.md 2026-09-25 and 2026-09-26. */
   opened:   { phone: 'how many times this ACCOUNT has opened the app, counted by rateOpen() (www/core.js) so the fifth asks the App Store for a rating (OWNER 2026-09-25). Filed under `lingua.set.<uid>` with the rest of the account\'s settings, and sent nowhere: a launch sends nothing' },
   wldMoved: { phone: 'the mark that 「what the language is for」 has been moved out of the settings and into the language. A migration mark, and the ACCOUNT\'s like `SET.world` it marks: kept with it under `lingua.set.<uid>`, so the next account to sign in has its own moved (r73 § 2-7)' },
   doneMoved: { phone: 'the mark that the old `done` has been copied into `walked` (walkedMigrate, www/core.js). A migration mark -- it is what the old field\'s absence used to say, now that the migration copies and removes nothing' },
@@ -344,16 +343,6 @@ const FIELDS = {
      until today. The field is not written any more and this check is what
      said so: 「FIELDS names SET.wsys and nothing writes it any more」. */
 
-  /* --- and the four `setDefaults()` mints that nothing assigns ----------
-     Every one of these is written to `lingua.set` on the first save of a
-     fresh install, and every one is a shape from before the thing that
-     replaced it. They are named rather than removed: taking a key out of
-     setDefaults() is a change to what is stored, and www/ still reads two of
-     them to migrate what is already on somebody's phone. */
-  order:    { phone: 'the word order, from before a stage had one. phases.js copies it INTO the language\'s `phases` slice and leaves it standing (docs/DATA_SAFETY.md § 2), so this is the source of a migration rather than a setting anything reads' },
-  script:   { phone: 'roman -> a borrowed character, from before LETTERS existed. letters.js migrateLetters() reads it to build the letters that were only ever characters, and leaves it standing. `false` is what a phone that never had one holds' },
-  read:     { phone: 'NAMED AS A GAP. Nothing in www/ reads it — it is minted by setDefaults() on every fresh install and read by nobody. It is here so the key is not invisible; whether it goes is a deletion and needs the DELETE REVIEW in docs/DATA_SAFETY.md' },
-  voice:    { phone: 'NAMED AS A GAP. The same as `read`: minted by setDefaults(), read by nothing in www/. Written down rather than quietly removed' }
 };
 /* The settings being READ BACK from the file is not a write of anybody's
    work, and it is the one computed one there is. Named by its expression the

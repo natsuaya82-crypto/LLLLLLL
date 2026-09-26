@@ -931,6 +931,46 @@ const CASES = [
   ['A unfollows B again',                     'ok',     A, 0,
     `delete from follow where follower='${A}' and followed='${B}'`],
 
+  /* --- and what somebody passed on is on their page ----------------------
+     「リツイートとか引用したやつって自分の投稿に載らないのはなぜ？」 OWNER
+     2026-09-26. posts_by() is feed_fo() for one person: what B wrote and
+     what B passed on, one list, the pass dated by the pass. Nobody has to
+     follow anybody for a page. */
+  ['B boosts A\u2019s post again, for B\u2019s page', 'ok',  B, 0,
+    `insert into react(post,actor,kind) values ('${P}','${B}','boost')`],
+  ['C finds it on B\u2019s page',              'ok',     C, 0,
+    `select 1 from posts_by('${B}', 50, null) where id='${P}' and by='${B}'`],
+  ['dated by the passing on',                 'ok',     C, 0,
+    `select 1 from posts_by('${B}', 50, null) f
+       where f.id='${P}' and f.at_key = (select r.created_at from react r
+                                          where r.post='${P}' and r.actor='${B}'
+                                            and r.kind='boost')`],
+  ['and it is not on A\u2019s page as a pass', 'denied', C, 0,
+    `select 1 from posts_by('${A}', 50, null) where id='${P}' and by is not null`],
+  ['A\u2019s page has it as what A wrote',     'ok',     C, 0,
+    `select 1 from posts_by('${A}', 50, null) where id='${P}' and by is null`],
+  /* A mute of the one who passed it on takes the pass off, as feed_fo()'s
+     does; what B WROTE stays on B's page, which is what a mute is. */
+  ['C mutes B',                               'ok',     C, 0,
+    `insert into mute(actor,muted) values ('${C}','${B}')`],
+  ['what a muted B passed on is off B\u2019s page', 'denied', C, 0,
+    `select 1 from posts_by('${B}', 50, null) where by is not null`],
+  ['C lifts the mute of B',                   'ok',     C, 0,
+    `delete from mute where actor='${C}' and muted='${B}'`],
+  /* and a mute of who WROTE it takes it off anybody's page */
+  ['C mutes A',                               'ok',     C, 0,
+    `insert into mute(actor,muted) values ('${C}','${A}')`],
+  ['A muted, what B passed on of A\u2019s is off', 'denied', C, 0,
+    `select 1 from posts_by('${B}', 50, null) where id='${P}'`],
+  ['C lifts the mute of A',                   'ok',     C, 0,
+    `delete from mute where actor='${C}' and muted='${A}'`],
+  ['B takes the boost back once more',        'ok',     B, 0,
+    `delete from react where post='${P}' and actor='${B}' and kind='boost'`],
+  ['and it is off B\u2019s page',              'denied', C, 0,
+    `select 1 from posts_by('${B}', 50, null) where id='${P}'`],
+  ['nobody signed in reads a page',           'denied', B, 2,
+    `select 1 from posts_by('${B}', 50, null)`],
+
   /* --- how big a published language is, without handing it over ---------
      「言語の詳細は？」OWNER 2026-09-01. A person's page could say the NAME of
      their language and nothing else, so there was nowhere to go from it.

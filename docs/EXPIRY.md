@@ -294,7 +294,7 @@ OWNER 2026-09-04（`docs/FEATURE_RULES.md` § 頼まれていないものを、�
        ORDERS.indexOf(SET.order)>=0) o.order=SET.order;
 ```
 
-`appOrder` は `setDefaults().order` です ── この file に `'SOV'` をもう一つ
+~~`appOrder`~~ は `setDefaults().order` です ── この file に `'SOV'` をもう一つ
 書くと、既定が変わった日にそちらだけ古いままになるからです。
 
 **狭めたのは片側だけです。**六つのうちの一つを**選んだ**人には、いままで
