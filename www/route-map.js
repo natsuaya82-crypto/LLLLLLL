@@ -58,6 +58,8 @@ page('letter',   vLetter);
 page('wsys',     vWsys);
 page('sp',       vSp);
 page('abugida',  vAbugida);
+page('blk',      vBlk);
+page('blkv',     vBlkv);
 page('relate',   vRelate);
 page('fm',       vFm);
 page('pos',      vPos);

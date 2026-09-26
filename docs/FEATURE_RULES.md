@@ -292,7 +292,9 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Affected features: 辞書、書記体系、キーボード（組み合わせの一マスを打つ）、カード、全画面の「?」。
 - Affected data: 語の由来の持ち方・組み合わせの型は新しく保存する物 ── 各セッションが CHANGELOG に先に書く。
 - Affected docs: この項、CLAUDE.md「A chapter that is closed」（Make の段を書き直した）。
-- Implementation status: 未。
+- Implementation status: 字を組み合わせた一マス（書き方 `block`、`SCRIPT.blk`）と SVG の書き出し（文字ぜんぶ・一文字）は r102
+  （`claude/r102-block`）── コード確認、実機未確認。SVG は指示どおり**文字**を書き出す形で、この項の「一行を自分の字で SVG」は
+  まだ作っていない（`docs/scope/r102-block.md`）。単語の自動生成・語源は r101。「?」の中の使い方は未。
 
 ### 2026-09-26 プロフィールに自分のリポストも出す（1.0.3）
 - Date: 2026-09-26

@@ -8,13 +8,15 @@
    an alphabet, and then hid the assumption inside a screen that looked like
    it was asking something open.
 
-   There are five kinds, and every one of them is in use by somebody today:
+   There are six kinds, and every one of them is in use by somebody today:
 
      alphabet    one letter, one sound            a  k
      syllabary   one letter, one syllable         か = ka, き = ki
      abjad       consonants written, vowels not   Arabic, Hebrew
      abugida     a consonant letter with a vowel mark added
                                                   क = ka, कि = ki
+     block       a syllable's letters put together in one square
+                                                  ㅎ + ㅏ + ㄴ = 한
      logography  one letter, one word             Han characters
 
    None of this needs a new idea underneath, because a word here has been a
@@ -31,14 +33,14 @@
    characters it is made of -- exactly the mechanism the two-letter digraphs
    used before any of this. You type the sounds and the font draws the letter. */
 
-var WSYS=['alpha','syll','abjad','abugida','logo'];
+var WSYS=['alpha','syll','abjad','abugida','block','logo'];
 
-/* ---- which of the five this is ----------------------------------------
+/* ---- which of the six this is ----------------------------------------
    Asking somebody to choose between an abjad and an abugida before they have
    drawn anything is asking them to know the answer to a question they came
    here to find out. So it is worked out from what they made, and the letters
    are the evidence: what a letter reads is exactly where the language is
-   being cut, which is the only thing that separates the five.
+   being cut, which is the only thing that separates them.
 
      a letter reads a whole word           logography
      a letter reads more than one sound    syllabary
@@ -88,7 +90,7 @@ function wsGuess(){
   return 'alpha';
 }
 /* A stored answer wins, always. Otherwise the guess. */
-/* An alphabet, and nothing to guess, on the free plan: the other four are
+/* An alphabet, and nothing to guess, on the free plan: the other five are
    paid, and the free alphabet is a-z with the sounds those letters are
    normally read with -- most of which the language has not taken up on the
    chart, which is exactly what wsGuess reads as a syllabary. So the guess
@@ -105,7 +107,7 @@ function wsGuess(){
 /* AND IT IS NOT ASKED BEFORE THE SERVER HAS SAID WHAT THIS ACCOUNT PAYS.
    「free is an alphabet; there is nothing to guess」 is written down
    (CLAUDE.md § What the free plan is) and stays: nobody on the free plan can
-   choose one of the five, so a guess made off their letters is the app
+   choose one of the six, so a guess made off their letters is the app
    telling somebody their alphabet is a syllabary. Measured 2026-09-11 with
    the line taken out: the fixture's free language came back `syll`, and the
    characters borrowed for it stopped being drawn.
@@ -142,7 +144,7 @@ function setWsys(k){
      古いのは消して」 OWNER 2026-09-05 is what replaced it. Said as
      `upStop(can('wsys'))` it is the line at the top of this function, word
      for word, and a route arrived at from anywhere or a plan that ended
-     while one of the other four was set meets it there. Written twice, the
+     while one of the other five was set meets it there. Written twice, the
      second one can never run. */
   /* THE SERVER FIRST. The screen moves when the column has it -- the same
      sentence the 公開 switch and the heart carry
@@ -193,7 +195,9 @@ function wsSplit(seq){
     }
     return out;
   }
-  /* a syllabary */
+  /* a syllabary, and a block: both write a syllable as one unit. What
+     differs is only where the unit's shape comes from -- drawn whole, or put
+     together out of the letters it is spelt with (wsParts below) */
   cut=phCut(seq);
   for(i=0;i<cut.length;i++) out.push(wsKey(cut[i].on.concat(cut[i].nu).concat(cut[i].co)));
   return out;
@@ -202,7 +206,7 @@ function wsUnitsOf(w){ return wsSplit(wPh(w)); }
 
 /* ---- what has to be drawn --------------------------------------------
    The list of letters this writing system needs, which is a different list
-   for each of the five and is worked out from the language rather than
+   for each of the six and is worked out from the language rather than
    guessed. Anything already drawn is kept in the list even if nothing uses
    it any more, so a letter never silently disappears. */
 function wsUnits(){
@@ -210,11 +214,13 @@ function wsUnits(){
   function push(x){ if(x && !seen[x]){ seen[x]=1; out.push(x); } }
   if(k==='alpha'){ addedSnd().forEach(push); }
   else if(k==='abjad'){ wsCons().forEach(push); }
-  else if(k==='abugida'){
+  else if(k==='abugida' || k==='block'){
     /* the letters and the marks are what gets drawn, and every consonant with
        a vowel on it that a word actually uses is a letter too -- made out of
        those two, and needing a glyph of its own in the font so that the
-       ligature has somewhere to land */
+       ligature has somewhere to land. A block is the same list: its letters
+       are single sounds, and every syllable a word says is a square made out
+       of them */
     wsCons().forEach(push); wsVows().forEach(push);
     for(i=0;i<WORDS.length;i++){
       u=wsSplit(wPh(WORDS[i]));
@@ -247,28 +253,133 @@ function wsUnits(){
    them, so the screen shows them as two lists and says which is which. */
 /* The letters an abugida works out for itself: a consonant with a vowel on
    it. They are shown but not drawn -- the two pieces are what you change. */
-/* ---- an abugida's letter is made, not drawn ---------------------------
-   A letter is a list of strokes and so is a vowel mark, so the letter for a
-   consonant-plus-vowel is the two lists one after the other. Nothing has to
-   know how to combine drawings, because there is nothing to combine: strokes
-   in the same square are already one letter. */
-function wsStrokes(unit){
-  var own=inkGeo(ltMain(unit));
-  if(own) return own;
-  if(wsHasMarks() && unit && unit.length>1){
-    var i, base=null, mark=null, ch;
-    for(i=0;i<unit.length;i++){
-      ch=unit.charAt(i);
-      if(ipaIsVowel(ch)) mark=inkGeo(ltMain(ch));
-      else base=inkGeo(ltMain(ch));
-    }
-    /* Two lists of one kind are one shape. A drawn base under a mark written
-       on a sheet is two kinds, and a shape is one kind (inkRings), so there
-       is nothing composed -- the base alone, as when there is no mark. */
-    if(base && mark && inkRings(base)===inkRings(mark)) return base.concat(mark);
-    if(base) return base;
+/* ---- a letter that is made, not drawn ---------------------------------
+   Two of the six build a unit's shape out of letters somebody drew one at a
+   time. An abugida puts a vowel mark on a consonant; a block puts a
+   syllable's letters side by side and one over another in one square, the
+   way 한 is ㅎ, ㅏ and ㄴ. 「組み合わせてやるのも作ろう」 OWNER 2026-09-26.
+
+   It is ONE mechanism: a unit is a list of PIECES, each a letter and the part
+   of the square it stands in (wsParts), and the shape is every piece drawn
+   into its part (wsStrokes). An abugida's pieces both stand in the whole
+   square -- the mark was drawn where it goes -- so its shape is the two
+   stroke lists one after the other, exactly as it always was. A block's
+   pieces are shrunk into the parts its square is cut into (wsBlockBoxes).
+
+   The pen is not shrunk with them: the font sweeps every stroke with the one
+   pen (GPEN), so a letter drawn into a quarter of the square is the same
+   weight as a letter drawn into all of it, which is what a block script
+   looks like on paper. */
+
+/* A unit, as the sounds it is spelt with. A unit is those sounds run
+   together (wsKey), and a sound can be more than one character -- tʃ -- so it
+   is read back off the language's own sounds, the longest first, and a
+   character that is none of them stands for itself. */
+function wsSeq(unit){
+  var snds=addedSnd().slice(), out=[], i=0, j, hit;
+  LETTERS.forEach(function(l){ (l.snd||[]).forEach(function(x){ if(x && snds.indexOf(x)<0) snds.push(x); }); });
+  snds.sort(function(x, y){ return y.length-x.length; });
+  unit=String(unit||'');
+  while(i<unit.length){
+    hit='';
+    for(j=0;j<snds.length;j++)
+      if(snds[j].length>1 && unit.substr(i, snds[j].length)===snds[j]){ hit=snds[j]; break; }
+    if(!hit) hit=unit.charAt(i);
+    out.push(hit); i+=hit.length;
   }
-  return null;
+  return out;
+}
+/* Which way a vowel's square is cut: `lr`, the vowel beside what comes
+   before it, or `tb`, the vowel under it -- ㅏ and ㅗ. The language's, in the
+   `script` slice beside the direction and the gap: `SCRIPT.blk` names the
+   vowels that go under, and a vowel it does not name goes beside. */
+function wsBlkOf(v){
+  return (SCRIPT.blk && SCRIPT.blk[v]==='tb')? 'tb' : 'lr';
+}
+function wsBlkSet(v, k){
+  var m={}, x;
+  for(x in SCRIPT.blk||{}) if(Object.prototype.hasOwnProperty.call(SCRIPT.blk, x)) m[x]=SCRIPT.blk[x];
+  if(k==='tb') m[v]='tb'; else delete m[v];
+  SCRIPT.blk=m;
+}
+/* The parts of the square a syllable stands in, in the order of its sounds,
+   as [x, y, w, h] in fractions of the lattice. Rows down, and each row cut
+   across into as many parts as it has letters:
+
+     lr    onset and vowel in one row          ㅎㅏ
+     tb    onset over vowel                    ㅎ / ㅗ
+     and a row underneath for the final sound, in either      ㄴ
+
+   The final row is lower than the others, and there is a gap between two
+   parts. Both are a look, not a rule anybody has given (docs/scope/r102-block.md). */
+var WS_BLK={gap:0.06, low:0.7};
+function wsBlockBoxes(on, nu, co, type){
+  var rows=(type==='tb')? [on, nu, co] : [on.concat(nu), co],
+      use=[], i, j, sum=0, y=0, h, w, out=[], g=WS_BLK.gap;
+  for(i=0;i<rows.length;i++) if(rows[i].length) use.push({n:rows[i].length, wt:(i===rows.length-1 && co.length && i>0)? WS_BLK.low : 1});
+  for(i=0;i<use.length;i++) sum+=use[i].wt;
+  for(i=0;i<use.length;i++){
+    h=(1-g*(use.length-1))*use[i].wt/sum;
+    w=(1-g*(use[i].n-1))/use[i].n;
+    for(j=0;j<use[i].n;j++) out.push([j*(w+g), y, w, h]);
+    y+=h+g;
+  }
+  return out;
+}
+/* What a unit is put together from: [{s: sound, box}], or null when this
+   writing system does not put this unit together. `type` is for a preview
+   of a cut the language has not been given yet; nothing else passes it. */
+function wsParts(unit, type){
+  var k=wsys(), seq=wsSeq(unit), on=[], nu=[], co=[], i, box, out=[];
+  if(seq.length<2) return null;
+  if(k==='abugida'){
+    if(seq.length!==2 || ipaIsVowel(seq[0]) || !ipaIsVowel(seq[1])) return null;
+    return [{s:seq[0], box:null}, {s:seq[1], box:null}];
+  }
+  if(k!=='block') return null;
+  for(i=0;i<seq.length;i++){
+    if(ipaIsVowel(seq[i])){ if(co.length) return null; nu.push(seq[i]); }
+    else if(nu.length) co.push(seq[i]);
+    else on.push(seq[i]);
+  }
+  if(!nu.length) return null;
+  box=wsBlockBoxes(on, nu, co, type || wsBlkOf(nu[0]));
+  seq=on.concat(nu).concat(co);
+  for(i=0;i<seq.length;i++) out.push({s:seq[i], box:box[i]});
+  return out;
+}
+/* A shape drawn into a part of the square. A box of null is the whole
+   square, and the shape is handed back as it is -- the same objects, so an
+   abugida's letter is byte for byte what it was. */
+function wsInto(g, box){
+  var a=GGRID.inset, S=800-2*a;
+  function at(p){ return [Math.round(a+(box[0]+(p[0]-a)/S*box[2])*S), Math.round(a+(box[1]+(p[1]-a)/S*box[3])*S)]; }
+  if(!box) return g;
+  return g.map(function(x){
+    if(inkRings(g)) return x.map(at);
+    var c={}, f;
+    for(f in x) if(Object.prototype.hasOwnProperty.call(x, f)) c[f]=x[f];
+    c.pts=x.pts.map(at);
+    return c;
+  });
+}
+/* The shape of a unit: the letter drawn for it, or the pieces put together.
+   Every piece that has a shape of the first piece's kind is drawn -- two
+   kinds are not one shape (inkRings) -- and a unit whose first piece has no
+   shape has none. A mark with no drawing, or a vowel of a block nobody drew
+   yet, leaves the rest standing, as it always did for an abugida. */
+function wsStrokes(unit, type){
+  var own=inkGeo(ltMain(unit)), parts, i, g, out=null, rings;
+  if(own && !type) return own;
+  parts=wsParts(unit, type);
+  if(!parts) return own || null;
+  for(i=0;i<parts.length;i++){
+    g=inkGeo(ltMain(parts[i].s));
+    if(!i){ if(!g) return null; rings=inkRings(g); out=[]; }
+    if(!g || inkRings(g)!==rings) continue;
+    out=out.concat(wsInto(g, parts[i].box));
+  }
+  return out;
 }
 /* A word in the letters chosen for it. Used for borrowed characters; drawn
    letters are a font and need no substitution. */

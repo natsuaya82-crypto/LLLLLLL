@@ -3131,6 +3131,18 @@ export function halfDone(){
         const h = vAbugida();
         LETTERS = LETTERS.filter((l) => l.id !== 'fx-own');
         planGot('free'); langWsysGot(langId, ''); return h; }],
+    /* A BLOCK: the letters chapter carrying the row to the cuts, the list of
+       vowels, and one vowel's page -- the only doors to either, and only
+       while the writing is a block, which is itself paid. */
+    ['the letters chapter of a block', () => { planGot('pro'); langWsysGot(langId, 'block');
+        window.route = 'letters'; NAV = [{r:'letters'}];
+        const h = vLetters(); planGot('free'); langWsysGot(langId, ''); return h; }],
+    ['the cuts of a block', () => { planGot('pro'); langWsysGot(langId, 'block');
+        window.route = 'blk'; NAV = [{r:'blk'}];
+        const h = vBlk(); planGot('free'); langWsysGot(langId, ''); return h; }],
+    ['one vowel\'s cut', () => { planGot('pro'); langWsysGot(langId, 'block');
+        window.route = 'blkv'; NAV = [{r:'blk'}, {r:'blkv', a:'o'}];
+        const h = vBlkv(); planGot('free'); langWsysGot(langId, ''); return h; }],
     ['the five kinds of writing', () => { planGot('pro');
         window.route = 'wsys'; NAV = [{r:'wsys'}];
         const h = vWsys(); planGot('free'); return h; }],

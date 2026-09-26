@@ -16,17 +16,17 @@
    A letter an abugida has worked out for itself -- a consonant with a vowel
    mark on it -- is shown as what it is and cannot be drawn over: the two
    pieces it is made of are what you change. */
-/* The five kinds of writing, one to a row, each saying what it is. It was a
+/* The six kinds of writing, one to a row, each saying what it is. It was a
    rail of five tabs across the top of the letters chapter, wrapping so that
    Logography sat alone on a second line, on a screen you open every day to
    answer a question you answer once. */
-/* Four of the five are paid. An alphabet is one letter per sound and the
+/* Five of the six are paid. An alphabet is one letter per sound and the
    free plan is exactly that -- twenty-six slots with roman names on them --
-   so a syllabary, an abjad, an abugida and a logography are all the same
+   so a syllabary, an abjad, an abugida, a block and a logography are all the same
    purchase: letters that are not a-z. Hidden rather than shown locked,
    because a row that cannot be pressed is a row that has to explain itself
    every time the screen is opened. */
-/* What the five kinds ARE, behind the `?` rather than under each row.
+/* What the six kinds ARE, behind the `?` rather than under each row.
    「3入れよう」 OWNER 2026-08-28: an abjad and an abugida are words somebody
    either knows or does not, and the screen was asking them to choose between
    five of them. On the free plan it is worse than that -- four of the five
@@ -243,6 +243,82 @@ function vAbugida(){
           : '<div class="note">'+t('ab.nocons')+'</div>')
       : '<div class="note">'+t('ab.novow')+'</div>')+
     '</div></div>';
+}
+/* ---- how a block's square is cut ---------------------------------------
+   「組み合わせてやるのも作ろう」 OWNER 2026-09-26. A block puts a syllable's
+   letters into one square, and the vowel decides the cut -- beside what comes
+   before it, or under it (wsBlkOf(), www/wsys.js). So the language's vowels
+   are a list, and pressing one is its page, where the two cuts are the rows:
+   choosing is a screen and changing is the screen you arrive at.
+
+   Every cut is drawn as what it makes: the first consonant somebody drew with
+   this vowel, and with a second one under it -- the square with no final and
+   the square with one. Those are the whole of the four shapes a block has. */
+var WS_BLK_CUTS=['lr', 'tb'];
+/* The consonants a preview is made with: the first two that have a shape,
+   the one twice where only one has, and the language's first where none has. */
+function blkCons(){
+  var cs=wsCons(), drawn=cs.filter(function(c){ return !!inkGeo(ltMain(c)); });
+  if(!drawn.length) drawn=cs.slice(0, 1);
+  if(drawn.length===1) drawn.push(drawn[0]);
+  return drawn;
+}
+/* One square, as a small picture: the unit as the cut `type` would make it.
+   Inline SVG from the same outline the file carries (ltSvgPath()), because a
+   canvas draws what the language HOLDS and a cut not yet saved is not held. */
+function blkPv(unit, type){
+  var d=ltSvgPath(wsStrokes(unit, type) || []);
+  return '<svg class="blkpv" viewBox="0 0 800 800" width="40" height="40" aria-hidden="true">'+
+    (d? '<path fill="currentColor" d="'+d+'"/>' : '')+'</svg>';
+}
+/* The square with no final and the square with one; `one` is the first
+   alone, for a row of a list, which has the room for one picture. */
+function blkPvs(v, type, one){
+  var c=blkCons();
+  if(!c.length) return '';
+  return blkPv(wsKey([c[0], v]), type)+(one? '' : blkPv(wsKey([c[0], v, c[1]]), type));
+}
+function vBlk(){
+  var vs=wsVows();
+  if(wsys()!=='block') return viewGone();
+  return '<div class="view">'+navTop('')+'<div class="body">'+
+    (vs.length
+      ? '<div class="toc">'+vs.map(function(v){
+          return '<button class="trow"' + DO('go', ['blkv', v]) + '>'+
+            '<span class="rn"></span><span class="rt">'+esc(v)+'</span>'+
+            '<span class="lead"></span><span class="rv">'+blkPvs(v, wsBlkOf(v), 1)+esc(t('blk.'+wsBlkOf(v)))+'</span>'+ICON_GO+'</button>';
+        }).join('')+'</div>'
+      : '<div class="note">'+t('ab.novow')+'</div>')+
+    '</div></div>';
+}
+/* A vowel's page: the two cuts, the chosen one ticked, and the Save in the
+   bar writes it -- the same KEEP every screen with a choice on it holds
+   (wsKeepOn() above, www/shell.js § KEEP). Not in somebody else's language:
+   save() refuses one, so a Save there could not write. */
+function blkV(){ return String(here().a||''); }
+function vBlkv(){
+  var v=blkV();
+  if(wsys()!=='block' || wsVows().indexOf(v)<0) return viewGone();
+  if(!langLocked())
+    keepOn(keepKey(), function(){ return {cut:wsBlkOf(v)}; },
+           function(o, done){ blkKeepSave(v, o, done); });
+  return '<div class="view">'+navTop('')+'<div class="body">'+
+    WS_BLK_CUTS.map(function(k){
+      return '<button class="set"' + DO('blkPick', [k]) + '>'+
+        '<span class="sl">'+esc(t('blk.'+k))+'</span>'+
+        '<span class="sv">'+blkPvs(v, k)+
+        ((keepVal(keepKey(), 'cut') || wsBlkOf(v))===k? ICON_TICK : '')+'</span></button>';
+    }).join('')+
+    '</div></div>';
+}
+function blkPick(k){
+  if(WS_BLK_CUTS.indexOf(k)<0) return;
+  keepSet('cut', k); render();
+}
+function blkKeepSave(v, o, done){
+  if(o.hasOwnProperty('cut')) wsBlkSet(v, String(o.cut));
+  save(); installScriptFont();
+  done(true);
 }
 /* ---- the language's sounds --------------------------------------------
    Which sounds a language uses is the language's, and it was the person's:
@@ -788,13 +864,22 @@ function vLetters(){
     /* THE FONT, OUT: the share mark, in the corner a share stands in
        (「共有も共有マークを右上」 OWNER 2026-09-23), on the letters -- 「フォントは
        文字なんだから文字から書き出しのマークつけないとダメでは？」 OWNER
-       2026-09-25. It was on the list of keyboards. ltFontOut(). */
-    navTop('', navDo(t('kb.font'), 'ltFontOut', null, false, {icon:ICON_SHARE}))+
+       2026-09-25. It was on the list of keyboards. ltFontOut().
+       And the same mark is where the letters leave as SVG -- 「svgも足そう」
+       OWNER 2026-09-26 -- so it asks which: ltOutAsk(). */
+    navTop('', navDo(t('lt.out'), 'ltOutAsk', null, false, {icon:ICON_SHARE}))+
     '<div class="body">'+
     (wsHasMarks()
       ? '<button class="trow"' + DO('go', ["abugida"]) + ' style="margin-top:6px">'+
           '<span class="rn"></span><span class="rt">'+esc(t('ab.title'))+'</span>'+
           '<span class="lead"></span><span class="rv">'+wsCons().length+' × '+wsVows().length+'</span>'+ICON_GO+'</button>'
+      : '')+
+    /* A block's cuts, the way an abugida's bench is reached: a row at the
+       head of the chapter, only while the writing is a block. */
+    (wsys()==='block'
+      ? '<button class="trow"' + DO('go', ["blk"]) + ' style="margin-top:6px">'+
+          '<span class="rn"></span><span class="rt">'+esc(t('blk.title'))+'</span>'+
+          '<span class="lead"></span><span class="rv">'+wsVows().length+'</span>'+ICON_GO+'</button>'
       : '')+
     '<div class="toc">'+ltKinds().map(ltKindRow).join('')+
     /* And the way in from somewhere else. A letter is made by tracing the
@@ -853,6 +938,70 @@ function ltFontOut(){
 function ltFontName(){
   var n=String(langName||'').replace(/[^\w \-]/g, '').replace(/\s+/g, ' ').replace(/^ +| +$/g, '');
   return n? n.slice(0, 40) : 'Lingua';
+}
+/* WHICH ONE LEAVES. The letters leave by one mark, as a font or as SVG, and
+   the mark asks -- a question that is only its answers, the shape
+   「リポスト／引用」 is asked in (popAsk(), www/shell.js). */
+function ltOutAsk(){
+  popAsk('', ltFontOut, t('lt.out.font'), t('lt.out.svg'), ltSvgOut);
+}
+/* THE DRAWN LETTERS AS SVG. 「svgも足そう」 OWNER 2026-09-26. Every plan: a
+   plan decides what somebody may do, and where the line would go for this is
+   not decided (docs/scope/r102-block.md) -- so it is not drawn.
+
+   The outline is the font's own: LinguaFont.glyphContours() with the one pen,
+   which is what inkStrokes() fills a canvas with (www/glyph.js), so a letter
+   in the file is the letter on a key, a tile and the card. Every letter drawn,
+   in the alphabet's order (ltPuaOrder()), a square each, eight across; one
+   letter from its own page. Each is a group named by the letter, so a drawing
+   program lists them by name. */
+var LT_SVG_ACROSS=8;
+function ltSvgPath(g){
+  var cont=[], d='';
+  try{ cont=LinguaFont.glyphContours(inkDef(g), GPEN); }catch(e){ return ''; }
+  cont.forEach(function(poly){
+    if(poly.length<3) return;
+    poly.forEach(function(p, j){
+      d+=(j? 'L' : 'M')+Math.round(p[0])+' '+Math.round(p[1]);
+    });
+    d+='Z';
+  });
+  return d;
+}
+function ltSvg(lts){
+  var n=Math.min(lts.length, LT_SVG_ACROSS), rows=Math.ceil(lts.length/LT_SVG_ACROSS), out=[];
+  function x(v){ return String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+  lts.forEach(function(l, i){
+    out.push('<g transform="translate('+(i%LT_SVG_ACROSS)*800+' '+Math.floor(i/LT_SVG_ACROSS)*800+')">'+
+      '<title>'+x(ltName(l))+'</title><path d="'+ltSvgPath(inkGeo(l))+'"/></g>');
+  });
+  return '<?xml version="1.0" encoding="UTF-8"?>\n'+
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+n*800+' '+rows*800+'" '+
+    'width="'+n*100+'" height="'+rows*100+'" fill="#000" fill-rule="nonzero">\n'+
+    out.join('\n')+'\n</svg>\n';
+}
+/* And out, by the road the font takes (ltFontOut() above): the temporary
+   folder, then iOS's share sheet. btoa() takes bytes, so the text is made
+   UTF-8 first -- a letter's name can be anything. */
+function ltSvgSend(lts, name){
+  var p, b64;
+  if(!lts.length){ toast(t('kb.font.none')); return; }
+  p=sharePlug();
+  if(!p){ toast(t('card.nofile')); return; }
+  try{ b64=btoa(unescape(encodeURIComponent(ltSvg(lts)))); }catch(e){ toast(t('card.nofile')); return; }
+  p('LinguaShare', 'sheet', {name:name, ext:'svg', b64:b64})
+    .then(function(r){
+      if(!(r && r.file)){ toast(t('card.nofile')); return; }
+      return p('LinguaShare', 'shareFile', {file:String(r.file)});
+    })
+    ['catch'](function(){ toast(t('card.nofile')); });
+}
+function ltSvgOut(){ ltSvgSend(ltPuaOrder(), ltFontName()); }
+function ltSvgOne(lid){
+  var l=ltById(lid), nm;
+  if(!l || !inkGeo(l)){ toast(t('kb.font.none')); return; }
+  nm=String(ltName(l)).replace(/[^\w \-]/g, '');
+  ltSvgSend([l], ltFontName()+(nm? ' '+nm.slice(0, 20) : ''));
 }
 /* One of the three. The base belongs on the digits page and nowhere else,
    because that is the page it decides the shape of. */
@@ -1255,8 +1404,12 @@ function vLetter(){
        changed -- 「なにもない時は薄い灰色、何か打ったら金にする」 OWNER
        2026-09-03, www/shell.js § navDo. Whether it can be pressed is said by
        its colour. The drawing has its own Save where it is drawn, and it is
-       the same button. */
-    navTop('')+'<div class="body">'+
+       the same button.
+
+       And the letter, out, as SVG: the share mark in the corner a share
+       stands in, beside the Save. Only on a letter with a shape -- there is
+       nothing to put in the file otherwise. ltSvgOne(). */
+    navTop('', inkGeo(l)? navDo(t('lt.out.svg'), 'ltSvgOne', [lid], false, {icon:ICON_SHARE}) : '')+'<div class="body">'+
     /* The letter itself, first and big. A page about one letter that does not
        show it is a page of three buttons about nothing, and "draw it again"
        on a screen with nothing on it says nothing. A letter with no shape yet

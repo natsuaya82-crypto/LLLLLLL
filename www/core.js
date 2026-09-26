@@ -1596,22 +1596,23 @@ function langFirst(){
    somebody else's language and find your own dictionary in it. */
 var LSAVED='';
 function langRead(){
-  var gg;
+  var gg, k;
   WORDS=slOpen('words') || []; LINES=slOpen('lines') || [];
   langName=langNameOf(langId); SCRIPT={g:{}, extra:[]};
   gg=slOpen('script');
-  if(gg){
-    if(gg.g){ SCRIPT.g=gg.g; SCRIPT.extra=gg.extra||[]; }
-    /* Which way the language is written. Read on its own rather than inside
-       the `gg.g` branch above: a language can have a direction and no glyphs
-       drawn yet, and reading it only when there are glyphs would lose it for
-       exactly the person who set it first and drew second. */
-    if(gg.dir) SCRIPT.dir=gg.dir;
-    /* And what stands between two letters, in steps (glyph.js § geSide).
-       Read here or it is gone: SCRIPT is rebuilt from these lines and saved
-       whole, so a field this function does not copy is a field the next save
-       drops. Absent stays absent -- one step, which is what it always was. */
-    if(typeof gg.sp==='number') SCRIPT.sp=gg.sp;
+  /* EVERY FIELD THE SLICE HOLDS IS KEPT. SCRIPT is saved whole, so a field
+     this function does not carry over is a field the next save drops -- and
+     it used to carry four by name (`g`, `extra`, `dir`, `sp`), a list written
+     by hand that each new field had to remember to join. What is checked is
+     only what the four have always been checked for: no glyphs is no
+     `extra` either, a direction is a string that says something, the gap is
+     a number. Absent stays absent. */
+  if(gg && typeof gg==='object' && !(gg instanceof Array)){
+    for(k in gg) if(Object.prototype.hasOwnProperty.call(gg, k)) SCRIPT[k]=gg[k];
+    if(!gg.g){ SCRIPT.g={}; SCRIPT.extra=[]; }
+    else SCRIPT.extra=gg.extra||[];
+    if(!gg.dir) delete SCRIPT.dir;
+    if(typeof gg.sp!=='number') delete SCRIPT.sp;
   }
   /* what the language was when it was read -- save() asks it (§ langMoved) */
   LSAVED=langShape();
