@@ -2083,20 +2083,22 @@ function wdWrite(){
 /* Taking one word out of the language, and leaving nothing pointing at it.
    It was the body of `delWord` and is its own function because it is about to
    be done to more than one word at a time: two places doing this five ways
-   would be two answers to what a deleted word leaves behind, and the one that
-   was not read would be the one that left a `from` pointing at nothing.
+   would be two answers to what a deleted word leaves behind.
 
    It does not confirm, does not save, does not touch the trail and does not
    redraw -- those are the deleting SCREEN's, and they are done once however
    many words go. `wRename` in `www/letters.js` is the same set of pointers
-   read the other way round; this is the one place they are cut. */
+   read the other way round; this is the one place they are cut.
+
+   A child's `from` is NOT one of them. It is the spelling the child was made
+   from, written on the child when it was made -- a value, not a way to reach
+   the parent -- so the parent going changes nothing about where the child
+   came from (CLAUDE.md § The past, 2026-09-26). The family and the tree draw
+   a `from` with no word behind it as the spelling alone. */
 function wDrop(hw){
   var gone=String(hw), w=findWord(gone);
   if(!w) return;
   WORDS=WORDS.filter(function(x){return x!==w;});
-  /* its children keep their own life; they simply stop pointing at a parent
-     that is not there */
-  WORDS.forEach(function(x){ if(x.from===gone) delete x.from; });
   /* and nothing is left pointing at a word that has gone */
   WORDS.forEach(function(x){
     ['syn','ant'].forEach(function(k){
