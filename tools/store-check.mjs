@@ -130,6 +130,10 @@ const ROADS = {
      account shared, the fields of `lingua.set` beside the handset's setup --
      and writes the rest back exactly as it was */
   'core.js:e.old': { whose: 'old', phone: 'an older version\'s key with the deleted account\'s part taken out and the rest -- nobody\'s, read by nobody -- written back as it was (lsWipeAcct, www/core.js)' },
+  /* and the settings written back without the keyboard's measurement
+     (setVvkbDrop, OWNER 2026-09-26) -- `lingua.set` and each
+     `lingua.set.<uid>`, one field fewer, nothing else moved */
+  'core.js:k': { whose: 'same', phone: 'nothing of its own. It is setVvkbDrop() in www/core.js writing `lingua.set` and each account\'s `lingua.set.<uid>` back with `vvkb` -- a measurement of this screen\'s keyboard that nothing reads since 2026-09-25 -- taken out and every other field as it was, so each key it writes is `LS_S` or `acctKey(name` above (DELETE REVIEW docs/CHANGELOG.md 2026-09-25, 「1 消す」 OWNER 2026-09-26)' },
   'core.js:LS_S':    { whose: 'handset', phone: 'how this handset is set up -- exactly what `SET_PHONE` in www/core.js names and nothing else. The account\'s fields are `lingua.set.<uid>` (acctKey above); what an older version left in this key beside the setup is kept as it was and read by nobody' },
   'net.js:LS_SESS':  { whose: 'sess', phone: 'the tokens. They are what talks to the server; they cannot be kept on it' }
   /* `sns.js:k` -- the notices, kept under the account -- STOOD HERE AND IS
@@ -325,10 +329,9 @@ const FIELDS = {
   /* `vvkb` STOOD HERE AND IS GONE (2026-09-25). It was how much of this
      screen the keyboard covered, measured by the page; the phone ends the
      screen at the keyboard itself now (ios/App/App/MainViewController.swift
-     § keepStill) and nothing writes or reads it. A phone that has it keeps
-     it in `lingua.set` as it was -- the settings are read and written by
-     `SET_PHONE`'s names alone, and it is not one -- and whether it goes is
-     the DELETE REVIEW in docs/CHANGELOG.md 2026-09-25. */
+     § keepStill) and nothing writes or reads it. A phone that has it has it
+     taken off at launch -- setVvkbDrop() in www/core.js, 「1 消す」 OWNER
+     2026-09-26, the DELETE REVIEW in docs/CHANGELOG.md 2026-09-25. */
   opened:   { phone: 'how many times this ACCOUNT has opened the app, counted by rateOpen() (www/core.js) so the fifth asks the App Store for a rating (OWNER 2026-09-25). Filed under `lingua.set.<uid>` with the rest of the account\'s settings, and sent nowhere: a launch sends nothing' },
   wldMoved: { phone: 'the mark that 「what the language is for」 has been moved out of the settings and into the language. A migration mark, and the ACCOUNT\'s like `SET.world` it marks: kept with it under `lingua.set.<uid>`, so the next account to sign in has its own moved (r73 § 2-7)' },
   doneMoved: { phone: 'the mark that the old `done` has been copied into `walked` (walkedMigrate, www/core.js). A migration mark -- it is what the old field\'s absence used to say, now that the migration copies and removes nothing' },

@@ -1291,6 +1291,19 @@ const buy = await pg.evaluate(async () => {
   /* AND WHAT WENT UP IS THE RECEIPT, untouched. A purchase that sent a plan
      word instead is the road of 2026-09-06 growing back. */
   out.sentIsReceipt = out.sentJws === 'J1';
+  /* AND THE SERVER NOT HAVING IT IS NOT 「になりました」. 「Proになりました」
+     on the owner's TestFlight with the account still free (2026-09-26,
+     restore measured 1/0/0): the name of what was pressed was said whatever
+     came back. It is said only when the answer is at least what was pressed;
+     anything less is the restore's own sentence with its numbers -- one way
+     of answering for both buttons. */
+  var e = await press({ how: 'bought', bought: 'com.tokinets.lingua.pro.yearly',
+                        jws: ['J1'], saw: 1 }, 'free', 'free');
+  out.freeSaid = e.last; out.freeRung = e.rung;
+  var f = await press({ how: 'bought', bought: 'com.tokinets.lingua.pro.yearly',
+                        jws: ['J1'], saw: 1 }, 'free', 'plus');
+  out.lowSaid = f.last;
+  out.none = t('store.none') + storeWhyNone({ saw: 1 }, undefined);
   /* Cancelling says nothing at all, and asks the server nothing either. */
   out.sentJws = '';
   var d = await press({ how: 'cancelled', jws: ['J1'] }, 'plus', 'free');
@@ -2109,6 +2122,13 @@ say(buy.plainSaid === buy.plus && buy.plainRung === 'plus',
 say(buy.oldSaid === buy.plus && buy.oldRung === 'plus',
     'a phone whose native side answers no `bought` falls back to what the ' +
     'server answered (' + buy.oldSaid + ')');
+say(buy.freeSaid === buy.none && buy.freeRung === 'free',
+    'Pro pressed and the server answering free says the restore\u2019s sentence ' +
+    'with its numbers, not 「' + buy.pro + '」 (' + buy.freeSaid + ')');
+say(buy.lowSaid === buy.none,
+    'and Pro pressed with the server answering Plus does not say Pro either — ' +
+    'the name is said only when the answer is at least what was pressed (' +
+    buy.lowSaid + ')');
 say(buy.sentIsReceipt,
     'and what went up is the RECEIPT and nothing else — a plan word going up ' +
     'is the road of 2026-09-06 growing back');

@@ -785,6 +785,53 @@ want('the sounds in the settings reach the open language', sn.snd, 'k,t,a');
 want('and are still in the settings afterwards', sn.kept, 'k,t,a');
 want('and the copy is marked as made', sn.mark, 1);
 
+/* ---- the keyboard's measurement is taken off every copy of the settings --
+   「1 消す」 OWNER 2026-09-26 (DELETE REVIEW docs/CHANGELOG.md 2026-09-25).
+   `vvkb` sat in `lingua.set`, where an older version wrote it, and in an
+   account's `lingua.set.<uid>`, where acctMoved() copied it. setVvkbDrop()
+   in www/core.js takes it off at launch, before the settings are read. It is
+   COUNTED across every settings copy on the phone, not asked of one: the one
+   nobody checked is where it would have stayed. And nothing beside it moves
+   -- the setup, another account's settings, a key that is not settings. */
+await pg.evaluate(() => {
+  localStorage.clear();
+  localStorage.setItem('lingua.set', JSON.stringify(
+    { theme: 'dark', walked: true, vvkb: { on: 844, kb: 336 } }));
+  localStorage.setItem('lingua.set.u-two', JSON.stringify(
+    { theme: 'light', vvkb: { on: 667, kb: 260 } }));
+  localStorage.setItem('lingua.sets', JSON.stringify({ vvkb: 1 }));
+});
+await oldPhone();
+await pg.reload();
+await settle();
+const vk = await pg.evaluate(() => {
+  var n = 0, k, v, i, all = {};
+  for (i = 0; i < localStorage.length; i++) {
+    k = localStorage.key(i);
+    if (k !== 'lingua.set' && k.indexOf('lingua.set.') !== 0) continue;
+    try { v = JSON.parse(localStorage.getItem(k)); } catch (e) { v = null; }
+    all[k] = v;
+    if (v && typeof v === 'object' && Object.prototype.hasOwnProperty.call(v, 'vvkb')) n++;
+  }
+  return {
+    left: n, copies: Object.keys(all).length,
+    walked: all['lingua.set'] && all['lingua.set'].walked,
+    two: all['lingua.set.u-two'] && all['lingua.set.u-two'].theme,
+    mine: all['lingua.set.u-old'] && all['lingua.set.u-old'].theme,
+    inMem: Object.prototype.hasOwnProperty.call(SET, 'vvkb'),
+    other: localStorage.getItem('lingua.sets')
+  };
+});
+want('no copy of the settings still holds the keyboard\'s measurement', vk.left, 0);
+want('and there were three copies to look in', vk.copies, 3);
+want('and the settings in memory do not have it either', vk.inMem, false);
+want('the handset\'s setup beside it is untouched', vk.walked, true);
+want('another account\'s settings keep what they had', vk.two, 'light');
+want('the stamped account\'s own were still moved under it', vk.mine, 'dark');
+want('and a key that is not the settings is not touched', vk.other, '{"vvkb":1}');
+console.log('the keyboard\'s measurement: ' + vk.left + ' of ' + vk.copies +
+            ' copies of the settings still hold it');
+
 /* ---- a pronunciation somebody brought in is not replaced by a guess -----
    CLAUDE.md § Data: *a migration COPIES and never removes what it read*.
    migrateSp() took a word from when a word was its sounds and, along with the

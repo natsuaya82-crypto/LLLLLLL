@@ -1056,6 +1056,22 @@ const CASES = [
     `select 1 from post_seen where id='${P}' and likes = 1`],
   ['the boost that was taken back is not',    'ok',     A, 0,
     `select 1 from post_seen where id='${P}' and boosts = 0`],
+  /* AND A QUOTE IS A REPOST. 「リツイートと同じ数の数え方で足していい」
+     OWNER 2026-09-26 -- post_seen.boosts is the reposts and the quotes
+     together, counted in that one column. B quotes P: A reads one. A quote
+     kept to B alone is not one anybody can open, so it is not counted, and
+     taking the quote away takes the one away -- which also puts the state
+     back to 「no boost」 for everything below. */
+  ['B quotes A’s post',                   'ok',     B, 0,
+    `insert into post(id,author,body,quote_of) values ('e9800000-0000-4000-8000-0000000000b1','${B}','{}'::jsonb,'${P}')`],
+  ['and B keeps a second quote to B alone',   'ok',     B, 0,
+    `insert into post(id,author,body,quote_of) values ('e9800000-0000-4000-8000-0000000000b2','${B}','{"pv":1}'::jsonb,'${P}')`],
+  ['one quote is one repost on the count',    'ok',     A, 0,
+    `select 1 from post_seen where id='${P}' and boosts = 1`],
+  ['B takes both quotes away',                'ok',     B, 0,
+    `delete from post where id in ('e9800000-0000-4000-8000-0000000000b1','e9800000-0000-4000-8000-0000000000b2')`],
+  ['and the count is nought again',           'ok',     A, 0,
+    `select 1 from post_seen where id='${P}' and boosts = 0`],
   /* Whether the READER is one of them, which the count cannot answer. */
   ['B is told that B liked it',               'ok',     B, 0,
     `select 1 from post_seen where id='${P}' and i_like`],

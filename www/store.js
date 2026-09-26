@@ -139,7 +139,7 @@ function storeBuy(id){
            says the App Store road failed and leaves the plan alone. */
         if(!p){ toast(t('store.fail')); return; }
         storeUntilTook(p, d);
-        toast(t('toast.plan.other', planName(paid || p)));
+        toast(storeSaid(p, paid, r, d));
       });
     })
     ['catch'](function(){ toast(t('store.fail')); });
@@ -183,6 +183,27 @@ function storeWhyNone(r, d){
   var sy=!!(r && r.synced);
   return ' ('+saw+'/'+un+'/'+no+(sy? '' : ' ×')+')';
 }
+/* WHAT A PURCHASE AND A RESTORE SAY ONCE THE SERVER HAS ANSWERED, and it is
+   one answer for both buttons. `p` is what the server answered and `want`
+   the plan that was PRESSED ('' for a restore, or a native side too old to
+   say): 「〇〇になりました」 is said, in the name of what was pressed, only
+   when `p` is at least that on PLAN_ORDER -- this line is where the two are
+   compared, and nowhere else. Anything less is the restore's sentence with
+   its numbers.
+
+   It used to name what was pressed whatever came back, so a purchase the
+   server did not have said 「Proになりました」 and left the account free (the
+   owner's TestFlight, 2026-09-26: restore 1/0/0). And WHICH 「nothing」 it is
+   is the numbers -- 「これ出るのに、復元できるものはありませんって出るけど？」
+   OWNER 2026-09-03, with Apple's sheet saying the subscription is live. Four
+   faults say this sentence and one of them is 「you really own nothing」; the
+   fourth is the owner's decision of 2026-09-06: the receipts are real and
+   belong to ANOTHER ACCOUNT. An error is a state. */
+function storeSaid(p, want, r, d){
+  var at=want || p, got=PLAN_ORDER.indexOf(p), need=PLAN_ORDER.indexOf(at);
+  if(need>0 && got>=need) return t('toast.plan.other', planName(at));
+  return t('store.none') + storeWhyNone(r, d);
+}
 function storeRestore(){
   var np=storePlug();
   if(!np){ toast(t('store.none')); return; }
@@ -197,14 +218,7 @@ function storeRestore(){
       netPlanVerify(storeJws(r), function(p, d){
         if(!p){ say(t('store.fail')); return; }
         storeUntilTook(p, d);
-        if(p!=='free'){ say(t('toast.plan.other', planName(p))); return; }
-        /* AND WHICH 「nothing」 IT IS. 「これ出るのに、復元できるものはありません
-           って出るけど？」 OWNER 2026-09-03, with Apple's sheet on screen saying
-           the subscription is live. Four different faults say this sentence now
-           and one of them is 「you really own nothing」. The fourth is the new
-           one and is the owner's decision of 2026-09-06: the receipts are real
-           and belong to ANOTHER ACCOUNT. An error is a state. */
-        say(t('store.none') + storeWhyNone(r, d));
+        say(storeSaid(p, '', r, d));
       });
     })
     ['catch'](function(){ say(t('store.fail')); });

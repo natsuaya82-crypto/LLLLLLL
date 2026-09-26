@@ -800,6 +800,45 @@ const r = await pg.evaluate(({ s }) => {
     netSend1 = realS1; netSend = realS; netGet = realG;
   }
 
+  /* ---- 14b: a quote is a repost on the count --------------------------
+     「リツイートと同じ数の数え方で足していい」 OWNER 2026-09-26. The server
+     counts it (post_seen.boosts, held by rls-check); what is asked here is
+     that the phone FINDS OUT -- a quote landing asks for the quoted post's
+     numbers again, as a reply landing asks for the answered one's, and the
+     number drawn beside the repost mark goes up by one. The server here
+     counts the rows it was handed, so it answers one more only if a quote
+     reached it. */
+  {
+    const realS1 = netSend1, realS = netSend, realG = netGet;
+    /* the answer rewrites every number on p2 (postFresh), so all of it is
+       put back afterwards, not only the two set here */
+    const p = postById('p2'), was = Object.assign({}, p);
+    p.sid = 'SRV-2'; p.nboost = 4;
+    let quotes = 0;
+    netSend1 = function (m, path, b, t, ok) {
+      path = String(path);
+      if (m === 'POST' && path.split('?')[0] === '/rest/v1/post') {
+        if (b && b.quote_of === 'SRV-2') quotes++;
+        ok([{ id:'SRV-q' }], 200); return;
+      }
+      if (m === 'GET' && path.indexOf('post_seen') >= 0 && path.indexOf('id=eq.SRV-2') >= 0) {
+        ok([{ id:'SRV-2', created_at:'2026-09-24T00:00:00Z', body:{ ln:'qel', hd:'iri', who:'Iri' },
+              likes:0, boosts:4 + quotes, replies:0, i_like:false, i_boost:false }], 200); return;
+      }
+      ok([], 200);
+    };
+    netSend = function (m, path, b, t, ok, bad, up) { netSend1(m, path, b, t, ok, bad, up, true); };
+    netGet = function (path, ok, bad) { netSend('GET', path, null, '', ok, bad); };
+    NAV = [{ r:'feed' }]; window.route = 'feed'; render();
+    const before = postNBoost(postById('p2'));
+    postSend({ id:'pq-count', at:Date.now(), ln:'kano', qt:'SRV-2', qp:postQuoteCopy(p) },
+             function () {}, function () {});
+    out.qCount = before + '->' + postNBoost(postById('p2')) + ' (quotes the server got: ' + quotes +
+                 ', signed in: ' + netSignedIn() + ')';
+    Object.keys(p).forEach((k) => { delete p[k]; }); Object.assign(p, was); render();
+    netSend1 = realS1; netSend = realS; netGet = realG;
+  }
+
   /* ---- 15: r94 E -- the meaning switched off ------------------------------
      「意味をオフにした場合はTwitterと同じように投稿できる」 OWNER 2026-09-25.
      Off: the composer has no meaning field and the switch says so; the post
@@ -1191,6 +1230,11 @@ if (!r.qDrawn || r.qGone !== r.qGoneWant || !r.qPlain)
       '」, one that quotes nothing has none: ' + r.qPlain);
 if (!r.qNotice)
   say('14: a notice of the kind quote does not say 「' + 'notif.quote' + '」.');
+if (!/^4->5 /.test(String(r.qCount)))
+  say('14b: a quote went up and the quoted post’s repost count went ' + r.qCount +
+      ' -- one quote is one more on that number (post_seen.boosts), and the phone asks for it again ' +
+      'when a quote lands (postCountsUnder).');
+else console.log('14b: one quote is one more repost on the post it quotes: ' + r.qCount);
 if (!r.mnOnField || !r.mnOffField || r.mnDraft !== 1)
   say('15: the meaning switch -- on, the field and the switch: ' + r.mnOnField + '; off, no field and ' +
       'the switch saying off: ' + r.mnOffField + '; a draft keeps it: ' + r.mnDraft);
