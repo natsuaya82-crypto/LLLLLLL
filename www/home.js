@@ -233,9 +233,11 @@ var HELP={};
    `s` may be '' and is then left out. */
 /* A paragraph stands apart from what is above it; the line under a step or a
    mark is that step's own and sits under it with no gap. Two paragraphs in a
-   row ran together as one otherwise. */
+   row ran together as one otherwise. The gap is the separating row (.grpsep),
+   never a margin on the row itself -- CLAUDE.md § Rows in one list, held by
+   `press`. */
 function helpNote(s){ return s? '<div class="note">'+esc(s)+'</div>' : ''; }
-function helpPara(s){ return s? '<div class="note" style="margin-top:14px">'+esc(s)+'</div>' : ''; }
+function helpPara(s){ return s? '<div class="grpsep"></div>'+helpNote(s) : ''; }
 function helpStep(n, title, s){
   return '<div class="sec">'+n+'. '+esc(title)+'</div>'+helpNote(s);
 }

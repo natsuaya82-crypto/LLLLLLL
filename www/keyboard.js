@@ -3955,7 +3955,7 @@ HELP.kb=function(){
        2026-09-26. The mark stays where 2026-09-06 put it -- this list, one
        mark in one place -- so the editor's own marks are drawn here beside
        what each does, rather than a second `?` on a board's page. */
-    '<div class="sec" style="margin-top:26px">'+esc(t('hp.kb.ed'))+'</div>'+
+    '<div class="grpsep"></div><div class="sec">'+esc(t('hp.kb.ed'))+'</div>'+
     helpStep(1, t('kb.new'), t('hp.kb.1.d'))+
     helpStep(2, t('hp.kb.2'), t('hp.kb.2.d'))+
     helpStep(3, t('hp.kb.3'), t('hp.kb.3.d'))+
