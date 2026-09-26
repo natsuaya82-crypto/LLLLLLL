@@ -500,8 +500,10 @@ appFiles.forEach(f => {
      bare() would blank exactly the thing being read. */
   const src = fs.readFileSync(f, 'utf8')
     .replace(/\/\*[\s\S]*?\*\//g, '').replace(/^[ \t]*\/\/.*$/gm, '');
-  /* `function can(what)` is the declaration, not an ask. */
-  [...src.matchAll(/(?<![\w$.])(?<!function\s{1,8})can\s*\(([^)]*)\)/g)].forEach(m => {
+  /* `function can(what)` is the declaration, not an ask. canRung('x') --
+     which rung opens x, for a row of the price list -- is an ask of the same
+     table by the same literal, and is read the same way. */
+  [...src.matchAll(/(?<![\w$.])(?<!function\s{1,8})can(?:Rung)?\s*\(([^)]*)\)/g)].forEach(m => {
     const a = m[1].trim(), lit = a.match(/^'([\w$]+)'$/);
     if (!lit){ loose.push(rel + '  can(' + a + ')'); return; }
     if (!asked.has(lit[1])) asked.set(lit[1], rel);

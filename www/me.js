@@ -910,12 +910,13 @@ function whoOf(h){
                door onto the page (`who`, www/sns.js § WHAT EACH PAGE READS). */
             fo:(WHO_HAVE[h] || {}).fo,
             fr:(WHO_HAVE[h] || {}).fr, out:false,
-            /* AND IT SAYS SO. `mine` means 「this is the reader's own」 and it
-               is what postBadge() asks -- so leaving it off took the mark off
-               your own card the moment meCard() started asking this instead
-               of plan(). Measured, not read: `bdgw` was in the card and then
-               was not. */
-            mine:true, pro:can('badge')};
+            /* `mine` means 「this is the reader's own」. The mark is NOT
+               answered from it: it is the same `profile_seen` row as the two
+               counts, the server's answer about this account today, and
+               somebody else's page reads it off the same column
+               (「課金者にちゃんと…ダイヤ見えるようになってる？」 OWNER
+               2026-09-26). */
+            mine:true, badge:(WHO_HAVE[h] || {}).badge};
   /* THE SERVER IS THE RECORD. What it sent is what the person looks like NOW,
      which is the right answer for a page about them; a post's copy is frozen
      at the moment it was written (rule 8) and is right for the post. */
@@ -957,14 +958,9 @@ function whoOf(h){
                phone whose net.js does not answer with them yet: no address,
                no door, and the name stays a plain row exactly as it is now. */
             lid:got.lid||'', lpub:!!got.lpub,
-            /* AND WHETHER THEY WEAR THE MARK. Passed through with `!!` for
-               the reason `lid` and `lpub` above are: a phone whose net.js
-               does not answer with it yet draws a name with nothing beside
-               it, exactly as it does today. `profile_seen` carrying it, and
-               netWho() answering with it, are the other half and are in the
-               report -- www/net.js and supabase/schema.sql are not this
-               session's files. */
-            pro:!!got.pro,
+            /* AND WHETHER THEY WEAR THE MARK -- `profile_seen.badge`, off
+               the row netWhoRow() read (netBadgeOn() in www/net.js). */
+            badge:!!got.badge,
             /* HOW MANY THEY FOLLOW AND HOW MANY FOLLOW THEM, passed through
                rather than nailed to 0. Both were `0` here because no request
                in www/net.js had ever asked for anybody's but your own --
@@ -1004,14 +1000,14 @@ function whoOf(h){
          「0 と出て1秒後に1に変わる、をしない」 OWNER 2026-09-04. */
       return {who:p.who||'', hd:h, av:p.av, lname:p.lname||'', id:'w:'+h,
               bio:p.bio||'', fo:p.fo, fr:p.fr, out:!!p.out,
-              /* Off the POST, which is where the mark lives (postBadge in
-                 www/post.js) -- so a person this phone knows only from
-                 something they wrote wears it on their page too. */
-              pro:!!p.pro};
+              /* Off the POST, which carried the server's answer about its
+                 author (post_seen.badge) -- so a person this phone knows only
+                 from something they wrote wears it on their page too. */
+              badge:!!p.badge};
   }
   /* Nobody by that name, here or anywhere yet: no name, no face, and no
      count -- an unanswered number is not a zero, one line up. */
-  return {who:'', hd:h, av:null, lname:'', bio:'', out:false, pro:false};
+  return {who:'', hd:h, av:null, lname:'', bio:'', out:false, badge:false};
 }
 /* ---- WHETHER YOU FOLLOW SOMEBODY, AND WHETHER THEY FOLLOW YOU ----------
    「開いた時は通知とタイムラインだけ」 OWNER 2026-09-23.

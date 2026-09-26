@@ -249,6 +249,33 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Implementation status:
 ```
 
+### 2026-09-26 課金者の印は、誰の画面でも、その人の投稿とプロフィールに出る（1.0.3）
+- Date: 2026-09-26
+- Area: 名前の横の印（`postBadge()` in `www/post.js`、`whoOf()`/`whoCard()`/`meCard()` in `www/me.js`）、サーバーの
+  `badge_of()`（`supabase/schema.sql`）
+- Decision:
+
+  ```
+  課金者にちゃんと投稿とかプロフィールにダイヤ見えるようになってる？
+  ```
+  ```
+  入れるよ？
+  ```
+
+  印を付けている人（段は `CAN.badge` ── 今は Pro）の投稿とプロフィールには、**読む人が誰でも**印が出る。
+  自分の分も同じ道 ── サーバーの答えから描き、自分のプランからは描かない。
+- Reason: 印は書いた本人の電話にしか出ていなかった（2026-09-04「後相手の画面にパッチ映らないけど？プロなのに」）。
+- Affected features: 投稿の頭の名前、引用の中の投稿、人のページ、自分のページ。おすすめの並び ── 2026-08-28 の
+  「青パッチの倍率」は印に掛かると書いてあるので、同じ `badge_of()` に掛かる。**印の無い段（plus）に倍率を掛けるかは
+  決まっていない**ので掛けない。
+- Affected data: 表は増えない。`post_seen`・`profile_seen`（と `feed_hot()`・`feed_fo()`・`posts_by()`）が真偽の列
+  `badge` を返す。段・product・期限は外に出ない（`rls-check`）。「バッジは消える」── `plan` の行を読み、`purchase` が
+  切れていれば（`until` が過去・`revoked`）付かない。スタッフは付く。
+- Affected docs: この項、2026-08-28「おすすめの並び」の実装状況と「今できないところ」、2026-09-04「オンラインを進める」の
+  実装状況、`docs/CHANGELOG.md`、`docs/scope/r109-badge.md`。
+- Implementation status: 実装（r109、`claude/r109-badge`、CODE CONFIRMED のみ）。**本番の `supabase/schema.sql` を流す
+  まで、この版の電話はタイムラインとプロフィールが読めない**（無い列を頼むと 400）。流すのはオーナー。実機未確認。
+
 ### 2026-09-25 複数のキーに一度に字を入れる ── 選んだ順に①②、字を選んだ順に入る、右上の確定で入って戻る（1.0.3）
 - Date: 2026-09-25
 - Area: キーボードの編集（`www/keyboard.js` のシートとキーの画面）、字を選ぶ画面（2026-09-25「字を選ぶ画面は一つ」）
@@ -1641,8 +1668,8 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Affected features: オンライン一本化。バッジ
 - Affected data: 無し
 - Affected docs: この項目、`docs/STATE.md`
-- Implementation status: オンライン一本化は入りました。**バッジはオーナーの
-  SQL 待ちで、アプリ側から出来ることはありません。**
+- Implementation status: オンライン一本化は入りました。バッジは 2026-09-26
+  「課金者の印は、誰の画面でも…」で `supabase/schema.sql` に入りました（r109）。
 
 ### 増えた文字は消してよい ── リリース前のあいだだけ
 - Date: 2026-09-04
@@ -3845,18 +3872,9 @@ www/net.js:1544  netDraftUp() ── www/post.js:380 と :463 から
   一行で持つ ── X が 2023 年に公開した、フォローしていない人に見せるときの数。
   「倍率をオーナーに訊かない」はそのとおりにした。
 
-  **掛ける先はまだ無い。**`profile` に契約の列が無く、`feed_weight()` は
-  `to_jsonb(p) ->> 'paid'` で訊いている ── 列が無ければ NULL、できた日から
-  黙って効き始める。その列は Apple の署名付き通知をサーバーで受けて立てるもので、
-  端末からは書けないよう塞ぐ（`staff` と同じ形）。**それが唯一の残り。**
-
-#### 今できないところ
-
-**サーバーは誰が課金しているか知らない。**`profile` に契約の列が無く、
-`postBadge()` は自分の投稿にしか印を出していない。**列ができるまで青パッチの
-倍率は掛ける先が無い。**Apple の署名付き通知をサーバーで受けて立てる列で、
-本人にも書けないよう塞ぐ（`staff`/`admin` と同じ形）。端末が自分で書く形は
-誰でも自分に印をつけられるので、やってはいけない。
+  **掛ける先は `badge_of()`**（`feed_weight()`）── 印を付けている人と同じ答え
+  （2026-09-26「課金者の印は、誰の画面でも…」、r109）。印は `plan` と `purchase`
+  から決まり、どちらも service role しか書けないので、誰も自分に印を付けられない。
 
 **リーダーが提案しただけでオーナーが答えていないもの**（入れない）:
 一人一件まで／押した人の頭数で数える／自分の反応は数えない。
@@ -4983,11 +5001,12 @@ and is never merged into your own」と言っている。**入らない、は二
 - Implementation status: **the keyboards are built** (2026-08-23,
   `claude/save`): ~~`kbCap()`~~ in `www/core.js`, ~~`kbCount()`~~ / ~~`kbRoomKb()`~~ in
   `www/keyboard.js`, ~~`CAN.kb`~~ at `plus`, ~~`KB_MAX`~~ gone. Held by `plan-check`.
-  **The language ceiling, `can('edit')` and `can('badge')` are all built now** --
+  **The language ceiling, `can('edit')` and `CAN.badge` are all built now** --
   `langCap()` beside ~~`kbCap()`~~ in `www/core.js` (1 / 1 / 3, with `langStop()`
   as the refusal), `CAN.edit` at `plus` with `postEdit()` asking `can('edit')`,
-  and `CAN.badge` at `pro` with `postBadge()` asking `can('badge')` instead of
-  reading `plan()`. `dl` was added on 2026-09-02.
+  and `CAN.badge` at `pro` -- which the plans page asks as `canRung('badge')`;
+  whether a name WEARS it is the server's `badge_of()` since 2026-09-26, and
+  `postBadge()` asks no plan at all. `dl` was added on 2026-09-02.
   広告の `CAN`（pro の「広告なし」）は 「広告は出さない ── AdMob も、売れる広告枠も、追跡の問いも無い」（2026-09-25） で無くなった。
 
   **数えるのはアカウントです。**「は？端末の話なんかしてねえだろ」「だから端末で

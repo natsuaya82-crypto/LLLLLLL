@@ -53,7 +53,7 @@
 //      saying something is gone that is standing right there.
 //
 //      What the platform provides -- `confirm()`, `layoutSubviews()`,
-//      `to_jsonb()` -- is not ours to define, and is named in PLATFORM below.
+//      `getBoundingClientRect()` -- is not ours to define, and is named in PLATFORM below.
 //      An entry nothing mentions any more, or that the code now defines as
 //      its own, fails like a baseline line that outlived what it allowed.
 //
@@ -228,8 +228,8 @@ const PLATFORM = [
   'getBoundingClientRect', 'decode',
   // UIKit, Core Graphics, Core Text
   'advanceToNextInputMode', 'deleteBackward', 'fillPath', 'UILayoutPriority',
-  // PostgreSQL, and PostgREST following a foreign key: `actor(handle)`
-  'to_jsonb', 'actor',
+  // PostgREST following a foreign key: `actor(handle)`
+  'actor',
 ]
 
 /* THE LANGUAGES' OWN WORDS, which are not names. What a sentence calls in

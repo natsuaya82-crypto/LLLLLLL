@@ -3053,7 +3053,7 @@ var NET_PAGE=50;
    row. And what other people did to a post -- written since there were
    reactions and read back by nobody until netRow() -- is part of it. */
 var NET_POST_SEL='/rest/v1/post_seen?select=id,author,created_at,reply_to,body,hidden_at,author_out'+
-                 ',likes,boosts,replies,i_like,i_boost,quote_of,quoted';
+                 ',likes,boosts,replies,i_like,i_boost,quote_of,quoted,badge';
 /* AND THE LISTS A MUTE LEAVES OUT ASK FOR IT, in these words and no others.
    「ミュートした人の投稿はタイムラインに出ない」 OWNER 2026-09-25, and the
    leader's reading of it: the timelines, a thread and a search. A person's
@@ -3076,7 +3076,7 @@ function netBody(p){
   /* `qt` is a column (quote_of, netPush) and `qp` is the server's answer
      about somebody else's post (netRow) -- neither is this post's body. */
   var o={}, k, skip={id:1, sid:1, mine:1, at:1, to:1, pics:1, vo:1, li:1, bo:1, re:1,
-                     down:1, out:1, qt:1, qp:1};
+                     down:1, out:1, qt:1, qp:1, badge:1};
   for(k in p) if(Object.prototype.hasOwnProperty.call(p, k) && !skip[k]) o[k]=p[k];
   /* THE VOICE'S LENGTH TRAVELS; ITS FILE ON THIS PHONE DOES NOT. `vo` was
      skipped whole because `vo.f` names a file in this phone's Documents, and
@@ -3084,6 +3084,19 @@ function netBody(p){
      recording (r63-audit R1, measured). The recording itself is `vu`, a path
      in the bucket, and postVoAt() reads that where there is no `f`. */
   if(p.vo && p.vo.ms) o.vo={ms:p.vo.ms};
+  return o;
+}
+/* WHETHER SOMEBODY WEARS THE MARK, read off a row in one place -- a post's
+   row (`post_seen.badge`, and the same column on feed_hot/feed_fo/posts_by and
+   inside `quoted`) and a person's (`profile_seen.badge`) alike.
+   「課金者にちゃんと投稿とかプロフィールにダイヤ見えるようになってる？」
+   OWNER 2026-09-26. It is the server's answer about the author NOW
+   (supabase/schema.sql § badge_of) -- nothing on this phone works it out,
+   the reader's own plan included. Left off where the row did not say, for the
+   reason the counts are: 「not wearing it」 and 「nobody has said」 differ, and
+   postFresh() only moves a field that arrived. */
+function netBadgeOn(o, r){
+  if(r && r.badge!==undefined && r.badge!==null) o.badge=!!r.badge;
   return o;
 }
 /* And what a row is on the way back. The server's uuid becomes the post's id,
@@ -3138,6 +3151,8 @@ function netRow(r){
   if(r.replies!==undefined && r.replies!==null) p.nreply=Number(r.replies)||0;
   if(r.i_like!==undefined)  p.ilike=!!r.i_like;
   if(r.i_boost!==undefined) p.iboost=!!r.i_boost;
+  /* And whether whoever wrote it wears the mark, as the server says today. */
+  netBadgeOn(p, r);
   /* WHO PASSED IT ON, and when it reached you. Only feed_fo() says either --
      a post from any other list has no `by` and is not a boost, which is why
      this is absent rather than null: 「nobody passed this on」 and 「this list
@@ -3928,7 +3943,7 @@ function netLike(q){
    for them: one person by handle, and many people at once. A `select=` written
    out twice is two lists that come to differ, and the one that differs is the
    one nobody is looking at. */
-var NET_WHO_SEL='/rest/v1/profile_seen?select=id,handle,display,av,bio,link,loc,banned_at,fo,fr,lang_id,lang_name,lang_pub';
+var NET_WHO_SEL='/rest/v1/profile_seen?select=id,handle,display,av,bio,link,loc,banned_at,fo,fr,lang_id,lang_name,lang_pub,badge';
 /* And one place turns a row into a person, for the same reason. */
 /* THE LANGUAGE IS ON THE ROW AND IS NOT A SECOND REQUEST.
    「なんか全体的に遅くない？」 OWNER 2026-09-08 (143). It used to be
@@ -3941,7 +3956,7 @@ var NET_WHO_SEL='/rest/v1/profile_seen?select=id,handle,display,av,bio,link,loc,
    no language -- or none anybody else may see -- has always looked like. */
 function netWhoRow(r){
   r=r||{};
-  return {who:String(r.display||''), hd:String(r.handle||''),
+  return netBadgeOn({who:String(r.display||''), hd:String(r.handle||''),
           av:r.av||null,
           lname:String(r.lang_name||''),
           lid:String(r.lang_id||''), lpub:!!r.lang_pub,
@@ -3953,7 +3968,7 @@ function netWhoRow(r){
           fr:(r.fr===undefined || r.fr===null)? undefined : (Number(r.fr)||0),
           out:!!r.banned_at,
           /* the account's uuid, which somebody's posts are keyed on */
-          uid:String(r.id||'')};
+          uid:String(r.id||'')}, r);
 }
 /* MANY PEOPLE, IN ONE REQUEST.
    -------------------------------------------------------------------------

@@ -154,6 +154,32 @@ const XR = '7b000000-0000-4000-8000-000000000002';  /* Pro, and Apple took it ba
 const XU = '7b000000-0000-4000-8000-000000000003';  /* Plus, running */
 const XLP= '7b000000-0000-4000-8000-000000000011';  /* what XL wrote */
 const XUP= '7b000000-0000-4000-8000-000000000013';  /* XU quoting A */
+/* EVERY COLUMN THE PHONE ASKS A TABLE OR A VIEW FOR, out of www/net.js with
+   the comments out -- each `'/rest/v1/<rel>?select=<cols>'` literal and the
+   `+ ',more'` literals joined onto it. PostgREST answers a column that is not
+   there with a 400, and a 400 on post_seen is a timeline with nothing on it:
+   nothing throws in the phone, every check that stubs the network is green,
+   and the day it is found is the day it is on the App Store. Counted rather
+   than listed, so a column asked for tomorrow is asked about tomorrow. An
+   alias (`a:b`) and an embed (`a(b)`) are PostgREST's own grammar and are
+   left to it; a list built from a variable says nothing here to check. */
+const NET_ASKS = (function(){
+  const src = fs.readFileSync(path.join(HERE, '..', 'www', 'net.js'), 'utf8')
+    .replace(/\/\*[\s\S]*?\*\//g, ' ');
+  const re = /'\/rest\/v1\/(\w+)\?select=([^'&]*)/g, out = [];
+  let m;
+  while ((m = re.exec(src))) {
+    let cols = m[2], i = re.lastIndex;
+    for (;;) {
+      const t = /^'\s*\+\s*'([^'&]*)/.exec(src.slice(i));
+      if (!t || t[1][0] !== ',') break;
+      cols += t[1]; i += t[0].length;
+    }
+    for (const c of cols.split(','))
+      if (c && !/[:(*]/.test(c)) out.push([m[1], c]);
+  }
+  return out;
+})();
 /* Which rung wears the mark is www/core.js's CAN.badge, and badge_rung() in
    schema.sql says it again in SQL. Read here so the two cannot drift. */
 const CAN_BADGE = (function(){
@@ -2957,6 +2983,12 @@ const SHAPE = [
   ['and somebody here wears it', `
      select count(*) from (select 1 where not exists
        (select 1 from profile where badge_of(id))) q`, '0'],
+  /* AND EVERY COLUMN THE PHONE ASKS FOR IS THERE (NET_ASKS above). */
+  ['every column www/net.js asks for exists (' + NET_ASKS.length + ' asked)', `
+     select count(*) from (values ${NET_ASKS.map(([r, c]) => '(' + q(r) + ',' + q(c) + ')').join(',')}) w(r, c)
+      where not exists (select 1 from information_schema.columns ic
+                         where ic.table_schema = 'public'
+                           and ic.table_name = w.r and ic.column_name = w.c)`, '0'],
   /* WHICH RUNG WEARS IT is www/core.js's CAN.badge, said again here in SQL. */
   ['badge_rung() is CAN.badge', `
      select count(*) from (select 1 where badge_rung() <> ${q(CAN_BADGE)}) q`, '0'],

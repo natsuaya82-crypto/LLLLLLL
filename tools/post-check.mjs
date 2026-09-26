@@ -66,6 +66,12 @@
         nobody having touched it. It is written on the account now, by the
         walk, and read here.
 
+    24  THE MARK IS WHAT THE ROW CARRIED. Somebody else's post, the post
+        inside a quote and somebody else's page wear it when the server's
+        row says so, and nothing wears it when the row does not -- your own
+        included, whatever the READER pays. 「課金者にちゃんと投稿とか
+        プロフィールにダイヤ見えるようになってる？」 OWNER 2026-09-26
+
    Claim 1 is checked by reading the pixels of the file that came out, because
    "the string is different" would also be true of a bake that drew nothing.
 
@@ -682,11 +688,10 @@ const R = await pg.evaluate(async () => {
      check in this file and every screenshot of the fixture, whose names are
      three letters long.
 
-     The plan is put up for it: postBadge() answers can('badge'), and free is
-     what these walks run on. */
+     The post is given the mark for it: postBadge() answers what the post
+     carried (`badge`, post_seen), and the fixture's own posts carry none. */
   {
     const app = document.getElementById('app');
-    const wasPlan = plan();
     /* A post of this person's own THAT THE TIMELINE SHOWS. It was 「the first
        one that is mine」, and by this point in the file the first one that is
        mine is a REPLY -- the parent of the reply written above was deleted on
@@ -700,11 +705,11 @@ const R = await pg.evaluate(async () => {
        a post the feed is drawing, because the fold is measured ON the feed at
        390px. */
     const own = POSTS.filter(p => p.mine && !p.to)[0];
-    const wasWho = own && own.who, wasHd = own && own.hd;
+    const wasWho = own && own.who, wasHd = own && own.hd, wasBdg = own && own.badge;
     if (!own) fails.push('no post of this person\u2019s own, so the badge and the ' +
                          'fold below are tests of nothing');
     else {
-      planGot('pro');
+      own.badge = true;
       const at = (h, cls) => h.indexOf('class="' + cls);
       const h = postRow(own);
       /* The handle is asked for by the characters, not by what it wears.
@@ -717,8 +722,8 @@ const R = await pg.evaluate(async () => {
       const iName = at(h, 'pname"'), iBdg = at(h, 'bdgw'),
             iHd = h.indexOf('@' + own.hd), iWhen = at(h, 'pwhen"');
       if (iBdg < 0)
-        fails.push('a post of this person\u2019s own on the plan that carries the ' +
-                   'mark has no mark on it, so where it sits is untested');
+        fails.push('a post of this person\u2019s own carrying the mark has no ' +
+                   'mark on it, so where it sits is untested');
       else if (!(iName < iBdg && iBdg < iHd && iHd < iWhen))
         fails.push('the head of a post is not name, badge, handle, time. The ' +
                    'badge is a fact about the person and anything standing ' +
@@ -759,8 +764,89 @@ const R = await pg.evaluate(async () => {
       }
       own.who = wasWho; own.hd = wasHd;
     }
-    planGot(wasPlan);
+    if (own) { if (wasBdg === undefined) delete own.badge; else own.badge = wasBdg; }
     app.innerHTML = '';
+  }
+
+  /* ---- the mark: off what the post and the person CARRIED, and nothing else
+     「課金者にちゃんと投稿とかプロフィールにダイヤ見えるようになってる？」
+     「入れるよ？」 OWNER 2026-09-26. It was drawn off two facts about the
+     READER -- `p.mine` and can('badge') -- so the author's phone was the only
+     one in the world that ever showed it, and every check here was green,
+     because every post a walk draws is the walker's own.
+
+     So the rows are the server's shape, put through the real readers --
+     netRow() for a post (and the post inside a quote), netWhoRow() for a
+     person -- and what comes out is drawn by the real postRow() and
+     whoCard(). Three claims:
+       somebody else's post and page wear it when the row says so;
+       nothing wears it when the row does not, whatever the READER pays;
+       your own post and page go the same road -- no row, no mark, on Pro. */
+  {
+    const bd = h => h.indexOf('bdgw') >= 0;
+    const wasPlan = plan();
+    const other = 'b0000000-0000-4000-8000-0000000000b9';
+    const row = (id, author, badge, extra) => Object.assign({
+      id, author, created_at: '2026-09-26T00:00:00Z', reply_to: null,
+      body: { who: 'Iri', hd: 'iri', ln: 'sina' }, hidden_at: null, author_out: false,
+      likes: 0, boosts: 0, replies: 0, i_like: false, i_boost: false }, extra || {},
+      badge === undefined ? {} : { badge });
+    planGot('free');
+    const theirs = netRow(row('p-bdg-1', other, true));
+    const plain  = netRow(row('p-bdg-2', other, false));
+    const quote  = netRow(row('p-bdg-3', other, false,
+                    { quote_of: 'p-bdg-1', quoted: row('p-bdg-1', other, true) }));
+    if (!bd(postRow(theirs)))
+      fails.push('somebody else\u2019s post whose row says they wear the mark ' +
+                 'has no mark on it. 「相手の画面にパッチ映らない」 again');
+    if (bd(postRow(plain)))
+      fails.push('a post whose row says its author does not wear the mark has one');
+    if (!quote.qp || !quote.qp.badge)
+      fails.push('the post inside a quote lost the mark its row carried');
+    /* On Pro, the reader's plan must change nothing about somebody else's post,
+       and nothing about their own: the mark is the ROW's. */
+    planGot('pro');
+    if (bd(postRow(plain)))
+      fails.push('the READER being on Pro put the mark on somebody else\u2019s ' +
+                 'post whose row said no. The mark is the author\u2019s, not mine');
+    const me = netUid() || 'a0000000-0000-4000-8000-0000000000a9';
+    const mineNo  = netRow(row('p-bdg-4', me, undefined));
+    const mineYes = netRow(row('p-bdg-5', me, true));
+    if (!mineNo.mine)
+      fails.push('a row by this account did not come back as mine, so the ' +
+                 'claim about your own post is a test of nothing');
+    if (bd(postRow(mineNo)))
+      fails.push('your own post wore the mark with no answer from the server, ' +
+                 'because YOUR plan is Pro. That is the second road, and it is ' +
+                 'the one that only ever worked on one phone');
+    if (!bd(postRow(mineYes)))
+      fails.push('your own post whose row says you wear the mark has none -- ' +
+                 'your own is meant to come back the same road as everybody\u2019s');
+    /* And a person's page, off profile_seen's row. */
+    const was = WHO_HAVE.iri;
+    WHO_HAVE.iri = netWhoRow({ id: other, handle: 'iri', display: 'Iri', badge: true });
+    const card1 = whoCard('iri');
+    WHO_HAVE.iri = netWhoRow({ id: other, handle: 'iri', display: 'Iri', badge: false });
+    const card2 = whoCard('iri');
+    if (was === undefined) delete WHO_HAVE.iri; else WHO_HAVE.iri = was;
+    if (!bd(card1))
+      fails.push('somebody else\u2019s page whose row says they wear the mark ' +
+                 'has no mark beside their name');
+    if (bd(card2))
+      fails.push('somebody else\u2019s page wore the mark with the row saying no, ' +
+                 'because the READER is on Pro');
+    const mh = meHandle(), wasMe = WHO_HAVE[mh];
+    WHO_HAVE[mh] = netWhoRow({ id: me, handle: mh, display: 'Me', badge: false });
+    const meNo = meCard();
+    WHO_HAVE[mh] = netWhoRow({ id: me, handle: mh, display: 'Me', badge: true });
+    const meYes = meCard();
+    if (wasMe === undefined) delete WHO_HAVE[mh]; else WHO_HAVE[mh] = wasMe;
+    if (bd(meNo))
+      fails.push('your own page wore the mark with your row saying no, because ' +
+                 'your plan is Pro -- the second road');
+    if (!bd(meYes))
+      fails.push('your own page whose row says you wear the mark has none');
+    planGot(wasPlan);
   }
 
   /* ---- the line, then what it means, then everything else --------------
