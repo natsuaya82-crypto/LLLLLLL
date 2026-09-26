@@ -226,7 +226,18 @@ function prevPage(){ return NAV.length>1? NAV[NAV.length-2] : null; }
 
    And leaving ends the keyboard's wobble: it is a state of a screen you are
    standing ON (www/keyboard.js § kbWob) -- 「並べ替えは保存か戻るで終わる」
-   OWNER 2026-09-05 -- and a save that landed leaves through here too. */
+   OWNER 2026-09-05 -- and a save that landed leaves through here too.
+
+   AND COMING BACK IS COMING BACK TO WHERE YOU WERE.
+   「投稿の詳細とか見て戻ったら一番上になるのやめて欲しい。その画面のまま
+   止まって欲しい。全部。」 OWNER 2026-09-26. A step of the trail is the
+   screen, and it carries `y` -- how far down it stood -- written the moment
+   it is walked off. Arriving on a step that has one (it was on the trail
+   already: back, the swipe, go() to a page behind you) puts the page there;
+   a step made new (going deeper, a tab) has none and starts at the top. The
+   list under it is still what was read, down to the last page the foot
+   brought in: an answer already in is not asked again (pageWait, www/sns.js
+   § pullWait), so the page is as tall as when it was left. */
 var NAV_TO=null;
 function navNow(){ return NAV_TO || NAV; }
 function navLand(nav){
@@ -238,7 +249,8 @@ function navLand(nav){
     if(NAV_TO!==nav) return;
     NAV_TO=null;
     if(!went){ netPop(null, 0, 'page', function(){ navLand(nav); }); return; }
-    NAV=nav; route=to.r; render(); window.scrollTo(0,0);
+    here().y=pullTop();
+    NAV=nav; route=to.r; render(); window.scrollTo(0, to.y||0);
   });
 }
 /* Is this screen -- a route AND its argument -- still on that trail. */
@@ -333,10 +345,9 @@ function backAnswer(keep){
      Both answers leave the composer empty: a post that is in the drafts and
      still in the composer is the same post in two places, and one that was
      not kept was not kept. 「残ってほしくない」 */
-  var to=NAV.slice(0, NAV.length-1);
+  var to=backTo();
   if(keep) draftKeep(); else PW=pwBlank();
-  NAV=to.length? to : [{r:'profile'}];
-  route=here().r; render(); window.scrollTo(0,0);
+  navLand(to);
 }
 /* ---- what has been TYPED and not saved yet -----------------------------
    OWNER DECISION 2026-09-03:

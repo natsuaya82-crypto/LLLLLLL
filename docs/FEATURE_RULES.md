@@ -361,6 +361,15 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Affected data: 無し（読み方だけ）。
 - Implementation status: 実装（r100、`posts_by()`、integ-0905、CODE CONFIRMED のみ）。本番の `schema.sql` を貼り直すまでプロフィールには出ない。
 
+### 2026-09-26 戻ったら、その画面のまま止まる（全部の画面）
+- Date: 2026-09-26
+- Area: 画面の行き来（`navLand()`、`www/shell.js`）
+- Decision: 投稿の詳細などを見て戻ったら、戻った画面は離れた時のスクロール位置のまま。タイムライン・通知・フォロー欄・プロフィール・辞書、全部の画面。新しい画面へ進む時とタブは今どおり一番上。
+- Reason: オーナーの言葉「投稿とか通知とかフォロー欄とかなんでもそうなんだけど、投稿の詳細とか見て戻ったら一番上になるのやめて欲しい。その画面のまま止まって欲しい。全部。」
+- Affected features: 戻る（矢印・左端のスワイプ・投稿画面の「下書きに？」の答え・保存して戻る）、足跡の中の画面への go()。
+- Affected data: 無し（位置は足跡 `NAV` の各項目の `y`、メモリだけ）。
+- Implementation status: 実装（r108-scroll、`tools/scroll-check.mjs`、CODE CONFIRMED のみ・実機未確認）。
+
 ### 2026-09-26 ルールの洗い出しへの答え ── 角丸の残りはそのまま、マークの無い字はそのまま、端末に何も残さない
 - Date: 2026-09-26
 - Area: 見た目の残り（`tools/box-baseline.txt`）、字のままの操作、端末に残る物
