@@ -8,6 +8,8 @@
 #   check  ── 読むだけ。通知の道（Webhooks・トリガー・宛先の数・push-send の
 #             答え十件）と、schema の新しさの印を Actions の記録に出す。
 #             何も書かない。
+#   logs   ── 読むだけ。直近 6 時間の、断られた要求（4xx・5xx）と Postgres の
+#             エラーを出す（Supabase のログ API）。何も書かない。
 #   apply  ── supabase/schema.sql を丸ごと流す（何度流しても同じになる作り）。
 #             流した後に check と同じものを出す。本番を書き換えるので、押すのは
 #             オーナーか、オーナーが「押して」と言った時だけ。
@@ -17,12 +19,13 @@ on:
   workflow_dispatch:
     inputs:
       action:
-        description: 'check（読むだけ）か apply（schema.sql を流す）'
+        description: 'check・logs（読むだけ）か apply（schema.sql を流す）'
         required: true
         default: check
         type: choice
         options:
           - check
+          - logs
           - apply
 
 env:
@@ -51,7 +54,24 @@ jobs:
           echo "HTTP $CODE"; head -c 2000 out.json; echo
           case "$CODE" in 2*) ;; *) exit 1 ;; esac
 
+      - name: ログを読む（logs の時だけ）
+        if: inputs.action == 'logs'
+        run: |
+          S=$(date -u -d '6 hours ago' +%Y-%m-%dT%H:%M:%SZ); E=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          q(){
+            curl -s -G "https://api.supabase.com/v1/projects/$PROJECT_REF/analytics/endpoints/logs.all" \
+              -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+              --data-urlencode "iso_timestamp_start=$S" --data-urlencode "iso_timestamp_end=$E" \
+              --data-urlencode "sql=$1" > out.json
+            jq -c '.result[]? ' out.json 2>/dev/null || cat out.json; echo
+          }
+          echo '== 断られた要求'
+          q "select datetime(timestamp) as t, request.method as m, request.path as p, request.search as s, response.status_code as c from edge_logs cross join unnest(metadata) as md cross join unnest(md.request) as request cross join unnest(md.response) as response where response.status_code >= 400 order by timestamp desc limit 60"
+          echo '== Postgres のエラー'
+          q "select datetime(timestamp) as t, parsed.error_severity as sev, event_message as msg from postgres_logs cross join unnest(metadata) as md cross join unnest(md.parsed) as parsed where parsed.error_severity in ('ERROR','FATAL','PANIC') order by timestamp desc limit 40"
+
       - name: 読む（通知の道と schema の新しさ）
+        if: inputs.action != 'logs'
         run: |
           cat > check.sql <<'SQL'
           select 'webhooks' as what,
