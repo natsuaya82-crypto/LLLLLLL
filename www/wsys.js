@@ -289,39 +289,63 @@ function wsSeq(unit){
   }
   return out;
 }
-/* Which way a vowel's square is cut: `lr`, the vowel beside what comes
-   before it, or `tb`, the vowel under it -- ㅏ and ㅗ. The language's, in the
-   `script` slice beside the direction and the gap: `SCRIPT.blk` names the
-   vowels that go under, and a vowel it does not name goes beside. */
+/* How a vowel's square is cut, one of three: `lr`, the vowel beside what
+   comes before it (ㅏ); `tb`, the vowel under it (ㅗ); `q`, the square cut in
+   four like 田, the vowel beside and the finals in the two quarters under.
+   「4分割までで作れればいいんちゃう？」 OWNER 2026-09-26. The language's, in
+   the `script` slice beside the direction and the gap: `SCRIPT.blk` names the
+   vowels that are not `lr`, and a vowel it does not name -- or names with a
+   value this build does not know -- goes beside. */
+var WS_BLK_CUTS=['lr', 'tb', 'q'];
 function wsBlkOf(v){
-  return (SCRIPT.blk && SCRIPT.blk[v]==='tb')? 'tb' : 'lr';
+  var k=SCRIPT.blk && SCRIPT.blk[v];
+  return (k && WS_BLK_CUTS.indexOf(k)>0)? k : 'lr';
 }
 function wsBlkSet(v, k){
   var m={}, x;
   for(x in SCRIPT.blk||{}) if(Object.prototype.hasOwnProperty.call(SCRIPT.blk, x)) m[x]=SCRIPT.blk[x];
-  if(k==='tb') m[v]='tb'; else delete m[v];
+  if(WS_BLK_CUTS.indexOf(k)>0) m[v]=k; else delete m[v];
   SCRIPT.blk=m;
 }
+/* The vowel a letter's page chooses the cut for: the first vowel of the
+   language the letter reads, while the writing is a block, or ''. */
+function wsBlkVowOf(l){
+  var vs, i;
+  if(!l || wsys()!=='block') return '';
+  vs=wsVows();
+  for(i=0;i<(l.snd||[]).length;i++) if(vs.indexOf(l.snd[i])>=0) return l.snd[i];
+  return '';
+}
 /* The parts of the square a syllable stands in, in the order of its sounds,
-   as [x, y, w, h] in fractions of the lattice. Rows down, and each row cut
-   across into as many parts as it has letters:
+   as [x, y, w, h] in fractions of the lattice, or null when the syllable
+   does not fit the cut. Rows down, each row cut across:
 
      lr    onset and vowel in one row          ㅎㅏ
      tb    onset over vowel                    ㅎ / ㅗ
-     and a row underneath for the final sound, in either      ㄴ
+     and a row underneath for the finals, in either      ㄴ
+     q     onset and vowel in one row, and under them two quarters, the
+           finals from the left -- one final stands in the left quarter
+           alone. With no final it is lr.        ㄷㅏ / ㄹㄱ
 
-   The final row is lower than the others, and there is a gap between two
-   parts. Both are a look, not a rule anybody has given (docs/scope/r102-block.md). */
+   A square is cut into four parts at most, so a syllable of more letters
+   than that is not put together (wsParts). The final row of lr and tb is
+   lower than the others and there is a gap between two parts; both are a
+   look, not a rule anybody has given (docs/scope/r102-block.md). */
 var WS_BLK={gap:0.06, low:0.7};
 function wsBlockBoxes(on, nu, co, type){
-  var rows=(type==='tb')? [on, nu, co] : [on.concat(nu), co],
-      use=[], i, j, sum=0, y=0, h, w, out=[], g=WS_BLK.gap;
-  for(i=0;i<rows.length;i++) if(rows[i].length) use.push({n:rows[i].length, wt:(i===rows.length-1 && co.length && i>0)? WS_BLK.low : 1});
+  var q=(type==='q'), rows=(type==='tb')? [on, nu, co] : [on.concat(nu), co],
+      use=[], i, j, n, sum=0, y=0, h, w, out=[], g=WS_BLK.gap;
+  if(q && (rows[0].length>2 || co.length>2)) return null;
+  for(i=0;i<rows.length;i++){
+    if(!rows[i].length) continue;
+    n=(q && i>0)? 2 : rows[i].length;
+    use.push({n:n, k:rows[i].length, wt:(!q && i===rows.length-1 && co.length && i>0)? WS_BLK.low : 1});
+  }
   for(i=0;i<use.length;i++) sum+=use[i].wt;
   for(i=0;i<use.length;i++){
     h=(1-g*(use.length-1))*use[i].wt/sum;
     w=(1-g*(use[i].n-1))/use[i].n;
-    for(j=0;j<use[i].n;j++) out.push([j*(w+g), y, w, h]);
+    for(j=0;j<use[i].k;j++) out.push([j*(w+g), y, w, h]);
     y+=h+g;
   }
   return out;
@@ -342,8 +366,9 @@ function wsParts(unit, type){
     else if(nu.length) co.push(seq[i]);
     else on.push(seq[i]);
   }
-  if(!nu.length) return null;
+  if(!nu.length || seq.length>4) return null;
   box=wsBlockBoxes(on, nu, co, type || wsBlkOf(nu[0]));
+  if(!box) return null;
   seq=on.concat(nu).concat(co);
   for(i=0;i<seq.length;i++) out.push({s:seq[i], box:box[i]});
   return out;

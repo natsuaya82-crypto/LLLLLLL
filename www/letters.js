@@ -823,8 +823,11 @@ function ltKeepOn(id){
   if(!l || langLocked()) return;
   keepOn(keepKeyOf('letter', id),
          function(){
-           var one=ltById(id);
-           return one? {ab:ltBoxed(one), nt:one.nt} : {ab:'', nt:''};
+           var one=ltById(id), v=wsBlkVowOf(one), o={ab:'', nt:''};
+           if(one) o={ab:ltBoxed(one), nt:one.nt};
+           /* a block's vowel carries how its square is cut (ltCutRows()) */
+           if(v) o.cut=wsBlkOf(v);
+           return o;
          },
          function(v, done){ ltSave(id, v); done(true); });
 }
@@ -847,6 +850,14 @@ function ltSave(id, v){
   if(v.hasOwnProperty('nt')){
     if(String(v.nt).length) l.nt=String(v.nt); else delete l.nt;
     saveLetters();
+  }
+  /* The cut before the name, for the reason the note is: it is this page's
+     vowel, and a rename can move the letter to another sound. Only when it
+     moved: the buffer carries every field, and a value this build does not
+     know reads as side by side and must not be written over as one. */
+  if(v.hasOwnProperty('cut') && wsBlkVowOf(l) && String(v.cut)!==wsBlkOf(wsBlkVowOf(l))){
+    wsBlkSet(wsBlkVowOf(l), String(v.cut));
+    save(); installScriptFont();
   }
   if(v.hasOwnProperty('ab')) now=ltSetRoman(id, String(v.ab));
   toast(t('toast.saved', ltName(ltById(now))||t('lt.untitled')));
