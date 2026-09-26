@@ -2629,7 +2629,16 @@ HELP.glyph=function(){
     geHelpRow('redo',   t('glyph.redo'),   t('glyph.redo.d'))+
     geHelpRow('fill',   t('glyph.fill'),   t('glyph.fill.d'))+
     geHelpRow('circle', t('glyph.circle'), t('glyph.circle.d'))+
-    geHelpRow('clear',  t('glyph.clear'),  t('glyph.clear.d'))};
+    geHelpRow('clear',  t('glyph.clear'),  t('glyph.clear.d'))+
+    /* A block puts a syllable together out of where each letter was drawn
+       on this square (wsParts(), www/wsys.js), so how is said here, where
+       the square is, and only while the writing is a block. */
+    (wsys()==='block'
+      ? helpPara(t('hp.bk.p'))+
+        helpStep(1, t('hp.bk.1'), t('hp.bk.1.d'))+
+        helpStep(2, t('hp.bk.2'), t('hp.bk.2.d'))+
+        helpStep(3, t('hp.bk.3'), t('hp.bk.3.d'))
+      : '')};
 };
 function geTools(){
   /* The Save in the bar is a control too, so it is brought up to date here

@@ -8,26 +8,29 @@
    them is a font that installs and a screen that renders. So this drives the
    real app and asks:
 
-   1. THE SQUARE. In a block the pieces of a syllable stand where the cut puts
-      them: side by side (ka), side by side over the final (kan), one over the
-      other (ko), one over the other over the final (kon), and the square in
-      four, 田 (kant, and kan with its one final in the left quarter alone).
-      Four parts at most: a syllable of five letters is not put together.
-      「4分割までで作れればいいんちゃう？」 OWNER 2026-09-26. Asked of where
-      the ink IS -- every point of a piece inside its part -- and never of the
-      boxes wsBlockBoxes() answers, because a check that asks the function
-      under test is a copy of it.
+   1. THE SQUARE. In a block every piece of a syllable stands where it was
+      DRAWN, as large as it was drawn, laid over the others -- the drawing
+      square is already cut in four (田), so the quarter a letter is drawn in
+      is where it goes. 「せっかく4つに区切ってるから、それうまく利用しない？
+      そうすれば置き場所指定しなくても入れるやん？」 OWNER 2026-09-26. The one
+      exception is a final: drawn in the top half it moves half the square
+      down -- the first into the lower left, a second into the lower right --
+      and one already drawn low is not moved. Asked of the ink: each piece is
+      the drawn strokes point for point, or the drawn strokes moved by one
+      constant, into the quarter asked for. Four letters at most, two finals
+      at most.
    2. THE PEN IS NOT SHRUNK, because the pen is not on a stroke: a piece is
-      its strokes moved, and the strokes carry nothing else that changed.
+      its strokes (moved, for a final), and the strokes carry nothing else
+      that changed.
    3. AN ABUGIDA IS WHAT IT WAS: the consonant's strokes and then the mark's,
       the same objects, which is what it was before it shared the mechanism.
    4. THE FONT CARRIES IT: LinguaFont.build is handed the square for a
       syllable a word says, under the unit's own glyph name.
-   5. THE CUT IS KEPT: chosen on the vowel's own letter page (the list and
-      the vowel screen it replaced are gone), saved by the Save in the bar,
-      and still there after the language is read back out of its slice --
-      langRead() used to copy four fields of `script` by name and drop the
-      rest.
+   5. NOBODY CHOOSES A CUT: the vowel's letter page has no placement on it,
+      the name that chose one is gone, and a `blk` already in the `script`
+      slice is not read -- ka is side by side with {"a":"tb"} in it -- and
+      is not dropped either: it is still in the slice after a save and a
+      read back.
    6. SVG: the share mark on the letters goes to the export screen -- no pop
       「そのポップでフォントとsvg出すのはやめてくれ」 -- and SVG there hands the
       share sheet a file with one group per drawn letter, each a path inside
@@ -52,43 +55,67 @@ const r = await pg.evaluate(async ({s}) => {
   SET.walked = true;
   var out = {};
   planGot('pro');
-  /* the fixture's k is drawn; a, o and n are slots with nothing on them */
-  var K = [{pts:[[112,112],[688,112],[400,688]]}];
-  inkSet(ltMain('k'), K);
-  inkSet(ltMain('a'), [{pts:[[400,112],[400,688]]}]);
-  inkSet(ltMain('o'), [{pts:[[112,400],[688,400]], rd:1}]);
-  inkSet(ltMain('n'), [{pts:[[112,112],[112,688],[688,688]]}]);
-  inkSet(ltMain('t'), [{pts:[[112,112],[688,112]]}]);
+  /* k, a, n and t drawn in the top half, o in the bottom half */
+  var K = [{pts:[[130,130],[370,130],[370,370]]}],
+      A = [{pts:[[560,120],[560,380]]}, {pts:[[560,250],[680,250]]}],
+      O = [{pts:[[180,560],[620,560]], rd:1}],
+      N = [{pts:[[140,130],[140,370],[370,370]]}],
+      T = [{pts:[[130,140],[370,140]]}, {pts:[[250,140],[250,370]]}];
+  inkSet(ltMain('k'), K); inkSet(ltMain('a'), A); inkSet(ltMain('o'), O);
+  inkSet(ltMain('n'), N); inkSet(ltMain('t'), T);
 
-  /* the part of the square each piece's ink stands in */
-  function span(st){
-    var x0=1e9, x1=-1e9, y0=1e9, y1=-1e9;
-    st.forEach(function(k){ k.pts.forEach(function(p){
-      if(p[0]<x0) x0=p[0]; if(p[0]>x1) x1=p[0]; if(p[1]<y0) y0=p[1]; if(p[1]>y1) y1=p[1]; }); });
-    return {x0:x0, x1:x1, y0:y0, y1:y1};
+  /* how a piece stands against what was drawn: the same points (0,0), the
+     same points moved by one constant [dx,dy], or not the drawing at all
+     (null); and whether every point is inside the quarter asked for */
+  function moved(piece, drawn){
+    var d = null, ok = piece.length === drawn.length;
+    drawn.forEach(function(k, i){
+      if (!ok || !piece[i] || piece[i].pts.length !== k.pts.length) { ok = false; return; }
+      k.pts.forEach(function(p, j){
+        var q = piece[i].pts[j], e = [q[0]-p[0], q[1]-p[1]];
+        if (!d) d = e; else if (d[0] !== e[0] || d[1] !== e[1]) ok = false;
+      });
+    });
+    return ok ? d : null;
   }
-  function pieces(unit, n){
-    var st = wsStrokes(unit) || [], ls = [K.length, 1, 1, 1], o = [], i = 0;
-    for (var j = 0; j < n; j++){ o.push(span(st.slice(i, i+ls[j]))); i += ls[j]; }
-    return { n: st.length, p: o, st: st };
+  function inQ(piece, qx, qy){
+    return piece.every(function(k){ return k.pts.every(function(p){
+      return (qx ? p[0] >= 400 : p[0] <= 400) && (qy ? p[1] >= 400 : p[1] <= 400); }); });
+  }
+  function pieces(unit, drawn){
+    var st = wsStrokes(unit), o = [], i = 0;
+    if (!st) return null;
+    drawn.forEach(function(g){ o.push(st.slice(i, i + g.length)); i += g.length; });
+    return { n: st.length, want: i, p: o, mv: o.map(function(x, j){ return moved(x, drawn[j]); }) };
   }
   langWsysGot(langId, 'block');
   out.wsys = wsys();
-  wsBlkSet('o', 'tb'); wsBlkSet('a', 'lr');
-  out.ka = pieces('ka', 2); out.kan = pieces('kan', 3);
-  out.ko = pieces('ko', 2); out.kon = pieces('kon', 3);
-  out.oflag = out.ko.st[1] && out.ko.st[1].rd === 1;
-  wsBlkSet('a', 'q');
-  out.qa = pieces('ka', 2); out.qan = pieces('kan', 3); out.qant = pieces('kant', 4);
-  wsBlkSet('o', 'lr'); wsBlkSet('a', 'lr');
-  /* asked side by side: 田 would refuse it on its own shape, and what is
-     held here is the four for every cut */
+  out.ka = pieces('ka', [K, A]);
+  out.ko = pieces('ko', [K, O]);
+  out.kan = pieces('kan', [K, A, N]);
+  out.kanQ = out.kan && inQ(out.kan.p[2], 0, 1);
+  out.kant = pieces('kant', [K, A, N, T]);
+  out.kantQ = out.kant && inQ(out.kant.p[2], 0, 1) && inQ(out.kant.p[3], 1, 1);
+  out.kon = pieces('kon', [K, O, N]);
+  out.oflag = out.ko && out.ko.p[1][0] && out.ko.p[1][0].rd === 1;
+  /* a final already drawn low stays where it was drawn */
+  var NL = [{pts:[[140,500],[140,700],[370,700]]}];
+  inkSet(ltMain('n'), NL);
+  out.kanLow = pieces('kan', [K, A, NL]);
+  /* and a second final drawn across the middle is moved down, not across */
+  var TW = [{pts:[[130,140],[600,140]]}];
+  inkSet(ltMain('n'), N); inkSet(ltMain('t'), TW);
+  out.kantWide = pieces('kant', [K, A, N, TW]);
+  inkSet(ltMain('t'), T);
   out.five = wsStrokes('knant');
+  out.three = wsStrokes('ankt');
+  out.after = wsStrokes('kana');
 
   /* 3 -- an abugida */
   langWsysGot(langId, 'abugida');
   var ab = wsStrokes('ka');
-  out.ab = !!ab && ab.length === 2 && ab[0] === inkGeo(ltMain('k'))[0] && ab[1] === inkGeo(ltMain('a'))[0];
+  out.ab = !!ab && ab.length === 3 && ab[0] === inkGeo(ltMain('k'))[0] &&
+           ab[1] === inkGeo(ltMain('a'))[0] && ab[2] === inkGeo(ltMain('a'))[1];
 
   /* 4 -- the font */
   langWsysGot(langId, 'block');
@@ -101,32 +128,22 @@ const r = await pg.evaluate(async ({s}) => {
   out.fontHanded = !!handed;
   out.font = got === want;
 
-  /* 5 -- the cut, chosen, saved and read back */
+  /* 5 -- nobody chooses a cut, and what an older build chose stays put */
+  out.gone = !PAGES.blk && !PAGES.blkv && typeof window.ltCutPick === 'undefined' &&
+             typeof window.wsBlkOf === 'undefined' && typeof window.WS_BLK_CUTS === 'undefined';
+  window.route = 'letter'; NAV = [{ r:'letters' }, { r:'letter', a: ltMain('a').id }]; render();
+  out.vowRows = document.querySelectorAll('#app [data-do="ltCutPick"]').length;
+  out.vowPage = here().r === 'letter' && !!document.querySelector('#app .gcell, #app canvas, #app [data-do]');
   var realSN = window.netSaveNow;
   window.netSaveNow = function(cb){ if (cb) cb(true); };
-  out.gone = !PAGES.blk && !PAGES.blkv;
-  function cutOn(k){
-    window.route = 'letter'; NAV = [{ r:'letters' }, { r:'letter', a: ltMain('o').id }]; render();
-    var row = document.querySelector('#app [data-do="ltCutPick"][data-a*="' + k + '"]');
-    var rows = document.querySelectorAll('#app [data-do="ltCutPick"]').length;
-    if (row) row.click();
-    var sv = document.querySelector('.navtop [data-do="keepPress"]');
-    var lit = !!(sv && sv.classList.contains('navon'));
-    if (sv) sv.click();
-    return { row: !!row, rows: rows, lit: lit };
-  }
-  out.cutQ = cutOn('q');
-  await new Promise(function(f){ setTimeout(f, 50); });
-  out.keptQ = wsBlkOf('o');
-  out.cutTb = cutOn('tb');
-  await new Promise(function(f){ setTimeout(f, 50); });
-  window.route = 'letter'; NAV = [{ r:'letters' }, { r:'letter', a: ltMain('k').id }]; render();
-  out.consRows = document.querySelectorAll('#app [data-do="ltCutPick"]').length;
-  window.netSaveNow = realSN;
-  out.kept = wsBlkOf('o');
+  window.route = 'letters'; NAV = [{ r:'letters' }]; render();
+  SCRIPT.blk = { a:'tb' };
+  out.kaOld = pieces('ka', [K, A]);
+  save();
   langRead();
-  out.reread = wsBlkOf('o');
   out.sliceHas = JSON.stringify((slRd(langKey('script')) && JSON.parse(slRd(langKey('script'))).blk) || null);
+  out.readHas = JSON.stringify(SCRIPT.blk || null);
+  window.netSaveNow = realSN;
 
   /* 6 -- SVG */
   var sent = [], sp0 = window.sharePlug;
@@ -181,34 +198,32 @@ function say(ok, line){ console.log('  ' + (ok ? '' : 'FAILED  ') + line); if (!
 const M = 400;   /* the middle of the square */
 const q = x => x.p.map(p => '[' + [p.x0, p.x1, p.y0, p.y1].join(' ') + ']').join(' ');
 
+const same = x => !!x && x.mv.every(d => d && d[0] === 0 && d[1] === 0);
+const shown = x => !x ? 'not put together' : x.mv.map(d => d ? '[' + d.join(',') + ']' : 'not the drawing').join(' ');
 say(r.wsys === 'block', 'the language is written in blocks (' + r.wsys + ')');
-say(r.ka.n === 2 && r.ka.p[0].x1 < M && r.ka.p[1].x0 > M && r.ka.p[0].y0 === 112 && r.ka.p[0].y1 === 688,
-    'ka: the consonant left, the vowel right, both as tall as they were drawn -- ' + q(r.ka));
-say(r.kan.n === 3 && r.kan.p[0].x1 < M && r.kan.p[1].x0 > M && r.kan.p[2].y0 > Math.max(r.kan.p[0].y1, r.kan.p[1].y1),
-    'kan: the same row over the final -- ' + q(r.kan));
-say(r.ko.n === 2 && r.ko.p[0].y1 < M && r.ko.p[1].y0 > M,
-    'ko: a vowel cut under -- the consonant over it -- ' + q(r.ko));
-say(r.kon.n === 3 && r.kon.p[0].y1 < r.kon.p[1].y0 && r.kon.p[1].y1 < r.kon.p[2].y0,
-    'kon: consonant, vowel, final, one under another -- ' + q(r.kon));
-say(r.qa.n === 2 && r.qa.p[0].x1 < M && r.qa.p[1].x0 > M && r.qa.p[0].y1 === 688,
-    'ka in four: nothing under it, so it is side by side -- ' + q(r.qa));
-say(r.qan.n === 3 && r.qan.p[0].x1 < M && r.qan.p[0].y1 < M && r.qan.p[1].x0 > M && r.qan.p[1].y1 < M &&
-    r.qan.p[2].x1 < M && r.qan.p[2].y0 > M,
-    'kan in four: consonant top left, vowel top right, the one final in the left quarter alone -- ' + q(r.qan));
-say(r.qant.n === 4 && r.qant.p[2].x1 < M && r.qant.p[2].y0 > M && r.qant.p[3].x0 > M && r.qant.p[3].y0 > M &&
-    r.qant.p[0].y1 < M && r.qant.p[1].x0 > M && r.qant.p[1].y1 < M,
-    'kant in four: 田, each letter in its own quarter -- ' + q(r.qant));
+say(!!r.ka && r.ka.n === r.ka.want && same(r.ka),
+    'ka: the consonant and the vowel exactly where they were drawn, nothing shrunk -- ' + shown(r.ka));
+say(!!r.ko && r.ko.n === r.ko.want && same(r.ko),
+    'ko: the vowel drawn low stays low, over nothing but where it was drawn -- ' + shown(r.ko));
+say(!!r.kan && same({ mv: r.kan.mv.slice(0, 2) }) && r.kan.mv[2] && r.kan.mv[2][0] === 0 && r.kan.mv[2][1] > 0 && r.kanQ,
+    'kan: the final drawn top left moves straight down into the lower left -- ' + shown(r.kan));
+say(!!r.kant && same({ mv: r.kant.mv.slice(0, 2) }) && r.kant.mv[3] && r.kant.mv[3][0] > 0 && r.kant.mv[3][1] > 0 && r.kantQ,
+    'kant: the second final moves down and right into the lower right -- ' + shown(r.kant));
+say(!!r.kon && same({ mv: r.kon.mv.slice(0, 2) }) && r.kon.mv[2] && r.kon.mv[2][1] > 0,
+    'kon: a final under a low vowel moves down all the same -- ' + shown(r.kon));
+say(!!r.kanLow && same(r.kanLow), 'a final already drawn low is not moved -- ' + shown(r.kanLow));
+say(!!r.kantWide && r.kantWide.mv[3] && r.kantWide.mv[3][0] === 0 && r.kantWide.mv[3][1] > 0,
+    'a second final drawn across the middle moves down and not across -- ' + shown(r.kantWide));
 say(r.five === null, 'a syllable of five letters is not put together (' + JSON.stringify(r.five && r.five.length) + ')');
-say(r.oflag, 'a piece keeps what its strokes carry (the round on o), only moved');
+say(r.three === null, 'three finals are not put together (' + JSON.stringify(r.three && r.three.length) + ')');
+say(r.oflag, 'a piece keeps what its strokes carry (the round on o)');
 say(r.ab, 'an abugida\'s letter is the consonant\'s strokes and then the mark\'s, the same objects as before');
 say(r.fontHanded && r.font, 'the font is handed the square for ka under the unit\'s own glyph');
-say(r.gone, 'the list of cuts and the vowel screen are gone -- one road');
-say(r.cutQ.rows === 3 && r.cutQ.row && r.cutQ.lit, 'the vowel o\'s letter page: three cuts, 田 pressed, the Save lit');
-say(r.keptQ === 'q', 'saved: o is cut in four (' + r.keptQ + ')');
-say(r.cutTb.row && r.cutTb.lit, 'and then under, pressed and saved on the same page');
-say(r.kept === 'tb', 'saved: o is cut under (' + r.kept + ')');
-say(r.consRows === 0, 'a consonant\'s page has no cut on it (' + r.consRows + ')');
-say(r.reread === 'tb' && /"o":"tb"/.test(r.sliceHas), 'and read back out of the slice it is still under (' + r.reread + ', ' + r.sliceHas + ')');
+say(r.gone, 'the placement is gone -- no route, no ltCutPick, no wsBlkOf, no WS_BLK_CUTS');
+say(r.vowPage && r.vowRows === 0, 'the vowel a\'s letter page has no placement on it (' + r.vowRows + ')');
+say(same(r.kaOld), 'a blk an older build wrote is not read: ka is still where it was drawn -- ' + shown(r.kaOld));
+say(/"a":"tb"/.test(r.sliceHas) && /"a":"tb"/.test(r.readHas),
+    'and it is not dropped: in the slice after a save and a read back (' + r.sliceHas + ')');
 say(r.mark && r.at === 'ltout' && !r.pop, 'the share mark on the letters goes to the export screen, and nothing pops (' + r.at + ')');
 say(r.outRows.length === 2 && /SVG/.test(r.outRows[1]), 'it is two rows, font and SVG (' + r.outRows.join(' / ') + ')');
 say(!!r.all && r.all.length === r.drawn.length && r.all.length > 0,
@@ -222,4 +237,4 @@ say(r.oneMark && !!r.one && r.one.length === 1 && r.one[0].title === r.oneName &
 say(!errs.length, 'nothing threw' + (errs.length ? ' -- ' + errs.join(' | ') : ''));
 
 if (bad.length) { console.error('\nblock: ' + bad.length + ' failed'); process.exit(1); }
-console.log('\nblock: seven squares, five letters refused, an abugida unchanged, the font, the cut kept on the vowel\'s page, and SVG out.');
+console.log('\nblock: seven squares as drawn, the finals moved down, five letters and three finals refused, an abugida unchanged, the font, no placement, an old blk kept, and SVG out.');

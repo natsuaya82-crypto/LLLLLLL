@@ -94,16 +94,7 @@ HELP.letter=function(){
     helpStep(4, t('hp.l1.4'), t('hp.l1.4.d'))+
     helpStep(5, t('hp.save'), t('hp.save.d'))+
     helpMark('', t('glyph.borrow'), t('hp.l1.borrow.d'))+
-    helpMark(ICON_SHARE, t('lt.out.svg'), t('hp.l1.svg.d'))+
-    /* A block's placement is chosen on a vowel's own page, so how it works
-       is said here, and only while the writing is a block. */
-    (wsys()==='block'
-      ? helpPara(t('hp.bk.p'))+
-        helpStep(1, t('hp.bk.1'), t('hp.bk.1.d'))+
-        helpStep(2, t('hp.bk.2'), t('hp.bk.2.d'))+
-        helpStep(3, t('hp.bk.3'), t('hp.bk.3.d'))+
-        helpPara(t('hp.bk.p2'))
-      : '')};
+    helpMark(ICON_SHARE, t('lt.out.svg'), t('hp.l1.svg.d'))};
 };
 HELP.abugida=function(){
   return {t:t('ab.title'), h:
@@ -301,55 +292,6 @@ function vAbugida(){
           : '<div class="note">'+t('ab.nocons')+'</div>')
       : '<div class="note">'+t('ab.novow')+'</div>')+
     '</div></div>';
-}
-/* ---- how a block's square is cut ---------------------------------------
-   「組み合わせてやるのも作ろう」 OWNER 2026-09-26. A block puts a syllable's
-   letters into one square, and the vowel decides the cut (wsBlkOf(),
-   www/wsys.js). It is chosen on the vowel's own letter page -- 「それは文字の
-   ページの文字設定の時に作れれば良くない？」 OWNER 2026-09-26 -- as three
-   rows under the letter, each drawn as what it makes, and the page's Save
-   writes it with the rest of the letter (ltKeepOn(), www/letters.js).
-
-   Every cut is drawn with the first consonant somebody drew and this vowel,
-   and with the finals under it -- one for side by side and one over the
-   other, two for the four quarters, which is the shape only it has. */
-/* The consonants a preview is made with: the first two that have a shape,
-   the one twice where only one has, and the language's first where none has. */
-function blkCons(){
-  var cs=wsCons(), drawn=cs.filter(function(c){ return !!inkGeo(ltMain(c)); });
-  if(!drawn.length) drawn=cs.slice(0, 1);
-  if(drawn.length===1) drawn.push(drawn[0]);
-  return drawn;
-}
-/* One square, as a small picture: the unit as the cut `type` would make it.
-   Inline SVG from the same outline the file carries (ltSvgPath()), because a
-   canvas draws what the language HOLDS and a cut not yet saved is not held. */
-function blkPv(unit, type){
-  var d=ltSvgPath(wsStrokes(unit, type) || []);
-  return '<svg class="blkpv" viewBox="0 0 800 800" width="40" height="40" aria-hidden="true">'+
-    (d? '<path fill="currentColor" d="'+d+'"/>' : '')+'</svg>';
-}
-/* The square with no final and the square with one; `one` is the first
-   alone, for a row of a list, which has the room for one picture. */
-function blkPvs(v, type){
-  var c=blkCons();
-  if(!c.length) return '';
-  return blkPv(wsKey([c[0], v]), type)+
-    blkPv(wsKey([c[0], v, c[1]].concat(type==='q'? [c[1]] : [])), type);
-}
-/* The three rows on a vowel's page, the one in the draft ticked. */
-function ltCutRows(v, lid){
-  var now=keepVal(keepKeyOf('letter', lid), 'cut') || wsBlkOf(v);
-  return '<div class="sec">'+t('blk.h')+'</div>'+
-    WS_BLK_CUTS.map(function(k){
-      return '<button class="set"' + DO('ltCutPick', [k]) + '>'+
-        '<span class="sl">'+esc(t('blk.'+k))+'</span>'+
-        '<span class="sv">'+blkPvs(v, k)+(now===k? ICON_TICK : '')+'</span></button>';
-    }).join('');
-}
-function ltCutPick(k){
-  if(WS_BLK_CUTS.indexOf(k)<0) return;
-  keepSet('cut', k); render();
 }
 /* ---- the language's sounds --------------------------------------------
    Which sounds a language uses is the language's, and it was the person's:
@@ -1480,8 +1422,6 @@ function vLetter(){
        wants to remember. It is free text and the app never reads it -- it is
        the person's note about their own letter.
        「標語文字の人は意味を持たせたいだろうから、メモ欄追加してもいいかも」 */
-    /* How this vowel's square is cut, while the writing is a block. */
-    (wsBlkVowOf(l)? ltCutRows(wsBlkVowOf(l), lid) : '')+
     '<div class="sec">'+t('lt.note')+'</div>'+
     lnField('lt-nt', '', IN('ltSetNote'), keepVal(keepKeyOf('letter', lid), 'nt'), 'ntin')+
     (l.ch
