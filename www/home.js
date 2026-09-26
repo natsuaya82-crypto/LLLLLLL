@@ -2072,7 +2072,7 @@ function wldSliceOf(m, kind, fb){
 
    Not one of the eight reaches the open language. `ws` is the language's own
    `wsys` column since 2026-09-09 (www/core.js § LWSYS) and comes down with the
-   row, so somebody else's page can say which of the five it is written as.
+   row, so somebody else's page can say which of the six it is written as.
    It was `SET.wsys` -- the PERSON's settings, on this handset, on no server --
    and this answered with nothing because there was nothing to say. An empty
    answer still means nobody has said, and the section is left off rather than

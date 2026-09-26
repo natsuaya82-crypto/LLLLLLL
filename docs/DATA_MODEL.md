@@ -99,7 +99,7 @@ break.
 **And three things about a language are COLUMNS rather than slices**, because
 they are what somebody else's page has to be able to say: `language.name`,
 `language.published_at` and — since 2026-09-09 — `language.wsys`, which of the
-five writing systems it is written as. That last one was `SET.wsys`, a field of
+six writing systems it is written as. That last one was `SET.wsys`, a field of
 the person's settings on the handset, so somebody with two languages had one
 answer for both and a published language could not say which it was.
 `langNameOf()` and `langWsysOf()` in `www/core.js` are how the two are asked;
@@ -139,7 +139,7 @@ original is gone — and `docs/BACKLOG.md` carries them.
 
 | `made` | — | **not a slice.** `lingua.<id>.made.got` is the picture of `language.created_at` and nothing writes a `made` slice — it is listed here only so the key is not read as one | — |
 | `lang` | — | the language's name, and **nothing in `www/` reads or writes it** since 2026-09-08. What a language is called is the `language.name` column on the server; `langNameOf()` in `www/core.js` is how it is asked, `LNAME` holds what the server has said this session, and `lingua.<id>.name.got` is the picture a launch with no signal draws from. The slice stays in `SLICES` and is not deleted — what an older version wrote is left exactly where it is | text |
-| `script` | `SCRIPT` | roman → strokes, letters no word uses yet, **which way the language is written** (`dir`), and **what stands between two letters** (`sp`, in steps of the lattice — absent means 1, which every language was before 2026-09-23; written only when somebody chooses one in 設定 → 言語 → 字間) | object |
+| `script` | `SCRIPT` | roman → strokes, letters no word uses yet, **which way the language is written** (`dir`), and **what stands between two letters** (`sp`, in steps of the lattice — absent means 1, which every language was before 2026-09-23; written only when somebody chooses one in 設定 → 言語 → 字間), and **how a block's square is cut** (`blk`, the vowels that go under what comes before them, `{"o":"tb"}` — a vowel it does not name goes beside; written only from 文字 → マスの型). `langRead()` keeps every field the slice holds | object |
 | `letters` | `LETTERS` | the alphabet | array |
 | `notes` | `NOTES` | the notebook | array |
 | `phases` | `STG` | grammar stages, `fm` — the rules a form is made by (`docs/FEATURES.md`) — and the calendar's two numbers, `months` and `week` (`www/cal.js`) | object |

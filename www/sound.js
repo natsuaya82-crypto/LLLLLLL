@@ -16,17 +16,17 @@
    A letter an abugida has worked out for itself -- a consonant with a vowel
    mark on it -- is shown as what it is and cannot be drawn over: the two
    pieces it is made of are what you change. */
-/* The five kinds of writing, one to a row, each saying what it is. It was a
+/* The six kinds of writing, one to a row, each saying what it is. It was a
    rail of five tabs across the top of the letters chapter, wrapping so that
    Logography sat alone on a second line, on a screen you open every day to
    answer a question you answer once. */
-/* Four of the five are paid. An alphabet is one letter per sound and the
+/* Five of the six are paid. An alphabet is one letter per sound and the
    free plan is exactly that -- twenty-six slots with roman names on them --
-   so a syllabary, an abjad, an abugida and a logography are all the same
+   so a syllabary, an abjad, an abugida, a block and a logography are all the same
    purchase: letters that are not a-z. Hidden rather than shown locked,
    because a row that cannot be pressed is a row that has to explain itself
    every time the screen is opened. */
-/* What the five kinds ARE, behind the `?` rather than under each row.
+/* What the six kinds ARE, behind the `?` rather than under each row.
    「3入れよう」 OWNER 2026-08-28: an abjad and an abugida are words somebody
    either knows or does not, and the screen was asking them to choose between
    five of them. On the free plan it is worse than that -- four of the five

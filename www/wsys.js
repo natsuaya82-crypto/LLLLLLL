@@ -35,12 +35,12 @@
 
 var WSYS=['alpha','syll','abjad','abugida','block','logo'];
 
-/* ---- which of the five this is ----------------------------------------
+/* ---- which of the six this is ----------------------------------------
    Asking somebody to choose between an abjad and an abugida before they have
    drawn anything is asking them to know the answer to a question they came
    here to find out. So it is worked out from what they made, and the letters
    are the evidence: what a letter reads is exactly where the language is
-   being cut, which is the only thing that separates the five.
+   being cut, which is the only thing that separates them.
 
      a letter reads a whole word           logography
      a letter reads more than one sound    syllabary
@@ -90,7 +90,7 @@ function wsGuess(){
   return 'alpha';
 }
 /* A stored answer wins, always. Otherwise the guess. */
-/* An alphabet, and nothing to guess, on the free plan: the other four are
+/* An alphabet, and nothing to guess, on the free plan: the other five are
    paid, and the free alphabet is a-z with the sounds those letters are
    normally read with -- most of which the language has not taken up on the
    chart, which is exactly what wsGuess reads as a syllabary. So the guess
@@ -107,7 +107,7 @@ function wsGuess(){
 /* AND IT IS NOT ASKED BEFORE THE SERVER HAS SAID WHAT THIS ACCOUNT PAYS.
    「free is an alphabet; there is nothing to guess」 is written down
    (CLAUDE.md § What the free plan is) and stays: nobody on the free plan can
-   choose one of the five, so a guess made off their letters is the app
+   choose one of the six, so a guess made off their letters is the app
    telling somebody their alphabet is a syllabary. Measured 2026-09-11 with
    the line taken out: the fixture's free language came back `syll`, and the
    characters borrowed for it stopped being drawn.
@@ -144,7 +144,7 @@ function setWsys(k){
      古いのは消して」 OWNER 2026-09-05 is what replaced it. Said as
      `upStop(can('wsys'))` it is the line at the top of this function, word
      for word, and a route arrived at from anywhere or a plan that ended
-     while one of the other four was set meets it there. Written twice, the
+     while one of the other five was set meets it there. Written twice, the
      second one can never run. */
   /* THE SERVER FIRST. The screen moves when the column has it -- the same
      sentence the 公開 switch and the heart carry
@@ -206,7 +206,7 @@ function wsUnitsOf(w){ return wsSplit(wPh(w)); }
 
 /* ---- what has to be drawn --------------------------------------------
    The list of letters this writing system needs, which is a different list
-   for each of the five and is worked out from the language rather than
+   for each of the six and is worked out from the language rather than
    guessed. Anything already drawn is kept in the list even if nothing uses
    it any more, so a letter never silently disappears. */
 function wsUnits(){
