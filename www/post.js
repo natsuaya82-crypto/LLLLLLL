@@ -3430,7 +3430,7 @@ function postCopyTab(p, el){
     if(typeof x==='number'){
       inw=true; shw[w]=1;
       ch=inkChar(ink.g[x], side);
-      if(ch) tab.push({ch:ch, w:w, id:ids.length? ids.shift() : undefined, sh:1});
+      if(ch) tab.push({ch:ch, w:w, id:ids.length? ids.shift() : undefined, drawn:1});
       continue;
     }
     x=String(x).replace(/[-]/g, '�');
@@ -3447,7 +3447,7 @@ function postCopyTab(p, el){
      the whole line's spelling, not a guess */
   if(el && tab.map(function(e){ return e.ch; }).join('')!==el.textContent) return null;
   return {tab:tab, words:(words.length===(inw? w+1 : w))? words : null, shw:shw,
-          own:(ids.length===0 && cut.length && tab.every(function(e){ return !e.sh || e.id!==undefined; }))};
+          own:(ids.length===0 && cut.length && tab.every(function(e){ return !e.drawn || e.id!==undefined; }))};
 }
 /* The characters of `el` a selection covers, as [from, to), or null. */
 function postSelIn(el, r){
