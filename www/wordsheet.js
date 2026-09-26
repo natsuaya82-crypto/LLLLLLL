@@ -1697,13 +1697,20 @@ function wdSaveBtn(){
 
    `mn` is not in the signature: it is the first meaning, written from `mns` by
    saveWord(), so it would be the same fact counted twice. */
-function wdSig(sp, mns, pos, sub, reg, tags, ety, nt){
+/* AND WHAT THE SHEET CHOOSES ON A LIST OF ITS OWN. What means the same, what
+   means the opposite and what it came from are chosen on the relate page and
+   written onto the WORD, not onto wEdit -- so a sheet holding them measured
+   as a sheet holding nothing: leaving asked nothing, and what was chosen
+   stayed in memory, unsaved, to ride the next save anywhere. They are the
+   word's own three fields, read off it here. */
+function wdSig(sp, mns, pos, sub, reg, tags, ety, nt, w){
   return JSON.stringify([sp||[], mns||[], pos||'', String(sub||''), reg||'',
-                         tags||[], String(ety||''), String(nt||'')]);
+                         tags||[], String(ety||''), String(nt||''),
+                         (w && w.syn)||[], (w && w.ant)||[], String((w && w.from)||'')]);
 }
 function wdSigEdit(){
   return wdSig(wEdit.sp, wEdit.mns, wEdit.pos, wEdit.sub, wEdit.reg,
-               wEdit.tags, wEdit.ety, wEdit.nt);
+               wEdit.tags, wEdit.ety, wEdit.nt, findWord(openHw));
 }
 /* THE SHEET, SAID ONCE. It is asked rather than told: whatever is on wEdit
    at this moment is what the screen is holding, so a meaning added, a tag
