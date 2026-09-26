@@ -276,6 +276,15 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Affected docs: この項、`docs/keyboard.md`、2026-09-25「キーボードはプランで分けない」のフォントの書き出しの行。
 - Implementation status: 実装（r96、integ-0905、CODE CONFIRMED のみ）。
 
+### 2026-09-26 押した所に輪が出る（1.0.3）
+- Date: 2026-09-26
+- Area: アプリ全体の押す物（`data-do`）
+- Decision: 押せる物に指が触れたら、その場所から輪（波紋）が広がって消える。押したかどうかが分かるように。
+- Reason: オーナーの言葉「押した場所に波動が出るようにしてほしい押してるかどうかもわからん」。
+- Affected features: 全画面のボタン・行・キー。
+- Affected data: 無し。
+- Implementation status: 実装（`actRing()`・`#ring`、integ-0905、CODE CONFIRMED のみ・実機未確認）。色は金、0.45 秒、大きさ 88px は見た目で仮に決めた。
+
 ### 2026-09-26 他の道具の強いところを全部入れる ── 単語の自動生成・語源の系統図・字を組み合わせた一マス・SVG の書き出し・「?」の中の使い方（1.0.3）
 - Date: 2026-09-26
 - Area: 単語（生成・語源）、書記体系（組み合わせの一マス）、カード（書き出し）、各画面の「?」

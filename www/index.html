@@ -183,6 +183,14 @@ button{font-family:inherit;cursor:pointer}
 .iconb{margin-left:auto;width:44px;height:44px;border-radius:0;border:0;background:none;
        color:var(--gold);display:flex;align-items:center;justify-content:center;font-size:.95rem}
 .iconb:active{opacity:.5}
+/* The ring actRing() plays where a thumb lands (OWNER 2026-09-26). A circle is
+   drawn by the gradient -- no corner, no border (CLAUDE.md § NO ROUNDED BOX) --
+   it never takes a press, and it is gone in under half a second. */
+#ring{position:fixed;left:0;top:0;width:88px;height:88px;margin:-44px 0 0 -44px;
+      pointer-events:none;z-index:9999;opacity:0;
+      background:radial-gradient(circle closest-side,var(--gold) 0,var(--gold) 35%,transparent 100%)}
+#ring.on{animation:ring .45s ease-out}
+@keyframes ring{from{opacity:.45;transform:scale(.25)}to{opacity:0;transform:scale(1.15)}}
 /* The gap has to be wider than the speaker's overhang or the speaker of one
    tile sits on top of the next tile: 44pt of button hanging 11pt past a
    corner, over a 6pt gap, means five points of every tile answered to its
@@ -3787,6 +3795,13 @@ textarea.ntbody.grow{min-height:0;height:auto;overflow:hidden;resize:none}
      render() only moves which tab is lit. The report is in www/shell.js,
      over tabBar(). -->
 <div id="tabs"></div>
+
+<!-- Where a press landed, so somebody can tell they pressed (OWNER
+     2026-09-26, docs/FEATURE_RULES.md). ONE ring for the whole app, out here beside the
+     screen: render() replaces #app on every press, so a ring put inside the
+     button would go with the button. actRing() (www/act.js) moves it to the
+     thumb and plays it again. -->
+<div id="ring" aria-hidden="true"></div>
 
 <!-- The popup and the dark behind it, and nothing else: `#pop` is drawn by
      popPaint() (www/shell.js) and by nothing else, and the dark is a button

@@ -110,6 +110,20 @@ function actVal(el){ return el? puaTyped(el.value).ln : ''; }
    deliberately the SAME name the row's tap carries: a row that is chosen two
    ways is still a row that does one thing. */
 function actDo(el){ return el? actRun(ACT, el, 'data-do') : false; }
+/* WHERE THE THUMB LANDED. 「押した場所に波動が出るようにしてほしい押してるかどうかも
+   わからん」 OWNER 2026-09-26. On the way DOWN rather than on the click, so
+   it answers the thumb before the screen changes under it, and only on
+   something that can be pressed -- a data-do, which is what every button in
+   this app is. One ring (#ring in index.html), moved and played again. */
+function actRing(e){
+  var r=document.getElementById('ring');
+  if(!r || !actOf(e.target, 'data-do')) return;
+  r.style.left=e.clientX+'px'; r.style.top=e.clientY+'px';
+  r.classList.remove('on');
+  void r.offsetWidth;
+  r.classList.add('on');
+}
+document.addEventListener('pointerdown', actRing, {passive:true});
 /* One listener for the whole app. A screen is replaced wholesale on every
    render, so nothing can be bound to the elements themselves: they are thrown
    away several times a second. This sits above them and outlives them. */

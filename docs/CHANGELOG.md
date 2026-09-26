@@ -15,6 +15,12 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### 2026-09-26 押した所に輪が出る（1.0.3）
+- 押せる物（ボタン・行・キー、`data-do` の付いた物すべて）に指が触れた瞬間、その場所から金色の輪が広がって消える（0.45 秒）。
+  画面の外に一つだけ置いた `#ring`（`www/index.html`）を `actRing()`（`www/act.js`）が指の位置へ動かして鳴らし直す。
+- 保存される物: 無し。消える物: 無し。
+- 写真: `shots/ring-pressed-ja.png`（押した瞬間）、`shots/ring-after-ja.png`（消えた後）。実機未確認。
+
 ### 2026-09-26 作る側の画面の「?」に使い方（r103-help、1.0.3）
 
 `docs/FEATURE_RULES.md` 2026-09-26「他の道具の強いところを全部入れる」の「?」の中に描きまくる。**実機未確認。**
