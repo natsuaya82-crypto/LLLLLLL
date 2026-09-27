@@ -2888,7 +2888,7 @@ function langsSeen(ids, cap){
    themselves is two answers to 「what is on the switcher」, and the whole of
    what langMainFall() does depends on giving the same answer this draws. */
 function langsList(){
-  var ids=Object.keys(LANGS), mine=[], reading=[], other=0, i, id,
+  var ids=Object.keys(LANGS), mine=[], reading=[], i, id,
       mineSeen, readSeen;
   for(i=0;i<ids.length;i++){
     id=ids[i];
@@ -2906,12 +2906,11 @@ function langsList(){
        「theirs」 hides your own. 「揃ってから開く」 OWNER 2026-09-07.
 
        Neither is REMOVED and nothing is written: signing back in, or the row
-       arriving, shows them again exactly as they were, and the count at the
-       foot says how many are not on the list -- docs/DATA_SAFETY.md § a
-       shorter list is not a deletion. */
+       arriving, shows them again exactly as they were. Neither is COUNTED
+       either -- they are not this account's list made shorter, and a count of
+       them is a number taken off the index (below). */
     if(langWhose(id)===LW_MINE){ mine.push(id); continue; }
-    if(langWhose(id)===LW_READ){ reading.push(id); continue; }
-    other++;
+    if(langWhose(id)===LW_READ) reading.push(id);
   }
   /* The ceiling, met on the way OUT. Both lists are cut the same way and by
      their own number: making and reading are two ceilings that never see each
@@ -2935,12 +2934,12 @@ function langsList(){
   mineSeen=langsSeen(langsByAge(mine), langMineKnown()? langCap() : null);
   readSeen=langsSeen(reading, dlCap());
   return { mine: mineSeen, reading: readSeen,
-           hid: other + (mine.length-mineSeen.length),
+           hid: mine.length-mineSeen.length,
            readHid: reading.length-readSeen.length };
 }
 function vLangs(){
   var L=langsList(), mineSeen=L.mine, readSeen=L.reading,
-      other=L.hid, readHid=L.readHid;
+      hid=L.hid, readHid=L.readHid;
   var body='<div class="sec">'+esc(t('langs.mine'))+'</div>'+
     /* AND A LIST WITH NOTHING ON IT IS NOT A PERSON WITH NO LANGUAGES.
        This section has never had a 「まだありません」 -- somebody standing here
@@ -2954,7 +2953,7 @@ function vLangs(){
        two it is, and the difference is the whole of their trust in the app.
        The same key the dictionary's foot uses, because it is the same
        sentence -- a count, which is a state and not an explanation. */
-    (other? '<div class="note">'+esc(t('cap.hid', other))+'</div>' : '')+
+    (hid? '<div class="note">'+esc(t('cap.hid', hid))+'</div>' : '')+
     langAddRow()+
     '<div class="sec">'+esc(t('langs.reading'))+'</div>'+
     /* .empty is the full-screen one: 54px of padding and a serif heading,
