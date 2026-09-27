@@ -182,7 +182,8 @@ const r = await pg.evaluate(async ({s}) => {
   out.allShare = sent[1] && sent[1].m === 'shareFile';
   sent = [];
   window.route = 'letter'; NAV = [{ r:'letter', a: ltMain('k').id }]; render();
-  var one = document.querySelector('.navtop [data-do="ltSvgOne"]');
+  /* beside the letter, in one row with it (OWNER 2026-09-27, www/sound.js § vLetter) */
+  var one = document.querySelector('.ltrow [data-do="ltSvgOne"]');
   out.oneMark = !!one;
   if (one) one.click();
   await new Promise(function(f){ setTimeout(f, 50); });
