@@ -96,6 +96,12 @@ jobs:
           select 'lang ' || to_char(created_at, 'MM-DD HH24:MI'), left(id::text, 8) || ' ' || coalesce(name, '-') || ' ' || coalesce(wsys, '-')
             from (select created_at, id, name, wsys from language order by created_at desc limit 8) l
           union all
+          select 'mine ' || to_char(l.created_at, 'MM-DD HH24:MI') || ' ' || left(l.id::text, 8),
+                 coalesce(nullif(l.name, ''), '-') || ' wsys=' || coalesce(nullif(l.wsys, ''), '-') || ' kinds=' ||
+                 coalesce((select string_agg(kind || ':' || no, ',' order by kind) from slice s where s.language = l.id), '')
+            from language l
+           where l.owner = (select owner from language where id::text like '5262c1dd%' limit 1)
+          union all
           select 'slow ' || calls || 'x mean=' || round(mean_exec_time) || 'ms max=' || round(max_exec_time) || 'ms',
                  left(regexp_replace(query, '\s+', ' ', 'g'), 160)
             from (select calls, mean_exec_time, max_exec_time, query from extensions.pg_stat_statements
