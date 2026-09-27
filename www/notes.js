@@ -164,14 +164,30 @@ function ntKept(f){
   var n=(ntAt>=0 && NOTES[ntAt])? NOTES[ntAt] : null;
   return n? String(n[f]||'') : '';
 }
-/* By the index itself, and not `ntAt`: this is pressed from the list, where
-   no note is "open", so there is nothing for `ntAt` to name. */
+/* ---- a note taken out, by either road -----------------------------------
+   The swipe's 削除 and the selection's bin are one act and this is it: both
+   are pressed from the list, so no note is open and `ntAt` names nothing.
+
+   Highest index first, so removing one does not move the next one under the
+   knife. And every note after the first one taken has MOVED -- its two faces
+   and its buffer are named by where it stands (`note:<i>`, `ntedit:<i>`),
+   and a buffer outlives a save that landed (www/shell.js § keepSave levels
+   it, it does not let it go). Left standing, the note that slid onto a place
+   found the buffer of the note that stood there before, and opened with a
+   gold Save over nothing typed. So the buffers from that place on are let
+   go: none of them holds typing, because leaving a changed note asks first
+   (keepAsked) -- they hold only a mark, and the mark is now of another note. */
+function ntDrop(ids){
+  var at=ids.slice().sort(function(a, b){ return b-a; }), n=NOTES.length, i;
+  if(!at.length) return;
+  for(i=0;i<at.length;i++) if(NOTES[at[i]]) NOTES.splice(at[i], 1);
+  for(i=at[at.length-1];i<n;i++) keepDrop(keepKeyOf('form', 'ntedit:'+i));
+  ntAt=-1; ntSwipeAt=-1; NTSEL=null;
+  saveNotes();
+}
 function delNoteGo(i){
   if(!NOTES[i]) return;
-  NOTES.splice(i,1);
-  if(ntAt===i) ntAt=-1; else if(ntAt>i) ntAt--;
-  ntSwipeAt=-1;
-  saveNotes(); render(); toast(t('toast.note.gone'));
+  ntDrop([i]); render(); toast(t('toast.note.gone'));
 }
 /* ---- deleting a row by swiping it, the way the standard app does it ------
    「メモの編集のところに削除ボタンやめて。一覧から右にスワイプして削除。
@@ -279,15 +295,7 @@ function ntSelDel(){
   if(!n) return;
   popAsk(tn('notes.sel.ask', n), function(){ ntSelDelGo(); }, t('pop.yes'));
 }
-/* Highest index first, so removing one does not move the next one under the
-   knife. */
-function ntSelDelGo(){
-  var ids=ntSelList().sort(function(a, b){ return b-a; }), i;
-  for(i=0;i<ids.length;i++) NOTES.splice(ids[i], 1);
-  NTSEL=null;
-  saveNotes();
-  render();
-}
+function ntSelDelGo(){ ntDrop(ntSelList()); render(); }
 /* The notebook's `?` (OWNER 2026-09-26 「？の中に描きまくろう」). */
 HELP.notes=function(){
   return {t:t('toc.notes'), h:

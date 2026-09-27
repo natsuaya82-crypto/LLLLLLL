@@ -587,6 +587,33 @@ const more = await pg.evaluate(() => {
   out.ntEditSave = !!document.querySelector('.navtop [data-do="keepPress"]');
   out.ntEditField = !!document.getElementById('nt-b');
 
+  /* ---- 11c. a note taken out moves every note after it -----------------
+     A note's two faces and its buffer are named by where it stands in NOTES
+     (`note:<i>`, `ntedit:<i>`), and a buffer outlives a save that landed --
+     it is levelled, not let go (www/shell.js § keepSave). So a note deleted
+     from the list slid every later note onto a buffer that remembered the
+     one before it: open the note that is now at 1, touch nothing, and the
+     Save was gold over somebody else's text. Asked by both roads out -- the
+     swipe's 削除 and the selection's bin -- because they are one statement. */
+  out.ntShift = [];
+  function ntType(v){ var e = document.getElementById('nt-t');
+    e.value = v; e.dispatchEvent(new Event('input', { bubbles: true })); }
+  function ntGold(){ var b = document.querySelector('.navtop [data-do="keepPress"]');
+    return !!b && b.classList.contains('navon'); }
+  [function(){ delNoteGo(0); }, function(){ NTSEL = {0: 1}; ntSelDelGo(); }].forEach(function(drop){
+    viewReset(); popOff();
+    NOTES = [{t:'first', b:'1'}, {t:'second', b:'2'}, {t:'third', b:'3'}]; saveNotes();
+    goTab('build'); go('notes'); openNote(1); openNoteEdit(1);
+    ntType('second, kept');
+    keepPress();
+    goTab('build'); go('notes');
+    drop();
+    openNote(1); openNoteEdit(1);
+    out.ntShift.push({ titles: NOTES.map(function(n){ return n.t; }).join(' / '),
+                       field: document.getElementById('nt-t').value, gold: ntGold() });
+  });
+  viewReset(); popOff();
+
   /* ---- 11c. the word order board ---------------------------------------
      「右上に保存（KEEP：置いた並びが開いた時と違えば金、保存で STG.order に
      書く。戻るで「保存しますか」）」 OWNER 2026-09-06. It is here rather than
@@ -1428,6 +1455,15 @@ if(more.ntReadField) fails.push('the reading face of a note is a field to type i
 if(!more.ntReadBody) fails.push('the reading face of a note showed nothing of it');
 if(!more.ntEditSave) fails.push('the writing face of a note has no Save in the corner');
 if(!more.ntEditField) fails.push('the writing face of a note has no field to type into');
+more.ntShift.forEach(function(x, i){
+  var road = i ? 'the selection\'s bin' : 'the swipe\'s 削除';
+  if(x.field !== 'third')
+    fails.push('after a note went by ' + road + ', the note now at 1 opened holding ' +
+               JSON.stringify(x.field) + ' (' + x.titles + ')');
+  if(x.gold)
+    fails.push('after a note went by ' + road + ', the note now at 1 opened with a GOLD Save ' +
+               'and nothing typed -- its buffer was the note that stood there before');
+});
 if(more.ntReadKey === more.ntEditKey)
   fails.push('the two faces of a note are one screen: ' + more.ntReadKey);
 if(!more.deadStayed) fails.push('a save with no wire went back anyway');
