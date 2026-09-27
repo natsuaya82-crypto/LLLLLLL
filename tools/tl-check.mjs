@@ -1081,6 +1081,26 @@ const au = await pg.evaluate(() => {
     netSend1 = s1; window.netPop = pop;
     netSignedIn = realIn; DRAFTS = was; }
 
+  /* a3: a word pressed while an answer to another word is on the screen is
+     waiting until ITS answer lands -- not the old answer, not 「No results」. */
+  { const held = netSend1;
+    netSend1 = function (m, p) { sent.push(m + ' ' + p); };
+    NAV = [{ r:'explore' }]; window.route = 'explore';
+    snsQ = 'aaa'; snsHits = { q:'aaa', who:[], posts:[] };
+    render();
+    snsPickWord('bbb');
+    const box = document.getElementById('sns-hits');
+    const h = box ? box.innerHTML : '';
+    out.a3 = h.indexOf(t('sns.nohit')) < 0 && h.indexOf('snswait') >= 0;
+    /* a4: a view reads nothing. Drawing the search with a word and no answer
+       sends nothing; a tag pressed is one question. */
+    snsQ = 'ccc'; snsHits = null; sent.length = 0;
+    vExplore();
+    out.a4view = sent.length;
+    snsTagGo('#dd');
+    out.a4tag = sent.filter((x) => /profile_seen|post_seen/.test(x)).length;
+    netSend1 = held; snsQ = ''; snsHits = null; }
+
   netIdOf = realId;
   netSend1 = realS1; netSend = realS; netGet = realG;
   NAV = [{ r:'feed' }]; window.route = 'feed'; render();
@@ -1094,6 +1114,12 @@ if (!au.a2door)
 if (!au.a2kept)
   say('a2: signed out, deleting a draft the server holds took it off this phone and left the row -- ' +
       'the next pull brings it back.');
+if (!au.a3)
+  say('a3: a word pressed while another word\u2019s answer is on the screen draws that old answer or ' +
+      '「No results」 until its own lands. Not answered yet is the waiting mark.');
+if (au.a4view !== 0 || au.a4tag !== 2)
+  say('a4: drawing the search sent ' + au.a4view + ' request(s) (want 0 -- a view reads nothing) and a ' +
+      'tag pressed sent ' + au.a4tag + ' (want 2: the people and the posts, once).');
 if (!/"who":"U-zed"/.test(au.a1 || ''))
   say('a1: a report on a person, its form built again from its key, sent 「' + au.a1 +
       '」 -- it has to name @zed. The key is what the form is; nothing beside it may hold the other half.');

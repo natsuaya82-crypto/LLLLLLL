@@ -1616,8 +1616,7 @@ function tagHTML(s){
    and what is left here is the two things a press of a tag actually is: the
    word, and the history 「タップしたらタグの検索になる」. */
 function snsTagGo(q){
-  snsQ=String(q||'');
-  snsHits=null;
+  snsAsk(q);
   snsFil=null;
   snsRecentAdd(snsQ);
   goTab('explore');
@@ -2028,10 +2027,18 @@ var snsQ='', snsHits=null, snsSort='new';
 
    `dayTagStore` maps back from all ten languages, so the word typed by hand
    in any of them is the same search as the word arriving off a press. */
+/* THE ONE PLACE A QUESTION IS PUT. Every road that changes what is being
+   searched -- typing, a word pressed, a tag pressed, the order -- comes here,
+   and the answer that was on the screen stops being an answer. vExplore()
+   draws and asks nothing. */
+function snsAsk(q){
+  snsQ=String(q||'');
+  snsHits=null;
+  if(snsQ.trim()) snsFind(snsQ, snsGot);
+}
 function snsSetQ(v){
-  snsQ=dayTagStore(String(v||''));
+  snsAsk(dayTagStore(String(v||'')));
   lnGrow('sns-q');
-  snsFind(snsQ, snsGot);
   var x=document.getElementById('sns-x');
   if(x){ if(snsQ) x.removeAttribute('hidden'); else x.setAttribute('hidden',''); }
 }
@@ -2560,8 +2567,8 @@ function vSort(){
 function snsSetSort(k){
   snsSort=(k==='buzz')? 'buzz' : 'new';
   /* The answer is in the old order, so it is not an answer to this question
-     any more. Thrown away rather than re-sorted, and vExplore asks again. */
-  snsHits=null;
+     any more. Thrown away rather than re-sorted, and asked again. */
+  snsAsk(snsQ);
   back();
 }
 /* The rows an answer draws, wherever an answer is drawn. The search has had
@@ -2578,7 +2585,7 @@ function snsAnsHTML(q, r){
      screen with no question on it looks like, so a question with no answer
      looked exactly like never having asked. `snsWaitHTML()` is the mark the
      timeline already turns beside this one; there is no second one. */
-  if(!r) return snsWaitHTML();
+  if(!r || r.q!==String(q).trim()) return snsWaitHTML();
   /* Could not ask, which is not the same as found nothing. */
   if(r.bad) return '<div class="note">'+esc(r.bad)+'</div>';
   /* A person a block stands between is not in the answer at all -- the
@@ -2608,9 +2615,6 @@ function vExplore(){
      the people in its rows, the words you keep, and the words you have typed
      -- and all three came down when the session began (§ WHAT AN OPEN ASKS
      FOR). Nothing is asked from here. */
-  /* Asked once when the screen is built, so coming back to a query already
-     typed shows its answer rather than an empty page. */
-  if(snsQ.trim() && !snsHits) snsFind(snsQ, snsGot);
   return '<div class="view">'+
     /* IN THE BAR, where the search on a timeline is. It sat under the bar,
        below a title that said the same word as its own placeholder, so the
