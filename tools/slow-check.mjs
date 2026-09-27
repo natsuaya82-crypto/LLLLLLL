@@ -429,6 +429,9 @@ await measure('save', () => {
      `sid` field on the index while a language had two numbers. */
   langRowGot(langId);
   LANGS[langId].uid = 'u';
+  /* and the server has said whose it is, or langLocked() refuses the save
+     before it sends anything -- which measured a save of nothing */
+  langOwnGot(langId, netUid());
   /* One word typed and saved, which is the road every write takes:
      save() → bkTouch() → netSaveNow(), the one send. */
   WORDS.push({ w: 'kefu', m: 'stone' });
