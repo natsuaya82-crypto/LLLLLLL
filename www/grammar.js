@@ -1018,9 +1018,9 @@ function g2NpDemo(seq){
    Delete beside Done. A row that is a word made in a stage carries no id: that
    word is deleted where it was made, and it cannot be chosen here. */
 function g2Row(lab, add, side, from, to, act, arg, id){
-  var on;
-  if(G2SEL && id){
-    on=!!G2SEL[id];
+  var on, sel=g2Sel();
+  if(sel && id){
+    on=!!sel.ids[id];
     return '<div class="fmmk">'+
       '<span class="ltck'+(on? ' on':'')+'" data-sel="1"'+DO('g2SelTap', [id])+
         ' role="button" aria-label="'+esc(t('fmr.sel.row'))+'">'+
@@ -1053,19 +1053,31 @@ function g2Row(lab, add, side, from, to, act, arg, id){
    is the same act on a different list. `G2SEL` is where you are standing on
    this screen, so viewReset() drops it, and it holds rule IDS rather than
    positions: a chapter draws the rules of one form out of one list that holds
-   every form's, so a position here is a position in nothing. */
+   every form's, so a position here is a position in nothing.
+
+   AND IT IS THE SCREEN'S IT WAS MADE ON (`at`, that screen's keepKey()).
+   Every chapter is the one route `gram`, so walking from one to another is
+   not leaving a screen as viewLeft() counts it: a selection made in 時制 was
+   still armed on 複数形, its bin in that bar, and pressing it deleted rules
+   that were not on the screen (監査 words grammar-5). g2Sel() is the one
+   reader, and on any other screen there is no selection. */
 var G2SEL=null;
-function g2SelOn(){ G2SEL={}; render(); }
+function g2Sel(){
+  if(G2SEL && G2SEL.at!==keepKey()) G2SEL=null;
+  return G2SEL;
+}
+function g2SelOn(){ G2SEL={at:keepKey(), ids:{}}; render(); }
 function g2SelOff(){ G2SEL=null; render(); }
 function g2SelList(){
-  var out=[], k;
-  if(!G2SEL) return out;
-  for(k in G2SEL) if(G2SEL.hasOwnProperty(k) && G2SEL[k]) out.push(k);
+  var sel=g2Sel(), out=[], k;
+  if(!sel) return out;
+  for(k in sel.ids) if(sel.ids.hasOwnProperty(k) && sel.ids[k]) out.push(k);
   return out;
 }
 function g2SelTap(id){
-  if(!G2SEL) return;
-  if(G2SEL[id]) delete G2SEL[id]; else G2SEL[id]=1;
+  var sel=g2Sel();
+  if(!sel) return;
+  if(sel.ids[id]) delete sel.ids[id]; else sel.ids[id]=1;
   render();
 }
 function g2SelDel(){
@@ -1092,7 +1104,7 @@ function g2ChapBar(c){
   /* A target's page has one rule on it and no list, so there is nothing to
      choose; the `?` is the chapter's own. */
   if(c && c.on) return helpQ('g2.'+String(c.id).split(':')[0]);
-  if(G2SEL)
+  if(g2Sel())
     return (g2SelList().length? navDel(t('fmr.sel.del'), 'g2SelDel') : '')+
       navDo(t('fmr.sel.done'), 'g2SelOff', null, true);
   if(c && c.fms && g2SecRules(c).length && !langLocked())

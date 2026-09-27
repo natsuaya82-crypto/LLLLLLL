@@ -1744,6 +1744,16 @@ const sel = await pg.evaluate(() => {
   const selBar = bar(), selMarks = marks();
   g2SelTap('s1');
   const oneBar = bar();
+  /* AND A SELECTION IS THE SCREEN'S IT WAS MADE ON (監査 words grammar-5).
+     Every chapter is the route `gram`, so walking to another one was not
+     leaving: the bin was still in that bar, and pressing it took s1 -- a rule
+     not on the screen. */
+  show('pl');
+  const elseBar = bar();
+  g2SelDelGo();
+  const elseLeft = (STG.fm || []).map((r) => r.id).join(',');
+  show('tense');
+  g2SelOn(); g2SelTap('s1');
   g2SelDelGo();
   const left = (STG.fm || []).map((r) => r.id).join(',');
   const after = G2SEL;
@@ -1751,7 +1761,8 @@ const sel = await pg.evaluate(() => {
   G2SEL = null;
   return { restBar: restBar.join(','), restMarks: restMarks, crosses: crosses,
            selBar: selBar.join(','), selMarks: selMarks,
-           oneBar: oneBar.join(','), left: left, after: after };
+           oneBar: oneBar.join(','), left: left, after: after,
+           elseBar: elseBar.join(','), elseLeft: elseLeft };
 });
 
 want('no row of a chapter carries a ⊖ of its own', sel.crosses, 0);
@@ -1764,6 +1775,8 @@ want('Delete arrives with the first one chosen', sel.oneBar, 'back,g2SelDel,g2Se
 want('what was chosen goes, and the other chapter’s rule stays',
      sel.left, 's2,s3');
 want('and the list stops being one you choose from', sel.after, null);
+want('another chapter does not carry the selection', sel.elseBar, 'back,g2SelOn');
+want('and nothing is deleted from there', sel.elseLeft, 's1,s2,s3');
 
 /* ---- 107-116: a kind of noun is deleted, and 「なし」 is never written ------
    「なしじゃなくて消して」 OWNER 2026-09-09. The chapter could make a class and

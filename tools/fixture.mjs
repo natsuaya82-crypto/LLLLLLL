@@ -1149,11 +1149,11 @@ export function halfDone(){
        because Delete is only in the bar once something is chosen. */
     ['the rules of a section, choosing', () => {
         window.route='gram'; NAV=[{r:'gram', a:'v2:pl'}];
-        G2SEL = {};
+        G2SEL = { at: keepKey(), ids: {} };
         const h = vGram(); G2SEL = null; return h; }],
     ['the rules of a section, one chosen', () => {
         window.route='gram'; NAV=[{r:'gram', a:'v2:pl'}];
-        G2SEL = { fr1: 1 };
+        G2SEL = { at: keepKey(), ids: { fr1: 1 } };
         const h = vGram(); G2SEL = null; return h; }],
     ['the digits, where the base is set', () => { planGot('pro');
        window.route='ltset'; NAV=[{r:'ltset', a:'num'}];
