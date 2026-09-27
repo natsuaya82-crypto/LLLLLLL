@@ -787,14 +787,35 @@ function obNative(name, call){
    before it is asked for anything, and because a failure here is a failure to
    CONFIGURE -- a different thing from somebody closing the sheet. */
 var OB_SL=false;
+/* WHAT THIS PHONE TELLS THE PLUGIN, and so which doors it has -- one answer,
+   read by obReady(), by both presses and by the door's buttons, so a door
+   cannot be drawn that initialize() was not told about.
+
+   Which phone it is is asked here and nowhere else (Capacitor.getPlatform(),
+   which the native bridge itself defines; a browser has no Capacitor and is
+   drawn as the iPhone).
+
+   iPhone: Apple takes an empty redirect -- the sheet is the system's own and
+   there is nowhere to come back from -- and Google its iOS client id.
+   Android: Google takes the WEB client id (GOOGLE_WEB_ID, net.js), and Apple
+   is not there at all. The Android plugin refuses the whole initialize() for
+   an Apple with no Services ID and redirect, which took Google down with it;
+   and whether Android offers Apple is the owner's and not decided
+   (docs/ANDROID.md § サインイン). A provider with no id is left out, and a
+   door left out is closed. */
+function obSocialCfg(){
+  var P=window.Capacitor, o={};
+  if(P && P.getPlatform && P.getPlatform()==='android'){
+    if(GOOGLE_WEB_ID) o.google={ webClientId:GOOGLE_WEB_ID };
+    return o;
+  }
+  o.apple={ redirectUrl:'' };
+  if(GOOGLE_IOS_ID) o.google={ iOSClientId:GOOGLE_IOS_ID };
+  return o;
+}
 function obReady(p, go){
   if(OB_SL){ go(); return; }
-  /* Apple takes an empty redirect on iOS: the sheet is the system's own and
-     there is nowhere to come back from. Google is named only when there is a
-     name -- see GOOGLE_IOS_ID in net.js. */
-  var o={ apple:{ redirectUrl:'' } };
-  if(GOOGLE_IOS_ID) o.google={ iOSClientId:GOOGLE_IOS_ID };
-  p.initialize(o).then(function(){ OB_SL=true; go(); })['catch'](obShrug);
+  p.initialize(obSocialCfg()).then(function(){ OB_SL=true; go(); })['catch'](obShrug);
 }
 /* THE NONCE, and it is Google's alone.
    「Passed nonce and nonce in id_token should either both exist or not」 --
@@ -881,12 +902,16 @@ function obSocial(who, opts){
     });
   });
 }
-function obSignInApple(){ obSocial('apple', { scopes:['name','email'] }); }
+/* A provider this phone was not configured for is not there to sign in to,
+   and the same words are said as when the plugin itself is missing --
+   because from where somebody is standing it is the same fact: not in this
+   build. */
+function obSignInApple(){
+  if(!obSocialCfg().apple){ toast(t('net.nonative')); return; }
+  obSocial('apple', { scopes:['name','email'] });
+}
 function obSignInGoogle(){
-  /* Without a client id there is no Google to sign in to, and the same words
-     are said as when the plugin itself is missing -- because from where
-     somebody is standing it is the same fact: not in this build. */
-  if(!GOOGLE_IOS_ID){ toast(t('net.nonative')); return; }
+  if(!obSocialCfg().google){ toast(t('net.nonative')); return; }
   obSocial('google', {});
 }
 /* AND SIGNING OUT OF THE PROVIDER, which nothing ever did.
@@ -1477,7 +1502,10 @@ function obFormHTML(up){
        password is the one thing that can be WRONG -- 「そんなアカウントは
        ありません」 is a sentence only the mail road can say. */
     '<div class="obor"><span>'+t('ob.signin.or')+'</span></div>'+
-    '<button class="btn signin apple"' + DO('obSignInApple') + '>'+MARK_APPLE+'<span>'+t('ob.signin.apple')+'</span></button>'+
+    /* Apple only where this phone has it: not on Android until the owner
+       says (obSocialCfg()). Google stays drawn when its id is empty, as on
+       the iPhone -- pressing it says it is not in this build. */
+    (obSocialCfg().apple? '<button class="btn signin apple"' + DO('obSignInApple') + '>'+MARK_APPLE+'<span>'+t('ob.signin.apple')+'</span></button>' : '')+
     '<button class="btn signin google"' + DO('obSignInGoogle') + '>'+MARK_GOOGLE+'<span>'+t('ob.signin.google')+'</span></button>'+
     /* There WAS a way out of here without signing in: 「あとで」, shown when
        this door was the onboarding's last step, straight to obFinish().
