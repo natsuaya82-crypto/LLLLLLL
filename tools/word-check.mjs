@@ -339,6 +339,89 @@ const R = await pg.evaluate(() => {
     out.fails.push('and what is DRAWN is not the screen that asks whether ' +
       'this is a paste or a file');
 
+  /* ---- what an import may write, and where ------------------------------
+     Three roads into the language that went round the door everything else
+     asks at (audit words pwi-1, 2, 3):
+
+     - an ALPHABET brought in on the free plan added letters -- 「nothing on
+       the free plan adds one」 (CLAUDE.md § What the free plan is). The
+       press puts up the plan's pop and writes nothing.
+     - a file row whose character a SLOT already wears renamed the slot with
+       上書き chosen, and the free QWERTY finds its keys by name (decision log
+       2026-08-22). The name stays.
+     - the import opened in a language that is not this account's, filled
+       WORDS in memory and said how many came in, and save() refused it. The
+       door does not open there.
+
+     Pressed through the real button on the real screen, and read off the
+     language and the popup afterwards -- the screen alone looks the same on
+     every plan, which is the point of HIDEFREE. */
+  const pressGo = () => {
+    screen();
+    const b = document.querySelector('#app [data-do="doImport"]');
+    if (b) b.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    return !!b;
+  };
+  const popLine = () => {
+    const e = document.querySelector('#pop.on .popm');
+    return e ? String(e.textContent || '') : '';
+  };
+  start(); planGot('free'); popOff();
+  goTab('find');
+  const ltBefore = LETTERS.length;
+  openImport();
+  impTake('character,name\nΨ,psi\nΩ,omega');
+  IMP.into = 'l'; IMP.roles = impMove(IMP.roles, 'l');
+  IMP.step = 'ready'; impPaint();
+  const freePressed = pressGo();
+  const freeAfter = LETTERS.length;
+  const freePsi = LETTERS.some((l) => l.ch === 'Ψ');
+  const freePop = popLine();
+  popOff();
+  out.said.push('an alphabet imported on the free plan: letters ' + ltBefore +
+    ' -> ' + freeAfter + ', Ψ is ' + (freePsi ? '' : 'not ') + 'in it, and the ' +
+    'pop says "' + freePop + '"');
+  if (!freePressed) out.fails.push('the free import has no button to press');
+  if (freeAfter !== ltBefore || freePsi)
+    out.fails.push('an alphabet imported on the FREE plan added letters (' +
+      ltBefore + ' -> ' + freeAfter + ') -- nothing on the free plan adds one');
+  if (freePop !== t('up.need'))
+    out.fails.push('and the press did not say it is the paid plan\'s: the pop ' +
+      'is "' + freePop + '"');
+
+  start(); popOff();
+  const slot = LETTERS.filter((l) => ltIsBase(l) && !numIsDigit(l))[0];
+  const slotName = ltName(slot);
+  slot.ch = 'Ψ';
+  goTab('find');
+  openImport();
+  impTake('character,name\nΨ,zzz');
+  IMP.into = 'l'; IMP.roles = impMove(IMP.roles, 'l');
+  IMP.dup = 'over';
+  IMP.step = 'ready'; impPaint();
+  pressGo();
+  const slotNow = ltName(ltById(slot.id));
+  out.said.push('a file row wearing slot "' + slotName + '"\'s character, ' +
+    'overwritten: the slot is called "' + slotNow + '"');
+  if (slotNow !== slotName)
+    out.fails.push('an import renamed the slot "' + slotName + '" to "' +
+      slotNow + '" -- a slot\'s name does not change, on any plan, and the ' +
+      'free QWERTY finds its keys by name');
+
+  start(); popOff();
+  goTab('find');
+  const ownWas = langOwnOf(langId);
+  langOwnGot(langId, 'somebody-else');
+  openImport();
+  const lockedAt = here().r + (here().a ? ':' + here().a : '');
+  if (ownWas) langOwnGot(langId, ownWas); else delete LOWN[langId];
+  out.said.push('the import opened in somebody else\'s language: standing on ' +
+    lockedAt);
+  if (lockedAt.indexOf('csv:') >= 0)
+    out.fails.push('the import opened in a language this account may not ' +
+      'write -- what it brings in is refused by save() after the screen has ' +
+      'said it arrived');
+
   /* ---- the word list forgets it was being chosen from -------------------
      「洗濯して前の画面戻ると選択画面がキープされたままや。流石に解除して
      欲しい。」 OWNER 2026-09-05, on a build in their hand.

@@ -601,8 +601,19 @@ function impBlank(){ return {step:'get', read:null, roles:[], into:'w', dup:'ski
    FORM_OPEN is how a form is rebuilt when nothing holds it any more -- the
    back button onto a route with no FORM behind it -- so that is an arrival
    too, and it starts one the same way. impStep() and impAgain() go through
-   impPaint(), because they ARE the running import. */
-function openImport(){ IMP=impBlank(); impPaint(); }
+   impPaint(), because they ARE the running import.
+
+   AND IT IS NOT OPENED WHERE IT CANNOT WRITE. An import changes WORDS,
+   LETTERS and SND in memory and only then reaches save(), and save() refuses
+   a language that is not this account's -- so the rows appeared, the toast
+   said how many came in, and they were gone on the next launch. The door
+   asks what every other way of making something asks first: makeNeed()
+   (an account, CLAUDE.md § Online), and langLocked() (somebody else's
+   language, or one the server has not answered about yet). */
+function openImport(){
+  if(!makeNeed() || langLocked()) return;
+  IMP=impBlank(); impPaint();
+}
 function impPaint(){ openForm('csv:', t('csv.title'), impHTML(), impMount); }
 FORM_OPEN.csv=function(){ openImport(); };
 function impHTML(){
@@ -844,7 +855,24 @@ function impGrow(units){
 }
 
 /* ---- doing it ----------------------------------------------------------- */
-function doImport(){ impPut(impRows(IMP.read, IMP.roles, addedSnd())); }
+/* AN ALPHABET IS THE PAID PLAN'S TO ADD TO. Letters come in, are named and
+   are given sounds on this side, and on the free plan nothing adds a letter,
+   names one or chooses its sound (CLAUDE.md § What the free plan is;
+   `CAN.letters`, `CAN.snd`). The screen is the same on every plan and the
+   PRESS answers, exactly as the + on the alphabet does (docs/HIDEFREE.md):
+   upStop() puts up the pop, and nothing has been written when it does. */
+function doImport(){
+  var rows=impRows(IMP.read, IMP.roles, addedSnd());
+  if(IMP.into==='l' && impLtStop(rows)) return;
+  impPut(rows);
+}
+function impLtStop(rows){
+  var i;
+  if(upStop(can('letters'))) return true;
+  for(i=0;i<rows.length;i++)
+    if(rows[i].ch && impLtrSnd(rows[i]).length) return upStop(can('snd'));
+  return false;
+}
 /* THE REST OF WHAT A ROW CARRIED, written onto the word. The shape is the
    word sheet's own -- wdPutExtras() in www/wordsheet.js writes exactly these
    keys off wEdit -- because a word that arrives here has to be a word that
@@ -907,9 +935,9 @@ function impPut(rows){
   for(i=0;i<rows.length;i++){
     r=rows[i];
     /* A letter, not a word -- because the person said the file is an
-       alphabet, not because this row happens to look like one. It costs no
-       room on the free plan: the ceiling is on the dictionary, and an
-       alphabet is not one. */
+       alphabet, not because this row happens to look like one. The plan was
+       asked before this was reached (doImport § impLtStop): the word
+       ceiling is on the dictionary, and adding to an alphabet is `letters`. */
     if(IMP.into==='l'){
       if(!r.ch) continue;
       u=impLtrSnd(r);
@@ -941,7 +969,11 @@ function impPut(rows){
       if(l){
         if(IMP.dup!=='over') continue;
         wasL++;
-        if(r.nm) l.nm=r.nm;
+        /* A SLOT'S NAME DOES NOT CHANGE, on any plan (decision log
+           2026-08-22): the free QWERTY finds its keys by name, so a slot
+           renamed by a file is a key nothing can find. ltIsBase() is the
+           rule, the same one ltSetRoman() refuses with. */
+        if(r.nm && !ltIsBase(l)) l.nm=r.nm;
         /* The list said what this letter reads, so it is an answer and not
            the app's guess: renaming the letter later leaves it alone. */
         if(u.length){ impGrow(u); l.snd=u; l.chose=1; }
