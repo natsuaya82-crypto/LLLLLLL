@@ -120,7 +120,12 @@ Deno.serve(async (req: Request) => {
                                           .join('\n') || '- (nothing yet)';
 
   const ask = RULES.replace('{DAY}', day).replace('{SEEN}', seen);
-  const gr = await fetch(
+  /* The model says 503 「high demand」 on some mornings -- 2026-09-27 16:00
+     UTC was one, and that day had no sentence. 「毎日同じ時間に変わるように」
+     OWNER 2026-09-27. So a busy answer is asked again, three times, a few
+     seconds apart, inside the 60 seconds the schedule waits. Anything else is
+     an answer and is not asked twice. */
+  const ask1 = () => fetch(
     'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + gem,
     { method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -131,6 +136,11 @@ Deno.serve(async (req: Request) => {
           responseSchema: SCHEMA,
         },
       }) });
+  let gr = await ask1();
+  for (let i = 0; i < 3 && (gr.status === 503 || gr.status === 429); i++) {
+    await new Promise((r) => setTimeout(r, 5000 * (i + 1)));
+    gr = await ask1();
+  }
   if (!gr.ok) {
     return new Response('the model refused: ' + (await gr.text()), { status: 502 });
   }
