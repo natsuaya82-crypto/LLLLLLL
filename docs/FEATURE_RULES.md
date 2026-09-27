@@ -481,8 +481,8 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Reason: オーナーの言葉「だから日本語で意味みたいにベタガキにするの禁止って話したよね？確定とかならわかるけど。」
   「意味オンオフは ⭕️のトグルにしよう。さっきの消せるやつは忘れて」「でも意訳をプレスホルダーで入れるんじゃなくてちゃんとした文字で入れて欲しい」「7はそれでいいよ」。
 - Affected features: 投稿画面、返信、引用。
-- Affected data: 投稿の `mn` は欄の中身そのもの（今も同じ）。
-- Implementation status: 実装（r99 A・B・C、integ-0905、CODE CONFIRMED のみ）。
+- Affected data: 投稿の `mn` は欄の中身そのもの（今も同じ）。編集して保存した投稿の `nm` はトグルのとおり 0 か 1（r119-edit）。
+- Implementation status: 実装（r99 A・B・C、integ-0905、CODE CONFIRMED のみ）。編集画面のトグルは r119-edit（CODE CONFIRMED のみ、`tools/post-check.mjs` 11d3）。
 
 ### 2026-09-26 1.0.3 の残りの答え ── キーボードの高さの測りは消す、評価は起動だけ数える、引用はリポストの数に入る、ミュートした人の引用元も出す
 - Date: 2026-09-26
