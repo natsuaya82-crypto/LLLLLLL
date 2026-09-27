@@ -591,18 +591,16 @@ function meDropPic(){ meFacePut(ME.av || null); }
    the old photograph, sent THAT on its own launch and put it back
    (r46-audit § A1). Taking a photograph off here, it came back from there. */
 function meFacePut(av, at){
-  /* 「何か更新するならクルクルが必要」 OWNER 2026-09-12 -- the same mark
-     pwSendPost() turns while a post goes up. */
-  netSpin(true);
+  /* 「何か更新するならクルクルが必要」 OWNER 2026-09-12 -- the wire turns
+     it for every press (www/net.js § HOW MANY REQUESTS SOMEBODY IS WAITING
+     ON). */
   at=at || Date.now();
   netProfPut({av:av}, at, function(row){
-      netSpin(false);
       /* the face the account now has: a face another phone set later is it */
       meAvGot(row? row.av : av);
       openMe();
     },
     function(d, st, m){
-      netSpin(false);
       netPop(d, st, m, function(){ meFacePut(av, at); });
     });
 }

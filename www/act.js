@@ -92,7 +92,12 @@ function actRun(table, el, attr, extra, argAttr){
   if(!fn) return false;
   var a=actRead(el, argAttr);
   if(extra) a=a.concat(extra);
-  fn.apply(el, a);
+  /* A PRESS, and not typing: what the wire sends because of it turns the
+     mark until it is answered (www/net.js § HOW MANY REQUESTS SOMEBODY IS
+     WAITING ON). Typing is not waited on -- a field that dimmed the screen
+     on every letter could not be typed in. */
+  if(attr==='data-in'){ fn.apply(el, a); return true; }
+  netPressed(function(){ fn.apply(el, a); });
   return true;
 }
 

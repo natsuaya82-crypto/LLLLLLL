@@ -2365,9 +2365,7 @@ function pwSendWith(ln, ink, pics, vo){
    postSend() and not netPush(): the one-send-at-a-time mark is on it, so a
    ［再接続］ pressed while the first send is still out does not send twice. */
 function pwSendPost(p){
-  netSpin(true);
   postSend(p, function(sid){
-    netSpin(false);
     POSTS.push(p);
     postSid(p, sid);
     savePosts();
@@ -2376,7 +2374,6 @@ function pwSendPost(p){
     toast(t('post.sent'));
     goTab('feed');
   }, function(d, s, m){
-    netSpin(false);
     /* What went wrong, in one sentence, and the post is a draft
        (pwSendFell). The voice's file being gone (`∅`, netWhy) is said as
        that, because it is not the wire and sending again will not bring it
@@ -3521,7 +3518,6 @@ function pwSaveEdit(ln, ink){
 function pwEditPut(p, q){
   function landed(sid){
     var k;
-    netSpin(false);
     for(k in q) if(Object.prototype.hasOwnProperty.call(q, k)) p[k]=q[k];
     if(sid) postSid(p, sid);
     savePosts();
@@ -3529,10 +3525,8 @@ function pwEditPut(p, q){
     goTab('feed');
   }
   function fell(d, s, m){
-    netSpin(false);
     netPop(d, s, m, function(){ pwEditPut(p, q); });
   }
-  netSpin(true);
   if(p.sid) netPostEdit(p.sid, q, function(){ landed(''); }, fell);
   else postSend(q, landed, fell);
 }

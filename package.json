@@ -52,6 +52,7 @@
     "take": "node tools/take-check.mjs",
     "tl": "node tools/tl-check.mjs",
     "scroll": "node tools/scroll-check.mjs",
+    "spin": "node tools/spin-check.mjs",
     "keep": "node tools/keep-check.mjs",
     "acct": "node tools/acct-check.mjs",
     "dl": "node tools/dl-check.mjs",

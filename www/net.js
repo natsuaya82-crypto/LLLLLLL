@@ -182,35 +182,56 @@ function netFreshDone(got){
    netSend() plus that one line, and both of them were therefore outside the
    refresh above -- which is where the fault lived. */
 var NET_WAIT=20000;
-/* ---- HOW MANY REQUESTS ARE IN THE AIR ------------------------------------
-   One number, kept by the two XMLHttpRequests this file owns and by nothing
-   else -- netSend1() above and netUp() at the foot of the file are the whole
-   of the app's wire, so counting here counts everything.
+/* ---- HOW MANY REQUESTS SOMEBODY IS WAITING ON ---------------------------
+   「通信とかしてる時はダイヤくるくる回してね。押したのに通信中何もないと
+   普通にバグかと思って連打しちゃうから」「通信してる箇所には出るように
+   して」「2箇所で追加しますみたいなやり方だと後で機能追加した時にまた
+   書かないといけないでしょ」 OWNER 2026-09-27.
 
-   It exists for one reason: 「再思考もポップ消えてくるくるみたいな。」OWNER
-   2026-09-05. 再接続 puts a mark up, and the mark has to come down when the
-   asking is OVER -- not after a fixed sleep, which would leave it turning
-   over a screen whose answer landed a second in, and would take it away from
-   a screen still waiting.
+   So the mark is not turned on by a screen. It is the wire's, and it turns
+   while a request that came of a PRESS is in the air. Two places make that
+   true for every press there is and every one added tomorrow:
+
+     actRun() (www/act.js)  every name a press runs goes through it, and it
+                            runs it inside netPressed() -- typing does not
+     netSend1() / netUp()   the whole of the app's wire. A request that goes
+                            out inside netPressed() is counted here, and its
+                            answer runs inside netPressed() too, so the next
+                            request a save or a page read makes on the way is
+                            the same press still waiting
+
+   What nobody pressed for -- a launch, the next page at the foot of a list,
+   a photograph arriving -- is not counted: dimming the screen under a thumb
+   that is reading would be the app taking the screen for something nobody
+   asked it to do. The pull has its own mark in the gap it opens.
 
    ONE REQUEST IS COUNTED ONCE. A dead network reaches readyState 4 AND then
    fires `onerror`, so both roads out call netOff() for the same request; the
-   stamp on the request itself is what makes the second call nothing. It is
-   put on the XHR rather than kept in a list because the request is the thing
-   that is either counted or not.
+   stamp on the request itself is what makes the second call nothing.
 
-   AND THE CHECK IS ONE TICK LATE, on purpose. A 401 goes again from inside
-   its own handler, so the count drops to zero and comes back up in the same
-   turn; asking there would flicker the mark off between a request and its
-   own retry. */
-var NET_OUT=0;
-function netOn(x){ if(x.__net) return; x.__net=1; NET_OUT++; }
+   AND THE CHECK IS ONE TICK LATE, on purpose. A save is several requests one
+   after another, each sent from the last one's answer, so the count drops to
+   zero and comes back up in the same turn; asking there would flicker the
+   mark off between them. */
+var NET_OUT=0, NET_ASKED=false;
+function netPressed(f){
+  var was=NET_ASKED;
+  NET_ASKED=true;
+  try{ f(); } finally { NET_ASKED=was; }
+}
+function netOn(x){
+  if(x.__net || !NET_ASKED) return;
+  x.__net=1; x.__press=1; NET_OUT++;
+  netSpin(true);
+}
 function netOff(x){
   if(!x.__net) return;
   x.__net=0;
   if(NET_OUT>0) NET_OUT--;
   setTimeout(netIdle, 0);
 }
+/* An answer to a request somebody pressed for is still that press. */
+function netAnswer(x, f){ if(x.__press) netPressed(f); else f(); }
 /* Nothing left in the air. Whatever fell has already put the pop up through
    netPop(); this only stops the mark turning. */
 function netIdle(){ if(!NET_OUT) netSpin(false); }
@@ -346,6 +367,9 @@ function netSend1(method, path, body, tok, ok, bad, up, may, prog){
   else if(up) x.setRequestHeader('Prefer', 'resolution=merge-duplicates');
   x.onreadystatechange=function(){
     if(x.readyState!==4) return;
+    netAnswer(x, netDone);
+  };
+  function netDone(){
     var d=null;
     netOff(x);
     try{ d=JSON.parse(x.responseText||'null'); }catch(e){}
@@ -371,8 +395,10 @@ function netSend1(method, path, body, tok, ok, bad, up, may, prog){
     /* Handed over through the slice store (www/core.js § LTOUCH): what an
        answer writes is the app's and not a person's. */
     slAsApp(bad, [d, x.status, netTag(path)+' '+x.status]);
+  }
+  x.onerror=function(){
+    netAnswer(x, function(){ netOff(x); slAsApp(bad, [null, 0, netTag(path)+' 0']); });
   };
-  x.onerror=function(){ netOff(x); slAsApp(bad, [null, 0, netTag(path)+' 0']); };
   if(prog) x.onprogress=function(e){ prog((e && e.lengthComputable && e.total)? e.loaded/e.total : -1); };
   netOn(x);
   x.send(body? JSON.stringify(body) : null);
@@ -543,14 +569,10 @@ function netPop(d, s, m, again){
 function netPopAgain(){
   var go=NET_AGAIN, i;
   NET_AGAIN=[];
-  /* ポップは popYes() が消してある。ここからは、答えが来るまでマークが回る
-     ── 押した人が見ているのは「押したのに何も起きない画面」ではなく、
-     「今きいているところ」。通らなければ netPop() がまたポップを出す。 */
-  netSpin(true);
+  /* ポップは popYes() が消してある。［再接続］は押されたものなので、ここで
+     出て行く要求にはマークが回る（§ HOW MANY REQUESTS SOMEBODY IS WAITING
+     ON）。通らなければ netPop() がまたポップを出す。 */
   for(i=0;i<go.length;i++) go[i]();
-  /* 一件も出て行かなかったとき。ためた道が全部「送るものが無い」だったなら
-     待つものは無いので、その場で止める ── 回り続ける方が嘘になる。 */
-  if(!NET_OUT) netSpin(false);
 }
 
 /* ---- coming and going --------------------------------------------------- */
@@ -4651,11 +4673,13 @@ function netUp(path, b64, mime, ok, bad){
   x.setRequestHeader('Content-Type', mime || 'application/octet-stream');
   x.onreadystatechange=function(){
     if(x.readyState!==4) return;
-    netOff(x);
-    if(x.status>=200 && x.status<300) ok(path);
-    else bad(null, x.status);
+    netAnswer(x, function(){
+      netOff(x);
+      if(x.status>=200 && x.status<300) ok(path);
+      else bad(null, x.status);
+    });
   };
-  x.onerror=function(){ netOff(x); bad(null, 0); };
+  x.onerror=function(){ netAnswer(x, function(){ netOff(x); bad(null, 0); }); };
   netOn(x);
   x.send(a);
 }
