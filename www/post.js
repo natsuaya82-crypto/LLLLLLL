@@ -715,7 +715,7 @@ function draftOpen(i){
 function draftDropGo(d){
   if(typeof d==='number') d=DRAFTS[d];
   if(!d) return;
-  if(!d.id || !d.up || !netSignedIn()){ draftDropHere(d); return; }
+  if(!d.id || !d.up){ draftDropHere(d); return; }
   netDraftDrop(d.id, function(){ draftDropHere(d); },
     function(dd, st, m){ netPop(dd, st, m, function(){ draftDropGo(d); }); });
 }
@@ -882,8 +882,9 @@ function dfSelDelGo(){
 }
 function vDrafts(){
   var out='', i, d, on, got=pullHad('drafts');
-  /* The drafts came down when the session began (www/sns.js § WHAT AN OPEN
-     ASKS FOR). Nothing is asked from here; a pull on this screen asks again. */
+  /* Drafts are the server's, so signed out this is the door, as the three
+     tabs are. What is drawn is this page's row in § WHAT EACH PAGE READS. */
+  if(!netSignedIn()) return snsLocked('drafts');
   /* THE MARK, AND NOT A LIST THAT IS ABOUT TO CHANGE.
      「先に空で描いて、あとから差し替えるのを無くす」 OWNER 2026-09-05.
 
@@ -892,12 +893,8 @@ function vDrafts(){
      so 「No drafts」 became a draft, and 「Select」 appeared over a bar that
      had not had it. Three faces and not two, the same as everywhere else:
      the mark while the answer is out, the list when it is in, and 「No
-     drafts」 only once the server has said so.
-
-     Signed out there is nothing to wait for -- the drafts are this phone's
-     and that is the whole of them -- so the mark does not turn on a question
-     nobody is asking. */
-  if(netSignedIn() && !got)
+     drafts」 only once the server has said so. */
+  if(!got)
     return '<div class="view">'+navTop('')+
       '<div class="body">'+snsWaitHTML()+'</div></div>';
   for(i=DRAFTS.length-1;i>=0;i--){

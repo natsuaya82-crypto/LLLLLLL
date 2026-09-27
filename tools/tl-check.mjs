@@ -1065,6 +1065,22 @@ const au = await pg.evaluate(() => {
   reportGo('spam');
   out.a1 = sent.filter((s) => /\/rest\/v1\/report/.test(s)).join(' | ');
 
+  /* a2: signed out, the drafts are the door like the three tabs, and a draft
+     that is on the server is not taken off this phone alone -- 「gone, then
+     back」 is not gone. */
+  { const realIn = netSignedIn, was = DRAFTS.slice();
+    DRAFTS.push({ id:'D-up', up:1, at:Date.now(), ln:'kept' });
+    netSignedIn = function () { return false; };
+    const h = vDrafts();
+    out.a2door = h.indexOf('D-up') < 0 && h.indexOf('kept') < 0 && h.indexOf(obDoorHTML().slice(0, 40)) >= 0;
+    const s1 = netSend1, pop = window.netPop;
+    netSend1 = function (m, p, b, t2, ok, bad) { bad(null, 401); };
+    window.netPop = function () {};
+    draftDropGo(draftById('D-up'));
+    out.a2kept = !!draftById('D-up');
+    netSend1 = s1; window.netPop = pop;
+    netSignedIn = realIn; DRAFTS = was; }
+
   netIdOf = realId;
   netSend1 = realS1; netSend = realS; netGet = realG;
   NAV = [{ r:'feed' }]; window.route = 'feed'; render();
@@ -1073,6 +1089,11 @@ const au = await pg.evaluate(() => {
 
 const fails = [];
 const say = (m) => fails.push(m);
+if (!au.a2door)
+  say('a2: signed out, the drafts page draws this phone’s drafts. It is the door, as the timeline is.');
+if (!au.a2kept)
+  say('a2: signed out, deleting a draft the server holds took it off this phone and left the row -- ' +
+      'the next pull brings it back.');
 if (!/"who":"U-zed"/.test(au.a1 || ''))
   say('a1: a report on a person, its form built again from its key, sent 「' + au.a1 +
       '」 -- it has to name @zed. The key is what the form is; nothing beside it may hold the other half.');
