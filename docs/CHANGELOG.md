@@ -15,6 +15,19 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### 2026-09-27 Android のサインイン: Google は webClientId、Apple は出さない（r122-android-signin）
+- **人が気づくこと**（Android だけ）: 門に Apple のボタンが無い ── Android に Apple のサインインを置くかはオーナーの
+  決定待ち。Google は `www/net.js` の `GOOGLE_WEB_ID` が空の間、押すと「このビルドには無い」と言う（iPhone で
+  `GOOGLE_IOS_ID` が空の時と同じ）。入れば Google で入れる。iPhone は何も変わらない。
+- 前は Android で Apple も Google も押して何も起きなかった: `obReady()` が Apple を空の戻り先で渡し、Android の
+  プラグインが `initialize` ごと断り、Google も初期化されなかった。
+- 電話ごとに何をプラグインに渡すかは `obSocialCfg()`（`www/onboard.js`）一つで、`obReady()`・二つの押す所・門の
+  ボタンがそれを訊く。どの電話かは `Capacitor.getPlatform()` をそこでだけ訊く。
+- **設定のアカウントの部屋**（`www/settings.js`）の Apple の行は Android でもまだ描かれる（押すと「このビルドには無い」）。
+  この回の持ち物ではない。
+- **保存する物**: 変わらない。写真は `shots/r122-door-ios-ja.png`・`shots/r122-door-android-ja.png`
+  （`tools/fixture.mjs` の `obStates()` に「signing in on android」の面）。
+
 ### 2026-09-27 投げ縄: なぞった所で止まる・親指の輪が輪になる（r113-lasso、実機 170 の直し）
 - 実機で「なぞったとこで止めて欲しいのに全部一直線で選ばれる」「囲ったとことかも関係ない」。
   測ると二つあった: なぞると一筆が丸ごと選ばれていた（そう作っていた ── 前の指示）、そして囲むのは「描き終わりが

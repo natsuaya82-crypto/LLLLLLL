@@ -127,28 +127,25 @@ iOS は `MainViewController.swift` の `keepStill()` で、ウェブビューの
 
 **端末で見ていない。** 揺れないかは実機でしか分からない。
 
-## サインイン ── `www/` に要る変更
+## サインイン
 
-**今の `www/` のままでは、Android で Apple も Google も押して何も起きない。**
-押すと待ちの印が出て、何も言わずに元に戻る。
+電話ごとに何をプラグイン（`@capgo/capacitor-social-login`）に渡すかは
+`www/onboard.js` の `obSocialCfg()` 一つで、`obReady()`・`obSignInApple()`・
+`obSignInGoogle()`・門のボタンがそれを訊く。どの電話かは
+`Capacitor.getPlatform()` をそこでだけ訊く。
 
-`www/onboard.js` の `obReady()` は initialize に { apple: { redirectUrl: '' },
-google: { iOSClientId } } を渡す。`@capgo/capacitor-social-login` の Android
-側は:
-
-- Apple に `redirectUrl` と clientId（Apple の Services ID）を**必須**にして
-  いて、空なら `initialize` 全体を reject する。`obReady()` はそれを
-  `obShrug()` で黙って受けるので、Google も初期化されない。
-- Google は webClientId（Web アプリケーションの OAuth クライアント ID）を
-  要求する。`iOSClientId` は読まない。
-
-だから `www/` に要るのは: Android の時は Apple を渡さない（または Apple の
-Android 用の Services ID と戻り先を渡す ── Android に Apple のサインインを
-置くかどうかはオーナーのもの）、Google には webClientId を渡す。
-webClientId は秘密ではなく、`www/net.js` の `GOOGLE_IOS_ID` と同じく
-ファイルに書く値。`obSignInGoogle()` も今は `GOOGLE_IOS_ID` の有無で道を
-閉じているので、同じ所を見る必要がある。この回は `www/` を持っていないので
-直していない。
+- **Google**: Android では webClientId（Web アプリケーションの OAuth
+  クライアント ID）を渡す。Android 側は `iOSClientId` を読まない。値は
+  `www/net.js` の `GOOGLE_WEB_ID`（`GOOGLE_IOS_ID` の隣、秘密ではない）。
+  **今は空** ── 空の間、Android の Google は iPhone で `GOOGLE_IOS_ID` が
+  空の時と同じく閉じていて、押すと「このビルドには無い」と言う。
+- **Apple**: Android では渡さず、門にボタンを出さない。**Android に Apple の
+  サインインを置くかはオーナーの決定待ち。** 置くなら Apple の Services ID と
+  戻り先が要る ── Android のプラグインはこの二つが空だと `initialize` ごと
+  断り、Google も道連れになる（前はそれで両方とも押して何も起きなかった）。
+- **設定のアカウントの部屋**（`www/settings.js`）の Apple・Google の行は
+  まだ電話を訊かず、Android でも Apple の行が出る（押すと「このビルドには
+  無い」）。r122 の持ち物ではなかった。
 
 **Android 用の OAuth クライアント ID はアプリに入らない。** Google Cloud に
 パッケージ名と署名の SHA-1 で登録するだけで、アプリが渡すのは
@@ -195,6 +192,9 @@ CI の debug の鍵は毎回作り直されるので、debug の APK では Goog
      Play Console の「アプリの署名」にあるアプリ署名鍵のもの。二つとも。
    - 種類「ウェブ アプリケーション」のクライアント ID を用意する（Supabase の
      Google の設定に既にあればそれ）。これが webClientId になる。
+     その値を `www/net.js` の `GOOGLE_WEB_ID = ''` の引用符の中に入れる
+     （`<数字>-<英数字>.apps.googleusercontent.com`）。入れるまで Android の
+     Google のボタンは閉じている。
    - Supabase の Authentication → Providers → Google の Client IDs に、
      その ウェブ のクライアント ID が入っていること（id token の audience に
      なる）。
