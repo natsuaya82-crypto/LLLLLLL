@@ -4001,10 +4001,10 @@ function kbMore(){
         '<span class="sl">'+esc(t('kb.pat.set'))+'</span>'+
         '<span class="sv">'+esc(t('kb.pat.'+kbBoard().pat))+ICON_GO+'</span></button>'+
         '<button class="set"' + DO('kbDrop', [now]) + '>'+
-        '<span class="sl bad">'+esc(t('kb.rm'))+'</span></button>'
-      : '')+
-    '<button class="set" style="border-bottom:none"' + DO('kbReset') + '>'+
-      '<span class="sl bad">'+esc(t('kb.reset'))+'</span></button>');
+        '<span class="sl bad">'+esc(t('kb.rm'))+'</span></button>'+
+        '<button class="set" style="border-bottom:none"' + DO('kbReset') + '>'+
+        '<span class="sl bad">'+esc(t('kb.reset'))+'</span></button>'
+      : ''));
 }
 FORM_OPEN.kbmore=function(){ kbMore(); };
 /* Whether what this chapter builds ever reached the phone.

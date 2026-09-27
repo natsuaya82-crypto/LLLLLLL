@@ -406,6 +406,17 @@ const r = await pg.evaluate(({ s }) => {
     x[1]();
     out.dropAt.push({ road: x[0], want: want, got: applied(), n: kbStored().length });
   });
+  /* ---- 5a'. board 0's ⋯, come back to as a route, offers nothing to undo --
+     `form:kbmore` is a route and can be restored standing on board 0. The
+     reset row was drawn outside the "not board 0" guard, and pressing it
+     there wrote `null`, which slRm() takes as a person deleting the slice --
+     memory, the disk copy and the picture (audit words kb-4, measured). */
+  KB = null; kbShow = 0; KEEP = {};
+  kbAdd('qwerty');
+  kbShow = 0; NAV = [{ r: 'profile' }, { r: 'kb' }];
+  go('form', 'kbmore'); render();
+  out.free0More = document.querySelectorAll('#app [data-do="kbReset"], #app [data-do="kbDrop"], #app [data-do="kbRepat"]').length;
+  NAV = [{ r: 'profile' }, { r: 'kb' }]; render();
   /* ---- 5b. a pattern that does not fit is more FACES ------------------
      「パターンから作った盤に、段の上限が効いていない」 LEADER, 2026-08-27.
 
@@ -4081,6 +4092,9 @@ r.survives.forEach((x) => {
       'and KB.at is still ' + x.atNow + ' (' + x.at + '), so the keyboard on the phone ' +
       'has not become its neighbour');
 });
+say(r.free0More === 0,
+    'and the ⋯ of board 0, come back to as a route, has nothing on it that deletes or ' +
+    'rebuilds -- ' + r.free0More + ' such rows');
 r.dropAt.forEach((x) => {
   say(x.got === x.want && x.n === 2,
       'and deleting the board IN FRONT of the applied one (' + x.road + ') leaves the ' +
