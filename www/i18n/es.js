@@ -725,7 +725,7 @@ defLang('es', (function(){
       "glyph.fill.d" : "Una forma cerrada se rellena.",
       "glyph.circle.d" : "Curva el trazo que acabas de hacer. Púlsalo otra vez para enderezarlo.",
       "glyph.clear.d" : "Quita todo del cuadro.",
-      "glyph.lasso.d" : "Rodea puntos para marcarlos. Arrastra uno marcado para moverlos todos; la papelera los quita junto con las líneas que los tocan.",
+      "glyph.lasso.d" : "Rodea puntos o pasa el dedo por líneas para marcarlos. Arrastra uno marcado para moverlos todos; la papelera los quita junto con las líneas que los tocan.",
       "fmr.title"        : "Formas hechas por una regla",
       "fmr.add"          : "Letras que añade",
       "g2.fm.add"          : "Añadir una regla",

@@ -772,7 +772,7 @@ defLang('pt', (function(){
       "glyph.fill.d" : "Uma forma fechada é preenchida.",
       "glyph.circle.d" : "Curva o traço que você acabou de fazer. Toque de novo para endireitá-lo.",
       "glyph.clear.d" : "Tira tudo do quadrado.",
-      "glyph.lasso.d" : "Circule pontos para marcá-los. Arraste um marcado para mover todos; a lixeira remove-os e as linhas que os tocam.",
+      "glyph.lasso.d" : "Circule pontos ou passe o dedo sobre linhas para marcá-los. Arraste um marcado para mover todos; a lixeira remove-os e as linhas que os tocam.",
       "fmr.title"        : "Formas feitas por uma regra",
       "fmr.add"          : "Letras que acrescenta",
       "g2.fm.add"          : "Adicionar uma regra",

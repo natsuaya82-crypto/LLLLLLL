@@ -753,7 +753,7 @@ defLang('de', (function(){
       "glyph.fill.d" : "Eine geschlossene Form wird gefüllt.",
       "glyph.circle.d" : "Biegt den eben gezogenen Strich. Noch einmal drücken macht ihn wieder gerade.",
       "glyph.clear.d" : "Nimmt alles aus dem Quadrat.",
-      "glyph.lasso.d" : "Punkte einkreisen, um sie auszuwählen. Einen ausgewählten ziehen verschiebt alle; der Papierkorb entfernt sie und die Linien, die sie berühren.",
+      "glyph.lasso.d" : "Punkte einkreisen oder über Linien streichen, um sie auszuwählen. Einen ausgewählten ziehen verschiebt alle; der Papierkorb entfernt sie und die Linien, die sie berühren.",
       "fmr.title"        : "Formen nach einer Regel",
       "fmr.add"          : "Buchstaben, die sie anfügt",
       "g2.fm.add"          : "Regel hinzufügen",

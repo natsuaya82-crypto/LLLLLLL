@@ -93,6 +93,45 @@ const r = await pg.evaluate(({s}) => {
   out.binUp = !!btn('bin') && !btn('bin').disabled;
   out.ropeDrew = J(GE.st) === J([{pts:A}, {pts:B}]);
 
+  /* ---- a trace lights every stroke it passes over, whole ----------------
+     「投げ縄に、なぞったら線が動かせる機能も追加して」 OWNER 2026-09-27. One
+     button: what the finger did says which. The points are handed over as
+     the finger's own samples and no more -- a fast finger's two samples
+     either side of a line is the case where only a crossing sees it. */
+  function trace(pts){
+    ev('pointerdown', pts[0]);
+    for (var i = 1; i < pts.length; i++) ev('pointermove', pts[i]);
+    ev('pointerup', pts[pts.length - 1]);
+  }
+  var C = [P(8,14)];
+  fresh([{pts:A}, {pts:B}, {pts:C}]);
+  tap('lasso');
+  trace([P(12,1), P(12,8)]);       /* across B's top, once, fast */
+  out.traceOne = J(GE.lsSel);
+  trace([P(2,6), P(9,6), P(17,6)]); /* across A and B's upright */
+  out.traceTwo = J(GE.lsSel);
+  /* the same four sides round the dot C, left open and then shut: open is a
+     trace that touches no line, shut is a ring round C */
+  var U = [P(7,13), P(7,15), P(9,15), P(9,13)];
+  rope(U.concat([]).slice(0, 4)); /* rope() shuts it: back to where it began */
+  out.shutU = J(GE.lsSel);
+  tap('lasso'); tap('lasso');
+  (function(){
+    ev('pointerdown', U[0]);
+    for (var i = 0; i < U.length - 1; i++)
+      for (var k = 1; k <= 8; k++) ev('pointermove', [U[i][0] + (U[i+1][0]-U[i][0])*k/8, U[i][1] + (U[i+1][1]-U[i][1])*k/8]);
+    ev('pointerup', U[U.length - 1]);
+  })();
+  out.openU = J(GE.lsSel);
+  /* and a traced stroke is pulled whole, like anything lit */
+  trace([P(12,1), P(12,8)]);
+  drag(P(14,4), P(14,6));
+  out.traceMoved = J(GE.st[1].pts) === J(B.map(function(p){ return [p[0], p[1]+2*D]; })) &&
+                   J(GE.st[0].pts) === J(A) && J(GE.st[2].pts) === J(C);
+  fresh([{pts:A}, {pts:B}]);
+  tap('lasso');
+  rope(box(3, 7, 5, 13));
+
   /* ---- a lit dot pulled takes the lit dots, and only them ---------------- */
   var u0 = GE.undo.length;
   drag(P(4,8), P(6,6));
@@ -188,6 +227,11 @@ say(r.binColdDown, 'with nothing lit the bin is down');
 say(r.sel === '[[0,1],[0,2]]', 'a ring lights the dots inside it and no other -- ' + r.sel);
 say(r.ropeDrew, 'and throwing it draws nothing');
 say(r.binUp, 'with something lit the bin is up');
+say(r.traceOne === '[[1,0],[1,1],[1,2]]', 'a trace across one stroke lights all of it and nothing else -- ' + r.traceOne);
+say(r.traceTwo === '[[0,0],[0,1],[0,2],[0,3],[1,0],[1,1],[1,2]]', 'a trace across two lights both, whole, and not the one it missed -- ' + r.traceTwo);
+say(r.shutU === '[[2,0]]', 'come back to where it began, it is a ring: the dot inside lights -- ' + r.shutU);
+say(r.openU === '[]', 'the same shape left open is a trace, and it passed over nothing -- ' + r.openU);
+say(r.traceMoved, 'a traced stroke is pulled whole, and nothing else moves');
 say(r.moveLit, 'pulling a lit dot moves every lit dot the same distance, on the lattice');
 say(r.moveRest, 'and not one dot that is not lit moves');
 say(r.moveOneStep, 'the pull is one step on the one history');

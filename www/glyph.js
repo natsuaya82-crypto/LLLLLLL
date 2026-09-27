@@ -2621,6 +2621,51 @@ function geLsIn(ring, q){
   }
   return inside;
 }
+/* A ring comes back to within a step of where it began, and on the way it
+   went at least two steps out -- so a finger scrubbed back and forth over
+   one place is a trace, not a ring round nothing. A step is the lattice's
+   own, the one distance on this paper a finger is already aiming at. */
+function geLsShut(path){
+  var n=path.length, a=path[0], b=path[n-1], D=geStep(), far=0, i, d;
+  if(n<3) return false;
+  for(i=1;i<n;i++){
+    d=Math.max(Math.abs(path[i][0]-a[0]), Math.abs(path[i][1]-a[1]));
+    if(d>far) far=d;
+  }
+  return far>=2*D && Math.max(Math.abs(b[0]-a[0]), Math.abs(b[1]-a[1]))<=D;
+}
+/* How far point q is from the segment a-b. */
+function geLsSeg(q, a, b){
+  var vx=b[0]-a[0], vy=b[1]-a[1], L=vx*vx+vy*vy, u=0, x, y;
+  if(L>0){ u=((q[0]-a[0])*vx+(q[1]-a[1])*vy)/L; if(u<0) u=0; if(u>1) u=1; }
+  x=a[0]+u*vx-q[0]; y=a[1]+u*vy-q[1];
+  return Math.sqrt(x*x+y*y);
+}
+/* Whether the trace passed over stroke s: some stretch of the finger's path
+   comes within half a lattice step of some stretch of the line as it is
+   drawn (the ink's own half width is 12 of the square's 800, a third of a
+   fingertip's wobble) -- curves through the same toPolyline() the paper is drawn with. Two
+   stretches that cross are at no distance, which the four ends alone would
+   not see when a fast finger's samples fall either side of a line. */
+function geLsOver(path, s){
+  var line=(s.pts.length>1)? LinguaFont.toPolyline(s) : s.pts, r=geStep()/2,
+      i, j, a, b, c, d, d1, d2, d3, d4;
+  if(!line.length) return false;
+  if(line.length===1) line=[line[0], line[0]];
+  for(i=1;i<path.length;i++){
+    a=path[i-1]; b=path[i];
+    for(j=1;j<line.length;j++){
+      c=line[j-1]; d=line[j];
+      d1=(b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1])*(c[0]-a[0]);
+      d2=(b[0]-a[0])*(d[1]-a[1])-(b[1]-a[1])*(d[0]-a[0]);
+      d3=(d[0]-c[0])*(a[1]-c[1])-(d[1]-c[1])*(a[0]-c[0]);
+      d4=(d[0]-c[0])*(b[1]-c[1])-(d[1]-c[1])*(b[0]-c[0]);
+      if(((d1>0)!==(d2>0)) && ((d3>0)!==(d4>0))) return true;
+      if(geLsSeg(a,c,d)<=r || geLsSeg(b,c,d)<=r || geLsSeg(c,a,b)<=r || geLsSeg(d,a,b)<=r) return true;
+    }
+  }
+  return false;
+}
 /* A lit dot within a step of the finger picks up all of them. Within a step,
    not on the dot: the lit dots are there to be pulled, and a dot a third of a
    fingertip across is something to aim at only when there is no other way. */
@@ -2693,10 +2738,20 @@ function geLsUp(ev){
     GE.pre=null; GE.lsMove=null;
   }else if(ring){
     GE.lsSel=[];
-    /* a tap is a ring round nothing: it puts the lit dots out */
-    if(ring.length>=3){
+    /* What the finger did says which of the two it was, and there is one
+       button: 「投げ縄に、なぞったら線が動かせる機能も追加して」 OWNER
+       2026-09-27. Come back to where it began, having gone somewhere, and
+       it was a ring -- the dots inside it light. Anything else that moved
+       was a trace -- every stroke it passed over lights whole. A tap is
+       neither, and puts the lit dots out. */
+    if(geLsShut(ring)){
       GE.st.forEach(function(s, si){
         s.pts.forEach(function(q, pi){ if(geLsIn(ring, q)) GE.lsSel.push([si, pi]); });
+      });
+    }else if(ring.length>=2){
+      GE.st.forEach(function(s, si){
+        if(!geLsOver(ring, s)) return;
+        s.pts.forEach(function(q, pi){ GE.lsSel.push([si, pi]); });
       });
     }
     GE.lsPath=null;
@@ -2988,15 +3043,17 @@ function geDraw(){
     poly.forEach(function(p,i){ if(i) x.lineTo(X(p[0]),Y(p[1])); else x.moveTo(X(p[0]),Y(p[1])); });
     x.stroke();
   });
-  /* The ring a finger is throwing, while it is thrown: a line in the colour
-     of the lines, broken, because it is not ink. */
+  /* The ring a finger is throwing, or the trace it is making, while it is
+     made: a line in the colour of the lines, broken, because it is not ink.
+     Where the finger went and no further -- whether it is a ring is decided
+     when it lifts. */
   if(GE.lsPath && GE.lsPath.length>1){
     x.save();
     x.setLineDash([k*14, k*12]);
     x.strokeStyle=cssVar('--gold'); x.lineWidth=Math.max(1,k*3);
     x.beginPath();
     GE.lsPath.forEach(function(p,i){ if(i) x.lineTo(X(p[0]),Y(p[1])); else x.moveTo(X(p[0]),Y(p[1])); });
-    x.closePath(); x.stroke();
+    x.stroke();
     x.restore();
   }
   GE.st.forEach(function(s,si){
