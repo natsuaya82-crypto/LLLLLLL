@@ -1584,10 +1584,15 @@ function wldOvDel(id){
    was. A migration copies and never removes what it read (docs/DATA_SAFETY).
    `ovnote` records that the copy has been made, so a person who then deletes
    the row does not get it back on the next launch: putting it back would be
-   the app overruling somebody who had just said no. */
+   the app overruling somebody who had just said no.
+
+   A MIGRATION, SO IT ASKS WHAT EVERY MIGRATION ASKS (www/core.js
+   § migrateAll): a language that may not be written -- somebody else's, one
+   nobody has answered for, or one standing on a draft -- is not touched and
+   raises no mark, and the copy is made the next time it can be. */
 function wldNoteMigrate(){
   var w=world(), a;
-  if(!w.note || w.ovnote) return;
+  if(!w.note || w.ovnote || !langWrites()) return;
   a=wldOvs();
   a.unshift({id:wldOvMint(), k:'', v:String(w.note)});
   w.ovs=a; w.ovnote=1; saveWld();
@@ -2165,10 +2170,12 @@ function wldSeenOf(lid){
   };
 }
 function vWorld(){
-  /* The note becomes a row of the overview the first time this is opened.
-     It cannot be done at load: saveWld() touches the backup and backup.js is
-     loaded after this file, which is why migrateWorld() runs from boot.js. */
-  wldNoteMigrate();
+  /* The note becomes a row of the overview the first time this is opened,
+     as the app's own write (slAsApp, www/core.js § LTOUCH) and never the
+     person's. It is here rather than in migrateAll() because migrateAll()
+     runs before a language's `wld` slice has come down (rule 22), and
+     nothing runs it again when it arrives. */
+  slAsApp(wldNoteMigrate, []);
   /* Every box on this face is typed into one buffer, so it has to exist before
      any of them is drawn out of it. */
   wldKeepOn();

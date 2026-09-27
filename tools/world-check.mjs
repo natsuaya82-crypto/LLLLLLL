@@ -270,6 +270,21 @@ const r = await pg.evaluate(({s}) => {
   stand('about', 'LX');
   out.seenHidSecs = heads().length;
 
+  /* AND THE NOTE IS MOVED ONLY WHERE IT CAN BE WRITTEN. The old `note` becomes
+     the first row of the overview the first time the writing face is drawn
+     (wldNoteMigrate) -- a migration, so it asks what every migration asks
+     (www/core.js § migrateAll): a language that may not be written is not
+     touched and raises no mark. Somebody else's language is the case: it used
+     to get the row and `ovnote` in memory while nothing could be saved. */
+  langOpen(langId);
+  var wasWld = WLD, wasOwn = langOwnOf(langId);
+  WLD = { note: 'an old note' };
+  langOwnGot(langId, 'somebody-else-entirely');
+  try { vWorld(); } catch (e) {}
+  out.lockedNote = JSON.stringify(WLD);
+  langOwnGot(langId, wasOwn);
+  WLD = wasWld;
+
   return out;
 }, { s: seed.toString() });
 
@@ -357,6 +372,9 @@ if (!r.hidEdSecs || !r.hidEdSwitch)
       '. The switch is the way back and the sections are what editing is.');
 if (!r.hidBack)
   say('pressing the switch did not make the page public again.');
+if (r.lockedNote !== JSON.stringify({ note: 'an old note' }))
+  say('the note of a language that may not be written was moved anyway: ' +
+      r.lockedNote + ' -- a migration that cannot write does not run and raises no mark.');
 if (r.unkRow !== '')
   say('with no answer about the page yet the profile drew its row (' + r.unkRow +
       '). 「まだ聞いていない」 is a third state and is not drawn (2026-09-08).');
