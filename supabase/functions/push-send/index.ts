@@ -1,5 +1,7 @@
 // push-send — フォロー・返信・いいね・リポスト、そしてその日のお題を、アプリを
-// 閉じている iPhone へ。
+// 閉じている iPhone（Apple の APNs）と Android（Google の Firebase Cloud
+// Messaging）へ。どちらの道かは行の `device.platform` が言い、分けるのは
+// `push.mjs` の `pushPlan()` です。
 //
 // OWNER 2026-09-23「通知なんだけど、今日のお題が変わった時にも出るようにできる？」
 //
@@ -62,8 +64,14 @@
 // から来ます（.github/workflows/supabase-deploy.yml が入れる、docs/apple.md § 8）。
 // **一つでも無ければ 500 で止まり、何も送りません。**送れないのと、間違った所へ
 // 送るのとでは、間違ってよい側が決まっています。
+//
+// Android の鍵 `FCM_SERVICE_ACCOUNT`（サービスアカウントの JSON、
+// docs/ANDROID.md § 通知）は**無くても止まりません** ── Firebase はオーナーの
+// 手で後から入るもので、それまで iPhone を鳴らさない理由はありません。無い間は
+// Android の行にだけ送らず、答えの `left` に `not set: FCM_SERVICE_ACCOUNT`。
 
-import { pushWhat, pushRead, pushTo, pushMay, pushPlan, pushBy, pushGone, TOPIC } from './push.mjs';
+import { pushWhat, pushRead, pushTo, pushMay, pushPlan, pushBy, pushGone, TOPIC,
+         pushFcm, pushFcmWhy, pushFcmSa, pushFcmClaim } from './push.mjs';
 
 const APNS = 'https://api.push.apple.com/3/device/';
 
@@ -100,6 +108,30 @@ async function apnsJwt(kid: string, team: string, p8: string): Promise<string> {
   const sig = new Uint8Array(await crypto.subtle.sign(
     { name: 'ECDSA', hash: 'SHA-256' }, key, enc.encode(head + '.' + body)));
   return head + '.' + body + '.' + b64u(sig);
+}
+
+/* Google のサービスアカウントの鍵は RSA の PKCS#8 PEM。JWT を RS256 で署名し、
+   token_uri で一時間の access token に換えます（Google の「サービスアカウント
+   で OAuth」の決まった形）。読めない・断られたは `Error` で、呼んだ側が
+   Android の行を「送れなかった」にします。 */
+async function fcmAccess(sa: { email: string; key: string; tokenUri: string }): Promise<string> {
+  const key = await crypto.subtle.importKey(
+    'pkcs8', derOf(sa.key), { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' }, false, ['sign']);
+  const enc = new TextEncoder();
+  const head = b64u(enc.encode(JSON.stringify({ alg: 'RS256', typ: 'JWT' })));
+  const body = b64u(enc.encode(JSON.stringify(pushFcmClaim(sa, Date.now()))));
+  const sig = new Uint8Array(await crypto.subtle.sign(
+    { name: 'RSASSA-PKCS1-v1_5' }, key, enc.encode(head + '.' + body)));
+  const r = await fetch(sa.tokenUri, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: 'grant_type=' + encodeURIComponent('urn:ietf:params:oauth:grant-type:jwt-bearer') +
+          '&assertion=' + head + '.' + body + '.' + b64u(sig),
+  });
+  const j = await r.json().catch(() => null);
+  const tok = j && typeof j.access_token === 'string' ? j.access_token : '';
+  if (!r.ok || !tok) throw new Error('google said ' + r.status);
+  return tok;
 }
 
 Deno.serve(async (req: Request) => {
@@ -212,7 +244,10 @@ Deno.serve(async (req: Request) => {
      設定を profile から一緒に持って来ます（device.uid → profile.id）。相手が
      一人でも千人でも、決めるのは下の同じ `pushPlan()` を一人ずつ ── スイッチも
      言語も、フォローの通知と同じ一行が答えます。 */
-  type One = { uid: string; prefs: unknown; tokens: string[] };
+  type Dev = { token: string; platform: string };
+  type One = { uid: string; prefs: unknown; tokens: Dev[] };
+  const devOf = (d: Record<string, unknown>): Dev =>
+    ({ token: String(d.token || ''), platform: String(d.platform || '') });
   const them: One[] = [];
   let fill: Record<string, unknown> = {};
   if (!how.all) {
@@ -220,16 +255,15 @@ Deno.serve(async (req: Request) => {
     const you = await one(`profile?select=prefs&id=${eq(aim.to)}`);
     const doer = await one(`profile?select=handle&id=${eq(aim.from)}`);
     if (!you || !doer) return said({ sent: 0, why: 'no such account' });
-    const devs = await rows(`device?select=token&uid=${eq(aim.to)}`);
-    them.push({ uid: aim.to, prefs: you.prefs,
-                tokens: devs.map((d) => String(d.token || '')) });
+    const devs = await rows(`device?select=token,platform&uid=${eq(aim.to)}`);
+    them.push({ uid: aim.to, prefs: you.prefs, tokens: devs.map(devOf) });
     fill = { handle: doer.handle };
   } else {
     fill = { says: row.says, text: row.text };
     const by_uid: Record<string, One> = {};
     /* 千行ずつ。PostgREST は一度に返す数に上限を持つので、読み切るまで。 */
     for (let from = 0; ; from += 1000) {
-      const page = await rows(`device?select=uid,token,profile(prefs)` +
+      const page = await rows(`device?select=uid,token,platform,profile(prefs)` +
                               `&order=uid,token&limit=1000&offset=${from}`);
       for (const d of page) {
         const uid = String(d.uid || '');
@@ -237,13 +271,13 @@ Deno.serve(async (req: Request) => {
         const p = (d.profile && typeof d.profile === 'object') ?
           (d.profile as Record<string, unknown>).prefs : null;
         if (!by_uid[uid]) { by_uid[uid] = { uid, prefs: p, tokens: [] }; them.push(by_uid[uid]); }
-        by_uid[uid].tokens.push(String(d.token || ''));
+        by_uid[uid].tokens.push(devOf(d));
       }
       if (page.length < 1000) break;
     }
   }
 
-  const sends: { uid: string; to: string[]; payload: unknown }[] = [];
+  const sends: { uid: string; to: string[]; fcm: string[]; payload: unknown }[] = [];
   let why = '';
   for (const t of them) {
     /* `push.mjs` は素の JavaScript なので、ここで形を言います ── 送らないと
@@ -251,9 +285,9 @@ Deno.serve(async (req: Request) => {
        進むのは、型を黙らせるためではなく、**片方だけ在る答えは無い**と言って
        おくためです。 */
     const plan = pushPlan({ ...aim, to: t.uid }, { ...fill, prefs: t.prefs }, t.tokens, by) as
-      { send: boolean; why?: string; to?: string[]; payload?: unknown };
-    if (!plan.send || !plan.to || !plan.payload) { why = plan.why || why; continue; }
-    sends.push({ uid: t.uid, to: plan.to, payload: plan.payload });
+      { send: boolean; why?: string; to?: string[]; fcm?: string[]; payload?: unknown };
+    if (!plan.send || !plan.to || !plan.fcm || !plan.payload) { why = plan.why || why; continue; }
+    sends.push({ uid: t.uid, to: plan.to, fcm: plan.fcm, payload: plan.payload });
   }
   if (!sends.length) return said({ sent: 0, why: why || 'no device' });
 
@@ -262,7 +296,7 @@ Deno.serve(async (req: Request) => {
   try { jwt = await apnsJwt(kid, team, p8); }
   catch (e) { return said({ why: 'APNS_P8 will not read: ' + (e as Error).message }, 500); }
 
-  const sent: { uid: string; token: string; status: number; reason: string }[] = [];
+  const sent: { uid: string; token: string; status: number; reason: string; platform: string }[] = [];
   for (const one_ of sends) {
     const body = JSON.stringify(one_.payload);
     for (const token of one_.to) {
@@ -290,13 +324,51 @@ Deno.serve(async (req: Request) => {
            枝を分けない（CLAUDE.md 一枚目）。 */
         status = 0;
       }
-      sent.push({ uid: one_.uid, token: token, status: status, reason: reason });
+      sent.push({ uid: one_.uid, token: token, status: status, reason: reason, platform: 'ios' });
     }
   }
 
-  /* Apple が 410 Unregistered と答えた token だけ落とします。その token を
-     持っていた**その人の行だけ**で、同じ iPhone の別のアカウントの行には
-     触りません。DELETE REVIEW は docs/CHANGELOG.md 2026-09-22。 */
+  /* ---- そして Google へ（Android の行）------------------------------------
+     鍵が無い・読めない・Google が鍵を出さない、はどれも「送れなかった」で、
+     その行ごとに `left` に理由が載ります。**token は消しません** ── 送れな
+     かったのは住所のせいではないからです。 */
+  const fcmTo = sends.filter((x) => x.fcm.length);
+  if (fcmTo.length) {
+    const sa = pushFcmSa(Deno.env.get('FCM_SERVICE_ACCOUNT') || '') as
+      { email: string; key: string; project: string; tokenUri: string } | null;
+    let access = '', not = '';
+    if (!sa) not = 'not set: FCM_SERVICE_ACCOUNT';
+    else {
+      try { access = await fcmAccess(sa); }
+      catch (e) { not = 'FCM_SERVICE_ACCOUNT will not sign in: ' + (e as Error).message; }
+    }
+    for (const one_ of fcmTo) {
+      for (const token of one_.fcm) {
+        let status = 0, reason = not;
+        if (access && sa) {
+          try {
+            const r = await fetch(
+              `https://fcm.googleapis.com/v1/projects/${encodeURIComponent(sa.project)}/messages:send`, {
+                method: 'POST',
+                headers: { authorization: 'Bearer ' + access, 'Content-Type': 'application/json' },
+                body: JSON.stringify(pushFcm(one_.payload, token)),
+              });
+            status = r.status;
+            reason = r.ok ? '' : pushFcmWhy(await r.json().catch(() => null));
+          } catch (_) {
+            /* 届かなかった。「読めなかった」は「無い」ではない。 */
+            status = 0;
+          }
+        }
+        sent.push({ uid: one_.uid, token: token, status: status, reason: reason, platform: 'android' });
+      }
+    }
+  }
+
+  /* Apple が 410 Unregistered と、Google が 404 UNREGISTERED と答えた token
+     だけ落とします（`pushGone()`）。その token を持っていた**その人の行だけ**で、
+     同じ電話の別のアカウントの行には触りません。DELETE REVIEW は
+     docs/CHANGELOG.md 2026-09-22 と 2026-09-27。 */
   const gone = pushGone(sent);
   for (const s of sent) {
     if (gone.indexOf(s.token) === -1) continue;
@@ -305,7 +377,8 @@ Deno.serve(async (req: Request) => {
   }
 
   /* 数えたもので、説明ではありません ── 実機で「来ない」と言われた時に、
-     送ったのか、送らなかったのか、Apple が断ったのかを分けられるのはここだけ。 */
+     送ったのか、送らなかったのか、Apple や Google が断ったのかを分けられるのは
+     ここだけ。 */
   return said({
     kind: aim.kind,
     sent: sent.filter((s) => s.status === 200).length,

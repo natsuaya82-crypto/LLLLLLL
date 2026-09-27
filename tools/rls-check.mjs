@@ -3270,10 +3270,17 @@ const KNOCK = await (async () => {
   const HOST = 'https://project.test';
   const P8 = generateKeyPairSync('ec', { namedCurve: 'P-256' })
     .privateKey.export({ type: 'pkcs8', format: 'pem' });
+  /* Google's service account for Firebase Cloud Messaging: an RSA key in the
+     JSON Firebase hands out, so the Android road is walked as well as Apple's. */
+  const FCM_SA = JSON.stringify({ type: 'service_account', project_id: 'lingua-test',
+    client_email: 'push@lingua-test.iam.gserviceaccount.com',
+    token_uri: 'https://oauth2.googleapis.com/token',
+    private_key: generateKeyPairSync('rsa', { modulusLength: 2048 })
+      .privateKey.export({ type: 'pkcs8', format: 'pem' }) });
   const ENV = {
     SUPABASE_URL: HOST, SUPABASE_SERVICE_ROLE_KEY: 'THE-SERVICE-KEY',
     SUPABASE_ANON_KEY: 'THE-PUBLISHABLE-KEY', APNS_KEY_ID: 'KID',
-    APPLE_TEAM_ID: 'TEAM', APNS_P8: P8, CRON_SECRET: 'THE-CRON-WORD',
+    APPLE_TEAM_ID: 'TEAM', APNS_P8: P8, FCM_SERVICE_ACCOUNT: FCM_SA, CRON_SECRET: 'THE-CRON-WORD',
     GEMINI_API_KEY: 'THE-MODEL-KEY', APPLE_ROOT_CA_G3: 'AAAA',
   };
   const WHO = { 'Bearer A-TOKEN': A, 'Bearer B-TOKEN': B };
@@ -3282,12 +3289,13 @@ const KNOCK = await (async () => {
   const rung = {};
   const said = (v, st) => new Response(JSON.stringify(v), { status: st || 200 });
   /* A Supabase that answers from the request itself: a row asked for by its
-     key is that row, every account has one phone. */
+     key is that row, every account has one iPhone and one Android. */
   globalThis.fetch = async (u, init) => {
     const url = String(u), method = String((init && init.method) || 'GET');
     const h = (init && init.headers) || {};
     const body = init && init.body ? String(init.body) : '';
     log.push({ url, method, body });
+    if (url === 'https://oauth2.googleapis.com/token') return said({ access_token: 'GOOGLE-SAYS' });
     if (!url.startsWith(HOST)) return said({}, 200);
     const p = new URL(url), eq = {};
     for (const [k, v] of p.searchParams) if (v.startsWith('eq.')) eq[k] = v.slice(3);
@@ -3301,7 +3309,8 @@ const KNOCK = await (async () => {
     if (p.pathname === '/rest/v1/rpc/plan_put') return said([JSON.parse(body)]);
     if (method !== 'GET') return said([]);
     const t = p.pathname.replace('/rest/v1/', '');
-    if (t === 'device') return said([{ token: 'ab'.repeat(32) }]);
+    if (t === 'device') return said([{ token: 'ab'.repeat(32), platform: 'ios' },
+                                     { token: 'fcm:APA91b_' + 'x'.repeat(140), platform: 'android' }]);
     if (t === 'profile') return said([{ prefs: {}, handle: 'someone' }]);
     if (t === 'prompt') return said([]);
     if (t === 'purchase') return said([]);
@@ -3341,13 +3350,16 @@ const KNOCK = await (async () => {
         .map((x) => x.method + ' ' + x.url))]);
     if (d === 'push-send') {
       const mine = JSON.stringify({ table: 'follow', record: { follower: B, followed: A } });
-      let apple = 0;
+      let apple = 0, google = 0;
       for (let i = 0; i < 2; i++) {
         const k = await call(serve, 'Bearer B-TOKEN', mine);
         apple += k.log.filter((x) => x.url.startsWith('https://api.push.apple.com')).length;
+        google += k.log.filter((x) => x.url.startsWith('https://fcm.googleapis.com')).length;
       }
       out.push(['push-send rings B’s follow of A once, knocked twice',
         apple === 1 ? [] : ['Apple was asked ' + apple + ' times']]);
+      out.push(['and A’s Android once as well',
+        google === 1 ? [] : ['Google was asked ' + google + ' times']]);
     }
   }
   out.push(['functions knocked on', dirs.length ? [] : ['none found']]);
