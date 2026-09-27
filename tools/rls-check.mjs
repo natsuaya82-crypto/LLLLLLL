@@ -962,6 +962,13 @@ const CASES = [
     `select 1 from slice where language='${BDL}' and kind='words'`],
   ['BD does not read BK’s dictionary',        'denied', BD, 0,
     `select 1 from slice where language='${BKL}' and kind='words'`],
+  /* AND NOT BY TAKING IT. A take is a read that lasts: language_took() lets
+     it through lang_readable() whatever stands between -- so a take made
+     ACROSS a block would be the road round every line above. Both ways. */
+  ['BD cannot take BK’s published language',  'denied', BD, 0,
+    `insert into language_take(uid,language) values ('${BD}','${BKL}')`],
+  ['nor BK take BD’s',                        'denied', BK, 0,
+    `insert into language_take(uid,language) values ('${BK}','${BDL}')`],
   ['BD still reads BD’s own, all of it',      'ok',     BD, 0,
     `select 1 from slice where language='${BDL}' and kind='words'`],
   /* AND ONE BK TOOK BEFORE THE BLOCK IS STILL READ, which is not a decision:
