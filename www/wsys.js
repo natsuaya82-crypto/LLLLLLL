@@ -122,8 +122,8 @@ function wsGuess(){
    `language.wsys` column the server holds, which is also what anybody reading
    a published language is told.
 
-   Changing it is a different question and is setWsys() below --
-   `upStop(can('wsys'))`, its first line, which is the door rather than the
+   Changing it is a different question, asked on the press -- wsPick()
+   (www/sound.js), `upStop(can('wsys'))`, which is the door rather than the
    room, and which says 「接続できません」 rather than a price while nobody
    has asked. */
 function wsys(){
@@ -131,30 +131,20 @@ function wsys(){
   var w=langWsysOf(langId);
   return WSYS.indexOf(w)>=0 ? w : wsGuess();
 }
-function setWsys(k){
-  /* The ceiling, met on the press. 「+を押したらそのまま課金のポップが出る
-     だけでしょ？」 OWNER 2026-09-01 -- the button is drawn on every plan. */
-  if(upStop(can('wsys'))) return;
-
-  if(WSYS.indexOf(k)<0) return;
-  /* There is no second guard under this one. It used to read
-     `if(!can('wsys') && k!=='alpha'){ go('plans'); return; }` -- the free plan
-     carried off to the price list, which is the older sentence
-     「無料はタップすると課金ページに飛ばされる」 and 「ポップだって。その
-     古いのは消して」 OWNER 2026-09-05 is what replaced it. Said as
-     `upStop(can('wsys'))` it is the line at the top of this function, word
-     for word, and a route arrived at from anywhere or a plan that ended
-     while one of the other five was set meets it there. Written twice, the
-     second one can never run. */
-  /* THE SERVER FIRST. The screen moves when the column has it -- the same
-     sentence the 公開 switch and the heart carry
-     （「保存するタイミングでエラーが起きるなら、保存されないし」 OWNER
-     2026-09-05）. A choice that did not arrive is a choice that did not
-     happen, and ［再接続］ presses it again. */
-  netLangWsys(k, function(){
-    installScriptFont();
-    render();
-  });
+/* THE WRITE, AND IT ANSWERS WHEN THE COLUMN HAS IT. The screen's Save is
+   keepSave() -> wsKeepSave() (www/sound.js), and `done` is what it waits
+   on: `true` once the server has the column, `false` when it said no -- the
+   popup with ［再接続］ is up by then, the same shape meProfPut() (www/me.js)
+   has for the profile. The plan is not asked here: it is asked on the press
+   (wsPick), which is the only road here. */
+function setWsys(k, done){
+  if(WSYS.indexOf(k)<0){ done(false); return; }
+  netLangWsys(k,
+    function(){ installScriptFont(); done(true); },
+    function(d, st, m){
+      netPop(d, st, m, function(){ setWsys(k, function(){ render(); }); });
+      done(false);
+    });
 }
 /* An abugida is the only one that builds a letter out of two drawings, so it
    is the only one that has two kinds of thing to draw. */
@@ -419,15 +409,11 @@ function scriptDir(){
 function dirClass(d){
   return 'dir-'+(DIRS.indexOf(d)>=0 ? d : 'ltr');
 }
+/* The direction is the `script` slice's, so it rides the Save's own send
+   (keepSave -> netSaveNow). The plan is asked on the press (dirPick). */
 function setScriptDir(k){
   if(DIRS.indexOf(k)<0) return;
-  /* The screen only offers this on a paid plan; this is the same sentence
-     said where it can be relied on, since a route can be arrived at from
-     anywhere and a plan can end while one of the four is set. Exactly as
-     setWsys() does it. */
-  if(upStop(can('dir'))) return;
   SCRIPT.dir=k; save();
-  render();
 }
 /* 字間, in steps of the lattice (glyph.js § geSide), and the one place its
    three numbers are written. 「あの文字間は規定を1としてスライドで文字間が見える

@@ -148,11 +148,13 @@ function dirPick(k){
 }
 /* And the write, which is still setWsys() and setScriptDir() in www/wsys.js
    -- the one place either of those is written down, font rebuild and all.
-   Nothing is written here beside them. */
+   The writing system is a column of the `language` row and the direction a
+   slice, so the column goes first and the Save hears its answer: saved is
+   said when it has landed, and a refusal leaves the screen as it was. */
 function wsKeepSave(v, done){
-  if(v.hasOwnProperty('ws')) setWsys(String(v.ws));
-  if(v.hasOwnProperty('dir')) setScriptDir(String(v.dir));
-  done(true);
+  function dir(){ if(v.hasOwnProperty('dir')) setScriptDir(String(v.dir)); }
+  if(!v.hasOwnProperty('ws')){ dir(); done(true); return; }
+  setWsys(String(v.ws), function(ok){ if(ok) dir(); done(ok); });
 }
 function vWsys(){
   /* Every kind, on every plan, and the buffer registered before the bar is

@@ -3000,7 +3000,7 @@ const R = await pg.evaluate(async () => {
     netSend = (method, path, body, tok, ok2) => {
       if (method === 'PATCH'){ sent63 = body || {}; letGo63 = () => ok2([]); }
     };
-    setWsys('syll');
+    setWsys('syll', () => {});
     if (!sent63 || sent63.wsys !== 'syll')
       no('63: 選んでも列へ PATCH が出ていない — ' + JSON.stringify(sent63));
     if (langWsysOf('Lw') === 'syll')
@@ -3021,9 +3021,31 @@ const R = await pg.evaluate(async () => {
     netSend = (method, path, body, tok, ok2, bad2) => {
       if (method === 'PATCH') bad2(null, 0, 'down');
     };
-    setWsys('abugida');
+    setWsys('abugida', () => {});
     if (langWsysOf('Lw') !== 'syll')
       no('63: 落ちたのに書記体系が動いた — ' + JSON.stringify(langWsysOf('Lw')));
+    /* AND THE SAVE SAYS SO WHEN THE COLUMN HAS IT, NOT BEFORE (2026-09-27,
+       claude/audit-glyph A5). The screen's Save is keepSave() -> wsKeepSave();
+       it answered `true` on the press while the column was still in the air,
+       so a refusal came up behind a screen that had already said it saved. */
+    let said63 = [], letGo63b = null;
+    netSend = (method, path, body, tok, ok2) => {
+      if (method === 'PATCH') letGo63b = () => ok2([]);
+    };
+    wsKeepSave({ ws:'logo' }, (ok) => said63.push(ok));
+    if (said63.length)
+      no('63: 保存が、列が答える前に「済んだ」と言った — ' + JSON.stringify(said63));
+    if (letGo63b) letGo63b();
+    if (said63.join() !== 'true')
+      no('63: 列が答えても保存が「済んだ」と言わない — ' + JSON.stringify(said63));
+    said63 = [];
+    netSend = (method, path, body, tok, ok2, bad2) => {
+      if (method === 'PATCH') bad2(null, 0, 'down');
+    };
+    wsKeepSave({ ws:'syll' }, (ok) => said63.push(ok));
+    if (said63.join() !== 'false')
+      no('63: 列が断ったのに保存が「済んだ」と言った — ' + JSON.stringify(said63));
+    if (popOn()) popNo();
     /* 人の設定には一字も入らない。 */
     if (SET.wsys !== undefined)
       no('63: 人の設定に書記体系を書いた — ' + JSON.stringify(SET.wsys));
