@@ -1611,6 +1611,19 @@ function lnFit(e){
   var cs=window.getComputedStyle? getComputedStyle(e) : null,
       pad=cs? (parseFloat(cs.paddingTop)||0)+(parseFloat(cs.paddingBottom)||0) : 0;
   e.style.minHeight=Math.max(44, e.scrollHeight-pad)+'px';
+  /* AND WHAT IS MEASURED IS THE TEXT IN THE FACE IT IS SET IN. A drawn letter
+     is a face built on the phone (www/glyph.js § inkFaces), and a face loads
+     after the page asks for it -- so the first measure is the line in the
+     face BEHIND it, and the letters arriving set it at other widths and wrap
+     it onto more rows than the field was made tall for. Nothing is typed into a post
+     being edited, so nothing measured it again: 658 of text in a field of
+     530, the last rows under the foot of the field where the board cannot
+     slide to them. 「文字も見切れてるし、キーボードで一番下も隠れるし」
+     OWNER 2026-09-27, 実機 170. So a field measured while a face is still
+     on its way is measured again when it has arrived. */
+  if(document.fonts && document.fonts.status==='loading' &&
+     document.fonts.ready && document.fonts.ready.then)
+    document.fonts.ready.then(function(){ if(e.isConnected) lnFit(e); });
 }
 /* And the bar a ROOT carries, which is a different bar: there is nothing
    behind a root, so it has no way back -- only its name, and at most one
