@@ -44,6 +44,41 @@ Kotlin は `android/app/src/main/java/com/tokinets/lingua/` の四つのファ�
 Cloud Messaging と `push-send` の Android 対応）。キーボード（Android の IME）と
 ウィジェットは次の回。
 
+### 課金 ── Play Billing をこの回で書かなかった理由と、要る変更
+
+リーダーから「Play Billing のライブラリを入れて、iOS と同じ答えの形で書ける
+所まで書いてよい」と来たが、書いていない。
+
+- **同じ答えの形が無い。** iOS の道はすべて `jws`（Apple が署名した取引）を
+  答え、`verify-plan` はその署名を Apple の根で確かめる。Google Play には
+  端末が受け取る署名つきの取引が無い。サーバーが要るのは購入トークンと
+  商品 ID で、サーバーが Google Play Developer API に訊いて確かめる。
+  トークンを `jws` に入れれば `verify-plan` は Apple の署名として読み、断る。
+- 答えの形は決定が「課金のセッションで決める前に報告」としている。ここで
+  書けば、決める前に形を決めることになる。
+- この環境では Play Billing をコンパイルできず（Google の Maven に届かない）、
+  商品が無いので書いても走らない。
+
+要る変更（`www/` と `supabase/` は持っていないので、ここは列挙だけ）:
+
+1. **Kotlin**: Play Billing で buy / restore / current を作る。買う時に
+   obfuscatedAccountId を Supabase の uid にする ── iOS の `appAccountToken`
+   に当たる「誰の購入か」。答えは購入トークンと商品 ID の組の一覧。
+2. **`www/store.js`**: `storeJws()` の代わりに Google の組を読み、
+   `netPlanVerify()` に渡す。どちらの電話かを画面が区別するのはこの一か所。
+3. **`supabase/functions/verify-plan`**: Google の組を受け、サービス
+   アカウントで purchases.subscriptionsv2.get を訊く。
+   obfuscatedExternalAccountId が呼んだ人の uid と同じ時だけ数える。期限は
+   Google の答えから取り、購入の承認（acknowledge、三日以内）もここでする。
+   更新・解約をすぐ知るなら Real-time developer notifications（Pub/Sub）。
+4. **商品 ID**: iOS と同じ名前（`com.tokinets.lingua.plus.monthly` など四つ）は、
+   Play の定期購入の ID として使える。Play の基本プラン（base plan）の ID は
+   ピリオドを使えないので、四つを別々の定期購入にして各々に基本プランを一つ
+   置く形になる。もう一つの形は、plus と pro の二つの定期購入に monthly・
+   yearly の基本プランを置くもの。どちらにするかは課金の回のもの。
+5. **オーナー**: Play Console に商品を作る。Google Cloud のサービスアカウントを
+   Play Console に招待し、その鍵を Supabase の secrets に入れる。
+
 ### 画面にペンで書いたシート
 
 iOS の `LinguaPdf.swift` の頭に理由が全部書いてある: 画面にペンで書いたものは
