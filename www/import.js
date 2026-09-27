@@ -18,11 +18,16 @@
    the column that held the right answer and guessed from the spelling, and
    the guesser deletes everything outside a-z.
 
-   So this file is in two halves. This one knows nothing about the app: given
-   text, it says what shape the text is, cuts it into rows, and guesses what
-   each column means. It touches no global and no document, which is why
-   tools/import-check.mjs can run it directly over one sample per format --
-   the only way "we support every service" can stay true a year from now.
+   So this file is in two halves. This one knows nothing about the language
+   in front of you: given text, it says what shape the text is, cuts it into
+   rows, and guesses what each column means. It touches no document and no
+   part of the open language. What it does read is two tables that are not
+   anybody's work -- the ten interface languages (LANG and UI_LANGS, for what
+   a column heading or a part of speech is called: 「つづり」「品詞」) and
+   www/ipa.js (ipaAll(), longCut(), for cutting a reading into sounds) --
+   and tools/import-check.mjs loads exactly those and runs this half directly
+   over one sample per format, the only way "we support every service" can
+   stay true a year from now.
 
    Four shapes, because there are four in the wild:
 
@@ -527,8 +532,8 @@ function impCut(s, snd){
    It is ABOVE the line with the rest of the guess, because it is part of it:
    what the guess ANSWERS is these roles read as one side, and a check that
    asked impGuess() alone would be asking a question the app never asks.
-   Nothing here touches a global or the document; impSetInto(), which does,
-   is below. */
+   Nothing here touches the document or the open language; impSetInto(),
+   which does, is below. */
 var IMP_SIDE={w:['hw','mn','pos','ph','ex','exg','reg','tags','ety','nt','sub','skip'],
               l:['ch','ph','nm','skip']};
 function impRolesFor(into){ return IMP_SIDE[into] || IMP_SIDE.w; }
@@ -554,10 +559,11 @@ function impMove(roles, into){
 }
 
 /* ==== below this line the app begins ==== */
-/* Everything above touches no global and no document, and must not start:
-   tools/import-check.mjs runs that half directly in Node, over one sample per
-   format, which is the only thing holding "we can read anybody's file"
-   upright. Everything below is the app -- the screen, the plan, the
+/* Everything above touches no document and nothing of the open language --
+   only the ten language files and www/ipa.js, which tools/import-check.mjs
+   loads beside it -- and must not start: that check runs that half directly
+   in Node, over one sample per format, which is the only thing holding "we
+   can read anybody's file" upright. Everything below is the app -- the screen, the plan, the
    dictionary -- and press.mjs walks it like any other screen.
    ========================================================================= */
 
@@ -622,9 +628,8 @@ function impHTML(){
   if(IMP.step==='paste') return impPasteHTML();
   return impGetHTML();
 }
-/* Rebuilding it rather than patching a piece: choosing what a column is
-   changes the counts underneath it and can change the buttons, and a screen
-   that redraws two of its three parts is where the third goes stale. */
+/* Choose again: the import starts over from the first screen, exactly as the
+   door starts it. */
 function impAgain(){ IMP=impBlank(); impPaint(); }
 function impStep(v){ IMP.step=v; impPaint(); }
 
@@ -753,6 +758,9 @@ function impColName(j){
   var head=IMP.read && IMP.read.head;
   return (head && head[j])? String(head[j]) : t('imp.col', j+1);
 }
+/* Rebuilding the screen rather than patching a piece: choosing what a column
+   is changes the counts underneath it and can change the buttons, and a
+   screen that redraws two of its three parts is where the third goes stale. */
 function impSetRole(j, v){ IMP.roles[j]=v; impPaint(); }
 function impSetDup(v){ IMP.dup=v; impPaint(); }
 
