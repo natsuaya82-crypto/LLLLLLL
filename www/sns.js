@@ -2316,23 +2316,23 @@ function snsIsSaved(q){
    put it on -- a second screen to remove one would be a screen. Newest
    first: the word just kept is the one being looked for.
 
-   The row goes up and the copy is written in the same breath, and the screen
-   does not wait for the server: a star that only lit once the network came
-   back would be a button that does nothing on a train. With no signal the
-   copy still changes and the filter still works -- and the word is NOT on
-   the server, so the next pull will not find it. That is what "the server is
-   the record" costs, and it is the leader's decision of 2026-08-28 rather
-   than something worked around here with a queue nobody asked for. */
+   A PRESS THAT GOES TO THE SERVER, and the copy changes on the answer:
+   「保存するタイミングでエラーが起きるなら、保存されないし」 OWNER 2026-09-05,
+   and the star turns while it is out (OWNER 2026-09-27, netPressed() in
+   www/net.js). A press that fell is 「接続できません」 with 再接続. */
 function snsSaveQ(){
-  var k=String(snsQ||'').trim(), a=snsSaved(), out=[], i, had=false;
+  var k=String(snsQ||'').trim(), had=snsIsSaved(k);
   if(!k) return;
-  for(i=0;i<a.length;i++){ if(a[i]===k) had=true; else out.push(a[i]); }
-  if(!had) out.unshift(k);
-  if(had) netSearchDrop(k, function(){}, function(){});
-  else    netSearchSave(k, function(){}, function(){});
-  SET.saved=out;
-  setKeep();
-  render();
+  function landed(){
+    var out=snsSaved().filter(function(w){ return w!==k; });
+    if(!had) out.unshift(k);
+    SET.saved=out;
+    setKeep();
+    render();
+  }
+  function fell(d, st, m){ netPop(d, st, m, snsSaveQ); }
+  if(had) netSearchDrop(k, landed, fell);
+  else    netSearchSave(k, landed, fell);
 }
 /* Chosen from the filter, and the timeline you were standing on is what gets
    filtered. 「絞り込みで星つけたやつはなんで検索欄行くの？ホームからね。」
@@ -2416,32 +2416,33 @@ function askRecent(ok, bad){
    「直近5件」 is what the feature IS. The one that fell off is dropped from
    the server by its words.
 
-   The copy is written and the screen does not wait for the server, the same
-   way the star does not: a history that only appeared once the network came
-   back would be a screen that forgets on a train. */
+   The copy is written when the server has the row, as the star's is. A
+   search that could not reach the server says so where its answer goes
+   (snsAnsHTML, `bad`), so this press has nothing of its own to add. */
 function snsRecentAdd(q){
-  var k=String(q||'').trim(), a=snsRecent(), out=[k], i, off;
-  if(!k) return;
-  for(i=0;i<a.length;i++) if(a[i]!==k) out.push(a[i]);
-  off=out.slice(SNS_RECENT);
-  out=out.slice(0, SNS_RECENT);
-  if(snsSameWords(out, a)) return;
-  netRecentAdd(k, function(){}, function(){});
-  for(i=0;i<off.length;i++) netRecentDrop(off[i], function(){}, function(){});
-  SET.recent=out;
-  setKeep();
+  var k=String(q||'').trim();
+  if(!k || snsRecent()[0]===k) return;
+  /* The list as it stands when the server has the row -- worked out then and
+     not at the press, which another answer may have landed after. */
+  netRecentAdd(k, function(){
+    var a=snsRecent(), out=[k], off, i;
+    for(i=0;i<a.length;i++) if(a[i]!==k) out.push(a[i]);
+    off=out.slice(SNS_RECENT);
+    for(i=0;i<off.length;i++) netRecentDrop(off[i], function(){}, function(){});
+    SET.recent=out.slice(0, SNS_RECENT);
+    setKeep();
+  }, function(){});
 }
 /* One word off, and only that one. There is no button that takes them all:
-   「1件づつ消せるでいいよ」. */
+   「1件づつ消せるでいいよ」. A press that goes to the server, as the star is. */
 function snsDropRecent(q){
-  var k=String(q||'').trim(), a=snsRecent(), out=[], i;
-  if(!k) return;
-  for(i=0;i<a.length;i++) if(a[i]!==k) out.push(a[i]);
-  if(snsSameWords(out, a)) return;
-  netRecentDrop(k, function(){}, function(){});
-  SET.recent=out;
-  setKeep();
-  render();
+  var k=String(q||'').trim();
+  if(!k || snsRecent().indexOf(k)<0) return;
+  netRecentDrop(k, function(){
+    SET.recent=snsRecent().filter(function(w){ return w!==k; });
+    setKeep();
+    render();
+  }, function(d, st, m){ netPop(d, st, m, function(){ snsDropRecent(k); }); });
 }
 /* Pressed: that word goes into the field and is searched for again. It is
    put through snsSetQ() rather than set here, because that is the one place

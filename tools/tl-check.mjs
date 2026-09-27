@@ -1120,6 +1120,18 @@ const au = await pg.evaluate(() => {
      it reads them (its own row in PAGE_READS). */
   out.a6 = JSON.stringify(pageNeeds('filter', ''));
 
+  /* a7: the star and the ✕ on a typed word are presses that go to the
+     server -- the copy changes on the answer, and a press that fell says so. */
+  { const s1 = netSend1, pop = window.netPop, was = { saved:SET.saved, recent:SET.recent, q:snsQ };
+    let pops = 0;
+    netSend1 = function (m, p, b, t2, ok, bad) { bad(null, 0); };
+    window.netPop = function () { pops++; };
+    SET.saved = []; SET.recent = ['yy']; snsQ = 'zz';
+    snsSaveQ();
+    snsDropRecent('yy');
+    out.a7 = JSON.stringify({ saved:SET.saved, recent:SET.recent, pops:pops });
+    netSend1 = s1; window.netPop = pop; SET.saved = was.saved; SET.recent = was.recent; snsQ = was.q; }
+
   netIdOf = realId;
   netSend1 = realS1; netSend = realS; netGet = realG;
   NAV = [{ r:'feed' }]; window.route = 'feed'; render();
@@ -1138,6 +1150,9 @@ if (!au.a5before || !au.a5after)
       '; after, with one unread, it moved and went up once: ' + au.a5after + '.');
 if (au.a6.indexOf('"saved"') < 0)
   say('a6: arriving at the filter page reads ' + au.a6 + ' -- it draws the kept words and has to read them.');
+if (au.a7 !== JSON.stringify({ saved:[], recent:['yy'], pops:2 }))
+  say('a7: the star and the \u2715 with the server refusing left ' + au.a7 +
+      ' -- nothing changes on this phone, and each press says it fell (want saved [], recent [yy], 2 pops).');
 if (!au.a3)
   say('a3: a word pressed while another word\u2019s answer is on the screen draws that old answer or ' +
       '「No results」 until its own lands. Not answered yet is the waiting mark.');
