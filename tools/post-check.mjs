@@ -1689,6 +1689,46 @@ const R = await pg.evaluate(async () => {
     PW = wasPW;
   }
 
+  /* ---- 11d1. a long line is all in its field, and the board slides ----
+     「長い文編集ができない」 OWNER 2026-09-27, with a screenshot of the
+     line's last four rows and nothing above them. The field was squeezed to
+     64px by the flex column it sits in while its text was 411px, and a field
+     does not scroll inside itself (`overflow:hidden`), so the start of what
+     somebody wrote was out of reach. The column may take the field's padding
+     and never its text (www/shell.js § lnFit), and what is left over the
+     board (`.pwscroll`) slides. Typed the way a person types: an `input` on the field, which is
+     what grows it (www/act.js -> lnFit). */
+  {
+    const wasPW = PW;
+    await screenTo(470);
+    PW = pwBlank();
+    openPost();
+    render();
+    await frame();
+    const ln = document.getElementById('pw-ln');
+    const scroll = document.querySelector('.view.fit .pwscroll');
+    if (ln && scroll) {
+      let t = '';
+      for (let i = 0; i < 9; i++) t += 'Line ' + i + ' of a long reply that goes on and on.\n\n';
+      ln.value = t;
+      ln.dispatchEvent(new Event('input', { bubbles: true }));
+      await frame();
+      /* the column may take the field's padding and never its text
+         (www/shell.js § lnFit) */
+      const cs = getComputedStyle(ln);
+      const pad = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0);
+      if (ln.clientHeight + pad + 1 < ln.scrollHeight)
+        fails.push('a long line is squeezed past its padding: ' + ln.clientHeight + 'px shown of ' +
+                   ln.scrollHeight + 'px written (padding ' + pad + '), and the field does not ' +
+                   'scroll -- the start of what somebody wrote cannot be reached');
+      if (scroll.scrollHeight <= scroll.clientHeight)
+        fails.push('a long line did not make the board slide (' + scroll.scrollHeight + ' of ' +
+                   scroll.clientHeight + ')');
+    } else fails.push('the composer drew no line field or no board');
+    await screenTo(844);
+    PW = wasPW;
+  }
+
   /* ---- 11d2. and the MEANING is in that box, not under it -------------
      「自分の言語で一行と意味がこのページで見れるように。」OWNER 2026-08-27
 

@@ -1601,6 +1601,16 @@ function lnFit(e){
   e.style.width='';
   e.style.height='auto';
   e.style.height=e.scrollHeight+'px';
+  /* AND A COLUMN MAY TAKE ITS PADDING, NEVER ITS TEXT. A field in a flex
+     column (the composer's board) is squeezed when the screen is short, and a
+     field does not scroll inside itself -- so squeezed past its padding it
+     hid the start of what somebody wrote and nothing could bring it back
+     「長い文編集ができない」 OWNER 2026-09-27. Squeezed only into its padding
+     it loses nothing, which is what lets the smallest phone keep the line and
+     its meaning both on the screen. What is left over, the board slides. */
+  var cs=window.getComputedStyle? getComputedStyle(e) : null,
+      pad=cs? (parseFloat(cs.paddingTop)||0)+(parseFloat(cs.paddingBottom)||0) : 0;
+  e.style.minHeight=Math.max(44, e.scrollHeight-pad)+'px';
 }
 /* And the bar a ROOT carries, which is a different bar: there is nothing
    behind a root, so it has no way back -- only its name, and at most one
