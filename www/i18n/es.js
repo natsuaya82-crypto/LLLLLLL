@@ -1452,7 +1452,7 @@ defLang('es', (function(){
       "hp.kb.ed" : "Crear un teclado",
       "hp.kb.1.d" : "Pulsa + y elige una distribución para empezar.",
       "hp.kb.2" : "Selecciona",
-      "hp.kb.2.d" : "Pulsa una tecla para seleccionarla. Pulsa el número de una fila o la letra de una columna para seleccionarla entera. Pulsa otra vez para soltar.",
+      "hp.kb.2.d" : "Pulsa una tecla para seleccionarla. Pulsa el número de una fila o la letra de una columna para seleccionarla entera.",
       "hp.kb.3" : "Pon caracteres en las teclas",
       "hp.kb.3.d" : "Selecciona una tecla o varias: ① ② ③ muestran el orden en que las elegiste. Abre las teclas, elige los caracteres en el mismo orden y confirma arriba a la derecha: van a ①, ②, ③ por turno.",
       "hp.kb.4.d" : "Hace que este sea el teclado con el que escribe el teclado de Lingua.",

@@ -1540,7 +1540,7 @@ defLang('fr', (function(){
       "hp.kb.ed" : "Construire un clavier",
       "hp.kb.1.d" : "Touchez + et choisissez une disposition de départ.",
       "hp.kb.2" : "Sélectionnez",
-      "hp.kb.2.d" : "Touchez une touche pour la sélectionner. Touchez le numéro d'une rangée ou la lettre d'une colonne pour la sélectionner entière. Touchez à nouveau pour relâcher.",
+      "hp.kb.2.d" : "Touchez une touche pour la sélectionner. Touchez le numéro d'une rangée ou la lettre d'une colonne pour la sélectionner entière.",
       "hp.kb.3" : "Mettez des caractères sur les touches",
       "hp.kb.3.d" : "Sélectionnez une ou plusieurs touches — ① ② ③ indiquent l'ordre de sélection. Ouvrez les touches, choisissez les caractères dans le même ordre et validez en haut à droite : ils vont sur ①, ②, ③ tour à tour.",
       "hp.kb.4.d" : "Fait de celui-ci le clavier avec lequel tape le clavier Lingua.",

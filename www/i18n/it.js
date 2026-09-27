@@ -1492,7 +1492,7 @@ defLang('it', (function(){
       "hp.kb.ed" : "Costruire una tastiera",
       "hp.kb.1.d" : "Tocca + e scegli una disposizione da cui partire.",
       "hp.kb.2" : "Seleziona",
-      "hp.kb.2.d" : "Tocca un tasto per selezionarlo. Tocca il numero di una riga o la lettera di una colonna per selezionarla tutta. Tocca di nuovo per rilasciare.",
+      "hp.kb.2.d" : "Tocca un tasto per selezionarlo. Tocca il numero di una riga o la lettera di una colonna per selezionarla tutta.",
       "hp.kb.3" : "Metti i caratteri sui tasti",
       "hp.kb.3.d" : "Seleziona uno o più tasti: ① ② ③ mostrano l'ordine in cui li hai scelti. Apri i tasti, scegli i caratteri nello stesso ordine e conferma in alto a destra: vanno su ①, ②, ③ nell'ordine.",
       "hp.kb.4.d" : "Rende questa la tastiera con cui scrive la tastiera Lingua.",

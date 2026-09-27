@@ -1499,7 +1499,7 @@ defLang('pt', (function(){
       "hp.kb.ed" : "Montar um teclado",
       "hp.kb.1.d" : "Toque em + e escolha um layout para começar.",
       "hp.kb.2" : "Selecione",
-      "hp.kb.2.d" : "Toque numa tecla para selecioná-la. Toque no número de uma linha ou na letra de uma coluna para selecioná-la inteira. Toque de novo para soltar.",
+      "hp.kb.2.d" : "Toque numa tecla para selecioná-la. Toque no número de uma linha ou na letra de uma coluna para selecioná-la inteira.",
       "hp.kb.3" : "Ponha caracteres nas teclas",
       "hp.kb.3.d" : "Selecione uma tecla ou várias — ① ② ③ mostram a ordem em que você as escolheu. Abra as teclas, escolha os caracteres na mesma ordem e confirme no canto superior direito: vão para ①, ②, ③ em sequência.",
       "hp.kb.4.d" : "Faz deste o teclado com que o teclado Lingua digita.",

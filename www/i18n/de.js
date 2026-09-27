@@ -1481,7 +1481,7 @@ defLang('de', (function(){
       "hp.kb.ed" : "Eine Tastatur bauen",
       "hp.kb.1.d" : "Tippe auf + und wähle ein Layout als Anfang.",
       "hp.kb.2" : "Auswählen",
-      "hp.kb.2.d" : "Tippe eine Taste an, um sie auszuwählen. Tippe die Nummer einer Reihe oder den Buchstaben einer Spalte, um sie ganz auszuwählen. Nochmal tippen löst sie.",
+      "hp.kb.2.d" : "Tippe eine Taste an, um sie auszuwählen. Tippe die Nummer einer Reihe oder den Buchstaben einer Spalte, um sie ganz auszuwählen.",
       "hp.kb.3" : "Zeichen auf Tasten legen",
       "hp.kb.3.d" : "Wähle eine oder mehrere Tasten — ① ② ③ zeigen die Reihenfolge der Auswahl. Öffne die Tasten, wähle die Zeichen in derselben Reihenfolge und bestätige oben rechts: Sie kommen der Reihe nach auf ①, ②, ③.",
       "hp.kb.4.d" : "Macht diese Tastatur zu der, mit der die Lingua-Tastatur tippt.",

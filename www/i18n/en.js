@@ -1425,7 +1425,7 @@ defLang('en', (function(){
       "hp.kb.ed" : "Building a keyboard",
       "hp.kb.1.d" : "Press + and choose a layout to start from.",
       "hp.kb.2" : "Select",
-      "hp.kb.2.d" : "Press a key to select it. Press a row's number or a column's letter to select the whole row or column. Press again to let go.",
+      "hp.kb.2.d" : "Press a key to select it. Press a row's number or a column's letter to select the whole row or column.",
       "hp.kb.3" : "Put characters on keys",
       "hp.kb.3.d" : "Select one key or several — ① ② ③ show the order you chose them in. Open the keys, choose characters in the same order and confirm at the top right: they go on ①, ②, ③ in turn.",
       "hp.kb.4.d" : "Makes this keyboard the one the Lingua keyboard types with.",
