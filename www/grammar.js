@@ -456,8 +456,7 @@ function gFmDrop(r){
    vowel, after a consonant -- and the engine has no phonology; sending one
    without its condition would make a rule for some words fire on all of them,
    which is worse than the rule not being there. So those stay behind, and
-   gFmLeft() is how many did, because a number nobody can see is the same as
-   no number at all. */
+   gFmRules() counts how many did (`left`). */
 function gFmCond(r){
   var e;
   if(!r || !r.when) return null;
@@ -466,16 +465,15 @@ function gFmCond(r){
   if(!e.length || typeof spWord!=='function') return false;
   return {endsWith:String(spWord(e))};
 }
-var gFmLeftN=0;
 function gFmRules(){
-  var e=LinguaGrammarEngine, a=(STG && STG.fm) || [], inf=[], der=[], i, r, f, c, g, k, op, pos, fm;
-  gFmLeftN=0;
+  var e=LinguaGrammarEngine, a=(STG && STG.fm) || [], inf=[], der=[], i, r, f, c, g, k, op, pos, fm,
+      left=0;
   for(i=0;i<a.length;i++){
     r=a[i]; if(!r) continue;
     f=gFmForm(r);
     if(!f){ continue; }                    /* a rule with nothing to add does nothing */
     c=gFmCond(r);
-    if(c===false){ gFmLeftN++; continue; } /* a condition this side cannot say */
+    if(c===false){ left++; continue; } /* a condition this side cannot say */
     fm=String(r.fm||'');
     op=(r.at==='start')? 'prefix' : 'suffix';
     pos=r.pos;
@@ -504,7 +502,7 @@ function gFmRules(){
      know that; this is where it is arranged. */
   inf=gFmSpecificFirst(inf);
   der=gFmSpecificFirst(der);
-  return {inf:inf, der:der, left:gFmLeftN};
+  return {inf:inf, der:der, left:left};
 }
 function gFmSpecificFirst(a){
   var with_=[], without=[], i, c;
@@ -565,10 +563,9 @@ function gModel(list){
   m.grammarRules=gRules();
   m.inflections=gInfl().concat(fm.inf);
   m.derivations=fm.der;
-  /* How many of somebody's rules this side could not say. Nothing shows it
-     yet; it is on the model so that the screen which will show it has
-     something to read, and so that "some rules did not travel" is a number
-     rather than a silence. */
+  /* How many of somebody's rules this side could not say. No screen shows
+     it; tools/gramlang-check.mjs reads it. Whether a screen should is the
+     owner's (監査 words grammar-21). */
   m.metadata.fmLeft=fm.left;
   m.forms=gForms(list||WORDS, fm.inf);
   return m;
@@ -823,19 +820,10 @@ function g2Bd(id){
 function g2Stored(){ return orderKeep(STG && STG.order); }
 function g2KeepOn(b){
   keepOn(g2KeepKey(),
-         /* WHAT THIS PAGE IS HOLDING. The cards, which are not written down
-            until the button is pressed and therefore live in the buffer; and
-            the rows of TWO under them, which are, because g2Move() on one of
-            those is a swap and setGPos() writes it where it lives. That
-            second half was the fault: a side swapped changed the language
-            with the corner still grey (docs/scope/r14-keep.md § A).
-
-            All of STG.gpos and not the rows this page happens to show. The
-            mark is taken as the page opens, so a side set on another screen
-            is already in it and does not light this one; naming the rows
-            here would be a list somebody has to remember to add to. */
-         function(){ return {seq:b.stored().join(','),
-                             gpos:JSON.stringify((STG && STG.gpos)||{})}; },
+         /* WHAT THIS PAGE IS HOLDING: the cards, which are not written down
+            until the button is pressed and therefore live in the buffer.
+            Nothing else on a board writes the language. */
+         function(){ return {seq:b.stored().join(',')}; },
          /* Split before it is handed on: setOrder() takes the list of cards
             or the old six-letter string, and a comma-joined string is
             neither -- orderSeq() would read 'O,V,S,ADV' one character at a
@@ -2386,9 +2374,9 @@ function g2HelpOf(sec){
          several -- otherwise six pairs of sentences run together and nobody
          can tell which is about which. A section of one form is that one form
          and the title already says it. */
-      if(sec.fms.length>1) h+='<div class="sec">'+esc(fmLabel(f))+'</div>';
-      h+='<div class="note">'+esc(t('word.fm.'+f+'.d'))+'</div>'+
-         '<div class="note">'+esc(t('word.fm.'+f+'.e'))+'</div>';
+      h+=(sec.fms.length>1)? helpMark('', fmLabel(f), t('word.fm.'+f+'.d'))
+                           : helpNote(t('word.fm.'+f+'.d'));
+      h+=helpNote(t('word.fm.'+f+'.e'));
     }
     return {t:t(sec.nm), h:h};
   };
