@@ -256,7 +256,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Reason: ユーザーの要望三つ（字全体を動かしたい・点で線を伸ばし縮め曲げたい・点と点の間の一区間だけ消したい）に、オーナーの言葉「ロープボタンで囲った範囲の字は動かせるとか？」「そうしよ」。選ぶ → 上のボタンが選んだものに働く、はキーボードの画面と同じ決まり。
 - Affected features: 字を描く画面、一つ戻す／やり直す。
 - Affected data: 字の線（`st`）が変わるのは今の描き方と同じ。新しく保存する物は無い。
-- Implementation status: 未（2026-09-27 に作業のセッションへ渡す）。
+- Implementation status: IMPLEMENTED（`claude/r113-lasso`）── `geLasso()`・`geLsDown()`・`geLsMove()`・`geLsUp()`・`geLsBin()`（`www/glyph.js`）、囲むとなぞるの見分けは `geLsShut()`、通った線は `geLsOver()`（しきい値は仮: 戻り一目・離れ二目・近さ半目）。指は `gePtDown()`・`gePtMove()`・`gePtUp()` で分かれ、`geDown()`・`geMove()`・`geUp()` は変わらない。`tools/lasso-check.mjs` が持つ。端末では未確認。
 
 ### 2026-09-27 通信・食い違い・保存を一本にしてから 1.0.3 を出す
 - Date: 2026-09-27

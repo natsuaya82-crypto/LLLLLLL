@@ -88,6 +88,8 @@ act('fPick', fPick);
 act('geCircle', geCircle);
 act('geFill', geFill);
 act('geClear', geClear);
+act('geLasso', geLasso);
+act('geLsBin', geLsBin);
 act('ltDelete', ltDelete);
 act('ltWobEnd', ltWobEnd);
 act('ltForUnitGo', ltForUnitGo);
