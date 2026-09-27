@@ -15,6 +15,7 @@
             android:label="@string/title_activity_main"
             android:theme="@style/AppTheme.NoActionBarLaunch"
             android:launchMode="singleTask"
+            android:windowSoftInputMode="adjustResize"
             android:exported="true">
 
             <intent-filter>
@@ -38,4 +39,12 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- The voice on a post (www/rec.js). The page opens the microphone with
+         getUserMedia, and Capacitor's web view asks Android for the
+         permission only if it is declared here; undeclared, it refuses
+         without asking. MODIFY_AUDIO_SETTINGS is what the web view's audio
+         capture needs beside it. NSMicrophoneUsageDescription is the same
+         line on iOS. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
 </manifest>

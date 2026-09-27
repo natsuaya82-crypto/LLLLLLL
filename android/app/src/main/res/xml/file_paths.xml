@@ -1,5 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- What this app may hand to another app, and nothing else. Two folders:
+
+     Sheets/ in the cache    what LinguaSharePlugin.sheet() writes and
+                             shareFile() hands over -- the word sheet (PDF)
+                             and the card (PNG). The fence the Swift keeps
+                             by name is kept here by path.
+     Pictures/ in the app's  where Capacitor's web view puts a photograph
+     external files          taken from the composer's camera button
+                             (<input capture>, BridgeWebChromeClient), before
+                             it hands it to the page.
+
+     The template opened the whole of external storage and the whole cache;
+     nothing here needs either. -->
 <paths xmlns:android="http://schemas.android.com/apk/res/android">
-    <external-path name="my_images" path="." />
-    <cache-path name="my_cache_images" path="." />
+    <cache-path name="sheets" path="Sheets/" />
+    <external-files-path name="camera" path="Pictures/" />
 </paths>
