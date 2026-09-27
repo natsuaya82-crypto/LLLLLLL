@@ -511,6 +511,15 @@ const CASES = [
        on conflict (language,kind) do update set body=excluded.body, ed=excluded.ed`],
   ['and what is there holds both saves, with the later time and no `was`', 'ok', A, 0,
     `select 1 from slice where language='${LD}' and kind='letters' and body::jsonb='[1,3,2]'::jsonb and (ed->>'body')::numeric=3000 and not (ed ? 'was')`],
+  /* AND WHAT 1.0.3 REMOVED STAYS REMOVED -- asked through the version its
+     `was` names, which is the history's and not the row's any more: the phone
+     agreed on [1,2] at two, then took the 1 away, and meanwhile the server
+     took on the 3. */
+  ['a 1.0.3 phone that agreed at two takes the 1 away', 'ok', A, 0,
+    `insert into slice(language,kind,body,ed) values ('${LD}','letters','[2]','{"body":4000,"was":2000}')
+       on conflict (language,kind) do update set body=excluded.body, ed=excluded.ed`],
+  ['and the 1 is gone while the other phone’s 3 stays', 'ok', A, 0,
+    `select 1 from slice where language='${LD}' and kind='letters' and body::jsonb='[2,3]'::jsonb`],
   /* BUILD 165, the first 1.0.2 on the App Store: the same upsert with no `ed`
      at all and `no` = the version it read, plus one. */
   ['build 165 saves the way it does', 'ok', A, 0,
