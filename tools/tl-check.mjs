@@ -1101,6 +1101,21 @@ const au = await pg.evaluate(() => {
     out.a4tag = sent.filter((x) => /profile_seen|post_seen/.test(x)).length;
     netSend1 = held; snsQ = ''; snsHits = null; }
 
+  /* a5: opening the notices is reading what was ANSWERED. Before the answer
+     lands the line does not move; once it lands and something is unread it
+     moves and goes up. */
+  { const was = { at:SET.notAt, have:NOTES_HAVE, got:PULL_GOT['notif'], put:window.netPrefsPut };
+    let puts = 0;
+    window.netPrefsPut = function () { puts++; };
+    SET.notAt = 1000; NOTES_HAVE = null; delete PULL_GOT['notif'];
+    vNotif();
+    out.a5before = SET.notAt === 1000 && puts === 0;
+    NOTES_HAVE = [{ kind:'like', at:5000, hd:'iri', who:'Iri' }]; PULL_GOT['notif'] = 1;
+    vNotif();
+    out.a5after = SET.notAt > 1000 && puts === 1;
+    SET.notAt = was.at; NOTES_HAVE = was.have; window.netPrefsPut = was.put;
+    if (was.got) PULL_GOT['notif'] = was.got; else delete PULL_GOT['notif']; }
+
   netIdOf = realId;
   netSend1 = realS1; netSend = realS; netGet = realG;
   NAV = [{ r:'feed' }]; window.route = 'feed'; render();
@@ -1114,6 +1129,9 @@ if (!au.a2door)
 if (!au.a2kept)
   say('a2: signed out, deleting a draft the server holds took it off this phone and left the row -- ' +
       'the next pull brings it back.');
+if (!au.a5before || !au.a5after)
+  say('a5: the notices\u2019 read line -- before the answer landed it stayed put: ' + au.a5before +
+      '; after, with one unread, it moved and went up once: ' + au.a5after + '.');
 if (!au.a3)
   say('a3: a word pressed while another word\u2019s answer is on the screen draws that old answer or ' +
       '「No results」 until its own lands. Not answered yet is the waiting mark.');

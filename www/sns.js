@@ -2708,19 +2708,17 @@ function notUnread(){
   for(i=0;i<ns.length;i++) if(Number(ns[i].at||0)>at) n++;
   return n;
 }
-/* Opening the screen is the reading. Written down only when something was
-   actually unread: this runs on every render of the notices, and a write on
-   each of them would be the settings written out to say a bell went quiet.
-   setKeep() and not save(): this is the settings and nobody's language. And
+/* Opening the screen is the reading -- of the notices the server has
+   ANSWERED with. Before they land there is nothing read, so the line stays
+   where it was; once they are drawn and something is unread it moves, and it
+   is written the moment it moves: setKeep() for this account's copy and
    netPrefsPut(), the road every account setting goes up by, so the account's
-   other phones read the same line (r79).
-
-   Not writing costs nothing that matters -- a phone killed before the write
-   shows the mark again, which is the side that never hides a notice. */
+   other phones read the same line (r79). */
 function notSeen(){
-  var had=notUnread();
+  if(!pullHad('notif') || !notUnread()) return;
   SET.notAt=Date.now();
-  if(had){ setKeep(); netPrefsPut(); }
+  setKeep();
+  netPrefsPut();
 }
 /* Asked when the session begins, so the count is right on the first frame of
    whatever screen the app opened on and no screen has to ask for it. What

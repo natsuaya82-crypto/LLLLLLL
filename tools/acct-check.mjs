@@ -4833,7 +4833,9 @@ const R = await pg.evaluate(async () => {
     };
     SET.notAt = 1000;
     NOTES_HAVE = [{ kind: 'like', at: 5000, hd: 'x' }];
+    PULL_GOT['notif'] = 1;   /* the notices have been ANSWERED -- what reading is of */
     notSeen();
+    delete PULL_GOT['notif'];
     netSend = keep89;
     const up89 = sent89.filter(b => b && b.p && typeof b.p.notAt === 'number');
     if (!up89.length)
