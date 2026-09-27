@@ -238,7 +238,11 @@ close, settings and more are the marks every phone already draws — from the
 `aria-label`, through `t()`. **And a screen's send and share are that mark
 at the top right of the bar** 「右上にしてね。送信も紙飛行機右上、共有も共有
 マークを右上。」 OWNER 2026-09-23 — `navDo(label, name, args, on, {icon})`,
-the one place the corner is drawn. A label that is more than the verb —
+the one place the corner is drawn. **The letter's page is the one screen whose
+share is not in the corner**: it stands beside the letter, and the two are
+centred together 「書いた文字の横に並べてその二つで中央取る感じにして」 OWNER
+2026-09-27 (`vLetter()` in `www/sound.js`); nothing holds that placement but a
+person looking at the screen. A label that is more than the verb —
 「アカウントを削除」, a row saying what goes — is a row, and an operation with
 no settled mark (sign in, next, save, done) stays a word until the owner gives
 it one. **`marks-check` holds it**: it walks every screen and face `press`

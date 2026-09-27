@@ -1376,12 +1376,8 @@ function vLetter(){
        changed -- 「なにもない時は薄い灰色、何か打ったら金にする」 OWNER
        2026-09-03, www/shell.js § navDo. Whether it can be pressed is said by
        its colour. The drawing has its own Save where it is drawn, and it is
-       the same button.
-
-       And the letter, out, as SVG: the share mark in the corner a share
-       stands in, beside the Save. Only on a letter with a shape -- there is
-       nothing to put in the file otherwise. ltSvgOne(). */
-    navTop('', helpQ('letter')+(inkGeo(l)? navDo(t('lt.out.svg'), 'ltSvgOne', [lid], false, {icon:ICON_SHARE}) : ''))+'<div class="body">'+
+       the same button. */
+    navTop('', helpQ('letter'))+'<div class="body">'+
     /* The letter itself, first and big. A page about one letter that does not
        show it is a page of three buttons about nothing, and "draw it again"
        on a screen with nothing on it says nothing. A letter with no shape yet
@@ -1390,8 +1386,19 @@ function vLetter(){
        pen sitting on it that did nothing and a button underneath saying the
        same thing in words. 「上にペンマークあるのに文字を書くもある。ペンマーク
        押しても反応しない」 */
-    '<button class="spbig"' + DO('editLetter', [lid]) + '>'+
-      ltInk(l, '<span class="nol">'+ICON_PEN+'</span>')+'</button>'+
+    /* AND THE LETTER, OUT, AS SVG, BESIDE IT: the letter and its share mark
+       stand in one row and the two are centred together.
+       「書いた文字の横に並べてその二つで中央取る感じにして」 OWNER 2026-09-27
+       -- it stood in the bar beside the Save, which is the one screen where a
+       share is not in the corner. Only on a letter with a shape -- there is
+       nothing to put in the file otherwise. ltSvgOne(). */
+    '<div class="ltrow">'+
+      '<button class="spbig"' + DO('editLetter', [lid]) + '>'+
+        ltInk(l, '<span class="nol">'+ICON_PEN+'</span>')+'</button>'+
+      (inkGeo(l)
+        ? '<button class="ltshare" aria-label="'+esc(t('lt.out.svg'))+'"' + DO('ltSvgOne', [lid]) + '>'+ICON_SHARE+'</button>'
+        : '')+
+    '</div>'+
     /* What the letter is called. Not on the free plan: the twenty-eight are
        a, b, c and the two marks, and that is what makes the free keyboard a
        QWERTY that works -- a key is found by the letter's name. Renaming one

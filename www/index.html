@@ -1584,6 +1584,13 @@ html.fitlock, html.fitlock body{height:100%;overflow:hidden;overscroll-behavior:
 .spbig{display:flex;align-items:center;justify-content:center;height:96px;font-size:2.4rem;
        margin-bottom:14px;color:var(--tx)}
 .spbig canvas.tc{width:80px;height:80px;display:block}
+/* The letter and its share mark, one row, centred together (www/sound.js
+   § vLetter). The letter is as wide as it is drawn rather than the row. */
+.ltrow{display:flex;align-items:center;justify-content:center;gap:18px;margin-bottom:14px}
+.ltrow button.spbig{width:auto;margin-bottom:0}
+.ltshare{flex:0 0 auto;min-width:44px;min-height:44px;display:flex;align-items:center;
+         justify-content:center;background:none;border:0;padding:0;color:var(--txm)}
+.ltshare .ic{width:22px;height:22px}
 /* A label on an example, so a pair reads as a comparison. It was a 5px
    rounded outline around two or three characters -- a box drawn round a word,
    which is the shape the rule at the head of this file is about. The gold and

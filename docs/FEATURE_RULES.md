@@ -249,6 +249,15 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Implementation status:
 ```
 
+### 2026-09-27 字の画面の共有（SVG）は、字の横に並べて二つで真ん中
+- Date: 2026-09-27
+- Area: 字の画面（vLetter）
+- Decision: 字の画面の共有の印は、バーの角ではなく、描いた字の横に並べ、字と印の二つで真ん中に置く。共有は右上の角という決まり（2026-09-23）の、この画面だけの例外。
+- Reason: オーナーの言葉「この共有の位置キモい」「書いた文字の横に並べてその二つで中央取る感じにして」。
+- Affected features: 字の画面。
+- Affected data: 無し。
+- Implementation status: 実装（integ-0905、CODE CONFIRMED のみ・実機未確認）。
+
 ### 2026-09-27 Android 版 ── 同じリポジトリ、課金は Google Play 直結、値段は iPhone と同じ
 - Date: 2026-09-27
 - Area: Android 版
