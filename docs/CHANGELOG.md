@@ -28,6 +28,20 @@ where it starts.
 - **保存する物**: 変わらない。写真は `shots/r122-door-ios-ja.png`・`shots/r122-door-android-ja.png`
   （`tools/fixture.mjs` の `obStates()` に「signing in on android」の面）。
 
+### 2026-09-27 お題: 作れなかった日を無くす（本番の cron と関数）
+- 今日のお題が変わらなかった（OWNER 2026-09-27）。測った原因は二つ: cron が
+  daily-prompt を待つのが 1000ms で、モデルに聞く関数は 1 秒で返らず打ち切られて
+  いた（net._http_response、09-27 07:00・08:00 とも timed_out）。待ちを 60000ms に
+  した後に呼ぶと、今度はモデルが 503「high demand」で断った。9/21〜23 も無い。
+- **変えた物**: 本番の `cron.job` の daily-prompt の待ちを 60000ms に
+  （`supabase/once/2026-09-27-prompt.sql`）。daily-prompt はモデルの 503・429 に
+  5・10・15 秒おいて三回まで聞き直す（本番に置いた）。
+- **保存した物**: `prompt` に 2026-09-27 の一行 「The birds sang in the
+  morning.」を十の言語で（`supabase/once/2026-09-27-today.sql`、「今日の文は君で
+  作り変えて」）。ほかの行、プロフィールには触っていない。
+- **検査**: 無い。cron の設定は schema.sql に無く、何も見張っていない
+  （docs/BACKLOG.md）。明日の太平洋時間 0 時に変わるかで確かめる。
+
 ### 2026-09-27 投げ縄: なぞった所で止まる・親指の輪が輪になる（r113-lasso、実機 170 の直し）
 - 実機で「なぞったとこで止めて欲しいのに全部一直線で選ばれる」「囲ったとことかも関係ない」。
   測ると二つあった: なぞると一筆が丸ごと選ばれていた（そう作っていた ── 前の指示）、そして囲むのは「描き終わりが

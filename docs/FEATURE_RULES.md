@@ -249,6 +249,15 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Implementation status:
 ```
 
+### 2026-09-27 お題は毎日、太平洋時間の 0 時に変わる。作れなかった日は無くす
+- Date: 2026-09-27
+- Area: 今日のお題（daily-prompt、cron）
+- Decision: お題は毎日同じ時間 ── 太平洋時間の 0 時（2026-08-23 の「日付はアメリカ時間の0時から」のまま）── に変わる。作れなかった日を出さない。作れなかった 2026-09-27 の一文はリーダーが同じ決まりで書いて入れた。
+- Reason: オーナーの言葉「西海岸時間にしてるんだから、それ守れや。今日の文は君で作り変えて明日から毎日同じ時間に変わるように」。
+- Affected features: お題、お題の通知。
+- Affected data: `prompt` に 2026-09-27 の一行（リーダーが書いた文）。cron の daily-prompt の待ちが 1000ms から 60000ms（本番の cron.job、schema.sql の外）。
+- Implementation status: 本番に入れた。daily-prompt はモデルの 503・429 に三回まで聞き直す（本番に置いた）。明日の 0 時に変わるかは、まだ見ていない。
+
 ### 2026-09-27 字の画面の共有（SVG）は、字の横に並べて二つで真ん中
 - Date: 2026-09-27
 - Area: 字の画面（vLetter）
