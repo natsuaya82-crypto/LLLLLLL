@@ -1301,6 +1301,17 @@ export function halfDone(){
     ['a letter in the editor, pinched in', () => { editGlyph('k'); GE.z=2; GE.cx=400; GE.cy=580;
                                                    window.route='glyph';
                                                    NAV=[{r:'glyph', a:GE.lid}]; return vGlyph(); }],
+    /* The rope (OWNER 2026-09-27): down with nothing lit, where the bin is
+       grey, and down with dots lit, where it is up. Neither is reached by
+       walking routes -- the rope is a press on this screen. */
+    ['a letter in the editor, the rope down', () => { editGlyph('k'); GE.ls=true; GE.lsSel=[];
+                                                      window.route='glyph';
+                                                      NAV=[{r:'glyph', a:GE.lid}]; return vGlyph(); }],
+    ['a letter in the editor, dots lit', () => { editGlyph('k'); GE.ls=true;
+                                                 GE.st=[{pts:[[184,184],[184,400],[184,616]]}];
+                                                 GE.si=0; GE.seal=true; GE.lsSel=[[0,1],[0,2]];
+                                                 window.route='glyph';
+                                                 NAV=[{r:'glyph', a:GE.lid}]; return vGlyph(); }],
     /* The IPA, opened from the letter it is about, and again from the
        inventory -- one page, two things a press means, so both are walked.
        Nothing reaches either by walking the routes. And once with something

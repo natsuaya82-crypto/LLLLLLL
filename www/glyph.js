@@ -810,6 +810,11 @@ function newGE(lid, label){
            drag:false, hit:false, again:false, moved:false, fresh:false,
            free:false, round:false, fill:false, flat:null, flatBy:'',
            raw:null, rawFor:-1, z:1, cx:400, cy:400,
+           /* the rope: whether a finger encircles instead of drawing, which
+              dots are lit, the ring being drawn, and a drag of the lit dots
+              under way. Where you are standing, not the letter -- none of it
+              is written anywhere (geNow reads GE.st and nothing else). */
+           ls:false, lsSel:[], lsPath:null, lsMove:null,
            seal:!!(src.length && src[src.length-1].pts.length) };
 }
 /* From the sound chapter: draw the letter this unit is written with, making
@@ -938,7 +943,13 @@ var GICON={
      ever had these two has drawn, and what ICON_REDO already draws on the
      sheet that builds a keyboard. 「進むはキーボードと同じで！」 */
   'redo'  : '<path d="M19.5 9.5h-10a5 5 0 0 0 0 10h6"/><path d="M16 5.5l4 4-4 4"/>',
-  'clear' : '<circle cx="12" cy="12" r="7.5" stroke-dasharray="2.2 2.8"/>'
+  'clear' : '<circle cx="12" cy="12" r="7.5" stroke-dasharray="2.2 2.8"/>',
+  /* A rope: the loop that is thrown round something, and the end still in
+     the hand. The loop is drawn whole, not in dots, so it is not the ring
+     beside it that means everything goes. */
+  'lasso' : '<ellipse cx="12" cy="9.5" rx="7.5" ry="5"/><path d="M8.2 13.8c-1.3 1.6-.9 3.3.7 3.9 1.4.5 1.6 1.9.6 3"/>',
+  /* ICON_BIN's own lines, in the rail's box: what the bin takes is what is lit. */
+  'bin'   : '<path d="M4 7h16"/><path d="M9 7V4.6h6V7"/><path d="M6.5 7l.9 12.2a1.4 1.4 0 0 0 1.4 1.2h6.4a1.4 1.4 0 0 0 1.4-1.2L17.5 7"/><path d="M10 11v6"/><path d="M14 11v6"/>'
 };
 /* Drawn, not typed. A glyph borrowed from the emoji block is somebody else's
    drawing: it arrives at whatever weight and colour the system feels like,
@@ -1721,12 +1732,15 @@ function geHist(fwd){
      the last one. 「一つ戻るボタン押したらそれを丸められなくなるって話？」
      It can still be bent -- it is taken as it stands from here. */
   GE.round=false; GE.flat=null; GE.flatBy='';
+  /* The lit dots are named by where they are in GE.st, and what came back is
+     another GE.st: the same numbers could be other dots. */
+  GE.lsSel=[]; GE.lsMove=null;
   render();
 }
 function geUndo(){ geHist(false); }
 function geRedo(){ geHist(true); }
 function geClear(){ geMark(); GE.st=[]; GE.si=-1; GE.pi=-1; GE.seal=false;
-  GE.round=false; GE.flat=null; GE.flatBy=''; render(); }
+  GE.round=false; GE.flat=null; GE.flatBy=''; GE.lsSel=[]; GE.lsMove=null; render(); }
 /* Putting the drawing where the letter keeps it, and nothing else -- no
    toast, no going anywhere, no saying the sound. Both ways out of this screen
    need this half and only one of them needs the rest. */
@@ -2519,10 +2533,14 @@ function gePtDown(ev){
   if(gePinAt(ev.pointerId)<0)
     GEPIN.pts.push({id:ev.pointerId, x:p[0], y:p[1], x0:p[0], y0:p[1]});
   if(GEPIN.pts.length>=2){
-    if(!GEPIN.on) gePinStart(c);
+    /* a second finger is a pinch whatever the first was doing: the ring it
+       was throwing goes, and a drag of lit dots is put back by gePinDrop()
+       through the GE.pre geLsDown() took */
+    if(!GEPIN.on){ GE.lsPath=null; GE.lsMove=null; gePinStart(c); }
     if(c.setPointerCapture) try{ c.setPointerCapture(ev.pointerId); }catch(e){}
     return;
   }
+  if(GE.ls){ geLsDown(ev); return; }
   geDown(ev);
 }
 function gePtMove(ev){
@@ -2536,6 +2554,7 @@ function gePtMove(ev){
     if(GEPIN.pts.length>=2) gePinMove(c);
     return;
   }
+  if(GE && GE.ls){ geLsMove(ev); return; }
   geMove(ev);
 }
 function gePtUp(ev){
@@ -2550,6 +2569,7 @@ function gePtUp(ev){
     geDraw(); geTools();
     return;
   }
+  if(GE && GE.ls){ geLsUp(ev); return; }
   geUp(ev);
 }
 /* Leaving the screen leaves no fingers on it. Without this a pinch
@@ -2558,6 +2578,173 @@ function gePtUp(ev){
 function gePinReset(){
   GEPIN.on=false; GEPIN.pts=[]; GEPIN.mode='';
   GEPIN.d0=0; GEPIN.anchor=null; GEPIN.mid0=null;
+}
+/* ---- the rope ------------------------------------------------------------
+   「ロープボタンで囲った範囲の字は動かせるとか？」「そうしよ」 OWNER
+   2026-09-27 (docs/FEATURE_RULES.md § Owner decision log).
+
+   The same habit as the keyboard's sheet: pressing selects, and the buttons
+   over the paper act on what is selected. With the rope down a finger does
+   not draw -- it throws a ring, and the dots inside it light, whichever
+   stroke they belong to and however long ago it was drawn. A lit dot pulled
+   takes every lit dot the same distance, on the lattice, and the lines that
+   run through them stretch and bend with them; the bin takes the lit dots and
+   every stretch of line that touches one.
+
+   A THIRD ENTRANCE, beside the pinch, and for the pinch's reason: geDown,
+   geMove and geUp are the drawing and are not told about any of this.
+   gePtDown/Move/Up hand the finger here while GE.ls is on.
+
+   ONE HISTORY. A drag and a bin each stamp GE.st through gePush() before
+   they change it, exactly as a stroke does, so the step back and the step
+   forward walk through them with everything else. */
+function geLasso(){
+  if(!GE) return;
+  GE.ls=!GE.ls; GE.lsSel=[]; GE.lsPath=null; GE.lsMove=null; GE.pi=-1;
+  render();
+}
+/* whether stroke si's dot pi is lit */
+function geLsLit(si, pi){
+  var i, q=GE.lsSel||[];
+  for(i=0;i<q.length;i++) if(q[i][0]===si && q[i][1]===pi) return true;
+  return false;
+}
+/* Inside the ring, the ring closed by its own ends. Even-odd, so a ring that
+   crosses itself leaves out what it went round twice, which is what it
+   looks like. */
+function geLsIn(ring, q){
+  var n=ring.length, i, j, a, b, inside=false;
+  for(i=0, j=n-1; i<n; j=i++){
+    a=ring[i]; b=ring[j];
+    if(((a[1]>q[1])!==(b[1]>q[1])) &&
+       (q[0] < (b[0]-a[0])*(q[1]-a[1])/(b[1]-a[1]) + a[0])) inside=!inside;
+  }
+  return inside;
+}
+/* A lit dot within a step of the finger picks up all of them. Within a step,
+   not on the dot: the lit dots are there to be pulled, and a dot a third of a
+   fingertip across is something to aim at only when there is no other way. */
+function geLsNear(p){
+  var q=GE.lsSel||[], i, d, pt, best=-1, bd=geStep()*1.5;
+  for(i=0;i<q.length;i++){
+    pt=GE.st[q[i][0]] && GE.st[q[i][0]].pts[q[i][1]];
+    if(!pt) continue;
+    d=Math.max(Math.abs(pt[0]-p[0]), Math.abs(pt[1]-p[1]));
+    if(d<=bd){ bd=d; best=i; }
+  }
+  return best;
+}
+function geLsDown(ev){
+  if(ev.preventDefault) ev.preventDefault();
+  var c=ev.currentTarget, raw=geXY(c,ev), i, q;
+  GE.drag=true;
+  if(c.setPointerCapture) try{ c.setPointerCapture(ev.pointerId); }catch(e){}
+  if(geLsNear(raw)>=0){
+    /* where every lit dot was, so the drag is always "where it was, plus how
+       far the finger has come" and never a sum of little steps */
+    q=GE.lsSel; GE.lsMove={from:geAt(c,ev), was:[], moved:false};
+    for(i=0;i<q.length;i++) GE.lsMove.was.push(GE.st[q[i][0]].pts[q[i][1]].slice(0,2));
+    GE.pre=JSON.stringify(GE.st);
+  }else{
+    GE.lsMove=null; GE.lsSel=[]; GE.lsPath=[raw];
+  }
+  geDraw(); geTools();
+}
+function geLsMove(ev){
+  if(ev && ev.preventDefault) ev.preventDefault();
+  if(!GE || !GE.drag) return;
+  var c=ev.currentTarget, m=GE.lsMove, p, dx, dy, lo=GGRID.inset, hi=800-GGRID.inset,
+      i, w, x0=1e9, x1=-1e9, y0=1e9, y1=-1e9, pt, last;
+  if(m){
+    p=geAt(c,ev); dx=p[0]-m.from[0]; dy=p[1]-m.from[1];
+    /* All of them the same distance, so the one nearest the edge says how
+       far: a letter pulled against the side of the square stops there
+       whole, rather than the dots at that side piling up on the edge. */
+    for(i=0;i<m.was.length;i++){
+      w=m.was[i];
+      if(w[0]<x0) x0=w[0]; if(w[0]>x1) x1=w[0];
+      if(w[1]<y0) y0=w[1]; if(w[1]>y1) y1=w[1];
+    }
+    if(dx<lo-x0) dx=lo-x0; if(dx>hi-x1) dx=hi-x1;
+    if(dy<lo-y0) dy=lo-y0; if(dy>hi-y1) dy=hi-y1;
+    for(i=0;i<GE.lsSel.length;i++){
+      pt=GE.st[GE.lsSel[i][0]].pts[GE.lsSel[i][1]];
+      pt[0]=m.was[i][0]+dx; pt[1]=m.was[i][1]+dy;
+    }
+    if(dx||dy) m.moved=true;
+    geDraw();
+    return;
+  }
+  if(!GE.lsPath) return;
+  p=geXY(c,ev); last=GE.lsPath[GE.lsPath.length-1];
+  if(Math.abs(p[0]-last[0])+Math.abs(p[1]-last[1]) > 6){ GE.lsPath.push(p); geDraw(); }
+}
+function geLsUp(ev){
+  if(ev && ev.preventDefault) ev.preventDefault();
+  if(!GE) return;
+  var m=GE.lsMove, ring=GE.lsPath;
+  GE.drag=false;
+  if(m){
+    if(GE.pre && GE.pre!==JSON.stringify(GE.st)){
+      gePush(GE.pre);
+      /* what ROUND would hand back is the stroke before it was pulled */
+      GE.round=false; GE.flat=null; GE.flatBy='';
+    }
+    GE.pre=null; GE.lsMove=null;
+  }else if(ring){
+    GE.lsSel=[];
+    /* a tap is a ring round nothing: it puts the lit dots out */
+    if(ring.length>=3){
+      GE.st.forEach(function(s, si){
+        s.pts.forEach(function(q, pi){ if(geLsIn(ring, q)) GE.lsSel.push([si, pi]); });
+      });
+    }
+    GE.lsPath=null;
+  }
+  geDraw(); geTools();
+}
+/* The bin. A lit dot goes, and so does every stretch of line that has it at
+   one end: what is left of a stroke is the runs of dots between the lit
+   ones, each a stroke of its own, not one dot of them moved. A closed
+   stroke opened by the bin runs on round its join, so it comes apart into
+   as few pieces as the lit dots make.
+
+   A run of ONE dot is not kept: it was the end of a stretch that has gone,
+   and a dot left on its own would be drawn as a blot of ink nobody made. A
+   stroke that was a single dot to begin with is somebody's dot, and unless
+   it is lit it is not touched. */
+function geLsBin(){
+  if(!GE || !(GE.lsSel||[]).length) return;
+  geMark();
+  var out=[];
+  GE.st.forEach(function(s, si){
+    var n=s.pts.length, hit=[], any=false, i, start, run, piece, key;
+    for(i=0;i<n;i++){ hit.push(geLsLit(si, i)); if(hit[i]) any=true; }
+    if(!any){ out.push(s); return; }
+    start=0;
+    if(s.closed){ for(i=0;i<n;i++) if(hit[i]){ start=i+1; break; } }
+    run=[];
+    function flush(){
+      if(run.length>=2){
+        piece={pts:run};
+        for(key in s){
+          if(s.hasOwnProperty(key) && key!=='pts' && key!=='closed' && key!=='k') piece[key]=s[key];
+        }
+        out.push(piece);
+      }
+      run=[];
+    }
+    for(i=0;i<n;i++){
+      var j=(start+i)%n;
+      if(hit[j]) flush(); else run.push(s.pts[j]);
+    }
+    flush();
+  });
+  GE.st=out;
+  GE.lsSel=[]; GE.si=GE.st.length-1; GE.pi=-1;
+  GE.seal=!!(GE.st.length && GE.st[GE.st.length-1].pts.length);
+  GE.round=false; GE.flat=null; GE.flatBy='';
+  render();
 }
 /* The toolbar's enabled/disabled state depends on the selection, and the
    selection changes on every tap — but re-rendering the whole view would tear
@@ -2594,12 +2781,18 @@ function geBendable(){
    under it. It was briefly not -- five in one row there and two rows here --
    which is the shape this file warns about everywhere else. */
 function geRail(st, pts){
+  /* With the rope down, fill and ROUND -- which act on the stroke just drawn
+     -- give their place to the bin, which acts on what is lit. Drawing, the
+     rail is what it was with the rope on the end. */
   return '<div class="gtools">'+
     geBtn('geUndo','undo','glyph.undo', !!GE.undo.length, false)+
     geBtn('geRedo','redo','glyph.redo', !!GE.redo.length, false)+
-    geBtn('geFill','fill','glyph.fill', true, !!GE.fill)+
-    geBtn('geCircle','circle','glyph.circle', geBendable(), !!GE.round)+
+    (GE.ls
+      ? geBtn('geLsBin','bin','glyph.bin', !!GE.lsSel.length, false)
+      : geBtn('geFill','fill','glyph.fill', true, !!GE.fill)+
+        geBtn('geCircle','circle','glyph.circle', geBendable(), !!GE.round))+
     geBtn('geClear','clear','glyph.clear', !!pts, false)+
+    geBtn('geLasso','lasso','glyph.lasso', true, !!GE.ls)+
   '</div>';
 }
 
@@ -2630,6 +2823,7 @@ HELP.glyph=function(){
     geHelpRow('fill',   t('glyph.fill'),   t('glyph.fill.d'))+
     geHelpRow('circle', t('glyph.circle'), t('glyph.circle.d'))+
     geHelpRow('clear',  t('glyph.clear'),  t('glyph.clear.d'))+
+    geHelpRow('lasso',  t('glyph.lasso'),  t('glyph.lasso.d'))+
     /* A block puts a syllable together out of where each letter was drawn
        on this square (wsParts(), www/wsys.js), so how is said here, where
        the square is, and only while the writing is a block. */
@@ -2670,7 +2864,9 @@ function geTools(){
           'fill'  :[true, !!GE.fill],
           'undo'  :[!!GE.undo.length, false],
           'redo'  :[!!GE.redo.length, false],
-          'clear' :[!!pts, false] };
+          'clear' :[!!pts, false],
+          'lasso' :[true, !!GE.ls],
+          'bin'   :[!!(GE.lsSel||[]).length, false] };
   var bi, b, i, s, g, cl;
   for(bi=0;bi<boxes.length;bi++){
     b=boxes[bi].getElementsByTagName('button');
@@ -2792,8 +2988,29 @@ function geDraw(){
     poly.forEach(function(p,i){ if(i) x.lineTo(X(p[0]),Y(p[1])); else x.moveTo(X(p[0]),Y(p[1])); });
     x.stroke();
   });
+  /* The ring a finger is throwing, while it is thrown: a line in the colour
+     of the lines, broken, because it is not ink. */
+  if(GE.lsPath && GE.lsPath.length>1){
+    x.save();
+    x.setLineDash([k*14, k*12]);
+    x.strokeStyle=cssVar('--gold'); x.lineWidth=Math.max(1,k*3);
+    x.beginPath();
+    GE.lsPath.forEach(function(p,i){ if(i) x.lineTo(X(p[0]),Y(p[1])); else x.moveTo(X(p[0]),Y(p[1])); });
+    x.closePath(); x.stroke();
+    x.restore();
+  }
   GE.st.forEach(function(s,si){
     s.pts.forEach(function(p,pi){
+      var lit=GE.ls && geLsLit(si, pi);
+      /* a lit dot is the chosen dot's own mark, a size down so that a row of
+         them lit side by side are still dots and not one gold bar */
+      if(lit){
+        x.beginPath(); x.arc(X(p[0]),Y(p[1]),k*15,0,Math.PI*2);
+        x.fillStyle = (p[2]==='c') ? cssVar('--pur') : cssVar('--gold'); x.fill();
+        x.beginPath(); x.arc(X(p[0]),Y(p[1]),k*25,0,Math.PI*2);
+        x.strokeStyle=cssVar('--gold'); x.lineWidth=k*4; x.stroke();
+        return;
+      }
       var sel=(si===GE.si && pi===GE.pi);
       /* Smaller than the step, or the handle covers the lattice dot it is
          sitting on and the thing you are aiming at is under the thing you
