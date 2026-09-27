@@ -278,6 +278,19 @@ const r = await pg.evaluate(({ s }) => {
   if (wasRow === undefined) delete WHO_HAVE[mh]; else WHO_HAVE[mh] = wasRow;
   planGot(wasPlan);
 
+  /* ---- and every row that draws a name wears it -----------------------
+     「この一覧とかにも♦️つけてよ」 OWNER 2026-09-27. Three rows drew a name
+     without asking postBadge(): a list of people, the post being answered
+     and the quoted post. Asked of the real drawers, with a person who wears
+     it and one who does not. */
+  const who1 = { hd:'dia', who:'Dia', badge:true }, who0 = { hd:'nod', who:'Nod', badge:false };
+  const q1 = { qt:1, qp:Object.assign({ id:'q1', at:Date.now(), ln:'x' }, who1) };
+  const q0 = { qt:1, qp:Object.assign({ id:'q0', at:Date.now(), ln:'x' }, who0) };
+  out.rowMarks = [snsWhoRow(who1, true), pwToHTML(Object.assign({ id:'t1', ln:'x' }, who1)), postQuoteHTML(q1, false)]
+    .map(h => h.indexOf('bdgw') >= 0);
+  out.rowBare = [snsWhoRow(who0, true), pwToHTML(Object.assign({ id:'t0', ln:'x' }, who0)), postQuoteHTML(q0, false)]
+    .map(h => h.indexOf('bdgw') >= 0);
+
   /* ---- 5: the two counts on a card -------------------------------------
      THERE ARE NOT THREE STATES ANY MORE. There were: answered, not answered
      but this phone holds last session's lists, and neither -- and the middle
@@ -1127,6 +1140,12 @@ if (r.followersAskedAgain !== 1)
 if (!r.proMark)
   say('the mark is off your own profile with your own row saying you wear it. ' +
       'One place says whether a name wears it and whoOf() has to read the row.');
+if (r.rowMarks.join(',') !== 'true,true,true')
+  say('a name in a row goes without the mark on a person who wears it -- the list ' +
+      'of people, the post being answered, the quoted post: ' + r.rowMarks.join(',') +
+      '. A row draws a name through whoName() (www/post.js).');
+if (r.rowBare.join(',') !== 'false,false,false')
+  say('a row puts the mark on a person who does not wear it: ' + r.rowBare.join(','));
 if (r.freeMark)
   say('and it is on your own profile with your row saying no, because your ' +
       'plan is Pro -- the second road, which only ever worked on one phone.');

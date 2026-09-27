@@ -3764,7 +3764,7 @@ function netFindWho(q, ok, bad, more){
      People have no `created_at` worth sorting by here: a search is not a
      timeline, and whoever matched first alphabetically is as good an answer
      as whoever signed up first -- it just has to be the SAME answer twice. */
-  netGet('/rest/v1/profile_seen?select=id,handle,display,av,lang_id,lang_name,lang_pub'+
+  netGet('/rest/v1/profile_seen?select=id,handle,display,av,lang_id,lang_name,lang_pub,badge'+
          '&or=(handle.ilike.'+like+',display.ilike.'+like+')'+
          '&order=handle.asc'+
          (more? '&handle=gt.'+encodeURIComponent(String(more)) : '')+
@@ -3782,6 +3782,9 @@ function netFindWho(q, ok, bad, more){
                   av:r.av||null,
                   lname:String(r.lang_name||''),
                   lid:String(r.lang_id||''), lpub:!!r.lang_pub,
+                  /* the server's answer about the mark (badge_of), the same
+                     column every other road to a person carries */
+                  badge:!!r.badge,
                   mine:!!(netUid() && r.id===netUid())});
       }
       ok(out);

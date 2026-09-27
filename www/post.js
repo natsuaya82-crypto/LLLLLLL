@@ -1537,6 +1537,15 @@ function planBadge(id){
 function postBadge(p){
   return (p && p.badge)? badgeMark() : '';
 }
+/* A PERSON'S NAME, WITH THE MARK, WHEREVER A ROW DRAWS ONE.
+   「この一覧とかにも♦️つけてよ」 OWNER 2026-09-27. postBadge() above was the
+   one place that decided the mark, and three of the rows that draw a name
+   never asked it -- the lists of people, the post being answered and the
+   quoted post -- so a name wore it on a post and not in a list. A row draws
+   a name through here and nowhere else, so the two cannot come apart. */
+function whoName(p){
+  return '<span class="pname">'+esc(postWho(p))+'</span>'+postBadge(p);
+}
 /* There was a preview under the field: the line you were typing, drawn again
    in the letters you drew. It was written before the keyboard was, and the
    keyboard has one -- the candidate bar shows the run in your own shapes as
@@ -1598,7 +1607,7 @@ function pwToHTML(to){
          it: written any other way the words run together (`IriVethi@iri`),
          which is what `.phead` losing its own flex did once already. */
       '<div class="phead"><div class="pheadn">'+
-        '<span class="pname">'+esc(postWho(to))+'</span>'+
+        whoName(to)+
         '<span class="phandle">@'+esc(to.hd||'')+'</span>'+
       '</div></div>'+
       ((to.ln || postInkOK(to.ink))? '<div class="pline '+dirClass(postDir(to))+'">'+postLnHTML(to)+'</div>' : '')+
@@ -4235,7 +4244,7 @@ function postRow(p){
                the two GROUPS -- a badge that fell to the line under its own
                name would be a badge belonging to the handle. */
             '<span class="pnamew">'+
-              '<span class="pname">'+esc(postWho(p))+'</span>'+postBadge(p)+
+              whoName(p)+
               '</span>'+
             /* WHAT STATE it is in: the group that drops under the name when
                the two of them do not fit, and sits beside it when they do.
@@ -4526,7 +4535,7 @@ function postQuoteHTML(p, press){
   if(!p || !p.qt || q===undefined) return '';
   if(!q) return '<div class="pqt pqgone">'+esc(t('post.quote.gone'))+'</div>';
   return '<div class="pqt"'+(press? DO('postOpen', [q.sid || q.id], true) : '')+'>'+
-    '<div class="pqth"><span class="pname">'+esc(postWho(q))+'</span>'+
+    '<div class="pqth">'+whoName(q)+
       (q.hd? '<span class="phandle">@'+esc(q.hd)+'</span>' : '')+
       '<span class="pwhen">'+esc(postWhen(q.at))+'</span></div>'+
     ((q.ln || postInkOK(q.ink))? '<div class="pline '+dirClass(postDir(q))+'">'+postLnHTML(q)+'</div>' : '')+

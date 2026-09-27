@@ -2211,7 +2211,7 @@ function snsWhoFace(p, full){
          札だけが残ります（測りました。「Iri」が一画になった）。
          プロフィールの側は幅が足りるので一行のままです。 */
       '<span class="whh" style="flex-wrap:wrap">'+
-        '<span class="pname">'+esc(postWho(p))+'</span>'+
+        whoName(p)+
         (full? whoBackTag(h) : '')+
       '</span>'+
       '<span class="whh">'+
