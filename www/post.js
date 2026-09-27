@@ -1748,8 +1748,10 @@ function pwHTML(){
          OWNER 2026-09-26 -- it was 「意味」 written out, which is an operation
          written as a word. Not in the bar under the field: that bar
          is exactly full on a 320 phone with nothing added (measured 320/320).
-         Not on the day's prompt, and not while a post that exists is edited
-         -- that keeps what it has.
+         Not on the day's prompt. It IS there while a post that exists is
+         edited: 「編集画面なにこれ。トグルもなければ」 OWNER 2026-09-27, 実機
+         170 -- editing is this screen, not a second one with parts missing,
+         and a post saved with its meaning off could never be given one back.
 
          Not there at all while the meaning is switched off: the screen is the
          line and nothing under it, which is a post anywhere else. What was
@@ -1759,7 +1761,7 @@ function pwHTML(){
       (pwMnOff()? '' :
         lnField('pw-mn', t('post.mn'),
           (PW.pr? ' readonly' : '')+IN('pwSetMn'), PW.mn, 'pwmn'))+
-      ((PW.pr || PW.ed)? '' :
+      (PW.pr? '' :
         '<button class="pwmnsw" aria-pressed="'+(pwMnOff()? 'false' : 'true')+
           '" aria-label="'+esc(t('post.mn.sw'))+'"'+DO('pwMnSw')+'>'+
           swtHTML(!pwMnOff())+'</button>')+
@@ -3510,11 +3512,17 @@ document.addEventListener('copy', postCopy, false);
 function pwSaveEdit(ln, ink){
   var p=postById(PW.ed), mn, q, k;
   if(!p || !p.mine){ toast(t('post.gone')); PW=pwBlank(); goTab('feed'); return; }
-  /* the field, and nothing else (pwMnFollow) */
-  mn=p.nm? '' : String(PW.mn||'').trim();
+  /* the field, and nothing else (pwMnFollow) -- and whether there is a
+     meaning at all is the switch on this screen, as it is on a new post
+     (pwSendWith): off is no meaning and a post that says so (`nm`). It was
+     the post's own `nm`, and with no switch on this screen a post sent
+     without a meaning could never be given one. Written 0 rather than left
+     off, because pwEditPut() lays what is here over the post and a field
+     that is not here is a field it leaves as it was. */
+  mn=pwMnOff()? '' : String(PW.mn||'').trim();
   q={};
   for(k in p) if(Object.prototype.hasOwnProperty.call(p, k)) q[k]=p[k];
-  q.ln=ln; q.mn=mn;
+  q.ln=ln; q.mn=mn; q.nm=pwMnOff()? 1 : 0;
   if(ln===String(p.ln||'')) q.ink=p.ink;
   else {
     q.ink=ink;
