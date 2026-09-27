@@ -197,7 +197,7 @@ function migrateGramLang(){
     }
     /* Nothing was there and nothing was copied. "Empty" and ABSENT are two
        states, the way empty and broken are: an absent slice is what
-       netLangsDown() fills in, and one written here is a slice it steps over
+       netLangFill() fills in, and one written here is a slice it steps over
        for good. So this language keeps having none. */
     if(raw===null && o.gpos===undefined) continue;
     slWr(key, JSON.stringify(o));
@@ -343,23 +343,8 @@ function chapSlotsHTML(chap){
   for(i=0;i<p.slots.length;i++) out+=stSlotRow(p, p.slots[i]);
   return '<div class="sec">'+t('stg.words')+'</div><div class="stslots">'+out+'</div>';
 }
-/* Stages that are not every language's, and are not offered until somebody's
-   language turns out to have one.
-   「助詞がない言語もあるんだから、助詞が最初からあるのおかしいだろ」
-
-   Particles are the case that made the point: English has none, and a list
-   that opens with a page for them is the app telling somebody their language
-   has something it may well not.
-
-   They are not deleted. A stage here appears the moment there is an answer in
-   it -- notes, rules, an example, a word, or merely having been opened -- so a
-   language that used one keeps it and nothing anybody wrote goes anywhere.
-   docs/DATA_SAFETY.md: nothing a person made is removed because the current
-   shape does not need it.
-
-   Adding one back by hand is what `stAddOwn` has always been for. */
-/* Its slots are the three roles a mark can take a word OUT of the queue for.
-   A particle is a WORD in this app -- the same as the 否定 stage's word for
+/* THE PARTICLES (`part` in STAGES). Its slots are the roles a mark can take
+   a word OUT of the queue for. A particle is a WORD in this app -- the same as the 否定 stage's word for
    "not" and the 場所 stage's adpositions -- so making one is making a word,
    and nothing new is stored anywhere. gInfl() in www/grammar.js is what turns
    the word somebody made here into something the engine reads.
@@ -595,10 +580,9 @@ function openOwnPhase(){
     markBtn(ICON_ADD2, t('stg.own.add'), 'stAddOwn'));
 }
 FORM_OPEN.own=function(){ openOwnPhase(); };
-/* Saying yes to the stage that is off the list. stMarkSet() is what stUsed()
-   reads, so the stage is on the list from here on and this button is not --
-   and the mark is in STG.set, which is the language's and is already in the
-   backup. Nothing is added to what is stored. */
+/* Making the stage the form was for: a title and one slot per line, pushed
+   onto STG.extra, which is the language's and goes up with the `phases`
+   slice. The plan was asked on the way in (openOwnPhase). */
 function stAddOwn(){
   var a=document.getElementById('st-t'), b=document.getElementById('st-w');
   if(!a) return;
@@ -618,9 +602,11 @@ function stAddOwn(){
    every plan, on the grounds that a language which came down from a paid plan
    still owns what it made. It still owns it -- which is exactly why it cannot
    be thrown away from a plan that cannot make another one.
-   「無料に戻ったら無料の形に戻る」 A stage of somebody's own stays on the
-   list, stays in the language, and cannot be added to or removed until the plan
-   that made it is back. Gating a delete never costs anybody anything. */
+   「無料に戻ったら無料の形に戻る」 A stage of somebody's own is hidden from
+   the list on free (「課金で追加した機能は無料になったら全部隠れる」 OWNER
+   2026-09-01, stHidden), stays in the language, and cannot be added to or
+   removed until the plan that made it is back. Gating a delete never costs
+   anybody anything. */
 function stDelOwn(id){
   if(upStop(can('gram'))) return;
   /* 確認は自前のポップで。「標準は使わねえって言ってるだろこれも禁止や」
@@ -851,24 +837,11 @@ function stRow(p, n){
     '<span class="stv">'+(tot? (stFilled(p)+' / '+tot) : '—')+'</span>'+
     ICON_GO+'</button>';
 }
-/* ONE list of chapters. There were two: this one, and the chapters that say
-   what a word actually turns into, which sat behind a button at the foot of
-   it labelled 語順 -- so they were two steps down inside one of the sixteen.
-   「文法ページはいつ統合されんの？」 OWNER 2026-08-28.
-
-   The rule-made forms come first: docs/GRAMMAR-V2-SPEC.md §14 is the chapter
-   that says how a word changes, which is what the grammar is FOR. The
-   sixteen follow, in the order they were in, numbered on from the eight.
-   Nothing is folded away.
-
-   Each group is NAMED, in the shape vWsys() puts `dir.title` over its three
-   directions: a `sec` and a name, no frame, no panel, no corner, and no
-   sentence. It is what CLAUDE.md §14 already calls that group from outside
-   the app, so nothing new was decided here. The names earn their place
-   because five pairs of rows are called the same thing -- 語順, 否定, 疑問,
-   形容詞, 場所 are each a chapter of both groups, invisible while one list
-   was hidden inside the other. Which group a row is in is the whole of what
-   tells them apart, so it has to be on the screen. */
+/* How many stages of somebody's own are off the list, said at the foot of
+   the appendix: a stage added on a paid plan is hidden on free
+   (「課金で追加した機能は無料になったら全部隠れる」 OWNER 2026-09-01, stAll()
+   and stHidden() above), and a list that is quietly shorter is the app
+   telling somebody their work is gone. Nothing when nothing is hidden. */
 function stHidHTML(){
   var n=stHidden();
   if(!n) return '';
