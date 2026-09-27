@@ -4297,6 +4297,94 @@ end
 $b$;
 
 -- ---------------------------------------------------------------------------
+-- The day's sentence, every day at the same time
+--
+-- 「毎日同じ時間に変わるように」 OWNER 2026-09-27. supabase/functions/
+-- daily-prompt writes the day's row; this is what calls it. It was made in the
+-- dashboard and lived in `cron.job` and nowhere else, so nobody knew it waited
+-- 1000ms for a function that takes longer than that, and days went missing.
+--
+--   WHEN   `0 7,8 * * *`. cron is UTC and the day turns at 0:00 in Los Angeles
+--          (「日付はアメリカ時間の0時から」 OWNER 2026-08-23), which is 07:00
+--          UTC in summer and 08:00 in winter. It rings at both; daily-prompt
+--          does nothing when the day's row is there, so one of the two writes.
+--   WAITS  60000ms. The function asks a model, and asks again when it is busy.
+--
+-- THE HEADERS ARE NOT IN THIS FILE. What the function's door asks for -- its
+-- own word (`x-cron-secret`) and a signature Supabase lets through (every
+-- function is deployed WITH JWT verification) -- is a Vault secret,
+-- `daily_prompt_headers`, a JSON object, read by the job each time it rings.
+-- A secret written here would be a secret in git.
+--
+-- WHERE THAT SECRET COMES FROM on a server that already has the dashboard's
+-- job: out of that job. The job's own command is run once with its call
+-- pointed at pg_temp.dp_headers(), which takes net.http_post()'s arguments
+-- and hands back the headers -- so whatever form the dashboard wrote them in,
+-- the same values are what goes into Vault, and nobody types them again. Only
+-- when Vault has none; a value there is somebody's answer and is not written
+-- over. Nothing is found, nothing is readable, or there is no x-cron-secret
+-- among them: nothing is written and the job is left EXACTLY as it is, and it
+-- says so -- a job that rings with the wrong word is a day with no sentence,
+-- which is the thing this block is for. supabase/setup.md § 9-5 is a new
+-- project, where there is no job to copy from.
+--
+-- GUARDED like the notification triggers above: pg_cron, pg_net and Vault are
+-- the dashboard's and not this file's, and a paste into a project without them
+-- lands everything else. tools/rls-check.mjs applies this file once without
+-- them and once with them and the dashboard's job, and counts what the job
+-- then is.
+do $cron$
+declare c text; h jsonb;
+begin
+  if to_regprocedure('cron.schedule(text,text,text)') is null
+     or not exists (select 1 from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+                     where n.nspname = 'net' and p.proname = 'http_post')
+     or to_regclass('vault.decrypted_secrets') is null then
+    raise notice '%', 'daily-prompt: pg_cron, pg_net or Vault is not on this project, '
+      'so the schedule was NOT made. See supabase/setup.md section 9-5.';
+    return;
+  end if;
+
+  if not exists (select 1 from vault.decrypted_secrets where name = 'daily_prompt_headers') then
+    select command into c from cron.job where jobname = 'daily-prompt' order by jobid limit 1;
+    begin
+      create or replace function pg_temp.dp_headers(
+        url text default null, body jsonb default null, params jsonb default null,
+        headers jsonb default null, timeout_milliseconds int default null)
+      returns jsonb language sql as 'select headers';
+      execute regexp_replace(c, 'net\s*\.\s*http_post\s*\(', 'pg_temp.dp_headers(', 'gi') into h;
+    exception when others then
+      h := null;
+    end;
+    if h is null or not (h ? 'x-cron-secret') then
+      raise notice '%', 'daily-prompt: no Vault secret daily_prompt_headers, and none could be '
+        'read out of the job that is there, so the job was left as it is. '
+        'See supabase/setup.md section 9-5.';
+      return;
+    end if;
+    perform vault.create_secret(h::text, 'daily_prompt_headers',
+      'what the daily-prompt cron sends: x-cron-secret and Authorization');
+  end if;
+
+  perform cron.schedule('daily-prompt', '0 7,8 * * *', $cmd$
+    select net.http_post(
+      url     := 'https://iimwukyyasbybfrirhsf.supabase.co/functions/v1/daily-prompt',
+      headers := (select decrypted_secret::jsonb from vault.decrypted_secrets
+                   where name = 'daily_prompt_headers'),
+      body    := '{}'::jsonb,
+      timeout_milliseconds := 60000)
+  $cmd$);
+
+  -- pg_cron keys a job by its name AND who made it. A dashboard job made by
+  -- another role is a second job beside this one, ringing with the old word.
+  if (select count(*) from cron.job where jobname = 'daily-prompt') > 1 then
+    raise notice '%', 'daily-prompt: there is more than one job of that name. The one '
+      'made by this file is the one whose command reads Vault.';
+  end if;
+end
+$cron$;
+
+-- ---------------------------------------------------------------------------
 -- THE WALL: nothing on this server answers anybody who has not signed in
 --
 -- 「ちがう。そもそもサインインがない状態でできることがないはずなのにそれが

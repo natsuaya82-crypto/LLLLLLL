@@ -257,7 +257,7 @@ insert into storage.buckets (id, name, public) values ('other', 'other', true);
 -- version of it lived with the stub, and taking the stub away made this file
 -- die instead of going red.
 create schema if not exists net;
-create table net._sent (n serial, url text, body jsonb, headers jsonb);
+create table net._sent (n serial, url text, body jsonb, headers jsonb, timeout int);
 `;
 
 /* Every claim schema.sql makes, as somebody trying to break it. Adding a
@@ -2760,6 +2760,30 @@ const SHAPE = [
                  and headers->>'Authorization' = 'Bearer DAILY-PROMPTS-OWN-KEY') <> 1)::int`, '0'],
   ['and nobody else’s attempt at one went down the road', `
      select ((select count(*) from net._sent where body->>'table' = 'prompt') <> 1)::int`, '0'],
+  /* AND WHAT WRITES THE DAY'S ROW RINGS EVERY DAY, AT THE SAME TIME.
+     「毎日同じ時間に変わるように」 OWNER 2026-09-27. The dashboard's job, with
+     its word as text and a wait of 1000ms, went in before the second paste
+     (CRON); schema.sql's block has moved the word into Vault and pointed the
+     job at it, and a third paste (CRONB) has changed nothing. Rung here the
+     way pg_cron rings it -- _cron_sent() -- so what is counted is what goes
+     out of the door, not what the command's text looks like. */
+  ['the day’s sentence is asked for at 0:00 Pacific, both seasons', `
+     select count(*) from cron.job where jobname = 'daily-prompt'
+        and schedule is distinct from '0 7,8 * * *'`, '0'],
+  ['and by one job, however many times the file is pasted', `
+     select ((select count(*) from cron.job
+               where command like '%/functions/v1/daily-prompt%') <> 1)::int`, '0'],
+  ['and it waits a minute for the answer', `
+     select ((_cron_sent()->>'timeout')::int < 60000)::int`, '0'],
+  ['and it knocks at daily-prompt with the dashboard’s own word', `
+     select ((select s->>'url' like '%/functions/v1/daily-prompt'
+                 and s->'headers'->>'x-cron-secret' = 'THE-DASHBOARDS-WORD'
+                 and s->'headers'->>'Authorization' = 'Bearer THE-DASHBOARDS-JWT'
+                from _cron_sent() s) is not true)::int`, '0'],
+  ['and the word is in Vault and not in the job', `
+     select (select count(*) from cron.job where command ~ 'THE-DASHBOARDS-(WORD|JWT)')
+          + ((select count(*) from vault.decrypted_secrets
+               where name = 'daily_prompt_headers') <> 1)::int`, '0'],
   /* A TOKEN IS NOT EDITED. schema.sql says so over the policies -- 「no update
      policy at all (a token does not change -- a new one is a new row and the
      old one goes)」 -- and an UPDATE policy added later would be the one road
@@ -3621,10 +3645,77 @@ create or replace function net.http_post(
   headers jsonb default '{}'::jsonb, timeout_milliseconds int default 5000)
 returns bigint language plpgsql as $$
 begin
-  insert into net._sent(url, body, headers) values (url, body, headers);
+  insert into net._sent(url, body, headers, timeout) values (url, body, headers, timeout_milliseconds);
   return 1;
 end $$;
 `;
+
+/* AND THE SCHEDULE, which is the dashboard's in the same way: pg_cron and
+   Vault arrive with a click, and the day's sentence was called by a job made
+   there and written down nowhere else -- it waited 1000ms, and nobody knew
+   (docs/BACKLOG.md 2026-09-27). This is that server: the job as the dashboard
+   left it, carrying its word as text, and a Vault with nothing in it. The
+   second paste of schema.sql has to move the word into Vault and point the
+   job at it; _cron_sent() rings the job the way pg_cron would and hands back
+   what went out of the door, taking it out of the notebook again so the push
+   claims below still count only what they wrote. */
+const CRON = `
+create schema if not exists cron;
+create table cron.job (jobid serial primary key, jobname text, schedule text, command text,
+                       username text not null default current_user, active boolean default true,
+                       unique (jobname, username));
+create or replace function cron.schedule(job_name text, schedule text, command text)
+returns bigint language plpgsql as $$
+declare i bigint;
+begin
+  insert into cron.job(jobname, schedule, command) values (job_name, schedule, command)
+  on conflict (jobname, username) do update set schedule = excluded.schedule, command = excluded.command
+  returning jobid into i;
+  return i;
+end $$;
+create schema if not exists vault;
+create table vault.secrets (id uuid primary key default gen_random_uuid(), name text unique,
+                            secret text, description text);
+create view vault.decrypted_secrets as
+  select id, name, secret as decrypted_secret, description from vault.secrets;
+create or replace function vault.create_secret(new_secret text, new_name text default null,
+                                               new_description text default '')
+returns uuid language sql as $$
+  insert into vault.secrets(name, secret, description) values (new_name, new_secret, new_description)
+  returning id $$;
+insert into cron.job(jobname, schedule, command) values ('daily-prompt', '0 7,8 * * *', $c$
+  select
+    net.http_post(
+        url:='https://iimwukyyasbybfrirhsf.supabase.co/functions/v1/daily-prompt',
+        headers:=jsonb_build_object('Content-Type', 'application/json',
+                                    'x-cron-secret', 'THE-DASHBOARDS-WORD',
+                                    'Authorization', 'Bearer THE-DASHBOARDS-JWT'),
+        body:=jsonb_build_object(),
+        timeout_milliseconds:=1000
+    ) as request_id;
+$c$);
+create or replace function public._cron_sent() returns jsonb language plpgsql as $$
+declare c text; m int; r jsonb;
+begin
+  select command into c from cron.job where jobname = 'daily-prompt' order by jobid limit 1;
+  select coalesce(max(n), 0) into m from net._sent;
+  execute c;
+  select to_jsonb(s) into r from net._sent s where n > m order by n limit 1;
+  delete from net._sent where n > m;
+  return r;
+end $$;
+`;
+/* The block itself, pasted a THIRD time over a server it has already moved:
+   the word is in Vault now, so nothing is copied and the job stays one job. */
+const CRONB = (function(){
+  const at = SCHEMA_SQL.indexOf('do $cron$');
+  const end = SCHEMA_SQL.indexOf('\n$cron$;', at);
+  if (at < 0 || end < 0) {
+    console.error('schema.sql has no daily-prompt schedule block (do $cron$) to paste again');
+    process.exit(1);
+  }
+  return SCHEMA_SQL.slice(at, end + 9);
+})();
 
 /* AN OLD SERVER'S LANGUAGES, for the one step schema.sql takes once. Before
    `language.name` there was the `lang` slice, and a language made then has
@@ -3686,7 +3777,9 @@ const sql = [
   SCHEMA_SQL,
   OLDLANG_EMPTIED,
   PGNET,
+  CRON,
   SCHEMA_SQL,
+  CRONB,
   EDITOR,
   HARNESS,
   'begin;',
