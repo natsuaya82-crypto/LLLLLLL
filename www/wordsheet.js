@@ -40,8 +40,12 @@ var addFrom='';
 var addSlot='';
 function openAdd(from){
   /* Adding a word is the second of the four. Asked before the sheet opens,
-     so nobody types a word into a form that is going to refuse it. */
+     so nobody types a word into a form that is going to refuse it -- and
+     before anything below is touched, so a refused open leaves the screen
+     behind it exactly as it was (the word being derived from is standing
+     on wEdit, which the fresh draft below replaces). */
   if(!makeNeed()) return;
+  if(capStop(1)) return;
   /* Reopened by its own redraw and on the way back from the picker, so what
      has been typed is only cleared when the sheet is genuinely new.
 
@@ -74,7 +78,6 @@ function openAdd(from){
     addFmClear();
     wdSync();
   }
-  if(capStop(1)) return;
   openForm('add:'+addFrom,
     (addFrom? t('add.title.from', addFrom) : t('add.title')),
     '<div id="wd-body">'+wdFormHTML()+'</div>',
@@ -2119,6 +2122,12 @@ function wdDelMn(i){ wEdit.mns.splice(i,1); wdPaint(); }
 function wdDerive(){
   var w=findWord(openHw); if(!w) return;
   closeSheet();
+  /* Leaving a sheet with something unsaved on it asks first and stays where
+     it is until it is answered (keepAsked, www/shell.js). Opening the new
+     word's sheet anyway put a fresh draft over the question and over wEdit,
+     which was what had been typed here -- so it opens only once this sheet
+     has actually been left, and otherwise the question is what is in front. */
+  if(here().r==='form' && here().a==='edit:'+w.hw) return;
   openAdd(w.hw);
 }
 /* The four, and the note, written onto a word -- by Save and by Add, which
@@ -2147,10 +2156,9 @@ function wdPutExtras(w){
    already has is somebody else's word. A refusal must not be followed by
    leaving the screen, or the toast that says why is gone before it is read.
 
-   It does not navigate. It used to end in closeSheet(), which made Save mean
-   "write it and take me off this screen"; leaving is the arrow's, and after a
-   save there is nothing left to ask about, so the button in the corner goes --
-   which is how somebody can tell it saved. OWNER DECISION 2026-09-03. */
+   It does not navigate and does not speak: where a save that landed goes,
+   and what it says, are keepSave()'s (www/shell.js) -- the screen before,
+   and 「保存しました」, once the send has answered. */
 function wdWrite(){
   var w=findWord(openHw); if(!w) return false;
   var hw=spWord(wEdit.sp||[]);
@@ -2179,7 +2187,11 @@ function wdWrite(){
      trail, so what it is open on follows too, or the next save would look for
      a word under the name it has just stopped having. */
   if(hw!==old){ wRename(old, hw); openHw=hw; }
-  save(); render(); toast(t('toast.saved', hw));
+  /* No toast here. This runs inside keepSave() BEFORE the send, and a save is
+     not saved until it is up; keepSave() says 「保存しました」 once it has
+     landed, and a sentence here was the same statement said twice -- once
+     over a send that had not answered yet. */
+  save(); render();
   return true;
 }
 /* Taking one word out of the language, and leaving nothing pointing at it.

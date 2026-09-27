@@ -940,6 +940,52 @@ const R = await pg.evaluate(() => {
   }
   start(); KEEP = {};
 
+  /* ---- the Save says nothing before the send has answered ----------------
+     wdWrite() runs inside keepSave() BEFORE netSaveNow(), and it said
+     「{0} を更新しました」 there -- over a send that had not answered, and a
+     second time beside keepSave()'s own 「保存しました」 when it did. */
+  start(); KEEP = {};
+  openWord('mos'); openEdit('mos');
+  wEdit.nt = 'a note';
+  const toldNow = [], realToast = window.toast;
+  window.toast = function (m) { toldNow.push(String(m)); return realToast.apply(null, arguments); };
+  wdWrite();
+  window.toast = realToast;
+  out.said.push('wdWrite() alone, before any send, says: ' + JSON.stringify(toldNow));
+  if (toldNow.length)
+    out.fails.push('the Save said ' + JSON.stringify(toldNow) + ' before the send answered');
+
+  /* ---- a word derived from a sheet with something typed on it --------------
+     Leaving asks first and stays until answered; the new sheet used to open
+     anyway, over the question, and replace what had been typed. */
+  start(); KEEP = {}; popOff();
+  openWord('mos'); openEdit('mos');
+  wEdit.nt = 'typed and not saved';
+  const drvKey = keepKey();
+  wdDerive();
+  out.said.push('derive pressed on a changed sheet: asked ' + popOn() + ', standing on ' +
+    here().a + ', the typed note ' + JSON.stringify(wEdit && wEdit.nt));
+  if (!popOn())
+    out.fails.push('derive on a changed sheet did not ask');
+  if (here().a !== 'edit:mos' || !wEdit || wEdit.nt !== 'typed and not saved')
+    out.fails.push('derive on a changed sheet opened the new word over what was typed: on ' +
+      here().a + ', note ' + JSON.stringify(wEdit && wEdit.nt));
+  popOff(); keepNo(drvKey);
+
+  /* ---- a refused Add leaves the screen behind it as it was -----------------
+     The ceiling is asked before the sheet opens (2026-09-04 上限のポップ:
+     後ろは何も変わらない); the draft was reset first, under the screen. */
+  start(); KEEP = {};
+  openWord('mos'); openEdit('mos');
+  const wasEdit = wEdit, realCap = window.capStop;
+  window.capStop = function () { return true; };
+  openAdd('mos');
+  window.capStop = realCap;
+  out.said.push('an Add refused at the ceiling leaves the sheet behind it: ' + (wEdit === wasEdit));
+  if (wEdit !== wasEdit)
+    out.fails.push('an Add refused at the ceiling replaced the draft of the sheet behind it');
+  start(); KEEP = {}; popOff();
+
   /* ---- and what the arrow that leaves the sheet is called ---------------
      www/shell.js § pageName. The label is on the button as an aria-label, so
      it is on the screen for anybody who cannot see the arrow and nowhere else
