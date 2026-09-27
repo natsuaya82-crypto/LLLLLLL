@@ -160,7 +160,14 @@ function migrateGramLang(){
     if(!Object.prototype.hasOwnProperty.call(LANGS, id)) continue;
     if(!langUnderSet(id)) continue;
     key=langKeyOf(id, 'phases');
-    raw=slRd(key);
+    /* slMine() and not slRd(): what this is copied ONTO is a slice this
+       phone holds -- memory, or the key an older version left on the disk.
+       slRd() falls through to the `.got` picture of what the server sent last
+       time, and writing that back with slWr() made the picture this phone's
+       own: slMine() answered it from then on, netLangFill() stepped over the
+       slice, and the next save carried the picture up (CLAUDE.md rule 22 --
+       the picture never goes back). */
+    raw=slMine(key);
     o={};
     if(raw!==null){
       try{ o=JSON.parse(raw); }catch(e){ o=null; }
