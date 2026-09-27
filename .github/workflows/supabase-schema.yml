@@ -27,6 +27,7 @@ on:
           - check
           - logs
           - apply
+          - once
 
 env:
   PROJECT_REF: iimwukyyasbybfrirhsf
@@ -52,6 +53,19 @@ jobs:
             -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
             -H "Content-Type: application/json" --data @q.json)
           echo "HTTP $CODE"; head -c 2000 out.json; echo
+          case "$CODE" in 2*) ;; *) exit 1 ;; esac
+
+      - name: 一回だけの SQL を流す（once の時だけ。supabase/once/ の一番新しい一つ）
+        if: inputs.action == 'once'
+        run: |
+          F=$(ls supabase/once/*.sql | sort | tail -1); echo "$F"
+          jq -Rs '{query: .}' "$F" > q.json
+          CODE=$(curl -s -o out.json -w '%{http_code}' -X POST \
+            "https://api.supabase.com/v1/projects/$PROJECT_REF/database/query" \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            -H "Content-Type: application/json" --data @q.json)
+          echo "HTTP $CODE"
+          jq -r '.[] | "\(.what)\t\(.value)"' out.json 2>/dev/null || head -c 2000 out.json
           case "$CODE" in 2*) ;; *) exit 1 ;; esac
 
       - name: ログを読む（logs の時だけ）
