@@ -562,46 +562,6 @@ function ltSlotKey(l){
   return (nm.length===1 && LT_START.indexOf(nm)>=0)? nm : '';
 }
 function ltIsBase(l){ return !!l && !!ltSlotKey(l); }
-/* THE THIRTY-EIGHT, ONCE EACH.
-   「だからリリース前の今は消していいから、描いてないからリリースしてから確認
-   してくれ、データがないから」OWNER 2026-09-04.
-
-   An alphabet that doubled before the ids were steady is still doubled -- the
-   rows are on the phone and on the server and nothing was going to take them
-   out. Two rows of one slot come to this, and it is the same sentence the
-   server puts two copies of an alphabet together by (supabase/schema.sql §
-   slice_arr): the copy that is drawn on is the copy that stays, both are kept
-   where both are drawn on under two ids, and what goes is an empty slot the
-   app made -- which is the same DELETE REVIEW ltFreeSlot() and ltToDigit()
-   are already written under. It is here and not asked of the server because
-   there is no second copy to put this one together with: it is one alphabet
-   and itself, at the launch, with no signal as well as with one.
-
-   The owner's decision above is why this may run today. Its reason is that
-   nobody has drawn anything yet; when that stops being true the decision
-   stops with it, and what holds afterwards is the paragraph above -- nothing
-   with a drawing on it is ever taken. docs/CHANGELOG.md, 2026-09-04. */
-/* Which ROW a letter is: its id, or where it has none, the whole of it. */
-function ltRowKey(l){
-  if(l && l.id) return 'k'+String(l.id);
-  try{ return 'j'+JSON.stringify(l); }catch(e){ return 'j'+String(l); }
-}
-function ltJoinSlots(){
-  var was=LETTERS.length, out=[], at={}, i, l, s, j;
-  for(i=0;i<LETTERS.length;i++){
-    l=LETTERS[i];
-    s=ltSlotKey(l);
-    s=s? ('s'+s) : ltRowKey(l);
-    j=at[s];
-    if(j===undefined){ at[s]=out.length; out.push(l); continue; }
-    if(!ltHasShape(out[j]) && ltHasShape(l)){ out[j]=l; continue; }
-    if(ltRowKey(out[j])!==ltRowKey(l) && ltHasShape(out[j]) && ltHasShape(l)) out.push(l);
-  }
-  if(out.length===was) return 0;
-  LETTERS=out;
-  saveLetters();
-  return was-out.length;
-}
 /* THE ID A SLOT WEARS, WORKED OUT FROM WHICH SLOT IT IS.
    「あと、キーボードを足したりしてたら文字増殖してるんだけど何で？」OWNER
    2026-09-04, and this is why: ltId() mints an id out of LT_SEQ, which counts
@@ -739,13 +699,12 @@ function ltStart(){
      planTook() (www/core.js) calls this again the moment the answer lands, so
      nothing is lost by waiting -- it is the same call at the moment the fact
      it needs becomes true, the shape langOwnGot() has for a language's owner.
-     Above ltJoinSlots() as well: that writes too. (www/core.js § has) */
+     (www/core.js § has) */
   var ok=can('letters');
   if(!planSaid(ok)) return;
-  /* An alphabet that doubled before the ids were steady, put back to one of
-     each. Above the plan, because a paid alphabet doubled the same way and
-     the free plan is not what this is about. */
-  ltJoinSlots();
+  /* An alphabet that doubled before the ids were steady stays doubled:
+     「昔の版で自動で増えた文字: 消さずに残す」 OWNER 2026-09-24. The launch
+     takes no row out of anybody's alphabet. */
   if(planNo(ok)) ltSlotsFill();
 }
 /* What this letter reads, spelled the way a person would write it. One word

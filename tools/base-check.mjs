@@ -421,12 +421,12 @@ const r = await pg.evaluate(({s}) => {
   function drawOn(l){ l.st = [{ pts: [[100, 100], [700, 700]] }]; }
   function inked(a){ return a.filter(function(l){ return ltHasShape(l); }).length; }
 
-  /* ---- and an alphabet that ALREADY doubled comes back to one of each ----
-     The rows are on the phone and on the server and the ids they wear cannot
-     be changed under somebody. ltJoinSlots() is what takes them out, and it
-     takes the EMPTY copy: 「だからリリース前の今は消していいから、描いてない
-     から」OWNER 2026-09-04, and after the release the drawn one is what that
-     same line protects. */
+  /* ---- and an alphabet that ALREADY doubled keeps every row ----
+     「昔の版で自動で増えた文字: 消さずに残す（公開したので「リリース前なら消して
+     よい」は使えない）」 OWNER 2026-09-24 (docs/FEATURE_RULES.md). The rows are
+     on the phone and on the server and somebody's work may be on either copy,
+     so the launch takes NEITHER -- the empty copy is not "an empty slot the app
+     made" any more, it is a row in a language that has been published. */
   LT_SEQ = 0; LETTERS = []; ltStart();
   var one = JSON.parse(JSON.stringify(LETTERS));
   one.forEach(function(l, i){ l.id = 'l' + (i + 1) + '_' + i + '_6'; });
@@ -434,21 +434,21 @@ const r = await pg.evaluate(({s}) => {
   LT_SEQ = 0; LETTERS = []; ltStart();
   LETTERS = one.concat(LETTERS);                 /* seventy-six, as it stands */
   out.wasDoubled = LETTERS.length;
+  var ids1 = LETTERS.map(function(l){ return l.id; }).join(',');
   /* through ltStart(), which is the road -- www/boot.js and langOpen() call
-     it, and nothing calls ltJoinSlots() by name. Asking the join directly
-     would leave "it is wired up" claimed by nothing. */
+     it at every launch. */
   ltStart();
-  out.joinedN = LETTERS.length;
-  out.joinedDrawn = inked(LETTERS);
-  out.joinedA = ltHasShape(LETTERS.filter(function(l){ return ltSlotKey(l) === 'a'; })[0]);
+  out.keptN = LETTERS.length;
+  out.keptSame = LETTERS.map(function(l){ return l.id; }).join(',') === ids1;
+  out.keptDrawn = inked(LETTERS);
   /* and the other way round: the empty copy FIRST and the drawn one after
-     it, which is the order that asks whether a blank ever keeps the place a
-     drawing wanted -- the order above keeps the drawing by being first. */
+     it, so neither order is what decides. */
   LT_SEQ = 0; LETTERS = []; ltStart();
   LETTERS = LETTERS.concat(one);
+  var ids2 = LETTERS.map(function(l){ return l.id; }).join(',');
   ltStart();
-  out.joinedN2 = LETTERS.length;
-  out.joinedA2 = ltHasShape(LETTERS.filter(function(l){ return ltSlotKey(l) === 'a'; })[0]);
+  out.keptN2 = LETTERS.length;
+  out.keptSame2 = LETTERS.map(function(l){ return l.id; }).join(',') === ids2;
   LETTERS = wasLts;
 
   return out;
@@ -591,13 +591,14 @@ say(r.slotN === 38 && r.slotSame === 38,
     'a slot wears the same id whenever ltStart runs -- first launch, a second ' +
     'language later in the same session, and another phone from zero (' +
     r.slotSame + ' of ' + r.slotN + ' agree, `a` is ' + (r.slotA || 'nothing') + ')');
-say(r.wasDoubled === 76 && r.joinedN === 38 && r.joinedA,
-    'an alphabet that doubled before the ids were steady comes back to one of ' +
-    'each, and the copy that is kept is the one somebody drew on (' +
-    r.wasDoubled + ' -> ' + r.joinedN + ', `a` still drawn: ' + r.joinedA + ')');
+say(r.wasDoubled === 76 && r.keptN === 76 && r.keptSame && r.keptDrawn === 1,
+    'an alphabet that doubled before the ids were steady keeps every row through ' +
+    'a launch -- 「消さずに残す」 OWNER 2026-09-24 (' +
+    r.wasDoubled + ' -> ' + r.keptN + ', same rows in the same order: ' + r.keptSame +
+    ', drawn: ' + r.keptDrawn + ')');
 
-say(r.joinedN2 === 38 && r.joinedA2,
-    'and with the empty copy first and the drawn one after it, the drawn one ' +
-    'still takes the place (' + r.joinedN2 + ' letters, `a` drawn: ' + r.joinedA2 + ')');
+say(r.keptN2 === 76 && r.keptSame2,
+    'and with the empty copy first and the drawn one after it, nothing is taken ' +
+    'either (' + r.keptN2 + ' letters, same rows: ' + r.keptSame2 + ')');
 if (bad.length) { console.error('\nbase: ' + bad.length + ' failed'); process.exit(1); }
 console.log('\nbase: slots arrive when asked, and nothing drawn is ever taken away.');
