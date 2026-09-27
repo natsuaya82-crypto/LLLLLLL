@@ -137,7 +137,7 @@ defLang('es', (function(){
       "kb.col.sel" : "Seleccionar esta columna",
       "kb.cell.add" : "Añadir una tecla aquí",
       "kb.cell.sel" : "Seleccionar este hueco",
-      "kb.key.join" : "Unir con la tecla contigua",
+      "kb.key.join" : "Unir teclas",
       "kb.key.open" : "Qué hace esta tecla",
       "kb.col.ins" : "Añadir una columna aquí",
       "kb.col.l" : "A la izquierda de esta columna",

@@ -177,7 +177,7 @@ defLang('it', (function(){
       "kb.col.sel" : "Seleziona questa colonna",
       "kb.cell.add" : "Aggiungi un tasto qui",
       "kb.cell.sel" : "Seleziona questo spazio",
-      "kb.key.join" : "Unisci al tasto accanto",
+      "kb.key.join" : "Unisci i tasti",
       "kb.key.open" : "Cosa fa questo tasto",
       "kb.col.ins" : "Aggiungi una colonna qui",
       "kb.col.l" : "A sinistra di questa colonna",

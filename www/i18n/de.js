@@ -165,7 +165,7 @@ defLang('de', (function(){
       "kb.col.sel" : "Diese Spalte auswählen",
       "kb.cell.add" : "Hier eine Taste einfügen",
       "kb.cell.sel" : "Dieses Feld auswählen",
-      "kb.key.join" : "Mit der Taste daneben verbinden",
+      "kb.key.join" : "Tasten verbinden",
       "kb.key.open" : "Was diese Taste tut",
       "kb.col.ins" : "Hier eine Spalte einfügen",
       "kb.col.l" : "Links von dieser Spalte",

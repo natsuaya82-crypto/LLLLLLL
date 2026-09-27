@@ -184,7 +184,7 @@ defLang('pt', (function(){
       "kb.col.sel" : "Selecionar esta coluna",
       "kb.cell.add" : "Adicionar uma tecla aqui",
       "kb.cell.sel" : "Selecionar este espaço",
-      "kb.key.join" : "Juntar à tecla ao lado",
+      "kb.key.join" : "Juntar teclas",
       "kb.key.open" : "O que esta tecla faz",
       "kb.col.ins" : "Adicionar uma coluna aqui",
       "kb.col.l" : "À esquerda desta coluna",
