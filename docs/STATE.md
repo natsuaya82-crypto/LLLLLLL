@@ -32,6 +32,15 @@ un-re-read.
 
 ---
 
+## Android ── 土台だけ、取り込み待ち（`claude/r115-android`、2026-09-27）
+
+`android/` に Capacitor の Android プロジェクトがあり、`www/` をそのまま載せる。画面が呼ぶネイティブは Kotlin で
+Swift と同じ表（`tools/assets-check.mjs` の `android:` の行）。**一度もビルドされていない** ── この環境に Android
+SDK が無く、`.github/workflows/android-build.yml`（手で押すだけ）は既定のブランチに入るまで押せない。何ができて、
+何が「無い」と答えるか、オーナーの操作は `docs/ANDROID.md`。**今の `www/` のままでは Android でサインインが
+通らない**（`obReady()` の Apple の設定で `initialize` が落ちる）── `www/` に要る変更として同じファイルにある。
+CODE CONFIRMED のみ。
+
 ## 2026-09-26 ── 1.0.3 を TestFlight へ（オーナー「テストフライト出して」── 実機で OK が出たらストアの中身を揃えて審査へ）
 
 ゲートは 60 全部緑（integ-0905 `f624e157`、その後はワークフロー一つだけ）。`rls` 603/0。**本番の `schema.sql` は流した**
