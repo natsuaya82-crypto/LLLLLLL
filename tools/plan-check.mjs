@@ -303,6 +303,17 @@ const r = await pg.evaluate(({ s }) => {
   out.editFreeKept = postById('p_plan') && postById('p_plan').ln === 'kano mos' &&
                      postById('p_plan').ed === 12345;
 
+  /* A GRAMMAR STAGE OF YOUR OWN, asked on the ＋ and not after the form
+     has been typed into (audit words pwi-15). The ＋ is drawn on every plan;
+     on free the press is the pop and no form is open behind it. */
+  popOff(); closeSheet();
+  out.ownFreeAsked = askPop(function(){ openOwnPhase(); });
+  out.ownFreeNoForm = !(here().r === 'form' && here().a === 'own:');
+  planGot('pro'); popOff();
+  openOwnPhase();
+  out.ownProOpens = here().r === 'form' && here().a === 'own:';
+  closeSheet(); planGot('free');
+
   /* Pressed on plus: it opens, carrying the post it was pressed on. */
   planGot('plus');
   PW = pwBlank();
@@ -1821,6 +1832,11 @@ say(r.freeNoMid, 'while free meets neither');
 say(r.penOnFree, 'the pencil is drawn on the free plan -- a closed door is shown, not hidden');
 say(r.editFreeNoPW && r.editFreeSaidNo,
     'pressed on free it asks rather than telling -- no is no, and no composer opens');
+say(r.ownFreeAsked === r.upNeed,
+    'a grammar stage of your own asks the plan on the + on free (' +
+    (r.ownFreeAsked || 'nothing') + ')');
+say(r.ownFreeNoForm, 'and no form is open behind the pop');
+say(r.ownProOpens, 'and on a paid plan the + opens the form');
 say(/Plus/.test(r.editFreeAsked || ''),
     'the sentence names the plan (' + (r.editFreeAsked || 'nothing') + ')');
 say(r.editFreeWent, 'and yes goes to the plans screen, still without a composer');

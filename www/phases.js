@@ -569,6 +569,13 @@ FORM_OPEN.slot=function(a){ var i=String(a).indexOf('/'); openSlot(a.slice(0,i),
 function openOwnPhase(){
   /* Writing a grammar stage of your own is the third of the four. */
   if(!makeNeed()) return;
+  /* AND A STAGE OF YOUR OWN IS THE PAID PLAN'S, asked on the ＋ and not on
+     the last press of a form somebody has already typed into -- the ＋ is
+     drawn on every plan (docs/HIDEFREE.md), so the press is where the plan
+     answers, the way openAdd() asks the ceiling before its sheet opens. The
+     form is a route too, and FORM_OPEN.own below comes through here, so
+     this is the one place it is asked. */
+  if(upStop(can('gram'))) return;
   openForm('own:', t('stg.own.h'),
     /* This field carries no name of its own -- it is read when the form is
        saved -- so what makes it grow is the line in www/act.js. */
@@ -586,9 +593,6 @@ FORM_OPEN.own=function(){ openOwnPhase(); };
    and the mark is in STG.set, which is the language's and is already in the
    backup. Nothing is added to what is stored. */
 function stAddOwn(){
-  /* The screen only offers this on a paid plan; a form is a route and a route
-     can be arrived at from anywhere. */
-  if(upStop(can('gram'))) return;
   var a=document.getElementById('st-t'), b=document.getElementById('st-w');
   if(!a) return;
   var title=actVal(a).trim();
