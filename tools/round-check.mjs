@@ -389,8 +389,10 @@ say(r.fwdGone, 'and drawing something new empties it');
 say(r.hasRedo, 'the rail carries a step forward');
 say(r.coldDown, 'with nowhere to go both steps are down');
 say(r.warmUp, 'and with somewhere to go both are up');
-say(r.railRows === 1 && r.railBtns === 5,
-    'and it is one rail of five -- ' + r.railRows + ' row(s), ' + r.railBtns + ' marks');
+/* six since the lasso (docs/FEATURE_RULES.md, 2026-09-27 字を描く画面に投げ縄):
+   the two steps, the fill, ROUND, clear, and the lasso -- still one row */
+say(r.railRows === 1 && r.railBtns === 6,
+    'and it is one rail of six -- ' + r.railRows + ' row(s), ' + r.railBtns + ' marks');
 
 /* two fingers -- 「2本指を上下に開いたらズーム、スライドさせたら移動」 */
 say(r.pinDrew === 2, 'one finger down and moving is drawing a stroke');
