@@ -178,6 +178,13 @@ const R = await pg.evaluate(async () => {
        答え（`langOwnOf()`）だけを読むので、答えが入っていない状態で
        セッションが着くと、この端末には何も無いことになります。 */
     langOwnGot(langId, A);
+    /* AND IT IS FILED, as a language that arrived is: the slices a launch
+       holds are the ones that came down (netLangFill, www/net.js), in the
+       store, as the app. The fixture fills the globals and nothing else, and
+       a launch migration that saved every word (migrateSp, deleted
+       2026-09-27) used to file them here as a side effect -- which is what
+       74 and 91 were standing on without saying so. */
+    slAsApp(langSaveAll, []);
     arrive(A); beA();
     /* そして fixture の言語は、いまサインインしている人が書いたもの ──
        どの案件もそこから始まります。「誰が書いたか」はサーバーの答えで
