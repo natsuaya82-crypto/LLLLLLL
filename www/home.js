@@ -120,10 +120,25 @@ function tocRows(){
    of unit -> character; it is now a question about the letter that writes the
    unit, because a character is one of the two shapes a letter can have. */
 function chOf(p){ return ltChar(p); }
-/* A sound belongs to the language either because a word already uses it or
-   because you said so; before this, only the first way existed. */
-function invAll(){ return wsUnits(); }
-function scriptHave(){ return invAll().filter(function(p){ return !!ltChar(p); }).length; }
+/* How many of the language's units a borrowed character writes. It is read
+   off the LETTERS and no word is looked at: a unit has a character only
+   through the letter that reads it (ltChar), and every reading of every letter
+   is on wsUnits()'s list, so the units a word adds can never add to this
+   count. It was wsUnits() filtered -- every word cut into units -- and
+   scriptOn() asks it for every word a list draws, so the dictionary with
+   borrowed characters on read every word once per word (r120, measured). */
+function scriptHave(){
+  var seen={}, n=0, i, j, sn;
+  for(i=0;i<LETTERS.length;i++){
+    sn=LETTERS[i].snd || [];
+    for(j=0;j<sn.length;j++){
+      if(!sn[j] || seen[sn[j]]) continue;
+      seen[sn[j]]=1;
+      if(ltChar(sn[j])) n++;
+    }
+  }
+  return n;
+}
 /* A word written in the characters borrowed for it. What a character is
    borrowed FOR depends on the kind of writing: a sound, a syllable, a whole
    word. wsys.js cuts it; this looks each piece up. */
