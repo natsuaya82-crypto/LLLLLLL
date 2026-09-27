@@ -1,0 +1,18 @@
+name: Build sports (TestFlight)
+
+# 一時的な措置。natsuaya82-crypto/sports に Secrets が入るまでのあいだ、
+# このリポジトリの Secrets を借りて sports を TestFlight へ上げる（owner が許可）。
+#
+# このブランチは LLLLLLL のコードと履歴を持たない。置いているのはこのファイルだけ。
+# ビルドの手順は sports の ios-deploy.yml に1箇所だけあり、ここでは呼ぶだけ。
+#
+# sports に Secrets を入れたら、このブランチごと消す（sports の docs/RELEASE.md）。
+
+on:
+  push:
+    branches: [build-sports]
+
+jobs:
+  sports:
+    uses: natsuaya82-crypto/sports/.github/workflows/ios-deploy.yml@main
+    secrets: inherit
