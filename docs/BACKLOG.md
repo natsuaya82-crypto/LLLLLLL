@@ -8,6 +8,13 @@ refactor, a feature and a rename never arrive in the same diff.
 The order is the order to do them in.
 
 
+## お題の cron は本番にしか書かれていない（2026-09-27、リーダー）
+
+daily-prompt を呼ぶ cron（毎日 07:00・08:00 UTC、待ち 60000ms）は、ダッシュボードで作られて
+本番の `cron.job` にだけある。schema.sql にも check にも無いので、待ちが 1000ms だった
+ことは誰も知らず、お題の無い日が 9/21〜23 と 9/27 に出た。schema.sql に持たせて rls-check
+か別の check が待ちを数えるのが覆い方。秘密（x-cron-secret）を repo に置かない形が要る。
+
 ## press の「a word, read」は二つ目のボタンから押されていない（2026-09-26、リーダーが測った）
 
 `press` は面を作り直してから押す。「a word, read」の一つ目の押し（編集を開く）が `form:edit:kano` の KEEP を置き、
