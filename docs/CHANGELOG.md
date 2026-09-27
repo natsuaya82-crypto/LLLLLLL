@@ -15,6 +15,29 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### 2026-09-27 お題の cron を schema.sql に持たせる（audit-server、本番には未適用）
+- お題を呼ぶ cron は本番の `cron.job` にだけあり、待ちが 1000ms だったことを誰も知らなかった
+  （docs/BACKLOG.md）。`supabase/schema.sql` の末尾の block が言う: 名前 `daily-prompt`、
+  `0 7,8 * * *`（UTC ── 太平洋時間の 0 時が夏は 07:00、冬は 08:00）、待ち 60000ms。
+- **秘密は repo に無い。** 関数の入口が要る見出し（`x-cron-secret` と、JWT の検証を通す
+  `Authorization`）は Supabase の Vault の `daily_prompt_headers` に置き、cron は鳴るたびに
+  そこから読む。
+- **保存する物**: Vault に `daily_prompt_headers` が一つ。本番では、ダッシュボードで作った
+  job が今持っている見出しをそのまま写す（schema.sql を流した時、Vault に無ければ一度だけ）。
+  写せない時（job が無い・見出しが読めない・`x-cron-secret` が無い）は何も書かず、job にも
+  触らず、そう言う。
+- **変える物（DELETE REVIEW）**: `cron.job` の daily-prompt の `command` を、見出しを文字で
+  持つ形から Vault を読む形に置き換える。消えるのは command の中の見出しの文字列だけで、
+  同じ値は置き換えの前に Vault に入っている（同じ block の中、入らなければ置き換えない）。
+  関数の側の `CRON_SECRET` には触らない。人の作った物は何も動かない。
+- **変える物**: `supabase/once/` を流す口（Supabase Schema の `once`）は「一番新しい一つを
+  流す」から「名前を言った一つを、一度だけ流す」になる。流した名前は本番の `once_ran`
+  （ファイル名と時刻だけ。誰のものでもない、row level security でアプリからは読めない）に
+  残り、同じ名前は二度流れない。
+- **検査**: `rls-check` が pg_cron・pg_net・Vault の代わりを置いて、ダッシュボードの job から
+  見出しが Vault に移ること、時刻、待ちが 60000ms 以上であること、command に秘密の文字が
+  無いこと、二度流しても一つの job のままであることを数える。
+
 ### 2026-09-27 お題: 作れなかった日を無くす（本番の cron と関数）
 - 今日のお題が変わらなかった（OWNER 2026-09-27）。測った原因は二つ: cron が
   daily-prompt を待つのが 1000ms で、モデルに聞く関数は 1 秒で返らず打ち切られて
