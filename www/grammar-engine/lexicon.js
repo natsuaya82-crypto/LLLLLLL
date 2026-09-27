@@ -2,10 +2,9 @@
    Loaded by www/index.html as a plain script, in the order listed there.
    ES5 only: this runs in an old WKWebView. tools/es5-check.mjs enforces it.
 
-   docs/FEATURES.md, under "A post shown three ways", names exactly one thing
-   as missing: "a lookup from a meaning to one of my words. Word order
-   (SET.order, six of them) and the grammar stages already exist." This is
-   that lookup, and nothing else.
+   The lookup from a meaning to one of my words: what toNatural() and run()
+   in translate.js beside this file stand on. This is that lookup, and
+   nothing else.
 
    It is DOM-free and globals-free on purpose, the same way the reader half of
    www/import.js is: tools/grammar-engine-check.mjs runs this file in a Node
@@ -14,12 +13,10 @@
 
    It guesses at nothing. A meaning matches or it does not; there is no stem,
    no article stripped, no plural undone. Every one of those is a rule from
-   somebody else's language, and www/core.js already threw that out once —
-   phGuess() is kept for exactly one job and never used to read a new word. A
-   word that does not match is not a failure here: it comes back as a gap, and
-   docs/FEATURES.md decided what a gap is for — it "stays in the natural
-   language and is shown IN RED, so the gap is obvious — and it is also the
-   door to making that word". */
+   somebody else's language. A word that does not match is not a failure
+   here: it comes back as a gap, and a gap stays in the natural language as
+   it was typed. Nothing draws it in red any more -- 「赤文字消して」 OWNER
+   2026-08-28. */
 (function(root){
   'use strict';
   var api=root.LinguaGrammarEngine;

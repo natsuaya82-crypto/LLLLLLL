@@ -3,8 +3,7 @@
    ES5 only: this runs in an old WKWebView. tools/es5-check.mjs enforces it. */
 
 
-/* Search hits on any of spelling, meaning, reading or IPA */
-/* What a search looks in. The fields a word is filed under are in it, so
+/* What a search looks in: the spelling, the meanings, the IPA and the tags. The fields a word is filed under are in it, so
    typing `cooking` finds the words about cooking -- which is the only
    reason to have written them down. */
 function srcKey(w){ return (w.hw+' '+wMns(w).join(' ')+' '+phIpa(wPh(w))+
@@ -27,7 +26,8 @@ function srcKey(w){ return (w.hw+' '+wMns(w).join(' ')+' '+phIpa(wPh(w))+
 
    It is alive elsewhere and this is the sentence to read before deleting
    anything: the ten `read` engines in www/i18n/*.js are still on screen in
-   the interface-language chooser, where `vSet('ui')` renders one sample word
+   the interface-language chooser, where vSet() standing on `set` with `ui`
+   renders one sample word
    through each language's own respelling so the ten rows are ten readings
    rather than ten labels. `www/settings.js` is the one caller. */
 /* Called with a headword, which is what every screen has to hand. A word in
@@ -37,9 +37,6 @@ function seqOf(hw){
   var w=(typeof findWord==='function')? findWord(hw) : null;
   return w? wPh(w) : phGuess(hw);
 }
-/* Words run together when one ends on a consonant and the next opens on a
-   vowel. Decided on the sounds, which is where it was always happening. */
-
 /* ---- The device's voice is not here any more ---------------------------
    There used to be a block below this line that found a voice on the phone,
    picked the one whose language had the plainest vowels, and read a word
@@ -94,6 +91,3 @@ function makeWord(pos, A, tk){
   }
   return null;
 }
-/* Pick a short run of words that shows linking off, if the dictionary has one:
-   one that ends on a consonant followed by one that opens on a vowel. */
-/* What to do next so that another rule appears, in words a beginner can act on */

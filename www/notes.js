@@ -9,8 +9,9 @@
    for road, the thing you thought of on a train and will not remember
    tomorrow. There was nowhere to put any of it, so it went nowhere.
 
-   This is the nowhere. Plain text, a title if you want one, and it is kept on
-   the device with everything else. */
+   This is the nowhere. Plain text, a title if you want one, and it is kept
+   where the rest of the language is: `notes` is one of SLICES (www/core.js),
+   so it goes up to the server with the Save like every other slice of it. */
 
 var NOTES=[];
 /* The open language's notes. Empty first: see langRead() in core.js. */

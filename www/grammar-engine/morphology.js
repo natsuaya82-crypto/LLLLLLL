@@ -107,13 +107,14 @@
     return {surface:out,lemma:word.lemma,inflections:used}; }
   /* ---- derivation ---------------------------------------------------------
      An inflection makes another FORM of the same word; a derivation makes a
-     different word, of a different part of speech. `derivation()` has been in
-     model.js since Phase 1 with nothing in www/ that applied it, so a language
-     could declare NOUN + suffix `li` -> ADJECTIVE and the engine would never
-     make `beauty-li`, nor read it back. These three are that missing side, and
-     they are deliberately the same shape as inflect/analyzeForm above so the
-     two kinds of rule are told apart by what they mean, not by how they are
-     called. */
+     different word, of a different part of speech. A language can declare
+     NOUN + suffix `li` -> ADJECTIVE; these three make `beauty-li` and read it
+     back, and they are deliberately the same shape as inflect/analyzeForm
+     above so the two kinds of rule are told apart by what they mean, not by
+     how they are called. The READING side is reached from the app
+     (parseToken -> parseDerived); derive(), the writing side, is called by
+     tools/grammar-engine-check.mjs alone -- nothing in www/ writes a derived
+     word yet. */
   /* And one derivation makes one word, for the same reason: two rules that
      both turn a noun into an adjective are two ways of doing it, not two
      things done one after the other. The first that matches is the one. */

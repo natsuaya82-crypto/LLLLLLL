@@ -27,11 +27,11 @@ var IPA_OTHER=[{"s": "ʍ", "g": "other"}, {"s": "w", "g": "other"}, {"s": "ɥ", 
 
 /* ---- what a sound is, in words anybody has ------------------------------
    「無声両唇破裂音って聞いて普通の人一発で理解できんの？」 No. So the page does
-   not say that. It says what to do with your mouth, in pieces: where it is
-   made, how it is made, and whether the voice is on. Thirty-three fragments
-   in each of the ten languages, joined, rather than a hundred and sixty
-   sentences written out -- which would be a hundred and sixty chances to be
-   wrong about somebody else's language, ten times over.
+   not say that. What is said in words is the GROUP -- 破裂音, 鼻音 -- as a
+   thing the mouth does (`ipa.d.m.*`, openIpaG() in www/sound.js), one
+   sentence per group rather than one per symbol. The short words for how
+   and where a sound is made (`ipa.m.*`, `ipa.p.*`, `ipa.h.*`, `ipa.b.*`) name
+   the groups and are what a symbol is looked up by (ipaWords()).
 
    And where it is heard. That one cannot be composed, so it is a table, and
    it is short on purpose: the languages this app already speaks, and only
@@ -180,7 +180,7 @@ function ipaRoman(sym){
 
    Longest spelling first, so ng is ŋ and not n followed by ɡ. And among
    sounds spelled the same, the one that IS that letter wins: ipaRoman says k
-   for both c and k -- c is a palatal stop and k is on the chart before it --
+   for both c and k -- c is a palatal stop and it is on the chart before k --
    so typing ka got ca, a sound almost nobody meant and no keyboard would have
    suggested.
 
