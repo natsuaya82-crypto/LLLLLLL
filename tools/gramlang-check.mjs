@@ -2093,9 +2093,19 @@ const negMig = await pg.evaluate(() => {
      that, and the copy is in the list by the time the delete reaches it. */
   gPolPut('NEGATION', 'VERB', null);
   const again = !!gPolFind('NEGATION', 'VERB');
+  /* AND A SIDE NOBODY CHOSE IS NOTHING TO COPY (監査 words grammar-3). The
+     not-word is there and `negp` is not: gPos() answers its fallback for
+     that, and copying the fallback wrote 「after the verb」 into STG.gr the
+     first time any other target was saved. */
+  STG.gr = []; STG.grm = ''; delete STG.gpos.negp;
+  const unsaid = gPolFind('NEGATION', 'VERB');
+  gPolPut('QUESTION', 'VERB', gPolRule('QUESTION', 'VERB',
+          [{ operation:'word', form:'ka', at:'tail' }], null));
+  const unsaidWrote = STG.gr.filter((r) => r && r.feature === 'NEGATION').length;
   WORDS.length = wl;
   STG.gr = JSON.parse(wasGr); STG.grm = wasGrm; STG.gpos = JSON.parse(wasGpos);
-  return { made: made, kept: kept, same: same, wrote: wroteNothing, again: again };
+  return { made: made, kept: kept, same: same, wrote: wroteNothing, again: again,
+           unsaid: unsaid, unsaidWrote: unsaidWrote };
 });
 want('the old side is READ as a rule saying which word stands where',
      negMig.made && [negMig.made.operation, negMig.made.form, negMig.made.at].join(' '),
@@ -2105,6 +2115,8 @@ want('reading it twice is the same rule', negMig.same, true);
 want('and reading it writes nothing -- not STG.gr, not the mark, not the slice',
      negMig.wrote, true);
 want('and a rule deleted afterwards does not come back', negMig.again, false);
+want('a side nobody chose is not read as a rule', negMig.unsaid, null);
+want('and saving another target writes no negation rule for it', negMig.unsaidWrote, 0);
 
 /* ---- 122-126: a rule’s sentence says its condition -------------------------
    docs/BACKLOG.md 「文法書の章 ── ① 規則の一文が、条件を言いません」. The

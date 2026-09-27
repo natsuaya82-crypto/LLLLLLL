@@ -1419,7 +1419,14 @@ function gPolPut(feature, target, r){
    `STG.gpos.negp` said which side of the verb the not-word stands, and the
    word itself is a slot on this chapter. Between them they are exactly one
    rule of the new shape -- NEGATION, of a verb sentence, said with a WORD,
-   standing before or after the verb -- so that is what this ANSWERS. The
+   standing before or after the verb -- so that is what this ANSWERS.
+
+   ONLY WHERE A SIDE WAS CHOSEN. gPos('negp') answers GPOS_DEF for a
+   language nobody asked, and copying THAT wrote 「after the verb」 into
+   STG.gr for every language that had merely made its not-word -- the app's
+   fallback put down as the language's answer (OWNER 2026-09-10
+   「文法の各段は最初は何も置かれてない状態」). gPosSaid() is the question,
+   and the word alone is not a rule of where it stands. The
    settings and `STG.gpos` are READ and left exactly where they are
    (docs/DATA_SAFETY.md rule 2): nothing here removes anything.
 
@@ -1455,7 +1462,7 @@ function gPolOld(have){
   if(!STG || STG.grm) return null;
   for(i=0;i<have.length;i++)
     if(have[i] && have[i].feature==='NEGATION' && have[i].target==='VERB') return null;
-  if(typeof STAGES==='undefined' || !STAGES) return null;
+  if(typeof STAGES==='undefined' || !STAGES || !gPosSaid('negp')) return null;
   w=(typeof gSlot==='function')? gSlot('neg','not') : null;
   if(!w) return null;
   r=gPolRule('NEGATION', 'VERB',
