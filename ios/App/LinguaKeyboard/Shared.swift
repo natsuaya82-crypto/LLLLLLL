@@ -18,6 +18,12 @@ import CoreGraphics
 ///   `st` the shape somebody drew · `ch` a character they borrowed · `t` itself
 struct Face: Decodable {
   let t: String?
+  /// What the letter is CALLED, which is not what it types: `t` is a private
+  /// use code point, and the conversion table (`Conv.map`) is keyed by names.
+  /// So a run of somebody's own letters is looked up by these (Compose), and
+  /// the bar can offer the words it begins. shareFace() in www/share.js
+  /// writes it on every face; absent on one from a build before this.
+  let nm: String?
   /// Closed convex polygons in the box, each a list of [x, y].
   /// Already the ink: the pen, the spline and the joins are all in it. The
   /// app cut them with LinguaFont.glyphContours before writing this file.
@@ -97,7 +103,7 @@ struct Key: Decodable {
 
   var width: CGFloat { CGFloat(w ?? 1) }
   var tall: CGFloat { CGFloat(max(1, h ?? 1)) }
-  var face: Face { Face(t: t, st: st, ch: ch, aw: aw, dx: dx) }
+  var face: Face { Face(t: t, nm: nm, st: st, ch: ch, aw: aw, dx: dx) }
 }
 
 struct Layer: Decodable {
