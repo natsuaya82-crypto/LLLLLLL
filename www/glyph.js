@@ -2621,18 +2621,31 @@ function geLsIn(ring, q){
   }
   return inside;
 }
-/* A ring comes back to within a step of where it began, and on the way it
-   went at least two steps out -- so a finger scrubbed back and forth over
-   one place is a trace, not a ring round nothing. A step is the lattice's
-   own, the one distance on this paper a finger is already aiming at. */
+/* RING OR TRACE, asked here and nowhere else. A thumb on glass seldom
+   closes what it throws -- 「囲ったとことかも関係ない」 OWNER 2026-09-27,
+   because the first answer here wanted the end back within a step of the
+   start, which is fifteen pixels, and every ring on a phone came out a
+   trace. So it is asked of the SHAPE, not the gap alone: a ring encloses
+   something (at least a step across its narrow side and two across its
+   wide one), its ends are nearer each other than 0.6 of its size -- so
+   three hundred degrees of a circle is a ring and a half circle or a U is
+   not -- and closed by its own ends it covers at least 0.3 of its box, so
+   a line scrubbed back and forth is not a ring round nothing. The three
+   numbers are provisional; a step is the lattice's own. */
 function geLsShut(path){
-  var n=path.length, a=path[0], b=path[n-1], D=geStep(), far=0, i, d;
+  var n=path.length, D=geStep(), x0=1e9, x1=-1e9, y0=1e9, y1=-1e9,
+      i, j, w, h, ext, gx, gy, area=0;
   if(n<3) return false;
-  for(i=1;i<n;i++){
-    d=Math.max(Math.abs(path[i][0]-a[0]), Math.abs(path[i][1]-a[1]));
-    if(d>far) far=d;
+  for(i=0;i<n;i++){
+    if(path[i][0]<x0) x0=path[i][0]; if(path[i][0]>x1) x1=path[i][0];
+    if(path[i][1]<y0) y0=path[i][1]; if(path[i][1]>y1) y1=path[i][1];
   }
-  return far>=2*D && Math.max(Math.abs(b[0]-a[0]), Math.abs(b[1]-a[1]))<=D;
+  w=x1-x0; h=y1-y0; ext=Math.max(w,h);
+  if(ext<2*D || Math.min(w,h)<D) return false;
+  gx=path[n-1][0]-path[0][0]; gy=path[n-1][1]-path[0][1];
+  if(Math.sqrt(gx*gx+gy*gy)>0.6*ext) return false;
+  for(i=0, j=n-1; i<n; j=i++) area+=(path[j][0]*path[i][1]-path[i][0]*path[j][1]);
+  return Math.abs(area)/2 >= 0.3*w*h;
 }
 /* How far point q is from the segment a-b. */
 function geLsSeg(q, a, b){
@@ -2641,29 +2654,16 @@ function geLsSeg(q, a, b){
   x=a[0]+u*vx-q[0]; y=a[1]+u*vy-q[1];
   return Math.sqrt(x*x+y*y);
 }
-/* Whether the trace passed over stroke s: some stretch of the finger's path
-   comes within half a lattice step of some stretch of the line as it is
-   drawn (the ink's own half width is 12 of the square's 800, a third of a
-   fingertip's wobble) -- curves through the same toPolyline() the paper is drawn with. Two
-   stretches that cross are at no distance, which the four ends alone would
-   not see when a fast finger's samples fall either side of a line. */
-function geLsOver(path, s){
-  var line=(s.pts.length>1)? LinguaFont.toPolyline(s) : s.pts, r=geStep()/2,
-      i, j, a, b, c, d, d1, d2, d3, d4;
-  if(!line.length) return false;
-  if(line.length===1) line=[line[0], line[0]];
-  for(i=1;i<path.length;i++){
-    a=path[i-1]; b=path[i];
-    for(j=1;j<line.length;j++){
-      c=line[j-1]; d=line[j];
-      d1=(b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1])*(c[0]-a[0]);
-      d2=(b[0]-a[0])*(d[1]-a[1])-(b[1]-a[1])*(d[0]-a[0]);
-      d3=(d[0]-c[0])*(a[1]-c[1])-(d[1]-c[1])*(a[0]-c[0]);
-      d4=(d[0]-c[0])*(b[1]-c[1])-(d[1]-c[1])*(b[0]-c[0]);
-      if(((d1>0)!==(d2>0)) && ((d3>0)!==(d4>0))) return true;
-      if(geLsSeg(a,c,d)<=r || geLsSeg(b,c,d)<=r || geLsSeg(c,a,b)<=r || geLsSeg(d,a,b)<=r) return true;
-    }
-  }
+/* Whether a trace passed dot q: some stretch of the finger's path comes
+   within 0.6 of a step of it -- the dots it went over, and not the rest of
+   the line they are on. 「なぞったとこで止めて欲しい」 Measured to the
+   STRETCH between two samples, not to the samples, because a fast finger's
+   samples fall a long way apart. Under a step, so the dot beside the one
+   the finger went over is not taken with it. */
+function geLsPast(path, q){
+  var i, r=geStep()*0.6;
+  if(path.length===1) return geLsSeg(q, path[0], path[0])<=r;
+  for(i=1;i<path.length;i++) if(geLsSeg(q, path[i-1], path[i])<=r) return true;
   return false;
 }
 /* A lit dot within a step of the finger picks up all of them. Within a step,
@@ -2740,18 +2740,15 @@ function geLsUp(ev){
     GE.lsSel=[];
     /* What the finger did says which of the two it was, and there is one
        button: 「投げ縄に、なぞったら線が動かせる機能も追加して」 OWNER
-       2026-09-27. Come back to where it began, having gone somewhere, and
-       it was a ring -- the dots inside it light. Anything else that moved
-       was a trace -- every stroke it passed over lights whole. A tap is
+       2026-09-27. A ring (geLsShut) lights the dots inside it; a trace
+       lights the dots it passed and stops where it stopped. A tap is
        neither, and puts the lit dots out. */
-    if(geLsShut(ring)){
+    var shut=geLsShut(ring);
+    if(ring.length>=2){
       GE.st.forEach(function(s, si){
-        s.pts.forEach(function(q, pi){ if(geLsIn(ring, q)) GE.lsSel.push([si, pi]); });
-      });
-    }else if(ring.length>=2){
-      GE.st.forEach(function(s, si){
-        if(!geLsOver(ring, s)) return;
-        s.pts.forEach(function(q, pi){ GE.lsSel.push([si, pi]); });
+        s.pts.forEach(function(q, pi){
+          if(shut? geLsIn(ring, q) : geLsPast(ring, q)) GE.lsSel.push([si, pi]);
+        });
       });
     }
     GE.lsPath=null;

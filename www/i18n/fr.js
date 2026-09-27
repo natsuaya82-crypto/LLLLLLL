@@ -813,7 +813,7 @@ defLang('fr', (function(){
       "glyph.fill.d" : "Une forme fermée est remplie.",
       "glyph.circle.d" : "Courbe le trait que vous venez de tracer. Appuyez encore pour le redresser.",
       "glyph.clear.d" : "Enlève tout du carré.",
-      "glyph.lasso.d" : "Entourez des points ou passez le doigt sur des traits pour les sélectionner. Faites glisser un point sélectionné pour tous les déplacer ; la corbeille les retire avec les traits qui les touchent.",
+      "glyph.lasso.d" : "Entourez des points ou passez le doigt dessus pour les sélectionner. Faites glisser un point sélectionné pour tous les déplacer ; la corbeille les retire avec les traits qui les touchent.",
       "fmr.title"        : "Formes faites par une règle",
       "fmr.add"          : "Lettres ajoutées",
       "g2.fm.add"          : "Ajouter une règle",
