@@ -275,6 +275,36 @@ say(seven.length === 1 && seven[0] === 'bad 0',
     'and running out ends in the same one place a dead network does, exactly ' +
     'once -- no second way out: ' + JSON.stringify(seven));
 
+/* ---- 7b. and a dead network is answered once too --------------------------
+   What a request with no network does in a WebView: readyState 4 with status
+   0, AND THEN `error` -- both, one after the other. Each of the two used to
+   call `bad`, so netPop() was handed two ［再接続］ closures for one press and
+   the retry sent everything twice (docs/reports/rule-audit-2026-09-27-core.md
+   N1). The wire here does exactly what a dead network does. */
+const sevenB = await pg.evaluate(async ({ w, s }) => {
+  eval(w); eval(s); window.__reset();
+  var send = FakeX.prototype.send;
+  FakeX.prototype.send = function(b){
+    var self = this;
+    window.__X.sent.push({ m:this.m, u:this.u });
+    setTimeout(function(){
+      self.readyState = 4; self.status = 0; self.responseText = '';
+      if (self.onreadystatechange) self.onreadystatechange();
+      if (self.onerror) self.onerror();
+    }, 0);
+  };
+  var calls = [];
+  netGet('/rest/v1/profile?select=*', function(){ calls.push('ok'); },
+                                      function(d, st){ calls.push('bad ' + st); });
+  await wait(120);
+  FakeX.prototype.send = send;
+  return calls;
+}, { w: WIRE, s: wait });
+
+say(sevenB.length === 1 && sevenB[0] === 'bad 0',
+    'a dead network (readyState 4 AND error) answers once, not twice: ' +
+    JSON.stringify(sevenB));
+
 /* ---- 8. and the file and the picture leave by the same exit ------------
    「一本化してくれ」「通信する場所」 OWNER 2026-09-27. netUp() (a file going up)
    and netMedia() (a picture coming down) each had an XMLHttpRequest of their

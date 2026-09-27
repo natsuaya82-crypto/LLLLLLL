@@ -380,12 +380,20 @@ function netSend1(method, path, body, tok, ok, bad, how, may){
     x.setRequestHeader('Prefer',
       'return=representation'+(up? ', resolution=merge-duplicates' : ''));
   else if(up) x.setRequestHeader('Prefer', 'resolution=merge-duplicates');
+  /* ONE ANSWER PER REQUEST. A dead network reaches readyState 4 AND then
+     fires `error`; both are the same request ending, so both come to netDone()
+     and the first one is the answer. `error` used to be a second exit calling
+     `bad` itself, so one press with no signal put two ［再接続］ up behind the
+     pop and the retry sent it twice (token-check 7b). */
   x.onreadystatechange=function(){
     if(x.readyState!==4) return;
     netAnswer(x, netDone);
   };
+  x.onerror=function(){ netAnswer(x, netDone); };
   function netDone(){
     var d=null;
+    if(x.__done) return;
+    x.__done=1;
     netOff(x);
     if(how.blob){ if(x.status>=200 && x.status<300) d=x.response || null; }
     else try{ d=JSON.parse(x.responseText||'null'); }catch(e){}
@@ -412,9 +420,6 @@ function netSend1(method, path, body, tok, ok, bad, how, may){
        answer writes is the app's and not a person's. */
     slAsApp(bad, [d, x.status, netTag(path)+' '+x.status]);
   }
-  x.onerror=function(){
-    netAnswer(x, function(){ netOff(x); slAsApp(bad, [null, 0, netTag(path)+' 0']); });
-  };
   if(prog) x.onprogress=function(e){ prog((e && e.lengthComputable && e.total)? e.loaded/e.total : -1); };
   if(!how.quiet) netOn(x);
   x.send(how.mime? body : (body? JSON.stringify(body) : null));
