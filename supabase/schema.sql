@@ -31,15 +31,15 @@
 -- happened to a person who spent months on it.
 --
 -- What is deliberately NOT here
---   the free/paid limit. "One language you write, any number you read" is a
---   price, and prices change. There is no constraint below that counts a
---   person's languages -- the app and one edge function enforce it, and the
---   schema stays true whatever the plan becomes. A CHECK constraint would have
---   to be migrated the first time the answer stops being one.
+--   the free/paid limit. How many languages a plan may make or take is a
+--   price, and prices change. There is no constraint below that counts them
+--   -- the app enforces it (www/core.js, CAN), and the schema stays true
+--   whatever the plan becomes. Whether the server should count them too is
+--   the owner's (docs/reports/rule-audit-2026-09-27-server.md O2).
 --
---   the words, the letters, the drawn glyphs. A language is made on the
---   device and stays there; what is published is a copy, and what is quoted
---   is frozen into the post that quotes it. The phone is the original.
+-- A language lives HERE: the `language` row and its `slice` rows are the
+-- record, and the phone holds a read-only copy of what it last loaded
+-- (CLAUDE.md rule 22). What is quoted is frozen into the post that quotes it.
 -- ---------------------------------------------------------------------------
 
 -- ---- who ------------------------------------------------------------------
@@ -68,8 +68,8 @@ alter table profile add column if not exists av jsonb;
 --
 -- 「自己紹介を見せないって選択肢を俺はいつ与えた？」 OWNER 2026-09-01. There
 -- is no switch here and there is not going to be one: a profile is what other
--- people see, and this is part of it. `profile_read` is `using (true)` and
--- that is the whole of the reading rule -- the same sentence the handle, the
+-- people see, and this is part of it. `profile_read` (everybody, but whoever a
+-- block stands between) is the whole of the reading rule -- the same sentence the handle, the
 -- display name and the face are already under.
 --
 -- It existed on the phone and only there. `ME.bio` in www/me.js was written,
@@ -166,12 +166,11 @@ alter table profile add column if not exists admin boolean not null default fals
 -- not what a language is any more, and the sentence it rested on has gone with
 -- it.
 --
--- What a frozen account keeps: reading, everything already on the phone, and
--- the way out. account_delete() does not ask is_member() and must not -- being
--- thrown out of a place is not a reason to be locked out of the door marked
--- exit -- and nothing here reaches localStorage, so what somebody has made
--- goes on opening, editing and backing up on the phone it was made on. What
--- stops is the copy going up.
+-- What a frozen account keeps: reading, and the way out. account_delete()
+-- does not ask is_member() and must not -- being thrown out of a place is not
+-- a reason to be locked out of the door marked exit -- and neither does
+-- deleting its own files (media_drop). Every write asks is_member(), so what
+-- stops is making and saving: the language included.
 alter table profile add column if not exists banned_at timestamptz;
 alter table profile add column if not exists banned_why text;
 
@@ -470,14 +469,13 @@ alter table slice_hist add column if not exists press uuid;
 alter table slice_hist add column if not exists no bigint;
 alter table slice_hist add column if not exists ed_at numeric;
 
--- THE ONLY AUTOMATIC DELETION IN THIS FILE, and its DELETE REVIEW is in
--- docs/CHANGELOG.md 2026-09-09. What it removes is a copy of a previous
+-- AN AUTOMATIC DELETION, and its DELETE REVIEW is in docs/CHANGELOG.md
+-- 2026-09-09. The other one in this file is device_one() (2026-09-24). What it removes is a copy of a previous
 -- version; the row somebody is actually holding (`slice`) is never touched by
 -- this trigger, which only ever reads OLD.
 --
 -- BEFORE UPDATE AND BEFORE DELETE, so the version kept is the one that is
--- about to stop existing. The app is a line lighter for it: netSlicePut() in
--- www/net.js is unchanged and knows nothing about any of this.
+-- about to stop existing. The phone knows nothing about any of this.
 --
 -- `security definer`, because slice_hist has no write policy of any kind --
 -- the trigger is the one road in, and a policy would be a second one.
@@ -807,9 +805,8 @@ create trigger a_keep_newer before insert or update on profile
 -- 「一本化してくれ」「通信する場所食い違い保存」 OWNER 2026-09-27.
 --
 -- Two phones write the same slice. What the two of them come to used to be
--- decided on the PHONE (www/sync.js, syMerge) and checked again HERE
--- (keep_newer's `stale`), and on 2026-09-27 the two answers disagreed and
--- every second save of 1.0.3 was refused. So it is decided in one place, and
+-- decided on the PHONE and checked again HERE, and on 2026-09-27 the two
+-- answers disagreed and every second save of 1.0.3 was refused. So it is decided in one place, and
 -- the place is the one both phones reach: a phone says what it has and when a
 -- person last wrote it, and the server puts that together with what it holds.
 --
@@ -864,7 +861,7 @@ language sql immutable as $$
            else false end
 $$;
 
--- What makes two rows the same row (www/sync.js § syKeyOf, moved): a word is
+-- What makes two rows the same row: a word is
 -- its headword, a letter and a keyboard their id, anything else itself.
 create or replace function slice_key(kind text, x json) returns text
 language sql immutable as $$
@@ -876,7 +873,7 @@ language sql immutable as $$
     else 'j' || x::jsonb::text end
 $$;
 
--- Which of the thirty-eight a letter is (www/letters.js § ltSlotKey, moved):
+-- Which of the thirty-eight a letter is (www/letters.js § ltSlotKey says the same):
 -- a digit by its value, a to z, ! and ? by a one-character name.
 create or replace function slice_slot(kind text, x json) returns text
 language plpgsql immutable as $$
@@ -910,7 +907,7 @@ language sql immutable as $$
          slice_truthy(x -> 'ch'))
 $$;
 
--- A list, put together (www/sync.js § syArr and syPut, moved).
+-- A list, put together.
 --
 -- Two halves, and the first is the same for every slice: which rows are
 -- REMOVED. A row of mine is skipped when the server's side is the later one,
@@ -920,7 +917,7 @@ $$;
 -- is asked as one query, because a dictionary is thousands of rows and asking
 -- it a row at a time was eight seconds for five thousand words.
 --
--- The second half is where the rows that are left GO, and it is syPut(): mine
+-- The second half is where the rows that are left GO: mine
 -- first, then the server's, one row per key, each key where it first
 -- appeared, and the server's row taking the place when the server's side is
 -- the later one. The alphabet has two more sentences -- a blank never takes a
@@ -987,7 +984,7 @@ begin
   return coalesce(array_to_json(v_out), '[]'::json);
 end $$;
 
--- An object, key by key (www/sync.js § syObj, moved): theirs, with mine laid
+-- An object, key by key: theirs, with mine laid
 -- over; a list or an object on both sides goes together, a value is the
 -- later side's.
 create or replace function slice_obj(kind text, mine json, theirs json, base json, later boolean)
@@ -1013,8 +1010,8 @@ begin
   return ('{' || array_to_string(parts, ',') || '}')::json;
 end $$;
 
--- One slice, the string a phone holds, put together with the server's
--- (www/sync.js § syMerge, moved). '' is the one answer that writes NEITHER
+-- One slice, the string a phone holds, put together with the server's.
+-- '' is the one answer that writes NEITHER
 -- side: the server's copy cannot be read, and nobody's work is written over
 -- merely because this cannot read it.
 create or replace function slice_merge(kind text, mine text, theirs text, base text, later boolean)
@@ -1043,7 +1040,7 @@ begin
   return r::text;
 end $$;
 
--- NEVER LESS THAN WHAT WAS SENT (www/net.js § netKeeps, moved). A merge that
+-- NEVER LESS THAN WHAT WAS SENT. A merge that
 -- comes back holding less than the copy the phone sent is not written.
 create or replace function slice_keeps(kind text, mine text, put text) returns boolean
 language plpgsql immutable as $$
@@ -1271,13 +1268,12 @@ create index if not exists recent_search_author_idx
 -- 「課金とアカウントとキーボードはアカウントに結びつく。
 --   じゃないとアカウント変えたら無限に言語作れるやん」 OWNER 2026-09-01.
 --
--- The plan lived in `lingua.set` on the phone -- the person's SETTINGS, which
--- belong to the device and to no account. So it did not travel: signing in on
--- a second phone arrived on the free plan, and every ceiling the plan opens
--- was counted per device rather than per account.
+-- The plan lived in `lingua.set` on the phone, filed under no account. So it
+-- did not travel: signing in on a second phone arrived on the free plan, and
+-- every ceiling the plan opens was counted per device rather than per account.
 --
 -- A TABLE OF ITS OWN AND NOT A COLUMN ON `profile`, and the reason is one
--- line further up this file: `profile_read` is `using (true)`. Everybody can
+-- line further up this file: `profile_read` is everybody's. Everybody can
 -- read every profile, because that is what a profile IS -- a handle and a
 -- display name that other people see. **What somebody pays is not that.**
 -- A `plan` column there would have published every person's tier to every
@@ -1300,7 +1296,7 @@ create index if not exists recent_search_author_idx
 -- owner, and to nobody else.
 --
 -- `at` is when it last moved, and it is a record rather than a clock anything
--- reasons with -- the same argument bkNo() makes in docs/DATA_SAFETY.md.
+-- reasons with.
 create table if not exists plan (
   id    uuid primary key references auth.users on delete cascade,
   plan  text not null default 'free' check (plan in ('free', 'plus', 'pro')),
@@ -1312,7 +1308,7 @@ create table if not exists plan (
 -- 「オンラインで出してね流石に」「4 起動の時に表示して ☑️今後表示しない 閉じる
 --   みたいなポップにしたくない？」 OWNER 2026-09-12.
 --
--- 「プランが終了しました」 used to be decided on the PHONE: capLapse() compared
+-- 「プランが終了しました」 used to be decided on the PHONE, by comparing
 -- the plan with `SET.planWas`, the word this handset last showed, and on a
 -- phone whose Keychain read failed that told somebody who had never subscribed
 -- that their subscription had ended. The word went on 2026-09-11 (rule 22) and
@@ -1720,27 +1716,10 @@ create index if not exists promo_run_idx on promo(starts_at, ends_at);
 -- below opens exactly one door. Read them as sentences: who, may do what, to
 -- which rows.
 --
--- An anonymous session cannot write anything at all. Supabase gives an
--- anonymous sign-in a real uid, so "not signed in" is not the test -- the JWT
--- carries is_anonymous, and that is what every writing policy checks through
--- is_member(). Reading is the grants' question and not the policies': `anon`,
--- which is what a request with nobody signed in arrives as, holds nothing at
--- all (the block at the foot of this file).
---
--- The app does not make one any more (OWNER 2026-08-26), so this is a wall
--- with nobody standing at it. It stays because the switch that opens that
--- endpoint is in the Supabase dashboard rather than in this file.
---
--- This paragraph used to end: "when they register, the same uid is linked and
--- nothing they did is lost." **That was never true of this app.** netSignUp()
--- in www/net.js posts to /auth/v1/signup with no session token on it, which is
--- how Supabase is asked for a NEW user rather than for an identity on the one
--- already here -- so registering made a second uid and left the first one's
--- rows behind it. Nothing was ever lost by it, because no anonymous account
--- has ever existed outside a test build, and there is nothing to fix now that
--- the app has stopped making them. It is written down because a sentence that
--- describes a mechanism nobody built is the kind of thing the next person
--- builds on.
+-- Nobody writes without being a member (is_member() below): signed in, not
+-- an anonymous session, not frozen. Reading is the grants' question and not
+-- the policies': `anon`, which is what a request with nobody signed in
+-- arrives as, holds nothing at all (the block at the foot of this file).
 -- ---------------------------------------------------------------------------
 alter table profile     enable row level security;
 alter table language    enable row level security;
@@ -1763,40 +1742,18 @@ alter table plan        enable row level security;
 alter table purchase    enable row level security;
 alter table promo       enable row level security;
 
--- One question, and until 2026-08-26 there were two.
---
--- There used to be an anonymous account made at first launch, and "may this
--- account write" split along what the write was FOR: has_account() -- anybody
--- at all, anonymous included -- guarded a language and the slices under it, on
--- the grounds that those were nobody else's business; is_member() guarded
--- everything other people would see.
---
--- **The split was drawn along "can anybody else see this", and that line has
--- moved.** A language can be handed to somebody else now (DL), and it can be
--- put on a page anybody may open (the publish switch), and what a person makes
--- is kept on the server rather than only on the phone. So a language is not
--- "nobody else's business" any more, and there is nothing left for the two
--- questions to be about.
---
--- OWNER DECISION 2026-08-26: 「言語はアカウントないと作れないです」
+-- ONE QUESTION FOR EVERY WRITE. 「言語はアカウントないと作れないです」
 -- 「ログインした人しか書けないけど」「二種類になる意味も分からないけど」
--- This replaces the anonymous-first decision of 2026-08-22.
---
--- So has_account() is gone rather than left sitting unused, and every policy
--- that asked it asks is_member(). is_member() itself is not touched: ten
--- policies are standing on it and this change is about who else joins them.
+-- OWNER DECISION 2026-08-26: there is one kind of account.
 --
 -- A signed-in account that is not an anonymous one, and has not been frozen.
 --
--- The anonymous clause stays, and not for anybody's sake -- there is nobody:
--- the app has never been released, so no phone anywhere holds an anonymous
--- session. 「リリースしてないんだからアカウンとないでしょ」 -- OWNER 2026-08-26.
--- It stays because this is a wall and not a preference. Anonymous sign-in is a
--- switch in the Supabase dashboard, not a thing this file can see; if it is on
--- -- today, or in a year, by somebody setting up a second project -- the
--- endpoint answers, and what stops that session writing is this line and
--- nothing else. Every writing policy stands on this function and none of them
--- says the word anonymous.
+-- The anonymous clause is a wall and not a preference: the app makes no
+-- anonymous session, but anonymous sign-in is a switch in the Supabase
+-- dashboard, not a thing this file can see. If it is on -- today, or in a
+-- year, on a second project -- the endpoint answers, and what stops that
+-- session writing is this line and nothing else. Every writing policy stands
+-- on this function and none of them says the word anonymous.
 create or replace function is_member() returns boolean
 language sql stable as $$
   select auth.uid() is not null
@@ -2080,59 +2037,6 @@ create policy publication_make on publication for insert with check (
   and exists (select 1 from language l where l.id = language and l.owner = auth.uid())
 );
 
--- What a post says, to whoever is asking, and the app reads THIS rather than
--- `post`. A post taken down comes back as a row with an EMPTY body -- so a
--- thread can say that something was removed without saying what it was.
---
--- Hiding the row was the first shape of it. That is right for a timeline and
--- wrong inside a conversation: the replies to it are still there, answering
--- something that is not, and a reader cannot tell "taken down" from "never
--- existed". A thread with a hole in it is the app losing an argument it
--- should be winning -- something was removed, and saying so is the point of
--- removing it.
---
--- This view is a DEFINER view, which is the one kind this file has, and it is
--- deliberate. post_read above will not hand a hidden row to anybody, so a
--- view that asked as the caller could not see one either and would have
--- nothing to blank. Running as the owner it sees every row and does the
--- blanking itself -- and the blanking is the whole of what post_read says, so
--- the two agree by saying the same sentence rather than by one of them being
--- skipped. Nothing else about a post is restricted anywhere in this file, so
--- there is nothing else for this to have gone around. `hidden_why` is not a
--- column of it: why a post went is the reports screen's and the notice's.
---
--- The author and the staff are handed the post itself. The author has to be
--- told by their own post rather than by it turning into a stranger's
--- tombstone, and staff have to be able to read what they are deciding about.
---
--- `author_out` is the one thing on here that is not the post's: whether the
--- account that wrote it is frozen. It is on the ROW because that is how the
--- reading side works everywhere in this app -- what a reader needs is put on
--- the post -- and because the alternative is the phone asking about every
--- author it sees. A frozen account's posts come off the timeline and stay
--- readable on the account's own page; the app decides which, and this is
--- what it decides with.
--- WHO SOMEBODY IS, WITH THE TWO NUMBERS A PROFILE IS MADE OF.
---
--- 「当たり前だけどsnsとして機能してない」 OWNER 2026-09-01. A person's page
--- showed 0 followers and 0 following for everybody, always -- www/me.js says
--- so in a comment: 「Neither is on `profile` at all -- see netWho()」. It was
--- true. `follow` was written by netFollow() and read back only about
--- YOURSELF (netFollowing/netFollowers ask `follower=eq.me` / `followed=eq.me`),
--- so the two numbers on somebody else's page had nowhere to come from.
---
--- A VIEW rather than two more requests from the phone, and rather than
--- letting the phone download somebody's followers to count the rows: a count
--- is one number and shipping a list to produce it is how a popular account
--- becomes a slow page.
---
--- It exposes nothing new. `follow_read` is `using (true)` -- who follows whom
--- is public, which is what a follower list IS -- and every column named here
--- is already readable by everybody signed in through `profile_read`, also
--- `using (true)`. What
--- it does NOT carry is `staff`, `admin` and `banned_why`: they are on
--- `profile` and readable there, and there is no reason for a view about a
--- person's page to be the thing that hands them out.
 -- HOW BIG A LANGUAGE IS, WITHOUT HANDING IT OVER.
 --
 -- 「言語の詳細は？」 OWNER 2026-09-01, in the same breath as the bio. A
@@ -2161,7 +2065,7 @@ create policy publication_make on publication for insert with check (
 create or replace function slice_count(b text) returns int
 language plpgsql immutable as $$
 begin
-  /* The body is the string localStorage holds -- an array for `words` and
+  /* The body is the string the phone holds -- an array for `words` and
      for `letters`. Anything else is 0 rather than an error: a slice that has
      never been written, or one holding something this does not understand,
      is a language with none of that thing as far as a reader is concerned,
@@ -2197,43 +2101,14 @@ create view language_seen as
    where lang_readable(l.id);
 grant select on language_seen to authenticated;
 
--- AND THE LANGUAGE BESIDE THE PERSON, IN THE SAME ANSWER.
--- 「他人のフォロー／フォロワーとか見る時すんごいくるくる回ってるけど、なんか
---  全体的に遅くない？」 OWNER 2026-09-08 (143).
---
--- It was a SECOND request. netLangNames() in www/net.js asked `language` by
--- owner once the people had come back, so every screen that draws a list of
--- people paid two round trips one after the other -- and a round trip on a
--- phone is 100-300ms whatever is in it. Measured with tools/slow-check.mjs:
--- somebody else's follower list was four round trips deep and this was the
--- last of them.
---
--- It could not be an embed and still cannot: `language.owner` points at
--- auth.users and `profile.id` is its own key, so there is no foreign key for
--- PostgREST to travel and asking for `language(name)` answers PGRST200 for
--- everybody. What there IS is the same uuid on both sides, and joining on it
--- is a thing SQL can do perfectly well -- it is only PostgREST that needed a
--- key to follow. So the join is made here, once, and the view is what the
--- phone asks for.
---
--- THROUGH language_seen AND NOT `language`, so the rule about which languages
--- a stranger may see is written in one place: `published_at is not null or
--- owner = auth.uid()`, which is the same policy netLangNames() asked with.
---
--- WHICH ONE, when somebody has several: the OLDEST, by `created_at`, which is
--- what netLangNames() picked and for the reason it gave -- an unordered pick
--- gives a person a different tag every time somebody looks at them. It is not
--- a decision about which language represents somebody; nothing has asked
--- that.
 -- ---- who follows whom, by the name one person knows another by -------------
 -- 「他人のフォロー／フォロワーとか見る時すんごいくるくる回ってる」 OWNER
 -- 2026-09-08 (143).
 --
 -- `follow` is keyed by uuid on both sides, and the app has never held anybody
 -- else's uuid: every screen in it speaks handles. So asking for somebody's
--- follow list took TWO round trips -- one to turn the handle into a uuid
--- (netWhoseId in www/net.js), and then the real one -- and the first was pure
--- waiting. Measured with tools/slow-check.mjs: somebody else's follower list
+-- follow list took TWO round trips -- one to turn the handle into a uuid,
+-- and then the real one -- and the first was pure waiting. Measured with tools/slow-check.mjs: somebody else's follower list
 -- was four round trips deep and this was the first of them.
 --
 -- The join is made here so the phone can ask its question in the words it
@@ -2241,9 +2116,8 @@ grant select on language_seen to authenticated;
 -- because that is what a session carries and a phone that has not been given
 -- a handle yet still has one.
 --
--- `follow_read` is `using (true)` -- who follows whom is public the way it is
--- in every timeline -- so this view shows exactly what that policy already
--- shows and adds nothing.
+-- Who follows whom is public the way it is in every timeline (`follow_read`),
+-- so this view shows what that policy already shows and adds nothing.
 --
 -- AND WHEN, because that is the order a list is read in: 「フォロー中・
 -- フォロワーの並び → フォローした新しい順で」 OWNER 2026-09-24. The column
@@ -2268,7 +2142,7 @@ grant select on follow_seen to authenticated;
 -- this is follow_seen's shape: the row with the name the phone speaks, and
 -- the time it is ordered by.
 --
--- `react_read` is `using (true)`, so this shows no more than the table does.
+-- `react_read` is everybody's, so this shows no more than the table does.
 -- What it leaves out is what a list of people leaves out: somebody a block
 -- stands between, either way, and -- the owner's word for 「not in the lists
 -- you scroll」 -- somebody the reader has muted (block_hides, mute_hides).
@@ -2330,6 +2204,49 @@ language sql stable security definer set search_path = public as $$
                           and (u.until is null or u.until > now()))))
 $$;
 
+-- WHO SOMEBODY IS, WITH THE TWO NUMBERS A PROFILE IS MADE OF.
+--
+-- 「当たり前だけどsnsとして機能してない」 OWNER 2026-09-01. A person's page
+-- showed 0 followers and 0 following for everybody, always: `follow` was read
+-- back only about YOURSELF, so the two numbers on somebody else's page had
+-- nowhere to come from.
+--
+-- A VIEW rather than two more requests from the phone, and rather than
+-- letting the phone download somebody's followers to count the rows: a count
+-- is one number and shipping a list to produce it is how a popular account
+-- becomes a slow page.
+--
+-- It exposes nothing new: who follows whom is public, which is what a
+-- follower list IS (`follow_read`), and every column named here is readable
+-- through `profile_read` -- both of them, like this view, leaving out whoever
+-- a block stands between. What it does NOT carry is `staff`, `admin` and
+-- `banned_why`: there is no reason for a view about a person's page to be the
+-- thing that hands them out.
+--
+-- AND THE LANGUAGE BESIDE THE PERSON, IN THE SAME ANSWER.
+-- 「他人のフォロー／フォロワーとか見る時すんごいくるくる回ってるけど、なんか
+--  全体的に遅くない？」 OWNER 2026-09-08 (143).
+--
+-- It was a SECOND request: the phone asked `language` by owner once the
+-- people had come back, so every screen that draws a list of
+-- people paid two round trips one after the other -- and a round trip on a
+-- phone is 100-300ms whatever is in it. Measured with tools/slow-check.mjs:
+-- somebody else's follower list was four round trips deep and this was the
+-- last of them.
+--
+-- It could not be an embed and still cannot: `language.owner` points at
+-- auth.users and `profile.id` is its own key, so there is no foreign key for
+-- PostgREST to travel and asking for `language(name)` answers PGRST200 for
+-- everybody. What there IS is the same uuid on both sides, and joining on it
+-- is a thing SQL can do perfectly well -- it is only PostgREST that needed a
+-- key to follow. So the join is made here, once, and the view is what the
+-- phone asks for.
+--
+-- THROUGH language_seen AND NOT `language`, so the rule about which languages
+-- a stranger may see is written in one place: lang_readable().
+--
+-- WHICH ONE, when somebody has several: the OLDEST, by `created_at` -- the
+-- main language (「最初に作った言語」, docs/FEATURE_RULES.md 2026-09-12).
 drop view if exists profile_seen cascade;
 create view profile_seen as
   select p.id, p.handle, p.display, p.av, p.bio, p.link, p.loc, p.banned_at,
@@ -2370,7 +2287,7 @@ grant select on block_seen to authenticated;
 -- ---- whom you have muted, by name -----------------------------------------
 -- 「設定の「非表示リスト」がミュートした人の一覧で、そこから解除する」 OWNER
 -- 2026-09-25. block_seen's shape, for the same reason and with the same
--- `where` keeping it yours. rls-check: 「MD cannot read that MD is muted」.
+-- `where` keeping it yours. rls-check: 「A cannot read that A is muted」.
 drop view if exists mute_seen cascade;
 create view mute_seen as
   select m.muted as id, p.handle, p.display, p.av, m.created_at
@@ -2397,6 +2314,38 @@ language sql immutable as $$
   select coalesce(b ->> 'pv', '') not in ('', '0', 'false')
 $$;
 
+-- What a post says, to whoever is asking, and the app reads THIS rather than
+-- `post`. A post taken down comes back as a row with an EMPTY body -- so a
+-- thread can say that something was removed without saying what it was.
+--
+-- Hiding the row was the first shape of it. That is right for a timeline and
+-- wrong inside a conversation: the replies to it are still there, answering
+-- something that is not, and a reader cannot tell "taken down" from "never
+-- existed". A thread with a hole in it is the app losing an argument it
+-- should be winning -- something was removed, and saying so is the point of
+-- removing it.
+--
+-- This view is a DEFINER view, which is the one kind this file has, and it is
+-- deliberate. post_read above will not hand a hidden row to anybody, so a
+-- view that asked as the caller could not see one either and would have
+-- nothing to blank. Running as the owner it sees every row and does the
+-- blanking itself -- and the blanking is the whole of what post_read says, so
+-- the two agree by saying the same sentence rather than by one of them being
+-- skipped. Nothing else about a post is restricted anywhere in this file, so
+-- there is nothing else for this to have gone around. `hidden_why` is not a
+-- column of it: why a post went is the reports screen's and the notice's.
+--
+-- The author and the staff are handed the post itself. The author has to be
+-- told by their own post rather than by it turning into a stranger's
+-- tombstone, and staff have to be able to read what they are deciding about.
+--
+-- `author_out` is the one thing on here that is not the post's: whether the
+-- account that wrote it is frozen. It is on the ROW because that is how the
+-- reading side works everywhere in this app -- what a reader needs is put on
+-- the post -- and because the alternative is the phone asking about every
+-- author it sees. A frozen account's posts come off the timeline and stay
+-- readable on the account's own page; the app decides which, and this is
+-- what it decides with.
 drop view if exists post_seen cascade;
 create view post_seen as
   select p.id, p.author, p.language, p.prompt, p.reply_to, p.created_at,
@@ -2576,7 +2525,7 @@ create policy saved_drop on saved_search for delete using (is_member() and autho
 
 -- recent_search: the same four sentences, and the read is the one that
 -- matters. What somebody has been LOOKING FOR is not what they published --
--- `profile_read` is `using (true)` and this must never be, or a history is a
+-- `profile_read` is everybody's and this must never be, or a history is a
 -- list of every name a person typed, readable by every account there is.
 -- Nothing would throw and every screen would be right.
 drop policy if exists recent_read on recent_search;
@@ -2589,7 +2538,7 @@ create policy recent_edit on recent_search for update using (is_member() and aut
 drop policy if exists recent_drop on recent_search;
 create policy recent_drop on recent_search for delete using (is_member() and author = auth.uid());
 
--- plan: yours to read, yours to write, and nobody else's to do either.
+-- plan: yours to read, nobody's to write through the API.
 --
 -- 「課金とアカウントとキーボードはアカウントに結びつく」 OWNER 2026-09-01.
 --
@@ -3194,8 +3143,8 @@ $$;
 -- the newest row rather than today's. That is true of the PHONE and it is not
 -- where the boundary is decided: supabase/functions/daily-prompt/index.ts
 -- picks `on_day` with `timeZone: 'America/Los_Angeles'`, and the cron that
--- runs it is set in Pacific (supabase/setup.md). So the day already turns in
--- California, and the list was turning in UTC beside it -- 0 4 8 12 16 20 in
+-- runs it rings at 0:00 Pacific (the daily-prompt schedule near the foot of this
+-- file). So the day already turns in California, and the list was turning in UTC beside it -- 0 4 8 12 16 20 in
 -- American local time only while the offset happens to be a multiple of four.
 --
 -- Naming the zone here is not a second copy of a timezone rule: it is the
@@ -3468,8 +3417,12 @@ $$;
 --
 -- It takes no argument. A deletion with options is how the last version of
 -- this ended up with a language that outlived the person who asked for it to
--- be gone. Everything of theirs goes: the languages cascade from the profile,
--- the posts and follows and publication records with them.
+-- be gone. Everything of theirs goes by cascade from auth.users: the profile,
+-- the languages and their slices and versions, the posts, drafts, follows,
+-- reactions, blocks, mutes, searches, the plan and purchases, and the phones'
+-- addresses. A report or feedback they wrote stays with nobody's name on it
+-- (`report.actor`, `feedback.author`), and their files in the bucket are taken
+-- by the phone on the way here (media_drop).
 -- ---------------------------------------------------------------------------
 create or replace function account_delete()
 returns void
@@ -3621,12 +3574,9 @@ end $$;
 -- count in a Content-Range HEADER, and www/net.js reads bodies.
 --
 -- The second: counting the languages through the table would mean widening
--- `language_read`, which today is "published, or yours". Adding is_staff() to
--- it would hand staff the CONTENTS of every language nobody has published --
+-- `language_read` (lang_readable()). Adding is_staff() to it would hand staff the CONTENTS of every language nobody has published --
 -- somebody's four months of work, unfinished, read by an account that only
--- wanted to know how many there were. rls-check.mjs has a claim named "what a
--- language is made of is nobody else's" and that claim is the reason. So the
--- count is taken by a function with definer rights, which sees every row and
+-- wanted to know how many there were. So the count is taken by a function with definer rights, which sees every row and
 -- hands back a number, and the read policy does not move.
 --
 -- `security definer` for the same reason post_hide() is, and the question is
@@ -4045,20 +3995,10 @@ create trigger profile_follows after insert on profile
 -- Said after the tables and the policies because the columns have to exist.
 -- ---------------------------------------------------------------------------
 --
--- `prefs` IS ON THIS LINE AND WAS NOT, FOR A FORTNIGHT. The column was added
--- on 2026-09-08 -- 「端末に残すものないんですけど。サーバーで同じ機能になるよう
--- に代替して」 -- and this grant was not touched, so `netPrefsPut()` in
--- www/net.js sent `PATCH /rest/v1/profile {prefs:...}` and the database
--- refused it, every time, for everybody. Nothing threw: that call's failure
--- handler is `function(){}`, so the theme and the interface language went on
--- working out of the copy on the handset and simply never arrived anywhere.
--- Exactly the thing the paragraph above says this line is for -- 「a column
--- added later is not updatable until it is added to one of these lines」 --
--- happening to the column added the day after it was written.
---
--- It is not a preference any more either: the switches that say which
--- notices reach a phone are fields of this column (2026-09-22), and a switch
--- that cannot be written is a switch that is always on.
+-- `prefs` and `ed` are on this line because the settings and the switches
+-- that say which notices reach a phone are written through them (prefs_put),
+-- and a column not named here is a column nobody can write: a switch that
+-- cannot be written is a switch that is always on.
 revoke update on profile from authenticated;
 grant  update (handle, display, av, bio, link, loc, prefs, ed) on profile to authenticated;
 
@@ -4075,7 +4015,7 @@ grant  update (handle, display, av, bio, link, loc, prefs, ed) on profile to aut
 -- profile yet could arrive holding staff, which opens post_hide(),
 -- account_ban() and the report queue behind them.
 --
--- The five named are what netMakeProfile() in www/net.js sends. staff,
+-- The columns named are what netMakeProfile() in www/net.js may send. staff,
 -- banned_at and banned_why are the server's, and the only thing that writes
 -- staff is profile_first() -- a BEFORE trigger, which assigns to NEW rather
 -- than naming a column in the statement, so it is not what this grant is
@@ -4086,20 +4026,13 @@ grant  update (handle, display, av, bio, link, loc, prefs, ed) on profile to aut
 revoke insert on profile from authenticated;
 grant  insert (id, handle, display, av, bio, link, loc) on profile to authenticated;
 
--- ---------------------------------------------------------------------------
--- And the question that is no longer asked
---
 -- has_account() -- "there is an account, anonymous counts" -- is dropped by
--- name rather than merely deleted from this file. This file gets pasted over a
--- database that already has one, so a function nobody writes down any more
--- goes on existing there, and a function that exists is one a policy written
--- next year can reach for without anybody noticing what it means.
---
--- Here, at the foot, and not where it used to be defined: every policy above
--- had to stop naming it first. A `drop` with no `cascade` refuses rather than
--- quietly taking a policy down with it, so if this line ever errors it is
--- telling the truth -- something is still standing on it.
+-- name: a server this file was pasted over before 2026-08-26 still has one,
+-- and a function that exists is one a policy can reach for. No `cascade`, so
+-- if this ever errors something is still standing on it.
 drop function if exists has_account();
+
+-- And the post: what its author may change, and nothing staff set.
 revoke update on post from authenticated;
 grant  update (body, language, prompt, reply_to) on post to authenticated;
 
@@ -4112,10 +4045,10 @@ grant  update (body, language, prompt, reply_to) on post to authenticated;
 -- a reason its own author wrote, and post_show() is staff's -- so it could
 -- not be undone by the person who did it either.
 --
--- The five named are what netSend('POST','/rest/v1/post') sends in www/net.js
--- (id, author, body, prompt, reply_to) plus `language`, which the update line
--- above already calls the author's. created_at is left out on purpose: it
--- defaults to now() and a client that could name it could date a post.
+-- The columns named are what the phone sends when it posts (www/net.js),
+-- `quote_of` among them: a quote is said once, when it is sent, and is not in
+-- the update line. created_at is left out on purpose: it defaults to now()
+-- and a client that could name it could date a post.
 revoke insert on post from authenticated;
 grant  insert (id, author, language, body, prompt, reply_to, quote_of) on post to authenticated;
 
