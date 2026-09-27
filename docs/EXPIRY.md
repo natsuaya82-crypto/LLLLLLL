@@ -204,8 +204,8 @@ www/*.js`）。だから一度消えると、iPhone からも、バックアッ�
 が、その言語の文法を埋めなくなります。`docs/DATA_SAFETY.md` の
 「A slice the app has never written is **absent**, and absent is what a restore
 is for」が効かなくなる、という形です。
-サーバーとの同期（`www/net.js` の `netLangSync1()` → `www/sync.js` の
-`syMerge()`）は両側を足すので、**電波があれば戻ります。**
+サーバーとの同期（`www/net.js` の ~~`netLangSync1()`~~ → ~~`www/sync.js`~~ の
+~~`syMerge()`~~）は両側を足すので、**電波があれば戻ります。**
 戻らないのは、電波が無い・アカウントが無い iPhone です。
 
 **どこにあるか。** `www/phases.js`（`migrateGramLang()`）。
@@ -483,7 +483,7 @@ and it is still a serpentine and not one long drag -- 15 corners over 21 rows
 **後から直した**ほうの値が残ります（2026-09-23 から。それまでは後から
 同期したほうでした）。並び（単語や文字の一覧）は両方足されます。
 
-**どこにあるか。** `www/sync.js` § `syMerge`（`later`）と
+**どこにあるか。** ~~`www/sync.js`~~ § ~~`syMerge`~~（`later`）と
 `supabase/schema.sql` § `keep_newer`。
 
 **それは人が作ったものか。** はい。

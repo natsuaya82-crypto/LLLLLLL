@@ -115,8 +115,8 @@ function netMail(){
    netResume() is called from one place -- boot.js, on the launch -- and for
    as long as that was the only place, an app left open for an hour went on
    sending a dead token to everything. Nothing threw. Every write answered
-   401 and every 401 went where that write's `bad` went, which for a slice
-   (`netSlicePut`), a plan and a draft was nowhere at all. So a
+   401 and every 401 went where that write's `bad` went, which for a slice,
+   a plan and a draft was nowhere at all. So a
    person who opened Lingua in the morning and saved a word in the afternoon
    saved it to the phone and to nothing else, and was told it had gone up.
    「保存押せば起動されないの？」 OWNER 2026-09-02 -- no, it did not: saving
@@ -349,21 +349,15 @@ function netSend1(method, path, body, tok, ok, bad, up, may, prog){
      Asked for here rather than at netDrop(), because it is the same sentence
      the two lines above are: a write that changed nothing must never read as
      a write that worked. */
-  /* EXCEPT THE SLICE, WHICH IS SOMEBODY'S DICTIONARY COMING STRAIGHT BACK.
-     A slice write is a POST that upserts, so there is no 「matched no row」
-     to tell apart -- that is what the three paragraphs above are about and
-     none of them is about this one. 2xx IS 「the server took it」, which is
-     the whole of what netSlicePut()'s `ok` has ever read: it takes no
-     argument and never has. Asking for the row back doubles every save --
-     872 KB up and the same 872 KB down again on a 5,000-word language, a
-     quarter of everything that account sends in a month.
-     docs/reports/cost-2026-09-09.md 一. */
+  /* A SLICE DOES NOT COME STRAIGHT BACK: it goes up through slice_put(),
+     whose answer carries the body only where the server put something with
+     it (supabase/schema.sql § slice_put) -- asking for the row back doubled
+     every save, 872 KB up and 872 KB down on a 5,000-word language
+     (docs/reports/cost-2026-09-09.md 一). */
   if((method==='POST' || method==='PATCH' || method==='DELETE') &&
      path.indexOf('/rest/v1/')===0)
     x.setRequestHeader('Prefer',
-      (path.indexOf('/rest/v1/slice')===0
-         ? 'return=minimal' : 'return=representation')+
-      (up? ', resolution=merge-duplicates' : ''));
+      'return=representation'+(up? ', resolution=merge-duplicates' : ''));
   else if(up) x.setRequestHeader('Prefer', 'resolution=merge-duplicates');
   x.onreadystatechange=function(){
     if(x.readyState!==4) return;
@@ -1032,7 +1026,7 @@ function netMyProfile(ok, bad){
            /* NO ROW IS NOT AN EMPTY PROFILE -- an account whose row has not
               been made yet is not somebody whose line about themselves is
               blank, so nothing is written over the copy. */
-           if(p){ meProfGot(p); netPrefsGot(p.prefs, p.ed); }
+           if(p){ meProfGot(p); netPrefsGot(p.prefs); }
            netStaffGot(p);
            render();
            ok(p);
@@ -1168,8 +1162,7 @@ function netProfPut(fields, at, ok, bad){
     o[k]=fields[k]; ed[k]=at;
   }
   o.ed=ed;
-  netSend('PATCH', '/rest/v1/profile?id=eq.'+encodeURIComponent(netUid()),
-          o, netTok(), function(d){ ok((d && d.length)? d[0] : null); }, bad);
+  netPut('profile', netUid(), o, ok, bad);
 }
 /* HOW THIS ACCOUNT HAS THE APP SET UP, BOTH WAYS.
    -------------------------------------------------------------------------
@@ -1210,29 +1203,27 @@ function netPrefsSaw(){
 }
 /* WHAT THE SERVER SAYS THE SETTINGS ARE, put on SET -- the one place. Both a
    sign-in's read and the answer to a send come here: prefs_put() hands back
-   the settings as they stand, which is how a phone whose press was OLDER than
-   the other phone's takes the other one's (supabase/schema.sql § keep_newer).
-
-   AND A KEY PRESSED HERE THAT HAS NOT LANDED is the same question asked on the
-   way down: it stands if its press is later than the time the server holds
-   for it (`ed`, `prefs.<key>`), and gives way if the server's is later. With
-   no time from the server, the press here is the later one -- the value there
-   was put before anything said when. */
-function netPrefsGot(p, ed){
-  var i, k, w, their, drew=false;
+   the settings as they stand, and which of two phones' presses stands is the
+   server's to say (supabase/schema.sql § keep_newer, the later press). The
+   one thing held back is a key pressed HERE that has not gone up yet
+   (NET_PREFS_AT): an answer to an earlier send is not allowed to paint over
+   it, and it goes up with its own press time on the next send. */
+function netPrefsGot(p){
+  var i, k, drew=false;
   if(!p || typeof p!=='object') p={};
-  if(!ed || typeof ed!=='object') ed={};
   for(i=0;i<SET_PREFS.length;i++){
     k=SET_PREFS[i];
     if(!Object.prototype.hasOwnProperty.call(p, k)) continue;
-    w=NET_PREFS_AT[k];
-    their=Number(ed['prefs.'+k]) || 0;
-    if(w && w.at>=their) continue;
-    delete NET_PREFS_AT[k];
+    if(NET_PREFS_AT[k]) continue;
     if(SET[k]===p[k]) continue;
     SET[k]=p[k]; drew=true;
   }
+  /* What the two sides now agree on is what the SERVER holds -- for a key
+     pressed here and not up yet as well, so that it still differs and goes. */
   netPrefsSaw();
+  for(k in NET_PREFS_AT)
+    if(Object.prototype.hasOwnProperty.call(NET_PREFS_AT, k) &&
+       Object.prototype.hasOwnProperty.call(p, k)) NET_PREFS[k]=p[k];
   if(drew){
     setKeep();
     /* The theme is painted rather than drawn: applyTheme() writes the
@@ -1271,7 +1262,7 @@ function netPrefsPut(){
     o[k]=SET[k]; e[k]=w.at; n++;
   }
   if(!n) return;
-  netSend('POST', '/rest/v1/rpc/prefs_put', {p:o, e:e}, netTok(),
+  netPut('prefs', netUid(), {p:o, e:e},
           function(d){
             for(k in o)
               if(Object.prototype.hasOwnProperty.call(o, k) &&
@@ -1462,9 +1453,10 @@ function netLapseSeen(){
 
    Per slice and not per language, because of what happens with two phones: a
    word added on one and a letter drawn on the other are two different rows
-   and do not touch. Inside one row they are put together by sync.js, which
-   adds both rather than choosing. Nothing here decides a winner; the only
-   thing this file does is carry the strings.
+   and do not touch. Inside one row they are put together by the server
+   (supabase/schema.sql § slice_in), which adds both rather than choosing.
+   Nothing here decides a winner; the only thing this file does is carry the
+   strings.
 
    THE LANGUAGE'S ID IS THE SERVER'S ID (www/core.js § langMint). There is no
    second number and nothing to hold two of them together. */
@@ -1519,8 +1511,9 @@ function netLapseSeen(){
    language that is not open -- `langName` is the open one's.
 
    And `mine===false` is refused outright: a language taken from somebody else
-   is not this account's to put anywhere. `syMerge` adds both sides, so one
-   trip through here would add something to a トキポナ nobody may edit
+   is not this account's to put anywhere. A slice sent is put together with
+   what is there (supabase/schema.sql § slice_in), so one trip through here
+   would add something to a トキポナ nobody may edit
    (OWNER 2026-09-01, and docs/DATA_MODEL.md § A language that is only read).
 
    Nothing here deletes, hides or rewrites a language. A refusal leaves it
@@ -1728,15 +1721,11 @@ function netLangDrop(id, ok, bad){
    not happen. */
 function netLangPublic(on){
   var at=on? new Date().toISOString() : null;
-  /* The switch is on the OPEN language's page, so that is the one it is about. */
-  netLangRow(langId, function(sid){
-    netSend('PATCH', '/rest/v1/language?id=eq.'+encodeURIComponent(sid),
-            {published_at: at}, netTok(),
-            /* wldPubGot() brings the screen back -- www/home.js § LPUB is
-               the one place that says so now, so this does not say it too. */
-            function(){ wldPubGot(langId, at); },
-            function(d, st, m){ netPop(d, st, m, function(){ netLangPublic(on); }); });
-  }, function(d, st, m){ netPop(d, st, m, function(){ netLangPublic(on); }); });
+  /* The switch is on the OPEN language's page, so that is the one it is
+     about. wldPubGot() brings the screen back -- www/home.js § LPUB. */
+  netPut('language', langId, {published_at:at},
+    function(){ wldPubGot(langId, at); },
+    function(d, st, m){ netPop(d, st, m, function(){ netLangPublic(on); }); });
 }
 /* AND WHAT THIS LANGUAGE IS CALLED.
    -------------------------------------------------------------------------
@@ -1756,17 +1745,11 @@ function netLangPublic(on){
    Signed out is netLangRow()'s answer and not a branch here: it says
    `langrow −`, which netPop() shows, so 「電波が無い」 does not arrive as
    silence. */
-function netLangNamePut(sid, nm, ok, bad){
-  netSend('PATCH', '/rest/v1/language?id=eq.'+encodeURIComponent(sid),
-          {name:String(nm||'')}, netTok(), ok, bad);
-}
 function netLangRename(nm, then){
   var v=String(nm||'');
-  netLangRow(langId, function(sid){
-    netLangNamePut(sid, v,
-      function(){ langNameGot(langId, v); if(then) then(); },
-      function(d, st, m){ netPop(d, st, m, function(){ netLangRename(v, then); }); });
-  }, function(d, st, m){ netPop(d, st, m, function(){ netLangRename(v, then); }); });
+  netPut('language', langId, {name:v},
+    function(){ langNameGot(langId, v); if(then) then(); },
+    function(d, st, m){ netPop(d, st, m, function(){ netLangRename(v, then); }); });
 }
 /* WHICH OF SOMEBODY ELSE'S LANGUAGES THIS ACCOUNT HAS TAKEN.
    -------------------------------------------------------------------------
@@ -1868,12 +1851,9 @@ function netTakeDrop(sid, ok, bad){
    list; this only carries the word. */
 function netLangWsys(k, then){
   var v=String(k||'');
-  netLangRow(langId, function(sid){
-    netSend('PATCH', '/rest/v1/language?id=eq.'+encodeURIComponent(sid),
-            {wsys:v}, netTok(),
-            function(){ langWsysGot(langId, v); if(then) then(); },
-            function(d, st, m){ netPop(d, st, m, function(){ netLangWsys(v, then); }); });
-  }, function(d, st, m){ netPop(d, st, m, function(){ netLangWsys(v, then); }); });
+  netPut('language', langId, {wsys:v},
+    function(){ langWsysGot(langId, v); if(then) then(); },
+    function(d, st, m){ netPop(d, st, m, function(){ netLangWsys(v, then); }); });
 }
 /* THIS ACCOUNT'S OWN LANGUAGES COME DOWN ONE ROAD, AND IT IS netLangsDown().
    -------------------------------------------------------------------------
@@ -1891,7 +1871,8 @@ function netLangWsys(k, then){
    a second mechanism covering the first one's gap is the thing that must not
    happen, because from then on nobody can say which of the two is deciding.
    netLangsWalk() is the wider of the two anyway -- it writes the writing
-   system and the owner columns, calls netAgreed(), fills an empty name column
+   system and the owner columns, records which version of each slice came
+   down (netBaseSet), fills an empty name column
    out of the `lang` slice, and walks the languages this account TOOK as well.
 
    What this one carried that the other did not is the moment AFTER: 「the
@@ -1973,41 +1954,6 @@ function netSlices(sid, ok, bad, kinds, cols, prog){
       }
       ok(out);
     }, bad, prog);
-}
-/* One slice, written. `Prefer: resolution=merge-duplicates` is what makes an
-   insert into a table with a two-column primary key an upsert -- the phone
-   does not have to know whether this slice has ever been up. */
-function netSlicePut(sid, kind, body, ed, was, ok, bad){
-  /* Through netSend(), like everything else here: this is the write a
-     person's work actually goes up in, and it used to open its own
-     XMLHttpRequest, outside the token renewal. 「保存押せば起動されないの？」
-     -- it did not, and this is the line that answers it. */
-  /* THE STAMP IS BUILT HERE AND HANDED BACK, because there is nowhere else it
-     could come from: the row does not return any more (`return=minimal`
-     above), so what the server holds for this slice is exactly the string
-     this line sent. netSlice1() gives it to netAgreed(), and the next save
-     compares against it rather than reading the dictionary back. */
-  var at=(new Date()).toISOString();
-  /* AND WHEN IT WAS WRITTEN, AND WHAT IT WAS PUT TOGETHER WITH. `ed` is the
-     later of the person's own write and the server's (what went up holds
-     both); `was` is the server's time this merged against, and the server
-     refuses the write with `stale` if it has moved since (keep_newer). That
-     refusal is the one answer handed back as the third argument, so the
-     caller can tell 「read again」 from 「no signal」. */
-  /* NO `no`. Which write this is, is numbered by the server (slice_no(),
-     supabase/schema.sql, r65): a number the phone sends is not read, so
-     sending one was a second answer to the question nobody asks the phone. */
-  /* AND WHICH SAVE THIS IS (NET_PRESS below). Every row one save writes
-     carries the same number, so the history on the server can say what the
-     WHOLE language was before that save -- 「言語を前に戻す →『3つ前、まるごと』」
-     OWNER 2026-09-24, supabase/schema.sql § slice_hist. */
-  netSend('POST', '/rest/v1/slice',
-          {language:sid, kind:kind, body:String(body||''),
-           at:at, ed:{body:ed||0, was:was||0}, press:NET_PRESS},
-          netTok(), function(){ ok(at); },
-          function(d, st){
-            bad(null, st||0, (d && d.message==='stale')? 'stale' : '');
-          }, true);
 }
 /* EVERY LANGUAGE THIS ACCOUNT HAS, BROUGHT DOWN TO THE PHONE.
    -------------------------------------------------------------------------
@@ -2163,9 +2109,11 @@ function netLangFill(id, ok, bad){
       if(!there[k] || there[k].body==='') continue;
       if(slMine(langKeyOf(nid, k))!==null) continue;
       slWr(langKeyOf(nid, k), there[k].body);
-      /* and the mark on what the two sides agree it is, so the first thing
-         removed after this is understood as a removal (netAgreed) */
-      netAgreed(nid, k, there[k].body, there[k].at);
+      /* and which version this phone now holds, so the first thing removed
+         after this is understood by the server as a removal (§ NET_BASE),
+         and the picture for a launch with no signal (slGot, www/core.js) */
+      netBaseSet(nid, k, there[k].no);
+      slGot(langKeyOf(nid, k), there[k].body);
     }
     /* The OPEN language's slices came down, so what the screens are holding
        is the picture: read it in the way langOpen() does, HERE, before
@@ -2414,292 +2362,128 @@ function netLangsGone(mine, ids){
   if(moved) langForAcct();
   else render();
 }
-/* The open language and its copy, put together. Read, merge, write back
-   whatever moved -- in that order, so a phone that has been offline for a
-   week arrives holding the week rather than replacing it.
+/* ---- THE ONE SAVE ---------------------------------------------------------
+   「そもそもみんな同じ仕組みで作ってるのに保存できないとかなるのおかしくない？」
+   「一本化してくれ」「通信する場所食い違い保存」 OWNER 2026-09-27.
 
-   Fired and never waited for. Nothing on screen depends on it: the language
-   is already on the phone and already drawn, and what this does is make the
-   two copies the same. A failure is silence, because a phone with no signal
-   is a phone somebody is still writing a language on. */
-/* NEVER LESS THAN WHAT IS THERE.
+   Everything a person keeps goes up here, by one function, and comes back in
+   one shape:
+
+     slice      a part of the language -- supabase/schema.sql § slice_put
+     language   what the language is called, how it is written, whether its
+                page is open (its columns)
+     draft      what was written and not posted
+     profile    the name, the line about yourself, the picture
+     prefs      how this account has the app set up (§ netPrefsPut)
+
+   ok(what the server now holds) -- the row, or for a slice slice_put()'s
+   answer. bad(d, status, mark) -- the same three every request in this file
+   hands back: status 0 is 「電波が無い」, anything else is the server saying
+   no, and netWhy() words both. Nothing else.
+
+   WHAT HAPPENS WHEN TWO PHONES WROTE THE SAME THING IS NOT DECIDED HERE. The
+   server decides it, in one place for each: a slice is put together
+   (slice_in(), 「欄は後から直した方が残る」 and 「一覧は両方足す」), and every
+   other row keeps, field by field, the later of two writes (keep_newer). The
+   phone says what it has and when a person last wrote it, and takes what
+   comes back. It used to put a slice together itself (www/sync.js), read
+   the server first to do it, and read and put together again up to three
+   times when the server said somebody had moved in between -- and on
+   2026-09-27 the phone's answer and the server's disagreed, and every second
+   save of 1.0.3 was 「接続できません」. That is all gone. */
+var NET_PUT={
+  slice: function(sid, r){
+    return {method:'POST', path:'/rest/v1/rpc/slice_put',
+            body:{p_lang:sid, p_kind:r.kind, p_body:String(r.body), p_ed:r.ed||0,
+                  p_base:r.base||null, p_press:r.press||null},
+            got:function(d){ return (d && typeof d==='object')? d : {}; }};
+  },
+  language: function(sid, r){
+    return {method:'PATCH', path:'/rest/v1/language?id=eq.'+encodeURIComponent(sid), body:r,
+            got:function(d){ return (d && d.length)? d[0] : null; }};
+  },
+  /* An upsert: a draft the server has never seen is made, one it has is
+     written over -- by the later keep (keep_newer), whichever phone. */
+  draft: function(id, r){
+    return {method:'POST', path:'/rest/v1/draft', up:true,
+            body:{id:id, author:netUid(), body:r.body, ed:r.ed,
+                  updated_at:(new Date()).toISOString()},
+            got:function(d){ return (d && d.length)? d[0] : null; }};
+  },
+  profile: function(uid, r){
+    return {method:'PATCH', path:'/rest/v1/profile?id=eq.'+encodeURIComponent(uid), body:r,
+            got:function(d){ return (d && d.length)? d[0] : null; }};
+  },
+  prefs: function(uid, r){
+    return {method:'POST', path:'/rest/v1/rpc/prefs_put', body:r,
+            got:function(d){ return d; }};
+  }
+};
+function netPut(to, id, row, ok, bad){
+  function go(key){
+    var w=NET_PUT[to](key, row);
+    netSend(w.method, w.path, w.body, netTok(),
+            function(d){ ok(w.got(d)); }, bad, w.up);
+  }
+  /* A language's rows hang off its `language` row, which may not be up yet
+     (the walk's language at the door): netLangRow() puts it up first. */
+  if(to==='slice' || to==='language') netLangRow(id, go, bad);
+  else go(id);
+}
+/* ---- WHICH VERSION OF A SLICE THIS PHONE LAST AGREED WITH -----------------
+   The server's `no` on the row, the moment this phone and the server held the
+   same thing: a slice brought down (netLangFill), or a send that landed. It
+   goes up with the next send of that slice, and it is the one thing the
+   server needs from the phone to tell 「removed here」 from 「never heard of
+   here」 (supabase/schema.sql § slice_in). No record is null, and a send with
+   null is a merge that removes nothing -- 「知らない」は「同じ」ではない.
+
+   In memory, because the slices are (CLAUDE.md rule 22): a fresh launch has
+   no record and no slices, and the slice it brings down records its own. */
+var NET_BASE={};
+function netBaseKey(id, kind){ return String(id)+'.'+kind; }
+function netBaseOf(id, kind){ return NET_BASE[netBaseKey(id, kind)] || null; }
+function netBaseSet(id, kind, no){
+  if(no) NET_BASE[netBaseKey(id, kind)]=Number(no);
+  else delete NET_BASE[netBaseKey(id, kind)];
+}
+/* ONE SLICE UP, AND WHAT CAME BACK.
    -------------------------------------------------------------------------
-   The condition this piece of work is written under, and it is structural
-   rather than careful: 「この変更で localStorage からキーを一本も消さないこと。
-   同じキーを、今より少ない中身で書かない」 OWNER 2026-09-01, asked of a change
-   that touches people's languages a day before a release.
+   What this phone is holding (slMine -- never the picture kept for a launch
+   with no signal, so 「写しは絶対にサーバーへ戻らない」 holds here), when a
+   person last wrote it (LTOUCH), and which version it last agreed with.
 
-   Two things may happen to a key and no third: something that is not there is
-   PLACED, and something that is there is replaced by something that CONTAINS
-   it. Anything else is skipped and said out loud, so the worst outcome of a
-   wrong merge is a duplicate or a no-op. A duplicate can be fixed. What is
-   gone cannot.
+   The answer is the server's (§ slice_put):
+     said ''         it is up. Where the server put another phone's work in
+                     with it, `body` is the whole of what it now holds and
+                     this phone takes it -- unless a person has written the
+                     slice again while the answer was in the air, in which
+                     case theirs stays and goes up with the next press
+     said 'kept'     the server's copy could not be read, so nothing was
+     or 'shrank'     written and this phone keeps its own (「空」と「壊れて
+                     いる」は違う; never less than what was sent). It is still
+                     marked as a person's, so the next press sends it again.
 
-   `syMerge()` in www/sync.js already adds both sides and falls back to what is
-   on the phone whenever it cannot read either half, so this should never fire.
-   That is exactly why it is here: it costs one comparison, and the day it
-   fires is the day something upstream changed.
-
-   WHAT EACH SIDE IS, it asks slState() (www/core.js) -- the four answers
-   every reader of a slice gets. It used to parse for itself and measure
-   whatever it could not parse by its LENGTH, so a shorter name was refused
-   and a longer string of wreckage was let over a readable slice
-   (docs/scope/r73-audit.md § 2-4). Now: nothing unreadable goes over
-   anything; a copy on this phone that cannot be read takes the server's
-   (CLAUDE.md rule 22); a name is a name. */
-function netKeeps(kind, mine, put){
-  var s1=slState(kind, mine), s2=slState(kind, put), a, b, k;
-  if(s1.is==='none') return true;                /* placing, not replacing */
-  if(put===mine) return true;
-  if(s2.is==='wreck' || s2.is==='none') return false;
-  if(s1.is==='wreck' || s1.is==='plain') return true;
-  a=s1.v; b=s2.v;
-  if(a instanceof Array)
-    return (b instanceof Array) && b.length>=a.length;
-  if(a && typeof a==='object'){
-    if(!b || typeof b!=='object' || (b instanceof Array)) return false;
-    for(k in a)
-      if(Object.prototype.hasOwnProperty.call(a, k) &&
-         !Object.prototype.hasOwnProperty.call(b, k)) return false;
-    return true;
-  }
-  return String(put).length>=String(mine).length;
-}
-/* WHAT THE TWO SIDES NOW HOLD, written down so the next merge can tell a
-   removal from a thing this phone has not heard about. It is not anybody's
-   work and it is not a backup -- it is a copy of what BOTH sides already
-   have, and losing it costs one sync's worth of forgetting rather than any
-   data. Filed beside the slice (langWasKey in core.js), so deleting the
-   language takes it and lsWipeAcct, which counts the namespace rather than a
-   list, takes it when an account goes. */
-/* AND THE PICTURE THE SCREENS FALL BACK TO WITH NO SIGNAL, written from the
-   same moment and for the same reason: this is the one place in this file that
-   knows what the SERVER is holding for a slice. 「前に読み込んだ分は出て欲しい」
-   OWNER 2026-09-05. slGot() in www/core.js says what it may and may not be
-   read for -- it is on no road back up, and slMine() below is what keeps it
-   off one. */
-function netAgreed(id, kind, body, at){
-  slSettled(langKeyOf(id, kind));
-  try{
-    if(body==='') slRm(langWasKey(id, kind));
-    else slWr(langWasKey(id, kind), body);
-    slGot(langKeyOf(id, kind), body);
-  }catch(e){}
-  netAtSet(id, kind, at);
-}
-/* ---- AND WHICH VERSION OF THE SERVER'S THAT AGREEMENT WAS ----------------
-   `langWasKey` is the body the two sides last agreed on. This is the
-   SERVER'S mark on that same moment -- `slice.at` -- and it exists so that a
-   save does not have to read the dictionary back to find out whether anybody
-   else has written since. Mark unmoved means the server is still holding
-   `langWasKey`, and this phone already has that.
-
-   IT IS IN MEMORY AND IT IS NOBODY'S BELONGINGS. Losing it costs one read:
-   a fresh launch starts empty and the first save reads bodies exactly as it
-   always did. It is not written to localStorage, because a key there is a
-   thing store-check rightly asks 「which account is this」 of, and this is
-   not a thing that should have to answer (rule 22).
-
-   「知らない」 is not 「同じ」. No record means read. */
-var NET_AT={};
-function netAtKey(id, kind){ return String(id)+'.'+kind; }
-function netAtSet(id, kind, at){
-  var k=netAtKey(id, kind);
-  if(at) NET_AT[k]=String(at); else delete NET_AT[k];
-}
-function netAtHas(id, kind){ return !!NET_AT[netAtKey(id, kind)]; }
-function netAtSame(id, kind, row){
-  var k=netAtKey(id, kind);
-  return !!(row && row.at && NET_AT[k] && String(row.at)===NET_AT[k]);
-}
-/* ---- WHAT THE SERVER IS HOLDING FOR THESE SLICES, WITHOUT CARRYING BACK
-   THE ONES IT ALREADY AGREES WITH -----------------------------------------
-   Both roads that put a slice up -- a save (netSaveNow) and a launch
-   (netLangSync1) -- have to hand netSlice1() what the server has, and both
-   read every BODY to do it. That is 877 KB to add one word of 0.14 KB, and
-   at a launch it is the whole language read a SECOND time, right behind
-   netLangsWalk() reading it once. docs/reports/cost-2026-09-09.md 一・二.
-
-   WHAT THE READ IS FOR IS syMerge() AND THAT STAYS. It is the only thing
-   that keeps what a SECOND PHONE added when this one writes --
-   「そりゃあ両方足すだろ」 -- because `slice`'s primary key is
-   (language, kind) and an unmerged write simply wins. What changes is WHICH
-   BODIES are read, and nothing else.
-
-   The marks come first (`kind,no,at`, about a tenth of a kilobyte), and a
-   body only where its mark has MOVED since this phone last agreed. Where it
-   has not moved AND this phone still holds `langWasKey`, that is what the
-   server is holding -- it is already here, so there is nothing to fetch. Both
-   halves, because the mark says WHEN the two sides agreed and the record says
-   WHAT they agreed on; a mark with no record behind it answers nothing.
-
-   SO A SECOND PHONE IS ALWAYS READ. Two phones writing send two different
-   marks, so whichever landed second leaves a mark the other does not know,
-   and the loser reads and merges on its next save. A phone with no record
-   reads -- 「知らない」 is not 「同じ」.
-
-   ONE FUNCTION BECAUSE IT IS ONE QUESTION. Two copies of this would be two
-   answers to 「サーバーは今なにを持っているか」, and the wrong one would be
-   the one nobody is reading. */
-function netGotFor(id, sid, kinds, ok, bad){
-  var know=[], dunno=[], got={}, st={}, left=0, fell=false, i, k;
-  /* A MARK THIS PHONE HAS NEVER RECORDED ANSWERS NOTHING, so its body is
-     asked for outright -- and the two asks go out TOGETHER, because neither
-     needs the other's answer. One stage, whatever the mixture is. Sending
-     everything down the body road because one slice's mark is unknown would
-     drag the dictionary along for company; asking the marks first for a
-     slice with no record would be a round trip spent to learn nothing.
-     tools/slow-check.mjs holds the depth and the bytes. */
-  for(i=0;i<kinds.length;i++){
-    k=kinds[i];
-    if(netAtHas(id, k)) know.push(k); else dunno.push(k);
-  }
-  if(!know.length && !dunno.length){ ok({}); return; }
-  function bail(d, s2){ if(fell) return; fell=true; bad(d, s2); }
-  function step(){
-    if(fell || --left) return;
-    /* Of the ones this phone has a record for, the bodies of any whose mark
-       has MOVED -- somebody else has written those and they have to be
-       merged. The rest are `langWasKey`, which is here. */
-    var need=[], j, kk, was;
-    for(j=0;j<know.length;j++){
-      kk=know[j];
-      was=slMine(langWasKey(id, kk));
-      /* THE MARK ALONE DOES NOT ANSWER IT. 「サーバーは何を持っているか」 is
-         answered without a read only when BOTH halves are here: the mark has
-         not moved, AND this phone still holds the body the two sides agreed
-         on. A missing `langWasKey` is 「知らない」 and it was written down as
-         `''`, which is the string syMerge() reads as 「サーバーは何も持って
-         いない」 -- the same 「空」と「知らない」を同じ枝に入れる fault
-         CLAUDE.md 規則 11 is about. Where either half is missing this reads
-         the body, which is what it did before any of this existed. */
-      if(was===null || !netAtSame(id, kk, st[kk])){ need.push(kk); continue; }
-      got[kk]={body:was, no:st[kk].no, at:st[kk].at, ed:st[kk].ed};
-    }
-    if(!need.length){ ok(got); return; }
-    netSlices(sid, function(there){
-      var n;
-      for(n=0;n<need.length;n++) got[need[n]]=there[need[n]];
-      ok(got);
-    }, bail, need);
-  }
-  if(dunno.length) left++;
-  if(know.length) left++;
-  if(dunno.length)
-    netSlices(sid, function(there){
-      var n;
-      for(n=0;n<dunno.length;n++) got[dunno[n]]=there[dunno[n]];
-      step();
-    }, bail, dunno);
-  if(know.length)
-    netSlices(sid, function(rows){ st=rows; step(); }, bail, know, 'kind,no,at,ed');
-}
-var NET_SHRANK=[];
-var NET_SYNCING=false;
-/* ONE SLICE, BOTH WAYS, AND IT IS THE ONLY PLACE A SLICE GOES UP.
-   -------------------------------------------------------------------------
-   This was the body of the loop inside netLangSync1() and nothing else could
-   reach it, so the only moment a person's work went up was a LAUNCH -- twice
-   a session, from www/boot.js and from the door. 「保存としたらオンライン
-   おしまい」 OWNER 2026-09-04: a save has to arrive, and it could not,
-   because the road was written inside a walk over all twelve.
-
-   It is lifted out rather than copied. netLangSync1() below calls it twelve
-   times and netSaveNow() calls it for the slices that moved, and there is ONE
-   road: merge, keep, write, agree. A second function that only wrote would be
-   the phone overwriting whatever another one had added -- `slice`'s primary
-   key is (language, kind) and `no` is a counter that guards nothing, so an
-   unmerged write wins and 「そりゃあ両方足すだろ」 loses.
-
-   `got` is what the server is holding for this slice, or nothing.
-
-   AND A WRITE THAT DID NOT LAND IS SAID OUT LOUD. Both of the netSlicePut()
-   failures below used to call done(), exactly as a success does, so the one
-   request that carries a person's work could fail with nothing told to
-   anybody -- pressed on 2026-09-05: Save on the drawing screen, five POSTs of
-   /rest/v1/slice refused, no pop, the screen moved on and the toast said
-   saved. 「通信エラーなら進むわけねえだろ全部」 OWNER 2026-09-05. `bad` is
-   that answer, and it is the file's own `ok, bad` shape rather than a new
-   one. Which of the two a caller wants is the CALLER's, so both call sites
-   pass one and neither can inherit a swallow it did not ask for. */
-function netSlice1(id, sid, kind, got, done, bad, tries){
-  var mine, was, put, my, their, later, ed;
-  /* WHAT THIS PHONE HAS THAT THE SERVER MAY NOT KNOW ABOUT, and never the
-     picture kept for a launch with no signal -- slGot() in www/core.js says
-     why. This is the only function that puts a slice up, so slMine() here is
-     the whole of 「写しは絶対にサーバーへ戻らない」. */
-  mine=slMine(langKeyOf(id, kind));
-  /* What the two sides last agreed this slice was. It is the only thing
-     that tells 「somebody removed this here」 from 「this phone has not
-     been told about it yet」 -- the two look identical from here and
-     want opposite answers. No record means no dropping, which is what
-     this did before there was one. */
-  was=slMine(langWasKey(id, kind));
-  /* WHICH SIDE WAS CHANGED LATER, for the one thing the two cannot both keep
-     (www/sync.js § syMerge). This phone's is when a person here last wrote
-     this slice; the server's is when anybody did, on any phone. */
-  my=slTouchedAt(langKeyOf(id, kind));
-  their=(got && got.ed) || 0;
-  later=their>my;
-  ed=later? their : my;
-  put=syMerge(kind, mine===null? '' : mine, got? got.body : '',
-              was===null? '' : was, later);
-  if(put!=='' && put!==mine){
-    /* and only where it keeps everything that is already there */
-    if(netKeeps(kind, mine, put)){
-      slMend(langKeyOf(id, kind));
-      slWr(langKeyOf(id, kind), put);
-      /* Something came back, so say so: the caller reads the screens again. */
-      if(put===''){ done(true); return; }
-    } else {
-      /* Skipped, and remembered rather than swallowed: a merge that came
-         back smaller is a thing somebody has to be told about, and the
-         phone keeps what it had in the meantime. */
-      NET_SHRANK.push(id+'.'+kind);
-      done(false); return;
-    }
-    /* Both sides are holding the same string now, so that is what they
-       agreed. Recorded here rather than after the write, because there is
-       nothing to write. */
-    if(got && put===got.body){ netAgreed(id, kind, put, got.at); done(true); return; }
-    netSlicePut(sid, kind, put, ed, their,
-                function(at){ netAgreed(id, kind, put, at); done(true); },
-                /* A write that did not land agreed nothing, and the record
-                   stays as it was. What happens next is the caller's --
-                   unless the server said `stale` (netSliceAgain). */
-                function(d, st, m){
-                  if(m==='stale'){ netSliceAgain(id, sid, kind, done, bad, tries); return; }
-                  bad(d, st); });
-    return;
-  }
-  /* The stamp only where the server is KNOWN to be holding `put`. An empty
-     merge over a server that holds something is not an agreement about that
-     something, and recording a mark there would tell the next save to skip a
-     read it needs. */
-  if(put==='' || (got && put===got.body)){
-    netAgreed(id, kind, put, (got && put===got.body)? got.at : '');
-    done(false); return;
-  }
-  netSlicePut(sid, kind, put, ed, their,
-              function(at){ netAgreed(id, kind, put, at); done(false); },
-              function(d, st, m){
-                if(m==='stale'){ netSliceAgain(id, sid, kind, done, bad, tries); return; }
-                bad(d, st); });
-}
-/* ANOTHER PHONE WROTE THIS SLICE BETWEEN THIS ONE READING IT AND WRITING IT
-   (the server said `stale`, supabase/schema.sql § keep_newer). What this
-   phone put together is missing whatever that was, so it is not written: the
-   slice is read again -- its body, whatever the mark said -- and put together
-   again, by the same netSlice1(). Three times and no more: a slice two phones
-   are both writing every second is a slice somebody has to be told about,
-   and the answer then is the ordinary failure. */
-function netSliceAgain(id, sid, kind, done, bad, tries){
-  var n=(tries||0)+1;
-  if(n>3){ bad(null, 0); return; }
-  netAtSet(id, kind, '');
-  netSlices(sid, function(there){
-    netSlice1(id, sid, kind, there[kind], done, bad, n);
-  }, function(d, st){ bad(d, st); }, [kind]);
+   done(moved) -- moved is true when what the server sent back changed a
+   slice here, which is the caller's sign to read the screens again. */
+function netSliceUp(id, kind, done, bad){
+  var k=langKeyOf(id, kind), mine=slMine(k);
+  if(mine===null){ done(false); return; }
+  netPut('slice', id,
+    {kind:kind, body:mine, ed:slTouchedAt(k), base:netBaseOf(id, kind), press:NET_PRESS},
+    function(a){
+      var now=mine, moved=false;
+      if(a.said!==''){ done(false); return; }
+      netBaseSet(id, kind, a.no);
+      if(typeof a.body==='string') now=a.body;
+      if(slMine(k)===mine){
+        /* the server's answer, written by the app and not by a person */
+        if(now!==mine){ slMend(k); slAsApp(slWr, [k, now]); moved=true; }
+        slSettled(k);
+        slGot(k, now);
+      }
+      done(moved);
+    }, bad);
 }
 /* ---- and the moment a save reaches the server --------------------------
    「保存がサーバーに上がる時 →『保存を押したら』」 OWNER 2026-09-24,
@@ -2710,28 +2494,18 @@ function netSliceAgain(id, sid, kind, done, bad, tries){
    that has none -- a word deleted from the list, a letter slot added
    (bkTouch, www/backup.js, which does not wait).
 
-   IT USED TO BE A BURST. Every save started a timer, NET_UPMS of quiet was
-   what separated 「still typing」 from 「stopped」, and the language went up
-   1.2 seconds after the last stroke whether or not anybody had pressed Save
-   -- so a drawing somebody then said 「いいえ」 to had already gone. The timer
-   is gone and so is netSaveUp(); a screen with a Save holds what is pressed
-   on it as its draft until the Save (www/core.js § langWrites).
-
-   WHICH SLICES MOVED IS ASKED OF WHAT IS ALREADY WRITTEN DOWN, and not of the
-   caller. Each slice is compared against `langWasKey`, which is what this
-   phone and the server last agreed it was. A slice equal to that has nothing
-   to say. That record is kept for the merge above and is exactly the
-   question being asked here, so nothing new is stored to answer it.
+   WHICH SLICES GO is the ones a PERSON wrote since they were last up
+   (www/core.js § LTOUCH): a slice the app worked out for itself -- the free
+   alphabet topped up, a migration -- is not anybody's to send, and goes with
+   the next thing a person writes in it.
 
    ONE SEND AT A TIME, AND A PRESS IS NEVER DROPPED. A press that arrives
    while a send is in the air is QUEUED (NET_NEXT) and runs the moment the
-   first lands or falls -- it used to answer done(true) and send nothing, so a
-   second press inside the round trip was 「保存しました」 for slices that had
-   not moved. netLangSync() below shares the one flag and hands over the same
-   way. */
-var NET_NEXT=null;
+   first lands or falls. netLangSync() below shares the one flag and hands
+   over the same way. */
+var NET_NEXT=null, NET_SYNCING=false;
 /* ONE NUMBER PER SAVE: minted where a send starts (here, and netLangSync()
-   below), and put on every slice that send writes (netSlicePut). */
+   below), and put on every slice that send writes. */
 var NET_PRESS=null;
 function netSaveNext(){
   var ws=NET_NEXT;
@@ -2750,51 +2524,29 @@ function netSaveNext(){
 
    THE ANSWER TO A PRESS IS THE WIRE AND NOTHING ELSE.
    「保存ボタン押して保存ができるかできないかは通信の有無だけだからな？」
-   OWNER 2026-09-05.
-
-   Every way out of here used to say `done(true)` -- a slice that had not
-   moved, a language that is not this account's to write -- on the grounds
-   that those are not a network being down. That reasoning is right about a
-   press nobody waits on and wrong about a Save: it is the difference between 「there was
-   nothing to send」 and 「it is saved」, and the button says the second one.
-   With the phone in flight mode the profile screen therefore saved, said so,
-   and went back, having touched nothing.
-
-   So there are two exits and no third. Signed OUT is the one road that is
-   still true without asking: there is no server for this phone yet, the
-   language lives here, and nothing was ever going to go up. Everything else
-   asks -- either by sending what moved, or, when nothing moved, by putting
-   the smallest question this account has to the server through none() below
-   and letting the answer stand for the press. */
+   OWNER 2026-09-05. When nothing moved, the smallest question this account
+   has is put to the server through none() below and its answer stands for
+   the press -- 「there was nothing to send」 is not 「it is saved」. */
 function netSaveNow(done){
-  var id=langId, kinds=[], i, k, mine, was;
+  var id=langId, kinds=[], i;
   function no(d, s, m){
     NET_SYNCING=false;
     netPop(d, s, m, netSaveNow);
     if(done) done(false);
     netSaveNext();
   }
-  /* Nothing to send, and somebody pressed. The wire is the question, so the
-     wire is asked: one row of one column, the cheapest thing this account can
-     ask for, and its content is not read. A failure lands in `no` and is
-     therefore the same pop and the same 再接続 as every other failed save. */
   function none(){
     if(!done) return;
     netLangAsk('', function(){ done(true); }, no);
   }
-  /* Already going up. A second send on top of the first would race it, so
-     this one waits its turn (§ NET_NEXT above) rather than answering for a
-     send it did not make. */
   if(NET_SYNCING){ (NET_NEXT=NET_NEXT||[]).push(done||null); return; }
-  /* No account: the language is on the phone and has nowhere else to be. */
   if(!netSignedIn()){ if(done) done(true); return; }
   /* NOT ANSWERED YET IS NOT 「NOTHING TO SEND」. On a launch the language on
      the screen is the picture until its slices land, and langLocked()
      (www/core.js) refuses every save onto it -- so a press in that moment
      saved nothing, and asking the wire here would answer 「保存しました」 for
-     it. It is told what a press with no signal is told. Somebody else's
-     language is the other kind of locked: nothing of this phone's goes into
-     it, and the press is a question about the wire, as it was. */
+     it. Somebody else's language is the other kind of locked: nothing of this
+     phone's goes into it, and the press is a question about the wire. */
   if(langLocked()){
     if(!Object.prototype.hasOwnProperty.call(LOWN, String(id||''))){
       if(done) no(null, 0, '');
@@ -2802,57 +2554,38 @@ function netSaveNow(done){
     }
     none(); return;
   }
-  for(i=0;i<SLICES.length;i++){
-    k=SLICES[i];
-    /* A slice a PERSON wrote (core.js § LTOUCH) and that has moved since the
-       two sides last agreed. Moved alone is not enough: the app's own
-       top-ups move a slice too, and they are not anybody's to send. */
-    if(!slTouched(langKeyOf(id, k))) continue;
-    mine=slMine(langKeyOf(id, k));
-    was=slMine(langWasKey(id, k));
-    if((mine===null? '' : mine)!==(was===null? '' : was)) kinds.push(k);
-  }
+  for(i=0;i<SLICES.length;i++)
+    if(slTouched(langKeyOf(id, SLICES[i]))) kinds.push(SLICES[i]);
   if(!kinds.length){ none(); return; }
   NET_SYNCING=true;
   NET_PRESS=uuid4();
-  netLangRow(id, function(sid){
-    /* Only the slices that moved, and of those only the bodies the server
-       has changed since this phone last agreed -- netGotFor() above is the
-       one place that decides which those are, and the launch road asks it
-       the same question. */
-    netGotFor(id, sid, kinds, send, no);
-
-    /* ---- THE SLICES THAT MOVED GO TOGETHER --------------------------
-       「なんか全体的に遅くない？」 OWNER 2026-09-08 (143). This was a walk
-       too: one slice up, wait, the next. A save that touched three of them
-       was three round trips one after another and measured four deep with
-       the read in front of it (tools/slow-check.mjs). None of the three
-       needed either of the others' answers -- netLangSync1() above has the
-       whole of why.
-
-       A SLICE THAT DID NOT LAND STILL DOES NOT AGREE. It used to stop the
-       ones behind it as well; they are already in the air now, and each
-       still records its own agreement or does not -- so pressing save again
-       sends what is still missing, exactly as before. What a PERSON is told
-       is one pop and not three: the first fall is the answer and the rest
-       are the same network. */
-    function send(there){
-      var left=kinds.length, fell=false, i;
-      function one(){
-        if(fell || --left) return;
-        NET_SYNCING=false;
-        if(done) done(true);
-        netSaveNext();
-      }
-      function stop(d, s2){
-        if(fell) return;
-        fell=true;
-        no(d, s2, '');
-      }
-      for(i=0;i<kinds.length;i++)
-        netSlice1(id, sid, kinds[i], there[kinds[i]], one, stop);
-    }
+  netSlicesUp(id, kinds, function(){
+    NET_SYNCING=false;
+    if(done) done(true);
+    netSaveNext();
   }, no);
+}
+/* THE SLICES THAT MOVED GO TOGETHER -- none of them needs another's answer
+   (「なんか全体的に遅くない？」 OWNER 2026-09-08). A slice that did not land
+   is still marked as a person's, so pressing again sends what is still
+   missing; what a PERSON is told is one pop and not three: the first fall is
+   the answer and the rest are the same network. What came back is read into
+   the screens once, at the end, and only for the open language -- the
+   globals are 「the language in front of me」. */
+function netSlicesUp(id, kinds, ok, bad){
+  var left=kinds.length, fell=false, moved=false, i;
+  function one(m){
+    if(m) moved=true;
+    if(fell || --left) return;
+    if(moved && id===langId){ langLoad(); render(); }
+    ok(moved);
+  }
+  function stop(d, s2, m){
+    if(fell) return;
+    fell=true;
+    bad(d, s2, m);
+  }
+  for(i=0;i<kinds.length;i++) netSliceUp(id, kinds[i], one, stop);
 }
 /* EVERY LANGUAGE THIS PERSON MADE, and it used to be the one that happened to
    be open. That is not a smaller version of the same thing: a second language
@@ -2864,12 +2597,11 @@ function netSaveNow(done){
    THE OPEN ONE FIRST, and then the rest. Sync is fired at launch and never
    waited for, so the order decides which language is right first on a phone
    that has just been opened -- and that is the one in front of the person.
-   One at a time rather than all at once: they share NET_SYNCING, the merge
-   writes localStorage, and a launch that fires eleven requests at once on a
+   One at a time rather than all at once: they share NET_SYNCING, and a launch that fires eleven requests at once on a
    bad connection is a launch that finishes none of them.
 
-   A language that is only READ is not in this list at all. `syMerge` adds
-   both sides, so one pass would put something into a language somebody else
+   A language that is only READ is not in this list at all. A slice sent is
+   put together with what is there, so one pass would put something into a language somebody else
    wrote -- 「トキポナに文字足したらトキポナじゃないです」 OWNER 2026-08-25 --
    and the write half would be this phone trying to edit their rows. */
 /* NOT 「WHOSE IS IT」 BUT 「MAY THIS PHONE PUT IT UP」, and they are different
@@ -2949,90 +2681,27 @@ function netLangSync(then){
   if(!ids.length){ done(false); return; }
   NET_SYNCING=true;
   function next(){
+    var id, kinds=[], i;
     if(at>=ids.length){ NET_SYNCING=false; done(moved); netSaveNext(); return; }
-    var id=ids[at]; at++;
+    id=ids[at]; at++;
+    /* THE SLICES A PERSON WROTE, and not all twelve -- the same question the
+       save asks (www/core.js § LTOUCH). What the walk drew and typed was
+       written by the person, signed out, and is marked; the free alphabet's
+       slots and a migration are not, and go up with the next thing a person
+       writes in that slice. */
+    for(i=0;i<SLICES.length;i++)
+      if(slTouched(langKeyOf(id, SLICES[i]))) kinds.push(SLICES[i]);
     NET_PRESS=uuid4();
-    netLangSync1(id, function(m){ if(m) moved=true; next(); });
+    /* The row first, even with nothing to send: for the walk's language at the
+       door, the insert IS the road to the answer (§ langMineIds above). A
+       launch WALKS ON past a language that did not go -- the launch is its own
+       one of the places a pop comes from, and www/boot.js holds it. */
+    netLangRow(id, function(){
+      if(!kinds.length){ next(); return; }
+      netSlicesUp(id, kinds, function(m){ if(m) moved=true; next(); }, function(){ next(); });
+    }, function(){ next(); });
   }
   next();
-}
-/* One language, both ways. Read, merge, write back whatever moved.
-   `langKeyOf(id, …)` and not `langKey(…)`: this is asked about a language
-   that may not be the open one, which is the whole of the change. */
-function netLangSync1(id, done){
-  /* THE SLICES A PERSON WROTE, and not all twelve (www/core.js § LTOUCH) --
-     the same question the save road asks. What the walk drew and typed was
-     written by the person, signed out, and is marked; the free alphabet's
-     slots, a migration, and a slice an older version left on the disk that
-     nothing here has written (`lang`, r63-audit B3) are not, and go up only
-     with the next thing a person writes in that slice. */
-  var mine=[], i;
-  for(i=0;i<SLICES.length;i++)
-    if(slTouched(langKeyOf(id, SLICES[i]))) mine.push(SLICES[i]);
-  netLangRow(id, function(sid){
-    /* THE SECOND READ OF THE WHOLE LANGUAGE, and it is on every launch.
-       netLangsWalk() has just brought this language down and recorded what
-       the two sides agreed; this then read all twelve bodies again to merge
-       them against themselves -- 1.75 MB of a 1.87 MB launch on a 5,000-word
-       language, half of it for nothing. docs/reports/cost-2026-09-09.md 二.
-       netGotFor() asks the marks first, so a slice the two sides already
-       agree on costs nothing here. */
-    if(!mine.length){ done(false); return; }
-    netGotFor(id, sid, mine, function(there){
-      /* ---- ALL TWELVE AT ONCE, NOT ONE AFTER ANOTHER --------------------
-         「なんか全体的に遅くない？」 OWNER 2026-09-08 (143). This was a walk:
-         slice one went up, and only when its answer came back did slice two
-         go. Measured with tools/slow-check.mjs, that made a launch EIGHT
-         round trips deep and a save four -- and not one of the twelve
-         questions needed any of the others' answers.
-
-         They are independent by construction. Each one merges what this
-         phone has against what the server has for THAT kind, writes its own
-         key, and records its own agreement; nothing in netSlice1() reads
-         another slice. So the order was never load-bearing -- it was a `for`
-         loop that happened to be written with a callback in it.
-
-         WHAT A FAILURE MEANS IS UNCHANGED. It stopped the walk before, so
-         the ones already up stayed up and the rest were not sent; now the
-         rest are already in the air, and each one still records its own
-         agreement or does not. Either way the next save sends what is still
-         missing, which is what netAgreed() is for. */
-      var left=mine.length, moved=false, i;
-      function step(){
-        /* The last one in is the one that goes on. Each of the twelve calls
-           this exactly once, whichever way it went. */
-        if(--left) return;
-        if(moved && id===langId){
-          /* Something came back, so what the screens are holding is older
-             than what is in storage. Read it in the way langOpen() does
-             rather than patching each global by hand.
-             ONLY for the open one: the globals are 「the language in front
-             of me」, and filling them from another language is that language
-             appearing on the screen somebody is standing on. */
-          langLoad();
-          render();
-        }
-        /* Whether this language's page may be read by anybody else USED TO
-           BE SENT FROM HERE, once a launch, out of the phone's own `hide`.
-           It is not sent at all any more: the answer is the server's column
-           and this road only ever READS it (netLangsDown, netLangBack).
-           「端末に hide の存在があるわけないやろ」 OWNER 2026-09-08. */
-        done(moved);
-      }
-      for(i=0;i<mine.length;i++)
-        netSlice1(id, sid, mine[i], there[mine[i]], function(m){
-          if(m) moved=true;
-          step();
-        }, /* A LAUNCH WALKS ON, and it did before `bad` existed too -- this
-              is that same behaviour, written where it is chosen rather than
-              buried in netSlice1(). The launch is its own one of the four
-              places a pop comes from and www/boot.js already holds it; what
-              this line has not been pressed about is a launch where the
-              slices are the only thing that fails. Whoever presses that
-              decides it. */
-           function(){ step(); });
-    }, function(){ done(false); });
-  }, function(){ done(false); });
 }
 
 /* ---- the timeline, when there is one -----------------------------------
@@ -4928,24 +4597,11 @@ function netUpVoice(uid, pid, post, ok){
    draft written with no signal already has the name it will go up under. */
 function netDraftUp(d, ok, bad){
   if(!d || !d.id){ bad && bad(null, 0); return; }
-  var row={id:d.id, author:netUid(), body:netDraftBody(d)};
-  /* The update first and the insert only if it matched nothing. The other
-     order is an insert that fails on the primary key every time after the
-     first, and a refusal that is expected is a refusal nobody reads. Two
-     requests happen once per draft; every save after it is one. */
   /* AND WHEN IT WAS WRITTEN -- `d.at`, the keep -- so that of two phones
      keeping the same draft the later keep stands (supabase/schema.sql §
      keep_newer). `ok` is handed the row as it now is. */
-  row.ed={body:d.at||0};
-  netSend('PATCH', '/rest/v1/draft?id=eq.'+encodeURIComponent(d.id),
-          {body:row.body, updated_at:(new Date()).toISOString(), ed:row.ed}, netTok(),
-    function(r){
-      if(r && r.length){ ok && ok(r[0]); return; }
-      netSend('POST', '/rest/v1/draft', row, netTok(),
-              function(r2){ ok && ok((r2 && r2.length)? r2[0] : null); },
-              bad || function(){});
-    },
-    bad || function(){});
+  netPut('draft', d.id, {body:netDraftBody(d), ed:{body:d.at||0}},
+          function(row){ ok && ok(row); }, bad || function(){});
 }
 /* Everything of a draft except its name, which is the column and not a field
    of the body. The same shape as netBody() above and for the same reason. */

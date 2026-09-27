@@ -885,9 +885,15 @@ answer (`keepSave()`); 「いいえ」 puts the language back as the screen open
 (`langHeldBack()`). On a screen with no Save the press is the save:
 `bkTouch()`, the one place all seven writers pass through, sends once the
 press has finished. `netSaveNow()` (`www/net.js`) is the one send, the slices
-that moved, one short read and one short write; nothing goes up because
+a person wrote, one write each and no read; nothing goes up because
 typing stopped — there is no timer. `keep-check` holds both halves. `netLangSync()` is the door's (`netTook()`) and a new
-language's (`langNew()`), and it is the same road: both call `netSlice1()`, which is the only thing that puts a slice up. `SLICES` in `core.js` is the list of them —
+language's (`langNew()`), and it is the same road: both call `netSliceUp()`, which is the only thing that puts a slice up, through `netPut()` — the one save for a slice, a language's columns, a draft, the profile and the settings, with one answer.
+**Where two phones wrote the same slice is decided on the server and nowhere
+else** 「一本化してくれ」 OWNER 2026-09-27: the phone sends what it holds, when a
+person last wrote it and which version it last agreed with, and
+`slice_in()` in `supabase/schema.sql` puts the two together — lists both
+added, a value the later change's — and hands back what it now holds.
+`rls-check` holds the rule on the real SQL. `SLICES` in `core.js` is the list of them —
 **count them off that and not off a line here**, which has said eleven and has
 said twelve. `lingua.langs.<uid>` says which languages that account has;
 `lingua.set` is this handset's setup and `lingua.set.<uid>` that account's
@@ -1197,8 +1203,8 @@ where they were, so pressing save again is a save that can land.
 **NOTHING HOLDS THIS, AND THAT IS SAID HERE SO SILENCE IS NOT READ AS A
 CHECK.** No check in the gate makes `localStorage` throw. It is a rule a
 person holds by pressing save on a phone with no room left. **And the server
-half still says nothing** -- a slice that `netSlicePut()` could not put up is
-kept and tried again, silently; `docs/BACKLOG.md` carries it.
+half still says nothing** -- a slice that `netSliceUp()` could not put up
+stays marked and goes again with the next press, silently; `docs/BACKLOG.md` carries it.
 
 ### 12. A card of a post is a picture of that post
 
@@ -1825,11 +1831,12 @@ nothing is made on it, nothing is saved to it, and **it never goes back to the
 server. The road is one way.**
 
 **The one-way line is what stops it becoming a second answer to 「what is this
-language」.** A copy that can travel back is a copy that can win. `syMerge()`
-(`www/sync.js`) is where what this phone holds meets the server, and it tells
-wreckage from empty (`slState()` in `core.js`, the one place every reader of
-a slice asks): a copy it cannot parse takes the server's,
-and a server row it cannot parse is not written over. What keeps the picture
+language」.** A copy that can travel back is a copy that can win. `slice_in()`
+(`supabase/schema.sql`) is where what this phone holds meets the server, and
+it tells wreckage from empty (`slice_state()`, the same four answers
+`slState()` in `core.js` gives every reader of a slice on the phone): a copy
+it cannot parse takes the server's, and a server row it cannot parse is not
+written over. What keeps the picture
 off that road is `slMine()` — the up road asks it, and the picture is not in
 it. With no road back, a copy that is wrong costs the copy and nothing else.
 
@@ -2267,7 +2274,6 @@ the string and the function — and `act-check` fails on either half alone.
 | `www/rec.js` | the voice on a post — thirty seconds. It goes into the `post-media` bucket the moment it is recorded (`voKeep()`) and nothing is written on the phone 「端末に持たせるものはない」; a draft carries the path, and `netUpVoice()` (`www/net.js`) makes it the post's `body.vu`. `voRemote()` is how one name tells a path on the server from a file an earlier version recorded (ch 25) |
 | `www/sheet.js` | the sheet somebody writes a word on paper on; what is printed on it is `Lingua` and the page, `n/N` (ch 26) |
 | `www/store.js` | the App Store: what `LinguaStore.swift` is asked and what comes back (ch 26) |
-| `www/sync.js` | putting a language and what this phone is holding back together — two phones can still both edit one language, so the merge stays (ch 26) |
 | `www/mod.js` | the other side of a report — what somebody with the flag sees |
 | `www/cal.js` | the calendar: a month is a word (ch 27) |
 | `www/push.js` | Apple's notifications: the one window onto `LinguaPush.swift` — the address, the switches for each kind, and what tapping one opens (ch 28) |
@@ -2428,9 +2434,9 @@ be a change somebody made on purpose.
   number in its opening comment. One
   chapter per file — a file that grew to hold five was split along those banners,
   not along anything new. The numbering has gaps where a chapter was closed; it is
-  a shelf, not a count. **Three files say 26** (`sheet.js`, `store.js`,
-  `sync.js`), which is the shelf saying two of them are in the wrong place;
-  which one keeps the number is the owner's and `docs/BACKLOG.md` carries it.
+  a shelf, not a count. **Two files say 26** (`sheet.js`, `store.js`),
+  which is the shelf saying one of them is in the wrong place; which one keeps
+  the number is the owner's and `docs/BACKLOG.md` carries it.
   Read the file's own first line for its number rather than a range here.
 - `www/glyph.js` is the largest file in `www/` after `index.html` (the font
   writer and the drawing surface). Grep for

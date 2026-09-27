@@ -746,10 +746,6 @@ function wipeLangsHere(id){
   var j;
   for(j=0;j<SLICES.length;j++){
     slRm(langKeyOf(id, SLICES[j]));
-    /* and what this phone and the server last agreed that slice was. It is
-       filed beside the slice and goes with it: a record of a language that
-       is no longer here describes nothing. */
-    slRm(langWasKey(id, SLICES[j]));
   }
   /* Its row, and nothing else's. langStore() writes the index back out. */
   delete LANGS[id];

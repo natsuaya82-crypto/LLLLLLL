@@ -1619,7 +1619,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
   ものを一箇所にしています。**言語も単語も文字も、失敗した瞬間そのまま画面に
   残ります**（`LSL`・`WORDS`・`LETTERS` は触られません）。
 
-  **サーバー側の失敗はまだ黙っています。**`netSlicePut()` の失敗の道は
+  **サーバー側の失敗はまだ黙っています。**~~`netSlicePut()`~~ の失敗の道は
   `www/net.js` で、このセッションの持ち場ではありません。**そこは残って
   います。**
 
@@ -1650,7 +1650,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
   オーナーの言葉です。**編集と読み替えて広げないでください。**
 
   **この写しは絶対にサーバーへ戻りません。片道です。**理由は
-  `docs/HANDOVER.md` 七章にあります ── `www/sync.js` の `syMerge()` は
+  `docs/HANDOVER.md` 七章にあります ── ~~`www/sync.js`~~ の ~~`syMerge()`~~ は
   **壊れた写しでサーバーの正しいほうを上書きするバグ**です。読めない側を
   「無い」と同じに扱っています。**戻る道があるかぎり、同じ形の事故が起きます。**
   戻る道が無ければ、写しが壊れていても失われるのは写しだけです。
@@ -1809,7 +1809,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
 
 ### 同期でぶつかったら、後から「直した」ほうが残るべき。いまは後から「繋がった」ほうが残る
 - Date: 2026-09-04
-- Area: 二台以上で同じアカウントを使っているときの同期（`www/sync.js`）
+- Area: 二台以上で同じアカウントを使っているときの同期（~~`www/sync.js`~~）
 - Decision:
 
   ```
@@ -1835,16 +1835,16 @@ the reasoning — a reason can be re-derived, a decision cannot.
   一覧は両方足されるため消えません。
 
   **これは `docs/EXPIRY.md` 10番が「仕様どおり」と書いていたものです。**
-  `www/sync.js` の冒頭と `docs/DATA_SAFETY.md` に「値のぶつかりは iPhone の側を
+  ~~`www/sync.js`~~ の冒頭と `docs/DATA_SAFETY.md` に「値のぶつかりは iPhone の側を
   返す」と明記されていますが、**オーナーはその仕様を今日いま見直しました。**
-- Affected features: 同期（`www/sync.js`）
+- Affected features: 同期（~~`www/sync.js`~~）
 - Affected data: **増えます。**直した時刻を持つ必要があります。**どの粒度で
   持つか（欄ごとか、スライスごとか）は決まっていません。**
 - Affected docs: この項目、`docs/EXPIRY.md` 10番、`docs/DATA_SAFETY.md`、
-  `www/sync.js` の冒頭
+  ~~`www/sync.js`~~ の冒頭
 - Implementation status: **実装（2026-09-23、`claude/r60-up`）。実機未確認。**
   書き込みは人が直した時刻を持って行き、サーバーは新しい時にだけ受け取る
-  （`supabase/schema.sql` § `keep_newer`、`www/sync.js` § `syMerge`）。
+  （`supabase/schema.sql` § `keep_newer`、~~`www/sync.js`~~ § ~~`syMerge`~~）。
   **粒度はオーナーが決めていない。**r60 は「一度に送る単位ごと」に置いた ──
   言語は欄（スライス）ごと、設定は項目ごと、プロフィールは欄ごと、下書きは
   一つごと。オーナーの確認待ち。
@@ -4272,7 +4272,7 @@ instead of appearing here.
    空の言語を作る（それが「言語ゼロ」という状態がこのアプリに無いということ）。
    消せないなら、一覧の最後の行だけ押せない。
 2. **サーバの行も消すか。** 「基本は全部サーバー管理」なら消す。
-   消さないと、次に `netLangSync()` が走った瞬間 **`syMerge` が両方足して
+   消さないと、次に `netLangSync()` が走った瞬間 **~~`syMerge`~~ が両方足して
    帰ってくる** ── 消したはずの言語が戻る。**ここは間違えると
    「消えない削除」になる。**
 3. **バックアップの file はどうするか。** ~~`bkDropAll()`~~ は全部消す道しか無い。
@@ -4401,7 +4401,7 @@ something was restructured」であり、**理由を四つ挙げて禁じてい�
   そして「じゃないといつまでもこれになる」── 範囲が決まっていないことそのものが
   費用だと言っている。決めない自由は無い。
 
-- Affected features: `www/sync.js`、`www/net.js`（`netLangRow`/`netSlices`/
+- Affected features: ~~`www/sync.js`~~、`www/net.js`（`netLangRow`/`netSlices`/
   `netSlicePut`/`netLangSync`）、`www/boot.js`、`www/backup.js`、
   オンボーディングの扉（`www/onboard.js`）、最初の言語が作られる所
   （`www/core.js` の最上位）。

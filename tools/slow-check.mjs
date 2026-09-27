@@ -194,19 +194,18 @@ function fakeNet(lat){
        takes -- so a save reading the dictionary back and a save reading a
        mark measured the same. It keeps what was written now, and answers the
        way PostgREST does: only the columns `select` asked for. */
+    /* one slice up (supabase/schema.sql § slice_put): kept, and answered
+       the way the server answers a phone that is the only writer */
+    if (p === '/rest/v1/rpc/slice_put') {
+      var f, hit = null;
+      for (f = 0; f < SL.length; f++)
+        if (SL[f].language === body.p_lang && SL[f].kind === body.p_kind) hit = SL[f];
+      if (hit) { hit.body = String(body.p_body); hit.no = (hit.no || 0) + 1; hit.at = new Date().toISOString(); }
+      else SL.push(hit = { language: body.p_lang, kind: body.p_kind, body: String(body.p_body),
+                           no: 1, at: new Date().toISOString() });
+      return { no: hit.no, said: '', body: null };
+    }
     if (p === '/rest/v1/slice') {
-      if (m === 'POST') {
-        var rw = (body instanceof Array) ? body : [body], q, r, f, hit;
-        for (q = 0; q < rw.length; q++) {
-          r = rw[q]; hit = null;
-          for (f = 0; f < SL.length; f++)
-            if (SL[f].language === r.language && SL[f].kind === r.kind) hit = SL[f];
-          if (hit) { hit.body = r.body; hit.no = r.no; hit.at = r.at; }
-          else SL.push({ language: r.language, kind: r.kind,
-                         body: r.body, no: r.no, at: r.at });
-        }
-        return SL;
-      }
       var want = asked(qs(u, 'language'))[0] || '';
       var kinds = asked(qs(u, 'kind'));
       var cols = (qs(u, 'select') || 'kind,body,no').split(',');

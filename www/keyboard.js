@@ -87,8 +87,9 @@ function kbBoardsOf(k){
   return null;
 }
 /* WHICH BOARD THIS IS, and it is a field because nothing else on a board says
-   so. Two copies of one language are put back together by www/sync.js, which
-   asks syKeyOf() what makes two rows the same row -- a word is its headword,
+   so. Two copies of one language are put back together by the server
+   (supabase/schema.sql § slice_arr), which asks slice_key() what makes two
+   rows the same row -- a word is its headword,
    a letter is its id, and everything else is its own JSON. A board had no id,
    so the JSON was the whole of it: a board touched here differed from the
    server's copy by a byte and the two were kept as two, every launch, so a
@@ -148,8 +149,8 @@ function kbId(){ KB_SEQ++; return 'k'+Date.now()+'_'+KB_SEQ; }
    AND A BOARD WEARING THE ID THIS READER MINTED IS STILL THAT BOARD, which
    is the half the first version got wrong. On the real launch the two never
    meet while one of them is bare: kbRead() stamps the disk copy, saveKb()
-   writes the stamped one into LSL, and netSlice1()'s slMine() hands syMerge()
-   THAT -- so both sides carry an id by the time they are in one array, and
+   writes the stamped one into LSL, and netSliceUp()'s slMine() hands the
+   server THAT -- so both sides carry an id by the time they are in one array, and
    the join above could not fire. Measured, not read: `(none)` on the disk,
    `bfzcp3y_1714` after kbRead(), the same after saveKb(), and two boards out
    of the merge. kbMinted() is what tells the two kinds of id apart, and it
@@ -293,8 +294,8 @@ function migrateKbFree(){
    「無料の分も全部入らないとダメでしょ」 OWNER 2026-09-04.
 
    docs/DATA_SAFETY.md has the sentence: *a slice the app has never written is
-   absent*. netLangSync1() reads an absent one as '' and takes the server's
-   copy down rather than pushing a null up, and kbRead() turns a missing key
+   absent*. netSliceUp() sends nothing for an absent one and netLangFill()
+   takes the server's copy down rather than a null going up, and kbRead() turns a missing key
    and a stored `null` into the same empty KB, which is what kbResetGo() means
    by clearing one. */
 /* EVERY CHANGE TO A KEYBOARD ENDS HERE, AND ON A BOARD'S PAGE IT IS THAT

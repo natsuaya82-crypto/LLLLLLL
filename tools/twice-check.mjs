@@ -78,16 +78,14 @@ await pg.evaluate(() => {
       }, 250);
       return;
     }
-    if (method === 'POST' && p.indexOf('/rest/v1/slice') === 0){
-      var rows = (body instanceof Array) ? body : [body], k, r, f, hit;
-      for (k = 0; k < rows.length; k++){
-        r = rows[k]; hit = null;
-        for (f = 0; f < S.slice.length; f++)
-          if (S.slice[f].language === r.language && S.slice[f].kind === r.kind) hit = S.slice[f];
-        if (hit){ hit.body = r.body; hit.no = r.no; }
-        else S.slice.push({ language:r.language, kind:r.kind, body:r.body, no:r.no });
-      }
-      return answer([]);
+    /* one slice up (supabase/schema.sql § slice_put): stored as sent */
+    if (method === 'POST' && p.indexOf('/rest/v1/rpc/slice_put') === 0){
+      var f, hit = null;
+      for (f = 0; f < S.slice.length; f++)
+        if (S.slice[f].language === body.p_lang && S.slice[f].kind === body.p_kind) hit = S.slice[f];
+      if (hit){ hit.body = String(body.p_body); hit.no = (hit.no || 1) + 1; }
+      else S.slice.push(hit = { language:body.p_lang, kind:body.p_kind, body:String(body.p_body), no:1 });
+      return answer({ no:hit.no, said:'', body:null });
     }
     if (method === 'GET' && p.indexOf('/rest/v1/slice') === 0){
       var want = arg('language'), out2 = [], q;

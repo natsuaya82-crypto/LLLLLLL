@@ -508,7 +508,7 @@ function langNameSaid(nm){ return String(nm||'') || t('langs.untitled'); }
    It goes through slGot(), the one writer of `lingua.<id>.<...>.got`, and it
    is kept out of every road up by the same mechanism the slices are: slWr()
    is never called on this key, so slMine() cannot see it and netSaveNow(),
-   netSlice1() and both 「fills in and stops」 reads never find it. */
+   netSliceUp() and both 「fills in and stops」 reads never find it. */
 var LNAME={};
 function langNameKey(id){ return langKeyOf(String(id||''), 'name'); }
 function langNameGot(id, nm){
@@ -653,7 +653,7 @@ function langOwnOf(id){
    Same shape as LNAME, LWSYS and LOWN above: memory for what the server has
    said this session (CLAUDE.md rule 22), a picture on the disk so a launch
    with no signal can still put the list in order, and NO ROAD UP -- slGot()
-   is the one writer, so slMine() cannot see it and netSlice1(),
+   is the one writer, so slMine() cannot see it and netSliceUp(),
    netSaveNow() and both 「fills in and stops」 reads never find it.
 
    EMPTY IS 「NOBODY HAS SAID」 AND NOT 「OLDEST」. A language minted on this
@@ -887,14 +887,6 @@ var SCRIPT={g:{}, extra:[]};
    CLAUDE.md names them. */
 function langKeyOf(id, slice){ return 'lingua.' + id + '.' + slice; }
 function langKey(slice){ return langKeyOf(langId, slice); }
-/* WHAT THIS PHONE AND THE SERVER LAST AGREED THIS SLICE WAS.
-   Not a copy of somebody's work and not a backup: it is the only way the
-   merge can tell 「I removed this」 from 「I have not been told about this
-   yet」, which are the same thing to look at and opposite things to do.
-   Written by netLangSync1() the moment the two sides hold the same string,
-   read by nothing else, and filed beside the slice so deleting a language
-   takes it with everything else. */
-function langWasKey(id, slice){ return langKeyOf(id, slice) + '.was'; }
 
 /* AND WHERE A SLICE ACTUALLY SITS, WHICH IS MEMORY AND NOT THIS PHONE'S DISK.
    -------------------------------------------------------------------------
@@ -978,8 +970,8 @@ function slMine(k){
    it has never been up, and the migration exists to send it. It is in
    slMine() for exactly that reason and stays ahead of the picture here.
 
-   Written in one place (netAgreed in www/net.js, the moment both sides hold
-   the same string) and removed in one place (slRm below, which is only ever a
+   Written where the server has said what it holds (netSliceUp and
+   netLangFill in www/net.js) and removed in one place (slRm below, which is only ever a
    person deleting a language or an account). */
 function slGotKey(k){ return k + '.got'; }
 function slRd(k){
@@ -1015,14 +1007,13 @@ function slGot(k, body){
    a request whose answer lands inside it. A write of the same string is
    nobody changing anything -- a settings save() writes the dictionary back
    exactly as it was, and that is not a person writing the dictionary
-   (r63-audit 0-1). netSaveNow() and netLangSync1() send a slice that is
-   marked here AND has moved; netAgreed() takes the mark off when the two
-   sides hold the same string.
+   (r63-audit 0-1). netSaveNow() and netLangSync() send a slice that is
+   marked here; netSliceUp() takes the mark off when the server has it.
 
    AND WHEN. The mark is the moment the person last wrote that slice, by this
    phone's clock, because that is what goes up with it: two phones that
-   changed the same thing keep the later change (www/sync.js § syMerge,
-   supabase/schema.sql § keep_newer). */
+   changed the same thing keep the later change (supabase/schema.sql §
+   slice_in, which decides it -- the phone only says when). */
 var LTOUCH={}, SL_APP=0;
 function slAsApp(fn, args){
   SL_APP++;
@@ -1031,9 +1022,9 @@ function slAsApp(fn, args){
 }
 /* ---- WHAT A SLICE IS: FOUR ANSWERS, AND THIS IS WHERE THEY ARE MADE -----
    「"Empty" and "broken" are different states and must not share a branch」
-   (CLAUDE.md § Data). Every reader of a slice asks here, and so does the
-   merge (www/sync.js § syMerge) and what may be written over what
-   (www/net.js § netKeeps):
+   (CLAUDE.md § Data). Every reader of a slice on this phone asks here; the
+   server asks the same four of what it is sent (supabase/schema.sql §
+   slice_state), because putting two copies together is the server's:
 
      none    no string, or an empty one: there is nothing
      plain   a slice that is not JSON and never was -- `lang`, the name
@@ -1070,9 +1061,9 @@ function slOpen(kind){
   else delete LWRECK[k];
   return d.v;
 }
-/* And the one write that may go over a wreck: the SERVER's readable answer,
-   put there by the merge (www/net.js § netKeeps) -- 「a copy it cannot parse
-   takes the server's」 (CLAUDE.md rule 22). */
+/* And the one write that may go over a wreck: the SERVER's readable answer
+   to a send (www/net.js § netSliceUp) -- 「a copy it cannot parse takes the
+   server's」 (CLAUDE.md rule 22). */
 function slMend(k){ delete LWRECK[k]; }
 function slWr(k, v){
   var s=String(v);
@@ -1103,7 +1094,13 @@ function slSettled(k){ delete LTOUCH[k]; }
 function slRm(k){
   delete LSL[k];
   slSettled(k);
-  try{ localStorage.removeItem(k); localStorage.removeItem(slGotKey(k)); }catch(e){}
+  try{
+    localStorage.removeItem(k); localStorage.removeItem(slGotKey(k));
+    /* and `<k>.was`, what an older version kept of what it and the server
+       last agreed -- the merge was the phone's until 2026-09-27 and nothing
+       reads it now, but it is filed under this slice and goes with it. */
+    localStorage.removeItem(k + '.was');
+  }catch(e){}
 }
 /* Which slices could not be read is about the account that read them. */
 acctMem(function(){ LWRECK={}; });

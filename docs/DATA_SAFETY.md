@@ -57,7 +57,7 @@ the whole of it.
 
 ### 1. A save reaches the server, and a merge never destroys what is there
 
-`netSlice1()` in `www/net.js` is the only thing that puts a slice up, and both
+`netSliceUp()` in `www/net.js` is the only thing that puts a slice up, and both
 roads call it — `netSaveNow()` on a save a person makes, `netLangSync()` at the
 door (what the walk made). **A launch sends nothing** (2026-09-23,
 `tools/quiet-check.mjs`): until a language's slices have come down in this run
@@ -65,25 +65,36 @@ of the app, what is on the screen is the picture, `langLocked()` refuses every
 save onto it, and a slice goes up only when a PERSON wrote it
 (`LTOUCH` in `www/core.js`) — a slice the app itself changed inside a server
 answer (the free alphabet topped up, a migration) goes with the next thing
-somebody saves in that slice and never on its own. It
-MERGES: `syMerge()` (`www/sync.js`) adds both sides, so a word added here and
-a word added there are both added 「そりゃあ両方足すだろ」 — and where the two
-disagree about ONE thing (a value, the same row changed on both, a row removed
-on one and changed on the other) **the side a person changed later keeps it**
-「普通後から変えたほうになる？」 OWNER 2026-09-04. When is `LTOUCH`'s time on
-this phone and `slice.ed` on the server.
+somebody saves in that slice and never on its own.
+
+**THE SERVER MERGES, AND ONLY THE SERVER** 「一本化してくれ」 OWNER 2026-09-27.
+The phone sends what it holds, when a person last wrote it, and which version
+of the slice it last agreed with (`no`, kept in memory as `NET_BASE`), through
+`slice_put()` — and `slice_in()` in `supabase/schema.sql` puts it together
+with what is there, on the row that is really there: both sides added, so a
+word added here and a word added there are both added 「そりゃあ両方足すだろ」 —
+and where the two disagree about ONE thing (a value, the same row changed on
+both, a row removed on one and changed on the other) **the side a person
+changed later keeps it** 「普通後から変えたほうになる？」 OWNER 2026-09-04. The
+version the phone agreed with is the third copy that tells 「removed here」
+from 「never heard of here」; the server finds it in its own history
+(`slice_hist`), and where it cannot, the merge removes nothing. What comes back
+is what the server now holds, and the phone takes it. It used to be the other
+way round — the phone read, merged (~~`www/sync.js`~~) and wrote, and the
+server refused a write merged against a version that had moved — and on
+2026-09-27 the two answers disagreed and every second save was refused.
 
 **A write that only wrote would destroy.** `slice`'s primary key is
-`(language, kind)`, so a phone that sent what it was holding would take out
-whatever another one had added, silently. That is why there is one road and
-not a short one beside it — and why the server refuses a write put together
-against a version that has since moved (`stale`, `keep_newer()` in
-`supabase/schema.sql`): the phone reads again and merges again.
+`(language, kind)`, so a write that was simply stored would take out whatever
+another phone had added, silently. That is why every write of a slice — this
+build's, and builds 165, 167 and 1.0.3 still on phones — reaches `slice_in()`.
 
-`again-check` holds it: a save arrives without a launch, only the slices that
-moved are asked for and sent, a word deleted here stays deleted, a `stale`
-write is merged again with both phones' words kept, and the later change of
-one value stands. `rls-check` holds the server half.
+`rls-check` holds the merge on the real SQL (two phones adding, the later
+change of one value, a removal, 1.0.3's and build 165's writes, the alphabet's
+slots). `again-check` holds the phone's half: a save arrives without a launch,
+only the slices a person wrote are sent, nothing is read to save, a word
+deleted here stays deleted, and what the server hands back is what the phone
+then holds.
 
 ### 2. A restore never overwrites a slice that is there
 
@@ -102,9 +113,10 @@ few hundred kilobytes and cannot lose anything; moving could.
 ### 3. "Empty" and "broken" are not the same state
 
 An empty language is a legitimate state — somebody just made one. Wreckage is
-not. `netKeeps(mine, put)` is where this lives now: a merge that came back
-holding LESS than what is here is refused and recorded in `NET_SHRANK`, and
-the phone keeps what it had.
+not. `slice_keeps()` on the server is where this lives now: a merge that
+would hold LESS than what the phone sent is not written, the answer says
+`shrank`, and the phone keeps what it had and sends it again with the next
+press. A server copy that cannot be read is not written over (`kept`).
 
 **A slice the app has never written is not unsound. It is absent**, and absent
 is what `netLangFill()` fills in.

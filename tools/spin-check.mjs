@@ -44,7 +44,8 @@ await pg.route(/\/(rest|storage|auth)\/v1\//, async (route) => {
     let b = {}; try { b = JSON.parse(req.postData() || '{}'); } catch (e) {}
     body = JSON.stringify([{ id: b.id || 'srv1' }]);
   }
-  if (m === 'POST' && u.indexOf('/rest/v1/slice') >= 0) { status = 201; body = ''; }
+  /* one slice up: what supabase/schema.sql § slice_put answers */
+  if (m === 'POST' && u.indexOf('/rest/v1/rpc/slice_put') >= 0) body = JSON.stringify({ no: 1, said: '', body: null });
   await route.fulfill({ status, body, headers: {
     'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': '*',
     'Access-Control-Allow-Methods': '*', 'Content-Type': 'application/json' } });

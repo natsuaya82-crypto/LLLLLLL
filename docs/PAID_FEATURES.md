@@ -332,7 +332,7 @@ nothing has to be restored, because nothing went.
 **The cloud is on every plan, and that is where the money actually goes.**
 OWNER DECISION 2026-08-22 「クラウドは全員で」, re-confirmed 2026-08-26 「基本は
 全部サーバー管理」. It is not a capability and must not become one: there is no
-`can()` anywhere in `www/net.js`, `www/sync.js` or `www/boot.js`, and
+`can()` anywhere in `www/net.js`, ~~`www/sync.js`~~ or `www/boot.js`, and
 `netLangSync()` asks nothing about a plan before it runs. That is correct and
 is the rule at the head of this file — a plan decides what may be DONE, and a
 language existing is not something anybody does.

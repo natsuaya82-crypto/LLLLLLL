@@ -7,7 +7,7 @@
 
      1. 言語一本の大きさ ── slice 12 個の bytes を、100 / 1000 / 5000 語で。
         アプリ自身の langSaveAll() を通します。ここで書き出されたものが、
-        そのままサーバーの `slice.body` になります（netSlicePut）。
+        そのままサーバーの `slice.body` になります（netSliceUp、slice_put）。
      2. 起動一回の通信量 ── 本物の www/index.html を、偽の線の上で起動し、
         出て行った要求ごとに「送った bytes」と「返ってきた bytes」を数える。
         偽の線は slow-check.mjs のものと同じ形ですが、**憶えます** ── 上げた
@@ -94,6 +94,15 @@ function meter(cfg){
       return LROW;
     }
     if (p === '/rest/v1/language_take' || p === '/rest/v1/language_seen') return [];
+    /* 上げは slice_put ひとつ（supabase/schema.sql）。答えは版と「書いた」だけで、
+       本文は送った物と違う時にしか戻らない ── 復りは往きより軽い。 */
+    if (p === '/rest/v1/rpc/slice_put'){
+      SL[body.p_lang] = SL[body.p_lang] || {};
+      var was = SL[body.p_lang][body.p_kind];
+      SL[body.p_lang][body.p_kind] = { kind:body.p_kind, body:String(body.p_body||''),
+        no:(was ? was.no : 0) + 1, language:body.p_lang, at:new Date().toISOString() };
+      return { no:SL[body.p_lang][body.p_kind].no, said:'', body:null };
+    }
     if (p === '/rest/v1/slice'){
       if (m === 'POST'){
         /* サーバーが憶える。Prefer: return=representation なので、上げたものが

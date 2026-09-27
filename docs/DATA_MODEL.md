@@ -42,10 +42,12 @@ goes with the deletes above is with the owner (`docs/scope/aud-data.md`
 **And now a third reader walks it: the server.** OWNER DECISION 2026-08-26 —
 「基本は全部サーバー管理」. Each slice is one
 row in `slice` (`supabase/schema.sql`), keyed `(language, kind)`, and `body` is
-**the exact string `localStorage` holds** — the same string `syMerge()` works
-on and the file, so a slice has one shape and not three that could drift.
-`netSaveNow()` (a person's save) and `netLangSync()` (the door) read, merge
-through `www/sync.js` and write back; a launch only reads (`netLangsDown()`). So being in `SLICES` now decides three things at
+**the exact string `localStorage` holds** — the same string the server's
+`slice_merge()` works on, so a slice has one shape and not two that could drift.
+`netSaveNow()` (a person's save) and `netLangSync()` (the door) send it through
+`slice_put()` with the version this phone last agreed with, and the SERVER puts
+two phones' copies together (`slice_in()`, 2026-09-27) and hands back what it
+holds; the phone reads nothing to save and merges nothing; a launch only reads (`netLangsDown()`). So being in `SLICES` now decides three things at
 once — wipe and what goes up — and a slice added outside the list is
 missing from all three.
 
@@ -86,8 +88,8 @@ signed in AT THE PRESS, hands that uid down both arms of `netDropMe()`, and
 `wipeHere(uid)` calls `lsWipeAcct(uid)` (`www/core.js`). What comes off the phone is listed under **what an account
 deletion actually takes**, below.
 
-Which of the copies is believed when they differ: **neither.** `sync.js` adds
-both sides and lets neither win by being newer 「そりゃあ両方足すだろ」. The
+Which of the copies is believed when they differ: **neither.** The server
+(`slice_in()`) adds both sides and lets neither win by being newer 「そりゃあ両方足すだろ」. The
 cost of merging is a duplicate; the cost of choosing is somebody's word. This
 is `docs/DATA_SAFETY.md`'s rule at the one place it would have been easiest to
 break.
@@ -149,8 +151,9 @@ original is gone — and `docs/BACKLOG.md` carries them.
 | `gram2` | — | the grammar engine's v2 model (`www/grammar-engine/`). **`gModel()` in `www/grammar.js` reads it**; nothing writes it yet, so every language today falls to `fromLegacy()` and answers exactly as before. What it holds when it is written is **everything except the dictionary and the rules that name words** — `words` is rebuilt from `WORDS` on every read and `grammarRules` from the stages, because both point AT the dictionary and a stored copy would part company with it the first time somebody renamed a word. `adapter.save` still has no caller. It is in `SLICES` from the day the key existed rather than the day the first caller does, which is the whole lesson of the keyboard and the world: a slice joins the list BEFORE anything writes to it, or the first thing written is the thing that never reaches the server. It sits **beside** `phases` and does not replace it — a migration copies and never removes | object |
 | `wld` | `WLD` | what the language is for — and two flags. `hide`: whether it has a page anybody else may open; **absent means public**. `dl`: whether the letters and the words may be taken away and used; **absent means no**, and the two defaults point opposite ways on purpose — a page is a thing to be looked at, and handing over months of somebody's drawing is not a thing to decide for them | object |
 
-`syMerge()` in `www/sync.js` reads those shapes to put two copies together; it and `netKeeps()` tell
-a slice from wreckage. **`langKeyOf(id, slice)` is the only thing that knows how
+`slice_merge()` in `supabase/schema.sql` reads those shapes to put two copies
+together; it and `slice_keeps()` tell a slice from wreckage, with the same four
+answers `slState()` gives on the phone. **`langKeyOf(id, slice)` is the only thing that knows how
 a language is filed**, and `langKey(slice)` is it asked about the open one —
 which is what 290-odd call sites mean. The two are one sentence and two
 audiences: a screen means "the one in front of me" and must never be handed an
@@ -383,7 +386,7 @@ it goes with the rest of that account's keys. **It is with the owner** —
 | 誰の | その言語の。`language` を指していて、言語が消えれば cascade で消えます |
 | 誰が読めるか | `is_staff()` だけ。**本人にも見えません** ── 日付の並びは、その人がいつ考えを変えたかの記録で、アプリのどの画面にも出しません（`docs/STATE.md` § 4a 四の勧め「見せない」のとおり） |
 | 誰が書けるか | 誰も。insert / update / delete の policy が一つもなく、trigger（definer）が唯一の道です |
-| いつ増えるか | `slice` の行が update / delete される直前。中身が本当に変わったときだけです（`netSlice1()` は送るものが無ければ送らないので） |
+| いつ増えるか | `slice` の行が update / delete される直前。人が書いた欄を送ったときだけです（`netSaveNow()` は人が書いていない欄を送らないので）。版には番号 `no` と人が書いた時刻 `ed_at` が付き、`slice_in()` が「合意していた版」を探すのに読みます（`slice_base()`、持ち主にだけ答える） |
 | いつ消えるか | **4 版目が積まれた瞬間、一番古い版が消えます。**これがこのファイルで唯一の自動削除で、DELETE REVIEW は `docs/CHANGELOG.md` 2026-09-09 |
 | 何を束ねるか | `press` ── その版を置き換えた保存の番号（`netSaveNow()` が一回の送りに一つ作り、その回の全部の行に載せる）。**言語の版はこの番号一つ**で、番号の無い古い行はその時刻が名前（`slice_versions()`、新しい 3 つ） |
 | 戻す道 | RPC `admin_restore_lang(language, v)`。**言語まるごと**、その保存の前の形に ──「3つ前、まるごと」OWNER 2026-09-24。部分ごとに戻す ~~`admin_restore()`~~ は消した。書き戻しは一回の保存なので、その瞬間の「今」が一つの版になります ── **戻すのを戻せます** |
@@ -579,7 +582,7 @@ and then writes the slices it was asked for with `langKeyOf(id, kind)`.
    キーボード with a ↓ on each, and they are taken **one at a time**. So a
    language with `words` and no `letters` is what the app looks like halfway
    through, and it has to draw. "No slice" and "an empty slice" are already
-   separate states (`netKeeps()`); **a downloaded language uses the
+   separate states (`slState()`); **a downloaded language uses the
    first** — the slice is absent until its ↓ is pressed. No third state is
    invented: "never offered" is the publisher's ↓ not being there to press.
    A section that is more than one slice is gathered and written together —
@@ -618,7 +621,7 @@ and then writes the slices it was asked for with `langKeyOf(id, kind)`.
 
 **5. It is outside sync, and that is not a flag — it is the whole point.**
 Everything else about a language goes to the server and comes back merged
-(2026-08-26, above), and `syMerge` **adds both sides**. Run a downloaded
+(2026-08-26, above), and the merge (`slice_in()`) **adds both sides**. Run a downloaded
 トキポナ through that once and something has been added to it, at which point
 「トキポナに文字足したらトキポナじゃないです」 (OWNER DECISION 2026-08-25). So
 「基本は全部サーバー管理」 has exactly one exception and this is it, and it holds

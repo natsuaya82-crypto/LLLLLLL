@@ -77,8 +77,8 @@ function ltChar(unit){ var l=ltMain(unit); return (l && l.ch)? l.ch : ''; }
    came in on a sheet, or a character borrowed for it. It is the sentence the
    two DELETE REVIEWs in this file already made in their own words twice
    (「no strokes, no borrowed character, made by the app and never touched by
-   anybody」), and syPut() in www/sync.js asks it a third time when two rows
-   turn out to be one slot. One sentence, one place: an empty slot is the
+   anybody」), and the server asks it a third time when two rows turn out to
+   be one slot (supabase/schema.sql § slice_made, the same sentence in SQL). One sentence, one place: an empty slot is the
    app's, and anything else is somebody's. It was two functions with two
    names and one body (r78-sides); this is the one. */
 function ltHasShape(l){ return !!l && (!!inkGeo(l) || !!l.ch); }
@@ -568,19 +568,35 @@ function ltIsBase(l){ return !!l && !!ltSlotKey(l); }
 
    An alphabet that doubled before the ids were steady is still doubled -- the
    rows are on the phone and on the server and nothing was going to take them
-   out. This is what takes them out, and it does not have a rule of its own:
-   it is syArr() putting this alphabet together with NOTHING, which is the one
-   place that says what two rows of one slot come to. So the copy that is
-   drawn on is the copy that stays, both are kept where both are drawn on, and
-   what goes is an empty slot the app made -- which is the same DELETE REVIEW
-   ltFreeSlot() and ltToDigit() are already written under.
+   out. Two rows of one slot come to this, and it is the same sentence the
+   server puts two copies of an alphabet together by (supabase/schema.sql §
+   slice_arr): the copy that is drawn on is the copy that stays, both are kept
+   where both are drawn on under two ids, and what goes is an empty slot the
+   app made -- which is the same DELETE REVIEW ltFreeSlot() and ltToDigit()
+   are already written under. It is here and not asked of the server because
+   there is no second copy to put this one together with: it is one alphabet
+   and itself, at the launch, with no signal as well as with one.
 
    The owner's decision above is why this may run today. Its reason is that
    nobody has drawn anything yet; when that stops being true the decision
    stops with it, and what holds afterwards is the paragraph above -- nothing
    with a drawing on it is ever taken. docs/CHANGELOG.md, 2026-09-04. */
+/* Which ROW a letter is: its id, or where it has none, the whole of it. */
+function ltRowKey(l){
+  if(l && l.id) return 'k'+String(l.id);
+  try{ return 'j'+JSON.stringify(l); }catch(e){ return 'j'+String(l); }
+}
 function ltJoinSlots(){
-  var was=LETTERS.length, out=syArr('letters', LETTERS, [], null);
+  var was=LETTERS.length, out=[], at={}, i, l, s, j;
+  for(i=0;i<LETTERS.length;i++){
+    l=LETTERS[i];
+    s=ltSlotKey(l);
+    s=s? ('s'+s) : ltRowKey(l);
+    j=at[s];
+    if(j===undefined){ at[s]=out.length; out.push(l); continue; }
+    if(!ltHasShape(out[j]) && ltHasShape(l)){ out[j]=l; continue; }
+    if(ltRowKey(out[j])!==ltRowKey(l) && ltHasShape(out[j]) && ltHasShape(l)) out.push(l);
+  }
   if(out.length===was) return 0;
   LETTERS=out;
   saveLetters();
@@ -590,9 +606,9 @@ function ltJoinSlots(){
    「あと、キーボードを足したりしてたら文字増殖してるんだけど何で？」OWNER
    2026-09-04, and this is why: ltId() mints an id out of LT_SEQ, which counts
    from zero every launch, so the SAME slot came out `l1_0_0` on one run of
-   ltStart() and `l39_0_0` on another. syArr() in www/sync.js puts two copies
-   of a language together by a letter's ID and nothing else -- that is chapter
-   26's whole design, 「そりゃあ両方足すだろ」 -- so thirty-eight and
+   ltStart() and `l39_0_0` on another. Two copies of a language are put
+   together by a letter's ID (supabase/schema.sql § slice_arr), and
+   「そりゃあ両方足すだろ」 -- so thirty-eight and
    thirty-eight became SEVENTY-SIX: a a, b b, c c, every reading twice, and
    the free plan shows all of them because ltIsBase() is true of both.
 

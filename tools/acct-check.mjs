@@ -3125,8 +3125,8 @@ const R = await pg.evaluate(async () => {
     /* AND THE LATER PRESS STANDS (supabase/schema.sql § keep_newer,
        「普通後から変えたほうになる？」 OWNER 2026-09-04). A press carries when
        it happened; what prefs_put() hands back is what stands, and a phone
-       whose press was older takes it. A press that has not landed gives way
-       on the way down only to a LATER time. */
+       whose press was older takes it. A press that has not landed is not
+       painted over on the way down; it goes up, and the server says. */
     {
       let e64 = null;
       const t64 = Date.now();
@@ -3151,10 +3151,27 @@ const R = await pg.evaluate(async () => {
       netMyProfile(function () {}, function () {});
       if (SET.theme !== 'light')
         no('64: まだ着いていない押しが、それより古いサーバーの値に上書きされた — ' + SET.theme);
+      /* and which of the two stands is not decided on the way down -- the
+         server decides it when the press goes up (keep_newer, the later
+         press), and what prefs_put() answers is what the screen shows
+         (「一本化してくれ」 OWNER 2026-09-27). */
       netGet = (path, ok) => ok([{ prefs:{ theme:'night' }, ed:{ 'prefs.theme':Date.now() + 60000 } }]);
       netMyProfile(function () {}, function () {});
+      if (SET.theme !== 'light')
+        no('64: 読んだだけで、まだ着いていない押しが上書きされた — ' + SET.theme);
+      let e64b = null;
+      netSend = (method, path, body, tok, ok) => {
+        if (path.indexOf('/rest/v1/rpc/prefs_put') === 0){
+          e64b = body.e;
+          /* the server holds a later press than this one, so it keeps night */
+          if (ok) ok({ theme:'night', ui:SET.ui });
+        }
+      };
+      netPrefsPut();
+      if (!e64b || !e64b.theme)
+        no('64: 着いていない押しが、押した時刻を持って上がらない — ' + JSON.stringify(e64b));
       if (SET.theme !== 'night')
-        no('64: 後から押されたサーバーの値が、着いていない古い押しに負けた — ' + SET.theme);
+        no('64: 後から押されたサーバーの値を、サーバーが残したのに画面が取らない — ' + SET.theme);
       say('64: 設えは後から押したほうが残る ── 押した時刻が出て行き、答えと降りてきた値のうち後のものが画面に来る');
     }
     /* AND A MIGRATION'S MARK IS WHOEVER OWNS WHAT IT MARKS (r73 § 2-7).
@@ -3676,9 +3693,10 @@ const R = await pg.evaluate(async () => {
        下の `langOwnGot()`、`language.owner` です。 */
     LANGS = { [ID66]: {} };
     langId = ID66;
-    /* スライスと、サーバーと合意した印。 */
+    /* スライスと、古い版がディスクに残した「サーバーと合意した印」（`.was`、
+       2026-09-27 まで電話がまとめていた頃の物）。 */
     slWr(langKeyOf(ID66, 'words'), '[{"hw":"nokori"}]');
-    slWr(langWasKey(ID66, 'words'), '[{"hw":"nokori"}]');
+    localStorage.setItem(langKeyOf(ID66, 'words') + '.was', '[{"hw":"nokori"}]');
     slGot(langKeyOf(ID66, 'words'), '[{"hw":"nokori"}]');
     /* そして `language` 行の列 ── 名前・書記体系・書いた人。スライスでは
        ないので `SLICES` には居ません。 */
@@ -3965,7 +3983,10 @@ const R = await pg.evaluate(async () => {
          端末が一本 mint して、行を POST する。 */
       if (url === '/rest/v1/language' && method === 'POST') { rowOk77 = ok; return; }
       if (url === '/rest/v1/language') { setTimeout(() => ok([]), 0); return; }
-      if (url === '/rest/v1/slice') { setTimeout(() => ok(method === 'GET' ? [] : {}), 0); return; }
+      if (url === '/rest/v1/slice') { setTimeout(() => ok([]), 0); return; }
+      /* 一つの slice が上がった ── サーバーが一台の電話から受けた時の答え
+         （supabase/schema.sql § slice_put）。 */
+      if (url === '/rest/v1/rpc/slice_put') { setTimeout(() => ok({ no: 1, said: '', body: null }), 0); return; }
       if (url === '/rest/v1/profile') {
         setTimeout(() => ok([{ id: U77, handle: 'aya77', display: 'Aya' }]), 0); return;
       }

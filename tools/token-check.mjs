@@ -67,7 +67,14 @@ const WIRE = `
   };
 `;
 
-const wait = `function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }`;
+/* THE SLICE WRITE, built by the app's own table (www/net.js § NET_PUT) and
+   sent down the one wire -- what a save sends, minus netLangRow() in front of
+   it, which is a read and is not what this is about. */
+const wait = `function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
+function slicePut(kind, ok, bad){
+  var w = NET_PUT.slice('srv1', { kind: kind, body: '[]' });
+  netSend(w.method, w.path, w.body, netTok(), ok, bad);
+}`;
 
 console.log('');
 
@@ -79,14 +86,14 @@ const one = await pg.evaluate(async ({ w, s }) => {
   /* the first slice write is refused the way an expired token is refused */
   var first = true;
   window.__X.refuse = function(r){
-    if (/\/rest\/v1\/slice/.test(r.u) && first){ first = false; return 401; }
+    if (/rpc\/slice_put/.test(r.u) && first){ first = false; return 401; }
     return 200;
   };
   var got = null;
-  netSlicePut('srv1', 'words', '[]', 0, 0, function(){ got = 'ok'; },
+  slicePut('words', function(){ got = 'ok'; },
                                         function(d, st){ got = 'bad ' + st; });
   await wait(120);
-  var sl = window.__of('/rest/v1/slice');
+  var sl = window.__of('rpc/slice_put');
   return { got: got,
            tries: sl.length,
            firstTok: sl[0] && sl[0].tok,
@@ -113,15 +120,15 @@ const two = await pg.evaluate(async ({ w, s }) => {
   window.__X.refuse = function(r){
     /* every slice write is refused ONCE -- which is what an hour looks like
        when a launch sends every slice at the same moment */
-    if (/\/rest\/v1\/slice/.test(r.u) && r.tok === 'Bearer OLD') return 401;
+    if (/rpc\/slice_put/.test(r.u) && r.tok === 'Bearer OLD') return 401;
     return 200;
   };
   var done = 0, i;
   for (i = 0; i < 20; i++)
-    netSlicePut('srv1', 'k' + i, '[]', 0, 0, function(){ done++; }, function(){});
+    slicePut('k' + i, function(){ done++; }, function(){});
   await wait(200);
   return { done: done,
-           tries: window.__count('/rest/v1/slice'),
+           tries: window.__count('rpc/slice_put'),
            refreshes: window.__count('grant_type=refresh_token') };
 }, { w: WIRE, s: wait });
 
@@ -149,13 +156,13 @@ const three = await pg.evaluate(async ({ w, s }) => {
   /* and a refresh that is itself refused must not refresh again */
   window.__reset();
   SESS = { at:'OLD', rt:'r', uid:'me', anon:false };
-  window.__X.refuse = function(r){ return /\/rest\/v1\/slice|refresh_token/.test(r.u) ? 401 : 200; };
+  window.__X.refuse = function(r){ return /rpc\/slice_put|refresh_token/.test(r.u) ? 401 : 200; };
   var got2 = null;
-  netSlicePut('srv1', 'words', '[]', 0, 0, function(){ got2 = 'ok'; },
+  slicePut('words', function(){ got2 = 'ok'; },
                                         function(d, st){ got2 = 'bad ' + st; });
   await wait(200);
   a.got2 = got2;
-  a.tries2 = window.__count('/rest/v1/slice');
+  a.tries2 = window.__count('rpc/slice_put');
   a.refreshes2 = window.__count('grant_type=refresh_token');
   a.out = !netSignedIn();
   return a;
@@ -176,12 +183,12 @@ const four = await pg.evaluate(async ({ w, s }) => {
   eval(w); eval(s);
   SESS = { at:'OLD', rt:'r', uid:'me', anon:false };
   window.__reset();
-  window.__X.refuse = function(r){ return /\/rest\/v1\/slice/.test(r.u) ? 401 : 200; };
+  window.__X.refuse = function(r){ return /rpc\/slice_put/.test(r.u) ? 401 : 200; };
   var got = null;
-  netSlicePut('srv1', 'words', '[]', 0, 0, function(){ got = 'ok'; },
+  slicePut('words', function(){ got = 'ok'; },
                                         function(d, st){ got = 'bad ' + st; });
   await wait(200);
-  return { got: got, tries: window.__count('/rest/v1/slice'),
+  return { got: got, tries: window.__count('rpc/slice_put'),
            refreshes: window.__count('grant_type=refresh_token') };
 }, { w: WIRE, s: wait });
 

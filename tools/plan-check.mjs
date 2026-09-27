@@ -410,15 +410,13 @@ const r = await pg.evaluate(({ s }) => {
      that is the road asked -- and it is the stronger question, because the
      file was one handset's and the server is the copy that outlives it.
 
-     Every slice has something in it first, and nothing has been agreed yet:
-     netSaveNow() sends a slice only where it differs from what the two sides
-     last agreed, and an absent slice has nothing to say. The one this exists
+     Every slice has something in it first: an absent slice has nothing to
+     say. The one this exists
      for is exactly that -- the keyboard was in no backup at all for a while,
      and a count went on saying the right number while it was. */
   SLICES.forEach(function(sl){
     if (slRd(langKey(sl)) === null)
       slWr(langKey(sl), '[]');
-    slRm(langWasKey(langId, sl));
   });
   function sentOn(p){
     var got = [], realSend = netSend, realRow = netLangRow, realSlices = netSlices;
@@ -436,16 +434,16 @@ const r = await pg.evaluate(({ s }) => {
     LANGS[langId].mine = true; langOwnGot(langId, 'planner');
     netLangRow = function(id, ok){ ok('sid-plan'); };
     netSlices = function(sid, ok){ ok({}); };
-    /* the ok half has to be called: netSlicePut() steps to the next slice
-       from inside it, so a stub that only records stops after the first one */
-    netSend = function(m, path, b, tok, ok){ if (b && b.kind) got.push(b.kind); if (ok) ok(); };
+    /* the ok half has to be called, with what the server answers to one
+       slice (supabase/schema.sql § slice_put), or the save never finishes */
+    netSend = function(m, path, b, tok, ok){
+      if (b && b.p_kind) got.push(b.p_kind);
+      if (ok) ok({ no:1, said:'', body:null });
+    };
     NET_SYNCING = false;
     netSaveNow();
     netSend = realSend; netLangRow = realRow; netSlices = realSlices;
     NET_SYNCING = false;
-    /* what was sent has just been agreed, so a second call would have nothing
-       to say -- put the record back, so both plans are asked one question */
-    SLICES.forEach(function(sl){ slRm(langWasKey(langId, sl)); });
     return got.sort().join(' ');
   }
   out.bkPaidKeys = sentOn('pro');

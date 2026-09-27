@@ -4677,11 +4677,12 @@ say(r.pullAl && r.pullAlStep && r.pullAlOnly,
    板に id がついた（2026-09-06）あとも増え続けた道はこれです。id を持たない
    古い写しが `lingua.<id>.kb` としてディスクに残っていて、rule 22 の移行で
    `slRd()` は今もそれを読む。読むたびに `kbIded()` が id を打つので、その id
-   が読むたびに違えば、サーバーの写しと突き合わない ── `syKeyOf()` は別物と
-   答え、`syPut()` が両方残し、起動のたびに板が足される。
+   が読むたびに違えば、サーバーの写しと突き合わない ── 板を id で突き合わせる
+   まとめ（2026-09-27 からはサーバーの slice_key()）は別物と答えて両方残し、
+   起動のたびに板が足される。
 
    ここは起動の道を本物で走らせます。`bootSession()`（www/boot.js のもの）→
-   `netLangsDown()` → `netLangSync()` → `netSlice1()` → `syMerge()`。差し替え
+   `netLangsDown()` → `netLangSync()` → `netSliceUp()`。差し替え
    るのは `netSend()` ひとつだけで、上は全部本物です。同じ端末をもう一度立ち
    上げる（reload）ので、LSL は消えてディスクの写しだけが残る ── それが実機の
    アップデートの初回起動です。 */
@@ -4708,16 +4709,16 @@ const KB_SRV = `
       return answer([{ id:id }]);
     }
     if (method === 'PATCH' && p.indexOf('/rest/v1/language') === 0) return answer([]);
-    if (method === 'POST' && p.indexOf('/rest/v1/slice') === 0){
-      var rows = (body instanceof Array) ? body : [body], k, r2, f, hit;
-      for (k = 0; k < rows.length; k++){
-        r2 = rows[k]; hit = null;
-        for (f = 0; f < S.slice.length; f++)
-          if (S.slice[f].language === r2.language && S.slice[f].kind === r2.kind) hit = S.slice[f];
-        if (hit){ hit.body = r2.body; hit.no = r2.no; }
-        else S.slice.push({ language:r2.language, kind:r2.kind, body:r2.body, no:r2.no });
-      }
-      return answer([]);
+    /* one slice up (supabase/schema.sql § slice_put): stored as sent. Two
+       boards under one id are one board on the server as well -- that is
+       slice_key() and rls-check asks it; here the phone is the only writer. */
+    if (method === 'POST' && p.indexOf('/rest/v1/rpc/slice_put') === 0){
+      var f, hit = null;
+      for (f = 0; f < S.slice.length; f++)
+        if (S.slice[f].language === body.p_lang && S.slice[f].kind === body.p_kind) hit = S.slice[f];
+      if (hit){ hit.body = String(body.p_body); hit.no = (hit.no || 1) + 1; }
+      else S.slice.push(hit = { language:body.p_lang, kind:body.p_kind, body:String(body.p_body), no:1 });
+      return answer({ no:hit.no, said:'', body:null });
     }
     if (method === 'GET' && p.indexOf('/rest/v1/slice') === 0){
       var want = arg('language'), out = [], q;
@@ -4780,8 +4781,7 @@ const kbPrep = await pg2.evaluate(({ s }) => {
   const madeA = kbId(), madeB = kbId();
   /* 増殖の元 ── ディスクに残る id 無しの写し（`lingua.<id>.kb`、rule 22 の
      移行で slRd() が今も読む・書き換えない）。読むたびに違う id が打たれると
-     サーバーの行と突き合わず、syKeyOf() が別物と答え、syPut() が両方残して
-     起動ごとに板が足されます。中身の同じ板が二枚あっても、読むたび同じ id で、
+     サーバーの行と突き合わず、別物として両方残り、起動ごとに板が足されます。中身の同じ板が二枚あっても、読むたび同じ id で、
      二枚のままでなければならない ── まとめて一枚にするのは、増殖を止める
      こととは別の話です。 */
   const blank = { nm:'', pat:'qwerty', lay: old.kbs[0].lay };
@@ -4797,8 +4797,8 @@ const kbPrep = await pg2.evaluate(({ s }) => {
   const pair = kbBoardsOf(JSON.parse(JSON.stringify({ kbs: [oldOne, srvOne], at:0, v:2 })));
   const pairN = pair.kbs.length, pairId = pair.kbs[0].id;
   /* そして実機の道では、二枚が出会うときには写しのほうにもう id が打たれて
-     います ── kbRead() が打ち、saveKb() がそれを LSL に書き、netSlice1() の
-     slMine() がその版を syMerge() に渡すからです（測りました：ディスク (none)、
+     います ── kbRead() が打ち、saveKb() がそれを LSL に書き、netSliceUp() の
+     slMine() がその版をサーバーへ送るからです（測りました：ディスク (none)、
      kbRead のあと bfzcp3y_1714、saveKb のあとも同じ）。読み手が打った id は
      名前ではなく立て替えなので、そのときも同じ組として一枚になります。
      kbMinted() が二種類の id を見分ける一か所で、板に自分自身のことだけを

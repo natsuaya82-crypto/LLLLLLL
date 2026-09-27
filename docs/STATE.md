@@ -625,7 +625,7 @@ staff の plan は free に戻らない）が実物でも真になります。
 ### まだ直っていないもの ── 9/5 の 45 件の外
 
 - 「文字増殖バグは治ったの？」── 押していないので分かりません。
-- 「保存できませんでした」の `save.no`、`syMerge()` の片道、電波の無いときの
+- 「保存できませんでした」の `save.no`、~~`syMerge()`~~ の片道、電波の無いときの
   写し ── 9/4 の五つの決定のうち着手していないものはそのまま（下の § 0-a）。
 
 ---
@@ -660,7 +660,7 @@ CODE CONFIRMED だけ。**検査の緑は証拠になりません。**
    `LETTERS` はそのまま残ります。
 3. **電波が無いときは、前に読み込んだ分を出します。見るだけです。**作れない、
    保存できない。**その写しはサーバーへ戻りません ── 片道です。**理由は
-   `syMerge()`（`www/sync.js`）が壊れた写しでサーバーの正しいほうを上書きする
+   ~~`syMerge()`~~（~~`www/sync.js`~~）が壊れた写しでサーバーの正しいほうを上書きする
    バグがあったからです（今は `slState()` が壊れと空を分けます）。写しは
    `lingua.<id>.<slice>.got` で、`slGot()` が書き `slRd()` が最後に読み、上り道の
    `slMine()` は読みません（`www/core.js`、CLAUDE.md 規則 22）。
@@ -787,7 +787,7 @@ Google と同じアドレスを打って二つ目のアカウントを立てて�
 - **一時間たっても保存が届く。**`netResume()` は起動の一回だけで、アクセス
   トークンは一時間で切れる。開いたままのアプリはサーバーへの書き込みが全部
   黙って落ちていた ── slice も plan も draft も `bad` が空関数。`netSend()` が
-  401 で更新して一度だけ投げ直します。段の道と `netSlicePut()` は自前の XHR を
+  401 で更新して一度だけ投げ直します。段の道と ~~`netSlicePut()`~~ は自前の XHR を
   やめて `netSend()` に乗りました（その二つが線の外にいた）。
   `tools/token-check.mjs`（新）が `XMLHttpRequest` だけを偽物にして持ちます。
 - **メール確認の画面に戻ると再送信。**`obCanBack()` が `appIs()==='door'` で
@@ -1118,8 +1118,8 @@ On 2026-09-03 that answers: `profile` 13, `rpc` 12, `language` 8, `follow` 4,
 `profile_seen` 1, `language_seen` 1 — and the twelve `rpc` are `account_ban`
 `account_delete` `account_unban` `admin_counts` `email_taken` `feed_fo`
 `feed_hot` `notices` `post_hide` `post_show` `staff_add` `staff_drop`.
-`netLangSync()` is the door's (`netTook()`) and a new language's (`langNew()`), not the launch's, and `syMerge()`
-(`www/sync.js` ch 26) is what puts two copies together by adding both.
+`netLangSync()` is the door's (`netTook()`) and a new language's (`langNew()`), not the launch's, and ~~`syMerge()`~~
+(~~`www/sync.js`~~ ch 26) is what puts two copies together by adding both.
 
 **Still unused: `quote` and `publication`. Those two, and nothing else.**
 
@@ -1152,9 +1152,9 @@ Order, and where it stands:
 3. **The language living on the server — done.** `language` holds the name,
    the licence, the date and `published_at`; **`slice` holds every slice of
    it**, one row per slice of `SLICES`, carrying exactly the string
-   `localStorage` holds. `netLangRow()` makes the row, `netSlicePut()` upserts
+   `localStorage` holds. `netLangRow()` makes the row, ~~`netSlicePut()`~~ upserts
    a slice, `netSlices()` reads them back, and `netLangSync()` — the door's (`netTook()`) and a new
-   language's (`langNew()`) — puts the two copies together through `syMerge()`,
+   language's (`langNew()`) — puts the two copies together through ~~`syMerge()`~~,
    which adds both sides and lets neither win by being newer.
 4. **The plan — on the account, done.** OWNER 2026-09-01: 「課金とアカウントと
    キーボードはアカウントに結びつく」. It is **its own table and not a column on

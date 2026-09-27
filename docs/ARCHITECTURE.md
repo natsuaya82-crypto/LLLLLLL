@@ -102,8 +102,10 @@ once. What it answered today: `profile`, `post`, `follow`, `block`, `report`,
 `language_seen`, `react`, `prompt`, `plan`, the RPCs — **and `language` and
 `slice`**. A language and every one of its slices go up and come back:
 `netLangRow()` makes the `language` row and keeps its id on `LANGS[id].sid`,
-`netSlices()` reads them, `netSlicePut()` upserts one, `netLangSync()` puts the
-two copies together through `www/sync.js`, and **`boot.js` calls it on
+`netSlices()` reads them, `netSliceUp()` sends one through `slice_put()`
+(the one save, `netPut()`), and the SERVER puts two copies together
+(`slice_in()` in `supabase/schema.sql`, 2026-09-27) -- the phone does not
+merge; `netLangSync()` sends what the walk made, and **`boot.js` calls it on
 launch**. `quote` and `publication` really are still unused.
 
 **And every one of them goes out as somebody.** 「サーバーは、サインインして
@@ -150,8 +152,9 @@ So, the order:
 
 What changes when the two differ is which one is **believed** — and the answer
 is neither, on purpose. **Two phones can still both be editing one language**,
-which is why `www/sync.js` did not go with the disk copy. `www/sync.js` adds both sides and lets neither
-win by being newer, because the cost of merging is a duplicate and the cost of
+which is why the merge did not go with the disk copy -- it went to the server
+(`slice_in()`, 「一本化してくれ」 OWNER 2026-09-27), which adds both sides and
+lets neither win by being newer, because the cost of merging is a duplicate and the cost of
 choosing is somebody's word 「そりゃあ両方足すだろ」.
 
 **Making a language needs an account, and there is one kind** 「言語はアカウント
