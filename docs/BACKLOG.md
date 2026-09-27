@@ -409,7 +409,7 @@ E（七回叩く扉）を測っているときに出てきました。`grep -rn 
 端末の `WLD` だけ**で、そこが空だと画面は「公開」と言います ──
 `wldHidden()` は `!!(world()).hide` なので、**「無い」と「公開」が同じ枝**です
 （`CLAUDE.md` §「"Empty" and "broken" are different states and must not share a
-branch」）。書くほうは守られています: `netLangSync1()` は `netSlices()` が
+branch」）。書くほうは守られています: ~~`netLangSync1()`~~ は `netSlices()` が
 落ちたら `done(false)` で戻り、`netLangPublic()` まで行きません。
 
 `tools/again-check.mjs` に三本入れました ── 非公開にした瞬間、立ち上げ
@@ -2940,7 +2940,7 @@ function fmSay(f){
 **片方を消すのは削除で、削除には書かれた仕様が要ります**（`CLAUDE.md`
 「Automatic deletion, pruning and cleanup are forbidden unless a written spec
 asks for them; anything that deletes gets a DELETE REVIEW first」）。しかも
-片方には人が描いた線が載っていることがあり、`syPut()` が「両方に線があれば
+片方には人が描いた線が載っていることがあり、~~`syPut()`~~ が「両方に線があれば
 両方残す」と答えているのはそのためです。**どちらを残すかは人にしか言えません。**
 
 選択肢は少なくとも三つ：(a) 何もしない ── 二行のまま画面に並ぶ（無料では
@@ -2961,7 +2961,7 @@ asks for them; anything that deletes gets a DELETE REVIEW first」）。しか�
    39 → 42 に増える。** 端末の文字が 38（a〜z・!・?・0〜9）で、サーバーが 39
    （描いた一文字が余分）のとき、保存で 42 になる ── 端末の 38 とサーバーの 39
    が「同じ文字」として結ばれず、足し合わされている疑い。**どの行がそうしたかは
-   まだ測っていません**（`syMerge()` か `ltStart()` の穴埋めか、その両方か）。
+   まだ測っていません**（~~`syMerge()`~~ か `ltStart()` の穴埋めか、その両方か）。
    文字は消えていない ── 増えているので `docs/DATA_SAFETY.md` の側の問題では
    ないが、同じ文字が二つ並ぶ言語になる。
 2. **入れ直した端末（147）で、起動のあとサーバーの letters が 42** ── その

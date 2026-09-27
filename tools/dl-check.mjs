@@ -19,8 +19,9 @@
      a save does not send it up into THIS account's rows -- 「入らん」
        OWNER 2026-09-01. It used to be 「bkPack() does not carry it into the
        backup FILE」, and there is no file (www/backup.js, 2026-09-04)
-     netLangSync() will not run on it -- syMerge adds both sides, and one
-       pass would put something into a language somebody else wrote
+     netLangSync() will not run on it -- a slice sent is put together with
+       what is there, and one pass would put something into a language
+       somebody else wrote
 
    Only the NETWORK is stubbed. What lands, and where, is the thing under
    test, so nothing here recomputes it: a check that works out the answer a
@@ -335,19 +336,20 @@ const r = await pg.evaluate(async ({ s, sid }) => {
     langOwnGot(sid, 'somebody-else'); langNameGot(sid, 'Shango');
     langTookGot([sid]);
     langId = sid;
-    var ran = [], oldPut = netSlicePut, k, snap = {};
+    var ran = [], oldPut = netPut, k, snap = {};
     for (k = 0; k < SLICES.length; k++)
       snap[SLICES[k]] = slRd(langKeyOf(sid, SLICES[k]));
-    netSlicePut = function(a, kind){ if(a === 'srv-of-' + sid) ran.push(kind); };
-    /* Both halves, because either one alone is green with the bug in.
-       A put is somebody else's language being WRITTEN on the server; a
-       changed slice is their copy on this phone being merged into -- and
-       syMerge adds both sides, so a merge is an edit. */
+    /* THE ONE SAVE (www/net.js § netPut), listened to for a slice of THIS
+       language. Both halves, because either one alone is green with the bug
+       in. A put is somebody else's language being WRITTEN on the server --
+       where it would be put together with what is there, and a merge is an
+       edit; a changed slice is their copy on this phone being written into. */
+    netPut = function(to, id, row){ if (to === 'slice' && id === sid) ran.push(row.kind); };
     var ended = false;
     function end(){
       /* the answer and the ceiling can both arrive; the first one decides */
       if (ended) return; ended = true;
-      netSlicePut = oldPut; langId = wasId;
+      netPut = oldPut; langId = wasId;
       var moved = '';
       for (var j = 0; j < SLICES.length; j++)
         if (slRd(langKeyOf(sid, SLICES[j])) !== snap[SLICES[j]])
@@ -500,7 +502,7 @@ say(r.stillTheirs,
     'and what landed is still theirs after all of that — byte for byte the ' +
     'body the server sent, not this phone’s alphabet written over it');
 say(r.syncRefused,
-    'and netLangSync() will not run on it — syMerge adds both sides, and one ' +
+    'and netLangSync() will not run on it — a slice sent is put together with what is there, and one ' +
     'pass would put something into a language somebody else wrote' +
     ((r.syncPut || r.syncMoved)
       ? ' (it put `' + (r.syncPut || '—') + '` and moved `' + (r.syncMoved || '—') + '`)'

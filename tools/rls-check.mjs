@@ -263,6 +263,25 @@ create table net._sent (n serial, url text, body jsonb, headers jsonb);
 /* Every claim schema.sql makes, as somebody trying to break it. Adding a
    policy means adding the line here that somebody would use against it --
    a policy with no attempt against it is a policy nobody has read. */
+/* THIRTY-EIGHT SLOTS, four ways: blank (as ltStart() makes them), the same
+   ids a second time, drawn on, and drawn on under the ids an alphabet that
+   doubled before the ids were steady still carries. */
+const ALPHA38 = `select
+    json_agg(case when c ~ '^[0-9]$' then json_build_object('id', 'lt.n' || c, 'val', c::int)
+                  else json_build_object('id', 'lt.' || c, 'nm', c) end order by o) as blank,
+    json_agg(case when c ~ '^[0-9]$' then json_build_object('id', 'lt.n' || c, 'val', c::int)
+                  else json_build_object('id', 'lt.' || c, 'nm', c) end order by o) as blank2,
+    json_agg(case when c ~ '^[0-9]$'
+                  then json_build_object('id', 'lt.n' || c, 'val', c::int, 'st', '[{"pts":[[100,100],[700,700]]}]'::json)
+                  else json_build_object('id', 'lt.' || c, 'nm', c, 'st', '[{"pts":[[100,100],[700,700]]}]'::json) end
+             order by o) as drawn,
+    json_agg(case when c ~ '^[0-9]$'
+                  then json_build_object('id', 'l' || o || '_6', 'val', c::int, 'st', '[{"pts":[[1,1],[9,9]]}]'::json)
+                  else json_build_object('id', 'l' || o || '_6', 'nm', c, 'st', '[{"pts":[[1,1],[9,9]]}]'::json) end
+             order by o) as old
+  from unnest(string_to_array('a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y,z,!,?,0,1,2,3,4,5,6,7,8,9', ','))
+       with ordinality t(c, o)`;
+
 const CASES = [
   /* --- everybody writes themselves into existence, and only themselves --- */
   ['A makes A\u2019s profile',                'ok',     A, 0,
@@ -489,27 +508,150 @@ const CASES = [
     `select 1 from slice where language='${LD}' and kind='words'`],
   ['and writes over it',                      'ok',     A, 0,
     `update slice set body='[1,2]', no=2 where language='${LD}' and kind='words'`],
-  /* THE WAY THE PHONE ACTUALLY SAVES: PostgREST's upsert, which is an INSERT
-     that turns into an UPDATE on the primary key, carrying `ed.was` -- the
-     server's mark this write was put together against (keep_newer). The
-     first save of a slice has nothing to have been put together against;
-     the second is put together against the first. Both are one person on
-     one phone saving twice, and both must land. 「文字書いた後セーブできない」
-     OWNER 2026-09-27. */
-  ['and saves its alphabet the way the phone does', 'ok', A, 0,
+  /* THE WAY 1.0.3 SAVES, AND BUILD 167 (the second 1.0.2): PostgREST's upsert,
+     an INSERT that turns into an UPDATE on the primary key, carrying `ed.was`
+     -- the server's time on the version this phone put its copy together
+     against. The first save of a slice has nothing to have been put together
+     against; the second is put together against the first. Both are one
+     person on one phone saving twice, and both must land.
+     「文字書いた後セーブできない」 OWNER 2026-09-27. */
+  ['and saves its alphabet the way 1.0.3 does', 'ok', A, 0,
     `insert into slice(language,kind,body,ed) values ('${LD}','letters','[1]','{"body":1000,"was":0}')
        on conflict (language,kind) do update set body=excluded.body, ed=excluded.ed`],
   ['and saves it again, put together against the first', 'ok', A, 0,
     `insert into slice(language,kind,body,ed) values ('${LD}','letters','[1,2]','{"body":2000,"was":1000}')
        on conflict (language,kind) do update set body=excluded.body, ed=excluded.ed`],
-  /* and the one the check is FOR still holds through the same door: a save put
-     together against the first, arriving after the second has landed, is
-     refused -- and what is there is the second. */
-  ['but not one put together against a version that has moved', 'denied', A, 0,
+  /* AND ONE PUT TOGETHER AGAINST A VERSION THAT HAS MOVED is not refused any
+     more: it is put together HERE, against the version it names, which the
+     history kept (「一本化してくれ」 OWNER 2026-09-27). The second phone's 3
+     and the first phone's 2 are both there, and nothing it had is gone. */
+  ['and one put together against a version that has moved is put together here', 'ok', A, 0,
     `insert into slice(language,kind,body,ed) values ('${LD}','letters','[1,3]','{"body":3000,"was":1000}')
        on conflict (language,kind) do update set body=excluded.body, ed=excluded.ed`],
-  ['and what is there is the second save',    'ok',     A, 0,
-    `select 1 from slice where language='${LD}' and kind='letters' and body='[1,2]' and (ed->>'body')::numeric=2000 and not (ed ? 'was')`],
+  ['and what is there holds both saves, with the later time and no `was`', 'ok', A, 0,
+    `select 1 from slice where language='${LD}' and kind='letters' and body::jsonb='[1,3,2]'::jsonb and (ed->>'body')::numeric=3000 and not (ed ? 'was')`],
+  /* AND WHAT 1.0.3 REMOVED STAYS REMOVED -- asked through the version its
+     `was` names, which is the history's and not the row's any more: the phone
+     agreed on [1,2] at two, then took the 1 away, and meanwhile the server
+     took on the 3. */
+  ['a 1.0.3 phone that agreed at two takes the 1 away', 'ok', A, 0,
+    `insert into slice(language,kind,body,ed) values ('${LD}','letters','[2]','{"body":4000,"was":2000}')
+       on conflict (language,kind) do update set body=excluded.body, ed=excluded.ed`],
+  ['and the 1 is gone while the other phone’s 3 stays', 'ok', A, 0,
+    `select 1 from slice where language='${LD}' and kind='letters' and body::jsonb='[2,3]'::jsonb`],
+  /* THE ALPHABET, PUT TOGETHER: the thirty-eight slots (a to z, ! and ?, and
+     a digit for each of ten values) are one letter each on every phone
+     -- 「文字増殖してるんだけど何で？」 OWNER 2026-09-04 -- and nothing anybody
+     drew is taken by a blank. These were tools/base-check.mjs's, asked of the
+     phone's syMerge(); the merge is the server's now, so they are asked of it.
+     `lt.<slot>` is the id a slot wears (www/letters.js § ltSlotId). */
+  ['two copies of one free alphabet come to thirty-eight, not seventy-six', 'ok', A, 0,
+    `with z as (${ALPHA38}) select 1 from z
+      where json_array_length(slice_merge('letters', blank::text, blank2::text, '', false)::json) = 38`],
+  ['an alphabet that has not arrived here does not write blanks over the drawn one', 'ok', A, 0,
+    `with z as (${ALPHA38}), m as (select slice_merge('letters', blank::text, drawn::text, '', false)::json j from z)
+     select 1 from m where json_array_length(j) = 38
+        and (select count(*) from json_array_elements(j) e where slice_made('letters', e)) = 38`],
+  ['and an empty copy coming back the other way takes nothing away', 'ok', A, 0,
+    `with z as (${ALPHA38}), m as (select slice_merge('letters', drawn::text, blank::text, '', true)::json j from z)
+     select 1 from m where json_array_length(j) = 38
+        and (select count(*) from json_array_elements(j) e where slice_made('letters', e)) = 38`],
+  ['blanks under today\u2019s ids meeting drawings under the old ids are one letter each, drawn', 'ok', A, 0,
+    `with z as (${ALPHA38}), m as (select slice_merge('letters', blank::text, old::text, '', false)::json j from z)
+     select 1 from m where json_array_length(j) = 38
+        and (select count(*) from json_array_elements(j) e where slice_made('letters', e)) = 38`],
+  ['and where both were drawn on under two ids, both are kept', 'ok', A, 0,
+    `with z as (${ALPHA38}), m as (select slice_merge('letters', old::text, drawn::text, '', false)::json j from z)
+     select 1 from m where json_array_length(j) = 76
+        and (select count(*) from json_array_elements(j) e where slice_made('letters', e)) = 76`],
+  /* AND A KEYBOARD IS ITS ID: two copies of one board are one board, and a
+     board added on each phone is two (「何もしていないのにキーボードが8枚に
+     増える」 OWNER 2026-09-06; www/keyboard.js § kbId). */
+  ['one board on both phones is one board, and a board added on each is two', 'ok', A, 0,
+    `select 1 where json_array_length(slice_merge('kb',
+        '{"kbs":[{"id":"k1","lay":[1]},{"id":"k2"}],"at":0}',
+        '{"kbs":[{"id":"k1","lay":[2]},{"id":"k3"}],"at":0}', '', false)::json -> 'kbs') = 3`],
+  /* AND WHEN THE SERVER HANDS A 1.0.3 WRITE BACK DIFFERENT FROM WHAT IT SENT,
+     the row's `at` is not the one that phone sent: 1.0.3 decides whether to
+     read a slice again by comparing `at` with the one it wrote
+     (netAtSame in that build), and a row that kept its `at` would tell it
+     the server holds exactly what it sent -- and its next write would take
+     the other phone's work away. */
+  ['a 1.0.3 phone writes its notes, and the row carries its time', 'ok', A, 0,
+    `insert into slice(language,kind,body,ed,at) values ('${LD}','talk','[1]','{"body":1000,"was":0}','2001-01-01T00:00:00Z')
+       on conflict (language,kind) do update set body=excluded.body, ed=excluded.ed, at=excluded.at`],
+  ['another 1.0.3 phone that never saw it writes, and is put together with it', 'ok', A, 0,
+    `insert into slice(language,kind,body,ed,at) values ('${LD}','talk','[2]','{"body":2000,"was":0}','2001-01-02T00:00:00Z')
+       on conflict (language,kind) do update set body=excluded.body, ed=excluded.ed, at=excluded.at`],
+  ['and the row holds both, and not the time that phone sent', 'ok', A, 0,
+    `select 1 from slice where language='${LD}' and kind='talk' and body::jsonb='[2,1]'::jsonb
+        and at <> '2001-01-02T00:00:00Z'::timestamptz`],
+  /* BUILD 165, the first 1.0.2 on the App Store: the same upsert with no `ed`
+     at all and `no` = the version it read, plus one. */
+  ['build 165 saves the way it does', 'ok', A, 0,
+    `insert into slice(language,kind,body,no,at) values ('${LD}','snd','["p"]',1,now())
+       on conflict (language,kind) do update set body=excluded.body, no=excluded.no, at=excluded.at`],
+  ['and again, having read the first', 'ok', A, 0,
+    `insert into slice(language,kind,body,no,at) values ('${LD}','snd','["p","t"]',2,now())
+       on conflict (language,kind) do update set body=excluded.body, no=excluded.no, at=excluded.at`],
+  ['and a second phone on 165 that read the first adds its own', 'ok', A, 0,
+    `insert into slice(language,kind,body,no,at) values ('${LD}','snd','["p","k"]',2,now())
+       on conflict (language,kind) do update set body=excluded.body, no=excluded.no, at=excluded.at`],
+  ['and both phones’ sounds are there', 'ok', A, 0,
+    `select 1 from slice where language='${LD}' and kind='snd' and body::jsonb='["p","k","t"]'::jsonb and no=3`],
+  /* TODAY'S PHONE: slice_put(), the same upsert with the answer handed back. */
+  ['today’s phone saves its notes', 'ok', A, 0,
+    `select 1 where (slice_put('${LD}','notes','["a"]',1000,null)->>'no')='1'`],
+  ['and again, from the version it agreed with', 'ok', A, 0,
+    `select 1 where (slice_put('${LD}','notes','["a","b"]',2000,1)->>'body') is null`],
+  ['a second phone that agreed on the first adds its own, and is handed the two back', 'ok', A, 0,
+    `select 1 where (slice_put('${LD}','notes','["a","c"]',3000,1)->>'body')::jsonb='["a","c","b"]'::jsonb`],
+  ['and both are on the server', 'ok', A, 0,
+    `select 1 from slice where language='${LD}' and kind='notes' and body::jsonb='["a","c","b"]'::jsonb`],
+  ['a phone removes one, from the version it agreed with', 'ok', A, 0,
+    `select 1 where (slice_put('${LD}','notes','["a","b"]',4000,3)->>'said')=''`],
+  ['and it is gone and nothing else is', 'ok', A, 0,
+    `select 1 from slice where language='${LD}' and kind='notes' and body::jsonb='["a","b"]'::jsonb`],
+  /* A VALUE BOTH SIDES CHANGED IS THE LATER CHANGE'S (2026-09-04). */
+  ['the name, written at five', 'ok', A, 0,
+    `select 1 where (slice_put('${LD}','lang','Nen',5000,null)->>'said')=''`],
+  ['a rename made EARLIER on another phone arrives later and loses', 'ok', A, 0,
+    `select 1 where (slice_put('${LD}','lang','Early',4000,1)->>'body')='Nen'`],
+  ['and a rename made later wins', 'ok', A, 0,
+    `select 1 where (slice_put('${LD}','lang','Late',6000,2)->>'body') is null`],
+  ['and the name is the later one', 'ok', A, 0,
+    `select 1 from slice where language='${LD}' and kind='lang' and body='Late'`],
+  ['the grammar is saved', 'ok', A, 0,
+    `select 1 where (slice_put('${LD}','phases','{"a":1,"b":1}',7000,null)->>'said')=''`],
+  ['one key of the grammar, changed later on the server, is kept', 'ok', A, 0,
+    `select 1 where (slice_put('${LD}','phases','{"a":2,"b":1,"c":1}',6500,1)->>'body')::jsonb='{"a":1,"b":1,"c":1}'::jsonb`],
+  /* NEVER LESS THAN WHAT WAS SENT (netKeeps, moved): the other phone removed y
+     LATER, this phone still has it and added z. The merge would hand back two
+     where three were sent, so nothing is written and the phone is told. */
+  ['a phone saves its lines', 'ok', A, 0,
+    `select 1 where (slice_put('${LD}','lines','["x","y"]',1000,null)->>'said')=''`],
+  ['another phone removes y, later', 'ok', A, 0,
+    `select 1 where (slice_put('${LD}','lines','["x"]',9000,1)->>'said')=''`],
+  ['a merge that would hold less than was sent is not written', 'ok', A, 0,
+    `select 1 where (slice_put('${LD}','lines','["x","y","z"]',2000,1)->>'said')='shrank'`],
+  ['and the server holds what it held', 'ok', A, 0,
+    `select 1 from slice where language='${LD}' and kind='lines' and body='["x"]'`],
+  /* 「空」と「壊れている」は違う状態 -- what the server holds cannot be read,
+     so nothing is written over it and the phone keeps its own. */
+  ['the grammar notes are saved', 'ok', A, 0,
+    `select 1 where (slice_put('${LD}','gram2','{"g":1}',1000,null)->>'said')=''`],
+  ['and what the server holds of it stops being readable', 'ok', A, 0,
+    `update slice set body='[[[not json' where language='${LD}' and kind='gram2'`],
+  ['a server copy that cannot be read is not written over', 'ok', A, 0,
+    `select 1 where (slice_put('${LD}','gram2','{"g":2}',2000,2)->>'said')='kept'`],
+  ['and what is there is still what was there', 'ok', A, 0,
+    `select 1 from slice where language='${LD}' and kind='gram2' and body='[[[not json'`],
+  /* AND THE OPERATOR PUTTING A VERSION BACK is written as it is: an UPDATE
+     with no upsert in front of it is not put together with anything. */
+  ['a plain update writes exactly what it says', 'ok', A, 0,
+    `update slice set body='["only"]' where language='${LD}' and kind='notes'`],
+  ['and nothing was put together with it', 'ok', A, 0,
+    `select 1 from slice where language='${LD}' and kind='notes' and body='["only"]'`],
   ['B cannot read it',                        'denied', B, 0,
     `select 1 from slice where language='${LD}'`],
   /* THE ONE THAT MAY NEVER MOVE. \u300c\u975e\u516c\u958b\u306b\u3057\u305f\u3089\u975e\u516c\u958b\u300d -- an unpublished
@@ -1954,19 +2096,20 @@ const CASES = [
     `update draft set body='{"ln":"older"}'::jsonb, ed='{"body":1000}'::jsonb where id='${DR}'`],
   ['it is still the later one',               'ok',     A, 0,
     `select 1 from draft where id='${DR}' and body->>'ln'='later'`],
-  /* And a slice, which two phones ADD to: the write says which version it
-     put itself together with, and one made against a version that has since
-     moved is refused rather than written over it (r63-audit 0-4). */
+  /* And a slice, which two phones ADD to. A write that has not seen what is
+     there -- put together against nothing -- is not refused and does not take
+     what is there away: it is put together HERE (slice_in, 2026-09-27; it was
+     refused `stale` until then, r63-audit 0-4). */
   ['A writes notes, merged against nothing',  'ok',     A, 0,
-    `insert into slice(language,kind,body,ed) values ('${L}','notes','["a"]','{"body":1000,"was":0}'::jsonb)`],
+    `insert into slice(language,kind,body,ed) values ('${L}','notes','["a"]','{"body":1000,"was":0}'::jsonb)
+       on conflict (language,kind) do update set body=excluded.body, ed=excluded.ed`],
   ['and "was" is not kept on the row',        'ok',     A, 0,
     `select 1 from slice where language='${L}' and kind='notes' and not (ed ? 'was')`],
-  ['another write merged against nothing is refused -- it has not seen "a"', 'denied', A, 0,
-    `update slice set body='["b"]', ed='{"body":3000,"was":0}'::jsonb where language='${L}' and kind='notes'`],
-  ['one merged against what is there lands',  'ok',     A, 0,
-    `update slice set body='["a","b"]', ed='{"body":3000,"was":1000}'::jsonb where language='${L}' and kind='notes'`],
-  ['and holds both',                          'ok',     A, 0,
-    `select 1 from slice where language='${L}' and kind='notes' and body='["a","b"]'`],
+  ['another write that has not seen "a" lands', 'ok',   A, 0,
+    `insert into slice(language,kind,body,ed) values ('${L}','notes','["b"]','{"body":3000,"was":7}'::jsonb)
+       on conflict (language,kind) do update set body=excluded.body, ed=excluded.ed`],
+  ['and "a" is still there beside it',         'ok',     A, 0,
+    `select 1 from slice where language='${L}' and kind='notes' and body::jsonb='["b","a"]'::jsonb`],
   /* The four somebody else would try. READ FIRST and not last: it is the one
      that costs somebody something even when nothing is written, and it is the
      one a `for all` policy or a `using (true)` would hand over in silence. */

@@ -334,13 +334,13 @@ Built:
   `supabase/schema.sql` is `(language, kind)` primary key, `body` the exact
   string the app holds for it — so a slice has one shape and not two that
   could disagree.
-- **two phones**: `www/sync.js` (ch. 26) reads, merges and writes back.
+- **two phones**: ~~`www/sync.js`~~ (ch. 26) reads, merges and writes back.
   Lists are both added — the price of that is a duplicate, never a deletion
   「そりゃあ両方足すだろ」 — and one thing changed on both is the later
   change's 「普通後から変えたほうになる？」 OWNER 2026-09-04
   (`docs/DATA_SAFETY.md` § 1).
 - `netLangRow()` makes the `language` row and puts its id on `LANGS[id].sid`;
-  `netSlicePut()` upserts (`Prefer: resolution=merge-duplicates`);
+  ~~`netSlicePut()`~~ upserts (`Prefer: resolution=merge-duplicates`);
   `netSlices()` reads them; `netLangSync()` runs the three; and a save goes up
   when Save is pressed — `netSaveNow()`, from `keepSave()` or `bkTouch()` (CLAUDE.md rule 6).
 
@@ -531,7 +531,7 @@ then `wipeLangsHere()` walks `SLICES` for that one id through `langKeyOf()`,
 and touches nothing else. It is
 down in a language this phone is only reading (`langLocked()`). The sharp part
 is why the server goes first: deleting on the phone alone brings the language
-**back** on the next `netLangSync()`, because `syMerge` adds both sides.
+**back** on the next `netLangSync()`, because ~~`syMerge`~~ adds both sides.
 
 ### 9. Push notifications
 
@@ -637,9 +637,9 @@ What is still missing, checked against the code rather than remembered:
 What that means here, item by item, and most of it is **already built**:
 
 - **the language lives on the server.** `netLangRow()` makes the `language`
-  row and keeps its id on `LANGS[id].sid`; `netSlicePut()` upserts one slice
+  row and keeps its id on `LANGS[id].sid`; ~~`netSlicePut()`~~ upserts one slice
   (`Prefer: resolution=merge-duplicates`); `netSlices()` reads them back;
-  `netLangSync()` puts the two copies together through `www/sync.js`: lists
+  `netLangSync()` puts the two copies together through ~~`www/sync.js`~~: lists
   are both added, and the price of that is a duplicate rather than a deletion
   「そりゃあ両方足すだろ」; one thing changed on both is the later change's.
   `www/boot.js` fires it on launch.
@@ -683,7 +683,7 @@ walk drew is on this phone until the door and goes up as the session arrives
 (`netTook()`); with no signal the door cannot be passed (CLAUDE.md § Online).
 
 **The exception, and it is the one place 「全部」 does not reach: a language
-that was downloaded is not synced.** `syMerge` adds both sides, so the first
+that was downloaded is not synced.** ~~`syMerge`~~ adds both sides, so the first
 time anything is added to a downloaded トキポナ it stops being トキポナ —
 「もちろんダメです。トキポナに文字足したらトキポナじゃないです」 (OWNER
 DECISION 2026-08-25). A read-only language is outside sync by construction, not

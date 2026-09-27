@@ -15,8 +15,8 @@
 
    What is stubbed is `netSend()`, and only that: it is the one place every
    request in www/net.js goes through, so everything above it — netLangRow,
-   netSlices, netSlicePut, the merge — runs for real against a server made of
-   two arrays. A check that stubbed netSlices or netLangSync would be asking
+   netSlices, netPut, netSliceUp — runs for real against a server made of
+   two arrays (the merge is the server's, and rls-check holds it). A check that stubbed netSlices or netLangSync would be asking
    its own answer back (CLAUDE.md rule 12).
 
    Run: node tools/again-check.mjs                                        */
@@ -76,7 +76,7 @@ const SERVER = `
        It is not a contrived case: the language row is already known and the
        GET of the slices is cached or small, so the POST is the request most
        likely to be the one that does not make it. */
-    if (S.downSlice && method === 'POST' && p.indexOf('/rest/v1/slice') === 0){
+    if (S.downSlice && method === 'POST' && p.indexOf('/rest/v1/rpc/slice_put') === 0){
       setTimeout(function(){ bad(null, 0, 'down'); }, 0); return;
     }
     /* そして取った言語の ask だけを落とす。全部落とすと「答えが来ていない
@@ -125,38 +125,34 @@ const SERVER = `
       }
       return answer([]);
     }
-    if (method === 'POST' && p.indexOf('/rest/v1/slice') === 0){
-      /* ANOTHER PHONE WROTE IN BETWEEN, played once when a scenario asks for
-         it: S.between changes the row the way that phone's write would, and
-         the answer is the refusal keep_newer() gives (supabase/schema.sql).
-         WHEN the server refuses is the scenario's to say -- this does not
-         work out \`was\` again; rls-check holds that rule on the real SQL. */
-      if (S.between){
-        var bt = S.between; S.between = null; bt();
-        S.tried.push('stale');
-        setTimeout(function(){ bad({ message:'stale' }, 400, 'slice 400'); }, 0); return;
-      }
-      var rows = (body instanceof Array) ? body : [body], k, r, f, hit;
-      for (k = 0; k < rows.length; k++){
-        r = rows[k]; hit = null;
-        for (f = 0; f < S.slice.length; f++)
-          if (S.slice[f].language === r.language && S.slice[f].kind === r.kind) hit = S.slice[f];
-        /* \`ed\` without \`was\`, which the server does not keep */
-        var ed = r.ed ? { body:r.ed.body } : {};
-        if (hit){ hit.body = r.body; hit.no = r.no; hit.at = r.at; hit.ed = ed; }
-        else S.slice.push({ language:r.language, kind:r.kind, body:r.body,
-                            no:r.no, at:r.at, ed:ed });
-        S.eds = S.eds || []; S.eds.push(r.kind + ':' + JSON.stringify(r.ed || null));
-        S.sent.push('slice:' + r.language + ':' + r.kind);
-        S.presses = S.presses || []; S.presses.push(r.press || null);
-      }
-      return answer([]);
+    /* ONE SLICE UP, supabase/schema.sql § slice_put, as far as a server with
+       one phone on it goes: it stores what it is sent and says so. What the
+       REAL server does when another phone wrote in between -- puts the two
+       together -- is not worked out here again (a check that recomputes the
+       thing under test is a copy of it); rls-check holds it on the real SQL.
+       What a scenario can say is what the server ANSWERED:
+         S.withIt(what it held, what was sent) -> the body it put together,
+                  handed back as body
+         S.said   'kept' or 'shrank' -- nothing written, the phone keeps its own */
+    if (method === 'POST' && p.indexOf('/rest/v1/rpc/slice_put') === 0){
+      var hit = null, f, put = String(body.p_body), back = null, said = S.said || '';
+      S.said = null;
+      for (f = 0; f < S.slice.length; f++)
+        if (S.slice[f].language === body.p_lang && S.slice[f].kind === body.p_kind) hit = S.slice[f];
+      S.puts = S.puts || []; S.puts.push({ kind:body.p_kind, base:body.p_base, ed:body.p_ed });
+      S.presses = S.presses || []; S.presses.push(body.p_press || null);
+      if (said) return answer({ no:hit ? hit.no : 0, said:said, body:null });
+      if (S.withIt){ var w = S.withIt; S.withIt = null; put = w(hit ? hit.body : '', put); back = put; }
+      if (hit){ hit.body = put; hit.no = (hit.no || 0) + 1; hit.at = new Date().toISOString(); hit.ed = { body:body.p_ed }; }
+      else S.slice.push(hit = { language:body.p_lang, kind:body.p_kind, body:put, no:1,
+                                at:new Date().toISOString(), ed:{ body:body.p_ed } });
+      S.sent.push('slice:' + body.p_lang + ':' + body.p_kind);
+      return answer({ no:hit.no, said:'', body:back });
     }
     if (method === 'GET' && p.indexOf('/rest/v1/slice') === 0){
-      /* at を返します ── サーバーがその slice を最後に書いた印で、保存が
-         中身を読まずに済ませられるかはこれで決まります（www/net.js
-         § netAtSame）。返さない偽サーバーは「印を知らない」端末を作るので、
-         いつまでも中身を読む道しか歩かれません。 */
+      /* no を返します ── その slice の版で、降ろした端末はそれを控え、次の
+         保存に「この版と合意していた」と付けて送ります（www/net.js §
+         NET_BASE）。 */
       var want = arg('language'), out = [], q;
       for (q = 0; q < S.slice.length; q++) if (S.slice[q].language === want)
         out.push({ kind:S.slice[q].kind, body:S.slice[q].body,
@@ -193,11 +189,6 @@ const SERVER = `
     }
     return setTimeout(function(){ bad(null, 404, 'no route ' + method + ' ' + p); }, 0);
   };
-  /* netSlicePut() used to open its own XMLHttpRequest, so it was a SECOND
-     transport this stub could not see and had to be replaced here as well.
-     On 2026-09-02 it moved onto netSend() -- it differed by one header and by
-     being outside the token renewal -- so the stub above is now the only
-     transport again, and nothing extra is needed. */
   /* AND A PERSON WALKING ONTO WHAT THEY HAVE. 「開いた時は通知とタイムライン
      だけでしょ、そのページに進むときに読み込むべき」 OWNER 2026-09-23: the
      list of languages is read when the list is arrived at, and what is in each
@@ -312,7 +303,7 @@ say(up.upFirst > 0 && up.upSecond > 0,
 say(up.upSp === 0,
     'and the gap between its letters went up in the script slice: sp=' + up.upSp);
 say(up.theirsRow && up.theirsSent === 0,
-    'and a language that is only READ went nowhere — syMerge adds both sides, ' +
+    'and a language that is only READ went nowhere — a merge adds both sides, ' +
     'and one pass would put something into a language somebody else wrote (' +
     up.theirsSent + ' requests about it)');
 
@@ -481,7 +472,7 @@ const safe = await pg.evaluate(async ({ srv, saved }) => {
   S.lang = keep.lang; S.slice = keep.slice;
   /* WHAT IS MEASURED IS WHAT SOMEBODY MADE, AND THE PICTURE IS NOT THAT.
      `lingua.<id>.<slice>.got` is what the SERVER last said (www/core.js §
-     slGot) -- it is written by netAgreed() every time the two sides agree, so
+     slGot) -- it is written every time the server says what it holds, so
      it changes size whenever the app speaks to the server at all, and a
      shrink there means the server's answer got shorter, not that anybody lost
      anything. Measured 2026-09-09: this fired on a picture catching up with a
@@ -547,19 +538,19 @@ const safe = await pg.evaluate(async ({ srv, saved }) => {
   await new Promise(function(f){ netLangSync(function(){ f(); }); });
   await wait(200);
   out.twice = [n1, words()];
-  /* and a slice that came back SMALLER is refused rather than written. Driven
-     by handing the merge a shorter body than the phone has -- the one shape
-     the condition names, made to happen rather than reasoned about. */
+  /* and a merge that would come back SMALLER than what the phone sent is not
+     written: the server answers `shrank` (supabase/schema.sql § slice_in,
+     slice_keeps -- rls-check holds that half on the real SQL). What is asked
+     here is the phone's half: the four words stay exactly as they are, and
+     the slice is still marked as a person's, so the next press sends it
+     again. */
   var big = JSON.stringify([{hw:'a'},{hw:'b'},{hw:'c'},{hw:'d'}]);
   slWr(langKeyOf(one, 'words'), big);
-  var oldMerge = syMerge;
-  syMerge = function(){ return JSON.stringify([{hw:'a'}]); };
-  NET_SHRANK = [];
+  S.said = 'shrank';
   await new Promise(function(f){ netLangSync(function(){ f(); }); });
   await wait(200);
-  syMerge = oldMerge;
   out.shrankKept = slRd(langKeyOf(one, 'words')) === big;
-  out.shrankSaid = NET_SHRANK.length > 0;
+  out.shrankSaid = slTouched(langKeyOf(one, 'words'));
   return out;
 }, { srv: SERVER, saved: up.srv });
 
@@ -573,15 +564,16 @@ say(safe.down.lost.length === 0 && safe.down.keysNow >= safe.down.keys,
     safe.down.keys + ' keys before, ' + safe.down.keysNow + ' after' +
     (safe.down.lost.length ? ', LOST ' + safe.down.lost.join(', ') : ''));
 say(safe.twice[0] === safe.twice[1] && safe.twice[0] > 0,
-    'and syncing twice in a row does not grow the dictionary — syMerge adds ' +
+    'and syncing twice in a row does not grow the dictionary — a merge adds ' +
     'both sides, so a language that gains a word every launch is the other way ' +
     'this goes wrong: ' + safe.twice.join(' then '));
 
 say(safe.shrankKept && safe.shrankSaid,
-    'and a merge that comes back SMALLER than what is on the phone is skipped ' +
-    'and said out loud, never written — 「同じキーを、今より少ない中身で書かない」: ' +
+    'and when the server says a merge would come back SMALLER than what was ' +
+    'sent, the phone keeps what it has and sends it again next time — ' +
+    '「同じキーを、今より少ない中身で書かない」: ' +
     (safe.shrankKept ? 'the phone kept its four words' : 'THE PHONE LOST WORDS') +
-    ', ' + (safe.shrankSaid ? 'and it was recorded' : 'and nothing said so'));
+    ', ' + (safe.shrankSaid ? 'still marked to go' : 'and it was dropped as if sent'));
 
 /* ---- waiting is not empty, and a refusal is not an answer ----------------
    Two sentences the timeline used to say before the server had said anything.
@@ -811,13 +803,8 @@ say(V.recentOffline && V.savedOffline,
    「消すも保存もそうだけど、そういったものが動く時はサーバーに行かないと。
    オフラインで作業できるのはオンラインに復帰した時にそれが最新データになる
    んだから」 OWNER 2026-09-04. */
-/* THE PAGE IS RELOADED FIRST, and that is not tidiness. The scenario above
-   replaces `syMerge` itself with a stub -- `function(){ return [{hw:'a'}] }`,
-   to prove that a merge coming back smaller is refused -- and never puts the
-   real one back. Every scenario after it therefore runs against that stub, in
-   one page, in silence. Written without this reload, the claims below went red
-   for the wrong reason and looked exactly like the bug they were written for.
-   A fresh page is the only thing that gives them the real sync.js back. */
+/* THE PAGE IS RELOADED FIRST, so the scenarios below start from a page that
+   no scenario above has left anything on. */
 await pg.evaluate(() => localStorage.clear());
 await pg.reload();
 await pg.waitForSelector('#splash', { state:'detached', timeout:20000 });
@@ -1019,27 +1006,32 @@ const up2 = await pg.evaluate(async ({ s, srv }) => {
     return false;
   })();
 
-  /* 五. 二台目が同じ言語を書いていたら、中身を読みに行く。
-     ここを間違えると片方の単語が黙って消えます ── 保存が中身を読まなくなった
-     のは「印が動いていなければサーバーは合意した中身を持っている」からで、
-     動いていれば読まなければなりません。相手の行を直に書き換えて、印を
-     別の文字列にします（二台が同時に書けば印は必ず別の文字列です）。 */
+  /* 五. 二台目が同じ言語を書いていたら、まとめるのはサーバー。
+     この端末は読みに行かず、合意していた版（no）を付けて送るだけで、サーバーが
+     二台目の単語と一緒にまとめた本文を答えに載せて返したら、それを受け取る
+     （www/net.js § netSliceUp、supabase/schema.sql § slice_in）。まとめ方
+     そのものは rls-check が本物の SQL で持ちます ── ここの偽サーバーは
+     「二台目の単語を足して返した」と答えるだけです。 */
   window.__SRV.sent = [];
   window.__SRV.asked = [];
-  (function(){
-    var S = window.__SRV, sid = id, i, o;
+  window.__SRV.puts = [];
+  out.baseBefore = netBaseOf(id, 'words');
+  out.noBefore = (function(){
+    var S = window.__SRV, i;
     for (i = 0; i < S.slice.length; i++)
-      if (S.slice[i].language === sid && S.slice[i].kind === 'words'){
-        o = JSON.parse(S.slice[i].body);
-        o.push({ hw:'mikka', gl:'a word the SECOND phone added' });
-        S.slice[i].body = JSON.stringify(o);
-        S.slice[i].at = '2099-01-01T00:00:00.000Z';
-      }
+      if (S.slice[i].language === id && S.slice[i].kind === 'words') return S.slice[i].no;
+    return -1;
   })();
+  window.__SRV.withIt = function(held, sent){
+    var o = JSON.parse(sent);
+    o.push({ hw:'mikka', gl:'a word the SECOND phone added' });
+    return JSON.stringify(o);
+  };
   WORDS.push({ hw:'yonka', gl:'a word THIS phone added' });
   save();
   await settle();
   out.askedTwo = window.__SRV.asked.slice();
+  out.baseSent = (window.__SRV.puts[0] || {}).base;
   out.bothOnServer = (function(){
     var S = window.__SRV, sid = id, i, b;
     for (i = 0; i < S.slice.length; i++)
@@ -1049,43 +1041,22 @@ const up2 = await pg.evaluate(async ({ s, srv }) => {
       }
     return false;
   })();
+  out.bothHere = WORDS.some(function(w){ return w.hw === 'mikka'; }) &&
+                 WORDS.some(function(w){ return w.hw === 'yonka'; });
+  out.settled = !slTouched(langKeyOf(id, 'words'));
 
-  /* 六. 合意の控えを無くした端末は、中身を読みに行く。
-     「控えが無い」は「サーバーは空」ではありません ── `langWasKey` はこの
-     端末とサーバーが最後に同じ文字列を持った時の**控え**で、それが無いのは
-     「知らない」です。netGotFor() はそこを `''` にしていました。`''` は
-     syMerge() が「サーバーは何も持っていない」と読む値なので、片側が空の
-     まま突き合わせに入ります ── この端末が何も持っていない欄なら、結果は
-     「両方とも空」で、サーバーが持っている中身は読まれも降りもしません。
-     CLAUDE.md 規則 11「『空』と『壊れている』は違う状態」と同じ一文です。
-
-     印（NET_AT）は残し、控えだけを落とします。この二つは netAgreed() が
-     一緒に書くので普段は揃っていますが、揃っていることに寄りかかった枝が
-     あるかどうかが、ここで訊いていることです。 */
-  window.__SRV.sent = [];
-  window.__SRV.asked = [];
-  /* 五の突き合わせで store は増えましたが、WORDS は増えていません ── 保存の
-     道は merge のあと langLoad() を呼ばないからです（起動の道は呼びます）。
-     ここが訊いているのは控えの話なので、その一つを持ち込まないように読み
-     直します。**保存が merge のあと globals を読み直さないこと自体は別の
-     欠陥で、docs/BACKLOG.md にあります。** */
-  langLoad();
-  slRm(langWasKey(id, 'words'));
-  out.markKept = netAtHas(id, 'words');
-  out.wasGone = slMine(langWasKey(id, 'words')) === null;
+  /* 六. 合意の版の控えを無くした端末は、「知らない」と送る。
+     「控えが無い」は「サーバーと同じ」ではありません ── 起動し直した電話は
+     版を覚えていない（メモリ、規則 22）。null で送れば、サーバーは何も
+     消さずにまとめます（slice_in、基の無いまとめ）。0 や前の版を送れば、
+     サーバーは知らない削除を読み取ってしまう。 */
+  window.__SRV.puts = [];
+  netBaseSet(id, 'words', 0);
   WORDS.push({ hw:'gonka', gl:'a word added after the record was lost' });
   save();
   await settle();
-  out.askedNoWas = window.__SRV.asked.slice();
-  out.keptAllThree = (function(){
-    var S = window.__SRV, sid = id, i, b;
-    for (i = 0; i < S.slice.length; i++)
-      if (S.slice[i].language === sid && S.slice[i].kind === 'words'){
-        b = S.slice[i].body;
-        return b.indexOf('mikka') >= 0 && b.indexOf('yonka') >= 0 && b.indexOf('gonka') >= 0;
-      }
-    return false;
-  })();
+  out.baseLost = (window.__SRV.puts[0] || {}).base;
+  out.baseBack = netBaseOf(id, 'words');
 
   /* 四. 署名が無ければ何も送らない。そして何も失わない ── 言語はこの iPhone に
      そのまま在る。「電波が無いときはログインできない」はオーナーの決定だが、
@@ -1109,29 +1080,24 @@ say(up2.onServer,
     'そして足した単語がサーバーの行に入っている');
 say(up2.sentAfter.length === 1 && up2.sentAfter[0].indexOf(':words') > 0,
     '送るのは動いた欄だけ ── 十二本ではなく一本: ' + JSON.stringify(up2.sentAfter));
-say(up2.asked.length === 1 && up2.asked[0].indexOf('kind=in.(words)') > 0 &&
-    up2.asked[0].indexOf('select=kind,no,at') > 0,
-    'そして訊くのは動いた欄の**印だけ** ── 中身は訊かない。全部降ろすと ' +
-    '大きい言語で毎回 685 KB、動いた欄の中身でも 877 KB ' +
-    '（docs/reports/cost-2026-09-09.md 一）: ' + JSON.stringify(up2.asked));
-say(up2.askedTwo.length === 2 &&
-    up2.askedTwo[0].indexOf('select=kind,no,at') > 0 &&
-    up2.askedTwo[1].indexOf('body') > 0,
-    'でも二台目が書いていたら中身を読みに行く ── 印が動いていれば読む: ' +
-    JSON.stringify(up2.askedTwo));
-say(up2.bothOnServer,
-    'そして二台の単語が両方サーバーに残る ── 片方が消えない' +
-    (up2.bothOnServer ? '' : '**片方が消えた**'));
-say(up2.markKept && up2.wasGone && up2.askedNoWas.length === 2 &&
-    up2.askedNoWas[0].indexOf('select=kind,no,at') > 0 &&
-    up2.askedNoWas[1].indexOf('body') > 0,
-    '控えを無くした端末も中身を読みに行く ── 「控えが無い」は「サーバーは空」' +
-    'ではない（印 ' + (up2.markKept ? 'あり' : '**無し**') + '、控え ' +
-    (up2.wasGone ? '無し' : '**あり**') + '、訊いた道 ' +
-    JSON.stringify(up2.askedNoWas) + '）');
-say(up2.keptAllThree,
-    'そして三つの単語がすべてサーバーに残る ── 二台目のも、この端末のも、' +
-    '控えを無くしたあとのも' + (up2.keptAllThree ? '' : '**消えた**'));
+say(up2.asked.length === 0,
+    'そして保存は何も読まない ── 送って、答えを受け取るだけ。まとめるのは' +
+    'サーバー（読み直しは 877 KB、docs/reports/cost-2026-09-09.md 一）: ' +
+    JSON.stringify(up2.asked));
+say(up2.askedTwo.length === 0 && up2.baseSent === up2.noBefore && up2.baseBefore === up2.noBefore,
+    '二台目が書いていても、この端末は読みに行かない ── 合意していた版を付けて送る' +
+    'だけ（訊いた道 ' + JSON.stringify(up2.askedTwo) + '、送った版 ' + up2.baseSent +
+    '、サーバーの版 ' + up2.noBefore + '）');
+say(up2.bothOnServer && up2.bothHere && up2.settled,
+    'そしてサーバーがまとめて返した本文をこの端末が受け取る ── 二台の単語が' +
+    'サーバーにもこの端末にもある' +
+    (up2.bothOnServer ? '' : '、**サーバーで片方が消えた**') +
+    (up2.bothHere ? '' : '、**この端末に二台目の単語が無い**') +
+    (up2.settled ? '' : '、**送ったのに書いた印が残った**'));
+say(up2.baseLost === null && typeof up2.baseBack === 'number' && up2.baseBack > 0,
+    '版の控えを無くした端末は null を送る ── 「知らない」は「同じ」ではない' +
+    '（送った版 ' + JSON.stringify(up2.baseLost) + '、答えで控え直した版 ' +
+    up2.baseBack + '）');
 say(up2.sentIdle.length === 0,
     '何も動いていない保存は、何も送らない: ' + JSON.stringify(up2.sentIdle));
 say(up2.sentWhileBusy.length === 0 && up2.queuedOnServer,
@@ -1170,8 +1136,8 @@ say(up2.sentOut.length === 0 && up2.keptOut,
 
      S.down       通信ごと落ちる。GET も POST も返らない
      S.downSlice  言語の欄は分かっていて、**その人の作ったものを運ぶ POST だけ**
-                  が落ちる。netSlice1() の netSlicePut 失敗が done() を呼んで
-                  いたので、五本落ちてもポップは一つも立ちませんでした
+                  が落ちる。slice の書き込みの失敗が done() を呼んでいた頃は、
+                  五本落ちてもポップは一つも立ちませんでした
 
    そして三つ目に、**電波があるときは今までどおり進む**ことを訊きます。落ちた
    ときに止める直しは、止まったままにする直しと一行しか違わないので。 */
@@ -1504,8 +1470,9 @@ say(road.words.filter(w => w === 'newer').length === 1,
    **上がること自体は正しい。**一語足したのはその人で、それはこの iPhone に
    しかない仕事です（規則 11「失敗して残る」）。規則 22 が禁じているのは
    **写しが答えとして戻ること** ── だから訊くのは「何が上がったか」ではなく、
-   **サーバーが持っている本文を、写しが上書きしないこと**です。`syMerge` が
-   両方足すので、上がった本文にはサーバーの語も入っていなければなりません。 */
+   **サーバーが持っている本文を、写しが上書きしないこと**です。まとめる
+   のはサーバーで両方足すので、上がった本文にもサーバーの語が残っていなければ
+   なりません。 */
 await pg.route('https://*.supabase.co/**', r => r.abort());
 await pg.reload();
 await pg.waitForSelector('#splash', { state:'detached', timeout:20000 });
@@ -2167,7 +2134,7 @@ const oneC = await pg.evaluate(async ({ srv, u }) => {
   await wait(600);
   var out = { mine: langMine(langId), lock: langLocked(),
               open: langId, letters: LETTERS.length,
-              sent: S.tried.filter(function(t){ return t.indexOf('POST /rest/v1/slice') === 0; }).length };
+              sent: S.tried.filter(function(t){ return t.indexOf('POST /rest/v1/rpc/slice_put') === 0; }).length };
   /* 次の節のために、この節が置いたものは持ち出さない（下の節と同じ理由）。 */
   localStorage.clear();
   return out;
@@ -2496,7 +2463,7 @@ const goneB = await pg.evaluate(async ({ srv, saved, lid }) => {
     letters: slRd(langKeyOf('gone-1', 'letters')),
     words: slRd(langKeyOf('gone-1', 'words')),
     got: localStorage.getItem(langKeyOf('gone-1', 'letters') + '.got'),
-    was1: slMine(langWasKey('gone-1', 'letters')),
+    was1: localStorage.getItem(langKeyOf('gone-1', 'letters') + '.was'),
     stored: (localStorage.getItem('lingua.langs') || '').indexOf('gone-1') >= 0,
     /* まだ在る取った言語は、そのまま */
     stay: !!LANGS['stay-1'], stayLetters: slRd(langKeyOf('stay-1', 'letters')),
@@ -2869,19 +2836,21 @@ say(takeB.pic,
 
 /* ---- 7. TWO PHONES, ONE THING CHANGED ON BOTH: THE LATER CHANGE STANDS ----
    「普通後から変えたほうになる？アプリ気になるそこ」 OWNER 2026-09-04
-   (docs/FEATURE_RULES.md). Lists are still both added -- 「そりゃあ両方足すだろ」
-   -- and what cannot be added (a value, the same row changed twice) is the
-   later side's, by when a PERSON wrote it on each phone (www/net.js §
-   netSlice1, www/sync.js § syMerge, supabase/schema.sql § keep_newer).
+   (docs/FEATURE_RULES.md). Lists are both added -- 「そりゃあ両方足すだろ」 --
+   and what cannot be added (a value, the same row changed twice) is the later
+   side's, by when a PERSON wrote it on each phone.
 
-   Four things, and the real netSaveNow()/netSlice1()/syMerge() run for all of
-   them against the stub above:
-     a  a save carries when the person wrote it, and what it merged against
-     b  a write the server refuses as stale is read again and merged again,
-        so the other phone's word and this one's are both there
-     c  the other phone changed the same value LATER: that value stands, here
-        and on the server
-     d  it changed it EARLIER: this phone's goes up */
+   WHICH ONE IS LATER IS THE SERVER'S TO SAY, and nowhere else's
+   (「一本化してくれ」 OWNER 2026-09-27; supabase/schema.sql § slice_in, held on
+   the real SQL by rls-check: 「a rename made EARLIER on another phone arrives
+   later and loses」 and the rest). What is asked here is the phone's half, with
+   the real netSaveNow()/netSliceUp() against the stub above:
+     a  a save carries when the person wrote it, and the version it agreed with
+     b  the server put the other phone's word in with this one's: it is here
+        too, and the phone read nothing and tried nothing twice to get it
+     c  the server kept the other phone's value (it was later): that value is
+        here too
+     d  it kept this phone's: this phone's is on the server */
 await pg.evaluate(() => localStorage.clear());
 await pg.reload();
 await pg.waitForSelector('#splash', { state:'detached', timeout:20000 });
@@ -2905,68 +2874,61 @@ const late = await pg.evaluate(async ({ s, srv }) => {
   await wait(200);
 
   /* a */
-  var before = row('words') && row('words').ed && row('words').ed.body;
-  S.eds = [];
+  var before = row('words') && row('words').no;
+  S.puts = [];
   var t0 = Date.now();
   WORDS.push({ hw:'ulma', gl:'a second word' }); save();
   await settle();
-  var sentW = (S.eds || []).filter(function(e){ return e.indexOf('words:') === 0; })[0] || '';
-  var edW = null; try { edW = JSON.parse(sentW.slice(6)); } catch (e) {}
-  out.a = { before:before, sent:edW, t0:t0 };
+  var putW = (S.puts || []).filter(function(e){ return e.kind === 'words'; })[0] || {};
+  out.a = { before:before, ed:putW.ed, base:putW.base, t0:t0 };
 
   /* b */
   S.tried = [];
-  S.between = function(){
-    var r = row('words'), o = JSON.parse(r.body);
+  S.withIt = function(held, sent){
+    var o = JSON.parse(sent);
     o.push({ hw:'mikka', gl:'the SECOND phone wrote this in between' });
-    r.body = JSON.stringify(o); r.ed = { body:Date.now() }; r.at = '2099-01-01T00:00:00.000Z';
+    return JSON.stringify(o);
   };
   WORDS.push({ hw:'yonka', gl:'THIS phone wrote this' }); save();
   await settle(); await wait(400);
   var bw = row('words').body;
-  out.b = { stale:S.tried.indexOf('stale') >= 0,
-            both:bw.indexOf('mikka') >= 0 && bw.indexOf('yonka') >= 0,
-            /* the slice and not WORDS: a save does not read the globals
-               again after a merge, which is its own entry in docs/BACKLOG.md
-               (the note over 五 above) and not this one */
-            here:String(slRd(langKey('words')) || '').indexOf('mikka') >= 0 };
+  out.b = { both:bw.indexOf('mikka') >= 0 && bw.indexOf('yonka') >= 0,
+            here:String(slRd(langKey('words')) || '').indexOf('mikka') >= 0,
+            onScreen:WORDS.some(function(w){ return w.hw === 'mikka'; }),
+            read:S.tried.filter(function(t){ return t.indexOf('GET /rest/v1/slice') === 0; }).length,
+            puts:S.tried.filter(function(t){ return t.indexOf('slice_put') >= 0; }).length };
 
-  /* c: the other phone set the direction LATER than this one */
-  var rs = row('script'), o1 = JSON.parse(rs.body);
-  o1.dir = 'ttb-rl'; rs.body = JSON.stringify(o1);
-  rs.ed = { body:Date.now() + 60000 }; rs.at = '2099-01-02T00:00:00.000Z';
+  /* c: the server kept the other phone's direction -- it was set LATER */
+  S.withIt = function(held, sent){ var o = JSON.parse(sent); o.dir = 'ttb-rl'; return JSON.stringify(o); };
   SCRIPT.dir = 'rtl'; save();
   await settle();
   out.c = { server:JSON.parse(row('script').body).dir,
             here:JSON.parse(slRd(langKey('script')) || '{}').dir };
 
-  /* d: and EARLIER than this one */
-  rs = row('script'); o1 = JSON.parse(rs.body);
-  o1.dir = 'ttb-lr'; rs.body = JSON.stringify(o1);
-  rs.ed = { body:1000 }; rs.at = '2099-01-03T00:00:00.000Z';
-  SCRIPT.dir = 'rtl'; save();
+  /* d: and kept this phone's -- the other was EARLIER */
+  SCRIPT.dir = 'ttb-lr'; save();
   await settle();
   out.d = { server:JSON.parse(row('script').body).dir,
             here:JSON.parse(slRd(langKey('script')) || '{}').dir };
   return out;
 }, { s: seed.toString(), srv: SERVER });
 
-say(late.a.sent && late.a.sent.body >= late.a.t0 && late.a.sent.was === late.a.before,
-    '保存は「人が書いた時」と「混ぜた相手の時」を持って行く ── 送った ed ' +
-    JSON.stringify(late.a.sent) + '、書いたのは ' + late.a.t0 + ' 以降、サーバーの前の時 ' +
-    JSON.stringify(late.a.before));
-say(late.b.stale && late.b.both,
-    '**読んだ後に別の端末が書いていたら、断られて読み直し、混ぜ直す** ── stale ' +
-    (late.b.stale ? 'あり' : 'なし') + '、サーバーに二台の単語が両方 ' +
-    (late.b.both ? 'ある' : '**無い**') + '（r63-audit 0-4）');
-say(late.b.here,
-    'そして別の端末の単語はこの端末の slice にも来ている');
+say(typeof late.a.ed === 'number' && late.a.ed >= late.a.t0 && late.a.base === late.a.before,
+    '保存は「人が書いた時」と「合意していた版」を持って行く ── 送った時 ' +
+    late.a.ed + '（書いたのは ' + late.a.t0 + ' 以降）、送った版 ' +
+    JSON.stringify(late.a.base) + '、サーバーの前の版 ' + JSON.stringify(late.a.before));
+say(late.b.both && late.b.here && late.b.onScreen && late.b.read === 0 && late.b.puts === 1,
+    '**別の端末が書いていても、この端末は一度送るだけ** ── サーバーが二台の単語を' +
+    'まとめて返し、それがこの端末にも画面にも来る（サーバー ' +
+    (late.b.both ? '両方' : '**片方**') + '、slice ' + (late.b.here ? 'あり' : '**なし**') +
+    '、画面 ' + (late.b.onScreen ? 'あり' : '**なし**') + '、読んだ ' + late.b.read +
+    ' 回、送った ' + late.b.puts + ' 回）');
 say(late.c.server === 'ttb-rl' && late.c.here === 'ttb-rl',
-    '**同じ物を二台で直したら、後から直したほうが残る** ── 相手が後: サーバー ' +
-    JSON.stringify(late.c.server) + '、この端末 ' + JSON.stringify(late.c.here) +
-    '（「普通後から変えたほうになる？」OWNER 2026-09-04）');
-say(late.d.server === 'rtl' && late.d.here === 'rtl',
-    'そして相手が先なら、この端末のが上がる ── サーバー ' +
+    '**同じ物を二台で直して、サーバーが後の方を残したら、この端末もそれになる** ── ' +
+    'サーバー ' + JSON.stringify(late.c.server) + '、この端末 ' + JSON.stringify(late.c.here) +
+    '（どちらが後かを決めるのはサーバー、rls-check が持つ）');
+say(late.d.server === 'ttb-lr' && late.d.here === 'ttb-lr',
+    'そしてこの端末のが残ったら、それがサーバーにある ── サーバー ' +
     JSON.stringify(late.d.server) + '、この端末 ' + JSON.stringify(late.d.here));
 
 await br.close();

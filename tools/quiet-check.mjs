@@ -139,12 +139,16 @@ function wire(cfg){
       }
       return [];
     }
+    /* one slice up (supabase/schema.sql § slice_put): stored as sent, and
+       the answer a server with one phone on it gives */
+    if (p === '/rest/v1/rpc/slice_put'){
+      S.slice[body.p_lang] = S.slice[body.p_lang] || {};
+      var was = S.slice[body.p_lang][body.p_kind];
+      S.slice[body.p_lang][body.p_kind] = { kind:body.p_kind, body:String(body.p_body||''),
+                                            no:(was ? was.no : 0) + 1, at:new Date().toISOString() };
+      return { no:S.slice[body.p_lang][body.p_kind].no, said:'', body:null };
+    }
     if (p === '/rest/v1/slice'){
-      if (m === 'POST'){
-        S.slice[body.language] = S.slice[body.language] || {};
-        S.slice[body.language][body.kind] = { kind:body.kind, body:String(body.body||''), no:body.no, at:body.at };
-        return [];
-      }
       bag = S.slice[asked(qs(u, 'language'))[0] || ''] || {};
       var kinds = asked(qs(u, 'kind')), cols = (qs(u, 'select') || 'kind,body,no,at').split(',');
       rows = [];
@@ -267,7 +271,7 @@ const wrote = launch.filter(r => writes(r.m, r.u));
 console.log('a launch nobody touched: ' + launch.length + ' requests, ' + wrote.length + ' of them writes');
 for (const r of wrote)
   console.log('          ' + r.m + ' ' + r.u.replace(/^[a-z]+:\/\/[^/]*/, '').slice(0, 70) +
-              (r.body && r.body.kind ? '  (' + r.body.kind + ')' : ''));
+              (r.body && r.body.p_kind ? '  (' + r.body.p_kind + ')' : ''));
 say(wrote.length === 0, '1 a launch nobody touched writes nothing');
 const plan = launch.filter(r => /verify-plan/.test(r.u));
 say(plan.every(r => r.body && Object.keys(r.body).join() === 'jws'),
@@ -312,7 +316,7 @@ async function writesDuring(fn, arg){
 }
 function named(ws){
   return ws.map(r => r.m + ' ' + r.u.replace(/^[a-z]+:\/\/[^/]*/, '').split('?')[0] +
-                     (r.body && r.body.kind ? ' (' + r.body.kind + ')' : '')).join(', ');
+                     (r.body && r.body.p_kind ? ' (' + r.body.p_kind + ')' : '')).join(', ');
 }
 
 /* ---- 4. a person opens another language ---------------------------------
@@ -331,7 +335,7 @@ await pg.evaluate(() => { window.__Q.log.length = 0; WORDS.push({ hw:'lo', ph:['
 await quiet(pg);
 const one = await pg.evaluate(() => window.__Q.log.map(r => ({ m:r.m, u:r.u, body:r.body })));
 const up = one.filter(r => writes(r.m, r.u));
-const kinds = up.map(r => (r.body && r.body.kind) || r.u.replace(/^[a-z]+:\/\/[^/]*/, '').split('?')[0]);
+const kinds = up.map(r => (r.body && r.body.p_kind) || r.u.replace(/^[a-z]+:\/\/[^/]*/, '').split('?')[0]);
 console.log('one word added: ' + kinds.join(', '));
 say(kinds.join() === 'words', '3 one word added sends the words slice and nothing else');
 

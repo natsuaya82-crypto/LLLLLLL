@@ -384,16 +384,16 @@ language sql stable security definer set search_path = public as $$
 -- collision, and one of the two has to lose something nobody was arguing
 -- about. Per slice they do not touch each other at all.
 --
--- Inside one slice the phone merges rather than overwriting -- a word added
+-- Inside one slice the SERVER merges rather than overwriting -- a word added
 -- here and a word added there are both added -- so what is stored is the
--- result and not a claim about who was first. What says the phone merged
--- against what is here is `ed.was` (keep_newer() below), not `no`.
+-- result and not a claim about who was first (slice_in() below, 2026-09-27).
 --
 -- `no` IS HOW MANY TIMES THE SERVER HAS TAKEN THIS SLICE, and the server is
 -- the one that counts. 「番号はサーバーが配ります」 (docs/FEATURE_RULES.md,
 -- 2026-09-04): slice_no() below sets it on every write, 1 for the first and
--- one more than the row held after that, and whatever number the phone sends
--- is not read. www/net.js still sends `no + 1`; it is thrown away here.
+-- one more than the row held after that. What a phone SENDS in `no` is not
+-- the number the row gets: it is the version the phone last agreed with,
+-- plus one, and slice_in() reads it as that and nothing else.
 --
 -- `body` is text and not jsonb on purpose: it is exactly the string the
 -- phone holds, so there is one shape for a slice and not two that could
@@ -460,6 +460,16 @@ create index if not exists slice_hist_at_idx on slice_hist(language, kind, at de
 alter table slice add column if not exists press uuid;
 alter table slice_hist add column if not exists press uuid;
 
+-- AND WHICH VERSION IT WAS. A phone says which version it last agreed with --
+-- by `no` (www/net.js today, and build 165) or by the time on `ed.body`
+-- (builds 167 and 1.0.3, `ed.was`) -- and when that is not the row standing
+-- now, slice_in() below finds it here: it is the third copy a merge needs to
+-- tell 「removed on one side」 from 「never heard of on the other」. A version
+-- kept before these two columns existed carries neither and is simply not
+-- found, which is a merge that drops nothing.
+alter table slice_hist add column if not exists no bigint;
+alter table slice_hist add column if not exists ed_at numeric;
+
 -- THE ONLY AUTOMATIC DELETION IN THIS FILE, and its DELETE REVIEW is in
 -- docs/CHANGELOG.md 2026-09-09. What it removes is a copy of a previous
 -- version; the row somebody is actually holding (`slice`) is never touched by
@@ -507,10 +517,11 @@ begin
   -- The save that replaced it, when there was one. A write that did not
   -- carry a number leaves the row's old one standing, and that is not the
   -- save that replaced it -- so it is taken only where it moved.
-  insert into slice_hist(language, kind, body, at, press)
+  insert into slice_hist(language, kind, body, at, press, no, ed_at)
        values (old.language, old.kind, old.body, v_at,
                case when tg_op = 'UPDATE' and new.press is distinct from old.press
-                    then new.press end);
+                    then new.press end,
+               old.no, nullif(old.ed ->> 'body', '')::numeric);
 
   delete from slice_hist h
    where h.language = old.language and h.kind = old.kind
@@ -711,26 +722,19 @@ alter table draft add column if not exists ed jsonb not null default '{}'::jsonb
 -- A field the write carries no time for is not compared -- an older version
 -- of the app writes none, and there is nothing to compare it with.
 --
--- ONE MORE THING FOR A SLICE, and it is the same sentence one step earlier.
--- A slice is a list that two phones ADD to, and the phone puts the two
--- together before it writes (www/sync.js) -- which only works if what it put
--- together is what is here. `ed.was` is the time it merged against; if this
--- row has moved since, the write is refused with `stale` and the phone reads
--- again and merges again (r63-audit 0-4: `no` was a counter nobody compared).
--- A refusal and not a quiet keep, because a slice is written without asking for
--- the row back (www/net.js § netSend) and a quiet keep would say nothing.
---
 -- The time is the phone's clock. A phone whose clock is far out wins or loses
 -- by that much; nothing here can know better.
 --
+-- A SLICE IS NOT THIS. It is a list that two phones ADD to, so it is put
+-- together rather than kept or refused, by slice_in() below -- and the same
+-- sentence is one of the things slice_in() does (a value both sides changed
+-- is the later side's).
+--
 -- 「HERE」 IS THE ROW THAT IS REALLY THERE, ON AN INSERT AS ON AN UPDATE.
--- 「文字書いた後セーブできない」 OWNER 2026-09-27. The phone writes a slice
--- the way PostgREST writes everything with `resolution=merge-duplicates`: an
--- INSERT that becomes an UPDATE on the primary key. This trigger runs on the
--- INSERT half first, and it used to take an INSERT to mean 「nothing is here」
--- -- so the second save of any slice, put together against the first, was
--- compared against nothing and refused `stale`, three times, and the phone
--- said 「接続できません」. Every save after the first, on every screen.
+-- 「文字書いた後セーブできない」 OWNER 2026-09-27. A phone writes the way
+-- PostgREST writes everything with `resolution=merge-duplicates`: an INSERT
+-- that becomes an UPDATE on the primary key. This trigger runs on the INSERT
+-- half first, and it used to take an INSERT to mean 「nothing is here」.
 -- keep_here() below is the one answer to 「what is here」 for both halves:
 -- OLD on an update, and on an insert the row already standing on the key the
 -- insert is about to meet -- nothing only where there is really nothing.
@@ -760,18 +764,11 @@ declare
   k  text; col text; sub text; ne numeric; oe numeric;
 begin
   -- What is here (keep_here above). A first write has nothing here to be
-  -- newer than, and `was` is held to 「nothing」 there too.
+  -- newer than.
   if tg_op = 'UPDATE' then o := to_jsonb(old);
   else o := keep_here(tg_relid, n);
   end if;
   ed := coalesce(o -> 'ed', '{}'::jsonb);
-  if (n -> 'ed') ? 'was' then
-    if coalesce(nullif(ed ->> 'body', '')::numeric, 0)
-       <> coalesce(nullif(n -> 'ed' ->> 'was', '')::numeric, 0) then
-      raise exception 'stale' using errcode = 'P0001';
-    end if;
-    n := jsonb_set(n, '{ed}', (n -> 'ed') - 'was');
-  end if;
   for k in select jsonb_object_keys(coalesce(n -> 'ed', '{}'::jsonb)) loop
     ne  := nullif(n -> 'ed' ->> k, '')::numeric;
     oe  := nullif(ed ->> k, '')::numeric;
@@ -795,17 +792,420 @@ begin
 end
 $$;
 -- First of every trigger on the row (they run in name order), so what the
--- others see -- slice_hist keeping the version before, profile_rename's
--- fourteen days -- is the write as it will land.
+-- others see -- profile_rename's fourteen days -- is the write as it will land.
+-- Not on `slice` any more: a slice is put together, by slice_in() below.
 drop trigger if exists a_keep_newer on slice;
-create trigger a_keep_newer before insert or update on slice
-  for each row execute function keep_newer();
 drop trigger if exists a_keep_newer on draft;
 create trigger a_keep_newer before insert or update on draft
   for each row execute function keep_newer();
 drop trigger if exists a_keep_newer on profile;
 create trigger a_keep_newer before insert or update on profile
   for each row execute function keep_newer();
+
+-- ---- PUTTING TWO COPIES OF A SLICE TOGETHER, AND IT IS DONE HERE ----------
+-- 「そもそもみんな同じ仕組みで作ってるのに保存できないとかなるのおかしくない？」
+-- 「一本化してくれ」「通信する場所食い違い保存」 OWNER 2026-09-27.
+--
+-- Two phones write the same slice. What the two of them come to used to be
+-- decided on the PHONE (www/sync.js, syMerge) and checked again HERE
+-- (keep_newer's `stale`), and on 2026-09-27 the two answers disagreed and
+-- every second save of 1.0.3 was refused. So it is decided in one place, and
+-- the place is the one both phones reach: a phone says what it has and when a
+-- person last wrote it, and the server puts that together with what it holds.
+--
+-- THE RULE IS THE ONE THE PHONE HAD, MOVED AND NOT CHANGED
+-- (docs/DATA_SAFETY.md, docs/FEATURE_RULES.md 2026-09-04):
+--
+--   a list: BOTH SIDES ADDED. Mine first, in my order, then what the server
+--           has that mine does not. A row the two sides last agreed on (`base`)
+--           that is missing from one side was REMOVED there, and stays removed
+--           unless the other side changed it later.
+--   a value on both sides that differs: THE LATER CHANGE WINS (`later` is true
+--           when the server's side was written later than the sender's).
+--   the alphabet: two rows of one slot are one letter; a blank never replaces
+--           a drawing; two drawings under one slot are both kept.
+--
+-- `base` is what the sender and the server last AGREED the slice was -- the
+-- third copy that tells 「removed here」 from 「not heard of here」. Nothing
+-- (null) is a merge that drops nothing, which is what the phone did with no
+-- record too.
+--
+-- Everything is `json` and not `jsonb`: json keeps a body's own order and its
+-- own text, and a dictionary is in the order somebody built it. Equality
+-- (「is this the same row」) is asked through jsonb, which is what 「the same」
+-- means for two rows.
+
+-- none, plain, read or wreck -- www/core.js § slState, the same four answers.
+-- 「空」と「壊れている」は違う状態で、同じ枝に入れてはいけません.
+create or replace function slice_state(kind text, s text) returns text
+language plpgsql immutable as $$
+declare v json; want text;
+begin
+  if s is null or s = '' then return 'none'; end if;
+  if kind = 'lang' then return 'plain'; end if;
+  begin v := s::json; exception when others then return 'wreck'; end;
+  want := case when kind in ('words','lines','letters','notes','snd') then 'a'
+               when kind in ('script','phases','wld','kb') then 'o' end;
+  if json_typeof(v) <> 'null' and
+     ((want = 'a' and json_typeof(v) <> 'array') or
+      (want = 'o' and json_typeof(v) <> 'object')) then return 'wreck'; end if;
+  return 'read';
+end $$;
+
+-- A value as JavaScript's `!!` would read it.
+create or replace function slice_truthy(v json) returns boolean
+language sql immutable as $$
+  select case json_typeof(v)
+           when 'string'  then (v #>> '{}') <> ''
+           when 'number'  then (v #>> '{}')::numeric <> 0
+           when 'boolean' then (v #>> '{}') = 'true'
+           when 'object'  then true
+           when 'array'   then true
+           else false end
+$$;
+
+-- What makes two rows the same row (www/sync.js § syKeyOf, moved): a word is
+-- its headword, a letter and a keyboard their id, anything else itself.
+create or replace function slice_key(kind text, x json) returns text
+language sql immutable as $$
+  select case
+    when kind = 'words' and json_typeof(x) = 'object' and slice_truthy(x -> 'hw')
+      then 'k' || (x ->> 'hw')
+    when kind in ('letters','kb') and json_typeof(x) = 'object' and slice_truthy(x -> 'id')
+      then 'k' || (x ->> 'id')
+    else 'j' || x::jsonb::text end
+$$;
+
+-- Which of the thirty-eight a letter is (www/letters.js § ltSlotKey, moved):
+-- a digit by its value, a to z, ! and ? by a one-character name.
+create or replace function slice_slot(kind text, x json) returns text
+language plpgsql immutable as $$
+declare nm text := '';
+begin
+  if kind <> 'letters' or json_typeof(x) is distinct from 'object' then return ''; end if;
+  if json_typeof(x -> 'val') = 'number' then return 's#' || (x ->> 'val'); end if;
+  if slice_truthy(x -> 'nm') then nm := x ->> 'nm';
+  elsif slice_truthy(x -> 'ab') then nm := x ->> 'ab';
+  elsif json_typeof(x -> 'snd') = 'array' and json_array_length(x -> 'snd') > 0 then
+    select string_agg(e #>> '{}', ' ' order by o) into nm
+      from json_array_elements(x -> 'snd') with ordinality as t(e, o);
+  end if;
+  nm := translate(coalesce(nm, ''), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz');
+  if length(nm) = 1 and position(nm in 'abcdefghijklmnopqrstuvwxyz!?') > 0 then
+    return 's' || nm; end if;
+  return '';
+end $$;
+
+-- Whether anybody has made anything of this row: a letter with a drawing, a
+-- shape or a borrowed character (www/letters.js § ltHasShape). Nothing else.
+create or replace function slice_made(kind text, x json) returns boolean
+language sql immutable as $$
+  select kind = 'letters' and json_typeof(x) = 'object' and (
+         (slice_truthy(x -> 'sh') and coalesce(case json_typeof(x -> 'sh')
+            when 'array' then json_array_length(x -> 'sh') > 0
+            when 'string' then (x ->> 'sh') <> '' end, false)) or
+         (slice_truthy(x -> 'st') and coalesce(case json_typeof(x -> 'st')
+            when 'array' then json_array_length(x -> 'st') > 0
+            when 'string' then (x ->> 'st') <> '' end, false)) or
+         slice_truthy(x -> 'ch'))
+$$;
+
+-- A list, put together (www/sync.js § syArr and syPut, moved).
+--
+-- Two halves, and the first is the same for every slice: which rows are
+-- REMOVED. A row of mine is skipped when the server's side is the later one,
+-- the server no longer has it, and it is what the two last agreed; a row of the
+-- server's is skipped when mine does not have it, the two had agreed on it, and
+-- either mine is the later side or the server has not changed it since. That
+-- is asked as one query, because a dictionary is thousands of rows and asking
+-- it a row at a time was eight seconds for five thousand words.
+--
+-- The second half is where the rows that are left GO, and it is syPut(): mine
+-- first, then the server's, one row per key, each key where it first
+-- appeared, and the server's row taking the place when the server's side is
+-- the later one. The alphabet has two more sentences -- a blank never takes a
+-- drawing's place, and two drawn rows under one slot are both kept -- and they
+-- need the rows one after another, so the alphabet is walked; it is the only
+-- slice where slice_made() can be true, and for every other slice the walk
+-- comes to exactly the query below.
+create or replace function slice_arr(kind text, mine json, theirs json, base json, later boolean)
+returns json language plpgsql immutable as $$
+declare
+  v_at jsonb := '{}'; v_out json[] := '{}'; v_x json; v_k text; v_s text; v_j int; v_i int; v_r json;
+  v_sides int[]; v_es json[]; v_ks text[];
+begin
+  with b as (select slice_key(kind, e) k, e::jsonb v, o
+               from json_array_elements(coalesce(base, '[]'::json)) with ordinality t(e, o)),
+       w as (select distinct on (k) k, v from b order by k, o desc),
+       m as (select o, e, slice_key(kind, e) k from json_array_elements(mine) with ordinality t(e, o)),
+       t as (select o, e, slice_key(kind, e) k from json_array_elements(theirs) with ordinality t(e, o)),
+       tk as (select distinct k from t),
+       mp as (select m.o, m.e, m.k from m left join w on w.k = m.k left join tk on tk.k = m.k
+               where not (later and tk.k is null and w.k is not null and w.v = m.e::jsonb)),
+       mk as (select distinct k from mp),
+       t0 as (select t.o, t.e, t.k,
+                     (mk.k is null and w.k is not null and (not later or w.v = t.e::jsonb)) as skip0
+                from t left join w on w.k = t.k left join mk on mk.k = t.k),
+       t1 as (select t0.*, coalesce(bool_and(skip0) over (partition by k order by o
+                         rows between unbounded preceding and 1 preceding), true) as none_before
+                from t0),
+       seq as (select 1 as side, o, e, k from mp
+               union all
+               select 2, o, e, k from t1 where not (skip0 and none_before))
+  select array_agg(side order by side, o), array_agg(e order by side, o), array_agg(k order by side, o)
+    into v_sides, v_es, v_ks from seq;
+  if v_sides is null then return '[]'::json; end if;
+
+  if kind <> 'letters' then
+    select coalesce(json_agg(coalesce(wv, fe) order by fs, fo), '[]'::json) into v_r from (
+      select z.k,
+             (array_agg(z.side order by z.side, z.n))[1] as fs,
+             (array_agg(z.n order by z.side, z.n))[1] as fo,
+             (array_agg(z.e order by z.side, z.n))[1] as fe,
+             (array_agg(z.e order by z.n desc) filter (where z.side = 2 and later))[1] as wv
+        from unnest(v_sides, v_es, v_ks) with ordinality z(side, e, k, n)
+       group by z.k) g;
+    return v_r;
+  end if;
+
+  for v_i in 1..array_length(v_sides, 1) loop
+    v_x := v_es[v_i]; v_k := v_ks[v_i];
+    v_s := slice_slot(kind, v_x);
+    if v_s = '' then v_s := v_k; end if;
+    v_j := (v_at ->> v_s)::int;
+    if v_j is null then
+      v_at := v_at || jsonb_build_object(v_s, coalesce(array_length(v_out, 1), 0) + 1);
+      v_out := v_out || v_x;
+    elsif not slice_made(kind, v_out[v_j]) and slice_made(kind, v_x) then
+      v_out[v_j] := v_x;
+    elsif slice_key(kind, v_out[v_j]) <> v_k and slice_made(kind, v_out[v_j]) and slice_made(kind, v_x) then
+      v_out := v_out || v_x;
+    elsif v_sides[v_i] = 2 and later and not (slice_made(kind, v_out[v_j]) and not slice_made(kind, v_x)) then
+      v_out[v_j] := v_x;
+    end if;
+  end loop;
+  return coalesce(array_to_json(v_out), '[]'::json);
+end $$;
+
+-- An object, key by key (www/sync.js § syObj, moved): theirs, with mine laid
+-- over; a list or an object on both sides goes together, a value is the
+-- later side's.
+create or replace function slice_obj(kind text, mine json, theirs json, base json, later boolean)
+returns json language plpgsql immutable as $$
+declare parts text[] := '{}'; k text; v json; mv json; b json;
+begin
+  for k, v in select t.k, t.v from json_each(theirs) with ordinality t(k, v, o) order by o loop
+    mv := mine -> k;
+    if mv is not null then
+      b := case when json_typeof(base) = 'object' then base -> k end;
+      if json_typeof(mv) = 'array' and json_typeof(v) = 'array' then
+        v := slice_arr(kind, mv, v, case when json_typeof(b) = 'array' then b end, later);
+      elsif json_typeof(mv) = 'object' and json_typeof(v) = 'object' then
+        v := slice_obj(kind, mv, v, case when json_typeof(b) = 'object' then b end, later);
+      elsif not later then v := mv;
+      end if;
+    end if;
+    parts := parts || (to_json(k)::text || ':' || v::text);
+  end loop;
+  for k, v in select t.k, t.v from json_each(mine) with ordinality t(k, v, o) order by o loop
+    if theirs -> k is null then parts := parts || (to_json(k)::text || ':' || v::text); end if;
+  end loop;
+  return ('{' || array_to_string(parts, ',') || '}')::json;
+end $$;
+
+-- One slice, the string a phone holds, put together with the server's
+-- (www/sync.js § syMerge, moved). '' is the one answer that writes NEITHER
+-- side: the server's copy cannot be read, and nobody's work is written over
+-- merely because this cannot read it.
+create or replace function slice_merge(kind text, mine text, theirs text, base text, later boolean)
+returns text language plpgsql immutable as $$
+declare m text := slice_state(kind, mine); th text := slice_state(kind, theirs);
+        mv json; tv json; bv json; r json;
+begin
+  if m = 'none' then return case when th in ('none','wreck') then '' else theirs end; end if;
+  if th = 'none' then return mine; end if;
+  if m = 'plain' then return case when later and th = 'plain' then theirs else mine end; end if;
+  if mine = theirs then return mine; end if;
+  if th = 'wreck' then return ''; end if;
+  if m = 'wreck' then return theirs; end if;
+  mv := mine::json; tv := theirs::json;
+  if slice_state(kind, base) = 'read' then bv := base::json; end if;
+  if json_typeof(mv) = 'array' and json_typeof(tv) = 'array' then
+    r := slice_arr(kind, mv, tv, case when json_typeof(bv) = 'array' then bv end, later);
+  elsif json_typeof(mv) = 'object' and json_typeof(tv) = 'object' then
+    r := slice_obj(kind, mv, tv, case when json_typeof(bv) = 'object' then bv end, later);
+  else
+    return case when later then theirs else mine end;
+  end if;
+  -- The same thing as one side is that side's own text, byte for byte.
+  if r::jsonb = mv::jsonb then return mine; end if;
+  if r::jsonb = tv::jsonb then return theirs; end if;
+  return r::text;
+end $$;
+
+-- NEVER LESS THAN WHAT WAS SENT (www/net.js § netKeeps, moved). A merge that
+-- comes back holding less than the copy the phone sent is not written.
+create or replace function slice_keeps(kind text, mine text, put text) returns boolean
+language plpgsql immutable as $$
+declare s1 text := slice_state(kind, mine); s2 text := slice_state(kind, put); a json; b json;
+begin
+  if s1 = 'none' then return true; end if;
+  if put = mine then return true; end if;
+  if s2 in ('wreck','none') then return false; end if;
+  if s1 in ('wreck','plain') then return true; end if;
+  a := mine::json; b := put::json;
+  if json_typeof(a) = 'array' then
+    return json_typeof(b) = 'array' and json_array_length(b) >= json_array_length(a); end if;
+  if json_typeof(a) = 'object' then
+    if json_typeof(b) is distinct from 'object' then return false; end if;
+    return not exists (select 1 from json_object_keys(a) k where b -> k is null);
+  end if;
+  return length(put) >= length(mine);
+end $$;
+
+-- ---- WHERE A SLICE IS PUT TOGETHER: ON THE ROW THAT IS REALLY THERE -------
+-- Every write of a slice is an upsert -- PostgREST's `merge-duplicates` from
+-- builds 165 and 167 and 1.0.3, and slice_put() below from today -- and an
+-- upsert is two halves: an INSERT, and, where the key is already taken, an
+-- UPDATE with the row that is really there as OLD, locked, newest version.
+-- The merge is done in THAT half and nowhere else, which is also what keeps
+-- two phones' first writes of one slice from passing each other: the second
+-- one waits for the first and then meets it as OLD.
+--
+-- The INSERT half only writes down what the write said about which version it
+-- had agreed with, because by the UPDATE half the payload has been folded into
+-- the row and that is gone:
+--
+--   `ed.was`   builds 167 and 1.0.3: the server's `ed.body` it put together
+--              against
+--   `no`       build 165 and slice_put(): the `no` it agreed with, plus one
+--   neither    no agreement to speak of: a merge that removes nothing
+--
+-- An UPDATE that no INSERT half wrote anything down for is somebody writing
+-- the row directly -- the operator putting a version back
+-- (admin_restore_lang) -- and it is written exactly as it is.
+--
+-- WHAT A WRITE IS TOLD. slice_put() reads `lingua.slice_said` afterwards:
+--   ''        written; the answer carries what the row now holds
+--   'kept'    what is here could not be read, or could not be put together,
+--             so nothing is written over it and the phone keeps its own
+--   'shrank'  the result would hold less than the phone sent
+--             (slice_keeps), so nothing is written and the phone keeps its own
+-- An older build is not asked: 'shrank' on a write carrying `ed.was` is
+-- refused `stale`, which is the one answer builds 167 and 1.0.3 already meet
+-- by reading again and putting it together themselves -- the road they were
+-- built with. Build 165 has no such road and gets what it always got.
+-- THE VERSION A WRITE NAMES, OUT OF THE HISTORY. slice_hist is the operator's
+-- and nobody else may read it (slice_hist_read), so slice_in() -- which runs
+-- as the person saving -- asks here. Definer, and it answers only about a
+-- language the caller owns, which is who may write its slices at all
+-- (slice_edit): the one thing it hands back is a version of their own work,
+-- and only to the merge that is writing it.
+create or replace function slice_base(lang uuid, k text, v_no bigint, v_ed numeric)
+returns text language sql stable security definer set search_path = public as $$
+  select h.body from slice_hist h
+   where h.language = lang and h.kind = k
+     and exists (select 1 from language l where l.id = lang and l.owner = auth.uid())
+     and ((v_no is not null and h.no = v_no) or (v_ed is not null and h.ed_at = v_ed))
+   order by h.at desc limit 1
+$$;
+create or replace function slice_in() returns trigger
+language plpgsql as $$
+declare
+  up jsonb; base text; put text; sent numeric; hed numeric; ned numeric; later boolean;
+begin
+  if tg_op = 'INSERT' then
+    perform set_config('lingua.slice_up', jsonb_build_object(
+      'l', new.language, 'k', new.kind, 't', statement_timestamp(),
+      'was', new.ed -> 'was', 'no', new.no, 'ed', new.ed -> 'body')::text, true);
+    perform set_config('lingua.slice_said', '', true);
+    new.ed := coalesce(new.ed, '{}'::jsonb) - 'was';
+    return new;
+  end if;
+  up := nullif(current_setting('lingua.slice_up', true), '')::jsonb;
+  if up is null or up ->> 'l' <> old.language::text or up ->> 'k' <> old.kind
+     or (up ->> 't')::timestamptz <> statement_timestamp() then
+    return new;
+  end if;
+  perform set_config('lingua.slice_up', '', true);
+
+  hed  := nullif(old.ed ->> 'body', '')::numeric;
+  sent := nullif(up ->> 'ed', '')::numeric;
+  if jsonb_typeof(up -> 'was') = 'number' then
+    if coalesce(hed, 0) = (up ->> 'was')::numeric then base := old.body;
+    else base := slice_base(old.language, old.kind, null, (up ->> 'was')::numeric);
+    end if;
+  elsif (up ->> 'no')::bigint >= 2 then
+    if old.no = (up ->> 'no')::bigint - 1 then base := old.body;
+    else base := slice_base(old.language, old.kind, (up ->> 'no')::bigint - 1, null);
+    end if;
+  end if;
+  -- A write that carries no time is not compared (keep_newer's sentence):
+  -- build 165 sends none, and its own merge was the last word, as it always was.
+  later := sent is not null and coalesce(hed, 0) > sent;
+  begin
+    put := slice_merge(old.kind, new.body, old.body, coalesce(base, ''), later);
+  exception when others then put := '';
+  end;
+
+  if put = '' then
+    perform set_config('lingua.slice_said', 'kept', true);
+    new := old;
+    return new;
+  end if;
+  if put <> new.body and not slice_keeps(old.kind, new.body, put) then
+    if jsonb_typeof(up -> 'was') = 'number' then
+      raise exception 'stale' using errcode = 'P0001';
+    end if;
+    perform set_config('lingua.slice_said', 'shrank', true);
+    new := old;
+    return new;
+  end if;
+  -- WHEN A PERSON LAST WROTE IT: the later of the two. And a body that moved
+  -- has a time of its own, because builds 167 and 1.0.3 name a version by it.
+  ned := greatest(coalesce(sent, 0), coalesce(hed, 0));
+  if put is distinct from old.body and hed is not null and ned <= hed then ned := hed + 1; end if;
+  new.ed := coalesce(old.ed, '{}'::jsonb) - 'was';
+  if ned > 0 then new.ed := new.ed || jsonb_build_object('body', ned); end if;
+  -- What the writer was sent back is not what it sent, so its mark on this
+  -- row is no longer this row's (builds 167 and 1.0.3 read `at` as that).
+  if put <> new.body then new.at := now(); end if;
+  new.body := put;
+  return new;
+end $$;
+drop trigger if exists a_slice_in on slice;
+create trigger a_slice_in before insert or update on slice
+  for each row execute function slice_in();
+
+-- ---- AND THE ONE DOOR TODAY'S PHONE WRITES A SLICE THROUGH ----------------
+-- The phone says what it has (`p_body`), when a person last wrote it
+-- (`p_ed`), which version it last agreed with (`p_base`, the row's `no`, or
+-- null for none), and which save this is (`p_press`, slice_hist). It is the
+-- same upsert every older build makes, so it meets the same slice_in() -- one
+-- place where two copies are put together -- and what it adds is the answer:
+--
+--   no     the version the row is now, which is the phone's next `p_base`
+--   said   '' written, 'kept' or 'shrank' nothing written (slice_in above)
+--   body   what the row holds, ONLY where it is not what was sent -- the
+--          dictionary does not come back on every save (cost-2026-09-09 一)
+--
+-- AS THE CALLER: the row policies on `slice` decide whose language it may
+-- write, exactly as for an upsert.
+create or replace function slice_put(p_lang uuid, p_kind text, p_body text, p_ed numeric,
+                                     p_base bigint default null, p_press uuid default null)
+returns jsonb language plpgsql security invoker set search_path = public as $$
+declare r record; said text;
+begin
+  insert into slice as s (language, kind, body, at, ed, no, press)
+       values (p_lang, p_kind, coalesce(p_body, ''), now(),
+               jsonb_build_object('body', coalesce(p_ed, 0)), coalesce(p_base, 0) + 1, p_press)
+  on conflict (language, kind) do update
+     set body = excluded.body, at = excluded.at, ed = excluded.ed, press = excluded.press
+  returning s.no, s.body into r;
+  said := coalesce(current_setting('lingua.slice_said', true), '');
+  return jsonb_build_object('no', r.no, 'said', said,
+           'body', case when said = '' and r.body is distinct from p_body then r.body end);
+end $$;
 
 -- ---- looked for, and kept -------------------------------------------------
 -- A search somebody starred. 「SNSは全部サーバー」 OWNER -- a search is

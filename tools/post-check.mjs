@@ -2656,18 +2656,17 @@ const R = await pg.evaluate(async () => {
   netSend = function (method, path, body, tok, ok, bad) {
     if (String(path).indexOf('/rest/v1/draft') === 0) {
       dsent.push({ method, path, body });
-      /* An update that matched nothing, so netDraftUp() falls through to the
-         insert -- which is the branch worth driving: it is the one that puts a
-         draft the server has never seen on the server. */
-      const idD = decodeURIComponent((/id=eq\.([^&]+)/.exec(String(path)) || [])[1] || '');
-      if (ok) ok(method === 'PATCH'
-                 ? (draftRow ? [Object.assign({ id: idD }, draftRow)] : [])
-                 : null);
+      /* One upsert (www/net.js § NET_PUT.draft): made where the server has
+         never seen it, written over where it has -- and the answer is the row
+         as it stands after keep_newer, which is what `draftRow` plays. */
+      if (ok) ok(method === 'POST'
+                 ? [Object.assign({ id: body && body.id }, draftRow || { body: body && body.body })]
+                 : []);
       return;
     }
     return realSend.apply(this, arguments);
   };
-  /* The row the server hands back to a PATCH, when a claim wants one --
+  /* The row the server hands back, when a claim wants one --
      the draft as it stands after the write (keep_newer). */
   let draftRow = null;
   const wasDrafts = DRAFTS.slice();
@@ -2690,8 +2689,8 @@ const R = await pg.evaluate(async () => {
                  'old shape: one flat key on this phone, and a person who ' +
                  'changes phones loses what they wrote and did not send');
     if (dsent.length && !dsent.some(r => r.method === 'POST'))
-      fails.push('the draft was never inserted -- the update matched no row ' +
-                 'and nothing followed it, so the draft exists nowhere but here');
+      fails.push('the draft was never put on the server -- nothing went that ' +
+                 'could make a row, so the draft exists nowhere but here');
 
     /* AND THE LATER KEEP STANDS. A draft carries when it was kept, and
        where the server already holds a LATER keep of the same draft from
