@@ -41,14 +41,6 @@ function ntBody(n){
 }
 
 var ntAt=-1;                        /* which note the sheet is open for, -1 = new */
-/* Whether the ntedit:-1 buffer already became a real note. openNote(undefined)
-   is the + itself -- keepPaint's own redraw of the same sheet always passes
-   a number, never undefined -- so this is the one place that can tell "the
-   thing typed here is already on the list" from "still a draft, still worth
-   finding again". A draft that was never saved is left exactly as it was:
-   that is the rest of the app's own rule (www/shell.js § KEEP). Only a note
-   that has already landed makes the NEXT + start empty. */
-var ntNewSpent=false;
 /* 開いたときは閲覧、右上の「編集」で編集の顔へ、そこの右上が保存。
    「メモ：開いた時は閲覧、右上（今は保存がある所）に「編集」、押すと編集
    できて、そのボタンが「保存」に変わる」 OWNER 2026-09-06。単語がずっとその形
@@ -67,7 +59,6 @@ function openNote(i){
      ログイン求められる」 (www/onboard.js § makeNeed): the fourth of the four
      is ADDING a note, and writing one is openNoteEdit(), which asks. This is
      the reading face, and the + passes straight through to that one. */
-  if(i===undefined && ntNewSpent){ keepDrop(keepKeyOf('form', 'ntedit:-1')); ntNewSpent=false; }
   var k=(typeof i==='number' && NOTES[i]) ? i : -1;
   /* 作るときは読むものが無いので、+ はそのまま書く顔。 */
   if(k<0) return openNoteEdit(-1);
@@ -144,19 +135,19 @@ function ntKeepOn(k, n){
 function ntTyped(k, f){ return keepVal(keepKeyOf('form', 'ntedit:'+k), f); }
 function ntSetT(v){ keepSet('t', String(v||'')); }
 function ntSetB(v){ keepSet('b', String(v||'')); }
-/* Writing it down, and STAYING on it -- leaving is what the arrow beside the
-   button is for, and after a save there is nothing left to ask about, so the
-   button goes. That is the answer to "did it save".
+/* Writing it down. What happens after -- saying so, and going back one page
+   -- is keepSave()'s, for every screen with a Save (www/shell.js § keepSave).
 
-   A note being MADE becomes a note being edited the moment it is written down,
-   which is what `ntAt` is: without that line a second press would push a second
-   copy of the same note. */
+   A note being MADE is a push. Nothing here has to remember that it was: a
+   save that lands levels the ntedit:-1 buffer back to the empty note it was
+   opened with and redraws that face (keepPaint), which opens it as -1 again,
+   so the next + starts empty and pushes a note of its own. */
 function saveNote(v){
   var ti=String(v.hasOwnProperty('t')? v.t : ntKept('t')).trim(),
       bo=String(v.hasOwnProperty('b')? v.b : ntKept('b')).trim();
   if(!ti && !bo) return;
   if(ntAt>=0 && NOTES[ntAt]){ NOTES[ntAt].t=ti; NOTES[ntAt].b=bo; NOTES[ntAt].ed=Date.now(); }
-  else { NOTES.push({t:ti, b:bo, at:Date.now()}); ntAt=NOTES.length-1; ntNewSpent=true; }
+  else NOTES.push({t:ti, b:bo, at:Date.now()});
   saveNotes();
 }
 /* What the note holds now, for the half of the pair somebody did not touch. */
