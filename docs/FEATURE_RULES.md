@@ -249,6 +249,15 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Implementation status:
 ```
 
+### 2026-09-27 Android 版 ── 同じリポジトリ、課金は Google Play 直結、値段は iPhone と同じ
+- Date: 2026-09-27
+- Area: Android 版
+- Decision: Android 版を同じリポジトリで作る。移せるものは全部移し、作り直しが要る所（Swift で書いた部分）は規則どおり Kotlin で作る。課金は Google Play の課金を直接つなぐ（RevenueCat は使わない）。Play での値段は iPhone と同じ。
+- Reason: オーナーの言葉「Android版作りたいから移行できるもの全部移行しつつ、作り直しで必要なところはルールに則って作って欲しい」「Googleplay直結で、値段は一緒」。
+- Affected features: 課金（`LinguaStore` の Android 版、`verify-plan` に Google Play の購入の確かめ）、通知、キーボード、ウィジェット、ビルド。
+- Affected data: `plan`・`purchase` の行に Google Play の購入が入る（形は課金のセッションで決める前に報告）。
+- Implementation status: 土台は作業中（r115-android）。課金・通知・キーボード・ウィジェットは未。
+
 ### 2026-09-27 字を描く画面に投げ縄 ── 囲んだ点を動かす・消す（1.0.3）
 - Date: 2026-09-27
 - Area: 字を描く画面（glyph）
