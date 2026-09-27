@@ -1739,16 +1739,24 @@ function wdSaveBtn(){
 
    `mn` is not in the signature: it is the first meaning, written from `mns` by
    saveWord(), so it would be the same fact counted twice. */
-/* AND WHAT THE SHEET CHOOSES ON A LIST OF ITS OWN. What means the same, what
-   means the opposite and what it came from are chosen on the relate page and
-   written onto the WORD, not onto wEdit -- so a sheet holding them measured
-   as a sheet holding nothing: leaving asked nothing, and what was chosen
-   stayed in memory, unsaved, to ride the next save anywhere. They are the
-   word's own three fields, read off it here. */
+/* AND WHAT THE SHEET PUTS ON THE WORD ITSELF. What means the same, what
+   means the opposite, what it came from, what form of that it is, and its
+   examples are chosen or written on the sheet and go onto the WORD, not onto
+   wEdit -- so a sheet holding them measured as a sheet holding nothing:
+   leaving asked nothing, and what was chosen stayed in memory, unsaved, to
+   ride the next save anywhere. It was said of the first three and the
+   examples and the 語形 went on doing it. So it is one list, WD_ON_WORD, read
+   off the word here, and a field the sheet writes onto the word tomorrow is
+   one more name in it. An empty list and no list are the same thing: showing
+   a relation makes the list (wRel), and that is not a change. */
+var WD_ON_WORD=['syn','ant','from','fm','ex'];
 function wdSig(sp, mns, pos, sub, reg, tags, ety, nt, w){
+  var on=WD_ON_WORD.map(function(k){
+    var v=w? w[k] : null;
+    return (v===undefined || v===null || (v instanceof Array && !v.length))? '' : v;
+  });
   return JSON.stringify([sp||[], mns||[], pos||'', String(sub||''), reg||'',
-                         tags||[], String(ety||''), String(nt||''),
-                         (w && w.syn)||[], (w && w.ant)||[], String((w && w.from)||'')]);
+                         tags||[], String(ety||''), String(nt||''), on]);
 }
 function wdSigEdit(){
   return wdSig(wEdit.sp, wEdit.mns, wEdit.pos, wEdit.sub, wEdit.reg,

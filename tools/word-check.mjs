@@ -857,6 +857,47 @@ const R = await pg.evaluate(() => {
     out.fails.push('the spelling was changed and the sheet still says nothing ' +
       'has -- the Save stays grey and the back arrow leaves without asking');
 
+  /* ---- and an example, and a 語形, turn it gold as well --------------------
+     「保存を押したときだけ、保存されているものが変わる」OWNER 2026-09-04,
+     「保存を押したら」OWNER 2026-09-24. An example and a 語形 are written onto
+     the WORD rather than onto wEdit, and the sheet's signature left both out:
+     the Save stayed grey, the arrow left without asking, and the example rode
+     the next unrelated save. 「いいえ」 has to take it back off again. */
+  start(); KEEP = {};
+  openWord('mos'); openEdit('mos');
+  const exGrey = !keepDirty(keepKey()), exKey = keepKey();
+  const exBefore = (findWord('mos').ex || []).length;
+  wdExOpen();
+  document.getElementById('wd-exl').value = 'mos tir';
+  document.getElementById('wd-exg').value = '';
+  wdAddEx();
+  const exGold = keepDirty(exKey);
+  keepNo(exKey);
+  const exAfterNo = (findWord('mos').ex || []).length;
+  out.said.push('an example added on the sheet: untouched ' + exGrey + ', changed after ' +
+    exGold + ', and 「いいえ」 leaves ' + exAfterNo + ' of ' + exBefore);
+  if (!exGold)
+    out.fails.push('an example was added on the sheet and the sheet says nothing ' +
+      'has changed -- the Save stays grey and the arrow leaves without asking');
+  if (exAfterNo !== exBefore)
+    out.fails.push('「いいえ」 did not take the example back off: ' + exAfterNo +
+      ' where there were ' + exBefore);
+  start(); KEEP = {};
+  const kid = WORDS.filter(w => w.from && findWord(w.from))[0];
+  if (!kid) out.fails.push('the fixture has no word made from another -- the 語形 claim asked nothing');
+  else {
+    openWord(kid.hw); openEdit(kid.hw);
+    const fmKey = keepKey();
+    go('fm', String(kid.hw));
+    fmPick(String(kid.hw), kid.fm === 'agt' ? 'dim' : 'agt');
+    const fmGold = keepDirty(fmKey);
+    out.said.push('a 語形 chosen for ' + kid.hw + ': the sheet has changed ' + fmGold);
+    if (!fmGold)
+      out.fails.push('a 語形 was chosen on the sheet and the sheet says nothing has changed');
+    keepNo(fmKey);
+  }
+  start(); KEEP = {};
+
   /* ---- and what the arrow that leaves the sheet is called ---------------
      www/shell.js § pageName. The label is on the button as an aria-label, so
      it is on the screen for anybody who cannot see the arrow and nowhere else
