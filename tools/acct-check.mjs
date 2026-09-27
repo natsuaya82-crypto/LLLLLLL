@@ -793,7 +793,7 @@ const R = await pg.evaluate(async () => {
   /* 編集。通ってから入り、落ちれば一字も入らない。 */
   let sent21 = null, letGo21 = null;
   netSend = (method, path, body, tok, ok2) => {
-    if (method === 'PATCH'){ sent21 = body || {}; letGo21 = () => ok2([]); }
+    if (method === 'PATCH'){ sent21 = body || {}; letGo21 = () => ok2([body || {}]); }
   };
   let saved21 = 'まだ';
   meKeepSave({ bio: '打った一行' }, (okk) => { saved21 = okk; });
@@ -2991,7 +2991,7 @@ const R = await pg.evaluate(async () => {
     delete SET.wsys;
     let sent63 = null, letGo63 = null;
     netSend = (method, path, body, tok, ok2) => {
-      if (method === 'PATCH'){ sent63 = body || {}; letGo63 = () => ok2([]); }
+      if (method === 'PATCH'){ sent63 = body || {}; letGo63 = () => ok2([body || {}]); }
     };
     setWsys('syll');
     if (!sent63 || sent63.wsys !== 'syll')
@@ -3060,7 +3060,7 @@ const R = await pg.evaluate(async () => {
        （www/net.js § netPrefsGot）。 */
     netSend = (method, path, body, tok, ok) => {
       if (method === 'POST' && path.indexOf('/rest/v1/rpc/prefs_put') === 0 &&
-          body && body.p){ put64 = body.p; if (ok) ok(null); }
+          body && body.p){ put64 = body.p; if (ok) ok(body.p); }
     };
     SET.theme = 'dark'; SET.myfont = false; SET.showScript = false;
     SET.kbrom = true;

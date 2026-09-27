@@ -2423,7 +2423,7 @@ var NET_PUT={
     return {method:'POST', path:'/rest/v1/rpc/slice_put',
             body:{p_lang:sid, p_kind:r.kind, p_body:String(r.body), p_ed:r.ed||0,
                   p_base:r.base||null, p_press:r.press||null},
-            got:function(d){ return (d && typeof d==='object')? d : {}; }};
+            got:function(d){ return (d && typeof d==='object')? d : null; }};
   },
   language: function(sid, r){
     return {method:'PATCH', path:'/rest/v1/language?id=eq.'+encodeURIComponent(sid), body:r,
@@ -2443,14 +2443,24 @@ var NET_PUT={
   },
   prefs: function(uid, r){
     return {method:'POST', path:'/rest/v1/rpc/prefs_put', body:r,
-            got:function(d){ return d; }};
+            got:function(d){ return (d && typeof d==='object')? d : null; }};
   }
 };
+/* A WRITE THAT CAME BACK WITH NOTHING DID NOT LAND. `got` answers null when
+   the server's answer carries no row -- a PATCH that matched none answers 200
+   and `[]` (no row yet, or a row policy saying no) -- and that is `bad`, with
+   `≠` (「answered, and not what was asked」, netPop). It used to go to `ok` as
+   null, and every caller read it as landed: a photograph shown on the phone
+   that profile.av never had (docs/reports/rule-audit-2026-09-27-core.md § 0). */
 function netPut(to, id, row, ok, bad){
   function go(key){
     var w=NET_PUT[to](key, row);
     netSend(w.method, w.path, w.body, netTok(),
-            function(d){ ok(w.got(d)); }, bad, w.up);
+            function(d){
+              var r=w.got(d);
+              if(r===null){ bad(d, 200, to+' \u2260'); return; }
+              ok(r);
+            }, bad, w.up);
   }
   /* A language's rows hang off its `language` row, which may not be up yet
      (the walk's language at the door): netLangRow() puts it up first. */

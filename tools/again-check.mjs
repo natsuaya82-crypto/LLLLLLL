@@ -123,6 +123,11 @@ const SERVER = `
         if (body && body.published_at !== undefined) S.lang[j].published_at = body.published_at;
         if (body && body.name !== undefined) S.lang[j].name = body.name;
       }
+      /* The row as it now stands, which is what PostgREST hands back for
+         `return=representation` -- `[]` is 「matched no row」, and netPut()
+         (www/net.js) reads that as a write that did not land. */
+      for (j = 0; j < S.lang.length; j++) if (S.lang[j].id === lid)
+        return answer([JSON.parse(JSON.stringify(S.lang[j]))]);
       return answer([]);
     }
     /* ONE SLICE UP, supabase/schema.sql § slice_put, as far as a server with

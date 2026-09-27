@@ -305,6 +305,28 @@ say(sevenB.length === 1 && sevenB[0] === 'bad 0',
     'a dead network (readyState 4 AND error) answers once, not twice: ' +
     JSON.stringify(sevenB));
 
+/* ---- 7c. and a write that changed no row did not work ---------------------
+   PATCH answers 200 and `[]` when it matched no row -- no row yet, or a row
+   policy that said no (supabase/schema.sql § profile_edit). netPut() is the
+   one save, and it handed that to `ok` as `null`; every caller read it as
+   landed, which is how a photograph was shown on the phone and never reached
+   profile.av (docs/reports/rule-audit-2026-09-27-core.md § 0, N3). */
+const sevenC = await pg.evaluate(async ({ w, s }) => {
+  eval(w); eval(s); window.__reset();
+  var out = {};
+  ['profile', 'draft'].forEach(function(to){
+    netPut(to, 'x1', to === 'draft' ? { body:{}, ed:{} } : { a:1 },
+           function(r){ out[to] = 'ok ' + JSON.stringify(r); },
+           function(d, st, m){ out[to] = 'bad ' + st + ' ' + m; });
+  });
+  await wait(200);
+  return out;
+}, { w: WIRE, s: wait });
+
+say(['profile', 'draft'].every(function(k){ return /^bad 200 .*≠/.test(sevenC[k] || ''); }),
+    'a write the server answered with no row is a write that did not land: ' +
+    JSON.stringify(sevenC));
+
 /* ---- 8. and the file and the picture leave by the same exit ------------
    「一本化してくれ」「通信する場所」 OWNER 2026-09-27. netUp() (a file going up)
    and netMedia() (a picture coming down) each had an XMLHttpRequest of their
