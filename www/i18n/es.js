@@ -822,7 +822,6 @@ defLang('es', (function(){
       "notes.untitled"   : "Sin título",
       "notes.empty.t"    : "Aún no hay nada escrito",
       "notes.empty.s"    : "Todavía ninguna",
-      "toast.note.kept"  : "Nota guardada",
       "toast.note.gone"  : "Nota eliminada",
       /* the conversation */
       "words.addmn"      : "Añadir un significado",

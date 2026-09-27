@@ -741,7 +741,6 @@ defLang('ja', (function(){
       'notes.untitled'  : '見出しなし',
       'notes.empty.t'   : 'まだメモがありません',
       'notes.empty.s'   : 'まだありません',
-      'toast.note.kept' : "メモを保存しました",
       'toast.note.gone' : "メモを削除しました",
       /* the conversation */
       /* grammar — the decisions */

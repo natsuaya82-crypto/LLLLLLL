@@ -825,7 +825,6 @@ defLang('it', (function(){
       "notes.untitled"   : "Senza titolo",
       "notes.empty.t"    : "Ancora niente di scritto",
       "notes.empty.s"    : "Ancora nessuna",
-      "toast.note.kept"  : "Nota conservata",
       "toast.note.gone"  : "Nota eliminata",
       /* the conversation */
       /* grammar — the decisions */

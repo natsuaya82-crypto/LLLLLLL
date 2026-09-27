@@ -837,7 +837,6 @@ defLang('ru', (function(){
       "notes.untitled"    : "Без заголовка",
       "notes.empty.t"     : "Пока ничего не записано",
       "notes.empty.s"     : "Пока нет",
-      "toast.note.kept"   : "Заметка сохранена",
       "toast.note.gone"   : "Заметка удалена",
       /* разговор */
       /* грамматика — решения */

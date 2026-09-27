@@ -1001,7 +1001,6 @@ defLang('ko', (function(){
       "notes.untitled"   : "제목 없음",
       "notes.empty.t"    : "아직 적어 둔 것이 없어요",
       "notes.empty.s"    : "아직 없습니다",
-      "toast.note.kept"  : "메모를 간직했어요",
       "toast.note.gone"  : "메모를 지웠어요",
       /* the conversation */
       /* grammar — the decisions */

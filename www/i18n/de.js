@@ -850,7 +850,6 @@ defLang('de', (function(){
       "notes.untitled"   : "Ohne Titel",
       "notes.empty.t"    : "Noch nichts aufgeschrieben",
       "notes.empty.s"    : "Noch keine",
-      "toast.note.kept"  : "Notiz behalten",
       "toast.note.gone"  : "Notiz gelöscht",
       /* the conversation */
       /* rules */

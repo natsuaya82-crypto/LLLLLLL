@@ -733,7 +733,6 @@ defLang('en', (function(){
       'notes.untitled'  : "Untitled",
       'notes.empty.t'   : "Nothing written down yet",
       'notes.empty.s'   : "None yet",
-      'toast.note.kept' : "Note kept",
       'toast.note.gone' : "Note deleted",
       /* the conversation */
       /* grammar — the decisions */

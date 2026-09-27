@@ -156,7 +156,7 @@ function saveNote(v){
   if(!ti && !bo) return;
   if(ntAt>=0 && NOTES[ntAt]){ NOTES[ntAt].t=ti; NOTES[ntAt].b=bo; NOTES[ntAt].ed=Date.now(); }
   else { NOTES.push({t:ti, b:bo, at:Date.now()}); ntAt=NOTES.length-1; ntNewSpent=true; }
-  saveNotes(); toast(t('toast.note.kept'));
+  saveNotes();
 }
 /* What the note holds now, for the half of the pair somebody did not touch. */
 function ntKept(f){

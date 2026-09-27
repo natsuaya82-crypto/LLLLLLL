@@ -258,6 +258,16 @@ const r = await pg.evaluate(({ s }) => {
 
   function fail(m){ out.fails.push(m); }
 
+  /* THE SCREENS THAT STILL SAY IT TWICE, and whose files are not the notes
+     chapter's to change (audit words, 2026-09-27). Each says 「{0} updated」
+     from its own save function before keepSave() has heard from the server.
+     A line here fails the day its screen says it once, so the list can only
+     shrink. */
+  var TWICE = {
+    "a letter's note": "www/letters.js -- toast(t('toast.saved', ...)) in the letter's save",
+    "a word's sheet":  "www/wordsheet.js -- toast(t('toast.saved', hw)) in the sheet's save"
+  };
+
   for(var i = 0; i < SCREENS.length; i++){
     var sc = SCREENS[i], res = { n: sc.n };
     sc.go();
@@ -309,7 +319,16 @@ const r = await pg.evaluate(({ s }) => {
     sc.go();
     type(sc.sel, sc.v);
     back();
+    /* 7b -- AND IT SAYS SO ONCE. 「保存しました」 is keepSave()'s one line for
+       every screen (www/shell.js § keepSave, OWNER 2026-09-06), and it is said
+       when the save has LANDED. A screen whose own save function says a
+       second sentence of its own says it twice on one press, and says it
+       before the server has answered -- the note did (「メモを保存しました」). */
+    var said7 = [], toast7 = window.toast;
+    window.toast = function(m){ said7.push(String(m)); };
     clickSel('#pop [data-do="popYes"]');
+    window.toast = toast7;
+    res.yesSaid = said7;
     res.yesLeft = (whereAmI() !== key);
     res.yesStored = (sc.read() === sc.v);
     res.yesHeld = (all().indexOf(sc.v) >= 0);
@@ -332,6 +351,12 @@ const r = await pg.evaluate(({ s }) => {
     if(!res.yesLeft) fail(sc.n + ': Yes did not go back');
     if(!res.yesStored) fail(sc.n + ': Yes did not write it');
     if(!res.yesHeld) fail(sc.n + ': Yes wrote it to no key the phone is holding');
+    if(TWICE[sc.n]){
+      if(res.yesSaid.length === 1)
+        fail(sc.n + ': says it once now -- take its line out of TWICE in this file');
+    } else if(res.yesSaid.length !== 1 || res.yesSaid[0] !== t('keep.saved'))
+      fail(sc.n + ': a save that landed said ' + JSON.stringify(res.yesSaid) +
+           ' -- it is keepSave()\'s one line, once: ' + JSON.stringify(t('keep.saved')));
     out.screens.push(res);
   }
 
@@ -364,9 +389,12 @@ const r = await pg.evaluate(({ s }) => {
     v2 = sd.v + ' again';
     wasV = sd.read(); wasAll = all();
     type(sd.sel, v2);
+    var saidD = [], toastD = window.toast;
+    window.toast = function(m){ saidD.push(String(m)); };
     keepPress();
+    window.toast = toastD;
     f = document.querySelector(sd.sel);
-    out.dead.push({ n: sd.n, value: sd.read(), was: wasV, typed: v2,
+    out.dead.push({ n: sd.n, value: sd.read(), was: wasV, typed: v2, said: saidD, twice: !!TWICE[sd.n],
                     moved: all() !== wasAll,
                     dirty: keepDirty(keepKey()),
                     field: f ? String(f.value || '') : null });
@@ -1374,6 +1402,10 @@ for(const d of r.dead){
     fails.push(d.n + ': a save that did not land moved something on the phone');
   if(!d.dirty)
     fails.push(d.n + ': a save that did not land let go of what was typed');
+  /* netPop() is what speaks when a save does not land; a toast here is a
+     screen saying 「saved」 about a save that did not happen. */
+  if(d.said.length && !d.twice)
+    fails.push(d.n + ': a save that did not land said ' + JSON.stringify(d.said));
   /* AND IT IS STILL IN THE FIELD, asked of every screen whose buffer IS its
      fields. The word sheet is the one that is not -- its buffer is the sheet
      said once (`w`, wdSigEdit in www/wordsheet.js), what was typed is in

@@ -830,7 +830,6 @@ defLang('zh', (function(){
       "notes.untitled"   : "无标题",
       "notes.empty.t"    : "还没有写下什么",
       "notes.empty.s"    : "还没有",
-      "toast.note.kept"  : "笔记已留下",
       "toast.note.gone"  : "笔记已删除",
       /* the conversation */
       /* grammar — the decisions */

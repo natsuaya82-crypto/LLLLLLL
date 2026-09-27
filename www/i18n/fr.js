@@ -873,7 +873,6 @@ defLang('fr', (function(){
       "notes.untitled"   : "Sans titre",
       "notes.empty.t"    : "Rien de noté pour l’instant",
       "notes.empty.s"    : "Aucune",
-      "toast.note.kept"  : "Note gardée",
       "toast.note.gone"  : "Note supprimée",
       /* the conversation */
       /* grammar — the decisions */
