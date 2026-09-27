@@ -1114,19 +1114,6 @@ function gFmAffix(r){
   if(!f) return '';
   return (r && r.at==='start')? f+'-' : '-'+f;
 }
-/* WHICH CHAPTER AN ENGINE RULE BELONGS TO, and it is asked here and nowhere
-   else. It used to be a table of five features, because the verbs chapter was
-   one chapter holding eleven forms; a form is a CHAPTER now (g2Chaps below), a
-   chapter names the `fm` label it is about, and its rules are asked for by that
-   label rather than worked back out of the feature they became. What is left
-   here is the two kinds of rule that are NOT one form of a word: a describing
-   word that agrees, and the marks the 助詞 stage makes. */
-function g2Chap(r){
-  /* The marks the 助詞 stage makes, and nothing else. Every rule somebody wrote
-     is claimed by the chapter of the FORM it makes -- g2FmRows() above -- so a
-     rule read by its feature here as well would be one fact drawn twice. */
-  return (String(r.feature)==='CASE')? 'n' : '';
-}
 /* §14 Nouns. The chapter is the three roles the 助詞 stage names -- 主語 /
    目的語 / 受け手 -- and it is drawn the way every other chapter of this page
    is: the ones this language has said, and the ones it has not as a row
@@ -1135,8 +1122,8 @@ function g2Chap(r){
 
    It used to be a walk over the model's CASE inflections, and gInfl() builds
    one only where the stage already HAS the word -- so a language that had not
-   written its case marks yet had no rows, and this chapter has no g2Add() row
-   either, because no form in FM_INF makes a CASE rule. The page came out
+   written its case marks yet had no rows, and no row to write one on either,
+   because no form in FM_INF makes a CASE rule. The page came out
    empty however many nouns were in the dictionary. Not blank because
    something failed: blank because nothing was ever drawn.
 
@@ -2074,64 +2061,6 @@ function g2Adp(){
    to be written, which is not decided here and is not papered over.
    docs/BACKLOG.md carries what is missing, with what each would need. */
 
-/* ---- what a chapter can still be told ----------------------------------
-   「新しい規則は＋とかで作ればいいやん」 OWNER 2026-08-27.
-
-   A chapter knows its part of speech, so nobody is asked which -- that is
-   what splitting the page bought. It does NOT know which FORM: a verb has
-   eleven of them, and choosing among eleven is a choice however the page is
-   arranged.
-
-   So the chapter shows them the way a STAGE shows its words: the ones this
-   language has, as the pair they make, and the ones it has not, as a row
-   saying 作成. Pressing an empty one writes the rule and opens it for its
-   letters. No picker for the part of speech and none for the form -- the row
-   pressed IS the answer to both.
-
-   Which forms belong to which chapter is NOT a second table. It is asked of
-   g2Chap(), the one place that already decides it, by handing it the rule
-   that form would make. A form added to the app lands in a chapter the day
-   it is added. */
-function g2PosTarget(pos){
-  var w=LinguaGrammarEngine.adapter.wordsOf([{hw:'x', pos:pos}]);
-  return (w.length && w[0].partOfSpeech) || 'WORD';
-}
-function g2FmsOf(id){
-  var c=g2ChapBy(id), out=[], i, f, g;
-  if(!c || !c.pos) return out;
-  /* A SECTION is about its own forms and no others, and it draws its own way
-     to add one on each of their headings -- g2FmSec() -- so there is nothing
-     for g2Add() to offer. */
-  if(c.fms) return c.fms;
-  if(typeof FM_INF==='undefined') return out;
-  for(i=0;i<FM_INF.length;i++){
-    f=FM_INF[i]; g=GFM_FEAT[f];
-    if(!g) continue;
-    if(g2Chap({feature:g[0], value:g[1], target:g2PosTarget(c.pos)})!==id) continue;
-    out.push(f);
-  }
-  return out;
-}
-/* Whether this language has already said this. Asked of the rules somebody
-   wrote rather than of the engine: a rule this side cannot carry over is
-   still a rule they wrote, and offering to write it again would be the app
-   forgetting what it was told. */
-function g2HasFm(pos, fm){
-  var a=(STG && STG.fm) || [], i;
-  for(i=0;i<a.length;i++)
-    if(a[i] && String(a[i].fm)===fm && String(a[i].pos||'')===String(pos)) return true;
-  return false;
-}
-function g2Add(id){
-  var c=g2ChapBy(id), fms=g2FmsOf(id), i, out='';
-  if(!c || !c.pos || c.fms) return '';
-  for(i=0;i<fms.length;i++){
-    if(g2HasFm(c.pos, fms[i])) continue;
-    out+=g2FmSlot(c.pos, fms[i]);
-  }
-  return out;
-}
-
 /* ====================================================================
    A SECTION IS A CHAPTER, AND A FORM IS A HEADING INSIDE IT
    「開いたらそんな分け方してるの意味わからない。人称でまとめて設定できれば
@@ -2317,9 +2246,8 @@ function g2FmRows(fm, pos){
   return out;
 }
 /* 作成 -- one form of this section that this language has not written yet.
-   ONE PLACE: the chapters whose rows are forms of a word draw it from here and
-   so does g2Add(), which is the same row asked for a chapter that is not a
-   section. It says the form and it says 作成, which is what every row in this
+   ONE PLACE: every section whose rows are forms of a word draws it from here
+   (g2FmSec() below). It says the form and it says 作成, which is what every row in this
    app says where the thing is not made. */
 function g2FmSlot(pos, fm){
   return '<button class="stslot"' + DO('fmrNew', [pos, fm]) + '>'+
@@ -2664,22 +2592,18 @@ function g2ChapRow(c, n){
     '<span class="stv">'+esc(g2ChapVal(c))+'</span>'+
     ICON_GO+'</button>';
 }
-/* One chapter's page. It is handed the chapter rather than the argument now:
-   vGram() looks it up, because it is vGram() that has to fall back to the
-   list when the argument names no chapter. */
 /* THE LINES WRITTEN FOR THIS CHAPTER. 「その章の例文（言語の一行＋訳）」 --
    the same stEx() a stage's examples have always been in, keyed by the chapter's
    own id, drawn by the same exRowHTML() and added with the same ＋ on the
    heading. Nothing new is stored and nothing new decides anything: what a
-   chapter had to have was somewhere to put the line that shows the rule.
-
-   この言語について is the one page without it. It is three counts of what this
-   language has, not a chapter of the book, and a place to write an example of a
-   count is a slot nobody can fill. */
+   chapter had to have was somewhere to put the line that shows the rule. */
 function g2ChapEx(id){
   return secAdd(ICON_LINE+t('stg.ex'), DO('stExOpen', [id]), t('word.mn.add'))+
     stExHTML(id);
 }
+/* One chapter's page. It is handed the chapter rather than the argument:
+   vGram() looks it up, because it is vGram() that has to fall back to the
+   list when the argument names no chapter. */
 function g2Page(c){
   /* A target's page is one rule being written and nothing else. The words a
      chapter asks for, the lines written for it and the ＋ that makes the words
@@ -2687,8 +2611,7 @@ function g2Page(c){
      them here would be the chapter said twice, on a page that is a part of
      it. */
   if(c.on) return c.body(c);
-  return c.body(c)+g2Add(c.id)+
-    (c.id==='st'? '' : g2ChapEx(c.id));
+  return c.body(c)+g2ChapEx(c.id);
 }
 
 /* ---- the screen -------------------------------------------------------- */
