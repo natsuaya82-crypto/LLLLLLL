@@ -3907,11 +3907,10 @@ export function halfDone(){
        2026-09-04. Thirty-eight slots made twice under two sets of ids, which
        is what the owner is holding: a a, b b, c c, every reading twice.
 
-       It goes through ltStart() rather than showing the seventy-six, because
-       ltStart() is the road -- www/boot.js and langOpen() call it -- and what
-       this face is for is the screen somebody ARRIVES at. With the join in it
-       is thirty-eight; with the join taken out it is the owner's photograph.
-       One face, both states, which is what a picture of a fix has to be. */
+       It goes through ltStart() because ltStart() is the road -- www/boot.js
+       and langOpen() call it -- and what this face is for is the screen
+       somebody ARRIVES at. The launch takes no row out of it: 「昔の版で自動で
+       増えた文字: 消さずに残す」 OWNER 2026-09-24. */
     ['an alphabet that had doubled, arrived at', () => {
        const was = LETTERS, wasPlan = plan(), wasSeq = LT_SEQ;
        planGot('free');
