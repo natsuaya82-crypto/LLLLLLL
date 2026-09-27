@@ -20,7 +20,7 @@ where it starts.
 OWNER 2026-09-27。同じリポジトリの `android/`。**iPhone の振る舞いは何も変わらない**（`www/` と `ios/` に触れていない）。
 - `android/` は `www/` をそのまま載せる Capacitor の Android プロジェクト。画面が呼ぶネイティブは Kotlin で、Swift と
   同じ名前・同じメソッド・同じ答えの形（`tools/assets-check.mjs` の `android:` の行が持つ）。何ができて何が「無い」と
-  答えるかは `docs/ANDROID.md`。課金・通知・キーボード・ウィジェットは Android ではまだ「無い」と答える。
+  答えるかは `docs/ANDROID.md`。課金（Google Play 直結・値段は iPhone と同じ、と決まっている）・通知・キーボード・ウィジェットは、Android ではまだ「無い」と答える。
 - **保存する物**: サーバーは変わらない。Android の端末に新しく書くのは、紙のシートとカードを共有シートへ渡すための
   一時ファイル（キャッシュの `Sheets/`）だけ。`localStorage` の鍵は `www/` のままで、増えも減りもしない。
 - **iOS と違うところ**: 共有シートが閉じても一時ファイルを消さない ── Android は渡した先が読み終わる時を教えない

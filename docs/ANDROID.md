@@ -37,10 +37,12 @@ Kotlin は `android/app/src/main/java/com/tokinets/lingua/` の四つのファ�
 | LinguaStore.current / buy / restore / manage | **無いと答える**（`no store`）。`current` の reject は `netPlanVerify([])` に落ち、サーバーがこのアカウントの plan を答えるので、iPhone で買った plan は Android でもそのまま |
 | LinguaPush.ask / status | **無いと答える**（reject）。`denied` は返さない ── `www/push.js` はそれを「通知は…設定でオフになっています」と描いて設定へ誘い、Android では偽の文になる。reject なら画面はブラウザと同じ描き方（スイッチだけ） |
 
-**待っているもの**（オーナーの決定）: 課金の仕組み（Google Play Billing か、
-商品、値段、サーバーへの伝え方）、通知の仕組み（Firebase Cloud Messaging と
-`push-send` の Android 対応）。キーボード（Android の IME）とウィジェットは
-次の回。
+**課金は決まっていて、まだ作っていない**: Google Play の課金を直接つなぐ
+（RevenueCat は使わない）、値段は iPhone と同じ（`docs/FEATURE_RULES.md`
+2026-09-27）。Kotlin の課金と、`verify-plan` が Google Play の購入を確かめる
+ことは別の回。**待っているもの**（オーナーの決定）: 通知の仕組み（Firebase
+Cloud Messaging と `push-send` の Android 対応）。キーボード（Android の IME）と
+ウィジェットは次の回。
 
 ### 画面にペンで書いたシート
 
@@ -161,7 +163,9 @@ CI の debug の鍵は毎回作り直されるので、debug の APK では Goog
    - Supabase の Authentication → Providers → Google の Client IDs に、
      その ウェブ のクライアント ID が入っていること（id token の audience に
      なる）。
-5. 課金と通知を Android でどうするかを決める（それまで「無い」と答えている）。
+5. Play Console に定期購入の商品を作る（課金は Google Play 直結・値段は
+   iPhone と同じ、と決まっている。商品 ID の形は課金の回で報告する）。
+6. 通知を Android でどうするかを決める（それまで「無い」と答えている）。
    通知に Firebase を使うなら、Firebase のプロジェクトと
    google-services.json（`android/app/` に置くと
    `android/app/build.gradle` が Google サービスのプラグインを当てる）。

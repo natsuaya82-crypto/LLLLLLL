@@ -13,11 +13,12 @@ import com.google.android.play.core.review.ReviewManagerFactory
  * and www/store.js does not know which phone it is on.
  *
  * THERE IS NO STORE ON ANDROID YET, AND FIVE OF THE SIX SAY SO. How a plan is
- * bought on Android -- Google Play Billing, the products, the prices, how the
- * server is told -- is the owner's to decide and has not been decided
- * (docs/ANDROID.md). Until it is, each method answers with the state as it
- * is, and every answer lands where www/store.js already puts 「the store
- * could not help」:
+ * bought is decided -- Google Play Billing directly, no RevenueCat, the same
+ * prices as the iPhone (docs/FEATURE_RULES.md, 2026-09-27) -- and is not
+ * built: that is its own round, with verify-plan learning to check a Google
+ * Play purchase. Until then each method answers with the state as it is, and
+ * every answer lands where www/store.js already puts 「the store could not
+ * help」:
  *
  *   products  an empty list          -> 「まだ販売されていません」, which on
  *                                        Android is simply true
