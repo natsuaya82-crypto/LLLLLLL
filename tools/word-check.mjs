@@ -422,6 +422,53 @@ const R = await pg.evaluate(() => {
       'write -- what it brings in is refused by save() after the screen has ' +
       'said it arrived');
 
+  /* ---- an import that meets the ceiling --------------------------------
+     (audit words pwi-4, 5, 6.) A free dictionary one word short of its
+     ceiling, and a file of two new words and then one the dictionary
+     already has, with 上書き chosen:
+
+     - the screen before the press says what the press then does -- one new
+       word and one overwrite, not two and one;
+     - the overwrite AFTER the ceiling still happens: an overwrite adds no
+       word, and the walk used to stop dead at the first row past it;
+     - and the ceiling is said the way every ceiling is, the one pop. */
+  start(); planGot('free'); popOff();
+  const capN = wordCap();
+  let pad = 0;
+  while (wCountable() < capN - 1) { WORDS.push({ hw: 'pad' + (pad++), mns: ['p'], mn: 'p', ph: [], pos: 'n' }); }
+  const old = WORDS.filter((w) => !wIsForm(w))[0];
+  const oldHw = String(old.hw);
+  goTab('find');
+  openImport();
+  impTake('word,meaning\nzzaa,one\nzzbb,two\n' + oldHw + ',overwritten');
+  IMP.into = 'w'; IMP.roles = impMove(IMP.roles, 'w');
+  IMP.dup = 'over';
+  IMP.step = 'ready';
+  const planned = impGoN(impPlan());
+  impPaint();
+  pressGo();
+  const gotA = !!findWord('zzaa'), gotB = !!findWord('zzbb');
+  const oldMn = (findWord(oldHw) || {}).mn;
+  const ceilPop = popLine();
+  popOff();
+  const didN = (gotA ? 1 : 0) + (gotB ? 1 : 0) + (oldMn === 'overwritten' ? 1 : 0);
+  out.said.push('an import one word short of the ceiling: the screen said ' +
+    planned + ', the press wrote ' + didN + ' (zzaa ' + gotA + ', zzbb ' + gotB +
+    ', the overwrite ' + (oldMn === 'overwritten') + '), and the pop says "' +
+    ceilPop + '"');
+  if (!gotA || gotB)
+    out.fails.push('the ceiling let ' + (gotB ? 'two' : 'no') + ' new words in ' +
+      'where there was room for one');
+  if (oldMn !== 'overwritten')
+    out.fails.push('the word already here was not overwritten because a row ' +
+      'above it met the ceiling -- an overwrite adds no word');
+  if (planned !== didN)
+    out.fails.push('the screen said ' + planned + ' and the press wrote ' + didN +
+      ' -- the counts on the screen are what will happen');
+  if (ceilPop !== t('up.need'))
+    out.fails.push('the ceiling was not said the way every ceiling is: the ' +
+      'pop is "' + ceilPop + '"');
+
   /* ---- the word list forgets it was being chosen from -------------------
      「洗濯して前の画面戻ると選択画面がキープされたままや。流石に解除して
      欲しい。」 OWNER 2026-09-05, on a build in their hand.

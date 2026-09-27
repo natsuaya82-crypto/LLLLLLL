@@ -1262,7 +1262,6 @@ defLang('en', (function(){
       'imp.empty'         : 'Nothing readable in that',
       'csv.title'       : "Import a list",
       'csv.ph'          : "cat\nwater\nto walk\n\nkano, mountain, noun",
-      'csv.full'        : '{0} taken, {1} coined — the list is full',
       /* voice errors */
       /* how IPA and reading are joined when both are shown */
       /* the day's sentence. The sentence itself is not here: it comes

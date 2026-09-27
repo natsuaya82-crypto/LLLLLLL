@@ -1395,7 +1395,6 @@ defLang('fr', (function(){
       "imp.empty"         : "Rien de lisible là-dedans",
       "csv.title"        : "Importer une liste",
       "csv.ph"           : "chat\neau\nmarcher\n\nkano, montagne, nom",
-      "csv.full"        : "{0} importés, {1} créés — la liste est pleine",
       /* the day's sentence. The sentence itself is not here: it comes
          from the server, one row a day, in every interface language. */
       "day.k"  : "Du jour",
