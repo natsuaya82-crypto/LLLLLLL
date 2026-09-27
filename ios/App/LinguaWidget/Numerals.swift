@@ -69,7 +69,9 @@ struct Numerals: Decodable {
   /// epoch of their own. Neither question is this app's to answer: the phone
   /// has a calendar and it is the one on the lock screen six inches away.
   /// www/cal.js says where the line is.
-  func monthOf(_ d: Date) -> Int { Calendar.current.component(.month, from: d) }
+  /// `static` because it asks nothing of the numerals: with no widget.json
+  /// (signed out, nothing sent yet) the month is still the month.
+  static func monthOf(_ d: Date) -> Int { Calendar.current.component(.month, from: d) }
   /// Sunday is one, because that is where a calendar's week starts.
   func dayOf(_ d: Date) -> Int { Calendar.current.component(.weekday, from: d) }
 

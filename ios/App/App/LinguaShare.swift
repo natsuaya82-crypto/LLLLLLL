@@ -84,11 +84,28 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
       call.reject("no container for \(Self.group)")
       return
     }
-    let json = Data((call.getString("json") ?? "").utf8)
-    let num = Data((call.getString("num") ?? "").utf8)
+    /* EMPTY AND BROKEN ARE TWO STATES (CLAUDE.md § Data). www/share.js sends
+       all three every time, '' for one that is empty; a call missing one, or
+       a font that is not base64, is a call that is wrong -- and it used to
+       read as empty and take the file off the keyboard. It is refused and
+       nothing is touched. */
+    guard let jsonS = call.getString("json"), let numS = call.getString("num"),
+          let fontS = call.getString("font") else {
+      call.reject("json, num and font are all three required")
+      return
+    }
+    let json = Data(jsonS.utf8)
+    let num = Data(numS.utf8)
     /* Nothing drawn is no font rather than an empty one, exactly as
        installScriptFont() decides it -- www sends '' and the file goes. */
-    let font = Data(base64Encoded: call.getString("font") ?? "") ?? Data()
+    var font = Data()
+    if !fontS.isEmpty {
+      guard let d = Data(base64Encoded: fontS) else {
+        call.reject("font is not base64")
+        return
+      }
+      font = d
+    }
     do {
       try mirror(json, Self.jsonName, dir)
       try mirror(num, Self.numName, dir)
@@ -144,14 +161,19 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
   /// folder would be a second fence to keep right, and the fence is the part
   /// that matters.
   ///
-  /// Letters and digits only, and ASCII ones. It arrives from the web side,
-  /// it is pasted into a file name, and `..` in a file name is the whole of
-  /// that class of bug -- so this asks what it MAY be rather than trying to
-  /// name what it may not.
+  /// Both arrive from the web side and are pasted into a path, and `..` or a
+  /// `/` in one is the whole of that class of bug. The kind is letters and
+  /// digits only, ASCII ones -- it asks what it MAY be. The name is held to
+  /// the same fence shareFile() below reads a name back through, so what is
+  /// written here is always something that can be handed over.
   @objc func sheet(_ call: CAPPluginCall) {
     let name = (call.getString("name") ?? "sheet")
     let ext = (call.getString("ext") ?? "pdf")
     let b64 = call.getString("b64") ?? ""
+    guard !name.isEmpty, !name.contains("/"), name != ".", name != ".." else {
+      call.reject("not a file name")
+      return
+    }
     guard !ext.isEmpty, ext.count <= 8,
           ext.allSatisfy({ $0.isASCII && ($0.isLetter || $0.isNumber) }) else {
       call.reject("not a file extension")

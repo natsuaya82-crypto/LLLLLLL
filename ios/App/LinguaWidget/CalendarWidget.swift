@@ -126,10 +126,10 @@ struct MonthGrid: View {
            made one, its number when it has not. */
         HStack(spacing: 0) {
           Group {
-            if let m = num?.monthName(num?.monthOf(entry.date) ?? 1) {
+            if let m = num?.monthName(Numerals.monthOf(entry.date)) {
               WordView(word: m, size: monH * 0.72)
             } else {
-              NumberView(n: num?.monthOf(entry.date) ?? 1, num: num, em: monH * 0.72)
+              NumberView(n: Numerals.monthOf(entry.date), num: num, em: monH * 0.72)
             }
           }
           Spacer(minLength: 0)
@@ -160,14 +160,13 @@ struct MonthGrid: View {
   }
 
   private func rowCount() -> Int {
-    guard let last = days.last else { return 1 }
+    guard !days.isEmpty else { return 1 }
     var n = 1, col = column(days.first ?? 1)
     for d in days where d > (days.first ?? 1) {
       let c = column(d)
       if c <= col { n += 1 }
       col = c
     }
-    _ = last
     return max(n, 1)
   }
 
