@@ -453,7 +453,7 @@ function shBoxField(warp, sign, i, res){
    already thrown out); ink outside it is pushed far negative so no edge is
    found around it. */
 function shEdge(f, res, keep){
-  var n = res, i, x, y, g = [], seg = [], at = {}, id;
+  var n = res, i, x, y, g = [], seg = [], at = {};
   for (i = 0; i < n * n; i++) g[i] = (keep && !keep[i] && f[i] > 0) ? -1000 : f[i];
   function pt(ax, ay, bx, by){
     var fa = g[ay * n + ax], fb = g[by * n + bx];
