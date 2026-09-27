@@ -250,6 +250,16 @@ const r = await pg.evaluate(({s}) => {
   /* and the switch is the way back */
   wldPubGot(langId, true);
   out.hidBack = !wldHidden();
+  /* AND 「NOT ASKED YET」 IS NEITHER. 「まだ聞いていない」は第三の状態で、画面
+     には出さない。行が降りてくるまで…プロフィールの言語の行も開かない
+     (docs/FEATURE_RULES.md 2026-09-08). With no answer in hand the row is
+     not drawn at all -- it used to be drawn saying 非公開, which is 「not
+     asked」 and 「private」 sharing a branch. */
+  delete LPUB[String(langId)];
+  stand('profile');
+  var urow = document.querySelector('#app .wldrow');
+  out.unkRow = urow ? (/\bwldoff\b/.test(urow.innerHTML) ? 'private' : 'row') : '';
+  wldPubGot(langId, true);
 
   /* AND SOMEBODY ELSE'S PRIVATE PAGE IS STILL THE NAME AND NOTHING ELSE.
      「非公開にする場合は言語名しか表示されない」 OWNER 2026-08-25 is about the
@@ -347,6 +357,9 @@ if (!r.hidEdSecs || !r.hidEdSwitch)
       '. The switch is the way back and the sections are what editing is.');
 if (!r.hidBack)
   say('pressing the switch did not make the page public again.');
+if (r.unkRow !== '')
+  say('with no answer about the page yet the profile drew its row (' + r.unkRow +
+      '). 「まだ聞いていない」 is a third state and is not drawn (2026-09-08).');
 if (r.seenHidSecs)
   say('somebody ELSE’s private article drew ' + r.seenHidSecs + ' section(s). ' +
       'That face is the name and nothing else — 「非公開にする場合は言語名しか' +

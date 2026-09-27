@@ -2754,8 +2754,15 @@ const R = await pg.evaluate(async () => {
          いない）を跨いでしまう。2026-09-08 まではその答えが `wld` スライスの
          `hide` で、今は `language` の行の `published_at` です
          （OWNER「端末に hide の存在があるわけないやろ」）。null が非公開。 */
-      if (p.indexOf('/rest/v1/language?select=id,name,published_at&owner=') === 0)
-        return [{ id: SID59, name: 'Shango', published_at: null }];
+      /* The query the page really sends (www/net.js § netLangsDown) -- this
+         answered `select=id,name,published_at&owner=` after the columns grew,
+         so the row never came and 60 was green only because 「not asked」 was
+         drawn as 非公開 (監査 words home-3). Matched on the table and the
+         owner, not on the column list, so a column added tomorrow still gets
+         its answer. */
+      if (p.indexOf('/rest/v1/language?select=') === 0 && p.indexOf('&owner=eq.') !== -1)
+        return [{ id: SID59, name: 'Shango', published_at: null, owner: SESS.uid,
+                  wsys: '', created_at: '2026-09-01T00:00:00Z' }];
       if (p.indexOf('/rest/v1/slice?select=') === 0) return [];
       return [];
     };

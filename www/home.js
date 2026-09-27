@@ -1446,7 +1446,12 @@ function wldRow(){
      It returned nothing at all, so a language nobody had named had no row on
      the profile and therefore no way in to its article from here -- and the
      article was the one screen that would have let them name it. */
-  var lnm=langNameSaid(langName);
+  var lnm=langNameSaid(langName), L=wldOpen();
+  /* 「まだ聞いていない」は第三の状態で、画面には出さない。行が降りてくるまで
+     「この言語について」もプロフィールの言語の行も開かない (docs/FEATURE_RULES.md
+     2026-09-08). Not asked is neither public nor private, so there is no row
+     to draw until the server has said which. */
+  if(!L.here()) return '';
   /* PRIVATE IS A STATE OF THE PAGE AND NOT A LOCK ON ITS OWNER.
      「ホームの自分の言語の wiki ページを非公開にすると開けなくなり、編集も
      再公開もできない」 OWNER 2026-09-06, on a phone.
@@ -1463,7 +1468,7 @@ function wldRow(){
      which is the row saying which state it is in rather than a shut door. */
   return '<button class="wldrow"' + DO('go', ["about"]) + '>'+
     '<span class="wldnm">'+esc(lnm)+'</span>'+
-    (wldHidden()? '<span class="wldoff">'+esc(t('wld.hidden'))+'</span>' : '')+
+    (wldHidden(L)? '<span class="wldoff">'+esc(t('wld.hidden'))+'</span>' : '')+
     ICON_GO+'</button>';
 }
 /* ---- a section of the article opens and shuts -------------------------
