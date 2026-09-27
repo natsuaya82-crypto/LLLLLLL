@@ -121,8 +121,15 @@ function orderDef(){
 
    The six buttons are gone. What calls this is the SAVE on the board's own
    screen -- g2KeepOn()'s closure below -- so the language's word order moves
-   when somebody presses save and at no other moment. */
-function setOrder(v){ STG.order=orderSeq(v); stMarkSet('order'); render(); }
+   when somebody presses save and at no other moment.
+
+   WHAT IS WRITTEN IS WHAT IS ON THE BOARD, and an emptied board is written
+   empty. It went through orderSeq(), so a board somebody cleared and saved
+   was written down as 主語 目的語 動詞 -- the engine's fallback stored as the
+   language's answer, and the board opened again with the three placed
+   (OWNER 2026-09-06). orderSeq() is the READ side's; the noun phrase's
+   board below has always written this way. */
+function setOrder(v){ STG.order=orderKeep(v); stMarkSet('order'); render(); }
 /* The noun phrase's order, read and written the way the sentence's is. It has
    no orderSeq() beside it and no ORDER_DEF behind it, and that is the whole
    difference between the two: a sentence has to be arranged somehow, and a

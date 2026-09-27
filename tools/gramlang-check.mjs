@@ -427,6 +427,21 @@ want('and its own position', f.aNegp, 'before');
 want('which is still what its file says', f.aStored, 'OSV');
 want('all of it', f.aStoredNegp, 'before');
 want('and the settings still do not hold a word order', f.personOrder, undefined);
+
+/* AN EMPTIED BOARD IS WRITTEN EMPTY (監査 words grammar-4). setOrder() put
+   what it was handed through orderSeq(), so clearing the board and pressing
+   save wrote 主語 目的語 動詞 as this language's answer. The engine still
+   reads SOV off an empty field -- that is orderDef()'s, asked here too. */
+const emptied = await pg.evaluate(() => {
+  const was = JSON.stringify(STG.order);
+  STG.order = ['S', 'V', 'O'];
+  setOrder([]);
+  const out = { stored: JSON.stringify(STG.order), reads: orderDef().id };
+  STG.order = JSON.parse(was);
+  return out;
+});
+want('an emptied board is written empty', emptied.stored, '[]');
+want('and the engine still arranges by the fallback', emptied.reads, 'SOV');
 want('and what was chosen in one is not chosen in the other', f.aTouchedAdj, false);
 
 /* ---- 8: a default nobody chose is not lit -------------------------------
