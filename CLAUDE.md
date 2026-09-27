@@ -1975,9 +1975,12 @@ was local for a week with every check green, and the languages were local for
 as long again after that; both were found by a person holding a phone.
 「書いていて止めないの本当に何？」 OWNER 2026-09-01.
 
-`store-check` names every key the app writes into `localStorage` — by FILE and
-by the expression, because `k` is a loop variable in two files about two
-different things — and each one is either **on a road to the server**, with the
+`store-check` names every write the app makes into `localStorage` — by the
+FILE, the FUNCTION it is in and the key expression, because `k` is a local
+variable in several functions about different things, and a new write
+answering to another function's `k` passed as that one — and refuses
+`localStorage` touched any way but `getItem` / `setItem` / `removeItem` /
+`key` / `length`. Each write is either **on a road to the server**, with the
 function in `www/net.js` that takes it there (and that function has to exist),
 or **the phone's own with a sentence saying why**. A `lingua.<id>.<slice>` key
 appearing there again is the copy coming back, and it fails as a key nobody

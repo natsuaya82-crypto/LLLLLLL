@@ -4,9 +4,9 @@
 
    The app is online. The server is where things live, and `localStorage` is
    the copy that runs with no signal -- CLAUDE.md § Online. **NOTHING IS THE
-   PHONE'S. EVERYTHING IS THE ACCOUNT'S** (OWNER 2026-09-03): the backup file
-   and an exported sheet are that account's language in a form a person can
-   hold, and the settings are that account's settings. The question a new key
+   PHONE'S. EVERYTHING IS THE ACCOUNT'S** (OWNER 2026-09-03): an exported
+   sheet is that account's language in a form a person can hold, and the
+   settings are that account's settings. The question a new key
    has to answer is not 「is this the phone's」 -- there is no answer to that --
    it is 「which account is this」.
 
@@ -21,10 +21,19 @@
    holding a phone rather than by anything here. 「書いていて止めないの本当に
    何？」 OWNER 2026-09-01.
 
-   So: every key this app writes into localStorage is named below, with WHERE
-   IT GOES. A key with a road has the function that takes it there, and that
-   function has to exist. A key with no road says why it is the phone's, and
-   there are four of those and they are the decision, not an oversight.
+   So: every write this app makes into localStorage is named below, with
+   WHERE IT GOES. A key with a road has the function that takes it there, and
+   that function has to exist. A key with no road says whose it is and why it
+   stays on this phone -- the run prints how many of each there are.
+
+   A WRITE IS NAMED BY ITS FILE, THE FUNCTION IT IS IN, AND THE KEY IT IS
+   HANDED -- `core.js:setKeep:LS_S`. It was the file and the key alone, and
+   `k` in core.js was setGoneDrop()'s: a new function in core.js writing
+   `lingua.photo.cache` through a `var k` answered to setGoneDrop()'s row and
+   passed. The function is part of the name so a new write is a new row. And
+   `localStorage` touched any way but getItem / setItem / removeItem / key /
+   length -- `localStorage[k]=`, a second name for it -- is a write nothing
+   here could name, so it fails before the table is read.
 
    A NEW KEY FAILS until somebody writes down which of the two it is. That is
    the whole of what this holds: it cannot tell whether the road is walked --
@@ -92,7 +101,7 @@ const ROADS = {
      `slMine()` for everything that sends, which does not -- so it can be
      drawn and can never be merged, sent, or preferred to an answer that has
      just arrived. */
-  'core.js:slGotKey(k)': { whose: 'lang', phone: 'what the server last said this slice was, kept so a launch with no signal draws the language instead of nothing. It belongs to the account the slice does -- filed under `lingua.<id>.<slice>`, so wipeLangsGo() takes it with the language and lsWipeAcct(), which counts the `lingua.<id>.` namespace rather than walking SLICES, takes it with the account (acct-check 66; until 2026-09-11 it walked SLICES and left the `name`/`wsys`/`owner` pictures behind, because those are columns of the `language` row and were born after that loop). It has no road UP and must not be given one: `slMine()` in www/core.js is what keeps it out of netSlice1(), netSaveNow() and both of the 「fills in and stops」 reads' },
+  'core.js:slGot:slGotKey(k)': { whose: 'lang', phone: 'what the server last said this slice was, kept so a launch with no signal draws the language instead of nothing. It belongs to the account the slice does -- filed under `lingua.<id>.<slice>`, so wipeLangsGo() takes it with the language and lsWipeAcct(), which counts the `lingua.<id>.` namespace rather than walking SLICES, takes it with the account (acct-check 66; until 2026-09-11 it walked SLICES and left the `name`/`wsys`/`owner` pictures behind, because those are columns of the `language` row and were born after that loop). It has no road UP and must not be given one: `slMine()` in www/core.js is what keeps it out of netSlice1(), netSaveNow() and both of the 「fills in and stops」 reads' },
   /* AND ONE WRITE THAT ADDS NO KEY EITHER, for the opposite reason: it is a
      key this phone already has, written down again under the language's own
      number. langsCarry() in www/core.js is the 2026-09-10 migration -- a
@@ -101,7 +110,7 @@ const ROADS = {
      removed. The destination is `lingua.<id>.<something>` with the id being
      the same language's server id, so every key it can write is a key ROADS
      already names above; what it copies keeps the road the original had. */
-  'core.js:dst': { whose: 'lang', phone: 'the same keys under the language\'s own number, written by the 2026-09-10 migration (langsCarry, www/core.js). It copies and removes nothing, and a key already holding something is never written over, so this adds no kind of key and no road: `lingua.<id>.<slice>` and its `.was` and the pictures beside them are each on the road their own row above names' },
+  'core.js:langsCarry:dst': { whose: 'lang', phone: 'the same keys under the language\'s own number, written by the 2026-09-10 migration (langsCarry, www/core.js). It copies and removes nothing, and a key already holding something is never written over, so this adds no kind of key and no road: `lingua.<id>.<slice>` and its `.was` and the pictures beside them are each on the road their own row above names' },
   /* AND ONE WRITE THAT ADDS NO KEY, because it is the same keys put back.
      keepSave() in www/shell.js takes a copy of the `lingua.` namespace before
      a save writes anything and writes it back when the send does not land
@@ -109,7 +118,7 @@ const ROADS = {
      touch is a key that was already on this phone a moment earlier and has
      its own row somewhere in this table. It cannot invent one: a key that is
      not in the copy is REMOVED rather than written. */
-  'shell.js:k': { whose: 'same', phone: 'nothing of its own. It is keepBack() in www/shell.js putting the `lingua.` namespace back exactly as it was before a save that did not reach the server, so each key it writes is one of the others in this table, with the value it already had' },
+  'shell.js:keepBack:k': { whose: 'same', phone: 'nothing of its own. It is keepBack() in www/shell.js putting the `lingua.` namespace back exactly as it was before a save that did not reach the server, so each key it writes is one of the others in this table, with the value it already had' },
   /* EVERYTHING AN ACCOUNT HAS ON THIS PHONE, AND IT IS ONE ROW.
      「端末ごとにやることなんてねえよ」「アカウントごとってずっと言ってるよな？」
      OWNER 2026-09-03. The posts, the drafts, `me`, the account's fields of
@@ -121,21 +130,23 @@ const ROADS = {
      § ACCT), so the key carries the uid by construction. Which of them goes
      up, and by what road, is ACCT_ROADS below -- one row per thing an
      account holds, counted off the `acctKeep('…')` calls in www/. */
-  'core.js:acctKey(name': { whose: 'acct', phone: 'an account\'s things, each under `lingua.<name>.<uid>` -- ACCT_ROADS below says where each one goes' },
+  'core.js:acctPut:acctKey(name': { whose: 'acct', phone: 'an account\'s things, each under `lingua.<name>.<uid>` -- ACCT_ROADS below says where each one goes' },
   /* and the same keys written once by the move from an older version, for
      the account `lingua.set`'s stamp named (acctMoved) */
-  'core.js:acctKey(e.name': { whose: 'acct', phone: 'the move (acctMoved, www/core.js): an older version\'s live copy, written under the account its stamp named. It copies and removes nothing' },
+  'core.js:acctMoved:acctKey(e.name': { whose: 'acct', phone: 'the move (acctMoved, www/core.js): an older version\'s live copy, written under the account its stamp named. It copies and removes nothing' },
   /* and the one write that is not an account's: deleting an account takes its
      part of an older version's shared key -- the rows of the one index every
      account shared, the fields of `lingua.set` beside the handset's setup --
      and writes the rest back exactly as it was */
-  'core.js:e.old': { whose: 'old', phone: 'an older version\'s key with the deleted account\'s part taken out and the rest -- nobody\'s, read by nobody -- written back as it was (lsWipeAcct, www/core.js)' },
+  'core.js:lsWipeAcct:e.old': { whose: 'old', phone: 'an older version\'s key with the deleted account\'s part taken out and the rest -- nobody\'s, read by nobody -- written back as it was (lsWipeAcct, www/core.js)' },
   /* and the settings written back without what is taken off them
      (SET_GONE, www/core.js -- OWNER 2026-09-26) -- `lingua.set` and each
      `lingua.set.<uid>`, those fields fewer, nothing else moved */
-  'core.js:k': { whose: 'same', phone: 'nothing of its own. It is setGoneDrop() in www/core.js writing `lingua.set` and each account\'s `lingua.set.<uid>` back with the fields `SET_GONE` names -- read by nothing -- taken out and every other field as it was, so each key it writes is `LS_S` or `acctKey(name` above (DELETE REVIEWs docs/CHANGELOG.md 2026-09-25 and 2026-09-26, 「1 消す」「消していいよ」 OWNER 2026-09-26)' },
-  'core.js:LS_S':    { whose: 'handset', phone: 'how this handset is set up -- exactly what `SET_PHONE` in www/core.js names and nothing else. The account\'s fields are `lingua.set.<uid>` (acctKey above); what an older version left in this key beside the setup is kept as it was and read by nobody' },
-  'net.js:LS_SESS':  { whose: 'sess', phone: 'the tokens. They are what talks to the server; they cannot be kept on it' }
+  'core.js:setGoneDrop:k': { whose: 'same', phone: 'nothing of its own. It is setGoneDrop() in www/core.js writing `lingua.set` and each account\'s `lingua.set.<uid>` back with the fields `SET_GONE` names -- read by nothing -- taken out and every other field as it was, so each key it writes is `LS_S` or `acctPut:acctKey(name` above (DELETE REVIEWs docs/CHANGELOG.md 2026-09-25 and 2026-09-26, 「1 消す」「消していいよ」 OWNER 2026-09-26)' },
+  'core.js:setKeep:LS_S':    { whose: 'handset', phone: 'how this handset is set up -- exactly what `SET_PHONE` in www/core.js names and nothing else. The account\'s fields are `lingua.set.<uid>` (acctPut above); what an older version left in this key beside the setup is kept as it was and read by nobody' },
+  'core.js:acctMoved:LS_S':  { whose: 'handset', phone: 'the same key, with the move\'s mark (`acctMoved`, in SET_PHONE) added to what it already held -- nothing else in it moves' },
+  'core.js:lsWipeAcct:LS_S': { whose: 'handset', phone: 'the same key, with `acct` -- the deleted account\'s old stamp -- taken out and everything else written back as it was' },
+  'net.js:netSave:LS_SESS':  { whose: 'sess', phone: 'the tokens. They are what talks to the server; they cannot be kept on it' }
   /* `sns.js:k` -- the notices, kept under the account -- STOOD HERE AND IS
      GONE. The copy was what the notices screen drew in its first frame, and
      drawing it meant drawing last session's faces and swapping them a second
@@ -145,21 +156,63 @@ const ROADS = {
      blank for a stale copy to cover. Nothing on this phone keeps them. */
 };
 
+/* Comments out, strings and regexes kept whole, newlines kept so a line
+   number still means what it says. */
+function nocomment(s){
+  let out = '', i = 0, prev = '';
+  const AFTER_VALUE = /[A-Za-z0-9_$)\]]$/;
+  while (i < s.length){
+    const c = s[i], d = s[i + 1];
+    if (c === '/' && d === '/'){ while (i < s.length && s[i] !== '\n') i++; continue; }
+    if (c === '/' && d === '*'){
+      i += 2;
+      while (i < s.length && !(s[i] === '*' && s[i + 1] === '/')){ if (s[i] === '\n') out += '\n'; i++; }
+      i += 2; continue;
+    }
+    if (c === '"' || c === "'" || c === '`'){
+      let j = i + 1;
+      while (j < s.length && s[j] !== c){ if (s[j] === '\\') j++; j++; }
+      out += s.slice(i, j + 1); i = j + 1; prev = c; continue;
+    }
+    if (c === '/' && !AFTER_VALUE.test(prev)){
+      let j = i + 1, cls = false;
+      while (j < s.length){
+        if (s[j] === '\\'){ j += 2; continue; }
+        if (s[j] === '[') cls = true;
+        else if (s[j] === ']') cls = false;
+        else if ((s[j] === '/' && !cls) || s[j] === '\n') break;
+        j++;
+      }
+      out += s.slice(i, j + 1); i = j + 1; prev = '/'; continue;
+    }
+    out += c; if (!/\s/.test(c)) prev = c; i++;
+  }
+  return out;
+}
+
 const files = fs.readdirSync(WWW).filter(f => f.endsWith('.js'));
 const found = new Map();
+const bad = [];
 for (const f of files) {
-  const src = fs.readFileSync(path.join(WWW, f), 'utf8');
-  const re = /localStorage\.setItem\(([^,]+),/g;
+  const src = nocomment(fs.readFileSync(path.join(WWW, f), 'utf8'));
+  const line = (at) => f + ':' + src.slice(0, at).split('\n').length;
+  const other = /localStorage\b(?!\s*\.\s*(?:(?:getItem|setItem|removeItem|key)\s*\(|length\b))/g;
   let m;
+  while ((m = other.exec(src)))
+    bad.push('`localStorage` is touched at ' + line(m.index) + ' by some way ' +
+      'other than getItem / setItem / removeItem / key / length. A write made ' +
+      'that way is one this table cannot name, so it is refused: write through ' +
+      'localStorage.setItem() and give it a row in ROADS.');
+  const re = /localStorage\.setItem\(([^,]+),/g;
   while ((m = re.exec(src))) {
-    const k = f + ':' + m[1].trim();
+    const fn = [...src.slice(0, m.index).matchAll(/function\s+([A-Za-z0-9_$]+)\s*\(/g)].pop();
+    const k = f + ':' + (fn ? fn[1] : '(top)') + ':' + m[1].trim();
     if (!found.has(k)) found.set(k, []);
-    found.get(k).push(f + ':' + src.slice(0, m.index).split('\n').length);
+    found.get(k).push(line(m.index));
   }
 }
 
 const net = fs.readFileSync(path.join(WWW, 'net.js'), 'utf8');
-const bad = [];
 for (const [k, where] of found) {
   const road = ROADS[k];
   if (!road) {
@@ -200,7 +253,7 @@ for (const [k, road] of Object.entries(ROADS)) {
       'a thing that must not be written down」 CLAUDE.md § Online.');
     continue;
   }
-  if (road.whose === 'acct' && k.split(':')[1].indexOf('acctKey(') !== 0)
+  if (road.whose === 'acct' && k.split(':')[2].indexOf('acctKey(') !== 0)
     bad.push('ROADS row `' + k + '` says it is an account\'s and is not built ' +
       'by acctKey() -- a key of an account\'s that does not carry its uid is ' +
       'the copy that was adopted by whoever signed in first (r73 § 2-7).');
@@ -365,12 +418,9 @@ const SET_LOADER = {
   'net.js:SET[k]=p[k]': true
 };
 
-/* Comments carry `SET.x` in prose all over www/, so they come off first --
-   the same reason act-check strips them before counting names. */
-function nocomment(src){
-  return src.replace(/\/\*[\s\S]*?\*\//g, '')
-            .replace(/(^|[^:])\/\/[^\n]*/g, '$1');
-}
+/* Comments carry `SET.x` in prose all over www/, so they come off first
+   (nocomment(), above) -- the same reason act-check strips them before
+   counting names. */
 const fields = new Map();
 const computed = [];
 for (const f of files) {
