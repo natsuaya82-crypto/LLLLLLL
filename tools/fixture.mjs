@@ -1312,6 +1312,36 @@ export function halfDone(){
                                                  GE.si=0; GE.seal=true; GE.lsSel=[[0,1],[0,2]];
                                                  window.route='glyph';
                                                  NAV=[{r:'glyph', a:GE.lid}]; return vGlyph(); }],
+    /* What a finger chose, chosen by the real geLsUp() off a finger's path:
+       a trace down part of a long line (only what it passed lights), a
+       thumb's ring that does not close (only what is inside lights), and
+       the traced dots after they were pulled three steps right. */
+    ...(() => {
+      const lasso = (path, pull) => () => {
+        editGlyph('k');
+        const o = GGRID.inset, D = geStep(), P = (i, j) => [o + i*D, o + j*D];
+        const L = [], R = [];
+        for (let y = 2; y <= 18; y += 2) L.push(P(6, y));
+        for (let x = 6; x <= 16; x += 2) R.push(P(x, 10));
+        GE.st = [{pts:L}, {pts:R}]; GE.si = 1; GE.seal = true; GE.ls = true;
+        GE.lsPath = path(P, D); GE.lsMove = null; GE.lsSel = [];
+        geLsUp({});
+        if (pull) GE.lsSel.forEach(s => { GE.st[s[0]].pts[s[1]][0] += 3*D; });
+        window.route = 'glyph'; NAV = [{r:'glyph', a:GE.lid}]; return vGlyph();
+      };
+      const trace = P => [P(6,5), P(6,6.5), P(6,8), P(6,9.5)];
+      const thumb = (P, D) => {
+        const t = [];
+        for (let a = 0; a <= 8; a++){
+          const th = (30 + a*300/8) * Math.PI/180;
+          t.push([P(12,10)[0] + 3.2*D*Math.cos(th), P(12,10)[1] + 3.2*D*Math.sin(th)]);
+        }
+        return t;
+      };
+      return [['a letter in the editor, part of a line traced', lasso(trace, false)],
+              ['a letter in the editor, a thumb\'s ring round part of a line', lasso(thumb, false)],
+              ['a letter in the editor, the traced dots pulled', lasso(trace, true)]];
+    })(),
     /* The IPA, opened from the letter it is about, and again from the
        inventory -- one page, two things a press means, so both are walked.
        Nothing reaches either by walking the routes. And once with something
