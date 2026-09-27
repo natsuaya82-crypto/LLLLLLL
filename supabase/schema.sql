@@ -2956,11 +2956,25 @@ insert into storage.buckets (id, name)
 values ('post-media', 'post-media')
 on conflict (id) do nothing;
 
--- Whoever is signed in reads what is in this bucket, and only this bucket --
--- the same sentence `post_read` is under.
+-- A FILE IS THE POST'S: read by whoever may read a post that names it, and
+-- by whoever put it there. A photograph is named by its folder
+-- (`<author>/<post>/`), a voice by the post's `body.vu` (it goes up the moment
+-- it is recorded, before there is a post -- www/rec.js voKeep()). The post is
+-- asked under the reader's own rights, so `post_read` is what decides -- a
+-- post kept to its writer, one taken down, one a block stands between: its
+-- files are the same answer. A voice no post names yet is its recorder's.
+--
+-- Not is_member(): reading is what a frozen account keeps (over `banned_at`).
+-- Nobody with no session reads anything -- that is the wall at the foot.
 drop policy if exists media_read on storage.objects;
 create policy media_read on storage.objects for select
-  using (is_member() and bucket_id = 'post-media');
+  using (auth.uid() is not null and bucket_id = 'post-media'
+         and (name like auth.uid()::text || '/%'
+              or exists (select 1 from post p
+                          where p.id::text = split_part(name, '/', 2)
+                            and p.author::text = split_part(name, '/', 1))
+              or exists (select 1 from post p where p.body ->> 'vu' = name)));
+create index if not exists post_vu_idx on post ((body ->> 'vu'));
 -- You write under your own uuid and nowhere else.
 drop policy if exists media_make on storage.objects;
 create policy media_make on storage.objects for insert with check (
@@ -2971,9 +2985,13 @@ create policy media_make on storage.objects for insert with check (
 -- the row goes by cascade and the bytes go by this, from the phone, in the
 -- same breath. Nothing here removes anybody's file on a schedule:
 -- docs/DATA_SAFETY.md forbids automatic deletion and there is no job.
+--
+-- Not is_member(), for the reason account_delete() does not ask it: a frozen
+-- account keeps the way out, and deleting an account takes its files with it
+-- (「全部消える」 OWNER). DELETE REVIEW in docs/CHANGELOG.md 2026-09-27.
 drop policy if exists media_drop on storage.objects;
 create policy media_drop on storage.objects for delete using (
-  is_member() and bucket_id = 'post-media'
+  auth.uid() is not null and bucket_id = 'post-media'
   and name like auth.uid()::text || '/%'
 );
 -- No update policy. A picture is not edited; a different picture is a

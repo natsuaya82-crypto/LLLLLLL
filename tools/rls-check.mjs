@@ -1706,6 +1706,37 @@ const CASES = [
     `select 1 from post_seen v where v.id='${P}' and v.replies =
        (select count(*) from post q where q.reply_to='${P}' and q.hidden_at is null)`],
 
+  /* --- AND ITS PHOTOGRAPHS AND ITS VOICE ARE THE POST'S --------------------
+     A file in the bucket is read by whoever may read a post that names it --
+     a photograph by its folder (`<author>/<post>/`), a voice by the post's
+     `body.vu` -- and by whoever put it there. So a post kept to its writer
+     keeps its pictures, and a voice no post names yet (a draft's, a
+     composer's) is its recorder's alone. media_read asks post_read, so a
+     block and a take-down are the same sentence here as on the post. */
+  ['A puts a photograph on the post A kept',  'ok',     A, 0,
+    `insert into storage.objects(bucket_id,name) values ('post-media','${A}/${PV}/0.jpg')`],
+  ['A puts a photograph on P',                'ok',     A, 0,
+    `insert into storage.objects(bucket_id,name) values ('post-media','${A}/${P}/1.jpg')`],
+  ['A records a voice no post names yet',     'ok',     A, 0,
+    `insert into storage.objects(bucket_id,name) values ('post-media','${A}/v1/vo.m4a')`],
+  ['A records one and posts it',              'ok',     A, 0,
+    `insert into storage.objects(bucket_id,name) values ('post-media','${A}/v2/vo.m4a')`],
+  ['the post names it',                       'ok',     A, 0,
+    `insert into post(author,body) values ('${A}','{"vu":"${A}/v2/vo.m4a"}'::jsonb)`],
+  ['B reads the photograph on P',             'ok',     B, 0,
+    `select 1 from storage.objects where name='${A}/${P}/1.jpg'`],
+  ['and the voice on the post',               'ok',     B, 0,
+    `select 1 from storage.objects where name='${A}/v2/vo.m4a'`],
+  ['B cannot read the kept post’s photograph', 'denied', B, 0,
+    `select 1 from storage.objects where name='${A}/${PV}/0.jpg'`],
+  ['nor the voice no post names',             'denied', B, 0,
+    `select 1 from storage.objects where name='${A}/v1/vo.m4a'`],
+  ['A reads both of A’s own',                 'ok',     A, 0,
+    `select 1 from storage.objects where name in ('${A}/${PV}/0.jpg','${A}/v1/vo.m4a')
+      having count(*) = 2`],
+  ['B records a voice',                       'ok',     B, 0,
+    `insert into storage.objects(bucket_id,name) values ('post-media','${B}/v9/vo.m4a')`],
+
   /* --- ejecting somebody, which is the half guideline 1.2 asks for -------
      Taking the post down leaves whoever wrote it free to write it again. What
      a ban IS, here, is one line in is_member() -- so the thing to attack is
@@ -1728,6 +1759,13 @@ const CASES = [
     `update profile set display='new' where id='${B}'`],
   ['nor upload anything',                     'denied', B, 0,
     `insert into storage.objects(bucket_id,name) values ('post-media','${B}/x.jpg')`],
+  /* What a frozen account keeps is reading and the way out (schema.sql over
+     `banned_at`): the pictures on posts it may read, and taking its own
+     files off the server on the way to deleting itself. */
+  ['but still sees a photograph on a post',  'ok',     B, 0,
+    `select 1 from storage.objects where name='${A}/${P}/1.jpg'`],
+  ['and takes its own files out',            'ok',     B, 0,
+    `delete from storage.objects where name='${B}/v9/vo.m4a'`],
   /* And the language, which used to be the half a freeze left alone.
      「制作は好きにやらせればいいし、sns止められても作りたいやつは作るでしょ」 was
      true while a language was nobody else's business and the language policies
@@ -2681,13 +2719,13 @@ const SHAPE = [
      anyone who had the link. */
   ['no bucket answers without a session', `
      select count(*) from storage.buckets where public`, '0'],
-  /* And the policy over the files asks who you are now. `using (true)` on a
-     private bucket would still be every signed-in person, which is what this
-     one is; `using (bucket_id = ...)` alone was every person at all. */
+  /* And the policy over the files asks who you are. `using (bucket_id = ...)`
+     alone was every person at all. Not is_member(): a frozen account still
+     reads (the cases over `media_read` press both). */
   ['and the files are only read by somebody signed in', `
      select count(*) from pg_policies
       where schemaname='storage' and tablename='objects' and policyname='media_read'
-        and qual not like '%is_member%'`, '0'],
+        and qual not like '%auth.uid()%'`, '0'],
   /* AND WHAT IS LEFT FOR TOMORROW. A table made after this file was pasted
      would be granted to anon by Supabase's own default privileges, which is
      how every one of the rows above got there in the first place. */
