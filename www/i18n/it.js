@@ -765,7 +765,7 @@ defLang('it', (function(){
       "glyph.fill.d" : "Una forma chiusa viene riempita.",
       "glyph.circle.d" : "Curva il tratto appena fatto. Premi di nuovo per raddrizzarlo.",
       "glyph.clear.d" : "Toglie tutto dal quadrato.",
-      "glyph.lasso.d" : "Cerchia i punti o passa il dito sulle linee per selezionarli. Trascinane uno selezionato per spostarli tutti; il cestino li rimuove con le linee che li toccano.",
+      "glyph.lasso.d" : "Cerchia i punti o passaci sopra con il dito per selezionarli. Trascinane uno selezionato per spostarli tutti; il cestino li rimuove con le linee che li toccano.",
       "fmr.title"        : "Forme fatte da una regola",
       "fmr.add"          : "Lettere che aggiunge",
       "g2.fm.add"          : "Aggiungi una regola",
