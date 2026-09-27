@@ -3753,9 +3753,10 @@ end $$;
 /* The block itself, pasted a THIRD time over a server it has already moved:
    the word is in Vault now, so nothing is copied and the job stays one job. */
 const CRONB = (function(){
-  const at = SCHEMA_SQL.indexOf('do $cron$');
+  /* At the head of a line: the name in a comment is not the block. */
+  const at = SCHEMA_SQL.indexOf('\ndo $cron$') + 1;
   const end = SCHEMA_SQL.indexOf('\n$cron$;', at);
-  if (at < 0 || end < 0) {
+  if (at < 1 || end < 0) {
     console.error('schema.sql has no daily-prompt schedule block (do $cron$) to paste again');
     process.exit(1);
   }
