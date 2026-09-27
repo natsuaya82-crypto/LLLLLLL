@@ -8,8 +8,13 @@ android {
         applicationId "com.tokinets.lingua"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        // Google Play refuses a second upload with the same number, so the
+        // workflow hands in its run number (.github/workflows/android-build.yml).
+        // A build made by hand is 1.
+        versionCode Integer.parseInt((project.findProperty('linguaVersionCode') ?: '1').toString())
+        // The version is package.json's "version", the one place the iOS build
+        // reads it from too (ios-deploy.yml), so the two phones cannot drift.
+        versionName new groovy.json.JsonSlurper().parse(rootProject.file('../package.json')).version
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -17,8 +22,26 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    // THE UPLOAD KEY IS NEVER IN THE REPOSITORY. The workflow writes it out of
+    // the ANDROID_KEYSTORE_B64 secret and names it here through the
+    // environment; with no key the release is simply not signed, and the
+    // workflow builds a debug APK instead (docs/ANDROID.md).
+    def upKey = System.getenv('LINGUA_KEYSTORE')
+    signingConfigs {
+        release {
+            if (upKey) {
+                storeFile file(upKey)
+                storePassword System.getenv('LINGUA_KEYSTORE_PASSWORD')
+                keyAlias System.getenv('LINGUA_KEY_ALIAS')
+                keyPassword System.getenv('LINGUA_KEY_PASSWORD')
+            }
+        }
+    }
     buildTypes {
         release {
+            if (upKey) {
+                signingConfig signingConfigs.release
+            }
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }

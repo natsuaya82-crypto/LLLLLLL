@@ -1,0 +1,84 @@
+name: Android build
+
+# 手で押すだけ。タグでも push でも動かない ── Play への提出はまだしない
+# （オーナーの Play Console のアカウント待ち、docs/ANDROID.md）。
+#
+# 作るもの:
+#   署名の鍵が Secrets にある時  AAB（Play に上げる形）と、同じ鍵で署名した APK
+#   無い時                       debug の鍵で署名した APK だけ ── 手元の Android
+#                                 に入れて確かめるためのもの。署名の無い release
+#                                 の APK は端末に入らないので作らない。
+# どちらも成果物（Artifacts）に残る。
+#
+# Secrets（オーナーが作って入れる。値はリポジトリに書かない）:
+#   ANDROID_KEYSTORE_B64       アップロード鍵の keystore を base64 にしたもの
+#   ANDROID_KEYSTORE_PASSWORD  keystore のパスワード
+#   ANDROID_KEY_ALIAS          鍵の別名
+#   ANDROID_KEY_PASSWORD       鍵のパスワード
+# android/app/build.gradle は LINGUA_KEYSTORE が指す鍵があれば release に署名し、
+# 無ければ署名しない。鍵のファイルはこのジョブの中にしか無い。
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      KEY_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      # www を android/app/src/main/assets/public へ写し、capacitor.config.json
+      # と capacitor.plugins.json を作る。どれも .gitignore 済みで、ここで作る。
+      - name: Sync Android (Web → Android)
+        run: npx cap sync android
+
+      # capacitor.build.gradle が Java 21 と言うので、21。
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'gradle'
+
+      # 版は android/app/build.gradle が package.json から読む（iOS と同じ一箇所）。
+      # 番号は run 番号 ── Play は同じ番号の二度目を受け取らない。
+      - name: Build (signed AAB + APK)
+        if: env.KEY_B64 != ''
+        working-directory: android
+        env:
+          LINGUA_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          LINGUA_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          LINGUA_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          export LINGUA_KEYSTORE="$RUNNER_TEMP/upload.jks"
+          echo "$KEY_B64" | base64 -d > "$LINGUA_KEYSTORE"
+          ./gradlew --no-daemon bundleRelease assembleRelease -PlinguaVersionCode=${{ github.run_number }}
+          rm -f "$LINGUA_KEYSTORE"
+
+      - name: Build (debug APK, no key)
+        if: env.KEY_B64 == ''
+        working-directory: android
+        run: ./gradlew --no-daemon assembleDebug -PlinguaVersionCode=${{ github.run_number }}
+
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: lingua-android-${{ github.run_number }}
+          path: |
+            android/app/build/outputs/bundle/release/*.aab
+            android/app/build/outputs/apk/release/*.apk
+            android/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
