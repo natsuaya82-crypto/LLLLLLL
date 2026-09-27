@@ -897,8 +897,11 @@ function fLtkHTML(l, call){
    a list of what you have already done is not a list of what to do. */
 function fTodo(){
   var out=[];
-  var noMn=WORDS.filter(function(w){ return !wMns(w).length; }).length;
-  var noSnd=LETTERS.filter(function(l){ return ltHasShape(l) && !ltUnits(l).length; }).length;
+  /* Counted off what the lists show, for the reason fWordsWithSnd() gives:
+     a count of words the dictionary does not list is a row that lands on a
+     list without them in it. */
+  var noMn=wordsSeen().filter(function(w){ return !wMns(w).length; }).length;
+  var noSnd=ltSeen().filter(function(l){ return ltHasShape(l) && !ltUnits(l).length; }).length;
   var noLt=addedSnd().filter(function(x){ return !ltHasShape(ltMain(x)); }).length;
   var stg=stAll().filter(function(p){ return !stIsDone(p); }).length;
   if(noMn) out.push([t('find.todo.mn'), noMn, 'words']);
@@ -911,11 +914,11 @@ function fTodo(){
 /* ---- searching the whole language -------------------------------------- */
 function fHits(qq){
   var g={w:[], l:[], s:[], n:[], r:[]};
-  g.w=WORDS.filter(function(w){ return srcKey(w).indexOf(qq)>=0; })
+  /* wordsSeen() and ltSeen(), not WORDS and LETTERS: the dictionary and the
+     alphabet hide what a free plan cannot reach, and a search that answered
+     off the whole list put those back on the screen through the other door. */
+  g.w=wordsSeen().filter(function(w){ return srcKey(w).indexOf(qq)>=0; })
     .sort(function(a,b){ return String(a.hw).localeCompare(String(b.hw)); });
-  /* ltSeen(), not LETTERS: the alphabet's own room hides what a free plan
-     cannot reach, and a search that answered off the whole list put those
-     letters back on the screen through the other door. */
   g.l=ltSeen().filter(function(l){
     return (ltName(l)+' '+(l.ch||'')+' '+ltUnits(l).join(' ')).toLowerCase().indexOf(qq)>=0; });
   g.s=addedSnd().filter(function(x){ return String(x).toLowerCase().indexOf(qq)>=0; });
@@ -971,7 +974,7 @@ function fPickedHTML(){
     (hits.length? hits.map(entryOneHTML).join('') : emptyBox(t('words.nomatch')));
 }
 function fRestHTML(){
-  var snd=addedSnd(), lt=LETTERS.filter(ltHasShape), todo=fTodo(), out='';
+  var snd=addedSnd(), lt=ltSeen().filter(ltHasShape), todo=fTodo(), out='';
   if(snd.length) out+=fSec(t('find.by.snd'), snd.length)+
     '<div class="phkeys">'+snd.map(function(x){
       return phkHTML(x, DO('fPick',['s', x])); }).join('')+'</div>';
@@ -982,7 +985,10 @@ function fRestHTML(){
   out+= todo.length
     ? todo.map(function(r){ return fRow(r[0], r[1], DO('goIn',[r[2]])); }).join('')
     : '<div class="note">'+t('find.todo.no')+'</div>';
-  out+=fSec(t('find.in'), '')+fRow(t('set.csv.in'), '', DO('openImport'));
+  /* The same door as the settings one (www/settings.js § the CSV rows), and
+     gone on free the same way: docs/PAID_FEATURES.md 「CSV, file import, the
+     sheet」 -- asked with can() on the press. */
+  out+=fSec(t('find.in'), '')+fRow(t('set.csv.in'), '', can('data')? DO('openImport') : DO('upData'));
   return out;
 }
 function findPaint(){
