@@ -103,6 +103,10 @@ const R = await pg.evaluate(() => {
      Same three steps, ending in Delete. The word is gone, so its page cannot
      be where you are put back down -- the trail has to lose it as well. */
   start();
+  save();
+  const inSlice = (hw) => { try { return JSON.parse(slMine(langKey('words')) || '[]')
+    .some(w => w.hw === hw); } catch (e) { return 'unreadable'; } };
+  const delBefore = inSlice('tira');
   openWord('tira');
   openEdit('tira');
   /* The question is the app's own popup now, not the system's -- 「標準は
@@ -121,6 +125,44 @@ const R = await pg.evaluate(() => {
      has gone, which is what you got by being put back down on its page. */
   if (screen().indexOf(t('form.gone')) >= 0)
     out.fails.push('deleted tira, and you were put down on "that is no longer here"');
+  /* AND IT IS WRITTEN ON THE PRESS. The delete row is on the sheet, and while
+     the sheet's buffer was on the trail save() held the delete as a draft: the
+     toast said 削除しました over a word still in the slice, and the buffer was
+     left for the next word given that spelling. */
+  const delAfter = inSlice('tira');
+  out.said.push('tira in the slice before the delete: ' + delBefore + ', after: ' + delAfter +
+    ', its sheet\'s buffer left behind: ' + !!KEEP['form|edit:tira']);
+  if (delBefore !== true)
+    out.fails.push('tira was not in the slice before the delete -- this claim asked nothing');
+  if (delAfter !== false)
+    out.fails.push('tira was deleted from its sheet and the slice still holds it -- ' +
+      'the delete was held as the sheet\'s draft and nothing was written');
+  if (KEEP['form|edit:tira'])
+    out.fails.push('the deleted word\'s sheet buffer is still held');
+
+  /* ---- a placed form taken off is written on the press, the same way ---- */
+  start();
+  /* a word that is not itself a form -- an old inflection has no forms page */
+  const fw = WORDS.filter(w => !wIsForm(w))[0];
+  const fwh = String(fw.hw);
+  fw.fms = [{ fm: 'pst', hw: fwh + 'pst', sp: JSON.parse(JSON.stringify(spOf(fw))) }];
+  save();
+  const fmsIn = () => { try { const x = JSON.parse(slMine(langKey('words')) || '[]')
+    .filter(w => w.hw === fwh)[0]; return !!(x && x.fms && x.fms.length); } catch (e) { return 'unreadable'; } };
+  const fmsBefore = fmsIn();
+  openWord(fwh);
+  openWfm(fwh, 'pst');
+  const fmsOn = here().r + ':' + here().a;
+  wfmDelGo(fwh, 'pst');
+  const fmsAfter = fmsIn();
+  out.said.push('a placed form of ' + fwh + ' in the slice before it is taken off on ' + fmsOn +
+    ': ' + fmsBefore + ', after: ' + fmsAfter);
+  if (fmsOn.indexOf('form:wfm:') !== 0)
+    out.fails.push('the form\'s page did not open -- this claim asked nothing');
+  if (fmsBefore !== true)
+    out.fails.push('the placed form was not in the slice first -- this claim asked nothing');
+  if (fmsAfter !== false)
+    out.fails.push('a placed form was taken off and the slice still holds it');
 
   /* ---- the add sheet arrived at cold ------------------------------------
      `openAdd()` decides whether the sheet is NEW by asking whether the route

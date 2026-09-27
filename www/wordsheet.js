@@ -1163,8 +1163,11 @@ function wfmDelGo(hw, was){
   a=w.fms||[];
   for(i=0;i<a.length;i++) if(a[i] && String(a[i].fm)!==was) out.push(a[i]);
   if(out.length) w.fms=out; else delete w.fms;
-  save();
+  /* The screen's buffer is let go BEFORE the write: while it is on the trail
+     save() is holding a draft (keepDrafting, www/shell.js), and the form just
+     taken off was never written. */
   keepDrop(keepKeyOf('form', wfmKey(hw, was)));
+  save();
   back();
 }
 
@@ -2215,13 +2218,24 @@ function delWord(){
 function delWordGo(){
   var w=findWord(openHw); if(!w) return;
   var gone=String(w.hw);
+  /* THE SHEET GOES FIRST, AND THEN THE WORD IS WRITTEN. The delete row is on
+     the sheet, and while the sheet's buffer is on the trail everything
+     pressed is its draft (keepDrafting, www/shell.js) -- so save() wrote
+     nothing, 「削除しました」 was said over a word still in the slice and on
+     the server, and the buffer stayed behind for the next word given that
+     spelling. A confirmed delete is a press with no Save behind it: the
+     buffer is let go, the word's screens come off the trail, and save()
+     writes and sends. What was pressed on the sheet and not saved stays in
+     memory and goes up with it (a word made on the relate page is not lost);
+     what was on the deleted word goes with the word.
+
+     Not closeSheet(): that steps back one, onto the deleted word's own page,
+     which then has nothing to show. You are put back down wherever you were
+     before you opened it -- the dictionary, or the word you reached it from. */
+  keepDrop(keepKeyOf('form', 'edit:'+gone));
+  navDrop('edit:'+gone); navDrop('word:'+gone); navDrop(gone, 'ety');
   wDrop(gone);
   save();
-  /* Not closeSheet(): that steps back one, onto the deleted word's own page,
-     which then has nothing to show. Both of its screens come off the trail,
-     so you are put back down wherever you were before you opened it -- the
-     dictionary, or the word you reached it from. */
-  navDrop('edit:'+gone); navDrop('word:'+gone); navDrop(gone, 'ety');
   render(); toast(t('toast.deleted', gone));
 }
 
