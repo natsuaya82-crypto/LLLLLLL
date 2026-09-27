@@ -1045,8 +1045,37 @@ Object.assign(r, await pg.evaluate(() => {
   return out;
 }));
 
+/* ---- the rule audit of 2026-09-27 (docs/reports/rule-audit-2026-09-27-sns.md)
+   Each of these was watched red with the fault in place before it was fixed. */
+const au = await pg.evaluate(() => {
+  const out = {};
+  const realS1 = netSend1, realS = netSend, realG = netGet;
+  const sent = [];
+  netSend1 = function (m, p, b, t2, ok) { sent.push(m + ' ' + p + ' ' + JSON.stringify(b)); ok([], 200); };
+  netSend = function (m, p, b, t2, ok, bad, up) { netSend1(m, p, b, t2, ok, bad, up, true); };
+  netGet = function (p, ok, bad) { netSend('GET', p, null, '', ok, bad); };
+  const realId = netIdOf;
+  netIdOf = function (h, ok) { ok('U-' + h); };
+
+  /* a1: a report on a PERSON is still about that person after the form is
+     built again from its key (vForm / keepPaint go through FORM_OPEN). */
+  openReport('', 'zed');
+  FORM = null; render();
+  sent.length = 0;
+  reportGo('spam');
+  out.a1 = sent.filter((s) => /\/rest\/v1\/report/.test(s)).join(' | ');
+
+  netIdOf = realId;
+  netSend1 = realS1; netSend = realS; netGet = realG;
+  NAV = [{ r:'feed' }]; window.route = 'feed'; render();
+  return out;
+});
+
 const fails = [];
 const say = (m) => fails.push(m);
+if (!/"who":"U-zed"/.test(au.a1 || ''))
+  say('a1: a report on a person, its form built again from its key, sent 「' + au.a1 +
+      '」 -- it has to name @zed. The key is what the form is; nothing beside it may hold the other half.');
 if (r.hLike !== 'postHoldLikes' || r.hBoost !== 'postHoldBoosts')
   say('13: a post the server has, with likes and reposts, carries holds 「' + r.hLike + '」 and 「' +
       r.hBoost + '」 on its heart and its repost -- they have to be postHoldLikes and postHoldBoosts.');

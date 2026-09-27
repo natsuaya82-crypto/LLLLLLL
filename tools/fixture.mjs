@@ -1577,7 +1577,7 @@ export function halfDone(){
                               const h = vFeed(); NET_PPL.block = was; PMENU = ''; return h; }],
     /* The five reasons. It is a form and nothing walks to it. */
     ['saying what is wrong with a post', () => { openReport('p2', 'iri');
-                              const h = vForm(); rpFor = null; return h; }],
+                              return vForm(); }],
     /* And the other end of that form, which is one account's and is drawn for
        nobody else. The row at the foot of the settings list is the only way
        in, and NET_STAFF is false everywhere else -- so both the door and the

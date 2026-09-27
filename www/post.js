@@ -4757,34 +4757,36 @@ function postMenuHTML(p){
 /* The five reasons are the server's -- `report.why` is a check constraint, so
    a sixth invented here would be refused, which is the right way round. */
 var REPORT_WHY=['spam','abuse','hate','sexual','other'];
-var rpFor=null;
-/* BOTH MENUS, because this row is on both of them. It cleared `PMENU` only,
-   and the same row sits in the menu on a person's page -- so reporting from
-   THERE walked to this form with `WMENU` still standing, and postMenuTook()
-   read the first press on a reason as "a press outside the menu", closed the
-   menu nobody could see, and swallowed it. Measured: the first press sent no
-   report and stayed on the form; the second sent one. Somebody presses Spam
-   and nothing happens.
+/* BOTH MENUS, because this row is on both of them. It is on the menu on a
+   person's page as well, and a row that ENDS a menu closes it itself -- the
+   same sentence as meBlock() in www/me.js -- or postMenuTook() reads the first
+   press on a reason as "a press outside the menu" and swallows it.
 
-   Same sentence as meBlock() in www/me.js: a row that ENDS a menu closes it
-   itself, and this row ends whichever one it was pressed from. */
+   What is being reported is the form's KEY and nothing beside it:
+   `report:<post>:<handle>`. The form is built again from its key whenever it
+   is arrived at without being open (vForm, keepPaint), so a second place
+   holding the other half is a report that forgets who it was about. */
 function openReport(id, handle){
   PMENU=''; WMENU=false;
-  rpFor={post:String(id||''), handle:String(handle||'')};
-  openForm('report:'+id, t('post.report'),
+  openForm('report:'+String(id||'')+':'+String(handle||''), t('post.report'),
     REPORT_WHY.map(function(w){
       return '<button class="set"' + DO('reportGo', [w]) + '>'+
         '<span class="sl">'+esc(t('report.'+w))+'</span>'+ICON_GO+'</button>';
     }).join(''));
 }
-FORM_OPEN.report=function(x){ openReport(x, ''); };
+function reportOf(rest){
+  var i=String(rest||'').lastIndexOf(':');
+  return (i<0)? {post:String(rest||''), handle:''} :
+    {post:rest.slice(0, i), handle:rest.slice(i+1)};
+}
+FORM_OPEN.report=function(x){ var r=reportOf(x); openReport(r.post, r.handle); };
 function reportGo(why){
-  var r=rpFor;
-  if(!r) return;
-  rpFor=null;
+  var s=formArg(here().a), r;
+  if(s.kind!=='report') return;
+  r=reportOf(s.rest);
   back();
   netReport(r, why, '', function(){ toast(t('report.done')); },
-            function(d, s){ toast(netWhy(d, s)); });
+            function(d, s2){ toast(netWhy(d, s2)); });
 }
 /* act.js asks this before it delivers a press, and it is the whole of the
    rule: with a menu open, a press that is not part of that menu closes it and
