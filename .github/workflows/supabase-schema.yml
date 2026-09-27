@@ -108,6 +108,17 @@ jobs:
           select 'postface ' || to_char(created_at, 'MM-DD'), case when body ? 'av' then 'kind=' || coalesce((select string_agg(k, ',') from jsonb_object_keys(body->'av') k), '?') else 'none' end
             from (select created_at, body from post where author = (select id from profile where handle = 'tytaymcgill') order by created_at desc limit 3) z
           union all
+          select 'faceed ' || handle, coalesce(ed::text, '-') from profile where handle = 'tytaymcgill'
+          union all
+          select 'prompt ' || on_day::text, left(coalesce(text, ''), 80)
+            from (select on_day, text from prompt order by on_day desc limit 5) p
+          union all
+          select 'cronjob ' || jobname, schedule || ' active=' || active::text || ' ' || left(regexp_replace(command, '\s+', ' ', 'g'), 120)
+            from cron.job
+          union all
+          select 'cronrun ' || to_char(start_time, 'MM-DD HH24:MI'), status || ' ' || left(coalesce(return_message, ''), 160)
+            from (select start_time, status, return_message from cron.job_run_details order by start_time desc limit 8) c
+          union all
           select 'slow ' || calls || 'x mean=' || round(mean_exec_time) || 'ms max=' || round(max_exec_time) || 'ms',
                  left(regexp_replace(query, '\s+', ' ', 'g'), 160)
             from (select calls, mean_exec_time, max_exec_time, query from extensions.pg_stat_statements
