@@ -8,10 +8,10 @@
 /* The dictionary is one screen, and it was one list. A box that filtered as
    you typed, entries sorted one way, and the first of a word's meanings. That
    is a word list; a dictionary is a thing you go into looking for something.
-   So: search that says what it found and can be cleared, a rail that narrows
-   by part of speech and can show the words still waiting for a meaning, a
-   choice of order, every sense on the entry rather than the first, and where
-   a word came from written on it rather than implied by an indent. */
+   So: search that says what it found and can be cleared, one button that
+   opens the list of parts of speech (and the words still waiting for a
+   meaning), a choice of order, and every sense on the entry rather than the
+   first. Where a word came from is on its page, not on the list. */
 var q='', wFil='*', wSort='a';
 /* The orders the list can be in, in the order they are offered.
    「単語だけど並べ替えをもっと充実させたい。最新とかいらんし、グループごととか、
@@ -58,8 +58,7 @@ function wGroupLab(w){
    never read for its size to answer whether choosing is on.
 
    Neither this nor the undo below is the language's -- nothing here is
-   written to `localStorage`, nothing is in `SLICES`, and nothing is in the
-   backup. Both are forgotten in `viewLeft()` (www/shell.js) when this screen
+   written to `localStorage` and nothing is in `SLICES`. Both are forgotten in `viewLeft()` (www/shell.js) when this screen
    is walked off: the choosing because 「前の画面戻ると選択画面がキープされた
    ままや」 OWNER 2026-09-05, the undo because it holds words as they were at
    the positions they were in. The kind of word and the order are not -- they
@@ -120,15 +119,15 @@ function wFilters(){
    「無料に戻ったら無料の形に戻る」
 
    **Nothing is deleted and nothing is unreachable.** `WORDS` is untouched and
-   every word in it is written by `save()`, packed by `bkPack()` and in the
-   file in Documents; a post still spells out of the whole dictionary, the
+   every word in it is written by `save()` and goes up with the language; a
+   post still spells out of the whole dictionary, the
    gloss still reads it, and the language comes back whole the moment the plan
    does. What changes is one list on one screen.
 
    Because that is a difference between what is stored and what is shown --
    the kind of difference somebody reads as "my words are gone" -- the app
    says so twice: a line at the foot of the list, and once, out loud, on the
-   day the plan ends (`capLapse()` in boot.js).
+   day the plan ends (`capLapseSaw()` / `capLapsePop()` in www/settings.js).
 
    Everything the app reads FOR ITSELF goes through `WORDS` and must keep
    doing so. `findWord()` in particular: a post's gloss, a spelling and an
@@ -226,7 +225,7 @@ function wSortRow(){
 
    A list that is quietly a hundred long when the dictionary is five thousand
    is the app telling somebody their work is gone. It is not gone -- it is in
-   `WORDS`, in `save()`, in the backup and in the file in Documents -- and the
+   `WORDS`, in `save()` and on the server -- and the
    place to say so is the foot of the list it is missing from, not only a
    message they saw once weeks ago. */
 function wordsHidHTML(){
@@ -309,11 +308,6 @@ function vWords(){
        and the timeline has had this exact button since it was written, in
        this exact place, for this exact reason. Same class, same corner.
        Nothing new was invented for it. */
-    /* While choosing, the round + is not what the thumb is for. What is under
-       it is the two things being done to what was chosen, in the bar across
-       the foot the app already has (`.barfix`, worn by www/sheet.js and
-       www/sound.js). Both are down until something is chosen: a button that
-       does nothing is a button that is broken. */
     /* Delete and nothing else. 「複数選択のedit今実装しないでいいやdeleteだけ
        にしよう。」OWNER 2026-09-01 -- so the page that wrote one part of
        speech over everything chosen is not in the app, and neither is the
@@ -343,8 +337,6 @@ function wordsPaint(){
    own -- typing repaints the list rather than the screen, so the field would
    stay one row while the text wrapped out of sight underneath. */
 function wordsSetQ(v){ q=v; lnGrow('w-q'); wordsPaint(); }
-/* Clearing leaves the cursor where it was, because clearing a search is
-   nearly always the first half of typing a different one. */
 /* What the list is filtered to, as a word. */
 function wFilLab(){
   var fs=wFilters(), i, sub=wFilSub(wFil);
@@ -355,9 +347,8 @@ function wFilLab(){
   for(i=0;i<fs.length;i++) if(fs[i].k===wFil) return fs[i].lab;
   return posLabel(POS_ALL);
 }
-/* The list, on a sheet. Every kind that has a word in it, and the count
-   beside each -- which the row of tabs could not show and is most of what
-   somebody is choosing on. */
+/* One row of the list of kinds openFil() draws: every part of speech, and
+   the words still waiting for a meaning, with a tick on the one chosen. */
 function wFilRow(k, lab){
   return '<button class="set"' + DO('wordsSetFil', [k]) + '>'+
     '<span class="sl'+(wFil===k? ' on':'')+'">'+esc(lab)+'</span>'+
@@ -404,12 +395,11 @@ function wordsSetSort(k){
   if(here().r==='form') back(); else render();
 }
 /* ---- doing it, and being able to not have done it ----------------------
-   「重要な操作は取り消せること」 -- the owner's, and the DELETE REVIEW for this
-   is in docs/CHANGELOG.md. Deleting twenty words at once is the most
-   dangerous thing this app can do, so it is asked AND it can be put back:
-   not one or the other. The keyboard's bin gets away with only the step back
-   because it takes one row and the step back is exactly one row
-   (CLAUDE.md § 19); this takes as many as were ticked.
+   A delete asks first: 「確認ポップにしてください」 OWNER 2026-09-24, which
+   replaced criterion 9's undo with a confirm, and the DELETE REVIEW for this
+   is in docs/CHANGELOG.md. The step back below it is still here, from before
+   that decision; whether it stays beside the pop is the owner's and has not
+   been asked (docs/reports/rule-audit-2026-09-27-words.md, pwi-26).
 
    What is kept is what WAS THERE, copied whole and before anything is cut --
    the words with the positions they were at, every word left standing that
@@ -456,8 +446,7 @@ function wSelDelGo(){
 }
 /* Putting it back. The words that were taken out go in at the index they came
    out of, in the order they were in, so each splice lands where it was; the
-   words that were only pointed AT are written back whole, which is what
-   `impUndo` does with what an import overwrote. */
+   words that were only pointed AT are written back whole. */
 function wSelUndo(){
   var u=wUndo, i, k;
   if(!u) return;
@@ -473,8 +462,8 @@ function wSelUndo(){
   toast(t('words.sel.back', u.n));
 }
 /* What just happened, at the foot of the list it happened to, with the way to
-   make it not have happened. `impUndo`'s row, in the place this one's is
-   missing from -- and it lasts exactly as long as you are looking at the list,
+   make it not have happened -- and it lasts exactly as long as you are
+   looking at the list,
    because it holds words as they were at the positions they were in and
    writing those over whatever came later is a restore WINNING
    (docs/DATA_SAFETY.md § 2). viewLeft() in www/shell.js drops it. */
@@ -484,9 +473,7 @@ function wordsUndoHTML(){
       esc(t('words.sel.gone', wUndo.n))+'</div>'+
     markBtn(ICON_UNDO, t('imp.undo'), 'wSelUndo');
 }
-/* One entry. The word says itself when you touch it; the chevron at its edge
-   opens it. Listening is what you do dozens of times on this screen and
-   editing is what you do once.
+/* One entry. The row opens the word; the speaker beside it says it.
 
    Every sense, numbered, and not only the first: a word with three meanings
    that shows one is lying about the word.
