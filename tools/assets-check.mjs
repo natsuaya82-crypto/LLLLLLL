@@ -449,9 +449,11 @@ if (existsSync(KT)) {
     ktPlugins++
     ktMethods += kt[name].size
     const cls = ktFile[name].cls
-    if (!cls || mainSrc.indexOf(`registerPlugin(${cls}::class.java)`) < 0)
+    // Asked as the class handed over -- `(Cls::class.java)` -- which is the
+    // only thing MainActivity.kt does with a plugin class.
+    if (!cls || !new RegExp('\\(\\s*' + cls + '::class\\.java\\s*\\)').test(mainSrc))
       note(`android/.../${ktFile[name].f}: ${name} is not handed to the bridge -- MainActivity.kt ` +
-           `has no registerPlugin(${cls || '?'}::class.java), so every call to it goes unanswered.`)
+           `never passes ${cls || '?'}::class.java, so every call to it goes unanswered.`)
   }
   const PAIR = /['"](Lingua[A-Za-z0-9_]*)['"]\s*,\s*['"]([A-Za-z0-9_]+)['"]/g
   referenced.filter((r) => r.endsWith('.js')).forEach((r) => {
