@@ -309,19 +309,18 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
 
   // ---- the voice on a post ------------------------------------------------
   //
-  // Documents, and only until the post it is on has gone up: thirty seconds
-  // of AAC is about 240 KB, too big to be text in localStorage, so a
-  // recording is a file and the post being written carries its name. When
-  // the post lands, the server holds the recording and the file goes
-  // (postSend() in www/post.js, 「スマホの中に保存されているものなんてない」
-  // OWNER 2026-09-24). www/rec.js (chapter 25) is the other half.
+  // NOTHING NEW IS WRITTEN HERE. A recording goes into the `post-media`
+  // bucket the moment it ends (voKeep() in www/rec.js), and 「端末に持たせる
+  // ものはない」 -- so this folder holds only what an EARLIER build wrote into
+  // Documents/Voices, and these three methods are how that is read and let go:
   //
-  // dropVoice deletes exactly one file: the one a post names -- a post being
-  // deleted, a post that has gone up, or a recording taken off the post being
-  // written. sweepVoices is the other, and the only thing that walks this
-  // folder: at launch, what an earlier build left (OWNER 2026-09-25) -- every
-  // file the web side does NOT name as still waiting on it. Both DELETE
-  // REVIEWs are in docs/CHANGELOG.md.
+  //   voice        reads one back, by the name a post or a draft still carries
+  //   dropVoice    deletes exactly the one file a post names -- a post being
+  //                deleted, or one whose recording has gone up
+  //   sweepVoices  at launch, what an earlier build left that the web side
+  //                does NOT name as still waiting on it (OWNER 2026-09-25)
+  //
+  // Both DELETE REVIEWs are in docs/CHANGELOG.md.
 
   static let voiceDir = "Voices"
 
@@ -466,9 +465,10 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
   /// 「そのiPhoneに入れられますって設定じゃ無くてボタン押したら追加する画面まで
   /// 進められないの？」 Half of it, and the half that is possible is the half
   /// that matters. `openSettingsURLString` is Apple's one public door and it
-  /// lands on Settings → Lingua, which is where **Full Access** is granted —
-  /// the switch without which the keyboard cannot read a single letter
-  /// somebody drew.
+  /// lands on Settings → Lingua: the keyboard, and the notifications
+  /// (www/push.js). The keyboard asks for no Full Access and needs none to
+  /// read the letters somebody drew (2026-09-18, Info.plist
+  /// `RequestsOpenAccess` false).
   ///
   /// What it cannot do is ADD the keyboard. Settings → General → Keyboard →
   /// Keyboards → Add New Keyboard has no public URL; the `App-prefs:` scheme

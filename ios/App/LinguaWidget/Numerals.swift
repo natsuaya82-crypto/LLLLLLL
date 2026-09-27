@@ -85,9 +85,9 @@ struct Numerals: Decodable {
   static let group = "group.com.tokinets.lingua"
   static let file = "widget.json"
 
-  /// Nil for every reason equally: no container, nothing written yet, a file
-  /// from a version that does not exist. Every caller has one thing to draw
-  /// either way -- roman numbers -- so there is nothing to tell apart.
+  /// Nil for: no container, nothing written yet, a file that will not decode,
+  /// a base outside 2-20. `v` is not compared. Every caller draws roman
+  /// numbers for all of them (docs/reports/rule-audit-2026-09-27-server.md O8).
   static func read() -> Numerals? {
     guard let dir = FileManager.default
       .containerURL(forSecurityApplicationGroupIdentifier: group) else { return nil }

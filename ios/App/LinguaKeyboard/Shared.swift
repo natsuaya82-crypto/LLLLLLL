@@ -48,7 +48,7 @@ struct Face: Decodable {
   let dx: Double?
 }
 
-/// One key. `k` says what it does: lt sp del lay next rom.
+/// One key. `k` says what it does: lt sp del ret lay next rom gap.
 ///
 /// `rom` is a plain roman letter on the conversion face. It carries no shape
 /// because it is not one of the person's letters -- it is the q of QWERTY,
@@ -157,9 +157,11 @@ struct Board: Decodable {
 enum Shared {
   static let group = "group.com.tokinets.lingua"
 
-  /// Nil for every reason equally: nothing written yet, a file from a version
-  /// that does not exist, a file that will not decode. The caller has one
-  /// thing to say either way, so there is nothing to tell apart.
+  /// Nil for two reasons: nothing written yet, and a file that will not
+  /// decode. `v` is not compared. The keyboard says the same sentence for
+  /// both (Say.draw()), which is the wrong cause for the second -- a second
+  /// sentence is the owner's to word (docs/reports/rule-audit-2026-09-27-
+  /// server.md O8).
   ///
   /// READING is all this does, and that is what lets the keyboard work with
   /// Full Access off -- Apple's "Configuring open access for a custom
