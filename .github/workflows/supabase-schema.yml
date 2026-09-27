@@ -98,9 +98,9 @@ jobs:
           union all
           select 'mine ' || to_char(l.created_at, 'MM-DD HH24:MI') || ' ' || left(l.id::text, 8),
                  coalesce(nullif(l.name, ''), '-') || ' wsys=' || coalesce(nullif(l.wsys, ''), '-') || ' kinds=' ||
-                 coalesce((select string_agg(kind || ':' || no, ',' order by kind) from slice s where s.language = l.id), '')
+                 coalesce((select string_agg(kind || ':' || no || '@' || to_char(s.at, 'MM-DD HH24:MI'), ',' order by kind) from slice s where s.language = l.id), '') || ' owner=' || left(l.owner::text, 8)
             from language l
-           where l.owner = (select owner from language where id::text like '5262c1dd%' limit 1)
+           where l.owner in (select owner from language where wsys = 'block')
           union all
           select 'slow ' || calls || 'x mean=' || round(mean_exec_time) || 'ms max=' || round(max_exec_time) || 'ms',
                  left(regexp_replace(query, '\s+', ' ', 'g'), 160)
