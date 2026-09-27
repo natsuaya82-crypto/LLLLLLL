@@ -157,7 +157,7 @@ schema.sql の 42501 の直し。**RevenueCat の Swift はこのビルドで初
   字にして LinguaType に足し（`inkChar`/`inkFaces`/`inkFaceCSS`、glyph.js）、入力欄・
   投稿・引用・字間の見本・カレンダーが同じ書体・同じ CSS 規則（`.pline, .pwfield
   #pw-ln`、`pre-wrap`）の文字。空白と改行は `postRuns()`（post.js）一か所、カードも
-  それを読む。`inkLine` と `.tcln` は消えた。`line-check`（新規）。写真 `shots/r53-*`。
+  それを読む。~~`inkLine`~~ と ~~`.tcln`~~ は消えた。`line-check`（新規）。写真 `shots/r53-*`。
   **実機はまだ。** 並列の重さで `plan-check` が一度 5 秒待ちに遅れた ── 単独 4 回緑、
   r53 前後で所要 30s 同じ、と測った。
 - `claude/r54-guides` ── **文字を描く面に目安の線三本**（OWNER 2026-09-23「aやね」、
@@ -296,7 +296,7 @@ Apple が 4 で落とした）。
   その言語の「無料」の語、期間なし。plan-check に無料の段の claim 六本（それまで
   無料の枝は誰も歩いていなかった）。
 - `claude/r44-ios` ── **「切っていい」**：`RequestsOpenAccess` false、案内の手順 4
-  「フルアクセスを許可」を手順ごと削除（`kb.step4`・`kb-full.jpg`）。
+  「フルアクセスを許可」を手順ごと削除（~~`kb.step4`~~・`kb-full.jpg`）。
   **「縦のみ」**：`UISupportedInterfaceOrientations` を Portrait だけに。
   **DEVICE UNCONFIRMED**（Linux に Swift は無い）。
 
@@ -496,32 +496,32 @@ CHANGELOG 2026-09-11）、「まだ訊けていない」は無料ではない三
   `slice_hist` に残し管理画面から戻す**（`r10-hist`、SQL）；$25 で何人かを
   測った `docs/reports/cost-2026-09-09.md`（`r10-measure`）；保存の写しを
   返さない・送る前は印だけ読む・起動で同じ言語を二度降ろさない（`r10-wire`、
-  5,000 語の人の月 335 MB → 139 MB）。ゲートは 44 本。
+  5,000 語の人の月 335 MB → 139 MB）。
 - **r10-fix**（149、master `00f6a6b9`）：スライドで出るのはメモも切り替えも同じ
   作りの赤い「−」、語順の札は「補語」「比較の相手」。
 - **r11-letters**（150、master `e2d1b6ae`、2026-09-10）：148 より前の版が
   残した一覧の行を 148 以降が自分の言語と結び付けられず、切り替えに同じ言語が
   2 行・開いていた方が鍵つき → a–z の穴埋めが走らず保存が黙って止まる、を
-  `nidFor` の書き直しで直した（`www/net.js`、`again-check` に 4 claim、
+  ~~`nidFor`~~ の書き直しで直した（`www/net.js`、`again-check` に 4 claim、
   `docs/CHANGELOG.md` に DELETE REVIEW）。原因は 8 通りの端末状態を 147 と
   149 で流して測った（`docs/scope/r11-letters.md`）。実機は
   `docs/CHECK-0907.md` の 150 節。
 - **r12-oneid**（151、master `f11bbb88`、2026-09-10）：「スパゲッティやめろ、
   太い幹を分岐させろ」。言語の番号を一本に ── 端末が uuid を打ち、サーバーの
-  行の id もそれ。`sid`・`nidFor`・`nidHolds`・`nidDrop` は削除。古い索引は起動時
+  行の id もそれ。`sid`・~~`nidFor`~~・~~`nidHolds`~~・~~`nidDrop`~~ は削除。古い索引は起動時
   `langsOneId()` が新しい番号へ写す（索引の鍵 `L…` だけ消える ── DELETE REVIEW、
-  ディスクの slice 鍵は残る）。検査 8 本が二番号前提だったので直した
+  ディスクの slice 鍵は残る）。二番号前提だった検査を直した
   （`r12-fix`：gramlang と slow の種）。実機は `docs/CHECK-0907.md` の 151 節。
 - **r13-dup**（152、master `982ae856`、2026-09-10）：「直書きは今直して」。
   `docs/DUPLICATES.md` の開いていた 8 件を一箇所に（`capWarnHTML` `emptyBox`
-  `modListHTML` `netPairRow` `netWordRows` `postShrink` `fileInHTML`、`goPlans`
+  `modListHTML` `netPairRow` `netWordRows` `postShrink` `fileInHTML`、~~`goPlans`~~
   は削除）。19 は読んで「分かれていてよい」。見た目が変わるのは 2 画面
   （目次の帯、通報の空表示）。実機は `docs/CHECK-0907.md` の 152 節。
 - **r14-keep**（153、master `dfdbb77d`、2026-09-10）：「書き換えてもセーブ
   ボタン光らないとこ多いから一本化して」。24 画面を全部押して測り、5 画面
   11 操作が灰のままだった。`keepOn(key, now, save, landed)` ── 画面が「今の
   値」を一つの関数で答え、`keepDirty` 一箇所で開いた時と比べる。`keepPut` と
-  glyph の `geKeepPut` は削除、`keepSet` は打った字の置き場（`b.v`）への道
+  glyph の ~~`geKeepPut`~~ は削除、`keepSet` は打った字の置き場（`b.v`）への道
   として残る。`keep-check` は保存ボタンを持つ全画面 × 全変更を画面から取って
   問う。実機は `docs/CHECK-0907.md` の 153 節。
 - **r15-letters42**（154、master `23ad34f5`、2026-09-10）：「サーバーの文字は
@@ -590,7 +590,7 @@ git fetch --all --prune && git log --oneline -1 origin/master
 **master は 2026-09-05 の 45 件を全部持っています。** オーナーが 9/5 の昼から
 夜に言った 45 件（`docs/CHANGELOG.md` 2026-09-05 の節が全部）を、リーダーが
 場所を指名し、8 本のセッション（opus 5・sonnet 3、`claude/tr g1 k1 c1 n1 q2 m2
-u2`）が直して push し、`integ-0905` に取り込み、ゲート 41 本を緑にして master を
+u2`）が直して push し、`integ-0905` に取り込み、ゲートを緑にして master を
 二度進めました（`97666ade` → `3ca3049c`）。**ビルドは出していません** ──
 「全部入ったら」「朝見てから」。
 
@@ -615,7 +615,7 @@ staff の plan は free に戻らない）が実物でも真になります。
 
 - **投稿の意味欄は辞書と文法で組む。機械翻訳は無い。** `www/post.js` の `pwMn()`
   → `LinguaGrammarEngine.translate.toNatural(model, line, lang)`。~~`postTr()`~~・
-  `TR_SEAM`・`post.tr` は削除。「単語はその単語の意味を 文法は並び替えた単語たち
+  ~~`TR_SEAM`~~・`post.tr` は削除。「単語はその単語の意味を 文法は並び替えた単語たち
   が文章として成り立つように。きかいほんやくはつかわない。」
 - 文法ページ: 語順は常に出る、規則の画面は「足す文字」と「前後」だけ、時制・相の
   章、規則と例文は一枚。単語に `sub`（下位分類）。
@@ -688,7 +688,7 @@ git merge-base --is-ancestor origin/claude/online origin/master && echo IN || ec
 - **保存を押した瞬間にサーバーへ行きます。**前は起動と扉の二回だけでした
   （~~`netSaveUp()`~~ ── 2026-09-25 から `netSaveNow()`、保存を押した時）。
 - **バックアップのファイルが無くなりました。**書く側、読む側、設定の一覧、
-  Swift ごと。**`tools/backup-check.mjs` も丸ごと消えました。**
+  Swift ごと。**~~`tools/backup-check.mjs`~~ も丸ごと消えました。**
 - **言語の写しは iPhone のディスクにありません。**スライスはメモリ（`LSL`）。
   古い鍵はまだ読みます ── 更新した人の言語が空にならないように。
 - **アカウントを消したら検索履歴も消えます**（引き継ぎ書六章の1）。手で書いた
@@ -696,11 +696,9 @@ git merge-base --is-ancestor origin/claude/online origin/master && echo IN || ec
 
 **四つとも master にあります**（9/5 に取り込み。`git show origin/master:www/core.js | grep SET_PHONE`）。
 
-### ゲートの本数 ── master は41本
+### ゲートの本数
 
-**数えました**（`tools/gate.mjs` の `FAST` と `SLOW`）。14 + 27 = 41。
-**`backup-check` は無くなりました。**
-**本数はここではなく、走らせた最後の行で読んでください。**
+**本数はここではなく、`npm test` の最後の行で読んでください。**
 
 ### 引き継ぎ書六章の11件 ── 十件は master、一件は枝の上
 
@@ -749,7 +747,7 @@ Google と同じアドレスを打って二つ目のアカウントを立てて�
 （2026-09-11、`claude/r18-plan`）── 段はメモリだけで、アカウントが変わる一箇所（`acctFor()`、r79）が忘れる。**印の無い
 端末も例外ではありません**「1アカウントに1課金ですけど。他のアカウントについて
 くるわけねえだろ」OWNER 2026-09-11。段は設定の預け写しにも乗りません
-（`SET_PLAN`）。`acct-check` 40・40b・40c。**実機は未確認**（Keychain の往復は
+（~~`SET_PLAN`~~）。`acct-check` 40・40b・40c。**実機は未確認**（Keychain の往復は
 実機でしか見られません）。
 
 **今は iPhone だけ。**そのあと iPad、Android。
@@ -811,7 +809,7 @@ Google と同じアドレスを打って二つ目のアカウントを立てて�
 - **Keychain。**読めなかった Keychain に段を書きません。`Transaction.updates` は
   届いた取引が終わり（返金・過ぎた失効日）を言った時だけ下げます ── 更新も
   家族の購入も同じ口に届くので、権利一覧が追いつく前に払ったばかりの人の段が
-  消えていました。`isUpgraded` は除きます（格上げは失効日が過去になる）。
+  消えていました。~~`isUpgraded`~~ は除きます（格上げは失効日が過去になる）。
 
 ### 2026-09-03 に入ったもの
 
@@ -823,7 +821,7 @@ Google と同じアドレスを打って二つ目のアカウントを立てて�
   iPhone では、`shell.js` がその行で投げて**その下の定義が全部消えました。**
   画面には何も出ません。呼ぶ場所を `www/boot.js` へ移しました ── boot.js は
   最後に読まれ、移行を走らせるためだけにあります。定義は `shell.js` のままです。
-- **アカウント削除が平キー八つも消す。**`LS_FLAT` は言語に id が無かった頃の
+- **アカウント削除が平キー八つも消す。**~~`LS_FLAT`~~ は言語に id が無かった頃の
   八つ（`lingua.words` `lines` `lang` `script` `letters` `notes` `phases`
   `talk`）で、~~`langMigrate()`~~ がそこから言語へ写し、`lsWipeAcct()` が
   アカウントと一緒に持っていきます。**一箇所に書いて二つが読む**ので、
@@ -1374,12 +1372,11 @@ node -e "const s=require('fs').readFileSync('tools/gate.mjs','utf8');
     console.log(m[1], m[2].split(',').length)"
 ```
 
-**Every browser check loads Chromium through `loadChromium()`**, which falls
-back to a global playwright install. A check that writes
-`import { chromium } from 'playwright'` instead dies at module load on any
-machine without playwright in `node_modules` — and since `npm test` chains on
-`&&`, everything after it silently never runs. **A check nobody can run is a
-check that is not in the gate.**
+**Every browser check opens Chromium through `tools/browser.mjs`**
+(`import { chromium, LAUNCH } from './browser.mjs'`), which falls back to a
+global playwright install. A check that imports playwright on its own dies at
+module load on a machine where playwright is installed globally. **A check
+nobody can run is a check that is not in the gate.**
 
 `npm run rls` is not in `npm test` at all: it stands up a real PostgreSQL.
 Run it whenever `supabase/schema.sql` changes, which is the only time it can
@@ -1516,7 +1513,7 @@ are each asked at the moment they are met, on the screen the person is on —
 ### Found and left alone, deliberately
 
 - **`tools/verify-script.mjs` runs again** — three breakages, not one:
-   `gstep`→`geStep`, `scriptDrawn` gone since `9226dd6`, and every click was
+   ~~`gstep`~~→`geStep`, ~~`scriptDrawn`~~ gone since `9226dd6`, and every click was
    landing on `#splash` because it waited 250 ms where every other check waits
    for the selector. It is not a font experiment: it is the only end-to-end
    proof of the PUA font path. It now reports 13 ok / 19 FAIL, and each of the

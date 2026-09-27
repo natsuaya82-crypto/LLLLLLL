@@ -17,30 +17,6 @@
 orphan docs/HANDOVER-2026-08-28-2.md
 orphan docs/SCOPE-yaa.md
 
-# docs/STATE.md is the LEADER's. claude/r77-docs was handed its appendix-C
-# sentences only (docs/scope/r73-audit.md), and these are the rest.
-
-check docs/STATE.md backup-check
-count docs/STATE.md ゲート 41 本
-count docs/STATE.md ゲートは 44 本
-count docs/STATE.md 検査 8 本
-file docs/STATE.md backup-check.mjs
-name docs/STATE.md LS_FLAT
-name docs/STATE.md SET_PLAN
-name docs/STATE.md TR_SEAM
-name docs/STATE.md geKeepPut
-name docs/STATE.md goPlans
-name docs/STATE.md gstep
-name docs/STATE.md inkLine
-name docs/STATE.md isUpgraded
-name docs/STATE.md kb.step4
-name docs/STATE.md nidDrop
-name docs/STATE.md nidFor
-name docs/STATE.md nidHolds
-name docs/STATE.md node_modules
-name docs/STATE.md scriptDrawn
-name docs/STATE.md tcln
-
 # Proposals, not the app: names of what docs/GRAMMAR-V2-SPEC.md and
 # docs/RECOVERY.md describe building. They go the day it is built or dropped.
 
