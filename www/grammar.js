@@ -1921,9 +1921,9 @@ function nclsOpen(i){ nclsForm(Number(i)); }
 function nclsForm(i){
   openForm((i<0? 'ncls:' : 'nclsr:'+i), t('g2.ncls.h'),
     '<div class="field"><label>'+t('g2.ncls.name')+'</label>'+
-      lnField('ncls-n', t('g2.ncls.name'), nclsName(i), '')+'</div>'+
+      lnField('ncls-n', t('g2.ncls.name'), '', nclsName(i))+'</div>'+
     '<button class="btn" style="width:100%;margin-top:6px"' + DO('nclsSave', [i]) + '>'+
-      t(i<0? 'g2.ncls.add' : 'form.save')+'</button>'+
+      t(i<0? 'g2.ncls.add' : 'keep.save')+'</button>'+
     /* And the way out, which only a class that exists has: the bin, with no
        box round it -- CLAUDE.md § NO ROUNDED BOX and § Shape. */
     (i<0? '' : markBtn(ICON_BIN, t('g2.ncls.del'), 'nclsDel', [i])));
