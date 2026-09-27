@@ -330,7 +330,6 @@ function vNotes(){
       : (langLocked()? ''
            : navDo(t('notes.sel'), 'ntSelOn', null, true))))+
     '<div class="body">'+
-    '<div class="note" style="margin-bottom:12px">'+t('notes.note')+'</div>'+
     (found.length
       ? '<div class="ntlist">'+rows+'</div>'
       : emptyBox(t('notes.empty.t'), t('notes.empty.s')))+

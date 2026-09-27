@@ -3252,6 +3252,12 @@ export function halfDone(){
         window.route = 'notes'; NAV = [{ r:'notes' }];
         NTSEL = { 0:1 };
         const h = vNotes(); NTSEL = null; return h; }],
+    /* The notebook with nothing in it. Nothing at rest has an empty one --
+       the seed writes a note -- so the empty state is only ever seen here. */
+    ['the notes, with none written', () => {
+        window.route = 'notes'; NAV = [{ r:'notes' }];
+        const was = NOTES; NOTES = [];
+        const h = vNotes(); NOTES = was; return h; }],
     /* A row swiped left, its delete showing -- 「一覧から右にスワイプして削除」
        OWNER 2026-09-05. Nothing at rest ever has a row open, the same reason
        the lens above never had a box: a walk over the routes never swipes. */

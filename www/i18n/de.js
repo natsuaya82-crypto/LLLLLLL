@@ -840,7 +840,6 @@ defLang('de', (function(){
       "toc.notes"        : "Notizen",
       "count.notes"      : "{0} Notizen",
       "count.notes.1"    : "1 Notiz",
-      "notes.note"       : "　",
       "notes.new"        : "Neue Notiz",
       "notes.edit"       : "Notiz",
       "notes.t"          : "Überschrift",

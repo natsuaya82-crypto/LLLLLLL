@@ -863,7 +863,6 @@ defLang('fr', (function(){
       "toc.notes"        : "Carnet",
       "count.notes"      : "{0} notes",
       "count.notes.1"    : "1 note",
-      "notes.note"       : "　",
       "notes.new"        : "Nouvelle note",
       "notes.edit"       : "Note",
       "notes.t"          : "Titre",

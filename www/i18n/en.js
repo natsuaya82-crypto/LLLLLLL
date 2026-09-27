@@ -723,7 +723,6 @@ defLang('en', (function(){
       'toc.notes'       : "Notebook",
       'count.notes'     : "{0} notes",
       'count.notes.1'   : "1 note",
-      'notes.note'      : "　",
       'notes.new'       : "New note",
       'notes.edit'      : "Note",
       'notes.t'         : "Heading",

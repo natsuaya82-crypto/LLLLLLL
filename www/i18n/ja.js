@@ -731,7 +731,6 @@ defLang('ja', (function(){
       'toc.notes'       : 'メモ',
       'count.notes'     : '{0}件',
       'count.notes.1'   : '1枚',
-      'notes.note'      : '　',
       'notes.new'       : 'メモの追加',
       'notes.edit'      : 'メモの編集',
       'notes.t'         : '題名',

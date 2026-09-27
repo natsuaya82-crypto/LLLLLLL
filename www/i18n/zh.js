@@ -820,7 +820,6 @@ defLang('zh', (function(){
       /* notes */
       "toc.notes"        : "笔记",
       "count.notes"      : "{0} 条笔记",
-      "notes.note"       : "　",
       "notes.new"        : "新的备注",
       "notes.edit"       : "备注",
       "notes.t"          : "标题",

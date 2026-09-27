@@ -991,7 +991,6 @@ defLang('ko', (function(){
       /* notes */
       "toc.notes"        : "메모",
       "count.notes"      : "메모 {0}개",
-      "notes.note"       : "　",
       "notes.new"        : "새 메모",
       "notes.edit"       : "메모",
       "notes.t"          : "제목",

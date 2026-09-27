@@ -859,7 +859,6 @@ defLang('pt', (function(){
       "toc.notes"        : "Caderno",
       "count.notes"      : "{0} notas",
       "count.notes.1"    : "1 nota",
-      "notes.note"       : "　",
       "notes.new"        : "Nota nova",
       "notes.edit"       : "Nota",
       "notes.t"          : "Título",

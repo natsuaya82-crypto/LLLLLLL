@@ -827,7 +827,6 @@ defLang('ru', (function(){
       "count.notes"       : "{0} заметок",
       "count.notes.1"     : "1 заметка",
       "count.notes.few"   : "{0} заметки",
-      "notes.note"        : "　",
       "notes.new"         : "Новая заметка",
       "notes.edit"        : "Заметка",
       "notes.t"           : "Заголовок",

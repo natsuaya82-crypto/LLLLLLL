@@ -815,7 +815,6 @@ defLang('it', (function(){
       "toc.notes"        : "Quaderno",
       "count.notes"      : "{0} note",
       "count.notes.1"    : "1 nota",
-      "notes.note"       : "　",
       "notes.new"        : "Nota nuova",
       "notes.edit"       : "Nota",
       "notes.t"          : "Titolo",
