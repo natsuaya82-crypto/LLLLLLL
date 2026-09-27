@@ -302,10 +302,8 @@ function snsFilTop(){
 }
 function vFilter(){
   var ks=['rec','fo','day'];
-  /* NOTHING IS ASKED HERE. 「画面に入った瞬間にサーバーへ訊きに行くのは無し」
-     OWNER 2026-09-05 -- the words this account keeps came down when the
-     session began (§ WHAT AN OPEN ASKS FOR), and a pull on this screen asks
-     again. Standing on it is not a question. */
+  /* NOTHING IS ASKED HERE. The words this account keeps are this page's row
+     in § WHAT EACH PAGE READS, and the door onto it waited for them. */
   return '<div class="view">'+navTop('')+'<div class="body">'+
     ks.map(function(k){
       return '<button class="set"' + DO('snsSetFil', [k]) + '>'+
@@ -332,13 +330,10 @@ function vFilter(){
             '<span class="sv">'+((snsFil && snsFil.q===q)? ICON_TICK : '')+
             '</span></button>';
         }).join('')
-      /* Nothing at all when none are kept -- and the mark, turning, before the
-         answer that says whether any are. A phone that has never held this
-         account's list drew the same empty space for 「keeps none」 and for
-         「has not been told yet」, and the second is the one a new phone is in
-         every time. netSignedIn() is the ask's own condition: no question, no
-         mark. */
-      : (netSignedIn() && !pullHad('saved'))? snsEmpty('saved', '') : '')+
+      /* Nothing at all when none are kept, the mark while a pull is out, and
+         接続できません when it fell -- snsEmpty(), the one place those three
+         are told apart. */
+      : snsEmpty('saved', ''))+
     '</div></div>';
 }
 /* Chosen, and then you are back on the thing it is about. The same shape as
@@ -698,6 +693,7 @@ pageReads('feed', function(){
   return o;
 }, true);
 pageReads('explore', function(){ return [['saved'], ['recent']]; }, true);
+pageReads('filter',  function(){ return [['saved']]; }, true);
 pageReads('notif',   function(){ return [['notif']]; }, true);
 pageReads('thread',  function(a){ return [['thread', String(a||'')]]; }, true);
 /* A person's page, and your own is the same page: who they are (with the two

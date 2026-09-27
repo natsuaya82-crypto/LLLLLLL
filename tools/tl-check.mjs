@@ -1116,6 +1116,10 @@ const au = await pg.evaluate(() => {
     SET.notAt = was.at; NOTES_HAVE = was.have; window.netPrefsPut = was.put;
     if (was.got) PULL_GOT['notif'] = was.got; else delete PULL_GOT['notif']; }
 
+  /* a6: the filter page draws the words this account keeps, so arriving at
+     it reads them (its own row in PAGE_READS). */
+  out.a6 = JSON.stringify(pageNeeds('filter', ''));
+
   netIdOf = realId;
   netSend1 = realS1; netSend = realS; netGet = realG;
   NAV = [{ r:'feed' }]; window.route = 'feed'; render();
@@ -1132,6 +1136,8 @@ if (!au.a2kept)
 if (!au.a5before || !au.a5after)
   say('a5: the notices\u2019 read line -- before the answer landed it stayed put: ' + au.a5before +
       '; after, with one unread, it moved and went up once: ' + au.a5after + '.');
+if (au.a6.indexOf('"saved"') < 0)
+  say('a6: arriving at the filter page reads ' + au.a6 + ' -- it draws the kept words and has to read them.');
 if (!au.a3)
   say('a3: a word pressed while another word\u2019s answer is on the screen draws that old answer or ' +
       '「No results」 until its own lands. Not answered yet is the waiting mark.');
