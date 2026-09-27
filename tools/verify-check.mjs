@@ -24,6 +24,8 @@
    --------------------------------------------------------------------------- */
 import { verifyJws, bindOf, decidePlan, BUNDLE } from
   '../supabase/functions/verify-plan/verify.mjs';
+import { gpRow, gpCheck, isPair, assertion, accessToken, readKey, gpKey, TOKEN_URL } from
+  '../supabase/functions/verify-plan/google.mjs';
 
 const subtle = crypto.subtle;
 let bad = 0, said = 0;
@@ -226,5 +228,136 @@ say('同じ段が二つなら遅い方まで', decidePlan(
   { now: NOW }).until, String(NOW + 300 * DAY));
 say('free に日付は無い', decidePlan([], { now: NOW }).until, '0');
 
-console.log('verify: ' + said + ' claims about a receipt nobody at Apple signed for us');
+/* ---- Google Play ------------------------------------------------------
+   Google は端末に署名を渡さないので、確かめるのはサーバーが Google に訊いた
+   答えです。ここでは **Google の答えを作って** google.mjs に渡します ──
+   fetch を注入して、試験対象そのものを走らせる。 */
+console.log('verify: Google Play の購入は、訊いた答えとアカウントで決まる');
+const GNOW = Date.UTC(2026, 8, 27);
+const gsub = (o) => Object.assign({
+  subscriptionState: 'SUBSCRIPTION_STATE_ACTIVE',
+  acknowledgementState: 'ACKNOWLEDGEMENT_STATE_ACKNOWLEDGED',
+  externalAccountIdentifiers: { obfuscatedExternalAccountId: A },
+  lineItems: [{ productId: 'com.tokinets.lingua.pro.monthly',
+                expiryTime: new Date(GNOW + 20 * DAY).toISOString() }],
+}, o || {});
+const gp = (o) => gpRow(gsub(o), 'tok-1', A, { now: GNOW });
+const gplan = (o) => {
+  const r = gp(o);
+  if (!r.ok) return 'refused';
+  return decidePlan([{ productId: r.row.product,
+                       expiresDate: r.row.until ? Date.parse(r.row.until) : 0 }], { now: GNOW }).plan;
+};
+say('iPhone の文字列は Google の組ではない', isPair('a.b.c'), 'false');
+say('{token, product} は Google の組', isPair({ token: 't', product: 'p' }), 'true');
+say('空のトークンは組ではない', isPair({ token: '', product: 'p' }), 'false');
+say('自分の uid が付いた ACTIVE の pro は pro', gplan(), 'pro');
+say('期限は Google の expiryTime', gp().row.until, new Date(GNOW + 20 * DAY).toISOString());
+say('行の鍵は gp: とトークン', gp().row.orig_tx, gpKey('tok-1'));
+say('別の uid が付いた購入は拒む',
+    gp({ externalAccountIdentifiers: { obfuscatedExternalAccountId: B } }).why, 'another account');
+say('uid の付いていない購入は拒む', gp({ externalAccountIdentifiers: {} }).why,
+    'no account on the purchase');
+say('uid の大小文字は同じもの',
+    gp({ externalAccountIdentifiers: { obfuscatedExternalAccountId: A.toUpperCase() } }).ok, 'true');
+say('解約済み（CANCELED）でも期限までは数える',
+    gplan({ subscriptionState: 'SUBSCRIPTION_STATE_CANCELED' }), 'pro');
+say('猶予期間（IN_GRACE_PERIOD）は数える',
+    gplan({ subscriptionState: 'SUBSCRIPTION_STATE_IN_GRACE_PERIOD' }), 'pro');
+say('EXPIRED は期限が先にあっても数えない',
+    gplan({ subscriptionState: 'SUBSCRIPTION_STATE_EXPIRED' }), 'free');
+say('ON_HOLD は数えない', gplan({ subscriptionState: 'SUBSCRIPTION_STATE_ON_HOLD' }), 'free');
+say('PENDING は数えない', gplan({ subscriptionState: 'SUBSCRIPTION_STATE_PENDING' }), 'free');
+say('期限の過ぎた ACTIVE は数えない', gplan({ lineItems: [{
+  productId: 'com.tokinets.lingua.pro.monthly', expiryTime: new Date(GNOW - DAY).toISOString() }] }), 'free');
+say('売っていない商品は拒む',
+    gp({ lineItems: [{ productId: 'com.example.other', expiryTime: new Date(GNOW + DAY).toISOString() }] }).why,
+    'not a product we sell');
+say('plus の年は plus', gplan({ lineItems: [{
+  productId: 'com.tokinets.lingua.plus.yearly', expiryTime: new Date(GNOW + 300 * DAY).toISOString() }] }), 'plus');
+say('テストの購入はそう書く', gp({ testPurchase: {} }).row.env, 'GoogleTest');
+say('承認済みなら承認しない', gp().ack, 'false');
+say('承認待ちなら承認する', gp({ acknowledgementState: 'ACKNOWLEDGEMENT_STATE_PENDING' }).ack, 'true');
+say('数えない状態は承認しない', gp({ subscriptionState: 'SUBSCRIPTION_STATE_PENDING',
+  acknowledgementState: 'ACKNOWLEDGEMENT_STATE_PENDING' }).ack, 'false');
+say('誰でもない者には付かない', gpRow(gsub(), 't', '', { now: GNOW }).ok, 'false');
+
+/* 端から端まで、Google の HTTP を作って。 */
+function fakeGoogle(sub, status) {
+  const hits = [];
+  const f = async (u, init) => {
+    hits.push({ u, m: (init && init.method) || 'GET', auth: init && init.headers && init.headers.Authorization });
+    if (/:acknowledge$/.test(u)) return { ok: true, status: 200, json: async () => ({}) };
+    return { ok: (status || 200) === 200, status: status || 200, json: async () => sub };
+  };
+  return { f, hits };
+}
+{
+  const g = fakeGoogle(gsub({ acknowledgementState: 'ACKNOWLEDGEMENT_STATE_PENDING' }));
+  const r = await gpCheck('tok/2', A, { fetch: g.f, access: 'AT', now: GNOW });
+  say('Google に訊くのは subscriptionsv2 のこのアプリ', g.hits[0].u,
+      'https://androidpublisher.googleapis.com/androidpublisher/v3/applications/com.tokinets.lingua/purchases/subscriptionsv2/tokens/tok%2F2');
+  say('鍵のアクセストークンで訊く', g.hits[0].auth, 'Bearer AT');
+  say('自分の承認待ちは承認する', g.hits.length === 2 && g.hits[1].m === 'POST' &&
+      /\/purchases\/subscriptions\/com\.tokinets\.lingua\.pro\.monthly\/tokens\/tok%2F2:acknowledge$/.test(g.hits[1].u), 'true');
+  say('承認できたことを返す', r.acked, 'true');
+}
+{
+  const g = fakeGoogle(gsub({ acknowledgementState: 'ACKNOWLEDGEMENT_STATE_PENDING',
+    externalAccountIdentifiers: { obfuscatedExternalAccountId: B } }));
+  const r = await gpCheck('tok-3', A, { fetch: g.f, access: 'AT', now: GNOW });
+  say('他人の購入は承認しない', g.hits.length, '1');
+  say('他人の購入は数えない', r.ok, 'false');
+}
+{
+  const g = fakeGoogle(null, 404);
+  const r = await gpCheck('tok-4', A, { fetch: g.f, access: 'AT', now: GNOW });
+  say('Google が答えなければ数えない', r.why, 'Google answered 404');
+}
+
+/* サービスアカウントの鍵で署名した JWT。鍵をその場で作り、公開鍵で確かめる。 */
+{
+  const kp = await subtle.generateKey({ name: 'RSASSA-PKCS1-v1_5', modulusLength: 2048,
+    publicExponent: new Uint8Array([1, 0, 1]), hash: 'SHA-256' }, true, ['sign', 'verify']);
+  const der = new Uint8Array(await subtle.exportKey('pkcs8', kp.privateKey));
+  const pem = '-----BEGIN PRIVATE KEY-----\n' +
+    Buffer.from(der).toString('base64').replace(/(.{64})/g, '$1\n') + '\n-----END PRIVATE KEY-----\n';
+  const key = readKey(JSON.stringify({ client_email: 'svc@x.iam.gserviceaccount.com', private_key: pem }));
+  say('鍵の JSON が読める', !!key, 'true');
+  say('client_email の無い鍵は読まない', readKey('{"private_key":"x"}'), 'null');
+  say('JSON でない鍵は読まない', readKey('nope'), 'null');
+  const jwt = await assertion(key, { now: GNOW });
+  const [h, c, s] = jwt.split('.');
+  const u8 = (x) => Uint8Array.from(Buffer.from(x.replace(/-/g, '+').replace(/_/g, '/'), 'base64'));
+  const okSig = await subtle.verify('RSASSA-PKCS1-v1_5', kp.publicKey, u8(s), new TextEncoder().encode(h + '.' + c));
+  say('JWT は鍵で RS256 に署名されている', okSig, 'true');
+  const cl = JSON.parse(Buffer.from(u8(c)).toString());
+  say('JWT は androidpublisher の範囲を名乗る', cl.scope, 'https://www.googleapis.com/auth/androidpublisher');
+  say('JWT の宛先は Google の token', cl.aud, TOKEN_URL);
+  let sentBody = '';
+  const at = await accessToken(key, { now: GNOW, fetch: async (u, init) => {
+    sentBody = init.body; return { ok: u === TOKEN_URL, json: async () => ({ access_token: 'ya29.x' }) };
+  } });
+  say('token に換えたものを返す', at, 'ya29.x');
+  say('jwt-bearer で換える', /^grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion=/.test(sentBody), 'true');
+  const none = await accessToken(key, { now: GNOW, fetch: async () => ({ ok: false, json: async () => ({}) }) });
+  say('換えられなければ空', none, '');
+}
+
+/* www/store.js の storeJws() ── どちらの電話かを決める一か所。関数そのものを
+   源から取り出して走らせる（写しを書かない）。 */
+{
+  const { readFileSync } = await import('node:fs');
+  const src = readFileSync(new URL('../www/store.js', import.meta.url), 'utf8');
+  const m = src.match(/function storeJws\(r\)\{[\s\S]*?\n\}/);
+  const storeJws = m ? new Function(m[0] + '; return storeJws;')() : () => 'missing';
+  const pair = { token: 't', product: 'com.tokinets.lingua.plus.monthly' };
+  say('iPhone の答えは jws を上げる', JSON.stringify(storeJws({ jws: ['a.b.c'], saw: 1 })), '["a.b.c"]');
+  say('Android の答えは google の組を上げる', JSON.stringify(storeJws({ google: [pair], saw: 1 })),
+      JSON.stringify([pair]));
+  say('何も無ければ空（「この人は何を払っているか」）', JSON.stringify(storeJws({ google: [] })), '[]');
+  say('上げたものはサーバーで Google の組と読まれる', storeJws({ google: [pair] }).every(isPair), 'true');
+}
+
+console.log('verify: ' + said + ' claims about a receipt nobody at Apple or Google signed for us');
 if (bad) { console.error('verify-check: ' + bad + ' failed'); process.exit(1); }
