@@ -1378,8 +1378,11 @@ four faults this rule was written after were that shape exactly:
 So the faces are variables on `:root`, and `tools/face-check.mjs` holds four
 things:
 
-1. **Only `:root` may name a family.** Every other `font-family` in the
-   stylesheet resolves to `var(--face-*)`, `inherit`, or a generic keyword.
+1. **Only `:root` may name a family.** Every other `font-family` or `font`
+   resolves to `var(--face-*)`, `inherit`, or a generic keyword -- in the
+   stylesheet, in a `style=""` in `index.html`'s markup, and in a string or a
+   `.style.fontFamily` in `www/*.js`, because each of those is a declaration
+   too. And each face is declared once.
 2. **Both directions on the variables**, as `act-map`'s names are held: no
    `var(--face-x)` that `:root` does not declare, and no face declared that no
    rule wears. A face nothing wears is one that was replaced and left behind.
