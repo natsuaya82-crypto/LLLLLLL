@@ -2381,6 +2381,23 @@ const CASES = [
      a check constraint rather than a comment: 「空」と「壊れている」は別。 */
   ['a token that is not hex is refused',      'denied', A, 0,
     `insert into device(uid,token) values ('${A}','not a token')`],
+  /* AND WHICH ROAD THE ADDRESS GOES DOWN. An Android's token is Google's
+     (Firebase Cloud Messaging) and is not hex, so the check asks the row's
+     `platform` which shape it has to be. A row that says nothing is an iPhone
+     -- every row there was before the column was -- so an Android's token
+     sent with no platform is refused rather than filed as Apple's. */
+  ['A registers A\u2019s own Android',          'ok',     A, 0,
+    `insert into device(uid,token,platform) values ('${A}','dQw4w9WgXcQ:APA91bH_Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9','android')`],
+  ['and it is filed as an Android',           'ok',     A, 0,
+    `select 1 from device where uid='${A}' and token='dQw4w9WgXcQ:APA91bH_Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9' and platform='android'`],
+  ['an iPhone that says nothing is an iPhone', 'ok',     A, 0,
+    `select 1 from device where uid='${A}' and platform='ios' and token ~ '^[0-9a-f]+$'`],
+  ['an Android token with no platform is refused', 'denied', A, 0,
+    `insert into device(uid,token) values ('${A}','dQw4w9WgXcQ:APA91bH_Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9x')`],
+  ['a platform that is neither is refused',   'denied', A, 0,
+    `insert into device(uid,token,platform) values ('${A}','a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7','web')`],
+  ['B cannot register an Android as A',       'denied', B, 0,
+    `insert into device(uid,token,platform) values ('${A}','bdQw4w9WgXcQ:APA91bH_Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9Qz-9','android')`],
   /* AND THE ADDRESS IS WHOEVER IS SIGNED IN ON THAT PHONE NOW.
      「端末ごとにやることなんてねえよ」 -- a phone is a window, and the account
      looking through it is the one its notices are for. Two things were wrong

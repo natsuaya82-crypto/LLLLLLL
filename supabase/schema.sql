@@ -1560,8 +1560,9 @@ $$;
 -- 「通知作ろう。アップルのネイティブ通知で、フォローされた時、返信きた時みたい
 --   な感じでSNS部分であるやつ。」 OWNER 2026-09-22.
 --
--- One row per iPhone that has been allowed to be notified: the account, and
--- the device token Apple issued that installation of the app. It is THE
+-- One row per phone that has been allowed to be notified: the account, and
+-- the token Apple (an iPhone) or Google (an Android) issued that installation
+-- of the app, and which of the two it was. It is THE
 -- ADDRESS OF A PHONE and nothing else -- no name, no setting, nothing
 -- anybody wrote.
 --
@@ -1579,8 +1580,9 @@ $$;
 -- that phone once. Two rows is the truthful shape; which one is rung is
 -- decided by the uid, which is what the notice is addressed to.
 --
--- NOTHING ELSE IS ON THIS ROW. Not the model, not the iOS version, not when
--- it last spoke -- 「端末ごとにやることなんてねえよ」. A column here that
+-- NOTHING ELSE IS ON THIS ROW. Not the model, not the OS version, not when
+-- it last spoke -- 「端末ごとにやることなんてねえよ」. `platform` below is
+-- which road the address goes down, not what the handset is. A column here that
 -- described the handset would be the phone becoming a thing the server knows
 -- about, and the server knows about accounts.
 --
@@ -1595,10 +1597,32 @@ $$;
 -- this app.
 create table if not exists device (
   uid        uuid not null references profile(id) on delete cascade,
-  token      text not null check (token ~ '^[0-9a-fA-F]{32,200}$'),
+  token      text not null,
   created_at timestamptz not null default now(),
   primary key (uid, token)
 );
+-- WHICH KIND OF PHONE, because the address is given to two different posts
+-- offices: an iPhone's token to Apple (APNs), an Android's to Google (Firebase
+-- Cloud Messaging). supabase/functions/push-send reads it and nothing else
+-- does. The default is `ios` because every row that existed before this
+-- column was an iPhone -- the column arriving writes nothing over and takes
+-- nothing away; an Android sends `android` (www/push.js). It is still not a
+-- description of the handset: it is which road the address goes down.
+alter table device add column if not exists platform text not null default 'ios';
+-- And what an address looks like depends on who issued it: Apple's is hex,
+-- Google's is letters, digits and `:_-`, a hundred and some long. ONE check
+-- that asks both, rather than a hex check with an exception beside it; the
+-- `name` is the one the column check had, so a database made before this
+-- loses that one here and not a second copy of it. A platform that is
+-- neither is refused by the same line. 「空」と「壊れている」は別。
+-- The length is `length()` and not a `{m,n}`: PostgreSQL's regular
+-- expressions count to 255 at most, and a bound past it is an error raised
+-- only when an Android row is checked -- measured, r124.
+alter table device drop constraint if exists device_token_check;
+alter table device add constraint device_token_check check (
+  (platform = 'ios'     and token ~ '^[0-9a-fA-F]{32,200}$') or
+  (platform = 'android' and token ~ '^[A-Za-z0-9_:-]+$'
+                        and length(token) between 32 and 4096));
 -- Asked one way only: supabase/functions/push-send reads every token of the
 -- ONE account a notice is for.
 create index if not exists device_uid_idx on device(uid);
