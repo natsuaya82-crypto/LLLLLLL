@@ -3491,7 +3491,7 @@ begin
   for r in
     select c.relname::text as nm, quote_ident(c.relname) as src
       from pg_class c join pg_namespace s on s.oid = c.relnamespace
-     where s.nspname = 'public' and c.relkind in ('v','m')
+     where s.nspname = 'public' and c.relkind in ('r','p','v','m')
        and c.relname not like '\\_%'
     union all
     select p.proname::text, quote_ident(p.proname) || '()'
@@ -4010,9 +4010,11 @@ if (wall) {
    「Blocked means you see nothing of them」 OWNER 2026-08-19. block_hides()
    in schema.sql is the one thing that answers it, and every read the app
    makes passes what it returns about a person through it. `_block_seen`
-   above walks the catalogue, so this is every view and every row-returning
-   function there is, not a list of them: a read shows BD to BK with the block
-   lifted and nothing of BD with it on, or it is red.
+   above walks the catalogue, so this is every table, every view and every
+   row-returning function there is, not a list of them: a read shows BD to BK
+   with the block lifted and nothing of BD with it on, or it is red. Tables
+   were left out until 2026-09-27 and four of them handed BD over both ways
+   (audit-server B1) -- a table is a request anybody can make without the app.
 
    HELD is the reads a block does not reach YET, by name and with the reason.
    A name here must still show BD -- the day it stops, the line is permission
@@ -4024,6 +4026,11 @@ if (wall) {
    was blocked (`BLOCKED`) -- and every read is held to the same sentence
    both times. */
 const BLOCK_HELD = {
+  /* The follow a person made before the block, which is theirs to take off
+     (「BD stops following BK」). What a block does to it has not been
+     decided -- docs/reports/rule-audit-2026-09-27-server.md O7. */
+  /* Keyed by the name the walk prints, so it holds one direction only. */
+  follow: 'your own follow, made before the block, is yours to take off',
 };
 const blockRows = out.split('\n').map((l) => l.split('\t'))
                      .filter((r) => r.length === 4 && (r[0] === 'BLOCK' || r[0] === 'BLOCKED'));
@@ -4032,7 +4039,7 @@ if (!blockRows.some((r) => r[0] === 'BLOCK')) bad.push(['a block, asked of every
 if (!blockRows.some((r) => r[0] === 'BLOCKED')) bad.push(['a block, asked of every read by who was blocked', 'reads', 'none were found']);
 for (const [way, name0, open, shut] of blockRows) {
   const name = way === 'BLOCKED' ? name0 + ' (to who was blocked)' : name0;
-  const o = Number(open), s = Number(shut), held = BLOCK_HELD[name0];
+  const o = Number(open), s = Number(shut), held = BLOCK_HELD[name];
   let why = '';
   if (o < 0 || s < 0) why = 'could not be read as the blocker';
   else if (!o) { blockNobody++; if (held) why = 'held by name and names nobody -- take it off BLOCK_HELD'; }
@@ -4045,7 +4052,7 @@ for (const [way, name0, open, shut] of blockRows) {
               (why || (held && s ? 'held: ' + held : '')));
 }
 for (const name of Object.keys(BLOCK_HELD))
-  if (!blockRows.some((r) => r[1] === name)) {
+  if (!blockRows.some((r) => (r[0] === 'BLOCKED' ? r[1] + ' (to who was blocked)' : r[1]) === name)) {
     bad.push(['a block leaves ' + name + ' out', 'a read', 'held by name and not in the catalogue']);
     console.log('  FAIL  ' + ('a block leaves ' + name + ' out').padEnd(44) +
                 'held by name and not in the catalogue');

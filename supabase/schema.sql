@@ -1448,13 +1448,14 @@ create index if not exists block_actor_idx on block(actor);
 -- (left out by the server)」, and the server did not: post_seen, feed_hot,
 -- feed_fo and notices() handed every row over and the phone threw some away.
 --
--- Every read the app makes (a view, or a function that returns rows) asks
--- this of each person it hands out -- the author of a post, whoever passed
--- it on, whoever a notice is about -- and nothing else says what a block
--- hides. tools/rls-check.mjs walks the catalogue as somebody who has blocked
--- somebody and counts every read, so a view added tomorrow is asked tomorrow;
--- the reads a block does not reach yet are named there (BLOCK_HELD) with
--- the reason, and docs/scope/r80-block.md says what each is waiting on.
+-- Every read (a table, a view, or a function that returns rows) asks this
+-- of each person it hands out -- the author of a post, whoever passed it on,
+-- whoever a notice is about -- and nothing else says what a block hides. A
+-- table is a read like any other: `GET /rest/v1/post?author=eq.<them>` is a
+-- request anybody signed in can make without the app. tools/rls-check.mjs
+-- walks the catalogue as somebody who has blocked somebody and counts every
+-- read, so a table or a view added tomorrow is asked tomorrow; the one read a
+-- block does not reach is named there (BLOCK_HELD) with the reason.
 --
 -- BOTH WAYS. 「ブロック → 見えなくして」 OWNER 2026-09-24: somebody who has
 -- been blocked does not see the timeline, the page or the notices of the
@@ -1848,7 +1849,10 @@ $$;
 
 -- profile: everyone reads, you write yourself into existence and edit yourself
 drop policy if exists profile_read on profile;
-create policy profile_read on profile for select using (true);
+create policy profile_read on profile for select
+  -- a person a block stands between is nobody, both ways (block_hides) --
+  -- here as in profile_seen: the table is a road to the same rows
+  using (not block_hides(id));
 drop policy if exists profile_make on profile;
 create policy profile_make on profile for insert with check (is_member() and id = auth.uid());
 drop policy if exists profile_edit on profile;
@@ -2508,6 +2512,9 @@ create policy post_read on post for select using (
   (hidden_at is null or author = auth.uid() or is_staff())
   -- and one kept to yourself is yours alone, staff included (post_private)
   and (not post_private(body) or author = auth.uid())
+  -- and one by somebody a block stands between is nobody's to read, the
+  -- same sentence post_seen says (block_hides)
+  and not block_hides(author)
 );
 drop policy if exists post_make on post;
 create policy post_make on post for insert with check (
@@ -2736,7 +2743,10 @@ create policy quote_drop on quote for delete using (
 -- somebody else's name and cannot be taken out of it either. No update policy,
 -- so a row cannot be turned into a different kind under a different name.
 drop policy if exists react_read on react;
-create policy react_read on react for select using (true);
+create policy react_read on react for select
+  -- your own is yours to take back whoever stands where (react_drop reads
+  -- through this); anybody else's across a block is nobody's
+  using (actor = auth.uid() or (not block_hides(actor) and not post_blocks(post)));
 drop policy if exists react_make on react;
 create policy react_make on react for insert
   with check (is_member() and actor = auth.uid() and not post_blocks(post));
@@ -2866,7 +2876,12 @@ create policy feedback_make on feedback for insert
 
 -- follow: everyone sees who follows whom; you add and remove your own following
 drop policy if exists follow_read on follow;
-create policy follow_read on follow for select using (true);
+create policy follow_read on follow for select
+  -- your own follow is yours to take off, block or no block (follow_drop
+  -- reads through this). What a block does to a follow made before it has
+  -- not been decided; until it is, it stays and its owner may undo it.
+  using (follower = auth.uid()
+         or (not block_hides(follower) and not block_hides(followed)));
 drop policy if exists follow_make on follow;
 create policy follow_make on follow for insert
   with check (is_member() and follower = auth.uid() and not block_hides(followed));
