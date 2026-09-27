@@ -1918,15 +1918,20 @@ function nclsIndexOf(fm){
    added or written over. */
 function nclsNew(){ nclsForm(-1); }
 function nclsOpen(i){ nclsForm(Number(i)); }
+/* The decide button is the bar's, where every form that takes a name puts it
+   (editName() in www/home.js): 保存 over a class that exists, and the plus --
+   an add is a mark (OWNER 2026-09-23) -- over one being made. Nothing in the
+   body is a box (CLAUDE.md § NO ROUNDED BOX). */
 function nclsForm(i){
   openForm((i<0? 'ncls:' : 'nclsr:'+i), t('g2.ncls.h'),
     '<div class="field"><label>'+t('g2.ncls.name')+'</label>'+
       lnField('ncls-n', t('g2.ncls.name'), '', nclsName(i))+'</div>'+
-    '<button class="btn" style="width:100%;margin-top:6px"' + DO('nclsSave', [i]) + '>'+
-      t(i<0? 'g2.ncls.add' : 'keep.save')+'</button>'+
     /* And the way out, which only a class that exists has: the bin, with no
        box round it -- CLAUDE.md § NO ROUNDED BOX and § Shape. */
-    (i<0? '' : markBtn(ICON_BIN, t('g2.ncls.del'), 'nclsDel', [i])));
+    (i<0? '' : markBtn(ICON_BIN, t('g2.ncls.del'), 'nclsDel', [i])),
+    null,
+    (i<0)? navDo(t('g2.ncls.add'), 'nclsSave', [i], true, {icon:ICON_ADD2})
+         : navDo(t('keep.save'), 'nclsSave', [i], true));
 }
 function nclsSave(i){
   var a=document.getElementById('ncls-n'), v;
