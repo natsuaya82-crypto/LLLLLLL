@@ -80,13 +80,13 @@ first time it fired the cause was read off as the wrong one of the two.
 ### Who runs it, when more than one of you is in the tree
 
 The three rules above say *you* run the gate once before pushing.
-`docs/SESSIONS.md` says a session never runs it at all — the leader does, once,
-after integrating. Both are the owner's, both are true, and they are about
+`docs/SESSIONS.md` says a session never runs it at all — the sub-leader does,
+once, after integrating, and the leader when there is no sub-leader. Both are the owner's, both are true, and they are about
 different days.
 
 | | who runs the whole gate |
 |---|---|
-| parallel sessions are running | **the leader**, once, after integrating. A session runs the one check that holds what it changed, by name, and nothing else |
+| parallel sessions are running | **the sub-leader** (the leader when there is none), once, after integrating. A session runs nothing but the one run that watches its bug go red; it pushes, and whoever integrates gates what was pushed |
 | one session, nobody else in the tree | **you**, once, before pushing. You are the leader |
 
 `docs/SESSIONS.md` wins while there are parallel sessions; this page wins when
@@ -115,7 +115,7 @@ So `tools/gate.mjs` now writes the commit it was green on into
 matters: **a push to `master` of a commit no green run has ever seen is
 refused.**
 
-- **It does not run the gate.** Sixteen minutes inside a push hook is a hook
+- **It does not run the gate.** The whole gate inside a push hook is a hook
   people turn off. It only asks whether the gate HAS been run, on THIS commit.
 - **It stops `master` and nothing else.** A session pushes to its own branch
   as often as it likes; none of those pushes broke anything.
@@ -157,11 +157,12 @@ shipped once.
 
 ## What to run when
 
-One check, by name, for what you changed. Not `npm test` — see rule 2.
+One check, by name, for what you changed. Not `npm test` — that is run once,
+before pushing, by whoever integrates (§ Who runs it).
 
 | changed | run |
 |---|---|
-| anything, **when you are about to commit** | `npm test` |
+| anything, **once, before pushing** (one session alone) | `npm test` |
 | a face, or anything in `index.html`'s CSS | `npm run face` |
 | a global that a screen remembers | `npm run dead` |
 | the base a language counts in | `npm run base` |
@@ -178,7 +179,8 @@ One check, by name, for what you changed. Not `npm test` — see rule 2.
 | a corner, a border, or a panel | `npm run box` — rule 18, against a frozen baseline |
 | what the app asks the server for | `npm run acct` + `npm run find` |
 | what a brand new phone opens on, or any step of the onboarding | `npm run open` |
-| the keyboard's pages, or a key that goes to another face | `npm run page` |
+| a route, its view, or anything that draws a page | `npm run page` |
+| the keyboard's pages, or a key that goes to another face | `npm run kb` |
 | the four products or the plan they map to | `npm run store` |
 
 ## Fixing a bug
@@ -265,7 +267,7 @@ Mandatory regression tests, no exceptions:
   anything past-tense (posts, and whatever comes after them)
   anything a plan gates
   anything that deletes
-  anything that syncs
+  anything that sends to or reads from the server
 ```
 
 ## Which prose rules a check holds, and which are prose on purpose
@@ -276,18 +278,18 @@ table says which is which, so that **a rule with no check is a deliberate state
 and not an oversight waiting to be fixed** — the last audit found people about
 to build the two that must not be built.
 
-Audited 2026-08-22, by measuring rather than by remembering.
+What each check measured is printed on its own run; read it there, not here.
 
-| rule | held by | measured |
+| rule | held by | what it asks |
 |---|---|---|
-| **NO ROUNDED BOX** | `box` (rule 18) | 240 corners and borders, baseline frozen; 0 set from JS |
-| **Rows in one list are one height** | `press` (first half) | 1484 lists, none at two type sizes |
+| **NO ROUNDED BOX** | `box` (rule 18) | every corner and border against a frozen baseline; none set from JS |
+| **Rows in one list are one height** | `press` (first half) | siblings of one class at two type sizes |
 | **The past is put on the thing when it is made** | `card`, `post` | ink cut at write time, redrawn under a changed alphabet |
-| **Data: a migration copies, a restore fills** | `migrate`, `backup` | old keys seeded; an older file restored over a live language |
+| **Data: a migration copies, a restore fills** | `migrate`, `again` | old keys seeded; a language coming back down fills only what is missing |
 | **Money: a plan opens capabilities, not existence** | `dead` (`CAN`/`can`) | no capability nothing asks for, no `can()` in no plan |
-| **A key nothing asks for** | `i18n` (tenth) | 127 dead keys × 10 languages found and removed |
-| **No explanatory text in the app** | — **prose, and kept** | 194 strings; one over 100 chars, and it is the frozen screen, which CLAUDE.md names as the only exception |
-| **No `margin-top` on a row to make a group** | — prose | not measured yet; the other half of the row rule |
+| **A key nothing asks for** | `i18n` (tenth) | a key in `en` that no screen asks for |
+| **No explanatory text in the app** | — **prose, and kept** | a person reading the screen; the frozen screen is the one exception CLAUDE.md names |
+| **No `margin-top` on a row to make a group** | `press` (second half) | siblings of one class that disagree about `margin-top` |
 | **Online: a screen that half-works without a server** | — prose | no way to ask it mechanically found |
 | **Automatic deletion, pruning and cleanup** | — prose + DELETE REVIEW | a process gate, not a check |
 
@@ -368,24 +370,20 @@ always.**
 Device required:
 
 ```
-  writing a file to Documents, and reading it back
-  the backup generations (.1 / .2), and a corrupt newest file
   anything in WKWebView that a headless Chromium does not reproduce
   the system keyboard extension
-  registering the drawn font with iOS (LinguaShare.registerFont)
   the home-screen widgets
   purchases
   TestFlight-only behaviour
   sharing a file out
-  restoring after the app is relaunched
+  a language coming back down after the app is relaunched
   notifications
   the network
-  cloud sync
+  two phones saving one language (slice_in() on the server)
 ```
 
 **There is no Swift on a Linux runner**, so every `.swift` in `ios/App/` is on
-this list by construction — the app's five, the keyboard extension's six, the
-widget's eight. `assets-check` asks whether each one is in the Xcode Sources
+this list by construction — count them with `find ios/App -name '*.swift'`. `assets-check` asks whether each one is in the Xcode Sources
 phase and says nothing whatever about whether it compiles.
 
 iOS builds happen on a Mac with Xcode, or through the `ios-deploy.yml` workflow.
