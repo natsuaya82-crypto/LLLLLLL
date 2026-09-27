@@ -18,7 +18,7 @@
 
    So a key does not carry a letter's id. It carries:
 
-     what pressing it types      the letter's name, which is its code point
+     what pressing it types      a private use code point (sharePua)
      what it looks like          the SHAPE, already cut, as filled polygons
 
    Polygons and not strokes. A stroke is a line through the lattice with a
@@ -444,11 +444,11 @@ function shareKbd(){
      screen. 「高さやめて、フリックなら日本語のサイズ、qwartyなら無料版のサイズ
      くらいまでにしないとキツくない？」
 
-     A row is one height now -- the height the free QWERTY and a Japanese kana
-     keyboard are both already drawn at -- and the extension caps the total
-     against the screen, so a keyboard somebody built ten rows deep is squeezed
-     rather than swallowing the phone. `h` stays on the stored board, unread:
-     nothing anybody set is thrown away. */
+     A row's height is the extension's own -- a share of the phone's short
+     side (`rowPerWidth` in KeyboardViewController.swift, CLAUDE.md rule 19),
+     with the whole keyboard capped at half the screen -- and nothing here
+     sends one. `h` stays on the stored board, unread: nothing anybody set is
+     thrown away. */
   /* Whether a key wears the letter it types, small in its corner. The
      extension has always been handed `t` on every letter key; this says
      whether to draw it. */
@@ -478,8 +478,8 @@ function shareHand(){
 
 /* ---- when ----------------------------------------------------------------
    Everything the keyboard is given changes when a letter changes, when the
-   layout changes, when the plan changes (free reads kbFixed and paid reads
-   KB), or when a different language is opened. That is four call sites and
+   layout changes, when the plan changes (free is an alphabet, so no roman
+   face), or when a different language is opened. That is four call sites and
    four chances to forget one, so it is none of them: the signature is asked
    on every render and the write happens when the answer moves.
 

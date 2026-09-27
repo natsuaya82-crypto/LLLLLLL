@@ -12,9 +12,6 @@
    taken by a hand is always a trapezoid. The price is the one Calligraphr also
    pays and states: all four have to be in the picture.
 
-   The name is also printed faintly INSIDE its box, so a person can see what
-   each box is for. It is light enough that the threshold does not pick it up.
-
    This file is in two halves, the same as www/import.js and for the same
    reason. THIS one knows nothing about the app -- given names and a small
    picture of each, it builds PDF bytes; given a page of samples, it reads the
@@ -189,7 +186,7 @@ function shPageOps(from, count, pics, bits, page, pages){
        ABOVE it. It did: 6 + 20 against a gap of 22, so `mountain` was printed
        four points inside 愛's square. Nothing throws; somebody just finds
        another language's word sitting in the box they are about to draw in.
-       There is an assertion below rather than a comment saying to be careful. */
+       tools/sheet-check.mjs holds it rather than a comment saying to be careful. */
     if (p && p.w && p.h){
       wide = shLabelW(p);
       o.push('q ' + shNum(wide) + ' 0 0 ' + shNum(SH_LABEL) + ' ' + shNum(b.x) + ' ' +
@@ -452,7 +449,7 @@ function shBoxField(warp, sign, i, res){
    named by which edge it is on -- and stitching the segments into rings is then
    exact rather than a search by distance. Rings close by construction, the same
    property crack-following had and for the same reason.
-   `drop` is the yes/no mask of what to KEEP (dust and the printed box edge
+   `keep` is the yes/no mask of what to KEEP (dust and the printed box edge
    already thrown out); ink outside it is pushed far negative so no edge is
    found around it. */
 function shEdge(f, res, keep){
@@ -1246,7 +1243,7 @@ function shInHTML(){
 
      `can('file')` -- 「a list brought in as a file rather than a paste」, and
      a sheet handed back is a file brought in. It is asked inside
-     fileInHTML(); shTakeIn() asks it again where the file arrives, because a
+     fileInHTML(); shTakeIn() asks it again where the letters arrive, because a
      control drawn on a screen is not the gate. There is no separate `write`:
      `file` is the sheet's gate too (docs/PAID_FEATURES.md, OWNER DECISION
      2026-08-23).
