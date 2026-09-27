@@ -722,6 +722,35 @@ alter table draft add column if not exists ed jsonb not null default '{}'::jsonb
 --
 -- The time is the phone's clock. A phone whose clock is far out wins or loses
 -- by that much; nothing here can know better.
+--
+-- 「HERE」 IS THE ROW THAT IS REALLY THERE, ON AN INSERT AS ON AN UPDATE.
+-- 「文字書いた後セーブできない」 OWNER 2026-09-27. The phone writes a slice
+-- the way PostgREST writes everything with `resolution=merge-duplicates`: an
+-- INSERT that becomes an UPDATE on the primary key. This trigger runs on the
+-- INSERT half first, and it used to take an INSERT to mean 「nothing is here」
+-- -- so the second save of any slice, put together against the first, was
+-- compared against nothing and refused `stale`, three times, and the phone
+-- said 「接続できません」. Every save after the first, on every screen.
+-- keep_here() below is the one answer to 「what is here」 for both halves:
+-- OLD on an update, and on an insert the row already standing on the key the
+-- insert is about to meet -- nothing only where there is really nothing.
+create or replace function keep_here(rel regclass, n jsonb) returns jsonb
+language plpgsql stable as $$
+declare
+  cond text;
+  r    jsonb;
+begin
+  select string_agg(format('t.%I = ($1 ->> %L)::%s', a.attname, a.attname,
+                           format_type(a.atttypid, a.atttypmod)), ' and ')
+    into cond
+    from pg_index i
+    join pg_attribute a on a.attrelid = i.indrelid and a.attnum = any(i.indkey)
+   where i.indrelid = rel and i.indisprimary;
+  if cond is null then return '{}'::jsonb; end if;
+  execute format('select to_jsonb(t) from %s t where %s', rel, cond) into r using n;
+  return coalesce(r, '{}'::jsonb);
+end
+$$;
 create or replace function keep_newer() returns trigger
 language plpgsql as $$
 declare
@@ -730,12 +759,12 @@ declare
   ed jsonb := '{}'::jsonb;
   k  text; col text; sub text; ne numeric; oe numeric;
 begin
-  -- A first write has nothing here to be newer than; it is asked the same
-  -- questions against an empty row, so `was` is held to 「nothing」 too.
-  if tg_op = 'UPDATE' then
-    o  := to_jsonb(old);
-    ed := coalesce(o -> 'ed', '{}'::jsonb);
+  -- What is here (keep_here above). A first write has nothing here to be
+  -- newer than, and `was` is held to 「nothing」 there too.
+  if tg_op = 'UPDATE' then o := to_jsonb(old);
+  else o := keep_here(tg_relid, n);
   end if;
+  ed := coalesce(o -> 'ed', '{}'::jsonb);
   if (n -> 'ed') ? 'was' then
     if coalesce(nullif(ed ->> 'body', '')::numeric, 0)
        <> coalesce(nullif(n -> 'ed' ->> 'was', '')::numeric, 0) then

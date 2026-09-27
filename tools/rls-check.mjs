@@ -489,6 +489,27 @@ const CASES = [
     `select 1 from slice where language='${LD}' and kind='words'`],
   ['and writes over it',                      'ok',     A, 0,
     `update slice set body='[1,2]', no=2 where language='${LD}' and kind='words'`],
+  /* THE WAY THE PHONE ACTUALLY SAVES: PostgREST's upsert, which is an INSERT
+     that turns into an UPDATE on the primary key, carrying `ed.was` -- the
+     server's mark this write was put together against (keep_newer). The
+     first save of a slice has nothing to have been put together against;
+     the second is put together against the first. Both are one person on
+     one phone saving twice, and both must land. 「文字書いた後セーブできない」
+     OWNER 2026-09-27. */
+  ['and saves its alphabet the way the phone does', 'ok', A, 0,
+    `insert into slice(language,kind,body,ed) values ('${LD}','letters','[1]','{"body":1000,"was":0}')
+       on conflict (language,kind) do update set body=excluded.body, ed=excluded.ed`],
+  ['and saves it again, put together against the first', 'ok', A, 0,
+    `insert into slice(language,kind,body,ed) values ('${LD}','letters','[1,2]','{"body":2000,"was":1000}')
+       on conflict (language,kind) do update set body=excluded.body, ed=excluded.ed`],
+  /* and the one the check is FOR still holds through the same door: a save put
+     together against the first, arriving after the second has landed, is
+     refused -- and what is there is the second. */
+  ['but not one put together against a version that has moved', 'denied', A, 0,
+    `insert into slice(language,kind,body,ed) values ('${LD}','letters','[1,3]','{"body":3000,"was":1000}')
+       on conflict (language,kind) do update set body=excluded.body, ed=excluded.ed`],
+  ['and what is there is the second save',    'ok',     A, 0,
+    `select 1 from slice where language='${LD}' and kind='letters' and body='[1,2]' and (ed->>'body')::numeric=2000 and not (ed ? 'was')`],
   ['B cannot read it',                        'denied', B, 0,
     `select 1 from slice where language='${LD}'`],
   /* THE ONE THAT MAY NEVER MOVE. \u300c\u975e\u516c\u958b\u306b\u3057\u305f\u3089\u975e\u516c\u958b\u300d -- an unpublished
