@@ -224,6 +224,7 @@ defLang('fr', (function(){
       "kb.row.sel" : "Sélectionner cette ligne",
       "kb.col.sel" : "Sélectionner cette colonne",
       "kb.cell.add" : "Ajouter une touche ici",
+      "kb.cell.sel" : "Sélectionner cet emplacement",
       "kb.key.join" : "Fusionner avec la touche voisine",
       "kb.key.open" : "Ce que fait cette touche",
       "kb.col.ins" : "Ajouter une colonne ici",

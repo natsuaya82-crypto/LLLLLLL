@@ -78,6 +78,7 @@ defLang('en', (function(){
       "kb.row.sel" : "Select this row",
       "kb.col.sel" : "Select this column",
       "kb.cell.add" : "Add a key here",
+      "kb.cell.sel" : "Select this frame",
       "kb.key.join" : "Join to the key beside it",
       "kb.key.open" : "What this key does",
       "kb.col.ins" : "Add a column here",

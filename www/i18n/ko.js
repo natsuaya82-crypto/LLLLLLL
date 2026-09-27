@@ -355,6 +355,7 @@ defLang('ko', (function(){
       "kb.row.sel" : "이 행 선택",
       "kb.col.sel" : "이 열 선택",
       "kb.cell.add" : "여기에 키 추가",
+      "kb.cell.sel" : "이 칸 선택",
       "kb.key.join" : "옆의 키와 합치기",
       "kb.key.open" : "이 키가 하는 일",
       "kb.col.ins" : "여기에 열 추가",

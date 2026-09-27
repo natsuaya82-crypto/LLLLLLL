@@ -92,6 +92,7 @@ defLang('ja', (function(){
       "kb.row.sel" : "この行を選ぶ",
       "kb.col.sel" : "この列を選ぶ",
       "kb.cell.add" : "ここにキーを足す",
+      "kb.cell.sel" : "この枠を選ぶ",
       "kb.key.join" : "隣のキーとくっつける",
       "kb.key.open" : "このキーの設定",
       "kb.col.ins" : "ここに列を足す",

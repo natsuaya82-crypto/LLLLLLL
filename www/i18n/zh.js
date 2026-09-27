@@ -184,6 +184,7 @@ defLang('zh', (function(){
       "kb.row.sel" : "选择此行",
       "kb.col.sel" : "选择此列",
       "kb.cell.add" : "在此添加一个键",
+      "kb.cell.sel" : "选择此格",
       "kb.key.join" : "与旁边的键合并",
       "kb.key.open" : "这个键做什么",
       "kb.col.ins" : "在此添加一列",

@@ -1679,7 +1679,7 @@ function kbCellHTML(ri, at, span, ki){
        Slack the row does not write down names nothing, which is what it has
        always done. */
     (ki===undefined? '' : ' data-r="'+ri+'" data-k="'+ki+'"') +
-    ' aria-label="'+esc(t('kb.cell.add'))+'"></button>';
+    ' aria-label="'+esc(t('kb.cell.sel'))+'"></button>';
 }
 /* Which frame is being worked on. KBH's fourth kind, beside the row, the
    column and the key, and it is held by WHERE it is -- the row and the column
