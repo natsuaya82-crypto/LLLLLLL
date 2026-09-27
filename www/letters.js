@@ -861,20 +861,19 @@ function ltReadName(sp){
 /* Letters from before the guess followed the name. `chose` is the answer to
    "did somebody pick this sound, or did the app read it off the name", and a
    letter that has never been asked has no answer at all -- which is what makes
-   this run once per letter and not once per launch. Not asked means not
-   chosen, so the name wins, and the letter renamed from n to O stops being
-   told that n is taken.
+   this run once per letter and not once per launch.
 
-   Aligning a sound somebody DID choose on the chart is the cost, and it is
-   paid once, by letters that could not say which they were. */
+   What the letter reads is not touched: a migration copies and never
+   removes what it read (CLAUDE.md § Data). Where the sound is what the name
+   reads, nobody chose it; where it is anything else, somebody put it there,
+   and it is kept as chosen -- so a rename later leaves it alone. */
 function migrateSndName(){
   var moved=0, i, l, units;
   for(i=0;i<LETTERS.length;i++){
     l=LETTERS[i];
     if(l.chose!==undefined) continue;
     units=ltReadName(l.ab||'').units;
-    if(units.length) l.snd=units;
-    l.chose=0;
+    l.chose=(!l.snd || !l.snd.length || units.join(' ')===l.snd.join(' '))? 0 : 1;
     moved++;
   }
   if(moved) saveLetters();
@@ -1437,62 +1436,8 @@ function spPh(sp){
   for(i=0;i<sp.length;i++) out=out.concat(uSplit(spUnit(sp[i])));
   return out;
 }
-/* Words from when a word was its sounds. Each of them carries a unit on every
-   position -- a copy of what its letter reads -- and a headword made of those
-   sounds run together. Both were true then and neither is now.
-
-   So: the copies go, except where one genuinely differs, which is the sound
-   change that was worth keeping. And the headword is written out of the
-   letters, which is what it always looked like it was.
-
-   It renames a word only when every position is a letter with a name, and
-   only when the name it comes out with is not already taken. A word that
-   cannot be written out of its letters keeps the headword it has -- there is
-   nothing better to call it, and a rename that collides would merge two
-   words into one, which is not a thing to do to somebody's dictionary. */
-function migrateSp(){
-  var moved=0, i, j, w, sp, l, hw, taken={};
-  for(i=0;i<WORDS.length;i++) taken[String(WORDS[i].hw)]=1;
-  for(i=0;i<WORDS.length;i++){
-    w=WORDS[i];
-    if(!w.sp || !w.sp.length) continue;
-    if(w.spv) continue;                      /* already answered */
-    sp=w.sp;
-    for(j=0;j<sp.length;j++){
-      l=ltById(sp[j].l);
-      if(l && ltFirstUnit(l)===sp[j].u) delete sp[j].u;
-    }
-    hw=spWord(sp);
-    if(hw && hw!==String(w.hw) && !taken[hw]){
-      delete taken[String(w.hw)]; taken[hw]=1;
-      wRename(String(w.hw), hw);
-    }
-    /* AND THE PRONUNCIATION STAYS. It was deleted here, along with the copies
-       above, on the reasoning that a word from when a word was its sounds
-       carried a `ph` that was only ever a copy of what its letters read. That
-       is true of the words this app MADE and false of the ones it was GIVEN:
-       an imported word carries the pronunciation somebody typed into a column
-       of their spreadsheet (www/import.js reads it), and nothing here can tell
-       the two apart.
-
-       What made it worse than a deletion is the order in boot.js: migratePh()
-       runs FIRST and this LAST, so the launch after this one found `ph`
-       missing and wrote phGuess(hw) -- a guess made out of the spelling of the
-       HEADWORD -- in its place. Measured, with the line still in: an imported
-       /t sʰ ɑ ŋ/ came back as `k a n o`. Not lost, which somebody might
-       notice: replaced by an answer the app made up, which looks like theirs.
-
-       CLAUDE.md § Data: *a migration copies and never removes what it read*.
-       「2発音は消えないでくい」 OWNER 2026-09-04. migrate-check holds it now. */
-    w.spv=1;
-    moved++;
-  }
-  if(moved) save();
-}
-/* Everything that points at a word by name, told the new one. saveWord has
-   done this since words could be renamed; it is here because a migration
-   renames them too, and two copies of "what points at a word" is how one of
-   them comes to miss the examples. */
+/* Everything that points at a word by name, told the new one -- the word
+   sheet's rename (www/wordsheet.js) is what calls it. */
 function wRename(old, hw){
   var i;
   for(i=0;i<WORDS.length;i++){

@@ -1956,7 +1956,6 @@ function migrateAll(){
   migrateSnd();
   migratePosts();
   migratePostInk();
-  migrateSp();
   /* and what the language is for, off the phone and into the language */
   migrateWorld();
   /* and the word order and the three positions a person chose when they were
