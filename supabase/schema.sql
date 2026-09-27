@@ -1951,6 +1951,11 @@ alter table slice_hist enable row level security;
 -- its name here when it has happened, and asks this table before it runs.
 -- Nothing about anybody is on it: the name of a step and when it ran. Row
 -- level security with no policy, so nobody the app signs in as reads it.
+--
+-- A FILE IN supabase/once/ IS THE SAME KIND OF STEP, and is written here as
+-- `once/<file>` by the Supabase Schema workflow's `once`, in the same
+-- request as the file itself: a name already here is refused by the key and
+-- the file does not run a second time.
 create table if not exists schema_step (
   step text primary key,
   at   timestamptz not null default now()

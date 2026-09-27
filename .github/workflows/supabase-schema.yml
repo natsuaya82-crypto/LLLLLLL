@@ -13,13 +13,19 @@
 #   apply  ── supabase/schema.sql を丸ごと流す（何度流しても同じになる作り）。
 #             流した後に check と同じものを出す。本番を書き換えるので、押すのは
 #             オーナーか、オーナーが「押して」と言った時だけ。
+#   once   ── supabase/once/ の、file に名前を書いた一つを、一度だけ流す。
+#             流した名前は schema_step に `once/<名前>` で残り（schema.sql の
+#             「what this file has done once」と同じ表）、同じ名前はもう流れない
+#             ── 一度だけの SQL は、二度目に流れた時に過去を今で作り直すから。
+#             名前を書くのは押す人で、「一番新しいもの」を選ぶ仕組みは無い。
+#             押すのは apply と同じ人だけ。
 name: Supabase Schema
 
 on:
   workflow_dispatch:
     inputs:
       action:
-        description: 'check・logs（読むだけ）か apply（schema.sql を流す）'
+        description: 'check・logs（読むだけ）、apply（schema.sql を流す）、once（file の一つを一度だけ流す）'
         required: true
         default: check
         type: choice
@@ -28,6 +34,11 @@ on:
           - logs
           - apply
           - once
+      file:
+        description: 'once の時だけ: supabase/once/ の中のファイル名（例 2026-09-27-today.sql）'
+        required: false
+        default: ''
+        type: string
 
 env:
   PROJECT_REF: iimwukyyasbybfrirhsf
@@ -55,11 +66,23 @@ jobs:
           echo "HTTP $CODE"; head -c 2000 out.json; echo
           case "$CODE" in 2*) ;; *) exit 1 ;; esac
 
-      - name: 一回だけの SQL を流す（once の時だけ。supabase/once/ の一番新しい一つ）
+      # 名前を記録する一行と SQL は一つの問い合わせで送る。PostgreSQL は一つの
+      # 問い合わせの中の文を一つの取引として流すので、SQL が落ちれば記録も
+      # 残らず、記録が既にあれば（主キーが断る）SQL は流れない。管理 API が
+      # 一つの問い合わせとして渡すことは、本番で確かめていない。
+      - name: 一回だけの SQL を流す（once の時だけ。file に名前を書いた一つ）
         if: inputs.action == 'once'
+        env:
+          FILE: ${{ inputs.file }}
         run: |
-          F=$(ls supabase/once/*.sql | sort | tail -1); echo "$F"
-          jq -Rs '{query: .}' "$F" > q.json
+          case "$FILE" in
+            ''|*/*|*..*) echo "file に supabase/once/ の中の名前を一つ書いてください"; exit 1 ;;
+          esac
+          F="supabase/once/$FILE"
+          test -f "$F" || { echo "$F はありません"; exit 1; }
+          echo "$F"
+          { printf "insert into schema_step(step) values ('once/%s');\n" "$FILE"; cat "$F"; } > run.sql
+          jq -Rs '{query: .}' run.sql > q.json
           CODE=$(curl -s -o out.json -w '%{http_code}' -X POST \
             "https://api.supabase.com/v1/projects/$PROJECT_REF/database/query" \
             -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
@@ -127,8 +150,13 @@ jobs:
           select 'prompt ' || on_day::text, left(coalesce(text, ''), 80)
             from (select on_day, text from prompt order by on_day desc limit 5) p
           union all
-          select 'cronjob ' || jobname, schedule || ' active=' || active::text || ' ' || left(regexp_replace(command, '\s+', ' ', 'g'), 120)
+          select 'cronjob ' || jobname, schedule || ' active=' || active::text
+                 || ' timeout=' || coalesce(substring(command from 'timeout_milliseconds\s*:=\s*([0-9]+)'), '-')
+                 || ' headers=' || case when command ~ 'vault' then 'vault' else 'in the command' end
             from cron.job
+          union all
+          select 'ran ' || step, to_char(at, 'MM-DD HH24:MI')
+            from schema_step
           union all
           select 'cronrun ' || to_char(start_time, 'MM-DD HH24:MI'), status || ' ' || left(coalesce(return_message, ''), 160)
             from (select start_time, status, return_message from cron.job_run_details order by start_time desc limit 8) c
