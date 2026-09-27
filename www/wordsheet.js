@@ -2144,10 +2144,12 @@ function wdPutExtras(w){
      a word carrying '' would be a fourteenth thing on nobody's list. */
   if(String(wEdit.sub||'').trim()) w.sub=String(wEdit.sub).trim();
   else delete w.sub;
-  /* `fm` is written where it is chosen, not here. What is here is the one
-     thing Save has to hold: a form of nothing is not a form, so a word with
-     no parent cannot carry one. */
-  if(!w.from) delete w.fm;
+  /* `fm` is not touched here. It is written and taken off where it is
+     chosen (fmPick), and the row it is chosen on is only drawn while the word
+     has a parent -- so a `fm` on a word with no `from` is on no screen, and
+     Save deleting it was Save changing something nobody could see
+     (「保存を押したときだけ、保存されているものが変わる」 OWNER 2026-09-04,
+     whose worked example was this function deleting `ph`). */
   if((wEdit.tags||[]).length) w.tags=wEdit.tags.slice(); else delete w.tags;
   w.up=Date.now();
 }

@@ -986,6 +986,24 @@ const R = await pg.evaluate(() => {
     out.fails.push('an Add refused at the ceiling replaced the draft of the sheet behind it');
   start(); KEEP = {}; popOff();
 
+  /* ---- Save does not delete a 語形 that is not on the screen ---------------
+     The 語形 row is drawn only while the word has a parent, and wDrop() took
+     `from` off children until 2026-09-26 -- so words carry `fm` with no
+     `from`, and Save deleted it while somebody changed only a meaning.
+     「保存を押したときだけ、保存されているものが変わる」 OWNER 2026-09-04. */
+  start(); KEEP = {};
+  const orphan = findWord('mos');
+  delete orphan.from; orphan.fm = 'dim';
+  openWord('mos'); openEdit('mos');
+  wEdit.mns = ['a meaning rewritten'];
+  wdWrite();
+  out.said.push('a word carrying fm "dim" and no parent, saved with a new meaning, carries fm ' +
+    JSON.stringify(findWord('mos').fm));
+  if (findWord('mos').fm !== 'dim')
+    out.fails.push('Save deleted a 語形 that is not on the screen: fm is now ' +
+      JSON.stringify(findWord('mos').fm));
+  start(); KEEP = {};
+
   /* ---- and what the arrow that leaves the sheet is called ---------------
      www/shell.js § pageName. The label is on the button as an aria-label, so
      it is on the screen for anybody who cannot see the arrow and nowhere else
