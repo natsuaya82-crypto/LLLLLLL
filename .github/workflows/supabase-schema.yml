@@ -94,7 +94,13 @@ jobs:
             from (select at, kind, no, body, language from slice order by at desc limit 15) s
           union all
           select 'lang ' || to_char(created_at, 'MM-DD HH24:MI'), left(id::text, 8) || ' ' || coalesce(name, '-') || ' ' || coalesce(wsys, '-')
-            from (select created_at, id, name, wsys from language order by created_at desc limit 8) l;
+            from (select created_at, id, name, wsys from language order by created_at desc limit 8) l
+          union all
+          select 'slow ' || calls || 'x mean=' || round(mean_exec_time) || 'ms max=' || round(max_exec_time) || 'ms',
+                 left(regexp_replace(query, '\s+', ' ', 'g'), 160)
+            from (select calls, mean_exec_time, max_exec_time, query from extensions.pg_stat_statements
+                   where query ilike '%slice%' or query ilike '%language%'
+                   order by max_exec_time desc limit 12) q;
           SQL
           jq -Rs '{query: .}' check.sql > q.json
           CODE=$(curl -s -o out.json -w '%{http_code}' -X POST \
