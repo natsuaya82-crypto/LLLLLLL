@@ -63,9 +63,10 @@ var ntNewSpent=false;
    KEEP の buffer は書く方の鍵で登録するので、読む顔には保存が出ない
    (www/shell.js § keepBtnHTML)。人の言語では編集のボタンごと出ない。 */
 function openNote(i){
-  /* A note is the fourth. Editing one is making one -- what comes out is a
-     note either way -- so this is asked on the way in, not only on the + . */
-  if(!makeNeed()) return;
+  /* Reading asks nothing. 「全部の画面一通り見れるけど制作しようとすると
+     ログイン求められる」 (www/onboard.js § makeNeed): the fourth of the four
+     is ADDING a note, and writing one is openNoteEdit(), which asks. This is
+     the reading face, and the + passes straight through to that one. */
   if(i===undefined && ntNewSpent){ keepDrop(keepKeyOf('form', 'ntedit:-1')); ntNewSpent=false; }
   var k=(typeof i==='number' && NOTES[i]) ? i : -1;
   /* 作るときは読むものが無いので、+ はそのまま書く顔。 */
