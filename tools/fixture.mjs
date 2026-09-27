@@ -3676,6 +3676,16 @@ export function halfDone(){
        __stemLetters(); const was = SCRIPT.sp; SCRIPT.sp = v; window.route = 'sp';
        NAV = [{ r:'settings' }, { r:'set', a:'lang' }, { r:'sp' }];
        const h = vSp(); if (was === undefined) delete SCRIPT.sp; else SCRIPT.sp = was; return h; }]),
+    /* AND A LANGUAGE WRITTEN RIGHT TO LEFT, on the free plan and on Pro. The
+       preview is a post's line, so it goes the way a post from here would:
+       scriptDir() -- left to right on a plan that does not choose one, the
+       stored way on one that does. It read SCRIPT.dir itself until
+       2026-09-27, and drew the free plan a direction no post is written in. */
+    ...['free', 'pro'].map((p) => ['the gap between letters, a language written right to left, on ' + p, () => {
+       __stemLetters(); const was = SCRIPT.dir; SCRIPT.dir = 'rtl'; planGot(p); window.route = 'sp';
+       NAV = [{ r:'settings' }, { r:'set', a:'lang' }, { r:'sp' }];
+       const h = vSp(); planGot('free');
+       if (was === undefined) delete SCRIPT.dir; else SCRIPT.dir = was; return h; }]),
     ...[0, 0.5, 1, 1.5, 2].map((v) => ['a post whose letters stand ' + v + ' apart', () => {
        __joinPosts(v); window.route = 'feed'; NAV = [{ r:'feed' }];
        return vFeed(); }]),

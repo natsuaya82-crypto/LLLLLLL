@@ -114,6 +114,10 @@ const DYNAMIC = {
    that sentence lives in myFontWant() and nowhere else. */
 const READS = {
   'SET.myfont': 'myFontWant',
+  /* which way the language is written: stored on the language, and ltr on a
+     plan that does not choose one -- the spacing page read the stored one
+     itself and drew a direction no post is written in (2026-09-27). */
+  'SCRIPT.dir': 'scriptDir',
 };
 
 /* ---- read -------------------------------------------------------------- */
@@ -167,7 +171,8 @@ for (const f of fs.readdirSync(WWW).filter((x) => x.endsWith('.js')).sort()) {
     while ((w = all.exec(ln))) put(w[2]);
     for (const key of Object.keys(READS)) {
       const [o, k] = key.split('.');
-      const rr = new RegExp('\\b' + o + '\\s*\\.\\s*' + k + '\\b(?!\\s*(=(?!=)|\\+=|-=|\\+\\+|--))', 'g');
+      /* `delete X.k` takes the field away, which is a write (above). */
+      const rr = new RegExp('(?<!\\bdelete\\s+)\\b' + o + '\\s*\\.\\s*' + k + '\\b(?!\\s*(=(?!=)|\\+=|-=|\\+\\+|--))', 'g');
       while (rr.exec(ln)) if (fn !== READS[key]) readFails.push(key + ' is read in ' + fn + ' (' + f + ':' + (i + 1) +
         ') -- ' + READS[key] + '() is the one place that answers it; ask that');
     }

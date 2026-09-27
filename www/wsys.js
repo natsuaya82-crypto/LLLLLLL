@@ -434,9 +434,10 @@ function spClamp(v){
    スライドしてどう動くかで別ページにした方が見やすい。」 OWNER 2026-09-23.
    Both are a post's line -- `.pline` and dirClass(), the element a post is
    set in (www/post.js § postLnHTML) -- so what moves here is what a post
-   will look like, because it is the same thing. Across is the language's own
-   way across and down its own way down, where it has one; otherwise left to
-   right, and the first column on the right. */
+   will look like, because it is the same thing. Across is the way a post
+   from here goes across and down the way it goes down -- scriptDir(), the
+   one answer, so a plan that does not choose a direction sees left to right
+   and the first column on the right, as its posts are written. */
 /* The spacing's `?` (OWNER 2026-09-26 「？の中に描きまくろう」). */
 HELP.sp=function(){
   return {t:t('set.sp'), h:
@@ -446,7 +447,7 @@ HELP.sp=function(){
     helpPara(t('hp.sp.p2'))};
 };
 function vSp(){
-  var v=inkSteps(SCRIPT.sp), d=SCRIPT.dir,
+  var v=inkSteps(SCRIPT.sp), d=scriptDir(),
       hz=(d==='rtl')? 'rtl' : 'ltr', vt=(d==='ttb-lr')? 'ttb-lr' : 'ttb-rl';
   return '<div class="view">'+navTop('', helpQ('sp'))+'<div class="body">'+
     /* Styled here rather than in index.html, which is not this page's to
