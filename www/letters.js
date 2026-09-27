@@ -43,10 +43,24 @@ function saveLetters(){ if(!langWrites()) return; bkTouch(); slWr(langKey('lette
    be redrawn. The borrowed characters that sat in `SET.script` are not read:
    that field is taken off the phone (www/core.js § SET_GONE, OWNER
    2026-09-26). */
+/* A NEW LETTER'S ID, AND IT IS NOBODY ELSE'S.
+   Two copies of an alphabet are put together by id (supabase/schema.sql
+   § slice_arr), so an id two letters share is one of them lost. It was a
+   counter and the alphabet's length, and the counter began at zero every
+   launch -- a letter added today and one added tomorrow at the same count,
+   or the first letter two phones each added, came out as one id. The moment
+   and a random part now, and never one this alphabet already has. `l`,
+   then letters, digits and `_` only: kbFixed() puts an id in a `data-lt`
+   attribute and the onboarding reads it back out of a CSS selector. */
 var LT_SEQ=0;
 function ltId(){
-  LT_SEQ++;
-  return 'l'+LT_SEQ+'_'+LETTERS.length+'_'+(LETTERS.length? LETTERS[0].id.length : 0);
+  var id;
+  do{
+    LT_SEQ++;
+    id='l'+(new Date()).getTime().toString(36)+'_'+LT_SEQ.toString(36)+'_'+
+       Math.floor(Math.random()*2176782336).toString(36);
+  }while(ltById(id));
+  return id;
 }
 function migrateLetters(){
   if(LETTERS.length) return;
@@ -587,11 +601,10 @@ function ltSlotId(key){
   var k=String(key);
   return (k.charAt(0)==='#')? ('lt.n'+k.slice(1)) : ('lt.'+(LT_SLOT_MARK[k] || k));
 }
-/* ...unless something already answers to it. Nothing this app has ever
-   written can collide -- ltId() makes `l<n>_<n>_<n>` and there is no dot in
-   it -- but two letters with one id is the one thing that would make the
-   merge above LOSE a row rather than double one, so it is asked rather than
-   assumed. */
+/* ...unless something already answers to it. ltId() never makes a dot, so
+   a slot id and a minted one cannot meet -- but two letters with one id is
+   the one thing that would make the merge above LOSE a row rather than
+   double one, so it is asked rather than assumed. */
 function ltSlotIdFree(key){
   var id=ltSlotId(key);
   return ltById(id)? ltId() : id;

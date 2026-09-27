@@ -449,6 +449,20 @@ const r = await pg.evaluate(({s}) => {
   ltStart();
   out.keptN2 = LETTERS.length;
   out.keptSame2 = LETTERS.map(function(l){ return l.id; }).join(',') === ids2;
+  /* ---- and a letter somebody ADDS never wears another letter's id ----
+     Two copies of an alphabet are put together by id (supabase/schema.sql
+     § slice_arr), so two letters on one id is one of them lost. Two launches
+     that add a letter at the same count, and two phones each adding their
+     first, are the two ways an id minted from a counter meets itself. */
+  LT_SEQ = 0; LETTERS = []; ltStart();
+  LT_SEQ = 0;                        /* a launch: the counter from zero */
+  var idA = ltNew({}).id;
+  LETTERS.pop();                     /* the alphabet is the same size again */
+  LT_SEQ = 0;                        /* the next launch, or the other phone */
+  var idB = ltNew({}).id;
+  out.idTwo = [idA, idB];
+  out.idApart = idA !== idB;
+  out.idShape = /^l[0-9a-z_]+$/.test(idA) && /^l[0-9a-z_]+$/.test(idB);
   LETTERS = wasLts;
 
   return out;
@@ -600,5 +614,9 @@ say(r.wasDoubled === 76 && r.keptN === 76 && r.keptSame && r.keptDrawn === 1,
 say(r.keptN2 === 76 && r.keptSame2,
     'and with the empty copy first and the drawn one after it, nothing is taken ' +
     'either (' + r.keptN2 + ' letters, same rows: ' + r.keptSame2 + ')');
+say(r.idApart && r.idShape,
+    'a letter added on one launch and a letter added on the next, at the same ' +
+    'count, wear two ids -- and each is still `l` and letters, digits and _ (' +
+    r.idTwo.join(' / ') + ')');
 if (bad.length) { console.error('\nbase: ' + bad.length + ' failed'); process.exit(1); }
 console.log('\nbase: slots arrive when asked, and nothing drawn is ever taken away.');
