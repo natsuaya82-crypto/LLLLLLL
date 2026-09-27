@@ -15,6 +15,31 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### 2026-09-27 Android の通知（Firebase Cloud Messaging）── `device` がどちらの電話かを持つ（r124-android-push）
+- **人が気づくこと**: Firebase（プロジェクトと `android/app/google-services.json`）が入るまで、何も変わらない。
+  Android の `LinguaPush` は今までどおり「無い」と答え、通知の部屋はスイッチだけ。入った後は、Android でも
+  サインインした時に Android の許可の問い（Android 13 以降）が出て、フォロー・返信・引用・いいね・リポスト・
+  その日のお題が届き、押すとその投稿・通知タブ・タイムラインが開く ── iPhone と同じ。
+- **保存する物（新しい列）**: `device.platform text not null default 'ios'`、値は `ios` か `android`。
+  今ある行は全部 iPhone なので、既定で `ios` になる ── 行は一つも書き換えない・消さない（`add column` の既定）。
+  Android の電話は `platform: 'android'` を付けて出す（`www/push.js` → `netDevicePut()`）。iPhone は何も付けず、
+  既定が答える。
+- **token の検査が電話ごとに**: 今は「16 進 32〜200 字」一つで、FCM の token（英数字と `:` `_` `-`、百数十字）は
+  入らない。`device_token_check` を「ios なら 16 進 32〜200 字、android なら `[A-Za-z0-9_:-]` 32〜4096 字」に
+  書き直す。今ある行は全部 ios で 16 進なので、どの行も新しい検査に通る（通らない行があれば `add constraint` が
+  落ちて何も変わらない ── 行を黙って消す道は無い）。
+- **DELETE REVIEW ── FCM が「もう無い」と答えた token の行**:
+  - 何が消えるか: `device` の一行（その uid とその token の組だけ）。iPhone の 410 Unregistered と同じ扱いを、
+    Android では FCM の **404 かつ `UNREGISTERED`** の時だけ。400（`INVALID_ARGUMENT`）・401・403・429・500・
+    届かない、はどれも「読めなかった」で、消さない。
+  - 誰が: push-send（service role）。
+  - 人の作った物か: いいえ。電話の住所で、アプリを消した電話を指している。
+  - 戻せるか: 戻す必要が無い ── 電話がアプリを持っていれば、次にサインインした時に同じ道で行が入る。
+- **push-send**: 誰に・何を・どの token を消すかは今までどおり `push.mjs` 一枚。行の `platform` で APNs と FCM に
+  分けるのもそこ（`pushPlan()` が `to`（iPhone）と `fcm`（Android）を返す）。APNs に送る中身と道は変えていない。
+  FCM の鍵（`FCM_SERVICE_ACCOUNT`、Google Cloud のサービスアカウントの JSON）が無い間は Android の行にだけ
+  送らず、答えの `left` に `not set: FCM_SERVICE_ACCOUNT` と出る ── iPhone への送信は止めない。
+
 ### 2026-09-27 投げ縄: なぞった所で止まる・親指の輪が輪になる（r113-lasso、実機 170 の直し）
 - 実機で「なぞったとこで止めて欲しいのに全部一直線で選ばれる」「囲ったとことかも関係ない」。
   測ると二つあった: なぞると一筆が丸ごと選ばれていた（そう作っていた ── 前の指示）、そして囲むのは「描き終わりが
