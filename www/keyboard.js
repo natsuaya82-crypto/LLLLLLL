@@ -881,12 +881,29 @@ function kbDrop(i){
   popAsk(t('kb.rm.q'), function(){ kbDropGo(i); }, t('pop.yes'));
 }
 function kbDropGo(i){
-  var b=kbBoards();
-  if(!b.length) return;
-  KB.kbs.splice(i-1, 1);
+  kbDropAll([i]);
+}
+/* THE ONE DELETE, for one board off its ⋯ and for several off the list.
+   `KB.at` and `kbShow` are indexes, so each goes down by the number of boards
+   taken out IN FRONT of it and by nothing else: deleting the first keyboard
+   leaves the one on the phone the one on the phone. The Select road clamped
+   instead of counting, and made the applied board's neighbour the keyboard
+   on the phone with no press on it (audit words kb-1). Highest index first,
+   so removing one does not move the next one under the knife. */
+function kbDropAll(ids){
+  var at, show, i, b, gone;
+  if(!KB || !kbStored().length) return;
+  gone=ids.slice().sort(function(x, y){ return y-x; });
+  at=parseInt(KB.at, 10)||0; show=parseInt(kbShow, 10)||0;
+  for(i=0;i<gone.length;i++){
+    if(kbIsFree(gone[i]) || gone[i]>KB.kbs.length || gone[i]===gone[i-1]) continue;
+    KB.kbs.splice(gone[i]-1, 1);
+    if(gone[i]<at) at--;
+    if(gone[i]<show) show--;
+  }
   b=kbBoards();
-  KB.at=kbClamp(KB.at>i? KB.at-1 : KB.at, b.length);
-  kbShow=kbClamp(kbShow>=b.length? b.length-1 : kbShow, b.length);
+  KB.at=kbClamp(at, b.length);
+  kbShow=kbClamp(show, b.length);
   kbLay=0; kbSel=null;
   kbForget();
   saveKb();
@@ -2692,26 +2709,14 @@ function kbSelDel(){
   if(!n) return;
   popAsk(tn('kb.rm.n', n), function(){ kbSelDelGo(); }, t('pop.yes'));
 }
-/* Highest index first, so removing one does not move the next one under the
-   knife -- the same reason a list is walked backwards anywhere else. */
+/* The same delete done to several at once (kbDropAll), and it lands on the
+   list for kbDropGo()'s reason above: it is PRESSED on the list, so opening a
+   board here was the screen moving under somebody who had asked for
+   nothing. */
 function kbSelDelGo(){
-  var ids=kbSelList().sort(function(a, b){ return b-a; }), i;
-  for(i=0;i<ids.length;i++){
-    if(kbIsFree(ids[i])) continue;
-    KB.kbs.splice(ids[i]-1, 1);
-  }
+  var ids=kbSelList();
   KBSEL=null;
-  var b=kbBoards();
-  KB.at=kbClamp(KB.at, b.length);
-  kbShow=kbClamp(kbShow, b.length);
-  kbLay=0; kbSel=null;
-  kbForget();
-  saveKb();
-  /* Onto the list, for kbDropGo()'s reason above -- this is the same delete
-     done to several at once, and it is PRESSED on the list, so opening a
-     board here was the screen moving under somebody who had asked for
-     nothing. */
-  kbGo();
+  kbDropAll(ids);
 }
 function kbRowHTML(x, i, at){
   var sel=!!KBSEL, on=!!(sel && KBSEL[i]);
