@@ -74,6 +74,28 @@ jobs:
                                --project-ref "$PROJECT_REF"
           echo "APNS_KEY_ID / APPLE_TEAM_ID / APNS_P8: set"
 
+      # Android の通知（Firebase Cloud Messaging）の鍵。Firebase の「サービス
+      # アカウント」→「新しい秘密鍵を生成」で出る JSON を、そのまま GitHub の
+      # Secrets の FCM_SERVICE_ACCOUNT に入れる（docs/ANDROID.md § 通知）。
+      # **無くても止めない** ── Firebase はオーナーの手で後から入るもので、
+      # それまで iPhone の通知を置けない理由は無い。無い間の push-send は
+      # Android の行にだけ送らず、答えの left に「not set」と言う。
+      - name: FCM の鍵を Supabase の Secrets に入れる（push-send のみ、あれば）
+        if: inputs.function == 'push-send'
+        env:
+          FCM_SERVICE_ACCOUNT: ${{ secrets.FCM_SERVICE_ACCOUNT }}
+        run: |
+          if [ -z "$FCM_SERVICE_ACCOUNT" ]; then
+            echo "FCM_SERVICE_ACCOUNT: GitHub の Secrets に無い ── Android には送らない（iPhone はそのまま）"
+            exit 0
+          fi
+          # JSON として読めて、要る三つがあるかをここで見る。壊れたまま置くと
+          # 函数は Android の行ごとに「not set」を返すだけで、ここより遅く分かる。
+          printf '%s' "$FCM_SERVICE_ACCOUNT" | jq -e '.project_id and .client_email and .private_key' > /dev/null \
+            || { echo "FCM_SERVICE_ACCOUNT が JSON でないか、project_id / client_email / private_key が無い"; exit 1; }
+          supabase secrets set "FCM_SERVICE_ACCOUNT=$FCM_SERVICE_ACCOUNT" --project-ref "$PROJECT_REF"
+          echo "FCM_SERVICE_ACCOUNT: set ($(printf '%s' "$FCM_SERVICE_ACCOUNT" | jq -r .project_id))"
+
       # 三つとも同じ置き方です。**--no-verify-jwt はどれにも付けません** ──
       # 「サインインなしで勧めるものないけど」 OWNER 2026-09-22。push-send を
       # 叩くのはデータベースのトリガーで、トリガーは**行を入れた人の
