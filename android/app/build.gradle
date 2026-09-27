@@ -77,6 +77,20 @@ dependencies {
     implementation project(':capacitor-cordova-android-plugins')
 }
 
+// hand.js -- which drawn letter a finger wrote on the keyboard's handwriting
+// face. ONE FILE AND THREE PROGRAMS: the iOS keyboard runs it in
+// JavaScriptCore, tools/hand-check.mjs in Node, and the Android keyboard in a
+// WebView (keyboard/HandPad.kt). So it is COPIED here at build time from where
+// it lives, and never kept twice in git: a second copy is a second measure the
+// day somebody edits one.
+def linguaAssets = layout.buildDirectory.dir('generated/lingua-assets').get().asFile
+def linguaHandJs = tasks.register('linguaHandJs', Copy) {
+    from rootProject.file('../ios/App/LinguaKeyboard/hand.js')
+    into new File(linguaAssets, 'keyboard')
+}
+android.sourceSets.main.assets.srcDir(linguaAssets)
+preBuild.dependsOn linguaHandJs
+
 apply from: 'capacitor.build.gradle'
 
 try {

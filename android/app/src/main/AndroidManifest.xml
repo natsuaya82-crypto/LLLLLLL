@@ -34,6 +34,23 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths"></meta-data>
         </provider>
+        <!-- The Lingua keyboard: the Android half of ios/App/LinguaKeyboard/:
+             an input method inside this app that reads what LinguaShare.write
+             put in the app's own storage (keyboard/Shared.kt). Named "Lingua",
+             which is never translated. BIND_INPUT_METHOD means only the
+             system may bind it. -->
+        <service
+            android:name=".keyboard.LinguaIme"
+            android:label="@string/app_name"
+            android:permission="android.permission.BIND_INPUT_METHOD"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.view.InputMethod" />
+            </intent-filter>
+            <meta-data
+                android:name="android.view.im"
+                android:resource="@xml/method" />
+        </service>
     </application>
 
     <!-- Permissions -->
