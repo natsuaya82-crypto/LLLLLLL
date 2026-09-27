@@ -571,6 +571,21 @@ const CASES = [
     `select 1 where json_array_length(slice_merge('kb',
         '{"kbs":[{"id":"k1","lay":[1]},{"id":"k2"}],"at":0}',
         '{"kbs":[{"id":"k1","lay":[2]},{"id":"k3"}],"at":0}', '', false)::json -> 'kbs') = 3`],
+  /* AND WHEN THE SERVER HANDS A 1.0.3 WRITE BACK DIFFERENT FROM WHAT IT SENT,
+     the row's `at` is not the one that phone sent: 1.0.3 decides whether to
+     read a slice again by comparing `at` with the one it wrote
+     (netAtSame in that build), and a row that kept its `at` would tell it
+     the server holds exactly what it sent -- and its next write would take
+     the other phone's work away. */
+  ['a 1.0.3 phone writes its notes, and the row carries its time', 'ok', A, 0,
+    `insert into slice(language,kind,body,ed,at) values ('${LD}','talk','[1]','{"body":1000,"was":0}','2001-01-01T00:00:00Z')
+       on conflict (language,kind) do update set body=excluded.body, ed=excluded.ed, at=excluded.at`],
+  ['another 1.0.3 phone that never saw it writes, and is put together with it', 'ok', A, 0,
+    `insert into slice(language,kind,body,ed,at) values ('${LD}','talk','[2]','{"body":2000,"was":0}','2001-01-02T00:00:00Z')
+       on conflict (language,kind) do update set body=excluded.body, ed=excluded.ed, at=excluded.at`],
+  ['and the row holds both, and not the time that phone sent', 'ok', A, 0,
+    `select 1 from slice where language='${LD}' and kind='talk' and body::jsonb='[2,1]'::jsonb
+        and at <> '2001-01-02T00:00:00Z'::timestamptz`],
   /* BUILD 165, the first 1.0.2 on the App Store: the same upsert with no `ed`
      at all and `no` = the version it read, plus one. */
   ['build 165 saves the way it does', 'ok', A, 0,
