@@ -1904,21 +1904,27 @@ function wldGet(lid, r){
       if(o && o.body) got.push([kinds[i], o.body]);
     }
     if(!got.length){ delete WLD_TAKING[k]; render(); return; }
-    /* The index row FIRST, so a slice can never be in storage under a
-       language the index does not know. */
-    langSeenAdd(id, seen? seen.name : '', seen? seen.owner : '');
-    try{
-      for(i=0;i<got.length;i++) slWr(langKeyOf(id, got[i][0]), got[i][1]);
-    }catch(e){ delete WLD_TAKING[k]; render(); return; }
-    /* AND THAT THIS ACCOUNT TOOK IT, which is a row on the server and not a
-       stamp on this phone's index (www/net.js § netTakePut) -- the ceiling
-       counts those rows. The circle turns until the server answers, and a
-       refusal is 「接続できません」 with the row a ↓ again. */
+    /* THE SERVER FIRST, AND THEN THIS PHONE. 「先にサーバーじゃないの？
+       失敗しましたなのに端末に出るの変じゃない？」 OWNER 2026-09-06. That this
+       account took it is a row on the server (www/net.js § netTakePut) -- the
+       ceiling counts those rows -- and nothing is written here until that row
+       is in: a refusal is 「接続できません」 with the row a ↓ again and not one
+       byte of the chapter left behind. A language whose owner the page never
+       said cannot be taken, and saying nothing about it would be a press that
+       did nothing (rule 11). */
+    if(!(seen && seen.owner)){ delete WLD_TAKING[k]; toast(t('net.offline')); render(); return; }
     WLD_TAKING[k]=-1;
     wldMeterPaint(k);
-    if(!(seen && seen.owner)){ delete WLD_TAKING[k]; render(); return; }
-    netTakePut(id, function(){ delete WLD_TAKING[k]; render(); },
-      function(){ delete WLD_TAKING[k]; toast(t('net.offline')); render(); });
+    netTakePut(id, function(){
+      delete WLD_TAKING[k];
+      /* The index row FIRST, so a slice can never be in memory under a
+         language the index does not know. */
+      langSeenAdd(id, seen.name, seen.owner);
+      try{
+        for(i=0;i<got.length;i++) slWr(langKeyOf(id, got[i][0]), got[i][1]);
+      }catch(e){ toast(t('save.no')); }
+      render();
+    }, function(){ delete WLD_TAKING[k]; toast(t('net.offline')); render(); });
   }, function(d, s, m){
     delete WLD_TAKING[k];
     render();
