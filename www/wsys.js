@@ -172,9 +172,15 @@ function wsVows(){
    ligature substitutes. */
 function wsKey(a){ return a.join(''); }
 
-/* A word, as the units its writing system would write it in. */
-function wsSplit(seq){
-  var k=wsys(), out=[], i, cut, c, v;
+/* A word, as the units writing system `k` would write it in. The kind is
+   HANDED IN, never asked here: wsys() is worked out from the whole language
+   when nothing is stored (wsGuess reads every word), and a list cut word by
+   word asked it once per word -- the dictionary with borrowed characters on
+   was every word, times every word, times every word, and one draw of 130
+   words took a second and a half (r120, measured). Whoever cuts asks wsys()
+   once and passes the answer to every word. */
+function wsSplit(k, seq){
+  var out=[], i, cut, c, v;
   if(!seq || !seq.length) return [];
   if(k==='logo') return [wsKey(seq)];
   if(k==='alpha') return seq.slice();
@@ -202,7 +208,6 @@ function wsSplit(seq){
   for(i=0;i<cut.length;i++) out.push(wsKey(cut[i].on.concat(cut[i].nu).concat(cut[i].co)));
   return out;
 }
-function wsUnitsOf(w){ return wsSplit(wPh(w)); }
 
 /* ---- what has to be drawn --------------------------------------------
    The list of letters this writing system needs, which is a different list
@@ -223,7 +228,7 @@ function wsUnits(){
        of them */
     wsCons().forEach(push); wsVows().forEach(push);
     for(i=0;i<WORDS.length;i++){
-      u=wsSplit(wPh(WORDS[i]));
+      u=wsSplit(k, wPh(WORDS[i]));
       for(j=0;j<u.length;j++) push(u[j]);
     }
   }
@@ -233,7 +238,7 @@ function wsUnits(){
        consonant against every vowel would be hundreds of letters to draw,
        most of which no word would ever need */
     for(i=0;i<WORDS.length;i++){
-      u=wsUnitsOf(WORDS[i]);
+      u=wsSplit(k, wPh(WORDS[i]));
       for(j=0;j<u.length;j++) push(u[j]);
     }
     /* with no words yet there is still something to start on: every sound
@@ -365,7 +370,7 @@ function wsStrokes(unit){
 /* A word in the letters chosen for it. Used for borrowed characters; drawn
    letters are a font and need no substitution. */
 function wsInScript(hw){
-  var u=wsSplit(seqOf(hw)), out=[], i, c;
+  var u=wsSplit(wsys(), seqOf(hw)), out=[], i, c;
   for(i=0;i<u.length;i++){ c=ltChar(u[i]); out.push(c || u[i]); }
   return out.join('');
 }
