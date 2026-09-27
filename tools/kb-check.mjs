@@ -3878,6 +3878,22 @@ const swBarH = swiftNum(/barHeight:\s*CGFloat\s*=\s*([0-9.]+)/, 'barHeight');
 const swMost = swiftNum(/mostOfScreen:\s*CGFloat\s*=\s*([0-9.]+)/, 'mostOfScreen');
 const swEdge = swiftNum(/let bars = ([0-9.]+) \+ \(wantsBar/, 'the two edges');
 
+/* And the Android keyboard says the same three numbers and the same two edges
+   (android/.../keyboard/LinguaIme.kt), read the same way -- the rows that fit
+   are divided out of ONE ceiling, and a keyboard belongs to a language that
+   moves between an iPhone and an Android. */
+const KT_DIR = path.join(dir, '..', 'android', 'app', 'src', 'main', 'java', 'com', 'tokinets', 'lingua', 'keyboard');
+const KTIME = fs.readFileSync(path.join(KT_DIR, 'LinguaIme.kt'), 'utf8');
+function ktNum(re, what){
+  const m = KTIME.match(re);
+  if (!m) return { ok: false, what: 'LinguaIme.kt ' + what, saw: 'no line matching ' + re };
+  return { ok: true, what: 'LinguaIme.kt ' + what, n: parseFloat(m[1]) };
+}
+const ktRowW = ktNum(/const val rowPerWidth\s*=\s*([0-9.]+)f/, 'rowPerWidth');
+const ktBarH = ktNum(/const val barHeight\s*=\s*([0-9.]+)f/, 'barHeight');
+const ktMost = ktNum(/const val mostOfScreen\s*=\s*([0-9.]+)f/, 'mostOfScreen');
+const ktEdge = ktNum(/val bars = ([0-9.]+) \+ \(if \(wantsBar\)/, 'the two edges');
+
 /* ---- EACH CEILING IS ANSWERED IN ONE PLACE -----------------------------
    「横 10」 is kbRoomFor(), the row ceiling is kbRoomRow(), and 「the free
    board is not touched」 is kbEdit(). Counted off the source with the comments
@@ -3906,6 +3922,8 @@ function whereAll(re){
 const KBVIEW = fs.readFileSync(
   path.join(dir, '..', 'ios', 'App', 'LinguaKeyboard', 'KeyBoardView.swift'), 'utf8');
 const swHalf = (KBVIEW.match(/static let halfCols = ([0-9]+)/) || [])[1];
+const ktHalf = (fs.readFileSync(path.join(KT_DIR, 'KeyBoardView.kt'), 'utf8')
+  .match(/const val halfCols = ([0-9]+)/) || [])[1];
 const jsHalf = (KBSRC.match(/var KB_COLS=([0-9]+)/) || [])[1];
 const cmpCols = whereAll(/(?:[<>]=?\s*KB_COLS\b|\bKB_COLS\s*[<>])/g);
 const cmpRows = whereAll(/(?:[<>]=?\s*kbRowsMax\(\)|kbRowsMax\(\)\s*[<>])/g);
@@ -3997,20 +4015,22 @@ say(r.letters, 'no letter moved');
 say(r.words, 'no word moved');
 say(r.boards, 'no other keyboard moved');
 say(r.faces, 'no other face of this keyboard moved');
-say([swRowW, swBarH, swMost, swEdge].every((x) => x.ok),
-    'the extension still says its height in the three ways this reads' +
-    ([swRowW, swBarH, swMost, swEdge].filter((x) => !x.ok).map((x) => ' -- ' + x.what + ': ' + x.saw).join('')));
-say(swRowW.ok && r.roww === swRowW.n,
-    'a row is ' + r.roww + ' of the phone across, here and in the extension' +
-    ' (' + (swRowW.ok ? swRowW.n : '?') + ')');
+say([swRowW, swBarH, swMost, swEdge, ktRowW, ktBarH, ktMost, ktEdge].every((x) => x.ok),
+    'both keyboards still say their height in the three ways this reads' +
+    ([swRowW, swBarH, swMost, swEdge, ktRowW, ktBarH, ktMost, ktEdge].filter((x) => !x.ok).map((x) => ' -- ' + x.what + ': ' + x.saw).join('')));
+say(swRowW.ok && ktRowW.ok && r.roww === swRowW.n && r.roww === ktRowW.n,
+    'a row is ' + r.roww + ' of the phone across, here, in the extension' +
+    ' (' + (swRowW.ok ? swRowW.n : '?') + ') and on Android (' + (ktRowW.ok ? ktRowW.n : '?') + ')');
 say(Math.abs(r.row390 - 54) < 0.5,
     'which on the 390pt phone it was measured at is still ' + r.row390.toFixed(1) +
     'pt -- the 54 it used to be flat at');
-say(swMost.ok && r.most === swMost.n,
-    'a keyboard may take ' + r.most + ' of the screen, both sides');
-say(swBarH.ok && swEdge.ok && r.bars === swEdge.n + swBarH.n,
-    'the bars come to ' + r.bars + 'pt here and ' +
-    ((swEdge.ok && swBarH.ok) ? (swEdge.n + ' + ' + swBarH.n) : '?') + ' in the extension');
+say(swMost.ok && ktMost.ok && r.most === swMost.n && r.most === ktMost.n,
+    'a keyboard may take ' + r.most + ' of the screen, here, on iOS and on Android');
+say(swBarH.ok && swEdge.ok && ktBarH.ok && ktEdge.ok &&
+    r.bars === swEdge.n + swBarH.n && r.bars === ktEdge.n + ktBarH.n,
+    'the bars come to ' + r.bars + 'pt here, ' +
+    ((swEdge.ok && swBarH.ok) ? (swEdge.n + ' + ' + swBarH.n) : '?') + ' in the extension and ' +
+    ((ktEdge.ok && ktBarH.ok) ? (ktEdge.n + ' + ' + ktBarH.n) : '?') + ' on Android');
 say(r.ceilRows === Math.max(1, Math.floor((r.screenH * r.most - r.bars) / r.rowh)),
     'so the ceiling is ' + r.ceilRows + ' rows -- divided out of the cap, not chosen');
 say(r.refW === 320 && r.screenH === 568,
@@ -4990,9 +5010,10 @@ say(SF.alR && SF.alL,
     + 'against the tenth column and pushed left against the first (' + SF.alRSheet + ')');
 say(SF.cellAt === 4,
     'and a key put into a frame stands in that frame (column half ' + SF.cellAt + ', wanted 4)');
-say(!!swHalf && swHalf === jsHalf,
+say(!!swHalf && swHalf === jsHalf && ktHalf === jsHalf,
     'the phone counts a row in the sheet’s half columns: KeyBoardView.swift halfCols '
-    + swHalf + ', keyboard.js KB_COLS ' + jsHalf + ' — a short row stands where kbStart() stands it');
+    + swHalf + ', KeyBoardView.kt halfCols ' + ktHalf + ', keyboard.js KB_COLS ' + jsHalf
+    + ' — a short row stands where kbStart() stands it');
 say(r.ukUsed === 16 && r.ukUnder === '1:2',
     'under a key is what the sheet draws under it: on a row of ten over a row of eight, '
     + 'under the fourth key is the third (' + r.ukUnder + ', row of ' + r.ukUsed + ' half columns)');
