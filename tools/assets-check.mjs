@@ -417,6 +417,67 @@ for (const e of readdirSync(join(IOS, "App"), { withFileTypes: true })) {
   }
 }
 
+// AND ANDROID ANSWERS EVERY NAME THE SCREEN SAYS.
+//
+// www/ is one set of files on both phones and does not know which it is on,
+// so a plugin and method it calls has to be answered by the Kotlin as well
+// as by the Swift -- and an unanswered one throws nothing: nativePromise
+// rejects, the screen's catch runs, and the button looks as if the phone
+// refused. Three statements, and the surface is counted, not listed:
+//   - every 'LinguaX', 'method' pair a file of www/ writes out is a
+//     @PluginMethod of the Kotlin class whose @CapacitorPlugin name is LinguaX;
+//   - each Kotlin plugin's table is the Swift plugin's of the same jsName,
+//     both directions -- 「同じ名前・同じメソッド」, so a method added on one
+//     phone tomorrow is red until the other has it;
+//   - every Kotlin plugin is handed to the bridge in MainActivity.kt, because
+//     Capacitor does not find an app's own plugin by looking for it.
+const KT = join(ROOT, 'android', 'app', 'src', 'main', 'java', 'com', 'tokinets', 'lingua')
+let ktPlugins = 0, ktMethods = 0, ktPairs = 0
+if (existsSync(KT)) {
+  const kt = {}
+  const ktFile = {}
+  for (const f of readdirSync(KT)) {
+    if (!f.endsWith('.kt')) continue
+    const src = readFileSync(join(KT, f), 'utf8')
+    const name = (src.match(/@CapacitorPlugin\(\s*name\s*=\s*"([A-Za-z0-9_]+)"/) || [])[1]
+    if (!name) continue
+    kt[name] = new Set([...src.matchAll(/@PluginMethod\s+fun\s+([A-Za-z0-9_]+)\s*\(/g)].map((x) => x[1]))
+    ktFile[name] = { f, cls: (src.match(/class\s+([A-Za-z0-9_]+)\s*:\s*Plugin\(\)/) || [])[1] || '' }
+  }
+  const mainSrc = existsSync(join(KT, 'MainActivity.kt')) ? readFileSync(join(KT, 'MainActivity.kt'), 'utf8') : ''
+  for (const name of Object.keys(kt)) {
+    ktPlugins++
+    ktMethods += kt[name].size
+    const cls = ktFile[name].cls
+    // Asked as the class handed over -- `(Cls::class.java)` -- which is the
+    // only thing MainActivity.kt does with a plugin class.
+    if (!cls || !new RegExp('\\(\\s*' + cls + '::class\\.java\\s*\\)').test(mainSrc))
+      note(`android/.../${ktFile[name].f}: ${name} is not handed to the bridge -- MainActivity.kt ` +
+           `never passes ${cls || '?'}::class.java, so every call to it goes unanswered.`)
+  }
+  const PAIR = /['"](Lingua[A-Za-z0-9_]*)['"]\s*,\s*['"]([A-Za-z0-9_]+)['"]/g
+  referenced.filter((r) => r.endsWith('.js')).forEach((r) => {
+    let src
+    try { src = readFileSync(join(WWW, r), 'utf8') } catch (e) { return }
+    for (const p of src.matchAll(PAIR)) {
+      ktPairs++
+      if (!kt[p[1]]) note(`www/${r} calls ${p[1]}.${p[2]} and no Kotlin plugin is named '${p[1]}' (android/app/src/main/java/com/tokinets/lingua).`)
+      else if (!kt[p[1]].has(p[2])) note(`www/${r} calls ${p[1]}.${p[2]} and ${ktFile[p[1]].f} has no @PluginMethod fun ${p[2]}.`)
+    }
+  })
+  for (const e of readdirSync(join(IOS, 'App'), { withFileTypes: true })) {
+    if (!e.isFile() || !e.name.endsWith('.swift')) continue
+    const sw = readFileSync(join(IOS, 'App', e.name), 'utf8')
+    const js = (sw.match(/jsName\s*=\s*"([A-Za-z0-9_]+)"/) || [])[1]
+    if (!js) continue
+    const swm = new Set([...sw.matchAll(NATIVE)].map((x) => x[1]))
+    if (!kt[js]) { note(`ios/App/App/${e.name} is the plugin '${js}' and Android has no plugin of that name.`); continue }
+    for (const q of swm) if (!kt[js].has(q)) note(`${js}.${q} is in ${e.name} and not in ${ktFile[js].f}.`)
+    for (const q of kt[js]) if (!swm.has(q)) note(`${js}.${q} is in ${ktFile[js].f} and not in ${e.name}.`)
+  }
+  if (!ktPlugins) note('android/: no @CapacitorPlugin was found under com/tokinets/lingua -- the Android check read nothing, which is not the same as it holding')
+}
+
 // AND THE APP GROUP HOLDS NOTHING THAT NOBODY WILL TAKE BACK.
 //
 // 「NOTHING IS THE PHONE'S. EVERYTHING IS THE ACCOUNT'S」 (CLAUDE.md). The
@@ -568,5 +629,6 @@ if (swiftCount) console.log(`swift: ${swiftCount} files under ios/App/, every on
 if (privCount) console.log(`privacy: ${privCount} PrivacyInfo.xcprivacy (${PRIV.map(p => p[0]).join(', ')}), each in its own target's Resources phase.`)
 console.log(`placeholders: ${holes} under ios/App/, every one of them substituted by the deploy workflow.`)
 console.log(`the bridge: ${natives} native methods, every one of them called by www/ as plugin and method together.`)
+if (ktPlugins) console.log(`android: ${ktPlugins} plugins, ${ktMethods} methods -- the Swift's table, every one registered in MainActivity.kt, and all ${ktPairs} plugin-and-method pairs www/ writes out answered.`)
 console.log(`the App Group: ${groupFiles} files read by the keyboard and the widget, every one of them mirrored by LinguaShare's write -- emptied when nobody is signed in.`)
 console.log(`load order: core.js -> ${LANGS.length} languages -> ... -> otf5.js -> glyph.js -> act-map.js -> boot.js (last)`)

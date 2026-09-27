@@ -1,0 +1,89 @@
+apply plugin: 'com.android.application'
+apply plugin: 'org.jetbrains.kotlin.android'
+
+android {
+    namespace = "com.tokinets.lingua"
+    compileSdk = rootProject.ext.compileSdkVersion
+    defaultConfig {
+        applicationId "com.tokinets.lingua"
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        // Google Play refuses a second upload with the same number, so the
+        // workflow hands in its run number (.github/workflows/android-build.yml).
+        // A build made by hand is 1.
+        versionCode Integer.parseInt((project.findProperty('linguaVersionCode') ?: '1').toString())
+        // The version is package.json's "version", the one place the iOS build
+        // reads it from too (ios-deploy.yml), so the two phones cannot drift.
+        versionName new groovy.json.JsonSlurper().parse(rootProject.file('../package.json')).version
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        aaptOptions {
+             // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
+             // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
+            ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+        }
+    }
+    // THE UPLOAD KEY IS NEVER IN THE REPOSITORY. The workflow writes it out of
+    // the ANDROID_KEYSTORE_B64 secret and names it here through the
+    // environment; with no key the release is simply not signed, and the
+    // workflow builds a debug APK instead (docs/ANDROID.md).
+    def upKey = System.getenv('LINGUA_KEYSTORE')
+    signingConfigs {
+        release {
+            if (upKey) {
+                storeFile file(upKey)
+                storePassword System.getenv('LINGUA_KEYSTORE_PASSWORD')
+                keyAlias System.getenv('LINGUA_KEY_ALIAS')
+                keyPassword System.getenv('LINGUA_KEY_PASSWORD')
+            }
+        }
+    }
+    buildTypes {
+        release {
+            if (upKey) {
+                signingConfig signingConfigs.release
+            }
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+// capacitor.build.gradle says Java 21, and Kotlin has to say the same or
+// Gradle refuses the two targets disagreeing.
+kotlin {
+    compilerOptions {
+        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21
+    }
+}
+
+repositories {
+    flatDir{
+        dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
+    }
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
+    implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
+    implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
+    implementation project(':capacitor-android')
+    // LinguaStore.review -- Google Play's own request for a rating, the
+    // Android half of CLAUDE.md's second system dialog (StoreKit's on iOS).
+    implementation 'com.google.android.play:review:2.0.2'
+    testImplementation "junit:junit:$junitVersion"
+    androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
+    androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
+    implementation project(':capacitor-cordova-android-plugins')
+}
+
+apply from: 'capacitor.build.gradle'
+
+try {
+    def servicesJSON = file('google-services.json')
+    if (servicesJSON.text) {
+        apply plugin: 'com.google.gms.google-services'
+    }
+} catch(Exception e) {
+    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+}
