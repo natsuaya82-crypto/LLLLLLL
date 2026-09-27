@@ -2080,6 +2080,125 @@ const R = await pg.evaluate(async () => {
     PW = wasPW;
   }
 
+  /* ---- 11d3. EDITING IS THIS SCREEN, AND ITS LAST ROW IS REACHED -----
+     「文字のサイズとカーソルサイズ全然違うし、編集画面なにこれ。トグルも
+     なければ文字も見切れてるし、キーボードで一番下も隠れるしくそ」 OWNER
+     2026-09-27, 実機 170, editing a long post of their own.
+
+     Three things, asked of a long post of drawn letters opened with the
+     real postEdit() on a screen of 508 -- a 390 with a keyboard up:
+
+       the switch   the meaning's switch is on the edit screen, as it is on
+                    a new post -- and pressing it off and saving makes a
+                    post with no meaning that says so (`nm`), and on again
+                    gives the meaning back. It was drawn nowhere on an edit
+                    and pwSaveEdit() read the post's own `nm`, so a post sent
+                    with its meaning off could never be given one
+       the field    is as tall as its text in the face it is SET in. The
+                    drawn letters are a face that arrives after the page asks
+                    for it; lnFit() measured the line before it came and
+                    nothing typed on an edit measured it again -- 658 of text
+                    in a field of 530, the last rows under the field's foot
+       the foot     the board slid to its end shows the meaning's last row
+                    inside the screen
+
+     The field may give up its padding (lnFit § A COLUMN MAY TAKE ITS
+     PADDING), so "as tall as its text" is the text plus nothing: what is
+     past the field's height is at most its padding. */
+  {
+    const wasPW = PW, wasPosts = POSTS.slice(), wasPlan = plan();
+    try {
+      planGot('pro');
+      await screenTo(508);
+      let K = null, TH = null;
+      LETTERS.forEach((l) => { if (ltName(l) === 'k') K = l; if (ltName(l) === 'th') TH = l; });
+      const cut = [];
+      for (let q = 0; q < 60; q++) {
+        cut.push({ id: K.id }); cut.push({ t: 'ano ' }); cut.push({ id: TH.id }); cut.push({ t: 'ir ' });
+      }
+      PW = pwBlank(); pwLine(cut);
+      const mine = { id: 'p_r119', at: Date.now(), lang: langId, lname: langName || '',
+                     who: meName(), hd: meHandle(), mine: true, ln: PW.ln,
+                     ink: postInkOf(cut), dir: scriptDir(), mn: 'the mountain is seen',
+                     ui: 'en', li: 0, bo: 0, re: 0 };
+      POSTS.unshift(mine);
+      PW = pwBlank();
+      postEdit(mine.id); render();
+      if (typeof popOff === 'function') popOff();
+      if (!(here().r === 'form' && here().a === 'post:' && PW.ed === mine.id))
+        fails.push('postEdit() did not stand on the composer editing the post (' +
+                   here().r + ' ' + here().a + '), so nothing below is about the edit screen');
+      if (!document.querySelector('.view.fit .pwmnsw'))
+        fails.push('the edit screen has no switch for the meaning. 「トグルもなければ」 ' +
+                   'OWNER 2026-09-27 -- editing is the composer, not a second screen ' +
+                   'with parts missing');
+      if (document.fonts && document.fonts.ready) await document.fonts.ready;
+      await frame(); await frame();
+      const e = document.getElementById('pw-ln');
+      if (!e) fails.push('the edit screen drew no line field');
+      else {
+        const cs = getComputedStyle(e);
+        const pad = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0);
+        const hid = e.scrollHeight - e.clientHeight;
+        if (document.fonts && document.fonts.check && !document.fonts.check('15px LinguaLine', ''))
+          fails.push('the drawn letters’ face never arrived, so the field was not ' +
+                     'measured in it and this says nothing');
+        if (hid > pad + 1)
+          fails.push('the line field is ' + e.clientHeight + ' tall and its text ' +
+                     e.scrollHeight + ': ' + (hid - pad) + ' of what somebody wrote is ' +
+                     'under the foot of the field, where the board cannot slide to it. ' +
+                     '「文字も見切れてる」 OWNER 2026-09-27');
+      }
+      const board = document.querySelector('.view.fit .pwscroll');
+      const mn = document.getElementById('pw-mn');
+      if (board && mn) {
+        board.scrollTop = board.scrollHeight;
+        await frame();
+        const foot = Math.min(window.innerHeight, board.getBoundingClientRect().bottom);
+        if (mn.getBoundingClientRect().bottom > foot + 1)
+          fails.push('the board slid to its end leaves the meaning’s last row at ' +
+                     Math.round(mn.getBoundingClientRect().bottom) + ', under the foot ' +
+                     'of the screen at ' + Math.round(foot) + '. 「キーボードで一番下も' +
+                     '隠れる」 OWNER 2026-09-27');
+      } else fails.push('the edit screen drew no board or no meaning to reach');
+
+      /* the switch, pressed for real, and the edit saved */
+      const sw = document.querySelector('.view.fit .pwmnsw');
+      if (sw) {
+        sw.click(); await frame();
+        pwSend(); await frame();
+        const off = postById(mine.id);
+        if (!off || off.nm !== 1 || off.mn !== '')
+          fails.push('the meaning switched off on the edit screen and saved gave a post ' +
+                     'carrying nm=' + (off && off.nm) + ' and mn="' + (off && off.mn) +
+                     '": the switch on the screen is not what was saved');
+        PW = pwBlank(); postEdit(mine.id); render();
+        if (typeof popOff === 'function') popOff();
+        const sw2 = document.querySelector('.view.fit .pwmnsw');
+        if (!sw2 || sw2.getAttribute('aria-pressed') !== 'false')
+          fails.push('a post saved with its meaning off opened for editing again without ' +
+                     'its switch standing off');
+        else {
+          sw2.click(); await frame();
+          pwSetMn('the river runs');
+          pwSend(); await frame();
+          const on = postById(mine.id);
+          if (!on || on.nm || on.mn !== 'the river runs')
+            fails.push('the meaning switched back on and saved gave nm=' + (on && on.nm) +
+                       ' and mn="' + (on && on.mn) + '": a post sent without a meaning ' +
+                       'cannot be given one');
+        }
+      }
+    } finally {
+      if (typeof popOff === 'function') popOff();
+      POSTS.length = 0; wasPosts.forEach((x) => POSTS.push(x));
+      planGot(wasPlan);
+      await screenTo(844);
+      const f = document.activeElement; if (f && f.blur) f.blur();
+      PW = wasPW;
+    }
+  }
+
   /* ---- 11d-2. a column of letters STANDS UP -------------------------
      「横にするなんか言ったことない。直して。」 OWNER 2026-09-22, a third
      photograph: a vertical-writing language, 「Hello」 typed into the line
@@ -4728,6 +4847,11 @@ console.log('post: a letter placed on a black photograph is IN the file that goe
             '      A column of letters STANDS UP in the field, the way it\n' +
             '      does in a post -- both vertical directions, asked of the\n' +
             '      computed value.\n' +
+            '      Editing a post is the same composer, with the meaning\u2019s\n' +
+            '      switch on it: switched off and saved the post has no meaning\n' +
+            '      and says so, and on again it has one. Its line is as tall as\n' +
+            '      its text once the drawn letters\u2019 face has arrived, and the\n' +
+            '      board slides to the meaning\u2019s last row on a 508 screen.\n' +
             '      And the composer answering somebody is the same\n' +
             '      composer as the one writing a new post, element for element,\n' +
             '      with the post being answered above it.\n' +
