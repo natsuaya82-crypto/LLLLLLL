@@ -43,7 +43,8 @@ const WIRE = `
   FakeX.prototype.send = function(b){
     var self = this;
     var rec = { m:this.m, u:this.u, tok:String(this.h['Authorization'] || ''),
-                pre:String(this.h['Prefer'] || ''), body:b, to:this.timeout };
+                pre:String(this.h['Prefer'] || ''), ct:String(this.h['Content-Type'] || ''),
+                body:b, to:this.timeout, blob:this.responseType === 'blob' };
     window.__X.sent.push(rec);
     var st = window.__X.refuse(rec);
     setTimeout(function(){
@@ -54,6 +55,8 @@ const WIRE = `
         ? JSON.stringify({ access_token:'AT' + window.__X.sent.length,
                            refresh_token:'RT', user:{ id:'me' } })
         : '[]';
+      /* a picture asked for as bytes comes back as bytes */
+      self.response = (rec.blob && st === 200) ? new Blob(['img'], { type:'image/jpeg' }) : null;
       if (self.onreadystatechange) self.onreadystatechange();
     }, 0);
   };
@@ -272,28 +275,93 @@ say(seven.length === 1 && seven[0] === 'bad 0',
     'and running out ends in the same one place a dead network does, exactly ' +
     'once -- no second way out: ' + JSON.stringify(seven));
 
-/* ---- 8. and the OTHER wire, the one that carries a file ------------------
-   netUp() is the second XMLHttpRequest in www/net.js -- one photograph or one
-   voice, bytes rather than JSON -- and it was written before there was a
-   deadline anywhere. A post's photographs go up one after another, never in
-   parallel, so a single stalled file holds the whole post open for ever.
-
-   The SAME NET_WAIT, not a second number: how long to wait is one decision,
-   and a decision written down twice is two decisions waiting to disagree.
-   Two PLACES obeying one number is not the same thing as two numbers. */
+/* ---- 8. and the file and the picture leave by the same exit ------------
+   「一本化してくれ」「通信する場所」 OWNER 2026-09-27. netUp() (a file going up)
+   and netMedia() (a picture coming down) each had an XMLHttpRequest of their
+   own: their own copy of the deadline, and NO renewal -- so an hour after the
+   launch a photograph would not go up and the timeline drew no pictures. Both
+   go through netSend1() now, so what is asked of them is what is asked of
+   every write above: refused for an old token, renewed once, sent again with
+   the new one, and landed. The picture is also asked not to be a PRESS: it
+   fills in behind the text, and counting it would dim the screen for every
+   photograph on a timeline (www/net.js § NET_OUT). */
 const eight = await pg.evaluate(async ({ w, s }) => {
   eval(w); eval(s); window.__reset();
-  SESS = { at:'AT', rt:'RT', uid:'me', anon:false };
-  netUp('p/1.jpg', 'AAECAwQ=', 'image/jpeg', function(){}, function(){});
-  await wait(30);
-  var r = window.__of('/storage/v1/object/')[0] || {};
-  return { sent: !!r.u, to: r.to, wait: (typeof NET_WAIT === 'number') ? NET_WAIT : null };
+  SESS = { at:'OLD', rt:'r', uid:'me', anon:false };
+  var first = true, got = null;
+  window.__X.refuse = function(r){
+    if (/\/storage\/v1\/object\/post-media\//.test(r.u) && first){ first = false; return 401; }
+    return 200;
+  };
+  netUp('p/1.jpg', 'AAECAwQ=', 'image/jpeg', function(p){ got = 'ok ' + p; },
+                                             function(d, st){ got = 'bad ' + st; });
+  await wait(150);
+  var up = window.__of('/storage/v1/object/post-media/');
+  var a = { got: got, tries: up.length, first: up[0] ? up[0].tok : '',
+            last: up.length ? up[up.length - 1].tok : '', at: SESS && SESS.at,
+            ct: up[0] ? up[0].ct : '', bytes: up[0] && up[0].body ? up[0].body.length : 0,
+            to: up[0] ? up[0].to : null, wait: NET_WAIT };
+  window.__reset();
+  SESS = { at:'OLD2', rt:'r', uid:'me', anon:false };
+  first = true;
+  window.__X.refuse = function(r){
+    if (/object\/authenticated\/post-media\//.test(r.u) && first){ first = false; return 401; }
+    return 200;
+  };
+  var u = null, counted = -1;
+  netPressed(function(){ netMedia('u/p/0.jpg', function(x){ u = x; }); counted = NET_OUT; });
+  await wait(150);
+  var pic = window.__of('object/authenticated/post-media/');
+  a.pic = { drawn: !!u && u.indexOf('blob:') === 0, tries: pic.length,
+            last: pic.length ? pic[pic.length - 1].tok : '', at: SESS && SESS.at,
+            counted: counted, to: pic[0] ? pic[0].to : null };
+  return a;
 }, { w: WIRE, s: wait });
 
-say(eight.sent, 'a file upload reaches the wire at all: ' + JSON.stringify(eight.sent));
+say(eight.got === 'ok p/1.jpg' && eight.tries === 2 && eight.first === 'Bearer OLD' &&
+    eight.last === 'Bearer ' + eight.at,
+    'a file an hour after the launch is refused, the token is renewed, and it goes ' +
+    'again with the new one and lands: ' + eight.tries + ' tries, ' + eight.got);
+say(eight.ct === 'image/jpeg' && eight.bytes === 5,
+    'and it goes as the BYTES of the file with its own type, not as JSON: ' +
+    JSON.stringify(eight.ct) + ', ' + eight.bytes + ' bytes');
 say(typeof eight.to === 'number' && eight.to > 0 && eight.to === eight.wait,
-    'and it carries the same deadline as everything else, not one of its own: ' +
-    'timeout=' + JSON.stringify(eight.to) + ' NET_WAIT=' + JSON.stringify(eight.wait));
+    'and it carries the one deadline: timeout=' + JSON.stringify(eight.to) +
+    ' NET_WAIT=' + JSON.stringify(eight.wait));
+say(eight.pic.drawn && eight.pic.tries === 2 && eight.pic.last === 'Bearer ' + eight.pic.at &&
+    eight.pic.to === eight.wait,
+    'a picture an hour after the launch is renewed the same way and drawn: ' +
+    eight.pic.tries + ' tries, drawn ' + eight.pic.drawn);
+say(eight.pic.counted === 0,
+    'and a picture filling in is not a press, even when one is under way — ' +
+    'nothing to dim the screen for: ' + eight.pic.counted + ' counted');
+
+/* ---- 9. and there is ONE way out, counted rather than listed -------------
+   Every way a page can reach a server, looked for in every file under www/
+   with the comments taken out. One, and it is in netSend1(). A second one
+   written tomorrow -- for a new kind of file, a new service -- fails here the
+   day it is written, before it has had the chance to be the one road the
+   renewal does not reach. */
+{
+  const fs = await import('fs');
+  const www = path.join(dir, '..', 'www');
+  const hits = [];
+  for (const f of fs.readdirSync(www).filter((n) => n.endsWith('.js'))) {
+    const src = fs.readFileSync(path.join(www, f), 'utf8')
+      .replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ' '));
+    const re = /new\s+XMLHttpRequest\b|\bfetch\s*\(|\bsendBeacon\b|new\s+WebSocket\b|new\s+EventSource\b|\bimportScripts\b/g;
+    let m;
+    while ((m = re.exec(src))) {
+      const line = src.slice(0, m.index).split('\n').length;
+      const before = src.slice(0, m.index);
+      const decl = [...before.matchAll(/function\s+(\w+)\s*\(/g)];
+      const fn = decl.length ? decl[decl.length - 1][1] : '?';
+      hits.push(f + ':' + line + ' ' + m[0] + ' in ' + fn);
+    }
+  }
+  say(hits.length === 1 && /^net\.js:\d+ new XMLHttpRequest in netSend1$/.test(hits[0]),
+      'every way out of www/ is one, and it is netSend1(): ' + JSON.stringify(hits));
+}
 
 await br.close();
 console.log('');

@@ -256,7 +256,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Reason: オーナーの言葉「そもそもみんな同じ仕組みで作ってるのに保存できないとかなるのおかしくない？」「一本化してくれ」「通信する場所食い違い保存」「1本か終えてから」。2026-09-27 の「二回目からの保存が接続できません」は、判断が電話とサーバーの二箇所にあり、その二つが食い違ったことから出た。
 - Affected features: 保存と通信のすべて。
 - Affected data: 保存の形は変わらない（slice・draft・profile の行と列）。まとめ方が電話からサーバーへ移る。
-- Implementation status: 未（2026-09-27 に作業のセッションへ渡す）。
+- Implementation status: 実装（claude/r112-one、CODE CONFIRMED のみ・実機未確認・本番の schema は未適用）。①出口は `netSend1()` 一本（`netUp()`・`netMedia()` の XMLHttpRequest を消した、`token-check` 9 が www/ の出口を数える）。②食い違いは `slice_in()`／`slice_merge()`（supabase/schema.sql）だけで決め、電話の ~~`www/sync.js`~~・読み直し・やり直しは消した（`rls-check`）。③言語の中身・名前・書き方・公開・下書き・プロフィール・設えは `netPut()` 一つ、答えは「今サーバーが持っている物」か `bad(d, 状態, 印)`。
 
 ### 2026-09-27 押して通信を待つ間は、星が回る ── 押す物すべて、一箇所で（1.0.3）
 - Date: 2026-09-27

@@ -194,7 +194,7 @@ var NET_WAIT=20000;
 
      actRun() (www/act.js)  every name a press runs goes through it, and it
                             runs it inside netPressed() -- typing does not
-     netSend1() / netUp()   the whole of the app's wire. A request that goes
+     netSend1()             the whole of the app's wire. A request that goes
                             out inside netPressed() is counted here, and its
                             answer runs inside netPressed() too, so the next
                             request a save or a page read makes on the way is
@@ -256,7 +256,7 @@ function netSpin(on){
   if(on) el.className='netspin on'; else el.className='netspin';
 }
 function netSend(method, path, body, tok, ok, bad, up, prog){
-  netSend1(method, path, body, tok, ok, bad, up, true, prog);
+  netSend1(method, path, body, tok, ok, bad, {up:up, prog:prog}, true);
 }
 /* ---- THE DOOR, AND IT IS THE ONLY THING THAT GOES OUT WITH NOBODY ON IT ---
    「サーバーは、サインインしていない人には何も返さない」 OWNER 2026-09-22.
@@ -288,10 +288,29 @@ function netDoor(path){
   return p.indexOf('/auth/v1/')===0 ||
          p.indexOf('/rest/v1/rpc/email_taken')===0;
 }
-/* `prog` is how far an answer has come in, 0 to 1, or -1 where the server
-   did not say how long it is -- the one thing a ⭕ meter needs
-   (www/home.js § wldGet). Asked for by the one read that draws one. */
-function netSend1(method, path, body, tok, ok, bad, up, may, prog){
+/* ---- THE ONE EXIT, AND WHAT A REQUEST MAY ASK OF IT ------------------------
+   「一本化してくれ」「通信する場所」 OWNER 2026-09-27. Every request this app
+   makes leaves through here -- rows of JSON, a file going up, a picture coming
+   down -- so the token on it, the renewal when the hour runs out, the twenty
+   seconds, and whether it counts as a press (netOn/netOff) are each said once.
+   Until that day there were three: this, netUp() for files and netMedia() for
+   pictures, and the other two had no renewal and each its own copy of the
+   deadline. `how` is what differs, and nothing else does:
+
+     up     an upsert (PostgREST's merge-duplicates)
+     prog   how far an answer has come in, 0 to 1, or -1 where the server
+            did not say how long it is -- the one thing a ⭕ meter needs
+            (www/home.js § wldGet)
+     mime   the body is BYTES (a Uint8Array) of this type, not JSON -- a jpeg
+            sent as octet-stream comes back as a download, not a picture
+     blob   the answer is bytes, handed to `ok` as a Blob
+     quiet  not a press even inside one: a picture filling in behind the text
+            is not somebody waiting (§ NET_OUT), and dimming the screen for
+            every photograph on a timeline is the app taking it from them */
+function netSend1(method, path, body, tok, ok, bad, how, may){
+  var up, prog;
+  how=how || {};
+  up=!!how.up; prog=how.prog;
   /* NOTHING GOES OUT WITH NOBODY ON IT.
      -----------------------------------------------------------------------
      It used to. The Authorization header below falls back to the anon key
@@ -325,8 +344,10 @@ function netSend1(method, path, body, tok, ok, bad, up, may, prog){
   x.open(method, SB_URL+path, true);
   /* After open(), which is where a deadline may be set. */
   x.timeout=NET_WAIT;
+  if(how.blob) x.responseType='blob';
   x.setRequestHeader('apikey', SB_KEY);
-  if(body) x.setRequestHeader('Content-Type', 'application/json');
+  if(how.mime) x.setRequestHeader('Content-Type', how.mime);
+  else if(body) x.setRequestHeader('Content-Type', 'application/json');
   /* This is the person. The key is what is left when there is no token, and
      since the line above there is exactly one kind of request that reaches
      here without one: the door. 「signed out, it is the key again」 is what
@@ -366,7 +387,8 @@ function netSend1(method, path, body, tok, ok, bad, up, may, prog){
   function netDone(){
     var d=null;
     netOff(x);
-    try{ d=JSON.parse(x.responseText||'null'); }catch(e){}
+    if(how.blob){ if(x.status>=200 && x.status<300) d=x.response || null; }
+    else try{ d=JSON.parse(x.responseText||'null'); }catch(e){}
     if(x.status>=200 && x.status<300){ slAsApp(ok, [d]); return; }
     /* An hour has gone by with the app open. Everything about this request is
        still right except the token on it, so it goes again with a live one.
@@ -377,12 +399,12 @@ function netSend1(method, path, body, tok, ok, bad, up, may, prog){
       if(netSignedIn() && netTok()!==tok){
         /* Somebody else's refresh landed while this was in the air. There is
            nothing to ask for; go again with what is already in hand. */
-        netSend1(method, path, body, netTok(), ok, bad, up, false, prog);
+        netSend1(method, path, body, netTok(), ok, bad, how, false);
         return;
       }
       netFresh(function(got){
         if(!got){ bad(d, 401, netTag(path)+' 401'); return; }
-        netSend1(method, path, body, netTok(), ok, bad, up, false, prog);
+        netSend1(method, path, body, netTok(), ok, bad, how, false);
       });
       return;
     }
@@ -394,8 +416,8 @@ function netSend1(method, path, body, tok, ok, bad, up, may, prog){
     netAnswer(x, function(){ netOff(x); slAsApp(bad, [null, 0, netTag(path)+' 0']); });
   };
   if(prog) x.onprogress=function(e){ prog((e && e.lengthComputable && e.total)? e.loaded/e.total : -1); };
-  netOn(x);
-  x.send(body? JSON.stringify(body) : null);
+  if(!how.quiet) netOn(x);
+  x.send(how.mime? body : (body? JSON.stringify(body) : null));
 }
 function netPost(path, body, tok, ok, bad){
   netSend('POST', path, body||{}, tok, ok, bad);
@@ -4074,17 +4096,17 @@ function netRecentDrop(q, ok, bad){
    request -- one for every other road and one for pictures. CLAUDE.md
    「one thing is done by ONE mechanism」.
 
-   **AND NOT THROUGH netSend1().** That function is the one window onto rows
-   of JSON, and this is bytes: netUp() one screen down made the same call for
-   the same reason 「the body is bytes rather than JSON」 and it is the write
-   half of exactly this sentence. One place reads media and one place writes
-   it, and they sit either side of this comment.
+   **THROUGH netSend1(), LIKE EVERYTHING ELSE** (「一本化してくれ」 OWNER
+   2026-09-27). It had its own XMLHttpRequest because the answer is bytes and
+   not JSON, and so it had no renewal: a timeline opened an hour after the
+   launch drew no pictures at all. `how.blob` is the one difference.
 
-   **NO SPINNER.** netOn()/netOff() turn the mark that says 「something is in
-   the air」, and a timeline filling in twenty photographs would turn it for
-   as long as somebody scrolled. The app's own promise here is that the text
-   arrives at once and the pictures fill in behind it; a mark that says the
-   app is busy for the whole of that is the opposite of that promise. */
+   **NO SPINNER** (`how.quiet`). netOn()/netOff() turn the mark that says
+   「something is in the air」, and a timeline filling in twenty photographs
+   would turn it for as long as somebody scrolled. The app's own promise here
+   is that the text arrives at once and the pictures fill in behind it; a mark
+   that says the app is busy for the whole of that is the opposite of that
+   promise. */
 /* WHAT HAS BEEN FETCHED, AND WHAT IS NOT WORTH ASKING FOR AGAIN.
      a string   the blob: URL, ready to be given to a tag
      1          on its way
@@ -4107,7 +4129,7 @@ function netMediaOK(p){ return /^[A-Za-z0-9][A-Za-z0-9/_.-]*$/.test(p); }
    below paints them in place), and the voice does, because there is one of it
    and it was pressed. */
 function netMedia(path, ok){
-  var p=String(path||''), had, x;
+  var p=String(path||''), had;
   function done(u){ if(ok) ok(u); }
   if(!p || !netMediaOK(p)){ done(''); return ''; }
   had=NET_MED[p];
@@ -4115,30 +4137,21 @@ function netMedia(path, ok){
   /* On its way, or it did not come. Either way there is nothing to give now;
      the one on its way will paint itself. */
   if(had===1 || had===0){ done(''); return ''; }
-  /* A transport of its own (a blob, not JSON), so it asks the window's one
-     question itself: no token, nothing goes out. */
+  /* No session, nothing goes out -- the window says so as well, and saying
+     it here too keeps `NET_MED` from recording a fetch that was never made. */
   if(!netTok()){ done(''); return ''; }
   NET_MED[p]=1;
-  x=new XMLHttpRequest();
-  x.open('GET', SB_URL+'/storage/v1/object/authenticated/post-media/'+p, true);
-  x.timeout=NET_WAIT;
-  x.responseType='blob';
-  x.setRequestHeader('apikey', SB_KEY);
-  x.setRequestHeader('Authorization', 'Bearer '+netTok());
-  x.onreadystatechange=function(){
-    var u;
-    if(x.readyState!==4) return;
-    if(x.status>=200 && x.status<300 && x.response){
-      u=URL.createObjectURL(x.response);
+  netSend1('GET', '/storage/v1/object/authenticated/post-media/'+p, null, netTok(),
+    function(blob){
+      var u;
+      if(!blob){ NET_MED[p]=0; done(''); return; }
+      u=URL.createObjectURL(blob);
       NET_MED[p]=u;
       netMediaFill(p, u);
       done(u);
-      return;
-    }
-    NET_MED[p]=0; done('');
-  };
-  x.onerror=function(){ NET_MED[p]=0; done(''); };
-  x.send(null);
+    },
+    function(){ NET_MED[p]=0; done(''); },
+    {blob:true, quiet:true}, true);
   return '';
 }
 /* And the picture that was already on the screen, waiting for it.
@@ -4318,39 +4331,19 @@ function netBytes(b64){
   for(i=0;i<n;i++) a[i]=bin.charCodeAt(i);
   return a;
 }
-/* One file up. Not netSend(): this is a different service on the same host,
-   the body is bytes rather than JSON, and the one header that matters is the
-   content type -- a jpeg uploaded as octet-stream comes back as a download
-   rather than as a picture.
-
-   It carries THE SAME NET_WAIT as everything else. A post's photographs go up
-   one after another and never at once, so one file that is accepted and never
-   answered holds the whole post open with nothing said -- the fault netSend()
-   had, on the wire that carries the biggest thing this app sends. How long to
-   wait is ONE decision; this is a second place obeying it, not a second
-   number. Running out lands where a dead network already lands, by the same
-   readyState-4-status-0 the handler below reads, so there is no `ontimeout`
-   here either. */
+/* One file up, through the one exit (netSend1, `how.mime`): a different
+   service on the same host, and the body is bytes rather than JSON, and the
+   one header that matters is the content type -- a jpeg uploaded as
+   octet-stream comes back as a download rather than as a picture. It had its
+   own XMLHttpRequest until 2026-09-27, with its own copy of the deadline and
+   no renewal when the hour ran out. `bad` is handed (null, status), which is
+   what its callers read. */
 function netUp(path, b64, mime, ok, bad){
-  var x, a=netBytes(b64);
+  var a=netBytes(b64);
   if(!a){ bad(null, 0); return; }
-  x=new XMLHttpRequest();
-  x.open('POST', SB_URL+'/storage/v1/object/post-media/'+path, true);
-  x.timeout=NET_WAIT;
-  x.setRequestHeader('apikey', SB_KEY);
-  x.setRequestHeader('Authorization', 'Bearer '+netTok());
-  x.setRequestHeader('Content-Type', mime || 'application/octet-stream');
-  x.onreadystatechange=function(){
-    if(x.readyState!==4) return;
-    netAnswer(x, function(){
-      netOff(x);
-      if(x.status>=200 && x.status<300) ok(path);
-      else bad(null, x.status);
-    });
-  };
-  x.onerror=function(){ netAnswer(x, function(){ netOff(x); bad(null, 0); }); };
-  netOn(x);
-  x.send(a);
+  netSend1('POST', '/storage/v1/object/post-media/'+path, a, netTok(),
+           function(){ ok(path); }, function(d, s){ bad(null, s||0); },
+           {mime:mime || 'application/octet-stream'}, true);
 }
 /* Every picture on a post, one after the other, and then the caller.
    One at a time and not all at once: a phone on a train has one usable

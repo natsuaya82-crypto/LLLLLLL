@@ -129,8 +129,12 @@ bytes are fetched instead — `netMedia()` in `www/net.js`, one place,
 `/object/authenticated/…` with the session on it — and what a tag is given is
 a `blob:` of what came back. Not a signed URL: that would be a second way this
 app authorises a request. `netUp()` is the write half of the same sentence and
-sits beside it; neither goes through `netSend1()`, because both are bytes
-rather than JSON, and that was already `netUp()`'s reason.
+sits beside it, and **both go through `netSend1()`** 「一本化してくれ」 OWNER
+2026-09-27: `how.mime` sends bytes, `how.blob` takes bytes back, and `how.quiet`
+keeps a picture filling in from counting as a press. They each had their own
+XMLHttpRequest until then, with no renewal when the hour ran out, so an app
+left open drew no pictures and sent no photographs. `token-check` holds both,
+and counts every way out of `www/` — one, in `netSend1()`.
 
 This closed something that had been open since the beginning: `netGet()` handed
 `''` whenever there was no session, the header falls back to the publishable
