@@ -561,32 +561,51 @@ function vRelate(){
 /* Made and joined in one press. A word typed here is spelled by the same
    spType() the new-word sheet uses, so it is written in this language's
    letters and not in whatever was on the keyboard; a spelling the dictionary
-   already holds is not made twice, it is simply joined. */
+   already holds is not made twice, it is simply joined.
+
+   WHICH SHEET THIS PAGE WAS REACHED FROM DECIDES HOW THE WORD IS WRITTEN, and
+   there are two and no third:
+   - a word that exists (`hw`): its sheet has a Save and is on the trail, so
+     the word made here is that sheet's DRAFT, like the relation it is made
+     for -- written by the Save, taken back by 「いいえ」, and nothing is said
+     about it here (「追加しました」 was said over nothing written);
+   - the word being made (no `hw`): that sheet has no Save, so this press is
+     an Add, and it goes the Add's road (addOne): written through keepWrite(),
+     sent, and said only when it has landed
+     「通信エラーなら進むわけねえだろ全部」 OWNER 2026-09-05. */
 function relNew(){
   var a=String(here().a||''), i=a.indexOf(':'), k=a.slice(0,i), hw=a.slice(i+1);
   var e=document.getElementById('rel-hw'), m=document.getElementById('rel-mn');
   var txt=actVal(e).trim(), mn=actVal(m).trim();
-  var sp, nw, w, on=hw? findWord(hw) : addW;
+  var sp, nw, w, snap, on=hw? findWord(hw) : addW;
   if(!on || (k!=='syn' && k!=='ant' && k!=='from')) return;
   if(!txt){ toast(t('toast.hw2')); return; }
   sp=spType(txt); nw=spWord(sp);
   if(!nw){ toast(t('toast.hw2')); return; }
   if(hw && nw.toLowerCase()===String(hw).toLowerCase()){ toast(t('toast.dup')); return; }
-  if(!findWord(nw)){
-    if(capStop(1)) return;
-    w={hw:nw, mn:mn, mns:(mn?[mn]:[]), pos:addPos, at:Date.now(), sp:sp};
-    WORDS.push(w);
+  if(findWord(nw)){ relJoin(k, hw, nw); return; }
+  if(capStop(1)) return;
+  w={hw:nw, mn:mn, mns:(mn?[mn]:[]), pos:addPos, at:Date.now(), sp:sp};
+  if(hw){ WORDS.push(w); relJoin(k, hw, nw); return; }
+  snap=keepSnap();
+  keepWrite(function(){ WORDS.push(w); save(); });
+  netSaveNow(function(up){
+    if(!up){ keepBack(snap); return; }
     toast(t('toast.added.1', nw));
-  }
-  /* saves and redraws, and does nothing at all if the two are already joined
-     -- so pressing this twice does not take the relation back off again */
+    relJoin(k, hw, nw);
+  });
+}
+/* The other end joined -- and nothing at all if the two already are, so
+   pressing twice does not take the relation back off again. */
+function relJoin(k, hw, nw){
+  var on=hw? findWord(hw) : addW, x=findWord(nw);
+  if(!on || !x) return;
   if(k==='from'){
-    if(on.from!==findWord(nw).hw) wFromSet(hw, nw);
-    else { save(); relDirty(); render(); }
+    if(on.from!==x.hw) wFromSet(hw, nw); else { relDirty(); render(); }
     return;
   }
-  if(wRel(on, k).indexOf(findWord(nw).hw)<0) wRelToggle(hw, k, nw);
-  else { save(); relDirty(); render(); }
+  if(wRel(on, k).indexOf(x.hw)<0) wRelToggle(hw, k, nw);
+  else { relDirty(); render(); }
 }
 /* The word this one came from, set -- or taken off, when it is the one
    already set. The spelling is written on the word as a value (CLAUDE.md

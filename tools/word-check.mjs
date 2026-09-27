@@ -1004,6 +1004,53 @@ const R = await pg.evaluate(() => {
       JSON.stringify(findWord('mos').fm));
   start(); KEEP = {};
 
+  /* ---- a word made on the relate page -------------------------------------
+     From the sheet of a word being MADE it is an Add: written, sent, and
+     「追加しました」 only once the send has landed -- with no wire, nothing is
+     added. From the sheet of a word that EXISTS it is that sheet's draft:
+     nothing said, nothing written, and 「いいえ」 takes it back off. */
+  const relType = (v) => {
+    document.getElementById('rel-hw').value = v;
+    document.getElementById('rel-mn').value = '';
+  };
+  const said4 = [], realToast4 = window.toast, realSend4 = window.netSaveNow;
+  window.toast = function (m) { said4.push(String(m)); return realToast4.apply(null, arguments); };
+  start(); KEEP = {};
+  openAdd(''); go('relate', 'syn:');
+  window.netSaveNow = function (done) { if (done) done(false); };
+  relType('zamo'); relNew();
+  const noWire = { made: !!findWord('zamo'), said: said4.slice() };
+  said4.length = 0;
+  window.netSaveNow = function (done) { if (done) done(true); };
+  relType('zamo'); relNew();
+  const wire = { made: !!findWord('zamo'), inSlice: inSlice('zamo'), said: said4.slice(),
+                 joined: !!(addW && (addW.syn || []).indexOf('zamo') >= 0) };
+  said4.length = 0;
+  start(); KEEP = {};
+  openWord('mos'); openEdit('mos');
+  const relKey = keepKey();
+  go('relate', 'syn:mos');
+  relType('zemo'); relNew();
+  const drafted = { made: !!findWord('zemo'), inSlice: inSlice('zemo'), said: said4.slice() };
+  keepNo(relKey);
+  drafted.afterNo = !!findWord('zemo');
+  window.toast = realToast4; window.netSaveNow = realSend4;
+  out.said.push('a word made on the relate page of a new word: with no wire ' + JSON.stringify(noWire) +
+    ', with one ' + JSON.stringify(wire) + '; of an existing word ' + JSON.stringify(drafted));
+  if (noWire.made || noWire.said.length)
+    out.fails.push('with no wire, the word made on the relate page was added anyway, or something was said: ' +
+      JSON.stringify(noWire));
+  if (!wire.made || wire.inSlice !== true || !wire.joined || !wire.said.length)
+    out.fails.push('with the wire, the word made on the relate page of a new word was not added, written, joined and said: ' +
+      JSON.stringify(wire));
+  if (drafted.said.length)
+    out.fails.push('a word made on the relate page of an existing word said ' +
+      JSON.stringify(drafted.said) + ' over a draft nothing wrote');
+  if (!drafted.made || drafted.inSlice !== false || drafted.afterNo)
+    out.fails.push('a word made on the relate page of an existing word is not that sheet\'s draft: ' +
+      JSON.stringify(drafted));
+  start(); KEEP = {}; popOff();
+
   /* ---- and what the arrow that leaves the sheet is called ---------------
      www/shell.js § pageName. The label is on the button as an aria-label, so
      it is on the screen for anybody who cannot see the arrow and nowhere else
