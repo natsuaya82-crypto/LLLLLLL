@@ -2369,7 +2369,7 @@ function wldPage(ed, L, lid){
               '</div>';
           }).join('')+'</div>';
         extra='<button class="abshg"' + DO('wldOvAdd') + ' aria-label="'+
-          esc(t('wld.overview'))+'">'+ICON_ADD+'</button>';
+          esc(t('add.btn'))+'">'+ICON_ADD+'</button>';
       } else {
         if(w.where) inner+=abField(t('wld.where'), w.where);
         if(w.who) inner+=abField(t('wld.who'), w.who);
@@ -2510,10 +2510,8 @@ HELP.wld=function(){
    than as a sentence on the screen. 「showの横に？つけて他と同じ感じで」 */
 HELP.pub=function(){
   return {t:t('wld.public'), h:
-    '<div class="sec">'+esc(t('wld.public'))+'</div>'+
-    '<div class="note">'+t('wld.public.d')+'</div>'+
-    '<div class="sec">'+esc(t('wld.dl'))+'</div>'+
-    '<div class="note">'+t('wld.dl.d')+'</div>'};
+    helpMark('', t('wld.public'), t('wld.public.d'))+
+    helpMark('', t('wld.dl'), t('wld.dl.d'))};
 };
 /* THE LANGUAGE'S NAME, TYPED ON A SCREEN OF THIS APP'S OWN.
    「標準は使わねえって言ってるだろこれも禁止や」「禁止事項入れろ」 OWNER
