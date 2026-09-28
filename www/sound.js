@@ -230,6 +230,11 @@ function abSetVow(v){ abVow=v; render(); }
    would be a different shape. It used to ask `l.st`, so a sheet mark was
    「no mark」 on the screen that was showing it. */
 function abMark(){
+  /* Not in a language that may not be written: the arrows moved the points
+     in memory and rebuilt the font, and the save then refused -- a moved
+     mark on the screen that no save keeps (「取ってきた言語を編集できるか
+     →『できない』」 OWNER 2026-09-24; dl-check). */
+  if(langLocked()) return null;
   var g=inkGeo(ltMain(abVowel()));
   if(!g){ toast(t('ab.nomark')); return null; }
   return {pts:inkPts(g), snap: inkRings(g)? function(x){ return x; } : geSnap};
