@@ -512,8 +512,9 @@ function contactGo(){
   netFeedbackSend(CONT.kind, txt, function(){
     CONT={kind:'opinion', body:'', busy:false};
     back(); toast(t('contact.sent'));
-  }, function(d, st){
-    CONT.busy=false; render(); toast(netWhy(d, st));
+  }, function(d, st, m){
+    /* render() first: it takes a pop down, and netPop() may put one up */
+    CONT.busy=false; render(); netPop(d, st, m, contactGo);
   });
 }
 function vContact(){

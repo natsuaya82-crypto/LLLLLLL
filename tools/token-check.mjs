@@ -327,6 +327,36 @@ say(['profile', 'draft'].every(function(k){ return /^bad 200 .*≠/.test(sevenC[
     'a write the server answered with no row is a write that did not land: ' +
     JSON.stringify(sevenC));
 
+/* ---- 7d. and a refusal says so, in the one place -------------------------
+   netPop() is the app's one answer to a request that fell over. It put the
+   pop up for 「no answer」 and said NOTHING for an answer that was no -- a
+   403, a 409, a 500, or a write that matched no row (7c) -- so every caller
+   that handed it the failure and nothing else (a save, the photograph, the
+   language's name) stood still in silence. 「保存して黙るのは仕様ではない」
+   (CLAUDE.md rule 11). What it says is netWhy()'s, the app's one wording of
+   a refusal. */
+const sevenD = await pg.evaluate(async ({ w, s }) => {
+  eval(w); eval(s); window.__reset();
+  var said = [], realToast = toast;
+  toast = function(x){ said.push(String(x)); };
+  var out = {};
+  out.r403 = netPop({ message:'nope' }, 403, 'profile 403', function(){});
+  out.s403 = said.slice(); said.length = 0;
+  out.rNone = netPop([], 200, 'profile ≠', function(){});
+  out.sNone = said.slice(); said.length = 0;
+  out.rNever = netPop(null, 0, 'resume −');
+  out.sNever = said.slice();
+  toast = realToast;
+  out.failed = t('net.failed');
+  return out;
+}, { w: WIRE, s: wait });
+
+say(sevenD.r403 === false && sevenD.s403.length === 1 && sevenD.s403[0] === sevenD.failed &&
+    sevenD.rNone === false && sevenD.sNone.length === 1 && sevenD.sNone[0] === sevenD.failed &&
+    sevenD.sNever.length === 0,
+    'a refusal is said once, in netWhy()\'s words, and is not a fallen line; ' +
+    'a request never sent says nothing: ' + JSON.stringify(sevenD));
+
 /* ---- 8. and the file and the picture leave by the same exit ------------
    「一本化してくれ」「通信する場所」 OWNER 2026-09-27. netUp() (a file going up)
    and netMedia() (a picture coming down) each had an XMLHttpRequest of their

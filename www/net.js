@@ -569,10 +569,16 @@ function netWhy(d, status, mark){
 /* 答えは「線が落ちたか」── ここが通信エラーと呼んだ物だけが true で、画面へ
    進む戸口（www/shell.js § navLand）はそれで進まない。「そもそも通信エラー
    ならそこにはいけないはずでしょ」OWNER 2026-09-05。決めるのはこの一箇所。 */
+/* AND AN ANSWER THAT WAS NO IS SAID HERE TOO, once, in netWhy()'s words --
+   a 403, a 409, a 500, or a write that matched no row (netPut, `≠` with a
+   status). It said nothing, so every caller that handed its failure here and
+   nowhere else -- a save, the photograph, the language's name -- stood still
+   in silence: 「保存して黙るのは仕様ではない」 (CLAUDE.md rule 11). It is not a
+   line that fell, so the answer is still false and nothing is asked again. */
 var NET_AGAIN=[];
 function netPop(d, s, m, again){
   var mark=String(m||''), i;
-  if(s) return false;
+  if(s){ toast(netWhy(d, s, m)); return false; }
   if(mark.indexOf('−')>=0 || mark.indexOf('≠')>=0) return false;
   if(again){
     for(i=0;i<NET_AGAIN.length;i++) if(NET_AGAIN[i]===again) break;
