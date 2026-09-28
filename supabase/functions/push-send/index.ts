@@ -221,9 +221,12 @@ Deno.serve(async (req: Request) => {
     const doer = await one(`profile?select=handle&id=${eq(aim.from)}`);
     if (!you || !doer) return said({ sent: 0, why: 'no such account' });
     const devs = await rows(`device?select=token&uid=${eq(aim.to)}`);
+    /* 相手がやった人をミュートしているか（mute の行、actor が相手）。
+       決めるのは pushPlan() の一行で、ここは読んで渡すだけ。 */
+    const mut = await rows(`mute?select=actor&actor=${eq(aim.to)}&muted=${eq(aim.from)}&limit=1`);
     them.push({ uid: aim.to, prefs: you.prefs,
                 tokens: devs.map((d) => String(d.token || '')) });
-    fill = { handle: doer.handle };
+    fill = { handle: doer.handle, muted: mut.length > 0 };
   } else {
     fill = { says: row.says, text: row.text };
     const by_uid: Record<string, One> = {};

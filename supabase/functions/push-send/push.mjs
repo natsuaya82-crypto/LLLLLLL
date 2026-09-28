@@ -309,6 +309,10 @@ export function pushPlan(aim, who, devices, by) {
      `r.actor <> auth.uid()` と書いているのと同じ一行。 */
   if (aim.to === aim.from) return { send: false, why: 'their own' };
   const w = (who && typeof who === 'object') ? who : {};
+  /* ミュートした人からは鳴らさない 「ミュートした人の物は届かない」 ── notices()
+     が `not mute_hides(ev.actor)` で一覧から外すのと同じ答え。`muted` は
+     index.ts が相手の mute の行から読んで持って来る。種類を問わず一か所で。 */
+  if (w.muted) return { send: false, why: 'muted' };
   if (!pushWants(w.prefs, aim.kind)) return { send: false, why: 'switched off' };
   const to = [];
   for (let i = 0; i < (devices || []).length; i++) {
