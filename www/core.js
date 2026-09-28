@@ -983,9 +983,14 @@ function slRd(k){
    lost by it -- the language is on the server and on the screen -- so
    「保存できませんでした」 here would be a sentence that is not true. What is
    lost is the picture on the next launch with no signal. */
+/* `null` is 「there is nothing」 and takes the picture away; '' is the
+   server saying EMPTY, which is an answer and is kept -- 「空」と「無い」は
+   別の枝 (CLAUDE.md § Data). It took '' as nothing, so a name the server had
+   emptied came back with no signal as whatever an older version called the
+   language (state-check G, rule-audit-2026-09-27-core C1). */
 function slGot(k, body){
   try{
-    if(body===null || body==='') localStorage.removeItem(slGotKey(k));
+    if(body===null) localStorage.removeItem(slGotKey(k));
     else localStorage.setItem(slGotKey(k), String(body));
   }catch(e){}
 }
