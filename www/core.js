@@ -175,11 +175,13 @@ function acctMoved(e){
   if(raw.acctMoved.indexOf(e.name)>=0) return;
   v=acctRaw(e.old);
   if(v!==null && e.pick) v=e.pick(v, who);
-  try{
+  /* saveTry() answers for whether it landed (§ saveTry); a write that did not
+     leaves no mark, so the next launch copies it again. */
+  saveTry(function(){
     if(v!==null && v!==undefined) localStorage.setItem(acctKey(e.name, who), JSON.stringify(v));
     raw.acctMoved.push(e.name);
     localStorage.setItem(LS_S, JSON.stringify(raw));
-  }catch(x){}
+  });
   /* and in memory, or the next setKeep() writes the mark from before this */
   SET.acctMoved=raw.acctMoved.slice();
 }
@@ -1726,7 +1728,7 @@ function setGoneDrop(){
     for(j=0;j<SET_GONE.length;j++)
       if(Object.prototype.hasOwnProperty.call(v, SET_GONE[j])){ delete v[SET_GONE[j]]; hit=true; }
     if(!hit) continue;
-    try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){}
+    saveTry(function(){ localStorage.setItem(k, JSON.stringify(v)); });
   }
 }
 setGoneDrop();
