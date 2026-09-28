@@ -86,7 +86,10 @@ const R = await pg.evaluate(() => {
     netSend = (method, path, body, tok, ok2, bad2) => {
       srvSaw.push(method + ' ' + path);
       if (srvDown) return bad2(null, 0, 'down');
-      return ok2(method === 'PATCH' ? [{ id: 'row' }] : []);
+      /* a write answers with the row it wrote (PostgREST's
+         return=representation); `[]` would be 「matched no row」 */
+      return ok2(method === 'PATCH' ? [{ id: 'row' }]
+                 : method === 'POST' && path.indexOf('/rest/v1/draft') === 0 ? [body || {}] : []);
     };
     netGet = (path, ok2) => ok2([]);
     NAV = [{ r: 'profile' }]; window.route = 'profile';

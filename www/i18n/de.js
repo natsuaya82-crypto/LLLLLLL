@@ -256,8 +256,6 @@ defLang('de', (function(){
       "set.account"               : "Konto",
       "set.account.guest"         : "Nicht angemeldet",
       "ob.borrow.h"               : "Geliehener Buchstabe",
-      "ob.borrow.sub"             : "　",
-      "ob.borrow.take"            : "　",
       "ob.tour.tab" : "Öffne Erstellen.",
       "ob.tour.build" : "Tippe auf die Tastatur.",
       "ob.tour.kb0" : "Tippe auf deine Tastatur.",
@@ -730,7 +728,6 @@ defLang('de', (function(){
       "lt.out.svg" : "SVG",
       /* onboarding */
       "ob.next"          : "Weiter",
-      "ob.name.sub"      : "　",
       "ob.name.note"     : "Später änderbar",
       "ob.name.later"     : "Später entscheiden",
       "ob.draw.h"       : "Zeichne dein eigenes {0}.",

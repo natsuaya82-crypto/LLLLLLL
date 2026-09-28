@@ -907,7 +907,7 @@ const r = await pg.evaluate(({ s }) => {
      none (postRpOff(), www/post.js). */
   {
     const realS1 = netSend1, realS = netSend, realG = netGet;
-    const n0 = POSTS.length, keepFo = FO_HAVE;
+    const n0 = POSTS.length, keepFo = FEED_HAVE.fo;
     netSend1 = function (m, path, b, t2, ok) {
       if (m === 'POST' && String(path) === '/rest/v1/rpc/feed_fo') {
         ok([{ id:'RP-b', author:'U-veth', created_at:'2026-09-10T00:00:00Z',
@@ -935,7 +935,7 @@ const r = await pg.evaluate(({ s }) => {
     snsTab = 'rec';
     out.rpRec = drawn(snsList()).split(mark).length - 1;
     out.rpCopy = postById('RP-b') ? ('rp' in postById('RP-b')) : '(not taken)';
-    POSTS.splice(n0, POSTS.length - n0); FO_HAVE = keepFo;
+    POSTS.splice(n0, POSTS.length - n0); FEED_HAVE.fo = keepFo;
     netSend1 = realS1; netSend = realS; netGet = realG;
   }
 
@@ -1045,8 +1045,350 @@ Object.assign(r, await pg.evaluate(() => {
   return out;
 }));
 
+/* ---- the rule audit of 2026-09-27 (docs/reports/rule-audit-2026-09-27-sns.md)
+   Each of these was watched red with the fault in place before it was fixed. */
+const au = await pg.evaluate(() => {
+  const out = {};
+  const realS1 = netSend1, realS = netSend, realG = netGet;
+  const sent = [];
+  netSend1 = function (m, p, b, t2, ok) { sent.push(m + ' ' + p + ' ' + JSON.stringify(b)); ok([], 200); };
+  netSend = function (m, p, b, t2, ok, bad, up) { netSend1(m, p, b, t2, ok, bad, up, true); };
+  netGet = function (p, ok, bad) { netSend('GET', p, null, '', ok, bad); };
+  const realId = netIdOf;
+  netIdOf = function (h, ok) { ok('U-' + h); };
+
+  /* a1: a report on a PERSON is still about that person after the form is
+     built again from its key (vForm / keepPaint go through FORM_OPEN). */
+  openReport('', 'zed');
+  FORM = null; render();
+  sent.length = 0;
+  reportGo('spam');
+  out.a1 = sent.filter((s) => /\/rest\/v1\/report/.test(s)).join(' | ');
+
+  /* a2: signed out, the drafts are the door like the three tabs, and a draft
+     that is on the server is not taken off this phone alone -- 「gone, then
+     back」 is not gone. */
+  { const realIn = netSignedIn, was = DRAFTS.slice();
+    DRAFTS.push({ id:'D-up', up:1, at:Date.now(), ln:'kept' });
+    netSignedIn = function () { return false; };
+    const h = vDrafts();
+    out.a2door = h.indexOf('D-up') < 0 && h.indexOf('kept') < 0 && h.indexOf(obDoorHTML().slice(0, 40)) >= 0;
+    const s1 = netSend1, pop = window.netPop;
+    netSend1 = function (m, p, b, t2, ok, bad) { bad(null, 401); };
+    window.netPop = function () {};
+    draftDropGo(draftById('D-up'));
+    out.a2kept = !!draftById('D-up');
+    netSend1 = s1; window.netPop = pop;
+    netSignedIn = realIn; DRAFTS = was; }
+
+  /* a3: a word pressed while an answer to another word is on the screen is
+     waiting until ITS answer lands -- not the old answer, not 「No results」. */
+  { const held = netSend1;
+    netSend1 = function (m, p) { sent.push(m + ' ' + p); };
+    NAV = [{ r:'explore' }]; window.route = 'explore';
+    snsQ = 'aaa'; snsHits = { q:'aaa', who:[], posts:[] };
+    render();
+    snsPickWord('bbb');
+    const box = document.getElementById('sns-hits');
+    const h = box ? box.innerHTML : '';
+    out.a3 = h.indexOf(t('sns.nohit')) < 0 && h.indexOf('snswait') >= 0;
+    /* a4: a view reads nothing. Drawing the search with a word and no answer
+       sends nothing; a tag pressed is one question. */
+    snsQ = 'ccc'; snsHits = null; sent.length = 0;
+    vExplore();
+    out.a4view = sent.length;
+    snsTagGo('#dd');
+    out.a4tag = sent.filter((x) => /profile_seen|post_seen/.test(x)).length;
+    netSend1 = held; snsQ = ''; snsHits = null; }
+
+  /* a5: opening the notices is reading what was ANSWERED. Before the answer
+     lands the line does not move; once it lands and something is unread it
+     moves and goes up. */
+  { const was = { at:SET.notAt, have:NOTES_HAVE, got:PULL_GOT['notif'], put:window.netPrefsPut };
+    let puts = 0;
+    window.netPrefsPut = function () { puts++; };
+    SET.notAt = 1000; NOTES_HAVE = null; delete PULL_GOT['notif'];
+    vNotif();
+    out.a5before = SET.notAt === 1000 && puts === 0;
+    NOTES_HAVE = [{ kind:'like', at:5000, hd:'iri', who:'Iri' }]; PULL_GOT['notif'] = 1;
+    vNotif();
+    out.a5after = SET.notAt > 1000 && puts === 1;
+    SET.notAt = was.at; NOTES_HAVE = was.have; window.netPrefsPut = was.put;
+    if (was.got) PULL_GOT['notif'] = was.got; else delete PULL_GOT['notif']; }
+
+  /* a6: the filter page draws the words this account keeps, so arriving at
+     it reads them (its own row in PAGE_READS). */
+  out.a6 = JSON.stringify(pageNeeds('filter', ''));
+
+  /* a7: the star and the ✕ on a typed word are presses that go to the
+     server -- the copy changes on the answer, and a press that fell says so. */
+  { const s1 = netSend1, pop = window.netPop, was = { saved:SET.saved, recent:SET.recent, q:snsQ };
+    let pops = 0;
+    netSend1 = function (m, p, b, t2, ok, bad) { bad(null, 0); };
+    window.netPop = function () { pops++; };
+    SET.saved = []; SET.recent = ['yy']; snsQ = 'zz';
+    snsSaveQ();
+    snsDropRecent('yy');
+    out.a7 = JSON.stringify({ saved:SET.saved, recent:SET.recent, pops:pops });
+    netSend1 = s1; window.netPop = pop; SET.saved = was.saved; SET.recent = was.recent; snsQ = was.q; }
+
+  /* a8: a profile save the server did not take -- no row came back -- is not
+     a save. ME keeps what the server has and the press says it fell. */
+  { const s1 = netSend1, was = ME.name; let said = null;
+    netSend1 = function (m, p, b, t2, ok) { ok([], 200); };
+    meProfPut({ name:'Somebody Else' }, function (x) { said = x; });
+    out.a8 = JSON.stringify({ name:ME.name === was, done:said });
+    netSend1 = s1; ME.name = was; }
+
+  /* a9: the face is the server's answer and nothing else -- a face this phone
+     was holding does not outlive an answer that has none. */
+  { const was = { av:ME.av, pic:ME.pic };
+    ME.av = { ch:'A' }; ME.pic = '';
+    meAvGot(null);
+    const none = ME.av;
+    meAvGot({ pic:'u/p.jpg', ch:'B' });
+    out.a9 = JSON.stringify({ none:none, av:ME.av, pic:ME.pic });
+    ME.av = was.av; ME.pic = was.pic; }
+
+  /* a11: who somebody is has one answer -- the server's row (WHO_HAVE), or
+     nothing yet. A post of theirs on this phone is the post's, not the person. */
+  { POSTS.push({ id:'W-1', hd:'wq', who:'Old Name', at:1, ln:'x' });
+    delete WHO_HAVE['wq'];
+    out.a11 = whoOf('wq').who;
+    POSTS.splice(POSTS.length - 1, 1); }
+
+  /* a12: your own row names the language everybody else sees on it -- the
+     server's row (profile_seen), not whichever language is open. */
+  { const h = meHandle(), was = WHO_HAVE[h];
+    WHO_HAVE[h] = { who:'Aya', lname:'Mainish' };
+    out.a12 = whoOf(h).lname;
+    if (was) WHO_HAVE[h] = was; else delete WHO_HAVE[h]; }
+
+  /* a13: the name field is the person's; nothing in it is made up out of
+     the language's name. */
+  { openMe();
+    const m = /id="me-nm"[^>]*placeholder="([^"]*)"/.exec(FORM.html || '');
+    out.a13 = m ? m[1] : '(no field)'; }
+
+  /* a14: the reports fall down the same road every list does -- a pull that
+     fell draws 接続できません, not an empty page and not 「no reports」. */
+  { const was = MODS; MODS = null; PULL_OFF['mod'] = 1;
+    const h = vMod();
+    out.a14 = h.indexOf(esc(t('net.offline'))) >= 0 && h.indexOf(esc(t('mod.none'))) < 0;
+    delete PULL_OFF['mod']; MODS = was; }
+
+  /* a15: a report whose author has left carries no handle, and a blank
+     where a name goes says less than nothing. */
+  out.a15 = modRow({ id:9, why:'spam', note:'', at:Date.now(), who:'', uid:'', by:'', pid:'x', ln:'l' })
+    .indexOf(esc(t('mod.of', ''))) < 0;
+
+  /* a16: a draft from before the voice went to the server carries the
+     recording itself. Opening it puts the recording up first; if that does
+     not land the draft stays in the list, recording and all. */
+  { const was = DRAFTS.slice(), vk = window.voKeep, tt = window.toast;
+    window.voKeep = function (vo, done) { done(null); };
+    window.toast = function () {};
+    DRAFTS = [{ id:'D-b64', up:1, at:1, ln:'x', vo:{ b64:'AAAA', ms:900 } }];
+    draftOpen(0);
+    out.a16 = !!draftById('D-b64') && !!draftById('D-b64').vo.b64;
+    window.voKeep = vk; window.toast = tt; DRAFTS = was; PW = pwBlank();
+    NAV = [{ r:'feed' }]; window.route = 'feed'; }
+
+  /* a17: the − on a draft's recording does not delete the file while the
+     draft's row on the server still names it -- only once the draft is kept
+     again without it. */
+  { const vd = window.voDropFile, dup = window.netDraftUp, gone = [];
+    window.voDropFile = function (f) { gone.push(f); };
+    window.netDraftUp = function (d, ok) { ok(null); };
+    PW = pwBlank(); PW.did = 'D-v'; PW.vo = { f:'u/v1/vo.m4a', ms:900 }; PW.ln = 'x'; PW.cut = [{ t:'x' }];
+    voDrop();
+    const atPress = gone.length;
+    draftKeep();
+    out.a17 = JSON.stringify({ atPress:atPress, afterKeep:gone });
+    window.voDropFile = vd; window.netDraftUp = dup; DRAFTS = DRAFTS.filter((d) => d.id !== 'D-v');
+    PW = pwBlank(); NAV = [{ r:'feed' }]; window.route = 'feed'; }
+
+  /* a18: a recording that cannot be read says so and puts the button back --
+     the stop face with nothing behind it is a screen with no way on. */
+  { const FR = window.FileReader, vp = window.voPaint, tt = window.toast; let painted = 0;
+    window.FileReader = function () { const me = this; this.readAsDataURL = function () { me.onerror(); }; };
+    window.voPaint = function () { painted++; }; window.toast = function () {};
+    RECBITS = [new Blob(['x'])]; RECAT = Date.now() - 2000;
+    voTook('audio/mp4');
+    out.a18 = painted;
+    window.FileReader = FR; window.voPaint = vp; window.toast = tt; RECBITS = null; RECAT = 0; }
+
+  /* a19: the shape chosen for one card is that card's -- the next post's
+     card opens in the shape its own writing wants. */
+  { cardOpen('p', 'p1'); cardSetShape('9:16'); const kept = CARD.sh;
+    cardOpen('p', 'p2');
+    out.a19 = kept + '|' + CARD.sh;
+    NAV = [{ r:'feed' }]; window.route = 'feed'; }
+
+  /* a20: おすすめ is what the server recommended, in the order it
+     recommended it -- not every post this phone happens to hold, by time. */
+  { const was = POSTS.slice(), fh = FEED_HAVE.rec, tab = snsTab;
+    POSTS.push({ id:'RA', sid:'RA', at:1000, hd:'iri', who:'Iri', ln:'a' },
+               { id:'RB', sid:'RB', at:500,  hd:'iri', who:'Iri', ln:'b' },
+               { id:'RC', sid:'RC', at:2000, hd:'sol', who:'Sol', ln:'c' });
+    FEED_HAVE.rec = { ids:['RB', 'RA'], rp:{}, key:{ RB:500, RA:1000 }, at:Date.now() };
+    snsTab = 'rec';
+    out.a20 = snsList().map((p) => p.id).filter((id) => /^R[ABC]$/.test(id)).join(',');
+    POSTS = was; FEED_HAVE.rec = fh; snsTab = tab; }
+
+  /* a21: with a kept word on, the timeline IS that word's answer -- arrival
+     reads it and not the tab it covers, and the foot pages it. */
+  { const s1 = netSend1, fil = snsFil, ask = snsMoreAsk;
+    const got = [];
+    netSend1 = function (m, p, b, t2, ok) { got.push(String(p)); ok([], 200); };
+    snsFil = { q:'wd', r:{ q:'wd', posts:[{ id:'F1', sid:'F1', at:5000, ln:'wd', hd:'iri' }] } };
+    out.a21reads = JSON.stringify(pageNeeds('feed'));
+    NAV = [{ r:'feed' }]; window.route = 'feed'; snsMoreAsk = false;
+    snsMore();
+    out.a21more = got.join(' | ');
+    netSend1 = s1; snsFil = fil; snsMoreAsk = ask; }
+
+  /* a22: a post is lines -- Enter in the composer's body opens one, new or
+     edited 「投稿の改行ができない」 (OWNER, build 171) -- and every one-line
+     field still takes none 「必要ないところで開業できるのやめて欲しい」. */
+  { const enter = (id) => { const e = document.getElementById(id);
+      return e ? e.dispatchEvent(new KeyboardEvent('keydown', { key:'Enter', bubbles:true, cancelable:true })) : 'none'; };
+    PW = pwBlank(); openPost(); render();
+    const nw = enter('pw-ln');
+    PW = pwBlank(); PW.ed = 'p1'; openPost(); render();
+    const ed = enter('pw-ln');
+    openMe(); render();
+    const nm = enter('me-nm');
+    out.a22 = JSON.stringify({ post:nw, edit:ed, name:nm });
+    PW = pwBlank(); NAV = [{ r:'feed' }]; window.route = 'feed'; render(); }
+
+  /* a23: the mark is one colour wherever it stands 「他の画面で見れる♦️なんで
+     色違うの？合わせろ」 (OWNER, build 171) -- a list of people, a post's head,
+     a quote, a profile, measured on the page against the mark on its own. */
+  { const app = document.getElementById('app'), keep = app.innerHTML;
+    const p = { who:'Iri', hd:'iri', badge:true, av:null, lname:'' };
+    app.innerHTML = '<div id="b0">'+badgeMark()+'</div>'+
+      '<div id="b1">'+snsWhoRow(p)+'</div>'+
+      '<div id="b2" class="post"><div class="pheadn"><span class="pnamew">'+whoName(p)+'</span></div></div>'+
+      '<div id="b3" class="mewho">'+whoName(p)+'</div>';
+    const col = (id) => { const e = document.querySelector('#' + id + ' .bdg'); return e ? getComputedStyle(e).color : 'none'; };
+    out.a23 = ['b0','b1','b2','b3'].map(col).join(' / ');
+    app.innerHTML = keep; }
+
+  /* a24: a long name gives way to the mark 「名前長いユーザーも♦️優先しなさい」
+     (OWNER, build 171): on every row that draws one, the mark is on the
+     screen and nothing clips it; the name is what ellipsises. */
+  { const L = 'Alexandria Konstantinopoulou-Wetherby', h = 'alexandriakonst';
+    const post = { id:'LP', sid:'LP', at:Date.now()-6e4, hd:h, who:L, badge:true, ln:'kano', lname:'Vethi', lang:'x' };
+    const keep = { name:ME.name, me:WHO_HAVE[meHandle()], them:WHO_HAVE[h], n:POSTS.length };
+    WHO_HAVE[h] = { who:L, badge:true, fo:1, fr:2 };
+    WHO_HAVE[meHandle()] = Object.assign({}, keep.me || {}, { badge:true });
+    ME.name = L;
+    const seen = (k) => {
+      const b = [...document.querySelectorAll('#app .bdg')].filter((x) => ((x.closest('.pnamew,.pheadn,.whh,.pqth,.mehr,.mewho') || {}).textContent || '').indexOf('Alexandria') >= 0)[0];
+      if (!b) return k + ':none';
+      const r = b.getBoundingClientRect(); let e = b.parentElement, ok = r.right <= window.innerWidth && r.width > 0;
+      while (e && e !== document.body){ const cs = getComputedStyle(e);
+        if (cs.overflowX !== 'visible'){ const a = e.getBoundingClientRect(); if (r.right > a.right + 0.5) ok = false; } e = e.parentElement; }
+      return k + ':' + (ok ? 'ok' : 'hidden');
+    };
+    const res = [];
+    POSTS.push(post); NAV = [{ r:'feed' }]; window.route = 'feed'; render(); res.push(seen('post'));
+    POSTS.push({ id:'LQ', sid:'LQ', at:Date.now(), hd:'iri', who:'Iri', ln:'q', qp:post, qt:'LP' }); render(); res.push(seen('quote'));
+    document.getElementById('app').innerHTML = '<div class="view"><div class="body">'+snsWhoRow({ who:L, hd:h, badge:true, av:null, lname:'' })+'</div></div>'; res.push(seen('list'));
+    PW = pwBlank(); PW.to = 'LP'; openPost(); render(); res.push(seen('replyto'));
+    NAV = [{ r:'profile', a:h }]; window.route = 'profile'; render(); res.push(seen('profile'));
+    NAV = [{ r:'profile', a:'' }]; render(); res.push(seen('mine'));
+    out.a24 = res.join(' ');
+    POSTS.splice(keep.n, POSTS.length - keep.n); ME.name = keep.name;
+    if (keep.me) WHO_HAVE[meHandle()] = keep.me; else delete WHO_HAVE[meHandle()];
+    if (keep.them) WHO_HAVE[h] = keep.them; else delete WHO_HAVE[h];
+    PW = pwBlank(); NAV = [{ r:'feed' }]; window.route = 'feed'; render(); }
+
+  netIdOf = realId;
+  netSend1 = realS1; netSend = realS; netGet = realG;
+  NAV = [{ r:'feed' }]; window.route = 'feed'; render();
+  return out;
+});
+
+/* a10: the native question falling over is 「写真を扱えませんでした」, not the
+   file input -- which is iOS's photo / camera / file sheet, the one the owner
+   took off on 2026-09-03. */
+au.a10 = await pg.evaluate(async () => {
+  const sp = window.sharePlug, f = window.mePicFile, tt = window.toast;
+  let file = 0, said = '';
+  window.sharePlug = function () { return function () { return Promise.reject(new Error('x')); }; };
+  window.mePicFile = function () { file++; };
+  window.toast = function (m) { said = m; };
+  mePicAsk();
+  await new Promise((r) => setTimeout(r, 30));
+  window.sharePlug = sp; window.mePicFile = f; window.toast = tt;
+  return JSON.stringify({ file:file, said:said === t('me.pic.bad') });
+});
+
 const fails = [];
 const say = (m) => fails.push(m);
+if (!au.a2door)
+  say('a2: signed out, the drafts page draws this phone’s drafts. It is the door, as the timeline is.');
+if (!au.a2kept)
+  say('a2: signed out, deleting a draft the server holds took it off this phone and left the row -- ' +
+      'the next pull brings it back.');
+if (!au.a5before || !au.a5after)
+  say('a5: the notices\u2019 read line -- before the answer landed it stayed put: ' + au.a5before +
+      '; after, with one unread, it moved and went up once: ' + au.a5after + '.');
+if (au.a6.indexOf('"saved"') < 0)
+  say('a6: arriving at the filter page reads ' + au.a6 + ' -- it draws the kept words and has to read them.');
+if (au.a7 !== JSON.stringify({ saved:[], recent:['yy'], pops:2 }))
+  say('a7: the star and the \u2715 with the server refusing left ' + au.a7 +
+      ' -- nothing changes on this phone, and each press says it fell (want saved [], recent [yy], 2 pops).');
+if (au.a8 !== JSON.stringify({ name:true, done:false }))
+  say('a8: a profile save the server answered with no row ' + au.a8 +
+      ' -- the name on this phone must stay the server\u2019s, and the save must say it did not land.');
+if (au.a9 !== JSON.stringify({ none:null, av:{ ch:'B' }, pic:'u/p.jpg' }))
+  say('a9: the face after the server\u2019s answer is ' + au.a9 + ' -- no face in the answer is no face, ' +
+      'and a photograph\u2019s row carries the letter face beside it.');
+if (au.a10 !== JSON.stringify({ file:0, said:true }))
+  say('a10: the photo question falling over did ' + au.a10 + ' -- it says it could not, and does not open the file input.');
+if (au.a11 !== '')
+  say('a11: who @wq is came off a post of theirs (「' + au.a11 + '」) -- a second answer beside the server\u2019s row.');
+if (au.a12 !== 'Mainish')
+  say('a12: your own row names 「' + au.a12 + '」 -- the language everybody else sees on it is the server\u2019s row.');
+if (au.a13 !== '')
+  say('a13: the name field says 「' + au.a13 + '」 before anything is typed -- the language\u2019s name, which is not the person\u2019s.');
+if (!au.a14)
+  say('a14: the reports could not be read and the screen did not say 接続できません.');
+if (!au.a15)
+  say('a15: a report whose author has left prints 「' + 'mod.of' + '」 with an empty handle in it.');
+if (!au.a16)
+  say('a16: opening an old draft whose recording could not go up took it out of the list -- the recording is gone.');
+if (au.a17 !== JSON.stringify({ atPress:0, afterKeep:['u/v1/vo.m4a'] }))
+  say('a17: the recording of an opened draft -- ' + au.a17 + ' -- the file goes when the row stops naming it, not at the press.');
+if (au.a18 !== 1)
+  say('a18: a recording that could not be read left the stop face up (' + au.a18 + ' repaints).');
+if (au.a19 !== '9:16|')
+  say('a19: a shape chosen on one card and the next post\u2019s card: ' + au.a19 + ' (want 9:16|).');
+if (au.a20 !== 'RB,RA')
+  say('a20: おすすめ drew ' + au.a20 + ' -- it is the server\u2019s answer in the server\u2019s order (RB,RA), not every post this phone holds.');
+if (/"feed"/.test(au.a21reads) || !/"fil","wd"/.test(au.a21reads))
+  say('a21: with a word kept on, arriving at the timeline reads ' + au.a21reads + ' -- the word\u2019s answer, not the tab under it.');
+if (/feed_(hot|fo)/.test(au.a21more) || !/post_seen/.test(au.a21more))
+  say('a21: the foot of a word\u2019s timeline asked 「' + au.a21more + '」 -- the next page of the word, not of the hidden tab.');
+if (au.a22 !== JSON.stringify({ post:true, edit:true, name:false }))
+  say('a22: Enter let through (true) or swallowed (false): ' + au.a22 +
+      ' -- a post new and edited takes a new line, the name field takes none.');
+if (new Set(String(au.a23).split(' / ')).size !== 1)
+  say('a23: the mark is ' + au.a23 + ' (alone / a list of people / a post / a profile) -- one colour everywhere.');
+if (au.a24 !== 'post:ok quote:ok list:ok replyto:ok profile:ok mine:ok')
+  say('a24: with a long name the mark is ' + au.a24 + ' -- on the screen on every row; the name is what gives way.');
+if (!au.a3)
+  say('a3: a word pressed while another word\u2019s answer is on the screen draws that old answer or ' +
+      '「No results」 until its own lands. Not answered yet is the waiting mark.');
+if (au.a4view !== 0 || au.a4tag !== 2)
+  say('a4: drawing the search sent ' + au.a4view + ' request(s) (want 0 -- a view reads nothing) and a ' +
+      'tag pressed sent ' + au.a4tag + ' (want 2: the people and the posts, once).');
+if (!/"who":"U-zed"/.test(au.a1 || ''))
+  say('a1: a report on a person, its form built again from its key, sent 「' + au.a1 +
+      '」 -- it has to name @zed. The key is what the form is; nothing beside it may hold the other half.');
 if (r.hLike !== 'postHoldLikes' || r.hBoost !== 'postHoldBoosts')
   say('13: a post the server has, with likes and reposts, carries holds 「' + r.hLike + '」 and 「' +
       r.hBoost + '」 on its heart and its repost -- they have to be postHoldLikes and postHoldBoosts.');

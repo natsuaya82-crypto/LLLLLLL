@@ -178,6 +178,13 @@ const R = await pg.evaluate(async () => {
        答え（`langOwnOf()`）だけを読むので、答えが入っていない状態で
        セッションが着くと、この端末には何も無いことになります。 */
     langOwnGot(langId, A);
+    /* AND IT IS FILED, as a language that arrived is: the slices a launch
+       holds are the ones that came down (netLangFill, www/net.js), in the
+       store, as the app. The fixture fills the globals and nothing else, and
+       a launch migration that saved every word (migrateSp, deleted
+       2026-09-27) used to file them here as a side effect -- which is what
+       74 and 91 were standing on without saying so. */
+    slAsApp(langSaveAll, []);
     arrive(A); beA();
     /* そして fixture の言語は、いまサインインしている人が書いたもの ──
        どの案件もそこから始まります。「誰が書いたか」はサーバーの答えで
@@ -793,7 +800,7 @@ const R = await pg.evaluate(async () => {
   /* 編集。通ってから入り、落ちれば一字も入らない。 */
   let sent21 = null, letGo21 = null;
   netSend = (method, path, body, tok, ok2) => {
-    if (method === 'PATCH'){ sent21 = body || {}; letGo21 = () => ok2([]); }
+    if (method === 'PATCH'){ sent21 = body || {}; letGo21 = () => ok2([body || {}]); }
   };
   let saved21 = 'まだ';
   meKeepSave({ bio: '打った一行' }, (okk) => { saved21 = okk; });
@@ -2316,7 +2323,7 @@ const R = await pg.evaluate(async () => {
     no('47: **サーバが消していないのに端末の単語が消えた**');
   if (!netSignedIn())
     no('47: 消えていないのにログアウトした ── アカウントはまだそこにあります');
-  if (netEnded())
+  if (SESS && SESS.end)
     no('47: **サーバへ行かなかったのに削除の印が付いた** ── 端末だけが終わった'
      + 'ことにしています。「通信エラーなら進むわけねえだろ全部」OWNER 2026-09-05');
   say('47: サーバが消し切っていないあいだは、端末のものは一つも消えず、印も付かない');
@@ -2330,6 +2337,7 @@ const R = await pg.evaluate(async () => {
      wipeHere() が端末を通り抜ける前。そこでアプリが閉じられた場合が
      www/boot.js の bootSession() が読む道で、要求が届かなかった場合ではない。 */
   srv49(() => 200);
+  const before48 = Object.keys(LSL).filter(k => slTouched(k));
   wipeAllGo();
   await settle49();
   await settle49();
@@ -2338,7 +2346,48 @@ const R = await pg.evaluate(async () => {
   if (slRd(langKeyOf('Ld47','words')))
     no('48: 続きの削除で、その単語が消えていない');
   if (netSignedIn()) no('48: 消え切ったのにセッションが残っている');
+  /* 48b. 消した後の電話は何も作らない ── 作ると、次にサインインした人の
+     アカウントへ名前の無い空の言語として上がる（rule-audit-2026-09-27-core T4）。 */
+  {
+    const held48 = [];
+    for (const k in LSL)
+      if (Object.prototype.hasOwnProperty.call(LSL, k) && slTouched(k) &&
+          before48.indexOf(k) < 0) held48.push(k);
+    if (langId || held48.length)
+      no('48b: **消した後の電話が誰のでもない言語を作り、人の書き込みとして印を付けた** ── langId '
+       + JSON.stringify(langId) + '、印 ' + JSON.stringify(held48));
+    say('48b: アカウントを消した電話は言語を作らず、何も上げる印を持たない');
+  }
   say('48: 途中で切れた削除は、次に開いたときサーバが答えて消し切られる');
+
+  /* 48c. 「この言語を削除」── その言語の slice は全部消え、索引からも消え、
+     残った言語が開き、押した後に人の書き込みの印は一つも増えない
+     （印が付けば、次の保存でサーバーへ上がる）。言語の削除に回帰の検査が
+     一つも無かった（rule-audit-2026-09-27-core T3）。 */
+  {
+    start(); netOut(); arrive(A);
+    const send48c = netSend;
+    netSend = (m, p, b, tok, ok) => {
+      setTimeout(() => ok(m === 'DELETE' ? [{ id: 'x' }] : m === 'PATCH' ? [b || {}] : []), 0);
+    };
+    const del48c = langId;
+    LANGS.Lkeep48 = {}; langOwnGot('Lkeep48', A); langStore();
+    slAsApp(slWr, [langKeyOf('Lkeep48', 'words'), '[{"hw":"k"}]']);
+    slAsApp(slWr, [langKeyOf(del48c, 'words'), '[{"hw":"gone"}]']);
+    const before48c = Object.keys(LSL).filter(k => slTouched(k));
+    wipeLangsGo();
+    await new Promise(r => setTimeout(r, 60));
+    netSend = send48c;
+    const left48c = Object.keys(LSL).filter(k => k.indexOf('lingua.' + del48c + '.') === 0);
+    const marked48c = Object.keys(LSL).filter(k => slTouched(k) && before48c.indexOf(k) < 0);
+    if (left48c.length) no('48c: 消した言語の slice が残っている — ' + JSON.stringify(left48c));
+    if (LANGS[del48c]) no('48c: 消した言語が索引に残っている');
+    if (!langId || langId === del48c || langOwnOf(langId) !== A)
+      no('48c: 残った言語が開いていない — ' + JSON.stringify(langId));
+    if (marked48c.length)
+      no('48c: **消した後に、人の書き込みの印が付いた** ── 次の保存で上がる: ' + JSON.stringify(marked48c));
+    say('48c: 言語を消すと、その言語だけが消え、残った言語が開き、上がる印は増えない');
+  }
 
   /* 49. 消された側の端末は、画面ごと出される。 */
   start();
@@ -2991,9 +3040,9 @@ const R = await pg.evaluate(async () => {
     delete SET.wsys;
     let sent63 = null, letGo63 = null;
     netSend = (method, path, body, tok, ok2) => {
-      if (method === 'PATCH'){ sent63 = body || {}; letGo63 = () => ok2([]); }
+      if (method === 'PATCH'){ sent63 = body || {}; letGo63 = () => ok2([body || {}]); }
     };
-    setWsys('syll');
+    setWsys('syll', () => {});
     if (!sent63 || sent63.wsys !== 'syll')
       no('63: 選んでも列へ PATCH が出ていない — ' + JSON.stringify(sent63));
     if (langWsysOf('Lw') === 'syll')
@@ -3014,9 +3063,31 @@ const R = await pg.evaluate(async () => {
     netSend = (method, path, body, tok, ok2, bad2) => {
       if (method === 'PATCH') bad2(null, 0, 'down');
     };
-    setWsys('abugida');
+    setWsys('abugida', () => {});
     if (langWsysOf('Lw') !== 'syll')
       no('63: 落ちたのに書記体系が動いた — ' + JSON.stringify(langWsysOf('Lw')));
+    /* AND THE SAVE SAYS SO WHEN THE COLUMN HAS IT, NOT BEFORE (2026-09-27,
+       claude/audit-glyph A5). The screen's Save is keepSave() -> wsKeepSave();
+       it answered `true` on the press while the column was still in the air,
+       so a refusal came up behind a screen that had already said it saved. */
+    let said63 = [], letGo63b = null;
+    netSend = (method, path, body, tok, ok2) => {
+      if (method === 'PATCH') letGo63b = () => ok2([body || {}]);
+    };
+    wsKeepSave({ ws:'logo' }, (ok) => said63.push(ok));
+    if (said63.length)
+      no('63: 保存が、列が答える前に「済んだ」と言った — ' + JSON.stringify(said63));
+    if (letGo63b) letGo63b();
+    if (said63.join() !== 'true')
+      no('63: 列が答えても保存が「済んだ」と言わない — ' + JSON.stringify(said63));
+    said63 = [];
+    netSend = (method, path, body, tok, ok2, bad2) => {
+      if (method === 'PATCH') bad2(null, 0, 'down');
+    };
+    wsKeepSave({ ws:'syll' }, (ok) => said63.push(ok));
+    if (said63.join() !== 'false')
+      no('63: 列が断ったのに保存が「済んだ」と言った — ' + JSON.stringify(said63));
+    if (popOn()) popNo();
     /* 人の設定には一字も入らない。 */
     if (SET.wsys !== undefined)
       no('63: 人の設定に書記体系を書いた — ' + JSON.stringify(SET.wsys));
@@ -3060,7 +3131,7 @@ const R = await pg.evaluate(async () => {
        （www/net.js § netPrefsGot）。 */
     netSend = (method, path, body, tok, ok) => {
       if (method === 'POST' && path.indexOf('/rest/v1/rpc/prefs_put') === 0 &&
-          body && body.p){ put64 = body.p; if (ok) ok(null); }
+          body && body.p){ put64 = body.p; if (ok) ok(body.p); }
     };
     SET.theme = 'dark'; SET.myfont = false; SET.showScript = false;
     SET.kbrom = true;

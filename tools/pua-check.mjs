@@ -239,7 +239,7 @@ const D = await pg.evaluate(() => {
     e.value = ltPua(k);
     e.dispatchEvent(new Event('input', { bubbles: true }));
     const n = POSTS.length;
-    out.on = pwOn();
+    out.on = pwHas();
     pwSend();
     const p = POSTS.length > n ? POSTS.slice().sort((a, b) => (b.at || 0) - (a.at || 0))[0] : null;
     out.posted = !!p;

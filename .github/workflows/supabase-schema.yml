@@ -161,6 +161,11 @@ jobs:
           select 'cronrun ' || to_char(start_time, 'MM-DD HH24:MI'), status || ' ' || left(coalesce(return_message, ''), 160)
             from (select start_time, status, return_message from cron.job_run_details order by start_time desc limit 8) c
           union all
+          select 'purchase ' || to_char(at, 'MM-DD HH24:MI'), product || ' env=' || env || ' until=' || coalesce(to_char(until, 'MM-DD'), '-') || ' revoked=' || coalesce(to_char(revoked, 'MM-DD'), '-')
+            from (select at, product, env, until, revoked from purchase order by at desc limit 10) pu
+          union all
+          select 'plans', string_agg(plan || ':' || n, ' ') from (select plan, count(*) n from plan group by plan) pl
+          union all
           select 'slow ' || calls || 'x mean=' || round(mean_exec_time) || 'ms max=' || round(max_exec_time) || 'ms',
                  left(regexp_replace(query, '\s+', ' ', 'g'), 160)
             from (select calls, mean_exec_time, max_exec_time, query from extensions.pg_stat_statements

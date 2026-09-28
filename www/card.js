@@ -9,8 +9,9 @@
    about; the same line set in a script its author invented is the one part of
    this work that is legible to a stranger at a glance. So the card is the
    whole of the app's reach outward, and everything on it is there to survive
-   being looked at for one second: the script large, the spelling small under
-   it, the meaning under that, and nothing else.
+   being looked at for one second: a line is the script large, the spelling
+   small under it, the meaning under that, and whose and in what at the foot;
+   a word is a dictionary page (cardWord).
 
    It follows the app's theme rather than carrying a light/dark switch of its
    own. A second palette here would be the two theme blocks in index.html
@@ -54,12 +55,10 @@ var CARD_PAGE={w:1080, h:1350};
 /* The font's cell, in the units strokes are drawn in. */
 var CARD_CELL=800;
 
-/* Three things carry a share mark and they are not the same thing, so they do
-   not come out as the same picture.
+/* A word's card is a page (cardWord below). The other two things that carry a
+   share mark are a line each, and not the same line, so they do not come out
+   as the same picture.
 
-     w  a word          a specimen. The script as large as the card allows,
-                        and under it what a dictionary entry carries: the
-                        spelling, the reading, the part of speech, the meaning
      x  an example      a LINE, not a letterform. Set smaller, because a
                         sentence is read rather than looked at, and headed by
                         the word it is an example of -- which is the word
@@ -71,13 +70,13 @@ var CARD_CELL=800;
    the only number that separates a word from a sentence, and it is the whole
    of why they stop looking alike. */
 var CARD_KINDS={
-  w:{cap:0.60, of:false, sub:true},
-  x:{cap:0.40, of:true,  sub:false},
-  p:{cap:0.58, of:false, sub:false}
+  x:{cap:0.40, of:true},
+  p:{cap:0.58, of:false}
 };
 
 function cardOpen(kind, key){
-  CARD={k:String(kind), v:String(key), sh:CARD.sh};
+  CARD={k:String(kind), v:String(key),
+        sh:(String(kind)===CARD.k && String(key)===CARD.v)? CARD.sh : ''};
   /* A card of something that is not there any more says so, the way a screen
      does (viewGone): no canvas, so nothing below is ever asked to draw it. */
   /* THE SHARE IS IN THE CORNER OF THE BAR, AS THE MARK. 「右上にしてね。
@@ -664,8 +663,8 @@ function cardTrackL(x, s, x0, y, tr){
 }
 /* The page itself. `extra` is the air put into every gap, which is how a word
    with one sense fills the sheet: the entry is not stretched, the spacing is.
-   Drawn twice -- once against a scratch canvas to find out where it ends, and
-   again for real with the leftover room shared out. */
+   Drawn against a scratch canvas to find out where it ends (cardWordFit),
+   and again for real with the leftover room shared out. */
 function cardWordPage(x, W, H, S, src, extra, drop, lim, ink){
   var M=Math.round(S*0.090), RIGHT=W-M, COL=RIGHT-M, IND=Math.round(S*0.040);
   var mns=src.mns && src.mns.length? src.mns : (src.mn? [src.mn] : []);
@@ -814,8 +813,6 @@ function cardWordPage(x, W, H, S, src, extra, drop, lim, ink){
   cardMark(x, RIGHT-Math.round(S*0.010), b-Math.round(S*0.005), Math.round(S*0.010));
   return y;
 }
-/* Twice: once to a scratch canvas to learn where the entry ends, and once for
-   real with the room that was left shared out between the gaps. */
 /* What the page will carry. A verb with four relatives, a sentence under it
    and a line about where it came from does not fit on one sheet, and the
    first version of this drew all of it anyway -- straight through the rule at
@@ -893,7 +890,7 @@ function cardPaint(c){
      somebody else's post with no ink was drawn in MY alphabet while its line
      on the timeline was its text. */
   var src=cardSrc(), items=src.ink? cardInkUnits(src.ink) : cardUnits(src.line);
-  var kind=CARD_KINDS[src.kind] || CARD_KINDS.w;
+  var kind=CARD_KINDS[src.kind];
   var dir=src.dir, vert=dir.indexOf('ttb')===0, lay, g, i;
   c.width=W; c.height=H;
   cardMeasure(x, items, src.sd);
@@ -953,28 +950,14 @@ function cardPaint(c){
   var rs=cardFit(x, up, aw*0.86, Math.round(S*0.050), cardCaps(), 0.24);
   cardTrack(x, up, W/2, rsY, rs*0.24);
 
-  /* How it is said and what part of speech it is -- one line, between the
-     spelling and the meaning. A word's own page says both and the picture of
-     it said neither. Only a word: a sentence has no part of speech, and a
-     post is somebody else's and carries neither. */
-  var subY=0;
-  if(kind.sub && (src.rd || src.pos)){
-    subY=rsY+Math.round(S*0.046);
-    x.fillStyle=cssVar('--txm');
-    x.font='italic '+Math.round(S*0.030)+'px '+cardItal();
-    x.textAlign='center';
-    x.fillText([src.rd? '/'+src.rd+'/' : '', src.pos].filter(Boolean).join('  \u00b7  '),
-               W/2, subY);
-  }
-
   /* what it means, in the italic every meaning in this app is set in, in the
      room there is between the spelling and the foot */
   if(src.mn){
     x.fillStyle=cssVar('--tx');
-    var high=(footY-Math.round(S*0.030))-((subY||rsY)+Math.round(S*0.022));
+    var high=(footY-Math.round(S*0.030))-(rsY+Math.round(S*0.022));
     var mn=cardLines(x, src.mn, aw, high, Math.round(S*0.082), cardItal(), 'italic', 2);
     var lh=cardLead(mn.sz);
-    var y0=(subY? Math.max(mnY, subY+Math.round(S*0.058)) : mnY)-(mn.ln.length-1)*lh/2;
+    var y0=mnY-(mn.ln.length-1)*lh/2;
     x.textAlign='center';
     for(i=0;i<mn.ln.length;i++) x.fillText(mn.ln[i], W/2, Math.round(y0+i*lh));
   }
@@ -1086,7 +1069,7 @@ function cardBytes(c){
   i=String(url).indexOf(',');
   return i<0? '' : String(url).slice(i+1);
 }
-/* A name a person will recognise in the Files app, cut down the way
+/* A name a person will recognise in the share sheet, cut down the way
    shFileName() cuts one: this is pasted into a file name on the phone, and
    the handle it comes from arrives on somebody else's post.
 
@@ -1151,7 +1134,7 @@ function cardOfPost(po){
      day's prompt in the reader's own words where the post answers one. */
   return {kind:'p', line:dayTagShow(String(po.ln||'')), mn:postSay(po),
           hd:String(po.hd||''), nm:langNameSaid(po.lname),
-          ink:cardInkShown(postInkOK(po.ink)? po.ink : {g:[], s:[String(po.ln||'')]}),
+          ink:cardInkShown(postInkOr(po)),
           dir:postDir(po), sd:postSide(po)};
 }
 /* The same ink with the day's mark said in the reader's words. A copy: the

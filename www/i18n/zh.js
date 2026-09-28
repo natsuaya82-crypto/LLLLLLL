@@ -276,8 +276,6 @@ defLang('zh', (function(){
       "set.account"               : "账号",
       "set.account.guest"         : "未登录",
       "ob.borrow.h"               : "借来的字",
-      "ob.borrow.sub"             : "　",
-      "ob.borrow.take"            : "　",
       "ob.tour.tab" : "打开制作。",
       "ob.tour.build" : "点一下键盘。",
       "ob.tour.kb0" : "点一下你的键盘。",
@@ -750,7 +748,6 @@ defLang('zh', (function(){
       "lt.out.svg" : "SVG",
       /* onboarding */
       "ob.next"          : "下一步",
-      "ob.name.sub"      : "　",
       "ob.name.note"     : "以后可以改",
       "ob.name.later"     : "稍后再定",
       "ob.draw.h"       : "画出你自己的 {0}。",
