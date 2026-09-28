@@ -793,7 +793,10 @@ const R = await pg.evaluate(async () => {
   /* 編集。通ってから入り、落ちれば一字も入らない。 */
   let sent21 = null, letGo21 = null;
   netSend = (method, path, body, tok, ok2) => {
-    if (method === 'PATCH'){ sent21 = body || {}; letGo21 = () => ok2([]); }
+    /* the row as the server now holds it -- an empty answer is a PATCH no
+       row took, which is not a save (a8 in tools/tl-check.mjs) */
+    if (method === 'PATCH'){ sent21 = body || {};
+      letGo21 = () => ok2([{ id: netUid(), bio: String(sent21.bio || '') }]); }
   };
   let saved21 = 'まだ';
   meKeepSave({ bio: '打った一行' }, (okk) => { saved21 = okk; });

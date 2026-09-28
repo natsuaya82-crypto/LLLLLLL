@@ -300,18 +300,6 @@ function meWas(){
 /* And what goes in a field when the screen is drawn: what has been typed, or
    what it held when the screen opened. */
 function meTyped(f){ return keepVal(ME_KEY, f); }
-/* Writing the five down. `v` is only the fields somebody actually touched, so
-   a field nobody typed into is not written over -- which matters here because
-   netMyProfile() can fill the bio, the link and the location in from the
-   account while this screen is open. */
-function meKeepPut(v){
-  if(v.hasOwnProperty('name')) ME.name=String(v.name);
-  if(v.hasOwnProperty('handle')) ME.handle=String(v.handle);
-  if(v.hasOwnProperty('bio')) ME.bio=String(v.bio);
-  if(v.hasOwnProperty('link')) ME.link=String(v.link);
-  if(v.hasOwnProperty('loc')) ME.loc=String(v.loc);
-  saveMe();
-}
 /* THE @ IS THE ONE THING ON THIS SCREEN THIS PHONE DOES NOT DECIDE, and that
    is why keepSave() carries an answer back at all.
 
@@ -379,8 +367,8 @@ function meKeepSave(v, done){
    `profile.display`), and nothing here knows which is which: this walks the
    pairs. www/net.js § PROF_MINE is the one place.
 
-   Nothing to send is not a failure: pressing Save with nothing moved writes
-   what is already there, which is what it did before. */
+   Nothing to send is not a failure: pressing Save with nothing moved is a
+   save of what is already there, and nothing is sent or written. */
 function meProfPut(v, done, at){
   var send=null, i, k;
   /* the press, kept across ［再接続］ so a retry is still the press it was */
@@ -392,12 +380,15 @@ function meProfPut(v, done, at){
       send[PROF_MINE[i][1]]=String(v[k]);
     }
   }
-  if(!send || typeof netProfPut!=='function'){ meKeepPut(v); done(true); return; }
+  if(!send){ done(true); return; }
   /* The row that comes back is what the account now says -- a field another
      phone saved LATER is that phone's (supabase/schema.sql § keep_newer), and
-     meProfGot() is the one place a row goes on ME. */
+     meProfGot() is the one place a row goes on ME. No row back is the server
+     not taking it (a PATCH the row's policy refused answers 200 and empty),
+     and that is 「保存できませんでした」, not a save. */
   netProfPut(send, at, function(row){
-      if(row) meProfGot(row); else meKeepPut(v);
+      if(!row){ toast(t('save.no')); done(false); return; }
+      meProfGot(row);
       done(true);
     },
     function(d, st, m){

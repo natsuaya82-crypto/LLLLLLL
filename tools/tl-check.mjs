@@ -1132,6 +1132,14 @@ const au = await pg.evaluate(() => {
     out.a7 = JSON.stringify({ saved:SET.saved, recent:SET.recent, pops:pops });
     netSend1 = s1; window.netPop = pop; SET.saved = was.saved; SET.recent = was.recent; snsQ = was.q; }
 
+  /* a8: a profile save the server did not take -- no row came back -- is not
+     a save. ME keeps what the server has and the press says it fell. */
+  { const s1 = netSend1, was = ME.name; let said = null;
+    netSend1 = function (m, p, b, t2, ok) { ok([], 200); };
+    meProfPut({ name:'Somebody Else' }, function (x) { said = x; });
+    out.a8 = JSON.stringify({ name:ME.name === was, done:said });
+    netSend1 = s1; ME.name = was; }
+
   netIdOf = realId;
   netSend1 = realS1; netSend = realS; netGet = realG;
   NAV = [{ r:'feed' }]; window.route = 'feed'; render();
@@ -1153,6 +1161,9 @@ if (au.a6.indexOf('"saved"') < 0)
 if (au.a7 !== JSON.stringify({ saved:[], recent:['yy'], pops:2 }))
   say('a7: the star and the \u2715 with the server refusing left ' + au.a7 +
       ' -- nothing changes on this phone, and each press says it fell (want saved [], recent [yy], 2 pops).');
+if (au.a8 !== JSON.stringify({ name:true, done:false }))
+  say('a8: a profile save the server answered with no row ' + au.a8 +
+      ' -- the name on this phone must stay the server\u2019s, and the save must say it did not land.');
 if (!au.a3)
   say('a3: a word pressed while another word\u2019s answer is on the screen draws that old answer or ' +
       '「No results」 until its own lands. Not answered yet is the waiting mark.');

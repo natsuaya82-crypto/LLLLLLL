@@ -124,8 +124,21 @@ const r = await pg.evaluate(({ s }) => {
   window.WIRE = true;
   netSend = function(method, path, body, tok, ok, bad){
     if(!window.WIRE){ bad(null, 0, 'no wire'); return; }
-    ok(String(path).indexOf('/rest/v1/language?') === 0 ? [{ id: 'srv-known' }] : []);
+    ok(wireRow(method, path, body));
   };
+  /* What PostgREST hands back: the language's row, and a PATCHed profile as it
+     now stands (return=representation) -- an empty answer to a PATCH is a row
+     nobody took, which is not a save. */
+  function wireRow(method, path, body){
+    if(String(path).indexOf('/rest/v1/language?') === 0) return [{ id: 'srv-known' }];
+    if(method === 'PATCH' && String(path).indexOf('/rest/v1/profile?') === 0){
+      var r = { id: 'me' }, k;
+      for(k in (body || {})) if(k !== 'ed') r[k] = body[k];
+      return [r];
+    }
+    return [];
+  }
+  window.wireRow = wireRow;
 
   /* EVERYTHING THE PHONE IS HOLDING, AS ONE STRING. This is what "not one
      byte moved" is asked of, rather than one slice by name: a save that wrote
@@ -939,9 +952,7 @@ const walk = await pg.evaluate(({ s }) => {
   const out = { stands: [], fails: [], fields: 0, presses: 0, gold: 0, refused: 0, lit: 0, noes: 0, yeses: 0 };
 
   langRowGot(langId); langStore();
-  netSend = function(method, path, body, tok, ok){
-    ok(String(path).indexOf('/rest/v1/language?') === 0 ? [{ id: 'srv-known' }] : []);
-  };
+  netSend = function(method, path, body, tok, ok){ ok(window.wireRow(method, path, body)); };
 
   /* A change to the LANGUAGE, and to nothing else. slMine() is the app's own
      answer to 「what is this phone holding」 (www/core.js). */

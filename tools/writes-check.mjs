@@ -73,11 +73,9 @@ const WRITERS = {
     lsWipeAcct: 'that account deleted: the stamp goes with its fields',
   },
   'ME.name': {
-    meKeepPut: 'the profile editor -- the person deciding, written once the server has taken it',
     obWhoGo: 'the door: the account made, with the name that was just sent and landed',
   },
   'ME.handle': {
-    meKeepPut: 'the profile editor -- the person deciding, written once the server has taken it',
     obWhoGo: 'the door: the account made, with the @ that was just sent and landed',
   },
   'ME.av': {
