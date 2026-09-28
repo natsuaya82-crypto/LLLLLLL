@@ -41,7 +41,9 @@ const r = await pg.evaluate(({ s }) => {
   function bytes(){
     var o = {}, i;
     for (i = 0; i < SLICES.length; i++) o[SLICES[i]] = slRd(langKey(SLICES[i]));
-    o['@langs'] = localStorage.getItem('lingua.langs');
+    /* the account's index, under its uid (www/core.js § ACCT) -- `lingua.langs`
+       with no uid is a key nothing has written since r79 */
+    o['@langs'] = localStorage.getItem(acctKey('langs', ACCT_UID));
     return JSON.stringify(o);
   }
   function same(a, b){ return a === b; }
@@ -72,6 +74,10 @@ const r = await pg.evaluate(({ s }) => {
   out.freeShown = wordsSeen().length;
   out.freeHeld = WORDS.length;
   out.freeCap = wordCap();
+  /* and a word past the ceiling is still a word: findWord() -- what a card, a
+     post and the grammar spell with -- finds the last one, off the list */
+  var last = WORDS[WORDS.length - 1];
+  out.freeFound = !!findWord(last.hw) && wordsSeen().indexOf(last) < 0;
   /* and not one byte of the language moved when the plan did */
   out.freeKeptBytes = same(wasBytes, bytes());
 
@@ -1772,6 +1778,7 @@ say(r.freeHeld === 500,
     'the plan ending keeps all 500 (' + r.freeHeld + ')');
 say(r.freeShown === r.freeCap,
     'and lists ' + r.freeCap + ' of them (' + r.freeShown + ')');
+say(r.freeFound, 'and findWord() still finds the last of them, which is off the list');
 say(r.ltGrew === 1 && r.ltPaidSeen && !r.ltFreeSeen,
     'a letter added on the paid plan is on the alphabet, and hidden on free');
 say(r.ltFreeHeld, 'and it is still in LETTERS -- hidden, never removed');
