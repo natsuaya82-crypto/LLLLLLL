@@ -101,7 +101,25 @@
 - 引用した出力に `text` を付けた囲みのうち、中身そのものが古い物: `docs/DUPLICATES.md:413`（`netWhoseId()` は無い）、`docs/BACKLOG.md:2175`（confirm と `kbCap()` は無い ── その項目は済んでいるか）、`docs/PROMPTFILTER.md`（`claude/find4` のスコープ宣言で、`www/sync.js` を含む ── 文書ごと日の記録）。【未】
 - 保存の失敗が画面に何を出すか（CLAUDE.md 11 条「the server half still says nothing」）── 読み手は「ポップが出る」と言うが、確かめていない。【未確認】
 
-## G. 読めていない所（次に読む）
+## G. 未了（2026-09-28 10:12 に締めた。次のセッションへ）
 
-決定ログ 3200–4699、docs/FEATURES.md、docs/BACKLOG.md、docs/HIDEFREE.md・EXPIRY・RISK・RECOVERY・DUPLICATES・PROMPTFILTER・WALK-141・GRAMMAR-V2-SPEC・keyboard*・apple・ANDROID・README、
-tools の検査のうち 1b の残りと 1a・2・3（fixture・post・kb・acct・press・rls ほか）。サブエージェントは使わない（リーダーの指示、2026-09-28）。
+**読んでいない:**
+- 決定ログ 3200–4699 行（約 50 項目）
+- `docs/FEATURES.md`、`docs/BACKLOG.md`
+- `docs/HIDEFREE.md`・`EXPIRY.md`・`RISK.md`・`RECOVERY.md`・`DUPLICATES.md`・`PROMPTFILTER.md`・`WALK-141.md`・`GRAMMAR-V2-SPEC.md`・`keyboard.md`・`keyboard-extension.md`・`apple.md`・`ANDROID.md`、README
+- 検査: 1b の残り（token・pua・world・push・draft・quiet・round・slow・card・load・import・base・assets・conv・dl・act）、
+  1a（box・writes・css-once・es5・verify・shape・block・marks・ink ほか）、2（line・word・i18n・open・find・sheet・migrate・tl・grammar-engine・keep・press・gramlang・again・rls）、3（fixture・post・kb・acct）
+  ── それぞれ、バグを戻して赤を見る所まで
+
+**読んだが当てていない:**
+- 決定ログ 235–3199 と 4700– の所見（付録 `log1.md`・`log2.md`、E 節の元）── 状態の文の誤り 約 55、差し替えの印が無い 約 25、差し替え済みで本文が残る 約 16
+- CLAUDE.md の残り（付録 `claude.md`）── 持ち手の無い規則 12、歴史の残り 6（ボタン数の表）、内部の食い違い 8
+- STATE.md の残り（D 節）と、44–912 行のビルドごとの記録（リーダーの判断）
+- `docs/DATA_MODEL.md`・`PAID_FEATURES.md`・`TESTING.md` のうち、付録 `core-docs.md` で UNVERIFIED のもの
+
+**検査の限界（直していない）:**
+- `sides-check` の関数を辿る段は `MINE`（手書き）で辿る
+- `dead-check` は tools からの言及を根に数える（`folPut`・`gramArgs` を core/words が片付けたら外せる）
+- `load-check` の三つの読みの基準線、`press` の 44pt の例外五つ、`import-check` の見本の数
+
+**確かめていない:** 保存の失敗が画面に何を出すか（CLAUDE.md 11 条）、`netDay()` と 2026-09-27「作れなかった日は無くす」
