@@ -1797,6 +1797,21 @@ want('and nothing is deleted from there', sel.elseLeft, 's1,s2,s3');
    questions -- so the record itself is asked for, off STG.ncls.of. Writing
    「なし」 in place of the class is the bug this claim exists to catch, and it
    passes every screen-shaped test there is. */
+/* A CHAPTER NOBODY HAS WRITTEN IN IS FAINT. 「まだ書いていない章は薄い字」
+   OWNER 2026-09-06. g2Said() answered yes at its foot, so 冠詞・指示詞 and
+   コピュラ were lit, and counted in the book's n / m, on a language that had
+   written nothing in either. */
+const faint = await pg.evaluate(() => {
+  const was = JSON.stringify(STG), ws = WORDS;
+  STG.ex = {}; STG.gr = [];
+  WORDS = [];
+  const det = g2Said(g2ChapBy('det')), cop = g2Said(g2ChapBy('cop'));
+  STG = JSON.parse(was); WORDS = ws;
+  return { det, cop };
+});
+want('冠詞・指示詞, with nothing written, reads as written', faint.det, false);
+want('コピュラ, with nothing written, reads as written', faint.cop, false);
+
 /* A DERIVED NOUN IS A NOUN. 「一覧から外す条件は wIsForm() 一か所」 and
    「派生は今まで通り語として保存する」 (2026-09-23): wordsSeen() already leaves
    the inflections out, and a second test on `fm` took every derived word off

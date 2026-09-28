@@ -2512,8 +2512,22 @@ function g2Said(c){
   /* A language with a class in it has said something here, whether or not any
      noun is in one yet. */
   if(c.id==='ncls') return nclsLive().length>0;
-  /* この言語について counts what this language has and is never empty. */
-  return true;
+  /* The copula's chapter also holds how a noun sentence and existence say no
+     and ask (g2Cop -> g2PolAt): any of those written is the chapter written. */
+  if(c.id==='cop') return g2PolSaidOn('n') || g2PolSaidOn('ex');
+  /* Everything else has been asked above -- its example lines and its slots
+     -- so nothing written is nothing written, and the row is faint
+     「まだ書いていない章は薄い字」 OWNER 2026-09-06. It answered yes here,
+     which kept 冠詞・指示詞 and コピュラ lit and counted on an empty language. */
+  return false;
+}
+function g2PolSaidOn(on){
+  var i, s;
+  for(i=0;i<GPOL_FEAT.length;i++){
+    s=g2ChapBy(GPOL_FEAT[i].id+':'+on);
+    if(s && g2Said(s)) return true;
+  }
+  return false;
 }
 /* WHETHER THIS LANGUAGE HAS A RULE FOR ONE FORM OF A SECTION. `STG.fm` holds
    them for every form but 否定 and 疑問, whose rules are a shape of their own
