@@ -249,6 +249,21 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Implementation status:
 ```
 
+### 2026-09-28 凍結中は読めない。ブロックした・された相手の物は、どの道からも見えない
+- Date: 2026-09-28
+- Area: 凍結（`profile.banned_at`、`is_member()`）、ブロック（`block_hides()`）、`supabase/schema.sql` の読み全部
+- Decision:
+  - **凍結中のアカウントは読めない**（書けないのは前から）。どの表・ビュー・関数・写真と声からも、何も返らない。
+    本人に見えるのは、自分の `profile` の行 ── 凍結の画面を出すため ── だけ。
+  - **ブロックした・された相手の物は、どの道からも一切見えない**。投稿・人・フォロー・反応・写真と声・通知・検索・
+    言語と slice、下書き以外の読み全部。自分がブロックの前にしたフォローやいいねも、見えなくなる。
+- Reason: オーナーの言葉「凍結したら読めないだろ」「ブロックは絶対見えないように」（2026-09-28、リーダー経由）。
+- Replaces: schema.sql と rls-check の「凍結は読むのと出口を残す」「自分のフォローはブロックの後も外せる」（audit-server
+  2026-09-27）。ブロック前のフォローをどうするか（残すか外すか）は、まだ決まっていない（残る、誰にも見えない）。
+- Affected data: 無し（読みの規則だけ。消す物・移す物は無い）。
+- Implementation status: `claude/audit-server`。`npm run rls` が凍結した人と、ブロックした・された人として、全部の関係と
+  関数を読んで何も返らないことを数える。CODE CONFIRMED のみ、本番には未適用。
+
 ### 2026-09-27 一行の行の箱は字の高さ ── 入力欄のカーソルが字の二倍にならない
 - Date: 2026-09-27
 - Area: 一行の規則（`www/index.html` の `.pline,.pwfield #pw-ln`）── 投稿の入力欄・編集の欄・投稿の一行
