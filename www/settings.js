@@ -167,7 +167,7 @@ function vSettings(){
        own room. 「プランを設定の中に入れると課金導線がカスだから一番上置くとか」 */
     '<button class="set"' + DO('go', ["plans"]) + '>'+
       '<span class="sl">'+esc(t('set.plan'))+'</span>'+
-      '<span class="sv">'+esc(p? p.name : 'Free')+ICON_GO+'</span></button>'+
+      '<span class="sv">'+esc(p? p.name : '')+ICON_GO+'</span></button>'+
     SETS.filter(function(x){ return !x.off; }).map(function(x){
       return '<button class="set"' + DO('go', ["set", x.id]) + '>'+
         '<span class="sl">'+esc(t(x.k))+'</span>'+
