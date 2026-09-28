@@ -257,7 +257,7 @@ insert into storage.buckets (id, name, public) values ('other', 'other', true);
 -- version of it lived with the stub, and taking the stub away made this file
 -- die instead of going red.
 create schema if not exists net;
-create table net._sent (n serial, url text, body jsonb, headers jsonb);
+create table net._sent (n serial, url text, body jsonb, headers jsonb, timeout int);
 `;
 
 /* Every claim schema.sql makes, as somebody trying to break it. Adding a
@@ -962,6 +962,13 @@ const CASES = [
     `select 1 from slice where language='${BDL}' and kind='words'`],
   ['BD does not read BK’s dictionary',        'denied', BD, 0,
     `select 1 from slice where language='${BKL}' and kind='words'`],
+  /* AND NOT BY TAKING IT. A take is a read that lasts: language_took() lets
+     it through lang_readable() whatever stands between -- so a take made
+     ACROSS a block would be the road round every line above. Both ways. */
+  ['BD cannot take BK’s published language',  'denied', BD, 0,
+    `insert into language_take(uid,language) values ('${BD}','${BKL}')`],
+  ['nor BK take BD’s',                        'denied', BK, 0,
+    `insert into language_take(uid,language) values ('${BK}','${BDL}')`],
   ['BD still reads BD’s own, all of it',      'ok',     BD, 0,
     `select 1 from slice where language='${BDL}' and kind='words'`],
   /* AND ONE BK TOOK BEFORE THE BLOCK IS STILL READ, which is not a decision:
@@ -1699,6 +1706,37 @@ const CASES = [
     `select 1 from post_seen v where v.id='${P}' and v.replies =
        (select count(*) from post q where q.reply_to='${P}' and q.hidden_at is null)`],
 
+  /* --- AND ITS PHOTOGRAPHS AND ITS VOICE ARE THE POST'S --------------------
+     A file in the bucket is read by whoever may read a post that names it --
+     a photograph by its folder (`<author>/<post>/`), a voice by the post's
+     `body.vu` -- and by whoever put it there. So a post kept to its writer
+     keeps its pictures, and a voice no post names yet (a draft's, a
+     composer's) is its recorder's alone. media_read asks post_read, so a
+     block and a take-down are the same sentence here as on the post. */
+  ['A puts a photograph on the post A kept',  'ok',     A, 0,
+    `insert into storage.objects(bucket_id,name) values ('post-media','${A}/${PV}/0.jpg')`],
+  ['A puts a photograph on P',                'ok',     A, 0,
+    `insert into storage.objects(bucket_id,name) values ('post-media','${A}/${P}/1.jpg')`],
+  ['A records a voice no post names yet',     'ok',     A, 0,
+    `insert into storage.objects(bucket_id,name) values ('post-media','${A}/v1/vo.m4a')`],
+  ['A records one and posts it',              'ok',     A, 0,
+    `insert into storage.objects(bucket_id,name) values ('post-media','${A}/v2/vo.m4a')`],
+  ['the post names it',                       'ok',     A, 0,
+    `insert into post(author,body) values ('${A}','{"vu":"${A}/v2/vo.m4a"}'::jsonb)`],
+  ['B reads the photograph on P',             'ok',     B, 0,
+    `select 1 from storage.objects where name='${A}/${P}/1.jpg'`],
+  ['and the voice on the post',               'ok',     B, 0,
+    `select 1 from storage.objects where name='${A}/v2/vo.m4a'`],
+  ['B cannot read the kept post’s photograph', 'denied', B, 0,
+    `select 1 from storage.objects where name='${A}/${PV}/0.jpg'`],
+  ['nor the voice no post names',             'denied', B, 0,
+    `select 1 from storage.objects where name='${A}/v1/vo.m4a'`],
+  ['A reads both of A’s own',                 'ok',     A, 0,
+    `select 1 from storage.objects where name in ('${A}/${PV}/0.jpg','${A}/v1/vo.m4a')
+      having count(*) = 2`],
+  ['B records a voice',                       'ok',     B, 0,
+    `insert into storage.objects(bucket_id,name) values ('post-media','${B}/v9/vo.m4a')`],
+
   /* --- ejecting somebody, which is the half guideline 1.2 asks for -------
      Taking the post down leaves whoever wrote it free to write it again. What
      a ban IS, here, is one line in is_member() -- so the thing to attack is
@@ -1721,6 +1759,13 @@ const CASES = [
     `update profile set display='new' where id='${B}'`],
   ['nor upload anything',                     'denied', B, 0,
     `insert into storage.objects(bucket_id,name) values ('post-media','${B}/x.jpg')`],
+  /* What a frozen account keeps is reading and the way out (schema.sql over
+     `banned_at`): the pictures on posts it may read, and taking its own
+     files off the server on the way to deleting itself. */
+  ['but still sees a photograph on a post',  'ok',     B, 0,
+    `select 1 from storage.objects where name='${A}/${P}/1.jpg'`],
+  ['and takes its own files out',            'ok',     B, 0,
+    `delete from storage.objects where name='${B}/v9/vo.m4a'`],
   /* And the language, which used to be the half a freeze left alone.
      「制作は好きにやらせればいいし、sns止められても作りたいやつは作るでしょ」 was
      true while a language was nobody else's business and the language policies
@@ -2674,13 +2719,13 @@ const SHAPE = [
      anyone who had the link. */
   ['no bucket answers without a session', `
      select count(*) from storage.buckets where public`, '0'],
-  /* And the policy over the files asks who you are now. `using (true)` on a
-     private bucket would still be every signed-in person, which is what this
-     one is; `using (bucket_id = ...)` alone was every person at all. */
+  /* And the policy over the files asks who you are. `using (bucket_id = ...)`
+     alone was every person at all. Not is_member(): a frozen account still
+     reads (the cases over `media_read` press both). */
   ['and the files are only read by somebody signed in', `
      select count(*) from pg_policies
       where schemaname='storage' and tablename='objects' and policyname='media_read'
-        and qual not like '%is_member%'`, '0'],
+        and qual not like '%auth.uid()%'`, '0'],
   /* AND WHAT IS LEFT FOR TOMORROW. A table made after this file was pasted
      would be granted to anon by Supabase's own default privileges, which is
      how every one of the rows above got there in the first place. */
@@ -2760,6 +2805,30 @@ const SHAPE = [
                  and headers->>'Authorization' = 'Bearer DAILY-PROMPTS-OWN-KEY') <> 1)::int`, '0'],
   ['and nobody else’s attempt at one went down the road', `
      select ((select count(*) from net._sent where body->>'table' = 'prompt') <> 1)::int`, '0'],
+  /* AND WHAT WRITES THE DAY'S ROW RINGS EVERY DAY, AT THE SAME TIME.
+     「毎日同じ時間に変わるように」 OWNER 2026-09-27. The dashboard's job, with
+     its word as text and a wait of 1000ms, went in before the second paste
+     (CRON); schema.sql's block has moved the word into Vault and pointed the
+     job at it, and a third paste (CRONB) has changed nothing. Rung here the
+     way pg_cron rings it -- _cron_sent() -- so what is counted is what goes
+     out of the door, not what the command's text looks like. */
+  ['the day’s sentence is asked for at 0:00 Pacific, both seasons', `
+     select count(*) from cron.job where jobname = 'daily-prompt'
+        and schedule is distinct from '0 7,8 * * *'`, '0'],
+  ['and by one job, however many times the file is pasted', `
+     select ((select count(*) from cron.job
+               where command like '%/functions/v1/daily-prompt%') <> 1)::int`, '0'],
+  ['and it waits a minute for the answer', `
+     select ((_cron_sent()->>'timeout')::int < 60000)::int`, '0'],
+  ['and it knocks at daily-prompt with the dashboard’s own word', `
+     select ((select s->>'url' like '%/functions/v1/daily-prompt'
+                 and s->'headers'->>'x-cron-secret' = 'THE-DASHBOARDS-WORD'
+                 and s->'headers'->>'Authorization' = 'Bearer THE-DASHBOARDS-JWT'
+                from _cron_sent() s) is not true)::int`, '0'],
+  ['and the word is in Vault and not in the job', `
+     select (select count(*) from cron.job where command ~ 'THE-DASHBOARDS-(WORD|JWT)')
+          + ((select count(*) from vault.decrypted_secrets
+               where name = 'daily_prompt_headers') <> 1)::int`, '0'],
   /* A TOKEN IS NOT EDITED. schema.sql says so over the policies -- 「no update
      policy at all (a token does not change -- a new one is a new row and the
      old one goes)」 -- and an UPDATE policy added later would be the one road
@@ -3467,7 +3536,7 @@ begin
   for r in
     select c.relname::text as nm, quote_ident(c.relname) as src
       from pg_class c join pg_namespace s on s.oid = c.relnamespace
-     where s.nspname = 'public' and c.relkind in ('v','m')
+     where s.nspname = 'public' and c.relkind in ('r','p','v','m')
        and c.relname not like '\\_%'
     union all
     select p.proname::text, quote_ident(p.proname) || '()'
@@ -3621,10 +3690,78 @@ create or replace function net.http_post(
   headers jsonb default '{}'::jsonb, timeout_milliseconds int default 5000)
 returns bigint language plpgsql as $$
 begin
-  insert into net._sent(url, body, headers) values (url, body, headers);
+  insert into net._sent(url, body, headers, timeout) values (url, body, headers, timeout_milliseconds);
   return 1;
 end $$;
 `;
+
+/* AND THE SCHEDULE, which is the dashboard's in the same way: pg_cron and
+   Vault arrive with a click, and the day's sentence was called by a job made
+   there and written down nowhere else -- it waited 1000ms, and nobody knew
+   (docs/BACKLOG.md 2026-09-27). This is that server: the job as the dashboard
+   left it, carrying its word as text, and a Vault with nothing in it. The
+   second paste of schema.sql has to move the word into Vault and point the
+   job at it; _cron_sent() rings the job the way pg_cron would and hands back
+   what went out of the door, taking it out of the notebook again so the push
+   claims below still count only what they wrote. */
+const CRON = `
+create schema if not exists cron;
+create table cron.job (jobid serial primary key, jobname text, schedule text, command text,
+                       username text not null default current_user, active boolean default true,
+                       unique (jobname, username));
+create or replace function cron.schedule(job_name text, schedule text, command text)
+returns bigint language plpgsql as $$
+declare i bigint;
+begin
+  insert into cron.job(jobname, schedule, command) values (job_name, schedule, command)
+  on conflict (jobname, username) do update set schedule = excluded.schedule, command = excluded.command
+  returning jobid into i;
+  return i;
+end $$;
+create schema if not exists vault;
+create table vault.secrets (id uuid primary key default gen_random_uuid(), name text unique,
+                            secret text, description text);
+create view vault.decrypted_secrets as
+  select id, name, secret as decrypted_secret, description from vault.secrets;
+create or replace function vault.create_secret(new_secret text, new_name text default null,
+                                               new_description text default '')
+returns uuid language sql as $$
+  insert into vault.secrets(name, secret, description) values (new_name, new_secret, new_description)
+  returning id $$;
+insert into cron.job(jobname, schedule, command) values ('daily-prompt', '0 7,8 * * *', $c$
+  select
+    net.http_post(
+        url:='https://iimwukyyasbybfrirhsf.supabase.co/functions/v1/daily-prompt',
+        headers:=jsonb_build_object('Content-Type', 'application/json',
+                                    'x-cron-secret', 'THE-DASHBOARDS-WORD',
+                                    'Authorization', 'Bearer THE-DASHBOARDS-JWT'),
+        body:=jsonb_build_object(),
+        timeout_milliseconds:=1000
+    ) as request_id;
+$c$);
+create or replace function public._cron_sent() returns jsonb language plpgsql as $$
+declare c text; m int; r jsonb;
+begin
+  select command into c from cron.job where jobname = 'daily-prompt' order by jobid limit 1;
+  select coalesce(max(n), 0) into m from net._sent;
+  execute c;
+  select to_jsonb(s) into r from net._sent s where n > m order by n limit 1;
+  delete from net._sent where n > m;
+  return r;
+end $$;
+`;
+/* The block itself, pasted a THIRD time over a server it has already moved:
+   the word is in Vault now, so nothing is copied and the job stays one job. */
+const CRONB = (function(){
+  /* At the head of a line: the name in a comment is not the block. */
+  const at = SCHEMA_SQL.indexOf('\ndo $cron$') + 1;
+  const end = SCHEMA_SQL.indexOf('\n$cron$;', at);
+  if (at < 1 || end < 0) {
+    console.error('schema.sql has no daily-prompt schedule block (do $cron$) to paste again');
+    process.exit(1);
+  }
+  return SCHEMA_SQL.slice(at, end + 9);
+})();
 
 /* AN OLD SERVER'S LANGUAGES, for the one step schema.sql takes once. Before
    `language.name` there was the `lang` slice, and a language made then has
@@ -3686,7 +3823,9 @@ const sql = [
   SCHEMA_SQL,
   OLDLANG_EMPTIED,
   PGNET,
+  CRON,
   SCHEMA_SQL,
+  CRONB,
   EDITOR,
   HARNESS,
   'begin;',
@@ -3917,9 +4056,11 @@ if (wall) {
    「Blocked means you see nothing of them」 OWNER 2026-08-19. block_hides()
    in schema.sql is the one thing that answers it, and every read the app
    makes passes what it returns about a person through it. `_block_seen`
-   above walks the catalogue, so this is every view and every row-returning
-   function there is, not a list of them: a read shows BD to BK with the block
-   lifted and nothing of BD with it on, or it is red.
+   above walks the catalogue, so this is every table, every view and every
+   row-returning function there is, not a list of them: a read shows BD to BK
+   with the block lifted and nothing of BD with it on, or it is red. Tables
+   were left out until 2026-09-27 and four of them handed BD over both ways
+   (audit-server B1) -- a table is a request anybody can make without the app.
 
    HELD is the reads a block does not reach YET, by name and with the reason.
    A name here must still show BD -- the day it stops, the line is permission
@@ -3931,6 +4072,11 @@ if (wall) {
    was blocked (`BLOCKED`) -- and every read is held to the same sentence
    both times. */
 const BLOCK_HELD = {
+  /* The follow a person made before the block, which is theirs to take off
+     (「BD stops following BK」). What a block does to it has not been
+     decided -- docs/reports/rule-audit-2026-09-27-server.md O7. */
+  /* Keyed by the name the walk prints, so it holds one direction only. */
+  follow: 'your own follow, made before the block, is yours to take off',
 };
 const blockRows = out.split('\n').map((l) => l.split('\t'))
                      .filter((r) => r.length === 4 && (r[0] === 'BLOCK' || r[0] === 'BLOCKED'));
@@ -3939,7 +4085,7 @@ if (!blockRows.some((r) => r[0] === 'BLOCK')) bad.push(['a block, asked of every
 if (!blockRows.some((r) => r[0] === 'BLOCKED')) bad.push(['a block, asked of every read by who was blocked', 'reads', 'none were found']);
 for (const [way, name0, open, shut] of blockRows) {
   const name = way === 'BLOCKED' ? name0 + ' (to who was blocked)' : name0;
-  const o = Number(open), s = Number(shut), held = BLOCK_HELD[name0];
+  const o = Number(open), s = Number(shut), held = BLOCK_HELD[name];
   let why = '';
   if (o < 0 || s < 0) why = 'could not be read as the blocker';
   else if (!o) { blockNobody++; if (held) why = 'held by name and names nobody -- take it off BLOCK_HELD'; }
@@ -3952,7 +4098,7 @@ for (const [way, name0, open, shut] of blockRows) {
               (why || (held && s ? 'held: ' + held : '')));
 }
 for (const name of Object.keys(BLOCK_HELD))
-  if (!blockRows.some((r) => r[1] === name)) {
+  if (!blockRows.some((r) => (r[0] === 'BLOCKED' ? r[1] + ' (to who was blocked)' : r[1]) === name)) {
     bad.push(['a block leaves ' + name + ' out', 'a read', 'held by name and not in the catalogue']);
     console.log('  FAIL  ' + ('a block leaves ' + name + ' out').padEnd(44) +
                 'held by name and not in the catalogue');

@@ -26,9 +26,9 @@ class MainViewController: CAPBridgeViewController {
   override func capacitorDidLoad() {
     bridge?.registerPluginInstance(LinguaSharePlugin())
     /* www/store.js asks it on every launch, and registering it here is also
-       what starts its Transaction.updates listener in load() -- a renewal
-       that arrives while nothing is listening is a day the app is wrong
-       about. See the head of LinguaStore.swift. */
+       what makes it RevenueCat's delegate in load() -- a renewal that arrives
+       while nothing is listening is a day the app is wrong about. See the
+       head of LinguaStore.swift. */
     bridge?.registerPluginInstance(LinguaStorePlugin())
     /* Registered here like the others, and for one reason on top of
        being reachable: load() is where it picks up a notification tapped

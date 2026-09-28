@@ -84,11 +84,28 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
       call.reject("no container for \(Self.group)")
       return
     }
-    let json = Data((call.getString("json") ?? "").utf8)
-    let num = Data((call.getString("num") ?? "").utf8)
+    /* EMPTY AND BROKEN ARE TWO STATES (CLAUDE.md § Data). www/share.js sends
+       all three every time, '' for one that is empty; a call missing one, or
+       a font that is not base64, is a call that is wrong -- and it used to
+       read as empty and take the file off the keyboard. It is refused and
+       nothing is touched. */
+    guard let jsonS = call.getString("json"), let numS = call.getString("num"),
+          let fontS = call.getString("font") else {
+      call.reject("json, num and font are all three required")
+      return
+    }
+    let json = Data(jsonS.utf8)
+    let num = Data(numS.utf8)
     /* Nothing drawn is no font rather than an empty one, exactly as
        installScriptFont() decides it -- www sends '' and the file goes. */
-    let font = Data(base64Encoded: call.getString("font") ?? "") ?? Data()
+    var font = Data()
+    if !fontS.isEmpty {
+      guard let d = Data(base64Encoded: fontS) else {
+        call.reject("font is not base64")
+        return
+      }
+      font = d
+    }
     do {
       try mirror(json, Self.jsonName, dir)
       try mirror(num, Self.numName, dir)
@@ -144,14 +161,19 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
   /// folder would be a second fence to keep right, and the fence is the part
   /// that matters.
   ///
-  /// Letters and digits only, and ASCII ones. It arrives from the web side,
-  /// it is pasted into a file name, and `..` in a file name is the whole of
-  /// that class of bug -- so this asks what it MAY be rather than trying to
-  /// name what it may not.
+  /// Both arrive from the web side and are pasted into a path, and `..` or a
+  /// `/` in one is the whole of that class of bug. The kind is letters and
+  /// digits only, ASCII ones -- it asks what it MAY be. The name is held to
+  /// the same fence shareFile() below reads a name back through, so what is
+  /// written here is always something that can be handed over.
   @objc func sheet(_ call: CAPPluginCall) {
     let name = (call.getString("name") ?? "sheet")
     let ext = (call.getString("ext") ?? "pdf")
     let b64 = call.getString("b64") ?? ""
+    guard !name.isEmpty, !name.contains("/"), name != ".", name != ".." else {
+      call.reject("not a file name")
+      return
+    }
     guard !ext.isEmpty, ext.count <= 8,
           ext.allSatisfy({ $0.isASCII && ($0.isLetter || $0.isNumber) }) else {
       call.reject("not a file extension")
@@ -287,19 +309,18 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
 
   // ---- the voice on a post ------------------------------------------------
   //
-  // Documents, and only until the post it is on has gone up: thirty seconds
-  // of AAC is about 240 KB, too big to be text in localStorage, so a
-  // recording is a file and the post being written carries its name. When
-  // the post lands, the server holds the recording and the file goes
-  // (postSend() in www/post.js, 「スマホの中に保存されているものなんてない」
-  // OWNER 2026-09-24). www/rec.js (chapter 25) is the other half.
+  // NOTHING NEW IS WRITTEN HERE. A recording goes into the `post-media`
+  // bucket the moment it ends (voKeep() in www/rec.js), and 「端末に持たせる
+  // ものはない」 -- so this folder holds only what an EARLIER build wrote into
+  // Documents/Voices, and these three methods are how that is read and let go:
   //
-  // dropVoice deletes exactly one file: the one a post names -- a post being
-  // deleted, a post that has gone up, or a recording taken off the post being
-  // written. sweepVoices is the other, and the only thing that walks this
-  // folder: at launch, what an earlier build left (OWNER 2026-09-25) -- every
-  // file the web side does NOT name as still waiting on it. Both DELETE
-  // REVIEWs are in docs/CHANGELOG.md.
+  //   voice        reads one back, by the name a post or a draft still carries
+  //   dropVoice    deletes exactly the one file a post names -- a post being
+  //                deleted, or one whose recording has gone up
+  //   sweepVoices  at launch, what an earlier build left that the web side
+  //                does NOT name as still waiting on it (OWNER 2026-09-25)
+  //
+  // Both DELETE REVIEWs are in docs/CHANGELOG.md.
 
   static let voiceDir = "Voices"
 
@@ -444,9 +465,10 @@ public class LinguaSharePlugin: CAPPlugin, CAPBridgedPlugin {
   /// 「そのiPhoneに入れられますって設定じゃ無くてボタン押したら追加する画面まで
   /// 進められないの？」 Half of it, and the half that is possible is the half
   /// that matters. `openSettingsURLString` is Apple's one public door and it
-  /// lands on Settings → Lingua, which is where **Full Access** is granted —
-  /// the switch without which the keyboard cannot read a single letter
-  /// somebody drew.
+  /// lands on Settings → Lingua: the keyboard, and the notifications
+  /// (www/push.js). The keyboard asks for no Full Access and needs none to
+  /// read the letters somebody drew (2026-09-18, Info.plist
+  /// `RequestsOpenAccess` false).
   ///
   /// What it cannot do is ADD the keyboard. Settings → General → Keyboard →
   /// Keyboards → Add New Keyboard has no public URL; the `App-prefs:` scheme

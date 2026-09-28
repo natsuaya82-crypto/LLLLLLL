@@ -15,7 +15,6 @@ on:
       version:
         description: '入れる版（提出準備中のもの。例 1.0.2）'
         required: true
-        default: '1.0.2'
       create:
         description: 'その版が無ければ作る'
         required: false
@@ -43,8 +42,12 @@ jobs:
           ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
           ASC_KEY_ID: ${{ secrets.IOS_KEY_ID }}
           ASC_PRIVATE_KEY: ${{ secrets.IOS_API_KEY }}
+          # 打たれた値はシェルの文字として埋めず、環境変数で渡す。
+          VERSION: ${{ inputs.version }}
+          CREATE: ${{ inputs.create }}
+          SKIP: ${{ inputs.skip }}
         run: |
-          ARGS="--version ${{ inputs.version }}"
-          if [ "${{ inputs.create }}" = "true" ]; then ARGS="$ARGS --create"; fi
-          if [ -n "${{ inputs.skip }}" ]; then ARGS="$ARGS --skip ${{ inputs.skip }}"; fi
-          node tools/store-localize.mjs $ARGS
+          set -- --version "$VERSION"
+          if [ "$CREATE" = "true" ]; then set -- "$@" --create; fi
+          if [ -n "$SKIP" ]; then set -- "$@" --skip "$SKIP"; fi
+          node tools/store-localize.mjs "$@"

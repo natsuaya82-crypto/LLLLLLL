@@ -288,6 +288,32 @@ const R = await pg.evaluate(() => {
     }));
     rec.bytes = JSON.stringify({ ink: ink, conv: conv }).length;
 
+    /* 13. a key of somebody's own letters is looked up by its NAME. It PUTS
+       IN a private use code point (claim 8), and no key of the table is one,
+       so the extension asks the table with the face's `nm` (Compose.swift)
+       -- which is only a question with an answer if every drawn letter's key
+       and every ink entry carries a name the table has. Without it the bar
+       on that face offered the run back and never a word it begins. */
+    rec.named = 0;
+    const askOf = (f, where) => {
+      const t = String((f && f.t) || '');
+      const c = t.charCodeAt(0);
+      if (!(c >= 0xE000 && c <= 0xF8FF)) return;
+      const nm = String(f.nm || '').toLowerCase();
+      rec.named++;
+      if (!nm || !Object.prototype.hasOwnProperty.call(map, nm))
+        fails.push(w + ': ' + where + ' puts in U+' + c.toString(16).toUpperCase() +
+          ' and is called ' + JSON.stringify(f.nm) + ', which the table has no key' +
+          ' for -- the bar cannot offer a word that letter begins');
+    };
+    (kbd.lay || []).forEach((face) => (face.rows || []).forEach((row) => row.forEach((k) => {
+      if (k.k === 'lt') askOf(k, 'a key');
+    })));
+    ink.forEach((f, i) => askOf(f, 'ink[' + i + ']'));
+    if (!rec.named)
+      fails.push(w + ': not one key or ink entry put in a drawn letter, so claim 13' +
+        ' asked nothing');
+
     /* 1. every index in map points at a real ink entry */
     keys.forEach((k) => {
       (map[k] || []).forEach((ix) => {
@@ -672,7 +698,7 @@ if (R.fails.length) {
   if (R.fails.length > 40) console.error('  ...and ' + (R.fails.length - 40) + ' more');
   process.exit(1);
 }
-console.log('\nall twelve claims hold, for every writing system: every map index' +
+console.log('\nall thirteen claims hold, for every writing system: every map index' +
   ' resolves, max is the longest key, nothing in ink goes unreached, every' +
   ' key is lower case and unique, the roman layer appears exactly where the' +
   ' person CHOSE one and never where the app merely guessed, and wears' +
@@ -688,4 +714,6 @@ console.log('\nall twelve claims hold, for every writing system: every map index
   ' but the range it is for: LinguaType answers for no space, so U+0020 in' +
   ' a .tfont field falls through like every roman letter beside it, while' +
   ' LinguaScript keeps its one-cell space, which is the drawn script\'s' +
-  ' own spacing. And every form of every word is offered beside the word.');
+  ' own spacing. And every form of every word is offered beside the word.' +
+  ' And a key of somebody\'s own letters, and every ink entry, is called a name' +
+  ' the table has, so the bar on that face can offer the words it begins.');
