@@ -46,14 +46,15 @@ un-re-read.
 - 決めてもらうこと 35 件は `docs/reports/owner-asks-2026-09-28.md`。1〜10 は答えが出て入った。11〜35 は答え待ち。
 - 残り: APNs の鍵（オーナー、9/29）、RevenueCat の IAP key と通知の URL（オーナー）、Android の r123・r124（途中）。
 
-## Android ── 土台だけ（`claude/r115-android`、取り込み済み、2026-09-27）
+## Android ── コードはできた、一度もビルドしていない（2026-09-28、integ に取り込み済み、master にはまだ）
 
-`android/` に Capacitor の Android プロジェクトがあり、`www/` をそのまま載せる。画面が呼ぶネイティブは Kotlin で
-Swift と同じ表（`tools/assets-check.mjs` の `android:` の行）。**一度もビルドされていない** ── この環境に Android
-SDK が無く、`.github/workflows/android-build.yml`（手で押すだけ）は既定のブランチに入るまで押せない。何ができて、
-何が「無い」と答えるか、オーナーの操作は `docs/ANDROID.md`。**今の `www/` のままでは Android でサインインが
-通らない**（`obReady()` の Apple の設定で `initialize` が落ちる）── `www/` に要る変更として同じファイルにある。
-CODE CONFIRMED のみ。
+`android/` に Capacitor の Android プロジェクト。Kotlin は Swift と同じ表（`tools/assets-check.mjs` の `android:` の行）。
+r115 土台、r121 課金（Google Play Billing、`verify-plan` の Google 側）、r122 サインイン、r123 キーボード（IME、
+`keyboard/` の七つ、`kb-check` が Kotlin の数も読む）、r124 通知（FCM、`device.platform`、push-send が電話ごとに
+道を分け、ミュートは両方に効く）。**一度もビルドされていない** ── この環境に Android SDK が無く、
+`.github/workflows/android-build.yml` は既定のブランチに入るまで押せない。**CODE CONFIRMED のみ**。
+オーナーの操作（Play Console の商品とサービスアカウント、Firebase の google-services.json と鍵、
+keystore、Google の webClientId）と端末で見るものは `docs/ANDROID.md`。ウィジェットは次の回。
 
 ## 2026-09-26 ── 1.0.3 を TestFlight へ（オーナー「テストフライト出して」── 実機で OK が出たらストアの中身を揃えて審査へ）
 
