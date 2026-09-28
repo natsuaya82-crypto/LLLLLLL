@@ -332,7 +332,7 @@ function meKeepSave(v, done){
   var h=v.hasOwnProperty('handle')? String(v.handle) : String(ME.handle||'');
   if(h===String(ME.handle||'')){ meProfPut(v, done); return; }
   if(h.length<2 || h.length>ME_MAX.handle){ toast(t('net.badhandle')); done(false); return; }
-  if(typeof netSignedIn!=='function' || !netSignedIn()){ meProfPut(v, done); return; }
+  if(!netSignedIn()){ meProfPut(v, done); return; }
   netHandleFree(h, function(free){
     if(!free){ toast(t('net.handle.taken')); done(false); return; }
     meProfPut(v, done);
@@ -1031,7 +1031,7 @@ function relAsk(hs, ok, bad){
    handset that has this app; it is not read, not written and not deleted
    (docs/DATA_SAFETY.md rule 2). */
 function meBlocking(){
-  return (typeof netPplHandles==='function')? netPplHandles('block') : [];
+  return netPplHandles('block');
 }
 function meBlocks(h){ return meBlocking().indexOf(String(h||''))>=0; }
 /* And whom you have muted, the same road with the other table's name on it
@@ -1040,7 +1040,7 @@ function meBlocks(h){ return meBlocking().indexOf(String(h||''))>=0; }
    post names its author by the one and whoever passed it on by the other
    (`by`, www/net.js § netRow). */
 function meMutes(h){
-  var l=(typeof netPpl==='function')? netPpl('mute') : [], i;
+  var l=netPpl('mute'), i;
   h=String(h||'');
   if(!h) return false;
   for(i=0;i<l.length;i++) if(l[i].hd===h || l[i].id===h) return true;

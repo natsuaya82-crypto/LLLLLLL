@@ -240,12 +240,12 @@ function pwVoRowHTML(){
    folder is the account, which is the whole of the bucket's write rule
    (supabase/schema.sql § media_make), and the shape is a post's
    (`<author>/<post>/vo.m4a`), so voRemote() reads it as the server's. */
-function voName(mime){
+function voName(){
   return 'v'+(new Date()).getTime()+String(Math.floor(Math.random()*1e6));
 }
 function voKeep(vo, done){
   if(!vo || !vo.b64 || !netSignedIn()){ done(null); return; }
-  netUp(netUid()+'/'+voName(vo.mime)+'/vo'+voExt(vo.mime), vo.b64, vo.mime,
+  netUp(netUid()+'/'+voName()+'/vo'+voExt(vo.mime), vo.b64, vo.mime,
     function(path){ done({f:path, ms:vo.ms}); },
     function(){ done(null); });
 }
@@ -325,9 +325,9 @@ function voSweepKeep(){
       list(l, d);
     }
   }catch(e){ return null; }
-  list(typeof DRAFTS!=='undefined'? DRAFTS : null, true);
-  list(typeof POSTS!=='undefined'? POSTS : null, false);
-  if(typeof PW!=='undefined' && PW) name(PW, true);
+  list(DRAFTS, true);
+  list(POSTS, false);
+  if(PW) name(PW, true);
   return bad? null : keep;
 }
 function voSweep(){

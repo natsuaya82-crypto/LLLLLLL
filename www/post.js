@@ -1299,8 +1299,7 @@ function postTake(ps){
   }
   for(i=0;i<(ps||[]).length;i++){
     p=ps[i];
-    if(POST_GONE[p.id] || (p.sid && POST_GONE[p.sid])) continue;
-    if(!p || !p.id) continue;
+    if(!p || !p.id || POST_GONE[p.id] || (p.sid && POST_GONE[p.sid])) continue;
     /* ALREADY HERE IS NOT NOTHING TO DO, and that was the hole. This skipped
        a post it already had, so the numbers on it were whatever they were the
        first time it arrived -- frozen for the life of the copy. A phone that
@@ -4587,7 +4586,7 @@ function postCountsPull(id, done){
   /* `done` is「the ask is over」and it runs on every road out of here,
      including the ones that never ask: a press waiting on an answer that is
      never going to come is a ♡ left lit on a post nobody can see. */
-  if(!sid || typeof netPostCounts!=='function' || !netSignedIn()){
+  if(!sid || !netSignedIn()){
     if(done){ done(); render(); }
     return;
   }
