@@ -286,8 +286,8 @@ it is quoted, and where a decision has never been made the row in
 - Affected data: ブロックの時に `follow` の行が消える（DELETE REVIEW は `docs/CHANGELOG.md`）。ピン留めがサーバーの
   列に入る（電話の写しからは消さない）。送れなかった投稿は電話に書かれなくなる（前に書かれた物は残る）。
   古い投稿のインクはもう書かれない（書かれた物は残る）。
-- Implementation status: `claude/r126-decide`。ミュートした人の通知は `claude/r124-android-push` が push-send の
-  同じ所を書き換えているので、その取り込みの後。
+- Implementation status: `claude/r126-decide`。ミュートした人の通知は `pushPlan()`（push-send/push.mjs）の一か所、
+  `push-check` が持つ。CODE CONFIRMED のみ、関数は未デプロイ。
 
 ### 2026-09-28 凍結中は読めない。ブロックした・された相手の物は、どの道からも見えない
 - Date: 2026-09-28
