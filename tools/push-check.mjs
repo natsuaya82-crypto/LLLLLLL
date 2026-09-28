@@ -26,10 +26,12 @@
        `SET_PREFS`）と i18n の `push.<種類>` がそれと揃っていること
    --------------------------------------------------------------------------- */
 import fs from 'fs';
+import vm from 'vm';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { pushWhat, pushTo, pushPlan, pushMay, pushBy, pushSay, pushWants, pushLang,
-         pushGone, pushRead, PUSH, KINDS, SERVICE, LANGS, SAY, TITLE, TOPIC } from
+         pushGone, pushRead, pushFcm, pushFcmWhy, pushFcmSa, pushFcmClaim,
+         PUSH, KINDS, SERVICE, LANGS, SAY, TITLE, TOPIC, CHANNEL, ROADS, FCM_SCOPE } from
   '../supabase/functions/push-send/push.mjs';
 const WWW = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'www');
 
@@ -58,7 +60,11 @@ const P = 'd0000000-0000-4000-8000-000000000004';   /* その投稿 */
 const Q = 'd0000000-0000-4000-8000-000000000009';   /* その返信 */
 const TOK = 'a1'.repeat(32);
 const TOK2 = 'b2'.repeat(32);
-const DEV = [{ token: TOK }];
+const DEV = [{ token: TOK, platform: 'ios' }];
+/* Android の住所は Google が出したもの。16 進ではない。 */
+const FCM = 'dQw4w9WgXcQ:APA91bH_' + 'Qz-9'.repeat(35);
+const FCM2 = 'eXa_mple:APA91bG-' + 'Rt8_'.repeat(35);
+const fcms = (p) => (p && p.fcm) ? p.fcm.length : -1;
 const WHO = { handle: 'iri', prefs: { ui: 'ja' } };
 
 /* ---- 何が起きたか、を request から取り出す ---------------------------- */
@@ -191,6 +197,15 @@ for (const [nm, aim] of [['フォロー', fol], ['返信', rep], ['引用', quo]
   say(nm + ': ミュートした人からは送らない', m.send + ' ' + m.why, 'false muted');
   say(nm + ': ミュートしていない人からは送る', pushPlan(aim, { ...WHO, muted: false }, DEV, B).send, 'true');
 }
+/* 道を問わない ── Android の行にも同じ一行が効く。 */
+{
+  const droid = [{ token: FCM, platform: 'android' }];
+  const m = pushPlan(lik, { ...WHO, muted: true }, droid, B);
+  say('Android の行でも、ミュートした人からは送らない',
+      m.send + ' ' + m.why + ' ' + (m.fcm || []).length, 'false muted 0');
+  say('Android の行でも、ミュートしていない人からは送る',
+      pushPlan(lik, { ...WHO, muted: false }, droid, B).fcm.length, '1');
+}
 /* そして index.ts が、その一人について mute の行を読んで渡していること ──
    push.mjs は DB を読めないので、読まなければ上の一行は空回りする。 */
 {
@@ -207,8 +222,38 @@ say('行が一つも無ければ送らない', pushPlan(lik, WHO, [], B).send, '
 say('理由は「宛先が無い」', pushPlan(lik, WHO, [], B).why, 'no device');
 say('送らないと決めた答えに payload は無い', pushPlan(lik, WHO, [], B).payload, 'undefined');
 say('undefined でも落ちない', pushPlan(lik, WHO, undefined, B).send, 'false');
-say('二台持っていれば二台とも', many(pushPlan(lik, WHO, [{ token: TOK }, { token: TOK2 }], B)), '2');
-say('空の token は数えない', many(pushPlan(lik, WHO, [{ token: '' }, { token: TOK }], B)), '1');
+say('二台持っていれば二台とも',
+    many(pushPlan(lik, WHO, [{ token: TOK, platform: 'ios' }, { token: TOK2, platform: 'ios' }], B)), '2');
+say('空の token は数えない',
+    many(pushPlan(lik, WHO, [{ token: '', platform: 'ios' }, { token: TOK, platform: 'ios' }], B)), '1');
+
+/* ---- どの道か ──  device.platform ------------------------------------ */
+console.log('push: iPhone は Apple へ、Android は Google へ（device.platform）');
+say('道は二つ', ROADS.join(','), 'ios,android');
+{
+  const both = pushPlan(lik, WHO, [{ token: TOK, platform: 'ios' }, { token: FCM, platform: 'android' },
+                                   { token: FCM2, platform: 'android' }], B);
+  say('iPhone と Android を持つ人には両方へ', both.send, 'true');
+  say('iPhone の行は Apple の宛先に', (both.to || []).join(','), TOK);
+  say('Android の行は Google の宛先に', (both.fcm || []).join(','), FCM + ',' + FCM2);
+  const droid = pushPlan(lik, WHO, [{ token: FCM, platform: 'android' }], B);
+  say('Android だけの人にも送る', droid.send, 'true');
+  say('Android だけなら Apple には一台も', many(droid), '0');
+  say('iPhone だけなら Google には一台も', fcms(pushPlan(lik, WHO, DEV, B)), '0');
+  /* 列は not null で既定が ios。データベースから来る行には必ずどちらかが
+     あり、ここで「無いのは ios」と読めば既定が二箇所になる。 */
+  say('道を言わない行には送らない', pushPlan(lik, WHO, [{ token: TOK }], B).why, 'no device');
+  say('知らない道の行には送らない',
+      pushPlan(lik, WHO, [{ token: TOK, platform: 'web' }], B).why, 'no device');
+  say('素の文字列は行ではない', pushPlan(lik, WHO, [TOK], B).why, 'no device');
+  say('送らない答えに Google の宛先も無い', pushPlan(lik, WHO, [], B).fcm, 'undefined');
+  say('スイッチを切れば Android にも送らない',
+      pushPlan(lik, { handle: 'iri', prefs: { push_like: false } },
+               [{ token: FCM, platform: 'android' }], B).why, 'switched off');
+  say('自分がやったことは Android にも送らない',
+      pushPlan({ kind: 'like', to: B, from: B, post: P }, WHO,
+               [{ token: FCM, platform: 'android' }], B).why, 'their own');
+}
 
 /* ---- payload ---------------------------------------------------------- */
 console.log('push: Apple に渡す形');
@@ -225,6 +270,55 @@ console.log('push: Apple に渡す形');
   const f = pushPlan(fol, WHO, DEV, B);
   say('follow には開く先の欄そのものが無い',
       Object.prototype.hasOwnProperty.call(pay(f), 'post'), 'false');
+}
+
+/* ---- Android に渡す形 ── Apple に渡す形の写し ------------------------ */
+console.log('push: Google に渡す形は、Apple に渡す形から写すだけ');
+{
+  const plan = pushPlan(rep, { handle: 'iri', prefs: { ui: 'ja' } },
+                        [{ token: FCM, platform: 'android' }], B);
+  const m = pushFcm(plan.payload, FCM).message;
+  say('宛先はその token', m.token, FCM);
+  say('title は Apple と同じ', m.notification.title, pay(plan).aps.alert.title);
+  say('body は Apple と同じ（相手の言語）', m.notification.body, line(plan));
+  say('押した時に渡るのは種類と開く先', Object.keys(m.data).join(','), 'kind,post');
+  say('種類', m.data.kind, 'reply');
+  say('開く先', m.data.post, Q);
+  say('data はどれも文字列（FCM の決まり）',
+      Object.values(m.data).every((v) => typeof v === 'string'), 'true');
+  say('チャンネルは Android 側と同じ名前', m.android.notification.channel_id, CHANNEL);
+  say('すぐ届く', m.android.priority, 'HIGH');
+  const f = pushFcm(pushPlan(fol, WHO, [{ token: FCM, platform: 'android' }], B).payload, FCM).message;
+  say('follow には開く先の欄そのものが無い',
+      Object.prototype.hasOwnProperty.call(f.data, 'post'), 'false');
+  /* request に何を書いて寄越しても、Google への文は DB の行から。 */
+  const evil = pushWhat(hook('follow', { follower: B, followed: A, handle: 'EVIL', body: 'EVIL' }));
+  say('request の文字は Google への文にも混ざらない',
+      JSON.stringify(pushFcm(pushPlan(pushTo('follow', evil.key, null), WHO,
+                                      [{ token: FCM, platform: 'android' }], B).payload, FCM))
+        .indexOf('EVIL'), '-1');
+}
+console.log('push: Google が断った理由と、鍵');
+{
+  const un = { error: { code: 404, status: 'NOT_FOUND', details: [
+    { '@type': 'type.googleapis.com/google.firebase.fcm.v1.FcmError', errorCode: 'UNREGISTERED' }] } };
+  say('UNREGISTERED は details の errorCode から', pushFcmWhy(un), 'UNREGISTERED');
+  say('errorCode が無ければ status', pushFcmWhy({ error: { status: 'INVALID_ARGUMENT' } }),
+      'INVALID_ARGUMENT');
+  say('読めなければ空', pushFcmWhy('nonsense'), '');
+  say('無ければ空', pushFcmWhy(null), '');
+  const SA = JSON.stringify({ type: 'service_account', project_id: 'lingua-1', client_email: 'x@y.iam',
+                              private_key: '-----BEGIN PRIVATE KEY-----\nAA\n-----END PRIVATE KEY-----\n',
+                              token_uri: 'https://oauth2.googleapis.com/token' });
+  const sa = pushFcmSa(SA);
+  say('鍵の JSON から四つ', sa && [sa.project, sa.email, sa.tokenUri].join(' '),
+      'lingua-1 x@y.iam https://oauth2.googleapis.com/token');
+  say('鍵が無ければ null', pushFcmSa(''), 'null');
+  say('JSON でなければ null', pushFcmSa('{not json'), 'null');
+  say('秘密鍵が無ければ null', pushFcmSa(JSON.stringify({ project_id: 'p', client_email: 'e' })), 'null');
+  const c = pushFcmClaim(sa, 1700000000000);
+  say('JWT は scope と aud と一時間', [c.iss, c.scope, c.aud, c.exp - c.iat].join(' '),
+      'x@y.iam ' + FCM_SCOPE + ' https://oauth2.googleapis.com/token 3600');
 }
 
 /* ---- 言語 ------------------------------------------------------------- */
@@ -300,6 +394,18 @@ say('二台のうち 410 の方だけ落ちる',
     pushGone([{ token: TOK, status: 200 }, { token: TOK2, status: 410 }]).join(','), TOK2);
 say('何も送っていなければ何も落ちない', pushGone([]).length, '0');
 say('undefined でも落ちない', pushGone(undefined).length, '0');
+/* Android。FCM は 410 を返さず、「もう無い」は 404 の UNREGISTERED だけ。 */
+say('Android の 404 UNREGISTERED は落ちる',
+    pushGone([{ token: FCM, status: 404, reason: 'UNREGISTERED', platform: 'android' }]).join(','), FCM);
+say('Android の 404 で理由が無ければ落ちない',
+    pushGone([{ token: FCM, status: 404, reason: '', platform: 'android' }]).length, '0');
+for (const r of ['INVALID_ARGUMENT', 'SENDER_ID_MISMATCH', 'QUOTA_EXCEEDED', 'UNAVAILABLE',
+                 'not set: FCM_SERVICE_ACCOUNT'])
+  say('Android の ' + r + ' では落ちない',
+      pushGone([{ token: FCM, status: r.indexOf('not set') === 0 ? 0 : 400, reason: r,
+                  platform: 'android' }]).length, '0');
+say('iPhone の行は UNREGISTERED と書いてあっても 404 では落ちない',
+    pushGone([{ token: TOK, status: 404, reason: 'UNREGISTERED', platform: 'ios' }]).length, '0');
 
 /* ---- 今日のお題 ── 全員宛て -----------------------------------------
    「通知なんだけど、今日のお題が変わった時にも出るようにできる？」
@@ -401,6 +507,59 @@ console.log('push: 種類は PUSH が一箇所、www/ の手書きはそれと�
                                        typeof b.key[f] === 'string' && a.key[f] !== b.key[f]))
       dup.push(a.kind + '=' + b.kind);
   say('一つの行が二つの種類になることは無い', dup.join(' ') || 'none', 'none');
+}
+
+/* ---- 電話は、どちらの電話かを自分で言う ------------------------------
+   `device.platform` を決めるのはネイティブの答えで、www/ は写すだけ。
+   **本物の pushAsk()（www/push.js）と netDevicePut()（www/net.js）を**
+   そのまま切り出して vm で走らせ、`device` へ出る体を数えます ── ここで
+   判断を書き直したら写しで、写しはいつも合う。Android の LinguaPushPlugin.kt
+   は `platform: "android"` を付けて答え、iPhone の LinguaPush.swift は何も
+   付けない（列の既定 `ios` が答える）。 */
+console.log('push: 電話は、どちらの電話かを device の行に載せる');
+{
+  const src = (f) => fs.readFileSync(path.join(WWW, f), 'utf8');
+  const fn = (s, name) => {
+    const at = s.search(new RegExp('^function ' + name + '\\(', 'm'));
+    if (at < 0) return '';
+    let d = 0, i = s.indexOf('{', at);
+    for (; i < s.length; i++) { if (s[i] === '{') d++; else if (s[i] === '}' && --d === 0) break; }
+    return s.slice(at, i + 1);
+  };
+  const code = ['pushPlug', 'pushStGot', 'pushStAsk', 'pushAsk'].map((n) => fn(src('push.js'), n))
+    .concat([fn(src('net.js'), 'netDevicePut')]).join('\n');
+  const ask = async (answer) => {
+    const sent = [];
+    const box = {
+      SESS: { rt: 'r', at: 'a', uid: A }, PUSH_ST: '', NET_TOK: '', Promise, setTimeout,
+      render() {}, netSignedIn() { return true; }, netUid() { return A; }, netTok() { return 'a'; },
+      netSend(m, p, body) { if (String(p).indexOf('/rest/v1/device') === 0) sent.push(body); },
+      Capacitor: { nativePromise: (plug, m) =>
+        plug !== 'LinguaPush' ? Promise.reject('wrong') :
+        m === 'status' ? Promise.resolve({ status: 'authorized' }) : Promise.resolve(answer) },
+    };
+    box.window = box;
+    vm.createContext(box);
+    vm.runInContext(code + '\npushAsk();', box);
+    for (let i = 0; i < 5; i++) await new Promise((r) => setTimeout(r, 0));
+    return sent;
+  };
+  const droid = await ask({ token: FCM, platform: 'android' });
+  say('Android の答えは platform: android として device へ',
+      droid.length + ' ' + (droid[0] && droid[0].platform), '1 android');
+  say('その行の token は FCM の物', droid[0] && droid[0].token, FCM);
+  const ios = await ask({ token: TOK });
+  say('iPhone の答えは platform を載せない（列の既定 ios が答える）',
+      ios.length + ' ' + (ios[0] && Object.prototype.hasOwnProperty.call(ios[0], 'platform')), '1 false');
+  const odd = await ask({ token: FCM, platform: 'windows' });
+  say('知らない platform は載せない（検査で落ちる行を出さない）',
+      odd.length + ' ' + (odd[0] && Object.prototype.hasOwnProperty.call(odd[0], 'platform')), '1 false');
+  /* Android の通知のチャンネルは、push-send が名指す物と同じ名前。違えば
+     Android 8 以降は黙って捨てる。Kotlin の文字をそのまま読みます。 */
+  const kt = fs.readFileSync(path.join(WWW, '..', 'android', 'app', 'src', 'main', 'java', 'com',
+                                       'tokinets', 'lingua', 'LinguaPushPlugin.kt'), 'utf8');
+  say('LinguaPushPlugin.kt の CHANNEL は push-send の CHANNEL',
+      (kt.match(/const val CHANNEL = "([^"]*)"/) || [])[1], CHANNEL);
 }
 
 /* ---- そのほか、名前が合っていること ---------------------------------- */

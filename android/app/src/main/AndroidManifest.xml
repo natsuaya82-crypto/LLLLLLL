@@ -51,6 +51,20 @@
                 android:name="android.view.im"
                 android:resource="@xml/method" />
         </service>
+        <!-- A notification that arrives while the app is in front
+             (LinguaPushService.kt). Firebase finds it by this action; it does
+             nothing until android/app/google-services.json is in. The channel
+             is the one push-send names (`CHANNEL`, push.mjs). -->
+        <service
+            android:name=".LinguaPushService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="lingua" />
     </application>
 
     <!-- Permissions -->
@@ -64,4 +78,8 @@
          line on iOS. -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <!-- Notifications (LinguaPushPlugin.kt). Android 13 and later ask the
+         person; UNdeclared, the question is never put and the answer is no.
+         iOS asks through requestAuthorization with nothing declared. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 </manifest>

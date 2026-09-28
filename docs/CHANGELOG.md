@@ -98,6 +98,36 @@ where it starts.
 - 前の項（2026-09-27）の「凍結は写真を読める・自分の物は消せる」は取り消し ── 凍結は写真も読めず、消せない。
 - 保存する物・移す物・消す物は無い（読みの規則だけ）。`rls-check` が持つ。
 
+### 2026-09-27 Android の通知（Firebase Cloud Messaging）── `device` がどちらの電話かを持つ（r124-android-push）
+- **人が気づくこと**: Firebase（プロジェクトと `android/app/google-services.json`）が入るまで、何も変わらない。
+  Android の `LinguaPush` は今までどおり「無い」と答え、通知の部屋はスイッチだけ。入った後は、Android でも
+  サインインした時に Android の許可の問い（Android 13 以降）が出て、フォロー・返信・引用・いいね・リポスト・
+  その日のお題が届き、押すとその投稿・通知タブ・タイムラインが開く ── iPhone と同じ。
+- **保存する物（新しい列）**: `device.platform text not null default 'ios'`、値は `ios` か `android`。
+  今ある行は全部 iPhone なので、既定で `ios` になる ── 行は一つも書き換えない・消さない（`add column` の既定）。
+  Android の電話は `platform: 'android'` を付けて出す（`www/push.js` → `netDevicePut()`）。iPhone は何も付けず、
+  既定が答える。
+- **token の検査が電話ごとに**: 今は「16 進 32〜200 字」一つで、FCM の token（英数字と `:` `_` `-`、百数十字）は
+  入らない。`device_token_check` を「ios なら 16 進 32〜200 字、android なら `[A-Za-z0-9_:-]` 32〜4096 字」に
+  書き直す。今ある行は全部 ios で 16 進なので、どの行も新しい検査に通る（通らない行があれば `add constraint` が
+  落ちて何も変わらない ── 行を黙って消す道は無い）。
+- **DELETE REVIEW ── FCM が「もう無い」と答えた token の行**:
+  - 何が消えるか: `device` の一行（その uid とその token の組だけ）。iPhone の 410 Unregistered と同じ扱いを、
+    Android では FCM の **404 かつ `UNREGISTERED`** の時だけ。400（`INVALID_ARGUMENT`）・401・403・429・500・
+    届かない、はどれも「読めなかった」で、消さない。
+  - 誰が: push-send（service role）。
+  - 人の作った物か: いいえ。電話の住所で、アプリを消した電話を指している。
+  - 戻せるか: 戻す必要が無い ── 電話がアプリを持っていれば、次にサインインした時に同じ道で行が入る。
+- **push-send**: 誰に・何を・どの token を消すかは今までどおり `push.mjs` 一枚。行の `platform` で APNs と FCM に
+  分けるのもそこ（`pushPlan()` が `to`（iPhone）と `fcm`（Android）を返す）。APNs に送る中身と道は変えていない。
+  FCM の鍵（`FCM_SERVICE_ACCOUNT`、Google Cloud のサービスアカウントの JSON）が無い間は Android の行にだけ
+  送らず、答えの `left` に `not set: FCM_SERVICE_ACCOUNT` と出る ── iPhone への送信は止めない。
+  ミュートした人からは鳴らさない（2026-09-28）は `pushPlan()` の道に分ける前の一行なので、Android の行にも同じく効く。
+- **電話に書く物**: 無い。FCM の token は iPhone と同じく電話に持たず、`device` の行が記録（サインインのたびに訊き直す）。
+  アプリが前にある時の通知は `LinguaPushService.kt` が同じ文で出すだけで、何も残さない。
+- **本番**: schema も push-send も未適用・未デプロイ。流すのはリーダー。Firebase の二つ（google-services.json と
+  `FCM_SERVICE_ACCOUNT`）はオーナー（docs/ANDROID.md § オーナーがすること 7）。
+
 ### 2026-09-27 入力欄のカーソルが字の高さに（r125-line、1.0.3）
 - 「文字のサイズとカーソルサイズ全然違う」（実機 170）「直してください」OWNER 2026-09-27。
 - **人が気づくこと**:
