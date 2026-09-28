@@ -686,10 +686,10 @@ function pageNeeds(r, a){
   if(f) return f(a);
   return (PAGES[r] && PAGES[r].lang && langId)? [['lang', langId]] : [];
 }
+/* With a word kept on, the timeline IS that word's answer, so that is what
+   is read -- not the tab it covers. */
 pageReads('feed', function(){
-  var o=[['day'], ['feed', snsTab]];
-  if(snsFil && snsFil.q) o.push(['fil', String(snsFil.q)]);
-  return o;
+  return [['day'], (snsFil && snsFil.q)? ['fil', String(snsFil.q)] : ['feed', snsTab]];
 }, true);
 pageReads('explore', function(){ return [['saved'], ['recent']]; }, true);
 pageReads('filter',  function(){ return [['saved']]; }, true);
@@ -1089,9 +1089,11 @@ function snsMoreWhere(){
      the oldest post of a search nobody has made is not a question. So it
      pages a search that has brought posts back, and not the empty screen and
      not a list of people, which is a different query. */
-  if(r==='explore' && !(snsHits && snsHits.posts && snsHits.posts.length)) return '';
+  if(r==='explore' && !snsWordPosts(snsHits)) return '';
+  if(r==='feed' && snsFil && !snsWordPosts(snsFil.r)) return '';
   return r;
 }
+function snsWordPosts(ans){ return !!(ans && ans.posts && ans.posts.length); }
 /* How far the foot of the page is from the foot of the window. Asked of the
    document rather than of a screen, the same way pullTop() is. */
 function snsMoreLeft(){
@@ -1112,11 +1114,12 @@ function snsMoreCheck(){
    answer -- 「could not ask」 is not the end. The search's end is its own
    (`snsHits.end`), because a new word is a new list. */
 function snsMore(){
-  var r=snsMoreWhere(), q, low=0, i, ps;
+  var r=snsMoreWhere();
   if(snsMoreAsk || !r) return;
   /* A list of people carries on by handle, and it is www/me.js's. */
   if(r==='follows' || r==='reacts'){ folMore(); return; }
   if(r==='profile' || r==='thread'){ snsMoreOf(r, String(here().a||'')); return; }
+  if(r==='feed' && snsFil){ snsWordMore(function(){ return snsFil && snsFil.r; }); return; }
   if(r==='feed'){
     if(SNS_END[snsTab] || !SNS_NEXT[snsTab]) return;
     snsMoreAsk=true;
@@ -1124,17 +1127,25 @@ function snsMore(){
              function(d, s, m){ snsMoreAsk=false; netPop(d, s, m); }, SNS_NEXT[snsTab]);
     return;
   }
-  ps=snsHits.posts; q=snsHits.q;
-  if(snsHits.end) return;
+  snsWordMore(function(){ return snsHits; });
+}
+/* The next page of a word's answer -- the search's, or the timeline's with a
+   word kept on: one question, from the oldest post it is holding. `now()`
+   is where that answer lives, asked again when the page lands, so an answer
+   the word has moved past is not added to. */
+function snsWordMore(now){
+  var ans=now(), q, low=0, i, ps;
+  if(!ans || ans.end) return;
+  ps=ans.posts||[]; q=ans.q;
   for(i=0;i<ps.length;i++) if(ps[i].at && (!low || ps[i].at<low)) low=ps[i].at;
   if(!low) return;
   snsMoreAsk=true;
   netFindPosts(q, function(more){
     snsMoreAsk=false;
-    if(!more || !snsHits || snsHits.q!==q) return;
-    if(more.length<NET_PAGE) snsHits.end=true;
+    if(!more || now()!==ans) return;
+    if(more.length<NET_PAGE) ans.end=true;
     postTake(more);
-    snsHits.posts=snsHits.posts.concat(more);
+    ans.posts=ans.posts.concat(more);
     render();
   }, function(d, s, m){ snsMoreAsk=false; netPop(d, s, m); }, new Date(low).toISOString());
 }

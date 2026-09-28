@@ -1236,6 +1236,18 @@ const au = await pg.evaluate(() => {
     out.a20 = snsList().map((p) => p.id).filter((id) => /^R[ABC]$/.test(id)).join(',');
     POSTS = was; FEED_HAVE.rec = fh; snsTab = tab; }
 
+  /* a21: with a kept word on, the timeline IS that word's answer -- arrival
+     reads it and not the tab it covers, and the foot pages it. */
+  { const s1 = netSend1, fil = snsFil, ask = snsMoreAsk;
+    const got = [];
+    netSend1 = function (m, p, b, t2, ok) { got.push(String(p)); ok([], 200); };
+    snsFil = { q:'wd', r:{ q:'wd', posts:[{ id:'F1', sid:'F1', at:5000, ln:'wd', hd:'iri' }] } };
+    out.a21reads = JSON.stringify(pageNeeds('feed'));
+    NAV = [{ r:'feed' }]; window.route = 'feed'; snsMoreAsk = false;
+    snsMore();
+    out.a21more = got.join(' | ');
+    netSend1 = s1; snsFil = fil; snsMoreAsk = ask; }
+
   netIdOf = realId;
   netSend1 = realS1; netSend = realS; netGet = realG;
   NAV = [{ r:'feed' }]; window.route = 'feed'; render();
@@ -1300,6 +1312,10 @@ if (au.a19 !== '9:16|')
   say('a19: a shape chosen on one card and the next post\u2019s card: ' + au.a19 + ' (want 9:16|).');
 if (au.a20 !== 'RB,RA')
   say('a20: おすすめ drew ' + au.a20 + ' -- it is the server\u2019s answer in the server\u2019s order (RB,RA), not every post this phone holds.');
+if (/"feed"/.test(au.a21reads) || !/"fil","wd"/.test(au.a21reads))
+  say('a21: with a word kept on, arriving at the timeline reads ' + au.a21reads + ' -- the word\u2019s answer, not the tab under it.');
+if (/feed_(hot|fo)/.test(au.a21more) || !/post_seen/.test(au.a21more))
+  say('a21: the foot of a word\u2019s timeline asked 「' + au.a21more + '」 -- the next page of the word, not of the hidden tab.');
 if (!au.a3)
   say('a3: a word pressed while another word\u2019s answer is on the screen draws that old answer or ' +
       '「No results」 until its own lands. Not answered yet is the waiting mark.');
