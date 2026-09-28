@@ -624,12 +624,21 @@ for (const [day, where] of ownerDates) {
     `      has no entry of that day. Write the decision down there.`)
 }
 
-/* 【差し替え済み】 keeps one line. */
+/* 【差し替え済み】 keeps one line -- and it is asked of EVERY heading that says
+   差し替え済み, wherever in the heading it says it. It was asked only of one
+   that OPENED with the mark, so three headings carrying it at the end, with no
+   date, were never counted at all. The form is FEATURE_RULES.md's own:
+   `### 【差し替え済み YYYY-MM-DD】…`. */
 let goneHeads = 0
 {
   const lines = LOG.split('\n')
   for (let i = 0; i < lines.length; i++) {
-    if (!/^### 【差し替え済み/.test(lines[i])) continue
+    if (!/^### /.test(lines[i]) || lines[i].indexOf('差し替え済み') < 0) continue
+    if (!/^### 【差し替え済み \d{4}-\d{2}-\d{2}】/.test(lines[i]))
+      say(`gone docs/FEATURE_RULES.md ${lines[i].slice(4, 40)}`, `docs/FEATURE_RULES.md:${i + 1}`,
+        `says 差し替え済み and is not in the form the log uses:\n` +
+        `      ### 【差し替え済み YYYY-MM-DD】<heading> and one line under it,\n` +
+        `      - 差し替えた決定: 「<heading>」（date）`)
     goneHeads++
     let body = 0, j = i + 1
     for (; j < lines.length && !/^#{1,3} /.test(lines[j]); j++) if (lines[j].trim()) body++
