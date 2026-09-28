@@ -269,7 +269,7 @@ function vSet(){
          した方が見やすい。」 OWNER 2026-09-23. */
       '<button class="set"' + DO('go', ["sp"]) + '><span class="sl">'+t('set.sp')+'</span>'+
       '<span class="sv">'+inkSteps(SCRIPT.sp)+ICON_GO+'</span></button>'+
-      '<button class="set" style="border-bottom:none"' + DO('go', ["wsys"]) + '><span class="sl">'+t('ws.kind')+'</span>'+
+      '<button class="set end"' + DO('go', ["wsys"]) + '><span class="sl">'+t('ws.kind')+'</span>'+
       '<span class="sv">'+esc(t('ws.k.'+wsys()))+ICON_GO+'</span></button>'+
       '';
   } else if(id==='block'){
