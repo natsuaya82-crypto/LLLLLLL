@@ -393,8 +393,8 @@ await pg.evaluate((old) => {
 await boot();
 const f = await pg.evaluate((ids) => {
   langOpen(ids.LB);
-  setOrder('VOS');
-  setGPos('negp', 'after');
+  gOrderPut('VOS');
+  gPosPut('negp', 'after');
   const bReads = orderDef().id, bNegp = gPos('negp');
   langOpen(ids.LA);
   let aSet = null;
@@ -416,7 +416,7 @@ want('the language that was changed says the new order', f.bReads, 'VOS');
 want('and the new position', f.bNegp, 'after');
 /* And what is written down is the CARDS -- a list of roles, because the board
    is a list of roles. The six-letter string is what a language written before
-   today holds and is read back into this (orderSeq); it is not what setOrder()
+   today holds and is read back into this (orderSeq); it is not what gOrderPut()
    writes any more. `aStored` two lines down is still 'OSV', which is that
    half: LA was never arranged in this run, so its own string is exactly where
    it was. */
@@ -428,14 +428,14 @@ want('which is still what its file says', f.aStored, 'OSV');
 want('all of it', f.aStoredNegp, 'before');
 want('and the settings still do not hold a word order', f.personOrder, undefined);
 
-/* AN EMPTIED BOARD IS WRITTEN EMPTY (監査 words grammar-4). setOrder() put
+/* AN EMPTIED BOARD IS WRITTEN EMPTY (監査 words grammar-4). gOrderPut() put
    what it was handed through orderSeq(), so clearing the board and pressing
    save wrote 主語 目的語 動詞 as this language's answer. The engine still
    reads SOV off an empty field -- that is orderDef()'s, asked here too. */
 const emptied = await pg.evaluate(() => {
   const was = JSON.stringify(STG.order);
   STG.order = ['S', 'V', 'O'];
-  setOrder([]);
+  gOrderPut([]);
   const out = { stored: JSON.stringify(STG.order), reads: orderDef().id };
   STG.order = JSON.parse(was);
   return out;
@@ -553,7 +553,7 @@ const g = await pg.evaluate(() => {
      side is READ rather than written down here: the seed is somebody else's
      file and a check that names the answer is a second copy of it. */
   const other = gPos('adj') === 'before' ? 'after' : 'before';
-  setGPos('adj', other);
+  gPosPut('adj', other);
   render();
   return { on: on, came: came, holds: holds, first: first, fell: fell,
            moved: lit(), saysOther: gPosLab('adj', other),

@@ -490,7 +490,7 @@ function stSlotsDone(p){
   return n;
 }
 /* A decision counts once it has been touched. `STG.set` is written by
-   setOrder() and setGPos() in www/grammar.js and is what says a language
+   gOrderPut() and gPosPut() in www/grammar.js and is what says a language
    ANSWERED rather than took the default. It went unread for a while -- stOn()
    lit a stage's button and the stages that had buttons are gone -- and the
    chapter that was going to ask it has arrived: the contents draws a chapter

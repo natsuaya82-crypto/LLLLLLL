@@ -78,7 +78,7 @@
     19  and if now() has not moved, the Save is GREY -- which is every
         selection on every screen, asked without naming one
     20  a press that changes the LANGUAGE moves now(). 18 alone goes green on
-        the exact bug this was written after: setGPos() wrote STG and the
+        the exact bug this was written after: gPosPut() wrote STG and the
         board's now() did not carry it, so nothing moved, the corner stayed
         grey, and the wiring was perfect. One named exception, held both ways
     21  a field wired to keepSet() writes a name its screen's now() already
@@ -963,7 +963,7 @@ const more = await pg.evaluate(() => {
         to stay grey, and that is C in the table asked without naming one of
         them
      C  and a press that changes the LANGUAGE moves now(). B alone would go
-        green on exactly the bug this was written after: setGPos() wrote STG
+        green on exactly the bug this was written after: gPosPut() wrote STG
         and the board's now() did not carry it, so nothing moved, the button
         stayed grey, and the wiring was perfect
 

@@ -66,7 +66,7 @@ var NPARTS=['DEM','NUM','ADJ','POSS','REL','N'];
    are somebody's: the six-letter string every language written before today
    holds, and the list of cards a finger arranged. The string is COPIED into
    the list and nothing is removed -- a language opened on an older build still
-   finds its own 'SOV' where it left it, because setOrder() is the only thing
+   finds its own 'SOV' where it left it, because gOrderPut() is the only thing
    that ever writes over it.
 
    A card nobody knows is dropped and a card written twice is kept once: the
@@ -128,7 +128,7 @@ function orderDef(){
    language's answer, and the board opened again with the three placed
    (OWNER 2026-09-06). orderSeq() is the READ side's; the noun phrase's
    board below has always written this way. */
-function setOrder(v){ STG.order=orderKeep(v); stMarkSet('order'); render(); }
+function gOrderPut(v){ STG.order=orderKeep(v); stMarkSet('order'); render(); }
 /* The noun phrase's order, read and written the way the sentence's is. It has
    no orderSeq() beside it and no ORDER_DEF behind it, and that is the whole
    difference between the two: a sentence has to be arranged somehow, and a
@@ -147,7 +147,7 @@ function npKeep(v){
   return out;
 }
 function npStored(){ return npKeep(STG && STG.np); }
-function setNpOrder(v){ STG.np=npKeep(v); stMarkSet('np'); render(); }
+function gNpPut(v){ STG.np=npKeep(v); stMarkSet('np'); render(); }
 
 /* ---- where a word stands ----------------------------------------------
    Three positions. Each is one answer for the whole language and each is
@@ -181,7 +181,7 @@ function gPos(id){
    「文法の各段は最初は何も置かれてない状態」 OWNER 2026-09-10.
 
    IT IS THE VALUE AND NOT stTouched(). The two say the same thing about every
-   language anybody makes from now on -- setGPos() writes both in one press --
+   language anybody makes from now on -- gPosPut() writes both in one press --
    and they part company on exactly one kind: a language that came through
    migrateGramLang() (www/phases.js), which COPIES the side somebody pressed on
    the old phone-wide screen and deliberately leaves STG.set alone, because
@@ -194,7 +194,7 @@ function gPos(id){
    GPOS_DEF is then what it always was: what stands where there is no answer.
    Nothing writes it. */
 function gPosSaid(id){ return !!(STG && STG.gpos && STG.gpos[id]); }
-function setGPos(id, v){
+function gPosPut(id, v){
   if(!STG.gpos) STG.gpos={};
   STG.gpos[id]=v; stMarkSet(id); render();
 }
@@ -738,7 +738,7 @@ function g2Move(key, i){
   g2Lift='';
   /* A row of two. Swapping them IS the other answer, so there is nothing to
      work out: it is whichever side this language is not on now. */
-  setGPos(key, gPos(key)==='before'? 'after' : 'before');
+  gPosPut(key, gPos(key)==='before'? 'after' : 'before');
 }
 /* One word of a row somebody arranges. The row is named so that two of them
    on one page cannot pick each other's words up. */
@@ -792,8 +792,8 @@ function g2KeepKey(){ return keepKey(); }
    fallback, where there is one, is orderSeq()'s and belongs to the engine's
    side of the wall. */
 function g2Bd(id){
-  if(id==='np') return {id:'np', demo:g2NpDemo, stored:npStored, save:setNpOrder, cards:NPARTS};
-  return {id:'order', demo:g2Demo, stored:g2Stored, save:setOrder, cards:ROLES};
+  if(id==='np') return {id:'np', demo:g2NpDemo, stored:npStored, save:gNpPut, cards:NPARTS};
+  return {id:'order', demo:g2Demo, stored:g2Stored, save:gOrderPut, cards:ROLES};
 }
 /* WHAT THIS LANGUAGE HAS ACTUALLY SAVED, which is what the board opens with.
    Empty is a real answer here and means nobody has arranged anything yet -- so
@@ -807,7 +807,7 @@ function g2KeepOn(b){
             until the button is pressed and therefore live in the buffer.
             Nothing else on a board writes the language. */
          function(){ return {seq:b.stored().join(',')}; },
-         /* Split before it is handed on: setOrder() takes the list of cards
+         /* Split before it is handed on: gOrderPut() takes the list of cards
             or the old six-letter string, and a comma-joined string is
             neither -- orderSeq() would read 'O,V,S,ADV' one character at a
             time and keep the three single letters. The buffer holds strings
@@ -1204,7 +1204,7 @@ function g2SidePick(key){
   var a=['before','after'], i, now=gPosSaid(key)? gPos(key) : '', out='';
   for(i=0;i<a.length;i++)
     out+='<button class="seg'+(a[i]===now? ' on' : '')+'"' +
-      DO('setGPos', [key, a[i]]) + '>'+esc(gPosLab(key, a[i]))+'</button>';
+      DO('gPosPut', [key, a[i]]) + '>'+esc(gPosLab(key, a[i]))+'</button>';
   return '<div class="segs">'+out+'</div>';
 }
 /* Where a describing word stands, and that alone. The ways one CHANGES are

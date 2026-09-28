@@ -291,7 +291,7 @@ act('abSetVow', abSetVow);
 act('pkTake', pkTake);
 act('openFil', openFil);
 act('wordsSetFil', wordsSetFil);
-act('setGPos', setGPos);
+act('gPosPut', gPosPut);
 act('setMyFont', setMyFont);
 act('openLtView', openLtView);
 act('nextLtSort', nextLtSort);
