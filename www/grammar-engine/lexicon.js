@@ -67,9 +67,11 @@
   /* Where a word ENDS is a thing some scripts write down and some do not.
      Latin writes it with a space, so "eat" may not be found inside "eaten";
      Japanese writes nothing, so 魚 has to be found inside 魚を. One rule
-     covers both: a match may not have a letter or a digit of the alphabet
-     that writes spaces immediately beside it. */
-  var WORDCH=/[0-9A-Za-z]/;
+     covers both: a match may not have a letter or a digit of a script that
+     writes spaces immediately beside it -- Latin with its accents, Greek and
+     Cyrillic. Hangul is left out on purpose: it writes spaces but fastens a
+     particle onto the word (고양이가), so it is found inside the way 魚 is. */
+  var WORDCH=/[0-9A-Za-z\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u024F\u1E00-\u1EFF\u0370-\u03FF\u0400-\u052F]/;
   function edge(text, at, len){
     var before=at>0?text.charAt(at-1):'', after=(at+len)<text.length?text.charAt(at+len):'';
     if(before && WORDCH.test(before) && WORDCH.test(text.charAt(at))) return false;

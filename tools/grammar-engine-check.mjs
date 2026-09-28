@@ -348,6 +348,16 @@ assert.equal(say(build(),'sea'),'te');
    rule covers both: "eat" is not inside "eaten", and 魚 IS inside 魚を. */
 assert.equal(e.lexicon.cut(build(),'eaten').filter((u)=>u.kind==='word').length,0,
   '"eat" was found inside "eaten". A space-writing script writes its word ends.');
+/* and a space-writing script is not only a-z: Cyrillic, Greek and Latin with
+   accents write their word ends too, while Hangul fastens a particle on
+   (고양이가) and is found inside, the way 魚 is */
+const ru=e.adapter.fromLegacy('ru',[{hw:'mau',mns:['кот'],pos:'n'},{hw:'pe',mns:['café'],pos:'n'},{hw:'go',mns:['고양이'],pos:'n'}],{order:'SOV'});
+assert.equal(e.lexicon.cut(ru,'котёл').filter((u)=>u.kind==='word').length,0,
+  '"кот" was found inside "котёл". Cyrillic writes its word ends.');
+assert.equal(e.lexicon.cut(ru,'cafés').filter((u)=>u.kind==='word').length,0,
+  '"café" was found inside "cafés". An accented Latin letter is a letter.');
+assert.equal(e.lexicon.cut(ru,'고양이가').filter((u)=>u.kind==='word').length,1,
+  '고양이 was not found inside 고양이가. Hangul fastens its particles on.');
 const jp=e.adapter.fromLegacy('jp',[{hw:'poko',mns:['魚'],pos:'n'}],{order:'SOV'});
 assert.equal(e.lexicon.cut(jp,'魚を').filter((u)=>u.kind==='word').length,1,
   '魚 was not found inside 魚を. A script that writes no spaces still has words in it.');
