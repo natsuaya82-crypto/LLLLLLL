@@ -2725,6 +2725,25 @@ create policy block_make on block for insert
 drop policy if exists block_drop on block;
 create policy block_drop on block for delete using (is_member() and actor = auth.uid());
 
+-- AND A BLOCK TAKES THE FOLLOWS WITH IT, BOTH WAYS, the moment it is made
+-- 「ブロックした時に両向きのフォローを外す（X と同じ）」 OWNER 2026-09-28.
+-- `security definer` because the follow the other person made is theirs, and
+-- no policy lets you delete somebody else's row; what this may do with that is
+-- its whole body -- the two rows between these two people, and nothing else.
+-- Lifting the block puts nothing back. DELETE REVIEW in docs/CHANGELOG.md.
+create or replace function block_unfollow() returns trigger
+language plpgsql security definer set search_path = public as $f$
+begin
+  delete from follow
+   where (follower = new.actor   and followed = new.blocked)
+      or (follower = new.blocked and followed = new.actor);
+  return null;
+end
+$f$;
+drop trigger if exists block_unfollow on block;
+create trigger block_unfollow after insert on block
+  for each row execute function block_unfollow();
+
 -- mute: YOURS and nobody else's, in every direction, for block's reason.
 drop policy if exists mute_read on mute;
 create policy mute_read on mute for select using (actor = auth.uid());
