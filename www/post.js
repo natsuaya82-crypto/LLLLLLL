@@ -3419,7 +3419,7 @@ function postCutOf(p){
    part of the line each shape is, so a word with a shape in it is copied
    whole -- its spelling, rather than a guess at half of it. */
 function postCopyTab(p, el){
-  var ink=postInkOK(p.ink)? p.ink : {g:[], s:[String(p.ln||'')]}, side=postSide(p),
+  var ink=postInkOr(p), side=postSide(p),
       ids=[], cut, tab=[], w=0, inw=false, i, j, x, ch, words, shw={};
   cut=(p.mine && p.lang===langId && postInkOK(p.ink))? postCutOf(p) : [];
   for(i=0;i<cut.length;i++) if(cut[i].id!==undefined) ids.push(cut[i].id);
@@ -3845,6 +3845,11 @@ function postInkOK(ink){
     if(Object.prototype.toString.call(ink.g[x])!=='[object Array]' || !ink.g[x].length) return false;
   }
   return true;
+}
+/* And the ink a post is drawn from: its own where postInkOK() says it can be,
+   and otherwise its text -- one line, no letters. The one place that says so. */
+function postInkOr(p){
+  return postInkOK(p && p.ink)? p.ink : {g:[], s:[String((p && p.ln)||'')]};
 }
 /* Which way this post's line runs, asked of the POST.
 

@@ -1135,7 +1135,7 @@ function cardOfPost(po){
      day's prompt in the reader's own words where the post answers one. */
   return {kind:'p', line:dayTagShow(String(po.ln||'')), mn:postSay(po),
           hd:String(po.hd||''), nm:langNameSaid(po.lname),
-          ink:cardInkShown(postInkOK(po.ink)? po.ink : {g:[], s:[String(po.ln||'')]}),
+          ink:cardInkShown(postInkOr(po)),
           dir:postDir(po), sd:postSide(po)};
 }
 /* The same ink with the day's mark said in the reader's words. A copy: the
