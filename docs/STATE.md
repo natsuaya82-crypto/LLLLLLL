@@ -32,7 +32,7 @@ un-re-read.
 
 ---
 
-## Android ── 土台だけ、取り込み待ち（`claude/r115-android`、2026-09-27）
+## Android ── 土台だけ（`claude/r115-android`、取り込み済み、2026-09-27）
 
 `android/` に Capacitor の Android プロジェクトがあり、`www/` をそのまま載せる。画面が呼ぶネイティブは Kotlin で
 Swift と同じ表（`tools/assets-check.mjs` の `android:` の行）。**一度もビルドされていない** ── この環境に Android
@@ -59,7 +59,7 @@ CODE CONFIRMED のみ。
 - **r100**: プロフィールの投稿にその人のリポストも（`posts_by()`）、端末の設定の四つ（order・script・read・voice）を消す（`SET_GONE`・`setGoneDrop()`）、
   録音はバケツに、書き出したシートは端末に残さない。
 - **r101**: 単語の自動生成（`vGen`・`vGenSyl`、音節の形は `STG.syl`）、語源の系統図（`vEty`、単語の `from`、親を消しても子の `from` は残る）。
-- **r102**: 字を組み合わせた一マス（書き方の六つ目 `block`、母音ごとの型は `SCRIPT.blk`）、文字の SVG の書き出し（全部・一文字、全プラン）。
+- **r102**: 字を組み合わせた一マス（書き方の六つ目 `block`、描いた位置のまま重ねる、r105）、文字の SVG の書き出し（全部・一文字、全プラン）。
 - **r103**: 作る側の画面 20 のバーに「?」、中に使い方（`helpPara()`・`helpStep()`・`helpMark()`、10 言語）。
 - **r104〜r106 と輪**: 組み合わせの置き方は描いた位置のまま重ね、終声だけ下の段へ（r105、置き方の選択は消した）、文字の書き出しは
   「書き出す」の画面（フォント／SVG、r104）、「〇〇がリポスト」を投稿者の名前の下に（`postRpHTML()`、フォロー中とプロフィール、r106）、
@@ -122,7 +122,7 @@ schema.sql の 42501 の直し。**RevenueCat の Swift はこのビルドで初
   キーボードの変換も引ける。**前に語として作られた活用形は一覧から隠すだけで消さない**
   （`wIsForm()`、決定 B）。`forms-check`（新規）、`plan-check`・conv・grammar を更新。
 - `claude/r55-ads` ── **広告枠**（OWNER 2026-09-23「Twitterと同じ。ツイート擬態右上に
-  pr」）。投稿 10 件ごとに一枠、10 件未満なら無し、pro は無し（`can('noads')`）。
+  pr」）。投稿 10 件ごとに一枠、10 件未満なら無し、pro は無し（広告の能力は `CAN` に無い）。
   枠は売れる形 ── サーバーの広告行を `postRow` で描き右上に PR。売れていない枠は
   AdMob ネイティブだった。**2026-09-25（r93）に今はまだ出さないことになり、広告の行・AdMob・追跡の問いを
   ビルドから外した**（審査が BINARY_INDICATES_APP_TRACKS_USERS で断ったため。戻し方は決定ログ 2026-09-25）。
@@ -134,7 +134,7 @@ schema.sql の 42501 の直し。**RevenueCat の Swift はこのビルドで初
   拒む（FAST に登録）。Store Localize は 1.0.2 で 10 言語成功（run 35871369202）。
 - `claude/r58-prompt-push` ── **通知「今日のお題」**。通知の種類は一覧一つ、`prompt`
   を足した。Supabase の cron `daily-prompt` は `0 7,8 * * *`（ロサンゼルスの 0 時、
-  夏冬どちらも）、関数は同じ日に二度送らない。通知の部屋のスイッチは 5 つ。rls の
+  夏冬どちらも）、関数は同じ日に二度送らない。通知の部屋のスイッチは `PUSH_KINDS`（`www/push.js`）の数。rls の
   ケースを追加。
 - `claude/r59-take` ── **人の言語の ↓**（OWNER 2026-09-23）。押すと回る印、サーバーが
   取れたと言えば ⭕☑️、断られたら ↓ に戻り「接続できません」。⭕☑️ はサーバーの答え
@@ -146,8 +146,7 @@ schema.sql の 42501 の直し。**RevenueCat の Swift はこのビルドで初
 **166 の前にオーナーがやること**（枝 `claude/owner-todo` の OWNER-TODO.md）：
 ① App ID `com.tokinets.lingua` に Push Notifications を足す ② 配布用プロファイルを
 作り直して secret `PROVISIONING_PROFILE_BASE64` に入れる。`aps-environment` が入って
-いるので、この二つの前に出すと Archive で落ちる。AdMob の本番 ID の secrets も同じ
-ファイルにある（無くてもテスト ID で出る）。
+いるので、この二つの前に出すと Archive で落ちる。
 
 ## 2026-09-23 午後 ── 一行を描く仕組みを一つに・文字を描く面の目安の線（integ `8801f35b`、ゲート 47 緑、166 で出す）
 
@@ -197,8 +196,8 @@ schema.sql の 42501 の直し。**RevenueCat の Swift はこのビルドで初
   bucket 2）。扉の `email_taken()` だけ例外（OWNER「これは例外で」）。
 - `claude/r48-push-app` ── **アプリ側**：`LinguaPush.swift`（許可・token・押して
   開いたら `window.pushOpened`）、`www/push.js`（第 28 章、`pushAsk()` は
-  `netTook()` から一箇所）、設定の部屋「通知」に四つのスイッチ（`profile.prefs`
-  の `push_follow/reply/like/boost`、無いのはオン）、サインアウトで自分の token
+  `netTook()` から一箇所）、設定の部屋「通知」に `PUSH_KINDS` ぶんのスイッチ（`profile.prefs`
+  の `push_*`、無いのはオン）、サインアウトで自分の token
   の行だけ落とす。`acct-check` 82〜85。**`www/net.js` はセッションが無ければ
   一本も送らない**（扉の `email_taken` と `/auth/v1/*` だけ通す）、**写真と声は
   `netMedia()` 一箇所がセッション付きで取って objectURL**（~~`netMediaURL()`~~ は
@@ -709,14 +708,9 @@ git merge-base --is-ancestor origin/claude/online origin/master && echo IN || ec
 |---|---|---|
 | 0 | 文字の増殖 | **master**（`claude/dup` を `77bba34b` で取り込み） |
 | 10 | キーボードの一番下の ＋ | **master**（同じ取り込み、CSS は `6a6056f8`） |
-| 1 | アカウントを消したのに検索履歴が残る | **`claude/online` / `claude/rules`。master にはまだありません**（`1e3eed4b`） |
+| 1 | アカウントを消したのに検索履歴が残る | **master にある**（`1e3eed4b`） |
 | 2・3・4〜9 | 更新できない、フォロワーの数、実機の写真の六つ | **master**（`claude/tl2`。報告は `docs/reports/tl2-2026-09-04.md`） |
-| 6（バッジ） | 相手の画面に有料のバッジが出ない | **アプリ側は済み。サーバーの列がまだで、そこはオーナーが SQL を流すまで動きません** |
-
-**バッジだけがオーナー待ちです。**流す SQL は書けていて、本物の PostgreSQL で
-確かめてあります ── `docs/reports/badge-sql-2026-09-04.md`。`profile_seen` と
-`post_seen` に「この人はプロか」を出す列一つです。**`supabase/schema.sql` には
-まだ入っていません。**
+| 6（バッジ） | 相手の画面に有料のバッジが出ない | **済み**（`badge_of()`、`supabase/schema.sql`） |
 
 ### 2026-09-03 の決定 ── 一日で三つ、どれも仕様
 
@@ -747,8 +741,7 @@ Google と同じアドレスを打って二つ目のアカウントを立てて�
 （2026-09-11、`claude/r18-plan`）── 段はメモリだけで、アカウントが変わる一箇所（`acctFor()`、r79）が忘れる。**印の無い
 端末も例外ではありません**「1アカウントに1課金ですけど。他のアカウントについて
 くるわけねえだろ」OWNER 2026-09-11。段は設定の預け写しにも乗りません
-（~~`SET_PLAN`~~）。`acct-check` 40・40b・40c。**実機は未確認**（Keychain の往復は
-実機でしか見られません）。
+（~~`SET_PLAN`~~）。`acct-check` 40・40b。
 
 **今は iPhone だけ。**そのあと iPad、Android。
 
@@ -806,10 +799,6 @@ Google と同じアドレスを打って二つ目のアカウントを立てて�
   ~~`bkRestore()`~~、そして ~~`langMigrate()`~~ は `mig` を通して。印の無い言語を
   自分のものと答えるのはオンボーディングの歩きの途中（`SET.done` が偽）だけで、
   扉を出た `obFinish()` がそこで印を付けます。どの iPhone かを憶える仕掛けはありません。
-- **Keychain。**読めなかった Keychain に段を書きません。`Transaction.updates` は
-  届いた取引が終わり（返金・過ぎた失効日）を言った時だけ下げます ── 更新も
-  家族の購入も同じ口に届くので、権利一覧が追いつく前に払ったばかりの人の段が
-  消えていました。~~`isUpgraded`~~ は除きます（格上げは失効日が過去になる）。
 
 ### 2026-09-03 に入ったもの
 
@@ -868,7 +857,6 @@ Google と同じアドレスを打って二つ目のアカウントを立てて�
 ### 走っているセッション ── 2026-09-03
 
 RevenueCat は `claude/r91-rc` で入った（2026-09-25、公開キーも入った、Swift は未ビルド）。
-保存のポップは決定だけあって未着手です（決定ログ `9bbd83d3`）。
 
 **この二行を信じないでください。**枝が取り込まれているかは名前からもこの行
 からも推測せず、訊くこと ── この段落は半日で二度変わりました:
@@ -922,12 +910,12 @@ Connect と DNS のダッシュボードの話なので、**済んだかどう�
 
 | 何 | 分かったこと | どこ |
 |---|---|---|
-| 今日のお題の日付 | `netDay()` が `order=on_day.desc&limit=1` と訊いていて、**今日を訊いていない。**古い行が一つあれば、それが永久に「今日」として出ます。`on_day` はどこにも描かれません | `www/net.js` `netDay()` |
+| 今日のお題の日付 | `netDay()` が `order=on_day.desc&limit=1` と訊いていて、**今日を訊いていない。**古い行が一つあれば、それが永久に「今日」として出ます | `www/net.js` `netDay()` |
 
 **オーナーは iPhone SE2 と iPhone 17 で実機確認しています。**OWNER 2026-08-28
 「iPhone se2と17で作業してる」。**一番狭い iPhone と一番広い iPhone の両方**なので、
 画面の話はその二つで成り立つかを考えること ── `press` が測っているのは 402pt の
-一台だけで、SE2 の 320pt はそこに入っていません。
+一台だけで、SE2 の 375pt はそこに入っていません。
 
 **でんわ、という語を使わないこと。iPhone と書く。**二度言われた。二度目は
 「使うなって言ってんだから使うな」。報告でも、コメントでも、画面の文字でも、docs でも。
@@ -944,10 +932,13 @@ Connect と DNS のダッシュボードの話なので、**済んだかどう�
 
 ---
 
-## 1. `master` is the app again. Keep it that way.
+## 1. Which branch is the app
 
-A fresh clone of `master` is the current app. **No sha is written here** — a sha
-has a shelf life of about a day.
+`integ-0905` is where the sessions' work is integrated, and `master` is moved
+up to it by a fast-forward. **Before believing either is the current app, ask:**
+`git rev-list --count origin/master..origin/integ-0905` — anything above 0 is
+work that is integrated and not yet on `master`. **No sha is written here** — a
+sha has a shelf life of about a day.
 
 How many checks the gate has is `FAST` and `SLOW` in `tools/gate.mjs`, and the
 last line `npm test` prints — the only place the number lives.
@@ -1019,8 +1010,8 @@ Pushing to `master` is the owner's call and is asked for each time.
   the grammar stages, the notebook. (Twenty-eight is what it was before the
   free plan got its own digits; measured on a fresh free language it is 38.) `CLAUDE.md`
   → "What the free plan is" is the specification and is current.
-- **The system keyboard**, `ios/App/LinguaKeyboard/` — six Swift files. It is
-  built, it is on TestFlight, and a person has typed their own letters on it on
+- **The system keyboard**, `ios/App/LinguaKeyboard/` — its Swift files. It is
+  built, it is on the App Store, and a person has typed their own letters on it on
   a real phone. App Group `group.com.tokinets.lingua`; appId
   `com.tokinets.lingua`.
 - **The hand-over from app to keyboard**, `www/share.js` (chapter 23) — the
@@ -1049,7 +1040,7 @@ Pushing to `master` is the owner's call and is asked for each time.
   `appIs()` answers `'app'` for the walk before it asks about the session — the
   walk IS the app. Without that, a new phone draws its first letter, presses
   done, and is shown the door. `obTourOn()` is
-  `!SET.done && ob.step===OB_TOUR`, false for every finished phone.
+  `!SET.walked && ob.step===OB_TOUR`, false for every finished phone.
 
 ## 3. What is NOT built, however much it looks like it is
 
@@ -1125,8 +1116,8 @@ On 2026-09-03 that answers: `profile` 13, `rpc` 12, `language` 8, `follow` 4,
 `profile_seen` 1, `language_seen` 1 — and the twelve `rpc` are `account_ban`
 `account_delete` `account_unban` `admin_counts` `email_taken` `feed_fo`
 `feed_hot` `notices` `post_hide` `post_show` `staff_add` `staff_drop`.
-`netLangSync()` is the door's (`netTook()`) and a new language's (`langNew()`), not the launch's, and ~~`syMerge()`~~
-(~~`www/sync.js`~~ ch 26) is what puts two copies together by adding both.
+`netLangSync()` is the door's (`netTook()`) and a new language's (`langNew()`), not the launch's, and `slice_in()` in `supabase/schema.sql` is what puts two
+copies together (lists both added, a value the later change's).
 
 **Still unused: `quote` and `publication`. Those two, and nothing else.**
 
@@ -1161,8 +1152,8 @@ Order, and where it stands:
    it**, one row per slice of `SLICES`, carrying exactly the string
    `localStorage` holds. `netLangRow()` makes the row, ~~`netSlicePut()`~~ upserts
    a slice, `netSlices()` reads them back, and `netLangSync()` — the door's (`netTook()`) and a new
-   language's (`langNew()`) — puts the two copies together through ~~`syMerge()`~~,
-   which adds both sides and lets neither win by being newer.
+   language's (`langNew()`) — sends them, and `slice_in()` on the server puts the
+   two copies together.
 4. **The plan — on the account, done.** OWNER 2026-09-01: 「課金とアカウントと
    キーボードはアカウントに結びつく」. It is **its own table and not a column on
    `profile`** — `plan` in `supabase/schema.sql`, one row per uid.
@@ -1497,7 +1488,7 @@ can hold two rules.
   OWNER 2026-08-25 (`docs/FEATURE_RULES.md`, the Shipaton entry). The first
   public version went live on 2026-09-22 (1.0.0 (162), § the head of this file).
 
-### Blocks shipping the free version
+### Waiting on a phone
 
 - **Signing in from Settings** is written and has not been opened on a phone.
   `obReturn()` in `www/onboard.js`.
@@ -1522,9 +1513,9 @@ are each asked at the moment they are met, on the screen the person is on —
 
 ### Offered and not yet answered
 
-- **Find the strings nothing says.** 270 of 692 keys in `en.js` never appear
+- **Find the strings nothing says.** Many keys in `en.js` never appear
     as a literal in `www/`, but most are built — `t('stg.'+p.id+'.t')` — so a
-    grep cannot tell. `i18n-check` already renders 271 screens in 10 languages;
+    grep cannot tell. `i18n-check` already renders every screen in 10 languages;
     recording what `t()` was asked for would say it properly. It has to be a
     report, not a failure: a toast on an error is real and unwalked.
 12. **Two questions about screens, open since before the keyboard work.**
@@ -1589,8 +1580,8 @@ known place** (`docs/apple.md` § 4 has every field):
     changing code first.
 
     The code side of this is done as far as it can be here:
-    `LinguaStore.swift` (`products` `buy` `restore` `current` `manage`, the
-    `Transaction.updates` listener, and an id→plan map that answers with the
+    `LinguaStore.swift` (RevenueCat: `products` `buy` `restore` `current`
+    `manage` `review`, and an id→plan map that answers with the
     HIGHEST entitlement) and `www/store.js`, which `plBuy()` goes through on
     a phone. The three things that were waiting on another session's files are
     in: Restore (**Apple requires it**), Plus's own card, and Cancel opening
