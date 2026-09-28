@@ -143,7 +143,7 @@ function modWhyOf(uid){
 function modRow(r){
   return '<div class="mrep'+(r.down? ' mdown':'')+'">'+
     '<div class="mhead">'+
-      '<span class="mwho">'+esc(t('mod.of', r.who))+'</span>'+
+      '<span class="mwho">'+(r.who? esc(t('mod.of', r.who)) : '')+'</span>'+
       '<span class="mwhen">'+esc(postWhen(r.at))+'</span>'+
     '</div>'+
     '<div class="mhead">'+

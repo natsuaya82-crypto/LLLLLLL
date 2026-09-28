@@ -1177,6 +1177,11 @@ const au = await pg.evaluate(() => {
     out.a14 = h.indexOf(esc(t('net.offline'))) >= 0 && h.indexOf(esc(t('mod.none'))) < 0;
     delete PULL_OFF['mod']; MODS = was; }
 
+  /* a15: a report whose author has left carries no handle, and a blank
+     where a name goes says less than nothing. */
+  out.a15 = modRow({ id:9, why:'spam', note:'', at:Date.now(), who:'', uid:'', by:'', pid:'x', ln:'l' })
+    .indexOf(esc(t('mod.of', ''))) < 0;
+
   netIdOf = realId;
   netSend1 = realS1; netSend = realS; netGet = realG;
   NAV = [{ r:'feed' }]; window.route = 'feed'; render();
@@ -1229,6 +1234,8 @@ if (au.a13 !== '')
   say('a13: the name field says 「' + au.a13 + '」 before anything is typed -- the language\u2019s name, which is not the person\u2019s.');
 if (!au.a14)
   say('a14: the reports could not be read and the screen did not say 接続できません.');
+if (!au.a15)
+  say('a15: a report whose author has left prints 「' + 'mod.of' + '」 with an empty handle in it.');
 if (!au.a3)
   say('a3: a word pressed while another word\u2019s answer is on the screen draws that old answer or ' +
       '「No results」 until its own lands. Not answered yet is the waiting mark.');
