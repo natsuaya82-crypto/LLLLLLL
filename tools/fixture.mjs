@@ -1576,6 +1576,10 @@ export function halfDone(){
     ['what you can do about somebody else', () => { window.route='feed'; NAV=[{r:'feed'}];
                               postMore('p2');
                               const h = vFeed(); PMENU = ''; return h; }],
+    /* And on your own: pin, edit, and the delete, which is the bin. */
+    ['what you can do about your own post', () => { window.route='feed'; NAV=[{r:'feed'}];
+                              postMore(POSTS.filter((p) => p.mine)[0].id);
+                              const h = vFeed(); PMENU = ''; return h; }],
     /* ブロックしている一覧はサーバーの `block_seen` です（2026-09-24）── `ME.bl`
        ではありません。`NET_PPL.block` は netPplRead() が降ろす人の行で、
        この検査は網を張らないので置きます。 */
@@ -1586,7 +1590,7 @@ export function halfDone(){
                               const h = vFeed(); NET_PPL.block = was; PMENU = ''; return h; }],
     /* The five reasons. It is a form and nothing walks to it. */
     ['saying what is wrong with a post', () => { openReport('p2', 'iri');
-                              const h = vForm(); rpFor = null; return h; }],
+                              return vForm(); }],
     /* And the other end of that form, which is one account's and is drawn for
        nobody else. The row at the foot of the settings list is the only way
        in, and NET_STAFF is false everywhere else -- so both the door and the
@@ -1664,8 +1668,9 @@ export function halfDone(){
     /* The reports before the server has answered, and the reports when there
        are none. Two sentences, and they are not the same sentence. */
     ['the reports, and there are none', () => { const keep = MODS; MODS = [];
+        const had = PULL_GOT['mod']; PULL_GOT['mod'] = 1;   /* answered, with none */
         window.route='mod'; NAV=[{r:'mod'}];
-        const h = vMod(); MODS = keep; return h; }],
+        const h = vMod(); MODS = keep; if (!had) delete PULL_GOT['mod']; return h; }],
     /* And the one thing on this screen that really deletes, asking. A post
        comes back and an account comes back; a report row that has gone has
        gone, so the word on the button that does it is the word for what it
@@ -2277,11 +2282,11 @@ export function halfDone(){
     ['the timeline, following', () => { snsTab = 'fo';
         POSTS.push({id:'fbo1', sid:'fbo1', at:Date.now()-9e8, lang:langId, lname:'Tovi',
                     ln:'mosa relu', who:'Veth', hd:'veth', mine:false, mn:'the river', ui:'en'});
-        const keepFo = FO_HAVE; FO_HAVE = {};
-        POSTS.forEach((p) => { if (p.mine || p.hd === 'iri' || p.hd === 'veth') FO_HAVE[p.id] = 1; });
-        FO_HAVE.fbo1 = { n:'Iri', h:'iri', me:false };
+        const keepFo = FEED_HAVE.fo, fo = { ids:[], rp:{}, key:{}, at:0 };
+        POSTS.forEach((p) => { if (p.hd === 'iri' || p.hd === 'veth'){ fo.ids.push(p.id); fo.key[p.id] = p.at; } });
+        fo.rp.fbo1 = { n:'Iri', h:'iri', me:false }; FEED_HAVE.fo = fo;
         window.route='feed'; NAV=[{r:'feed'}];
-        const h = vFeed(); POSTS.pop(); FO_HAVE = keepFo; snsTab = 'rec'; return h; }],
+        const h = vFeed(); POSTS.pop(); FEED_HAVE.fo = keepFo; snsTab = 'rec'; return h; }],
     ['the timeline, following nobody', () => { snsTab = 'fo';
         const keep = folOf(false, 'aya'); folPut(false, 'aya', []);
         window.route='feed'; NAV=[{r:'feed'}];
