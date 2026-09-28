@@ -1,54 +1,99 @@
 # rule-audit 2026-09-27 ── docs（文書と検査）
 
-ブランチ `claude/audit-docs`（integ-0905 `7ad9b612` から）。範囲は `docs/scope/audit-docs.md`。
-**書き足しながら push している。途中の版。** 各項目: 場所 · 規則 · 何が · 証拠 · したこと。
+ブランチ `claude/audit-docs`（integ-0905 から、2026-09-28 に integ-0905 を取り込み済み）。範囲は `docs/scope/audit-docs.md`。
+**書き足しながら push している途中の版。**
 
-凡例: 【直した】このブランチで直した（コミット） / 【他へ】www・supabase・ios・android の物、担当セッションへ /
-【オーナー】決めるのはオーナー、選択肢つき / 【未】見つけたが、まだ手を付けていない
+凡例: 【直した】コミット済み / 【オーナー】決めるのはオーナー（選択肢つき） / 【他へ】www・supabase・ios・android の物 / 【未】見つけたがまだ
 
-## A. 検査が、バグを入れても緑のまま（CLAUDE.md「watched failing」「a copy always agrees」）
+読み手の生の所見（証拠の grep 付き、読み手が確かめきれなかった物は UNVERIFIED と書いてある）は
+`docs/reports/rule-audit-2026-09-27-docs/` に置いた: `claude.md`（CLAUDE.md 58 件）、`core-docs.md`（規則の文書 100 件）、
+`log1.md`（決定ログ 235–1699、31 件）、`log2.md`（1700–3199、33 件）、`tools1b.md`（検査 34 本の途中まで）。
+**決定ログ 3200–4699 と、FEATURES/BACKLOG・残りの文書・検査 1a/2/3 は読み手が上限で止まり、まだ読めていない。**
 
-各バグは worktree の中で www/ に入れ、その検査だけを走らせ、戻した。
+## 数（今の時点）
 
-A1. `tools/face-check.mjs:240` · 17 条 4 · 4 番目の決まり（canvas の字は page に訊く）は、`+ fam` を含む行を名前で見逃している。
-`www/card.js:452` に `fam='Arial';` を入れても EXIT 0。【未】
+| | 数 |
+|---|---|
+| 見つけた（読み手の所見の合計、重複あり） | 約 330 |
+| 直した（コミット済み） | 文書 約 90 文、検査 4 本（store・face・plan・docs の基準線） |
+| オーナーの物 | 14 |
+| 他の担当へ | 21 |
 
-A2. `tools/face-check.mjs:170-205` · 17 条 3「www/*.js に家族名を一つも書かない」 · :root が宣言している家族しか探していない。
-`www/notes.js` に `font-family:Helvetica` と `e.style.fontFamily='Helvetica'` を入れても EXIT 0。【未】
+## A. 検査 ── 直した（全部、バグを戻して赤を見た）
 
-A3. `tools/face-check.mjs:62-64` · 17 条 1 · `<style>` の中しか読まず、`index.html` のマークアップの `style="font-family:…"` を読まない。【未】
+| 検査 | 何が緑のまま通っていたか | 赤を見たバグ | コミット |
+|---|---|---|---|
+| `store-check` | 書き込みを「ファイル＋式」で見分けていた → 同じ字面 `core.js:k` の新しいキーは既存の行として通る。`localStorage[k]=` は見えない | 新しい関数から `var k='lingua.photo.cache'` で setItem、`localStorage['lingua.zz2']=` | `95531cb8` |
+| `face-check` | ① canvas の家族名の `+ fam` を名前で見逃し（`fam='Arial'` が通った） ② マークアップの `style=""` と JS の文字列・`.style.fontFamily` を読まない ③ `decomment` が行をずらし、452 行目を 276 と言った ④ 「none named twice」を確かめていなかった | 7 通り（コミット文に列挙） | `b32452f4` |
+| `plan-check` | DATA_SAFETY.md「plan-check が findWord の半分も持つ」が嘘だった（findWord を呼んでいない）。`bytes()` が誰も書かない `lingua.langs` を比べていた | `findWord()` が `wordsSeen()` の中だけを探す | `b8fdcc7e` の前のコミット |
+| `docs-baseline` | STATE.md の古い名前 16・ゲートの本数の文 3・無いファイル 2 | 消えた名前を線なしで戻す → 505 行目で赤 | `7d8bc616` |
 
-A4. `tools/sides-check.mjs:84-115` · 8 条 · `MINE` は手で書いた一覧（CLAUDE.md が「a list of keys, written by hand」と戒める形）。
-作る側の変数 `LANGS`・`LMINE`・`KB`・`WLD`・`LSL`・`WSYS`・`PLAN` が入っていない。
-`postWho()`（線より下）に `LANGS[LMINE].name`・`KB[0].name` を入れても「none of them yours」、EXIT 0。【未】
+## B. 検査 ── 見つけて、まだ直していない
 
-A5. `tools/dead-check.mjs:330-340` · 5 条 · 「届いている」を「二回以上名前が出る」で数えている。
-自分しか呼ばない関数、互いしか呼ばない二つ、`ZZ=ZZ+1` だけの変数が全部「reached」、EXIT 0。【未】
+- `sides-check.mjs:84-115` `MINE` は手書きの一覧。`LANGS`・`LMINE`・`KB`・`WLD`・`LSL`・`WSYS`・`PLAN` が無く、`postWho()` に `LANGS[LMINE].name` を入れても緑。【未】
+- `dead-check.mjs:330-340` 「届いた」＝名前が二回出る。自分だけを呼ぶ関数・互いに呼ぶ二つが通る。【未】
+- `dead-check.mjs:165-173` 検査（tools/）からの言及も「届いた」に数える。`folPut`（me.js:1607）・`gramArgs`（phases.js:415）は検査からしか呼ばれない。【未】／関数の扱いは【他へ core/words】
+- `docs-check` ① ``` で囲んだ図の中を読まない（ARCHITECTURE.md の `syMerge()`・`netSlice1()`・`www/sync.js` を見逃した） ② 【差し替え済み】が見出しの頭にある時しか見ない（FEATURE_RULES.md:583・730・732 は末尾に付いて日付も一行も無い） ③ 出力の「(baseline N)」は基準線の全行数で、届く文書の数ではない。【未】
+- `load-check` 三つの読みが基準線で上限を免れている、`press` は 44pt の例外が五つの class（規則はキーだけ）。【未、claude.md 参照】
+- `import-check` CLAUDE.md 7 条「eleven real samples」── 見本は 19、見本自身のコメントが「本物の書き出しではない」。【未】
 
-A6. `tools/dead-check.mjs:165-173` · 5 条 · `tools/*.mjs` の中の言及も「届いている」に数える。
-アプリから誰も呼ばず、検査からだけ呼ばれる関数が生き残る: `www/me.js:1607 folPut`（fixture だけ）、
-`www/phases.js:415 gramArgs`（press・i18n-check・shot だけ）。【未】（関数を消すかは www の担当 → 【他へ】core/words）
+## C. 文書 ── 直した
 
-A7. `tools/dead-check.mjs:217` · 5 条 · 「値として使う」を後ろが `( ) , ;` かで近似している（代わりの印で見ている）。
-`a ? f : g`・`||`・`[f]`・`{k:f}` は使われた数に入らない。`netFollowers` は検査が名前を出すから生きている。【未】
+| 文書 | 何を | コミット |
+|---|---|---|
+| `docs/STATE.md` | 消えた名前に線、ゲートの本数の文を消す、`loadChromium()`・`&&` の鎖 | `7d8bc616` |
+| `docs/ARCHITECTURE.md` | sync.js・syMerge・netSlice1 は無い、スライスは LSL、保存は Save、食い違いは slice_in、netLangSync は起動で呼ばない、sid は無い、rest/v1 の手書きの一覧 | `038e742c` |
+| `docs/DATA_MODEL.md` | お知らせの写しは無い、planWas は無い、下書きはサーバーの行、声は録った時にバケット、lsWipeAcct は名前空間を数える、langWrites、dlCap は null、post.tr、インクの無い投稿は文字、aud-data Q1–Q3 の前提は無い 他 | `62642820` |
+| `docs/TESTING.md` | 回すのはサブリーダー（居なければリーダー）、npm test は push の前、page と kb、backup・registerFont・三世代は無い、margin-top は press、測った数を書かない | `7007b14c` |
+| `CLAUDE.md` | 17 条 1（マークアップと JS も宣言）、22 条の store-check の説明 | `b32452f4`・`95531cb8` |
 
-A8. `tools/store-check.mjs:146-156` · 22 条 · 書き込みを `file:<式の字面>` で見分けている。
-同じ字面（`core.js:k`）の新しいキーは既存の行として通り、`localStorage[k]=` のような書き方は見えない。
-`lingua.photo.cache`・`lingua.zz2`・`lingua.zz3` を書かせても EXIT 0。【未】
+## D. 文書 ── まだ直していない（場所は付録）
 
-A9. `tools/store-check.mjs:146-156`（FIELDS） · 22 条 · `SET.x.push()`・`SET.x[k]=` は書き込みに数えない。【未】
+- `docs/STATE.md`（嘘 38・古い規則 9・歴史 4）── 主な物: :35 Android は integ-0905 に取り込み済み／:44–67 1.0.3 の一覧に lasso・r112・r116・r117・r119・星・お題が無い／:62 `SCRIPT.blk` は無い／:125 `can('noads')` は無い／:146 AdMob は r93 で消えた／:135・200 通知のスイッチは六つ／:809・1592 Keychain・Transaction.updates は無い（RevenueCat）／:947 「master が今のアプリ」は違う（integ-0905 が 34 先）／:1022 Swift は七つ、App Store に出ている／:1051 `SET.done` → `SET.walked`／:1128・1163 syMerge ではなく slice_in／:1192 「まだ」の一覧（段・通知・お題・引用・公開）は全部できている／:750 `acct-check 40c` は無い。**STATE.md の 44–912 行はビルドごとの記録で、CLAUDE.md「今のことだけ」に反する** ── 消すか一節にまとめるかはリーダーの物。【未／リーダー】
+- `docs/DATA_SAFETY.md` 33–39 行（消えたバックアップの段落）、150 行（終わった段は「シート」でなく `capLapseSaw()` のポップ）、152 行（findWord の半分 → plan-check を直したので文は正しくなった）、227 行（「一つ」→ 二つ）、257 行（again-check は食い違いを走らせない、slice_in は rls-check）。【未】
+- `docs/PAID_FEATURES.md` 18 件 ── キーボードは段で分けない（1.0.3）のに「無料は固定 QWERTY」が :73・153・541・559・624 に残る／:24 `netPlanUp` に線／:36–44 LinguaPlan.swift の表（歴史）／:218 「隠さない」と 2026-09-01「隠れる」の食い違い／:306 `dlCount()` は `language_take` の数／:399 写真は `blob:`／:413 `netSlicePut` は無い／:763 「plus 以外は何も買えない」→ pro も買える。【未】
+- `docs/SESSIONS.md`・`docs/FEATURE_RULES.md`（頭と尻）・`docs/LEADER.md` ── 「取り込み・ゲートはリーダー」が CLAUDE.md の「サブリーダー、居なければリーダー」と食い違う所 11 か所。SESSIONS.md:36–72 の訂正の歴史、:720 の一セッションのスコープ。【未】
+- `CLAUDE.md` 58 件（`claude.md`）── :527「fifteen-minute audit」は 30 分（LEADER.md、OWNER 2026-09-24）／:1209「the server half still says nothing」は違う（保存の失敗はポップ）／:1406「They all say var(--face-ui)」── `font-family:inherit` が 43 残る／:1029 投稿の一行は `LinguaLine`／:2304 Swift は七つ／:2311 `vSet` は九つ／:2434 i18n-check は `['free','pro']`／:640「every browser check owns a distinct port」── 27 本はポートを使わない／ボタン数の歴史の表（2325–2436）は「数をここに写さない」と自分で言いながら数を並べている。【未】
+- 決定ログ（`log1.md`・`log2.md`・下の E）── 状態の文が古い物 約 55、差し替えの印が無い物 約 25、差し替え済みで本文が残る物 約 16。【未】
 
-## B. 検査のコメント・文書が、検査の実際と違う
+## E. オーナーの物（決めない。選択肢だけ）
 
-B1. `tools/store-check.mjs:25-27` · 「there are four of those」 · 実際の出力は「9 keys — 0 with a road, 9 the phone's own」。数を消す。【未】
+1. **LEADER.md:78「セッションに CLAUDE.md・STATE.md を読ませない」** vs CLAUDE.md § Scope「各セッションは CLAUDE.md と STATE.md を読んで始める」。どちらも書かれた決まりで、どちらも言い直されていない。A: LEADER.md に揃える（CLAUDE.md § Scope を「リーダーが渡す数行」に） / B: CLAUDE.md に揃える（LEADER.md の一文を消す）
+2. **一件の枠: LEADER.md:26「15 分以内」** vs 同じ文書が引くオーナーの言葉「5分以内」と CLAUDE.md「five minutes each」。A: 5 分 / B: 15 分（起動 3〜4 分込み）
+3. **キーボードの行のゴミ箱は確認しない（CLAUDE.md 19 条）** vs 基準 9「削除の前に確認ポップ」（2026-09-24）。A: キーボードは戻すで済ませる例外 / B: キーボードも確認ポップ
+4. **`langDrop`（取った言語を一覧から外す）が確認なし** ── 同じ基準 9 に入るか。A: 入る / B: 外すのは削除ではない
+5. **押した後に星が回る（2026-09-27）** vs ↓の⭕メーター（2026-09-23）・♡がすぐ光る（2026-09-09）。A: その二つは星の例外 / B: 星に揃える
+6. **凍結中の制作（2026-08-26「制作側も止まります」）** vs 同じ項目の「決まっていません」と sns.js:1193 のコメント「制作は続く」。コードは今、制作を止めていない。A: 止める / B: 止めない
+7. **キーボードの高さ: 「四段が天井」（2026-08-26 五つの型）** vs `kbRowsMax()` の五段（同じ日の高さの決定）
+8. **AI**: 2026-08 の「Plus は一日数回 AI と話せる」「AI の部分は今から作る」 vs 「AI入れないって言ってるでしょ？」（CHANGELOG）。A: AI の決定を差し替え済みにする / B: まだ生きている
+9. **2026-09-04 の「バックアップの三世代はそのまま」（1888 行）と「バックアップのファイルを消す」（2049 行）** ── 同じ日で、ログの並びでは前者が新しい。実際には消えている
+10. **基準 1「system standard first」**: 3167 行が取り下げたと言い、3338 行の基準の列挙と CLAUDE.md:212 に残る
+11. **ミュートした人からの通知が鳴る** ── push-send がミュートを見ない（決定は「ミュートした人の物は届かない」のはず。BACKLOG に無い）
+12. **決定ログに無い OWNER の日付 4 つ**（コメントが引いている）: 2026-08-31（別アカウントで前の人のものが出る・Google ボタン・課金がタップで入る）、2026-09-07（全部読み込んでから開く・@ の飛び先・キーボードが増える・文法の各段）、2026-09-10（保存ボタンを一本化・サーバーの文字を増やすな・否定を細かく）、2026-09-16（畳んだ投稿は五行）── 書くのはリーダー。場所は `log4` の読み手の所見（このファイルの E の元、会話の中）: onboard.js:826・net.js:1490・shell.js:194・me.js:232・post.js:3721 ほか
+13. **STATE.md のビルドごとの記録（44–912 行）を消すか残すか**（CLAUDE.md「今のことだけ」）── リーダーのファイル
+14. **docs/HANDOVER-2026-08-28-2.md・docs/SCOPE-yaa.md はどこからも辿れない**（docs-baseline）── 地図に載せるか消すか
 
-B2. `tools/face-check.mjs:268` · 出力の「none named twice」 · 二回宣言を調べている所が無い。【未】
+## F. 他の担当へ（www・supabase・ios は触っていない）
 
-B3. `CLAUDE.md:970` · 7 条「eleven real samples」 · `import-check` の見本は 19。しかも見本自身のコメント（:20-23）が「本物の書き出しではない」と言う。【未】
+| 担当 | 場所 | 何 |
+|---|---|---|
+| core | `www/core.js:2150` | コメントが消えた `tools/backup-check.mjs` を今もあるように言う |
+| core | `www/core.js:2828` | `ltFontOut()` は keyboard.js と言うが sound.js |
+| core | `www/onboard.js:1429-1437` | 消えた `netAnon()` が今もあるように言う |
+| core/words | `www/me.js:1607 folPut`、`www/phases.js:415 gramArgs` | アプリから呼ばれず検査からだけ呼ばれる |
+| core | `www/core.js:2109` `off:'17'` | 国ごとの値段の決定のあとも手打ちの 17 が落ち先に残る |
+| sns | `www/sns.js:1193` | 凍結中も制作は続く、とコメント（E6） |
+| sns | `www/post.js:4353-4358` | `p.ad` の枝、無い `netPromos()` を名指し |
+| sns | `www/post.js:4753` | 投稿の削除の行が `ICON_CROSS`（決まりはゴミ箱） |
+| glyph | `www/keyboard.js:398` | 「四段が天井」のコメント（E7） |
+| words | `www/home.js:2587-2601` | 言語の名前の保存ボタンがいつも金（打ったかを見ない） |
+| sns/core | `www/net.js` `netSearchSave()` | ☆の検索 50 件の上限と押し出しが無い（2026-09-04 の決定） |
+| sns | @ の 14 日 | サーバーは断るが、画面が「いつ変えられるか」を出さない |
+| server | push-send | ミュートを見ない（E11） |
+| ios | `ios/App/App/LinguaShare.swift:288-296` | 録音を Documents に置くと書いたコメント |
+| sns | `www/net.js:4465` `netDay()` | 作れなかった日に前の日の一文を出す（2026-09-27「作れなかった日は無くす」と合うか） |
 
-## C. 文書の嘘・古い規則（読み途中）
+## G. 読めていない所（次に読む）
 
-C1. `tools/docs-baseline.txt` · STATE.md の古い名前 16・ゲートの本数を数える文 3・無いファイル／検査 2。【未】
-
-C2. `tools/docs-baseline.txt` · 決定ログに無い OWNER 日付 4 つ（2026-08-31・09-07・09-10・09-16）がコードのコメントに引かれている。
-決定ログを書くのはリーダー。【オーナー／リーダー】
+決定ログ 3200–4699、docs/FEATURES.md、docs/BACKLOG.md、docs/HIDEFREE.md・EXPIRY・RISK・RECOVERY・DUPLICATES・PROMPTFILTER・WALK-141・GRAMMAR-V2-SPEC・keyboard*・apple・ANDROID・README、
+tools の検査のうち 1b の残りと 1a・2・3（fixture・post・kb・acct・press・rls ほか）。サブエージェントは使わない（リーダーの指示、2026-09-28）。
