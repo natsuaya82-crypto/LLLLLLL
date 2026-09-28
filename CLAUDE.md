@@ -38,7 +38,10 @@ written spec asks for them; anything that deletes gets a DELETE REVIEW first.
 **The past.** Do not re-generate past data from the present state. If something
 means what it means because of how things were when it was made, that goes ON
 it at the moment it is made — the value, not an id pointing at the current
-object. `post.ink` is the worked example and `card-check` is what holds it.
+object. `post.ink` is the worked example and `card-check` is what holds it. Who
+wrote a post is the other way round and deliberately so: an old post shows the
+name and the face the account has NOW, as on every SNS 「今の名前と顔」 OWNER
+2026-09-28 — the ink is the past, the person is the present.
 → `docs/DATA_MODEL.md`
 
 **Money.** A plan decides what a person may DO and decides nothing about what
@@ -1264,10 +1267,10 @@ as a guess — repairing it would be inventing somebody else's alphabet.
 whoever wrote it.** `cardPaint()` sends a post to `cardInkUnits()` and never
 to `cardUnits()`, which is for a word or an example of the open language. A
 line with not one drawn shape in it carries no ink (`inkOfCut()` answers
-`null`), and `migratePostInk()` cuts ink onto this person's own older posts
-one language at a time, as each is opened, because a post can only be cut
-with the alphabet it was written in; until then, and for anybody else's, the
-card is the text. `card-check` holds it, mine and not mine.
+`null`), and nothing cuts ink onto an older post afterwards: today's
+alphabet is not the one it was written in 「古い投稿を今の字で切らない」
+OWNER 2026-09-28, so a post that left with no ink is its text for good, mine
+and anybody else's. `card-check` holds it, mine and not mine.
 
 ### 13. What a post carries is put on it when it is written
 
@@ -1486,11 +1489,11 @@ The head used to DELETE on the press — 「1触ったら1が全部消える」 
 replaced by the owner as too dangerous: 「今即削除なの危なすぎだろ」. Both are in
 docs/CHANGELOG.md; the second is the one in force.
 
-The bin does not ask first. What stands behind it is the step back rather than a
-dialog — a confirmation on every row would make building a keyboard a
-conversation — so the delete and the undo are one statement and have to be held
-as one. **A delete with a broken undo behind it is worse than a delete that
-asks**, because the app has told somebody it is safe to try things.
+The bin asks first, in `popAsk()`, like every other delete in the app
+「消す前はいつも確認」 OWNER 2026-09-28 (criterion 9). The step back stays
+behind it, so the delete and the undo are still one statement and have to be
+held as one: **a delete with a broken undo behind it is still a fault**, even
+behind a question.
 
 **A column takes only the keys it is entirely made of.** 「半キーにしよう。その
 代わり縦列の選択の時では選ばれない。例えばaが半きーのばあい。aを選択したら他の
