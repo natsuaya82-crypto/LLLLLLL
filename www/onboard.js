@@ -73,30 +73,14 @@ function wsKind(id){
 }
 
 /* ---- Onboarding -------------------------------------------------------
-   Three steps: the door, one letter drawn, the name.
-
-   It used to open on a language picker, which is a question the app needs
-   answered rather than one anybody came to answer. Then it opened on a
-   drawing square: draw a shape, and immediately -- which single sound is
-   this? That is only a question an alphabet has an answer to. It quietly
-   decided, on the person's behalf, that they were making one, and it asked
-   them to name a sound before they had chosen any sounds at all.
-
-   And then it put them on a screen that said: coin your first word. With no
-   sounds, no letters and no name, out of nothing.
+   One letter drawn, a walk through the app's own screens, the timeline, the
+   name, and the door -- in that order, and the door is last.
 
    A mark, and then a name. Nothing is asked about sound: the language has an
    inventory from the moment it exists, and a drawn letter takes the next
-   sound nothing reads yet. Making a script is a substitution on an alphabet
-   somebody already has -- ohayo, annyon, ni hao -- so the sound is carried
-   over rather than answered for, and the reading is corrected on the letter
-   in the glyph editor by anyone who wants a different one.
-
-   The name is last, because a language is easier to name once it has made a
-   mark, and obFinish() can invent one for anybody who skips it. No word is
-   asked for: a word is made of sounds and written in letters, and by the end
-   of this there are both, so the dictionary is somewhere to go rather than
-   somewhere to be sent. */
+   sound nothing reads yet. The reading is corrected on the letter in the
+   glyph editor by anyone who wants a different one. A language nobody names
+   stays unnamed -- nothing here invents one. */
 /* The walk with nothing done in it. One place: deleting an account puts the
    walk back to this too (www/settings.js § wipeHere). */
 function obBlank(){ return {step:0, name:'', mode:'draw', pick:'', lid:''}; }
@@ -106,76 +90,28 @@ var ob=obBlank();
    read it -- and dead-check, which watched functions, could not see a number
    nobody asked for. It watches top-level vars now, so this one is deleted the
    day it stops being read. */
-/* The owner's order, and signing in is the LAST of it:
+/* The owner's order, and signing in is the LAST of it 「オンボーディング→
+   最後にログイン」 OWNER 2026-08-27, 2026-08-28:
 
-     1 draw one letter
-     2 the keyboard
-     3 the letters page
-     4 the words page
-     5 the grammar page
-     6 name the language
-     7 sign in
+     OB_DRAW  draw one letter
+     OB_TOUR  the walk -- the app's own finished screens, one thing lit
+              (OB_TOUR_STOPS below); vOb() is not on the page while it runs
+     OB_SNS   the timeline
+     OB_NAME  name the language
+     OB_IN    the door
 
-   OWNER 2026-08-28: 「キーボードの後、文字のページ、単語のページ、文法のページ、
-   …→君の言語を決めよう→ログイン」
+   The walk is the one place making happens with no account (makeNeed() asks
+   appIs(), www/shell.js), and the door is where the account is asked for:
+   netTook() (www/net.js) sends what the walk made the moment the session
+   arrives, and only then asks what the account has. There is no 「あとで」
+   and no way past the door (OWNER 2026-08-26).
 
-   Every stop is one of the app's OWN finished screens -- 「オンボーディングは
-   追加だから基本完成したページを見せて欲しい。指でここ押すんだよみたいなやつは
-   他のページでもそのまま使って」 OWNER 2026-08-28. Nothing here draws a picture
-   of a screen; the walk points at what is already there.
-
-   THERE IS NO MOCK OF A TIMELINE, and there is not going to be one made up
-   out of nothing. The owner asked for 「君の文字でSNSを見てみよう（モックの
-   ページ）」 and what was built for it was invented people saying invented
-   words -- 「snsの画面それなに？ゴミはいらねえよ」 OWNER 2026-08-28. It is
-   gone. Anything that stands here later has to be somebody's real writing,
-   not something this file made up.
-
-   The door was put FIRST once and that was a misreading of
-   「とりあえずログインして、文字を書くところからやな」, which is what to
-   BUILD first, not what comes first on screen. It goes back to the end,
-   where the owner put it: somebody draws a letter and sees where it landed,
-   and is asked to sign in once there is something to sign in for.
-
-   That is why makeNeed() does not fire while this account has no `profile` row -- the walk
-   below is the one place making happens without a name on the account, and
-   step 7 is where the account is asked for.
-
-   Steps 2 to 5 are not screens of this file. They are the app itself, walked
-   with everything but one thing greyed out -- OB_TOUR_STOPS below. The dots
-   count the three SCREENS the onboarding has, in the order they come: the
-   drawing, the name, the door. The walk is not one of them, because while it
-   is running the app is showing its own screens and vOb() is not on the page
-   at all. */
+   What the OB_SNS step draws is an open question for the owner
+   (docs/reports/rule-audit-2026-09-27-core.md, C2). */
 var OB_STEPS=4;
-/* Which step is which, by name, because 0 1 2 3 in eight places is four
-   chances to renumber three of them.
-
-   「オンボーディング→最後にログイン」 OWNER 2026-08-27. The door is the LAST
-   step and the drawing is the first, which is where the owner put them.
-
-   It was moved to the front once, on 2026-08-26, and that was a misreading of
-   「言語はアカウントないと作れないです」 -- which says what a language NEEDS,
-   not what order the screens come in. The two do not fight: what somebody
-   draws and names here is on the phone until the door at the end, and
-   obFinish() puts it on the server the moment they are through it. That is
-   the whole of what the account is needed FOR, and it is needed at step 3 of
-   three rather than at step 1.
-
-   「そんなの俺頼んでねえぞ」 OWNER 2026-08-28, of the door having been first.
-
-   What did NOT come back with the order is the door's 「あとで」 button:
-   「サインインしなかったときは門で止まるよ！」 OWNER 2026-08-23 was struck out
-   on 2026-08-26 and that decision stands. Draw, name, and then sign in with
-   no way past it.
-
-   The three the dots count are 0, 1 and 2, in the order they happen. The walk
-   is last on purpose and not because it happens last -- it is not a screen of
-   this file at all, vOb() is not on the page while it runs, so keeping it
-   outside the counted range is what lets obDots() stay a plain loop. The
-   numbers are in the order the screens COME, which is what makes `i<=s` in
-   obDots() the right test: the walk runs between OB_DRAW and OB_NAME, and
-   nothing on the screen counts it. */
+/* Which step is which, by name. The dots count the four screens of this file
+   in the order they come; OB_TOUR is numbered outside that range because it
+   is not a screen of this file, which is what lets obDots() stay a loop. */
 var OB_DRAW=0, OB_SNS=1, OB_NAME=2, OB_IN=3, OB_TOUR=4;
 
 /* ---- the walk through the app itself -----------------------------------
@@ -417,9 +353,9 @@ function obTourHTML(){
        A lit thing that does NOTHING. The free keyboard's keys are spans,
        because there is no editor behind them.
 
-       A stop that is a PAGE rather than a door -- `look` above. The letters,
-       words and grammar pages are what somebody came to be shown, and none of
-       them has a thing on it whose job is to lead to the next one.
+       A stop that is a PAGE rather than a door -- `look` above. The letters
+       page is what somebody came to be shown, and nothing on it has the job
+       of leading to the next one.
 
        And NOTHING LIT AT ALL, which is the way out of a locked screen rather
        than a nicety. ob.lid is empty for anybody who skipped the drawing, so
@@ -755,8 +691,8 @@ function obBack(){
    does not: what it says is that a language needs an account, and the account
    at the end of the walk is the account the language gets. Somebody draws a
    letter, names what they are making, and is asked to sign in once there is
-   something to sign in FOR -- and obFinish() sends what they made up the
-   moment they are through.
+   something to sign in FOR -- and netTook() (www/net.js) sends what they made
+   the moment the session arrives.
 
    The question the old argument was about -- you drew a letter here, and the
    account you just signed into already has a language, which one survives --
@@ -1035,9 +971,9 @@ function obIn(prof){
          What is left of it here is the two things that ARE true: the walk is
          over, and the app opens on the profile
          （「開く画面はプロフィール画面であって設定画面じゃない」 OWNER
-         2026-09-06). `SET.walked` is written and not read -- the owner keeps
-         it as this handset's own (2026-09-09, choice A), because a phone with
-         nobody signed in has nobody to ask. */
+         2026-09-06). `SET.walked` is this handset's own (2026-09-09, choice A):
+         appIs() reads it, because a phone with nobody signed in has nobody
+         to ask. */
       SET.walked=true; save();
       goTab('profile'); return;
     }
@@ -1198,8 +1134,7 @@ function obDoor(r, a){
 }
 /* And the question every one of them is asking. Anything other people would
    see needs somebody's name on it -- a post, a like, a boost, a follow, a
-   block, a report -- and there is a session without one from the first
-   launch, so this is netSignedIn() and not netSignedIn().
+   block, a report -- so this asks netSignedIn().
 
    Where you are standing is where the door sends you back to, so a like
    pressed halfway down a thread does not land you on the timeline. */
@@ -1367,7 +1302,7 @@ function obMailForgot(){
   /* The other half of the same question. /auth/v1/recover answers 200 for an
      address it has never seen, so this screen used to walk on to a code
      that were never going to arrive -- a state with no cause and no way out,
-     which is the one place www/CLAUDE.md says a sentence is written. */
+     which is the one place CLAUDE.md § Explaining says a sentence is written. */
   netMailTaken(OBM.em, function(taken){
     if(!taken){ OBM.busy=false; OBM.msg=t('ob.mail.none'); render(); return; }
     obMailForgotGo();
@@ -1431,17 +1366,9 @@ function obCrestHTML(){
    not be able to tell which of the two they were looking at. */
 /* There is nothing to skip past, and the reason under this comment changed.
 
-   It said the app makes an account by itself at first launch, so "continue
-   without an account" would be offering what everybody already has. **It does
-   not.** netAnon() gets a token whose JWT carries `is_anonymous`: netSignedIn()
-   reads false off it and so does is_member() in supabase/schema.sql. It is a
-   uid to hang a language on, which is what 2026-08-22 asked for and all it
-   asked for. It is not somebody, and it is not an account. 「匿名アカウントは
-   ねえよ」
-
-   So the offer is missing for the opposite reason now, and a stronger one:
-   2026-08-26, 「言語はアカウントないと作れないです」. There is no continuing
-   without an account to offer. The chevron is the way out. */
+   「匿名アカウントはねえよ」 and 「言語はアカウントないと作れないです」
+   (OWNER 2026-08-26): there is no continuing without an account to offer.
+   The chevron is the way out. */
 function obFormHTML(up){
   return '<div class="mid obform">'+
     obCrestHTML()+
@@ -1620,7 +1547,7 @@ function obWhoGo(){
       /* And a new account made at the END of the onboarding, which is where
          the door is: it was the last step, so the walk is over. Everything
          behind it -- the letter, the language, the name -- was made before
-         this account existed, and obFinish() is what puts it on the server. */
+         this account existed and went up with the session (netTook). */
       obFinish();
     }, obNo);
   }, obNo);
@@ -2044,10 +1971,9 @@ function obStrokes(){
    DOWN until there is something to end it with, so nothing here can be
    pressed into a dead end.
 
-   This is the one place the app coaches, and it is inside the onboarding,
-   which is the one place CLAUDE.md's rule against explaining is not about --
-   the rule is that a SCREEN does not explain itself, and the onboarding is
-   not a screen somebody arrives at, it is what the app is until it is done. */
+   These lines are the owner's own words (2026-08-28, below). CLAUDE.md
+   § Explaining makes no exception for the onboarding, so whether they stay
+   is the owner's (docs/reports/rule-audit-2026-09-27-core.md, C1). */
 /* What the step says AND that it is not for ever, on one line under the
    heading. 「指で線を引いて。後で書き直せます。」 OWNER 2026-08-28 -- the
    reassurance used to sit at the foot, under the buttons, which is after
@@ -2135,8 +2061,7 @@ function obDrawHTML(){
        It skips TO the door, not past it: the door is still the last step and
        there is still no way round it (OWNER 2026-08-26, and act-check holds
        it -- signed out, all 37 routes are the door). Signing in from there
-       ends the onboarding exactly as it does at the end of the walk, because
-       obIn() calls obFinish() at the end of the walk.
+       ends the onboarding exactly as it does at the end of the walk (obIn).
 
        Here and nowhere else. This is the FIRST screen, which is where somebody
        decides they do not want the walk; the name step already reaches the
@@ -2230,9 +2155,7 @@ function vOb(){
      sounds. The writing system is gone -- wsGuess() reads it off the letters
      rather than asking somebody to choose between an abjad and an abugida
      before they have drawn anything -- and the name went last, because a
-     language is easier to name once it has made a mark, and obFinish() has
-     always been able to invent one out of the inventory for anybody who
-     skips it. */
+     language is easier to name once it has made a mark. */
   var h = door? obDoorHTML()
         : (s===OB_DRAW && ob.mode==='borrow')? obBorrowHTML()
         : (s===OB_DRAW)? obDrawHTML()
