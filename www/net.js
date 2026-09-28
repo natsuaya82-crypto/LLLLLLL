@@ -638,13 +638,7 @@ function netTook(d){
      be. Nothing is stored: it is a fact about the reply in hand. */
   var netCame=!(SESS && SESS.rt);
   SESS={ at:d.access_token, rt:d.refresh_token,
-         uid:(d.user && d.user.id) || netUid(),
-         /* Whether this one has a name on it, decided here because this is
-            the one place that knows what a session is made of. A session
-            already stored when this key arrived has no `anon` on it at all,
-            which reads as false -- correct, because every account that
-            existed before anonymous sign-in did was a real one. */
-         anon:false };
+         uid:(d.user && d.user.id) || netUid() };
   netSave();
   /* AND EVERYTHING THIS PHONE HOLDS OF AN ACCOUNT IS NOW THIS ONE'S.
      「アカウント新規作成してんのにまた前のアカウント残ってんだけど」 OWNER
@@ -805,12 +799,8 @@ function netTook(d){
    anonymous accounts the second half could never be true, so it was a true
    question with nothing left to answer it yes, asked in twenty-eight places.
 
-   netMember() and netAnonTok() are deleted and every caller asks
-   netSignedIn(). `SESS.anon` is written `false` and read by nothing here --
-   it stays in the stored session because a phone holding one from before
-   today would otherwise come back with a field missing, and because the
-   server is still what decides: is_member() in supabase/schema.sql reads
-   `is_anonymous` off the token, whatever this file believes. */
+   Every caller asks netSignedIn(), and the server is what decides:
+   is_member() in supabase/schema.sql reads `is_anonymous` off the token. */
 function netOut(){
   /* WHERE THIS HANDSET IS REACHED FOR THE ACCOUNT THAT IS LEAVING, FIRST --
      while the token that signs the DELETE is still in hand. It was the sign-out
@@ -2061,7 +2051,7 @@ function netLangsWalk(d, done){
        `owner=eq.me`, so it is this account's. */
     own=String(row.owner||netUid());
     nid=String(row.id);
-    NET_LROW[nid]={owner:own, name:String(row.name||'')};
+    NET_LROW[nid]={owner:own};
     if(!LANGS[nid]){
       /* Somebody else's is stamped with its owner (langSeenAdd); this
          account's is an entry and nothing else. The entry first, so slices
