@@ -268,8 +268,6 @@ defLang('it', (function(){
       "set.account"               : "Account",
       "set.account.guest"         : "Non connesso",
       "ob.borrow.h"               : "Lettera presa in prestito",
-      "ob.borrow.sub"             : "　",
-      "ob.borrow.take"            : "　",
       "ob.tour.tab" : "Apri Crea.",
       "ob.tour.build" : "Tocca la tastiera.",
       "ob.tour.kb0" : "Tocca la tua tastiera.",
@@ -742,7 +740,6 @@ defLang('it', (function(){
       "lt.out.svg" : "SVG",
       /* onboarding */
       "ob.next"          : "Avanti",
-      "ob.name.sub"      : "　",
       "ob.name.note"     : "Modificabile dopo",
       "ob.name.later"     : "Decido dopo",
       "ob.draw.h"       : "Disegna la tua {0}.",

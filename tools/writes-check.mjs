@@ -92,7 +92,7 @@ const DYNAMIC = {
     keepBack: 'a save that did not land: the snapshot from before it put back',
   },
   'SET[]': {
-    '(top)': 'the load: what is on the disk read in over the defaults',
+    setPhoneRead: "the load: this handset's own setup (SET_PHONE) read in off lingua.set",
     setGot: "an account's own settings arriving at a switch (acctFor) -- the defaults, then lingua.set.<uid>",
     netPrefsGot: "the account's settings arriving from the server -- a sign-in's read, or the answer to a send (the later press stands)",
   },

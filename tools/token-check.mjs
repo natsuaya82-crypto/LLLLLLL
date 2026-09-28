@@ -275,6 +275,116 @@ say(seven.length === 1 && seven[0] === 'bad 0',
     'and running out ends in the same one place a dead network does, exactly ' +
     'once -- no second way out: ' + JSON.stringify(seven));
 
+/* ---- 7b. and a dead network is answered once too --------------------------
+   What a request with no network does in a WebView: readyState 4 with status
+   0, AND THEN `error` -- both, one after the other. Each of the two used to
+   call `bad`, so netPop() was handed two ［再接続］ closures for one press and
+   the retry sent everything twice (docs/reports/rule-audit-2026-09-27-core.md
+   N1). The wire here does exactly what a dead network does. */
+const sevenB = await pg.evaluate(async ({ w, s }) => {
+  eval(w); eval(s); window.__reset();
+  var send = FakeX.prototype.send;
+  FakeX.prototype.send = function(b){
+    var self = this;
+    window.__X.sent.push({ m:this.m, u:this.u });
+    setTimeout(function(){
+      self.readyState = 4; self.status = 0; self.responseText = '';
+      if (self.onreadystatechange) self.onreadystatechange();
+      if (self.onerror) self.onerror();
+    }, 0);
+  };
+  var calls = [];
+  netGet('/rest/v1/profile?select=*', function(){ calls.push('ok'); },
+                                      function(d, st){ calls.push('bad ' + st); });
+  await wait(120);
+  FakeX.prototype.send = send;
+  return calls;
+}, { w: WIRE, s: wait });
+
+say(sevenB.length === 1 && sevenB[0] === 'bad 0',
+    'a dead network (readyState 4 AND error) answers once, not twice: ' +
+    JSON.stringify(sevenB));
+
+/* ---- 7c. and a write that changed no row did not work ---------------------
+   PATCH answers 200 and `[]` when it matched no row -- no row yet, or a row
+   policy that said no (supabase/schema.sql § profile_edit). netPut() is the
+   one save, and it handed that to `ok` as `null`; every caller read it as
+   landed, which is how a photograph was shown on the phone and never reached
+   profile.av (docs/reports/rule-audit-2026-09-27-core.md § 0, N3). */
+const sevenC = await pg.evaluate(async ({ w, s }) => {
+  eval(w); eval(s); window.__reset();
+  var out = {};
+  ['profile', 'draft'].forEach(function(to){
+    netPut(to, 'x1', to === 'draft' ? { body:{}, ed:{} } : { a:1 },
+           function(r){ out[to] = 'ok ' + JSON.stringify(r); },
+           function(d, st, m){ out[to] = 'bad ' + st + ' ' + m; });
+  });
+  await wait(200);
+  return out;
+}, { w: WIRE, s: wait });
+
+say(['profile', 'draft'].every(function(k){ return /^bad 200 .*≠/.test(sevenC[k] || ''); }),
+    'a write the server answered with no row is a write that did not land: ' +
+    JSON.stringify(sevenC));
+
+/* ---- 7d. and a refusal says so, in the one place -------------------------
+   netPop() is the app's one answer to a request that fell over. It put the
+   pop up for 「no answer」 and said NOTHING for an answer that was no -- a
+   403, a 409, a 500, or a write that matched no row (7c) -- so every caller
+   that handed it the failure and nothing else (a save, the photograph, the
+   language's name) stood still in silence. 「保存して黙るのは仕様ではない」
+   (CLAUDE.md rule 11). What it says is netWhy()'s, the app's one wording of
+   a refusal. */
+const sevenD = await pg.evaluate(async ({ w, s }) => {
+  eval(w); eval(s); window.__reset();
+  var said = [], realToast = toast;
+  toast = function(x){ said.push(String(x)); };
+  var out = {};
+  out.r403 = netPop({ message:'nope' }, 403, 'profile 403', function(){});
+  out.s403 = said.slice(); said.length = 0;
+  out.rNone = netPop([], 200, 'profile ≠', function(){});
+  out.sNone = said.slice(); said.length = 0;
+  out.rNever = netPop(null, 0, 'resume −');
+  out.sNever = said.slice();
+  toast = realToast;
+  out.failed = t('net.failed');
+  return out;
+}, { w: WIRE, s: wait });
+
+say(sevenD.r403 === false && sevenD.s403.length === 1 && sevenD.s403[0] === sevenD.failed &&
+    sevenD.rNone === false && sevenD.sNone.length === 1 && sevenD.sNone[0] === sevenD.failed &&
+    sevenD.sNever.length === 0,
+    'a refusal is said once, in netWhy()\'s words, and is not a fallen line; ' +
+    'a request never sent says nothing: ' + JSON.stringify(sevenD));
+
+/* ---- 7e. and a read that is not a list is not 「none」 ---------------------
+   Every read netGet() makes is of a table or a view, and PostgREST answers
+   one with a list. Something else is broken, not empty (CLAUDE.md § Data:
+   「"Empty" and "broken" are different states and must not share a
+   branch」) -- and twenty-odd readers turned it into `[]`, three of which
+   then took this account's languages off the phone as 「the server has
+   none」 (rule-audit-2026-09-27-core N4-N7). */
+const sevenE = await pg.evaluate(async ({ w, s }) => {
+  eval(w); eval(s); window.__reset();
+  var send = FakeX.prototype.send, out = [];
+  FakeX.prototype.send = function(b){
+    var self = this;
+    setTimeout(function(){
+      self.readyState = 4; self.status = 200; self.responseText = '{"x":1}';
+      if (self.onreadystatechange) self.onreadystatechange();
+    }, 0);
+  };
+  netGet('/rest/v1/language_take?select=language', function(d){ out.push('ok ' + JSON.stringify(d)); },
+         function(d, st, m){ out.push('bad ' + st + ' ' + m); });
+  await wait(120);
+  FakeX.prototype.send = send;
+  return out;
+}, { w: WIRE, s: wait });
+
+say(sevenE.length === 1 && /^bad 200 .*\u2260/.test(sevenE[0]),
+    'a read the server answered with something that is not a list is broken, not empty: ' +
+    JSON.stringify(sevenE));
+
 /* ---- 8. and the file and the picture leave by the same exit ------------
    「一本化してくれ」「通信する場所」 OWNER 2026-09-27. netUp() (a file going up)
    and netMedia() (a picture coming down) each had an XMLHttpRequest of their

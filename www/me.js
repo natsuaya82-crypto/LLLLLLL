@@ -372,11 +372,9 @@ function meProfPut(v, done, at){
   if(!send){ done(true); return; }
   /* The row that comes back is what the account now says -- a field another
      phone saved LATER is that phone's (supabase/schema.sql § keep_newer), and
-     meProfGot() is the one place a row goes on ME. No row back is the server
-     not taking it (a PATCH the row's policy refused answers 200 and empty),
-     and that is 「保存できませんでした」, not a save. */
+     meProfGot() is the one place a row goes on ME. A PATCH no row took comes
+     back through `bad` (netPut, www/net.js). */
   netProfPut(send, at, function(row){
-      if(!row){ toast(t('save.no')); done(false); return; }
       meProfGot(row);
       done(true);
     },

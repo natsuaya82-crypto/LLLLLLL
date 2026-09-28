@@ -170,8 +170,6 @@ defLang('en', (function(){
       "set.account"               : "Account",
       "set.account.guest"         : "Not signed in",
       "ob.borrow.h"               : "Borrowed letter",
-      "ob.borrow.sub"             : "　",
-      "ob.borrow.take"            : "　",
       "ob.tour.tab" : "Open Build.",
       "ob.tour.build" : "Tap the keyboard.",
       "ob.tour.kb0" : "Tap your keyboard.",
@@ -647,7 +645,6 @@ defLang('en', (function(){
       /* onboarding */
       'ob.next'         : "Next",
       'ob.name.h'       : "What is your language called?",
-      'ob.name.sub'     : "　",
       'ob.name.ph'      : "a name",
       'ob.name.note'    : "You can change it later",
       'ob.name.later'   : "Decide later",
