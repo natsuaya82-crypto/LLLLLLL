@@ -19,7 +19,8 @@ Android の Kotlin は iOS の Swift と**同じ名前・同じメソッド・�
 
 ## 何ができて、何が「無い」と答えるか
 
-Kotlin は `android/app/src/main/java/com/tokinets/lingua/` の四つのファイル。
+Kotlin は `android/app/src/main/java/com/tokinets/lingua/` の四つのファイルと、
+キーボードの `keyboard/`（下の § キーボード）。
 
 | プラグイン.メソッド | Android の答え |
 |---|---|
@@ -31,7 +32,7 @@ Kotlin は `android/app/src/main/java/com/tokinets/lingua/` の四つのファ�
 | LinguaShare.audio | 何もせず答える。iOS が切り替える「音声の種類」が Android には無い |
 | LinguaShare.voice / dropVoice / sweepVoices | 事実を答える。iOS では前の版が残した声のファイルを読む・消すためのもの。Android には前の版が無く、そのフォルダは一度も無い |
 | LinguaStore.review | できた。Google Play の In-App Review |
-| LinguaShare.write | **無いと答える**（reject）。Android にはまだキーボードもウィジェットも無い。`www/share.js` が reject を `SHARE.how` に残す |
+| LinguaShare.write | できた。`keyboard.json`・`widget.json`・`LinguaScript.otf` をアプリの内部の `LinguaKeyboard/` に書く（iOS の App Group と同じ三つ・同じ名前）。空で渡された物は消す。下の § キーボード |
 | LinguaShare.renderPdf | **無いと答える**（reject）。下の § 画面にペンで書いたシート |
 | LinguaStore.products | Google Play Billing の値段（基本プランの formattedPrice）。Play Console に商品が無い間は**空の一覧**で、画面は「まだ販売されていません」 |
 | LinguaStore.current / buy / restore / manage | Google Play Billing。答えは `google: [{token, product}]`（下の § 課金）。Play ストアの無い端末は `no store` で、`current` の reject は `netPlanVerify([])` に落ち、サーバーがこのアカウントの plan を答えるので、iPhone で買った plan は Android でもそのまま |
@@ -41,8 +42,8 @@ Kotlin は `android/app/src/main/java/com/tokinets/lingua/` の四つのファ�
 iPhone と同じ（`docs/FEATURE_RULES.md` 2026-09-27）。コードはできていて、
 Play Console の商品とサービスアカウントの鍵を待っている（下の § オーナーが
 すること）。**待っているもの**（オーナーの決定）: 通知の仕組み（Firebase
-Cloud Messaging と `push-send` の Android 対応）。キーボード（Android の IME）と
-ウィジェットは次の回。
+Cloud Messaging と `push-send` の Android 対応）。ウィジェットは次の回
+（`widget.json` は書いているが、読む物がまだ無い）。
 
 ### 課金
 
@@ -105,6 +106,32 @@ JPEG をそのまま取り出す）ので、紙を読むこと自体は Android 
 2.0.3 がある）。ネイティブ込みでおよそ 10MB、Kotlin 2.4 で作られていてビルド
 全体の Kotlin をそれに合わせる必要があり、この環境では確かめられないので、
 入れるかどうかはリーダーの判断に残す。
+
+## キーボード
+
+`ios/App/LinguaKeyboard/` の Android 版。Android では入力方法（IME）で、
+`keyboard/LinguaIme.kt` が InputMethodService。manifest に
+入力方法のサービスと `res/xml/method.xml`。Swift と同じ名前の
+六つ（`LinguaIme` が `KeyboardViewController` の分）:
+`Shared`・`KeyBoardView`・`Compose`・`CandidateBar`・`GlyphView`・`HandPad`。
+
+- **読む物**: `LinguaShare.write` が書いた三つ。同じアプリの中なので App Group
+  の代わりは要らない。キーボードは読むだけで、開くたびに読み直す
+  （入力が始まるたび）。**言語の写しで、言語の在りかではない**。
+- **数**: 横十（`halfCols` = `KB_COLS`）、行の高さは画面の短い辺の 0.1385、
+  全体は画面の半分まで、帯 44、両端 8、短い行は `kbStart()` の所。
+  `kb-check` が Kotlin から読んで Swift と `www/keyboard.js` に突き合わせる
+  （書き写さない）。
+- **描いた字**: iPhone と同じ私用領域の文字を入れ、`LinguaScript.otf` で描く。
+- **変換・候補・はじき**: `Compose.kt`・`CandidateBar.kt` が Swift と同じ表
+  （`shareKbd()` の `conv`）を読む。
+- **手書き**: `hand.js` は iOS のファイルそのもの ── `build.gradle` がビルドの
+  時に assets に写し、画面に出さない WebView で走らせる。「どの字が近いか」を
+  Kotlin で書き直さない（二つの答えになる）。
+- **地球儀**: 電話が次のキーボードへの切り替えを持っていない時は落とす。
+
+使う人がすること: 設定 → システム → キーボード（端末で名前が違う）で
+「Lingua」をオンにして選ぶ。
 
 ## iOS と違うところ
 
@@ -240,7 +267,10 @@ Kotlin は Robolectric の android-all と Capacitor の core を相手にコン
 選ぶ・消すの一覧、写真ピッカー（一枚と四枚）、紙のシートの共有、声の録音と
 再生（再生中に他のアプリの音楽が止まらないか ── WebView が音声の
 フォーカスを取るかは見ていない）、設定を開く、評価のお願い（Play から入れた
-アプリでしか出ない）。課金: 値段が出るか、買う・Plus から Pro に替える
+アプリでしか出ない）。キーボード: 設定に「Lingua」が出るか、行の数と高さが iPhone と
+同じか、描いた字が入って描かれるか、変換の帯・はじき・手書き（hand.js が assets
+に入っているか）、地球儀と次のキーボード、サインアウトで前の人の字が消えるか。
+課金: 値段が出るか、買う・Plus から Pro に替える
 （二重に請求されないか）・保留の購入・復元・定期購入のページから戻る、別の
 Supabase アカウントでは付かないこと、三日後に返金されていないこと（承認が
 効いたこと）。Play Billing は Google の Maven に届かずコンパイルしていない。
