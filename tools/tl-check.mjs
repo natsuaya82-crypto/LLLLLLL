@@ -1275,6 +1275,36 @@ const au = await pg.evaluate(() => {
     out.a23 = ['b0','b1','b2','b3'].map(col).join(' / ');
     app.innerHTML = keep; }
 
+  /* a24: a long name gives way to the mark 「名前長いユーザーも♦️優先しなさい」
+     (OWNER, build 171): on every row that draws one, the mark is on the
+     screen and nothing clips it; the name is what ellipsises. */
+  { const L = 'Alexandria Konstantinopoulou-Wetherby', h = 'alexandriakonst';
+    const post = { id:'LP', sid:'LP', at:Date.now()-6e4, hd:h, who:L, badge:true, ln:'kano', lname:'Vethi', lang:'x' };
+    const keep = { name:ME.name, me:WHO_HAVE[meHandle()], them:WHO_HAVE[h], n:POSTS.length };
+    WHO_HAVE[h] = { who:L, badge:true, fo:1, fr:2 };
+    WHO_HAVE[meHandle()] = Object.assign({}, keep.me || {}, { badge:true });
+    ME.name = L;
+    const seen = (k) => {
+      const b = [...document.querySelectorAll('#app .bdg')].filter((x) => ((x.closest('.pnamew,.pheadn,.whh,.pqth,.mehr,.mewho') || {}).textContent || '').indexOf('Alexandria') >= 0)[0];
+      if (!b) return k + ':none';
+      const r = b.getBoundingClientRect(); let e = b.parentElement, ok = r.right <= window.innerWidth && r.width > 0;
+      while (e && e !== document.body){ const cs = getComputedStyle(e);
+        if (cs.overflowX !== 'visible'){ const a = e.getBoundingClientRect(); if (r.right > a.right + 0.5) ok = false; } e = e.parentElement; }
+      return k + ':' + (ok ? 'ok' : 'hidden');
+    };
+    const res = [];
+    POSTS.push(post); NAV = [{ r:'feed' }]; window.route = 'feed'; render(); res.push(seen('post'));
+    POSTS.push({ id:'LQ', sid:'LQ', at:Date.now(), hd:'iri', who:'Iri', ln:'q', qp:post, qt:'LP' }); render(); res.push(seen('quote'));
+    document.getElementById('app').innerHTML = '<div class="view"><div class="body">'+snsWhoRow({ who:L, hd:h, badge:true, av:null, lname:'' })+'</div></div>'; res.push(seen('list'));
+    PW = pwBlank(); PW.to = 'LP'; openPost(); render(); res.push(seen('replyto'));
+    NAV = [{ r:'profile', a:h }]; window.route = 'profile'; render(); res.push(seen('profile'));
+    NAV = [{ r:'profile', a:'' }]; render(); res.push(seen('mine'));
+    out.a24 = res.join(' ');
+    POSTS.splice(keep.n, POSTS.length - keep.n); ME.name = keep.name;
+    if (keep.me) WHO_HAVE[meHandle()] = keep.me; else delete WHO_HAVE[meHandle()];
+    if (keep.them) WHO_HAVE[h] = keep.them; else delete WHO_HAVE[h];
+    PW = pwBlank(); NAV = [{ r:'feed' }]; window.route = 'feed'; render(); }
+
   netIdOf = realId;
   netSend1 = realS1; netSend = realS; netGet = realG;
   NAV = [{ r:'feed' }]; window.route = 'feed'; render();
@@ -1348,6 +1378,8 @@ if (au.a22 !== JSON.stringify({ post:true, edit:true, name:false }))
       ' -- a post new and edited takes a new line, the name field takes none.');
 if (new Set(String(au.a23).split(' / ')).size !== 1)
   say('a23: the mark is ' + au.a23 + ' (alone / a list of people / a post / a profile) -- one colour everywhere.');
+if (au.a24 !== 'post:ok quote:ok list:ok replyto:ok profile:ok mine:ok')
+  say('a24: with a long name the mark is ' + au.a24 + ' -- on the screen on every row; the name is what gives way.');
 if (!au.a3)
   say('a3: a word pressed while another word\u2019s answer is on the screen draws that old answer or ' +
       '「No results」 until its own lands. Not answered yet is the waiting mark.');

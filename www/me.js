@@ -677,7 +677,11 @@ function meCard(){
          -- the same function every post and every other person's card asks.
          It said planBadge(plan()) here, which is a second answer to one
          question and is the half that only ever worked on your own phone. */
-      '<div class="pname">'+esc(meName())+postBadge(whoOf(meHandle()))+'</div>'+
+      /* and a name too long for the line gives way to the mark, the way every
+         row's does: whoName() inside `.pnamew` (「名前長いユーザーも♦️優先
+         しなさい」 OWNER, build 171) */
+      '<div class="pnamew">'+whoName({who:meName(), hd:meHandle(),
+        badge:whoOf(meHandle()).badge})+'</div>'+
       '<div class="mehr">'+
         '<span class="phandle">@'+esc(meHandle())+'</span>'+
       '</div>'+
@@ -1233,7 +1237,7 @@ function whoCard(h){
          `flex:0 0 auto`, so a long name gives way and the label stays whole.
          Inside `.pname` it would be ellipsised away with the name. */
       '<div class="mehr">'+
-        '<div class="pname">'+esc(postWho(p))+postBadge(p)+'</div>'+
+        '<div class="pnamew">'+whoName(p)+'</div>'+
         whoBackTag(h)+
       '</div>'+
       '<div class="mehr"><span class="phandle">@'+esc(h)+'</span></div>'+
