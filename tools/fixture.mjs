@@ -1200,6 +1200,15 @@ export function halfDone(){
        const h=vAbout();
        ABOPEN.wlddl = was;
        return h; }],
+    /* THE TIMELINE BEFORE THE DAY'S SENTENCE HAS COME: the mark at the size
+       of a word stands where the sentence goes (www/sns.js § snsWaitWord). */
+    ['the timeline, the day\u2019s sentence not come yet', () => {
+       const wasD = DAY, wasG = PULL_GOT.day;
+       DAY = null; PULL_GOT.day = 0;
+       window.route='feed'; NAV=[{ r:'feed' }];
+       const h = vFeed();
+       DAY = wasD; PULL_GOT.day = wasG;
+       return h; }],
     /* THE CHAPTER ONCE THE SERVER SAYS IT IS TAKEN, ⭕☑️.
        「ダウンロードしてる言語は⭕️☑️」 OWNER 2026-09-23 -- www/home.js
        § wldTakeOf. Taken is the SERVER's two answers (the owner is somebody
