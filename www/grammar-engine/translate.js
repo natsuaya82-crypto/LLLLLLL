@@ -195,7 +195,7 @@
         np=npOrderOf(model), npOn={}, nmods=[],
         adjPos=positionOf(model,'ADJECTIVE'), adpPos=positionOf(model,'ADPOSITION'),
         negPos=positionOf(model,'NEGATION'), onBoard={}, adpHead={},
-        i, j, k, slots=[], si=0, role, roleOf=[], head, out=[], phrase, extra=[], seen={};
+        i, j, slots=[], si=0, role, roleOf=[], head, out=[], phrase, extra=[], seen={};
 
     /* WHICH ROLES ARE ON THE BOARD. The word order used to be exactly three
        roles, so everything else had a place worked out from one of them --
@@ -346,8 +346,8 @@
        taken out after the check that holds this passed with it gone -- no
        sample could reach it. A net nothing reaches does not catch the next
        bug, it hides it, and leaves the check green for the wrong reason.
-       tools/grammar-engine-check.mjs counts the pieces against the units. */
-    for(k=0;k<out.length;k++) if(!out[k].role) out[k].role='MODIFIER';
+       tools/grammar-engine-check.mjs counts the pieces against the units, and
+       every tag() above is handed a role, so nothing here gives one out. */
     return out;
   }
 

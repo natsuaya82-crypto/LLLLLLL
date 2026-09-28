@@ -34,7 +34,7 @@ function srcKey(w){ return (w.hw+' '+wMns(w).join(' ')+' '+phIpa(wPh(w))+
    the dictionary is read from its own sounds; anything else -- a word being
    coined, a sample -- from the sounds its spelling would be made of. */
 function seqOf(hw){
-  var w=(typeof findWord==='function')? findWord(hw) : null;
+  var w=findWord(hw);
   return w? wPh(w) : phGuess(hw);
 }
 /* ---- The device's voice is not here any more ---------------------------
