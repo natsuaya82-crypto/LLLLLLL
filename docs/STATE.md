@@ -21,7 +21,7 @@ The rest of `docs/` is the working detail behind the rules at the head of
 | `RECOVERY.md` | バグで人のものが消えたときに運営側で戻す案。三つ並べてある。**まだ決まっていません** |
 | `DUPLICATES.md` | 同じものが二箇所以上に直書きされている所の一覧。食い違っているものが八件、まだ一致しているものが十二件 |
 
-**The 2026-09-09 section was written that day. § 0 was written on 2026-09-05 and § 0-a re-read that night. Every other section was read
+**The 2026-09-28 section was written that day. The 2026-09-09 section was written that day. § 0 was written on 2026-09-05 and § 0-a re-read that night. Every other section was read
 on 2026-09-03 and has not been re-read since.** Where a claim can go stale it
 carries the command that re-checks it. **Run the command; do not believe the
 sentence.**
@@ -31,6 +31,20 @@ A stale statement of FACT is simply believed — which is why nothing here may s
 un-re-read.
 
 ---
+
+## 2026-09-28 ── ビルド 172・173・174（1.0.3、master `5988eb1b`、ゲート全部緑、rls 698/0）
+
+**本番のサーバーに入れた**（Actions「Supabase Schema」apply run 24、15:52 UTC、成功 ── 「Supabase Deploy」push-send run 8、成功）。
+**実機ではまだ誰も見ていない**（CODE CONFIRMED のみ）。
+
+- **172**（`a34fad7d`）: ルールの洗い出し六つ（`docs/reports/rule-audit-2026-09-27-*.md`）の直し、改行、♦️ の色と長い名前。
+- **173**（`86f10894`）: オーナーの答え十件（決定ログ 2026-09-28）── ブロックで両向きのフォローを外す、ピン留めはサーバー
+  （`profile.pin`）、話題はいいね＋リポスト順、送れない投稿は下書きにしない、~~`migratePostInk()`~~ を消した、字が焼けない写真は
+  送らない、キーボードの行・列と取った言語を外す前に確認、↓ と ♡ は星一つ。プロフィールの位置・リンクは一行で「…」。
+- **174**（`5988eb1b`）: アプリは 173 と同じ。サーバーだけ ── 凍結は SNS だけ（`is_signed()` と `is_member()`、作る側の表は
+  `making_rel()`）、ミュートした人からの通知は鳴らさない（push-send の `pushPlan()`）。
+- 決めてもらうこと 35 件は `docs/reports/owner-asks-2026-09-28.md`。1〜10 は答えが出て入った。11〜35 は答え待ち。
+- 残り: APNs の鍵（オーナー、9/29）、RevenueCat の IAP key と通知の URL（オーナー）、Android の r123・r124（途中）。
 
 ## Android ── 土台だけ（`claude/r115-android`、取り込み済み、2026-09-27）
 
