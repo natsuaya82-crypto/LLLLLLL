@@ -1164,6 +1164,12 @@ const au = await pg.evaluate(() => {
     out.a12 = whoOf(h).lname;
     if (was) WHO_HAVE[h] = was; else delete WHO_HAVE[h]; }
 
+  /* a13: the name field is the person's; nothing in it is made up out of
+     the language's name. */
+  { openMe();
+    const m = /id="me-nm"[^>]*placeholder="([^"]*)"/.exec(FORM.html || '');
+    out.a13 = m ? m[1] : '(no field)'; }
+
   netIdOf = realId;
   netSend1 = realS1; netSend = realS; netGet = realG;
   NAV = [{ r:'feed' }]; window.route = 'feed'; render();
@@ -1212,6 +1218,8 @@ if (au.a11 !== '')
   say('a11: who @wq is came off a post of theirs (「' + au.a11 + '」) -- a second answer beside the server\u2019s row.');
 if (au.a12 !== 'Mainish')
   say('a12: your own row names 「' + au.a12 + '」 -- the language everybody else sees on it is the server\u2019s row.');
+if (au.a13 !== '')
+  say('a13: the name field says 「' + au.a13 + '」 before anything is typed -- the language\u2019s name, which is not the person\u2019s.');
 if (!au.a3)
   say('a3: a word pressed while another word\u2019s answer is on the screen draws that old answer or ' +
       '「No results」 until its own lands. Not answered yet is the waiting mark.');

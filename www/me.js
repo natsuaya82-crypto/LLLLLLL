@@ -1512,7 +1512,7 @@ function openMe(){
     '</div>'+
     '<div class="field at" style="gap:14px;margin-bottom:20px">'+
       '<span style="flex:0 0 auto;white-space:nowrap;min-width:4.5em">'+esc(t('me.name'))+'</span>'+
-      lnField('me-nm', langName||'',
+      lnField('me-nm', '',
         ' maxlength="'+ME_MAX.name+'"' + IN('meSetName'), meTyped('name'))+'</div>'+
     '<div class="field at" style="gap:14px;margin-bottom:20px">'+
       '<span style="flex:0 0 auto;white-space:nowrap;min-width:4.5em">'+esc(t('me.handle'))+'</span>'+
