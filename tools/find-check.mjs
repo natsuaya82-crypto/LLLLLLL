@@ -664,22 +664,22 @@ const byWho = await pressed('aya');
 say(byWho.after.rows === 0,
     '書いた人の @ では投稿は出ない (人の検索の仕事: ' + byWho.after.rows + ' 件)');
 
-/* ---- 11. 信号が無いときに書いた投稿は、下書きに入り、送り直せば上がって出る -
+/* ---- 11. 信号が無いときに書いた投稿は、欄に残り、送り直せば上がって出る -----
    検索はサーバーのものです ── 手元の五十件を絞ったものは上位五十件ではない、
    とこの画面は既に書いている。だからサーバーに届いていない投稿は、書いた
    本人にも探せません。**そして、それは失われたということではありません。**
-   送れなかった投稿は「送信できませんでした」と出て下書きに入り
-   （「普通に送信できませんでした。になるんじゃないの？下書きに入るように
-   しよう」OWNER 2026-09-24）、その下書きを開いて送れば上がって、そこから
-   探せます。送り直しのボタンは無い。
+   送れなかった投稿は「送信できませんでした」と出て、打った物は欄にその
+   まま残る。下書きにも端末の一覧にも入らない（「そもそもツイートできない
+   んだから保存もされなくね？」OWNER 2026-09-28）。つながってから同じ欄で
+   もう一度送れば上がって、そこから探せます。
 
    二つを分けて押さえるのは、片方だけ見ると別の結論になるからです ──
    「出ない」だけ見れば消えたように見え、「出る」だけ見れば信号の有無は
    関係ないように見えます。 */
 const w2 = await wrote('zzuquat', 'つながっていないときに書いた', 'nosignal');
-say(!w2.kept && w2.drafted === 1 && w2.here === 0,
-    '出ていかなかった投稿は下書きに一件入り、欄は空、端末の一覧には入らない (下書き ' +
-    w2.drafted + ' 件、欄 ' + (w2.kept ? '**残る**' : '空') + '、一覧 ' + w2.here + ' 件)');
+say(w2.kept && w2.drafted === 0 && w2.here === 0,
+    '出ていかなかった投稿は欄に残り、下書きにも端末の一覧にも入らない (下書き ' +
+    w2.drafted + ' 件、欄 ' + (w2.kept ? '残る' : '**空**') + '、一覧 ' + w2.here + ' 件)');
 say(w2.said.indexOf(w2.no) >= 0,
     '「送信できませんでした」と出る (' + JSON.stringify(w2.said) + ')');
 say(w2.there === 0, 'サーバーへは出ていかなかった (' + w2.there + ' 件)');
@@ -695,16 +695,13 @@ say(before === 0,
    保存されない」「なら失敗して残るにするべき」── 上がるのは人が送った時。 */
 const caught = await pg.evaluate(() => new Promise(function(d){
   window.__MODE = 'ok';
-  var at = -1, j;
-  for(j=0;j<DRAFTS.length;j++) if(DRAFTS[j] && DRAFTS[j].ln === 'zzuquat') at = j;
-  draftOpen(at);           /* the draft it went into, opened */
-  pwSend();                /* and sent */
+  pwSend();                /* the same field, sent again */
   setTimeout(function(){
     d(window.__POSTS.filter(function(r){
         return (r.body || {}).ln === 'zzuquat'; }).length);
   }, 900);
 }));
-say(caught === 1, 'つながってから下書きを開いて送れば上がる (' + caught + ' 件)');
+say(caught === 1, 'つながってから欄のまま送り直せば上がる (' + caught + ' 件)');
 const back = await pressed('zzuquat');
 say(back.after.rows === 1,
     '上がったあとは検索に出る ── 何も失われていない (' + back.after.rows + ' 件)');
