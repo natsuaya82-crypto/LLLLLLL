@@ -323,11 +323,12 @@ const r = await pg.evaluate(async ({ s, sid }) => {
     faces.forEach(function(f){ fseen[JSON.stringify(f)] = 1; });
     out.pressedNames = {};
     /* FOUND BY THIS WALK IN ANOTHER SESSION'S FILE, and listed rather than
-       fixed from here (docs/reports/rule-audit-2026-09-27-glyph.md, A8):
-       setGPos (www/grammar.js) writes the grammar's positions into a taken
-       language in memory. The list only shrinks -- a name here that no press
-       trips any more fails below, so it cannot outlive its fix. */
-    var OTHERS = ['setGPos'];
+       fixed from here. The list only shrinks -- a name here that no press
+       trips any more fails below, so it cannot outlive its fix. It is empty:
+       setGPos (now gPosPut, www/grammar.js) was the last, and the grammar's
+       board no longer offers a press on somebody else's language
+       (rule-audit-2026-09-27-core, 取り込み後の赤). */
+    var OTHERS = [];
     out.othersSeen = {};
     for (fi = 0; fi < faces.length; fi++) (function(face){
       var rt = face[0];
@@ -568,7 +569,7 @@ say(!r.opens || (r.madeBy && r.madeBy.length === 0 && r.surfaceSlices),
     'of it moves — 「取ってきた言語は編集できない」' +
     ((r.madeBy && r.madeBy.length) ? ' (made by: ' + r.madeBy.join(' | ') + ')' : '') +
     (r.surfaceSlices ? '' : ' (a slice moved)'));
-say(!r.opens || !r.othersSeen || ['setGPos'].every(function(n){ return r.othersSeen[n]; }),
+say(!r.opens || !r.othersSeen || [].every(function(n){ return r.othersSeen[n]; }),
     'and every name listed as another session\'s is still one this walk trips -- the list only shrinks (' +
     Object.keys(r.othersSeen || {}).join(' ') + ')');
 /* and the presses this was written for are on the surface -- a walk that
