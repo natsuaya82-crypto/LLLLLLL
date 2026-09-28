@@ -25,16 +25,13 @@
   function trim(s){ return String(s===undefined||s===null?'':s).replace(/^\s+|\s+$/g,''); }
   function norm(s){ return trim(s).toLowerCase(); }
 
-  /* A word means a LIST of things. `meanings` is that list; `meaning` is the
-     joined string that has always been beside it. A model saved before the
-     list existed carries only the string, so it is split back apart HERE and
-     nowhere else — one place doing the guess, so there is one place to stop
-     doing it when no such model is left. */
+  /* A word means a LIST of things, and `meanings` is that list. No model is
+     stored (adapter.js), so every word arrives with the list and nothing here
+     splits the joined `meaning` string back apart. */
   function meaningsOf(word){
     var out=[], src, i, v;
     if(!word) return out;
     if(word.meanings && word.meanings.length) src=word.meanings;
-    else if(trim(word.meaning)) src=String(word.meaning).split(' / ');
     else return out;
     for(i=0;i<src.length;i++){ v=trim(src[i]); if(v) out.push(v); }
     return out;
@@ -116,5 +113,5 @@
     return out;
   }
 
-  api.lexicon={meaningsOf:meaningsOf, keys:keys, find:find, cut:cut};
+  api.lexicon={meaningsOf:meaningsOf, find:find, cut:cut};
 }(typeof window!=='undefined'?window:this));

@@ -163,8 +163,10 @@ assert.equal(e.morphology.parseSentence(plainRole,'neko-ni luma').roles.RECIPIEN
    shape, and no second language can be written out of it -- which is the one
    way this can look like it works while being useless. */
 function lang(id,order,words,infl){
+  /* a word carries its meanings as a list beside the joined string, which is
+     the shape the adapter hands the engine */
   return e.languageModel({languageId:id,wordOrder:order,
-    words:words.map((w)=>e.word({id:id+':'+w[0],lemma:w[0],meaning:w[1],partOfSpeech:w[2]})),
+    words:words.map((w)=>e.word({id:id+':'+w[0],lemma:w[0],meaning:w[1],meanings:[w[1]],partOfSpeech:w[2]})),
     inflections:(infl||[]).map((r)=>e.inflection(r))});
 }
 const PAST_A={id:'p',target:'VERB',feature:'TENSE',value:'PAST',operation:'suffix',form:'ta'};

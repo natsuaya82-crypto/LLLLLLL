@@ -33,8 +33,8 @@
      Both directions of one fact, and it is stated in morphology.js -- this
      asks the engine for it rather than restating it, because two copies of a
      table is two answers to "what does ACCUSATIVE mean" the day one moves. */
-  var CASE_ROLE=api&&api.morphology&&api.morphology.CASE_ROLE;
-  if(!api) throw new Error('LinguaGrammarEngine model must load before translate');
+  if(!api || !api.morphology) throw new Error('LinguaGrammarEngine morphology must load before translate');
+  var CASE_ROLE=api.morphology.CASE_ROLE;
 
   /* ---- what the language has decided --------------------------------------
      Where a word stands is one answer for the whole language and is heard in
@@ -554,11 +554,6 @@
      gap here exactly as it is for a head -- it stays as the meaning. */
   function modWords(model, v, gaps, depth, part, cls){
     var out=[], list, i, found, cv, marked;
-    /* HOW DEEP IN is read here as well as passed in, and that is not belt and
-       braces: a caller that forgot the argument made `depth < CLAUSE_DEEP`
-       compare undefined, which is false, and every relative clause was
-       dropped in silence. A missing depth is the top of the sentence. */
-    depth=Math.max(0, parseInt(depth,10)||0);
     if(v===undefined || v===null) return out;
     list=Array.isArray(v)? v : [v];
     for(i=0;i<list.length;i++){
@@ -880,5 +875,5 @@
     return out.join(' ');
   }
 
-  api.translate={run:run, arrange:arrange, line:line, positionOf:positionOf, markedIds:markedIds, srcOrder:srcOrder, toSemantic:toSemantic, fromSemantic:fromSemantic, toNatural:toNatural, glossLine:glossLine, npOrderOf:npOrderOf, polarRules:polarRules, polarKind:polarKind};
+  api.translate={run:run, arrange:arrange, line:line, toSemantic:toSemantic, fromSemantic:fromSemantic, toNatural:toNatural};
 }(typeof window!=='undefined'?window:this));
