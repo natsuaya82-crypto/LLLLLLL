@@ -185,7 +185,7 @@ function voTook(mime){
         openPost();
       });
   };
-  r.onerror=function(){ toast(t('post.vo.bad')); };
+  r.onerror=function(){ toast(t('post.vo.bad')); voPaint(); };
   r.readAsDataURL(b);
 }
 /* Taking it off the post being written, and the file goes with it -- once
