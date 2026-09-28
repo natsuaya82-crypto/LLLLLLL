@@ -55,6 +55,14 @@ var SB_KEY='sb_publishable_3FTW3G5jfBVPoc8MiXgdNw_OZk2L1-6';
    Apple needs nothing here. On iOS the sign-in is the system's own sheet and
    the app is named by its bundle id, which Xcode already knows. */
 var GOOGLE_IOS_ID='535150348007-i8roam4vdjjlfql5ktb4mld3v9chb6gr.apps.googleusercontent.com';
+/* AND ANDROID'S, which is a different client of the same Google project: the
+   Android plugin asks for the WEB application client id and never reads the
+   iOS one. Public for the same reason, and empty in the same way -- it means
+   the owner has not put it here yet, and the Google button on Android is
+   closed until then (obSocialCfg() in onboard.js). The Android client that
+   Google Cloud also wants is registered by package name and SHA-1 and is
+   never in the app. docs/ANDROID.md § オーナーがすること. */
+var GOOGLE_WEB_ID='';
 
 /* The session itself -- `LS_SESS`, `SESS`, sessRead() and netUid() -- is
    read at the top of www/core.js, because which account this phone is has to

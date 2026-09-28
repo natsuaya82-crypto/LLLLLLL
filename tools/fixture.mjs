@@ -86,6 +86,9 @@ export function seed(){
      faces that set it is what keeps shot.mjs's render() from photographing
      the screen a face tidied back to. */
   DAY = null;
+  /* And no phone: a browser, which the door draws as the iPhone. The one
+     face that says otherwise is 'signing in on android' in obStates(). */
+  window.Capacitor = undefined;
   /* AND THE LANGUAGE THIS FIXTURE IS STANDING IN BELONGS TO THAT SESSION.
      core.js mints the first language at load, before net.js exists, so it
      carries no `uid` -- and on a real phone netLangRow() puts one on the
@@ -703,7 +706,19 @@ export function obStates(){
     ['the code, no way back to', () => { SET.obback = null; SET.walked = true;
                                          ob.step = OB_IN;
                                          OBM.mode = 'code'; OBM.busy = false;
-                                         OBM.em = 'a@b.c'; return vOb(); }]
+                                         OBM.em = 'a@b.c'; return vOb(); }],
+    /* THE DOOR ON AN ANDROID PHONE. Which phone it is is
+       Capacitor.getPlatform() (obSocialCfg(), www/onboard.js), and a check
+       has no Capacitor, so every face above is the iPhone's. This one puts
+       in a Capacitor that answers 'android' and nothing else -- no
+       nativePromise, no Plugins, so every other reader of Capacitor still
+       sees a browser -- and leaves it, as every face here leaves what it set,
+       because shot.mjs throws the returned page away and calls render().
+       It is LAST so no face after it is drawn on Android, and seed() is what
+       takes it away again. */
+    ['signing in on android',     () => { window.Capacitor = { getPlatform: function () { return 'android'; } };
+                                          SET.obback = null; ob.step = OB_IN;
+                                          ob.mode = ''; OBM.mode = 'in'; return vOb(); }]
   ];
 }
 
