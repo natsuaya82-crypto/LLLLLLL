@@ -3773,14 +3773,15 @@ function netFindWho(q, ok, bad, more){
            the shape a person comes back in is what every screen already
            draws, and an `id` on it would be a uuid reaching places that read
            a handle. */
-        out.push({who:String(r.display||''), hd:String(r.handle||''),
+        out.push(netBadgeOn({who:String(r.display||''), hd:String(r.handle||''),
                   av:r.av||null,
                   lname:String(r.lang_name||''),
                   lid:String(r.lang_id||''), lpub:!!r.lang_pub,
-                  /* the server's answer about the mark (badge_of), the same
-                     column every other road to a person carries */
-                  badge:!!r.badge,
-                  mine:!!(netUid() && r.id===netUid())});
+                  mine:!!(netUid() && r.id===netUid())},
+          /* the mark is the server's answer (badge_of) read in the one place
+             every road to a person reads it: absent is 「nobody has said」,
+             not 「not wearing it」 (rule-audit-2026-09-27-core N15) */
+          r));
       }
       ok(out);
     }, bad);
