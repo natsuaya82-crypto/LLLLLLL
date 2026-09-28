@@ -1436,6 +1436,26 @@ export function halfDone(){
         WHO_HAVE['iri'] = { who:'Iri', hd:'iri', av:{ch:'Ж'}, lname:'Vethi',
                              bio:'', fo:2, fr:3, out:false };
         return h; }],
+    /* 長いときは一行のまま、はみ出た分が … になります（meWhereRow）。
+       リンクが先に縮み、位置は入る限り全部。三つの形と、人のページ。 */
+    ...[['both', 'tokinets.com/lingua/a-very-long-address-that-goes-on', '谷の上の古い図書館のとなり'],
+        ['link only', 'tokinets.com/lingua/a-very-long-address-that-goes-on-and-on-and-on', ''],
+        ['place only', '', '谷の上の古い図書館のとなりにある小さな家の二階の窓ぎわ']].map(([k, lk, lc]) =>
+      ['the profile, a long ' + k, () => {
+        window.route='profile'; NAV=[{r:'profile'}];
+        const wasL = ME.link, wasC = ME.loc;
+        ME.link = lk; ME.loc = lc;
+        const h = vProfile(); ME.link = wasL; ME.loc = wasC; return h; }]),
+    ['somebody else\'s profile, a long link and place', () => {
+        window.route='profile'; NAV=[{r:'profile', a:'iri'}];
+        WHO_HAVE['iri'] = { who:'Iri', hd:'iri', av:{ch:'Ж'}, lname:'Vethi',
+                             bio:'', link:'iri.example/a-very-long-address-that-goes-on',
+                             loc:'海のそばの白い灯台の見える坂の上',
+                             fo:2, fr:3, out:false };
+        const h = vProfile(); NAV=[{r:'profile'}];
+        WHO_HAVE['iri'] = { who:'Iri', hd:'iri', av:{ch:'Ж'}, lname:'Vethi',
+                             bio:'', fo:2, fr:3, out:false };
+        return h; }],
     ['the profile, the language private', () => {
         window.route='profile'; NAV=[{r:'profile'}];
         /* 非公開かはサーバーの答えです。`WLD.hide` を立てていたのが 2026-09-08
