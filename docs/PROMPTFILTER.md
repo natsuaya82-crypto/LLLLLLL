@@ -2,7 +2,7 @@
 
 `claude/find3` の続きです。**私が書き換えてよいと理解したもの:**
 
-```
+```text
 www/sns.js  www/post.js  www/net.js  www/shell.js  www/sync.js  www/boot.js
 www/i18n/*.js
 tools/find-check.mjs  tools/post-check.mjs  tools/fixture.mjs

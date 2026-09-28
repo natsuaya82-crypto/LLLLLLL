@@ -237,6 +237,12 @@ it seems wrong, say so and stop; do not implement the better idea.
 Newest first. One entry per decision. The **decision itself** matters more than
 the reasoning — a reason can be re-derived, a decision cannot.
 
+The oldest entries, headed `### Decision`, are transcribed from decisions the
+repository already recorded verbatim, in `CLAUDE.md` and in the code comments
+that quote them. Nothing there was inferred: where the wording is the owner's
+it is quoted, and where a decision has never been made the row in
+`docs/FEATURES.md` says **open** instead of appearing here.
+
 ```
 ### Decision
 - Date:
@@ -4163,23 +4169,6 @@ www/net.js:1544  netDraftUp() ── www/post.js:380 と :463 から
 
 ### 【差し替え済み 2026-09-02】売上とアナリティクスを、アプリの中で見る（2026-08-26）
 - 差し替えた決定: 「売上とアナリティクスは RevenueCat で見る」（2026-09-02）
-
-### Decision
-- Date:
-- Area:
-- Decision:
-- Reason:
-- Affected features:
-- Affected data:
-- Affected docs:
-- Implementation status:
-```
-
-Entries below are transcribed from decisions the repository already records
-verbatim, in `CLAUDE.md` and in the code comments that quote them. Nothing here
-was inferred: where the wording is the owner's it is quoted, and where a
-decision has never been made the row in `docs/FEATURES.md` says **open**
-instead of appearing here.
 
 ### Decision
 - Date: 2026-08-26 (同日、五つめ)

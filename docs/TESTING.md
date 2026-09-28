@@ -229,7 +229,7 @@ miss". And deleting the declaration is not the mistake anybody makes — the
 mistake is **leaving one call site behind**, which is a different red and the
 one worth watching:
 
-```
+```text
 core.js:183 back to noteRead()
   → 1 name is called and never defined:  www/core.js  noteRead()
 ```
