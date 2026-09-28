@@ -74,7 +74,7 @@ function vxCons(sym){
 }
 
 /* One formant: a narrow band picked out of whatever is fed into it. */
-function vxFormant(x, src, hz, q, gain, t0, dur){
+function vxFormant(x, src, hz, q, gain){
   var f=x.createBiquadFilter(), g=x.createGain();
   f.type='bandpass'; f.frequency.value=hz; f.Q.value=q;
   g.gain.value=gain;
@@ -230,76 +230,59 @@ function vxOne(x, out, sym, t0, f0){
    has finished, so pressing twice quickly says the sound twice instead of
    once and a half. */
 var VXEND=0;
-function vxPlay(x, seq, f0){
+function vxPlay(x, seq){
   var out=x.createGain();
   out.gain.value=0.9;
   out.connect(x.destination);
   var now=(x.currentTime||0);
-  var t=Math.max(now+0.03, VXEND), i, d, base=f0||118;
+  var t=Math.max(now+0.03, VXEND), i, d, base=118;
   for(i=0;i<seq.length;i++){
     d=vxOne(x, out, seq[i], t, base);
     /* sounds run into each other rather than sitting in a row */
     t += d*0.86;
   }
-  if(!x.startRendering) VXEND=t+0.04;
+  VXEND=t+0.04;
   return t-now;
 }
 /* ---- what you press now beats what is already queued -------------------
    Every sound is scheduled on the clock, each one starting where the last
    one ended, so that two sounds asked for in the same instant do not play
    on top of each other. That is right for two taps a moment apart and wrong
-   the moment a whole dictionary is playing: thirty words is half a minute
-   of queue, and a key pressed during it was scheduled after all of it. The
-   key made no sound for thirty seconds, which is not a queue, it is a
-   broken app -- 「あと音声流れない」.
+   once taps pile up faster than the sounds end: a key pressed behind a long
+   queue was scheduled after all of it, and a key that makes no sound for
+   seconds is a broken app -- 「あと音声流れない」.
 
-   So anything asked for while a long queue is still ahead throws the queue
-   away first. Throwing it away means closing the context, because every
+   So anything asked for while more than a moment of queue is still ahead
+   throws the queue away first. Throwing it away means closing the context, because every
    sound in it is already scheduled and nothing else stops a sound the
    browser has been told to make twenty seconds from now. */
 function vxCut(x){
   var now=(x.currentTime||0);
   if(VXEND <= now+1.2) return x;
-  if(VXRUN){ clearTimeout(VXRUN); VXRUN=0; }
   try{ x.close(); }catch(e){}
   VX=null; VXEND=0;
-  /* the button that said "stop" has nothing left to stop */
-  if(typeof render==='function') setTimeout(render, 0);
   return vxCtx();
 }
-function sayPh(seq, ctx, f0){
-  var x=ctx||vxCtx();
+function sayPh(seq){
+  var x=vxCtx();
   /* A tap that makes no sound and says nothing is indistinguishable from a
      broken app, so the one case where sound is genuinely impossible says so. */
-  if(!x){ if(!ctx && typeof toast==='function') toast(t('voice.none')); return 0; }
+  if(!x){ if(typeof toast==='function') toast(t('voice.none')); return 0; }
   if(!seq || !seq.length) return 0;
-  if(!ctx){ x=vxCut(x); if(!x) return 0; }
-  /* An offline context is rendering rather than playing and must not be
-     woken -- asking throws. */
-  if(!ctx && x.state==='suspended' && x.resume){
+  x=vxCut(x); if(!x) return 0;
+  if(x.state==='suspended' && x.resume){
     try{
       var pr=x.resume();
-      if(pr && pr.then){ pr.then(function(){ VXEND=0; vxPlay(x, seq, f0); }); return 0; }
+      if(pr && pr.then){ pr.then(function(){ VXEND=0; vxPlay(x, seq); }); return 0; }
     }catch(e){}
     /* an old WebKit resumes without a promise; give the clock a moment */
     if(x.state==='suspended'){
-      setTimeout(function(){ VXEND=0; vxPlay(x, seq, f0); }, 60);
+      setTimeout(function(){ VXEND=0; vxPlay(x, seq); }, 60);
       return 0;
     }
   }
-  return vxPlay(x, seq, f0);
+  return vxPlay(x, seq);
 }
 /* One sound on its own, for the chart. */
 function sayOne(sym){ return sayPh([sym]); }
 
-/* ---- a run of words, one after another --------------------------------
-   Hearing a language is not hearing a word. Until now the only way to hear
-   what you had built was to open one word, listen, go back, open the next --
-   which tells you about a word and nothing about a language. This says a
-   list straight through, with a breath between each one so they stay
-   separate words rather than becoming one long one.
-
-   It stops by throwing the audio context away, because every sound in the
-   run has already been scheduled on it and there is nothing else that stops
-   a sound the browser has been told to make in four seconds' time. */
-var VXRUN=0;
