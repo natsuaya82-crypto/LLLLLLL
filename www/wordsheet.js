@@ -1665,14 +1665,14 @@ function wdFormHTML(){
 
     /* What kind of word it is, what it is of the word it came from, and how
        it is said: three lists, one after another, each saying what it is set
-       to. They had a heading each over a box each. */
-    '<div style="margin-top:22px">'+
-      wdPickRow(t('f.pos'), posLabel(wEdit.pos), DO('go', ["pos"]))+
-      wdSubHTML()+
-      (mk? '' : wdFromRowHTML())+
-      (wdFrom()? wdFmHTML() : '')+
-      wdRegHTML()+
-    '</div>'+
+       to. They had a heading each over a box each. A group is made by the
+       row that separates (.grpsep), never by a margin on the rows. */
+    '<div class="grpsep"></div>'+
+    wdPickRow(t('f.pos'), posLabel(wEdit.pos), DO('go', ["pos"]))+
+    wdSubHTML()+
+    (mk? '' : wdFromRowHTML())+
+    (wdFrom()? wdFmHTML() : '')+
+    wdRegHTML()+
 
     /* The forms the rules make of it, where a word is coined and nowhere
        else. A word that already exists has its forms already, and re-spelling
