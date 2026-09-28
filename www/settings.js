@@ -406,7 +406,7 @@ function vSet(){
        language is on the server the moment it is saved (netSaveNow() in
        www/net.js), so what that list answered is not a question this app
        has any more. www/backup.js says the whole of it. */
-    body='<div class="sec">'+t('set.data')+'</div>'+
+    body=
       /* No cloud row. It said "Cloud sync -- On" to anybody on Plus and did
          nothing at all: there is no code anywhere that sends a language to a
          server. A switch that reports a state the app does not have is worse
