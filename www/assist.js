@@ -30,7 +30,7 @@
    already uses them in -- so a proposed word sounds like it belongs, and a
    sound the language does not have can never appear in one. */
 function asWord(pos, avoid){
-  var A=analyze(), tk=taken(), i, seq;
+  var A=analyze(), tk=asTaken(), i, seq;
   if(avoid) for(i=0;i<avoid.length;i++) tk[avoid[i].join('')]=1;
   seq=makeWord(pos||'x', A, tk);
   if(seq) return seq;
@@ -99,9 +99,9 @@ function genSounds(){
   return out;
 }
 /* n words, each {seq, sp, hw}: its sounds, its letters, its spelling. None
-   sounds like a word the dictionary has (taken()) or like another of the n. */
+   sounds like a word the dictionary has (asTaken()) or like another of the n. */
 function genWords(n){
-  var sh=genShapes(), S=genSounds(), tk=taken(), out=[], tries=0, lens=[1,2,2,3],
+  var sh=genShapes(), S=genSounds(), tk=asTaken(), out=[], tries=0, lens=[1,2,2,3],
       seq, shape, nsyl, sp, hw, i, j, ok;
   function one(a){ return a[Math.floor(Math.random()*a.length)]; }
   if(!S.c.length) sh=sh.filter(function(s){ return s.indexOf('C')<0; });

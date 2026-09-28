@@ -123,6 +123,11 @@ const SERVER = `
         if (body && body.published_at !== undefined) S.lang[j].published_at = body.published_at;
         if (body && body.name !== undefined) S.lang[j].name = body.name;
       }
+      /* The row as it now stands, which is what PostgREST hands back for
+         return=representation -- [] is 「matched no row」, and netPut()
+         (www/net.js) reads that as a write that did not land. */
+      for (j = 0; j < S.lang.length; j++) if (S.lang[j].id === lid)
+        return answer([JSON.parse(JSON.stringify(S.lang[j]))]);
       return answer([]);
     }
     /* ONE SLICE UP, supabase/schema.sql § slice_put, as far as a server with
@@ -827,7 +832,7 @@ const del = await pg.evaluate(async ({ s, srv }) => {
   langStore();
   /* THE SEED IS NOT SOMEBODY'S WRITING. It fills the globals, and since
      2026-09-23 the migrations run the moment the owner answers (migrateAll,
-     www/core.js) -- migrateSp() brings the seed's spellings forward and saves
+     www/core.js) -- they bring the seed's older shapes forward and save
      them, as the APP, so nothing of it counts as touched and nothing of it
      goes up (r60: an app write never travels). These claims are about a
      dictionary somebody wrote, so somebody writes one word first. */
@@ -923,7 +928,7 @@ const up2 = await pg.evaluate(async ({ s, srv }) => {
   langName = 'Save Now';
   /* AND HERE TOO: THE SEED IS NOT SOMEBODY'S WRITING. It fills the globals, and since
      2026-09-23 the migrations run the moment the owner answers (migrateAll,
-     www/core.js) -- migrateSp() brings the seed's spellings forward and saves
+     www/core.js) -- they bring the seed's older shapes forward and save
      them, as the APP, so nothing of it counts as touched and nothing of it
      goes up (r60: an app write never travels). These claims are about a
      dictionary somebody wrote, so somebody writes one word first. */

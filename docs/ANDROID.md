@@ -33,51 +33,61 @@ Kotlin は `android/app/src/main/java/com/tokinets/lingua/` の四つのファ�
 | LinguaStore.review | できた。Google Play の In-App Review |
 | LinguaShare.write | **無いと答える**（reject）。Android にはまだキーボードもウィジェットも無い。`www/share.js` が reject を `SHARE.how` に残す |
 | LinguaShare.renderPdf | **無いと答える**（reject）。下の § 画面にペンで書いたシート |
-| LinguaStore.products | **空の一覧**。画面は「まだ販売されていません」── Android では事実 |
-| LinguaStore.current / buy / restore / manage | **無いと答える**（`no store`）。`current` の reject は `netPlanVerify([])` に落ち、サーバーがこのアカウントの plan を答えるので、iPhone で買った plan は Android でもそのまま |
+| LinguaStore.products | Google Play Billing の値段（基本プランの formattedPrice）。Play Console に商品が無い間は**空の一覧**で、画面は「まだ販売されていません」 |
+| LinguaStore.current / buy / restore / manage | Google Play Billing。答えは `google: [{token, product}]`（下の § 課金）。Play ストアの無い端末は `no store` で、`current` の reject は `netPlanVerify([])` に落ち、サーバーがこのアカウントの plan を答えるので、iPhone で買った plan は Android でもそのまま |
 | LinguaPush.ask / status | **無いと答える**（reject）。`denied` は返さない ── `www/push.js` はそれを「通知は…設定でオフになっています」と描いて設定へ誘い、Android では偽の文になる。reject なら画面はブラウザと同じ描き方（スイッチだけ） |
 
-**課金は決まっていて、まだ作っていない**: Google Play の課金を直接つなぐ
-（RevenueCat は使わない）、値段は iPhone と同じ（`docs/FEATURE_RULES.md`
-2026-09-27）。Kotlin の課金と、`verify-plan` が Google Play の購入を確かめる
-ことは別の回。**待っているもの**（オーナーの決定）: 通知の仕組み（Firebase
+**課金は Google Play Billing を直接つなぐ**（RevenueCat は使わない）、値段は
+iPhone と同じ（`docs/FEATURE_RULES.md` 2026-09-27）。コードはできていて、
+Play Console の商品とサービスアカウントの鍵を待っている（下の § オーナーが
+すること）。**待っているもの**（オーナーの決定）: 通知の仕組み（Firebase
 Cloud Messaging と `push-send` の Android 対応）。キーボード（Android の IME）と
 ウィジェットは次の回。
 
-### 課金 ── Play Billing をこの回で書かなかった理由と、要る変更
+### 課金
 
-リーダーから「Play Billing のライブラリを入れて、iOS と同じ答えの形で書ける
-所まで書いてよい」と来たが、書いていない。
+**端末は確かめない。** App Store は端末に署名つきの取引（`jws`）を渡すが、
+Google Play が渡すのは購入トークンだけ。だから Android の `LinguaStore` の
+答えは、`jws` の代わりに **`google: [{token, product}]`** ── 購入トークンと
+商品 ID の組の一覧（`saw` など他は iPhone と同じ）。
 
-- **同じ答えの形が無い。** iOS の道はすべて `jws`（Apple が署名した取引）を
-  答え、`verify-plan` はその署名を Apple の根で確かめる。Google Play には
-  端末が受け取る署名つきの取引が無い。サーバーが要るのは購入トークンと
-  商品 ID で、サーバーが Google Play Developer API に訊いて確かめる。
-  トークンを `jws` に入れれば `verify-plan` は Apple の署名として読み、断る。
-- 答えの形は決定が「課金のセッションで決める前に報告」としている。ここで
-  書けば、決める前に形を決めることになる。
-- この環境では Play Billing をコンパイルできず（Google の Maven に届かない）、
-  商品が無いので書いても走らない。
+1. **Kotlin**（`LinguaStorePlugin.kt`、`com.android.billingclient:billing:8.0.0`）:
+   `products` は基本プランの値段、`buy` は obfuscatedAccountId に Supabase の
+   uid を入れて買う（iOS の `appAccountToken` に当たる「誰の購入か」）。
+   `current` と `restore` は Play が今持っている定期購入を組にする（Play には
+   App Store のような「復元」の操作が無く、毎回そのまま読める）。`manage` は
+   Google Play の定期購入のページを開き、戻った時に `linguastore` の知らせで
+   画面が訊き直す。Play が後から言ったこと（保留が通った・更新）も同じ知らせ。
+   **承認（acknowledge）は端末でしない** ── サーバーが uid を確かめてから。
+2. **`www/store.js`**: `storeJws()` が `jws` か `google` を読む。どちらの電話かを
+   区別するのはこの一か所。どちらも同じ `netPlanVerify()` の同じ配列で上がる。
+3. **`supabase/functions/verify-plan`**: 配列の文字列は Apple（今まで通り）、
+   `{token, product}` は Google（`google.mjs`）。secret
+   `GOOGLE_PLAY_SERVICE_ACCOUNT` の鍵で `purchases.subscriptionsv2.get` を訊き、
+   `obfuscatedExternalAccountId` が呼んだ人の uid と同じ時だけ数える。期限は
+   Google の `expiryTime`。数えるのは ACTIVE・CANCELED（期限まで）・
+   IN_GRACE_PERIOD。承認待ちなら、uid が一致した時だけここで承認する（三日
+   以内にしないと Google が返金する）。行は `purchase` の今の形のまま ──
+   `orig_tx` は `gp:` と購入トークン、`env` は `Google` か `GoogleTest`。
+   呼び出しごとに、この uid の `gp:` の行でまだ数えているものを訊き直す
+   （解約・返金は Google にだけ起き、端末からは送られてこない）。
+   鍵が無い間は Google の組を一つも数えず、`left` にそう書く。
+4. **商品 ID**: iPhone と同じ四つの名前 ── `com.tokinets.lingua.plus.monthly`・
+   `.plus.yearly`・`.pro.monthly`・`.pro.yearly` ── を、**四つの別々の定期購入**
+   にし、各々に**基本プランを一つ**置く（基本プランの ID はピリオドを使えない
+   ので、例えば `monthly` / `yearly`）。`verify.mjs` の `PRODUCTS` は一つのまま
+   両方の電話に効く。
+5. **プランを変える時**: Play には App Store の「グループ」が無く、Plus を
+   持ったまま Pro を買うと二つの定期購入・二重の請求になる。だから `buy` は
+   持っている方を古い購入として渡し、残りの時間を差し引いてすぐ替える
+   （WITH_TIME_PRORATION）。
 
-要る変更（`www/` と `supabase/` は持っていないので、ここは列挙だけ）:
+**画面の言葉**: 「App Store に問い合わせ中…」「App Store につながりませんでした」
+（`store.wait`・`store.fail`）は Android でもそのまま出る。言葉はオーナーのもの
+で、`www/i18n/` はこの回が持っていない。
 
-1. **Kotlin**: Play Billing で buy / restore / current を作る。買う時に
-   obfuscatedAccountId を Supabase の uid にする ── iOS の `appAccountToken`
-   に当たる「誰の購入か」。答えは購入トークンと商品 ID の組の一覧。
-2. **`www/store.js`**: `storeJws()` の代わりに Google の組を読み、
-   `netPlanVerify()` に渡す。どちらの電話かを画面が区別するのはこの一か所。
-3. **`supabase/functions/verify-plan`**: Google の組を受け、サービス
-   アカウントで purchases.subscriptionsv2.get を訊く。
-   obfuscatedExternalAccountId が呼んだ人の uid と同じ時だけ数える。期限は
-   Google の答えから取り、購入の承認（acknowledge、三日以内）もここでする。
-   更新・解約をすぐ知るなら Real-time developer notifications（Pub/Sub）。
-4. **商品 ID**: iOS と同じ名前（`com.tokinets.lingua.plus.monthly` など四つ）は、
-   Play の定期購入の ID として使える。Play の基本プラン（base plan）の ID は
-   ピリオドを使えないので、四つを別々の定期購入にして各々に基本プランを一つ
-   置く形になる。もう一つの形は、plus と pro の二つの定期購入に monthly・
-   yearly の基本プランを置くもの。どちらにするかは課金の回のもの。
-5. **オーナー**: Play Console に商品を作る。Google Cloud のサービスアカウントを
-   Play Console に招待し、その鍵を Supabase の secrets に入れる。
+**すぐ知る道は入れていない**: Real-time developer notifications（Pub/Sub）。
+解約・返金は、次にその人が起動した時（`verify-plan` が訊き直す時）に反映する。
 
 ### 画面にペンで書いたシート
 
@@ -127,28 +137,25 @@ iOS は `MainViewController.swift` の `keepStill()` で、ウェブビューの
 
 **端末で見ていない。** 揺れないかは実機でしか分からない。
 
-## サインイン ── `www/` に要る変更
+## サインイン
 
-**今の `www/` のままでは、Android で Apple も Google も押して何も起きない。**
-押すと待ちの印が出て、何も言わずに元に戻る。
+電話ごとに何をプラグイン（`@capgo/capacitor-social-login`）に渡すかは
+`www/onboard.js` の `obSocialCfg()` 一つで、`obReady()`・`obSignInApple()`・
+`obSignInGoogle()`・門のボタンがそれを訊く。どの電話かは
+`Capacitor.getPlatform()` をそこでだけ訊く。
 
-`www/onboard.js` の `obReady()` は initialize に { apple: { redirectUrl: '' },
-google: { iOSClientId } } を渡す。`@capgo/capacitor-social-login` の Android
-側は:
-
-- Apple に `redirectUrl` と clientId（Apple の Services ID）を**必須**にして
-  いて、空なら `initialize` 全体を reject する。`obReady()` はそれを
-  `obShrug()` で黙って受けるので、Google も初期化されない。
-- Google は webClientId（Web アプリケーションの OAuth クライアント ID）を
-  要求する。`iOSClientId` は読まない。
-
-だから `www/` に要るのは: Android の時は Apple を渡さない（または Apple の
-Android 用の Services ID と戻り先を渡す ── Android に Apple のサインインを
-置くかどうかはオーナーのもの）、Google には webClientId を渡す。
-webClientId は秘密ではなく、`www/net.js` の `GOOGLE_IOS_ID` と同じく
-ファイルに書く値。`obSignInGoogle()` も今は `GOOGLE_IOS_ID` の有無で道を
-閉じているので、同じ所を見る必要がある。この回は `www/` を持っていないので
-直していない。
+- **Google**: Android では webClientId（Web アプリケーションの OAuth
+  クライアント ID）を渡す。Android 側は `iOSClientId` を読まない。値は
+  `www/net.js` の `GOOGLE_WEB_ID`（`GOOGLE_IOS_ID` の隣、秘密ではない）。
+  **今は空** ── 空の間、Android の Google は iPhone で `GOOGLE_IOS_ID` が
+  空の時と同じく閉じていて、押すと「このビルドには無い」と言う。
+- **Apple**: Android では渡さず、門にボタンを出さない。**Android に Apple の
+  サインインを置くかはオーナーの決定待ち。** 置くなら Apple の Services ID と
+  戻り先が要る ── Android のプラグインはこの二つが空だと `initialize` ごと
+  断り、Google も道連れになる（前はそれで両方とも押して何も起きなかった）。
+- **設定のアカウントの部屋**（`www/settings.js`）の Apple・Google の行は
+  まだ電話を訊かず、Android でも Apple の行が出る（押すと「このビルドには
+  無い」）。r122 の持ち物ではなかった。
 
 **Android 用の OAuth クライアント ID はアプリに入らない。** Google Cloud に
 パッケージ名と署名の SHA-1 で登録するだけで、アプリが渡すのは
@@ -195,12 +202,29 @@ CI の debug の鍵は毎回作り直されるので、debug の APK では Goog
      Play Console の「アプリの署名」にあるアプリ署名鍵のもの。二つとも。
    - 種類「ウェブ アプリケーション」のクライアント ID を用意する（Supabase の
      Google の設定に既にあればそれ）。これが webClientId になる。
+     その値を `www/net.js` の `GOOGLE_WEB_ID = ''` の引用符の中に入れる
+     （`<数字>-<英数字>.apps.googleusercontent.com`）。入れるまで Android の
+     Google のボタンは閉じている。
    - Supabase の Authentication → Providers → Google の Client IDs に、
      その ウェブ のクライアント ID が入っていること（id token の audience に
      なる）。
-5. Play Console に定期購入の商品を作る（課金は Google Play 直結・値段は
-   iPhone と同じ、と決まっている。商品 ID の形は課金の回で報告する）。
-6. 通知を Android でどうするかを決める（それまで「無い」と答えている）。
+5. **Play Console に定期購入を四つ作る**（収益化 → 定期購入）。商品 ID は
+   `com.tokinets.lingua.plus.monthly`・`com.tokinets.lingua.plus.yearly`・
+   `com.tokinets.lingua.pro.monthly`・`com.tokinets.lingua.pro.yearly`。各々に
+   基本プランを一つ（自動更新、期間は月か年、ID は例えば `monthly` / `yearly`）、
+   値段は iPhone と同じ。有効にする。定期購入はアプリを一度 Play に上げて
+   （内部テストでよい）からでないと作れない。
+6. **Google Play の購入を確かめる鍵**:
+   - Google Cloud でプロジェクトを選び（無ければ作る）、**Google Play Android
+     Developer API** を有効にする。
+   - サービスアカウントを作り、**JSON 鍵**を作ってダウンロードする。
+   - Play Console の「ユーザーと権限」でそのサービスアカウントのメールを招待し、
+     このアプリに「財務データの表示」と「注文と定期購入の管理」を与える。
+   - JSON 鍵の中身をまるごと GitHub の Secrets に `GOOGLE_PLAY_SERVICE_ACCOUNT`
+     として入れ、Actions の Supabase Deploy を `verify-plan` で回す（その段が
+     Supabase の secret に入れる）。鍵のファイルはリポジトリに入れない。
+   - 試すのは Play Console の「ライセンス テスト」に入れた Google アカウントで。
+7. 通知を Android でどうするかを決める（それまで「無い」と答えている）。
    通知に Firebase を使うなら、Firebase のプロジェクトと
    google-services.json（`android/app/` に置くと
    `android/app/build.gradle` が Google サービスのプラグインを当てる）。
@@ -216,4 +240,7 @@ Kotlin は Robolectric の android-all と Capacitor の core を相手にコン
 選ぶ・消すの一覧、写真ピッカー（一枚と四枚）、紙のシートの共有、声の録音と
 再生（再生中に他のアプリの音楽が止まらないか ── WebView が音声の
 フォーカスを取るかは見ていない）、設定を開く、評価のお願い（Play から入れた
-アプリでしか出ない）。
+アプリでしか出ない）。課金: 値段が出るか、買う・Plus から Pro に替える
+（二重に請求されないか）・保留の購入・復元・定期購入のページから戻る、別の
+Supabase アカウントでは付かないこと、三日後に返金されていないこと（承認が
+効いたこと）。Play Billing は Google の Maven に届かずコンパイルしていない。

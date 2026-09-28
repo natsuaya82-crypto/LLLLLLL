@@ -27,27 +27,27 @@ in memory while the app runs (`LSL`, CLAUDE.md rule 22). `SLICES` in `www/core.j
 the list, and **being in that list is what makes a slice real**: `netSaveNow()`
 and `netLangSync()` walk it, so a slice outside it reaches no server;
 `wipeLangsGo()` walks it for
-one id and `lsWipeAcct()` walks it for every language an account has, so a
-slice outside it survives both deletes into the next language. Two were outside
+one id; `lsWipeAcct()` does not walk it at all — it takes every key under
+`lingua.<id>.`, in memory and on the disk, so it cannot miss one. Two were outside
 it once — the keyboard and the world — and neither could throw. **Count them
 off `SLICES` itself and not off this sentence**, which has said eleven and has
 said twelve.
 
 **`lingua.<id>.bkn` is not a slice.** It was the backup FILE's save counter,
 and the file is gone (`CLAUDE.md` rule 11, 2026-09-04): nothing in the app reads
-or writes it, and a phone an older version wrote it on still has it. Whether it
-goes with the deletes above is with the owner (`docs/scope/aud-data.md`
-§ オーナーに訊くこと).
+or writes it, and a phone an older version wrote it on still has it. `lsWipeAcct()` and
+deleting the language take it with every other `lingua.<id>.` key.
 
 **And now a third reader walks it: the server.** OWNER DECISION 2026-08-26 —
 「基本は全部サーバー管理」. Each slice is one
 row in `slice` (`supabase/schema.sql`), keyed `(language, kind)`, and `body` is
-**the exact string `localStorage` holds** — the same string the server's
+**the exact string `LSL` holds for it** — the same string the server's
 `slice_merge()` works on, so a slice has one shape and not two that could drift.
 `netSaveNow()` (a person's save) and `netLangSync()` (the door) send it through
 `slice_put()` with the version this phone last agreed with, and the SERVER puts
 two phones' copies together (`slice_in()`, 2026-09-27) and hands back what it
-holds; the phone reads nothing to save and merges nothing; a launch only reads (`netLangsDown()`). So being in `SLICES` now decides three things at
+holds; the phone reads nothing to save and merges nothing; which languages the account has comes
+down at the door and on the languages page (`netLangsDown()`, `pullWait('mylangs')`). So being in `SLICES` now decides three things at
 once — wipe and what goes up — and a slice added outside the list is
 missing from all three.
 
@@ -57,7 +57,8 @@ reads it in and the function that writes it out — or, for the two that have no
 global, why they have none (`talk` is a closed chapter and `gram2` is read by
 language id on demand). `langLoad()` and `langSaveAll()` walk `SLICES` through
 it, and every road that swaps the open language now takes them: opening one,
-deleting one, deleting an account, a restore, and the sync.
+deleting one, deleting an account, and a language filled from the server
+(`netLangFill()`).
 
 It was written out by hand in **eight** places before 2026-09-03 — five reads
 and three writes — and no two of them agreed. The keyboard and the world were
@@ -147,8 +148,8 @@ original is gone — and `docs/BACKLOG.md` carries them.
 | `phases` | `STG` | grammar stages, `fm` — the rules a form is made by (`docs/FEATURES.md`) — and the calendar's two numbers, `months` and `week` (`www/cal.js`) | object |
 | `talk` | — | the conversation. **Its screen and its global are both gone** — there is no `TALK` in `www/`, and nothing in the app reads or writes this. The slice stays in `SLICES`, `netSaveNow()` still sends the text up under its own name, and it still comes back down: a screen going away is not a reason for somebody's conversation to be deleted | array |
 | `snd` | `SND` | the sound inventory | array |
-| `kb` | `KB` | the keyboards this language's owner **built**, and which one is applied. The free QWERTY is not among them: it is board 0, rebuilt from `kbFixed()` every time it is asked for, so it cannot go stale and cannot be edited. `v:2` says `migrateKbFree()` has taken the old copy of it out of the array | object |
-| `gram2` | — | the grammar engine's v2 model (`www/grammar-engine/`). **`gModel()` in `www/grammar.js` reads it**; nothing writes it yet, so every language today falls to `fromLegacy()` and answers exactly as before. What it holds when it is written is **everything except the dictionary and the rules that name words** — `words` is rebuilt from `WORDS` on every read and `grammarRules` from the stages, because both point AT the dictionary and a stored copy would part company with it the first time somebody renamed a word. `adapter.save` still has no caller. It is in `SLICES` from the day the key existed rather than the day the first caller does, which is the whole lesson of the keyboard and the world: a slice joins the list BEFORE anything writes to it, or the first thing written is the thing that never reaches the server. It sits **beside** `phases` and does not replace it — a migration copies and never removes | object |
+| `kb` | `KB` | the keyboards this language's owner **built**, and which one is applied. The free QWERTY is not among them: it is board 0, rebuilt from `kbFixed()` every time it is asked for, so it cannot go stale and cannot be edited. `v:2` says `migrateKbFree()` has moved the old copy of it out of the list into `was0`, in the same slice, byte for byte and read by nothing | object |
+| `gram2` | — | the grammar engine's v2 model (`www/grammar-engine/`). **`gModel()` in `www/grammar.js` reads it**; nothing writes it yet, so every language today falls to `fromLang()` and answers exactly as before. What it holds when it is written is **everything except the dictionary and the rules that name words** — `words` is rebuilt from `WORDS` on every read and `grammarRules` from the stages, because both point AT the dictionary and a stored copy would part company with it the first time somebody renamed a word. `adapter.save` still has no caller. It is in `SLICES` from the day the key existed rather than the day the first caller does, which is the whole lesson of the keyboard and the world: a slice joins the list BEFORE anything writes to it, or the first thing written is the thing that never reaches the server. It sits **beside** `phases` and does not replace it — a migration copies and never removes | object |
 | `wld` | `WLD` | what the language is for — and two flags. `hide`: whether it has a page anybody else may open; **absent means public**. `dl`: whether the letters and the words may be taken away and used; **absent means no**, and the two defaults point opposite ways on purpose — a page is a thing to be looked at, and handing over months of somebody's drawing is not a thing to decide for them | object |
 
 `slice_merge()` in `supabase/schema.sql` reads those shapes to put two copies
@@ -178,22 +179,18 @@ byte for byte and never read again; a copy no stamp names is nobody's and is
 neither read nor removed (decision log 2026-09-24).
 
 **Not a slice, and deliberately:** `lingua.set` (`SET`) is the person's
-settings and belongs to no language. It carries `planWas` — the plan the app
-last saw — so that a plan ending can be noticed however it happens and said
-once (`docs/PAID_FEATURES.md` § when a plan ends). It also carries `obback`,
-which is where to go when the door is done: the sign-in screen lives inside
-the onboarding, so Settings has to write `done:false` to show it, and the note
-saying that flag is temporary has to be written to the same place at the same
-moment. It was a variable, and a reload between the two left a phone claiming
-the onboarding was unfinished with nothing left saying otherwise. Cleared by
-`obReturn()`; it is a pending move, not a preference, and it is the one thing
-in `SET` that is meant to be short-lived. **How this account has the app set up is `profile.prefs`**, since 2026-09-09:
-one jsonb column carrying exactly `SET_PREFS` in `www/core.js` — the theme, the
-interface language, and the three switches about the drawn letters — **and,
-from 2026-09-22, the four that say which notices reach a phone**:
-`push_follow`, `push_reply`, `push_like`, `push_boost`. **A switch that is not
-there is ON**, and that is the spec rather than a default: nobody's `prefs`
-carried these four before that day, so reading a missing one as 「切ってある」
+settings and belongs to no language. Whether a plan has ended is not in it:
+that is the server's (`plan.was`, `plan.lapse_seen_at`), arriving on
+verify-plan's reply (`docs/PAID_FEATURES.md` § when a plan ends). It carries
+`obback` (`SET_PHONE`), which is where to go when the door is done: `obDoor()`
+writes it and `appIs()` draws the door off it (`obPending()`), so the door and
+its note are one fact. Cleared by `obReturn()`; it is a pending move, not a
+preference. **How this account has the app set up is `profile.prefs`**, since 2026-09-09:
+one jsonb column carrying exactly `SET_PREFS` in `www/core.js` — read the
+array, not this line — the theme, the interface language, the switches about
+the drawn letters, **the switches that say which notices reach a phone**, and
+`notAt`. **A switch that is not there is ON**, and that is the spec rather than
+a default: nobody's `prefs` carried the notice switches before 2026-09-22, so reading a missing one as 「切ってある」
 is every account that has ever existed getting no notifications at all, with
 nothing on any screen saying so. Off is `false` written down and nothing else.
 `supabase/functions/push-send/push.mjs` is the one place that asks
@@ -211,9 +208,8 @@ were in `SET_PHONE` as 「how this handset is set up」, and that sentence was
 wrong about all five: signing in on a second phone gave somebody the app
 arranged the way that phone happened to be. `lingua.set.<uid>` holds them as
 the copy, written under the account the moment they are written, and what is
-left in `lingua.set` is
-`SET_PHONE` in `www/core.js` is what that array names — read it there, not
-here.
+left in `lingua.set` is what `SET_PHONE` in `www/core.js` names — read it
+there, not here.
 
 `lingua.me` (`ME`) is the person — the copy of their `profile` row. **Who they
 follow and who follows them are not in it**, since 2026-09-09: `ME.fo` and
@@ -222,19 +218,12 @@ holds stays). The `follow` table is the answer, and both lists live in
 `FOL_HAVE` in `www/me.js`, keyed by handle, where everybody else's already
 did — memory, written only by an answer from the server, dropped by
 `folForget()` when the session goes.
-`lingua.sess` (`SESS`) is the session — the token pair, and one mark; **a
-password is never held, stored or logged.** The mark is `end`, written by
-`netEnding()` in `www/net.js` when somebody presses 「アカウントを削除」 and
-gone when the session is. It says **this account has been asked to be deleted
-and the server has not confirmed it yet** — 「削除し切ってないと消えない」 OWNER
-2026-09-03. Nothing on the phone is removed while it is set: the record is the
-server, so the copy goes after the row does and never instead of it, and a
-press that lost its signal is picked up by `bootSession()` (`www/boot.js`) at
-the next launch. It is a field of the session rather than a key of its own for
-the reason the session is the one key that is nobody's belongings: the mark is
-worth nothing without the token that says whose account it is, and a key beside
-the session could outlive the account it names and be read against the next
-one. `lingua.posts` (`POSTS`) is **the copy of** the
+`lingua.sess` (`SESS`) is the session — the token pair; **a password is never
+held, stored or logged.** Deleting an account writes nothing on it: the phone
+is emptied in the same turn the server's answer arrives
+(`wipeAllGo()` → `wipeHere()`, `www/settings.js`), and a press that lost its
+signal changed nothing anywhere — 「削除し切ってないと消えない」 OWNER
+2026-09-03. `lingua.posts` (`POSTS`) is **the copy of** the
 timeline and `lingua.drafts` (`DRAFTS`) **the copy of** what was written and not
 sent — both live on the server, and both are read here so that the app works
 with no signal. A draft is the composer,
@@ -259,52 +248,30 @@ copy** since 2026-09-09: the row goes first and the copy follows. Keeping a
 draft waits for `netDraftUp()`, deleting one waits for the DELETE, and a pull
 makes the copy match the server — a draft this phone had SENT and the server no
 longer has is one somebody deleted on another phone, and it goes. A draft that
-has never been up (`up` false — written before there was a server) is sent
-rather than dropped. The copy never travels back, which is what the old road
+has never been up (`up` false — written before there was a server) stays in
+the list, and goes up when somebody opens it and keeps it (`draftKeep()`);
+nothing sends it off the back of a pull. The copy never travels back, which is what the old road
 did: it re-sent every draft the server did not have, so a draft deleted on the
 other phone was put back by this one, for ever. `up` on a draft is the mark
 that says which of the two a row-less draft is, and it is `.was`'s job said
 about a draft.
 
-A draft is read back by `draftsPull()` (`www/post.js`), which **fills in what
-this phone is missing and never writes over what is here** — § 2 of
-`docs/DATA_SAFETY.md`, and the reason is the one that file gives: the way a
-copy destroys somebody's work is by winning.
+A draft is read back by `draftsPull()` (`www/post.js`), and **the server's row
+IS the draft**: the copy here is replaced by it, except the one open in the
+composer. Nothing is lost by the answer winning, because a draft is kept on the
+server first (`draftKeep()`). Of two phones keeping one draft, the later keep
+stands (`keep_newer()`, `supabase/schema.sql`).
 
-`lingua.notices` (`NOTES_HAVE`) is the third of these and the newest —
-**2026-09-01**. It is the notices the RPC last answered with, and it exists for
-one reason: the notices screen had no copy at all, so it was blank for about a
-second every time it was opened while the feed beside it drew instantly off
-`lingua.posts`. 「通知とか表示されるのに1秒くらいの空白の時間があるのうざい
-からそれ無くして欲しい」 OWNER 2026-08-28.
-
-**It is a copy and never a record.** `notices()` in `supabase/schema.sql` is
-computed from `react`, `post` and `follow` every time it is asked; nothing is
-stored server-side that this could be the only surviving version of, so an
-answer simply REPLACES what is here rather than filling in what is missing.
-That is the opposite of the draft rule above and it is not an exception to it:
-a draft is something a person MADE, and a notice is something that happened to
-them. There is nothing here to destroy by winning.
-
-**It is filed under the account**, `lingua.notices.<uid>`, the way every
-account key is (`lingua.<name>.<uid>`, `www/core.js` § ACCT). Two accounts on one handset must not read each
-other's notices, and a notice names who did what to whom.
-
-**Nothing prunes it and nothing ages it out**, which is the same sentence
-`lingua.posts` and `lingua.drafts` carry: it is replaced whole by the next
-answer and by nothing else. **`lsWipeAcct()` does NOT take it** — that function
-names three parked prefixes and this is not one of them — so an account
-deleted on this handset leaves behind the list of who did what to it. Whether
-it should be taken is with the owner (`docs/scope/aud-data.md`
-§ オーナーに訊くこと, Q1); what is written here is what the code does.
+The notices are not kept on the phone. `NOTES_HAVE` (`www/sns.js`) is memory,
+filled by the launch page (`PAGE_OPEN`); `notices()` in `supabase/schema.sql`
+is computed from `react`, `post` and `follow` every time it is asked.
 
 `lingua.set.<uid>` carries **`notAt`** beside it, and it is not the same kind of
 thing: it is **when the notices screen was last opened**, as a number of
 milliseconds, and it is what makes a notice unread. 「最後に通知の画面を開いた
 時刻より新しいものを未読とする」 OWNER 2026-09-01 — the count on the bell is
-how many of `NOTES_HAVE` are newer than it. It is in `SET` and not beside the
-copy because it is a fact about the PERSON and not about the notices: it
-survives the copy being replaced, and it is the one number the bell reads.
+how many of `NOTES_HAVE` are newer than it. It is a fact about the PERSON and
+not about the notices, and it is the one number the bell reads.
 **The server holds no table of read notices** — `notices()` returns eight
 columns and none of them says read — so this one number is the whole of what
 "unread" means here, by the owner's decision rather than for want of a column.
@@ -313,15 +280,16 @@ columns and none of them says read — so this one number is the whole of what
 the same answer on whichever phone it is opened, which is only true if the
 time follows the account.
 
-What is IN a draft's `body` is what the composer had in its hands, pictures and
-recording as base64 — **not** files in the media bucket. That is not a
-shortcut. `post-media` is readable by every signed-in person (`media_read` is
+What is IN a draft's `body` is what the composer had in its hands: pictures as
+base64 — **not** files in the media bucket — and a recording as a path in
+`post-media`, put there the moment it is recorded (`voKeep()`, `www/rec.js`).
+The pictures are not a shortcut. `post-media` is readable by every signed-in person (`media_read` is
 `using (is_member() and bucket_id = 'post-media')`), so a draft's photographs
 put there would be readable by everybody signed in while the draft itself was
 only its author's; and
 `netMyFiles()` collects what an account deletion removes out of `post.body`
 only, so a draft owning files in the bucket would be files nothing points at.
-The bytes go up when the post does, and not before.
+A picture's bytes go up when the post does, and not before.
 
 A draft carries no `ink`: ink is cut onto a post as it is sent (rule 13), and a
 draft has not been sent.
@@ -355,25 +323,15 @@ Which languages is asked of that account's own index on the disk
 (`lingua.langs.<uid>`), not of memory: the session has usually ended by the
 time this runs, and signing out empties memory (r79, `acct-check` 48).
 
-**Two things under `lingua.` are NOT taken.** They are named so that nobody
-reads the list above as complete:
-
-```
-  lingua.notices.<uid>   the notices copy      www/sns.js  notKey()
-```
-
 `lingua.set.<uid>` ends in the uid and is taken with the rest (r79 — it was
 removed by hand in `wipeHere()` before, beside a second road to the same
 fields).
 
-Two written rules pull opposite ways here and **nothing in this file decides
-between them**: 「アカウント削除で残るものねえ」 (OWNER 2026-08-27) says
-everything of that account's goes, and `docs/DATA_SAFETY.md` § 4 says nothing
-is removed without a written spec asking for it. **`lingua.<id>.bkn` is no
-longer part of this question**: nothing writes it since the backup file went
-(`CLAUDE.md` rule 11, 2026-09-04), and `lsWipeAcct()` counts the namespace, so
-it goes with the rest of that account's keys. **It is with the owner** —
-`docs/scope/aud-data.md` § オーナーに訊くこと, Q1 to Q3.
+Nothing of that account's is left: 「アカウント削除で残るものねえ」 (OWNER
+2026-08-27) is the written spec `docs/DATA_SAFETY.md` § 4 asks for, and
+`lsWipeAcct()` takes every key ending in that account's uid and every
+`lingua.<id>.` key of its languages — the notices are not kept on the phone,
+and `lingua.<id>.bkn` goes with the rest of its language.
 
 ## 直前の三版 ── `slice_hist`（サーバーだけ、運営だけ）
 
@@ -397,7 +355,8 @@ it goes with the rest of that account's keys. **It is with the owner** —
 一番古い時刻で入り、同じ文の中で消えていました（`npm run rls` で見えます）。
 
 **本人の端末に届く道は増えていません。**戻した版は `slice` に載り、その人の
-次の起動の `netLangsWalk()`（`www/net.js`）が「無いものを埋める」ので入ります
+その言語から描かれる画面に着いたときの `netLangFill()`（`www/net.js`）が
+「無いものを埋める」ので入ります
 ── スライスはメモリなので（規則 22）、アプリを閉じて開けば端末は何も持って
 おらず、サーバーの答えがそのまま入ります。**アプリを開いたままだと届きません**
 （端末が持っているものは書き換えない ── それが一分前のタイピングを守る側の
@@ -468,7 +427,7 @@ it goes with the rest of that account's keys. **It is with the owner** —
 サーバーの知っているものになったということで、サーバーが知っているのは
 アカウントです（「端末ごとにやることなんてねえよ」OWNER 2026-09-03）。
 
-**オン／オフはここにありません。**四つのスイッチは `profile.prefs` の中で、
+**オン／オフはここにありません。**スイッチは `profile.prefs` の中（`SET_PREFS`、`www/core.js`）で、
 アカウントの答えだからです ── この表に置くと、答えが電話ごとになります。
 
 ## The index of languages, and what is actually in it
@@ -550,11 +509,8 @@ lands in the same place and does not make a second copy. 「ダウンロード�
 | 上る道 | **無し。**これを送る所はどこにも無く、作ってはいけない ── 何を取ったかは `language_take` で、訊くのは `netTakes()` |
 | なぜ在るか | 「前に読み込んだの出していいよ。何か更新するならクルクルが必要」OWNER 2026-09-12。無ければ電波の無い起動で `langWhose()` が `LW_WAIT` を返し、取った言語が丸ごと消えて見える |
 
-**電波が無い起動で一覧に出るには、もう一枚壁があります。**`dlCap()` は
-`has('plus')` で答えるので、段を訊けていない起動では 0 ── `langsSeen()` が
-読む側の一覧を畳み、足に「n hidden」が出ます。段はメモリだけ（規則 22）なので
-電波の無い起動で段が分かることはありません。**これは直していません**：段の
-決めごとなので `docs/BACKLOG.md` § 段を訊けていない間、一覧を切るか。
+段を訊けていない起動では `dlCap()` は数ではなく（`planNum()` が `null`）、
+天井が数でない間は何も畳みません。
 
 `wldGet()` (`www/home.js`) is the one road in: it writes the index row FIRST,
 so a slice can never sit in storage under a language the index does not know,
@@ -569,13 +525,12 @@ and then writes the slices it was asked for with `langKeyOf(id, kind)`.
    the bug `CLAUDE.md` names twice (the keyboard, the world).
 2. **It does not go up into this account's rows.** OWNER 2026-09-01, asked
    whether a downloaded language travels with the person's own: 「入らん」.
-   (It said 「the backup file」 and there is no file — `CLAUDE.md` rule 11.)
    `SLICES` is
    unchanged — it is the list of what a language is MADE of, and that is the
    same list for every language. **Every writer refuses it** — each asks
-   `langLocked()` (`www/core.js`, off `langWhose()`) before it writes, so
-   nothing of it reaches `netSaveNow()`. Nothing is deleted and nothing is moved: it is the FILE that
-   does not carry it, and it is not lost by being skipped, because it came
+   `langWrites()` (`www/core.js`, which asks `langLocked()`, off `langWhose()`) before it writes, so
+   nothing of it reaches `netSaveNow()`. Nothing is deleted and nothing is moved: it is the up road
+   that does not carry it (`langMineIds()` leaves it out), and it is not lost by being skipped, because it came
    from somewhere and can be taken again.
 3. **A partial language is a normal state, not an error.** OWNER 2026-09-01:
    「いや一つづつdlでいいよ。」 — the download section opens onto 単語 / 文字 /
@@ -619,7 +574,7 @@ and then writes the slices it was asked for with `langKeyOf(id, kind)`.
    everything that is here rather than a free-sized list — 「前に読み込んだの
    出していいよ」 OWNER 2026-09-12.
 
-**5. It is outside sync, and that is not a flag — it is the whole point.**
+**5. It is outside the up road, and that is not a flag — it is the whole point.**
 Everything else about a language goes to the server and comes back merged
 (2026-08-26, above), and the merge (`slice_in()`) **adds both sides**. Run a downloaded
 トキポナ through that once and something has been added to it, at which point
@@ -627,7 +582,7 @@ Everything else about a language goes to the server and comes back merged
 「基本は全部サーバー管理」 has exactly one exception and this is it, and it holds
 by construction: `langMineIds()` (`www/net.js`) is what `netLangSync()` walks,
 and a language `langWhose()` answers **read** or **none** for is not in the
-list at all. There is no second test inside the sync to be forgotten. What IS
+list at all. There is no second test inside `netLangSync()` to be forgotten. What IS
 in the list is a language nobody has answered for yet — that is the walk's own,
 and the insert is what obtains the answer; `netLangRow()` refuses one the
 server already holds for somebody else.
@@ -636,10 +591,10 @@ server already holds for somebody else.
 「編集不可でそのアカウントに切り替えたらダウンロードした人の言語が使える」 OWNER
 2026-09-02, and `tools/migrate-check.mjs` holds `CLAUDE.md`'s rule 6 with a
 fixture whose second language is somebody else's. What protects it is not a locked
-door but the WRITERS, and there are more of them than the four this file used
-to name: `langLocked()` (`www/core.js`) is the one question, asked at
-`save()`, `saveLetters()`, `saveNotes()`, `saveStg()`, `saveSnd()`, `saveKb()`,
-`saveWld()` and at `ltStart()`, which does not top one up
+door but the WRITERS: `langWrites()` (`www/core.js`) is the one question every
+writer asks — no on a language that is only read (`langLocked()`), and no while
+a screen with a Save is drafting — and `ltStart()` asks `langLocked()` and does
+not top one up
 （「dl言語はへんしゅうはできないってなんかいもいわせんなよ」 OWNER 2026-09-01）.
 A rule that lives in one place and is asked at each road that could break it —
 `upStop()`'s shape.
@@ -752,7 +707,7 @@ post at all now: they arrive with the row and are replaced by the next answer
 has this app and are not removed. `pr` is the id of the prompt this was written to, if it
 was written to one; the words of the prompt are not on the post. `sid` is the
 post's row on the server, put on by `postSid()` after it goes up — a post with
-no `sid` has never been up, the same sentence `LANGS[id].sid` carries.
+no `sid` has never been up.
 
 Everything a reader needs is on it, because the reader does not have the
 writer's language:
@@ -768,8 +723,8 @@ writer's language:
 | `pin` | this author put it at the top of their own page. One at a time |
 | `pics` | **up to four photographs**, each squeezed to 900px on the long edge at q0.72 — about 22 KB as text apiece. See below: this is the one field big enough to matter |
 | `pic` | one photograph, on posts written before `pics` existed. Never rewritten. `postPics()` is the one place that reads either |
-| `tr` | what it means in other natural languages, translated at the moment of posting by the writer's own device AI. Absent until that is wired up, and absent is not empty |
-| `vo` | **the voice**, as `{f, ms}` — a name and how long it is, never the bytes: thirty seconds of AAC is about 240 KB, which is ten free-sized languages, and `lingua.posts` shares its quota with everything a person has made. **The bytes are on the server** — `netUpVoice()` puts them in the `post-media` bucket at `<uid>/<pid>/vo.m4a` and writes that path onto `body.vu`. `www/rec.js` writes a local file first so a recording made with no signal is not lost; `voRemote()` tells the two apart by whether the name holds a slash |
+| `tr` | **not written and not read.** The meaning is built from the dictionary and the grammar (`pwMn()`); there is no machine translation 「きかいほんやくはつかわない」. A post that carries one keeps it |
+| `vo` | **the voice**, as `{f, ms}` — a name and how long it is, never the bytes: thirty seconds of AAC is about 240 KB, and `lingua.posts` shares its quota with every other key of this app on the phone. **The bytes are on the server** — `netUpVoice()` puts them in the `post-media` bucket at `<uid>/<pid>/vo.m4a` and writes that path onto `body.vu`. `www/rec.js` puts it in the bucket the moment it is recorded (`voKeep()`) and nothing is written on the phone; what an earlier version wrote into Documents/Voices is still read, and `voRemote()` tells the two apart by whether the name holds a slash |
 | `ed` | when it was edited, if it ever was. An author may put the **line and the meaning** right; the photographs and the voice stay as they were. The `ink` is re-cut at that moment, which is the one place in this app where a post's shapes are not the shapes it was born with — a changed line with the old shapes is the old line |
 | `to`, `toh` | **what it answers, and who wrote that.** Both, and for two different readers: `to` is the id, which is how a reply and its parent are put back together on a phone that has them both, and `toh` is the handle, which is what is SHOWN — so it is on the reply, because the post it answers may not be here at all. `postToWho()` in `www/post.js` is the one place either is read for display: it takes `toh`, falls back to asking the parent when the parent is here, and shows nothing when it is not. A reply written before `toh` existed has only `to` and is not back-filled |
 | `dir` | **which way the line runs** — `ltr`, `rtl`, `ttb-rl`, `ttb-lr`. The language's, frozen at the moment of writing. A timeline that asked the open language would set every post the way MY language runs, which is `ink` all over again. Absent means `ltr`, which is how every post before this was written |
@@ -786,8 +741,7 @@ writer's language:
 (`postInkOf()` makes it when the post is sent; an edit keeps the ink it was written with while the line is the same), for the reason
 `dir` is: the reader has neither the writer's language nor its settings, and
 the writer's own old posts must not move when they change it. **Absent means
-1** — every post written before 2026-09-23, and every post whose ink was cut by
-`migratePostInk()`, stood one step apart. `postSide()` is the one place below
+1** — every post written before 2026-09-23 stood one step apart. `postSide()` is the one place below
 the line that reads it. It travels inside `body` (jsonb) with the rest of the
 ink; the server's shape did not change.
 
@@ -815,27 +769,21 @@ every letter and deletes the word it was written with**, and asks what
 
 ### Posts without ink
 
-`migratePostInk()` cuts ink onto posts one language at a time, as each is
-opened, because a post can only be cut with the alphabet it was written in. A
-post not yet cut has no ink and falls back to the open dictionary.
-
-**That is correct today and will not be tomorrow.** It is correct because every
-post without ink predates the timeline holding anybody else's, so all of them
-are this person's own. The day posts arrive from a server, **they must arrive
-with their ink already on them** — a post from elsewhere with no ink must be
-drawn as text, never re-cut locally.
+Nothing cuts ink onto a post after it was written: today's alphabet is not the
+one it was written in 「古い投稿を今の字で切らない」 OWNER 2026-09-28. A post
+with no ink is drawn as its **text** — on the timeline and on the card, whoever
+wrote it (`CLAUDE.md` rule 12).
 
 ### A photograph, and why there is a ceiling
 
 The bytes go to the server with the post — `netUpPics()` into the `post-media`
 bucket, the paths onto `body.pu` and the small copies onto `body.pt`. **The
 copy this phone keeps is a data URL in `lingua.posts`**, which shares one
-`localStorage` allowance with **every slice of the language**, and that is
+`localStorage` allowance with every other key this app writes, and that is
 where the ceiling comes from: the size of a photograph is a data-safety
 question before it is a picture-quality one.
 
 ```
-  a whole free language                     about 25 KB
   one photograph at 900px q0.72             about 22 KB as text
   POST_BYTES, the ceiling on the timeline    2 MB, about 95 photographs
 ```

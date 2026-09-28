@@ -7,16 +7,6 @@
    ========================================================================= */
 var addPos='n';
 
-/* The word suggestions were here, and the conversation was a chapter, and
-   both were Studio's under the name `ai`. They are out until Studio is,
-   because what Studio sells is the hosted model and the hosted model is the
-   last thing going in: a tier that charges for three of something a day and
-   then asks for money is a price on an unfinished thing.
-
-   Nothing is deleted, it is lifted -- www/reading.js still has makeWord() and
-   www/assist.js still proposes sounds, letters and words everywhere else in
-   the app, because those are the app being usable and were never Studio's.
-   What went is the metered surface and the tier behind it. */
 var addW=null;
 /* ---- the sheet a word is written on --------------------------------------
    One sheet, whether the word exists yet or not. 「作成編集それぞれ同じ画面で」
@@ -38,10 +28,14 @@ var addFrom='';
    than from the dictionary. `count.1`, and empty for every ordinary word.
    phases.js § openSlot sets it; addOne() writes it onto the word. */
 var addSlot='';
-function openAdd(from){
+function openAdd(from, sp){
   /* Adding a word is the second of the four. Asked before the sheet opens,
-     so nobody types a word into a form that is going to refuse it. */
+     so nobody types a word into a form that is going to refuse it -- and
+     before anything below is touched, so a refused open leaves the screen
+     behind it exactly as it was (the word being derived from is standing
+     on wEdit, which the fresh draft below replaces). */
   if(!makeNeed()) return;
+  if(capStop(1)) return;
   /* Reopened by its own redraw and on the way back from the picker, so what
      has been typed is only cleared when the sheet is genuinely new.
 
@@ -53,7 +47,9 @@ function openAdd(from){
      this took the not-fresh branch, left both null, and wdFormHTML() threw
      into vForm's catch: "that is no longer here", about a sheet nobody had
      opened. Empty and broken were sharing a branch. */
-  var fresh = !(here().r==='form' && here().a==='add:'+(from||'')) || !addW || !wEdit;
+  /* `sp` is a spelling somebody chose to start from (a made-up word, vGen):
+     that is a new sheet by definition, so it is fresh whatever the route. */
+  var fresh = !!sp || !(here().r==='form' && here().a==='add:'+(from||'')) || !addW || !wEdit;
   var par=from? findWord(from) : null;
   addFrom = par? String(par.hw) : '';
   /* A word coined from the dictionary fills no slot. Cleared here rather than
@@ -69,12 +65,11 @@ function openAdd(from){
     addW={hw:'', mns:[], pos:addPos, syn:[], ant:[], ex:[]};
     wdMnNew=false; wdExNew=false; wdSubNew=false;
     if(addFrom) addW.from=addFrom;
-    wEdit={seq:[], sp:(par? JSON.parse(JSON.stringify(spOf(par))) : []),
+    wEdit={seq:[], sp:JSON.parse(JSON.stringify(sp || (par? spOf(par) : []))),
            mns:[], pos:addPos, sub:'', reg:'', tags:[], ety:'', nt:''};
     addFmClear();
     wdSync();
   }
-  if(capStop(1)) return;
   openForm('add:'+addFrom,
     (addFrom? t('add.title.from', addFrom) : t('add.title')),
     '<div id="wd-body">'+wdFormHTML()+'</div>',
@@ -183,10 +178,6 @@ function findWord(hw){
   for(var i=0;i<WORDS.length;i++){ if(String(WORDS[i].hw).toLowerCase()===String(hw).toLowerCase()) return WORDS[i]; }
   return null;
 }
-/* The syllables, from the sounds. What used to sit here was the respelling
-   -- the word written out in the reader's own script -- and a word made of
-   IPA symbols gives it nothing to work from. One syllabifier, in core.js,
-   used by the dictionary, the analysis and this. */
 /* ---- One word, opened ---------------------------------------------------
    It used to be a read-only card with a meaning box on it: you could change
    what a word meant and nothing else. Not the word. A word built out of the
@@ -200,17 +191,10 @@ function findWord(hw){
 var openHw='', wEdit=null;
 
 /* ---- spelling a word --------------------------------------------------
-   The word is a row of letters, each with the sound it makes underneath. Tap
-   a letter in the row and you change what it says HERE and nowhere else --
-   which is what a sound change is: 「アルファベットに決まった音があるならそのまま、
-   漣音化とか音が変わるならそこの単語から変更できるようにして」
-
-   The keyboard is letters when the language has any, and sounds when it does
-   not or when you ask for sounds. Nobody spells by phoneme -- but a language
-   three days old has no letters yet, and it still has to be possible to make
-   a word. */
-/* The same as the new-word sheet's: typed on free, pressed on the paid plan,
-   and the row of letters under it either way. */
+   The word is typed, letter by letter, in the same field as the new-word
+   sheet's. What a letter says HERE and nowhere else is the reading row
+   (wdSeqHTML) -- which is what a sound change is: 「アルファベットに決まった音が
+   あるならそのまま、漣音化とか音が変わるならそこの単語から変更できるようにして」 */
 function wdTypeHTML(){ return spTypeField('wd-ln', IN('wdSetLn'), wEdit.sp||[], 'whin'); }
 function wdSetLn(v){
   wEdit.sp=spType(v);
@@ -224,9 +208,22 @@ function wdSetLn(v){
      is the word itself, did not. www/shell.js § KEEP. */
   wdKeepTouch();
   lnGrow('wd-ln');
-  var r=document.getElementById('wd-rd');
-  if(r) r.textContent=phIpa(wEdit.seq);
+  wdSounds();
   addFmPaint();
+}
+/* Typing does not redraw the sheet, so everything on it that is worked out
+   from the spelling is written again here: the IPA, the syllables, and the
+   value on the reading row. It was the IPA alone, and the other two showed
+   the word as it was before the last key. */
+function wdSyl(seq){
+  return phCut(seq).map(function(p){ return p.on.join('')+p.nu.join('')+p.co.join(''); }).join('\u00b7');
+}
+function wdSounds(){
+  var r=document.getElementById('wd-rd'), y=document.getElementById('wd-syl'),
+      v=document.getElementById('wd-sv');
+  if(r) r.textContent=phIpa(wEdit.seq);
+  if(y) y.textContent=wdSyl(wEdit.seq);
+  if(v) v.textContent=phIpa(spPh(wEdit.sp||[]));
 }
 /* The reading, and the way to change it. It is proposed -- the letters of
    the word say what it reads, and that is the answer until somebody says
@@ -243,9 +240,16 @@ function wdSeqHTML(){
      way to CHANGE it, and there is none where the spelling has no letters to
      hang one on -- spRdOK(), www/letters.js. */
   if(!spRdOK(sp)) return '';
-  return '<button class="set"' + DO('go', ["spell"]) + '>'+
+  return '<button class="set"' + DO('wdSpellGo') + '>'+
     '<span class="sl">'+esc(t('word.sp'))+'</span>'+
-    '<span class="sv">'+esc(phIpa(spPh(sp)))+ICON_GO+'</span></button>';
+    '<span class="sv"><span id="wd-sv">'+esc(phIpa(spPh(sp)))+'</span>'+ICON_GO+'</span></button>';
+}
+/* The same row on every plan 「全部一緒 / 有料から無料も同じ画面でタップしたら
+   有料に行くように」 OWNER 2026-09-04: a plan that cannot change how a word
+   is read is sent to the plans on the press. */
+function wdSpellGo(){
+  if(upStop(can('snd'))) return;
+  go('spell');
 }
 /* ---- the reading of one word ---------------------------------------------
    A letter has a sound and a word is normally read by running those sounds
@@ -325,9 +329,9 @@ function wdMnsHTML(){
    「単語の例文は？反対語は？同義語は？これのどこが辞書と同じなの？」
 
    An example, a synonym and an antonym are the three things every dictionary
-   in the world has and this one did not. All three are edited on the word
-   and saved as they are made, like the derivations above them, because they
-   are facts about the word rather than a draft of it.
+   in the world has and this one did not. All three are edited on the
+   sheet's draft and written when Save is pressed, with everything else on
+   it (keepDrafting(), 「保存を押したら」 OWNER 2026-09-24).
 
    A relation goes both ways or it is not a relation: making B a synonym of A
    makes A a synonym of B, and the same for opposites. A dictionary where you
@@ -367,7 +371,7 @@ function wRelToggle(hw, k, other){
   else { A.push(b.hw); if(j<0) B.push(a.hw); }
   save(); relDirty(); render();
 }
-/* Taking one off the word being made, from the chip rather than from the
+/* Taking one off the word being made, from its row rather than from the
    picker -- the same list, so the same function decides it. */
 function wRelOff(k, other){ wRelToggle('', k, other); wdPaint(); }
 /* Everything pointing at a word is told its new name when the name changes,
@@ -396,9 +400,9 @@ function wdRelHTML(k){
   var ws=wRelWords(w,k);
   return (ws.length
     ? '<div class="rels">'+ws.map(function(x){
-        /* On a word that exists the chip is a way to it. On the one being
+        /* On a word that exists the row is a way to it. On the one being
            made it cannot be -- going there would leave the draft -- so there
-           it takes the word back off, which is the only other thing a chip
+           it takes the word back off, which is the only other thing a row
            on a list you are assembling could mean. */
         return '<button class="rel"' +
           (addW? DO('wRelOff', [k, x.hw]) : DO('openWord', [x.hw])) + '>'+
@@ -422,9 +426,6 @@ function exGloss(ln){
   var ps=String(ln||'').trim().split(/\s+/);
   return ps.map(function(x){ var w=findWord(x); return (w && wMns(w)[0]) || x; }).join(' ');
 }
-/* The placeholder is two of this language's own words. An instruction there
-   -- "words with spaces between them" -- is a sentence nobody wants to read
-   in a box they are about to type in; two words show the shape at a glance. */
 /* One button at the end of an example: listen, make a card, throw it away.
    Five of them, in two files, were the same line with a different icon. */
 function exBtn(fn, args, key, icon){
@@ -475,6 +476,9 @@ function exRowHTML(e, seq, tail){
     (seq.length? exBtn('sayPh', [seq], 'f.listen', ICON_SPK) : '')+
     tail+'</div>';
 }
+/* The placeholder is two of this language's own words. An instruction there
+   -- "words with spaces between them" -- is a sentence nobody wants to read
+   in a box they are about to type in; two words show the shape at a glance. */
 function exHint(){
   var a=WORDS.slice(0,2).map(function(w){ return String(w.hw); });
   return a.length>1? a.join(' ') : (a[0]||'');
@@ -535,10 +539,12 @@ function vRelate(){
        here and find it". 「その場で類義語とか対義語を作れるようにすればいいやん」
        So it is made here, and joined here, in one press. */
     '<div class="sec">'+t('home.write')+'</div>'+
-    '<div class="row2"><div class="field">'+
-      spTypeField('rel-hw', ' autocapitalize="none"', [], '', t('f.spelling'))+'</div>'+
-    '<div class="field">'+
-      lnField('rel-mn', t('f.meaning.ph'), '', '')+'</div></div>'+
+    /* Nothing is written inside the boxes 「四角のなかにつづりとか読みとか書く
+       の消して」: what each one is, is said over it. */
+    '<div class="row2"><div class="field"><label>'+esc(t('f.spelling'))+'</label>'+
+      spTypeField('rel-hw', ' autocapitalize="none" aria-label="'+esc(t('f.spelling'))+'"', [], '')+'</div>'+
+    '<div class="field"><label>'+esc(t('f.meaning'))+'</label>'+
+      lnField('rel-mn', '', ' aria-label="'+esc(t('f.meaning'))+'"', '')+'</div></div>'+
     '<button class="btn ghost" style="width:100%;margin:8px 0 18px"' + DO('relNew') +
       ' aria-label="'+esc(t('add.btn'))+'">'+ICON_ADD+'</button>'+
     (list.length
@@ -549,7 +555,7 @@ function vRelate(){
                                                  : DO('wRelToggle', [hw, k, x.hw])) + '>'+
             '<div class="hwrow"><span class="hw">'+sfontHTML(wOut(x.hw))+'</span>'+
             '<span class="pos">'+esc(posLabel(x.pos))+'</span></div>'+
-            '<div class="mn">'+esc(wMns(x)[0]||t('words.addmn'))+'</div></button>'+
+            '<div class="mn">'+esc(wMns(x)[0]||t('sent.nomean'))+'</div></button>'+
             '<span class="ltck">'+(has? ICON_TICK : '')+'</span></div>';
         }).join('')
       : '<div class="note">'+t('words.empty')+'</div>')+
@@ -558,32 +564,51 @@ function vRelate(){
 /* Made and joined in one press. A word typed here is spelled by the same
    spType() the new-word sheet uses, so it is written in this language's
    letters and not in whatever was on the keyboard; a spelling the dictionary
-   already holds is not made twice, it is simply joined. */
+   already holds is not made twice, it is simply joined.
+
+   WHICH SHEET THIS PAGE WAS REACHED FROM DECIDES HOW THE WORD IS WRITTEN, and
+   there are two and no third:
+   - a word that exists (`hw`): its sheet has a Save and is on the trail, so
+     the word made here is that sheet's DRAFT, like the relation it is made
+     for -- written by the Save, taken back by 「いいえ」, and nothing is said
+     about it here (「追加しました」 was said over nothing written);
+   - the word being made (no `hw`): that sheet has no Save, so this press is
+     an Add, and it goes the Add's road (addOne): written through keepWrite(),
+     sent, and said only when it has landed
+     「通信エラーなら進むわけねえだろ全部」 OWNER 2026-09-05. */
 function relNew(){
   var a=String(here().a||''), i=a.indexOf(':'), k=a.slice(0,i), hw=a.slice(i+1);
   var e=document.getElementById('rel-hw'), m=document.getElementById('rel-mn');
   var txt=actVal(e).trim(), mn=actVal(m).trim();
-  var sp, nw, w, on=hw? findWord(hw) : addW;
+  var sp, nw, w, snap, on=hw? findWord(hw) : addW;
   if(!on || (k!=='syn' && k!=='ant' && k!=='from')) return;
   if(!txt){ toast(t('toast.hw2')); return; }
   sp=spType(txt); nw=spWord(sp);
   if(!nw){ toast(t('toast.hw2')); return; }
   if(hw && nw.toLowerCase()===String(hw).toLowerCase()){ toast(t('toast.dup')); return; }
-  if(!findWord(nw)){
-    if(capStop(1)) return;
-    w={hw:nw, mn:mn, mns:(mn?[mn]:[]), pos:addPos, at:Date.now(), sp:sp};
-    WORDS.push(w);
+  if(findWord(nw)){ relJoin(k, hw, nw); return; }
+  if(capStop(1)) return;
+  w={hw:nw, mn:mn, mns:(mn?[mn]:[]), pos:addPos, at:Date.now(), sp:sp};
+  if(hw){ WORDS.push(w); relJoin(k, hw, nw); return; }
+  snap=keepSnap();
+  keepWrite(function(){ WORDS.push(w); save(); });
+  netSaveNow(function(up){
+    if(!up){ keepBack(snap); return; }
     toast(t('toast.added.1', nw));
-  }
-  /* saves and redraws, and does nothing at all if the two are already joined
-     -- so pressing this twice does not take the relation back off again */
+    relJoin(k, hw, nw);
+  });
+}
+/* The other end joined -- and nothing at all if the two already are, so
+   pressing twice does not take the relation back off again. */
+function relJoin(k, hw, nw){
+  var on=hw? findWord(hw) : addW, x=findWord(nw);
+  if(!on || !x) return;
   if(k==='from'){
-    if(on.from!==findWord(nw).hw) wFromSet(hw, nw);
-    else { save(); relDirty(); render(); }
+    if(on.from!==x.hw) wFromSet(hw, nw); else { relDirty(); render(); }
     return;
   }
-  if(wRel(on, k).indexOf(findWord(nw).hw)<0) wRelToggle(hw, k, nw);
-  else { save(); relDirty(); render(); }
+  if(wRel(on, k).indexOf(x.hw)<0) wRelToggle(hw, k, nw);
+  else { relDirty(); render(); }
 }
 /* The word this one came from, set -- or taken off, when it is the one
    already set. The spelling is written on the word as a value (CLAUDE.md
@@ -769,10 +794,10 @@ function wdFmHTML(){
   return wdPickRow(t('word.fm'), fmLabel(f)||t('word.none'),
     DO('go', ["fm", (addW? '' : String(openHw||''))]));
 }
-/* Written onto the word as it is chosen, the way a synonym is -- what a word
-   is of its parent is a fact about the word, not a draft of it. The word
-   being coined has nowhere to save to yet, so it goes on the draft and
-   addOne() carries it over. */
+/* What a word is of its parent goes on the sheet's draft as it is chosen,
+   the way a synonym does, and is written with the rest when Save is pressed
+   (keepDrafting()). The word being coined carries it on its own draft and
+   addOne() writes it. */
 function fmPick(hw, f){
   var w;
   /* A FORM's label (§ the forms of a word): it goes onto the screen the form
@@ -835,7 +860,7 @@ var fmNewG='';
 function fmOpen(g){ fmNewG=g; render(); }
 function fmGroupHTML(hw, g, now){
   var list=(g==='i'? FM_INF : FM_DER).concat(fmMine(g));
-  return secAdd(t('word.fm.'+(g==='i'? 'inf' : 'der')), DO('fmOpen', [g]), t('word.fm.own'))+
+  return secAdd(t('word.fm.'+(g==='i'? 'inf' : 'der')), DO('fmOpen', [g]), t('word.mn.add'))+
     list.map(function(f){ return fmRowHTML(hw, f, f===now); }).join('')+
     (fmNewG===g? '<div class="field" style="margin-top:8px">'+
       lnField('fm-'+g, '',
@@ -976,7 +1001,7 @@ function fmrWord(w, m){
    list of them, the room for them, and the word's page again afterwards. */
 function fmrAdd(hw){
   var w=findWord(hw), todo=w? fmrTodo(w) : [], i, m, nw, made=[];
-  if(!w || !todo.length) return;
+  if(!w || !todo.length || langLocked()) return;
   if(capStop(todo.length)) return;
   for(i=0;i<todo.length;i++){
     m=todo[i];
@@ -998,7 +1023,7 @@ function fmrAdd(hw){
    that does nothing when pressed is worse than no button. */
 function fmrTodoHTML(w){
   var todo=fmrTodo(w);
-  if(!todo.length) return '';
+  if(!todo.length || langLocked()) return '';
   return '<button class="btn ghost wide"' +
     DO('fmrAdd', [String(w.hw)]) + '>'+ICON_ADD+
     esc(tn('fmr.todo', todo.length))+'</button>';
@@ -1073,18 +1098,23 @@ function wfmRowHTML(label, hw, doAttr){
     '<span class="wdroww">'+sfontHTML(wOut(hw))+'</span></button>';
 }
 function wfmListHTML(w){
-  var a=wForms(w);
+  var a=wForms(w), ro=langLocked();
   return '<div class="wdrows">'+
-    wfmRowHTML(t('word.root'), w.hw, DO('openEdit', [String(w.hw)]))+
+    wfmRowHTML(t('word.root'), w.hw, ro? '' : DO('openEdit', [String(w.hw)]))+
     a.map(function(x){
-      return wfmRowHTML(fmLabel(x.fm), x.hw, DO('openWfm', [String(w.hw), x.fm]));
+      return wfmRowHTML(fmLabel(x.fm), x.hw, ro? '' : DO('openWfm', [String(w.hw), x.fm]));
     }).join('')+'</div>';
 }
 /* The section, with its + -- and none at all on an old inflection, which is
    a form of its parent and whose page says so with the family. */
+/* NOTHING TO PRESS IN SOMEBODY ELSE'S LANGUAGE (langLocked(), www/core.js;
+   「取ってきた言語を編集できるか →『できない』」 OWNER 2026-09-24): the forms
+   are read there, so the heading has no + and the rows lead nowhere -- every
+   one of them opens a writing face. */
 function wfmSecHTML(w){
   if(wIsForm(w)) return '';
-  return secAdd(esc(t('word.fm.inf')), DO('openWfm', [String(w.hw), '']), t('word.fm.inf'))+
+  if(langLocked()) return '<div class="sec">'+esc(t('word.fm.inf'))+'</div>'+wfmListHTML(w);
+  return secAdd(esc(t('word.fm.inf')), DO('openWfm', [String(w.hw), '']), t('word.mn.add'))+
     wfmListHTML(w);
 }
 
@@ -1105,7 +1135,7 @@ function wfmArg(rest){
 }
 function openWfm(hw, was){
   var w=findWord(hw), k, cur;
-  if(!w || wIsForm(w)) return;
+  if(!w || wIsForm(w) || langLocked()) return;
   was=String(was||'');
   cur=was? wFormOf(w, was) : null;
   k=wfmKey(w.hw, was);
@@ -1125,9 +1155,10 @@ function wfmFormHTML(w, was, k){
     spTypeField('wfm-f', IN('wfmSetF'), spType(f), 'whin')+
     /* The way out, and only for a form somebody placed: a form a rule makes
        is the rule's, and an old one is a word in the dictionary, which this
-       screen does not delete. */
-    (placed? '<button class="btn ghost"'+DO('wfmDel', [String(w.hw), was])+'>'+
-      esc(t('wfm.del'))+'</button>' : '');
+       screen does not delete. The same row as the word sheet's 単語の削除,
+       last on the page 「一番下がデリートになるように」. */
+    (placed? '<div class="grpsep"></div><button class="set end"'+DO('wfmDel', [String(w.hw), was])+'>'+
+      '<span class="sl bad">'+esc(t('wfm.del'))+'</span></button>' : '');
 }
 function wfmSetF(v){ keepSet('f', String(v||'')); lnGrow('wfm-f'); }
 /* THE ONE PLACE A FORM IS WRITTEN. Both halves or nothing: 「ラベルと単語が
@@ -1163,8 +1194,11 @@ function wfmDelGo(hw, was){
   a=w.fms||[];
   for(i=0;i<a.length;i++) if(a[i] && String(a[i].fm)!==was) out.push(a[i]);
   if(out.length) w.fms=out; else delete w.fms;
-  save();
+  /* The screen's buffer is let go BEFORE the write: while it is on the trail
+     save() is holding a draft (keepDrafting, www/shell.js), and the form just
+     taken off was never written. */
   keepDrop(keepKeyOf('form', wfmKey(hw, was)));
+  save();
   back();
 }
 
@@ -1630,8 +1664,7 @@ function wdFormHTML(){
       (mk? '' : '<button class="usep"' + DO('cardOpen', ["w", openHw]) + ' aria-label="'+
         esc(t('card.title'))+'">'+ICON_SHARE+'</button>')+'</div>'+
     '<div class="wsub" id="wd-rd">'+esc(phIpa(seq))+'</div>'+
-    '<div class="wsub2">'+esc(phCut(seq).map(function(p){
-        return p.on.join('')+p.nu.join('')+p.co.join(''); }).join('·'))+'</div>'+
+    '<div class="wsub2" id="wd-syl">'+esc(wdSyl(seq))+'</div>'+
 
     /* A word is TYPED, on both plans. Under this heading were two grids --
        the alphabet, and the sounds -- with a rail to switch between them, so
@@ -1644,27 +1677,24 @@ function wdFormHTML(){
        somebody drew; the Lingua keyboard puts the same letters in with the
        shapes on the keys.
 
-       What is left under the field is not input. Free sees what it reads; a
-       paid plan sees the word as its letters, and pressing one opens that
-       letter's sound in this word -- which is the only thing on this screen
-       the keyboard cannot do. */
-    (can('snd')? wdSeqHTML() : '')+
-    /* Only where a word is being coined. Asking for a spelling to be made up
-       for a word that already has one is asking to throw it away. */
+       What is left under the field is not input: one row that goes to how
+       this word is read (wdSeqHTML) -- the only thing on this screen the
+       keyboard cannot do. */
+    wdSeqHTML()+
 
     secAdd(t('word.means'), DO('wdMnOpen'), t('word.mn.add'))+
     wdMnsHTML()+
 
     /* What kind of word it is, what it is of the word it came from, and how
        it is said: three lists, one after another, each saying what it is set
-       to. They had a heading each over a box each. */
-    '<div style="margin-top:22px">'+
-      wdPickRow(t('f.pos'), posLabel(wEdit.pos), DO('go', ["pos"]))+
-      wdSubHTML()+
-      (mk? '' : wdFromRowHTML())+
-      (wdFrom()? wdFmHTML() : '')+
-      wdRegHTML()+
-    '</div>'+
+       to. They had a heading each over a box each. A group is made by the
+       row that separates (.grpsep), never by a margin on the rows. */
+    '<div class="grpsep"></div>'+
+    wdPickRow(t('f.pos'), posLabel(wEdit.pos), DO('go', ["pos"]))+
+    wdSubHTML()+
+    (mk? '' : wdFromRowHTML())+
+    (wdFrom()? wdFmHTML() : '')+
+    wdRegHTML()+
 
     /* The forms the rules make of it, where a word is coined and nowhere
        else. A word that already exists has its forms already, and re-spelling
@@ -1739,16 +1769,24 @@ function wdSaveBtn(){
 
    `mn` is not in the signature: it is the first meaning, written from `mns` by
    saveWord(), so it would be the same fact counted twice. */
-/* AND WHAT THE SHEET CHOOSES ON A LIST OF ITS OWN. What means the same, what
-   means the opposite and what it came from are chosen on the relate page and
-   written onto the WORD, not onto wEdit -- so a sheet holding them measured
-   as a sheet holding nothing: leaving asked nothing, and what was chosen
-   stayed in memory, unsaved, to ride the next save anywhere. They are the
-   word's own three fields, read off it here. */
+/* AND WHAT THE SHEET PUTS ON THE WORD ITSELF. What means the same, what
+   means the opposite, what it came from, what form of that it is, and its
+   examples are chosen or written on the sheet and go onto the WORD, not onto
+   wEdit -- so a sheet holding them measured as a sheet holding nothing:
+   leaving asked nothing, and what was chosen stayed in memory, unsaved, to
+   ride the next save anywhere. It was said of the first three and the
+   examples and the 語形 went on doing it. So it is one list, WD_ON_WORD, read
+   off the word here, and a field the sheet writes onto the word tomorrow is
+   one more name in it. An empty list and no list are the same thing: showing
+   a relation makes the list (wRel), and that is not a change. */
+var WD_ON_WORD=['syn','ant','from','fm','ex'];
 function wdSig(sp, mns, pos, sub, reg, tags, ety, nt, w){
+  var on=WD_ON_WORD.map(function(k){
+    var v=w? w[k] : null;
+    return (v===undefined || v===null || (v instanceof Array && !v.length))? '' : v;
+  });
   return JSON.stringify([sp||[], mns||[], pos||'', String(sub||''), reg||'',
-                         tags||[], String(ety||''), String(nt||''),
-                         (w && w.syn)||[], (w && w.ant)||[], String((w && w.from)||'')]);
+                         tags||[], String(ety||''), String(nt||''), on]);
 }
 function wdSigEdit(){
   return wdSig(wEdit.sp, wEdit.mns, wEdit.pos, wEdit.sub, wEdit.reg,
@@ -1823,9 +1861,8 @@ function wdSecHTML(head, body){
 /* What means the same and what means the opposite, on the read page. They
    were chips -- a bordered box each, wrapping across the column -- and so was
    the family above them, so a word page was four kinds of boxed thing in a
-   row. One row shape for all of it: `wdRowHTML`. The chips stay on the sheet
-   where the two lists are assembled, because there a box is a thing you take
-   back off. */
+   row. One row shape for all of it: `wdRowHTML`, here and on the sheet
+   where the two lists are assembled. */
 function wdRelsHTML(w, k){
   var ws=wRelWords(w,k);
   return ws.length? '<div class="wdrows">'+ws.map(function(x){
@@ -1952,7 +1989,7 @@ function wdViewHTML(){
           return '<div class="mnrow"><span class="mnv">'+
             (mns.length>1? '<span class="sn">'+(i+1)+'</span>' : '')+esc(m)+'</span></div>';
         }).join('')+'</div>'
-      : '<div class="note">'+esc(t('words.addmn'))+'</div>')+
+      : '<div class="note">'+esc(t('sent.nomean'))+'</div>')+
     wfmSecHTML(w)+
     wdSecHTML(t('word.family'), wdFamHTML(w)+etyDoorHTML(w)+fmrTodoHTML(w))+
     wdSecHTML(t('word.syn'), wdRelsHTML(w,'syn'))+
@@ -1964,9 +2001,6 @@ function wdViewHTML(){
         }).join('')+'</div>' : '')+
     wdSecHTML(t('word.ety'), w.ety? '<div class="note">'+esc(w.ety)+'</div>' : '')+
     wdSecHTML(t('word.note'), w.nt? '<div class="note">'+esc(w.nt)+'</div>' : '')+
-    /* When it was made, and when it last moved -- and the second only when it
-       is a different day from the first, because "made today, changed today"
-       is one fact written twice. */
     /* Made, and last changed. Both, always -- the second used to be dropped
        on the day the word was made, on the grounds that "made today, changed
        today" is one fact written twice. To the minute it is two. */
@@ -2009,11 +2043,13 @@ function openWord(hw){
   openHw=w.hw; addW=null; wEdit=null;
   openForm('word:'+w.hw, wOut(w.hw), '<div id="wd-view">'+wdViewHTML()+'</div>',
            function(){ geTiles(); },
-           helpQ('word')+navDo(t('word.edit'), 'openEdit', [w.hw], true, {icon:ICON_PEN}));
+           /* and no pen in somebody else's language -- wfmSecHTML above */
+           helpQ('word')+(langLocked()? '' :
+             navDo(t('word.edit'), 'openEdit', [w.hw], true, {icon:ICON_PEN})));
 }
 /* The same sheet a new word is written on, opened on one that exists. */
 function openEdit(hw){
-  var w=findWord(hw); if(!w) return;
+  var w=findWord(hw); if(!w || langLocked()) return;
   openHw=w.hw; addW=null; wdMnNew=false; wdExNew=false; wdSubNew=false;
   wEdit={seq:wPh(w).slice(), sp:JSON.parse(JSON.stringify(spOf(w))), mns:wMns(w).slice(),
          pos:w.pos, sub:subOf(w), reg:w.reg||'', tags:(w.tags||[]).slice(),
@@ -2025,9 +2061,7 @@ function openEdit(hw){
 }
 FORM_OPEN.edit=function(hw){ openEdit(hw); };
 FORM_OPEN.word=function(hw){ openWord(hw); };
-/* Both keyboards write the same thing: a step in the spelling. A sound
-   pressed on the sound keyboard is a step whose letter is whichever letter
-   writes it, or none at all if nothing does yet. */
+/* The sounds the spelling reads, worked out again whenever it moves. */
 function wdSync(){ wEdit.seq=spPh(wEdit.sp||[]); }
 /* An assignment that was written as code inside a button. It is one line now,
    in a file a checker can read. */
@@ -2108,6 +2142,12 @@ function wdDelMn(i){ wEdit.mns.splice(i,1); wdPaint(); }
 function wdDerive(){
   var w=findWord(openHw); if(!w) return;
   closeSheet();
+  /* Leaving a sheet with something unsaved on it asks first and stays where
+     it is until it is answered (keepAsked, www/shell.js). Opening the new
+     word's sheet anyway put a fresh draft over the question and over wEdit,
+     which was what had been typed here -- so it opens only once this sheet
+     has actually been left, and otherwise the question is what is in front. */
+  if(here().r==='form' && here().a==='edit:'+w.hw) return;
   openAdd(w.hw);
 }
 /* The four, and the note, written onto a word -- by Save and by Add, which
@@ -2124,10 +2164,12 @@ function wdPutExtras(w){
      a word carrying '' would be a fourteenth thing on nobody's list. */
   if(String(wEdit.sub||'').trim()) w.sub=String(wEdit.sub).trim();
   else delete w.sub;
-  /* `fm` is written where it is chosen, not here. What is here is the one
-     thing Save has to hold: a form of nothing is not a form, so a word with
-     no parent cannot carry one. */
-  if(!w.from) delete w.fm;
+  /* `fm` is not touched here. It is written and taken off where it is
+     chosen (fmPick), and the row it is chosen on is only drawn while the word
+     has a parent -- so a `fm` on a word with no `from` is on no screen, and
+     Save deleting it was Save changing something nobody could see
+     (「保存を押したときだけ、保存されているものが変わる」 OWNER 2026-09-04,
+     whose worked example was this function deleting `ph`). */
   if((wEdit.tags||[]).length) w.tags=wEdit.tags.slice(); else delete w.tags;
   w.up=Date.now();
 }
@@ -2136,10 +2178,9 @@ function wdPutExtras(w){
    already has is somebody else's word. A refusal must not be followed by
    leaving the screen, or the toast that says why is gone before it is read.
 
-   It does not navigate. It used to end in closeSheet(), which made Save mean
-   "write it and take me off this screen"; leaving is the arrow's, and after a
-   save there is nothing left to ask about, so the button in the corner goes --
-   which is how somebody can tell it saved. OWNER DECISION 2026-09-03. */
+   It does not navigate and does not speak: where a save that landed goes,
+   and what it says, are keepSave()'s (www/shell.js) -- the screen before,
+   and 「保存しました」, once the send has answered. */
 function wdWrite(){
   var w=findWord(openHw); if(!w) return false;
   var hw=spWord(wEdit.sp||[]);
@@ -2168,7 +2209,11 @@ function wdWrite(){
      trail, so what it is open on follows too, or the next save would look for
      a word under the name it has just stopped having. */
   if(hw!==old){ wRename(old, hw); openHw=hw; }
-  save(); render(); toast(t('toast.saved', hw));
+  /* No toast here. This runs inside keepSave() BEFORE the send, and a save is
+     not saved until it is up; keepSave() says 「保存しました」 once it has
+     landed, and a sentence here was the same statement said twice -- once
+     over a send that had not answered yet. */
+  save(); render();
   return true;
 }
 /* Taking one word out of the language, and leaving nothing pointing at it.
@@ -2179,7 +2224,9 @@ function wdWrite(){
    It does not confirm, does not save, does not touch the trail and does not
    redraw -- those are the deleting SCREEN's, and they are done once however
    many words go. `wRename` in `www/letters.js` is the same set of pointers
-   read the other way round; this is the one place they are cut.
+   read the other way round (not `from`, which a rename rewrites and this
+   leaves standing -- docs/reports/rule-audit-2026-09-27-words.md,
+   wordsheet-19); this is the one place they are cut.
 
    A child's `from` is NOT one of them. It is the spelling the child was made
    from, written on the child when it was made -- a value, not a way to reach
@@ -2207,13 +2254,24 @@ function delWord(){
 function delWordGo(){
   var w=findWord(openHw); if(!w) return;
   var gone=String(w.hw);
+  /* THE SHEET GOES FIRST, AND THEN THE WORD IS WRITTEN. The delete row is on
+     the sheet, and while the sheet's buffer is on the trail everything
+     pressed is its draft (keepDrafting, www/shell.js) -- so save() wrote
+     nothing, 「削除しました」 was said over a word still in the slice and on
+     the server, and the buffer stayed behind for the next word given that
+     spelling. A confirmed delete is a press with no Save behind it: the
+     buffer is let go, the word's screens come off the trail, and save()
+     writes and sends. What was pressed on the sheet and not saved stays in
+     memory and goes up with it (a word made on the relate page is not lost);
+     what was on the deleted word goes with the word.
+
+     Not closeSheet(): that steps back one, onto the deleted word's own page,
+     which then has nothing to show. You are put back down wherever you were
+     before you opened it -- the dictionary, or the word you reached it from. */
+  keepDrop(keepKeyOf('form', 'edit:'+gone));
+  navDrop('edit:'+gone); navDrop('word:'+gone); navDrop(gone, 'ety');
   wDrop(gone);
   save();
-  /* Not closeSheet(): that steps back one, onto the deleted word's own page,
-     which then has nothing to show. Both of its screens come off the trail,
-     so you are put back down wherever you were before you opened it -- the
-     dictionary, or the word you reached it from. */
-  navDrop('edit:'+gone); navDrop('word:'+gone); navDrop(gone, 'ety');
   render(); toast(t('toast.deleted', gone));
 }
 

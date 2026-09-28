@@ -43,10 +43,24 @@ function saveLetters(){ if(!langWrites()) return; bkTouch(); slWr(langKey('lette
    be redrawn. The borrowed characters that sat in `SET.script` are not read:
    that field is taken off the phone (www/core.js § SET_GONE, OWNER
    2026-09-26). */
+/* A NEW LETTER'S ID, AND IT IS NOBODY ELSE'S.
+   Two copies of an alphabet are put together by id (supabase/schema.sql
+   § slice_arr), so an id two letters share is one of them lost. It was a
+   counter and the alphabet's length, and the counter began at zero every
+   launch -- a letter added today and one added tomorrow at the same count,
+   or the first letter two phones each added, came out as one id. The moment
+   and a random part now, and never one this alphabet already has. `l`,
+   then letters, digits and `_` only: kbFixed() puts an id in a `data-lt`
+   attribute and the onboarding reads it back out of a CSS selector. */
 var LT_SEQ=0;
 function ltId(){
-  LT_SEQ++;
-  return 'l'+LT_SEQ+'_'+LETTERS.length+'_'+(LETTERS.length? LETTERS[0].id.length : 0);
+  var id;
+  do{
+    LT_SEQ++;
+    id='l'+(new Date()).getTime().toString(36)+'_'+LT_SEQ.toString(36)+'_'+
+       Math.floor(Math.random()*2176782336).toString(36);
+  }while(ltById(id));
+  return id;
 }
 function migrateLetters(){
   if(LETTERS.length) return;
@@ -266,6 +280,9 @@ function ltMove(k, id, to){
   var list=ltOrder(ltOfKind(k)), from=-1, i;
   for(i=0;i<list.length;i++) if(list[i].id===id) from=i;
   if(from<0 || to<0 || to>=list.length) return;
+  /* Held until it wobbled and put down where it was: the marks come up and
+     nothing is written -- a save is something somebody did (rule 6). */
+  if(from===to){ render(); return; }
   list.splice(to, 0, list.splice(from, 1)[0]);
   for(i=0;i<list.length;i++) list[i].ord=i;
   saveLetters(); render();
@@ -370,8 +387,8 @@ function ltUp(e){
   d.el.classList.remove('lift');
   d.g.classList.remove('moving');
   if(!d.on){
-    /* Held long enough to wobble but let go without moving anything: still a
-       hold, so the marks appear. */
+    /* Let go before the hold: a tap, which the cell's own press answers --
+       and while the letters already wobble, they are drawn again. */
     if(ltWob) render();
     return;
   }
@@ -562,46 +579,6 @@ function ltSlotKey(l){
   return (nm.length===1 && LT_START.indexOf(nm)>=0)? nm : '';
 }
 function ltIsBase(l){ return !!l && !!ltSlotKey(l); }
-/* THE THIRTY-EIGHT, ONCE EACH.
-   「だからリリース前の今は消していいから、描いてないからリリースしてから確認
-   してくれ、データがないから」OWNER 2026-09-04.
-
-   An alphabet that doubled before the ids were steady is still doubled -- the
-   rows are on the phone and on the server and nothing was going to take them
-   out. Two rows of one slot come to this, and it is the same sentence the
-   server puts two copies of an alphabet together by (supabase/schema.sql §
-   slice_arr): the copy that is drawn on is the copy that stays, both are kept
-   where both are drawn on under two ids, and what goes is an empty slot the
-   app made -- which is the same DELETE REVIEW ltFreeSlot() and ltToDigit()
-   are already written under. It is here and not asked of the server because
-   there is no second copy to put this one together with: it is one alphabet
-   and itself, at the launch, with no signal as well as with one.
-
-   The owner's decision above is why this may run today. Its reason is that
-   nobody has drawn anything yet; when that stops being true the decision
-   stops with it, and what holds afterwards is the paragraph above -- nothing
-   with a drawing on it is ever taken. docs/CHANGELOG.md, 2026-09-04. */
-/* Which ROW a letter is: its id, or where it has none, the whole of it. */
-function ltRowKey(l){
-  if(l && l.id) return 'k'+String(l.id);
-  try{ return 'j'+JSON.stringify(l); }catch(e){ return 'j'+String(l); }
-}
-function ltJoinSlots(){
-  var was=LETTERS.length, out=[], at={}, i, l, s, j;
-  for(i=0;i<LETTERS.length;i++){
-    l=LETTERS[i];
-    s=ltSlotKey(l);
-    s=s? ('s'+s) : ltRowKey(l);
-    j=at[s];
-    if(j===undefined){ at[s]=out.length; out.push(l); continue; }
-    if(!ltHasShape(out[j]) && ltHasShape(l)){ out[j]=l; continue; }
-    if(ltRowKey(out[j])!==ltRowKey(l) && ltHasShape(out[j]) && ltHasShape(l)) out.push(l);
-  }
-  if(out.length===was) return 0;
-  LETTERS=out;
-  saveLetters();
-  return was-out.length;
-}
 /* THE ID A SLOT WEARS, WORKED OUT FROM WHICH SLOT IT IS.
    「あと、キーボードを足したりしてたら文字増殖してるんだけど何で？」OWNER
    2026-09-04, and this is why: ltId() mints an id out of LT_SEQ, which counts
@@ -627,11 +604,10 @@ function ltSlotId(key){
   var k=String(key);
   return (k.charAt(0)==='#')? ('lt.n'+k.slice(1)) : ('lt.'+(LT_SLOT_MARK[k] || k));
 }
-/* ...unless something already answers to it. Nothing this app has ever
-   written can collide -- ltId() makes `l<n>_<n>_<n>` and there is no dot in
-   it -- but two letters with one id is the one thing that would make the
-   merge above LOSE a row rather than double one, so it is asked rather than
-   assumed. */
+/* ...unless something already answers to it. ltId() never makes a dot, so
+   a slot id and a minted one cannot meet -- but two letters with one id is
+   the one thing that would make the merge above LOSE a row rather than
+   double one, so it is asked rather than assumed. */
 function ltSlotIdFree(key){
   var id=ltSlotId(key);
   return ltById(id)? ltId() : id;
@@ -739,13 +715,12 @@ function ltStart(){
      planTook() (www/core.js) calls this again the moment the answer lands, so
      nothing is lost by waiting -- it is the same call at the moment the fact
      it needs becomes true, the shape langOwnGot() has for a language's owner.
-     Above ltJoinSlots() as well: that writes too. (www/core.js § has) */
+     (www/core.js § has) */
   var ok=can('letters');
   if(!planSaid(ok)) return;
-  /* An alphabet that doubled before the ids were steady, put back to one of
-     each. Above the plan, because a paid alphabet doubled the same way and
-     the free plan is not what this is about. */
-  ltJoinSlots();
+  /* An alphabet that doubled before the ids were steady stays doubled:
+     「昔の版で自動で増えた文字: 消さずに残す」 OWNER 2026-09-24. The launch
+     takes no row out of anybody's alphabet. */
   if(planNo(ok)) ltSlotsFill();
 }
 /* What this letter reads, spelled the way a person would write it. One word
@@ -889,20 +864,19 @@ function ltReadName(sp){
 /* Letters from before the guess followed the name. `chose` is the answer to
    "did somebody pick this sound, or did the app read it off the name", and a
    letter that has never been asked has no answer at all -- which is what makes
-   this run once per letter and not once per launch. Not asked means not
-   chosen, so the name wins, and the letter renamed from n to O stops being
-   told that n is taken.
+   this run once per letter and not once per launch.
 
-   Aligning a sound somebody DID choose on the chart is the cost, and it is
-   paid once, by letters that could not say which they were. */
+   What the letter reads is not touched: a migration copies and never
+   removes what it read (CLAUDE.md § Data). Where the sound is what the name
+   reads, nobody chose it; where it is anything else, somebody put it there,
+   and it is kept as chosen -- so a rename later leaves it alone. */
 function migrateSndName(){
   var moved=0, i, l, units;
   for(i=0;i<LETTERS.length;i++){
     l=LETTERS[i];
     if(l.chose!==undefined) continue;
     units=ltReadName(l.ab||'').units;
-    if(units.length) l.snd=units;
-    l.chose=0;
+    l.chose=(!l.snd || !l.snd.length || units.join(' ')===l.snd.join(' '))? 0 : 1;
     moved++;
   }
   if(moved) saveLetters();
@@ -1241,8 +1215,6 @@ function ltForUnit(unit){
   if(langLocked()) return null;
   return ltNew({snd:[unit]});
 }
-/* Everything the two chapters count. */
-function ltShaped(){ return LETTERS.filter(ltHasShape).length; }
 
 /* ---- spelling a word with letters -------------------------------------
    「単語も音単位で決めるやついねえだろ。アルファベットに決まった音があるならそのまま、
@@ -1465,62 +1437,8 @@ function spPh(sp){
   for(i=0;i<sp.length;i++) out=out.concat(uSplit(spUnit(sp[i])));
   return out;
 }
-/* Words from when a word was its sounds. Each of them carries a unit on every
-   position -- a copy of what its letter reads -- and a headword made of those
-   sounds run together. Both were true then and neither is now.
-
-   So: the copies go, except where one genuinely differs, which is the sound
-   change that was worth keeping. And the headword is written out of the
-   letters, which is what it always looked like it was.
-
-   It renames a word only when every position is a letter with a name, and
-   only when the name it comes out with is not already taken. A word that
-   cannot be written out of its letters keeps the headword it has -- there is
-   nothing better to call it, and a rename that collides would merge two
-   words into one, which is not a thing to do to somebody's dictionary. */
-function migrateSp(){
-  var moved=0, i, j, w, sp, l, hw, taken={};
-  for(i=0;i<WORDS.length;i++) taken[String(WORDS[i].hw)]=1;
-  for(i=0;i<WORDS.length;i++){
-    w=WORDS[i];
-    if(!w.sp || !w.sp.length) continue;
-    if(w.spv) continue;                      /* already answered */
-    sp=w.sp;
-    for(j=0;j<sp.length;j++){
-      l=ltById(sp[j].l);
-      if(l && ltFirstUnit(l)===sp[j].u) delete sp[j].u;
-    }
-    hw=spWord(sp);
-    if(hw && hw!==String(w.hw) && !taken[hw]){
-      delete taken[String(w.hw)]; taken[hw]=1;
-      wRename(String(w.hw), hw);
-    }
-    /* AND THE PRONUNCIATION STAYS. It was deleted here, along with the copies
-       above, on the reasoning that a word from when a word was its sounds
-       carried a `ph` that was only ever a copy of what its letters read. That
-       is true of the words this app MADE and false of the ones it was GIVEN:
-       an imported word carries the pronunciation somebody typed into a column
-       of their spreadsheet (www/import.js reads it), and nothing here can tell
-       the two apart.
-
-       What made it worse than a deletion is the order in boot.js: migratePh()
-       runs FIRST and this LAST, so the launch after this one found `ph`
-       missing and wrote phGuess(hw) -- a guess made out of the spelling of the
-       HEADWORD -- in its place. Measured, with the line still in: an imported
-       /t sʰ ɑ ŋ/ came back as `k a n o`. Not lost, which somebody might
-       notice: replaced by an answer the app made up, which looks like theirs.
-
-       CLAUDE.md § Data: *a migration copies and never removes what it read*.
-       「2発音は消えないでくい」 OWNER 2026-09-04. migrate-check holds it now. */
-    w.spv=1;
-    moved++;
-  }
-  if(moved) save();
-}
-/* Everything that points at a word by name, told the new one. saveWord has
-   done this since words could be renamed; it is here because a migration
-   renames them too, and two copies of "what points at a word" is how one of
-   them comes to miss the examples. */
+/* Everything that points at a word by name, told the new one -- the word
+   sheet's rename (www/wordsheet.js) is what calls it. */
 function wRename(old, hw){
   var i;
   for(i=0;i<WORDS.length;i++){
@@ -1543,7 +1461,7 @@ function wRename(old, hw){
    would, and ask which letter writes each piece. */
 function spOf(w){
   if(w && w.sp && w.sp.length) return w.sp;
-  var u=wsSplit(wPh(w||{ph:[]})), out=[], i, l;
+  var u=wsSplit(wsys(), wPh(w||{ph:[]})), out=[], i, l;
   for(i=0;i<u.length;i++){
     l=ltMain(u[i]);
     out.push({l:l? l.id : '', u:u[i]});

@@ -258,9 +258,35 @@ const r = await pg.evaluate(async ({ s, sid }) => {
        memory is a thing on the screen that no save will keep, which is the
        fault this guards (it was one: a sound with no letter made a letter on
        the alphabet page, r84-save, measured). */
+    /* The WHOLE language, as a Save measures it (langHold, www/core.js) --
+       not how many of each. A count misses a press that moves a point of a
+       letter or changes the base: the same number of things, one of them not
+       what it was (2026-09-27, the abugida bench and the base ±). */
     function made(){
-      return [WORDS.length, LETTERS.length, NOTES.length,
-              (KB && KB.kbs) ? KB.kbs.length : 0, SND.length].join(',');
+      /* An empty list, an empty object and an empty string are left out: a
+         screen that fills in an empty default while it draws (the grammar's
+         `ex`, a word's `syn`) has made nothing anybody would keep -- and
+         those are listed for their own screens (docs/reports/
+         rule-audit-2026-09-27-glyph.md). What is left is anything a person
+         could have made. */
+      function canon(x){
+        var o, k, v, n = 0;
+        if (x instanceof Array){
+          o = []; for (k = 0; k < x.length; k++) o.push(canon(x[k])); return o;
+        }
+        if (x && typeof x === 'object'){
+          o = {};
+          Object.keys(x).sort().forEach(function(k2){
+            v = canon(x[k2]);
+            if (v === '' || (v instanceof Array && !v.length) ||
+                (v && typeof v === 'object' && !(v instanceof Array) && !Object.keys(v).length)) return;
+            o[k2] = v;
+          });
+          return o;
+        }
+        return x;
+      }
+      return JSON.stringify(canon(JSON.parse(langHold())));
     }
     var sliceSig = function(){ var o = '', q; for (q = 0; q < SLICES.length; q++) o += slRd(langKeyOf(sid, SLICES[q])) + '|'; return o; };
     var realNetSend = netSend;
@@ -273,36 +299,81 @@ const r = await pg.evaluate(async ({ s, sid }) => {
     slWr(langKeyOf(sid, 'snd'), JSON.stringify(['a', 'k', 'n']));
     slWr(langKeyOf(sid, 'words'), JSON.stringify([{ hw:'qa', mn:'theirs' }, { hw:'qak', mn:'two' }]));
     slWr(langKeyOf(sid, 'notes'), JSON.stringify([{ t:'n1', b:'b' }]));
+    /* and a vowel mark somebody DREW, first in line for `a`, so the abugida
+       bench has a drawing its arrows would move */
+    var ltsWas = slRd(langKeyOf(sid, 'letters')), lts0 = [];
+    try { lts0 = JSON.parse(ltsWas || '[]') || []; } catch (e) {}
+    lts0.unshift({ id:'lmk', st:[{ pts:[[300, 300], [500, 300]] }], ch:'', nm:'', ab:'', snd:['a'], chose:1 });
+    slWr(langKeyOf(sid, 'letters'), JSON.stringify(lts0));
     slWr(langKeyOf(sid, 'kb'), JSON.stringify({ kbs:[{ id:'kx', nm:'K', pat:'qwerty', lay: kbFixed().lay }], at:0 }));
     langLoad();
-    var made0 = made(), slice0 = sliceSig(), seen = {}, pressed = 0;
+    /* AS SOMEBODY ON PRO HAS IT, written as an abugida -- so the screens that
+       only draw their controls on a paid plan or for one writing system are
+       on the surface too (the abugida bench's nudges were not, and moved a
+       mark in memory: 2026-09-27). */
+    var planWas = PLAN;
+    planGot('pro'); langWsysGot(sid, 'abugida');
+    var slice0 = sliceSig(), seen = {}, pressed = 0;
     out.madeBy = [];
-    Object.keys(PAGES).forEach(function(rt){
-      function stand(){ try { popOff(); } catch (e) {} NAV = [{ r: rt }]; window.route = rt;
+    /* EVERY FACE, NOT EVERY ROUTE. A screen is a route AND its argument
+       (CLAUDE.md § Layout) -- the digits room is `ltset` with `num` -- so the
+       doors each screen offers (`go` with an argument) are walked as well,
+       harvested from what was drawn rather than written out here. */
+    var faces = Object.keys(PAGES).map(function(r){ return [r]; }), fseen = {}, fi;
+    faces.forEach(function(f){ fseen[JSON.stringify(f)] = 1; });
+    out.pressedNames = {};
+    /* FOUND BY THIS WALK IN ANOTHER SESSION'S FILE, and listed rather than
+       fixed from here. The list only shrinks -- a name here that no press
+       trips any more fails below, so it cannot outlive its fix. It is empty:
+       setGPos (now gPosPut, www/grammar.js) was the last, and the grammar's
+       board no longer offers a press on somebody else's language
+       (rule-audit-2026-09-27-core, 取り込み後の赤). */
+    var OTHERS = [];
+    out.othersSeen = {};
+    for (fi = 0; fi < faces.length; fi++) (function(face){
+      var rt = face[0];
+      function stand(){ try { popOff(); } catch (e) {} NAV = [face.length > 1 ? { r: rt, a: face[1] } : { r: rt }]; window.route = rt;
                         if (langId !== sid) langOpen(sid); render(); }
       try { stand(); } catch (e) { return; }
-      var els = document.querySelectorAll('#app [data-do], .navtop [data-do]'), list = [], q;
-      for (q = 0; q < els.length; q++) list.push([els[q].getAttribute('data-do'), els[q].getAttribute('data-a')]);
+      var els = document.querySelectorAll('#app [data-do], .navtop [data-do]'), list = [], q, ga;
+      for (q = 0; q < els.length; q++){
+        list.push([els[q].getAttribute('data-do'), els[q].getAttribute('data-a')]);
+        if (els[q].getAttribute('data-do') === 'go' && els[q].getAttribute('data-a')){
+          try { ga = JSON.parse(els[q].getAttribute('data-a')); } catch (e) { ga = null; }
+          /* Not the settings rooms: their rows are the account's (sign out,
+             delete, the password), and the language's own rows in them are
+             routes of their own -- wsys, sp -- walked above. */
+          if (ga && ga.length === 2 && PAGES[ga[0]] && PAGES[ga[0]].lang && ga[0] !== 'set' && !fseen[JSON.stringify(ga)]){
+            fseen[JSON.stringify(ga)] = 1; faces.push(ga);
+          }
+        }
+      }
       list.forEach(function(p){
-        var key = rt + ' ' + p[0] + ' ' + (p[1] || '');
+        var key = JSON.stringify(face) + ' ' + p[0] + ' ' + (p[1] || '');
         if (seen[key]) return; seen[key] = 1;
         try {
           stand();
           var sel = '[data-do="' + p[0] + '"]' +
                     (p[1] !== null ? '[data-a=\'' + p[1].replace(/'/g, "\\'") + '\']' : ':not([data-a])');
           var el = document.querySelector(sel); if (!el) return;
-          pressed++;
+          pressed++; out.pressedNames[p[0]] = 1;
+          var before = made();
           el.click();
           if (popOn()) popYes();
-          if (langId === sid && made() !== made0){ out.madeBy.push(key); langLoad(); }
+          if (langId === sid && made() !== before){
+            if (OTHERS.indexOf(p[0]) >= 0) out.othersSeen[p[0]] = 1; else out.madeBy.push(key);
+            langLoad(); }
         } catch (e) {}
       });
-    });
+    })(faces[fi]);
+    out.faces = faces.length;
+    PLAN = planWas;
     netSend = realNetSend;
     if (langId !== sid) langOpen(sid);
     out.surfacePressed = pressed;
     out.surfaceRoutes = Object.keys(PAGES).length;
     out.surfaceSlices = sliceSig() === slice0;
+    slWr(langKeyOf(sid, 'letters'), ltsWas); langLoad();
 
     langOpen(was);
   }
@@ -493,11 +564,19 @@ say(!r.opens || (r.doorsUp && r.doorsUp.length === 0),
     'door alone would show the word and lose it' +
     ((r.doorsUp && r.doorsUp.length) ? ' (' + r.doorsUp.join(' ') + ')' : ''));
 say(!r.opens || (r.madeBy && r.madeBy.length === 0 && r.surfaceSlices),
-    'and on every route (' + r.surfaceRoutes + '), every button its screen draws pressed ' +
+    'and on every face of every route (' + r.surfaceRoutes + ' routes, ' + r.faces + ' faces), every button its screen draws pressed ' +
     'and answered yes (' + r.surfacePressed + '), nothing is made in it and not one slice ' +
     'of it moves — 「取ってきた言語は編集できない」' +
     ((r.madeBy && r.madeBy.length) ? ' (made by: ' + r.madeBy.join(' | ') + ')' : '') +
     (r.surfaceSlices ? '' : ' (a slice moved)'));
+say(!r.opens || !r.othersSeen || [].every(function(n){ return r.othersSeen[n]; }),
+    'and every name listed as another session\'s is still one this walk trips -- the list only shrinks (' +
+    Object.keys(r.othersSeen || {}).join(' ') + ')');
+/* and the presses this was written for are on the surface -- a walk that
+   no longer reaches them is green about nothing */
+say(!r.opens || ['abNudge', 'abScale', 'numStepBase'].every(function(n){ return r.pressedNames && r.pressedNames[n]; }),
+    'and the walk reaches the abugida bench and the base ± (' +
+    ['abNudge', 'abScale', 'numStepBase'].filter(function(n){ return r.pressedNames && r.pressedNames[n]; }).join(' ') + ')');
 say(r.stillTheirs,
     'and what landed is still theirs after all of that — byte for byte the ' +
     'body the server sent, not this phone’s alphabet written over it');
@@ -659,6 +738,11 @@ const gone = await pg.evaluate(async ({ s }) => {
   SRV.down = true;
   var hitsWas = SRV.hits.length;
   if (delIn(sid)) delIn(sid).click();
+  /* IT ASKS FIRST 「消す前はいつも確認」 OWNER 2026-09-28: the question is up
+     and nothing has gone to the server yet. */
+  await wait(40);
+  out.asked = !!POP_YES && SRV.hits.length === hitsWas;
+  popYes();
   await wait(160);
   SRV.down = false;
   out.downTried = SRV.hits.length > hitsWas;
@@ -671,6 +755,7 @@ const gone = await pg.evaluate(async ({ s }) => {
   swipe(sid);
   SRV.hits = [];
   if (delIn(sid)) delIn(sid).click();
+  popYes();
   await wait(200);
   out.deletes = SRV.hits.filter(function(h){ return h.indexOf('DELETE ') === 0; });
   out.row = !!LANGS[sid];
@@ -698,6 +783,8 @@ say(gone.theirsHasRow && gone.mineHasNoRow,
     JSON.stringify(gone.saw));
 say(gone.shutAtFirst && gone.swiped && gone.openNow && gone.delUp,
     'and a thumb dragged left across it opens it, with the 「−」 at the right end');
+say(gone.asked,
+    'pressing 「−」 asks first, and nothing goes to the server while it asks');
 say(gone.downTried && gone.downKeptRow && gone.downKeptSlice !== null &&
     gone.downKeptTake === gone.dlBefore,
     'a DELETE that does not land takes NOTHING — the row, the slice and the ' +

@@ -893,6 +893,19 @@ const unnamed = await pg.evaluate(() => ({
 }));
 await pg.evaluate(() => { try { delete window.Capacitor; } catch (e) { window.Capacitor = undefined; } });
 
+/* What the file is called, which is what the share sheet and Files show. A
+   language named in letters that are not ASCII kept nothing of its name, and
+   the word after it was English on every phone (CLAUDE.md rule 2). */
+const fname = await pg.evaluate(() => {
+  const was = langName, ui = SET.ui;
+  langName = '日本語/試し'; SET.ui = 'ja';
+  const n = shFileName();
+  langName = was; SET.ui = ui;
+  return n;
+});
+say(fname === '日本語試し 用紙',
+    'a sheet of a language called 日本語/試し, made in Japanese, is filed as ' + JSON.stringify(fname) +
+    ' -- the name kept, the slash out, and the word after it the interface\'s own');
 await br.close();
 
 /* ---- what came back ----------------------------------------------------- */

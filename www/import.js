@@ -18,11 +18,16 @@
    the column that held the right answer and guessed from the spelling, and
    the guesser deletes everything outside a-z.
 
-   So this file is in two halves. This one knows nothing about the app: given
-   text, it says what shape the text is, cuts it into rows, and guesses what
-   each column means. It touches no global and no document, which is why
-   tools/import-check.mjs can run it directly over one sample per format --
-   the only way "we support every service" can stay true a year from now.
+   So this file is in two halves. This one knows nothing about the language
+   in front of you: given text, it says what shape the text is, cuts it into
+   rows, and guesses what each column means. It touches no document and no
+   part of the open language. What it does read is two tables that are not
+   anybody's work -- the ten interface languages (LANG and UI_LANGS, for what
+   a column heading or a part of speech is called: 「つづり」「品詞」) and
+   www/ipa.js (ipaAll(), longCut(), for cutting a reading into sounds) --
+   and tools/import-check.mjs loads exactly those and runs this half directly
+   over one sample per format, the only way "we support every service" can
+   stay true a year from now.
 
    Four shapes, because there are four in the wild:
 
@@ -527,8 +532,8 @@ function impCut(s, snd){
    It is ABOVE the line with the rest of the guess, because it is part of it:
    what the guess ANSWERS is these roles read as one side, and a check that
    asked impGuess() alone would be asking a question the app never asks.
-   Nothing here touches a global or the document; impSetInto(), which does,
-   is below. */
+   Nothing here touches the document or the open language; impSetInto(),
+   which does, is below. */
 var IMP_SIDE={w:['hw','mn','pos','ph','ex','exg','reg','tags','ety','nt','sub','skip'],
               l:['ch','ph','nm','skip']};
 function impRolesFor(into){ return IMP_SIDE[into] || IMP_SIDE.w; }
@@ -554,10 +559,11 @@ function impMove(roles, into){
 }
 
 /* ==== below this line the app begins ==== */
-/* Everything above touches no global and no document, and must not start:
-   tools/import-check.mjs runs that half directly in Node, over one sample per
-   format, which is the only thing holding "we can read anybody's file"
-   upright. Everything below is the app -- the screen, the plan, the
+/* Everything above touches no document and nothing of the open language --
+   only the ten language files and www/ipa.js, which tools/import-check.mjs
+   loads beside it -- and must not start: that check runs that half directly
+   in Node, over one sample per format, which is the only thing holding "we
+   can read anybody's file" upright. Everything below is the app -- the screen, the plan, the
    dictionary -- and press.mjs walks it like any other screen.
    ========================================================================= */
 
@@ -601,8 +607,19 @@ function impBlank(){ return {step:'get', read:null, roles:[], into:'w', dup:'ski
    FORM_OPEN is how a form is rebuilt when nothing holds it any more -- the
    back button onto a route with no FORM behind it -- so that is an arrival
    too, and it starts one the same way. impStep() and impAgain() go through
-   impPaint(), because they ARE the running import. */
-function openImport(){ IMP=impBlank(); impPaint(); }
+   impPaint(), because they ARE the running import.
+
+   AND IT IS NOT OPENED WHERE IT CANNOT WRITE. An import changes WORDS,
+   LETTERS and SND in memory and only then reaches save(), and save() refuses
+   a language that is not this account's -- so the rows appeared, the toast
+   said how many came in, and they were gone on the next launch. The door
+   asks what every other way of making something asks first: makeNeed()
+   (an account, CLAUDE.md § Online), and langLocked() (somebody else's
+   language, or one the server has not answered about yet). */
+function openImport(){
+  if(!makeNeed() || langLocked()) return;
+  IMP=impBlank(); impPaint();
+}
 function impPaint(){ openForm('csv:', t('csv.title'), impHTML(), impMount); }
 FORM_OPEN.csv=function(){ openImport(); };
 function impHTML(){
@@ -611,9 +628,8 @@ function impHTML(){
   if(IMP.step==='paste') return impPasteHTML();
   return impGetHTML();
 }
-/* Rebuilding it rather than patching a piece: choosing what a column is
-   changes the counts underneath it and can change the buttons, and a screen
-   that redraws two of its three parts is where the third goes stale. */
+/* Choose again: the import starts over from the first screen, exactly as the
+   door starts it. */
 function impAgain(){ IMP=impBlank(); impPaint(); }
 function impStep(v){ IMP.step=v; impPaint(); }
 
@@ -742,6 +758,9 @@ function impColName(j){
   var head=IMP.read && IMP.read.head;
   return (head && head[j])? String(head[j]) : t('imp.col', j+1);
 }
+/* Rebuilding the screen rather than patching a piece: choosing what a column
+   is changes the counts underneath it and can change the buttons, and a
+   screen that redraws two of its three parts is where the third goes stale. */
 function impSetRole(j, v){ IMP.roles[j]=v; impPaint(); }
 function impSetDup(v){ IMP.dup=v; impPaint(); }
 
@@ -781,34 +800,20 @@ function impReadyHTML(){
 }
 /* What pressing it would do, said before it is pressed. It follows the side
    that was chosen and not what the rows look like, which is the whole point
-   of choosing: the counts on this screen are what will happen. */
-function impPlan(){
-  var rows=impRows(IMP.read, IMP.roles, addedSnd());
-  var p={add:0, ltr:0, coin:0, have:0, mute:0}, i, r;
-  for(i=0;i<rows.length;i++){
-    r=rows[i];
-    if(IMP.into==='l'){
-      if(!r.ch) continue;
-      if(impLtrBy(r.ch)) p.have++; else p.ltr++;
-    }
-    else if(r.hw){
-      if(findWord(r.hw)) p.have++;
-      else {
-        p.add++;
-        /* A word arriving with no reading: the file gave none and the
-           spelling gives none either, which is every list not written in
-           roman. Asked the same way impPut() asks it. */
-        if(!r.ph.length && !phGuess(r.hw).length) p.mute++;
-      }
-    }
-    else if(r.mn) p.coin++;
-  }
-  return p;
-}
+   of choosing: the counts on this screen are what will happen.
+
+   So they are not counted here. They are the SAME walk the press takes --
+   impPut() below, with nothing written -- because a second walk that asks
+   its own questions is a screen that says 300 and a press that puts in 70:
+   the ceiling, a meaning-only row that has no sounds to be coined from, and
+   a digit that goes onto its empty slot were each answered one way here and
+   another way there. */
+function impPlan(){ return impPut(impRows(IMP.read, IMP.roles, addedSnd()), false); }
 /* The number on the button, which is what will actually be written: the ones
-   already here are among them only if they are to be overwritten. */
+   already here are among them only if they are to be overwritten, which the
+   walk has already counted as `was`. */
 function impGoN(p){
-  return (IMP.into==='l'? p.ltr : p.add+p.coin) + (IMP.dup==='over'? p.have : 0);
+  return (IMP.into==='l'? p.ltr : p.add+p.coin) + p.was;
 }
 /* The letter wearing this character, if there is one. A borrowed character is
    a letter's shape, and two letters cannot wear the same one. */
@@ -844,7 +849,24 @@ function impGrow(units){
 }
 
 /* ---- doing it ----------------------------------------------------------- */
-function doImport(){ impPut(impRows(IMP.read, IMP.roles, addedSnd())); }
+/* AN ALPHABET IS THE PAID PLAN'S TO ADD TO. Letters come in, are named and
+   are given sounds on this side, and on the free plan nothing adds a letter,
+   names one or chooses its sound (CLAUDE.md § What the free plan is;
+   `CAN.letters`, `CAN.snd`). The screen is the same on every plan and the
+   PRESS answers, exactly as the + on the alphabet does (docs/HIDEFREE.md):
+   upStop() puts up the pop, and nothing has been written when it does. */
+function doImport(){
+  var rows=impRows(IMP.read, IMP.roles, addedSnd());
+  if(IMP.into==='l' && impLtStop(rows)) return;
+  impLand(impPut(rows, true));
+}
+function impLtStop(rows){
+  var i;
+  if(upStop(can('letters'))) return true;
+  for(i=0;i<rows.length;i++)
+    if(rows[i].ch && impLtrSnd(rows[i]).length) return upStop(can('snd'));
+  return false;
+}
 /* THE REST OF WHAT A ROW CARRIED, written onto the word. The shape is the
    word sheet's own -- wdPutExtras() in www/wordsheet.js writes exactly these
    keys off wEdit -- because a word that arrives here has to be a word that
@@ -892,7 +914,18 @@ function impRegKey(v){
   });
   return k;
 }
-/* Every row, as a word.
+/* EVERY ROW, AND ONE WALK FOR THE SCREEN AND THE PRESS.
+
+   `put` false is the screen before the press asking what would happen;
+   true is the press. Everything the two could disagree about is asked once,
+   here, and only the writing is behind `put`. What comes back is the count
+   of each thing, which is what the ready screen draws and what impLand()
+   says afterwards:
+
+     add   new words     coin  words coined from a meaning
+     ltr   new letters, and a digit going onto its empty slot
+     have  already here  was   of those, overwritten
+     mute  new words with no sounds    full  the ceiling was met
 
    A row that brought a spelling keeps it, and keeps the sounds the file gave
    it. Only a row with no sounds falls back to guessing them off the letters,
@@ -901,113 +934,158 @@ function impRegKey(v){
 
    A row that brought only a meaning gets a word coined out of this language's
    own sounds, which is the commonest thing anybody imports: a list of what
-   the words are for, with no words yet. */
-function impPut(rows){
-  var added=0, was=0, lts=0, wasL=0, full=false, i, r, seq, hw, w, l, u, guard, v, d;
+   the words are for, with no words yet. That is the one thing the screen
+   cannot know before the press: a coined word is drawn at random, and one
+   that cannot be found in forty draws is not written. */
+function impPut(rows, put){
+  var p={add:0, coin:0, ltr:0, have:0, was:0, mute:0, full:false},
+      base=wCountable(), cap=wordCap(), seen={}, i;
   for(i=0;i<rows.length;i++){
-    r=rows[i];
-    /* A letter, not a word -- because the person said the file is an
-       alphabet, not because this row happens to look like one. It costs no
-       room on the free plan: the ceiling is on the dictionary, and an
-       alphabet is not one. */
-    if(IMP.into==='l'){
-      if(!r.ch) continue;
-      u=impLtrSnd(r);
-      /* A ROW WHOSE NAME IS A NUMBER IS A DIGIT, and it was becoming a letter
-         called `1` on the alphabet. 「まだ1でここ入るけど？ pdfで取り込んだ時
-         もちゃんと分けてくれよ」 OWNER 2026-09-01. The sheet has read it this
-         way since 「数字と記号はそれぞれのページあるんだからちゃんと振り分け
-         られるようにして」 -- shTakeIn() in www/sheet.js -- and this road, the
-         one a file comes in on, never asked. The three answers are the sheet's
-         three and for the same reasons: nothing holds that value, so this IS
-         that digit; the slot is there with nothing on it, so the picture goes
-         onto it; it is already somebody's work, so a SECOND digit of that
-         value goes in beside it rather than over it. */
-      v=numTyped(r.nm || r.ch);
-      if(numInBase(v)){
-        d=numByVal(v);
-        if(!d){ ltNew({val:v, ch:r.ch, snd:u}); lts++; if(u.length) impGrow(u); continue; }
-        if(!inkGeo(d) && !d.ch){
-          wasL++;
-          d.ch=r.ch;
-          if(u.length){ impGrow(u); d.snd=u; d.chose=1; }
-          saveLetters();
-          continue;
-        }
-        ltNew({val:v, ch:r.ch, snd:u}); lts++; if(u.length) impGrow(u);
-        continue;
-      }
-      l=impLtrBy(r.ch);
-      if(l){
-        if(IMP.dup!=='over') continue;
-        wasL++;
-        if(r.nm) l.nm=r.nm;
-        /* The list said what this letter reads, so it is an answer and not
-           the app's guess: renaming the letter later leaves it alone. */
-        if(u.length){ impGrow(u); l.snd=u; l.chose=1; }
-      } else {
-        if(u.length) impGrow(u);
-        ltNew({ch:r.ch, nm:r.nm, snd:u});
-        lts++;
-      }
-      continue;
-    }
-    if(!capOK(1)){ full=true; break; }
-    hw='';
-    if(r.hw){
-      hw=String(r.hw);
-      w=findWord(hw);
-      if(w){
-        if(IMP.dup!=='over') continue;
-        was++;
-        if(r.mn){ w.mns=impSenses(r.mn); w.mn=w.mns[0]||r.mn; }
-        if(r.pos) w.pos=posKey(r.pos);
-        if(r.ph.length) w.ph=r.ph;
-        impPutRow(w, r);
-        continue;
-      }
-      /* A word with no sounds is still a word. phGuess() works from the
-         roman spelling -- it throws away everything that is not a-z -- so a
-         list written in the person's own letters, in kana, or in anything
-         with a mark in it came out empty, and the row was DROPPED. Silently:
-         no message, no count, nothing to notice except that the dictionary
-         was still empty afterwards. 「単語入ってないけど。全く。」
-
-         Sounds are the app's guess at how a spelling is said. Somebody's list
-         of words is the thing they came here with. If the guess comes out
-         empty the word goes in without one, and how many that will be is
-         counted by impPlan() and said on the screen BEFORE the press, rather
-         than the number quietly being smaller than the file. */
-      seq = r.ph.length? r.ph : phGuess(hw);
-    } else {
-      if(!r.mn) continue;
-      if(!addedSnd().length) continue;
-      /* asWord and not makeWord: makeWord copies the shapes the dictionary
-         already uses, and a dictionary of one word has one shape, so a list
-         of two hundred meanings would get two words out of it. asWord falls
-         back to the plainest shape there is, built from the whole inventory,
-         which is the only thing that can be done before there is a pattern
-         to imitate. */
-      seq=null; guard=0;
-      while(guard<40){
-        guard++;
-        seq=asWord('n');
-        if(seq && seq.length && !findWord(seq.join(''))) break;
-        seq=null;
-      }
-      if(!seq) continue;
-      hw=seq.join('');
-    }
-    w={hw:hw, ph:seq, mns:impSenses(r.mn), mn:'',
-       pos:r.pos? posKey(r.pos) : 'n', at:Date.now()+i};
-    w.mn=w.mns[0]||r.mn||'';
-    impPutRow(w, r);
-    WORDS.push(w);
-    added++;
+    if(IMP.into==='l') impPutLt(rows[i], put, p, seen);
+    else impPutWd(rows[i], put, p, seen, base, cap, i);
   }
-  save();
-  if(lts || wasL){ saveLetters(); installScriptFont(); }
-  impLand(added+was, lts+wasL, full);
+  if(put){
+    save();
+    if(IMP.into==='l' && (p.ltr || p.was)){ saveLetters(); installScriptFont(); }
+  }
+  return p;
+}
+/* A letter, not a word -- because the person said the file is an alphabet,
+   not because this row happens to look like one. The plan was asked before
+   the press reached here (doImport § impLtStop): the word ceiling is on the
+   dictionary, and adding to an alphabet is `letters`. `seen` is what this
+   walk has already put in, so a character twice in one file is counted the
+   way the press meets it -- once new, then already here. */
+function impPutLt(r, put, p, seen){
+  var u, v, d, l;
+  if(!r.ch) return;
+  u=impLtrSnd(r);
+  /* A ROW WHOSE NAME IS A NUMBER IS A DIGIT, and it was becoming a letter
+     called `1` on the alphabet. 「まだ1でここ入るけど？ pdfで取り込んだ時
+     もちゃんと分けてくれよ」 OWNER 2026-09-01. The sheet has read it this
+     way since 「数字と記号はそれぞれのページあるんだからちゃんと振り分け
+     られるようにして」 -- shTakeIn() in www/sheet.js -- and this road, the
+     one a file comes in on, never asked. The three answers are the sheet's
+     three and for the same reasons: nothing holds that value, so this IS
+     that digit; the slot is there with nothing on it, so the picture goes
+     onto it; it is already somebody's work, so a SECOND digit of that
+     value goes in beside it rather than over it. Every one of the three
+     writes, whichever of skip and overwrite was chosen, so each is `ltr`. */
+  v=numTyped(r.nm || r.ch);
+  if(numInBase(v)){
+    p.ltr++;
+    if(!put) return;
+    d=numByVal(v);
+    if(d && !inkGeo(d) && !d.ch){
+      d.ch=r.ch;
+      if(u.length){ impGrow(u); d.snd=u; d.chose=1; }
+      return;
+    }
+    if(u.length) impGrow(u);
+    ltNew({val:v, ch:r.ch, snd:u});
+    return;
+  }
+  l=impLtrBy(r.ch);
+  if(l || seen['c'+r.ch]){
+    p.have++;
+    if(IMP.dup!=='over') return;
+    p.was++;
+    if(!put || !l) return;
+    /* A SLOT'S NAME DOES NOT CHANGE, on any plan (decision log
+       2026-08-22): the free QWERTY finds its keys by name, so a slot
+       renamed by a file is a key nothing can find. ltIsBase() is the
+       rule, the same one ltSetRoman() refuses with. */
+    if(r.nm && !ltIsBase(l)) l.nm=r.nm;
+    /* The list said what this letter reads, so it is an answer and not
+       the app's guess: renaming the letter later leaves it alone. */
+    if(u.length){ impGrow(u); l.snd=u; l.chose=1; }
+    return;
+  }
+  seen['c'+r.ch]=1;
+  p.ltr++;
+  if(!put) return;
+  if(u.length) impGrow(u);
+  ltNew({ch:r.ch, nm:r.nm, snd:u});
+}
+/* A word. The ceiling is asked only of a row that ADDS one -- an overwrite
+   adds nothing and is not counted (wCountable), so the words after the
+   ceiling that are already here are still overwritten when that was chosen.
+   It used to stop the whole walk at the first row past the ceiling, and
+   every overwrite below it went with it.
+
+   Measured from the count the walk STARTED with plus what it has added, so
+   the screen, which writes nothing, meets the ceiling on the same row as
+   the press, which does. */
+function impPutWd(r, put, p, seen, base, cap, i){
+  var hw, w, seq;
+  if(r.hw){
+    hw=String(r.hw);
+    w=findWord(hw);
+    if(w || seen['w'+hw]){
+      p.have++;
+      if(IMP.dup!=='over') return;
+      p.was++;
+      if(put && w) impOver(w, r);
+      return;
+    }
+    if(!impRoom(p, base, cap)) return;
+    /* A word with no sounds is still a word. phGuess() works from the
+       roman spelling -- it throws away everything that is not a-z -- so a
+       list written in the person's own letters, in kana, or in anything
+       with a mark in it came out empty, and the row was DROPPED. Silently:
+       no message, no count, nothing to notice except that the dictionary
+       was still empty afterwards. 「単語入ってないけど。全く。」
+
+       Sounds are the app's guess at how a spelling is said. Somebody's list
+       of words is the thing they came here with. If the guess comes out
+       empty the word goes in without one, and how many that will be is
+       said on the screen BEFORE the press, rather than the number quietly
+       being smaller than the file. */
+    seq = r.ph.length? r.ph : phGuess(hw);
+    if(!seq.length) p.mute++;
+    seen['w'+hw]=1;
+    p.add++;
+  } else {
+    if(!r.mn) return;
+    if(!addedSnd().length) return;
+    if(!impRoom(p, base, cap)) return;
+    if(!put){ p.coin++; return; }
+    seq=impCoin();
+    if(!seq) return;
+    hw=seq.join('');
+    p.coin++;
+  }
+  if(!put) return;
+  w={hw:hw, ph:seq, mns:impSenses(r.mn), mn:'',
+     pos:r.pos? posKey(r.pos) : 'n', at:Date.now()+i};
+  w.mn=w.mns[0]||r.mn||'';
+  impPutRow(w, r);
+  WORDS.push(w);
+}
+function impRoom(p, base, cap){
+  if(planFits(base, p.add+p.coin+1, cap)===true) return true;
+  p.full=true;
+  return false;
+}
+function impOver(w, r){
+  if(r.mn){ w.mns=impSenses(r.mn); w.mn=w.mns[0]||r.mn; }
+  if(r.pos) w.pos=posKey(r.pos);
+  if(r.ph.length) w.ph=r.ph;
+  impPutRow(w, r);
+}
+/* asWord and not makeWord: makeWord copies the shapes the dictionary
+   already uses, and a dictionary of one word has one shape, so a list
+   of two hundred meanings would get two words out of it. asWord falls
+   back to the plainest shape there is, built from the whole inventory,
+   which is the only thing that can be done before there is a pattern
+   to imitate. */
+function impCoin(){
+  var seq, guard;
+  for(guard=0;guard<40;guard++){
+    seq=asWord('n');
+    if(seq && seq.length && !findWord(seq.join(''))) return seq;
+  }
+  return null;
 }
 /* AND THEN YOU ARE STANDING ON WHAT ARRIVED. 「押したら取り込んで辞書へ戻る」
    OWNER 2026-09-06. There was a screen after this one saying how many came in;
@@ -1027,13 +1105,17 @@ function impPut(rows){
    import screen. Then the dictionary, and a paint -- go() draws when it moves
    and is silent when the trail already ended where it was sent, and either
    way the screen still has the form's body on it. */
-function impLand(nw, nl, full){
+function impLand(p){
   var lt=IMP.into==='l';
   IMP=impBlank();
   navDrop('csv:');
   go(lt? 'letters' : 'words');
   render();
   /* The list being full is the one thing that did not go as asked, so it is
-     what the screen says; otherwise it says what arrived. */
-  toast(full? t('csv.full', nw, 0) : t(lt? 'imp.donelt' : 'imp.done', lt? nl : nw));
+     what the screen says -- and it says it the way every other ceiling
+     does, capStop()'s pop (「上限に達した時の文: ほかの上限の文と同じ形」
+     OWNER 2026-09-24). What did arrive was on the screen before the press.
+     Otherwise it says what arrived. */
+  if(p.full){ capStop(1); return; }
+  toast(t(lt? 'imp.donelt' : 'imp.done', lt? p.ltr+p.was : p.add+p.coin+p.was));
 }

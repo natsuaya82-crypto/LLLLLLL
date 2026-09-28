@@ -388,6 +388,13 @@ const R = await pg.evaluate(async () => {
     const id = 'pnoink' + i, ln = 'ke  tir\nke';
     POSTS.push({ id, at: 2, lang: c[2], lname: 'Borrowed', ln, who: 'Iri',
                  hd: 'iri', mine: c[1], mn: '', ui: 'en' });
+    /* and opening the language it was written in does not cut it now
+       「古い投稿を今の字で切らない」 OWNER 2026-09-28: the launch's
+       migrations run, and a post that left with no ink still has none. */
+    migrateAll();
+    if (postById(id).ink !== undefined)
+      fails.push('a post (' + c[0] + ') with no ink was cut with today\u2019s alphabet ' +
+                 'by the launch -- ' + JSON.stringify(postById(id).ink).slice(0, 80));
     const got = itemsFor('p', id).items;
     if (got.some((u) => u.st))
       fails.push('a post (' + c[0] + ') with no ink came out with shapes on it, which ' +

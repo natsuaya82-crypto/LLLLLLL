@@ -368,8 +368,8 @@ function readKey(u){
     await clear(pg);
     const during = await pg.evaluate(() => {
       document.querySelector('#app [data-do="wldGet"]').click();
-      var m = document.querySelector('#app .wldmeter');
-      return m ? m.outerHTML.slice(0, 60) : '';
+      var m = document.getElementById('netspin');
+      return (m && m.className.indexOf('on') >= 0 && !document.querySelector('#app [aria-busy="true"]')) ? 'star' : '';
     });
     await quiet(pg);
     const reads = (await logOf(pg)).filter(x => where(x.u) === 'rest/v1/slice');
@@ -377,7 +377,7 @@ function readKey(u){
     const got = reads.map(kindsOf);
     say(reads.length === 1 && got[0].slice().sort().join() === want.slice().sort().join(),
         '6 ↓ reads that chapter\'s kinds and nothing else -- ' + JSON.stringify(got) + ', the chapter is ' + JSON.stringify(want));
-    say(!!during, '6 the ⭕ meter is on the screen while it comes down -- ' + (during || 'nothing drawn'));
+    say(!!during, '6 the star turns while it comes down, and no row draws a meter of its own -- ' + (during || 'no star, or a row still busy'));
     const done = await pg.evaluate(() => !!document.querySelector('#app .wldgot'));
     say(done, '6 and ⭕☑️ when it is in');
   }

@@ -14,16 +14,16 @@
    reason is that the only person who could catch a wrong reading never sees
    it. This runs the other way — a natural sentence, the reader's OWN
    dictionary, the reader's own word order — so the guessing is about your own
-   words and you are the one who can see it is wrong. docs/FEATURES.md says
-   the same thing under "A post shown three ways", layer three.
+   words and you are the one who can see it is wrong.
 
    Nothing here waits on a hosted model. 「きかいほんやくはつかわない」 OWNER
    2026-09-05. It is computed offline and costs nothing. What toNatural()
-   says of a line IS put on a post -- as `post.mn`, at the moment it is
-   written or edited, when the writer typed no meaning of their own
-   (pwSend() and pwSaveEdit() in www/post.js) -- because what a post means is
-   the value as it was then, not the dictionary as it is now (CLAUDE.md
-   § The past; docs/FEATURES.md, 「post.mn, frozen on the post」).
+   says of a line is written INTO the composer's meaning field as text, and
+   follows the line as it is typed until a hand is put on the field
+   (pwMn() / pwMnFollow() in www/post.js, OWNER 2026-09-26). What goes up as
+   `post.mn` is that field and nothing else, so what a post means is the
+   value as it was then, not the dictionary as it is now (CLAUDE.md
+   § The past).
 
    DOM-free and globals-free, like lexicon.js beside it. */
 (function(root){
@@ -33,8 +33,8 @@
      Both directions of one fact, and it is stated in morphology.js -- this
      asks the engine for it rather than restating it, because two copies of a
      table is two answers to "what does ACCUSATIVE mean" the day one moves. */
-  var CASE_ROLE=api&&api.morphology&&api.morphology.CASE_ROLE;
-  if(!api) throw new Error('LinguaGrammarEngine model must load before translate');
+  if(!api || !api.morphology) throw new Error('LinguaGrammarEngine morphology must load before translate');
+  var CASE_ROLE=api.morphology.CASE_ROLE;
 
   /* ---- what the language has decided --------------------------------------
      Where a word stands is one answer for the whole language and is heard in
@@ -128,8 +128,8 @@
      morphology.parseSentence writes: the verb is found by what it is, and
      everything else queues. A run of text this dictionary has no word for
      cannot be known to be the verb, so it takes the next place in the queue —
-     which is what puts an unknown object where the object goes, in red, where
-     it is the door to making that word. */
+     which is what puts an unknown object where the object goes, as the
+     meaning it was typed as. */
   var NOMINAL={NOUN:1, PRONOUN:1, NAME:1};
   function kindOf(model, unit, negIds, adpIds, demIds){
     if(unit.kind==='gap') return 'NOMINAL';
@@ -181,11 +181,12 @@
   }
 
   /* ---- the sentence, in this language's own order -------------------------
-     Roles come out of the word order the language chose (www/grammar.js keeps
-     all six, because all six are used by languages on this planet). Nominals
-     take the non-verb places in that order as they appear; a third and any
-     after it follow the sentence rather than being dropped, because dropping
-     a word somebody wrote is the one thing this must not do. */
+     Roles come out of the word order the language chose -- a board of cards
+     in www/grammar.js, placed by hand, not one of six fixed orders. Nominals
+     take the non-verb places in that order as they appear; every noun the
+     board has no place for follows the sentence rather than being dropped
+     (below), because dropping a word somebody wrote is the one thing this
+     must not do. */
   function arrange(model, units){
     var order=(model&&model.wordOrder&&model.wordOrder.length)?model.wordOrder:['SUBJECT','OBJECT','VERB'],
         negIds=markedIds(model,'NEGATION'), adpIds=markedIds(model,'ADPOSITION'),
@@ -194,7 +195,7 @@
         np=npOrderOf(model), npOn={}, nmods=[],
         adjPos=positionOf(model,'ADJECTIVE'), adpPos=positionOf(model,'ADPOSITION'),
         negPos=positionOf(model,'NEGATION'), onBoard={}, adpHead={},
-        i, j, k, slots=[], si=0, role, roleOf=[], head, out=[], phrase, extra=[], seen={};
+        i, j, slots=[], si=0, role, roleOf=[], head, out=[], phrase, extra=[], seen={};
 
     /* WHICH ROLES ARE ON THE BOARD. The word order used to be exactly three
        roles, so everything else had a place worked out from one of them --
@@ -345,15 +346,15 @@
        taken out after the check that holds this passed with it gone -- no
        sample could reach it. A net nothing reaches does not catch the next
        bug, it hides it, and leaves the check green for the wrong reason.
-       tools/grammar-engine-check.mjs counts the pieces against the units. */
-    for(k=0;k<out.length;k++) if(!out[k].role) out[k].role='MODIFIER';
+       tools/grammar-engine-check.mjs counts the pieces against the units, and
+       every tag() above is handed a role, so nothing here gives one out. */
     return out;
   }
 
   /* A sentence in a natural language, in this language's words and this
      language's order. `complete` is whether every piece of it was found —
-     false is not a failure and is not an error, it is the gap, and the gap is
-     the door to making that word. */
+     false is not a failure and is not an error, it is the gap, and the gap
+     stays as the meaning it was typed as. */
   function run(model, text){
     var units=api.lexicon.cut(model,text), pieces=arrange(model,units),
         missing=[], roles={}, i;
@@ -427,7 +428,7 @@
      its words, its order, its marks, its inflections. A meaning this language
      has no word for is a gap and stays as the meaning, for the same reason
      lexicon.cut() leaves one: inventing the word would be worse than showing
-     that it is missing, and the gap is the door to making it. */
+     that it is missing. */
   /* ---- a sentence inside a sentence ---------------------------------------
      「複文 ── 従属節（〜とき／〜ので／〜なら／〜と言う）の位置と印、関係節
      （「私が見た山」）の位置と印、並列」 OWNER 2026-09-07.
@@ -550,15 +551,9 @@
   function isPhrase(v){ return !!(v && typeof v==='object' && !Array.isArray(v)); }
   /* One modifier, or several: a noun may have two adjectives on it and the
      list is what somebody meant. A meaning this language has no word for is a
-     gap here exactly as it is for a head -- it stays as the meaning, and the
-     gap is the door to making that word. */
+     gap here exactly as it is for a head -- it stays as the meaning. */
   function modWords(model, v, gaps, depth, part, cls){
     var out=[], list, i, found, cv, marked;
-    /* HOW DEEP IN is read here as well as passed in, and that is not belt and
-       braces: a caller that forgot the argument made `depth < CLAUSE_DEEP`
-       compare undefined, which is false, and every relative clause was
-       dropped in silence. A missing depth is the top of the sentence. */
-    depth=Math.max(0, parseInt(depth,10)||0);
     if(v===undefined || v===null) return out;
     list=Array.isArray(v)? v : [v];
     for(i=0;i<list.length;i++){
@@ -880,5 +875,5 @@
     return out.join(' ');
   }
 
-  api.translate={run:run, arrange:arrange, line:line, positionOf:positionOf, markedIds:markedIds, srcOrder:srcOrder, toSemantic:toSemantic, fromSemantic:fromSemantic, toNatural:toNatural, glossLine:glossLine, npOrderOf:npOrderOf, polarRules:polarRules, polarKind:polarKind};
+  api.translate={run:run, arrange:arrange, line:line, toSemantic:toSemantic, fromSemantic:fromSemantic, toNatural:toNatural};
 }(typeof window!=='undefined'?window:this));

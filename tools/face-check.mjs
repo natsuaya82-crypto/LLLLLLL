@@ -60,8 +60,10 @@ const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'www'
 const HTML = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
 const fails = [];
 
-/* Comments are prose and may say anything; only declarations are held. */
-const decomment = (s) => s.replace(/\/\*[\s\S]*?\*\//g, ' ');
+/* Comments are prose and may say anything; only declarations are held. The
+   newlines inside a comment are kept, so a line number reported below is the
+   line in the file -- a check that names the wrong line is believed. */
+const decomment = (s) => s.replace(/\/\*[\s\S]*?\*\//g, (c) => c.replace(/[^\n]/g, ' '));
 
 /* EVERY <style> block, not the first: index.html has more than one, and a
    check that read one of them would hold half the stylesheet and report
@@ -71,7 +73,11 @@ const css = decomment([...HTML.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)]
 if (!css.trim()) fails.push('index.html has no <style> block to read');
 
 const FACES = new Map();
-for (const m of css.matchAll(/(--face-[\w-]+)\s*:\s*([^;}]+)/g)) FACES.set(m[1], m[2].trim());
+for (const m of css.matchAll(/(--face-[\w-]+)\s*:\s*([^;}]+)/g)) {
+  /* declared twice is two places, and the later one silently wins */
+  if (FACES.has(m[1])) fails.push(`${m[1]} is declared twice — one face, one place`);
+  FACES.set(m[1], m[2].trim());
+}
 if (!FACES.size) fails.push('index.html declares no --face-* variable, so there is no one place to be');
 
 /* Where those declarations sit, so rule 1 can ignore them and only them. */
@@ -109,6 +115,45 @@ for (const m of elsewhere.matchAll(/(?:^|[;{\s])(font-family|font)\s*:\s*([^;}]+
   const bad = val.replace(/var\(--face-[\w-]+\)/g, ' ').replace(/!\s*important/g, ' ')
                  .split(/[\s,]+/).filter(w => w && GENERIC.indexOf(w.toLowerCase()) < 0);
   if (bad.length) fails.push(`a rule sets ${prop}:${m[2].trim()} — ${bad.join(', ')} is not a face variable`);
+}
+
+/* ---- 1b. and outside the stylesheet: a style="" in the markup, and a style
+        set from JavaScript, are declarations too -------------------------
+   Rule 1 read the <style> blocks and nothing else, so a family could be named
+   in index.html's own markup or from www/*.js -- `font-family:Helvetica` in a
+   string, `el.style.fontFamily='Helvetica'` -- with this check green. The
+   surface is every place a declaration can be written, and the statement is
+   the same everywhere: a family is var(--face-*), a generic keyword, or the
+   name a builder gives its own @font-face. */
+const inlineDecl = (where, prop, val) => {
+  const v = familyOf(prop, val);
+  if (v === null) return;
+  const bad = v.replace(/var\(--face-[\w-]+\)/g, ' ').replace(/!\s*important/g, ' ')
+               .replace(/['"+]/g, ' ').split(/[\s,]+/)
+               .filter(w => w && GENERIC.indexOf(w.toLowerCase()) < 0);
+  if (bad.length) fails.push(`${where} sets ${prop}:${val.trim()} — a family may only be named on :root`);
+};
+{
+  const markup = HTML.replace(/<style[^>]*>[\s\S]*?<\/style>/g, (b) => b.replace(/[^\n]/g, ' '))
+                     .replace(/<!--[\s\S]*?-->/g, (c) => c.replace(/[^\n]/g, ' '));
+  for (const m of markup.matchAll(/style\s*=\s*"([^"]*)"|style\s*=\s*'([^']*)'/g))
+    for (const d of (m[1] || m[2] || '').matchAll(/(?:^|;)\s*(font-family|font)\s*:\s*([^;]+)/g))
+      inlineDecl('index.html:' + HTML.slice(0, m.index).split('\n').length, d[1], d[2]);
+  for (const f of fs.readdirSync(ROOT).filter(f => f.endsWith('.js'))) {
+    const src = decomment(fs.readFileSync(path.join(ROOT, f), 'utf8'));
+    const at = (i) => f + ':' + src.slice(0, i).split('\n').length;
+    /* `font-family:` can only be CSS; `font:` is CSS where a string or a
+       declaration has just begun (`"font:`, `;font:`) and an object key
+       otherwise ({json:…, font:…} in share.js). A builder naming its own
+       @font-face is rule 3's. */
+    for (const m of src.matchAll(/(@font-face\s*\{\s*)?(?:\bfont-family|(?<=['";]\s*)font)\s*:\s*([^;}\n]*)/g)) {
+      if (m[1]) continue;
+      inlineDecl(at(m.index), /font-family/.test(m[0]) ? 'font-family' : 'font', m[2]);
+    }
+    for (const m of src.matchAll(/\.style\.(fontFamily|font)\s*=\s*([^;\n]+)/g))
+      if (!/cssVar\(|var\(--face-/.test(m[2]))
+        fails.push(`${at(m.index)} sets style.${m[1]} = ${m[2].trim()} — ask the page: var(--face-x) or cssVar('--face-x', 'serif')`);
+  }
 }
 
 /* ---- 2. both directions on the variables ------------------------------- */
@@ -221,38 +266,71 @@ for (const n of familyNames) {
 }
 
 /* ---- 4. a canvas font comes off the page ------------------------------- */
-for (const f of jsFiles) {
-  const src = decomment(fs.readFileSync(path.join(ROOT, f), 'utf8'));
+/* The family on a canvas is the LAST term of the string handed to `.font`
+   (`sz+'px '+X`). X comes off the page when it is
+     - cssVar(...), or a function whose whole body is `return cssVar(...)`
+       -- read off the source, so a wrapper written tomorrow counts and
+       cardCaps()/cardItal() are not a list somebody keeps;
+     - a variable whose nearest assignment above it is one of those; or
+     - a PARAMETER of the function it is in, and then every call of that
+       function in www/ hands one of those in that position.
+   Anything else is a family this file chose -- a literal, or a name that
+   stood for one (`fam` was once allowed by its NAME, and `fam='Arial'`
+   inside cardFit() passed). */
+const allSrc = jsFiles.map(f => [f, decomment(fs.readFileSync(path.join(ROOT, f), 'utf8'))]);
+const pageFns = new Set();
+for (const [, src] of allSrc)
+  for (const m of src.matchAll(/function\s+([A-Za-z_$][\w$]*)\s*\(\s*\)\s*\{\s*return\s+cssVar\(/g))
+    pageFns.add(m[1]);
+const fromPage = (x) => /cssVar\(/.test(x) ||
+  [...pageFns].some(n => new RegExp('(?:^|[^\\w$.])' + n + '\\s*\\(').test(x));
+/* the arguments of a call, split at the commas that are not inside ( ) [ ] { } */
+const argsAt = (src, open) => {
+  const out = []; let depth = 0, cur = '', q = '';
+  for (let k = open + 1; k < src.length; k++) {
+    const c = src[k];
+    if (q) { cur += c; if (c === '\\') { cur += src[++k]; } else if (c === q) q = ''; continue; }
+    if (c === "'" || c === '"') { q = c; cur += c; continue; }
+    if ('([{'.indexOf(c) >= 0) depth++;
+    if (')]}'.indexOf(c) >= 0) { if (depth === 0) { out.push(cur.trim()); return out; } depth--; }
+    if (c === ',' && depth === 0) { out.push(cur.trim()); cur = ''; continue; }
+    cur += c;
+  }
+  return out;
+};
+for (const [f, src] of allSrc) {
   const lines = src.split('\n');
-  /* A canvas whose size is set loses everything on its context, so the face
-     has to be set TWICE from one value -- which means the honest way to write
-     it is to build the string once into a variable. `fam` used to be named
-     here as the one blessed variable, which is a check knowing a convention
-     rather than a fact: www/sheet.js called its variable `f` and was reported
-     for a line whose own comment says it asks the page.
-     So ask where the variable CAME FROM instead. A name counts as off-the-page
-     only if EVERY assignment to it in this file goes through cssVar() -- one
-     assignment from a literal anywhere and the name is not trusted, which is
-     what keeps this from being a way around the rule. */
-  /* The value that REACHES this line, which is the nearest assignment to that
-     name above it -- not "every assignment in the file". A short name is a
-     different local in every function that uses one: `f` is assigned four
-     times in www/sheet.js, in four functions, and only one of them is a face.
-     Asking the file would call that name untrusted and report the one place
-     that does it correctly. */
-  const filledFromPage = (name, upto) => {
-    const re = new RegExp('(?:^|[^0-9A-Za-z_$.])' + name + '\\s*=[^=]');
-    for (let k = upto; k >= 0; k--) if (re.test(lines[k])) return /cssVar\(/.test(lines[k]);
-    return false;
-  };
   lines.forEach((line, i) => {
-    if (!/\.font\s*=/.test(line)) return;
-    /* on this line: asked the page, or a family handed in as an argument */
-    if (/cssVar\(|card(Caps|Ital)\(|\+\s*fam\b/.test(line)) return;
-    /* or from a variable last filled from the page */
-    const via = line.match(/\.font\s*=\s*([A-Za-z_$][\w$]*)\s*;/);
-    if (via && filledFromPage(via[1], i)) return;
-    fails.push(`${f}:${i + 1} sets a canvas font without asking the page for the family:\n      ${line.trim()}`);
+    const m = line.match(/\.font\s*=\s*([^;]+)/);
+    if (!m) return;
+    const last = m[1].split('+').pop().trim();
+    if (fromPage(last)) return;
+    let ok = false;
+    if (/^[A-Za-z_$][\w$]*$/.test(last)) {
+      const asg = new RegExp('(?:^|[^0-9A-Za-z_$.])' + last + '\\s*=[^=]');
+      let k = i;
+      for (; k >= 0; k--) {
+        if (asg.test(lines[k])) { ok = fromPage(lines[k].slice(lines[k].search(asg))); break; }
+        const fn = lines[k].match(/function\s+([A-Za-z_$][\w$]*)\s*\(([^)]*)\)/);
+        if (fn) {
+          const at = fn[2].split(',').map(a => a.trim()).indexOf(last);
+          if (at >= 0) {
+            const calls = [];
+            for (const [g, s2] of allSrc)
+              for (const c of s2.matchAll(new RegExp('(?:^|[^\\w$.])' + fn[1] + '\\s*\\(', 'g'))) {
+                const open = c.index + c[0].length - 1;
+                if (/function\s*$/.test(s2.slice(Math.max(0, c.index - 12), c.index + 1))) continue;
+                calls.push([g, argsAt(s2, open)[at] || '']);
+              }
+            ok = calls.length > 0 && calls.every(([, a]) => fromPage(a));
+            if (!ok) for (const [g, a] of calls) if (!fromPage(a))
+              fails.push(`${g} calls ${fn[1]}() with ${a || '(nothing)'} as the family it sets on a canvas (${f}:${i + 1}) — ask the page: cssVar('--face-x', 'serif').`);
+          }
+          break;
+        }
+      }
+    }
+    if (!ok) fails.push(`${f}:${i + 1} sets a canvas font without asking the page for the family:\n      ${line.trim()}`);
   });
 }
 
@@ -267,7 +345,7 @@ if (fails.length) {
 }
 
 console.log('faces: ' + FACES.size + ' declared on :root, ' +
-            [...css.matchAll(/font-family\s*:/g)].length + ' rules wearing them, none named twice');
+            [...css.matchAll(/font-family\s*:/g)].length + ' font-family rules, none declared twice');
 console.log('       ' + [...FACES.keys()].sort().join('  '));
 const drawn = [...built.entries()].map(([n, f]) => n + ' (' + f + ')').sort();
 console.log('       ' + (drawn.length

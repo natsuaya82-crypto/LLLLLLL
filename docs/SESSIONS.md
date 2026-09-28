@@ -9,8 +9,8 @@
 守られていないのと同じです。
 
 - **master に取り込んだブランチは、取り込んだ人が消す。**中身は master に
-  あるので、消しても何も失われません。取り込みはリーダーの仕事なので、
-  削除もリーダーの仕事です。
+  あるので、消しても何も失われません。取り込みはサブリーダー（居なければリーダー）の
+  仕事なので、削除も取り込んだ人の仕事です。
 - **取り込まれていない古いブランチは、消す前に一本ずつ中身を見る。**そこに
   しか無い commit があります。まとめて消してはいけません。
   `docs/DATA_SAFETY.md` の DELETE REVIEW と同じ扱いです。
@@ -30,45 +30,18 @@ GitHub の画面か、権限を持つ側から消してください。**次の�
 一つの仕事に一つのセッション。**指示は生まれた瞬間に持っている**（`create_session`
 の prompt が指示そのもの）。終わったら畳む。次の仕事は次のセッション。
 
-これは好みではなく、この環境で実際に動く唯一の形として決まった。2026-08-25 に
-測った:
-
-- `ListAgents` は誰も返さず、`SendMessage` は名前でも ID でも通らない。
-  `send_message` という道具は製品には在る（`create_session` の説明が自分で
-  そう書いている）が、このセッションの道具箱には配られていない。受け取る側は
-  開いている（`cross_session_inbound: available` が全員に立っている）ので、
-  塞がっているのは「相手を見つける」半分だけ。
-
-**訂正 2026-08-25 ── 道はあった。この節は一日だけ嘘をついていた。**
-
-上の三行から「だからリーダーからセッションへ言葉を届ける口は無い」「言えるのは
-生まれる瞬間だけ」を結論していたが、**別の道具が通る**:
+走っているセッションに言葉を届ける道は一つある:
 
 ```
   create_trigger(persistent_session_id: "session_...", prompt: "...")
   fire_trigger(trigger_id: "trig_...")
 ```
 
-`create_trigger` の説明が自分でそう書いている ── 「(2) persistent_session_id
-set — fires into a SPECIFIC OTHER SESSION you name」。`cron_expression` も
-`run_once_at` も省くと自分では発火しない Routine になり、`fire_trigger` が
-その場で撃つ。走っているセッションに、ユーザーの発言として届く。
+`create_trigger` に `cron_expression` も `run_once_at` も渡さないと自分では
+発火しない Routine になり、`fire_trigger` がその場で撃つ。走っているセッションに、ユーザーの発言として届く。
 
-実際に通した。`claude/post` が報告【3】に「オーナーに一つだけ訊いてもらえれば
-片が付く」と書いて止まっていたので、オーナーの答えとスクリーンショットの読みを
-送った。発火した秒に相手の `updated_at` が動き、`SESSION_STATUS_RUNNING` の
-まま作業を続けた。
-
-**なぜ間違えたか、が残す価値のある方。** `SendMessage` と `ListAgents` という
-「メッセージを送る道具」を二つ試して両方通らなかったので、**道具の名前で
-探すのをやめてしまった。** 通ったのは「予定を組む道具」で、名前のどこにも
-message と書いていない。**道具箱を機能で読み直していれば一日早く見つかっていた。**
-
-だから「言えるのは生まれる瞬間だけ」は**もう正しくない**。それでも
-「指示は生まれた瞬間に全部持たせる」はやめないこと ── 後から言えることと、
-後から言えばいいことは別で、2026-08-25 の四つの詰まり（act-map.js、docs/、
-検査の名指し、index.html の一行）は全部、最初の指示で territory を間違えた
-ことが原因だった。**送れる道があることは、territory を雑に切ってよい理由に
+それでも「指示は生まれた瞬間に全部持たせる」はやめないこと ── 後から言えることと、
+後から言えばいいことは別。**送れる道があることは、territory を雑に切ってよい理由に
 ならない。**
 
 - リーダーに在るのは **立てる・止める・畳む・名前を変える・送る** の五つ。
@@ -90,8 +63,8 @@ Scope の空コミット。`docs/SESSIONS.md` は元々そう書いている ─
 
 ## 追いつくのは自分で、束ねるのはサブリーダー ── OWNER DECISION 2026-08-25 / 08-28
 
-規則 6 は「merge / rebase / cherry-pick を一切しない」だった。**他の枝**につい
-てはそのまま。**master を自分の枝に入れることは、そこから外す。**
+**他の枝**を merge / rebase / cherry-pick しない。**master を自分の枝に入れることは、
+それではない。**
 
   他の枝を取り込む     禁止。**サブリーダーの仕事。居なければリーダー**
                        （OWNER 2026-08-28）
@@ -132,7 +105,7 @@ Scope の空コミット。`docs/SESSIONS.md` は元々そう書いている ─
   持っていないファイルを触らない
   merge / rebase / cherry-pick をしない
   コミットごとに push する
-  全ゲートを回さない（リーダーが最後に一度）
+  全ゲートを回さない（取り込んだ人 ── サブリーダー、居なければリーダー ── が最後に一度）
   値段・自由と有料の境・削除・保存の期間・言葉づかい・しきい値を決めない
   iOS のビルドを回さない
   人が作ったものを消さない
@@ -207,7 +180,7 @@ Scope の空コミット。`docs/SESSIONS.md` は元々そう書いている ─
    一コミット一事。機能・修正・整理・改名・移行は混ぜない。
 
 6. **他の枝**には触らない。merge も rebase も cherry-pick も、
-   「衝突するか見るだけ」も駄目。束ねるのはリーダー。
+   「衝突するか見るだけ」も駄目。束ねるのはサブリーダー（居なければリーダー）。
 
    **master を自分の枝に入れるのは、これに当たらない。** それは他人に触って
    いない ── 追いつくことであって、束ねることではない。**報告する前に必ず
@@ -221,8 +194,8 @@ Scope の空コミット。`docs/SESSIONS.md` は元々そう書いている ─
    個人個人でやる必要ある？」
 
    **速いもの（`tools/gate.mjs` の `FAST`、約2秒）は好きなだけ回す。** ES5・script タグ・死んだコード・
-   角丸で、落ちると端末が真っ白になる種類。`tools/pre-commit` が毎コミット
-   回している。
+   角丸で、落ちると端末が真っ白になる種類。`tools/pre-commit` が `www/` に触る
+   コミットごとに回している。
 
    **遅いもの（`SLOW`）は、赤を見るためだけに回す。** バグを戻して、担当の検査が落ちる
    のを一度見る。**そのあと直したら、緑を見に行かずに push する。**
@@ -427,8 +400,8 @@ which is hours later, after both of you have written over each other.
 No `merge`, no `rebase`, no `cherry-pick` of another branch. Not even to
 "check whether it conflicts".
 
-Where two intents disagree, the leader is the one who decides which wins --
-and asks the owner where the answer is a decision rather than a merge. A
+Where two intents disagree, whoever integrates asks the leader, and the leader
+asks the owner where the answer is a decision rather than a merge. A
 session that merges on its own has produced a diff neither session wrote and
 nobody can review.
 
@@ -436,21 +409,21 @@ Report the overlap. Stop. That is the finished job.
 
 ---
 
-## 6. The gate is the leader's
+## 6. The gate is whoever integrated
 
 **Watching a check go RED is work; watching it go GREEN is verification.
 Only the author can do the first. The second can be done once, for everybody.**
 
 - **The fast ones (`FAST` in `tools/gate.mjs`, ~2s): run them freely.** ES5, a missing script tag, dead
   code, a corner -- the kinds that blank a device. `tools/pre-commit` runs
-  them on every commit anyway.
+  them on every commit that touches `www/`.
 - **The slow ones (`SLOW`): run ONE, and only to watch the bug go red.** Put the bug
   back, see the check that holds it fail, take the bug out -- then **push
   without running it green.** `npm run press` is five minutes; paid by the
   session, the sub-leader and the leader it is fifteen, and the third green is
   not truer than the second.
-- **The green belongs to the leader and the sub-leader, once, after
-  integrating.** All of them — `npm test`'s last line says how many.
+- **The green belongs to whoever integrated — the sub-leader, or the leader
+  when there is none — once, after integrating.** All of them — `npm test`'s last line says how many.
 
 **Leaders: do not ask a session to "run it once and see green".** That was
 done repeatedly on 2026-08-27 and the delay was exactly the sum of it.
@@ -716,8 +689,3 @@ what was wanted ではない」。今日わかったのは、その裏側も同�
 「目次から数を外すと press の buttons pressed が動く」と書いて配った。
 外したのは `<span>` で押せる物ではなく、数は 10652 のまま動かなかった。
 **動くと書くなら、先に測ること。** 動かないことも測って書く価値がある。
-
-## claude/more — 2026-08-28
-Scope: キーボードの配置（型）を変える道が画面に出ていない件。
-触るファイル: `www/keyboard.js` `www/shell.js` `tools/kb-check.mjs` `tools/fixture.mjs`。
-それ以外は触らない。

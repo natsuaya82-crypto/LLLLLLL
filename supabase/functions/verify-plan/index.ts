@@ -18,6 +18,10 @@
 //   4. 段 ── その uid の `purchase` の行**全部**から決め、service role で `plan`
 //      に書く。
 //
+// Android の購入は署名つきの取引ではなく {token, product} で来て、2 と 3 を
+// google.mjs が Google Play Developer API に訊いて済ませます（obfuscated
+// account id が uid と同じ時だけ）。4 は同じ一本の道です。
+//
 // 3 と 4 の間の線が、この函数の一番大事なところです。**段はこの呼び出しで届いた
 // ものからではなく、この uid について今までに検証できたもの全部から決まります。**
 // 届いたものだけで決めると、StoreKit がまだ追いついていない起動が「何も持って
@@ -34,6 +38,7 @@
 // free の側に間違えるのが、間違えてよい側です。
 
 import { verifyJws, bindOf, decidePlan, b64ToBytes, ORDER } from './verify.mjs';
+import { isPair, gpCheck, readKey, accessToken } from './google.mjs';
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -74,7 +79,13 @@ Deno.serve(async (req: Request) => {
 
   let body: { jws?: unknown };
   try { body = await req.json(); } catch { body = {}; }
-  const list = Array.isArray(body.jws) ? body.jws.slice(0, 50) : [];
+  /* `jws` は一つの配列で、iPhone からは Apple の署名つき取引（文字列）、
+     Android からは Google の {token, product} が入ります ── どちらの電話かを
+     決めるのは www/store.js の一箇所で、ここは来たものの形で道を分けるだけ。
+     Apple の道はこの分け方の前と一字も変わりません。 */
+  const sent = Array.isArray(body.jws) ? body.jws.slice(0, 50) : [];
+  const list = sent.filter((x) => typeof x === 'string');
+  const pairs = sent.filter(isPair);
 
   const head = { apikey: svc, Authorization: `Bearer ${svc}`, 'Content-Type': 'application/json' };
   const now = new Date();
@@ -112,6 +123,39 @@ Deno.serve(async (req: Request) => {
       body: JSON.stringify(row),
     });
     if (put.ok) took.push(orig); else left.push(orig + ': ' + (await put.text()));
+  }
+
+  /* ---- Google Play ---------------------------------------------------
+     google.mjs の頭の注記が全部です。訊くトークンは二つの集まりを一つにした
+     もの：この呼び出しで来たものと、この uid の `gp:` の行でまだ数えている
+     もの。後の方があるのは、解約や返金が Google にだけ起きて端末からは
+     もう送られてこないからで、Apple と違い Google には訊き直せます。
+     Google が答えなかった行は触りません ── 読めなかったのは、終わったの
+     ではない。 */
+  const stored = await fetch(
+    `${url}/rest/v1/purchase?uid=eq.${uid}&orig_tx=like.gp:*&until=gt.${encodeURIComponent(now.toISOString())}&select=orig_tx`,
+    { headers: head });
+  const again = stored.ok ? (await stored.json()).map((r: { orig_tx: string }) => String(r.orig_tx).slice(3)) : [];
+  const toks: string[] = [];
+  for (const t of pairs.map((p: { token: string }) => p.token).concat(again)) {
+    if (toks.indexOf(t) < 0) toks.push(t);
+  }
+  if (toks.length) {
+    const key = readKey(Deno.env.get('GOOGLE_PLAY_SERVICE_ACCOUNT'));
+    const access = key ? await accessToken(key, { now }) : '';
+    for (const t of toks) {
+      const short = t.slice(0, 12) + '…';
+      if (!key) { left.push(short + ': GOOGLE_PLAY_SERVICE_ACCOUNT is not set'); continue; }
+      if (!access) { left.push(short + ': no access token from Google'); continue; }
+      const r = await gpCheck(t, uid, { access, now });
+      if (!r.ok) { left.push(short + ': ' + r.why); continue; }
+      const put = await fetch(`${url}/rest/v1/purchase`, {
+        method: 'POST',
+        headers: { ...head, Prefer: 'resolution=merge-duplicates' },
+        body: JSON.stringify(r.row),
+      });
+      if (put.ok) took.push(r.row.orig_tx.slice(0, 15)); else left.push(short + ': ' + (await put.text()));
+    }
   }
 
   /* そして段。**この呼び出しで来たものではなく、この uid について蓄えたもの全部

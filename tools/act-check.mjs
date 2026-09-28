@@ -600,7 +600,10 @@ const R = await pg.evaluate((ON_ATTR) => {
       const wasConfirm = window.confirm;
       window.confirm = () => true;
       let wiped;
-      try { wipeHere(); wiped = appIs(); }
+      /* the real order: netEndMe() signs out on the server's answer, then
+         wipeHere() empties the phone -- the session ends in netOut() and
+         nowhere else (rule-audit-2026-09-27-core T2) */
+      try { const u = netUid(); netOut(); wipeHere(u); wiped = appIs(); }
       catch (e) { wiped = 'threw: ' + e.message; }
       window.confirm = wasConfirm;
       if (wiped !== 'door')

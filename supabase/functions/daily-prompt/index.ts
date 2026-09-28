@@ -17,7 +17,10 @@
 //      second posting surface with no author on it.
 //
 // It is idempotent per day: if the row is already there it does nothing and
-// says so. Running it twice, or ten times, costs one model call at most.
+// says so. Running it twice, or ten times, writes one row -- and asks the
+// model once, or up to four times when it answers that it is busy (below).
+// What calls it every day is the daily-prompt schedule at the foot of
+// supabase/schema.sql.
 
 const LANGS = ['en', 'es', 'pt', 'fr', 'de', 'it', 'ru', 'zh', 'ko', 'ja'];
 

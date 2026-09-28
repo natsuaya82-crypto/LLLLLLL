@@ -343,7 +343,6 @@ function pwSidePaint(){
    things. A post with no line, no photograph and no voice is not a post.
    「なにもない時は薄い灰色、何か打ったら金にする」 OWNER 2026-09-03,
    www/shell.js § navDo. */
-function pwOn(){ return pwHas(); }
 /* The thing that finishes it goes in the top bar, filled, where every phone
    puts it -- not at the foot of a screen you have to scroll to. */
 function openPost(from, at){
@@ -478,7 +477,7 @@ function openPost(from, at){
        a bar that narrow has room for. The ground and the lock say WHICH post
        this is; whether there IS one to send is the colour, and the colour is
        www/shell.js § navDo's two states. */
-    navDo(t(PW.ed? 'post.save' : 'post.send'), 'pwSend', null, pwOn(),
+    navDo(t(PW.ed? 'post.save' : 'post.send'), 'pwSend', null, pwHas(),
           /* A send is the paper plane (CLAUDE.md § Shape, the sixth). Saving
              an edit has no settled mark yet, so that one stays a word. */
           {id:'pw-go', cls:(pwPriv()? 'pv' : ''), mark:(pwPriv()? ICON_LOCK : ''),
@@ -592,6 +591,12 @@ function draftOfPW(){
 }
 /* A draft goes into the list, and the composer is empty behind it. The one
    place, for both roads in: keeping one, and a post that would not go. */
+/* The recording an opened draft's row named, taken off in the composer
+   (voDrop, www/rec.js): the row has just stopped naming it, so it goes. */
+function pwVoOffGo(){
+  if(PW && PW.voOff && !(PW.vo && PW.vo.f===PW.voOff)) voDropFile(PW.voOff);
+  if(PW) delete PW.voOff;
+}
 function draftIn(d, said){
   DRAFTS.push(d);
   draftsSave();
@@ -619,34 +624,9 @@ function draftKeep(){
        that is the draft (supabase/schema.sql § keep_newer). */
     if(row && row.body) d=draftOfRow(row);
     d.up=1;
+    pwVoOffGo();
     draftIn(d, t('post.draft.kept'));
   }, function(dd, st, m){ netPop(dd, st, m, draftKeep); });
-}
-/* A POST THAT DID NOT GO IS A DRAFT. 「普通に送信できませんでした。になるんじゃ
-   ないの？下書きに入るようにしよう」 OWNER 2026-09-24 -- and no button to send
-   it again: sending it again is opening the draft and sending, which is the
-   road every draft already has.
-
-   The server first, as a kept draft is. When it will not take the draft
-   either -- which is the usual reason the post did not go -- the draft is
-   kept in this account's list here with `up` 0, the state a draft written
-   before there was a server has always had: it stays in the list, and goes
-   up when it is opened and kept or sent (draftsPull). Under a NEW name when
-   it came from a draft the server holds, so the server's older row coming
-   down cannot be taken for this one and win over it -- two drafts, and
-   nothing lost. What is sent is the composer as it stands, marks unbaked,
-   because a draft is not a post. */
-function pwSendFell(said){
-  var d=draftOfPW();
-  netDraftUp(d, function(row){
-    if(row && row.body) d=draftOfRow(row);
-    d.up=1;
-    draftIn(d, said);
-  }, function(){
-    if(PW.did) d.id=netUUID();
-    d.up=0;
-    draftIn(d, said);
-  });
 }
 /* A kept draft's line as the composer holds it. One kept before 2026-09-24
    has no `cut` and its `ln` is what the field held, private use characters
@@ -664,11 +644,26 @@ function draftCut(d){
    too, rather than its private use characters in a face that has none. */
 function draftLn(d){ return puaTyped((d && d.ln) || '').ln; }
 /* Opening one takes it out of the list: it is the composer again, and a draft
-   that is open in two places at once is a draft about to be duplicated. */
+   that is open in two places at once is a draft about to be duplicated.
+
+   A draft written before the voice went to the server carries the recording
+   itself (`b64`). It is put up first (voKeep(), www/rec.js), and the draft is
+   opened only when it has landed -- as `{f, ms}`, the one shape everything
+   downstream reads. If it does not land the draft stays in the list exactly
+   as it was, recording and all, and the press says so. */
 function draftOpen(i){
-  i=parseInt(i, 10)||0;
-  var d=DRAFTS[i];
+  var d=DRAFTS[parseInt(i, 10)||0];
   if(!d) return;
+  if(!(d.vo && d.vo.b64)){ draftOpenNow(d); return; }
+  voKeep(d.vo, function(vo){
+    if(!vo){ toast(t('post.vo.bad')); return; }
+    d.vo=vo;
+    draftOpenNow(d);
+  });
+}
+function draftOpenNow(d){
+  var i=DRAFTS.indexOf(d);
+  if(i<0) return;
   DRAFTS.splice(i, 1);
   draftsSave();
   if(here().r==='drafts') back();
@@ -681,19 +676,10 @@ function draftOpen(i){
      and a post cannot disagree about it. */
   PW.tags=tagsOf(d);
   PW.pics=d.pics||[]; PW.pv=!!d.pv;
-  /* A draft written before the voice became a file carries the recording
-     itself (`b64`). It is put on the disk now and the draft's copy is
-     replaced by the name -- one shape from here on, and nothing downstream
-     has to ask which kind it was given. A draft from today is already
-     `{f, ms}` and goes straight across. */
-  if(d.vo && d.vo.b64) voKeep(d.vo, function(vo){ if(vo){ PW.vo=vo; openPost(); } });
-  else if(d.vo) PW.vo=d.vo;
-  /* The name it goes back under. Set after pwBlank() above, which does not
-     know about it.
-
-     The row on the server is NOT removed here, and that is the point: this
-     takes the draft out of the LIST so that it is not open in two places at
-     once (tools/draft-check.mjs), and an app that stopped here -- killed,
+  PW.vo=d.vo || null;
+  /* The name it goes back under. The row on the server is NOT removed here:
+     this takes the draft out of the LIST so that it is not open in two places
+     at once (tools/draft-check.mjs), and an app that stopped here -- killed,
      crashed, battery -- would otherwise have thrown away the only copy of
      something somebody was in the middle of. It stays until the draft is put
      back over it, thrown away, or posted. */
@@ -715,7 +701,7 @@ function draftOpen(i){
 function draftDropGo(d){
   if(typeof d==='number') d=DRAFTS[d];
   if(!d) return;
-  if(!d.id || !d.up || !netSignedIn()){ draftDropHere(d); return; }
+  if(!d.id || !d.up){ draftDropHere(d); return; }
   netDraftDrop(d.id, function(){ draftDropHere(d); },
     function(dd, st, m){ netPop(dd, st, m, function(){ draftDropGo(d); }); });
 }
@@ -726,9 +712,9 @@ function draftDropHere(d){
   draftsSave();
   /* AND THE RECORDING THAT WAS ONLY THIS DRAFT'S.
      「声は投稿上で再生できるよね？下書き消した時にはいらなくない？」 OWNER
-     2026-09-03. The file is written when the recording ends (www/rec.js §
-     voTook), so a draft thrown away without being posted is the one road that
-     leaves a file nothing points at. postDelGo() says the same sentence about
+     2026-09-03. The recording is in the post-media bucket from the moment it
+     ends (voKeep(), www/rec.js), so a draft thrown away without being posted
+     is the one road that leaves a file nothing points at. postDelGo() says the same sentence about
      a post and this is it about a draft: the ONE file this draft named, and
      nothing else. */
   if(d && d.vo && d.vo.f) voDropFile(d.vo.f);
@@ -865,9 +851,8 @@ function dfSelDel(){
   if(!n) return;
   popAsk(tn('post.draft.sel.ask', n), function(){ dfSelDelGo(); }, t('pop.yes'));
 }
-/* Highest index first, so removing one does not move the next one under the
-   knife. And through draftDropGo(), which is the one place a draft goes -- it
-   is what tells the server. */
+/* Through draftDropGo(), which is the one place a draft goes -- it is what
+   tells the server. */
 function dfSelDelGo(){
   var ids=dfSelList(), ds=[], i;
   DFSEL=null;
@@ -882,8 +867,9 @@ function dfSelDelGo(){
 }
 function vDrafts(){
   var out='', i, d, on, got=pullHad('drafts');
-  /* The drafts came down when the session began (www/sns.js § WHAT AN OPEN
-     ASKS FOR). Nothing is asked from here; a pull on this screen asks again. */
+  /* Drafts are the server's, so signed out this is the door, as the three
+     tabs are. What is drawn is this page's row in § WHAT EACH PAGE READS. */
+  if(!netSignedIn()) return snsLocked('drafts');
   /* THE MARK, AND NOT A LIST THAT IS ABOUT TO CHANGE.
      「先に空で描いて、あとから差し替えるのを無くす」 OWNER 2026-09-05.
 
@@ -892,12 +878,8 @@ function vDrafts(){
      so 「No drafts」 became a draft, and 「Select」 appeared over a bar that
      had not had it. Three faces and not two, the same as everywhere else:
      the mark while the answer is out, the list when it is in, and 「No
-     drafts」 only once the server has said so.
-
-     Signed out there is nothing to wait for -- the drafts are this phone's
-     and that is the whole of them -- so the mark does not turn on a question
-     nobody is asking. */
-  if(netSignedIn() && !got)
+     drafts」 only once the server has said so. */
+  if(!got)
     return '<div class="view">'+navTop('')+
       '<div class="body">'+snsWaitHTML()+'</div></div>';
   for(i=DRAFTS.length-1;i>=0;i--){
@@ -1065,12 +1047,11 @@ function postThumb(u, ok){
     ok(whole? '' : (out||''));
   });
 }
-/* What the timeline may take up. localStorage is one allowance shared by the
-/* What the timeline may take up. localStorage is one allowance shared by the
-   posts and by every slice of the language, so a timeline with no ceiling can
-   make somebody's LANGUAGE unsaveable -- and the language is the thing this
-   app cannot replace. Two megabytes is about twenty photographs and leaves
-   room for a five-thousand-word language several times over.
+/* What the timeline's copy on this phone may take up, measured against the
+   copy (pwPicRoom). Whether a photograph should be refused by the size of
+   this phone's copy at all is the owner's (docs/reports/rule-audit-2026-09-27-sns.md
+   O5) -- the language is not in localStorage any more (CLAUDE.md rule 22),
+   and the photographs go to the post-media bucket.
 
    When it is full the PHOTOGRAPH is refused, never the post and never
    anything already written. Nothing is pruned to make room. */
@@ -1289,8 +1270,7 @@ function postTake(ps){
   }
   for(i=0;i<(ps||[]).length;i++){
     p=ps[i];
-    if(POST_GONE[p.id] || (p.sid && POST_GONE[p.sid])) continue;
-    if(!p || !p.id) continue;
+    if(!p || !p.id || POST_GONE[p.id] || (p.sid && POST_GONE[p.sid])) continue;
     /* ALREADY HERE IS NOT NOTHING TO DO, and that was the hole. This skipped
        a post it already had, so the numbers on it were whatever they were the
        first time it arrived -- frozen for the life of the copy. A phone that
@@ -1307,7 +1287,7 @@ function postTake(ps){
   return n;
 }
 /* What the server is allowed to change under a post this phone already holds,
-   and it is only ever these five.
+   and it is only ever the fields put() names below.
 
    NOT what the author wrote. The line, the meaning, the ink, the photographs
    and the voice are frozen onto a post when it is written (rule 8) and a
@@ -1362,40 +1342,10 @@ function postFresh(p){
    `bome` are still in `lingua.posts` on every phone that has this app; they
    are not read, not written and not removed (docs/DATA_SAFETY.md). */
 
-/* AND A PRESS THE SERVER HAS NOT ANSWERED YET.
-   「Twitter もその仕様なはず。ハート押して 1 つくやん？サーバー飛んでないなら
-   ハートが消えるでいいんじゃない？」 OWNER 2026-09-09.
-
-   The ♡ lights and the number moves the moment it is pressed; if it did not
-   reach anybody the ♡ goes out and the number comes back, and nothing is
-   said. **This supersedes 「押した瞬間は動かず」 of 2026-09-08** -- that
-   decision is about where the ANSWER lives and it is untouched: the count is
-   still the server's, and the phone still adds nothing up that outlives a
-   press.
-
-   `PMARK` is that press and nothing else. It is a key in memory, not a field
-   on a post: nothing is written to `lingua.posts`, nothing survives the app
-   closing, and it goes the moment the server has answered -- whatever the
-   answer was. So there is no SECOND answer to 「did I press this」 anywhere
-   on this phone; there is the server's row, and a press still in the air.
-
-   It is read HERE, in the one place that says what the ♡ and the number are,
-   because a screen drawing the pending press itself would be that second
-   answer written out again. */
-var PMARK={};
-function pmOf(p, kind){
-  return (p && PMARK[String(p.id)+'|'+kind]) || null;
-}
-function postNLike(p){
-  var m=pmOf(p, 'like');
-  return m? m.n : ((p && p.nlike!==undefined)? p.nlike : 0);
-}
+function postNLike(p){ return (p && p.nlike!==undefined)? p.nlike : 0; }
 function postNBoost(p){ return (p && p.nboost!==undefined)? p.nboost : 0; }
 function postNReply(p){ return (p && p.nreply!==undefined)? p.nreply : 0; }
-function postILike(p){
-  var m=pmOf(p, 'like');
-  return m? m.i : !!(p && p.ilike);
-}
+function postILike(p){ return !!(p && p.ilike); }
 function postIBoost(p){ return !!(p && p.iboost); }
 /* Where the server keeps it. Written when a push comes back and read for two
    things: whether this post has gone up at all, and what to point a reply at.
@@ -1414,39 +1364,14 @@ function postSid(p, sid){
    goes up too -- and the row is what says so on the screen. 「5 いります」
    OWNER 2026-09-06.
 
-   NOTHING SENDS IT ON ITS OWN BUT THE DOOR (postUpAll below). postCatchUp()
-   used to, off the back of the next timeline answer, with nobody having
-   pressed anything -- and that is the other half of 「保存するタイミングで
-   エラーが起きるなら、保存されない」「なら失敗して残るにするべき」 OWNER
-   2026-09-05 (r46-audit § A5).
+   NOTHING SENDS IT ON ITS OWN. One an older version left here stays, saying
+   so, and is not sent from this copy -- not off a timeline answer and not at
+   the door 「そもそもツイートできないんだから保存もされなくね？」 OWNER
+   2026-09-28; a send that fails now leaves nothing here at all (pwSendPost).
 
    It reads nothing but what is ON the post, so the reading side may ask it. */
 function postUnsent(p){
   return !!(p && p.mine && !p.sid);
-}
-/* ---- AT THE DOOR, WHAT THIS ACCOUNT WROTE AND THE SERVER HAS NOT GOT ----
-   The one moment the phone's copy goes up without a press, and it is the
-   same exception the language has: the door (www/net.js § netTook) puts what
-   is on this phone up as the account arriving. What is left here is what an
-   older version kept on this phone alone -- a post kept to yourself, which
-   was never sent, and a post whose send failed before a failed send stayed in
-   the composer. Nothing is deleted: each one is sent as it is, gets the
-   server's id (postSid), and the copy here stays.
-
-   One at a time and oldest first, through postSend() -- the one-send-at-a-time
-   mark is on it -- so a reply goes after the post it answers and can name it
-   (netPush reads the parent's `sid`). A send that fails leaves that post as it
-   was, saying 「未送信」, and the next is tried. */
-function postUpAll(){
-  var list=[], i;
-  for(i=0;i<POSTS.length;i++) if(postUnsent(POSTS[i])) list.push(POSTS[i]);
-  list.sort(function(a, b){ return (a.at||0)-(b.at||0); });
-  function one(k){
-    if(k>=list.length) return;
-    postSend(list[k], function(sid){ postSid(list[k], sid); one(k+1); },
-             function(){ one(k+1); });
-  }
-  one(0);
 }
 /* ---- ONE POST, ONE SEND AT A TIME --------------------------------------
    Which posts are on the wire right now, by this phone's own name for them.
@@ -1686,8 +1611,11 @@ function pwHTML(){
 
          The ring is what says so before the press: past zero it counts in
          negative numbers and goes red, in front of somebody while they type. */
+      /* `lnlines`: a post is LINES, so Enter opens one here -- new and edited,
+         which are this one field 「投稿の改行ができない」 (OWNER, build 171).
+         www/act.js § Enter is the one place that reads it. */
       lnField('pw-ln', t('post.ln.ph'), IN('pwSetLn'),
-        puaField(PW.cut), dirClass(scriptDir()))+
+        puaField(PW.cut), 'lnlines '+dirClass(scriptDir()))+
       /* The meaning sits in the same column as the line, in the same
          borderless field, because it is the second half of the same act. */
       /* Read-only when it is the day's sentence. Not disabled: a disabled
@@ -1872,7 +1800,7 @@ function pwSetLn(v, cut){
      field is patched by hand: this screen is not redrawn while somebody is
      typing into it. A photograph and a voice both come back through
      openPost(), which rebuilds the bar, so they need nothing here. */
-  navDoPaint('pwSend', pwOn());
+  navDoPaint('pwSend', pwHas());
   pwFresh();
 }
 /* The first `k` roman characters off the front of a cut -- what pwAtHead()
@@ -1937,9 +1865,7 @@ function pwAtLift(){
    index.html is already 44pt on this row without making the row taller --
    padding 11 and a margin of -11 that gives it back (the rule says so where
    it is written). No corner, no border, no fill: CLAUDE.md § NO ROUNDED BOX.
-   It sits directly after the handle rather than out at the right margin,
-   because pinning it there is a flex rule in index.html and that file is
-   another branch's today. */
+   It sits directly after the handle. */
 function pwToRow(){
   if(!PW.toh) return '';
   return ptoHTML(PW.toh)+
@@ -2072,10 +1998,10 @@ function pwTagsGrow(){
    to remember and a second thing to get wrong, and nothing about these two
    rows wants different room: a line, and what that line means.
 
-   It holds on WRITING only. A post already longer than this keeps every
-   character -- `maxlength` stops typing and never truncates a value the app
-   put there -- so an older post opened to be edited can be shortened and can
-   be left alone, and is never cut down by the app (docs/DATA_SAFETY.md). */
+   It holds on WRITING only, at the press (pwCapStop). A post already longer
+   than this keeps every character -- an older post opened to be edited can
+   be shortened and can be left alone, and is never cut down by the app
+   (docs/DATA_SAFETY.md). */
 var POST_MAX=140;
 /* How much room is left, as a RING that empties as you type.
    「カウントは打つほど減っていく輪、帯の中、常に出す」 OWNER 2026-08-28.
@@ -2142,7 +2068,7 @@ function pwLeftHTML(){
    different number about a different thing. What is shared is the shape, and
    the shape is the point -- 「いつもの課金誘導ポップ」 OWNER 2026-09-15: the
    same popAsk(), the same one sentence, the same way to the plans screen that
-   a second language, the hundredth word, a fifth keyboard and the pencil all
+   a second language, the hundredth word and the pencil all
    use. There is no new string in ten languages; `up.need` is ONE sentence for
    every ceiling and capStop()'s comment says so.
 
@@ -2198,7 +2124,7 @@ function pwHas(){
 /* The letters placed on the photograph are drawn INTO it first, and after
    that there is a picture and nothing else. It is the one thing here that
    cannot happen synchronously -- an image loads -- so the rest of posting is
-   below, and a bake that fails sends the photograph as it was. */
+   below, and a bake that fails stops the send (pwBake). */
 function pwSend(){
   /* Back to roman before anything is kept. What the Lingua keyboard typed is
      private use code points and they go no further than the field: a post
@@ -2234,7 +2160,14 @@ function pwSend(){
      here. It used to be written at this line, which left the OTHER road out
      of the composer -- keeping a draft -- carrying thirty seconds of base64
      into localStorage. */
-  pwBake(function(pics){ pwSendWith(ln, ink, pics, PW.vo||null); });
+  pwBake(function(pics){
+    /* A PHOTOGRAPH WHOSE LETTERS WOULD NOT GO ON IT IS NOT SENT WITHOUT THEM.
+       「送るのを止めて言う」 OWNER 2026-09-28 -- it went up bare, silently,
+       which is a post that is not the one somebody arranged. Nothing moves:
+       the composer is as it was. */
+    if(!pics){ toast(t('net.failed')); return; }
+    pwSendWith(ln, ink, pics, PW.vo||null);
+  });
 }
 /* A post that BEGINS by naming somebody is a post TO them. 「@したらもう勝手に
    ツイートがこの形式になるようにしたい」 OWNER 2026-09-07 -- the same thing
@@ -2381,15 +2314,20 @@ function pwSendPost(p){
     postSid(p, sid);
     savePosts();
     if(PW.did){ netDraftDrop(PW.did); PW.did=''; }
+    pwVoOffGo();
     PW=pwBlank();
     toast(t('post.sent'));
     goTab('feed');
   }, function(d, s, m){
-    /* What went wrong, in one sentence, and the post is a draft
-       (pwSendFell). The voice's file being gone (`∅`, netWhy) is said as
-       that, because it is not the wire and sending again will not bring it
-       back; everything else is 「送信できませんでした」. */
-    pwSendFell(String(m||'').indexOf('∅')>=0? netWhy(d, s, m) : t('post.send.no'));
+    /* A POST THAT DID NOT GO IS NOT KEPT AND IS NOT SENT LATER.
+       「そもそもツイートできないんだから保存もされなくね？」 OWNER 2026-09-28.
+       What went wrong, in one sentence, and nothing else moves: what was typed
+       is still in the composer, as it was, and pressing send again is the one
+       road. It is not a draft and it is not written on this phone. The voice's
+       file being gone (`∅`, netWhy) is said as that, because it is not the
+       wire and sending again will not bring it back; everything else is
+       「送信できませんでした」. */
+    toast(String(m||'').indexOf('∅')>=0? netWhy(d, s, m) : t('post.send.no'));
   });
 }
 
@@ -2518,8 +2456,6 @@ function inkOfCut(cut){
   if(!g.length) return null;   /* nothing drawn in it: the text is the post */
   return {g:g, s:s};
 }
-/* Posts written before a post carried its author. They are all this person's,
-   because there was nowhere else for one to come from. */
 /* Posts written before a post carried who wrote it. Those were this phone's
    own -- there was no timeline of anybody else's then -- and that is only
    still true of a post that never came from the server. One that DID came
@@ -2535,23 +2471,6 @@ function migratePosts(){
     if(p.sid && !p.mine) continue;
     p.who=meName(); p.hd=meHandle();
     p.mine=true; p.av=postAvatar();
-    n++;
-  }
-  if(n) savePosts();
-}
-/* And posts written before a post carried its ink. Only the ones written in
-   the language that is open can be cut, because they are the only ones this
-   phone has the letters for -- so this is not once, it is once per language,
-   and a post it cannot reach yet keeps `ink` undefined and is picked up on
-   the day that language is opened. Cutting somebody's post with the wrong
-   alphabet is the one outcome worth going to this trouble to avoid. */
-function migratePostInk(){
-  var i, p, n=0;
-  for(i=0;i<POSTS.length;i++){
-    p=POSTS[i];
-    if(p.ink!==undefined) continue;
-    if(!p.mine || p.lang!==langId) continue;
-    p.ink=postInk(p.ln);
     n++;
   }
   if(n) savePosts();
@@ -2986,11 +2905,6 @@ function pwMarkRun(x, units, k, ox, oy, col){
     cur+=pwMarkW(u)*k;
   }
 }
-/* Not inkCanvases(): that draws every square cell in --tx, which is the
-   theme's ink and is right for a tile, a key and the alphabet. A letter on a
-   photograph is white or black and nothing else -- the two colours a caption
-   has ever been -- so the strokes go through inkStrokes directly, which is
-   still the one place that turns strokes into a shape. */
 /* How wide a mark is on the picture, as a fraction of it: its height times
    the line's own advance. Asked in one place because the drawing, the hit box
    and the bake all need the same answer. */
@@ -3248,13 +3162,18 @@ function pwMarkUp(){
    the same guarantee `ink` gives by the longer route.
 
    It is asynchronous because an image is, so pwSend hands it a function
-   rather than waiting: a post is not held up by a picture, and a bake that
-   fails sends the photograph as it was rather than sending nothing. */
+   rather than waiting. A picture whose letters would not go on answers null,
+   and then so does the whole bake: the post is not sent without them
+   (OWNER 2026-09-28). */
 function pwBake(done){
   var ps=pwPics(), out=[], i=0;
   function next(){
     if(i>=ps.length){ done(out); return; }
-    pwBakeOne(ps[i], function(u){ if(u) out.push(u); i++; next(); });
+    pwBakeOne(ps[i], function(u){
+      if(u===null){ done(null); return; }
+      if(u) out.push(u);
+      i++; next();
+    });
   }
   next();
 }
@@ -3289,10 +3208,10 @@ function pwBakeOne(pc, done){
       }
     }
     try{ out=c.toDataURL('image/jpeg', POST_PICQ); }
-    catch(e){ done(pc.u); return; }
+    catch(e){ done(null); return; }
     done(out);
   };
-  im.onerror=function(){ done(pc.u); };
+  im.onerror=function(){ done(null); };
   im.src=pc.u;
 }
 
@@ -3326,9 +3245,7 @@ function postEdit(id){
      somebody from the timeline to a price list with nothing in between.
      「編集はplusプランからです。みたいなポップなしに課金画面飛ばされる」
 
-     Asked, the way this app already asks in the three other places a plan
-     stops somebody -- core.js:522 (a second language), core.js:703 (the
-     hundredth word), keyboard.js:349 (a fifth keyboard). All three are
+     Asked, the way this app asks everywhere a plan stops somebody:
 
          popAsk(<what the ceiling is>, function(){ go('plans'); });
 
@@ -3410,7 +3327,7 @@ function postCutOf(p){
    part of the line each shape is, so a word with a shape in it is copied
    whole -- its spelling, rather than a guess at half of it. */
 function postCopyTab(p, el){
-  var ink=postInkOK(p.ink)? p.ink : {g:[], s:[String(p.ln||'')]}, side=postSide(p),
+  var ink=postInkOr(p), side=postSide(p),
       ids=[], cut, tab=[], w=0, inw=false, i, j, x, ch, words, shw={};
   cut=(p.mine && p.lang===langId && postInkOK(p.ink))? postCutOf(p) : [];
   for(i=0;i<cut.length;i++) if(cut[i].id!==undefined) ids.push(cut[i].id);
@@ -3584,14 +3501,12 @@ function postMay(){ return netSignedIn() && !NET_BANNED; }
    -- those belong to the book side, and a feed that looks like a book looks
    like something you have to learn. 「TwitterとかXと同じように作って」
 
-   What is INSIDE the row is this app's and nothing else's: three layers, the
-   line as it was written, what its author says it means, and the gloss word
-   by word. That is the reason to read a stranger's post at all.
+   What is INSIDE the row is this app's and nothing else's: the line as it
+   was written, and what its author says it means. That is the reason to read
+   a stranger's post at all.
 
-   Every one of the four works. There is no server, so a like is a like on
-   this phone -- kept, counted, and the first thing that syncs when there is
-   one. A row of buttons that do nothing is what this app already got wrong
-   once at the bottom of a screen. */
+   Every one of the four works: a like and a repost are rows on the server
+   (netMark), and the numbers are the server's (postCountsPull). */
 /* How long ago, and then WHEN. Under a day it is how long ago, because that
    is what anybody wants of something from this morning. Past a day it is the
    date, because "9d" is not a time -- it is arithmetic somebody has to do,
@@ -3837,6 +3752,11 @@ function postInkOK(ink){
   }
   return true;
 }
+/* And the ink a post is drawn from: its own where postInkOK() says it can be,
+   and otherwise its text -- one line, no letters. The one place that says so. */
+function postInkOr(p){
+  return postInkOK(p && p.ink)? p.ink : {g:[], s:[String((p && p.ln)||'')]};
+}
 /* Which way this post's line runs, asked of the POST.
 
    It is frozen on at the moment of writing, exactly as the shapes are, and
@@ -3881,8 +3801,7 @@ function postPics(p){
      say it. Everything that reads this list reads the same three kinds it
      always did: a `data:` from the camera, a `blob:` already fetched, or a
      path in the bucket -- and netMediaSrc() is the one place that tells them
-     apart. The LENGTH is unchanged, which is what postHasMedia() and
-     netUpPics() read it for. */
+     apart. The LENGTH is unchanged, which is what netUpPics() reads it for. */
   if(Object.prototype.toString.call(p.pu)==='[object Array]' && p.pu.length){
     for(i=0;i<p.pu.length;i++) out.push(String(p.pu[i]||''));
     return out;
@@ -3996,10 +3915,9 @@ function postLines(){
   }catch(e){}
 }
 /* Where this post's voice is, as one string, and the one place that decides
-   between the two answers. On this phone it is `vo.f`, a name in Documents;
-   from anywhere else it is `vu`, a path in Storage. voPlay() takes either and
-   tells them apart by the slash -- and it can only do that because both are
-   asked for here rather than in each of the four places that want one. */
+   between the two answers: `vo.f` on a post still in hand (the bucket path, or
+   a Documents name an earlier version wrote), `vu` on one that has gone up.
+   voRemote() (www/rec.js) tells a path from a name. */
 function postVoAt(p){
   if(!p) return '';
   if(p.vo && p.vo.f) return String(p.vo.f);
@@ -4172,7 +4090,7 @@ function ptoHTML(hd){
    shows the same post because it is a post. The post itself is ONE copy that
    every list shares (postTake()), so what netRow() says about who passed it
    on is taken OFF the row as it arrives -- postRpOff() -- and kept by the
-   list that asked (FO_HAVE and PF_BOOST, www/sns.js). The list then hands
+   list that asked (FEED_HAVE and PF_BOOST, www/sns.js). The list then hands
    postRow() a row that carries it -- postRp() -- and a row from any other
    list carries nothing, so nothing is drawn.
 
@@ -4262,8 +4180,8 @@ function postRow(p){
                なくそう。プロフいけば見れる」 -- and that last clause was checked
                before it was believed: `whoCard()` in me.js draws `p.lname` as a
                row you press, which goes to "about". It is one tap away, not gone.
-               `plangtag` itself stays: post.js:795 (who you are replying to) and
-               sns.js:510 (a person in a list) both still wear it.
+               `plangtag` itself stays: a person in a list (snsWhoFace,
+               www/sns.js) still wears it.
 
                The `·` went with it. It was there to part `@aya` from `15分`,
                the gap this row is built with parts them now, and it was worn in
@@ -4334,7 +4252,7 @@ function postRow(p){
                head -- which is the app explaining itself, and is the notice's job
                rather than this one's. 「アプリ内に説明書くの禁止」 */
             (p.down? '<span class="pdown">'+esc(t('post.down'))+'</span>' : '')+
-            (p.pin? '<span class="ppin">'+ICON_PIN+'</span>' : '')+
+            (p.pinned? '<span class="ppin">'+ICON_PIN+'</span>' : '')+
             '</div>'+
           '</div>'+
           /* The ... and, when it is the one that is open, the menu hanging off
@@ -4387,10 +4305,8 @@ function postRow(p){
                (postFoldable(p) && !postUnfolded(p)
                  ? ' pfold" style="-webkit-line-clamp:'+POST_FOLD+'"' : '"')+
                '>'+postLnHTML(p)+'</div>' : '')+
-      /* The natural language, in the reader's own if the post carries it and
-         in the author's if it does not -- which is every post until the
-         translator is wired up, and is not a failure. Not "always" any more:
-         a post with no line has nothing to mean.
+      /* What the author says it means (postSay: `mn`, or the day's prompt in
+         the reader's own language). A post with no line has nothing to mean.
 
          It is DIRECTLY under the line and above everything else --
          「投稿の翻訳画面さ画像の下に行くのやめてくれる？ 投稿 / 翻訳 / そのた
@@ -4472,11 +4388,10 @@ function postRow(p){
          on the right, over the buttons. A post that has not gone up has no
          time to tell (its head says 未送信). */
       ((foc && !postUnsent(p))? '<div class="pwhenf">'+esc(postWhenFull(p.at))+'</div>' : '')+
-      /* Three layers, and there is no fourth.
+      /* Two layers, and there is no third.
 
            the writer's own letters      ln + ink
-           the language you read in      mn, or tr[yours] if the post has it
-           your own language             on a button
+           what it means                 mn (postSay)
 
          A word-by-word gloss used to sit here. It said the writer's word ->
          the writer's meaning; the layer below says the meaning -> MY word.
@@ -4576,7 +4491,7 @@ function postCountsPull(id, done){
   /* `done` is「the ask is over」and it runs on every road out of here,
      including the ones that never ask: a press waiting on an answer that is
      never going to come is a ♡ left lit on a post nobody can see. */
-  if(!sid || typeof netPostCounts!=='function' || !netSignedIn()){
+  if(!sid || !netSignedIn()){
     if(done){ done(); render(); }
     return;
   }
@@ -4595,39 +4510,18 @@ function postCountsUnder(p){
   if(p && p.to) postCountsPull(p.to);
   if(p && p.qt) postCountsPull(p.qt);
 }
-/* A LIKE LIGHTS AT ONCE, AND GOES OUT IF IT DID NOT ARRIVE.
-   -------------------------------------------------------------------------
-   「Twitter もその仕様なはず。ハート押して 1 つくやん？サーバー飛んでないなら
-   ハートが消えるでいいんじゃない？」 OWNER 2026-09-09.
-
-   The press shows immediately -- ♡ and the number, on the SCREEN (PMARK
-   above; nothing is stored) -- and the server is asked. When it answers, the
-   count is the server's, asked for rather than added up here: two phones each
-   adding one to their own copy is how a number goes backwards. When it does
-   not, the ♡ and the number are what they were before it was pressed and
-   NOTHING IS SAID -- the ♡ going out is what the person is told. There was a
-   ［再接続］ pop here; it is gone, because a press somebody can simply make
-   again is not a failure to stop them with.
-
-   **This replaces the shape of 2026-09-05, and only for the ♡.** That one
-   sent first and moved the screen on the answer, so a like that did not
-   arrive was a like that never showed. Both readings are about the same
-   thing -- a screen must not say what did not happen -- and the owner has
-   chosen which one the ♡ is.
-
-   One press at a time on one ♡: pressing again while the first is in the air
-   would send a second row about a state nobody has agreed on yet. */
+/* A LIKE IS THE SERVER'S ANSWER, LIKE EVERY OTHER PRESS.
+   「↓のメーターと♡も星で」 OWNER 2026-09-28 -- one mechanism, no exceptions:
+   the press turns the star (netPressed, www/net.js) while the row goes, and
+   the ♡ and its number are what the server says when it has answered
+   (postCountsPull), never a guess put up before it. A press that does not
+   arrive is 「接続できません」 with ［再接続］, as everywhere else. */
 function postLike(id){
-  var p=postById(id), k, on;
+  var p=postById(id);
   if(!p || !postMay()) return;
-  k=String(id)+'|like';
-  if(PMARK[k]) return;
-  on=!postILike(p);
-  PMARK[k]={i:on, n:Math.max(0, postNLike(p)+(on? 1 : -1))};
-  render();
-  netMark(id, 'like', on,
-    function(){ postCountsPull(id, function(){ delete PMARK[k]; }); },
-    function(){ delete PMARK[k]; render(); });
+  netMark(id, 'like', !postILike(p),
+    function(){ postCountsPull(id); },
+    function(d, st, m){ netPop(d, st, m, function(){ postLike(id); }); });
 }
 /* TAKING A REPOST BACK IS ASKED FIRST. 「リツイート解除とかフォロー解除は
    開錠しますか？みたいなポップつけて欲しい」 OWNER 2026-09-25 -- the same
@@ -4747,44 +4641,46 @@ function postMenuHTML(p){
       '</span>';
   return '<span class="pmenu" data-pm="1">'+
     '<button class="pmi"' + DO('postPin', [p.id]) + '>'+ICON_PIN+
-      '<span>'+esc(t(p.pin? 'post.unpin' : 'post.pin'))+'</span></button>'+
+      '<span>'+esc(t(mePins(p.id)? 'post.unpin' : 'post.pin'))+'</span></button>'+
     '<button class="pmi"' + DO('postEdit', [p.id]) + '>'+ICON_PEN+
       '<span>'+esc(t('post.edit'))+'</span></button>'+
-    '<button class="pmi bad"' + DO('postDel', [p.id]) + '>'+ICON_CROSS+
+    '<button class="pmi bad"' + DO('postDel', [p.id]) + '>'+ICON_BIN+
       '<span>'+esc(t('post.del'))+'</span></button>'+
     '</span>';
 }
 /* The five reasons are the server's -- `report.why` is a check constraint, so
    a sixth invented here would be refused, which is the right way round. */
 var REPORT_WHY=['spam','abuse','hate','sexual','other'];
-var rpFor=null;
-/* BOTH MENUS, because this row is on both of them. It cleared `PMENU` only,
-   and the same row sits in the menu on a person's page -- so reporting from
-   THERE walked to this form with `WMENU` still standing, and postMenuTook()
-   read the first press on a reason as "a press outside the menu", closed the
-   menu nobody could see, and swallowed it. Measured: the first press sent no
-   report and stayed on the form; the second sent one. Somebody presses Spam
-   and nothing happens.
+/* BOTH MENUS, because this row is on both of them. It is on the menu on a
+   person's page as well, and a row that ENDS a menu closes it itself -- the
+   same sentence as meBlock() in www/me.js -- or postMenuTook() reads the first
+   press on a reason as "a press outside the menu" and swallows it.
 
-   Same sentence as meBlock() in www/me.js: a row that ENDS a menu closes it
-   itself, and this row ends whichever one it was pressed from. */
+   What is being reported is the form's KEY and nothing beside it:
+   `report:<post>:<handle>`. The form is built again from its key whenever it
+   is arrived at without being open (vForm, keepPaint), so a second place
+   holding the other half is a report that forgets who it was about. */
 function openReport(id, handle){
   PMENU=''; WMENU=false;
-  rpFor={post:String(id||''), handle:String(handle||'')};
-  openForm('report:'+id, t('post.report'),
+  openForm('report:'+String(id||'')+':'+String(handle||''), t('post.report'),
     REPORT_WHY.map(function(w){
       return '<button class="set"' + DO('reportGo', [w]) + '>'+
         '<span class="sl">'+esc(t('report.'+w))+'</span>'+ICON_GO+'</button>';
     }).join(''));
 }
-FORM_OPEN.report=function(x){ openReport(x, ''); };
+function reportOf(rest){
+  var i=String(rest||'').lastIndexOf(':');
+  return (i<0)? {post:String(rest||''), handle:''} :
+    {post:rest.slice(0, i), handle:rest.slice(i+1)};
+}
+FORM_OPEN.report=function(x){ var r=reportOf(x); openReport(r.post, r.handle); };
 function reportGo(why){
-  var r=rpFor;
-  if(!r) return;
-  rpFor=null;
+  var s=formArg(here().a), r;
+  if(s.kind!=='report') return;
+  r=reportOf(s.rest);
   back();
   netReport(r, why, '', function(){ toast(t('report.done')); },
-            function(d, s){ toast(netWhy(d, s)); });
+            function(d, s2){ toast(netWhy(d, s2)); });
 }
 /* act.js asks this before it delivers a press, and it is the whole of the
    rule: with a menu open, a press that is not part of that menu closes it and
@@ -4821,17 +4717,12 @@ function postMenuTook(target){
 }
 /* One at a time. A page with three things at the top of it has nothing at the
    top of it, and "which one is pinned" then has no answer. Pressing the one
-   that is pinned takes it off. */
+   that is pinned takes it off. Where it is kept is the page's (mePinPut). */
 function postPin(id){
-  var p=postById(id), was, i;
+  var p=postById(id);
   if(!p || !p.mine) return;
-  was=!!p.pin;
-  for(i=0;i<POSTS.length;i++) if(POSTS[i].mine) delete POSTS[i].pin;
-  if(!was) p.pin=1;
   PMENU='';
-  savePosts();
-  if(here().r==='form') back();
-  render();
+  mePinPut(mePins(id)? null : id);
 }
 /* The post first, its voice second. 「投稿消した声も消していいよ」
    The order is the whole of it: the person pressed delete on a POST, so the

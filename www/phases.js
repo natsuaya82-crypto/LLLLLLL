@@ -160,7 +160,14 @@ function migrateGramLang(){
     if(!Object.prototype.hasOwnProperty.call(LANGS, id)) continue;
     if(!langUnderSet(id)) continue;
     key=langKeyOf(id, 'phases');
-    raw=slRd(key);
+    /* slMine() and not slRd(): what this is copied ONTO is a slice this
+       phone holds -- memory, or the key an older version left on the disk.
+       slRd() falls through to the `.got` picture of what the server sent last
+       time, and writing that back with slWr() made the picture this phone's
+       own: slMine() answered it from then on, netLangFill() stepped over the
+       slice, and the next save carried the picture up (CLAUDE.md rule 22 --
+       the picture never goes back). */
+    raw=slMine(key);
     o={};
     if(raw!==null){
       try{ o=JSON.parse(raw); }catch(e){ o=null; }
@@ -190,7 +197,7 @@ function migrateGramLang(){
     }
     /* Nothing was there and nothing was copied. "Empty" and ABSENT are two
        states, the way empty and broken are: an absent slice is what
-       netLangsDown() fills in, and one written here is a slice it steps over
+       netLangFill() fills in, and one written here is a slice it steps over
        for good. So this language keeps having none. */
     if(raw===null && o.gpos===undefined) continue;
     slWr(key, JSON.stringify(o));
@@ -336,23 +343,8 @@ function chapSlotsHTML(chap){
   for(i=0;i<p.slots.length;i++) out+=stSlotRow(p, p.slots[i]);
   return '<div class="sec">'+t('stg.words')+'</div><div class="stslots">'+out+'</div>';
 }
-/* Stages that are not every language's, and are not offered until somebody's
-   language turns out to have one.
-   「助詞がない言語もあるんだから、助詞が最初からあるのおかしいだろ」
-
-   Particles are the case that made the point: English has none, and a list
-   that opens with a page for them is the app telling somebody their language
-   has something it may well not.
-
-   They are not deleted. A stage here appears the moment there is an answer in
-   it -- notes, rules, an example, a word, or merely having been opened -- so a
-   language that used one keeps it and nothing anybody wrote goes anywhere.
-   docs/DATA_SAFETY.md: nothing a person made is removed because the current
-   shape does not need it.
-
-   Adding one back by hand is what `stAddOwn` has always been for. */
-/* Its slots are the three roles a mark can take a word OUT of the queue for.
-   A particle is a WORD in this app -- the same as the 否定 stage's word for
+/* THE PARTICLES (`part` in STAGES). Its slots are the roles a mark can take
+   a word OUT of the queue for. A particle is a WORD in this app -- the same as the 否定 stage's word for
    "not" and the 場所 stage's adpositions -- so making one is making a word,
    and nothing new is stored anywhere. gInfl() in www/grammar.js is what turns
    the word somebody made here into something the engine reads.
@@ -498,7 +490,7 @@ function stSlotsDone(p){
   return n;
 }
 /* A decision counts once it has been touched. `STG.set` is written by
-   setOrder() and setGPos() in www/grammar.js and is what says a language
+   gOrderPut() and gPosPut() in www/grammar.js and is what says a language
    ANSWERED rather than took the default. It went unread for a while -- stOn()
    lit a stage's button and the stages that had buttons are gone -- and the
    chapter that was going to ask it has arrived: the contents draws a chapter
@@ -515,11 +507,6 @@ function stTotal(p){ return p.slots.length + 1; }
 function stSaid(p){ return (stRules(p.id).length || stEx(p.id).length)? 1 : 0; }
 function stFilled(p){ return stSlotsDone(p) + stSaid(p); }
 function stIsDone(p){ return stFilled(p)>=stTotal(p); }
-function stCount(){
-  var a=stAll(), n=0, i;
-  for(i=0;i<a.length;i++) if(stIsDone(a[i])) n++;
-  return n;
-}
 
 /* ---- a slot's word is a word, and a word has one screen ----------------
    This used to be a form of its own: a box of sounds you pressed, a reading
@@ -569,6 +556,13 @@ FORM_OPEN.slot=function(a){ var i=String(a).indexOf('/'); openSlot(a.slice(0,i),
 function openOwnPhase(){
   /* Writing a grammar stage of your own is the third of the four. */
   if(!makeNeed()) return;
+  /* AND A STAGE OF YOUR OWN IS THE PAID PLAN'S, asked on the ＋ and not on
+     the last press of a form somebody has already typed into -- the ＋ is
+     drawn on every plan (docs/HIDEFREE.md), so the press is where the plan
+     answers, the way openAdd() asks the ceiling before its sheet opens. The
+     form is a route too, and FORM_OPEN.own below comes through here, so
+     this is the one place it is asked. */
+  if(upStop(can('gram'))) return;
   openForm('own:', t('stg.own.h'),
     /* This field carries no name of its own -- it is read when the form is
        saved -- so what makes it grow is the line in www/act.js. */
@@ -581,14 +575,10 @@ function openOwnPhase(){
     markBtn(ICON_ADD2, t('stg.own.add'), 'stAddOwn'));
 }
 FORM_OPEN.own=function(){ openOwnPhase(); };
-/* Saying yes to the stage that is off the list. stMarkSet() is what stUsed()
-   reads, so the stage is on the list from here on and this button is not --
-   and the mark is in STG.set, which is the language's and is already in the
-   backup. Nothing is added to what is stored. */
+/* Making the stage the form was for: a title and one slot per line, pushed
+   onto STG.extra, which is the language's and goes up with the `phases`
+   slice. The plan was asked on the way in (openOwnPhase). */
 function stAddOwn(){
-  /* The screen only offers this on a paid plan; a form is a route and a route
-     can be arrived at from anywhere. */
-  if(upStop(can('gram'))) return;
   var a=document.getElementById('st-t'), b=document.getElementById('st-w');
   if(!a) return;
   var title=actVal(a).trim();
@@ -607,9 +597,11 @@ function stAddOwn(){
    every plan, on the grounds that a language which came down from a paid plan
    still owns what it made. It still owns it -- which is exactly why it cannot
    be thrown away from a plan that cannot make another one.
-   「無料に戻ったら無料の形に戻る」 A stage of somebody's own stays on the
-   list, stays in the language, and cannot be added to or removed until the plan
-   that made it is back. Gating a delete never costs anybody anything. */
+   「無料に戻ったら無料の形に戻る」 A stage of somebody's own is hidden from
+   the list on free (「課金で追加した機能は無料になったら全部隠れる」 OWNER
+   2026-09-01, stHidden), stays in the language, and cannot be added to or
+   removed until the plan that made it is back. Gating a delete never costs
+   anybody anything. */
 function stDelOwn(id){
   if(upStop(can('gram'))) return;
   /* 確認は自前のポップで。「標準は使わねえって言ってるだろこれも禁止や」
@@ -840,24 +832,11 @@ function stRow(p, n){
     '<span class="stv">'+(tot? (stFilled(p)+' / '+tot) : '—')+'</span>'+
     ICON_GO+'</button>';
 }
-/* ONE list of chapters. There were two: this one, and the chapters that say
-   what a word actually turns into, which sat behind a button at the foot of
-   it labelled 語順 -- so they were two steps down inside one of the sixteen.
-   「文法ページはいつ統合されんの？」 OWNER 2026-08-28.
-
-   The rule-made forms come first: docs/GRAMMAR-V2-SPEC.md §14 is the chapter
-   that says how a word changes, which is what the grammar is FOR. The
-   sixteen follow, in the order they were in, numbered on from the eight.
-   Nothing is folded away.
-
-   Each group is NAMED, in the shape vWsys() puts `dir.title` over its three
-   directions: a `sec` and a name, no frame, no panel, no corner, and no
-   sentence. It is what CLAUDE.md §14 already calls that group from outside
-   the app, so nothing new was decided here. The names earn their place
-   because five pairs of rows are called the same thing -- 語順, 否定, 疑問,
-   形容詞, 場所 are each a chapter of both groups, invisible while one list
-   was hidden inside the other. Which group a row is in is the whole of what
-   tells them apart, so it has to be on the screen. */
+/* How many stages of somebody's own are off the list, said at the foot of
+   the appendix: a stage added on a paid plan is hidden on free
+   (「課金で追加した機能は無料になったら全部隠れる」 OWNER 2026-09-01, stAll()
+   and stHidden() above), and a list that is quietly shorter is the app
+   telling somebody their work is gone. Nothing when nothing is hidden. */
 function stHidHTML(){
   var n=stHidden();
   if(!n) return '';
