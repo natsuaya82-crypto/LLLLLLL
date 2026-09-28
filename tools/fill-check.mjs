@@ -36,6 +36,12 @@ const r = await pg.evaluate(async ({s}) => {
   eval('(' + s + ')()');
   SET.walked = true; SET.theme = 'light'; SET.myfont = true;
   function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
+  /* Until the Save has had its answer (www/shell.js § keepSave), not for a
+     number of milliseconds: four checks at once on one machine took the
+     wire past 60ms on 2026-09-28 and the Yes was counted before it landed. */
+  async function saved(){
+    for (var i = 0; i < 250 && KEEP_BUSY; i++) await wait(20);
+  }
   /* A WIRE THAT ANSWERS. The Save in the bar is not saved until it is up
      (www/shell.js § keepSave -> netSaveNow), so a press with nothing on the
      other end never lands, never levels the buffer and never lets the screen
@@ -152,7 +158,7 @@ const r = await pg.evaluate(async ({s}) => {
   editLetter(l.id); render();
   GE.st = [{ pts: tri, fill: true }];
   document.querySelector('[data-do="keepPress"]').click();
-  await wait(60);
+  await saved();
   /* not `back` -- that is the app's back arrow, and a `var back` here hoists
      over it for the whole of this function */
   var readBack = (ltById(l.id) || {}).st || [];
@@ -188,7 +194,7 @@ const r = await pg.evaluate(async ({s}) => {
   out.leftQuiet = ((ltById(lid2) || {}).st || []).length === 0;
   out.leftHeld  = ink(geInk(GE.st));
   document.querySelector('[data-do="popYes"]').click();
-  await wait(60);
+  await saved();
   var kept = (ltById(lid2) || {}).st || [];
   out.leftKept  = kept.length;
   out.leftFill  = !!(kept[0] && kept[0].fill);
