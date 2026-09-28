@@ -379,9 +379,10 @@ export function seed(){
      app's own road rather than by writing letter ids down here, which would
      be a second answer to which letter writes `k`. */
   var __kano=findWord('kano'); if(__kano) __kano.sp=spType(__kano.hw);
-  /* and the ink for the post that is this person's own, for the same reason:
-     boot.js cut what it could before this file put these posts here. */
-  migratePostInk();
+  /* and the ink for the post that is this person's own, as it would have
+     been put on it the moment it was written (postInkOf) -- nothing in the
+     app cuts an older post afterwards (OWNER 2026-09-28). */
+  for (const p of POSTS) if (p.mine && p.ink === undefined && p.lang === langId) p.ink = postInk(p.ln);
   STG = {done:{}, notes:{gr:'x'}, set:{}, extra:[],
          /* Under 挨拶 rather than 否定: the 否定 stage is gone (「重複はいらない」
             OWNER 2026-09-06) and a rule and an example filed under a stage

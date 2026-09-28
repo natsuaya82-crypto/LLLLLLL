@@ -2498,23 +2498,6 @@ function migratePosts(){
   }
   if(n) savePosts();
 }
-/* And posts written before a post carried its ink. Only the ones written in
-   the language that is open can be cut, because they are the only ones this
-   phone has the letters for -- so this is not once, it is once per language,
-   and a post it cannot reach yet keeps `ink` undefined and is picked up on
-   the day that language is opened. Cutting somebody's post with the wrong
-   alphabet is the one outcome worth going to this trouble to avoid. */
-function migratePostInk(){
-  var i, p, n=0;
-  for(i=0;i<POSTS.length;i++){
-    p=POSTS[i];
-    if(p.ink!==undefined) continue;
-    if(!p.mine || p.lang!==langId) continue;
-    p.ink=postInk(p.ln);
-    n++;
-  }
-  if(n) savePosts();
-}
 
 /* ---- what a post says ---------------------------------------------------
    OWNER 2026-09-05 単語はその単語の意味を 文法は並べ替えた単語たちが文章として
