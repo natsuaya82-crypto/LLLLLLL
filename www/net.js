@@ -1269,8 +1269,8 @@ function netPrefsPut(){
    「通知作ろう。アップルのネイティブ通知で」 OWNER 2026-09-22.
 
    A `device` row is a PAIR -- an account and an address -- and neither half
-   means anything on its own. The token is the handset's, issued by Apple and
-   the same whoever is signed in; the account is who is at it now. So the key
+   means anything on its own. The token is the handset's, issued by Apple (or
+   by Google on Android) and the same whoever is signed in; the account is who is at it now. So the key
    is both, two people on one iPhone are two rows, and one person on two
    phones is two rows, and neither of those is a conflict to be resolved.
 
@@ -1290,11 +1290,15 @@ function netPrefsPut(){
    about it on the screen they are standing on; the next session arrival
    offers it again. */
 var NET_TOK='';
-function netDevicePut(token){
+function netDevicePut(token, platform){
   var tk=String(token||'');
   if(!tk) return;
   NET_TOK=tk;
-  netSend('POST', '/rest/v1/device', {uid:netUid(), token:tk}, netTok(),
+  /* Which phone, when the native side said one the column knows; otherwise
+     nothing, and `device.platform`'s default (`ios`) answers. */
+  var row={uid:netUid(), token:tk};
+  if(platform==='android') row.platform='android';
+  netSend('POST', '/rest/v1/device', row, netTok(),
           function(){}, function(){}, true);
 }
 /* AND STOP REACHING IT FOR SOMEBODY WHO HAS SIGNED OUT.

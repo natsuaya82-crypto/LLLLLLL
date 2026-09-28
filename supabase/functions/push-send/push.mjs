@@ -7,10 +7,13 @@
    同じ理由で、同じ形です：**検査が試験対象を書き直したら、それは写しであって、
    写しは必ず一致します**（CLAUDE.md § 10, § 12）。
 
-   ここには I/O が一つもありません。表を読むのも、Apple に送るのも index.ts。
+   ここには I/O が一つもありません。表を読むのも、Apple と Google に送るのも
+   index.ts。
    ここにあるのは**判断**だけで、判断は全部ここにあります ── 署名した本人の
    操作でなければ送らない、自分には送らない、スイッチが切れていれば送らない、
-   宛先が無ければ送らない、何と書くか、そしてどの token を消すか。
+   宛先が無ければ送らない、何と書くか、**どの電話にはどの道で送るか**
+   （iPhone は Apple の APNs、Android は Google の Firebase Cloud Messaging
+   ── `device.platform`）、そしてどの token を消すか。
    ただ一つ「その行はもう鳴ったか」だけは、答えが**行の上**にあるので
    `supabase/schema.sql` の `push_once()` が答えます（index.ts がそれに訊く）。
 
@@ -85,6 +88,22 @@ export const LANGS = ['en', 'es', 'pt', 'fr', 'de', 'it', 'ru', 'zh', 'ko', 'ja'
 
 /* APNs の topic ＝ bundle id。ios/App/App/Info.plist と同じもの。 */
 export const TOPIC = 'com.tokinets.lingua';
+
+/* ---- どの電話が、どの道か -------------------------------------------
+   `device.platform`（supabase/schema.sql）の二つの値。iPhone の住所は Apple が
+   出したもので APNs へ、Android の住所は Google が出したもので FCM へ。
+   **どちらでもない行には送りません** ── 列は not null で既定が `ios` なので
+   データベースから来る行には必ずどちらかがあり、ここで「無いのは ios」と
+   読めば、既定が二箇所に書かれることになります。 */
+export const ROADS = ['ios', 'android'];
+
+/* Android の通知のチャンネル。android/app/src/main/java/com/tokinets/lingua/
+   LinguaPushPlugin.kt が同じ名前で作り、AndroidManifest.xml が既定に置く。
+   tools/push-check.mjs が三つの字が揃っていることを数えます。 */
+export const CHANNEL = 'lingua';
+
+/* FCM の鍵を取りに行く時の scope。 */
+export const FCM_SCOPE = 'https://www.googleapis.com/auth/firebase.messaging';
 
 /* ---- 文面 ---------------------------------------------------------------
    **これは二つ目の置き場です。**五種類 × 十言語の同じ文が
@@ -315,21 +334,88 @@ export function pushPlan(aim, who, devices, by) {
      index.ts が相手の mute の行から読んで持って来る。種類を問わず一か所で。 */
   if (w.muted) return { send: false, why: 'muted' };
   if (!pushWants(w.prefs, aim.kind)) return { send: false, why: 'switched off' };
-  const to = [];
+  /* 行は `{token, platform}`。道で二つに分けます ── `to` は iPhone（APNs）、
+     `fcm` は Android（FCM）。**どちらにも入らない行は数えない**（ROADS）。 */
+  const to = [], fcm = [];
   for (let i = 0; i < (devices || []).length; i++) {
     const t = devices[i];
-    const s = (t && typeof t === 'object') ? t.token : t;
-    if (typeof s === 'string' && s) to.push(s);
+    if (!t || typeof t !== 'object') continue;
+    const s = t.token;
+    if (typeof s !== 'string' || !s) continue;
+    if (t.platform === 'ios') to.push(s);
+    else if (t.platform === 'android') fcm.push(s);
   }
   /* 許可していない人、アプリを消した人。**行が無いのは切ってあるのとは別**
      ですが、どちらも送る先が無いので同じ終わり方をします。 */
-  if (!to.length) return { send: false, why: 'no device' };
+  if (!to.length && !fcm.length) return { send: false, why: 'no device' };
   const say = pushSay(w.prefs, aim.kind, w);
   if (!say) return { send: false, why: 'nothing to say' };
   const payload = { aps: { alert: say, sound: 'default' }, kind: aim.kind };
   /* 開く先。無ければ**載せない** ── 空の値は「無い」ではありません。 */
   if (aim.post) payload.post = aim.post;
-  return { send: true, to: to, payload: payload };
+  return { send: true, to: to, fcm: fcm, payload: payload };
+}
+
+/* ---- Android へは、同じ知らせを FCM の形で -----------------------------
+   **文面も開く先も、上の `payload` から写すだけです。**二つ目の判断を書けば、
+   iPhone と Android で違う文が出る日が来ます。
+
+   `notification` は Android が自分で出す通知（アプリが閉じている時）、`data`
+   は押した時にアプリへ渡るもの ── Android は `data` の鍵を起動の intent に
+   そのまま載せ、LinguaPushPlugin.kt がそこから `kind` と `post` だけを取って
+   `window.pushOpened()` に渡します（iPhone の payload の `kind` と `post` と
+   同じ二つ）。FCM の `data` は文字列しか持てないので、文字列にします。 */
+export function pushFcm(payload, token) {
+  const p = (payload && typeof payload === 'object') ? payload : {};
+  const a = (p.aps && p.aps.alert && typeof p.aps.alert === 'object') ? p.aps.alert : {};
+  const data = { kind: String(p.kind || '') };
+  if (p.post) data.post = String(p.post);
+  return {
+    message: {
+      token: String(token || ''),
+      notification: { title: String(a.title || ''), body: String(a.body || '') },
+      data: data,
+      android: { priority: 'HIGH',
+                 notification: { channel_id: CHANNEL, sound: 'default' } },
+    },
+  };
+}
+
+/* FCM が断った理由の一語。答えは
+   `{error:{code, status, details:[{'@type': '…FcmError', errorCode}]}}` で、
+   `UNREGISTERED` はその `errorCode` にしか書いてありません（`status` は
+   NOT_FOUND）。読めなければ `status`、それも無ければ ''。 */
+export function pushFcmWhy(body) {
+  const e = (body && typeof body === 'object' && body.error && typeof body.error === 'object')
+    ? body.error : null;
+  if (!e) return '';
+  const d = Array.isArray(e.details) ? e.details : [];
+  for (let i = 0; i < d.length; i++) {
+    if (d[i] && typeof d[i].errorCode === 'string' && d[i].errorCode) return d[i].errorCode;
+  }
+  return typeof e.status === 'string' ? e.status : '';
+}
+
+/* ---- FCM の鍵 ---------------------------------------------------------
+   `FCM_SERVICE_ACCOUNT` は Google Cloud のサービスアカウントの JSON そのもの
+   （Firebase の「サービス アカウント」→「新しい秘密鍵を生成」で出てくるもの、
+   docs/ANDROID.md § 通知）。そこから要る四つだけを取り、一つでも欠けていれば
+   `null` ── index.ts は Android の行に送らず、`left` にその理由が出ます。 */
+export function pushFcmSa(raw) {
+  let j = null;
+  try { j = JSON.parse(String(raw || '')); } catch (_) { j = null; }
+  if (!j || typeof j !== 'object') return null;
+  const s = (v) => (typeof v === 'string' ? v : '');
+  const sa = { email: s(j.client_email), key: s(j.private_key), project: s(j.project_id),
+               tokenUri: s(j.token_uri) || 'https://oauth2.googleapis.com/token' };
+  return (sa.email && sa.key && sa.project) ? sa : null;
+}
+
+/* Google に鍵を貰うための JWT の中身。一時間まで ── APNs と同じく呼び出し
+   ごとに一枚。 */
+export function pushFcmClaim(sa, now) {
+  const iat = Math.floor(Number(now) / 1000);
+  return { iss: sa.email, scope: FCM_SCOPE, aud: sa.tokenUri, iat: iat, exp: iat + 3600 };
 }
 
 /* ---- 来た Authorization の形 --------------------------------------------
@@ -387,18 +473,27 @@ export function pushBy(auth) {
   return t.kind === 'jwt' && t.role === SERVICE ? SERVICE : '';
 }
 
-/* ---- Apple が「もう無い」と答えた token -------------------------------
-   410 Unregistered は、その token が指していたアプリがその iPhone から消えた
-   ということです。**410 だけ**：400 も 429 も 500 もタイムアウトも「読めな
+/* ---- 「もう無い」と答えた token ---------------------------------------
+   Apple の 410 Unregistered は、その token が指していたアプリがその iPhone から
+   消えたということです。**410 だけ**：400 も 429 も 500 もタイムアウトも「読めな
    かった」であって「無い」ではなく、枝を分けません（CLAUDE.md 一枚目）。
 
-   `sent` は `[{token, status}]`（全員宛てでは `uid` も付く）。返すのは消す
-   token。DELETE REVIEW は docs/CHANGELOG.md 2026-09-22。 */
+   Google（Android）で同じことを言うのは **404 で理由が `UNREGISTERED`** の時
+   だけ（`pushFcmWhy()`）。FCM は 410 を返さず、400 の `INVALID_ARGUMENT` は
+   token が壊れている時にも送る文が悪い時にも来るので、それでは落としません。
+
+   `sent` は `[{token, status, reason, platform}]`（全員宛てでは `uid` も付く）。
+   返すのは消す token。DELETE REVIEW は docs/CHANGELOG.md 2026-09-22（iPhone）と
+   2026-09-27（Android）。 */
 export function pushGone(sent) {
   const out = [];
   for (let i = 0; i < (sent || []).length; i++) {
     const r = sent[i] || {};
-    if (Number(r.status) === 410 && typeof r.token === 'string' && r.token) out.push(r.token);
+    if (typeof r.token !== 'string' || !r.token) continue;
+    if (Number(r.status) === 410 ||
+        (r.platform === 'android' && Number(r.status) === 404 && r.reason === 'UNREGISTERED')) {
+      out.push(r.token);
+    }
   }
   return out;
 }

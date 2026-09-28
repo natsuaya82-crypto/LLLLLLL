@@ -20,7 +20,9 @@
    THREE THINGS LIVE HERE AND NOTHING ELSE DOES.
 
    - the address. pushAsk() puts iOS's question in front of somebody and, if
-     they say yes, hands the token to netDevicePut(). **This phone keeps no
+     they say yes, hands the token to netDevicePut() -- with which phone it
+     is, when the native side says (Android answers `platform: 'android'`;
+     iOS answers nothing and `device.platform`'s default says `ios`). **This phone keeps no
      copy of it**: the row in `device` is the record, and NET_TOK in
      www/net.js is only what the sign-out DELETE needs, in memory.
    - the switches. Which kinds of notification somebody wants, which are
@@ -121,7 +123,7 @@ function pushAsk(){
   np('LinguaPush', 'ask', {})
     .then(function(r){
       pushStGot('authorized');
-      if(r && r.token) netDevicePut(r.token);
+      if(r && r.token) netDevicePut(r.token, r.platform);
     })
     /* Refused, or Apple never answered. Either way there is no address, so
        there is nothing to send -- and the room says which of the two it is,

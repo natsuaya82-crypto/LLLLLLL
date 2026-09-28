@@ -34,6 +34,37 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths"></meta-data>
         </provider>
+        <!-- The Lingua keyboard: the Android half of ios/App/LinguaKeyboard/:
+             an input method inside this app that reads what LinguaShare.write
+             put in the app's own storage (keyboard/Shared.kt). Named "Lingua",
+             which is never translated. BIND_INPUT_METHOD means only the
+             system may bind it. -->
+        <service
+            android:name=".keyboard.LinguaIme"
+            android:label="@string/app_name"
+            android:permission="android.permission.BIND_INPUT_METHOD"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.view.InputMethod" />
+            </intent-filter>
+            <meta-data
+                android:name="android.view.im"
+                android:resource="@xml/method" />
+        </service>
+        <!-- A notification that arrives while the app is in front
+             (LinguaPushService.kt). Firebase finds it by this action; it does
+             nothing until android/app/google-services.json is in. The channel
+             is the one push-send names (`CHANNEL`, push.mjs). -->
+        <service
+            android:name=".LinguaPushService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="lingua" />
     </application>
 
     <!-- Permissions -->
@@ -47,4 +78,8 @@
          line on iOS. -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <!-- Notifications (LinguaPushPlugin.kt). Android 13 and later ask the
+         person; UNdeclared, the question is never put and the answer is no.
+         iOS asks through requestAuthorization with nothing declared. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 </manifest>
