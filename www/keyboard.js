@@ -574,7 +574,6 @@ function kbFlickLay(){
      space, no delete and no return. */
   var fr=kbFaceRows();
   n=Math.max(3, Math.ceil(keys.length/3));
-  if(n>fr) n=Math.ceil(keys.length/3)>fr? Math.ceil(keys.length/3) : n;
   /* Four across, so a key is FIVE columns of the ten -- 97pt on a 390pt
      phone against a QWERTY's 39. That is the whole of why a flick key is big:
      not a bigger grid, a key that spans more of it. And four times five is
@@ -2573,7 +2572,7 @@ function kbHTML(sel, ro){
           '<span class="kbc">'+kbFace(key)+'</span>'+kbMark(key)+'</span>'
         : '<button class="'+cls+(kbWob? ' wob':'')+'" '+
           'style="grid-column:span '+kbU(key.w)+kbRhCSS(key)+
-            (ro? '' : kbPickCSS(ri, ki))+'" '+
+            kbPickCSS(ri, ki)+'" '+
           'data-r="'+ri+'" data-k="'+ki+'"'+
           DO('kbTapKey', [ri, ki]) + '>'+kbFlicks(key, slots)+
           '<span class="kbc">'+kbFace(key)+'</span>'+kbMark(key)+

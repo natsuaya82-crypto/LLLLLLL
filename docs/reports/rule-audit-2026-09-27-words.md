@@ -28,12 +28,104 @@ Items are numbered per group: `kb-12` is item 12 of the keyboard group.
 
 ## Ledger — what happened to each item
 
+Every commit that fixes an item names it — `git log --grep 'words kb-1'` finds
+the fix for `kb-1`. Each commit says what was watched red, and carries the
+before/after pictures (`shots/audit-words-*`) where the look changed.
+
+**Fixed** means code (or a sentence) changed on this branch and the check that
+holds it was run; nothing here was pressed on a phone (CODE CONFIRMED only).
+
+### sheetshare (www/sheet.js, www/share.js)
+
 | item | outcome |
 |---|---|
-| sheetshare-1,3,4,13,14,16,17 | fixed, comments, 06cc5317 |
-| sheetshare-4 (unused `id`) | fixed, refactor, cd7d751b |
+| 1, 3, 4, 13, 14, 16, 17 | fixed — comments |
+| 2 | fixed — dead `/G1` taken out of the PDF |
+| 8 | fixed — file name keeps the language's name, the word after it through `t()`; sheet-check watched red |
+| 9 | fixed — the sheet's export is the share mark top right (rule six); marks-check green, 396 → 395 word-only |
+| 15 | comment fixed; **OWNER**: `SHARE.how` prints `no bridge` / `sent` / `refused: …` in English on the digits page — (a) marks like net.js (`−` never sent …) or (b) through `t()` |
+| 7 | **OWNER**: making a sheet asks no plan, PAID_FEATURES puts the whole chapter on Pro — (a) gate `shMake()` with `can('file')` or (b) making stays free and the docs say so |
+| 5 | **OTHERS** shell.js `viewReset()` does not forget `SH` |
+| 6 | **OTHERS** see the cover under "taken language" below |
+| 10 | **OTHERS** i18n `wr.s2.d` 「ファイルアプリに入ります」 is stale (it is the share sheet now) — wording is the owner's |
+| 11, 12 | not changed — row height is UNCONFIRMED (needs a fixture state with a read sheet); inline `style=` layout is not a corner/border |
+| 18, 19, 20 | **OTHERS** docs/keyboard-extension.md §14, docs/FEATURES.md § write, sound.js comment |
 
-(The ledger grows as items are fixed. An item not in it is still open.)
+### small (grammar-engine, assist, ipa, reading, notes, voice)
+
+| item | outcome |
+|---|---|
+| 1, 3, 5, 6, 7, 8, 10, 17, 18, 19, 24, 25, 29, 31, 32, 41 | fixed (notes: one 保存しました after the server answers, reading needs no sign-in, a deleted note no longer shifts the next one's save mark, dead `ntNewSpent`, the blank line; comments) |
+| 11, 20, 40 | fixed — renames `ntFound`→`ntNewest`, `pick`/`taken`→`asPick`/`asTaken`, `fromLegacy`→`fromLang` |
+| 13, 14, 15, 16 | fixed — voice's dead Play-all residue and unused arguments |
+| 21, 33 | fixed — two branches nothing reaches |
+| 26 | fixed — three IPA examples a language does not have (χ fr, ʋ ko, ɤ ko; ɤ zh as 饿) |
+| 27 | fixed — a meaning is not found inside a longer Cyrillic/Greek/accented-Latin word; grammar-engine-check watched red |
+| 28, 34, 35, 37, 38 | fixed — engine roads nothing takes and exports nobody calls |
+| 39 | half — the adapter's unused `'SOV'` default is gone; `model.wordOrder()` still reads a string, because grammar-engine-check holds that the six stored strings are read |
+| 2, 4, 9, 12 (wording), 22, 23, 30, 36 | **OWNER** — as written in the group section below |
+| 42–48 | **OTHERS** — as written below |
+
+### pwi (phases.js, import.js, words.js)
+
+| item | outcome |
+|---|---|
+| 1, 2, 3 | fixed — import on free adds no letters and renames no slot; import does not write a language it may not write; word-check watched red |
+| 4, 5, 6 | fixed — the screen before the press and the press count on one road; an overwrite at the ceiling is allowed; the ceiling is the usual `up.need` pop |
+| 13 | fixed — the migration no longer writes the read-only picture back as this phone's own; migrate-check watched red |
+| 15 | fixed — a grammar stage of one's own asks the plan on the ＋; plan-check watched red |
+| 8, 12, 16–20, 26 (comment), 27–33 | fixed — comments |
+| 35 | fixed — `genTake()` no longer patches the sheet after opening it (`openAdd(from, sp)`) |
+| 14 | **OWNER** — the stage subtitles: the owner cut four with 「↑これは説明だろ」 and the rest were left on purpose; whether 「一語で通じる言葉」… and 「1から{0}まで」 are explanation is theirs |
+| 23 | not changed — carried in docs/BACKLOG.md (`migrateGramLang()` walks LANGS). The one-word fix it names (`LANGS[id].mine`) no longer exists: ownership is `langOwnOf()`'s three states, and "not asked yet" at launch is the open question |
+| 34 | **OTHERS** — see "taken language" below |
+| 7, 9, 10, 11, 22, 24, 25, 26 (undo), 36 | **OWNER** — as written below |
+| 21 | **OTHERS** shell.js `viewReset()` does not forget `stExNew` |
+
+### wordsheet (www/wordsheet.js)
+
+| item | outcome |
+|---|---|
+| 1, 2, 3, 4, 5, 8, 9, 10 | fixed (the Save's draft holds examples and forms; delete/derive after the draft is let go; no 更新しました before the answer; a form not on the screen is not deleted by Save); word-check watched red |
+| 11 | fixed — no pen, forms ＋ or rule button in somebody else's language; word-check watched red |
+| 12 | fixed — the reading row is on every plan and sends free to the plans; word-check watched red |
+| 13 | fixed — no text inside the relation sheet's boxes; the example box's `exHint()` is **OWNER** (the file argues both ways) |
+| 15 | fixed — 「意味なし」 instead of the unpressable 「意味の追加」; a fixture face added so it can be photographed |
+| 17 | fixed — the group is a `.grpsep`, not a margin |
+| 24 | fixed — 「この活用を削除」 is the same bottom red row as 単語の削除 |
+| 25 | fixed — the two ＋ read 「追加」 |
+| 27–35, 37, 38 | fixed — comments |
+| 40 | fixed — typing rewrites the syllables and the reading row too; word-check watched red |
+| 6 | **OTHERS** — a rename Save that does not land leaves `NAV` on the new name. The cover is `keepSnap()`/`keepBack()` in shell.js holding `NAV`, which covers every save that moves the trail |
+| 22 | **OTHERS** shell.js `viewReset()` (`fmNewG`, `fmrDraft` …) |
+| 36, 41 | not changed — UNCONFIRMED (`addW.mns/pos` may be read as a generic `w`; whether the sheet ever holds `canvas.tc`) |
+| 7, 14, 16, 18, 19, 20, 23, 26, 42 | **OWNER** — as written below |
+| 21, 39 | **OTHERS** phases.js `openSlot` (a second draft builder), DATA_MODEL.md |
+
+### grammar (www/grammar.js)
+
+| item | outcome |
+|---|---|
+| 1, 2, 3, 4, 5, 8, 9, 12, 21, 25 | fixed (noun-class rename sheet; its Save in the bar; no default written as an answer; an emptied board is written empty; a rule picked in a chapter is picked there only; dead code); gramlang-check watched red |
+| 7 | fixed — rename `setOrder`/`setNpOrder`/`setGPos` → `gOrderPut`/`gNpPut`/`gPosPut` |
+| 16 | fixed — a derived noun is on the noun-class list and the form table; gramlang-check watched red |
+| 26–44 | fixed — comments (36 and 42 were already gone) |
+| 45 | fixed — a guard that cannot be false |
+| 6 | **OTHERS** shell.js `viewReset()` (`g2Lift`, `G2POL`) |
+| 11, 13, 15, 17, 18, 20, 22, 24 | **OWNER** — as written below |
+| 23, 41 (BACKLOG) | **OTHERS** |
+
+### The taken language — one hole, five doors
+
+sheetshare-6, pwi-3, pwi-34, wordsheet-11 and the import are one statement: *a
+screen that writes opens in a language that may not be written*. Each was
+closed where it was drawn, the way the code already does it (`langLocked()`),
+and `word-check` holds the word sheet and the import. **The cover for the
+press is `makeNeed()` (www/onboard.js, r122's file)**: if it answered
+`langLocked()` as well, every writing sheet would refuse in one place and the
+per-screen refusals could be deleted.
+
+(kb and home: see below; the ledger for those two groups is filled in as they land.)
 
 
 ---
