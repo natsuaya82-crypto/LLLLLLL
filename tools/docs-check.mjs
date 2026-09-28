@@ -503,9 +503,9 @@ const NOT_OURS = [
   // Capacitor's configuration and bridge, Supabase's verify parameter
   'server.hostname', 'notifyListeners', 'token_hash',
   // what drives a session (docs/SESSIONS.md, docs/LEADER.md)
-  'create_session', 'send_message', 'archive_session', 'unarchive_session', 'get_session',
+  'create_session', 'archive_session', 'unarchive_session', 'get_session',
   'create_trigger', 'fire_trigger', 'cron_expression', 'run_once_at', 'source_url', 'source_revision',
-  'add_repo', 'ListAgents', 'SendMessage', 'REQUIRES_ACTION', 'IDLE', 'SESSION_STATUS_RUNNING',
+  'add_repo', 'ListAgents', 'SendMessage', 'REQUIRES_ACTION', 'IDLE',
   'mcp__Claude_Code_Remote__',
   // Capacitor's native bridge, injected into the page (CLAUDE.md § Layout, keyboard-extension.md)
   'toNative', 'nativeCallback', 'isPluginAvailable', 'withPlugin', 'registerPlugin',

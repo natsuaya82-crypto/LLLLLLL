@@ -6300,7 +6300,7 @@ Do not pick:
   prices, and which plan buys what
   the free / paid boundary
   anything that deletes data, or how long data is kept
-  how a sync resolves a conflict
+  how two copies of one thing are put together when they disagree
   a change to behaviour a person already relies on
   wording a person will read
   any threshold or number that is a judgement rather than a measurement
@@ -6357,7 +6357,7 @@ are the leader's to name, not the session's to choose:
 - May change:            files, by name
 - May NOT change:        files another session holds, or that are simply out of scope
 - Depends on decision:   which entry in the owner decision log
-- Tests to run:
+- Check that holds it (named; watched red once, not run green):
 ```
 
 ### How the work moves
