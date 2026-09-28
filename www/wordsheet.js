@@ -227,9 +227,16 @@ function wdSeqHTML(){
      way to CHANGE it, and there is none where the spelling has no letters to
      hang one on -- spRdOK(), www/letters.js. */
   if(!spRdOK(sp)) return '';
-  return '<button class="set"' + DO('go', ["spell"]) + '>'+
+  return '<button class="set"' + DO('wdSpellGo') + '>'+
     '<span class="sl">'+esc(t('word.sp'))+'</span>'+
     '<span class="sv">'+esc(phIpa(spPh(sp)))+ICON_GO+'</span></button>';
+}
+/* The same row on every plan 「全部一緒 / 有料から無料も同じ画面でタップしたら
+   有料に行くように」 OWNER 2026-09-04: a plan that cannot change how a word
+   is read is sent to the plans on the press. */
+function wdSpellGo(){
+  if(upStop(can('snd'))) return;
+  go('spell');
 }
 /* ---- the reading of one word ---------------------------------------------
    A letter has a sound and a word is normally read by running those sounds
@@ -1658,10 +1665,10 @@ function wdFormHTML(){
        somebody drew; the Lingua keyboard puts the same letters in with the
        shapes on the keys.
 
-       What is left under the field is not input: on a paid plan, one row
-       that goes to how this word is read (wdSeqHTML) -- the only thing on
-       this screen the keyboard cannot do. */
-    (can('snd')? wdSeqHTML() : '')+
+       What is left under the field is not input: one row that goes to how
+       this word is read (wdSeqHTML) -- the only thing on this screen the
+       keyboard cannot do. */
+    wdSeqHTML()+
 
     secAdd(t('word.means'), DO('wdMnOpen'), t('word.mn.add'))+
     wdMnsHTML()+

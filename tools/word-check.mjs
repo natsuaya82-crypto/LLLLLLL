@@ -1074,6 +1074,20 @@ const R = await pg.evaluate(() => {
     out.fails.push('openEdit opened a writing sheet in somebody else\'s language: ' + lockedOn);
   start(); KEEP = {};
 
+  /* ---- the reading row is the same row on every plan --------------------
+     「全部一緒 / 有料から無料も同じ画面でタップしたら有料に行くように」 OWNER
+     2026-09-04. It was not drawn at all on free. Pressed there, it goes to the
+     plans and not to the reading. */
+  start(); KEEP = {}; planGot('free'); popOff();
+  openEdit('mos'); render();
+  const spRow = !!document.querySelector('[data-do="wdSpellGo"]');
+  wdSpellGo();
+  const spOn = here().r;
+  out.said.push('on free the word sheet draws the reading row: ' + spRow + ', and pressing it leaves you on ' + spOn);
+  if (!spRow) out.fails.push('on free the word sheet has no reading row -- a paid thing hidden rather than shown');
+  if (spOn === 'spell') out.fails.push('on free the reading row opened the reading page');
+  popOff(); planGot('pro'); start(); KEEP = {};
+
   /* ---- and what the arrow that leaves the sheet is called ---------------
      www/shell.js § pageName. The label is on the button as an aria-label, so
      it is on the screen for anybody who cannot see the arrow and nowhere else

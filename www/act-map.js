@@ -348,6 +348,7 @@ act('genSylSet', genSylSet);
 act('wRelOff', wRelOff);
 act('wdMnOpen', wdMnOpen);
 act('wdExOpen', wdExOpen);
+act('wdSpellGo', wdSpellGo);
 act('stExOpen', stExOpen);
 act('openStRules', openStRules);
 act('openStEx', openStEx);
