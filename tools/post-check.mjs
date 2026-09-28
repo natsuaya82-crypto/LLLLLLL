@@ -3267,6 +3267,28 @@ const R = await pg.evaluate(async () => {
                    JSON.stringify(PW.ln) + ') -- what was typed stays as it was');
       DRAFTS = wasDr20;
 
+      /* ...and a photograph whose letters would not go on it is NOT SENT
+         WITHOUT THEM 「送るのを止めて言う」 OWNER 2026-09-28: a picture that
+         will not load, with a letter placed on it -- nothing goes up, the
+         send says 「うまくいきませんでした」, and the composer is as it was. */
+      rows = {}; inserts = 0; POST_GONE = {};
+      const wasToast8 = toast; let said8 = '';
+      toast = (m) => { said8 = String(m); };
+      PW = pwBlank(); pwLine(puaTyped('bake').cut);
+      PW.pics = [{ u: 'data:image/jpeg;base64,AAAA', marks: [{ x: .5, y: .5, s: 60 }] }];
+      pwSend();
+      await new Promise(r => setTimeout(r, 400));
+      toast = wasToast8;
+      if (inserts || Object.keys(rows).length)
+        fails.push('a photograph whose letters would not go on it was SENT without ' +
+                   'them -- ' + inserts + ' inserts');
+      if (said8 !== t('net.failed'))
+        fails.push('a photograph whose letters would not go on it said ' +
+                   JSON.stringify(said8) + ' and should say ' + JSON.stringify(t('net.failed')));
+      if (String(PW.ln || '').indexOf('bake') < 0 || pwPics().length !== 1)
+        fails.push('a send stopped by the photograph emptied the composer');
+      PW = pwBlank();
+
       /* ---- 21. a post with no name on it is not made mine by guessing --
          migratePosts() gives the posts written before a post carried its
          writer this account's name -- they were all this phone's own. A post

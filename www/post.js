@@ -2154,7 +2154,7 @@ function pwHas(){
 /* The letters placed on the photograph are drawn INTO it first, and after
    that there is a picture and nothing else. It is the one thing here that
    cannot happen synchronously -- an image loads -- so the rest of posting is
-   below, and a bake that fails sends the photograph as it was. */
+   below, and a bake that fails stops the send (pwBake). */
 function pwSend(){
   /* Back to roman before anything is kept. What the Lingua keyboard typed is
      private use code points and they go no further than the field: a post
@@ -2190,7 +2190,14 @@ function pwSend(){
      here. It used to be written at this line, which left the OTHER road out
      of the composer -- keeping a draft -- carrying thirty seconds of base64
      into localStorage. */
-  pwBake(function(pics){ pwSendWith(ln, ink, pics, PW.vo||null); });
+  pwBake(function(pics){
+    /* A PHOTOGRAPH WHOSE LETTERS WOULD NOT GO ON IT IS NOT SENT WITHOUT THEM.
+       「送るのを止めて言う」 OWNER 2026-09-28 -- it went up bare, silently,
+       which is a post that is not the one somebody arranged. Nothing moves:
+       the composer is as it was. */
+    if(!pics){ toast(t('net.failed')); return; }
+    pwSendWith(ln, ink, pics, PW.vo||null);
+  });
 }
 /* A post that BEGINS by naming somebody is a post TO them. 「@したらもう勝手に
    ツイートがこの形式になるようにしたい」 OWNER 2026-09-07 -- the same thing
@@ -3185,13 +3192,18 @@ function pwMarkUp(){
    the same guarantee `ink` gives by the longer route.
 
    It is asynchronous because an image is, so pwSend hands it a function
-   rather than waiting: a post is not held up by a picture, and a bake that
-   fails sends the photograph as it was rather than sending nothing. */
+   rather than waiting. A picture whose letters would not go on answers null,
+   and then so does the whole bake: the post is not sent without them
+   (OWNER 2026-09-28). */
 function pwBake(done){
   var ps=pwPics(), out=[], i=0;
   function next(){
     if(i>=ps.length){ done(out); return; }
-    pwBakeOne(ps[i], function(u){ if(u) out.push(u); i++; next(); });
+    pwBakeOne(ps[i], function(u){
+      if(u===null){ done(null); return; }
+      if(u) out.push(u);
+      i++; next();
+    });
   }
   next();
 }
@@ -3226,10 +3238,10 @@ function pwBakeOne(pc, done){
       }
     }
     try{ out=c.toDataURL('image/jpeg', POST_PICQ); }
-    catch(e){ done(pc.u); return; }
+    catch(e){ done(null); return; }
     done(out);
   };
-  im.onerror=function(){ done(pc.u); };
+  im.onerror=function(){ done(null); };
   im.src=pc.u;
 }
 

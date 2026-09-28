@@ -1960,6 +1960,13 @@ export function halfDone(){
         PW = pwBlank(); openPost('new'); pwSetLn('kano tir');
         FORM.html = pwHTML(); toast(t('post.send.no'));
         const h = vForm(); PW = pwBlank(); return h; }],
+    /* and a photograph whose letters would not go on it: the send stops and
+       says so (www/post.js § pwBake, OWNER 2026-09-28) */
+    ['the composer, after a photograph\u2019s letters would not go on', () => {
+        PW = pwBlank(); openPost('new'); pwSetLn('kano tir');
+        pwPics().push({ u: POSTS[0].pic, marks: [] });
+        FORM.html = pwHTML(); toast(t('net.failed'));
+        const h = vForm(); PW = pwBlank(); return h; }],
     /* and with the meaning switched off: the switch alone at the end of the
        meaning's row (www/post.js § pwHTML, r97) */
     ['the composer, replying, the meaning off', () => {
