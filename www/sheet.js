@@ -1188,8 +1188,13 @@ function shMake(){
    anything and does not point at a language. It names itself in its own
    strip. */
 function shFileName(){
-  var n = String(langName || '').replace(/[^\w \-]/g, '').replace(/\s+/g, ' ');
-  return (n ? n.slice(0, 40) + ' ' : '') + 'sheet';
+  /* Only what a file name cannot hold comes out -- a `/` would be a folder
+     in LinguaShare.swift's path -- so 日本語 or Ελληνικά stays itself. The
+     word after it is the screen's own name for a sheet, in the interface's
+     language (CLAUDE.md rule 2). */
+  var n = String(langName || '').replace(/[\/\\:*?"<>|\u0000-\u001f]/g, '')
+    .replace(/\s+/g, ' ').replace(/^[\s.]+|\s+$/g, '');
+  return (n ? n.slice(0, 40) + ' ' : '') + t('wr.title');
 }
 
 /* ---- reading one back -------------------------------------------------- */
