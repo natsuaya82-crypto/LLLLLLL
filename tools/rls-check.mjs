@@ -880,6 +880,12 @@ const CASES = [
     `update post set quote_of='${P}' where author='${BD}' and quote_of='${BKP}'`],
   ['BD likes BK\u2019s post',                 'ok',     BD, 0,
     `insert into react(post,actor,kind) values ('${BKP}','${BD}','like')`],
+  /* 「話題」 is ordered by this (post_seen.buzz, OWNER 2026-09-28): the likes
+     and the reposts together, and on no row anything else. */
+  ['a post\u2019s 話題 is its likes and reposts', 'ok', B, 0,
+    `select 1 from post_seen where id='${BKP}' and buzz = likes + boosts and buzz > 0`],
+  ['and no row says otherwise',               'denied', B, 0,
+    `select 1 from post_seen where buzz is distinct from likes + boosts`],
   ['BD passes somebody else\u2019s post on',  'ok',     BD, 0,
     `insert into react(post,actor,kind) values ('${PA}','${BD}','boost')`],
   ['BD follows BK',                           'ok',     BD, 0,

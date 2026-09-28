@@ -1118,7 +1118,7 @@ function snsWordMore(now){
   if(!ans || ans.end) return;
   ps=ans.posts||[]; q=ans.q;
   for(i=0;i<ps.length;i++) if(ps[i].at && (!low || ps[i].at<low)) low=ps[i].at;
-  if(!low) return;
+  if(!ans.buzz && !low) return;
   snsMoreAsk=true;
   netFindPosts(q, function(more){
     snsMoreAsk=false;
@@ -1127,7 +1127,8 @@ function snsWordMore(now){
     postTake(more);
     ans.posts=ans.posts.concat(more);
     render();
-  }, function(d, s, m){ snsMoreAsk=false; netPop(d, s, m); }, new Date(low).toISOString());
+  }, function(d, s, m){ snsMoreAsk=false; netPop(d, s, m); },
+     ans.buzz? ps.length : new Date(low).toISOString(), ans.buzz);
 }
 /* A person's page carries on back from the oldest post it was handed, and a
    thread down from the newest reply -- MORE_AT, § askReplies. */
@@ -1998,11 +1999,11 @@ function snsClearQ(){ snsQ=''; snsHits=null; render(); }
    back to the screen is one answer and not two arriving at different times.
 
    AND THIS IS WHERE THE ORDER IS ASKED FOR. `snsSort` is 'new' or 'buzz',
-   and netFindPosts() does not take it yet -- www/net.js is another session's
-   and the ordering lives there, beside the numbers that make it. When it
-   takes one, it is the call below and nothing else on this screen: what
-   comes back is drawn in the order it comes back in, which is already true.
-   Nothing here scores a post or re-arranges an answer, deliberately. */
+   and it is handed to netFindPosts() below and to nothing else on this
+   screen: what comes back is drawn in the order it comes back in. The
+   answer carries which order it was (`buzz`), so its next page is asked the
+   same way. Nothing here scores a post or re-arranges an answer,
+   deliberately. */
 function snsFind(q, done){
   q=String(q||'').trim();
   if(!q){ done({q:q, who:[], posts:[]}); return; }
@@ -2022,10 +2023,10 @@ function snsFind(q, done){
      the other brought rows is an answer, and the rows are it -- 「0 件」 and
      「訊けなかった」 stay two different screens, which is what snsAnsHTML()
      reads `bad` for. */
-  var who=null, posts=null, why=null, name=netAtOff(q);
+  var who=null, posts=null, why=null, name=netAtOff(q), buzz=(snsSortNow()==='buzz');
   function fire(){
     if(who===null || posts===null) return;
-    done({q:q, who:who, posts:posts,
+    done({q:q, who:who, posts:posts, buzz:buzz,
           bad:(!who.length && !posts.length && why)? why : null});
   }
   /* Both ask the SERVER. They used to walk this phone's own POSTS, which
@@ -2066,7 +2067,7 @@ function snsFind(q, done){
   else netFindWho(name, function(ws){ who=ws||[]; fire(); },
                         function(d, st){ who=[]; why=why||netWhy(d, st); fire(); });
   netFindPosts(q, function(ps){ posts=ps||[]; fire(); },
-                  function(d, st){ posts=[]; why=why||netWhy(d, st); fire(); });
+                  function(d, st){ posts=[]; why=why||netWhy(d, st); fire(); }, null, buzz);
   /* AND A TAG NEEDS NOTHING OF ITS OWN, which is the whole of what changed.
      「しかも何で検索が今日しか出ないの？ありえないだろ」 OWNER 2026-09-04.
 

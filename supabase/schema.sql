@@ -2415,8 +2415,7 @@ create view post_seen as
          --
          -- Counted here rather than by the phone because a phone can only
          -- count the reactions it was handed, and it is handed none.
-         (select count(*) from react r
-           where r.post = p.id and r.kind = 'like')  as likes,
+         n.likes,
          -- AND A QUOTE IS A REPOST. 「リツイートと同じ数の数え方で足して
          -- っていい」 OWNER 2026-09-26: the number beside the repost mark is
          -- the reposts and the quotes together, and no number of quotes on
@@ -2426,11 +2425,12 @@ create view post_seen as
          -- asked of `post` as the replies are just below, on the same terms:
          -- one taken down or kept to its author is not a repost anybody can
          -- open. Who reposted (react_seen) is still the `react` rows alone.
-         (select count(*) from react r
-           where r.post = p.id and r.kind = 'boost')
-       + (select count(*) from post q
-           where q.quote_of = p.id and q.hidden_at is null
-             and not post_private(q.body)) as boosts,
+         n.boosts,
+         -- AND WHAT 「話題」 IS ORDERED BY 「検索の話題は本当に並べる」 OWNER
+         -- 2026-09-28: the likes and the reposts together, the two numbers
+         -- drawn under the post. A column because the search asks for its
+         -- order here (`order=buzz.desc`) and an order is a column to PostgREST.
+         n.likes + n.boosts as buzz,
          -- A reply is a post, so this is the same question asked of the same
          -- table. Taken-down replies are not counted: a count that includes
          -- what nobody can open is a number with nothing behind it.
@@ -2452,6 +2452,17 @@ create view post_seen as
          -- out ask for it, and their own page does not.
          mute_hides(p.author) as muted
     from post p left join profile a on a.id = p.author
+    -- the two counts, each counted once, so `buzz` above is their sum and not
+    -- a third copy of them
+    cross join lateral (
+      select (select count(*) from react r
+               where r.post = p.id and r.kind = 'like') as likes,
+             (select count(*) from react r
+               where r.post = p.id and r.kind = 'boost')
+           + (select count(*) from post q
+               where q.quote_of = p.id and q.hidden_at is null
+                 and not post_private(q.body)) as boosts
+    ) n
    -- and a post kept to yourself is not a row for anybody else (post_private),
    -- and one by somebody the reader blocked is not a row for them (block_hides).
    where (not post_private(p.body) or p.author = auth.uid())

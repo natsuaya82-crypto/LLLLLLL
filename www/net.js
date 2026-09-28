@@ -3855,7 +3855,7 @@ function netPostsBy(uid, ok, bad, more){
       ok(out);
     }, bad);
 }
-function netFindPosts(q, ok, bad, more){
+function netFindPosts(q, ok, bad, more, buzz){
   var like=netLike(q),
       /* AND THE FRAME, WHICH IS WHERE A TAG IS NOW.
          「#はべつで」 OWNER 2026-09-15 -- a tag written today is in
@@ -3875,15 +3875,21 @@ function netFindPosts(q, ok, bad, more){
          what the mark is. Somebody who typed no `#` is unaffected -- there
          is nothing to take off. */
       tlike=netLike(tagBare(q));
-  /* `more` is the `at` of the last post already held. Keyset and not an
-     offset for the reason netFeed()'s is: posts are written while somebody
-     is reading, and an offset walked over a list that has grown hands back
-     one they have already read, or steps over one they have not. */
+  /* NEWEST FIRST, `more` is the `at` of the last post already held. Keyset
+     and not an offset for the reason netFeed()'s is: posts are written while
+     somebody is reading, and an offset walked over a list that has grown
+     hands back one they have already read, or steps over one they have not.
+
+     「話題」 (`buzz`) is ordered by the likes and the reposts together
+     (post_seen.buzz) 「検索の話題は本当に並べる」 OWNER 2026-09-28, and a
+     count is not a place to carry on from -- it moves under the reader -- so
+     there `more` is how many are already held. */
   netGet(NET_POST_SEL+
          '&or=(body->>ln.ilike.'+like+',body->>mn.ilike.'+like+
          ',body->>lname.ilike.'+like+',body->>tags.ilike.'+tlike+')'+NET_UNMUTED+
-         '&order=created_at.desc'+
-         (more? '&created_at=lt.'+encodeURIComponent(String(more)) : '')+
+         (buzz? '&order=buzz.desc,created_at.desc'+(more? '&offset='+(Number(more)||0) : '')
+              : '&order=created_at.desc'+
+                (more? '&created_at=lt.'+encodeURIComponent(String(more)) : ''))+
          '&limit='+NET_PAGE,
     function(d){
       var out=[], i;
