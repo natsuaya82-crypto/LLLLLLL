@@ -2330,6 +2330,7 @@ const R = await pg.evaluate(async () => {
      wipeHere() が端末を通り抜ける前。そこでアプリが閉じられた場合が
      www/boot.js の bootSession() が読む道で、要求が届かなかった場合ではない。 */
   srv49(() => 200);
+  const before48 = Object.keys(LSL).filter(k => slTouched(k));
   wipeAllGo();
   await settle49();
   await settle49();
@@ -2338,6 +2339,18 @@ const R = await pg.evaluate(async () => {
   if (slRd(langKeyOf('Ld47','words')))
     no('48: 続きの削除で、その単語が消えていない');
   if (netSignedIn()) no('48: 消え切ったのにセッションが残っている');
+  /* 48b. 消した後の電話は何も作らない ── 作ると、次にサインインした人の
+     アカウントへ名前の無い空の言語として上がる（rule-audit-2026-09-27-core T4）。 */
+  {
+    const held48 = [];
+    for (const k in LSL)
+      if (Object.prototype.hasOwnProperty.call(LSL, k) && slTouched(k) &&
+          before48.indexOf(k) < 0) held48.push(k);
+    if (langId || held48.length)
+      no('48b: **消した後の電話が誰のでもない言語を作り、人の書き込みとして印を付けた** ── langId '
+       + JSON.stringify(langId) + '、印 ' + JSON.stringify(held48));
+    say('48b: アカウントを消した電話は言語を作らず、何も上げる印を持たない');
+  }
   say('48: 途中で切れた削除は、次に開いたときサーバが答えて消し切られる');
 
   /* 49. 消された側の端末は、画面ごと出される。 */

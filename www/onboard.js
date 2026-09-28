@@ -97,7 +97,10 @@ function wsKind(id){
    asked for: a word is made of sounds and written in letters, and by the end
    of this there are both, so the dictionary is somewhere to go rather than
    somewhere to be sent. */
-var ob={step:0, name:'', mode:'draw', pick:'', strokes:null, ch:'', lid:''};
+/* The walk with nothing done in it. One place: deleting an account puts the
+   walk back to this too (www/settings.js § wipeHere). */
+function obBlank(){ return {step:0, name:'', mode:'draw', pick:'', lid:''}; }
+var ob=obBlank();
 /* How many steps there are, in one place: the dots count them and shot.mjs
    photographs them. It said 5 for as long as there were four, because nothing
    read it -- and dead-check, which watched functions, could not see a number

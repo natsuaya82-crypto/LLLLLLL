@@ -881,7 +881,7 @@ function wipeHere(uid){
      Writing 「and if nobody else is here, wipe the lot」 was a first draft and
      it is two behaviours where the rule has one. */
   var wipeUid=String(uid || netUid());
-  var wipeIds=lsWipeAcct(wipeUid);
+  lsWipeAcct(wipeUid);
   /* AND WHAT IS ON THE PHONE OUTSIDE ITS STORAGE, which is files an earlier
      version wrote: a voice a draft or an unsent post of this account named
      (www/rec.js § voSweep), and a sheet left in the middle of a hand-over
@@ -894,60 +894,32 @@ function wipeHere(uid){
      measured). */
   voSweep();
   shDropOld();
+  /* NOTHING IS MADE HERE. This minted a fresh language (langFirst), topped
+     it up and saved it -- as a person's writes, with nobody signed in -- so
+     the next person to sign in on this phone had it put up under THEIR
+     account at the door: a nameless empty `language` row and eight slices
+     (measured, rule-audit-2026-09-27-core T4). The phone is at the door now,
+     and signing in is what opens that account's language or makes one with
+     its name on it (langForAcct). So the globals are emptied, and that is all:
+     LANG_IO (www/core.js) is the one list of them, read here through
+     langLoad() with no language open. */
   langId='';
-  langFirst();
-  /* AND ALL TEN, NOT FIVE. This named five of them by hand, so `KB` and `WLD`
-     came through holding the deleted account's keyboard and their land -- and
-     langFirst() a line above has just minted a new language, so the saves at
-     the foot of this function wrote both of them into it. Written to disk
-     under the next language, not merely left in memory.
-     「アカウント削除で残るものねえ」 OWNER 2026-08-27.
-     LANG_IO in www/core.js is the one list now. */
   langLoad();
-  /* Whom this phone belonged to, what it was carrying, what had been written
-     and not sent, and the fields of the settings that were theirs -- the
-     searches they starred, how far down their notices they had read -- went
-     with lsWipeAcct() above: they are the account's container (www/core.js
-     § ACCT), and emptying it is one call there rather than a list of them
-     here, which is how `recent` was left standing once. */
-  /* THE PLAN IS NOT ON THIS PHONE and there is nothing here to set back.
-     It was `SET.plan` and `SET.planWas` in `lingua.set`; what an account pays
-     is `verify-plan`'s answer, held in memory (www/core.js § PLAN), and
-     netOut() a few lines below forgets it with the session. */
+  /* What the account paid, what it held and wrote went with lsWipeAcct()
+     above and with the session (netEndMe() signed out before this ran, and
+     netOut() is the one place a session ends and draws). */
   /* AND IT OPENS ON THE DOOR, not on the walk. 「アカウント削除した後
-     オンボーディングから始まるのはなぜ？」 OWNER 2026-09-03.
-
-     setDefaults() answers `done` false, which is what a phone out of the box
-     says, and appIs() reads that as 「this is the onboarding」. It is not: the
-     person is standing here, they have just deleted an account, and what they
-     are going to do next is sign in as somebody else. Asking them to draw an
-     alphabet first is asking them to make a language with no account to make
-     it for -- 「言語はアカウントないと作れないです」 -- which the door is the
-     answer to.
-
-     A phone with nothing on it still opens on the walk; that is a different
-     phone and tools/open-check.mjs § 1 holds it. This is the one that has
-     been through it. */
+     オンボーディングから始まるのはなぜ？」 OWNER 2026-09-03 -- the person has
+     just deleted an account, and what they are going to do next is sign in as
+     somebody else. A phone with nothing on it still opens on the walk; that
+     is a different phone and tools/open-check.mjs § 1 holds it. */
   SET.walked=true;
-  netOut();
-  /* and the twenty-eight slots, for a language that is empty now and on a
-     plan that adds no letters of its own */
-  ltStart();
   SFONT={built:false, sig:null};
   var css=document.getElementById('sfontcss');
   if(css && css.parentNode) css.parentNode.removeChild(css);
-  langSaveAll();
-  /* NO COPIES IN DOCUMENTS TO TAKE. This dropped the backup files of the
-     languages going -- and only those, which is what 2026-09-03 cost, when a
-     second account leaving carried off the first one's files. There are no
-     files now (www/backup.js), so this account's things are the storage keys
-     lsWipeAcct() counted and the rows account_delete() takes on the server,
-     and there is no third place. `wipeIds` is what lsWipeAcct() returned and
-     nothing reads it any more. */
-  /* and where you were standing is nowhere now */
   viewReset();
-  ob={step:0, name:'', mode:'draw', pick:'', strokes:null, ch:'', lid:''};
-  GE=null; route='profile'; RENDERED=null;
+  ob=obBlank();
+  GE=null; RENDERED=null;
   render();
 }
 
