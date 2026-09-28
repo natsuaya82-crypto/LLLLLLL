@@ -2210,7 +2210,7 @@ function vOb(){
      who signs out after finishing has ob.step sitting on the name or the
      tour, and neither of those is a screen to show somebody with no account.
      appIs() in www/shell.js is where that is decided. */
-  var s=ob.step, door=appIs()==='door' || !!obPending() || s===OB_IN;
+  var s=ob.step, door=obAtDoor();
   var head='<div class="obhead">'+
     (obCanBack()? '<button class="obback"' + DO('obBack') + ' aria-label="'+esc(t('ob.back'))+'">'+OB_CHEV+'</button>'
                 : '<span class="obback ph"></span>')+
