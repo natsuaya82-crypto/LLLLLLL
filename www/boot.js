@@ -25,10 +25,9 @@ installScriptFont();
 swMount();
 /* The session, resumed. The token in hand lasts an hour, so a launch the next
    morning has one that is already dead; this trades the refresh token for a
-   fresh pair before anything asks the server for something. It is fired and
-   not waited for -- the app opens on what is on the phone, which is all of
-   the making side, and the timeline reads with the publishable key whether
-   this comes back or not. */
+   fresh pair before anything asks the server for something. Nothing is read
+   until it comes back: with no session there is only the door (CLAUDE.md
+   § Online), and with no signal netPop() says so. */
 function bootSession(){
   render();
   /* And what this ACCOUNT has paid for, which used to be a fact about the
@@ -110,12 +109,6 @@ render();
    and the DELETE REVIEW in docs/CHANGELOG.md 2026-09-25. */
 shDropOld();
 voSweep();
-/* 「プランが終了しました」 STOOD HERE and is not said any more. capLapse()
-   compared the plan against a word in `lingua.set`, and there is no word on
-   this phone: what an account pays is `verify-plan`'s answer, in memory
-   (www/core.js § PLAN). The `plan` table carries no previous plan, so
-   nothing can say 「it ended」 -- www/core.js § 「プランが終了しました」 and
-   docs/scope/r31-server.md § オーナーへ. */
 /* AND THE SPLASH COMES DOWN WHEN THE SCREEN UNDER IT IS WHOLE.
    「押してから読み込みが終わるまで前の画面のままで、揃った瞬間に出る」 OWNER
    2026-09-07.

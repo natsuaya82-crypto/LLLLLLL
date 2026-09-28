@@ -363,9 +363,9 @@ function backAnswer(keep){
    ONE MECHANISM, AND IT IS NOT WRITTEN PER SCREEN. A screen that had to
    remember to ask on the way out is a screen that will one day forget, and a
    screen that forgets throws somebody's words away in silence -- which is the
-   worst shape this could take. So the asking is in back(), which is the one
-   road off a screen and the road the left-edge swipe already takes (swEnd
-   below ends in back()), and the button is in navTop(), which is the one bar
+   worst shape this could take. So the asking is in navLand() (keepAsked),
+   which is the one door every road off a screen goes through -- the arrow,
+   the left-edge swipe, a tab -- and the button is in navTop(), which is the one bar
    every screen has.
 
    What a screen supplies is the two things only it can know: what its fields
@@ -438,11 +438,11 @@ function keepKey(){ return keepKeyOf(here().r, here().a); }
    over a screen that may have been rebuilt around it. */
 /* `landed` is for the one screen that has something to DO once the save is
    up, and it is not a second answer to where a save ends -- keepSave() below
-   is still the only one, and 「保存しました」 is keepSave()'s one line for all
-   nine. The letter being drawn plays its own sound as it is put away, which
+   is still the only one, and 「保存しました」 is keepSave()'s one line for every
+   screen. The letter being drawn plays its own sound as it is put away, which
    may not happen while the send is still out:
-   「通信エラーなら進むわけねえだろ全部」. It is optional; eight of the nine
-   screens hand nothing. */
+   「通信エラーなら進むわけねえだろ全部」. It is optional; most screens hand
+   nothing. */
 /* AND `drop` IS WHAT ELSE 「いいえ」 FORGETS. What was pressed on a screen with
    a Save is its draft and is never written before the Save (§ keepDrafting
    below), so 「いいえ」 reading the language back is the whole of putting it
@@ -682,14 +682,12 @@ function keepSave(key, done, to){
        じゃないの？」 OWNER 2026-09-06.
        What it never did was ask whether the server heard -- the copy went up
        on a 1.2-second burst timer (deleted 2026-09-25), behind a person who
-       had already been told 「saved」 and sent back a screen. Nine screens
-       register a buffer here, so that was nine buttons lying in the same
-       way, and it is one road rather than nine: this function is the only
-       caller of `b.save` there is.
+       had already been told 「saved」 and sent back a screen. Every screen
+       with a Save registers a buffer here, and it is one road: this function
+       is the only caller of `b.save` there is.
 
        netSaveNow() (www/net.js) is the one road up -- the send happens on
-       the press and answers whether it landed. It is not reached before net.js is loaded, so the check is
-       for the order of the script tags in www/index.html and nothing else.
+       the press and answers whether it landed.
 
        WHAT IS TYPED IS NOT TAKEN BACK when it does not land. The buffer is
        left exactly as it is, so the fields still hold what the person wrote
@@ -854,8 +852,8 @@ function navDoPaint(name, on){
      a state of the button and is not this function's to remove. */
   if(on) b.classList.add('navon'); else b.classList.remove('navon');
 }
-/* The save in the corner of the bar. It writes and stays -- leaving is what
-   the arrow beside it is for.
+/* The save in the corner of the bar. It writes, and a save that landed goes
+   back one page (「保存したら一個前のページ」 OWNER 2026-09-05).
 
    IT IS THERE FROM THE MOMENT THE SCREEN IS, and grey until something is
    changed. It used to APPEAR on the first keystroke and go again after a
@@ -1066,7 +1064,7 @@ function appIs(){
      2026-08-26、「アカウント削除した後オンボーディングから始まるのはなぜ？」
      OWNER 2026-09-03）. It was `SET.done`, which also answered 「has this
      ACCOUNT been through」 -- that half is the `profile` row now, three lines
-     down. This line is the only place `walked` is read. */
+     down. */
   if(!SET.walked) return 'ob';
   /* THE DOOR, OPENED FROM SOMEWHERE INSIDE THE APP. obDoor() used to take the
      flag above away to get here, so the lie and the note saying it was a lie
@@ -1352,8 +1350,8 @@ function navTop(count, right){
        said by its colour, and a screen that has not been touched says so
        rather than saying nothing at all.
 
-       It is here rather than in the nine screens for the same reason the
-       question is in back(): one place, so the day a tenth screen takes
+       It is here rather than in each screen for the same reason the
+       question is in navLand(): one place, so the day a tenth screen takes
        typing it is already in the bar. A screen that has NOT registered a
        buffer has no fields and gets nothing. */
     (right||'')+
@@ -1921,8 +1919,7 @@ document.addEventListener('click',       slideEat,   true);
    has to be mostly horizontal AND start within a thumb's width of the edge.
 
    pointer* and not touch*: this app is one webview and pointer events are
-   what it has. Passive, because it never prevents the default -- a gesture
-   that cancels a scroll it has decided against is worse than no gesture. */
+   what it has. */
 var swX=0, swY=0, swOn=false, swWay=0;
 function swStart(e){
   swOn=false;
@@ -1965,9 +1962,9 @@ function navKeep(r, html){ NAVBK=(r && html)? {r:String(r), html:html} : null; }
 function navBackTo(){ return (NAV.length>1)? String(NAV[NAV.length-2].r||'') : ''; }
 /* The screen under the one being dragged, or nothing.
 
-   Nothing is REBUILT here and that is the point: calling a view again runs it
-   -- vNotif() marks the notices read, three screens pull -- so an abandoned
-   swipe would have done all of it. render() keeps what it replaces. */
+   Nothing is REBUILT here and that is the point: calling a view again runs
+   it, and an abandoned swipe would have run it for nothing. render() keeps
+   what it replaces. */
 function swPrev(){
   var to=navBackTo();
   return (NAVBK && to && NAVBK.r===to)? NAVBK.html : '';
@@ -2306,8 +2303,6 @@ function toast(m){
   var el=document.getElementById('toast'); el.textContent=m; el.classList.add('on');
   clearTimeout(tt); tt=setTimeout(function(){el.classList.remove('on');},1900);
 }
-/* Changing the screen is all this does. Where it lands is render()'s to say,
-   and it says the top, because the screen is a different one. */
 /* ---- A part of speech is stored as a key ------------------------------
    What is saved on a word is one of n / v / adj / x. "noun" and "名詞" are
    only the label that key wears in whichever language is on screen. Same
