@@ -819,7 +819,6 @@ defLang('es', (function(){
       "notes.empty.s"    : "Todavía ninguna",
       "toast.note.gone"  : "Nota eliminada",
       /* the conversation */
-      "words.addmn"      : "Añadir un significado",
       "set.title"        : "Ajustes",
       "set.look"         : "Pantalla",
       "theme.system"     : "Sistema",

@@ -775,7 +775,6 @@ defLang('ja', (function(){
       'gram.pos.after.n' : '名詞の後',
       'gram.pos.before.v' : '動詞の前',
       'gram.pos.after.v' : '動詞の後',
-      'words.addmn'     : '意味の追加',
       'set.title'       : '設定',
       'set.look'        : "画面表示",
       'theme.system'    : 'システム',

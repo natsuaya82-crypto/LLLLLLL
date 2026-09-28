@@ -769,7 +769,6 @@ defLang('en', (function(){
       'gram.pos.after.v' : 'After the verb',
       /* rules */
       /* sentences */
-      'words.addmn'     : 'Add a meaning',
       /* make */
       /* settings */
       'set.title'       : "Settings",

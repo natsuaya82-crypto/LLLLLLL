@@ -848,7 +848,6 @@ defLang('de', (function(){
       "toast.note.gone"  : "Notiz gelöscht",
       /* the conversation */
       /* rules */
-      "words.addmn"      : "Bedeutung hinzufügen",
       "set.title"        : "Einstellungen",
       "set.look"         : "Anzeige",
       "theme.system"     : "System",

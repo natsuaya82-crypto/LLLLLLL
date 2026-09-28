@@ -871,7 +871,6 @@ defLang('ru', (function(){
       "gram.pos.after.n"  : "После существительного",
       "gram.pos.before.v" : "Перед глаголом",
       "gram.pos.after.v"  : "После глагола",
-      "words.addmn"       : "Добавить значение",
       "set.title"         : "Настройки",
       "set.look"          : "Экран",
       "theme.system"      : "Системная",

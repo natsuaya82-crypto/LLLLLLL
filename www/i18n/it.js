@@ -859,7 +859,6 @@ defLang('it', (function(){
       "gram.pos.after.n" : "Dopo il nome",
       "gram.pos.before.v" : "Prima del verbo",
       "gram.pos.after.v" : "Dopo il verbo",
-      "words.addmn"      : "Aggiungere un significato",
       "set.title"        : "Impostazioni",
       "set.look"         : "Schermo",
       "theme.system"     : "Sistema",

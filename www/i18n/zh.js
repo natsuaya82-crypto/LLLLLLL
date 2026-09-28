@@ -865,7 +865,6 @@ defLang('zh', (function(){
       "gram.pos.before.v" : "动词前",
       "gram.pos.after.v" : "动词后",
       /* rules */
-      "words.addmn"      : "添加意思",
       "set.title"        : "设置",
       "set.look"         : "显示",
       "theme.system"     : "系统",

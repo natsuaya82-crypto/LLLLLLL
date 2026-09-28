@@ -866,7 +866,6 @@ defLang('pt', (function(){
       "notes.empty.s"    : "Ainda nenhuma",
       "toast.note.gone"  : "Nota apagada",
       /* the conversation */
-      "words.addmn"      : "Acrescentar um significado",
       "set.title"        : "Ajustes",
       "set.look"         : "Ecrã",
       "theme.system"     : "Sistema",

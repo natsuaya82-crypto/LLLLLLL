@@ -1035,7 +1035,6 @@ defLang('ko', (function(){
       "gram.pos.after.n" : "명사 뒤",
       "gram.pos.before.v" : "동사 앞",
       "gram.pos.after.v" : "동사 뒤",
-      "words.addmn"      : "뜻 추가",
       "set.title"        : "설정",
       "set.look"         : "화면 표시",
       "theme.system"     : "시스템",

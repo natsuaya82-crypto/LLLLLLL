@@ -3330,6 +3330,13 @@ export function halfDone(){
                                mns:['a bank of a river','an edge'], pos:'n', at:12 }]);
         window.route = 'words'; NAV = [{ r:'words' }];
         const h = vWords(); WORDS = keep; return h; }],
+    /* and that word opened: the meanings section of a word with none says
+       the state (sent.nomean), which no word the fixture holds reaches */
+    ['a word with no meaning, opened', () => {
+        const keep = WORDS;
+        WORDS = keep.concat([{ hw:'vel', ph:['v','e','l'], mns:[], pos:'n', at:11 }]);
+        openWord('vel');
+        const h = vForm(); WORDS = keep; return h; }],
     /* ---- the dictionary as a list you CHOOSE from -----------------------
        Three faces, because the buttons differ on every one of them and none of
        the three is reachable from the list at rest: nothing here is on a screen

@@ -533,7 +533,7 @@ function vRelate(){
                                                  : DO('wRelToggle', [hw, k, x.hw])) + '>'+
             '<div class="hwrow"><span class="hw">'+sfontHTML(wOut(x.hw))+'</span>'+
             '<span class="pos">'+esc(posLabel(x.pos))+'</span></div>'+
-            '<div class="mn">'+esc(wMns(x)[0]||t('words.addmn'))+'</div></button>'+
+            '<div class="mn">'+esc(wMns(x)[0]||t('sent.nomean'))+'</div></button>'+
             '<span class="ltck">'+(has? ICON_TICK : '')+'</span></div>';
         }).join('')
       : '<div class="note">'+t('words.empty')+'</div>')+
@@ -1967,7 +1967,7 @@ function wdViewHTML(){
           return '<div class="mnrow"><span class="mnv">'+
             (mns.length>1? '<span class="sn">'+(i+1)+'</span>' : '')+esc(m)+'</span></div>';
         }).join('')+'</div>'
-      : '<div class="note">'+esc(t('words.addmn'))+'</div>')+
+      : '<div class="note">'+esc(t('sent.nomean'))+'</div>')+
     wfmSecHTML(w)+
     wdSecHTML(t('word.family'), wdFamHTML(w)+etyDoorHTML(w)+fmrTodoHTML(w))+
     wdSecHTML(t('word.syn'), wdRelsHTML(w,'syn'))+

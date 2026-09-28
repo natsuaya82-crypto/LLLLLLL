@@ -907,7 +907,6 @@ defLang('fr', (function(){
       "gram.pos.after.n" : "Après le nom",
       "gram.pos.before.v" : "Avant le verbe",
       "gram.pos.after.v" : "Après le verbe",
-      "words.addmn"      : "Ajouter un sens",
       "set.title"        : "Réglages",
       "set.look"         : "Affichage",
       "theme.system"     : "Système",
