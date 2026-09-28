@@ -2025,7 +2025,7 @@ function obFinish(){
      moment the language goes up and for the same reason: the door is the last
      step, so it is the first time there is anywhere to send them. */
   if(typeof netPrefsPut==='function') netPrefsPut();
-  route='profile'; RENDERED=null; render(); window.scrollTo(0,0);
+  goTab('profile');
 }
 
 /* How many strokes are actually on the canvas. GE.st carries the one being
