@@ -819,22 +819,14 @@ function wipeAll(){
    Nothing is asked about the session here. netDropMe() refuses without one and
    says so, which is the same answer in the one place that can give it.
 
-   AND THE MARK GOES ON AFTER THE SERVER HAS ANSWERED, NOT BEFORE THE ASK.
-   「通信エラーなら進むわけねえだろ全部」 OWNER 2026-09-05. It stood above this
-   call, so pressing 削除 with no signal wrote `"end":1` into `lingua.sess`
-   while all three requests fell over -- the phone said the account was on its
-   way out and the server had never been told. **Nothing is written until the
-   row is gone**, which is measured rather than read: pressed with netSend
-   failing, the session came back carrying `end` and 25 keys untouched.
-
-   It still covers the gap it was written for. netEndMe() answers only once
-   `account_delete()` has run, so the mark now sits between the row going and
-   wipeHere() finishing -- a phone closed in THAT moment comes back and
-   finishes at www/boot.js § bootSession(). A phone closed while the request
-   was in the air has nothing to finish: the account is still there. */
+   NOTHING IS WRITTEN ON THE PHONE BEFORE THE SERVER HAS ANSWERED.
+   「通信エラーなら進むわけねえだろ全部」 OWNER 2026-09-05. The answer and
+   wipeHere() are one turn of the same callback, so there is no moment between
+   the row going and the phone emptying for a mark to cover, and there is no
+   mark. */
 function wipeAllGo(){
   var uid=netUid();
-  netDropMe(function(){ netEnding(); wipeHere(uid); }, wipeStopped);
+  netDropMe(function(){ wipeHere(uid); }, wipeStopped);
 }
 /* It did not go. Nothing on this phone has been touched, nothing was written
    down, and the account is still there -- which is what 「削除し切ってないと

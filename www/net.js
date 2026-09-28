@@ -884,32 +884,6 @@ function netOut(){
   OBM.mode='in'; OBM.msg=''; OBM.busy=false;
   render();
 }
-/* AN ACCOUNT ON ITS WAY OUT, WRITTEN ON THE SESSION.
-   「そもそもこのアプリはオンラインが基本なんだからね？SNSなんだから、削除し
-   切ってないと消えない。」 OWNER 2026-09-03.
-
-   Deleting an account is one thing that happens in two places -- the server's
-   row and this phone's copy -- and the server is the record, so the copy goes
-   only after the row has. **This is written after the row is gone, never
-   before the ask** 「通信エラーなら進むわけねえだろ全部」 OWNER 2026-09-05: it
-   is what stands between `account_delete()` answering and wipeHere() getting
-   through the phone, so an app closed in that moment comes back and finishes.
-   A request that fell over leaves nothing here at all -- the account is still
-   there and there is nothing to finish. www/settings.js § wipeAllGo() is the
-   press and www/boot.js § bootSession() is the launch.
-
-   It is a field of `lingua.sess` rather than a key of its own, and that is
-   the whole answer to 「which account is this」 (CLAUDE.md rule 22): the mark
-   is about the account this phone is signed in as, it is worth nothing
-   without the token that proves who that is, and it goes when the token does.
-   A key beside the session would be a mark that could outlive the account it
-   names and be read against the next one. */
-function netEnding(){
-  if(!SESS) return false;
-  SESS.end=1; netSave();
-  return true;
-}
-function netEnded(){ return !!(SESS && SESS.end); }
 /* The token in hand lasts an hour. This is what makes the next launch silent:
    nothing is typed, nothing is remembered by the person, and the thing on the
    phone that does it can be taken away from the server's side. */
