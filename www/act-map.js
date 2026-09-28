@@ -164,8 +164,8 @@ act('obName', obName);
 act('obNameLater', obNameLater);
 /* obFinish is not here any more. It was the door's "later" button, and the
    door has no way past it since the anonymous account went
-   (OWNER 2026-08-26). The function is alive and called from three places in
-   onboard.js; what is gone is any screen naming it. */
+   (OWNER 2026-08-26). The function is alive and called from onboard.js
+   (obWhoGo); what is gone is any screen naming it. */
 act('obPickScript', obPickScript);
 act('obSignInApple', obSignInApple);
 act('obSignInGoogle', obSignInGoogle);
