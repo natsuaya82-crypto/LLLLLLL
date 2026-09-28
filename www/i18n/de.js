@@ -375,7 +375,6 @@ defLang('de', (function(){
       "wld.title"    : "Wozu diese Sprache da ist",
       'wld.about'             : "Über diese Sprache",
       'wld.edit'            : "Bearbeiten",
-      'wld.taking'          : "Wird geladen",
       'wld.took'            : "Geladen",
       'wld.public'            : "Diese Sprache anderen zeigen",
       'wld.public.d' : "Andere können deine Sprachseite öffnen und lesen.",

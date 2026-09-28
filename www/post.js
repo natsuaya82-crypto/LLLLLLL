@@ -1342,40 +1342,10 @@ function postFresh(p){
    `bome` are still in `lingua.posts` on every phone that has this app; they
    are not read, not written and not removed (docs/DATA_SAFETY.md). */
 
-/* AND A PRESS THE SERVER HAS NOT ANSWERED YET.
-   「Twitter もその仕様なはず。ハート押して 1 つくやん？サーバー飛んでないなら
-   ハートが消えるでいいんじゃない？」 OWNER 2026-09-09.
-
-   The ♡ lights and the number moves the moment it is pressed; if it did not
-   reach anybody the ♡ goes out and the number comes back, and nothing is
-   said. **This supersedes 「押した瞬間は動かず」 of 2026-09-08** -- that
-   decision is about where the ANSWER lives and it is untouched: the count is
-   still the server's, and the phone still adds nothing up that outlives a
-   press.
-
-   `PMARK` is that press and nothing else. It is a key in memory, not a field
-   on a post: nothing is written to `lingua.posts`, nothing survives the app
-   closing, and it goes the moment the server has answered -- whatever the
-   answer was. So there is no SECOND answer to 「did I press this」 anywhere
-   on this phone; there is the server's row, and a press still in the air.
-
-   It is read HERE, in the one place that says what the ♡ and the number are,
-   because a screen drawing the pending press itself would be that second
-   answer written out again. */
-var PMARK={};
-function pmOf(p, kind){
-  return (p && PMARK[String(p.id)+'|'+kind]) || null;
-}
-function postNLike(p){
-  var m=pmOf(p, 'like');
-  return m? m.n : ((p && p.nlike!==undefined)? p.nlike : 0);
-}
+function postNLike(p){ return (p && p.nlike!==undefined)? p.nlike : 0; }
 function postNBoost(p){ return (p && p.nboost!==undefined)? p.nboost : 0; }
 function postNReply(p){ return (p && p.nreply!==undefined)? p.nreply : 0; }
-function postILike(p){
-  var m=pmOf(p, 'like');
-  return m? m.i : !!(p && p.ilike);
-}
+function postILike(p){ return !!(p && p.ilike); }
 function postIBoost(p){ return !!(p && p.iboost); }
 /* Where the server keeps it. Written when a push comes back and read for two
    things: whether this post has gone up at all, and what to point a reply at.
@@ -4540,39 +4510,18 @@ function postCountsUnder(p){
   if(p && p.to) postCountsPull(p.to);
   if(p && p.qt) postCountsPull(p.qt);
 }
-/* A LIKE LIGHTS AT ONCE, AND GOES OUT IF IT DID NOT ARRIVE.
-   -------------------------------------------------------------------------
-   「Twitter もその仕様なはず。ハート押して 1 つくやん？サーバー飛んでないなら
-   ハートが消えるでいいんじゃない？」 OWNER 2026-09-09.
-
-   The press shows immediately -- ♡ and the number, on the SCREEN (PMARK
-   above; nothing is stored) -- and the server is asked. When it answers, the
-   count is the server's, asked for rather than added up here: two phones each
-   adding one to their own copy is how a number goes backwards. When it does
-   not, the ♡ and the number are what they were before it was pressed and
-   NOTHING IS SAID -- the ♡ going out is what the person is told. There was a
-   ［再接続］ pop here; it is gone, because a press somebody can simply make
-   again is not a failure to stop them with.
-
-   **This replaces the shape of 2026-09-05, and only for the ♡.** That one
-   sent first and moved the screen on the answer, so a like that did not
-   arrive was a like that never showed. Both readings are about the same
-   thing -- a screen must not say what did not happen -- and the owner has
-   chosen which one the ♡ is.
-
-   One press at a time on one ♡: pressing again while the first is in the air
-   would send a second row about a state nobody has agreed on yet. */
+/* A LIKE IS THE SERVER'S ANSWER, LIKE EVERY OTHER PRESS.
+   「↓のメーターと♡も星で」 OWNER 2026-09-28 -- one mechanism, no exceptions:
+   the press turns the star (netPressed, www/net.js) while the row goes, and
+   the ♡ and its number are what the server says when it has answered
+   (postCountsPull), never a guess put up before it. A press that does not
+   arrive is 「接続できません」 with ［再接続］, as everywhere else. */
 function postLike(id){
-  var p=postById(id), k, on;
+  var p=postById(id);
   if(!p || !postMay()) return;
-  k=String(id)+'|like';
-  if(PMARK[k]) return;
-  on=!postILike(p);
-  PMARK[k]={i:on, n:Math.max(0, postNLike(p)+(on? 1 : -1))};
-  render();
-  netMark(id, 'like', on,
-    function(){ postCountsPull(id, function(){ delete PMARK[k]; }); },
-    function(){ delete PMARK[k]; render(); });
+  netMark(id, 'like', !postILike(p),
+    function(){ postCountsPull(id); },
+    function(d, st, m){ netPop(d, st, m, function(){ postLike(id); }); });
 }
 /* TAKING A REPOST BACK IS ASKED FIRST. 「リツイート解除とかフォロー解除は
    開錠しますか？みたいなポップつけて欲しい」 OWNER 2026-09-25 -- the same

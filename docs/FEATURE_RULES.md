@@ -1423,9 +1423,9 @@ it is quoted, and where a decision has never been made the row in
     戻すと、それまでの「今」も版の一つになる。`docs/RECOVERY.md` 案A の形。**SQL の流し直しあり。**
     合わせて「$25 で何人持つか」を測った数字で出す（`claude/r10-measure`）。
 - Affected features: ♡、古い言語、管理画面
-- Affected data: ♡は保存されるものが増えない（画面の一時状態だけ）。復旧は
+- Affected data: ♡は保存されるものが増えない。復旧は
   サーバーに前の版が積まれる（作る時に DATA_MODEL を書く）。
-- Implementation status: ♡は **IMPLEMENTED**（`postLike()` と `PMARK`、`www/post.js`、`acct-check` 62）。
+- Implementation status: ♡は **IMPLEMENTED**（`postLike()`、`www/post.js`、`acct-check` 62、`spin-check`）。
   古い言語は BACKLOG に「作らない」。復旧は BACKLOG（リリース後、日数待ち）。
 
 ### 2026-09-09 の午後、画面で訊いて答えの出た十一

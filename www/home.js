@@ -1459,23 +1459,6 @@ var ICON_DL='<svg class="ic" viewBox="0 0 24 24" width="14" height="14" fill="no
 var ICON_TOOK='<svg class="ic" viewBox="0 0 24 24" width="14" height="14" fill="none" '+
   'stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" '+
   'aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.2l2.8 2.8L16 9.6"/></svg>';
-/* AND WHILE IT COMES DOWN, THE SAME CIRCLE FILLING. 「ダウンロードは普通⭕️の
-   メーターだろ」 OWNER 2026-09-23 -- and 「進みが取れない時は ⭕ が回る」: a
-   server that does not say how long the answer is gives no fraction, so the
-   circle is drawn a quarter open and turns, on `.pullrule.go`, the one
-   animation the app has for 「今きいているところ」. `f` is 0 to 1, or -1.
-   The arc is the stroke's own dash, set as an attribute of the drawing -- no
-   style from here (CLAUDE.md rule 18). */
-var WLD_RING=2*Math.PI*9;
-function iconMeter(f){
-  var on=(f<0)? WLD_RING*0.75 : Math.max(0, Math.min(1, f))*WLD_RING;
-  var svg='<svg class="ic" viewBox="0 0 24 24" width="14" height="14" fill="none" '+
-    'stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true">'+
-    '<circle cx="12" cy="12" r="9" opacity=".25"/>'+
-    '<circle cx="12" cy="12" r="9" stroke-dasharray="'+on.toFixed(2)+' '+WLD_RING.toFixed(2)+'" '+
-    'transform="rotate(-90 12 12)"/></svg>';
-  return (f<0)? '<span class="numwait"><span class="pullrule go">'+svg+'</span></span>' : svg;
-}
 /* ---- the overview is the person's own list now -------------------------
    「メモじゃなくて概要に好きに追加したいこと並べればいいやん」 OWNER 2026-08-25.
    Four fixed facts and one box called 「メモ」 was what this page had; what it
@@ -1769,15 +1752,10 @@ function wldGetRow(sec, lid){
      It used to say the row needed no plan because downloading letters and a
      keyboard was free; that was 2026-08-19 and 「plusからです」 OWNER
      2026-09-02 replaced it. `CAN.dl` is `plus` and has been since. */
-  var st=wldTakeOf(lid, sec.r), nm='<span class="sl">'+esc(wldSecNm(sec))+'</span>',
-      k=String(lid||'')+'|'+sec.r;
-  /* A state and not a control, and it says which: role="status" while it
-     comes down, role="img" once it is the tick -- a name with no role reads
-     as something to press (press-check). `data-meter` is what the progress
-     paints into without drawing the page again (wldMeterPaint). */
-  if(st==='wait') return '<div class="set" aria-busy="true">'+nm+
-    '<span class="sv wldmeter" role="status" data-meter="'+esc(k)+'" aria-label="'+
-      esc(t('wld.taking'))+'">'+iconMeter(WLD_TAKING[k])+'</span></div>';
+  var st=wldTakeOf(lid, sec.r), nm='<span class="sl">'+esc(wldSecNm(sec))+'</span>';
+  /* A state and not a control once it is the tick: role="img" -- a name with
+     no role reads as something to press (press-check). While it comes down
+     it is the ↓ it was, under the star (wldGet). */
   if(st==='took') return '<div class="set">'+nm+
     '<span class="sv wldgot" role="img" aria-label="'+esc(t('wld.took'))+'">'+ICON_TOOK+'</span></div>';
   /* A language not taken yet, on the top plan with the ceiling met: nothing
@@ -1787,25 +1765,18 @@ function wldGetRow(sec, lid){
   return '<button class="set"' + DO('wldGet', [String(lid||''), sec.r]) + '>'+nm+
     '<span class="sv">'+ICON_DL+'</span></button>';
 }
-/* WHICH OF THE THREE A SECTION'S ROW IS -- ↓, ⭕ or ⭕☑️.
-   「人の言語dlした時にdlできたかわかりにくいから↓を押したら⭕️でダウンロード
-   状況表示。ダウンロードしてる言語は⭕️☑️にして。」 OWNER 2026-09-23.
-   The press used to write the chapter, fire netTakePut() and draw straight
-   away, so nothing on the screen said whether it had gone.
+/* WHICH OF THE TWO A SECTION'S ROW IS -- ↓ or ⭕☑️.
+   「ダウンロードしてる言語は⭕️☑️にして。」 OWNER 2026-09-23. While it comes
+   down the star turns over the screen, as for every press 「↓のメーターと♡も
+   星で」 OWNER 2026-09-28, and the row is the ↓ it was.
 
    One place answers it, and it asks two things that are not this phone's
    opinion: whether the SERVER says this account took the language
    (langWhose(), which is `language_take`'s answer), and whether the chapter
    is in what is loaded (slMine() -- the slices a take wrote, or the ones
-   netLangsWalk() brought down for a language taken before this launch).
-   WLD_TAKING is the one thing held here, and it is only 「a put is out for
-   the chapter that was pressed」: set by the press, cleared by the answer,
-   whichever answer it is -- and while the chapter is coming down it is how
-   far it has come (iconMeter). The other rows stay what they were. */
-var WLD_TAKING={};
+   netLangsWalk() brought down for a language taken before this launch). */
 function wldTakeOf(lid, r){
   var id=String(lid||''), kinds=wldDlKind(r)||[], i;
-  if(Object.prototype.hasOwnProperty.call(WLD_TAKING, id+'|'+r)) return 'wait';
   if(langWhose(id)!==LW_READ) return 'dl';
   for(i=0;i<kinds.length;i++)
     if(slMine(langKeyOf(id, kinds[i]))!==null) return 'took';
@@ -1829,14 +1800,12 @@ function wldTakeOf(lid, r){
    the moment it was opened -- the whole dictionary to draw a page that shows
    a count of it -- and ↓ only copied what was already here. Now the page
    reads what it draws (WLD_PAGE_KINDS) and ↓ asks the server for this
-   chapter's kinds and nothing else, with the ⭕ filling while it comes
-   (iconMeter), then records the take and turns into ⭕☑️ when the server
-   says so. A chapter that came down is what the server held at the press. */
+   chapter's kinds and nothing else, under the star (netPressed), then records
+   the take and turns into ⭕☑️ when the server says so. A chapter that came
+   down is what the server held at the press. */
 function wldGet(lid, r){
-  var id=String(lid||''), kinds=wldDlKind(r), seen=wldSeen(id), k=id+'|'+r;
+  var id=String(lid||''), kinds=wldDlKind(r), seen=wldSeen(id);
   if(!id || !kinds || !kinds.length) return;
-  /* Already coming down. */
-  if(Object.prototype.hasOwnProperty.call(WLD_TAKING, k)) return;
   /* WHETHER, AND THEN HOW MANY. 「plusからです」「plusは1つproは3つ」OWNER
      2026-09-02. The plan is the door and the ceiling is the room, asked here
      in the one place a download happens. A chapter of a language this
@@ -1845,8 +1814,6 @@ function wldGet(lid, r){
      (www/core.js) is the server's answer to that, not this phone's index. */
   if(upStop(can('dl'))) return;
   if(langWhose(id)!==LW_READ && dlStop()) return;
-  WLD_TAKING[k]=-1;
-  render();
   netSlices(id, function(m){
     var got=[], i, o;
     /* EVERY SLICE THE CHAPTER IS, OR NONE OF THEM. The grammar is `phases`
@@ -1857,7 +1824,7 @@ function wldGet(lid, r){
       o=m[kinds[i]];
       if(o && o.body) got.push([kinds[i], o.body]);
     }
-    if(!got.length){ delete WLD_TAKING[k]; render(); return; }
+    if(!got.length){ render(); return; }
     /* THE SERVER FIRST, AND THEN THIS PHONE. 「先にサーバーじゃないの？
        失敗しましたなのに端末に出るの変じゃない？」 OWNER 2026-09-06. That this
        account took it is a row on the server (www/net.js § netTakePut) -- the
@@ -1866,11 +1833,8 @@ function wldGet(lid, r){
        byte of the chapter left behind. A language whose owner the page never
        said cannot be taken, and saying nothing about it would be a press that
        did nothing (rule 11). */
-    if(!(seen && seen.owner)){ delete WLD_TAKING[k]; toast(t('net.offline')); render(); return; }
-    WLD_TAKING[k]=-1;
-    wldMeterPaint(k);
+    if(!(seen && seen.owner)){ toast(t('net.offline')); render(); return; }
     netTakePut(id, function(){
-      delete WLD_TAKING[k];
       /* The index row FIRST, so a slice can never be in memory under a
          language the index does not know. */
       langSeenAdd(id, seen.name, seen.owner);
@@ -1878,22 +1842,11 @@ function wldGet(lid, r){
         for(i=0;i<got.length;i++) slWr(langKeyOf(id, got[i][0]), got[i][1]);
       }catch(e){ toast(t('save.no')); }
       render();
-    }, function(){ delete WLD_TAKING[k]; toast(t('net.offline')); render(); });
+    }, function(){ toast(t('net.offline')); render(); });
   }, function(d, s, m){
-    delete WLD_TAKING[k];
     render();
     netPop(d, s, m, function(){ wldGet(lid, r); });
-  }, kinds, null, function(f){
-    WLD_TAKING[k]=f;
-    wldMeterPaint(k);
-  });
-}
-/* How far it has come, painted into the one row rather than drawing the page
-   again for every piece of the answer that arrives. */
-function wldMeterPaint(k){
-  var els=document.querySelectorAll('#app [data-meter]'), i;
-  for(i=0;i<els.length;i++)
-    if(els[i].getAttribute('data-meter')===k) els[i].innerHTML=iconMeter(WLD_TAKING[k]);
+  }, kinds);
 }
 /* A heading that folds, and it is the only kind this page has now. It used to
    sit beside `.abts`, an <h2> -- a button and an h2 as siblings in one list

@@ -435,7 +435,6 @@ defLang('fr', (function(){
       "wld.title"    : "À quoi sert cette langue",
       'wld.about'             : "À propos de cette langue",
       'wld.edit'            : "Modifier",
-      'wld.taking'          : "Téléchargement",
       'wld.took'            : "Téléchargé",
       'wld.public'            : "Montrer cette langue aux autres",
       'wld.public.d' : "D'autres personnes peuvent ouvrir la page de votre langue et la lire.",

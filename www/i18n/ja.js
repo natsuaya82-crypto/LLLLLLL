@@ -303,7 +303,6 @@ defLang('ja', (function(){
       'wld.title'    : 'この言語の用途',
       'wld.about'             : "この言語について",
       'wld.edit'            : "編集",
-      'wld.taking'          : "ダウンロード中",
       'wld.took'            : "ダウンロード済み",
       'wld.public'            : "言語のページを公開する",
       'wld.public.d' : "他のユーザーがあなたの言語のページを開いて読めるようになります。",

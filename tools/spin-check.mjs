@@ -110,6 +110,49 @@ const s5 = await spin();
 await pg.waitForTimeout(500);
 say(asked > b5 && !s5, 'a read nobody pressed for turns nothing (' + (asked - b5) + ' asked)', { s5 });
 
+/* 6-7: ♡ AND ↓ ARE PRESSES LIKE ANY OTHER 「↓のメーターと♡も星で」 OWNER
+   2026-09-28 -- one mechanism, no exceptions. The star is up at once; the ♡ is
+   not lit before the answer, and no row draws a meter of its own. */
+const pl = await pg.evaluate(() => {
+  /* on your own page, which draws the posts held -- the feed draws its own
+     pulled answer, which this server leaves empty */
+  var p = POSTS.filter(function (x){ return x.mine && !x.to && !x.toh; })[0], b;
+  if (!p.sid) p.sid = 'S-spin';
+  p.ilike = false;
+  NAV = [{ r:'profile' }]; route = 'profile'; render();
+  b = document.querySelector('#app [data-do="postLike"][data-a=\'' + JSON.stringify([p.id]) + '\']');
+  if (b) b.click();
+  return p.id;
+});
+const s6 = await spin();
+const lit6 = await pg.evaluate((id) => postILike(postById(id)), pl);
+if (shot) { await pg.waitForTimeout(200); await pg.screenshot({ path: path.join(dir, '..', 'shots', shot + '-like.png') }); }
+await pg.waitForTimeout(900);
+say(s6 && !lit6, '\u2661 pressed: the star is up at once and the \u2661 is not lit before the answer', { s6, lit6 });
+say(!(await spin()), 'and the star is down once it has answered', {});
+
+const lid7 = await pg.evaluate(() => {
+  var lid = 'spin-lang-1';
+  planGot('plus');
+  WLD_HAVE[lid] = { id:lid, name:'Necwe', owner:'somebody-else', pub:'2026-08-01' };
+  WLDS_HAVE[lid] = { wld:{ body: JSON.stringify({ dl:true }), no:1 } };
+  langOwnGot(lid, 'somebody-else');
+  ABOPEN.wlddl = true;
+  NAV = [{ r:'about', a:lid }]; route = 'about'; render();
+  return lid;
+});
+await pg.waitForTimeout(300);
+const had7 = await pg.evaluate(() => {
+  var b = document.querySelector('#app [data-do="wldGet"]');
+  if (b) b.click();
+  return !!b;
+});
+const s7 = await spin();
+const busy7 = await pg.evaluate(() => !!document.querySelector('#app [aria-busy="true"]'));
+if (shot) { await pg.waitForTimeout(200); await pg.screenshot({ path: path.join(dir, '..', 'shots', shot + '-dl.png') }); }
+await pg.waitForTimeout(900);
+say(had7 && s7 && !busy7, '\u2193 pressed: the star is up at once, and no row draws a meter of its own', { had7, s7, busy7, lid7 });
+
 say(errs.length === 0, 'nothing threw', errs);
 await br.close();
 console.log(fails ? 'spin-check: ' + fails + ' of ' + n + ' FAILED' : 'spin-check: ' + n + ' of ' + n + ' held');

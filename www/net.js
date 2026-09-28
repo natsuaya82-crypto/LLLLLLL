@@ -250,8 +250,8 @@ function netSpin(on){
   if(on && !el.firstChild) el.innerHTML='<div class="mk">'+ICON_PLUS+'</div>';
   if(on) el.className='netspin on'; else el.className='netspin';
 }
-function netSend(method, path, body, tok, ok, bad, up, prog){
-  netSend1(method, path, body, tok, ok, bad, {up:up, prog:prog}, true);
+function netSend(method, path, body, tok, ok, bad, up){
+  netSend1(method, path, body, tok, ok, bad, {up:up}, true);
 }
 /* ---- THE DOOR, AND IT IS THE ONLY THING THAT GOES OUT WITH NOBODY ON IT ---
    「サーバーは、サインインしていない人には何も返さない」 OWNER 2026-09-22.
@@ -293,9 +293,6 @@ function netDoor(path){
    deadline. `how` is what differs, and nothing else does:
 
      up     an upsert (PostgREST's merge-duplicates)
-     prog   how far an answer has come in, 0 to 1, or -1 where the server
-            did not say how long it is -- the one thing a ⭕ meter needs
-            (www/home.js § wldGet)
      mime   the body is BYTES (a Uint8Array) of this type, not JSON -- a jpeg
             sent as octet-stream comes back as a download, not a picture
      blob   the answer is bytes, handed to `ok` as a Blob
@@ -303,9 +300,9 @@ function netDoor(path){
             is not somebody waiting (§ NET_OUT), and dimming the screen for
             every photograph on a timeline is the app taking it from them */
 function netSend1(method, path, body, tok, ok, bad, how, may){
-  var up, prog;
+  var up;
   how=how || {};
-  up=!!how.up; prog=how.prog;
+  up=!!how.up;
   /* NOTHING GOES OUT WITH NOBODY ON IT.
      -----------------------------------------------------------------------
      It used to. The Authorization header below falls back to the anon key
@@ -415,7 +412,6 @@ function netSend1(method, path, body, tok, ok, bad, how, may){
        answer writes is the app's and not a person's. */
     slAsApp(bad, [d, x.status, netTag(path)+' '+x.status]);
   }
-  if(prog) x.onprogress=function(e){ prog((e && e.lengthComputable && e.total)? e.loaded/e.total : -1); };
   if(!how.quiet) netOn(x);
   x.send(how.mime? body : (body? JSON.stringify(body) : null));
 }
@@ -436,13 +432,13 @@ function netPost(path, body, tok, ok, bad){
    readers each turned it into `[]` for themselves, and three of them then took
    this account's languages off the phone as 「the server has none」
    (docs/reports/rule-audit-2026-09-27-core.md N4-N7). token-check 7e. */
-function netGet(path, ok, bad, prog){
+function netGet(path, ok, bad){
   netSend('GET', path, null, netTok(), function(d){
     if(!d || typeof d!=='object' || typeof d.length!=='number'){
       bad(d, 200, netTag(path)+' \u2260'); return;
     }
     ok(d);
-  }, bad, false, prog);
+  }, bad, false);
 }
 
 /* What Supabase says when it refuses, in the person's language where we have
@@ -1924,7 +1920,7 @@ function netInList(xs){
    for always. The body is put on the answer ONLY where it was asked for --
    「訊かなかった中身」 and 「空の中身」 are two states and must not share a
    branch (docs/DATA_SAFETY.md rule 3). */
-function netSlices(sid, ok, bad, kinds, cols, prog){
+function netSlices(sid, ok, bad, kinds, cols){
   netGet('/rest/v1/slice?select='+(cols || 'kind,body,no,at,ed')+
          '&language=eq.'+encodeURIComponent(sid)+
          ((kinds && kinds.length)
@@ -1940,7 +1936,7 @@ function netSlices(sid, ok, bad, kinds, cols, prog){
         if(r.body!==undefined && r.body!==null) out[r.kind].body=String(r.body);
       }
       ok(out);
-    }, bad, prog);
+    }, bad);
 }
 /* EVERY LANGUAGE THIS ACCOUNT HAS, BROUGHT DOWN TO THE PHONE.
    -------------------------------------------------------------------------

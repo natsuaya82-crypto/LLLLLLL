@@ -1200,30 +1200,13 @@ export function halfDone(){
        const h=vAbout();
        ABOPEN.wlddl = was;
        return h; }],
-    /* THE ↓ WHILE THE CHAPTER COMES DOWN, AND ONCE THE SERVER SAYS IT IS TAKEN.
-       「↓を押したら⭕️でダウンロード状況表示。ダウンロードしてる言語は⭕️☑️」
-       「ダウンロードは普通⭕️のメーターだろ」 OWNER 2026-09-23 -- www/home.js
-       § wldTakeOf, iconMeter. WLD_TAKING is how far the chapter has come, 0 to
-       1, or -1 where the server gave no length (the circle turns). Taken is
-       the SERVER's two answers (the owner is somebody else, a `language_take`
-       row is this account's) and the chapter in what is loaded; all three are
-       pushed here because no check has a network. */
-    ['somebody else\u2019s language page, a download going', () => {
-       const lid = __seenLang();
-       const was = ABOPEN.wlddl;
-       ABOPEN.wlddl = true; WLD_TAKING[lid + '|letters'] = 0.4;
-       window.route='about'; NAV=[{ r:'about', a:lid }];
-       const h=vAbout();
-       delete WLD_TAKING[lid + '|letters']; ABOPEN.wlddl = was;
-       return h; }],
-    ['somebody else\u2019s language page, a download going with no length', () => {
-       const lid = __seenLang();
-       const was = ABOPEN.wlddl;
-       ABOPEN.wlddl = true; WLD_TAKING[lid + '|letters'] = -1;
-       window.route='about'; NAV=[{ r:'about', a:lid }];
-       const h=vAbout();
-       delete WLD_TAKING[lid + '|letters']; ABOPEN.wlddl = was;
-       return h; }],
+    /* THE CHAPTER ONCE THE SERVER SAYS IT IS TAKEN, ⭕☑️.
+       「ダウンロードしてる言語は⭕️☑️」 OWNER 2026-09-23 -- www/home.js
+       § wldTakeOf. Taken is the SERVER's two answers (the owner is somebody
+       else, a `language_take` row is this account's) and the chapter in what
+       is loaded; all three are pushed here because no check has a network.
+       While it comes down it is the star over the screen (OWNER 2026-09-28),
+       which spin-check holds. */
     ['somebody else\u2019s language page, taken', () => {
        const lid = __seenLang();
        const was = ABOPEN.wlddl;
@@ -2440,15 +2423,6 @@ export function halfDone(){
        その「同じ」を撮れる状態がどこにも無かった：縦書きの面は新規だけ、
        返信の面は横書きだけで、二つが交わる所を歩いたものが無い。
        OWNER 実機 142 の二つ目はここのことなので、ここに置く。 */
-    /* ♡ を押した瞬間 ── 答えが戻る前の画面。「ハート押して 1 つくやん？」
-       OWNER 2026-09-09。走っているあいだのメモリ（`PMARK`）だけの状態なので、
-       種にも写しにも無く、どの面も歩いていませんでした。素の `feed` が
-       押す前で、これが押した直後です。 */
-    ['a post whose \u2661 has just been pressed', () => {
-        const p = POSTS[0], k = String(p.id) + '|like';
-        PMARK[k] = { i: true, n: postNLike(p) + 1 };
-        window.route = 'feed'; NAV = [{ r:'feed' }];
-        const h = vFeed(); delete PMARK[k]; return h; }],
     /* A POST THAT NAMED SOMEBODY AND ANSWERS NOTHING. 「@したらもう勝手に
        ツイートがこの形式になるようにしたい」 OWNER 2026-09-07 ── `toh` は
        載っていて `to` は無い、という組み合わせがどの面にも無かった。返信は
