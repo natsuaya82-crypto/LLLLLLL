@@ -409,7 +409,7 @@ npm run find
 
 **決めごととして置いたものが三つあります。**どれもこの枝では決めていません:
 
-```
+```text
   14  netWhoseId() が三箇所目の handle→id。失敗の意味が違うので畳んでいない
   17  netSearchDrop / netRecentDrop も表の名前だけが違う。読む所ではないので外した
   9 10 上限の警告と .mnone の状態は、どの walk も通らない。fixture に面を

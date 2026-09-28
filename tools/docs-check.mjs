@@ -305,6 +305,54 @@ collect(walkFiles('supabase', /\.sql$/),
 
 const live = files.filter((f) => f.endsWith('.md') && (f.startsWith('docs/') || ENTRANCES.indexOf(f) >= 0) && !PAST(f))
 const lineOf = (src, i) => src.slice(0, i).split('\n').length
+
+/* AND INSIDE A DIAGRAM. A call is only read in backticks, so a fenced block
+   with no language -- a diagram of how data flows -- was never read at all,
+   and ARCHITECTURE.md drew `netSlice1()`, `syMerge()` and `www/sync.js` for
+   weeks after all three were gone. A fence that names a language is code
+   somebody pastes (a shell line, SQL, an example) or ```text, output quoted
+   from a day -- a check's red, a measurement -- and is left alone; a bare
+   fence is prose drawn with lines, and what it names is held like prose: a
+   camelCase call is a function the code defines, a `www/…` path is a file git
+   has. Struck names are not possible inside a fence, so a diagram says what
+   is, and nothing else. */
+const allTracked = new Set(execFileSync('git', ['ls-files', '-z'], { cwd: ROOT, encoding: 'utf8' }).split('\0').filter(Boolean))
+let drawn = 0
+for (const d of live) {
+  const src = read(d)
+  /* A fence is opened and closed by lines, one after the other: the closing
+     line of a ```js block is not the opening of a bare one. */
+  const bare = []
+  {
+    const lines = src.split('\n')
+    let open = null, off = 0
+    for (let i = 0; i < lines.length; off += lines[i].length + 1, i++) {
+      const f = /^\s*```(.*)$/.exec(lines[i])
+      if (!f) continue
+      if (open === null) { open = { lang: f[1].trim(), from: off + lines[i].length + 1 }; continue }
+      if (!open.lang) bare.push({ index: open.from, body: src.slice(open.from, off) })
+      open = null
+    }
+  }
+  for (const blk of bare) {
+    const b = [null, blk.body]
+    const at = (i) => `${d}:${lineOf(src, blk.index + i)}`
+    for (const m of b[1].matchAll(/(?:^|[^\w$.])([a-z][a-z0-9_$]*[A-Z][A-Za-z0-9_$]*)\(/g)) {
+      drawn++
+      if (defined.has(m[1]) || PLATFORM.indexOf(m[1]) >= 0) continue
+      if (forgiven(`call ${d} ${m[1]}`)) continue
+      note(`${at(m.index)} draws ${m[1]}() in a diagram and nothing in www/, ios/,\n` +
+        `      tools/ or supabase/ defines it. Draw what is there now -- or, if\n` +
+        `      it is output quoted from a day, open the fence with \`\`\`text.`)
+    }
+    for (const m of b[1].matchAll(/\b(www\/[\w./-]+\.(?:js|html))\b/g)) {
+      drawn++
+      if (allTracked.has(m[1])) continue
+      if (forgiven(`file ${d} ${m[1]}`)) continue
+      note(`${at(m.index)} draws ${m[1]} in a diagram and git has no such file.`)
+    }
+  }
+}
 const platformSeen = new Set()
 let calls = 0
 let struck = 0
@@ -455,9 +503,9 @@ const NOT_OURS = [
   // Capacitor's configuration and bridge, Supabase's verify parameter
   'server.hostname', 'notifyListeners', 'token_hash',
   // what drives a session (docs/SESSIONS.md, docs/LEADER.md)
-  'create_session', 'send_message', 'archive_session', 'unarchive_session', 'get_session',
+  'create_session', 'archive_session', 'unarchive_session', 'get_session',
   'create_trigger', 'fire_trigger', 'cron_expression', 'run_once_at', 'source_url', 'source_revision',
-  'add_repo', 'ListAgents', 'SendMessage', 'REQUIRES_ACTION', 'IDLE', 'SESSION_STATUS_RUNNING',
+  'add_repo', 'ListAgents', 'SendMessage', 'REQUIRES_ACTION', 'IDLE',
   'mcp__Claude_Code_Remote__',
   // Capacitor's native bridge, injected into the page (CLAUDE.md § Layout, keyboard-extension.md)
   'toNative', 'nativeCallback', 'isPluginAvailable', 'withPlugin', 'registerPlugin',
@@ -496,7 +544,6 @@ function keysOf(g) {
   return out
 }
 const HEX = /^[0-9a-f]{7,40}$/
-const allTracked = new Set(execFileSync('git', ['ls-files', '-z'], { cwd: ROOT, encoding: 'utf8' }).split('\0').filter(Boolean))
 const baseNames = new Set([...allTracked].map((f) => f.split('/').pop()))
 const scripts = Object.keys(JSON.parse(read('package.json') || '{}').scripts || {})
 const NUMW = 'six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|(?:twenty|thirty|forty|fifty|sixty)(?:-[a-z]+)?'
@@ -624,12 +671,21 @@ for (const [day, where] of ownerDates) {
     `      has no entry of that day. Write the decision down there.`)
 }
 
-/* 【差し替え済み】 keeps one line. */
+/* 【差し替え済み】 keeps one line -- and it is asked of EVERY heading that says
+   差し替え済み, wherever in the heading it says it. It was asked only of one
+   that OPENED with the mark, so three headings carrying it at the end, with no
+   date, were never counted at all. The form is FEATURE_RULES.md's own:
+   `### 【差し替え済み YYYY-MM-DD】…`. */
 let goneHeads = 0
 {
   const lines = LOG.split('\n')
   for (let i = 0; i < lines.length; i++) {
-    if (!/^### 【差し替え済み/.test(lines[i])) continue
+    if (!/^### /.test(lines[i]) || lines[i].indexOf('差し替え済み') < 0) continue
+    if (!/^### 【差し替え済み \d{4}-\d{2}-\d{2}】/.test(lines[i]))
+      say(`gone docs/FEATURE_RULES.md ${lines[i].slice(4, 40)}`, `docs/FEATURE_RULES.md:${i + 1}`,
+        `says 差し替え済み and is not in the form the log uses:\n` +
+        `      ### 【差し替え済み YYYY-MM-DD】<heading> and one line under it,\n` +
+        `      - 差し替えた決定: 「<heading>」（date）`)
     goneHeads++
     let body = 0, j = i + 1
     for (; j < lines.length && !/^#{1,3} /.test(lines[j]); j++) if (lines[j].trim()) body++
@@ -699,7 +755,7 @@ console.log(
 console.log(`docs: ${records} under docs/reports/ and docs/scope/ — a day's record, not on the map.`)
 console.log(
   `docs: ${calls} function calls named in ${live.length} live documents, every one defined in ` +
-    `www/ ios/ tools/ supabase/; ${struck} struck through as gone; ${PLATFORM.length} the platform's.`
+    `www/ ios/ tools/ supabase/; ${struck} struck through as gone; ${PLATFORM.length} the platform's; ${drawn} names drawn in diagrams, every one there.`
 )
 console.log(
   `docs: ${namesSeen} names, ${fileRefs} code files, ${checkRefs} checks and ${npmRefs} npm scripts named, ` +

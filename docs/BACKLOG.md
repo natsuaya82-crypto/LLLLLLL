@@ -1185,7 +1185,7 @@ www/grammar-engine/model.js       行頭 0  字下げ 12
 
 **読んだのではなく、実測した**（2026-08-26、`f10b655` の上で）:
 
-```
+```text
 IIFE の中（字下げ）に置く:
   www/grammar-engine/model.js に function zzzNobodyEverCallsThis(){ return 1; }
   node tools/dead-check.mjs → EXIT=0  緑
@@ -2169,7 +2169,7 @@ asks about」。
 
 そしてもう一つ、今のコードは**天井を名指ししていない**:
 
-```
+```text
   core.js:522      confirm(t('langs.full', langCap()) + '\n\n' + t('up.cta'))
   core.js:703      confirm(t('toast.cap',  wordCap()) + '\n\n' + t('up.cta'))
   keyboard.js:349  confirm(t('kb.full',    kbCap())   + '\n\n' + t('up.cta'))

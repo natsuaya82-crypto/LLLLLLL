@@ -7,8 +7,9 @@ A conlang-building app. Plain HTML/CSS/JS under `www/`, wrapped by Capacitor for
 `<script src>` tag. What is in the repo is what runs on the phone.
 
 > **New here? Read `docs/STATE.md` first.** This file says how the code has to
-> be written; that one says what has been built and what has not. It opens with
-> two `git rev-list` lines to run before deciding anything is missing —
+> be written; that one says what has been built and what has not. Run
+> `git rev-list --count origin/master..origin/integ-0905` before deciding
+> anything is missing —
 > `master` once sat 144 commits behind, and a session that cloned it reported
 > the system keyboard as unbuilt, correctly, about an app a week old. It also
 > says the two that are easiest to get backwards: **the server holds both
@@ -380,8 +381,10 @@ it is. `node tools/shot.mjs --lang ja <screen>` takes it; a state the tool
 cannot reach is a state to make reachable in `tools/fixture.mjs`, not a reason
 to skip the picture. **Where a thing has two states — pressed and not, on and
 off — both are shown**, because the fault is nearly always in the one nobody
-photographed. **Nothing holds this. A person holds it by asking for the
-picture**, which is what the leader does at every audit.
+photographed. **`tools/commit-msg` holds one part of it**: a commit that
+changes a screen and adds no `.png` under `shots/` is refused. That it is the
+right picture, of both states, and that the owner saw it, **a person holds by
+asking for the picture**, which is what the leader does at every audit.
 
 **Saying what you are doing, while you are doing it.** Work is reported as it
 happens, not at the end. Before a step that takes more than a moment -- a
@@ -515,8 +518,9 @@ fallen behind; none came from two sessions wanting the same line.
 **The one page to hand a session is `docs/SESSIONS.md`.** It carries the rule
 that actually prevents a collision rather than finding one: **the leader
 names the files a session owns, and a session edits nothing else.** The leader
-is another session above this one -- it names the territory, integrates the
-branches and runs the whole gate; a session does none of those three. `www/index.html`
+is another session above this one -- it names the territory; the sub-leader
+(the leader when there is none) integrates the branches and runs the whole
+gate; a session does none of those. `www/index.html`
 is the known hazard -- every screen's CSS is in it -- so one session at a time
 owns it until that file is split by chapter.
 The top of `docs/SESSIONS.md` is a block to copy whole into a session's first
@@ -524,7 +528,7 @@ instruction, with three blanks to fill in.
 **And the LEADER's own way of working is `docs/LEADER.md`** — the one往復
 (owner says it → the leader READS THE CODE and names the file and line →
 a session for the light items alone → five minutes each → the leader runs
-the checks), the fifteen-minute audit, and the three shapes a stuck session
+the checks), the thirty-minute audit (OWNER 2026-09-24), and the three shapes a stuck session
 takes. It is there because the leader's rules live in a prompt the owner
 pastes by hand, and a prompt not pasted is a rule that is gone: on
 2026-09-05 the same three failures cost the day.
@@ -637,7 +641,8 @@ It is `tools/gate.mjs` rather than an `&&` chain, and speed was the smaller
 reason. A chain **stops** at the first failure and prints nothing to say what
 never ran — which is how `fill` and `round` dying at module load took `round`
 and `press` with them, silently, with everything above the stop looking green.
-Every browser check owns a distinct port; that is load-bearing now.
+Every browser check that serves pages owns a distinct port; that is
+load-bearing now.
 
 Do not silence a failure. Every one of these fires on a real bug that no browser
 and no CI runner would show — the checks exist because each of them already shipped once.
@@ -812,8 +817,11 @@ under another screen's name, and a view on no route was simply unreachable.
 
 ### 5. Nothing that nothing reaches, and nothing that is nothing
 
-Every function declared in `www/` must be named somewhere other than its own
-declaration. `dead-check` fails otherwise, and the fix is to delete it — git
+Every function declared in `www/` must be REACHED: named at the top of a file
+(`act-map.js` and `route-map.js` register there), in `index.html`, the
+languages or the tools, or inside the body of a function that is itself
+reached. A function naming only itself, or two naming only each other, is not.
+`dead-check` fails otherwise, and the fix is to delete it — git
 remembers, and a reader cannot tell a dead function from a live one.
 
 The other way too: every name **called** must be something — a function
@@ -971,8 +979,8 @@ forbidden the slots in the name of checking the three.
 
 `www/import.js` has a line across it. Above it is the reader: what shape a paste or a file
 is in, and what each column means. It is DOM-free and globals-free on purpose, so
-`tools/import-check.mjs` can `eval` that half in Node and put eleven real samples through
-it — a spreadsheet with any columns in any order, Excel pasted straight in, semicolon CSV,
+`tools/import-check.mjs` can `eval` that half in Node and put its samples through it — built
+from what each format is documented to be, not from real exports — a spreadsheet with any columns in any order, Excel pasted straight in, semicolon CSV,
 backslash-coded SIL lexicons, JSON, plain lines, a bare list of meanings. Below the line is
 the app.
 
@@ -1052,7 +1060,9 @@ once. `line-check` 6 measures a column at 0, 1 and 2, on a post and in the field
 
 `tools/sides-check.mjs` holds the line: nothing below it may name `WORDS`, `LETTERS`,
 `STG`, `SET`, `langName`, `findWord`, `myFontOn`, `ltById`, `ME`, `meName` or their
-siblings. It also refuses a **two-argument function passed bare to `map`** — `postRow` grew
+siblings — and no all-capitals global another file of `www/` declares, except the
+few `READER_MAY` names with a reason each, so `LANGS` or `KB` added to the making
+side is refused below the line the day it is added. It also refuses a **two-argument function passed bare to `map`** — `postRow` grew
 a second argument and `list.map(postRow)` handed each row its index, so post 0 was right
 and every post after it wore my font anyway.
 
@@ -1378,8 +1388,11 @@ four faults this rule was written after were that shape exactly:
 So the faces are variables on `:root`, and `tools/face-check.mjs` holds four
 things:
 
-1. **Only `:root` may name a family.** Every other `font-family` in the
-   stylesheet resolves to `var(--face-*)`, `inherit`, or a generic keyword.
+1. **Only `:root` may name a family.** Every other `font-family` or `font`
+   resolves to `var(--face-*)`, `inherit`, or a generic keyword -- in the
+   stylesheet, in a `style=""` in `index.html`'s markup, and in a string or a
+   `.style.fontFamily` in `www/*.js`, because each of those is a declaration
+   too. And each face is declared once.
 2. **Both directions on the variables**, as `act-map`'s names are held: no
    `var(--face-x)` that `:root` does not declare, and no face declared that no
    rule wears. A face nothing wears is one that was replaced and left behind.
@@ -1400,7 +1413,8 @@ things:
 container rules in the same file set `font-family:inherit` on the input inside
 them, and every one of those is *two* selectors where `.sfont` is one. Beating
 them one at a time is a great many places that have to be found and kept found.
-They all say `var(--face-ui)` now and there is one place to change.
+Forty-odd of them still say `font-family:inherit`, and `.sfont` saying
+`!important` is what beats every one of them — one place, not forty.
 
 ### 18. NO ROUNDED BOX, and it does not grow back
 
@@ -1931,8 +1945,8 @@ things it was still answering moved to columns: what a language is CALLED is
 is `language.wsys`, and who WROTE it is `language.owner` — with 「which of
 somebody else's this account has taken」 a row in `language_take`, because
 `LANGS[id].uid` had been answering that and 「who made it」 with one field.
-Each is asked through one function in `www/core.js` (`langNameOf`,
-`wldPubOf`, `langWsysOf`, `langOwnOf`), each keeps the server's answer in
+Each is asked through one function (`langNameOf`, `langWsysOf`,
+`langOwnOf` in `www/core.js`, `wldPubOf` in `www/home.js`), each keeps the server's answer in
 memory and a picture on the disk with no road up, and each has THREE states:
 mine, somebody else's, and **not asked yet** — which is drawn as neither.
 **WHEN a language was made is a fifth of exactly that shape** (`langMadeOf`,
@@ -1975,9 +1989,12 @@ was local for a week with every check green, and the languages were local for
 as long again after that; both were found by a person holding a phone.
 「書いていて止めないの本当に何？」 OWNER 2026-09-01.
 
-`store-check` names every key the app writes into `localStorage` — by FILE and
-by the expression, because `k` is a loop variable in two files about two
-different things — and each one is either **on a road to the server**, with the
+`store-check` names every write the app makes into `localStorage` — by the
+FILE, the FUNCTION it is in and the key expression, because `k` is a local
+variable in several functions about different things, and a new write
+answering to another function's `k` passed as that one — and refuses
+`localStorage` touched any way but `getItem` / `setItem` / `removeItem` /
+`key` / `length`. Each write is either **on a road to the server**, with the
 function in `www/net.js` that takes it there (and that function has to exist),
 or **the phone's own with a sentence saying why**. A `lingua.<id>.<slice>` key
 appearing there again is the copy coming back, and it fails as a key nobody
@@ -2295,7 +2312,7 @@ the string and the function — and `act-check` fails on either half alone.
 | `docs/FEATURES.md` | the registry: every feature, its status, its plan, its data, and whether the owner has decided it. Read before building anything |
 | `docs/ARCHITECTURE.md`, `DATA_MODEL.md`, `DATA_SAFETY.md`, `FEATURE_RULES.md`, `PAID_FEATURES.md`, `TESTING.md`, `CHANGELOG.md` | the rules above, in full. What is at the head of this file is the part that may not be argued with; these are the working detail |
 | `docs/keyboard.md` | how a person builds a keyboard in the app — every field of the editor, and the two ways to lock yourself out of a layer |
-| `docs/keyboard-extension.md` | the whole spec for the **Lingua keyboard**: what a person clicks in Apple's site, what the App Group carries, and what the extension may not do. It is an iOS keyboard extension by mechanism and a **Lingua-only** keyboard by purpose -- where somebody writes in their own letters is a field inside this app, not Messages, and **that is why the timeline is inside this app too**. Built now -- `ios/App/LinguaKeyboard/` holds six Swift files, and a person has typed their own letters on it on a real phone. Getting there took four failed builds with one symptom between them, and the fourth cause is the one to remember: the native bridge injects `toNative`, `nativePromise`, `nativeCallback`, `isPluginAvailable` and `withPlugin`, and nothing else. `registerPlugin` and `Plugins` are `@capacitor/core`'s, and **this app has no bundler and never loads it** -- so `Capacitor.Plugins.LinguaShare` is undefined on a phone and silently does nothing. `Capacitor.nativePromise('LinguaShare','write',…)` is the call. Three builds were spent guessing before the app was made to say on screen whether the hand-over had gone out (~~`kbOutSay()`~~, since deleted); the fourth cause fell out of one screenshot. Build the status line first |
+| `docs/keyboard-extension.md` | the whole spec for the **Lingua keyboard**: what a person clicks in Apple's site, what the App Group carries, and what the extension may not do. It is an iOS keyboard extension by mechanism and a **Lingua-only** keyboard by purpose -- where somebody writes in their own letters is a field inside this app, not Messages, and **that is why the timeline is inside this app too**. Built now -- `ios/App/LinguaKeyboard/` holds its Swift files, and a person has typed their own letters on it on a real phone. Getting there took four failed builds with one symptom between them, and the fourth cause is the one to remember: the native bridge injects `toNative`, `nativePromise`, `nativeCallback`, `isPluginAvailable` and `withPlugin`, and nothing else. `registerPlugin` and `Plugins` are `@capacitor/core`'s, and **this app has no bundler and never loads it** -- so `Capacitor.Plugins.LinguaShare` is undefined on a phone and silently does nothing. `Capacitor.nativePromise('LinguaShare','write',…)` is the call. Three builds were spent guessing before the app was made to say on screen whether the hand-over had gone out (~~`kbOutSay()`~~, since deleted); the fourth cause fell out of one screenshot. Build the status line first |
 | `docs/apple.md` | what a person does in App Store Connect — TestFlight and the two subscriptions; the StoreKit side is `ios/App/App/LinguaStore.swift`. Same argument as `mail.md`: none of it can live in the repo except as words |
 | `tools/*.mjs` | the checks; `verify-script.mjs`, `lattice-truth.mjs` etc. are font/script experiments |
 
@@ -2303,7 +2320,7 @@ A new view is found automatically by the checks (they ask the page for globals n
 `v` + a capital), so a screen written today is walked today. Nobody adds it to a list.
 
 **A screen is a route AND its argument.** `vSet` with no argument takes none of its
-six branches; `vGram` with none shows the list, not a stage. Both walks render each
+branches; `vGram` with none shows the list, not a stage. Both walks render each
 argument-taking screen once per argument — `walkArg` in `act-check`, `argsOf` in
 `i18n-check` — and both ask the page for the list, so a room or stage added later is
 walked the day it is added. Do not narrow either one back to the argument-less face:
@@ -2440,10 +2457,10 @@ be a change somebody made on purpose.
   not along anything new. The numbering has gaps where a chapter was closed; it is
   a shelf, not a count. **Two files say 26** (`sheet.js`, `store.js`),
   which is the shelf saying one of them is in the wrong place; which one keeps
-  the number is the owner's and `docs/BACKLOG.md` carries it.
+  the number is the owner's and has not been asked.
   Read the file's own first line for its number rather than a range here.
-- `www/glyph.js` is the largest file in `www/` after `index.html` (the font
-  writer and the drawing surface). Grep for
+- `www/net.js`, `www/post.js` and `www/glyph.js` are the largest files in
+  `www/` after `index.html`. Grep for
   the function and read that range rather than the whole file.
 - After a change, run the ONE check that holds it (`npm run base`, `npm run card`) --
   seconds. Not `npm test`: six minutes, and it is the leader's run.

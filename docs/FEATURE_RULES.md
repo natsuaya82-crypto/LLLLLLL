@@ -110,8 +110,8 @@ not need each other, leave it.** Taste is not a reason.
 **A behaviour change and a refactor do not share a commit.** Neither does a
 rename: renaming an acted function touches `act-map.js` twice — the string and
 the function — which are the same files a feature change touches, and the diff
-stops being readable. Renames go in a commit of their own with `npm test` on
-both sides. `docs/BACKLOG.md` holds the ones known and deliberately not done.
+stops being readable. Renames go in a commit of their own; the gate is run once, before
+pushing, by whoever integrates. `docs/BACKLOG.md` holds the ones known and deliberately not done.
 
 ## The order
 
@@ -236,6 +236,12 @@ it seems wrong, say so and stop; do not implement the better idea.
 
 Newest first. One entry per decision. The **decision itself** matters more than
 the reasoning — a reason can be re-derived, a decision cannot.
+
+The oldest entries, headed `### Decision`, are transcribed from decisions the
+repository already recorded verbatim, in `CLAUDE.md` and in the code comments
+that quote them. Nothing there was inferred: where the wording is the owner's
+it is quoted, and where a decision has never been made the row in
+`docs/FEATURES.md` says **open** instead of appearing here.
 
 ```
 ### Decision
@@ -605,7 +611,8 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Affected docs: この項、`docs/PAID_FEATURES.md`、`docs/FEATURES.md`、`docs/keyboard.md`、CLAUDE.md の「What the free plan is」。
 - Implementation status: r95-kbfont（`claude/r95-kbfont`）── キーボード（段を訊かない、`=文字` の枠と「文字を入力」の欄）とフォントの書き出し（Plus、`ltFontOut()`）は入った・コード確認、実機未確認。手書きは r96。
 
-### 2026-09-25 キーボードは誰でも作れる、自作文字のキーボードとフォントの書き出しは Plus から【差し替え済み】→ 2026-09-25「キーボードはプランで分けない」
+### 【差し替え済み 2026-09-25】キーボードは誰でも作れる、自作文字のキーボードとフォントの書き出しは Plus から（2026-09-25）
+- 差し替えた決定: 「キーボードはプランで分けない」（2026-09-25）
 
 ### 2026-09-25 投稿の見た目 ── 意味の行を出さずに投稿できる、本文は Twitter の大きさ、意味はその 0.8 倍（1.0.3）
 - Date: 2026-09-25
@@ -752,9 +759,11 @@ the reasoning — a reason can be re-derived, a decision cannot.
   **言語を前に戻す** ── 入った（保存の番号 `slice.press`、`admin_restore_lang()`、運営の画面は版三つ。`npm run rls`・
   `hist-check`・`again-check`）。**schema.sql をアプリより先に流すこと。**
 
-### 2026-09-24 キーボードのプランとフォントの書き出し（r46 の申し送り）【差し替え済み】→ 2026-09-25「キーボードはプランで分けない」
+### 【差し替え済み 2026-09-25】キーボードのプランとフォントの書き出し（r46 の申し送り）（2026-09-24）
+- 差し替えた決定: 「キーボードはプランで分けない」（2026-09-25）
 
-### 2026-09-24 キーの画面 ── 押した字がそのキーに入る。確定は無い【差し替え済み】→ 2026-09-25「複数のキーに一度に字を入れる」
+### 【差し替え済み 2026-09-25】キーの画面 ── 押した字がそのキーに入る。確定は無い（2026-09-24）
+- 差し替えた決定: 「複数のキーに一度に字を入れる」（2026-09-25）
 
 ### 2026-09-24 【決定の読み ── オーナーの新しい言葉ではない】持ち主の無い写しは読まない、消さない
 - Date: 2026-09-24（r79-acct、リーダーの指示で書いた。**オーナーはこの日これを言っていない**）
@@ -4177,23 +4186,6 @@ www/net.js:1544  netDraftUp() ── www/post.js:380 と :463 から
 - 差し替えた決定: 「売上とアナリティクスは RevenueCat で見る」（2026-09-02）
 
 ### Decision
-- Date:
-- Area:
-- Decision:
-- Reason:
-- Affected features:
-- Affected data:
-- Affected docs:
-- Implementation status:
-```
-
-Entries below are transcribed from decisions the repository already records
-verbatim, in `CLAUDE.md` and in the code comments that quote them. Nothing here
-was inferred: where the wording is the owner's it is quoted, and where a
-decision has never been made the row in `docs/FEATURES.md` says **open**
-instead of appearing here.
-
-### Decision
 - Date: 2026-08-26 (同日、五つめ)
 - Area: 匿名アカウントは無くなる。アカウントは一種類
 - Decision:
@@ -5868,7 +5860,7 @@ Reporting "there is no hosted model" as a blocker was wrong. It is a fact
 about today, not about the design, and the design is the part being asked
 for.
 
-### 【差し替え済み】A post shown three ways（2026-08-12）
+### 【差し替え済み 2026-08-28】A post shown three ways（2026-08-12）
 - 差し替えた決定: 投稿は二層 ── `docs/CHANGELOG.md` §「自分の言語で読む」は無くなった
 
 ### Decision
@@ -6323,7 +6315,7 @@ Do not pick:
   prices, and which plan buys what
   the free / paid boundary
   anything that deletes data, or how long data is kept
-  how a sync resolves a conflict
+  how two copies of one thing are put together when they disagree
   a change to behaviour a person already relies on
   wording a person will read
   any threshold or number that is a judgement rather than a measurement
@@ -6380,7 +6372,7 @@ are the leader's to name, not the session's to choose:
 - May change:            files, by name
 - May NOT change:        files another session holds, or that are simply out of scope
 - Depends on decision:   which entry in the owner decision log
-- Tests to run:
+- Check that holds it (named; watched red once, not run green):
 ```
 
 ### How the work moves
@@ -6400,10 +6392,11 @@ visible there early enough to be avoided.
   5  push after every commit          a branch nobody can see is a branch
                                       nobody can avoid
   6  never integrate ANOTHER BRANCH   no merge, no rebase, no cherry-pick of
-                                      another branch. The leader integrates.
+                                      another branch. The sub-leader integrates
+                                      (the leader when there is none).
                                       master into your OWN branch is not that,
                                       and is required before you report
-  7  the gate is the leader's         see docs/TESTING.md § the gate, rule 2
+  7  the gate is whoever integrated's see docs/TESTING.md § Who runs it
 ```
 
 **Step 3 is the collision test and it is mechanical.** If
@@ -6418,8 +6411,8 @@ stale information for that hour. The scope declaration is cheap to push and
 it is the thing others read.
 
 **Step 6 is absolute about ANOTHER branch.** A session that merges another
-branch into its own has produced a diff neither session wrote. The leader --
-another session above this one -- integrates, and asks the owner where the
+branch into its own has produced a diff neither session wrote. The sub-leader
+(the leader when there is none) integrates, and asks the leader where the
 answer is a decision rather than a merge. Report the conflict and stop; do not
 resolve it.
 
@@ -6444,8 +6437,9 @@ to push the Scope of its next piece**, so finishing does not mean queueing
 behind the leader.
 
 **Who is who.** The owner decides what the app does and confirms it on a
-phone. The leader names what each session owns, integrates, and runs the whole
-gate. A session does none of those three. → `docs/SESSIONS.md`
+phone. The leader names what each session owns and triggers the build when the
+owner says so; the sub-leader (the leader when there is none) integrates and
+runs the whole gate. A session does none of those. → `docs/SESSIONS.md`
 
 ### What is forbidden, by name
 
@@ -6524,7 +6518,7 @@ it, and it becomes a decision, not a cleanup.
 [ ] the blast radius is known
 [ ] the docs that apply are updated
 [ ] implemented
-[ ] npm test green
+[ ] the whole gate green — run by whoever integrated, not the session
 [ ] the regression test for this specific bug is green
 [ ] the bug was PUT BACK and the test was watched going red
 [ ] node --check, and any static check that applies

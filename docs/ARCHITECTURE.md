@@ -3,9 +3,9 @@
 What this app is made of, and where each thing is the truth.
 
 `CLAUDE.md` says how code here has to be written; `docs/STATE.md` says what has
-been built. This file says what the shape is. When the three disagree, the
-checks in `tools/` win — a document is a claim, and a claim nothing holds is
-worth nothing here.
+been built. This file says what the shape is. When the three disagree, that is a
+contradiction to report: the order is owner decision → spec → tests → code
+(`CLAUDE.md` § Code is not the specification).
 
 ## One page, no build step
 
@@ -16,8 +16,9 @@ the user already owns. That is why `www/**` is ES5 and why `tools/es5-check.mjs`
 exists.
 
 Capacitor wraps it for iOS. `ios/App/` is the native side: the bridge
-(`App/LinguaShare.swift` — the voice files and the sheet an export writes; the
-backup file it also wrote is gone, `CLAUDE.md` rule 11), the App Store's receipts (`App/LinguaStore.swift` — the plan itself is the
+(`App/LinguaShare.swift` — the App Group the keyboard and the widget read, the
+sheet an export writes, the photo picker, the system's ask, and the voice files
+an earlier version recorded), the App Store's receipts (`App/LinguaStore.swift` — the plan itself is the
 server's answer, `supabase/functions/verify-plan/`), the system keyboard extension (`LinguaKeyboard/`) and
 the home-screen widget (`LinguaWidget/`).
 
@@ -44,8 +45,8 @@ and `docs/DATA_MODEL.md` for which fields travel on a post.
 
 **DL — the third thing, and it is built.** A downloaded official asset is a
 language on the reading side that is filed like one on the making side: it sits
-in `LANGS` carrying somebody else's `language.owner` and under
-`lingua.<id>.<slice>`, and it is
+in `LANGS` carrying somebody else's `language.owner`, its slices in memory
+(`LSL`, rule 22) like any other language's, and it is
 **switched to** rather than merged in (OWNER DECISION 2026-08-25,
 `docs/FEATURE_RULES.md`). It is the first language this app holds that its user
 did not write, and every global above is still 「the one in front of me」 — so
@@ -62,7 +63,7 @@ locked door but `langLocked()` (`www/core.js`), asked at every saver.
 | the timeline — a post, its photographs, its voice, reactions, follows, blocks, reports | **the server**, with `lingua.posts.<uid>` as the copy that survives a bad network 「SNSは全部サーバー」 | `POSTS` (`www/post.js`) |
 | what was written and not sent | **the `draft` rows on the server**, with `lingua.drafts.<uid>` as the copy | `DRAFTS` (`www/post.js`) |
 | the person — the handle, the display name, the profile picture | **the `profile` row on the server**, with `lingua.me.<uid>` as the copy | `ME` (`www/me.js`) |
-| which languages exist, which is open | `lingua.langs.<uid>`, `lingua.cur.<uid>` — that account's index of the copies this phone is holding. `LANGS[id].sid` is the language's row on the server, and an entry with no `sid` has never been up | `LANGS`, `langId` |
+| which languages exist, which is open | `lingua.langs.<uid>`, `lingua.cur.<uid>` — that account's index of the copies this phone is holding. A language's id IS its `language` row's id; whether that row has been made is `langRowUp()` (`LROW`, memory, `www/core.js`) | `LANGS`, `langId` |
 | the person's settings | `lingua.set.<uid>`, written there the moment it is written (`acctPut()`) and read back when that account arrives (`acctFor()`). `lingua.set` holds only what `SET_PHONE` names — this handset's own setup | `SET` |
 | the person's session | `lingua.sess` — the token pair only | `SESS` (`www/net.js`) |
 | what the server holds and who may touch it | `supabase/schema.sql` | nothing on the phone decides this |
@@ -97,16 +98,16 @@ grep -o "rest/v1/[a-z_]*" www/net.js | sort | uniq -c | sort -rn
 ```
 
 Read what it prints rather than the list somebody wrote down after running it
-once. What it answered today: `profile`, `post`, `follow`, `block`, `report`,
-`draft`, `saved_search`, `recent_search`, `post_seen`, `profile_seen`,
-`language_seen`, `react`, `prompt`, `plan`, the RPCs — **and `language` and
-`slice`**. A language and every one of its slices go up and come back:
-`netLangRow()` makes the `language` row and keeps its id on `LANGS[id].sid`,
+once. **`language` and `slice` are among them**. A language and every one of
+its slices go up and come back: `netLangRow()` makes the `language` row (its id
+is the language's id; `langRowGot()` records that it exists),
 `netSlices()` reads them, `netSliceUp()` sends one through `slice_put()`
 (the one save, `netPut()`), and the SERVER puts two copies together
 (`slice_in()` in `supabase/schema.sql`, 2026-09-27) -- the phone does not
-merge; `netLangSync()` sends what the walk made, and **`boot.js` calls it on
-launch**. `quote` and `publication` really are still unused.
+merge; `netLangSync()` sends what the walk made, called by the door
+(`netTook()`) and by `langNew()` — never by the launch. The `quote` and
+`publication` tables have no road from the phone (quoting rides on
+`post.quote_of`).
 
 **And every one of them goes out as somebody.** 「サーバーは、サインインして
 いない人には何も返さない」 OWNER 2026-09-22. `netSend1()` (`www/net.js`) is the
@@ -185,20 +186,22 @@ for real.
 ## Where data flows
 
 ```
-  a person types
+  a person presses
       ↓
   a global (WORDS, LETTERS, KB, WLD, …)
       ↓  save() / saveLetters() / saveKb() / saveWld() / …
-  localStorage,  lingua.<id>.<slice>        ← the working copy, never the home
-      ↓  netSlice1() — netSaveNow() on every save, netLangSync() at launch,
-      ↓  both through syMerge() (www/sync.js)
+  LSL (memory),  lingua.<id>.<slice>        ← what the running app holds
+      ↓  on Save (keepSave()), or the press itself on a screen with no Save
+      ↓  (bkTouch()): netSaveNow() → netSliceUp() → netPut() → slice_put()
+  slice_in() on the server puts two copies together
   the `slice` rows on the server            ← the record
-      ↓  and back down the same way, both sides added and neither made to win
+      ↓  back down by netLangFill() when a screen drawn from it is arrived at
 
 ```
 
 **There is nothing off to one side** (`CLAUDE.md` rule 11): a save reaches
-the server at once, and `netLangFill()` (`www/net.js`) — asked by the door
+the server when Save is pressed (or, on a screen with no Save, on the press
+itself), and `netLangFill()` (`www/net.js`) — asked by the door
 onto any screen drawn from the language (`PAGES`' `lang:1`) — is what a phone
 whose storage was reclaimed comes back from.
 

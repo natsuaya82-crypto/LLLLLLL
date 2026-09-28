@@ -129,6 +129,32 @@ const MINE = [
 
 const CARD_MARK = '==== below this line a card of a post renders from the post ====';
 
+/* THE GLOBALS ARE ASKED THE OTHER WAY ROUND. MINE named WORDS, LETTERS, SET,
+   ME and a few more by hand, and the making side had grown LANGS, LMINE, KB,
+   WLD, LSL, WSYS and PLAN since -- `LANGS[LMINE].name` below the line was
+   green. A list of what is forbidden is the list somebody forgets to add to.
+   So: every top-level all-capitals `var` another file of www/ declares is the
+   making side's or the shell's, and below the line only the ones named here
+   may be read, each for its reason. One added tomorrow is refused tomorrow.
+   post.js's and card.js's own are theirs and are not asked about here. */
+const READER_MAY = {
+  FORM_OPEN: 'the shell\'s record of which form to rebuild on the way back (www/home.js), not a language',
+  WMENU:     'whether the ⋯ menu over somebody is open (www/me.js), not a language',
+  DIRS:      'the four directions a line can run, a constant (www/wsys.js)'
+};
+const FOREIGN = new Set();
+for (const f of fs.readdirSync(WWW).filter((f) => f.endsWith('.js') && f !== 'post.js' && f !== 'card.js'))
+  for (const m of stripped(fs.readFileSync(path.join(WWW, f), 'utf8')).matchAll(/^var\s+([A-Z][A-Z0-9_]+)\b/gm))
+    if (!/^ICON_/.test(m[1]) && !READER_MAY[m[1]]) FOREIGN.add(m[1]);
+/* What may not be NAMED below the line: MINE, and every foreign global. What
+   a builder may not REACH through a call (below) is still MINE alone -- every
+   foreign global there would taint DO() and esc(), which read the shell's
+   tables and not a language. That half is still a list somebody keeps. */
+const MAKING = [...new Set([...MINE, ...FOREIGN])];
+for (const n of Object.keys(READER_MAY))
+  if (![...fs.readdirSync(WWW)].some((f) => f.endsWith('.js') && new RegExp('^var\\s+' + n + '\\b', 'm').test(fs.readFileSync(path.join(WWW, f), 'utf8'))))
+    fail.push('READER_MAY names ' + n + ' and no file of www/ declares it any more -- delete the line.');
+
 for (const [file, mark] of [['post.js', MARK], ['card.js', CARD_MARK]]) {
   const s2 = fs.readFileSync(path.join(WWW, file), 'utf8');
   const at2 = s2.indexOf(mark);
@@ -141,7 +167,7 @@ for (const [file, mark] of [['post.js', MARK], ['card.js', CARD_MARK]]) {
   const body2 = stripped(s2).split('\n').slice(lineNo2 - 1);
   let n2 = 0;
   body2.forEach((line, i) => {
-    for (const name of MINE) {
+    for (const name of MAKING) {
       if (new RegExp('\\b' + name + '\\b').test(line)) {
         fail.push('www/' + file + ' line ' + (lineNo2 + i) + ' renders a post out of ' +
                   name + ', which is the open language and not the post:\n' +
