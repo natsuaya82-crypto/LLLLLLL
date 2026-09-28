@@ -738,6 +738,17 @@ const CASES = [
     `update post set body='{"x":1}'::jsonb where id='${P}'`],
   ['B cannot delete A\u2019s post',           'denied', B, 0,
     `delete from post where id='${P}'`],
+  /* THE PIN IS THE PAGE'S, ON THE SERVER 「ピン留めはサーバーに持つ」 OWNER
+     2026-09-28: one of your own posts, on your own row, and read by whoever
+     reads the page. */
+  ['A pins A\u2019s own post',                'ok',     A, 0,
+    `update profile set pin='${P}' where id='${A}' returning 1`],
+  ['and B reads it off A\u2019s page',        'ok',     B, 0,
+    `select 1 from profile_seen where id='${A}' and pin='${P}'`],
+  ['B cannot pin A\u2019s post on B\u2019s page', 'denied', B, 0,
+    `update profile set pin='${P}' where id='${B}'`],
+  ['nor put a pin on A\u2019s page',          'denied', B, 0,
+    `update profile set pin=null where id='${A}' returning 1`],
   ['nobody signed in reads nothing of the feed',         'denied',     B, 1, `select 1 from post`],
   ['nobody signed in posts',                  'denied', B, 1,
     `insert into post(author,body) values ('${B}','{}'::jsonb)`],

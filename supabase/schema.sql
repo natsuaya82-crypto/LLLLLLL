@@ -624,6 +624,15 @@ create table if not exists post (
   reply_to   uuid references post(id) on delete set null,
   created_at timestamptz not null default now()
 );
+
+-- WHICH OF THEIR POSTS SOMEBODY PUT AT THE TOP OF THEIR PAGE. One, or none.
+-- 「ピン留めはサーバーに持つ」 OWNER 2026-09-28: it was a field on this phone's
+-- copy of the post, so no other phone -- nobody else, and not a second phone
+-- of the same person -- ever saw it. A column of the profile because it is a
+-- fact about the page, read by whoever may read the page (profile_seen), and
+-- written the way the rest of the page is (profile_edit, which also says it
+-- is your own post). The post going takes the pin with it.
+alter table profile add column if not exists pin uuid references post(id) on delete set null;
 create index if not exists post_prompt_idx on post(prompt, created_at desc);
 create index if not exists post_author_idx on post(author, created_at desc);
 create index if not exists post_language_idx on post(language, created_at desc);
@@ -1821,7 +1830,10 @@ drop policy if exists profile_make on profile;
 create policy profile_make on profile for insert with check (is_member() and id = auth.uid());
 drop policy if exists profile_edit on profile;
 create policy profile_edit on profile for update using (is_member() and id = auth.uid())
-                                              with check (id = auth.uid());
+                                              with check (id = auth.uid()
+                                                -- a pin is one of your own posts (profile.pin)
+                                                and (pin is null or exists (select 1 from post x
+                                                      where x.id = pin and x.author = auth.uid())));
 
 -- language: who may read one is lang_readable() above, and nothing here says it
 -- again. Only the owner ever writes.
@@ -2258,6 +2270,8 @@ drop view if exists profile_seen cascade;
 create view profile_seen as
   select p.id, p.handle, p.display, p.av, p.bio, p.link, p.loc, p.banned_at,
          badge_of(p.id) as badge,
+         -- the post at the top of their page (profile.pin), for whoever reads it
+         p.pin,
          (select count(*) from follow f where f.follower = p.id) as fo,
          (select count(*) from follow f where f.followed = p.id) as fr,
          l.id                          as lang_id,
@@ -4020,7 +4034,7 @@ create trigger profile_follows after insert on profile
 -- and a column not named here is a column nobody can write: a switch that
 -- cannot be written is a switch that is always on.
 revoke update on profile from authenticated;
-grant  update (handle, display, av, bio, link, loc, prefs, ed) on profile to authenticated;
+grant  update (handle, display, av, bio, link, loc, prefs, ed, pin) on profile to authenticated;
 
 -- And the same sentence about INSERT, which is not the same statement.
 --
