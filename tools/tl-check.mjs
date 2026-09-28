@@ -1140,6 +1140,16 @@ const au = await pg.evaluate(() => {
     out.a8 = JSON.stringify({ name:ME.name === was, done:said });
     netSend1 = s1; ME.name = was; }
 
+  /* a9: the face is the server's answer and nothing else -- a face this phone
+     was holding does not outlive an answer that has none. */
+  { const was = { av:ME.av, pic:ME.pic };
+    ME.av = { ch:'A' }; ME.pic = '';
+    meAvGot(null);
+    const none = ME.av;
+    meAvGot({ pic:'u/p.jpg', ch:'B' });
+    out.a9 = JSON.stringify({ none:none, av:ME.av, pic:ME.pic });
+    ME.av = was.av; ME.pic = was.pic; }
+
   netIdOf = realId;
   netSend1 = realS1; netSend = realS; netGet = realG;
   NAV = [{ r:'feed' }]; window.route = 'feed'; render();
@@ -1164,6 +1174,9 @@ if (au.a7 !== JSON.stringify({ saved:[], recent:['yy'], pops:2 }))
 if (au.a8 !== JSON.stringify({ name:true, done:false }))
   say('a8: a profile save the server answered with no row ' + au.a8 +
       ' -- the name on this phone must stay the server\u2019s, and the save must say it did not land.');
+if (au.a9 !== JSON.stringify({ none:null, av:{ ch:'B' }, pic:'u/p.jpg' }))
+  say('a9: the face after the server\u2019s answer is ' + au.a9 + ' -- no face in the answer is no face, ' +
+      'and a photograph\u2019s row carries the letter face beside it.');
 if (!au.a3)
   say('a3: a word pressed while another word\u2019s answer is on the screen draws that old answer or ' +
       '「No results」 until its own lands. Not answered yet is the waiting mark.');

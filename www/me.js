@@ -602,8 +602,11 @@ function meFacePut(av, at){
    over the answer). A letter's face is written into `av` beside it, so taking
    the photograph off gives back the face that was on file. */
 function meAvGot(av){
+  var face=null, k;
+  for(k in (av || {}))
+    if(k!=='pic' && Object.prototype.hasOwnProperty.call(av, k)){ face=face || {}; face[k]=av[k]; }
   ME.pic=(av && av.pic)? String(av.pic) : '';
-  if(av && !av.pic) ME.av=av;
+  ME.av=face;
   saveMe();
 }
 /* ---- THE ACCOUNT'S PROFILE, PUT ON ME -- AND THIS IS THE ONE PLACE ------
