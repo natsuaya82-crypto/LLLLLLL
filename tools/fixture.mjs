@@ -2282,11 +2282,11 @@ export function halfDone(){
     ['the timeline, following', () => { snsTab = 'fo';
         POSTS.push({id:'fbo1', sid:'fbo1', at:Date.now()-9e8, lang:langId, lname:'Tovi',
                     ln:'mosa relu', who:'Veth', hd:'veth', mine:false, mn:'the river', ui:'en'});
-        const keepFo = FO_HAVE; FO_HAVE = {};
-        POSTS.forEach((p) => { if (p.mine || p.hd === 'iri' || p.hd === 'veth') FO_HAVE[p.id] = 1; });
-        FO_HAVE.fbo1 = { n:'Iri', h:'iri', me:false };
+        const keepFo = FEED_HAVE.fo, fo = { ids:[], rp:{}, key:{}, at:0 };
+        POSTS.forEach((p) => { if (p.hd === 'iri' || p.hd === 'veth'){ fo.ids.push(p.id); fo.key[p.id] = p.at; } });
+        fo.rp.fbo1 = { n:'Iri', h:'iri', me:false }; FEED_HAVE.fo = fo;
         window.route='feed'; NAV=[{r:'feed'}];
-        const h = vFeed(); POSTS.pop(); FO_HAVE = keepFo; snsTab = 'rec'; return h; }],
+        const h = vFeed(); POSTS.pop(); FEED_HAVE.fo = keepFo; snsTab = 'rec'; return h; }],
     ['the timeline, following nobody', () => { snsTab = 'fo';
         const keep = folOf(false, 'aya'); folPut(false, 'aya', []);
         window.route='feed'; NAV=[{r:'feed'}];

@@ -907,7 +907,7 @@ const r = await pg.evaluate(({ s }) => {
      none (postRpOff(), www/post.js). */
   {
     const realS1 = netSend1, realS = netSend, realG = netGet;
-    const n0 = POSTS.length, keepFo = FO_HAVE;
+    const n0 = POSTS.length, keepFo = FEED_HAVE.fo;
     netSend1 = function (m, path, b, t2, ok) {
       if (m === 'POST' && String(path) === '/rest/v1/rpc/feed_fo') {
         ok([{ id:'RP-b', author:'U-veth', created_at:'2026-09-10T00:00:00Z',
@@ -935,7 +935,7 @@ const r = await pg.evaluate(({ s }) => {
     snsTab = 'rec';
     out.rpRec = drawn(snsList()).split(mark).length - 1;
     out.rpCopy = postById('RP-b') ? ('rp' in postById('RP-b')) : '(not taken)';
-    POSTS.splice(n0, POSTS.length - n0); FO_HAVE = keepFo;
+    POSTS.splice(n0, POSTS.length - n0); FEED_HAVE.fo = keepFo;
     netSend1 = realS1; netSend = realS; netGet = realG;
   }
 
@@ -1225,6 +1225,17 @@ const au = await pg.evaluate(() => {
     out.a19 = kept + '|' + CARD.sh;
     NAV = [{ r:'feed' }]; window.route = 'feed'; }
 
+  /* a20: おすすめ is what the server recommended, in the order it
+     recommended it -- not every post this phone happens to hold, by time. */
+  { const was = POSTS.slice(), fh = FEED_HAVE.rec, tab = snsTab;
+    POSTS.push({ id:'RA', sid:'RA', at:1000, hd:'iri', who:'Iri', ln:'a' },
+               { id:'RB', sid:'RB', at:500,  hd:'iri', who:'Iri', ln:'b' },
+               { id:'RC', sid:'RC', at:2000, hd:'sol', who:'Sol', ln:'c' });
+    FEED_HAVE.rec = { ids:['RB', 'RA'], rp:{}, key:{ RB:500, RA:1000 }, at:Date.now() };
+    snsTab = 'rec';
+    out.a20 = snsList().map((p) => p.id).filter((id) => /^R[ABC]$/.test(id)).join(',');
+    POSTS = was; FEED_HAVE.rec = fh; snsTab = tab; }
+
   netIdOf = realId;
   netSend1 = realS1; netSend = realS; netGet = realG;
   NAV = [{ r:'feed' }]; window.route = 'feed'; render();
@@ -1287,6 +1298,8 @@ if (au.a18 !== 1)
   say('a18: a recording that could not be read left the stop face up (' + au.a18 + ' repaints).');
 if (au.a19 !== '9:16|')
   say('a19: a shape chosen on one card and the next post\u2019s card: ' + au.a19 + ' (want 9:16|).');
+if (au.a20 !== 'RB,RA')
+  say('a20: おすすめ drew ' + au.a20 + ' -- it is the server\u2019s answer in the server\u2019s order (RB,RA), not every post this phone holds.');
 if (!au.a3)
   say('a3: a word pressed while another word\u2019s answer is on the screen draws that old answer or ' +
       '「No results」 until its own lands. Not answered yet is the waiting mark.');

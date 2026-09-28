@@ -100,7 +100,7 @@ function snsLocked(r){
    and "the people I follow" are two queries with two answers, and a phone that
    asked for everything and then threw most of it away would be downloading a
    timeline to hide it. THE SERVER IS HERE, so the answer to "the people I
-   follow" is the one it sent -- `FO_HAVE` below -- and not a sieve run over
+   follow" is the one it sent -- `FEED_HAVE` below -- and not a sieve run over
    everything this phone happens to be holding.
 
    The sieve is still written, and it is now the COPY: what the tab falls back
@@ -121,41 +121,19 @@ function snsLocked(r){
    queries with two answers -- so what went is the ROW, not the question. It
    is answered in the corner of the bar now, which is the block below. */
 var snsTab='rec';
-/* WHICH POSTS THE FOLLOWED TIMELINE IS, BY ID -- the server's answer, kept.
-   `null` until one has arrived, which is not the same as none.
+/* WHAT EACH TIMELINE IS -- the server's answer, kept, one table for the
+   three: `FEED_HAVE[tab]` is `{ids, rp, key, at}` -- the posts it handed
+   back in the order it handed them, who passed each on (フォロー中), when
+   each reached you, and when it answered. Absent until an answer has
+   arrived, which is not the same as none.
 
-   netFeed('fo') asks the server for posts by the people this account follows,
-   and the server answers off the `follow` table. What came back was then put
-   through meFollows() a second time -- and meFollows() reads ME.fo, which is
-   written by meFollow() when somebody presses Follow ON THIS PHONE and is
-   filled from the server by nothing at all.
-
-   So the same account on a second phone follows the same people and has an
-   empty ME.fo: every post the server correctly sent arrived and was thrown
-   away by the sieve, and the tab read 0 with the answer to its own question
-   already in its hands. The owner has an SE2 and a 17, which is exactly the
-   two phones that makes it.
-
-   A LIST THE SERVER SELECTED MUST NOT BE SELECTED AGAIN HERE. Filtering an
-   answer with a weaker copy of the question can only take correct rows out.
-   ME.fo stays as the copy -- it is what the Follow button reads, and it is
-   what this falls back to before any answer has come -- but where the two
-   disagree the server is the record. The same shape as the kept searches
-   further down this file: 「SNSは全部サーバー」.
-
-   Filling ME.fo from the server is the other half and is NOT here: it is a
-   read in www/net.js and a write in www/me.js, and both belong to other
-   sessions. Until it lands the Follow button on a second phone still says
-   Follow for somebody already followed. That is one wrong word on a button;
-   this was the whole timeline. */
-var FO_HAVE=null;
-/* Your own are in it, and that has not moved -- 「a timeline of people you
-   follow that leaves you out is a timeline you cannot see yourself having
-   spoken in」. The server does not send them: netFeed('fo') asks for
-   `author=in.(the followed)` and you do not follow yourself. */
-function snsMine(p){
-  return !!p.mine || (FO_HAVE? !!FO_HAVE[p.id] : meFollows(p.hd));
-}
+   A LIST THE SERVER SELECTED MUST NOT BE SELECTED AGAIN HERE. おすすめ is
+   feed_hot()'s choice in feed_hot()'s order, フォロー中 is feed_fo()'s, the
+   day is the day's -- not every post this phone happens to be holding (a
+   profile visited, a thread, a search), sorted by time. Before any answer --
+   the copy a launch with no signal shows 「前に読み込んだ分は出て欲しい」 --
+   the tab is the same question put to what is here (snsSieve). */
+var FEED_HAVE={};
 /* AND A REPLY IS NOT ON おすすめ. 「リプライはおすすめ並ぶことないでしょ？
    基本」 OWNER 2026-09-04, looking at 4-home.png -- an answer to one of their
    own posts standing in the recommended list at the same size as the post it
@@ -178,21 +156,40 @@ function snsMine(p){
    thirty. This line is about the list in front of somebody, which holds
    posts the server has never seen -- the reply written a second ago, and
    everything on a phone with no signal. Neither covers the other's half. */
+function snsFits(p){
+  return snsTab==='fo'? true : (snsTab==='day')? dayIs(p) : !p.to;
+}
 function snsList(){
-  var all=postAll();
-  if(snsTab==='fo') return all.filter(snsMine).map(function(p){
-    return postRp(p, FO_HAVE && FO_HAVE[p.id]);
+  var all=postAll(), h=FEED_HAVE[snsTab], by={}, out=[], mine=[], i, p, id;
+  if(!h) return snsSieve(all);
+  for(i=0;i<all.length;i++){ by[all[i].id]=all[i]; if(all[i].sid) by[all[i].sid]=all[i]; }
+  for(i=0;i<h.ids.length;i++){
+    id=h.ids[i]; p=by[id];
+    if(p && snsFits(p)) out.push(snsTab==='fo'? postRp(p, h.rp[id]) : p);
+  }
+  /* And your own that the answer does not carry: フォロー中 never does -- you
+     do not follow yourself -- and the other two do not have what was written
+     after they answered. */
+  for(i=0;i<all.length;i++){
+    p=all[i];
+    if(p.mine && !h.key.hasOwnProperty(p.id) && !(p.sid && h.key.hasOwnProperty(p.sid)) &&
+       snsFits(p) && (snsTab==='fo' || Number(p.at||0)>h.at)) mine.push(p);
+  }
+  if(snsTab!=='fo') return mine.concat(out);
+  /* フォロー中 is in the order things reached you, so your own go in by when
+     they were written. */
+  return out.concat(mine).sort(function(a, b){ return snsKey(b, h)-snsKey(a, h); });
+}
+function snsKey(p, h){
+  var k=h.key[p.id];
+  if(k===undefined && p.sid) k=h.key[p.sid];
+  return Number(k!==undefined? k : p.at) || 0;
+}
+/* The same three questions put to what this phone holds, before any answer. */
+function snsSieve(all){
+  return all.filter(function(p){
+    return snsTab==='fo'? (!!p.mine || meFollows(p.hd)) : snsFits(p);
   });
-  /* AND THE THIRD IS ONE DAY'S. 「絞り込みに「#今日のお題」を足す。その行を
-     選ぶと、その日のお題に答えた投稿だけ」 OWNER 2026-09-06.
-
-     Asked of `pr`, which is the prompt's id and is put on the post when it is
-     written (pwSend, rule 13) -- 「繋がりはハッシュタグではなく列」 OWNER
-     DECISION 2026-08-23 #6, still in force. Not of the tag in the body: that
-     is characters somebody can delete, and a post they deleted it from is
-     still an answer to the day. */
-  if(snsTab==='day') return all.filter(dayIs);
-  return all.filter(function(p){ return !p.to; });
 }
 /* Today's sentence, by the name the server knows it by, or 0 where this phone
    has not been told one. One place, because the list above, the request that
@@ -393,14 +390,16 @@ function askFeed1(which, ok, bad, more){
     var have, i, low=0, t2;
     /* `null` is 「could not ask」 and not an answer. */
     if(!ps){ ok(0); return; }
-    /* The followed timeline as the server answered it: FO_HAVE is what that
-       tab draws, and a later page is the rest of one answer, so it is added
-       to rather than written over. */
-    if(which==='fo'){
-      have=more? (FO_HAVE || {}) : {};
-      for(i=0;i<ps.length;i++) if(ps[i] && ps[i].id) have[ps[i].id]=postRpOff(ps[i]) || 1;
-      FO_HAVE=have;
+    /* The timeline as the server answered it: FEED_HAVE is what the tab
+       draws, and a later page is the rest of one answer, so it is added to
+       rather than written over. */
+    have=(more && FEED_HAVE[which]) || {ids:[], rp:{}, key:{}, at:Date.now()};
+    for(i=0;i<ps.length;i++) if(ps[i] && ps[i].id){
+      if(!have.key.hasOwnProperty(ps[i].id)) have.ids.push(ps[i].id);
+      have.rp[ps[i].id]=postRpOff(ps[i]);
+      have.key[ps[i].id]=Number(ps[i].arrived || ps[i].at) || 0;
     }
+    FEED_HAVE[which]=have;
     for(i=0;i<ps.length;i++){
       t2=(which==='fo')? (ps[i].arrived || ps[i].at) : ps[i].at;
       if(t2 && (!low || t2<low)) low=t2;
@@ -554,7 +553,7 @@ function pullForget(){
      waiters have just been dropped, so it would never land, and every move
      after it would be worked out from a trail nobody is standing on */
   NAV_TO=null;
-  DAY=null; NOTES_HAVE=null; FO_HAVE=null; PF_BOOST={}; SNS_NEXT={}; SNS_END={};
+  DAY=null; NOTES_HAVE=null; FEED_HAVE={}; PF_BOOST={}; SNS_NEXT={}; SNS_END={};
   MORE_AT={}; MORE_END={};
   folForget();
   netPplDrop('block'); netPplDrop('mute');
@@ -976,7 +975,7 @@ function askWho(ok, bad, person, h){
 }
 /* WHAT EACH PERSON'S PAGE WAS TOLD THEY PASSED ON: handle -> post id ->
    who and when (`rp`, www/net.js § netRow, with `at`). Only the server's answer (posts_by() in supabase/schema.sql) writes
-   it, the way FO_HAVE is the followed timeline's answer; pfList()
+   it, the way FEED_HAVE is each timeline's answer; pfList()
    (www/home.js) reads it through pfBoosts(). */
 var PF_BOOST={};
 function pfBoosts(h){ return PF_BOOST[String(h||'')] || {}; }

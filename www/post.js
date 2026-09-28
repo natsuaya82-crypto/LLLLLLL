@@ -4183,7 +4183,7 @@ function ptoHTML(hd){
    shows the same post because it is a post. The post itself is ONE copy that
    every list shares (postTake()), so what netRow() says about who passed it
    on is taken OFF the row as it arrives -- postRpOff() -- and kept by the
-   list that asked (FO_HAVE and PF_BOOST, www/sns.js). The list then hands
+   list that asked (FEED_HAVE and PF_BOOST, www/sns.js). The list then hands
    postRow() a row that carries it -- postRp() -- and a row from any other
    list carries nothing, so nothing is drawn.
 
