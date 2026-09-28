@@ -1722,7 +1722,6 @@ function obName(){
 function obNameHTML(){
   return '<div class="mid">'+
     '<h2>'+t('ob.name.h')+'</h2>'+
-    '<p class="obsub">'+t('ob.name.sub')+'</p>'+
     '<div class="obnamebox"><input id="ob-name" value="'+esc(ob.name||langName||'')+'" '+
       'placeholder="'+esc(t('ob.name.ph'))+'" autocomplete="off" '+
       '' + KD('obName') + '></div>'+
@@ -2180,7 +2179,6 @@ function obBorrowHTML(){
   var w=wsKind(ob.pick);
   if(w) return '<div class="mid obleft">'+
     '<h2 class="obh">'+esc(t('ws.'+w.id))+'</h2>'+
-    '<p class="obsub">'+t('ob.borrow.take')+'</p>'+
     '<div class="obchars">'+wsChars(w).map(function(ch){
       return '<button class="obchb"' + DO('obTakeCh', [ch]) + '>'+esc(wsFace(ch))+'</button>';
     }).join('')+'</div></div>';
@@ -2190,7 +2188,6 @@ function obBorrowHTML(){
      nothing you can picture, and three of its letters tell you everything. */
   return '<div class="mid obleft">'+
     '<h2 class="obh">'+t('ob.borrow.h')+'</h2>'+
-    '<p class="obsub">'+t('ob.borrow.sub')+'</p>'+
     '<div class="obscroll"><div class="obscripts">'+WORLD_SCRIPTS.map(function(x){
       var pv=obPv(x);
       return '<button class="obsrow"' + DO('obPickScript', [x.id]) + '>'+
