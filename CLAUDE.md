@@ -817,8 +817,11 @@ under another screen's name, and a view on no route was simply unreachable.
 
 ### 5. Nothing that nothing reaches, and nothing that is nothing
 
-Every function declared in `www/` must be named somewhere other than its own
-declaration. `dead-check` fails otherwise, and the fix is to delete it — git
+Every function declared in `www/` must be REACHED: named at the top of a file
+(`act-map.js` and `route-map.js` register there), in `index.html`, the
+languages or the tools, or inside the body of a function that is itself
+reached. A function naming only itself, or two naming only each other, is not.
+`dead-check` fails otherwise, and the fix is to delete it — git
 remembers, and a reader cannot tell a dead function from a live one.
 
 The other way too: every name **called** must be something — a function
