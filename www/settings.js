@@ -6,7 +6,6 @@
    11. Settings
    ========================================================================= */
 function setSample(){
-  var p=PLANS.filter(function(x){return x.id===plan();})[0];
   /* The sample is a word of this language if there is one, shown as its own
      sounds; the Latin beside it is only what the respelling engines read. */
   var sseq=WORDS.length? wPh(WORDS[0]) : phGuess('aelin');
@@ -20,8 +19,8 @@ function setSample(){
    ten rows of interface languages -- so the way to reach "erase everything"
    was to scroll past every language the app speaks. Six pages now, and the
    first one is a list of six rows. Each of them is one question. */
-/* The two documents, in the account room and under everything else in it --
-   not on the settings list itself, and not in the onboarding.
+/* The two documents, on the plans screen where Apple asks for them
+   (§ planTerms) -- not on the settings list itself, and not in the onboarding.
 
    Small, side by side, and NOT rows. They were rows the same height as
    "Sign out" and "Erase everything", which put a thing you read in the
@@ -72,7 +71,7 @@ var SETS=[
   {id:'acct',  k:'set.account'},
   /* 「それに加えて設定で個別通知のオンオフできるように。」 OWNER 2026-09-22.
      Under the account rather than under Display, because what it answers is
-     about being reached as a person -- and it is four switches on `prefs`,
+     about being reached as a person -- and it is switches on `prefs`,
      which is the account's, so it follows somebody to their next phone. */
   {id:'push',  k:'set.push'},
   /* Whom you have blocked, and the one place a block is lifted.
@@ -168,11 +167,11 @@ function vSettings(){
        own room. 「プランを設定の中に入れると課金導線がカスだから一番上置くとか」 */
     '<button class="set"' + DO('go', ["plans"]) + '>'+
       '<span class="sl">'+esc(t('set.plan'))+'</span>'+
-      '<span class="sv">'+esc(p? p.name : 'Free')+ICON_GO+'</span></button>'+
+      '<span class="sv">'+esc(p? p.name : '')+ICON_GO+'</span></button>'+
     SETS.filter(function(x){ return !x.off; }).map(function(x){
       return '<button class="set"' + DO('go', ["set", x.id]) + '>'+
         '<span class="sl">'+esc(t(x.k))+'</span>'+
-        '<span class="sv">'+esc(setSummary(x.id, p))+ICON_GO+'</span></button>';
+        '<span class="sv">'+esc(setSummary(x.id))+ICON_GO+'</span></button>';
     }).join('')+
     /* And the way to say something about the app itself, which is not a
        setting and is a row on this list because this list is where somebody
@@ -205,7 +204,7 @@ function setPplRow(p, press, k){
 }
 /* What each room answers, said on its door, so most questions are answered
    without opening anything. */
-function setSummary(id, p){
+function setSummary(id){
   if(id==='look')  return t('theme.'+(SET.theme||'system'));
   if(id==='ui')    return LANG[uiLang()].label;
   if(id==='lang')  return langNameSaid(langName);
@@ -217,7 +216,7 @@ function setSummary(id, p){
   return '';
 }
 function vSet(){
-  var id=String(here().a||''), p=PLANS.filter(function(x){return x.id===plan();})[0], S=setSample();
+  var id=String(here().a||''), S=setSample();
   var body='';
   if(id==='look'){
     /* Three words in a row said nothing about what they did. A phone shows
@@ -270,7 +269,7 @@ function vSet(){
          した方が見やすい。」 OWNER 2026-09-23. */
       '<button class="set"' + DO('go', ["sp"]) + '><span class="sl">'+t('set.sp')+'</span>'+
       '<span class="sv">'+inkSteps(SCRIPT.sp)+ICON_GO+'</span></button>'+
-      '<button class="set" style="border-bottom:none"' + DO('go', ["wsys"]) + '><span class="sl">'+t('ws.kind')+'</span>'+
+      '<button class="set end"' + DO('go', ["wsys"]) + '><span class="sl">'+t('ws.kind')+'</span>'+
       '<span class="sv">'+esc(t('ws.k.'+wsys()))+ICON_GO+'</span></button>'+
       '';
   } else if(id==='block'){
@@ -288,7 +287,7 @@ function vSet(){
       ? netPpl('mute').map(setMuteRow).join('')
       : snsEmpty('mutes', snsNone());
   } else if(id==='push'){
-    /* Four rows, and the state above them when iOS has said no. www/push.js
+    /* A row per kind (PUSH_KINDS), and the state above them when iOS has said no. www/push.js
        draws it: this file says where the room is and that file says what is
        in it, the same way the keyboard's own switch lives in keyboard.js. */
     body=pushRoomHTML();
@@ -342,8 +341,8 @@ function vSet(){
 
            The field inside still says 「現在のパスワード」 to somebody who has
            none, and the row is still called 「変更」 rather than 「決める」.
-           Both are words and words are the owner's; www/i18n/ is not this
-           session's. It is in the report. */
+           Both are words and words are the owner's
+           (docs/reports/rule-audit-2026-09-27-core.md). */
         '<button class="set"' + DO('go', ["set", "pw"]) + '>'+
         '<span class="sl">'+t('set.pw')+'</span>'+
         '<span class="sv">'+ICON_GO+'</span></button>'+
@@ -381,7 +380,10 @@ function vSet(){
          Signing out is the row above, inside the signed-in half, because
          there is nothing to sign out of otherwise; these two are here whoever
          is holding the phone. */
-      '<button class="set"' + DO('wipeLangs') + '>'+
+      /* DOWN in a language this account did not write: 「自分のでない言語では
+         下りる」 (docs/FEATURE_RULES.md, 2026-09-03). It was drawn the same
+         and a press did nothing (rule-audit-2026-09-27-core T7). */
+      '<button class="set"' + DO('wipeLangs') + (langLocked()? ' disabled' : '') + '>'+
       '<span class="sl bad">'+t('set.wipe.langs')+'</span></button>'+
       '<button class="set"' + DO('wipeAll') + '>'+
       '<span class="sl bad">'+t('set.wipe')+'</span></button>'+
@@ -394,22 +396,9 @@ function vSet(){
          and is the plans screen's now. */
       '';
   } else if(id==='data'){
-    /* What is on the disk, for everybody. Keeping a language is not a paid
-       feature -- charging for not losing somebody's work would mean
-       answering, on the day it is lost, whether they had paid -- so this
-       sits above the lock rather than behind it. */
-    /* NO 「ON THIS PHONE」 LIST. It showed the backup files in Documents --
-       the generations, newest first, each with the save number it carried --
-       and there are no files. 「今ファイルもいらん」 OWNER 2026-09-04: a
-       language is on the server the moment it is saved (netSaveNow() in
-       www/net.js), so what that list answered is not a question this app
-       has any more. www/backup.js says the whole of it. */
-    body='<div class="sec">'+t('set.data')+'</div>'+
-      /* No cloud row. It said "Cloud sync -- On" to anybody on Plus and did
-         nothing at all: there is no code anywhere that sends a language to a
-         server. A switch that reports a state the app does not have is worse
-         than no switch, because somebody will trust it and stop making
-         backups. It comes back when the thing behind it does. */
+    /* Bringing a list in. The room is the same on every plan and the row
+       goes to the plans where a plan says no (upData). */
+    body=
       /* ONE ROW, THE SAME ON EVERY PLAN. 「できないことは、有料と同じ画面に
          同じ形で出す。押したら有料へ」 OWNER 2026-09-04. The free plan used to
          get a different thing here -- a dashed, rounded panel with a star, a
@@ -512,8 +501,9 @@ function contactGo(){
   netFeedbackSend(CONT.kind, txt, function(){
     CONT={kind:'opinion', body:'', busy:false};
     back(); toast(t('contact.sent'));
-  }, function(d, st){
-    CONT.busy=false; render(); toast(netWhy(d, st));
+  }, function(d, st, m){
+    /* render() first: it takes a pop down, and netPop() may put one up */
+    CONT.busy=false; render(); netPop(d, st, m, contactGo);
   });
 }
 function vContact(){
@@ -591,10 +581,9 @@ function vContact(){
     '</div>'+
     '</div></div>';
 }
-/* One card: a small Lingua in that theme, its name, and a tick. The colours
-   are written out rather than taken from the variables, because the light
-   card has to look light while the app around it is dark -- that is the
-   whole of what it is for. */
+/* One card: a small Lingua in that theme, its name, and a tick. The light
+   card looks light while the app around it is dark -- `.thmini.light` and
+   `.thmini.dark` carry the two theme blocks' own variables. */
 function setLookCard(th){
   var on=(SET.theme===th);
   return '<button class="thcard'+(on?' on':'')+'"' + DO('setTheme', [th]) + '>'+
@@ -622,70 +611,6 @@ function setUi(l){
   NOTES_HAVE=null; pullDrop('notif'); pullNeed('notif');
   render();
 }
-/* Delete account: everything this phone holds, and the tokens with it.
-
-   It used to empty the words, the sentences and the name and stop there, so
-   the sounds you had chosen, the letters you had drawn, the characters you
-   had borrowed and every grammar decision survived a wipeAll and turned up
-   inside the next language you started -- which is not a language you made,
-   it is two of them mixed. The storage keys are removed rather than
-   overwritten, so nothing can be left behind by a shape this version does
-   not know about.
-
-   The tokens go too. They did not, and "delete everything" that left you
-   signed in was the one thing on the screen the sentence did not cover --
-   you erased the phone and the app still greeted you by name. netOut() is
-   the same two lines signing out uses; nothing is asked of the server,
-   which is what it was already true of. */
-/* Everything, and it is the only thing in this app that means that. The
-   account on the server with every post, photograph and recording on it; the
-   languages on this phone; the backup files in Documents that outlive the app
-   itself. Asked once and not twice -- a second "are you sure" is how a person
-   learns to press through them -- and the one question is the whole sentence.
-
-   The order matters and it is the safe one. The server is told FIRST and the
-   phone is emptied whatever it answers: somebody who asked to be deleted must
-   be deleted, and a phone that kept its languages because the network was bad
-   would be the button lying in the direction that cannot be corrected later.
-   The other order leaves an account nobody can reach and nothing to reach it
-   from. */
-/* Erase the languages on this phone, and nothing else.
-   「端末のデータはSNSは消えないで言語データが全部消えるの」OWNER 2026-08-28.
-
-   The one below erases everything and this one is not a smaller version of
-   it. They are told apart by what they DO NOT touch, and the list is the
-   whole of the difference:
-
-     the server            not touched. Not one net* call from here. The
-                           posts, the photographs, the recordings, the
-                           follows and the profile are still there, and the
-                           languages are still there too (netLangSync()), so
-                           this is undone by the next sync as often as not
-     lingua.set            not touched. The theme, the interface language and
-                           the plan are the PERSON's and none of them is a
-                           language
-     lingua.me             not touched, and neither are the posts or the
-                           drafts. 「SNSは消えない」is that sentence
-     Documents/            not touched. The backup files are what this is
-                           recoverable FROM, and whether they should go is
-                           not something the owner has said
-
-   So the keys are NAMED rather than counted, deliberately. A key added
-   tomorrow belongs in this list only if it is a LANGUAGE's, and the list of
-   what a language
-   is made of already exists and is already kept in step: SLICES, which
-   bkPack() walks to write a backup. A count here would take the drafts and
-   the timeline's copy with it on the day somebody adds a key, silently.
-
-   Every language, not the open one. langKeyOf() is what names a language
-   that is not open, which is what it was given its first argument for.
-
-   Then a first run out of the same functions a first run uses, and this half
-   is not tidying up: the globals still hold the language that was just
-   erased, and the next save() writes them straight back out under the new
-   id. langFirst() mints a new one for the same reason wipeHere() does --
-   with the old id kept, ltStart() rebuilds twenty-eight letters under it and
-   the language is back. */
 /* THIS LANGUAGE, AND EVERYTHING MADE IN IT.
    「この言語を削除で言語の制作のものは全部なくなるってずっと言ってんだろ」
    OWNER 2026-09-03. The middle of the three rows the owner has asked for and
@@ -701,8 +626,7 @@ function setUi(l){
    shape that destroyed the owner's language on 2026-09-03: one account
    pressing something and another account's work going.
 
-   One language. The open one -- this room is the open language's, which is
-   where its name is changed two rows up. The DELETE REVIEW is in
+   One language: the open one. The DELETE REVIEW is in
    docs/CHANGELOG.md and names every key. */
 function wipeLangs(){
   /* Nothing to press in a language this phone is only reading. langLocked()
@@ -726,7 +650,7 @@ function wipeLangs(){
    で、削除の途中で止まっているということ。
 
    サーバーへ一度も上がっていない言語には行が無く、netLangDrop() はそれを
-   ok() で返す ── サーバーへは行かないので、電波が無くてもこの道は通る。
+   ok() で返す。DELETE は送るので、電波が無ければポップが出る。
 
    答えが返ってきて、それでも行が消えていないときは通信の話ではない ── ポップ
    は「送ったのに返事が無い」ためのもので、これは返事が来ている。一文で言う。
@@ -751,35 +675,23 @@ function wipeLangsHere(id){
   delete LANGS[id];
   langId='';
   langStore();
-  /* NO FILE TO TAKE WITH IT. This dropped the language's backup file in
-     Documents, and had to run while the row still said what the language was
-     called, because the file was named after it. There are no files
-     (www/backup.js), and the row on the server went through netLangDrop()
-     above. */
-  /* Where you are standing now. langForAcct() is the one place that
-     answers 「which language is this account's to be in」 -- it opens one they
-     already have, and mints one stamped with them when they have none. A
-     phone that has just deleted its only language gets a new empty one, which
-     is what a first run is. */
-  langForAcct();
-  /* Every global a language owns, put back to what an empty one looks like.
-     This is langOpen()'s own line less migratePostInk(), which cuts ink onto
-     posts out of the alphabet they were written in -- there is no alphabet
-     here now, and the posts are not going anywhere. */
-  langLoad(); ltStart(); migrateKbFree();
+  /* The deleted language's globals, emptied, and its font and its letter
+     under the pen with them -- then where you are standing now, which is
+     langForAcct()'s to say: it opens a language this account already has
+     through langOpen() -- which reads it, migrates it as the app's own writes
+     and puts you on the profile -- or makes one with the account's name on
+     it. Nothing else is repeated here: this used to do langOpen()'s work a
+     second time after it, with ltStart() and a save OUTSIDE slAsApp, so the
+     language left standing was marked as a person's writes and went up on
+     the next save (rule-audit-2026-09-27-core T3, acct-check 48c). */
+  langLoad();
   SFONT={built:false, sig:null};
   var css=document.getElementById('sfontcss');
   if(css && css.parentNode) css.parentNode.removeChild(css);
-  langSaveAll();
-  /* and where you were standing was in a language that is not there.
-     langOpen()'s own two lines: the last one leaves you on the cover of the
-     language you are in now, which is the only way this row can be seen to
-     have done anything -- rendering the settings room again draws a screen
-     that looks exactly as it did before it was pressed. GE goes with them:
-     the glyph editor holds one letter, and that letter is not there either. */
   GE=null;
   viewReset();
   goTab('profile');
+  langForAcct();
 }
 function wipeAll(){
   /* 確認は自前のポップで。「標準は使わねえって言ってるだろこれも禁止や」
@@ -818,22 +730,14 @@ function wipeAll(){
    Nothing is asked about the session here. netDropMe() refuses without one and
    says so, which is the same answer in the one place that can give it.
 
-   AND THE MARK GOES ON AFTER THE SERVER HAS ANSWERED, NOT BEFORE THE ASK.
-   「通信エラーなら進むわけねえだろ全部」 OWNER 2026-09-05. It stood above this
-   call, so pressing 削除 with no signal wrote `"end":1` into `lingua.sess`
-   while all three requests fell over -- the phone said the account was on its
-   way out and the server had never been told. **Nothing is written until the
-   row is gone**, which is measured rather than read: pressed with netSend
-   failing, the session came back carrying `end` and 25 keys untouched.
-
-   It still covers the gap it was written for. netEndMe() answers only once
-   `account_delete()` has run, so the mark now sits between the row going and
-   wipeHere() finishing -- a phone closed in THAT moment comes back and
-   finishes at www/boot.js § bootSession(). A phone closed while the request
-   was in the air has nothing to finish: the account is still there. */
+   NOTHING IS WRITTEN ON THE PHONE BEFORE THE SERVER HAS ANSWERED.
+   「通信エラーなら進むわけねえだろ全部」 OWNER 2026-09-05. The answer and
+   wipeHere() are one turn of the same callback, so there is no moment between
+   the row going and the phone emptying for a mark to cover, and there is no
+   mark. */
 function wipeAllGo(){
   var uid=netUid();
-  netDropMe(function(){ netEnding(); wipeHere(uid); }, wipeStopped);
+  netDropMe(function(){ wipeHere(uid); }, wipeStopped);
 }
 /* It did not go. Nothing on this phone has been touched, nothing was written
    down, and the account is still there -- which is what 「削除し切ってないと
@@ -888,7 +792,7 @@ function wipeHere(uid){
      Writing 「and if nobody else is here, wipe the lot」 was a first draft and
      it is two behaviours where the rule has one. */
   var wipeUid=String(uid || netUid());
-  var wipeIds=lsWipeAcct(wipeUid);
+  lsWipeAcct(wipeUid);
   /* AND WHAT IS ON THE PHONE OUTSIDE ITS STORAGE, which is files an earlier
      version wrote: a voice a draft or an unsent post of this account named
      (www/rec.js § voSweep), and a sheet left in the middle of a hand-over
@@ -901,60 +805,32 @@ function wipeHere(uid){
      measured). */
   voSweep();
   shDropOld();
+  /* NOTHING IS MADE HERE. This minted a fresh language (langFirst), topped
+     it up and saved it -- as a person's writes, with nobody signed in -- so
+     the next person to sign in on this phone had it put up under THEIR
+     account at the door: a nameless empty `language` row and eight slices
+     (measured, rule-audit-2026-09-27-core T4). The phone is at the door now,
+     and signing in is what opens that account's language or makes one with
+     its name on it (langForAcct). So the globals are emptied, and that is all:
+     LANG_IO (www/core.js) is the one list of them, read here through
+     langLoad() with no language open. */
   langId='';
-  langFirst();
-  /* AND ALL TEN, NOT FIVE. This named five of them by hand, so `KB` and `WLD`
-     came through holding the deleted account's keyboard and their land -- and
-     langFirst() a line above has just minted a new language, so the saves at
-     the foot of this function wrote both of them into it. Written to disk
-     under the next language, not merely left in memory.
-     「アカウント削除で残るものねえ」 OWNER 2026-08-27.
-     LANG_IO in www/core.js is the one list now. */
   langLoad();
-  /* Whom this phone belonged to, what it was carrying, what had been written
-     and not sent, and the fields of the settings that were theirs -- the
-     searches they starred, how far down their notices they had read -- went
-     with lsWipeAcct() above: they are the account's container (www/core.js
-     § ACCT), and emptying it is one call there rather than a list of them
-     here, which is how `recent` was left standing once. */
-  /* THE PLAN IS NOT ON THIS PHONE and there is nothing here to set back.
-     It was `SET.plan` and `SET.planWas` in `lingua.set`; what an account pays
-     is `verify-plan`'s answer, held in memory (www/core.js § PLAN), and
-     netOut() a few lines below forgets it with the session. */
+  /* What the account paid, what it held and wrote went with lsWipeAcct()
+     above and with the session (netEndMe() signed out before this ran, and
+     netOut() is the one place a session ends and draws). */
   /* AND IT OPENS ON THE DOOR, not on the walk. 「アカウント削除した後
-     オンボーディングから始まるのはなぜ？」 OWNER 2026-09-03.
-
-     setDefaults() answers `done` false, which is what a phone out of the box
-     says, and appIs() reads that as 「this is the onboarding」. It is not: the
-     person is standing here, they have just deleted an account, and what they
-     are going to do next is sign in as somebody else. Asking them to draw an
-     alphabet first is asking them to make a language with no account to make
-     it for -- 「言語はアカウントないと作れないです」 -- which the door is the
-     answer to.
-
-     A phone with nothing on it still opens on the walk; that is a different
-     phone and tools/open-check.mjs § 1 holds it. This is the one that has
-     been through it. */
+     オンボーディングから始まるのはなぜ？」 OWNER 2026-09-03 -- the person has
+     just deleted an account, and what they are going to do next is sign in as
+     somebody else. A phone with nothing on it still opens on the walk; that
+     is a different phone and tools/open-check.mjs § 1 holds it. */
   SET.walked=true;
-  netOut();
-  /* and the twenty-eight slots, for a language that is empty now and on a
-     plan that adds no letters of its own */
-  ltStart();
   SFONT={built:false, sig:null};
   var css=document.getElementById('sfontcss');
   if(css && css.parentNode) css.parentNode.removeChild(css);
-  langSaveAll();
-  /* NO COPIES IN DOCUMENTS TO TAKE. This dropped the backup files of the
-     languages going -- and only those, which is what 2026-09-03 cost, when a
-     second account leaving carried off the first one's files. There are no
-     files now (www/backup.js), so this account's things are the storage keys
-     lsWipeAcct() counted and the rows account_delete() takes on the server,
-     and there is no third place. `wipeIds` is what lsWipeAcct() returned and
-     nothing reads it any more. */
-  /* and where you were standing is nowhere now */
   viewReset();
-  ob={step:0, name:'', mode:'draw', pick:'', strokes:null, ch:'', lid:''};
-  GE=null; route='profile'; RENDERED=null;
+  ob=obBlank();
+  GE=null; RENDERED=null;
   render();
 }
 
@@ -1055,10 +931,8 @@ function capLapseShut(){
    That also makes the price the button -- pressing a price buys that term,
    which is one press where the toggle was two.
 
-   Every box is inline here and none of it is a box: no border, no corner, no
-   panel. www/index.html holds the stylesheet and belongs to another session
-   today, so what a class would say is said on the element; when that file is
-   free these become `.plrail` and `.plpage`. The peeking edge is what makes
+   None of it is a box: no border, no corner, no panel -- `.plrail` and
+   `.plpage` in www/index.html. The peeking edge is what makes
    the row readable as more-to-the-side, and it is `flex-basis` plus
    `scroll-snap`, nothing else. */
 /* A mark per line, because a column of identical ticks says nothing about
@@ -1119,9 +993,7 @@ function planPage(p){
    Nothing else may take that as permission;規則18 in CLAUDE.md carries the
    exception and tools/box-baseline.txt is what holds it to this one pair.
 
-   ⚠ The box itself is a rule in www/index.html and is NOT in this branch --
-   see docs/reports/plan-2026-08-26.md. Until it lands these read exactly as
-   they did, because `.ghost` and `.btn` are the same declarations today. */
+   The box is `.btn.plterm` in www/index.html. */
 /* WHICH TERM IS CHOSEN, and nothing is bought until the button at the foot is
    pressed. 「プランタップしたらすぐ行くのいやだ。プランタップして下のサブス
    クライブするみたいなボタン押してやっと課金いけるみたいにしたい」 OWNER
@@ -1262,11 +1134,9 @@ function planPrice(p, free){
        and for a product not yet made -- 何も出さない, OWNER 2026-08-26 -- and
        the year's own price and its saving are on the screen either way.
 
-       ⚠ `.plterm .pwas` is NOT in the stylesheet yet and is needed: `.pp` is
-       `display:inline` since 「4.99/月は一列にしろ」, so with nothing on this
-       class the two prices touch -- `¥9,000¥6,000`. Measured at 320 and 390,
-       not guessed. The rule is in docs/reports/plan2-2026-08-27.md;
-       www/index.html is not this branch's to write.
+       `.plterm .pwas` (www/index.html) puts the struck price on a line of
+       its own: `.pp` is `display:inline` since 「4.99/月は一列にしろ」, and
+       with nothing on this class the two prices touch -- `¥9,000¥6,000`.
 
        And nothing in the gate but plan-check ever renders this: every other
        walk runs in a browser, where there is no App Store and storeWas() is
@@ -1315,7 +1185,7 @@ function planPrice(p, free){
    Apple's, and www/store.js is at length about why there is only ever one.
 
    THE LINKS ARE docRows(), which is DOC_TERMS and DOC_PRIVACY -- the two
-   published pages the account room already links to. No new URL: one copy of
+   published pages. No new URL: one copy of
    a contract, so the version somebody agreed to is the version that is up.
    There is no third document -- 「出さない。」 OWNER 2026-08-26 about the
    特定商取引法 notice, because the App Store's seller is Apple.
@@ -1448,8 +1318,8 @@ function vPlans(){
 }
 
 
-/* Signing out leaves everything where it is: the languages are on the phone
-   and the account is on the server, and coming back finds both. Only the pair
+/* Signing out leaves everything where it is: the account and its languages
+   are on the server, and coming back finds them. Only the pair
    of tokens goes. */
 /* 「ログアウト、アカウント消去、言語消去はログアウトしますか？みたいなポップ
    つけてほしい」OWNER 2026-09-02. The other two already ask -- wipeAll() and

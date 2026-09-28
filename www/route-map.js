@@ -3,7 +3,7 @@
    act-map.js and before boot.js.
    ES5 only: this runs in an old WKWebView. tools/es5-check.mjs enforces it.
 
-   www/screens.js has PAGES, which says what a route is called and which tab it
+   www/shell.js has PAGES, which says what a route is called and which tab it
    lives under. It did not say what a route *shows*. That lived separately, as
    a ladder of twenty-two conditions inside render():
 

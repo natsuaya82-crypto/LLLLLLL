@@ -856,7 +856,7 @@ const two = await pg.evaluate(() => {
      never came on and the word stayed roman. */
   const KANA = 'あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほ'.split('');
   setMyFont(false);
-  invAll().forEach((u, i) => {
+  wsUnits().forEach((u, i) => {
     const l = ltMain(u);
     if (l) { l.ch = KANA[i % KANA.length]; l.st = null; }
   });

@@ -1214,6 +1214,23 @@ want('all of them, not just the ones the new shape needed', one.old1L, '[{"id":"
 want('including the language that had never been up', one.old2, '[{"hw":"kef"}]');
 want('and the one whose number was already taken', one.old3, '[{"hw":"geb"}]');
 
+/* A part of speech that is no label this app knows is not thrown away by the
+   migration that turns labels into keys: the word takes `n`, the value it
+   carried is copied beside it (`posWas`), and a word that had one of the
+   app's own labels is converted and nothing else (CLAUDE.md § Data: a
+   migration copies and never removes what it read -- rule-audit-2026-09-27-core S1). */
+const POSW = await pg.evaluate(() => {
+  var keep = WORDS;
+  WORDS = [{ hw: 'x', pos: '副詞っぽい' }, { hw: 'y', pos: LANG.ja.pos.v }, { hw: 'z' }];
+  var realSave = save; save = function(){};
+  migratePos();
+  save = realSave;
+  var out = WORDS.map(function(w){ return [w.pos, w.posWas === undefined ? null : w.posWas]; });
+  WORDS = keep;
+  return out;
+});
+want('an unknown part of speech is kept beside the word', JSON.stringify(POSW),
+     JSON.stringify([['n', '副詞っぽい'], ['v', null], ['n', null]]));
 await br.close();
 srv.close();
 

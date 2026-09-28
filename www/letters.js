@@ -1543,7 +1543,7 @@ function wRename(old, hw){
    would, and ask which letter writes each piece. */
 function spOf(w){
   if(w && w.sp && w.sp.length) return w.sp;
-  var u=wsSplit(wPh(w||{ph:[]})), out=[], i, l;
+  var u=wsSplit(wsys(), wPh(w||{ph:[]})), out=[], i, l;
   for(i=0;i<u.length;i++){
     l=ltMain(u[i]);
     out.push({l:l? l.id : '', u:u[i]});

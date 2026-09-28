@@ -275,8 +275,6 @@ defLang('pt', (function(){
       "set.account"               : "Conta",
       "set.account.guest"         : "Sem sessão",
       "ob.borrow.h"               : "Letra emprestada",
-      "ob.borrow.sub"             : "　",
-      "ob.borrow.take"            : "　",
       "ob.tour.tab" : "Abra Criar.",
       "ob.tour.build" : "Toque no teclado.",
       "ob.tour.kb0" : "Toque no seu teclado.",
@@ -749,7 +747,6 @@ defLang('pt', (function(){
       "lt.out.svg" : "SVG",
       /* onboarding */
       "ob.next"           : "Próximo",
-      "ob.name.sub"       : "　",
       "ob.name.note"      : "Dá para mudar depois",
       "ob.name.later"      : "Decidir depois",
       "ob.draw.h"        : "Desenhe o seu {0}.",
