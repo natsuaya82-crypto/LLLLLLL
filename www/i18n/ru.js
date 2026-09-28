@@ -997,7 +997,6 @@ defLang('ru', (function(){
       "f.spelling"        : "Написание",
       "f.listen"          : "Прослушать",
       "f.meaning"         : "Значение",
-      "f.meaning.ph"      : "звезда",
       "f.pos"             : "Часть речи",
       "f.sub"             : "Подкласс",
       "f.sub.new"         : "Новый подкласс",

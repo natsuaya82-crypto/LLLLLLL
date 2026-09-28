@@ -519,10 +519,12 @@ function vRelate(){
        here and find it". 「その場で類義語とか対義語を作れるようにすればいいやん」
        So it is made here, and joined here, in one press. */
     '<div class="sec">'+t('home.write')+'</div>'+
-    '<div class="row2"><div class="field">'+
-      spTypeField('rel-hw', ' autocapitalize="none"', [], '', t('f.spelling'))+'</div>'+
-    '<div class="field">'+
-      lnField('rel-mn', t('f.meaning.ph'), '', '')+'</div></div>'+
+    /* Nothing is written inside the boxes 「四角のなかにつづりとか読みとか書く
+       の消して」: what each one is, is said over it. */
+    '<div class="row2"><div class="field"><label>'+esc(t('f.spelling'))+'</label>'+
+      spTypeField('rel-hw', ' autocapitalize="none" aria-label="'+esc(t('f.spelling'))+'"', [], '')+'</div>'+
+    '<div class="field"><label>'+esc(t('f.meaning'))+'</label>'+
+      lnField('rel-mn', '', ' aria-label="'+esc(t('f.meaning'))+'"', '')+'</div></div>'+
     '<button class="btn ghost" style="width:100%;margin:8px 0 18px"' + DO('relNew') +
       ' aria-label="'+esc(t('add.btn'))+'">'+ICON_ADD+'</button>'+
     (list.length

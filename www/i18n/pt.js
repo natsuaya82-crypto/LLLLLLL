@@ -992,7 +992,6 @@ defLang('pt', (function(){
       "f.spelling"       : "Grafia",
       "f.listen"         : "Reproduzir",
       "f.meaning"        : "Significado",
-      "f.meaning.ph"     : "estrela",
       "f.pos"            : "Classe gramatical",
       "f.sub"            : "Subclasse",
       "f.sub.new"        : "Nova subclasse",

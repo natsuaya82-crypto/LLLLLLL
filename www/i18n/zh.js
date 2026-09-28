@@ -991,7 +991,6 @@ defLang('zh', (function(){
       "f.spelling"       : "拼写",
       "f.listen"         : "播放",
       "f.meaning"        : "词义",
-      "f.meaning.ph"     : "星",
       "f.pos"            : "词性",
       "f.sub"            : "子类",
       "f.sub.new"        : "新建子类",

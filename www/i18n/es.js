@@ -945,7 +945,6 @@ defLang('es', (function(){
       "f.spelling"       : "Grafía",
       "f.listen"         : "Reproducir",
       "f.meaning"        : "Significado",
-      "f.meaning.ph"     : "estrella",
       "f.pos"            : "Categoría",
       "f.sub"            : "Subclase",
       "f.sub.new"        : "Nueva subclase",

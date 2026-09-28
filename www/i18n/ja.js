@@ -901,7 +901,6 @@ defLang('ja', (function(){
       'f.spelling'      : 'つづり',
       'f.listen'        : '再生',
       'f.meaning'       : '意味',
-      'f.meaning.ph'    : '星',
       'f.pos'           : '品詞',
       'f.sub'           : '下位分類',
       'f.sub.new'       : '新しく作る',

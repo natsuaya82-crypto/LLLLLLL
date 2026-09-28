@@ -985,7 +985,6 @@ defLang('it', (function(){
       "f.spelling"       : "Grafia",
       "f.listen"         : "Riprodurre",
       "f.meaning"        : "Significato",
-      "f.meaning.ph"     : "stella",
       "f.pos"            : "Parte del discorso",
       "f.sub"            : "Sottoclasse",
       "f.sub.new"        : "Nuova sottoclasse",

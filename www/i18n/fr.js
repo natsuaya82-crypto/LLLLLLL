@@ -1033,7 +1033,6 @@ defLang('fr', (function(){
       "f.spelling"       : "Graphie",
       "f.listen"         : "Écouter",
       "f.meaning"        : "Sens",
-      "f.meaning.ph"     : "étoile",
       "f.pos"            : "Nature du mot",
       "f.sub"            : "Sous-classe",
       "f.sub.new"        : "Nouvelle sous-classe",

@@ -974,7 +974,6 @@ defLang('de', (function(){
       "f.spelling"       : "Schreibweise",
       "f.listen"         : "Abspielen",
       "f.meaning"        : "Bedeutung",
-      "f.meaning.ph"     : "Stern",
       "f.pos"            : "Wortart",
       "f.sub"            : "Unterklasse",
       "f.sub.new"        : "Neue Unterklasse",

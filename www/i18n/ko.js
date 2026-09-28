@@ -1161,7 +1161,6 @@ defLang('ko', (function(){
       "f.spelling"       : "철자",
       "f.listen"         : "재생",
       "f.meaning"        : "뜻",
-      "f.meaning.ph"     : "별",
       "f.pos"            : "품사",
       "f.sub"            : "하위 분류",
       "f.sub.new"        : "새로 만들기",

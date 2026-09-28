@@ -900,7 +900,6 @@ defLang('en', (function(){
       'f.spelling'      : "Spelling",
       'f.listen'        : "Play",
       'f.meaning'       : "Meaning",
-      'f.meaning.ph'    : "star",
       'f.pos'           : "Part of speech",
       'f.sub'           : "Subclass",
       'f.sub.new'       : "New subclass",
