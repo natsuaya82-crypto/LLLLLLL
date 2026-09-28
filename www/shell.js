@@ -1304,8 +1304,11 @@ function secAdd(label, doAttr, aria){
    photograph of four you are looking at, which is where you are standing
    rather than how much you have. */
 function navTop(count, right){
-  var h=here(), pv=prevPage(), n=h.a? '' : tocNum(h.r);
-  var lab = pv? pageName(pv.r, pv.a) : t('tab.build');
+  /* The arrow is named after where back() goes, asked of the one place that
+     says (backTo) -- it said 「制作」 over an arrow that went to the profile
+     (rule-audit-2026-09-27-core S4). */
+  var h=here(), to=backTo(), pv=to[to.length-1], n=h.a? '' : tocNum(h.r);
+  var lab=pageName(pv.r, pv.a);
   /* THE ? STANDS BESIDE THE NAME OF THE SCREEN, not at the far end of the
      bar. 「？を文字の横に動かしたらいけない？」 OWNER 2026-09-05.
 
