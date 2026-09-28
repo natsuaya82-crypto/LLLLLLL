@@ -1248,6 +1248,20 @@ const au = await pg.evaluate(() => {
     out.a21more = got.join(' | ');
     netSend1 = s1; snsFil = fil; snsMoreAsk = ask; }
 
+  /* a22: a post is lines -- Enter in the composer's body opens one, new or
+     edited 「投稿の改行ができない」 (OWNER, build 171) -- and every one-line
+     field still takes none 「必要ないところで開業できるのやめて欲しい」. */
+  { const enter = (id) => { const e = document.getElementById(id);
+      return e ? e.dispatchEvent(new KeyboardEvent('keydown', { key:'Enter', bubbles:true, cancelable:true })) : 'none'; };
+    PW = pwBlank(); openPost(); render();
+    const nw = enter('pw-ln');
+    PW = pwBlank(); PW.ed = 'p1'; openPost(); render();
+    const ed = enter('pw-ln');
+    openMe(); render();
+    const nm = enter('me-nm');
+    out.a22 = JSON.stringify({ post:nw, edit:ed, name:nm });
+    PW = pwBlank(); NAV = [{ r:'feed' }]; window.route = 'feed'; render(); }
+
   netIdOf = realId;
   netSend1 = realS1; netSend = realS; netGet = realG;
   NAV = [{ r:'feed' }]; window.route = 'feed'; render();
@@ -1316,6 +1330,9 @@ if (/"feed"/.test(au.a21reads) || !/"fil","wd"/.test(au.a21reads))
   say('a21: with a word kept on, arriving at the timeline reads ' + au.a21reads + ' -- the word\u2019s answer, not the tab under it.');
 if (/feed_(hot|fo)/.test(au.a21more) || !/post_seen/.test(au.a21more))
   say('a21: the foot of a word\u2019s timeline asked 「' + au.a21more + '」 -- the next page of the word, not of the hidden tab.');
+if (au.a22 !== JSON.stringify({ post:true, edit:true, name:false }))
+  say('a22: Enter let through (true) or swallowed (false): ' + au.a22 +
+      ' -- a post new and edited takes a new line, the name field takes none.');
 if (!au.a3)
   say('a3: a word pressed while another word\u2019s answer is on the screen draws that old answer or ' +
       '「No results」 until its own lands. Not answered yet is the waiting mark.');

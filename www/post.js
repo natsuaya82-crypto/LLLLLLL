@@ -1692,8 +1692,11 @@ function pwHTML(){
 
          The ring is what says so before the press: past zero it counts in
          negative numbers and goes red, in front of somebody while they type. */
+      /* `lnlines`: a post is LINES, so Enter opens one here -- new and edited,
+         which are this one field 「投稿の改行ができない」 (OWNER, build 171).
+         www/act.js § Enter is the one place that reads it. */
       lnField('pw-ln', t('post.ln.ph'), IN('pwSetLn'),
-        puaField(PW.cut), dirClass(scriptDir()))+
+        puaField(PW.cut), 'lnlines '+dirClass(scriptDir()))+
       /* The meaning sits in the same column as the line, in the same
          borderless field, because it is the second half of the same act. */
       /* Read-only when it is the day's sentence. Not disabled: a disabled
