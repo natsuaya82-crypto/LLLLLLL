@@ -357,6 +357,34 @@ say(sevenD.r403 === false && sevenD.s403.length === 1 && sevenD.s403[0] === seve
     'a refusal is said once, in netWhy()\'s words, and is not a fallen line; ' +
     'a request never sent says nothing: ' + JSON.stringify(sevenD));
 
+/* ---- 7e. and a read that is not a list is not 「none」 ---------------------
+   Every read netGet() makes is of a table or a view, and PostgREST answers
+   one with a list. Something else is broken, not empty (CLAUDE.md § Data:
+   「"Empty" and "broken" are different states and must not share a
+   branch」) -- and twenty-odd readers turned it into `[]`, three of which
+   then took this account's languages off the phone as 「the server has
+   none」 (rule-audit-2026-09-27-core N4-N7). */
+const sevenE = await pg.evaluate(async ({ w, s }) => {
+  eval(w); eval(s); window.__reset();
+  var send = FakeX.prototype.send, out = [];
+  FakeX.prototype.send = function(b){
+    var self = this;
+    setTimeout(function(){
+      self.readyState = 4; self.status = 200; self.responseText = '{"x":1}';
+      if (self.onreadystatechange) self.onreadystatechange();
+    }, 0);
+  };
+  netGet('/rest/v1/language_take?select=language', function(d){ out.push('ok ' + JSON.stringify(d)); },
+         function(d, st, m){ out.push('bad ' + st + ' ' + m); });
+  await wait(120);
+  FakeX.prototype.send = send;
+  return out;
+}, { w: WIRE, s: wait });
+
+say(sevenE.length === 1 && /^bad 200 .*\u2260/.test(sevenE[0]),
+    'a read the server answered with something that is not a list is broken, not empty: ' +
+    JSON.stringify(sevenE));
+
 /* ---- 8. and the file and the picture leave by the same exit ------------
    「一本化してくれ」「通信する場所」 OWNER 2026-09-27. netUp() (a file going up)
    and netMedia() (a picture coming down) each had an XMLHttpRequest of their

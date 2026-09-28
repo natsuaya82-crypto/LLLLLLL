@@ -434,8 +434,20 @@ function netPost(path, body, tok, ok, bad){
    without a sign-in, so a GET with no session is a request that would be
    refused, and netSend1() above does not send it. What the door needs is
    `email_taken`, which is named in netDoor() with the rest of the door. */
+/* AND WHAT COMES BACK IS A LIST, OR IT IS BROKEN. Every read here is of a
+   table or a view, which PostgREST answers with a list; anything else is not
+   「none」 -- 「"Empty" and "broken" are different states and must not share a
+   branch」 (CLAUDE.md § Data). It is said here, once, with `≠`: twenty-odd
+   readers each turned it into `[]` for themselves, and three of them then took
+   this account's languages off the phone as 「the server has none」
+   (docs/reports/rule-audit-2026-09-27-core.md N4-N7). token-check 7e. */
 function netGet(path, ok, bad, prog){
-  netSend('GET', path, null, netTok(), ok, bad, false, prog);
+  netSend('GET', path, null, netTok(), function(d){
+    if(!d || typeof d!=='object' || typeof d.length!=='number'){
+      bad(d, 200, netTag(path)+' \u2260'); return;
+    }
+    ok(d);
+  }, bad, false, prog);
 }
 
 /* What Supabase says when it refuses, in the person's language where we have
@@ -1048,12 +1060,8 @@ function netMyProfile(ok, bad){
   netGet('/rest/v1/profile?select='+profCols()+',av,prefs,ed,staff,banned_at,banned_why,admin:profile_admin'+
          '&limit=1&id=eq.'+encodeURIComponent(uid),
          function(d){
-           var p;
-           /* A list is the answer; anything else is broken and is not 「no
-              row」 -- empty and broken do not share a branch (CLAUDE.md
-              § Data). `≠` is 「answered, and not what was asked」 (netPop). */
-           if(!d || typeof d.length!=='number'){ bad(d, 200, 'profile \u2260'); return; }
-           p=d.length? d[0] : null;
+           /* A list, or netGet() has already said it is broken. */
+           var p=d.length? d[0] : null;
            NET_MINE_UID=uid;
            meRowGot(!!p);
            /* NO ROW IS NOT AN EMPTY PROFILE -- an account whose row has not
@@ -1808,7 +1816,7 @@ function netTakes(ok, bad){
   netGet('/rest/v1/language_take?select=language&uid=eq.'+
          encodeURIComponent(netUid())+'&limit='+NET_PAGE,
     function(d){
-      var rows=(d && typeof d.length==='number')? d : [], out=[], i;
+      var rows=d, out=[], i;
       for(i=0;i<rows.length;i++) if(rows[i] && rows[i].language)
         out.push(String(rows[i].language));
       langTookGot(out);
@@ -1938,7 +1946,7 @@ function netLangSeen(lid, ok, bad){
          '&limit=1&id=eq.'+encodeURIComponent(id),
     function(d){
       var r;
-      if(!d || !d.length){ ok(null); return; }
+      if(!d.length){ ok(null); return; }
       r=d[0]||{};
       ok({ id:String(r.id||''), owner:String(r.owner||''),
            name:String(r.name||''),
@@ -1977,7 +1985,7 @@ function netSlices(sid, ok, bad, kinds, cols, prog){
             ? '&kind=in.('+netInList(kinds)+')' : ''),
     function(d){
       var out={}, i, r;
-      for(i=0;i<(d||[]).length;i++){
+      for(i=0;i<d.length;i++){
         r=d[i];
         /* `ed` is when a person last wrote it, on whichever phone
            (supabase/schema.sql § keep_newer) -- 0 where nobody has said. */
@@ -2056,9 +2064,8 @@ function netSlices(sid, ok, bad, kinds, cols, prog){
    page drawn from that language is arrived at (netLangFill below, `lang` in
    www/sns.js § WHAT EACH PAGE READS).
 
-   WHAT CAME BACK IS A LIST OR IT IS NOT AN ANSWER: anything without a length
-   is walked as no rows, never as rows (acct-check, 2026-09-07, `step` until
-   the stack ran out).
+   WHAT CAME BACK IS A LIST: anything else never reaches here -- netGet()
+   hands it to `bad` as broken, and it is walked neither as rows nor as none.
 
    WHAT IS ALREADY HERE IS `LANGS` ITSELF, asked every time -- keyed by the
    server's own id, so two walks running at once see each other's entries
@@ -2071,7 +2078,7 @@ function netSlices(sid, ok, bad, kinds, cols, prog){
    is the server's」 (quiet-check 2). netLangFill() writes LOWN. */
 var NET_LROW={};
 function netLangsWalk(d, done){
-  var rows=(d && typeof d.length==='number')? d : [], made=0, i, row, nid, own;
+  var rows=d, made=0, i, row, nid, own;
   for(i=0;i<rows.length;i++){
     row=rows[i];
     if(!row || !row.id) continue;
@@ -2194,7 +2201,7 @@ function netLangsDown(then, bad){
   netGet(NET_LANG_SEL+'&owner=eq.'+
          encodeURIComponent(netUid())+'&order=created_at.asc&limit='+NET_PAGE,
     function(d){
-      var rows=(d && typeof d.length==='number')? d : [], ids=[], i;
+      var rows=d, ids=[], i;
       for(i=0;i<rows.length;i++)
         if(rows[i] && rows[i].id) ids.push(String(rows[i].id));
       netLangsWalk(d, function(made){
@@ -2940,7 +2947,7 @@ function netFeed(which, ok, bad, more){
      Left out entirely, both sides behave exactly as they did. */
   function got(d){
     var out=[], i;
-    if(!d || !d.length){ ok([]); return; }
+    if(!d.length){ ok([]); return; }
     for(i=0;i<d.length;i++) out.push(netRow(d[i]));
     ok(out);
   }
@@ -3112,7 +3119,7 @@ function netPplPage(at, col, where, after, lim, ok, bad){
          '&limit='+lim,
     function(d){
       var out=[], i, hd, end=null;
-      for(i=0;i<(d||[]).length;i++){
+      for(i=0;i<d.length;i++){
         hd=(d[i] && d[i][col]) || '';
         if(hd){ out.push(String(hd)); end=[String(d[i].created_at||''), String(hd)]; }
       }
@@ -3300,7 +3307,7 @@ function netPplRead(k, ok, bad){
     function(d){
       var rows=[], ids=[], j, r;
       if(NET_PPL_WAIT[k]===w) NET_PPL_WAIT[k]=null;
-      for(j=0;j<(d||[]).length;j++){
+      for(j=0;j<d.length;j++){
         r=d[j];
         if(!r || !r.id || !r.handle) continue;
         rows.push({id:String(r.id), hd:String(r.handle), who:String(r.display||''), av:r.av||null});
@@ -3487,7 +3494,7 @@ function netHandleOf(s){
    is not. */
 function netStaffList(ok, bad){
   netGet('/rest/v1/profile?select=id,handle,admin:profile_admin&staff=is.true&order=handle.asc&limit='+NET_PAGE,
-    function(d){ ok(d || []); }, bad);
+    function(d){ ok(d); }, bad);
 }
 /* The reports, newest first, each carrying the thing it is about -- because a
    list of reasons with no posts under them is a list nobody can act on, and
@@ -3510,7 +3517,7 @@ function netReports(ok, bad){
          '&order=created_at.desc&limit='+NET_PAGE,
     function(d){
       var out=[], i, r, po, au, by;
-      for(i=0;i<(d||[]).length;i++){
+      for(i=0;i<d.length;i++){
         r=d[i]||{}; po=r.post||null; by=r.actor||null;
         /* Whoever it is about: the author of the post, or -- when the report
            is about an account and carries no post -- the account itself. Both
@@ -3550,7 +3557,7 @@ function netFeedbacks(ok, bad){
          '&order=created_at.desc&limit='+NET_PAGE,
     function(d){
       var out=[], i, r, by;
-      for(i=0;i<(d||[]).length;i++){
+      for(i=0;i<d.length;i++){
         r=d[i]||{}; by=r.author||null;
         out.push({ id:r.id,
                    kind:String(r.kind||'opinion'),
@@ -3740,7 +3747,7 @@ function netWhoMany(handles, ok, bad){
   netGet(NET_WHO_SEL+'&handle=in.('+want.join(',')+')&limit='+want.length,
     function(d){
       var by={}, j, who;
-      for(j=0;j<(d||[]).length;j++){
+      for(j=0;j<d.length;j++){
         who=netWhoRow(d[j]);
         if(!who.hd) continue;
         by[who.hd]=who;
@@ -3756,7 +3763,7 @@ function netWho(handle, ok, bad){
   netGet(NET_WHO_SEL+'&limit=1&handle=eq.'+encodeURIComponent(h),
     function(d){
       var r, who;
-      if(!d || !d.length){ ok(null); return; }
+      if(!d.length){ ok(null); return; }
       r=d[0]||{};
       /* WHAT A PERSON IS, out of the one place that says so -- netWhoRow()
          above. The line they wrote about themselves is SHOWN and there is no
@@ -3792,7 +3799,7 @@ function netFindWho(q, ok, bad, more){
          '&limit='+NET_PAGE,
     function(d){
       var out=[], i, r;
-      for(i=0;i<(d||[]).length;i++){
+      for(i=0;i<d.length;i++){
         r=d[i]||{};
         /* The language comes off this same row -- supabase/schema.sql §
            profile_seen. The account's uuid does not travel with the answer:
@@ -3890,7 +3897,7 @@ function netReplies(ids, ok, bad, after){
          '&limit='+NET_PAGE,
     function(d){
       var out=[], j;
-      for(j=0;j<(d||[]).length;j++) out.push(netRow(d[j]));
+      for(j=0;j<d.length;j++) out.push(netRow(d[j]));
       ok(out);
     }, bad);
 }
@@ -3956,7 +3963,7 @@ function netFindPosts(q, ok, bad, more){
          '&limit='+NET_PAGE,
     function(d){
       var out=[], i;
-      for(i=0;i<(d||[]).length;i++) out.push(netRow(d[i]));
+      for(i=0;i<d.length;i++) out.push(netRow(d[i]));
       ok(out);
     }, bad);
 }
@@ -3998,7 +4005,7 @@ function netWordRows(tab, when, ok, bad){
          '&limit='+NET_PAGE,
     function(d){
       var out=[], i, r;
-      for(i=0;i<(d||[]).length;i++){
+      for(i=0;i<d.length;i++){
         r=d[i]||{};
         out.push({id:r.id||'', q:String(r.q||''), at:Date.parse(r[when])||0});
       }
@@ -4633,7 +4640,7 @@ function netDraftBody(d){
    nothing else if this asked for everything. */
 function netDrafts(ok, bad){
   netGet('/rest/v1/draft?select=id,body,updated_at&order=updated_at.desc',
-         function(d){ ok(d || []); }, bad || function(){});
+         function(d){ ok(d); }, bad || function(){});
 }
 /* And taking one off. Called when a draft is thrown away, and when it stops
    being a draft by being posted -- www/post.js does the second one AFTER the
@@ -4777,7 +4784,7 @@ function netDropMe(ok, bad){
   netGet('/rest/v1/post?select=body&author=eq.'+encodeURIComponent(netUid()),
     function(d){
       netGet('/rest/v1/draft?select=body',
-        function(dr){ netDropMine(netMyFiles((d || []).concat(dr || [])), function(){ netEndMe(ok, bad); }); },
+        function(dr){ netDropMine(netMyFiles(d.concat(dr)), function(){ netEndMe(ok, bad); }); },
         function(){ netDropMine(netMyFiles(d), function(){ netEndMe(ok, bad); }); });
     },
     /* The listing failed, and the account still goes. Somebody who asked to
