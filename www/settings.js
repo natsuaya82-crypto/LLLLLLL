@@ -757,30 +757,23 @@ function wipeLangsHere(id){
      called, because the file was named after it. There are no files
      (www/backup.js), and the row on the server went through netLangDrop()
      above. */
-  /* Where you are standing now. langForAcct() is the one place that
-     answers 「which language is this account's to be in」 -- it opens one they
-     already have, and mints one stamped with them when they have none. A
-     phone that has just deleted its only language gets a new empty one, which
-     is what a first run is. */
-  langForAcct();
-  /* Every global a language owns, put back to what an empty one looks like.
-     This is langOpen()'s own line less migratePostInk(), which cuts ink onto
-     posts out of the alphabet they were written in -- there is no alphabet
-     here now, and the posts are not going anywhere. */
-  langLoad(); ltStart(); migrateKbFree();
+  /* The deleted language's globals, emptied, and its font and its letter
+     under the pen with them -- then where you are standing now, which is
+     langForAcct()'s to say: it opens a language this account already has
+     through langOpen() -- which reads it, migrates it as the app's own writes
+     and puts you on the profile -- or makes one with the account's name on
+     it. Nothing else is repeated here: this used to do langOpen()'s work a
+     second time after it, with ltStart() and a save OUTSIDE slAsApp, so the
+     language left standing was marked as a person's writes and went up on
+     the next save (rule-audit-2026-09-27-core T3, acct-check 48c). */
+  langLoad();
   SFONT={built:false, sig:null};
   var css=document.getElementById('sfontcss');
   if(css && css.parentNode) css.parentNode.removeChild(css);
-  langSaveAll();
-  /* and where you were standing was in a language that is not there.
-     langOpen()'s own two lines: the last one leaves you on the cover of the
-     language you are in now, which is the only way this row can be seen to
-     have done anything -- rendering the settings room again draws a screen
-     that looks exactly as it did before it was pressed. GE goes with them:
-     the glyph editor holds one letter, and that letter is not there either. */
   GE=null;
   viewReset();
   goTab('profile');
+  langForAcct();
 }
 function wipeAll(){
   /* 確認は自前のポップで。「標準は使わねえって言ってるだろこれも禁止や」

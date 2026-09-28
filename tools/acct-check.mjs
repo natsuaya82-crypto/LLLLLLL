@@ -2353,6 +2353,35 @@ const R = await pg.evaluate(async () => {
   }
   say('48: 途中で切れた削除は、次に開いたときサーバが答えて消し切られる');
 
+  /* 48c. 「この言語を削除」── その言語の slice は全部消え、索引からも消え、
+     残った言語が開き、押した後に人の書き込みの印は一つも増えない
+     （印が付けば、次の保存でサーバーへ上がる）。言語の削除に回帰の検査が
+     一つも無かった（rule-audit-2026-09-27-core T3）。 */
+  {
+    start(); netOut(); arrive(A);
+    const send48c = netSend;
+    netSend = (m, p, b, tok, ok) => {
+      setTimeout(() => ok(m === 'DELETE' ? [{ id: 'x' }] : m === 'PATCH' ? [b || {}] : []), 0);
+    };
+    const del48c = langId;
+    LANGS.Lkeep48 = {}; langOwnGot('Lkeep48', A); langStore();
+    slAsApp(slWr, [langKeyOf('Lkeep48', 'words'), '[{"hw":"k"}]']);
+    slAsApp(slWr, [langKeyOf(del48c, 'words'), '[{"hw":"gone"}]']);
+    const before48c = Object.keys(LSL).filter(k => slTouched(k));
+    wipeLangsGo();
+    await new Promise(r => setTimeout(r, 60));
+    netSend = send48c;
+    const left48c = Object.keys(LSL).filter(k => k.indexOf('lingua.' + del48c + '.') === 0);
+    const marked48c = Object.keys(LSL).filter(k => slTouched(k) && before48c.indexOf(k) < 0);
+    if (left48c.length) no('48c: 消した言語の slice が残っている — ' + JSON.stringify(left48c));
+    if (LANGS[del48c]) no('48c: 消した言語が索引に残っている');
+    if (!langId || langId === del48c || langOwnOf(langId) !== A)
+      no('48c: 残った言語が開いていない — ' + JSON.stringify(langId));
+    if (marked48c.length)
+      no('48c: **消した後に、人の書き込みの印が付いた** ── 次の保存で上がる: ' + JSON.stringify(marked48c));
+    say('48c: 言語を消すと、その言語だけが消え、残った言語が開き、上がる印は増えない');
+  }
+
   /* 49. 消された側の端末は、画面ごと出される。 */
   start();
   netOut(); arrive(D);
