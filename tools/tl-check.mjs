@@ -1262,6 +1262,19 @@ const au = await pg.evaluate(() => {
     out.a22 = JSON.stringify({ post:nw, edit:ed, name:nm });
     PW = pwBlank(); NAV = [{ r:'feed' }]; window.route = 'feed'; render(); }
 
+  /* a23: the mark is one colour wherever it stands 「他の画面で見れる♦️なんで
+     色違うの？合わせろ」 (OWNER, build 171) -- a list of people, a post's head,
+     a quote, a profile, measured on the page against the mark on its own. */
+  { const app = document.getElementById('app'), keep = app.innerHTML;
+    const p = { who:'Iri', hd:'iri', badge:true, av:null, lname:'' };
+    app.innerHTML = '<div id="b0">'+badgeMark()+'</div>'+
+      '<div id="b1">'+snsWhoRow(p)+'</div>'+
+      '<div id="b2" class="post"><div class="pheadn"><span class="pnamew">'+whoName(p)+'</span></div></div>'+
+      '<div id="b3" class="mewho">'+whoName(p)+'</div>';
+    const col = (id) => { const e = document.querySelector('#' + id + ' .bdg'); return e ? getComputedStyle(e).color : 'none'; };
+    out.a23 = ['b0','b1','b2','b3'].map(col).join(' / ');
+    app.innerHTML = keep; }
+
   netIdOf = realId;
   netSend1 = realS1; netSend = realS; netGet = realG;
   NAV = [{ r:'feed' }]; window.route = 'feed'; render();
@@ -1333,6 +1346,8 @@ if (/feed_(hot|fo)/.test(au.a21more) || !/post_seen/.test(au.a21more))
 if (au.a22 !== JSON.stringify({ post:true, edit:true, name:false }))
   say('a22: Enter let through (true) or swallowed (false): ' + au.a22 +
       ' -- a post new and edited takes a new line, the name field takes none.');
+if (new Set(String(au.a23).split(' / ')).size !== 1)
+  say('a23: the mark is ' + au.a23 + ' (alone / a list of people / a post / a profile) -- one colour everywhere.');
 if (!au.a3)
   say('a3: a word pressed while another word\u2019s answer is on the screen draws that old answer or ' +
       '「No results」 until its own lands. Not answered yet is the waiting mark.');

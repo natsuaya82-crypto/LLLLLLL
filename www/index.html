@@ -2217,7 +2217,12 @@ a.set{text-decoration:none}
    so what shipped was a blue mark and a rule nothing ever wore.
    「企業バッジ一旦廃止して、青バッジをそのまま金にして欲しい。プロプラン」
    OWNER 2026-09-01. */
-.bdg{color:var(--gold)}
+/* AND NOTHING OUTRANKS IT. A container's own `svg` colour -- `.whrow svg`, a
+   list of people -- is one selector more specific than `.bdg` and turned the
+   mark grey there and gold everywhere else 「他の画面で見れる♦️なんで色違う
+   の？合わせろ」 (OWNER, build 171). Beating containers one at a time is a
+   list somebody has to keep; this says it once, the way `.sfont` does. */
+.bdg{color:var(--gold) !important}
 .bdgw svg{display:block}
 .pname .bdgw{margin-left:5px}
 /* The language, as a row of its own between what somebody says about
