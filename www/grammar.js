@@ -2454,7 +2454,11 @@ function g2ChapBy(id){
    about what somebody just opened. */
 function g2ChapName(id){
   var c=g2ChapBy(id);
-  return c? c.nm : t('stg.order.t');
+  /* A chapter that is not there -- an argument a relaunch put back after the
+     chapter was retired -- is drawn as the contents (vGram), so it is named
+     as the contents: pageName() of the bare route, the one place that says
+     it. It said 語順, over a page that is not the word order. */
+  return c? c.nm : pageName('gram');
 }
 /* One row of the grammar's list, and the list itself is stListHTML() in
    www/phases.js -- there is one list of chapters, not two.
