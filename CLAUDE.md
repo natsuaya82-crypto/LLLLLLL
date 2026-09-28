@@ -370,6 +370,17 @@ confirmed is a swing in the dark**, and three days went that way: the search
 fault was named twice from reading and was wrong twice; the Settings button had
 three causes listed and was never once pressed.
 
+**NO FIX ON A HUNCH.** 「なんとなくで治すのルールで禁止して」 OWNER 2026-09-28.
+A change that is meant to fix something ships only with the cause **measured**
+-- the failing answer read, the bug put back and watched going red -- and the
+report says which. When the answer that would name the cause is gone or was
+never kept, the first change is the one that KEEPS it (a log, a stored reply),
+and the report says 「原因は分かっていない」 in those words, not a likely one.
+The daily prompt is the worked example: on 2026-09-27 the wait was lengthened
+and a retry added on a guess, the report said 「明日から毎日変わる」, and the
+next midnight wrote nothing, with nothing left to say why. **Nothing stops
+this. A person holds it by reading the report.**
+
 **What was fixed is SHOWN.** 「スクショで見るのは俺の方なんだから直したところは
 俺に見せろ」 OWNER 2026-09-03. The owner is the one holding the phone. Take the
 screenshot and put it in front of them; do not look at it yourself and call that
