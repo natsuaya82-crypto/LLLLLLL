@@ -38,7 +38,7 @@ var addFrom='';
    than from the dictionary. `count.1`, and empty for every ordinary word.
    phases.js § openSlot sets it; addOne() writes it onto the word. */
 var addSlot='';
-function openAdd(from){
+function openAdd(from, sp){
   /* Adding a word is the second of the four. Asked before the sheet opens,
      so nobody types a word into a form that is going to refuse it -- and
      before anything below is touched, so a refused open leaves the screen
@@ -57,7 +57,9 @@ function openAdd(from){
      this took the not-fresh branch, left both null, and wdFormHTML() threw
      into vForm's catch: "that is no longer here", about a sheet nobody had
      opened. Empty and broken were sharing a branch. */
-  var fresh = !(here().r==='form' && here().a==='add:'+(from||'')) || !addW || !wEdit;
+  /* `sp` is a spelling somebody chose to start from (a made-up word, vGen):
+     that is a new sheet by definition, so it is fresh whatever the route. */
+  var fresh = !!sp || !(here().r==='form' && here().a==='add:'+(from||'')) || !addW || !wEdit;
   var par=from? findWord(from) : null;
   addFrom = par? String(par.hw) : '';
   /* A word coined from the dictionary fills no slot. Cleared here rather than
@@ -73,7 +75,7 @@ function openAdd(from){
     addW={hw:'', mns:[], pos:addPos, syn:[], ant:[], ex:[]};
     wdMnNew=false; wdExNew=false; wdSubNew=false;
     if(addFrom) addW.from=addFrom;
-    wEdit={seq:[], sp:(par? JSON.parse(JSON.stringify(spOf(par))) : []),
+    wEdit={seq:[], sp:JSON.parse(JSON.stringify(sp || (par? spOf(par) : []))),
            mns:[], pos:addPos, sub:'', reg:'', tags:[], ety:'', nt:''};
     addFmClear();
     wdSync();

@@ -632,17 +632,12 @@ function vGen(){
       : '<div class="note">'+esc(t('gen.none'))+'</div>')+
     '</div></div>';
 }
-/* Onto the sheet, with the spelling in it. openAdd() is asked first and may
-   refuse (no account, the ceiling): then nothing is written and you are
+/* Onto the sheet, with the spelling in it. openAdd() asks first and may
+   refuse (no account, the ceiling): then nothing is opened and you are
    still here. */
 function genTake(i){
   var g=GEN && GEN.ws[i];
-  if(!g) return;
-  addW=null;
-  openAdd('');
-  if(!addW || here().r!=='form') return;
-  wEdit.sp=JSON.parse(JSON.stringify(g.sp));
-  wdSync(); relDirty(); render();
+  if(g) openAdd('', g.sp);
 }
 /* The language's syllable shapes, chosen. A shape is on or off; the first
    press on a language that has chosen none starts from the shapes its
