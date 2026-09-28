@@ -1074,6 +1074,23 @@ const R = await pg.evaluate(() => {
     out.fails.push('openEdit opened a writing sheet in somebody else\'s language: ' + lockedOn);
   start(); KEEP = {};
 
+  /* ---- typing moves everything worked out from the spelling --------------
+     Typing does not redraw the sheet; the IPA line was the only thing written
+     again, and the syllables and the reading row showed the word before the
+     last key. */
+  start(); KEEP = {};
+  openEdit('mos'); render();
+  const sylWas = (document.getElementById('wd-syl') || {}).textContent;
+  wdSetLn('mosi');
+  const sylNow = (document.getElementById('wd-syl') || {}).textContent,
+        rdNow = (document.getElementById('wd-rd') || {}).textContent,
+        svNow = (document.getElementById('wd-sv') || {}).textContent;
+  out.said.push('typing mos → mosi: syllables ' + JSON.stringify(sylWas) + ' → ' + JSON.stringify(sylNow) +
+    ', IPA ' + JSON.stringify(rdNow) + ', reading row ' + JSON.stringify(svNow));
+  if (!sylNow || sylNow === sylWas) out.fails.push('the syllable line did not move when the spelling was typed');
+  if (svNow !== undefined && svNow !== rdNow) out.fails.push('the reading row still says the word before the last key: ' + svNow);
+  start(); KEEP = {};
+
   /* ---- the reading row is the same row on every plan --------------------
      「全部一緒 / 有料から無料も同じ画面でタップしたら有料に行くように」 OWNER
      2026-09-04. It was not drawn at all on free. Pressed there, it goes to the

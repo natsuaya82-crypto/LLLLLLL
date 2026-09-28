@@ -208,9 +208,22 @@ function wdSetLn(v){
      is the word itself, did not. www/shell.js § KEEP. */
   wdKeepTouch();
   lnGrow('wd-ln');
-  var r=document.getElementById('wd-rd');
-  if(r) r.textContent=phIpa(wEdit.seq);
+  wdSounds();
   addFmPaint();
+}
+/* Typing does not redraw the sheet, so everything on it that is worked out
+   from the spelling is written again here: the IPA, the syllables, and the
+   value on the reading row. It was the IPA alone, and the other two showed
+   the word as it was before the last key. */
+function wdSyl(seq){
+  return phCut(seq).map(function(p){ return p.on.join('')+p.nu.join('')+p.co.join(''); }).join('\u00b7');
+}
+function wdSounds(){
+  var r=document.getElementById('wd-rd'), y=document.getElementById('wd-syl'),
+      v=document.getElementById('wd-sv');
+  if(r) r.textContent=phIpa(wEdit.seq);
+  if(y) y.textContent=wdSyl(wEdit.seq);
+  if(v) v.textContent=phIpa(spPh(wEdit.sp||[]));
 }
 /* The reading, and the way to change it. It is proposed -- the letters of
    the word say what it reads, and that is the answer until somebody says
@@ -229,7 +242,7 @@ function wdSeqHTML(){
   if(!spRdOK(sp)) return '';
   return '<button class="set"' + DO('wdSpellGo') + '>'+
     '<span class="sl">'+esc(t('word.sp'))+'</span>'+
-    '<span class="sv">'+esc(phIpa(spPh(sp)))+ICON_GO+'</span></button>';
+    '<span class="sv"><span id="wd-sv">'+esc(phIpa(spPh(sp)))+'</span>'+ICON_GO+'</span></button>';
 }
 /* The same row on every plan 「全部一緒 / 有料から無料も同じ画面でタップしたら
    有料に行くように」 OWNER 2026-09-04: a plan that cannot change how a word
@@ -1651,8 +1664,7 @@ function wdFormHTML(){
       (mk? '' : '<button class="usep"' + DO('cardOpen', ["w", openHw]) + ' aria-label="'+
         esc(t('card.title'))+'">'+ICON_SHARE+'</button>')+'</div>'+
     '<div class="wsub" id="wd-rd">'+esc(phIpa(seq))+'</div>'+
-    '<div class="wsub2">'+esc(phCut(seq).map(function(p){
-        return p.on.join('')+p.nu.join('')+p.co.join(''); }).join('·'))+'</div>'+
+    '<div class="wsub2" id="wd-syl">'+esc(wdSyl(seq))+'</div>'+
 
     /* A word is TYPED, on both plans. Under this heading were two grids --
        the alphabet, and the sounds -- with a rail to switch between them, so
