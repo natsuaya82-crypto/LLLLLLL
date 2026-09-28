@@ -3433,6 +3433,10 @@ const KNOCK = await (async () => {
     if (t === 'device') return said([{ token: 'ab'.repeat(32), platform: 'ios' },
                                      { token: 'fcm:APA91b_' + 'x'.repeat(140), platform: 'android' }]);
     if (t === 'profile') return said([{ prefs: {}, handle: 'someone' }]);
+    /* Nobody has muted anybody: a row here is push-send being told not to
+       ring (pushPlan()'s `muted`), and the answer-from-the-key below would
+       be one. */
+    if (t === 'mute') return said([]);
     if (t === 'prompt') return said([]);
     if (t === 'purchase') return said([]);
     return said(Object.keys(eq).length ? [eq] : []);
