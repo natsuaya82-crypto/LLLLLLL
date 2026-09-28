@@ -5357,7 +5357,7 @@ and is never merged into your own」と言っている。**入らない、は二
 
   **(3) `note*` in `notes.js` is the chapter spelled long, and goes to
   `nt*`.** ~~`noteRead`~~ ~~`noteCut`~~ ~~`noteHead`~~ ~~`noteBody`~~ ~~`noteAt`~~ → `nt*`, and
-  ~~`notesFound`~~ → `ntFound`. `openNote` and `vNotes` are untouched — `open*`
+  ~~`notesFound`~~ → ~~`ntFound`~~ → `ntNewest`. `openNote` and `vNotes` are untouched — `open*`
   and `v*` are named in CLAUDE.md — and `saveNote` `saveNotes` ~~`delNote`~~ are
   untouched by (1).
 - Reason: the Names rule exists so that 500-odd globals in one namespace stay

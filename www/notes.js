@@ -259,7 +259,7 @@ function ntSwTapClose(){ ntSwipeAt=-1; render(); }
    asked for again; git is what remembers it, not a branch left standing here.
    NOTHING SOMEBODY WROTE IS TOUCHED -- what went is the way of looking, and
    every note is still in NOTES and still on this list. */
-function ntFound(){
+function ntNewest(){
   var out=[], i;
   for(i=NOTES.length-1;i>=0;i--) out.push(i);
   return out;
@@ -298,7 +298,7 @@ HELP.notes=function(){
 };
 function vNotes(){
   /* Newest first: a notebook is read from the end. */
-  var found=ntFound(), rows='';
+  var found=ntNewest(), rows='';
   found.forEach(function(i){
     var on=!!(NTSEL && NTSEL[i]);
     if(NTSEL){

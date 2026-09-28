@@ -47,7 +47,7 @@ function seqOf(hw){
 
 /* Generation: build new words that keep the rules we inferred.
    Also plain arithmetic on the device. */
-function pick(o){
+function asPick(o){
   var e=Object.keys(o).map(function(k){return [k,o[k]];});
   if(!e.length) return '';
   var sum=0,i; for(i=0;i<e.length;i++) sum+=e[i][1];
@@ -56,7 +56,7 @@ function pick(o){
   return e[0][0];
 }
 /* Two words that sound identical are the same word, whatever they look like */
-function taken(){
+function asTaken(){
   var s={}; WORDS.forEach(function(w){ s[wPh(w).join('')]=1; }); return s;
 }
 /* Coining a word means choosing sounds, in the shapes this language already
@@ -65,15 +65,15 @@ function taken(){
    never chosen. It cannot now: every piece comes out of the dictionary's own
    sequences. Hands back a sequence, because that is what a word is. */
 function makeWord(pos, A, tk){
-  A=A||analyze(); tk=tk||taken();
+  A=A||analyze(); tk=tk||asTaken();
   if(!Object.keys(A.nu).length) return null;
   var rule=A.finalRule[pos];
   for(var tr=0;tr<120;tr++){
-    var n=Math.max(1,Math.min(3,+pick(A.cnt)||2));
+    var n=Math.max(1,Math.min(3,+asPick(A.cnt)||2));
     var seq=[], i, pool;
     for(i=0;i<n;i++){
       pool = i===0 ? A.onI : (Object.keys(A.onM).length?A.onM:A.onI);
-      seq = seq.concat(phUnkey(pick(pool))).concat(phUnkey(pick(A.nu)));
+      seq = seq.concat(phUnkey(asPick(pool))).concat(phUnkey(asPick(A.nu)));
     }
     if(rule){
       var ch=rule.ch;
@@ -81,7 +81,7 @@ function makeWord(pos, A, tk){
       if(ipaIsVowel(ch)){ while(seq.length && ipaIsVowel(seq[seq.length-1])) seq.pop(); }
       seq.push(ch);
     } else if(Object.keys(A.co).length && Math.random()<.35){
-      seq = seq.concat(phUnkey(pick(A.co)));
+      seq = seq.concat(phUnkey(asPick(A.co)));
     }
     if(seq.length < (tr<70?3:2)) continue;   /* look for three sounds first, settle for two */
     var key=seq.join('');
