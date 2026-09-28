@@ -1135,9 +1135,10 @@ function wfmFormHTML(w, was, k){
     spTypeField('wfm-f', IN('wfmSetF'), spType(f), 'whin')+
     /* The way out, and only for a form somebody placed: a form a rule makes
        is the rule's, and an old one is a word in the dictionary, which this
-       screen does not delete. */
-    (placed? '<button class="btn ghost"'+DO('wfmDel', [String(w.hw), was])+'>'+
-      esc(t('wfm.del'))+'</button>' : '');
+       screen does not delete. The same row as the word sheet's 単語の削除,
+       last on the page 「一番下がデリートになるように」. */
+    (placed? '<div class="grpsep"></div><button class="set end"'+DO('wfmDel', [String(w.hw), was])+'>'+
+      '<span class="sl bad">'+esc(t('wfm.del'))+'</span></button>' : '');
 }
 function wfmSetF(v){ keepSet('f', String(v||'')); lnGrow('wfm-f'); }
 /* THE ONE PLACE A FORM IS WRITTEN. Both halves or nothing: 「ラベルと単語が
