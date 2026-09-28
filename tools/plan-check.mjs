@@ -92,7 +92,7 @@ const r = await pg.evaluate(({ s }) => {
      Held for real: made on the paid plan, counted on free, and counted again
      in LETTERS/STG so that hidden is hidden and never removed. */
   planGot('pro');
-  var ltWas = LETTERS.length, extraLt = ltNew({ nm:'zzq' });
+  var ltWas = LETTERS.length, extraLt = ltNew({ nm:'zzq', ch:'\u02ac' });
   var stWas = (STG.extra ? STG.extra.length : 0);
   STG.extra.push({ id:'own_plan_check', title:'a stage of my own',
                    slots:['s1'], labels:{ s1:'one' }, what:'' });
@@ -113,6 +113,24 @@ const r = await pg.evaluate(({ s }) => {
   out.ltFreeSeen = seenHas(extraLt.id);
   out.stFreeSeen = stageHas('own_plan_check');
   out.ltFreeHeld = !!ltById(extraLt.id);
+  /* ---- and the find screen sees what the lists see -------------------
+     Search is the dictionary and the alphabet read backwards, so on free it
+     answers off wordsSeen() and ltSeen() like the lists do -- a search, a
+     count of what is half done, or a row of letter keys that answered off
+     WORDS/LETTERS put the hidden ones back through the other door. And its
+     import row is the same door as the settings one: gone on free
+     (docs/PAID_FEATURES.md, 「CSV, file import, the sheet」). */
+  var seenKata = wordsSeen().filter(function(w){ return srcKey(w).indexOf('kata') >= 0; }).length;
+  out.findWords = fHits('kata').w.length;
+  out.findWordsSeen = seenKata;
+  out.findRestLt = fRestHTML().indexOf(extraLt.id) !== -1;
+  var todoLt = fTodo().filter(function(r){ return r[0] === t('find.todo.lt'); });
+  out.findTodoLt = todoLt.length ? todoLt[0][1] : 0;
+  out.findTodoLtSeen = ltSeen().filter(function(l){ return ltHasShape(l) && !ltUnits(l).length; }).length;
+  out.findImportFree = fRestHTML().indexOf('"openImport"') !== -1;
+  planGot('pro');
+  out.findImportPaid = fRestHTML().indexOf('"openImport"') !== -1;
+  planGot('free');
   out.stFreeHeld = (STG.extra ? STG.extra.length : 0) - stWas;
   out.ltGrew = LETTERS.length - ltWas;
   /* put back: everything after this walks the fixture's own language */
@@ -308,6 +326,17 @@ const r = await pg.evaluate(({ s }) => {
   /* and the post itself is untouched by having been refused */
   out.editFreeKept = postById('p_plan') && postById('p_plan').ln === 'kano mos' &&
                      postById('p_plan').ed === 12345;
+
+  /* A GRAMMAR STAGE OF YOUR OWN, asked on the ＋ and not after the form
+     has been typed into (audit words pwi-15). The ＋ is drawn on every plan;
+     on free the press is the pop and no form is open behind it. */
+  popOff(); closeSheet();
+  out.ownFreeAsked = askPop(function(){ openOwnPhase(); });
+  out.ownFreeNoForm = !(here().r === 'form' && here().a === 'own:');
+  planGot('pro'); popOff();
+  openOwnPhase();
+  out.ownProOpens = here().r === 'form' && here().a === 'own:';
+  closeSheet(); planGot('free');
 
   /* Pressed on plus: it opens, carrying the post it was pressed on. */
   planGot('plus');
@@ -1779,6 +1808,14 @@ say(r.freeHeld === 500,
 say(r.freeShown === r.freeCap,
     'and lists ' + r.freeCap + ' of them (' + r.freeShown + ')');
 say(r.freeFound, 'and findWord() still finds the last of them, which is off the list');
+say(r.findWords === r.findWordsSeen && r.findWords <= r.freeCap,
+    'on free the find screen\'s search answers off the list the dictionary shows (' +
+    r.findWords + ' found, ' + r.findWordsSeen + ' listed)');
+say(!r.findRestLt && r.findTodoLt === r.findTodoLtSeen,
+    'on free the find screen draws and counts no letter the alphabet hides (' +
+    r.findTodoLt + ' counted, ' + r.findTodoLtSeen + ' listed)');
+say(!r.findImportFree && r.findImportPaid,
+    'the find screen\'s import row is the settings door: gone on free, there on paid');
 say(r.ltGrew === 1 && r.ltPaidSeen && !r.ltFreeSeen,
     'a letter added on the paid plan is on the alphabet, and hidden on free');
 say(r.ltFreeHeld, 'and it is still in LETTERS -- hidden, never removed');
@@ -1828,6 +1865,11 @@ say(r.freeNoMid, 'while free meets neither');
 say(r.penOnFree, 'the pencil is drawn on the free plan -- a closed door is shown, not hidden');
 say(r.editFreeNoPW && r.editFreeSaidNo,
     'pressed on free it asks rather than telling -- no is no, and no composer opens');
+say(r.ownFreeAsked === r.upNeed,
+    'a grammar stage of your own asks the plan on the + on free (' +
+    (r.ownFreeAsked || 'nothing') + ')');
+say(r.ownFreeNoForm, 'and no form is open behind the pop');
+say(r.ownProOpens, 'and on a paid plan the + opens the form');
 say(/Plus/.test(r.editFreeAsked || ''),
     'the sentence names the plan (' + (r.editFreeAsked || 'nothing') + ')');
 say(r.editFreeWent, 'and yes goes to the plans screen, still without a composer');

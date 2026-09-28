@@ -1130,6 +1130,32 @@ await twice();
 const g5 = await gramOf();
 want('a phases slice that will not parse is left alone', g5.a, '[[[not json');
 
+/* 6. AND THE PICTURE IS NOT MINE. `lingua.<id>.phases.got` is what came
+      down from the server last time, kept to LOOK at with no signal
+      (CLAUDE.md rule 22) -- slRd() reads it last, slMine() never does, and
+      the road up asks slMine(). This migration read the slice through
+      slRd() and wrote what came back with slWr(), so a picture and nothing
+      else went into memory as this phone's own: from then on slMine()
+      answered it, netLangFill() stepped over that slice for good, and the
+      next save carried a stale picture up (audit words pwi-13).
+
+      Seeded on a language an older version DID leave keys for -- that is
+      the only one the migration looks at -- with a picture of phases and
+      nothing in the settings to copy. */
+await GLANGS(JSON.stringify({ theme: 'dark' }));
+await twice();
+const idPic = await gid('Aya');
+await pg.evaluate((id) => {
+  localStorage.setItem('lingua.' + id + '.phases.got', '{"done":{"pic":1}}');
+}, idPic);
+await twice();
+const g6 = await pg.evaluate((id) => ({
+  mine: slMine('lingua.' + id + '.phases'),
+  pic: localStorage.getItem('lingua.' + id + '.phases.got')
+}), idPic);
+want('a picture of the slice is not written back as this phone\'s own', g6.mine, null);
+want('and the picture itself is where it was', g6.pic, '{"done":{"pic":1}}');
+
 /* ---- 9: the two numbers become one -------------------------------------
    2026-09-10. A language used to have two numbers -- `L<ms36>`, minted on the
    phone and used as the key of the index and of every key under it, and the

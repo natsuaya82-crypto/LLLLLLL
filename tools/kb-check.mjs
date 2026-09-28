@@ -388,6 +388,35 @@ const r = await pg.evaluate(({ s }) => {
     out.survives.push({ pat: p, was: was, now: launch(), at: at,
                         atNow: KB ? KB.at : -1 });
   });
+  /* ---- 5a. deleting boards IN FRONT of the applied one moves nothing ---
+     `KB.at` is an index, so a board taken out below it moves it down by
+     one. kbDropGo() said so and kbSelDelGo() -- the same delete, done to
+     several at once from Select -- did not: with flick applied, deleting
+     board 1 from the list made abc the keyboard on the phone, with no press
+     on abc (audit words kb-1, measured). One function moves `at` for both
+     roads now, so this asks both. */
+  function applied(){ return kbStored()[KB.at - 1] ? kbStored()[KB.at - 1].id : null; }
+  out.dropAt = [];
+  [['one', function (){ kbDropGo(1); }],
+   ['select', function (){ kbSelOn(); kbSelTap(1); kbSelDelGo(); }]].forEach(function (x){
+    KB = null; kbShow = 0; KEEP = {};
+    kbAdd('qwerty'); kbAdd('flick'); kbAdd('abc');
+    kbApply(2);
+    var want = applied();
+    x[1]();
+    out.dropAt.push({ road: x[0], want: want, got: applied(), n: kbStored().length });
+  });
+  /* ---- 5a'. board 0's ⋯, come back to as a route, offers nothing to undo --
+     `form:kbmore` is a route and can be restored standing on board 0. The
+     reset row was drawn outside the "not board 0" guard, and pressing it
+     there wrote `null`, which slRm() takes as a person deleting the slice --
+     memory, the disk copy and the picture (audit words kb-4, measured). */
+  KB = null; kbShow = 0; KEEP = {};
+  kbAdd('qwerty');
+  kbShow = 0; NAV = [{ r: 'profile' }, { r: 'kb' }];
+  go('form', 'kbmore'); render();
+  out.free0More = document.querySelectorAll('#app [data-do="kbReset"], #app [data-do="kbDrop"], #app [data-do="kbRepat"]').length;
+  NAV = [{ r: 'profile' }, { r: 'kb' }]; render();
   /* ---- 5b. a pattern that does not fit is more FACES ------------------
      「パターンから作った盤に、段の上限が効いていない」 LEADER, 2026-08-27.
 
@@ -4062,6 +4091,15 @@ r.survives.forEach((x) => {
       x.was + ' stored, ' + x.now + ' after the disk is read and the migration runs, ' +
       'and KB.at is still ' + x.atNow + ' (' + x.at + '), so the keyboard on the phone ' +
       'has not become its neighbour');
+});
+say(r.free0More === 0,
+    'and the ⋯ of board 0, come back to as a route, has nothing on it that deletes or ' +
+    'rebuilds -- ' + r.free0More + ' such rows');
+r.dropAt.forEach((x) => {
+  say(x.got === x.want && x.n === 2,
+      'and deleting the board IN FRONT of the applied one (' + x.road + ') leaves the ' +
+      'same keyboard on the phone -- ' + x.want + ' applied before, ' + x.got + ' after, ' +
+      x.n + ' boards left');
 });
 say(r.sizes5.every((x) => x.over === 0),
     'and at 26 / 60 / 105 / 150 / 300 letters too -- no face over the ceiling' +

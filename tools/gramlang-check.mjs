@@ -393,8 +393,8 @@ await pg.evaluate((old) => {
 await boot();
 const f = await pg.evaluate((ids) => {
   langOpen(ids.LB);
-  setOrder('VOS');
-  setGPos('negp', 'after');
+  gOrderPut('VOS');
+  gPosPut('negp', 'after');
   const bReads = orderDef().id, bNegp = gPos('negp');
   langOpen(ids.LA);
   let aSet = null;
@@ -416,7 +416,7 @@ want('the language that was changed says the new order', f.bReads, 'VOS');
 want('and the new position', f.bNegp, 'after');
 /* And what is written down is the CARDS -- a list of roles, because the board
    is a list of roles. The six-letter string is what a language written before
-   today holds and is read back into this (orderSeq); it is not what setOrder()
+   today holds and is read back into this (orderSeq); it is not what gOrderPut()
    writes any more. `aStored` two lines down is still 'OSV', which is that
    half: LA was never arranged in this run, so its own string is exactly where
    it was. */
@@ -427,6 +427,21 @@ want('and its own position', f.aNegp, 'before');
 want('which is still what its file says', f.aStored, 'OSV');
 want('all of it', f.aStoredNegp, 'before');
 want('and the settings still do not hold a word order', f.personOrder, undefined);
+
+/* AN EMPTIED BOARD IS WRITTEN EMPTY (監査 words grammar-4). gOrderPut() put
+   what it was handed through orderSeq(), so clearing the board and pressing
+   save wrote 主語 目的語 動詞 as this language's answer. The engine still
+   reads SOV off an empty field -- that is orderDef()'s, asked here too. */
+const emptied = await pg.evaluate(() => {
+  const was = JSON.stringify(STG.order);
+  STG.order = ['S', 'V', 'O'];
+  gOrderPut([]);
+  const out = { stored: JSON.stringify(STG.order), reads: orderDef().id };
+  STG.order = JSON.parse(was);
+  return out;
+});
+want('an emptied board is written empty', emptied.stored, '[]');
+want('and the engine still arranges by the fallback', emptied.reads, 'SOV');
 want('and what was chosen in one is not chosen in the other', f.aTouchedAdj, false);
 
 /* ---- 8: a default nobody chose is not lit -------------------------------
@@ -538,7 +553,7 @@ const g = await pg.evaluate(() => {
      side is READ rather than written down here: the seed is somebody else's
      file and a check that names the answer is a second copy of it. */
   const other = gPos('adj') === 'before' ? 'after' : 'before';
-  setGPos('adj', other);
+  gPosPut('adj', other);
   render();
   return { on: on, came: came, holds: holds, first: first, fell: fell,
            moved: lit(), saysOther: gPosLab('adj', other),
@@ -1729,6 +1744,16 @@ const sel = await pg.evaluate(() => {
   const selBar = bar(), selMarks = marks();
   g2SelTap('s1');
   const oneBar = bar();
+  /* AND A SELECTION IS THE SCREEN'S IT WAS MADE ON (監査 words grammar-5).
+     Every chapter is the route `gram`, so walking to another one was not
+     leaving: the bin was still in that bar, and pressing it took s1 -- a rule
+     not on the screen. */
+  show('pl');
+  const elseBar = bar();
+  g2SelDelGo();
+  const elseLeft = (STG.fm || []).map((r) => r.id).join(',');
+  show('tense');
+  g2SelOn(); g2SelTap('s1');
   g2SelDelGo();
   const left = (STG.fm || []).map((r) => r.id).join(',');
   const after = G2SEL;
@@ -1736,7 +1761,8 @@ const sel = await pg.evaluate(() => {
   G2SEL = null;
   return { restBar: restBar.join(','), restMarks: restMarks, crosses: crosses,
            selBar: selBar.join(','), selMarks: selMarks,
-           oneBar: oneBar.join(','), left: left, after: after };
+           oneBar: oneBar.join(','), left: left, after: after,
+           elseBar: elseBar.join(','), elseLeft: elseLeft };
 });
 
 want('no row of a chapter carries a ⊖ of its own', sel.crosses, 0);
@@ -1749,6 +1775,8 @@ want('Delete arrives with the first one chosen', sel.oneBar, 'back,g2SelDel,g2Se
 want('what was chosen goes, and the other chapter’s rule stays',
      sel.left, 's2,s3');
 want('and the list stops being one you choose from', sel.after, null);
+want('another chapter does not carry the selection', sel.elseBar, 'back,g2SelOn');
+want('and nothing is deleted from there', sel.elseLeft, 's1,s2,s3');
 
 /* ---- 107-116: a kind of noun is deleted, and 「なし」 is never written ------
    「なしじゃなくて消して」 OWNER 2026-09-09. The chapter could make a class and
@@ -1769,6 +1797,37 @@ want('and the list stops being one you choose from', sel.after, null);
    questions -- so the record itself is asked for, off STG.ncls.of. Writing
    「なし」 in place of the class is the bug this claim exists to catch, and it
    passes every screen-shaped test there is. */
+/* A CHAPTER NOBODY HAS WRITTEN IN IS FAINT. 「まだ書いていない章は薄い字」
+   OWNER 2026-09-06. g2Said() answered yes at its foot, so 冠詞・指示詞 and
+   コピュラ were lit, and counted in the book's n / m, on a language that had
+   written nothing in either. */
+const faint = await pg.evaluate(() => {
+  const was = JSON.stringify(STG), ws = WORDS;
+  STG.ex = {}; STG.gr = [];
+  WORDS = [];
+  const det = g2Said(g2ChapBy('det')), cop = g2Said(g2ChapBy('cop'));
+  STG = JSON.parse(was); WORDS = ws;
+  return { det, cop };
+});
+want('冠詞・指示詞, with nothing written, reads as written', faint.det, false);
+want('コピュラ, with nothing written, reads as written', faint.cop, false);
+
+/* A DERIVED NOUN IS A NOUN. 「一覧から外す条件は wIsForm() 一か所」 and
+   「派生は今まで通り語として保存する」 (2026-09-23): wordsSeen() already leaves
+   the inflections out, and a second test on `fm` took every derived word off
+   the noun-class list and the form table as well. */
+const derived = await pg.evaluate(() => {
+  const was = JSON.stringify(STG.ncls || {}), wl = WORDS.length;
+  WORDS.push({ hw:'zapa', pos:'n', mns:['apple'], at:1 });
+  WORDS.push({ hw:'zapali', pos:'n', mns:['little apple'], from:'zapa', fm:'dim', at:1 });
+  STG.ncls = { names:['ka'], of:{} };
+  window.route = 'gram'; NAV = [{ r:'gram', a:'v2:ncls' }]; render();
+  const on = !!document.querySelector('#app [data-do="nclsPut"][data-a^="[\\"zapali\\""]');
+  WORDS.length = wl; STG.ncls = JSON.parse(was); render();
+  return on;
+});
+want('a derived noun (zapali, the diminutive of zapa) is on the noun-class list', derived, true);
+
 const nclsDel = await pg.evaluate(() => {
   const sp = (w) => w.split('').map((u) => ({ l:'', u:u }));
   const wasNcls = JSON.stringify(STG.ncls || {});
@@ -2093,9 +2152,19 @@ const negMig = await pg.evaluate(() => {
      that, and the copy is in the list by the time the delete reaches it. */
   gPolPut('NEGATION', 'VERB', null);
   const again = !!gPolFind('NEGATION', 'VERB');
+  /* AND A SIDE NOBODY CHOSE IS NOTHING TO COPY (監査 words grammar-3). The
+     not-word is there and `negp` is not: gPos() answers its fallback for
+     that, and copying the fallback wrote 「after the verb」 into STG.gr the
+     first time any other target was saved. */
+  STG.gr = []; STG.grm = ''; delete STG.gpos.negp;
+  const unsaid = gPolFind('NEGATION', 'VERB');
+  gPolPut('QUESTION', 'VERB', gPolRule('QUESTION', 'VERB',
+          [{ operation:'word', form:'ka', at:'tail' }], null));
+  const unsaidWrote = STG.gr.filter((r) => r && r.feature === 'NEGATION').length;
   WORDS.length = wl;
   STG.gr = JSON.parse(wasGr); STG.grm = wasGrm; STG.gpos = JSON.parse(wasGpos);
-  return { made: made, kept: kept, same: same, wrote: wroteNothing, again: again };
+  return { made: made, kept: kept, same: same, wrote: wroteNothing, again: again,
+           unsaid: unsaid, unsaidWrote: unsaidWrote };
 });
 want('the old side is READ as a rule saying which word stands where',
      negMig.made && [negMig.made.operation, negMig.made.form, negMig.made.at].join(' '),
@@ -2105,6 +2174,8 @@ want('reading it twice is the same rule', negMig.same, true);
 want('and reading it writes nothing -- not STG.gr, not the mark, not the slice',
      negMig.wrote, true);
 want('and a rule deleted afterwards does not come back', negMig.again, false);
+want('a side nobody chose is not read as a rule', negMig.unsaid, null);
+want('and saving another target writes no negation rule for it', negMig.unsaidWrote, 0);
 
 /* ---- 122-126: a rule’s sentence says its condition -------------------------
    docs/BACKLOG.md 「文法書の章 ── ① 規則の一文が、条件を言いません」. The

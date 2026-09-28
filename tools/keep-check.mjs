@@ -78,7 +78,7 @@
     19  and if now() has not moved, the Save is GREY -- which is every
         selection on every screen, asked without naming one
     20  a press that changes the LANGUAGE moves now(). 18 alone goes green on
-        the exact bug this was written after: setGPos() wrote STG and the
+        the exact bug this was written after: gPosPut() wrote STG and the
         board's now() did not carry it, so nothing moved, the corner stayed
         grey, and the wiring was perfect. One named exception, held both ways
     21  a field wired to keepSet() writes a name its screen's now() already
@@ -258,6 +258,15 @@ const r = await pg.evaluate(({ s }) => {
 
   function fail(m){ out.fails.push(m); }
 
+  /* THE SCREENS THAT STILL SAY IT TWICE, and whose files are not the notes
+     chapter's to change (audit words, 2026-09-27). Each says 「{0} updated」
+     from its own save function before keepSave() has heard from the server.
+     A line here fails the day its screen says it once, so the list can only
+     shrink. */
+  var TWICE = {
+    "a letter's note": "www/letters.js -- toast(t('toast.saved', ...)) in the letter's save"
+  };
+
   for(var i = 0; i < SCREENS.length; i++){
     var sc = SCREENS[i], res = { n: sc.n };
     sc.go();
@@ -309,7 +318,16 @@ const r = await pg.evaluate(({ s }) => {
     sc.go();
     type(sc.sel, sc.v);
     back();
+    /* 7b -- AND IT SAYS SO ONCE. 「保存しました」 is keepSave()'s one line for
+       every screen (www/shell.js § keepSave, OWNER 2026-09-06), and it is said
+       when the save has LANDED. A screen whose own save function says a
+       second sentence of its own says it twice on one press, and says it
+       before the server has answered -- the note did (「メモを保存しました」). */
+    var said7 = [], toast7 = window.toast;
+    window.toast = function(m){ said7.push(String(m)); };
     clickSel('#pop [data-do="popYes"]');
+    window.toast = toast7;
+    res.yesSaid = said7;
     res.yesLeft = (whereAmI() !== key);
     res.yesStored = (sc.read() === sc.v);
     res.yesHeld = (all().indexOf(sc.v) >= 0);
@@ -332,6 +350,12 @@ const r = await pg.evaluate(({ s }) => {
     if(!res.yesLeft) fail(sc.n + ': Yes did not go back');
     if(!res.yesStored) fail(sc.n + ': Yes did not write it');
     if(!res.yesHeld) fail(sc.n + ': Yes wrote it to no key the phone is holding');
+    if(TWICE[sc.n]){
+      if(res.yesSaid.length === 1)
+        fail(sc.n + ': says it once now -- take its line out of TWICE in this file');
+    } else if(res.yesSaid.length !== 1 || res.yesSaid[0] !== t('keep.saved'))
+      fail(sc.n + ': a save that landed said ' + JSON.stringify(res.yesSaid) +
+           ' -- it is keepSave()\'s one line, once: ' + JSON.stringify(t('keep.saved')));
     out.screens.push(res);
   }
 
@@ -364,9 +388,12 @@ const r = await pg.evaluate(({ s }) => {
     v2 = sd.v + ' again';
     wasV = sd.read(); wasAll = all();
     type(sd.sel, v2);
+    var saidD = [], toastD = window.toast;
+    window.toast = function(m){ saidD.push(String(m)); };
     keepPress();
+    window.toast = toastD;
     f = document.querySelector(sd.sel);
-    out.dead.push({ n: sd.n, value: sd.read(), was: wasV, typed: v2,
+    out.dead.push({ n: sd.n, value: sd.read(), was: wasV, typed: v2, said: saidD, twice: !!TWICE[sd.n],
                     moved: all() !== wasAll,
                     dirty: keepDirty(keepKey()),
                     field: f ? String(f.value || '') : null });
@@ -558,6 +585,33 @@ const more = await pg.evaluate(() => {
   out.ntEditKey = here().r + '|' + (here().a === undefined ? '' : here().a);
   out.ntEditSave = !!document.querySelector('.navtop [data-do="keepPress"]');
   out.ntEditField = !!document.getElementById('nt-b');
+
+  /* ---- 11c. a note taken out moves every note after it -----------------
+     A note's two faces and its buffer are named by where it stands in NOTES
+     (`note:<i>`, `ntedit:<i>`), and a buffer outlives a save that landed --
+     it is levelled, not let go (www/shell.js § keepSave). So a note deleted
+     from the list slid every later note onto a buffer that remembered the
+     one before it: open the note that is now at 1, touch nothing, and the
+     Save was gold over somebody else's text. Asked by both roads out -- the
+     swipe's 削除 and the selection's bin -- because they are one statement. */
+  out.ntShift = [];
+  function ntType(v){ var e = document.getElementById('nt-t');
+    e.value = v; e.dispatchEvent(new Event('input', { bubbles: true })); }
+  function ntGold(){ var b = document.querySelector('.navtop [data-do="keepPress"]');
+    return !!b && b.classList.contains('navon'); }
+  [function(){ delNoteGo(0); }, function(){ NTSEL = {0: 1}; ntSelDelGo(); }].forEach(function(drop){
+    viewReset(); popOff();
+    NOTES = [{t:'first', b:'1'}, {t:'second', b:'2'}, {t:'third', b:'3'}]; saveNotes();
+    goTab('build'); go('notes'); openNote(1); openNoteEdit(1);
+    ntType('second, kept');
+    keepPress();
+    goTab('build'); go('notes');
+    drop();
+    openNote(1); openNoteEdit(1);
+    out.ntShift.push({ titles: NOTES.map(function(n){ return n.t; }).join(' / '),
+                       field: document.getElementById('nt-t').value, gold: ntGold() });
+  });
+  viewReset(); popOff();
 
   /* ---- 11c. the word order board ---------------------------------------
      「右上に保存（KEEP：置いた並びが開いた時と違えば金、保存で STG.order に
@@ -909,7 +963,7 @@ const more = await pg.evaluate(() => {
         to stay grey, and that is C in the table asked without naming one of
         them
      C  and a press that changes the LANGUAGE moves now(). B alone would go
-        green on exactly the bug this was written after: setGPos() wrote STG
+        green on exactly the bug this was written after: gPosPut() wrote STG
         and the board's now() did not carry it, so nothing moved, the button
         stayed grey, and the wiring was perfect
 
@@ -1374,6 +1428,10 @@ for(const d of r.dead){
     fails.push(d.n + ': a save that did not land moved something on the phone');
   if(!d.dirty)
     fails.push(d.n + ': a save that did not land let go of what was typed');
+  /* netPop() is what speaks when a save does not land; a toast here is a
+     screen saying 「saved」 about a save that did not happen. */
+  if(d.said.length && !d.twice)
+    fails.push(d.n + ': a save that did not land said ' + JSON.stringify(d.said));
   /* AND IT IS STILL IN THE FIELD, asked of every screen whose buffer IS its
      fields. The word sheet is the one that is not -- its buffer is the sheet
      said once (`w`, wdSigEdit in www/wordsheet.js), what was typed is in
@@ -1396,6 +1454,15 @@ if(more.ntReadField) fails.push('the reading face of a note is a field to type i
 if(!more.ntReadBody) fails.push('the reading face of a note showed nothing of it');
 if(!more.ntEditSave) fails.push('the writing face of a note has no Save in the corner');
 if(!more.ntEditField) fails.push('the writing face of a note has no field to type into');
+more.ntShift.forEach(function(x, i){
+  var road = i ? 'the selection\'s bin' : 'the swipe\'s 削除';
+  if(x.field !== 'third')
+    fails.push('after a note went by ' + road + ', the note now at 1 opened holding ' +
+               JSON.stringify(x.field) + ' (' + x.titles + ')');
+  if(x.gold)
+    fails.push('after a note went by ' + road + ', the note now at 1 opened with a GOLD Save ' +
+               'and nothing typed -- its buffer was the note that stood there before');
+});
 if(more.ntReadKey === more.ntEditKey)
   fails.push('the two faces of a note are one screen: ' + more.ntReadKey);
 if(!more.deadStayed) fails.push('a save with no wire went back anyway');

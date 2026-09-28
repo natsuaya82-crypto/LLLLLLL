@@ -87,6 +87,9 @@ const r = await pg.evaluate(({ s }) => {
   window.toast = wasToast;
   out.refused = rows();
   out.refusedSaid = toasts;
+  /* and nothing of the chapter was written on this phone ahead of the
+     server's answer (OWNER 2026-09-06 「先にサーバーじゃないの？」) */
+  out.refusedHeld = slMine(langKeyOf(lid, 'letters')) !== null;
   /* ---- the chapter in memory is not 「taken」 until the server says so -- */
   langTookGot([]);
   slWr(langKeyOf(lid, 'letters'), WLDS_HAVE[lid].letters.body);
@@ -153,6 +156,8 @@ say(Object.values(r.done).indexOf('took') !== -1 && r.done.kb === 'dl',
     '3 the server said so: ⭕☑️ on that chapter, ↓ on the one not taken', r.done);
 say(r.refused.letters === 'dl' && r.refusedSaid.length === 1,
     '4 refused: back to ↓, and it says so once', { rows: r.refused, said: r.refusedSaid });
+say(r.refusedHeld === false,
+    '4b refused: not one slice of the chapter was written ahead of the answer', r.refusedHeld);
 say(r.heldNotTaken.letters === 'dl',
     '5 the chapter in memory with no `language_take` answer is still a ↓', r.heldNotTaken);
 say(Object.values(r.arrive).indexOf('took') !== -1,
@@ -168,5 +173,5 @@ say(r.waitWhose === 'wait' && r.waitRow === true && r.waitH1 === true && r.waitE
     { whose: r.waitWhose, row: r.waitRow, h1: r.waitH1, edit: r.waitEdit });
 
 await br.close();
-console.log(bad ? `\ntake-check: ${bad} failed` : '\ntake-check: 10 of 10');
+console.log(bad ? `\ntake-check: ${bad} failed` : '\ntake-check: 11 of 11');
 process.exit(bad ? 1 : 0);

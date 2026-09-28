@@ -1215,8 +1215,6 @@ function ltForUnit(unit){
   if(langLocked()) return null;
   return ltNew({snd:[unit]});
 }
-/* Everything the two chapters count. */
-function ltShaped(){ return LETTERS.filter(ltHasShape).length; }
 
 /* ---- spelling a word with letters -------------------------------------
    「単語も音単位で決めるやついねえだろ。アルファベットに決まった音があるならそのまま、

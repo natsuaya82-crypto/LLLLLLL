@@ -78,7 +78,8 @@ defLang('en', (function(){
       "kb.row.sel" : "Select this row",
       "kb.col.sel" : "Select this column",
       "kb.cell.add" : "Add a key here",
-      "kb.key.join" : "Join to the key beside it",
+      "kb.cell.sel" : "Select this frame",
+      "kb.key.join" : "Join keys",
       "kb.key.open" : "What this key does",
       "kb.col.ins" : "Add a column here",
       "kb.col.l" : "Left of this column",
@@ -102,15 +103,10 @@ defLang('en', (function(){
       'kb.pat.set' : "Arrangement",
       'kb.pat.q' : "Changing the arrangement deletes the letters and keys set on this keyboard.",
       "kb.pat.qwerty" : "QWERTY",
-      "kb.pat.qwerty.d" : "10 / 9 / 7 and a row of digits",
       "kb.pat.flick" : "Flick",
-      "kb.pat.flick.d" : "Twelve keys, four directions on each",
       "kb.pat.tap" : "Tap",
-      "kb.pat.tap.d" : "One letter per key, five to a row",
       "kb.pat.chart" : "Chart",
-      "kb.pat.chart.d" : "Consonants down, vowels across",
       "kb.pat.abc" : "ABC",
-      "kb.pat.abc.d" : "In name order, ten to a row",
       "kb.apply" : "Apply to the phone",
       "kb.new" : "Another keyboard",
       "kb.n" : "Keyboard {0}",
@@ -693,8 +689,6 @@ defLang('en', (function(){
       'fmr.off'          : "Do not make this form",
       'fmr.with'         : "Added, with {0} forms",
       'fmr.with.1'       : "Added, with one form",
-      'count.words'     : "{0} words",
-      'count.words.1'   : "1 word",
       'home.write'      : "New word",
       /* words */
       /* AI に相談する -- www/assist.js builds the link. The sentences below
@@ -721,9 +715,6 @@ defLang('en', (function(){
       /* sound */
       /* notes */
       'toc.notes'       : "Notebook",
-      'count.notes'     : "{0} notes",
-      'count.notes.1'   : "1 note",
-      'notes.note'      : "　",
       'notes.new'       : "New note",
       'notes.edit'      : "Note",
       'notes.t'         : "Heading",
@@ -733,7 +724,6 @@ defLang('en', (function(){
       'notes.untitled'  : "Untitled",
       'notes.empty.t'   : "Nothing written down yet",
       'notes.empty.s'   : "None yet",
-      'toast.note.kept' : "Note kept",
       'toast.note.gone' : "Note deleted",
       /* the conversation */
       /* grammar — the decisions */
@@ -775,7 +765,6 @@ defLang('en', (function(){
       'gram.pos.after.v' : 'After the verb',
       /* rules */
       /* sentences */
-      'words.addmn'     : 'Add a meaning',
       /* make */
       /* settings */
       'set.title'       : "Settings",
@@ -907,7 +896,6 @@ defLang('en', (function(){
       'f.spelling'      : "Spelling",
       'f.listen'        : "Play",
       'f.meaning'       : "Meaning",
-      'f.meaning.ph'    : "star",
       'f.pos'           : "Part of speech",
       'f.sub'           : "Subclass",
       'f.sub.new'       : "New subclass",
@@ -1264,7 +1252,6 @@ defLang('en', (function(){
       'imp.empty'         : 'Nothing readable in that',
       'csv.title'       : "Import a list",
       'csv.ph'          : "cat\nwater\nto walk\n\nkano, mountain, noun",
-      'csv.full'        : '{0} taken, {1} coined — the list is full',
       /* voice errors */
       /* how IPA and reading are joined when both are shown */
       /* the day's sentence. The sentence itself is not here: it comes
@@ -1427,7 +1414,7 @@ defLang('en', (function(){
       "hp.kb.ed" : "Building a keyboard",
       "hp.kb.1.d" : "Press + and choose a layout to start from.",
       "hp.kb.2" : "Select",
-      "hp.kb.2.d" : "Press a key to select it. Press a row's number or a column's letter to select the whole row or column. Press again to let go.",
+      "hp.kb.2.d" : "Press a key to select it. Press a row's number or a column's letter to select the whole row or column.",
       "hp.kb.3" : "Put characters on keys",
       "hp.kb.3.d" : "Select one key or several — ① ② ③ show the order you chose them in. Open the keys, choose characters in the same order and confirm at the top right: they go on ①, ②, ③ in turn.",
       "hp.kb.4.d" : "Makes this keyboard the one the Lingua keyboard types with.",

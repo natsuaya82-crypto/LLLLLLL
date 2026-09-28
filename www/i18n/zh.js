@@ -184,7 +184,8 @@ defLang('zh', (function(){
       "kb.row.sel" : "选择此行",
       "kb.col.sel" : "选择此列",
       "kb.cell.add" : "在此添加一个键",
-      "kb.key.join" : "与旁边的键合并",
+      "kb.cell.sel" : "选择此格",
+      "kb.key.join" : "合并按键",
       "kb.key.open" : "这个键做什么",
       "kb.col.ins" : "在此添加一列",
       "kb.col.l" : "此列左侧",
@@ -208,15 +209,10 @@ defLang('zh', (function(){
       "kb.pat.set" : "排列",
       "kb.pat.q" : "更改排列会删除在当前键盘上设置的文字和按键。",
       "kb.pat.qwerty" : "QWERTY",
-      "kb.pat.qwerty.d" : "10 / 9 / 7 加一行数字",
       "kb.pat.flick" : "滑动",
-      "kb.pat.flick.d" : "十二个键，每个键四个方向",
       "kb.pat.tap" : "点按",
-      "kb.pat.tap.d" : "一键一个字，每行五个",
       "kb.pat.chart" : "音表",
-      "kb.pat.chart.d" : "纵为辅音，横为元音",
       "kb.pat.abc" : "ABC 顺",
-      "kb.pat.abc.d" : "按名字排，每行十个",
       "kb.apply" : "应用到手机",
       "kb.new" : "添加键盘",
       "kb.n" : "键盘{0}",
@@ -793,8 +789,6 @@ defLang('zh', (function(){
       "fmr.off" : "不生成这个形式",
       "fmr.with" : "已添加，连同 {0} 个形式",
       "fmr.with.1" : "已添加，连同一个形式",
-      "count.words"      : "{0} 个词",
-      "count.words.1"    : "1 个词",
       "home.write"       : "新的词",
       /* AI に相談する -- www/assist.js builds the link. The sentences below
          are the PROMPT, and they are here for the same reason every other
@@ -819,8 +813,6 @@ defLang('zh', (function(){
       "words.empty"      : "还没有词",
       /* notes */
       "toc.notes"        : "笔记",
-      "count.notes"      : "{0} 条笔记",
-      "notes.note"       : "　",
       "notes.new"        : "新的备注",
       "notes.edit"       : "备注",
       "notes.t"          : "标题",
@@ -830,7 +822,6 @@ defLang('zh', (function(){
       "notes.untitled"   : "无标题",
       "notes.empty.t"    : "还没有写下什么",
       "notes.empty.s"    : "还没有",
-      "toast.note.kept"  : "笔记已留下",
       "toast.note.gone"  : "笔记已删除",
       /* the conversation */
       /* grammar — the decisions */
@@ -871,7 +862,6 @@ defLang('zh', (function(){
       "gram.pos.before.v" : "动词前",
       "gram.pos.after.v" : "动词后",
       /* rules */
-      "words.addmn"      : "添加意思",
       "set.title"        : "设置",
       "set.look"         : "显示",
       "theme.system"     : "系统",
@@ -998,7 +988,6 @@ defLang('zh', (function(){
       "f.spelling"       : "拼写",
       "f.listen"         : "播放",
       "f.meaning"        : "词义",
-      "f.meaning.ph"     : "星",
       "f.pos"            : "词性",
       "f.sub"            : "子类",
       "f.sub.new"        : "新建子类",
@@ -1355,7 +1344,6 @@ defLang('zh', (function(){
       "imp.empty"         : "里面没有可读的内容",
       "csv.title"        : "导入清单",
       "csv.ph"           : "猫\n水\n走\n\nkano, 山, 名词",
-      "csv.full"        : "已导入 {0}，已创建 {1} — 列表已满",
       /* the day's sentence. The sentence itself is not here: it comes
          from the server, one row a day, in every interface language. */
       "day.k"  : "今日",
@@ -1500,7 +1488,7 @@ defLang('zh', (function(){
       "hp.kb.ed" : "制作键盘",
       "hp.kb.1.d" : "点 +，选一个布局作为起点。",
       "hp.kb.2" : "选中",
-      "hp.kb.2.d" : "点一个键选中它。点行号或列字母可以选中整行或整列。再点一次取消。",
+      "hp.kb.2.d" : "点一个键选中它。点行号或列字母可以选中整行或整列。",
       "hp.kb.3" : "给键放上字",
       "hp.kb.3.d" : "选中一个或几个键——①②③ 表示选中的顺序。打开键，按同样的顺序选字，在右上角确定：字会依次放到 ①、②、③ 上。",
       "hp.kb.4.d" : "让 Lingua 键盘用这一个来打字。",

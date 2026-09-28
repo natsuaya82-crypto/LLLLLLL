@@ -1149,11 +1149,11 @@ export function halfDone(){
        because Delete is only in the bar once something is chosen. */
     ['the rules of a section, choosing', () => {
         window.route='gram'; NAV=[{r:'gram', a:'v2:pl'}];
-        G2SEL = {};
+        G2SEL = { at: keepKey(), ids: {} };
         const h = vGram(); G2SEL = null; return h; }],
     ['the rules of a section, one chosen', () => {
         window.route='gram'; NAV=[{r:'gram', a:'v2:pl'}];
-        G2SEL = { fr1: 1 };
+        G2SEL = { at: keepKey(), ids: { fr1: 1 } };
         const h = vGram(); G2SEL = null; return h; }],
     ['the digits, where the base is set', () => { planGot('pro');
        window.route='ltset'; NAV=[{r:'ltset', a:'num'}];
@@ -3257,6 +3257,12 @@ export function halfDone(){
         window.route = 'notes'; NAV = [{ r:'notes' }];
         NTSEL = { 0:1 };
         const h = vNotes(); NTSEL = null; return h; }],
+    /* The notebook with nothing in it. Nothing at rest has an empty one --
+       the seed writes a note -- so the empty state is only ever seen here. */
+    ['the notes, with none written', () => {
+        window.route = 'notes'; NAV = [{ r:'notes' }];
+        const was = NOTES; NOTES = [];
+        const h = vNotes(); NOTES = was; return h; }],
     /* A row swiped left, its delete showing -- 「一覧から右にスワイプして削除」
        OWNER 2026-09-05. Nothing at rest ever has a row open, the same reason
        the lens above never had a box: a walk over the routes never swipes. */
@@ -3329,6 +3335,13 @@ export function halfDone(){
                                mns:['a bank of a river','an edge'], pos:'n', at:12 }]);
         window.route = 'words'; NAV = [{ r:'words' }];
         const h = vWords(); WORDS = keep; return h; }],
+    /* and that word opened: the meanings section of a word with none says
+       the state (sent.nomean), which no word the fixture holds reaches */
+    ['a word with no meaning, opened', () => {
+        const keep = WORDS;
+        WORDS = keep.concat([{ hw:'vel', ph:['v','e','l'], mns:[], pos:'n', at:11 }]);
+        openWord('vel');
+        const h = vForm(); WORDS = keep; return h; }],
     /* ---- the dictionary as a list you CHOOSE from -----------------------
        Three faces, because the buttons differ on every one of them and none of
        the three is reachable from the list at rest: nothing here is on a screen

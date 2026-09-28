@@ -1666,14 +1666,17 @@ const R = await pg.evaluate(async () => {
   if (asA2.indexOf('他人の1') >= 0) no('32: A の一覧に B の言語が出ている');
   if (asB2.indexOf('他人の1') < 0) no('32: B の一覧に B 自身の言語が出ていない');
   if (asB2.indexOf('自分の') >= 0) no('32: B の一覧に A の言語が出ている');
-  /* 出していない件数を言うこと。A から見て隠れているのは 2 件。
+  /* そして B の言語を A の「非表示 n」に数えないこと。索引は見るための写しで、
+     そこから数えるものは無い（CLAUDE.md 規則 22「nothing counts from it」、
+     www/core.js § langWhose の LW_NONE「not drawn, not counted」）。A の一覧に
+     「2 件非表示」と出るのは、A の言語が隠れているのではなく、A のもので
+     ない二つを A に数えて見せているだけです（監査 words home-5）。
      **数字を探すのではなく、その文そのものを探します** ── '2' は class 名にも
-     他人の言語の名前にも出るので、それを見るのは「よく一緒に真になること」を
-     見ているだけで、当たっているようで当たっていません。 */
+     他人の言語の名前にも出ます。 */
   const hidSay = t('cap.hid', 2);
-  if (asA2.indexOf(hidSay) < 0)
-    no('32: 出していない件数を言っていない（' + JSON.stringify(hidSay) +
-       '）── 消えたのと見分けが付かない');
+  if (asA2.indexOf(hidSay) >= 0)
+    no('32: A の一覧が B の言語を「非表示」に数えている（' + JSON.stringify(hidSay) +
+       '）── 索引の写しから数えている');
   /* そして隠すものが無いときは言わない。数えていない一覧は、0 件を
      「0 件かくしています」と言い出します。 */
   netOut(); arrive(A);
@@ -1684,7 +1687,7 @@ const R = await pg.evaluate(async () => {
     no('32: 隠すものが無いのに件数を言っている');
   /* そして何も消えていない: LANGS には三つとも在る。 */
   if (!LANGS || Object.keys({La:1,Lb:1,Lc:1}).length !== 3) no('32: 内部で数が変わった');
-  say('32: 言語の一覧はそのアカウントのぶんだけ ── 消さず、隠した件数を言う');
+  say('32: 言語の一覧はそのアカウントのぶんだけ ── 消さず、他のアカウントの物を数えない');
 
   /* ---- 33. アカウントが違えば、開いている言語も違う --------------------
      「ログアウトして違うアカウントでログインしても前のアカウント残ってるん
@@ -2761,8 +2764,15 @@ const R = await pg.evaluate(async () => {
          いない）を跨いでしまう。2026-09-08 まではその答えが `wld` スライスの
          `hide` で、今は `language` の行の `published_at` です
          （OWNER「端末に hide の存在があるわけないやろ」）。null が非公開。 */
-      if (p.indexOf('/rest/v1/language?select=id,name,published_at&owner=') === 0)
-        return [{ id: SID59, name: 'Shango', published_at: null }];
+      /* The query the page really sends (www/net.js § netLangsDown) -- this
+         answered `select=id,name,published_at&owner=` after the columns grew,
+         so the row never came and 60 was green only because 「not asked」 was
+         drawn as 非公開 (監査 words home-3). Matched on the table and the
+         owner, not on the column list, so a column added tomorrow still gets
+         its answer. */
+      if (p.indexOf('/rest/v1/language?select=') === 0 && p.indexOf('&owner=eq.') !== -1)
+        return [{ id: SID59, name: 'Shango', published_at: null, owner: SESS.uid,
+                  wsys: '', created_at: '2026-09-01T00:00:00Z' }];
       if (p.indexOf('/rest/v1/slice?select=') === 0) return [];
       return [];
     };
