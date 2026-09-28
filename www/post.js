@@ -738,9 +738,9 @@ function draftDropHere(d){
   draftsSave();
   /* AND THE RECORDING THAT WAS ONLY THIS DRAFT'S.
      「声は投稿上で再生できるよね？下書き消した時にはいらなくない？」 OWNER
-     2026-09-03. The file is written when the recording ends (www/rec.js §
-     voTook), so a draft thrown away without being posted is the one road that
-     leaves a file nothing points at. postDelGo() says the same sentence about
+     2026-09-03. The recording is in the post-media bucket from the moment it
+     ends (voKeep(), www/rec.js), so a draft thrown away without being posted
+     is the one road that leaves a file nothing points at. postDelGo() says the same sentence about
      a post and this is it about a draft: the ONE file this draft named, and
      nothing else. */
   if(d && d.vo && d.vo.f) voDropFile(d.vo.f);
@@ -877,9 +877,8 @@ function dfSelDel(){
   if(!n) return;
   popAsk(tn('post.draft.sel.ask', n), function(){ dfSelDelGo(); }, t('pop.yes'));
 }
-/* Highest index first, so removing one does not move the next one under the
-   knife. And through draftDropGo(), which is the one place a draft goes -- it
-   is what tells the server. */
+/* Through draftDropGo(), which is the one place a draft goes -- it is what
+   tells the server. */
 function dfSelDelGo(){
   var ids=dfSelList(), ds=[], i;
   DFSEL=null;
@@ -1074,12 +1073,11 @@ function postThumb(u, ok){
     ok(whole? '' : (out||''));
   });
 }
-/* What the timeline may take up. localStorage is one allowance shared by the
-/* What the timeline may take up. localStorage is one allowance shared by the
-   posts and by every slice of the language, so a timeline with no ceiling can
-   make somebody's LANGUAGE unsaveable -- and the language is the thing this
-   app cannot replace. Two megabytes is about twenty photographs and leaves
-   room for a five-thousand-word language several times over.
+/* What the timeline's copy on this phone may take up, measured against the
+   copy (pwPicRoom). Whether a photograph should be refused by the size of
+   this phone's copy at all is the owner's (docs/reports/rule-audit-2026-09-27-sns.md
+   O5) -- the language is not in localStorage any more (CLAUDE.md rule 22),
+   and the photographs go to the post-media bucket.
 
    When it is full the PHOTOGRAPH is refused, never the post and never
    anything already written. Nothing is pruned to make room. */
@@ -1315,7 +1313,7 @@ function postTake(ps){
   return n;
 }
 /* What the server is allowed to change under a post this phone already holds,
-   and it is only ever these five.
+   and it is only ever the fields put() names below.
 
    NOT what the author wrote. The line, the meaning, the ink, the photographs
    and the voice are frozen onto a post when it is written (rule 8) and a
@@ -1945,9 +1943,7 @@ function pwAtLift(){
    index.html is already 44pt on this row without making the row taller --
    padding 11 and a margin of -11 that gives it back (the rule says so where
    it is written). No corner, no border, no fill: CLAUDE.md § NO ROUNDED BOX.
-   It sits directly after the handle rather than out at the right margin,
-   because pinning it there is a flex rule in index.html and that file is
-   another branch's today. */
+   It sits directly after the handle. */
 function pwToRow(){
   if(!PW.toh) return '';
   return ptoHTML(PW.toh)+
@@ -2080,10 +2076,10 @@ function pwTagsGrow(){
    to remember and a second thing to get wrong, and nothing about these two
    rows wants different room: a line, and what that line means.
 
-   It holds on WRITING only. A post already longer than this keeps every
-   character -- `maxlength` stops typing and never truncates a value the app
-   put there -- so an older post opened to be edited can be shortened and can
-   be left alone, and is never cut down by the app (docs/DATA_SAFETY.md). */
+   It holds on WRITING only, at the press (pwCapStop). A post already longer
+   than this keeps every character -- an older post opened to be edited can
+   be shortened and can be left alone, and is never cut down by the app
+   (docs/DATA_SAFETY.md). */
 var POST_MAX=140;
 /* How much room is left, as a RING that empties as you type.
    「カウントは打つほど減っていく輪、帯の中、常に出す」 OWNER 2026-08-28.
@@ -2150,7 +2146,7 @@ function pwLeftHTML(){
    different number about a different thing. What is shared is the shape, and
    the shape is the point -- 「いつもの課金誘導ポップ」 OWNER 2026-09-15: the
    same popAsk(), the same one sentence, the same way to the plans screen that
-   a second language, the hundredth word, a fifth keyboard and the pencil all
+   a second language, the hundredth word and the pencil all
    use. There is no new string in ten languages; `up.need` is ONE sentence for
    every ceiling and capStop()'s comment says so.
 
@@ -2527,8 +2523,6 @@ function inkOfCut(cut){
   if(!g.length) return null;   /* nothing drawn in it: the text is the post */
   return {g:g, s:s};
 }
-/* Posts written before a post carried its author. They are all this person's,
-   because there was nowhere else for one to come from. */
 /* Posts written before a post carried who wrote it. Those were this phone's
    own -- there was no timeline of anybody else's then -- and that is only
    still true of a post that never came from the server. One that DID came
@@ -2995,11 +2989,6 @@ function pwMarkRun(x, units, k, ox, oy, col){
     cur+=pwMarkW(u)*k;
   }
 }
-/* Not inkCanvases(): that draws every square cell in --tx, which is the
-   theme's ink and is right for a tile, a key and the alphabet. A letter on a
-   photograph is white or black and nothing else -- the two colours a caption
-   has ever been -- so the strokes go through inkStrokes directly, which is
-   still the one place that turns strokes into a shape. */
 /* How wide a mark is on the picture, as a fraction of it: its height times
    the line's own advance. Asked in one place because the drawing, the hit box
    and the bake all need the same answer. */
@@ -3335,9 +3324,7 @@ function postEdit(id){
      somebody from the timeline to a price list with nothing in between.
      「編集はplusプランからです。みたいなポップなしに課金画面飛ばされる」
 
-     Asked, the way this app already asks in the three other places a plan
-     stops somebody -- core.js:522 (a second language), core.js:703 (the
-     hundredth word), keyboard.js:349 (a fifth keyboard). All three are
+     Asked, the way this app asks everywhere a plan stops somebody:
 
          popAsk(<what the ceiling is>, function(){ go('plans'); });
 
@@ -3593,14 +3580,12 @@ function postMay(){ return netSignedIn() && !NET_BANNED; }
    -- those belong to the book side, and a feed that looks like a book looks
    like something you have to learn. 「TwitterとかXと同じように作って」
 
-   What is INSIDE the row is this app's and nothing else's: three layers, the
-   line as it was written, what its author says it means, and the gloss word
-   by word. That is the reason to read a stranger's post at all.
+   What is INSIDE the row is this app's and nothing else's: the line as it
+   was written, and what its author says it means. That is the reason to read
+   a stranger's post at all.
 
-   Every one of the four works. There is no server, so a like is a like on
-   this phone -- kept, counted, and the first thing that syncs when there is
-   one. A row of buttons that do nothing is what this app already got wrong
-   once at the bottom of a screen. */
+   Every one of the four works: a like and a repost are rows on the server
+   (netMark), and the numbers are the server's (postCountsPull). */
 /* How long ago, and then WHEN. Under a day it is how long ago, because that
    is what anybody wants of something from this morning. Past a day it is the
    date, because "9d" is not a time -- it is arithmetic somebody has to do,
@@ -3895,8 +3880,7 @@ function postPics(p){
      say it. Everything that reads this list reads the same three kinds it
      always did: a `data:` from the camera, a `blob:` already fetched, or a
      path in the bucket -- and netMediaSrc() is the one place that tells them
-     apart. The LENGTH is unchanged, which is what postHasMedia() and
-     netUpPics() read it for. */
+     apart. The LENGTH is unchanged, which is what netUpPics() reads it for. */
   if(Object.prototype.toString.call(p.pu)==='[object Array]' && p.pu.length){
     for(i=0;i<p.pu.length;i++) out.push(String(p.pu[i]||''));
     return out;
@@ -4010,10 +3994,9 @@ function postLines(){
   }catch(e){}
 }
 /* Where this post's voice is, as one string, and the one place that decides
-   between the two answers. On this phone it is `vo.f`, a name in Documents;
-   from anywhere else it is `vu`, a path in Storage. voPlay() takes either and
-   tells them apart by the slash -- and it can only do that because both are
-   asked for here rather than in each of the four places that want one. */
+   between the two answers: `vo.f` on a post still in hand (the bucket path, or
+   a Documents name an earlier version wrote), `vu` on one that has gone up.
+   voRemote() (www/rec.js) tells a path from a name. */
 function postVoAt(p){
   if(!p) return '';
   if(p.vo && p.vo.f) return String(p.vo.f);
@@ -4276,8 +4259,8 @@ function postRow(p){
                なくそう。プロフいけば見れる」 -- and that last clause was checked
                before it was believed: `whoCard()` in me.js draws `p.lname` as a
                row you press, which goes to "about". It is one tap away, not gone.
-               `plangtag` itself stays: post.js:795 (who you are replying to) and
-               sns.js:510 (a person in a list) both still wear it.
+               `plangtag` itself stays: a person in a list (snsWhoFace,
+               www/sns.js) still wears it.
 
                The `·` went with it. It was there to part `@aya` from `15分`,
                the gap this row is built with parts them now, and it was worn in
@@ -4401,10 +4384,8 @@ function postRow(p){
                (postFoldable(p) && !postUnfolded(p)
                  ? ' pfold" style="-webkit-line-clamp:'+POST_FOLD+'"' : '"')+
                '>'+postLnHTML(p)+'</div>' : '')+
-      /* The natural language, in the reader's own if the post carries it and
-         in the author's if it does not -- which is every post until the
-         translator is wired up, and is not a failure. Not "always" any more:
-         a post with no line has nothing to mean.
+      /* What the author says it means (postSay: `mn`, or the day's prompt in
+         the reader's own language). A post with no line has nothing to mean.
 
          It is DIRECTLY under the line and above everything else --
          「投稿の翻訳画面さ画像の下に行くのやめてくれる？ 投稿 / 翻訳 / そのた
@@ -4486,11 +4467,10 @@ function postRow(p){
          on the right, over the buttons. A post that has not gone up has no
          time to tell (its head says 未送信). */
       ((foc && !postUnsent(p))? '<div class="pwhenf">'+esc(postWhenFull(p.at))+'</div>' : '')+
-      /* Three layers, and there is no fourth.
+      /* Two layers, and there is no third.
 
            the writer's own letters      ln + ink
-           the language you read in      mn, or tr[yours] if the post has it
-           your own language             on a button
+           what it means                 mn (postSay)
 
          A word-by-word gloss used to sit here. It said the writer's word ->
          the writer's meaning; the layer below says the meaning -> MY word.
