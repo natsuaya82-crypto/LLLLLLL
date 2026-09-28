@@ -343,7 +343,6 @@ function pwSidePaint(){
    things. A post with no line, no photograph and no voice is not a post.
    「なにもない時は薄い灰色、何か打ったら金にする」 OWNER 2026-09-03,
    www/shell.js § navDo. */
-function pwOn(){ return pwHas(); }
 /* The thing that finishes it goes in the top bar, filled, where every phone
    puts it -- not at the foot of a screen you have to scroll to. */
 function openPost(from, at){
@@ -478,7 +477,7 @@ function openPost(from, at){
        a bar that narrow has room for. The ground and the lock say WHICH post
        this is; whether there IS one to send is the colour, and the colour is
        www/shell.js § navDo's two states. */
-    navDo(t(PW.ed? 'post.save' : 'post.send'), 'pwSend', null, pwOn(),
+    navDo(t(PW.ed? 'post.save' : 'post.send'), 'pwSend', null, pwHas(),
           /* A send is the paper plane (CLAUDE.md § Shape, the sixth). Saving
              an edit has no settled mark yet, so that one stays a word. */
           {id:'pw-go', cls:(pwPriv()? 'pv' : ''), mark:(pwPriv()? ICON_LOCK : ''),
@@ -1881,7 +1880,7 @@ function pwSetLn(v, cut){
      field is patched by hand: this screen is not redrawn while somebody is
      typing into it. A photograph and a voice both come back through
      openPost(), which rebuilds the bar, so they need nothing here. */
-  navDoPaint('pwSend', pwOn());
+  navDoPaint('pwSend', pwHas());
   pwFresh();
 }
 /* The first `k` roman characters off the front of a cut -- what pwAtHead()

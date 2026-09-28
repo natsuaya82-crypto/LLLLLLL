@@ -222,9 +222,6 @@ function dayIs(p){
    it is the day's own list, gathered by the column the post carries, which is
    the same thing the two above it are. Nothing here invents a topic of its
    own and there are still no free-typed tags. */
-function snsFilNow(){
-  return (snsTab==='fo')? 'fo' : (snsTab==='day')? 'day' : 'rec';
-}
 function snsFilKey(k){
   return (k==='fo')? 'feed.fo' : (k==='day')? 'feed.filter.prompt' : 'feed.rec';
 }
@@ -295,7 +292,7 @@ function snsFilTop(){
      it does not go through t() -- the same as a word in the dictionary or
      the body of a post. */
   return '<button class="navq navfil"' + DO('go', ['filter']) + '>'+
-    esc(snsFil? snsFil.q : t(snsFilKey(snsFilNow())))+'</button>';
+    esc(snsFil? snsFil.q : t(snsFilKey(snsTab)))+'</button>';
 }
 function vFilter(){
   var ks=['rec','fo','day'];
@@ -307,7 +304,7 @@ function vFilter(){
         '<span class="sl">'+esc(t(snsFilKey(k)))+'</span>'+
         /* Nothing ticked here while a word is on: the three rows are one
            answer, so a timeline and a word are never both marked. */
-        '<span class="sv">'+((!snsFil && snsFilNow()===k)? ICON_TICK : '')+
+        '<span class="sv">'+((!snsFil && snsTab===k)? ICON_TICK : '')+
         '</span></button>';
     }).join('')+
     /* And the words somebody keeps, under the two timelines because they are
@@ -1404,7 +1401,7 @@ function dayTagStore(s){
   var x=String(s||''), c, d, w;
   for(c in LANG){
     if(!Object.prototype.hasOwnProperty.call(LANG, c)) continue;
-    d=(LANG[c] && LANG[c].str) || {};
+    d=strOf(c);
     w=d['day.tag'];
     if(!w || w===DAY_TAG) continue;
     x=x.split(w).join(DAY_TAG);
