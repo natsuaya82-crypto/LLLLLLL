@@ -1994,8 +1994,8 @@ function obFinish(){
      already chosen. 「言語名も勝手に決まるの何」
 
      Unnamed is a state this app already has: the cover says so and offers the
-     pencil, settings shows a dash. */
-  if(!langName) langName=ob.name||'';
+     pencil, settings shows a dash. The name is written once, where it is
+     typed (obName), before the door sends it -- nothing here writes it again. */
   /* AND THE FACE, decided here and nowhere else afterwards.
      「最初の文字になるのはいいけど、それはオンボーディングを通ってかいたもじ
      だけで、それ以降は勝手に変えないで」 OWNER 2026-09-05.
