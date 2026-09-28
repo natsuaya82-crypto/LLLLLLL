@@ -1194,6 +1194,20 @@ const au = await pg.evaluate(() => {
     window.voKeep = vk; window.toast = tt; DRAFTS = was; PW = pwBlank();
     NAV = [{ r:'feed' }]; window.route = 'feed'; }
 
+  /* a17: the − on a draft's recording does not delete the file while the
+     draft's row on the server still names it -- only once the draft is kept
+     again without it. */
+  { const vd = window.voDropFile, dup = window.netDraftUp, gone = [];
+    window.voDropFile = function (f) { gone.push(f); };
+    window.netDraftUp = function (d, ok) { ok(null); };
+    PW = pwBlank(); PW.did = 'D-v'; PW.vo = { f:'u/v1/vo.m4a', ms:900 }; PW.ln = 'x'; PW.cut = [{ t:'x' }];
+    voDrop();
+    const atPress = gone.length;
+    draftKeep();
+    out.a17 = JSON.stringify({ atPress:atPress, afterKeep:gone });
+    window.voDropFile = vd; window.netDraftUp = dup; DRAFTS = DRAFTS.filter((d) => d.id !== 'D-v');
+    PW = pwBlank(); NAV = [{ r:'feed' }]; window.route = 'feed'; }
+
   netIdOf = realId;
   netSend1 = realS1; netSend = realS; netGet = realG;
   NAV = [{ r:'feed' }]; window.route = 'feed'; render();
@@ -1250,6 +1264,8 @@ if (!au.a15)
   say('a15: a report whose author has left prints 「' + 'mod.of' + '」 with an empty handle in it.');
 if (!au.a16)
   say('a16: opening an old draft whose recording could not go up took it out of the list -- the recording is gone.');
+if (au.a17 !== JSON.stringify({ atPress:0, afterKeep:['u/v1/vo.m4a'] }))
+  say('a17: the recording of an opened draft -- ' + au.a17 + ' -- the file goes when the row stops naming it, not at the press.');
 if (!au.a3)
   say('a3: a word pressed while another word\u2019s answer is on the screen draws that old answer or ' +
       '「No results」 until its own lands. Not answered yet is the waiting mark.');

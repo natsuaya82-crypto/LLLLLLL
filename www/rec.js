@@ -188,12 +188,18 @@ function voTook(mime){
   r.onerror=function(){ toast(t('post.vo.bad')); };
   r.readAsDataURL(b);
 }
-/* Taking it off the post being written, and the file goes with it. It is
-   put on the server the moment it is recorded, so this removes both or the
-   bucket fills up with recordings nobody kept. */
+/* Taking it off the post being written, and the file goes with it -- once
+   nothing stored names it. A recording made in this composer is named by
+   nothing else, so it goes now. One that came with a draft is still named by
+   that draft's row on the server until the draft is kept again or posted, so
+   it is noted (`PW.voOff`) and goes then (pwVoOffGo, www/post.js); an app
+   closed before that leaves the draft, and its voice, as they were. */
 function voDrop(){
   voPlayOff();
-  if(PW && PW.vo && PW.vo.f) voDropFile(PW.vo.f);
+  if(PW && PW.vo && PW.vo.f){
+    if(PW.did) PW.voOff=PW.vo.f;
+    else voDropFile(PW.vo.f);
+  }
   if(PW) delete PW.vo;
   openPost();
 }

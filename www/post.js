@@ -592,6 +592,12 @@ function draftOfPW(){
 }
 /* A draft goes into the list, and the composer is empty behind it. The one
    place, for both roads in: keeping one, and a post that would not go. */
+/* The recording an opened draft's row named, taken off in the composer
+   (voDrop, www/rec.js): the row has just stopped naming it, so it goes. */
+function pwVoOffGo(){
+  if(PW && PW.voOff && !(PW.vo && PW.vo.f===PW.voOff)) voDropFile(PW.voOff);
+  if(PW) delete PW.voOff;
+}
 function draftIn(d, said){
   DRAFTS.push(d);
   draftsSave();
@@ -619,6 +625,7 @@ function draftKeep(){
        that is the draft (supabase/schema.sql § keep_newer). */
     if(row && row.body) d=draftOfRow(row);
     d.up=1;
+    pwVoOffGo();
     draftIn(d, t('post.draft.kept'));
   }, function(dd, st, m){ netPop(dd, st, m, draftKeep); });
 }
@@ -2384,6 +2391,7 @@ function pwSendPost(p){
     postSid(p, sid);
     savePosts();
     if(PW.did){ netDraftDrop(PW.did); PW.did=''; }
+    pwVoOffGo();
     PW=pwBlank();
     toast(t('post.sent'));
     goTab('feed');
