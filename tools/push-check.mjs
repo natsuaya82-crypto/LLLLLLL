@@ -26,6 +26,7 @@
        `SET_PREFS`）と i18n の `push.<種類>` がそれと揃っていること
    --------------------------------------------------------------------------- */
 import fs from 'fs';
+import vm from 'vm';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { pushWhat, pushTo, pushPlan, pushMay, pushBy, pushSay, pushWants, pushLang,
@@ -195,6 +196,15 @@ for (const [nm, aim] of [['フォロー', fol], ['返信', rep], ['引用', quo]
   const m = pushPlan(aim, { ...WHO, muted: true }, DEV, B);
   say(nm + ': ミュートした人からは送らない', m.send + ' ' + m.why, 'false muted');
   say(nm + ': ミュートしていない人からは送る', pushPlan(aim, { ...WHO, muted: false }, DEV, B).send, 'true');
+}
+/* 道を問わない ── Android の行にも同じ一行が効く。 */
+{
+  const droid = [{ token: FCM, platform: 'android' }];
+  const m = pushPlan(lik, { ...WHO, muted: true }, droid, B);
+  say('Android の行でも、ミュートした人からは送らない',
+      m.send + ' ' + m.why + ' ' + (m.fcm || []).length, 'false muted 0');
+  say('Android の行でも、ミュートしていない人からは送る',
+      pushPlan(lik, { ...WHO, muted: false }, droid, B).fcm.length, '1');
 }
 /* そして index.ts が、その一人について mute の行を読んで渡していること ──
    push.mjs は DB を読めないので、読まなければ上の一行は空回りする。 */
@@ -497,6 +507,59 @@ console.log('push: 種類は PUSH が一箇所、www/ の手書きはそれと�
                                        typeof b.key[f] === 'string' && a.key[f] !== b.key[f]))
       dup.push(a.kind + '=' + b.kind);
   say('一つの行が二つの種類になることは無い', dup.join(' ') || 'none', 'none');
+}
+
+/* ---- 電話は、どちらの電話かを自分で言う ------------------------------
+   `device.platform` を決めるのはネイティブの答えで、www/ は写すだけ。
+   **本物の pushAsk()（www/push.js）と netDevicePut()（www/net.js）を**
+   そのまま切り出して vm で走らせ、`device` へ出る体を数えます ── ここで
+   判断を書き直したら写しで、写しはいつも合う。Android の LinguaPushPlugin.kt
+   は `platform: "android"` を付けて答え、iPhone の LinguaPush.swift は何も
+   付けない（列の既定 `ios` が答える）。 */
+console.log('push: 電話は、どちらの電話かを device の行に載せる');
+{
+  const src = (f) => fs.readFileSync(path.join(WWW, f), 'utf8');
+  const fn = (s, name) => {
+    const at = s.search(new RegExp('^function ' + name + '\\(', 'm'));
+    if (at < 0) return '';
+    let d = 0, i = s.indexOf('{', at);
+    for (; i < s.length; i++) { if (s[i] === '{') d++; else if (s[i] === '}' && --d === 0) break; }
+    return s.slice(at, i + 1);
+  };
+  const code = ['pushPlug', 'pushStGot', 'pushStAsk', 'pushAsk'].map((n) => fn(src('push.js'), n))
+    .concat([fn(src('net.js'), 'netDevicePut')]).join('\n');
+  const ask = async (answer) => {
+    const sent = [];
+    const box = {
+      SESS: { rt: 'r', at: 'a', uid: A }, PUSH_ST: '', NET_TOK: '', Promise, setTimeout,
+      render() {}, netSignedIn() { return true; }, netUid() { return A; }, netTok() { return 'a'; },
+      netSend(m, p, body) { if (String(p).indexOf('/rest/v1/device') === 0) sent.push(body); },
+      Capacitor: { nativePromise: (plug, m) =>
+        plug !== 'LinguaPush' ? Promise.reject('wrong') :
+        m === 'status' ? Promise.resolve({ status: 'authorized' }) : Promise.resolve(answer) },
+    };
+    box.window = box;
+    vm.createContext(box);
+    vm.runInContext(code + '\npushAsk();', box);
+    for (let i = 0; i < 5; i++) await new Promise((r) => setTimeout(r, 0));
+    return sent;
+  };
+  const droid = await ask({ token: FCM, platform: 'android' });
+  say('Android の答えは platform: android として device へ',
+      droid.length + ' ' + (droid[0] && droid[0].platform), '1 android');
+  say('その行の token は FCM の物', droid[0] && droid[0].token, FCM);
+  const ios = await ask({ token: TOK });
+  say('iPhone の答えは platform を載せない（列の既定 ios が答える）',
+      ios.length + ' ' + (ios[0] && Object.prototype.hasOwnProperty.call(ios[0], 'platform')), '1 false');
+  const odd = await ask({ token: FCM, platform: 'windows' });
+  say('知らない platform は載せない（検査で落ちる行を出さない）',
+      odd.length + ' ' + (odd[0] && Object.prototype.hasOwnProperty.call(odd[0], 'platform')), '1 false');
+  /* Android の通知のチャンネルは、push-send が名指す物と同じ名前。違えば
+     Android 8 以降は黙って捨てる。Kotlin の文字をそのまま読みます。 */
+  const kt = fs.readFileSync(path.join(WWW, '..', 'android', 'app', 'src', 'main', 'java', 'com',
+                                       'tokinets', 'lingua', 'LinguaPushPlugin.kt'), 'utf8');
+  say('LinguaPushPlugin.kt の CHANNEL は push-send の CHANNEL',
+      (kt.match(/const val CHANNEL = "([^"]*)"/) || [])[1], CHANNEL);
 }
 
 /* ---- そのほか、名前が合っていること ---------------------------------- */
