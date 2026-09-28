@@ -3690,6 +3690,16 @@ export function halfDone(){
        __stemLetters(); const was = SCRIPT.sp; SCRIPT.sp = v; window.route = 'sp';
        NAV = [{ r:'settings' }, { r:'set', a:'lang' }, { r:'sp' }];
        const h = vSp(); if (was === undefined) delete SCRIPT.sp; else SCRIPT.sp = was; return h; }]),
+    /* AND A LANGUAGE WRITTEN RIGHT TO LEFT, on the free plan and on Pro. The
+       preview is a post's line, so it goes the way a post from here would:
+       scriptDir() -- left to right on a plan that does not choose one, the
+       stored way on one that does. It read SCRIPT.dir itself until
+       2026-09-27, and drew the free plan a direction no post is written in. */
+    ...['free', 'pro'].map((p) => ['the gap between letters, a language written right to left, on ' + p, () => {
+       __stemLetters(); const was = SCRIPT.dir; SCRIPT.dir = 'rtl'; planGot(p); window.route = 'sp';
+       NAV = [{ r:'settings' }, { r:'set', a:'lang' }, { r:'sp' }];
+       const h = vSp(); planGot('free');
+       if (was === undefined) delete SCRIPT.dir; else SCRIPT.dir = was; return h; }]),
     ...[0, 0.5, 1, 1.5, 2].map((v) => ['a post whose letters stand ' + v + ' apart', () => {
        __joinPosts(v); window.route = 'feed'; NAV = [{ r:'feed' }];
        return vFeed(); }]),
@@ -3921,11 +3931,10 @@ export function halfDone(){
        2026-09-04. Thirty-eight slots made twice under two sets of ids, which
        is what the owner is holding: a a, b b, c c, every reading twice.
 
-       It goes through ltStart() rather than showing the seventy-six, because
-       ltStart() is the road -- www/boot.js and langOpen() call it -- and what
-       this face is for is the screen somebody ARRIVES at. With the join in it
-       is thirty-eight; with the join taken out it is the owner's photograph.
-       One face, both states, which is what a picture of a fix has to be. */
+       It goes through ltStart() because ltStart() is the road -- www/boot.js
+       and langOpen() call it -- and what this face is for is the screen
+       somebody ARRIVES at. The launch takes no row out of it: 「昔の版で自動で
+       増えた文字: 消さずに残す」 OWNER 2026-09-24. */
     ['an alphabet that had doubled, arrived at', () => {
        const was = LETTERS, wasPlan = plan(), wasSeq = LT_SEQ;
        planGot('free');

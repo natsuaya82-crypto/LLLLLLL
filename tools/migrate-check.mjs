@@ -64,6 +64,7 @@ import path from 'path';
 import { createRequire } from 'module';
 import { fileURLToPath } from 'url';
 import { chromium, LAUNCH } from './browser.mjs';
+import { seed } from './fixture.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const WWW = path.join(HERE, '..', 'www');
@@ -1213,6 +1214,49 @@ want('the old keys are still there, byte for byte', one.old1, '[{"hw":"tuf"}]');
 want('all of them, not just the ones the new shape needed', one.old1L, '[{"id":"aA"}]');
 want('including the language that had never been up', one.old2, '[{"hw":"kef"}]');
 want('and the one whose number was already taken', one.old3, '[{"hw":"geb"}]');
+
+/* ---- THE LAUNCH'S OWN MIGRATIONS TAKE NOTHING AND RENAME NOTHING ----------
+   CLAUDE.md § Data: *a migration COPIES and never removes what it read*, and
+   「保存を押したときだけ、保存されているものが変わる」 OWNER 2026-09-04.
+   Stood on the road they run on -- the owner of the open language answering
+   (langOwnGot, www/core.js) is what calls migrateAll() -- because the cases
+   above arrive through the flat keys, which nothing reads any more, and a
+   claim about a migration that never ran is green for the wrong reason.
+   `ran` says it ran: every letter comes out with an answer to `chose`.
+
+   Measured before this was held (2026-09-27): a word made today, `kwa`, came
+   out of the next launch as `zha` once its letter was renamed kw -> zh, the
+   headword it was saved under gone; each position's sound was taken off
+   where it equalled what the letter reads now; and an old letter's sound
+   was replaced by a reading of its name. */
+const pgM = await br.newPage({ viewport: { width: 390, height: 844 } });
+await pgM.goto('file://' + path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'www', 'index.html'));
+await pgM.waitForSelector('#splash', { state: 'detached', timeout: 10000 });
+const mg = await pgM.evaluate(({ s }) => {
+  eval('(' + s + ')()');
+  SET.walked = true; planGot('pro');
+  var la = LETTERS.filter(function(l){ return ltSlotKey(l) === 'a'; })[0];
+  var nl = ltNew({}); ltSetRoman(nl.id, 'kw'); nl = ltById(nl.id) || nl;
+  var sp = [{ l: nl.id }, { l: la.id, u: ltFirstUnit(la) }];
+  WORDS.push({ hw: spWord(sp), mns: ['zzmig'], mn: 'zzmig', pos: 'n', at: 1, sp: sp });
+  var made = spWord(sp);
+  ltSetRoman(nl.id, 'zh');
+  /* an old letter: no answer to `chose`, and a sound nobody would read off its name */
+  LETTERS.push({ id: 'lold', st: null, ch: '', nm: '', ab: 'b', snd: ['q'] });
+  var me = LOWN[langId];
+  delete LOWN[langId];
+  langOwnGot(langId, me || 'me');
+  var w = WORDS.filter(function(x){ return x.mn === 'zzmig'; })[0] || {};
+  var old = ltById('lold') || {};
+  return { made: made, hw: String(w.hw || ''), u: (w.sp && w.sp[1] && w.sp[1].u) || '',
+           oldSnd: (old.snd || []).join(' '),
+           ran: LETTERS.every(function(l){ return l.chose !== undefined; }) };
+}, { s: seed.toString() });
+await pgM.close();
+want('the launch\'s migrations ran on the open language', mg.ran, true);
+want('a word is not renamed at a launch after its letter was (made as ' + mg.made + ')', mg.hw, mg.made);
+want('and the sound a position was written with stays on it', mg.u !== '', true);
+want('and an old letter keeps the sound it had', mg.oldSnd, 'q');
 
 /* A part of speech that is no label this app knows is not thrown away by the
    migration that turns labels into keys: the word takes `n`, the value it

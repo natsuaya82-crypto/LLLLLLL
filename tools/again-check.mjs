@@ -832,7 +832,7 @@ const del = await pg.evaluate(async ({ s, srv }) => {
   langStore();
   /* THE SEED IS NOT SOMEBODY'S WRITING. It fills the globals, and since
      2026-09-23 the migrations run the moment the owner answers (migrateAll,
-     www/core.js) -- migrateSp() brings the seed's spellings forward and saves
+     www/core.js) -- they bring the seed's older shapes forward and save
      them, as the APP, so nothing of it counts as touched and nothing of it
      goes up (r60: an app write never travels). These claims are about a
      dictionary somebody wrote, so somebody writes one word first. */
@@ -928,7 +928,7 @@ const up2 = await pg.evaluate(async ({ s, srv }) => {
   langName = 'Save Now';
   /* AND HERE TOO: THE SEED IS NOT SOMEBODY'S WRITING. It fills the globals, and since
      2026-09-23 the migrations run the moment the owner answers (migrateAll,
-     www/core.js) -- migrateSp() brings the seed's spellings forward and saves
+     www/core.js) -- they bring the seed's older shapes forward and save
      them, as the APP, so nothing of it counts as touched and nothing of it
      goes up (r60: an app write never travels). These claims are about a
      dictionary somebody wrote, so somebody writes one word first. */

@@ -1838,13 +1838,14 @@ function netTakeDrop(sid, ok, bad){
    -------------------------------------------------------------------------
    「端末に残すものないんですけど」 OWNER 2026-09-08. The same shape as
    netLangRename() above and for the same sentence: nothing moves on the
-   screen until the server has taken it. The five kinds are www/wsys.js's
-   list; this only carries the word. */
-function netLangWsys(k, then){
+   screen until the server has taken it. The six kinds are www/wsys.js's
+   list; this only carries the word, and the caller hears both answers
+   (setWsys, which a Save is waiting on). */
+function netLangWsys(k, ok, bad){
   var v=String(k||'');
   netPut('language', langId, {wsys:v},
-    function(){ langWsysGot(langId, v); if(then) then(); },
-    function(d, st, m){ netPop(d, st, m, function(){ netLangWsys(v, then); }); });
+    function(){ langWsysGot(langId, v); ok(); },
+    function(d, st, m){ bad(d, st, m); });
 }
 /* THIS ACCOUNT'S OWN LANGUAGES COME DOWN ONE ROAD, AND IT IS netLangsDown().
    -------------------------------------------------------------------------
