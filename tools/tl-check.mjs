@@ -1150,6 +1150,13 @@ const au = await pg.evaluate(() => {
     out.a9 = JSON.stringify({ none:none, av:ME.av, pic:ME.pic });
     ME.av = was.av; ME.pic = was.pic; }
 
+  /* a11: who somebody is has one answer -- the server's row (WHO_HAVE), or
+     nothing yet. A post of theirs on this phone is the post's, not the person. */
+  { POSTS.push({ id:'W-1', hd:'wq', who:'Old Name', at:1, ln:'x' });
+    delete WHO_HAVE['wq'];
+    out.a11 = whoOf('wq').who;
+    POSTS.splice(POSTS.length - 1, 1); }
+
   netIdOf = realId;
   netSend1 = realS1; netSend = realS; netGet = realG;
   NAV = [{ r:'feed' }]; window.route = 'feed'; render();
@@ -1194,6 +1201,8 @@ if (au.a9 !== JSON.stringify({ none:null, av:{ ch:'B' }, pic:'u/p.jpg' }))
       'and a photograph\u2019s row carries the letter face beside it.');
 if (au.a10 !== JSON.stringify({ file:0, said:true }))
   say('a10: the photo question falling over did ' + au.a10 + ' -- it says it could not, and does not open the file input.');
+if (au.a11 !== '')
+  say('a11: who @wq is came off a post of theirs (「' + au.a11 + '」) -- a second answer beside the server\u2019s row.');
 if (!au.a3)
   say('a3: a word pressed while another word\u2019s answer is on the screen draws that old answer or ' +
       '「No results」 until its own lands. Not answered yet is the waiting mark.');

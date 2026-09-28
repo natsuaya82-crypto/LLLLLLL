@@ -871,7 +871,7 @@ function profileOpen(h){
   if(h) go('profile', h); else goTab('profile');
 }
 function whoOf(h){
-  var i, p, got;
+  var got;
   h=String(h||'');
   /* YOU ARE THE ONE PERSON THIS PHONE ALREADY KNOWS, AND NOTHING READ IT.
      ---------------------------------------------------------------------
@@ -970,33 +970,6 @@ function whoOf(h){
                gets '' and draws no row (meWhereRow). */
             link:got.link||'', loc:got.loc||'',
             fo:got.fo, fr:got.fr, out:!!got.out};
-  /* And until it answers, the copy: a post of theirs, if this phone has one.
-     Better than an empty page for the moment the request is out, and it is
-     where the whole page came from before there was anywhere else. */
-  for(i=0;i<POSTS.length;i++){
-    p=POSTS[i];
-    /* No `lid` on this road even though a post carries `lang`: that is the
-       id of the language the POST was written in, which is the same language
-       only until somebody makes a second one. A door built on it would open
-       the wrong article for anybody who has two, and 「持っている人には出て、
-       持っていない人には出ない」 is the half-working screen CLAUDE.md bans.
-       The address comes from netWho() or not at all. */
-    if(String(p.hd||'')===h)
-      /* `id` is the FACE'S key here and not the post's -- the same reason as
-         above. Taking p.id would file this person's face under one of their
-         posts, which is a key that means something else. */
-      /* AND THE TWO COUNTS ARE LEFT ALONE, which is not the same as 0. A
-         post carries neither and never did -- they were `p.fo||0`, so a
-         person this phone knows only from something they wrote printed 0
-         under both words and jumped to the real number when netWho() landed.
-         「0 と出て1秒後に1に変わる、をしない」 OWNER 2026-09-04. */
-      return {who:p.who||'', hd:h, av:p.av, lname:p.lname||'', id:'w:'+h,
-              bio:p.bio||'', fo:p.fo, fr:p.fr, out:!!p.out,
-              /* Off the POST, which carried the server's answer about its
-                 author (post_seen.badge) -- so a person this phone knows only
-                 from something they wrote wears it on their page too. */
-              badge:!!p.badge};
-  }
   /* Nobody by that name, here or anywhere yet: no name, no face, and no
      count -- an unanswered number is not a zero, one line up. */
   return {who:'', hd:h, av:null, lname:'', bio:'', out:false, badge:false};
