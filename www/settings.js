@@ -381,7 +381,10 @@ function vSet(){
          Signing out is the row above, inside the signed-in half, because
          there is nothing to sign out of otherwise; these two are here whoever
          is holding the phone. */
-      '<button class="set"' + DO('wipeLangs') + '>'+
+      /* DOWN in a language this account did not write: 「自分のでない言語では
+         下りる」 (docs/FEATURE_RULES.md, 2026-09-03). It was drawn the same
+         and a press did nothing (rule-audit-2026-09-27-core T7). */
+      '<button class="set"' + DO('wipeLangs') + (langLocked()? ' disabled' : '') + '>'+
       '<span class="sl bad">'+t('set.wipe.langs')+'</span></button>'+
       '<button class="set"' + DO('wipeAll') + '>'+
       '<span class="sl bad">'+t('set.wipe')+'</span></button>'+
