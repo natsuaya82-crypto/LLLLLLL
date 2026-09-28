@@ -14,9 +14,10 @@
    because the post it points at says whether it was, and a second state to
    keep in step with the first is a second thing that can be wrong.
 
-   Who may open it is `profile.staff`, which is set by hand in the dashboard
-   and by nothing anywhere in this app. netMyProfile() in www/net.js reads it
-   off this account's row, once a session. */
+   The way in is the admin screen, and only `NET_ADMIN` reaches it (adminTap).
+   `profile.staff` is read (NET_STAFF) and opens nothing yet -- which rooms a
+   staff member who is not the admin may enter is the owner's
+   (docs/reports/rule-audit-2026-09-27-sns.md O19). */
 
 /* What was read, and what went wrong reading it. Null and not [] before the
    first answer: "nothing has been asked yet" and "there are no reports" are
@@ -202,11 +203,9 @@ function vMod(){
    「通報の確認とかアナリティクスとか売り上げとか含めて全部見れる新ページ」
 
    Its own page rather than more of the one above it, which is the owner's
-   call: the reports screen stays what it is and this one carries it. What is
-   on it today is the four numbers and the reports; there is no analytics
-   section and no takings section, because there is nothing recorded to put in
-   one and a heading over an empty box explaining that is the app explaining
-   itself. When there is something, it goes here.
+   call: the reports screen stays what it is and this one carries it. It is a
+   list of ways in -- the reports, the recovery, the feedback -- and who
+   answers them.
 
    ── The door ────────────────────────────────────────────────────────────
    Two things stand in it and only one of them is a wall.
@@ -243,21 +242,16 @@ var ADMINS=null, ADMINS_ERR='', ADMIN_H='';
 
    A FACE OF THIS ROUTE AND NOT A SECOND SCREEN. `admin` takes an argument
    like every other route in PAGES -- 'rec' is the handle box and the list of
-   that person's languages, 'rec:<id>' is one language's parts and their
-   versions -- so the trail and the back button are the shell's, nothing new
-   was registered, and vAdmin() is still the one function that draws this
-   route (CLAUDE.md rule 21).
-
-   What comes back carries no bodies: a part's name and a date, which is all
-   the operator needs to pick one. netHist() in www/net.js says why. */
+   that person's languages, 'rec:<id>' is one language's versions, each the
+   whole language -- so the trail and the back button are the shell's, and
+   vAdmin() is still the one function that draws this route (CLAUDE.md
+   rule 21). */
 /* ---- what people have said about the app --------------------------------
    「フォームみたいなの作ってみんなからの意見要望バグとかあればそれを見たい。
    フォームはアプリ内のadminのページで見れるようにしたい。」 OWNER 2026-09-22.
 
-   A SECTION OF THIS SCREEN AND NOT A SCREEN. It is the queue the operator is
-   already standing in front of, one heading below the reports, and it needs
-   nothing the reports do not already have -- so it is drawn here rather than
-   registered as a route nobody would find twice.
+   A FACE OF THIS ROUTE (`admin/fb`), reached from its row on the admin
+   screen, and the page behind it holds nothing else.
 
    THREE STATES AND NOT TWO, which is modListHTML()'s lesson one section up:
    「まだ何も無い」 and 「読めなかった」 do not share a branch. FBK is null
@@ -317,9 +311,6 @@ function adminGo(){
     ADMIN_PW=''; ADMIN_BUSY=false; ADMIN_ERR=netWhy(d, st); render();
   });
 }
-/* The numbers, and then the reports under them -- one press asks for both,
-   because a screen with a button for each half is a screen where half of it
-   is out of date and nothing says so. */
 function adminLoad(){
   if(ADMIN_BUSY) return;
   ADMIN_BUSY=true; ADMIN_ERR=''; render();
@@ -345,16 +336,12 @@ function adminLoad(){
    of modOut() one chapter up, and deliberately: ejecting somebody is done TO
    them and cannot be taken back by typing their name again. This can, by the
    same person, on the same screen, in one press. */
-/* Apple used to be asked here, last, because it was the slowest thing on the
-   screen. It is not asked at all now -- 「lingua内ではみないって言ってるだろ」
-   OWNER 2026-09-02 -- so what is left is the reports, which is what this
-   screen is for. */
 /* And what people have written in, asked for in the same press as the rest of
    the screen. A screen with a button for each half is a screen where half of
    it is out of date and nothing says so -- the sentence adminLoad() above is
    already built on.
 
-   Unlike the staff list, a refusal here is NOT an empty list: see FBK_ERR at
+   Like the staff list, a refusal here is NOT an empty list: see FBK_ERR at
    the head of this section. Either way the screen is drawn, because the
    reports above it are what it is mostly for. */
 function adminFbk(){
@@ -534,31 +521,9 @@ function adRecBody(a){
           : emptyBox(t('admin.rec.none')))
       : '');
 }
-/* ---- what Apple counted -- GONE 2026-09-02 -------------------------------
-   「lingua内ではみないって言ってるだろ」「RevenueCatで見るって話してるんだけど」
-   OWNER. The takings, the months, the plans, the retention and the downloads
-   were five pages hanging off this screen, all of them fed by
-   supabase/functions/appstore/. They are read in RevenueCat now, so none of it
-   is here: not the pages, not the rows that opened them, not the request.
-
-   `docs/FEATURE_RULES.md` carries the decision and marks the 2026-08-26 one
-   superseded. git remembers the code. */
 function vAdmin(){
   if(adminLocked()) return adminDoor();
-  /* THE NUMBERS ARE NOT HERE ANY MORE.
-     「lingua内ではみないって言ってるだろ」「RevenueCatで見るって話してるんだけど」
-     OWNER 2026-09-02. Sales and analytics are read in RevenueCat, so this
-     screen carries none of them -- not the takings, not the downloads, not the
-     retention, and not the account count either: the sentence is about Lingua,
-     not about which of them came from Apple.
-
-     The 2026-08-26 decision that put them here is superseded
-     (`docs/FEATURE_RULES.md`). What is left is the thing this screen is for
-     that nothing else does: the reports, and who answers them.
-
-     admin_counts() in supabase/schema.sql still counts and still sends; only
-     the reports count is read off it now. Nothing was deleted on the server. */
-  /* AND THE FACE THAT PUTS SOMEBODY'S LANGUAGE BACK. A route's argument, so
+    /* AND THE FACE THAT PUTS SOMEBODY'S LANGUAGE BACK. A route's argument, so
      it is this route wearing another face rather than a screen that had to be
      registered -- and the back button is the shell's. */
   var a=String((here()||{}).a || '');
@@ -575,14 +540,8 @@ function vAdmin(){
   /* THIS SCREEN IS A LIST OF WAYS IN, AND NOTHING ELSE.
      「そもそもadminの画面キモすぎる。お問い合わせ→開いたらお問い合わせだけの
      画面。通報と→開いたら通報だけの画面。最初のスタッフとかの画面はあくまで
-     選択の画面だから」 OWNER 2026-09-22.
-
-     The reports used to be drawn HERE as well, under the staff field -- the
-     same modListHTML() the reports screen is made of -- so this page was a
-     menu with one of its own destinations spilled down the bottom of it, and
-     the row above them went to a screen showing the same thing again. What is
-     left is rows: the reports, the recovery, the feedback, and who answers
-     them. Each one opens a page that is only that. */
+     選択の画面だから」 OWNER 2026-09-22. Rows: the reports, the recovery,
+     the feedback, and who answers them. Each opens a page that is only that. */
   var n=ADMINN||{};
   return '<div class="view">'+navTop('')+'<div class="body">'+
     adminRow('admin.reports', n.reports, 'goMod')+
@@ -593,8 +552,9 @@ function vAdmin(){
       '<span class="sv">'+ICON_GO+'</span></button>'+
     /* And what people have written in -- a row like the two above it, and the
        page behind it holds nothing else. 「お問い合わせ→開いたらお問い合わせ
-       だけの画面」 OWNER 2026-09-22. The number is how many came back, which
-       is the same thing the reports row says. */
+       だけの画面」 OWNER 2026-09-22. The number is how many came back in the
+       first page (NET_PAGE) -- not the server's count the reports row shows;
+       which it should be is the owner's (O18 in the rule audit). */
     '<button class="set"' + DO('go', ['admin', 'fb']) + '>'+
       '<span class="sl">'+esc(t('admin.feedback'))+'</span>'+
       '<span class="sv">'+esc(FBK? String(FBK.length) : '')+ICON_GO+'</span></button>'+
@@ -605,17 +565,15 @@ function vAdmin(){
     (ADMINS_ERR? emptyBox(ADMINS_ERR, '', '', true) : '')+
     (ADMINS||[]).map(adminStaffRow).join('')+
     /* A handle is short, but nothing stops a long one being pasted here.
-       The password on the door above is NOT this -- it stays an
+       The password on the door (adminDoor) is NOT this -- it stays an
        <input type="password">, because a textarea has no such type and would
        print somebody's word on the screen. */
     '<div class="field">'+
       lnField('admin-h', t('admin.staff.ph'), ' autocapitalize="none"' +
         IN('adminStaffSet', ['h']), ADMIN_H)+'</div>'+
-    /* What went wrong, under the field it went wrong in. It used to be at the
-       top of the screen, above the list and the reports count, which is the
-       far end of the page from the thing that was typed -- so a handle nobody
-       has emptied the field and said nothing anybody saw. One message, in the
-       one place a failure on this screen can come from. */
+    /* What went wrong, under the field it went wrong in. A load of this
+       screen that fell is drawn here too (adminLoad) -- B36 in the rule
+       audit. */
     (ADMIN_ERR? emptyBox(ADMIN_ERR, '', '', true) : '')+
     markBtn(ICON_ADD2, t('admin.staff.add'), 'adminStaffAdd', null, ADMIN_BUSY? ' disabled':'')+
     '</div></div>';

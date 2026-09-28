@@ -9,8 +9,9 @@
    about; the same line set in a script its author invented is the one part of
    this work that is legible to a stranger at a glance. So the card is the
    whole of the app's reach outward, and everything on it is there to survive
-   being looked at for one second: the script large, the spelling small under
-   it, the meaning under that, and nothing else.
+   being looked at for one second: a line is the script large, the spelling
+   small under it, the meaning under that, and whose and in what at the foot;
+   a word is a dictionary page (cardWord).
 
    It follows the app's theme rather than carrying a light/dark switch of its
    own. A second palette here would be the two theme blocks in index.html
@@ -662,8 +663,8 @@ function cardTrackL(x, s, x0, y, tr){
 }
 /* The page itself. `extra` is the air put into every gap, which is how a word
    with one sense fills the sheet: the entry is not stretched, the spacing is.
-   Drawn twice -- once against a scratch canvas to find out where it ends, and
-   again for real with the leftover room shared out. */
+   Drawn against a scratch canvas to find out where it ends (cardWordFit),
+   and again for real with the leftover room shared out. */
 function cardWordPage(x, W, H, S, src, extra, drop, lim, ink){
   var M=Math.round(S*0.090), RIGHT=W-M, COL=RIGHT-M, IND=Math.round(S*0.040);
   var mns=src.mns && src.mns.length? src.mns : (src.mn? [src.mn] : []);
@@ -812,8 +813,6 @@ function cardWordPage(x, W, H, S, src, extra, drop, lim, ink){
   cardMark(x, RIGHT-Math.round(S*0.010), b-Math.round(S*0.005), Math.round(S*0.010));
   return y;
 }
-/* Twice: once to a scratch canvas to learn where the entry ends, and once for
-   real with the room that was left shared out between the gaps. */
 /* What the page will carry. A verb with four relatives, a sentence under it
    and a line about where it came from does not fit on one sheet, and the
    first version of this drew all of it anyway -- straight through the rule at
@@ -1070,7 +1069,7 @@ function cardBytes(c){
   i=String(url).indexOf(',');
   return i<0? '' : String(url).slice(i+1);
 }
-/* A name a person will recognise in the Files app, cut down the way
+/* A name a person will recognise in the share sheet, cut down the way
    shFileName() cuts one: this is pasted into a file name on the phone, and
    the handle it comes from arrives on somebody else's post.
 

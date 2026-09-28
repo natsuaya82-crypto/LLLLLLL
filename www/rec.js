@@ -337,10 +337,9 @@ function voSweep(){
   if(keep===null) return;
   p('LinguaShare', 'sweepVoices', {keep:keep, before:Date.now()})['catch'](function(){});
 }
-/* Whether this voice is on the disk or on the server. A name made by voName()
-   is `v` and digits and an extension and never holds a slash; a path in
-   Storage is `<author>/<post>/vo.m4a` and always does. One character tells
-   them apart, which is why the name was made in one place. */
+/* Whether this voice is on the disk or on the server. A name an earlier
+   version wrote on the disk never holds a slash; a path in Storage
+   (`<uid>/<voName()>/vo.<ext>`) always does. One character tells them apart. */
 function voRemote(f){ return String(f||'').indexOf('/')>=0; }
 function voRead(f, done){
   var p=sharePlug();
