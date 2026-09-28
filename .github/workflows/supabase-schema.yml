@@ -104,6 +104,11 @@ jobs:
           }
           echo '== 断られた要求'
           q "select datetime(timestamp) as t, request.method as m, request.path as p, request.search as s, response.status_code as c from edge_logs cross join unnest(metadata) as md cross join unnest(md.request) as request cross join unnest(md.response) as response where response.status_code >= 400 order by timestamp desc limit 60"
+          echo '== daily-prompt の答え（24 時間）'
+          S=$(date -u -d '24 hours ago' +%Y-%m-%dT%H:%M:%SZ)
+          q "select datetime(timestamp) as t, response.status_code as c, m.execution_time_ms as ms from function_edge_logs cross join unnest(metadata) as m cross join unnest(m.request) as request cross join unnest(m.response) as response where request.url like '%daily-prompt%' order by timestamp desc limit 20"
+          q "select datetime(timestamp) as t, event_message as msg from function_logs cross join unnest(metadata) as m where m.function_id is not null and event_message like '%refused%' or event_message like '%model%' order by timestamp desc limit 20"
+          S=$(date -u -d '6 hours ago' +%Y-%m-%dT%H:%M:%SZ)
           echo '== Postgres のエラー'
           q "select datetime(timestamp) as t, parsed.error_severity as sev, event_message as msg from postgres_logs cross join unnest(metadata) as md cross join unnest(md.parsed) as parsed where parsed.error_severity in ('ERROR','FATAL','PANIC') order by timestamp desc limit 40"
 
