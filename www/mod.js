@@ -482,11 +482,9 @@ function adminStaffRow(r){
    that has not come back yet is a blank and not a nought: nought is a fact
    about the app and this is a fact about the request. */
 function adminRow(k, n, go){
-  var body='<span class="sl">'+esc(t(k))+'</span>'+
-    '<span class="sv">'+esc((n===0 || n)? String(n) : '')+
-    (go? ICON_GO : '')+'</span>';
-  return go? '<button class="set"' + DO(go) + '>'+body+'</button>'
-           : '<div class="set">'+body+'</div>';
+  return '<button class="set"' + DO(go) + '>'+
+    '<span class="sl">'+esc(t(k))+'</span>'+
+    '<span class="sv">'+esc((n===0 || n)? String(n) : '')+ICON_GO+'</span></button>';
 }
 /* ONE LANGUAGE OF THAT PERSON'S. `.set` and nothing round it -- no corner, no
    border, no panel (CLAUDE.md rule 18). */
