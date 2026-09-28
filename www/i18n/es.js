@@ -132,6 +132,8 @@ defLang('es', (function(){
       "kb.dir.left"               : "Izquierda",
       "kb.row.ins" : "Añadir una fila aquí",
       "kb.row.up" : "Encima de esta fila",
+      "kb.cut.q.r" : "¿Eliminar las filas seleccionadas?",
+      "kb.cut.q.c" : "¿Eliminar las columnas seleccionadas?",
       "kb.row.down" : "Debajo de esta fila",
       "kb.row.sel" : "Seleccionar esta fila",
       "kb.col.sel" : "Seleccionar esta columna",

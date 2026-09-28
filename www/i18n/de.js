@@ -160,6 +160,8 @@ defLang('de', (function(){
       "kb.dir.left"               : "Links",
       "kb.row.ins" : "Hier eine Zeile einfügen",
       "kb.row.up" : "Über dieser Zeile",
+      "kb.cut.q.r" : "Ausgewählte Zeilen löschen?",
+      "kb.cut.q.c" : "Ausgewählte Spalten löschen?",
       "kb.row.down" : "Unter dieser Zeile",
       "kb.row.sel" : "Diese Zeile auswählen",
       "kb.col.sel" : "Diese Spalte auswählen",

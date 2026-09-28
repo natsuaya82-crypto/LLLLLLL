@@ -1676,6 +1676,20 @@ export function halfDone(){
        comes back and an account comes back; a report row that has gone has
        gone, so the word on the button that does it is the word for what it
        does rather than 「はい」. */
+    /* The keyboard's bin on a row and on a column, and giving a taken
+       language back: each asks first (OWNER 2026-09-28). */
+    ['a keyboard row being deleted, asking', () => {
+        popAsk(t('kb.cut.q.r'), function(){}, t('pop.yes'));
+        const h = document.getElementById('pop').outerHTML;
+        popOff(); return h; }],
+    ['a keyboard column being deleted, asking', () => {
+        popAsk(t('kb.cut.q.c'), function(){}, t('pop.yes'));
+        const h = document.getElementById('pop').outerHTML;
+        popOff(); return h; }],
+    ['a taken language being given back, asking', () => {
+        popAsk(t('confirm.del', 'Borrowed'), function(){}, t('pop.yes'));
+        const h = document.getElementById('pop').outerHTML;
+        popOff(); return h; }],
     ['a report being deleted, asking', () => {
         popAsk(t('mod.drop.sure'), function(){}, t('mod.drop.yes'));
         const h = document.getElementById('pop').outerHTML;
@@ -2821,7 +2835,7 @@ export function halfDone(){
                                                   kbAdd('qwerty'); kbAdd('flick');
                                                   kbGoBoard(2); render();
                                                   kbDropGo(1); render();
-                                                  KBH = { k:'r', r:0, i:0 }; kbCut();
+                                                  KBH = { k:'r', r:0, i:0 }; kbCut(); popYes();
                                                   const h = vKb();
                                                   KEEP = {}; KB = null; kbShow = 0;
                                                   planGot('free'); return h; }],
@@ -2875,7 +2889,7 @@ export function halfDone(){
        and this face is about the two answers it gives when there IS room. */
     ['a row selected, asking where a new one goes', () => { planGot('pro'); KB = null; kbShow = 0;
                                                kbAdd('qwerty'); kbLay = 0;
-                                               kbHeadRow(0); kbCut();
+                                               kbHeadRow(0); kbCut(); popYes();
                                                kbHeadRow(1); kbInsAsk();
                                                const h = vKb();
                                                KBH = null; KB = null; kbShow = 0; kbLay = 0;
@@ -2922,7 +2936,7 @@ export function halfDone(){
        thing that puts it up. */
     ['an empty frame of the keyboard selected', () => { planGot('pro'); KB = null; kbShow = 0;
                                                   kbAdd('qwerty'); kbLay = 0;
-                                                  kbHeadCol(0); kbCut();
+                                                  kbHeadCol(0); kbCut(); popYes();
                                                   kbCellSel(0, 0, 1);
                                                   const h = vKb();
                                                   KBH = null; KB = null; kbShow = 0; kbLay = 0;
@@ -2977,7 +2991,7 @@ export function halfDone(){
        with no slack is not offered a + at all. 「最大になったら+はなし」 */
     ['a column selected, asking where a new one goes', () => { planGot('pro'); KB = null; kbShow = 0;
                                                   kbAdd('qwerty'); kbLay = 0;
-                                                  kbHeadCol(0); kbCut();
+                                                  kbHeadCol(0); kbCut(); popYes();
                                                   kbHeadCol(2); kbInsAsk();
                                                   const h = vKb();
                                                   KBH = null; KB = null; kbShow = 0; kbLay = 0;

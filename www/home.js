@@ -2649,10 +2649,9 @@ function langRow(id){
 /* GIVING ONE BACK, WHICH IS A DELETE AND IS WRITTEN DOWN AS ONE.
    docs/CHANGELOG.md 2026-09-09 carries the DELETE REVIEW.
 
-   Nothing is asked first. What stands behind it is the road back rather than
-   a dialog -- 「もう一度取る」: the ↓ on the article takes it again, so long
-   as the source still has it published. That is the same shape the keyboard's
-   bin has (CLAUDE.md rule 19), and iOS's own box is banned anyway.
+   It asks first, in the app's own popup 「消す前はいつも確認」 OWNER
+   2026-09-28 (criterion 9). Behind it is still the road back -- the ↓ on the
+   article takes it again, so long as the source still has it published.
 
    The SERVER is first and this phone drops nothing until it has answered.
    netTakeDrop() (www/net.js) is the whole of it -- what comes off this phone
@@ -2668,8 +2667,11 @@ function langDrop(id){
      a language is one this account is only READING is langWhose()
      (www/core.js), off `language.owner` and `language_take`. */
   if(!sid || langWhose(sid)!==LW_READ) return;
+  popAsk(t('confirm.del', langNameOf(sid) || t('langs.drop')), function(){ langDropGo(sid); }, t('pop.yes'));
+}
+function langDropGo(sid){
   netTakeDrop(sid, function(){},
-    function(d, s, m){ netPop(d, s, m, function(){ langDrop(id); }); });
+    function(d, s, m){ netPop(d, s, m, function(){ langDropGo(sid); }); });
 }
 /* ---- and the finger that opens the row ---------------------------------
    iOS's own list, the same gesture as the notebook's rows and the

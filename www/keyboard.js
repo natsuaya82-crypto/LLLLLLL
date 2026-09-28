@@ -2332,7 +2332,7 @@ function kbIns(down){
    keyboard -- it is asked for by pressing the bin, and the step back holds it. */
 function kbCut(){
   if(!KBH) return;
-  var h=KBH, ms, j, run, i;
+  var h=KBH, ms;
   /* An empty frame holds nothing to take. Without this the bin would ask
      kbDelCol() for column `undefined`, which is a keyboard that still renders
      and is not the one somebody built. */
@@ -2343,6 +2343,13 @@ function kbCut(){
     kbDelKeys(ms);
     return;
   }
+  /* A ROW OR A COLUMN ASKS FIRST 「消す前はいつも確認」 OWNER 2026-09-28
+     (criterion 9); the step back still stands behind it. */
+  popAsk(t(h.k==='r'? 'kb.cut.q.r' : 'kb.cut.q.c'), kbCutGo, t('pop.yes'));
+}
+function kbCutGo(){
+  var h=KBH, run, i;
+  if(!h || (h.k!=='r' && h.k!=='c')) return;
   run=kbHeadRun();
   KBH=null;
   /* ONE save and therefore ONE step back for one press -- kbDelRow() and

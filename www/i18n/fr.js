@@ -220,6 +220,8 @@ defLang('fr', (function(){
       "kb.dir.left"               : "Gauche",
       "kb.row.ins" : "Ajouter une ligne ici",
       "kb.row.up" : "Au-dessus de cette ligne",
+      "kb.cut.q.r" : "Supprimer les lignes sélectionnées ?",
+      "kb.cut.q.c" : "Supprimer les colonnes sélectionnées ?",
       "kb.row.down" : "En dessous de cette ligne",
       "kb.row.sel" : "Sélectionner cette ligne",
       "kb.col.sel" : "Sélectionner cette colonne",

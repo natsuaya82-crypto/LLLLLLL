@@ -172,6 +172,8 @@ defLang('it', (function(){
       "kb.dir.left"               : "Sinistra",
       "kb.row.ins" : "Aggiungi una riga qui",
       "kb.row.up" : "Sopra questa riga",
+      "kb.cut.q.r" : "Eliminare le righe selezionate?",
+      "kb.cut.q.c" : "Eliminare le colonne selezionate?",
       "kb.row.down" : "Sotto questa riga",
       "kb.row.sel" : "Seleziona questa riga",
       "kb.col.sel" : "Seleziona questa colonna",

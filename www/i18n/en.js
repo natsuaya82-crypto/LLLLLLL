@@ -74,6 +74,8 @@ defLang('en', (function(){
       "kb.dir.left"               : "Left",
       "kb.row.ins" : "Add a row here",
       "kb.row.up" : "Above this row",
+      "kb.cut.q.r" : "Delete the selected rows?",
+      "kb.cut.q.c" : "Delete the selected columns?",
       "kb.row.down" : "Below this row",
       "kb.row.sel" : "Select this row",
       "kb.col.sel" : "Select this column",

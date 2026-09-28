@@ -494,7 +494,7 @@ const more = await pg.evaluate(() => {
   out.kbKeyOne = keepKey() === keepKeyOf('kb', kbShow);
   out.kbGoldAfterDrop = keepDirty(keepKey());
   var rowsWas = kbLayer().rows.length;
-  KBH = { k: 'r', r: 0, i: 0 }; kbCut(); render();
+  KBH = { k: 'r', r: 0, i: 0 }; kbCut(); popYes(); render();
   out.kbRowWent = kbLayer().rows.length < rowsWas;
   out.kbGoldOnChange = keepDirty(keepKey());
   out.kbBufs = Object.keys(KEEP).filter(function(k){ return k.indexOf('kb|') === 0; }).length;

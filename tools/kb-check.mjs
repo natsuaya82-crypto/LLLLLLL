@@ -140,8 +140,20 @@ const r = await pg.evaluate(({ s }) => {
     return x.some(function (k){ return (k.w || 1) === 0.5; });
   });
 
-  /* ---- 1. the number takes its row and leaves the others alone --------- */
+  /* ---- 1a. the bin asks first 「消す前はいつも確認」 OWNER 2026-09-28 --
+     a row and a column: nothing moves while the question is up, and 「いいえ」
+     leaves the board as it was. */
   kbHeadRow(1); kbCut();
+  out.askRow = rows().join('|') === was.join('|') && !!POP_YES;
+  popNo();
+  out.noRow = rows().join('|') === was.join('|');
+  KBH = null; kbHeadCol(0); kbCut();
+  out.askCol = rows().join('|') === was.join('|') && !!POP_YES;
+  popNo(); KBH = null;
+  out.noCol = rows().join('|') === was.join('|');
+
+  /* ---- 1. the number takes its row and leaves the others alone --------- */
+  kbHeadRow(1); kbCut(); popYes();
   var now = rows();
   out.rowWent = now.length === was.length - 1;
   out.rowOnly = now.join('|') === was.slice(0, 1).concat(was.slice(2)).join('|');
@@ -157,9 +169,9 @@ const r = await pg.evaluate(({ s }) => {
   /* ---- 3. several deletes walk back through them, in order ------------- */
   fresh();
   var s0 = rows();
-  kbHeadRow(0); kbCut(); var s1 = rows();
-  kbHeadRow(0); kbCut(); var s2 = rows();
-  kbHeadRow(0); kbCut();
+  kbHeadRow(0); kbCut(); popYes(); var s1 = rows();
+  kbHeadRow(0); kbCut(); popYes(); var s2 = rows();
+  kbHeadRow(0); kbCut(); popYes();
   kbUndo(); out.back1 = rows().join('|') === s2.join('|');
   kbUndo(); out.back2 = rows().join('|') === s1.join('|');
   kbUndo(); out.back3 = rows().join('|') === s0.join('|');
@@ -167,7 +179,7 @@ const r = await pg.evaluate(({ s }) => {
   /* ---- 4. the letter takes ONE key out of every row that reaches it ---- */
   fresh();
   var w0 = widths();
-  kbHeadCol(0); kbCut();
+  kbHeadCol(0); kbCut(); popYes();
   var w1 = widths();
   out.colEvery = w0.length === w1.length;
   out.colOne = w0.length === w1.length && w0.every(function (w, n){
@@ -184,7 +196,7 @@ const r = await pg.evaluate(({ s }) => {
   if (ri >= 0){
     for (i = 0; i < ki; i++) at += (rr[ri][i].w || 1);
     var wasW = rr[ri][ki].w, n = rr[ri].length;
-    kbHeadCol(Math.floor(at)); kbCut();
+    kbHeadCol(Math.floor(at)); kbCut(); popYes();
     var row = kbLayer().rows[ri];
     out.stillThere = row.length === n;
     out.narrowed = row.length === n && row[ki].k === 'sp' && row[ki].w === wasW - 1;
@@ -196,7 +208,7 @@ const r = await pg.evaluate(({ s }) => {
   fresh();
   var lts = LETTERS.length, wds = WORDS.length, brds = kbBoards().length,
       faces = KB.kbs[kbShow - 1].lay.length;
-  kbHeadRow(0); kbCut(); kbHeadCol(1); kbCut(); kbUndo();
+  kbHeadRow(0); kbCut(); popYes(); kbHeadCol(1); kbCut(); popYes(); kbUndo();
   out.letters = LETTERS.length === lts;
   out.words = WORDS.length === wds;
   out.boards = kbBoards().length === brds;
@@ -682,7 +694,7 @@ const r = await pg.evaluate(({ s }) => {
   }
   fresh(); kbAddLay(); kbLay = 1; render();
   out.deadRowsWas = kbEdit().lay[1].rows.length;
-  kbHeadRow(0); kbCut();
+  kbHeadRow(0); kbCut(); popYes();
   out.deadRowKept = kbEdit().lay[1].rows.length >= 1;
   out.deadRowOff = offOf(kbEdit().lay[1]).length > 0;
   /* and the face it goes back to is the one it came from, not a number that
@@ -694,7 +706,7 @@ const r = await pg.evaluate(({ s }) => {
      without the row floor above being what saves it */
   kbEdit().lay[1].rows.push([kbKey('lt', ''), kbKey('lt', '')]);
   kbLay = 1; saveKb(); render();
-  kbHeadCol(0); kbCut();
+  kbHeadCol(0); kbCut(); popYes();
   out.deadColOff = offOf(kbEdit().lay[1]).length > 0;
 
   /* and face 0 seen from the other end: with nothing on it pointing anywhere,
@@ -707,7 +719,7 @@ const r = await pg.evaluate(({ s }) => {
   /* A keyboard of ONE face is left alone: there is nowhere to go and a key
      that goes nowhere is a key that does nothing. */
   fresh();
-  kbHeadRow(0); kbCut();
+  kbHeadRow(0); kbCut(); popYes();
   out.oneFacePlain = offOf(kbEdit().lay[0]).length === 0;
 
   /* ---- 6d3. a row can be added on EVERY face --------------------------
@@ -769,7 +781,7 @@ const r = await pg.evaluate(({ s }) => {
      selector nothing wears passes by measuring -1 against -1, which is the
      stale-baseline shape CLAUDE.md refuses, so it went with the key. */
   fresh();
-  kbHeadRow(0); kbCut(); KBH = null; render();
+  kbHeadRow(0); kbCut(); popYes(); KBH = null; render();
   out.wideSheet = widthOf('.kb.kbsheet');
   /* and the two boards the owner put side by side */
   const sizes = {};
@@ -824,7 +836,7 @@ const r = await pg.evaluate(({ s }) => {
   const keyWas = keyW();
   const hdrWas = [].slice.call(document.querySelectorAll('.kbhdr .kbcl'))
     .map(function (b){ return b.textContent; }).join('');
-  kbHeadCol(0); kbCut();
+  kbHeadCol(0); kbCut(); popYes();
   out.edgeStill = widthOf('.kb.kbsheet') === edgeWas;
   /* AND THE KEYS THAT ARE LEFT ARE THE SAME SIZE. 「エクセルは足しても小さく
      ならんやろ」 said about adding; taking away is the same sentence and is the
@@ -939,7 +951,7 @@ const r = await pg.evaluate(({ s }) => {
     });
   });
   var usedWas = kbLayer().rows.map(function (rw){ return kbUsed(rw); });
-  kbCut();
+  kbCut(); popYes();
   var usedNow = kbLayer().rows.map(function (rw){ return kbUsed(rw); });
   out.litCount = litWas.length;
   out.cutTookTwo = litWas.every(function (x){ return usedNow[x[0]] === usedWas[x[0]] - 2; });
@@ -1012,7 +1024,7 @@ const r = await pg.evaluate(({ s }) => {
     var ro = document.querySelector('.kb:not(.kbsheet) .kbk.gap');
     out.gapRoPlain = !ro || getComputedStyle(ro).borderTopColor === 'rgba(0, 0, 0, 0)';
   }());
-  kbHeadCol(0); kbCut(); KBH = null; standKb();
+  kbHeadCol(0); kbCut(); popYes(); KBH = null; standKb();
   var cells = document.querySelectorAll('.kb.kbsheet .kbk.cell:not([data-k])');
   out.cellShown = cells.length > 0;
   out.cellIsButton = cells.length > 0 && cells[0].tagName === 'BUTTON';
@@ -1380,7 +1392,7 @@ const r = await pg.evaluate(({ s }) => {
   fresh();
   kbTapKey(0, 2); standKb();
   var binWas = kbLayer().rows[0].length;
-  kbCut(); standKb();
+  kbCut(); popYes(); standKb();
   out.keyBinTook = kbLayer().rows[0].length === binWas - 1;
   out.keyBinBack = (kbUndo(), kbLayer().rows[0].length === binWas);
   /* ---- and the bin takes EVERY key of a run, in ONE step ---------------
@@ -1394,7 +1406,7 @@ const r = await pg.evaluate(({ s }) => {
   kbTapKey(0, 2); kbTapKey(0, 3); kbTapKey(0, 4); standKb();
   var manyWas = kbLayer().rows[0].length;
   out.manyChosen = kbSelKeys().length === 3;
-  kbCut(); standKb();
+  kbCut(); popYes(); standKb();
   out.manyBinTook = kbLayer().rows[0].length === manyWas - 3;
   kbUndo(); standKb();
   out.manyBinBack = kbLayer().rows[0].length === manyWas;
@@ -1426,7 +1438,7 @@ const r = await pg.evaluate(({ s }) => {
   out.insColFullBtn = vKb().indexOf('data-do="kbInsCol"') < 0;
 
   fresh();
-  kbHeadCol(0); kbCut();
+  kbHeadCol(0); kbCut(); popYes();
   /* A SHORT ROW, put in on purpose. Without one, "the rows that reach it and
      no others" cannot be watched failing: every row of a QWERTY is the same
      width, so inserting into all of them and inserting into the ones that
@@ -1929,7 +1941,7 @@ const r = await pg.evaluate(({ s }) => {
   var first = vKb();
   out.hasUndo = first.indexOf('data-do="kbUndo"') >= 0;
   out.undoOffAtFirst = /kbUndo[^>]*disabled/.test(first);
-  kbHeadRow(0); kbCut();
+  kbHeadRow(0); kbCut(); popYes();
   out.undoOnAfter = !/kbUndo[^>]*disabled/.test(vKb());
   kbUndo();
   out.redoOnAfterUndo = !/kbRedo[^>]*disabled/.test(vKb());
@@ -3181,12 +3193,12 @@ const r = await pg.evaluate(({ s }) => {
   }());
   /* 2. choose a row while a key is chosen, bin it, choose another */
   q = chooseRow(1); out.seqRow1 = q.got; out.seqRowN = q.n;
-  out.seqRowCut = (tapDo('kbCut'), !KBH);
+  out.seqRowCut = (tapDo('kbCut'), tapDo('popYes'), !KBH);
   q = chooseRow(1); out.seqRow2 = q.got && q.n === 1;
   out.seqRowTool = toolFor().indexOf('kbAlign') >= 0;
   /* 3. choose a column while a row is chosen, bin it, choose another */
   q = chooseCol(2); out.seqCol1 = q.got; out.seqColN = q.n;
-  out.seqColCut = (tapDo('kbCut'), !KBH);
+  out.seqColCut = (tapDo('kbCut'), tapDo('popYes'), !KBH);
   q = chooseCol(2); out.seqCol2 = q.got && q.n === 1;
   /* 4. push a row three ways in a row, and then choose a key on it */
   q = chooseRow(2); out.seqAlRow = q.got;
@@ -3404,7 +3416,7 @@ const r = await pg.evaluate(({ s }) => {
     keepDrop(keepKeyOf('kb', kbShow));
     render();
     out.keepOnArrival = gold();
-    kbHeadRow(1); kbCut();
+    kbHeadRow(1); kbCut(); popYes();
     out.keepAfterCut = gold();
     /* and back to what it opened with is nothing to save. The step back is
        the same road out as the change, so a `was` that levelled itself on
@@ -3456,7 +3468,7 @@ const r = await pg.evaluate(({ s }) => {
 
     /* ---- and the bin takes the whole run, in ONE step -------------------- */
     var wasW = kbLayer().rows.map(kbUsed), wasU = KBU.u.length;
-    kbCut(); standKb();
+    kbCut(); popYes(); standKb();
     out.pullCutW = kbLayer().rows.map(kbUsed).join(',');
     out.pullCut = kbLayer().rows.every(function (r, i){
       return kbUsed(r) === Math.max(0, wasW[i] - 8) || wasW[i] <= 8;
@@ -3631,7 +3643,7 @@ const SF = await sf.evaluate(({ s }) => {
      same stub keep-check uses -- a file:// page has no server). */
   function walkedOff(answer){
     board(function (){ return [[lt('a'), lt('b'), lt('c')], [lt('d'), lt('e')]]; });
-    kbHeadRow(1); kbCut();
+    kbHeadRow(1); kbCut(); popYes();
     kbHeadRow(0);
     var r = { before: { h: !!KBH, u: KBU.u.length } }, realSN = window.netSaveNow;
     window.netSaveNow = function (cb){ if (cb) cb(true); };
@@ -3651,7 +3663,7 @@ const SF = await sf.evaluate(({ s }) => {
      opening another language does; the board in front of you afterwards is
      at the same place in the list and is a different board. */
   board(function (){ return [[lt('a'), lt('b'), lt('c')]]; });
-  kbHeadRow(0); kbCut();
+  kbHeadRow(0); kbCut(); popYes();
   viewReset();
   /* the other language's keyboard, as langLoad() puts it there: read, not
      made -- kbAdd() forgets on its own, and that is not this road */
@@ -3691,7 +3703,7 @@ const SF = await sf.evaluate(({ s }) => {
          spelling can stand on two keys of one row */
       before = kbLayer().rows.map(function (r){ return r.map(function (k){ return { k: k, v: k.v, u: kbU(k.w) }; }); });
       u0 = KBU.u.length;
-      kbCut();
+      kbCut(); popYes();
       after = kbLayer().rows;
       took = [];
       before.forEach(function (r, ri){
@@ -3720,7 +3732,7 @@ const SF = await sf.evaluate(({ s }) => {
     for (ci = 0; ci < KB_COLS / 2; ci++){
       before = JSON.stringify(kbLayer().rows);
       u0 = KBU.u.length;
-      KBH = null; kbHeadCol(ci); kbCut();
+      KBH = null; kbHeadCol(ci); kbCut(); popYes();
       a = kbLayer().rows.map(function (r, i){ return JSON.stringify(r) !== JSON.stringify(JSON.parse(before)[i]); });
       if (KBU.u.length > u0) kbUndo();
       KBH = null; kbHeadCol(ci);
@@ -3804,7 +3816,7 @@ const SF = await sf.evaluate(({ s }) => {
     var one = JSON.stringify(KB.kbs[0]);
     kbShow = 2; kbLay = 0;
     window.route = 'kb'; NAV = [{ r: 'kb' }, { r: 'kb', a: '2' }]; render();
-    KBH = null; kbHeadCol(0); kbCut();
+    KBH = null; kbHeadCol(0); kbCut(); popYes();
     out.k3Two = JSON.stringify(KB.kbs[1].lay[0].rows.map(function (r){ return r.length; }));
     out.k3One = JSON.stringify(KB.kbs[0]) === one;
   }());
@@ -4010,6 +4022,8 @@ if (!r.roadDots){
 say(r.rows > 3, 'the board has ' + r.rows + ' rows to work on');
 say(r.cols === 20, 'the sheet is ' + r.cols + ' columns wide, which is ten keys -- a column is half a key');
 say(r.halves, 'and one row is inset by half a key, which is what the columns count in');
+say(r.askRow && r.askCol, 'the bin asks first, for a row and for a column, and nothing moves while it asks');
+say(r.noRow && r.noCol, 'and 「いいえ」 leaves the board as it was');
 say(r.rowWent, 'pressing 2 leaves ' + (r.rows - 1) + ' rows');
 say(r.rowOnly, 'and every other row is the row it was, in the order it was in');
 say(r.undo, 'the step back puts the row back, key for key');

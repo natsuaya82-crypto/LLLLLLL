@@ -180,6 +180,8 @@ defLang('zh', (function(){
       "kb.dir.left"               : "左",
       "kb.row.ins" : "在此添加一行",
       "kb.row.up" : "在此行上方",
+      "kb.cut.q.r" : "删除所选的行？",
+      "kb.cut.q.c" : "删除所选的列？",
       "kb.row.down" : "在此行下方",
       "kb.row.sel" : "选择此行",
       "kb.col.sel" : "选择此列",

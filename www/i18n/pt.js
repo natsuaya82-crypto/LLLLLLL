@@ -179,6 +179,8 @@ defLang('pt', (function(){
       "kb.dir.left"               : "Esquerda",
       "kb.row.ins" : "Adicionar uma linha aqui",
       "kb.row.up" : "Acima desta linha",
+      "kb.cut.q.r" : "Excluir as linhas selecionadas?",
+      "kb.cut.q.c" : "Excluir as colunas selecionadas?",
       "kb.row.down" : "Abaixo desta linha",
       "kb.row.sel" : "Selecionar esta linha",
       "kb.col.sel" : "Selecionar esta coluna",

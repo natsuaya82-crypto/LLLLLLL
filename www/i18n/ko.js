@@ -351,6 +351,8 @@ defLang('ko', (function(){
       "kb.dir.left"               : "왼쪽",
       "kb.row.ins" : "여기에 행 추가",
       "kb.row.up" : "이 행 위에",
+      "kb.cut.q.r" : "선택한 행을 삭제할까요?",
+      "kb.cut.q.c" : "선택한 열을 삭제할까요?",
       "kb.row.down" : "이 행 아래에",
       "kb.row.sel" : "이 행 선택",
       "kb.col.sel" : "이 열 선택",

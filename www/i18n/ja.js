@@ -88,6 +88,8 @@ defLang('ja', (function(){
       "kb.dir.left"               : "左",
       "kb.row.ins" : "ここに行を足す",
       "kb.row.up" : "この行の上",
+      "kb.cut.q.r" : "選んだ行を消しますか？",
+      "kb.cut.q.c" : "選んだ列を消しますか？",
       "kb.row.down" : "この行の下",
       "kb.row.sel" : "この行を選ぶ",
       "kb.col.sel" : "この列を選ぶ",
