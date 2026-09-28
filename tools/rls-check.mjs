@@ -2892,9 +2892,12 @@ const SHAPE = [
      job at it, and a third paste (CRONB) has changed nothing. Rung here the
      way pg_cron rings it -- _cron_sent() -- so what is counted is what goes
      out of the door, not what the command's text looks like. */
-  ['the day’s sentence is asked for at 0:00 Pacific, both seasons', `
+  /* And asked again every five minutes through both hours, so that one ring
+     that fails is not a day with no sentence (2026-09-28: 07:00 and 08:00
+     both wrote nothing). */
+  ['the day’s sentence is asked for from 0:00 Pacific, both seasons, every five minutes', `
      select count(*) from cron.job where jobname = 'daily-prompt'
-        and schedule is distinct from '0 7,8 * * *'`, '0'],
+        and schedule is distinct from '*/5 7,8 * * *'`, '0'],
   ['and by one job, however many times the file is pasted', `
      select ((select count(*) from cron.job
                where command like '%/functions/v1/daily-prompt%') <> 1)::int`, '0'],

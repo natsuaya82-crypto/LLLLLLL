@@ -703,7 +703,7 @@ iPhone が通知を許可して token をサーバーに送るところと、設
 
 ```
 1  Supabase → SQL Editor → schema.sql を流し直す（push_on_prompt ができる。setup.md § 12 の確かめ方で四行）
-2  Supabase → Cron → daily-prompt の Schedule を 0 7,8 * * * に（setup.md § 9-5）
+2  Supabase → Cron → daily-prompt の Schedule を */5 7,8 * * * に（setup.md § 9-5。今は 1 の schema.sql が置く）
 3  GitHub → Actions → Supabase Deploy → push-send（全員宛てを送れる版に置き換える）
 ```
 

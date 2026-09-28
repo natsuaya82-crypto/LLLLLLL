@@ -4387,10 +4387,18 @@ $b$;
 -- dashboard and lived in `cron.job` and nowhere else, so nobody knew it waited
 -- 1000ms for a function that takes longer than that, and days went missing.
 --
---   WHEN   `0 7,8 * * *`. cron is UTC and the day turns at 0:00 in Los Angeles
---          (「日付はアメリカ時間の0時から」 OWNER 2026-08-23), which is 07:00
---          UTC in summer and 08:00 in winter. It rings at both; daily-prompt
---          does nothing when the day's row is there, so one of the two writes.
+--   WHEN   `*/5 7,8 * * *`. cron is UTC and the day turns at 0:00 in Los
+--          Angeles (「日付はアメリカ時間の0時から」 OWNER 2026-08-23), which is
+--          07:00 UTC in summer and 08:00 in winter -- and it rings every five
+--          minutes through both hours, twenty-four times a day. ONE FAILED
+--          RING MUST NOT COST THE DAY (「作れなかった日を出さない」 OWNER
+--          2026-09-27): it rang twice, at 07:00 and 08:00, and on 2026-09-28
+--          both wrote nothing and there was no sentence until somebody rang it
+--          by hand at 21:58. daily-prompt does nothing when the day's row is
+--          there, so the first ring that succeeds writes the one row and every
+--          ring after it says `already`. In winter the 07:xx rings are 23:xx
+--          of the day before, whose row is there. What each ring answered is
+--          kept in `prompt_run` (above), so the next miss can be read.
 --   WAITS  60000ms. The function asks a model, and asks again when it is busy.
 --
 -- THE HEADERS ARE NOT IN THIS FILE. What the function's door asks for -- its
@@ -4449,7 +4457,7 @@ begin
       'what the daily-prompt cron sends: x-cron-secret and Authorization');
   end if;
 
-  perform cron.schedule('daily-prompt', '0 7,8 * * *', $cmd$
+  perform cron.schedule('daily-prompt', '*/5 7,8 * * *', $cmd$
     select net.http_post(
       url     := 'https://iimwukyyasbybfrirhsf.supabase.co/functions/v1/daily-prompt',
       headers := (select decrypted_secret::jsonb from vault.decrypted_secrets

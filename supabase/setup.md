@@ -64,7 +64,7 @@ https://raw.githubusercontent.com/natsuaya82-crypto/LLLLLLL/master/supabase/sche
 |---|---|
 | `webhooks` | `1`（§ 12 の Webhooks が ON） |
 | `triggers` | `push_on_follow,push_on_post,push_on_prompt,push_on_react` |
-| `cronjob daily-prompt` | `0 7,8 * * * active=true timeout=60000 headers=vault`（§ 9-5） |
+| `cronjob daily-prompt` | `*/5 7,8 * * * active=true timeout=60000 headers=vault`（§ 9-5） |
 | `prompt …` | 今日（太平洋時間）の行がある |
 
 ダッシュボードで見るなら: Storage → `post-media` が **Public ではない**。
@@ -595,13 +595,13 @@ Table Editor → `prompt` に行が一つ増えていて、`says` に十言語�
 ### 9-5. 毎日にする
 
 **時刻と待ちは `supabase/schema.sql` が言います**（末尾の daily-prompt の block）:
-名前 `daily-prompt`、`0 7,8 * * *`、待ち 60000ms。cron が鳴るたびに、関数の入口に
+名前 `daily-prompt`、`*/5 7,8 * * *`、待ち 60000ms。cron が鳴るたびに、関数の入口に
 渡す見出しを **Vault の `daily_prompt_headers`** から読みます ── 秘密はリポジトリに
 ありません。
 
 **今の本番**: ダッシュボードで作った job があるので、§ 2 の `apply` を押すと、その
 job が持っている見出しを Vault に写してから、Vault を読む形に張り替えます。
-押した後の `check` で `cronjob daily-prompt  0 7,8 * * * active=true timeout=60000
+押した後の `check` で `cronjob daily-prompt  */5 7,8 * * * active=true timeout=60000
 headers=vault` と出れば済みです。`headers=in the command` のままなら写せなかった
 ということで、job は前のまま動いています（`apply` の出力の NOTICE に理由）。
 
@@ -616,9 +616,12 @@ headers=vault` と出れば済みです。`headers=in the command` のままな�
 **cron は UTC で、日付はアメリカ太平洋時間の 0 時に変わります**（「日付は
 アメリカ時間の0時から」OWNER 2026-08-23）。太平洋時間の 0 時は、夏時間（3 月〜
 11 月、PDT）は **07:00 UTC**、冬（PST）は **08:00 UTC** で、一つの時刻では両方に
-当たりません。だから二回鳴らします。関数はその日の行があれば何もしないので、
-**どちらの季節でも書くのは 0 時ちょうどの一回だけで、もう一回は何もしません**
-── そして行が入った瞬間がお題の通知です（§ 12）。
+当たりません。だから 7 時台と 8 時台を**5 分ごとに**鳴らします（一日 24 回）。
+一回が落ちてもその日が消えないためで、2026-09-28 は 07:00・08:00 の二回とも
+書けず、手で鳴らすまでお題が無かった。関数はその日の行があれば何もしないので、
+**書くのは最初に通った一回だけで、あとは何もしません** ── そして行が入った
+瞬間がお題の通知です（§ 12）。鳴った一回ごとの答えは表 `prompt_run` に残り、
+`check` の最後に新しい順に 10 行出ます。
 
 2026-09-23 に測ったもの（関数と同じ `Intl` で、`America/Los_Angeles` の日付）:
 
@@ -627,12 +630,15 @@ headers=vault` と出れば済みです。`headers=in the command` のままな�
 | 07:00 | 00:00 PDT、日付 07-15 → **書く** | 23:00 PST、日付 12-14 → 前日の行があるので何もしない |
 | 08:00 | 01:00 PDT、日付 07-15 → もうあるので何もしない | 00:00 PST、日付 12-15 → **書く** |
 
+7 時台・8 時台の残りの回（:05〜:55）は、その日の行があれば何もしません。0 時の回が
+落ちた日は、次の 5 分の回が書きます。
+
 切り替わりの日も同じです：2026-11-01（夏時間の終わり）は 07:00 UTC が 00:00 PDT で
 書き、翌日からは 08:00 UTC が 00:00 PST で書く。2026-03-08（始まり）は 08:00 UTC が
 00:00 PST で書き、翌日からは 07:00 UTC が 00:00 PDT で書く。
 
-**冬の 07:00 UTC は前日の 23:00 です。**前日の 0 時の回が失敗していて前日の行が
-無ければ、この回が前日の行を書き、前日のお題の通知がその 23:00 に出ます。
+**冬の 7 時台 UTC は前日の 23 時台です。**前日の行が 8 時台の 12 回とも書けず
+に無ければ、この時間の回が前日の行を書き、前日のお題の通知がその 23 時台に出ます。
 
 ### 9-6. 文が気に入らない日は
 
