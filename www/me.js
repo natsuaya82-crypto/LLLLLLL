@@ -1190,7 +1190,7 @@ function meLinkHref(v){
 function meWhereRow(link, loc){
   var lk=String(link||''), lc=String(loc||''), out='';
   if(!lk && !lc) return '';
-  if(lc) out+='<span>'+esc(lc)+'</span>';
+  if(lc) out+='<span class="pwloc">'+esc(lc)+'</span>';
   if(lc && lk) out+='<span class="docdot" style="margin:0 8px">\u00b7</span>';
   /* THE COLOUR EVERYTHING PRESSABLE IS, and the underline off. A browser's own
      blue link is the one thing on this screen that belongs to no theme -- it
@@ -1201,7 +1201,10 @@ function meWhereRow(link, loc){
      wearing it. */
   if(lk) out+='<a href="'+esc(meLinkHref(lk))+'" target="_blank" rel="noopener"'+
               ' style="color:var(--gold);text-decoration:none">'+esc(lk)+'</a>';
-  return '<div class="pbio">'+out+'</div>';
+  /* ONE LINE, always 「2列になるくらいなら...にして」: what
+     does not fit ends in an ellipsis, the address giving way first and the
+     place kept whole for as long as it fits (.pwhere, www/index.html). */
+  return '<div class="pbio pwhere">'+out+'</div>';
 }
 function whoBackTag(h){
   if(!meFollowed(h)) return '';

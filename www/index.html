@@ -3141,6 +3141,16 @@ button.spbig{display:block;width:100%;background:none;border:0;padding:0;font:in
    measured from. So the thumb gets 44 and the bio's line spacing and the
    page's height do not move. No corner, no border, no colour. */
 .pbio a{display:inline-block;padding:14px 0;margin:-14px 0}
+/* The place and the address are ONE line (meWhereRow). Nothing wraps; the
+   address shrinks first -- its shrink is so much larger than the place's that
+   the place gives up less than a layout unit while the address has any to give -- and
+   the place keeps all of itself while it fits, then ends in … as well. The
+   row itself clips nothing, so the address keeps its 44pt above. Written
+   after .mecard .pbio so the line clamp there does not win. */
+.pbio.pwhere{display:flex;align-items:baseline;white-space:nowrap;overflow:visible;min-width:0}
+.pwhere .pwloc{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.pwhere .docdot{flex:0 0 auto}
+.pwhere a{flex:0 100000 auto;min-width:2em;overflow:hidden;text-overflow:ellipsis}
 .field textarea#me-bio{height:84px}
 /* one word, opened */
 .whd{display:flex;align-items:center;gap:12px;margin:0 2px}
