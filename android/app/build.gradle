@@ -71,6 +71,9 @@ dependencies {
     // LinguaStore.review -- Google Play's own request for a rating, the
     // Android half of CLAUDE.md's second system dialog (StoreKit's on iOS).
     implementation 'com.google.android.play:review:2.0.2'
+    // LinguaStore's purchases -- Google Play Billing directly, no RevenueCat
+    // (docs/FEATURE_RULES.md 2026-09-27, docs/ANDROID.md § 課金).
+    implementation 'com.android.billingclient:billing:8.0.0'
     testImplementation "junit:junit:$junitVersion"
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"

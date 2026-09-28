@@ -47,6 +47,25 @@ jobs:
           supabase secrets set "APPLE_ROOT_CA_G3=$B64" --project-ref "$PROJECT_REF"
           echo "APPLE_ROOT_CA_G3: set ($(wc -c < AppleRootCA-G3.cer) bytes)"
 
+      # Google Play の購入を確かめる鍵（docs/ANDROID.md § オーナーがすること）。
+      # サービスアカウントの JSON 鍵をまるごと、GitHub の Secrets の
+      # GOOGLE_PLAY_SERVICE_ACCOUNT に。**空なら落とさない** ── オーナーが
+      # Play Console を作るまでは無いのが事実で、その間も Apple の道は置かれる
+      # べきだから。無いまま置かれた函数は Google の購入を一つも数えず、
+      # `left` に「GOOGLE_PLAY_SERVICE_ACCOUNT is not set」と言う。
+      - name: Google Play のサービスアカウント鍵を Supabase の Secrets に入れる（verify-plan のみ）
+        if: inputs.function == 'verify-plan'
+        env:
+          GOOGLE_PLAY_SERVICE_ACCOUNT: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT }}
+        run: |
+          if [ -z "$GOOGLE_PLAY_SERVICE_ACCOUNT" ]; then
+            echo "GOOGLE_PLAY_SERVICE_ACCOUNT: GitHub の Secrets に無い ── Android の購入はまだ数えられません（Apple はそのまま）"
+            exit 0
+          fi
+          echo "$GOOGLE_PLAY_SERVICE_ACCOUNT" | node -e 'const k=JSON.parse(require("fs").readFileSync(0,"utf8")); if(!k.client_email||!k.private_key){console.error("JSON 鍵に client_email か private_key がありません"); process.exit(1)} console.log("鍵: "+k.client_email)'
+          supabase secrets set "GOOGLE_PLAY_SERVICE_ACCOUNT=$GOOGLE_PLAY_SERVICE_ACCOUNT" --project-ref "$PROJECT_REF"
+          echo "GOOGLE_PLAY_SERVICE_ACCOUNT: set"
+
       - name: APNs の鍵を Supabase の Secrets に入れる（push-send のみ）
         if: inputs.function == 'push-send'
         env:

@@ -351,6 +351,28 @@ where it starts.
 - **検査**: `rls-check` が pg_cron・pg_net・Vault の代わりを置いて、ダッシュボードの job から
   見出しが Vault に移ること、時刻、待ちが 60000ms 以上であること、command に秘密の文字が
   無いこと、二度流しても一つの job のままであることを数える。
+### 2026-09-27 Android の課金 ── Google Play Billing を直接（r121-android-billing）
+- OWNER 2026-09-27「Googleplay直結で、値段は一緒」。オーナーを要しない所を全部。商品とサービスアカウントの鍵は
+  オーナーが後で作る ── それまでは「まだ販売されていません」（商品の一覧が空）と、`verify-plan` の `left` に
+  「GOOGLE_PLAY_SERVICE_ACCOUNT is not set」と、正直に言う。
+- **人が気づくこと**: Android でプランの画面に Google Play の値段が出て、買える・購入を復元・解約（Google Play の
+  定期購入のページ）が動く ── Play Console に商品ができてから。それまでは今と同じ。iPhone で買ったプランは Android でも
+  そのまま（サーバーがアカウントの段を答える）。iPhone は何も変わらない。
+- **どう確かめるか**: 端末は購入トークンと商品 ID の組（`{token, product}`）をサーバーに上げ、`verify-plan` が
+  Google Play Developer API（`purchases.subscriptionsv2.get`）に訊く。`obfuscatedExternalAccountId`（買う時に端末が
+  Supabase の uid を入れる）が呼んだ人と同じ時だけ数える。期限は Google の `expiryTime`。数えるのは ACTIVE・CANCELED
+  （期限まで）・IN_GRACE_PERIOD。承認（acknowledge）はサーバーが、uid が一致した時だけする。
+- **プランを変える時**: Play には App Store の「グループ」が無く、Plus を持ったまま Pro を買うと二つの定期購入・二重の
+  請求になる。だから持っている方を古い購入として渡し、残りの時間を差し引いてすぐ替える（WITH_TIME_PRORATION）。
+- **保存する物**: `purchase` の行に Google の購入が入る。表の形は変えない ── `orig_tx` は `gp:` と購入トークン
+  （Apple の数字の id とは重ならない）、`product` は Apple と同じ四つの名前、`until` は Google の期限（数えない状態なら
+  今で切る）、`revoked` は空、`env` は `Google` か `GoogleTest`。段を決めるのは今まで通り、この uid の行全部から。
+  **呼び出しごとに、この uid の `gp:` の行でまだ数えているものを Google に訊き直す** ── 解約・返金は Google にだけ
+  起き、端末からはもう送られてこないから。Google が答えなかった行は触らない。消す物は無い。
+- **新しい secret**: `GOOGLE_PLAY_SERVICE_ACCOUNT`（サービスアカウントの JSON 鍵）。`supabase-deploy.yml` の
+  verify-plan の段が GitHub の Secrets から入れる。無ければ落とさずそう言い、Apple の道はそのまま置く。
+- **検査**: `tools/verify-check.mjs` に Google の段（Google の答えを作って `google.mjs` を走らせる、他人の購入・状態・
+  承認・鍵の署名、`storeJws()`）。Kotlin は Play Billing に届かずコンパイルしていない（CODE CONFIRMED 未満、CI が最初）。
 
 ### 2026-09-27 お題: 作れなかった日を無くす（本番の cron と関数）
 - 今日のお題が変わらなかった（OWNER 2026-09-27）。測った原因は二つ: cron が

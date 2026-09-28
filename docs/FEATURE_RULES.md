@@ -339,8 +339,17 @@ it is quoted, and where a decision has never been made the row in
 - Decision: Android 版を同じリポジトリで作る。移せるものは全部移し、作り直しが要る所（Swift で書いた部分）は規則どおり Kotlin で作る。課金は Google Play の課金を直接つなぐ（RevenueCat は使わない）。Play での値段は iPhone と同じ。
 - Reason: オーナーの言葉「Android版作りたいから移行できるもの全部移行しつつ、作り直しで必要なところはルールに則って作って欲しい」「Googleplay直結で、値段は一緒」。
 - Affected features: 課金（`LinguaStore` の Android 版、`verify-plan` に Google Play の購入の確かめ）、通知、キーボード、ウィジェット、ビルド。
-- Affected data: `plan`・`purchase` の行に Google Play の購入が入る（形は課金のセッションで決める前に報告）。
-- Implementation status: 土台は作業中（r115-android）。課金・通知・キーボード・ウィジェットは未。
+- Affected data: `purchase` の行に Google Play の購入が入る。表の形は変えず、`orig_tx` は `gp:` と購入トークン、`env` は `Google`／`GoogleTest`（r121、下の項）。
+- Implementation status: 土台は r115-android。課金は r121-android-billing（CODE CONFIRMED のみ、Kotlin は未コンパイル・実機未確認、商品と鍵はオーナー待ち）。通知・キーボード・ウィジェットは未。
+
+### 2026-09-27 Android の課金の形 ── 商品は四つの定期購入、確かめるのはサーバー（実装の選択）
+- Date: 2026-09-27
+- Area: 課金（Android）
+- Decision: 実装の選択（オーナーの決定「Google Play 直結・値段は iPhone と同じ・オーナーを要しない所は全部」の中で）。商品 ID は iPhone と同じ四つの名前を**四つの別々の定期購入**にし、各々に基本プランを一つ。端末は `{token, product}` の組を上げ、`verify-plan` が `purchases.subscriptionsv2.get` で確かめ、`obfuscatedExternalAccountId` が uid と同じ時だけ数え、期限は Google から、承認もサーバー。プランの変更は WITH_TIME_PRORATION（すぐ替え、残りを差し引く）。
+- Reason: 基本プランの ID はピリオドを使えず、四つを別々にすれば `verify.mjs` の `PRODUCTS` が一つのまま両方の電話に効く。Play には App Store のグループが無く、置き換えを渡さないと二重の請求になる。替え方（すぐか次の更新か）はオーナーのもので、変えるなら `LinguaStorePlugin.kt` の `buy` 一か所。
+- Affected features: `LinguaStore`（Android）、`www/store.js` の `storeJws()`、`verify-plan`。
+- Affected data: `purchase` の行（上の項）。新しい secret `GOOGLE_PLAY_SERVICE_ACCOUNT`。
+- Implementation status: 実装（r121-android-billing、CODE CONFIRMED のみ）。`verify-check` が Google の段を持つ。
 
 ### 2026-09-27 字を描く画面に投げ縄 ── 囲んだ点を動かす・消す（1.0.3）
 - Date: 2026-09-27
