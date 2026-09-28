@@ -15,6 +15,11 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### 2026-09-28 お題の通知が鳴るように（push-send が service role を JWT の role で知る）と、daily-prompt の答えを残す
+- **人が気づくこと**: その日のお題が入った時の通知が出るようになる（はず ── 本番で 401 だった原因は次の 07:00 UTC の cron で測る。push-send の断りの答えに、どの枝で落ちたか・来た Authorization が JWT か・その role を載せた。値は載せない）。
+- **保存される物**: 表 `prompt_run` を一つ足す ── daily-prompt が一回鳴るごとの答え（時刻・その日・HTTP の数・短い理由）。書くのは daily-prompt（service role）だけで、アプリの誰も読めず書けない。`net._http_response` の答えは 6 時間で消えるので、07:00・08:00 に書けなかった理由が翌日に読めなかった。
+- **消す物**: 無い。`prompt_run` は消さない（一日二行）。本番には未適用・未デプロイ。
+
 ### 2026-09-28 ミュートした人からの iPhone の通知は鳴らない
 - **人が気づくこと**: ミュートした人のいいね・返信・引用・リポスト・フォローで、iPhone の通知が来なくなる（アプリの中の通知一覧と同じ）。
 - **保存される物・消す物**: 無い。push-send が送る前に相手の `mute` の行を一つ読み、`pushPlan()` の一か所が決める。本番の関数は未デプロイ。

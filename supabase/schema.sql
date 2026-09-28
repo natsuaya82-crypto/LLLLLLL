@@ -588,6 +588,28 @@ create table if not exists prompt (
 -- above is written to be re-runnable.
 alter table prompt add column if not exists says jsonb not null default '{}'::jsonb;
 
+-- WHAT daily-prompt ANSWERED, each time it rang. On 2026-09-28 the 07:00 and
+-- 08:00 UTC runs wrote no sentence, the cron said "succeeded", and what the
+-- function had answered was in `net._http_response`, which pg_net empties
+-- after six hours -- so by the time anybody looked there was no reason left
+-- to read. supabase/functions/daily-prompt writes one row here for every
+-- answer it gives past its door (`x-cron-secret`), with the service role:
+-- the day it was about, the HTTP status it answered with, and a short reason.
+-- A ring that left no row here never reached the function's body, which is
+-- an answer too.
+--
+-- Nobody the app signs in as reads or writes it: row level security on and no
+-- policy at all, so it is the service role's (which no policy applies to) and
+-- the Supabase Schema workflow's `check`. Nothing deletes it -- two rows a day.
+create table if not exists prompt_run (
+  id     bigint generated always as identity primary key,
+  at     timestamptz not null default now(),
+  on_day date,
+  status int  not null,
+  said   text not null default ''
+);
+alter table prompt_run enable row level security;
+
 -- ---- said ------------------------------------------------------------------
 -- A post is a thing somebody said, once. body holds the runs of text and the
 -- glyph outlines they were drawn with AT THE TIME -- frozen, because a post is
