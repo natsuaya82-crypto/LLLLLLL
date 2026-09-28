@@ -71,15 +71,11 @@ function snsWaitWord(){
    「なんでログインしてないアカウントで投稿できんの？そんなsnsどこにあんの？」
    「最初からオンライン前提で作れ」
 
-   The making side is untouched and stays untouched. A language is made on
-   this phone, with or without a name on the account.
-
-   What this answers is narrower than it was, and it is not "sign in": the
-   app signs itself in at first launch, so there IS a session on every phone
-   that has ever had a signal, and the three tabs open on it. This is the
-   one case left -- no session at all, which is a first launch with no
-   network. The door is what to show, because a session is what is missing
-   and the door is where one comes from.
+   Signed out, the whole app is the door (appIs(), www/shell.js), so what
+   this answers is the one time a tab is drawn with no session: the walk
+   through the app before the door (obTourOn(), www/onboard.js). The door is
+   what to show, because a session is what is missing and the door is where
+   one comes from.
 
    Who you ARE is asked elsewhere and one press later: obNeed(), at the six
    things other people would see. One door and not a second one either
@@ -307,7 +303,7 @@ function vFilter(){
         '<span class="sv">'+((!snsFil && snsTab===k)? ICON_TICK : '')+
         '</span></button>';
     }).join('')+
-    /* And the words somebody keeps, under the two timelines because they are
+    /* And the words somebody keeps, under the three timelines because they are
        the same question asked a third way: what am I looking at. The heading
        is a NAME and not an explanation -- vWsys puts `dir.title` over its
        three directions in the same shape. Nothing at all when none are kept,
@@ -342,19 +338,6 @@ function snsSetFil(k){
   snsFil=null;
   back();
 }
-/* Everybody's languages, as they are written. This said "which for the moment
-   is yours, because there is no server yet and a post has nowhere else to go",
-   and went on saying it after netPush() and netFeed() existed -- the same week
-   docs/STATE.md § 3 was saying the opposite about the same code. A post goes to
-   the server and comes back from it; localStorage is the copy that survives a
-   bad network, not the only place one exists. */
-/* What has arrived, asked for whenever the timeline is looked at. The screen
-   does NOT wait: it draws the posts that are here and takes an answer when
-   one comes, which is what a timeline does and is the only shape that works
-   on a phone in a tunnel. The answer is whatever netFeed() brings back.
-
-   A second ask while one is out is refused by pullRun() below, which holds
-   that for every screen rather than each screen holding it for itself. */
 /* THE TIMELINE'S ASK, ONE TAB AT A TIME. It writes the answer down and says
    whether one came; the mark, the pop, the 再接続 and the render are
    pullRun()'s. `tab` is what the question is about -- 'rec', 'fo' or 'day' --
@@ -1232,21 +1215,6 @@ function vFeed(){
     snsFab()+
     '</div>';
 }
-/* The way to write, and it is one thing in one place.
-
-   The timeline has had it since there was a timeline, and nothing else did.
-   But the app does not open on the timeline -- `route` starts at `profile`
-   and NAV starts at `profile` -- so somebody who never pressed the home tab
-   was standing on a screen with a list of their own posts and no way to add
-   one. 「プロフィール画面の右下に＋がないから投稿ができない」
-
-   Where every timeline puts it: over the list, above the bar, under the
-   thumb of the hand already holding the phone.
-
-   Both conditions travel with it rather than being restated at each end.
-   Signed out there is nobody to post as; frozen, the composer would refuse
-   -- and a button that cannot do its one thing is worse than no button: it
-   is the app asking somebody to find out. */
 /* ---- the day's sentence -------------------------------------------------
    One sentence a day, put up by us, that anybody may answer in their own
    language. It is the loop this whole thing turns on: everyone already knows
@@ -1303,20 +1271,6 @@ function daySay(){
   var m=(DAY && DAY.says) || {};
   return String(m[uiLang()] || (DAY && DAY.text) || '');
 }
-/* THE SAME SENTENCE, FOR SOMEBODY ELSE'S POST. 「今日のお題だけ、毎回その人の
-   表示言語になるようにできないの？…今日のお題だけは全員見れるようにしたい」
-   OWNER 2026-09-01.
-
-   An answer to the day's sentence carries the PROMPT'S ID (`post.pr`, a
-   column with a key behind it) and the words as the writer's app said them.
-   The words are frozen, correctly -- everything on a post is. But this one
-   sentence is not the person's own writing: it is the app's, and the server
-   holds it in all ten languages, so a Japanese reader was reading a Japanese
-   writer's Japanese and an English reader was reading the same Japanese.
-
-   Only TODAY'S, because today's is the one this phone has: `DAY` is one row.
-   Anything older falls back to what the post carries, which is what it always
-   showed. Nothing is stored differently and nothing is thrown away. */
 /* Every prompt this phone has been handed, by id. One row a day, the same
    for everybody, so it is ASKED FOR rather than copied onto every post that
    answers it -- 「今日のお題は全員共通なんだからそんな難しいこと考えないで
@@ -1602,22 +1556,8 @@ function tagHTML(s){
 
    snsGo() is what a person pressing the search does, and this is a person
    searching. */
-/* ONE PRESS IS ONE QUESTION, and this asked TWO. `goTab('explore')` draws,
-   and vExplore() asks whenever there is a word with no answer under it -- so
-   by the time `snsGo()` ran, the question was already out. `snsGo()` then
-   render()ed a second time, `snsHits` was still null because the first answer
-   had not landed, and the same two requests went out again.
-
-   Nothing threw and nothing looked wrong: two answers to one question are the
-   same answer, and the second landed on a screen that already had it. What it
-   costs is the server, doubled by however many people are searching, and it
-   is visible to nobody. Measured 2026-09-11: one press of `#さくら` put out
-   two profile_seen and two post_seen.
-
-   snsGo()'s own comment says it -- *「One place asks and it is vExplore()」* --
-   and this was the road running beside it. So the render is goTab()'s alone
-   and what is left here is the two things a press of a tag actually is: the
-   word, and the history 「タップしたらタグの検索になる」. */
+/* A tag pressed is one question: snsAsk() puts it, the history takes the
+   word 「タップしたらタグの検索になる」, and goTab() draws. */
 function snsTagGo(q){
   snsAsk(q);
   snsFil=null;
@@ -1637,8 +1577,7 @@ function snsTagGo(q){
 
    UTC, and not the phone's midnight: `on_day` is a date and not a moment, so
    `new Date('2026-08-25')` is UTC midnight and a phone west of Greenwich
-   would draw it as the 24th. tools/../www/numbers.js:350 has the same line
-   for the same reason.
+   would draw it as the 24th.
 
    The year is left off when it is this year, which is what postWhen() does
    four screens away. */
@@ -1755,10 +1694,9 @@ function snsFab(at){
    draws, so a post reads the same here as it does there and there is no
    second place a post is rendered.
 
-   What the top counts is how many replies are IN FRONT OF YOU, not `re`.
-   They agree today, because every post anybody has made is on this phone;
-   after a server they will not, and the number on the screen has to be the
-   number of rows under it or it is the app arguing with itself. */
+   What the top counts is how many replies are IN FRONT OF YOU, not `re`:
+   the number on the screen has to be the number of rows under it or it is
+   the app arguing with itself. */
 /* ---- WHICH ROW ANSWERS WHICH, AND THE LINES THAT SAY SO ------------------
    「返信の孫投稿（返信の返信）に線が無い。わざとではない」 OWNER 2026-09-06,
    on a phone. 「線で繋いでないとマジでどの投稿か分からなくなる」 the day
@@ -1989,11 +1927,6 @@ function pvScroll(e){
    function that returns. Nothing at the call site knows or cares where the
    answer came from -- it types, an answer arrives, the rows are drawn.
 
-   Until net.js is wired, the answer is assembled out of what has already
-   arrived. That is not the design; it is what the seam is filled with today.
-   When there is a server, snsFind() asks it and everything else is
-   unchanged.
-
    A PERSON is `{who, hd, av, lname}` -- the same four fields a post already
    carries about its author, and the same four a server row will have. There
    is no second shape for a person anywhere in this app, and there must not
@@ -2149,20 +2082,8 @@ function snsFind(q, done){
      second road is deleted rather than fixed -- one question, one request,
      and no id to be right about. */
 }
-/* Which of the two the answer is about. Where you are standing rather than
-   anything the language has, so viewReset() drops it. */
-/* IT ASKS BY THROWING THE ANSWER AWAY, and that is the whole of it. This
-   used to ask here AND render, and vExplore() asks whenever there is a word
-   with no answer under it -- so every press sent the same question to the
-   server twice. Nothing threw: two answers to one question are the same
-   answer, and the second one landed on a screen that already had it. It is
-   the kind of waste that is multiplied by however many people are searching
-   and is visible to nobody.
-
-   One place asks and it is vExplore(). snsSetSort() has had this shape since
-   it was written -- change what is being asked, empty `snsHits`, and let the
-   render put the question. This is that, with the mode moving instead of the
-   order. */
+/* 🔍 records the word in the history. The question is already out --
+   snsSetQ() put it through snsAsk() as it was typed -- so this draws. */
 function snsGo(){
   if(!snsQ.trim()) return;
   snsRecentAdd(snsQ);
@@ -2227,9 +2148,7 @@ function snsWhoFace(p, full){
       '<span class="whh">'+
         '<span class="phandle">@'+esc(h)+'</span>'+
       '</span>'+
-      /* 一行の自己紹介。**いまは誰の分も空になります** -- `profile` に
-         `bio` の列が無く（netWho() のコメントがそう書いている）、投稿も
-         bio を運んでいない。列が出来た日にこの行が埋まる。 */
+      /* 一行の自己紹介（profile.bio、netWhoRow() が読む）。 */
       (full && p.bio? '<span class="pbio">'+esc(p.bio)+'</span>' : '')+
     '</span>'+
     (p.lname? '<span class="plangtag">'+esc(p.lname)+'</span>' : '');
@@ -2237,9 +2156,8 @@ function snsWhoFace(p, full){
 /* ---- the words somebody keeps ------------------------------------------
    「検索ページで言葉を⭐️で保存、絞り込みから選ぶとその言葉で検索し直す」
    OWNER 2026-08-28 -- and it is what the owner meant by 「自分が好きなトピック
-   とか」 back when the filter was built. There are no tags in this app and
-   none have been invented: a kept word is a SEARCH somebody made, and
-   choosing it makes that search again.
+   とか」 back when the filter was built. A kept word is a SEARCH somebody
+   made, and choosing it makes that search again.
 
    THE SERVER IS THE RECORD AND `SET.saved` IS THE COPY. 「SNSは全部サーバー」
    -- what a person keeps is theirs and follows them to the next phone, so it
@@ -2278,11 +2196,9 @@ function snsSameWords(a, b){
    stopped both of these arriving a second after somebody was already looking
    at the list they replace.
 
-   `netSignedIn()` is asked HERE and not left to net.js. netSearchSaved()
-   answers `ok([])` when there is no member -- an empty list that means
-   "nobody asked", not "this person keeps nothing" -- and writing that over
-   the copy would erase somebody's list on a launch that had not signed in
-   yet. So it is not asked at all until there is somebody to ask for.
+   It is asked only with a session -- the pull table does not ask for a
+   signed-out phone -- because netSearchSaved() answers `ok([])` with no
+   member, and that empty list means 「nobody asked」, not 「keeps nothing」.
 
    A refusal leaves the copy exactly as it is. No signal is not an answer.
 
@@ -2404,18 +2320,14 @@ function askRecent(ok, bad){
 /* THE ONE PLACE A WORD ENTERS THE HISTORY, AND 🔍 IS THE ONLY ROAD TO IT.
    「検索は🔍押したらって言ってるやん」 OWNER 2026-09-03.
 
-   `snsGo()` is the whole of it. Nothing else calls this, and nothing else may:
-   `snsSetQ()` runs on every letter, so a word written from there leaves
+   `snsGo()` (🔍) and `snsTagGo()` (a tag pressed) are the two presses that
+   are a search, and nothing else calls this: `snsSetQ()` runs on every letter, so a word written from there leaves
    「a」「ay」「aya」 standing as three searches -- and the search was the one
    press, not the three letters. Writing it when an ANSWER lands is the same
    mistake wearing a later moment, because an answer lands per letter too.
 
-   IT AGREES WITH WHAT THIS SCREEN ALREADY SAYS, which is why it is one road
-   and not two. 「ツイートの検索は検索ボタン押したら出てくる。それまでは人」
-   (2026-08-26): 🔍 is the place that already means 「searched」, and typing is
-   somebody looking at people. Opening a person off the answer was a second
-   road into this function and it is gone -- a history is what somebody
-   searched for, and reaching a person is not the act the owner named.
+   Opening a person off the answer is not a search and does not come here --
+   a history is what somebody searched for.
 
    Newest first, and the same words again MOVE rather than making a second
    line -- `unique (author, q)` on the server says the same thing. The sixth
@@ -2617,8 +2529,8 @@ function vExplore(){
   if(!netSignedIn()) return snsLocked('explore');
   /* Three things this screen reads live on the server -- whether you follow
      the people in its rows, the words you keep, and the words you have typed
-     -- and all three came down when the session began (§ WHAT AN OPEN ASKS
-     FOR). Nothing is asked from here. */
+     -- are this page's row in § WHAT EACH PAGE READS. Nothing is asked
+     from here. */
   return '<div class="view">'+
     /* IN THE BAR, where the search on a timeline is. It sat under the bar,
        below a title that said the same word as its own placeholder, so the
@@ -2724,16 +2636,6 @@ function notSeen(){
   setKeep();
   netPrefsPut();
 }
-/* Asked when the session begins, so the count is right on the first frame of
-   whatever screen the app opened on and no screen has to ask for it. What
-   holds 「asked once」 is the pull table and not a flag of this file's own.
-   www/sns.js § pullRun.
-
-   THE NOTICES ARE WHY IT IS HELD THERE. This screen's own pull was called
-   from vNotif() with no such guard: the answer landed, the screen was drawn,
-   the drawing asked again, and it went round for as long as anybody stood on
-   the notices. The timeline had the guard and this did not, and no one
-   reading either could see that. */
 /* The face, and the way to whoever wears it. 「行に顔、顔を押すとその人の
    ページ」 OWNER -- which is the same sentence the timeline already answered
    with postAvHTML(): 「人のツイートのアイコン押したらその人のホーム画面に
@@ -2759,21 +2661,6 @@ function notFace(n){
   if(!h) return '';
   return postAvHTML({hd:h, who:n.who, av:n.av, id:'n:'+h});
 }
-/* A notice is a way to the thing it is about. 「通知で飛べないよ」 OWNER
-   2026-08-28 -- the row was a plain <div> with nothing on it to press, so
-   every notice was a sentence you could read and not follow.
-
-   THE SAME SHAPE A POST'S ROW HAS: the row carries the press and the face
-   inside it carries its own, so pressing the row opens the post and pressing
-   the face opens the person. postRow() has been that since a post opened onto
-   its thread, and act.js hands a press to the nearest name above it, which is
-   what lets the two live in one row.
-
-   Only where there IS a post. A follow carries none -- somebody followed you,
-   there is nothing to open -- and postOpen() refuses an id this phone does
-   not hold, so the press is put on rather than the row pretending. Nothing
-   moves on the screen either way: no class, no mark, no arrow.
-   「ui変更は俺が頼んだの以外は勝手な判断でやるなよ？」 */
 /* WHO A NOTICE IS FROM, when it is from more than one person.
    「同じ投稿のいいねはXみたいにまとめる」「フォローも同じでいい ── 〇〇さん
    他3人にフォローされました」 OWNER 2026-08-28, docs/FEATURE_RULES.md.
@@ -2788,7 +2675,7 @@ function notFace(n){
    about the person it named.
 
    The count is the SERVER's -- `n` -- and not the length of `more`, which is
-   capped at four. Saying 「他3人」 off a capped list would be the app quietly
+   capped at three. Saying 「他3人」 off a capped list would be the app quietly
    deciding that fifty is three. */
 function notWho(n){
   var few=n.more||[], k=Number(n.n||1);
@@ -2800,7 +2687,7 @@ function notWho(n){
      「1 other」 and 「3 others」 and Russian counts differently again. */
   return tn('notif.many', k-1, postWho(n));
 }
-/* Their faces, up to three. Each is its own door, the way the single one
+/* Their faces, two of them. Each is its own door, the way the single one
    always was -- pressing a face opens that person and pressing the row opens
    the post. */
 function notFaces(n){
@@ -2990,8 +2877,8 @@ function vNotfo(){
 function vNotif(){
   if(!netSignedIn()) return snsLocked('notif');
   notSeen();
-  /* The notices came down when the session began (§ WHAT AN OPEN ASKS FOR).
-     Standing on this screen asks for nothing; pulling it asks again. */
+  /* The notices are this page's row in § WHAT EACH PAGE READS. Standing on
+     this screen asks for nothing; pulling it asks again. */
   var ns=pullHad('notif')? (NOTES_HAVE||[]) : [];
   return '<div class="view">'+rootTop('notif')+
     '<div class="body">'+
