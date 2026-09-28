@@ -11,11 +11,10 @@
    person rather than to any language, so it is filed beside the posts and not
    under langKey().
 
-   A post does NOT keep a copy of the name. The language's name it does keep,
-   because that is what the post is written in and renaming a language later
-   would rewrite what old posts say they are. A person's name is not part of
-   what they said; change it and every post of yours shows the new one, which
-   is what every timeline does.
+   A post carries the name, the handle and the face it was written with, and
+   the language's name (rule 8) -- the reader has nothing else to draw them
+   from. The face on a row is shown as it is NOW where this phone knows the
+   person (postFace, www/post.js).
    ========================================================================= */
 
 /* =========================================================================
@@ -168,16 +167,6 @@ acctKeep('me', function(){ return meHas(ME)? ME : null; },
    language's name stands in, which is what it did before there were accounts
    at all -- so the screen never shows an empty space or a word invented to
    fill one. */
-/* ---- FOLLOW_SEAM ---------------------------------------------------------
-   Who this person follows, and who follows them. Two lists of handles, and
-   they are asked for through these two rather than read out of ME wherever
-   somebody happens to want them -- so the day they come from somewhere else,
-   they come from somewhere else here and in no other place.
-
-   `fo` is writable from this phone: following somebody is something you do.
-   `fr` is not -- being followed is something that happens to you, and this
-   phone is not where it happens. Both are absent on an account that has
-   neither, and absent is not empty. */
 /* AND NEITHER LIST HAS YOU IN IT. `follow` in supabase/schema.sql carries
    `check (follower <> followed)`, so a row saying you follow yourself is a
    row the server cannot hold and the copy must not either -- 「SNSは全部
@@ -270,7 +259,7 @@ function meCount(n){
    same person to every one of those three.
 
    `profile.display` and `profile.handle` are the answers, and they arrive
-   through meRowGot()/meFor() (§ ME_ROW). No row, or a row with nothing in the
+   through meRowGot() and the account's container (www/core.js § ACCT, § ME_ROW). No row, or a row with nothing in the
    column, is EMPTY -- not a guess, not a stand-in. Nothing on a screen has to
    cope with that: appIs() (www/shell.js) draws the door for an account with
    no row, and meRowHas() is the question it asks. */
@@ -774,7 +763,7 @@ acctMem(meRowForget);
 var WHO_HAVE={}, WHO_ASKED={};
 /* Asked for by the door onto the page that draws them (`who`, www/sns.js
    § WHAT EACH PAGE READS). */
-/* THE ASK ITSELF, and it is the only place this phone asks who somebody is.
+/* THE ASK ITSELF for one person. whoNeed() below asks for many at once.
    Nothing guards it: a person pulling the screen down is 「もう一度聞け」 and
    is never refused -- www/sns.js § pullRun says the same sentence about every
    other screen. 「他の人の画面でも更新できるようにしたい」 OWNER 2026-09-04. */
@@ -873,26 +862,12 @@ function profileOpen(h){
 function whoOf(h){
   var got;
   h=String(h||'');
-  /* YOU ARE THE ONE PERSON THIS PHONE ALREADY KNOWS, AND NOTHING READ IT.
-     ---------------------------------------------------------------------
-     whoAsk() refuses to ask the server for your own handle and says why in
-     as many words -- 「that is ME, it is on this phone」. It was right and it
-     was only half a sentence: nothing here ever went and got ME, so your own
-     handle fell past WHO_HAVE, past the POSTS below, and out of the end as
-     `{who:'', av:null}`. postFace() draws '?' out of that and postWho() draws
-     nothing, so YOUR OWN ROW was a question mark with no name on it.
-     「ここも？になるの謎だし」 OWNER 2026-09-04, 1-following.png.
-
-     It looked right for as long as this phone happened to be holding a post
-     of yours -- the loop below found one and took the name off it -- which is
-     every screenshot anybody had taken. A phone that has not pulled a
-     timeline yet has none, and the row is the question mark.
-
-     Your own row is on this screen legitimately: somebody else's followers
-     list has you in it whenever you follow them, which is the ordinary way to
-     arrive there. So this is the first answer and not an exception -- ME is
-     what you look like NOW, which is exactly what the server's row is for
-     everybody else and is fresher than any of them. */
+  /* YOUR OWN ROW. ME is what you look like NOW -- the name, the face, what you
+     wrote about yourself -- and the row's two counts, the mark and the
+     language come off the account's own `profile_seen` row, the same row
+     everybody else's page is drawn from (`who`, § WHAT EACH PAGE READS). Your
+     own row is on screens legitimately: somebody else's followers list has
+     you in it whenever you follow them. */
   if(h===meHandle())
     /* The language on it is the row's too (profile_seen.lang_id -- the main
        one), the same row somebody else's page is drawn from, and not
@@ -924,34 +899,14 @@ function whoOf(h){
                the one face on a page is only why it did not show yet. A page
                about somebody else is the last place to key anything as mine. */
             id:'w:'+h,
-            /* WHAT THEY WROTE ABOUT THEMSELVES, passed through rather than
-               blanked. 「自己紹介を見せないって選択肢を俺はいつ与えた？」
-               OWNER 2026-09-01 -- it is a thing a person wrote and it is
-               shown.
-
-               It was `bio:''` outright, which is not the same as absent: the
-               day netWho() starts answering with one, a hard-coded '' here
-               would throw it away and the screen would go on looking exactly
-               as wrong. `claude/acct2` is adding the column and the read; the
-               drawing is already here, on both screens that show a person
-               (whoCard below and snsWhoRow in www/sns.js), and both already
-               draw nothing when there is nothing. So this needs no second
-               change when the column lands.
-
-               The two counts stay 0 and stay a lie waiting to be told: no
-               request in www/net.js asks for anybody's follow counts but your
-               own -- every `follow` query there is keyed on SESS.uid. That is
-               net.js's and is in the report. */
-            /* THE ADDRESS OF THEIR LANGUAGE, and whether its page is open.
+                        /* THE ADDRESS OF THEIR LANGUAGE, and whether its page is open.
                `claude/acct2`'s ccf439d made netWho() answer with both --
                `lid` is the `language` row's id, which is what netSlices()
                needs, and `lpub` is whether `published_at` is set. Without the
                first there is nowhere for a door to go; without the second the
                app would offer one that `slice_read` refuses.
 
-               Passed through with `||''` and `!!` so this reads the same on a
-               phone whose net.js does not answer with them yet: no address,
-               no door, and the name stays a plain row exactly as it is now. */
+               No address is no door, and the name stays a plain row. */
             lid:got.lid||'', lpub:!!got.lpub,
             /* AND WHETHER THEY WEAR THE MARK -- `profile_seen.badge`, off
                the row netWhoRow() read (netBadgeOn() in www/net.js). */
@@ -969,8 +924,7 @@ function whoOf(h){
             bio:got.bio||'',
             /* AND WHERE THEY ARE AND THEIR ADDRESS, passed through for the
                reason `bio` above is: what somebody wrote about themselves is
-               shown, and a phone whose net.js does not answer with them yet
-               gets '' and draws no row (meWhereRow). */
+               shown, and nothing written draws no row (meWhereRow). */
             link:got.link||'', loc:got.loc||'',
             fo:got.fo, fr:got.fr, out:!!got.out};
   /* Nobody by that name, here or anywhere yet: no name, no face, and no
@@ -1110,9 +1064,6 @@ function mePplPress(k, h){
   if(k==='mute') netMute(h, on, landed, fell);
   else netBlock(h, on, landed, fell);
 }
-/* Following and unfollowing, in one place. The list is what this phone knows
-   and netFollow() is what the server is told -- not waited on, the way a like
-   is not waited on: the button has already changed. */
 /* FOLLOWING AND UNFOLLOWING, AND THE BUTTON MOVES WHEN THE SERVER HAS IT.
    -------------------------------------------------------------------------
    「保存するタイミングでエラーが起きるなら、保存されないし」 OWNER 2026-09-05,
@@ -1223,23 +1174,13 @@ function whoMore(h){
    your own card and somebody else's -- and a row written out twice is two
    rows that come to differ (CLAUDE.md § One place, not fifteen).
 
-   Both are FREE TEXT and neither has a format 「自由入力です。」
-   OWNER DECISION 2026-08-25, so what is drawn is what somebody typed. Nothing
-   is parsed, nothing is corrected, and a location is text and never a link.
+   The place is free text 「自由入力です。」 OWNER DECISION 2026-08-25, drawn as
+   typed and never a link. The link is only ever an http(s) address (meLinkOK,
+   OWNER 2026-08-28), and it is the one thing on the row that is pressed.
 
    Empty means no row at all rather than an empty one: 「何も無い」 is a state
    and drawing a blank line for it is the app saying something it was not told.
-
-   No corner, no border, no panel (CLAUDE.md rule 18). `.pbio` is the plain
-   block of words directly above this and this row is the same kind of thing;
-   the address is an `<a>` for the reason docRows() in www/settings.js is one
-   -- that is this app's one way to hand an address to Safari, and a second
-   would be a second mechanism for one act.
-
-   THE SCHEME IS ADDED WHERE SOMEBODY DID NOT TYPE ONE, and only there. An
-   href with no scheme is read as a path inside the app, so 「example.com」
-   would open nothing at all -- which is the field existing and not working.
-   What is SHOWN is still exactly what they typed. */
+*/
 function meLinkHref(v){
   var s=String(v||'');
   return /^https?:\/\//i.test(s)? s : 'https://'+s;
@@ -1317,30 +1258,7 @@ function whoCard(h){
     /* And where they are and their address -- the same row, drawn by the same
        function, off what netWhoRow() carried down. */
     meWhereRow(p.link, p.loc)+
-    /* THE NAME, AND NOT A WAY THROUGH.
-       「この言語についてで人のをタップしても自分のが出る」 OWNER.
-
-       It was a button, and it called go("about") without saying WHOSE. The
-       page it opens -- vAbout() -> wldPage() in www/home.js -- draws world(),
-       LETTERS and langName: the OPEN language, every one of them. So pressing
-       somebody else's language name showed them mine, with their name at the
-       head of it. Rule 8 exactly, on the one screen a language is read on.
-
-       IT CANNOT BE MADE TRUE YET, AND NOT FOR WANT OF THE CALL. The article
-       is a `wld` slice, and `slice_read` in supabase/schema.sql is
-       `l.owner = auth.uid()` -- ANOTHER PERSON'S LANGUAGE IS NOT READABLE AT
-       ALL, published or not. There is nothing to fetch and so nothing to
-       draw, and a door that opens on nothing is what this already was.
-
-       So the door closes and the name stays: the language a person writes is
-       a fact of their profile, which is what 「lingua マーク」 asked for. The
-       same shape wldRow() takes when a language is private --
-       「そもそも非公開ならプロフィールから飛べないんだって」 -- a row, no arrow,
-       nothing to press.
-
-       What reopens it is one line here, the day slice_read lets a published
-       language be read and there is something to put on the page. */
-    /* AND THE DOOR IS OPEN AGAIN, where the language is published. The note
+        /* AND THE DOOR IS OPEN AGAIN, where the language is published. The note
        above says what closes it -- there was nothing to fetch. There is now:
        `language_seen` answers for a published language, `netWho()` carries its
        address as `lid` and whether it is open as `lpub`, and vAbout() draws it
@@ -1442,13 +1360,10 @@ function openMe(){
   keepOn(ME_KEY, meWas, meKeepSave);
   /* Named after the page it is the settings for, through the one function
      that names a page. */
-  /* The picture first, then the name, the handle and the bio -- OWNER
-     DECISION, 2026-08-25. It is the order somebody fills a profile in: the
-     face is the thing they came to change, and it used to be at the bottom
-     under three text fields.
-
-     画像を外す行はここに無い。**触ったらカメラロールが直接開く。** ──
-     「写真をタップしたら変えたいのよ」 OWNER 2026-08-28。 */
+    /* The picture first, then the name, the handle and the bio -- OWNER
+     DECISION, 2026-08-25. Pressing the face puts up iOS's own two rows,
+     choose a photograph or take it off 「タップしたらios標準出して」 OWNER
+     2026-09-03 (mePicAsk). */
   openForm('me:', pageName('profile'),
     /* The face is the label, and the input lives inside it -- so the thing
        somebody reaches for is the thing that opens the camera roll, in one
@@ -1474,33 +1389,8 @@ function openMe(){
 
        欄そのものは `lnField()`（www/shell.js の一箇所）。`<input>` は
        折り返せないので、書いた字が横に消えていた。 */
-    /* 触ったら写真を選ぶところが直接開く。それだけです。
-       「ちがう。写真をタップしたら変えたいのよ。104の前のやつは写真を変更
-         するの文字が出てきてたやんそれをやめろって言ってるのよ」
-       「プロフィールの写真変更画面はタップしたら変更して、変更するとかの
-         ページに飛ばないで。」 OWNER 2026-08-28。
-
-       画像が在るときだけ「変える／外す を選ぶ画面」へ行く形でした。文字の
-       行も、その画面も、無くなります ── 在るときと無いときで触った先が
-       違うこと自体が、この画面が説明を挟んでいたということなので、分岐ごと
-       落としました。
-
-       **外す道はこれで一つも無くなります。**外す行は #104 の前に顔の下に
-       在ってオーナーに断られ（「なんでアイコンの下に画像消すみたいな垢文字
-       でんの？」）、選ぶ画面のほうも今日断られた。二つとも断られたので、
-       どこに置くかは決めごと ── 私は決めません。報告に書いてあります。
-
-       **顔が在るか無いかで触った先が変わりません。**変わっていた形が
-       「後プロフィールファイルから選択なくして欲しい」「画像ね」
-       OWNER 2026-09-03 の原因です ── 顔がまだ無い人は `<label>` の下の
-       file input を直に踏んでいて、それは iOS 自身の「写真を選ぶ／撮る／
-       ファイル」を出します。**写真だけを出す道は `mePicAsk()` の一本**
-       （PHPicker）なので、両方ともそこを通します。
-
-       下の file input は二本目の道ではありません。`mePicAsk()` の註が
-       元からそう書いています ── **ネイティブが無い端末（検査のブラウザ）
-       のための、同じ一本道の入口**で、`mePicFile()` だけが開けます。
-       だから踏めない場所に置くだけで、消しません。 */
+        /* The face is a button (mePicAsk). The file input under it is the way in
+       only where there is no native side (mePicFile). */
     '<div class="picrow">'+
       '<button class="pav pavb" style="width:96px;height:96px;margin:0"' +
         DO('mePicAsk') + '>'+
@@ -1523,18 +1413,10 @@ function openMe(){
     '<div class="field"><textarea id="me-bio" maxlength="'+ME_MAX.bio+'" '+
       'placeholder="'+esc(t('me.bio.ph'))+'"' +
       IN('meSetBio') + '>'+esc(meTyped('bio'))+'</textarea></div>'+
-    /* リンクと場所。**両方とも自由入力**で、書式を決めない ──
-       「自由入力です。」「だって自分の国入れたい人だっているやん」
-       OWNER DECISION 2026-08-25。端末の位置ではなく、国コードでもなく、
-       候補の一覧も出さない。人が打った文字がそのまま入る。**2026-08-28 に
-       リンクの形を検査する話が出たが、この決定のままにしてある** ── 書式を
-       決めないのが決定で、検査を足すのはそれに反する。
-
-       この枝が書けたのは欄と関数までで、`meSetLink`/`meSetLoc` の登録
-       （www/act-map.js）と `me.link` `me.loc` の鍵（www/i18n）は他の
-       セッションの持ち物だった。取り込みと同じコミットで揃えた ──
-       act-map は名前ではなく関数そのものを登録するので、関数より先に行を
-       書くとアプリが読み込みで止まる。**分けられない。** */
+        /* The link and the place. The place is free text 「自由入力です。」
+       「だって自分の国入れたい人だっているやん」 OWNER DECISION 2026-08-25;
+       the link is an http(s) address and nothing else (meLinkOK, OWNER
+       2026-08-28). */
     '<div class="field at" style="gap:14px;margin-bottom:20px">'+
       '<span style="flex:0 0 auto;white-space:nowrap;min-width:4.5em">'+esc(t('me.link'))+'</span>'+
       lnField('me-lk', t('me.link.ph')||'',
@@ -1571,9 +1453,9 @@ FORM_OPEN.me=function(){ openMe(); };
    needs no account. */
 var FOL_HAVE={}, FOL_ASKED={};
 function folKey(ers, h){ return (ers? 'ers:' : 'ing:') + String(h||''); }
-/* An answer, written down. One place, because three write here now -- the
-   pull for somebody else's list, the pull for this account's two, and a
-   Follow the server has taken. */
+/* An answer, written down: folSet() is where the pulls and a Follow the
+   server has taken write. folPut() is the checks' way in (tools/fixture.mjs,
+   tools/acct-check.mjs) -- nothing in the app calls it. */
 function folPut(ers, h, hs){ folSet(folKey(ers, h), hs); }
 function folSet(k, hs){
   FOL_HAVE[k]=hs || [];
