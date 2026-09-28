@@ -1,4 +1,4 @@
-/* Lingua Grammar Engine v2 legacy adapter. ES5 only; no automatic migration. */
+/* Lingua Grammar Engine v2 adapter: this app's words and word order into the engine's model. ES5 only; no automatic migration. */
 (function(root){
   'use strict';
   var api=root.LinguaGrammarEngine;
@@ -41,15 +41,15 @@
   /* Which stage's slot made this word rides along. It is how the grammar page
      can say "the 否定 stage's word is the negation" without the engine ever
      having to know what a stage is. */
-  function meta(w){ var m={legacyWord:true}; if(w.slot) m.slot=String(w.slot); if(w.pos) m.legacyPos=String(w.pos); return m; }
-  function words(legacy){ var out=[],i,w; legacy=legacy||[]; for(i=0;i<legacy.length;i++){ w=legacy[i]||{}; out.push(api.word({id:idOf(w),lemma:w.hw||'',meaning:meanings(w),meanings:mnList(w),partOfSpeech:pos(w.pos),metadata:meta(w)})); } return out; }
-  function fromLegacy(languageId, legacyWords, legacySet){ legacySet=legacySet||{}; return api.languageModel({languageId:languageId||null,wordOrder:legacySet.order,words:words(legacyWords),metadata:{source:'legacy-adapter',legacyGrammarVersion:1}}); }
+  function meta(w){ var m={appWord:true}; if(w.slot) m.slot=String(w.slot); if(w.pos) m.appPos=String(w.pos); return m; }
+  function words(list){ var out=[],i,w; list=list||[]; for(i=0;i<list.length;i++){ w=list[i]||{}; out.push(api.word({id:idOf(w),lemma:w.hw||'',meaning:meanings(w),meanings:mnList(w),partOfSpeech:pos(w.pos),metadata:meta(w)})); } return out; }
+  function fromLang(languageId, langWords, set){ set=set||{}; return api.languageModel({languageId:languageId||null,wordOrder:set.order,words:words(langWords),metadata:{source:'adapter'}}); }
   /* Nothing here reads or writes a stored model. A model is built from the
      language every time it is asked for (gModel() in www/grammar.js says
      why), so this module turns this app's words into the engine's and does
      nothing else. wordsOf() is the dictionary alone, for a caller that wants
-     one word's part of speech without a model around it; fromLegacy() is the
+     one word's part of speech without a model around it; fromLang() is the
      whole model and calls the same function, so there is one place that
      turns a word of this app into a word of the engine. */
-  api.adapter={fromLegacy:fromLegacy,wordsOf:words,idOf:idOf};
+  api.adapter={fromLang:fromLang,wordsOf:words,idOf:idOf};
 }(typeof window!=='undefined'?window:this));

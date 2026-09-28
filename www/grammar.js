@@ -535,7 +535,7 @@ function gFmPos(p){
    and translate.arrange() never looks at model.words at all -- it reads the
    word order and the rules. The decisions are the same either way, which is
    the point of there being one function. */
-/* The engine is handed the word order and not the settings. fromLegacy()
+/* The engine is handed the word order and not the settings. fromLang()
    reads one key -- `order` -- and reading it off SET is what made the whole
    phone share one, so the caller answers with the language's own. The engine
    is DOM-free and globals-free and this is the one place that crosses back:
@@ -565,7 +565,7 @@ function gModel(list){
      主語 副詞 目的語 動詞 came out 'SADVOV', which is S A D V O V -- six roles
      with the verb in twice, and the demonstration under the board printed this
      language's verb twice. Nothing threw. */
-  var m=LinguaGrammarEngine.adapter.fromLegacy(langId, list||WORDS, {order:orderDef().seq}),
+  var m=LinguaGrammarEngine.adapter.fromLang(langId, list||WORDS, {order:orderDef().seq}),
       fm=gFmRules();
   m.grammarRules=gRules();
   m.inflections=gInfl().concat(fm.inf);

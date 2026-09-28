@@ -247,7 +247,7 @@ const POS_KEYS=/var POS=\[([^\]]*)\]/.exec(fs.readFileSync('www/shell.js','utf8'
   .split(',').map((s)=>s.trim().replace(/'/g,'')).filter(Boolean);
 assert.ok(POS_KEYS.length>=13,'www/shell.js no longer states its parts of speech as a literal list.');
 for(const k of POS_KEYS){
-  const got=e.adapter.fromLegacy('pos',[{hw:'x',pos:k}],{}).words[0].partOfSpeech;
+  const got=e.adapter.fromLang('pos',[{hw:'x',pos:k}],{}).words[0].partOfSpeech;
   assert.ok(got && got!==k.toUpperCase(),
     'A word stored as pos "'+k+'" reaches the engine as "'+got+'". That is the key '+
     'shouted, not a part of speech: the adapter has no row for it, and an inflection '+
@@ -259,8 +259,8 @@ for(const k of POS_KEYS){
    model.js minted `word_<clock>_<random>` and the SAME word got a different
    id on every build. Anything that points at a word -- which is how the
    grammar page says "this one is the negation" -- pointed at a ghost. */
-const twice=[e.adapter.fromLegacy('id',[{hw:'luma',pos:'v'}],{}),
-             e.adapter.fromLegacy('id',[{hw:'luma',pos:'v'}],{})];
+const twice=[e.adapter.fromLang('id',[{hw:'luma',pos:'v'}],{}),
+             e.adapter.fromLang('id',[{hw:'luma',pos:'v'}],{})];
 assert.equal(twice[0].words[0].id,twice[1].words[0].id,
   'The same word built twice has two ids, so nothing can point at a word.');
 
@@ -268,7 +268,7 @@ assert.equal(twice[0].words[0].id,twice[1].words[0].id,
    with " / " on the way in, so the only road back was splitting on a
    separator that can sit inside a meaning. The list travels beside the
    joined string; neither replaces the other. */
-const many=e.adapter.fromLegacy('mn',[{hw:'sara',mns:['river','road / way'],pos:'n'}],{}).words[0];
+const many=e.adapter.fromLang('mn',[{hw:'sara',mns:['river','road / way'],pos:'n'}],{}).words[0];
 /* join and compare: the engine runs in a vm context, so its Array is a
    different realm's and deepStrictEqual refuses two identical lists. */
 assert.equal(many.meanings.join('|'),'river|road / way');
@@ -277,10 +277,10 @@ assert.equal(many.meaning,'river / road / way');
 /* Which slot of which stage made this word travels with it. It is how the
    grammar page can say "the 否定 stage's word is the negation" without the
    engine having to know what a stage is. */
-const slotted=e.adapter.fromLegacy('sl',[{hw:'nai',pos:'part',slot:'neg.not'}],{}).words[0];
+const slotted=e.adapter.fromLang('sl',[{hw:'nai',pos:'part',slot:'neg.not'}],{}).words[0];
 assert.equal(slotted.metadata.slot,'neg.not');
 
-const adapted=e.adapter.fromLegacy('legacy',[{hw:'luma',mn:'食べる',pos:'v'}],{order:'SOV'});
+const adapted=e.adapter.fromLang('legacy',[{hw:'luma',mn:'食べる',pos:'v'}],{order:'SOV'});
 assert.equal(adapted.words[0].partOfSpeech,'VERB'); assert.equal(adapted.wordOrder.join(','),'SUBJECT,OBJECT,VERB');
 /* Nothing here builds a storage key out of string pieces. Where a language is
    filed is core.js's one place to say, and a second place saying it is how a
@@ -306,7 +306,7 @@ const D=[{hw:'mi',   mns:['I','me'],        pos:'pro'},
 const id=(hw)=>'hw:'+hw;
 function build(order,pos){
   pos=pos||{};
-  const m=e.adapter.fromLegacy('demo',D,{order:order||'SOV'});
+  const m=e.adapter.fromLang('demo',D,{order:order||'SOV'});
   const rule=(target,feature,value)=>e.grammarRule({type:'syntax',target,feature,value});
   m.grammarRules=[rule('ADJECTIVE','POSITION',pos.adj||'after'),
                   rule('NEGATION','POSITION',pos.negp||'after'),
@@ -338,9 +338,9 @@ assert.equal(say(build(),'sea'),'te');
    the case the sort exists for; this is the same dictionary written the other
    way round. */
 {
-  const back=e.adapter.fromLegacy('rev',D.slice().reverse(),{order:'SOV'});
+  const back=e.adapter.fromLang('rev',D.slice().reverse(),{order:'SOV'});
   assert.equal(e.translate.line(e.translate.run(back,'sea water')),'telo');
-  const fwd=e.adapter.fromLegacy('fwd',D,{order:'SOV'});
+  const fwd=e.adapter.fromLang('fwd',D,{order:'SOV'});
   assert.equal(e.translate.line(e.translate.run(fwd,'sea water')),'telo');
 }
 
@@ -351,14 +351,14 @@ assert.equal(e.lexicon.cut(build(),'eaten').filter((u)=>u.kind==='word').length,
 /* and a space-writing script is not only a-z: Cyrillic, Greek and Latin with
    accents write their word ends too, while Hangul fastens a particle on
    (고양이가) and is found inside, the way 魚 is */
-const ru=e.adapter.fromLegacy('ru',[{hw:'mau',mns:['кот'],pos:'n'},{hw:'pe',mns:['café'],pos:'n'},{hw:'go',mns:['고양이'],pos:'n'}],{order:'SOV'});
+const ru=e.adapter.fromLang('ru',[{hw:'mau',mns:['кот'],pos:'n'},{hw:'pe',mns:['café'],pos:'n'},{hw:'go',mns:['고양이'],pos:'n'}],{order:'SOV'});
 assert.equal(e.lexicon.cut(ru,'котёл').filter((u)=>u.kind==='word').length,0,
   '"кот" was found inside "котёл". Cyrillic writes its word ends.');
 assert.equal(e.lexicon.cut(ru,'cafés').filter((u)=>u.kind==='word').length,0,
   '"café" was found inside "cafés". An accented Latin letter is a letter.');
 assert.equal(e.lexicon.cut(ru,'고양이가').filter((u)=>u.kind==='word').length,1,
   '고양이 was not found inside 고양이가. Hangul fastens its particles on.');
-const jp=e.adapter.fromLegacy('jp',[{hw:'poko',mns:['魚'],pos:'n'}],{order:'SOV'});
+const jp=e.adapter.fromLang('jp',[{hw:'poko',mns:['魚'],pos:'n'}],{order:'SOV'});
 assert.equal(e.lexicon.cut(jp,'魚を').filter((u)=>u.kind==='word').length,1,
   '魚 was not found inside 魚を. A script that writes no spaces still has words in it.');
 
@@ -1070,7 +1070,7 @@ const npD=[{hw:'yama', mns:['mountain'], pos:'n'},
            {hw:'mi',   mns:['I'],        pos:'pro'},
            {hw:'miru', mns:['see'],      pos:'v'}];
 const npRead=(cards)=>{
-  const m=e.adapter.fromLegacy('npr',npD,{order:'SOV'});
+  const m=e.adapter.fromLang('npr',npD,{order:'SOV'});
   return e.translate.line(e.translate.run(withNp(m,cards),'I see two red mountain'));
 };
 assert.equal(npRead(['NUM','ADJ','N']),'mi futa aka yama miru');
@@ -1297,7 +1297,7 @@ const detD=[{hw:'yama', mns:['mountain'], pos:'n'},
             {hw:'miru', mns:['see'],      pos:'v'},
             {hw:'mi',   mns:['I'],        pos:'pro'}];
 const detRead=(cards, named)=>{
-  const m=e.adapter.fromLegacy('dtr',detD,{order:'SOV'});
+  const m=e.adapter.fromLang('dtr',detD,{order:'SOV'});
   if(named) m.grammarRules.push(e.grammarRule({type:'syntax',target:'DEMONSTRATIVE',feature:'WORD',value:'hw:kono'}));
   return e.translate.line(e.translate.run(withNp(m,cards),'I see this mountain'));
 };
