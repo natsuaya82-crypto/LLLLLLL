@@ -110,8 +110,8 @@ not need each other, leave it.** Taste is not a reason.
 **A behaviour change and a refactor do not share a commit.** Neither does a
 rename: renaming an acted function touches `act-map.js` twice — the string and
 the function — which are the same files a feature change touches, and the diff
-stops being readable. Renames go in a commit of their own with `npm test` on
-both sides. `docs/BACKLOG.md` holds the ones known and deliberately not done.
+stops being readable. Renames go in a commit of their own; the gate is run once, before
+pushing, by whoever integrates. `docs/BACKLOG.md` holds the ones known and deliberately not done.
 
 ## The order
 
@@ -6385,10 +6385,11 @@ visible there early enough to be avoided.
   5  push after every commit          a branch nobody can see is a branch
                                       nobody can avoid
   6  never integrate ANOTHER BRANCH   no merge, no rebase, no cherry-pick of
-                                      another branch. The leader integrates.
+                                      another branch. The sub-leader integrates
+                                      (the leader when there is none).
                                       master into your OWN branch is not that,
                                       and is required before you report
-  7  the gate is the leader's         see docs/TESTING.md § the gate, rule 2
+  7  the gate is whoever integrated's see docs/TESTING.md § Who runs it
 ```
 
 **Step 3 is the collision test and it is mechanical.** If
@@ -6403,8 +6404,8 @@ stale information for that hour. The scope declaration is cheap to push and
 it is the thing others read.
 
 **Step 6 is absolute about ANOTHER branch.** A session that merges another
-branch into its own has produced a diff neither session wrote. The leader --
-another session above this one -- integrates, and asks the owner where the
+branch into its own has produced a diff neither session wrote. The sub-leader
+(the leader when there is none) integrates, and asks the leader where the
 answer is a decision rather than a merge. Report the conflict and stop; do not
 resolve it.
 
@@ -6429,8 +6430,9 @@ to push the Scope of its next piece**, so finishing does not mean queueing
 behind the leader.
 
 **Who is who.** The owner decides what the app does and confirms it on a
-phone. The leader names what each session owns, integrates, and runs the whole
-gate. A session does none of those three. → `docs/SESSIONS.md`
+phone. The leader names what each session owns and triggers the build when the
+owner says so; the sub-leader (the leader when there is none) integrates and
+runs the whole gate. A session does none of those. → `docs/SESSIONS.md`
 
 ### What is forbidden, by name
 
@@ -6509,7 +6511,7 @@ it, and it becomes a decision, not a cleanup.
 [ ] the blast radius is known
 [ ] the docs that apply are updated
 [ ] implemented
-[ ] npm test green
+[ ] the whole gate green — run by whoever integrated, not the session
 [ ] the regression test for this specific bug is green
 [ ] the bug was PUT BACK and the test was watched going red
 [ ] node --check, and any static check that applies

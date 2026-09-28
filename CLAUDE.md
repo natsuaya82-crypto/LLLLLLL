@@ -515,8 +515,9 @@ fallen behind; none came from two sessions wanting the same line.
 **The one page to hand a session is `docs/SESSIONS.md`.** It carries the rule
 that actually prevents a collision rather than finding one: **the leader
 names the files a session owns, and a session edits nothing else.** The leader
-is another session above this one -- it names the territory, integrates the
-branches and runs the whole gate; a session does none of those three. `www/index.html`
+is another session above this one -- it names the territory; the sub-leader
+(the leader when there is none) integrates the branches and runs the whole
+gate; a session does none of those. `www/index.html`
 is the known hazard -- every screen's CSS is in it -- so one session at a time
 owns it until that file is split by chapter.
 The top of `docs/SESSIONS.md` is a block to copy whole into a session's first
@@ -524,7 +525,7 @@ instruction, with three blanks to fill in.
 **And the LEADER's own way of working is `docs/LEADER.md`** — the one往復
 (owner says it → the leader READS THE CODE and names the file and line →
 a session for the light items alone → five minutes each → the leader runs
-the checks), the fifteen-minute audit, and the three shapes a stuck session
+the checks), the thirty-minute audit (OWNER 2026-09-24), and the three shapes a stuck session
 takes. It is there because the leader's rules live in a prompt the owner
 pastes by hand, and a prompt not pasted is a rule that is gone: on
 2026-09-05 the same three failures cost the day.

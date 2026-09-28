@@ -9,8 +9,8 @@
 守られていないのと同じです。
 
 - **master に取り込んだブランチは、取り込んだ人が消す。**中身は master に
-  あるので、消しても何も失われません。取り込みはリーダーの仕事なので、
-  削除もリーダーの仕事です。
+  あるので、消しても何も失われません。取り込みはサブリーダー（居なければリーダー）の
+  仕事なので、削除も取り込んだ人の仕事です。
 - **取り込まれていない古いブランチは、消す前に一本ずつ中身を見る。**そこに
   しか無い commit があります。まとめて消してはいけません。
   `docs/DATA_SAFETY.md` の DELETE REVIEW と同じ扱いです。
@@ -132,7 +132,7 @@ Scope の空コミット。`docs/SESSIONS.md` は元々そう書いている ─
   持っていないファイルを触らない
   merge / rebase / cherry-pick をしない
   コミットごとに push する
-  全ゲートを回さない（リーダーが最後に一度）
+  全ゲートを回さない（取り込んだ人 ── サブリーダー、居なければリーダー ── が最後に一度）
   値段・自由と有料の境・削除・保存の期間・言葉づかい・しきい値を決めない
   iOS のビルドを回さない
   人が作ったものを消さない
@@ -207,7 +207,7 @@ Scope の空コミット。`docs/SESSIONS.md` は元々そう書いている ─
    一コミット一事。機能・修正・整理・改名・移行は混ぜない。
 
 6. **他の枝**には触らない。merge も rebase も cherry-pick も、
-   「衝突するか見るだけ」も駄目。束ねるのはリーダー。
+   「衝突するか見るだけ」も駄目。束ねるのはサブリーダー（居なければリーダー）。
 
    **master を自分の枝に入れるのは、これに当たらない。** それは他人に触って
    いない ── 追いつくことであって、束ねることではない。**報告する前に必ず
@@ -221,8 +221,8 @@ Scope の空コミット。`docs/SESSIONS.md` は元々そう書いている ─
    個人個人でやる必要ある？」
 
    **速いもの（`tools/gate.mjs` の `FAST`、約2秒）は好きなだけ回す。** ES5・script タグ・死んだコード・
-   角丸で、落ちると端末が真っ白になる種類。`tools/pre-commit` が毎コミット
-   回している。
+   角丸で、落ちると端末が真っ白になる種類。`tools/pre-commit` が `www/` に触る
+   コミットごとに回している。
 
    **遅いもの（`SLOW`）は、赤を見るためだけに回す。** バグを戻して、担当の検査が落ちる
    のを一度見る。**そのあと直したら、緑を見に行かずに push する。**
@@ -427,8 +427,8 @@ which is hours later, after both of you have written over each other.
 No `merge`, no `rebase`, no `cherry-pick` of another branch. Not even to
 "check whether it conflicts".
 
-Where two intents disagree, the leader is the one who decides which wins --
-and asks the owner where the answer is a decision rather than a merge. A
+Where two intents disagree, whoever integrates asks the leader, and the leader
+asks the owner where the answer is a decision rather than a merge. A
 session that merges on its own has produced a diff neither session wrote and
 nobody can review.
 
@@ -436,21 +436,21 @@ Report the overlap. Stop. That is the finished job.
 
 ---
 
-## 6. The gate is the leader's
+## 6. The gate is whoever integrated
 
 **Watching a check go RED is work; watching it go GREEN is verification.
 Only the author can do the first. The second can be done once, for everybody.**
 
 - **The fast ones (`FAST` in `tools/gate.mjs`, ~2s): run them freely.** ES5, a missing script tag, dead
   code, a corner -- the kinds that blank a device. `tools/pre-commit` runs
-  them on every commit anyway.
+  them on every commit that touches `www/`.
 - **The slow ones (`SLOW`): run ONE, and only to watch the bug go red.** Put the bug
   back, see the check that holds it fail, take the bug out -- then **push
   without running it green.** `npm run press` is five minutes; paid by the
   session, the sub-leader and the leader it is fifteen, and the third green is
   not truer than the second.
-- **The green belongs to the leader and the sub-leader, once, after
-  integrating.** All of them — `npm test`'s last line says how many.
+- **The green belongs to whoever integrated — the sub-leader, or the leader
+  when there is none — once, after integrating.** All of them — `npm test`'s last line says how many.
 
 **Leaders: do not ask a session to "run it once and see green".** That was
 done repeatedly on 2026-08-27 and the delay was exactly the sum of it.
