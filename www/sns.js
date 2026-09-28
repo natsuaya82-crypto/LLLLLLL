@@ -672,7 +672,7 @@ pageReads('feed', function(){
   return [['day'], (snsFil && snsFil.q)? ['fil', String(snsFil.q)] : ['feed', snsTab]];
 }, true);
 pageReads('explore', function(){ return [['saved'], ['recent']]; }, true);
-pageReads('filter',  function(){ return [['saved']]; }, true);
+pageReads('filter',  function(){ return [['saved']]; });
 pageReads('notif',   function(){ return [['notif']]; }, true);
 pageReads('thread',  function(a){ return [['thread', String(a||'')]]; }, true);
 /* A person's page, and your own is the same page: who they are (with the two
