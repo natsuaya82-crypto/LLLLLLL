@@ -590,7 +590,8 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Affected docs: この項、`docs/PAID_FEATURES.md`、`docs/FEATURES.md`、`docs/keyboard.md`、CLAUDE.md の「What the free plan is」。
 - Implementation status: r95-kbfont（`claude/r95-kbfont`）── キーボード（段を訊かない、`=文字` の枠と「文字を入力」の欄）とフォントの書き出し（Plus、`ltFontOut()`）は入った・コード確認、実機未確認。手書きは r96。
 
-### 2026-09-25 キーボードは誰でも作れる、自作文字のキーボードとフォントの書き出しは Plus から【差し替え済み】→ 2026-09-25「キーボードはプランで分けない」
+### 【差し替え済み 2026-09-25】キーボードは誰でも作れる、自作文字のキーボードとフォントの書き出しは Plus から（2026-09-25）
+- 差し替えた決定: 「キーボードはプランで分けない」（2026-09-25）
 
 ### 2026-09-25 投稿の見た目 ── 意味の行を出さずに投稿できる、本文は Twitter の大きさ、意味はその 0.8 倍（1.0.3）
 - Date: 2026-09-25
@@ -737,9 +738,11 @@ the reasoning — a reason can be re-derived, a decision cannot.
   **言語を前に戻す** ── 入った（保存の番号 `slice.press`、`admin_restore_lang()`、運営の画面は版三つ。`npm run rls`・
   `hist-check`・`again-check`）。**schema.sql をアプリより先に流すこと。**
 
-### 2026-09-24 キーボードのプランとフォントの書き出し（r46 の申し送り）【差し替え済み】→ 2026-09-25「キーボードはプランで分けない」
+### 【差し替え済み 2026-09-25】キーボードのプランとフォントの書き出し（r46 の申し送り）（2026-09-24）
+- 差し替えた決定: 「キーボードはプランで分けない」（2026-09-25）
 
-### 2026-09-24 キーの画面 ── 押した字がそのキーに入る。確定は無い【差し替え済み】→ 2026-09-25「複数のキーに一度に字を入れる」
+### 【差し替え済み 2026-09-25】キーの画面 ── 押した字がそのキーに入る。確定は無い（2026-09-24）
+- 差し替えた決定: 「複数のキーに一度に字を入れる」（2026-09-25）
 
 ### 2026-09-24 【決定の読み ── オーナーの新しい言葉ではない】持ち主の無い写しは読まない、消さない
 - Date: 2026-09-24（r79-acct、リーダーの指示で書いた。**オーナーはこの日これを言っていない**）
@@ -5853,7 +5856,7 @@ Reporting "there is no hosted model" as a blocker was wrong. It is a fact
 about today, not about the design, and the design is the part being asked
 for.
 
-### 【差し替え済み】A post shown three ways（2026-08-12）
+### 【差し替え済み 2026-08-28】A post shown three ways（2026-08-12）
 - 差し替えた決定: 投稿は二層 ── `docs/CHANGELOG.md` §「自分の言語で読む」は無くなった
 
 ### Decision
