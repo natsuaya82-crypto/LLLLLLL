@@ -125,7 +125,56 @@ press is `makeNeed()` (www/onboard.js, r122's file)**: if it answered
 `langLocked()` as well, every writing sheet would refuse in one place and the
 per-screen refusals could be deleted.
 
-(kb and home: see below; the ledger for those two groups is filled in as they land.)
+### kb (www/keyboard.js, docs/keyboard.md)
+
+| item | outcome |
+|---|---|
+| 1 | fixed — deleting keyboards through Select no longer moves the phone's keyboard to a neighbour (one road, `kbDropAll`); kb-check watched red |
+| 4 | fixed — the ⋯ of board 0 has no 「組み直す」; kb-check watched red |
+| 5 | already fixed on integ-0905 — `migrateKbFree()` is inside `migrateAll()`, and every caller runs it under `slAsApp()` |
+| 7, 8, 9, 10 | fixed — i18n: an empty frame reads 「この枠を選ぶ」; the `?` no longer says a second press lets go; the join button is not "beside" only; the five unread `kb.pat.*.d` are gone |
+| 12 | fixed — a keyboard page is deleted with the bin, not × |
+| 17, 18 | fixed — a line that does nothing and a test that cannot be true |
+| 19–39 | fixed — comments (the plan split of before 2026-09-25, gone screens and roads) |
+| 40–49 | fixed — docs/keyboard.md rewritten to what the code does |
+| 2, 3, 6, 11, 16 | **OWNER** — as written in the group section (3: 「最初から組み直す」 asks about one keyboard and removes every built one) |
+| 13, 14 | **OTHERS** www/index.html — `.kbk.pick`, `.ltc.pick`, `.kbe .kbstk`, `.kbe .kbl.sm`, `.kbpad`, so the inline `style=` here can go |
+| 15 | **OTHERS** www/glyph.js — `ICON_INLF`, `ICON_INRT`, `ICON_JOIN`, `ICON_KEYSET` belong in the `ICON_*` row (the comments say docs/BACKLOG.md carries the move; it does not) |
+
+### home (www/home.js)
+
+| item | outcome |
+|---|---|
+| 1, 2 | fixed — search shows what the free list shows, and its import row is the same door as Settings; plan-check watched red |
+| 3 | fixed — the profile's language row waits for the server's answer about the page; world-check watched red |
+| 4 | fixed — somebody else's language is written to this phone only after the take is answered; take-check watched red |
+| 5 | fixed — 「非表示 n」 counts this account's own ceiling only; acct-check watched red |
+| 6 | fixed — the overview note migration runs only on a language that may be written, as the app's write; world-check watched red |
+| 11 | fixed — a section's own page draws nothing of somebody else's language; world-check watched red |
+| 12 | fixed — the contents rows carry no unread counts; the two dead helpers and four unused keys went with them |
+| 13–36 | fixed — comments (36 and 24 were already right after integ-0905) |
+| 38, 39 | fixed — the overview ＋ reads 「追加」; `HELP.pub` is built by `helpMark()` and escaped |
+| 7 | **OTHERS** — the name screen's Save is not the KEEP road. It can join it only when `netLangRename()` (www/net.js) answers a refusal to its caller, so `done(false)` can be said; net.js is not this branch's |
+| 8, 9, 40, 41 | **OWNER** — as written below (8: the two deletes that do not ask; 9: the swipe's − or the bin) |
+| 10, 37 | not changed — UNCONFIRMED (whether `netPrefsPut()` inside a Save is rolled back; which of two stacked comments on `langAddRow` is true) |
+| 42 | **OTHERS** index.html inline styles |
+
+### Left open, and why
+
+- **grammar-14** — a negation or question rule's sentence always says 「動詞の先頭／末尾」, also on the noun sentence and existence pages. The fix needs the rule's op to carry the part of speech of the word the letters went on, which changes the stored rule (`STG.gr`): a CHANGELOG entry and a check first. Not done in this pass.
+- **pwi-23** — as above.
+- **wordsheet-36, 41; home-10, 37; sheetshare-11** — UNCONFIRMED; each says what would confirm it.
+
+### Checks
+
+Every behaviour fix names the check it was watched red on. The nineteen fast
+checks are green on the last commit. Each slow check was run green after the
+change it holds (grammar-engine-check, gramlang-check, word-check,
+world-check, kb-check, keep-check, sheet-check, gen-check, marks-check), not
+all again at the end. plan-check, take-check, acct-check and migrate-check
+were run by the fixes that name them before the branches were brought
+together, and have not been run since. The whole gate was not run — that is
+the leader's.
 
 
 ---
