@@ -19,7 +19,7 @@ Android の Kotlin は iOS の Swift と**同じ名前・同じメソッド・�
 
 ## 何ができて、何が「無い」と答えるか
 
-Kotlin は `android/app/src/main/java/com/tokinets/lingua/` の四つのファイル。
+Kotlin は `android/app/src/main/java/com/tokinets/lingua/` の五つのファイル。
 
 | プラグイン.メソッド | Android の答え |
 |---|---|
@@ -35,13 +35,13 @@ Kotlin は `android/app/src/main/java/com/tokinets/lingua/` の四つのファ�
 | LinguaShare.renderPdf | **無いと答える**（reject）。下の § 画面にペンで書いたシート |
 | LinguaStore.products | Google Play Billing の値段（基本プランの formattedPrice）。Play Console に商品が無い間は**空の一覧**で、画面は「まだ販売されていません」 |
 | LinguaStore.current / buy / restore / manage | Google Play Billing。答えは `google: [{token, product}]`（下の § 課金）。Play ストアの無い端末は `no store` で、`current` の reject は `netPlanVerify([])` に落ち、サーバーがこのアカウントの plan を答えるので、iPhone で買った plan は Android でもそのまま |
-| LinguaPush.ask / status | **無いと答える**（reject）。`denied` は返さない ── `www/push.js` はそれを「通知は…設定でオフになっています」と描いて設定へ誘い、Android では偽の文になる。reject なら画面はブラウザと同じ描き方（スイッチだけ） |
+| LinguaPush.ask / status | Firebase Cloud Messaging（下の § 通知）。android/app/google-services.json が無い間は**無いと答える**（reject）。`denied` は返さない ── `www/push.js` はそれを「通知は…設定でオフになっています」と描いて設定へ誘い、無い物について偽の文になる。reject なら画面はブラウザと同じ描き方（スイッチだけ） |
 
 **課金は Google Play Billing を直接つなぐ**（RevenueCat は使わない）、値段は
 iPhone と同じ（`docs/FEATURE_RULES.md` 2026-09-27）。コードはできていて、
 Play Console の商品とサービスアカウントの鍵を待っている（下の § オーナーが
-すること）。**待っているもの**（オーナーの決定）: 通知の仕組み（Firebase
-Cloud Messaging と `push-send` の Android 対応）。キーボード（Android の IME）と
+すること）。**通知**も Firebase Cloud Messaging でコードはできていて、Firebase の
+プロジェクトと二つの鍵を待っている（下の § 通知）。キーボード（Android の IME）と
 ウィジェットは次の回。
 
 ### 課金
@@ -105,6 +105,36 @@ JPEG をそのまま取り出す）ので、紙を読むこと自体は Android 
 2.0.3 がある）。ネイティブ込みでおよそ 10MB、Kotlin 2.4 で作られていてビルド
 全体の Kotlin をそれに合わせる必要があり、この環境では確かめられないので、
 入れるかどうかはリーダーの判断に残す。
+
+### 通知
+
+**Firebase Cloud Messaging**。iPhone と同じ五つと今日のお題が、同じ文で届き、押すと
+同じ画面が開く（その投稿・通知タブ・タイムライン）。
+
+- **端末**: `LinguaPushPlugin.kt` が `LinguaPush.swift` と同じ `ask` / `status` を
+  答える。`ask` は Android 13 以降なら Android の許可の問い（POST_NOTIFICATIONS、
+  manifest に書いてある）を出し、許されれば FCM の token を
+  `{token, platform: 'android'}` で返す。二十秒で Google が答えなければ reject
+  （iPhone と同じ）。`status` は `authorized` / `notDetermined`（Android 13 以降で
+  まだ訊いていない）/ `denied`。**google-services.json が無ければ両方とも無いと
+  答える**（FirebaseApp が無い）。ビルドは google-services.json 無しで通る
+  （`build.gradle` はファイルがある時だけ Google サービスのプラグインを当てる）。
+- **住所の行**: `www/push.js` が token と `platform` を `netDevicePut()` に渡し、
+  `device` の行が `platform = 'android'` を持つ。iPhone は何も付けず、列の既定
+  `ios` が答える。token の検査は電話ごと（`supabase/schema.sql` の
+  `device_token_check`）。
+- **押した通知**: アプリが閉じている・後ろにある時は Android が通知を出し、押すと
+  `data` の `kind` と `post` が起動の intent に載る。`LinguaPushPlugin` がその二つ
+  だけを取って `window.pushOpened()` に渡す（ページが読まれるまで持っておく ──
+  `LinguaPush.swift` の `pending` と同じ）。アプリが前にある時は Firebase は何も
+  出さないので、`android/app/src/main/java/com/tokinets/lingua/LinguaPushService.kt` が同じ文・同じ二つの鍵で出す（iPhone の
+  前にある時のバナーと同じ）。チャンネルは `lingua`（push-send の `CHANNEL`、
+  `push-check` が二つの名前を突き合わせる）。
+- **サーバー**: `push-send` が `platform` で APNs と FCM HTTP v1 に分ける
+  （`pushPlan()` 一つ ── 誰に・何を・ミュートは道を問わず同じ）。FCM の鍵
+  （`FCM_SERVICE_ACCOUNT`）が無い間は Android の行にだけ送らず、iPhone は止めない。
+  FCM が `404 UNREGISTERED` と答えた token の行だけを消す（DELETE REVIEW は
+  `docs/CHANGELOG.md` 2026-09-27）。
 
 ## iOS と違うところ
 
@@ -224,10 +254,20 @@ CI の debug の鍵は毎回作り直されるので、debug の APK では Goog
      として入れ、Actions の Supabase Deploy を `verify-plan` で回す（その段が
      Supabase の secret に入れる）。鍵のファイルはリポジトリに入れない。
    - 試すのは Play Console の「ライセンス テスト」に入れた Google アカウントで。
-7. 通知を Android でどうするかを決める（それまで「無い」と答えている）。
-   通知に Firebase を使うなら、Firebase のプロジェクトと
-   google-services.json（`android/app/` に置くと
-   `android/app/build.gradle` が Google サービスのプラグインを当てる）。
+7. **通知（Firebase）**（§ 通知。入れるまで Android は「無い」と答える）:
+   - Firebase コンソールでプロジェクトを作る（Google Cloud の既存のプロジェクトに
+     足してよい）。Android アプリを足す（パッケージ名 `com.tokinets.lingua`）。
+   - **google-services.json** をダウンロードし、android/app/google-services.json
+     に置いてコミットする（鍵ではなく、アプリがどのプロジェクトかを言うだけの
+     ファイル）。`android/app/build.gradle` がそれを見て Google サービスの
+     プラグインを当てる。
+   - Firebase の「プロジェクトの設定 → サービス アカウント」で**新しい秘密鍵**
+     （JSON）を作る。中身をまるごと GitHub の Secrets に `FCM_SERVICE_ACCOUNT`
+     として入れ、Actions の Supabase Deploy を `push-send` で回す（その段が
+     Supabase の secret に入れる）。鍵のファイルはリポジトリに入れない。
+   - `device.platform` の列はサーバーにまだ無い（`supabase/schema.sql` を本番に
+     流すのはリーダー）。列が無い間に Android から出た行は落ちる ── 流してから
+     google-services.json を入れたビルドを出す。
 
 ## 端末で見ていないこと
 
@@ -244,3 +284,8 @@ Kotlin は Robolectric の android-all と Capacitor の core を相手にコン
 （二重に請求されないか）・保留の購入・復元・定期購入のページから戻る、別の
 Supabase アカウントでは付かないこと、三日後に返金されていないこと（承認が
 効いたこと）。Play Billing は Google の Maven に届かずコンパイルしていない。
+通知: 許可の問いが出るか（Android 13 以降）、token が `device` に `android` で
+入るか、閉じている時・後ろにある時・前にある時の三つで届くか、押して開く画面、
+ミュートした人から来ないこと、アプリを消した電話の行が消えること。
+LinguaPushPlugin.kt と LinguaPushService.kt（`android/app/src/main/java/com/tokinets/lingua/`） は Firebase と androidx.core に
+届かずコンパイルしていない（CI のビルドが最初）。

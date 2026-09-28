@@ -1605,7 +1605,8 @@ create table if not exists device (
 -- Cloud Messaging). supabase/functions/push-send reads it and nothing else
 -- does. The default is `ios` because every row that existed before this
 -- column was an iPhone -- the column arriving writes nothing over and takes
--- nothing away; an Android sends `android` (www/push.js). It is still not a
+-- nothing away; an Android sends `android` (LinguaPushPlugin.kt answers it,
+-- www/push.js hands it to netDevicePut()). It is still not a
 -- description of the handset: it is which road the address goes down.
 alter table device add column if not exists platform text not null default 'ios';
 -- And what an address looks like depends on who issued it: Apple's is hex,
@@ -2853,10 +2854,12 @@ create trigger device_one before insert on device
 
 --
 -- The one thing that is not the person: supabase/functions/push-send deletes
--- a row Apple has answered `410 Unregistered` for. That runs with the service
+-- a row Apple has answered `410 Unregistered` for, or Google (FCM) `404` with
+-- `UNREGISTERED` -- and no other answer from either. That runs with the service
 -- role, which no policy applies to -- and it is written down here because a
 -- row that can disappear without its owner doing anything is a thing to be
--- able to find. docs/CHANGELOG.md 2026-09-22 carries the DELETE REVIEW.
+-- able to find. docs/CHANGELOG.md 2026-09-22 (Apple) and 2026-09-27 (Google)
+-- carry the DELETE REVIEWs.
 drop policy if exists device_read on device;
 create policy device_read on device for select using (is_member() and uid = auth.uid());
 drop policy if exists device_make on device;

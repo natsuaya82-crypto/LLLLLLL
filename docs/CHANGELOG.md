@@ -122,6 +122,11 @@ where it starts.
   分けるのもそこ（`pushPlan()` が `to`（iPhone）と `fcm`（Android）を返す）。APNs に送る中身と道は変えていない。
   FCM の鍵（`FCM_SERVICE_ACCOUNT`、Google Cloud のサービスアカウントの JSON）が無い間は Android の行にだけ
   送らず、答えの `left` に `not set: FCM_SERVICE_ACCOUNT` と出る ── iPhone への送信は止めない。
+  ミュートした人からは鳴らさない（2026-09-28）は `pushPlan()` の道に分ける前の一行なので、Android の行にも同じく効く。
+- **電話に書く物**: 無い。FCM の token は iPhone と同じく電話に持たず、`device` の行が記録（サインインのたびに訊き直す）。
+  アプリが前にある時の通知は `LinguaPushService.kt` が同じ文で出すだけで、何も残さない。
+- **本番**: schema も push-send も未適用・未デプロイ。流すのはリーダー。Firebase の二つ（google-services.json と
+  `FCM_SERVICE_ACCOUNT`）はオーナー（docs/ANDROID.md § オーナーがすること 7）。
 
 ### 2026-09-27 入力欄のカーソルが字の高さに（r125-line、1.0.3）
 - 「文字のサイズとカーソルサイズ全然違う」（実機 170）「直してください」OWNER 2026-09-27。
