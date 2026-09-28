@@ -7,16 +7,6 @@
    ========================================================================= */
 var addPos='n';
 
-/* The word suggestions were here, and the conversation was a chapter, and
-   both were Studio's under the name `ai`. They are out until Studio is,
-   because what Studio sells is the hosted model and the hosted model is the
-   last thing going in: a tier that charges for three of something a day and
-   then asks for money is a price on an unfinished thing.
-
-   Nothing is deleted, it is lifted -- www/reading.js still has makeWord() and
-   www/assist.js still proposes sounds, letters and words everywhere else in
-   the app, because those are the app being usable and were never Studio's.
-   What went is the metered surface and the tier behind it. */
 var addW=null;
 /* ---- the sheet a word is written on --------------------------------------
    One sheet, whether the word exists yet or not. 「作成編集それぞれ同じ画面で」
@@ -188,10 +178,6 @@ function findWord(hw){
   for(var i=0;i<WORDS.length;i++){ if(String(WORDS[i].hw).toLowerCase()===String(hw).toLowerCase()) return WORDS[i]; }
   return null;
 }
-/* The syllables, from the sounds. What used to sit here was the respelling
-   -- the word written out in the reader's own script -- and a word made of
-   IPA symbols gives it nothing to work from. One syllabifier, in core.js,
-   used by the dictionary, the analysis and this. */
 /* ---- One word, opened ---------------------------------------------------
    It used to be a read-only card with a meaning box on it: you could change
    what a word meant and nothing else. Not the word. A word built out of the
@@ -205,17 +191,10 @@ function findWord(hw){
 var openHw='', wEdit=null;
 
 /* ---- spelling a word --------------------------------------------------
-   The word is a row of letters, each with the sound it makes underneath. Tap
-   a letter in the row and you change what it says HERE and nowhere else --
-   which is what a sound change is: 「アルファベットに決まった音があるならそのまま、
-   漣音化とか音が変わるならそこの単語から変更できるようにして」
-
-   The keyboard is letters when the language has any, and sounds when it does
-   not or when you ask for sounds. Nobody spells by phoneme -- but a language
-   three days old has no letters yet, and it still has to be possible to make
-   a word. */
-/* The same as the new-word sheet's: typed on free, pressed on the paid plan,
-   and the row of letters under it either way. */
+   The word is typed, letter by letter, in the same field as the new-word
+   sheet's. What a letter says HERE and nowhere else is the reading row
+   (wdSeqHTML) -- which is what a sound change is: 「アルファベットに決まった音が
+   あるならそのまま、漣音化とか音が変わるならそこの単語から変更できるようにして」 */
 function wdTypeHTML(){ return spTypeField('wd-ln', IN('wdSetLn'), wEdit.sp||[], 'whin'); }
 function wdSetLn(v){
   wEdit.sp=spType(v);
@@ -330,9 +309,9 @@ function wdMnsHTML(){
    「単語の例文は？反対語は？同義語は？これのどこが辞書と同じなの？」
 
    An example, a synonym and an antonym are the three things every dictionary
-   in the world has and this one did not. All three are edited on the word
-   and saved as they are made, like the derivations above them, because they
-   are facts about the word rather than a draft of it.
+   in the world has and this one did not. All three are edited on the
+   sheet's draft and written when Save is pressed, with everything else on
+   it (keepDrafting(), 「保存を押したら」 OWNER 2026-09-24).
 
    A relation goes both ways or it is not a relation: making B a synonym of A
    makes A a synonym of B, and the same for opposites. A dictionary where you
@@ -372,7 +351,7 @@ function wRelToggle(hw, k, other){
   else { A.push(b.hw); if(j<0) B.push(a.hw); }
   save(); relDirty(); render();
 }
-/* Taking one off the word being made, from the chip rather than from the
+/* Taking one off the word being made, from its row rather than from the
    picker -- the same list, so the same function decides it. */
 function wRelOff(k, other){ wRelToggle('', k, other); wdPaint(); }
 /* Everything pointing at a word is told its new name when the name changes,
@@ -401,9 +380,9 @@ function wdRelHTML(k){
   var ws=wRelWords(w,k);
   return (ws.length
     ? '<div class="rels">'+ws.map(function(x){
-        /* On a word that exists the chip is a way to it. On the one being
+        /* On a word that exists the row is a way to it. On the one being
            made it cannot be -- going there would leave the draft -- so there
-           it takes the word back off, which is the only other thing a chip
+           it takes the word back off, which is the only other thing a row
            on a list you are assembling could mean. */
         return '<button class="rel"' +
           (addW? DO('wRelOff', [k, x.hw]) : DO('openWord', [x.hw])) + '>'+
@@ -427,9 +406,6 @@ function exGloss(ln){
   var ps=String(ln||'').trim().split(/\s+/);
   return ps.map(function(x){ var w=findWord(x); return (w && wMns(w)[0]) || x; }).join(' ');
 }
-/* The placeholder is two of this language's own words. An instruction there
-   -- "words with spaces between them" -- is a sentence nobody wants to read
-   in a box they are about to type in; two words show the shape at a glance. */
 /* One button at the end of an example: listen, make a card, throw it away.
    Five of them, in two files, were the same line with a different icon. */
 function exBtn(fn, args, key, icon){
@@ -480,6 +456,9 @@ function exRowHTML(e, seq, tail){
     (seq.length? exBtn('sayPh', [seq], 'f.listen', ICON_SPK) : '')+
     tail+'</div>';
 }
+/* The placeholder is two of this language's own words. An instruction there
+   -- "words with spaces between them" -- is a sentence nobody wants to read
+   in a box they are about to type in; two words show the shape at a glance. */
 function exHint(){
   var a=WORDS.slice(0,2).map(function(w){ return String(w.hw); });
   return a.length>1? a.join(' ') : (a[0]||'');
@@ -793,10 +772,10 @@ function wdFmHTML(){
   return wdPickRow(t('word.fm'), fmLabel(f)||t('word.none'),
     DO('go', ["fm", (addW? '' : String(openHw||''))]));
 }
-/* Written onto the word as it is chosen, the way a synonym is -- what a word
-   is of its parent is a fact about the word, not a draft of it. The word
-   being coined has nowhere to save to yet, so it goes on the draft and
-   addOne() carries it over. */
+/* What a word is of its parent goes on the sheet's draft as it is chosen,
+   the way a synonym does, and is written with the rest when Save is pressed
+   (keepDrafting()). The word being coined carries it on its own draft and
+   addOne() writes it. */
 function fmPick(hw, f){
   var w;
   /* A FORM's label (§ the forms of a word): it goes onto the screen the form
@@ -1676,13 +1655,10 @@ function wdFormHTML(){
        somebody drew; the Lingua keyboard puts the same letters in with the
        shapes on the keys.
 
-       What is left under the field is not input. Free sees what it reads; a
-       paid plan sees the word as its letters, and pressing one opens that
-       letter's sound in this word -- which is the only thing on this screen
-       the keyboard cannot do. */
+       What is left under the field is not input: on a paid plan, one row
+       that goes to how this word is read (wdSeqHTML) -- the only thing on
+       this screen the keyboard cannot do. */
     (can('snd')? wdSeqHTML() : '')+
-    /* Only where a word is being coined. Asking for a spelling to be made up
-       for a word that already has one is asking to throw it away. */
 
     secAdd(t('word.means'), DO('wdMnOpen'), t('word.mn.add'))+
     wdMnsHTML()+
@@ -1863,9 +1839,8 @@ function wdSecHTML(head, body){
 /* What means the same and what means the opposite, on the read page. They
    were chips -- a bordered box each, wrapping across the column -- and so was
    the family above them, so a word page was four kinds of boxed thing in a
-   row. One row shape for all of it: `wdRowHTML`. The chips stay on the sheet
-   where the two lists are assembled, because there a box is a thing you take
-   back off. */
+   row. One row shape for all of it: `wdRowHTML`, here and on the sheet
+   where the two lists are assembled. */
 function wdRelsHTML(w, k){
   var ws=wRelWords(w,k);
   return ws.length? '<div class="wdrows">'+ws.map(function(x){
@@ -2004,9 +1979,6 @@ function wdViewHTML(){
         }).join('')+'</div>' : '')+
     wdSecHTML(t('word.ety'), w.ety? '<div class="note">'+esc(w.ety)+'</div>' : '')+
     wdSecHTML(t('word.note'), w.nt? '<div class="note">'+esc(w.nt)+'</div>' : '')+
-    /* When it was made, and when it last moved -- and the second only when it
-       is a different day from the first, because "made today, changed today"
-       is one fact written twice. */
     /* Made, and last changed. Both, always -- the second used to be dropped
        on the day the word was made, on the grounds that "made today, changed
        today" is one fact written twice. To the minute it is two. */
@@ -2067,9 +2039,7 @@ function openEdit(hw){
 }
 FORM_OPEN.edit=function(hw){ openEdit(hw); };
 FORM_OPEN.word=function(hw){ openWord(hw); };
-/* Both keyboards write the same thing: a step in the spelling. A sound
-   pressed on the sound keyboard is a step whose letter is whichever letter
-   writes it, or none at all if nothing does yet. */
+/* The sounds the spelling reads, worked out again whenever it moves. */
 function wdSync(){ wEdit.seq=spPh(wEdit.sp||[]); }
 /* An assignment that was written as code inside a button. It is one line now,
    in a file a checker can read. */
@@ -2232,7 +2202,9 @@ function wdWrite(){
    It does not confirm, does not save, does not touch the trail and does not
    redraw -- those are the deleting SCREEN's, and they are done once however
    many words go. `wRename` in `www/letters.js` is the same set of pointers
-   read the other way round; this is the one place they are cut.
+   read the other way round (not `from`, which a rename rewrites and this
+   leaves standing -- docs/reports/rule-audit-2026-09-27-words.md,
+   wordsheet-19); this is the one place they are cut.
 
    A child's `from` is NOT one of them. It is the spelling the child was made
    from, written on the child when it was made -- a value, not a way to reach
