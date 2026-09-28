@@ -4168,10 +4168,17 @@ grant  insert (id, author, language, body, prompt, reply_to, quote_of) on post t
 --
 -- THE DAY'S PROMPT IS THE SAME ROAD. Its row is written by
 -- supabase/functions/daily-prompt with the service role key, through
--- PostgREST like every other write, so that key is what is in
--- `request.headers` and what push_ping() hands on. push-send rings EVERYBODY
--- for that kind and nobody else can make it: the entry says its actor is the
--- service role, and a signed-in person's token is not that key. `prompt` has
+-- PostgREST like every other write, and push_ping() hands on the
+-- Authorization PostgREST received for it -- which on 2026-09-28 was NOT the
+-- key's own text, so push-send, comparing against the key, answered 401 and
+-- the day's notice went to nobody. Read off the facts rather than measured
+-- yet: push-send's gateway let it through, so it is a JWT with this project's
+-- signature, and PostgREST let it insert into `prompt`, so its role is
+-- service_role -- and that role is what push-send asks now (`pushBy()`). A
+-- refusal says what did arrive (`tok`), which is the measurement. push-send
+-- rings EVERYBODY for that kind and nobody else can make it: the entry says
+-- its actor is the service role, and a signed-in person's token does not
+-- carry that role. `prompt` has
 -- no insert policy and no insert grant for anybody the app signs in as
 -- (the prompt_read policy above, the cover at the foot), so no request from
 -- a phone can reach this trigger at all -- tools/rls-check.mjs tries, as B

@@ -21,14 +21,14 @@
      - 410 だけで token が落ち、他のどの答えでも落ちない
      - **request の文字が payload に一文字も混ざらない**
      - 種類 × 十言語の文が全部あり、どれも {0} を持っている
-     - お題は全員宛てで、鳴らせるのは service role の鍵だけ
+     - お題は全員宛てで、鳴らせるのは入口が確かめた JWT の role が service_role の時だけ
      - **種類は `PUSH` が一箇所**で、www/ の二つの手書き（`PUSH_KINDS` と
        `SET_PREFS`）と i18n の `push.<種類>` がそれと揃っていること
    --------------------------------------------------------------------------- */
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { pushWhat, pushTo, pushPlan, pushMay, pushBy, pushSay, pushWants, pushLang,
+import { pushWhat, pushTo, pushPlan, pushMay, pushBy, pushTok, pushSay, pushWants, pushLang,
          pushGone, pushRead, PUSH, KINDS, SERVICE, LANGS, SAY, TITLE, TOPIC } from
   '../supabase/functions/push-send/push.mjs';
 const WWW = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'www');
@@ -324,12 +324,54 @@ console.log('push: お題は全員へ、鳴らせるのは service role の鍵�
   say('やったのは service role', aim.from, SERVICE);
   say('開く先は無い', aim.post, 'null');
 
-  /* 叩いた人。service role の鍵そのものだけが SERVICE。 */
-  say('service role の鍵なら SERVICE', pushBy('Bearer ' + SVC, SVC), SERVICE);
-  say('違う鍵なら誰でもない', pushBy('Bearer ' + SVC + 'x', SVC), '');
-  say('サインインした人の JWT は誰でもない', pushBy('Bearer eyJhbGciOi.user.sig', SVC), '');
-  say('鍵が函数に無ければ誰でもない', pushBy('Bearer ', ''), '');
-  say('何も無ければ誰でもない', pushBy('', SVC), '');
+  /* 叩いた人。**Supabase の入口が署名を確かめた JWT の role** が
+     service_role の時だけ SERVICE（`pushBy()`）。2026-09-28 本番で、
+     daily-prompt の insert から来た Authorization は函数の env の鍵と
+     一字一句同じではなく、お題の通知が 401 だった ── 鍵の文字を比べる
+     問いは、入口が鍵を JWT に替えた日に黙って外れる。role を読む。
+     署名はここでは作らない：確かめるのは入口で、下の「入口が確かめて
+     いる」がそれを数える。 */
+  const b64u = (o) => Buffer.from(JSON.stringify(o)).toString('base64')
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  const jwt = (claims) => b64u({ alg: 'ES256', typ: 'JWT' }) + '.' + b64u(claims) + '.c2ln';
+  say('role が service_role の JWT なら SERVICE',
+      pushBy('Bearer ' + jwt({ iss: 'supabase', role: 'service_role', exp: 9e9 })), SERVICE);
+  say('サインインした人の JWT は誰でもない',
+      pushBy('Bearer ' + jwt({ role: 'authenticated', sub: B })), '');
+  say('publishable の JWT は誰でもない', pushBy('Bearer ' + jwt({ role: 'anon' })), '');
+  say('role の無い JWT は誰でもない', pushBy('Bearer ' + jwt({ sub: B })), '');
+  say('JWT でない鍵そのものは誰でもない', pushBy('Bearer ' + SVC), '');
+  say('sb_secret の鍵そのものも誰でもない', pushBy('Bearer sb_secret_abc'), '');
+  say('読めない JWT は誰でもない', pushBy('Bearer eyJhbGciOi.user.sig'), '');
+  say('Bearer でなければ誰でもない',
+      pushBy(jwt({ role: 'service_role' })), '');
+  say('何も無ければ誰でもない', pushBy(''), '');
+
+  /* 断った時に何が来ていたかを答えに載せる形（`pushTok()`）。値は一文字も
+     載せない ── 種類と role と sub の有無だけ。 */
+  say('JWT の形', JSON.stringify(pushTok('Bearer ' + jwt({ role: 'service_role', sub: '' }))),
+      JSON.stringify({ kind: 'jwt', role: 'service_role', sub: false }));
+  say('利用者の JWT の形', JSON.stringify(pushTok('Bearer ' + jwt({ role: 'authenticated', sub: B }))),
+      JSON.stringify({ kind: 'jwt', role: 'authenticated', sub: true }));
+  say('sb_secret の形', JSON.stringify(pushTok('Bearer sb_secret_zzz')), JSON.stringify({ kind: 'sb_secret' }));
+  say('sb_publishable の形', JSON.stringify(pushTok('Bearer sb_publishable_zzz')),
+      JSON.stringify({ kind: 'sb_publishable' }));
+  say('それ以外の形', JSON.stringify(pushTok('Bearer ' + SVC)), JSON.stringify({ kind: 'other' }));
+  say('無い', JSON.stringify(pushTok('')), JSON.stringify({ kind: 'none' }));
+  say('形に値は載らない', JSON.stringify(pushTok('Bearer ' + jwt({ role: 'x', sub: 'SECRET-SUB' }))).indexOf('SECRET'), '-1');
+
+  /* **入口が確かめている。**role を信じてよいのは、Supabase の入口が JWT の
+     署名を確かめてから函数を走らせるからで、それは push-send を
+     `--no-verify-jwt` なしで置くことで決まる。その一語がどこかの置き方に
+     入った日に、role は誰にでも書ける文字になる。 */
+  const ROOT = path.join(WWW, '..');
+  const WF = path.join(ROOT, '.github', 'workflows');
+  /* 注釈の行（`#`）は数えない ── supabase-deploy.yml が「付けません」と書いている。 */
+  const noVerify = fs.readdirSync(WF).filter((f) => fs.readFileSync(path.join(WF, f), 'utf8')
+    .split('\n').some((l) => !/^\s*#/.test(l) && /no-verify-jwt/.test(l)));
+  const toml = path.join(ROOT, 'supabase', 'config.toml');
+  if (fs.existsSync(toml) && /verify_jwt\s*=\s*false/.test(fs.readFileSync(toml, 'utf8'))) noVerify.push('supabase/config.toml');
+  say('どの置き方も JWT の検証を外さない', noVerify.join(',') || 'none', 'none');
 
   /* **全員宛てを鳴らせるのは service role だけ。**サインインした B が
      お題の行を指して叩いても、`pushMay()` が一人も読まないうちに断る。 */

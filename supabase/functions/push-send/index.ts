@@ -27,8 +27,9 @@
 //     この行が走る前に断られます。
 //   二枚目 ── **その人がやったことか。**一枚目が言えるのは「サインインして
 //     いる誰か」までで、サインインした他人が他人の行を指して他人の iPhone を
-//     鳴らせます。だから下で**誰から来たかを確かめ**（service role の鍵その
-//     ものか、そうでなければ `/auth/v1/user` に訊いた uid）、`push.mjs` の
+//     鳴らせます。だから下で**誰から来たかを確かめ**（一枚目が署名を確かめた
+//     JWT の role が service_role か、そうでなければ `/auth/v1/user` に訊いた
+//     uid）、`push.mjs` の
 //     `pushMay()` が行の actor と突き合わせます。お題の actor は service role
 //     なので、全員を鳴らせるのはお題の行を書いた daily-prompt だけです。
 //     publishable キーで叩かれた時もここで止まります ── あの鍵に user の sub
@@ -63,7 +64,7 @@
 // **一つでも無ければ 500 で止まり、何も送りません。**送れないのと、間違った所へ
 // 送るのとでは、間違ってよい側が決まっています。
 
-import { pushWhat, pushRead, pushTo, pushMay, pushPlan, pushBy, pushGone, TOPIC } from './push.mjs';
+import { pushWhat, pushRead, pushTo, pushMay, pushPlan, pushBy, pushTok, pushGone, TOPIC } from './push.mjs';
 
 const APNS = 'https://api.push.apple.com/3/device/';
 
@@ -112,8 +113,9 @@ Deno.serve(async (req: Request) => {
   const p8 = Deno.env.get('APNS_P8') || '';
   /* 名前を挙げて返します ── 実機で「来ない」と言われた時に、どれが入っていない
      のかを分けられるのはここだけです。値は返しません。 */
+  const anon = Deno.env.get('SUPABASE_ANON_KEY') || '';
   const missing = [['SUPABASE_URL', url], ['SUPABASE_SERVICE_ROLE_KEY', svc],
-                   ['SUPABASE_ANON_KEY', Deno.env.get('SUPABASE_ANON_KEY') || ''],
+                   ['SUPABASE_ANON_KEY', anon],
                    ['APNS_KEY_ID', kid], ['APPLE_TEAM_ID', team], ['APNS_P8', p8]]
     .filter(([, v]) => !v).map(([n]) => n);
   if (missing.length) return said({ why: 'not set: ' + missing.join(', ') }, 500);
@@ -122,23 +124,28 @@ Deno.serve(async (req: Request) => {
      同じ理由です。この函数は service role を持っているので、uid を body から
      取ったら誰でも誰の iPhone でも鳴らせます。
 
-     先に**service role の鍵そのものか**を見ます（`pushBy()`）。お題の行を
-     入れるのは daily-prompt で、トリガーはその Authorization を持って来るので、
-     全員宛てを鳴らせるのはこの鍵を持っている者だけです。そうでなければ
-     `/auth/v1/user` に訊き、返ってきた uid が `by`。
+     先に**service role として呼ばれたか**を見ます（`pushBy()` ── 入口が署名を
+     確かめた JWT の role）。お題の行を入れるのは daily-prompt で、トリガーは
+     その insert が PostgREST に届けた Authorization を持って来るので、全員宛てを
+     鳴らせるのは service role だけです。そうでなければ `/auth/v1/user` に訊き、
+     返ってきた uid が `by`。`SUPABASE_ANON_KEY` が無い時は上の `missing` が
+     500 で止めています。
 
-     `SUPABASE_ANON_KEY` が無ければ訊けないので、その時も 401 ── 訊けないことを
-     「誰でもよい」と読まないためです。 */
-  const anon = Deno.env.get('SUPABASE_ANON_KEY') || '';
+     断る時は**どこで断ったか（`at`）と、何が来ていたかの形（`tok`、`pushTok()`）**
+     を答えに載せます ── 値は載せません。2026-09-28 にお題の通知が 401 だった時、
+     答えは「no session」の一語で、来た Authorization が何だったのかを本番で
+     読む手が無かった。`svc` は函数が持っている鍵の形（同じく値は無し）。 */
   const auth = req.headers.get('Authorization') || '';
-  if (!anon || !/^Bearer .+/.test(auth)) return said({ why: 'no session' }, 401);
-  let by = pushBy(auth, svc);
+  const no = (at: string) => said({ why: 'no session', at,
+    tok: pushTok(auth), svc: pushTok('Bearer ' + svc).kind }, 401);
+  if (!/^Bearer .+/.test(auth)) return no('no bearer');
+  let by = pushBy(auth);
   if (!by) {
     const who = await fetch(`${url}/auth/v1/user`, { headers: { apikey: anon, Authorization: auth } });
-    if (!who.ok) return said({ why: 'no session' }, 401);
+    if (!who.ok) return no('auth/v1/user ' + who.status);
     by = String(((await who.json()) || {}).id || '');
   }
-  if (!by) return said({ why: 'no session' }, 401);
+  if (!by) return no('no id');
 
   let raw: unknown;
   try { raw = await req.json(); } catch { raw = null; }
