@@ -1021,7 +1021,7 @@ function netMyProfile(ok, bad){
            /* NO ROW IS NOT AN EMPTY PROFILE -- an account whose row has not
               been made yet is not somebody whose line about themselves is
               blank, so nothing is written over the copy. */
-           if(p){ meProfGot(p); netPrefsGot(p.prefs); }
+           if(p){ meProfGot(p); netPrefsGot(p.prefs); mePinUp(p); }
            netStaffGot(p);
            render();
            ok(p);

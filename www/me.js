@@ -1014,6 +1014,23 @@ function mePinPut(id){
       netPop(d, st, m, function(){ mePinPut(id); });
     });
 }
+/* AND THE PIN AN OLDER VERSION KEPT ON THIS PHONE goes up ONCE -- copied,
+   never removed: the `pin` on this phone's copy of a post stays where it is
+   and is simply not read any more. Asked when the account's own row has come
+   back (netMyProfile), so a pin the server already has is never written over,
+   and done once per account (SET.pinUp) so that a pin somebody took off later
+   does not come back from the copy. A send that does not land is tried again
+   on the next launch. */
+function mePinUp(row){
+  var i, id='';
+  if(SET.pinUp || !row) return;
+  for(i=0;i<POSTS.length;i++)
+    if(POSTS[i].mine && POSTS[i].pin && POSTS[i].sid){ id=String(POSTS[i].sid); break; }
+  if(row.pin || !id){ SET.pinUp=1; setKeep(); return; }
+  netPut('profile', netUid(), {pin:id},
+    function(r){ meProfGot(r); SET.pinUp=1; setKeep(); render(); },
+    function(){});
+}
 /* And whom you have muted, the same road with the other table's name on it
    (www/net.js § NET_PPL). 「人をミュートできる」 OWNER 2026-09-25. */
 /* By the @ or by the account's id -- a row of the list carries both, and a

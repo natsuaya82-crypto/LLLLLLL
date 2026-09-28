@@ -5031,7 +5031,10 @@ const R = await pg.evaluate(async () => {
   /* ---- 96. ピン留めはサーバーの物（オーナーの答え 2、2026-09-28） -----------
      1. 押すと profile へ PATCH {pin} が飛び、**答えが戻ってから** ME.pin が動く。
         写しの投稿には一字も書かない。
-     赤を見た形: postPin() を写しに書く前の形に戻すと 1 が赤。 */
+     2. 電話の写しにあった古いピンは、アカウントの行が来た時に一度だけ上がる。
+        写しの `pin` は消さない。一度上がれば、外した後に写しから戻らない。
+     赤を見た形: postPin() を写しに書く前の形に戻すと 1 が赤、mePinUp() の
+     SET.pinUp を立てないと 2 の三つ目が赤。 */
   {
     start();
     netOut(); arrive(A);
@@ -5053,9 +5056,20 @@ const R = await pg.evaluate(async () => {
     if (mine96.pin !== undefined) no('96: **写しの投稿にピンを書いた** ── ' + JSON.stringify(mine96.pin));
     if (go96) go96();
     if (!mePins(mine96.id)) no('96: 答えが戻ってもピンになっていない');
+    /* 2. 古い形: 写しの投稿に pin が付いている、サーバーにはまだ無い。 */
+    sent96.length = 0; go96 = null;
+    ME.pin = ''; delete SET.pinUp; mine96.pin = 1;
+    mePinUp({ pin:null });
+    if (sent96.length !== 1 || sent96[0].pin !== mine96.sid)
+      no('96: 写しの古いピンが一度上がっていない ── ' + JSON.stringify(sent96));
+    if (go96) go96();
+    if (mine96.pin !== 1) no('96: **写しの pin を消した**（写す、消さない）');
+    ME.pin = ''; sent96.length = 0;
+    mePinUp({ pin:null });
+    if (sent96.length) no('96: **外したピンが写しから戻った** ── ' + JSON.stringify(sent96));
     netSend = real96;
     POSTS.splice(POSTS.indexOf(mine96), 1);
-    say('96: ピン留めは profile.pin ── 答えの後に動き、写しには書かない');
+    say('96: ピン留めは profile.pin ── 答えの後に動き、写しには書かず、古いピンは一度だけ写して上げる');
   }
 
   return out;
