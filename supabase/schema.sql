@@ -156,15 +156,10 @@ alter table profile add column if not exists admin boolean not null default fals
 -- What it does is one line in is_member() below, which every write policy in
 -- this file now asks.
 --
--- It used to stop the timeline and not the work. The line over it said
--- 「制作は好きにやらせればいいし、sns止められても作りたいやつは作るでしょ」 and
--- a frozen account went on writing its own language, because that was nobody
--- else's business. **OWNER DECISION 2026-08-26 replaced that**: asked directly
--- whether a frozen account may still edit its language, the answer was that it
--- may not. A language is handed to other people now -- it can be downloaded and
--- it can be put on a page anybody may open -- so "nobody else's business" is
--- not what a language is any more, and the sentence it rested on has gone with
--- it.
+-- The app does not stop a frozen account MAKING -- letters and words -- 「凍結
+-- 中も作れる」 OWNER 2026-09-28 (docs/FEATURE_RULES.md, the ten answers, 5).
+-- What this file stops is the server half, below: nothing a frozen account
+-- makes is written here while it is frozen.
 --
 -- A frozen account reads nothing and writes nothing. 「凍結したら読めない
 -- だろ」 OWNER 2026-09-28. is_member() is on every table (`frozen_out` at the
@@ -624,6 +619,15 @@ create table if not exists post (
   reply_to   uuid references post(id) on delete set null,
   created_at timestamptz not null default now()
 );
+
+-- WHICH OF THEIR POSTS SOMEBODY PUT AT THE TOP OF THEIR PAGE. One, or none.
+-- 「ピン留めはサーバーに持つ」 OWNER 2026-09-28: it was a field on this phone's
+-- copy of the post, so no other phone -- nobody else, and not a second phone
+-- of the same person -- ever saw it. A column of the profile because it is a
+-- fact about the page, read by whoever may read the page (profile_seen), and
+-- written the way the rest of the page is (profile_edit, which also says it
+-- is your own post). The post going takes the pin with it.
+alter table profile add column if not exists pin uuid references post(id) on delete set null;
 create index if not exists post_prompt_idx on post(prompt, created_at desc);
 create index if not exists post_author_idx on post(author, created_at desc);
 create index if not exists post_language_idx on post(language, created_at desc);
@@ -1821,7 +1825,10 @@ drop policy if exists profile_make on profile;
 create policy profile_make on profile for insert with check (is_member() and id = auth.uid());
 drop policy if exists profile_edit on profile;
 create policy profile_edit on profile for update using (is_member() and id = auth.uid())
-                                              with check (id = auth.uid());
+                                              with check (id = auth.uid()
+                                                -- a pin is one of your own posts (profile.pin)
+                                                and (pin is null or exists (select 1 from post x
+                                                      where x.id = pin and x.author = auth.uid())));
 
 -- language: who may read one is lang_readable() above, and nothing here says it
 -- again. Only the owner ever writes.
@@ -2258,6 +2265,8 @@ drop view if exists profile_seen cascade;
 create view profile_seen as
   select p.id, p.handle, p.display, p.av, p.bio, p.link, p.loc, p.banned_at,
          badge_of(p.id) as badge,
+         -- the post at the top of their page (profile.pin), for whoever reads it
+         p.pin,
          (select count(*) from follow f where f.follower = p.id) as fo,
          (select count(*) from follow f where f.followed = p.id) as fr,
          l.id                          as lang_id,
@@ -2401,8 +2410,7 @@ create view post_seen as
          --
          -- Counted here rather than by the phone because a phone can only
          -- count the reactions it was handed, and it is handed none.
-         (select count(*) from react r
-           where r.post = p.id and r.kind = 'like')  as likes,
+         n.likes,
          -- AND A QUOTE IS A REPOST. 「リツイートと同じ数の数え方で足して
          -- っていい」 OWNER 2026-09-26: the number beside the repost mark is
          -- the reposts and the quotes together, and no number of quotes on
@@ -2412,11 +2420,12 @@ create view post_seen as
          -- asked of `post` as the replies are just below, on the same terms:
          -- one taken down or kept to its author is not a repost anybody can
          -- open. Who reposted (react_seen) is still the `react` rows alone.
-         (select count(*) from react r
-           where r.post = p.id and r.kind = 'boost')
-       + (select count(*) from post q
-           where q.quote_of = p.id and q.hidden_at is null
-             and not post_private(q.body)) as boosts,
+         n.boosts,
+         -- AND WHAT 「話題」 IS ORDERED BY 「検索の話題は本当に並べる」 OWNER
+         -- 2026-09-28: the likes and the reposts together, the two numbers
+         -- drawn under the post. A column because the search asks for its
+         -- order here (`order=buzz.desc`) and an order is a column to PostgREST.
+         n.likes + n.boosts as buzz,
          -- A reply is a post, so this is the same question asked of the same
          -- table. Taken-down replies are not counted: a count that includes
          -- what nobody can open is a number with nothing behind it.
@@ -2438,6 +2447,17 @@ create view post_seen as
          -- out ask for it, and their own page does not.
          mute_hides(p.author) as muted
     from post p left join profile a on a.id = p.author
+    -- the two counts, each counted once, so `buzz` above is their sum and not
+    -- a third copy of them
+    cross join lateral (
+      select (select count(*) from react r
+               where r.post = p.id and r.kind = 'like') as likes,
+             (select count(*) from react r
+               where r.post = p.id and r.kind = 'boost')
+           + (select count(*) from post q
+               where q.quote_of = p.id and q.hidden_at is null
+                 and not post_private(q.body)) as boosts
+    ) n
    -- and a post kept to yourself is not a row for anybody else (post_private),
    -- and one by somebody the reader blocked is not a row for them (block_hides).
    where (not post_private(p.body) or p.author = auth.uid())
@@ -2724,6 +2744,25 @@ create policy block_make on block for insert
   with check (is_member() and actor = auth.uid());
 drop policy if exists block_drop on block;
 create policy block_drop on block for delete using (is_member() and actor = auth.uid());
+
+-- AND A BLOCK TAKES THE FOLLOWS WITH IT, BOTH WAYS, the moment it is made
+-- 「ブロックした時に両向きのフォローを外す（X と同じ）」 OWNER 2026-09-28.
+-- `security definer` because the follow the other person made is theirs, and
+-- no policy lets you delete somebody else's row; what this may do with that is
+-- its whole body -- the two rows between these two people, and nothing else.
+-- Lifting the block puts nothing back. DELETE REVIEW in docs/CHANGELOG.md.
+create or replace function block_unfollow() returns trigger
+language plpgsql security definer set search_path = public as $f$
+begin
+  delete from follow
+   where (follower = new.actor   and followed = new.blocked)
+      or (follower = new.blocked and followed = new.actor);
+  return null;
+end
+$f$;
+drop trigger if exists block_unfollow on block;
+create trigger block_unfollow after insert on block
+  for each row execute function block_unfollow();
 
 -- mute: YOURS and nobody else's, in every direction, for block's reason.
 drop policy if exists mute_read on mute;
@@ -4001,7 +4040,7 @@ create trigger profile_follows after insert on profile
 -- and a column not named here is a column nobody can write: a switch that
 -- cannot be written is a switch that is always on.
 revoke update on profile from authenticated;
-grant  update (handle, display, av, bio, link, loc, prefs, ed) on profile to authenticated;
+grant  update (handle, display, av, bio, link, loc, prefs, ed, pin) on profile to authenticated;
 
 -- And the same sentence about INSERT, which is not the same statement.
 --

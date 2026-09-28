@@ -738,6 +738,17 @@ const CASES = [
     `update post set body='{"x":1}'::jsonb where id='${P}'`],
   ['B cannot delete A\u2019s post',           'denied', B, 0,
     `delete from post where id='${P}'`],
+  /* THE PIN IS THE PAGE'S, ON THE SERVER 「ピン留めはサーバーに持つ」 OWNER
+     2026-09-28: one of your own posts, on your own row, and read by whoever
+     reads the page. */
+  ['A pins A\u2019s own post',                'ok',     A, 0,
+    `update profile set pin='${P}' where id='${A}' returning 1`],
+  ['and B reads it off A\u2019s page',        'ok',     B, 0,
+    `select 1 from profile_seen where id='${A}' and pin='${P}'`],
+  ['B cannot pin A\u2019s post on B\u2019s page', 'denied', B, 0,
+    `update profile set pin='${P}' where id='${B}'`],
+  ['nor put a pin on A\u2019s page',          'denied', B, 0,
+    `update profile set pin=null where id='${A}' returning 1`],
   ['nobody signed in reads nothing of the feed',         'denied',     B, 1, `select 1 from post`],
   ['nobody signed in posts',                  'denied', B, 1,
     `insert into post(author,body) values ('${B}','{}'::jsonb)`],
@@ -786,6 +797,13 @@ const CASES = [
      of BK and BD below, who exist for that alone. */
   ['B lifts B\u2019s own block',               'ok',     B, 0,
     `delete from block where actor='${B}' and blocked='${A}'`],
+  /* The block took B's follow of A with it (block_unfollow), and lifting it
+     puts nothing back -- so B follows A again, which the rest of this file
+     reads as there. */
+  ['and B\u2019s follow of A went with it',     'denied', B, 3,
+    `select 1 from follow where follower='${B}' and followed='${A}'`],
+  ['B follows A again',                       'ok',     B, 0,
+    `insert into follow(follower,followed) values ('${B}','${A}')`],
 
   /* --- a mute is yours, goes one way, and keeps nobody out --------------
      \u300c\u4eba\u3092\u30df\u30e5\u30fc\u30c8\u3067\u304d\u308b\u2026\uff08\u30d6\u30ed\u30c3\u30af\u3068\u306f\u5225\uff09\u300d OWNER 2026-09-25. B mutes A
@@ -862,12 +880,20 @@ const CASES = [
     `update post set quote_of='${P}' where author='${BD}' and quote_of='${BKP}'`],
   ['BD likes BK\u2019s post',                 'ok',     BD, 0,
     `insert into react(post,actor,kind) values ('${BKP}','${BD}','like')`],
+  /* 「話題」 is ordered by this (post_seen.buzz, OWNER 2026-09-28): the likes
+     and the reposts together, and on no row anything else. */
+  ['a post\u2019s 話題 is its likes and reposts', 'ok', B, 0,
+    `select 1 from post_seen where id='${BKP}' and buzz = likes + boosts and buzz > 0`],
+  ['and no row says otherwise',               'denied', B, 0,
+    `select 1 from post_seen where buzz is distinct from likes + boosts`],
   ['BD passes somebody else\u2019s post on',  'ok',     BD, 0,
     `insert into react(post,actor,kind) values ('${PA}','${BD}','boost')`],
   ['BD follows BK',                           'ok',     BD, 0,
     `insert into follow(follower,followed) values ('${BD}','${BK}')`],
   ['BK follows BD',                           'ok',     BK, 0,
     `insert into follow(follower,followed) values ('${BK}','${BD}')`],
+  ['B follows BK',                            'ok',     B, 0,
+    `insert into follow(follower,followed) values ('${B}','${BK}')`],
   ['BD makes a language',                     'ok',     BD, 0,
     `insert into language(id,owner,name) values ('${BDL}','${BD}','Blok')`],
   ['and publishes it',                        'ok',     BD, 0,
@@ -894,6 +920,16 @@ const CASES = [
     `select 1 from slice where language='${BDL}' and kind='words'`],
   ['BK blocks BD',                            'ok',     BK, 0,
     `insert into block(actor,blocked) values ('${BK}','${BD}')`],
+  /* AND THE BLOCK TOOK BOTH FOLLOWS WITH IT 「両向きのフォローを外す」 OWNER
+     2026-09-28. Asked as the service role, because what BK can READ of a
+     follow with BD is already nothing (block_hides) whether the row is there
+     or not -- a read as BK would be green with the trigger gone. */
+  ['a block takes BK’s follow of BD',   'denied', BK, 3,
+    `select 1 from follow where follower='${BK}' and followed='${BD}'`],
+  ['and BD’s follow of BK',             'denied', BK, 3,
+    `select 1 from follow where follower='${BD}' and followed='${BK}'`],
+  ['and nobody else’s follow of BK',    'ok',     BK, 3,
+    `select 1 from follow where followed='${BK}' and follower<>'${BD}'`],
   /* WHOM YOU HAVE BLOCKED, BY NAME, AND TO YOU ALONE. 「設定に追加して非表示
      リストとブロックリスト」 OWNER 2026-09-24: the list is where unblocking
      is, now that a blocked person's page is gone from both sides. */
@@ -936,9 +972,9 @@ const CASES = [
        and quote_of='e9400000-0000-4000-8000-0000000000e1' and quoted is null`],
   ['nor edit a post into an answer to BK',    'denied', BD, 0,
     `update post set reply_to='${BKP}' where id='${BDP}'`],
-  /* 「ブロックは絶対見えないように」 OWNER 2026-09-28: BD's own follow of BK,
-     made before the block, is not a row BD is handed either -- so it is not
-     one BD can reach to take off. It stays, and nobody sees it. */
+  /* 「ブロックは絶対見えないように」 OWNER 2026-09-28: BD's follow of BK
+     went with the block (block_unfollow), and a row that were there would not
+     be one BD is handed or can reach either. */
   ['BD does not see BD’s follow of BK',       'denied', BD, 0,
     `select 1 from follow where follower='${BD}' and followed='${BK}'`],
   ['nor reach it to take it off',             'denied', BD, 0,

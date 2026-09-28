@@ -1140,6 +1140,36 @@ say(gotRecent.indexOf(wantRecent) === 0,
     '履歴の一覧は recent_search を at の順で訊く ── 同じ関数、違う引数 (' +
     gotRecent + ')');
 
+/* ---- 話題は本当に並べる（オーナーの答え 3、2026-09-28） ------------------
+   並べ替えで「話題」を選ぶと、投稿の検索はいいねとリポストの合計
+   （post_seen.buzz）の順で訊き、続きはその順のまま何件目から、で訊く。
+   「新しい順」は今までどおり。赤を見た形: snsFind() が buzz を渡さないと赤。 */
+const sorted = await pg.evaluate(() => new Promise(function(done){
+  var out = {};
+  window.__MODE = 'ok';
+  snsSort = 'buzz'; window.__ASK = [];
+  snsFind('kanuko', function(r){
+    out.buzz = decodeURIComponent(window.__ASK.join('|'));
+    window.__ASK = []; snsHits = r; r.posts = [{ id:'x', at:Date.now() }]; r.end = false;
+    snsWordMore(function(){ return snsHits; });
+    setTimeout(function(){
+      out.more = decodeURIComponent(window.__ASK.join('|'));
+      snsSort = 'new'; window.__ASK = [];
+      snsFind('kanuko', function(){
+        out.fresh = decodeURIComponent(window.__ASK.join('|'));
+        snsMoreAsk = false; snsHits = null;
+        done(out);
+      });
+    }, 50);
+  });
+}));
+say(sorted.buzz.indexOf('order=buzz.desc,created_at.desc') !== -1,
+    '話題を選ぶと、投稿はいいねとリポストの順で訊く');
+say(sorted.more.indexOf('order=buzz.desc') !== -1 && sorted.more.indexOf('offset=1') !== -1,
+    '話題の続きは同じ順で、持っている数から訊く');
+say(sorted.fresh.indexOf('order=created_at.desc') !== -1 && sorted.fresh.indexOf('buzz') === -1,
+    '新しい順に戻せば新しい順で訊く');
+
 await br.close();
 console.log(bad.length ? '\nfind: FAILED ' + bad.length : '\nfind: 一つの箱に打てば人も投稿も出る。途中の言葉でも出て、出ていない投稿は出ない');
 process.exit(bad.length ? 1 : 0);

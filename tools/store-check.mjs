@@ -322,6 +322,7 @@ const FIELDS = {
      hand-over is gone (r79 -- 「オンラインのみ」 2026-09-04 and rule 22 over
      「次つながった時に更新される」) and nothing writes it; a phone that has it
      keeps it. What a phone that never handed over had is kept instead: */
+  pinUp:    { phone: 'whether this account has handed up, ONCE, the pin an older version kept on this phone\'s copy of a post (mePinUp, www/me.js) -- so a pin taken off later does not come back from the copy. The account\'s, under `lingua.set.<uid>`' },
   savedWas: { phone: 'the ☆ list a phone had before `saved_search` existed and never handed over, copied ONCE when the server\'s answer is written over `saved` -- read by nothing, removed by nothing (「読まない、消さない」 2026-09-03). The account\'s, under `lingua.set.<uid>`' },
   /* `plan`, `planWas`, `planV` and `planUid` STOOD HERE AND ARE GONE
      (2026-09-11). 「オンラインで 1 端末に 1 アカウント…段 ── 答えは全部

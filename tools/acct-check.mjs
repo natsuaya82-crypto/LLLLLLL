@@ -2925,23 +2925,18 @@ const R = await pg.evaluate(async () => {
      言っていない投稿ではそちらを読んでいました。だから**この端末が自分で
      出した数が、直しようもなく画面に残り**、別の端末は違う数を出します。
 
-     **2 は 2026-09-09 に上書きされました。**「Twitter もその仕様なはず。
-     ハート押して 1 つくやん？サーバー飛んでないならハートが消えるでいいん
-     じゃない？」OWNER。♡ は**押した瞬間に点いて数が 1 動き**、届かなければ
-     消えて数が戻ります。何も言いません。動くのは**画面だけ**で、端末の写し
-     には一バイトも書きません ── そこが 1 と喧嘩しない所です：写しは今も
-     読まれず、書かれず、「押したか」の二つ目の答えは端末に無い（`PMARK` は
-     走っているあいだのメモリで、答えが来た瞬間に消えます）。
+     ♡ も押す物の一つで、押したら星が回り、**答えが来てから**点いて数が動く
+     「↓のメーターと♡も星で」 OWNER 2026-09-28（先に点く形は差し替え）。
 
      五本訊きます:
      1. 写しの中の数は読まない ── `li:99 lime:true` を持つ投稿が 0 と空の心
-     2. 押した瞬間に♡が点いて数が 1 動く
+     2. 押した瞬間は♡も数も動かない
      3. 戻ってきたら、サーバーが数えた数になる（自分で足したままにしない）
-     4. 落ちたら押す前に戻る。そして写しの欄は書き換えも削除もされない
+     4. 落ちたら何も動かない。そして写しの欄は書き換えも削除もされない
      5. 押しているあいだも、端末の写しには何も書かれていない
 
-     赤を見た形（2026-09-09）: `postNLike()` に `: ((p && p.li)||0)` を戻すと
-     1 が赤（99 が出る）。`postLike()` を答え待ちの形に戻すと 2 が赤。 */
+     赤を見た形: `postNLike()` に `: ((p && p.li)||0)` を戻すと 1 が赤
+     （99 が出る）。`postLike()` を先に点く形に戻すと 2 が赤。 */
   start();
   netOut(); arrive(A);
   {
@@ -2976,9 +2971,9 @@ const R = await pg.evaluate(async () => {
     const atOnceN = postNLike(postById('q1')), atOnceI = postILike(postById('q1'));
     if (!sent.length || sent[0].indexOf('/rest/v1/react') < 0)
       no('62: 押しても react に行が出ていない — ' + JSON.stringify(sent));
-    if (atOnceN !== 1 || !atOnceI)
-      no('62: 押した瞬間に♡が点かず数も動かない — ' + atOnceN + '、' + atOnceI +
-         '（「ハート押して 1 つくやん？」OWNER 2026-09-09）');
+    if (atOnceN !== 0 || atOnceI)
+      no('62: **答えの前に♡が点いた** — ' + atOnceN + '、' + atOnceI +
+         '（「↓のメーターと♡も星で」OWNER 2026-09-28）');
     /* 押しているあいだも、端末の写しは触られていない。動くのは画面だけ。 */
     {
       const mid = postById('q1');
@@ -2997,7 +2992,7 @@ const R = await pg.evaluate(async () => {
     /* 落ちたとき。何も動かず、写しの欄も触られない。 */
     netSend = (m, path, body, tok, ok2, bad2) => { bad2(null, 0, 'down'); };
     netGet = (path, ok2) => ok2([]);
-    /* 落ちた♡は、押す前に戻る ── 数もサーバーの 12 のまま。 */
+    /* 落ちた♡は何も動かない ── 数もサーバーの 12 のまま。 */
     postLike('q1');
     {
       const f62 = postById('q1');
@@ -3015,8 +3010,8 @@ const R = await pg.evaluate(async () => {
 
     netSend = realSend62; netGet = realGet62;
     say('62: 投稿の数と自分が押したかはサーバーのもの ── 写しの数は読まず、' +
-        '♡は押した瞬間に点いて数が動き、戻ってきたらサーバーが数えた数になり、' +
-        '落ちれば押す前に戻る（写しには一バイトも書かない）');
+        '♡は答えが来てから点いてサーバーが数えた数になり、' +
+        '落ちれば何も動かない（写しには一バイトも書かない）');
   }
 
   /* ---- 63. 書記体系は言語のもの ------------------------------------------
@@ -5028,6 +5023,50 @@ const R = await pg.evaluate(async () => {
       no('94: A に戻ると A の数（6）のはず ── ' + SET.opened);
     window.Capacitor = wasCap;
     say('94: 評価のお願いは開いた五回目に一度、数はアカウントの物（A 6、B 1）');
+  }
+
+  /* ---- 96. ピン留めはサーバーの物（オーナーの答え 2、2026-09-28） -----------
+     1. 押すと profile へ PATCH {pin} が飛び、**答えが戻ってから** ME.pin が動く。
+        写しの投稿には一字も書かない。
+     2. 電話の写しにあった古いピンは、アカウントの行が来た時に一度だけ上がる。
+        写しの `pin` は消さない。一度上がれば、外した後に写しから戻らない。
+     赤を見た形: postPin() を写しに書く前の形に戻すと 1 が赤、mePinUp() の
+     SET.pinUp を立てないと 2 の三つ目が赤。 */
+  {
+    start();
+    netOut(); arrive(A);
+    const real96 = netSend, sent96 = [];
+    let go96 = null;
+    netSend = (method, path, body, tok, ok2) => {
+      if (method === 'PATCH' && /\/rest\/v1\/profile\?/.test(path)){
+        sent96.push(body || {}); go96 = () => ok2([body || {}]);
+      }
+    };
+    const mine96 = { id:'5a000000-0000-4000-8000-000000000096', sid:'5a000000-0000-4000-8000-000000000096',
+                     mine:true, at:Date.now(), hd:meHandle(), ln:'pin' };
+    POSTS.unshift(mine96);
+    ME.pin = '';
+    postPin(mine96.id);
+    if (!sent96.length || sent96[0].pin !== mine96.id)
+      no('96: ピン留めが profile へ上がっていない ── ' + JSON.stringify(sent96));
+    if (mePins(mine96.id)) no('96: 答えが戻る前にピンになっている');
+    if (mine96.pin !== undefined) no('96: **写しの投稿にピンを書いた** ── ' + JSON.stringify(mine96.pin));
+    if (go96) go96();
+    if (!mePins(mine96.id)) no('96: 答えが戻ってもピンになっていない');
+    /* 2. 古い形: 写しの投稿に pin が付いている、サーバーにはまだ無い。 */
+    sent96.length = 0; go96 = null;
+    ME.pin = ''; delete SET.pinUp; mine96.pin = 1;
+    mePinUp({ pin:null });
+    if (sent96.length !== 1 || sent96[0].pin !== mine96.sid)
+      no('96: 写しの古いピンが一度上がっていない ── ' + JSON.stringify(sent96));
+    if (go96) go96();
+    if (mine96.pin !== 1) no('96: **写しの pin を消した**（写す、消さない）');
+    ME.pin = ''; sent96.length = 0;
+    mePinUp({ pin:null });
+    if (sent96.length) no('96: **外したピンが写しから戻った** ── ' + JSON.stringify(sent96));
+    netSend = real96;
+    POSTS.splice(POSTS.indexOf(mine96), 1);
+    say('96: ピン留めは profile.pin ── 答えの後に動き、写しには書かず、古いピンは一度だけ写して上げる');
   }
 
   return out;

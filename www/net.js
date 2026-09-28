@@ -250,8 +250,8 @@ function netSpin(on){
   if(on && !el.firstChild) el.innerHTML='<div class="mk">'+ICON_PLUS+'</div>';
   if(on) el.className='netspin on'; else el.className='netspin';
 }
-function netSend(method, path, body, tok, ok, bad, up, prog){
-  netSend1(method, path, body, tok, ok, bad, {up:up, prog:prog}, true);
+function netSend(method, path, body, tok, ok, bad, up){
+  netSend1(method, path, body, tok, ok, bad, {up:up}, true);
 }
 /* ---- THE DOOR, AND IT IS THE ONLY THING THAT GOES OUT WITH NOBODY ON IT ---
    「サーバーは、サインインしていない人には何も返さない」 OWNER 2026-09-22.
@@ -293,9 +293,6 @@ function netDoor(path){
    deadline. `how` is what differs, and nothing else does:
 
      up     an upsert (PostgREST's merge-duplicates)
-     prog   how far an answer has come in, 0 to 1, or -1 where the server
-            did not say how long it is -- the one thing a ⭕ meter needs
-            (www/home.js § wldGet)
      mime   the body is BYTES (a Uint8Array) of this type, not JSON -- a jpeg
             sent as octet-stream comes back as a download, not a picture
      blob   the answer is bytes, handed to `ok` as a Blob
@@ -303,9 +300,9 @@ function netDoor(path){
             is not somebody waiting (§ NET_OUT), and dimming the screen for
             every photograph on a timeline is the app taking it from them */
 function netSend1(method, path, body, tok, ok, bad, how, may){
-  var up, prog;
+  var up;
   how=how || {};
-  up=!!how.up; prog=how.prog;
+  up=!!how.up;
   /* NOTHING GOES OUT WITH NOBODY ON IT.
      -----------------------------------------------------------------------
      It used to. The Authorization header below falls back to the anon key
@@ -415,7 +412,6 @@ function netSend1(method, path, body, tok, ok, bad, how, may){
        answer writes is the app's and not a person's. */
     slAsApp(bad, [d, x.status, netTag(path)+' '+x.status]);
   }
-  if(prog) x.onprogress=function(e){ prog((e && e.lengthComputable && e.total)? e.loaded/e.total : -1); };
   if(!how.quiet) netOn(x);
   x.send(how.mime? body : (body? JSON.stringify(body) : null));
 }
@@ -436,13 +432,13 @@ function netPost(path, body, tok, ok, bad){
    readers each turned it into `[]` for themselves, and three of them then took
    this account's languages off the phone as 「the server has none」
    (docs/reports/rule-audit-2026-09-27-core.md N4-N7). token-check 7e. */
-function netGet(path, ok, bad, prog){
+function netGet(path, ok, bad){
   netSend('GET', path, null, netTok(), function(d){
     if(!d || typeof d!=='object' || typeof d.length!=='number'){
       bad(d, 200, netTag(path)+' \u2260'); return;
     }
     ok(d);
-  }, bad, false, prog);
+  }, bad, false);
 }
 
 /* What Supabase says when it refuses, in the person's language where we have
@@ -733,11 +729,6 @@ function netTook(d){
     /* Every answer the server gave before this session arrived was
        forgotten by acctFor() above: a session arriving after nobody is
        always a switch, because nothing else empties SESS (netOut). */
-    /* AND WHAT THIS ACCOUNT WROTE THAT THE SERVER HAS NOT GOT, sent here and
-       nowhere else without a press -- the same door the language goes up at
-       (www/post.js § postUpAll). acctFor() above has just made POSTS this
-       account's own, so what is sent is this account's and nobody else's. */
-    if(typeof postUpAll==='function') postUpAll();
     LANG_WAIT=true;
     netLangSync(function(){
       if(typeof pullWait==='function') pullWait('mylangs', null, function(){
@@ -1011,7 +1002,7 @@ function netSetPass(pass, ok, bad){
 var NET_MINE_UID='';
 function netMyProfile(ok, bad){
   var uid=netUid();
-  netGet('/rest/v1/profile?select='+profCols()+',av,prefs,ed,staff,banned_at,banned_why,admin:profile_admin'+
+  netGet('/rest/v1/profile?select='+profCols()+',av,pin,prefs,ed,staff,banned_at,banned_why,admin:profile_admin'+
          '&limit=1&id=eq.'+encodeURIComponent(uid),
          function(d){
            /* A list, or netGet() has already said it is broken. */
@@ -1021,7 +1012,7 @@ function netMyProfile(ok, bad){
            /* NO ROW IS NOT AN EMPTY PROFILE -- an account whose row has not
               been made yet is not somebody whose line about themselves is
               blank, so nothing is written over the copy. */
-           if(p){ meProfGot(p); netPrefsGot(p.prefs); }
+           if(p){ meProfGot(p); netPrefsGot(p.prefs); mePinUp(p); }
            netStaffGot(p);
            render();
            ok(p);
@@ -1929,7 +1920,7 @@ function netInList(xs){
    for always. The body is put on the answer ONLY where it was asked for --
    「訊かなかった中身」 and 「空の中身」 are two states and must not share a
    branch (docs/DATA_SAFETY.md rule 3). */
-function netSlices(sid, ok, bad, kinds, cols, prog){
+function netSlices(sid, ok, bad, kinds, cols){
   netGet('/rest/v1/slice?select='+(cols || 'kind,body,no,at,ed')+
          '&language=eq.'+encodeURIComponent(sid)+
          ((kinds && kinds.length)
@@ -1945,7 +1936,7 @@ function netSlices(sid, ok, bad, kinds, cols, prog){
         if(r.body!==undefined && r.body!==null) out[r.kind].body=String(r.body);
       }
       ok(out);
-    }, bad, prog);
+    }, bad);
 }
 /* EVERY LANGUAGE THIS ACCOUNT HAS, BROUGHT DOWN TO THE PHONE.
    -------------------------------------------------------------------------
@@ -3605,7 +3596,7 @@ function netLike(q){
    for them: one person by handle, and many people at once. A `select=` written
    out twice is two lists that come to differ, and the one that differs is the
    one nobody is looking at. */
-var NET_WHO_SEL='/rest/v1/profile_seen?select=id,handle,display,av,bio,link,loc,banned_at,fo,fr,lang_id,lang_name,lang_pub,badge';
+var NET_WHO_SEL='/rest/v1/profile_seen?select=id,handle,display,av,bio,link,loc,banned_at,fo,fr,lang_id,lang_name,lang_pub,badge,pin';
 /* And one place turns a row into a person, for the same reason. */
 /* THE LANGUAGE IS ON THE ROW AND IS NOT A SECOND REQUEST.
    「なんか全体的に遅くない？」 OWNER 2026-09-08 (143). It used to be
@@ -3629,6 +3620,8 @@ function netWhoRow(r){
           fo:(r.fo===undefined || r.fo===null)? undefined : (Number(r.fo)||0),
           fr:(r.fr===undefined || r.fr===null)? undefined : (Number(r.fr)||0),
           out:!!r.banned_at,
+          /* the post at the top of their page (profile.pin), '' for none */
+          pin:String(r.pin||''),
           /* the account's uuid, which somebody's posts are keyed on */
           uid:String(r.id||'')}, r);
 }
@@ -3853,7 +3846,7 @@ function netPostsBy(uid, ok, bad, more){
       ok(out);
     }, bad);
 }
-function netFindPosts(q, ok, bad, more){
+function netFindPosts(q, ok, bad, more, buzz){
   var like=netLike(q),
       /* AND THE FRAME, WHICH IS WHERE A TAG IS NOW.
          「#はべつで」 OWNER 2026-09-15 -- a tag written today is in
@@ -3873,15 +3866,21 @@ function netFindPosts(q, ok, bad, more){
          what the mark is. Somebody who typed no `#` is unaffected -- there
          is nothing to take off. */
       tlike=netLike(tagBare(q));
-  /* `more` is the `at` of the last post already held. Keyset and not an
-     offset for the reason netFeed()'s is: posts are written while somebody
-     is reading, and an offset walked over a list that has grown hands back
-     one they have already read, or steps over one they have not. */
+  /* NEWEST FIRST, `more` is the `at` of the last post already held. Keyset
+     and not an offset for the reason netFeed()'s is: posts are written while
+     somebody is reading, and an offset walked over a list that has grown
+     hands back one they have already read, or steps over one they have not.
+
+     「話題」 (`buzz`) is ordered by the likes and the reposts together
+     (post_seen.buzz) 「検索の話題は本当に並べる」 OWNER 2026-09-28, and a
+     count is not a place to carry on from -- it moves under the reader -- so
+     there `more` is how many are already held. */
   netGet(NET_POST_SEL+
          '&or=(body->>ln.ilike.'+like+',body->>mn.ilike.'+like+
          ',body->>lname.ilike.'+like+',body->>tags.ilike.'+tlike+')'+NET_UNMUTED+
-         '&order=created_at.desc'+
-         (more? '&created_at=lt.'+encodeURIComponent(String(more)) : '')+
+         (buzz? '&order=buzz.desc,created_at.desc'+(more? '&offset='+(Number(more)||0) : '')
+              : '&order=created_at.desc'+
+                (more? '&created_at=lt.'+encodeURIComponent(String(more)) : ''))+
          '&limit='+NET_PAGE,
     function(d){
       var out=[], i;

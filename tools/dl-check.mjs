@@ -738,6 +738,11 @@ const gone = await pg.evaluate(async ({ s }) => {
   SRV.down = true;
   var hitsWas = SRV.hits.length;
   if (delIn(sid)) delIn(sid).click();
+  /* IT ASKS FIRST 「消す前はいつも確認」 OWNER 2026-09-28: the question is up
+     and nothing has gone to the server yet. */
+  await wait(40);
+  out.asked = !!POP_YES && SRV.hits.length === hitsWas;
+  popYes();
   await wait(160);
   SRV.down = false;
   out.downTried = SRV.hits.length > hitsWas;
@@ -750,6 +755,7 @@ const gone = await pg.evaluate(async ({ s }) => {
   swipe(sid);
   SRV.hits = [];
   if (delIn(sid)) delIn(sid).click();
+  popYes();
   await wait(200);
   out.deletes = SRV.hits.filter(function(h){ return h.indexOf('DELETE ') === 0; });
   out.row = !!LANGS[sid];
@@ -777,6 +783,8 @@ say(gone.theirsHasRow && gone.mineHasNoRow,
     JSON.stringify(gone.saw));
 say(gone.shutAtFirst && gone.swiped && gone.openNow && gone.delUp,
     'and a thumb dragged left across it opens it, with the 「−」 at the right end');
+say(gone.asked,
+    'pressing 「−」 asks first, and nothing goes to the server while it asks');
 say(gone.downTried && gone.downKeptRow && gone.downKeptSlice !== null &&
     gone.downKeptTake === gone.dlBefore,
     'a DELETE that does not land takes NOTHING — the row, the slice and the ' +

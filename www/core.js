@@ -1805,9 +1805,9 @@ function langOpen(id){
      next thing a person saves in that slice. */
   slAsApp(langSaveAll, []);
   langId=id; langStore();
-  /* LANG_IO is the list; ltStart(), migrateKbFree() and migratePostInk() are
-     not reads and stay -- one tops a free language up, two bring an older
-     shape forward. */
+  /* LANG_IO is the list; ltStart() and migrateKbFree() are not reads and
+     stay -- one tops a free language up, the other brings an older shape
+     forward. */
   langLoad();
   slAsApp(migrateAll, []);
   /* and where you were standing in the old one is not a place in this one:
@@ -1943,7 +1943,6 @@ function migrateAll(){
   migrateSndName();
   migrateSnd();
   migratePosts();
-  migratePostInk();
   /* and what the language is for, off the phone and into the language */
   migrateWorld();
   /* and the word order and the three positions a person chose when they were

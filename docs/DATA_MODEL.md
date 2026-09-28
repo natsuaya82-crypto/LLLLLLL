@@ -741,8 +741,7 @@ writer's language:
 (`postInkOf()` makes it when the post is sent; an edit keeps the ink it was written with while the line is the same), for the reason
 `dir` is: the reader has neither the writer's language nor its settings, and
 the writer's own old posts must not move when they change it. **Absent means
-1** — every post written before 2026-09-23, and every post whose ink was cut by
-`migratePostInk()`, stood one step apart. `postSide()` is the one place below
+1** — every post written before 2026-09-23 stood one step apart. `postSide()` is the one place below
 the line that reads it. It travels inside `body` (jsonb) with the rest of the
 ink; the server's shape did not change.
 
@@ -770,11 +769,10 @@ every letter and deletes the word it was written with**, and asks what
 
 ### Posts without ink
 
-`migratePostInk()` cuts ink onto posts one language at a time, as each is
-opened, because a post can only be cut with the alphabet it was written in. A
-post not yet cut has no ink and is drawn as its **text** — on the timeline and
-on the card, whoever wrote it (`CLAUDE.md` rule 12). A post from the server with
-no ink is never re-cut here.
+Nothing cuts ink onto a post after it was written: today's alphabet is not the
+one it was written in 「古い投稿を今の字で切らない」 OWNER 2026-09-28. A post
+with no ink is drawn as its **text** — on the timeline and on the card, whoever
+wrote it (`CLAUDE.md` rule 12).
 
 ### A photograph, and why there is a ceiling
 

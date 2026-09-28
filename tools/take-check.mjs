@@ -51,7 +51,8 @@ const r = await pg.evaluate(({ s }) => {
     render();
   }
   /* What each chapter's row IS, off the page: a button carrying ↓, a row
-     that is busy, or a row that says it is taken. */
+     that is busy (which nothing draws any more, and is asked so), or a row
+     that says it is taken. */
   function rows(){
     var o = {}, n = document.querySelectorAll('#app .set'), i, b, sv;
     for(i = 0; i < n.length; i++){
@@ -150,8 +151,10 @@ const say = (ok, what, got) => {
   if (!ok) bad++;
 };
 say(r.before.letters === 'dl', '1 before the press the chapter is a ↓', r.before);
-say(Object.values(r.going).indexOf('wait') !== -1 && r.going.kb === 'dl',
-    '2 pressed, that chapter turns while the put is out -- and only that one', r.going);
+say(Object.values(r.going).indexOf('wait') === -1 && r.going.kb === 'dl' &&
+    Object.values(r.going).indexOf('took') === -1,
+    '2 pressed, no row draws a mark of its own while it is out -- the star is ' +
+    'the one mark (OWNER 2026-09-28, spin-check)', r.going);
 say(Object.values(r.done).indexOf('took') !== -1 && r.done.kb === 'dl',
     '3 the server said so: ⭕☑️ on that chapter, ↓ on the one not taken', r.done);
 say(r.refused.letters === 'dl' && r.refusedSaid.length === 1,

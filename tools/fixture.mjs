@@ -379,9 +379,10 @@ export function seed(){
      app's own road rather than by writing letter ids down here, which would
      be a second answer to which letter writes `k`. */
   var __kano=findWord('kano'); if(__kano) __kano.sp=spType(__kano.hw);
-  /* and the ink for the post that is this person's own, for the same reason:
-     boot.js cut what it could before this file put these posts here. */
-  migratePostInk();
+  /* and the ink for the post that is this person's own, as it would have
+     been put on it the moment it was written (postInkOf) -- nothing in the
+     app cuts an older post afterwards (OWNER 2026-09-28). */
+  for (const p of POSTS) if (p.mine && p.ink === undefined && p.lang === langId) p.ink = postInk(p.ln);
   STG = {done:{}, notes:{gr:'x'}, set:{}, extra:[],
          /* Under 挨拶 rather than 否定: the 否定 stage is gone (「重複はいらない」
             OWNER 2026-09-06) and a rule and an example filed under a stage
@@ -1199,30 +1200,13 @@ export function halfDone(){
        const h=vAbout();
        ABOPEN.wlddl = was;
        return h; }],
-    /* THE ↓ WHILE THE CHAPTER COMES DOWN, AND ONCE THE SERVER SAYS IT IS TAKEN.
-       「↓を押したら⭕️でダウンロード状況表示。ダウンロードしてる言語は⭕️☑️」
-       「ダウンロードは普通⭕️のメーターだろ」 OWNER 2026-09-23 -- www/home.js
-       § wldTakeOf, iconMeter. WLD_TAKING is how far the chapter has come, 0 to
-       1, or -1 where the server gave no length (the circle turns). Taken is
-       the SERVER's two answers (the owner is somebody else, a `language_take`
-       row is this account's) and the chapter in what is loaded; all three are
-       pushed here because no check has a network. */
-    ['somebody else\u2019s language page, a download going', () => {
-       const lid = __seenLang();
-       const was = ABOPEN.wlddl;
-       ABOPEN.wlddl = true; WLD_TAKING[lid + '|letters'] = 0.4;
-       window.route='about'; NAV=[{ r:'about', a:lid }];
-       const h=vAbout();
-       delete WLD_TAKING[lid + '|letters']; ABOPEN.wlddl = was;
-       return h; }],
-    ['somebody else\u2019s language page, a download going with no length', () => {
-       const lid = __seenLang();
-       const was = ABOPEN.wlddl;
-       ABOPEN.wlddl = true; WLD_TAKING[lid + '|letters'] = -1;
-       window.route='about'; NAV=[{ r:'about', a:lid }];
-       const h=vAbout();
-       delete WLD_TAKING[lid + '|letters']; ABOPEN.wlddl = was;
-       return h; }],
+    /* THE CHAPTER ONCE THE SERVER SAYS IT IS TAKEN, ⭕☑️.
+       「ダウンロードしてる言語は⭕️☑️」 OWNER 2026-09-23 -- www/home.js
+       § wldTakeOf. Taken is the SERVER's two answers (the owner is somebody
+       else, a `language_take` row is this account's) and the chapter in what
+       is loaded; all three are pushed here because no check has a network.
+       While it comes down it is the star over the screen (OWNER 2026-09-28),
+       which spin-check holds. */
     ['somebody else\u2019s language page, taken', () => {
        const lid = __seenLang();
        const was = ABOPEN.wlddl;
@@ -1556,9 +1540,9 @@ export function halfDone(){
     ['what an author can do to a post', () => { PMENU = 'p1';
                               window.route='feed'; NAV=[{r:'feed'}];
                               const h = vFeed(); PMENU = ''; return h; }],
-    ['and the same, already pinned',    () => { const p = postById('p1'); p.pin = 1;
+    ['and the same, already pinned',    () => { ME.pin = 'p1';
                               PMENU = 'p1'; window.route='feed'; NAV=[{r:'feed'}];
-                              const h = vFeed(); delete p.pin; PMENU = ''; return h; }],
+                              const h = vFeed(); ME.pin = ''; PMENU = ''; return h; }],
     /* And the OTHER menu, which is a different menu: on somebody else's post
        what you can do is about them, not about it. `p2` is Iri's.
 
@@ -1675,6 +1659,20 @@ export function halfDone(){
        comes back and an account comes back; a report row that has gone has
        gone, so the word on the button that does it is the word for what it
        does rather than 「はい」. */
+    /* The keyboard's bin on a row and on a column, and giving a taken
+       language back: each asks first (OWNER 2026-09-28). */
+    ['a keyboard row being deleted, asking', () => {
+        popAsk(t('kb.cut.q.r'), function(){}, t('pop.yes'));
+        const h = document.getElementById('pop').outerHTML;
+        popOff(); return h; }],
+    ['a keyboard column being deleted, asking', () => {
+        popAsk(t('kb.cut.q.c'), function(){}, t('pop.yes'));
+        const h = document.getElementById('pop').outerHTML;
+        popOff(); return h; }],
+    ['a taken language being given back, asking', () => {
+        popAsk(t('confirm.del', 'Borrowed'), function(){}, t('pop.yes'));
+        const h = document.getElementById('pop').outerHTML;
+        popOff(); return h; }],
     ['a report being deleted, asking', () => {
         popAsk(t('mod.drop.sure'), function(){}, t('mod.drop.yes'));
         const h = document.getElementById('pop').outerHTML;
@@ -1951,6 +1949,20 @@ export function halfDone(){
         const h = vForm(); PW = pwBlank(); return h; }],
     ['the composer, replying to somebody', () => {
         PW = pwBlank(); PW.to = 'p1'; openPost('reply');
+        const h = vForm(); PW = pwBlank(); return h; }],
+    /* A post that would not send: the composer as it was typed, and the
+       sentence that says so (www/post.js § pwSendPost, OWNER 2026-09-28) --
+       nothing kept, nothing moved. */
+    ['the composer, after a post that would not send', () => {
+        PW = pwBlank(); openPost('new'); pwSetLn('kano tir');
+        FORM.html = pwHTML(); toast(t('post.send.no'));
+        const h = vForm(); PW = pwBlank(); return h; }],
+    /* and a photograph whose letters would not go on it: the send stops and
+       says so (www/post.js § pwBake, OWNER 2026-09-28) */
+    ['the composer, after a photograph\u2019s letters would not go on', () => {
+        PW = pwBlank(); openPost('new'); pwSetLn('kano tir');
+        pwPics().push({ u: POSTS[0].pic, marks: [] });
+        FORM.html = pwHTML(); toast(t('net.failed'));
         const h = vForm(); PW = pwBlank(); return h; }],
     /* and with the meaning switched off: the switch alone at the end of the
        meaning's row (www/post.js § pwHTML, r97) */
@@ -2321,11 +2333,11 @@ export function halfDone(){
                           window.__fixPic(900, 900), window.__fixPic(1200, 500)]});
         window.route='photo'; NAV=[{r:'feed'},{r:'photo', a:'pm:1'}];
         const h = vPhoto(); POSTS.pop(); return h; }],
-    /* A pinned post in the timeline: the mark beside the time only exists on
-       one, and a walk over a timeline where nothing is pinned never draws it. */
-    ['a pinned post', () => { const p = postById('p1'); p.pin = 1;
-                              window.route='feed'; NAV=[{r:'feed'}];
-                              const h = vFeed(); delete p.pin; return h; }],
+    /* A pinned post on its author's page (profile.pin): the mark beside the
+       time only exists on one, and a page where nothing is pinned never draws it. */
+    ['a pinned post', () => { ME.pin = 'p1';
+                              window.route='profile'; NAV=[{r:'profile'}];
+                              const h = vProfile(); ME.pin = ''; return h; }],
     /* A post being written, with a photograph already chosen. The button that
        takes it off and the one that changes it only exist once there is one,
        so a composer opened empty draws neither. The data URL is a real 1x1
@@ -2411,15 +2423,6 @@ export function halfDone(){
        その「同じ」を撮れる状態がどこにも無かった：縦書きの面は新規だけ、
        返信の面は横書きだけで、二つが交わる所を歩いたものが無い。
        OWNER 実機 142 の二つ目はここのことなので、ここに置く。 */
-    /* ♡ を押した瞬間 ── 答えが戻る前の画面。「ハート押して 1 つくやん？」
-       OWNER 2026-09-09。走っているあいだのメモリ（`PMARK`）だけの状態なので、
-       種にも写しにも無く、どの面も歩いていませんでした。素の `feed` が
-       押す前で、これが押した直後です。 */
-    ['a post whose \u2661 has just been pressed', () => {
-        const p = POSTS[0], k = String(p.id) + '|like';
-        PMARK[k] = { i: true, n: postNLike(p) + 1 };
-        window.route = 'feed'; NAV = [{ r:'feed' }];
-        const h = vFeed(); delete PMARK[k]; return h; }],
     /* A POST THAT NAMED SOMEBODY AND ANSWERS NOTHING. 「@したらもう勝手に
        ツイートがこの形式になるようにしたい」 OWNER 2026-09-07 ── `toh` は
        載っていて `to` は無い、という組み合わせがどの面にも無かった。返信は
@@ -2806,7 +2809,7 @@ export function halfDone(){
                                                   kbAdd('qwerty'); kbAdd('flick');
                                                   kbGoBoard(2); render();
                                                   kbDropGo(1); render();
-                                                  KBH = { k:'r', r:0, i:0 }; kbCut();
+                                                  KBH = { k:'r', r:0, i:0 }; kbCut(); popYes();
                                                   const h = vKb();
                                                   KEEP = {}; KB = null; kbShow = 0;
                                                   planGot('free'); return h; }],
@@ -2860,7 +2863,7 @@ export function halfDone(){
        and this face is about the two answers it gives when there IS room. */
     ['a row selected, asking where a new one goes', () => { planGot('pro'); KB = null; kbShow = 0;
                                                kbAdd('qwerty'); kbLay = 0;
-                                               kbHeadRow(0); kbCut();
+                                               kbHeadRow(0); kbCut(); popYes();
                                                kbHeadRow(1); kbInsAsk();
                                                const h = vKb();
                                                KBH = null; KB = null; kbShow = 0; kbLay = 0;
@@ -2907,7 +2910,7 @@ export function halfDone(){
        thing that puts it up. */
     ['an empty frame of the keyboard selected', () => { planGot('pro'); KB = null; kbShow = 0;
                                                   kbAdd('qwerty'); kbLay = 0;
-                                                  kbHeadCol(0); kbCut();
+                                                  kbHeadCol(0); kbCut(); popYes();
                                                   kbCellSel(0, 0, 1);
                                                   const h = vKb();
                                                   KBH = null; KB = null; kbShow = 0; kbLay = 0;
@@ -2962,7 +2965,7 @@ export function halfDone(){
        with no slack is not offered a + at all. 「最大になったら+はなし」 */
     ['a column selected, asking where a new one goes', () => { planGot('pro'); KB = null; kbShow = 0;
                                                   kbAdd('qwerty'); kbLay = 0;
-                                                  kbHeadCol(0); kbCut();
+                                                  kbHeadCol(0); kbCut(); popYes();
                                                   kbHeadCol(2); kbInsAsk();
                                                   const h = vKb();
                                                   KBH = null; KB = null; kbShow = 0; kbLay = 0;
