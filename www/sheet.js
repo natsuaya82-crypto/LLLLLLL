@@ -224,7 +224,6 @@ function shSheet(names, pics){
   add('<< /Type /Catalog /Pages 2 0 R >>');
   add('');
   add('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>');
-  var gid = add('<< /Type /ExtGState /ca 0.14 >>');     /* the faint guide */
   for (i = 0; i < pages; i++){
     count = Math.min(per, n - i * per);
     bits = shPack(names.slice(i * per, i * per + count));
@@ -242,8 +241,7 @@ function shSheet(names, pics){
     body = shPageOps(i * per, count, mine, bits, i, pages);
     cid = add('<< /Length ' + body.length + ' >>\nstream\n' + body + '\nendstream');
     pid = add('<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ' + shNum(SH_W) + ' ' +
-              shNum(SH_H) + '] /Resources << /Font << /F1 3 0 R >> /ExtGState << /G1 ' +
-              gid + ' 0 R >>' + (ims.length ? ' /XObject << ' + ims.join(' ') + ' >>' : '') +
+              shNum(SH_H) + '] /Resources << /Font << /F1 3 0 R >>' + (ims.length ? ' /XObject << ' + ims.join(' ') + ' >>' : '') +
               ' >> /Contents ' + cid + ' 0 R >>');
     kids.push(pid + ' 0 R');
   }
