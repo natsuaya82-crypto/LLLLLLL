@@ -536,7 +536,7 @@ function mePicAsk(){
     if(i===0) mePicPick();
     else if(i===1) meDropPic();
     /* -1 is somebody changing their mind, and nothing is said about it. */
-  })['catch'](function(){ mePicFile(); });
+  })['catch'](function(){ toast(t('me.pic.bad')); });
 }
 /* The phone's own library. Same call the composer makes (pwPickLib), same
    answer: `b64` is the picture, without the data URL on the front, and

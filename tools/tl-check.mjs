@@ -1156,6 +1156,21 @@ const au = await pg.evaluate(() => {
   return out;
 });
 
+/* a10: the native question falling over is 「写真を扱えませんでした」, not the
+   file input -- which is iOS's photo / camera / file sheet, the one the owner
+   took off on 2026-09-03. */
+au.a10 = await pg.evaluate(async () => {
+  const sp = window.sharePlug, f = window.mePicFile, tt = window.toast;
+  let file = 0, said = '';
+  window.sharePlug = function () { return function () { return Promise.reject(new Error('x')); }; };
+  window.mePicFile = function () { file++; };
+  window.toast = function (m) { said = m; };
+  mePicAsk();
+  await new Promise((r) => setTimeout(r, 30));
+  window.sharePlug = sp; window.mePicFile = f; window.toast = tt;
+  return JSON.stringify({ file:file, said:said === t('me.pic.bad') });
+});
+
 const fails = [];
 const say = (m) => fails.push(m);
 if (!au.a2door)
@@ -1177,6 +1192,8 @@ if (au.a8 !== JSON.stringify({ name:true, done:false }))
 if (au.a9 !== JSON.stringify({ none:null, av:{ ch:'B' }, pic:'u/p.jpg' }))
   say('a9: the face after the server\u2019s answer is ' + au.a9 + ' -- no face in the answer is no face, ' +
       'and a photograph\u2019s row carries the letter face beside it.');
+if (au.a10 !== JSON.stringify({ file:0, said:true }))
+  say('a10: the photo question falling over did ' + au.a10 + ' -- it says it could not, and does not open the file input.');
 if (!au.a3)
   say('a3: a word pressed while another word\u2019s answer is on the screen draws that old answer or ' +
       '「No results」 until its own lands. Not answered yet is the waiting mark.');
