@@ -156,15 +156,10 @@ alter table profile add column if not exists admin boolean not null default fals
 -- What it does is one line in is_member() below, which every write policy in
 -- this file now asks.
 --
--- It used to stop the timeline and not the work. The line over it said
--- 「制作は好きにやらせればいいし、sns止められても作りたいやつは作るでしょ」 and
--- a frozen account went on writing its own language, because that was nobody
--- else's business. **OWNER DECISION 2026-08-26 replaced that**: asked directly
--- whether a frozen account may still edit its language, the answer was that it
--- may not. A language is handed to other people now -- it can be downloaded and
--- it can be put on a page anybody may open -- so "nobody else's business" is
--- not what a language is any more, and the sentence it rested on has gone with
--- it.
+-- The app does not stop a frozen account MAKING -- letters and words -- 「凍結
+-- 中も作れる」 OWNER 2026-09-28 (docs/FEATURE_RULES.md, the ten answers, 5).
+-- What this file stops is the server half, below: nothing a frozen account
+-- makes is written here while it is frozen.
 --
 -- A frozen account reads nothing and writes nothing. 「凍結したら読めない
 -- だろ」 OWNER 2026-09-28. is_member() is on every table (`frozen_out` at the
