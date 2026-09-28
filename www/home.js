@@ -7,9 +7,6 @@
       The chapter names stay in Cinzel English everywhere, the way a book
       keeps its own typography; only the contents rows follow the locale.
    ========================================================================= */
-/* The one thing worth doing next, given where this language currently stands.
-   Without it the contents page is a list of rooms with no reason to enter any. */
-
 /* Free accounts hit a ceiling; saying so before they reach it reads as
    information rather than as an interruption. */
 function capBanner(){
@@ -113,9 +110,6 @@ function tocRows(){
    Writing system. The map is sound -> {ch}; an entry can later carry {svg}
    from the drawing tool without any reader here needing to change.
    ========================================================================= */
-/* Sound -> character. The sound is the key because a sound is what a word is
-   made of; the character is the clothing you setPlan for it. An entry is a
-   plain string today and can become {ch, svg} when glyphs can be drawn. */
 /* Which borrowed character writes this unit. It used to be a lookup in a map
    of unit -> character; it is now a question about the letter that writes the
    unit, because a character is one of the two shapes a letter can have. */
@@ -150,9 +144,6 @@ function scriptOn(){ return !!SET.showScript && scriptHave()>0; }
    your own letters are showing, the word stays the word — the font draws it. */
 function wOut(word){ return (scriptOn() && !myFontOn()) ? inScript(word) : String(word||''); }
 
-/* Which sound the picker is currently open for. */
-/* Both pickers use the sheet the app already has: it is sized to the phone
-   column, scrolls on its own, and leaves the page underneath untouched. */
 /* ---- a form is a page --------------------------------------------------
    Everything you fill in used to slide up from the bottom over the screen you
    were on: a word, a note, a stage's word, the piece of sound a grammar
@@ -574,7 +565,6 @@ function pkKeepSave(lid, v){
   ltSetChar(lid, String(v.hasOwnProperty('ch')? v.ch : ''));
   SET.showScript=true; save(); netPrefsPut(); installScriptFont();
 }
-/* Characters already spoken for, so the palette can grey them out. */
 /* Characters already spoken for, so the palette can grey them out. Two
    letters may not wear the same borrowed character; there would be no way to
    tell them apart on the page. */
@@ -584,22 +574,6 @@ function chTaken(){
   return o;
 }
 
-/* One sound as a small tile: the character it wears above, the sound below.
-   Tapping opens the picker in the sheet rather than growing the page. */
-/* ---- the three roots -------------------------------------------------
-   One screen used to be the cover and the contents and the recent work all
-   at once, and it scrolled -- so the name of your language slid off the top
-   of the first thing you saw. Three now, one per tab.
-
-   HOME is the cover. It does not scroll: 「ホームもスクロールさせるな固定させて
-   くれ」. The name, what state the language is in, and the one thing to do
-   next.
-
-   BUILD is the old contents -- 「今の目次画面が制作画面になる」.
-
-   FIND is search across the whole language and bringing other people's work
-   in. It is where a public gallery goes when there is one; until then it is
-   already the fastest way into a word, which is what it is for. */
 /* Who you are, and then what you are making. It carried neither: a card,
    and under it a cover with the language's name set like a title page, a
    line about what it is for, two counts, a card telling you what to do
@@ -785,8 +759,8 @@ function vProfile(){
     '</div>';
 }
 
-/* The contents, in the order the work happens: you setPlan sounds, you give
-   them letters, and then there is something a word can be made of. */
+/* The contents, in the order the work happens: sounds, then the letters that
+   write them, and then there is something a word can be made of. */
 function vBuild(){
 
   return '<div class="view">'+
@@ -816,14 +790,14 @@ function vBuild(){
        everything else of theirs is. 「制作のところに設定ボタンはいらない」 */
     '</div></div>';
 }
-/* ---- the search tab ---------------------------------------------------
+/* ---- search, from the contents' bar (vBuild) -------------------------
    「なんで下タブはsns用に作ったのにそれすら存在しないゴミデータなの？」
 
-   He is right and it was indefensible. This screen opened on an empty box
+   The owner was right and it was indefensible. This screen opened on an empty box
    headed "everything you have made" with nothing inside it, and a dashed
    card headed "other people's languages" saying "not open yet" -- a heading
-   with no content and a promise with no date, taking up a third of a tab
-   that the bottom bar sends you to. A tab has to be worth arriving at.
+   with no content and a promise with no date, taking up a third of the
+   screen. A screen has to be worth arriving at.
 
    It is worth arriving at when it can do something no other screen can. Two
    things only this one does:
@@ -1020,7 +994,8 @@ function fSetQ(v){ fq=v; if(v) fpick=null; lnGrow('f-q'); findPaint(); }
    and the sounds are. It used to be SET.world -- the PERSON's settings --
    directly under a comment saying it travels with the language, which it did
    not: it was one answer per phone shown on every language's cover, and it
-   was in no backup, because a backup is SLICES and SET is not a slice.
+   never reached the server, because what goes up is SLICES and SET is not
+   a slice.
 
    The old one is read once and copied in, and it is left exactly where it
    is. That is langMigrate()'s rule and it is here for langMigrate()'s
@@ -1039,10 +1014,9 @@ function wldRead(){
    is a worse lie than the one being fixed -- and it is what the first version
    of this did. SET.wldMoved is the mark that it has happened.
 
-   It runs from boot.js beside the other migrations rather than from wldRead()
-   at load, because saving touches the backup and backup.js is loaded after
-   this file: called at load it threw, and the world was never written down
-   at all. */
+   It runs from migrateAll() (www/core.js) with the other migrations rather
+   than from wldRead() at load: called at load it threw, and the world was
+   never written down at all. */
 function migrateWorld(){
   var o=SET.world, k, got=false;
   if(SET.wldMoved || !o || typeof o!=='object') return;
@@ -1120,11 +1094,11 @@ function wldKeepOn(){
   if(langLocked()) return;
   keepOn(keepKeyOf('world', ''), wldNow, wldKeepSave);
 }
-/* `v` is what was TYPED and not written down -- the rows and the sections
-   themselves are already on the language by the time the button is gold, the
-   way a keyboard's layout is (www/keyboard.js § kbKeepSave). `dl` and the
-   section titles are in wldNow() so that the button lights for them, and are
-   not written here because there is nothing left to write. */
+/* `v` is what was TYPED. The rows and the sections pressed on this face are
+   the page's draft in memory (langWrites() says no while keepDrafting(),
+   www/core.js), and saveWld() below writes them with it -- the way a
+   keyboard's layout is (www/keyboard.js § kbKeepSave). `dl` and the rows are
+   in wldNow() so that the button lights for them. */
 function wldKeepSave(v, done){
   var f, m;
   for(f in v){
@@ -1246,8 +1220,8 @@ wldRead();
    the screen you arrive at, which is where a thing is changed -- the two are
    not allowed to share a screen and here they do not. */
 function vWldArt(){
-  /* The id comes off the route, not off a parameter: PAGES[route].view() is
-     called with no arguments (www/glyph.js), so a view that took one was
+  /* The id comes off the route, not off a parameter: the view route-map.js
+     binds (page(...)) is called with no arguments, so a view that took one was
      handed undefined and drew the gone box instead of the section -- on a
      phone, not only in the walk. Every other view that is about one thing
      reads here().a the same way (vThread, vFm, vSet). */
@@ -1271,15 +1245,11 @@ function vWldArt(){
    「その言語について簡単にまとめてあるページ欲しいな」「そこでその人が作ってるの
    見れる」
 
-   The World screen above is the EDITOR -- five kinds, three fields, and every
-   one of them a thing to fill in. This is the other half and it was missing:
-   somewhere to LOOK at a language, which is what a profile points at and what
-   anybody but its author would ever want.
-
-   It reads and touches nothing. Everything on it is the open language --
-   which is correct today, because the only profile this phone can show is
-   this person's own, and the day somebody else's arrives it arrives with
-   their language's summary on it the way a post arrives with its ink.
+   The World screen is the writing face; this is the reading one: somewhere
+   to LOOK at a language, which is what a profile points at and what anybody
+   but its author would ever want. Both are wldPage() (CLAUDE.md rule 21).
+   Somebody else's language arrives as a bundle (wldSeenOf()) and is read
+   from that, never from the open language.
 
    What is on it, and the owner chose it: what the language is for, where, who
    and the note; the letters somebody has actually drawn; and the three
@@ -1291,11 +1261,9 @@ function vWldArt(){
    DL可能になって他の人が使えるようになるイメージ。その人の言語Wikipedia
    みたいな感じにしたいそのページ」
 
-   THIS IS THE LOOK ONLY, and that is the owner's own order --
-   「見た目を完璧にしてからsqlね」. Nothing here asks the server, nothing
-   here writes, and「他の人が使えるようになる」is the server's half and is
-   not started. What is here is the shape: the article, and under it every
-   section of the language with what it is open to. */
+   What is here is the shape: the article, and under it every section of the
+   language with what it is open to. Whether the page is open is the server's
+   answer (below); what a section is open to is the language's. */
 /* WHETHER A LANGUAGE'S PAGE IS OPEN, AND THE ANSWER IS THE SERVER'S.
    -------------------------------------------------------------------------
    「端末に hide の存在があるわけないやろ。全部オンラインだって言ってるけど」
@@ -1374,10 +1342,10 @@ function setWldHide(v){
    read a language without being handed it. 「言語ページ公開と単語や文字の
    dl可能は別だし」
 
-   `dl` is absent by default and absent means no. The page's own flag is the
-   other way round -- absent is public -- because a page is a thing to be
-   looked at; this hands over months of somebody's drawing, and the app does
-   not decide that for them.
+   `dl` is absent by default and absent means no. Whether the page is open is
+   a different question with its own answer (`language.published_at`, below);
+   this hands over months of somebody's drawing, and the app does not decide
+   that for them.
 
    Nothing SETS it any more, and that is the whole of it being here: the one
    switch that wrote it was a second copy of a switch this page already has,
@@ -1391,11 +1359,10 @@ function wldDl(w){ return !!(w||world()).dl; }
    DL可能になって他の人が使えるようになるイメージ」
 
    A section that has never been touched has nothing stored for it and follows
-   the PAGE's own flag. That is not a third state: it is the absence of an
-   answer, and it is deliberate. 2026-08-13 settled what a PAGE defaults to
-   (`hide` absent = public) and nothing has settled what a SECTION defaults
-   to, so with nothing stored both answers are still reachable -- the owner
-   decides it by deciding the page's, and no migration has to run either way.
+   the PAGE's own answer (wldPubOf(), `language.published_at`). That is not a
+   third state: it is the absence of an answer, and it is deliberate -- nothing
+   has settled what a SECTION defaults to, so with nothing stored both answers
+   are still reachable, and no migration has to run either way.
 
    `wld.secs` is an object of objects rather than two lists, so a section
    carries both answers in one place and a section nobody has touched is not
@@ -1419,7 +1386,7 @@ function wldSecDl(r, w){
 /* ---- and writing those two answers ------------------------------------
    The four above READ `secs`. Nothing anywhere wrote it: every row said
    公開, and there was no way to make one say anything else. This is that
-   missing half, and it is the page-wide pair in the settings room asked of
+   missing half: the page's own pair on the article's writing face, asked of
    one section -- the same two questions, the same order, the same switch.
 
    A section nobody has touched stays out of `secs` entirely. These write only
@@ -1507,10 +1474,9 @@ var ICON_FOLD='<svg class="ic abmk" viewBox="0 0 24 24" width="13" height="13" f
    two things, and flipping it would have turned every 「行を下へ」 button in the
    keyboard into a download.
 
-   Here rather than in www/glyph.js because that file is not this session's,
-   and because `ICON_FOLD` above is already this chapter's own mark kept beside
-   the screen it marks. When the chapters are put back together this belongs
-   with the rest of them. */
+   It belongs with the ICON_* row in www/glyph.js, like every other mark; it
+   is here, beside `ICON_FOLD`, until that move is made (docs/reports/
+   rule-audit-2026-09-27-words.md, home-25). */
 var ICON_DL='<svg class="ic" viewBox="0 0 24 24" width="14" height="14" fill="none" '+
   'stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" '+
   'aria-hidden="true"><path d="M12 4v10"/><path d="M8 10l4 4 4-4"/><path d="M4 20h16"/></svg>';
@@ -1700,9 +1666,7 @@ function wldGrow(el){
 }
 /* How tall a box has to arrive to hold what is already in it. The growing
    above happens on a keystroke, and a box that arrives full has had none --
-   the line that would size them all after a render belongs in render()
-   itself, which is www/glyph.js and not this session's. So the height is
-   decided here, where the text is, and written as `rows`.
+   the height is decided here, where the text is, and written as `rows`.
    Wrapping is counted at roughly thirty-four characters, which is what a line
    of this box holds on the narrowest phone: too many rows shows blank space
    and too few hides the end, and of the two only one loses somebody's words
@@ -2071,9 +2035,6 @@ function vAbout(){
   if(!a) return wldPage(false);
   return wldPage(false, wldSeenOf(a), a);
 }
-/* Named for the world and not for the view. The checks find a screen by its
-   NAME -- a global that is `v` plus a capital -- so a helper named that way is
-   a screen on no route, and act-check said so the moment this was written. */
 /* A letter of somebody else's alphabet: drawn, named, and nothing else.
    ltCell() is the one on your own and carries two marks this cannot have --
    whether another of YOUR letters already says that sound, and whether a
@@ -2124,7 +2085,7 @@ function wldSliceOf(m, kind, fb){
   d=slState(kind, o.body);
   return (d.is==='read' && d.v!==null)? d.v : fb;
 }
-/* SOMEBODY ELSE'S LANGUAGE AS A BUNDLE, answering the same seven questions
+/* SOMEBODY ELSE'S LANGUAGE AS A BUNDLE, answering the same questions
    wldOpen() answers -- so the SAME page draws it. 「このwikiのような感じに
    するんじゃないの？」 OWNER 2026-09-01: not a second screen, this one.
 
@@ -2135,7 +2096,7 @@ function wldSliceOf(m, kind, fb){
    else's is here once its slices are, and the one page decides what a page
    that is not here yet looks like.
 
-   Not one of the eight reaches the open language. `ws` is the language's own
+   Not one of them reaches the open language. `ws` is the language's own
    `wsys` column since 2026-09-09 (www/core.js § LWSYS) and comes down with the
    row, so somebody else's page can say which of the six it is written as.
    It was `SET.wsys` -- the PERSON's settings, on this handset, on no server --
@@ -2190,7 +2151,7 @@ function vWorld(){
    the top and MY language underneath, which is why the door was closed
    (「この言語についてで人のをタップしても自分のが出る」 OWNER).
 
-   Eight questions -- count them off the two bundles below, not off this line
+   The questions -- count them off the two bundles below, not off this line
    -- so a reader's copy can answer them from what came off the server
    instead. **Functions and not values**, because some are only asked inside
    branches (the writing system on two faces), and an eager read would ask
@@ -2217,8 +2178,7 @@ function wldOpen(){
     name:    function(){ return langName; },
     ws:      function(){ return wsys(); },
     /* The sounds the language is made of, and whether this article is YOURS --
-       the Edit button and the pressable letter cells are the two things that
-       are only true of your own. */
+       the Edit button is the thing that is only true of your own. */
     snd:     function(){ return addedSnd(); },
     /* Which way it is written. `scriptDir()` reads SCRIPT -- the open
        language's -- and it is in the `script` slice for anybody else's. */
@@ -2305,7 +2265,8 @@ function wldPage(ed, L, lid){
      again -- docs/keyboard.md carries the same trap written out in four steps,
      and that is a manual page standing in for the thing working.
 
-     Nothing is deleted and nothing is unset. `hide` is one flag, the sections
+     Nothing is deleted and nothing is unset. The page's answer is one column
+     (`language.published_at`), the sections
      keep their own answers, and every word is where it was: turning the
      switch back on brings the whole page back exactly as it was left. */
   if(wldHidden(L) && !mine) return '<div class="view">'+wldFrame(body, ed, mine)+'</div>';
@@ -2335,26 +2296,13 @@ function wldPage(ed, L, lid){
        arrow into this phone's own chapters, which is a way through that means
        nothing to anybody but their owner. What is left to READ is the
        overview, the sounds and the letters. */
-    /* And what MAY be taken away says so, where it is --
-       「DL許可が出てるものはDLマークつけないと」 OWNER 2026-08-25. It is on the
-       article and not on the editor: the switch is the answer on the writing
-       face, and this is what that answer looks like to somebody reading.
-
-       ON YOUR OWN ARTICLE ONLY. This mark is the answer to 「may other people
-       take this?」, which is a thing to know about your own language and
-       nothing at all on somebody else's -- there, the answer is not a mark,
-       it is the ↓ you press, and it is collected into its own section at the
-       foot with the others. It was a `<span>` on both faces, carrying no
-       action, which is what the owner pressed:
-       「ダウンロードボタン押しても言語追加されないけど？」 OWNER 2026-09-01. */
     /* THE ↓ MARK IS OFF THE ROWS, and that is what makes the two articles
        one article. 「自分のページでも人のページでも見た目は一緒にしてよ
        なんで変える必要あんの？」 OWNER 2026-09-02.
 
        It was drawn on your own rows and not on anybody else's, so the same
        page carried a mark on four rows or on none depending on whose it was.
-       This SUPERSEDES 「DL許可が出てるものはDLマークつけないと」 OWNER
-       2026-08-25 for the reading face, and nothing it was for is lost: on
+       Nothing it was for is lost: on
        somebody else's article the ↓ is the row at the foot that actually
        takes the chapter, and on your own, whether other people may take one
        is the four switches on the writing face -- 「文字とか単語とかはここで
@@ -2588,8 +2536,6 @@ function wldPage(ed, L, lid){
   if(!body) body='<div class="note">'+esc(t('wld.empty'))+'</div>';
   return '<div class="view">'+wldFrame(body, ed, mine)+'</div>';
 }
-/* What making this language public means, behind the `?` in the bar rather
-   than as a sentence on the screen. 「showの横に？つけて他と同じ感じで」 */
 /* The language's page, both faces and one section of it (wldFrame(),
    vWldArt()). OWNER 2026-09-26 「？の中に描きまくろう」. */
 HELP.wld=function(){
@@ -2600,6 +2546,8 @@ HELP.wld=function(){
     helpStep(3, t('wld.shown'), t('hp.wk.3.d'))+
     helpStep(4, t('wld.dl.can'), t('hp.wk.4.d'))};
 };
+/* What making this language public means, behind the `?` in the bar rather
+   than as a sentence on the screen. 「showの横に？つけて他と同じ感じで」 */
 HELP.pub=function(){
   return {t:t('wld.public'), h:
     '<div class="sec">'+esc(t('wld.public'))+'</div>'+
@@ -2609,8 +2557,10 @@ HELP.pub=function(){
 };
 /* THE LANGUAGE'S NAME, TYPED ON A SCREEN OF THIS APP'S OWN.
    「標準は使わねえって言ってるだろこれも禁止や」「禁止事項入れろ」 OWNER
-   2026-09-01 -- `confirm()`, `alert()`, `prompt()` and UIAlertController, none
-   of them. 「iPhoneのやつ使ってるsnsないしな」
+   2026-09-01 -- `confirm()`, `alert()` and `prompt()`, none of them.
+   「iPhoneのやつ使ってるsnsないしな」 (iOS's own sheet is kept for the two
+   things CLAUDE.md names -- the profile picture and the rating -- and neither
+   is here.)
 
    This was `prompt()`, which is iOS's own box: the one shape the app is
    forbidden to use, on the row that renames the thing the whole app is about.
@@ -2657,9 +2607,9 @@ function saveName(){
 
 /* =========================================================================
    Languages -- which ones are here, and which one is open.
-   LANGS holds every language this device knows about, yours and anyone
-   else's you are reading; langId says which one the rest of the app means
-   by WORDS. Pressing a row is the only way to change that. */
+   LANGS is this account's index (`lingua.langs.<uid>`, CLAUDE.md rule 22) --
+   a picture to look at, which nothing counts from; langId says which one the
+   rest of the app means by WORDS. */
 function langRow(id){
   var l=LANGS[id]||{}, isOpen=(id===langId);
   /* One question, one answer, and it is the server's -- `language.name`
@@ -2668,12 +2618,6 @@ function langRow(id){
      `langName`, so renaming a language and looking at this list before
      anything saved showed the old name here and the new one everywhere else. */
   var nm = langNameOf(id);
-  /* A language that is only READ is a row and not a button. langOpen()
-     refuses it -- opening is what writes, and 「dl言語は編集はできない」
-     (OWNER 2026-09-01) -- so a button here would be a door that answers
-     nothing, which is the shape the ↓ itself was until today. It is drawn,
-     because it is on this phone and somebody took it; it is not pressable,
-     because there is nowhere to go yet. */
   /* THE SHAPE IS THE ACCOUNT SWITCHER'S, not a settings row. 「言語切り替えは
      設定の言語じゃなくて、ちゃんとした画面作ってくれよ。インスタのアカウント
      切り替えみたいなイメージ」 OWNER 2026-09-01 -- it was already a screen of
@@ -2694,8 +2638,8 @@ function langRow(id){
      button like any other and langOpen() takes it, which it has always been
      willing to do.
 
-     What makes it safe is not this row. It is langLocked() in core.js, asked
-     by every one of the seven savers, so nothing anywhere can write to a
+     What makes it safe is not this row. It is langWrites() in core.js, the
+     one door every writer asks, so nothing anywhere can write to a
      language that is not yours -- however it was reached. langOpen()'s own
      comment named the writers as the protection from the day it was written
      and only three of them were asking; opening this door is what finished
@@ -2756,8 +2700,9 @@ function langDrop(id){
     function(d, s, m){ netPop(d, s, m, function(){ langDrop(id); }); });
 }
 /* ---- and the finger that opens the row ---------------------------------
-   iOS's own list, and nothing else in this app slides sideways -- the slide
-   in shell.js runs DOWN a list choosing rows, and holding a row to carry it
+   iOS's own list, the same gesture as the notebook's rows and the
+   profile's three lists (pfSwDown/pfSwUp) -- the slide in shell.js runs
+   DOWN a list choosing rows, and holding a row to carry it
    is wldDragDown() above. So this is a third gesture and it is told from
    those two by the one thing that makes it this one: it has to travel
    SIDEWAYS further than it travels down, or a thumb scrolling the list would
