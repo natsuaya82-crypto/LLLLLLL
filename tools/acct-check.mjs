@@ -3072,7 +3072,7 @@ const R = await pg.evaluate(async () => {
        so a refusal came up behind a screen that had already said it saved. */
     let said63 = [], letGo63b = null;
     netSend = (method, path, body, tok, ok2) => {
-      if (method === 'PATCH') letGo63b = () => ok2([]);
+      if (method === 'PATCH') letGo63b = () => ok2([body || {}]);
     };
     wsKeepSave({ ws:'logo' }, (ok) => said63.push(ok));
     if (said63.length)
