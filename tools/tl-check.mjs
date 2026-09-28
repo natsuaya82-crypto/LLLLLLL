@@ -1170,6 +1170,13 @@ const au = await pg.evaluate(() => {
     const m = /id="me-nm"[^>]*placeholder="([^"]*)"/.exec(FORM.html || '');
     out.a13 = m ? m[1] : '(no field)'; }
 
+  /* a14: the reports fall down the same road every list does -- a pull that
+     fell draws 接続できません, not an empty page and not 「no reports」. */
+  { const was = MODS; MODS = null; PULL_OFF['mod'] = 1;
+    const h = vMod();
+    out.a14 = h.indexOf(esc(t('net.offline'))) >= 0 && h.indexOf(esc(t('mod.none'))) < 0;
+    delete PULL_OFF['mod']; MODS = was; }
+
   netIdOf = realId;
   netSend1 = realS1; netSend = realS; netGet = realG;
   NAV = [{ r:'feed' }]; window.route = 'feed'; render();
@@ -1220,6 +1227,8 @@ if (au.a12 !== 'Mainish')
   say('a12: your own row names 「' + au.a12 + '」 -- the language everybody else sees on it is the server\u2019s row.');
 if (au.a13 !== '')
   say('a13: the name field says 「' + au.a13 + '」 before anything is typed -- the language\u2019s name, which is not the person\u2019s.');
+if (!au.a14)
+  say('a14: the reports could not be read and the screen did not say 接続できません.');
 if (!au.a3)
   say('a3: a word pressed while another word\u2019s answer is on the screen draws that old answer or ' +
       '「No results」 until its own lands. Not answered yet is the waiting mark.');

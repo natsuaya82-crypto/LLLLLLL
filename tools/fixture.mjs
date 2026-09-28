@@ -1668,8 +1668,9 @@ export function halfDone(){
     /* The reports before the server has answered, and the reports when there
        are none. Two sentences, and they are not the same sentence. */
     ['the reports, and there are none', () => { const keep = MODS; MODS = [];
+        const had = PULL_GOT['mod']; PULL_GOT['mod'] = 1;   /* answered, with none */
         window.route='mod'; NAV=[{r:'mod'}];
-        const h = vMod(); MODS = keep; return h; }],
+        const h = vMod(); MODS = keep; if (!had) delete PULL_GOT['mod']; return h; }],
     /* And the one thing on this screen that really deletes, asking. A post
        comes back and an account comes back; a report row that has gone has
        gone, so the word on the button that does it is the word for what it

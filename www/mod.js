@@ -21,7 +21,7 @@
 /* What was read, and what went wrong reading it. Null and not [] before the
    first answer: "nothing has been asked yet" and "there are no reports" are
    different sentences and the screen says a different one for each. */
-var MODS=null, MODBUSY=false, MODERR='';
+var MODS=null;
 
 /* Going there and reading are one press. A view that fetched what it needed
    while it was being drawn would fetch it again every time anything on the
@@ -40,9 +40,7 @@ function goMod(){ go('mod'); pullGo('mod'); }
 
    `ok(1)` -- the answer is what the screen draws, so it is always redrawn. */
 function modAsk(ok, bad){
-  MODBUSY=true; MODERR=''; render();
-  netReports(function(rows){ MODS=rows; MODBUSY=false; ok(1); },
-             function(d, st){ MODBUSY=false; MODERR=netWhy(d, st); bad(d, st); });
+  netReports(function(rows){ MODS=rows; ok(1); }, bad);
 }
 /* Two reports about one post are two rows and one post, so answering either
    of them answers both. Marking every row that points at it is what stops the
@@ -187,15 +185,11 @@ function modRow(r){
    disagree about what a report looks like is what modRow() already refuses;
    this is the same sentence about the list AROUND the rows.
 
-   Three states and not two: what could not be asked, nothing to show, and the
-   reports. 「空」 and 「読めていない」 do not share a branch -- an empty list
-   is only said once an answer has actually come back (`MODS` set, not busy,
-   and no error). */
+   Three states and not two: waiting, could not be asked, and nothing to
+   show -- snsEmpty() (www/sns.js), the one place they are told apart for
+   every list pullRun() fetches. */
 function modListHTML(rows){
-  return (MODERR? emptyBox(MODERR, '', '', true) : '')+
-    ((!MODBUSY && !MODERR && MODS && !rows.length)
-      ? emptyBox(t('mod.none')) : '')+
-    rows.map(modRow).join('');
+  return rows.length? rows.map(modRow).join('') : snsEmpty('mod', emptyBox(t('mod.none')));
 }
 function vMod(){
   var rows=MODS||[];
