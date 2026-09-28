@@ -15,7 +15,7 @@
 | | 数 |
 |---|---|
 | 見つけた（読み手の所見の合計、重複あり） | 約 330 |
-| 直した（コミット済み） | 文書 約 90 文、検査 4 本（store・face・plan・docs の基準線） |
+| 直した（コミット済み） | 文書 約 170 文、検査 7 本（store・face・plan・docs-check 二つ・sides・dead）と docs の基準線 |
 | オーナーの物 | 14 |
 | 他の担当へ | 21 |
 
@@ -27,13 +27,16 @@
 | `face-check` | ① canvas の家族名の `+ fam` を名前で見逃し（`fam='Arial'` が通った） ② マークアップの `style=""` と JS の文字列・`.style.fontFamily` を読まない ③ `decomment` が行をずらし、452 行目を 276 と言った ④ 「none named twice」を確かめていなかった | 7 通り（コミット文に列挙） | `b32452f4` |
 | `plan-check` | DATA_SAFETY.md「plan-check が findWord の半分も持つ」が嘘だった（findWord を呼んでいない）。`bytes()` が誰も書かない `lingua.langs` を比べていた | `findWord()` が `wordsSeen()` の中だけを探す | `b8fdcc7e` の前のコミット |
 | `docs-baseline` | STATE.md の古い名前 16・ゲートの本数の文 3・無いファイル 2 | 消えた名前を線なしで戻す → 505 行目で赤 | `7d8bc616` |
+| `docs-check` | 【差し替え済み】が見出しの頭にある時しか見なかった（3 つ末尾・日付なし） | 直す前の決定ログで 4 見出しが赤 | `1de45fa6` |
+| `docs-check` | ``` の図の中を読まなかった（`syMerge()`・`www/sync.js`）。決定ログの途中に開きの無い雛形があり、囲みの数え方が全部ずれていた | 図に `syMerge() (www/sync.js)` を戻す → 二つ赤 | `6a8b3f73` |
+| `sides-check` | 禁止の手書き一覧。`LANGS[LMINE].name`・`KB[0].name` が線より下で通った → よそのファイルの大文字のグローバルは許可（`READER_MAY`）以外全部断る | 所見の postWho() → 三つ赤 | `6e246e21` |
+| `dead-check` | 「届く」＝名前が二回。自分を呼ぶ・互いを呼ぶ関数が通った → 根から辿る | zzRec・zzPingA/B → 三つ赤 | `965172d8` |
 
 ## B. 検査 ── 見つけて、まだ直していない
 
-- `sides-check.mjs:84-115` `MINE` は手書きの一覧。`LANGS`・`LMINE`・`KB`・`WLD`・`LSL`・`WSYS`・`PLAN` が無く、`postWho()` に `LANGS[LMINE].name` を入れても緑。【未】
-- `dead-check.mjs:330-340` 「届いた」＝名前が二回出る。自分だけを呼ぶ関数・互いに呼ぶ二つが通る。【未】
+- `sides-check` 関数を辿る段（ビルダーが呼んだ先が作る側に届くか）は、まだ `MINE`（手書き）だけで辿る。よその大文字のグローバル全部で辿ると `DO()`・`esc()` まで届いてしまい、言語の状態と殻の状態を分ける物が無い。【未・限界】
 - `dead-check.mjs:165-173` 検査（tools/）からの言及も「届いた」に数える。`folPut`（me.js:1607）・`gramArgs`（phases.js:415）は検査からしか呼ばれない。【未】／関数の扱いは【他へ core/words】
-- `docs-check` ① ``` で囲んだ図の中を読まない（ARCHITECTURE.md の `syMerge()`・`netSlice1()`・`www/sync.js` を見逃した） ② 【差し替え済み】が見出しの頭にある時しか見ない（FEATURE_RULES.md:583・730・732 は末尾に付いて日付も一行も無い） ③ 出力の「(baseline N)」は基準線の全行数で、届く文書の数ではない。【未】
+- `docs-check` 出力の「(baseline N)」は基準線の全行数で、届く文書の数ではない。【未】
 - `load-check` 三つの読みが基準線で上限を免れている、`press` は 44pt の例外が五つの class（規則はキーだけ）。【未、claude.md 参照】
 - `import-check` CLAUDE.md 7 条「eleven real samples」── 見本は 19、見本自身のコメントが「本物の書き出しではない」。【未】
 
@@ -45,14 +48,16 @@
 | `docs/ARCHITECTURE.md` | sync.js・syMerge・netSlice1 は無い、スライスは LSL、保存は Save、食い違いは slice_in、netLangSync は起動で呼ばない、sid は無い、rest/v1 の手書きの一覧 | `038e742c` |
 | `docs/DATA_MODEL.md` | お知らせの写しは無い、planWas は無い、下書きはサーバーの行、声は録った時にバケット、lsWipeAcct は名前空間を数える、langWrites、dlCap は null、post.tr、インクの無い投稿は文字、aud-data Q1–Q3 の前提は無い 他 | `62642820` |
 | `docs/TESTING.md` | 回すのはサブリーダー（居なければリーダー）、npm test は push の前、page と kb、backup・registerFont・三世代は無い、margin-top は press、測った数を書かない | `7007b14c` |
-| `CLAUDE.md` | 17 条 1（マークアップと JS も宣言）、22 条の store-check の説明 | `b32452f4`・`95531cb8` |
+| `CLAUDE.md` | 17 条 1、22 条の store-check、8 条の sides-check、5 条の dead-check、事実の誤り 10 文、取り込みの文・監査 30 分 | `b32452f4` ほか、`4bb0eaa9`・`a12de5f8` |
+| `docs/STATE.md`（二度目） | 嘘 22 文 ── SCRIPT.blk・noads・AdMob・Keychain・Transaction.updates・PUSH_KINDS・badge_of・40c・slice_in・SET.walked・SE2・「master が今のアプリ」 | `8255e343` |
+| `docs/DATA_SAFETY.md` | 消えたバックアップの段落、終わった段はポップ、削除は二つ、again-check は食い違いを走らせない | `0a9dc286` |
+| `docs/PAID_FEATURES.md` | 19 文 ── キーボードは段で分けない（五か所）、dlCount、隠す、blob:、netSlicePut、pro も買える、歴史の表 | `0f130989` |
+| `docs/SESSIONS.md`・`FEATURE_RULES.md`・`LEADER.md` | 取り込み・ゲートはサブリーダー（居なければリーダー）16 文、SESSIONS の訂正の歴史、決定ログの【差し替え済み】4 つと壊れた雛形 | `a12de5f8`・`750799d3`・`f8b3c3fe`・`ac52ce28` |
 
 ## D. 文書 ── まだ直していない（場所は付録）
 
 - `docs/STATE.md`（嘘 38・古い規則 9・歴史 4）── 主な物: :35 Android は integ-0905 に取り込み済み／:44–67 1.0.3 の一覧に lasso・r112・r116・r117・r119・星・お題が無い／:62 `SCRIPT.blk` は無い／:125 `can('noads')` は無い／:146 AdMob は r93 で消えた／:135・200 通知のスイッチは六つ／:809・1592 Keychain・Transaction.updates は無い（RevenueCat）／:947 「master が今のアプリ」は違う（integ-0905 が 34 先）／:1022 Swift は七つ、App Store に出ている／:1051 `SET.done` → `SET.walked`／:1128・1163 syMerge ではなく slice_in／:1192 「まだ」の一覧（段・通知・お題・引用・公開）は全部できている／:750 `acct-check 40c` は無い。**STATE.md の 44–912 行はビルドごとの記録で、CLAUDE.md「今のことだけ」に反する** ── 消すか一節にまとめるかはリーダーの物。【未／リーダー】
-- `docs/DATA_SAFETY.md` 33–39 行（消えたバックアップの段落）、150 行（終わった段は「シート」でなく `capLapseSaw()` のポップ）、152 行（findWord の半分 → plan-check を直したので文は正しくなった）、227 行（「一つ」→ 二つ）、257 行（again-check は食い違いを走らせない、slice_in は rls-check）。【未】
-- `docs/PAID_FEATURES.md` 18 件 ── キーボードは段で分けない（1.0.3）のに「無料は固定 QWERTY」が :73・153・541・559・624 に残る／:24 `netPlanUp` に線／:36–44 LinguaPlan.swift の表（歴史）／:218 「隠さない」と 2026-09-01「隠れる」の食い違い／:306 `dlCount()` は `language_take` の数／:399 写真は `blob:`／:413 `netSlicePut` は無い／:763 「plus 以外は何も買えない」→ pro も買える。【未】
-- `docs/SESSIONS.md`・`docs/FEATURE_RULES.md`（頭と尻）・`docs/LEADER.md` ── 「取り込み・ゲートはリーダー」が CLAUDE.md の「サブリーダー、居なければリーダー」と食い違う所 11 か所。SESSIONS.md:36–72 の訂正の歴史、:720 の一セッションのスコープ。【未】
+- ~~`docs/PAID_FEATURES.md` 18 件~~（直した、上の表） ── キーボードは段で分けない（1.0.3）のに「無料は固定 QWERTY」が :73・153・541・559・624 に残る／:24 `netPlanUp` に線／:36–44 LinguaPlan.swift の表（歴史）／:218 「隠さない」と 2026-09-01「隠れる」の食い違い／:306 `dlCount()` は `language_take` の数／:399 写真は `blob:`／:413 `netSlicePut` は無い／:763 「plus 以外は何も買えない」→ pro も買える。【未】
 - `CLAUDE.md` 58 件（`claude.md`）── :527「fifteen-minute audit」は 30 分（LEADER.md、OWNER 2026-09-24）／:1209「the server half still says nothing」は違う（保存の失敗はポップ）／:1406「They all say var(--face-ui)」── `font-family:inherit` が 43 残る／:1029 投稿の一行は `LinguaLine`／:2304 Swift は七つ／:2311 `vSet` は九つ／:2434 i18n-check は `['free','pro']`／:640「every browser check owns a distinct port」── 27 本はポートを使わない／ボタン数の歴史の表（2325–2436）は「数をここに写さない」と自分で言いながら数を並べている。【未】
 - 決定ログ（`log1.md`・`log2.md`・下の E）── 状態の文が古い物 約 55、差し替えの印が無い物 約 25、差し替え済みで本文が残る物 約 16。【未】
 
@@ -92,6 +97,9 @@
 | server | push-send | ミュートを見ない（E11） |
 | ios | `ios/App/App/LinguaShare.swift:288-296` | 録音を Documents に置くと書いたコメント |
 | sns | `www/net.js:4465` `netDay()` | 作れなかった日に前の日の一文を出す（2026-09-27「作れなかった日は無くす」と合うか） |
+
+- 引用した出力に `text` を付けた囲みのうち、中身そのものが古い物: `docs/DUPLICATES.md:413`（`netWhoseId()` は無い）、`docs/BACKLOG.md:2175`（confirm と `kbCap()` は無い ── その項目は済んでいるか）、`docs/PROMPTFILTER.md`（`claude/find4` のスコープ宣言で、`www/sync.js` を含む ── 文書ごと日の記録）。【未】
+- 保存の失敗が画面に何を出すか（CLAUDE.md 11 条「the server half still says nothing」）── 読み手は「ポップが出る」と言うが、確かめていない。【未確認】
 
 ## G. 読めていない所（次に読む）
 
