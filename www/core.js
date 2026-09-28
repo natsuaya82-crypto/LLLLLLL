@@ -1732,11 +1732,16 @@ function setGoneDrop(){
   }
 }
 setGoneDrop();
-try{
-  var s=JSON.parse(localStorage.getItem(LS_S)||'null');
-  if(s) for(var sk in s)
-    if(Object.prototype.hasOwnProperty.call(s,sk) && SET_PHONE.indexOf(sk)>=0) SET[sk]=s[sk];
-}catch(e){}
+/* This handset's own setup, off `lingua.set` -- read through acctRaw(), the
+   one reader of a disk key, inside a function so the load leaves no `s` and
+   `sk` lying about as globals (rule-audit-2026-09-27-core C5). */
+function setPhoneRead(){
+  var v=acctRaw(LS_S), k;
+  if(!v || typeof v!=='object') return;
+  for(k in v)
+    if(Object.prototype.hasOwnProperty.call(v, k) && SET_PHONE.indexOf(k)>=0) SET[k]=v[k];
+}
+setPhoneRead();
 acctKeep('set', setMine, setGot, LS_S, function(v){
   var out={}, k;
   if(!v || typeof v!=='object') return null;
