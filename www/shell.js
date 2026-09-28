@@ -2124,7 +2124,6 @@ function swMount(){
     if(!swOn && !swLive) return;
     swOn=false; swLive=false; swClear();
   }, {passive:true});
-  document.addEventListener('pointercancel', function(){ swOn=false; }, {passive:true});
 }
 /* And the bar is put on the page here, once, into an element beside #app that
    render() never rewrites. Writing it into each screen's HTML meant it was
