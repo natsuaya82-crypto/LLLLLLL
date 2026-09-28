@@ -15,6 +15,14 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### 2026-09-27 品詞の移行が、知らない品詞を消していた（audit-core S1）
+- 古い形の辞書（品詞をラベルのまま持つ）を開くと `migratePos()`（`www/shell.js`）がキーに直す。どの言語の
+  ラベルでもない値は `n`（名詞）で**上書きされ、元の値は残らなかった**。
+- 今は `n` にした上で、元の値を語の `posWas` に写す。知っているラベルはこれまでどおりキーに直すだけ。
+- **保存する物**: 語に `posWas`（その語が持っていた品詞の文字）が増えることがある。**消す物**: 無い。
+- **検査**: `migrate-check`（直す前は `posWas` が null で赤）。
+- 同じ `posKey()` で取り込み（`www/import.js` 964・1002）も知らない品詞を `n` にする ── 取り込みの持ち主へ（報告書）。
+
 ### 2026-09-27 アカウント削除の「途中の印」を消す（audit-core T1）
 - 削除を押してサーバーが消し終わった時に `lingua.sess` へ `end` を書き、次の起動で続きを消す道があった
   （`netEnding()`・`netEnded()`、`www/boot.js` の起動の枝）。印は `netEndMe()` がサインアウトさせた**後**に

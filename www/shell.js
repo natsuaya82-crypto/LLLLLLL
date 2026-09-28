@@ -2385,14 +2385,24 @@ function posKey(s){
    lives in www/backup.js -- loaded AFTER this file. So on any phone with one
    old label in its dictionary, shell.js threw at this line and stopped:
    everything below it was never defined. Nothing on the screen said so.
-   www/core.js § planMigrate() carries the same hazard written out, and
    boot.js is the answer to it -- it is loaded last, and running the
-   migrations is what it is for. */
+   migrations is what it is for.
+
+   AND IT COPIES. A label this app knows is turned into its key, which is the
+   same word said the other way. A value that is no label at all takes `n`,
+   and what it was is copied to `posWas` beside it -- 「a migration copies and
+   never removes what it read」 (CLAUDE.md § Data). It overwrote it with `n`
+   and kept nothing (rule-audit-2026-09-27-core S1, migrate-check). */
 function migratePos(){
   var moved=0;
   WORDS.forEach(function(w){
+    var v, known=false, L;
     if(POS.indexOf(w.pos)>=0) return;
-    w.pos=posKey(w.pos); moved++;
+    v=String(w.pos||'').trim();
+    for(L in LANG) if(Object.prototype.hasOwnProperty.call(LANG, L) &&
+                      LANG[L].pos.n===v) known=true;
+    w.pos=posKey(v); moved++;
+    if(v && w.pos==='n' && !known && w.posWas===undefined) w.posWas=v;
   });
   if(moved) save();
 }
