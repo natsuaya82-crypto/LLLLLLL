@@ -71,13 +71,8 @@ function netSignedIn(){ return !!(SESS && SESS.rt); }
 /* AND THE TOKEN IT IS SENT WITH, or '' with nobody signed in -- which is what
    the window (netSend1) refuses. */
 function netTok(){ return (SESS && SESS.at) || ''; }
-/* Whether the token in hand is an anonymous one, read off the TOKEN rather
-   than off the answer that carried it. `is_anonymous` in the JWT is the exact
-   claim is_member() reads in supabase/schema.sql, so the phone and the server
-   settle this out of the same sentence rather than out of two that could
-   drift. An unreadable token is not anonymous: the server is what decides,
-   and a phone guessing "anonymous" would close doors on somebody who has an
-   account. */
+/* What a token says about itself, read off the TOKEN -- the one place a JWT
+   is read (netIdWhy asks it whether a nonce is there). */
 function netClaims(at){
   var p=String(at||'').split('.')[1], c;
   if(!p) return null;
@@ -460,10 +455,10 @@ function netGet(path, ok, bad, prog){
    「接続できません」 in red, on a screen where nothing could be done about it.
 
      the request went and nothing came back   netSend()'s x.onerror
-     the request was never made at all        netMyProfile / netMakeProfile /
-                                              netSetPass / netLangRow /
-                                              netResume, each refusing locally
-                                              when it sees no session
+     the request was never made at all        netResume with no session (`−`);
+                                              any other /rest/v1 request with no
+                                              session is refused by netSend1()
+                                              before it leaves, as 401
      the answer was 200 and was not a session netTook(d) false
 
    The first is a network. The second never touched one. The third means the
@@ -480,8 +475,7 @@ function netGet(path, ok, bad, prog){
    `≠` is "not a session", and a bare word plus the real HTTP number is the
    ordinary road. `∅` is the fourth: the request went, the server answered,
    and it took nothing away -- netDrop() below is the one thing that says it.
-   www/backup.js's BK.how and www/share.js's SHARE.how are the
-   same instrument, put in for the same reason and on the same day's evidence:
+   www/share.js's SHARE.how is the same instrument, put in for the same reason and on the same day's evidence:
    一枚のスクリーンショットで原因が落ちてくる。 */
 function netTag(path){
   var p=String(path||'').split('?')[0].split('/');
@@ -618,7 +612,7 @@ function netPopAgain(){
 /* A session, put away. Everything that signs somebody in ends here, so there
    is one place that knows what a session is made of. */
 function netTook(d){
-  /* Both halves, because a session is both. netRead() two functions up has
+  /* Both halves, because a session is both. sessRead() (www/core.js) has
      always refused a stored session with no refresh token (`if(s && s.rt)`),
      and netSignedIn() has always answered on `rt` -- so a reply carrying an
      access token and no refresh token was taken, stored, and then read as
@@ -651,7 +645,7 @@ function netTook(d){
      account does not already have. A token being renewed is the same account
      and changes nothing. */
   acctFor(netUid());
-  /* AND THE LANGUAGE ON SCREEN. `meFor()` above swapped who the phone says
+  /* AND THE LANGUAGE ON SCREEN. acctFor() above swapped who the phone says
      it is; this swaps what it is showing. Twice, and the two are different
      moments -- see langForAcct() in www/core.js. Now, without minting,
      because this account's languages may be on their way down; and again
@@ -712,11 +706,10 @@ function netTook(d){
 
      AND IT IS THE DOOR AND ONLY THE DOOR. `netCame` above is 「there was no
      session here a moment ago」, which is what coming through the door IS: a
-     launch resumes a session this phone already had (netRead() put it back
+     launch resumes a session this phone already had (sessRead() put it back
      before this), and the hour running out renews the one that is running. A
-     launch sends on its own road, after the list -- www/boot.js § bootSession,
-     `pullWait('mylangs', netLangSync)` -- and what moves while the app is open
-     goes up on the press that made it (netSaveNow). This is the moment neither of those covers, and
+     launch sends nothing up, and what moves while the app is open goes up on
+     the press that made it (netSaveNow). This is the moment neither of those covers, and
      it is the one the walk needs.
 
      Without it the hour running out re-sent all twelve slices of every
@@ -726,7 +719,7 @@ function netTook(d){
      because the plan was a word on the handset and whoever signed in
      inherited it. It is not: the plan is `verify-plan`'s answer about the
      account that is signed in, held in memory (www/core.js § PLAN), and
-     planFor() above has just forgotten the one before it. Without this,
+     acctFor() above has just forgotten the one before it. Without this,
      somebody signing in mid-session has no plan until they close the app --
      every ceiling says 「接続できません」 and the free alphabet is not topped
      up. 「段は起動とサインインで訊く」 OWNER 2026-09-11.
@@ -828,10 +821,7 @@ function netOut(){
   /* THE LANGUAGE IS NOT TOUCHED HERE, AND THAT IS THE SAFE DIRECTION.
      A slice is in memory now (CLAUDE.md rule 22), so it was tempting to empty
      the store on the way out -- 「what this phone is holding is the signed-in
-     account's」. It would destroy a language that has never reached the
-     server: somebody who made one with no signal and signed out would have
-     nothing left anywhere, and 「人が作ったものは消さない」 is the rule that
-     outranks tidiness. Nothing leaks by leaving it: the index of languages
+     account's」 -- and it is not needed: nothing leaks by leaving it: the index of languages
      is the account's (§ ACCT) and goes with it, so nothing on the next
      person's screens names a language of the last one's. */
   /* AND THE SCREEN, HERE, BECAUSE THIS IS WHERE A SESSION ENDS.
@@ -1050,9 +1040,9 @@ function netHandleFree(h, ok, bad){
    cut loose from the language so somebody who does not have that language can
    still see it.
 
-   Written here and not kept in step afterwards: drawing a new letter does not
-   yet update it. That is docs/BACKLOG.md's, not a silent gap -- a notice with
-   no face draws no face and nothing throws. */
+   Written here and not kept in step afterwards, and that is the owner's:
+   「それ以降は勝手に変えないで」 (2026-09-05) -- drawing a new letter does not
+   change it; choosing a photograph does (meFacePut, www/me.js). */
 function netMakeProfile(h, name, ok, bad){
   var av=postAvatar(), row={id:netUid(), av:av},
       typed={name:String(name||''), handle:String(h||'')}, i, k;
@@ -1447,14 +1437,12 @@ function netLapseSeen(){
 
 /* ---- a language, which belongs to the account --------------------------
    Everything somebody makes belongs to the account and the server is where
-   it is kept -- 「全部アカウントごとでしょ」「クラウドは全員で」. The phone
-   goes on being the place it is MADE: nothing here waits for a network, and
-   the whole making side works with no signal, because a language is edited
-   on a phone that may be in a tunnel.
+   it is kept -- 「全部アカウントごとでしょ」「クラウドは全員で」. Making and
+   saving need a signal (CLAUDE.md § Online, OWNER 2026-09-04).
 
-   Two rows and eleven. `language` is the language -- its name, its licence,
+   Two kinds of row. `language` is the language -- its name, its licence,
    whether it is published -- and `slice` is what it is made of, one row per
-   slice of SLICES, holding exactly the string localStorage holds.
+   slice of SLICES, holding the string the phone holds for it in memory.
 
    Per slice and not per language, because of what happens with two phones: a
    word added on one and a letter drawn on the other are two different rows
@@ -1499,15 +1487,14 @@ function netLapseSeen(){
                                      same reason -- and it is what the
                                      ONBOARDING needs: the walk makes a
                                      language before there is an account and
-                                     obFinish() puts it up at the door.
+                                     netTook() puts it up at the door.
                                      「オンボーディング→最後にログイン」
 
-   THE FOURTH IS THE ONE THE OWNER HAS TO DECIDE, and it is in the report
-   rather than settled here. A language made by A, never once uploaded, on a
-   phone B then signs in to, is adopted by B -- because from storage alone
-   there is nothing that tells it from the onboarding's. Every language made
-   from today carries its `uid`, so the hole is exactly the languages that
-   already exist on a phone today and have never been up.
+   THE FOURTH WAS DECIDED (docs/FEATURE_RULES.md 2026-09-02, read again on
+   2026-09-24): a copy an older version left with no owner on it is nobody's,
+   read by nobody and removed by nobody, and a language with no row is adopted
+   only as the walk's, at the door. What reaches here is what the callers hand
+   in (langMineIds, langNew).
 
    **Which.** It used to be whichever was OPEN. That was the whole of why a
    second language never reached the server: everything here asked about
@@ -1747,9 +1734,8 @@ function netLangPublic(on){
    A rename that did not arrive is a rename that did not happen, the box stays
    open with what was typed in it, and ［再接続］ sends the same one again.
 
-   Signed out is netLangRow()'s answer and not a branch here: it says
-   `langrow −`, which netPop() shows, so 「電波が無い」 does not arrive as
-   silence. */
+   Signed out is not a branch here: netSend1() refuses a request with no
+   session before it leaves, and netPop() says it. */
 function netLangRename(nm, then){
   var v=String(nm||'');
   netPut('language', langId, {name:v},
@@ -1965,10 +1951,8 @@ function netSlices(sid, ok, bad, kinds, cols, prog){
    「前のアカウント消えたんだが？」 OWNER 2026-08-31 -- and nothing had been
    deleted. There was simply no way back to it.
 
-   netLangSync() below syncs the language that is OPEN, and it finds it
-   through the index, which is on the PHONE. So everything the server holds
-   for an account that this phone has not got an entry for was unreachable: no GET of `/rest/v1/language` anywhere in www/ asked for the
-   ones this phone has no entry for. Signing in on a second
+   Nothing asked the server which languages the ACCOUNT has, so everything
+   it held that this phone had no entry for was unreachable. Signing in on a second
    phone, or on a phone that had been somebody else's, showed whatever that
    phone was already carrying and nothing of yours. 「全部アカウントごとで
    しょ」「基本は全部サーバー管理」
@@ -1978,7 +1962,7 @@ function netSlices(sid, ok, bad, kinds, cols, prog){
    the obvious way: **the way a copy destroys somebody's work is by winning.**
    So:
 
-     a language already here (its `sid` is on an entry)  -> not touched at all
+     a language already here (an entry under its id)     -> not touched at all
      a slice already on the phone                        -> not touched at all
      anything else                                       -> written
 
@@ -1989,10 +1973,7 @@ function netSlices(sid, ok, bad, kinds, cols, prog){
    The ceiling is not asked and must not be: langCount() gates ADDING one, and
    docs/PAID_FEATURES.md is explicit that somebody holding more than their
    plan allows keeps every one of them. A language that is already yours
-   arriving on your own phone is not somebody making a new one.
-
-   Fired and not waited for, like everything else here. A phone with no signal
-   is a phone somebody is still writing a language on. */
+   arriving on your own phone is not somebody making a new one. */
 /* THE ENTRY FOR A SERVER ROW IS THE ONE UNDER THE SERVER'S ID, AND THERE IS
    NOTHING TO LOOK IT UP BY (2026-09-10).
 
@@ -2144,7 +2125,7 @@ function netLangFill(id, ok, bad){
    「端末で使うものなんかないだろ」「そもそも端末を使用するところがないんだから
    直すじゃないでしょ設計ミスなんだから作り直しでしょ」 OWNER 2026-09-15.
 
-   netLangsWalk() below fills in what the answer HAS, and that is the right
+   netLangsWalk() above fills in what the answer HAS, and that is the right
    half of the sentence. The other half had nobody saying it: rows the answer
    no longer names stayed in `lingua.langs`, which is on the disk and outlives
    them. The owner deleted two nameless rows on a real phone and 設定→言語
@@ -2608,9 +2589,9 @@ function netSlicesUp(id, kinds, ok, bad){
    root as the restore below.
    「基本は全部サーバー管理」「アカウント消したら残るわけがない」 OWNER 2026-08-26.
 
-   THE OPEN ONE FIRST, and then the rest. Sync is fired at launch and never
-   waited for, so the order decides which language is right first on a phone
-   that has just been opened -- and that is the one in front of the person.
+   THE OPEN ONE FIRST, and then the rest. This runs at the door (netTook) and
+   for a new language (langNew), and the order decides which language is right
+   first -- the one in front of the person.
    One at a time rather than all at once: they share NET_SYNCING, and a launch that fires eleven requests at once on a
    bad connection is a launch that finishes none of them.
 
@@ -2707,9 +2688,7 @@ function netLangSync(then){
       if(slTouched(langKeyOf(id, SLICES[i]))) kinds.push(SLICES[i]);
     NET_PRESS=uuid4();
     /* The row first, even with nothing to send: for the walk's language at the
-       door, the insert IS the road to the answer (§ langMineIds above). A
-       launch WALKS ON past a language that did not go -- the launch is its own
-       one of the places a pop comes from, and www/boot.js holds it. */
+       door, the insert IS the road to the answer (§ langMineIds above). */
     netLangRow(id, function(){
       if(!kinds.length){ next(); return; }
       netSlicesUp(id, kinds, function(m){ if(m) moved=true; next(); }, function(){ next(); });
@@ -2718,35 +2697,12 @@ function netLangSync(then){
   next();
 }
 
-/* ---- the timeline, when there is one -----------------------------------
-   Everything below this line is the SHAPE of a request and nothing else. The
-   account half above is real -- it talks to Supabase today -- and this half
-   is the same four functions the timeline will need, written now, in the
-   place they will live, called from where they will be called from.
-
-   They are written first on purpose. A seam cannot be retrofitted: a screen
-   built around a function that RETURNS cannot later be handed one that
-   answers, because every caller has to change and the ones that quietly do
-   not are the bugs. So the timeline already draws what it has and takes an
-   answer when one arrives, which is what a timeline does; today the answer is
-   "nothing new", which is true and is not a failure.
-
-   `supabase/schema.sql` already holds the tables -- post, follow, quote --
-   with the row level security written and held by `npm run rls`. What is
-   missing is these four bodies and nothing else.
-
-   The shape, and it is the same as everything else in this file:
-
+/* ---- the timeline --------------------------------------------------------
      netFeed(which, ok, bad)       ok(posts | null)  'rec' or 'fo'
      netPush(post, ok, bad)        ok()              this post is now public
      netMark(id, kind, on, ok, bad) ok()             liked / boosted, or not
      netDrop(post, ok, bad)        ok()              gone from the server too
-
-   Every one of them is FIRE AND FORGET on the phone's side. A post is on this
-   phone the moment it is written, a like is counted the moment it is pressed,
-   and a post is deleted the moment somebody says so. The server is told
-   afterwards. Nothing a person does waits for a network, because a person
-   holding a phone in a tunnel is still using this app. */
+   Posting and pressing need a signal (CLAUDE.md § Online). */
 /* How many come back at once. A timeline is read from the top and stops when
    somebody stops scrolling, so this is "enough to fill a screen and then
    some" rather than a number anybody has to be right about. */
@@ -2773,10 +2729,9 @@ var NET_LANG_SEL='/rest/v1/language?select=id,name,published_at,wsys,owner,creat
    `sid` is where the row lives, and `id` is this phone's name for it. A row
    that carried them would be answering questions on the other phone's behalf.
 
-   The photographs and the voice are not here yet. They are bytes and they go
-   to Storage, which is the next thing; until they do, a post with a
-   photograph goes up as the post without it rather than as most of a megabyte
-   of base64 in a jsonb column. */
+   The photographs and the voice are bytes and they go to Storage
+   (netUpPics, netUpVoice); what travels in the body is their paths (`pu`,
+   `pt`, `vu`), never the base64 of the pictures themselves (`pics`). */
 function netBody(p){
   /* `qt` is a column (quote_of, netPush) and `qp` is the server's answer
      about somebody else's post (netRow) -- neither is this post's body. */
@@ -2943,7 +2898,7 @@ function netFeed(which, ok, bad, more){
      the filter page, and the id it needs is the row this phone already holds.
 
      No prompt in hand is 「could not ask」 and not an empty day: `null` leaves
-     the road askable, the way the followed timeline does signed out. */
+     the road askable. */
   if(which==='day'){
     var pid=(typeof dayId==='function')? dayId() : 0;
     if(!pid){ ok(null); return; }
@@ -3266,8 +3221,8 @@ function netPplRead(k, ok, bad){
   w=NET_PPL_WAIT[k]=[{ok:ok, bad:bad}];
   /* WHO IT WAS ASKED FOR, held while the answer is out. Signing out with this
      in the air would otherwise let the old account's list land afterwards and
-     be kept as the new one's -- the same shape netTook() guards meFor() and
-     postFor() against, one file over. The waiters are still answered, with
+     be kept as the new one's -- the same shape acctFor() guards the
+     account's container against (www/core.js § ACCT). The waiters are still answered, with
      none, because a caller left hanging is worse than a caller told nothing. */
   who=netUid();
   netGet(NET_PPL_AT[k]+'?select=id,handle,display,av&order=created_at.desc',
@@ -3643,10 +3598,8 @@ function netLike(q){
    search can hand over a name that has since been deleted, and a page saying
    so is not the same as a page that could not ask.
 
-   No bio and no counts, and that is not an omission here: there is no `bio`
-   column and no follower count on `profile` at all -- what somebody writes
-   about themselves lives on their own phone (www/me.js). whoCard() already
-   draws neither rather than drawing a zero. */
+   A count nobody sent is not 0: `fo`/`fr` stay undefined and whoCard()
+   draws nothing for them. */
 /* WHAT COLUMNS A PERSON IS, and one place says so, because two requests ask
    for them: one person by handle, and many people at once. A `select=` written
    out twice is two lists that come to differ, and the one that differs is the
@@ -4424,14 +4377,6 @@ function netExt(mime){
   if(mime.indexOf('mp4')>=0 || mime.indexOf('m4a')>=0) return '.m4a';
   return '.jpg';
 }
-/* One row in `post`. Everything a reader needs is already ON it (rule 8): who
-   wrote it, what they are called, the language's name, the shapes, which way
-   the line runs. There is nothing to look up.
-
-   ok() is called with the server's id for it, and the caller writes that onto
-   the post -- which is what stops the same post coming back down the timeline
-   as somebody else's. A push that fails leaves no `sid`, and a post with no
-   `sid` is one that has not gone up yet, which is the whole of the retry. */
 /* ---- the day's sentence ------------------------------------------------
    One row, the newest there is. Not "today's": the app does not work out what
    day it is in California -- the function that writes the row does that, and
@@ -4470,6 +4415,14 @@ function netPostEdit(sid, post, ok, bad){
   netSend('PATCH', '/rest/v1/post?id=eq.'+encodeURIComponent(sid),
           {body:netBody(post)}, netTok(), ok, bad);
 }
+/* One row in `post`. Everything a reader needs is already ON it (rule 8): who
+   wrote it, what they are called, the language's name, the shapes, which way
+   the line runs. There is nothing to look up.
+
+   ok() is called with the server's id for it, and the caller writes that onto
+   the post -- which is what stops the same post coming back down the timeline
+   as somebody else's. A push that fails leaves no `sid`, and a post with no
+   `sid` is one that has not gone up yet, which is the whole of the retry. */
 function netPush(post, ok, bad){
   var row, pid, up;
   if(!post){ bad(null, 0); return; }
@@ -4679,7 +4632,7 @@ function netMark(id, kind, on, ok, bad){
    ITS FILES STILL GO. A post's send can come apart in the middle: the
    photographs and the voice reach the bucket and the row that would name
    them does not. So there is no row and there ARE files, and leaving them is
-   a file nothing points at in a PUBLIC bucket -- which is voDrop()'s reason
+   a file nothing points at in the bucket -- which is voDrop()'s reason
    said about a post instead of a recording, and docs/RISK.md § 9. The same
    netDropFiles() road, named by the post being deleted and nothing else.
 
@@ -4726,8 +4679,8 @@ function netDropFiles(p, done, bad){
 
    What does NOT cascade is Storage. A photograph is bytes in a bucket and a
    bucket has no foreign keys, so a deletion that only called the function
-   would leave every picture anybody had ever posted sitting in a PUBLIC
-   bucket with nothing pointing at it and nobody able to find it to remove it.
+   would leave every picture anybody had ever posted sitting in the bucket
+   with nothing pointing at it and nobody able to find it to remove it.
    So the files go first and they go from here.
 
    Which files is asked of the SERVER and not of this phone. The phone holds
@@ -4740,12 +4693,9 @@ function netDropFiles(p, done, bad){
    docs/DATA_SAFETY.md says that in general terms. Erasing the phone is the
    other button, and it says which it is. */
 function netDropMe(ok, bad){
-  /* No session is not 「done」. It said `ok()` here, so a press with nothing to
-     prove who was being deleted reported success and the caller went on to
-     empty the phone -- an account nobody asked the server about, and the only
-     copy of it gone. The token is what says whose account this is; without one
-     there is nothing to delete and nothing to claim. The mark is the same
-     shape as netSetPass()'s a few hundred lines up. */
+  /* No session is not 「done」: netSend1() refuses every request here with
+     no session before it leaves, so the phone is emptied only by an answer
+     from the server. */
   /* What the posts put in the bucket, and what the drafts did -- a voice is
      in the bucket from the moment it is recorded, so a draft that is never
      posted owns one (www/rec.js § voKeep). */
@@ -4867,8 +4817,8 @@ function netNotices(ok, bad){
 
    AND THERE IS NO NEW ROAD DOWN TO THE PERSON'S PHONE. A restore lands on
    `slice` and reaches them the way everything on `slice` reaches them:
-   netLangsWalk() on their next launch, which fills in what this phone is not
-   holding. The slices are in memory (rule 22), so an app that has been closed
+   netLangFill() when a screen drawn from it is arrived at, which fills in what
+   this phone is not holding. The slices are in memory (rule 22), so an app that has been closed
    is holding nothing and the restored version is simply what comes down. An
    app left OPEN is holding the old one and will not take it -- 「アプリを
    一度閉じて開き直してください」 is what the operator says, and it is one
