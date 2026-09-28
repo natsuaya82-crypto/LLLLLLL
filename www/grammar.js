@@ -1429,7 +1429,7 @@ function gPolOld(have){
   for(i=0;i<have.length;i++)
     if(have[i] && have[i].feature==='NEGATION' && have[i].target==='VERB') return null;
   if(typeof STAGES==='undefined' || !STAGES || !gPosSaid('negp')) return null;
-  w=(typeof gSlot==='function')? gSlot('neg','not') : null;
+  w=gSlot('neg','not');
   if(!w) return null;
   r=gPolRule('NEGATION', 'VERB',
              [{operation:'word', form:String(w.hw||''),
