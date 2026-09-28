@@ -4334,7 +4334,7 @@ function postRow(p){
                head -- which is the app explaining itself, and is the notice's job
                rather than this one's. 「アプリ内に説明書くの禁止」 */
             (p.down? '<span class="pdown">'+esc(t('post.down'))+'</span>' : '')+
-            (p.pin? '<span class="ppin">'+ICON_PIN+'</span>' : '')+
+            (p.pinned? '<span class="ppin">'+ICON_PIN+'</span>' : '')+
             '</div>'+
           '</div>'+
           /* The ... and, when it is the one that is open, the menu hanging off
@@ -4744,7 +4744,7 @@ function postMenuHTML(p){
       '</span>';
   return '<span class="pmenu" data-pm="1">'+
     '<button class="pmi"' + DO('postPin', [p.id]) + '>'+ICON_PIN+
-      '<span>'+esc(t(p.pin? 'post.unpin' : 'post.pin'))+'</span></button>'+
+      '<span>'+esc(t(mePins(p.id)? 'post.unpin' : 'post.pin'))+'</span></button>'+
     '<button class="pmi"' + DO('postEdit', [p.id]) + '>'+ICON_PEN+
       '<span>'+esc(t('post.edit'))+'</span></button>'+
     '<button class="pmi bad"' + DO('postDel', [p.id]) + '>'+ICON_BIN+
@@ -4820,17 +4820,12 @@ function postMenuTook(target){
 }
 /* One at a time. A page with three things at the top of it has nothing at the
    top of it, and "which one is pinned" then has no answer. Pressing the one
-   that is pinned takes it off. */
+   that is pinned takes it off. Where it is kept is the page's (mePinPut). */
 function postPin(id){
-  var p=postById(id), was, i;
+  var p=postById(id);
   if(!p || !p.mine) return;
-  was=!!p.pin;
-  for(i=0;i<POSTS.length;i++) if(POSTS[i].mine) delete POSTS[i].pin;
-  if(!was) p.pin=1;
   PMENU='';
-  savePosts();
-  if(here().r==='form') back();
-  render();
+  mePinPut(mePins(id)? null : id);
 }
 /* The post first, its voice second. 「投稿消した声も消していいよ」
    The order is the whole of it: the person pressed delete on a POST, so the

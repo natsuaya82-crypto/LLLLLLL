@@ -618,6 +618,10 @@ function meProfGot(row){
     if(there===String(ME[k]||'')) continue;
     ME[k]=there; moved=true;
   }
+  /* WHICH POST IS AT THE TOP OF MY PAGE -- the server's (profile.pin). */
+  if(Object.prototype.hasOwnProperty.call(row, 'pin') && String(row.pin||'')!==String(ME.pin||'')){
+    ME.pin=String(row.pin||''); moved=true;
+  }
   if(Object.prototype.hasOwnProperty.call(row, 'av')){
     face=String(ME.pic||'')+JSON.stringify(ME.av||null);
     meAvGot(row.av);
@@ -888,7 +892,7 @@ function whoOf(h){
                somebody else's page reads it off the same column
                (「課金者にちゃんと…ダイヤ見えるようになってる？」 OWNER
                2026-09-26). */
-            mine:true, badge:(WHO_HAVE[h] || {}).badge};
+            mine:true, badge:(WHO_HAVE[h] || {}).badge, pin:String(ME.pin||'')};
   /* THE SERVER IS THE RECORD. What it sent is what the person looks like NOW,
      which is the right answer for a page about them; a post's copy is frozen
      at the moment it was written (rule 8) and is right for the post. */
@@ -913,6 +917,8 @@ function whoOf(h){
             /* AND WHETHER THEY WEAR THE MARK -- `profile_seen.badge`, off
                the row netWhoRow() read (netBadgeOn() in www/net.js). */
             badge:!!got.badge,
+            /* the post at the top of their page (profile.pin) */
+            pin:String(got.pin||''),
             /* HOW MANY THEY FOLLOW AND HOW MANY FOLLOW THEM, passed through
                rather than nailed to 0. Both were `0` here because no request
                in www/net.js had ever asked for anybody's but your own --
@@ -990,6 +996,24 @@ function meBlocking(){
   return netPplHandles('block');
 }
 function meBlocks(h){ return meBlocking().indexOf(String(h||''))>=0; }
+/* ---- the post at the top of my page ---------------------------------------
+   「ピン留めはサーバーに持つ」 OWNER 2026-09-28. It is the page's and not the
+   post's: `profile.pin` on the server, read by whoever reads the page
+   (profile_seen) and written here, through netPut, the way the rest of the
+   page is. One at a time -- pressing the one that is pinned takes it off.
+   ME.pin is what the server said, and nothing moves until it has said it. */
+function mePins(id){ return !!id && String(ME.pin||'')===String(id); }
+function mePinPut(id){
+  netPut('profile', netUid(), {pin:id || null},
+    function(r){
+      meProfGot(r);
+      if(here().r==='form') back();
+      render();
+    },
+    function(d, st, m){
+      netPop(d, st, m, function(){ mePinPut(id); });
+    });
+}
 /* And whom you have muted, the same road with the other table's name on it
    (www/net.js § NET_PPL). 「人をミュートできる」 OWNER 2026-09-25. */
 /* By the @ or by the account's id -- a row of the list carries both, and a

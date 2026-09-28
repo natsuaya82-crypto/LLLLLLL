@@ -1011,7 +1011,7 @@ function netSetPass(pass, ok, bad){
 var NET_MINE_UID='';
 function netMyProfile(ok, bad){
   var uid=netUid();
-  netGet('/rest/v1/profile?select='+profCols()+',av,prefs,ed,staff,banned_at,banned_why,admin:profile_admin'+
+  netGet('/rest/v1/profile?select='+profCols()+',av,pin,prefs,ed,staff,banned_at,banned_why,admin:profile_admin'+
          '&limit=1&id=eq.'+encodeURIComponent(uid),
          function(d){
            /* A list, or netGet() has already said it is broken. */
@@ -3605,7 +3605,7 @@ function netLike(q){
    for them: one person by handle, and many people at once. A `select=` written
    out twice is two lists that come to differ, and the one that differs is the
    one nobody is looking at. */
-var NET_WHO_SEL='/rest/v1/profile_seen?select=id,handle,display,av,bio,link,loc,banned_at,fo,fr,lang_id,lang_name,lang_pub,badge';
+var NET_WHO_SEL='/rest/v1/profile_seen?select=id,handle,display,av,bio,link,loc,banned_at,fo,fr,lang_id,lang_name,lang_pub,badge,pin';
 /* And one place turns a row into a person, for the same reason. */
 /* THE LANGUAGE IS ON THE ROW AND IS NOT A SECOND REQUEST.
    「なんか全体的に遅くない？」 OWNER 2026-09-08 (143). It used to be
@@ -3629,6 +3629,8 @@ function netWhoRow(r){
           fo:(r.fo===undefined || r.fo===null)? undefined : (Number(r.fo)||0),
           fr:(r.fr===undefined || r.fr===null)? undefined : (Number(r.fr)||0),
           out:!!r.banned_at,
+          /* the post at the top of their page (profile.pin), '' for none */
+          pin:String(r.pin||''),
           /* the account's uuid, which somebody's posts are keyed on */
           uid:String(r.id||'')}, r);
 }

@@ -1556,9 +1556,9 @@ export function halfDone(){
     ['what an author can do to a post', () => { PMENU = 'p1';
                               window.route='feed'; NAV=[{r:'feed'}];
                               const h = vFeed(); PMENU = ''; return h; }],
-    ['and the same, already pinned',    () => { const p = postById('p1'); p.pin = 1;
+    ['and the same, already pinned',    () => { ME.pin = 'p1';
                               PMENU = 'p1'; window.route='feed'; NAV=[{r:'feed'}];
-                              const h = vFeed(); delete p.pin; PMENU = ''; return h; }],
+                              const h = vFeed(); ME.pin = ''; PMENU = ''; return h; }],
     /* And the OTHER menu, which is a different menu: on somebody else's post
        what you can do is about them, not about it. `p2` is Iri's.
 
@@ -2321,11 +2321,11 @@ export function halfDone(){
                           window.__fixPic(900, 900), window.__fixPic(1200, 500)]});
         window.route='photo'; NAV=[{r:'feed'},{r:'photo', a:'pm:1'}];
         const h = vPhoto(); POSTS.pop(); return h; }],
-    /* A pinned post in the timeline: the mark beside the time only exists on
-       one, and a walk over a timeline where nothing is pinned never draws it. */
-    ['a pinned post', () => { const p = postById('p1'); p.pin = 1;
-                              window.route='feed'; NAV=[{r:'feed'}];
-                              const h = vFeed(); delete p.pin; return h; }],
+    /* A pinned post on its author's page (profile.pin): the mark beside the
+       time only exists on one, and a page where nothing is pinned never draws it. */
+    ['a pinned post', () => { ME.pin = 'p1';
+                              window.route='profile'; NAV=[{r:'profile'}];
+                              const h = vProfile(); ME.pin = ''; return h; }],
     /* A post being written, with a photograph already chosen. The button that
        takes it off and the one that changes it only exist once there is one,
        so a composer opened empty draws neither. The data URL is a real 1x1

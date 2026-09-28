@@ -5028,6 +5028,36 @@ const R = await pg.evaluate(async () => {
     say('94: 評価のお願いは開いた五回目に一度、数はアカウントの物（A 6、B 1）');
   }
 
+  /* ---- 96. ピン留めはサーバーの物（オーナーの答え 2、2026-09-28） -----------
+     1. 押すと profile へ PATCH {pin} が飛び、**答えが戻ってから** ME.pin が動く。
+        写しの投稿には一字も書かない。
+     赤を見た形: postPin() を写しに書く前の形に戻すと 1 が赤。 */
+  {
+    start();
+    netOut(); arrive(A);
+    const real96 = netSend, sent96 = [];
+    let go96 = null;
+    netSend = (method, path, body, tok, ok2) => {
+      if (method === 'PATCH' && /\/rest\/v1\/profile\?/.test(path)){
+        sent96.push(body || {}); go96 = () => ok2([body || {}]);
+      }
+    };
+    const mine96 = { id:'5a000000-0000-4000-8000-000000000096', sid:'5a000000-0000-4000-8000-000000000096',
+                     mine:true, at:Date.now(), hd:meHandle(), ln:'pin' };
+    POSTS.unshift(mine96);
+    ME.pin = '';
+    postPin(mine96.id);
+    if (!sent96.length || sent96[0].pin !== mine96.id)
+      no('96: ピン留めが profile へ上がっていない ── ' + JSON.stringify(sent96));
+    if (mePins(mine96.id)) no('96: 答えが戻る前にピンになっている');
+    if (mine96.pin !== undefined) no('96: **写しの投稿にピンを書いた** ── ' + JSON.stringify(mine96.pin));
+    if (go96) go96();
+    if (!mePins(mine96.id)) no('96: 答えが戻ってもピンになっていない');
+    netSend = real96;
+    POSTS.splice(POSTS.indexOf(mine96), 1);
+    say('96: ピン留めは profile.pin ── 答えの後に動き、写しには書かない');
+  }
+
   return out;
 });
 

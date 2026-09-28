@@ -609,9 +609,21 @@ function pfList(){
     if(at[q.id]===undefined) mine.push(q);
     at[q.id]=Math.max(at[q.id] || 0, bo[id].at);
   }
-  mine.sort(function(a, b){ return ((b.pin?1:0)-(a.pin?1:0)) || (at[b.id]-at[a.id]); });
+  /* THE PIN IS THE PAGE'S (profile.pin, whoOf) -- that one first, wearing
+     the mark; a copy, so nothing on the post itself says so. */
+  var pin=(whoOf(pfMine()? meHandle() : h) || {}).pin || '';
+  mine.sort(function(a, b){
+    return ((b.id===pin?1:0)-(a.id===pin?1:0)) || (at[b.id]-at[a.id]);
+  });
   /* and the ones it passed on say so 「〇〇がリポスト」 (www/post.js § postRp) */
-  return mine.map(function(p){ return postRp(p, bo[p.id]); });
+  return mine.map(function(p){
+    var q=postRp(p, bo[p.id]), c, k;
+    if(p.id!==pin) return q;
+    c={};
+    for(k in q) if(Object.prototype.hasOwnProperty.call(q, k)) c[k]=q[k];
+    c.pinned=1;
+    return c;
+  });
 }
 /* The three lists, in the order they stand in. ONE list: the row of buttons
    is built from it and the swipe below walks it, so a fourth list added here

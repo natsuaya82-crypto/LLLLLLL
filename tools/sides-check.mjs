@@ -220,9 +220,12 @@ for (const [file, mark] of [['post.js', MARK], ['card.js', CARD_MARK]]) {
 
    meMutes -- the same question about the other row on that menu, 「ミュート」
    or 「ミュート解除」 (OWNER 2026-09-25). It is about my account and draws
-   nothing into the post, for meBlocks's reason. */
+   nothing into the post, for meBlocks's reason.
 
-const ALLOW = new Set(['trHTML', 'trBtnHTML', 'postMenuHTML', 'meBlocks', 'meMutes']);
+   mePins -- whether 「ピン留め」 on my own post's menu says 「外す」. The pin is
+   my page's (profile.pin, OWNER 2026-09-28) and draws nothing into the post. */
+
+const ALLOW = new Set(['trHTML', 'trBtnHTML', 'postMenuHTML', 'meBlocks', 'meMutes', 'mePins']);
 
 const bodies = {};
 for (const f of fs.readdirSync(WWW).filter((x) => x.endsWith('.js')).sort()) {
