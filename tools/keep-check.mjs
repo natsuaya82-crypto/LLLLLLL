@@ -264,8 +264,7 @@ const r = await pg.evaluate(({ s }) => {
      A line here fails the day its screen says it once, so the list can only
      shrink. */
   var TWICE = {
-    "a letter's note": "www/letters.js -- toast(t('toast.saved', ...)) in the letter's save",
-    "a word's sheet":  "www/wordsheet.js -- toast(t('toast.saved', hw)) in the sheet's save"
+    "a letter's note": "www/letters.js -- toast(t('toast.saved', ...)) in the letter's save"
   };
 
   for(var i = 0; i < SCREENS.length; i++){
