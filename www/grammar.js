@@ -802,6 +802,9 @@ function g2Bd(id){
    「最初から主語と動詞とかが入ってるせいでわかりにくい」 OWNER 2026-09-06. */
 function g2Stored(){ return orderKeep(STG && STG.order); }
 function g2KeepOn(b){
+  /* no Save on somebody else's language -- nothing of it is this account's
+     to write (langLocked) */
+  if(langLocked()) return;
   keepOn(g2KeepKey(),
          /* WHAT THIS PAGE IS HOLDING: the cards, which are not written down
             until the button is pressed and therefore live in the buffer.
@@ -1202,6 +1205,10 @@ function g2Side(key, w, n){
 }
 function g2SidePick(key){
   var a=['before','after'], i, now=gPosSaid(key)? gPos(key) : '', out='';
+  /* Somebody else's language is read, not written: nothing to press, the way
+     every other screen draws it (langLocked, www/core.js) -- the answer, if
+     there is one, as words. */
+  if(langLocked()) return now? '<div class="segs"><span class="seg on">'+esc(gPosLab(key, now))+'</span></div>' : '';
   for(i=0;i<a.length;i++)
     out+='<button class="seg'+(a[i]===now? ' on' : '')+'"' +
       DO('gPosPut', [key, a[i]]) + '>'+esc(gPosLab(key, a[i]))+'</button>';
