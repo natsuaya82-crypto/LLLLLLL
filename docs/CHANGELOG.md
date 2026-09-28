@@ -400,6 +400,32 @@ where it starts.
 - **検査**: 無い。cron の設定は schema.sql に無く、何も見張っていない
   （docs/BACKLOG.md）。明日の太平洋時間 0 時に変わるかで確かめる。
 
+### 2026-09-27 Android に Lingua キーボード（入力方法、r123-android-ime）
+- 「Android版作りたいから移行できるもの全部移行しつつ、作り直しで必要なところは
+  ルールに則って作って欲しい。」OWNER 2026-09-27。`ios/App/LinguaKeyboard/` の
+  Android 版を `android/app/src/main/java/com/tokinets/lingua/keyboard/` に作った
+  （`LinguaIme` が InputMethodService）。
+- **人が気づくこと**（Android だけ）: 設定 → システム → キーボードに「Lingua」が
+  出る。選ぶと、iPhone の Lingua キーボードと同じ行・同じ大きさ（横十、行の高さは
+  画面の短い辺の 0.1385、全体は画面の半分まで、短い行は真ん中）で、描いた字の
+  キーは iPhone と同じ私用領域の文字を入れる。変換の帯・はじき・手書きの面も同じ。
+- **保存する物（新しく）**: アプリの内部の保存場所の `LinguaKeyboard/` に
+  `keyboard.json`・`widget.json`・`LinguaScript.otf`。`www/share.js` の
+  `sharePush()` が iPhone の App Group に渡している三つと同じ中身・同じ名前で、
+  `LinguaShare.write` が書く（これまで Android では断っていた）。キーボードは
+  読むだけ。**どれも言語の写しで、言語の在りかではない** ── サーバーの言語から
+  毎回作り直され、書くたびに丸ごと置き換わる。
+- **消すこと**: 空で渡されたファイルは消す（サインアウト・アカウント削除・別の
+  アカウント）── iPhone の `LinguaShare.swift` の `mirror()` と同じ。消えるのは
+  写しだけで、人の作った物はサーバーにある。前の人の字がキーボードに残らない
+  ためのもので、DELETE REVIEW は iPhone の同じ行（r63 § 2-1 K5）と同じ理由。
+- **移行・課金**: 無し。プランは何も変えない（キーボードは両方のプランのもの）。
+- **確かめたこと**: Kotlin は android-all に対してコンパイルが通る。`shareKbd()` の
+  本物の出力（六つの書き方と無料の QWERTY）を Kotlin の読み手と `Compose` に
+  通した。kb-check が Kotlin の数（行の高さ・帯・上限・両端・halfCols）を Swift と
+  `www/keyboard.js` に突き合わせる。**端末では何も見ていない** ──
+  `docs/ANDROID.md` § キーボード。
+
 ### 2026-09-27 投げ縄: なぞった所で止まる・親指の輪が輪になる（r113-lasso、実機 170 の直し）
 - 実機で「なぞったとこで止めて欲しいのに全部一直線で選ばれる」「囲ったとことかも関係ない」。
   測ると二つあった: なぞると一筆が丸ごと選ばれていた（そう作っていた ── 前の指示）、そして囲むのは「描き終わりが

@@ -28,6 +28,7 @@ import com.getcapacitor.PluginCall
 import com.getcapacitor.PluginMethod
 import com.getcapacitor.annotation.ActivityCallback
 import com.getcapacitor.annotation.CapacitorPlugin
+import com.tokinets.lingua.keyboard.Shared
 import java.io.ByteArrayOutputStream
 import java.io.File
 import kotlin.math.max
@@ -45,12 +46,11 @@ import kotlin.math.roundToInt
  * Like the Swift, this class decides nothing. It writes down what it is
  * given, shows what it is told to show, and answers what happened.
  *
- * WHAT ANDROID DOES NOT HAVE YET IS SAID, NOT PRETENDED. Two methods answer
- * with a refusal on purpose -- `write` (there is no keyboard and no widget
- * on Android to hand anything to) and `renderPdf` (no renderer on this side
- * draws what somebody wrote on a page). Each says why where it stands, and
- * the screen already reads a refusal as the state it is: sharePush() keeps
- * it as SHARE.how, shPdfDraw() says the page could not be read.
+ * WHAT ANDROID DOES NOT HAVE YET IS SAID, NOT PRETENDED. One method answers
+ * with a refusal on purpose -- `renderPdf` (no renderer on this side draws
+ * what somebody wrote on a page). It says why where it stands, and the screen
+ * already reads the refusal as the state it is: shPdfDraw() says the page
+ * could not be read.
  */
 @CapacitorPlugin(name = "LinguaShare")
 class LinguaSharePlugin : Plugin() {
@@ -58,14 +58,49 @@ class LinguaSharePlugin : Plugin() {
   // ---- the App Group ------------------------------------------------------
   //
   // On iOS this is the shared folder between the app and its keyboard and
-  // widgets. Android has neither yet -- the input method and the home screen
-  // widget are the next round (docs/ANDROID.md) -- so there is nobody to
-  // write for. Resolving here would put `sent` in SHARE.how while the letters
-  // went nowhere, which is the exact failure www/share.js says took three
-  // builds to see. So it refuses, and the refusal is what SHARE.how keeps.
+  // widgets. On Android the keyboard is an input method inside THIS app
+  // (keyboard/LinguaIme.kt), so the app's own storage is the folder both can
+  // see, and keyboard/Shared.kt names it. The three files and what is in them
+  // are LinguaShare.swift's, byte for byte: www/share.js § sharePush() hands
+  // the same three strings to both phones.
+  //
+  // WHAT IS HANDED IS WHAT IS THERE, as in the Swift's mirror(): each file is
+  // written whole, and one handed EMPTY is removed -- the folder is a copy of
+  // the open language of the account signed in, and a file left over from
+  // before is somebody else's letters on the keyboard. www sends all three
+  // empty when nobody is signed in.
+  //
+  // widget.json is written although Android has no widget yet, because it is
+  // the same payload: the widget round reads it rather than changing this.
   @PluginMethod
   fun write(call: PluginCall) {
-    call.reject("no keyboard or widget on Android yet")
+    val dir = Shared.dir(context)
+    try {
+      if (!dir.isDirectory && !dir.mkdirs()) throw java.io.IOException("cannot make $dir")
+      mirror((call.getString("json") ?: "").toByteArray(Charsets.UTF_8), Shared.jsonName, dir)
+      mirror((call.getString("num") ?: "").toByteArray(Charsets.UTF_8), Shared.numName, dir)
+      // Nothing drawn is no font rather than an empty one, and bytes that are
+      // not base64 are nothing -- Data(base64Encoded:) ?? Data() in the Swift.
+      val font = try { Base64.decode(call.getString("font") ?: "", Base64.DEFAULT) }
+                 catch (e: IllegalArgumentException) { ByteArray(0) }
+      mirror(font, Shared.fontName, dir)
+      call.resolve()
+    } catch (e: Exception) {
+      call.reject(e.message ?: "write failed")
+    }
+  }
+
+  /** Written to a file beside it and renamed over, because the keyboard may be
+   *  reading it: a half-written layout is a keyboard with no keys on it. */
+  private fun mirror(data: ByteArray, name: String, dir: File) {
+    val f = File(dir, name)
+    if (data.isEmpty()) {
+      if (f.exists() && !f.delete()) throw java.io.IOException("cannot remove $name")
+      return
+    }
+    val tmp = File(dir, "$name.part")
+    tmp.writeBytes(data)
+    if (!tmp.renameTo(f)) { tmp.delete(); throw java.io.IOException("cannot write $name") }
   }
 
   // ---- the paper ------------------------------------------------------------

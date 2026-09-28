@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The Lingua keyboard (keyboard/LinguaIme.kt). It switches to the next
+     keyboard itself: the globe key, which is in every board www/share.js
+     writes and which LinguaIme drops when the phone does not want it. -->
+<input-method xmlns:android="http://schemas.android.com/apk/res/android"
+    android:supportsSwitchingToNextInputMethod="true" />
