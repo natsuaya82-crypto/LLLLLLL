@@ -185,15 +185,21 @@ function voTook(mime){
         openPost();
       });
   };
-  r.onerror=function(){ toast(t('post.vo.bad')); };
+  r.onerror=function(){ toast(t('post.vo.bad')); voPaint(); };
   r.readAsDataURL(b);
 }
-/* Taking it off the post being written, and the file goes with it. It is
-   put on the server the moment it is recorded, so this removes both or the
-   bucket fills up with recordings nobody kept. */
+/* Taking it off the post being written, and the file goes with it -- once
+   nothing stored names it. A recording made in this composer is named by
+   nothing else, so it goes now. One that came with a draft is still named by
+   that draft's row on the server until the draft is kept again or posted, so
+   it is noted (`PW.voOff`) and goes then (pwVoOffGo, www/post.js); an app
+   closed before that leaves the draft, and its voice, as they were. */
 function voDrop(){
   voPlayOff();
-  if(PW && PW.vo && PW.vo.f) voDropFile(PW.vo.f);
+  if(PW && PW.vo && PW.vo.f){
+    if(PW.did) PW.voOff=PW.vo.f;
+    else voDropFile(PW.vo.f);
+  }
   if(PW) delete PW.vo;
   openPost();
 }
@@ -234,12 +240,12 @@ function pwVoRowHTML(){
    folder is the account, which is the whole of the bucket's write rule
    (supabase/schema.sql § media_make), and the shape is a post's
    (`<author>/<post>/vo.m4a`), so voRemote() reads it as the server's. */
-function voName(mime){
+function voName(){
   return 'v'+(new Date()).getTime()+String(Math.floor(Math.random()*1e6));
 }
 function voKeep(vo, done){
   if(!vo || !vo.b64 || !netSignedIn()){ done(null); return; }
-  netUp(netUid()+'/'+voName(vo.mime)+'/vo'+voExt(vo.mime), vo.b64, vo.mime,
+  netUp(netUid()+'/'+voName()+'/vo'+voExt(vo.mime), vo.b64, vo.mime,
     function(path){ done({f:path, ms:vo.ms}); },
     function(){ done(null); });
 }
@@ -319,9 +325,9 @@ function voSweepKeep(){
       list(l, d);
     }
   }catch(e){ return null; }
-  list(typeof DRAFTS!=='undefined'? DRAFTS : null, true);
-  list(typeof POSTS!=='undefined'? POSTS : null, false);
-  if(typeof PW!=='undefined' && PW) name(PW, true);
+  list(DRAFTS, true);
+  list(POSTS, false);
+  if(PW) name(PW, true);
   return bad? null : keep;
 }
 function voSweep(){
@@ -331,10 +337,9 @@ function voSweep(){
   if(keep===null) return;
   p('LinguaShare', 'sweepVoices', {keep:keep, before:Date.now()})['catch'](function(){});
 }
-/* Whether this voice is on the disk or on the server. A name made by voName()
-   is `v` and digits and an extension and never holds a slash; a path in
-   Storage is `<author>/<post>/vo.m4a` and always does. One character tells
-   them apart, which is why the name was made in one place. */
+/* Whether this voice is on the disk or on the server. A name an earlier
+   version wrote on the disk never holds a slash; a path in Storage
+   (`<uid>/<voName()>/vo.<ext>`) always does. One character tells them apart. */
 function voRemote(f){ return String(f||'').indexOf('/')>=0; }
 function voRead(f, done){
   var p=sharePlug();

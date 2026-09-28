@@ -66,10 +66,19 @@ struct Candidate {
 /// produces a new state rather than editing one in place -- which is what
 /// makes "throw the buffer away" a single assignment rather than four.
 struct Compose {
+  /// What those keys PUT IN, in order: on the roman face it is held back
+  /// until something is chosen, on a face of somebody's own letters it is
+  /// already in the document and this is the mirror of its tail.
   private(set) var buffer = ""
+  /// What each of those keys is CALLED, one entry per key. This is what the
+  /// table is asked with: its keys are names, and on somebody's own face a
+  /// key PUTS IN a private use code point, which no key of the table is --
+  /// asking with the buffer there found nothing, and the words a run begins
+  /// were never offered.
+  private var names: [String] = []
   /// The face of every key pressed since the buffer was last emptied, in
-  /// order. The buffer is what those keys are CALLED; this is what they look
-  /// like, and the bar of somebody's own face is made of it.
+  /// order: what they look like, and the bar of somebody's own face is made
+  /// of it.
   private(set) var typedFaces: [Face] = []
   private let conv: Conv
   private let ink: [Face]
@@ -89,7 +98,7 @@ struct Compose {
   /// the letter that was meant.
   var holdsText: Bool { onRoman }
 
-  mutating func clear() { buffer = ""; typedFaces = [] }
+  mutating func clear() { buffer = ""; names = []; typedFaces = [] }
 
   /// Take one more roman character, or one more letter's name, with the face
   /// of the key it came from.
@@ -106,7 +115,12 @@ struct Compose {
     guard !s.isEmpty else { return false }
     if onRoman, buffer.count + s.count > conv.max { return false }
     buffer += s
-    typedFaces.append(face ?? Face(t: s, st: nil, ch: nil, aw: nil, dx: nil))
+    // The name a table key would be. On the roman face what was pressed is
+    // the name; on somebody's own face it is the face's `nm`, lower case
+    // because every key of the table is (shareMapLts in www/share.js).
+    let nm = onRoman ? s : (face?.nm ?? "").lowercased()
+    names.append(nm.isEmpty ? s : nm)
+    typedFaces.append(face ?? Face(t: s, nm: nil, st: nil, ch: nil, aw: nil, dx: nil))
     return true
   }
 
@@ -115,6 +129,7 @@ struct Compose {
   mutating func back() -> Bool {
     guard !buffer.isEmpty else { return false }
     buffer.removeLast()
+    if !names.isEmpty { names.removeLast() }
     if !typedFaces.isEmpty { typedFaces.removeLast() }
     return true
   }
@@ -136,9 +151,10 @@ struct Compose {
   /// then by the key itself so the order is the same twice running. A bar
   /// that reshuffles between keystrokes cannot be aimed at.
   private func lookup() -> [Candidate] {
+    let asked = names.joined()
     var keys: [String] = []
-    if conv.map[buffer] != nil { keys.append(buffer) }
-    for k in conv.map.keys where k != buffer && k.hasPrefix(buffer) { keys.append(k) }
+    if conv.map[asked] != nil { keys.append(asked) }
+    for k in conv.map.keys where k != asked && k.hasPrefix(asked) { keys.append(k) }
     let head = keys.prefix(1)
     let rest = keys.dropFirst().sorted { a, b in
       a.count == b.count ? a < b : a.count < b.count

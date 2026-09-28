@@ -1,4 +1,4 @@
-# Three of the twenty-six checks, run where a build tag can see them: what the
+# Three of the gate's checks, run where a build tag can see them: what the
 # commit points at, modern syntax that would be a blank screen on an old
 # iPhone, and a screen not fully translated in all ten languages.
 #
@@ -9,8 +9,8 @@
 #
 # What that gives up is small, because none of these three is the only thing
 # asking its question: a session runs the check that holds what it changed, by
-# name, and nothing reaches master without all 26 of tools/gate.mjs having been
-# run over it first. These three are three of those 26.
+# name, and nothing reaches master without the whole of tools/gate.mjs having
+# been run over it first. These three are three of those.
 #
 # workflow_dispatch stays, so a branch that wants this can still ask for it by
 # hand from the Actions tab without editing this file.

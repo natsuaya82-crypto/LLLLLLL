@@ -1576,6 +1576,10 @@ export function halfDone(){
     ['what you can do about somebody else', () => { window.route='feed'; NAV=[{r:'feed'}];
                               postMore('p2');
                               const h = vFeed(); PMENU = ''; return h; }],
+    /* And on your own: pin, edit, and the delete, which is the bin. */
+    ['what you can do about your own post', () => { window.route='feed'; NAV=[{r:'feed'}];
+                              postMore(POSTS.filter((p) => p.mine)[0].id);
+                              const h = vFeed(); PMENU = ''; return h; }],
     /* ブロックしている一覧はサーバーの `block_seen` です（2026-09-24）── `ME.bl`
        ではありません。`NET_PPL.block` は netPplRead() が降ろす人の行で、
        この検査は網を張らないので置きます。 */
@@ -1586,7 +1590,7 @@ export function halfDone(){
                               const h = vFeed(); NET_PPL.block = was; PMENU = ''; return h; }],
     /* The five reasons. It is a form and nothing walks to it. */
     ['saying what is wrong with a post', () => { openReport('p2', 'iri');
-                              const h = vForm(); rpFor = null; return h; }],
+                              return vForm(); }],
     /* And the other end of that form, which is one account's and is drawn for
        nobody else. The row at the foot of the settings list is the only way
        in, and NET_STAFF is false everywhere else -- so both the door and the
@@ -1664,8 +1668,9 @@ export function halfDone(){
     /* The reports before the server has answered, and the reports when there
        are none. Two sentences, and they are not the same sentence. */
     ['the reports, and there are none', () => { const keep = MODS; MODS = [];
+        const had = PULL_GOT['mod']; PULL_GOT['mod'] = 1;   /* answered, with none */
         window.route='mod'; NAV=[{r:'mod'}];
-        const h = vMod(); MODS = keep; return h; }],
+        const h = vMod(); MODS = keep; if (!had) delete PULL_GOT['mod']; return h; }],
     /* And the one thing on this screen that really deletes, asking. A post
        comes back and an account comes back; a report row that has gone has
        gone, so the word on the button that does it is the word for what it
@@ -2277,11 +2282,11 @@ export function halfDone(){
     ['the timeline, following', () => { snsTab = 'fo';
         POSTS.push({id:'fbo1', sid:'fbo1', at:Date.now()-9e8, lang:langId, lname:'Tovi',
                     ln:'mosa relu', who:'Veth', hd:'veth', mine:false, mn:'the river', ui:'en'});
-        const keepFo = FO_HAVE; FO_HAVE = {};
-        POSTS.forEach((p) => { if (p.mine || p.hd === 'iri' || p.hd === 'veth') FO_HAVE[p.id] = 1; });
-        FO_HAVE.fbo1 = { n:'Iri', h:'iri', me:false };
+        const keepFo = FEED_HAVE.fo, fo = { ids:[], rp:{}, key:{}, at:0 };
+        POSTS.forEach((p) => { if (p.hd === 'iri' || p.hd === 'veth'){ fo.ids.push(p.id); fo.key[p.id] = p.at; } });
+        fo.rp.fbo1 = { n:'Iri', h:'iri', me:false }; FEED_HAVE.fo = fo;
         window.route='feed'; NAV=[{r:'feed'}];
-        const h = vFeed(); POSTS.pop(); FO_HAVE = keepFo; snsTab = 'rec'; return h; }],
+        const h = vFeed(); POSTS.pop(); FEED_HAVE.fo = keepFo; snsTab = 'rec'; return h; }],
     ['the timeline, following nobody', () => { snsTab = 'fo';
         const keep = folOf(false, 'aya'); folPut(false, 'aya', []);
         window.route='feed'; NAV=[{r:'feed'}];
@@ -3698,6 +3703,16 @@ export function halfDone(){
        __stemLetters(); const was = SCRIPT.sp; SCRIPT.sp = v; window.route = 'sp';
        NAV = [{ r:'settings' }, { r:'set', a:'lang' }, { r:'sp' }];
        const h = vSp(); if (was === undefined) delete SCRIPT.sp; else SCRIPT.sp = was; return h; }]),
+    /* AND A LANGUAGE WRITTEN RIGHT TO LEFT, on the free plan and on Pro. The
+       preview is a post's line, so it goes the way a post from here would:
+       scriptDir() -- left to right on a plan that does not choose one, the
+       stored way on one that does. It read SCRIPT.dir itself until
+       2026-09-27, and drew the free plan a direction no post is written in. */
+    ...['free', 'pro'].map((p) => ['the gap between letters, a language written right to left, on ' + p, () => {
+       __stemLetters(); const was = SCRIPT.dir; SCRIPT.dir = 'rtl'; planGot(p); window.route = 'sp';
+       NAV = [{ r:'settings' }, { r:'set', a:'lang' }, { r:'sp' }];
+       const h = vSp(); planGot('free');
+       if (was === undefined) delete SCRIPT.dir; else SCRIPT.dir = was; return h; }]),
     ...[0, 0.5, 1, 1.5, 2].map((v) => ['a post whose letters stand ' + v + ' apart', () => {
        __joinPosts(v); window.route = 'feed'; NAV = [{ r:'feed' }];
        return vFeed(); }]),
@@ -3929,11 +3944,10 @@ export function halfDone(){
        2026-09-04. Thirty-eight slots made twice under two sets of ids, which
        is what the owner is holding: a a, b b, c c, every reading twice.
 
-       It goes through ltStart() rather than showing the seventy-six, because
-       ltStart() is the road -- www/boot.js and langOpen() call it -- and what
-       this face is for is the screen somebody ARRIVES at. With the join in it
-       is thirty-eight; with the join taken out it is the owner's photograph.
-       One face, both states, which is what a picture of a fix has to be. */
+       It goes through ltStart() because ltStart() is the road -- www/boot.js
+       and langOpen() call it -- and what this face is for is the screen
+       somebody ARRIVES at. The launch takes no row out of it: 「昔の版で自動で
+       増えた文字: 消さずに残す」 OWNER 2026-09-24. */
     ['an alphabet that had doubled, arrived at', () => {
        const was = LETTERS, wasPlan = plan(), wasSeq = LT_SEQ;
        planGot('free');

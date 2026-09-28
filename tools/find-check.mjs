@@ -383,11 +383,13 @@ const shown = await pg.evaluate(() => {
 say(!shown, '文字が入っているときは履歴を出さない');
 
 /* そして星（`SET.saved`）は別物で、履歴に触られない。 */
-const star = await pg.evaluate(() => {
+/* The ✕ is a press that goes to the server, and the copy moves on the answer. */
+await pg.evaluate(() => {
   SET.saved = ['hoshi']; SET.recent = ['rireki']; snsQ = '';
   snsDropRecent('rireki');
-  return { saved: SET.saved.slice(), recent: SET.recent.slice() };
 });
+await pg.waitForTimeout(120);
+const star = await pg.evaluate(() => ({ saved: SET.saved.slice(), recent: SET.recent.slice() }));
 say(star.saved.length === 1 && star.saved[0] === 'hoshi' && star.recent.length === 0,
     '履歴を消しても星は残る (星と履歴は別の仕組み)');
 
@@ -992,7 +994,7 @@ say(found.ask.indexOf('body->>mn') !== -1,
    履歴の行に見える字、そして日本語に戻したら箱も行も綴りに戻ること。
    最後の一つが要るのは、**表示言語を変えても保存は動かない**というのが
    2026-09-08 の決定そのものだからです。 */
-const dayBox = await pg.evaluate(() => {
+const dayBox = await pg.evaluate(async () => {
   var was = SET.ui, out = {};
   function box(){
     var e = document.createElement('div');
@@ -1030,6 +1032,8 @@ const dayBox = await pg.evaluate(() => {
      でした。goTab() の描画と snsGo() の描画で、一回の押しが二回の問いに
      なっていた（下の「一回の押しは一回の問い」）。 */
   snsTagGo(DAY_TAG);
+  /* the history is written when the server has the row */
+  await new Promise((res) => setTimeout(res, 60));
   out.enBox = box();
   out.enRow = row();
   out.enSaved = (SET.recent || []).slice(0);

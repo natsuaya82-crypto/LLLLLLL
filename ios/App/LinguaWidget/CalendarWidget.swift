@@ -126,10 +126,10 @@ struct MonthGrid: View {
            made one, its number when it has not. */
         HStack(spacing: 0) {
           Group {
-            if let m = num?.monthName(num?.monthOf(entry.date) ?? 1) {
+            if let m = num?.monthName(Numerals.monthOf(entry.date)) {
               WordView(word: m, size: monH * 0.72)
             } else {
-              NumberView(n: num?.monthOf(entry.date) ?? 1, num: num, em: monH * 0.72)
+              NumberView(n: Numerals.monthOf(entry.date), num: num, em: monH * 0.72)
             }
           }
           Spacer(minLength: 0)
@@ -160,14 +160,13 @@ struct MonthGrid: View {
   }
 
   private func rowCount() -> Int {
-    guard let last = days.last else { return 1 }
+    guard !days.isEmpty else { return 1 }
     var n = 1, col = column(days.first ?? 1)
     for d in days where d > (days.first ?? 1) {
       let c = column(d)
       if c <= col { n += 1 }
       col = c
     }
-    _ = last
     return max(n, 1)
   }
 
@@ -219,39 +218,8 @@ struct CalendarWidget: Widget {
     .configurationDisplayName("Calendar")
     .description("This month, in your own language.")
     .supportedFamilies([.systemMedium])
-    /* iOS's own margin, given back. This is the 32 points -- sixteen on each
-       side of a 158pt widget -- that made the face a small ring in a big dark
-       square: the code never saw them, because geo.size arrives already
-       shrunk by them, so no padding and no ring arithmetic here could reach
-       it. 「時計小さくなってんだって根本から違うだろ」
-
-       NOT wrapped in `if #available`. The wrapped version is what build #89
-       refused: @ViewBuilder builds views, and a function returning
-       some WidgetConfiguration cannot be built with it. The modifier is
-       documented as available from iOS 15, which is this target -- so there
-       is nothing to guard.
-
-       If that is wrong, the build says so in two minutes and in one line
-       ('only available in iOS 17.0 or newer'). It is the only compiler this
-       repo can reach. */
+    /* iOS's own margin, given back -- WidgetGround.swift says why, once. */
     .contentMarginsDisabled()
-    /* widgetRoom() was here and is gone: it never compiled.
-
-         WidgetGround.swift:47:7: error: static method 'buildExpression'
-         requires that 'some WidgetConfiguration' conform to 'View'
-
-       @ViewBuilder is for views. A function returning some WidgetConfiguration
-       cannot be built with it, and there is no WidgetConfiguration builder to
-       swap in that exists before iOS 17 -- which is the version the modifier
-       was there to guard against in the first place.
-
-       It was written on a branch, on Linux, where no Swift compiler runs. Four
-       browser-free checks, twelve browser checks and the whole gate say nothing
-       about a .swift file. Build #89 is the first thing that ever read it.
-
-       So iOS 17's content margin is back on the widget for now. That is a
-       widget that is slightly smaller than it could be, which is a smaller
-       problem than an app that does not build. */
   }
 }
 

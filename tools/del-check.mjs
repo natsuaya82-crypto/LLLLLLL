@@ -81,7 +81,7 @@ const DELETES = {
                 why: 'the letter stays and keeps its name and its sounds. What goes is a face that was chosen rather than drawn, and choosing another one is the same press' },
   snsDropRecent: { takes: 'one word out of the search history, here and in recent_search', asks: false,
                 why: '「1件づつ消せるでいいよ」 OWNER 2026-09-03 — the ✕ on the row IS the feature. A history is a record of typing, not something somebody made, and the star beside it is untouched' },
-  voDrop:     { takes: 'the voice file in Documents/Voices of the recording being taken off the post that is being written', asks: false,
+  voDrop:     { takes: 'the recording in the post-media bucket that the post being written carried -- at once when only this composer named it, and when the draft is kept again or posted when an opened draft\u2019s row still names it', asks: false,
                 why: 'the recording has not been sent. Taking it off is the person deciding not to use it, and leaving the file would be a file nothing points at — which is what nothing may tidy up later' },
   delNoteGo:  { takes: 'one note out of NOTES', asks: false,
                 why: '「一覧から右にスワイプして削除。標準アプリと同じ作りにして」 OWNER 2026-09-05 — the swipe is the two-step press this app asks with a popup everywhere else: left to uncover 削除, then press it. A confirm on top of that is not what the standard app does, and the form’s own delete button (which did ask) is gone with it' },

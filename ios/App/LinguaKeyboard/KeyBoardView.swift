@@ -46,9 +46,10 @@ final class KeyView: UIView {
     case "del":  faceView.text = "⌫"
     case "next": faceView.text = "🌐"
     case "ret":  faceView.text = "⏎"
-    // The half key that insets a row. It is in the file so the row still
-    // comes to ten units here -- take it out and the columns stop lining up
-    // on the phone, which is the thing it exists to fix.
+    // A gap: the half key that insets a row, or the room under a key joined
+    // to the one below it (`h` 2 on the key above). It is in the file so the
+    // row still comes to ten units here -- take it out and the columns stop
+    // lining up on the phone, which is the thing it exists to fix.
     case "gap":
       faceView.text = ""
       backgroundColor = .clear

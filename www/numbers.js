@@ -174,6 +174,10 @@ function numStepBase(d){
      what answers somebody who has not bought the letters it would make.
      OWNER 2026-09-01「+を押したらそのまま課金のポップが出るだけでしょ？」 */
   if(upStop(can('letters'))) return;
+  /* And not in a language that may not be written: the base, the slots it
+     makes and the ones it takes went into memory and the save refused --
+     the same shape as ltForUnit() (www/letters.js; dl-check). */
+  if(langLocked()) return;
   var b=numBase()+d;
   if(b<NUM_BASES[0] || b>NUM_BASES[NUM_BASES.length-1]) return;
   numSetBase(b);
