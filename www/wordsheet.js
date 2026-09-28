@@ -838,7 +838,7 @@ var fmNewG='';
 function fmOpen(g){ fmNewG=g; render(); }
 function fmGroupHTML(hw, g, now){
   var list=(g==='i'? FM_INF : FM_DER).concat(fmMine(g));
-  return secAdd(t('word.fm.'+(g==='i'? 'inf' : 'der')), DO('fmOpen', [g]), t('word.fm.own'))+
+  return secAdd(t('word.fm.'+(g==='i'? 'inf' : 'der')), DO('fmOpen', [g]), t('word.mn.add'))+
     list.map(function(f){ return fmRowHTML(hw, f, f===now); }).join('')+
     (fmNewG===g? '<div class="field" style="margin-top:8px">'+
       lnField('fm-'+g, '',
@@ -1092,7 +1092,7 @@ function wfmListHTML(w){
 function wfmSecHTML(w){
   if(wIsForm(w)) return '';
   if(langLocked()) return '<div class="sec">'+esc(t('word.fm.inf'))+'</div>'+wfmListHTML(w);
-  return secAdd(esc(t('word.fm.inf')), DO('openWfm', [String(w.hw), '']), t('word.fm.inf'))+
+  return secAdd(esc(t('word.fm.inf')), DO('openWfm', [String(w.hw), '']), t('word.mn.add'))+
     wfmListHTML(w);
 }
 
