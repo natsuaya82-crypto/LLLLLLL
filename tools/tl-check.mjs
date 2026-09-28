@@ -1182,6 +1182,18 @@ const au = await pg.evaluate(() => {
   out.a15 = modRow({ id:9, why:'spam', note:'', at:Date.now(), who:'', uid:'', by:'', pid:'x', ln:'l' })
     .indexOf(esc(t('mod.of', ''))) < 0;
 
+  /* a16: a draft from before the voice went to the server carries the
+     recording itself. Opening it puts the recording up first; if that does
+     not land the draft stays in the list, recording and all. */
+  { const was = DRAFTS.slice(), vk = window.voKeep, tt = window.toast;
+    window.voKeep = function (vo, done) { done(null); };
+    window.toast = function () {};
+    DRAFTS = [{ id:'D-b64', up:1, at:1, ln:'x', vo:{ b64:'AAAA', ms:900 } }];
+    draftOpen(0);
+    out.a16 = !!draftById('D-b64') && !!draftById('D-b64').vo.b64;
+    window.voKeep = vk; window.toast = tt; DRAFTS = was; PW = pwBlank();
+    NAV = [{ r:'feed' }]; window.route = 'feed'; }
+
   netIdOf = realId;
   netSend1 = realS1; netSend = realS; netGet = realG;
   NAV = [{ r:'feed' }]; window.route = 'feed'; render();
@@ -1236,6 +1248,8 @@ if (!au.a14)
   say('a14: the reports could not be read and the screen did not say 接続できません.');
 if (!au.a15)
   say('a15: a report whose author has left prints 「' + 'mod.of' + '」 with an empty handle in it.');
+if (!au.a16)
+  say('a16: opening an old draft whose recording could not go up took it out of the list -- the recording is gone.');
 if (!au.a3)
   say('a3: a word pressed while another word\u2019s answer is on the screen draws that old answer or ' +
       '「No results」 until its own lands. Not answered yet is the waiting mark.');

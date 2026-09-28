@@ -664,11 +664,26 @@ function draftCut(d){
    too, rather than its private use characters in a face that has none. */
 function draftLn(d){ return puaTyped((d && d.ln) || '').ln; }
 /* Opening one takes it out of the list: it is the composer again, and a draft
-   that is open in two places at once is a draft about to be duplicated. */
+   that is open in two places at once is a draft about to be duplicated.
+
+   A draft written before the voice went to the server carries the recording
+   itself (`b64`). It is put up first (voKeep(), www/rec.js), and the draft is
+   opened only when it has landed -- as `{f, ms}`, the one shape everything
+   downstream reads. If it does not land the draft stays in the list exactly
+   as it was, recording and all, and the press says so. */
 function draftOpen(i){
-  i=parseInt(i, 10)||0;
-  var d=DRAFTS[i];
+  var d=DRAFTS[parseInt(i, 10)||0];
   if(!d) return;
+  if(!(d.vo && d.vo.b64)){ draftOpenNow(d); return; }
+  voKeep(d.vo, function(vo){
+    if(!vo){ toast(t('post.vo.bad')); return; }
+    d.vo=vo;
+    draftOpenNow(d);
+  });
+}
+function draftOpenNow(d){
+  var i=DRAFTS.indexOf(d);
+  if(i<0) return;
   DRAFTS.splice(i, 1);
   draftsSave();
   if(here().r==='drafts') back();
@@ -681,19 +696,10 @@ function draftOpen(i){
      and a post cannot disagree about it. */
   PW.tags=tagsOf(d);
   PW.pics=d.pics||[]; PW.pv=!!d.pv;
-  /* A draft written before the voice became a file carries the recording
-     itself (`b64`). It is put on the disk now and the draft's copy is
-     replaced by the name -- one shape from here on, and nothing downstream
-     has to ask which kind it was given. A draft from today is already
-     `{f, ms}` and goes straight across. */
-  if(d.vo && d.vo.b64) voKeep(d.vo, function(vo){ if(vo){ PW.vo=vo; openPost(); } });
-  else if(d.vo) PW.vo=d.vo;
-  /* The name it goes back under. Set after pwBlank() above, which does not
-     know about it.
-
-     The row on the server is NOT removed here, and that is the point: this
-     takes the draft out of the LIST so that it is not open in two places at
-     once (tools/draft-check.mjs), and an app that stopped here -- killed,
+  PW.vo=d.vo || null;
+  /* The name it goes back under. The row on the server is NOT removed here:
+     this takes the draft out of the LIST so that it is not open in two places
+     at once (tools/draft-check.mjs), and an app that stopped here -- killed,
      crashed, battery -- would otherwise have thrown away the only copy of
      something somebody was in the middle of. It stays until the draft is put
      back over it, thrown away, or posted. */
