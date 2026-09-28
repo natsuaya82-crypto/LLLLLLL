@@ -6,7 +6,6 @@
    11. Settings
    ========================================================================= */
 function setSample(){
-  var p=PLANS.filter(function(x){return x.id===plan();})[0];
   /* The sample is a word of this language if there is one, shown as its own
      sounds; the Latin beside it is only what the respelling engines read. */
   var sseq=WORDS.length? wPh(WORDS[0]) : phGuess('aelin');
@@ -172,7 +171,7 @@ function vSettings(){
     SETS.filter(function(x){ return !x.off; }).map(function(x){
       return '<button class="set"' + DO('go', ["set", x.id]) + '>'+
         '<span class="sl">'+esc(t(x.k))+'</span>'+
-        '<span class="sv">'+esc(setSummary(x.id, p))+ICON_GO+'</span></button>';
+        '<span class="sv">'+esc(setSummary(x.id))+ICON_GO+'</span></button>';
     }).join('')+
     /* And the way to say something about the app itself, which is not a
        setting and is a row on this list because this list is where somebody
@@ -205,7 +204,7 @@ function setPplRow(p, press, k){
 }
 /* What each room answers, said on its door, so most questions are answered
    without opening anything. */
-function setSummary(id, p){
+function setSummary(id){
   if(id==='look')  return t('theme.'+(SET.theme||'system'));
   if(id==='ui')    return LANG[uiLang()].label;
   if(id==='lang')  return langNameSaid(langName);
@@ -217,7 +216,7 @@ function setSummary(id, p){
   return '';
 }
 function vSet(){
-  var id=String(here().a||''), p=PLANS.filter(function(x){return x.id===plan();})[0], S=setSample();
+  var id=String(here().a||''), S=setSample();
   var body='';
   if(id==='look'){
     /* Three words in a row said nothing about what they did. A phone shows
