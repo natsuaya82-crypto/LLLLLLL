@@ -38,10 +38,8 @@
 /* Twelve and seven, and neither is a setting.
    They are here as names rather than as bare numbers in five files, so that
    the day one of them is questioned there is one line to read. */
-var CAL_MONTHS=12;
-var CAL_WEEK=7;
-function calMonths(){ return CAL_MONTHS; }
-function calWeek(){ return CAL_WEEK; }
+function calMonths(){ return 12; }
+function calWeek(){ return 7; }
 
 /* One slot per month, one per day of the week, and each is called what the
    world calls it: January, Sunday. Day one is SUNDAY, because that is where a
@@ -68,12 +66,12 @@ function calWeek(){ return CAL_WEEK; }
    written that way, which is the check doing its job. */
 function calMonthSlots(){
   var out=[], i;
-  for(i=1;i<=CAL_MONTHS;i++) out.push(t('cal.m.'+i));
+  for(i=1;i<=calMonths();i++) out.push(t('cal.m.'+i));
   return out;
 }
 function calWeekSlots(){
   var out=[], i;
-  for(i=1;i<=CAL_WEEK;i++) out.push(t('cal.d.'+i));
+  for(i=1;i<=calWeek();i++) out.push(t('cal.d.'+i));
   return out;
 }
 

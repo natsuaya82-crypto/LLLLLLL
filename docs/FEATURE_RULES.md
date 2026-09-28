@@ -249,6 +249,16 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Implementation status:
 ```
 
+### 2026-09-27 一行の行の箱は字の高さ ── 入力欄のカーソルが字の二倍にならない
+- Date: 2026-09-27
+- Area: 一行の規則（`www/index.html` の `.pline,.pwfield #pw-ln`）── 投稿の入力欄・編集の欄・投稿の一行
+- Decision: 行の箱（`line-height`）を自作文字の em の 1.2 倍（15px で約 25px）にする。前は 1.7 倍（約 35.4px）。欄と投稿は同じ一つの規則のまま。行の箱から減った分の半分ずつを投稿の一行（`.pline`）の外側、行が積まれる向きの余白（`padding-block`）に出し、一行の投稿の位置と、本文から意味までの間は変えない。二行以上の投稿は行と行の間が詰まる（格子の上から下まで届く字で、空きが 19.5px → 9.5px）。縦書きは列と列の間が同じだけ詰まり、下向きの字間は変わらない。
+- Reason: オーナーの言葉「文字のサイズとカーソルサイズ全然違う」（実機 170）、「直してください」。iOS はカーソルを行の箱の高さで描く（r119-edit で測った原因）。
+- Affected features: 投稿画面の本文の欄、投稿の編集画面、タイムライン・スレッド・引用・通知の投稿の一行。
+- Affected data: 無し。
+- Affected docs: `docs/CHANGELOG.md`、`docs/scope/r125-line.md`。
+- Implementation status: 実装（`claude/r125-line`、CODE CONFIRMED のみ）。カーソルの高さは Linux の Chromium では iOS と同じに描かれないので、実機で見るまで DEVICE CONFIRMED ではない。`line-check` 13 が持つ（欄の行の箱が格子いっぱいの字のインクの 1.7 倍以下、その字の二行が離れている）。
+
 ### 2026-09-27 お題は毎日、太平洋時間の 0 時に変わる。作れなかった日は無くす
 - Date: 2026-09-27
 - Area: 今日のお題（daily-prompt、cron）
@@ -1735,28 +1745,8 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Implementation status: オンライン一本化は入りました。バッジは 2026-09-26
   「課金者の印は、誰の画面でも…」で `supabase/schema.sql` に入りました（r109）。
 
-### 増えた文字は消してよい ── リリース前のあいだだけ
-- Date: 2026-09-04
-- Area: 文字（`www/letters.js`）。増殖した分の後始末
-
-- Decision:
-
-  ```
-  だからリリース前の今は消していいから、描いてないからリリースしてから
-  確認してくれ、データがないから
-  ```
-
-- Reason: **リリース前で、増えた文字には誰も何も描いていない。**だから
-  消しても失われるものが無い。
-- Affected features: 文字の増殖（`docs/HANDOVER.md` 六章の 0）の後始末。
-  **`docs/DATA_SAFETY.md` の DELETE REVIEW は、この件については要らない。**
-- Affected data: 増殖した文字。**中身は空 ── 誰も描いていない。**
-- Affected docs: `docs/HANDOVER.md` 六章の 0 に書いた「勝手に消してはいけない」
-  は取り消し。同じコミットで消した。
-- Implementation status: 増殖そのものが未着手。
-- **有効期限つきの決定です。**理由が「いまはデータが無いから」なので、
-  **リリース後はこの決定は効きません。**そのときは人が描いた文字が混ざる
-  ので、同じ消し方をしてはいけません。
+### 【差し替え済み 2026-09-24】増えた文字は消してよい ── リリース前のあいだだけ（2026-09-04）
+- 差し替えた決定: 2026-09-24「画面・タイムライン・キーボード・保存・お金」の「昔の版で自動で増えた文字: 消さずに残す」
 
 ### キーボードの編集画面、一番下の ＋ を外す
 - Date: 2026-09-04
@@ -2755,7 +2745,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
   **「何か打ったか」は画面が答えます。**書き込む中身を知っているのは画面
   だけなので、一箇所が持つのは「状態は二つ」と「色はどこから来るか」だけです。
   ── 打ちかけの欄は `KEEP`、文字を描く画面は開いた時の線と今の線
-  （~~`geDirty()`~~）、投稿は `pwSend()` が断る条件そのもの（`pwOn()`）、
+  （~~`geDirty()`~~）、投稿は `pwSend()` が断る条件そのもの（`pwHas()`）、
   単語の追加は `addOne()` が断る条件そのもの（`wdAddOn()`）。
 
   **打っている間は画面を描き直さないので、色は塗り直します**

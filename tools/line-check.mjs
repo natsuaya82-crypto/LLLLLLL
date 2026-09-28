@@ -61,6 +61,9 @@
      9  nobody-has-decided is ON: with SET.myfont absent the dictionary is set
         in the drawn letters and the switch reads on; with it `false` neither.
         「オンをデフォルトにしてくれ。」 OWNER 2026-09-23
+    13  the composer's line box -- the height iOS draws the caret -- is no more
+        than 1.7 times the ink of a letter as tall as the lattice, and two rows
+        of that letter still stand apart. 「直してください」 OWNER 2026-09-27
 
    A browser, on its own port.
    --------------------------------------------------------------------------- */
@@ -172,7 +175,7 @@ const inkOf = async (sel) => {
         const last = runs[runs.length - 1];
         if (last && last[1] === i - 1) last[1] = i; else runs.push([i, i]);
       }
-      return { top: bd.a / S, runs: runs.map((r) => [r[0] / S, (r[1] + 1) / S]) };
+      return { top: bd.a / S, bot: (bd.b + 1) / S, runs: runs.map((r) => [r[0] / S, (r[1] + 1) / S]) };
     });
   }, png.toString('base64'));
 };
@@ -762,6 +765,37 @@ else if (!SIZE.ch || Math.abs(SIZE.inLine - SIZE.was) > 0.6)
   fails.push('12: a drawn letter on the line is ' + (SIZE.inLine || 0).toFixed(1) + 'px across and ' +
              'the same letter at the size a line was is ' + (SIZE.was || 0).toFixed(1) + 'px -- the drawn ' +
              'letters stay where they were while the ordinary ones get smaller');
+/* ---- 13. the field's line box is the letters' height
+   「文字のサイズとカーソルサイズ全然違う」「直してください」 OWNER 2026-09-27.
+   iOS draws the caret the full height of the line box, and a box of 1.7 of a
+   drawn letter's em stood a caret twice as tall as the letters beside it. A
+   letter reaching the top and the bottom of the lattice, two rows of it typed
+   into the composer: the line box read off the page against that letter's ink
+   read off a photograph of the field -- and the two rows still stand apart. */
+await pg.evaluate(() => {
+  const I = GGRID.inset, R = 800 - GGRID.inset;
+  /* an X: a diagonal inks every row from the top of the lattice to the bottom */
+  ltPuaOrder()[0].st = [{ pts: [[I, I], [R, R]] }, { pts: [[R, I], [I, R]] }];
+  installScriptFont();
+  const a = ltPua(0);
+  PW = pwBlank(); openPost(); render();
+  const e = document.getElementById('pw-ln');
+  e.style.caretColor = 'transparent';
+  e.value = a + a + '\n' + a + a;
+  e.dispatchEvent(new Event('input', { bubbles: true }));
+});
+await pg.evaluate(() => { if (typeof popOff === 'function') popOff(); });
+const TALL = await inkOf('#pw-ln');
+const BOX = await pg.evaluate(() => parseFloat(getComputedStyle(document.getElementById('pw-ln')).lineHeight));
+const tallInk = TALL && TALL[0] ? TALL[0].bot - TALL[0].top : 0;
+if (!TALL || TALL.length !== 2 || !(tallInk > 0))
+  fails.push('13: two rows of a letter as tall as the lattice came out as ' + (TALL ? TALL.length : 0) +
+             ' bands of ink in the field -- the rows ran into each other: ' + say(TALL));
+else if (!(BOX <= 1.7 * tallInk))
+  fails.push('13: the field\u2019s line box is ' + BOX.toFixed(1) + 'px and a letter as tall as the lattice inks ' +
+             tallInk.toFixed(1) + 'px of it -- iOS draws the caret the height of the box, ' +
+             (BOX / tallInk).toFixed(2) + ' times the letter (OWNER 2026-09-27)');
+
 if (errs.length) fails.push('the page threw: ' + errs.slice(0, 3).join(' | '));
 
 await br.close();
@@ -793,4 +827,6 @@ console.log('line: typed into the composer and posted, one line comes out in the
             '      ' + MINEONLY.lines + ' lines on the timeline, ' + MINEONLY.pua + ' private use characters on them, every one a shape its own post carries.\n' +
             '      The timeline and two cards drawn with ' + QUIET.saves + ' save functions watched: nothing written, ME and SET as they were.\n' +
             '      A posted line is set at ' + SIZE.ord + 'px, and a drawn letter on it is ' + SIZE.inLine.toFixed(1) +
-            'px across -- ' + SIZE.was.toFixed(1) + 'px at the size a line was.');
+            'px across -- ' + SIZE.was.toFixed(1) + 'px at the size a line was.\n' +
+            '      The field\u2019s line box -- the caret on iOS -- is ' + BOX.toFixed(1) + 'px, a letter as tall as the lattice\n' +
+            '      inks ' + tallInk.toFixed(1) + 'px of it, and two rows of it stand ' + (TALL[1].top - TALL[0].bot).toFixed(1) + 'px apart.');

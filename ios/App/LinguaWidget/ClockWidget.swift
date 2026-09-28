@@ -157,17 +157,6 @@ struct ClockFace: View {
           .position(centre)
       }
     }
-    /* Two, and it is two because the overflow it was hiding is fixed above.
-       Eight was here to keep a wide numeral inside the circle -- the nine
-       o'clock one, in a base whose numerals are four signs long -- and the
-       ring now pulls those in by their own half-width instead. What is left
-       is a hair of breathing room, not a fix.
-
-       「時計はもっと幅広く使って欲しい」 iOS 17's own margin is the other
-       sixteen points on each side and it is NOT taken back here: the modifier
-       that does it (contentMarginsDisabled) could not be wrapped in an
-       availability check that compiles, and build #89 is what said so.
-       WidgetGround.swift carries the error. */
     /* Nothing. The overflow the old eight was hiding is fixed above -- the
        ring pulls a wide numeral in by its own half-width now -- so there is
        nothing left for a margin to protect. 「時計は今余白多すぎるから無くして
@@ -218,38 +207,7 @@ struct ClockWidget: Widget {
     .configurationDisplayName("Clock")
     .description("The time, in your own numerals.")
     .supportedFamilies([.systemSmall])
-    /* iOS's own margin, given back. This is the 32 points -- sixteen on each
-       side of a 158pt widget -- that made the face a small ring in a big dark
-       square: the code never saw them, because geo.size arrives already
-       shrunk by them, so no padding and no ring arithmetic here could reach
-       it. 「時計小さくなってんだって根本から違うだろ」
-
-       NOT wrapped in `if #available`. The wrapped version is what build #89
-       refused: @ViewBuilder builds views, and a function returning
-       some WidgetConfiguration cannot be built with it. The modifier is
-       documented as available from iOS 15, which is this target -- so there
-       is nothing to guard.
-
-       If that is wrong, the build says so in two minutes and in one line
-       ('only available in iOS 17.0 or newer'). It is the only compiler this
-       repo can reach. */
+    /* iOS's own margin, given back -- WidgetGround.swift says why, once. */
     .contentMarginsDisabled()
-    /* widgetRoom() was here and is gone: it never compiled.
-
-         WidgetGround.swift:47:7: error: static method 'buildExpression'
-         requires that 'some WidgetConfiguration' conform to 'View'
-
-       @ViewBuilder is for views. A function returning some WidgetConfiguration
-       cannot be built with it, and there is no WidgetConfiguration builder to
-       swap in that exists before iOS 17 -- which is the version the modifier
-       was there to guard against in the first place.
-
-       It was written on a branch, on Linux, where no Swift compiler runs. Four
-       browser-free checks, twelve browser checks and the whole gate say nothing
-       about a .swift file. Build #89 is the first thing that ever read it.
-
-       So iOS 17's content margin is back on the widget for now. That is a
-       widget that is slightly smaller than it could be, which is a smaller
-       problem than an app that does not build. */
   }
 }

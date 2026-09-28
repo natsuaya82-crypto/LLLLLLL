@@ -122,8 +122,8 @@ function wsGuess(){
    `language.wsys` column the server holds, which is also what anybody reading
    a published language is told.
 
-   Changing it is a different question and is setWsys() below --
-   `upStop(can('wsys'))`, its first line, which is the door rather than the
+   Changing it is a different question, asked on the press -- wsPick()
+   (www/sound.js), `upStop(can('wsys'))`, which is the door rather than the
    room, and which says 「接続できません」 rather than a price while nobody
    has asked. */
 function wsys(){
@@ -131,30 +131,20 @@ function wsys(){
   var w=langWsysOf(langId);
   return WSYS.indexOf(w)>=0 ? w : wsGuess();
 }
-function setWsys(k){
-  /* The ceiling, met on the press. 「+を押したらそのまま課金のポップが出る
-     だけでしょ？」 OWNER 2026-09-01 -- the button is drawn on every plan. */
-  if(upStop(can('wsys'))) return;
-
-  if(WSYS.indexOf(k)<0) return;
-  /* There is no second guard under this one. It used to read
-     `if(!can('wsys') && k!=='alpha'){ go('plans'); return; }` -- the free plan
-     carried off to the price list, which is the older sentence
-     「無料はタップすると課金ページに飛ばされる」 and 「ポップだって。その
-     古いのは消して」 OWNER 2026-09-05 is what replaced it. Said as
-     `upStop(can('wsys'))` it is the line at the top of this function, word
-     for word, and a route arrived at from anywhere or a plan that ended
-     while one of the other five was set meets it there. Written twice, the
-     second one can never run. */
-  /* THE SERVER FIRST. The screen moves when the column has it -- the same
-     sentence the 公開 switch and the heart carry
-     （「保存するタイミングでエラーが起きるなら、保存されないし」 OWNER
-     2026-09-05）. A choice that did not arrive is a choice that did not
-     happen, and ［再接続］ presses it again. */
-  netLangWsys(k, function(){
-    installScriptFont();
-    render();
-  });
+/* THE WRITE, AND IT ANSWERS WHEN THE COLUMN HAS IT. The screen's Save is
+   keepSave() -> wsKeepSave() (www/sound.js), and `done` is what it waits
+   on: `true` once the server has the column, `false` when it said no -- the
+   popup with ［再接続］ is up by then, the same shape meProfPut() (www/me.js)
+   has for the profile. The plan is not asked here: it is asked on the press
+   (wsPick), which is the only road here. */
+function setWsys(k, done){
+  if(WSYS.indexOf(k)<0){ done(false); return; }
+  netLangWsys(k,
+    function(){ installScriptFont(); done(true); },
+    function(d, st, m){
+      netPop(d, st, m, function(){ setWsys(k, function(){ render(); }); });
+      done(false);
+    });
 }
 /* An abugida is the only one that builds a letter out of two drawings, so it
    is the only one that has two kinds of thing to draw. */
@@ -172,9 +162,15 @@ function wsVows(){
    ligature substitutes. */
 function wsKey(a){ return a.join(''); }
 
-/* A word, as the units its writing system would write it in. */
-function wsSplit(seq){
-  var k=wsys(), out=[], i, cut, c, v;
+/* A word, as the units writing system `k` would write it in. The kind is
+   HANDED IN, never asked here: wsys() is worked out from the whole language
+   when nothing is stored (wsGuess reads every word), and a list cut word by
+   word asked it once per word -- the dictionary with borrowed characters on
+   was every word, times every word, times every word, and one draw of 130
+   words took a second and a half (r120, measured). Whoever cuts asks wsys()
+   once and passes the answer to every word. */
+function wsSplit(k, seq){
+  var out=[], i, cut, c, v;
   if(!seq || !seq.length) return [];
   if(k==='logo') return [wsKey(seq)];
   if(k==='alpha') return seq.slice();
@@ -202,7 +198,6 @@ function wsSplit(seq){
   for(i=0;i<cut.length;i++) out.push(wsKey(cut[i].on.concat(cut[i].nu).concat(cut[i].co)));
   return out;
 }
-function wsUnitsOf(w){ return wsSplit(wPh(w)); }
 
 /* ---- what has to be drawn --------------------------------------------
    The list of letters this writing system needs, which is a different list
@@ -223,7 +218,7 @@ function wsUnits(){
        of them */
     wsCons().forEach(push); wsVows().forEach(push);
     for(i=0;i<WORDS.length;i++){
-      u=wsSplit(wPh(WORDS[i]));
+      u=wsSplit(k, wPh(WORDS[i]));
       for(j=0;j<u.length;j++) push(u[j]);
     }
   }
@@ -233,7 +228,7 @@ function wsUnits(){
        consonant against every vowel would be hundreds of letters to draw,
        most of which no word would ever need */
     for(i=0;i<WORDS.length;i++){
-      u=wsUnitsOf(WORDS[i]);
+      u=wsSplit(k, wPh(WORDS[i]));
       for(j=0;j<u.length;j++) push(u[j]);
     }
     /* with no words yet there is still something to start on: every sound
@@ -365,7 +360,7 @@ function wsStrokes(unit){
 /* A word in the letters chosen for it. Used for borrowed characters; drawn
    letters are a font and need no substitution. */
 function wsInScript(hw){
-  var u=wsSplit(seqOf(hw)), out=[], i, c;
+  var u=wsSplit(wsys(), seqOf(hw)), out=[], i, c;
   for(i=0;i<u.length;i++){ c=ltChar(u[i]); out.push(c || u[i]); }
   return out.join('');
 }
@@ -419,15 +414,11 @@ function scriptDir(){
 function dirClass(d){
   return 'dir-'+(DIRS.indexOf(d)>=0 ? d : 'ltr');
 }
+/* The direction is the `script` slice's, so it rides the Save's own send
+   (keepSave -> netSaveNow). The plan is asked on the press (dirPick). */
 function setScriptDir(k){
   if(DIRS.indexOf(k)<0) return;
-  /* The screen only offers this on a paid plan; this is the same sentence
-     said where it can be relied on, since a route can be arrived at from
-     anywhere and a plan can end while one of the four is set. Exactly as
-     setWsys() does it. */
-  if(upStop(can('dir'))) return;
   SCRIPT.dir=k; save();
-  render();
 }
 /* 字間, in steps of the lattice (glyph.js § geSide), and the one place its
    three numbers are written. 「あの文字間は規定を1としてスライドで文字間が見える
@@ -448,9 +439,10 @@ function spClamp(v){
    スライドしてどう動くかで別ページにした方が見やすい。」 OWNER 2026-09-23.
    Both are a post's line -- `.pline` and dirClass(), the element a post is
    set in (www/post.js § postLnHTML) -- so what moves here is what a post
-   will look like, because it is the same thing. Across is the language's own
-   way across and down its own way down, where it has one; otherwise left to
-   right, and the first column on the right. */
+   will look like, because it is the same thing. Across is the way a post
+   from here goes across and down the way it goes down -- scriptDir(), the
+   one answer, so a plan that does not choose a direction sees left to right
+   and the first column on the right, as its posts are written. */
 /* The spacing's `?` (OWNER 2026-09-26 「？の中に描きまくろう」). */
 HELP.sp=function(){
   return {t:t('set.sp'), h:
@@ -460,7 +452,7 @@ HELP.sp=function(){
     helpPara(t('hp.sp.p2'))};
 };
 function vSp(){
-  var v=inkSteps(SCRIPT.sp), d=SCRIPT.dir,
+  var v=inkSteps(SCRIPT.sp), d=scriptDir(),
       hz=(d==='rtl')? 'rtl' : 'ltr', vt=(d==='ttb-lr')? 'ttb-lr' : 'ttb-rl';
   return '<div class="view">'+navTop('', helpQ('sp'))+'<div class="body">'+
     /* Styled here rather than in index.html, which is not this page's to

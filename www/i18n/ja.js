@@ -184,8 +184,6 @@ defLang('ja', (function(){
       "set.account"               : "アカウント",
       "set.account.guest"         : "未ログイン",
       "ob.borrow.h"               : "借りる文字",
-      "ob.borrow.sub"             : "　",
-      "ob.borrow.take"            : "　",
       "ob.tour.tab" : "制作をひらく。",
       "ob.tour.build" : "キーボードをタップ。",
       "ob.tour.kb0" : "キーボードをタップ。",
@@ -658,7 +656,6 @@ defLang('ja', (function(){
       'lt.out.svg' : "SVG",
       /* onboarding */
       'ob.next'         : '次へ',
-      'ob.name.sub'     : '　',
       'ob.name.note'    : "あとで変更できます",
       'ob.name.later'   : 'あとで決める',
       'ob.draw.h'      : "君の {0} を書いてみよう。",

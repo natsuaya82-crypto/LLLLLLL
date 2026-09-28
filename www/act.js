@@ -215,7 +215,11 @@ function actWire(root){
      press that runs a name never also does what Enter would have done. */
   root.addEventListener('keydown', function(e){
     if(e.key!=='Enter' && e.keyCode!==13) return;
-    var one=(e.target && String(e.target.className||'').indexOf('lnin')>=0),
+    /* ...unless the field says it is lines: `lnlines`, which the composer's
+       body wears, because a post is lines 「投稿の改行ができない」 (OWNER,
+       build 171). The field says so, not a list of ids here. */
+    var c=' '+String((e.target && e.target.className)||'')+' ',
+        one=c.indexOf(' lnin ')>=0 && c.indexOf(' lnlines ')<0,
         el=actOf(e.target, 'data-kd');
     if(one || el) e.preventDefault();
     if(el) actRun(ACT_KEY, el, 'data-kd');

@@ -10,7 +10,6 @@ on:
       version:
         description: '出す版（提出準備中のもの。例 1.0.2）'
         required: true
-        default: '1.0.2'
       build:
         description: '付けるビルド番号（例 166）'
         required: true
@@ -34,7 +33,11 @@ jobs:
           ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
           ASC_KEY_ID: ${{ secrets.IOS_KEY_ID }}
           ASC_PRIVATE_KEY: ${{ secrets.IOS_API_KEY }}
+          # 打たれた値はシェルの文字として埋めず、環境変数で渡す。
+          VERSION: ${{ inputs.version }}
+          BUILD: ${{ inputs.build }}
+          DRY: ${{ inputs.dry }}
         run: |
-          ARGS="--version ${{ inputs.version }} --build ${{ inputs.build }}"
-          if [ "${{ inputs.dry }}" = "true" ]; then ARGS="$ARGS --dry"; fi
-          node tools/store-submit.mjs $ARGS
+          set -- --version "$VERSION" --build "$BUILD"
+          if [ "$DRY" = "true" ]; then set -- "$@" --dry; fi
+          node tools/store-submit.mjs "$@"

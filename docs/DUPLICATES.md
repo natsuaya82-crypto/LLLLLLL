@@ -167,7 +167,7 @@ grep -rn "capwarn" www/*.js      www/shell.js の一行だけ
 別の状態だからです（`snsWaitHTML()` の注記がその理由を書いています）。
 
 **~~`.mnone`~~ の六箇所と、赤い三つは、どの walk も通りません。**
-`tools/fixture.mjs` に `MODERR` も `ADREC_ERR` も `admin.rec.none` も無い
+`tools/fixture.mjs` に ~~`MODERR`~~（2026-09-28 に消えた）も `ADREC_ERR` も `admin.rec.none` も無い
 ので、写真は面を五つ足して撮り、**足した面は commit していません**（9番 と
 同じ理由）。
 

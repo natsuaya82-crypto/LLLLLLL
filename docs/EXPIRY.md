@@ -72,7 +72,7 @@ CLAUDE.md は「A migration **copies** and never removes what it read」と
 （`w.ph`）が消えます。次に起動したとき、綴りからの**推測**が代わりに
 書き込まれます。綴りを letters で組み直した単語だけが対象です。
 
-**どこにあるか。** `www/letters.js:1265`（`migrateSp()` の `delete w.ph;`）。
+**どこにあるか。** `www/letters.js:1265`（~~`migrateSp()`~~（2026-09-27 に消えた、claude/audit-glyph） の `delete w.ph;`）。
 書き戻しは `www/core.js:1648`（~~`migratePh()`~~ ── 2026-09-23 に消えた、`claude/r60-up`）。
 取り込みで入る所は `www/import.js:818`。
 
@@ -83,7 +83,7 @@ CLAUDE.md は「A migration **copies** and never removes what it read」と
 **直す大きさ:** 小。
 
 **✅ 直りました。**`027b0e9e`（`master` に入っています。この一覧を書いた
-セッションではなく、別のセッションの仕事です）。`migrateSp()` から
+セッションではなく、別のセッションの仕事です）。~~`migrateSp()`~~ から
 `delete w.ph;` を一行削っただけで、条件は足していません。
 「2発音は消えないでくい」OWNER 2026-09-04。
 
@@ -121,7 +121,7 @@ CLAUDE.md は「A migration **copies** and never removes what it read」と
 | `www/import.js:818` | 表の発音の列が `w.ph` に入る所 |
 
 **確かめたこと ── 本物のアプリを走らせています。**取り込んだ単語
-（`spv:1` を付けてあるので `migrateSp()` はこの単語に何もしません ──
+（`spv:1` を付けてあるので ~~`migrateSp()`~~ はこの単語に何もしません ──
 **3-a とは別の道であることの確かめ方です**）に発音 `/t sʰ ɑ ŋ/` を入れて:
 
 ```

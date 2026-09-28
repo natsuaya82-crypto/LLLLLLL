@@ -402,7 +402,7 @@ const FIELDS = {
    way ROADS names `core.js:langKey(k)`, so a second computed write -- which
    nothing here could name a field for -- is red. */
 const SET_LOADER = {
-  'core.js:SET[sk]=s[sk]': true,
+  'core.js:SET[k]=v[k]': true,
   /* setGot() handing an account its own fields -- the defaults, then what
      `lingua.set.<uid>` holds (www/core.js § ACCT). Every name it writes is a
      name `SET` itself holds or setDefaults() mints, and every one of those is

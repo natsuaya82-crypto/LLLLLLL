@@ -447,8 +447,6 @@ defLang('ko', (function(){
       "set.account"               : "계정",
       "set.account.guest"         : "로그인 안 함",
       "ob.borrow.h"               : "빌린 문자",
-      "ob.borrow.sub"             : "　",
-      "ob.borrow.take"            : "　",
       "ob.tour.tab" : "제작을 여세요.",
       "ob.tour.build" : "키보드를 눌러 보세요.",
       "ob.tour.kb0" : "내 키보드를 눌러 보세요.",
@@ -921,7 +919,6 @@ defLang('ko', (function(){
       "lt.out.svg" : "SVG",
       /* onboarding */
       "ob.next"         : "다음",
-      "ob.name.sub"     : "　",
       "ob.name.note"    : "나중에 바꿀 수 있습니다",
       "ob.name.later"    : "나중에 정하기",
       "ob.draw.h"      : "당신의 {0} 를 그려 보세요.",

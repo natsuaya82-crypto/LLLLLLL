@@ -849,12 +849,18 @@ canvas.pkc{width:34px;height:34px;display:block}
    shapes are added to (www/glyph.js § A LINE OF THE LANGUAGE IS TEXT), so a
    letter, a space and a newline stand the same on both. `pre-wrap` is what a
    field already is, and it is what keeps a newline on the post.
-   Drawn letters stand at their full height on this line, so 1.45 put the
-   rows of a two-line post against each other. 「ここつまりすぎてる」 */
+   THE LINE BOX IS THE LETTERS' HEIGHT. iOS draws the caret the full height
+   of the line box, and at 1.7 it stood twice as tall as the letters beside
+   it 「文字のサイズとカーソルサイズ全然違う」「直してください」 OWNER 2026-09-27.
+   1.2 of a drawn letter's em is the box: a letter reaching the top and the
+   bottom of the lattice inks 0.74 of it, so two rows of those keep nearly
+   half a letter clear between them (9.5px at 15). What the line box gave up is put
+   back OUTSIDE the line, on a post's `padding-block` below -- a post of one
+   row stands where it stood, and the field is the caret's. */
 .pline,.pwfield #pw-ln{font-family:var(--face-line);font-size:.9375rem;
-       line-height:calc(1.7em * var(--ink-over));
+       line-height:calc(1.2em * var(--ink-over));
        white-space:pre-wrap;word-break:normal;overflow-wrap:break-word}
-.pline{color:var(--tx);margin-top:6px}
+.pline{color:var(--tx);margin-top:6px;padding-block:calc(.25em * var(--ink-over))}
 /* ---------- which way a line runs ----------
    Four of them, and the class is the only place any of it is written down --
    dirClass() in wsys.js names one and nothing else sets `direction` or
@@ -2211,7 +2217,12 @@ a.set{text-decoration:none}
    so what shipped was a blue mark and a rule nothing ever wore.
    「企業バッジ一旦廃止して、青バッジをそのまま金にして欲しい。プロプラン」
    OWNER 2026-09-01. */
-.bdg{color:var(--gold)}
+/* AND NOTHING OUTRANKS IT. A container's own `svg` colour -- `.whrow svg`, a
+   list of people -- is one selector more specific than `.bdg` and turned the
+   mark grey there and gold everywhere else 「他の画面で見れる♦️なんで色違う
+   の？合わせろ」 (OWNER, build 171). Beating containers one at a time is a
+   list somebody has to keep; this says it once, the way `.sfont` does. */
+.bdg{color:var(--gold) !important}
 .bdgw svg{display:block}
 .pname .bdgw{margin-left:5px}
 /* The language, as a row of its own between what somebody says about

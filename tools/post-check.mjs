@@ -2594,7 +2594,10 @@ const R = await pg.evaluate(async () => {
     netSend = function (method, path, body, tok, ok, bad) {
       if (String(path).indexOf('/rest/v1/profile') === 0) {
         sent.push({ method, av: JSON.stringify((body && body.av) || null) });
-        if (answer === 'ok') { if (ok) ok(null); }
+        /* taken is the row as it now stands -- `null` or `[]` is a write
+           that matched no row, which is how the photograph used to be shown
+           here and never reach profile.av (rule-audit-2026-09-27-core § 0) */
+        if (answer === 'ok') { if (ok) ok([{ id: 'me', av: body && body.av }]); }
         else if (bad) bad(null, 0, 'profile 0');
         return;
       }
@@ -4259,7 +4262,8 @@ const R = await pg.evaluate(async () => {
          （www/post.js § draftKeep）。サーバーが要る ── 無いと、ここは
          「保存できなかった」を測っているだけになります。 */
       SESS = { at:'t', rt:'r', uid:'me' };
-      netSend = (m, path, body, tok, ok2) => ok2(m === 'PATCH' ? [{ id:'row' }] : []);
+      netSend = (m, path, body, tok, ok2) => ok2(m === 'PATCH' ? [{ id:'row' }]
+                                                  : String(path).indexOf('/rest/v1/draft') === 0 ? [body || {}] : []);
       PW = pwBlank(); pwLine(puaTyped(enWord + ' kano').cut);
       draftKeep();
       netSend = wasSendD; SESS = wasSessD;

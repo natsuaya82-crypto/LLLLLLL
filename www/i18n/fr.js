@@ -316,8 +316,6 @@ defLang('fr', (function(){
       "set.account"               : "Compte",
       "set.account.guest"         : "Non connecté",
       "ob.borrow.h"               : "Lettre empruntée",
-      "ob.borrow.sub"             : "　",
-      "ob.borrow.take"            : "　",
       "ob.tour.tab" : "Ouvrez Créer.",
       "ob.tour.build" : "Touchez le clavier.",
       "ob.tour.kb0" : "Touchez votre clavier.",
@@ -790,7 +788,6 @@ defLang('fr', (function(){
       "lt.out.svg" : "SVG",
       /* onboarding */
       "ob.next"           : "Suivant",
-      "ob.name.sub"       : "　",
       "ob.name.note"      : "Modifiable plus tard",
       "ob.name.later"      : "Plus tard",
       "ob.draw.h"        : "Dessinez votre {0}.",

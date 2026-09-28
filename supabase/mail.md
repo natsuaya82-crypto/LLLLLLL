@@ -1,6 +1,6 @@
 # Mail
 
-Six digits, out of a mailbox, into `obAskHTML` in `www/onboard.js`. This file is
+Eight digits, out of a mailbox, into `obAskHTML` in `www/onboard.js`. This file is
 how they get there, written down because the next person to need it is whoever
 set it up, a year later, with none of it in their head.
 
@@ -75,6 +75,11 @@ stays red is a host field written the wrong way, not a wait.
 `Authentication → Rate Limits` → emails → 30/hour. Custom SMTP does not lift
 Supabase's own limit; it is a separate number and it is low by default.
 
+`Authentication → Sign In / Providers → Email → OTP Settings → OTP Length` → 8.
+The app does not count digits (no `maxlength`, and `obMailCode()` and
+`obResetGo()` send what was typed), so this is the one place the length is
+decided.
+
 ## The templates, which are not optional — and there are THREE
 
 **Confirm signup, Magic Link and Reset Password are three separate templates
@@ -91,13 +96,8 @@ interface languages and the mail has one, so the one is English.** The digits
 are the message; the three lines round them are English. Ten is
 `docs/BACKLOG.md`, not this file.
 
-That is not a hypothetical. `supabase/setup.md` § 3 ended at the signup one for
-weeks and the reset one lived only in the prose below, and what happened was
-what the shape of the list predicted: the signup code arrived as six digits,
-the reset arrived as a link, and it kept arriving as a link every time somebody
-asked. 「6桁の数字がそもそも届かない。リンクでくるのをやめて欲しい」 OWNER
-2026-08-26. **A step that is not in the list people follow is a step nobody
-takes.** Both are numbered in setup.md now.
+**A step that is not in the list people follow is a step nobody takes.** All
+three are numbered in `supabase/setup.md` § 3.
 
 ### 1 of 3 — Confirm signup
 
@@ -115,16 +115,16 @@ takes.** Both are numbered in setup.md now.
 **A link has nowhere to land.** This is a Capacitor app with no web page behind
 it, so the default confirmation URL opens a page that does not exist on the
 tester's phone and the account is never confirmed. `netVerify` in `www/net.js`
-posts a six-digit token to `/auth/v1/verify`; the template is the other half of
+posts the code that was typed to `/auth/v1/verify`; the template is the other half of
 that and there is no check that can hold the pair together, because one of them
 is on a server nobody here can read.
 
-`Authentication → Providers → Email → Confirm email` on.
+`Authentication → Sign In / Providers → Email → Confirm email` on.
 
 ### 2 of 3 — Reset Password
 
 **Same wall, same answer.** The link in the default template opens nothing on
-the phone, so the app takes six digits and sets the new password itself. It is
+the phone, so the app takes the code and sets the new password itself. It is
 two screens now: the digits, and then — once the server has accepted them — the
 new password (`obResetGo` and `obNewPwGo` in `www/onboard.js`).
 

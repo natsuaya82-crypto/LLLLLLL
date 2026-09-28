@@ -218,19 +218,12 @@ holds stays). The `follow` table is the answer, and both lists live in
 `FOL_HAVE` in `www/me.js`, keyed by handle, where everybody else's already
 did — memory, written only by an answer from the server, dropped by
 `folForget()` when the session goes.
-`lingua.sess` (`SESS`) is the session — the token pair, and one mark; **a
-password is never held, stored or logged.** The mark is `end`, written by
-`netEnding()` in `www/net.js` when somebody presses 「アカウントを削除」 and
-gone when the session is. It says **this account has been asked to be deleted
-and the server has not confirmed it yet** — 「削除し切ってないと消えない」 OWNER
-2026-09-03. Nothing on the phone is removed while it is set: the record is the
-server, so the copy goes after the row does and never instead of it, and a
-press that lost its signal is picked up by `bootSession()` (`www/boot.js`) at
-the next launch. It is a field of the session rather than a key of its own for
-the reason the session is the one key that is nobody's belongings: the mark is
-worth nothing without the token that says whose account it is, and a key beside
-the session could outlive the account it names and be read against the next
-one. `lingua.posts` (`POSTS`) is **the copy of** the
+`lingua.sess` (`SESS`) is the session — the token pair; **a password is never
+held, stored or logged.** Deleting an account writes nothing on it: the phone
+is emptied in the same turn the server's answer arrives
+(`wipeAllGo()` → `wipeHere()`, `www/settings.js`), and a press that lost its
+signal changed nothing anywhere — 「削除し切ってないと消えない」 OWNER
+2026-09-03. `lingua.posts` (`POSTS`) is **the copy of** the
 timeline and `lingua.drafts` (`DRAFTS`) **the copy of** what was written and not
 sent — both live on the server, and both are read here so that the app works
 with no signal. A draft is the composer,
