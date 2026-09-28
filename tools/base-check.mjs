@@ -463,6 +463,16 @@ const r = await pg.evaluate(({s}) => {
   out.idTwo = [idA, idB];
   out.idApart = idA !== idB;
   out.idShape = /^l[0-9a-z_]+$/.test(idA) && /^l[0-9a-z_]+$/.test(idB);
+
+  /* ---- and a letter held and put down where it was writes nothing ----
+     Holding one until the letters wobble is how the marks come up; putting it
+     back where it was is not a new order, and writing `ord` onto every letter
+     is a save nobody pressed (rule 6). */
+  LT_SEQ = 0; LETTERS = []; ltStart();
+  LETTERS.forEach(function(l){ delete l.ord; });
+  var al = ltOrder(ltOfKind('alpha')), at3 = 3;
+  ltMove('alpha', al[at3].id, at3);
+  out.stillOrd = LETTERS.filter(function(l){ return l.ord !== undefined; }).length;
   LETTERS = wasLts;
 
   return out;
@@ -618,5 +628,8 @@ say(r.idApart && r.idShape,
     'a letter added on one launch and a letter added on the next, at the same ' +
     'count, wear two ids -- and each is still `l` and letters, digits and _ (' +
     r.idTwo.join(' / ') + ')');
+say(r.stillOrd === 0,
+    'a letter held and put down where it was writes no order onto the alphabet (' +
+    r.stillOrd + ' letters given one)');
 if (bad.length) { console.error('\nbase: ' + bad.length + ' failed'); process.exit(1); }
 console.log('\nbase: slots arrive when asked, and nothing drawn is ever taken away.');

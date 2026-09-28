@@ -280,6 +280,9 @@ function ltMove(k, id, to){
   var list=ltOrder(ltOfKind(k)), from=-1, i;
   for(i=0;i<list.length;i++) if(list[i].id===id) from=i;
   if(from<0 || to<0 || to>=list.length) return;
+  /* Held until it wobbled and put down where it was: the marks come up and
+     nothing is written -- a save is something somebody did (rule 6). */
+  if(from===to){ render(); return; }
   list.splice(to, 0, list.splice(from, 1)[0]);
   for(i=0;i<list.length;i++) list[i].ord=i;
   saveLetters(); render();
@@ -384,8 +387,8 @@ function ltUp(e){
   d.el.classList.remove('lift');
   d.g.classList.remove('moving');
   if(!d.on){
-    /* Held long enough to wobble but let go without moving anything: still a
-       hold, so the marks appear. */
+    /* Let go before the hold: a tap, which the cell's own press answers --
+       and while the letters already wobble, they are drawn again. */
     if(ltWob) render();
     return;
   }
