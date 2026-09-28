@@ -33,7 +33,9 @@
    The extension therefore draws a key in three lines: fill these polygons in
    this box, or if there are none draw this text.
 
-   Nothing here is user-facing, so nothing here goes through t(). */
+   One thing here reaches a screen: SHARE.how, the status the digits page
+   prints (numWidOut() in numbers.js) -- the same instrument as net.js's
+   marks, untranslated for the same reason. Nothing else here is seen. */
 
 /* What was last handed over. Everything below is rebuilt from scratch each
    time, so this is the only thing the chapter remembers. */
