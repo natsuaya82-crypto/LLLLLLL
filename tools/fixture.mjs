@@ -33,8 +33,17 @@ export function seed(){
      the screen, which is why nothing said the timeline was doing the second.
 
      Made rather than pasted in as kilobytes of base64, at the size and the
-     quality a real post carries -- POST_PIC and POST_PICQ in www/post.js. */
+     quality a real post carries -- POST_PIC and POST_PICQ in www/post.js.
+
+     Made ONCE per size and kept on the page: seed() runs before every press,
+     and encoding a 900x600 JPEG was 19ms of every one of them -- seven of
+     press's minutes spent making the same string twenty thousand times
+     (r120, measured). The same size gives the same bytes, so the second ask
+     is handed the first answer. */
   const fixPic = (w, h) => {
+    const made = window.__fixPicMade || (window.__fixPicMade = {});
+    const key = w + 'x' + h;
+    if (made[key]) return made[key];
     const c = document.createElement('canvas');
     c.width = w; c.height = h;
     const x = c.getContext('2d');
@@ -42,7 +51,7 @@ export function seed(){
     x.fillStyle = '#8fa68a'; x.fillRect(0, Math.round(h * 0.62), w, h);
     x.fillStyle = '#5b6b74'; x.fillRect(Math.round(w * 0.12), Math.round(h * 0.3),
                                         Math.round(w * 0.2), Math.round(h * 0.42));
-    return c.toDataURL('image/jpeg', POST_PICQ);
+    return (made[key] = c.toDataURL('image/jpeg', POST_PICQ));
   };
   /* halfDone() below is sent to the page as source too, so it cannot reach
      this either. One maker, left where both can find it. */

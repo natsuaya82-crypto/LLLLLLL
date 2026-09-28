@@ -124,7 +124,11 @@ const r = await pg.evaluate(({ s }) => {
   window.WIRE = true;
   netSend = function(method, path, body, tok, ok, bad){
     if(!window.WIRE){ bad(null, 0, 'no wire'); return; }
-    ok(String(path).indexOf('/rest/v1/language?') === 0 ? [{ id: 'srv-known' }] : []);
+    /* A PATCH answers with the row it wrote, as PostgREST does when asked for
+       it (www/net.js § netSend1) -- `[]` is 「matched no row」, which netPut()
+       reads as a write that did not land. */
+    ok(String(path).indexOf('/rest/v1/language?') === 0 ? [{ id: 'srv-known' }]
+       : method === 'PATCH' ? [body || {}] : []);
   };
 
   /* EVERYTHING THE PHONE IS HOLDING, AS ONE STRING. This is what "not one
@@ -940,7 +944,11 @@ const walk = await pg.evaluate(({ s }) => {
 
   langRowGot(langId); langStore();
   netSend = function(method, path, body, tok, ok){
-    ok(String(path).indexOf('/rest/v1/language?') === 0 ? [{ id: 'srv-known' }] : []);
+    /* A PATCH answers with the row it wrote, as PostgREST does when asked for
+       it (www/net.js § netSend1) -- `[]` is 「matched no row」, which netPut()
+       reads as a write that did not land. */
+    ok(String(path).indexOf('/rest/v1/language?') === 0 ? [{ id: 'srv-known' }]
+       : method === 'PATCH' ? [body || {}] : []);
   };
 
   /* A change to the LANGUAGE, and to nothing else. slMine() is the app's own

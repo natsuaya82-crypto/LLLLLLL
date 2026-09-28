@@ -249,6 +249,16 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Implementation status:
 ```
 
+### 2026-09-27 一行の行の箱は字の高さ ── 入力欄のカーソルが字の二倍にならない
+- Date: 2026-09-27
+- Area: 一行の規則（`www/index.html` の `.pline,.pwfield #pw-ln`）── 投稿の入力欄・編集の欄・投稿の一行
+- Decision: 行の箱（`line-height`）を自作文字の em の 1.2 倍（15px で約 25px）にする。前は 1.7 倍（約 35.4px）。欄と投稿は同じ一つの規則のまま。行の箱から減った分の半分ずつを投稿の一行（`.pline`）の外側、行が積まれる向きの余白（`padding-block`）に出し、一行の投稿の位置と、本文から意味までの間は変えない。二行以上の投稿は行と行の間が詰まる（格子の上から下まで届く字で、空きが 19.5px → 9.5px）。縦書きは列と列の間が同じだけ詰まり、下向きの字間は変わらない。
+- Reason: オーナーの言葉「文字のサイズとカーソルサイズ全然違う」（実機 170）、「直してください」。iOS はカーソルを行の箱の高さで描く（r119-edit で測った原因）。
+- Affected features: 投稿画面の本文の欄、投稿の編集画面、タイムライン・スレッド・引用・通知の投稿の一行。
+- Affected data: 無し。
+- Affected docs: `docs/CHANGELOG.md`、`docs/scope/r125-line.md`。
+- Implementation status: 実装（`claude/r125-line`、CODE CONFIRMED のみ）。カーソルの高さは Linux の Chromium では iOS と同じに描かれないので、実機で見るまで DEVICE CONFIRMED ではない。`line-check` 13 が持つ（欄の行の箱が格子いっぱいの字のインクの 1.7 倍以下、その字の二行が離れている）。
+
 ### 2026-09-27 お題は毎日、太平洋時間の 0 時に変わる。作れなかった日は無くす
 - Date: 2026-09-27
 - Area: 今日のお題（daily-prompt、cron）

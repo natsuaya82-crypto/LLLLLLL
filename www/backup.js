@@ -15,7 +15,7 @@
 
      「オンラインは一本化ね？」「簡単よ」「保存としたらオンラインおしまい」
      「今ファイルもいらん。オンラインのみで行こうってことになってる今後
-       オフラインたいおする時にまた考えることにした」 OWNER 2026-09-04
+       オフライン対応する時にまた考えることにした」 OWNER 2026-09-04
 
    The file answered 「what is left when nothing else is」, and that question
    had an answer because a save reached the server twice a session -- at
@@ -53,7 +53,8 @@
      and nobody waits for it: a send that does not land says so through
      netPop() (www/net.js), exactly as before.
 
-   A launch does not call this (www/boot.js) and nothing runs a save before
+   A launch sends nothing through this (the migrations' writes are the
+   app's, below) and nothing runs a save before
    www/net.js is loaded -- index.html puts net.js ahead of this file, and the
    migrations that save are in boot.js, which is last. What they write is the
    app's (slAsApp, www/core.js § LTOUCH) and netSaveNow() does not send it. */

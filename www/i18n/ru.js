@@ -273,8 +273,6 @@ defLang('ru', (function(){
       "set.account"               : "Учётная запись",
       "set.account.guest"         : "Не выполнен вход",
       "ob.borrow.h"               : "Заимствованная буква",
-      "ob.borrow.sub"             : "　",
-      "ob.borrow.take"            : "　",
       "ob.tour.tab" : "Откройте «Создание».",
       "ob.tour.build" : "Нажмите на клавиатуру.",
       "ob.tour.kb0" : "Нажмите на свою клавиатуру.",
@@ -747,7 +745,6 @@ defLang('ru', (function(){
       /* знакомство */
       "ob.next"           : "Дальше",
       "ob.name.h"         : "Как называется ваш язык?",
-      "ob.name.sub"       : "　",
       "ob.name.ph"        : "название",
       "ob.name.note"      : "Можно изменить позже",
       "ob.name.later"      : "Решить позже",
