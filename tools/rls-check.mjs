@@ -1812,19 +1812,24 @@ const CASES = [
     `select 1 from storage.objects where name='${A}/${P}/1.jpg'`],
   ['nor takes its files out',                'denied', B, 0,
     `delete from storage.objects where name='${B}/v9/vo.m4a'`],
-  /* And the language, which used to be the half a freeze left alone.
-     「制作は好きにやらせればいいし、sns止められても作りたいやつは作るでしょ」 was
-     true while a language was nobody else's business and the language policies
-     asked has_account(), which said nothing about banned_at.
-     **OWNER DECISION 2026-08-26 replaced it**, asked directly: a frozen account
-     may not write its language either. They ask is_member() now, and
-     is_member() is where banned_at lives. */
-  ['nor make a language any more',            'denied', B, 0,
-    `insert into language(id,owner,name) values ('${LB}','${B}','Bene')`],
-  ['nor write the one they had',              'denied', B, 0,
-    `update language set name='Benet' where id='${L}'`],
-  ['nor put a slice in it',                   'denied', B, 0,
-    `insert into slice(language,kind,body) values ('${L}','words','[]')`],
+  /* AND THE LANGUAGE IS NOT THE SNS 「凍結ってSNSの話でしょ？作るのは別に
+     気にしなくていいんじゃないの？」 OWNER 2026-09-28. A frozen account makes,
+     writes and reads ITS OWN language (making_rel() in schema.sql names the
+     tables), and still reads nobody else's. */
+  ['B still makes a language',                'ok',     B, 0,
+    `insert into language(id,owner,name) values ('${LB}','${B}','Bene') returning 1`],
+  ['and writes it',                           'ok',     B, 0,
+    `update language set name='Benet' where id='${LB}' returning 1`],
+  ['and puts a slice in it',                  'ok',     B, 0,
+    `insert into slice(language,kind,body) values ('${LB}','words','[]') returning 1`],
+  ['and reads it back',                       'ok',     B, 0,
+    `select 1 from slice where language='${LB}' and kind='words'`],
+  ['and reads B\u2019s plan',                 'ok',     B, 0,
+    `select 1 where not exists (select 1 from plan where id<>'${B}')`],
+  ['but not A\u2019s language',               'denied', B, 0,
+    `select 1 from language where id='${L}'`],
+  ['nor writes A\u2019s',                      'denied', B, 0,
+    `update language set name='Benet' where id='${L}' returning 1`],
   ['nor lift it by hand',                     'denied', B, 0,
     `update profile set banned_at=null where id='${B}'`],
   ['nor by asking',                           'denied', B, 0,
@@ -3155,10 +3160,12 @@ const SHAPE = [
      and only the second is the rule. 「言語はアカウントないと作れないです」 */
   ['there is no way to ask that only wants an account', `
      select count(*) from pg_proc where proname='has_account'`, '0'],
-  ['and a language asks the same thing a post does', `
+  /* and making a language asks 「signed in」 and not 「not frozen」 -- a freeze
+     is the SNS's (OWNER 2026-09-28, making_rel() in schema.sql) */
+  ['and a language asks who signed in, not who is frozen', `
      select count(*) from pg_policies
       where tablename in ('language','slice') and cmd <> 'SELECT'
-        and coalesce(qual,'') || coalesce(with_check,'') not like '%is_member%'`, '0'],
+        and coalesce(qual,'') || coalesce(with_check,'') not like '%is_signed%'`, '0'],
   /* No policy, either way. Staff DO drop a report that was about nothing, and
      that is report_drop() -- a security definer function asking is_staff(),
      the same shape as post_hide(). A policy would be a second place saying who
@@ -3572,14 +3579,17 @@ begin
   execute 'set local role postgres';
   return c;
 end $$;
--- A FROZEN ACCOUNT READS NOTHING. 「凍結したら読めないだろ」 OWNER 2026-09-28.
+-- A FROZEN ACCOUNT READS NOTHING OF THE SNS. 「凍結したら読めないだろ」「凍結って
+-- SNSの話でしょ？」 OWNER 2026-09-28. The making relations (making_rel()) are
+-- left out and marked, and held by the cases instead: its own language reads
+-- and writes, nobody else's does not.
 -- Every relation, every row-returning function taking no argument, and the
 -- files, read as \`sub\` frozen (\`shut\`) and then not (\`open\`, so a read that
 -- shows nothing either way is told apart from one the freeze closed). The one
 -- row it may still read is its own \`profile\`, which is what the frozen screen
 -- is drawn from -- so a profile row of its own is not counted.
 create or replace function _frozen_seen(sub uuid)
-returns table(what text, open int, shut int) language plpgsql as $$
+returns table(what text, open int, shut int, making boolean) language plpgsql as $$
 declare r record; stmt text;
 begin
   for r in
@@ -3599,6 +3609,7 @@ begin
     stmt := format('select count(*)::int from %s x where row_to_json(x)::text not like %L',
                    r.src, '{"id":"' || sub || '"%');
     what := r.nm;
+    making := making_rel(r.nm::name);
     update profile set banned_at = now() where id = sub;
     shut := _block_read(stmt, sub);
     update profile set banned_at = null where id = sub;
@@ -4062,7 +4073,7 @@ const sql = [
      number that moves is a question and a list is a thing to maintain. */
   `select 'BLOCK'||chr(9)||what||chr(9)||open||chr(9)||shut
      from _block_seen(${q(BK)}, ${q(BD)}, ${q(BDH)}, ${q(BK)});`,
-  `select 'FROZEN'||chr(9)||what||chr(9)||open||chr(9)||shut from _frozen_seen(${q(B)});`,
+  `select 'FROZEN'||chr(9)||what||chr(9)||open||chr(9)||shut||chr(9)||making from _frozen_seen(${q(B)});`,
   `select 'BLOCKED'||chr(9)||what||chr(9)||open||chr(9)||shut
      from _block_seen(${q(BD)}, ${q(BK)}, ${q(BKH)}, ${q(BK)});`,
   /* EVERY ROAD A LANGUAGE IS READ BY, out of the catalogue (LANG_READ below):
@@ -4189,11 +4200,14 @@ console.log(`\nblock: ${blockRows.length} reads walked as the blocker and as who
    the files, read as A frozen: nothing may come back but A's own profile row.
    Counted off the catalogue, so a table added tomorrow is asked tomorrow. */
 const frozenRows = out.split('\n').map((l) => l.split('\t'))
-                      .filter((r) => r.length === 4 && r[0] === 'FROZEN');
+                      .filter((r) => r.length === 5 && r[0] === 'FROZEN');
 let frozenShut = 0, frozenOpen = 0;
+const frozenMaking = [];
 if (!frozenRows.length) bad.push(['a frozen account reads nothing', 'reads', 'none were walked']);
-for (const [, name, open, shut] of frozenRows) {
+for (const [, name, open, shut, making] of frozenRows) {
   const o = Number(open), sh = Number(shut);
+  /* the making side is the cases' (「B still makes a language」 and on) */
+  if (making === 'true') { frozenMaking.push(name); continue; }
   if (o > 0) frozenOpen++;
   const why = sh > 0 ? sh + ' row(s) read while frozen' : '';
   if (why) bad.push(['a frozen account reads nothing from ' + name, 'none', why]);
@@ -4202,7 +4216,8 @@ for (const [, name, open, shut] of frozenRows) {
 }
 if (!frozenOpen) bad.push(['a frozen account reads nothing', 'something to read unfrozen', 'the walk read nothing either way']);
 console.log(`\nfrozen: ${frozenRows.length} reads walked as a frozen account -- ${frozenShut} ` +
-            `that show something unfrozen show nothing frozen\n`);
+            `that show something unfrozen show nothing frozen; the making side, ` +
+            `left to the cases: ${frozenMaking.join(' ')}\n`);
 
 /* ---- WHO MAY READ A LANGUAGE IS ASKED IN ONE PLACE -----------------------
    「ブロックした相手の公開言語は見えない（両向き）」 OWNER 2026-09-25. The

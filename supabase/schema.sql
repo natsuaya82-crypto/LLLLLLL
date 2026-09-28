@@ -153,19 +153,14 @@ alter table profile add column if not exists admin boolean not null default fals
 -- date, for the same reason post.hidden_at is one: two columns that have to
 -- agree about whether something happened are two columns that can disagree.
 --
--- What it does is one line in is_member() below, which every write policy in
--- this file now asks.
---
--- The app does not stop a frozen account MAKING -- letters and words -- 「凍結
--- 中も作れる」 OWNER 2026-09-28 (docs/FEATURE_RULES.md, the ten answers, 5).
--- What this file stops is the server half, below: nothing a frozen account
--- makes is written here while it is frozen.
---
--- A frozen account reads nothing and writes nothing. 「凍結したら読めない
--- だろ」 OWNER 2026-09-28. is_member() is on every table (`frozen_out` at the
--- foot) and in every view; the one row it still reads is its own `profile`,
--- which the frozen screen is drawn from. account_delete() does not ask
--- is_member() -- the door marked exit.
+-- What it does is one line in is_member() below. A freeze is the SNS's and
+-- nothing else's 「凍結ってSNSの話でしょ？作るのは別に気にしなくていいんじゃ
+-- ないの？」 OWNER 2026-09-28: a frozen account reads and writes nothing of the
+-- timeline -- is_member() is on every table but the making ones (`frozen_out`
+-- at the foot) and in every view -- and still makes, writes and reads its own
+-- language (making_rel(), is_signed()). The one other row it reads is its own
+-- `profile`, which the frozen screen is drawn from. account_delete() does not
+-- ask is_member() -- the door marked exit.
 alter table profile add column if not exists banned_at timestamptz;
 alter table profile add column if not exists banned_why text;
 
@@ -1500,9 +1495,12 @@ create or replace function lang_readable(lang uuid) returns boolean
 language sql stable security definer set search_path = public as $$
   select exists (select 1 from language l
                   where l.id = lang
-                    and (l.owner = auth.uid() or language_took(l.id)
-                         or (l.published_at is not null
-                             and not block_hides(l.owner))))
+                    and (l.owner = auth.uid()
+                         -- somebody else's is the SNS's, and a freeze stops it
+                         or (is_member()
+                             and (language_took(l.id)
+                                  or (l.published_at is not null
+                                      and not block_hides(l.owner))))))
 $$;
 
 -- AND NOTHING IS DONE TO SOMEBODY A BLOCK STANDS BETWEEN. 「ブロックされた
@@ -1759,18 +1757,35 @@ alter table promo       enable row level security;
 -- session writing is this line and nothing else. Every writing policy stands
 -- on this function and none of them says the word anonymous.
 --
--- AND IT IS ASKED OF EVERY READ TOO. 「凍結したら読めないだろ」 OWNER
--- 2026-09-28: a frozen account reads nothing. `frozen_out` at the foot of this
--- file puts this function on every table as a restrictive policy, and every
--- view this file makes asks it in its own `where`. `security definer` because
--- it reads `profile`, which `frozen_out` is on -- as the caller that would be
--- the policy asking itself.
-create or replace function is_member() returns boolean
-language sql stable security definer set search_path = public as $$
+-- TWO QUESTIONS, AND THEY ARE DIFFERENT. 「凍結ってSNSの話でしょ？作るのは
+-- 別に気にしなくていいんじゃないの？」 OWNER 2026-09-28. is_signed() is
+-- 「somebody who signed in」, and it is what making a language asks
+-- (making_rel() below names those tables). is_member() is that AND not frozen,
+-- and it is what everything else asks -- the timeline and every read of it:
+-- 「凍結したら読めないだろ」 OWNER 2026-09-28. `frozen_out` at the foot of this
+-- file puts is_member() on every table that is not a making one as a
+-- restrictive policy, and every view this file makes asks it in its own
+-- `where`. `security definer` because it reads `profile`, which `frozen_out`
+-- is on -- as the caller that would be the policy asking itself.
+create or replace function is_signed() returns boolean
+language sql stable as $$
   select auth.uid() is not null
      and coalesce((auth.jwt() ->> 'is_anonymous')::boolean, false) = false
+$$;
+create or replace function is_member() returns boolean
+language sql stable security definer set search_path = public as $$
+  select is_signed()
      and not exists (select 1 from profile
                       where id = auth.uid() and banned_at is not null)
+$$;
+-- THE MAKING SIDE, NAMED ONCE: a person's own language, its slices and their
+-- versions, and the plan that says what may be made. A freeze does not reach
+-- these (frozen_out skips them, and their policies ask is_signed()); what a
+-- frozen account may read of them is still only its own (lang_readable,
+-- plan_read). A table added tomorrow is the SNS's unless it is named here.
+create or replace function making_rel(r name) returns boolean
+language sql immutable as $$
+  select r = any (array['language', 'slice', 'slice_hist', 'plan']::name[])
 $$;
 
 -- And the one account that answers the reports. Written the same way and read
@@ -1853,13 +1868,13 @@ create policy language_read on language for select
   using (lang_readable(id));
 drop policy if exists language_make on language;
 create policy language_make on language for insert
-  with check (is_member() and owner = auth.uid());
+  with check (is_signed() and owner = auth.uid());
 drop policy if exists language_edit on language;
 create policy language_edit on language for update
-  using (is_member() and owner = auth.uid()) with check (owner = auth.uid());
+  using (is_signed() and owner = auth.uid()) with check (owner = auth.uid());
 drop policy if exists language_drop on language;
 create policy language_drop on language for delete
-  using (is_member() and owner = auth.uid());
+  using (is_signed() and owner = auth.uid());
 
 -- language_take: your own rows and nobody else's, in all three directions.
 -- Who has taken a language is not something the app shows anybody -- it is
@@ -2027,17 +2042,17 @@ create policy slice_read on slice for select
   );
 drop policy if exists slice_make on slice;
 create policy slice_make on slice for insert
-  with check (is_member() and exists (select 1 from language l
+  with check (is_signed() and exists (select 1 from language l
                   where l.id = language and l.owner = auth.uid()));
 drop policy if exists slice_edit on slice;
 create policy slice_edit on slice for update
-  using (is_member() and exists (select 1 from language l
+  using (is_signed() and exists (select 1 from language l
                   where l.id = language and l.owner = auth.uid()))
   with check (exists (select 1 from language l
                   where l.id = language and l.owner = auth.uid()));
 drop policy if exists slice_drop on slice;
 create policy slice_drop on slice for delete
-  using (is_member() and exists (select 1 from language l
+  using (is_signed() and exists (select 1 from language l
                   where l.id = language and l.owner = auth.uid()));
 
 -- publication: everyone reads the record. Anyone may add to it about their own
@@ -2585,7 +2600,7 @@ create policy recent_drop on recent_search for delete using (is_member() and aut
 -- no row reads as `free`, and free is the side to be wrong on.
 drop policy if exists plan_read on plan;
 create policy plan_read on plan for select
-  using (is_member() and id = auth.uid());
+  using (is_signed() and id = auth.uid());
 -- `plan_make` and `plan_edit` were here until 2026-09-06 and are GONE, not
 -- narrowed. They let the owner of a row write it, and the owner of a row is a
 -- phone: 「だから端末でやるわけねえだろ」 OWNER 2026-09-03. The function writes
@@ -2956,7 +2971,8 @@ on conflict (id) do nothing;
 -- asked under the reader's own rights, so `post_read` is what decides -- a
 -- post kept to its writer, one taken down, one a block stands between: its
 -- files are the same answer. A voice no post names yet is its recorder's.
--- And is_member(): a frozen account reads nothing (OWNER 2026-09-28).
+-- And is_member(): a file on a post is the SNS's, and a frozen account reads
+-- nothing of it (OWNER 2026-09-28).
 drop policy if exists media_read on storage.objects;
 create policy media_read on storage.objects for select
   using (is_member() and bucket_id = 'post-media'
@@ -4396,13 +4412,15 @@ end
 $cron$;
 
 -- ---------------------------------------------------------------------------
--- AND NOTHING ANSWERS A FROZEN ACCOUNT. 「凍結したら読めないだろ」 OWNER
--- 2026-09-28. One restrictive policy on every table in `public`, counted off
--- the catalogue and not listed, so a table added tomorrow is covered
--- tomorrow: whatever the permissive policies above open, a caller who is not
--- a member -- frozen, anonymous, nobody -- is handed and writes nothing. The
--- one row a frozen account still reads is its own `profile`, which is what
--- the frozen screen is drawn from. The views ask is_member() in their own
+-- AND THE SNS ANSWERS NO FROZEN ACCOUNT. 「凍結したら読めないだろ」「凍結って
+-- SNSの話でしょ？作るのは別に気にしなくていいんじゃないの？」 OWNER
+-- 2026-09-28. One restrictive policy on every table in `public` that is not
+-- a making one (making_rel()), counted off the catalogue and not listed, so a
+-- table added tomorrow is covered tomorrow: whatever the permissive policies
+-- above open, a caller who is not a member -- frozen, anonymous, nobody -- is
+-- handed and writes nothing there. A frozen account still reads its own
+-- `profile`, which is what the frozen screen is drawn from, and still makes
+-- its own language. The views ask is_member() in their own
 -- `where`, because a view runs with its owner's rights and no policy reaches
 -- through it. tools/rls-check.mjs reads everything as a frozen account.
 do $frozen$
@@ -4412,7 +4430,9 @@ begin
             where n.nspname = 'public' and c.relkind in ('r','p')
   loop
     execute format('drop policy if exists frozen_out on %I', r.relname);
-    if r.relname = 'profile' then
+    if making_rel(r.relname) then
+      null;
+    elsif r.relname = 'profile' then
       execute 'create policy frozen_out on profile as restrictive for all '
               'using (is_member() or id = auth.uid()) with check (is_member())';
     else
