@@ -894,7 +894,10 @@ function whoOf(h){
      what you look like NOW, which is exactly what the server's row is for
      everybody else and is fresher than any of them. */
   if(h===meHandle())
-    return {who:meName(), hd:h, av:postAvatar(), lname:langName||'', id:'me',
+    /* The language on it is the row's too (profile_seen.lang_id -- the main
+       one), the same row somebody else's page is drawn from, and not
+       whichever language happens to be open on this phone. */
+    return {who:meName(), hd:h, av:postAvatar(), lname:(WHO_HAVE[h] || {}).lname || '', id:'me',
             bio:String(ME.bio||''),
             link:String(ME.link||''), loc:String(ME.loc||''),
             /* The two counts are the account's own `profile_seen` row, the

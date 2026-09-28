@@ -1157,6 +1157,13 @@ const au = await pg.evaluate(() => {
     out.a11 = whoOf('wq').who;
     POSTS.splice(POSTS.length - 1, 1); }
 
+  /* a12: your own row names the language everybody else sees on it -- the
+     server's row (profile_seen), not whichever language is open. */
+  { const h = meHandle(), was = WHO_HAVE[h];
+    WHO_HAVE[h] = { who:'Aya', lname:'Mainish' };
+    out.a12 = whoOf(h).lname;
+    if (was) WHO_HAVE[h] = was; else delete WHO_HAVE[h]; }
+
   netIdOf = realId;
   netSend1 = realS1; netSend = realS; netGet = realG;
   NAV = [{ r:'feed' }]; window.route = 'feed'; render();
@@ -1203,6 +1210,8 @@ if (au.a10 !== JSON.stringify({ file:0, said:true }))
   say('a10: the photo question falling over did ' + au.a10 + ' -- it says it could not, and does not open the file input.');
 if (au.a11 !== '')
   say('a11: who @wq is came off a post of theirs (「' + au.a11 + '」) -- a second answer beside the server\u2019s row.');
+if (au.a12 !== 'Mainish')
+  say('a12: your own row names 「' + au.a12 + '」 -- the language everybody else sees on it is the server\u2019s row.');
 if (!au.a3)
   say('a3: a word pressed while another word\u2019s answer is on the screen draws that old answer or ' +
       '「No results」 until its own lands. Not answered yet is the waiting mark.');
