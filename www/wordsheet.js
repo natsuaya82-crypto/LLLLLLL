@@ -1000,7 +1000,7 @@ function fmrWord(w, m){
    list of them, the room for them, and the word's page again afterwards. */
 function fmrAdd(hw){
   var w=findWord(hw), todo=w? fmrTodo(w) : [], i, m, nw, made=[];
-  if(!w || !todo.length) return;
+  if(!w || !todo.length || langLocked()) return;
   if(capStop(todo.length)) return;
   for(i=0;i<todo.length;i++){
     m=todo[i];
@@ -1022,7 +1022,7 @@ function fmrAdd(hw){
    that does nothing when pressed is worse than no button. */
 function fmrTodoHTML(w){
   var todo=fmrTodo(w);
-  if(!todo.length) return '';
+  if(!todo.length || langLocked()) return '';
   return '<button class="btn ghost wide"' +
     DO('fmrAdd', [String(w.hw)]) + '>'+ICON_ADD+
     esc(tn('fmr.todo', todo.length))+'</button>';
@@ -1097,17 +1097,22 @@ function wfmRowHTML(label, hw, doAttr){
     '<span class="wdroww">'+sfontHTML(wOut(hw))+'</span></button>';
 }
 function wfmListHTML(w){
-  var a=wForms(w);
+  var a=wForms(w), ro=langLocked();
   return '<div class="wdrows">'+
-    wfmRowHTML(t('word.root'), w.hw, DO('openEdit', [String(w.hw)]))+
+    wfmRowHTML(t('word.root'), w.hw, ro? '' : DO('openEdit', [String(w.hw)]))+
     a.map(function(x){
-      return wfmRowHTML(fmLabel(x.fm), x.hw, DO('openWfm', [String(w.hw), x.fm]));
+      return wfmRowHTML(fmLabel(x.fm), x.hw, ro? '' : DO('openWfm', [String(w.hw), x.fm]));
     }).join('')+'</div>';
 }
 /* The section, with its + -- and none at all on an old inflection, which is
    a form of its parent and whose page says so with the family. */
+/* NOTHING TO PRESS IN SOMEBODY ELSE'S LANGUAGE (langLocked(), www/core.js;
+   「取ってきた言語を編集できるか →『できない』」 OWNER 2026-09-24): the forms
+   are read there, so the heading has no + and the rows lead nowhere -- every
+   one of them opens a writing face. */
 function wfmSecHTML(w){
   if(wIsForm(w)) return '';
+  if(langLocked()) return '<div class="sec">'+esc(t('word.fm.inf'))+'</div>'+wfmListHTML(w);
   return secAdd(esc(t('word.fm.inf')), DO('openWfm', [String(w.hw), '']), t('word.fm.inf'))+
     wfmListHTML(w);
 }
@@ -1129,7 +1134,7 @@ function wfmArg(rest){
 }
 function openWfm(hw, was){
   var w=findWord(hw), k, cur;
-  if(!w || wIsForm(w)) return;
+  if(!w || wIsForm(w) || langLocked()) return;
   was=String(was||'');
   cur=was? wFormOf(w, was) : null;
   k=wfmKey(w.hw, was);
@@ -2044,11 +2049,13 @@ function openWord(hw){
   openHw=w.hw; addW=null; wEdit=null;
   openForm('word:'+w.hw, wOut(w.hw), '<div id="wd-view">'+wdViewHTML()+'</div>',
            function(){ geTiles(); },
-           helpQ('word')+navDo(t('word.edit'), 'openEdit', [w.hw], true, {icon:ICON_PEN}));
+           /* and no pen in somebody else's language -- wfmSecHTML above */
+           helpQ('word')+(langLocked()? '' :
+             navDo(t('word.edit'), 'openEdit', [w.hw], true, {icon:ICON_PEN})));
 }
 /* The same sheet a new word is written on, opened on one that exists. */
 function openEdit(hw){
-  var w=findWord(hw); if(!w) return;
+  var w=findWord(hw); if(!w || langLocked()) return;
   openHw=w.hw; addW=null; wdMnNew=false; wdExNew=false; wdSubNew=false;
   wEdit={seq:wPh(w).slice(), sp:JSON.parse(JSON.stringify(spOf(w))), mns:wMns(w).slice(),
          pos:w.pos, sub:subOf(w), reg:w.reg||'', tags:(w.tags||[]).slice(),

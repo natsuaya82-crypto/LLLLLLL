@@ -1051,6 +1051,29 @@ const R = await pg.evaluate(() => {
       JSON.stringify(drafted));
   start(); KEEP = {}; popOff();
 
+  /* ---- somebody else's language has nothing to press toward writing -------
+     「取ってきた言語を編集できるか →『できない』」 OWNER 2026-09-24. The word
+     page offered the pen, and the pen opened a sheet whose Delete said
+     削除しました over a language nothing of this phone's goes into. */
+  start(); KEEP = {};
+  const lockedWas = LOWN[langId];
+  LOWN[langId] = 'somebody-else';
+  const lockedNow = langLocked();
+  openWord('mos'); render();
+  const penThere = !!document.querySelector('[data-do="openEdit"], [data-do="openWfm"], [data-do="fmrAdd"]');
+  openEdit('mos');
+  const lockedOn = here().a;
+  if (lockedWas === undefined) delete LOWN[langId]; else LOWN[langId] = lockedWas;
+  out.said.push('in somebody else\'s language (locked: ' + lockedNow + ') the word page offers a way to write: ' +
+    penThere + ', and openEdit leaves you on ' + lockedOn);
+  if (!lockedNow)
+    out.fails.push('the language did not read as somebody else\'s -- this claim asked nothing');
+  if (penThere)
+    out.fails.push('a word page in somebody else\'s language offers the pen, the forms + or the rule button');
+  if (lockedOn !== 'word:mos')
+    out.fails.push('openEdit opened a writing sheet in somebody else\'s language: ' + lockedOn);
+  start(); KEEP = {};
+
   /* ---- and what the arrow that leaves the sheet is called ---------------
      www/shell.js § pageName. The label is on the button as an aria-label, so
      it is on the screen for anybody who cannot see the arrow and nowhere else
