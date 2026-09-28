@@ -2889,7 +2889,7 @@ function kbLaysHTML(){
        SHOWN, which is the one the rest of this screen is about. */
     (n>1
       ? '<button class="seg drop"' + DO('kbDropLay', [at]) +
-        ' aria-label="'+esc(t('kb.lay.rm'))+'">'+ICON_CROSS+'</button>'
+        ' aria-label="'+esc(t('kb.lay.rm'))+'">'+ICON_BIN+'</button>'
       : '')+
     '</div>';
 }
