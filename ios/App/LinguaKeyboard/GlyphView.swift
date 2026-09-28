@@ -75,7 +75,7 @@ final class GlyphView: UIView {
     // difference between a letter on a key and a letter spilling over three.
     //
     // It was scaled to the height and then centred on a square of the width,
-    // which are two different numbers on every phone made: a key is about 35
+    // which are two different numbers on every phone made: a key was about 35
     // points across and 54 tall, so a shape was drawn 54 wide inside a 20
     // wide box -- seventeen points over each edge, into its neighbours, and
     // off the end of the row at both ends. 「文字がずれてる」

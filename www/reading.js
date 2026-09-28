@@ -3,8 +3,7 @@
    ES5 only: this runs in an old WKWebView. tools/es5-check.mjs enforces it. */
 
 
-/* Search hits on any of spelling, meaning, reading or IPA */
-/* What a search looks in. The fields a word is filed under are in it, so
+/* What a search looks in: the spelling, the meanings, the IPA and the tags. The fields a word is filed under are in it, so
    typing `cooking` finds the words about cooking -- which is the only
    reason to have written them down. */
 function srcKey(w){ return (w.hw+' '+wMns(w).join(' ')+' '+phIpa(wPh(w))+
@@ -27,19 +26,17 @@ function srcKey(w){ return (w.hw+' '+wMns(w).join(' ')+' '+phIpa(wPh(w))+
 
    It is alive elsewhere and this is the sentence to read before deleting
    anything: the ten `read` engines in www/i18n/*.js are still on screen in
-   the interface-language chooser, where `vSet('ui')` renders one sample word
+   the interface-language chooser, where vSet() standing on `set` with `ui`
+   renders one sample word
    through each language's own respelling so the ten rows are ten readings
    rather than ten labels. `www/settings.js` is the one caller. */
 /* Called with a headword, which is what every screen has to hand. A word in
    the dictionary is read from its own sounds; anything else -- a word being
    coined, a sample -- from the sounds its spelling would be made of. */
 function seqOf(hw){
-  var w=(typeof findWord==='function')? findWord(hw) : null;
+  var w=findWord(hw);
   return w? wPh(w) : phGuess(hw);
 }
-/* Words run together when one ends on a consonant and the next opens on a
-   vowel. Decided on the sounds, which is where it was always happening. */
-
 /* ---- The device's voice is not here any more ---------------------------
    There used to be a block below this line that found a voice on the phone,
    picked the one whose language had the plainest vowels, and read a word
@@ -50,7 +47,7 @@ function seqOf(hw){
 
 /* Generation: build new words that keep the rules we inferred.
    Also plain arithmetic on the device. */
-function pick(o){
+function asPick(o){
   var e=Object.keys(o).map(function(k){return [k,o[k]];});
   if(!e.length) return '';
   var sum=0,i; for(i=0;i<e.length;i++) sum+=e[i][1];
@@ -59,7 +56,7 @@ function pick(o){
   return e[0][0];
 }
 /* Two words that sound identical are the same word, whatever they look like */
-function taken(){
+function asTaken(){
   var s={}; WORDS.forEach(function(w){ s[wPh(w).join('')]=1; }); return s;
 }
 /* Coining a word means choosing sounds, in the shapes this language already
@@ -68,15 +65,15 @@ function taken(){
    never chosen. It cannot now: every piece comes out of the dictionary's own
    sequences. Hands back a sequence, because that is what a word is. */
 function makeWord(pos, A, tk){
-  A=A||analyze(); tk=tk||taken();
+  A=A||analyze(); tk=tk||asTaken();
   if(!Object.keys(A.nu).length) return null;
   var rule=A.finalRule[pos];
   for(var tr=0;tr<120;tr++){
-    var n=Math.max(1,Math.min(3,+pick(A.cnt)||2));
+    var n=Math.max(1,Math.min(3,+asPick(A.cnt)||2));
     var seq=[], i, pool;
     for(i=0;i<n;i++){
       pool = i===0 ? A.onI : (Object.keys(A.onM).length?A.onM:A.onI);
-      seq = seq.concat(phUnkey(pick(pool))).concat(phUnkey(pick(A.nu)));
+      seq = seq.concat(phUnkey(asPick(pool))).concat(phUnkey(asPick(A.nu)));
     }
     if(rule){
       var ch=rule.ch;
@@ -84,7 +81,7 @@ function makeWord(pos, A, tk){
       if(ipaIsVowel(ch)){ while(seq.length && ipaIsVowel(seq[seq.length-1])) seq.pop(); }
       seq.push(ch);
     } else if(Object.keys(A.co).length && Math.random()<.35){
-      seq = seq.concat(phUnkey(pick(A.co)));
+      seq = seq.concat(phUnkey(asPick(A.co)));
     }
     if(seq.length < (tr<70?3:2)) continue;   /* look for three sounds first, settle for two */
     var key=seq.join('');
@@ -94,6 +91,3 @@ function makeWord(pos, A, tk){
   }
   return null;
 }
-/* Pick a short run of words that shows linking off, if the dictionary has one:
-   one that ends on a consonant followed by one that opens on a vowel. */
-/* What to do next so that another rule appears, in words a beginner can act on */

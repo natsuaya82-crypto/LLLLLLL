@@ -9,8 +9,9 @@
    for road, the thing you thought of on a train and will not remember
    tomorrow. There was nowhere to put any of it, so it went nowhere.
 
-   This is the nowhere. Plain text, a title if you want one, and it is kept on
-   the device with everything else. */
+   This is the nowhere. Plain text, a title if you want one, and it is kept
+   where the rest of the language is: `notes` is one of SLICES (www/core.js),
+   so it goes up to the server with the Save like every other slice of it. */
 
 var NOTES=[];
 /* The open language's notes. Empty first: see langRead() in core.js. */
@@ -41,14 +42,6 @@ function ntBody(n){
 }
 
 var ntAt=-1;                        /* which note the sheet is open for, -1 = new */
-/* Whether the ntedit:-1 buffer already became a real note. openNote(undefined)
-   is the + itself -- keepPaint's own redraw of the same sheet always passes
-   a number, never undefined -- so this is the one place that can tell "the
-   thing typed here is already on the list" from "still a draft, still worth
-   finding again". A draft that was never saved is left exactly as it was:
-   that is the rest of the app's own rule (www/shell.js § KEEP). Only a note
-   that has already landed makes the NEXT + start empty. */
-var ntNewSpent=false;
 /* 開いたときは閲覧、右上の「編集」で編集の顔へ、そこの右上が保存。
    「メモ：開いた時は閲覧、右上（今は保存がある所）に「編集」、押すと編集
    できて、そのボタンが「保存」に変わる」 OWNER 2026-09-06。単語がずっとその形
@@ -63,10 +56,10 @@ var ntNewSpent=false;
    KEEP の buffer は書く方の鍵で登録するので、読む顔には保存が出ない
    (www/shell.js § keepBtnHTML)。人の言語では編集のボタンごと出ない。 */
 function openNote(i){
-  /* A note is the fourth. Editing one is making one -- what comes out is a
-     note either way -- so this is asked on the way in, not only on the + . */
-  if(!makeNeed()) return;
-  if(i===undefined && ntNewSpent){ keepDrop(keepKeyOf('form', 'ntedit:-1')); ntNewSpent=false; }
+  /* Reading asks nothing. 「全部の画面一通り見れるけど制作しようとすると
+     ログイン求められる」 (www/onboard.js § makeNeed): the fourth of the four
+     is ADDING a note, and writing one is openNoteEdit(), which asks. This is
+     the reading face, and the + passes straight through to that one. */
   var k=(typeof i==='number' && NOTES[i]) ? i : -1;
   /* 作るときは読むものが無いので、+ はそのまま書く顔。 */
   if(k<0) return openNoteEdit(-1);
@@ -143,34 +136,50 @@ function ntKeepOn(k, n){
 function ntTyped(k, f){ return keepVal(keepKeyOf('form', 'ntedit:'+k), f); }
 function ntSetT(v){ keepSet('t', String(v||'')); }
 function ntSetB(v){ keepSet('b', String(v||'')); }
-/* Writing it down, and STAYING on it -- leaving is what the arrow beside the
-   button is for, and after a save there is nothing left to ask about, so the
-   button goes. That is the answer to "did it save".
+/* Writing it down. What happens after -- saying so, and going back one page
+   -- is keepSave()'s, for every screen with a Save (www/shell.js § keepSave).
 
-   A note being MADE becomes a note being edited the moment it is written down,
-   which is what `ntAt` is: without that line a second press would push a second
-   copy of the same note. */
+   A note being MADE is a push. Nothing here has to remember that it was: a
+   save that lands levels the ntedit:-1 buffer back to the empty note it was
+   opened with and redraws that face (keepPaint), which opens it as -1 again,
+   so the next + starts empty and pushes a note of its own. */
 function saveNote(v){
   var ti=String(v.hasOwnProperty('t')? v.t : ntKept('t')).trim(),
       bo=String(v.hasOwnProperty('b')? v.b : ntKept('b')).trim();
   if(!ti && !bo) return;
   if(ntAt>=0 && NOTES[ntAt]){ NOTES[ntAt].t=ti; NOTES[ntAt].b=bo; NOTES[ntAt].ed=Date.now(); }
-  else { NOTES.push({t:ti, b:bo, at:Date.now()}); ntAt=NOTES.length-1; ntNewSpent=true; }
-  saveNotes(); toast(t('toast.note.kept'));
+  else NOTES.push({t:ti, b:bo, at:Date.now()});
+  saveNotes();
 }
 /* What the note holds now, for the half of the pair somebody did not touch. */
 function ntKept(f){
   var n=(ntAt>=0 && NOTES[ntAt])? NOTES[ntAt] : null;
   return n? String(n[f]||'') : '';
 }
-/* By the index itself, and not `ntAt`: this is pressed from the list, where
-   no note is "open", so there is nothing for `ntAt` to name. */
+/* ---- a note taken out, by either road -----------------------------------
+   The swipe's 削除 and the selection's bin are one act and this is it: both
+   are pressed from the list, so no note is open and `ntAt` names nothing.
+
+   Highest index first, so removing one does not move the next one under the
+   knife. And every note after the first one taken has MOVED -- its two faces
+   and its buffer are named by where it stands (`note:<i>`, `ntedit:<i>`),
+   and a buffer outlives a save that landed (www/shell.js § keepSave levels
+   it, it does not let it go). Left standing, the note that slid onto a place
+   found the buffer of the note that stood there before, and opened with a
+   gold Save over nothing typed. So the buffers from that place on are let
+   go: none of them holds typing, because leaving a changed note asks first
+   (keepAsked) -- they hold only a mark, and the mark is now of another note. */
+function ntDrop(ids){
+  var at=ids.slice().sort(function(a, b){ return b-a; }), n=NOTES.length, i;
+  if(!at.length) return;
+  for(i=0;i<at.length;i++) if(NOTES[at[i]]) NOTES.splice(at[i], 1);
+  for(i=at[at.length-1];i<n;i++) keepDrop(keepKeyOf('form', 'ntedit:'+i));
+  ntAt=-1; ntSwipeAt=-1; NTSEL=null;
+  saveNotes();
+}
 function delNoteGo(i){
   if(!NOTES[i]) return;
-  NOTES.splice(i,1);
-  if(ntAt===i) ntAt=-1; else if(ntAt>i) ntAt--;
-  ntSwipeAt=-1;
-  saveNotes(); render(); toast(t('toast.note.gone'));
+  ntDrop([i]); render(); toast(t('toast.note.gone'));
 }
 /* ---- deleting a row by swiping it, the way the standard app does it ------
    「メモの編集のところに削除ボタンやめて。一覧から右にスワイプして削除。
@@ -250,7 +259,7 @@ function ntSwTapClose(){ ntSwipeAt=-1; render(); }
    asked for again; git is what remembers it, not a branch left standing here.
    NOTHING SOMEBODY WROTE IS TOUCHED -- what went is the way of looking, and
    every note is still in NOTES and still on this list. */
-function ntFound(){
+function ntNewest(){
   var out=[], i;
   for(i=NOTES.length-1;i>=0;i--) out.push(i);
   return out;
@@ -278,15 +287,7 @@ function ntSelDel(){
   if(!n) return;
   popAsk(tn('notes.sel.ask', n), function(){ ntSelDelGo(); }, t('pop.yes'));
 }
-/* Highest index first, so removing one does not move the next one under the
-   knife. */
-function ntSelDelGo(){
-  var ids=ntSelList().sort(function(a, b){ return b-a; }), i;
-  for(i=0;i<ids.length;i++) NOTES.splice(ids[i], 1);
-  NTSEL=null;
-  saveNotes();
-  render();
-}
+function ntSelDelGo(){ ntDrop(ntSelList()); render(); }
 /* The notebook's `?` (OWNER 2026-09-26 「？の中に描きまくろう」). */
 HELP.notes=function(){
   return {t:t('toc.notes'), h:
@@ -297,7 +298,7 @@ HELP.notes=function(){
 };
 function vNotes(){
   /* Newest first: a notebook is read from the end. */
-  var found=ntFound(), rows='';
+  var found=ntNewest(), rows='';
   found.forEach(function(i){
     var on=!!(NTSEL && NTSEL[i]);
     if(NTSEL){
@@ -330,7 +331,6 @@ function vNotes(){
       : (langLocked()? ''
            : navDo(t('notes.sel'), 'ntSelOn', null, true))))+
     '<div class="body">'+
-    '<div class="note" style="margin-bottom:12px">'+t('notes.note')+'</div>'+
     (found.length
       ? '<div class="ntlist">'+rows+'</div>'
       : emptyBox(t('notes.empty.t'), t('notes.empty.s')))+

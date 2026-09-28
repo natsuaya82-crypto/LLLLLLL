@@ -61,13 +61,13 @@ const DELETES = {
   modDrop:    { takes: 'one report row on the server, and nothing else -- the post and the account it names are untouched', asks: true },
   fbkDrop:    { takes: 'one feedback row on the server, and nothing else -- the account that wrote it, its posts and its languages are untouched', asks: true },
 
+  langDrop:   { takes: 'a language this account only TOOK: its row in `language_take` on the server, then its twelve slices and its row in LANGS on this phone. The source\u2019s own language and its slice rows are not touched \u2014 what comes off is the mark', asks: true },
+
   /* ---- everything, asked first --------------------------------------- */
   wipeLangs:  { takes: 'the open language: every slice of it, its row in LANGS, its row on the server, and its backup files', asks: true },
   wipeAll:    { takes: 'the account: its row on the server and, on this handset, everything lsWipeAcct() names (docs/DATA_MODEL.md § what an account deletion actually takes)', asks: true },
 
   /* ---- taken without asking, and each of these is a decision ---------- */
-  langDrop:   { takes: 'a language this account only TOOK: its row in `language_take` on the server, then its twelve slices and its row in LANGS on this phone. The source\u2019s own language and its slice rows are not touched \u2014 what comes off is the mark', asks: false,
-                why: 'the row of somebody else\u2019s language, slid left in the switcher, with a 削除 at the end of it \u2014 iOS\u2019s own list. A confirm on every one would make giving a download back a conversation, and what stands behind it is the road back rather than a dialog: the \u2193 on the article takes it again （「もう一度取る」）. Nothing anybody MADE goes, and the server is asked first \u2014 a DELETE that does not land drops nothing at all. DELETE REVIEW in docs/CHANGELOG.md 2026-09-09' },
   sndDrop:    { takes: 'one sound out of SND', asks: false,
                 why: 'it refuses while any letter still reads that sound and says which letters, so nothing that is in use can go — and a sound nothing reads is a row in a list rather than something somebody made' },
   wldOvDel:   { takes: 'one row of what the language is for, out of WLD', asks: false,
@@ -81,7 +81,7 @@ const DELETES = {
                 why: 'the letter stays and keeps its name and its sounds. What goes is a face that was chosen rather than drawn, and choosing another one is the same press' },
   snsDropRecent: { takes: 'one word out of the search history, here and in recent_search', asks: false,
                 why: '「1件づつ消せるでいいよ」 OWNER 2026-09-03 — the ✕ on the row IS the feature. A history is a record of typing, not something somebody made, and the star beside it is untouched' },
-  voDrop:     { takes: 'the voice file in Documents/Voices of the recording being taken off the post that is being written', asks: false,
+  voDrop:     { takes: 'the recording in the post-media bucket that the post being written carried -- at once when only this composer named it, and when the draft is kept again or posted when an opened draft\u2019s row still names it', asks: false,
                 why: 'the recording has not been sent. Taking it off is the person deciding not to use it, and leaving the file would be a file nothing points at — which is what nothing may tidy up later' },
   delNoteGo:  { takes: 'one note out of NOTES', asks: false,
                 why: '「一覧から右にスワイプして削除。標準アプリと同じ作りにして」 OWNER 2026-09-05 — the swipe is the two-step press this app asks with a popup everywhere else: left to uncover 削除, then press it. A confirm on top of that is not what the standard app does, and the form’s own delete button (which did ask) is gone with it' },

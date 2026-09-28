@@ -73,11 +73,9 @@ const WRITERS = {
     lsWipeAcct: 'that account deleted: the stamp goes with its fields',
   },
   'ME.name': {
-    meKeepPut: 'the profile editor -- the person deciding, written once the server has taken it',
     obWhoGo: 'the door: the account made, with the name that was just sent and landed',
   },
   'ME.handle': {
-    meKeepPut: 'the profile editor -- the person deciding, written once the server has taken it',
     obWhoGo: 'the door: the account made, with the @ that was just sent and landed',
   },
   'ME.av': {
@@ -94,7 +92,7 @@ const DYNAMIC = {
     keepBack: 'a save that did not land: the snapshot from before it put back',
   },
   'SET[]': {
-    '(top)': 'the load: what is on the disk read in over the defaults',
+    setPhoneRead: "the load: this handset's own setup (SET_PHONE) read in off lingua.set",
     setGot: "an account's own settings arriving at a switch (acctFor) -- the defaults, then lingua.set.<uid>",
     netPrefsGot: "the account's settings arriving from the server -- a sign-in's read, or the answer to a send (the later press stands)",
   },
@@ -114,6 +112,10 @@ const DYNAMIC = {
    that sentence lives in myFontWant() and nowhere else. */
 const READS = {
   'SET.myfont': 'myFontWant',
+  /* which way the language is written: stored on the language, and ltr on a
+     plan that does not choose one -- the spacing page read the stored one
+     itself and drew a direction no post is written in (2026-09-27). */
+  'SCRIPT.dir': 'scriptDir',
 };
 
 /* ---- read -------------------------------------------------------------- */
@@ -167,7 +169,8 @@ for (const f of fs.readdirSync(WWW).filter((x) => x.endsWith('.js')).sort()) {
     while ((w = all.exec(ln))) put(w[2]);
     for (const key of Object.keys(READS)) {
       const [o, k] = key.split('.');
-      const rr = new RegExp('\\b' + o + '\\s*\\.\\s*' + k + '\\b(?!\\s*(=(?!=)|\\+=|-=|\\+\\+|--))', 'g');
+      /* `delete X.k` takes the field away, which is a write (above). */
+      const rr = new RegExp('(?<!\\bdelete\\s+)\\b' + o + '\\s*\\.\\s*' + k + '\\b(?!\\s*(=(?!=)|\\+=|-=|\\+\\+|--))', 'g');
       while (rr.exec(ln)) if (fn !== READS[key]) readFails.push(key + ' is read in ' + fn + ' (' + f + ':' + (i + 1) +
         ') -- ' + READS[key] + '() is the one place that answers it; ask that');
     }

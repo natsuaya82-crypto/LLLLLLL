@@ -21,7 +21,7 @@ OWNER 2026-09-06。「だから端末でやるわけねえだろ」OWNER 2026-09
 
 端末には段を決める判定が一つも残っていない ── `LinguaStore.swift` の ~~`best()`~~、
 ~~`entitledPlan()`~~、~~`writeDown()`~~ は消えた。`www/` から `plan` 表を触る道も無い
-（`netPlanUp`、~~`netPlanSync`~~ は削除）。
+（~~`netPlanUp`~~、~~`netPlanSync`~~ は削除）。
 
 ## プランは絶対におかしくしてはいけない
 
@@ -32,16 +32,6 @@ OWNER 2026-09-06。「だから端末でやるわけねえだろ」OWNER 2026-09
 
 「読めなかった」「まだ来ていない」「届かなかった」は、どれも段を書き換える理由に
 ならない。何も書かず、そこにあるものをそのままにする。
-
-失った日の原因は二つあり、二つとも同じ形だった。
-
-| どこ | 何が起きたか |
-|---|---|
-| `LinguaPlan.read()` | 読み取り失敗が空文字。`core.js` が空を見て `free` を Keychain に書いた |
-| `LinguaStore.entitledPlan()` | 権利が一つも返らないと `free`。~~`writeDown()`~~ がそれを書いた |
-
-どちらも「持っていない」と「分からない」が同じ枝だった。CLAUDE.md の一ページ目
-に書いてある通りのことが、お金の上で起きた。
 
 **2026-09-06 に、二つ目の原因そのものが消えた。**端末は段を答えなくなったので、
 「権利が一つも返らない」という状態を段の語に変える場所が無い。残っているのは
@@ -70,7 +60,7 @@ OWNER 2026-09-06。「だから端末でやるわけねえだろ」OWNER 2026-09
 - 押す所は `upStop(ok)`：`null` は**「接続できません」**。値段の頁へ送るのは、
   **訊けた上で足りないとき**だけ。天井（`capStop()` ほか）も `planFits()` の
   答えを渡すのでここを通る
-- 形（一覧を畳む・固定の QWERTY・アルファベット・左から右）は
+- 形（一覧を畳む・アルファベット・左から右）は
   `planNo(ok)`：**訊けた上で「無い」ときだけ**無料の形。訊けていない間は
   作った物の形のまま ── 一覧は Pro と同じ長さ
 - 書く所・端末の外へ渡す所は `planSaid(ok)`：答えが来るまで何もしない
@@ -151,8 +141,8 @@ RevenueCat の `Purchases` を通り StoreKit 直の買う・復元・聞き手�
 ```
 
 無料の枠とは、無料プランがもともと持っている分のこと ── 単語100、文字は
-a–z と `!` `?` と基数ぶんの数字、キーボードは固定 QWERTY、文法は最初から
-ある段、音は最初からある分。**それを超えて足したものが「課金で追加した
+a–z と `!` `?` と基数ぶんの数字、文法は最初から
+ある段、音は最初からある分（キーボードは段で分けない、OWNER 2026-09-25）。**それを超えて足したものが「課金で追加した
 もの」で、それが隠れる。**
 
 **隠すのであって、消すのではない。**この文書の一番上がそれで、そちらが
@@ -217,9 +207,8 @@ buys what they cannot see.
 
 So *fewer buttons* is no longer how a closed door looks — but the sentence it
 was protecting is untouched and is the one that matters. **Nothing a person
-made is hidden, moved or removed by a plan**, and a screen that shows fewer
-WORDS on the free plan is still the bug it always was. The two halves were
-never the same statement; only one of them was ever absolute.
+made is moved or removed by a plan** — past a ceiling it is hidden from the
+list (§ 課金で追加したもの), and every byte stays where it is.
 
 `capStop()` — the words ceiling met in the middle of typing — is read as NOT
 covered by this, and the reason is written on the function: it stopped doing
@@ -303,8 +292,8 @@ dlはしかもplusは1つproは3つ DL言語とmake言語でそれぞれ別の�
 ```
 
 **Free 0, Plus 1, Pro 3.** `dlCap()` in `www/core.js` is the number and
-`can('dl')` is the door; `dlCount()` counts the languages whose `mine` is
-false and `dlStop()` is the refusal. `dl-check` holds all four.
+`can('dl')` is the door; `dlCount()` is the server's count of this account's
+`language_take` rows and `dlStop()` is the refusal. `dl-check` holds all four.
 
 **Free does not download at all**, and that is the same sentence said twice:
 「plusからです」, and 「無料はdlさせるなんか話した？　公式アセットのdlは
@@ -312,8 +301,8 @@ plusからっていう決定事項あんのになんで聞いてくんの？」
 
 **A DL'd language is counted SEPARATELY from your own**, which is what
 「それぞれ別の最大値」 says. Two ceilings and not one: `langCount()` counts
-`mine` and has never seen a download, `dlCount()` counts `mine` false and has
-never seen a language somebody made. Filling one leaves the other where it was.
+what `langWhose()` answers mine for and has never seen a download, `dlCount()`
+counts `language_take` rows and has never seen a language somebody made. Filling one leaves the other where it was.
 
 `CAN.dl` and `dlCap()` landed together on 2026-09-02, which is the rule the
 keyboard's door set while it had one: a door opened with no number behind it hands Plus whatever the code
@@ -341,10 +330,10 @@ language existing is not something anybody does.
 cloud half was never true in code: `can('data')` is asked in `www/settings.js`
 twice, both about CSV. Corrected 2026-08-26.
 
-**So the bill scales with people, not with payers.** Every account's twelve
-slices are `slice` rows — 5.4 KB for a small language, about a megabyte for a
-large one (the numbers ~~`bkPack()`~~ measured) — plus the egress of reading them back on
-every launch. `docs/FEATURES.md` § 2 carried 「deferred until Supabase $25 is
+**So the bill scales with people, not with payers.** Every language's slices
+are `slice` rows — 5.4 KB for a small language, about a megabyte for a
+large one (the numbers ~~`bkPack()`~~ measured) — plus the egress of reading one language's back when a
+screen drawn from it is opened. `docs/FEATURES.md` § 2 carried 「deferred until Supabase $25 is
 worth paying」 as the reason nothing was built; the decision overrode the
 deferral and **the cost did not change**. Nobody has priced it against the four
 subscription products (2026-08-14), and **nobody here should**: what a plan
@@ -381,12 +370,8 @@ performance question, it is the plan.
 は開くたび / 言語はそういうわけじゃない」. **The two halves are on different
 clocks and only one of them is per-open.**
 
-**This file said the opposite yesterday and it was wrong.** It read 「常に同期」
-as covering the language too, and warned that re-reading every slice's body on
-every sync would make the language four times the cost of the whole timeline.
-The arithmetic was right; **the premise was not.** The language is not on the
-per-open clock, so the table above stands at 8,000 and the language is not what
-threatens it.
+The language is not on the per-open clock, so the table above stands at 8,000
+and the language is not what threatens it.
 
 **The timeline half is the one to watch.** `askFeed()` (`www/sns.js`) asks
 for a timeline only while that tab has no answer, and a pull-to-refresh asks
@@ -396,9 +381,9 @@ not an ask. Each ask is a `netFeed()`, which is `NET_PAGE=50` posts with their
 whole `body` on it, **`ink` included** — the frozen stroke shapes, which is the
 biggest field a post has.
 
-The photographs are the cheap half of that, and deliberately: they are Storage
-URLs on the post rather than bytes in the JSON, so the webview caches them and
-a re-render redraws the same picture without asking for it again. **It is the
+The photographs are the cheap half of that, and deliberately: they are paths
+on the post rather than bytes in the JSON, fetched through `netMedia()` with the
+session on them, and what a tag is given is a `blob:` of what came back. **It is the
 JSON that repeats.**
 
 So the honest form of the number: **8,000 daily openers if a visit is one
@@ -411,9 +396,9 @@ not the price. What this section is for is that the expensive part of a pull is 
 bodies, not the pictures.
 
 **And for the language half, when it is written:** `no` is a version counter
-that goes up on every write (`netSlicePut`, and `supabase/schema.sql` says so),
-and `netSlices()` currently asks `select=kind,body,no` — every body, every
-time. Asking `select=kind,no` first and fetching bodies only for the slices
+that goes up on every write (`slice_put()`/`slice_in()` in
+`supabase/schema.sql`), and `netSlices()` takes the kinds and the columns it is
+asked for. Asking `select=kind,no` first and fetching bodies only for the slices
 whose number moved makes a sync that found nothing cost almost nothing. That
 matters less now that the language is off the per-open clock, but it is the
 difference between a cheap sync and an expensive one whenever it does run.
@@ -421,9 +406,8 @@ difference between a cheap sync and an expensive one whenever it does run.
 **Answered 2026-08-26: 「supabaseのエンタープライズで対応する予定」.** The bill
 scaling with people rather than payers is not a reason to narrow the scope, and
 proposals to narrow it on cost grounds are **finished** — the owner has priced
-the decision and taken it. The multiplier is settled too: 「常に同期」, not the
-once-on-launch `www/boot.js` does today, so the number goes UP from whatever it
-is now.
+the decision and taken it. The multiplier is settled too: 「常に同期」 — the timeline
+is per open, and a language is read when its screens are opened.
 
 What is still true and still this file's job to say: **none of it may reach
 anybody's data.** An enterprise plan that lapses, a bill that goes unpaid, a
@@ -538,7 +522,6 @@ deleted.** Those are two halves of one sentence and neither may be dropped.
 | languages of your own | **lists the one made FIRST** — the main language (2026-09-12). The open one is not swapped in; where the ceiling comes down under somebody standing in another, `langMainFall()` opens the main one | `langsList()`/`langsSeen()`, `www/home.js`; `langsByAge()`/`langMainId()`/`langMainFall()`, `www/core.js` |
 | languages downloaded | **lists none** | `langsSeen()` with `dlCap()` |
 | the writing system | an alphabet | `wsys()`, `www/wsys.js` |
-| the keyboard | the fixed QWERTY, in the app and on the phone | `kbOf()`, `www/keyboard.js` |
 | the direction | left→right | `setScriptDir()`, `www/wsys.js` |
 | CSV, file import, the sheet | gone, as they always were on free | `can()` on the press |
 | the badge | off everybody's screen once no purchase is running under the plan row — the server's answer, not this phone's | `badge_of()`, `supabase/schema.sql`; `postBadge()` off the row, `www/post.js` |
@@ -558,7 +541,7 @@ where they were (`plan-check`).
 隠すだけね」「だって単語でも文法でも同じようにやったじゃん」 OWNER 2026-09-02.
 The list is cut; nothing else is. There was a day when the alphabet, the
 stages and the sounds showed everything and merely refused to grow, while the
-words and the keyboards dropped out of the list — four screens with two
+words dropped out of the list — four screens with two
 answers to one question, each correct on its own. They are the one answer now.
 
 Every word, every letter, every keyboard layout, every stage, every language
@@ -586,7 +569,7 @@ for a month and then never again. 「a にしたら最初の1ヶ月で作りき�
 
 There used to be a fourth plan, Studio, and it sold the hosted model — the
 conversation, and word suggestions with no daily limit. There is no hosted
-model: the comment AI_SEAM in `www/glyph.js` marks where one would join and nothing joins
+model: the comments AI_SEAM in `www/glyph.js` and `www/assist.js` mark where one would join and nothing joins
 it. A tier whose headline is a thing the app cannot do is the app lying to
 somebody who is about to pay, so Studio is out until the seam has something
 behind it, and what it opened went with it.
@@ -621,9 +604,10 @@ on them is the whole of it.
 消したものを戻すことになります。押さえるのは `plan-check`。
 
 That is not a restriction bolted on; it is what makes the rest possible.
-Because the letters are exactly a–z and their names cannot change, the keyboard
-can be a QWERTY with the drawn letters substituted in, built from `LETTERS`
-every time it is shown, stored nowhere, with nothing to set.
+Because the letters are exactly a–z and their names cannot change, the first
+keyboard is a QWERTY with the drawn letters substituted in, built from `LETTERS`
+every time it is shown and stored nowhere; anybody may build more, on every plan
+(OWNER 2026-09-25).
 
 Four places say it and they say four different things: `ltStart` in
 `letters.js`（起動の埋め戻し、無料だけ）, `kbOf` in `keyboard.js`, `wsys()` in
@@ -742,8 +726,7 @@ is true and is not what you meant.
 ## What holds all of this
 
 `tools/plan-check.mjs` — `npm run plan`. **Count the `say(` lines there rather
-than trusting a number here**, which has been stale once already; it is over a
-hundred and fifty. The sentence they are all about is the one at the head of
+than trusting a number here**, which has been stale once already. The sentence they are all about is the one at the head of
 this file: **a plan decides what may be DONE and nothing about what exists.**
 
 `tools/paid-check.mjs` is the second one, and it needs no browser. It holds
@@ -760,8 +743,8 @@ alone. What it cannot ask is what happens to somebody's WORDS when the answer
 changes, and that is this: five hundred words made on the paid plan, the plan
 ended, and then the list is a hundred while the language is still five hundred
 and **not one byte of any slice has moved**. Also that no plan at all reads as
-free; that any plan which is not the word `plus` buys nothing (`'garbage'`,
-`'PLUS'`, `'studio'`); that the ceiling refuses without taking the screen off
+free; that any plan which is not a rung of the ladder (`free`/`plus`/`pro`) buys
+nothing (`'garbage'`, `'PRO'`, `'basic'`, `'studio'`); that the ceiling refuses without taking the screen off
 anybody; that **a launch holds no plan at all** until `verify-plan` answers,
 whatever an old `lingua.set` holds, and writes nothing back; that no field of
 the settings is about money; and that **「プランが終了しました」 is the
@@ -797,13 +780,7 @@ The four subscriptions are configured in App Store Connect and are described in
 `docs/apple.md` § 4.
 
 **WHERE THE PLAN IS KEPT IS MEMORY, AND THERE IS NO SECOND PLACE** (2026-09-11).
-There were three. ~~`SET.plan`~~ in the settings file; the iOS Keychain, which
-`setOnDisk()` kept the settings out of because that file is in the backup a PC
-makes; and the PARKED settings, `lingua.set.<uid>`, written from `SET` directly
-and past the line that kept the plan out of the file. Whichever ran last
-decided.
-
-None of them exists. `PLAN` in `www/core.js` holds `verify-plan`'s answer about
+There is one. `PLAN` in `www/core.js` holds `verify-plan`'s answer about
 the account that is signed in; `planGot()` writes it and `planForget()` empties
 it, and nothing else assigns it. The Swift that read the Keychain is deleted
 (2026-09-23); the items it wrote stay on phones and nothing reads them.

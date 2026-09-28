@@ -327,17 +327,55 @@ const KEYWORD = new Set(['if','for','while','switch','catch','function','return'
 const unresolved = [...calls].filter(([n]) =>
   !bindings.has(n) && !KEYWORD.has(n) && BROWSER.indexOf(n) < 0);
 
-const dead = decls.filter(d => {
+/* REACHED MEANS REACHED FROM SOMEWHERE THAT RUNS. It was "named more than
+   once", and a name mentioned only inside its own body, or two functions
+   naming only each other, are named more than once and run never:
+   `function zzRec(n){ return n ? zzRec(n-1) : 0; }` passed, and so did a pair
+   calling each other. So the question is a walk: the ROOTS are every mention
+   outside a top-level function -- a statement at the top of a file (act-map's
+   and route-map's registrations are that), index.html, the ten languages,
+   and the tools -- and a function is reached if a root names it or a reached
+   function's body does. A top-level function's body is from its `function`
+   line to where its braces close (bare() has taken the strings out, so the
+   braces are code). */
+const chunks = [];          /* {owner, text} -- owner null is a root */
+bared.forEach((src, rel) => {
+  if (!/^www\/.*\.js$/.test(rel) || rel.startsWith('www/i18n/')) { chunks.push({ owner: null, rel, text: src }); return; }
+  const lines = src.split('\n');
+  let owner = null, depth = 0, buf = [], top = [];
+  lines.forEach(line => {
+    const m = owner === null && /^function\s+([A-Za-z_$][\w$]*)\s*\(/.exec(line);
+    if (m) { owner = m[1]; depth = 0; buf = []; }
+    if (owner === null) { top.push(line); return; }
+    buf.push(line);
+    for (const ch of line) { if (ch === '{') depth++; else if (ch === '}') depth--; }
+    if (depth <= 0 && buf.join('').indexOf('{') >= 0) { chunks.push({ owner, rel, text: buf.join('\n') }); owner = null; }
+  });
+  if (owner !== null) chunks.push({ owner, rel, text: buf.join('\n') });
+  chunks.push({ owner: null, rel, text: top.join('\n') });
+});
+const callers = new Map();  /* name -> Set of owners (null = a root) */
+decls.forEach(d => {
   const use = new RegExp('(?<![\\w$.])' + d.name + USE, 'g');
   const own = new RegExp('(?<![\\w$.])' + d.name + '\\s*=(?!=)');
   const arg = new RegExp('function\\s*[\\w$]*\\s*\\([^)]*(?<![\\w$.])' + d.name + '(?![\\w$])[^)]*\\)');
-  let n = 0;
-  bared.forEach((src, rel) => {
-    if (rel !== d.file && (own.test(src) || arg.test(src))) return;   /* shadowed there */
-    n += (src.match(use) || []).length;
+  const by = new Set();
+  const shadowed = new Set([...bared].filter(([rel, src]) => rel !== d.file && (own.test(src) || arg.test(src))).map(([rel]) => rel));
+  chunks.forEach(c => {
+    if (shadowed.has(c.rel) || c.owner === d.name) return;
+    if (c.text.match(use)) by.add(c.owner);
   });
-  return n <= 1;   /* its own declaration */
+  callers.set(d.name, by);
 });
+const reached = new Set();
+for (let moved = true; moved; ) {
+  moved = false;
+  decls.forEach(d => {
+    if (reached.has(d.name)) return;
+    for (const o of callers.get(d.name)) if (o === null || reached.has(o)) { reached.add(d.name); moved = true; break; }
+  });
+}
+const dead = decls.filter(d => !reached.has(d.name));
 
 /* A var is not called, so the call-shaped USE pattern above is the wrong
    question for one -- OB_STEPS is read as OB_STEPS.length, not OB_STEPS(.

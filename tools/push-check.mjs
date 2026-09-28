@@ -186,6 +186,26 @@ say('like を切っても他は生きている',
   say('別の種類を切ってもいいねは届く', on.send, 'true');
 }
 
+/* ---- ミュートした人からは届かない ------------------------------------
+   「ミュートした人の物は届かない」 ── notices() が `not mute_hides(ev.actor)`
+   で一覧から外すのと同じ答えを、iPhone の通知にも。種類ごとではなく送る道の
+   一か所（pushPlan）で、やった人（actor）がいる種類は全部。 */
+console.log('push: ミュートした人からの通知は鳴らない');
+for (const [nm, aim] of [['フォロー', fol], ['返信', rep], ['引用', quo], ['いいね', lik], ['リポスト', boo]]) {
+  const m = pushPlan(aim, { ...WHO, muted: true }, DEV, B);
+  say(nm + ': ミュートした人からは送らない', m.send + ' ' + m.why, 'false muted');
+  say(nm + ': ミュートしていない人からは送る', pushPlan(aim, { ...WHO, muted: false }, DEV, B).send, 'true');
+}
+/* そして index.ts が、その一人について mute の行を読んで渡していること ──
+   push.mjs は DB を読めないので、読まなければ上の一行は空回りする。 */
+{
+  const ix = fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)),
+                            '..', 'supabase', 'functions', 'push-send', 'index.ts'), 'utf8');
+  say('index.ts は受け取る人が送り手をミュートしているかを mute から読む',
+      /mute\?select=[^`]*actor=\$\{eq\(aim\.to\)\}[^`]*muted=\$\{eq\(aim\.from\)\}/.test(ix) &&
+      /muted:/.test(ix), true);
+}
+
 /* ---- 宛先 ------------------------------------------------------------- */
 console.log('push: device の行が無ければ何もしない');
 say('行が一つも無ければ送らない', pushPlan(lik, WHO, [], B).send, 'false');

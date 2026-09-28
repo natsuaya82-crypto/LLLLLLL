@@ -178,6 +178,13 @@ const R = await pg.evaluate(async () => {
        答え（`langOwnOf()`）だけを読むので、答えが入っていない状態で
        セッションが着くと、この端末には何も無いことになります。 */
     langOwnGot(langId, A);
+    /* AND IT IS FILED, as a language that arrived is: the slices a launch
+       holds are the ones that came down (netLangFill, www/net.js), in the
+       store, as the app. The fixture fills the globals and nothing else, and
+       a launch migration that saved every word (migrateSp, deleted
+       2026-09-27) used to file them here as a side effect -- which is what
+       74 and 91 were standing on without saying so. */
+    slAsApp(langSaveAll, []);
     arrive(A); beA();
     /* そして fixture の言語は、いまサインインしている人が書いたもの ──
        どの案件もそこから始まります。「誰が書いたか」はサーバーの答えで
@@ -793,7 +800,7 @@ const R = await pg.evaluate(async () => {
   /* 編集。通ってから入り、落ちれば一字も入らない。 */
   let sent21 = null, letGo21 = null;
   netSend = (method, path, body, tok, ok2) => {
-    if (method === 'PATCH'){ sent21 = body || {}; letGo21 = () => ok2([]); }
+    if (method === 'PATCH'){ sent21 = body || {}; letGo21 = () => ok2([body || {}]); }
   };
   let saved21 = 'まだ';
   meKeepSave({ bio: '打った一行' }, (okk) => { saved21 = okk; });
@@ -1659,14 +1666,17 @@ const R = await pg.evaluate(async () => {
   if (asA2.indexOf('他人の1') >= 0) no('32: A の一覧に B の言語が出ている');
   if (asB2.indexOf('他人の1') < 0) no('32: B の一覧に B 自身の言語が出ていない');
   if (asB2.indexOf('自分の') >= 0) no('32: B の一覧に A の言語が出ている');
-  /* 出していない件数を言うこと。A から見て隠れているのは 2 件。
+  /* そして B の言語を A の「非表示 n」に数えないこと。索引は見るための写しで、
+     そこから数えるものは無い（CLAUDE.md 規則 22「nothing counts from it」、
+     www/core.js § langWhose の LW_NONE「not drawn, not counted」）。A の一覧に
+     「2 件非表示」と出るのは、A の言語が隠れているのではなく、A のもので
+     ない二つを A に数えて見せているだけです（監査 words home-5）。
      **数字を探すのではなく、その文そのものを探します** ── '2' は class 名にも
-     他人の言語の名前にも出るので、それを見るのは「よく一緒に真になること」を
-     見ているだけで、当たっているようで当たっていません。 */
+     他人の言語の名前にも出ます。 */
   const hidSay = t('cap.hid', 2);
-  if (asA2.indexOf(hidSay) < 0)
-    no('32: 出していない件数を言っていない（' + JSON.stringify(hidSay) +
-       '）── 消えたのと見分けが付かない');
+  if (asA2.indexOf(hidSay) >= 0)
+    no('32: A の一覧が B の言語を「非表示」に数えている（' + JSON.stringify(hidSay) +
+       '）── 索引の写しから数えている');
   /* そして隠すものが無いときは言わない。数えていない一覧は、0 件を
      「0 件かくしています」と言い出します。 */
   netOut(); arrive(A);
@@ -1677,7 +1687,7 @@ const R = await pg.evaluate(async () => {
     no('32: 隠すものが無いのに件数を言っている');
   /* そして何も消えていない: LANGS には三つとも在る。 */
   if (!LANGS || Object.keys({La:1,Lb:1,Lc:1}).length !== 3) no('32: 内部で数が変わった');
-  say('32: 言語の一覧はそのアカウントのぶんだけ ── 消さず、隠した件数を言う');
+  say('32: 言語の一覧はそのアカウントのぶんだけ ── 消さず、他のアカウントの物を数えない');
 
   /* ---- 33. アカウントが違えば、開いている言語も違う --------------------
      「ログアウトして違うアカウントでログインしても前のアカウント残ってるん
@@ -2316,7 +2326,7 @@ const R = await pg.evaluate(async () => {
     no('47: **サーバが消していないのに端末の単語が消えた**');
   if (!netSignedIn())
     no('47: 消えていないのにログアウトした ── アカウントはまだそこにあります');
-  if (netEnded())
+  if (SESS && SESS.end)
     no('47: **サーバへ行かなかったのに削除の印が付いた** ── 端末だけが終わった'
      + 'ことにしています。「通信エラーなら進むわけねえだろ全部」OWNER 2026-09-05');
   say('47: サーバが消し切っていないあいだは、端末のものは一つも消えず、印も付かない');
@@ -2330,6 +2340,7 @@ const R = await pg.evaluate(async () => {
      wipeHere() が端末を通り抜ける前。そこでアプリが閉じられた場合が
      www/boot.js の bootSession() が読む道で、要求が届かなかった場合ではない。 */
   srv49(() => 200);
+  const before48 = Object.keys(LSL).filter(k => slTouched(k));
   wipeAllGo();
   await settle49();
   await settle49();
@@ -2338,7 +2349,48 @@ const R = await pg.evaluate(async () => {
   if (slRd(langKeyOf('Ld47','words')))
     no('48: 続きの削除で、その単語が消えていない');
   if (netSignedIn()) no('48: 消え切ったのにセッションが残っている');
+  /* 48b. 消した後の電話は何も作らない ── 作ると、次にサインインした人の
+     アカウントへ名前の無い空の言語として上がる（rule-audit-2026-09-27-core T4）。 */
+  {
+    const held48 = [];
+    for (const k in LSL)
+      if (Object.prototype.hasOwnProperty.call(LSL, k) && slTouched(k) &&
+          before48.indexOf(k) < 0) held48.push(k);
+    if (langId || held48.length)
+      no('48b: **消した後の電話が誰のでもない言語を作り、人の書き込みとして印を付けた** ── langId '
+       + JSON.stringify(langId) + '、印 ' + JSON.stringify(held48));
+    say('48b: アカウントを消した電話は言語を作らず、何も上げる印を持たない');
+  }
   say('48: 途中で切れた削除は、次に開いたときサーバが答えて消し切られる');
+
+  /* 48c. 「この言語を削除」── その言語の slice は全部消え、索引からも消え、
+     残った言語が開き、押した後に人の書き込みの印は一つも増えない
+     （印が付けば、次の保存でサーバーへ上がる）。言語の削除に回帰の検査が
+     一つも無かった（rule-audit-2026-09-27-core T3）。 */
+  {
+    start(); netOut(); arrive(A);
+    const send48c = netSend;
+    netSend = (m, p, b, tok, ok) => {
+      setTimeout(() => ok(m === 'DELETE' ? [{ id: 'x' }] : m === 'PATCH' ? [b || {}] : []), 0);
+    };
+    const del48c = langId;
+    LANGS.Lkeep48 = {}; langOwnGot('Lkeep48', A); langStore();
+    slAsApp(slWr, [langKeyOf('Lkeep48', 'words'), '[{"hw":"k"}]']);
+    slAsApp(slWr, [langKeyOf(del48c, 'words'), '[{"hw":"gone"}]']);
+    const before48c = Object.keys(LSL).filter(k => slTouched(k));
+    wipeLangsGo();
+    await new Promise(r => setTimeout(r, 60));
+    netSend = send48c;
+    const left48c = Object.keys(LSL).filter(k => k.indexOf('lingua.' + del48c + '.') === 0);
+    const marked48c = Object.keys(LSL).filter(k => slTouched(k) && before48c.indexOf(k) < 0);
+    if (left48c.length) no('48c: 消した言語の slice が残っている — ' + JSON.stringify(left48c));
+    if (LANGS[del48c]) no('48c: 消した言語が索引に残っている');
+    if (!langId || langId === del48c || langOwnOf(langId) !== A)
+      no('48c: 残った言語が開いていない — ' + JSON.stringify(langId));
+    if (marked48c.length)
+      no('48c: **消した後に、人の書き込みの印が付いた** ── 次の保存で上がる: ' + JSON.stringify(marked48c));
+    say('48c: 言語を消すと、その言語だけが消え、残った言語が開き、上がる印は増えない');
+  }
 
   /* 49. 消された側の端末は、画面ごと出される。 */
   start();
@@ -2712,8 +2764,15 @@ const R = await pg.evaluate(async () => {
          いない）を跨いでしまう。2026-09-08 まではその答えが `wld` スライスの
          `hide` で、今は `language` の行の `published_at` です
          （OWNER「端末に hide の存在があるわけないやろ」）。null が非公開。 */
-      if (p.indexOf('/rest/v1/language?select=id,name,published_at&owner=') === 0)
-        return [{ id: SID59, name: 'Shango', published_at: null }];
+      /* The query the page really sends (www/net.js § netLangsDown) -- this
+         answered `select=id,name,published_at&owner=` after the columns grew,
+         so the row never came and 60 was green only because 「not asked」 was
+         drawn as 非公開 (監査 words home-3). Matched on the table and the
+         owner, not on the column list, so a column added tomorrow still gets
+         its answer. */
+      if (p.indexOf('/rest/v1/language?select=') === 0 && p.indexOf('&owner=eq.') !== -1)
+        return [{ id: SID59, name: 'Shango', published_at: null, owner: SESS.uid,
+                  wsys: '', created_at: '2026-09-01T00:00:00Z' }];
       if (p.indexOf('/rest/v1/slice?select=') === 0) return [];
       return [];
     };
@@ -2866,23 +2925,18 @@ const R = await pg.evaluate(async () => {
      言っていない投稿ではそちらを読んでいました。だから**この端末が自分で
      出した数が、直しようもなく画面に残り**、別の端末は違う数を出します。
 
-     **2 は 2026-09-09 に上書きされました。**「Twitter もその仕様なはず。
-     ハート押して 1 つくやん？サーバー飛んでないならハートが消えるでいいん
-     じゃない？」OWNER。♡ は**押した瞬間に点いて数が 1 動き**、届かなければ
-     消えて数が戻ります。何も言いません。動くのは**画面だけ**で、端末の写し
-     には一バイトも書きません ── そこが 1 と喧嘩しない所です：写しは今も
-     読まれず、書かれず、「押したか」の二つ目の答えは端末に無い（`PMARK` は
-     走っているあいだのメモリで、答えが来た瞬間に消えます）。
+     ♡ も押す物の一つで、押したら星が回り、**答えが来てから**点いて数が動く
+     「↓のメーターと♡も星で」 OWNER 2026-09-28（先に点く形は差し替え）。
 
      五本訊きます:
      1. 写しの中の数は読まない ── `li:99 lime:true` を持つ投稿が 0 と空の心
-     2. 押した瞬間に♡が点いて数が 1 動く
+     2. 押した瞬間は♡も数も動かない
      3. 戻ってきたら、サーバーが数えた数になる（自分で足したままにしない）
-     4. 落ちたら押す前に戻る。そして写しの欄は書き換えも削除もされない
+     4. 落ちたら何も動かない。そして写しの欄は書き換えも削除もされない
      5. 押しているあいだも、端末の写しには何も書かれていない
 
-     赤を見た形（2026-09-09）: `postNLike()` に `: ((p && p.li)||0)` を戻すと
-     1 が赤（99 が出る）。`postLike()` を答え待ちの形に戻すと 2 が赤。 */
+     赤を見た形: `postNLike()` に `: ((p && p.li)||0)` を戻すと 1 が赤
+     （99 が出る）。`postLike()` を先に点く形に戻すと 2 が赤。 */
   start();
   netOut(); arrive(A);
   {
@@ -2917,9 +2971,9 @@ const R = await pg.evaluate(async () => {
     const atOnceN = postNLike(postById('q1')), atOnceI = postILike(postById('q1'));
     if (!sent.length || sent[0].indexOf('/rest/v1/react') < 0)
       no('62: 押しても react に行が出ていない — ' + JSON.stringify(sent));
-    if (atOnceN !== 1 || !atOnceI)
-      no('62: 押した瞬間に♡が点かず数も動かない — ' + atOnceN + '、' + atOnceI +
-         '（「ハート押して 1 つくやん？」OWNER 2026-09-09）');
+    if (atOnceN !== 0 || atOnceI)
+      no('62: **答えの前に♡が点いた** — ' + atOnceN + '、' + atOnceI +
+         '（「↓のメーターと♡も星で」OWNER 2026-09-28）');
     /* 押しているあいだも、端末の写しは触られていない。動くのは画面だけ。 */
     {
       const mid = postById('q1');
@@ -2938,7 +2992,7 @@ const R = await pg.evaluate(async () => {
     /* 落ちたとき。何も動かず、写しの欄も触られない。 */
     netSend = (m, path, body, tok, ok2, bad2) => { bad2(null, 0, 'down'); };
     netGet = (path, ok2) => ok2([]);
-    /* 落ちた♡は、押す前に戻る ── 数もサーバーの 12 のまま。 */
+    /* 落ちた♡は何も動かない ── 数もサーバーの 12 のまま。 */
     postLike('q1');
     {
       const f62 = postById('q1');
@@ -2956,8 +3010,8 @@ const R = await pg.evaluate(async () => {
 
     netSend = realSend62; netGet = realGet62;
     say('62: 投稿の数と自分が押したかはサーバーのもの ── 写しの数は読まず、' +
-        '♡は押した瞬間に点いて数が動き、戻ってきたらサーバーが数えた数になり、' +
-        '落ちれば押す前に戻る（写しには一バイトも書かない）');
+        '♡は答えが来てから点いてサーバーが数えた数になり、' +
+        '落ちれば何も動かない（写しには一バイトも書かない）');
   }
 
   /* ---- 63. 書記体系は言語のもの ------------------------------------------
@@ -2991,9 +3045,9 @@ const R = await pg.evaluate(async () => {
     delete SET.wsys;
     let sent63 = null, letGo63 = null;
     netSend = (method, path, body, tok, ok2) => {
-      if (method === 'PATCH'){ sent63 = body || {}; letGo63 = () => ok2([]); }
+      if (method === 'PATCH'){ sent63 = body || {}; letGo63 = () => ok2([body || {}]); }
     };
-    setWsys('syll');
+    setWsys('syll', () => {});
     if (!sent63 || sent63.wsys !== 'syll')
       no('63: 選んでも列へ PATCH が出ていない — ' + JSON.stringify(sent63));
     if (langWsysOf('Lw') === 'syll')
@@ -3014,9 +3068,31 @@ const R = await pg.evaluate(async () => {
     netSend = (method, path, body, tok, ok2, bad2) => {
       if (method === 'PATCH') bad2(null, 0, 'down');
     };
-    setWsys('abugida');
+    setWsys('abugida', () => {});
     if (langWsysOf('Lw') !== 'syll')
       no('63: 落ちたのに書記体系が動いた — ' + JSON.stringify(langWsysOf('Lw')));
+    /* AND THE SAVE SAYS SO WHEN THE COLUMN HAS IT, NOT BEFORE (2026-09-27,
+       claude/audit-glyph A5). The screen's Save is keepSave() -> wsKeepSave();
+       it answered `true` on the press while the column was still in the air,
+       so a refusal came up behind a screen that had already said it saved. */
+    let said63 = [], letGo63b = null;
+    netSend = (method, path, body, tok, ok2) => {
+      if (method === 'PATCH') letGo63b = () => ok2([body || {}]);
+    };
+    wsKeepSave({ ws:'logo' }, (ok) => said63.push(ok));
+    if (said63.length)
+      no('63: 保存が、列が答える前に「済んだ」と言った — ' + JSON.stringify(said63));
+    if (letGo63b) letGo63b();
+    if (said63.join() !== 'true')
+      no('63: 列が答えても保存が「済んだ」と言わない — ' + JSON.stringify(said63));
+    said63 = [];
+    netSend = (method, path, body, tok, ok2, bad2) => {
+      if (method === 'PATCH') bad2(null, 0, 'down');
+    };
+    wsKeepSave({ ws:'syll' }, (ok) => said63.push(ok));
+    if (said63.join() !== 'false')
+      no('63: 列が断ったのに保存が「済んだ」と言った — ' + JSON.stringify(said63));
+    if (popOn()) popNo();
     /* 人の設定には一字も入らない。 */
     if (SET.wsys !== undefined)
       no('63: 人の設定に書記体系を書いた — ' + JSON.stringify(SET.wsys));
@@ -3060,7 +3136,7 @@ const R = await pg.evaluate(async () => {
        （www/net.js § netPrefsGot）。 */
     netSend = (method, path, body, tok, ok) => {
       if (method === 'POST' && path.indexOf('/rest/v1/rpc/prefs_put') === 0 &&
-          body && body.p){ put64 = body.p; if (ok) ok(null); }
+          body && body.p){ put64 = body.p; if (ok) ok(body.p); }
     };
     SET.theme = 'dark'; SET.myfont = false; SET.showScript = false;
     SET.kbrom = true;
@@ -4833,7 +4909,9 @@ const R = await pg.evaluate(async () => {
     };
     SET.notAt = 1000;
     NOTES_HAVE = [{ kind: 'like', at: 5000, hd: 'x' }];
+    PULL_GOT['notif'] = 1;   /* the notices have been ANSWERED -- what reading is of */
     notSeen();
+    delete PULL_GOT['notif'];
     netSend = keep89;
     const up89 = sent89.filter(b => b && b.p && typeof b.p.notAt === 'number');
     if (!up89.length)
@@ -4945,6 +5023,50 @@ const R = await pg.evaluate(async () => {
       no('94: A に戻ると A の数（6）のはず ── ' + SET.opened);
     window.Capacitor = wasCap;
     say('94: 評価のお願いは開いた五回目に一度、数はアカウントの物（A 6、B 1）');
+  }
+
+  /* ---- 96. ピン留めはサーバーの物（オーナーの答え 2、2026-09-28） -----------
+     1. 押すと profile へ PATCH {pin} が飛び、**答えが戻ってから** ME.pin が動く。
+        写しの投稿には一字も書かない。
+     2. 電話の写しにあった古いピンは、アカウントの行が来た時に一度だけ上がる。
+        写しの `pin` は消さない。一度上がれば、外した後に写しから戻らない。
+     赤を見た形: postPin() を写しに書く前の形に戻すと 1 が赤、mePinUp() の
+     SET.pinUp を立てないと 2 の三つ目が赤。 */
+  {
+    start();
+    netOut(); arrive(A);
+    const real96 = netSend, sent96 = [];
+    let go96 = null;
+    netSend = (method, path, body, tok, ok2) => {
+      if (method === 'PATCH' && /\/rest\/v1\/profile\?/.test(path)){
+        sent96.push(body || {}); go96 = () => ok2([body || {}]);
+      }
+    };
+    const mine96 = { id:'5a000000-0000-4000-8000-000000000096', sid:'5a000000-0000-4000-8000-000000000096',
+                     mine:true, at:Date.now(), hd:meHandle(), ln:'pin' };
+    POSTS.unshift(mine96);
+    ME.pin = '';
+    postPin(mine96.id);
+    if (!sent96.length || sent96[0].pin !== mine96.id)
+      no('96: ピン留めが profile へ上がっていない ── ' + JSON.stringify(sent96));
+    if (mePins(mine96.id)) no('96: 答えが戻る前にピンになっている');
+    if (mine96.pin !== undefined) no('96: **写しの投稿にピンを書いた** ── ' + JSON.stringify(mine96.pin));
+    if (go96) go96();
+    if (!mePins(mine96.id)) no('96: 答えが戻ってもピンになっていない');
+    /* 2. 古い形: 写しの投稿に pin が付いている、サーバーにはまだ無い。 */
+    sent96.length = 0; go96 = null;
+    ME.pin = ''; delete SET.pinUp; mine96.pin = 1;
+    mePinUp({ pin:null });
+    if (sent96.length !== 1 || sent96[0].pin !== mine96.sid)
+      no('96: 写しの古いピンが一度上がっていない ── ' + JSON.stringify(sent96));
+    if (go96) go96();
+    if (mine96.pin !== 1) no('96: **写しの pin を消した**（写す、消さない）');
+    ME.pin = ''; sent96.length = 0;
+    mePinUp({ pin:null });
+    if (sent96.length) no('96: **外したピンが写しから戻った** ── ' + JSON.stringify(sent96));
+    netSend = real96;
+    POSTS.splice(POSTS.indexOf(mine96), 1);
+    say('96: ピン留めは profile.pin ── 答えの後に動き、写しには書かず、古いピンは一度だけ写して上げる');
   }
 
   return out;

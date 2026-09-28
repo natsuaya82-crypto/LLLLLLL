@@ -383,11 +383,13 @@ const shown = await pg.evaluate(() => {
 say(!shown, '文字が入っているときは履歴を出さない');
 
 /* そして星（`SET.saved`）は別物で、履歴に触られない。 */
-const star = await pg.evaluate(() => {
+/* The ✕ is a press that goes to the server, and the copy moves on the answer. */
+await pg.evaluate(() => {
   SET.saved = ['hoshi']; SET.recent = ['rireki']; snsQ = '';
   snsDropRecent('rireki');
-  return { saved: SET.saved.slice(), recent: SET.recent.slice() };
 });
+await pg.waitForTimeout(120);
+const star = await pg.evaluate(() => ({ saved: SET.saved.slice(), recent: SET.recent.slice() }));
 say(star.saved.length === 1 && star.saved[0] === 'hoshi' && star.recent.length === 0,
     '履歴を消しても星は残る (星と履歴は別の仕組み)');
 
@@ -662,22 +664,22 @@ const byWho = await pressed('aya');
 say(byWho.after.rows === 0,
     '書いた人の @ では投稿は出ない (人の検索の仕事: ' + byWho.after.rows + ' 件)');
 
-/* ---- 11. 信号が無いときに書いた投稿は、下書きに入り、送り直せば上がって出る -
+/* ---- 11. 信号が無いときに書いた投稿は、欄に残り、送り直せば上がって出る -----
    検索はサーバーのものです ── 手元の五十件を絞ったものは上位五十件ではない、
    とこの画面は既に書いている。だからサーバーに届いていない投稿は、書いた
    本人にも探せません。**そして、それは失われたということではありません。**
-   送れなかった投稿は「送信できませんでした」と出て下書きに入り
-   （「普通に送信できませんでした。になるんじゃないの？下書きに入るように
-   しよう」OWNER 2026-09-24）、その下書きを開いて送れば上がって、そこから
-   探せます。送り直しのボタンは無い。
+   送れなかった投稿は「送信できませんでした」と出て、打った物は欄にその
+   まま残る。下書きにも端末の一覧にも入らない（「そもそもツイートできない
+   んだから保存もされなくね？」OWNER 2026-09-28）。つながってから同じ欄で
+   もう一度送れば上がって、そこから探せます。
 
    二つを分けて押さえるのは、片方だけ見ると別の結論になるからです ──
    「出ない」だけ見れば消えたように見え、「出る」だけ見れば信号の有無は
    関係ないように見えます。 */
 const w2 = await wrote('zzuquat', 'つながっていないときに書いた', 'nosignal');
-say(!w2.kept && w2.drafted === 1 && w2.here === 0,
-    '出ていかなかった投稿は下書きに一件入り、欄は空、端末の一覧には入らない (下書き ' +
-    w2.drafted + ' 件、欄 ' + (w2.kept ? '**残る**' : '空') + '、一覧 ' + w2.here + ' 件)');
+say(w2.kept && w2.drafted === 0 && w2.here === 0,
+    '出ていかなかった投稿は欄に残り、下書きにも端末の一覧にも入らない (下書き ' +
+    w2.drafted + ' 件、欄 ' + (w2.kept ? '残る' : '**空**') + '、一覧 ' + w2.here + ' 件)');
 say(w2.said.indexOf(w2.no) >= 0,
     '「送信できませんでした」と出る (' + JSON.stringify(w2.said) + ')');
 say(w2.there === 0, 'サーバーへは出ていかなかった (' + w2.there + ' 件)');
@@ -693,16 +695,13 @@ say(before === 0,
    保存されない」「なら失敗して残るにするべき」── 上がるのは人が送った時。 */
 const caught = await pg.evaluate(() => new Promise(function(d){
   window.__MODE = 'ok';
-  var at = -1, j;
-  for(j=0;j<DRAFTS.length;j++) if(DRAFTS[j] && DRAFTS[j].ln === 'zzuquat') at = j;
-  draftOpen(at);           /* the draft it went into, opened */
-  pwSend();                /* and sent */
+  pwSend();                /* the same field, sent again */
   setTimeout(function(){
     d(window.__POSTS.filter(function(r){
         return (r.body || {}).ln === 'zzuquat'; }).length);
   }, 900);
 }));
-say(caught === 1, 'つながってから下書きを開いて送れば上がる (' + caught + ' 件)');
+say(caught === 1, 'つながってから欄のまま送り直せば上がる (' + caught + ' 件)');
 const back = await pressed('zzuquat');
 say(back.after.rows === 1,
     '上がったあとは検索に出る ── 何も失われていない (' + back.after.rows + ' 件)');
@@ -992,7 +991,7 @@ say(found.ask.indexOf('body->>mn') !== -1,
    履歴の行に見える字、そして日本語に戻したら箱も行も綴りに戻ること。
    最後の一つが要るのは、**表示言語を変えても保存は動かない**というのが
    2026-09-08 の決定そのものだからです。 */
-const dayBox = await pg.evaluate(() => {
+const dayBox = await pg.evaluate(async () => {
   var was = SET.ui, out = {};
   function box(){
     var e = document.createElement('div');
@@ -1030,6 +1029,8 @@ const dayBox = await pg.evaluate(() => {
      でした。goTab() の描画と snsGo() の描画で、一回の押しが二回の問いに
      なっていた（下の「一回の押しは一回の問い」）。 */
   snsTagGo(DAY_TAG);
+  /* the history is written when the server has the row */
+  await new Promise((res) => setTimeout(res, 60));
   out.enBox = box();
   out.enRow = row();
   out.enSaved = (SET.recent || []).slice(0);
@@ -1135,6 +1136,36 @@ say(gotSaved.indexOf(wantSaved) === 0,
 say(gotRecent.indexOf(wantRecent) === 0,
     '履歴の一覧は recent_search を at の順で訊く ── 同じ関数、違う引数 (' +
     gotRecent + ')');
+
+/* ---- 話題は本当に並べる（オーナーの答え 3、2026-09-28） ------------------
+   並べ替えで「話題」を選ぶと、投稿の検索はいいねとリポストの合計
+   （post_seen.buzz）の順で訊き、続きはその順のまま何件目から、で訊く。
+   「新しい順」は今までどおり。赤を見た形: snsFind() が buzz を渡さないと赤。 */
+const sorted = await pg.evaluate(() => new Promise(function(done){
+  var out = {};
+  window.__MODE = 'ok';
+  snsSort = 'buzz'; window.__ASK = [];
+  snsFind('kanuko', function(r){
+    out.buzz = decodeURIComponent(window.__ASK.join('|'));
+    window.__ASK = []; snsHits = r; r.posts = [{ id:'x', at:Date.now() }]; r.end = false;
+    snsWordMore(function(){ return snsHits; });
+    setTimeout(function(){
+      out.more = decodeURIComponent(window.__ASK.join('|'));
+      snsSort = 'new'; window.__ASK = [];
+      snsFind('kanuko', function(){
+        out.fresh = decodeURIComponent(window.__ASK.join('|'));
+        snsMoreAsk = false; snsHits = null;
+        done(out);
+      });
+    }, 50);
+  });
+}));
+say(sorted.buzz.indexOf('order=buzz.desc,created_at.desc') !== -1,
+    '話題を選ぶと、投稿はいいねとリポストの順で訊く');
+say(sorted.more.indexOf('order=buzz.desc') !== -1 && sorted.more.indexOf('offset=1') !== -1,
+    '話題の続きは同じ順で、持っている数から訊く');
+say(sorted.fresh.indexOf('order=created_at.desc') !== -1 && sorted.fresh.indexOf('buzz') === -1,
+    '新しい順に戻せば新しい順で訊く');
 
 await br.close();
 console.log(bad.length ? '\nfind: FAILED ' + bad.length : '\nfind: 一つの箱に打てば人も投稿も出る。途中の言葉でも出て、出ていない投稿は出ない');

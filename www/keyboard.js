@@ -288,9 +288,9 @@ function migrateKbFree(){
    four characters `null`, which parse to something that is not an object --
    a slice that reads as wreckage rather than as nothing.
 
-   Every free language is that language. Free reads kbFixed(), a QWERTY built
-   out of LETTERS on the way to the screen and stored nowhere, so on the free
-   plan there is no other state this can be.
+   A language nobody has built a keyboard for is that language, on every plan
+   (「キーボードはプランで分けない」 OWNER 2026-09-25): board 0 is kbFixed(),
+   a QWERTY built out of LETTERS on the way to the screen and stored nowhere.
    「無料の分も全部入らないとダメでしょ」 OWNER 2026-09-04.
 
    docs/DATA_SAFETY.md has the sentence: *a slice the app has never written is
@@ -366,9 +366,6 @@ function kbChSlot(c){ c=String(c||''); return c? KB_CH+c : ''; }
    than handing the extension a key with no job. */
 function kbGap(w){ var k=kbKey('gap'); k.w=w; return k; }
 
-/* Letters five to a row, with a space and a backspace under them. Used for
-   both faces of the first keyboard, so the two cannot drift in how wide a
-   row is. */
 /* How many keys to a row, so that what comes out is the shape of a keyboard.
 
    Measured on a 390pt phone: every keyboard on a phone is FOUR rows of keys
@@ -420,8 +417,6 @@ function kbFillRow(row){
   if(lead>0) row.unshift(kbGap(kbGapW(lead)));
   return row;
 }
-/* The bottom bar: the space takes whatever the row has left, which is what
-   every phone does with it, so the row comes to ten without a gap in it. */
 /* Putting the way-across on a bar that is already ten wide: the space pays
    for it, which is where every phone takes it from. */
 function kbBarLay(row, to){
@@ -430,6 +425,8 @@ function kbBarLay(row, to){
   row.unshift(kbKey('lay', to));
   return row;
 }
+/* The bottom bar: the space takes whatever the row has left, which is what
+   every phone does with it, so the row comes to ten without a gap in it. */
 function kbBar(del){
   var sp=kbKey('sp'), d=kbKey('del');
   d.w=del||2;
@@ -509,10 +506,9 @@ function kbSecond(){
   var xs=ltOfKind('num').concat(ltOfKind('mark'));
   return xs.length? kbRowFaces(xs) : null;
 }
-/* The first keyboard, so there is something to type on before anybody has
-   built anything: the letters in the order they are already in, and the
-   digits and marks behind a switch. It is a starting point and it is meant
-   to be pulled apart. Nothing is stored until it is. */
+/* The tap pattern (kbTapLay): the letters in the order they are already in,
+   and the digits and marks behind a switch. The first keyboard is kbFixed(),
+   not this. It is a starting point and it is meant to be pulled apart. */
 function kbDefault(){
   var lay=kbRowFaces(ltOrder(ltOfKind('alpha'))), more=kbSecond();
   /* The digits and the marks are their own group and split on their own, so
@@ -546,7 +542,6 @@ function kbDefault(){
    `hand` -- somewhere to write (ios/App/LinguaKeyboard/HandPad.swift) over
    one row of space, delete and return 「改行も入れてあげたら」. */
 var KB_PATS=['qwerty', 'flick', 'tap', 'chart', 'abc', 'hand'];
-/* Ten to a row, which is what a row of a phone keyboard holds. */
 /* Twelve keys, four directions on each. One key holds five letters, so a
    language of sixty is one face -- which is the whole argument for a flick
    keyboard and the reason Japanese phones have one. The letters go on in the
@@ -579,7 +574,6 @@ function kbFlickLay(){
      space, no delete and no return. */
   var fr=kbFaceRows();
   n=Math.max(3, Math.ceil(keys.length/3));
-  if(n>fr) n=Math.ceil(keys.length/3)>fr? Math.ceil(keys.length/3) : n;
   /* Four across, so a key is FIVE columns of the ten -- 97pt on a 390pt
      phone against a QWERTY's 39. That is the whole of why a flick key is big:
      not a bigger grid, a key that spans more of it. And four times five is
@@ -866,9 +860,8 @@ function kbGoBoard(i){
      something else. */
   kbGo(kbShow);
 }
-/* A keyboard goes only when somebody says so, and never the last one: with
-   none left there is nothing to apply, and the app would be quietly back to
-   the default while the screen said three. */
+/* A keyboard goes only when somebody says so, and asks first. Board 0 never
+   goes, so there is always one to apply. */
 function kbDrop(i){
   var b=kbBoards();
   if(!b.length) return;
@@ -881,12 +874,29 @@ function kbDrop(i){
   popAsk(t('kb.rm.q'), function(){ kbDropGo(i); }, t('pop.yes'));
 }
 function kbDropGo(i){
-  var b=kbBoards();
-  if(!b.length) return;
-  KB.kbs.splice(i-1, 1);
+  kbDropAll([i]);
+}
+/* THE ONE DELETE, for one board off its ⋯ and for several off the list.
+   `KB.at` and `kbShow` are indexes, so each goes down by the number of boards
+   taken out IN FRONT of it and by nothing else: deleting the first keyboard
+   leaves the one on the phone the one on the phone. The Select road clamped
+   instead of counting, and made the applied board's neighbour the keyboard
+   on the phone with no press on it (audit words kb-1). Highest index first,
+   so removing one does not move the next one under the knife. */
+function kbDropAll(ids){
+  var at, show, i, b, gone;
+  if(!KB || !kbStored().length) return;
+  gone=ids.slice().sort(function(x, y){ return y-x; });
+  at=parseInt(KB.at, 10)||0; show=parseInt(kbShow, 10)||0;
+  for(i=0;i<gone.length;i++){
+    if(kbIsFree(gone[i]) || gone[i]>KB.kbs.length || gone[i]===gone[i-1]) continue;
+    KB.kbs.splice(gone[i]-1, 1);
+    if(gone[i]<at) at--;
+    if(gone[i]<show) show--;
+  }
   b=kbBoards();
-  KB.at=kbClamp(KB.at>i? KB.at-1 : KB.at, b.length);
-  kbShow=kbClamp(kbShow>=b.length? b.length-1 : kbShow, b.length);
+  KB.at=kbClamp(at, b.length);
+  kbShow=kbClamp(show, b.length);
   kbLay=0; kbSel=null;
   kbForget();
   saveKb();
@@ -995,7 +1005,7 @@ function kbNameHTML(i){
    row now, one at each end of the space bar, because the space bar was the
    whole width of the phone and nothing else was down there.
    「これスペースデカすぎやね。！スペース？みたいにできない？」 It also evens the
-   rows out: ten, nine, and seven letters with a delete two keys wide. */
+   rows out: ten, nine, and seven letters with a delete three keys wide. */
 var KB_QWERTY=['qwertyuiop', 'asdfghjkl', 'zxcvbnm'];
 /* The two that sit beside the space. Marks, so they are found by name over
    every letter exactly as the rows above are. */
@@ -1091,16 +1101,14 @@ function kbFixed(){
       id=kbNamed(r.charAt(j));
       row.push(id? kbFix(r.charAt(j), id) : kbRom(r.charAt(j)));
     }
-    /* Two keys wide. It is the one key you hit without looking, and it was
-       the same width as a letter. 「デリートキーは横二つ分欲しいかも」
+    /* The row comes to TEN like the two above it: every row divides the whole
+       width among its own keys, so a row that adds up to nine has keys a
+       ninth wider than a row that adds up to ten -- and the columns stop
+       lining up. 「キーボードずれた。文字サイズとか小さくしていいからずらさない
+       で」 The nine-letter row does it with half a key at each end, which is
+       where a phone puts it.
 
-       And a gap before it, so the row comes to TEN like the two above it.
-       Every row divides the whole width among its own keys, so a row that
-       adds up to nine has keys a ninth wider than a row that adds up to ten
-       -- and the columns stop lining up. 「キーボードずれた。文字サイズとか
-       小さくしていいからずらさないで」 The nine-letter row does the same
-       thing with half a key at each end, which is where a phone puts it. */
-    /* The delete takes the slack instead of an empty slot taking it. The row
+       The delete takes the slack instead of an empty slot taking it. The row
        was [nothing(1), z..m(7), delete(2)] -- ten across, so the columns
        lined up with the two rows above, at the price of a key-wide hole at
        the left of the third row. With the layer key gone from the bottom row
@@ -1386,19 +1394,6 @@ function kbFlicks(key, slots){
    any more; everything that does is on the other side of the App Group. */
 function kbTyped(id){ return String(ltName(ltById(id))||''); }
 
-/* One layer, as it will be pressed -- which now means pressed to be EDITED.
-   `act` was here because a key meant two things, typing and editing; it
-   means one. */
-/* `ro` is the same keyboard with nothing to press.
-
-   The free plan has a keyboard -- kbFixed(), a QWERTY wearing the letters
-   somebody drew -- and it is the whole point of the app. What it does not
-   have is an editor. Drawn as buttons it would offer to open a key and then
-   refuse, so the keys are plain spans there: nothing to press, because there
-   is nothing to press it for. It is one function and not two so that a key
-   cannot look like one thing on the paid screen and another on the free
-   one, which is the same argument kbFace() is already making one level
-   down. */
 /* A column, as a letter: a, b, ... z, aa. The other half of the address, and
    it means the same thing on every row because the editor's rows are a grid.
    「エクセルみたいに123abcみたいに振ればどこのどこをいじってるか分かりやすく
@@ -1478,13 +1473,6 @@ var KB_MOST=0.5, KB_ROWW=0.1385, KB_BARS=8+44;
    It is the WIDTH rule one axis over, and rule 19 has always said the width
    this way: 「TEN ACROSS is the phone's number -- the narrowest iPhone is
    320」. Not the phone in your hand. The narrowest one.
-
-   The reference is a 390 x 844 phone -- the one most people are holding, and
-   the one the 0.1385 above was measured at, so this is the phone where the
-   keyboard is exactly what it always was. Every other phone gets a key of its
-   own size and, because the bars do not scale, within a row of the same
-   answer: seven from the 13 mini up, six on an SE 2, five on an SE 1. The
-   ceiling is one number rather than each of those, for the reason above.
 
    kb-check prints what every phone comes to, so a change to any of the three
    numbers shows its whole shape rather than one number moving. */
@@ -1662,7 +1650,7 @@ function kbCellHTML(ri, at, span, ki){
        Slack the row does not write down names nothing, which is what it has
        always done. */
     (ki===undefined? '' : ' data-r="'+ri+'" data-k="'+ki+'"') +
-    ' aria-label="'+esc(t('kb.cell.add'))+'"></button>';
+    ' aria-label="'+esc(t('kb.cell.sel'))+'"></button>';
 }
 /* Which frame is being worked on. KBH's fourth kind, beside the row, the
    column and the key, and it is held by WHERE it is -- the row and the column
@@ -1899,7 +1887,6 @@ function kbJoin(ri, ki){
   kbSel=null;
   saveKb(); render();
 }
-/* Whether the selected key has one beside it to join to. */
 /* Whether the selected key has one to join to -- the one beside it, or the one
    under it. Both, because the button is ONE button: 「なんで？ 結合ボタン
    作れよ。編集も含め全部ボタンで作業だから」 OWNER 2026-08-27.
@@ -2047,9 +2034,9 @@ function kbRowTied(ri){
    kbJoin()'s reason: a key carries one letter, and somebody pressing two
    keys has said nothing about which. The step back is what stands behind it.
 
-   It answers whether it happened, so kbTapKey() can fall through to plain
-   selection when the two do not line up. Refused rather than repaired: a
-   merge of a wide key and a narrow one is a cell this sheet cannot draw. */
+   It is refused when the two do not line up, rather than repaired: a merge of
+   a wide key and a narrow one is a cell this sheet cannot draw. The join
+   button (kbJoinSel) is down exactly then, because it asks this rule. */
 function kbVJoin(ri, ki){
   var b=kbEdit(), rows, up, dn, di;
   if(!b) return false;
@@ -2119,13 +2106,8 @@ function kbHdrHTML(cols){
   }
   return '<div class="kbhdr">'+out+'</div>';
 }
-/* The row's number, which is also how the row goes. 「1触ったら1が全部消える
-   a触ったらa列全部消える」 A sheet is pointed at by its edges, and on a sheet
-   the edge is where you take a whole row or a whole column away from.
-
-   It asks nothing first, and that is deliberate: what stands behind it is the
-   step back, not a dialog. A dialog on every row would make building a
-   keyboard a conversation. */
+/* The row's number, which SELECTS the row -- a sheet is pointed at by its
+   edges. Taking it away is the bin over the sheet (below). */
 function kbNHTML(ri){
   return '<button class="kbn'+(kbHeadIs('r', ri)? ' on':'')+'"' + DO('kbHeadRow', [ri]) +
     ' aria-label="'+esc(t('kb.row.sel'))+'">'+(ri+1)+'</button>';
@@ -2189,15 +2171,8 @@ function kbRunTied(){
    「今列選択してる時も適当に触ったら選択解除されるようにして欲しい。同じとこ
    触ると選択解除されるからわかりにくい」 OWNER 2026-08-27.
 
-   This does not change what happens yet -- it is the same three answers, in
-   one place, so that the sentence the owner asked for is one line to write
-   and not three to find. What the sentence IS is still being asked: press
-   something unrelated and the selection is released, but whether the thing
-   just pressed then becomes the selection is the half that was not said, and
-   is a judgement about how the screen feels rather than a bug. It is in
-   docs/reports/kb6-tools-2026-08-27.md with the button table.
-
-   Everything that selects goes through here: the row's number, the column's
+   So it is one place (kbSelSpread, kbHeadTo): press something else while
+   one is chosen and it is let go; press again to choose. Everything that selects goes through here: the row's number, the column's
    letter, and a key. */
 function kbSelTo(next){
   KBH=next || null;
@@ -2357,7 +2332,7 @@ function kbIns(down){
    keyboard -- it is asked for by pressing the bin, and the step back holds it. */
 function kbCut(){
   if(!KBH) return;
-  var h=KBH, ms, j, run, i;
+  var h=KBH, ms;
   /* An empty frame holds nothing to take. Without this the bin would ask
      kbDelCol() for column `undefined`, which is a keyboard that still renders
      and is not the one somebody built. */
@@ -2368,6 +2343,13 @@ function kbCut(){
     kbDelKeys(ms);
     return;
   }
+  /* A ROW OR A COLUMN ASKS FIRST 「消す前はいつも確認」 OWNER 2026-09-28
+     (criterion 9); the step back still stands behind it. */
+  popAsk(t(h.k==='r'? 'kb.cut.q.r' : 'kb.cut.q.c'), kbCutGo, t('pop.yes'));
+}
+function kbCutGo(){
+  var h=KBH, run, i;
+  if(!h || (h.k!=='r' && h.k!=='c')) return;
   run=kbHeadRun();
   KBH=null;
   /* ONE save and therefore ONE step back for one press -- kbDelRow() and
@@ -2597,7 +2579,7 @@ function kbHTML(sel, ro){
           '<span class="kbc">'+kbFace(key)+'</span>'+kbMark(key)+'</span>'
         : '<button class="'+cls+(kbWob? ' wob':'')+'" '+
           'style="grid-column:span '+kbU(key.w)+kbRhCSS(key)+
-            (ro? '' : kbPickCSS(ri, ki))+'" '+
+            kbPickCSS(ri, ki)+'" '+
           'data-r="'+ri+'" data-k="'+ki+'"'+
           DO('kbTapKey', [ri, ki]) + '>'+kbFlicks(key, slots)+
           '<span class="kbc">'+kbFace(key)+'</span>'+kbMark(key)+
@@ -2692,26 +2674,14 @@ function kbSelDel(){
   if(!n) return;
   popAsk(tn('kb.rm.n', n), function(){ kbSelDelGo(); }, t('pop.yes'));
 }
-/* Highest index first, so removing one does not move the next one under the
-   knife -- the same reason a list is walked backwards anywhere else. */
+/* The same delete done to several at once (kbDropAll), and it lands on the
+   list for kbDropGo()'s reason above: it is PRESSED on the list, so opening a
+   board here was the screen moving under somebody who had asked for
+   nothing. */
 function kbSelDelGo(){
-  var ids=kbSelList().sort(function(a, b){ return b-a; }), i;
-  for(i=0;i<ids.length;i++){
-    if(kbIsFree(ids[i])) continue;
-    KB.kbs.splice(ids[i]-1, 1);
-  }
+  var ids=kbSelList();
   KBSEL=null;
-  var b=kbBoards();
-  KB.at=kbClamp(KB.at, b.length);
-  kbShow=kbClamp(kbShow, b.length);
-  kbLay=0; kbSel=null;
-  kbForget();
-  saveKb();
-  /* Onto the list, for kbDropGo()'s reason above -- this is the same delete
-     done to several at once, and it is PRESSED on the list, so opening a
-     board here was the screen moving under somebody who had asked for
-     nothing. */
-  kbGo();
+  kbDropAll(ids);
 }
 function kbRowHTML(x, i, at){
   var sel=!!KBSEL, on=!!(sel && KBSEL[i]);
@@ -2773,16 +2743,14 @@ function kbListHTML(){
       : '');
 }
 function vKb(){
-  /* The free plan has a keyboard. It was shown a wall.
+  /* ONE SCREEN ON EVERY PLAN. 「キーボードはプランで分けない」 OWNER
+     2026-09-25: anybody builds as many keyboards as they like, in the same
+     editor, and what a free keyboard can carry is limited only by the letters
+     a free language has (its slots). This chapter once answered the free
+     plan with a wall -- kb.locked and an Upgrade button -- and that said, to
+     somebody who had drawn twenty-eight letters, that they had no keyboard.
 
-     This chapter used to answer the free plan with kb.locked and an Upgrade
-     button and nothing else -- which said, to somebody who had drawn
-     twenty-eight letters, that they had no keyboard. They have exactly the
-     one the app is for: kbFixed(), their letters on a QWERTY, and it is what
-     goes on the phone. What they do not have is an editor for it, and that
-     is the only thing Upgrade buys here.
-
-     Worse, the two things that MATTER on this screen were behind the wall:
+     And the two things that MATTER on this screen were behind the wall:
      how to switch the keyboard on in iOS, and whether the letters have
      actually been handed over. Those are not a paid feature -- they are the
      instructions for using what is already yours, and without them a free
@@ -2791,23 +2759,10 @@ function vKb(){
      にくいんだよ。Linguaで先に文字を書いてくださいの画面にどう結びつけるのか
      がわからんて」
 
-     So free gets the steps, the state, and the keyboard itself with nothing
-     to press.
+     AND NO UPGRADE on this screen, and no plan question behind the + either
+     (2026-09-25).
 
-     AND NO UPGRADE. 「upgradeはそこにはいらんくね。追加するときに出てくるよう
-     にして欲しい」 OWNER 2026-09-01. It stood at the foot of this screen saying
-     the one true thing, and the one true thing is about ADDING a keyboard --
-     so it belongs where somebody adds one, not under a keyboard they already
-     have. Under the keyboard it reads as a price on the thing above it, which
-     is the free QWERTY and is not for sale.
-
-     kbNew() and kbAdd() ask instead, which is where the app already asks
-     every other question of this shape -- ltKind() on a letter, wsysSet() on
-     a writing system, phGo() on a grammar stage all send somebody to the
-     plans screen at the moment the act is pressed rather than standing a
-     button beside it.
-
-     AND THE FREE PLAN'S OWN FACE IS GONE, which is the whole of this change.
+     AND THE FREE PLAN'S OWN FACE IS GONE.
      「キーボードの画面無料だと何で1個なの？一覧が並ばないの？無料も有料も同じ
      画面っちうルールは？」 OWNER 2026-09-03. It returned here, above the
      list, so free never saw a list at all: one keyboard, no rows, and the
@@ -2816,8 +2771,7 @@ function vKb(){
      both plans walk it -- the list, and one keyboard's page under it.
 
      THE LIST HOLDS WHAT THERE IS, and the + is the one door on every plan
-     「＋は右下につけて」 OWNER 2026-09-04. A free list is one row, because
-     that is one keyboard; the ceiling is met when the + is pressed. */
+     「＋は右下につけて」 OWNER 2026-09-04, with no ceiling behind it. */
   /* The keyboard, and the row of the ones there are above it. There is no
      "nothing built yet" face any more: kbBoards() answers with the one
      already on the phone, so the first thing on this screen is always a
@@ -2831,9 +2785,9 @@ function vKb(){
     /* SELECT AT THE FAR END OF THE BAR, where the ? was 「？の位置を
        キーボード 選択 にしたい」 OWNER 2026-09-01.
 
-       And NOTHING where there is nothing to select. The free plan's one board
-       is board 0, which kbSelTap() refuses and which cannot be deleted, so
-       Select there is a word that puts marks on nothing.
+       And NOTHING where there is nothing to select. With only board 0 --
+       which kbSelTap() refuses and which cannot be deleted -- Select would be
+       a word that puts marks on nothing.
 
        AND THE ? IS HERE. 「目次の「キーボード」の横ではなく
        それより一つ中＝キーボード一覧」 OWNER 2026-09-06. One in from the
@@ -2861,8 +2815,8 @@ function vKb(){
       '</div></div>';
   var now=kbClamp(a, bs.length);
   kbShow=now;
-  /* Board 0 is the free QWERTY and has no editor -- the same face the free
-     plan gets, on the paid screen, because it is the same keyboard. What goes
+  /* Board 0 is the QWERTY built from the letters (kbFixed()) and has no
+     editor, on every plan, because it is stored nowhere. What goes
      with the editor goes with it: the row of faces (it has one), the height
      (it is the height free types at), and the row of keys as buttons. What
      stays is Apply, because choosing it is the one thing anybody does to it. */
@@ -2894,9 +2848,6 @@ function vKb(){
     '</div></div>';
 }
 /* The ⋯ in the bar of one keyboard's page: deleting it, and starting the
-   chapter over. It was at the end of the row of tabs, which is a row that no
-   longer exists. */
-/* The ⋯ in the bar of one keyboard's page: deleting it, and starting the
    chapter over.
 
    NOT on board 0. Board 0 is the free QWERTY: it is not stored, it cannot be
@@ -2907,12 +2858,9 @@ function vKb(){
    「キーボード1の右上の・・・いらないから消して。そうしたら、そもそも
    キーボードはいじれないから、防げる。」 */
 function kbMoreQ(){
-  /* NOTHING on board 0. It is the free QWERTY: it cannot be deleted and it
-     has no editor, so there is nothing behind a ⋯ -- and the ? that stood
-     here has gone to the contents, beside the chapter's own name
-     (www/home.js § vBuild). 「キーボードの？は目次のキーボードの題名の横」
-     OWNER 2026-09-05. That is one screen earlier than this one, which is
-     where 「how do I switch this on」 is asked. */
+  /* NOTHING on board 0: it cannot be deleted and it has no editor, so there
+     is nothing behind a ⋯. The ? is on the list of keyboards, one screen
+     earlier (vKb), 「一つ中＝キーボード一覧」 OWNER 2026-09-06. */
   if(!kbEdit()) return '';
   return '<button class="navq"' + DO('kbMore') + ' aria-label="'+esc(t('kb.more'))+'">'+
     ICON_DOTS+'</button>';
@@ -2948,7 +2896,7 @@ function kbLaysHTML(){
        SHOWN, which is the one the rest of this screen is about. */
     (n>1
       ? '<button class="seg drop"' + DO('kbDropLay', [at]) +
-        ' aria-label="'+esc(t('kb.lay.rm'))+'">'+ICON_CROSS+'</button>'
+        ' aria-label="'+esc(t('kb.lay.rm'))+'">'+ICON_BIN+'</button>'
       : '')+
     '</div>';
 }
@@ -3016,8 +2964,8 @@ function kbShotHTML(lay, src){
   return '<span class="kbshot2">'+out+'</span>';
 }
 /* Apply, and it is the only control on this screen that changes what somebody
-   types with. On the one already applied it says so instead, because a button
-   that does nothing is worse than a line that explains. */
+   types with. On the one already applied it draws nothing, because a button
+   that does nothing is worse than no button. */
 function kbApplyHTML(){
   var bs=kbBoards(), at=kbApplied(bs.length), now=kbClamp(kbShow, bs.length);
   /* Nothing at all when this IS the one on the phone. It said so in a line of
@@ -3795,10 +3743,11 @@ FORM_OPEN.kbnew=function(){ kbNew(); };
    とき変えられないよ？」
 
    DELETE REVIEW. Twelve keys and thirty keys are not the same set of places,
-   so there is nowhere to put what was on the old ones and the layout is
-   rebuilt empty: everything assigned to a key on this keyboard goes. Nothing
-   ELSE goes -- not the letters, not the other keyboards, not the name. It is
-   asked for by name, it asks before it does it, and it is not automatic.
+   so the layout is built again from the new pattern (kbPatLay(), which lays
+   the language's letters on, OWNER 2026-09-11): what somebody placed by hand
+   on this keyboard's keys goes. Nothing ELSE goes -- not the letters, not the
+   other keyboards, not the name. It is asked for by name, it asks before it
+   does it, and it is not automatic.
 
    The same five patterns, from the same list, drawn by the same function: the
    only difference between choosing one here and choosing one for a new
@@ -3930,11 +3879,8 @@ HELP.kb=function(){
      2026-09-18: the extension asks for no open access, so the walk ends
      where iOS's own list of keyboards does.
 
-     The upgrade lines are kept and moved to the FOOT, after the steps:
-     「無料プランのキーボードは編集ができません。／自作キーボードを作りたい
-     場合はアップグレードしてください。／アップグレードする。」 OWNER
-     2026-08-28 is answered, and 「無料でもplusでもproでも同じ画面なのよ」
-     OWNER 2026-09-01 decides which way round the two go. */
+     There are no upgrade lines: a keyboard is built on every plan
+     (「キーボードはプランで分けない」 OWNER 2026-09-25). */
   return {t:t('kb.sys.h'), h:
     /* 手順 3 にだけ。OWNER 2026-09-06
 
@@ -3996,24 +3942,12 @@ function kbMore(){
         '<span class="sl">'+esc(t('kb.pat.set'))+'</span>'+
         '<span class="sv">'+esc(t('kb.pat.'+kbBoard().pat))+ICON_GO+'</span></button>'+
         '<button class="set"' + DO('kbDrop', [now]) + '>'+
-        '<span class="sl bad">'+esc(t('kb.rm'))+'</span></button>'
-      : '')+
-    '<button class="set" style="border-bottom:none"' + DO('kbReset') + '>'+
-      '<span class="sl bad">'+esc(t('kb.reset'))+'</span></button>');
+        '<span class="sl bad">'+esc(t('kb.rm'))+'</span></button>'+
+        '<button class="set" style="border-bottom:none"' + DO('kbReset') + '>'+
+        '<span class="sl bad">'+esc(t('kb.reset'))+'</span></button>'
+      : ''));
 }
 FORM_OPEN.kbmore=function(){ kbMore(); };
-/* Whether what this chapter builds ever reached the phone.
-   
-   sharePush() has recorded the answer since the day it was written and showed
-   it to nobody, which is how three builds in a row failed with the same
-   symptom and three different causes -- the keyboard saying "draw some
-   letters first" while the letters sat drawn on the other side of a wall.
-   Each time the answer was already in memory and had no way out.
-   
-   This is not a debug line. It is the one question a person can act on: if
-   nothing was ever handed over, drawing more letters will not help. */
-/* No bridge means a browser, which is every check and no phone: there is no
-   Settings to open and nothing to say about it. */
 /* Settings, opened at this app's own page. LinguaShare.swift § settings says
    what that is and why it is the only door Apple gives.
 
@@ -4029,11 +3963,6 @@ function kbSettings(){
   p('LinguaShare', 'settings', {})['catch'](function(){ toast(t('kb.sys.no')); });
 }
 function kbGoLay(i){ kbLay=i; render(); }
-/* Is there anywhere on this face to put a key that goes to another one, and
-   putting it there. At the front of the last row, which is where every phone
-   keeps its 123 and where kbDefault() has always put it; failing that, a row
-   of its own. Failing both, the face is as big as a face may get and the
-   answer is no -- which is why the + is not drawn.  */
 /* Whether a key to another face can go on this one. THREE places it can go,
    and they are kbFacePut()'s three -- a gap that is already there, a space
    bar that can give up a key's width, or a row of its own.
@@ -4107,9 +4036,8 @@ function kbWayOff(){
    it and no way off it. docs/keyboard.md said so in four steps, which is a
    manual page standing in for the thing working.
 
-   kbDefault() has done this from the beginning for the digits face it builds:
-   a key to 1 on the first, a key to 0 on the second. This is that, for a face
-   somebody adds. Nothing is overwritten -- the key goes IN at the front of a
+   kbPatLay() links the faces of a pattern the same way (kbLinkFaces); this
+   is that, for a face somebody adds. Nothing is overwritten -- the key goes IN at the front of a
    row, or into a row of its own. */
 function kbAddLay(){
   var b=kbEdit(), from;

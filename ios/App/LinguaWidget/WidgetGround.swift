@@ -33,29 +33,8 @@ extension View {
 //
 
 //  contentMarginsDisabled() is iOS 17's own way of saying "I will do my own
-//  spacing", and it is the modifier that would win this room back.
-//
-//  IT IS NOT HERE, and build #89 is why. The version that was here read:
-//
-//      extension WidgetConfiguration {
-//        @ViewBuilder
-//        func widgetRoom() -> some WidgetConfiguration {
-//          if #available(iOS 17.0, *) { self.contentMarginsDisabled() }
-//          else { self }
-//        }
-//      }
-//
-//  and the compiler refused it:
-//
-//      error: static method 'buildExpression' requires that
-//             'some WidgetConfiguration' conform to 'View'
-//
-//  @ViewBuilder builds views. A function returning some WidgetConfiguration
-//  cannot be built with it, and there is no configuration builder to swap in
-//  that exists before iOS 17 -- which is the very version the branch was
-//  guarding against.
-//
-//  It was written on Linux, where no Swift compiler runs, and nothing in
-//  `npm test` reads a .swift file. Nineteen checks, all green, and the first
-//  thing that ever read this was a build. Whatever replaces it has to be
-//  compiled before it is believed.
+//  spacing", and it is on each widget's configuration, NOT wrapped in
+//  `if #available`: the modifier is available from iOS 15, which is this
+//  target, and a wrapped version would not compile (@ViewBuilder builds
+//  views, not a WidgetConfiguration -- build #89). Swift is compiled only by
+//  a build; nothing in `npm test` reads a .swift file.

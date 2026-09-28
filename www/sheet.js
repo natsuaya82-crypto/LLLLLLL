@@ -12,9 +12,6 @@
    taken by a hand is always a trapezoid. The price is the one Calligraphr also
    pays and states: all four have to be in the picture.
 
-   The name is also printed faintly INSIDE its box, so a person can see what
-   each box is for. It is light enough that the threshold does not pick it up.
-
    This file is in two halves, the same as www/import.js and for the same
    reason. THIS one knows nothing about the app -- given names and a small
    picture of each, it builds PDF bytes; given a page of samples, it reads the
@@ -189,7 +186,7 @@ function shPageOps(from, count, pics, bits, page, pages){
        ABOVE it. It did: 6 + 20 against a gap of 22, so `mountain` was printed
        four points inside 愛's square. Nothing throws; somebody just finds
        another language's word sitting in the box they are about to draw in.
-       There is an assertion below rather than a comment saying to be careful. */
+       tools/sheet-check.mjs holds it rather than a comment saying to be careful. */
     if (p && p.w && p.h){
       wide = shLabelW(p);
       o.push('q ' + shNum(wide) + ' 0 0 ' + shNum(SH_LABEL) + ' ' + shNum(b.x) + ' ' +
@@ -227,7 +224,6 @@ function shSheet(names, pics){
   add('<< /Type /Catalog /Pages 2 0 R >>');
   add('');
   add('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>');
-  var gid = add('<< /Type /ExtGState /ca 0.14 >>');     /* the faint guide */
   for (i = 0; i < pages; i++){
     count = Math.min(per, n - i * per);
     bits = shPack(names.slice(i * per, i * per + count));
@@ -245,8 +241,7 @@ function shSheet(names, pics){
     body = shPageOps(i * per, count, mine, bits, i, pages);
     cid = add('<< /Length ' + body.length + ' >>\nstream\n' + body + '\nendstream');
     pid = add('<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ' + shNum(SH_W) + ' ' +
-              shNum(SH_H) + '] /Resources << /Font << /F1 3 0 R >> /ExtGState << /G1 ' +
-              gid + ' 0 R >>' + (ims.length ? ' /XObject << ' + ims.join(' ') + ' >>' : '') +
+              shNum(SH_H) + '] /Resources << /Font << /F1 3 0 R >>' + (ims.length ? ' /XObject << ' + ims.join(' ') + ' >>' : '') +
               ' >> /Contents ' + cid + ' 0 R >>');
     kids.push(pid + ' 0 R');
   }
@@ -452,11 +447,11 @@ function shBoxField(warp, sign, i, res){
    named by which edge it is on -- and stitching the segments into rings is then
    exact rather than a search by distance. Rings close by construction, the same
    property crack-following had and for the same reason.
-   `drop` is the yes/no mask of what to KEEP (dust and the printed box edge
+   `keep` is the yes/no mask of what to KEEP (dust and the printed box edge
    already thrown out); ink outside it is pushed far negative so no edge is
    found around it. */
 function shEdge(f, res, keep){
-  var n = res, i, x, y, g = [], seg = [], at = {}, id;
+  var n = res, i, x, y, g = [], seg = [], at = {};
   for (i = 0; i < n * n; i++) g[i] = (keep && !keep[i] && f[i] > 0) ? -1000 : f[i];
   function pt(ax, ay, bx, by){
     var fa = g[ay * n + ax], fb = g[by * n + bx];
@@ -908,7 +903,11 @@ function shRoomHTML(){
 
 /* ---- making one -------------------------------------------------------- */
 function openWrOut(){
-  openForm('wrout:', t('wr.make'), shOutHTML(), shPvDraw);
+  /* Making the sheet ends in iOS's share sheet (shMake), so it is the share
+     mark at the top right of the bar and the words are its label -- CLAUDE.md
+     § AN OPERATION THAT HAS A MARK, 「共有マークを右上」 OWNER 2026-09-23. */
+  openForm('wrout:', t('wr.make'), shOutHTML(), shPvDraw,
+    navDo(t('wr.out'), 'shMake', null, false, {icon:ICON_SHARE}));
 }
 /* The count under the field is a count. It says how many boxes twenty names
    make and how many sheets that is, which is the one thing a person cannot
@@ -919,9 +918,7 @@ function shOutHTML(){
     '<textarea id="wr-names" placeholder="'+esc(t('wr.ph'))+'"' + IN('shTyped') + '>'+
     esc(s.names)+'</textarea></div>'+
     '<div class="mini" id="wr-mini">'+esc(tn('wr.boxes', n))+' · '+esc(tn('wr.pages', shPages(n)))+'</div>'+
-    shPvHTML()+
-    '<div class="barfix"><button class="btn ghost"' + DO('shMake') + '>'+
-    esc(t('wr.out'))+'</button></div>';
+    shPvHTML();
 }
 /* ---- what will come out, before it comes out ----------------------------
    「自分の言語に入れたい文字　例 a,b,c みたいにしてカンマで区切ったら、どんな
@@ -1193,8 +1190,13 @@ function shMake(){
    anything and does not point at a language. It names itself in its own
    strip. */
 function shFileName(){
-  var n = String(langName || '').replace(/[^\w \-]/g, '').replace(/\s+/g, ' ');
-  return (n ? n.slice(0, 40) + ' ' : '') + 'sheet';
+  /* Only what a file name cannot hold comes out -- a `/` would be a folder
+     in LinguaShare.swift's path -- so 日本語 or Ελληνικά stays itself. The
+     word after it is the screen's own name for a sheet, in the interface's
+     language (CLAUDE.md rule 2). */
+  var n = String(langName || '').replace(/[\/\\:*?"<>|\u0000-\u001f]/g, '')
+    .replace(/\s+/g, ' ').replace(/^[\s.]+|\s+$/g, '');
+  return (n ? n.slice(0, 40) + ' ' : '') + t('wr.title');
 }
 
 /* ---- reading one back -------------------------------------------------- */
@@ -1246,7 +1248,7 @@ function shInHTML(){
 
      `can('file')` -- 「a list brought in as a file rather than a paste」, and
      a sheet handed back is a file brought in. It is asked inside
-     fileInHTML(); shTakeIn() asks it again where the file arrives, because a
+     fileInHTML(); shTakeIn() asks it again where the letters arrive, because a
      control drawn on a screen is not the gate. There is no separate `write`:
      `file` is the sheet's gate too (docs/PAID_FEATURES.md, OWNER DECISION
      2026-08-23).

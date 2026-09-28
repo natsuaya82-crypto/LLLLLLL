@@ -51,7 +51,8 @@ const r = await pg.evaluate(({ s }) => {
     render();
   }
   /* What each chapter's row IS, off the page: a button carrying ↓, a row
-     that is busy, or a row that says it is taken. */
+     that is busy (which nothing draws any more, and is asked so), or a row
+     that says it is taken. */
   function rows(){
     var o = {}, n = document.querySelectorAll('#app .set'), i, b, sv;
     for(i = 0; i < n.length; i++){
@@ -87,6 +88,9 @@ const r = await pg.evaluate(({ s }) => {
   window.toast = wasToast;
   out.refused = rows();
   out.refusedSaid = toasts;
+  /* and nothing of the chapter was written on this phone ahead of the
+     server's answer (OWNER 2026-09-06 「先にサーバーじゃないの？」) */
+  out.refusedHeld = slMine(langKeyOf(lid, 'letters')) !== null;
   /* ---- the chapter in memory is not 「taken」 until the server says so -- */
   langTookGot([]);
   slWr(langKeyOf(lid, 'letters'), WLDS_HAVE[lid].letters.body);
@@ -147,12 +151,16 @@ const say = (ok, what, got) => {
   if (!ok) bad++;
 };
 say(r.before.letters === 'dl', '1 before the press the chapter is a ↓', r.before);
-say(Object.values(r.going).indexOf('wait') !== -1 && r.going.kb === 'dl',
-    '2 pressed, that chapter turns while the put is out -- and only that one', r.going);
+say(Object.values(r.going).indexOf('wait') === -1 && r.going.kb === 'dl' &&
+    Object.values(r.going).indexOf('took') === -1,
+    '2 pressed, no row draws a mark of its own while it is out -- the star is ' +
+    'the one mark (OWNER 2026-09-28, spin-check)', r.going);
 say(Object.values(r.done).indexOf('took') !== -1 && r.done.kb === 'dl',
     '3 the server said so: ⭕☑️ on that chapter, ↓ on the one not taken', r.done);
 say(r.refused.letters === 'dl' && r.refusedSaid.length === 1,
     '4 refused: back to ↓, and it says so once', { rows: r.refused, said: r.refusedSaid });
+say(r.refusedHeld === false,
+    '4b refused: not one slice of the chapter was written ahead of the answer', r.refusedHeld);
 say(r.heldNotTaken.letters === 'dl',
     '5 the chapter in memory with no `language_take` answer is still a ↓', r.heldNotTaken);
 say(Object.values(r.arrive).indexOf('took') !== -1,
@@ -168,5 +176,5 @@ say(r.waitWhose === 'wait' && r.waitRow === true && r.waitH1 === true && r.waitE
     { whose: r.waitWhose, row: r.waitRow, h1: r.waitH1, edit: r.waitEdit });
 
 await br.close();
-console.log(bad ? `\ntake-check: ${bad} failed` : '\ntake-check: 10 of 10');
+console.log(bad ? `\ntake-check: ${bad} failed` : '\ntake-check: 11 of 11');
 process.exit(bad ? 1 : 0);

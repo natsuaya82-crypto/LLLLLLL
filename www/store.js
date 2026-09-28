@@ -5,7 +5,8 @@
 /* ==== 26. what money actually buys, bought ==============================
 
    The one window onto the App Store -- LinguaStore.swift, with RevenueCat
-   under it -- the way net.js is the one window onto the server. Nothing else
+   under it -- and onto Google Play (LinguaStorePlugin.kt, Play Billing
+   directly), the way net.js is the one window onto the server. Nothing else
    in www/ may talk to `LinguaStore`.
 
    `Capacitor.nativePromise` and NOT `Capacitor.Plugins`: this app has no
@@ -52,9 +53,19 @@ function storeOn(){ return !!storePlug(); }
    the one thing that reads a signature is supabase/functions/verify-plan.
 
    So this file's job on every road is the same two lines: take the receipts,
-   hand them to netPlanVerify(), and say what came back. */
+   hand them to netPlanVerify(), and say what came back.
+
+   AND THIS IS THE ONE PLACE THAT KNOWS WHICH PHONE IT IS. The iPhone answers
+   `jws`; Android (android/.../LinguaStorePlugin.kt) answers `google`, a list
+   of {token, product} -- Google Play hands a phone no signed transaction, only
+   a purchase token, and verify-plan asks Google about it. Either list goes up
+   in the same array and the server tells the two apart by their shape
+   (supabase/functions/verify-plan/google.mjs § isPair). Nothing else in www
+   asks which phone. */
 function storeJws(r){
-  return (r && r.jws && r.jws.length) ? r.jws : [];
+  if(r && r.jws && r.jws.length) return r.jws;
+  if(r && r.google && r.google.length) return r.google;
+  return [];
 }
 /* Which plan a product id buys, for the SENTENCE after a purchase and for
    nothing else. 「plus で課金しても pro になりましたって出る」 OWNER

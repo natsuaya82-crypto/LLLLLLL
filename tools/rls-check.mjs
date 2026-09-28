@@ -257,7 +257,7 @@ insert into storage.buckets (id, name, public) values ('other', 'other', true);
 -- version of it lived with the stub, and taking the stub away made this file
 -- die instead of going red.
 create schema if not exists net;
-create table net._sent (n serial, url text, body jsonb, headers jsonb);
+create table net._sent (n serial, url text, body jsonb, headers jsonb, timeout int);
 `;
 
 /* Every claim schema.sql makes, as somebody trying to break it. Adding a
@@ -698,7 +698,7 @@ const CASES = [
     `select 1 from slice where language='${L}' and kind='wld'`],
   ['and its letters',                         'ok',     B, 0,
     `select 1 from slice where language='${L}' and kind='letters'`],
-  ['and so does somebody with no account at all', 'ok', B, 1,
+  ['but not somebody with no account at all', 'denied', B, 1,
     `select 1 from slice where language='${L}' and kind='wld'`],
   /* AND THE DICTIONARY IS NOT THE PAGE. \u300c\u8a00\u8a9e\u30da\u30fc\u30b8\u516c\u958b\u3068\u5358\u8a9e\u3084\u6587\u5b57\u306edl\u53ef\u80fd\u306f
      \u5225\u3060\u3057\u300d OWNER -- being allowed to READ somebody's page and being handed
@@ -738,7 +738,18 @@ const CASES = [
     `update post set body='{"x":1}'::jsonb where id='${P}'`],
   ['B cannot delete A\u2019s post',           'denied', B, 0,
     `delete from post where id='${P}'`],
-  ['nobody signed in reads the feed',         'ok',     B, 1, `select 1 from post`],
+  /* THE PIN IS THE PAGE'S, ON THE SERVER 「ピン留めはサーバーに持つ」 OWNER
+     2026-09-28: one of your own posts, on your own row, and read by whoever
+     reads the page. */
+  ['A pins A\u2019s own post',                'ok',     A, 0,
+    `update profile set pin='${P}' where id='${A}' returning 1`],
+  ['and B reads it off A\u2019s page',        'ok',     B, 0,
+    `select 1 from profile_seen where id='${A}' and pin='${P}'`],
+  ['B cannot pin A\u2019s post on B\u2019s page', 'denied', B, 0,
+    `update profile set pin='${P}' where id='${B}'`],
+  ['nor put a pin on A\u2019s page',          'denied', B, 0,
+    `update profile set pin=null where id='${A}' returning 1`],
+  ['nobody signed in reads nothing of the feed',         'denied',     B, 1, `select 1 from post`],
   ['nobody signed in posts',                  'denied', B, 1,
     `insert into post(author,body) values ('${B}','{}'::jsonb)`],
 
@@ -786,6 +797,13 @@ const CASES = [
      of BK and BD below, who exist for that alone. */
   ['B lifts B\u2019s own block',               'ok',     B, 0,
     `delete from block where actor='${B}' and blocked='${A}'`],
+  /* The block took B's follow of A with it (block_unfollow), and lifting it
+     puts nothing back -- so B follows A again, which the rest of this file
+     reads as there. */
+  ['and B\u2019s follow of A went with it',     'denied', B, 3,
+    `select 1 from follow where follower='${B}' and followed='${A}'`],
+  ['B follows A again',                       'ok',     B, 0,
+    `insert into follow(follower,followed) values ('${B}','${A}')`],
 
   /* --- a mute is yours, goes one way, and keeps nobody out --------------
      \u300c\u4eba\u3092\u30df\u30e5\u30fc\u30c8\u3067\u304d\u308b\u2026\uff08\u30d6\u30ed\u30c3\u30af\u3068\u306f\u5225\uff09\u300d OWNER 2026-09-25. B mutes A
@@ -842,6 +860,11 @@ const CASES = [
     `insert into post(id,author,body) values ('${BKP}','${BK}','{}'::jsonb)`],
   ['BD writes a post',                        'ok',     BD, 0,
     `insert into post(id,author,body) values ('${BDP}','${BD}','{}'::jsonb)`],
+  /* And a photograph on each, so the walk has a file of each to not see. */
+  ['BK puts a photograph on it',              'ok',     BK, 0,
+    `insert into storage.objects(bucket_id,name) values ('post-media','${BK}/${BKP}/0.jpg')`],
+  ['BD puts a photograph on it',              'ok',     BD, 0,
+    `insert into storage.objects(bucket_id,name) values ('post-media','${BD}/${BDP}/0.jpg')`],
   ['BD answers BK',                           'ok',     BD, 0,
     `insert into post(author,body,reply_to) values ('${BD}','{}'::jsonb,'${BKP}')`],
   /* A QUOTE (r94): a post carrying `quote_of`, written by its author, and
@@ -857,12 +880,20 @@ const CASES = [
     `update post set quote_of='${P}' where author='${BD}' and quote_of='${BKP}'`],
   ['BD likes BK\u2019s post',                 'ok',     BD, 0,
     `insert into react(post,actor,kind) values ('${BKP}','${BD}','like')`],
+  /* 「話題」 is ordered by this (post_seen.buzz, OWNER 2026-09-28): the likes
+     and the reposts together, and on no row anything else. */
+  ['a post\u2019s 話題 is its likes and reposts', 'ok', B, 0,
+    `select 1 from post_seen where id='${BKP}' and buzz = likes + boosts and buzz > 0`],
+  ['and no row says otherwise',               'denied', B, 0,
+    `select 1 from post_seen where buzz is distinct from likes + boosts`],
   ['BD passes somebody else\u2019s post on',  'ok',     BD, 0,
     `insert into react(post,actor,kind) values ('${PA}','${BD}','boost')`],
   ['BD follows BK',                           'ok',     BD, 0,
     `insert into follow(follower,followed) values ('${BD}','${BK}')`],
   ['BK follows BD',                           'ok',     BK, 0,
     `insert into follow(follower,followed) values ('${BK}','${BD}')`],
+  ['B follows BK',                            'ok',     B, 0,
+    `insert into follow(follower,followed) values ('${B}','${BK}')`],
   ['BD makes a language',                     'ok',     BD, 0,
     `insert into language(id,owner,name) values ('${BDL}','${BD}','Blok')`],
   ['and publishes it',                        'ok',     BD, 0,
@@ -889,6 +920,16 @@ const CASES = [
     `select 1 from slice where language='${BDL}' and kind='words'`],
   ['BK blocks BD',                            'ok',     BK, 0,
     `insert into block(actor,blocked) values ('${BK}','${BD}')`],
+  /* AND THE BLOCK TOOK BOTH FOLLOWS WITH IT 「両向きのフォローを外す」 OWNER
+     2026-09-28. Asked as the service role, because what BK can READ of a
+     follow with BD is already nothing (block_hides) whether the row is there
+     or not -- a read as BK would be green with the trigger gone. */
+  ['a block takes BK’s follow of BD',   'denied', BK, 3,
+    `select 1 from follow where follower='${BK}' and followed='${BD}'`],
+  ['and BD’s follow of BK',             'denied', BK, 3,
+    `select 1 from follow where follower='${BD}' and followed='${BK}'`],
+  ['and nobody else’s follow of BK',    'ok',     BK, 3,
+    `select 1 from follow where followed='${BK}' and follower<>'${BD}'`],
   /* WHOM YOU HAVE BLOCKED, BY NAME, AND TO YOU ALONE. 「設定に追加して非表示
      リストとブロックリスト」 OWNER 2026-09-24: the list is where unblocking
      is, now that a blocked person's page is gone from both sides. */
@@ -931,7 +972,12 @@ const CASES = [
        and quote_of='e9400000-0000-4000-8000-0000000000e1' and quoted is null`],
   ['nor edit a post into an answer to BK',    'denied', BD, 0,
     `update post set reply_to='${BKP}' where id='${BDP}'`],
-  ['BD stops following BK',                   'ok',     BD, 0,
+  /* 「ブロックは絶対見えないように」 OWNER 2026-09-28: BD's follow of BK
+     went with the block (block_unfollow), and a row that were there would not
+     be one BD is handed or can reach either. */
+  ['BD does not see BD’s follow of BK',       'denied', BD, 0,
+    `select 1 from follow where follower='${BD}' and followed='${BK}'`],
+  ['nor reach it to take it off',             'denied', BD, 0,
     `delete from follow where follower='${BD}' and followed='${BK}'`],
   ['and cannot follow BK again',              'denied', BD, 0,
     `insert into follow(follower,followed) values ('${BD}','${BK}')`],
@@ -962,6 +1008,13 @@ const CASES = [
     `select 1 from slice where language='${BDL}' and kind='words'`],
   ['BD does not read BK’s dictionary',        'denied', BD, 0,
     `select 1 from slice where language='${BKL}' and kind='words'`],
+  /* AND NOT BY TAKING IT. A take is a read that lasts: language_took() lets
+     it through lang_readable() whatever stands between -- so a take made
+     ACROSS a block would be the road round every line above. Both ways. */
+  ['BD cannot take BK’s published language',  'denied', BD, 0,
+    `insert into language_take(uid,language) values ('${BD}','${BKL}')`],
+  ['nor BK take BD’s',                        'denied', BK, 0,
+    `insert into language_take(uid,language) values ('${BK}','${BDL}')`],
   ['BD still reads BD’s own, all of it',      'ok',     BD, 0,
     `select 1 from slice where language='${BDL}' and kind='words'`],
   /* AND ONE BK TOOK BEFORE THE BLOCK IS STILL READ, which is not a decision:
@@ -1201,7 +1254,7 @@ const CASES = [
      about B's, which nobody has published. */
   ['anybody may read a published one',        'ok',     B, 0,
     `select 1 from language_seen where id='${L}'`],
-  ['and somebody with no account may too',    'ok',     B, 1,
+  ['but somebody with no account may not',    'denied',     B, 1,
     `select 1 from language_seen where id='${L}'`],
   ['it says how many words there are',        'ok',     B, 0,
     `select 1 from language_seen where id='${L}' and nwords = 1`],
@@ -1241,7 +1294,7 @@ const CASES = [
     `insert into follow(follower,followed) values ('${A}','${F}')`],
   ['and F\u2019s page says one follows them', 'ok',     A, 0,
     `select 1 from profile_seen where id='${F}' and fr = 1`],
-  ['and somebody with no account sees it',    'ok',     B, 1,
+  ['but somebody with no account does not see it',    'denied',     B, 1,
     `select 1 from profile_seen where id='${F}' and fr = 1`],
   ['F is still following nobody',             'ok',     A, 0,
     `select 1 from profile_seen where id='${F}' and fo = 0`],
@@ -1289,7 +1342,7 @@ const CASES = [
     `select 1 from follow_seen where follower_handle='aya' and followed_handle='veth'`],
   ['and B reads it, being nobody\u2019s business but public', 'ok',   B, 0,
     `select 1 from follow_seen where follower_handle='aya'`],
-  ['and somebody with no account reads it',   'ok',     B, 1,
+  ['but somebody with no account does not read it',   'denied',     B, 1,
     `select 1 from follow_seen where followed_handle='veth'`],
   ['A unfollows F again',                     'ok',     A, 0,
     `delete from follow where follower='${A}' and followed='${F}'`],
@@ -1305,7 +1358,7 @@ const CASES = [
      no boost -- B put one on two lines up and took it back one line up. */
   ['the like is counted for anybody reading',  'ok',     A, 0,
     `select 1 from post_seen where id='${P}' and likes = 1`],
-  ['and for somebody with no account',        'ok',     B, 1,
+  ['but not for somebody with no account',        'denied',     B, 1,
     `select 1 from post_seen where id='${P}' and likes = 1`],
   ['the boost that was taken back is not',    'ok',     A, 0,
     `select 1 from post_seen where id='${P}' and boosts = 0`],
@@ -1652,7 +1705,7 @@ const CASES = [
     `select 1 from post_seen where id='${P}' and body ->> 'ln' is not null`],
   ['nor out of the table under it',           'denied', B, 0,
     `select 1 from post where id='${P}' and body ->> 'ln' is not null`],
-  ['somebody not signed in is handed the row too', 'ok', B, 1,
+  ['somebody not signed in is not handed the row', 'denied', B, 1,
     `select 1 from post_seen where id='${P}'`],
   ['and it says nothing to them either',      'denied', B, 1,
     `select 1 from post_seen where id='${P}' and body ->> 'ln' is not null`],
@@ -1699,6 +1752,37 @@ const CASES = [
     `select 1 from post_seen v where v.id='${P}' and v.replies =
        (select count(*) from post q where q.reply_to='${P}' and q.hidden_at is null)`],
 
+  /* --- AND ITS PHOTOGRAPHS AND ITS VOICE ARE THE POST'S --------------------
+     A file in the bucket is read by whoever may read a post that names it --
+     a photograph by its folder (`<author>/<post>/`), a voice by the post's
+     `body.vu` -- and by whoever put it there. So a post kept to its writer
+     keeps its pictures, and a voice no post names yet (a draft's, a
+     composer's) is its recorder's alone. media_read asks post_read, so a
+     block and a take-down are the same sentence here as on the post. */
+  ['A puts a photograph on the post A kept',  'ok',     A, 0,
+    `insert into storage.objects(bucket_id,name) values ('post-media','${A}/${PV}/0.jpg')`],
+  ['A puts a photograph on P',                'ok',     A, 0,
+    `insert into storage.objects(bucket_id,name) values ('post-media','${A}/${P}/1.jpg')`],
+  ['A records a voice no post names yet',     'ok',     A, 0,
+    `insert into storage.objects(bucket_id,name) values ('post-media','${A}/v1/vo.m4a')`],
+  ['A records one and posts it',              'ok',     A, 0,
+    `insert into storage.objects(bucket_id,name) values ('post-media','${A}/v2/vo.m4a')`],
+  ['the post names it',                       'ok',     A, 0,
+    `insert into post(author,body) values ('${A}','{"vu":"${A}/v2/vo.m4a"}'::jsonb)`],
+  ['B reads the photograph on P',             'ok',     B, 0,
+    `select 1 from storage.objects where name='${A}/${P}/1.jpg'`],
+  ['and the voice on the post',               'ok',     B, 0,
+    `select 1 from storage.objects where name='${A}/v2/vo.m4a'`],
+  ['B cannot read the kept post’s photograph', 'denied', B, 0,
+    `select 1 from storage.objects where name='${A}/${PV}/0.jpg'`],
+  ['nor the voice no post names',             'denied', B, 0,
+    `select 1 from storage.objects where name='${A}/v1/vo.m4a'`],
+  ['A reads both of A’s own',                 'ok',     A, 0,
+    `select 1 from storage.objects where name in ('${A}/${PV}/0.jpg','${A}/v1/vo.m4a')
+      having count(*) = 2`],
+  ['B records a voice',                       'ok',     B, 0,
+    `insert into storage.objects(bucket_id,name) values ('post-media','${B}/v9/vo.m4a')`],
+
   /* --- ejecting somebody, which is the half guideline 1.2 asks for -------
      Taking the post down leaves whoever wrote it free to write it again. What
      a ban IS, here, is one line in is_member() -- so the thing to attack is
@@ -1721,27 +1805,38 @@ const CASES = [
     `update profile set display='new' where id='${B}'`],
   ['nor upload anything',                     'denied', B, 0,
     `insert into storage.objects(bucket_id,name) values ('post-media','${B}/x.jpg')`],
-  /* And the language, which used to be the half a freeze left alone.
-     「制作は好きにやらせればいいし、sns止められても作りたいやつは作るでしょ」 was
-     true while a language was nobody else's business and the language policies
-     asked has_account(), which said nothing about banned_at.
-     **OWNER DECISION 2026-08-26 replaced it**, asked directly: a frozen account
-     may not write its language either. They ask is_member() now, and
-     is_member() is where banned_at lives. */
-  ['nor make a language any more',            'denied', B, 0,
-    `insert into language(id,owner,name) values ('${LB}','${B}','Bene')`],
-  ['nor write the one they had',              'denied', B, 0,
-    `update language set name='Benet' where id='${L}'`],
-  ['nor put a slice in it',                   'denied', B, 0,
-    `insert into slice(language,kind,body) values ('${L}','words','[]')`],
+  /* A frozen account reads nothing: 「凍結したら読めないだろ」 OWNER
+     2026-09-28 -- not the pictures on a post either, and it takes nothing
+     out. The whole of it is walked further down (FROZEN). */
+  ['nor sees a photograph on a post',        'denied', B, 0,
+    `select 1 from storage.objects where name='${A}/${P}/1.jpg'`],
+  ['nor takes its files out',                'denied', B, 0,
+    `delete from storage.objects where name='${B}/v9/vo.m4a'`],
+  /* AND THE LANGUAGE IS NOT THE SNS 「凍結ってSNSの話でしょ？作るのは別に
+     気にしなくていいんじゃないの？」 OWNER 2026-09-28. A frozen account makes,
+     writes and reads ITS OWN language (making_rel() in schema.sql names the
+     tables), and still reads nobody else's. */
+  ['B still makes a language',                'ok',     B, 0,
+    `insert into language(id,owner,name) values ('${LB}','${B}','Bene') returning 1`],
+  ['and writes it',                           'ok',     B, 0,
+    `update language set name='Benet' where id='${LB}' returning 1`],
+  ['and puts a slice in it',                  'ok',     B, 0,
+    `insert into slice(language,kind,body) values ('${LB}','words','[]') returning 1`],
+  ['and reads it back',                       'ok',     B, 0,
+    `select 1 from slice where language='${LB}' and kind='words'`],
+  ['and reads B\u2019s plan',                 'ok',     B, 0,
+    `select 1 where not exists (select 1 from plan where id<>'${B}')`],
+  ['but not A\u2019s language',               'denied', B, 0,
+    `select 1 from language where id='${L}'`],
+  ['nor writes A\u2019s',                      'denied', B, 0,
+    `update language set name='Benet' where id='${L}' returning 1`],
   ['nor lift it by hand',                     'denied', B, 0,
     `update profile set banned_at=null where id='${B}'`],
   ['nor by asking',                           'denied', B, 0,
     `select account_unban('${B}')`],
-  /* Two things a ban must NOT do. Reading is the one that keeps somebody from
-     being told nothing at all, and the door marked exit is the one that being
-     thrown out of a place is never a reason to lock. */
-  ['B can still read the timeline',           'ok',     B, 0,
+  /* A ban reads nothing (OWNER 2026-09-28), and the door marked exit is the
+     one thing being thrown out of a place is never a reason to lock. */
+  ['B cannot read the timeline',              'denied', B, 0,
     `select 1 from post where hidden_at is null`],
   ['B can still leave',                       'ok',     B, 0,
     `select 1 where (select count(*) from pg_proc p
@@ -2017,7 +2112,7 @@ const CASES = [
      `security definer` and the grant beside it this ask would fail on the
      privilege rather than on the policy, for every reader of every published
      language. */
-  ['and somebody with no account may too',    'ok',     F, 1,
+  ['but somebody with no account may not',    'denied',     F, 1,
     `select 1 from slice where language='${L}' and kind='letters'`],
   ['F, who has not taken it, may take it while it is published', 'ok', F, 0,
     `insert into language_take(uid,language) values ('${F}','${L}')`],
@@ -2149,7 +2244,7 @@ const CASES = [
     `update profile set bio='a line about me' where id='${A}'`],
   ['and it can be read by anybody',           'ok',     B, 0,
     `select 1 from profile where id='${A}' and bio='a line about me'`],
-  ['and by somebody with no account',         'ok',     B, 1,
+  ['but not by somebody with no account',         'denied',     B, 1,
     `select 1 from profile where id='${A}' and bio='a line about me'`],
   ['B cannot write A\u2019s bio',             'denied', B, 0,
     `update profile set bio='not theirs to write' where id='${A}'`],
@@ -2691,13 +2786,13 @@ const SHAPE = [
      anyone who had the link. */
   ['no bucket answers without a session', `
      select count(*) from storage.buckets where public`, '0'],
-  /* And the policy over the files asks who you are now. `using (true)` on a
-     private bucket would still be every signed-in person, which is what this
-     one is; `using (bucket_id = ...)` alone was every person at all. */
+  /* And the policy over the files asks who you are. `using (bucket_id = ...)`
+     alone was every person at all. Not is_member(): a frozen account still
+     reads (the cases over `media_read` press both). */
   ['and the files are only read by somebody signed in', `
      select count(*) from pg_policies
       where schemaname='storage' and tablename='objects' and policyname='media_read'
-        and qual not like '%is_member%'`, '0'],
+        and qual not like '%auth.uid()%'`, '0'],
   /* AND WHAT IS LEFT FOR TOMORROW. A table made after this file was pasted
      would be granted to anon by Supabase's own default privileges, which is
      how every one of the rows above got there in the first place. */
@@ -2777,6 +2872,30 @@ const SHAPE = [
                  and headers->>'Authorization' = 'Bearer DAILY-PROMPTS-OWN-KEY') <> 1)::int`, '0'],
   ['and nobody else’s attempt at one went down the road', `
      select ((select count(*) from net._sent where body->>'table' = 'prompt') <> 1)::int`, '0'],
+  /* AND WHAT WRITES THE DAY'S ROW RINGS EVERY DAY, AT THE SAME TIME.
+     「毎日同じ時間に変わるように」 OWNER 2026-09-27. The dashboard's job, with
+     its word as text and a wait of 1000ms, went in before the second paste
+     (CRON); schema.sql's block has moved the word into Vault and pointed the
+     job at it, and a third paste (CRONB) has changed nothing. Rung here the
+     way pg_cron rings it -- _cron_sent() -- so what is counted is what goes
+     out of the door, not what the command's text looks like. */
+  ['the day’s sentence is asked for at 0:00 Pacific, both seasons', `
+     select count(*) from cron.job where jobname = 'daily-prompt'
+        and schedule is distinct from '0 7,8 * * *'`, '0'],
+  ['and by one job, however many times the file is pasted', `
+     select ((select count(*) from cron.job
+               where command like '%/functions/v1/daily-prompt%') <> 1)::int`, '0'],
+  ['and it waits a minute for the answer', `
+     select ((_cron_sent()->>'timeout')::int < 60000)::int`, '0'],
+  ['and it knocks at daily-prompt with the dashboard’s own word', `
+     select ((select s->>'url' like '%/functions/v1/daily-prompt'
+                 and s->'headers'->>'x-cron-secret' = 'THE-DASHBOARDS-WORD'
+                 and s->'headers'->>'Authorization' = 'Bearer THE-DASHBOARDS-JWT'
+                from _cron_sent() s) is not true)::int`, '0'],
+  ['and the word is in Vault and not in the job', `
+     select (select count(*) from cron.job where command ~ 'THE-DASHBOARDS-(WORD|JWT)')
+          + ((select count(*) from vault.decrypted_secrets
+               where name = 'daily_prompt_headers') <> 1)::int`, '0'],
   /* A TOKEN IS NOT EDITED. schema.sql says so over the policies -- 「no update
      policy at all (a token does not change -- a new one is a new row and the
      old one goes)」 -- and an UPDATE policy added later would be the one road
@@ -2806,14 +2925,14 @@ const SHAPE = [
   ['publication can never be deleted',   `
      select count(*) from pg_policies where tablename='publication' and cmd='DELETE'`, '0'],
   ['the day\u2019s sentence is read-only', `
-     select count(*) from pg_policies where tablename='prompt' and cmd<>'SELECT'`, '0'],
+     select count(*) from pg_policies where tablename='prompt' and cmd<>'SELECT' and permissive = 'PERMISSIVE'`, '0'],
   /* And the two the money is on. A policy of any other kind on either table is
      a road back to the phone writing its own plan, which is what 2026-09-06
      closed -- and it would be added by somebody who found the app could not
      write and "fixed" it. Asked of the catalogue rather than by trying, so a
      policy that exists but happens to refuse today still fails. */
   ['a plan is read-only through the API', `
-     select count(*) from pg_policies where tablename='plan' and cmd<>'SELECT'`, '0'],
+     select count(*) from pg_policies where tablename='plan' and cmd<>'SELECT' and permissive = 'PERMISSIVE'`, '0'],
   /* --- and a staff row does not end ---------------------------------------
      「スタッフは消えないんじゃねえの？」 OWNER 2026-09-12. verify-plan works a
      rung out of the `purchase` rows and a staff account has none, so what it
@@ -2835,7 +2954,7 @@ const SHAPE = [
      select count(*) from plan where id='${A}'
        and (plan <> 'free' or was is distinct from 'plus')`, '0'],
   ['a purchase is read-only through the API', `
-     select count(*) from pg_policies where tablename='purchase' and cmd<>'SELECT'`, '0'],
+     select count(*) from pg_policies where tablename='purchase' and cmd<>'SELECT' and permissive = 'PERMISSIVE'`, '0'],
   /* A tier nobody sells still cannot be written down, and that is the CHECK
      rather than a policy now: nothing signed in can write this table at all,
      so the attempt that used to hold it would be denied for the wrong reason.
@@ -3058,10 +3177,12 @@ const SHAPE = [
      and only the second is the rule. 「言語はアカウントないと作れないです」 */
   ['there is no way to ask that only wants an account', `
      select count(*) from pg_proc where proname='has_account'`, '0'],
-  ['and a language asks the same thing a post does', `
+  /* and making a language asks 「signed in」 and not 「not frozen」 -- a freeze
+     is the SNS's (OWNER 2026-09-28, making_rel() in schema.sql) */
+  ['and a language asks who signed in, not who is frozen', `
      select count(*) from pg_policies
       where tablename in ('language','slice') and cmd <> 'SELECT'
-        and coalesce(qual,'') || coalesce(with_check,'') not like '%is_member%'`, '0'],
+        and coalesce(qual,'') || coalesce(with_check,'') not like '%is_signed%'`, '0'],
   /* No policy, either way. Staff DO drop a report that was about nothing, and
      that is report_drop() -- a security definer function asking is_staff(),
      the same shape as post_hide(). A policy would be a second place saying who
@@ -3487,6 +3608,44 @@ begin
   execute 'set local role postgres';
   return c;
 end $$;
+-- A FROZEN ACCOUNT READS NOTHING OF THE SNS. 「凍結したら読めないだろ」「凍結って
+-- SNSの話でしょ？」 OWNER 2026-09-28. The making relations (making_rel()) are
+-- left out and marked, and held by the cases instead: its own language reads
+-- and writes, nobody else's does not.
+-- Every relation, every row-returning function taking no argument, and the
+-- files, read as \`sub\` frozen (\`shut\`) and then not (\`open\`, so a read that
+-- shows nothing either way is told apart from one the freeze closed). The one
+-- row it may still read is its own \`profile\`, which is what the frozen screen
+-- is drawn from -- so a profile row of its own is not counted.
+create or replace function _frozen_seen(sub uuid)
+returns table(what text, open int, shut int, making boolean) language plpgsql as $$
+declare r record; stmt text;
+begin
+  for r in
+    select c.relname::text as nm, quote_ident(c.relname) as src
+      from pg_class c join pg_namespace s on s.oid = c.relnamespace
+     where s.nspname = 'public' and c.relkind in ('r','p','v','m')
+       and c.relname not like '\\_%'
+    union all
+    select p.proname::text, quote_ident(p.proname) || '()'
+      from pg_proc p join pg_namespace s on s.oid = p.pronamespace
+     where s.nspname = 'public' and p.proretset
+       and p.pronargs = p.pronargdefaults and p.proname not like '\\_%'
+    union all
+    select 'storage.objects', 'storage.objects'
+     order by 1
+  loop
+    stmt := format('select count(*)::int from %s x where row_to_json(x)::text not like %L',
+                   r.src, '{"id":"' || sub || '"%');
+    what := r.nm;
+    making := making_rel(r.nm::name);
+    update profile set banned_at = now() where id = sub;
+    shut := _block_read(stmt, sub);
+    update profile set banned_at = null where id = sub;
+    open := _block_read(stmt, sub);
+    return next;
+  end loop;
+end $$;
 -- \`owner\` is who made the block: the reader themself (the blocker's walk),
 -- or \`them\` (the walk of the person who was blocked).
 create or replace function _block_seen(sub uuid, them uuid, hd text, owner uuid)
@@ -3496,13 +3655,16 @@ begin
   for r in
     select c.relname::text as nm, quote_ident(c.relname) as src
       from pg_class c join pg_namespace s on s.oid = c.relnamespace
-     where s.nspname = 'public' and c.relkind in ('v','m')
+     where s.nspname = 'public' and c.relkind in ('r','p','v','m')
        and c.relname not like '\\_%'
     union all
     select p.proname::text, quote_ident(p.proname) || '()'
       from pg_proc p join pg_namespace s on s.oid = p.pronamespace
      where s.nspname = 'public' and p.proretset
        and p.pronargs = p.pronargdefaults and p.proname not like '\\_%'
+    union all
+    -- and the files, which are a read like any other (media_read)
+    select 'storage.objects', 'storage.objects'
      order by 1
   loop
     stmt := format('select count(*)::int from %s x where row_to_json(x)::text like %L'
@@ -3650,10 +3812,78 @@ create or replace function net.http_post(
   headers jsonb default '{}'::jsonb, timeout_milliseconds int default 5000)
 returns bigint language plpgsql as $$
 begin
-  insert into net._sent(url, body, headers) values (url, body, headers);
+  insert into net._sent(url, body, headers, timeout) values (url, body, headers, timeout_milliseconds);
   return 1;
 end $$;
 `;
+
+/* AND THE SCHEDULE, which is the dashboard's in the same way: pg_cron and
+   Vault arrive with a click, and the day's sentence was called by a job made
+   there and written down nowhere else -- it waited 1000ms, and nobody knew
+   (docs/BACKLOG.md 2026-09-27). This is that server: the job as the dashboard
+   left it, carrying its word as text, and a Vault with nothing in it. The
+   second paste of schema.sql has to move the word into Vault and point the
+   job at it; _cron_sent() rings the job the way pg_cron would and hands back
+   what went out of the door, taking it out of the notebook again so the push
+   claims below still count only what they wrote. */
+const CRON = `
+create schema if not exists cron;
+create table cron.job (jobid serial primary key, jobname text, schedule text, command text,
+                       username text not null default current_user, active boolean default true,
+                       unique (jobname, username));
+create or replace function cron.schedule(job_name text, schedule text, command text)
+returns bigint language plpgsql as $$
+declare i bigint;
+begin
+  insert into cron.job(jobname, schedule, command) values (job_name, schedule, command)
+  on conflict (jobname, username) do update set schedule = excluded.schedule, command = excluded.command
+  returning jobid into i;
+  return i;
+end $$;
+create schema if not exists vault;
+create table vault.secrets (id uuid primary key default gen_random_uuid(), name text unique,
+                            secret text, description text);
+create view vault.decrypted_secrets as
+  select id, name, secret as decrypted_secret, description from vault.secrets;
+create or replace function vault.create_secret(new_secret text, new_name text default null,
+                                               new_description text default '')
+returns uuid language sql as $$
+  insert into vault.secrets(name, secret, description) values (new_name, new_secret, new_description)
+  returning id $$;
+insert into cron.job(jobname, schedule, command) values ('daily-prompt', '0 7,8 * * *', $c$
+  select
+    net.http_post(
+        url:='https://iimwukyyasbybfrirhsf.supabase.co/functions/v1/daily-prompt',
+        headers:=jsonb_build_object('Content-Type', 'application/json',
+                                    'x-cron-secret', 'THE-DASHBOARDS-WORD',
+                                    'Authorization', 'Bearer THE-DASHBOARDS-JWT'),
+        body:=jsonb_build_object(),
+        timeout_milliseconds:=1000
+    ) as request_id;
+$c$);
+create or replace function public._cron_sent() returns jsonb language plpgsql as $$
+declare c text; m int; r jsonb;
+begin
+  select command into c from cron.job where jobname = 'daily-prompt' order by jobid limit 1;
+  select coalesce(max(n), 0) into m from net._sent;
+  execute c;
+  select to_jsonb(s) into r from net._sent s where n > m order by n limit 1;
+  delete from net._sent where n > m;
+  return r;
+end $$;
+`;
+/* The block itself, pasted a THIRD time over a server it has already moved:
+   the word is in Vault now, so nothing is copied and the job stays one job. */
+const CRONB = (function(){
+  /* At the head of a line: the name in a comment is not the block. */
+  const at = SCHEMA_SQL.indexOf('\ndo $cron$') + 1;
+  const end = SCHEMA_SQL.indexOf('\n$cron$;', at);
+  if (at < 1 || end < 0) {
+    console.error('schema.sql has no daily-prompt schedule block (do $cron$) to paste again');
+    process.exit(1);
+  }
+  return SCHEMA_SQL.slice(at, end + 9);
+})();
 
 /* AN OLD SERVER'S LANGUAGES, for the one step schema.sql takes once. Before
    `language.name` there was the `lang` slice, and a language made then has
@@ -3715,7 +3945,9 @@ const sql = [
   SCHEMA_SQL,
   OLDLANG_EMPTIED,
   PGNET,
+  CRON,
   SCHEMA_SQL,
+  CRONB,
   EDITOR,
   HARNESS,
   'begin;',
@@ -3870,6 +4102,7 @@ const sql = [
      number that moves is a question and a list is a thing to maintain. */
   `select 'BLOCK'||chr(9)||what||chr(9)||open||chr(9)||shut
      from _block_seen(${q(BK)}, ${q(BD)}, ${q(BDH)}, ${q(BK)});`,
+  `select 'FROZEN'||chr(9)||what||chr(9)||open||chr(9)||shut||chr(9)||making from _frozen_seen(${q(B)});`,
   `select 'BLOCKED'||chr(9)||what||chr(9)||open||chr(9)||shut
      from _block_seen(${q(BD)}, ${q(BK)}, ${q(BKH)}, ${q(BK)});`,
   /* EVERY ROAD A LANGUAGE IS READ BY, out of the catalogue (LANG_READ below):
@@ -3880,7 +4113,7 @@ const sql = [
           (coalesce(qual,'') like '%lang_readable(%')||chr(9)||'-'
      from pg_policies
     where schemaname='public' and tablename in ('language','slice')
-      and cmd in ('SELECT','ALL');`,
+      and cmd in ('SELECT','ALL') and permissive = 'PERMISSIVE';`,
   `select distinct 'LANGREAD'||chr(9)||'view '||v.relname||chr(9)||
           (pg_get_viewdef(v.oid) like '%lang_readable(%')||chr(9)||'-'
      from pg_depend d
@@ -3946,9 +4179,11 @@ if (wall) {
    「Blocked means you see nothing of them」 OWNER 2026-08-19. block_hides()
    in schema.sql is the one thing that answers it, and every read the app
    makes passes what it returns about a person through it. `_block_seen`
-   above walks the catalogue, so this is every view and every row-returning
-   function there is, not a list of them: a read shows BD to BK with the block
-   lifted and nothing of BD with it on, or it is red.
+   above walks the catalogue, so this is every table, every view and every
+   row-returning function there is, not a list of them: a read shows BD to BK
+   with the block lifted and nothing of BD with it on, or it is red. Tables
+   were left out until 2026-09-27 and four of them handed BD over both ways
+   (audit-server B1) -- a table is a request anybody can make without the app.
 
    HELD is the reads a block does not reach YET, by name and with the reason.
    A name here must still show BD -- the day it stops, the line is permission
@@ -3968,7 +4203,7 @@ if (!blockRows.some((r) => r[0] === 'BLOCK')) bad.push(['a block, asked of every
 if (!blockRows.some((r) => r[0] === 'BLOCKED')) bad.push(['a block, asked of every read by who was blocked', 'reads', 'none were found']);
 for (const [way, name0, open, shut] of blockRows) {
   const name = way === 'BLOCKED' ? name0 + ' (to who was blocked)' : name0;
-  const o = Number(open), s = Number(shut), held = BLOCK_HELD[name0];
+  const o = Number(open), s = Number(shut), held = BLOCK_HELD[name];
   let why = '';
   if (o < 0 || s < 0) why = 'could not be read as the blocker';
   else if (!o) { blockNobody++; if (held) why = 'held by name and names nobody -- take it off BLOCK_HELD'; }
@@ -3981,13 +4216,37 @@ for (const [way, name0, open, shut] of blockRows) {
               (why || (held && s ? 'held: ' + held : '')));
 }
 for (const name of Object.keys(BLOCK_HELD))
-  if (!blockRows.some((r) => r[1] === name)) {
+  if (!blockRows.some((r) => (r[0] === 'BLOCKED' ? r[1] + ' (to who was blocked)' : r[1]) === name)) {
     bad.push(['a block leaves ' + name + ' out', 'a read', 'held by name and not in the catalogue']);
     console.log('  FAIL  ' + ('a block leaves ' + name + ' out').padEnd(44) +
                 'held by name and not in the catalogue');
   }
 console.log(`\nblock: ${blockRows.length} reads walked as the blocker and as who was blocked -- ${blockOut} leave them out, ` +
             `${blockHeld} held by name, ${blockNobody} name nobody\n`);
+
+/* ---- A FROZEN ACCOUNT READS NOTHING, COUNTED -----------------------------
+   「凍結したら読めないだろ」 OWNER 2026-09-28. Every relation, function and
+   the files, read as A frozen: nothing may come back but A's own profile row.
+   Counted off the catalogue, so a table added tomorrow is asked tomorrow. */
+const frozenRows = out.split('\n').map((l) => l.split('\t'))
+                      .filter((r) => r.length === 5 && r[0] === 'FROZEN');
+let frozenShut = 0, frozenOpen = 0;
+const frozenMaking = [];
+if (!frozenRows.length) bad.push(['a frozen account reads nothing', 'reads', 'none were walked']);
+for (const [, name, open, shut, making] of frozenRows) {
+  const o = Number(open), sh = Number(shut);
+  /* the making side is the cases' (「B still makes a language」 and on) */
+  if (making === 'true') { frozenMaking.push(name); continue; }
+  if (o > 0) frozenOpen++;
+  const why = sh > 0 ? sh + ' row(s) read while frozen' : '';
+  if (why) bad.push(['a frozen account reads nothing from ' + name, 'none', why]);
+  else if (o > 0) frozenShut++;
+  if (why) console.log('  FAIL  ' + ('frozen reads nothing from ' + name).padEnd(44) + why);
+}
+if (!frozenOpen) bad.push(['a frozen account reads nothing', 'something to read unfrozen', 'the walk read nothing either way']);
+console.log(`\nfrozen: ${frozenRows.length} reads walked as a frozen account -- ${frozenShut} ` +
+            `that show something unfrozen show nothing frozen; the making side, ` +
+            `left to the cases: ${frozenMaking.join(' ')}\n`);
 
 /* ---- WHO MAY READ A LANGUAGE IS ASKED IN ONE PLACE -----------------------
    「ブロックした相手の公開言語は見えない（両向き）」 OWNER 2026-09-25. The

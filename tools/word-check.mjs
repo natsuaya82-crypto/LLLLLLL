@@ -103,6 +103,10 @@ const R = await pg.evaluate(() => {
      Same three steps, ending in Delete. The word is gone, so its page cannot
      be where you are put back down -- the trail has to lose it as well. */
   start();
+  save();
+  const inSlice = (hw) => { try { return JSON.parse(slMine(langKey('words')) || '[]')
+    .some(w => w.hw === hw); } catch (e) { return 'unreadable'; } };
+  const delBefore = inSlice('tira');
   openWord('tira');
   openEdit('tira');
   /* The question is the app's own popup now, not the system's -- 「標準は
@@ -121,6 +125,44 @@ const R = await pg.evaluate(() => {
      has gone, which is what you got by being put back down on its page. */
   if (screen().indexOf(t('form.gone')) >= 0)
     out.fails.push('deleted tira, and you were put down on "that is no longer here"');
+  /* AND IT IS WRITTEN ON THE PRESS. The delete row is on the sheet, and while
+     the sheet's buffer was on the trail save() held the delete as a draft: the
+     toast said 削除しました over a word still in the slice, and the buffer was
+     left for the next word given that spelling. */
+  const delAfter = inSlice('tira');
+  out.said.push('tira in the slice before the delete: ' + delBefore + ', after: ' + delAfter +
+    ', its sheet\'s buffer left behind: ' + !!KEEP['form|edit:tira']);
+  if (delBefore !== true)
+    out.fails.push('tira was not in the slice before the delete -- this claim asked nothing');
+  if (delAfter !== false)
+    out.fails.push('tira was deleted from its sheet and the slice still holds it -- ' +
+      'the delete was held as the sheet\'s draft and nothing was written');
+  if (KEEP['form|edit:tira'])
+    out.fails.push('the deleted word\'s sheet buffer is still held');
+
+  /* ---- a placed form taken off is written on the press, the same way ---- */
+  start();
+  /* a word that is not itself a form -- an old inflection has no forms page */
+  const fw = WORDS.filter(w => !wIsForm(w))[0];
+  const fwh = String(fw.hw);
+  fw.fms = [{ fm: 'pst', hw: fwh + 'pst', sp: JSON.parse(JSON.stringify(spOf(fw))) }];
+  save();
+  const fmsIn = () => { try { const x = JSON.parse(slMine(langKey('words')) || '[]')
+    .filter(w => w.hw === fwh)[0]; return !!(x && x.fms && x.fms.length); } catch (e) { return 'unreadable'; } };
+  const fmsBefore = fmsIn();
+  openWord(fwh);
+  openWfm(fwh, 'pst');
+  const fmsOn = here().r + ':' + here().a;
+  wfmDelGo(fwh, 'pst');
+  const fmsAfter = fmsIn();
+  out.said.push('a placed form of ' + fwh + ' in the slice before it is taken off on ' + fmsOn +
+    ': ' + fmsBefore + ', after: ' + fmsAfter);
+  if (fmsOn.indexOf('form:wfm:') !== 0)
+    out.fails.push('the form\'s page did not open -- this claim asked nothing');
+  if (fmsBefore !== true)
+    out.fails.push('the placed form was not in the slice first -- this claim asked nothing');
+  if (fmsAfter !== false)
+    out.fails.push('a placed form was taken off and the slice still holds it');
 
   /* ---- the add sheet arrived at cold ------------------------------------
      `openAdd()` decides whether the sheet is NEW by asking whether the route
@@ -338,6 +380,136 @@ const R = await pg.evaluate(() => {
   if (!impAgainDrawn)
     out.fails.push('and what is DRAWN is not the screen that asks whether ' +
       'this is a paste or a file');
+
+  /* ---- what an import may write, and where ------------------------------
+     Three roads into the language that went round the door everything else
+     asks at (audit words pwi-1, 2, 3):
+
+     - an ALPHABET brought in on the free plan added letters -- 「nothing on
+       the free plan adds one」 (CLAUDE.md § What the free plan is). The
+       press puts up the plan's pop and writes nothing.
+     - a file row whose character a SLOT already wears renamed the slot with
+       上書き chosen, and the free QWERTY finds its keys by name (decision log
+       2026-08-22). The name stays.
+     - the import opened in a language that is not this account's, filled
+       WORDS in memory and said how many came in, and save() refused it. The
+       door does not open there.
+
+     Pressed through the real button on the real screen, and read off the
+     language and the popup afterwards -- the screen alone looks the same on
+     every plan, which is the point of HIDEFREE. */
+  const pressGo = () => {
+    screen();
+    const b = document.querySelector('#app [data-do="doImport"]');
+    if (b) b.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    return !!b;
+  };
+  const popLine = () => {
+    const e = document.querySelector('#pop.on .popm');
+    return e ? String(e.textContent || '') : '';
+  };
+  start(); planGot('free'); popOff();
+  goTab('find');
+  const ltBefore = LETTERS.length;
+  openImport();
+  impTake('character,name\nΨ,psi\nΩ,omega');
+  IMP.into = 'l'; IMP.roles = impMove(IMP.roles, 'l');
+  IMP.step = 'ready'; impPaint();
+  const freePressed = pressGo();
+  const freeAfter = LETTERS.length;
+  const freePsi = LETTERS.some((l) => l.ch === 'Ψ');
+  const freePop = popLine();
+  popOff();
+  out.said.push('an alphabet imported on the free plan: letters ' + ltBefore +
+    ' -> ' + freeAfter + ', Ψ is ' + (freePsi ? '' : 'not ') + 'in it, and the ' +
+    'pop says "' + freePop + '"');
+  if (!freePressed) out.fails.push('the free import has no button to press');
+  if (freeAfter !== ltBefore || freePsi)
+    out.fails.push('an alphabet imported on the FREE plan added letters (' +
+      ltBefore + ' -> ' + freeAfter + ') -- nothing on the free plan adds one');
+  if (freePop !== t('up.need'))
+    out.fails.push('and the press did not say it is the paid plan\'s: the pop ' +
+      'is "' + freePop + '"');
+
+  start(); popOff();
+  const slot = LETTERS.filter((l) => ltIsBase(l) && !numIsDigit(l))[0];
+  const slotName = ltName(slot);
+  slot.ch = 'Ψ';
+  goTab('find');
+  openImport();
+  impTake('character,name\nΨ,zzz');
+  IMP.into = 'l'; IMP.roles = impMove(IMP.roles, 'l');
+  IMP.dup = 'over';
+  IMP.step = 'ready'; impPaint();
+  pressGo();
+  const slotNow = ltName(ltById(slot.id));
+  out.said.push('a file row wearing slot "' + slotName + '"\'s character, ' +
+    'overwritten: the slot is called "' + slotNow + '"');
+  if (slotNow !== slotName)
+    out.fails.push('an import renamed the slot "' + slotName + '" to "' +
+      slotNow + '" -- a slot\'s name does not change, on any plan, and the ' +
+      'free QWERTY finds its keys by name');
+
+  start(); popOff();
+  goTab('find');
+  const ownWas = langOwnOf(langId);
+  langOwnGot(langId, 'somebody-else');
+  openImport();
+  const lockedAt = here().r + (here().a ? ':' + here().a : '');
+  if (ownWas) langOwnGot(langId, ownWas); else delete LOWN[langId];
+  out.said.push('the import opened in somebody else\'s language: standing on ' +
+    lockedAt);
+  if (lockedAt.indexOf('csv:') >= 0)
+    out.fails.push('the import opened in a language this account may not ' +
+      'write -- what it brings in is refused by save() after the screen has ' +
+      'said it arrived');
+
+  /* ---- an import that meets the ceiling --------------------------------
+     (audit words pwi-4, 5, 6.) A free dictionary one word short of its
+     ceiling, and a file of two new words and then one the dictionary
+     already has, with 上書き chosen:
+
+     - the screen before the press says what the press then does -- one new
+       word and one overwrite, not two and one;
+     - the overwrite AFTER the ceiling still happens: an overwrite adds no
+       word, and the walk used to stop dead at the first row past it;
+     - and the ceiling is said the way every ceiling is, the one pop. */
+  start(); planGot('free'); popOff();
+  const capN = wordCap();
+  let pad = 0;
+  while (wCountable() < capN - 1) { WORDS.push({ hw: 'pad' + (pad++), mns: ['p'], mn: 'p', ph: [], pos: 'n' }); }
+  const old = WORDS.filter((w) => !wIsForm(w))[0];
+  const oldHw = String(old.hw);
+  goTab('find');
+  openImport();
+  impTake('word,meaning\nzzaa,one\nzzbb,two\n' + oldHw + ',overwritten');
+  IMP.into = 'w'; IMP.roles = impMove(IMP.roles, 'w');
+  IMP.dup = 'over';
+  IMP.step = 'ready';
+  const planned = impGoN(impPlan());
+  impPaint();
+  pressGo();
+  const gotA = !!findWord('zzaa'), gotB = !!findWord('zzbb');
+  const oldMn = (findWord(oldHw) || {}).mn;
+  const ceilPop = popLine();
+  popOff();
+  const didN = (gotA ? 1 : 0) + (gotB ? 1 : 0) + (oldMn === 'overwritten' ? 1 : 0);
+  out.said.push('an import one word short of the ceiling: the screen said ' +
+    planned + ', the press wrote ' + didN + ' (zzaa ' + gotA + ', zzbb ' + gotB +
+    ', the overwrite ' + (oldMn === 'overwritten') + '), and the pop says "' +
+    ceilPop + '"');
+  if (!gotA || gotB)
+    out.fails.push('the ceiling let ' + (gotB ? 'two' : 'no') + ' new words in ' +
+      'where there was room for one');
+  if (oldMn !== 'overwritten')
+    out.fails.push('the word already here was not overwritten because a row ' +
+      'above it met the ceiling -- an overwrite adds no word');
+  if (planned !== didN)
+    out.fails.push('the screen said ' + planned + ' and the press wrote ' + didN +
+      ' -- the counts on the screen are what will happen');
+  if (ceilPop !== t('up.need'))
+    out.fails.push('the ceiling was not said the way every ceiling is: the ' +
+      'pop is "' + ceilPop + '"');
 
   /* ---- the word list forgets it was being chosen from -------------------
      「洗濯して前の画面戻ると選択画面がキープされたままや。流石に解除して
@@ -726,6 +898,212 @@ const R = await pg.evaluate(() => {
   if (!goldAfter)
     out.fails.push('the spelling was changed and the sheet still says nothing ' +
       'has -- the Save stays grey and the back arrow leaves without asking');
+
+  /* ---- and an example, and a 語形, turn it gold as well --------------------
+     「保存を押したときだけ、保存されているものが変わる」OWNER 2026-09-04,
+     「保存を押したら」OWNER 2026-09-24. An example and a 語形 are written onto
+     the WORD rather than onto wEdit, and the sheet's signature left both out:
+     the Save stayed grey, the arrow left without asking, and the example rode
+     the next unrelated save. 「いいえ」 has to take it back off again. */
+  start(); KEEP = {};
+  openWord('mos'); openEdit('mos');
+  const exGrey = !keepDirty(keepKey()), exKey = keepKey();
+  const exBefore = (findWord('mos').ex || []).length;
+  wdExOpen();
+  document.getElementById('wd-exl').value = 'mos tir';
+  document.getElementById('wd-exg').value = '';
+  wdAddEx();
+  const exGold = keepDirty(exKey);
+  keepNo(exKey);
+  const exAfterNo = (findWord('mos').ex || []).length;
+  out.said.push('an example added on the sheet: untouched ' + exGrey + ', changed after ' +
+    exGold + ', and 「いいえ」 leaves ' + exAfterNo + ' of ' + exBefore);
+  if (!exGold)
+    out.fails.push('an example was added on the sheet and the sheet says nothing ' +
+      'has changed -- the Save stays grey and the arrow leaves without asking');
+  if (exAfterNo !== exBefore)
+    out.fails.push('「いいえ」 did not take the example back off: ' + exAfterNo +
+      ' where there were ' + exBefore);
+  start(); KEEP = {};
+  const kid = WORDS.filter(w => w.from && findWord(w.from))[0];
+  if (!kid) out.fails.push('the fixture has no word made from another -- the 語形 claim asked nothing');
+  else {
+    openWord(kid.hw); openEdit(kid.hw);
+    const fmKey = keepKey();
+    go('fm', String(kid.hw));
+    fmPick(String(kid.hw), kid.fm === 'agt' ? 'dim' : 'agt');
+    const fmGold = keepDirty(fmKey);
+    out.said.push('a 語形 chosen for ' + kid.hw + ': the sheet has changed ' + fmGold);
+    if (!fmGold)
+      out.fails.push('a 語形 was chosen on the sheet and the sheet says nothing has changed');
+    keepNo(fmKey);
+  }
+  start(); KEEP = {};
+
+  /* ---- the Save says nothing before the send has answered ----------------
+     wdWrite() runs inside keepSave() BEFORE netSaveNow(), and it said
+     「{0} を更新しました」 there -- over a send that had not answered, and a
+     second time beside keepSave()'s own 「保存しました」 when it did. */
+  start(); KEEP = {};
+  openWord('mos'); openEdit('mos');
+  wEdit.nt = 'a note';
+  const toldNow = [], realToast = window.toast;
+  window.toast = function (m) { toldNow.push(String(m)); return realToast.apply(null, arguments); };
+  wdWrite();
+  window.toast = realToast;
+  out.said.push('wdWrite() alone, before any send, says: ' + JSON.stringify(toldNow));
+  if (toldNow.length)
+    out.fails.push('the Save said ' + JSON.stringify(toldNow) + ' before the send answered');
+
+  /* ---- a word derived from a sheet with something typed on it --------------
+     Leaving asks first and stays until answered; the new sheet used to open
+     anyway, over the question, and replace what had been typed. */
+  start(); KEEP = {}; popOff();
+  openWord('mos'); openEdit('mos');
+  wEdit.nt = 'typed and not saved';
+  const drvKey = keepKey();
+  wdDerive();
+  out.said.push('derive pressed on a changed sheet: asked ' + popOn() + ', standing on ' +
+    here().a + ', the typed note ' + JSON.stringify(wEdit && wEdit.nt));
+  if (!popOn())
+    out.fails.push('derive on a changed sheet did not ask');
+  if (here().a !== 'edit:mos' || !wEdit || wEdit.nt !== 'typed and not saved')
+    out.fails.push('derive on a changed sheet opened the new word over what was typed: on ' +
+      here().a + ', note ' + JSON.stringify(wEdit && wEdit.nt));
+  popOff(); keepNo(drvKey);
+
+  /* ---- a refused Add leaves the screen behind it as it was -----------------
+     The ceiling is asked before the sheet opens (2026-09-04 上限のポップ:
+     後ろは何も変わらない); the draft was reset first, under the screen. */
+  start(); KEEP = {};
+  openWord('mos'); openEdit('mos');
+  const wasEdit = wEdit, realCap = window.capStop;
+  window.capStop = function () { return true; };
+  openAdd('mos');
+  window.capStop = realCap;
+  out.said.push('an Add refused at the ceiling leaves the sheet behind it: ' + (wEdit === wasEdit));
+  if (wEdit !== wasEdit)
+    out.fails.push('an Add refused at the ceiling replaced the draft of the sheet behind it');
+  start(); KEEP = {}; popOff();
+
+  /* ---- Save does not delete a 語形 that is not on the screen ---------------
+     The 語形 row is drawn only while the word has a parent, and wDrop() took
+     `from` off children until 2026-09-26 -- so words carry `fm` with no
+     `from`, and Save deleted it while somebody changed only a meaning.
+     「保存を押したときだけ、保存されているものが変わる」 OWNER 2026-09-04. */
+  start(); KEEP = {};
+  const orphan = findWord('mos');
+  delete orphan.from; orphan.fm = 'dim';
+  openWord('mos'); openEdit('mos');
+  wEdit.mns = ['a meaning rewritten'];
+  wdWrite();
+  out.said.push('a word carrying fm "dim" and no parent, saved with a new meaning, carries fm ' +
+    JSON.stringify(findWord('mos').fm));
+  if (findWord('mos').fm !== 'dim')
+    out.fails.push('Save deleted a 語形 that is not on the screen: fm is now ' +
+      JSON.stringify(findWord('mos').fm));
+  start(); KEEP = {};
+
+  /* ---- a word made on the relate page -------------------------------------
+     From the sheet of a word being MADE it is an Add: written, sent, and
+     「追加しました」 only once the send has landed -- with no wire, nothing is
+     added. From the sheet of a word that EXISTS it is that sheet's draft:
+     nothing said, nothing written, and 「いいえ」 takes it back off. */
+  const relType = (v) => {
+    document.getElementById('rel-hw').value = v;
+    document.getElementById('rel-mn').value = '';
+  };
+  const said4 = [], realToast4 = window.toast, realSend4 = window.netSaveNow;
+  window.toast = function (m) { said4.push(String(m)); return realToast4.apply(null, arguments); };
+  start(); KEEP = {};
+  openAdd(''); go('relate', 'syn:');
+  window.netSaveNow = function (done) { if (done) done(false); };
+  relType('zamo'); relNew();
+  const noWire = { made: !!findWord('zamo'), said: said4.slice() };
+  said4.length = 0;
+  window.netSaveNow = function (done) { if (done) done(true); };
+  relType('zamo'); relNew();
+  const wire = { made: !!findWord('zamo'), inSlice: inSlice('zamo'), said: said4.slice(),
+                 joined: !!(addW && (addW.syn || []).indexOf('zamo') >= 0) };
+  said4.length = 0;
+  start(); KEEP = {};
+  openWord('mos'); openEdit('mos');
+  const relKey = keepKey();
+  go('relate', 'syn:mos');
+  relType('zemo'); relNew();
+  const drafted = { made: !!findWord('zemo'), inSlice: inSlice('zemo'), said: said4.slice() };
+  keepNo(relKey);
+  drafted.afterNo = !!findWord('zemo');
+  window.toast = realToast4; window.netSaveNow = realSend4;
+  out.said.push('a word made on the relate page of a new word: with no wire ' + JSON.stringify(noWire) +
+    ', with one ' + JSON.stringify(wire) + '; of an existing word ' + JSON.stringify(drafted));
+  if (noWire.made || noWire.said.length)
+    out.fails.push('with no wire, the word made on the relate page was added anyway, or something was said: ' +
+      JSON.stringify(noWire));
+  if (!wire.made || wire.inSlice !== true || !wire.joined || !wire.said.length)
+    out.fails.push('with the wire, the word made on the relate page of a new word was not added, written, joined and said: ' +
+      JSON.stringify(wire));
+  if (drafted.said.length)
+    out.fails.push('a word made on the relate page of an existing word said ' +
+      JSON.stringify(drafted.said) + ' over a draft nothing wrote');
+  if (!drafted.made || drafted.inSlice !== false || drafted.afterNo)
+    out.fails.push('a word made on the relate page of an existing word is not that sheet\'s draft: ' +
+      JSON.stringify(drafted));
+  start(); KEEP = {}; popOff();
+
+  /* ---- somebody else's language has nothing to press toward writing -------
+     「取ってきた言語を編集できるか →『できない』」 OWNER 2026-09-24. The word
+     page offered the pen, and the pen opened a sheet whose Delete said
+     削除しました over a language nothing of this phone's goes into. */
+  start(); KEEP = {};
+  const lockedWas = LOWN[langId];
+  LOWN[langId] = 'somebody-else';
+  const lockedNow = langLocked();
+  openWord('mos'); render();
+  const penThere = !!document.querySelector('[data-do="openEdit"], [data-do="openWfm"], [data-do="fmrAdd"]');
+  openEdit('mos');
+  const lockedOn = here().a;
+  if (lockedWas === undefined) delete LOWN[langId]; else LOWN[langId] = lockedWas;
+  out.said.push('in somebody else\'s language (locked: ' + lockedNow + ') the word page offers a way to write: ' +
+    penThere + ', and openEdit leaves you on ' + lockedOn);
+  if (!lockedNow)
+    out.fails.push('the language did not read as somebody else\'s -- this claim asked nothing');
+  if (penThere)
+    out.fails.push('a word page in somebody else\'s language offers the pen, the forms + or the rule button');
+  if (lockedOn !== 'word:mos')
+    out.fails.push('openEdit opened a writing sheet in somebody else\'s language: ' + lockedOn);
+  start(); KEEP = {};
+
+  /* ---- typing moves everything worked out from the spelling --------------
+     Typing does not redraw the sheet; the IPA line was the only thing written
+     again, and the syllables and the reading row showed the word before the
+     last key. */
+  start(); KEEP = {};
+  openEdit('mos'); render();
+  const sylWas = (document.getElementById('wd-syl') || {}).textContent;
+  wdSetLn('mosi');
+  const sylNow = (document.getElementById('wd-syl') || {}).textContent,
+        rdNow = (document.getElementById('wd-rd') || {}).textContent,
+        svNow = (document.getElementById('wd-sv') || {}).textContent;
+  out.said.push('typing mos → mosi: syllables ' + JSON.stringify(sylWas) + ' → ' + JSON.stringify(sylNow) +
+    ', IPA ' + JSON.stringify(rdNow) + ', reading row ' + JSON.stringify(svNow));
+  if (!sylNow || sylNow === sylWas) out.fails.push('the syllable line did not move when the spelling was typed');
+  if (svNow !== undefined && svNow !== rdNow) out.fails.push('the reading row still says the word before the last key: ' + svNow);
+  start(); KEEP = {};
+
+  /* ---- the reading row is the same row on every plan --------------------
+     「全部一緒 / 有料から無料も同じ画面でタップしたら有料に行くように」 OWNER
+     2026-09-04. It was not drawn at all on free. Pressed there, it goes to the
+     plans and not to the reading. */
+  start(); KEEP = {}; planGot('free'); popOff();
+  openEdit('mos'); render();
+  const spRow = !!document.querySelector('[data-do="wdSpellGo"]');
+  wdSpellGo();
+  const spOn = here().r;
+  out.said.push('on free the word sheet draws the reading row: ' + spRow + ', and pressing it leaves you on ' + spOn);
+  if (!spRow) out.fails.push('on free the word sheet has no reading row -- a paid thing hidden rather than shown');
+  if (spOn === 'spell') out.fails.push('on free the reading row opened the reading page');
+  popOff(); planGot('pro'); start(); KEEP = {};
 
   /* ---- and what the arrow that leaves the sheet is called ---------------
      www/shell.js § pageName. The label is on the button as an aria-label, so

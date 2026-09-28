@@ -147,7 +147,7 @@
 ~~`syMerge()`~~ は、どちらかが JSON として読めないと **iPhone の側を返します**。
 ~~`netLangSync1()`~~ はそれをそのまま ~~`netSlicePut()`~~ に渡します。
 
-```
+```text
 iPhone の words = [[[not json    サーバーの words = 単語 3000 個
    → syMerge は iPhone の壊れた文字列を返す
    → netKeeps(mine, put) は put===mine なので通る（そもそも比較にかからない）

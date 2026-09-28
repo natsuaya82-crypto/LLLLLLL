@@ -30,14 +30,6 @@ passes through); `netSaveNow()` (`www/net.js`) sends the slices that moved — `
 (「読むのは開いた画面の分だけ」 OWNER 2026-09-23). Sign in on any handset
 and the language is there.
 
-**There was a third place and it is deleted.** `www/backup.js` wrote the open
-language into `Documents/Languages/`, three generations deep, where iOS put it
-in the device backup and the Files app could show it. It existed because a
-language went up twice a session — at launch and at the door — so there were
-hours when an afternoon's work was on one handset and nowhere else. **That
-window is what closed**, and the file went with it. The DELETE REVIEW is in
-`docs/CHANGELOG.md`, 2026-09-04.
-
 **NOT SAVING IS THE SPEC.** 「保存するタイミングでエラーが起きるなら、保存
 されないし。そう言うもんじゃないの？オンラインアプリってどうなの？」 OWNER
 2026-09-05. With no signal there is nothing to send, so the save does not
@@ -147,8 +139,9 @@ from a list has no way to tell which of the two it is, and the difference is
 the whole of their trust in the app. So:
 
 - the foot of the list says how many are not on it, every time
-- the day the plan changes, the app says it once, in a sheet: nothing has been
-  deleted, it is on the server, it comes back
+- when the server says a plan ended (`plan.was`) and it has not been seen
+  (`plan.lapse_seen_at`), a popup says so once (`capLapseSaw()`,
+  `www/settings.js`)
 - `plan-check` holds both halves — past the ceiling, on the free plan,
   `findWord()` still finds an unlisted word and a save still sends every slice
   up. Both were watched failing with the bug put back
@@ -224,7 +217,7 @@ asked first, and, **when something is taken and nobody is asked, why that is
 right**. A new one is red until somebody answers. So is a confirm that quietly
 went away, and so is a line describing a button no screen carries any more.
 
-One deletion is outside that table on purpose, because it is not a button:
+Two deletions are outside that table on purpose, because neither is a button:
 
 - `lsWipeAcct()` (`www/core.js`) taking that account's keys off the phone
   happens under `wipeAll`, which is in the table, and is written out in
@@ -255,7 +248,8 @@ somewhere:
 ```
 
 `tools/again-check.mjs` holds them, against a server made of two arrays behind
-`netSend()` — so `netSaveNow()`, `netSlices()` and the merge all run for real.
+`netSend()` — so `netSaveNow()` and `netSlices()` run for real. The merge is
+`slice_in()` on the server, and `rls-check` runs it on the real SQL.
 
 **Every one of its failures was made to happen before it was believed.** Do the
 same for anything added to it.

@@ -132,7 +132,7 @@ const R = await pg.evaluate(() => {
     g.sp.forEach(st => { if (!st.l || !ltById(st.l)) bad.push(g.hw + ' has a position no letter spells'); });
     if (JSON.stringify(spPh(g.sp)) !== JSON.stringify(g.seq)) bad.push(g.hw + ' is spelled with letters that read ' + spPh(g.sp).join('') + ', not ' + g.seq.join(''));
     if (findWord(g.hw)) bad.push(g.hw + ' is already in the dictionary');
-    if (taken()[g.seq.join('')]) bad.push(g.hw + ' sounds like a word the dictionary has');
+    if (asTaken()[g.seq.join('')]) bad.push(g.hw + ' sounds like a word the dictionary has');
   });
   out.said.push('3. ' + ws.length + ' words made in CV out of ' + all.length +
     ' sounds the letters write, e.g. ' + ws.slice(0, 4).map(g => g.hw + ' ' + phIpa(g.seq)).join(', '));

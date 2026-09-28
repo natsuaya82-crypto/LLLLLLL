@@ -250,6 +250,16 @@ const r = await pg.evaluate(({s}) => {
   /* and the switch is the way back */
   wldPubGot(langId, true);
   out.hidBack = !wldHidden();
+  /* AND 「NOT ASKED YET」 IS NEITHER. 「まだ聞いていない」は第三の状態で、画面
+     には出さない。行が降りてくるまで…プロフィールの言語の行も開かない
+     (docs/FEATURE_RULES.md 2026-09-08). With no answer in hand the row is
+     not drawn at all -- it used to be drawn saying 非公開, which is 「not
+     asked」 and 「private」 sharing a branch. */
+  delete LPUB[String(langId)];
+  stand('profile');
+  var urow = document.querySelector('#app .wldrow');
+  out.unkRow = urow ? (/\bwldoff\b/.test(urow.innerHTML) ? 'private' : 'row') : '';
+  wldPubGot(langId, true);
 
   /* AND SOMEBODY ELSE'S PRIVATE PAGE IS STILL THE NAME AND NOTHING ELSE.
      「非公開にする場合は言語名しか表示されない」 OWNER 2026-08-25 is about the
@@ -260,11 +270,46 @@ const r = await pg.evaluate(({s}) => {
   stand('about', 'LX');
   out.seenHidSecs = heads().length;
 
+  /* AND THE NOTE IS MOVED ONLY WHERE IT CAN BE WRITTEN. The old `note` becomes
+     the first row of the overview the first time the writing face is drawn
+     (wldNoteMigrate) -- a migration, so it asks what every migration asks
+     (www/core.js § migrateAll): a language that may not be written is not
+     touched and raises no mark. Somebody else's language is the case: it used
+     to get the row and `ovnote` in memory while nothing could be saved. */
+  langOpen(langId);
+  var wasWld = WLD, wasOwn = langOwnOf(langId);
+  WLD = { note: 'an old note' };
+  langOwnGot(langId, 'somebody-else-entirely');
+  try { vWorld(); } catch (e) {}
+  out.lockedNote = JSON.stringify(WLD);
+  langOwnGot(langId, wasOwn);
+  WLD = wasWld;
+
+  /* AND A SECTION'S OWN PAGE IS THE SAME PAGE. 取った言語は wiki に出ない
+     (2026-09-23): wldPage() draws nothing of somebody else's language, and
+     a section's own page (wldart) drew its title and body as fields there. */
+  langOpen(langId);
+  var a0 = wldArts().length;
+  try { wldArtAdd(); } catch (e) {}
+  var arts = wldArts(), aid = arts.length ? arts[arts.length - 1].id : null;
+  var wasOwn2 = langOwnOf(langId);
+  langOwnGot(langId, 'somebody-else-entirely');
+  NAV = [{ r:'wldart', a:aid }]; window.route = 'wldart';
+  var ah = '';
+  try { ah = vWldArt(); } catch (e) { ah = 'threw: ' + e.message; }
+  out.artLocked = aid ? (ah === viewGone()) : null;
+  out.artAdded = arts.length > a0;
+  langOwnGot(langId, wasOwn2);
+  WLD = wasWld;
+
   return out;
 }, { s: seed.toString() });
 
 const fails = [];
 const say = (m) => fails.push(m);
+
+if (r.artLocked === null) say('no section of the article to stand on — the claim about wldart asked nothing');
+else if (!r.artLocked) say('a section\'s own page (wldart) draws somebody else\'s language — 取った言語は wiki に出ない');
 
 if (!r.arrive || !r.arrive.length)
   say('no foldable heading was found on the article at all — the fixture no ' +
@@ -347,6 +392,12 @@ if (!r.hidEdSecs || !r.hidEdSwitch)
       '. The switch is the way back and the sections are what editing is.');
 if (!r.hidBack)
   say('pressing the switch did not make the page public again.');
+if (r.lockedNote !== JSON.stringify({ note: 'an old note' }))
+  say('the note of a language that may not be written was moved anyway: ' +
+      r.lockedNote + ' -- a migration that cannot write does not run and raises no mark.');
+if (r.unkRow !== '')
+  say('with no answer about the page yet the profile drew its row (' + r.unkRow +
+      '). 「まだ聞いていない」 is a third state and is not drawn (2026-09-08).');
 if (r.seenHidSecs)
   say('somebody ELSE’s private article drew ' + r.seenHidSecs + ' section(s). ' +
       'That face is the name and nothing else — 「非公開にする場合は言語名しか' +

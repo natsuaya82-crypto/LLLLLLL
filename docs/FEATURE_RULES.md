@@ -110,8 +110,8 @@ not need each other, leave it.** Taste is not a reason.
 **A behaviour change and a refactor do not share a commit.** Neither does a
 rename: renaming an acted function touches `act-map.js` twice — the string and
 the function — which are the same files a feature change touches, and the diff
-stops being readable. Renames go in a commit of their own with `npm test` on
-both sides. `docs/BACKLOG.md` holds the ones known and deliberately not done.
+stops being readable. Renames go in a commit of their own; the gate is run once, before
+pushing, by whoever integrates. `docs/BACKLOG.md` holds the ones known and deliberately not done.
 
 ## The order
 
@@ -237,6 +237,12 @@ it seems wrong, say so and stop; do not implement the better idea.
 Newest first. One entry per decision. The **decision itself** matters more than
 the reasoning — a reason can be re-derived, a decision cannot.
 
+The oldest entries, headed `### Decision`, are transcribed from decisions the
+repository already recorded verbatim, in `CLAUDE.md` and in the code comments
+that quote them. Nothing there was inferred: where the wording is the owner's
+it is quoted, and where a decision has never been made the row in
+`docs/FEATURES.md` says **open** instead of appearing here.
+
 ```
 ### Decision
 - Date:
@@ -248,6 +254,75 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Affected docs:
 - Implementation status:
 ```
+
+### 2026-09-28 オーナーに訊いた十件の答え ── ブロックでフォローが外れる・ピン留めはサーバー・話題順・送れない投稿は残さない・古い投稿を今の字で切らない・消す前はいつも確認・星は例外なし
+- Date: 2026-09-28
+- Area: ブロック、ピン留め、検索の並び、送れなかった投稿、凍結中の制作、古い投稿の名前と顔とインク、写真の字、削除の確認、押した後の星、ミュートした人の通知（`docs/reports/owner-asks-2026-09-28.md` 1〜10）
+- Decision:
+  1. **ブロックした時に、両向きのフォローを外す**（X と同じ）。ブロックの行が入った瞬間に、サーバーで。
+  2. **ピン留めはサーバーに持つ**。アカウントの物で、プロフィールを読める人は誰でも読める。書くのは `netPut()`。
+     電話の中だけのピン留めは無くす。この電話が持っているピンは一度だけ上げる（写す。消さない）。
+  3. **検索の「話題」は本当に並べる**: いいねとリポストの数の順。並べ替えを押すと順が変わる。
+  4. **送れなかった投稿（電波が無い・失敗）は保存しないし、後で送らない**。「送信できませんでした」と出し、
+     打った物は投稿画面にそのまま残る。下書きには入れない。後で送る道（`up=0` の下書きと扉での
+     ~~`postUpAll()`~~）は消して、道は一本。「そもそもツイートできないんだから保存もされなくね？」
+     電話にもう入っている下書きは消さない。ただ自動では送らない。
+  5. **凍結は SNS だけ**。「凍結ってSNSの話でしょ？作るのは別に気にしなくていいんじゃないの？」
+     自分の言語・字・単語・キーボード（`language`・`slice`・`slice_hist`、それに要る `plan`）は、凍結中も
+     サーバーで読み書きできる。人の言語は読めない（SNS の側）。どの表が作る側かは `making_rel()`
+     （`supabase/schema.sql`）一か所、`npm run rls` が持つ。
+  6. **古い投稿には今の名前と顔が出る**（どの SNS もそう）。`migratePosts()` は今のまま。
+  7. **古い投稿のインクを今の字で切り直さない**。~~`migratePostInk()`~~ は消す。インクの無い投稿は文字で出る。
+  8. **写真の字が焼けなかったら、送るのを止めて「うまくいきませんでした」と言う**。
+  9. **消す前はいつも確認のポップ（`popAsk()`）**: キーボードの行・列のゴミ箱も、取った言語を一覧から外す
+     （`langDrop`）のも。
+  10. **↓ のメーターと ♡ も、押した後の星（`netPressed()`）で回る**。一つの仕組み、例外なし。
+  - そして前からの決定どおり、**ミュートした人からの iPhone の通知は鳴らない**（push-send がミュートを見る）。
+- Reason: オーナーの答え（2026-09-28、リーダー経由）。
+- Replaces: 2026-09-28 凍結・ブロックの項の「ブロック前のフォローは決まっていない」／2026-09-24 の「送れなかった投稿は
+  下書きに入る」／2026-09-24 の「確認の窓は 17 か所」とキーボードのゴミ箱は確認しない（CLAUDE.md 19 条）／
+  2026-09-23 の「落としている間は ⭕ のメーター」／2026-09-09 の「♡は押した瞬間に点く」／2026-08-26 の
+  「凍結中は制作側も止まります」／CLAUDE.md 12 条の、古い投稿を開いた言語で切る一文。
+- Affected data: ブロックの時に `follow` の行が消える（DELETE REVIEW は `docs/CHANGELOG.md`）。ピン留めがサーバーの
+  列に入る（電話の写しからは消さない）。送れなかった投稿は電話に書かれなくなる（前に書かれた物は残る）。
+  古い投稿のインクはもう書かれない（書かれた物は残る）。
+- Implementation status: `claude/r126-decide`。ミュートした人の通知は `pushPlan()`（push-send/push.mjs）の一か所、
+  `push-check` が持つ。CODE CONFIRMED のみ、関数は未デプロイ。
+
+### 2026-09-28 凍結中は読めない。ブロックした・された相手の物は、どの道からも見えない
+- Date: 2026-09-28
+- Area: 凍結（`profile.banned_at`、`is_member()`）、ブロック（`block_hides()`）、`supabase/schema.sql` の読み全部
+- Decision:
+  - **凍結中のアカウントは SNS を読めない**（書けないのは前から）。SNS のどの表・ビュー・関数・写真と声からも、
+    何も返らない。本人に見えるのは、自分の `profile` の行 ── 凍結の画面を出すため ── と、自分の言語
+    （答え 5、作る側は止めない）。
+  - **ブロックした・された相手の物は、どの道からも一切見えない**。投稿・人・フォロー・反応・写真と声・通知・検索・
+    言語と slice、下書き以外の読み全部。自分がブロックの前にしたフォローやいいねも、見えなくなる。
+- Reason: オーナーの言葉「凍結したら読めないだろ」「ブロックは絶対見えないように」（2026-09-28、リーダー経由）。
+- Replaces: schema.sql と rls-check の「凍結は読むのと出口を残す」「自分のフォローはブロックの後も外せる」（audit-server
+  2026-09-27）。ブロック前のフォローは、ブロックした時に両向きとも外れる（2026-09-28 十件の答え 1）。
+- Affected data: 無し（読みの規則だけ。消す物・移す物は無い）。
+- Implementation status: `claude/audit-server`。`npm run rls` が凍結した人と、ブロックした・された人として、全部の関係と
+  関数を読んで何も返らないことを数える。CODE CONFIRMED のみ、本番には未適用。
+
+### 2026-09-27 一行の行の箱は字の高さ ── 入力欄のカーソルが字の二倍にならない
+- Date: 2026-09-27
+- Area: 一行の規則（`www/index.html` の `.pline,.pwfield #pw-ln`）── 投稿の入力欄・編集の欄・投稿の一行
+- Decision: 行の箱（`line-height`）を自作文字の em の 1.2 倍（15px で約 25px）にする。前は 1.7 倍（約 35.4px）。欄と投稿は同じ一つの規則のまま。行の箱から減った分の半分ずつを投稿の一行（`.pline`）の外側、行が積まれる向きの余白（`padding-block`）に出し、一行の投稿の位置と、本文から意味までの間は変えない。二行以上の投稿は行と行の間が詰まる（格子の上から下まで届く字で、空きが 19.5px → 9.5px）。縦書きは列と列の間が同じだけ詰まり、下向きの字間は変わらない。
+- Reason: オーナーの言葉「文字のサイズとカーソルサイズ全然違う」（実機 170）、「直してください」。iOS はカーソルを行の箱の高さで描く（r119-edit で測った原因）。
+- Affected features: 投稿画面の本文の欄、投稿の編集画面、タイムライン・スレッド・引用・通知の投稿の一行。
+- Affected data: 無し。
+- Affected docs: `docs/CHANGELOG.md`、`docs/scope/r125-line.md`。
+- Implementation status: 実装（`claude/r125-line`、CODE CONFIRMED のみ）。カーソルの高さは Linux の Chromium では iOS と同じに描かれないので、実機で見るまで DEVICE CONFIRMED ではない。`line-check` 13 が持つ（欄の行の箱が格子いっぱいの字のインクの 1.7 倍以下、その字の二行が離れている）。
+
+### 2026-09-27 お題は毎日、太平洋時間の 0 時に変わる。作れなかった日は無くす
+- Date: 2026-09-27
+- Area: 今日のお題（daily-prompt、cron）
+- Decision: お題は毎日同じ時間 ── 太平洋時間の 0 時（2026-08-23 の「日付はアメリカ時間の0時から」のまま）── に変わる。作れなかった日を出さない。作れなかった 2026-09-27 の一文はリーダーが同じ決まりで書いて入れた。
+- Reason: オーナーの言葉「西海岸時間にしてるんだから、それ守れや。今日の文は君で作り変えて明日から毎日同じ時間に変わるように」。
+- Affected features: お題、お題の通知。
+- Affected data: `prompt` に 2026-09-27 の一行（リーダーが書いた文）。cron の daily-prompt の待ちが 1000ms から 60000ms（本番の cron.job、schema.sql の外）。
+- Implementation status: 本番に入れた。daily-prompt はモデルの 503・429 に三回まで聞き直す（本番に置いた）。明日の 0 時に変わるかは、まだ見ていない。
 
 ### 2026-09-27 字の画面の共有（SVG）は、字の横に並べて二つで真ん中
 - Date: 2026-09-27
@@ -264,8 +339,17 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Decision: Android 版を同じリポジトリで作る。移せるものは全部移し、作り直しが要る所（Swift で書いた部分）は規則どおり Kotlin で作る。課金は Google Play の課金を直接つなぐ（RevenueCat は使わない）。Play での値段は iPhone と同じ。
 - Reason: オーナーの言葉「Android版作りたいから移行できるもの全部移行しつつ、作り直しで必要なところはルールに則って作って欲しい」「Googleplay直結で、値段は一緒」。
 - Affected features: 課金（`LinguaStore` の Android 版、`verify-plan` に Google Play の購入の確かめ）、通知、キーボード、ウィジェット、ビルド。
-- Affected data: `plan`・`purchase` の行に Google Play の購入が入る（形は課金のセッションで決める前に報告）。
-- Implementation status: 土台は作業中（r115-android）。課金・通知・キーボード・ウィジェットは未。
+- Affected data: `purchase` の行に Google Play の購入が入る。表の形は変えず、`orig_tx` は `gp:` と購入トークン、`env` は `Google`／`GoogleTest`（r121、下の項）。
+- Implementation status: 土台は r115-android。課金は r121-android-billing（CODE CONFIRMED のみ、Kotlin は未コンパイル・実機未確認、商品と鍵はオーナー待ち）。通知・キーボード・ウィジェットは未。
+
+### 2026-09-27 Android の課金の形 ── 商品は四つの定期購入、確かめるのはサーバー（実装の選択）
+- Date: 2026-09-27
+- Area: 課金（Android）
+- Decision: 実装の選択（オーナーの決定「Google Play 直結・値段は iPhone と同じ・オーナーを要しない所は全部」の中で）。商品 ID は iPhone と同じ四つの名前を**四つの別々の定期購入**にし、各々に基本プランを一つ。端末は `{token, product}` の組を上げ、`verify-plan` が `purchases.subscriptionsv2.get` で確かめ、`obfuscatedExternalAccountId` が uid と同じ時だけ数え、期限は Google から、承認もサーバー。プランの変更は WITH_TIME_PRORATION（すぐ替え、残りを差し引く）。
+- Reason: 基本プランの ID はピリオドを使えず、四つを別々にすれば `verify.mjs` の `PRODUCTS` が一つのまま両方の電話に効く。Play には App Store のグループが無く、置き換えを渡さないと二重の請求になる。替え方（すぐか次の更新か）はオーナーのもので、変えるなら `LinguaStorePlugin.kt` の `buy` 一か所。
+- Affected features: `LinguaStore`（Android）、`www/store.js` の `storeJws()`、`verify-plan`。
+- Affected data: `purchase` の行（上の項）。新しい secret `GOOGLE_PLAY_SERVICE_ACCOUNT`。
+- Implementation status: 実装（r121-android-billing、CODE CONFIRMED のみ）。`verify-check` が Google の段を持つ。
 
 ### 2026-09-27 字を描く画面に投げ縄 ── 囲んだ点を動かす・消す（1.0.3）
 - Date: 2026-09-27
@@ -571,7 +655,8 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Affected docs: この項、`docs/PAID_FEATURES.md`、`docs/FEATURES.md`、`docs/keyboard.md`、CLAUDE.md の「What the free plan is」。
 - Implementation status: r95-kbfont（`claude/r95-kbfont`）── キーボード（段を訊かない、`=文字` の枠と「文字を入力」の欄）とフォントの書き出し（Plus、`ltFontOut()`）は入った・コード確認、実機未確認。手書きは r96。
 
-### 2026-09-25 キーボードは誰でも作れる、自作文字のキーボードとフォントの書き出しは Plus から【差し替え済み】→ 2026-09-25「キーボードはプランで分けない」
+### 【差し替え済み 2026-09-25】キーボードは誰でも作れる、自作文字のキーボードとフォントの書き出しは Plus から（2026-09-25）
+- 差し替えた決定: 「キーボードはプランで分けない」（2026-09-25）
 
 ### 2026-09-25 投稿の見た目 ── 意味の行を出さずに投稿できる、本文は Twitter の大きさ、意味はその 0.8 倍（1.0.3）
 - Date: 2026-09-25
@@ -684,14 +769,14 @@ the reasoning — a reason can be re-derived, a decision cannot.
   - **紙に描いた字を描き直す時**: 紙の形を下に薄く敷く。
   - **字を囲ったボタン 9 か所・説明っぽい文・字だけのボタン（サインイン・次へ・保存・完了）**: 今のまま。
   - **行の組の間隔**: 14px・10px にそろえた今の形。
-  - **消す前の「○○を消しますか？」**: 確認の窓を出す（17 か所とも今のまま）。十の基準の 9「削除→Undo」はこれで置き換え。
+  - **消す前の「○○を消しますか？」**: 確認の窓を出す。十の基準の 9「削除→Undo」はこれで置き換え。キーボードの行・列のゴミ箱と、取った言語を外すのも確認を出す（2026-09-28）。文言は「選んだ行（列）を消しますか？」「○○ を消しますか？」、ボタンは「削除」「閉じる」（2026-09-28、オーナー「all ok」）。キーを一つ選んで押すゴミ箱は確認を出さない（2026-09-28「4はいらんな」）。
   - **スマホのキーボードの短い行**: 作る画面と同じく真ん中。
   - **2段をつないだキーの「真下」**: 画面に見えるとおりに数える。見た目で真下でない既存のつなぎは外れる。
   - **キーを運ぶ長押し**: ほかの長押しと同じ 10px。
   - **ブロック**: ブロックされた側からも、こちらのタイムライン・プロフィール・通知が見えない。解除は設定のブロックリスト。
   - **フォロー中・フォロワー**: フォローした新しい順。一覧は一度に 50 件。
   - **アプリを開いた最初の画面**: タイムライン。
-  - **送れなかった投稿**: 「送信できませんでした」と出して下書きに入る。送り直しボタンは無い。下書きの数に上限は無い。
+  - **送れなかった投稿**: 「送信できませんでした」と出し、打った物は投稿画面に残る。下書きには入らず、後で送られもしない（2026-09-28）。下書きの数に上限は無い。
   - **非公開の投稿・通知をどこまで読んだか**: アカウントに保存する。
   - **2台で同じ物を直した時**: 後から保存した方が残る。
   - **言語を前に戻す**: 3つ前まで。戻す時は言語まるごと。
@@ -718,9 +803,11 @@ the reasoning — a reason can be re-derived, a decision cannot.
   **言語を前に戻す** ── 入った（保存の番号 `slice.press`、`admin_restore_lang()`、運営の画面は版三つ。`npm run rls`・
   `hist-check`・`again-check`）。**schema.sql をアプリより先に流すこと。**
 
-### 2026-09-24 キーボードのプランとフォントの書き出し（r46 の申し送り）【差し替え済み】→ 2026-09-25「キーボードはプランで分けない」
+### 【差し替え済み 2026-09-25】キーボードのプランとフォントの書き出し（r46 の申し送り）（2026-09-24）
+- 差し替えた決定: 「キーボードはプランで分けない」（2026-09-25）
 
-### 2026-09-24 キーの画面 ── 押した字がそのキーに入る。確定は無い【差し替え済み】→ 2026-09-25「複数のキーに一度に字を入れる」
+### 【差し替え済み 2026-09-25】キーの画面 ── 押した字がそのキーに入る。確定は無い（2026-09-24）
+- 差し替えた決定: 「複数のキーに一度に字を入れる」（2026-09-25）
 
 ### 2026-09-24 【決定の読み ── オーナーの新しい言葉ではない】持ち主の無い写しは読まない、消さない
 - Date: 2026-09-24（r79-acct、リーダーの指示で書いた。**オーナーはこの日これを言っていない**）
@@ -764,7 +851,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
   「ダウンロードは普通⭕️のメーターだろ」
   - 起動で読むもの ── **2026-09-24 で置き換え**: 開いた時に要る物（通知・タイムライン・今日のお題・プラン・テーマと言語）は読む。
   - それ以外（プロフィール、フォロー・フォロワー、下書き、検索、自分の投稿、言語の一覧の中身、人の言語のページ…）は、その画面に進んだ時に、その画面に描く分だけ読む。一覧は上限を付けて、続きはスクロールで。
-  - 人の言語の章は ↓ を押した時にサーバーから落とす。落としている間は ⭕ のメーター（進みが取れない時は ⭕ が回る）、済んだら ⭕☑️。
+  - 人の言語の章は ↓ を押した時にサーバーから落とす。落としている間は押した後の星が回り（2026-09-28）、済んだら ⭕☑️。
 - Reason: 全部を一度に読むとアプリが重い。普通のアプリはそう動く。
 - Affected features: 起動、全部のタブと画面、人の言語のダウンロード
 - Affected data: 無し（読む時が変わるだけ。保存する物は変えない）
@@ -1331,16 +1418,11 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Affected data: 保存されるものは増えも減りもしない。流れる量が減る。
 - Implementation status: `claude/r10-wire` で作業中。
 
-### ♡は押した瞬間に点き、届かなければ消える／古い言語の件は作らない／運営が戻せる画面が欲しい
+### ♡はサーバーの答えで点く／古い言語の件は作らない／運営が戻せる画面が欲しい
 - Date: 2026-09-09（午後、続き）
 - Area: 投稿の♡、古い言語、運営画面
 - Decision:
-  - **♡は押した瞬間に点いて数が 1 動く。サーバーに届かなかったら♡が消えて
-    数が戻る。何も言わない。**「Twitter もその仕様なはず。ハート押して 1 つく
-    やん？サーバー飛んでないならハートが消えるでいいんじゃない？」──
-    2026-09-09 の「投稿の数と自分が押したかはサーバーのもの ── 押した瞬間は
-    動かず、戻ってきた数になる」の**「押した瞬間は動かず」を上書き**する。
-    数の答えがサーバーのものであることは変わらない：画面が先に動くだけで、
+  - **♡は押すと星が回り（`netPressed()`）、サーバーの答えで点いて数が動く**（2026-09-28 十件の答え 10）。
     端末に「押した」の写しは作らない。
   - **一度もサーバーに上がっていない古い言語をサインインした人のものにする
     ── 作らない**「いらん」。今のまま（開けるが書けない）。
@@ -1354,9 +1436,9 @@ the reasoning — a reason can be re-derived, a decision cannot.
     戻すと、それまでの「今」も版の一つになる。`docs/RECOVERY.md` 案A の形。**SQL の流し直しあり。**
     合わせて「$25 で何人持つか」を測った数字で出す（`claude/r10-measure`）。
 - Affected features: ♡、古い言語、管理画面
-- Affected data: ♡は保存されるものが増えない（画面の一時状態だけ）。復旧は
+- Affected data: ♡は保存されるものが増えない。復旧は
   サーバーに前の版が積まれる（作る時に DATA_MODEL を書く）。
-- Implementation status: ♡は **IMPLEMENTED**（`postLike()` と `PMARK`、`www/post.js`、`acct-check` 62）。
+- Implementation status: ♡は **IMPLEMENTED**（`postLike()`、`www/post.js`、`acct-check` 62、`spin-check`）。
   古い言語は BACKLOG に「作らない」。復旧は BACKLOG（リリース後、日数待ち）。
 
 ### 2026-09-09 の午後、画面で訊いて答えの出た十一
@@ -1726,28 +1808,8 @@ the reasoning — a reason can be re-derived, a decision cannot.
 - Implementation status: オンライン一本化は入りました。バッジは 2026-09-26
   「課金者の印は、誰の画面でも…」で `supabase/schema.sql` に入りました（r109）。
 
-### 増えた文字は消してよい ── リリース前のあいだだけ
-- Date: 2026-09-04
-- Area: 文字（`www/letters.js`）。増殖した分の後始末
-
-- Decision:
-
-  ```
-  だからリリース前の今は消していいから、描いてないからリリースしてから
-  確認してくれ、データがないから
-  ```
-
-- Reason: **リリース前で、増えた文字には誰も何も描いていない。**だから
-  消しても失われるものが無い。
-- Affected features: 文字の増殖（`docs/HANDOVER.md` 六章の 0）の後始末。
-  **`docs/DATA_SAFETY.md` の DELETE REVIEW は、この件については要らない。**
-- Affected data: 増殖した文字。**中身は空 ── 誰も描いていない。**
-- Affected docs: `docs/HANDOVER.md` 六章の 0 に書いた「勝手に消してはいけない」
-  は取り消し。同じコミットで消した。
-- Implementation status: 増殖そのものが未着手。
-- **有効期限つきの決定です。**理由が「いまはデータが無いから」なので、
-  **リリース後はこの決定は効きません。**そのときは人が描いた文字が混ざる
-  ので、同じ消し方をしてはいけません。
+### 【差し替え済み 2026-09-24】増えた文字は消してよい ── リリース前のあいだだけ（2026-09-04）
+- 差し替えた決定: 2026-09-24「画面・タイムライン・キーボード・保存・お金」の「昔の版で自動で増えた文字: 消さずに残す」
 
 ### キーボードの編集画面、一番下の ＋ を外す
 - Date: 2026-09-04
@@ -2746,7 +2808,7 @@ the reasoning — a reason can be re-derived, a decision cannot.
   **「何か打ったか」は画面が答えます。**書き込む中身を知っているのは画面
   だけなので、一箇所が持つのは「状態は二つ」と「色はどこから来るか」だけです。
   ── 打ちかけの欄は `KEEP`、文字を描く画面は開いた時の線と今の線
-  （~~`geDirty()`~~）、投稿は `pwSend()` が断る条件そのもの（`pwOn()`）、
+  （~~`geDirty()`~~）、投稿は `pwSend()` が断る条件そのもの（`pwHas()`）、
   単語の追加は `addOne()` が断る条件そのもの（`wdAddOn()`）。
 
   **打っている間は画面を描き直さないので、色は塗り直します**
@@ -4163,23 +4225,6 @@ www/net.js:1544  netDraftUp() ── www/post.js:380 と :463 から
 - 差し替えた決定: 「売上とアナリティクスは RevenueCat で見る」（2026-09-02）
 
 ### Decision
-- Date:
-- Area:
-- Decision:
-- Reason:
-- Affected features:
-- Affected data:
-- Affected docs:
-- Implementation status:
-```
-
-Entries below are transcribed from decisions the repository already records
-verbatim, in `CLAUDE.md` and in the code comments that quote them. Nothing here
-was inferred: where the wording is the owner's it is quoted, and where a
-decision has never been made the row in `docs/FEATURES.md` says **open**
-instead of appearing here.
-
-### Decision
 - Date: 2026-08-26 (同日、五つめ)
 - Area: 匿名アカウントは無くなる。アカウントは一種類
 - Decision:
@@ -5338,7 +5383,7 @@ and is never merged into your own」と言っている。**入らない、は二
 
   **(3) `note*` in `notes.js` is the chapter spelled long, and goes to
   `nt*`.** ~~`noteRead`~~ ~~`noteCut`~~ ~~`noteHead`~~ ~~`noteBody`~~ ~~`noteAt`~~ → `nt*`, and
-  ~~`notesFound`~~ → `ntFound`. `openNote` and `vNotes` are untouched — `open*`
+  ~~`notesFound`~~ → ~~`ntFound`~~ → `ntNewest`. `openNote` and `vNotes` are untouched — `open*`
   and `v*` are named in CLAUDE.md — and `saveNote` `saveNotes` ~~`delNote`~~ are
   untouched by (1).
 - Reason: the Names rule exists so that 500-odd globals in one namespace stay
@@ -5459,13 +5504,10 @@ and is never merged into your own」と言っている。**入らない、は二
   「三タブを閉じる」の二つを言っていて、**どちらも取り消されています**。
   - **タブは閉じません。**「3タブを閉じる必要もないし。ホームに出ればいいやん」
     ── 凍結は `vFeed` の中身がその一枚に変わることで、タブは開いたままです。
-  - **制作側も止まります。** OWNER DECISION 2026-08-26 ── 凍結アカウントが
-    自分の言語を編集してよいかを直接訊いた答えは、してはいけない、でした。
-    言語は人に渡るもの（DL できて、誰でも開けるページに載る）になったので、
-    「他人には関係ない」がもう言えません。
+  - **制作は止まりません**（2026-09-28 十件の答え 5）。字も単語も作れます。
 - Area: What being frozen stops
-- Decision: 止まるのは **SNS と、言語がサーバーへ上がる分**。投稿・返信・反応・
-  フォロー・通報と、`slice` の書き込み。**三つのタブは開いたままで**、凍結は
+- Decision: 止まるのは **SNS だけ**。投稿・返信・反応・
+  フォロー・通報。言語はサーバーへ上がる（2026-09-28 十件の答え 5）。**三つのタブは開いたままで**、凍結は
   ホームに出ます。端末の中にあるものは読めて、開けて、バックアップも取れます
   ── `account_delete()` だけは `is_member()` を訊きません。出口に鍵は掛けない。
 - Reason: 凍結は解けるので、何も壊さない。そして帳を下ろす場所は一つでいい ──
@@ -5479,11 +5521,7 @@ and is never merged into your own」と言っている。**入らない、は二
 - Implementation status: **入っています。**`www/sns.js` の `vFeed` が
   `NET_BANNED` のときホームを一枚に替え、`www/net.js` が `banned_at` を読み、
   書き込みは全部 `is_member()` が止めます。タブは開いたままです。
-- **一つ決まっていません。**端末の中だけの編集を止めるかどうか。2026-08-26 の
-  決定は要約（`supabase/schema.sql`）としてしか残っておらず原文がありません。
-  いまは端末では編集でき、上がる分だけが止まります。**これが決定どおりなのか、
-  RLS が localStorage に届かなかった結果なのかは、書かれたものからは読めません。**
-  訊くべき一文は「凍結中、端末の中だけの編集も止めますか？」です。
+- 凍結中も制作は止めない（2026-09-28 十件の答え 5）。
 
 ### Decision
 - Date: 2026-08-19
@@ -5854,7 +5892,7 @@ Reporting "there is no hosted model" as a blocker was wrong. It is a fact
 about today, not about the design, and the design is the part being asked
 for.
 
-### 【差し替え済み】A post shown three ways（2026-08-12）
+### 【差し替え済み 2026-08-28】A post shown three ways（2026-08-12）
 - 差し替えた決定: 投稿は二層 ── `docs/CHANGELOG.md` §「自分の言語で読む」は無くなった
 
 ### Decision
@@ -6309,7 +6347,7 @@ Do not pick:
   prices, and which plan buys what
   the free / paid boundary
   anything that deletes data, or how long data is kept
-  how a sync resolves a conflict
+  how two copies of one thing are put together when they disagree
   a change to behaviour a person already relies on
   wording a person will read
   any threshold or number that is a judgement rather than a measurement
@@ -6366,7 +6404,7 @@ are the leader's to name, not the session's to choose:
 - May change:            files, by name
 - May NOT change:        files another session holds, or that are simply out of scope
 - Depends on decision:   which entry in the owner decision log
-- Tests to run:
+- Check that holds it (named; watched red once, not run green):
 ```
 
 ### How the work moves
@@ -6386,10 +6424,11 @@ visible there early enough to be avoided.
   5  push after every commit          a branch nobody can see is a branch
                                       nobody can avoid
   6  never integrate ANOTHER BRANCH   no merge, no rebase, no cherry-pick of
-                                      another branch. The leader integrates.
+                                      another branch. The sub-leader integrates
+                                      (the leader when there is none).
                                       master into your OWN branch is not that,
                                       and is required before you report
-  7  the gate is the leader's         see docs/TESTING.md § the gate, rule 2
+  7  the gate is whoever integrated's see docs/TESTING.md § Who runs it
 ```
 
 **Step 3 is the collision test and it is mechanical.** If
@@ -6404,8 +6443,8 @@ stale information for that hour. The scope declaration is cheap to push and
 it is the thing others read.
 
 **Step 6 is absolute about ANOTHER branch.** A session that merges another
-branch into its own has produced a diff neither session wrote. The leader --
-another session above this one -- integrates, and asks the owner where the
+branch into its own has produced a diff neither session wrote. The sub-leader
+(the leader when there is none) integrates, and asks the leader where the
 answer is a decision rather than a merge. Report the conflict and stop; do not
 resolve it.
 
@@ -6430,8 +6469,9 @@ to push the Scope of its next piece**, so finishing does not mean queueing
 behind the leader.
 
 **Who is who.** The owner decides what the app does and confirms it on a
-phone. The leader names what each session owns, integrates, and runs the whole
-gate. A session does none of those three. → `docs/SESSIONS.md`
+phone. The leader names what each session owns and triggers the build when the
+owner says so; the sub-leader (the leader when there is none) integrates and
+runs the whole gate. A session does none of those. → `docs/SESSIONS.md`
 
 ### What is forbidden, by name
 
@@ -6510,7 +6550,7 @@ it, and it becomes a decision, not a cleanup.
 [ ] the blast radius is known
 [ ] the docs that apply are updated
 [ ] implemented
-[ ] npm test green
+[ ] the whole gate green — run by whoever integrated, not the session
 [ ] the regression test for this specific bug is green
 [ ] the bug was PUT BACK and the test was watched going red
 [ ] node --check, and any static check that applies

@@ -25,32 +25,11 @@ installScriptFont();
 swMount();
 /* The session, resumed. The token in hand lasts an hour, so a launch the next
    morning has one that is already dead; this trades the refresh token for a
-   fresh pair before anything asks the server for something. It is fired and
-   not waited for -- the app opens on what is on the phone, which is all of
-   the making side, and the timeline reads with the publishable key whether
-   this comes back or not. */
+   fresh pair before anything asks the server for something. Nothing is read
+   until it comes back: with no session there is only the door (CLAUDE.md
+   § Online), and with no signal netPop() says so. */
 function bootSession(){
   render();
-  /* AND A DELETION THAT WAS ASKED FOR AND DID NOT FINISH.
-     「そもそもこのアプリはオンラインが基本なんだからね？SNSなんだから、削除し
-     切ってないと消えない。」 OWNER 2026-09-03.
-
-     The press is in www/settings.js and it writes the mark once the server
-     says the row is gone, so what comes back here is a phone whose ACCOUNT
-     has already been deleted and whose copy did not finish going. It is the
-     same call the button makes, so there is one road and not a second one
-     for the second try.
-
-     A phone whose request never landed carries no mark and does not come
-     through here: the account is still there and nothing was written down
-     (www/settings.js § wipeAllGo). The popup is what it got, and ［再更新］
-     is its second try.
-
-     FIRST, and before the plan or the languages: everything below this line
-     asks the server for things that belong to an account that is on its way
-     out. It is not asked again -- popAsk() answered when it was pressed, and
-     asking twice would be the app doubting somebody who already said yes. */
-  if(netEnded()){ wipeAllGo(); return; }
   /* And what this ACCOUNT has paid for, which used to be a fact about the
      phone. The receipts this device holds go up and the plan comes back --
      storeSync() in www/store.js and netPlanVerify() in www/net.js have the
@@ -130,12 +109,6 @@ render();
    and the DELETE REVIEW in docs/CHANGELOG.md 2026-09-25. */
 shDropOld();
 voSweep();
-/* 「プランが終了しました」 STOOD HERE and is not said any more. capLapse()
-   compared the plan against a word in `lingua.set`, and there is no word on
-   this phone: what an account pays is `verify-plan`'s answer, in memory
-   (www/core.js § PLAN). The `plan` table carries no previous plan, so
-   nothing can say 「it ended」 -- www/core.js § 「プランが終了しました」 and
-   docs/scope/r31-server.md § オーナーへ. */
 /* AND THE SPLASH COMES DOWN WHEN THE SCREEN UNDER IT IS WHOLE.
    「押してから読み込みが終わるまで前の画面のままで、揃った瞬間に出る」 OWNER
    2026-09-07.

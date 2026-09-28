@@ -334,6 +334,21 @@ say(!E.quiet.length, 'and the save that did not happen says so' +
 say(!E.other.length, 'F. somebody else\'s ink, gap and slices are shape-checked, and a count nobody sent is not 0' +
     (E.other.length ? '\n            ' + E.other.join('\n            ') : ''));
 
+/* G. A column the server has said is EMPTY is an answer, and the picture kept
+   for a launch with no signal keeps it: a name the server says is '' is
+   drawn as unnamed, not as whatever an older version called the language.
+   slGot() took '' as 「nothing」 and removed the picture
+   (rule-audit-2026-09-27-core C1). */
+const G = await pg.evaluate(() => {
+  LANGS.Lg = { name: '古い名前' };
+  langNameGot('Lg', 'いまの名前');
+  langNameGot('Lg', '');
+  delete LNAME.Lg;              /* the next launch: memory is empty */
+  var got = langNameOf('Lg');
+  delete LANGS.Lg; slGot(langNameKey('Lg'), null);
+  return got;
+});
+say(G === '', 'G. a name the server emptied stays empty with no signal, and is not an older name: ' + JSON.stringify(G));
 await br.close();
 if (fails.length) {
   console.log('\nstate: ' + fails.length + ' of these do not hold.');

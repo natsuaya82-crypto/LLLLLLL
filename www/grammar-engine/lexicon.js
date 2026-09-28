@@ -2,10 +2,9 @@
    Loaded by www/index.html as a plain script, in the order listed there.
    ES5 only: this runs in an old WKWebView. tools/es5-check.mjs enforces it.
 
-   docs/FEATURES.md, under "A post shown three ways", names exactly one thing
-   as missing: "a lookup from a meaning to one of my words. Word order
-   (SET.order, six of them) and the grammar stages already exist." This is
-   that lookup, and nothing else.
+   The lookup from a meaning to one of my words: what toNatural() and run()
+   in translate.js beside this file stand on. This is that lookup, and
+   nothing else.
 
    It is DOM-free and globals-free on purpose, the same way the reader half of
    www/import.js is: tools/grammar-engine-check.mjs runs this file in a Node
@@ -14,12 +13,10 @@
 
    It guesses at nothing. A meaning matches or it does not; there is no stem,
    no article stripped, no plural undone. Every one of those is a rule from
-   somebody else's language, and www/core.js already threw that out once —
-   phGuess() is kept for exactly one job and never used to read a new word. A
-   word that does not match is not a failure here: it comes back as a gap, and
-   docs/FEATURES.md decided what a gap is for — it "stays in the natural
-   language and is shown IN RED, so the gap is obvious — and it is also the
-   door to making that word". */
+   somebody else's language. A word that does not match is not a failure
+   here: it comes back as a gap, and a gap stays in the natural language as
+   it was typed. Nothing draws it in red any more -- 「赤文字消して」 OWNER
+   2026-08-28. */
 (function(root){
   'use strict';
   var api=root.LinguaGrammarEngine;
@@ -28,16 +25,13 @@
   function trim(s){ return String(s===undefined||s===null?'':s).replace(/^\s+|\s+$/g,''); }
   function norm(s){ return trim(s).toLowerCase(); }
 
-  /* A word means a LIST of things. `meanings` is that list; `meaning` is the
-     joined string that has always been beside it. A model saved before the
-     list existed carries only the string, so it is split back apart HERE and
-     nowhere else — one place doing the guess, so there is one place to stop
-     doing it when no such model is left. */
+  /* A word means a LIST of things, and `meanings` is that list. No model is
+     stored (adapter.js), so every word arrives with the list and nothing here
+     splits the joined `meaning` string back apart. */
   function meaningsOf(word){
     var out=[], src, i, v;
     if(!word) return out;
     if(word.meanings && word.meanings.length) src=word.meanings;
-    else if(trim(word.meaning)) src=String(word.meaning).split(' / ');
     else return out;
     for(i=0;i<src.length;i++){ v=trim(src[i]); if(v) out.push(v); }
     return out;
@@ -73,9 +67,11 @@
   /* Where a word ENDS is a thing some scripts write down and some do not.
      Latin writes it with a space, so "eat" may not be found inside "eaten";
      Japanese writes nothing, so 魚 has to be found inside 魚を. One rule
-     covers both: a match may not have a letter or a digit of the alphabet
-     that writes spaces immediately beside it. */
-  var WORDCH=/[0-9A-Za-z]/;
+     covers both: a match may not have a letter or a digit of a script that
+     writes spaces immediately beside it -- Latin with its accents, Greek and
+     Cyrillic. Hangul is left out on purpose: it writes spaces but fastens a
+     particle onto the word (고양이가), so it is found inside the way 魚 is. */
+  var WORDCH=/[0-9A-Za-z\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u024F\u1E00-\u1EFF\u0370-\u03FF\u0400-\u052F]/;
   function edge(text, at, len){
     var before=at>0?text.charAt(at-1):'', after=(at+len)<text.length?text.charAt(at+len):'';
     if(before && WORDCH.test(before) && WORDCH.test(text.charAt(at))) return false;
@@ -119,5 +115,5 @@
     return out;
   }
 
-  api.lexicon={meaningsOf:meaningsOf, keys:keys, find:find, cut:cut};
+  api.lexicon={meaningsOf:meaningsOf, find:find, cut:cut};
 }(typeof window!=='undefined'?window:this));
