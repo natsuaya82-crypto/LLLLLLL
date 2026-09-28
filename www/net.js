@@ -2947,6 +2947,9 @@ function netFeed(which, ok, bad, more){
      Left out entirely, both sides behave exactly as they did. */
   function got(d){
     var out=[], i;
+    /* feed_hot() comes here as well as the GET, and a list is its answer too:
+       anything else is broken, not an empty timeline (netGet above). */
+    if(!d || typeof d.length!=='number'){ bad(d, 200, 'feed \u2260'); return; }
     if(!d.length){ ok([]); return; }
     for(i=0;i<d.length;i++) out.push(netRow(d[i]));
     ok(out);
