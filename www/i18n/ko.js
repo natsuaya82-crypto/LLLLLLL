@@ -960,8 +960,6 @@ defLang('ko', (function(){
       "fmr.off" : "이 형태는 만들지 않기",
       "fmr.with" : "{0}개의 형태와 함께 추가",
       "fmr.with.1" : "형태 하나와 함께 추가",
-      "count.words"      : "낱말 {0}개",
-      "count.words.1"    : "낱말 1개",
       "home.write"       : "새 단어",
       /* AI に相談する -- www/assist.js builds the link. The sentences below
          are the PROMPT, and they are here for the same reason every other
@@ -986,7 +984,6 @@ defLang('ko', (function(){
       "words.empty"      : "아직 단어가 없습니다",
       /* notes */
       "toc.notes"        : "메모",
-      "count.notes"      : "메모 {0}개",
       "notes.new"        : "새 메모",
       "notes.edit"       : "메모",
       "notes.t"          : "제목",

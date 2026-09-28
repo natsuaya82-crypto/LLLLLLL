@@ -792,9 +792,6 @@ defLang('ru', (function(){
       "fmr.with.1" : "Добавлено, с одной формой",
       "fmr.with.few" : "Добавлено, с {0} формами",
       "fmr.made.few"     : "Создано {0} слова",
-      "count.words"       : "{0} слов",
-      "count.words.1"     : "1 слово",
-      "count.words.few"   : "{0} слова",
       "home.write"        : "Новое слово",
       /* AI に相談する -- www/assist.js builds the link. The sentences below
          are the PROMPT, and they are here for the same reason every other
@@ -820,9 +817,6 @@ defLang('ru', (function(){
       "words.empty"       : "Слов пока нет",
       /* заметки */
       "toc.notes"         : "Заметки",
-      "count.notes"       : "{0} заметок",
-      "count.notes.1"     : "1 заметка",
-      "count.notes.few"   : "{0} заметки",
       "notes.new"         : "Новая заметка",
       "notes.edit"        : "Заметка",
       "notes.t"           : "Заголовок",

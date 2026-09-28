@@ -689,8 +689,6 @@ defLang('en', (function(){
       'fmr.off'          : "Do not make this form",
       'fmr.with'         : "Added, with {0} forms",
       'fmr.with.1'       : "Added, with one form",
-      'count.words'     : "{0} words",
-      'count.words.1'   : "1 word",
       'home.write'      : "New word",
       /* words */
       /* AI に相談する -- www/assist.js builds the link. The sentences below
@@ -717,8 +715,6 @@ defLang('en', (function(){
       /* sound */
       /* notes */
       'toc.notes'       : "Notebook",
-      'count.notes'     : "{0} notes",
-      'count.notes.1'   : "1 note",
       'notes.new'       : "New note",
       'notes.edit'      : "Note",
       'notes.t'         : "Heading",

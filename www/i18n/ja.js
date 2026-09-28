@@ -699,8 +699,6 @@ defLang('ja', (function(){
       'fmr.off'          : "この形は作らない",
       'fmr.with'         : "{0}つの形と一緒に追加",
       'fmr.with.1'       : "1つの形と一緒に追加",
-      'count.words'     : '{0}語',
-      'count.words.1'   : '1語',
       'home.write'      : '単語の作成',
       /* AI に相談する -- www/assist.js builds the link. The sentences below
          are the PROMPT, and they are here for the same reason every other
@@ -725,8 +723,6 @@ defLang('ja', (function(){
       'words.empty'     : '単語がまだありません',
       /* notes */
       'toc.notes'       : 'メモ',
-      'count.notes'     : '{0}件',
-      'count.notes.1'   : '1枚',
       'notes.new'       : 'メモの追加',
       'notes.edit'      : 'メモの編集',
       'notes.t'         : '題名',

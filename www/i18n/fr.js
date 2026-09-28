@@ -831,8 +831,6 @@ defLang('fr', (function(){
       "fmr.off" : "Ne pas créer cette forme",
       "fmr.with" : "Ajouté, avec {0} formes",
       "fmr.with.1" : "Ajouté, avec une forme",
-      "count.words"      : "{0} mots",
-      "count.words.1"    : "1 mot",
       "home.write"       : "Nouveau mot",
       /* AI に相談する -- www/assist.js builds the link. The sentences below
          are the PROMPT, and they are here for the same reason every other
@@ -857,8 +855,6 @@ defLang('fr', (function(){
       "words.empty"      : "Pas encore de mots",
       /* notes */
       "toc.notes"        : "Carnet",
-      "count.notes"      : "{0} notes",
-      "count.notes.1"    : "1 note",
       "notes.new"        : "Nouvelle note",
       "notes.edit"       : "Note",
       "notes.t"          : "Titre",

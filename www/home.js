@@ -50,60 +50,20 @@ function tocNum(r){
   return '';
 }
 function tocRows(){
+  /* A chapter's row is its name and the way in -- nothing else is drawn on it
+     (vBuild), so nothing else is carried.
+
+     The keyboard is a chapter rather than a button at the foot of the
+     alphabet: what it is is the layout of the keyboard on the PHONE, a made
+     thing of its own beside the letters and the words. It has no number:
+     「キーボードの数字9ってなに？意味がわからないから」 */
   return [
-    {k:'toc.letters', r:'letters', v:ltShaped(),
-     txt:LETTERS.length? (ltShaped()+' / '+LETTERS.length) : '—'},
-    {k:'toc.words',   r:'words',   v:WORDS.length,
-     txt:WORDS.length? tn('count.words', WORDS.length) : '—'},
-    {k:'toc.gram',    r:'gram',    v:stCount(),
-     txt:stCount()+' / '+stAll().length},
-    {k:'toc.notes',   r:'notes',   v:NOTES.length,
-     txt:NOTES.length? tn('count.notes', NOTES.length) : '—'},
-    /* The keyboard is a chapter now rather than a button at the foot of the
-       alphabet. It stopped being a thing the alphabet has when it stopped
-       being something you type on in here: what it is is the layout of the
-       keyboard on the PHONE, which is a made thing of its own beside the
-       letters and the words.
-
-       It is here on the free plan too, saying what it is, because the row is
-       numbered and a numbered row that appears when you pay renumbers the
-       book under somebody who already knew where things were.
-
-       The keyboard has no number. It carried the count of its KEYS, which is
-       a true number and answers a question nobody asked -- "9" beside the
-       chapter says nothing anybody can act on, where "5 / 30" beside the
-       letters says how much of an alphabet is drawn. 「キーボードの数字9って
-       なに？意味がわからないから」 */
-    {k:'kb.title',   r:'kb',     v:0, txt:''}
-  ].concat(
-    /* The sounds a language is built from, and it is Plus's. On free the
-       inventory is filled in by the app -- a letter named `k` reads /k/ and
-       nobody was asked -- so a page of it would be a page of the app's own
-       guesses with nothing to do on it. Somebody who wants to settle a
-       phonology properly is exactly somebody who has paid.
-       「音韻を細かく決めたい人だっているだろ。plusで復活」
-       「plus以外はもう音も文字も決まってる状態」
-
-       LAST but for the AI, for the reason the comment below gives about the
-       AI: a numbered row that appears when you pay renumbers the book under
-       somebody who already knows where things are. Free and Plus differ by
-       this row and it is at the end. */
-    []
-  ).concat(
-    /* The AI conversation is Studio's, and it is the LAST chapter so that not
-       having it takes nothing away from anybody's numbering.
-
-       It used to be chapter V, between the notebook and the keyboard, and
-       hiding it there would have moved the keyboard from VI to V -- under
-       somebody who already knew where things were. The comment above says
-       exactly that about the keyboard row and it is the same argument: a
-       numbered row that appears when you pay renumbers the book.
-
-       Last, it costs nothing to be absent. Free and Plus read I to V and
-       Studio reads I to VI, and every chapter they share has the same number
-       on both. Moving it here changes two numbers once, today, and never
-       again. 「AI会話のタブ自体freeとplusで消していいな」 */
-    []);
+    {k:'toc.letters', r:'letters'},
+    {k:'toc.words',   r:'words'},
+    {k:'toc.gram',    r:'gram'},
+    {k:'toc.notes',   r:'notes'},
+    {k:'kb.title',    r:'kb'}
+  ];
 }
 
 /* =========================================================================

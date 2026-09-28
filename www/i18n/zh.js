@@ -789,8 +789,6 @@ defLang('zh', (function(){
       "fmr.off" : "不生成这个形式",
       "fmr.with" : "已添加，连同 {0} 个形式",
       "fmr.with.1" : "已添加，连同一个形式",
-      "count.words"      : "{0} 个词",
-      "count.words.1"    : "1 个词",
       "home.write"       : "新的词",
       /* AI に相談する -- www/assist.js builds the link. The sentences below
          are the PROMPT, and they are here for the same reason every other
@@ -815,7 +813,6 @@ defLang('zh', (function(){
       "words.empty"      : "还没有词",
       /* notes */
       "toc.notes"        : "笔记",
-      "count.notes"      : "{0} 条笔记",
       "notes.new"        : "新的备注",
       "notes.edit"       : "备注",
       "notes.t"          : "标题",

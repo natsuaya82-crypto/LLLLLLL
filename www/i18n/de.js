@@ -771,8 +771,6 @@ defLang('de', (function(){
       "fmr.off" : "Diese Form nicht bilden",
       "fmr.with" : "Hinzugefügt, mit {0} Formen",
       "fmr.with.1" : "Hinzugefügt, mit einer Form",
-      "count.words"      : "{0} Wörter",
-      "count.words.1"    : "1 Wort",
       "home.write"       : "Neues Wort",
       /* AI に相談する -- www/assist.js builds the link. The sentences below
          are the PROMPT, and they are here for the same reason every other
@@ -834,8 +832,6 @@ defLang('de', (function(){
       "gram.pos.after.v" : "Nach dem Tunwort",
       /* the notebook */
       "toc.notes"        : "Notizen",
-      "count.notes"      : "{0} Notizen",
-      "count.notes.1"    : "1 Notiz",
       "notes.new"        : "Neue Notiz",
       "notes.edit"       : "Notiz",
       "notes.t"          : "Überschrift",

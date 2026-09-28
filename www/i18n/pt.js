@@ -790,8 +790,6 @@ defLang('pt', (function(){
       "fmr.off" : "Não criar esta forma",
       "fmr.with" : "Adicionada, com {0} formas",
       "fmr.with.1" : "Adicionada, com uma forma",
-      "count.words"      : "{0} palavras",
-      "count.words.1"    : "1 palavra",
       "home.write"       : "Palavra nova",
       /* AI に相談する -- www/assist.js builds the link. The sentences below
          are the PROMPT, and they are here for the same reason every other
@@ -853,8 +851,6 @@ defLang('pt', (function(){
       "gram.pos.after.v" : "Depois do verbo",
       /* the notebook — what is not a word, a sound or a decision */
       "toc.notes"        : "Caderno",
-      "count.notes"      : "{0} notas",
-      "count.notes.1"    : "1 nota",
       "notes.new"        : "Nota nova",
       "notes.edit"       : "Nota",
       "notes.t"          : "Título",

@@ -507,11 +507,6 @@ function stTotal(p){ return p.slots.length + 1; }
 function stSaid(p){ return (stRules(p.id).length || stEx(p.id).length)? 1 : 0; }
 function stFilled(p){ return stSlotsDone(p) + stSaid(p); }
 function stIsDone(p){ return stFilled(p)>=stTotal(p); }
-function stCount(){
-  var a=stAll(), n=0, i;
-  for(i=0;i<a.length;i++) if(stIsDone(a[i])) n++;
-  return n;
-}
 
 /* ---- a slot's word is a word, and a word has one screen ----------------
    This used to be a form of its own: a box of sounds you pressed, a reading
