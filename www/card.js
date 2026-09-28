@@ -77,7 +77,8 @@ var CARD_KINDS={
 };
 
 function cardOpen(kind, key){
-  CARD={k:String(kind), v:String(key), sh:CARD.sh};
+  CARD={k:String(kind), v:String(key),
+        sh:(String(kind)===CARD.k && String(key)===CARD.v)? CARD.sh : ''};
   /* A card of something that is not there any more says so, the way a screen
      does (viewGone): no canvas, so nothing below is ever asked to draw it. */
   /* THE SHARE IS IN THE CORNER OF THE BAR, AS THE MARK. 「右上にしてね。

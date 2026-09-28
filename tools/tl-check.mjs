@@ -1218,6 +1218,13 @@ const au = await pg.evaluate(() => {
     out.a18 = painted;
     window.FileReader = FR; window.voPaint = vp; window.toast = tt; RECBITS = null; RECAT = 0; }
 
+  /* a19: the shape chosen for one card is that card's -- the next post's
+     card opens in the shape its own writing wants. */
+  { cardOpen('p', 'p1'); cardSetShape('9:16'); const kept = CARD.sh;
+    cardOpen('p', 'p2');
+    out.a19 = kept + '|' + CARD.sh;
+    NAV = [{ r:'feed' }]; window.route = 'feed'; }
+
   netIdOf = realId;
   netSend1 = realS1; netSend = realS; netGet = realG;
   NAV = [{ r:'feed' }]; window.route = 'feed'; render();
@@ -1278,6 +1285,8 @@ if (au.a17 !== JSON.stringify({ atPress:0, afterKeep:['u/v1/vo.m4a'] }))
   say('a17: the recording of an opened draft -- ' + au.a17 + ' -- the file goes when the row stops naming it, not at the press.');
 if (au.a18 !== 1)
   say('a18: a recording that could not be read left the stop face up (' + au.a18 + ' repaints).');
+if (au.a19 !== '9:16|')
+  say('a19: a shape chosen on one card and the next post\u2019s card: ' + au.a19 + ' (want 9:16|).');
 if (!au.a3)
   say('a3: a word pressed while another word\u2019s answer is on the screen draws that old answer or ' +
       '「No results」 until its own lands. Not answered yet is the waiting mark.');
