@@ -4747,7 +4747,7 @@ function postMenuHTML(p){
       '<span>'+esc(t(p.pin? 'post.unpin' : 'post.pin'))+'</span></button>'+
     '<button class="pmi"' + DO('postEdit', [p.id]) + '>'+ICON_PEN+
       '<span>'+esc(t('post.edit'))+'</span></button>'+
-    '<button class="pmi bad"' + DO('postDel', [p.id]) + '>'+ICON_CROSS+
+    '<button class="pmi bad"' + DO('postDel', [p.id]) + '>'+ICON_BIN+
       '<span>'+esc(t('post.del'))+'</span></button>'+
     '</span>';
 }

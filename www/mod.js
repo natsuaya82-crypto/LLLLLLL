@@ -175,11 +175,9 @@ function modRow(r){
           esc(t(r.out? 'mod.in' : 'mod.out', r.who))+'</button>'
       : '')+
     /* And the answer that is about neither of them: the report was looked at
-       and there was nothing wrong. `.ghost` and not `.bad` -- what it takes
-       away is the card in front of you, and the red is for the two buttons
-       that reach somebody else's account. */
-    '<button class="btn ghost"' + DO('modDrop', [r.id]) + '>'+
-      esc(t('mod.drop'))+'</button>'+
+       and there was nothing wrong. It takes the card away, so it is the bin --
+       the same mark fbkRow() gives the same act on the other queue. */
+    markBtn(ICON_BIN, t('mod.drop'), 'modDrop', [r.id])+
     '</div>';
 }
 /* THE REPORTS, WHEREVER THEY ARE SHOWN, and the two things that stand in

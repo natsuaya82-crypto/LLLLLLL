@@ -1576,6 +1576,10 @@ export function halfDone(){
     ['what you can do about somebody else', () => { window.route='feed'; NAV=[{r:'feed'}];
                               postMore('p2');
                               const h = vFeed(); PMENU = ''; return h; }],
+    /* And on your own: pin, edit, and the delete, which is the bin. */
+    ['what you can do about your own post', () => { window.route='feed'; NAV=[{r:'feed'}];
+                              postMore(POSTS.filter((p) => p.mine)[0].id);
+                              const h = vFeed(); PMENU = ''; return h; }],
     /* ブロックしている一覧はサーバーの `block_seen` です（2026-09-24）── `ME.bl`
        ではありません。`NET_PPL.block` は netPplRead() が降ろす人の行で、
        この検査は網を張らないので置きます。 */
