@@ -1797,6 +1797,22 @@ want('and nothing is deleted from there', sel.elseLeft, 's1,s2,s3');
    questions -- so the record itself is asked for, off STG.ncls.of. Writing
    「なし」 in place of the class is the bug this claim exists to catch, and it
    passes every screen-shaped test there is. */
+/* A DERIVED NOUN IS A NOUN. 「一覧から外す条件は wIsForm() 一か所」 and
+   「派生は今まで通り語として保存する」 (2026-09-23): wordsSeen() already leaves
+   the inflections out, and a second test on `fm` took every derived word off
+   the noun-class list and the form table as well. */
+const derived = await pg.evaluate(() => {
+  const was = JSON.stringify(STG.ncls || {}), wl = WORDS.length;
+  WORDS.push({ hw:'zapa', pos:'n', mns:['apple'], at:1 });
+  WORDS.push({ hw:'zapali', pos:'n', mns:['little apple'], from:'zapa', fm:'dim', at:1 });
+  STG.ncls = { names:['ka'], of:{} };
+  window.route = 'gram'; NAV = [{ r:'gram', a:'v2:ncls' }]; render();
+  const on = !!document.querySelector('#app [data-do="nclsPut"][data-a^="[\\"zapali\\""]');
+  WORDS.length = wl; STG.ncls = JSON.parse(was); render();
+  return on;
+});
+want('a derived noun (zapali, the diminutive of zapa) is on the noun-class list', derived, true);
+
 const nclsDel = await pg.evaluate(() => {
   const sp = (w) => w.split('').map((u) => ({ l:'', u:u }));
   const wasNcls = JSON.stringify(STG.ncls || {});

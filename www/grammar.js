@@ -1991,7 +1991,7 @@ function g2Ncls(){
   out+='<div class="sec">'+esc(t('g2.ncls.words'))+'</div>';
   for(i=0;i<seen.length;i++){
     w=seen[i];
-    if(w.pos!=='n' || w.fm) continue;
+    if(w.pos!=='n') continue;
     out+=nclsRow(w);
   }
   return out;
@@ -2301,7 +2301,6 @@ function g2FmTable(c){
   if(!cols.length) return '';
   for(i=0;i<seen.length;i++){
     w=seen[i];
-    if(w.fm) continue;
     made=[]; any=false;
     for(j=0;j<cols.length;j++){
       made.push(g2FmMade(w, cols[j]));
