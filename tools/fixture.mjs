@@ -1952,6 +1952,13 @@ export function halfDone(){
     ['the composer, replying to somebody', () => {
         PW = pwBlank(); PW.to = 'p1'; openPost('reply');
         const h = vForm(); PW = pwBlank(); return h; }],
+    /* A post that would not send: the composer as it was typed, and the
+       sentence that says so (www/post.js § pwSendPost, OWNER 2026-09-28) --
+       nothing kept, nothing moved. */
+    ['the composer, after a post that would not send', () => {
+        PW = pwBlank(); openPost('new'); pwSetLn('kano tir');
+        FORM.html = pwHTML(); toast(t('post.send.no'));
+        const h = vForm(); PW = pwBlank(); return h; }],
     /* and with the meaning switched off: the switch alone at the end of the
        meaning's row (www/post.js § pwHTML, r97) */
     ['the composer, replying, the meaning off', () => {

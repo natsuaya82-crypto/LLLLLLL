@@ -733,11 +733,6 @@ function netTook(d){
     /* Every answer the server gave before this session arrived was
        forgotten by acctFor() above: a session arriving after nobody is
        always a switch, because nothing else empties SESS (netOut). */
-    /* AND WHAT THIS ACCOUNT WROTE THAT THE SERVER HAS NOT GOT, sent here and
-       nowhere else without a press -- the same door the language goes up at
-       (www/post.js § postUpAll). acctFor() above has just made POSTS this
-       account's own, so what is sent is this account's and nobody else's. */
-    if(typeof postUpAll==='function') postUpAll();
     LANG_WAIT=true;
     netLangSync(function(){
       if(typeof pullWait==='function') pullWait('mylangs', null, function(){

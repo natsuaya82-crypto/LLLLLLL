@@ -3022,11 +3022,12 @@ const R = await pg.evaluate(async () => {
     /* THE SERVER. `rows` is the `post` table by id, `bucket` is post-media by
        path. `dropWall` refuses a storage DELETE while it is up, and `upWall`
        is the list of path endings the wire will not accept. */
-    let rows = {}, bucket = {}, upWall = [], dropWall = false;
+    let rows = {}, bucket = {}, upWall = [], dropWall = false, postWall = false;
     let inserts = 0, patches = 0;
     netSend = function (method, path, body, tok, ok, bad) {
       const p = String(path);
       if (p.indexOf('/rest/v1/post') === 0) {
+        if (method === 'POST' && postWall) { setTimeout(() => { if (bad) bad(null, 0); }, 5); return; }
         if (method === 'POST') {
           inserts++;
           rows[body.id] = JSON.parse(JSON.stringify(body));
@@ -3239,28 +3240,32 @@ const R = await pg.evaluate(async () => {
         fails.push('the post kept to yourself is not on this phone with the ' +
                    'server\u2019s id on it: ' + JSON.stringify(pv20 || null));
 
-      /* ...and what an older version kept here alone goes up AT THE DOOR,
-         as the account arriving: postUpAll(), which netTook() calls and
-         nothing else does. Oldest first, so a reply can name what it
-         answers; nothing deleted; somebody else's never. */
-      rows = {}; inserts = 0; POST_GONE = {};
-      POSTS = [{ id: 'old-pv', at: 5, mine: true, ln: 'kept', pv: 1 },
-               { id: 'old-un', at: 3, mine: true, ln: 'failed' },
-               { id: 'old-up', at: 4, mine: true, ln: 'went', sid: 's-went' },
-               { id: 'theirs', at: 6, mine: false, ln: 'not mine' }];
-      postUpAll();
+      /* ...and a post that could not be sent is NOT KEPT AND NOT SENT LATER.
+         「そもそもツイートできないんだから保存もされなくね？」 OWNER 2026-09-28.
+         The wire refuses the insert: 「送信できませんでした」 is said, what was
+         typed is still in the composer as it was, and nothing is written --
+         no post on this phone, no draft. The road that sent it later from
+         this copy (a draft with `up` 0, and every unsent post at the door) is
+         gone, so there is nothing left to send it. */
+      rows = {}; inserts = 0; POST_GONE = {}; postWall = true;
+      const wasDr20 = DRAFTS, wasToast20 = toast; let said20 = '';
+      DRAFTS = []; POSTS = [];
+      toast = (m) => { said20 = String(m); };
+      PW = pwBlank(); pwLine(puaTyped('tunnel').cut);
+      pwSend();
       await new Promise(r => setTimeout(r, 400));
-      const went20 = Object.keys(rows).map(k => rows[k].body.ln);
-      if (went20.join(',') !== 'failed,kept')
-        fails.push('at the door the posts the server has not got went up as ' +
-                   JSON.stringify(went20) + ' and should be ["failed","kept"] -- ' +
-                   'what this account wrote and never sent, oldest first, and ' +
-                   'nothing that already went or is somebody else\u2019s');
-      if (!Object.keys(rows).some(k => rows[k].body.ln === 'kept' && rows[k].body.pv))
-        fails.push('the old post kept to yourself went up without its lock');
-      if (POSTS.length !== 4 || !postById('old-pv').sid || !postById('old-un').sid)
-        fails.push('at the door a post was lost or not given the server\u2019s ' +
-                   'id: ' + JSON.stringify(POSTS.map(x => [x.id, x.sid || ''])));
+      postWall = false; toast = wasToast20;
+      if (said20 !== t('post.send.no'))
+        fails.push('a post that would not send said ' + JSON.stringify(said20) +
+                   ' and should say ' + JSON.stringify(t('post.send.no')));
+      if (POSTS.length || DRAFTS.length)
+        fails.push('a post that would not send was KEPT on this phone -- ' +
+                   POSTS.length + ' posts, ' + DRAFTS.length + ' drafts. Nothing ' +
+                   'that could not be sent is saved');
+      if (String(PW.ln || '').indexOf('tunnel') < 0)
+        fails.push('a post that would not send is gone from the composer (' +
+                   JSON.stringify(PW.ln) + ') -- what was typed stays as it was');
+      DRAFTS = wasDr20;
 
       /* ---- 21. a post with no name on it is not made mine by guessing --
          migratePosts() gives the posts written before a post carried its

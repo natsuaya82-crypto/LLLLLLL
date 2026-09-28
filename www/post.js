@@ -628,32 +628,6 @@ function draftKeep(){
     draftIn(d, t('post.draft.kept'));
   }, function(dd, st, m){ netPop(dd, st, m, draftKeep); });
 }
-/* A POST THAT DID NOT GO IS A DRAFT. 「普通に送信できませんでした。になるんじゃ
-   ないの？下書きに入るようにしよう」 OWNER 2026-09-24 -- and no button to send
-   it again: sending it again is opening the draft and sending, which is the
-   road every draft already has.
-
-   The server first, as a kept draft is. When it will not take the draft
-   either -- which is the usual reason the post did not go -- the draft is
-   kept in this account's list here with `up` 0, the state a draft written
-   before there was a server has always had: it stays in the list, and goes
-   up when it is opened and kept or sent (draftsPull). Under a NEW name when
-   it came from a draft the server holds, so the server's older row coming
-   down cannot be taken for this one and win over it -- two drafts, and
-   nothing lost. What is sent is the composer as it stands, marks unbaked,
-   because a draft is not a post. */
-function pwSendFell(said){
-  var d=draftOfPW();
-  netDraftUp(d, function(row){
-    if(row && row.body) d=draftOfRow(row);
-    d.up=1;
-    draftIn(d, said);
-  }, function(){
-    if(PW.did) d.id=netUUID();
-    d.up=0;
-    draftIn(d, said);
-  });
-}
 /* A kept draft's line as the composer holds it. One kept before 2026-09-24
    has no `cut` and its `ln` is what the field held, private use characters
    and all; it is read through puaTyped(), the same reading as a keystroke,
@@ -1420,39 +1394,14 @@ function postSid(p, sid){
    goes up too -- and the row is what says so on the screen. 「5 いります」
    OWNER 2026-09-06.
 
-   NOTHING SENDS IT ON ITS OWN BUT THE DOOR (postUpAll below). postCatchUp()
-   used to, off the back of the next timeline answer, with nobody having
-   pressed anything -- and that is the other half of 「保存するタイミングで
-   エラーが起きるなら、保存されない」「なら失敗して残るにするべき」 OWNER
-   2026-09-05 (r46-audit § A5).
+   NOTHING SENDS IT ON ITS OWN. One an older version left here stays, saying
+   so, and is not sent from this copy -- not off a timeline answer and not at
+   the door 「そもそもツイートできないんだから保存もされなくね？」 OWNER
+   2026-09-28; a send that fails now leaves nothing here at all (pwSendPost).
 
    It reads nothing but what is ON the post, so the reading side may ask it. */
 function postUnsent(p){
   return !!(p && p.mine && !p.sid);
-}
-/* ---- AT THE DOOR, WHAT THIS ACCOUNT WROTE AND THE SERVER HAS NOT GOT ----
-   The one moment the phone's copy goes up without a press, and it is the
-   same exception the language has: the door (www/net.js § netTook) puts what
-   is on this phone up as the account arriving. What is left here is what an
-   older version kept on this phone alone -- a post kept to yourself, which
-   was never sent, and a post whose send failed before a failed send stayed in
-   the composer. Nothing is deleted: each one is sent as it is, gets the
-   server's id (postSid), and the copy here stays.
-
-   One at a time and oldest first, through postSend() -- the one-send-at-a-time
-   mark is on it -- so a reply goes after the post it answers and can name it
-   (netPush reads the parent's `sid`). A send that fails leaves that post as it
-   was, saying 「未送信」, and the next is tried. */
-function postUpAll(){
-  var list=[], i;
-  for(i=0;i<POSTS.length;i++) if(postUnsent(POSTS[i])) list.push(POSTS[i]);
-  list.sort(function(a, b){ return (a.at||0)-(b.at||0); });
-  function one(k){
-    if(k>=list.length) return;
-    postSend(list[k], function(sid){ postSid(list[k], sid); one(k+1); },
-             function(){ one(k+1); });
-  }
-  one(0);
 }
 /* ---- ONE POST, ONE SEND AT A TIME --------------------------------------
    Which posts are on the wire right now, by this phone's own name for them.
@@ -2393,11 +2342,15 @@ function pwSendPost(p){
     toast(t('post.sent'));
     goTab('feed');
   }, function(d, s, m){
-    /* What went wrong, in one sentence, and the post is a draft
-       (pwSendFell). The voice's file being gone (`∅`, netWhy) is said as
-       that, because it is not the wire and sending again will not bring it
-       back; everything else is 「送信できませんでした」. */
-    pwSendFell(String(m||'').indexOf('∅')>=0? netWhy(d, s, m) : t('post.send.no'));
+    /* A POST THAT DID NOT GO IS NOT KEPT AND IS NOT SENT LATER.
+       「そもそもツイートできないんだから保存もされなくね？」 OWNER 2026-09-28.
+       What went wrong, in one sentence, and nothing else moves: what was typed
+       is still in the composer, as it was, and pressing send again is the one
+       road. It is not a draft and it is not written on this phone. The voice's
+       file being gone (`∅`, netWhy) is said as that, because it is not the
+       wire and sending again will not bring it back; everything else is
+       「送信できませんでした」. */
+    toast(String(m||'').indexOf('∅')>=0? netWhy(d, s, m) : t('post.send.no'));
   });
 }
 
