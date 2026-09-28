@@ -1057,7 +1057,9 @@ once. `line-check` 6 measures a column at 0, 1 and 2, on a post and in the field
 
 `tools/sides-check.mjs` holds the line: nothing below it may name `WORDS`, `LETTERS`,
 `STG`, `SET`, `langName`, `findWord`, `myFontOn`, `ltById`, `ME`, `meName` or their
-siblings. It also refuses a **two-argument function passed bare to `map`** — `postRow` grew
+siblings — and no all-capitals global another file of `www/` declares, except the
+few `READER_MAY` names with a reason each, so `LANGS` or `KB` added to the making
+side is refused below the line the day it is added. It also refuses a **two-argument function passed bare to `map`** — `postRow` grew
 a second argument and `list.map(postRow)` handed each row its index, so post 0 was right
 and every post after it wore my font anyway.
 
