@@ -1186,7 +1186,9 @@ function vWldArt(){
      phone, not only in the walk. Every other view that is about one thing
      reads here().a the same way (vThread, vFm, vSet). */
   var one=wldArtBy(String(here().a||''));
-  if(!one) return viewGone();
+  /* One page with wldPage() and the same answer to 「whose」: somebody else's
+     language is not on the wiki (2026-09-23), asked of langTheirs() alone. */
+  if(!one || langTheirs(langId)) return viewGone();
   /* Both fields are typed into a buffer, so it has to exist before they are
      drawn out of it. */
   wldArtKeepOn(one);
