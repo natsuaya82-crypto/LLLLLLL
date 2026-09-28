@@ -38,19 +38,19 @@ audit (`au.*`), watched red with the fault in place before the fix.
 | B4 | post.js `draftOpen` | data safety | signed out, a draft was spliced out of the list before `openPost()` bounced to the feed. Now unreachable (B2 makes the list the door) | FIXED 44f29b03 (by B2) |
 | B5 | post.js `draftOpen` legacy `vo.b64` | data safety / saying nothing | when `voKeep()` fails the recording is dropped silently from the composer; comment says "put on the disk" | TODO |
 | B6 | post.js `postTake` | a guard in the wrong order | `p.id` read before `!p` is checked (unreachable today: no caller passes null) | TODO (refactor) |
-| B7 | sns.js `snsAnsHTML` | empty ≠ not answered | a new query draws the OLD answer, or 「No results」, until the new one lands (`r.q` never compared) | TODO |
-| B8 | sns.js `vNotif` → `notSeen` | a view writes nothing | the read-marker moves inside the render; if the notices have not landed it is moved in memory and never saved | TODO |
-| B9 | sns.js `vThread` / `vPhoto` | empty ≠ broken | offline, a thread draws 「That is no longer here」 rather than 接続できません | TODO |
-| B10 | sns.js filter page | load rules (`PAGE_READS`) | the filter page has no `pageReads` row; the kept words are read nowhere on arrival (comment cites a gone § WHAT AN OPEN ASKS FOR) | TODO |
-| B11 | sns.js `dayMap` | a view reads nothing | drawing a post row fetches an older day's prompt from inside the render and re-renders when it lands; a failure and "no row" share `PROMPT_ASK` | TODO |
-| B12 | sns.js `vExplore` | a view reads nothing | the search is asked from inside the render (`if(snsQ && !snsHits) snsFind(...)`) | TODO |
+| B7 | sns.js `snsAnsHTML` | empty ≠ not answered | a new query draws the OLD answer, or 「No results」, until the new one lands (`r.q` never compared) | FIXED d904c23f (tl a3) |
+| B8 | sns.js `vNotif` → `notSeen` | a view writes nothing | the read-marker moves inside the render; if the notices have not landed it is moved in memory and never saved | FIXED 982f5205 (tl a5; acct 89 given an answered pull) |
+| B9 | sns.js `vThread` / `vPhoto` | empty ≠ broken | offline, a thread draws 「That is no longer here」 rather than 接続できません | NOT A VIOLATION — `navLand()` does not arrive when the thread read falls, so vThread never draws offline; `viewGone()` is only reached for an answered absence |
+| B10 | sns.js filter page | load rules (`PAGE_READS`) | the filter page has no `pageReads` row; the kept words are read nowhere on arrival (comment cites a gone § WHAT AN OPEN ASKS FOR) | FIXED 0d69fd4f (tl a6) |
+| B11 | sns.js `dayMap` | a view reads nothing | drawing a post row fetches an older day's prompt from inside the render and re-renders when it lands; a failure and "no row" share `PROMPT_ASK` | NEEDS THE SERVER — the clean answer is `post_seen` carrying the prompt's ten sayings (a column/join in schema.sql), so no screen fetches while drawing. Left in place until the leader assigns schema.sql |
+| B12 | sns.js `vExplore` | a view reads nothing | the search is asked from inside the render (`if(snsQ && !snsHits) snsFind(...)`) | FIXED d904c23f (tl a4) — the one place a question is put is `snsAsk()` |
 | B13 | sns.js `snsList` rec/day | a list the server chose is not chosen again here | おすすめ and #今日のお題 are a local sieve over every post in memory (profiles visited, threads…), not what `feed_hot()` answered. `FO_HAVE` fixed this for フォロー中 only | TODO |
 | B14 | sns.js feed `pageReads` / `snsMore` | load rules | while a kept word is on, arrival reads and the bottom pages the hidden tab list; the word's own answer never pages | TODO |
-| B15 | sns.js `snsSaveQ` / `snsRecentAdd` / `snsDropRecent` | online-only 2026-09-04; rule 11 (saying nothing) | the local copy is written whether the server took it or not; a failure says nothing | TODO |
+| B15 | sns.js `snsSaveQ` / `snsRecentAdd` / `snsDropRecent` | online-only 2026-09-04; rule 11 (saying nothing) | the local copy is written whether the server took it or not; a failure says nothing | FIXED 373509b6 (tl a7; find-check waits for the answer) |
 | B16 | sns.js `notRow` | load rules | a notice's line and photo appear only if another screen happened to load that post | TODO (needs server columns → see O-list if so) |
 | B17 | post.js `postCountsPull` | dead branch | `typeof netPostCounts!=='function'` can never be true | TODO |
-| B18 | post.js `pwSend` path `dayTagStore(PW.ln)` (+ `pwLineKept`, `draftKeep`) | one road for the day tag | a translated day-tag word typed as ordinary text is rewritten into `#今日のお題`; left from tags-in-the-body | TODO |
-| B19 | me.js `meProfPut` | online / one answer | `typeof netProfPut` branch writes name/@/bio to the phone alone; a no-row answer writes the local value | TODO |
+| B18 | post.js `pwSend` path `dayTagStore(PW.ln)` (+ `pwLineKept`, `draftKeep`) | one road for the day tag | a translated day-tag word typed as ordinary text is rewritten into `#今日のお題`; left from tags-in-the-body | OWNER → O16 |
+| B19 | me.js `meProfPut` | online / one answer | `typeof netProfPut` branch writes name/@/bio to the phone alone; a no-row answer writes the local value | FIXED 9e9fdff0 (tl a8; `meKeepPut` deleted) |
 | B20 | me.js `meAvGot` | the copy never wins over the answer | server `av:null` clears `pic` but keeps a local `ME.av`, which is then stamped on new posts | TODO |
 | B21 | me.js `mePicAsk` catch | one road; 2026-09-03 「写真だけ」 | a failed native ask falls through to the file input (iOS's photo/camera/file sheet) | TODO |
 | B22 | me.js `whoOf` POSTS fallback | one mechanism | a second answer to "who is this" built from a post copy; `bio/fo/fr` are never on a post | TODO |
@@ -113,6 +113,7 @@ ask). → OWNER.
 | O12 | `voSweepKeep` reads ownerless `lingua.drafts`/`lingua.posts` | 2026-09-24 「読まない、消さない」 vs 2026-09-25 「前の版の声のファイル: 消す」 | which reading |
 | O13 | own profile card's language | follows the open language, others see the oldest | (a) the main language; (b) the open one |
 | O14 | wording | `pop.undo` on unfollow reads "Undo" in English; `me.bio.ph` may read as explaining | the owner's words |
+| O16 | is a `#` in the BODY still a tag | since 2026-09-15 tags are a frame and 「本文は本文だけ」, yet a new post's body still has the day's tag word rewritten on the way in (`dayTagStore(PW.ln)`) and `#` words drawn blue | (a) the body is verbatim, `#` in it is text; (b) keep treating it as a tag |
 | O15 | `SET.trDate` / `SET.trN` | left in `SET`, nothing reads them | (a) into `SET_GONE`; (b) leave |
 
 ## Another session's file (listed for later)
@@ -169,3 +170,9 @@ cleared per file in one commit each. → TODO
 - 07a1fa9c scope
 - 9cf80a43 B1
 - 44f29b03 B2 B3 B4
+- d904c23f B7 B12
+- 982f5205 B8
+- 0d69fd4f B10
+- 373509b6 B15
+- 9e9fdff0 B19
+- 1e335913 integ-0905 brought in
