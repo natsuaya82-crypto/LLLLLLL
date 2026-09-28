@@ -166,11 +166,11 @@ alter table profile add column if not exists admin boolean not null default fals
 -- not what a language is any more, and the sentence it rested on has gone with
 -- it.
 --
--- What a frozen account keeps: reading, and the way out. account_delete()
--- does not ask is_member() and must not -- being thrown out of a place is not
--- a reason to be locked out of the door marked exit -- and neither does
--- deleting its own files (media_drop). Every write asks is_member(), so what
--- stops is making and saving: the language included.
+-- A frozen account reads nothing and writes nothing. 「凍結したら読めない
+-- だろ」 OWNER 2026-09-28. is_member() is on every table (`frozen_out` at the
+-- foot) and in every view; the one row it still reads is its own `profile`,
+-- which the frozen screen is drawn from. account_delete() does not ask
+-- is_member() -- the door marked exit.
 alter table profile add column if not exists banned_at timestamptz;
 alter table profile add column if not exists banned_why text;
 
@@ -1754,8 +1754,15 @@ alter table promo       enable row level security;
 -- year, on a second project -- the endpoint answers, and what stops that
 -- session writing is this line and nothing else. Every writing policy stands
 -- on this function and none of them says the word anonymous.
+--
+-- AND IT IS ASKED OF EVERY READ TOO. 「凍結したら読めないだろ」 OWNER
+-- 2026-09-28: a frozen account reads nothing. `frozen_out` at the foot of this
+-- file puts this function on every table as a restrictive policy, and every
+-- view this file makes asks it in its own `where`. `security definer` because
+-- it reads `profile`, which `frozen_out` is on -- as the caller that would be
+-- the policy asking itself.
 create or replace function is_member() returns boolean
-language sql stable as $$
+language sql stable security definer set search_path = public as $$
   select auth.uid() is not null
      and coalesce((auth.jwt() ->> 'is_anonymous')::boolean, false) = false
      and not exists (select 1 from profile
@@ -1766,7 +1773,7 @@ $$;
 -- the same way: a sentence that is true or false about whoever is asking.
 create or replace function is_staff() returns boolean
 language sql stable as $$
-  select exists (select 1 from profile where id = auth.uid() and staff)
+  select is_member() and exists (select 1 from profile where id = auth.uid() and staff)
 $$;
 
 -- And the one account above that. IT IS THE @ AND NOT A COLUMN.
@@ -1801,7 +1808,7 @@ language sql stable as $$ select p.handle = 'lingua' $$;
 
 create or replace function is_admin() returns boolean
 language sql stable as $$
-  select exists (select 1 from profile p where p.id = auth.uid() and profile_admin(p))
+  select is_member() and exists (select 1 from profile p where p.id = auth.uid() and profile_admin(p))
 $$;
 
 -- profile: everyone reads, you write yourself into existence and edit yourself
@@ -2098,7 +2105,7 @@ create view language_seen as
    -- lang_readable() above, the same question `language_read` asks: a view
    -- runs with its owner's rights, so this `where` is the whole of what stands
    -- between a reader and the table.
-   where lang_readable(l.id);
+   where lang_readable(l.id) and is_member();
 grant select on language_seen to authenticated;
 
 -- ---- who follows whom, by the name one person knows another by -------------
@@ -2131,7 +2138,7 @@ create view follow_seen as
     join profile a on a.id = f.follower
     join profile b on b.id = f.followed
    -- a row naming somebody a block stands between is not a row (block_hides)
-   where not block_hides(f.follower) and not block_hides(f.followed);
+   where not block_hides(f.follower) and not block_hides(f.followed) and is_member();
 grant select on follow_seen to authenticated;
 
 -- ---- who liked a post, and who passed it on, by name -----------------------
@@ -2154,7 +2161,7 @@ create view react_seen as
     from react r
     join profile a on a.id = r.actor
    where not block_hides(r.actor) and not mute_hides(r.actor)
-     and not post_blocks(r.post);
+     and not post_blocks(r.post) and is_member();
 grant select on react_seen to authenticated;
 
 -- ---- whether somebody wears the mark, and the one place it is answered ------
@@ -2265,7 +2272,7 @@ create view profile_seen as
        limit 1
     ) l on true
    -- a person a block stands between is nobody, both ways (block_hides)
-   where not block_hides(p.id);
+   where not block_hides(p.id) and is_member();
 grant select on profile_seen to authenticated;
 
 -- ---- whom you have blocked, by name ---------------------------------------
@@ -2281,7 +2288,7 @@ create view block_seen as
   select b.blocked as id, p.handle, p.display, p.av, b.created_at
     from block b
     join profile p on p.id = b.blocked
-   where b.actor = auth.uid();
+   where b.actor = auth.uid() and is_member();
 grant select on block_seen to authenticated;
 
 -- ---- whom you have muted, by name -----------------------------------------
@@ -2293,7 +2300,7 @@ create view mute_seen as
   select m.muted as id, p.handle, p.display, p.av, m.created_at
     from mute m
     join profile p on p.id = m.muted
-   where m.actor = auth.uid();
+   where m.actor = auth.uid() and is_member();
 grant select on mute_seen to authenticated;
 
 -- A POST KEPT TO YOURSELF is read by the person who wrote it and by nobody
@@ -2434,7 +2441,7 @@ create view post_seen as
    -- and a post kept to yourself is not a row for anybody else (post_private),
    -- and one by somebody the reader blocked is not a row for them (block_hides).
    where (not post_private(p.body) or p.author = auth.uid())
-     and not block_hides(p.author);
+     and not block_hides(p.author) and is_member();
 grant select on post_seen to authenticated;
 
 -- post: everyone reads, you write as yourself.
@@ -2693,9 +2700,8 @@ create policy quote_drop on quote for delete using (
 -- so a row cannot be turned into a different kind under a different name.
 drop policy if exists react_read on react;
 create policy react_read on react for select
-  -- your own is yours to take back whoever stands where (react_drop reads
-  -- through this); anybody else's across a block is nobody's
-  using (actor = auth.uid() or (not block_hides(actor) and not post_blocks(post)));
+  -- nothing across a block, your own included (OWNER 2026-09-28)
+  using (not block_hides(actor) and not post_blocks(post));
 drop policy if exists react_make on react;
 create policy react_make on react for insert
   with check (is_member() and actor = auth.uid() and not post_blocks(post));
@@ -2826,11 +2832,10 @@ create policy feedback_make on feedback for insert
 -- follow: everyone sees who follows whom; you add and remove your own following
 drop policy if exists follow_read on follow;
 create policy follow_read on follow for select
-  -- your own follow is yours to take off, block or no block (follow_drop
-  -- reads through this). What a block does to a follow made before it has
-  -- not been decided; until it is, it stays and its owner may undo it.
-  using (follower = auth.uid()
-         or (not block_hides(follower) and not block_hides(followed)));
+  -- nothing across a block, your own follow included: 「ブロックは絶対見え
+  -- ないように」 OWNER 2026-09-28. A follow made before the block stays and
+  -- nobody sees it; what becomes of it has not been decided.
+  using (not block_hides(follower) and not block_hides(followed));
 drop policy if exists follow_make on follow;
 create policy follow_make on follow for insert
   with check (is_member() and follower = auth.uid() and not block_hides(followed));
@@ -2912,12 +2917,10 @@ on conflict (id) do nothing;
 -- asked under the reader's own rights, so `post_read` is what decides -- a
 -- post kept to its writer, one taken down, one a block stands between: its
 -- files are the same answer. A voice no post names yet is its recorder's.
---
--- Not is_member(): reading is what a frozen account keeps (over `banned_at`).
--- Nobody with no session reads anything -- that is the wall at the foot.
+-- And is_member(): a frozen account reads nothing (OWNER 2026-09-28).
 drop policy if exists media_read on storage.objects;
 create policy media_read on storage.objects for select
-  using (auth.uid() is not null and bucket_id = 'post-media'
+  using (is_member() and bucket_id = 'post-media'
          and (name like auth.uid()::text || '/%'
               or exists (select 1 from post p
                           where p.id::text = split_part(name, '/', 2)
@@ -2935,12 +2938,9 @@ create policy media_make on storage.objects for insert with check (
 -- same breath. Nothing here removes anybody's file on a schedule:
 -- docs/DATA_SAFETY.md forbids automatic deletion and there is no job.
 --
--- Not is_member(), for the reason account_delete() does not ask it: a frozen
--- account keeps the way out, and deleting an account takes its files with it
--- (「全部消える」 OWNER). DELETE REVIEW in docs/CHANGELOG.md 2026-09-27.
 drop policy if exists media_drop on storage.objects;
 create policy media_drop on storage.objects for delete using (
-  auth.uid() is not null and bucket_id = 'post-media'
+  is_member() and bucket_id = 'post-media'
   and name like auth.uid()::text || '/%'
 );
 -- No update policy. A picture is not edited; a different picture is a
@@ -3536,8 +3536,9 @@ end $$;
 -- whoever wrote it free to write it again.
 --
 -- It is not a deletion and it is not a sign-out. is_member() above stops
--- everything they would WRITE and nothing they can read, and account_delete()
--- goes on working: being thrown out is not a reason to be trapped inside.
+-- everything they would write and everything they would read (OWNER
+-- 2026-09-28), and account_delete() goes on working: being thrown out is not
+-- a reason to be trapped inside.
 create or replace function account_ban(p uuid, reason text)
 returns void
 language plpgsql security definer set search_path = public as $$
@@ -4354,6 +4355,34 @@ begin
   end if;
 end
 $cron$;
+
+-- ---------------------------------------------------------------------------
+-- AND NOTHING ANSWERS A FROZEN ACCOUNT. 「凍結したら読めないだろ」 OWNER
+-- 2026-09-28. One restrictive policy on every table in `public`, counted off
+-- the catalogue and not listed, so a table added tomorrow is covered
+-- tomorrow: whatever the permissive policies above open, a caller who is not
+-- a member -- frozen, anonymous, nobody -- is handed and writes nothing. The
+-- one row a frozen account still reads is its own `profile`, which is what
+-- the frozen screen is drawn from. The views ask is_member() in their own
+-- `where`, because a view runs with its owner's rights and no policy reaches
+-- through it. tools/rls-check.mjs reads everything as a frozen account.
+do $frozen$
+declare r record;
+begin
+  for r in select c.relname from pg_class c join pg_namespace n on n.oid = c.relnamespace
+            where n.nspname = 'public' and c.relkind in ('r','p')
+  loop
+    execute format('drop policy if exists frozen_out on %I', r.relname);
+    if r.relname = 'profile' then
+      execute 'create policy frozen_out on profile as restrictive for all '
+              'using (is_member() or id = auth.uid()) with check (is_member())';
+    else
+      execute format('create policy frozen_out on %I as restrictive for all '
+                     'using (is_member()) with check (is_member())', r.relname);
+    end if;
+  end loop;
+end
+$frozen$;
 
 -- ---------------------------------------------------------------------------
 -- THE WALL: nothing on this server answers anybody who has not signed in
