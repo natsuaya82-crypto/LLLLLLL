@@ -106,9 +106,8 @@ function orderSeq(v){
    word order between them: 「言語ごとですよ？」 OWNER DECISION 2026-08-25.
    Empty means nobody has answered, and the default stands.
 
-   `id` is the cards run together, so the three still read as one of the six
-   and the old stage screen goes on lighting the right one. A board with a
-   fourth card on it matches none of them, which is the honest answer. */
+   `id` is the cards run together; nothing in the app reads it -- the checks
+   do, to name a board in one word. */
 function orderDef(){
   var seq=orderSeq(STG && STG.order);
   return {id:seq.join(''), seq:seq};
@@ -199,8 +198,6 @@ function setGPos(id, v){
   if(!STG.gpos) STG.gpos={};
   STG.gpos[id]=v; stMarkSet(id); render();
 }
-/* Which side, and of what. "Before" on its own is not a label: before the
-   noun and before the verb are different facts. */
 /* Which side, and of what. "Before" on its own is not a label, and the three
    clause decisions are two different "of": a subordinate clause stands before
    or after THE MAIN SENTENCE, and a mark stands before or after THE CLAUSE it
@@ -559,8 +556,7 @@ function gFmPos(p){
    docs/FEATURES.md says the same thing from the other side -- this
    arithmetic is `current`, not `frozen`, and freezing it would be the bug. */
 function gModel(list){
-  /* THE CARDS, not the name they make. `id` is them run together so that three
-     of them still read as one of the six on the old stage screen, and handing
+  /* THE CARDS, not the name they make. `id` is them run together, and handing
      THAT to the engine is a string it reads one letter at a time: a board of
      主語 副詞 目的語 動詞 came out 'SADVOV', which is S A D V O V -- six roles
      with the verb in twice, and the demonstration under the board printed this
@@ -670,9 +666,8 @@ function gLay(list, bd, seq){
 
    A word this dictionary does not have stays in the line as it was typed,
    which is what docs/FEATURES.md decided ("stays in the natural language").
-   Showing it IN RED is the other half of that decision and is NOT here --
-   see the report: the one place a line's words are drawn is exRowHTML() in
-   www/wordsheet.js, which this session does not own. */
+   How such a word is drawn is exLnHTML()'s in www/wordsheet.js, the one place
+   a line's words are drawn. */
 function gExLine(ln, gl){
   var e=LinguaGrammarEngine, r, i, n=0;
   ln=String(ln||'').trim(); gl=String(gl||'').trim();
@@ -692,20 +687,9 @@ function gWordOf(pos, not){
   return null;
 }
 
-/* ---- the demonstration, and where it went -------------------------------
-   gSide(), gNeedWords(), gPairOf(), gPosDemo(), gOrderLine() and gOrderDemo()
-   drew a pair of this language's own words with the arrangement applied and a
-   speaker beside it. The ONE place any of them was drawn from was
-   stFeatHTML() in www/phases.js -- the `feats` of the 語順, 否定, 形容詞 and
-   場所 stages. All four stages are gone (「重複はいらない」 OWNER 2026-09-06),
-   so those six were reachable from nowhere: not dead by dead-check's measure,
-   because stFeatHTML() still named them, and dead on the phone, which is the
-   worse half.
-
-   What decides a side now is g2Adj() and g2Adp() below, and each draws the
-   pair ITSELF -- g2Side(), two of this language's words you MOVE rather than
-   two buttons you read. The board and the sentence under it are g2Board()'s.
-   One fact, one place, which is what taking the stages out was for. */
+/* What decides a side is g2Adj() and g2Adp() below, and each draws the pair
+   ITSELF -- g2Side(), two of this language's words you MOVE rather than two
+   buttons you read. The board and the sentence under it are g2Board()'s. */
 
 /* ====================================================================
    Grammar v2 -- the page that DEFINES a language, chapter by chapter
@@ -719,11 +703,8 @@ function gWordOf(pos, not){
    order is. 「ユーザーが SOV という専門用語を知らなくても、言語を作れる UI に
    する。SOV という表示は結果として表示する」
 
-   It is built BESIDE the old chapter rather than over it: the fifteen stages,
-   STG and the six-choice are untouched, and not one byte of anybody's language
-   moves. What this writes is `STG.order`, which is where the word order has
-   lived since 2026-08-25 -- the same answer arrived at a different way, so a
-   language that has one keeps it and the two screens cannot disagree.
+   What this writes is `STG.order`, which is where the word order has lived
+   since 2026-08-25, so a language that has one keeps it.
    ==================================================================== */
 
 /* Which word is picked up. Where you are standing, not something the language
@@ -749,9 +730,8 @@ function g2Three(seq){
 function g2Move(key, i){
   var at=g2Lift.split(':'), j;
   /* Nothing lifted, or a word of a DIFFERENT row: this one is lifted instead.
-     Two rows arrange two different things -- what order the roles go in, and
-     which side a describing word stands -- and carrying a word from one into
-     the other would mean nothing. */
+     Each row (g2Side(): the adjective's, the adposition's) arranges its own
+     thing, and carrying a word from one into the other would mean nothing. */
   if(!g2Lift || at[0]!==key){ g2Lift=key+':'+i; render(); return; }
   j=Number(at[1]);
   if(j===i){ g2Lift=''; render(); return; }
@@ -815,10 +795,6 @@ function g2Bd(id){
   if(id==='np') return {id:'np', demo:g2NpDemo, stored:npStored, save:setNpOrder, cards:NPARTS};
   return {id:'order', demo:g2Demo, stored:g2Stored, save:setOrder, cards:ROLES};
 }
-/* Called from the view, so it runs on every render of this screen and finding
-   a buffer already here leaves it exactly as it is -- somebody has been
-   arranging. The list travels as a comma-joined string because a buffer holds
-   strings (keepSet), and orderSeq() is what turns it back into the list. */
 /* WHAT THIS LANGUAGE HAS ACTUALLY SAVED, which is what the board opens with.
    Empty is a real answer here and means nobody has arranged anything yet -- so
    the sentence line starts blank and every card is in the tray, which is what
@@ -928,14 +904,6 @@ function g2Board(c){
            (seq.length? b.demo(seq) : '')+
          '</div>'+
          '<div class="gordrow" data-gord="off">'+off+'</div>';
-  /* THE NEGATION'S OWN ROW IS GONE FROM HERE. It was a two-choice -- before
-     the verb or after it -- and a two-choice is the whole of what
-     docs/GRAMMAR-V2-SPEC.md §4.4 says not to decide for anybody: it can only
-     describe a language that negates with a small word beside its verb, and
-     it said nothing about WHICH word. Where a word stands is one operation of
-     one rule now (www/grammar.js § 否定), written on that chapter's own page
-     out of two sentences somebody made, and `gpos.negp` is copied onto that
-     rule rather than left to mean something on its own. */
 }
 /* This language's own words, in the order the board says. gLay() runs the real
    engine, so this is what a sentence would actually come out as and not a
@@ -971,18 +939,6 @@ function g2NpDemo(seq){
   for(i=0;i<w.length;i++) out+='<span class="gor">'+sfontHTML(wOut(w[i].hw))+'</span>';
   return '<div class="gorder">'+out+'</div>';
 }
-/* §14 Nouns. 「ユーザーが『りんご』『りんごたち』などを実際の言語で作る。
-   例えば poko / poko-mi。ユーザーが差分を定義する」
-
-   So this shows a real noun of this language and every form of it this
-   language can make, worked out by the ENGINE -- the same road a translation
-   takes, so what is on the row is what would actually be written.
-
-   It does not build a second rule editor. The one there is lives on the word
-   side (www/wordsheet.js, `openFmr`) and a rule for the marks is a WORD made
-   in the 助詞 stage (`openSlot`). Two places that write the same thing is the
-   shape this repository is most often bitten by, so a row goes to whichever
-   of the two it came from -- which is what the rule's metadata carries. */
 /* One row of a chapter, and the way out of it.
 
    THE ROW SAYS WHAT THE RULE IS, IN WORDS. 「規則で作る形の>>-分かりにくすぎ
@@ -1004,10 +960,9 @@ function g2NpDemo(seq){
    different things. They are separate spans because they are separate faces:
    one is this language and one is the interface.
 
-   `lab` is HTML and not text, the way secAdd()'s label is. The two callers are
-   this file's own: the noun chapter's rows are a sentence of the interface with
-   one word in bold (gEg above), and a form chapter's are the numerals ❶❷❸.
-   Nothing anybody typed reaches it.
+   `lab` is HTML and not text, the way secAdd()'s label is. Its callers are
+   this file's own -- g2FmSent()'s sentence of the interface with one word in
+   bold (gEg below) among them. Nothing anybody typed reaches it.
 
    `id` is the rule's id where the row IS a rule, and it is what the row is
    CHOSEN by -- 「プラスとかプロなのに消す時も勝手に ui 足すのやめて。今まで
@@ -1121,8 +1076,8 @@ function gFmAffix(r){
   if(!f) return '';
   return (r && r.at==='start')? f+'-' : '-'+f;
 }
-/* §14 Nouns. The chapter is the three roles the 助詞 stage names -- 主語 /
-   目的語 / 受け手 -- and it is drawn the way every other chapter of this page
+/* §14 Nouns. The chapter is the roles a case mark can say (GCASE, seven since
+   2026-09-07), and it is drawn the way every other chapter of this page
    is: the ones this language has said, and the ones it has not as a row
    saying 作成. 「文法の名詞ページ見たけど、真っ暗で何もない」 OWNER
    2026-09-05.
@@ -1202,27 +1157,19 @@ function g2Made(m, r){
   return (made.surface===w.lemma)? '' : made.surface;
 }
 
-/* §14 Negation and §14 Questions were a PAIR OF LINES here -- `mi luma` over
-   `mi na luma` -- built out of the rules and, for the negation, the word the
-   否定 stage made. They are chapters of a form now, drawn by
-   g2FmChap() like the eleven beside them, because 「4の否定もなにすればいいか
-   わからんし」 OWNER 2026-09-05: a pair of lines says what a rule DOES and never
-   what the rules ARE, so a chapter with no rule in it drew nothing at all and a
-   chapter with three drew three lines that could not be told apart. The word
-   the 否定 stage made is edited in that stage, on the same list, and is not
-   drawn twice. */
+/* §14 Negation and §14 Questions are their own pages: a rule written out of
+   two sentences somebody made (g2PolPage(), § 否定, 2026-09-10/11). */
 /* §14 Adjectives. 「単に before / after だけにしない」
 
    Two things, and the first is why the chapter is not just a row of forms:
    WHERE a describing word stands is arranged here the way the sentence is
    arranged in the first chapter -- two words of this language, and moving one
-   is what says which side. The old screen asked it with a pair of buttons
-   labelled 「名詞の前 / 名詞の後」; nobody has to read a label to see
-   `red house` become `house red`.
+   is what says which side (g2Side(); until somebody has answered, the pair
+   of names stands in for the words -- below).
 
    The second is that a describing word may itself CHANGE -- 「形容詞そのものが
-   変化する言語にも対応できるようにする」 -- and those rules are drawn under
-   the same heading, on an adjective of this language.
+   変化する言語にも対応できるようにする」 -- and those rules are the
+   adjective's forms, in their own section.
 
    NOUN → ADJECTIVE is not here. §8 gives word formation a chapter of its own
    and it is a different question: this one is about a word that already is an
@@ -2058,11 +2005,8 @@ function g2Ncls(){
    a pair of buttons labelled 「名詞の前 / 名詞の後」 with the phrase itself.
 
    `house-LOC` -- the third way §7 names, where the place is marked on the
-   noun rather than said with a word -- CANNOT BE WRITTEN in this app yet.
-   The engine hears it (morphology.js knows LOCATIVE and ABLATIVE), and the
-   助詞 stage offers three roles that do not include them. docs/BACKLOG.md
-   carries that, because which of the two places a person should write it in
-   is not this file's to decide.
+   noun rather than said with a word -- is a case mark: GCASE's `loc` (PLACE),
+   one of the seven the 助詞 stage offers since 2026-09-07.
 
    The place words themselves are under the pair now. There WAS a 場所 stage
    holding them and this chapter beside it, which is the one list saying 場所
@@ -2075,10 +2019,10 @@ function g2Adp(){
 
 /* §14 Questions says 「方法は言語によって違う ── suffix / prefix / separate
    word / word order / particle / intonation / combination。Lingua 側が勝手に
-   決めない」, and THIS APP CAN WRITE TWO OF THE SEVEN. An ending and a beginning
-   are rules and are what the 疑問形 chapter lists; the other five have nowhere
-   to be written, which is not decided here and is not papered over.
-   docs/BACKLOG.md carries what is missing, with what each would need. */
+   決めない」. A question is written on its own page the way a negation is
+   (g2PolPage(), 2026-09-10): an ending, a beginning, a word in any of four
+   places, the words in another order, or more than one of those as ONE rule
+   (gPolDiff()). Intonation is not writing and has nowhere to be written. */
 
 /* ====================================================================
    A SECTION IS A CHAPTER, AND A FORM IS A HEADING INSIDE IT
@@ -2523,11 +2467,10 @@ function g2ChapName(id){
    these first, and the door at the foot is gone with the list it opened.
 
    It wears .strow like every other row there, because a row in one list is
-   one height. What it has not got is a count: "done" per chapter is not
-   defined for these, and stRow's own — is what this app already writes
-   where there is no number to write. Names and nothing else otherwise -- a
-   row that explained what a chapter was for would be the thing
-   「無駄に説明をするやつ」 names. */
+   one height. Its count is g2ChapVal(): how many of a section's forms this
+   language has said, and — where a chapter has no forms to count. Names and
+   that count and nothing else -- a row that explained what a chapter was for
+   would be the thing 「無駄に説明をするやつ」 names. */
 /* WHETHER THIS LANGUAGE HAS SAID ANYTHING IN THIS CHAPTER YET. The contents
    draws a chapter faint until it has -- 「まだ書いていない章は薄い字」 OWNER
    2026-09-06 -- which is what a contents page is for: how far the book has got,
@@ -2632,5 +2575,3 @@ function g2Page(c){
   if(c.on) return c.body(c);
   return c.body(c)+g2ChapEx(c.id);
 }
-
-/* ---- the screen -------------------------------------------------------- */
