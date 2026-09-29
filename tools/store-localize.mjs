@@ -32,9 +32,9 @@ const VERSION_FIELDS = ['description', 'keywords', 'promotionalText', 'whatsNew'
                         'supportUrl', 'marketingUrl'];
 const INFO_FIELDS = ['name', 'subtitle', 'privacyPolicyUrl'];
 /* 主カテゴリ。アプリに一つで、言語ごとではないのでここに一か所。
-   「教育カテゴリ早く変えて」OWNER 2026-09-29（2026-09-25 のグラフィック&デザインを差し替え）。
-   版の文を入れる時に、編集できる App 情報へ毎回当てる。 */
-const CATEGORY = 'EDUCATION';
+   グラフィック&デザイン（決定 2026-09-25、「教育カテゴリ早く変えて」OWNER 2026-09-29 は
+   今の教育からこれへ早く変える、の意）。版の文を入れる時に、編集できる App 情報へ毎回当てる。 */
+const CATEGORY = 'GRAPHICS_AND_DESIGN';
 /* 文字：Apple は許す文字の一覧を出していない。分かっているのは断られた物で、
    (1) U+2500 ─ 罫線（So）── 2026-09-23 の run 35867674238 で ja の説明文が
        409 INVALID_CHARACTERS。実測。
