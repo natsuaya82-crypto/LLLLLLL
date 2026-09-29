@@ -255,6 +255,19 @@ it is quoted, and where a decision has never been made the row in
 - Implementation status:
 ```
 
+### 2026-09-30 単語の自動生成の入口は「＋」から。単語を足す画面の確定は「保存」。書きかけで戻る時は確認
+- Date: 2026-09-30
+- Area: 辞書（`www/words.js` の右上の「作る」）、単語を足す画面（`www/wordsheet.js`）、戻る時の確認（`keepDrafting()`、`www/shell.js`）
+- Decision:
+  - 単語の自動生成（`vGen`）の入口を辞書の右上から外し、辞書の「＋」（単語を足す）から入る。単語を足す方法の一つとして並べる。
+  - 単語を足す画面の確定は「＋」の印ではなく「保存」の文字にする。
+  - 単語を足す画面で何か入れてから戻る時、ほかの保存のある画面と同じく「保存しますか」の確認を出す。
+- Reason: オーナーの言葉「2でしょ」「単語追加する時の+マークわかりにくいんだけど。saveじゃダメなの？」「入力して戻る時普通に戻るけど、ポップ出す仕様はなんで適応されてないの？」（2026-09-30）。
+  2026-09-26 の「新しい章として作る」の入口の部分を差し替え。CLAUDE.md の「add is the plus」は、この画面の確定には当てはめない。
+- Affected features: 辞書、単語を足す画面、単語の自動生成。
+- Affected data: 無い。
+- Implementation status: r138 に渡した。
+
 ### 2026-09-29 Android: 個人のアカウント、連絡先 Lingua@tokinets.com、Apple のサインインは置かない
 - Date: 2026-09-29
 - Area: Google Play の出し方（`docs/ANDROID.md` § オーナーがすること・§ 足りない物）、Android のサインイン（§ サインイン）
