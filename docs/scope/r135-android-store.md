@@ -19,3 +19,29 @@
 
 ## 触らないもの
 `android/`・`android-*.yml`（r134）・`www/`・`ios/`・`supabase/`・`store/`・他の人のブランチ。ゲートは回さない。
+
+---
+
+# 報告（2026-09-29）
+
+コミット: `a691dc06` scope → `94199720` 掲載の文・道具・workflow → `c366896c` shot の `--play` と play-shots → `e7876122` play-shots.yml → `d995e309` ANDROID.md。
+`origin/integ-0905` は `a8fc0106` から動いていない（取り込む物なし）。
+
+| ファイル | 何を・なぜ |
+|---|---|
+| `store-play/*.json`（10） | title・shortDescription・fullDescription。title と full は iOS の name と description のまま（iPhone 固有の語は元から無い）。short は promotionalText を 80 字に |
+| `tools/play-listing.mjs` | 長さ・制御文字・絵文字・`<>`・宣伝の語・Android に無い物の名前を見る。`--dry` は鍵なし。鍵があれば edits → listings を 10 言語 → commit |
+| `.github/workflows/play-listing.yml` | 手で押す。鍵が無ければ手順を言って止まる |
+| `tools/shot.mjs` | `--play` を一つ: 405×720 を 8/3 倍（1080×1920）、一画面、JPEG。territory の外 ── 撮り方を二つにしないため。上の「触ってよいファイル」に足した |
+| `tools/play-shots.mjs`・`.github/workflows/play-shots.yml` | 10 言語を回して `shots/play/<言語>/` に並べ、JPEG の頭から大きさを見る。Actions で撮って Artifacts に |
+| `docs/ANDROID.md` | § Play の掲載の文・§ スクリーンショット・§ Play Console で手で答える物・§ オーナーがすること（14 の順番）。古い文（`device.platform` は本番に無い、説明文はオーナーが書く）を直した |
+
+- 保存・移行・削除・プラン: なし。`www/`・`android/`・`supabase/` は触っていない。
+- 確かめたこと（CODE CONFIRMED）: `play-listing --dry` が 10 言語とも緑。わざと壊した写し（81 字・絵文字・iPhone・ウィジェット・Best・一言語欠け）で 6 つとも赤、鍵なしで止まるのも見た。
+  `play-shots --only ja feed letters kb` で 1080×1920・3 成分の JPEG が 3 枚。`assets` と `docs` の fast は緑。YAML は読めた。ゲートは回していない。
+- 確かめていないこと: Play の API に実際に送ること（鍵もアプリも無い）。workflow を Actions で押すこと（既定のブランチに入るまで押せない）。
+  CI で ja・ko・zh の字が出るか（`fonts-noto-cjk` を入れているが見ていない）。AD_ID が manifest に入らないこと。
+- 知っている限界: スクショの中身は fixture で、ストアの絵ではない。docs の r134 の名前（android-keygen.yml・android-release.yml・GOOGLE_WEB_CLIENT_ID）は r134 が入るまで
+  このブランチに無いので backtick を付けていない。
+- オーナーが決める物: 掲載の文、見せる画面、フィーチャー グラフィック、カテゴリ、連絡先のメール、アカウント削除の URL（Play が必須）、Android の Apple のサインイン、
+  デベロッパー アカウントが個人か組織か（個人なら 12 人・14 日のクローズド テスト）。
