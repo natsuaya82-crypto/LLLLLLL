@@ -588,6 +588,28 @@ create table if not exists prompt (
 -- above is written to be re-runnable.
 alter table prompt add column if not exists says jsonb not null default '{}'::jsonb;
 
+-- WHAT daily-prompt ANSWERED, each time it rang. On 2026-09-28 the 07:00 and
+-- 08:00 UTC runs wrote no sentence, the cron said "succeeded", and what the
+-- function had answered was in `net._http_response`, which pg_net empties
+-- after six hours -- so by the time anybody looked there was no reason left
+-- to read. supabase/functions/daily-prompt writes one row here for every
+-- answer it gives past its door (`x-cron-secret`), with the service role:
+-- the day it was about, the HTTP status it answered with, and a short reason.
+-- A ring that left no row here never reached the function's body, which is
+-- an answer too.
+--
+-- Nobody the app signs in as reads or writes it: row level security on and no
+-- policy at all, so it is the service role's (which no policy applies to) and
+-- the Supabase Schema workflow's `check`. Nothing deletes it -- two rows a day.
+create table if not exists prompt_run (
+  id     bigint generated always as identity primary key,
+  at     timestamptz not null default now(),
+  on_day date,
+  status int  not null,
+  said   text not null default ''
+);
+alter table prompt_run enable row level security;
+
 -- ---- said ------------------------------------------------------------------
 -- A post is a thing somebody said, once. body holds the runs of text and the
 -- glyph outlines they were drawn with AT THE TIME -- frozen, because a post is
@@ -4173,10 +4195,17 @@ grant  insert (id, author, language, body, prompt, reply_to, quote_of) on post t
 --
 -- THE DAY'S PROMPT IS THE SAME ROAD. Its row is written by
 -- supabase/functions/daily-prompt with the service role key, through
--- PostgREST like every other write, so that key is what is in
--- `request.headers` and what push_ping() hands on. push-send rings EVERYBODY
--- for that kind and nobody else can make it: the entry says its actor is the
--- service role, and a signed-in person's token is not that key. `prompt` has
+-- PostgREST like every other write, and push_ping() hands on the
+-- Authorization PostgREST received for it -- which on 2026-09-28 was NOT the
+-- key's own text, so push-send, comparing against the key, answered 401 and
+-- the day's notice went to nobody. Read off the facts rather than measured
+-- yet: push-send's gateway let it through, so it is a JWT with this project's
+-- signature, and PostgREST let it insert into `prompt`, so its role is
+-- service_role -- and that role is what push-send asks now (`pushBy()`). A
+-- refusal says what did arrive (`tok`), which is the measurement. push-send
+-- rings EVERYBODY for that kind and nobody else can make it: the entry says
+-- its actor is the service role, and a signed-in person's token does not
+-- carry that role. `prompt` has
 -- no insert policy and no insert grant for anybody the app signs in as
 -- (the prompt_read policy above, the cover at the foot), so no request from
 -- a phone can reach this trigger at all -- tools/rls-check.mjs tries, as B
@@ -4358,10 +4387,18 @@ $b$;
 -- dashboard and lived in `cron.job` and nowhere else, so nobody knew it waited
 -- 1000ms for a function that takes longer than that, and days went missing.
 --
---   WHEN   `0 7,8 * * *`. cron is UTC and the day turns at 0:00 in Los Angeles
---          (「日付はアメリカ時間の0時から」 OWNER 2026-08-23), which is 07:00
---          UTC in summer and 08:00 in winter. It rings at both; daily-prompt
---          does nothing when the day's row is there, so one of the two writes.
+--   WHEN   `*/5 7,8 * * *`. cron is UTC and the day turns at 0:00 in Los
+--          Angeles (「日付はアメリカ時間の0時から」 OWNER 2026-08-23), which is
+--          07:00 UTC in summer and 08:00 in winter -- and it rings every five
+--          minutes through both hours, twenty-four times a day. ONE FAILED
+--          RING MUST NOT COST THE DAY (「作れなかった日を出さない」 OWNER
+--          2026-09-27): it rang twice, at 07:00 and 08:00, and on 2026-09-28
+--          both wrote nothing and there was no sentence until somebody rang it
+--          by hand at 21:58. daily-prompt does nothing when the day's row is
+--          there, so the first ring that succeeds writes the one row and every
+--          ring after it says `already`. In winter the 07:xx rings are 23:xx
+--          of the day before, whose row is there. What each ring answered is
+--          kept in `prompt_run` (above), so the next miss can be read.
 --   WAITS  60000ms. The function asks a model, and asks again when it is busy.
 --
 -- THE HEADERS ARE NOT IN THIS FILE. What the function's door asks for -- its
@@ -4420,7 +4457,7 @@ begin
       'what the daily-prompt cron sends: x-cron-secret and Authorization');
   end if;
 
-  perform cron.schedule('daily-prompt', '0 7,8 * * *', $cmd$
+  perform cron.schedule('daily-prompt', '*/5 7,8 * * *', $cmd$
     select net.http_post(
       url     := 'https://iimwukyyasbybfrirhsf.supabase.co/functions/v1/daily-prompt',
       headers := (select decrypted_secret::jsonb from vault.decrypted_secrets

@@ -190,3 +190,17 @@ jobs:
           echo "HTTP $CODE"
           jq -r '.[] | "\(.what)\t\(.value)"' out.json 2>/dev/null || cat out.json
           case "$CODE" in 2*) ;; *) exit 1 ;; esac
+          # daily-prompt が鳴るたびに何と答えたか（schema.sql の prompt_run）。
+          # 上と別の問い合わせなのは、apply の前はこの表が無く、上に混ぜると
+          # check 全体が落ちるから。ここは落ちても job を止めない。
+          echo '== daily-prompt の答え（prompt_run、新しい順に 10）'
+          jq -Rs '{query: .}' > q2.json <<'SQL'
+          select 'prompt_run ' || to_char(at, 'MM-DD HH24:MI') as what,
+                 status || ' day=' || coalesce(on_day::text, '-') || ' ' || left(said, 300) as value
+            from (select at, status, on_day, said from prompt_run order by at desc limit 10) r
+          SQL
+          curl -s -o out2.json -X POST \
+            "https://api.supabase.com/v1/projects/$PROJECT_REF/database/query" \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            -H "Content-Type: application/json" --data @q2.json
+          jq -r '.[] | "\(.what)\t\(.value)"' out2.json 2>/dev/null || cat out2.json; echo

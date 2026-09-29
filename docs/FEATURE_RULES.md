@@ -340,7 +340,7 @@ it is quoted, and where a decision has never been made the row in
 - Reason: オーナーの言葉「西海岸時間にしてるんだから、それ守れや。今日の文は君で作り変えて明日から毎日同じ時間に変わるように」。
 - Affected features: お題、お題の通知。
 - Affected data: `prompt` に 2026-09-27 の一行（リーダーが書いた文）。cron の daily-prompt の待ちが 1000ms から 60000ms（本番の cron.job、schema.sql の外）。
-- Implementation status: 本番に入れた。daily-prompt はモデルの 503・429 に三回まで聞き直す（本番に置いた）。明日の 0 時に変わるかは、まだ見ていない。
+- Implementation status: 待ち 60000ms と、モデルの 503・429 に三回まで聞き直すのは本番に入っている。それでも 2026-09-28 は 07:00・08:00 とも行が書かれず、21:58 UTC にリーダーが手で鳴らすまで無かった。r128 で cron を `*/5 7,8 * * *`（7 時台と 8 時台の 5 分ごと、一回の失敗で一日が消えない）にし、鳴った一回ごとの答えを表 `prompt_run` に残す（`supabase/schema.sql`、rls-check が数える）。r128 は本番に未適用 ── 0 時に変わるのを本番でまだ見ていない。
 
 ### 2026-09-27 字の画面の共有（SVG）は、字の横に並べて二つで真ん中
 - Date: 2026-09-27

@@ -99,77 +99,99 @@ Deno.serve(async (req: Request) => {
   const url = Deno.env.get('SUPABASE_URL')!;
   const key = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
   const gem = Deno.env.get('GEMINI_API_KEY') || '';
-  if (!gem) return new Response('GEMINI_API_KEY is not set', { status: 500 });
-
   const head = { apikey: key, Authorization: `Bearer ${key}`,
                  'Content-Type': 'application/json' };
   const day = pacificDay(new Date());
 
-  /* Already there? Then this run has nothing to do. The unique on on_day
-     would refuse the insert anyway; asking first is what keeps a second run
-     from spending a model call to be refused. */
-  const has = await fetch(`${url}/rest/v1/prompt?on_day=eq.${day}&select=id`,
-                          { headers: head });
-  if ((await has.json()).length) {
-    return new Response(JSON.stringify({ day, already: true }), { status: 200 });
-  }
+  /* EVERY ANSWER PAST THE DOOR IS KEPT, in `prompt_run` (supabase/schema.sql).
+     On 2026-09-28 the 07:00 and 08:00 runs wrote no sentence and what this
+     function had said was gone six hours later with pg_net's own record, so
+     nobody could read why. One row per answer: the day, the status, the first
+     500 characters of what it said. A row that cannot be written changes nothing about
+     the answer -- keeping the reason must not cost the day its sentence. The
+     door itself (401 above) is not kept: anybody holding the publishable key
+     reaches it, and a table anybody can fill is not a record. */
+  const answer = async (status: number, said: string): Promise<Response> => {
+    try {
+      await fetch(`${url}/rest/v1/prompt_run`, {
+        method: 'POST', headers: head,
+        body: JSON.stringify({ on_day: day, status, said: said.slice(0, 500) }),
+      });
+    } catch (_) { /* the answer below still goes */ }
+    return new Response(said, { status });
+  };
+  try { return await ring(); }
+  catch (e) { return await answer(500, 'threw: ' + String((e as Error)?.message || e)); }
 
-  /* The last sixty, so the model can be told not to repeat itself. Sixty
-     because that is two months and the list still fits in one instruction. */
-  const past = await fetch(
-    `${url}/rest/v1/prompt?select=text&order=on_day.desc&limit=60`,
-    { headers: head });
-  const seen = ((await past.json()) || []).map((r: { text: string }) => '- ' + r.text)
-                                          .join('\n') || '- (nothing yet)';
+  async function ring(): Promise<Response> {
+    if (!gem) return await answer(500, 'GEMINI_API_KEY is not set');
 
-  const ask = RULES.replace('{DAY}', day).replace('{SEEN}', seen);
-  /* The model says 503 「high demand」 on some mornings -- 2026-09-27 16:00
-     UTC was one, and that day had no sentence. 「毎日同じ時間に変わるように」
-     OWNER 2026-09-27. So a busy answer is asked again, three times, a few
-     seconds apart, inside the 60 seconds the schedule waits. Anything else is
-     an answer and is not asked twice. */
-  const ask1 = () => fetch(
-    'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + gem,
-    { method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: ask }] }],
-        generationConfig: {
-          temperature: 1.0,
-          responseMimeType: 'application/json',
-          responseSchema: SCHEMA,
-        },
-      }) });
-  let gr = await ask1();
-  for (let i = 0; i < 3 && (gr.status === 503 || gr.status === 429); i++) {
-    await new Promise((r) => setTimeout(r, 5000 * (i + 1)));
-    gr = await ask1();
-  }
-  if (!gr.ok) {
-    return new Response('the model refused: ' + (await gr.text()), { status: 502 });
-  }
-  const raw = (await gr.json())?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-  let says: Record<string, string>;
-  try { says = JSON.parse(raw); } catch { return new Response('not json: ' + raw, { status: 502 }); }
+    /* Already there? Then this run has nothing to do. The unique on on_day
+       would refuse the insert anyway; asking first is what keeps a second run
+       from spending a model call to be refused. */
+    const has = await fetch(`${url}/rest/v1/prompt?on_day=eq.${day}&select=id`,
+                            { headers: head });
+    if ((await has.json()).length) {
+      return await answer(200, JSON.stringify({ day, already: true }));
+    }
 
-  /* Every language, or none. A row missing Korean is a Korean speaker seeing
-     English tomorrow and nobody finding out. */
-  const wrong: string[] = [];
-  for (const l of LANGS) {
-    const why = bad(says[l]);
-    if (why) wrong.push(`${l}: ${why}`);
-  }
-  if (wrong.length) {
-    return new Response('refused: ' + wrong.join('; '), { status: 422 });
-  }
-  for (const l of LANGS) says[l] = String(says[l]).trim();
+    /* The last sixty, so the model can be told not to repeat itself. Sixty
+       because that is two months and the list still fits in one instruction. */
+    const past = await fetch(
+      `${url}/rest/v1/prompt?select=text&order=on_day.desc&limit=60`,
+      { headers: head });
+    const seen = ((await past.json()) || []).map((r: { text: string }) => '- ' + r.text)
+                                            .join('\n') || '- (nothing yet)';
 
-  const put = await fetch(`${url}/rest/v1/prompt`, {
-    method: 'POST',
-    headers: { ...head, Prefer: 'return=representation' },
-    body: JSON.stringify({ on_day: day, text: says.en, says }),
-  });
-  if (!put.ok) {
-    return new Response('could not write it: ' + (await put.text()), { status: 500 });
+    const ask = RULES.replace('{DAY}', day).replace('{SEEN}', seen);
+    /* The model says 503 「high demand」 on some mornings -- 2026-09-27 16:00
+       UTC was one, and that day had no sentence. 「毎日同じ時間に変わるように」
+       OWNER 2026-09-27. So a busy answer is asked again, three times, a few
+       seconds apart, inside the 60 seconds the schedule waits. Anything else is
+       an answer and is not asked twice. */
+    const ask1 = () => fetch(
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + gem,
+      { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: ask }] }],
+          generationConfig: {
+            temperature: 1.0,
+            responseMimeType: 'application/json',
+            responseSchema: SCHEMA,
+          },
+        }) });
+    let gr = await ask1();
+    for (let i = 0; i < 3 && (gr.status === 503 || gr.status === 429); i++) {
+      await new Promise((r) => setTimeout(r, 5000 * (i + 1)));
+      gr = await ask1();
+    }
+    if (!gr.ok) {
+      return await answer(502, 'the model refused: ' + gr.status + ' ' + (await gr.text()));
+    }
+    const raw = (await gr.json())?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    let says: Record<string, string>;
+    try { says = JSON.parse(raw); } catch { return await answer(502, 'not json: ' + raw); }
+
+    /* Every language, or none. A row missing Korean is a Korean speaker seeing
+       English tomorrow and nobody finding out. */
+    const wrong: string[] = [];
+    for (const l of LANGS) {
+      const why = bad(says[l]);
+      if (why) wrong.push(`${l}: ${why}`);
+    }
+    if (wrong.length) {
+      return await answer(422, 'refused: ' + wrong.join('; '));
+    }
+    for (const l of LANGS) says[l] = String(says[l]).trim();
+
+    const put = await fetch(`${url}/rest/v1/prompt`, {
+      method: 'POST',
+      headers: { ...head, Prefer: 'return=representation' },
+      body: JSON.stringify({ on_day: day, text: says.en, says }),
+    });
+    if (!put.ok) {
+      return await answer(500, 'could not write it: ' + (await put.text()));
+    }
+    return await answer(200, JSON.stringify({ day, wrote: says.en }));
   }
-  return new Response(JSON.stringify({ day, wrote: says.en }), { status: 200 });
 });

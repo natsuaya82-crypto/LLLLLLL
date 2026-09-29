@@ -766,6 +766,19 @@ const CASES = [
     `select 1 from prompt where false union all select 1`],
   ['nobody writes one',                       'denied', B, 0,
     `insert into prompt(on_day,text) values (current_date,'forged')`],
+  /* What daily-prompt answered each time it rang (prompt_run) is the
+     service role's and the check workflow's: a signed-in person reads none of
+     it and writes none of it, and neither does somebody with no session. The
+     row asked about is seeded below, so 「no rows」 is the policy's answer and
+     not an empty table's. */
+  ['B cannot read what daily-prompt answered', 'denied', B, 0,
+    `select 1 from prompt_run`],
+  ['nor write an answer into it',             'denied', B, 0,
+    `insert into prompt_run(on_day,status,said) values (current_date,200,'forged')`],
+  ['nor can somebody with no session read it', 'denied', B, 2,
+    `select 1 from prompt_run`],
+  ['the service role writes what it answered', 'ok',     B, 3,
+    `insert into prompt_run(on_day,status,said) values (current_date,502,'the model refused')`],
 
   /* --- following is something you do, not something done to you --- */
   ['B follows A',                             'ok',     B, 0,
@@ -2879,9 +2892,12 @@ const SHAPE = [
      job at it, and a third paste (CRONB) has changed nothing. Rung here the
      way pg_cron rings it -- _cron_sent() -- so what is counted is what goes
      out of the door, not what the command's text looks like. */
-  ['the day’s sentence is asked for at 0:00 Pacific, both seasons', `
+  /* And asked again every five minutes through both hours, so that one ring
+     that fails is not a day with no sentence (2026-09-28: 07:00 and 08:00
+     both wrote nothing). */
+  ['the day’s sentence is asked for from 0:00 Pacific, both seasons, every five minutes', `
      select count(*) from cron.job where jobname = 'daily-prompt'
-        and schedule is distinct from '0 7,8 * * *'`, '0'],
+        and schedule is distinct from '*/5 7,8 * * *'`, '0'],
   ['and by one job, however many times the file is pasted', `
      select ((select count(*) from cron.job
                where command like '%/functions/v1/daily-prompt%') <> 1)::int`, '0'],
@@ -2926,6 +2942,8 @@ const SHAPE = [
      select count(*) from pg_policies where tablename='publication' and cmd='DELETE'`, '0'],
   ['the day\u2019s sentence is read-only', `
      select count(*) from pg_policies where tablename='prompt' and cmd<>'SELECT' and permissive = 'PERMISSIVE'`, '0'],
+  ['what daily-prompt answered has no road through the API', `
+     select count(*) from pg_policies where tablename='prompt_run' and permissive = 'PERMISSIVE'`, '0'],
   /* And the two the money is on. A policy of any other kind on either table is
      a road back to the phone writing its own plan, which is what 2026-09-06
      closed -- and it would be added by somebody who found the app could not
@@ -3486,6 +3504,23 @@ const KNOCK = await (async () => {
       out.push(['and A’s Android once as well',
         google === 1 ? [] : ['Google was asked ' + google + ' times']]);
     }
+    /* AND WHAT daily-prompt ANSWERED OUTLIVES pg_net'S SIX HOURS. On
+       2026-09-28 the 07:00 and 08:00 runs wrote nothing and nobody could read
+       why. Rung with its word, past the door, the model here answers nothing
+       it can read -- and whatever it answered is a row in `prompt_run`
+       carrying the status it answered with. */
+    if (d === 'daily-prompt') {
+      log = [];
+      let st;
+      try {
+        st = (await serve(new Request(HOST + '/fn', { method: 'POST', body: '{}',
+          headers: { 'Content-Type': 'application/json', 'x-cron-secret': ENV.CRON_SECRET } }))).status;
+      } catch (e) { st = 'threw: ' + e.message; }
+      const kept = log.filter((x) => x.method === 'POST' && x.url.endsWith('/rest/v1/prompt_run'))
+        .map((x) => { try { return JSON.parse(x.body).status; } catch (_) { return '?'; } });
+      out.push(['daily-prompt keeps what it answered',
+        kept.length === 1 && kept[0] === st ? [] : ['answered ' + st + ', kept ' + JSON.stringify(kept)]]);
+    }
   }
   out.push(['functions knocked on', dirs.length ? [] : ['none found']]);
   return { rows: out, count: dirs.length };
@@ -3985,6 +4020,7 @@ const sql = [
      outside every policy, which is the claim, and the attempts above are every
      way somebody could try to make one from inside. */
   `insert into plan(id,plan) values (${q(A)},'pro');`,
+  `insert into prompt_run(on_day,status,said) values (current_date,200,'wrote');`,
   `insert into purchase(orig_tx,uid,product,until,env) values
      ('2000000000000001', ${q(A)}, 'com.tokinets.lingua.pro.monthly',
       now() + interval '20 days', 'Sandbox');`,

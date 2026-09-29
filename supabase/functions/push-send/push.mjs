@@ -292,7 +292,7 @@ export function pushSay(prefs, kind, who) {
    初めて、これは**その人自身の操作の通知**です。
 
    **全員宛ても同じ一行です。**お題の `from` は `SERVICE` で、`by` が
-   `SERVICE` になるのは叩いた Authorization が service role の鍵そのもの
+   `SERVICE` になるのは入口が確かめた JWT の role が service_role
    だった時だけ（`pushBy()`）。サインインした誰かがお題の行を指して叩いても、
    その人の uid は `SERVICE` ではないので、ここで終わります。
 
@@ -319,7 +319,8 @@ export function pushMay(aim, by) {
    `who` は `{handle, prefs}` か `{says, text, prefs}` ── `prefs` は**相手の**
    設定。`devices` は相手の token の配列。どれも DB から来ます。`by` は
    **叩いた人**で、提示された JWT を Supabase に照らして返ってきた uid、
-   あるいは service role の鍵そのものだった時の `SERVICE`（`pushBy()`）。 */
+   あるいは入口が確かめた JWT の role が service_role だった時の `SERVICE`
+   （`pushBy()`）。 */
 export function pushPlan(aim, who, devices, by) {
   const may = pushMay(aim, by);
   if (may) return { send: false, why: may };
@@ -417,24 +418,59 @@ export function pushFcmClaim(sa, now) {
   return { iss: sa.email, scope: FCM_SCOPE, aud: sa.tokenUri, iat: iat, exp: iat + 3600 };
 }
 
+/* ---- 来た Authorization の形 --------------------------------------------
+   値は一文字も返しません。返すのは種類（JWT か、Supabase の新しい鍵
+   `sb_secret_` / `sb_publishable_` そのものか、それ以外か、無いか）と、JWT
+   なら `role` と `sub` の有無だけ。断った時の答えに載せて、net._http_response
+   で「何が来ていたか」を読むためです（2026-09-28、お題の通知が 401 だった時
+   に、それが読めなかった）。`pushBy()` が訊くのも同じこの一つ。 */
+function b64uText(s) {
+  let b = String(s).replace(/-/g, '+').replace(/_/g, '/');
+  while (b.length % 4) b += '=';
+  const bin = atob(b);
+  const u8 = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+  return new TextDecoder().decode(u8);
+}
+export function pushTok(auth) {
+  const a = String(auth || '');
+  if (!a) return { kind: 'none' };
+  const m = /^Bearer (.+)$/.exec(a);
+  if (!m) return { kind: 'other' };
+  const t = m[1];
+  if (/^sb_secret_/.test(t)) return { kind: 'sb_secret' };
+  if (/^sb_publishable_/.test(t)) return { kind: 'sb_publishable' };
+  const p = t.split('.');
+  if (p.length !== 3) return { kind: 'other' };
+  let c = null;
+  try { c = JSON.parse(b64uText(p[1])); } catch (_) { c = null; }
+  if (!c || typeof c !== 'object' || Array.isArray(c)) return { kind: 'other' };
+  return { kind: 'jwt', role: typeof c.role === 'string' ? c.role : '',
+           sub: typeof c.sub === 'string' && c.sub !== '' };
+}
+
 /* ---- 叩いたのは誰か ----------------------------------------------------
-   Authorization が **service role の鍵そのもの**なら `SERVICE`。そうでなければ
-   `''` で、index.ts はそこで初めて `/auth/v1/user` に訊きます。
+   **service role として呼ばれたか**を、一つの問いで：Supabase の入口が
+   署名を確かめた JWT の `role` が `service_role` か。そうなら `SERVICE`、
+   そうでなければ `''` で、index.ts はそこで初めて `/auth/v1/user` に訊きます。
 
-   service role の鍵は Supabase が函数に持たせるもので、repo にも端末にも
-   ありません。お題の行を入れるのは daily-prompt で、それはこの鍵で REST を
-   叩き、トリガーはその Authorization をそのまま持って来ます。
+   鍵の文字と一字一句比べていた間、お題の通知は一通も出ませんでした
+   （2026-09-28 21:58 UTC、push-send が 401 {"why":"no session"}）。
+   daily-prompt は env の鍵で REST を叩きますが、トリガーが
+   `request.headers` から持って来るのは **PostgREST に届いた**
+   Authorization で、それは函数の env の鍵と同じ文字ではなかった ── 何が
+   来ていたかは、断りの答えの `tok` が次の一回で言います。どの形で来ても、
+   PostgREST が prompt に書かせた以上、それは role が service_role の、
+   このプロジェクトの署名の JWT です（`prompt` に insert できる役は他に無い）。
 
-   比べ方は長さを見てから一字ずつ最後まで ── 途中で抜けると、どこまで合って
-   いたかが時間に出ます。 */
-export function pushBy(auth, svc) {
-  const a = String(auth || ''), k = String(svc || '');
-  if (!k) return '';
-  const want = 'Bearer ' + k;
-  if (a.length !== want.length) return '';
-  let d = 0;
-  for (let i = 0; i < a.length; i++) d |= a.charCodeAt(i) ^ want.charCodeAt(i);
-  return d === 0 ? SERVICE : '';
+   **role を信じてよい根拠は入口です。**push-send は `--no-verify-jwt` なしで
+   置かれ（.github/workflows/supabase-deploy.yml）、Supabase は署名の合わない
+   JWT をこの函数に一行も走らせずに断ります。ここは署名を確かめません ──
+   確かめるのは入口一か所で、その置き方を tools/push-check.mjs が数えます
+   （「どの置き方も JWT の検証を外さない」）。 */
+export function pushBy(auth) {
+  const t = pushTok(auth);
+  return t.kind === 'jwt' && t.role === SERVICE ? SERVICE : '';
 }
 
 /* ---- 「もう無い」と答えた token ---------------------------------------
