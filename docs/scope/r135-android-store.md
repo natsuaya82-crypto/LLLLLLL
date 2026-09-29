@@ -14,7 +14,7 @@
 5. スクショの決まりと、`tools/shot.mjs` で Android の縦の大きさを 10 言語で撮る段取り（試しは一言語数枚）。
 
 ## 触ってよいファイル
-`docs/ANDROID.md`・`store-play/`（新）・`tools/play-listing.mjs`（新）・`tools/play-shots.mjs`（新）・`.github/workflows/play-*.yml`（新）・このファイル・`shots/r135/`。
+`docs/ANDROID.md`・`store-play/`（新）・`tools/play-listing.mjs`（新）・`tools/play-shots.mjs`（新）・`tools/shot.mjs`（`--play` の旗を一つ ── 撮る仕組みを二つにしないため。2026-09-29 に誰も触っていないのを `git log --all` で見た）・`.github/workflows/play-*.yml`（新）・このファイル・`shots/r135/`。
 `package.json` の scripts に一行を足すなら、それは assets-check のため（下の報告に書く）。
 
 ## 触らないもの
