@@ -2,7 +2,7 @@
 <!-- What this app may hand to another app, and nothing else. Two folders:
 
      Sheets/ in the cache    what LinguaSharePlugin.sheet() writes and
-                             shareFile() hands over -- the word sheet (PDF)
+                             shareFile() hands over: the word sheet (PDF)
                              and the card (PNG). The fence the Swift keeps
                              by name is kept here by path.
      Pictures/ in the app's  where Capacitor's web view puts a photograph

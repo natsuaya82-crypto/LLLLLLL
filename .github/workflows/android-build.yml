@@ -1,20 +1,20 @@
 name: Android build
 
-# 手で押すだけ。タグでも push でも動かない ── Play への提出はまだしない
-# （オーナーの Play Console のアカウント待ち、docs/ANDROID.md）。
+# 手で押すだけ。タグでも push でも動かない。Play に上げるのは別の workflow
+# （android-release.yml）で、ここで組み上がって成果物に残った AAB をそのまま上げる。
 #
 # 作るもの:
-#   署名の鍵が Secrets にある時  AAB（Play に上げる形）と、同じ鍵で署名した APK
-#   無い時                       debug の鍵で署名した APK だけ ── 手元の Android
-#                                 に入れて確かめるためのもの。署名の無い release
-#                                 の APK は端末に入らないので作らない。
-# どちらも成果物（Artifacts）に残る。
+#   署名の鍵が Secrets にある時  署名した AAB（Play に上げる形）と、同じ鍵で署名した APK
+#   無い時                       debug の鍵で署名した APK（手元の Android に入れて確かめる物）と、
+#                                 署名の無い AAB（組み上がることの確かめ。Play は受け取らない）
+# どれも成果物（Artifacts）の lingua-android-<run 番号> に残る。versionCode はその run 番号。
 #
-# Secrets（オーナーが作って入れる。値はリポジトリに書かない）:
+# Secrets（オーナーが入れる。値はリポジトリに書かない。鍵は android-keygen.yml が作る）:
 #   ANDROID_KEYSTORE_B64       アップロード鍵の keystore を base64 にしたもの
 #   ANDROID_KEYSTORE_PASSWORD  keystore のパスワード
 #   ANDROID_KEY_ALIAS          鍵の別名
 #   ANDROID_KEY_PASSWORD       鍵のパスワード
+#   GOOGLE_WEB_CLIENT_ID       Google でサインインの WEB クライアント ID（無ければ Google は閉じる）
 # android/app/build.gradle は LINGUA_KEYSTORE が指す鍵があれば release に署名し、
 # 無ければ署名しない。鍵のファイルはこのジョブの中にしか無い。
 
@@ -45,6 +45,28 @@ jobs:
       - name: Sync Android (Web → Android)
         run: npx cap sync android
 
+      # Google でサインインの WEB クライアント ID（公開の値、秘密ではない）を
+      # Secrets の GOOGLE_WEB_CLIENT_ID から、写した先の net.js にだけ入れる。
+      # リポジトリの www/net.js は空のまま ── 空は「Android の Google は閉じている」
+      # （obSocialCfg、onboard.js）で、iOS は読まない。置き換える行は下の
+      # WEB_ID_LINE そのもので、tools/assets-check.mjs がこの行を読んで
+      # www/net.js に一度だけあることを確かめる。無ければここで止まる。
+      - name: Google web client id
+        env:
+          WEB_ID: ${{ secrets.GOOGLE_WEB_CLIENT_ID }}
+          WEB_ID_LINE: "var GOOGLE_WEB_ID='';"
+        run: |
+          set -eu
+          F=android/app/src/main/assets/public/net.js
+          [ "$(grep -cxF "$WEB_ID_LINE" "$F")" = 1 ] || { echo "::error::$F に $WEB_ID_LINE の行が一つない"; exit 1; }
+          if [ -z "$WEB_ID" ]; then
+            echo "::warning::GOOGLE_WEB_CLIENT_ID が Secrets に無い。この APK/AAB の Google でサインインは閉じている。"
+            exit 0
+          fi
+          printf '%s' "$WEB_ID" | grep -qxE '[0-9]+-[a-z0-9]+\.apps\.googleusercontent\.com' || { echo "::error::GOOGLE_WEB_CLIENT_ID が ...apps.googleusercontent.com の形でない"; exit 1; }
+          sed -i "s|^var GOOGLE_WEB_ID='';\$|var GOOGLE_WEB_ID='$WEB_ID';|" "$F"
+          grep -q "^var GOOGLE_WEB_ID='$WEB_ID';\$" "$F"
+
       # capacitor.build.gradle が Java 21 と言うので、21。
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -68,10 +90,10 @@ jobs:
           ./gradlew --no-daemon bundleRelease assembleRelease -PlinguaVersionCode=${{ github.run_number }}
           rm -f "$LINGUA_KEYSTORE"
 
-      - name: Build (debug APK, no key)
+      - name: Build (debug APK + unsigned AAB, no key)
         if: env.KEY_B64 == ''
         working-directory: android
-        run: ./gradlew --no-daemon assembleDebug -PlinguaVersionCode=${{ github.run_number }}
+        run: ./gradlew --no-daemon assembleDebug bundleRelease -PlinguaVersionCode=${{ github.run_number }}
 
       - name: Upload
         uses: actions/upload-artifact@v4

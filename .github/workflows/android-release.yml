@@ -1,0 +1,120 @@
+name: Android release
+
+# 手で押すだけ。「Android build」が作って署名した AAB を、Google Play の
+# 内部テスト（internal）トラックに上げる。ここでは組み立てない ── 上がるのは
+# 前に組み上がって成果物に残っている物そのもので、versionCode はその
+# 「Android build」の run 番号（android/app/build.gradle）。番号は一本しかない。
+#
+# 押す時に選ぶもの:
+#   build   どの「Android build」の run 番号か。空なら、成功した一番新しいもの。
+#   status  completed = テスターに届く / draft = Play Console で「公開」を押すまで待つ。
+#           一度も公開していない新しいアプリは draft しか受け取らない（Google がそう答える）。
+#
+# Secrets:
+#   GOOGLE_PLAY_SERVICE_ACCOUNT  Google Cloud のサービスアカウントの鍵（JSON を丸ごと）。
+#                                Play Console の「ユーザーと権限」でそのアカウントに
+#                                このアプリのリリースの権限が要る。
+
+on:
+  workflow_dispatch:
+    inputs:
+      build:
+        description: 'Android build の run 番号（空 = 成功した一番新しいもの）'
+        required: false
+        default: ''
+      status:
+        description: 'completed（テスターに届く）/ draft（Play Console で公開を押すまで待つ）'
+        required: true
+        default: 'completed'
+        type: choice
+        options: [completed, draft]
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SA: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT }}
+    steps:
+      - name: Secrets がそろっているか
+        run: |
+          if [ -z "$SA" ]; then
+            {
+              echo "### 止まった: GOOGLE_PLAY_SERVICE_ACCOUNT がない"
+              echo
+              echo "1. Google Cloud Console → IAM と管理 → サービスアカウント → 作成 → 鍵 → 鍵を追加 → JSON"
+              echo "2. Play Console → ユーザーと権限 → 新しいユーザーを招待 → そのサービスアカウントのメール → アプリ Lingua → リリース関係の権限"
+              echo "3. GitHub → Settings → Secrets and variables → Actions → New repository secret → 名前 GOOGLE_PLAY_SERVICE_ACCOUNT、値は JSON を丸ごと"
+            } | tee -a "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # どの run の成果物を上げるか。番号を指定されたらそれ、無ければ成功した一番新しいもの。
+      - name: Find the build
+        env:
+          GH_TOKEN: ${{ github.token }}
+          WANT: ${{ inputs.build }}
+        run: |
+          set -eu
+          LIST="$(gh run list -R "$GITHUB_REPOSITORY" --workflow android-build.yml --status success -L 100 --json number,databaseId)"
+          if [ -n "$WANT" ]; then
+            ID="$(printf '%s' "$LIST" | jq -r --argjson n "$WANT" '.[] | select(.number == $n) | .databaseId')"
+          else
+            ID="$(printf '%s' "$LIST" | jq -r '.[0].databaseId // empty')"
+            WANT="$(printf '%s' "$LIST" | jq -r '.[0].number // empty')"
+          fi
+          if [ -z "$ID" ]; then
+            echo "成功した「Android build」の run ${WANT:-（どれも）} が見つからない。先に Actions → Android build → Run workflow を押す。" | tee -a "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          echo "BUILD_ID=$ID" >> "$GITHUB_ENV"
+          echo "BUILD_NO=$WANT" >> "$GITHUB_ENV"
+
+      - name: Download the AAB
+        uses: actions/download-artifact@v4
+        with:
+          name: lingua-android-${{ env.BUILD_NO }}
+          run-id: ${{ env.BUILD_ID }}
+          github-token: ${{ github.token }}
+          path: out
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      # 鍵の無い時の「Android build」は署名の無い AAB を作る。Play はそれを断るので、
+      # 上げる前にここで止める。
+      - name: Is it signed
+        run: |
+          set -eu
+          AAB="$(ls out/bundle/release/*.aab 2>/dev/null | head -1 || true)"
+          [ -n "$AAB" ] || AAB="$(find out -name '*.aab' | head -1)"
+          if [ -z "$AAB" ]; then
+            echo "run ${BUILD_NO} の成果物に AAB が無い。" | tee -a "$GITHUB_STEP_SUMMARY"; exit 1
+          fi
+          if ! jarsigner -verify "$AAB" | grep -q 'jar verified'; then
+            echo "run ${BUILD_NO} の AAB は署名されていない。鍵の Secrets（ANDROID_KEYSTORE_B64 ほか）を入れてから Android build を押し直す。" | tee -a "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          echo "AAB=$AAB" >> "$GITHUB_ENV"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Upload to Play (internal)
+        shell: bash
+        env:
+          GOOGLE_PLAY_SERVICE_ACCOUNT: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT }}
+        run: |
+          node tools/play-upload.mjs "$AAB" internal "${{ inputs.status }}" | tee -a "$GITHUB_STEP_SUMMARY"

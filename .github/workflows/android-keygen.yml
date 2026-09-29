@@ -1,0 +1,87 @@
+name: Android keygen
+
+# 手で押すだけ。Google Play に上げる AAB に署名する「アップロード鍵」を一つ作る。
+# 一度だけ押すもの ── 二度押すと別の鍵ができ、Play に登録した鍵と合わなくなる。
+#
+# 作った物は成果物（Artifacts）の lingua-upload-key に入り、3 日で消える。
+# ダウンロードして手元に保管し、中の SECRETS.txt の四つの値を
+# Settings → Secrets and variables → Actions に貼る:
+#   ANDROID_KEYSTORE_B64 / ANDROID_KEYSTORE_PASSWORD / ANDROID_KEY_ALIAS / ANDROID_KEY_PASSWORD
+# パスワードと鍵はログに出さない。ログに出るのは指紋（SHA-1 / SHA-256）だけで、
+# これは秘密ではない（Google Cloud の Android クライアントに貼る値）。
+#
+# 鍵そのものはリポジトリに入らない。このジョブの中で作られ、成果物にだけ残る。
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  keygen:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Make the upload key
+        run: |
+          set -eu
+          umask 077
+          OUT="$RUNNER_TEMP/lingua-upload-key"
+          mkdir -p "$OUT"
+          PASS="$(openssl rand -hex 24)"
+          echo "::add-mask::$PASS"
+          ALIAS=upload
+          # PKCS12 は鍵と keystore のパスワードが同じでなければならないので一つ。
+          keytool -genkeypair -noprompt \
+            -keystore "$OUT/upload.jks" -storetype PKCS12 \
+            -alias "$ALIAS" -keyalg RSA -keysize 4096 -validity 10000 \
+            -storepass "$PASS" -keypass "$PASS" \
+            -dname "CN=Lingua, O=tokinets" >/dev/null 2>&1
+          base64 -w0 "$OUT/upload.jks" > "$OUT/upload.jks.b64"
+          LIST="$(keytool -list -v -keystore "$OUT/upload.jks" -storepass "$PASS" -alias "$ALIAS")"
+          SHA1="$(printf '%s\n' "$LIST" | sed -n 's/^[[:space:]]*SHA1: //p')"
+          SHA256="$(printf '%s\n' "$LIST" | sed -n 's/^[[:space:]]*SHA256: //p')"
+          test -n "$SHA1" && test -n "$SHA256"
+          {
+            echo "Lingua の Android アップロード鍵（${GITHUB_RUN_NUMBER} 回目の run で作成）"
+            echo "このファイルと upload.jks は手元に保管すること。失くすと Play に上げられなくなる。"
+            echo
+            echo "GitHub → Settings → Secrets and variables → Actions → New repository secret に四つ:"
+            echo
+            echo "ANDROID_KEYSTORE_B64"
+            echo "  （upload.jks.b64 の中身を全部そのまま）"
+            echo
+            echo "ANDROID_KEYSTORE_PASSWORD"
+            echo "  $PASS"
+            echo
+            echo "ANDROID_KEY_ALIAS"
+            echo "  $ALIAS"
+            echo
+            echo "ANDROID_KEY_PASSWORD"
+            echo "  $PASS"
+            echo
+            echo "指紋（秘密ではない。Google Cloud の Android の OAuth クライアントに貼る）:"
+            echo "  SHA-1   $SHA1"
+            echo "  SHA-256 $SHA256"
+          } > "$OUT/SECRETS.txt"
+          {
+            echo "### アップロード鍵を作った"
+            echo
+            echo "成果物 **lingua-upload-key** をダウンロード（3 日で消える）。パスワードはその中の SECRETS.txt にだけある。"
+            echo
+            echo "- SHA-1: \`$SHA1\`"
+            echo "- SHA-256: \`$SHA256\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "OUT=$OUT" >> "$GITHUB_ENV"
+
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: lingua-upload-key
+          path: ${{ env.OUT }}
+          retention-days: 3
+          if-no-files-found: error

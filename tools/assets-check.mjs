@@ -369,6 +369,23 @@ if (existsSync(IOS)) {
   look(IOS)
 }
 
+// The Android build fills a value in the other way round: www/ is shared with
+// the iPhone, so a `__NAME__` there would ship to iOS as its own text -- the
+// shape above. The repo keeps the honest empty line, and android-build.yml
+// replaces THAT LINE in the copy `cap sync` makes (GOOGLE_WEB_CLIENT_ID).
+// The line is read off the workflow, and www/net.js must carry it exactly
+// once: renamed or edited, the replacement would find nothing, and the
+// workflow stops rather than shipping a closed Google door in silence.
+const AWF = join(ROOT, '.github', 'workflows', 'android-build.yml')
+if (existsSync(AWF)) {
+  const m = readFileSync(AWF, 'utf8').match(/WEB_ID_LINE:\s*"([^"]+)"/)
+  if (!m) problems.push('.github/workflows/android-build.yml names no WEB_ID_LINE: the line it fills GOOGLE_WEB_CLIENT_ID into is how this check knows what www/net.js must carry.')
+  else {
+    const n = readFileSync(join(ROOT, 'www', 'net.js'), 'utf8').split('\n').filter((l) => l === m[1]).length
+    if (n !== 1) problems.push(`www/net.js carries the line \`${m[1]}\` ${n} times, and .github/workflows/android-build.yml replaces exactly that line with the GOOGLE_WEB_CLIENT_ID secret. It has to be there once, as it is written there, or the Android build stops.`)
+  }
+}
+
 // ------------------------------------------------------------------- verdict
 
 // AND EVERY NATIVE METHOD IS ONE THE APP ACTUALLY CALLS.
