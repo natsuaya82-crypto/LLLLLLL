@@ -709,6 +709,14 @@ was written to one; the words of the prompt are not on the post. `sid` is the
 post's row on the server, put on by `postSid()` after it goes up — a post with
 no `sid` has never been up.
 
+**What おすすめ holds is not stored anywhere.** `feed_hot()` answers it from
+`post_seen` at a moment: the posts going round (the 48 hours up to the two-hour
+tick), everything written since the tick between them, and everything older
+after them (OWNER 2026-09-28). That moment is `upto` going in and `asof` coming
+back; the phone keeps it in memory beside the count (`SNS_NEXT`), so every page
+of one list is cut from the same list, and it is forgotten when the list is
+asked from the top.
+
 Everything a reader needs is on it, because the reader does not have the
 writer's language:
 
