@@ -68,10 +68,10 @@ jobs:
           ./gradlew --no-daemon bundleRelease assembleRelease -PlinguaVersionCode=${{ github.run_number }}
           rm -f "$LINGUA_KEYSTORE"
 
-      - name: Build (debug APK, no key)
+      - name: Build (debug APK + unsigned AAB, no key)
         if: env.KEY_B64 == ''
         working-directory: android
-        run: ./gradlew --no-daemon assembleDebug -PlinguaVersionCode=${{ github.run_number }}
+        run: ./gradlew --no-daemon assembleDebug bundleRelease -PlinguaVersionCode=${{ github.run_number }}
 
       - name: Upload
         uses: actions/upload-artifact@v4
