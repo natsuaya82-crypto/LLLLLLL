@@ -75,7 +75,7 @@ for (const f of fs.readdirSync(WWW).filter((x) => x.endsWith('.js')).sort()) {
   strip(fs.readFileSync(path.join(WWW, f), 'utf8')).split('\n').forEach((l, i) => {
     if (/\bplanKnown\s*\(/.test(l)) asked.push(f + ':' + (i + 1));
     if (/JSON\.parse\(\s*slRd\(/.test(l)) parsed.push(f + ':' + (i + 1));
-    if (/\bgo\(\s*['"]plans['"]\s*\)|popAsk\(\s*t\(\s*'(up\.need|post\.editplan)'/.test(l)) priced.push(f + ':' + (i + 1));
+    if (/\bgo\(\s*['"]plans['"]\s*\)|popAsk\(\s*t\(\s*'up\.need'/.test(l)) priced.push(f + ':' + (i + 1));
   });
 }
 
@@ -162,7 +162,7 @@ const R = await pg.evaluate(() => {
   window.go = goW; ACT.go = goW;
   const pop0 = window.popAsk;
   window.popAsk = function(q){
-    if (counting && (q === t('up.need') || q === t('post.editplan'))) out.price++;
+    if (counting && q === t('up.need')) out.price++;
     return pop0.apply(this, arguments);
   };
 

@@ -1265,7 +1265,6 @@ defLang('de', (function(){
       'post.back.q'           : "Als Entwurf speichern?",
       'post.back.keep'        : "Speichern",
       'post.back.drop'        : "Verwerfen",
-      'post.editplan'         : "Beiträge bearbeiten gibt es im Plus-Plan",
       'post.save'             : "Sichern",
       'post.edited'           : "Bearbeitet",
       'post.pr'               : "PR",

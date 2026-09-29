@@ -255,6 +255,15 @@ it is quoted, and where a decision has never been made the row in
 - Implementation status:
 ```
 
+### 2026-09-28 投稿の編集は無料。長さの上限は変えない
+- Date: 2026-09-28
+- Area: 投稿の編集（`postEdit()`）、プラン（`CAN`）
+- Decision: 送った投稿の編集は、どのプランでもできる。長さの上限（無料 140 など、`postCap()`）は今のまま、編集にも同じく効く。2026-08-23「ツイートの編集も課金から」と 2026-08-25 の「投稿の編集はplusプランからです」の文を差し替え。
+- Reason: オーナーの言葉「まずはユーザーを増やすために編集も無料」「ただ長さの制限は変えない」。
+- Affected features: 投稿の編集、プランの画面の行、`upStop()`（その文のためだけの引数 `say` を消した）。
+- Affected data: 無い。
+- Implementation status: ~~`CAN.edit`~~ と `postEdit()` の門、~~`post.editplan`~~（十言語）を消した（`claude/r130-edit-free`）。`plan-check` 4e が持つ（無料で質問なしに開く・無料の長さを超える編集は `up.need` で断られ投稿は変わらない。今の形で赤、門を抜いて赤を見た）。CODE CONFIRMED のみ。
+
 ### 2026-09-28 なんとなくで直すのは禁止
 - Date: 2026-09-28
 - Area: 直し方すべて（CLAUDE.md § A cause is FOUND の続き）
@@ -2055,7 +2064,7 @@ it is quoted, and where a decision has never been made the row in
   - **投稿の頭の `@handle` は素の文字**。すぐ左のアイコンがその人への扉
     （`postAvHTML()`）なので、@ は二本目の扉でした。**「@〇〇 への返信」の @ と、
     人が文の中に打った `@aya` は青のまま** ── どちらも隣にアイコンがありません。
-  - **編集は天井に当たりません**（`CAN.edit='plus'`＝編集できる人は無限の人）。
+  - **編集も書く時と同じ天井に当たります**（2026-09-28 から編集は全プラン、長さの上限は変えない。`pwSend()` の `pwCapStop()` が編集の枝より先）。
   - **前からある長い投稿は一文字も切りません。**天井は「これから書く物」だけ。
 - Reason: 上の言葉。280 は Twitter の形を借りただけの数で、**意味の欄には
   上限が一つもありませんでした**（`maxlength` も無く `pwSetMn()` にも無い）──
@@ -5070,16 +5079,15 @@ and is never merged into your own」と言っている。**入らない、は二
 
   And two capabilities that exist in the app and were never in `CAN`:
 
-  - **`edit` — editing a post you have already sent. Basic and up.**
-    「ツイートの編集も課金から」「課金からはベーシックからってことね
-    プラスならプラスっていうから」 `postEdit()` today asks nothing about a
-    plan: anybody may edit their own post.
+  - **Editing a post you have already sent — on every plan since 2026-09-28**
+    （「まずはユーザーを増やすために編集も無料」、この項の「Basic and up」を
+    差し替え）. It is not in `CAN`.
   - **`badge` — the mark beside your name. Plus only.** 「バッチはplusから」
     `planBadge()` already shows it only on Plus, but it reads `plan()`
     directly instead of going through `can()`, which is the one thing `CAN`
     exists to stop.
 
-  So this lands with `words` `kb` `letters` `wsys` `snd` `edit` on the middle
+  So this lands with `words` `kb` `letters` `wsys` `snd` on the middle
   rung and `gram` `dir` `data` `file` `badge` on the top one. **How many `CAN`
   holds is read off `CAN`** — `npm run dead` prints it — because a number
   written here is a prediction, and both of the predictions this line used to
@@ -5110,10 +5118,9 @@ and is never merged into your own」と言っている。**入らない、は二
 - Implementation status: **the keyboards are built** (2026-08-23,
   `claude/save`): ~~`kbCap()`~~ in `www/core.js`, ~~`kbCount()`~~ / ~~`kbRoomKb()`~~ in
   `www/keyboard.js`, ~~`CAN.kb`~~ at `plus`, ~~`KB_MAX`~~ gone. Held by `plan-check`.
-  **The language ceiling, `can('edit')` and `CAN.badge` are all built now** --
+  **The language ceiling and `CAN.badge` are built** --
   `langCap()` beside ~~`kbCap()`~~ in `www/core.js` (1 / 1 / 3, with `langStop()`
-  as the refusal), `CAN.edit` at `plus` with `postEdit()` asking `can('edit')`,
-  and `CAN.badge` at `pro` -- which the plans page asks as `canRung('badge')`;
+  as the refusal), and `CAN.badge` at `pro` -- which the plans page asks as `canRung('badge')`;
   whether a name WEARS it is the server's `badge_of()` since 2026-09-26, and
   `postBadge()` asks no plan at all. `dl` was added on 2026-09-02.
   広告の `CAN`（pro の「広告なし」）は 「広告は出さない ── AdMob も、売れる広告枠も、追跡の問いも無い」（2026-09-25） で無くなった。
@@ -5266,8 +5273,7 @@ and is never merged into your own」と言っている。**入らない、は二
     ceiling against 3. `docs/BACKLOG.md` has both sides. Opening the door
     without the number would give Basic the three ~~`KB_MAX`~~ hands out today,
     which is neither answer.
-  - **`edit` and `badge` are not in `CAN`.** `postEdit()` and `planBadge()`
-    are both in `www/post.js`, which belongs to another session today, and
+  - **`badge` is not in `CAN`.** `planBadge()` is in `www/post.js`, which belongs to another session today, and
     `dead-check` refuses a capability nothing asks for.
   - The language ceiling does not exist at all yet.
 

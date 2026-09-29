@@ -3227,46 +3227,6 @@ function postEdit(id){
   var p=postById(id);
   if(!p || !p.mine) return;
   PMENU='';
-  /* Plus's, from 2026-08-23. 「ツイートの編集も課金から」
-
-     The pencil is drawn on EVERY plan and the refusal is here, on the press,
-     which is the owner's decision of 2026-08-25: 「だいたい無料で使えないやつ
-     は表示させていいよ。課金させる動線を減らしたくない」「無料はタップすると
-     課金ページに飛ばされる」. Hiding it was the older shape and it cost the
-     one thing a closed door is for -- nobody buys what they cannot see.
-
-     go() and not a toast, and this is the opposite of what capStop() does
-     four screens away. That one is a ceiling arrived at halfway through
-     typing a word, where moving somebody is taking the screen off them; this
-     is a door pressed on purpose, where the plans screen is the answer to
-     what was just asked. The two are in the decision log side by side.
-
-     WHAT WAS WRONG WITH IT: it went. It did not ask, it did not say, it moved
-     somebody from the timeline to a price list with nothing in between.
-     「編集はplusプランからです。みたいなポップなしに課金画面飛ばされる」
-
-     Asked, the way this app asks everywhere a plan stops somebody:
-
-         popAsk(<what the ceiling is>, function(){ go('plans'); });
-
-     and the pencil is now the fourth. The decision of 2026-08-25 is kept
-     whole: pressing it still goes to the plans screen. What changed is that
-     it goes when somebody says to.
-
-     AND THE SENTENCE IS THERE NOW. It was missing when the confirm() landed,
-     and asking with `up.cta` alone was a dialog that named no ceiling -- the
-     only one of the four like that. OWNER 2026-08-25, asked and answered:
-     「投稿の編集はplusプランからです」. `post.editplan` is that sentence, and
-     the plan is written into it rather than read off `CAN.edit`, because what
-     the owner settled is this sentence and not a rule about tiers. If `edit`
-     ever moves off plus, this string moves with it.
-
-     And it is upStop() now, with that sentence handed in: this was the one
-     wall that asked on its own, so a plan nobody had answered for was told
-     「投稿の編集はplusプランからです」 and offered a price for what it may have
-     bought. upStop() says 「接続できません」 then (docs/scope/r73-audit.md
-     § 2-3, measured). */
-  if(upStop(can('edit'), 'post.editplan')) return;
   PW=pwBlank();
   PW.ed=p.id; pwLine(postCutOf(p)); PW.nm=p.nm? 1 : 0; pwMnKept(p.mn);
   openPost();
