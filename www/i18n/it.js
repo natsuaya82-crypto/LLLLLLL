@@ -1184,6 +1184,8 @@ defLang('it', (function(){
       "word.made"        : "Creata il {0}",
       "prof.replies"        : "Risposte",
       "prof.likes"        : "Mi piace",
+      "prof.media"        : "Foto",
+      "prof.none.ph"      : "Ancora nessuna foto.",
       "prof.none.re"        : "Ancora nessuna risposta.",
       "prof.none.li"        : "Ancora nessun mi piace.",
       "me.following"        : "Seguiti",

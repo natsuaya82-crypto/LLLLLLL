@@ -1194,6 +1194,8 @@ defLang('ru', (function(){
       "word.made"         : "Создано {0}",
       "prof.replies"         : "Ответы",
       "prof.likes"         : "Нравится",
+      "prof.media"        : "Фото",
+      "prof.none.ph"      : "Пока нет фото.",
       "prof.none.re"         : "Ответов пока нет.",
       "prof.none.li"         : "Отметок «нравится» пока нет.",
       "me.following"         : "Подписки",

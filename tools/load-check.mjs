@@ -41,6 +41,13 @@
      7. Whether somebody is signed in is asked by the window alone -- no
         `!netSignedIn()` in www/net.js outside netSend1 -- and `SESS.` is read
         by the session's own functions in www/net.js and nowhere else.
+     9. A person's 写真 tab (OWNER 2026-09-29, X's media tab): pressing it reads
+        that account's posts with a photograph and nothing else, capped; the
+        grid is those posts alone, one tile each, newest first, the mark on a
+        tile carrying more than one; a tile opens that post's thread; the
+        bottom asks for the page before the oldest tile and the two pages do
+        not overlap; your own page reads your own; nobody's photographs is
+        the list's empty sentence.
 
    WHAT IT DOES NOT HOLD, said so silence is not read as a check:
      - The caps themselves. NET_PAGE is a provisional number and the owner's
@@ -103,7 +110,25 @@ function wire(cfg){
     return o;
   }
   function post(i){ return { id:'p' + i, author:'a' + (i % 7), author_handle:'h' + (i % 7), created_at:new Date(2026, 8, 1, 0, 0, N - i).toISOString(),
-                             reply_to:null, body:{ ln:'post ' + i, mn:'post ' + i }, likes:0, boosts:0, replies:0 }; }
+                             reply_to:null, body:{ ln:'post ' + i, mn:'post ' + i, hd:'h' + (i % 7) }, likes:0, boosts:0, replies:0 }; }
+  /* WHAT SOMEBODY HAS POSTED WITH A PHOTOGRAPH ON IT (section 9): N of them
+     for every account but h5, who has none, newest first and cut at
+     `created_at=lt.` as the server cuts them. Every third carries two. */
+  function media(u){
+    var who = qs(u, 'author').replace(/^eq\./, ''), hd = who === 'me1' ? 'aya' : who.replace(/^x-/, ''),
+        lt = qs(u, 'created_at').replace(/^lt\./, ''), lim = parseInt(qs(u, 'limit'), 10) || N, o = [], i, at;
+    if (hd === 'h5') return o;
+    for (i = 0; i < N && o.length < lim; i++){
+      at = new Date(2026, 7, 1, 0, 0, N - i).toISOString();
+      if (lt && !(at < lt)) continue;
+      o.push({ id:'m-' + hd + '-' + i, author:who, created_at:at, reply_to:null,
+               body:{ ln:'m ' + i, mn:'m ' + i, hd:hd,
+                      pu:(i % 3 === 0) ? ['u/m' + i + 'a.jpg', 'u/m' + i + 'b.jpg'] : ['u/m' + i + 'a.jpg'],
+                      pt:(i % 3 === 0) ? ['u/m' + i + 'a.t.jpg', 'u/m' + i + 'b.t.jpg'] : ['u/m' + i + 'a.t.jpg'] },
+               likes:0, boosts:0, replies:0 });
+    }
+    return o;
+  }
   function answer(m, u, body){
     var p = u.replace(/^[a-z]+:\/\/[^/]*/, '').split('?')[0];
     if (p === '/auth/v1/token' || p === '/auth/v1/user') return { access_token:TOK, refresh_token:'r', user:{ id:'me1' }, id:'me1' };
@@ -138,6 +163,7 @@ function wire(cfg){
     }
     if (p === '/rest/v1/follow_seen') return rows(function(i){ return { followed_handle:'h' + i, follower_handle:'h' + i }; }, u);
     if (p === '/rest/v1/draft') return rows(function(i){ return { id:'d' + i, body:{ ln:'d' + i }, updated_at:'2026-09-01T00:00:00Z' }; }, u);
+    if (p === '/rest/v1/post_seen' && /body->pu=not\.is\.null/.test(u)) return media(u);
     if (p === '/rest/v1/post_seen') return rows(post, u);
     /* a take is remembered, so the answer to 「which did this account take」
        says so after ↓ -- the app waits for the server's word before ⭕☑️ */
@@ -490,6 +516,70 @@ function readKey(u){
   for (const k of twice) console.log('          ' + k + ' -- ' + Array.from(by[k]).join(', '));
   say(twice.length === 0, '8 every table read for the same columns is written in one function -- ' +
       Object.keys(by).length + ' shapes, ' + twice.length + ' written twice');
+}
+
+/* ---- 9. a person's 写真 tab ------------------------------------------------ */
+{
+  const isMedia = (x) => where(x.u) === 'rest/v1/post_seen' && /body->pu=not\.is\.null/.test(x.u);
+  const tiles = () => pg.evaluate(() => Array.prototype.map.call(document.querySelectorAll('#app .pfgrid [data-do="postOpen"]'),
+    function(b){ var id = JSON.parse(b.getAttribute('data-a'))[0], p = postById(id);
+                 return { id:id, n:p ? postPics(p).length : -1, hd:p ? String(p.hd || '') : '', at:p ? p.at : 0,
+                          many:!!b.querySelector('.pfmany'), img:!!b.querySelector('img') }; }));
+  const press = async (keep) => {
+    if (!keep) await clear(pg);
+    const had = await pg.evaluate(() => { var b = document.querySelector('#app [data-do="pfSetTab"][data-a=\'["ph"]\']'); if (b) b.click(); return !!b; });
+    await quiet(pg);
+    return had;
+  };
+  await pg.evaluate(() => { pullForget(); go('profile', 'h3'); });
+  await quiet(pg);
+  const had = await press();
+  say(had, '9 a person\'s page has a 写真 tab');
+  const asked = (await logOf(pg)).filter(isMedia);
+  say(asked.length === 1 && /author=eq\.x-h3/.test(asked[0].u) && /limit=(\d+)/.test(asked[0].u) && +/limit=(\d+)/.exec(asked[0].u)[1] <= cap,
+      '9 pressing it reads that person\'s posts with a photograph, capped -- ' + asked.map(short).join(' | '));
+  const one = await tiles();
+  const known = await pg.evaluate(() => POSTS.filter(function(p){ return String(p.hd || '') === 'h3' && postShown(p) && !p.to; }).length);
+  say(one.length === cap && one.every(t => t.n > 0 && t.hd === 'h3' && t.img),
+      '9 the grid is their posts with a photograph and nothing else -- ' + one.length + ' tiles, ' +
+      one.filter(t => !(t.n > 0 && t.hd === 'h3')).length + ' that are not');
+  say(known > one.length, '9 and their posts without one are held and not drawn -- ' + known + ' of theirs held, ' + one.length + ' tiles');
+  say(one.every((t, i) => !i || one[i - 1].at >= t.at), '9 newest first');
+  say(one.every(t => t.many === (t.n > 1)) && one.some(t => t.many),
+      '9 the mark is on a tile carrying more than one photograph and only there -- ' + one.filter(t => t.many).length + ' marked');
+  await clear(pg);
+  await pg.evaluate(() => { window.scrollTo(0, document.body.scrollHeight); window.dispatchEvent(new Event('scroll')); });
+  await quiet(pg);
+  const next = (await logOf(pg)).filter(isMedia);
+  const oldest = one.length ? new Date(one[one.length - 1].at).toISOString() : '';
+  say(next.length === 1 && decodeURIComponent(next[0].u).indexOf('created_at=lt.' + oldest) >= 0,
+      '9 the bottom asks for the page before the oldest tile -- ' + next.map(short).join(' | '));
+  const two = await tiles(), ids = two.map(t => t.id);
+  say(two.length === 2 * cap && new Set(ids).size === ids.length && two.every((t, i) => !i || two[i - 1].at > t.at),
+      '9 and the two pages do not overlap -- ' + two.length + ' tiles, ' + new Set(ids).size + ' distinct');
+  const to = one.length ? one[3].id : '';
+  await pg.evaluate((id) => { var b = document.querySelector('#app .pfgrid [data-do="postOpen"][data-a=\'' + JSON.stringify([id]) + '\']'); if (b) b.click(); }, to);
+  await quiet(pg);
+  const at = await pg.evaluate(() => ({ r:here().r, a:String(here().a || '') }));
+  say(at.r === 'thread' && at.a === to, '9 a tile opens that post\'s thread -- ' + JSON.stringify(at) + ' for ' + to);
+  /* your own page reads your own -- counted from the arrival, because the
+     tab pressed last is the tab the page arrives on */
+  await pg.evaluate(() => { goTab('feed'); });
+  await quiet(pg);
+  await clear(pg);
+  await pg.evaluate(() => { goTab('profile'); });
+  await quiet(pg);
+  await press(true);
+  const mine = (await logOf(pg)).filter(isMedia), mt = await tiles();
+  say(mine.length === 1 && /author=eq\.me1/.test(mine[0].u) && mt.length === cap && mt.every(t => t.n > 0),
+      '9 your own page reads your own -- ' + mine.map(short).join(' | ') + ', ' + mt.length + ' tiles');
+  /* somebody with none */
+  await pg.evaluate(() => { go('profile', 'h5'); });
+  await quiet(pg);
+  await press();
+  const none = await pg.evaluate(() => ({ grid:!!document.querySelector('#app .pfgrid'), note:(document.querySelector('#app .note') || {}).textContent || '',
+                                          want:t('prof.none.ph') }));
+  say(!none.grid && !!none.note && none.note === none.want, '9 nobody\'s photographs is the list\'s empty sentence -- ' + JSON.stringify(none.note));
 }
 
 if (pg.__err.length) say(false, 'the page threw: ' + pg.__err.slice(0, 3).join(' | '));

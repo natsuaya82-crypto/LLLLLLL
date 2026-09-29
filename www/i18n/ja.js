@@ -1100,6 +1100,8 @@ defLang('ja', (function(){
       'word.made'       : "作成 {0}",
       'prof.replies'       : "返信",
       'prof.likes'       : "いいね",
+      'prof.media'        : "写真",
+      'prof.none.ph'      : "まだ写真がありません。",
       'prof.none.re'       : "まだ返信がありません。",
       'prof.none.li'       : "まだいいねがありません。",
       'me.following'       : "フォロー中",

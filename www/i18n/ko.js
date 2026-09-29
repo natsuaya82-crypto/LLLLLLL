@@ -1361,6 +1361,8 @@ defLang('ko', (function(){
       "word.made"        : "생성 {0}",
       "prof.replies"        : "답글",
       "prof.likes"        : "마음에 들어요",
+      "prof.media"        : "사진",
+      "prof.none.ph"      : "아직 사진이 없습니다.",
       "prof.none.re"        : "아직 답글이 없습니다.",
       "prof.none.li"        : "아직 마음에 든 글이 없습니다.",
       "me.following"        : "팔로잉",

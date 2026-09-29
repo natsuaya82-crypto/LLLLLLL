@@ -223,6 +223,18 @@ jobs:
             -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
             -H "Content-Type: application/json" --data @q3.json
           cat out3.json; echo
+          # 写真の置き場所が、期限切れ・壊れたサインインを何番で断るか（2026-09-29、写真の枠が空の件）。
+          # アプリは 401 の時だけサインインを更新して取り直す。鍵は公開の publishable（www/net.js）。
+          echo '== 置き場所の断り方'
+          U=https://$PROJECT_REF.supabase.co
+          K=$(grep -oE "sb_publishable_[A-Za-z0-9_-]+" www/net.js | head -1)
+          P="154f9ac6-d5b4-4434-8078-7e1daff76748/2dfb2afc-4cad-4e0e-b3b0-3b9c920c5aa8/0.t.jpg"
+          BAD="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwicm9sZSI6ImF1dGhlbnRpY2F0ZWQiLCJleHAiOjF9.x"
+          for A in "Bearer $BAD" ""; do
+            if [ -n "$A" ]; then H="Authorization: $A"; L=badjwt; else H="X-None: 1"; L=nojwt; fi
+            C=$(curl -s -o st.json -w '%{http_code}' "$U/storage/v1/object/authenticated/post-media/$P" -H "apikey: $K" -H "$H")
+            echo "$L HTTP $C $(head -c 200 st.json)"
+          done
           echo '== daily-prompt の答え（prompt_run、新しい順に 10）'
           jq -Rs '{query: .}' > q2.json <<'SQL'
           select 'prompt_run ' || to_char(at, 'MM-DD HH24:MI') as what,

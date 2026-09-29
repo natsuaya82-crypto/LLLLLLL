@@ -3861,6 +3861,29 @@ function netPostsBy(uid, ok, bad, more){
       ok(out);
     }, bad);
 }
+/* WHAT ONE PERSON HAS POSTED WITH A PHOTOGRAPH ON IT -- the 写真 tab of their
+   page, X's media tab 「Xのメディアタブと同じ」 OWNER 2026-09-29.
+
+   posts_by()'s first half and no second: `post_seen` where they are the
+   author, which is where a block, a post kept to yourself and a taken-down
+   one are already answered, and not muted-filtered, for the reason
+   netPostsBy() gives. What they passed on is not theirs to show here. A
+   photograph travels in the body as its path in the bucket (`pu`, netBody),
+   so `body->pu` is 「carries one」.
+
+   Newest first and keyset on `created_at`, from the oldest tile held. */
+function netMediaBy(uid, ok, bad, before){
+  netGet(NET_POST_SEL+
+         '&author=eq.'+encodeURIComponent(String(uid||''))+
+         '&body->pu=not.is.null&order=created_at.desc'+
+         (before? '&created_at=lt.'+encodeURIComponent(String(before)) : '')+
+         '&limit='+NET_PAGE,
+    function(d){
+      var out=[], i;
+      for(i=0;i<(d||[]).length;i++) out.push(netRow(d[i]));
+      ok(out);
+    }, bad);
+}
 function netFindPosts(q, ok, bad, more, buzz){
   var like=netLike(q),
       /* AND THE FRAME, WHICH IS WHERE A TAG IS NOW.

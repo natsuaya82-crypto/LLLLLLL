@@ -1217,6 +1217,11 @@ var ICON_LIB='<svg class="ic" viewBox="0 0 24 24" width="20" height="20" fill="n
   '<rect x="7" y="3" width="14" height="14" rx="2"/>'+
   '<path d="m10 12 2.5-3 3 3.5 2-2L21 14"/>'+
   '<path d="M17 21H5a2 2 0 0 1-2-2V7"/></svg>';
+/* More than one photograph, in the corner of a tile on somebody's 写真 tab:
+   two squares, one behind the other, the mark every photo grid draws. */
+var ICON_MANY='<svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="currentColor" '+
+  'stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true">'+
+  '<path d="M7 3h14v14" fill="none"/><rect x="3" y="7" width="14" height="14"/></svg>';
 /* A draft: a sheet with its corner turned. It sits in the row the camera, the
    library and the microphone are in, and those are marks -- a word among them
    is a word that has to be read while everything beside it is looked at.
