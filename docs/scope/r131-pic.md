@@ -63,7 +63,27 @@ Mac に電話をつなぎ Safari → 開発 → iPhone → Lingua（Web イン�
    それを人が読める所に出す変更が要る。**それは新しい見える物なので、作るかどうかは
    オーナーの判断**（CLAUDE.md「Answer before you move」）。ここでは作っていない。
 
+## 原因（置き場所の側で測った、2026-09-29 リーダー）
+
+オーナーに Mac は無く、失敗を残す仕組みは入れない（オーナー「仕組み入れなくていいです」）。
+リーダーが本番の bucket に直接訊いた（Actions「Supabase Schema」run 36536615180）:
+壊れた JWT → **HTTP 400** `{"statusCode":"403","error":"Unauthorized","message":"Failed to base64url decode the signature"}`、
+JWT 無し → HTTP 400 同じ形。**Storage はサインインの失敗を 401 でなく 400 で返す。**
+`netSend1()` は 401 の時だけ更新して取り直していたので、期限切れの JWT で写真を取りに行くと
+400 → `NET_MED[path]=0` → 開き直すまで枠だけ。**実機から出た答えそのものではない**
+（期限切れの JWT の本文も測っていない。判断は二つの測った本文が共に持つ `statusCode` と `error` で行う）。
+
+## した事
+- `netStale(status, d)`（`www/net.js`）── 「この答えはトークンが切れたと言っているか」の一か所。
+  PostgREST の 401 と、Storage の 400＋`statusCode:"403"`＋`error:"Unauthorized"`。`netSend1()` はこれで更新する。
+  400 で `404 not_found` 等は更新しない。
+- 写真の答えは `arraybuffer` で受ける（断りの本文を同期で読むため）。成功の時は `Content-Type` の Blob にして渡す。
+- `tools/token-check.mjs` 8b: 400 の形で二枚 → 更新は一回 → 取り直して二枚とも blob、`NET_MED` に 0 が残らない。
+  400 `not_found` は更新しない。**今の形で赤**（2 tries、更新 0、`NET_MED` 0）、直して緑、`netStale()` を 401 だけに戻して赤。
+- `NET_MED` の 0 は取り直しを妨げない: 更新と取り直しは `netSend1()` の中で `bad` より前に起きるので、
+  その間 `NET_MED` は 1 のまま、着いたら blob（8b が数える）。
+- スクショ: `shots/r131-pic-before.png`（400 で更新されず枠だけ）、`shots/r131-pic-after.png`（更新して描かれる）。
+
 ## していない事
-- アプリのコードの変更、検査の追加、スクショの追加（見た目は変えていない）。
-- `docs/CHANGELOG.md`: 貯まる物も人が気づく事も変えていないので書いていない。
-- 本番には当てていない。ゲートは回していない。
+- 本番には当てていない。ゲートは回していない（token・post・es5・dead・docs だけ回した）。
+- DEVICE CONFIRMED・OWNER CONFIRMED はまだ。

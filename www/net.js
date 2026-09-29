@@ -125,7 +125,9 @@ function netMail(){
    「保存押せば起動されないの？」 OWNER 2026-09-02 -- no, it did not: saving
    sends the token that is in hand and there was nothing that ever replaced it.
 
-   So a 401 refreshes and goes again. Three conditions, and each one is what
+   So an answer that says the token is dead refreshes and goes again --
+   netStale() is what says so, a 401 from PostgREST and Storage's own 400
+   alike. Three conditions, and each one is what
    keeps this from becoming its own kind of fault:
 
    ONLY THE SESSION'S OWN TOKEN. A request sent with the publishable key, or
@@ -134,7 +136,7 @@ function netMail(){
    SEND time, because netTok() may be replaced by another request's refresh
    while this one is in the air.
 
-   ONCE. A second 401 after a successful refresh is the server refusing the
+   ONCE. A second refusal after a successful refresh is the server refusing the
    person, not the clock, and going round again would be a loop that never
    reaches the `bad` somebody is waiting on.
 
@@ -307,6 +309,35 @@ function netDoor(path){
      quiet  not a press even inside one: a picture filling in behind the text
             is not somebody waiting (§ NET_OUT), and dimming the screen for
             every photograph on a timeline is the app taking it from them */
+/* WHETHER AN ANSWER SAYS THE TOKEN ON IT IS NO LONGER GOOD -- the one place,
+   and netSend1() renews and goes again on exactly this.
+
+   Two services on one host say it two ways. PostgREST and the functions
+   answer 401. Storage answers **400**, with the refusal in the body:
+   {"statusCode":"403","error":"Unauthorized",...} -- measured on the real
+   bucket with a broken token (Actions run 36536615180, docs/scope/
+   r131-pic.md). This asked for 401 alone, so an hour after the launch every
+   photograph came back 400, was written down as 「did not come」, and its
+   frame stayed empty until the app was opened again 「写真の枠だけ」 OWNER
+   実機 174-175, 2026-09-29.
+
+   The body's `statusCode` and `error` are what Storage says it with, and not
+   its `message`, which is a sentence about why and differs by cause. A 400
+   saying anything else -- `404` `not_found`, an object that is not there --
+   is what it says. */
+function netStale(status, d){
+  if(status===401) return true;
+  return status===400 && !!d && typeof d==='object' &&
+         String(d.statusCode)==='403' && d.error==='Unauthorized';
+}
+/* Bytes as the text they spell -- a refusal's body, which is short. */
+function netText(buf){
+  var a, s='', i;
+  if(!buf) return '';
+  a=new Uint8Array(buf);
+  for(i=0;i<a.length;i++) s+=String.fromCharCode(a[i]);
+  return s;
+}
 function netSend1(method, path, body, tok, ok, bad, how, may){
   var up;
   how=how || {};
@@ -344,7 +375,11 @@ function netSend1(method, path, body, tok, ok, bad, how, may){
   x.open(method, SB_URL+path, true);
   /* After open(), which is where a deadline may be set. */
   x.timeout=NET_WAIT;
-  if(how.blob) x.responseType='blob';
+  /* Bytes, and as bytes rather than a Blob because a REFUSAL comes back the
+     same way: Storage says a dead token in the body of a 400 (netStale()
+     below), and a Blob can only be read later, after netDone() has already
+     had to decide. The Blob `ok` is handed is made from these in netDone(). */
+  if(how.blob) x.responseType='arraybuffer';
   x.setRequestHeader('apikey', SB_KEY);
   if(how.mime) x.setRequestHeader('Content-Type', how.mime);
   else if(body) x.setRequestHeader('Content-Type', 'application/json');
@@ -395,7 +430,12 @@ function netSend1(method, path, body, tok, ok, bad, how, may){
     if(x.__done) return;
     x.__done=1;
     netOff(x);
-    if(how.blob){ if(x.status>=200 && x.status<300) d=x.response || null; }
+    if(how.blob){
+      if(x.status>=200 && x.status<300)
+        d=x.response? new Blob([x.response],
+                               {type:x.getResponseHeader('Content-Type') || ''}) : null;
+      else try{ d=JSON.parse(netText(x.response)||'null'); }catch(e){}
+    }
     else try{ d=JSON.parse(x.responseText||'null'); }catch(e){}
     if(x.status>=200 && x.status<300){ slAsApp(ok, [d]); return; }
     /* An hour has gone by with the app open. Everything about this request is
@@ -403,7 +443,7 @@ function netSend1(method, path, body, tok, ok, bad, how, may){
        netFresh() answers false for a refresh token the server no longer
        accepts -- and netResume() has already signed the phone out by then, so
        what reaches `bad` is a 401 on a session that has really ended. */
-    if(x.status===401 && may && mine){
+    if(netStale(x.status, d) && may && mine){
       if(netSignedIn() && netTok()!==tok){
         /* Somebody else's refresh landed while this was in the air. There is
            nothing to ask for; go again with what is already in hand. */
