@@ -1099,6 +1099,8 @@ defLang('en', (function(){
       'word.made'       : "Made {0}",
       'prof.replies'       : "Replies",
       'prof.likes'       : "Likes",
+      'prof.media'        : "Photos",
+      'prof.none.ph'      : "No photos yet.",
       'prof.none.re'       : "No replies yet.",
       'prof.none.li'       : "Nothing liked yet.",
       'me.following'       : "Following",

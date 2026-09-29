@@ -1463,6 +1463,38 @@ export function halfDone(){
     ['the profile, likes', () => { pfTab='li'; const p=postById('p2'); p.lime=1; p.li=1;
         window.route='profile'; NAV=[{r:'profile'}];
         const h=vProfile(); delete p.lime; p.li=0; pfTab='posts'; return h; }],
+    /* 写真タブ（OWNER 2026-09-29）── 在る時・無い時・人のページ。写真は
+       この端末で撮ったばかりの物（`pics`、data:）なので、網が無くても描ける。
+       二枚以上の投稿には右上に重なりの印。 */
+    ...[['the profile, photos', '', 7], ['the profile, photos, none', '', 0],
+        ['somebody else\'s profile, photos', 'iri', 5]].map(([name, who, n]) => [name, () => {
+        const hd = who || meHandle(), c = document.createElement('canvas'), g = c.getContext('2d'), put = [];
+        const HUE = ['#6d5a3a', '#3a5a6d', '#5a3a6d', '#3a6d4e', '#6d3a3a', '#4e4e6d', '#6d6a3a'];
+        c.width = c.height = 120;
+        for (let i = 0; i < n; i++){
+          const pics = [];
+          for (let k = 0; k < (i % 3 === 0 ? 2 : 1); k++){
+            g.fillStyle = HUE[(i + k) % HUE.length]; g.fillRect(0, 0, 120, 120);
+            g.fillStyle = 'rgba(255,255,255,.35)'; g.beginPath(); g.arc(30 + 12 * i, 70, 26, 0, 7); g.fill();
+            pics.push(c.toDataURL('image/png'));
+          }
+          put.push({ id:'ph' + i, at:100 - i, lang:langId, lname:'Shango', ln:'kano', who:who ? 'Iri' : 'Aya',
+                     hd:hd, mine:!who, mn:'a mountain', ui:'en', pics:pics });
+        }
+        /* and one of theirs with no photograph, which the tab leaves out */
+        put.push({ id:'ph-none', at:99, lang:langId, lname:'Shango', ln:'tir', who:who ? 'Iri' : 'Aya',
+                   hd:hd, mine:!who, mn:'water', ui:'en' });
+        /* 無い時は、種に元からある写真付きの投稿も一時的に外す */
+        const was = POSTS.slice();
+        if (!n) POSTS = POSTS.filter((p) => !(String(p.hd || '') === hd && postPics(p).length));
+        for (const p of put) POSTS.push(p);
+        const q = pullKey('media', hd);
+        PULL_GOT[q] = 1; MORE_END[q] = true;
+        pfTab = 'ph'; window.route = 'profile'; NAV = [who ? { r:'profile', a:who } : { r:'profile' }];
+        const h = vProfile();
+        POSTS = was;
+        PULL_GOT[q] = 0; delete MORE_END[q]; pfTab = 'posts'; NAV = [{ r:'profile' }];
+        return h; }]),
     /* AND THE LANGUAGE'S ROW WHEN THE LANGUAGE IS PRIVATE, which is the word
        beside its name and was in no picture and on no walk.
        「非公開の文字も出ない」 OWNER 2026-09-07, on a phone: the row draws

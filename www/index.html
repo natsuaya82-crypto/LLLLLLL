@@ -2360,6 +2360,16 @@ a.set{text-decoration:none}
 .pftab{flex:1;min-height:46px;background:none;border:0;border-bottom:2px solid transparent;
        font-family:inherit;font-size:.9rem;font-weight:600;color:var(--txm);padding:12px 4px}
 .pftab.on{color:var(--tx);border-bottom-color:var(--gold)}
+/* The 写真 tab: square tiles three across, edge to edge like the rule above
+   them, two pixels apart -- X's media tab. The square is the padding (a
+   percentage of the width), because aspect-ratio is newer than some of the
+   phones this runs on. No corner and no rim: the photograph is the tile. */
+.pfgrid{display:grid;grid-template-columns:repeat(3,1fr);grid-gap:2px;margin:2px -24px 0}
+.pfcell{position:relative;display:block;width:100%;height:0;padding:0 0 100%;margin:0;
+        border:0;background:var(--line);overflow:hidden}
+.pfcell img{position:absolute;left:0;top:0;width:100%;height:100%;object-fit:cover;display:block}
+.pfmany{position:absolute;top:6px;right:6px;color:#fff;line-height:0;
+        filter:drop-shadow(0 0 2px rgba(0,0,0,.6))}
 
 .ppin{display:inline-flex;align-items:center;color:var(--gold);margin-left:2px}
 .ppin svg{width:13px;height:13px}

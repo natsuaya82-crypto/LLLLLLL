@@ -1173,6 +1173,8 @@ defLang('de', (function(){
       "word.made"        : "Erstellt am {0}",
       "prof.replies"        : "Antworten",
       "prof.likes"        : "Gefällt mir",
+      "prof.media"        : "Fotos",
+      "prof.none.ph"      : "Noch keine Fotos.",
       "prof.none.re"        : "Noch keine Antworten.",
       "prof.none.li"        : "Noch nichts mit Gefällt mir.",
       "me.following"        : "Folgt",

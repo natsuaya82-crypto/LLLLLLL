@@ -624,6 +624,7 @@ pullOn('notif',   askNot);
 pullOn('thread',  askThread);
 pullOn('who',     askWho,     function(h){ return whoGot(h) && relGot([h]); });
 pullOn('posts',   askPosts);
+pullOn('media',   askMedia);
 pullOn('fols',    function(ok, bad, p, a){ folsAsk(a, ok, bad); }, function(a){ return folsGot(a); });
 pullOn('people',  function(ok, bad, p, a){ folPeople(String(a||'').split(','), function(){ ok(1); }, bad); },
                   function(a){ var hs=String(a||'').split(','); return whoAllGot(hs) && relGot(hs); });
@@ -683,12 +684,16 @@ pageReads('thread',  function(a){ return [['thread', String(a||'')]]; }, true);
    own row, read once a session (www/net.js § netMyProfile). */
 pageReads('profile', function(a){
   var h=String(a||'') || meHandle();
-  if(h===meHandle()) return [['who', h], ['posts', h], ['mylangs']];
+  /* and the 写真 tab is its own question, read when it is the tab on the
+     screen (www/home.js § pfSetTab) -- 「タブを開いた時にサーバーから読む」
+     OWNER 2026-09-29 */
+  var ph=(pfTab==='ph')? [['media', h]] : [];
+  if(h===meHandle()) return [['who', h], ['posts', h], ['mylangs']].concat(ph);
   /* Nobody a block stands between has a page to arrive at (profile_seen,
      both ways), so whom you have blocked is not this page's question -- it
      is the settings' (www/settings.js § block). Whom you have MUTED is: a
      muted person's page is there, and its ... says which way the press goes. */
-  return [['who', h], ['posts', h], ['mutes']];
+  return [['who', h], ['posts', h], ['mutes']].concat(ph);
 }, true);
 pageReads('follows', function(a){ return [['fols', String(a||'')]]; }, true);
 /* who liked a post, or passed it on: the same list, read off the post (r94) */
@@ -990,6 +995,23 @@ function askPosts(ok, bad, person, h, more){
     }, bad, more? new Date(more).toISOString() : null);
   });
 }
+/* AND WHAT THEY HAVE POSTED WITH A PHOTOGRAPH, a page at a time -- the 写真
+   tab (www/home.js § pfMedia). The same shape as askPosts(): by the uuid
+   `who` brought, into the one store of posts, and where it stopped in
+   MORE_AT under its own key. */
+function askMedia(ok, bad, person, h, more){
+  h=String(h||'');
+  pullWait('who', h, function(){
+    var uid=(h===meHandle())? netUid() : ((WHO_HAVE[h] || {}).uid || '');
+    if(!uid){ ok(0); return; }
+    netMediaBy(uid, function(ps){
+      if(!ps){ ok(0); return; }
+      postTake(ps);
+      moreGot(pullKey('media', h), ps, 0, more);
+      ok(1);
+    }, bad, more? new Date(more).toISOString() : null);
+  });
+}
 /* THE NOTICES. The copy on the handset is replaced by whatever came back --
    `notices()` is computed on the server every time it is asked, so nothing
    here can ever be the only surviving copy of anything. */
@@ -1132,17 +1154,19 @@ function snsWordMore(now){
   }, function(d, s, m){ snsMoreAsk=false; netPop(d, s, m); },
      ans.buzz? ps.length : new Date(low).toISOString(), ans.buzz);
 }
-/* A person's page carries on back from the oldest post it was handed, and a
-   thread down from the newest reply -- MORE_AT, § askReplies. */
+/* A person's page carries on back from the oldest post it was handed -- the
+   oldest tile on the 写真 tab, which is its own list -- and a thread down
+   from the newest reply -- MORE_AT, § askReplies. */
 function snsMoreOf(r, a){
-  var k=(r==='profile')? 'posts' : 'thread', q, at;
-  if(k==='posts') a=a || meHandle();
+  var k=(r!=='profile')? 'thread' : (pfTab==='ph')? 'media' : 'posts', q, at;
+  if(k!=='thread') a=a || meHandle();
   q=pullKey(k, a); at=MORE_AT[q];
   if(MORE_END[q] || !at) return;
   function done(){ snsMoreAsk=false; render(); }
   function fell(d, s, m){ snsMoreAsk=false; netPop(d, s, m); }
   snsMoreAsk=true;
   if(k==='posts') askPosts(done, fell, null, a, at);
+  else if(k==='media') askMedia(done, fell, null, a, at);
   else askReplies(postById(a), a, done, fell, new Date(at).toISOString());
 }
 window.addEventListener('scroll', snsMoreCheck, false);

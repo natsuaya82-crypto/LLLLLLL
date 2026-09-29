@@ -559,7 +559,14 @@ function chTaken(){
    still go to the letters and the words, and what the language is for is
    still one press. They are a strip rather than a page. */
 var pfTab='posts';
-function pfSetTab(k){ pfTab=k; render(); }
+/* A tab is part of what the page reads -- the 写真 tab is a question of its
+   own (www/sns.js § PAGE_READS) -- so pressing one waits on the same table the
+   door onto the page does, and the page is drawn when it is in. */
+function pfSetTab(k){
+  var h=here();
+  pfTab=k;
+  pageWait(h.r, h.a, function(){ render(); });
+}
 /* Which posts each list is. Replies are separated from posts the way every
    timeline does it, because a reply read out of the thread it answers is
    half a sentence. */
@@ -591,6 +598,7 @@ function pfList(){
      absent -- the same three lists on everybody's page.
      「他人のプロフィールは基本自分が見えてるのと同じ感じ」 */
   if(pfTab==='li')   return pfMine()? postAll().filter(function(p){ return !!p.lime; }) : [];
+  if(pfTab==='ph')   return pfMedia(mine);
   /* And the other side of the same question -- 投稿 is what is not a reply,
      asked the one way. Two lists asking two different questions is how one
      post came to be on both. */
@@ -625,10 +633,33 @@ function pfList(){
     return c;
   });
 }
-/* The three lists, in the order they stand in. ONE list: the row of buttons
-   is built from it and the swipe below walks it, so a fourth list added here
-   is a fourth list you can reach either way. */
-var PF_TABS=[['posts','prof.posts'], ['re','prof.replies'], ['li','prof.likes']];
+/* THE 写真 TAB IS X'S MEDIA TAB 「Xのメディアタブと同じ」 OWNER 2026-09-29:
+   what they wrote with a photograph on it -- a reply too, and not what they
+   passed on -- newest first. What is drawn is what this phone holds of theirs
+   down to where the server's answer reached (MORE_AT, www/sns.js § askMedia),
+   so a page further back is not drawn with a gap above it, and a post written
+   here a moment ago is. Nothing until the server has answered. */
+function pfMedia(mine){
+  var h=pfMine()? meHandle() : pfWho(), q=pullKey('media', h),
+      cut=MORE_END[q]? 0 : (MORE_AT[q] || 0);
+  if(!pullHad('media', h)) return [];
+  return mine.filter(function(p){ return postThumbs(p).length && (p.at || 0)>=cut; });
+}
+/* One tile a post, square, three across: the first photograph, small where
+   there is a small one (postThumbs, the timeline's own), and the mark in the
+   corner when there is more than one. Pressing it opens the thread. */
+function pfGrid(list){
+  return '<div class="pfgrid">'+list.map(function(p){
+    var th=postThumbs(p);
+    return '<button class="pfcell"' + DO('postOpen', [p.id]) + ' aria-label="'+esc(t('prof.media'))+'">'+
+      '<img'+netMediaSrc(th[0])+' alt="">'+
+      (th.length>1? '<span class="pfmany">'+ICON_MANY+'</span>' : '')+'</button>';
+  }).join('')+'</div>';
+}
+/* The four lists, in the order they stand in. ONE list: the row of buttons
+   is built from it and the swipe below walks it, so a list added here is a
+   list you can reach either way. */
+var PF_TABS=[['posts','prof.posts'], ['re','prof.replies'], ['ph','prof.media'], ['li','prof.likes']];
 function pfTabs(){
   return '<div class="pftabs">'+PF_TABS.map(function(x){
     return '<button class="pftab'+(pfTab===x[0]?' on':'')+'"' + DO('pfSetTab', [x[0]]) + '>'+
@@ -715,9 +746,10 @@ function vProfile(){
        lists under it are the same lists. */
     (pfMine()? meCard() : whoCard(h))+
     pfTabs()+
-    ((list=pfList()).length? list.map(postRow).join('')
-                : '<div class="note">'+esc(t(pfTab==='li'? 'prof.none.li'
-                                            : pfTab==='re'? 'prof.none.re' : 'prof.none'))+'</div>')+
+    ((list=pfList()).length? (pfTab==='ph'? pfGrid(list) : list.map(postRow).join(''))
+      : pfTab==='ph'? snsEmpty('media', '<div class="note">'+esc(t('prof.none.ph'))+'</div>', h || meHandle())
+      : '<div class="note">'+esc(t(pfTab==='li'? 'prof.none.li'
+                                  : pfTab==='re'? 'prof.none.re' : 'prof.none'))+'</div>')+
     '</div>'+
     /* The same one as the timeline's, from the same place. This screen is
        where the app opens, so without it a person who never pressed the home
