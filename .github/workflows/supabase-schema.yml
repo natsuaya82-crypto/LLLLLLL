@@ -169,6 +169,15 @@ jobs:
           select 'purchase ' || to_char(at, 'MM-DD HH24:MI'), product || ' env=' || env || ' until=' || coalesce(to_char(until, 'MM-DD'), '-') || ' revoked=' || coalesce(to_char(revoked, 'MM-DD'), '-')
             from (select at, product, env, until, revoked from purchase order by at desc limit 10) pu
           union all
+          select 'pic ' || left(p.id::text, 8) || ' ' || to_char(p.created_at, 'MM-DD HH24:MI'),
+                 'pu=' || coalesce(p.body->>'pu', '-') || ' pt=' || coalesce(p.body->>'pt', '-') ||
+                 ' objs=' || (select count(*) from storage.objects o where o.bucket_id = 'post-media'
+                                and split_part(o.name, '/', 2) = p.id::text)::text ||
+                 ' author_dir=' || (select count(*) from storage.objects o where o.bucket_id = 'post-media'
+                                and split_part(o.name, '/', 1) = p.author::text)::text
+            from (select * from post where author = (select id from profile where handle = 'feuaisle')
+                   order by created_at desc limit 3) p
+          union all
           select 'feed48', 'slot=' || to_char(feed_slot(), 'MM-DD HH24:MI') || ' posts=' || count(*) || ' notreply=' || count(*) filter (where reply_to is null) || ' visible=' || count(*) filter (where reply_to is null and hidden_at is null)
             from post where created_at > feed_slot() - interval '48 hours' and created_at <= feed_slot()
           union all
