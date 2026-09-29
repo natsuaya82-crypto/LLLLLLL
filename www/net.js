@@ -57,9 +57,12 @@ var SB_KEY='sb_publishable_3FTW3G5jfBVPoc8MiXgdNw_OZk2L1-6';
 var GOOGLE_IOS_ID='535150348007-i8roam4vdjjlfql5ktb4mld3v9chb6gr.apps.googleusercontent.com';
 /* AND ANDROID'S, which is a different client of the same Google project: the
    Android plugin asks for the WEB application client id and never reads the
-   iOS one. Public for the same reason, and empty in the same way -- it means
-   the owner has not put it here yet, and the Google button on Android is
-   closed until then (obSocialCfg() in onboard.js). The Android client that
+   iOS one. Public for the same reason, and empty HERE on purpose: the
+   Android build writes the GOOGLE_WEB_CLIENT_ID secret into the copy
+   `cap sync` makes (.github/workflows/android-build.yml replaces this exact
+   line, and assets-check holds that it is here once). An Android build made
+   with no secret keeps it empty, and its Google button is closed
+   (obSocialCfg() in onboard.js). The Android client that
    Google Cloud also wants is registered by package name and SHA-1 and is
    never in the app. docs/ANDROID.md § オーナーがすること. */
 var GOOGLE_WEB_ID='';
