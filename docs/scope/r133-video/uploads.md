@@ -1,6 +1,6 @@
 # 上げる時の文（YouTube Shorts / TikTok）
 
-動画は `docs/video/out/<id>.webm`（縦 1080×1920、VP8＋Opus）。項目の一覧は `docs/scope/r133-video/topics.md`。
+動画は `docs/video/out/<id>.mp4`（縦 1080×1920、H.264＋AAC）。項目の一覧は `docs/scope/r133-video/topics.md`。
 YouTube Shorts はタイトルか説明に `#Shorts` を入れる。TikTok は説明とハッシュタグを一つの欄に入れる。
 
 ---

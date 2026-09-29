@@ -429,7 +429,7 @@ async function film(br, ff, name, sc) {
   fs.mkdirSync(OUT, { recursive: true });
   const file = path.join(OUT, name + '.' + ff.ext);
   const enc = ff.ext === 'mp4'
-    ? ['-c:v', 'libx264', '-preset', 'slow', '-crf', '20', '-pix_fmt', 'yuv420p', '-movflags', '+faststart']
+    ? ['-c:v', 'libx264', '-preset', 'slow', '-crf', '21', '-maxrate', '2500k', '-bufsize', '5M', '-pix_fmt', 'yuv420p', '-profile:v', 'high', '-movflags', '+faststart', '-b:a', '128k']
     /* about 1.6 Mbit/s: a screen mostly standing still, and a film of 25s
        comes in under 5MB. */
   : ['-c:v', 'vp8', '-b:v', '1600k', '-maxrate', '2600k', '-bufsize', '4M', '-qmin', '4', '-qmax', '50',
