@@ -17,6 +17,7 @@
 `www/`・`ios/`・`supabase/` と、上に無いものすべて。指の丸と字幕は録画の時だけページに差し込み、アプリのコードは変えない。
 
 ## 順
-1. `docs/video/topics.md` ── 約 100 項目（アプリにある機能だけ）
+1. `docs/scope/r133-video/topics.md` ── 約 100 項目（アプリにある機能だけ）
 2. `tools/video/` ── 録画 → 字幕 → 縦動画
 3. まず 3 本（文字を描く／キーボードを作る／お題に投稿する）。100 本はオーナーが形を良いと言ってから。
+- 項目: `docs/scope/r133-video/topics.md`、上げる時の文: `docs/scope/r133-video/uploads.md`

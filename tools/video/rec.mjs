@@ -2,6 +2,7 @@
    tools/video/rec.mjs — a short vertical how-to video of the app.
 
    Run it:   node tools/video/rec.mjs draw-a-letter         (one script)
+             node tools/video/rec.mjs --probe 'kb>do:kbNew'  (arrive, press, then list)
              node tools/video/rec.mjs --all                  (every script)
              node tools/video/rec.mjs --probe letters        (what can be pressed on a route)
 
@@ -83,10 +84,13 @@ const LAYER = `
   var st = document.createElement('style');
   st.textContent =
     '#__v{position:fixed;inset:0;pointer-events:none;z-index:2147483647}' +
-    '#__vcap{position:absolute;left:14px;right:14px;top:58px;padding:13px 16px 14px;' +
-      'background:rgba(12,12,16,.84);color:#fff;border-radius:14px;' +
-      'font:700 23px/1.25 -apple-system,system-ui,"Helvetica Neue",Arial,sans-serif;' +
-      'text-align:center;letter-spacing:.01em;transition:opacity .25s;opacity:0}' +
+    /* The caption is the earlier film's (2026-09-25, the Devpost demo): big
+       white serif italic laid straight over the app, no box behind it. */
+    '#__vcap{position:absolute;left:10px;right:10px;top:44px;padding:0;' +
+      'color:#fff;font:italic 600 44px/1.02 var(--face-ital),Georgia,serif;' +
+      'text-align:center;letter-spacing:-.005em;' +
+      'text-shadow:0 2px 3px rgba(0,0,0,.9),0 0 18px rgba(0,0,0,.75),0 0 2px #000;' +
+      'transition:opacity .25s;opacity:0}' +
     '#__vcap.dim{opacity:.18!important}' +
     '#__vcap.on{opacity:1}' +
     '.__vdot{position:absolute;width:46px;height:46px;margin:-23px 0 0 -23px;border-radius:50%;' +
@@ -101,8 +105,9 @@ const LAYER = `
   var v = document.createElement('div'); v.id = '__v';
   v.innerHTML = '<div id="__vcap"></div><div id="__vend"><b>Lingua</b><i></i></div>';
   document.body.appendChild(v);
-  window.__vCap = function (s) {
+  window.__vCap = function (s, y) {
     var c = document.getElementById('__vcap');
+    c.style.top = (y === undefined || y === null ? 44 : y) + 'px';
     if (!s) { c.className = ''; return; }
     c.textContent = s; c.className = 'on';
   };
@@ -141,6 +146,54 @@ const LAYER = `
 })();
 `;
 
+/* ---- a drawn alphabet ----------------------------------------------------
+   The fixture's language has three letters drawn, so every line on the
+   screen came out roman -- and the earlier film was all somebody's own
+   letters. So before filming, every a-z slot the fixture left undrawn is
+   given a shape: angular strokes on the 800 square, each one a Latin
+   skeleton turned on its side so it reads as a script of its own. `keep`
+   names letters left blank (the letter a film draws). Only the page's
+   memory is touched. */
+const SHAPES = {
+  a: [[[.2,.9],[.2,.1],[.8,.1],[.8,.9]], [[.2,.5],[.8,.5]]],
+  b: [[[.2,.1],[.2,.9],[.8,.9],[.8,.5],[.2,.5]]],
+  c: [[[.8,.1],[.2,.1],[.2,.9],[.8,.9]]],
+  d: [[[.8,.1],[.8,.9],[.2,.9],[.2,.5],[.8,.5]]],
+  e: [[[.8,.1],[.2,.1],[.2,.9],[.8,.9]], [[.2,.5],[.6,.5]]],
+  f: [[[.8,.1],[.2,.1],[.2,.9]], [[.2,.5],[.6,.5]]],
+  g: [[[.8,.1],[.2,.1],[.2,.9],[.8,.9],[.8,.5],[.5,.5]]],
+  h: [[[.2,.1],[.2,.9]], [[.8,.1],[.8,.9]], [[.2,.5],[.8,.5]]],
+  i: [[[.5,.1],[.5,.9]], [[.3,.1],[.7,.1]]],
+  j: [[[.8,.1],[.8,.9],[.2,.9],[.2,.6]]],
+  l: [[[.2,.1],[.2,.9],[.8,.9]]],
+  m: [[[.2,.9],[.2,.1],[.5,.5],[.8,.1],[.8,.9]]],
+  n: [[[.2,.9],[.2,.1],[.8,.9],[.8,.1]]],
+  o: [[[.2,.1],[.8,.1],[.8,.9],[.2,.9],[.2,.1]], [[.5,.4],[.5,.6]]],
+  p: [[[.2,.9],[.2,.1],[.8,.1],[.8,.5],[.2,.5]]],
+  q: [[[.8,.9],[.8,.1],[.2,.1],[.2,.5],[.8,.5]]],
+  r: [[[.2,.9],[.2,.1],[.8,.1],[.8,.5],[.2,.5],[.8,.9]]],
+  s: [[[.8,.1],[.2,.1],[.2,.5],[.8,.5],[.8,.9],[.2,.9]]],
+  u: [[[.2,.1],[.2,.9],[.8,.9],[.8,.1]]],
+  v: [[[.2,.1],[.5,.9],[.8,.1]]],
+  w: [[[.2,.1],[.35,.9],[.5,.4],[.65,.9],[.8,.1]]],
+  x: [[[.2,.1],[.8,.9]], [[.8,.1],[.2,.9]]],
+  y: [[[.2,.1],[.5,.5],[.8,.1]], [[.5,.5],[.5,.9]]],
+  z: [[[.2,.1],[.8,.1],[.2,.9],[.8,.9]]],
+};
+async function inkAll(pg, keep) {
+  await pg.evaluate(({ SH, keep }) => {
+    LETTERS.forEach(function (l) {
+      var n = ltName(l);
+      if (!SH[n] || keep.indexOf(n) >= 0 || (l.st && l.st.length) || l.ch) return;
+      l.st = SH[n].map(function (line) {
+        return { pts: line.map(function (p) { return [Math.round(112 + p[1] * 576), Math.round(112 + p[0] * 576)]; }) };
+      });
+    });
+    installScriptFont(); installTypeFont(); render();
+  }, { SH: SHAPES, keep: keep || [] });
+  await pg.waitForTimeout(400);
+}
+
 /* ---- open the app -------------------------------------------------------- */
 async function open(br) {
   const ctx = await br.newContext({ viewport: { width: W, height: H }, deviceScaleFactor: SCALE,
@@ -160,10 +213,27 @@ async function open(br) {
   await pg.evaluate('window.__seed = ' + seed.toString());
   await pg.evaluate(() => {
     window.__seed();
-    SET.walked = true; SET.ui = 'en'; SET.theme = 'light';
+    SET.walked = true; SET.ui = 'en'; SET.theme = 'dark';
+    /* the drawn letters ON, which is the app's own default (myFontWant(),
+       www/glyph.js); the fixture turns them off for the checks. */
+    SET.myfont = true;
     if (typeof applyTheme === 'function') applyTheme();
   });
   await pg.evaluate(LAYER);
+  /* AND A SAVE IS HEARD. A Save waits for the server to answer (keepSave()
+     in www/shell.js) and there is no server here, so the screen would stand
+     on the press for ever. While filming, and only here, the one send says
+     it landed -- which is what a phone with a signal is told. Nothing under
+     www/ is changed; the page is. */
+  await pg.evaluate(() => { window.netSaveNow = function (done) { if (done) setTimeout(function () { done(true); }, 250); }; });
+  /* And a read that gives up says nothing. The requests held above time out
+     inside the app after a while and 「No connection」 came up over the last
+     seconds of a film. That is the app right about a network that is not
+     there, and it is not what the film is about. */
+  /* And a post is heard the same way: netPush() (www/net.js) is the one send
+     of a post, and here it says the row landed. */
+  await pg.evaluate(() => { window.netPush = function (p, ok) { if (ok) setTimeout(function () { ok('v' + Date.now()); }, 350); }; });
+  await pg.evaluate(() => { window.netPop = function () { if (typeof netSpin === 'function') netSpin(false); return true; }; });
   return { ctx, pg };
 }
 
@@ -191,9 +261,9 @@ async function boxOf(pg, s, nth) {
   return b;
 }
 
-async function run(pg, steps) {
+async function run(pg, steps, taps) {
   for (const s of steps) {
-    if (s.cap !== undefined) await pg.evaluate((c) => window.__vCap(c), s.cap);
+    if (s.cap !== undefined) await pg.evaluate(([c, y]) => window.__vCap(c, y), [s.cap, s.capAt]);
     if (s.go) {
       await pg.evaluate(({ r, a }) => { go(r, a); render(); }, { r: s.go, a: s.a });
       await unpop(pg);
@@ -204,6 +274,7 @@ async function run(pg, steps) {
       const x = b.x + (s.dx === undefined ? b.width / 2 : s.dx), y = b.y + (s.dy === undefined ? b.height / 2 : s.dy);
       await pg.evaluate(({ x, y }) => window.__vDot(x, y), { x, y });
       await pg.waitForTimeout(220);
+      if (taps) taps.push(Date.now());
       await pg.mouse.click(x, y);
       await unpop(pg);
     }
@@ -211,9 +282,25 @@ async function run(pg, steps) {
       if (s.into) {
         const b = await boxOf(pg, s.into);
         await pg.evaluate(({ x, y }) => window.__vDot(x, y), { x: b.x + b.width / 2, y: b.y + b.height / 2 });
+        if (taps) taps.push(Date.now());
         await pg.mouse.click(b.x + b.width / 2, b.y + b.height / 2);
+        await pg.waitForTimeout(300);
       }
-      await pg.keyboard.type(s.type, { delay: s.delay || 110 });
+      /* lingua: typed the way the Lingua keyboard types -- each letter's
+         private use code point (ltPuaOrder(), www/glyph.js), which is what
+         a post's ink is cut from. A roman letter with no shape stays roman. */
+      const txt = s.lingua ? await pg.evaluate((str) => {
+        var o = ltPuaOrder();
+        return str.split('').map(function (c) {
+          for (var i = 0; i < o.length; i++) if (ltName(o[i]) === c) return ltPua(i);
+          return c;
+        }).join('');
+      }, s.type) : s.type;
+      for (const ch of txt) {
+        if (s.lingua) await pg.keyboard.insertText(ch); else await pg.keyboard.type(ch);
+        if (taps && ch !== ' ') taps.push(Date.now());
+        await pg.waitForTimeout(s.delay || 110);
+      }
     }
     /* A stroke: points 0..1 inside the thing named, drawn with the circle
        following, at about the speed a finger moves. */
@@ -248,11 +335,15 @@ async function run(pg, steps) {
 /* ---- --probe: what is on a route, so a script can be written ------------- */
 async function doProbe(br, spec) {
   const { ctx, pg } = await open(br);
-  const ci = spec.indexOf(':');
-  /* `!js` runs that in the page and draws what it leaves: the screens that
-     are reached by a press rather than a route (the glyph editor). */
-  await run(pg, [spec.startsWith('!') ? { eval: spec.slice(1) + ';render()', wait: 300 }
-    : { go: ci < 0 ? spec : spec.slice(0, ci), a: ci < 0 ? undefined : spec.slice(ci + 1), wait: 300 }]);
+  await inkAll(pg);
+  /* `route>tap>tap`: arrive on the route, then press each target the way a
+     script does, so the screens reached by a press can be read too. */
+  let sp = spec;
+  if (sp.startsWith('@')) { const e = sp.indexOf('@', 1); await pg.evaluate(sp.slice(1, e)); sp = sp.slice(e + 1); }
+  const [head, ...presses] = sp.split('>');
+  const ci = head.indexOf(':');
+  await run(pg, [{ go: ci < 0 ? head : head.slice(0, ci), a: ci < 0 ? undefined : head.slice(ci + 1), wait: 300 }]
+    .concat(presses.map((t) => ({ tap: t, wait: 600 }))));
   const list = await pg.evaluate(() => Array.from(document.querySelectorAll('#app [data-do], .bar [data-do], [data-do]'))
     .filter((e) => e.getBoundingClientRect().width > 0)
     .map((e) => { const r = e.getBoundingClientRect();
@@ -266,12 +357,13 @@ async function doProbe(br, spec) {
 /* ---- film one script ----------------------------------------------------- */
 async function film(br, ff, name, sc) {
   const { ctx, pg } = await open(br);
+  await inkAll(pg, sc.blank);
   if (sc.setup) await run(pg, sc.setup.map((s) => Object.assign({ wait: 0 }, s)));
   await pg.waitForTimeout(300);
   const cdp = await ctx.newCDPSession(pg);
   const frames = [];
   cdp.on('Page.screencastFrame', (f) => {
-    frames.push({ t: f.metadata.timestamp, d: Buffer.from(f.data, 'base64') });
+    frames.push({ t: f.metadata.timestamp, w: Date.now(), d: Buffer.from(f.data, 'base64') });
     cdp.send('Page.screencastFrameAck', { sessionId: f.sessionId }).catch(() => {});
   });
   await cdp.send('Page.startScreencast', { format: 'jpeg', quality: 92,
@@ -287,11 +379,49 @@ async function film(br, ff, name, sc) {
     var n = 0; (function tick(){ n ^= 1; p.style.opacity = n ? '.011' : '.01'; requestAnimationFrame(tick); })();
   });
   const t0 = Date.now();
-  await run(pg, sc.steps);
+  const taps = [];
+  await run(pg, sc.steps, taps);
   await pg.evaluate((t) => window.__vEnd(t), sc.endLine || 'Make your own language');
   await pg.waitForTimeout(2200);
   await cdp.send('Page.stopScreencast');
+
+  /* THE SOUND: a soft tap on every press and nothing else 「無音でいいか効果音
+     だけつけて欲しい。タップ音とか」 OWNER 2026-09-29. Made in this browser
+     (Web Audio, recorded by MediaRecorder as Opus), because the ffmpeg here
+     has no audio encoder; it only has to copy the stream in. The moment of
+     each tap is taken against the frame clock the film is laid on. */
+  const fw0 = frames[0].w, ft0 = frames[0].t;
+  const at = taps.map((w) => (w - fw0) / 1000).filter((x) => x >= 0);
+  const len = frames[frames.length - 1].t - ft0;
+  const audio = await pg.evaluate(async ({ at, len }) => {
+    const ac = new AudioContext({ sampleRate: 48000 });
+    const dst = ac.createMediaStreamDestination();
+    const t0 = ac.currentTime + 0.3;
+    at.forEach((t) => {
+      const o = ac.createOscillator(), g = ac.createGain(), f = ac.createBiquadFilter();
+      o.type = 'triangle'; o.frequency.setValueAtTime(1500, t0 + t); o.frequency.exponentialRampToValueAtTime(700, t0 + t + 0.05);
+      f.type = 'lowpass'; f.frequency.value = 3200;
+      g.gain.setValueAtTime(0.0001, t0 + t); g.gain.exponentialRampToValueAtTime(0.5, t0 + t + 0.004);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + t + 0.07);
+      o.connect(f); f.connect(g); g.connect(dst); o.start(t0 + t); o.stop(t0 + t + 0.09);
+    });
+    const rec = new MediaRecorder(dst.stream, { mimeType: 'audio/webm;codecs=opus', audioBitsPerSecond: 96000 });
+    const parts = [];
+    rec.ondataavailable = (e) => parts.push(e.data);
+    const done = new Promise((r) => (rec.onstop = r));
+    /* started 0.3s before t0 so the recording's zero is t0 - 0.3 */
+    rec.start();
+    await new Promise((r) => setTimeout(r, (len + 0.6) * 1000));
+    rec.stop(); await done;
+    const buf = await new Blob(parts).arrayBuffer();
+    let bin = ''; const u = new Uint8Array(buf);
+    for (let i = 0; i < u.length; i++) bin += String.fromCharCode(u[i]);
+    return btoa(bin);
+  }, { at, len });
   await ctx.close();
+  fs.mkdirSync(OUT, { recursive: true });
+  const aFile = path.join(OUT, '.' + name + '.opus.webm');
+  fs.writeFileSync(aFile, Buffer.from(audio, 'base64'));
 
   if (!frames.length) throw new Error('no frames');
   const start = frames[0].t, dur = frames[frames.length - 1].t - start;
@@ -300,11 +430,16 @@ async function film(br, ff, name, sc) {
   const file = path.join(OUT, name + '.' + ff.ext);
   const enc = ff.ext === 'mp4'
     ? ['-c:v', 'libx264', '-preset', 'slow', '-crf', '20', '-pix_fmt', 'yuv420p', '-movflags', '+faststart']
-    : ['-c:v', 'vp8', '-b:v', '5M', '-maxrate', '7M', '-bufsize', '10M', '-qmin', '2', '-qmax', '40',
+    /* about 1.6 Mbit/s: a screen mostly standing still, and a film of 25s
+       comes in under 5MB. */
+  : ['-c:v', 'vp8', '-b:v', '1600k', '-maxrate', '2600k', '-bufsize', '4M', '-qmin', '4', '-qmax', '50',
        '-deadline', 'good', '-cpu-used', '2', '-auto-alt-ref', '1', '-lag-in-frames', '16'];
   const p = spawn(ff.bin, ['-loglevel', 'error', '-y', '-f', 'image2pipe', '-c:v', 'mjpeg', '-r', String(FPS),
-                           '-i', 'pipe:0', '-an', '-vf', 'scale=1080:1920', ...enc, file],
+                           '-i', 'pipe:0', '-itsoffset', '-0.3', '-i', aFile, '-map', '0:v', '-map', '1:a',
+                           '-c:a', ff.ext === 'mp4' ? 'aac' : 'copy',
+                           '-vf', 'scale=1080:1920', '-aspect', '9:16', ...enc, file],
                   { stdio: ['pipe', 'inherit', 'inherit'] });
+  p.stdin.on('error', () => {});
   let j = 0;
   for (let i = 0; i < n; i++) {
     const t = start + i / FPS;
@@ -313,6 +448,7 @@ async function film(br, ff, name, sc) {
   }
   p.stdin.end();
   await new Promise((r, x) => p.on('close', (c) => (c === 0 ? r() : x(new Error('ffmpeg ' + c)))));
+  fs.unlinkSync(aFile);
   const mb = fs.statSync(file).size / 1048576;
   console.log(`${path.relative(ROOT, file)}  ${(n / FPS).toFixed(1)}s  ${mb.toFixed(2)}MB  (${frames.length} painted frames, filmed in ${((Date.now() - t0) / 1000).toFixed(1)}s)`);
 }

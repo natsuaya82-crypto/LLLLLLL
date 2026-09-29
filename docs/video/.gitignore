@@ -1,2 +1,3 @@
-# the films and the probe pictures, until the owner says the shape is right (docs/scope/r133-video.md)
-out/
+# probe pictures and the sound file a film is put together from; the films themselves are kept (each under 5MB)
+out/probe-*
+out/.*
