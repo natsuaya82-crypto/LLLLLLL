@@ -210,9 +210,10 @@ iOS は `MainViewController.swift` の `keepStill()` で、ウェブビューの
   から置き換える形を r134（claude/r134-android-build）が作っている ── まだ
   integ-0905 に入っていない。
 - **Apple**: Android では渡さず、門にボタンを出さない。**Android に Apple の
-  サインインを置くかはオーナーの決定待ち。** 置くなら Apple の Services ID と
-  戻り先が要る ── Android のプラグインはこの二つが空だと `initialize` ごと
-  断り、Google も道連れになる（前はそれで両方とも押して何も起きなかった）。
+  サインインは置かない**（オーナー 2026-09-29「おかない！」）。Android の
+  プラグインは Apple の Services ID と戻り先が空だと `initialize` ごと断り、
+  Google も道連れになる（前はそれで両方とも押して何も起きなかった）ので、
+  渡さないのがそのまま答え。
 - **設定のアカウントの部屋**（`www/settings.js`）の Apple・Google の行は
   まだ電話を訊かず、Android でも Apple の行が出る（押すと「このビルドには
   無い」）。r122 の持ち物ではなかった。
@@ -386,9 +387,11 @@ snsって基本そうやん」OWNER 2026-08-28）。13 歳未満は選ばない�
   出せない。privacy.html に「アプリの 設定 → アカウントを削除、またはメールで
   頼む」節があればその URL（`#` 付き）でよい。無ければ一枚の頁が要る。
   tokinets.com はこのリポジトリの外。
-- **アプリのカテゴリ**（ストアの設定）。iOS と揃えるなら App Store Connect の値。
-- **連絡先のメール**（ストアの設定で必須、Play の頁に出る）。
-- **Android に Apple のサインインを置くか**（§ サインイン）。
+- **アプリのカテゴリ**（ストアの設定）。
+
+決まった物（2026-09-29、`docs/FEATURE_RULES.md` § Owner decision log）: アカウントは
+**個人**（手順 12 のクローズド テストが要る）、連絡先のメールは `Lingua@tokinets.com`、
+Android に Apple のサインインは**置かない**。
 
 ## オーナーがすること
 

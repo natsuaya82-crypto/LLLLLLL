@@ -255,6 +255,16 @@ it is quoted, and where a decision has never been made the row in
 - Implementation status:
 ```
 
+### 2026-09-29 Android: 個人のアカウント、連絡先 Lingua@tokinets.com、Apple のサインインは置かない
+- Date: 2026-09-29
+- Area: Google Play の出し方（`docs/ANDROID.md` § オーナーがすること・§ 足りない物）、Android のサインイン（§ サインイン）
+- Decision: Play Console のデベロッパー アカウントは**個人**で作る（本番の前にクローズド テスト 12 人以上・14 日間が要る）。ストアの連絡先のメールは `Lingua@tokinets.com`。Android には Apple のサインインを**置かない**（Google とメールだけ）。カテゴリはまだ決まっていない。
+- Reason: オーナーの言葉「Android個人で行く」「Lingua@tokinets.comで」「おかない！」（2026-09-29）。
+- Affected features: Android のサインイン画面、Play の掲載。
+- Affected data: 無い。
+- Affected docs: `docs/ANDROID.md`。
+- Implementation status: Apple のボタンは Android では既に閉じている（r122）。アカウントとメールはオーナーが Play Console で。
+
 ### 2026-09-29 写真タブ ── プロフィールの「投稿・返信・写真・いいね」、X のメディアタブと同じ
 - Date: 2026-09-29
 - Area: プロフィールのタブ（`PF_TABS`・`pfMedia()`・`pfGrid()`、`www/home.js`）、読む所（`askMedia()`、`www/sns.js`・`netMediaBy()`、`www/net.js`）
