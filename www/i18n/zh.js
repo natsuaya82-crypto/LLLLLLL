@@ -1191,6 +1191,8 @@ defLang('zh', (function(){
       "word.made"        : "创建于 {0}",
       "prof.replies"        : "回复",
       "prof.likes"        : "喜欢",
+      "prof.media"        : "照片",
+      "prof.none.ph"      : "还没有照片。",
       "prof.none.re"        : "还没有回复。",
       "prof.none.li"        : "还没有喜欢的帖子。",
       "me.following"        : "正在关注",

@@ -1232,6 +1232,8 @@ defLang('fr', (function(){
       "word.made"        : "Créé le {0}",
       "prof.replies"        : "Réponses",
       "prof.likes"        : "J’aime",
+      "prof.media"        : "Photos",
+      "prof.none.ph"      : "Aucune photo pour l’instant.",
       "prof.none.re"        : "Aucune réponse pour le moment.",
       "prof.none.li"        : "Aucun j’aime pour le moment.",
       "me.following"        : "Abonnements",
