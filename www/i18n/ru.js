@@ -1286,7 +1286,6 @@ defLang('ru', (function(){
       'post.back.q'           : "Сохранить как черновик?",
       'post.back.keep'        : "Сохранить",
       'post.back.drop'        : "Удалить",
-      'post.editplan'         : "Изменять записи можно на плане Plus",
       'post.save'             : "Сохранить",
       'post.edited'           : "Изменено",
       'post.pr'               : "PR",

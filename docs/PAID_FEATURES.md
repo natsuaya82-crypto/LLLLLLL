@@ -238,7 +238,7 @@ Plus < Pro` needs nobody told which is which.
 | keyboards — built, of drawn letters or any character | yes | yes | yes |
 | `font` the font file of the letters you drew | — | **yes** | yes |
 | `dl` a chapter of somebody else's language | — | **yes** | yes |
-| `edit` editing a post you have sent | — | **yes** | yes |
+| editing a post you have sent (not in `CAN`, 2026-09-28) | yes | yes | yes |
 | words | 100 | 1000 | no ceiling — `words` |
 | languages on the account | **1** | **1** | **3** |
 | how many DL'd languages | **0** | **1** | **3** |
@@ -430,7 +430,6 @@ a `can()` given anything but a literal, and a `has()` anywhere else.
 | `font` | plus | the font file of the letters you drew, through the share sheet |
 | `dl` | plus | taking a chapter of somebody else's language. How many is `dlCap()` |
 | `snd` | plus | choosing a sound, rather than taking the letter's own |
-| `edit` | plus | editing a post you have already sent |
 | `words` | pro | no ceiling on the dictionary at all. The ceiling itself is `wordCap()` |
 | `data` | pro | CSV out |
 | `file` | pro | a list brought in as a file rather than a paste, **and the sheet** (ch 26) |

@@ -1324,7 +1324,6 @@ defLang('fr', (function(){
       'post.back.q'           : "Enregistrer comme brouillon ?",
       'post.back.keep'        : "Enregistrer",
       'post.back.drop'        : "Supprimer",
-      'post.editplan'         : "Modifier un post est réservé au forfait Plus",
       'post.save'             : "Enregistrer",
       'post.edited'           : "Modifié",
       'post.pr'               : "PR",

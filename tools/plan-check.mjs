@@ -261,39 +261,20 @@ const r = await pg.evaluate(({ s }) => {
      that the free + goes straight through. */
 
   /* ---- 4e. editing a post you have sent, and the mark beside a name ----
-     Two capabilities that were in the app before they were in CAN.
-     「ツイートの編集も課金から」「バッチはplusから」 OWNER DECISION
-     2026-08-23.
-
-     `edit` is the only capability here that takes something away rather than
-     opening a door nobody had: postEdit() asked nothing about a plan, so
-     anybody could edit their own post. What it may never do is un-edit one,
-     which is the first thing asked below. */
+     「まずはユーザーを増やすために編集も無料」「ただ長さの制限は変えない」
+     OWNER 2026-09-28. Editing is on every plan, so it is no capability and
+     not in CAN; what a plan still decides about an edit is how LONG the post
+     may be, and that is the same ceiling as writing one (pwCapStop() in
+     pwSend(), before the edit branch). */
   var myPost = { id: 'p_plan', at: 1, lang: langId, lname: langName, mine: true,
                  hd: meHandle(), who: meName(), ln: 'kano mos', mn: 'a line',
                  ed: 12345 };
   POSTS.push(myPost);
   savePosts();
-
-  /* The pencil is DRAWN on every plan, and that is a decision rather than an
-     oversight: 「だいたい無料で使えないやつは表示させていいよ。課金させる動線
-     を減らしたくない」 OWNER DECISION 2026-08-25. Hiding it is the older shape
-     and the one this must not drift back to, so it is asked of the free
-     plan's own menu markup. */
   planGot('free');
   PMENU = 'p_plan';
   out.penOnFree = postMenuHTML(myPost).indexOf('postEdit') !== -1;
 
-  /* Pressed on free: it ASKS, and the composer does not open either way.
-     This used to be a bare go() and the check said so; 967e734 made it the
-     same shape as the other three ceilings -- core.js:522 (a second
-     language), core.js:703 (the hundredth word), keyboard.js:349 (a fifth
-     keyboard) -- after the owner said 「編集はplusプランからです。みたいな
-     ポップなしに課金画面飛ばされる」. So it is held the way those three are:
-     said no, nobody moves; said yes, the plans screen; and the sentence
-     names the ceiling rather than being `up.cta` on its own, which is what
-     it was for a day and is the one thing that made it unlike the other
-     three. */
   /* ---- THE QUESTION IS THE APP'S OWN POPUP, NOT THE SYSTEM'S -------------
      `confirm()` is banned -- 「標準は使わねえって言ってるだろこれも禁止や」
      OWNER 2026-09-01 -- and every door below now puts up popAsk(). This check
@@ -309,7 +290,9 @@ const r = await pg.evaluate(({ s }) => {
   }
   function askPop(fn){
     popOff(); fn();
-    var m=popSaid(); popOff(); return m;
+    /* only a pop that is UP said anything: a closed one keeps its last text
+       in the element, and reading that reported a question nobody asked */
+    var m=popOn()? popSaid() : ''; popOff(); return m;
   }
   function yesPop(fn){
     popOff(); fn();
@@ -317,15 +300,16 @@ const r = await pg.evaluate(({ s }) => {
   }
   go('feed');
   PW = pwBlank();
+  /* pressed on free: no question, the composer opens on the post */
   out.editFreeAsked = askPop(function(){ postEdit('p_plan'); });
-  out.editFreeNoPW = !PW.ed;
-  out.editFreeSaidNo = here().r !== 'plans';
-  /* said yes: the plans screen, and still no composer behind it */
-  yesPop(function(){ postEdit('p_plan'); });
-  out.editFreeWent = here().r === 'plans' && !PW.ed;
-  /* and the post itself is untouched by having been refused */
+  out.editFreeOpens = PW.ed === 'p_plan' && here().r !== 'plans';
+  /* and the free ceiling holds on an edit: a line past it is refused and the
+     post keeps what it had */
+  pwLine([{t: new Array(postCap() + 2).join('a')}]);
+  out.editFreeCapAsked = askPop(function(){ pwSend(); });
   out.editFreeKept = postById('p_plan') && postById('p_plan').ln === 'kano mos' &&
                      postById('p_plan').ed === 12345;
+  PW = pwBlank(); closeSheet(); popOff();
 
   /* A GRAMMAR STAGE OF YOUR OWN, asked on the ＋ and not after the form
      has been typed into (audit words pwi-15). The ＋ is drawn on every plan;
@@ -338,12 +322,7 @@ const r = await pg.evaluate(({ s }) => {
   out.ownProOpens = here().r === 'form' && here().a === 'own:';
   closeSheet(); planGot('free');
 
-  /* Pressed on plus: it opens, carrying the post it was pressed on. */
-  planGot('plus');
-  PW = pwBlank();
-  postEdit('p_plan');
-  out.editPlusOpens = PW.ed === 'p_plan' && PW.ln === 'kano mos';
-  PW = pwBlank(); PMENU = '';
+  PMENU = '';
 
   /* The mark. THE READER'S PLAN PUTS IT ON NOTHING -- not on your own post
      on Pro, not on anybody's. Whether a name wears it is the server's answer
@@ -1852,9 +1831,9 @@ say(r.paidAll, 'and open on plus');
 say(r.canTypo, 'and a name that is not in the table throws rather than reading as free');
 
 say(r.rungs.free === '', 'free opens nothing (' + (r.rungs.free || 'nothing') + ')');
-say(r.rungs.plus === 'dl edit font letters snd wsys',
-    'plus opens the font of its drawn letters, its own letters, its own sounds, ' +
-    'a writing system and editing a post it has sent (' + r.rungs.plus + ')');
+say(r.rungs.plus === 'dl font letters snd wsys',
+    'plus opens the font of its drawn letters, its own letters, its own sounds ' +
+    'and a writing system (' + r.rungs.plus + ')');
 say(r.rungs.pro.split(' ').length === r.canCount,
     'pro opens all ' + r.canCount + ' (' + r.rungs.pro.split(' ').length + ')');
 say(r.midUp && r.midNotTop, 'plus meets its own rung and not the one above it');
@@ -1862,19 +1841,19 @@ say(r.topHasMid, 'and pro meets plus\'s -- a ladder, not three equals signs');
 say(r.freeNoMid, 'while free meets neither');
 
 
-say(r.penOnFree, 'the pencil is drawn on the free plan -- a closed door is shown, not hidden');
-say(r.editFreeNoPW && r.editFreeSaidNo,
-    'pressed on free it asks rather than telling -- no is no, and no composer opens');
+say(r.penOnFree, 'the pencil is drawn on the free plan');
+say(r.editFreeAsked === '' && r.editFreeOpens,
+    'pressed on free it opens the composer on the post, with no question (' +
+    (r.editFreeAsked || 'no pop') + ')');
+say(r.editFreeCapAsked === r.upNeed,
+    'an edit past the free length is refused the way a new post is (' +
+    (r.editFreeCapAsked || 'nothing') + ')');
+say(r.editFreeKept, 'and the post keeps what it had');
 say(r.ownFreeAsked === r.upNeed,
     'a grammar stage of your own asks the plan on the + on free (' +
     (r.ownFreeAsked || 'nothing') + ')');
 say(r.ownFreeNoForm, 'and no form is open behind the pop');
 say(r.ownProOpens, 'and on a paid plan the + opens the form');
-say(/Plus/.test(r.editFreeAsked || ''),
-    'the sentence names the plan (' + (r.editFreeAsked || 'nothing') + ')');
-say(r.editFreeWent, 'and yes goes to the plans screen, still without a composer');
-say(r.editFreeKept, 'and the post it was pressed on is not changed by being refused');
-say(r.editPlusOpens, 'on plus it opens, carrying the post it was pressed on');
 
 say(r.bdgFree === '' && r.bdgMid === '' && r.bdgTop === '',
     'the reader\'s plan puts no mark on a post whose row says nothing -- free, plus, pro (' +

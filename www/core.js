@@ -2808,14 +2808,6 @@ var CAN={
      www/keyboard.js is the one place it is asked. */
   font:    'plus',
   snd:     'plus',   /* choosing a sound, rather than taking the letter's own */
-  /* Editing a post you have already sent. 「ツイートの編集も課金から」
-     「課金からはベーシックからってことね プラスならプラスっていうから」
-     OWNER DECISION 2026-08-23. postEdit() asked nothing about a plan until
-     this landed -- anybody could edit their own post -- so this is the one
-     capability here that TAKES something away rather than opening a door
-     nobody had. Nothing edited is un-edited by it: the refusal is on the
-     press, and every post already changed stays changed. */
-  edit:    'plus',
   /* The mark beside your name. 「バッチはplusから」 -- Plus in the old three
      names, which is Pro in these. Nothing on the phone GATES it: whoever
      wears it is the server's answer about them (badge_of(), which says this
@@ -2963,17 +2955,15 @@ function capStop(add){ return upStop(capOK(add)); }
    rather than throwing. So the caller writes `upStop(can('letters'))` and the
    name stays where a check can see it.
 
-   `say` is the one sentence where the owner settled a different one for one
-   wall -- 「投稿の編集はplusプランからです」 (OWNER 2026-08-25, `post.editplan`,
-   www/post.js § postEdit). Absent, it is `up.need`. */
-function upStop(ok, say){
+   Every wall says the same sentence, `up.need`. */
+function upStop(ok){
   if(ok) return false;
   /* NOBODY HAS ANSWERED -- the plan, or the count a ceiling is measured
      against -- so there is no price to offer: a phone with no signal would be
      told to buy something it may already have. 「電波が無ければ接続できません」
      (docs/FEATURE_RULES.md § 端末は何も決めない). */
   if(ok===null){ toast(t('net.offline')); return true; }
-  popAsk(t(say || 'up.need'), function(){ go('plans'); });
+  popAsk(t('up.need'), function(){ go('plans'); });
   return true;
 }
 
