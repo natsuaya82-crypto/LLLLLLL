@@ -24,7 +24,6 @@ Hi again! I posted Lingua here a while ago, the iPhone app where you draw your o
 - **Hangul-style blocks.** Several of your drawn letters can stack into one block, each sitting exactly where you drew it.
 - **Letter spacing per language.** Set it to 0 and your letters join up.
 - **Guide lines when drawing.** If you imported a letter from paper, its shape shows faintly underneath while you redraw it.
-- **Your script everywhere by default.** Spellings, the calendar and the home screen widget all show your own letters.
 - **SVG export.** Export your drawn letters as SVG, all at once or one at a time.
 
 **Also**
@@ -61,7 +60,6 @@ If you tried it before and something bugged you, I'd love to hear whether it's b
 - **ハングル式のマス。** 描いた字をいくつか一マスに重ねて書けます。字は描いた位置のまま重なります。
 - **言語ごとの字間。** 0 にすると字がつながります。
 - **描く時のガイド線。** 紙から取り込んだ字を描き直す時は、紙の形が下に薄く出ます。
-- **最初から自作文字で表示。** つづり・暦・ホーム画面のウィジェットも自分の字で出ます。
 - **SVG の書き出し。** 描いた字を SVG で書き出せます。全部まとめても、一字ずつでも。
 
 **そのほか**
