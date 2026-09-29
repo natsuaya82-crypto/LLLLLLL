@@ -202,6 +202,27 @@ jobs:
           # daily-prompt が鳴るたびに何と答えたか（schema.sql の prompt_run）。
           # 上と別の問い合わせなのは、apply の前はこの表が無く、上に混ぜると
           # check 全体が落ちるから。ここは落ちても job を止めない。
+          # 写真の枠が空の件（2026-09-29）: 書いた人でない、凍結されていない一人として、
+          # その投稿と写真の行が見えるかを、読むだけで試す。取引の中の set local なので残らない。
+          echo '== 写真を別の人として読む'
+          jq -Rs '{query: .}' > q3.json <<'SQL'
+          begin;
+          select set_config('request.jwt.claims', json_build_object('sub', r.id, 'role', 'authenticated')::text, true)
+            from (select id from profile where handle <> 'feuaisle' and banned_at is null order by id limit 1) r;
+          set local role authenticated;
+          select 'as_reader' as what,
+                 'member=' || is_member()::text ||
+                 ' post=' || (select count(*) from post where id::text like '2dfb2afc%')::text ||
+                 ' seen=' || (select count(*) from post_seen where id::text like '2dfb2afc%')::text ||
+                 ' objs=' || (select count(*) from storage.objects where bucket_id = 'post-media'
+                               and name like '%/2dfb2afc-%')::text as value;
+          rollback;
+          SQL
+          curl -s -o out3.json -X POST \
+            "https://api.supabase.com/v1/projects/$PROJECT_REF/database/query" \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            -H "Content-Type: application/json" --data @q3.json
+          cat out3.json; echo
           echo '== daily-prompt の答え（prompt_run、新しい順に 10）'
           jq -Rs '{query: .}' > q2.json <<'SQL'
           select 'prompt_run ' || to_char(at, 'MM-DD HH24:MI') as what,
