@@ -1348,7 +1348,6 @@ defLang('zh', (function(){
       "csv.ph"           : "猫\n水\n走\n\nkano, 山, 名词",
       /* the day's sentence. The sentence itself is not here: it comes
          from the server, one row a day, in every interface language. */
-      "day.k"  : "今日",
       "day.ask"          : "用你自己的语言？",
       "day.tag"          : "#今日话题",
       /* The world's names for the twelve months and the seven days. What

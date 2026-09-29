@@ -1301,7 +1301,6 @@ defLang('es', (function(){
       "csv.ph"           : "gato\nagua\ncaminar\n\nkano, montaña, sustantivo",
       /* the day's sentence. The sentence itself is not here: it comes
          from the server, one row a day, in every interface language. */
-      "day.k"  : "Hoy",
       "day.ask"          : "¿En tu propia lengua?",
       "day.tag"          : "#TemaDeHoy",
       /* The world's names for the twelve months and the seven days. What

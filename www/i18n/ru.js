@@ -1351,7 +1351,6 @@ defLang('ru', (function(){
       "csv.ph"            : "кошка\nвода\nидти\n\nkano, гора, существительное",
       /* the day's sentence. The sentence itself is not here: it comes
          from the server, one row a day, in every interface language. */
-      "day.k"  : "Сегодня",
       "day.ask"          : "На вашем языке?",
       "day.tag"          : "#ТемаДня",
       /* The world's names for the twelve months and the seven days. What

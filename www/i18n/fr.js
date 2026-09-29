@@ -1389,7 +1389,6 @@ defLang('fr', (function(){
       "csv.ph"           : "chat\neau\nmarcher\n\nkano, montagne, nom",
       /* the day's sentence. The sentence itself is not here: it comes
          from the server, one row a day, in every interface language. */
-      "day.k"  : "Du jour",
       "day.ask"          : "Dans votre propre langue ?",
       "day.tag"          : "#SujetDuJour",
       /* The world's names for the twelve months and the seven days. What
