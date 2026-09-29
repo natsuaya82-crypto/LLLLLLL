@@ -265,6 +265,15 @@ it is quoted, and where a decision has never been made the row in
 - Affected docs: `docs/CHANGELOG.md`、`docs/scope/r132-media.md`。
 - Implementation status: 実装（r132、CODE CONFIRMED のみ、`load-check` 9）。
 
+### 2026-09-29 説明文のキーボードの文を今に（10 言語）
+- Date: 2026-09-29
+- Area: App Store の掲載（`store/*.json` の description）
+- Decision: 説明文の「キーボードはアプリの中」「自分のキーボード配列は有料」を、今の形（自作文字のキーボードはアプリの中で打てる、既存の文字のキーボードはほかのアプリでも使える、無料でいくつでも）に 10 言語で直す。
+- Reason: オーナーの言葉「古い説明文も直してちゃんと10言語分」。
+- Affected features: App Store の掲載。
+- Affected data: 無い。
+- Implementation status: 説明文は `store/*.json`。App Store Connect へは 1.0.3 と一緒に。
+
 ### 2026-09-28 投稿の編集は無料。長さの上限は変えない
 - Date: 2026-09-28
 - Area: 投稿の編集（`postEdit()`）、プラン（`CAN`）
@@ -679,7 +688,7 @@ it is quoted, and where a decision has never been made the row in
 - Affected features: 評価のお願い（新しい、`ios/` と `www/` から呼ぶ一か所）。
 - Affected data: 無し。
 - Affected docs: この項、CLAUDE.md § Shape の五つ目、2026-09-01 の標準ダイアログの項、`store/*.json` の keywords。
-- Implementation status: キーワードは `store/*.json` に入った（App Store Connect へは 1.0.3 の版と一緒に送る）。評価のお願いは **IMPLEMENTED（CODE CONFIRMED のみ、実機未確認）** r97-still ── `rateOpen()`（`www/core.js`、数は `SET.opened`、アカウントの物）、`LinguaStore` の `review`、`acct-check` 94。カテゴリは App Store Connect で（未）。
+- Implementation status: キーワードは `store/*.json` に入った（App Store Connect へは 1.0.3 の版と一緒に送る）。評価のお願いは **IMPLEMENTED（CODE CONFIRMED のみ、実機未確認）** r97-still ── `rateOpen()`（`www/core.js`、数は `SET.opened`、アカウントの物）、`LinguaStore` の `review`、`acct-check` 94。カテゴリは `tools/store-localize.mjs` の `CATEGORY`、1.0.3 の版の文と一緒に App Store Connect へ（2026-09-29）。
 
 ### 2026-09-25 キーボードはプランで分けない ── 置ける字は自作文字と既存の文字、差は自作文字をいくつ作れるかだけ（1.0.3）
 - Date: 2026-09-25
