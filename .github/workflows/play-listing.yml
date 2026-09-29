@@ -1,0 +1,45 @@
+# Google Play の掲載の文を 10 言語で入れる（tools/play-listing.mjs、文は store-play/）。
+# 「Android一気に進めて欲しい」OWNER 2026-09-29。オーナーにターミナルは無いので Actions で押す。
+#
+# 鍵は verify-plan と同じ GOOGLE_PLAY_SERVICE_ACCOUNT（docs/ANDROID.md § オーナーがすること）。
+# 「見るだけ」なら鍵は要らない。
+name: Play Listing
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry:
+        description: '文を見るだけで、Play には送らない（鍵は要らない）'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  listing:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: 鍵があるか
+        if: ${{ !inputs.dry }}
+        env:
+          SA: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT }}
+        run: |
+          if [ -n "$SA" ]; then exit 0; fi
+          echo "::error::GOOGLE_PLAY_SERVICE_ACCOUNT が Secrets にありません。何も送っていません。"
+          echo "1. Google Cloud でサービスアカウントの JSON 鍵を作る（課金の確認と同じ鍵でよい）。"
+          echo "2. その中身をまるごと GitHub の Settings → Secrets and variables → Actions に GOOGLE_PLAY_SERVICE_ACCOUNT として入れる。"
+          echo "3. Play Console → ユーザーと権限 でそのメールを招待し、このアプリの「ストアの掲載情報の管理」を与える。"
+          echo "4. Play Console にアプリがあり、ビルドを一度上げてあること（それまで Play は API を開かない）。"
+          echo "文だけ確かめるなら、「見るだけ」にチェックを入れて押し直す。"
+          exit 1
+
+      - name: 見て、入れる
+        env:
+          GOOGLE_PLAY_SERVICE_ACCOUNT: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT }}
+          DRY: ${{ inputs.dry }}
+        run: |
+          if [ "$DRY" = "true" ]; then node tools/play-listing.mjs --dry; else node tools/play-listing.mjs; fi
