@@ -206,6 +206,9 @@ iOS は `MainViewController.swift` の `keepStill()` で、ウェブビューの
   `www/net.js` の `GOOGLE_WEB_ID`（`GOOGLE_IOS_ID` の隣、秘密ではない）。
   **今は空** ── 空の間、Android の Google は iPhone で `GOOGLE_IOS_ID` が
   空の時と同じく閉じていて、押すと「このビルドには無い」と言う。
+  オーナーにターミナルは無いので、ビルドの時に Secret GOOGLE_WEB_CLIENT_ID
+  から置き換える形を r134（claude/r134-android-build）が作っている ── まだ
+  integ-0905 に入っていない。
 - **Apple**: Android では渡さず、門にボタンを出さない。**Android に Apple の
   サインインを置くかはオーナーの決定待ち。** 置くなら Apple の Services ID と
   戻り先が要る ── Android のプラグインはこの二つが空だと `initialize` ごと
@@ -234,6 +237,10 @@ Manager がそのまま id token に載せるので、`netNonce()` の組はそ�
 - versionCode は run 番号、versionName は `package.json` の `version`
   （iOS と同じ一箇所）。
 
+r134 の枝に、鍵を Actions で作る android-keygen.yml と、組んだ AAB を Play に
+上げる android-release.yml、鍵が無くても署名なしの AAB を組む変更がある ── まだ
+integ-0905 に入っていない。下の § オーナーがすること はそれが入った形で書いてある。
+
 **`workflow_dispatch` は、そのファイルが既定のブランチに在る時だけ押せる。**
 既定のブランチに入れば、どのブランチを選んでも押せる。
 
@@ -241,60 +248,215 @@ CI の debug の鍵は毎回作り直されるので、debug の APK では Goog
 サインインは通らない（SHA-1 が毎回違う）。サインインを確かめるのは、
 アップロード鍵で署名した APK で。
 
+## Play の掲載の文
+
+`store-play/<Play の言語コード>.json` の 10 言語（`store/` の iOS の 10 と同じ言語）。
+欄は三つ: `title`（30 字まで）・`shortDescription`（80 字まで）・`fullDescription`
+（4000 字まで）。
+
+- `title` と `fullDescription` は iOS の `name` と `description` のまま。iOS の
+  説明文には App Store・iPhone・ウィジェットなど Android に無い物の名前が元から
+  一つも無く、書いてある機能（自分の文字・フォント・キーボード・辞書・文法・
+  タイムライン・写真・声・カード・課金）は全部 Android のコードに在る。
+- `shortDescription` は iOS の `promotionalText` を 80 字に縮めた物。日・韓・中は
+  そのまま収まり、欧文の 7 言語は後ろ半分（「誰でも読めるタイムラインで」）を落とした。
+- **文はオーナーのもの** ── これは案。直すなら `store-play/` の JSON を直す。
+
+`tools/play-listing.mjs` が見る物（一つでも外れたら何も送らない）: 10 言語が揃って
+いる・三つの欄だけ・長さ・制御文字（説明の改行は可）・絵文字・`<` と `>`（Play は
+説明を HTML として読む）・前後の空白・アプリ名の宣伝の語（free・best・top・#1・new
+など）・Android に無い物の名前（iPhone・iOS・App Store・Apple・ウィジェット など）。
+`--dry` は鍵なしで見るだけ。Actions の **Play Listing** を押すと入る（「見るだけ」に
+チェックで鍵なし）。鍵が無ければ何をすべきかを言って止まる。
+
+## スクリーンショット
+
+Play の決まり（電話）:
+
+| 物 | 決まり |
+|---|---|
+| 電話のスクショ | 2〜8 枚。JPEG か透過の無い PNG、一枚 8MB まで、辺は 320〜3840 px、長辺は短辺の 2 倍まで。おすすめに載るには 1080 px 以上・9:16 が 4 枚以上 |
+| アイコン | 512 × 512 の PNG（32 ビット）、1MB まで。iOS の 1024 の絵（`ios/App/App/Assets.xcassets/AppIcon.appiconset/`）を縮めればよい |
+| フィーチャー グラフィック | 1024 × 500 の JPEG か透過の無い PNG。**必須**。Play の頁の上に出る横長の絵で、iOS には無い ── 作るのはオーナー |
+| タブレット（7 インチ・10 インチ） | 任意。無ければタブレット向けとしては出ない |
+
+言語ごとに別の絵を置ける。置かない言語には既定の言語の絵が出る。
+
+撮り方: `tools/shot.mjs --play` が Play の枠（1080 × 1920、9:16、一画面、JPEG）で
+撮る。`tools/play-shots.mjs` がそれを 10 言語で回して `shots/play/<Play の言語>/` に
+番号順に並べ、一枚ずつ大きさを見る。オーナーは Actions の **Play Shots** を押し、
+Artifacts の zip を落とす（画面の名前と言語を一つに絞れる）。
+
+**中身は検査用の fixture**（`tools/fixture.mjs` の六語・三文字・「未送信」の投稿）で、
+ストアに出す絵ではない。何の画面を何枚、どんな言語を作った状態で見せるかは
+オーナーのもの。決まれば、その状態を fixture の一つの面として足して撮る。
+
+## Play Console で手で答える物（答えの案）
+
+どれも**案**で、答えるのはオーナー。Play Console → アプリ → 「アプリのコンテンツ」
+（ポリシー → アプリのコンテンツ）に並ぶ。
+
+### プライバシー ポリシー
+
+`https://tokinets.com/lingua/privacy.html`（iOS と同じ、`store/*.json` の
+`privacyPolicyUrl`）。
+
+### アプリのアクセス
+
+「一部またはすべての機能が制限されている」。サインインしないと何も見えないので、
+審査用のアカウントを渡す: **iOS の審査に渡したのと同じメールとパスワード**
+（`docs/apple.md` § 審査ノート）。**ここにもリポジトリにも書かない** ── Play Console
+の欄に直接入れる。入り方の一行（案）:
+
+> Open the app, walk through the short introduction, and at the last step choose
+> "Sign in with email" and use the account below.
+
+### 広告
+
+「いいえ、広告は含まれていません」。Lingua は広告を出さない（`docs/apple.md` § 9）。
+**広告 ID** の申告も「いいえ」（広告 ID を使う物は無い）。ただ、依存が
+AD_ID の権限を manifest に足すかは**確かめていない** ── CI が組んだ AAB の manifest
+に com.google.android.gms.permission.AD_ID が無いことを見てから答える。
+
+### コンテンツのレーティング（IARC の質問票）
+
+- カテゴリ: 「ソーシャル ネットワーキング、フォーラム、ブログ、UGC 共有」
+  （人が書いた物を他の人が読むのが中心）。
+- 暴力・恐怖・性的な内容・下品な言葉・薬物・アルコール・たばこ・ギャンブル・
+  差別的な表現: **いいえ**（アプリが用意する内容として。人が書く物は下の UGC で答える）。
+- ユーザー同士がやり取りする・内容を共有する: **はい**（投稿・返信・写真・声）。
+- ユーザーの現在地を他の人に見せる: **いいえ**（プロフィールの「場所」は人が打つ
+  文字で、端末の位置は読まない）。
+- デジタル商品の購入: **はい**（Plus・Pro の定期購入）。
+- ウェブ ブラウザや検索エンジンか: **いいえ**。
+- UGC の扱い（問われたら）: 投稿と人を通報できる（`report`）、ブロック・ミュート
+  できる、通報は運営が見て投稿を隠す（`www/mod.js`）。
+
+出た値は Play が決める。対象年齢（次）とは別の物で、レーティングが低く出ても
+規約の 13 歳以上と食い違いではない。
+
+### 対象年齢と内容
+
+**13〜15・16〜17・18 以上**（規約は 13 歳以上 ── `docs/apple.md` の「13さん以上だね。
+snsって基本そうやん」OWNER 2026-08-28）。13 歳未満は選ばない。「子どもの興味を引く
+か」は「いいえ」（案）。13 歳未満を選ばない限りファミリー ポリシーの対象にならない。
+
+### ニュース・金融・健康・政府
+
+どれも「いいえ」。
+
+### データ セーフティ
+
+`www/net.js` が送っている先（`rest/v1/…`・`storage/v1/object/post-media`・
+`functions/v1/verify-plan`・`auth/v1/…`）と `supabase/schema.sql` の表から数えた。
+分析・広告・クラッシュ収集の SDK は無い（`www/` にも `android/app/build.gradle`
+にも無い）。
+
+- **集める**: はい。**共有する**: いいえ ── Supabase（サーバー）・Google の Firebase
+  （通知）と Play（課金）は Lingua の代わりに処理する業者で、Play の定義で
+  「共有」に入らない。投稿が他の人に見えるのは本人が投稿した時で、これも入らない。
+- **送る時に暗号化**: はい（全部 HTTPS）。
+- **消してもらえる**: はい ── アプリの 設定 → アカウントを削除 で、言語・投稿・
+  写真・声・プロフィールが消える（`profile` から `on delete cascade`）。通報と
+  ご意見は書いた人の欄が空になって残る（`report.actor`・`feedback.author` は
+  `on delete set null`）。Play は**アプリの外から削除を頼めるウェブの
+  URL** も求める（下の「足りない物」）。
+
+| Play の種類 | 何か（どこに） | 必須か | 目的 |
+|---|---|---|---|
+| 個人情報 → メールアドレス | サインイン（Supabase Auth） | 必須 | アプリの機能・アカウント管理 |
+| 個人情報 → 名前 | 表示名とハンドル（`profile.display`・`handle`） | 必須 | アプリの機能・アカウント管理 |
+| 個人情報 → ユーザー ID | アカウントの uid | 必須 | アプリの機能・アカウント管理 |
+| 個人情報 → その他の情報 | 自己紹介・場所・リンク（`profile.bio`・`loc`・`link`、人が打つ文字） | 任意 | アプリの機能 |
+| 財務情報 → 購入履歴 | 定期購入（`purchase`、購入トークンと商品 ID と期限） | 任意 | アプリの機能 |
+| 写真と動画 → 写真 | 投稿の写真・プロフィールの写真（`post-media`、`profile.av`） | 任意 | アプリの機能 |
+| 音声 → 音声録音 | 投稿の 30 秒の声（`post-media`） | 任意 | アプリの機能 |
+| アプリのアクティビティ → その他のユーザー作成コンテンツ | 作った言語（`language`・`slice`）・投稿・下書き・通報・ご意見（`post`・`draft`・`report`・`feedback`） | 必須（言語は最初に作る） | アプリの機能 |
+| アプリのアクティビティ → アプリ内検索履歴 | 最近の検索・保存した検索（`recent_search`・`saved_search`） | 任意 | アプリの機能 |
+| アプリのアクティビティ → その他の操作 | いいね・リポスト・フォロー・ブロック・ミュート | 任意 | アプリの機能 |
+| デバイスまたはその他の ID | 通知の宛先の token（`device`） | 任意（通知を許した時だけ） | アプリの機能 |
+
+集めない: 位置情報・連絡先・カレンダー（アプリの暦は言語の中身）・メッセージ
+（DM は無い）・健康・ファイル（CSV と紙のシートは端末の中で読み、残るのは言語の
+中身として上）・ウェブ閲覧・アプリの情報とパフォーマンス（クラッシュ・診断）。
+
+### 足りない物（オーナーが決める）
+
+- **アカウント削除のウェブの URL**。Play はデータ セーフティにこれを求め、無いと
+  出せない。privacy.html に「アプリの 設定 → アカウントを削除、またはメールで
+  頼む」節があればその URL（`#` 付き）でよい。無ければ一枚の頁が要る。
+  tokinets.com はこのリポジトリの外。
+- **アプリのカテゴリ**（ストアの設定）。iOS と揃えるなら App Store Connect の値。
+- **連絡先のメール**（ストアの設定で必須、Play の頁に出る）。
+- **Android に Apple のサインインを置くか**（§ サインイン）。
+
 ## オーナーがすること
 
-1. **Google Play Console** のデベロッパーアカウントを作り、アプリを作る
-   （パッケージ名 `com.tokinets.lingua`）。アプリ名と説明文はオーナーのもの。
-2. **アップロード鍵**を作る（例:
-   `keytool -genkeypair -v -keystore upload.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload`）。
-   GitHub の Secrets に四つ入れる: `ANDROID_KEYSTORE_B64`（`base64 -w0 upload.jks`
-   の出力）、`ANDROID_KEYSTORE_PASSWORD`、`ANDROID_KEY_ALIAS`、
-   `ANDROID_KEY_PASSWORD`。鍵のファイルはリポジトリに入れない。失くすと
-   同じアプリに上げられなくなるので、手元に保管する。
-3. Play Console で **Play App Signing** を有効にする（初回の AAB を上げる時に
-   求められる）。
-4. **Google Cloud の OAuth クライアント**:
-   - 種類「Android」を作る。パッケージ名 `com.tokinets.lingua`、SHA-1 は
-     アップロード鍵のもの（`keytool -list -v -keystore upload.jks`）と、
-     Play Console の「アプリの署名」にあるアプリ署名鍵のもの。二つとも。
-   - 種類「ウェブ アプリケーション」のクライアント ID を用意する（Supabase の
-     Google の設定に既にあればそれ）。これが webClientId になる。
-     その値を `www/net.js` の `GOOGLE_WEB_ID = ''` の引用符の中に入れる
-     （`<数字>-<英数字>.apps.googleusercontent.com`）。入れるまで Android の
-     Google のボタンは閉じている。
-   - Supabase の Authentication → Providers → Google の Client IDs に、
-     その ウェブ のクライアント ID が入っていること（id token の audience に
-     なる）。
-5. **Play Console に定期購入を四つ作る**（収益化 → 定期購入）。商品 ID は
-   `com.tokinets.lingua.plus.monthly`・`com.tokinets.lingua.plus.yearly`・
-   `com.tokinets.lingua.pro.monthly`・`com.tokinets.lingua.pro.yearly`。各々に
-   基本プランを一つ（自動更新、期間は月か年、ID は例えば `monthly` / `yearly`）、
-   値段は iPhone と同じ。有効にする。定期購入はアプリを一度 Play に上げて
-   （内部テストでよい）からでないと作れない。
-6. **Google Play の購入を確かめる鍵**:
-   - Google Cloud でプロジェクトを選び（無ければ作る）、**Google Play Android
-     Developer API** を有効にする。
-   - サービスアカウントを作り、**JSON 鍵**を作ってダウンロードする。
-   - Play Console の「ユーザーと権限」でそのサービスアカウントのメールを招待し、
-     このアプリに「財務データの表示」と「注文と定期購入の管理」を与える。
-   - JSON 鍵の中身をまるごと GitHub の Secrets に `GOOGLE_PLAY_SERVICE_ACCOUNT`
-     として入れ、Actions の Supabase Deploy を `verify-plan` で回す（その段が
-     Supabase の secret に入れる）。鍵のファイルはリポジトリに入れない。
-   - 試すのは Play Console の「ライセンス テスト」に入れた Google アカウントで。
-7. **通知（Firebase）**（§ 通知。入れるまで Android は「無い」と答える）:
-   - Firebase コンソールでプロジェクトを作る（Google Cloud の既存のプロジェクトに
-     足してよい）。Android アプリを足す（パッケージ名 `com.tokinets.lingua`）。
-   - **google-services.json** をダウンロードし、android/app/google-services.json
-     に置いてコミットする（鍵ではなく、アプリがどのプロジェクトかを言うだけの
-     ファイル）。`android/app/build.gradle` がそれを見て Google サービスの
-     プラグインを当てる。
-   - Firebase の「プロジェクトの設定 → サービス アカウント」で**新しい秘密鍵**
-     （JSON）を作る。中身をまるごと GitHub の Secrets に `FCM_SERVICE_ACCOUNT`
-     として入れ、Actions の Supabase Deploy を `push-send` で回す（その段が
-     Supabase の secret に入れる）。鍵のファイルはリポジトリに入れない。
-   - `device.platform` の列はサーバーにまだ無い（`supabase/schema.sql` を本番に
-     流すのはリーダー）。列が無い間に Android から出た行は落ちる ── 流してから
-     google-services.json を入れたビルドを出す。
+上から順に。**(r134)** の付いた workflow は claude/r134-android-build の枝にあり、
+integ-0905 に入ってから押せる（`workflow_dispatch` は既定のブランチに在る物だけ）。
+Secret は GitHub の Settings → Secrets and variables → Actions に入れる。
+
+1. **Play Console のデベロッパー アカウント**を作る（登録料 25 ドル、本人確認）。
+   **個人のアカウントか組織のアカウントか**で後が変わる ── 2023 年 11 月以降に
+   作った個人のアカウントは、本番に出す前に**クローズド テストを 12 人以上で
+   14 日間続ける**ことを Play が求める（手順 12）。組織（会社）なら要らないが、
+   D-U-N-S 番号が要る。
+2. **アプリを作る**: アプリ名 `Lingua — Conlang Builder`、既定の言語、「アプリ」、
+   「無料」（定期購入は無料のアプリに付ける。無料を後から有料には変えられない）。
+   パッケージ名は最初の AAB を上げた時に `com.tokinets.lingua` に決まる。
+3. **アップロード鍵**: Actions の android-keygen.yml **(r134)** を押し、その
+   workflow が言うとおりに Secrets に四つ入れる: `ANDROID_KEYSTORE_B64`・
+   `ANDROID_KEYSTORE_PASSWORD`・`ANDROID_KEY_ALIAS`・`ANDROID_KEY_PASSWORD`。
+   鍵を失くすと同じアプリに上げられなくなるので、手元にも保管する。
+4. **Firebase（通知）**（§ 通知。入れるまで Android は「無い」と答える）:
+   - Firebase コンソールでプロジェクトを作り（Google Cloud の既存のプロジェクトに
+     足してよい）、Android アプリを足す（パッケージ名 `com.tokinets.lingua`）。
+   - **google-services.json** をダウンロードし、GitHub の画面で `android/app/` に
+     アップロードする（Add file → Upload files。鍵ではなく、どのプロジェクトかを
+     言うだけのファイル）。
+   - 「プロジェクトの設定 → サービス アカウント」で**新しい秘密鍵**（JSON）を作り、
+     中身をまるごと Secret `FCM_SERVICE_ACCOUNT` に入れ、Actions の Supabase Deploy
+     を `push-send` で回す。
+   - `device.platform` の列は 2026-09-29 に本番に入っている。
+5. **Google のサインイン**（Google Cloud → API とサービス → 認証情報）:
+   - 種類「ウェブ アプリケーション」の OAuth クライアント ID（Supabase の
+     Authentication → Providers → Google の Client IDs に入っている物）を、
+     Secret GOOGLE_WEB_CLIENT_ID **(r134)** に入れる。ビルドの時に `GOOGLE_WEB_ID`
+     に入る。入るまで Android の Google のボタンは閉じている。
+   - 種類「Android」を作る: パッケージ名 `com.tokinets.lingua`、SHA-1 はアップロード
+     鍵の物（android-keygen.yml **(r134)** が出す）。アプリ署名鍵の SHA-1 は手順 7 の
+     後に Play Console の「アプリの署名」に出るので、それでもう一つ作る。
+6. **組む**: Actions の **Android build** を押し、Artifacts から AAB を落とす。
+7. **最初の AAB を手で上げる**: Play Console → テスト → 内部テスト → 新しい
+   リリース に落とした AAB を上げる。この時 **Play App Signing** を有効にする。
+   Play は最初の一つを画面から上げるまで API を開かない（手順 8 以降の道具は
+   それから動く）。テスターのメール（自分）を足す。
+8. **Play の鍵（サービス アカウント）**:
+   - Google Cloud で **Google Play Android Developer API** を有効にし、サービス
+     アカウントを作り、**JSON 鍵**を作る。
+   - Play Console の「ユーザーと権限」でそのメールを招待し、このアプリに:
+     「財務データの表示」「注文と定期購入の管理」（課金の確認）、「ストアの掲載情報の
+     管理」（Play Listing）、「テストトラックへのリリース」「製品版へのリリース」
+     （android-release.yml **(r134)**）。
+   - 中身をまるごと Secret `GOOGLE_PLAY_SERVICE_ACCOUNT` に入れ、Actions の Supabase
+     Deploy を `verify-plan` で回す。
+9. **定期購入を四つ**（収益化 → 定期購入）: 商品 ID `com.tokinets.lingua.plus.monthly`・
+   `com.tokinets.lingua.plus.yearly`・`com.tokinets.lingua.pro.monthly`・
+   `com.tokinets.lingua.pro.yearly`。各々に基本プランを一つ（自動更新、月か年、
+   ID は例えば `monthly` / `yearly`）、値段は iPhone と同じ。有効にする。
+   試すのは「ライセンス テスト」に入れた Google アカウントで。
+10. **ストアの掲載**: `store-play/` の文を読んで直し、Actions の **Play Listing** を
+    「見るだけ」で押し、緑なら普通に押す。アイコン（512）・フィーチャー グラフィック
+    （1024 × 500）・スクショを Play Console に上げる（§ スクリーンショット。どの画面を
+    見せるか決まったら **Play Shots** で撮る）。カテゴリと連絡先のメールも。
+11. **アプリのコンテンツ**: § Play Console で手で答える物 の案で答える。アカウント
+    削除の URL を用意する。
+12. **クローズド テスト**（手順 1 で個人のアカウントの時だけ）: クローズド テストの
+    トラックに同じ AAB を出し、12 人以上に入ってもらい 14 日間続ける。その後
+    Play Console から本番へのアクセスを申し込む。
+13. **本番**: android-release.yml **(r134)** で製品版のトラックに上げる（または
+    Play Console で内部テストのリリースを製品版へ昇格）、審査に出す。
+14. 実機で見る物は下の § 端末で見ていないこと。
 
 ## 端末で見ていないこと
 

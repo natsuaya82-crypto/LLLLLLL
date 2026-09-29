@@ -1,0 +1,46 @@
+# Google Play の電話のスクリーンショットを 10 言語で撮り、Artifacts に置く（tools/play-shots.mjs）。
+# 「Android一気に進めて欲しい」OWNER 2026-09-29。オーナーにターミナルは無いので Actions で押す。
+# 撮るだけで Play には送らない。どの画面を出すかはオーナーのもの（docs/ANDROID.md § スクリーンショット）。
+name: Play Shots
+
+on:
+  workflow_dispatch:
+    inputs:
+      screens:
+        description: '撮る画面（空白で区切る。2〜8 個。空なら feed letters kb words gram profile）'
+        required: false
+        default: ''
+      only:
+        description: '一言語だけ（en de es fr it ja ko pt ru zh のどれか。空なら 10 言語）'
+        required: false
+        default: ''
+
+jobs:
+  shots:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Playwright と Chromium、日中韓の字
+        run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+          sudo apt-get install -y fonts-noto-cjk
+
+      - name: 撮る
+        env:
+          SCREENS: ${{ inputs.screens }}
+          ONLY: ${{ inputs.only }}
+        run: |
+          set --
+          if [ -n "$ONLY" ]; then set -- --only "$ONLY"; fi
+          # 画面の名前は空白で分ける（引用しないのはそのため）。
+          node tools/play-shots.mjs "$@" $SCREENS
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: play-shots-${{ github.run_number }}
+          path: shots/play/
