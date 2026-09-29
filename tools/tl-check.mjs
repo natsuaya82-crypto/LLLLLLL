@@ -939,6 +939,41 @@ const r = await pg.evaluate(({ s }) => {
     netSend1 = realS1; netSend = realS; netGet = realG;
   }
 
+  /* ---- 14e: おすすめ carries on from the moment its first page was cut ----
+     feed_hot() in supabase/schema.sql is a list AS OF a moment, and paged by
+     a count: the posts written since the tick are in it and more are written
+     while somebody reads, so a count against a list that grew would hand a
+     post over twice. The first page's answer says the moment (`asof`); the
+     real askFeed1('rec') runs twice with only the wire answered, and the
+     second ask has to send that moment back with the count after page one. */
+  {
+    const realS1 = netSend1, realS = netSend, realG = netGet;
+    const n0 = POSTS.length, keepRec = FEED_HAVE.rec, keepNext = SNS_NEXT.rec, keepEnd = SNS_END.rec;
+    const sent = [];
+    netSend1 = function (m, path, b, t2, ok) {
+      if (m === 'POST' && String(path) === '/rest/v1/rpc/feed_hot') {
+        sent.push(JSON.stringify(b));
+        const base = sent.length === 1 ? 0 : NET_PAGE, rows = [];
+        for (let i = 0; i < NET_PAGE; i++)
+          rows.push({ id:'FH-' + (base + i), author:'U-veth', created_at:'2026-09-10T00:00:00Z',
+                      body:{ ln:'fh', hd:'veth', who:'Veth', lname:'Tovi' },
+                      asof:'2026-09-29T01:23:45.678Z' });
+        ok(rows, 200);
+        return;
+      }
+      ok([], 200);
+    };
+    netSend = function (m, path, b, t2, ok, bad, up) { netSend1(m, path, b, t2, ok, bad, up, true); };
+    netGet = function (path, ok, bad) { netSend('GET', path, null, '', ok, bad); };
+    askFeed1('rec', function () {}, function () {});
+    askFeed1('rec', function () {}, function () {}, SNS_NEXT.rec);
+    out.recSent = sent.join(' then ');
+    out.recIds = FEED_HAVE.rec ? FEED_HAVE.rec.ids.length : -1;
+    POSTS.splice(n0, POSTS.length - n0);
+    FEED_HAVE.rec = keepRec; SNS_NEXT.rec = keepNext; SNS_END.rec = keepEnd;
+    netSend1 = realS1; netSend = realS; netGet = realG;
+  }
+
   /* ---- 15: r94 E -- the meaning switched off ------------------------------
      「意味をオフにした場合はTwitterと同じように投稿できる」 OWNER 2026-09-25.
      Off: the composer has no meaning field and the switch says so; the post
@@ -1701,6 +1736,12 @@ if (r.rpFo !== 1 || r.rpFoW || !r.rpFoGo || r.rpRec !== 0 || r.rpCopy !== false 
       r.rpPfMe + ' time(s) (want 1), on what I wrote: ' + r.rpPfW +
       '. 「vethの名前の下に〇〇がリポストって入れよう」');
 else console.log('14d: 〇〇がリポスト under the name, on the pass and nowhere else: fo 1, rec 0, my page 1');
+{ const want = JSON.stringify({ lim:50, off:0, upto:null }) + ' then ' +
+               JSON.stringify({ lim:50, off:50, upto:'2026-09-29T01:23:45.678Z' });
+  if (r.recSent !== want || r.recIds !== 100)
+    say('14e: おすすめ\u2019s next page must carry the first page\u2019s moment and the count after it -- ' +
+        'sent ' + r.recSent + ' (want ' + want + '), and the tab holds ' + r.recIds + ' (want 100).');
+  else console.log('14e: おすすめ carries on from the moment its first page was cut: off 50, the same asof'); }
 if (!r.mnOnField || !r.mnOffField || r.mnDraft !== 1)
   say('15: the meaning switch -- on, the field and the switch: ' + r.mnOnField + '; off, no field and ' +
       'the switch saying off: ' + r.mnOffField + '; a draft keeps it: ' + r.mnDraft);

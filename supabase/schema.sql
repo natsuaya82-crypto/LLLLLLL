@@ -3203,64 +3203,66 @@ language sql stable as $$
 $$;
 
 -- ---------------------------------------------------------------------------
--- What is going round
+-- What is going round -- おすすめ
 --
--- 「12時間ごとにバズった順」 OWNER, and 「検索の話題はTwitterと同じアルゴリズム
--- で」. The recommended timeline and the search's 話題 are the SAME list --
--- the owner said so -- so there is one function and not two.
+-- 「12時間ごとにバズった順」 OWNER, and 「Twitterと同じアルゴリズムで」.
 --
 -- The weights are decided: a like is 1, a repost is 3, an answer is 5. Somebody
 -- who wrote a sentence under your post did more than somebody who tapped a
--- heart, and the numbers say so. The window is the last 48 hours. A tie is
--- broken by the newer post, which is the second half of the owner's sentence
--- and not a detail: without it two posts on the same score swap places every
--- time the list is asked for.
+-- heart, and the numbers say so. The window is the 48 hours up to the tick. A
+-- tie is broken by the newer post, which is the second half of the owner's
+-- sentence and not a detail: without it two posts on the same score swap
+-- places every time the list is asked for.
+--
+-- THREE PARTS, one after another, OWNER 2026-09-28:
+--   going round  the 48 hours up to the tick, by score, as the tick left it
+--   new          everything written since the tick, newest first, one after
+--                every feed_fresh_every() of the ones going round
+--                「区切りの後に書かれた投稿を出す。全部。人気の投稿の間に挟む」
+--   older        once both of those have run out, everything before the 48
+--                hours, newest first
+--                「48時間の分を出し切ったら…それより古い投稿が新しい順で続く」
 --
 -- Read as `post_seen` reads, column for column, so the phone's netRow() does
 -- not learn a second shape. `stable` and no `security definer`: it walks the
 -- same signed-in-readable tables the timeline already walks, and post's own read
 -- policy is what decides that a taken-down post is nobody's business.
 --
--- WHAT IS NOT HERE, and both are deliberate:
---
---   Nothing. Both of the halves that were open on 2026-08-28 have been
---   answered and are in: the list stands still between ticks (feed_hot()
---   below, and the note inside it), and the blue mark is worth four
---   (feed_paid_weight()), multiplied onto whoever badge_of() says wears it
---   (feed_weight()).
---
--- `off` and not a timestamp for the continuation: this list is ordered by a
--- score, and a score is not something you can ask for "the ones after". A
--- count is honest about being a count.
+-- The blue mark is worth four (feed_paid_weight()), multiplied onto whoever
+-- badge_of() says wears it (feed_weight()).
 -- ---------------------------------------------------------------------------
 
--- The tick the list turns on. 「4時間ごと。0 4 8 12 16 20 24 これは入れ替わら
--- ない。」 OWNER 2026-08-28 -- so this answers the most recent of those six
--- hours and never anything in between.
+-- The tick the list turns on, at a moment (now, unless one is given).
+-- 「2時間ごと」 OWNER 2026-09-28 -- 0 2 4 ... 22, and this answers the most
+-- recent of those twelve hours and never anything in between.
 --
 -- IN AMERICAN TIME, and the zone is the day's sentence's own.
 -- 「3はアメリカ時間ね」「時間もお題のページに合わせるってこと」 OWNER
--- 2026-08-28 -- two sentences that point at the same place.
+-- 2026-08-28 -- supabase/functions/daily-prompt/index.ts picks `on_day` with
+-- `timeZone: 'America/Los_Angeles'`, so that is where the day turns and this
+-- turns there too. Naming the zone here is not a second copy of a timezone
+-- rule: it is the same one, read from the same place the day is read from.
+-- The phone does no arithmetic at all.
 --
--- IT WAS UTC, and that followed NEITHER of them. The argument written here
--- was that the day's page does no zone arithmetic, because netDay() asks for
--- the newest row rather than today's. That is true of the PHONE and it is not
--- where the boundary is decided: supabase/functions/daily-prompt/index.ts
--- picks `on_day` with `timeZone: 'America/Los_Angeles'`, and the cron that
--- runs it rings at 0:00 Pacific (the daily-prompt schedule near the foot of this
--- file). So the day already turns in California, and the list was turning in UTC beside it -- 0 4 8 12 16 20 in
--- American local time only while the offset happens to be a multiple of four.
---
--- Naming the zone here is not a second copy of a timezone rule: it is the
--- same one, read from the same place the day is read from. The phone still
--- does no arithmetic at all.
-create or replace function feed_slot()
+-- A moment and not only now(), because a list read a page at a time is a
+-- list AS OF the moment its first page was asked (feed_hot() below): the
+-- tick is that moment's tick, so a page read across 2:00 is still cut from
+-- the list its first page came from.
+drop function if exists feed_slot();
+create or replace function feed_slot(at_ timestamptz default now())
 returns timestamptz language sql stable as $$
-  select (date_trunc('hour', now() at time zone 'America/Los_Angeles')
+  select (date_trunc('hour', at_ at time zone 'America/Los_Angeles')
           - make_interval(hours =>
-              (extract(hour from now() at time zone 'America/Los_Angeles')::int % 4)))
+              (extract(hour from at_ at time zone 'America/Los_Angeles')::int % 2)))
          at time zone 'America/Los_Angeles'
 $$;
+
+-- How many going round come before each new one. TWO -- and it is a
+-- PLACEHOLDER: the leader chose it, the owner was not asked for a number
+-- (「人気の投稿の間に挟む」 OWNER 2026-09-28). 仮、オーナーに見せて決める.
+-- One function, as feed_paid_weight() is, so the number is found where it is.
+create or replace function feed_fresh_every()
+returns int language sql immutable as $$ select 2 $$;
 
 -- What a blue mark is worth. FOUR.
 --
@@ -3293,9 +3295,12 @@ $$;
 
 -- Dropped by name first, because the return type gains columns below and
 -- `create or replace function` refuses to change one. This file is pasted
--- over a database that already has the old shape.
+-- over a database that already has an older shape -- (int, int) before the
+-- moment was an argument, and (int, int, timestamptz) since.
 drop function if exists feed_hot(int, int);
-create or replace function feed_hot(lim int default 50, off int default 0)
+drop function if exists feed_hot(int, int, timestamptz);
+create or replace function feed_hot(lim int default 50, off int default 0,
+                                    upto timestamptz default null)
 returns table (id uuid, author uuid, language uuid, prompt bigint,
                reply_to uuid, created_at timestamptz, hidden_at timestamptz,
                author_out boolean, body jsonb,
@@ -3309,57 +3314,97 @@ returns table (id uuid, author uuid, language uuid, prompt bigint,
                -- and what it quotes, as post_seen has it (r94)
                quote_of uuid, quoted jsonb,
                -- and whether the author wears the mark (post_seen.badge)
-               badge boolean)
+               badge boolean,
+               -- and the moment this list is as of: `upto`, or now() when
+               -- none was given. The first page hands it back and every
+               -- later page sends it (netFeed() in www/net.js).
+               asof timestamptz)
 language sql stable as $$
+  /* ONE MOMENT, AND THE WHOLE LIST IS CUT FROM IT. Paging is by a count
+     (`off`), because two of the three parts are in score order and a score
+     is not something you can ask for "the ones after". A count only walks a
+     list that does not move under it, and the new part moves by the minute:
+     a post written while somebody reads page one would push everything down
+     one, and page two would start with the last post of page one. So the
+     list is the list AS OF `upto` -- nothing written after it, and the tick
+     that moment's tick -- and the phone sends the first page's `asof` with
+     every page after it. What was written since waits for the next time the
+     top of the list is asked for.
+
+     What this does not stand still for: a post deleted, taken down or
+     muted between two pages is left out of the second and the rows after it
+     move up by one. That is a post going away, and it was so before. */
+  with m as (
+    select coalesce(upto, now()) as at_,
+           feed_slot(coalesce(upto, now())) as slot
+  ),
+  v as (
+    select p.*, m.at_, m.slot
+      from post_seen p, m
+     where p.created_at <= m.at_
+       and p.hidden_at is null
+       /* AND NOT A REPLY, in all three parts. 「おすすめにリプライ出てくるの
+          やめよう」 OWNER 2026-09-08. This list is the one nobody asked to be
+          on -- 「リプライはおすすめ並ぶことないでしょ？基本」 OWNER
+          2026-09-04. It is left out of the RESULT and not out of the
+          scoring: `a.pts` below counts the replies TO a post, which is most
+          of what makes a post go round. 「フォロー中」 keeps them, and so
+          does the day's list. */
+       and p.reply_to is null
+       -- and nobody the reader has muted (post_seen.muted)
+       and not p.muted
+  ),
+  hot as (
+    select v.id,
+           row_number() over (order by ((k.pts + a.pts) * feed_weight(v.author)) desc,
+                                       v.created_at desc, v.id desc) as n
+      from v
+      left join lateral (
+        select coalesce(sum(case r.kind when 'like'  then 1
+                                        when 'boost' then 3 end), 0) as pts
+          from react r
+         where r.post = v.id and r.created_at <= v.slot
+      ) k on true
+      left join lateral (
+        select (count(*) * 5) as pts
+          from post q
+         where q.reply_to = v.id and q.created_at <= v.slot
+           and not post_private(q.body)
+      ) a on true
+     /* AS THE TICK LEFT IT: the posts of the 48 hours up to it, and the
+        reactions that had happened by then. Counting reactions as they stand
+        would move the order inside a slot. */
+     where v.created_at >  v.slot - interval '48 hours'
+       and v.created_at <= v.slot
+  ),
+  fresh as (
+    select v.id, row_number() over (order by v.created_at desc, v.id desc) as n
+      from v where v.created_at > v.slot
+  ),
+  older as (
+    select v.id, row_number() over (order by v.created_at desc, v.id desc) as n
+      from v where v.created_at <= v.slot - interval '48 hours'
+  ),
+  /* Where each row stands. Going round and new share a run of groups: group
+     g is the g-th feed_fresh_every() going round and then the g-th new one,
+     so whichever runs out first, the other carries on alone. The older part
+     is after all of it. */
+  seq as (
+    select hot.id, 0 as part,
+           (hot.n + feed_fresh_every() - 1) / feed_fresh_every() as g,
+           0 as side, hot.n
+      from hot
+    union all
+    select fresh.id, 0, fresh.n, 1, fresh.n from fresh
+    union all
+    select older.id, 1, 0, 0, older.n from older
+  )
   select v.id, v.author, v.language, v.prompt, v.reply_to, v.created_at,
          v.hidden_at, v.author_out, v.body,
          v.likes, v.boosts, v.replies, v.i_like, v.i_boost,
-         v.quote_of, v.quoted, v.badge
-    from post_seen v
-    left join lateral (
-      select coalesce(sum(case r.kind when 'like'  then 1
-                                      when 'boost' then 3 end), 0) as pts
-        from react r
-       where r.post = v.id and r.created_at <= feed_slot()
-    ) k on true
-    left join lateral (
-      select (count(*) * 5) as pts
-        from post q
-       where q.reply_to = v.id and q.created_at <= feed_slot()
-         and not post_private(q.body)
-    ) a on true
-   /* AS THE TICK LEFT IT, on both sides: the posts that existed then, and the
-      reactions that had happened by then. That is what makes the list stand
-      still. Counting reactions as they stand would move the order inside a
-      slot; letting posts in as they are written would move the tail of it.
-      「時間もお題のページに合わせるってこと」 OWNER -- and the day's sentence
-      is one row that does not move until the next one is written.
-
-      It costs what standing still costs, and the cost is real: a post written
-      a minute ago is not in this list and cannot be until the tick comes
-      round. That is the shape that was asked for. */
-   where v.created_at >  feed_slot() - interval '48 hours'
-     and v.created_at <= feed_slot()
-     and v.hidden_at is null
-     /* AND NOT A REPLY. 「おすすめにリプライ出てくるのやめよう」 OWNER
-        2026-09-08. This list is the one nobody asked to be on -- 「リプライは
-        おすすめ並ぶことないでしょ？基本」 OWNER 2026-09-04 -- and it was said
-        on the PHONE (snsList() in www/sns.js) and nowhere here. A phone that
-        asks for fifty and then hides the answers is a phone showing a page
-        of thirty: the filtering is not wrong, it is in the wrong place, and
-        what it costs is the length of the page.
-
-        It is left out of the RESULT and not out of the scoring: `a.pts`
-        above counts the replies TO a post, which is most of what makes a
-        post go round, and that is unchanged.
-
-        The other two lists are untouched. 「フォロー中」 is the people
-        somebody chose to read and a thread is theirs to say; feed_fo() below
-        keeps them, and so does the day's list. */
-     and v.reply_to is null
-     -- and nobody the reader has muted (post_seen.muted)
-     and not v.muted
-   order by ((k.pts + a.pts) * feed_weight(v.author)) desc, v.created_at desc
+         v.quote_of, v.quoted, v.badge, v.at_
+    from seq join v on v.id = seq.id
+   order by seq.part, seq.g, seq.side, seq.n
    limit lim offset off
 $$;
 

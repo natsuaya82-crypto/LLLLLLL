@@ -112,7 +112,8 @@ const LS = 'c0000000-0000-4000-8000-00000000005f';  /* a language B has not publ
    and that reads exactly like the policy refusing it. */
 const DR = 'd0000000-0000-4000-8000-0000000000d1';  /* what A wrote and did not send */
 const DR2= 'd0000000-0000-4000-8000-0000000000d2';  /* the one B tries to plant */
-/* Six posts to put in an order. B holds them all so that F is free to react
+/* Posts to put in an order: five going round, two older than the window and
+   two written since the tick. B holds them all so that F is free to react
    to them -- notices() leaves out what you did to your own -- and because
    they are seeded after A has asked to be deleted. */
 const H1 = 'a0000000-0000-4000-8000-0000000000f1';  /* one boost  = 3 */
@@ -121,6 +122,9 @@ const H3 = 'a0000000-0000-4000-8000-0000000000f3';  /* one like   = 1 */
 const H4 = 'a0000000-0000-4000-8000-0000000000f4';  /* nothing, and older */
 const H5 = 'a0000000-0000-4000-8000-0000000000f5';  /* older than the window */
 const H3b= 'a0000000-0000-4000-8000-0000000000f6';  /* nothing, and newer than H4 */
+const H6 = 'a0000000-0000-4000-8000-0000000000f7';  /* older than the window, older than H5 */
+const HN1= 'a0000000-0000-4000-8000-0000000000f8';  /* written after the tick */
+const HN2= 'a0000000-0000-4000-8000-0000000000f9';  /* and after HN1 */
 /* A search A starred. What somebody looks for is as much about them as
    what they write, so B tries every way to it that there is. */
 const SV = 'c0000000-0000-4000-8000-0000000000c1';  /* A\u2019s starred search */
@@ -191,6 +195,16 @@ const CAN_BADGE = (function(){
 })();
 /* A value as an SQL literal. */
 const q = (s) => "'" + String(s).replace(/'/g, "''") + "'";
+/* What is going round, row by row, with which of its three parts each row is
+   in: 'p' going round (the 48 hours up to the tick), 'f' written since the
+   tick, 'o' older than the 48 hours. Read at one now(), so the tick is the
+   same one the list was cut at. */
+const FEED_SEQ = `with r as (
+       select id, row_number() over () rn,
+              case when created_at > feed_slot() then 'f'
+                   when created_at <= feed_slot() - interval '48 hours' then 'o'
+                   else 'p' end k
+         from feed_hot(500))`;
 /* verify.mjs's ladder, as the array plan_put() is handed. */
 const LAD = 'array[' + PLAN_ORDER.map(q).join(',') + ']';
 /* An old server's account and three of its languages: OLDLANG, below. */
@@ -853,6 +867,14 @@ const CASES = [
     `select 1 from post_seen where id='${P}'`],
   ['and says nothing of the kind to C',       'denied', C, 0,
     `select 1 from post_seen where id='${P}' and muted`],
+  /* And what is going round leaves A out for B in all three of its parts --
+     the posts written since the tick included, which is where P is: it was
+     written a moment ago, through the policy. C mutes nobody and finds it
+     there, which is what makes B's answer a mute and not an empty list. */
+  ['nothing of A is going round for B',       'denied', B, 0,
+    `select 1 from feed_hot(500) where author='${A}'`],
+  ['while C finds P among what is new',       'ok',     C, 0,
+    `select 1 from feed_hot(500) where id='${P}'`],
   ['B lifts the mute',                        'ok',     B, 0,
     `delete from mute where actor='${B}' and muted='${A}'`],
   ['and B finds A among who liked P again',   'ok',     B, 0,
@@ -1984,17 +2006,12 @@ const CASES = [
                      where kind='like') q where q.t = 4`],
 
   /* --- and what is going round -------------------------------------------
-     Four hours, and the list STANDS STILL between ticks (schema.sql § what is
-     going round). Not one attempt about it can live here, and that is the
-     freeze being real rather than a gap: every row this file writes lands at
-     now(), now() is after the tick, and feed_hot() takes what existed AT the
-     tick. Nothing written during a run is in the list at all.
-
-     So the whole of it is in SHAPE below, against rows seeded by the owner of
-     the tables with ages put on them from outside -- which is also the only
-     way ages exist at all, since `created_at` is deliberately kept out of the
-     `grant insert (...)` on post: a post may not lie about when it was
-     written. */
+     Every two hours, in three parts (schema.sql § what is going round). The
+     order is in SHAPE below, against rows seeded by the owner of the tables
+     with ages put on them from outside -- which is the only way ages exist
+     at all, since `created_at` is deliberately kept out of the `grant insert
+     (...)` on post: a post may not lie about when it was written. What is
+     here is the mute, which is about who is reading. */
 
   /* --- and a search somebody starred, which is the other one -------------
      Weaker than a draft and still nobody else's: what a person looks for
@@ -3239,12 +3256,25 @@ const SHAPE = [
   /* The tie and the window, asked of the three posts seeded above. Here and
      not among the attempts because these statements run as the table's owner,
      which is the only way rows of different ages exist at all. */
-  /* The tick. 「4時間ごと。0 4 8 12 16 20 24 これは入れ替わらない。」 Asked of
-     the clock rather than of the source. Both halves -- the hour is one of
-     the six, and nothing below the hour is left on it. */
-  ['the list turns on a four-hour tick', `
+  /* The tick. 「2時間ごと」 OWNER 2026-09-28, in the day's zone -- 0 2 4 ...
+     22 in California. Asked of the clock rather than of the source. Both
+     halves -- the hour is one of the twelve, and nothing below the hour is
+     left on it. */
+  /* And at every half hour of one ordinary day, the tick is that hour cut
+     down to an even one -- 3:30 is 2:00 and 4:00 is 4:00. A four-hour tick
+     also lands on an even hour, so the line above cannot tell the two apart;
+     this one can. */
+  ['every two hours and not every four', `
+     select count(*) from generate_series(
+              timestamp '2026-09-28 00:00', timestamp '2026-09-28 23:30',
+              interval '30 minutes') t(l)
+      where feed_slot(l at time zone 'America/Los_Angeles')
+            <> (date_trunc('hour', l)
+                - make_interval(hours => extract(hour from l)::int % 2))
+               at time zone 'America/Los_Angeles'`, '0'],
+  ['the list turns on a two-hour tick', `
      select count(*) from (select 1 where
-       extract(hour from (feed_slot() at time zone 'America/Los_Angeles'))::int % 4 <> 0
+       extract(hour from (feed_slot() at time zone 'America/Los_Angeles'))::int % 2 <> 0
        or extract(minute from feed_slot())::int <> 0
        or extract(second from feed_slot())::numeric <> 0) q`, '0'],
   /* AND IT TURNS WHERE THE DAY TURNS. 「3はアメリカ時間ね」「時間もお題の
@@ -3270,7 +3300,7 @@ const SHAPE = [
      has not opened, and every post would be older than it. */
   ['and on the one that has already come', `
      select count(*) from (select 1 where feed_slot() > now()
-                                       or feed_slot() <= now() - interval '4 hours') q`, '0'],
+                                       or feed_slot() <= now() - interval '2 hours') q`, '0'],
   /* 5 beats 3 beats 1. An answer is somebody writing a sentence under you, a
      repost is a tap, a like is a smaller tap, and the order says which was
      more. Read as an ORDER out of what feed_hot() actually returns: asking
@@ -3286,12 +3316,74 @@ const SHAPE = [
        with r as (select id, row_number() over () rn from feed_hot(500))
        select 1 from r a, r b where a.id='${H1}' and b.id='${H3}' and a.rn < b.rn
      )) q`, '0'],
-  /* The list stands still between ticks, and that sentence has a sharp edge:
-     NOTHING written since the tick is in it. Every post written through a
-     policy above landed at now(), which is after the tick, so this is asked
-     of a list with plenty to be wrong with. */
-  ['nothing written since the tick is in it', `
-     select count(*) from feed_hot(500) where created_at > feed_slot()`, '0'],
+  /* WHAT WAS WRITTEN SINCE THE TICK IS IN IT, ALL OF IT, newest first.
+     「区切りの後に書かれた投稿を出す。全部」 OWNER 2026-09-28. It was the
+     other way round -- nothing written since the tick was in the list until
+     the next tick came. */
+  ['what was written since the tick is in it', `
+     select count(*) from (values ('${HN1}'::uuid), ('${HN2}'::uuid)) w(id)
+      where not exists (select 1 from feed_hot(500) f where f.id = w.id)`, '0'],
+  ['and the newest of it first', `
+     select count(*) from (select 1 where not exists (
+       ${FEED_SEQ}
+       select 1 from r a, r b where a.id='${HN2}' and b.id='${HN1}' and a.rn < b.rn
+     )) q`, '0'],
+  /* TWO GOING ROUND, THEN ONE THAT IS NEW. Before the j-th new post there
+     are exactly j times feed_fresh_every() of the ones going round, or all
+     of them once they have run out -- which says the pattern and what
+     happens when either side ends, in one sentence. Read off the list, not
+     off the function's own arithmetic. */
+  ['two going round, then one that is new', `
+     ${FEED_SEQ},
+     f as (select rn, row_number() over (order by rn) j from r where k = 'f'),
+     n as (select count(*) c from r where k = 'p')
+     select count(*) from f, n
+      where (select count(*) from r where k = 'p' and r.rn < f.rn)
+            <> least(f.j * feed_fresh_every(), n.c)`, '0'],
+  ['and there are enough of both to say so', `
+     ${FEED_SEQ}
+     select count(*) from (select 1 where
+       (select count(*) from r where k = 'p') < 2 * feed_fresh_every()
+       or (select count(*) from r where k = 'f') < 2) q`, '0'],
+  /* AND WHEN THE 48 HOURS HAVE RUN OUT, WHAT IS OLDER, NEWEST FIRST.
+     「48時間の分を出し切ったら…それより古い投稿が新しい順で続く」 OWNER
+     2026-09-28. It was the other way round -- the list ended there. */
+  ['what is older than the window is in it', `
+     select count(*) from (values ('${H5}'::uuid), ('${H6}'::uuid)) w(id)
+      where not exists (select 1 from feed_hot(500) f where f.id = w.id)`, '0'],
+  ['after everything in the window', `
+     ${FEED_SEQ}
+     select count(*) from r a, r b where a.k = 'o' and b.k <> 'o' and a.rn < b.rn`, '0'],
+  ['and the newest of it first', `
+     select count(*) from (select 1 where not exists (
+       ${FEED_SEQ}
+       select 1 from r a, r b where a.id='${H5}' and b.id='${H6}' and a.rn < b.rn
+     )) q`, '0'],
+  /* NO POST TWICE, AND NONE STEPPED OVER, when it is read a page at a time.
+     The list is a list AS OF a moment (`asof`, which the first page hands
+     back and every later page sends): pages of three cut from that moment,
+     put end to end, are the whole list from that moment, row for row. */
+  ['no post is in it twice', `
+     select count(*) - count(distinct id) from feed_hot(500)`, '0'],
+  ['pages of one moment put together are the list', `
+     with m as (select max(asof) t from feed_hot(1)),
+     w as (select id, row_number() over () rn from feed_hot(500, 0, (select t from m))),
+     g as (select g.p * 3 + x.n rn, x.id
+             from generate_series(0, 200) g(p),
+                  lateral (select id, row_number() over () n
+                             from feed_hot(3, g.p * 3, (select t from m))) x)
+     select count(*) from w full join g on g.rn = w.rn
+      where g.id is distinct from w.id`, '0'],
+  /* And what is written after that moment waits for the top of the list:
+     a list as of the moment between HN1 and HN2 has HN1 and not HN2. That
+     is what keeps a page from being pushed down under somebody's thumb by
+     a post written while they read. */
+  ['what is written after the moment is not in that list', `
+     with m as (select a.created_at + (b.created_at - a.created_at) / 2 t
+                  from post a, post b where a.id='${HN1}' and b.id='${HN2}')
+     select (select count(*) from feed_hot(500, 0, (select t from m)) where id='${HN2}')
+          + (select count(*) from (select 1 where not exists
+               (select 1 from feed_hot(500, 0, (select t from m)) where id='${HN1}')) q)`, '0'],
   /* THE FOUR FALLS ON WHOEVER WEARS THE MARK AND ON NOBODY ELSE -- badge_of(),
      the same answer the timeline draws (「青パッチの倍率」, 2026-08-28). A
      multiplier applying to somebody without the mark, or missing somebody
@@ -3331,8 +3423,6 @@ const SHAPE = [
        with r as (select id, row_number() over () rn from feed_hot(500))
        select 1 from r a, r b where a.id='${H3b}' and b.id='${H4}' and a.rn < b.rn
      )) q`, '0'],
-  ['and nothing older than the window is in it', `
-     select count(*) from feed_hot(500) where body ? 'old'`, '0'],
   /* AND NOT ONE REPLY. 「おすすめにリプライ出てくるのやめよう」 OWNER
      2026-09-08. It was said on the phone (snsList() in www/sns.js) and
      nowhere here, so the server handed over fifty rows and the phone drew
@@ -4050,7 +4140,7 @@ const sql = [
      (1, ${q(PA)}, now() - interval '1 day', null),
      (2, ${q(PA)}, now() - interval '3 days', now() - interval '1 day');`,
   run,
-  /* Three posts of different ages, written HERE by the owner of the table and
+  /* Posts of different ages, written HERE by the owner of the table and
      not by anybody a policy lets write. That is not a shortcut around a
      policy: `created_at` is deliberately left out of the `grant insert (...)`
      on post at the foot of schema.sql, so a post may not lie about when it
@@ -4065,7 +4155,15 @@ const sql = [
      (${q(H3)}, ${q(B)}, '{}'::jsonb,        feed_slot() - interval '30 minutes'),
      (${q(H4)}, ${q(B)}, '{}'::jsonb,        feed_slot() - interval '20 minutes'),
      (${q(H3b)},${q(B)}, '{}'::jsonb,        feed_slot() - interval '10 minutes'),
-     (${q(H5)}, ${q(B)}, '{"old":1}'::jsonb, feed_slot() - interval '3 days');`,
+     (${q(H5)}, ${q(B)}, '{"old":1}'::jsonb, feed_slot() - interval '3 days'),
+     (${q(H6)}, ${q(B)}, '{"old":1}'::jsonb, feed_slot() - interval '4 days');`,
+  /* And two written AFTER the tick, between it and now: a third and two
+     thirds of the way. What was written through a policy above landed at
+     now() and is after the tick too; these two are the ones with an order
+     between them that is known. */
+  `insert into post(id,author,body,created_at) values
+     (${q(HN1)},${q(B)}, '{"new":1}'::jsonb, feed_slot() + (now() - feed_slot()) / 3),
+     (${q(HN2)},${q(B)}, '{"new":1}'::jsonb, feed_slot() + (now() - feed_slot()) * 2 / 3);`,
   /* And one of BD's, before the tick, so the list that is going round has
      something of BD's in it to leave out (BLOCK_HELD). Older than every one
      above and with nothing done to it, so it is last and moves none of them. */

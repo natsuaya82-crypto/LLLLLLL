@@ -358,15 +358,16 @@ function askFeed(ok, bad, person, tab){
   else askFeed1(tab, ok, bad);
 }
 /* ONE PAGE OF ONE TAB. `more` is where to carry on from, and SNS_NEXT is what
-   the last answer said that is -- a count for おすすめ (it is in score order,
-   and a score has no keyset), the time it reached you for フォロー中 and the
-   time it was written for お題. No `more` is the top of the list, and it
+   the last answer said that is -- for おすすめ a count and the moment its
+   first page was cut at (`{off, at}`: it is in score order, a score has no
+   keyset, and the list is as of that moment -- netFeed() in www/net.js), the
+   time it reached you for フォロー中 and the time it was written for お題. No `more` is the top of the list, and it
    forgets where the list had got to. SNS_END is set only by a SHORT answer:
    「could not ask」 is not the end, or a phone in a tunnel would stop the
    timeline for the session. */
 var SNS_NEXT={}, SNS_END={};
 function askFeed1(which, ok, bad, more){
-  netFeed(which, function(ps){
+  netFeed(which, function(ps, asof){
     var have, i, low=0, t2;
     /* `null` is 「could not ask」 and not an answer. */
     if(!ps){ ok(0); return; }
@@ -384,7 +385,8 @@ function askFeed1(which, ok, bad, more){
       t2=(which==='fo')? (ps[i].arrived || ps[i].at) : ps[i].at;
       if(t2 && (!low || t2<low)) low=t2;
     }
-    SNS_NEXT[which]=(which==='rec')? String((parseInt(more, 10) || 0)+ps.length)
+    SNS_NEXT[which]=(which==='rec')? {off:((more && more.off) || 0)+ps.length,
+                                      at:(more && more.at) || asof || null}
                    : low? new Date(low).toISOString() : '';
     SNS_END[which]=ps.length<NET_PAGE;
     if(ps.length) postTake(ps);

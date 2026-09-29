@@ -2862,10 +2862,12 @@ function netFeed(which, ok, bad, more){
      post twice, or step over one.
 
      'rec' is in SCORE order, and "the ones after a score" is not a question
-     anybody can ask: two posts on the same score have no order between them
-     to continue from. So it is a count. That is honest rather than ideal, and
-     it is the reason the owner's twelve-hourly turn helps -- a list that
-     stands still between turns is a list a count can walk without repeating.
+     anybody can ask. So it is a count, and a count only walks a list that
+     does not move under it -- and おすすめ carries everything written since
+     the tick, which grows while somebody reads. So the list is the list AS OF
+     a moment: feed_hot() answers the first page with the moment it cut it at
+     (`asof` on every row), and `more` is `{off, at}` -- how many are already
+     held, and that moment, sent back so every page is cut from one list.
 
      Left out entirely, both sides behave exactly as they did. */
   function got(d){
@@ -2875,7 +2877,8 @@ function netFeed(which, ok, bad, more){
     if(!d || typeof d.length!=='number'){ bad(d, 200, 'feed \u2260'); return; }
     if(!d.length){ ok([]); return; }
     for(i=0;i<d.length;i++) out.push(netRow(d[i]));
-    ok(out);
+    /* and the moment feed_hot() cut its list at; the other lists have none */
+    ok(out, d[0].asof || null);
   }
   /* Whoever you have blocked is not in the answer: `post_seen` asks
      block_hides() of every author (supabase/schema.sql, r80-block), so the
@@ -2915,10 +2918,10 @@ function netFeed(which, ok, bad, more){
      weights, the window and the tie are supabase/schema.sql's feed_hot() and
      not this file's. A phone that scored posts itself would be scoring the
      fifty it had rather than the ones there are.
-     「12時間ごとにバズった順」「検索の話題はTwitterと同じアルゴリズムで」 */
+     「12時間ごとにバズった順」「Twitterと同じアルゴリズムで」 */
   if(which!=='fo'){
     netSend('POST', '/rest/v1/rpc/feed_hot',
-            {lim:NET_PAGE, off:(parseInt(more, 10) || 0)},
+            {lim:NET_PAGE, off:(more && more.off) || 0, upto:(more && more.at) || null},
             netTok(), got, bad);
     return;
   }
