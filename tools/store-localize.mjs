@@ -31,6 +31,10 @@ const MAX = { name: 30, subtitle: 30, description: 4000, keywords: 100,
 const VERSION_FIELDS = ['description', 'keywords', 'promotionalText', 'whatsNew',
                         'supportUrl', 'marketingUrl'];
 const INFO_FIELDS = ['name', 'subtitle', 'privacyPolicyUrl'];
+/* 主カテゴリ。アプリに一つで、言語ごとではないのでここに一か所。
+   「教育カテゴリ早く変えて」OWNER 2026-09-29（2026-09-25 のグラフィック&デザインを差し替え）。
+   版の文を入れる時に、編集できる App 情報へ毎回当てる。 */
+const CATEGORY = 'EDUCATION';
 /* 文字：Apple は許す文字の一覧を出していない。分かっているのは断られた物で、
    (1) U+2500 ─ 罫線（So）── 2026-09-23 の run 35867674238 で ja の説明文が
        409 INVALID_CHARACTERS。実測。
@@ -152,6 +156,9 @@ async function main(){
   /* app info localizations: name / subtitle / privacy url --- on the editable appInfo */
   const infos = (await call('GET', `/apps/${app.id}/appInfos`)).data;
   const info = infos.find((i) => !/READY_FOR_SALE|READY_FOR_DISTRIBUTION/.test(i.attributes.appStoreState || i.attributes.state || '')) || infos[0];
+  await call('PATCH', `/appInfos/${info.id}`, { data: { type: 'appInfos', id: info.id,
+    relationships: { primaryCategory: { data: { type: 'appCategories', id: CATEGORY } } } } });
+  console.log(`category ${CATEGORY} on appInfo ${info.id}`);
   const ihave = (await call('GET', `/appInfos/${info.id}/appInfoLocalizations?limit=200`)).data;
   const iby = Object.fromEntries(ihave.map((l) => [l.attributes.locale, l.id]));
   for (const row of rows) {

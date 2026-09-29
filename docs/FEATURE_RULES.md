@@ -255,6 +255,15 @@ it is quoted, and where a decision has never been made the row in
 - Implementation status:
 ```
 
+### 2026-09-29 App Store の主カテゴリは教育。説明文のキーボードの文を今に（10 言語）
+- Date: 2026-09-29
+- Area: App Store の掲載（App 情報のカテゴリ、`store/*.json` の description）
+- Decision: 主カテゴリは教育（2026-09-25 のグラフィック&デザインを差し替え）。説明文の「キーボードはアプリの中」「自分のキーボード配列は有料」を、今の形（自作文字のキーボードはアプリの中で打てる、既存の文字のキーボードはほかのアプリでも使える、無料でいくつでも）に 10 言語で直す。
+- Reason: オーナーの言葉「完全に今日とか流入がないから、教育カテゴリ早く変えてレビューも増やさないと」「古い説明文も直してちゃんと10言語分」。
+- Affected features: App Store の掲載。
+- Affected data: 無い。
+- Implementation status: `tools/store-localize.mjs` の `CATEGORY` 一か所、版の文を入れる時に App 情報へ当てる。説明文は `store/*.json`。App Store Connect へは 1.0.3 と一緒に。
+
 ### 2026-09-28 投稿の編集は無料。長さの上限は変えない
 - Date: 2026-09-28
 - Area: 投稿の編集（`postEdit()`）、プラン（`CAN`）
@@ -658,7 +667,7 @@ it is quoted, and where a decision has never been made the row in
 - Date: 2026-09-25
 - Area: App Store の掲載（`store/`、App Store Connect の App 情報）、システム標準のダイアログ（CLAUDE.md § Shape の五つ目）
 - Decision:
-  - **主カテゴリはグラフィック&デザイン。** 1.0.3 の版と一緒に App Store Connect で変える。
+  - ~~主カテゴリはグラフィック&デザイン~~ → **教育**（2026-09-29 で差し替え、下の項）。
   - **App Store の評価のお願い（iOS 自身が出すもの）を出す。** システム標準のダイアログの例外は、プロフィール画像とこれの二つ。
     出すかどうかと回数（年三回まで）は iOS が決める。**頼むのはアプリを開いた五回目。**
   - **キーワードを見直す。** アプリ名にある語は重ねず、自分の字を作りたい人が打つ狭い語にする（オリジナル文字・自作文字・フォント作成・手書き・暗号・ルーン など）。10 言語は `store/*.json`。
@@ -669,7 +678,7 @@ it is quoted, and where a decision has never been made the row in
 - Affected features: 評価のお願い（新しい、`ios/` と `www/` から呼ぶ一か所）。
 - Affected data: 無し。
 - Affected docs: この項、CLAUDE.md § Shape の五つ目、2026-09-01 の標準ダイアログの項、`store/*.json` の keywords。
-- Implementation status: キーワードは `store/*.json` に入った（App Store Connect へは 1.0.3 の版と一緒に送る）。評価のお願いは **IMPLEMENTED（CODE CONFIRMED のみ、実機未確認）** r97-still ── `rateOpen()`（`www/core.js`、数は `SET.opened`、アカウントの物）、`LinguaStore` の `review`、`acct-check` 94。カテゴリは App Store Connect で（未）。
+- Implementation status: キーワードは `store/*.json` に入った（App Store Connect へは 1.0.3 の版と一緒に送る）。評価のお願いは **IMPLEMENTED（CODE CONFIRMED のみ、実機未確認）** r97-still ── `rateOpen()`（`www/core.js`、数は `SET.opened`、アカウントの物）、`LinguaStore` の `review`、`acct-check` 94。カテゴリは 2026-09-29 の項。
 
 ### 2026-09-25 キーボードはプランで分けない ── 置ける字は自作文字と既存の文字、差は自作文字をいくつ作れるかだけ（1.0.3）
 - Date: 2026-09-25
