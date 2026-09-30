@@ -432,6 +432,40 @@ export const SCRIPTS = {
     ],
   },
 
+  /* The language's own page -- what it is, its sounds, its letters, the
+     sections somebody wrote -- written, made public, and the notebook beside
+     it. */
+  'language': {
+    view: [393, 852, 3], size: [1080, 2340], out: 'promo/language', hq: true, slow: 2,
+    music: 'sub_clair-background-music-550483.mp3',
+    setup: [{ eval: DICT_TIDY }, { go: 'about' }],
+    steps: [
+      { cap: 'A page about your language', capAt: 690, wait: 2000, still: 'l1-about' },
+      { cap: 'Its sounds', capAt: 690, wait: 200 },
+      { tap: '[data-do=abToggle][data-a*=sound]', wait: 2000, still: 'l2-sounds' },
+      { tap: '[data-do=abToggle][data-a*=sound]', wait: 500 },
+      { cap: 'Its letters', capAt: 690, wait: 200 },
+      { tap: '[data-do=abToggle][data-a*=letters]', wait: 2000, still: 'l3-letters' },
+      { tap: '[data-do=abToggle][data-a*=letters]', wait: 500 },
+      { cap: 'And anything you write about it', capAt: 690, wait: 200 },
+      { tap: '[data-do=abToggle][data-a*=A1]', wait: 2200, still: 'l4-section' },
+      { tap: '[data-do=abToggle][data-a*=A1]', wait: 500 },
+      { cap: 'Write it, and choose who sees it', capAt: 690, wait: 200 },
+      { tap: '[data-do=go][data-a*=world]', wait: 2000, still: 'l5-edit' },
+      { cap: 'Share the parts you want to share', capAt: 690, wait: 200 },
+      { tap: '[data-do=setWldSecDl][data-a*=letters]', wait: 700 },
+      { tap: '[data-do=setWldSecDl][data-a*=kb]', wait: 1200 },
+      { tap: 'do:keepPress', wait: 2000 },
+      { cap: 'Keep notes beside it', capAt: 600, wait: 200 },
+      { go: 'notes' },
+      { wait: 1500 },
+      { tap: '[data-do=openNote]:not([data-a])', wait: 900 },
+      { type: 'Sound changes', into: '#nt-t', delay: 90, wait: 300 },
+      { type: 'k becomes ch before i and e?', into: '#nt-b', delay: 60, wait: 900, still: 'l6-note' },
+      { tap: 'do:keepPress', wait: 2600, still: 'l7-notebook' },
+    ],
+  },
+
   /* The dictionary, in two films 「いいよ」 OWNER 2026-09-30 -- the one
      film asked for was split in two: making words, and using the
      dictionary. Filmed as the keyboard film was (393x852, 1080x2340, hq,
