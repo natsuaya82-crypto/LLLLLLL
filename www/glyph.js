@@ -487,12 +487,12 @@ function scriptSig(){
   for(i=0;i<LETTERS.length;i++){
     l=LETTERS[i];
     s.push(l.id+':'+(l.ab||'')+':'+ltUnits(l).join('')+':'+
-           (inkRings(inkGeo(l))? 'r' : 's')+JSON.stringify(inkGeo(l)||[]).length);
+           (inkRings(inkGeo(l))? 'r' : 's')+JSON.stringify(inkGeo(l)||[]));
   }
   /* and what the writing system composes, which is not any letter */
   scriptLetters().forEach(function(r){
     var g=wsStrokes(r);
-    s.push(r+':'+(g? JSON.stringify(g).length : 0));
+    s.push(r+':'+(g? JSON.stringify(g) : ''));
   });
   /* and what stands between two of them, which is in every advance the font
      carries -- so moving it rebuilds both faces and re-sends the keyboard */
