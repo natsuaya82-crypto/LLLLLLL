@@ -36,4 +36,18 @@
 - `CLAUDE.md`、`.claude/`、`tools/pre-commit`、`tools/commit-msg`、`docs/STATE.md`
 
 ## CLAUDE.md（リーダーが直す）
-（作業後に書く）
+このセッションは CLAUDE.md を編集できない。この変更で § Online の「It looks the same on every plan: nothing of it is folded…」の文が
+「字は全部出る」と読めるので、その文の直後に一文足す（案）:
+
+> And what of its alphabet is shown is what its maker DREW: every language
+> is born with the slots (`ltSlotsFill()`), and a slot nobody drew on is not
+> shown to the person who took it 「書いてない文字が入る必要があるの？」
+> OWNER 2026-09-30 — not listed, not offered, not on a key. Drawn is
+> `ltHasShape()`; the question is `ltShown()` (`www/sound.js`), and
+> `ltSeen()` is the alphabet it lets through. Nothing leaves the maker's
+> slices; `taken-check` holds it.
+
+## 測った・残した物
+- 取った言語・自分の言語の両方の「字の部屋」の fixture の face（`__past`）で、`ch`・`sh` の枠が空に見える（線はあるのに何も描かれない）。r157 の前から同じで、この変更とは関係ない。原因は確かめていない。
+- 設定の言語の部屋の字数（`settings.js`、`LETTERS.length`）は数で一覧ではないので変えていない。人の言語で開けるかも確かめていない。直すかはリーダーに。
+- `taken-check` が自分の言語を歩くと `form|add:kano` で落ちる（`sp` of null）── r153 から BACKLOG にある物。
