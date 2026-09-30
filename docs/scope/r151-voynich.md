@@ -12,6 +12,7 @@
 - `shots/r151-*.png`、`shots/r151b-*.png`
 - `official/ref/` ── 比較に使う写本のページ（Beinecke/Yale 2014 の撮影、パブリックドメイン）と `SOURCE.md`
 - `official/voynich-eva.py` ── 線の点と、見本の絵に重ねて確かめる道具
+- `official/voynich-sheet.mjs` ── アプリの書き取りシートに EVA Hand A を薄く敷いた PDF を作る道具（オーナーが手でなぞる用。フォントと PDF はリポジトリに入れない）
 - この文書
 
 ## 触らない

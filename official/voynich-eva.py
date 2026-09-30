@@ -111,13 +111,43 @@ P = {
 }
 
 
+def through(pts, closed):
+  """The points in P are where the line should GO. The app draws a run of
+  'c' points as a uniform cubic B-spline (bspline() in www/otf5.js), which
+  passes near a point at (before + 4 x point + after) / 6 -- inside it, not
+  through it -- so a curve drawn straight from P comes out shrunk, its rings
+  do not close and its joins fall short. This puts each 'c' point where the
+  spline has to be told to be for the line to pass through the point read,
+  then back on the lattice. A point without 'c' is passed through as it is,
+  which is why a join or a corner never carries one."""
+  m = len(pts)
+  soft = [len(q) > 2 and (closed or 0 < i < m - 1) for i, q in enumerate(pts)]
+  want = [(float(q[0]), float(q[1])) for q in pts]
+  ctl = list(want)
+  for _ in range(40):
+    nxt = list(ctl)
+    for i in range(m):
+      if not soft[i]:
+        continue
+      a = ctl[(i - 1) % m] if (closed or i > 0) else ctl[i]
+      b = ctl[(i + 1) % m] if (closed or i < m - 1) else ctl[i]
+      nxt[i] = ((6 * want[i][0] - a[0] - b[0]) / 4, (6 * want[i][1] - a[1] - b[1]) / 4)
+    ctl = nxt
+  out = []
+  for i, q in enumerate(pts):
+    x, y = (ctl[i] if soft[i] else want[i])
+    x = int(round(min(max(x, 0), N - 1))); y = int(round(min(max(y, 0), N - 1)))
+    out.append([x, y, 'c'] if len(q) > 2 else [x, y])
+  return out
+
+
 def strokes(letter):
   out = []
   for s in P[letter]:
     pts, closed = (s['p'], s.get('closed')) if isinstance(s, dict) else (s, 0)
     for q in pts:
       assert 0 <= q[0] < N and 0 <= q[1] < N, (letter, q)
-    out.append({'p': pts, 'closed': bool(closed)})
+    out.append({'p': through(pts, closed), 'closed': bool(closed)})
   return out
 
 
