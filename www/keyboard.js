@@ -71,6 +71,52 @@ var KB_V=2;
    `{kbs:[], at:0}` out by hand, which is three places to remember a field in
    and three that did not. */
 function kbMint(){ return {kbs:[], at:0, v:KB_V}; }
+/* ---- AND THE KEYBOARDS SOMEBODY BUILT FOR A LANGUAGE THEY TOOK ------------
+   「dl言語はキーボードは自分で作ってねって感じ。キーボードもDLできるけど、
+   ないやつは自作可能」 OWNER 2026-09-30 (docs/FEATURE_RULES.md § Owner
+   decision log, 2026-09-30, 「公式アカウントのプロフィールは「DL可能言語」の
+   一行…」 (2)).
+
+   Somebody else's language is not edited (langLocked, www/core.js), and this
+   is the one exception, which leaves the language exactly as it is. `KB` is
+   the LANGUAGE's keyboards -- its `kb` slice, which only the person who made
+   it writes. What somebody who TOOK it builds is theirs: a record of the same
+   shape ({kbs, at, v}) filed by language id here, and a `take_kb` row on the
+   server under their account (supabase/schema.sql). It is in memory and
+   nowhere else, like everything of a taken language (CLAUDE.md § Online);
+   netTakeKbRead() (www/net.js) brings it down with the language and
+   kbWrite() below sends it up.
+
+   So on a taken language the list is the free QWERTY, then the maker's own
+   keyboards (kbLent -- used, applied, never changed), then the taker's
+   (kbStored -- built, changed, deleted). Which one goes to the phone is the
+   taker's `at`, and until they have chosen, the maker's. */
+var KBT={};
+acctMem(function(){ KBT={}; });
+/* Whether the open language is one this account took and the server has
+   said so -- the one road into the taker's record. 「まだ訊けていない」 is
+   no: langLocked() stops every write until the answer is in, and so does
+   this. */
+function kbTaken(){ return langLocked() && langWhose(langId)===LW_READ; }
+/* Whether this account may build keyboards on the open language at all:
+   its own and written (langLocked), or one it took. */
+function kbMay(){ return !langLocked() || kbTaken(); }
+/* The record this account writes its keyboards into. */
+function kbRec(){ return kbTaken()? (KBT[langId] || null) : KB; }
+function kbRecMint(){
+  if(kbTaken()){
+    if(!KBT[langId]){ KBT[langId]=kbMint(); KBT[langId].at=KB? (parseInt(KB.at, 10)||0) : 0; }
+    return KBT[langId];
+  }
+  if(!KB) KB=kbMint();
+  return KB;
+}
+/* The maker's keyboards, lent to somebody who took the language. */
+function kbLent(){ return (kbTaken() && KB && KB.kbs)? KB.kbs : []; }
+/* The first board this account may change, and whether board i is before
+   it: the free QWERTY always, and on a taken language the maker's too. */
+function kbFirst(){ return 1+kbLent().length; }
+function kbHeld(i){ return (parseInt(i, 10)||0)<kbFirst(); }
 function kbRead(){
   KB=kbBoardsOf(slOpen('kb'));
 }
@@ -311,14 +357,25 @@ function migrateKbFree(){
    from the slice (keepNo, www/shell.js) and forgets the step back and the
    selection, which were about the draft (kbLeft). */
 function saveKb(){
-  if(langLocked()) return;
+  if(!kbMay()) return;
   kbVFix(); kbWayOff(); kbNoted();
   kbWrite();
 }
-function kbWrite(){
+function kbWrite(done){
+  /* The taker's own goes to THEIR row and nowhere near the language's slice.
+     A draft is a draft here too (keepDrafting, www/shell.js): the board's
+     Save sends it, and a press with no Save behind it is the save. */
+  if(kbTaken()){
+    if(keepDrafting()) return;
+    netTakeKbPut(langId, KBT[langId],
+      function(){ if(done) done(true); },
+      function(){ if(done) done(false); else toast(t('save.no')); });
+    return;
+  }
   if(!langWrites()) return;
   bkTouch();
   slWr(langKey('kb'), KB? JSON.stringify(KB) : null);
+  if(done) done(true);
 }
 /* The layout, said once as a string. Three things ask whether it has moved --
    the step-back, the buffer the editor opened with, and the write below. */
@@ -783,8 +840,7 @@ function kbAdd(pat){
   if(KB_PATS.indexOf(pat)<0) return;
   /* Storage holds only the ones the person built. The free QWERTY is board 0
      and is not among them, so the first one made here is the SECOND board. */
-  if(!KB) KB=kbMint();
-  KB.kbs.push({id:kbId(), nm:'', pat:pat, lay:kbPatLay(pat)});
+  kbRecMint().kbs.push({id:kbId(), nm:'', pat:pat, lay:kbPatLay(pat)});
   kbShow=kbBoards().length-1; kbLay=0; kbSel=null;
   kbForget();
   saveKb();
@@ -848,8 +904,7 @@ function kbApply(i){
   if(!bs.length) return;
   /* KB is null until something is built, and board 0 is appliable before
      then -- it is the keyboard already on the phone. */
-  if(!KB) KB=kbMint();
-  KB.at=kbClamp(i, bs.length);
+  kbRecMint().at=kbClamp(i, bs.length);
   saveKb(); render();
 }
 function kbGoBoard(i){
@@ -868,7 +923,7 @@ function kbDrop(i){
   i=kbClamp(i, b.length);
   /* Board 0 is not one of these. There is no "never the last one" test any
      more, because it is always there and there is always one to apply. */
-  if(kbIsFree(i)) return;
+  if(kbHeld(i)) return;
   /* 確認は自前のポップで。「標準は使わねえって言ってるだろこれも禁止や」
      OWNER 2026-09-01 -- confirm() は使わない。はいの側がこの下。 */
   popAsk(t('kb.rm.q'), function(){ kbDropGo(i); }, t('pop.yes'));
@@ -884,18 +939,18 @@ function kbDropGo(i){
    on the phone with no press on it (audit words kb-1). Highest index first,
    so removing one does not move the next one under the knife. */
 function kbDropAll(ids){
-  var at, show, i, b, gone;
-  if(!KB || !kbStored().length) return;
+  var r=kbRec(), first=kbFirst(), at, show, i, b, gone;
+  if(!r || !kbStored().length) return;
   gone=ids.slice().sort(function(x, y){ return y-x; });
-  at=parseInt(KB.at, 10)||0; show=parseInt(kbShow, 10)||0;
+  at=parseInt(r.at, 10)||0; show=parseInt(kbShow, 10)||0;
   for(i=0;i<gone.length;i++){
-    if(kbIsFree(gone[i]) || gone[i]>KB.kbs.length || gone[i]===gone[i-1]) continue;
-    KB.kbs.splice(gone[i]-1, 1);
+    if(kbHeld(gone[i]) || gone[i]>=first+r.kbs.length || gone[i]===gone[i-1]) continue;
+    r.kbs.splice(gone[i]-first, 1);
     if(gone[i]<at) at--;
     if(gone[i]<show) show--;
   }
   b=kbBoards();
-  KB.at=kbClamp(at, b.length);
+  r.at=kbClamp(at, b.length);
   kbShow=kbClamp(show, b.length);
   kbLay=0; kbSel=null;
   kbForget();
@@ -946,14 +1001,14 @@ function kbName(i){
 function kbNow(){
   var b=kbEdit();
   if(!b) return {};
-  return {nm:b.nm||'', lay:kbLaySig(b), at:(KB && KB.at)||0};
+  return {nm:b.nm||'', lay:kbLaySig(b), at:(kbRec() && kbRec().at)||0};
 }
 function kbKeepOn(){
   var b=kbEdit();
   /* Not in somebody else's language: saveKb() refuses one (langLocked, in
      www/core.js), so a buffer here would put a Save in the bar that could not
      write. */
-  if(!b || langLocked()) return;
+  if(!b || !kbMay()) return;
   /* The name, the layout, AND which board goes to the phone. What the screen
      is holding is asked every time the button is drawn (www/shell.js
      § keepOn), so a keyboard arrived at and left alone shows a grey Save and
@@ -976,12 +1031,11 @@ function kbKeepOn(){
 function kbKeepSave(v, done){
   var b=kbEdit();
   if(b && v.hasOwnProperty('nm')){ b.nm=String(v.nm).slice(0, 24); kbVFix(); kbNoted(); }
-  kbWrite();
-  done(true);
+  kbWrite(done);
 }
 function kbSetNm(v){ keepSet('nm', String(v||'').slice(0, 24)); }
 function kbNameHTML(i){
-  if(kbIsFree(i)) return '';
+  if(kbHeld(i)) return '';
   return '<input class="lnin kbnm" value="'+esc(keepVal(keepKey(), 'nm'))+'" '+
     'placeholder="'+esc(t('kb.n', i+1))+'" maxlength="24" autocomplete="off"'+
     IN('kbSetNm') + ' aria-label="'+esc(t('kb.n', i+1))+'">';
@@ -1152,7 +1206,7 @@ function kbFixed(){
    QWERTY is not among them and never was written there. Nothing else asks
    this: the screen, the count and the editor all want kbBoards(), which is
    this with that one in front. */
-function kbStored(){ return (KB && KB.kbs)? KB.kbs : []; }
+function kbStored(){ var r=kbRec(); return (r && r.kbs)? r.kbs : []; }
 /* The keyboard somebody already had, as a board. kbFixed() is the free
    plan's QWERTY wearing their drawn letters, built from LETTERS every time
    it is shown -- so this is not a copy that can go stale, it is that. */
@@ -1191,7 +1245,7 @@ function kbFree(){ return {nm:'', pat:'qwerty', lay:kbFixed().lay}; }
    And the boards somebody built are listed on every plan: 「キーボードはプラン
    で分けない」 OWNER 2026-09-25. */
 function kbBoards(){
-  return [kbFree()].concat(kbStored());
+  return [kbFree()].concat(kbLent(), kbStored());
 }
 /* Board 0 and no other. Everything that writes asks this first. */
 function kbIsFree(i){ return (parseInt(i, 10)||0)===0; }
@@ -1213,7 +1267,7 @@ function kbClamp(i, n){ return Math.max(0, Math.min(parseInt(i, 10)||0, n-1)); }
 /* Which of them is applied. KB is null until something is written, and
    kbBoards() answers with the free QWERTY before then -- so there is nothing
    to read it off and the answer is 0, which is that one. */
-function kbApplied(n){ return kbClamp(KB? KB.at : 0, n); }
+function kbApplied(n){ var r=kbRec() || KB; return kbClamp(r? r.at : 0, n); }
 function kbOf(){
   var b=kbBoards();
   return b[kbApplied(b.length)];
@@ -1242,11 +1296,11 @@ function kbEdit(){
      the whole of why it is not stored is that it may not be changed. Every
      mutator below asks here and stops on null -- one place saying no, rather
      than thirty places each remembering to. */
-  if(kbIsFree(kbShow)) return null;
-  if(!KB) KB=kbMint();
+  if(kbHeld(kbShow)) return null;
+  var r=kbRecMint();
   kbShow=kbClamp(kbShow, kbBoards().length);
-  if(kbIsFree(kbShow)) return null;
-  return KB.kbs[kbShow-1] || null;
+  if(kbHeld(kbShow)) return null;
+  return r.kbs[kbShow-kbFirst()] || null;
 }
 function kbAt(ri, ki){
   var rows=kbLayer().rows;
@@ -2665,7 +2719,7 @@ function kbSelList(){
 }
 function kbSelTap(i){
   if(!KBSEL) return;
-  if(kbIsFree(i)) return;
+  if(kbHeld(i)) return;
   if(KBSEL[i]) delete KBSEL[i]; else KBSEL[i]=1;
   render();
 }
@@ -2696,7 +2750,7 @@ function kbRowHTML(x, i, at){
      One row, one shape, both plans -- 「一覧の行の形は有料と同じ」. What
      the board's page then holds is vKb()'s to say, and on board 0 it is the
      QWERTY with nothing on it to change. */
-  if(sel && kbIsFree(i))
+  if(sel && kbHeld(i))
     return '<div class="kbrow kbrowq">'+
       '<span class="ltck" data-sel="0"></span>'+
       '<span class="kbrowk">'+kbShotHTML(x.lay)+'</span>'+
@@ -2737,7 +2791,7 @@ function kbListHTML(){
     /* ON EVERY PLAN, and at the bottom right where every other + is
        「＋は右下につけて」 OWNER 2026-09-04. There is no ceiling behind it
        on any plan (OWNER 2026-09-25). */
-    ((!KBSEL && !langLocked())
+    ((!KBSEL && kbMay())
       ? '<button class="fab"' + DO('kbNew') + ' aria-label="'+esc(t('kb.new'))+'">'+
           ICON_ADD2+'</button>'
       : '');
@@ -2802,7 +2856,7 @@ function vKb(){
               ? navDel(t('kb.sel.del'), 'kbSelDel')
               : '')+
            navDo(t('kb.sel.done'), 'kbSelOff', null, true))
-        : ((kbBoards().length<2 || langLocked())? ''
+        : ((!kbStored().length || !kbMay())? ''
             : navDo(t('kb.sel'), 'kbSelOn', null, true))))+
       /* AND NOT THE SWITCH. 「一覧の『キーに文字を表示』のスイッチを消す」
          OWNER 2026-09-06. kbSysHTML() is on every keyboard's own page, which
@@ -2823,7 +2877,7 @@ function vKb(){
   /* NO ? ON THIS SCREEN. It is on the LIST, one step back -- see the return
      above. A board's page is two in from the contents and the decision names
      one in. */
-  if(kbIsFree(now))
+  if(kbHeld(now))
     return '<div class="view">'+navTop('', kbMoreQ())+'<div class="body">'+
       kbHTML(null, true)+
       kbSysHTML()+
@@ -3937,7 +3991,7 @@ function kbMore(){
   openForm('kbmore', t('kb.more'),
     /* Not board 0. It is the free QWERTY, it is not in storage, and there is
        nothing there to delete. */
-    (!kbIsFree(now)
+    (!kbHeld(now)
       ? '<button class="set"' + DO('kbRepat', [now]) + '>'+
         '<span class="sl">'+esc(t('kb.pat.set'))+'</span>'+
         '<span class="sv">'+esc(t('kb.pat.'+kbBoard().pat))+ICON_GO+'</span></button>'+
@@ -4131,7 +4185,8 @@ function kbReset(){
   popAsk(t('kb.reset.ask'), function(){ kbResetGo(); }, t('pop.yes'));
 }
 function kbResetGo(){
-  KB=null; saveKb(); kbLay=0; kbSel=null; render();
+  if(kbTaken()) KBT[langId]=kbMint(); else KB=null;
+  saveKb(); kbLay=0; kbSel=null; render();
   toast(t('kb.reset.done'));
 }
 /* One key, opened. What it does, how wide it is, what each corner holds, and

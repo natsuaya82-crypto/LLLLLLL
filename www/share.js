@@ -520,7 +520,7 @@ function shareSig(){
      the widget would go on counting in twelve. */
   return who+'|'+scriptSig()+'|'+langId+'|'+(kb? 'p':'f')+'|'+
          (kbRomOn()? 'm':'-')+'|'+numBase()+'|'+(myFontWant()? 'o':'-')+'|'+
-         JSON.stringify(KB);
+         JSON.stringify(KB)+'|'+JSON.stringify(KBT[langId] || null);
 }
 /* ---- what the widgets read ---------------------------------------------
    A second file in the same App Group, and a second program after the

@@ -640,7 +640,13 @@ pullOn('mylangs', askLangs);
    may be WRITTEN is LOWN (www/core.js § langLocked), which the fill writes and
    which a take also stamps -- a different fact, so it is not asked here. */
 pullOn('lang',    function(ok, bad, p, a){
-                    pullWait('mylangs', null, function(){ netLangFill(a, ok, bad); });
+                    pullWait('mylangs', null, function(){
+                      netLangFill(a, function(n){
+                        /* and, on one this account took, the keyboards it
+                           built for it (www/net.js § netTakeKbRead) */
+                        if(langTheirs(a)) netTakeKbRead(a, ok, bad); else ok(n);
+                      }, bad);
+                    });
                   });
 pullOn('seen',    function(ok, bad, p, a){ wldSeenAsk(a, ok, bad); }, function(a){ return wldSeenGot(a); });
 pullOn('mod',     function(ok, bad){ modAsk(ok, bad); });

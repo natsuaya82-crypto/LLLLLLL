@@ -519,6 +519,22 @@ lands in the same place and does not make a second copy. 「ダウンロード�
 段を訊けていない起動では `dlCap()` は数ではなく（`planNum()` が `null`）、
 天井が数でない間は何も畳みません。
 
+**人の言語はプランで畳みません**（OWNER 2026-09-30「dl言語は有料無料関係ない」）。
+字・単語・文法の段・書き方・向きのどれも、作った人の物のまま見えます。プランが
+言語の形を変えるのは `langShaped()`（`www/core.js`）が答え、人の言語では必ず
+「変えない」です。`taken-check` が持ちます。
+
+**取った人が作るキーボードは、取った人の物です**（OWNER 2026-09-30、「DL可能
+言語」の決定の (2)）。サーバーの `take_kb` ── 一行が（取った人, 言語）で、
+`body` は `kb` スライスと同じ形 `{kbs, at, v}`。作った人の `kb` スライスは一バイト
+も動きません。本人だけが読み書きし（`uid = auth.uid()`）、書けるのは取った言語
+にだけ（`language_took()`）。DELETE は許していません ── 取った言語を外しても
+（`netTakeDrop()`）行は残り、もう一度取れば戻ります。アカウントを消すとその行も
+消えます（`auth.users` の cascade）。言語への外部キーは無く、作った人が言語を
+消しても行は残ります。端末には書かず、メモリの `KBT`（`www/keyboard.js`）だけ
+── 言語と一緒に `netTakeKbRead()`（`www/net.js`）が下ろし、保存で
+`netTakeKbPut()` が上げます。`taken-check` と `rls-check` が持ちます。
+
 `wldGet()` (`www/home.js`) is the one road in: it writes the index row FIRST,
 so a slice can never sit in storage under a language the index does not know,
 and then writes the slices it was asked for with `langKeyOf(id, kind)`.

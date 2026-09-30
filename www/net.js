@@ -1880,6 +1880,33 @@ function netTakeDrop(sid, ok, bad){
     },
     function(d, st, m){ if(bad) bad(d, st, m); });
 }
+/* AND THE KEYBOARDS THIS ACCOUNT BUILT FOR A LANGUAGE IT TOOK.
+   -------------------------------------------------------------------------
+   「ないやつは自作可能」 OWNER 2026-09-30. `take_kb` in supabase/schema.sql,
+   one row per (account, language), this account's and nobody else's; what it
+   holds is www/keyboard.js § KBT. It comes down with the language it is
+   for (pullOn('lang'), www/sns.js), because which keyboard goes to the phone
+   is the taker's to say and the phone is handed one on every render.
+
+   It FILLS IN what is missing and stops: a record this phone is holding --
+   built and not yet sent -- is not written over by the server's older one. */
+function netTakeKbRead(sid, ok, bad){
+  var id=String(sid||'');
+  if(!id){ ok(0); return; }
+  netGet('/rest/v1/take_kb?select=body&uid=eq.'+encodeURIComponent(netUid())+
+         '&language=eq.'+encodeURIComponent(id)+'&limit=1',
+    function(d){
+      var k=null;
+      if(d && d.length && d[0] && d[0].body){ try{ k=JSON.parse(d[0].body); }catch(e){ k=null; } }
+      if(!KBT[id] && k && typeof k==='object' && k.kbs) KBT[id]=kbIded(k);
+      ok(1);
+    }, bad);
+}
+/* And up, the whole record, when a keyboard of the taker's is saved
+   (kbWrite, www/keyboard.js). The language's own rows are not touched. */
+function netTakeKbPut(sid, rec, ok, bad){
+  netPut('takekb', String(sid||''), {body:JSON.stringify(rec || kbMint())}, ok, bad);
+}
 /* AND HOW THIS LANGUAGE IS WRITTEN.
    -------------------------------------------------------------------------
    「端末に残すものないんですけど」 OWNER 2026-09-08. The same shape as
@@ -2462,6 +2489,13 @@ var NET_PUT={
   },
   profile: function(uid, r){
     return {method:'PATCH', path:'/rest/v1/profile?id=eq.'+encodeURIComponent(uid), body:r,
+            got:function(d){ return (d && d.length)? d[0] : null; }};
+  },
+  /* An upsert: the first keyboard a taker builds makes the row, every save
+     after writes over it (supabase/schema.sql § take_kb). */
+  takekb: function(lid, r){
+    return {method:'POST', path:'/rest/v1/take_kb', up:true,
+            body:{uid:netUid(), language:lid, body:r.body, at:(new Date()).toISOString()},
             got:function(d){ return (d && d.length)? d[0] : null; }};
   },
   prefs: function(uid, r){

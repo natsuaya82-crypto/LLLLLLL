@@ -3969,7 +3969,9 @@ const ktHalf = (fs.readFileSync(path.join(KT_DIR, 'KeyBoardView.kt'), 'utf8')
 const jsHalf = (KBSRC.match(/var KB_COLS=([0-9]+)/) || [])[1];
 const cmpCols = whereAll(/(?:[<>]=?\s*KB_COLS\b|\bKB_COLS\s*[<>])/g);
 const cmpRows = whereAll(/(?:[<>]=?\s*kbRowsMax\(\)|kbRowsMax\(\)\s*[<>])/g);
-const freeAsk = whereAll(/kbIsFree\(kbShow\)|KB\.kbs\[kbShow-1\]/g);
+/* kbHeld() is board 0 and, on a language somebody took, its maker's boards
+   too (www/keyboard.js § KBT, r153) -- the same 「not written」, one place. */
+const freeAsk = whereAll(/kbHeld\(kbShow\)|\.kbs\[kbShow-kbFirst\(\)\]/g);
 
 /* ---- 「THE THING YOU CAME BACK FOR IS GONE」 IS DRAWN BY ONE FUNCTION ----
    CLAUDE.md § One place names goneBox()/viewGone() for it. Every t('form.gone')

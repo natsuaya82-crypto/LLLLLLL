@@ -1587,16 +1587,19 @@ function langWrites(){
    another screen with a Save is standing on that one's draft, and reading
    the slices would take the draft behind it away too. keepSnap() holds it
    for the same reason, so a Save that did not land leaves the draft on the
-   screen. The nine globals are the nine the writers in LANG_IO write. */
+   screen. The nine globals are the nine the writers in LANG_IO write, and
+   the tenth is the keyboards somebody built for a language they took
+   (KBT, www/keyboard.js) -- theirs rather than the language's, drafted on
+   the same page with the same Save. */
 function langHold(){
-  return JSON.stringify([WORDS, LINES, SCRIPT, LETTERS, NOTES, STG, SND, KB, WLD]);
+  return JSON.stringify([WORDS, LINES, SCRIPT, LETTERS, NOTES, STG, SND, KB, WLD, KBT]);
 }
 function langHeldBack(h){
   var a;
   try{ a=JSON.parse(h); }catch(e){ return; }
-  if(!a || a.length!==9) return;
+  if(!a || a.length!==10) return;
   WORDS=a[0]; LINES=a[1]; SCRIPT=a[2]; LETTERS=a[3]; NOTES=a[4];
-  STG=a[5]; SND=a[6]; KB=a[7]; WLD=a[8];
+  STG=a[5]; SND=a[6]; KB=a[7]; WLD=a[8]; KBT=a[9];
 }
 /* ---- ONE EMPTY LANGUAGE, MADE WHERE SOMEBODY STARTS MAKING ONE ----------
    「オンラインで 1 端末に 1 アカウント、そのアカウントに結びつけられる言語数が

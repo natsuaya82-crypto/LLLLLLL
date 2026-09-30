@@ -821,7 +821,31 @@ export function halfDone(){
     ['a word', () => { openWord(WORDS[0].hw); return vForm(); }],
     ['the handwriting sheet', () => { SH = shBlank(); openWrite(); return vForm(); }],
   ];
+  /* AND WHAT A PLAN DOES NOT DO TO IT, AND THE KEYBOARD ITS TAKER BUILDS
+     (r153, OWNER 2026-09-30): an alphabet past a–z drawn whole on free, the
+     keyboard list with its ＋, and a board of the taker's own open to be
+     built. The letters and the board are put back afterwards. */
+  const __past = (fn) => {
+    const n = LETTERS.length;
+    LETTERS.push({ id:'lt.ch', nm:'ch', st:[{ pts:[[200,200],[200,600],[600,600]] }], snd:[] },
+                 { id:'lt.sh', nm:'sh', st:[{ pts:[[200,600],[400,200],[600,600]] }], snd:[] });
+    try { return fn(); } finally { LETTERS.length = n; }
+  };
+  const __takerKb = (fn) => {
+    const was = KBT[langId];
+    KBT[langId] = { kbs:[{ id:'ktaker', nm:'', pat:'qwerty', lay:kbPatLay('qwerty') }], at:1, v:KB_V };
+    try { return fn(); } finally { if (was === undefined) delete KBT[langId]; else KBT[langId] = was; }
+  };
+  const __takenFaces = [
+    ['the alphabet past a-z on free', () => __past(() => {
+       window.route = 'ltset'; NAV = [{ r:'letters' }, { r:'ltset', a:'alpha' }]; return vLtset(); })],
+    ['the keyboards', () => { window.route = 'kb'; NAV = [{ r:'kb' }]; kbShow = 0; return vKb(); }],
+    ['a keyboard of the taker\'s own', () => __takerKb(() => {
+       window.route = 'kb'; NAV = [{ r:'kb' }, { r:'kb', a:'1' }]; return vKb(); })],
+  ];
   return [
+    ...__takenFaces.map(([n, f]) => [n + ', somebody else\'s language', () => __theirs(f)]),
+    ['the alphabet past a-z on free, your own language', () => __past(__takenFaces[0][1])],
     ...__outFaces.map(([n, f]) => [n + ', somebody else\'s language', () => __theirs(f)]),
     /* and the same four of your own, beside them, so the pair differs in
        whose it is and in nothing else */
