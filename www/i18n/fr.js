@@ -986,6 +986,7 @@ defLang('fr', (function(){
       "confirm.wipe"     : "Tout effacer ? Votre compte et chaque publication, photo et enregistrement quittent le serveur ; chaque langue, lettre et réglage quitte ce téléphone. Rien ne peut être récupéré. Résiliez votre abonnement avant de supprimer votre compte.",
       "confirm.wipe.langs": "Supprimer {0} ? Tout ce qui y a été créé disparaît : les mots, les lettres, le système d'écriture, le clavier, les notes et les sons. Elle est retirée de votre compte, elle ne reviendra donc pas sur un autre téléphone. Vos autres langues, vos publications et votre compte restent. Ceci est irréversible.",
       "langs.title"      : "Langues",
+      "dl.langs"         : "Langues téléchargeables",
       "langs.mine"       : "Vos langues",
       "langs.reading"    : "Lecture",
       "langs.untitled"   : "Sans titre",

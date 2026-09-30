@@ -93,6 +93,7 @@ const NP ='c0000000-0000-4000-8000-0000000000c7';   /* a post that answers and q
 const G1='a0000000-0000-4000-8000-0000000000a1';   /* tries to arrive holding admin */
 const G2='a0000000-0000-4000-8000-0000000000a2';   /* tries to arrive holding staff */
 const G3='a0000000-0000-4000-8000-0000000000a3';   /* tries to arrive already banned */
+const G5='a0000000-0000-4000-8000-0000000000a5';   /* tries to arrive official */
 /* Three about the fortnight the @ may not be changed twice inside.
    One each, and none of them reused from above, because what is being asked
    of them is a HISTORY -- when this account last renamed itself -- and an
@@ -399,6 +400,17 @@ const CASES = [
     `insert into profile(id,handle,staff) values ('${G2}','probe2',true)`],
   ['nor a ban on the way in',                 'denied', G3, 0,
     `insert into profile(id,handle,banned_at) values ('${G3}','probe3',now())`],
+  /* THE OFFICIAL MARK (profile.official, docs/FEATURE_RULES.md 2026-09-30) is
+     staff's shape: set by hand and by nothing an account can send. Not on the
+     way in, not on yourself afterwards, and not on somebody else. */
+  ['nor official on the way in',              'denied', G5, 0,
+    `insert into profile(id,handle,official) values ('${G5}','probe5',true)`],
+  ['B cannot make itself official',           'denied', B, 0,
+    `update profile set official=true where id='${B}'`],
+  ['nor anybody else',                        'denied', B, 0,
+    `update profile set official=true where id='${A}'`],
+  ['and is not',                              'denied', B, 0,
+    `select 1 from profile where id='${B}' and official`],
   /* And the same statement about a post. schema.sql says over hidden_at that
      "nobody may set these but the two functions at the foot of this file";
      a post arriving with it set reads as taken down by staff, carrying a
@@ -1340,6 +1352,12 @@ const CASES = [
   /* And it is not a second way at what profile keeps back. */
   ['profile_seen hands out no staff flag',    'denied', B, 0,
     `select 1 from profile_seen where id='${E}' and staff`],
+  /* The official mark IS on it, for anybody signed in, about anybody: it is
+     what somebody else's page is drawn from. */
+  ['B reads whether A is official',           'ok',     B, 0,
+    `select 1 from profile_seen where id='${A}' and official is not null`],
+  ['but somebody with no account does not',   'denied', B, 1,
+    `select 1 from profile_seen where id='${A}' and official is not null`],
 
   /* --- AND THE LANGUAGE THAT NOW RIDES ON THAT ROW -----------------------
      「なんか全体的に遅くない？」 OWNER 2026-09-08 (143). The language beside
@@ -4084,7 +4102,7 @@ const sql = [
      through a policy, in the order a real account would do it -- a profile
      before a language, a language before a post -- because a row put here by
      the owner of the table would be a row no policy ever had to allow. */
-  `insert into auth.users(id) values (${q(BK)}),(${q(BD)}),(${q(A)}),(${q(B)}),(${q(C)}),(${q(D)}),(${q(E)}),(${q(F)}),(${q(G1)}),(${q(G2)}),(${q(G3)}),(${q(G4)}),(${q(N1)}),(${q(N2)}),(${q(N3)});`,
+  `insert into auth.users(id) values (${q(BK)}),(${q(BD)}),(${q(A)}),(${q(B)}),(${q(C)}),(${q(D)}),(${q(E)}),(${q(F)}),(${q(G1)}),(${q(G2)}),(${q(G3)}),(${q(G4)}),(${q(G5)}),(${q(N1)}),(${q(N2)}),(${q(N3)});`,
   /* And one row that IS put here by the owner of the table, which the
      paragraph above says nothing else is. That is the claim being tested: no
      policy in schema.sql makes anybody staff, and the column is revoked from
