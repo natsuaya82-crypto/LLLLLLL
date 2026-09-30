@@ -492,10 +492,23 @@ async function film(br, ff, name, sc, stillsOnly) {
   if (sc.hq) {
     grabbing = true;
     const clip = { x: 0, y: 0, width: FRAME.w, height: FRAME.h, scale: FRAME.size[0] / FRAME.w };
+    /* A clip is in the DOCUMENT's pixels, not the screen's, so a page
+       scrolled by a step was filmed from the top of the document -- the
+       screen slid down and the caption, which is fixed to the screen, was
+       out of the picture. Each frame asks where the screen is. */
     grab = Promise.all([0, 1, 2, 3].map(async () => {
       while (grabbing) {
         const at = Date.now();
-        const r = await cdp.send('Page.captureScreenshot', { format: 'jpeg', quality: 95, optimizeForSpeed: true, clip }).catch(() => null);
+        const pos = async () => { const e = await cdp.send('Runtime.evaluate', { expression: 'scrollX+","+scrollY', returnByValue: true }).catch(() => null);
+                                  return e && e.result ? e.result.value : null; };
+        const p1 = await pos();
+        const xy = (p1 || '0,0').split(',');
+        let r = await cdp.send('Page.captureScreenshot', { format: 'jpeg', quality: 95, optimizeForSpeed: true,
+                                                            clip: Object.assign({}, clip, { x: +xy[0], y: +xy[1] }) }).catch(() => null);
+        /* and a frame taken while the screen moved under it (a new page
+           arriving scrolled back to the top) is the old position's, so it
+           is dropped rather than shown for a thirtieth of a second */
+        if (!p1 || (await pos()) !== p1) r = null;
         if (r) frames.push({ t: at / 1000, w: at, d: Buffer.from(r.data, 'base64') });
       }
     }));
