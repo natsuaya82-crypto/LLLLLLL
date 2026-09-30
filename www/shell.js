@@ -45,7 +45,6 @@ function viewReset(){
      -- an accident of where the screens are, not a rule, and not what
      「データ消えるのだけはありえない」 may rest on. */
   wUndo=null;
-  GEN=null;                            /* the words the app made up */
   fq=''; fpick=null;                   /* the find screen */
   abVow='';                            /* the abugida editor */
   ltSort='own'; ltFil='all'; ltQ='';   /* the alphabet's order, filter and search */
@@ -1145,11 +1144,8 @@ var PAGES={
   glyph:   {lang:1, tab:'build'},
   spell:   {lang:1, tab:'build', k:'word.sp'},
   words:   {lang:1, tab:'build', k:'toc.words'},
-  /* Words the app makes up, and the shapes it makes them in -- both off the
-     dictionary (www/words.js § vGen). And where one word came from, as a tree
-     (www/wordsheet.js § vEty), off a word's page. 2026-09-26. */
-  gen:     {lang:1, tab:'build', k:'gen.title'},
-  gensyl:  {lang:1, tab:'build', k:'gen.syl'},
+  /* Where one word came from, as a tree (www/wordsheet.js § vEty), off a
+     word's page. 2026-09-26. */
   ety:     {lang:1, tab:'build', k:'ety.title'},
   gram:    {lang:1, tab:'build', k:'toc.gram'},   /* the numeral is dropped on a single stage */
 

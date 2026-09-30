@@ -1403,7 +1403,7 @@ export function halfDone(){
        until something is on the sheet and gold the moment there is --
        「なにもない時は薄い灰色、何か打ったら金にする」 OWNER 2026-09-03. The
        fault is nearly always in the state nobody photographed, so both are
-       here.
+       here -- and the sheet after 自動生成.
 
        openAdd() is called TWICE on purpose, exactly as the synonym face
        below does it: what a form has in its corner is a string taken when
@@ -1415,6 +1415,10 @@ export function halfDone(){
                                                 addW = null; return h; }],
     ['the new word sheet, with a spelling typed', () => { window.route='words'; NAV=[{r:'words'}];
                                                 openAdd(''); wEdit.sp = spType('ka'); wdSync();
+                                                openAdd(''); const h = vForm();
+                                                addW = null; return h; }],
+    ['the new word sheet, after 自動生成', () => { window.route='words'; NAV=[{r:'words'}];
+                                                openAdd(''); wdGen();
                                                 openAdd(''); const h = vForm();
                                                 addW = null; return h; }],
     ['the new word sheet, with a synonym', () => { window.route='words'; NAV=[{r:'words'}];

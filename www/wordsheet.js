@@ -6,6 +6,9 @@
    13. The sheet for writing a word, and CSV
    ========================================================================= */
 var addPos='n';
+/* Whether the part of speech on the new-word sheet was chosen by the person,
+   so a generated word keeps it (wdGen). Cleared when a sheet opens fresh. */
+var addPosSet=false;
 
 var addW=null;
 /* ---- the sheet a word is written on --------------------------------------
@@ -28,7 +31,7 @@ var addFrom='';
    than from the dictionary. `count.1`, and empty for every ordinary word.
    phases.js § openSlot sets it; addOne() writes it onto the word. */
 var addSlot='';
-function openAdd(from, sp){
+function openAdd(from){
   /* Adding a word is the second of the four. Asked before the sheet opens,
      so nobody types a word into a form that is going to refuse it -- and
      before anything below is touched, so a refused open leaves the screen
@@ -47,9 +50,7 @@ function openAdd(from, sp){
      this took the not-fresh branch, left both null, and wdFormHTML() threw
      into vForm's catch: "that is no longer here", about a sheet nobody had
      opened. Empty and broken were sharing a branch. */
-  /* `sp` is a spelling somebody chose to start from (a made-up word, vGen):
-     that is a new sheet by definition, so it is fresh whatever the route. */
-  var fresh = !!sp || !(here().r==='form' && here().a==='add:'+(from||'')) || !addW || !wEdit;
+  var fresh = !(here().r==='form' && here().a==='add:'+(from||'')) || !addW || !wEdit;
   var par=from? findWord(from) : null;
   addFrom = par? String(par.hw) : '';
   /* A word coined from the dictionary fills no slot. Cleared here rather than
@@ -59,6 +60,7 @@ function openAdd(from, sp){
   if(fresh){
     /* A new sheet is measured from empty, not from the last word's mark. */
     keepDrop(keepKeyOf('form', 'add:'+addFrom));
+    addPosSet=false;
     openHw='';
       /* The draft holds only what a relation and an example need a WORD for.
        Everything staged -- the spelling, the meanings, the part of speech,
@@ -67,7 +69,7 @@ function openAdd(from, sp){
     addW={hw:'', mns:[], pos:addPos, syn:[], ant:[], ex:[]};
     wdMnNew=false; wdExNew=false; wdSubNew=false;
     if(addFrom) addW.from=addFrom;
-    wEdit={seq:[], sp:JSON.parse(JSON.stringify(sp || (par? spOf(par) : []))),
+    wEdit={seq:[], sp:JSON.parse(JSON.stringify(par? spOf(par) : [])),
            mns:[], pos:addPos, sub:'', reg:'', tags:[], ety:'', nt:''};
     addFmClear();
     wdSync();
@@ -1649,6 +1651,10 @@ function wdFormHTML(){
         esc(t('card.title'))+'">'+ICON_SHARE+'</button>')+'</div>'+
     '<div class="wsub" id="wd-rd">'+esc(phIpa(seq))+'</div>'+
     '<div class="wsub2" id="wd-syl">'+esc(wdSyl(seq))+'</div>'+
+    /* A word made up for this sheet -- the new-word sheet only 「直す画面に
+       いらねえだろ」 OWNER 2026-09-30. A word and not a mark: making up a
+       word has no mark every phone draws. */
+    ((mk && !addSlot)? '<button class="btn ghost"'+DO('wdGen')+'>'+esc(t('gen.btn'))+'</button>' : '')+
 
     /* A word is TYPED, on both plans. Under this heading were two grids --
        the alphabet, and the sounds -- with a rail to switch between them, so
@@ -2066,8 +2072,23 @@ function wdSetNt(v){ wEdit.nt=v; wdKeepTouch(); }
    that anybody else had: subsOf() reads the dictionary, so the name is still
    on the list for as long as one word is still in it. */
 function wdSetPos(v){
+  if(addW) addPosSet=true;
   if(wEdit.pos!==v) wEdit.sub='';
   wEdit.pos=v;
+}
+/* Everything but the meaning, filled in: the spelling (and with it the
+   reading) and the part of speech -- www/assist.js § genWords learns what a
+   word is like from the dictionary. The part of speech is kept when the
+   person chose it on this sheet, and drawn from the dictionary's mix when
+   they did not. Pressed again, another word. */
+function wdGen(){
+  var g;
+  if(!addW || !wEdit || langLocked()) return;
+  g=genWords(1, addPosSet? wEdit.pos : null)[0];
+  if(!g){ toast(t('gen.none')); return; }
+  wEdit.sp=g.sp; wdSync();
+  if(!addPosSet && g.pos && g.pos!==wEdit.pos){ wEdit.sub=''; wEdit.pos=g.pos; }
+  wdPaint();
 }
 function wdSetSub(v){ wEdit.sub=String(v||'').trim(); }
 /* A reading typed whole, given back to the positions that make it up.
