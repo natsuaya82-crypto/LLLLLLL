@@ -574,9 +574,35 @@ function keepDrafting(){
    leaving the screen, or the refusal is never seen. Every other screen's save
    is this phone's own and says true straight away. */
 /* One press at a time. The button stays where it is while the send is out and
-   a second press would put a second save on the same fields. The drawing
-   screen holds the same thing on GE.busy, for the same reason. */
-var KEEP_BUSY=false;
+   a second press would put a second save on the same fields.
+
+   AND IT IS A SAVE'S, NOT THE SESSION'S. 「画面には表示されてないし保存しました
+   って出ないから戻るボタンしか押せねえ」 OWNER 実機 1.0.3, 2026-09-30. It was
+   raised here and let down only inside the answers below, so one throw in
+   between -- in a screen's own save, before anything went out -- left it
+   raised for good: that press said nothing, and every Save after it, on
+   every screen, returned at the gate and said nothing either, until the app
+   was closed. What threw on the owner's phone is not known
+   (docs/scope/r143-save.md).
+
+   So a save is a RUN, numbered, and it ends once, through one of two doors:
+   it landed, or it did not -- and a throw is 「it did not」, with the phone put
+   back and the reason said, in a mark a screenshot carries (keepWhy). Only
+   the run that raised it lets it down, so an answer arriving for a run that
+   has already ended moves nothing.
+
+   A press that finds it raised is not dropped in silence either. With
+   something on the wire (keepAir) the run that is out IS this press's save
+   -- the same buffer, written when it was pressed -- and the mark turning
+   over the screen is the answer. With nothing on the wire and nothing
+   queued, nothing is carrying it: that is said, and this press goes.
+   keep-check 24 and 25, on every screen with a Save. */
+var KEEP_BUSY=false, KEEP_RUN=0;
+function keepAir(){ return NET_OUT>0 || NET_SYNCING || !!(NET_NEXT && NET_NEXT.length); }
+/* 「保存できませんでした」 and the mark, the way netWhy() puts one on
+   「接続できません」: a state for a screenshot to carry, not a sentence to
+   read. */
+function keepWhy(mark){ return t('save.no') + ' (' + String(mark).slice(0, 48) + ')'; }
 /* ---- AND THE SERVER GOES FIRST ------------------------------------------
    「先にサーバーじゃないの？失敗しましたなのに端末に出るの変じゃない？」
    OWNER 2026-09-06.
@@ -661,18 +687,35 @@ function keepBack(snap){
    and it is where a save that landed goes. The corner's Save hands none and
    goes back one page (backTo). */
 function keepSave(key, done, to){
-  var b=KEEP[String(key)], snap;
+  var b=KEEP[String(key)], snap, run, over=false;
   if(!b || !b.save){ if(done) done(true); return; }
-  if(KEEP_BUSY) return;
+  if(KEEP_BUSY){
+    if(keepAir()) return;
+    toast(keepWhy('keep busy'));
+  }
+  run=++KEEP_RUN;
   KEEP_BUSY=true;
+  /* The one way a run lets go, and only its own. */
+  function free(){ if(KEEP_RUN===run) KEEP_BUSY=false; }
+  /* And the one way a run that did not land ends: the phone as it was
+     before the press, and nothing moved on. `mark` is said when there is
+     no one else to say it -- a screen that refused has said its own. */
+  function fell(mark){
+    if(over) return;
+    over=true;
+    keepBack(snap);
+    free();
+    if(mark) toast(keepWhy(mark));
+    if(done) done(false);
+  }
   /* Before anything is written, so that nothing has to be worked out
      afterwards from what changed. */
   snap=keepSnap();
-  b.save(b.v, function(ok){
+  try{ b.save(b.v, function(ok){
     /* Refused by the screen itself -- the @ is taken, the sheet would not
        write. It is the same sentence as a send that did not land and it is
        the same road back: nothing on this phone moves. */
-    if(!ok){ keepBack(snap); KEEP_BUSY=false; if(done) done(false); return; }
+    if(!ok){ fell(''); return; }
     /* AND IT IS NOT SAVED UNTIL IT IS UP.
        「保存ボタン押して保存ができるかできないかは通信の有無だけだからな？」
        「通信エラーなら進むわけねえだろ全部」 OWNER 2026-09-05.
@@ -695,7 +738,9 @@ function keepSave(key, done, to){
        levelling below and the way off the screen -- and netPop() is already
        up over it saying why. */
     netSaveNow(function(up){
-      KEEP_BUSY=false;
+      if(over) return;
+      over=true;
+      free();
       /* It did not arrive, so it did not happen. */
       if(!up) keepBack(snap);
       /* Levelled rather than thrown away. What has just been written down IS
@@ -761,7 +806,11 @@ function keepSave(key, done, to){
       if(up){ keepPaint(); navLand(to || backTo()); }
       if(done) done(!!up);
     });
-  });
+  }); }catch(e){
+    /* A throw after the answer is not this run's to end -- it has ended. */
+    if(over) throw e;
+    fell('keep ' + ((e && e.message) || e));
+  }
 }
 /* A form is built once, when it is opened, and kept whole on FORM (www/home.js
    § openForm) -- so a screen that has just written its fields down has to be
