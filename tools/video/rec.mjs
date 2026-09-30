@@ -400,6 +400,25 @@ async function film(br, ff, name, sc, stillsOnly) {
     frames.push({ t: f.metadata.timestamp, w: Date.now(), d: Buffer.from(f.data, 'base64') });
     cdp.send('Page.screencastFrameAck', { sessionId: f.sessionId }).catch(() => {});
   });
+  /* hq: the screencast sends frames at the page's own CSS pixels (393 wide
+     here) whatever the scale, and the film was that picture blown up 2.75x
+     「画質悪い」 OWNER 2026-09-30. So an hq film takes the page as a
+     screenshot clipped at the FILM's width (a clip's `scale` is the only
+     thing that makes CDP hand back more than CSS pixels), four asked at once
+     because one at a time is about 15 a second and four overlap to about
+     28, and each is stamped with the moment it was asked for. */
+  let grabbing = false, grab = null;
+  if (sc.hq) {
+    grabbing = true;
+    const clip = { x: 0, y: 0, width: FRAME.w, height: FRAME.h, scale: FRAME.size[0] / FRAME.w };
+    grab = Promise.all([0, 1, 2, 3].map(async () => {
+      while (grabbing) {
+        const at = Date.now();
+        const r = await cdp.send('Page.captureScreenshot', { format: 'jpeg', quality: 95, optimizeForSpeed: true, clip }).catch(() => null);
+        if (r) frames.push({ t: at / 1000, w: at, d: Buffer.from(r.data, 'base64') });
+      }
+    }));
+  } else
   await cdp.send('Page.startScreencast', { format: 'jpeg', quality: 92,
                                            maxWidth: FRAME.size[0], maxHeight: FRAME.size[1], everyNthFrame: 1 });
   /* A screencast only sends a frame when something is painted. A page
@@ -417,7 +436,7 @@ async function film(br, ff, name, sc, stillsOnly) {
   await run(pg, sc.steps, taps);
   await pg.evaluate((t) => window.__vEnd(t), sc.endLine || 'Make your own language');
   await pg.waitForTimeout(2200);
-  await cdp.send('Page.stopScreencast');
+  if (grab) { grabbing = false; await grab; frames.sort((a, b) => a.t - b.t); } else await cdp.send('Page.stopScreencast');
 
   /* THE SOUND: a soft tap on every press and nothing else 「無音でいいか効果音
      だけつけて欲しい。タップ音とか」 OWNER 2026-09-29. Made in this browser
@@ -427,7 +446,9 @@ async function film(br, ff, name, sc, stillsOnly) {
   const fw0 = frames[0].w, ft0 = frames[0].t;
   const at = taps.map((w) => (w - fw0) / 1000).filter((x) => x >= 0);
   const len = frames[frames.length - 1].t - ft0;
-  const audio = await pg.evaluate(async ({ at, len }) => {
+  /* sound: false -- a silent track, the film is watched with the sound off
+     「音キモくね？」 OWNER 2026-09-30 (the r/conlangs film) */
+  const audio = sc.sound === false ? null : await pg.evaluate(async ({ at, len }) => {
     const ac = new AudioContext({ sampleRate: 48000 });
     const dst = ac.createMediaStreamDestination();
     const t0 = ac.currentTime + 0.3;
@@ -455,20 +476,23 @@ async function film(br, ff, name, sc, stillsOnly) {
   await ctx.close();
   fs.mkdirSync(FRAME.out, { recursive: true });
   const aFile = path.join(FRAME.out, '.' + name + '.opus.webm');
-  fs.writeFileSync(aFile, Buffer.from(audio, 'base64'));
+  if (audio) fs.writeFileSync(aFile, Buffer.from(audio, 'base64'));
 
   if (!frames.length) throw new Error('no frames');
   const start = frames[0].t, dur = frames[frames.length - 1].t - start;
   const n = Math.round(dur * FPS);
   const file = path.join(FRAME.out, name + '.' + ff.ext);
   const enc = ff.ext === 'mp4'
-    ? ['-c:v', 'libx264', '-preset', 'slow', '-crf', '21', '-maxrate', '2500k', '-bufsize', '5M', '-pix_fmt', 'yuv420p', '-profile:v', 'high', '-movflags', '+faststart', '-b:a', '128k']
+    ? ['-c:v', 'libx264', '-preset', 'slow', ...(sc.hq ? ['-crf', '14', '-tune', 'stillimage'] : ['-crf', '21', '-maxrate', '2500k', '-bufsize', '5M']),
+       '-pix_fmt', 'yuv420p', '-profile:v', 'high', '-movflags', '+faststart', '-b:a', '128k']
     /* about 1.6 Mbit/s: a screen mostly standing still, and a film of 25s
        comes in under 5MB. */
   : ['-c:v', 'vp8', '-b:v', '1600k', '-maxrate', '2600k', '-bufsize', '4M', '-qmin', '4', '-qmax', '50',
        '-deadline', 'good', '-cpu-used', '2', '-auto-alt-ref', '1', '-lag-in-frames', '16'];
   const p = spawn(ff.bin, ['-loglevel', 'error', '-y', '-f', 'image2pipe', '-c:v', 'mjpeg', '-r', String(FPS),
-                           '-i', 'pipe:0', '-itsoffset', '-0.3', '-i', aFile, '-map', '0:v', '-map', '1:a',
+                           '-i', 'pipe:0',
+                           ...(audio ? ['-itsoffset', '-0.3', '-i', aFile] : ['-f', 'lavfi', '-i', 'anullsrc=r=48000:cl=stereo']),
+                           '-map', '0:v', '-map', '1:a', '-shortest',
                            '-c:a', ff.ext === 'mp4' ? 'aac' : 'copy',
                            '-vf', 'scale=' + FRAME.size[0] + ':' + FRAME.size[1] + ',setsar=1', ...enc, file],
                   { stdio: ['pipe', 'inherit', 'inherit'] });
@@ -481,7 +505,7 @@ async function film(br, ff, name, sc, stillsOnly) {
   }
   p.stdin.end();
   await new Promise((r, x) => p.on('close', (c) => (c === 0 ? r() : x(new Error('ffmpeg ' + c)))));
-  fs.unlinkSync(aFile);
+  if (audio) fs.unlinkSync(aFile);
   const mb = fs.statSync(file).size / 1048576;
   console.log(`${path.relative(ROOT, file)}  ${(n / FPS).toFixed(1)}s  ${mb.toFixed(2)}MB  (${frames.length} painted frames, filmed in ${((Date.now() - t0) / 1000).toFixed(1)}s)`);
 }
