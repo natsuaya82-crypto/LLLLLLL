@@ -15,6 +15,7 @@
      draw: [[[u,v],..]] strokes, each a list of points 0..1 inside `on`
                         (default: the first canvas)
      eval: 'js'         set something up in the page (never a press)
+     pick: 'file'       the photo the phone's picker answers with (rec.mjs)
      wait: ms           how long to stand after the step (default 500)
 
    `setup` runs before filming starts. `blank` names letters left undrawn
@@ -363,6 +364,41 @@ export const SCRIPTS = {
       { go: 'words' },
       { tap: '[data-do=openWord][data-a=\'["lom"]\']', wait: 400 },
       { wait: 2800, still: 'g5-past' },
+    ],
+  },
+
+  /* A post: a line in your own letters, what it means, a tag, a photograph,
+     and the timeline it lands on. The photograph is tools/video/
+     photo-mountains.jpg, made for this film (a mountain at dusk, the line is
+     "kano mos" -- the mountain is tall). */
+  'post': {
+    view: [393, 852, 3], size: [1080, 2340], out: 'promo/post', hq: true, slow: 2,
+    music: 'sigmamusicart-background-music-inspiring-525840.mp3',
+    /* The fixture's own post (p1) is a post never sent, cut with a
+       half-drawn alphabet: on film it reads "Not sent" over "7ano mos tir".
+       It is taken out of the page for this film only. */
+    setup: [{ eval: "POSTS = POSTS.filter(function (p) { return p.id !== 'p1'; }); render();" }, { go: 'feed' }],
+    steps: [
+      { cap: 'Post in a language only you made', capAt: 600, wait: 2000, still: 'p1-feed' },
+      { cap: 'Tap + to write', capAt: 600, wait: 200 },
+      { tap: '[data-do=openPost][data-a*=new]', wait: 900 },
+      { cap: 'Type in your own letters', capAt: 600, wait: 200 },
+      { type: 'kano mos', lingua: true, into: 'do:pwFocusLn', delay: 260, wait: 1200, still: 'p2-line' },
+      { cap: 'Its meaning comes from your dictionary', capAt: 600, wait: 2200 },
+      { cap: 'Say it your way', capAt: 600, wait: 200 },
+      { tap: '#pw-mn', wait: 200 },
+      { eval: "document.getElementById('pw-mn').select()", wait: 200 },
+      { type: 'The mountain is tall', delay: 80, wait: 900 },
+      { cap: 'Tag it', capAt: 600, wait: 200 },
+      { type: 'mountains', into: '.pwtag', delay: 110, wait: 900 },
+      { cap: 'Add a photo', capAt: 600, wait: 200 },
+      { pick: 'tools/video/photo-mountains.jpg' },
+      { tap: 'do:pwPickLib', wait: 1800, still: 'p3-photo' },
+      { cap: 'Post it', capAt: 600, wait: 200 },
+      { tap: 'do:pwSend', wait: 1800 },
+      { cap: 'It is on the timeline, in your letters', capAt: 600, wait: 2800, still: 'p4-posted' },
+      { cap: 'Read other makers, in their letters', capAt: 600, wait: 200 },
+      { scroll: 330, wait: 3000 },
     ],
   },
 

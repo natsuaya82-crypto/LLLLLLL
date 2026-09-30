@@ -372,6 +372,18 @@ async function run(pg, steps, taps, stills) {
       await unpop(pg);
     }
     if (s.eval) await pg.evaluate(s.eval);
+    /* pick: a photograph for the phone's own picker to answer with. The
+       library is PHPickerViewController through LinguaShare (pwPickLib,
+       www/post.js), which a browser does not have; here the one call it
+       makes is answered with this file, as the picker would. */
+    if (s.pick) {
+      const b64 = fs.readFileSync(path.join(ROOT, s.pick)).toString('base64');
+      await pg.evaluate((b) => {
+        window.sharePlug = function () {
+          return function () { return Promise.resolve({ b64s: [b] }); };
+        };
+      }, b64);
+    }
     if (s.card !== undefined) await pg.evaluate(([src, t]) => window.__vCard(src, t),
                                                 [s.card < 0 ? null : CARDS[s.card], s.cardTitle]);
     if (s.tap) {
