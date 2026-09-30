@@ -94,4 +94,78 @@ export const SCRIPTS = {
     ],
     endLine: 'Make your own language',
   },
+
+  /* r/conlangs, 2026-09-30 -- building a keyboard, the whole road: the list,
+     one board, keys in and out, a row and a column selected and acted on,
+     a key made two rows tall, a key given an IPA letter and one given a
+     drawn letter, Save. Portrait at an iPhone's own 393x852, stills at 3x
+     (1179x2556), all into promo/keyboard/. Two boards are made before the
+     camera starts (kbAdd() -- the app's own), so the list has three. */
+  'keyboard-reddit': {
+    view: [393, 852, 3], size: [1080, 2340], out: 'promo/keyboard',
+    setup: [
+      { eval: "kbAdd('qwerty'); kbAdd('abc');" },
+      { go: 'kb' },
+    ],
+    steps: [
+      { cap: 'Build a keyboard for your conlang', capAt: 470, wait: 2200, still: '01-keyboard-list' },
+      { cap: 'Pick one', capAt: 470, wait: 300 },
+      { tap: '[data-do=kbGoBoard][data-a="[2]"]', wait: 1300 },
+      { cap: 'Every key is a letter you drew', capAt: 560, wait: 2000, still: '02-editor' },
+      /* add: a frame, then the + */
+      { cap: 'Add keys', capAt: 560, wait: 200 },
+      { tap: '[data-do=kbCellSel][data-a="[2,0,2]"]', wait: 450 },
+      { tap: 'do:kbCellPut', wait: 550 },
+      { tap: '[data-do=kbCellSel][data-a="[2,2,2]"]', wait: 450 },
+      { tap: 'do:kbCellPut', wait: 550 },
+      { tap: '[data-do=kbCellSel][data-a="[2,18,2]"]', wait: 450 },
+      { tap: 'do:kbCellPut', wait: 900 },
+      /* delete: a key, then the bin */
+      { cap: 'Delete keys', capAt: 560, wait: 200 },
+      { tap: '[data-do=kbTapKey][data-a="[1,6]"]', wait: 450 },
+      { tap: 'do:kbCut', wait: 1000 },
+      /* a row: select it, push it left, right, centre */
+      { cap: 'Select a row', capAt: 560, wait: 200 },
+      { tap: '[data-do=kbHeadRow][data-a="[1]"]', wait: 900, still: '03-row-selected' },
+      { cap: 'Push it left, centre or right', capAt: 560, wait: 200 },
+      { tap: '[data-do=kbAlign][data-a=\'["l"]\']', wait: 800 },
+      { tap: '[data-do=kbAlign][data-a=\'["c"]\']', wait: 800 },
+      { tap: '[data-do=kbAlign][data-a=\'["r"]\']', wait: 1000 },
+      /* a column: select it, delete it, and the step back */
+      { cap: 'Select a column', capAt: 560, wait: 200 },
+      { tap: '[data-do=kbHeadCol][data-a="[4]"]', wait: 350 },
+      { tap: '[data-do=kbHeadCol][data-a="[4]"]', wait: 900, still: '04-column-selected' },
+      { cap: 'Delete it in one go', capAt: 560, wait: 200 },
+      { tap: 'do:kbCut', pop: true, wait: 700 },
+      { tap: 'do:popYes', wait: 1100 },
+      { cap: 'Undo is one tap', capAt: 560, wait: 200 },
+      { tap: 'do:kbUndo', wait: 1100 },
+      /* a key two rows tall: the key and the one under it, then join */
+      { cap: 'Make a key two rows tall', capAt: 560, wait: 200 },
+      { tap: '[data-do=kbTapKey][data-a="[1,9]"]', wait: 400 },
+      { tap: '[data-do=kbTapKey][data-a="[2,9]"]', wait: 600 },
+      { tap: 'do:kbJoinSel', wait: 1300 },
+      /* a key: an IPA letter */
+      { cap: 'Put any character on a key', capAt: 560, wait: 200 },
+      { tap: '[data-do=kbTapKey][data-a="[2,0]"]', wait: 350 },
+      { tap: '[data-do=kbTapKey][data-a="[2,0]"]', wait: 450 },
+      { tap: 'do:kbOpenSel', wait: 1000 },
+      { cap: 'IPA, accents, any script', capAt: 120, wait: 1000, still: '05-pick-a-character' },
+      { tap: '[data-do=pkKind][data-a*=ipa]', wait: 900 },
+      { tap: '[data-do=pkTake][data-a*="=ʃ"]', wait: 800 },
+      { tap: 'do:keepPress', wait: 1000, },
+      /* and a letter of your own */
+      { cap: 'Or a letter you drew', capAt: 560, wait: 200 },
+      { tap: '[data-do=kbHeadRow][data-a="[2]"]', wait: 350 },
+      { tap: '[data-do=kbTapKey][data-a="[2,1]"]', wait: 450 },
+      { tap: 'do:kbOpenSel', wait: 900 },
+      { tap: '[data-do=pkKind][data-a*=own]', wait: 900 },
+      { tap: '[data-do=pkTake][data-a*="lt.q"]', wait: 800 },
+      { tap: 'do:keepPress', wait: 1100 },
+      { cap: 'Save it', capAt: 560, wait: 300 },
+      { tap: 'do:keepPress', wait: 1600, still: '06-finished-keyboard' },
+      { cap: 'Type your conlang on your phone', capAt: 560, wait: 2400 },
+    ],
+    endLine: 'Make your own language',
+  },
 };

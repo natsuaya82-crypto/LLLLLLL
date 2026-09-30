@@ -40,6 +40,15 @@ const WWW = path.join(ROOT, 'www');
 const OUT = path.join(ROOT, 'docs', 'video', 'out');
 const PORT = 8133;
 const W = 390, SCALE = 1080 / 390, H = Math.round(1920 / SCALE);   /* 693 */
+/* A script may name its own frame: `view: [w, h, scale]` is the page and how
+   many pixels a point is (stills are taken at that), `size: [w, h]` what the
+   film is written at, `out` the folder under the repo it goes into. */
+let FRAME = { w: W, h: H, scale: SCALE, size: [1080, 1920], out: OUT };
+function frameOf(sc) {
+  const v = sc.view || [W, H, SCALE];
+  return { w: v[0], h: v[1], scale: v[2], size: sc.size || [1080, 1920],
+           out: sc.out ? path.join(ROOT, sc.out) : OUT };
+}
 const FPS = 30;
 const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css',
                '.png': 'image/png', '.svg': 'image/svg+xml', '.woff2': 'font/woff2',
@@ -179,6 +188,16 @@ const SHAPES = {
   x: [[[.2,.1],[.8,.9]], [[.8,.1],[.2,.9]]],
   y: [[[.2,.1],[.5,.5],[.8,.1]], [[.5,.5],[.5,.9]]],
   z: [[[.2,.1],[.8,.1],[.2,.9],[.8,.9]]],
+  /* and the digits, so the row over a QWERTY is the language's too */
+  '0': [[[.3,.1],[.7,.1],[.7,.9],[.3,.9],[.3,.1]]],
+  '2': [[[.3,.1],[.7,.1],[.7,.5],[.3,.9],[.7,.9]]],
+  '3': [[[.3,.1],[.7,.3],[.3,.5],[.7,.7],[.3,.9]]],
+  '4': [[[.3,.1],[.3,.5],[.7,.5]], [[.6,.3],[.6,.9]]],
+  '5': [[[.7,.1],[.3,.1],[.3,.5],[.7,.6],[.3,.9]]],
+  '6': [[[.7,.1],[.3,.5],[.3,.9],[.7,.9],[.7,.6],[.3,.6]]],
+  '7': [[[.3,.1],[.7,.1],[.4,.9]]],
+  '8': [[[.3,.1],[.7,.1],[.3,.9],[.7,.9],[.3,.1]]],
+  '9': [[[.7,.5],[.3,.5],[.3,.1],[.7,.1],[.7,.9]]],
 };
 async function inkAll(pg, keep) {
   await pg.evaluate(({ SH, keep }) => {
@@ -196,7 +215,7 @@ async function inkAll(pg, keep) {
 
 /* ---- open the app -------------------------------------------------------- */
 async function open(br) {
-  const ctx = await br.newContext({ viewport: { width: W, height: H }, deviceScaleFactor: SCALE,
+  const ctx = await br.newContext({ viewport: { width: FRAME.w, height: FRAME.h }, deviceScaleFactor: FRAME.scale,
                                     hasTouch: true });
   /* THERE IS NO SERVER BEHIND THIS, as shot.mjs says. A request that fails
      puts 「接続できません」 over the film, and a request answered with
@@ -261,7 +280,7 @@ async function boxOf(pg, s, nth) {
   return b;
 }
 
-async function run(pg, steps, taps) {
+async function run(pg, steps, taps, stills) {
   for (const s of steps) {
     if (s.cap !== undefined) await pg.evaluate(([c, y]) => window.__vCap(c, y), [s.cap, s.capAt]);
     if (s.go) {
@@ -276,7 +295,9 @@ async function run(pg, steps, taps) {
       await pg.waitForTimeout(220);
       if (taps) taps.push(Date.now());
       await pg.mouse.click(x, y);
-      await unpop(pg);
+      /* pop: the press opens the app's own question and the next step
+         answers it, so it is left standing */
+      if (!s.pop) await unpop(pg);
     }
     if (s.type !== undefined) {
       if (s.into) {
@@ -329,6 +350,17 @@ async function run(pg, steps, taps) {
     if (s.scroll) { await pg.mouse.wheel(0, s.scroll); }
     if (s.end !== undefined) await pg.evaluate((t) => window.__vEnd(t), s.end);
     await pg.waitForTimeout(s.wait === undefined ? 500 : s.wait);
+    if (s.log) console.log('log', JSON.stringify(await pg.evaluate(s.log)));
+    /* still: a picture of the app as it stands, the caption and the finger
+       taken off, at the frame's own pixels (never fullPage, so every still
+       is the same size). Only on the --stills run; the film ignores it. */
+    if (s.still && stills) {
+      await pg.evaluate(() => { document.getElementById('__v').style.display = 'none'; });
+      fs.mkdirSync(FRAME.out, { recursive: true });
+      await pg.screenshot({ path: path.join(FRAME.out, s.still + '.png') });
+      await pg.evaluate(() => { document.getElementById('__v').style.display = ''; });
+      console.log('still ' + path.relative(ROOT, path.join(FRAME.out, s.still + '.png')));
+    }
   }
 }
 
@@ -343,7 +375,7 @@ async function doProbe(br, spec) {
   const [head, ...presses] = sp.split('>');
   const ci = head.indexOf(':');
   await run(pg, [{ go: ci < 0 ? head : head.slice(0, ci), a: ci < 0 ? undefined : head.slice(ci + 1), wait: 300 }]
-    .concat(presses.map((t) => ({ tap: t, wait: 600 }))));
+    .concat(presses.map((t) => (t.startsWith('js:') ? { eval: t.slice(3) + ';render()', wait: 600 } : { tap: t, wait: 600 }))));
   const list = await pg.evaluate(() => Array.from(document.querySelectorAll('#app [data-do], .bar [data-do], [data-do]'))
     .filter((e) => e.getBoundingClientRect().width > 0)
     .map((e) => { const r = e.getBoundingClientRect();
@@ -355,11 +387,13 @@ async function doProbe(br, spec) {
 }
 
 /* ---- film one script ----------------------------------------------------- */
-async function film(br, ff, name, sc) {
+async function film(br, ff, name, sc, stillsOnly) {
+  FRAME = frameOf(sc);
   const { ctx, pg } = await open(br);
   await inkAll(pg, sc.blank);
   if (sc.setup) await run(pg, sc.setup.map((s) => Object.assign({ wait: 0 }, s)));
   await pg.waitForTimeout(300);
+  if (stillsOnly) { await run(pg, sc.steps, null, true); await ctx.close(); return; }
   const cdp = await ctx.newCDPSession(pg);
   const frames = [];
   cdp.on('Page.screencastFrame', (f) => {
@@ -367,7 +401,7 @@ async function film(br, ff, name, sc) {
     cdp.send('Page.screencastFrameAck', { sessionId: f.sessionId }).catch(() => {});
   });
   await cdp.send('Page.startScreencast', { format: 'jpeg', quality: 92,
-                                           maxWidth: 1080, maxHeight: 1920, everyNthFrame: 1 });
+                                           maxWidth: FRAME.size[0], maxHeight: FRAME.size[1], everyNthFrame: 1 });
   /* A screencast only sends a frame when something is painted. A page
      standing still sends nothing, so a steady pulse under everything keeps
      the clock honest: one pixel in a corner, repainted on every frame,
@@ -419,15 +453,14 @@ async function film(br, ff, name, sc) {
     return btoa(bin);
   }, { at, len });
   await ctx.close();
-  fs.mkdirSync(OUT, { recursive: true });
-  const aFile = path.join(OUT, '.' + name + '.opus.webm');
+  fs.mkdirSync(FRAME.out, { recursive: true });
+  const aFile = path.join(FRAME.out, '.' + name + '.opus.webm');
   fs.writeFileSync(aFile, Buffer.from(audio, 'base64'));
 
   if (!frames.length) throw new Error('no frames');
   const start = frames[0].t, dur = frames[frames.length - 1].t - start;
   const n = Math.round(dur * FPS);
-  fs.mkdirSync(OUT, { recursive: true });
-  const file = path.join(OUT, name + '.' + ff.ext);
+  const file = path.join(FRAME.out, name + '.' + ff.ext);
   const enc = ff.ext === 'mp4'
     ? ['-c:v', 'libx264', '-preset', 'slow', '-crf', '21', '-maxrate', '2500k', '-bufsize', '5M', '-pix_fmt', 'yuv420p', '-profile:v', 'high', '-movflags', '+faststart', '-b:a', '128k']
     /* about 1.6 Mbit/s: a screen mostly standing still, and a film of 25s
@@ -437,7 +470,7 @@ async function film(br, ff, name, sc) {
   const p = spawn(ff.bin, ['-loglevel', 'error', '-y', '-f', 'image2pipe', '-c:v', 'mjpeg', '-r', String(FPS),
                            '-i', 'pipe:0', '-itsoffset', '-0.3', '-i', aFile, '-map', '0:v', '-map', '1:a',
                            '-c:a', ff.ext === 'mp4' ? 'aac' : 'copy',
-                           '-vf', 'scale=1080:1920', '-aspect', '9:16', ...enc, file],
+                           '-vf', 'scale=' + FRAME.size[0] + ':' + FRAME.size[1] + ',setsar=1', ...enc, file],
                   { stdio: ['pipe', 'inherit', 'inherit'] });
   p.stdin.on('error', () => {});
   let j = 0;
@@ -463,7 +496,7 @@ try {
     if (!which.length) console.error('which? ' + Object.keys(SCRIPTS).join(' '));
     for (const k of which) {
       if (!SCRIPTS[k]) { console.error(`no script called ${k}`); continue; }
-      await film(br, ff, k, SCRIPTS[k]);
+      await film(br, ff, k, SCRIPTS[k], argv.indexOf('--stills') >= 0);
     }
   }
 } finally {
