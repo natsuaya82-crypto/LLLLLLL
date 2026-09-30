@@ -39,10 +39,19 @@ const ROOT = path.join(HERE, '..', '..');
 const WWW = path.join(ROOT, 'www');
 const OUT = path.join(ROOT, 'docs', 'video', 'out');
 const PORT = 8133;
+const ICON = 'data:image/png;base64,' +
+  fs.readFileSync(path.join(ROOT, 'ios', 'App', 'App', 'Assets.xcassets', 'AppIcon.appiconset', 'AppIcon-512@2x.png')).toString('base64');
 const W = 390, SCALE = 1080 / 390, H = Math.round(1920 / SCALE);   /* 693 */
 /* A script may name its own frame: `view: [w, h, scale]` is the page and how
    many pixels a point is (stills are taken at that), `size: [w, h]` what the
    film is written at, `out` the folder under the repo it goes into. */
+/* SLOW: while an hq film is taken the page runs `slow` times slower -- its
+   CSS animations through CDP, the waits here and the layer's timers by the
+   same factor -- and the frames are laid back at the real speed, so a
+   browser that screenshots 15-20 times a second gives a film of 30-40 「まだ
+   カクカクしてる」 OWNER 2026-09-30. The app's own timers are not slowed. */
+let SLOW = 1;
+const nap = (pg, ms) => pg.waitForTimeout(ms * SLOW);
 let FRAME = { w: W, h: H, scale: SCALE, size: [1080, 1920], out: OUT };
 function frameOf(sc) {
   const v = sc.view || [W, H, SCALE];
@@ -105,14 +114,37 @@ const LAYER = `
     '.__vdot{position:absolute;width:46px;height:46px;margin:-23px 0 0 -23px;border-radius:50%;' +
       'background:rgba(255,255,255,.35);border:3px solid rgba(20,20,30,.55);' +
       'box-shadow:0 0 0 2px rgba(255,255,255,.7);transition:transform .18s,opacity .35s}' +
-    '#__vend{position:absolute;inset:0;background:#0d0d12;color:#f3efe6;display:flex;' +
-      'flex-direction:column;align-items:center;justify-content:center;opacity:0;transition:opacity .35s}' +
+    /* The end: the app's own icon, the name spaced out with its G in gold,
+       and the App Store badge under it -- the earlier demo's last card
+       「こんな感じだったのに。apple storeのロゴも使って欲しい」 OWNER
+       2026-09-30. The badge is drawn here in Apple's own shape (black, a
+       thin grey rim, the mark and two lines), because Apple's artwork
+       cannot be fetched from this container. */
+    '#__vend{position:absolute;inset:0;background:#070709;color:#f3efe6;display:flex;' +
+      'flex-direction:column;align-items:center;justify-content:center;opacity:0;transition:opacity .45s}' +
     '#__vend.on{opacity:1}' +
-    '#__vend b{font:600 64px/1 var(--face-display,Georgia),Georgia,serif;letter-spacing:.08em}' +
-    '#__vend i{font:400 19px/1.4 -apple-system,system-ui,sans-serif;font-style:normal;opacity:.7;margin-top:18px}';
+    '#__vend>*{opacity:0;transform:translateY(8px);transition:opacity .6s,transform .6s}' +
+    '#__vend.on>*{opacity:1;transform:none}' +
+    '#__vend.on>:nth-child(2){transition-delay:.25s}#__vend.on>:nth-child(3){transition-delay:.55s}' +
+    '#__vend img{width:92px;height:92px;border-radius:50%;box-shadow:0 0 40px rgba(201,164,76,.12)}' +
+    '#__vend b{margin-top:34px;padding-left:.42em;font:400 42px/1 var(--face-display,Georgia),Georgia,serif;' +
+      'letter-spacing:.42em;color:#f3efe6;text-shadow:0 2px 10px rgba(0,0,0,.8)}' +
+    '#__vend b em{font-style:normal;color:#c9a44c}' +
+    '#__vend a{margin-top:56px;display:flex;align-items:center;gap:9px;padding:8px 16px 8px 13px;' +
+      'background:#000;border:1.5px solid #a6a6a6;border-radius:11px;color:#fff;text-decoration:none}' +
+    '#__vend a svg{width:30px;height:30px;fill:#fff;margin-top:-3px}' +
+    '#__vend a span{display:flex;flex-direction:column;font-family:-apple-system,"Helvetica Neue",Helvetica,Arial,sans-serif;line-height:1}' +
+    '#__vend a small{font-size:11px;letter-spacing:.02em}' +
+    '#__vend a strong{font-size:25px;font-weight:600;letter-spacing:-.01em;margin-top:2px}';
   document.head.appendChild(st);
   var v = document.createElement('div'); v.id = '__v';
-  v.innerHTML = '<div id="__vcap"></div><div id="__vend"><b>Lingua</b><i></i></div>';
+  v.innerHTML = '<div id="__vcap"></div><div id="__vend">' +
+    '<img alt="">' +
+    '<b>LIN<em>G</em>UA</b>' +
+    /* the Apple mark: Simple Icons' "apple" (CC0) */
+    '<a><svg viewBox="0 0 24 24"><path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"/></svg>' +
+    '<span><small>Download on the</small><strong>App Store</strong></span></a>' +
+    '</div>';
   document.body.appendChild(v);
   window.__vCap = function (s, y) {
     var c = document.getElementById('__vcap');
@@ -124,7 +156,7 @@ const LAYER = `
     var c = document.getElementById('__vcap'), r = c.getBoundingClientRect();
     if (c.className.indexOf('on') >= 0 && y > r.top - 30 && y < r.bottom + 30) {
       c.classList.add('dim'); clearTimeout(window.__vUT);
-      window.__vUT = setTimeout(function(){ c.classList.remove('dim'); }, 900);
+      window.__vUT = setTimeout(function(){ c.classList.remove('dim'); }, 900 * (window.__vK || 1));
     }
   };
   window.__vDot = function (x, y, keep) {
@@ -132,9 +164,10 @@ const LAYER = `
     var d = document.createElement('div'); d.className = '__vdot';
     d.style.left = x + 'px'; d.style.top = y + 'px'; d.style.transform = 'scale(1.25)';
     document.getElementById('__v').appendChild(d);
-    setTimeout(function(){ d.style.transform = 'scale(.9)'; }, 30);
-    if (!keep) setTimeout(function(){ d.style.opacity = '0'; }, 420);
-    if (!keep) setTimeout(function(){ d.remove(); }, 800);
+    var k = window.__vK || 1;
+    setTimeout(function(){ d.style.transform = 'scale(.9)'; }, 30 * k);
+    if (!keep) setTimeout(function(){ d.style.opacity = '0'; }, 420 * k);
+    if (!keep) setTimeout(function(){ d.remove(); }, 800 * k);
     return d;
   };
   window.__vMove = function (x, y) {
@@ -145,10 +178,10 @@ const LAYER = `
   };
   window.__vLift = function () {
     var d = document.querySelector('.__vdot.keep');
-    if (d) { d.style.opacity = '0'; setTimeout(function(){ d.remove(); }, 400); }
+    if (d) { d.style.opacity = '0'; setTimeout(function(){ d.remove(); }, 400 * (window.__vK || 1)); }
   };
-  window.__vEnd = function (tag) {
-    document.querySelector('#__vend i').textContent = tag || '';
+  window.__vEnd = function (icon) {
+    document.querySelector('#__vend img').src = icon;
     window.__vCap('');
     document.getElementById('__vend').className = 'on';
   };
@@ -244,14 +277,14 @@ async function open(br) {
      on the press for ever. While filming, and only here, the one send says
      it landed -- which is what a phone with a signal is told. Nothing under
      www/ is changed; the page is. */
-  await pg.evaluate(() => { window.netSaveNow = function (done) { if (done) setTimeout(function () { done(true); }, 250); }; });
+  await pg.evaluate(() => { window.netSaveNow = function (done) { if (done) setTimeout(function () { done(true); }, 250 * (window.__vK || 1)); }; });
   /* And a read that gives up says nothing. The requests held above time out
      inside the app after a while and 「No connection」 came up over the last
      seconds of a film. That is the app right about a network that is not
      there, and it is not what the film is about. */
   /* And a post is heard the same way: netPush() (www/net.js) is the one send
      of a post, and here it says the row landed. */
-  await pg.evaluate(() => { window.netPush = function (p, ok) { if (ok) setTimeout(function () { ok('v' + Date.now()); }, 350); }; });
+  await pg.evaluate(() => { window.netPush = function (p, ok) { if (ok) setTimeout(function () { ok('v' + Date.now()); }, 350 * (window.__vK || 1)); }; });
   await pg.evaluate(() => { window.netPop = function () { if (typeof netSpin === 'function') netSpin(false); return true; }; });
   return { ctx, pg };
 }
@@ -260,7 +293,7 @@ async function unpop(pg) {
   for (let i = 0; i < 4; i++) {
     if (!await pg.evaluate(() => typeof popOn === 'function' && popOn())) break;
     await pg.evaluate(() => { if (typeof popOff === 'function') popOff(); });
-    await pg.waitForTimeout(260);
+    await nap(pg, 260);
   }
 }
 
@@ -292,7 +325,7 @@ async function run(pg, steps, taps, stills) {
       const b = await boxOf(pg, s.tap, s.nth);
       const x = b.x + (s.dx === undefined ? b.width / 2 : s.dx), y = b.y + (s.dy === undefined ? b.height / 2 : s.dy);
       await pg.evaluate(({ x, y }) => window.__vDot(x, y), { x, y });
-      await pg.waitForTimeout(220);
+      await nap(pg, 220);
       if (taps) taps.push(Date.now());
       await pg.mouse.click(x, y);
       /* pop: the press opens the app's own question and the next step
@@ -305,7 +338,7 @@ async function run(pg, steps, taps, stills) {
         await pg.evaluate(({ x, y }) => window.__vDot(x, y), { x: b.x + b.width / 2, y: b.y + b.height / 2 });
         if (taps) taps.push(Date.now());
         await pg.mouse.click(b.x + b.width / 2, b.y + b.height / 2);
-        await pg.waitForTimeout(300);
+        await nap(pg, 300);
       }
       /* lingua: typed the way the Lingua keyboard types -- each letter's
          private use code point (ltPuaOrder(), www/glyph.js), which is what
@@ -320,7 +353,7 @@ async function run(pg, steps, taps, stills) {
       for (const ch of txt) {
         if (s.lingua) await pg.keyboard.insertText(ch); else await pg.keyboard.type(ch);
         if (taps && ch !== ' ') taps.push(Date.now());
-        await pg.waitForTimeout(s.delay || 110);
+        await nap(pg, s.delay || 110);
       }
     }
     /* A stroke: points 0..1 inside the thing named, drawn with the circle
@@ -339,17 +372,16 @@ async function run(pg, steps, taps, stills) {
             const x = x0 + (x1 - x0) * k / n, y = y0 + (y1 - y0) * k / n;
             await pg.mouse.move(x, y);
             await pg.evaluate(([x, y]) => window.__vMove(x, y), [x, y]);
-            await pg.waitForTimeout(14);
+            await nap(pg, 14);
           }
         }
         await pg.mouse.up();
         await pg.evaluate(() => window.__vLift());
-        await pg.waitForTimeout(s.gap || 260);
+        await nap(pg, s.gap || 260);
       }
     }
     if (s.scroll) { await pg.mouse.wheel(0, s.scroll); }
-    if (s.end !== undefined) await pg.evaluate((t) => window.__vEnd(t), s.end);
-    await pg.waitForTimeout(s.wait === undefined ? 500 : s.wait);
+    await nap(pg, s.wait === undefined ? 500 : s.wait);
     if (s.log) console.log('log', JSON.stringify(await pg.evaluate(s.log)));
     /* still: a picture of the app as it stands, the caption and the finger
        taken off, at the frame's own pixels (never fullPage, so every still
@@ -389,6 +421,7 @@ async function doProbe(br, spec) {
 /* ---- film one script ----------------------------------------------------- */
 async function film(br, ff, name, sc, stillsOnly) {
   FRAME = frameOf(sc);
+  SLOW = 1;
   const { ctx, pg } = await open(br);
   await inkAll(pg, sc.blank);
   if (sc.setup) await run(pg, sc.setup.map((s) => Object.assign({ wait: 0 }, s)));
@@ -431,34 +464,49 @@ async function film(br, ff, name, sc, stillsOnly) {
     document.body.appendChild(p);
     var n = 0; (function tick(){ n ^= 1; p.style.opacity = n ? '.011' : '.01'; requestAnimationFrame(tick); })();
   });
+  SLOW = sc.slow || 1;
+  await pg.evaluate((k) => { window.__vK = k; }, SLOW);
+  await cdp.send('Animation.enable');
+  await cdp.send('Animation.setPlaybackRate', { playbackRate: 1 / SLOW });
   const t0 = Date.now();
   const taps = [];
   await run(pg, sc.steps, taps);
-  await pg.evaluate((t) => window.__vEnd(t), sc.endLine || 'Make your own language');
-  await pg.waitForTimeout(2200);
+  await pg.evaluate((i) => window.__vEnd(i), ICON);
+  await nap(pg, 2200);
   if (grab) { grabbing = false; await grab; frames.sort((a, b) => a.t - b.t); } else await cdp.send('Page.stopScreencast');
+  /* back to the real speed: every moment measured from the first frame and
+     divided by SLOW, the taps the same way */
+  const T0 = frames[0].t, W0 = frames[0].w;
+  frames.forEach((f) => { f.t = T0 + (f.t - T0) / SLOW; });
 
-  /* THE SOUND: a soft tap on every press and nothing else 「無音でいいか効果音
-     だけつけて欲しい。タップ音とか」 OWNER 2026-09-29. Made in this browser
+  /* THE SOUND: a tap on every press and nothing else 「無音でいいか効果音
+     だけつけて欲しい。タップ音とか」 OWNER 2026-09-29 -- and a TAP, a short
+     knock of filtered noise over a small low thud, not a tone: the falling
+     chirp it was 「音キモくね？」「タップっぽい音にして欲しい」 OWNER
+     2026-09-30. Made in this browser
      (Web Audio, recorded by MediaRecorder as Opus), because the ffmpeg here
      has no audio encoder; it only has to copy the stream in. The moment of
      each tap is taken against the frame clock the film is laid on. */
-  const fw0 = frames[0].w, ft0 = frames[0].t;
-  const at = taps.map((w) => (w - fw0) / 1000).filter((x) => x >= 0);
-  const len = frames[frames.length - 1].t - ft0;
-  /* sound: false -- a silent track, the film is watched with the sound off
-     「音キモくね？」 OWNER 2026-09-30 (the r/conlangs film) */
-  const audio = sc.sound === false ? null : await pg.evaluate(async ({ at, len }) => {
+  const at = taps.map((w) => (w - W0) / 1000 / SLOW).filter((x) => x >= 0);
+  const len = frames[frames.length - 1].t - T0;
+  await pg.evaluate(() => { window.__vK = 1; });
+  const audio = await pg.evaluate(async ({ at, len }) => {
     const ac = new AudioContext({ sampleRate: 48000 });
     const dst = ac.createMediaStreamDestination();
     const t0 = ac.currentTime + 0.3;
+    /* 25ms of noise that dies in about 4ms: the knock */
+    const nb = ac.createBuffer(1, 1200, 48000), nd = nb.getChannelData(0);
+    for (let i = 0; i < nd.length; i++) nd[i] = (Math.random() * 2 - 1) * Math.exp(-i / 190);
     at.forEach((t) => {
-      const o = ac.createOscillator(), g = ac.createGain(), f = ac.createBiquadFilter();
-      o.type = 'triangle'; o.frequency.setValueAtTime(1500, t0 + t); o.frequency.exponentialRampToValueAtTime(700, t0 + t + 0.05);
-      f.type = 'lowpass'; f.frequency.value = 3200;
-      g.gain.setValueAtTime(0.0001, t0 + t); g.gain.exponentialRampToValueAtTime(0.5, t0 + t + 0.004);
-      g.gain.exponentialRampToValueAtTime(0.0001, t0 + t + 0.07);
-      o.connect(f); f.connect(g); g.connect(dst); o.start(t0 + t); o.stop(t0 + t + 0.09);
+      const src = ac.createBufferSource(), bp = ac.createBiquadFilter(), g = ac.createGain();
+      src.buffer = nb; bp.type = 'bandpass'; bp.frequency.value = 2600; bp.Q.value = 0.9; g.gain.value = 0.55;
+      src.connect(bp); bp.connect(g); g.connect(dst); src.start(t0 + t);
+      /* and the body under it: a low sine that drops and is gone in 35ms */
+      const o = ac.createOscillator(), og = ac.createGain();
+      o.type = 'sine'; o.frequency.setValueAtTime(190, t0 + t); o.frequency.exponentialRampToValueAtTime(90, t0 + t + 0.035);
+      og.gain.setValueAtTime(0.0001, t0 + t); og.gain.exponentialRampToValueAtTime(0.35, t0 + t + 0.002);
+      og.gain.exponentialRampToValueAtTime(0.0001, t0 + t + 0.035);
+      o.connect(og); og.connect(dst); o.start(t0 + t); o.stop(t0 + t + 0.05);
     });
     const rec = new MediaRecorder(dst.stream, { mimeType: 'audio/webm;codecs=opus', audioBitsPerSecond: 96000 });
     const parts = [];
@@ -476,7 +524,7 @@ async function film(br, ff, name, sc, stillsOnly) {
   await ctx.close();
   fs.mkdirSync(FRAME.out, { recursive: true });
   const aFile = path.join(FRAME.out, '.' + name + '.opus.webm');
-  if (audio) fs.writeFileSync(aFile, Buffer.from(audio, 'base64'));
+  fs.writeFileSync(aFile, Buffer.from(audio, 'base64'));
 
   if (!frames.length) throw new Error('no frames');
   const start = frames[0].t, dur = frames[frames.length - 1].t - start;
@@ -491,8 +539,7 @@ async function film(br, ff, name, sc, stillsOnly) {
        '-deadline', 'good', '-cpu-used', '2', '-auto-alt-ref', '1', '-lag-in-frames', '16'];
   const p = spawn(ff.bin, ['-loglevel', 'error', '-y', '-f', 'image2pipe', '-c:v', 'mjpeg', '-r', String(FPS),
                            '-i', 'pipe:0',
-                           ...(audio ? ['-itsoffset', '-0.3', '-i', aFile] : ['-f', 'lavfi', '-i', 'anullsrc=r=48000:cl=stereo']),
-                           '-map', '0:v', '-map', '1:a', '-shortest',
+                           '-itsoffset', '-0.3', '-i', aFile, '-map', '0:v', '-map', '1:a',
                            '-c:a', ff.ext === 'mp4' ? 'aac' : 'copy',
                            '-vf', 'scale=' + FRAME.size[0] + ':' + FRAME.size[1] + ',setsar=1', ...enc, file],
                   { stdio: ['pipe', 'inherit', 'inherit'] });
@@ -505,7 +552,7 @@ async function film(br, ff, name, sc, stillsOnly) {
   }
   p.stdin.end();
   await new Promise((r, x) => p.on('close', (c) => (c === 0 ? r() : x(new Error('ffmpeg ' + c)))));
-  if (audio) fs.unlinkSync(aFile);
+  fs.unlinkSync(aFile);
   const mb = fs.statSync(file).size / 1048576;
   console.log(`${path.relative(ROOT, file)}  ${(n / FPS).toFixed(1)}s  ${mb.toFixed(2)}MB  (${frames.length} painted frames, filmed in ${((Date.now() - t0) / 1000).toFixed(1)}s)`);
 }

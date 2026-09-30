@@ -18,7 +18,7 @@
      wait: ms           how long to stand after the step (default 500)
 
    `setup` runs before filming starts. `blank` names letters left undrawn
-   (every other a-z is given a shape by rec.mjs, see SHAPES there). `endLine` is under the name at the end.
+   (every other a-z is given a shape by rec.mjs, see SHAPES there).
    --------------------------------------------------------------------------- */
 
 export const SCRIPTS = {
@@ -48,7 +48,6 @@ export const SCRIPTS = {
       { tap: 'do:back', wait: 900 },
       { cap: 'Now it is part of your alphabet', capAt: 300, wait: 2600 },
     ],
-    endLine: 'Make your own language',
   },
 
   /* 2-01 — build a keyboard for your language */
@@ -71,7 +70,6 @@ export const SCRIPTS = {
       { tap: 'do:keepPress', wait: 1600 },
       { cap: 'Your keyboard is ready', capAt: 360, wait: 2800 },
     ],
-    endLine: 'Make your own language',
   },
 
   /* 4-05 — answer the day's prompt */
@@ -92,7 +90,6 @@ export const SCRIPTS = {
       { cap: 'Your answer is on the timeline', capAt: 470, wait: 2600 },
       { cap: 'Everyone answers the same prompt', capAt: 470, wait: 2600 },
     ],
-    endLine: 'Make your own language',
   },
 
   /* r/conlangs, 2026-09-30 -- building a keyboard, the whole road: the list,
@@ -102,73 +99,82 @@ export const SCRIPTS = {
      (1179x2556), all into promo/keyboard/. Two boards are made before the
      camera starts (kbAdd() -- the app's own), so the list has three. */
   'keyboard-reddit': {
-    view: [393, 852, 3], size: [1080, 2340], out: 'promo/keyboard', sound: false, hq: true,
+    view: [393, 852, 3], size: [1080, 2340], out: 'promo/keyboard', hq: true, slow: 2,
     setup: [
       { eval: "kbAdd('qwerty'); kbAdd('abc');" },
       { go: 'kb' },
     ],
+    /* A key is added only where it is used, one at a time: beside z to be
+       joined to it, under t to make t two rows tall, and two more for a
+       character each 「最初に3つもキー足さなくていいよ」「横同士でくっつけて
+       1つのキーにする動作入れたら」 OWNER 2026-09-30. Joining keeps the LEFT
+       key (kbJoin) and the UPPER one (kbVJoin), so the key added is the one
+       that goes and no letter is lost. Row 3 is gap, u v w x y z, gap. */
     steps: [
-      { cap: 'Build a keyboard for your conlang', capAt: 600, wait: 2200, still: '01-keyboard-list' },
-      { cap: 'Pick one', capAt: 600, wait: 300 },
-      { tap: '[data-do=kbGoBoard][data-a="[2]"]', wait: 1300 },
-      { cap: 'Every key is a letter you drew', capAt: 600, wait: 2000, still: '02-editor' },
-      /* add: a frame, then the + */
-      { cap: 'Add keys', capAt: 600, wait: 200 },
-      { tap: '[data-do=kbCellSel][data-a="[2,0,2]"]', wait: 450 },
-      { tap: 'do:kbCellPut', wait: 550 },
-      { tap: '[data-do=kbCellSel][data-a="[2,2,2]"]', wait: 450 },
-      { tap: 'do:kbCellPut', wait: 550 },
-      { tap: '[data-do=kbCellSel][data-a="[2,18,2]"]', wait: 450 },
-      { tap: 'do:kbCellPut', wait: 900 },
-      /* delete: a key, then the bin */
+      { cap: 'Build a keyboard for your conlang', capAt: 600, wait: 2000, still: '01-keyboard-list' },
+      { cap: 'Pick one', capAt: 600, wait: 200 },
+      { tap: '[data-do=kbGoBoard][data-a="[2]"]', wait: 1200 },
+      { cap: 'Every key is a letter you drew', capAt: 600, wait: 1800, still: '02-editor' },
+      /* add one, beside z, and join the two */
+      { cap: 'Add a key', capAt: 600, wait: 200 },
+      { tap: '[data-do=kbCellSel][data-a="[2,16,2]"]', wait: 400 },
+      { tap: 'do:kbCellPut', wait: 700 },
+      { cap: 'Join keys side by side', capAt: 600, wait: 200 },
+      { tap: '[data-do=kbTapKey][data-a="[2,6]"]', wait: 350 },
+      { tap: '[data-do=kbTapKey][data-a="[2,7]"]', wait: 500 },
+      { tap: 'do:kbJoinSel', wait: 1100 },
+      /* delete: q -- the first press lets go of the wide z */
       { cap: 'Delete keys', capAt: 600, wait: 200 },
-      { tap: '[data-do=kbTapKey][data-a="[1,6]"]', wait: 450 },
-      { tap: 'do:kbCut', wait: 1000 },
-      /* a row: select it, push it left, right, centre */
+      { tap: '[data-do=kbTapKey][data-a="[1,6]"]', wait: 250 },
+      { tap: '[data-do=kbTapKey][data-a="[1,6]"]', wait: 400 },
+      { tap: 'do:kbCut', wait: 900 },
+      /* a row: select it, push it left, centre, right */
       { cap: 'Select a row', capAt: 600, wait: 200 },
-      { tap: '[data-do=kbHeadRow][data-a="[1]"]', wait: 900, still: '03-row-selected' },
+      { tap: '[data-do=kbHeadRow][data-a="[1]"]', wait: 800, still: '03-row-selected' },
       { cap: 'Push it left, centre or right', capAt: 600, wait: 200 },
-      { tap: '[data-do=kbAlign][data-a=\'["l"]\']', wait: 800 },
-      { tap: '[data-do=kbAlign][data-a=\'["c"]\']', wait: 800 },
-      { tap: '[data-do=kbAlign][data-a=\'["r"]\']', wait: 1000 },
-      /* a column: select it, delete it, and the step back */
+      { tap: '[data-do=kbAlign][data-a=\'["l"]\']', wait: 650 },
+      { tap: '[data-do=kbAlign][data-a=\'["c"]\']', wait: 650 },
+      { tap: '[data-do=kbAlign][data-a=\'["r"]\']', wait: 850 },
+      /* a column: select it (the first press lets go of the row), delete, undo */
       { cap: 'Select a column', capAt: 600, wait: 200 },
-      { tap: '[data-do=kbHeadCol][data-a="[4]"]', wait: 350 },
-      { tap: '[data-do=kbHeadCol][data-a="[4]"]', wait: 900, still: '04-column-selected' },
+      { tap: '[data-do=kbHeadCol][data-a="[4]"]', wait: 250 },
+      { tap: '[data-do=kbHeadCol][data-a="[4]"]', wait: 800, still: '04-column-selected' },
       { cap: 'Delete it in one go', capAt: 600, wait: 200 },
-      { tap: 'do:kbCut', pop: true, wait: 700 },
-      { tap: 'do:popYes', wait: 1100 },
+      { tap: 'do:kbCut', pop: true, wait: 600 },
+      { tap: 'do:popYes', wait: 1000 },
       { cap: 'Undo is one tap', capAt: 600, wait: 200 },
-      { tap: 'do:kbUndo', wait: 1100 },
-      /* a key two rows tall: the key and the one under it, then join */
+      { tap: 'do:kbUndo', wait: 1000 },
+      /* two rows tall: a key under t, then t and it joined */
       { cap: 'Make a key two rows tall', capAt: 600, wait: 200 },
-      { tap: '[data-do=kbTapKey][data-a="[1,9]"]', wait: 400 },
-      { tap: '[data-do=kbTapKey][data-a="[2,9]"]', wait: 600 },
-      { tap: 'do:kbJoinSel', wait: 1300 },
-      /* a key: an IPA letter */
+      { tap: '[data-do=kbCellSel][data-a="[2,18,2]"]', wait: 350 },
+      { tap: 'do:kbCellPut', wait: 500 },
+      { tap: '[data-do=kbTapKey][data-a="[1,9]"]', wait: 350 },
+      { tap: '[data-do=kbTapKey][data-a="[2,7]"]', wait: 500 },
+      { tap: 'do:kbJoinSel', wait: 1100 },
+      /* a key with an IPA letter on it */
       { cap: 'Put any character on a key', capAt: 600, wait: 200 },
-      { tap: '[data-do=kbTapKey][data-a="[2,0]"]', wait: 350 },
-      { tap: '[data-do=kbTapKey][data-a="[2,0]"]', wait: 450 },
+      { tap: '[data-do=kbCellSel][data-a="[2,0,2]"]', wait: 350 },
+      { tap: 'do:kbCellPut', wait: 450 },
+      { tap: '[data-do=kbTapKey][data-a="[2,0]"]', wait: 400 },
       { tap: 'do:kbOpenSel', wait: 0 },
-      { cap: '', wait: 1000, still: '05-pick-a-character' },
-      { tap: '[data-do=pkKind][data-a*=ipa]', wait: 900 },
-      { tap: '[data-do=pkTake][data-a*="=ʃ"]', wait: 800 },
+      { cap: '', wait: 900, still: '05-pick-a-character' },
+      { tap: '[data-do=pkKind][data-a*=ipa]', wait: 800 },
+      { tap: '[data-do=pkTake][data-a*="=ʃ"]', wait: 700 },
       { tap: 'do:keepPress', wait: 300 },
-      { cap: 'IPA, accents, any script', capAt: 600, wait: 1500 },
-      /* and a letter of your own */
+      { cap: 'IPA, accents, any script', capAt: 600, wait: 1300 },
+      /* and one with a letter you drew: q, back where it was */
       { cap: 'Or a letter you drew', capAt: 600, wait: 200 },
-      { tap: '[data-do=kbHeadRow][data-a="[2]"]', wait: 350 },
-      { tap: '[data-do=kbTapKey][data-a="[2,1]"]', wait: 450 },
+      { tap: '[data-do=kbCellSel][data-a="[1,0,2]"]', wait: 350 },
+      { tap: 'do:kbCellPut', wait: 450 },
+      { tap: '[data-do=kbTapKey][data-a="[1,0]"]', wait: 400 },
       { tap: 'do:kbOpenSel', wait: 0 },
-      { cap: '', wait: 900 },
-      { cap: '' },
-      { tap: '[data-do=pkKind][data-a*=own]', wait: 900 },
-      { tap: '[data-do=pkTake][data-a*="lt.q"]', wait: 800 },
-      { tap: 'do:keepPress', wait: 1100 },
-      { cap: 'Save it', capAt: 600, wait: 300 },
-      { tap: 'do:keepPress', wait: 1600, still: '06-finished-keyboard' },
-      { cap: 'Type your conlang on your phone', capAt: 600, wait: 2400 },
+      { cap: '', wait: 800 },
+      { tap: '[data-do=pkKind][data-a*=own]', wait: 800 },
+      { tap: '[data-do=pkTake][data-a*="lt.q"]', wait: 700 },
+      { tap: 'do:keepPress', wait: 300 },
+      { cap: 'Save it', capAt: 600, wait: 2600, still: '06-finished-keyboard' },
+      { tap: 'do:keepPress', wait: 1500 },
+      { cap: 'Type your conlang on your phone', capAt: 600, wait: 2200 },
     ],
-    endLine: 'Make your own language',
   },
 };
