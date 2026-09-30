@@ -801,8 +801,9 @@ export function halfDone(){
   /* THE FIXTURE'S OWN LANGUAGE, AS SOMEBODY ELSE'S THAT THIS ACCOUNT TOOK --
      the same letters and words, so a picture of it stands beside the picture
      of your own and the only difference is whose it is. Nothing of it leaves
-     the app (www/core.js § langOut, OWNER 2026-09-30), so the doors out are
-     not drawn: that is only ever seen in these faces. Put back afterwards. */
+     the app (www/core.js § langOut, OWNER 2026-09-30), so the doors out --
+     a file, the handwriting sheet -- are not drawn, while a word's card is
+     「カードはok」: that is only ever seen in these faces. Put back afterwards. */
   const __theirs = (fn) => {
     const was = LOWN[langId], tk = LTAKE;
     LOWN[langId] = 'somebody-else'; LTAKE = [langId];

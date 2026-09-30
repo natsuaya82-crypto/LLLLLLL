@@ -587,29 +587,12 @@ const R = await pg.evaluate(() => {
           '(LANG_WAIT) and ' + (wait ? 'their letters were handed over' : 'nothing ' +
           'was handed') + ' -- that language is not this account\'s to put there');
       LANG_WAIT = false;
-      /* back to this account's own first, so the App Group is holding
-         letters again -- otherwise the step above has already emptied it and
-         an empty signature moving to an empty signature hands nothing */
-      sharePush();
-      given.length = 0;
       SESS.uid = keepSess.uid + '-other';
       sharePush();
-      /* The open language is the last account's, so it is not this one's to
-         hand over (langOut(), OWNER 2026-09-30) -- and the App Group is
-         emptied rather than left holding the last account's letters. */
       const other = given.shift();
-      if (!other || Object.keys(other).some((k) => other[k] !== ''))
-        fails.push("another account signed in with the last account's language open and " +
-          (other ? 'its letters were handed over' : 'nothing was handed -- the App Group ' +
-          'stays whatever the last push left'));
-      const lownWas = LOWN[langId];
-      LOWN[langId] = SESS.uid;
-      sharePush();
-      const theirs = given.shift();
-      if (lownWas === undefined) delete LOWN[langId]; else LOWN[langId] = lownWas;
-      if (!theirs || !theirs.json)
-        fails.push('another account signed in with a language of its own open and ' +
-          'nothing was handed over -- the App Group stays whatever the last push left');
+      if (!other || !other.json)
+        fails.push('another account signed in and nothing was handed over -- the ' +
+          'App Group stays whatever the last push left');
     } finally {
       window.Capacitor = realCap;
       SESS = keepSess;

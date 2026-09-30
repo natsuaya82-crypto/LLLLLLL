@@ -9,19 +9,23 @@
 
    langOut() in www/core.js is the one question: may this language's content
    leave memory. Nothing about a way out that forgets to ask can throw -- the
-   file is written, the share sheet comes up, the keyboard types -- and it is
-   somebody else's alphabet in a file on somebody's phone. So this holds two
-   halves.
+   file is written, the share sheet comes up -- and it is somebody else's
+   alphabet in a file on somebody's phone. So this holds two halves.
 
    THE SURFACE, COUNTED. Every way out of the app in www/ -- a file handed to
-   the phone (LinguaShare `sheet`), the App Group (LinguaShare `write`), the
-   clipboard (`clipboardData.setData`) -- and every write of a language's
-   picture to the disk (`localStorage.setItem(slGotKey(`) is found by what it
-   IS, not by a list of the functions somebody remembered. The function it is
-   in has to ask langOut(), or call a function that does. A way out added
-   tomorrow is counted tomorrow. And nothing but langOut() may answer the
-   question: `langWhose(...)===LW_MINE` written out anywhere else is a second
-   answer.
+   the phone (LinguaShare `sheet`), the clipboard (`clipboardData.setData`)
+   -- and every write of a language's picture to the disk
+   (`localStorage.setItem(slGotKey(`) is found by what it IS, not by a list of
+   the functions somebody remembered. The function it is in has to ask
+   langOut(), or call a function that does. A way out added tomorrow is
+   counted tomorrow. And nothing but langOut() may answer the question:
+   `langWhose(...)===LW_MINE` written out anywhere else is a second answer.
+
+   TWO ROADS ARE NOT WAYS OUT, and they are named in NOT_OUT with the reason,
+   not left uncounted: the Lingua keyboard's App Group and a card. Each is
+   held the other way round -- it is found, and it does NOT ask langOut() --
+   because a road that asks is a taken language's keyboard that types nothing
+   and its word with no card, which is what OWNER 2026-09-30 (追記) undid.
 
    AND WHAT IT DOES, PRESSED. The fixture takes a language from another
    account through the real roads (netTakes -> netLangsWalk, netLangFill)
@@ -88,28 +92,43 @@ for (const f of fs.readdirSync(WWW).filter((x) => x.endsWith('.js')).sort()) {
 }
 const OUT = [
   { kind: 'a file handed to the phone', re: /'LinguaShare'\s*,\s*'sheet'/ },
-  { kind: 'the App Group', re: /'LinguaShare'\s*,\s*'write'/ },
   { kind: 'the clipboard', re: /clipboardData\.setData\s*\(/ },
   { kind: 'a picture on the disk', re: /localStorage\.setItem\s*\(\s*slGotKey\s*\(/ },
 ];
+/* Not a way out, by the owner's word, and each says why in one sentence. */
+const NOT_OUT = [
+  { fn: 'sharePush', re: /'LinguaShare'\s*,\s*'write'/,
+    why: 'the Lingua keyboard\'s App Group is how anybody types drawn letters inside Lingua -- not putting a language on the phone and not taking it out 「端末に置くものがそもそもないでしょ？」 OWNER 2026-09-30' },
+  { fn: 'cardSave', re: /'LinguaShare'\s*,\s*'sheet'/,
+    why: 'a card -- of a post, a word or an example -- is a picture, the way a screenshot is 「カードはok」 OWNER 2026-09-30' },
+];
+const notOut = new Set(NOT_OUT.map((x) => x.fn));
 const asksDirect = new Set([...fns.values()].filter((x) => /\blangOut\s*\(/.test(x.body)).map((x) => x.name));
 asksDirect.delete('langOut');
 const asks = (x) => asksDirect.has(x.name) ||
   [...asksDirect].some((n) => new RegExp('\\b' + n.replace(/\$/g, '\\$') + '\\s*\\(').test(x.body));
 const found = [];
 for (const x of fns.values())
-  for (const o of OUT) if (o.re.test(x.body)) found.push({ fn: x, kind: o.kind });
+  if (!notOut.has(x.name)) for (const o of OUT) if (o.re.test(x.body)) found.push({ fn: x, kind: o.kind });
+/* the App Group anywhere but its one road is a way out nobody named */
+for (const x of fns.values())
+  if (x.name !== 'sharePush' && /'LinguaShare'\s*,\s*'write'/.test(x.body))
+    found.push({ fn: x, kind: 'the App Group, off its road' });
 const counted = {};
 for (const w of found) counted[w.kind] = (counted[w.kind] || 0) + 1;
 console.log('ways out of memory: ' + found.length + ' -- ' +
   OUT.map((o) => (counted[o.kind] || 0) + ' ' + o.kind).join(', '));
 for (const w of found)
   console.log('    ' + (asks(w.fn) ? 'asks ' : 'NO   ') + w.fn.name + ' (' + w.fn.file + ':' + w.fn.line + ') -- ' + w.kind);
+for (const n of NOT_OUT) console.log('    not out: ' + n.fn + ' -- ' + n.why);
 const deaf = found.filter((w) => !asks(w.fn));
 say(found.length >= OUT.length && OUT.every((o) => counted[o.kind]),
   '1 every kind of way out is found in www/ (a pattern matching nothing is a check that stopped looking)', counted);
 say(!deaf.length, '2 every way out asks langOut(), or calls a function that does',
   deaf.map((w) => w.fn.name + ' ' + w.fn.file + ':' + w.fn.line));
+const nx = NOT_OUT.map((n) => { const f = fns.get(n.fn); return { fn: n.fn, found: !!f && n.re.test(f.body), asks: !!f && asks(f) }; });
+say(nx.every((n) => n.found && !n.asks),
+  '1b the two roads that are not ways out -- the keyboard\'s App Group and a card -- are there and do not ask langOut()', nx);
 const lo = fns.get('langOut');
 say(!!lo && /return\s+langWhose\s*\(\s*id\s*\)\s*===\s*LW_MINE\s*;/.test(lo.body),
   '3 langOut() is langWhose()\'s 「mine」 and nothing else -- 「not answered yet」 is not mine',
@@ -178,10 +197,16 @@ const r = await pg.evaluate(async ({ s }) => {
   asked.length = 0;
   ltFontOut(); ltSvgOut(); var l0 = LETTERS[0]; if(l0) ltSvgOne(l0.id);
   SH = shBlank(); SH.names = 'zork'; shMake();
-  cardOpen('w', 'zork'); cardSave();
-  SHARE.sent = null; sharePush();
   await wait(50);
   out.theirAsked = asked.slice();
+  /* the word's card, and the keyboard: neither is a way out */
+  asked.length = 0;
+  cardOpen('w', 'zork'); await wait(50); cardSave(); await wait(50);
+  out.theirCard = asked.slice();
+  asked.length = 0;
+  SHARE.sent = null; sharePush();
+  await wait(50);
+  out.theirKb = asked.slice();
   /* a card of a POST still leaves 「カード投稿はok」 */
   asked.length = 0;
   cardOpen('p', 'p2'); await wait(50); cardSave(); await wait(50);
@@ -213,19 +238,25 @@ say(r.theirDisk.filter((k) => !idsOnly(k)).length === 0 && r.take === null,
   { keys: r.theirDisk, take: r.take });
 say(r.ownPic, '5b and your own language\'s picture is still written', r.ownPic);
 const td = r.theirDoors, od = r.ownDoors;
-say(!td.ltout && !td.font && !td.svg && td.one === false && !td.sheet && td.card === false,
-  '6 on the taken language no way out is drawn: the letters\' share, font, SVG, one letter\'s share, the handwriting sheet, a word\'s card', td);
+say(!td.ltout && !td.font && !td.svg && td.one === false && !td.sheet,
+  '6 on the taken language no way out is drawn: the letters\' share, font, SVG, one letter\'s share, the handwriting sheet', td);
 say(od.ltout && od.font && od.svg && od.one === true && od.sheet && od.card === true,
   '6b and on your own every one of them is', od);
-say(r.theirAsked.every((a) => a === 'write:empty'),
-  '7 pressed anyway on the taken language: no file is handed to the phone, and the App Group is handed nothing but empties', r.theirAsked);
+say(td.card === true,
+  '6c and a word\'s card IS offered on the taken language (「カードはok」)', td.card);
+say(r.theirAsked.length === 0,
+  '7 pressed anyway on the taken language: no font, SVG or handwriting sheet is handed to the phone', r.theirAsked);
+say(r.theirCard.indexOf('sheet:png') !== -1,
+  '7c and its word\'s card, pressed, is handed to the phone as a picture (「カードはok」)', r.theirCard);
 say(r.ownAsked.indexOf('sheet:svg') !== -1 && r.ownAsked.indexOf('sheet:png') !== -1 && r.ownAsked.indexOf('write:full') !== -1,
   '7b and on your own the same presses hand a file, a card and the keyboard over', r.ownAsked);
 say(r.postCard.indexOf('sheet:png') !== -1,
   '8 a card of a post still leaves with the taken language open (「カード投稿はok」)', r.postCard);
+say(r.theirKb.indexOf('write:full') !== -1 && r.theirKb.indexOf('write:empty') === -1,
+  '8b the taken language\'s keyboard IS handed to the Lingua keyboard, as your own is -- typing drawn letters inside Lingua is not taking them out', r.theirKb);
 say(!errs.length, '9 nothing threw', errs);
 
 await br.close();
 console.log(bad ? `\ntheirs-check: ${bad} of ${claims} failed` :
-  `\ntheirs-check: ${claims} of ${claims} -- somebody else's language leaves by no road and lands on no disk`);
+  `\ntheirs-check: ${claims} of ${claims} -- somebody else's language leaves by no road and lands on no disk; its cards and its keyboard are there`);
 process.exit(bad ? 1 : 0);

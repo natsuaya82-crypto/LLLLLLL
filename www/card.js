@@ -74,12 +74,6 @@ var CARD_KINDS={
   p:{cap:0.58, of:false}
 };
 
-/* WHETHER THIS CARD MAY LEAVE THE APP. A card of a POST may, on every
-   language: 「カード投稿はok」 OWNER 2026-09-30 -- the post is on the timeline
-   already, and what leaves is that post. A card of a WORD or an EXAMPLE is a
-   picture of the open language's dictionary, and it leaves only when the
-   language does (langOut(), www/core.js): somebody else's does not. */
-function cardOut(kind){ return String(kind)==='p' || langOut(langId); }
 function cardOpen(kind, key){
   CARD={k:String(kind), v:String(key),
         sh:(String(kind)===CARD.k && String(key)===CARD.v)? CARD.sh : ''};
@@ -94,7 +88,7 @@ function cardOpen(kind, key){
     cardSrc()? '<div class="cardbox"><canvas id="cardc" class="cardc"></canvas></div>'+
     cardShapesHTML() : goneBox(),
     cardMount,
-    (cardSrc() && cardOut(CARD.k))? navDo(t('card.save'), 'cardSave', null, true, {icon:ICON_SHARE}) : '');
+    cardSrc()? navDo(t('card.save'), 'cardSave', null, true, {icon:ICON_SHARE}) : '');
 }
 function cardShapesHTML(){
   if(cardSrc().kind!=='p') return '';
@@ -1050,7 +1044,7 @@ function cardMount(){
    for this reason. */
 function cardSave(){
   var c=document.getElementById('cardc'), p=sharePlug(), b64;
-  if(!c || !cardOut(CARD.k)) return;
+  if(!c) return;
   if(!cardSrc()){ toast(t('form.gone')); return; }
   if(!p){ toast(t('card.nofile')); return; }
   /* toDataURL and not toBlob: what has to go over the bridge is base64, and

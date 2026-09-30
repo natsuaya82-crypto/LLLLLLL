@@ -477,7 +477,7 @@ function wdExHTML(){
         /* No card off a word that is not in the dictionary yet: a card is
            made from a headword, and this one has none until Add. */
         return exRowHTML(e, exSeq(e.ln),
-          ((addW || !cardOut('x'))? '' : exBtn('cardOpen', ["x", openHw+'#'+i], 'card.title', ICON_SHARE))+
+          (addW? '' : exBtn('cardOpen', ["x", openHw+'#'+i], 'card.title', ICON_SHARE))+
           exBtn('wdDelEx', [i], 'word.ex.del', ICON_CROSS));
       }).join('')+'</div>'
     : '')+
@@ -1647,7 +1647,7 @@ function wdFormHTML(){
         esc(t('f.listen'))+'">'+ICON_SPK+'</button>'+
       /* the one way out of the app: this word as a picture, in the letters
          it is written in, for somewhere that is not Lingua */
-      ((mk || !cardOut('w'))? '' : '<button class="usep"' + DO('cardOpen', ["w", openHw]) + ' aria-label="'+
+      (mk? '' : '<button class="usep"' + DO('cardOpen', ["w", openHw]) + ' aria-label="'+
         esc(t('card.title'))+'">'+ICON_SHARE+'</button>')+'</div>'+
     '<div class="wsub" id="wd-rd">'+esc(phIpa(seq))+'</div>'+
     '<div class="wsub2" id="wd-syl">'+esc(wdSyl(seq))+'</div>'+
@@ -1957,8 +1957,8 @@ function wdViewHTML(){
   return '<div class="whd"><span class="whw">'+sfontHTML(wOut(w.hw))+'</span>'+
       '<button class="play" style="margin:0 0 0 auto"' + DO('sayPh', [seq]) +
         ' aria-label="'+esc(t('f.listen'))+'">'+ICON_SPK+'</button>'+
-      (cardOut('w')? '<button class="usep"' + DO('cardOpen', ["w", w.hw]) + ' aria-label="'+
-        esc(t('card.title'))+'">'+ICON_SHARE+'</button>' : '')+'</div>'+
+      '<button class="usep"' + DO('cardOpen', ["w", w.hw]) + ' aria-label="'+
+        esc(t('card.title'))+'">'+ICON_SHARE+'</button></div>'+
     /* Three lines, and they are three different questions:
        the word in the letters somebody drew, how it is read, and how it
        sounds. 「自作文字 / 読み / ipaもしくは音 じゃないの？」 The middle one is
@@ -1996,7 +1996,7 @@ function wdViewHTML(){
     wdSecHTML(ICON_LINE+t('word.ex'), ex.length
       ? '<div class="exlist">'+ex.map(function(e,i){
           return exRowHTML(e, exSeq(e.ln),
-            cardOut('x')? exBtn('cardOpen', ["x", w.hw+'#'+i], 'card.title', ICON_SHARE) : '');
+            exBtn('cardOpen', ["x", w.hw+'#'+i], 'card.title', ICON_SHARE));
         }).join('')+'</div>' : '')+
     wdSecHTML(t('word.ety'), w.ety? '<div class="note">'+esc(w.ety)+'</div>' : '')+
     wdSecHTML(t('word.note'), w.nt? '<div class="note">'+esc(w.nt)+'</div>' : '')+
