@@ -255,6 +255,15 @@ it is quoted, and where a decision has never been made the row in
 - Implementation status:
 ```
 
+### 2026-09-30 字を描く画面にベースライン、線ごとの太さ
+- Date: 2026-09-30
+- Area: 字を描く画面（`www/glyph.js`、ペンは今 `GPEN.width` 24 の一つ）、フォントの書き出し（`www/otf5.js`）
+- Decision: (1) 描く面にベースライン（字が乗る線）を入れる。(2) 線の太さを**線ごと**に選べるようにする。点をつなぐ描き方（ブレが出ない）はそのまま。
+- Reason: オーナーの言葉「ベースライン欲しいね。入れよう」「ブレが出ないのはいいけど、全員が同じ太さになる」「Cでしょ」「そもそもフォントを作るのに太さが選べないのは変だよね？」（2026-09-30、r/casualconlang の他のツールを見て）。
+- Affected features: 字を描く画面、フォント、字を描く所すべて（投稿のインク・カード・キーボード）。
+- Affected data: 線に太さが増える（新しく貯まる物）。太さの無い今までの線は今の太さ（24）として読む ── 何も書き換えない。
+- Implementation status: 未着手。
+
 ### 2026-09-30 1枚目のキーボードは今のまま（字に連動、直せない）
 - Date: 2026-09-30
 - Area: キーボードの1枚目（`kbFixed()`、`www/keyboard.js`）
