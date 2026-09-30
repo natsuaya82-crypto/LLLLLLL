@@ -10,7 +10,7 @@
 /* Free accounts hit a ceiling; saying so before they reach it reads as
    information rather than as an interruption. */
 function capBanner(){
-  if(!planNo(can('words'))) return '';
+  if(!langShaped(can('words'))) return '';
   var left=wordCap()-WORDS.length;
   if(left>20 || left<0) return '';
   return capWarnHTML(t('cap.warn', left));

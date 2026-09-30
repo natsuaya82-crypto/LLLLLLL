@@ -813,7 +813,7 @@ function ltHidHTML(k){
   return capWarnHTML(t('cap.hid', n));
 }
 function ltSeen(){
-  if(!planNo(can('letters'))) return LETTERS;
+  if(!langShaped(can('letters'))) return LETTERS;
   return LETTERS.filter(ltIsBase);
 }
 /* How many are not on screen. With no room named it is the alphabet entire,

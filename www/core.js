@@ -1488,6 +1488,26 @@ function langTheirs(id){
       me=netUid();
   return !!(own && me && own!==me);
 }
+/* AND WHETHER THE PLAN SHAPES THE OPEN LANGUAGE -- planNo() (§ has, below)
+   asked of a language rather than of a person. 「dl言語は有料無料関係ないって
+   何回も言ってるよね？」 OWNER 2026-09-30.
+
+   What a plan does to a language's SHAPE -- the letters past the slots
+   folded (ltSeen, www/sound.js), the words past the ceiling (wordsSeen,
+   www/words.js), the stages somebody added (stAll, www/phases.js), an
+   alphabet and left to right (wsys, scriptDir, www/wsys.js), no roman face
+   (shareRoman, www/share.js) -- it does because the person who MADE the
+   language stopped paying for making it that way. A language somebody else
+   made was not made on this account's plan, so none of that touches it: it
+   looks the same on every plan. What the plan decides about DOING -- adding,
+   deleting, renaming a letter -- is the making side's and a taken language
+   has none (langLocked).
+
+   Every shape of the open language asks this and nothing asks planNo()
+   outside this file (tools/taken-check.mjs counts them). It is the DRAWING
+   question (langTheirs above), so a language nobody has answered for is
+   shaped as it always was. */
+function langShaped(ok){ return planNo(ok) && !langTheirs(langId); }
 /* AND THE OPEN LANGUAGE, ASKED BY EVERY WRITER OF ONE. True means the caller
    must stop -- upStop()'s shape, and for the same reason: a rule that lives in
    one place and is ASKED at each road that could break it.
@@ -2717,7 +2737,9 @@ function planTook(id){
                          alphabet, left to right, no places sold: true only
                          when the answer is in and it is no, so nobody is
                          shown the free shape of what they paid for on an
-                         answer nobody gave
+                         answer nobody gave. Asked of the open language, it
+                         is langShaped(ok) above, which a taken language
+                         never is
      planSaid(ok)        a WRITE, or something handed off the phone: nothing
                          goes until the answer is in, and planTook() calls
                          the writer again the moment it is

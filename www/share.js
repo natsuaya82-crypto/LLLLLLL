@@ -354,7 +354,7 @@ function shareConv(t){
    shipped the same face with both. */
 function shareRoman(){
   var w=langWsysOf(langId);
-  if(planNo(can('wsys'))) return false;
+  if(langShaped(can('wsys'))) return false;
   if(WSYS.indexOf(w)<0) return false;
   return w==='syll' || w==='abugida' || w==='block' || w==='logo';
 }

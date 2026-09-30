@@ -146,9 +146,11 @@ function wFilters(){
    the keyboard's conversion read through wForms(). So the hundred here and
    the hundred the ceiling counts are the same hundred. */
 function wordsSeen(){
-  var cap=wordCap(), out=[], i;
+  var cap=langShaped(can('words'))? wordCap() : null, out=[], i;
   /* `null` is a plan nobody has answered for (www/core.js § planNum), and it
-     folds nothing: 「a failed check means fewer buttons, never fewer words」. */
+     folds nothing: 「a failed check means fewer buttons, never fewer words」,
+     and neither does a language the plan does not shape (langShaped,
+     www/core.js) -- somebody else's. */
   if(cap===null) cap=Infinity;
   for(i=0;i<WORDS.length && out.length<cap;i++) if(!wIsForm(WORDS[i])) out.push(WORDS[i]);
   return out;

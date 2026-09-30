@@ -721,7 +721,7 @@ function ltStart(){
   /* An alphabet that doubled before the ids were steady stays doubled:
      「昔の版で自動で増えた文字: 消さずに残す」 OWNER 2026-09-24. The launch
      takes no row out of anybody's alphabet. */
-  if(planNo(ok)) ltSlotsFill();
+  if(langShaped(ok)) ltSlotsFill();
 }
 /* What this letter reads, spelled the way a person would write it. One word
    per unit, separated by spaces, because a letter may read more than one
@@ -1072,7 +1072,7 @@ function ltFreeSlot(l, nm0){
   /* A slot is the free plan's, and a name nobody has answered the plan for
      takes nobody's row (www/core.js § has): measured, a Pro letter renamed to
      a slot's name before verify-plan answered was spliced out of LETTERS. */
-  if(!planNo(can('letters'))) return null;
+  if(!langShaped(can('letters'))) return null;
   var nm=String((nm0===undefined? (l&&l.ab) : nm0)||'').toLowerCase(), i, s;
   if(!nm) return null;
   for(i=0;i<LETTERS.length;i++){
