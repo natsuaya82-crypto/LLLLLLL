@@ -226,7 +226,7 @@ LinguaScript.otf   その言語のフォント（フォントのシステム登�
 同じように置きます。** App Group に渡すのは Lingua の中で字を打つための道で、
 「端末に置く」「持ち出し」には当たりません（OWNER 2026-09-30「端末に置くものが
 そもそもないでしょ？」、`docs/FEATURE_RULES.md` § 決定ログ 2026-09-30 の追記）。
-だから `shareSig()` は `langOut()` を訊きません。`theirs-check` 7c が、取った
+だから `shareSig()` は `langOut()` を訊きません。`theirs-check` 8b が、取った
 言語を開いている時にそのキーボードが渡ることを見ています。
 
 `keyboard.json` の形。**id も参照も入れません。載せます。**
