@@ -276,6 +276,15 @@ it is quoted, and where a decision has never been made the row in
 - 追記（同日、スクショを見て）: レイヤーの列は、それぞれのレイヤーに何が描いてあるかが見えるようにする ── 番号だけでなく、そのレイヤーの線の小さい絵（「レイヤーはこいつみたいにちゃんと書いてるのがわかるようにして」、Reddit の道具の Layers 欄）。r147 に渡した。
 - 目標（同日）: 「レディットで作ってるやつの全部内包していってこれでいいやんを作るのが目標」── Reddit で人が作っている道具の機能を Lingua に取り込み、「これ一つでいい」にする。
 
+### 2026-09-30 文法で形が変わる表意文字の仕組みを 1.0.4 で作る
+- Date: 2026-09-30
+- Area: 表意文字（logography）の書き方、キーボード
+- Decision: 文法（形）に合わせて表意文字の形が変わる仕組みを 1.0.4 で作る。今は形ごとに別の字として描き、それぞれをキーに置く。
+- Reason: オーナーの言葉「じゃあその仕組みは1.0.4で作るって伝えよう」（2026-09-30、Reddit の質問「Will be able to make keyboard with ideograms that change shape bcz of grammar?」への答え）。
+- Affected features: 表意文字、キーボード、文法。
+- Affected data: まだ決まっていない（形の決め方はオーナーに聞いてから）。
+- Implementation status: まだ何も無い。
+
 ### 2026-09-30 字が入ったキー二つを結合すると、左（上）が残る
 - Date: 2026-09-30
 - Area: キーボードの結合（`kbJoin()` は左、`kbVJoin()` は上を残す、`www/keyboard.js`）
