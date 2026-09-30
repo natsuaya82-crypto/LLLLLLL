@@ -326,6 +326,46 @@ export const SCRIPTS = {
     ],
   },
 
+  /* The grammar book: its chapters, the word order put in by pressing the
+     parts in the order they go, a line made from its meaning alone (gExLine,
+     www/grammar.js -- the dictionary and the order), and a rule that makes a
+     verb's past, answered on a verb's own page. */
+  'grammar': {
+    view: [393, 852, 3], size: [1080, 2340], out: 'promo/grammar', hq: true, slow: 2,
+    music: 'echoes_of_lumen-vlog-background-music-596303.mp3',
+    setup: [{ eval: DICT_TIDY }, { eval: DICT_RULES }, { go: 'gram' }],
+    steps: [
+      { cap: 'A whole grammar book, ready to fill', capAt: 600, wait: 2000, still: 'g1-book' },
+      { cap: 'Start with the sentence', capAt: 600, wait: 200 },
+      { tap: '[data-do=go][data-a*="book:snt"]', wait: 1000 },
+      { tap: '[data-do=go][data-a*="v2:order"]', wait: 1000 },
+      { cap: 'Tap the parts in the order they go', capAt: 600, wait: 200 },
+      { tap: '[data-do=g2Put][data-a=\'["S"]\']', wait: 600 },
+      { tap: '[data-do=g2Put][data-a=\'["O"]\']', wait: 600 },
+      { tap: '[data-do=g2Put][data-a=\'["V"]\']', wait: 1400, still: 'g2-order' },
+      { cap: 'Write only what a line means', capAt: 600, wait: 200 },
+      { tap: 'do:stExOpen', wait: 800 },
+      { type: 'river see mountain', into: '#sx-gl', delay: 90, wait: 400 },
+      { cap: 'It is put in your words, in your order', capAt: 600, wait: 200 },
+      { eval: "stAddEx('order')", wait: 2400, still: 'g3-line' },
+      { tap: 'do:keepPress', wait: 900 },
+      { cap: 'Save it', capAt: 600, wait: 200 },
+      { tap: 'do:keepPress', wait: 1000 },
+      { cap: 'Rules make the forms of a word', capAt: 600, wait: 200 },
+      { go: 'gram' },
+      { tap: '[data-do=go][data-a*="book:verb"]', wait: 900 },
+      { tap: '[data-do=go][data-a*="v2:tense"]', wait: 1100 },
+      { tap: '[data-do=fmrNew][data-a*="pst"]', wait: 1000 },
+      { cap: 'The past: put -a on the end', capAt: 600, wait: 200 },
+      { type: 'a', lingua: true, into: '#fmr-add', delay: 300, wait: 1400, still: 'g4-rule' },
+      { tap: 'do:keepPress', wait: 1100 },
+      { cap: 'Every verb follows it', capAt: 600, wait: 200 },
+      { go: 'words' },
+      { tap: '[data-do=openWord][data-a=\'["lom"]\']', wait: 400 },
+      { wait: 2800, still: 'g5-past' },
+    ],
+  },
+
   /* The dictionary, in two films 「いいよ」 OWNER 2026-09-30 -- the one
      film asked for was split in two: making words, and using the
      dictionary. Filmed as the keyboard film was (393x852, 1080x2340, hq,
