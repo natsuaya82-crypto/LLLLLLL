@@ -110,6 +110,15 @@ const LAYER = `
       'text-shadow:0 2px 3px rgba(0,0,0,.9),0 0 18px rgba(0,0,0,.75),0 0 2px #000;' +
       'transition:opacity .25s;opacity:0}' +
     '#__vcap.dim{opacity:.18!important}' +
+    /* A card: one picture of a part of the app, alone on the dark, over the
+       app and under the caption -- the layouts shown one after another at
+       the end 「最後にこんだけあるよーってスライドショーみたいにドーン」
+       OWNER 2026-09-30. The pictures are taken before filming (cards, below). */
+    '#__vcard{position:absolute;inset:0;background:#070709;opacity:0;transition:opacity .3s}' +
+    '#__vcard.on{opacity:1}' +
+    '#__vcard h4{position:absolute;left:0;right:0;top:120px;margin:0;text-align:center;' +
+      'font:400 15px/1 var(--face-display,Georgia),Georgia,serif;letter-spacing:.34em;color:#c9a44c}' +
+    '#__vcard img{position:absolute;left:16px;right:16px;top:170px;height:390px;width:calc(100% - 32px);object-fit:contain}' +
     '#__vcap.on{opacity:1}' +
     '.__vdot{position:absolute;width:46px;height:46px;margin:-23px 0 0 -23px;border-radius:50%;' +
       'background:rgba(255,255,255,.35);border:3px solid rgba(20,20,30,.55);' +
@@ -138,7 +147,7 @@ const LAYER = `
     '#__vend a strong{font-size:25px;font-weight:600;letter-spacing:-.01em;margin-top:2px}';
   document.head.appendChild(st);
   var v = document.createElement('div'); v.id = '__v';
-  v.innerHTML = '<div id="__vcap"></div><div id="__vend">' +
+  v.innerHTML = '<div id="__vcard"><h4></h4><img alt=""></div><div id="__vcap"></div><div id="__vend">' +
     '<img alt="">' +
     '<b>LIN<em>G</em>UA</b>' +
     /* the Apple mark: Simple Icons' "apple" (CC0) */
@@ -179,6 +188,14 @@ const LAYER = `
   window.__vLift = function () {
     var d = document.querySelector('.__vdot.keep');
     if (d) { d.style.opacity = '0'; setTimeout(function(){ d.remove(); }, 400 * (window.__vK || 1)); }
+  };
+  window.__vCard = function (src, title) {
+    var c = document.getElementById('__vcard'), im = c.querySelector('img');
+    if (!src) { c.className = ''; return; }
+    c.querySelector('h4').textContent = title || '';
+    im.src = src; c.className = 'on';
+    im.animate([{ transform: 'scale(1.1)', opacity: 0 }, { transform: 'none', opacity: 1 }],
+               { duration: 320, easing: 'cubic-bezier(.2,.8,.2,1)' });
   };
   window.__vEnd = function (icon) {
     document.querySelector('#__vend img').src = icon;
@@ -289,6 +306,34 @@ async function open(br) {
   return { ctx, pg };
 }
 
+/* ---- cards: pictures of part of the app, taken before filming -----------
+   In a browser of their own, so what is done to take them (a keyboard of
+   every layout made, say) is not in the app that is then filmed. Each card is
+   { eval, sel }: run eval, then the smallest rectangle round everything sel
+   matches, at the frame's own pixels. */
+let CARDS = [];
+async function takeCards(br, sc) {
+  CARDS = [];
+  if (!sc.cards) return;
+  const { ctx, pg } = await open(br);
+  await inkAll(pg, sc.blank);
+  for (const c of sc.cards) {
+    await pg.evaluate(c.eval);
+    await pg.waitForTimeout(500);
+    const r = await pg.evaluate((sel) => {
+      var x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+      document.querySelectorAll(sel).forEach(function (e) {
+        var b = e.getBoundingClientRect();
+        if (!b.width) return;
+        x0 = Math.min(x0, b.left); y0 = Math.min(y0, b.top); x1 = Math.max(x1, b.right); y1 = Math.max(y1, b.bottom);
+      });
+      return { x: x0 - 6, y: y0 - 6, width: x1 - x0 + 12, height: y1 - y0 + 12 };
+    }, c.sel);
+    CARDS.push('data:image/png;base64,' + (await pg.screenshot({ clip: r })).toString('base64'));
+  }
+  await ctx.close();
+}
+
 async function unpop(pg) {
   for (let i = 0; i < 4; i++) {
     if (!await pg.evaluate(() => typeof popOn === 'function' && popOn())) break;
@@ -321,6 +366,8 @@ async function run(pg, steps, taps, stills) {
       await unpop(pg);
     }
     if (s.eval) await pg.evaluate(s.eval);
+    if (s.card !== undefined) await pg.evaluate(([src, t]) => window.__vCard(src, t),
+                                                [s.card < 0 ? null : CARDS[s.card], s.cardTitle]);
     if (s.tap) {
       const b = await boxOf(pg, s.tap, s.nth);
       const x = b.x + (s.dx === undefined ? b.width / 2 : s.dx), y = b.y + (s.dy === undefined ? b.height / 2 : s.dy);
@@ -422,6 +469,7 @@ async function doProbe(br, spec) {
 async function film(br, ff, name, sc, stillsOnly) {
   FRAME = frameOf(sc);
   SLOW = 1;
+  await takeCards(br, sc);
   const { ctx, pg } = await open(br);
   await inkAll(pg, sc.blank);
   if (sc.setup) await run(pg, sc.setup.map((s) => Object.assign({ wait: 0 }, s)));

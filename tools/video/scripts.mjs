@@ -21,6 +21,10 @@
    (every other a-z is given a shape by rec.mjs, see SHAPES there).
    --------------------------------------------------------------------------- */
 
+/* what a keyboard's keys are on the page: the keys, the empty frames and the
+   handwriting pad */
+const KEYS = '[data-do=kbTapKey],[data-do=kbCellSel],.kbpad';
+
 export const SCRIPTS = {
   /* 1-01 — draw a letter of your own */
   'draw-a-letter': {
@@ -101,6 +105,16 @@ export const SCRIPTS = {
   'keyboard-reddit': {
     view: [393, 852, 3], size: [1080, 2340], out: 'promo/keyboard', hq: true, slow: 2,
     music: 'echoes_of_lumen-vlog-background-music-596303.mp3',
+    /* the six layouts kbNew() offers, each made in a browser of its own and
+       cut down to its keys (rec.mjs, takeCards) */
+    cards: [
+      { eval: "kbAdd('qwerty')", sel: KEYS },
+      { eval: "kbAdd('flick')", sel: KEYS },
+      { eval: "kbAdd('tap')", sel: KEYS },
+      { eval: "kbAdd('chart')", sel: KEYS },
+      { eval: "kbAdd('abc')", sel: KEYS },
+      { eval: "kbAdd('hand')", sel: KEYS },
+    ],
     setup: [
       { eval: "kbAdd('qwerty'); kbAdd('abc');" },
       { go: 'kb' },
@@ -174,8 +188,14 @@ export const SCRIPTS = {
       { tap: '[data-do=pkTake][data-a*="lt.q"]', wait: 700 },
       { tap: 'do:keepPress', wait: 300 },
       { cap: 'Save it', capAt: 600, wait: 2600, still: '06-finished-keyboard' },
-      { tap: 'do:keepPress', wait: 1500 },
-      { cap: 'Type your conlang on your phone', capAt: 600, wait: 2200 },
+      { tap: 'do:keepPress', wait: 1000 },
+      /* and every layout a keyboard can start from, one after another */
+      { card: 0, cardTitle: 'START FROM ANY LAYOUT', cap: 'QWERTY', capAt: 600, wait: 950 },
+      { card: 1, cardTitle: 'START FROM ANY LAYOUT', cap: 'Flick', capAt: 600, wait: 950 },
+      { card: 2, cardTitle: 'START FROM ANY LAYOUT', cap: 'Tap', capAt: 600, wait: 950 },
+      { card: 3, cardTitle: 'START FROM ANY LAYOUT', cap: 'Chart', capAt: 600, wait: 950 },
+      { card: 4, cardTitle: 'START FROM ANY LAYOUT', cap: 'ABC', capAt: 600, wait: 950 },
+      { card: 5, cardTitle: 'START FROM ANY LAYOUT', cap: 'Handwriting', capAt: 600, wait: 950 },
     ],
   },
 };
