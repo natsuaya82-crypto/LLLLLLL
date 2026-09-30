@@ -100,6 +100,7 @@ export const SCRIPTS = {
      camera starts (kbAdd() -- the app's own), so the list has three. */
   'keyboard-reddit': {
     view: [393, 852, 3], size: [1080, 2340], out: 'promo/keyboard', hq: true, slow: 2,
+    music: 'echoes_of_lumen-vlog-background-music-596303.mp3',
     setup: [
       { eval: "kbAdd('qwerty'); kbAdd('abc');" },
       { go: 'kb' },

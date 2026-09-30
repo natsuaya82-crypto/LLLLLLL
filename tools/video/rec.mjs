@@ -483,47 +483,48 @@ async function film(br, ff, name, sc, stillsOnly) {
      だけつけて欲しい。タップ音とか」 OWNER 2026-09-29 -- and a TAP, a short
      knock of filtered noise over a small low thud, not a tone: the falling
      chirp it was 「音キモくね？」「タップっぽい音にして欲しい」 OWNER
-     2026-09-30. Made in this browser
-     (Web Audio, recorded by MediaRecorder as Opus), because the ffmpeg here
-     has no audio encoder; it only has to copy the stream in. The moment of
-     each tap is taken against the frame clock the film is laid on. */
+     2026-09-30. Made in this browser and RENDERED rather than recorded: an
+     OfflineAudioContext as long as the film, each tap put at its moment on
+     the frame clock, written out as a WAV. It was recorded live by
+     MediaRecorder, and on 2026-09-30 that track came out 46.7s under a film
+     of 52.5s -- why was not found; rendering has no clock to fall behind.
+     A WAV has to be encoded, which is the mp4 road; the ffmpeg Playwright
+     carries has no audio encoder, so a .webm film has no sound. */
   const at = taps.map((w) => (w - W0) / 1000 / SLOW).filter((x) => x >= 0);
   const len = frames[frames.length - 1].t - T0;
-  await pg.evaluate(() => { window.__vK = 1; });
   const audio = await pg.evaluate(async ({ at, len }) => {
-    const ac = new AudioContext({ sampleRate: 48000 });
-    const dst = ac.createMediaStreamDestination();
-    const t0 = ac.currentTime + 0.3;
+    const rate = 48000;
+    const ac = new OfflineAudioContext(1, Math.ceil((len + 0.5) * rate), rate);
     /* 25ms of noise that dies in about 4ms: the knock */
-    const nb = ac.createBuffer(1, 1200, 48000), nd = nb.getChannelData(0);
+    const nb = ac.createBuffer(1, 1200, rate), nd = nb.getChannelData(0);
     for (let i = 0; i < nd.length; i++) nd[i] = (Math.random() * 2 - 1) * Math.exp(-i / 190);
     at.forEach((t) => {
       const src = ac.createBufferSource(), bp = ac.createBiquadFilter(), g = ac.createGain();
       src.buffer = nb; bp.type = 'bandpass'; bp.frequency.value = 2600; bp.Q.value = 0.9; g.gain.value = 0.55;
-      src.connect(bp); bp.connect(g); g.connect(dst); src.start(t0 + t);
+      src.connect(bp); bp.connect(g); g.connect(ac.destination); src.start(t);
       /* and the body under it: a low sine that drops and is gone in 35ms */
       const o = ac.createOscillator(), og = ac.createGain();
-      o.type = 'sine'; o.frequency.setValueAtTime(190, t0 + t); o.frequency.exponentialRampToValueAtTime(90, t0 + t + 0.035);
-      og.gain.setValueAtTime(0.0001, t0 + t); og.gain.exponentialRampToValueAtTime(0.35, t0 + t + 0.002);
-      og.gain.exponentialRampToValueAtTime(0.0001, t0 + t + 0.035);
-      o.connect(og); og.connect(dst); o.start(t0 + t); o.stop(t0 + t + 0.05);
+      o.type = 'sine'; o.frequency.setValueAtTime(190, t); o.frequency.exponentialRampToValueAtTime(90, t + 0.035);
+      og.gain.setValueAtTime(0.0001, t); og.gain.exponentialRampToValueAtTime(0.35, t + 0.002);
+      og.gain.exponentialRampToValueAtTime(0.0001, t + 0.035);
+      o.connect(og); og.connect(ac.destination); o.start(t); o.stop(t + 0.05);
     });
-    const rec = new MediaRecorder(dst.stream, { mimeType: 'audio/webm;codecs=opus', audioBitsPerSecond: 96000 });
-    const parts = [];
-    rec.ondataavailable = (e) => parts.push(e.data);
-    const done = new Promise((r) => (rec.onstop = r));
-    /* started 0.3s before t0 so the recording's zero is t0 - 0.3 */
-    rec.start();
-    await new Promise((r) => setTimeout(r, (len + 0.6) * 1000));
-    rec.stop(); await done;
-    const buf = await new Blob(parts).arrayBuffer();
-    let bin = ''; const u = new Uint8Array(buf);
+    const d = (await ac.startRendering()).getChannelData(0);
+    /* 16-bit mono WAV */
+    const b = new DataView(new ArrayBuffer(44 + d.length * 2));
+    const str = (o, x) => { for (let i = 0; i < x.length; i++) b.setUint8(o + i, x.charCodeAt(i)); };
+    str(0, 'RIFF'); b.setUint32(4, 36 + d.length * 2, true); str(8, 'WAVEfmt ');
+    b.setUint32(16, 16, true); b.setUint16(20, 1, true); b.setUint16(22, 1, true);
+    b.setUint32(24, rate, true); b.setUint32(28, rate * 2, true); b.setUint16(32, 2, true); b.setUint16(34, 16, true);
+    str(36, 'data'); b.setUint32(40, d.length * 2, true);
+    for (let i = 0; i < d.length; i++) b.setInt16(44 + i * 2, Math.max(-1, Math.min(1, d[i])) * 32767, true);
+    let bin = ''; const u = new Uint8Array(b.buffer);
     for (let i = 0; i < u.length; i++) bin += String.fromCharCode(u[i]);
     return btoa(bin);
   }, { at, len });
   await ctx.close();
   fs.mkdirSync(FRAME.out, { recursive: true });
-  const aFile = path.join(FRAME.out, '.' + name + '.opus.webm');
+  const aFile = path.join(FRAME.out, '.' + name + '.wav');
   fs.writeFileSync(aFile, Buffer.from(audio, 'base64'));
 
   if (!frames.length) throw new Error('no frames');
@@ -537,10 +538,20 @@ async function film(br, ff, name, sc, stillsOnly) {
        comes in under 5MB. */
   : ['-c:v', 'vp8', '-b:v', '1600k', '-maxrate', '2600k', '-bufsize', '4M', '-qmin', '4', '-qmax', '50',
        '-deadline', 'good', '-cpu-used', '2', '-auto-alt-ref', '1', '-lag-in-frames', '16'];
+  /* music: a file in promo/music/ laid under the taps from the first frame,
+     at a level that leaves the taps on top, and faded over the last two
+     seconds so it ends with the end card 「音楽つけられないの？」 OWNER
+     2026-09-30. Sound at all is the mp4 road only (above). */
+  const mus = ff.ext !== 'mp4' ? ['-map', '0:v'] : sc.music
+    ? ['-i', path.join(ROOT, 'promo', 'music', sc.music),
+       '-filter_complex', '[2:a]volume=0.4,afade=t=out:st=' + Math.max(0, n / FPS - 2).toFixed(2) + ':d=2[m];' +
+                          '[1:a][m]amix=inputs=2:duration=first:normalize=0[a]',
+       '-map', '0:v', '-map', '[a]']
+    : ['-map', '0:v', '-map', '1:a'];
   const p = spawn(ff.bin, ['-loglevel', 'error', '-y', '-f', 'image2pipe', '-c:v', 'mjpeg', '-r', String(FPS),
                            '-i', 'pipe:0',
-                           '-itsoffset', '-0.3', '-i', aFile, '-map', '0:v', '-map', '1:a',
-                           '-c:a', ff.ext === 'mp4' ? 'aac' : 'copy',
+                           ...(ff.ext === 'mp4' ? ['-i', aFile] : []), ...mus,
+                           ...(ff.ext === 'mp4' ? ['-c:a', 'aac'] : []),
                            '-vf', 'scale=' + FRAME.size[0] + ':' + FRAME.size[1] + ',setsar=1', ...enc, file],
                   { stdio: ['pipe', 'inherit', 'inherit'] });
   p.stdin.on('error', () => {});
