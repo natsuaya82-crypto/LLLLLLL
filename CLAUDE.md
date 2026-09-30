@@ -88,6 +88,13 @@ walking your own language to find every editor and then every face of
 a taken copy. The one thing its taker makes is a keyboard of their own
 for it 「ないやつは自作可能」 OWNER 2026-09-30, which is theirs — the
 `take_kb` row, not the language's `kb` slice.
+And what of its alphabet is shown is what its maker DREW: every language
+is born with the slots (`ltSlotsFill()`), and a slot nobody drew on is not
+shown to the person who took it 「書いてない文字が入る必要があるの？」
+OWNER 2026-09-30 — not listed, not offered, not on a key. Drawn is
+`ltHasShape()`; the question is `ltShown()` (`www/sound.js`), and
+`ltSeen()` is the alphabet it lets through. Nothing leaves the maker's
+slices; `taken-check` holds it.
 
 **NOTHING IS THE PHONE'S. EVERYTHING IS THE ACCOUNT'S.**
 「端末ごとにやることなんてねえよ」「アカウントごとってずっと言ってるよな？」
