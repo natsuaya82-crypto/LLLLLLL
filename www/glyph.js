@@ -853,11 +853,18 @@ function newGE(lid, label){
     if(inkLy(all[i])===1) one.push(all[i]); else rest.push(all[i]);
     if(inkLy(all[i])>lys) lys=inkLy(all[i]);
   }
+  /* What each layer is called, where somebody called it something (geLyn). A
+     layer that has a name and nothing drawn on it is still a layer. */
+  var lyn=geLyn(l);
+  for(i in lyn) if(Object.prototype.hasOwnProperty.call(lyn, i) && Number(i)>lys) lys=Number(i);
   /* A letter opened for editing is finished work, the same as a drawing
      handed back by undo, so it opens sealed: the first press starts a new
      stroke instead of picking up the last one you drew last time. Only what
      is drawn in this sitting, before the finger comes up, can be grabbed. */
-  return { lid:lid, r:r, st:one, rest:rest, ly:1, lys:lys, lyh:{},
+  /* `hid` is which layers are out of sight on the paper -- where you are
+     standing, like `ly`, so it is written nowhere and goes with the editor
+     (geLayerEye). */
+  return { lid:lid, r:r, st:one, rest:rest, ly:1, lys:lys, lyh:{}, lyn:lyn, hid:{},
            under:(g && inkRings(g))? g : null,
            /* WHAT IT OPENED WITH. The button in the corner is grey until this
               stops being true of what is on the paper -- 「なにもない時は薄い
@@ -921,6 +928,13 @@ function geOpen(lid, label){
     /* Opened, not mid-stroke: the same sentence newGE() makes about a letter
        that already had something on it. */
     GE.seal=true;
+  }
+  /* and the names, which the same buffer holds (geNow) */
+  held=keepVal(keepKeyOf('glyph', lid), 'lyn');
+  if(held){ try{ st=geLynClean(JSON.parse(held)); }catch(e){ st=null; } }
+  if(held && st){
+    GE.lyn=st;
+    for(var n in st) if(Object.prototype.hasOwnProperty.call(st, n) && Number(n)>GE.lys) GE.lys=Number(n);
   }
   go('glyph', lid);
 }
@@ -1051,6 +1065,13 @@ var ICON_RET='<svg class="ic" viewBox="0 0 24 24" width="16" height="16" fill="n
 var ICON_PEN='<svg class="ic" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" '+
   'stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
   '<path d="M4 20h4L19.2 8.8a2 2 0 0 0-2.8-2.8L5 17.2V20Z"/><path d="M15.2 7.2 18 10"/></svg>';
+/* Shown and hidden: the open eye every layers panel draws, and the same eye
+   struck through. 「ひょうじひひょうじを目のマークでやったり」 OWNER 2026-09-30. */
+var ICON_EYE='<svg class="ic" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" '+
+  'stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
+  '<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/>'+
+  '<circle cx="12" cy="12" r="3"/></svg>';
+var ICON_EYEOFF=ICON_EYE.replace('</svg>', '<path d="M4 4l16 16"/></svg>');
 /* The star, and it is the app's own star. 「後パッチも更新のくるくるもただの
    ダイヤじゃなくてこんな感じの手裏剣に近い細長い形にしてほしい。今のやつ
    gemini ににすぎてる」 OWNER 2026-09-05. The four points were short and the
@@ -1886,6 +1907,8 @@ function geLayer(n){
     if(inkLy(all[i])===n) mine.push(all[i]); else rest.push(all[i]);
   }
   GE.st=mine; GE.rest=rest; GE.ly=n;
+  /* The layer on the paper is always in sight: nobody draws blind. */
+  delete GE.hid[n];
   h=GE.lyh[n]; GE.undo=h? h.u : []; GE.redo=h? h.r : [];
   GE.si=GE.st.length-1; GE.pi=-1; GE.seal=!!GE.st.length;
   GE.round=false; GE.flat=null; GE.flatBy='';
@@ -1901,7 +1924,7 @@ function geLayerInks(){
   for(i=0;i<els.length;i++){
     c=els[i]; n=Number(c.getAttribute('data-ly')); st=[];
     for(j=0;j<all.length;j++) if(all[j].pts.length && inkLy(all[j])===n) st.push(all[j]);
-    S=Math.max(24, Math.round((c.getBoundingClientRect().width||32)*dpr));
+    S=Math.max(24, Math.round((c.getBoundingClientRect().width||56)*dpr));
     if(c.width!==S){ c.width=S; c.height=S; }
     x=c.getContext('2d'); on=n===GE.ly;
     x.clearRect(0,0,S,S);
@@ -1915,18 +1938,79 @@ function geLayerAdd(){
   GE.lys++;
   geLayer(GE.lys);
 }
-/* Each layer is a small picture of what is drawn on it, and nothing else:
-   「レイヤーはこいつみたいにちゃんと書いてるのがわかるようにして」 OWNER
-   2026-09-30. The canvas is filled by geLayerInks(), which geDraw() calls, so
-   the picture of the layer under the finger moves with the finger. */
+/* ---- the layers panel ------------------------------------------------
+   「いやあレイヤーこれと同じ感時にして欲しい。鉛筆つけたり、ひょうじひひょうじ
+   を目のマークでやったり、レイヤーのサイズ変えたり」 OWNER 2026-09-30 -- the
+   Layers panel of the tool on r/casualconlang: a row per layer, the eye, the
+   picture and the name, and the pencil.
+
+   Each picture is what is drawn on that layer and nothing else
+   (「レイヤーはこいつみたいにちゃんと書いてるのがわかるようにして」): the
+   canvas is filled by geLayerInks(), which geDraw() calls, so the picture of
+   the layer under the finger moves with the finger. */
 function geLayersHTML(){
-  var h='<div class="glayers">', n;
+  var h='<div class="glayers">', n, hid, on;
   for(n=1;n<=GE.lys;n++){
-    h+='<button'+DO('geLayer',[n])+(n===GE.ly?' class="on"':'')+
-       ' aria-label="'+esc(t('glyph.layer',[n]))+'"><canvas class="glyc" data-ly="'+n+'"></canvas></button>';
+    hid=!!GE.hid[n]; on=n===GE.ly;
+    h+='<div class="glyr'+(on?' on':'')+'">'+
+       /* The layer on the paper cannot be hidden (geLayer), so its eye is down. */
+       '<button class="glyeye"'+DO('geLayerEye',[n])+(on?' disabled':'')+
+         ' aria-label="'+esc(t(hid?'glyph.layer.show':'glyph.layer.hide'))+'">'+
+         (hid? ICON_EYEOFF : ICON_EYE)+'</button>'+
+       '<button class="glysel"'+DO('geLayer',[n])+
+         ' aria-label="'+esc(geLyName(n))+'"><canvas class="glyc" data-ly="'+n+'"></canvas>'+
+         '<span class="glyn">'+esc(geLyName(n))+'</span></button>'+
+       '<button class="glypen"'+DO('geLayerName',[n])+
+         ' aria-label="'+esc(t('glyph.layer.rename'))+'">'+ICON_PEN+'</button>'+
+       '</div>';
   }
-  return h+'<button'+DO('geLayerAdd')+' aria-label="'+esc(t('glyph.layer.add'))+'">'+
-    ICON_ADD+'</button></div>';
+  return h+'<div class="glyr"><button class="glyadd"'+DO('geLayerAdd')+
+    ' aria-label="'+esc(t('glyph.layer.add'))+'">'+ICON_ADD+'</button></div></div>';
+}
+/* What a letter's layers are called: `lyn`, the layer's number to the name
+   somebody gave it. Nothing else is read out of it -- a key that is not a
+   layer's number or a name that is not words is left where it is on the
+   letter (geKeep writes only what was changed) and not shown. */
+function geLynClean(o){
+  var out={}, k;
+  if(!o || typeof o!=='object') return out;
+  for(k in o){
+    if(!Object.prototype.hasOwnProperty.call(o, k)) continue;
+    if(/^[1-9][0-9]{0,2}$/.test(k) && typeof o[k]==='string' && o[k]) out[k]=o[k];
+  }
+  return out;
+}
+function geLyn(l){ return geLynClean(l && l.lyn); }
+/* A layer nobody named is its number, and nothing is stored for it. */
+function geLyName(n){ return (GE && GE.lyn && GE.lyn[n]) || t('glyph.layer',[n]); }
+/* Shown or hidden on the paper, and only on the paper: the font, the keys, a
+   post and a card draw every layer (geAll, inkGeo). 「入る」 OWNER 2026-09-30. */
+function geLayerEye(n){
+  n=Number(n);
+  if(!GE || n===GE.ly || !(n>=1 && n<=GE.lys)) return;
+  if(GE.hid[n]) delete GE.hid[n]; else GE.hid[n]=true;
+  render();
+}
+/* The pencil: a name typed on a page of this app's own, as the language's
+   name is (editName). What is typed goes into the drawing, not onto the
+   letter -- this screen has a Save, and the Save writes both (geKeep). */
+function geLayerName(n){
+  n=Number(n);
+  if(!GE || !(n>=1 && n<=GE.lys)) return;
+  openForm('lyname:'+n, t('glyph.layer.name'),
+    '<div class="field"><label>'+t('glyph.layer.name')+'</label>'+
+      lnField('ly-nm', t('glyph.layer',[n]), '', GE.lyn[n]||'')+'</div>',
+    null, navDo(t('glyph.layer.done'), 'geLayerNamed', [n], true));
+}
+FORM_OPEN.lyname=function(n){ geLayerName(n); };
+/* Emptied, or typed back to the name it has anyway, is no name. */
+function geLayerNamed(n){
+  var a=document.getElementById('ly-nm'), v;
+  n=Number(n);
+  if(!a || !GE) return;
+  v=actVal(a).replace(/^\s+|\s+$/g, '');
+  if(v && v!==t('glyph.layer',[n])) GE.lyn[n]=v; else delete GE.lyn[n];
+  closeSheet();
 }
 /* Putting the drawing where the letter keeps it, and nothing else -- no
    toast, no going anywhere, no saying the sound. Both ways out of this screen
@@ -1977,9 +2061,19 @@ function geKeepOn(){
    and it was not true: render() reads keepDirty(), and keepDirty() read the
    very buffer only geKeepPut() ever wrote. Nothing held it because nothing
    was there to hold. www/shell.js § keepOn, OWNER 2026-09-10. */
-function geNow(){ return GE? {ink:JSON.stringify(geInk(geAll()))} : {ink:''}; }
+function geNow(){
+  return GE? {ink:JSON.stringify(geInk(geAll())), lyn:JSON.stringify(GE.lyn||{})} : {ink:'', lyn:''};
+}
 function geKeep(){
-  var keep=geInk(geAll());
+  var keep=geInk(geAll()), l=ltById(GE.lid), k, has=false;
+  /* The names go on the letter with the strokes, and only a name somebody
+     gave is written: a letter nobody renamed a layer of gets no `lyn` at
+     all, and emptying the last one takes the field off again. Names nobody
+     changed in this sitting are not touched, whatever shape they are in. */
+  if(l && JSON.stringify(geLyn(l))!==JSON.stringify(GE.lyn||{})){
+    for(k in GE.lyn) if(Object.prototype.hasOwnProperty.call(GE.lyn, k)) has=true;
+    if(has) l.lyn=geLynClean(GE.lyn); else delete l.lyn;
+  }
   ltSetStrokes(GE.lid, keep);
   /* NOT THE SWITCH. Whether words are set in the drawn letters is
      myFontWant(), and the switch (setMyFont) is the one place a person
@@ -3037,10 +3131,12 @@ function geDraw(){
   }
   /* The other layers, faint, and nothing of them to take hold of: no dots,
      no green edge. They are not in GE.st, which is all the rest of this
-     draws (geLayer). */
-  if(GE.rest && GE.rest.length){
+     draws (geLayer). A layer whose eye is shut is not drawn here -- and
+     here only: it is still in the letter (geLayerEye). */
+  var seen=(GE.rest||[]).filter(function(s){ return !GE.hid[inkLy(s)]; });
+  if(seen.length){
     x.globalAlpha=0.28;
-    inkStrokes(x, GE.rest, k, ix, iy, cssVar('--tx'));
+    inkStrokes(x, seen, k, ix, iy, cssVar('--tx'));
     x.globalAlpha=1;
   }
   inkStrokes(x, GE.st, k, ix, iy, cssVar('--tx'));
