@@ -96,7 +96,6 @@ act('ltForUnitGo', ltForUnitGo);
 act('geUndo', geUndo);
 act('geRedo', geRedo);
 act('geWidth', geWidth);
-actIn('geWidth', geWidth);
 act('geLayer', geLayer);
 act('geLayerAdd', geLayerAdd);
 act('geLayerEye', geLayerEye);

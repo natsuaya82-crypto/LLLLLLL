@@ -77,10 +77,10 @@ var GPEN={width:24, angleDeg:0, contrast:1.0, curve:36};
    The top is the pen, because the ceiling in the paragraph above is about
    two strokes on adjacent dots and not about taste: wider than 24 and they
    weld into one. Whether to go past it is the owner's and has not been
-   asked. `dots` are what the row of dots offers; the slider walks min..max
-   by `step`. inkW() is the one place that says what a stroke's width is,
-   and inkDef() hands every drawer a stroke whose `w` it has said. */
-var GE_W={min:6, max:24, step:2, dots:[6,10,14,19,24]};
+   asked. `dots` are what the row of dots offers, and a new stroke begins at
+   the middle one (GEW). inkW() is the one place that says what a stroke's
+   width is, and inkDef() hands every drawer a stroke whose `w` it has said. */
+var GE_W={min:6, max:24, dots:[6,10,14,19,24]};
 function inkW(s){
   var w=s && s.w;
   if(typeof w!=='number' || !(w>0)) return GPEN.width;
@@ -1457,8 +1457,9 @@ function geCur(){
   return GE.st[GE.si];
 }
 /* A new stroke, at the width chosen and on the layer being drawn on -- each
-   written only when it is not the default (GE_W, inkLy). The one place a
-   stroke is begun. */
+   written only when it is not what a stroke without it is read as (24 for
+   `w`, inkW; 1 for `ly`, inkLy). So a stroke begun at the middle dot carries
+   `w`. The one place a stroke is begun. */
 function geNewSt(){
   var st={pts:[]};
   if(GEW!==GPEN.width) st.w=GEW;
@@ -1831,17 +1832,16 @@ function geClear(){ geMark(); GE.st=[]; GE.si=-1; GE.pi=-1; GE.seal=false;
    and for whatever the rope has lit; a layer is chosen to draw on, and the
    others are on the paper faint and out of reach.
 
-   GEW is the width the next stroke is begun at. Where you stand, like the
-   zoom: not stored, and it stays from one letter to the next so an alphabet
-   drawn thin is not chosen thin twenty-six times.
+   GEW is the width the next stroke is begun at: the middle dot until one is
+   pressed. 「点でいいや基本が真ん中で線ごとに選べるようにして」 OWNER
+   2026-09-30 (the 追記 after r148). Where you stand, like the zoom: not
+   stored, and it stays from one letter to the next so an alphabet drawn thin
+   is not chosen thin twenty-six times. A stroke that carries no `w` is still
+   24 (inkW) -- only what is drawn from now on begins at the middle.
 
-   GEWV is WHICH of the two choosers stands here -- 'dots', a row of dots of
-   growing size, or 'slide', a slider. 「・の太さでサイズ変えれるかスライド式
-   かをやってみて。できたらスクショが見たい」 Both are built so the owner can
-   look at them side by side; one is kept and the other deleted with this
-   variable. Nothing in the app sets it; the fixture does. */
-var GEW=GPEN.width;
-var GEWV='dots';
+   With strokes lit by the rope, a dot is their width as well -- the one
+   road for both, and geMark() before it so the step back puts it back. */
+var GEW=GE_W.dots[Math.floor(GE_W.dots.length/2)];
 function geWidth(v){
   if(!GE) return;
   var w=inkW({w:Number(v)}), i, st;
@@ -1861,11 +1861,6 @@ function geWidth(v){
   render();
 }
 function geWidthHTML(){
-  if(GEWV==='slide'){
-    return '<div class="gwidth gwslide"><input type="range" min="'+GE_W.min+'" max="'+GE_W.max+'" '+
-      'step="'+GE_W.step+'" value="'+GEW+'" aria-label="'+esc(t('glyph.width'))+'"'+
-      CH('geWidth')+'></div>';
-  }
   var h='<div class="gwidth">', i, w;
   for(i=0;i<GE_W.dots.length;i++){
     w=GE_W.dots[i];
@@ -1947,9 +1942,16 @@ function geLayerAdd(){
    Each picture is what is drawn on that layer and nothing else
    (「レイヤーはこいつみたいにちゃんと書いてるのがわかるようにして」): the
    canvas is filled by geLayerInks(), which geDraw() calls, so the picture of
-   the layer under the finger moves with the finger. */
+   the layer under the finger moves with the finger.
+
+   Over the rows, a heading with the + at its end, under a line that parts it
+   from the dots 「点の列 → 区切りの線 → 『レイヤー　＋』の見出し → レイヤー
+   1…」 OWNER 2026-09-30 (「上と被ってるから」). The + stands there and
+   nowhere else. */
 function geLayersHTML(){
-  var h='<div class="glayers">', n, hid, on;
+  var h='<div class="glayers"><div class="glyhd"><span>'+esc(t('glyph.layers'))+'</span>'+
+    '<button class="glyadd"'+DO('geLayerAdd')+
+    ' aria-label="'+esc(t('glyph.layer.add'))+'">'+ICON_ADD+'</button></div>', n, hid, on;
   for(n=1;n<=GE.lys;n++){
     hid=!!GE.hid[n]; on=n===GE.ly;
     h+='<div class="glyr'+(on?' on':'')+'">'+
@@ -1964,8 +1966,7 @@ function geLayersHTML(){
          ' aria-label="'+esc(t('glyph.layer.rename'))+'">'+ICON_PEN+'</button>'+
        '</div>';
   }
-  return h+'<div class="glyr"><button class="glyadd"'+DO('geLayerAdd')+
-    ' aria-label="'+esc(t('glyph.layer.add'))+'">'+ICON_ADD+'</button></div></div>';
+  return h+'</div>';
 }
 /* What a letter's layers are called: `lyn`, the layer's number to the name
    somebody gave it. Nothing else is read out of it -- a key that is not a

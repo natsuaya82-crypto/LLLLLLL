@@ -808,7 +808,7 @@ defLang('fr', (function(){
       "glyph.circle.d" : "Courbe le trait que vous venez de tracer. Appuyez encore pour le redresser.",
       "glyph.clear.d" : "Enlève tout du carré.",
       "glyph.lasso.d" : "Entourez des points ou passez le doigt dessus pour les sélectionner. Faites glisser un point sélectionné pour tous les déplacer ; la corbeille les retire avec les traits qui les touchent.",
-      "glyph.width" : "Épaisseur",
+      "glyph.layers" : "Calques",
       "glyph.width.n" : "Épaisseur {0}",
       "glyph.layer" : "Calque {0}",
       "glyph.layer.add" : "Ajouter un calque",
