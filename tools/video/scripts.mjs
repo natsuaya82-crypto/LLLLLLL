@@ -596,6 +596,38 @@ export const SCRIPTS = {
     ],
   },
 
+  /* A writing system that is not an alphabet (can('wsys'), Plus): an
+     abugida, where a vowel is a mark on the consonant. The bench puts every
+     consonant with each vowel at once; the mark is moved, sized and drawn
+     there. Pro is set in the page as in 'plus'. */
+  'abugida': {
+    view: [393, 852, 3], size: [1080, 2340], out: 'promo/abugida', hq: true, slow: 2,
+    music: 'atlasaudio-music-background-606270.mp3',
+    setup: [{ eval: DICT_TIDY }, { eval: "planGot('pro'); render();" }, { go: 'wsys' }],
+    steps: [
+      { cap: 'Not every script is an alphabet', capAt: 600, wait: 2000, still: 'b1-kinds' },
+      { cap: 'Make it an abugida', capAt: 600, wait: 200 },
+      { tap: '[data-do=wsPick][data-a*=abugida]', wait: 900 },
+      { tap: 'do:keepPress', wait: 1200 },
+      { go: 'letters' },
+      { wait: 700 },
+      { tap: '[data-do=go][data-a*=abugida]', wait: 1000 },
+      { cap: 'Every consonant with every vowel, built for you', capAt: 600, wait: 2600, still: 'b2-bench' },
+      { cap: 'Move the vowel mark', capAt: 600, wait: 200 },
+      { tap: '[data-do=abNudge][data-a="[0,-1]"]', wait: 600 },
+      { tap: '[data-do=abNudge][data-a="[0,-1]"]', wait: 600 },
+      { tap: '[data-do=abNudge][data-a="[1,0]"]', wait: 900 },
+      { cap: 'Make it bigger or smaller', capAt: 600, wait: 200 },
+      { tap: '[data-do=abScale][data-a="[1.25]"]', wait: 1300, still: 'b3-moved' },
+      { cap: 'Draw a mark for each vowel', capAt: 600, wait: 200 },
+      { tap: '[data-do=abSetVow][data-a*=\'"i"\']', wait: 1000 },
+      { tap: '[data-do=editGlyph][data-a=\'["i"]\']', wait: 900 },
+      { draw: [[[0.30, 0.20], [0.70, 0.20]], [[0.50, 0.10], [0.50, 0.30]]], gap: 300, wait: 600 },
+      { tap: 'do:keepPress', wait: 1400 },
+      { cap: 'And the whole row follows', capAt: 600, wait: 2800, still: 'b4-i' },
+    ],
+  },
+
   /* The dictionary, in two films 「いいよ」 OWNER 2026-09-30 -- the one
      film asked for was split in two: making words, and using the
      dictionary. Filmed as the keyboard film was (393x852, 1080x2340, hq,
