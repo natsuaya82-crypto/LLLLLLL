@@ -2131,6 +2131,37 @@ const CASES = [
   ['and A still has it',                      'ok',     A, 0,
     `select 1 from language_take where uid='${A}' and language='${L}'`],
 
+  /* --- AND THE KEYBOARD SOMEBODY BUILT FOR A LANGUAGE THEY TOOK -----------
+     「dl言語はキーボードは自分で作ってねって感じ…ないやつは自作可能」 OWNER
+     2026-09-30. It is the taker's, like a draft is its writer's: nobody else
+     reads it or writes it, it is written only for a language this account
+     took (language_took()), and nothing deletes it -- the account going is
+     the one way it goes (docs/CHANGELOG.md 2026-09-30, r153). */
+  ['A builds a keyboard for a language it took', 'ok',   A, 0,
+    `insert into take_kb(uid,language,body) values ('${A}','${L}','{"kbs":[]}')`],
+  ['and reads it back',                       'ok',     A, 0,
+    `select 1 from take_kb where uid='${A}' and language='${L}'`],
+  ['and saves it again',                      'ok',     A, 0,
+    `update take_kb set body='{"kbs":[1]}' where uid='${A}' and language='${L}'`],
+  ['B cannot read A\u2019s keyboard',          'denied', B, 0,
+    `select 1 from take_kb where uid='${A}'`],
+  ['B cannot write one onto A',               'denied', B, 0,
+    `insert into take_kb(uid,language,body) values ('${A}','${LS}','x')`],
+  ['B cannot write over A\u2019s',             'denied', B, 0,
+    `update take_kb set body='x' where uid='${A}'`],
+  ['B cannot build one for a language B has not taken', 'denied', B, 0,
+    `insert into take_kb(uid,language,body) values ('${B}','${LS}','x')`],
+  ['nor move A\u2019s onto a language A has not taken', 'denied', A, 0,
+    `update take_kb set language='${LS}' where uid='${A}' and language='${L}'`],
+  ['nobody deletes one, A included',          'denied', A, 0,
+    `delete from take_kb where uid='${A}' and language='${L}'`],
+  ['nor can somebody with no account read one', 'denied', D, 1,
+    `select 1 from take_kb where uid='${A}'`],
+  ['nor anybody with no session at all',      'denied', B, 2,
+    `select 1 from take_kb where uid='${A}'`],
+  ['and A\u2019s is still as A saved it',       'ok',     A, 0,
+    `select 1 from take_kb where uid='${A}' and language='${L}' and body='{"kbs":[1]}'`],
+
   /* --- AND NON-PUBLIC STOPS A NEW DOWNLOAD AND NOTHING ELSE --------------
      「非公開にしたら新規 dl だけできないだけ」 OWNER 2026-09-09
      (docs/FEATURE_RULES.md § DL 言語の四つ).

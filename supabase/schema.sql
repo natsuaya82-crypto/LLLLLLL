@@ -374,6 +374,33 @@ language sql stable security definer set search_path = public as $$
   select exists (select 1 from language_take t
                   where t.uid = auth.uid() and t.language = lang) $$;
 
+-- ---- AND THE KEYBOARD SOMEBODY BUILT FOR A LANGUAGE THEY TOOK ------------
+-- 「dl言語はキーボードは自分で作ってねって感じ。キーボードもDLできるけど、
+-- ないやつは自作可能」 OWNER 2026-09-30 (docs/FEATURE_RULES.md § Owner
+-- decision log, 2026-09-30 「公式アカウントのプロフィールは「DL可能言語」の
+-- 一行…」 (2)). Somebody else's language is not edited by the person who took
+-- it -- and this is the one exception, which leaves the language exactly as
+-- it is: the keyboard is THEIRS, one row per (account, language), and the
+-- language's own `kb` slice is not touched.
+--
+-- `body` is the same shape as a `kb` slice ({kbs, at, v}, www/keyboard.js).
+--
+-- NOT A COLUMN ON language_take, because letting go of a language deletes
+-- that row (netTakeDrop) and the keyboard would go with it -- a deletion
+-- nobody decided. Taking the language again finds it here.
+--
+-- AND NO FOREIGN KEY TO language. The owner deleting their language would
+-- cascade into somebody else's work; with none, the row stays and names a
+-- language nobody can read, which costs a row and loses nothing. The account
+-- going takes it (auth.users, like every other row an account has).
+create table if not exists take_kb (
+  uid       uuid not null references auth.users(id) on delete cascade,
+  language  uuid not null,
+  body      text not null default '',
+  at        timestamptz not null default now(),
+  primary key (uid, language)
+);
+
 -- ---- what a language is made of ---------------------------------------
 -- One row per slice, and `SLICES` in www/core.js is the list of them -- read
 -- it there rather than a count here, which said eleven while there were
@@ -1785,6 +1812,7 @@ create index if not exists promo_run_idx on promo(starts_at, ends_at);
 alter table profile     enable row level security;
 alter table language    enable row level security;
 alter table language_take enable row level security;
+alter table take_kb enable row level security;
 alter table publication enable row level security;
 alter table post        enable row level security;
 alter table quote       enable row level security;
@@ -1959,6 +1987,22 @@ drop policy if exists take_drop on language_take;
 create policy take_drop on language_take for delete
   using (is_member() and uid = auth.uid());
 grant select, insert, delete on language_take to authenticated;
+
+-- take_kb: yours and nobody else's, and only for a language you took.
+-- Written as an upsert (www/net.js § NET_PUT.takekb), so insert AND update.
+-- NO DELETE: nothing in the app removes one, and nothing may
+-- (docs/DATA_SAFETY.md); the account going is the one way a row goes.
+drop policy if exists take_kb_read on take_kb;
+create policy take_kb_read on take_kb for select
+  using (uid = auth.uid());
+drop policy if exists take_kb_make on take_kb;
+create policy take_kb_make on take_kb for insert
+  with check (is_member() and uid = auth.uid() and language_took(language));
+drop policy if exists take_kb_edit on take_kb;
+create policy take_kb_edit on take_kb for update
+  using (is_member() and uid = auth.uid())
+  with check (uid = auth.uid() and language_took(language));
+grant select, insert, update on take_kb to authenticated;
 
 -- slice: published means published, and the rest stays its owner's.
 --
