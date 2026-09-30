@@ -79,6 +79,15 @@ every way out asks it. **`theirs-check` holds it**: it counts every way out in
 `www/` by what it is and fails one that does not ask, and takes a language
 from another account and finds nothing of it on the disk, no way out on its
 screens, its word's card offered and its keyboard handed over.
+It looks the same on every plan: nothing of it is folded and no upgrade
+line is drawn 「dl言語は有料無料関係ない」 — what a plan does to a
+language's shape is `langShaped()` (`www/core.js`), which a taken
+language never is — and no control that would change it is drawn;
+`langLocked()` is the one question and **`taken-check` holds it** by
+walking your own language to find every editor and then every face of
+a taken copy. The one thing its taker makes is a keyboard of their own
+for it 「ないやつは自作可能」 OWNER 2026-09-30, which is theirs — the
+`take_kb` row, not the language's `kb` slice.
 
 **NOTHING IS THE PHONE'S. EVERYTHING IS THE ACCOUNT'S.**
 「端末ごとにやることなんてねえよ」「アカウントごとってずっと言ってるよな？」
@@ -892,7 +901,7 @@ went stale, in both directions — a name that was not a capability, and
 capabilities left off while checks and a rung of the plans page ran on them.
 Read `CAN`. `npm run dead` prints the number it actually counted on every run
 ("what money buys: N capabilities in CAN"), which is the thing to read.
-`has()` names a *plan* and is `core.js`'s alone. `dead-check` refuses a
+`has()` names a *plan* and is `core.js`'s alone. So is `planNo()`: what a plan does to a language's shape is asked through `langShaped()`, and `taken-check` holds that nothing outside `core.js` calls `planNo()`. `dead-check` refuses a
 capability nothing asks for (a price with nothing behind it), a `can('x')` in
 no plan (false on every plan — a locked door nobody can open, and nothing says
 so), a `can()` given anything but a literal, and a `has()` anywhere else.
