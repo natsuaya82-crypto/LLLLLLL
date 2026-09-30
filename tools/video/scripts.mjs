@@ -25,6 +25,25 @@
    handwriting pad */
 const KEYS = '[data-do=kbTapKey],[data-do=kbCellSel],.kbpad';
 
+/* the fixture's language as an English film shows it: see 'words-make' */
+const DICT_TIDY =
+  "WORDS.forEach(function (w) {" +
+  "  if (w.sub === '自動詞') w.sub = 'intransitive';" +
+  "  if (w.sub === '他動詞') w.sub = 'transitive';" +
+  "  if (w.hw === 'tirok') delete w.fm;" +
+  "  if (w.hw === 'tir') w.fms = [];" +
+  /* `at` is 1..11 in the fixture, which a word's page reads as 1970 */
+  "  if (w.at < 1e6) w.at = Date.UTC(2026, 8, 1) + w.at * 86400000;" +
+  "});" +
+  /* t is the fixture's borrowed letter (l2, Ϙ), which rec.mjs's inkAll()
+     leaves alone, so every t in the film came out roman: a shape of its
+     own here, a T on its side like the rest */
+  "LETTERS.forEach(function (l) {" +
+  "  if (ltName(l) !== 't') return;" +
+  "  l.ch = ''; l.st = [{ pts: [[170,112],[170,688]] }, { pts: [[170,400],[688,400]] }];" +
+  "});" +
+  "installScriptFont(); installTypeFont(); render();";
+
 export const SCRIPTS = {
   /* 1-01 — draw a letter of your own */
   'draw-a-letter': {
@@ -234,6 +253,87 @@ export const SCRIPTS = {
       { tap: 'do:geUndo', wait: 900 },
       { cap: 'Save it', capAt: 650, wait: 300 },
       { tap: 'do:keepPress', wait: 1500, still: 't4-saved' },
+    ],
+  },
+
+  /* The dictionary, in two films 「いいよ」 OWNER 2026-09-30 -- the one
+     film asked for was split in two: making words, and using the
+     dictionary. Filmed as the keyboard film was (393x852, 1080x2340, hq,
+     slow 2, a track under the taps), into promo/words/.
+
+     Two things in the fixture's language are put right in the page before
+     filming, and only in the page: a subclass and a derivation label it
+     carries in Japanese, which an English film would show as they are, and
+     a future form of tir with no spelling, which the card draws in roman. */
+  'words-make': {
+    view: [393, 852, 3], size: [1080, 2340], out: 'promo/words', hq: true, slow: 2,
+    music: 'sub_clair-background-music-550483.mp3',
+    setup: [
+      { eval: DICT_TIDY },
+      { go: 'words' },
+    ],
+    steps: [
+      { cap: 'Make words for your conlang', capAt: 600, wait: 2000, still: 'make-01-lexicon' },
+      { cap: 'Add a word', capAt: 600, wait: 200 },
+      { tap: 'do:openAdd', wait: 1000 },
+      { cap: 'Type it in your own letters', capAt: 600, wait: 200 },
+      { type: 'velo', lingua: true, into: '#wd-ln', delay: 260, wait: 900 },
+      { cap: 'The reading is worked out for you', capAt: 600, wait: 1900, still: 'make-02-typed' },
+      { cap: 'Say what it means', capAt: 600, wait: 200 },
+      { tap: 'do:wdMnOpen', wait: 400 },
+      { type: 'bird', delay: 120, wait: 300 },
+      { eval: "wdAddMn()", wait: 1100 },
+      { cap: 'Pick its part of speech', capAt: 600, wait: 200 },
+      { tap: 'text:Part of speech', wait: 900 },
+      { tap: '[data-do=posPick][data-a=\'["n"]\']', wait: 1000 },
+      { cap: 'Its forms follow your rules', capAt: 600, wait: 200 },
+      { scroll: 360, wait: 2200, still: 'make-03-forms' },
+      { cap: 'Save it', capAt: 600, wait: 200 },
+      { tap: 'do:keepPress', wait: 1600 },
+      { cap: 'It is in your dictionary', capAt: 600, wait: 300 },
+      { scroll: 1500, wait: 2200, still: 'make-04-saved' },
+      { cap: 'Out of ideas?', capAt: 600, wait: 200 },
+      { tap: 'do:openAdd', wait: 900 },
+      { cap: 'Generate one from your sounds', capAt: 600, wait: 200 },
+      { tap: 'do:wdGen', wait: 900 },
+      { tap: 'do:wdGen', wait: 900 },
+      { tap: 'do:wdGen', wait: 1300, still: 'make-05-generated' },
+      { cap: 'Keep the one you like', capAt: 600, wait: 200 },
+      { tap: 'do:wdMnOpen', wait: 400 },
+      { type: 'star', delay: 120, wait: 300 },
+      { eval: "wdAddMn()", wait: 700 },
+      { tap: 'text:Part of speech', wait: 800 },
+      { tap: '[data-do=posPick][data-a=\'["n"]\']', wait: 900 },
+      { tap: 'do:keepPress', wait: 1300 },
+      { cap: 'Your language grows', capAt: 600, wait: 300 },
+      { scroll: 1500, wait: 2600, still: 'make-06-grows' },
+    ],
+  },
+
+  'words-use': {
+    view: [393, 852, 3], size: [1080, 2340], out: 'promo/words', hq: true, slow: 2,
+    music: 'verclub_music-background-music-571037.mp3',
+    setup: [
+      { eval: DICT_TIDY },
+      { go: 'words' },
+    ],
+    steps: [
+      { cap: 'Your conlang’s dictionary', capAt: 600, wait: 2000, still: 'use-01-lexicon' },
+      { cap: 'Search by word or meaning', capAt: 600, wait: 200 },
+      { type: 'see', into: '#w-q', delay: 260, wait: 1800, still: 'use-02-search' },
+      { tap: '#w-x', wait: 700 },
+      { cap: 'Only the verbs', capAt: 600, wait: 200 },
+      { tap: 'do:openFil', wait: 900 },
+      { tap: '[data-do=wordsSetFil][data-a=\'["v"]\']', wait: 1600, still: 'use-03-verbs' },
+      { cap: 'Every word has a page', capAt: 600, wait: 200 },
+      { tap: '[data-do=openWord][data-a=\'["tir"]\']', wait: 2000, still: 'use-04-word' },
+      { cap: 'Every form of it', capAt: 600, wait: 200 },
+      { scroll: 420, wait: 2200 },
+      { cap: 'And its family tree', capAt: 600, wait: 200 },
+      { tap: 'text:Family tree', wait: 2000, still: 'use-05-tree' },
+      { tap: 'do:back', wait: 900 },
+      { cap: 'Share it as a card', capAt: 600, wait: 200 },
+      { tap: 'do:cardOpen', wait: 2800, still: 'use-06-card' },
     ],
   },
 };
