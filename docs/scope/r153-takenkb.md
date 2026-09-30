@@ -30,4 +30,21 @@
 - `CLAUDE.md`、`.claude/`、`tools/pre-commit`、`tools/commit-msg`、`tools/push-alone.mjs`、`docs/STATE.md`
 
 ## CLAUDE.md（リーダーが直す）
-（作業の終わりに書く）
+このセッションは CLAUDE.md を編集できない。この変更で次が古くなる／足りなくなる。
+
+1. § Online の「Somebody else's language is on the server and in memory…」の段落の末尾に一文足す（案）:
+   > It looks the same on every plan: nothing of it is folded and no upgrade
+   > line is drawn 「dl言語は有料無料関係ない」 — what a plan does to a
+   > language's shape is `langShaped()` (`www/core.js`), which a taken
+   > language never is — and no control that would change it is drawn;
+   > `langLocked()` is the one question and **`taken-check` holds it** by
+   > walking your own language to find every editor and then every face of
+   > a taken copy. The one thing its taker makes is a keyboard of their own
+   > for it 「ないやつは自作可能」 OWNER 2026-09-30, which is theirs — the
+   > `take_kb` row, not the language's `kb` slice.
+2. 規則 5 の「`has()` names a *plan* and is `core.js`'s alone」の近くに、`planNo()` も core.js の外では呼ばない（言語の形は `langShaped()`）と一文。`taken-check` 7 が持つ。
+3. 「## What the free plan is」の表の `ltStart` の行は変わらない（`ltStart` が `langShaped(ok)` を訊くようになっただけで、人の言語には元から走らない）。
+
+## 測った・残した物
+- `taken-check` が自分の言語を歩くと、派生の新しい単語の画面で元の単語を押すと落ちる（`wdSigEdit`）── r153 の物ではないので `docs/BACKLOG.md` に。
+- 文字の一覧のタイルの鉛筆（形の無い字の絵）は人の言語でも出る。押すと読むだけの頁なので書き込みは無いが、見た目は「描く」の印。直すかはオーナーに。

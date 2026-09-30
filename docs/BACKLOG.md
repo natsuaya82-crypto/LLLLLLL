@@ -8,6 +8,12 @@ refactor, a feature and a rename never arrive in the same diff.
 The order is the order to do them in.
 
 
+## 派生の新しい単語の画面で元の単語を押すと落ちる（2026-09-30、r153 の `taken-check` が見つけた）
+- **道**: 単語 → 一つの単語 → 編集（`openEdit`）→ 派生（`wdDerive`）→ 新しい単語の画面（`form|add:<元の単語>`）で、元の単語の行（`openWord`）を押す。
+- **起きること**: `Uncaught TypeError: Cannot read properties of null (reading 'sp')` ── `wdSigEdit`（`www/wordsheet.js`）← `wdNow` ← `keepRead` ← `keepDirty`。道の下にある編集の画面（`form|edit:<単語>`）の保存の下書きが、`wEdit` が空になった後に読まれる。
+- **測った**: `tools/taken-check.mjs` が自分の言語を歩く時に毎回「FOUND (your own language, not this check's)」として出す。実機では押していない。
+- **やっていないこと**: 直していない ── r153 の持ち物（人の言語）ではない。`www/wordsheet.js` の単語の画面の持ち主が直す。
+
 ## press の「a word, read」は二つ目のボタンから押されていない（2026-09-26、リーダーが測った）
 
 `press` は面を作り直してから押す。「a word, read」の一つ目の押し（編集を開く）が `form:edit:kano` の KEEP を置き、
