@@ -1883,7 +1883,7 @@ function obIntoSlot(id){ return ltSetRoman(id, obFirst())||id; }
    into the slot -- and ltFreeSlot(), which decides whether it may, answers only
    for an EMPTY slot. So somebody who left the onboarding part-way and came back
    and drew again got a SECOND letter also called `a`, with the first one still
-   in the alphabet. kbNamed() walks LETTERS for the first one called `a`, so the
+   in the alphabet. kbNamed() walks the letters on screen for the first one called `a`, so the
    keyboard went on showing the drawing they had replaced.
    「もう一回書いたのに前の文字に勝手になる」 OWNER 2026-08-28.
 

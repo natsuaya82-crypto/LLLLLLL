@@ -1108,11 +1108,15 @@ function kbRom(c){ return {w:1, k:'rom', v:c, f:['','','','']}; }
    not on the other, split by nothing. sharePua() answers both now. `c` is
    still what finds the letter; it is no longer what the key types. */
 function kbFix(c, id){ var k=kbKey('lt', id); k.t=sharePua(id)||c; return k; }
+/* A letter that is not on screen is not on a key either: on somebody else's
+   language the slots its maker never drew are not theirs to show
+   (ltShown, www/sound.js, OWNER 2026-09-30), so the key is the roman one a
+   letter that is not found gets. */
 function kbNamed(c){
-  var i, n;
-  for(i=0;i<LETTERS.length;i++){
-    n=String(ltName(LETTERS[i])||'').toLowerCase();
-    if(n===c) return LETTERS[i].id;
+  var ls=ltSeen(), i, n;
+  for(i=0;i<ls.length;i++){
+    n=String(ltName(ls[i])||'').toLowerCase();
+    if(n===c) return ls[i].id;
   }
   return '';
 }
@@ -1121,7 +1125,7 @@ function kbFixed(){
   row=[];
   for(i=0;i<KB_DIGITS.length;i++){
     var dc=KB_DIGITS.charAt(i), dl=numByVal(parseInt(dc, 10));
-    row.push(dl? kbFix(dc, dl.id) : kbRom(dc));
+    row.push((dl && ltShown(dl))? kbFix(dc, dl.id) : kbRom(dc));
   }
   rows.push(row);
   for(i=0;i<KB_QWERTY.length;i++){

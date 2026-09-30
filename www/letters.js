@@ -538,7 +538,7 @@ var LT_START='abcdefghijklmnopqrstuvwxyz!?';
    on any plan.
 
    kbFixed() finds the free keyboard's keys by name: kbNamed('a') walks
-   LETTERS for one called `a`. So a renamed `a` is a key that answers to
+   the letters on screen (ltSeen) for one called `a`. So a renamed `a` is a key that answers to
    nothing -- and ltStart(), which tops a free language up by name, then makes
    a NEW empty letter called `a` and puts that on the key. Somebody who paid,
    renamed a letter, drew on it, and let the plan lapse would find a blank
@@ -890,7 +890,7 @@ function ltSetRoman(id, sp){
      「無料で作ってる範囲の名前変更は無しでしょ。有料は追加できるというだけで」
      Decision log, 2026-08-22.
 
-     The free QWERTY finds its keys BY NAME -- kbNamed('a') walks LETTERS for
+     The free QWERTY finds its keys BY NAME -- kbNamed('a') walks the letters on screen for
      one called `a` -- so a renamed slot is a key nothing can find, and
      ltStart() then fills the hole with a new EMPTY letter: what somebody drew
      stays in the alphabet and leaves the keyboard, with nothing anywhere

@@ -161,6 +161,21 @@ await pg.evaluate(() => {
            el.dispatchEvent(new Event('change', { bubbles:true })); }
     if(popOn()) popYes();
   };
+  /* A letter nobody made anything of: no shape drawn and no character
+     borrowed -- written out here rather than asked of the app, which is the
+     thing under test. What is on the face: its id where a control names it,
+     and the pencil a shapeless letter wears (.nol). */
+  K.undrawn = function(){
+    return LETTERS.filter(function(l){
+      return !(l.st && l.st.length) && !(l.sh && l.sh.length) && !l.ch; });
+  };
+  K.undrawnOn = function(){
+    var app = document.getElementById('app'), h = app.innerHTML, o = [];
+    K.undrawn().forEach(function(l){
+      if(h.indexOf('&quot;' + l.id + '&quot;') !== -1 || h.indexOf('data-id="' + l.id + '"') !== -1) o.push(l.id); });
+    if(app.querySelector('.nol')) o.push('(pencil)');
+    return o;
+  };
   K.key = function(){ var h = here(); return h.r + '|' + (h.a === undefined || h.a === null ? '' : h.a); };
   /* A face with the language's own ids taken out of its argument: one
      letter's page is every letter's page, and a walk that opened all forty
@@ -203,6 +218,7 @@ await pg.evaluate(() => {
     out.names = K.ctl().map(K.nameOf);
     out.cap = document.querySelectorAll('#app .capwarn').length;
     out.mine = langId !== LID;
+    out.undrawn = K.undrawnOn();
     n = out.names.length;
     for(i = 0; i < n; i++){
       try{ if(!K.reach(which, plan, f)) continue; }catch(e){ continue; }
@@ -312,8 +328,13 @@ const r = await pg.evaluate(() => {
   K.fresh('t', 'free'); K.stand(['ltset', 'alpha']);
   function shown(){ var h = document.getElementById('app').innerHTML;
     return LETTERS.filter(function(l){ return ltKindOf(l) === 'alpha' && h.indexOf('&quot;' + l.id + '&quot;') !== -1; }).length; }
+  var und = K.undrawn().map(function(l){ return l.id; });
+  function drawnAlpha(){ return LETTERS.filter(function(l){ return ltKindOf(l) === 'alpha' && und.indexOf(l.id) === -1; }); }
   out.tAlphaRows = shown();
-  out.tAlpha = LETTERS.filter(function(l){ return ltKindOf(l) === 'alpha'; }).length;
+  out.tAlpha = drawnAlpha().length;
+  out.tPast = drawnAlpha().filter(function(l){ return !ltIsBase(l); }).length;
+  out.tUndrawn = und.length;
+  out.tUndrawnOn = K.undrawnOn();
   K.stand(['words', null]);
   out.tWords = WORDS.filter(function(w){ return !wIsForm(w); }).length;
   out.tWordRows = document.querySelectorAll('#app [data-do="openWord"]').length;
@@ -323,27 +344,42 @@ const r = await pg.evaluate(() => {
   out.oAlphaRows = shown();
   out.oAlpha = LETTERS.filter(function(l){ return ltKindOf(l) === 'alpha'; }).length;
   out.oCap = document.querySelectorAll('#app .capwarn').length;
+  /* and yours on pro, where nothing is folded: the slots nobody drew are
+     there, pencils and all, as they always were */
+  K.fresh('o', 'pro'); K.stand(['ltset', 'alpha']);
+  out.oUndrawnOn = K.undrawnOn();
+  /* and a sound the language says with no letter for it: on yours a cell
+     offers to draw one, on a taken one nothing does -- its taker draws
+     nothing (OWNER 2026-09-30) */
+  function loose(which){
+    K.fresh(which, 'pro'); SND.push('\u0281'); K.stand(['ltset', 'alpha']);
+    return document.querySelectorAll('#app [data-snd]').length;
+  }
+  out.oLoose = loose('o');
+  out.tLoose = loose('t');
   return out;
 });
 /* ---- 2. yours: which names edit ------------------------------------------ */
 const EDIT = {}, LANGSAVE = new Set();
 const kindOf = (key) => { const r = key.split('|')[0]; return r + '|' + (r === 'form' ? key.slice(5).split(':')[0] : ''); };
-let ownCap = 0;
+let ownCap = 0, ownUndrawn = 0;
 /* On Pro, where every editor is drawn; the taken language then on both
    plans, because it is the same on both. */
 const ownWalk = await walk('o', 'pro', (o) => {
   ownCap += o.cap;
+  if (o.undrawn.length) ownUndrawn++;
   for (const p of o.press) if (p.changed && (p.lit || p.nm === 'keepPress')) LANGSAVE.add(kindOf(o.key));
   for (const p of o.press) if (p.changed && ROUTER.indexOf(p.nm) === -1) (EDIT[p.nm] = EDIT[p.nm] || []).push(o.key + ' [' + p.kinds.join(',') + (p.lit ? ' via Save' : '') + ']');
 });
 if (process.env.TRACE) console.log(Object.keys(EDIT).sort().map((k) => k + ' @' + EDIT[k][0]).join('\n'));
 /* ---- 3. theirs: none of them drawn, nothing written ------------------------ */
-const drawn = [], saves = [], caps = [], wrote = [];
+const drawn = [], saves = [], caps = [], wrote = [], undrawn = [];
 const mayKb = (key) => TAKER_MAY.some((m) => key.indexOf(m + '|') === 0 || key.indexOf('form|' + m) === 0);
 const seeTheirs = (o) => {
   if (o.mine) return;
   for (const p of o.press) for (const w of p.wrote) wrote.push(o.key + ' ' + p.nm + ' -> ' + w);
   if (o.cap) caps.push(o.key);
+  if (o.undrawn.length) undrawn.push(o.key + ' ' + o.undrawn.join(' '));
   if (mayKb(o.key)) return;
   for (const nm of o.names) {
     /* a Save is the language's where, on your own, it wrote the language;
@@ -397,6 +433,20 @@ const kbr = await pg.evaluate(() => {
   o.lentNames = Object.keys(n).sort();
   o.lentEdits = !!document.querySelector('#app .kbnm') || !!n.kbMore || !!n.keepPress;
   o.lentBoard = document.getElementById('app').innerHTML.indexOf('kbshot') !== -1 || document.querySelectorAll('#app .kb, #app .kbk, #app [class*="kbkey"]').length;
+  /* C: every pattern a keyboard is built from, and the free QWERTY, built
+     out of the taken language: not one key carries a letter its maker did
+     not draw -- and out of yours, the slots are on them as always */
+  function lays(){
+    var o = {}, i; for(i = 0; i < KB_PATS.length; i++) o[KB_PATS[i]] = JSON.stringify(kbPatLay(KB_PATS[i]));
+    o.fixed = JSON.stringify(kbFixed()); return o;
+  }
+  function keysOf(ls){
+    var und = K.undrawn(), out = [], p;
+    for(p in ls) und.forEach(function(l){ if(ls[p].indexOf('"' + l.id + '"') !== -1) out.push(p + ':' + l.id); });
+    return out;
+  }
+  K.fresh('t', 'pro'); o.tKeys = keysOf(lays());
+  K.fresh('o', 'pro'); o.oKeys = keysOf(lays());
   /* and yours: a keyboard you build goes into the language's own slice */
   K.fresh('o', 'free');
   K.stand(['kb', null]);
@@ -415,6 +465,7 @@ for (const f of fs.readdirSync(path.join(dir, '..', 'www')).filter((x) => x.ends
   src.split('\n').forEach((ln, i) => { if (/\bplanNo\s*\(/.test(ln)) planNoOut.push(f + ':' + (i + 1)); });
 }
 r.ownWalk = ownWalk; r.theirWalk = theirWalk; r.theirPro = theirPro; r.edit = Object.keys(EDIT).sort();
+r.undrawn = [...new Set(undrawn)].sort(); r.ownUndrawn = ownUndrawn;
 r.drawn = [...new Set(drawn)].sort(); r.saves = [...new Set(saves)].sort(); r.caps = caps; r.wrote = wrote;
 
 console.log('your language: ' + r.ownWalk.faces + ' faces, ' + r.ownWalk.presses + ' presses (' + r.ownWalk.ms + 'ms), ' +
@@ -426,8 +477,16 @@ say(r.edit.length > 20,
 say(r.theirWalk.faces >= 10, '0b (premise) the taken language is walked, not declined', r.theirWalk);
 say(r.oAlphaRows < r.oAlpha && r.oCap > 0,
   '1 (premise) on free YOUR alphabet still folds past the slots and says so', { rows:r.oAlphaRows, of:r.oAlpha, cap:r.oCap });
-say(r.tAlphaRows === r.tAlpha && r.tAlpha > r.oAlphaRows,
-  '1b on free a TAKEN alphabet shows every letter, a–z and past it', { rows:r.tAlphaRows, of:r.tAlpha });
+say(r.tAlphaRows === r.tAlpha && r.tPast > 0,
+  '1b on free a TAKEN alphabet shows every letter its maker drew, a–z and past it', { rows:r.tAlphaRows, of:r.tAlpha, past:r.tPast });
+say(r.tUndrawn > 0 && !r.tUndrawnOn.length,
+  '1f and none its maker did not draw -- no shapeless slot, no pencil (OWNER 2026-09-30)', { undrawn:r.tUndrawn, on:r.tUndrawnOn });
+say(!r.undrawn.length,
+  '1g no face of a taken language offers a letter its maker did not draw -- the lists, the keyboards, the search', r.undrawn);
+say(r.oLoose > 0 && !r.tLoose,
+  '1i a sound with no letter is a cell to draw one on YOUR alphabet, and on a taken one is not there', { yours:r.oLoose, taken:r.tLoose });
+say(r.oUndrawnOn.length > 1 && r.ownUndrawn > 0,
+  '1h (premise) YOUR alphabet still shows the slots you have not drawn, with the pencil', { on:r.oUndrawnOn.slice(0, 6), faces:r.ownUndrawn });
 say(r.tWordRows === r.tWords && r.tWords > 100,
   '1c on free a taken dictionary shows every word, past the hundred', { rows:r.tWordRows, of:r.tWords });
 say(r.tOwnStage, '1d on free a taken grammar shows the stages its owner added', r.tOwnStage);
@@ -444,6 +503,8 @@ say(kbr.back, '5e on the next launch it comes back down from the row, still the 
 say(kbr.lent && kbr.plusB, '6 a taken language WITH a keyboard: the maker\'s is listed and is the one handed over, and the ＋ is there too', kbr);
 say(!kbr.lentEdits, '6b and the maker\'s board opens with nothing on it to change', kbr.lentNames);
 say(kbr.ownSlice && !kbr.ownTake, '6c on your own language a keyboard still goes into the language\'s kb slice, not take_kb', { slice:kbr.ownSlice, take:kbr.ownTake });
+say(!kbr.tKeys.length && kbr.oKeys.length > 0,
+  '6d no keyboard built out of a taken language -- any pattern, or the free QWERTY -- puts a letter its maker did not draw on a key; yours still does', { taken:kbr.tKeys.slice(0, 8), yours:kbr.oKeys.length });
 say(!planNoOut.length, '7 planNo() is asked nowhere but www/core.js -- a shape of the open language is langShaped()', planNoOut);
 const errT = errs.filter((e) => !/\(on o /.test(e)), errO = errs.filter((e) => /\(on o /.test(e));
 say(!errT.length, '9 nothing threw on the taken language', errT.slice(0, 5));
