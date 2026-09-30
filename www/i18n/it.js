@@ -763,7 +763,6 @@ defLang('it', (function(){
       "glyph.width" : "Spessore",
       "glyph.width.n" : "Spessore {0}",
       "glyph.layer" : "Livello {0}",
-      "glyph.layer.n" : "{0}",
       "glyph.layer.add" : "Aggiungi livello",
       "fmr.title"        : "Forme fatte da una regola",
       "fmr.add"          : "Lettere che aggiunge",

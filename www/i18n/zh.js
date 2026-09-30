@@ -771,7 +771,6 @@ defLang('zh', (function(){
       "glyph.width" : "粗细",
       "glyph.width.n" : "粗细 {0}",
       "glyph.layer" : "图层 {0}",
-      "glyph.layer.n" : "{0}",
       "glyph.layer.add" : "添加图层",
       "fmr.title"        : "按规则造的形式",
       "fmr.add"          : "加上的字母",

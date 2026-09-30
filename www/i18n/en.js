@@ -669,7 +669,6 @@ defLang('en', (function(){
       'glyph.width' : "Width",
       'glyph.width.n' : "Width {0}",
       'glyph.layer' : "Layer {0}",
-      'glyph.layer.n' : "{0}",
       'glyph.layer.add' : "Add layer",
       'fmr.title'        : "Forms made by a rule",
       'fmr.add'          : "Letters it puts on",

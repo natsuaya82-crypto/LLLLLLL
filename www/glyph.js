@@ -1892,16 +1892,38 @@ function geLayer(n){
   GE.lsSel=[]; GE.lsMove=null; GE.lsPath=null;
   render();
 }
+/* The strokes of one layer only, through inkStrokes() at their own widths,
+   on a square framed the way the paper is -- so an empty layer is an empty
+   square. The chosen layer is gold, the way a chosen thing is. */
+function geLayerInks(){
+  var els=document.querySelectorAll('canvas.glyc'), all=geAll(), i, j, c, n, st, S, x, on, dpr;
+  dpr=window.devicePixelRatio||1;
+  for(i=0;i<els.length;i++){
+    c=els[i]; n=Number(c.getAttribute('data-ly')); st=[];
+    for(j=0;j<all.length;j++) if(all[j].pts.length && inkLy(all[j])===n) st.push(all[j]);
+    S=Math.max(24, Math.round((c.getBoundingClientRect().width||32)*dpr));
+    if(c.width!==S){ c.width=S; c.height=S; }
+    x=c.getContext('2d'); on=n===GE.ly;
+    x.clearRect(0,0,S,S);
+    x.strokeStyle=cssVar(on? '--gold' : '--goldln'); x.lineWidth=Math.max(1,dpr);
+    x.strokeRect(x.lineWidth/2, x.lineWidth/2, S-x.lineWidth, S-x.lineWidth);
+    inkStrokes(x, st, S/800, 0, 0, cssVar(on? '--gold' : '--tx'));
+  }
+}
 function geLayerAdd(){
   if(!GE) return;
   GE.lys++;
   geLayer(GE.lys);
 }
+/* Each layer is a small picture of what is drawn on it, and nothing else:
+   「レイヤーはこいつみたいにちゃんと書いてるのがわかるようにして」 OWNER
+   2026-09-30. The canvas is filled by geLayerInks(), which geDraw() calls, so
+   the picture of the layer under the finger moves with the finger. */
 function geLayersHTML(){
   var h='<div class="glayers">', n;
   for(n=1;n<=GE.lys;n++){
     h+='<button'+DO('geLayer',[n])+(n===GE.ly?' class="on"':'')+
-       ' aria-label="'+esc(t('glyph.layer',[n]))+'">'+t('glyph.layer.n',[n])+'</button>';
+       ' aria-label="'+esc(t('glyph.layer',[n]))+'"><canvas class="glyc" data-ly="'+n+'"></canvas></button>';
   }
   return h+'<button'+DO('geLayerAdd')+' aria-label="'+esc(t('glyph.layer.add'))+'">'+
     ICON_ADD+'</button></div>';
@@ -2934,6 +2956,7 @@ function geDraw(){
   var pad=geMar(S), k0=geK0(S), k=geK(S);
   var X=function(v){ return geTo(S,v,0); }, Y=function(v){ return geTo(S,v,1); };
   x.clearRect(0,0,S,S);
+  geLayerInks();
   x.strokeStyle=cssVar('--goldln'); x.lineWidth=Math.max(1,k0*2.5);
   x.strokeRect(k0*3,k0*3,S-k0*6,S-k0*6);
   /* The lattice is drawn as dots, not as ruled lines: a line says "anywhere

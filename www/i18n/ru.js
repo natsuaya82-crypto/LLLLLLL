@@ -769,7 +769,6 @@ defLang('ru', (function(){
       "glyph.width" : "Толщина",
       "glyph.width.n" : "Толщина {0}",
       "glyph.layer" : "Слой {0}",
-      "glyph.layer.n" : "{0}",
       "glyph.layer.add" : "Добавить слой",
       "fmr.title"        : "Формы по правилу",
       "fmr.add"          : "Какие буквы прибавляет",

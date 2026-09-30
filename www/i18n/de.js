@@ -751,7 +751,6 @@ defLang('de', (function(){
       "glyph.width" : "Stärke",
       "glyph.width.n" : "Stärke {0}",
       "glyph.layer" : "Ebene {0}",
-      "glyph.layer.n" : "{0}",
       "glyph.layer.add" : "Ebene hinzufügen",
       "fmr.title"        : "Formen nach einer Regel",
       "fmr.add"          : "Buchstaben, die sie anfügt",
