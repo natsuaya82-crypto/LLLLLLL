@@ -54,6 +54,7 @@
     "world": "node tools/world-check.mjs",
     "take": "node tools/take-check.mjs",
     "theirs": "node tools/theirs-check.mjs",
+    "taken": "node tools/taken-check.mjs",
     "tl": "node tools/tl-check.mjs",
     "scroll": "node tools/scroll-check.mjs",
     "spin": "node tools/spin-check.mjs",
