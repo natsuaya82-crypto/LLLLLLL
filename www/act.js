@@ -61,13 +61,6 @@ function actArgs(args){
 function DO(name, args, stop){
   return ' data-do="'+name+'"'+actArgs(args)+(stop? ' data-stop="1"' : '');
 }
-/* Something to run straight after the first thing, on the same press. The
-   drawing tools use it: the tool acts, and then the little demonstration of
-   that tool is shown. Two names, both looked up in the same table, so both
-   are checked. */
-function AFTER(name, args){
-  return ' data-do2="'+name+'"'+(args && args.length? ' data-b="'+esc(JSON.stringify(args))+'"' : '');
-}
 /* Typed into, as it is typed. */
 function IN(name, args){ return ' data-in="'+name+'"'+actArgs(args); }
 /* Finished typing -- left the field, or chose from a list. */
@@ -82,15 +75,15 @@ function actOf(el, attr){
   }
   return null;
 }
-function actRead(el, k){
-  var s=el.getAttribute(k||'data-a');
+function actRead(el){
+  var s=el.getAttribute('data-a');
   if(!s) return [];
   try{ var a=JSON.parse(s); return (a && a.length)? a : []; }catch(e){ return []; }
 }
-function actRun(table, el, attr, extra, argAttr){
+function actRun(table, el, attr, extra){
   var fn=table[el.getAttribute(attr)];
   if(!fn) return false;
-  var a=actRead(el, argAttr);
+  var a=actRead(el);
   if(extra) a=a.concat(extra);
   /* A PRESS, and not typing: what the wire sends because of it turns the
      mark until it is answered (www/net.js § HOW MANY REQUESTS SOMEBODY IS
@@ -149,7 +142,6 @@ function actWire(root){
     if(!el) return;
     if(el.getAttribute('data-stop')) e.stopPropagation();
     actRun(ACT, el, 'data-do');
-    if(el.getAttribute('data-do2')) actRun(ACT, el, 'data-do2', undefined, 'data-b');
   }, false);
   root.addEventListener('input', function(e){
     var el=actOf(e.target, 'data-in');

@@ -47,8 +47,9 @@ smooth hook depending on one toggle. `l` in the proof is four vertices with two 
 them curved.
 
 **The pen is ONE global setting for the whole writing system** — `width`,
-`angleDeg`, `contrast`. Kana, Hangul and Latin on a phone are all one weight; a
-script the user draws should be too. There is no per-stroke width anywhere.
+`angleDeg`, `contrast` — and a stroke may carry a width of its own, no wider
+than the pen: `w`, `GE_W` in `www/glyph.js` 「そもそもフォントを作るのに太さが
+選べないのは変だよね？」 OWNER 2026-09-30.
 
 Two things fall out of that last decision for free, and they are the reason to
 prefer it rather than merely accept it:

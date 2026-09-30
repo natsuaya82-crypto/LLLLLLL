@@ -1329,6 +1329,33 @@ export function halfDone(){
                                                  GE.si=0; GE.seal=true; GE.lsSel=[0];
                                                  window.route='glyph';
                                                  NAV=[{r:'glyph', a:GE.lid}]; return vGlyph(); }],
+    /* The width and the layers (OWNER 2026-09-30 and its 追記). One letter of
+       thin and thick strokes under each of the two choosers the owner is to
+       compare -- the row of dots and the slider (GEWV, put back before the
+       face returns so every face after it has the dots) -- and the same
+       letter split over two layers with the second on the paper, the first
+       faint under it. GE is never saved from here. */
+    ...(() => {
+      const ink = () => [{pts:[[184,184],[184,616]], w:6}, {pts:[[184,400],[616,184]], w:14},
+                         {pts:[[184,400],[616,616]]}];
+      const at = (v, w) => () => {
+        editGlyph('k'); GE.st = ink(); GE.si = 2; GE.seal = true; GEW = w;
+        const keep = GEWV; GEWV = v;
+        window.route = 'glyph'; NAV = [{r:'glyph', a:GE.lid}];
+        const h = vGlyph(); GEWV = keep; GEW = GPEN.width; return h;
+      };
+      return [
+        ['a letter in the editor, the width as dots', at('dots', 14)],
+        ['a letter in the editor, the width on a slider', at('slide', 14)],
+        ['a letter in the editor, layer 2 on the paper', () => {
+          editGlyph('k');
+          const st = ink();
+          GE.rest = [st[0], st[1]]; GE.st = [Object.assign({ly:2}, st[2])];
+          GE.lys = 2; GE.ly = 2; GE.si = 0; GE.seal = true;
+          window.route = 'glyph'; NAV = [{r:'glyph', a:GE.lid}]; return vGlyph();
+        }],
+      ];
+    })(),
     /* What a finger chose, chosen by the real geLsUp() off a finger's path:
        a trace down part of a long line and a thumb's ring round part of one
        (a stroke taken in part lights nothing), and the owner's A with the

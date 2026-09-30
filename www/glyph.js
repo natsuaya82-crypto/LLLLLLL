@@ -21,10 +21,9 @@
 
    The geometry: one letter is one square cell (advance = the 800 square), so
    the spacing between letters is even by construction the way kana are, and
-   there is no spacing solver anywhere in the app. The pen is a fixed 60 units
-   and there is no thickness control — a script whose letters are different
-   weights is not a script. Both of those are measured decisions, not taste;
-   tools/font-spike/README.md is the evidence.
+   there is no spacing solver anywhere in the app. The pen is GPEN below, and
+   a stroke may carry a width of its own no wider than it (GE_W). The cell is
+   a measured decision, not taste; tools/font-spike/README.md is the evidence.
 
    Every stroke is a convex nib swept along a polyline, which is the convex
    hull of the nib at both ends — so every contour is a convex polygon, which
@@ -33,7 +32,8 @@
    ========================================================================= */
 
 
-/* The pen. Fixed, everywhere, forever. See the font-spike README's v5 section.
+/* The pen: the width a stroke has unless it carries its own `w` (GE_W, just
+   below). See the font-spike README's v5 section.
    60 stays 60 even though the lattice got finer. "Half the lattice step" looked
    like the rule, because 60 was half of the old 7-dot step of 120, but half a step
    is only the width at which two strokes on ADJACENT dots still leave white between
@@ -65,8 +65,36 @@
    canvas. A wide pen buries the lattice under your finger, and a thinner one
    there was tried for exactly that; but a canvas drawn with a different pen
    from the font is this bug said backwards -- what is under your finger is
-   then not what comes out. One pen, everywhere. */
+   then not what comes out. Each stroke is drawn at its own width everywhere,
+   the canvas included. */
 var GPEN={width:24, angleDeg:0, contrast:1.0, curve:36};
+/* A STROKE CARRIES ITS OWN WIDTH. 「ブレが出ないのはいいけど、全員が同じ太さに
+   なる」「そもそもフォントを作るのに太さが選べないのは変だよね？」 OWNER
+   2026-09-30. `w` on a stroke, in the square's own units, and absent is the
+   pen above -- which is every stroke written before a stroke could carry
+   one, so nothing stored is rewritten and a stroke of 24 writes no `w`.
+
+   The top is the pen, because the ceiling in the paragraph above is about
+   two strokes on adjacent dots and not about taste: wider than 24 and they
+   weld into one. Whether to go past it is the owner's and has not been
+   asked. `dots` are what the row of dots offers; the slider walks min..max
+   by `step`. inkW() is the one place that says what a stroke's width is,
+   and inkDef() hands every drawer a stroke whose `w` it has said. */
+var GE_W={min:6, max:24, step:2, dots:[6,10,14,19,24]};
+function inkW(s){
+  var w=s && s.w;
+  if(typeof w!=='number' || !(w>0)) return GPEN.width;
+  w=Math.round(w);
+  return w<GE_W.min? GE_W.min : (w>GE_W.max? GE_W.max : w);
+}
+/* Which layer a stroke is on: `ly`, 2 upward, and absent is layer 1 --
+   every stroke drawn before there were layers. OWNER 2026-09-30 (the 追記).
+   Only the editor asks: the font and every drawing of a letter draw all of
+   its layers together. */
+function inkLy(s){
+  var n=s && s.ly;
+  return (typeof n==='number' && n>=2)? Math.floor(n) : 1;
+}
 
 /* Points land on a lattice, never wherever the finger stopped.
    A free point means the crossbar of one letter sits at 401 and the crossbar of
@@ -151,6 +179,11 @@ function geInkSpan(){ return Math.round(geStep()*(GGRID.n-1) + GPEN.width); }
    lattice is square. Drawn only; nothing stores them and no letter, key,
    tile or card carries them. tools/guide-check.mjs holds it. */
 function geGuideRows(){ return [0, (GGRID.n-1)/2, GGRID.n-1]; }
+/* Where a letter stands, in this square's own y: the foot of the square. Both
+   faces are built with it as otf5's `base` (font y = base - y), so the line
+   geDraw() rules across the paper is y 0 of the font, and the number is here
+   once. It was otf5's default, 800, before anything passed it. */
+function geBase(){ return 800; }
 function geSnap(v){
   var s=geStep(), i=Math.round((v - GGRID.inset) / s);
   if(i<0) i=0; if(i>GGRID.n-1) i=GGRID.n-1;
@@ -279,6 +312,10 @@ function inkPts(g){
 function inkJoinable(s){
   return !!(s && s.fill && s.pts && s.pts.length>1 && !s.closed && !s.k);
 }
+/* Two pieces are one line only at one width: a thin side and a thick side
+   meeting at a corner are two lines, and joining them would draw one of them
+   at the other's width. */
+function inkSameW(a,b){ return inkW(a)===inkW(b); }
 function inkSamePt(a,b){ return !!(a && b && a[0]===b[0] && a[1]===b[1]); }
 /* a copy with the curve flag off, for a point that is about to stop being an end */
 function inkHard(p){ return [p[0], p[1]]; }
@@ -300,7 +337,7 @@ function inkJoinFills(v){
     while(went){
       went=false;
       for(j=0;j<v.length;j++){
-        if(used[j] || !inkJoinable(v[j])) continue;
+        if(used[j] || !inkJoinable(v[j]) || !inkSameW(v[i], v[j])) continue;
         var q=v[j].pts, a=q[0], z=q[q.length-1],
             head=pts[0], tail=pts[pts.length-1], m, add=null, atEnd=true;
         if(inkSamePt(tail,a)){ add=q; }
@@ -330,13 +367,30 @@ function inkJoinFills(v){
     if(pts.length===v[i].pts.length && !shut){ out.push(v[i]); continue; }
     var one={pts:pts, fill:true};
     if(shut) one.closed=true;
+    if(v[i].w!==undefined) one.w=v[i].w;
     out.push(one);
   }
   return grew? out : v;
 }
 function inkDef(v){
   if(inkRings(v)) return {sh:v};
-  return {strokes: (v && v.length)? inkJoinFills(v) : v};
+  return {strokes: (v && v.length)? inkJoinFills(inkWOf(v)) : v};
+}
+/* The strokes with every `w` as inkW() says it -- a copy of the ones whose
+   `w` it had to say differently, and the same list when there were none. A
+   post's strokes are somebody else's numbers, and `w:5000` is one stroke
+   covering the card. */
+function inkWOf(v){
+  var out=null, i, c, f;
+  for(i=0;i<v.length;i++){
+    if(!v[i] || v[i].w===undefined || inkW(v[i])===v[i].w) continue;
+    if(!out) out=v.slice();
+    c={};
+    for(f in v[i]) if(Object.prototype.hasOwnProperty.call(v[i], f)) c[f]=v[i][f];
+    c.w=inkW(v[i]);
+    out[i]=c;
+  }
+  return out || v;
 }
 
 /* ---- what the font is made of ------------------------------------------
@@ -487,12 +541,12 @@ function scriptSig(){
   for(i=0;i<LETTERS.length;i++){
     l=LETTERS[i];
     s.push(l.id+':'+(l.ab||'')+':'+ltUnits(l).join('')+':'+
-           (inkRings(inkGeo(l))? 'r' : 's')+JSON.stringify(inkGeo(l)||[]).length);
+           (inkRings(inkGeo(l))? 'r' : 's')+JSON.stringify(inkGeo(l)||[]));
   }
   /* and what the writing system composes, which is not any letter */
   scriptLetters().forEach(function(r){
     var g=wsStrokes(r);
-    s.push(r+':'+(g? JSON.stringify(g).length : 0));
+    s.push(r+':'+(g? JSON.stringify(g) : ''));
   });
   /* and what stands between two of them, which is in every advance the font
      carries -- so moving it rebuilds both faces and re-sends the keyboard */
@@ -654,7 +708,7 @@ function installScriptFont(){
        no glyphs in it makes every word fall through to the serif anyway, one
        exception deeper. */
     if(!d.defs.length) return;
-    var f=LinguaFont.build(d.defs, {mode:'center', pen:GPEN, side:geSide(),
+    var f=LinguaFont.build(d.defs, {mode:'center', pen:GPEN, side:geSide(), base:geBase(),
                        asc:geInkTop(), desc:geInkTop()-geInkSpan()-geStep(), ligatures:d.ligs,
                                     family:SFONT_FAMILY, style:'Regular'});
     el=document.createElement('style');
@@ -792,11 +846,18 @@ function newGE(lid, label){
      ink: what is saved there replaces them (inkSet). */
   var l=ltById(lid), g=inkGeo(l), src=(g && !inkRings(g))? g : [];
   var r=label || ltName(l) || '';
+  /* It opens on layer 1. What is on the others waits in `rest`, where
+     nothing that edits the paper can reach it (geLayer). */
+  var all=JSON.parse(JSON.stringify(src)), one=[], rest=[], lys=1, i;
+  for(i=0;i<all.length;i++){
+    if(inkLy(all[i])===1) one.push(all[i]); else rest.push(all[i]);
+    if(inkLy(all[i])>lys) lys=inkLy(all[i]);
+  }
   /* A letter opened for editing is finished work, the same as a drawing
      handed back by undo, so it opens sealed: the first press starts a new
      stroke instead of picking up the last one you drew last time. Only what
      is drawn in this sitting, before the finger comes up, can be grabbed. */
-  return { lid:lid, r:r, st:JSON.parse(JSON.stringify(src)),
+  return { lid:lid, r:r, st:one, rest:rest, ly:1, lys:lys, lyh:{},
            under:(g && inkRings(g))? g : null,
            /* WHAT IT OPENED WITH. The button in the corner is grey until this
               stops being true of what is on the paper -- 「なにもない時は薄い
@@ -805,17 +866,17 @@ function newGE(lid, label){
               drawn now, because a letter opened and rubbed out has something
               to write down and nothing on the paper. Same question KEEP asks
               of a field, asked of strokes. */
-           was:JSON.stringify(geInk(src)),
-           si:src.length?src.length-1:-1, pi:-1, undo:[], redo:[], pre:null,
+           was:JSON.stringify(geInk(inkByLy(src))),
+           si:one.length?one.length-1:-1, pi:-1, undo:[], redo:[], pre:null,
            drag:false, hit:false, again:false, moved:false, fresh:false,
            free:false, round:false, fill:false, flat:null, flatBy:'',
            raw:null, rawFor:-1, z:1, cx:400, cy:400,
            /* the rope: whether a finger encircles instead of drawing, which
               dots are lit, the ring being drawn, and a drag of the lit dots
               under way. Where you are standing, not the letter -- none of it
-              is written anywhere (geNow reads GE.st and nothing else). */
+              is written anywhere (geNow reads the strokes and nothing else). */
            ls:false, lsSel:[], lsPath:null, lsMove:null,
-           seal:!!(src.length && src[src.length-1].pts.length) };
+           seal:!!(one.length && one[one.length-1].pts.length) };
 }
 /* From the sound chapter: draw the letter this unit is written with, making
    one if it has none.
@@ -1289,23 +1350,7 @@ var ICON_PIN='<svg class="ic" viewBox="0 0 24 24" width="14" height="14" fill="n
   '<path d="M9 3h6l-1 6 3 3v2H7v-2l3-3z"/><path d="M12 14v7"/></svg>';
 function geIcon(n){ return '<svg viewBox="0 0 24 24" aria-hidden="true">'+GICON[n]+'</svg>'; }
 function geBtn(fn,n,key,en,on){
-  var lb=t(key), cl=on?'on':'', act=DO(fn), off;
-  /* A button that can demonstrate itself stays tappable when it is unavailable
-     — it goes dim and does nothing, but it still answers "what is this". The
-     two history buttons have nothing to show, so those are plainly disabled.
-
-     Which is the whole of the difference: how it says it is unavailable, and
-     whether the demonstration is hung off the press. The button itself was
-     written out twice, once on each side of that, and the two copies were
-     identical.  */
-  if(GE_HINT_DEMO[n]){
-    if(!en) cl=cl?cl+' off':'off';
-    /* the demonstration comes after, because acting redraws the view */
-    act=act+AFTER('geHintShow',[n]);
-    off=en? '' : ' aria-disabled="true"';
-  }else{
-    off=en? '' : ' disabled';
-  }
+  var lb=t(key), cl=on?'on':'', act=DO(fn), off=en? '' : ' disabled';
   /* The mark, and nothing under it. 「2は文字なくそう」 OWNER 2026-08-27.
      The word was a caption in a font small enough to need it, and in French
      and German it did not fit -- ANNULER and ZURUCKSETZEN under a 23px icon
@@ -1379,12 +1424,26 @@ function vGlyph(){
     '<div class="body" style="padding-bottom:calc(env(safe-area-inset-bottom,0) + var(--tabh) + 24px)">'+
     '<div class="gcanvwrap"><canvas id="gcanv" class="gcanv"></canvas></div>'+
     geRail(st, pts)+
-    '<div class="ghintwrap"><canvas id="ghint" class="ghint"></canvas></div>'+
+    /* Where the square used to be drawn again small, a loop of three dots
+       tapped and shut. 「あれ消してあそこをレイヤーにすれば？」 OWNER
+       2026-09-30: the width and the layers stand there now. Not in geRail(),
+       which the onboarding's first step draws too. */
+    geWidthHTML()+geLayersHTML()+
     '</div></div>';
 }
 function geCur(){
-  if(GE.si<0 || !GE.st[GE.si]){ GE.st.push({pts:[]}); GE.si=GE.st.length-1; }
+  if(GE.si<0 || !GE.st[GE.si]) geNewSt();
   return GE.st[GE.si];
+}
+/* A new stroke, at the width chosen and on the layer being drawn on -- each
+   written only when it is not the default (GE_W, inkLy). The one place a
+   stroke is begun. */
+function geNewSt(){
+  var st={pts:[]};
+  if(GEW!==GPEN.width) st.w=GEW;
+  if(GE.ly>1) st.ly=GE.ly;
+  GE.st.push(st); GE.si=GE.st.length-1;
+  return st;
 }
 /* A stroke is one line, or one corner. Nothing longer: past three dots there
    is nothing left to decide about it, and every extra dot is one more thing
@@ -1746,6 +1805,107 @@ function geUndo(){ geHist(false); }
 function geRedo(){ geHist(true); }
 function geClear(){ geMark(); GE.st=[]; GE.si=-1; GE.pi=-1; GE.seal=false;
   GE.round=false; GE.flat=null; GE.flatBy=''; GE.lsSel=[]; GE.lsMove=null; render(); }
+/* ---- the width, and the layers ----------------------------------------
+   OWNER 2026-09-30, and its 追記: a width is chosen for the strokes to come
+   and for whatever the rope has lit; a layer is chosen to draw on, and the
+   others are on the paper faint and out of reach.
+
+   GEW is the width the next stroke is begun at. Where you stand, like the
+   zoom: not stored, and it stays from one letter to the next so an alphabet
+   drawn thin is not chosen thin twenty-six times.
+
+   GEWV is WHICH of the two choosers stands here -- 'dots', a row of dots of
+   growing size, or 'slide', a slider. 「・の太さでサイズ変えれるかスライド式
+   かをやってみて。できたらスクショが見たい」 Both are built so the owner can
+   look at them side by side; one is kept and the other deleted with this
+   variable. Nothing in the app sets it; the fixture does. */
+var GEW=GPEN.width;
+var GEWV='dots';
+function geWidth(v){
+  if(!GE) return;
+  var w=inkW({w:Number(v)}), i, st;
+  GEW=w;
+  if(GE.ls && (GE.lsSel||[]).length){
+    geMark();
+    for(i=0;i<GE.lsSel.length;i++){
+      st=GE.st[GE.lsSel[i]];
+      if(!st) continue;
+      if(w===GPEN.width) delete st.w; else st.w=w;
+    }
+  }else if(GE.si>=0 && GE.st[GE.si] && GE.st[GE.si].pts.length){
+    /* the stroke still under the finger was begun at the old width, so the
+       next press begins a new one rather than carrying on at the old one */
+    GE.seal=true;
+  }
+  render();
+}
+function geWidthHTML(){
+  if(GEWV==='slide'){
+    return '<div class="gwidth gwslide"><input type="range" min="'+GE_W.min+'" max="'+GE_W.max+'" '+
+      'step="'+GE_W.step+'" value="'+GEW+'" aria-label="'+esc(t('glyph.width'))+'"'+
+      CH('geWidth')+'></div>';
+  }
+  var h='<div class="gwidth">', i, w;
+  for(i=0;i<GE_W.dots.length;i++){
+    w=GE_W.dots[i];
+    /* the dot grows with the width it draws, the widest filling the mark */
+    h+='<button'+DO('geWidth',[w])+(w===GEW?' class="on"':'')+
+       ' aria-label="'+esc(t('glyph.width.n',[w]))+'">'+
+       '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="'+
+       (Math.round(w/GE_W.max*10*10)/10)+'" fill="currentColor"/></svg></button>';
+  }
+  return h+'</div>';
+}
+/* The strokes in layer order, each layer in the order it was drawn -- the
+   order they are written down in, so a letter opened and saved untouched
+   writes what it read. */
+function inkByLy(st){
+  var by={}, top=1, out=[], i, n;
+  for(i=0;i<(st||[]).length;i++){
+    n=inkLy(st[i]);
+    if(!by[n]) by[n]=[];
+    by[n].push(st[i]);
+    if(n>top) top=n;
+  }
+  for(n=1;n<=top;n++) if(by[n]) out=out.concat(by[n]);
+  return out;
+}
+/* The whole letter: the layer on the paper and the ones waiting. */
+function geAll(){ return inkByLy((GE.rest||[]).concat(GE.st)); }
+/* Onto another layer. GE.st is only ever the layer being drawn on, so the
+   finger, the rope, the bin, clear and the step back -- which all work on
+   GE.st -- cannot reach a stroke of another layer. The steps back are each
+   layer's own, kept while it is not the one on the paper. */
+function geLayer(n){
+  n=Number(n);
+  if(!GE || n===GE.ly || !(n>=1 && n<=GE.lys)) return;
+  GE.lyh[GE.ly]={u:GE.undo, r:GE.redo};
+  var all=GE.rest.concat(GE.st), mine=[], rest=[], i, h;
+  for(i=0;i<all.length;i++){
+    if(!all[i].pts.length) continue;
+    if(inkLy(all[i])===n) mine.push(all[i]); else rest.push(all[i]);
+  }
+  GE.st=mine; GE.rest=rest; GE.ly=n;
+  h=GE.lyh[n]; GE.undo=h? h.u : []; GE.redo=h? h.r : [];
+  GE.si=GE.st.length-1; GE.pi=-1; GE.seal=!!GE.st.length;
+  GE.round=false; GE.flat=null; GE.flatBy='';
+  GE.lsSel=[]; GE.lsMove=null; GE.lsPath=null;
+  render();
+}
+function geLayerAdd(){
+  if(!GE) return;
+  GE.lys++;
+  geLayer(GE.lys);
+}
+function geLayersHTML(){
+  var h='<div class="glayers">', n;
+  for(n=1;n<=GE.lys;n++){
+    h+='<button'+DO('geLayer',[n])+(n===GE.ly?' class="on"':'')+
+       ' aria-label="'+esc(t('glyph.layer',[n]))+'">'+t('glyph.layer.n',[n])+'</button>';
+  }
+  return h+'<button'+DO('geLayerAdd')+' aria-label="'+esc(t('glyph.layer.add'))+'">'+
+    ICON_ADD+'</button></div>';
+}
 /* Putting the drawing where the letter keeps it, and nothing else -- no
    toast, no going anywhere, no saying the sound. Both ways out of this screen
    need this half and only one of them needs the rest. */
@@ -1795,9 +1955,9 @@ function geKeepOn(){
    and it was not true: render() reads keepDirty(), and keepDirty() read the
    very buffer only geKeepPut() ever wrote. Nothing held it because nothing
    was there to hold. www/shell.js § keepOn, OWNER 2026-09-10. */
-function geNow(){ return GE? {ink:JSON.stringify(geInk(GE.st))} : {ink:''}; }
+function geNow(){ return GE? {ink:JSON.stringify(geInk(geAll()))} : {ink:''}; }
 function geKeep(){
-  var keep=geInk(GE.st);
+  var keep=geInk(geAll());
   ltSetStrokes(GE.lid, keep);
   /* NOT THE SWITCH. Whether words are set in the drawn letters is
      myFontWant(), and the switch (setMyFont) is the one place a person
@@ -1926,172 +2086,6 @@ function geWatch(){
   /* a web font arriving reflows the column the canvas sits in */
   try{ if(document.fonts && document.fonts.ready && document.fonts.ready.then) document.fonts.ready.then(again); }catch(e){}
 }
-/* ---- the hint ------------------------------------------------------------
-   This used to be a paragraph. Nobody reads a paragraph with a thumb already
-   on the canvas, and it had to be right in ten languages to be right at all.
-   It is a small silent loop instead: an arrow taps three dots — one corner,
-   which is all one stroke ever holds — and then taps the first dot again, and
-   the shape shuts. Same lattice, same pen, same glyphContours() as the editor
-   above it: a demonstration, not a picture of one. Wordless, so it says the
-   same thing in every language. */
-var GE_HINT={raf:0, t0:0, mode:''};
-var GE_HINT_P=[[400,184],[616,544],[184,544]];
-var GE_HINT_TAP=[0.9,1.7,2.5,3.5];
-var GE_HINT_CYC=5.2;
-/* ---- and what each button does -------------------------------------------
-   A name only helps if you already know the thing it names, and both of these
-   are dim until the drawing is far enough along to allow them — which is
-   exactly when you most want to know. So the square below the rail answers
-   instead: touch either button and it shows that button's before and after,
-   drawn with the same lattice, pen and glyphContours() as the canvas above. A
-   dim button still answers; it just does not act. Nothing to read, so it is
-   the same answer in every language. */
-var GE_HINT_DCYC=3.4;
-var GE_HINT_DEMO={
-  'circle': { a:[{pts:[[184,616],[400,184],[616,616]]}],
-              b:[{pts:[[184,616],[400,184],[616,616]], k:'o'}], m:[400,184] },
-  'fill'  : { a:[{pts:[[184,616],[400,184],[616,616],[184,616]]}],
-              b:[{pts:[[184,616],[400,184],[616,616],[184,616]], fill:true}], m:[400,400] },
-  'new'   : { a:[{pts:[[256,256],[256,544]]}],
-              b:[{pts:[[256,256],[256,544]]},{pts:[[472,256],[616,256],[616,544]]}], m:[472,256] }
-  /* 'new' is kept only so the hint reel still has its demonstration; no
-     button calls it any more -- lifting the finger starts the next stroke. */
-};
-function geHintShow(k){
-  if(!GE_HINT_DEMO[k]) return;
-  GE_HINT.mode=k; GE_HINT.t0=0;
-  if(!GE_HINT.raf && document.getElementById('ghint'))
-    GE_HINT.raf=requestAnimationFrame(geHintTick);
-}
-function geHintMount(){
-  var c=document.getElementById('ghint');
-  if(GE_HINT.raf){ cancelAnimationFrame(GE_HINT.raf); GE_HINT.raf=0; }
-  if(!c) return;
-  var dpr=window.devicePixelRatio||1, box=c.getBoundingClientRect();
-  var s=Math.round((box.width||190)*dpr);
-  c.width=s; c.height=s;
-  GE_HINT.t0=0; GE_HINT.mode='';
-  GE_HINT.raf=requestAnimationFrame(geHintTick);
-}
-function geHintTick(ts){
-  var c=document.getElementById('ghint');
-  if(!c){ GE_HINT.raf=0; return; }     /* the view moved on; stop by itself */
-  if(!GE_HINT.t0) GE_HINT.t0=ts;
-  var t=(ts-GE_HINT.t0)/1000;
-  if(GE_HINT.mode) geHintDemo(c, t%GE_HINT_DCYC, GE_HINT.mode);
-  else geHintDraw(c, t%GE_HINT_CYC);
-  GE_HINT.raf=requestAnimationFrame(geHintTick);
-}
-/* the square and its dots: a picture of the canvas above, drawn in the plain
-   rule rather than the gold one so it does not read as a second canvas to tap */
-function geHintField(x,S,k){
-  var i,j;
-  x.strokeStyle=cssVar('--line'); x.lineWidth=Math.max(1,k*2.5);
-  x.strokeRect(k*10,k*10,S-k*20,S-k*20);
-  var gs=geStep();
-  x.fillStyle=cssVar('--line2');
-  for(i=0;i<GGRID.n;i++) for(j=0;j<GGRID.n;j++){
-    x.beginPath();
-    x.arc(k*(GGRID.inset+i*gs), k*(GGRID.inset+j*gs), Math.max(1,k*gs*0.075),0,Math.PI*2);
-    x.fill();
-  }
-}
-/* the ink, through the font's own outliner, and the points still on top of it */
-function geHintInk(x,k,strokes){
-  inkStrokes(x, strokes, k, 0, 0, cssVar('--tx'));
-  x.fillStyle=cssVar('--gold');
-  strokes.forEach(function(s){
-    s.pts.forEach(function(q){
-      x.beginPath(); x.arc(q[0]*k,q[1]*k,k*16,0,Math.PI*2); x.fill();
-    });
-  });
-}
-function geHintDemo(c,t,k){
-  var d=GE_HINT_DEMO[k];
-  if(!d) return;
-  var x=c.getContext('2d'), S=c.width, u=S/800;
-  x.clearRect(0,0,S,S);
-  x.globalAlpha = t>GE_HINT_DCYC-0.45 ? Math.max(0,(GE_HINT_DCYC-t)/0.45) : 1;
-  geHintField(x,S,u);
-  var done = t>=1.35;
-  geHintInk(x,u, done ? d.b : d.a);
-  /* the spot the button acts on: a ring that closes in while it is still the
-     before, and opens out at the moment it becomes the after */
-  var mx=d.m[0]*u, my=d.m[1]*u, was=x.globalAlpha;
-  x.strokeStyle=cssVar('--gold'); x.lineWidth=u*6;
-  if(!done){
-    var p=(t%0.7)/0.7;
-    x.globalAlpha=was*(0.15+0.55*p);
-    x.beginPath(); x.arc(mx,my,u*(64-40*p),0,Math.PI*2); x.stroke();
-  } else if(t<1.85){
-    var q=(t-1.35)/0.5;
-    x.globalAlpha=was*(1-q);
-    x.beginPath(); x.arc(mx,my,u*(22+56*q),0,Math.PI*2); x.stroke();
-  }
-  x.globalAlpha=1;
-}
-function geHintEase(u){
-  if(u<0) u=0; if(u>1) u=1;
-  return u<0.5 ? 2*u*u : 1-2*(1-u)*(1-u);
-}
-function geHintSeg(t,t0,t1,a,b){
-  var u=geHintEase((t-t0)/(t1-t0));
-  return [a[0]+(b[0]-a[0])*u, a[1]+(b[1]-a[1])*u];
-}
-/* four taps round a square, then a fifth back on the dot it started from —
-   which is the whole of "join", shown rather than named */
-/* three dots and then back to the first one, which is the whole of "join",
-   shown rather than named */
-function geHintPos(t){
-  var A=GE_HINT_P[0], B=GE_HINT_P[1], C=GE_HINT_P[2];
-  if(t<0.9) return geHintSeg(t,0,0.9,[80,740],A);
-  if(t<1.1) return A;
-  if(t<1.7) return geHintSeg(t,1.1,1.7,A,B);
-  if(t<1.9) return B;
-  if(t<2.5) return geHintSeg(t,1.9,2.5,B,C);
-  if(t<2.7) return C;
-  if(t<3.5) return geHintSeg(t,2.7,3.5,C,A);
-  return A;
-}
-function geHintDraw(c,t){
-  var x=c.getContext('2d'), S=c.width, k=S/800, i, j;
-  x.clearRect(0,0,S,S);
-  x.globalAlpha = t>GE_HINT_CYC-0.6 ? Math.max(0,(GE_HINT_CYC-t)/0.6) : 1;
-
-  geHintField(x,S,k);
-
-  var n=0;
-  for(i=0;i<3;i++) if(t>=GE_HINT_TAP[i]) n=i+1;
-  var pts=[];
-  for(i=0;i<n;i++) pts.push([GE_HINT_P[i][0],GE_HINT_P[i][1]]);
-  geHintInk(x,k,[{pts:pts, closed:(t>=GE_HINT_TAP[3])}]);
-
-  /* the tap itself: a ring that opens where the finger landed. The last one
-     lands back on the first dot, and the shape shuts. */
-  for(i=0;i<GE_HINT_TAP.length;i++){
-    var d=t-GE_HINT_TAP[i], hp=GE_HINT_P[i===3?0:i];
-    if(d<0 || d>0.45) continue;
-    x.beginPath();
-    x.arc(hp[0]*k, hp[1]*k, k*(16+d/0.45*46), 0, Math.PI*2);
-    x.strokeStyle=cssVar('--gold'); x.lineWidth=k*5;
-    var was=x.globalAlpha; x.globalAlpha=was*(1-d/0.45);
-    x.stroke(); x.globalAlpha=was;
-  }
-
-  var pos=geHintPos(t), ahead=geHintPos(t+0.06), ang;
-  if(ahead[0]===pos[0] && ahead[1]===pos[1]){
-    var back=geHintPos(t-0.06);
-    ang=Math.atan2(pos[1]-back[1], pos[0]-back[0]);
-  } else ang=Math.atan2(ahead[1]-pos[1], ahead[0]-pos[0]);
-  x.save();
-  x.translate(pos[0]*k, pos[1]*k); x.rotate(ang);
-  x.fillStyle=cssVar('--gold');
-  x.beginPath();
-  x.moveTo(k*52,0); x.lineTo(k*-20,k*30); x.lineTo(k*-4,0); x.lineTo(k*-20,k*-30);
-  x.closePath(); x.fill();
-  x.restore();
-  x.globalAlpha=1;
-}
 /* How much of the canvas is margin at each edge, so the pen has somewhere to
    go at the outermost lattice points. Applied by geDraw, undone here. */
 var GEPAD=0.055;
@@ -2207,7 +2201,7 @@ function geDown(ev){
        placed is tapped again. Not at three points -- taps go on adding to the
        same curve for as long as they are wanted. */
     if(GE.seal || (st && (st.closed || st.k==='o'))){
-      GE.st.push({pts:[]}); GE.si=GE.st.length-1; st=GE.st[GE.si]; GE.seal=false;
+      st=geNewSt(); GE.seal=false;
       /* ROUND is not armed for what comes next -- it is a thing done to the
          stroke you have just drawn. A new one starts straight. */
       GE.round=false; GE.flat=null; GE.flatBy='';
@@ -2905,22 +2899,14 @@ function geTools(){
           'clear' :[!!pts, false],
           'lasso' :[true, !!GE.ls],
           'bin'   :[!!(GE.lsSel||[]).length, false] };
-  var bi, b, i, s, g, cl;
+  var bi, b, i, s, g;
   for(bi=0;bi<boxes.length;bi++){
     b=boxes[bi].getElementsByTagName('button');
     for(i=0;i<b.length;i++){
       g=b[i].getAttribute('data-g'); s=S[g];
       if(!s) continue;
-      if(GE_HINT_DEMO[g]){
-        cl=s[1]?'on':'';
-        if(!s[0]) cl=cl?cl+' off':'off';
-        b[i].className=cl;
-        if(s[0]) b[i].removeAttribute('aria-disabled');
-        else b[i].setAttribute('aria-disabled','true');
-      } else {
-        b[i].disabled=!s[0];
-        b[i].className=s[1]?'on':'';
-      }
+      b[i].disabled=!s[0];
+      b[i].className=s[1]?'on':'';
     }
   }
   /* the onboarding's own step, which is the other thing on this screen that
@@ -2969,6 +2955,17 @@ function geDraw(){
     x.moveTo(X(g0+gr[gi]*gs), Y(g0)); x.lineTo(X(g0+gr[gi]*gs), Y(g1));
     x.stroke();
   }
+  /* THE BASELINE. 「ベースライン欲しいね。入れよう」 OWNER 2026-09-30. It is
+     where the font puts a letter's feet, not a line drawn to look like one:
+     otf5 writes font y = base - y and both faces are built with geBase(), so
+     y 0 of every face this paper makes -- the line the ordinary letters
+     beside them stand on -- is this line. tools/layer-check.mjs asks the font. It
+     runs the whole width of the canvas, which is how it differs from the 田:
+     that is where the square's edges and middle are, and this is a line the
+     letter stands on. In the secondary text colour, because it is neither the
+     lattice nor ink. */
+  x.strokeStyle=cssVar('--txs'); x.lineWidth=Math.max(2,k0*3);
+  x.beginPath(); x.moveTo(0, Y(geBase())); x.lineTo(S, Y(geBase())); x.stroke();
   /* A lattice you cannot see is a lattice that is not there, and this surface
      has one job: to show where a point may land. It has been too faint twice.
      First at 5% white, which reads on a desk and vanishes on a phone. Then at
@@ -3002,7 +2999,7 @@ function geDraw(){
      which is the difference this is here to draw. 「緑は線で塗りつぶしは線と
      同じ色でしょ。差をつけないといけないやん」 */
   var area=[];
-  GE.st.forEach(function(s0){ if(s0.fill) area.push({pts:s0.pts, closed:s0.closed, k:s0.k}); });
+  GE.st.forEach(function(s0){ if(s0.fill) area.push({pts:s0.pts, closed:s0.closed, k:s0.k, w:s0.w}); });
   /* inkStrokes lays down ox + v*k, which is geTo() written out, so the
      origin it is handed is where 0 of the square falls once the window has
      been scrolled to geOrg(). At z=1 that is pad, as it always was. */
@@ -3013,6 +3010,14 @@ function geDraw(){
   if(GE.under){
     x.globalAlpha=0.16;
     inkStrokes(x, GE.under, k, ix, iy, cssVar('--tx'));
+    x.globalAlpha=1;
+  }
+  /* The other layers, faint, and nothing of them to take hold of: no dots,
+     no green edge. They are not in GE.st, which is all the rest of this
+     draws (geLayer). */
+  if(GE.rest && GE.rest.length){
+    x.globalAlpha=0.28;
+    inkStrokes(x, GE.rest, k, ix, iy, cssVar('--tx'));
     x.globalAlpha=1;
   }
   inkStrokes(x, GE.st, k, ix, iy, cssVar('--tx'));
@@ -3257,7 +3262,7 @@ function inkSpace(){
    The same shape at the same gap is the same code point for as long as the
    page lives, so a letter used on forty posts is built once. */
 function inkFaceCSS(defs, side){
-  var f=LinguaFont.build(defs, {mode:'center', pen:GPEN, side:side,
+  var f=LinguaFont.build(defs, {mode:'center', pen:GPEN, side:side, base:geBase(),
                      asc:geInkTop(), desc:geInkTop()-geInkSpan()-geStep(),
                      space:false, family:'LinguaType', style:'Regular'});
   var cs=[], i;
@@ -3489,7 +3494,7 @@ function renderMount(){
   var app=document.getElementById('app');
   /* the canvases have to be filled after the HTML exists, and sized in device
      pixels, which is something no markup can say */
-  if(route==='glyph'){ geMount(); geHintMount(); }
+  if(route==='glyph') geMount();
   /* Which screens have canvases on them was a list of route names here, and
      a list of route names is a thing that goes out of date the moment a screen
      is split in two -- the letters chapter became three pages and every digit

@@ -3244,10 +3244,24 @@ button.spbig{display:block;width:100%;background:none;border:0;padding:0;font:in
 .gtools svg{width:23px;height:23px;display:block;fill:none;stroke:currentColor;
             stroke-width:1.25;stroke-linecap:round;stroke-linejoin:round}
 .gtools button.on{color:var(--gold)}
-.gtools button:disabled,.gtools button.off{opacity:.22}
+.gtools button:disabled{opacity:.22}
 .gtools button:active{opacity:.55}
-.ghintwrap{margin:18px 0 2px;display:flex;justify-content:center;margin-top:0}
-.ghint{width:100%;max-width:152px;aspect-ratio:1/1;display:block;opacity:.85;pointer-events:none}
+/* Under the rail, where the square used to be drawn again small: the width,
+   then the layers (www/glyph.js § the width, and the layers). The same rows
+   as the rail -- marks in the colour of what can be pressed, gold on the one
+   chosen, 44pt, and nothing drawn round any of them. */
+.gwidth,.glayers{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;
+                 padding:4px 0}
+.gwidth button,.glayers button{flex:0 0 auto;min-width:48px;min-height:48px;background:none;
+               border:0;border-radius:0;padding:0 4px;color:var(--txs);display:flex;
+               align-items:center;justify-content:center;font-size:17px;line-height:1;
+               font-family:var(--face-ui)}
+.gwidth button.on,.glayers button.on{color:var(--gold)}
+.gwidth button:active,.glayers button:active{opacity:.55}
+.gwidth svg{width:24px;height:24px;display:block}
+.glayers svg{width:19px;height:19px;display:block}
+.gwslide input{flex:1 1 auto;min-width:0;max-width:340px;height:44px;margin:0 8px;
+               accent-color:var(--gold)}
 /* A placeholder is never in the drawn letters. It is the app saying what the
    box is for, in the app's own language, and .sfont carries !important so it
    was winning against every font rule on every empty field: the composer,
