@@ -760,7 +760,6 @@ defLang('it', (function(){
       "glyph.circle.d" : "Curva il tratto appena fatto. Premi di nuovo per raddrizzarlo.",
       "glyph.clear.d" : "Toglie tutto dal quadrato.",
       "glyph.lasso.d" : "Cerchia i punti o passaci sopra con il dito per selezionarli. Trascinane uno selezionato per spostarli tutti; il cestino li rimuove con le linee che li toccano.",
-      "glyph.width" : "Spessore",
       "glyph.width.n" : "Spessore {0}",
       "glyph.layer" : "Livello {0}",
       "glyph.layer.add" : "Aggiungi livello",

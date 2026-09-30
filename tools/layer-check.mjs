@@ -35,6 +35,12 @@
                      line there across the whole canvas.
      the pad      -- the square drawn again small under the rail is gone, and
                      the layers stand where it was.
+     the dots     -- OWNER 2026-09-30, the 追記 after r148 (r154): no slider; a
+                     letter opens on the middle dot and a stroke drawn before
+                     any is pressed carries 14, while a stroke with no width
+                     stays 24 and is saved with none; a dot pressed with
+                     strokes lit changes those and no other, and the step back
+                     puts it back.
 
    Run: node tools/layer-check.mjs                                        */
 import { seed } from './fixture.mjs';
@@ -134,6 +140,12 @@ const r = await pg.evaluate(async ({s}) => {
   var rail = document.querySelector('.gtools'), after = [];
   for (var nx = rail && rail.nextElementSibling; nx; nx = nx.nextElementSibling) after.push(nx.className);
   out.after = after.join(' ');
+  /* before any dot is pressed, the middle one is lit and a stroke begins
+     at it 「基本が真ん中」 OWNER 2026-09-30 */
+  out.midLit = [].map.call(document.querySelectorAll('.gwidth button.on'), function(b){ return b.getAttribute('data-a'); }).join(' ');
+  drag(P(4,4), P(4,16));
+  out.newW = (GE.st[GE.st.length - 1] || {}).w;
+  GE.st = []; GE.si = -1; GE.seal = false; GE.undo = []; GE.redo = []; render();
   /* the dot for 6, pressed as a finger presses it */
   var dot = document.querySelector('.gwidth button[data-a="[6]"]');
   out.dot = !!dot;
@@ -141,16 +153,26 @@ const r = await pg.evaluate(async ({s}) => {
   drag(P(4,4), P(4,16));
   var drawn = GE.st[GE.st.length - 1];
   out.drawnW = drawn ? drawn.w : null;
-  /* the slider is the same act: the value it hands over is the width */
-  geWidth('10');
+  function press(w){ var b = document.querySelector('.gwidth button[data-a="[' + w + ']"]'); if (b) b.click(); return !!b; }
+  out.slide = !!document.querySelector('.gwidth input, .gwslide');
+  press(10);
   drag(P(10,4), P(10,16));
-  out.slideW = (GE.st[GE.st.length - 1] || {}).w;
-  geWidth(24);
+  out.tenW = (GE.st[GE.st.length - 1] || {}).w;
+  press(24);
   drag(P(16,4), P(16,16));
   out.defaultNoW = GE.st.length === 3 && !('w' in GE.st[2]);
-  /* a width chosen with a stroke lit goes on that stroke */
-  GE.ls = true; GE.lsSel = [2]; geWidth(14);
-  out.litW = GE.st[2].w; GE.ls = false; GE.lsSel = [];
+  /* a dot pressed with a stroke lit goes on that stroke, and the step back
+     puts back the width it had -- the same dot, the same road */
+  GE.ls = true; GE.lsSel = [2]; render();
+  var others = J([GE.st[0], GE.st[1]]);
+  press(14);
+  out.litW = GE.st[2].w;
+  out.litOthers = J([GE.st[0], GE.st[1]]) === others;
+  geUndo();
+  out.undoW = GE.st.length === 3 && !('w' in GE.st[2]) && J([GE.st[0], GE.st[1]]) === others;
+  geRedo();
+  out.redoW = GE.st[2].w;
+  GE.ls = false; GE.lsSel = [];
   /* and the Save keeps it */
   var sig0 = scriptSig();
   BUILT = [];
@@ -196,6 +218,15 @@ const r = await pg.evaluate(async ({s}) => {
     var p2 = LinguaFont.profile(cs2);
     return Math.round(p2.xMax - p2.xMin);
   })();
+
+  /* ---- a stroke with no width, opened and saved beside a new one --------- */
+  inkSet(l, [{pts:[P(4,4), P(4,16)]}]);
+  GE = null; editLetter(l.id); render();
+  out.oldOnPaper = inkW(GE.st[0]);
+  drag(P(12,4), P(12,16));
+  document.querySelector('[data-do="keepPress"]').click();
+  await saved();
+  out.oldKept = ((ltById(l.id) || {}).st || []).map(function(x){ return x.w === undefined ? '-' : x.w; }).join(',');
 
   /* ---- the layers -------------------------------------------------------- */
   inkSet(l, [{pts:[P(4,4), P(4,16)]}, {pts:[P(12,4), P(12,16)], ly:2}]);
@@ -428,11 +459,14 @@ say(r.oldFont === OLD_FONT, 'and the fixture\'s font is the same bytes it was: '
 say(r.w24, 'and no width is 24, to the pixel');
 say(r.thinPx > 0 && r.thinPx * 2 < r.fullPx, 'a stroke of 6 inks ' + r.thinPx + 'px where the pen inks ' + r.fullPx);
 say(r.bigW > 0 && r.bigW <= 24, 'a width of 5000 off a post is held to the pen: ' + r.bigW + ' wide');
-say(r.dot, 'the width is a row of dots to press');
+say(r.midLit === '[14]', 'a letter opens with the middle dot lit: ' + r.midLit);
+say(r.newW === 14, 'a stroke drawn before any dot is pressed carries the middle one, 14 (' + r.newW + ')');
+say(r.dot && !r.slide, 'the width is a row of dots to press, and there is no slider');
 say(r.drawnW === 6, 'a stroke drawn after the dot for 6 is pressed carries 6 (' + r.drawnW + ')');
-say(r.slideW === 10, 'the slider hands over the same act: 10 (' + r.slideW + ')');
+say(r.tenW === 10, 'the dot for 10 gives 10 (' + r.tenW + ')');
 say(r.defaultNoW, 'a stroke at 24 writes no width, as every stroke before it');
-say(r.litW === 14, 'a width chosen with a stroke lit goes on that stroke (' + r.litW + ')');
+say(r.litW === 14 && r.litOthers, 'a dot pressed with a stroke lit goes on that stroke and no other (' + r.litW + ')');
+say(r.undoW && r.redoW === 14, 'and the step back puts back the width it had, the step forward the new one');
 say(r.keptW === '6,10,14', 'and the Save keeps each one: ' + r.keptW);
 say(r.sentW, 'and what went up to the server carries it');
 say(r.fontHad && r.fontStrokeW === 6, 'the font writer was handed the letter, and its stroke of 6 is ' + r.fontStrokeW + ' wide');
@@ -442,6 +476,8 @@ say(r.sigMoves && r.sigMovedOnSave, 'a width changed moves what the keyboard is 
 say(r.postW === 6 && r.postInkW === 6, 'a post written now carries the width and its ink is ' + r.postInkW + ' wide');
 say(r.oldPostW === 24, 'a post written before keeps what it carried: ' + r.oldPostW + ' wide while the letter is thin');
 say(r.keyW === 6, 'a key\'s outline, which the keyboard extension is handed, is ' + r.keyW + ' wide');
+
+say(r.oldOnPaper === 24 && r.oldKept === '-,14', 'a stroke with no width is 24 on the paper and saved beside a new one still has none: ' + r.oldKept);
 
 say(r.opensOn1, 'a letter with a stroke on layer 2 opens on layer 1 with layer 2 waiting');
 say(r.fingerLeft && r.fingerOn1, 'a finger on a dot of layer 2 draws on layer 1 and moves nothing of 2');

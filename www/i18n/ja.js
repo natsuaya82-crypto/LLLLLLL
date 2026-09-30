@@ -676,7 +676,6 @@ defLang('ja', (function(){
       'glyph.circle.d' : "直前の一画を曲線にします。もう一度押すと元に戻ります。",
       'glyph.clear.d' : "四角の中を全部消します。",
       'glyph.lasso.d' : "囲んだ点、なぞった点が光ります。光った点をずらすと全部が同じだけ動き、ゴミ箱で点とそれに接する線が消えます。",
-      'glyph.width' : "太さ",
       'glyph.width.n' : "太さ {0}",
       'glyph.layer' : "レイヤー {0}",
       'glyph.layer.add' : "レイヤーを追加",
