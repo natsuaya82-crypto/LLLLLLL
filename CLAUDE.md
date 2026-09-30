@@ -66,15 +66,19 @@ copy is read-only and it never goes back up** — it is never where a thing live
 **Somebody else's language is on the server and in memory, and nowhere else**
 「カード投稿はok」「svgやファイル書き出しはng」「だから端末に置くのもng」
 OWNER 2026-09-30, on every plan. It is USED inside Lingua — its letters shown
-and typed in this app's fields, posts written in it, its meanings read — and
-nothing of it leaves: not a file (font, SVG, the handwriting sheet, a word's
-card), not the clipboard, not the system keyboard's App Group, and not this
-phone's disk, so with no signal it is not shown. A card of a POST is the one
-picture of it that leaves. `langOut()` (`www/core.js`) is the one question —
-langWhose()'s 「mine」, so 「nobody has answered」 is not mine — and every way
-out asks it. **`theirs-check` holds it**: it counts every way out in `www/` by
-what it is and fails one that does not ask, and takes a language from another
-account and finds nothing of it on the disk and no way out on its screens.
+and typed in this app's fields and on the Lingua keyboard, posts written in
+it, its meanings read — and nothing of it leaves: not a file (font, SVG, the
+handwriting sheet), not the clipboard, and not this phone's disk, so with no
+signal it is not shown. Two roads are not leaving and do not ask: a card — of
+a post, a word or an example — is a picture 「カードはok」, and the Lingua
+keyboard's App Group is how anybody types drawn letters inside Lingua, so a
+taken language is handed over there as one's own is 「端末に置くものがそもそも
+ないでしょ？」 OWNER 2026-09-30. `langOut()` (`www/core.js`) is the one
+question — langWhose()'s 「mine」, so 「nobody has answered」 is not mine — and
+every way out asks it. **`theirs-check` holds it**: it counts every way out in
+`www/` by what it is and fails one that does not ask, and takes a language
+from another account and finds nothing of it on the disk, no way out on its
+screens, its word's card offered and its keyboard handed over.
 
 **NOTHING IS THE PHONE'S. EVERYTHING IS THE ACCOUNT'S.**
 「端末ごとにやることなんてねえよ」「アカウントごとってずっと言ってるよな？」
