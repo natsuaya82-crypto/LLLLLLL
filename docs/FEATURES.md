@@ -376,9 +376,10 @@ Decided 2026-08-19. The author decides what is public, per thing.
 replaces 「plusからです」 (2026-09-02). `dlCap()` in `www/core.js` is the one
 place; `dl-check` and `plan-check` hold it. **Somebody else's language is used, never had, on every
 plan**: letters and meanings inside Lingua, no edit, and nothing of it leaves
-the app — no font, SVG or sheet file, no copy, not sent to the iPhone keyboard
-— or is written to this phone's disk; a card of a post may leave (`langOut()`,
-`theirs-check`).
+the app — no font, SVG or sheet file, no copy — or is written to this phone's
+disk; a card of a post, a word or an example may leave, and its keyboard is
+handed to the Lingua keyboard like one's own, which is typing inside Lingua
+and not leaving (`langOut()`, `theirs-check`).
 Making and publishing stays Plus. A downloaded
 keyboard is not a shelf of its own: it is the `kb` slice of the language it came
 from, taken with that language's own ↓, and the language counts once however

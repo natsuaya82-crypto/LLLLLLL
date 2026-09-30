@@ -304,10 +304,11 @@ was ~~`CAN.dl`~~ at `plus` from 2026-09-02 until this.
 「dl言語は厳しくしないと、アプリ内で文字を使う、意味を見たりって言う編集はできない
 し外にも持ち出しできないようにしないといけないプランでも変わらない。人が作ったやつ
 はね」 OWNER 2026-09-30. Its letters are typed and its meanings read inside
-Lingua; it is not edited (`langLocked()`); nothing of it leaves the app — no
-font, SVG or sheet file, no copy, not sent to the iPhone keyboard — and nothing
-of it is written to this phone's disk, so there is no copy of it for a launch
-with no signal. A card of a post may leave. Where a taken language came with no
+Lingua — on the Lingua keyboard too, which is handed it as it is handed one's
+own; it is not edited (`langLocked()`); nothing of it leaves the app — no
+font, SVG or sheet file, no copy — and nothing of it is written to this
+phone's disk, so there is no copy of it for a launch with no signal. A card —
+of a post, a word or an example — may leave. Where a taken language came with no
 keyboard, the taker may build their own. No plan changes any of this;
 `langOut()` (`www/core.js`) is asked by every way out, and `theirs-check`
 counts them.
