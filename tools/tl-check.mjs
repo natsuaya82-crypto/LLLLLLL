@@ -939,6 +939,55 @@ const r = await pg.evaluate(({ s }) => {
     netSend1 = realS1; netSend = realS; netGet = realG;
   }
 
+  /* ---- 14f: the pass is found by the name the page's answer uses --------
+     A post written on THIS phone has two names: its own id here and the
+     server's (`sid`). posts_by() answers with the server's, and the page's
+     list of what was passed on is keyed by it; the post the list draws is the
+     phone's copy, which is keyed by the other. Asked by the phone's id, the
+     pass is not found and the post is drawn with no 「〇〇がリポスト」 over it
+     -- the owner's own post on demo's page, 2026-09-29, while every post by
+     somebody else demo passed on had it. Both kinds, on somebody else's page
+     and on mine. */
+  {
+    const realS1 = netSend1, realS = netSend, realG = netGet, realPW = pullWait;
+    const me = netUid(), h = meHandle(), n0 = POSTS.length, local = POSTS[0];
+    const keepSid = local.sid, keepWho = WHO_HAVE.iri;
+    local.sid = 'SRV-1';
+    WHO_HAVE.iri = Object.assign({}, keepWho || {}, { uid:'U-iri', h:'iri', n:'Iri' });
+    let by = 'U-iri';
+    netSend1 = function (m, path, b, t2, ok) {
+      if (m === 'POST' && String(path) === '/rest/v1/rpc/posts_by') {
+        const pass = (by === me) ? { by:me, by_name:'Aya', by_hd:h } : { by:'U-iri', by_name:'Iri', by_hd:'iri' };
+        ok([Object.assign({ id:'SRV-1', author:me, created_at:'2026-09-10T00:00:00Z',
+              body:{ ln:local.ln, hd:local.hd, who:local.who }, at_key:'2026-09-28T00:00:00Z' }, pass),
+            Object.assign({ id:'PF-v', author:'U-veth', created_at:'2026-09-11T00:00:00Z',
+              body:{ ln:'pfv', hd:'veth', who:'Veth' }, at_key:'2026-09-27T00:00:00Z' }, pass)], 200);
+        return;
+      }
+      ok([], 200);
+    };
+    netSend = function (m, path, b, t2, ok, bad, up) { netSend1(m, path, b, t2, ok, bad, up, true); };
+    netGet = function (path, ok, bad) { netSend('GET', path, null, '', ok, bad); };
+    pullWait = function (k, a, done) { done(true); };
+    const drawn = (who, mark) => {
+      NAV = [{ r:'profile', a:who }]; pfTab = 'posts';
+      const rows = pfList(), got = {};
+      rows.forEach((p) => {
+        const k = p.id === local.id ? 'phone' : p.id === 'PF-v' ? 'other' : '';
+        if (k) got[k] = postRow(p).indexOf(mark) >= 0 ? 'LABEL' : 'none';
+      });
+      return 'phone:' + (got.phone || 'absent') + ' other:' + (got.other || 'absent');
+    };
+    askPosts(function () {}, function () {}, null, 'iri');
+    out.rpPfSid = drawn('iri', t('post.rp', 'Iri'));
+    PF_BOOST = {}; by = me;
+    askPosts(function () {}, function () {}, null, h);
+    out.rpPfSidMe = drawn('', t('post.rp.me'));
+    POSTS.splice(n0, POSTS.length - n0); PF_BOOST = {}; MORE_AT = {}; MORE_END = {};
+    local.sid = keepSid; if (keepWho) WHO_HAVE.iri = keepWho; else delete WHO_HAVE.iri;
+    netSend1 = realS1; netSend = realS; netGet = realG; pullWait = realPW;
+  }
+
   /* ---- 14e: おすすめ carries on from the moment its first page was cut ----
      feed_hot() in supabase/schema.sql is a list AS OF a moment, and paged by
      a count: the posts written since the tick are in it and more are written
@@ -1736,6 +1785,12 @@ if (r.rpFo !== 1 || r.rpFoW || !r.rpFoGo || r.rpRec !== 0 || r.rpCopy !== false 
       r.rpPfMe + ' time(s) (want 1), on what I wrote: ' + r.rpPfW +
       '. 「vethの名前の下に〇〇がリポストって入れよう」');
 else console.log('14d: 〇〇がリポスト under the name, on the pass and nowhere else: fo 1, rec 0, my page 1');
+if (r.rpPfSid !== 'phone:LABEL other:LABEL' || r.rpPfSidMe !== 'phone:LABEL other:LABEL')
+  say('14f: a profile’s 投稿 -- on somebody else’s page ' + r.rpPfSid + ', on mine ' + r.rpPfSidMe +
+      ' (want phone:LABEL other:LABEL on both). A post written on this phone is passed on under the ' +
+      'server’s name (sid) and drawn from the phone’s copy; the pass has to be found by the ' +
+      'name the page’s answer uses.');
+else console.log('14f: 〇〇がリポスト on a pass of a post written on this phone, as on anybody else’s: ' + r.rpPfSid);
 { const want = JSON.stringify({ lim:50, off:0, upto:null }) + ' then ' +
                JSON.stringify({ lim:50, off:50, upto:'2026-09-29T01:23:45.678Z' });
   if (r.recSent !== want || r.recIds !== 100)

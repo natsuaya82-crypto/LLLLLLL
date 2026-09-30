@@ -2011,6 +2011,18 @@ export function halfDone(){
         PF_BOOST={ iri:{ pbo1:{ at:Date.now(), n:'Iri', h:'iri', me:false } } };
         window.route='profile'; NAV=[{r:'profile', a:'iri'}];
         const h=vProfile(); POSTS.pop(); PF_BOOST={}; NAV=[{r:'profile'}]; return h; }],
+    /* And one of them written on THIS phone: its copy here is `p1` and the
+       page's answer names it by the server's `SRV-1` (tl-check 14f). */
+    ['somebody else\'s profile, passing on a post written here', () => { pfTab='posts';
+        WHO_HAVE['iri'] = { who:'Iri', hd:'iri', av:{ch:'Ж'}, lname:'Vethi',
+                             bio:'', fo:2, fr:3, out:false };
+        const mine = postById('p1'); mine.sid = 'SRV-1';
+        POSTS.push({id:'pbo1', sid:'pbo1', at:Date.now()-9e8, lang:langId, lname:'Tovi',
+                    ln:'mosa relu', who:'Veth', hd:'veth', mine:false, mn:'the river', ui:'en'});
+        PF_BOOST={ iri:{ 'SRV-1':{ at:Date.now(), n:'Iri', h:'iri', me:false },
+                         pbo1:{ at:Date.now()-6e4, n:'Iri', h:'iri', me:false } } };
+        window.route='profile'; NAV=[{r:'profile', a:'iri'}];
+        const h=vProfile(); POSTS.pop(); delete mine.sid; PF_BOOST={}; NAV=[{r:'profile'}]; return h; }],
     ['somebody else\'s profile, followed', () => { folPut(false, 'aya', ['iri']);
         WHO_HAVE['iri'] = { who:'Iri', hd:'iri', av:{ch:'Ж'}, lname:'Vethi',
                              bio:'', fo:2, fr:3, out:false };
