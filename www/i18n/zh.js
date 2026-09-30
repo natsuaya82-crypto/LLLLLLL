@@ -768,7 +768,7 @@ defLang('zh', (function(){
       "glyph.circle.d" : "把刚画的一笔弯成弧线。再按一次变回直线。",
       "glyph.clear.d" : "清空方格。",
       "glyph.lasso.d" : "圈住的点、划过的点会被选中。拖动选中的点可一起移动；垃圾桶会删除这些点及与之相连的线。",
-      "glyph.width" : "粗细",
+      "glyph.layers" : "图层",
       "glyph.width.n" : "粗细 {0}",
       "glyph.layer" : "图层 {0}",
       "glyph.layer.add" : "添加图层",

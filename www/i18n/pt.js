@@ -767,7 +767,7 @@ defLang('pt', (function(){
       "glyph.circle.d" : "Curva o traço que você acabou de fazer. Toque de novo para endireitá-lo.",
       "glyph.clear.d" : "Tira tudo do quadrado.",
       "glyph.lasso.d" : "Circule pontos ou passe o dedo sobre eles para marcá-los. Arraste um marcado para mover todos; a lixeira remove-os e as linhas que os tocam.",
-      "glyph.width" : "Espessura",
+      "glyph.layers" : "Camadas",
       "glyph.width.n" : "Espessura {0}",
       "glyph.layer" : "Camada {0}",
       "glyph.layer.add" : "Adicionar camada",
