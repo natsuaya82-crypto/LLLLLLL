@@ -44,6 +44,17 @@ const DICT_TIDY =
   "});" +
   "installScriptFont(); installTypeFont(); render();";
 
+/* The fixture's rules as the app writes them now: its old diminutive (a
+   derivation for every part of speech, which the new-word sheet saves as a
+   word with no meaning) taken off, the plural left. And an example on tir,
+   so its page has one to read. See 'words-make'. */
+const DICT_RULES =
+  "STG.fm = (STG.fm || []).filter(function (r) { return r.fm !== 'dim'; });" +
+  "WORDS.forEach(function (w) {" +
+  "  if (w.hw === 'tir') w.ex = [{ ln: 'tir kano', gl: 'I see the mountain' }];" +
+  "});" +
+  "render();";
+
 export const SCRIPTS = {
   /* 1-01 — draw a letter of your own */
   'draw-a-letter': {
@@ -175,7 +186,7 @@ export const SCRIPTS = {
       { tap: '[data-do=kbHeadCol][data-a="[4]"]', wait: 800, still: '04-column-selected' },
       { cap: 'Delete it in one go', capAt: 600, wait: 200 },
       { tap: 'do:kbCut', pop: true, wait: 600 },
-      { tap: 'do:popYes', wait: 1000 },
+      { tap: 'do:popYes', wait: 1000, still: 'use-09-deleted' },
       { cap: 'Undo is one tap', capAt: 600, wait: 200 },
       { tap: 'do:kbUndo', wait: 1000 },
       /* two rows tall: a key under t, then t and it joined */
@@ -260,56 +271,93 @@ export const SCRIPTS = {
      film asked for was split in two: making words, and using the
      dictionary. Filmed as the keyboard film was (393x852, 1080x2340, hq,
      slow 2, a track under the taps), into promo/words/.
+     「機能説明なんだから機能もりもりで」 OWNER 2026-09-30 -- each film shows
+     as much of its half as there is, one short beat and one caption each.
 
-     Two things in the fixture's language are put right in the page before
-     filming, and only in the page: a subclass and a derivation label it
-     carries in Japanese, which an English film would show as they are, and
-     a future form of tir with no spelling, which the card draws in roman. */
+     Put right in the page before filming, and only in the page (DICT_TIDY,
+     DICT_RULES): a subclass and a derivation label the fixture carries in
+     Japanese, a future of tir with no spelling, and the fixture's old
+     diminutive rule. That rule is a DERIVATION for every part of speech --
+     no screen writes one any more (tools/fixture.mjs) -- and the new-word
+     sheet adds what it makes as a word of its own with no meaning, which on
+     film reads as a fault (reported to the leader, not fixed here). The plural,
+     an inflection, stays: it is what a word's page shows as its forms. */
   'words-make': {
     view: [393, 852, 3], size: [1080, 2340], out: 'promo/words', hq: true, slow: 2,
     music: 'sub_clair-background-music-550483.mp3',
     setup: [
       { eval: DICT_TIDY },
+      { eval: DICT_RULES },
       { go: 'words' },
     ],
-    /* Two words and nothing else: one typed, one generated, each given a
-       meaning, saved, and found again by searching for what it means. The
-       first cut also chose a part of speech, scrolled to the forms a rule
-       makes and scrolled the list -- 「バグってるし、分かりにくい」 OWNER
-       2026-09-30: a saved noun brings its diminutive into the list as a
-       word with no meaning, and Generate changes the part of speech on its
-       own, and on film both read as faults. A search finds the new word
-       wherever it sorts, so nothing is scrolled. */
+    /* Generate chooses a part of speech of its own when none was chosen on
+       the sheet (wdGen), which on film is a row changing under nobody's
+       finger. So the part of speech is chosen FIRST, and Generate then makes
+       words of that kind -- which is also what it does. */
     steps: [
       { cap: 'Make words for your conlang', capAt: 600, wait: 1800, still: 'make-01-lexicon' },
       { cap: 'Tap + to add one', capAt: 600, wait: 200 },
-      { tap: 'do:openAdd', wait: 1000 },
-      { cap: 'Type it in your own letters', capAt: 600, wait: 200 },
-      { type: 'velo', lingua: true, into: '#wd-ln', delay: 300, wait: 700 },
-      { cap: 'Its sound is worked out for you', capAt: 600, wait: 2000, still: 'make-02-typed' },
-      { cap: 'Write what it means', capAt: 600, wait: 200 },
-      { tap: 'do:wdMnOpen', wait: 400 },
-      { type: 'bird', delay: 140, wait: 300 },
-      { eval: "wdAddMn()", wait: 1200, still: 'make-03-meaning' },
-      { cap: 'Save it', capAt: 600, wait: 200 },
-      { tap: 'do:keepPress', wait: 1300 },
-      { cap: 'Now it is in your dictionary', capAt: 600, wait: 200 },
-      { type: 'bird', into: '#w-q', delay: 200, wait: 2200, still: 'make-04-found' },
-      { tap: '#w-x', wait: 700 },
-      { cap: 'Out of ideas?', capAt: 600, wait: 900 },
       { tap: 'do:openAdd', wait: 900 },
-      { cap: 'Generate a word that fits your sounds', capAt: 600, wait: 300 },
-      { tap: 'do:wdGen', wait: 1100 },
-      { tap: 'do:wdGen', wait: 1100 },
-      { tap: 'do:wdGen', wait: 1500, still: 'make-05-generated' },
-      { cap: 'Write what it means', capAt: 600, wait: 200 },
-      { tap: 'do:wdMnOpen', wait: 400 },
-      { type: 'star', delay: 140, wait: 300 },
-      { eval: "wdAddMn()", wait: 900 },
+      { cap: 'Type it in your own letters', capAt: 600, wait: 200 },
+      { type: 'velo', lingua: true, into: '#wd-ln', delay: 280, wait: 600 },
+      { cap: 'Its sound is worked out for you', capAt: 600, wait: 700, still: 'make-02-typed' },
+      { tap: 'do:sayPh', wait: 1200 },
+      { cap: 'Give it meanings, as many as you like', capAt: 600, wait: 200 },
+      { tap: 'do:wdMnOpen', wait: 350 },
+      { type: 'bird', delay: 120, wait: 250 },
+      { eval: 'wdAddMn()', wait: 500 },
+      { tap: 'do:wdMnOpen', wait: 350 },
+      { type: 'messenger', delay: 90, wait: 250 },
+      { eval: 'wdAddMn()', wait: 1100, still: 'make-03-meanings' },
+      { cap: 'Part of speech', capAt: 600, wait: 200 },
+      { tap: '[data-do=go][data-a=\'["pos"]\']', wait: 900 },
+      { tap: '[data-do=posPick][data-a=\'["n"]\']', wait: 800 },
+      { cap: 'Register', capAt: 600, wait: 200 },
+      { tap: '[data-do=go][data-a=\'["reg"]\']', wait: 900 },
+      { tap: '[data-do=regPick][data-a=\'["po"]\']', wait: 900 },
+      { cap: 'Fields it belongs to', capAt: 600, wait: 200 },
+      { type: 'animals, sky', into: '#wd-tags', delay: 90, wait: 900 },
+      { cap: 'An example sentence', capAt: 600, wait: 200 },
+      { tap: 'do:wdExOpen', wait: 400 },
+      { type: 'velo mos', into: '#wd-exl', delay: 160, wait: 300 },
+      { type: 'The bird is tall', into: '#wd-exg', delay: 80, wait: 300 },
+      { eval: 'wdAddEx()', wait: 1300, still: 'make-04-example' },
       { cap: 'Save it', capAt: 600, wait: 200 },
-      { tap: 'do:keepPress', wait: 1300 },
-      { cap: 'Your language grows', capAt: 600, wait: 200 },
-      { type: 'star', into: '#w-q', delay: 200, wait: 2600, still: 'make-06-grows' },
+      { tap: 'do:keepPress', wait: 1200 },
+      { cap: 'Its forms follow your grammar', capAt: 600, wait: 200 },
+      { type: 'bird', into: '#w-q', delay: 160, wait: 600 },
+      { tap: '[data-do=openWord][data-a=\'["velo"]\']', wait: 1000 },
+      { scroll: 300, wait: 1800, still: 'make-05-forms' },
+      { cap: 'Make new words from it', capAt: 600, wait: 200 },
+      { tap: 'do:openEdit', wait: 800 },
+      { tap: 'do:wdDerive', wait: 900 },
+      { tap: '#wd-ln', wait: 200 },
+      { eval: "(function(){var e=document.getElementById('wd-ln');e.focus();e.setSelectionRange(e.value.length,e.value.length);})()", wait: 150 },
+      { type: 'n', lingua: true, delay: 250, wait: 400 },
+      { tap: 'do:wdMnOpen', wait: 350 },
+      { type: 'flock', delay: 110, wait: 250 },
+      { eval: 'wdAddMn()', wait: 900, still: 'make-06-derived' },
+      { tap: 'do:keepPress', wait: 400 },
+      { cap: 'It joins the family', capAt: 600, wait: 200 },
+      { scroll: 500, wait: 1800 },
+      { tap: 'text:Family tree', wait: 1900, still: 'make-06b-tree' },
+      { cap: 'Out of ideas?', capAt: 600, wait: 900 },
+      { eval: "q=''" },
+      { go: 'words' },
+      { tap: 'do:openAdd', wait: 800 },
+      { cap: 'Choose a part of speech', capAt: 600, wait: 200 },
+      { tap: '[data-do=go][data-a=\'["pos"]\']', wait: 800 },
+      { tap: '[data-do=posPick][data-a=\'["v"]\']', wait: 700 },
+      { cap: 'Generate one that fits your sounds', capAt: 600, wait: 200 },
+      { tap: 'do:wdGen', wait: 1000 },
+      { tap: 'do:wdGen', wait: 1000 },
+      { tap: 'do:wdGen', wait: 1400, still: 'make-07-generated' },
+      { tap: 'do:wdMnOpen', wait: 350 },
+      { type: 'to fly', delay: 110, wait: 250 },
+      { eval: 'wdAddMn()', wait: 700 },
+      { tap: 'do:keepPress', wait: 1200 },
+      { cap: 'Your language grows', capAt: 600, wait: 300 },
+      { scroll: 2000, wait: 2600, still: 'make-08-grows' },
     ],
   },
 
@@ -318,25 +366,47 @@ export const SCRIPTS = {
     music: 'verclub_music-background-music-571037.mp3',
     setup: [
       { eval: DICT_TIDY },
+      { eval: DICT_RULES },
       { go: 'words' },
     ],
     steps: [
-      { cap: 'Your conlang’s dictionary', capAt: 600, wait: 2000, still: 'use-01-lexicon' },
+      { cap: 'Your conlang’s dictionary', capAt: 600, wait: 2400, still: 'use-01-lexicon' },
       { cap: 'Search by word or meaning', capAt: 600, wait: 200 },
-      { type: 'see', into: '#w-q', delay: 260, wait: 1800, still: 'use-02-search' },
-      { tap: '#w-x', wait: 700 },
-      { cap: 'Only the verbs', capAt: 600, wait: 200 },
-      { tap: 'do:openFil', wait: 900 },
-      { tap: '[data-do=wordsSetFil][data-a=\'["v"]\']', wait: 1600, still: 'use-03-verbs' },
+      { type: 'see', into: '#w-q', delay: 240, wait: 2100, still: 'use-02-search' },
+      { tap: '#w-x', wait: 600 },
+      { cap: 'Filter by part of speech', capAt: 600, wait: 200 },
+      { tap: 'do:openFil', wait: 800 },
+      { tap: '[data-do=wordsSetFil][data-a=\'["v"]\']', wait: 1900, still: 'use-03-verbs' },
+      { tap: 'do:openFil', wait: 600 },
+      { tap: '[data-do=wordsSetFil][data-a=\'["*"]\']', wait: 600 },
+      { cap: 'Sort by letter or by kind', capAt: 600, wait: 200 },
+      { tap: 'do:openSort', wait: 800 },
+      { tap: '[data-do=wordsSetSort][data-a=\'["pos"]\']', wait: 2200, still: 'use-04-sorted' },
       { cap: 'Every word has a page', capAt: 600, wait: 200 },
-      { tap: '[data-do=openWord][data-a=\'["tir"]\']', wait: 2000, still: 'use-04-word' },
+      { tap: '[data-do=openWord][data-a=\'["tir"]\']', wait: 1200 },
+      { cap: 'Hear how it sounds', capAt: 600, wait: 200 },
+      { tap: 'do:sayPh', wait: 1800, still: 'use-05-word' },
       { cap: 'Every form of it', capAt: 600, wait: 200 },
-      { scroll: 420, wait: 2200 },
-      { cap: 'And its family tree', capAt: 600, wait: 200 },
-      { tap: 'text:Family tree', wait: 2000, still: 'use-05-tree' },
-      { tap: 'do:back', wait: 900 },
+      { scroll: 260, wait: 2100 },
+      { cap: 'Example sentences', capAt: 600, wait: 200 },
+      { scroll: 380, wait: 2100 },
+      { cap: 'Words made from it', capAt: 600, wait: 200 },
+      { tap: 'text:Family tree', wait: 2400, still: 'use-06-tree' },
+      { tap: 'do:back', wait: 800 },
       { cap: 'Share it as a card', capAt: 600, wait: 200 },
-      { tap: 'do:cardOpen', wait: 2800, still: 'use-06-card' },
+      { tap: 'do:cardOpen', wait: 3000, still: 'use-07-card' },
+      { go: 'words' },
+      { cap: 'Select several at once', capAt: 600, wait: 300 },
+      { tap: 'do:wSelOn', wait: 600 },
+      { tap: 'do:wSelTap', nth: 3, wait: 350 },
+      { tap: 'do:wSelTap', nth: 4, wait: 1100, still: 'use-08-selected' },
+      { cap: 'Delete them together', capAt: 600, wait: 200 },
+      { tap: 'do:wSelDel', pop: true, wait: 700 },
+      { tap: 'do:popYes', wait: 1000, still: 'use-09-deleted' },
+      { cap: 'Undo is one tap', capAt: 600, wait: 200 },
+      { tap: 'do:wSelUndo', wait: 1400, still: 'use-10-undone' },
+      { scroll: -2000, wait: 300 },
+      { cap: 'Your dictionary, your way', capAt: 600, wait: 2400 },
     ],
   },
 };
