@@ -2087,26 +2087,26 @@ function planName(id){
 }
 var PLANS=[
   {id:'free', name:'Free', mo:'plan.price.free', yr:'plan.price.free', off:'',
-   lines:['plan.free.1','plan.free.2','plan.free.3','plan.free.5','plan.free.4']},
+   lines:['plan.free.1','plan.free.2','plan.free.6','plan.free.3','plan.free.5','plan.free.4']},
   /* The middle rung. Its price is here and its subscription is not in App
      Store Connect yet, which is not a hole: StoreKit returns nothing for a
      product that does not exist, so the card is on the screen and the button
      does nothing until the product is made. What is NOT allowed is the other
      way round -- a product on sale that the app does not name. */
   {id:'plus', name:'Plus', mo:'plan.price.plus', yr:'plan.price.plus.yr', off:'17',
-   lines:['plan.plus.1','plan.plus.2','plan.plus.3','plan.plus.4','plan.plus.6']},
+   lines:['plan.plus.1','plan.plus.2','plan.plus.3','plan.plus.4','plan.plus.7','plan.plus.6']},
   /* Pro opens with "everything in Plus, and:" rather than repeating the lines
      above it. Three pages that each list everything are three pages somebody
      has to compare word by word; the ladder is the thing being sold and it
      should be readable by scrolling.
 
      THE CEILINGS ARE ON THE CARDS, and that is 「何で入ってないの？」 OWNER
-     2026-09-03. langCap() and dlCap() sell three languages and three
-     downloads on Pro, and one download on Plus, and not one of those numbers
-     was anywhere on the screen a person pays from -- so the app was charging
-     for something it never said it had. Each is a NAME and not a sentence
-     (「アプリ内に説明書くの禁止」): plan.pro.6 / plan.pro.7 / plan.plus.6.
-     Plus's own languages are Free's one, so there is no line for them. */
+     2026-09-03: a number langCap() or dlCap() sells that is on no card is the
+     app charging for something it never said it had. Each is a NAME and not
+     a sentence (「アプリ内に説明書くの禁止」): free's one download
+     (plan.free.6), plus's three and three (plan.plus.7 / plan.plus.6), and
+     pro's none (plan.pro.6 / plan.pro.7). Free's one language of its own
+     has never had a line, and whether it gets one is the owner's. */
   {id:'pro',  name:'Pro',  mo:'plan.price.pro', yr:'plan.price.pro.yr', off:'17',
    lines:['plan.pro.1','plan.pro.2','plan.pro.4','plan.pro.5',
           'plan.pro.6','plan.pro.7','plan.badge']},
@@ -2163,18 +2163,13 @@ function wordCap(){
 function postCap(){
   return planNum(POST_MAX, Infinity, Infinity);
 }
-/* How many languages of their own this person may have. Free 1, Plus 1,
-   Pro 3 -- OWNER DECISION 2026-08-23, restated 2026-08-25「言語数はプラスは1、
-   プロは3」.
+/* How many languages of their own this person may have. Free 1, Plus 3,
+   Pro none -- 「作れる言語も1、3、無限にするのはどう思う？」 OWNER 2026-09-30.
 
-   Plus and Free are the same number and that is the decision, not an
-   oversight: this app is for making ONE language deeply, and the three are
-   for the person who wants a second and a third rather than the thing being
-   sold. Written as two names anyway, because they are two facts that happen
-   to be equal today and a number that is two facts is not a constant.
-
-   Not Infinity anywhere: three is a real ceiling on every plan there is. */
-var FREE_LANGS=1, PRO_LANGS=3;
+   Pro is Infinity, which is what "no ceiling" is everywhere in this file
+   (wordCap(), postCap()): the arithmetic is the same, and planFits() never
+   says no to it, so there is no rung on which the + goes away. */
+var FREE_LANGS=1, PLUS_LANGS=3;
 /* THREE STATES AND NOT TWO, and the third is 「nobody has asked」 rather than
    the free number. 「前に読み込んだの出していいよ。何か更新するならクルクルが
    必要」 OWNER 2026-09-12, and 「未回答は free ではない」 OWNER 2026-09-11
@@ -2192,7 +2187,7 @@ var FREE_LANGS=1, PRO_LANGS=3;
    drawn. It does not loosen the ceiling -- langStop() below hands it to
    upStop(), which says 「接続できません」. */
 function langCap(){
-  return planNum(FREE_LANGS, FREE_LANGS, PRO_LANGS);
+  return planNum(FREE_LANGS, PLUS_LANGS, Infinity);
 }
 /* And what it is compared against: the languages that are THIS PERSON'S.
 
@@ -2342,14 +2337,9 @@ function langMainFall(){
    the system's dialog is banned (CLAUDE.md § Shape). Nobody is moved unless
    they say yes.
 
-   Except where there is nothing to fly to. Somebody already holding the
-   biggest ceiling there is cannot be offered a bigger one, and a dialog whose
-   yes leads to a price list that answers nothing is worse than a sentence --
-   it is a screen with no cause and no way out, which is the ONE case
-   CLAUDE.md's 2026-08-22 narrowing says gets words. It gets one sentence and
-   nothing beyond it. `langCap() < PRO_LANGS` and not a plan name: the
-   question is whether a bigger ceiling exists to buy, and that stays true the
-   day the numbers move.
+   There is always somewhere to fly to: the top rung has no ceiling
+   (langCap() above), so a ceiling is only ever met on a rung with a bigger
+   one above it.
 
    NOTHING HERE REMOVES OR COUNTS DOWN ANYTHING, AND THE LIST FOLDS.
    「有料が消えて無料に残った後は非表示じゃないの？」 OWNER 2026-09-12.
@@ -2365,7 +2355,9 @@ function langMainFall(){
    here rather than a free-sized list. */
 /* ---- and how many you may have DOWNLOADED, which is a second number ------
    「dlはしかもplusは1つproは3つ DL言語とmake言語でそれぞれ別の最大値ね？」
-   OWNER 2026-09-02.
+   OWNER 2026-09-02 for the two ceilings, and 「DL言語1言語無料、plus、3言語、
+   pro無限にしない？」 OWNER 2026-09-30 for the numbers: Free 1, Plus 3, Pro
+   none.
 
    TWO CEILINGS AND NOT ONE. A language somebody else made is not one this
    person made, and langCount() above says so already -- it counts `mine`, so
@@ -2373,23 +2365,23 @@ function langMainFall(){
    of that sentence: downloads have a ceiling of their own, and filling it
    leaves the making one exactly where it was.
 
-   Free is ZERO, which is the same decision said a second way: 「plusからです」.
-   Whether a download may happen AT ALL is `can('dl')`; this is how many. Both
-   land together on purpose -- a door opened with no number behind it hands
-   Plus whatever the code happened to allow, which is neither number the owner
-   said, and that has happened here once already (the keyboard's).
+   EVERY PLAN MAY TAKE, so there is no door in CAN for it and nothing asks
+   whether a download may happen at all -- it was a door in CAN while free
+   was nought (「plusからです」 2026-09-02). How many is the one thing a plan
+   decides, and it is this.
 
    NOTHING HERE REMOVES OR COUNTS DOWN ANYTHING, AND THE LIST FOLDS, exactly as
    langCap() above says it: somebody whose plan ended keeps every language they
    took, the list draws this many with 「非表示 n」 under it, and only the NEXT
    download is refused. 「有料が消えて無料に残った後は非表示じゃないの？」 OWNER
    2026-09-12. `null` folds nothing, for the same reason. */
-var PLUS_DL=1, PRO_DL=3;
+var FREE_DL=1, PLUS_DL=3;
 function dlCap(){
-  /* 「nobody has asked」 is not nought, exactly as langCap() above: a launch
-     with no signal answered ZERO here and every language somebody had taken
-     off another page was folded off the list, with 「1 hidden」 at its foot. */
-  return planNum(0, PLUS_DL, PRO_DL);
+  /* 「nobody has asked」 is not the free number, exactly as langCap() above: a
+     launch with no signal answered ZERO here and every language somebody had
+     taken off another page was folded off the list, with 「1 hidden」 at its
+     foot. */
+  return planNum(FREE_DL, PLUS_DL, Infinity);
 }
 /* The languages this person is READING, AND IT IS THE SERVER'S COUNT. It walked this phone's index -- entries with
    `mine` false carrying this account's stamp -- and that stamp was 「who took
@@ -2398,30 +2390,13 @@ function dlCap(){
    `language_take` is the table and netTakes() (www/net.js) is what asks.
    `null` is 「not asked」 and dlStop() is what waits for it. */
 function dlCount(){ return langTook(); }
-/* ---- FULL ON THE TOP RUNG, AND THEN THERE IS NO + ---------------------
-   「追加自体できなくすればいい。＋があるところからプラスをなくすだけ」
-   OWNER 2026-09-25. Pro is the top plan, so a ceiling met on it has nothing
-   to sell: the thing that adds -- the + under 「自分の言語」, the ↓ on a
-   chapter of a language not taken yet -- is not drawn, and there is no
-   「アップグレードが必要です」 about a plan that does not exist.
-
-   ONE QUESTION, and the row that draws the mark and the stop behind it both
-   ask it -- the draw deciding one way and the press another is two answers.
-   Free and Plus are not this: their + is drawn and the press offers the
-   plans (upStop). `null` -- the count or the plan not answered -- is not
-   full, and the stop says 「接続できません」 for it. */
-function planTopFull(n, cap){ return has('pro') && planFits(n, 1, cap)===false; }
-function langFull(){ return planTopFull(langCount(), langCap()); }
-function dlFull(){ return planTopFull(dlCount(), dlCap()); }
 /* The ceiling on downloads, met. langStop()'s shape exactly, and the same
    sentence: 「全部確認して飛ぶ」. */
 function dlStop(){
   /* NOT ASKED YET IS NOT NOUGHT AND IS NOT FULL, and neither is a plan nobody
      has answered for: planFits() hands upStop() `null` for either, and that
      is 「接続できません」. The screen that presses this has already asked
-     (www/home.js § wldGet). Full on the top rung has no ↓ to press (§ FULL
-     ON THE TOP RUNG), so it refuses with nothing to say. */
-  if(dlFull()) return true;
+     (www/home.js § wldGet). */
   return upStop(planFits(dlCount(), 1, dlCap()));
 }
 /* THE OPEN LANGUAGE BELONGS TO WHOEVER IS SIGNED IN.
@@ -2508,8 +2483,6 @@ function langStop(){
      is a picture of rows that may not exist any more -- measuring against it
      is what refused the owner their own next language on 2026-09-15. Both
      are `null` until answered, and planFits() hands upStop() the `null`. */
-  /* Full on the top rung has no + to press (§ FULL ON THE TOP RUNG). */
-  if(langFull()) return true;
   return upStop(planFits(langCount(), 1, langCap()));
 }
 /* ---- WHAT THIS ACCOUNT HAS PAID FOR, AND IT IS THE SERVER'S ANSWER ------
@@ -2796,11 +2769,6 @@ var CAN={
   file:    'pro',    /* a list brought in as a file rather than a paste */
   letters: 'plus',   /* adding, naming and deleting a letter */
   wsys:    'plus',   /* a writing system that is not an alphabet */
-  /* Taking a chapter of somebody else's language. 「plusからです」OWNER
-     2026-09-02, which replaces 「Downloading a keyboard or an alphabet is
-     free」 (docs/FEATURES.md § 4, 2026-08-19). How many is dlCap() above, and
-     the two landed together -- see the comment there for why. */
-  dl:      'plus',
   snd:     'plus',   /* choosing a sound, rather than taking the letter's own */
   /* The mark beside your name. 「バッチはplusから」 -- Plus in the old three
      names, which is Pro in these. Nothing on the phone GATES it: whoever

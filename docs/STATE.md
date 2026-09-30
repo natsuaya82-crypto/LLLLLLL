@@ -1496,8 +1496,8 @@ can hold two rules.
   many as it likes, and a key carries a drawn letter or any existing character,
   typed straight in on the editor. What differs is how many drawn letters there
   are; the font file export is `can('font')`, Plus. The language ceiling is
-  `langCap()` — `FREE_LANGS=1`, `PRO_LANGS=3`, and Plus is deliberately the same
-  as free. `edit` and `badge` are both in `CAN` now.
+  `langCap()` — `FREE_LANGS=1`, `PLUS_LANGS=3`, Pro none (2026-09-30), and the
+  downloads are `dlCap()` with the same three numbers. `edit` and `badge` are both in `CAN` now.
 - **The price of Pro is decided.** The four products and their prices are in
   `docs/apple.md` § 4 and written into `ios/App/App/LinguaStore.swift`. What is
   left is **entering them in App Store Connect**, which is nobody's but the

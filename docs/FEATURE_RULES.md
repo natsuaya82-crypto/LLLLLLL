@@ -279,12 +279,12 @@ it is quoted, and where a decision has never been made the row in
 
 ### 2026-09-30 作れる言語と DL 言語の数は 1・3・無限。人の言語は使うだけ
 - Date: 2026-09-30
-- Area: 作れる言語の数（`langCap()`、`FREE_LANGS`・`PRO_LANGS`）、DL 言語の数（`dlCap()`、`PLUS_DL`・`PRO_DL`、`CAN.dl`）、`www/core.js`。人の言語（`langLocked()`）と外へ出す道。
+- Area: 作れる言語の数（`langCap()`、`FREE_LANGS`・`PLUS_LANGS`、前は ~~`PRO_LANGS`~~）、DL 言語の数（`dlCap()`、`FREE_DL`・`PLUS_DL`、前は ~~`PRO_DL`~~ と ~~`CAN.dl`~~）、`www/core.js`。人の言語（`langLocked()`）と外へ出す道。
 - Decision: (1) 作れる言語：無料 1・Plus 3・Pro 無限（今は 1・1・3）。DL 言語：無料 1・Plus 3・Pro 無限（今は 0・1・3）。DL は無料から。(2) 人が作った言語は、**どのプランでも**、Lingua の中で字を使うことと意味を見ることだけ。編集はできず、外へ持ち出すこともできない。
 - Reason: オーナーの言葉「DL言語1言語無料、plus、3言語、pro無限にしない？」「作れる言語も1、3、無限にするのはどう思う？」「プランを変えるとこだけ」「dl言語は厳しくしないと、アプリ内で文字を使う、意味を見たりって言う編集はできないし外にも持ち出しできないようにしないといけないプランでも変わらない。人が作ったやつはね」（2026-09-30）。ユーザーを増やすため（トキポナは r/tokipona に掲載の許可を取ってから、Lingua の中だけで DL して使える形）。
 - Affected features: プランの画面、言語の追加、他の人の言語の取り込み。
 - Affected data: 無い（数を変えるだけ。上限を超えた言語はどれも残る）。
-- Implementation status: (1) は r149 に渡した。(2) の編集は既に止まっている（`langLocked()`）。外へ出す道は測ると 6 つとも開いている ── フォント（`ltFontOut`）、SVG（`ltSvgOut`）、iPhone のキーボードへ送る（`sharePush`）、カード（`cardSave`）、書き取りシート（`shMake`）、コピー（`postCopy`）。まだ直していない。
+- Implementation status: (1) は入った（`claude/r149-caps`、CODE CONFIRMED のみ）── Pro は `Infinity`（`wordCap()` と同じ形）、取ることの扉（~~`CAN.dl`~~）は無くなり、「一番上の段で満杯」（~~`planTopFull()`~~）も起きないので消した。`plan-check`・`dl-check`・`paid-check` が持つ。(2) の編集は既に止まっている（`langLocked()`）。外へ出す道は測ると 6 つとも開いている ── フォント（`ltFontOut`）、SVG（`ltSvgOut`）、iPhone のキーボードへ送る（`sharePush`）、カード（`cardSave`）、書き取りシート（`shMake`）、コピー（`postCopy`）。まだ直していない。
 
 ### 2026-09-30 文法で形が変わる表意文字の仕組みを 1.0.4 で作る
 - Date: 2026-09-30
@@ -875,8 +875,7 @@ it is quoted, and where a decision has never been made the row in
 - Area: 保存ボタンのある画面、Pro の上限、ブロック、ミュート
 - Decision:
   - **保存ボタンのある画面を下のタブで出る時**: 戻るで出る時と同じく「保存しますか？」と訊く。
-  - **Pro で上限（言語3つ・ダウンロード3つ）に達した時**: 追加そのものをできなくする ── ＋のある所から＋を消す。
-    「アップグレードが必要です」のポップは出さない（Pro の上にプランは無い）。
+  - **Pro で上限に達した時**: 【差し替え済み 2026-09-30】── 差し替えた決定: 「作れる言語と DL 言語の数は 1・3・無限。人の言語は使うだけ」（2026-09-30）。Pro に上限は無い。
   - **ブロックする前にその人から取った言語**: 残す（一覧に残り、読める）。
   - **ミュートした人**: その人が書いた投稿に加えて、その人がリポストした投稿と、その人からの通知（いいね・返信など）も出さない。
   - **ミュートの印**: 「…」の一覧の「ミュート」の行の左はスピーカーの絵。もうミュートしている人の時は、その絵に
@@ -886,7 +885,7 @@ it is quoted, and where a decision has never been made the row in
 - Affected docs: この項、`docs/STATE.md` 4a。
 - Implementation status: **実装（`claude/r88-mute2`、2026-09-25）。CODE CONFIRMED のみ。**
   タブで出る時 ── 訊く所を `navLand()`（`www/shell.js`）一つに、戻る・タブ・長押し・前の画面への `go()` が同じ問い
-  （`keep-check` 14）。Pro の上限 ── `planTopFull()`（`www/core.js`）を行と stop が訊き、＋・↓ を描かない（`plan-check`）。
+  （`keep-check` 14）。Pro の上限 ── 2026-09-30 に Pro の上限そのものが無くなり、~~`planTopFull()`~~ は消えた。
   ブロックと取った言語 ── 残す（r85 から変えていない、コードは触っていない）。ミュートの広さ ── `feed_fo()` のリポストの枝と
   `notices()` が `mute_hides()`（`npm run rls`）、手元の写しは `postMuted()`（`tl-check` 10b）。**iPhone のプッシュ通知は
   まだ鳴る**（push-send は持ち物の外）。印 ── `ICON_MUTE`（`tl-check` 10b）。残りは `docs/scope/r88-mute2.md`。
@@ -2694,17 +2693,18 @@ it is quoted, and where a decision has never been made the row in
   何で入ってないの？
   ```
 
-  Pro の行に **「言語を三つ」と「ダウンロード三つ」**、Plus の行に
-  **「ダウンロード一つ」**。`langCap()` と `dlCap()` が売っている数が、
-  買う画面のどこにも書かれていなかった。
+  `langCap()` と `dlCap()` が売っている数を、その段の行に名前で書く。
+  それが買う画面のどこにも書かれていなかった。今の数（2026-09-30）は
+  無料の行に「ダウンロード一つ」、Plus の行に「言語三つ」と「ダウンロード三つ」、
+  Pro の行に二つとも「無制限」。
 
   **説明文にしない。名前で書く。**「アプリ内に説明書くの禁止」はそのまま。
 - Reason: 上限は値段の一部で、書いていなければ売っていないのと同じ。
   Pro は言語 3 個と DL 3 個、Plus は DL 1 個を持つのに、五行のどれもそれを
   言っていなかった。監査 C（`docs/scope/aud-pay.md` の 49）が見つけた。
-- Affected features: `PLANS`（`www/core.js`）に三行。`plan.plus.6`
-  `plan.pro.6` `plan.pro.7` を十言語ぶん（`www/i18n/*.js`）。
-  Plus の自作言語は Free と同じ 1 なので、Plus 側に言語の行は無い。
+- Affected features: `PLANS`（`www/core.js`）の行。`plan.free.6`
+  `plan.plus.6` `plan.plus.7` `plan.pro.6` `plan.pro.7` を十言語ぶん
+  （`www/i18n/*.js`）。無料の自作言語 1 つには行が無い。
 - Affected data: 無し。画面の文字だけ
 - Affected docs: `docs/PAID_FEATURES.md`、`docs/CHANGELOG.md`
 - Implementation status: **入っている**（2026-09-03、`claude/aud-pay`）。
@@ -3282,40 +3282,8 @@ it is quoted, and where a decision has never been made the row in
   ない）・40b（段は預け写しに乗らない）・40c（戻ってきたらサーバーが答える）。
   三つとも赤を見た。実機は未確認。
 
-### ダウンロードは Plus から。上限は make と別で、Plus 1・Pro 3
-- Date: 2026-09-02
-- Area: 人の言語をダウンロードする（⑫）、`CAN.dl` と `dlCap()`（`www/core.js`）
-- Decision:
-
-  ```
-  plusからです
-  dlはしかもplusは1つproは3つ DL言語とmake言語でそれぞれ別の最大値
-  言語足そうとしたり、dlしようとすると無料からアプデのポップ、
-  plusで1個から2個に増やそうとするとアプデのポップ
-  ```
-
-  ダウンロードできるのは **Plus から**。持てる数は **Plus 1、Pro 3**。
-  自分で作る言語の上限（Free 1・Plus 1・Pro 3）とは **別の数** で、
-  互いに影響しない。上限に当たったら課金のポップが出る。
-
-- Reason: オーナーが実機で、無料のままダウンロードした言語を使えることに
-  気づいた。
-- Affected features: ⑫。`CAN.dl` は 2026-08-19 の
-  「キーボードと文字の DL は無料、辞書は Plus」を **置き換える**
-  （docs/FEATURES.md § 4）
-- Affected data: 何も消えない。**上限を超えた分は一覧から隠れる**
-  ── 「減った時は隠すだけね」「だって単語でも文法でも同じようにやったじゃん」。
-  単語が無料で先頭百語だけ並べるのと同じ形（`wordsSeen()` → `langsSeen()`）。
-  どれが残るかは【差し替え済み 2026-09-12】── 差し替えた決定:「主言語 ── 一番古く
-  作った言語。無料はそれだけ出て、それが開く」（2026-09-12）。
-  `LANGS` も `lingua.` の鍵も一つも動かず、払い直せば全部元どおり並ぶ。
-  これは `www/core.js` に書いてあった「never hides one, never shortens a
-  list」を置き換える
-- Affected docs: この項目、docs/FEATURES.md § 4
-- Implementation status: IMPLEMENTED。`dl-check` が持つ
-  （無料は不可・Plus は 1・Pro は 3・二つの数が互いを見ない）。赤を見た。
-  隠す側も `dl-check` が持つ（Pro で三つ、無料で一つ、鍵が一つも消えない、
-  払い直すと戻る）。
+### 【差し替え済み 2026-09-30】ダウンロードは Plus から。上限は make と別で、Plus 1・Pro 3
+- 差し替えた決定: 「作れる言語と DL 言語の数は 1・3・無限。人の言語は使うだけ」（2026-09-30）
 
 ### 言語の記事は「人にどう見えるか」──自分のページで分岐しない
 - Date: 2026-09-02
@@ -3531,8 +3499,8 @@ it is quoted, and where a decision has never been made the row in
      OWNER 2026-09-03。トキポナの四章を全部取っても **1**。`dlCount()` が
      index の行を数えているのがその形。
   4. **言語数の上限は、自分で作った言語と別に数える。**
-     `langCount()` が `mine` だけ数えているのは正しい。数は 2026-09-02 の
-     決定 ── Plus 1・Pro 3（`dlCap()`）。
+     `langCount()` が `mine` だけ数えているのは正しい。数は 2026-09-30 の
+     決定 ── 無料 1・Plus 3・Pro 無限（`dlCap()`）。
 
 - Reason: 1 は「トキポナに文字足したらトキポナじゃない」。2 と 4 は
   他人のものが自分の持ち物として数えられない・配られないため。3 は原文のまま。
@@ -3667,7 +3635,7 @@ it is quoted, and where a decision has never been made the row in
 
 - Reason: **原文の二行目がそのまま理由です。**上限が端末に付いていると、
   **アカウントを変えるだけで何回でも作れます** ── `docs/PAID_FEATURES.md` の
-  「languages on the account 1 / 1 / 3」は、アカウントに付いていて初めて
+  「languages on the account」の数は、アカウントに付いていて初めて
   上限になります。プランも同じで、端末の中の値なら端末を変えれば無関係です。
 - Affected features: `www/core.js`（~~`planKeep()`~~ / `setOnDisk()`）、
   `www/settings.js`（~~`setPlan()`~~）、`supabase/schema.sql`（`profile` の列）、
@@ -4693,7 +4661,7 @@ something was restructured」であり、**理由を四つ挙げて禁じてい�
 - Affected features: ホームの言語の概要ページ（`www/home.js`、`wldSecDl()` の四つの
   解放トグルは `claude/wiki` が今作っている）、言語一覧 `vLangs()`（同じファイル、
   「読んでいる」の節が DL 言語の入る枠）、プロフィールの長押し（`www/me.js`）、
-  `CAN.dl`と DL 言語の天井（`www/core.js`）。**今日入ったのは一つもない。**
+  取ることの扉（~~`CAN.dl`~~、2026-09-30 に無くなった）と DL 言語の天井（`www/core.js`）。**今日入ったのは一つもない。**
 - Affected data: `LANGS[id]` に「読み取り専用」を言うものが要る。今は無い —
   `LANGS` に書き込む三箇所（`core.js:115`、`core.js:140`、`backup.js:264`）は
   全部 `mine:true` であり、**編集できない言語は今このアプリに一つも存在しない**。
@@ -4701,14 +4669,14 @@ something was restructured」であり、**理由を四つ挙げて禁じてい�
   `docs/DATA_MODEL.md` § 読み取り専用の言語。
 - Affected docs: `docs/FEATURES.md`、`docs/DATA_MODEL.md`、`docs/PAID_FEATURES.md`、
   `docs/ARCHITECTURE.md`、`docs/STATE.md` § 3。
-- Implementation status: **入っている。**`can('dl')` は plus（`CAN.dl`、
-  `www/core.js`）、数は `dlCap()` が 0 / 1 / 3 で答え、`dlCount()` が
+- Implementation status: **入っている。**取ることはどのプランでもでき
+  （2026-09-30、扉だった ~~`CAN.dl`~~ は無い）、数は `dlCap()` が 1 / 3 / 無限で答え、`dlCount()` が
   `mine` の false を数える ── 作る天井（`langCap()`）とは別の天井で、互いに
   見えない。取ってきた言語は `langSeenAdd()` が `mine:false` で index に入れ、
   `vLangs()` が「読んでいる」の節に並べる。解放は章ごと（`wldSecDl()`、
   `www/home.js`）で、一つのスイッチではない。
 
-  **数は 2026-09-02 の決定が決めた** ──「plusからです」。この項が
+  **数は 2026-09-30 の決定が決めた** ──「DL言語1言語無料、plus、3言語、pro無限」。この項が
   〈`は？` で終わっているので決めない〉と書いた二つは、そちらで閉じている。
 
 #### この決定がぶつかるもの二つ。ここで解決しない。
@@ -5226,10 +5194,10 @@ and is never merged into your own」と言っている。**入らない、は二
   `claude/save`): ~~`kbCap()`~~ in `www/core.js`, ~~`kbCount()`~~ / ~~`kbRoomKb()`~~ in
   `www/keyboard.js`, ~~`CAN.kb`~~ at `plus`, ~~`KB_MAX`~~ gone. Held by `plan-check`.
   **The language ceiling and `CAN.badge` are built** --
-  `langCap()` beside ~~`kbCap()`~~ in `www/core.js` (1 / 1 / 3, with `langStop()`
+  `langCap()` beside ~~`kbCap()`~~ in `www/core.js` (1 / 3 / none since 2026-09-30, with `langStop()`
   as the refusal), and `CAN.badge` at `pro` -- which the plans page asks as `canRung('badge')`;
   whether a name WEARS it is the server's `badge_of()` since 2026-09-26, and
-  `postBadge()` asks no plan at all. `dl` was added on 2026-09-02.
+  `postBadge()` asks no plan at all. `dl` was added on 2026-09-02 and went on 2026-09-30, when every plan could take.
   広告の `CAN`（pro の「広告なし」）は 「広告は出さない ── AdMob も、売れる広告枠も、追跡の問いも無い」（2026-09-25） で無くなった。
 
   **数えるのはアカウントです。**「は？端末の話なんかしてねえだろ」「だから端末で
@@ -5675,16 +5643,15 @@ and is never merged into your own」と言っている。**入らない、は二
 
 ### Decision
 - Date: 2026-08-19
-- **SUPERSEDED（2 と 4 番）→ 「ダウンロードは Plus から。上限は make と別で、
-  Plus 1・Pro 3」（2026-09-02、この log の上のほう）。**無料は一つも落とせません
-  ── 「plusからです」。数は言語ごとで Plus 1・Pro 3 で、自分で作る数とは
+- **SUPERSEDED（2 と 4 番）→ 「作れる言語と DL 言語の数は 1・3・無限。人の言語は使うだけ」（2026-09-30）（この log の上のほう）。**どのプランでも
+  取れます。数は言語ごとで 無料 1・Plus 3・Pro 無限で、自分で作る数とは
   別に数えます。1・3・5・6 番はそのまま生きています。
 - Area: Publishing and downloading — a keyboard, an alphabet, a dictionary
 - Decision:
   1. **The author decides.** Public or private, per thing, for all three: the
      keyboard, the letters, the words. Nothing is downloadable unless its
      author said so.
-  2. 取ることそのものが **Plus から**。`can('dl')` が扉で、`dlCap()` が数です。
+  2. 取ることは **どのプランでも**（2026-09-30）。扉は無く、`dlCap()` が数です。
   3. **Making and publishing stays Plus**, as it is now. Free still cannot
      build a keyboard or add a letter, and that does not change.
   4. 落としたものは自分の数を食いません ── `langCount()` は `mine` を数え、
@@ -5705,8 +5672,8 @@ and is never merged into your own」と言っている。**入らない、は二
      全部 `langWrites()`（`www/core.js`）一つを訊き、`langLocked()` がその言語で
      はいと答える。`dl-check` が、取った言語の全部の画面の全部のボタンを押して、
      何も作られず、どの章も動かないことを持つ。
-- Implementation status: **取る側は入りました。**`can('dl')`（`www/core.js` の
-  `CAN`）と `dlCap()`（Plus 1・Pro 3、無料は 0）、`dlCount()`、`dlStop()`。
+- Implementation status: **取る側は入りました。**`dlCap()`（無料 1・Plus 3・Pro 無限、
+  2026-09-30）、`dlCount()`、`dlStop()`。
   押すと本当に着地することを `tools/dl-check.mjs` が持ちます ── 記事の見た目
   ではなく storage を訊きます（`LANGS[id].mine` が false、~~`bkPack()`~~ は運ばない、
   `netLangSync()` は走らない）。「ダウンロードボタン押しても言語追加されない
