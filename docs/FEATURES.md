@@ -54,8 +54,8 @@ Marked separately, because they are not the same question:
 | Keyboard: any existing character on a key, chosen from the kinds of character on the key's page -- the same list as a letter's 「既存文字から選ぶ」 (`pkKindsHTML()`) | code confirmed (r96), not on a device | yes | — | slice `kb` (a slot holds `=` + the character, `kbCh()`) | decided — 2026-09-25 |
 | Keyboard: handwriting -- a keyboard of its own (pattern `hand`): write with a finger and the language's drawn letters nearest to it are offered on the bar, nearest first (`kbHandLay()`, `HandPad.swift`, `hand.js`) | code confirmed (r96), not on a device | yes | — | slice `kb` (a board of pattern `hand`, its face carries `hand:1`); App Group `keyboard.json` carries `hand` | decided — 「キーボードはプランで分けない」 2026-09-25 |
 | Font built on the device (OTF) | shipped | yes | — | none (derived) | decided |
-| Font file out of the app (.otf, the share sheet) -- the share mark at the top right of the letters screen opens the export screen (`vLtOut()`), and its フォント row is the export | code confirmed (r95; moved to the letters r96; every plan r146), not on a device | yes | — | none — a file in the app's tmp folder, handed to iOS (`ltFontOut()`) | decided — 2026-09-30 |
-| Letters out as SVG -- the SVG row of the export screen the letters' share mark opens (every drawn letter, eight across, `ltSvgOut()`); one letter's share mark on its own page (`ltSvgOne()`) | code confirmed (r102), not on a device | yes | — (where the line goes is not decided; every plan) | none — a file in the app's tmp folder, handed to iOS | decided — 2026-09-26 (the letters, not a line: 「カードはいらん。文字書いた後の書き出し。」) |
+| Font file out of the app (.otf, the share sheet) -- the share mark at the top right of the letters screen opens the export screen (`vLtOut()`), and its フォント row is the export | code confirmed (r95; moved to the letters r96; every plan r146), not on a device | yes | — | none — a file in the app's tmp folder, handed to iOS (`ltFontOut()`) | decided — 2026-09-30. Of your own language only: never somebody else's, on any plan (2026-09-30, r150) |
+| Letters out as SVG -- the SVG row of the export screen the letters' share mark opens (every drawn letter, eight across, `ltSvgOut()`); one letter's share mark on its own page (`ltSvgOne()`) | code confirmed (r102), not on a device | yes | — (where the line goes is not decided; every plan) | none — a file in the app's tmp folder, handed to iOS | decided — 2026-09-26 (the letters, not a line: 「カードはいらん。文字書いた後の書き出し。」). Of your own language only: never somebody else's, on any plan (2026-09-30, r150) |
 | Letters put together in one square (block, like Hangul) -- the sixth writing system; a syllable's onset, vowel and final laid over one another where each was drawn on the square cut in four (`wsStrokes()`, `wsParts()`), a final drawn high moved down into the lower left, a second into the lower right (`wsInto()`); four letters and two finals at most | code confirmed (r102, r105), not on a device | — | `wsys`, as the other five | the `language.wsys` column (`block`); an older `SCRIPT.blk` is kept and not read | decided — 2026-09-26 |
 | Import a word list | shipped | paste | `file`: a file | slice `words` | decided |
 | **write — letters brought in on a sheet** | **in progress** — the road is in (`www/sheet.js`, ch 26, `npm run sheet`) and **so is the plan gate**; the drawing is not | — | **Pro**, and it is `file` that says so — the door (`fileInHTML()` in `www/shell.js`) and `shTakeIn()` both ask `can('file')`, which is Pro. There is no `write` capability and there is not going to be one | slice `letters`: `lt.sh` and `lt.via` | partial |
@@ -74,7 +74,7 @@ Marked separately, because they are not the same question:
 | Feature | Status | Free | Paid | Data | Owner decision |
 |---|---|---|---|---|---|
 | Writing a post | shipped | yes | — | the `post` row on the server, ink frozen on write; `lingua.posts` is the copy shown with no signal, read-only (rule 22) | decided |
-| Making a second language | shipped | — | Pro | `lingua.langs` | decided — the door is on the language list in Settings (`langNew`, `www/home.js`), not on the profile 「せっていからでいいよ」. `langCount()` counts languages that are `mine` AND on this account, so reading somebody else's is not making one and signing in as somebody else does not inherit their count |
+| Making a second language | shipped | — | Plus (2026-09-30) | `lingua.langs` | decided — the door is on the language list in Settings (`langNew`, `www/home.js`), not on the profile 「せっていからでいいよ」. `langCount()` counts languages that are `mine` AND on this account, so reading somebody else's is not making one and signing in as somebody else does not inherit their count |
 | Timeline | shipped, **not device confirmed** | yes | — | `post` rows on the server; `lingua.posts` is the copy shown with no signal, read-only (rule 22) | decided — **an account is required to read it and to post**. 「なんでログインしてないアカウントで投稿できんの？」 The making side needed none; **2026-08-26 ended that** — 「言語はアカウントないと作れないです」. With no signal a post is not sent: it fails, says so, and stays in front of the person so pressing again sends it — it is **not** kept on the phone to go up later 「なら失敗して残るにするべき」 OWNER 2026-09-05 (`docs/FEATURE_RULES.md` decision log, 2026-09-05). **The code does not match that yet**: ~~`postCatchUp()`~~ (`www/post.js`) sends a post the server has no id for off the back of the next timeline answer, with nobody pressing (r46-audit A5). It does not work without an account |
 | Timeline split — For you / Following | shipped, **not device confirmed** | yes | — | none new; the `follow` rows are the list (`FOL_HAVE`, `www/me.js`) | decided — 「フォロー中とおススメみたいに分けたい」. For you is everything, Following is who this account follows plus your own, matched on the post's frozen `hd` |
 | A post carries its own shapes (`ink`) | shipped | yes | — | on the post | decided |
@@ -106,7 +106,7 @@ Marked separately, because they are not the same question:
 | Notices | shipped, **not device confirmed** | yes | — | — | done — `netNotices`, an RPC in `schema.sql` |
 | Following | shipped, **not device confirmed** | yes | — | `follow` rows (`FOL_HAVE`, `www/me.js`) | done — `netFollow`, and Follow is on a person's row in the search |
 | Quoting | **planned** | ? | ? | `quote` rows | **open** — the table exists in `schema.sql` and nothing reads it |
-| **DL — a chapter of somebody else's published language** | **shipped 2026-09-01**, **not device confirmed** — the ↓ on their article page (`wldGet()`, `www/home.js`) puts a row in the index (`langSeenAdd()`), the slices in memory under `langKeyOf()` (rule 22), and a `language_take` row on the server (`netTakePut()`) | **yes** — every plan may take, and how many is the next row (2026-09-30; it was Plus from 2026-09-02, ~~`CAN.dl`~~) | — | The dictionary and the grammar only where their owner's own switch says so: `slice_read` opens `words`, `phases` and `gram2` on a published or taken language when `slice_dl()` answers yes, and refuses them otherwise | the index row, the slices in memory, and the `language_take` row; **nothing of yours is touched** — it is not sent up (`langMineIds()` skips a language whose `language.owner` is somebody else) and not topped up (`ltStart()` asks `langMine()` first) | decided — **it cannot be edited** 「dl言語はへんしゅうはできないってなんかいもいわせんなよ」 OWNER 2026-09-01; **it is not in your backup** 「入らん」; **one chapter at a time** 「いや一つづつdlでいいよ」; **counted separately** 「別に数える」 — `langCount()` counts the languages `language.owner` says are yours and is untouched |
+| **DL — a chapter of somebody else's published language** | **shipped 2026-09-01**, **not device confirmed** — the ↓ on their article page (`wldGet()`, `www/home.js`) puts a row in the index (`langSeenAdd()`), the slices in memory under `langKeyOf()` (rule 22), and a `language_take` row on the server (`netTakePut()`) | **yes** — every plan may take, and how many is the next row (2026-09-30; it was Plus from 2026-09-02, ~~`CAN.dl`~~) | — | The dictionary and the grammar only where their owner's own switch says so: `slice_read` opens `words`, `phases` and `gram2` on a published or taken language when `slice_dl()` answers yes, and refuses them otherwise | the index row, the slices in memory, and the `language_take` row; **nothing of yours is touched** — it is not sent up (`langMineIds()` skips a language whose `language.owner` is somebody else) and not topped up (`ltStart()` asks `langMine()` first) | decided — **it cannot be edited** 「dl言語はへんしゅうはできないってなんかいもいわせんなよ」 OWNER 2026-09-01; **it is not in your backup** 「入らん」; **one chapter at a time** 「いや一つづつdlでいいよ」; **counted separately** 「別に数える」 — `langCount()` counts the languages `language.owner` says are yours and is untouched; **used inside Lingua only, on every plan** 「外にも持ち出しできないようにしないといけないプランでも変わらない」 OWNER 2026-09-30 — no font, SVG or sheet file, no copy, not sent to the iPhone keyboard, and nothing of it written to this phone's disk; a card of a post is allowed; where it came with no keyboard the taker may build their own (r150 closes the roads out and the disk copy) |
 | **A language comes back on a new phone** | **shipped 2026-09-01**, **not device confirmed** — `netLangSync()` now sends every language a person made, not only the one that is open, and `netTook()` pulls their `language` rows back and fills in the slices this phone does not have | yes | — | nothing new is stored; the local id of a language that came back **is its `sid`**, so a second phone cannot make a second copy | decided — 「基本は全部サーバー管理」「アカウント消したら残るわけがない」 OWNER 2026-08-26. It **fills in what is missing and stops**: a language or a slice already on the phone is untouched, and a server that does not answer changes nothing |
 | Reading a downloaded language | **shipped 2026-09-02**, **not device confirmed** — the row in the language switcher is a button and `langOpen()` takes it; `langLocked()` in `core.js` is what every saver asks, so nothing writes to it. The ↓ itself stays on the article and does not switch (`wldGet`, `www/home.js`). **The launch brings it back whole (2026-09-09)**: `netLangsDown()` walks this account's own rows AND the ones `language_take` says it took, in one ask, and fills the slices that are missing — so closing the app and opening it finds the language with what the server holds for it in it. What crosses is what `slice_read` allows (`words`/`gram2` only where the owner's own switch says so). `again-check` holds it | — | — | nothing new | decided — 「ダウンロード言語にしようよ。編集不可でそのアカウントに切り替えたらダウンロードした人の言語が使える」 OWNER 2026-09-02. **A DL is a POINTER, not a copy**: 「dl元が言語を削除したり、アカウントを消してその言語自体が消えた場合は、dlユーザーからも削除される」 OWNER 2026-09-09 — the server cascades (`language_take`, `schema.sql`) and the phone's index row and slices go with it on the next launch — `netLangsGone()` in `www/net.js`, DELETE REVIEW in `docs/CHANGELOG.md` 2026-09-09, and nothing is dropped on a launch where the answer never came. ↓ does NOT switch — 「切り替えなくていい」 OWNER 2026-09-09, settled. A language the source has deleted goes from the phone too, and unpublishing only stops NEW takes — somebody who already took it keeps reading it (`language_took()` in `schema.sql`, **SQL has to be re-run**). Both decided and built 2026-09-09, `claude/r9-dl`, not device confirmed |
 | How many DL'd languages a plan holds | **shipped 2026-09-02**, **not device confirmed** | 1 | Plus 3, Pro no limit | `language_take` on the server, one row per (account, language) — `dlCount()` counts what `netTakes()` brought down, so a second phone counts from where the first left off (2026-09-09) | decided — 「DL言語1言語無料、plus、3言語、pro無限にしない？」 OWNER 2026-09-30 (was 0 / 1 / 3, 「DL言語とmake言語でそれぞれ別の最大値」 2026-09-02). `dlCap()` is the number and `dlStop()` is the refusal, both in `www/core.js`; `dl-check` holds them. Two ceilings that cannot see each other: filling this one leaves `langCap()` where it was |
@@ -373,7 +373,11 @@ Decided 2026-08-19. The author decides what is public, per thing.
 **EVERY PLAN MAY DOWNLOAD, AND THE CEILING IS FREE 1 / PLUS 3 / PRO NONE** ──
 「DL言語1言語無料、plus、3言語、pro無限にしない？」 OWNER 2026-09-30, which
 replaces 「plusからです」 (2026-09-02). `dlCap()` in `www/core.js` is the one
-place; `dl-check` and `plan-check` hold it. Making and publishing stays Plus. A downloaded
+place; `dl-check` and `plan-check` hold it. **Somebody else's language is used, never had, on every
+plan**: letters and meanings inside Lingua, no edit, and nothing of it leaves
+the app — no font, SVG or sheet file, no copy, not sent to the iPhone keyboard
+— or is written to this phone's disk; a card of a post may leave (r150).
+Making and publishing stays Plus. A downloaded
 keyboard is not a shelf of its own: it is the `kb` slice of the language it came
 from, taken with that language's own ↓, and the language counts once however
 many of its sections were taken (`dlCount()`).
@@ -602,17 +606,28 @@ Decided, and in:
 - taken from **the language's overview page on Home**, where public/private
   already is 「dlは公開非公開があるから、ホームの言語の概要ページに作った」
 - **anybody may use an official asset — inside Lingua only**
-  「公式が提供してるアセットなんだからみんな使えるよ。でもlingua内ね？」
+  「公式が提供してるアセットなんだからみんな使えるよ。でもlingua内ね？」 — and
+  that holds for every taken language on every plan 「人が作ったやつはね」 OWNER
+  2026-09-30: no file (font, SVG, sheet), no copy, not sent to the iPhone
+  keyboard, held on the server only and never on this phone's disk, no copy
+  kept for a launch with no signal; a card of a post is allowed; a taken
+  language with no keyboard may be given one by the taker (r150)
+- the official assets come **from the server**, as the published languages of
+  Lingua's official account, the first being the Voynich script (OWNER
+  2026-09-30); **an official account's profile lists the languages it
+  publishes** in place of the one language line everybody else's has, and a
+  mark on the server says which accounts are official (OWNER 2026-09-30, r152)
 - **one account**, however many languages 「でもアカウントは一つだからね？」
+- you **can write a post** in a language you downloaded — posting is inside Lingua, and what is
+  refused is taking somebody else's language OUT 「人の言語を勝手に外持ち出すのはダメでしょって話をしてるのよ」
+  (OWNER 2026-09-30)
 - over the ceiling, the list is **cut and nothing is deleted** —
   `langsSeen()` with `dlCap()`, `wordsSeen()`'s shape 「減った時は隠すだけね」
 
 Open, and not to be guessed:
 
-- whether you can **write a post** in a language you downloaded
 - whether **一部だけ** DL した言語（例えば単語だけ）はその一部だけの言語として
   一覧に並ぶのか
-- whether the official assets ship **inside the app** or come **from the server**
 
 What is still missing, checked against the code rather than remembered:
 

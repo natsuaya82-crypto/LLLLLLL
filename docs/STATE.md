@@ -443,7 +443,7 @@ verify-plan の `index.ts` は作業側で走らせていない（Deno 無し）
 入ったもの：`claude/r33-owner`（2026-09-12 朝のオーナー決定）── 新しい言語は
 38 字の枠で始まる（`ltSlotsFill()` を `langNew()` が段を問わず一度呼ぶ、
 `ltStart()` の段の判定はそのまま）、取った言語の答えの写し `lingua.take.<uid>`
-（アカウントの鍵、上る道なし、読むのはアカウントの入れ物 `ACCT` 一箇所 ── r79）、段が訊けていない間は
+（アカウントの鍵、上る道なし、読むのはアカウントの入れ物 `ACCT` 一箇所 ── r79。2026-09-30 の決定で人の言語は端末に置かないことになり、この写しは r150 が見直す）、段が訊けていない間は
 天井が `null` で一覧を畳まない（`langCap()`/`dlCap()`、`langStop()`/`dlStop()` は
 数を見る前に段を訊いて「接続できません」）、ja の `g2.g.mood`「命令・条件・可能・
 義務・願望」、決定ログ 2026-09-12 の六項。**未**：「プランが終了しました」を
@@ -568,7 +568,7 @@ CHANGELOG 2026-09-11）、「まだ訊けていない」は無料ではない三
 索引の行を落とすのは DELETE REVIEW 待ち、BACKLOG）。
 
 **待っている判断**：↓ で直接その言語に切り替えるか／元が非公開にした時の
-取った側／DL 言語を「返す」道（plus は 1 つなので、返せないと一生埋まる）／
+取った側／DL 言語を「返す」道（DL の数は 2026-09-30 に 無料 1・Plus 3・Pro 無限 に決まった ── r149。返せないと埋まるのは同じ）／
 古い `lang` 鍵をいつ読まなくするか。iPhone の通知はリリース後（保留）。
 
 ## 2026-09-06 の夜 ── ビルド 140
@@ -692,7 +692,7 @@ CODE CONFIRMED だけ。**検査の緑は証拠になりません。**
    失敗しても、人が作ったものは目の前に残ります。もう一度押せば送れる。
    `saveTry()`（`www/core.js`）が「保存できませんでした」と言い、`LSL`・`WORDS`・
    `LETTERS` はそのまま残ります。
-3. **電波が無いときは、前に読み込んだ分を出します。見るだけです。**作れない、
+3. **電波が無いときは、前に読み込んだ分を出します。見るだけです。**自分の言語だけで、人の言語は端末に置かずサーバーにだけ置きます（2026-09-30、r150）。作れない、
    保存できない。**その写しはサーバーへ戻りません ── 片道です。**理由は
    ~~`syMerge()`~~（~~`www/sync.js`~~）が壊れた写しでサーバーの正しいほうを上書きする
    バグがあったからです（今は `slState()` が壊れと空を分けます）。写しは
@@ -1495,7 +1495,7 @@ can hold two rules.
 - **Keyboards are not divided by plan (1.0.3, r95).** Every plan builds as
   many as it likes, and a key carries a drawn letter or any existing character,
   typed straight in on the editor. What differs is how many drawn letters there
-  are; the font file export is `can('font')`, Plus. The language ceiling is
+  are; the font file export is on every plan (r146, 2026-09-30). The language ceiling is
   `langCap()` — `FREE_LANGS=1`, `PLUS_LANGS=3`, Pro none (2026-09-30), and the
   downloads are `dlCap()` with the same three numbers. `edit` and `badge` are both in `CAN` now.
 - **The price of Pro is decided.** The four products and their prices are in

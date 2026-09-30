@@ -275,7 +275,26 @@ it is quoted, and where a decision has never been made the row in
 - Implementation status: r145 に渡した。**1.0.4 に入れる**（「1.0.4で入れるやつね！」）。
 - 追記（同日、スクショを見て）: レイヤーの列は、それぞれのレイヤーに何が描いてあるかが見えるようにする ── 番号だけでなく、そのレイヤーの線の小さい絵（「レイヤーはこいつみたいにちゃんと書いてるのがわかるようにして」、Reddit の道具の Layers 欄）。r147 に渡した。
 - 追記（同日、r147 のスクショを見て）: レイヤーの欄は Reddit の道具（r/casualconlang の Layers 欄）と同じ形にする ──「いやあレイヤーこれと同じ感時にして欲しい。鉛筆つけたり、ひょうじひひょうじを目のマークでやったり、レイヤーのサイズ変えたり」。(a) 鉛筆で**レイヤーの名前を変える**。(b) 目のマークで**表示・非表示**。隠すのは描く画面の見た目だけで、隠したレイヤーの線も**フォント・キーボード・投稿には入る**（「入る」）。(c) 欄の小さい絵を**今より大きく**する（「下のレイヤーサイズが小さいからもう少しデカくして欲しい」）。r148 に渡す。
+- 追記（同日、r148 のスクショを見て）: 太さは**点**に決める（スライド式はやめる）──「点でいいや基本が真ん中で線ごとに選べるようにして」。新しく引く線は真ん中の点の太さから始まる（太さの無い今までの線は 24 のまま、書き換えない）。線を選んで点を押すとその線の太さが変わる。並びは「点の列 → 区切りの線 → 『レイヤー　＋』の見出し → レイヤー 1…」（「上と被ってるから」）。レイヤーの行は r148 のまま（「レイヤーの画面はこれでいい」）。r154 に渡す。
 - 目標（同日）: 「レディットで作ってるやつの全部内包していってこれでいいやんを作るのが目標」── Reddit で人が作っている道具の機能を Lingua に取り込み、「これ一つでいい」にする。
+
+### 2026-09-30 公式アカウントのプロフィールは「DL可能言語」の一行。開くと公式の文字の一覧
+- Date: 2026-09-30
+- Area: プロフィールの言語の一行（今は一番古い言語一つ、`profile_seen.lang_id`）、公式の印（サーバー）、DL、人の言語のキーボード
+- Decision: (1) 公式アカウント（今は @lingua だけ）のプロフィールでは、言語の一行の代わりに「DL可能言語」の一行を置く。開くと、そのアカウントが公開している言語（ヴォイニッチなど）の一覧。一つ開くとその言語のページで、字の形が見られ、字（フォント）を DL できる。字しか無いものは字だけ。キーボードが用意してあればキーボードも DL できる。(2) DL した言語にキーボードが無ければ、DL した人が自分で作れる（「人の言語は編集できない」の例外。作ったキーボードは DL した人のもので、元の言語は変わらない）。ほかの人のプロフィールは今のまま。公式かどうかはサーバーの印が答える。@lingua の今の名前の無い言語（5262c1dd）は消さず、非公開にする。
+- Reason: オーナーの言葉「俺は自分の文字作らないから」「アンタイトルドのところがそもそもみんなと違くなるようにしたいの」「俺は言語作らないって言ってるでしょ？ DL可能言語 開いたらボイニッチとか色々出てくる。フォントしかないやつはフォントをDLできる フォントはどんな感じか見れる。dl言語はキーボードは自分で作ってねって感じ。キーボードもDLできるけど、ないやつは自作可能」（2026-09-30）。
+- Affected features: プロフィール、DL、キーボード。
+- Affected data: 公式の印（新しく貯まる物、サーバー）。DL した人が作るキーボード（新しく貯まる物、DL した人のアカウントに）。5262c1dd の `published_at` を空にする（行と中身はそのまま）。
+- Implementation status: (1) は r152 に渡した。(2) は r150 を取り込んだ後に r153。
+
+### 2026-09-30 Unicode に無い字を Lingua 公式アカウントで用意する。まずヴォイニッチ
+- Date: 2026-09-30
+- Area: 公式アカウント（オーナーのアカウント、アドレスはリポジトリに書かない）の公開言語、DL の仕組み
+- Decision: Unicode に無く、著作権の問題も無い字を、Lingua 公式アカウントの言語として用意し、みんなが DL して Lingua の中で使う（人の言語の扱いは上の「人の言語は使うだけ」のまま）。著作権的に NG なもの（テングワール・オーレベシュ・クリンゴン・ゲームの字など）は避ける。最初はヴォイニッチ手稿。字の割り当ては EVA 転写（a〜z）。既存のヴォイニッチ用フォントのファイルは使わず、線を描き起こす。
+- Reason: オーナーの言葉「ユニコードにないやつをlingua公式アカウントで準備するみたいな」「著作権的にもngなのは避ける」「いやまずはボイニッチいこう」（2026-09-30）。
+- Affected features: タイムラインの他の人の言語、DL。
+- Affected data: 公式アカウントの `language`・`slice` の行（サーバーにリーダーが置く）。アプリのコードは変わらない。
+- Implementation status: 線は r151 に渡した。アカウントはオーナーが作る。
 
 ### 2026-09-30 作れる言語と DL 言語の数は 1・3・無限。人の言語は使うだけ
 - Date: 2026-09-30
@@ -284,6 +303,9 @@ it is quoted, and where a decision has never been made the row in
 - Reason: オーナーの言葉「DL言語1言語無料、plus、3言語、pro無限にしない？」「作れる言語も1、3、無限にするのはどう思う？」「プランを変えるとこだけ」「dl言語は厳しくしないと、アプリ内で文字を使う、意味を見たりって言う編集はできないし外にも持ち出しできないようにしないといけないプランでも変わらない。人が作ったやつはね」（2026-09-30）。ユーザーを増やすため（トキポナは r/tokipona に掲載の許可を取ってから、Lingua の中だけで DL して使える形）。
 - Affected features: プランの画面、言語の追加、他の人の言語の取り込み。
 - Affected data: 無い（数を変えるだけ。上限を超えた言語はどれも残る）。
+- 追記（同日）: 外へ出す線 ──「カード投稿はok」「svgやファイル書き出しはng」「だから端末に置くのもng」「サーバーであればスクショ以外で持っていけないでしょ？著作権関連するんだからそこはしっかりやろう」。人の言語は**サーバーにだけ**置く：端末のディスク（`localStorage` の読み込み済みの写し・`.got`・App Group など）に書かない。電波の無い時に人の言語を眺める写しも持たない（自分の言語の写しは今のまま）。ファイル（フォント・SVG・シート）・コピー・iPhone のキーボードへ送るのは不可。カード（投稿の画像）は可。r150 に渡した。
+- 追記（同日）: 例外が一つ ── DL した言語にキーボードが無ければ、DL した人が自分で作れる（下の「公式アカウントのプロフィールは「DL可能言語」の一行」(2)）。元の言語は変わらない。
+- 追記（同日）: DL した言語で**投稿はできる** ── 投稿は Lingua の中で、駄目なのは人の言語を外へ持ち出すこと（「だから、人の言語を勝手に外持ち出すのはダメでしょって話をしてるのよ」）。
 - Implementation status: (1) は入った（`claude/r149-caps`、CODE CONFIRMED のみ）── Pro は `Infinity`（`wordCap()` と同じ形）、取ることの扉（~~`CAN.dl`~~）は無くなり、「一番上の段で満杯」（~~`planTopFull()`~~）も起きないので消した。`plan-check`・`dl-check`・`paid-check` が持つ。(2) の編集は既に止まっている（`langLocked()`）。外へ出す道は測ると 6 つとも開いている ── フォント（`ltFontOut`）、SVG（`ltSvgOut`）、iPhone のキーボードへ送る（`sharePush`）、カード（`cardSave`）、書き取りシート（`shMake`）、コピー（`postCopy`）。まだ直していない。
 
 ### 2026-09-30 文法で形が変わる表意文字の仕組みを 1.0.4 で作る
@@ -875,7 +897,7 @@ it is quoted, and where a decision has never been made the row in
 - Area: 保存ボタンのある画面、Pro の上限、ブロック、ミュート
 - Decision:
   - **保存ボタンのある画面を下のタブで出る時**: 戻るで出る時と同じく「保存しますか？」と訊く。
-  - **Pro で上限に達した時**: 【差し替え済み 2026-09-30】── 差し替えた決定: 「作れる言語と DL 言語の数は 1・3・無限。人の言語は使うだけ」（2026-09-30）。Pro に上限は無い。
+  - **Pro で上限に達した時**: 【差し替え済み 2026-09-30】── Pro の言語と DL は無限になり、当たる上限が無い。差し替えた決定: 「作れる言語と DL 言語の数は 1・3・無限。人の言語は使うだけ」（2026-09-30）。
   - **ブロックする前にその人から取った言語**: 残す（一覧に残り、読める）。
   - **ミュートした人**: その人が書いた投稿に加えて、その人がリポストした投稿と、その人からの通知（いいね・返信など）も出さない。
   - **ミュートの印**: 「…」の一覧の「ミュート」の行の左はスピーカーの絵。もうミュートしている人の時は、その絵に
@@ -1430,7 +1452,9 @@ it is quoted, and where a decision has never been made the row in
     あれが言語切り替えになるって感じ」がそのまま生きている。2026-09-05 の
     「確定は一個前へ戻る」は**言語の選択には掛からない**。
   - (b) 「前に読み込んだの出していいよ。何か更新するならクルクルが必要」──
-    **電波が無い起動では、前に読み込んだ物を出す。取った言語も。**更新と保存は
+    **電波が無い起動では、前に読み込んだ物を出す。**「取った言語も」は【差し替え済み
+    2026-09-30】── 人の言語は端末に置かず、電波の無い時の写しも持たない。差し替えた決定:
+    「作れる言語と DL 言語の数は 1・3・無限。人の言語は使うだけ」（2026-09-30）（コードは r150）。更新と保存は
     クルクル →「接続できません」。2026-09-04「前に読み込んだ分は出て欲しい。
     制作も眺めたい人はいるだろうし、」の再確認。
   - (c) 「文字0はアルファベットでいいやん」── **新しい言語は、段を問わず
@@ -1460,7 +1484,7 @@ it is quoted, and where a decision has never been made the row in
 - Affected data: (c) **増減なし**（有料の言語が三十八字を持つようになるだけ、
   移行なし）。(b) **鍵が一つ増える** ── `lingua.take.<uid>`、`language_take` の
   答えの写し、そのアカウントの物、上る道なし（`docs/CHANGELOG.md` 2026-09-12、
-  `docs/DATA_MODEL.md`）。(a)(d)(e)(f) なし
+  `docs/DATA_MODEL.md`）── 人の言語は端末に置かない（2026-09-30）。この写しをどうするかは r150。(a)(d)(e)(f) なし
 - Affected docs: `CLAUDE.md`（規則 22・§ What the free plan is）、
   `docs/DATA_MODEL.md`、`docs/PAID_FEATURES.md`、`docs/CHANGELOG.md`、
   `docs/BACKLOG.md`
@@ -3282,7 +3306,7 @@ it is quoted, and where a decision has never been made the row in
   ない）・40b（段は預け写しに乗らない）・40c（戻ってきたらサーバーが答える）。
   三つとも赤を見た。実機は未確認。
 
-### 【差し替え済み 2026-09-30】ダウンロードは Plus から。上限は make と別で、Plus 1・Pro 3
+### 【差し替え済み 2026-09-30】ダウンロードは Plus から。上限は make と別で、Plus 1・Pro 3（2026-09-02）
 - 差し替えた決定: 「作れる言語と DL 言語の数は 1・3・無限。人の言語は使うだけ」（2026-09-30）
 
 ### 言語の記事は「人にどう見えるか」──自分のページで分岐しない
@@ -4587,9 +4611,10 @@ something was restructured」であり、**理由を四つ挙げて禁じてい�
   オーナーの言葉をそのまま置く。要約していない — この四つが決定の本体であり、
   下の見出しはそれを拾い直しただけのものである。
 
+  【差し替え済み 2026-09-30】── DL を取れる段と数を言った二行（Plus から、Plus 1・Pro 3）は
+  消した。差し替えた決定: 「作れる言語と DL 言語の数は 1・3・無限。人の言語は使うだけ」（2026-09-30）。
+
   ```
-  DLはplusからだけどplusは自分の言語+DL言語1個
-  proは自分の言語3個+DL言語3個は？
   ホーム長押しで言語切り替えできる
   制作以外は変わらない感じは？
   shangoにしてるならそれ。変えたなら変えた。
@@ -4638,14 +4663,6 @@ something was restructured」であり、**理由を四つ挙げて禁じてい�
   8. **タイムラインは色んな言語を読める。** DL は読むためのものではない —
      読むのはもう無料でできる。DL は「使いたい人がすぐに使えるように」の方である。
 
-  **決まっていないのはここである。数字を固めないこと。**
-  「DLはplusから」は言い切りである。そのあとの数は
-  「自分の言語3個+DL言語3個**は？**」と**問いで終わっている**。
-  「制作以外は変わらない感じ**は？**」も同じである。
-  問いを決定に書き換えない — このファイルの「決定をもっともらしい規則に
-  読み直さない」はこの向きにも効く。`docs/FEATURES.md` の行は
-  この二つを **open** として持つ。
-
 - Reason: オーナーが理由を二つ言っている。どちらも落とさないこと —
   次の人が「もっと綺麗な形がある」と思いついたときに止めるのは理由の方である。
 
@@ -4672,7 +4689,8 @@ something was restructured」であり、**理由を四つ挙げて禁じてい�
 - Implementation status: **入っている。**取ることはどのプランでもでき
   （2026-09-30、扉だった ~~`CAN.dl`~~ は無い）、数は `dlCap()` が 1 / 3 / 無限で答え、`dlCount()` が
   `mine` の false を数える ── 作る天井（`langCap()`）とは別の天井で、互いに
-  見えない。取ってきた言語は `langSeenAdd()` が `mine:false` で index に入れ、
+  見えない（どの段から取れるか・いくつかは【差し替え済み 2026-09-30】── 差し替えた決定:
+  「作れる言語と DL 言語の数は 1・3・無限。人の言語は使うだけ」（2026-09-30））。取ってきた言語は `langSeenAdd()` が `mine:false` で index に入れ、
   `vLangs()` が「読んでいる」の節に並べる。解放は章ごと（`wldSecDl()`、
   `www/home.js`）で、一つのスイッチではない。
 
@@ -4707,14 +4725,14 @@ down.」「せっていからでいいよ」。今日の「プロフィールの
 
 **二つめ — 公開と DL は 2026-08-19 に一度決まっている。**
 `docs/FEATURES.md` § 4「Publishing and downloading」がそれで、今日のものと
-三つ違う。① キーボードと文字の DL は**無料**だった（今日は「DLはplusから」）。
+三つ違う。① 【差し替え済み 2026-09-30】── DL は無料から。差し替えた決定: 「作れる言語と DL 言語の数は 1・3・無限。人の言語は使うだけ」（2026-09-30）。
 ② DL したキーボードは**自分の棚に三つまで**並ぶと書いてあるが、今日の形では
 DL は「言語一つ」として数えられ、キーボードはその中にある。
 ③ 08-19 は**人が人のものを**取る話、今日は**公式アセット**の話である。
 同じ仕組みを使うが同じものではないかもしれない。
 一つだけ合っている — 08-19 も「A downloaded dictionary is a language you can READ
 and is never merged into your own」と言っている。**入らない、は二度決まっている。**
-残りの三つは**オーナーに訊くこと。**
+残りの二つは**オーナーに訊くこと。**
 
 ### Decision
 - Date: 2026-08-23
@@ -5141,11 +5159,13 @@ and is never merged into your own」と言っている。**入らない、は二
 - Area: How many languages, how many keyboards, and two more capabilities
 - Decision:
 
-  | | languages | keyboards, in total |
-  |---|---|---|
-  | Free | 1 | 1 — the fixed QWERTY, which is not built and cannot be |
-  | **Basic** | **1** | **1 + 3 = 4** |
-  | **Plus** | **3** | **no ceiling** |
+  | | keyboards, in total |
+  |---|---|
+  | Free | 1 — the fixed QWERTY, which is not built and cannot be |
+  | **Basic** | **1 + 3 = 4** |
+  | **Plus** | **no ceiling** |
+
+  The languages column (1 / 1 / 3) went:【差し替え済み 2026-09-30】── 差し替えた決定: 「作れる言語と DL 言語の数は 1・3・無限。人の言語は使うだけ」（2026-09-30）.
 
   Keyboards are counted **across languages, not within one**. Today ~~`KB_MAX`~~
   is three boards *per language*; from now the number is a pool. A language
@@ -5178,11 +5198,6 @@ and is never merged into your own」と言っている。**入らない、は二
   a–z with nothing addable binds the moment somebody wants a letter. A
   keyboard count binds almost never, so Basic's four is generous on purpose
   and Plus's absence of one costs nothing to give.
-
-  A language is the same argument one step out: this app is for making ONE
-  language deeply — the dictionary, the letters, the writing system, the
-  keyboard, the calendar all stack onto one. Three is there for the person who
-  wants a second and a third, not as the thing being sold.
 - Affected features: ~~`KB_MAX`~~ (a per-language ceiling then, a pool now, and
   gone entirely on Pro), a new language ceiling that does not exist at
   all today, `postEdit()`, `planBadge()`.
@@ -5643,15 +5658,14 @@ and is never merged into your own」と言っている。**入らない、は二
 
 ### Decision
 - Date: 2026-08-19
-- **SUPERSEDED（2 と 4 番）→ 「作れる言語と DL 言語の数は 1・3・無限。人の言語は使うだけ」（2026-09-30）（この log の上のほう）。**どのプランでも
-  取れます。数は言語ごとで 無料 1・Plus 3・Pro 無限で、自分で作る数とは
-  別に数えます。1・3・5・6 番はそのまま生きています。
+- **SUPERSEDED（2 番）→ 「作れる言語と DL 言語の数は 1・3・無限。人の言語は使うだけ」（2026-09-30）。**取るのは無料から、数は言語ごとで
+  無料 1・Plus 3・Pro 無限、自分で作る数とは別に数えます。1・3・4・5・6 番はそのまま生きています。
 - Area: Publishing and downloading — a keyboard, an alphabet, a dictionary
 - Decision:
   1. **The author decides.** Public or private, per thing, for all three: the
      keyboard, the letters, the words. Nothing is downloadable unless its
      author said so.
-  2. 取ることは **どのプランでも**（2026-09-30）。扉は無く、`dlCap()` が数です。
+  2. 【差し替え済み 2026-09-30】── 取るのは無料から、数は `dlCap()`。差し替えた決定: 「作れる言語と DL 言語の数は 1・3・無限。人の言語は使うだけ」（2026-09-30）。
   3. **Making and publishing stays Plus**, as it is now. Free still cannot
      build a keyboard or add a letter, and that does not change.
   4. 落としたものは自分の数を食いません ── `langCount()` は `mine` を数え、
@@ -5997,7 +6011,7 @@ for.
 - Area: Plus — what it contains
 - Decision: はしごなので、上の段は下の段を全部含みます。**足す分だけ**を書くと:
   - **Plus**（中の段）── 文字の追加・改名・削除、音を選ぶ、アルファベット以外の
-    書記体系、語 1000、キーボード四つ、投稿の編集、人の言語を取ること。
+    書記体系、語 1000、キーボード四つ、投稿の編集。人の言語を取ることは【差し替え済み 2026-09-30】── 無料から。差し替えた決定: 「作れる言語と DL 言語の数は 1・3・無限。人の言語は使うだけ」（2026-09-30）。
   - **Pro**（上の段）── Plus の全部に足して、語に上限なし、キーボードに上限
     なし、自分の文法のステージ、言語の向き、CSV の出し入れ、ファイルで持ち込む、
     名前の横の印。

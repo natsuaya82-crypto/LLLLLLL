@@ -300,6 +300,17 @@ count of this account's `language_take` rows and `dlStop()` is the refusal.
 every plan may, so a capability would be a price with nothing behind it — it
 was ~~`CAN.dl`~~ at `plus` from 2026-09-02 until this.
 
+**Somebody else's language is USED, never HAD, on every plan.**
+「dl言語は厳しくしないと、アプリ内で文字を使う、意味を見たりって言う編集はできない
+し外にも持ち出しできないようにしないといけないプランでも変わらない。人が作ったやつ
+はね」 OWNER 2026-09-30. Its letters are typed and its meanings read inside
+Lingua; it is not edited (`langLocked()`); nothing of it leaves the app — no
+font, SVG or sheet file, no copy, not sent to the iPhone keyboard — and nothing
+of it is written to this phone's disk, so there is no copy of it for a launch
+with no signal. A card of a post may leave. Where a taken language came with no
+keyboard, the taker may build their own. No plan changes any of this; r150 is
+closing the roads that are still open.
+
 **A DL'd language is counted SEPARATELY from your own** 「DL言語とmake言語で
 それぞれ別の最大値」 OWNER 2026-09-02. Two ceilings and not one: `langCount()`
 counts what `langWhose()` answers mine for and has never seen a download,
@@ -312,7 +323,7 @@ no to `Infinity`, so there is nothing to hide and no count to show.
 **Nothing here may take a language away.** The rule at the head of this file
 covers a downloaded language the same as any other: a plan that lapses means
 fewer buttons — no new download, and the door drawn anyway — and never fewer
-languages. Somebody who downloaded three **keeps** three, byte for byte, and
+languages. Somebody who downloaded more than the ceiling **keeps** every one, byte for byte, and
 the list draws the ceiling's worth of them with 「非表示 n」 under it — 「有料が
 消えて無料に残った後は非表示じゃないの？」 OWNER 2026-09-12, exactly the way
 `langCap()`'s ceiling folds and never deletes. Paying again draws them all and
@@ -475,6 +486,9 @@ FREE_DL      1       languages downloaded, which is a second ceiling
 PLUS_DL      3       Pro has none -- dlCap() answers Infinity
 ```
 
+The last four lines are the code as it stands, and they are the owner's
+numbers of 2026-09-30: 1 / 3 / unlimited for both.
+
 **A fifth ceiling is not in that block, and that is deliberate: how long a
 post may be.** `postCap()` sits beside `wordCap()` and answers `POST_MAX` on
 free and `Infinity` from Plus — 「plusプランから無限」 OWNER 2026-09-15 — but
@@ -573,11 +587,11 @@ somebody who is about to pay, so Studio is out until the seam has something
 behind it, and what it opened went with it.
 
 ```
-  free    draw your own letters. 100 words. One language. Keyboards of
-          any characters. The font of your letters
-  plus    build it yourself. 1000 words. One download
-  pro     no ceiling on the words. Three languages,
-          three downloads, the grammar, the direction, the file roads
+  free    draw your own letters. 100 words. One language, one download.
+          Keyboards of any characters. The font of your letters
+  plus    build it yourself. 1000 words. Three languages, three downloads
+  pro     no ceiling on the words, the languages or the downloads,
+          the grammar, the direction, the file roads
 ```
 
 Neither paid rung is given fewer than the one below it of anything — "I paid

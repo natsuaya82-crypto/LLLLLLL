@@ -58,10 +58,13 @@ follows, blocks and reports 「SNSは全部サーバー」 — **and the languag
 every slice of it, the keyboard among them, because a keyboard is part of a
 language. **The server is the only place a language LIVES** — a slice is in
 memory while the app is running (rule 22, OWNER 2026-09-04). The phone keeps a
-copy of the timeline, and of the language as it was last loaded, so that with
-no signal there is still something to look at 「前に読み込んだ分は出て欲しい。
-制作も眺めたい人はいるだろうし、」 OWNER 2026-09-04. **That copy is read-only
-and it never goes back up** — it is never where a thing lives.
+copy of the timeline, and of this account's OWN languages as they were last
+loaded, so that with no signal there is still something to look at
+「前に読み込んだ分は出て欲しい。制作も眺めたい人はいるだろうし、」 OWNER
+2026-09-04. **That copy is read-only and it never goes back up** — it is never
+where a thing lives. **Somebody else's language is on the server only**:
+nothing of it is written to this phone's disk and there is no copy of it for a
+launch with no signal 「だから端末に置くのもng」 OWNER 2026-09-30.
 
 **NOTHING IS THE PHONE'S. EVERYTHING IS THE ACCOUNT'S.**
 「端末ごとにやることなんてねえよ」「アカウントごとってずっと言ってるよな？」
@@ -108,8 +111,8 @@ OWNER 2026-09-24. **Making and
 saving need a signal** 「オンラインのみで行こうってことになってる今後オフライン
 対応する時にまた考えることにした」 OWNER 2026-09-04: with none there is nothing
 to send, and 「電波が無いときはログインできない」 is what a screen says about
-signing in. **What there IS with no signal is what was loaded before, to look
-at** 「前に読み込んだ分は出て欲しい。制作も眺めたい人はいるだろうし、」 OWNER
+signing in. **What there IS with no signal is what was loaded before of this
+account's own, to look at** 「前に読み込んだ分は出て欲しい。制作も眺めたい人はいるだろうし、」 OWNER
 2026-09-04. Looking is the whole of it: nothing is made, nothing is saved, and
 nothing on that copy ever travels back to the server (rule 22).
 
@@ -1856,8 +1859,9 @@ arrive at a screen drawn from it, and `netLangFill()` brings it back.
 
 **There is one copy on this phone and it is READ-ONLY.**
 「前に読み込んだ分は出て欲しい。制作も眺めたい人はいるだろうし、」 OWNER
-2026-09-04. With no signal the app shows the language as it was last loaded, so
-that somebody can look at what they made. **Looking is the whole of it** —
+2026-09-04. With no signal the app shows this account's own language as it was
+last loaded, so that somebody can look at what they made. **A language taken
+off somebody else's page has no copy here at all** (below). **Looking is the whole of it** —
 nothing is made on it, nothing is saved to it, and **it never goes back to the
 server. The road is one way.**
 
@@ -1871,7 +1875,8 @@ written over. What keeps the picture
 off that road is `slMine()` — the up road asks it, and the picture is not in
 it. With no road back, a copy that is wrong costs the copy and nothing else.
 
-**The picture is `lingua.<id>.<slice>.got`.** `slGot()` in `core.js` writes
+**The picture is `lingua.<id>.<slice>.got`**, and only of this account's own
+languages. `slGot()` in `core.js` writes
 it the moment this phone and the server hold the same string, `slRd()` reads
 it last — after memory and after an older version's disk key — and `slMine()`
 never reads it at all, which is the whole of the one-way line.
@@ -1960,7 +1965,7 @@ somebody else's this account has taken」 a row in `language_take`, because
 `LANGS[id].uid` had been answering that and 「who made it」 with one field.
 Each is asked through one function (`langNameOf`, `langWsysOf`,
 `langOwnOf` in `www/core.js`, `wldPubOf` in `www/home.js`), each keeps the server's answer in
-memory and a picture on the disk with no road up, and each has THREE states:
+memory and — for this account's own languages — a picture on the disk with no road up, and each has THREE states:
 mine, somebody else's, and **not asked yet** — which is drawn as neither.
 **WHEN a language was made is a fifth of exactly that shape** (`langMadeOf`,
 `language.created_at`, 2026-09-12), and what it answers is which of this
@@ -1972,18 +1977,18 @@ in one place, `langMainId()` is its first element, and a language with no
 answer goes last, because one minted here and not yet sent is the newest thing
 in the index.
 
-**`language_take` is kept the same way, and it had to be.** 「前に読み込んだの
-出していいよ。何か更新するならクルクルが必要」 OWNER 2026-09-12: the answer was
-memory-only, so a launch with no signal had 「not asked」 for it, and every
-language somebody had TAKEN off another page fell to 「nobody has said」 —
-their own were on the screen, out of the pictures above, and the rest had
-gone. `langTookGot()` writes the picture and the account's container
-(`www/core.js` § ACCT) reads it, filed under the account it is about
-(`lingua.take.<uid>`), so signing in as somebody
-else reads that account's own and never the one before it
-（「違うアカウントでログインしてんのに前のやつ出てくるんだけど？」 OWNER
-2026-08-31). No road up, and a language that comes back this way is still only
-READ: updating or saving with no signal is 「接続できません」.
+**Somebody else's language keeps nothing on this phone.**
+「svgやファイル書き出しはng」「だから端末に置くのもng」「サーバーであればスクショ
+以外で持っていけないでしょ？」 OWNER 2026-09-30. A language this account TOOK
+(`language_take`) is on the server and in memory while the app runs, and
+nowhere on the disk — no `.got`, no picture, no copy for a launch with no
+signal: with no signal it is not there. **The code has not caught up** — the
+pictures above are still written for a taken language, and `langTookGot()`
+still writes which ones it took to `lingua.take.<uid>`; r150 is where that
+changes. What a list of that kind is filed under is still the account it is
+about, so signing in as somebody else reads that account's own and never the
+one before it （「違うアカウントでログインしてんのに前のやつ出てくるんだけど？」
+OWNER 2026-08-31）.
 
 **And every key of that copy belongs to an ACCOUNT.**
 「端末ごとにやることなんてねえよ」 OWNER 2026-09-03. This section used to end
