@@ -57,6 +57,8 @@ function openAdd(from, sp){
      left by going somewhere else. */
   addSlot='';
   if(fresh){
+    /* A new sheet is measured from empty, not from the last word's mark. */
+    keepDrop(keepKeyOf('form', 'add:'+addFrom));
     openHw='';
       /* The draft holds only what a relation and an example need a WORD for.
        Everything staged -- the spelling, the meanings, the part of speech,
@@ -73,22 +75,34 @@ function openAdd(from, sp){
   openForm('add:'+addFrom,
     (addFrom? t('add.title.from', addFrom) : t('add.title')),
     '<div id="wd-body">'+wdFormHTML()+'</div>',
-    wdMount, helpQ('word')+wdSaveBtn());
+    wdMount, helpQ('word'));
 }
 FORM_OPEN.add=function(from){ openAdd(from||''); };
-function addOne(){
+/* ---- A NEW WORD IS A SCREEN WITH A SAVE ---------------------------------
+   「単語追加する時の+マークわかりにくいんだけど。saveじゃダメなの？」
+   「入力して戻る時普通に戻るけど、ポップ出す仕様はなんで適応されてないの？」
+   OWNER 2026-09-30. Measured: typing onto this sheet left KEEP empty --
+   wdFormHTML() armed the buffer only on the sheet that CHANGES a word -- so
+   the arrow had nothing to ask about. It is armed by wdKeepOn() now like the
+   edit sheet, so the corner is www/shell.js § KEEP's Save and the way off asks.
+
+   addWrite() is the write, and the one thing both presses reach: the Save
+   (keepSave(), which snaps, sends and goes back) and addOne(), the grammar
+   slot's own button (www/phases.js § openSlot). It answers what it wrote, or
+   null when it refused. */
+function addWrite(){
   /* The word is what was typed, letter by letter -- not the sounds those
      letters happen to read. */
   var sp=(wEdit && wEdit.sp) || [], hw=spWord(sp), d=addW;
-  var syn, ant, w, made, snap;
-  if(!d) return;
-  if(!sp.length || !hw){ toast(t('toast.hw2')); return; }
+  var syn, ant, w, made;
+  if(!d) return null;
+  if(!sp.length || !hw){ toast(t('toast.hw2')); return null; }
   /* The word AND the forms going in with it. Asking for room for one and then
      writing four is how a free language ends up over its own limit. */
   addFmSync();
-  if(capStop(1+addFms.length)) return;
-  if(findWord(hw)){ toast(t('toast.dup')); return; }
-  /* After the guards, so a refused Add leaves the boxes holding what was
+  if(capStop(1+addFms.length)) return null;
+  if(findWord(hw)){ toast(t('toast.dup')); return null; }
+  /* After the guards, so a refused Save leaves the boxes holding what was
      typed rather than having quietly eaten it. */
   wdTakeFields();
   addPos=wEdit.pos;
@@ -108,51 +122,9 @@ function addOne(){
      not an empty one -- the same rule saveWord() holds. */
   if(d.ex && d.ex.length) w.ex=d.ex;
   wdPutExtras(w);
-  /* ---- AND IT IS NOT ADDED UNTIL IT IS UP ---------------------------------
-     「通信エラーなら進むわけねえだろ全部」 OWNER 2026-09-05, and the same
-     sentence again on 2026-09-11 about this button:
-     「電波なしならクルクル回るやろ」.
-
-     This wrote the word, said 「追加しました」 and opened its page, with not
-     one request sent -- the send was a 1.2-second burst, behind a
-     person who had already left. Measured with the radio off on 2026-09-11:
-     `WORDS=2` and the word's page on the screen, `WORDS=1` after a relaunch.
-     CLAUDE.md 規則 11: 「保存しないのが仕様、保存して黙るのはだめ」 -- the pop
-     was there, and the screen went on anyway, which is the app saying two
-     things at once.
-
-     IT IS THE SAME ROAD NINE SAVE BUTTONS ALREADY TAKE and not a second one:
-     netSaveNow() (www/net.js) is the one road up and it answers the press, and
-     keepSnap()/keepBack() (www/shell.js) is how this phone goes back to
-     before the press. Nothing new is written here; this button joins them.
-
-     AND THE PAPER IS NOT PUT AWAY UNTIL IT IS. 「打ったものは欄に残る」 is the
-     rule the save buttons already hold, and here it settles WHERE the five
-     lines that clear the draft go: after the answer, not before it. That also
-     means nothing has to be remembered and handed back -- the draft is never
-     taken away in the first place, so a refusal leaves this screen exactly as
-     the person left it and there is nothing to redraw.
-
-     AND NOTHING IS REDRAWN ON A REFUSAL, DELIBERATELY. render() folds the
-     popup away -- 「Any navigation takes the popup with it」, www/glyph.js §
-     render -- so a redraw here would take ［接続できません］ off the screen in
-     the same frame netPop() put it up. There is nothing to redraw anyway:
-     this screen has not moved. It is the same answer www/shell.js § keepSave
-     reached for the nine save buttons.
-
-     `addW` USED TO BE CLEARED BEFORE THE RELATIONS, and what that was for is
-     the render() inside wRelToggle(): with the draft gone the sheet cannot
-     draw itself. wRelToggle() itself does not care which way round it is --
-     given a headword it takes `findWord(hw)`, which is the word just pushed
-     and is never the draft, so the two-ended branch is the one taken either
-     way. With the draft still standing, that render draws the sheet instead
-     of falling into vForm's catch. */
-  snap=keepSnap();
-  /* THE ADD IS THIS SHEET'S SAVE, so it writes the way a Save does -- through
-     keepWrite() (www/shell.js), which is the one moment a screen with a Save
-     behind it on the trail is not a draft. The sheet can be reached from one
-     that has (a word's own sheet), and without this the word would be held
-     as that screen's draft and 「追加しました」 said over nothing sent. */
+  /* keepWrite() (www/shell.js) is the one moment a screen with a Save behind
+     it on the trail is not a draft -- a no-op inside keepSave(), which is
+     already writing, and what lets addOne() write at all. */
   keepWrite(function(){
     WORDS.push(w);
     syn.forEach(function(o){ wRelToggle(hw, 'syn', o); });
@@ -162,16 +134,28 @@ function addOne(){
     made=addFmWrite(hw);
     save();
   });
+  return {hw:hw, made:made};
+}
+/* The paper put away, once the word is UP and not before: 「打ったものは欄に
+   残る」 -- a refusal leaves the sheet exactly as the person left it. And its
+   buffer with it, so the next new word is measured from empty. */
+function addDone(){
+  keepDrop(keepKeyOf('form', 'add:'+addFrom));
+  addW=null; addFmClear(); addFrom=''; addSlot='';
+}
+/* THE GRAMMAR SLOT'S BUTTON. The same write, sent the same way keepSave()
+   sends it -- snapped first, netSaveNow() (www/net.js) as the one road up,
+   keepBack() when it does not land. AND NOTHING IS REDRAWN ON A REFUSAL:
+   render() folds the popup netPop() has just put up. */
+function addOne(){
+  var snap=keepSnap(), r=addWrite();
+  if(!r) return;
   netSaveNow(function(up){
-    /* 届かなかった。だから何も起きなかった。 */
     if(!up){ keepBack(snap); return; }
-    /* 届いた。ここで初めて紙が片付く。 */
-    addW=null; addFmClear(); addFrom=''; addSlot='';
-    /* Onto the word, read. Everything it holds was written on the way in, so
-       what is wanted now is a look at it, not another form. */
+    addDone();
     if(here().r==='form') back();
-    toast(made? tn('fmr.with', made) : t('toast.added.1', hw));
-    openWord(hw);
+    toast(r.made? tn('fmr.with', r.made) : t('toast.added.1', r.hw));
+    openWord(r.hw);
   });
 }
 function findWord(hw){
@@ -1646,7 +1630,7 @@ function wdFormHTML(){
      is the function that is run again every time anything on the sheet moves
      (relDirty), so it is the one place that is true about the sheet AS IT IS
      rather than as it was opened. */
-  if(!mk) wdKeepOn();
+  wdKeepOn();
   /* The field IS the head of the sheet. It used to sit four rows down under
      a heading, with the word repeated above it as text you could not touch,
      so writing a word meant reading it at the top and typing it in the
@@ -1790,7 +1774,7 @@ function wdSig(sp, mns, pos, sub, reg, tags, ety, nt, w){
 }
 function wdSigEdit(){
   return wdSig(wEdit.sp, wEdit.mns, wEdit.pos, wEdit.sub, wEdit.reg,
-               wEdit.tags, wEdit.ety, wEdit.nt, findWord(openHw));
+               wEdit.tags, wEdit.ety, wEdit.nt, addW || findWord(openHw));
 }
 /* THE SHEET, SAID ONCE. It is asked rather than told: whatever is on wEdit
    at this moment is what the screen is holding, so a meaning added, a tag
@@ -1806,10 +1790,19 @@ function wdSigEdit(){
    is built out of the word one line before the sheet is opened and there is
    nothing in between. */
 function wdNow(){ return {w:wdSigEdit()}; }
+/* Which screen the sheet is: the one that changes a word, or the one that
+   makes one. The grammar slot's sheet makes one too and is not here -- it
+   carries its own button (addOne above), and where it would stand in KEEP is
+   www/phases.js § openSlot's route, which is not this file's. */
 function wdKeepOn(){
-  if(!wEdit || !openHw || addW || langLocked()) return;
-  keepOn(keepKeyOf('form', 'edit:'+openHw), wdNow,
-         function(v, done){ done(wdWrite()); });
+  if(!wEdit || langLocked()) return;
+  if(addW){
+    if(!addSlot) keepOn(keepKeyOf('form', 'add:'+addFrom), wdNow,
+                        function(v, done){ done(!!addWrite()); }, addDone);
+    return;
+  }
+  if(openHw) keepOn(keepKeyOf('form', 'edit:'+openHw), wdNow,
+                    function(v, done){ done(wdWrite()); });
 }
 /* A field being TYPED into does not rebuild the sheet and must not -- a field
    being typed into loses the keyboard the moment the page under it is
