@@ -255,6 +255,15 @@ it is quoted, and where a decision has never been made the row in
 - Implementation status:
 ```
 
+### 2026-09-30 投げ縄で選んだ線だけが動く
+- Date: 2026-09-30
+- Area: 字を描く画面の投げ縄（r113、`www/glyph.js`）
+- Decision: 投げ縄で線を選んで動かすと、**選んだ線だけ**が動く。選んでいない線（つながっている斜め線・横棒など）は動かない。投げ縄の目的は「線全体を選択して動かす」こと。
+- Reason: オーナーの言葉「そもそも線全体を選択して動かすのが目的なんでしょ？」「なんでこうやって全体が動くの？」「選択してるのが縦の線なんだら横の線が動くのが謎」（2026-09-30、実機 1.0.3 のスクショ）。
+- Affected features: 字を描く画面。
+- Affected data: 無い（描いた線の座標が今までどおり保存される）。
+- Implementation status: r144 に渡した。
+
 ### 2026-09-30 今日のお題の行の「Today（お題）」の見出しは要らない
 - Date: 2026-09-30
 - Area: タイムラインの上の今日のお題の行（`www/sns.js` の ~~`.dayk`~~、~~`day.k`~~）
