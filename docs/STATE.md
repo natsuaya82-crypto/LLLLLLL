@@ -1496,8 +1496,8 @@ can hold two rules.
   many as it likes, and a key carries a drawn letter or any existing character,
   typed straight in on the editor. What differs is how many drawn letters there
   are; the font file export is on every plan (r146, 2026-09-30). The language ceiling is
-  `langCap()` — free 1, Plus 3, Pro unlimited by the 2026-09-30 decision (r149 is
-  changing `FREE_LANGS`/`PRO_LANGS`; until it lands the code still says 1 / 1 / 3). `edit` and `badge` are both in `CAN` now.
+  `langCap()` — `FREE_LANGS=1`, `PLUS_LANGS=3`, Pro none (2026-09-30), and the
+  downloads are `dlCap()` with the same three numbers. `edit` and `badge` are both in `CAN` now.
 - **The price of Pro is decided.** The four products and their prices are in
   `docs/apple.md` § 4 and written into `ios/App/App/LinguaStore.swift`. What is
   left is **entering them in App Store Connect**, which is nobody's but the

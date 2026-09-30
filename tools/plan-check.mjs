@@ -704,14 +704,22 @@ const r = await pg.evaluate(({ s }) => {
      Last, because making one SWITCHES which language is open and everything
      above reads the open one.
 
-     Free 1, Plus 1, Pro 3 -- OWNER DECISION 2026-08-23, restated 2026-08-25
-     「言語数はプラスは1、プロは3」. This is the only ceiling in this file that
+     Free 1, Plus 3, Pro none -- 「作れる言語も1、3、無限にするのはどう思う？」
+     OWNER 2026-09-30. This is the only ceiling in this file that
      can find somebody already over it, so most of what is asked here is what
      happens to them: they keep every language, see every language, and are
      refused only the next one. 「ボタンは減る、言葉は減らない」 */
-  out.langFree = (planGot('free'), langCap());
-  out.langMid  = (planGot('plus'), langCap());
-  out.langTop  = (planGot('pro'),  langCap());
+  /* Pro is Infinity, which JSON cannot carry out of the page -- so the
+     claim is asked here and a word is what comes back. */
+  function capSaid(n){ return n === Infinity ? 'none' : n; }
+  out.langFree = (planGot('free'), capSaid(langCap()));
+  out.langMid  = (planGot('plus'), capSaid(langCap()));
+  out.langTop  = (planGot('pro'),  capSaid(langCap()));
+  /* and what may be TAKEN, the other number: 「DL言語1言語無料、plus、3言語、
+     pro無限にしない？」 OWNER 2026-09-30 */
+  out.dlFree = (planGot('free'), capSaid(dlCap()));
+  out.dlMid  = (planGot('plus'), capSaid(dlCap()));
+  out.dlTop  = (planGot('pro'),  capSaid(dlCap()));
   planGot('free');
 
   /* A language being READ is not one of yours. Counting it would make looking
@@ -874,45 +882,68 @@ const r = await pg.evaluate(({ s }) => {
   out.fourthKeptAll = threeIds.every(function(x){ return !!LANGS[x]; });
   out.fourthKeptBytes = same(bytesThree, bytes());
 
-  /* And on the plan that buys the most, there is nothing to buy: the + is
-     not drawn at all 「追加自体できなくすればいい。＋があるところからプラスを
-     なくすだけ」 OWNER 2026-09-25 -- this used to ask for the upgrade line, and
-     that is what the decision took away. And a langNew() reached anyway (no
-     road draws one) makes nothing, moves nobody, and says nothing. */
+  /* PLUS HOLDS THREE, and the fourth is the one it asks about: the + is
+     drawn (a closed door is shown) and the press is the one upgrade line,
+     with nothing made. */
+  planGot('plus');
+  go('langs');
+  out.plusPlus = vLangs().indexOf('langNew') !== -1;
+  out.plusAsked = askPop(function(){ langNew(); });
+  out.plusRefused = langCount() === 3 && here().r === 'langs';
+
+  /* AND PRO HAS NO CEILING, so there is no rung on which the + goes away:
+     three made and the + is still drawn, and pressing it makes a fourth,
+     opened, with nothing asked. 「pro無限」 OWNER 2026-09-30 -- this used to
+     ask that the + was NOT drawn at three (OWNER 2026-09-25), which was true
+     of a top rung with a ceiling and there is none now. */
   planGot('pro');
   go('langs');
-  out.topNoPlus = vLangs().indexOf('langNew') === -1;
+  out.topPlus = vLangs().indexOf('langNew') !== -1;
   toastClear(); popOff();
   langNew();
-  out.topRefused = langCount() === 3;
+  out.topMade = langCount() === 4;
   out.topSaid = toastSays() + (popOn() ? popSaid() : '');
   popOff();
-  out.topStayed = here().r === 'langs';
-  /* and with one of the three gone from the count, the + is back: it is the
-     ceiling that took it, not the plan */
-  var keepCount = langCount;
-  window.langCount = function(){ return 2; };
-  out.topPlusUnder = vLangs().indexOf('langNew') !== -1;
-  window.langCount = keepCount;
+  out.topOpened = threeIds.indexOf(langId) === -1 && langWhose(langId) === LW_MINE;
+  go('langs');
+  out.topPlusAfter = vLangs().indexOf('langNew') !== -1;
 
-  /* THE SAME FOR A DOWNLOAD: the ↓ on a chapter of a language not taken yet.
-     Pro at three taken draws no ↓ and dlStop() says nothing; Pro at two draws
-     it; Plus at its one draws it and the press asks the one upgrade line --
-     free and plus are not moved by this decision. */
+  /* THE SAME FOR A DOWNLOAD: the ↓ on a chapter of a language not taken yet,
+     and the press -- wldGet() itself, with the one call that would go to the
+     server caught, because what is asked is whether the press GETS THAT FAR.
+
+     Free takes exactly one: with none taken the ↓ goes down to the server
+     and nothing is asked; with one taken the press is the upgrade line and
+     nothing is fetched. Plus the same at three. Pro at five still draws the
+     ↓ and goes. */
   var dlSec = { r:'kb', nm:'kb' };
   var dlWas = langTook() === null ? null : LTAKE.slice();
-  langTookGot(['t1', 't2', 't3']);
-  out.dlTopNoArrow = wldGetRow(dlSec, 'l_fourth').indexOf('wldGet') === -1;
-  toastClear(); popOff();
-  out.dlTopStops = dlStop() === true;
-  out.dlTopSaid = toastSays() + (popOn() ? popSaid() : '');
-  popOff();
-  langTookGot(['t1', 't2']);
-  out.dlTopUnder = wldGetRow(dlSec, 'l_fourth').indexOf('wldGet') !== -1;
-  planGot('plus');
+  var slicesWas = netSlices, fetched = 0;
+  netSlices = function(){ fetched++; };
+  function dlPress(){
+    fetched = 0; toastClear(); popOff();
+    wldGet('l_fourth', 'kb');
+    var said = toastSays() + (popOn() ? popSaid() : '');
+    popOff();
+    return { went: fetched === 1, said: said };
+  }
+  planGot('free');
+  langTookGot([]);
+  out.dlFreeArrow = wldGetRow(dlSec, 'l_fourth').indexOf('wldGet') !== -1;
+  out.dlFreeFirst = dlPress();
   langTookGot(['t1']);
+  out.dlFreeSecond = dlPress();
+  planGot('plus');
+  langTookGot(['t1', 't2']);
+  out.dlPlusThird = dlPress();
+  langTookGot(['t1', 't2', 't3']);
   out.dlPlusArrow = wldGetRow(dlSec, 'l_fourth').indexOf('wldGet') !== -1;
-  out.dlPlusAsked = askPop(function(){ dlStop(); });
+  out.dlPlusFourth = dlPress();
+  planGot('pro');
+  langTookGot(['t1', 't2', 't3', 't4', 't5']);
+  out.dlTopArrow = wldGetRow(dlSec, 'l_fourth').indexOf('wldGet') !== -1;
+  out.dlTopSixth = dlPress();
+  netSlices = slicesWas;
   langTookGot(dlWas);
   planGot('pro');
 
@@ -932,7 +963,7 @@ const r = await pg.evaluate(({ s }) => {
 
      planTook() is the road and not a re-statement of it: it is the one thing
      that writes the plan, and langMainFall() hangs off it (www/core.js). The
-     language open here is the NEWEST of the three, so the fold takes it off
+     language open here is the NEWEST of the four (the one pro just made), so the fold takes it off
      the list -- which is precisely the state a person is left in when a
      subscription ends. */
   go('langs');
@@ -1852,9 +1883,9 @@ say(r.paidAll, 'and open on plus');
 say(r.canTypo, 'and a name that is not in the table throws rather than reading as free');
 
 say(r.rungs.free === '', 'free opens nothing (' + (r.rungs.free || 'nothing') + ')');
-say(r.rungs.plus === 'dl letters snd wsys',
-    'plus opens its own letters, its own sounds, a writing system ' +
-    'and a download (' + r.rungs.plus + ')');
+say(r.rungs.plus === 'letters snd wsys',
+    'plus opens its own letters, its own sounds and a writing system -- ' +
+    'taking a language is every plan\'s and is no door (' + r.rungs.plus + ')');
 say(r.rungs.pro.split(' ').length === r.canCount,
     'pro opens all ' + r.canCount + ' (' + r.rungs.pro.split(' ').length + ')');
 say(r.midUp && r.midNotTop, 'plus meets its own rung and not the one above it');
@@ -1909,9 +1940,12 @@ say(r.kbFreeNoPop && r.kbFreeMade,
     'free with ' + r.kbPoolCount + ' keyboards built makes the next one without asking [' +
     [r.kbFreeNoPop, r.kbFreeMade].join(' ') + ']');
 
-say(r.langFree === 1 && r.langMid === 1 && r.langTop === 3,
-    'free and plus hold one language, pro holds three (' +
+say(r.langFree === 1 && r.langMid === 3 && r.langTop === 'none',
+    '**作れる言語は 無料 1・Plus 3・Pro 無限** (' +
     r.langFree + ' ' + r.langMid + ' ' + r.langTop + ')');
+say(r.dlFree === 1 && r.dlMid === 3 && r.dlTop === 'none',
+    '**取れる言語は 無料 1・Plus 3・Pro 無限** (' +
+    r.dlFree + ' ' + r.dlMid + ' ' + r.dlTop + ')');
 say(r.langCountReading === 1,
     'a language being READ from somebody else is not one of yours (' + r.langCountReading + ')');
 say(r.doorOnFree, 'the way to make one is drawn on free -- a closed door is shown, not hidden');
@@ -1960,31 +1994,38 @@ say(r.threeKeptBytes, 'and not one byte of any slice moved');
 say(r.fourthRefused && r.fourthWent, 'only the fourth is refused, and it goes to the plans screen');
 say(r.fourthKeptAll && r.fourthKeptBytes,
     'and being refused took none of the three away -- the same three ids, the same bytes');
-say(r.topRefused && r.topStayed,
-    'on the plan that buys the most the fourth is refused without moving anybody');
-say(r.topNoPlus && r.topPlusUnder,
-    '**pro で 3 本に達すると ＋ が無い**（OWNER 2026-09-25）── 2 本なら出る');
-say(r.topSaid === '',
-    'and a langNew() reached anyway says nothing -- no upgrade line on the top plan (' +
-    (r.topSaid || 'nothing said') + ')');
-say(r.dlTopNoArrow && r.dlTopUnder,
-    '**pro で 3 つ取ると、取っていない言語の章に ↓ が無い** ── 2 つなら出る');
-say(r.dlTopStops && r.dlTopSaid === '',
-    'and dlStop() on the top plan full refuses and says nothing (' + (r.dlTopSaid || 'nothing said') + ')');
-say(r.dlPlusArrow && r.dlPlusAsked === r.upNeed,
-    'plus at its one download still draws the ↓ and the press asks the one upgrade line (' +
-    (r.dlPlusAsked || 'nothing') + ')');
+say(r.plusPlus && r.plusAsked === r.upNeed && r.plusRefused,
+    'plus at three still draws the +, and the fourth asks the one upgrade line and makes nothing (' +
+    (r.plusAsked || 'nothing') + ')');
+say(r.topPlus && r.topMade && r.topSaid === '' && r.topOpened && r.topPlusAfter,
+    '**pro は 3 本でも ＋ があり、押すと 4 本目が何も訊かずにできて開き、＋ はそのまま** [' +
+    [r.topPlus, r.topMade, r.topOpened, r.topPlusAfter].join(' ') + ']' +
+    (r.topSaid ? ' (said: ' + r.topSaid + ')' : ''));
+say(r.dlFreeArrow && r.dlFreeFirst.went && r.dlFreeFirst.said === '',
+    '**無料で 1 つ目の ↓ は押すとサーバーへ行く** ── 何も訊かない' +
+    (r.dlFreeFirst.said ? ' (said: ' + r.dlFreeFirst.said + ')' : ''));
+say(!r.dlFreeSecond.went && r.dlFreeSecond.said === r.upNeed,
+    'and free with one taken asks the one upgrade line and fetches nothing (' +
+    (r.dlFreeSecond.said || 'nothing') + ')');
+say(r.dlPlusThird.went && r.dlPlusThird.said === '',
+    'plus with two taken takes a third without asking');
+say(r.dlPlusArrow && !r.dlPlusFourth.went && r.dlPlusFourth.said === r.upNeed,
+    'plus at three still draws the ↓ and the fourth asks the one upgrade line (' +
+    (r.dlPlusFourth.said || 'nothing') + ')');
+say(r.dlTopArrow && r.dlTopSixth.went && r.dlTopSixth.said === '',
+    '**pro は 5 つ取っていても ↓ があり、押すとサーバーへ行く**' +
+    (r.dlTopSixth.said ? ' (said: ' + r.dlTopSixth.said + ')' : ''));
 
 say(r.proShowsAll && r.proOldestFirst,
     '**pro なら古い順に 3 本** ── all three drawn, oldest first (at ' +
     (r.proAt || []).join(' ') + ')');
 say(r.fellToMain,
     '**段が pro → free に落ちた瞬間、開いていた新しい言語から主言語に切り替わる** ' +
-    '── planTook() の道で、開いていたのは三本のうち一番新しいもの（' +
+    '── planTook() の道で、開いていたのは四本のうち一番新しいもの（' +
     r.fellFrom + ' → ' + r.fellTo + '）');
-say(r.fellKeptHidden && r.fellKeptAll && r.fellCount === 3,
+say(r.fellKeptHidden && r.fellKeptAll && r.fellCount === 4,
     'and the ones that went off the list are untouched -- every slice of the ' +
-    'hidden one byte for byte what it was, all three still in the index (' +
+    'hidden one byte for byte what it was, all four still in the index (' +
     r.fellCount + ')');
 say(r.roseStayed,
     'and a ceiling going UP moves nobody -- it cannot take a language off the list');

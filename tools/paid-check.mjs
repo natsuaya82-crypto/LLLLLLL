@@ -24,7 +24,7 @@
       `CAN` has, at exactly the levels `CAN` gives them
    2. § The four numbers carries exactly the ceiling constants `core.js`
       declares -- FREE_LIMIT, PLUS_LIMIT, FREE_LANGS,
-      PRO_LANGS, PLUS_DL, PRO_DL
+      PLUS_LANGS, FREE_DL, PLUS_DL
 
    Nothing here decides what a level or a number OUGHT to be. Those are the
    owner's (`docs/FEATURE_RULES.md` § Deciding). All this says is that the two
@@ -117,7 +117,7 @@ if (wrong.length)
    document. A number that is two facts is what wordCap() exists to say, and
    a number in two FILES is the thing that drifts. */
 const NUMS = ['FREE_LIMIT', 'PLUS_LIMIT',
-              'FREE_LANGS', 'PRO_LANGS', 'PLUS_DL', 'PRO_DL'];
+              'FREE_LANGS', 'PLUS_LANGS', 'FREE_DL', 'PLUS_DL'];
 const block = DOC.match(/## The four numbers[\s\S]*?```\n([\s\S]*?)```/);
 if (!block){
   fails.push('docs/PAID_FEATURES.md has no `## The four numbers` block.\n' +

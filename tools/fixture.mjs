@@ -3687,19 +3687,17 @@ export function halfDone(){
        this row also needs something to drop (www/home.js § langDrop): without
        it the row is the one case netLangsGone() leaves alone, so the walk was
        pressing a button that returned on its first line. */
-    /* ON PLUS, AND IT HAS TO BE. 「読んでいる言語」 is cut to dlCap(), which is
-       NOUGHT on free -- the walk's plan -- so this face has been drawing a
-       heading with no row under it since the day it was written, and nothing
-       said so. CLAUDE.md § what the free plan is: a paid face needs the plan
-       flipped here and put back. */
-    ['a language somebody else is reading', () => { const wasP=plan(); planGot('plus');
+    /* ON FREE, THE WALK'S PLAN. 「読んでいる言語」 is cut to dlCap(), which
+       was NOUGHT on free until 2026-09-30 and this face flipped to plus for
+       it; free holds one now (「DL言語1言語無料」), so the row is free's own. */
+    ['a language somebody else is reading', () => {
                                                      LANGS.L_other={};
                                                      langOwnGot('L_other', 'somebody-else');
                                                      langNameGot('L_other', 'Necwe');
                                                      langTookGot(['L_other']);
                                                      window.route='langs'; NAV=[{r:'langs'}];
                                                      const h=vLangs(); delete LANGS.L_other;
-                                                     langTookGot([]); planGot(wasP); return h; }],
+                                                     langTookGot([]); return h; }],
     /* AND THE SAME ROW SLID OPEN, which is the state the 削除 is IN. The row
        is shut in the face above and the button is off the right edge of it,
        so a picture of that face says nothing about what the slide reveals --
@@ -3708,7 +3706,7 @@ export function halfDone(){
        Driven by the app's own handlers on the live page rather than by a
        class written in here: a fixture that put the class on would be a copy
        of langSwMove() and would agree with it whatever it did. */
-    ['a language you took, slid open', () => { const wasP=plan(); planGot('plus');
+    ['a language you took, slid open', () => {
        LANGS.L_other={};
        langOwnGot('L_other', 'somebody-else');
        langNameGot('L_other', 'Necwe');
@@ -3724,7 +3722,7 @@ export function halfDone(){
                            cancelable:true, preventDefault:function(){} });
               langSwUp({}); }
        const h=app.innerHTML; delete LANGS.L_other; langTookGot([]);
-       planGot(wasP); return h; }],
+       return h; }],
     /* ---- THREE LANGUAGES OF ONE PERSON'S, ON EACH SIDE OF THE CEILING ----
        「無料はそもそも1つの言語しか出ないやろ。一番最初に作ってた作り込んで
        た言語だけ表示であとは隠すだろ」 OWNER 2026-09-12. The walk's account
@@ -3738,6 +3736,19 @@ export function halfDone(){
        this account actually started with at the BOTTOM of its own list. */
     ['three languages of yours on free', () => { const wasP=plan(), wasM=langMadeOf(langId);
        planGot('free');
+       langMadeGot(langId, '2026-01-02T00:00:00Z');
+       LANGS.L_two={}; langOwnGot('L_two','u'); langNameGot('L_two','Nen');
+       langMadeGot('L_two', '2026-05-05T00:00:00Z');
+       LANGS.L_three={}; langOwnGot('L_three','u'); langNameGot('L_three','Kano');
+       langMadeGot('L_three', '2026-08-08T00:00:00Z');
+       window.route='langs'; NAV=[{r:'langs'}];
+       const h=vLangs();
+       delete LANGS.L_two; delete LANGS.L_three;
+       langMadeGot(langId, wasM); planGot(wasP); return h; }],
+    /* and plus, whose ceiling is three since 2026-09-30 (「1、3、無限」):
+       all three drawn and the + under them, which is the door to Pro */
+    ['three languages of yours on plus', () => { const wasP=plan(), wasM=langMadeOf(langId);
+       planGot('plus');
        langMadeGot(langId, '2026-01-02T00:00:00Z');
        LANGS.L_two={}; langOwnGot('L_two','u'); langNameGot('L_two','Nen');
        langMadeGot('L_two', '2026-05-05T00:00:00Z');
