@@ -666,7 +666,7 @@ and that is correct.
 `st` is the strokes somebody drew; `ch` is a character borrowed instead of
 drawing one; a letter with neither has no face yet.
 
-A stroke is `{ pts[], closed?, k?, fill? }`. `pts` are lattice points, a third
+A stroke is `{ pts[], closed?, k?, fill?, w?, ly? }`. `pts` are lattice points, a third
 element `'c'` on one marking a bend; `closed` joins the last back to the first;
 `k:'o'` is a true arc through the points rather than a corner rounded off.
 `fill` blackens the inside of what the stroke goes round — three points is the
@@ -676,7 +676,16 @@ that inside into triangles; the stroke itself is still drawn. Held by
 `tools/fill-check.mjs`.
 
 A stroke that predates any of these flags is a stroke with none of them set,
-which is a plain open line — the same thing it has always been. `val` makes it a digit — a
+which is a plain open line — the same thing it has always been.
+
+`w` is the stroke's width in the square's own units (6 to 24) and `ly` the layer
+it was drawn on (2 upward). Each is written only when it is not the default, so
+a stroke with no `w` is 24 -- the one pen every stroke had before 2026-09-30 --
+and one with no `ly` is on layer 1. Nothing already stored is rewritten. The
+width is read per stroke by `glyphContours()` (`www/otf5.js`), which is what
+every place a letter is drawn goes through; the layer is the editor's alone --
+every render draws all layers together. A post's ink carries its strokes as
+they were, so a post keeps the widths it was written with. `val` makes it a digit — a
 digit is a letter with a value instead of a reading, found by value, because a
 digit has no name to match on.
 
