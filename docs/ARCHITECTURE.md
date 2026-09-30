@@ -53,6 +53,11 @@ did not write, and every global above is still 「the one in front of me」 — 
 the line `sides-check` holds does not move, it just has a case where the
 language in front of you is one you may not edit. What stops the edit is not a
 locked door but `langLocked()` (`www/core.js`), asked at every saver.
+**And it is used, never had** (OWNER 2026-09-30, every plan): nothing of it
+leaves the app — no font, SVG or sheet file, no copy, not sent to the iPhone
+keyboard, only a card of a post — and nothing of it is written to this phone's
+disk, so it has no copy for a launch with no signal; r150 is closing what the
+code still lets out.
 `docs/DATA_MODEL.md` § a language that is only read is the whole of it.
 
 ## Where the truth lives

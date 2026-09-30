@@ -896,8 +896,7 @@ it is quoted, and where a decision has never been made the row in
 - Area: 保存ボタンのある画面、Pro の上限、ブロック、ミュート
 - Decision:
   - **保存ボタンのある画面を下のタブで出る時**: 戻るで出る時と同じく「保存しますか？」と訊く。
-  - **Pro で上限（言語3つ・ダウンロード3つ）に達した時**: 追加そのものをできなくする ── ＋のある所から＋を消す。
-    「アップグレードが必要です」のポップは出さない（Pro の上にプランは無い）。
+  - **Pro で上限に達した時**: 【差し替え済み 2026-09-30】── Pro の言語と DL は無限になり、当たる上限が無い。差し替えた決定: 「作れる言語と DL 言語の数は 1・3・無限。人の言語は使うだけ」（2026-09-30）。
   - **ブロックする前にその人から取った言語**: 残す（一覧に残り、読める）。
   - **ミュートした人**: その人が書いた投稿に加えて、その人がリポストした投稿と、その人からの通知（いいね・返信など）も出さない。
   - **ミュートの印**: 「…」の一覧の「ミュート」の行の左はスピーカーの絵。もうミュートしている人の時は、その絵に
@@ -1452,7 +1451,9 @@ it is quoted, and where a decision has never been made the row in
     あれが言語切り替えになるって感じ」がそのまま生きている。2026-09-05 の
     「確定は一個前へ戻る」は**言語の選択には掛からない**。
   - (b) 「前に読み込んだの出していいよ。何か更新するならクルクルが必要」──
-    **電波が無い起動では、前に読み込んだ物を出す。取った言語も。**更新と保存は
+    **電波が無い起動では、前に読み込んだ物を出す。**「取った言語も」は【差し替え済み
+    2026-09-30】── 人の言語は端末に置かず、電波の無い時の写しも持たない。差し替えた決定:
+    「作れる言語と DL 言語の数は 1・3・無限。人の言語は使うだけ」（2026-09-30）（コードは r150）。更新と保存は
     クルクル →「接続できません」。2026-09-04「前に読み込んだ分は出て欲しい。
     制作も眺めたい人はいるだろうし、」の再確認。
   - (c) 「文字0はアルファベットでいいやん」── **新しい言語は、段を問わず
@@ -1482,7 +1483,7 @@ it is quoted, and where a decision has never been made the row in
 - Affected data: (c) **増減なし**（有料の言語が三十八字を持つようになるだけ、
   移行なし）。(b) **鍵が一つ増える** ── `lingua.take.<uid>`、`language_take` の
   答えの写し、そのアカウントの物、上る道なし（`docs/CHANGELOG.md` 2026-09-12、
-  `docs/DATA_MODEL.md`）。(a)(d)(e)(f) なし
+  `docs/DATA_MODEL.md`）── 人の言語は端末に置かない（2026-09-30）。この写しをどうするかは r150。(a)(d)(e)(f) なし
 - Affected docs: `CLAUDE.md`（規則 22・§ What the free plan is）、
   `docs/DATA_MODEL.md`、`docs/PAID_FEATURES.md`、`docs/CHANGELOG.md`、
   `docs/BACKLOG.md`
@@ -2715,17 +2716,15 @@ it is quoted, and where a decision has never been made the row in
   何で入ってないの？
   ```
 
-  Pro の行に **「言語を三つ」と「ダウンロード三つ」**、Plus の行に
-  **「ダウンロード一つ」**。`langCap()` と `dlCap()` が売っている数が、
-  買う画面のどこにも書かれていなかった。
+  `langCap()` と `dlCap()` が売っている数を、その段の行に書く。
+  買う画面のどこにも書かれていなかった。どの行に何個と書くかは【差し替え済み
+  2026-09-30】── 差し替えた決定: 「作れる言語と DL 言語の数は 1・3・無限。人の言語は使うだけ」（2026-09-30）（行の文字は r149）。
 
   **説明文にしない。名前で書く。**「アプリ内に説明書くの禁止」はそのまま。
 - Reason: 上限は値段の一部で、書いていなければ売っていないのと同じ。
-  Pro は言語 3 個と DL 3 個、Plus は DL 1 個を持つのに、五行のどれもそれを
-  言っていなかった。監査 C（`docs/scope/aud-pay.md` の 49）が見つけた。
+  段が持つ数を、五行のどれも言っていなかった。監査 C（`docs/scope/aud-pay.md` の 49）が見つけた。
 - Affected features: `PLANS`（`www/core.js`）に三行。`plan.plus.6`
   `plan.pro.6` `plan.pro.7` を十言語ぶん（`www/i18n/*.js`）。
-  Plus の自作言語は Free と同じ 1 なので、Plus 側に言語の行は無い。
 - Affected data: 無し。画面の文字だけ
 - Affected docs: `docs/PAID_FEATURES.md`、`docs/CHANGELOG.md`
 - Implementation status: **入っている**（2026-09-03、`claude/aud-pay`）。
@@ -3303,40 +3302,8 @@ it is quoted, and where a decision has never been made the row in
   ない）・40b（段は預け写しに乗らない）・40c（戻ってきたらサーバーが答える）。
   三つとも赤を見た。実機は未確認。
 
-### ダウンロードは Plus から。上限は make と別で、Plus 1・Pro 3
-- Date: 2026-09-02
-- Area: 人の言語をダウンロードする（⑫）、`CAN.dl` と `dlCap()`（`www/core.js`）
-- Decision:
-
-  ```
-  plusからです
-  dlはしかもplusは1つproは3つ DL言語とmake言語でそれぞれ別の最大値
-  言語足そうとしたり、dlしようとすると無料からアプデのポップ、
-  plusで1個から2個に増やそうとするとアプデのポップ
-  ```
-
-  ダウンロードできるのは **Plus から**。持てる数は **Plus 1、Pro 3**。
-  自分で作る言語の上限（Free 1・Plus 1・Pro 3）とは **別の数** で、
-  互いに影響しない。上限に当たったら課金のポップが出る。
-
-- Reason: オーナーが実機で、無料のままダウンロードした言語を使えることに
-  気づいた。
-- Affected features: ⑫。`CAN.dl` は 2026-08-19 の
-  「キーボードと文字の DL は無料、辞書は Plus」を **置き換える**
-  （docs/FEATURES.md § 4）
-- Affected data: 何も消えない。**上限を超えた分は一覧から隠れる**
-  ── 「減った時は隠すだけね」「だって単語でも文法でも同じようにやったじゃん」。
-  単語が無料で先頭百語だけ並べるのと同じ形（`wordsSeen()` → `langsSeen()`）。
-  どれが残るかは【差し替え済み 2026-09-12】── 差し替えた決定:「主言語 ── 一番古く
-  作った言語。無料はそれだけ出て、それが開く」（2026-09-12）。
-  `LANGS` も `lingua.` の鍵も一つも動かず、払い直せば全部元どおり並ぶ。
-  これは `www/core.js` に書いてあった「never hides one, never shortens a
-  list」を置き換える
-- Affected docs: この項目、docs/FEATURES.md § 4
-- Implementation status: IMPLEMENTED。`dl-check` が持つ
-  （無料は不可・Plus は 1・Pro は 3・二つの数が互いを見ない）。赤を見た。
-  隠す側も `dl-check` が持つ（Pro で三つ、無料で一つ、鍵が一つも消えない、
-  払い直すと戻る）。
+### 【差し替え済み 2026-09-30】ダウンロードは Plus から。上限は make と別で、Plus 1・Pro 3（2026-09-02）
+- 差し替えた決定: 「作れる言語と DL 言語の数は 1・3・無限。人の言語は使うだけ」（2026-09-30）
 
 ### 言語の記事は「人にどう見えるか」──自分のページで分岐しない
 - Date: 2026-09-02
@@ -3552,8 +3519,8 @@ it is quoted, and where a decision has never been made the row in
      OWNER 2026-09-03。トキポナの四章を全部取っても **1**。`dlCount()` が
      index の行を数えているのがその形。
   4. **言語数の上限は、自分で作った言語と別に数える。**
-     `langCount()` が `mine` だけ数えているのは正しい。数は 2026-09-02 の
-     決定 ── Plus 1・Pro 3（`dlCap()`）。
+     `langCount()` が `mine` だけ数えているのは正しい。数は【差し替え済み
+     2026-09-30】── 差し替えた決定: 「作れる言語と DL 言語の数は 1・3・無限。人の言語は使うだけ」（2026-09-30）（DL 言語は無料 1・Plus 3・Pro 無限、`dlCap()`）。
 
 - Reason: 1 は「トキポナに文字足したらトキポナじゃない」。2 と 4 は
   他人のものが自分の持ち物として数えられない・配られないため。3 は原文のまま。
@@ -3688,7 +3655,7 @@ it is quoted, and where a decision has never been made the row in
 
 - Reason: **原文の二行目がそのまま理由です。**上限が端末に付いていると、
   **アカウントを変えるだけで何回でも作れます** ── `docs/PAID_FEATURES.md` の
-  「languages on the account 1 / 1 / 3」は、アカウントに付いていて初めて
+  「languages on the account」の数は、アカウントに付いていて初めて
   上限になります。プランも同じで、端末の中の値なら端末を変えれば無関係です。
 - Affected features: `www/core.js`（~~`planKeep()`~~ / `setOnDisk()`）、
   `www/settings.js`（~~`setPlan()`~~）、`supabase/schema.sql`（`profile` の列）、
@@ -4640,9 +4607,10 @@ something was restructured」であり、**理由を四つ挙げて禁じてい�
   オーナーの言葉をそのまま置く。要約していない — この四つが決定の本体であり、
   下の見出しはそれを拾い直しただけのものである。
 
+  【差し替え済み 2026-09-30】── DL を取れる段と数を言った二行（Plus から、Plus 1・Pro 3）は
+  消した。差し替えた決定: 「作れる言語と DL 言語の数は 1・3・無限。人の言語は使うだけ」（2026-09-30）。
+
   ```
-  DLはplusからだけどplusは自分の言語+DL言語1個
-  proは自分の言語3個+DL言語3個は？
   ホーム長押しで言語切り替えできる
   制作以外は変わらない感じは？
   shangoにしてるならそれ。変えたなら変えた。
@@ -4691,14 +4659,6 @@ something was restructured」であり、**理由を四つ挙げて禁じてい�
   8. **タイムラインは色んな言語を読める。** DL は読むためのものではない —
      読むのはもう無料でできる。DL は「使いたい人がすぐに使えるように」の方である。
 
-  **決まっていないのはここである。数字を固めないこと。**
-  「DLはplusから」は言い切りである。そのあとの数は
-  「自分の言語3個+DL言語3個**は？**」と**問いで終わっている**。
-  「制作以外は変わらない感じ**は？**」も同じである。
-  問いを決定に書き換えない — このファイルの「決定をもっともらしい規則に
-  読み直さない」はこの向きにも効く。`docs/FEATURES.md` の行は
-  この二つを **open** として持つ。
-
 - Reason: オーナーが理由を二つ言っている。どちらも落とさないこと —
   次の人が「もっと綺麗な形がある」と思いついたときに止めるのは理由の方である。
 
@@ -4722,15 +4682,13 @@ something was restructured」であり、**理由を四つ挙げて禁じてい�
   `docs/DATA_MODEL.md` § 読み取り専用の言語。
 - Affected docs: `docs/FEATURES.md`、`docs/DATA_MODEL.md`、`docs/PAID_FEATURES.md`、
   `docs/ARCHITECTURE.md`、`docs/STATE.md` § 3。
-- Implementation status: **入っている。**`can('dl')` は plus（`CAN.dl`、
-  `www/core.js`）、数は `dlCap()` が 0 / 1 / 3 で答え、`dlCount()` が
+- Implementation status: **入っている。**数は `dlCap()` が答え、`dlCount()` が
   `mine` の false を数える ── 作る天井（`langCap()`）とは別の天井で、互いに
-  見えない。取ってきた言語は `langSeenAdd()` が `mine:false` で index に入れ、
+  見えない（どの段から取れるか・いくつかは【差し替え済み 2026-09-30】── 差し替えた決定:
+  「作れる言語と DL 言語の数は 1・3・無限。人の言語は使うだけ」（2026-09-30）。コードは r149 が直す）。取ってきた言語は `langSeenAdd()` が `mine:false` で index に入れ、
   `vLangs()` が「読んでいる」の節に並べる。解放は章ごと（`wldSecDl()`、
   `www/home.js`）で、一つのスイッチではない。
 
-  **数は 2026-09-02 の決定が決めた** ──「plusからです」。この項が
-  〈`は？` で終わっているので決めない〉と書いた二つは、そちらで閉じている。
 
 #### この決定がぶつかるもの二つ。ここで解決しない。
 
@@ -4760,14 +4718,14 @@ down.」「せっていからでいいよ」。今日の「プロフィールの
 
 **二つめ — 公開と DL は 2026-08-19 に一度決まっている。**
 `docs/FEATURES.md` § 4「Publishing and downloading」がそれで、今日のものと
-三つ違う。① キーボードと文字の DL は**無料**だった（今日は「DLはplusから」）。
+三つ違う。① 【差し替え済み 2026-09-30】── DL は無料から。差し替えた決定: 「作れる言語と DL 言語の数は 1・3・無限。人の言語は使うだけ」（2026-09-30）。
 ② DL したキーボードは**自分の棚に三つまで**並ぶと書いてあるが、今日の形では
 DL は「言語一つ」として数えられ、キーボードはその中にある。
 ③ 08-19 は**人が人のものを**取る話、今日は**公式アセット**の話である。
 同じ仕組みを使うが同じものではないかもしれない。
 一つだけ合っている — 08-19 も「A downloaded dictionary is a language you can READ
 and is never merged into your own」と言っている。**入らない、は二度決まっている。**
-残りの三つは**オーナーに訊くこと。**
+残りの二つは**オーナーに訊くこと。**
 
 ### Decision
 - Date: 2026-08-23
@@ -5194,11 +5152,13 @@ and is never merged into your own」と言っている。**入らない、は二
 - Area: How many languages, how many keyboards, and two more capabilities
 - Decision:
 
-  | | languages | keyboards, in total |
-  |---|---|---|
-  | Free | 1 | 1 — the fixed QWERTY, which is not built and cannot be |
-  | **Basic** | **1** | **1 + 3 = 4** |
-  | **Plus** | **3** | **no ceiling** |
+  | | keyboards, in total |
+  |---|---|
+  | Free | 1 — the fixed QWERTY, which is not built and cannot be |
+  | **Basic** | **1 + 3 = 4** |
+  | **Plus** | **no ceiling** |
+
+  The languages column (1 / 1 / 3) went:【差し替え済み 2026-09-30】── 差し替えた決定: 「作れる言語と DL 言語の数は 1・3・無限。人の言語は使うだけ」（2026-09-30）.
 
   Keyboards are counted **across languages, not within one**. Today ~~`KB_MAX`~~
   is three boards *per language*; from now the number is a pool. A language
@@ -5231,11 +5191,6 @@ and is never merged into your own」と言っている。**入らない、は二
   a–z with nothing addable binds the moment somebody wants a letter. A
   keyboard count binds almost never, so Basic's four is generous on purpose
   and Plus's absence of one costs nothing to give.
-
-  A language is the same argument one step out: this app is for making ONE
-  language deeply — the dictionary, the letters, the writing system, the
-  keyboard, the calendar all stack onto one. Three is there for the person who
-  wants a second and a third, not as the thing being sold.
 - Affected features: ~~`KB_MAX`~~ (a per-language ceiling then, a pool now, and
   gone entirely on Pro), a new language ceiling that does not exist at
   all today, `postEdit()`, `planBadge()`.
@@ -5247,8 +5202,8 @@ and is never merged into your own」と言っている。**入らない、は二
   `claude/save`): ~~`kbCap()`~~ in `www/core.js`, ~~`kbCount()`~~ / ~~`kbRoomKb()`~~ in
   `www/keyboard.js`, ~~`CAN.kb`~~ at `plus`, ~~`KB_MAX`~~ gone. Held by `plan-check`.
   **The language ceiling and `CAN.badge` are built** --
-  `langCap()` beside ~~`kbCap()`~~ in `www/core.js` (1 / 1 / 3, with `langStop()`
-  as the refusal), and `CAN.badge` at `pro` -- which the plans page asks as `canRung('badge')`;
+  `langCap()` beside ~~`kbCap()`~~ in `www/core.js` (with `langStop()`
+  as the refusal; still 1 / 1 / 3 in the code until r149), and `CAN.badge` at `pro` -- which the plans page asks as `canRung('badge')`;
   whether a name WEARS it is the server's `badge_of()` since 2026-09-26, and
   `postBadge()` asks no plan at all. `dl` was added on 2026-09-02.
   広告の `CAN`（pro の「広告なし」）は 「広告は出さない ── AdMob も、売れる広告枠も、追跡の問いも無い」（2026-09-25） で無くなった。
@@ -5696,16 +5651,14 @@ and is never merged into your own」と言っている。**入らない、は二
 
 ### Decision
 - Date: 2026-08-19
-- **SUPERSEDED（2 と 4 番）→ 「ダウンロードは Plus から。上限は make と別で、
-  Plus 1・Pro 3」（2026-09-02、この log の上のほう）。**無料は一つも落とせません
-  ── 「plusからです」。数は言語ごとで Plus 1・Pro 3 で、自分で作る数とは
-  別に数えます。1・3・5・6 番はそのまま生きています。
+- **SUPERSEDED（2 番）→ 「作れる言語と DL 言語の数は 1・3・無限。人の言語は使うだけ」（2026-09-30）。**取るのは無料から、数は言語ごとで
+  無料 1・Plus 3・Pro 無限、自分で作る数とは別に数えます。1・3・4・5・6 番はそのまま生きています。
 - Area: Publishing and downloading — a keyboard, an alphabet, a dictionary
 - Decision:
   1. **The author decides.** Public or private, per thing, for all three: the
      keyboard, the letters, the words. Nothing is downloadable unless its
      author said so.
-  2. 取ることそのものが **Plus から**。`can('dl')` が扉で、`dlCap()` が数です。
+  2. 【差し替え済み 2026-09-30】── 取るのは無料から、数は `dlCap()`。差し替えた決定: 「作れる言語と DL 言語の数は 1・3・無限。人の言語は使うだけ」（2026-09-30）。
   3. **Making and publishing stays Plus**, as it is now. Free still cannot
      build a keyboard or add a letter, and that does not change.
   4. 落としたものは自分の数を食いません ── `langCount()` は `mine` を数え、
@@ -5727,7 +5680,8 @@ and is never merged into your own」と言っている。**入らない、は二
      はいと答える。`dl-check` が、取った言語の全部の画面の全部のボタンを押して、
      何も作られず、どの章も動かないことを持つ。
 - Implementation status: **取る側は入りました。**`can('dl')`（`www/core.js` の
-  `CAN`）と `dlCap()`（Plus 1・Pro 3、無料は 0）、`dlCount()`、`dlStop()`。
+  `CAN`）と `dlCap()`、`dlCount()`、`dlStop()`。コードの数はまだ 0・1・3 で、
+  無料から 1・3・無限にするのは r149。
   押すと本当に着地することを `tools/dl-check.mjs` が持ちます ── 記事の見た目
   ではなく storage を訊きます（`LANGS[id].mine` が false、~~`bkPack()`~~ は運ばない、
   `netLangSync()` は走らない）。「ダウンロードボタン押しても言語追加されない
@@ -6051,7 +6005,7 @@ for.
 - Area: Plus — what it contains
 - Decision: はしごなので、上の段は下の段を全部含みます。**足す分だけ**を書くと:
   - **Plus**（中の段）── 文字の追加・改名・削除、音を選ぶ、アルファベット以外の
-    書記体系、語 1000、キーボード四つ、投稿の編集、人の言語を取ること。
+    書記体系、語 1000、キーボード四つ、投稿の編集。人の言語を取ることは【差し替え済み 2026-09-30】── 無料から。差し替えた決定: 「作れる言語と DL 言語の数は 1・3・無限。人の言語は使うだけ」（2026-09-30）。
   - **Pro**（上の段）── Plus の全部に足して、語に上限なし、キーボードに上限
     なし、自分の文法のステージ、言語の向き、CSV の出し入れ、ファイルで持ち込む、
     名前の横の印。

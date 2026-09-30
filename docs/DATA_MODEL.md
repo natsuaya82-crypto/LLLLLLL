@@ -117,7 +117,9 @@ was made — is a fifth (`langMadeOf()`, `lingua.<id>.made.got`, 2026-09-12).
 the rule the server already wrote down rather than a second one: `profile_seen`
 picks `lang_id` by ordering `language_seen` `created_at asc limit 1`
 (`supabase/schema.sql`), so the language on somebody's profile is already the
-first one they made. The phone reads the same column in the same direction.
+first one they made — except an official account's, whose profile lists the
+languages it publishes in that line's place (OWNER 2026-09-30; a mark on the
+server says which accounts are official, r152). The phone reads the same column in the same direction.
 `langsByAge()` (`www/core.js`) is the one place that puts a list of languages in
 that order — a language with no answer goes LAST, because one minted here and
 not yet sent is the newest thing in the index — `langMainId()` is its first
@@ -139,6 +141,12 @@ disk alike, so a key written under a language tomorrow is taken the day it is
 written. `acct-check` 66 holds it. **Two other places still walk `SLICES` for
 the same job** — 「この言語を削除」 and the sweep of a DL language whose
 original is gone — and `docs/BACKLOG.md` carries them.
+
+**Those pictures are of this account's OWN languages only.** Somebody else's
+language is held on the server and nowhere on this phone's disk — no `.got`,
+no picture of a slice, no copy for a launch with no signal
+「サーバーであればスクショ以外で持っていけないでしょ？」 OWNER 2026-09-30. The
+code still writes some of them for a taken language; r150 stops it.
 
 | `made` | — | **not a slice.** `lingua.<id>.made.got` is the picture of `language.created_at` and nothing writes a `made` slice — it is listed here only so the key is not read as one | — |
 | `lang` | — | the language's name, and **nothing in `www/` reads or writes it** since 2026-09-08. What a language is called is the `language.name` column on the server; `langNameOf()` in `www/core.js` is how it is asked, `LNAME` holds what the server has said this session, and `lingua.<id>.name.got` is the picture a launch with no signal draws from. The slice stays in `SLICES` and is not deleted — what an older version wrote is left exactly where it is | text |
@@ -507,7 +515,7 @@ lands in the same place and does not make a second copy. 「ダウンロード�
 | 書く | `langTookGot()` ── 答えが来た時だけ。`null`（＝訊けていない）は書かない |
 | 読む | アカウントの入れ物（`acctKeep('take')`・`acctFor()`）── **手元のアカウントの分だけ**。起動と入り（`netTook`）、出る時は `acctFor('')` で忘れる |
 | 上る道 | **無し。**これを送る所はどこにも無く、作ってはいけない ── 何を取ったかは `language_take` で、訊くのは `netTakes()` |
-| なぜ在るか | 「前に読み込んだの出していいよ。何か更新するならクルクルが必要」OWNER 2026-09-12。無ければ電波の無い起動で `langWhose()` が `LW_WAIT` を返し、取った言語が丸ごと消えて見える |
+| なぜ在ったか | 電波の無い起動で取った言語を出すため（2026-09-12）。**人の言語は電波の無い時に出さない**（2026-09-30「だから端末に置くのもng」）ので、この理由はもう無い。この写しをどうするかは r150 |
 
 段を訊けていない起動では `dlCap()` は数ではなく（`planNum()` が `null`）、
 天井が数でない間は何も畳みません。
@@ -520,7 +528,8 @@ and then writes the slices it was asked for with `langKeyOf(id, kind)`.
 2026-09-02, and the answers are here rather than in a log somebody has to find.
 
 1. **Where the slices live.** A downloaded language is `lingua.<id>.<slice>`
-   like any other, or it is not a language at all — `langKeyOf(id, slice)` is
+   like any other — in memory, and **never on this phone's disk** (2026-09-30,
+   r150) — or it is not a language at all — `langKeyOf(id, slice)` is
    the only thing that knows how a language is filed and a second answer is
    the bug `CLAUDE.md` names twice (the keyboard, the world).
 2. **It does not go up into this account's rows.** OWNER 2026-09-01, asked
@@ -544,19 +553,21 @@ and then writes the slices it was asked for with `langKeyOf(id, kind)`.
    the grammar is `phases` **and** `gram2`, and half a chapter in the index
    would look like a grammar somebody could open.
 4. **The ceiling counts it separately, and both numbers are decided.**
-   OWNER 2026-09-01: 「別に数える」; OWNER 2026-09-02:
-   「plusからです」「plusは1つproは3つ」.
+   OWNER 2026-09-01: 「別に数える」; OWNER 2026-09-30:
+   「DL言語1言語無料、plus、3言語、pro無限にしない？」「作れる言語も1、3、無限にするのはどう思う？」.
 
    ```
-     langCap()  FREE_LANGS 1   PRO_LANGS 3    languages you MAKE   langWhose() mine
-     dlCap()    PLUS_DL    1   PRO_DL     3    languages you READ   language_take rows
+     langCap()  free 1  plus 3  pro no ceiling   languages you MAKE   langWhose() mine
+     dlCap()    free 1  plus 3  pro no ceiling   languages you READ   language_take rows
    ```
+
+   The code still answers 1 / 1 / 3 and 0 / 1 / 3 until r149.
 
    `langCount()` counts the ones `langWhose()` answers **mine** for and
    `dlCount()` is the server's own count of `language_take`, so signing in as
    somebody else hands you neither their languages nor their downloads. A
    language nobody has answered for is in neither number — a ceiling measured
-   against an unanswered language refuses somebody their own next one. Free is nought downloads: the plan is the
+   against an unanswered language refuses somebody their own next one. Free is one download (2026-09-30): the plan is the
    door and the ceiling is the room, asked in that order in `wldGet()`.
    **Neither ceiling removes or counts down anything, and the LIST FOLDS.**
    OWNER 2026-09-12 「有料が消えて無料に残った後は非表示じゃないの？」. Somebody
