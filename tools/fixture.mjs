@@ -1376,6 +1376,21 @@ export function halfDone(){
           GE.lys = 2; GE.ly = 2; GE.si = 0; GE.seal = true;
           window.route = 'glyph'; NAV = [{r:'glyph', a:GE.lid}]; return vGlyph();
         }],
+        /* The layers panel (r148): three layers, the second renamed, and the
+           third either hidden from the paper or shown. */
+        ...[['a letter in the editor, a layer named and one hidden', true],
+            ['a letter in the editor, a layer named and all shown', false]].map(([label, hide]) => [label, () => {
+          editGlyph('k');
+          const st = ink();
+          GE.st = [st[0]]; GE.rest = [Object.assign({ly:2}, st[1]), Object.assign({ly:3}, st[2])];
+          GE.lys = 3; GE.ly = 1; GE.si = 0; GE.seal = true;
+          GE.lyn = {2: '斜線'}; GE.hid = hide ? {3: true} : {};
+          window.route = 'glyph'; NAV = [{r:'glyph', a:GE.lid}]; return vGlyph();
+        }]),
+        ['the page a layer is renamed on', () => {
+          editGlyph('k'); GE.lys = 2; GE.lyn = {2: '斜線'};
+          geLayerName(2); return vForm();
+        }],
       ];
     })(),
     /* What a finger chose, chosen by the real geLsUp() off a finger's path:

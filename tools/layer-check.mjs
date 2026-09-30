@@ -21,6 +21,16 @@
                      not taken by the bin or by clear, not taken back by a
                      step back, not moved by a finger on its dot, and comes
                      back whole in what is saved.
+     the panel    -- OWNER 2026-09-30, the last 追記 (r148): a row per layer
+                     with the eye, the picture and the name, and the pencil;
+                     the pictures bigger than r147's 32px and every press 44;
+                     a name typed on the pencil's page is on the letter after
+                     the Save, went up with the letters slice, and is there
+                     after the app is closed and the slice brought down again
+                     (netLangFill); a layer nobody named stores nothing; the
+                     eye takes a layer off the PAPER and nowhere else -- the
+                     letter, the font writer, a key and a post still have it
+                     -- and a tab off the letter forgets it.
      the baseline -- both faces are built on geBase(), and the paper draws a
                      line there across the whole canvas.
      the pad      -- the square drawn again small under the rail is gone, and
@@ -53,8 +63,14 @@ const r = await pg.evaluate(async ({s}) => {
   makeNeed = function(){ return true; };
   function wait(ms){ return new Promise(function(f){ setTimeout(f, ms); }); }
   async function saved(){ for (var i = 0; i < 250 && KEEP_BUSY; i++) await wait(20); }
-  window.__SENT = [];
+  window.__SENT = []; window.__SENTO = []; window.__DOWN = null;
   netSend = function(method, p, body, tok, ok){
+    window.__SENTO.push({ method: method, p: p, body: body });
+    /* a read of a language's slices, answered with what __DOWN says the
+       server holds -- the relaunch in the names section below */
+    if (method === 'GET' && p.indexOf('/rest/v1/slice?') === 0 && window.__DOWN) {
+      var d = window.__DOWN; setTimeout(function(){ ok(d); }, 0); return;
+    }
     window.__SENT.push(method + ' ' + p + ' ' + (typeof body === 'string' ? body : JSON.stringify(body || '')));
     setTimeout(function(){
       ok(method === 'POST' && p.indexOf('/rest/v1/language') === 0 ? [{ id:'srv1' }] : []);
@@ -230,8 +246,8 @@ const r = await pg.evaluate(async ({s}) => {
   var plus = document.querySelector('.glayers button[data-do="geLayerAdd"]');
   if (plus) plus.click();
   out.plus = GE.lys === 3 && GE.ly === 3 && GE.st.length === 0;
-  out.rowSays = [].map.call(document.querySelectorAll('.glayers button'), function(b){
-    return (/\bon\b/.test(b.className) ? '*' : '') + (b.getAttribute('data-a') || '+'); }).join(' ');
+  out.rowSays = [].map.call(document.querySelectorAll('.glayers .glysel, .glayers .glyadd'), function(b){
+    return (/\bon\b/.test(b.parentNode.className) ? '*' : '') + (b.getAttribute('data-a') || '+'); }).join(' ');
 
   /* ---- each layer is a small picture of its own strokes ----------------- */
   inkSet(l, [{pts:[P(4,4), P(4,16)]}, {pts:[P(12,4), P(12,16)], ly:2}]);
@@ -248,13 +264,146 @@ const r = await pg.evaluate(async ({s}) => {
     return o;
   }
   out.pic = [pic(1), pic(2), pic(3)];
-  out.picText = [].map.call(document.querySelectorAll('.glayers button'), function(b){ return b.textContent; }).join('');
-  out.picOn = !!document.querySelector('.glayers button.on canvas.glyc[data-ly="2"]');
+  /* a row each: the eye, the picture and the name, the pencil */
+  out.rows = [].map.call(document.querySelectorAll('.glayers .glyr'), function(r){
+    return [].map.call(r.querySelectorAll('button'), function(b){
+      return b.getAttribute('data-do') + (b.querySelector('canvas') ? '[pic]' : '') +
+             (b.textContent ? '"' + b.textContent + '"' : ''); }).join(' ');
+  });
+  out.picOn = !!document.querySelector('.glayers .glyr.on canvas.glyc[data-ly="2"]');
   /* and it moves with the finger, with nothing rendered in between */
   geLayer(1); var b1 = pic(1);
   drag(P(10,4), P(10,16));
   var a1 = pic(1);
   out.picMoves = b1 && a1 && a1.right > b1.right;
+
+  /* ---- the pictures are bigger than r147's 32px, and every press is 44 --- */
+  GE = null; editLetter(l.id); render();
+  var pc0 = document.querySelector('canvas.glyc');
+  out.picPx = pc0 ? Math.round(pc0.getBoundingClientRect().width) : 0;
+  out.small = [].filter.call(document.querySelectorAll('.glayers button'), function(b){
+    var R = b.getBoundingClientRect(); return R.width < 44 || R.height < 44; }).length;
+
+  /* ---- the name: the pencil, a page of the app's own, and the Save ------- */
+  inkSet(l, [{pts:[P(4,4), P(4,16)]}, {pts:[P(12,4), P(12,16)], ly:2}]);
+  delete l.lyn;
+  GE = null; editLetter(l.id); render();
+  function row(n){ var c = document.querySelector('canvas.glyc[data-ly="' + n + '"]'); return c && c.parentNode.textContent; }
+  out.nameDefault = [row(1), row(2)];
+  /* saved with nobody renaming anything, a letter carries no names */
+  document.querySelector('[data-do="keepPress"]').click();
+  await saved();
+  out.noNameStored = !('lyn' in ltById(l.id));
+  GE = null; editLetter(l.id); render();
+  var pen = document.querySelector('.glayers button[data-do="geLayerName"][data-a="[2]"]');
+  out.pen = !!pen && !!pen.querySelector('svg') && pen.textContent === '' && !!pen.getAttribute('aria-label');
+  if (pen) pen.click();
+  out.formOn = here().r === 'form' && !!document.getElementById('ly-nm');
+  var fld = document.getElementById('ly-nm');
+  if (fld) fld.value = 'Stem';
+  var done = document.querySelector('[data-do="geLayerNamed"]');
+  if (done) done.click();
+  out.backOn = here().r === 'glyph';
+  out.nameRow = row(2);
+  out.nameDirty = keepDirty(keepKey());
+  __SENTO = [];
+  document.querySelector('[data-do="keepPress"]').click();
+  await saved();
+  out.nameKept = J((ltById(l.id) || {}).lyn);
+  /* what went up to the server is the letters slice with the name on it */
+  var up = null;
+  __SENTO.forEach(function(x){
+    if (x.p.indexOf('/rest/v1/rpc/slice_put') === 0 && x.body && x.body.p_kind === 'letters') up = x.body.p_body;
+  });
+  out.nameUp = !!up && up.indexOf('"lyn"') >= 0;
+  /* and the app closed and opened: memory gone, the slice brought down from
+     what went up, through the road a launch takes (netLangFill -> langLoad) */
+  var lk = langKey('letters');
+  delete LSL[lk]; try { localStorage.removeItem(slGotKey(lk)); } catch (e) {}
+  LETTERS = [];
+  window.__DOWN = [{ kind:'letters', body: up, no: 2, at: '', ed: null }];
+  await new Promise(function(f){ netLangFill(langId, f, f); });
+  window.__DOWN = null;
+  l = ltById(l.id);
+  GE = null; editLetter(l.id); render();
+  out.nameBack = J((ltById(l.id) || {}).lyn) + ' / ' + row(2);
+  /* emptied, it is the number again and nothing is stored */
+  geLayerName(2);
+  fld = document.getElementById('ly-nm'); if (fld) fld.value = '';
+  geLayerNamed(2);
+  document.querySelector('[data-do="keepPress"]').click();
+  await saved();
+  GE = null; editLetter(l.id); render();
+  out.nameGone = !('lyn' in ltById(l.id)) && row(2) === t('glyph.layer', [2]);
+  /* a named layer with nothing on it is still a layer */
+  l.lyn = { '3': 'Dot' }; saveLetters();
+  GE = null; editLetter(l.id); render();
+  out.namedEmpty = GE.lys === 3 && row(3) === 'Dot';
+  delete l.lyn; saveLetters();
+
+  /* ---- the eye: off the paper, and nowhere else -------------------------- */
+  inkSet(l, [{pts:[P(4,4), P(4,16)]}, {pts:[P(12,4), P(12,16)], ly:2}]);
+  GE = null; editLetter(l.id); render(); geDraw();
+  /* ink on the paper along layer 2's stroke */
+  function on2(){
+    var c = cv(), S = c.width, xx = c.getContext('2d');
+    var X = Math.round(geTo(S, P(12,0)[0], 0)), y0 = Math.round(geTo(S, P(0,6)[1], 1)), y1 = Math.round(geTo(S, P(0,14)[1], 1));
+    var d = xx.getImageData(X - 2, y0, 5, y1 - y0).data, n = 0, i;
+    for (i = 3; i < d.length; i += 4) if (d[i] > 40) n++;
+    return n;
+  }
+  out.shown2 = on2();
+  var rest0 = GE.rest; GE.rest = []; geDraw(); out.none2 = on2(); GE.rest = rest0; geDraw();
+  var eye1 = document.querySelector('.glayers button[data-do="geLayerEye"][data-a="[1]"]');
+  out.eye1Down = !!eye1 && eye1.disabled;
+  /* what the Save compares, before the eye is touched */
+  var nowOpen = J(keepNow(keepKey()));
+  var eye2 = document.querySelector('.glayers button[data-do="geLayerEye"][data-a="[2]"]');
+  if (eye2) eye2.click();
+  geDraw();
+  out.hid2 = on2();
+  out.eyeShut = !!document.querySelector('.glayers button[data-do="geLayerEye"][data-a="[2]"]') &&
+    document.querySelector('.glayers button[data-do="geLayerEye"][data-a="[2]"]').getAttribute('aria-label') === t('glyph.layer.show');
+  out.hidNotDirty = J(keepNow(keepKey())) === nowOpen;
+  /* the font: drawn with the eye shut, and the strokes of 2 are what it was handed */
+  var sigShown = scriptSig();
+  BUILT = [];
+  GE.st.push({pts:[P(6,4), P(6,16)]}); GE.si = GE.st.length - 1; GE.seal = true; render();
+  document.querySelector('[data-do="keepPress"]').click();
+  await saved();
+  var nm2 = glyphName(l.id), def2 = null;
+  BUILT.forEach(function(b){ b.defs.forEach(function(d){ if (d.name === nm2) def2 = d; }); });
+  out.fontHas2 = !!def2 && (def2.strokes || []).some(function(x){ return inkLy(x) === 2; });
+  out.letterHas2 = (ltById(l.id).st || []).some(function(x){ return inkLy(x) === 2; });
+  /* the keyboard is sent the same letter as with the eye open */
+  var st2 = ltById(l.id).st;
+  out.keyHas2 = (function(){
+    var one = shareInk({ id:'x', st: st2 }), two = shareInk({ id:'x', st: st2.filter(function(x){ return inkLy(x) === 1; }) });
+    return !!one && !!two && J(one) !== J(two);
+  })();
+  var pk = postInkOf([{ id: l.id }]);
+  out.postHas2 = !!(pk && pk.g[0] && pk.g[0].some(function(x){ return inkLy(x) === 2; }));
+  out.sigAll = sigShown !== scriptSig();
+  /* the layer put on the paper is in sight, and walking off forgets the rest */
+  GE = null; editLetter(l.id); render();
+  geLayerEye(2); out.hidOn = !!GE.hid[2];
+  geLayer(2); out.onShows = !GE.hid[2];
+  /* a letter this run has not saved, so nothing stands in the way out. The
+     first letter's buffer is let go of: after its Save landed, keepLevel()
+     wrote down what it opened with while GE was already null, so it reads as
+     changed and the tab would stop to ask about it -- which is so on integ
+     before this branch too, and is reported rather than fixed here. */
+  keepDrop(keepKeyOf('glyph', l.id));
+  var l2 = LETTERS[1];
+  inkSet(l2, [{pts:[P(4,4), P(4,16)]}, {pts:[P(12,4), P(12,16)], ly:2}]);
+  GE = null; editLetter(l2.id); render(); geLayerEye(2);
+  geLayerName(1);
+  out.deeperKeeps = here().r === 'form' && !!GE.hid[2];
+  window.back();
+  out.backKeeps = here().r === 'glyph' && !!GE.hid[2];
+  goTab('words');
+  out.leftForgets = here().r === 'words' && !!GE && !GE.hid[2];
+  GE = null;
 
   /* ---- the baseline on the paper ---------------------------------------- */
   GE = null; editLetter(l.id); GE.st = []; GE.rest = []; render(); geDraw();
@@ -312,8 +461,31 @@ say(pc[0] && pc[1] && pc[2] && pc[0].left > 0 && pc[1].right > 0 && pc[0].left +
     ', the empty 3 inks ' + (pc[2] && pc[2].left + pc[2].right));
 say(pc[0] && pc[1] && pc[0].right === 0 && pc[1].left === 0,
     'and only what is on it: layer 2\'s stroke in 1\'s picture ' + (pc[0] && pc[0].right) + ', 1\'s in 2\'s ' + (pc[1] && pc[1].left));
-say(r.picText === '' && r.picOn, 'the row is pictures and no words, the chosen one marked: "' + r.picText + '"');
+say(r.rows.length === 4 && /^geLayerEye geLayer\[pic\]"Layer 1" geLayerName$/.test(r.rows[0]) &&
+    /^geLayerAdd$/.test(r.rows[3]) && r.picOn,
+    'a row per layer -- the eye, the picture and its name, the pencil -- and the chosen one marked: ' + r.rows.join(' | '));
 say(r.picMoves, 'the picture of the layer being drawn on moves with the finger');
+say(r.picPx > 32, 'the pictures are bigger than r147\'s 32px: ' + r.picPx + 'px');
+say(r.small === 0, 'every press in the layers panel is 44pt both ways (' + r.small + ' short)');
+say(r.nameDefault[0] === 'Layer 1' && r.nameDefault[1] === 'Layer 2', 'a layer nobody named is its number: ' + r.nameDefault.join(', '));
+say(r.noNameStored, 'and saved like that, the letter carries no names');
+say(r.pen && r.formOn && r.backOn, 'the pencil is a mark, opens a page of the app\'s own to type the name on, and Done comes back');
+say(r.nameRow === 'Stem' && r.nameDirty, 'the row says the new name, and the Save lights for it: ' + r.nameRow);
+say(r.nameKept === '{"2":"Stem"}', 'the Save puts it on the letter: ' + r.nameKept);
+say(r.nameUp, 'and what went up to the server carries it');
+say(r.nameBack === '{"2":"Stem"} / Stem', 'closed and brought down again from the server, it is still there: ' + r.nameBack);
+say(r.nameGone, 'emptied and saved, it is the number again and nothing is stored');
+say(r.namedEmpty, 'a named layer with nothing on it is still a layer');
+say(r.shown2 > r.none2 && r.hid2 === r.none2, 'the eye takes layer 2 off the paper: ' + r.shown2 + ' inked px along it shown, ' +
+    r.hid2 + ' hidden, ' + r.none2 + ' (the lattice) with no layer 2 at all');
+say(r.eye1Down && r.eyeShut, 'the layer on the paper cannot be hidden, and the shut eye says show');
+say(r.hidNotDirty, 'hiding is not a change to the letter: the Save stays grey');
+say(r.fontHas2 && r.letterHas2, 'saved with 2 hidden, 2 is on the letter and in what the font writer was handed');
+say(r.keyHas2 && r.postHas2, 'and in a key\'s outline and a post\'s ink');
+say(r.sigAll, 'and what the keyboard is sent moved with the save');
+say(r.hidOn && r.onShows, 'putting a hidden layer on the paper shows it');
+say(r.deeperKeeps && r.backKeeps, 'the page that renames a layer is deeper: what was hidden stays hidden there and back');
+say(r.leftForgets, 'a tab off the letter forgets what was hidden');
 say(r.noPad, 'the square drawn again small under the rail is gone');
 say(/^gwidth.* glayers$/.test(r.after), 'and under the rail are the width and the layers: ' + r.after);
 say(r.baseRow > 0.95 && r.offRow < 0.5, 'the paper draws the baseline across the whole canvas at geBase() (' +
@@ -322,4 +494,5 @@ say(!errs.length, 'nothing threw' + (errs.length ? ': ' + errs.join(' | ') : '')
 
 if (bad.length) { console.log('\nlayer: ' + bad.length + ' failed'); process.exit(1); }
 console.log('\nlayer: a stroke carries its width to the font, a post and a key, one with none is what it was; ' +
-            'a layer is out of reach of everything done on another; the baseline is the font\'s.');
+            'a layer is out of reach of everything done on another, keeps its name through the server, ' +
+            'and hides from the paper only; the baseline is the font\'s.');
