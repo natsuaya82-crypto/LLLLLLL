@@ -553,21 +553,19 @@ and then writes the slices it was asked for with `langKeyOf(id, kind)`.
    would look like a grammar somebody could open.
 4. **The ceiling counts it separately, and both numbers are decided.**
    OWNER 2026-09-01: 「別に数える」; OWNER 2026-09-30:
-   「DL言語1言語無料、plus、3言語、pro無限にしない？」「作れる言語も1、3、無限にするのはどう思う？」.
+   「DL言語1言語無料、plus、3言語、pro無限」「作れる言語も1、3、無限」.
 
    ```
-     langCap()  free 1  plus 3  pro no ceiling   languages you MAKE   langWhose() mine
-     dlCap()    free 1  plus 3  pro no ceiling   languages you READ   language_take rows
+     langCap()  FREE_LANGS 1   PLUS_LANGS 3   Pro Infinity   languages you MAKE   langWhose() mine
+     dlCap()    FREE_DL    1   PLUS_DL    3   Pro Infinity   languages you READ   language_take rows
    ```
-
-   The code still answers 1 / 1 / 3 and 0 / 1 / 3 until r149.
 
    `langCount()` counts the ones `langWhose()` answers **mine** for and
    `dlCount()` is the server's own count of `language_take`, so signing in as
    somebody else hands you neither their languages nor their downloads. A
    language nobody has answered for is in neither number — a ceiling measured
-   against an unanswered language refuses somebody their own next one. Free is one download (2026-09-30): the plan is the
-   door and the ceiling is the room, asked in that order in `wldGet()`.
+   against an unanswered language refuses somebody their own next one. Every plan
+   may take: the ceiling is the only thing `wldGet()` asks.
    **Neither ceiling removes or counts down anything, and the LIST FOLDS.**
    OWNER 2026-09-12 「有料が消えて無料に残った後は非表示じゃないの？」. Somebody
    whose plan ended keeps **every** language, byte for byte, on the server and
