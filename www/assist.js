@@ -111,26 +111,26 @@ function genSounds(){
 /* n words, each {seq, sp, hw}: its sounds, its letters, its spelling. None
    sounds like a word the dictionary has (asTaken()) or like another of the n. */
 function genLearn(){
-  var L={n:0, on:[], rime:[], nsyl:[], pos:[], end:{}};
+  var L={n:0, on:[], rime:[], nsyl:[], end:{}};
   WORDS.forEach(function(w){
     var cut=phCut(wPh(w)), p=w.pos||'n', i, last;
     if(!cut.length) return;
     for(i=0;i<cut.length;i++) if(!cut[i].nu.length) return;
-    L.n++; L.nsyl.push(cut.length); L.pos.push(p);
+    L.n++; L.nsyl.push(cut.length);
     cut.forEach(function(c){ L.on.push(c.on); L.rime.push(c.nu.concat(c.co)); });
     last=cut[cut.length-1];
     (L.end[p]=L.end[p]||[]).push(last.nu.concat(last.co));
   });
   return L;
 }
-/* n words, each {seq, sp, hw, pos}: its sounds, its letters, its spelling and
-   the part of speech it was made as -- `pos` when one is handed in, otherwise
-   drawn from the dictionary's own mix (null with an empty dictionary: the
-   sheet keeps what it has). None sounds like a word the dictionary has
+/* n words of the part of speech `pos`, each {seq, sp, hw}: its sounds, its
+   letters, its spelling. The part of speech is the sheet's and is handed in --
+   it is never drawn here 「直して」 OWNER 2026-09-30: a press changed the one
+   the sheet was showing. None sounds like a word the dictionary has
    (asTaken()) or like another of the n. */
 function genWords(n, pos){
   var L=genLearn(), learn=L.n>=GEN_LEARN, sh=genShapes(), S=genSounds(), tk=asTaken(),
-      out=[], tries=0, lens=[1,2,2,3], seq, shape, nsyl, sp, hw, pp, i, j, ok;
+      out=[], tries=0, lens=[1,2,2,3], seq, shape, nsyl, sp, hw, i, j, ok;
   function one(a){ return a[Math.floor(Math.random()*a.length)]; }
   if(!learn){
     if(!S.c.length) sh=sh.filter(function(s){ return s.indexOf('C')<0; });
@@ -138,12 +138,11 @@ function genWords(n, pos){
   }
   while(out.length<n && tries<n*80){
     tries++;
-    pp=pos || (L.pos.length? one(L.pos) : null);
     seq=[];
     if(learn){
       nsyl=one(L.nsyl);
       for(i=0;i<nsyl;i++)
-        seq=seq.concat(one(L.on), (i===nsyl-1 && L.end[pp])? one(L.end[pp]) : one(L.rime));
+        seq=seq.concat(one(L.on), (i===nsyl-1 && L.end[pos])? one(L.end[pos]) : one(L.rime));
     } else {
       nsyl=one(lens);
       for(i=0;i<nsyl;i++){
@@ -161,7 +160,7 @@ function genWords(n, pos){
     hw=spWord(sp);
     if(!hw || findWord(hw)) continue;
     tk[seq.join('')]=1;
-    out.push({seq:seq, sp:sp, hw:hw, pos:pp});
+    out.push({seq:seq, sp:sp, hw:hw});
   }
   return out;
 }

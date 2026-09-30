@@ -6,9 +6,6 @@
    13. The sheet for writing a word, and CSV
    ========================================================================= */
 var addPos='n';
-/* Whether the part of speech on the new-word sheet was chosen by the person,
-   so a generated word keeps it (wdGen). Cleared when a sheet opens fresh. */
-var addPosSet=false;
 
 var addW=null;
 /* ---- the sheet a word is written on --------------------------------------
@@ -60,7 +57,6 @@ function openAdd(from){
   if(fresh){
     /* A new sheet is measured from empty, not from the last word's mark. */
     keepDrop(keepKeyOf('form', 'add:'+addFrom));
-    addPosSet=false;
     openHw='';
       /* The draft holds only what a relation and an example need a WORD for.
        Everything staged -- the spelling, the meanings, the part of speech,
@@ -2076,22 +2072,20 @@ function wdSetNt(v){ wEdit.nt=v; wdKeepTouch(); }
    that anybody else had: subsOf() reads the dictionary, so the name is still
    on the list for as long as one word is still in it. */
 function wdSetPos(v){
-  if(addW) addPosSet=true;
   if(wEdit.pos!==v) wEdit.sub='';
   wEdit.pos=v;
 }
-/* Everything but the meaning, filled in: the spelling (and with it the
-   reading) and the part of speech -- www/assist.js § genWords learns what a
-   word is like from the dictionary. The part of speech is kept when the
-   person chose it on this sheet, and drawn from the dictionary's mix when
-   they did not. Pressed again, another word. */
+/* Everything but the meaning, filled in: the spelling and with it the
+   reading -- www/assist.js § genWords learns what a word is like from the
+   dictionary. The part of speech is the one the sheet is showing, and a word
+   of it is made; the press does not change it 「直して」 OWNER 2026-09-30.
+   Pressed again, another word. */
 function wdGen(){
   var g;
   if(!addW || !wEdit || langLocked()) return;
-  g=genWords(1, addPosSet? wEdit.pos : null)[0];
+  g=genWords(1, wEdit.pos)[0];
   if(!g){ toast(t('gen.none')); return; }
   wEdit.sp=g.sp; wdSync();
-  if(!addPosSet && g.pos && g.pos!==wEdit.pos){ wEdit.sub=''; wEdit.pos=g.pos; }
   wdPaint();
 }
 function wdSetSub(v){ wEdit.sub=String(v||'').trim(); }
