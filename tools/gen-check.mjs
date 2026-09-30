@@ -13,8 +13,9 @@
    made goes ON it, and nothing re-generates it from the present.
 
    WORDS MADE UP -- one button on the new-word sheet (OWNER 2026-09-30).
-   Pressing it fills everything but the meaning: the spelling, its reading
-   and the part of speech. What a word is like is learned from the
+   Pressing it fills the spelling and its reading, as a word of the part of
+   speech the sheet is showing -- which it never changes (「直して」 OWNER
+   2026-09-30). What a word is like is learned from the
    dictionary, per part of speech, so a dictionary whose verbs all end in -a
    makes verbs ending in -a. Too few words and it is the letters' sounds in
    the language's shapes (STG.syl, read and never written). The sheet that
@@ -93,8 +94,11 @@ const R = await pg.evaluate(() => {
       'on no page -- still in WORDS, and nowhere a person can reach it');
 
   /* ---- 2. learned from the dictionary: verbs end in -a -----------------
-     Pressed on the sheet itself, forty times, with the part of speech left
-     to the dictionary; then with the person's own choice of verb. */
+     Pressed on the sheet itself, forty times, with the part of speech the
+     sheet opened on (a noun) left alone; then with the person's own choice of
+     verb. THE PRESS NEVER CHANGES THE PART OF SPEECH 「直して」 OWNER
+     2026-09-30 -- it used to draw one from the dictionary's mix whenever the
+     person had not chosen, over the noun the sheet was showing. */
   start();
   WORDS = [
     { hw:'kana', ph:['k','a','n','a'], mns:['x'], pos:'v', at:1 },
@@ -108,23 +112,20 @@ const R = await pg.evaluate(() => {
     { hw:'morin',ph:['m','o','r','i','n'], mns:['x'], pos:'n', at:9 },
     { hw:'pol',  ph:['p','o','l'],     mns:['x'], pos:'n', at:10 }];
   const syl0 = JSON.stringify(STG.syl);
+  addPos = 'n';
   openAdd(''); screen();
   const press = () => { const b = document.querySelector('#app [data-do="wdGen"]'); if (b) b.click(); return !!b; };
-  const made = [], badV = [];
+  const pos0 = wEdit.pos, made = [], moved = [];
   let btn = true;
   for (let i = 0; i < 40 && btn; i++) {
     btn = press();
-    const seq = (wEdit.seq || []).slice();
-    made.push({ hw: spWord(wEdit.sp || []), pos: wEdit.pos, seq });
-    if (wEdit.pos === 'v' && seq[seq.length - 1] !== 'a') badV.push(spWord(wEdit.sp || []));
+    made.push({ hw: spWord(wEdit.sp || []), pos: wEdit.pos });
+    if (wEdit.pos !== pos0) moved.push(wEdit.pos + ':' + spWord(wEdit.sp || []));
   }
-  const vs = made.filter(m => m.pos === 'v'), ns = made.filter(m => m.pos === 'n');
-  out.said.push('2. forty presses: ' + vs.length + ' verbs (' + vs.slice(0, 5).map(m => m.hw).join(' ') +
-    '), ' + ns.length + ' nouns (' + ns.slice(0, 5).map(m => m.hw).join(' ') + ')');
+  out.said.push('2. sheet opened on ' + pos0 + ', forty presses: ' + made.slice(0, 6).map(m => m.pos + ':' + m.hw).join(' '));
   if (!btn) out.fails.push('2. the new-word sheet has no 自動生成 button to press');
-  if (!vs.length) out.fails.push('2. forty presses on a dictionary half verbs made no verb -- the part of speech is not drawn from the dictionary');
-  if (!ns.length) out.fails.push('2. forty presses on a dictionary half nouns made no noun');
-  if (badV.length) out.fails.push('2. every verb in the dictionary ends in -a and these were made as verbs: ' + badV.slice(0, 6).join(' '));
+  if (pos0 !== 'n') out.fails.push('2. the sheet opened on ' + pos0 + ', not the noun it was handed');
+  if (moved.length) out.fails.push('2. the sheet showed ' + pos0 + ' and a press changed it: ' + moved.slice(0, 6).join(' '));
   const kinds = {}; made.forEach(m => { kinds[m.hw] = 1; });
   if (Object.keys(kinds).length < 10) out.fails.push('2. forty presses gave ' + Object.keys(kinds).length + ' different words -- pressing again is meant to give another');
   /* the person's own part of speech is kept */
