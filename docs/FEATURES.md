@@ -620,12 +620,14 @@ Decided, and in:
   publishes** in place of the one language line everybody else's has, and a
   mark on the server says which accounts are official (OWNER 2026-09-30, r152)
 - **one account**, however many languages 「でもアカウントは一つだからね？」
+- you **can write a post** in a language you downloaded — posting is inside Lingua, and what is
+  refused is taking somebody else's language OUT 「人の言語を勝手に外持ち出すのはダメでしょって話をしてるのよ」
+  (OWNER 2026-09-30)
 - over the ceiling, the list is **cut and nothing is deleted** —
   `langsSeen()` with `dlCap()`, `wordsSeen()`'s shape 「減った時は隠すだけね」
 
 Open, and not to be guessed:
 
-- whether you can **write a post** in a language you downloaded
 - whether **一部だけ** DL した言語（例えば単語だけ）はその一部だけの言語として
   一覧に並ぶのか
 
