@@ -1669,9 +1669,8 @@ function dayRow(){
     '<span class="pav">'+
       postFace({who:meName(), lname:langName, av:postAvatar()})+'</span>'+
     '<span class="dayrb">'+
-      '<span class="dayline">'+
-        '<span class="dayk">'+esc(t('day.k'))+'</span>'+esc(say)+'</span>'+
-      /* The date goes on the SECOND line and not beside the label, because
+      '<span class="dayline">'+esc(say)+'</span>'+
+      /* The date goes on the SECOND line and not beside the sentence, because
          `.dayline` is one line with an ellipsis on it -- anything put in
          front of the sentence is taken off the end of the sentence, and the
          sentence is what the row is for. */

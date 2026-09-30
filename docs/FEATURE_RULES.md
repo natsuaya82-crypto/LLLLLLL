@@ -257,7 +257,7 @@ it is quoted, and where a decision has never been made the row in
 
 ### 2026-09-30 今日のお題の行の「Today（お題）」の見出しは要らない
 - Date: 2026-09-30
-- Area: タイムラインの上の今日のお題の行（`www/sns.js` の `.dayk`、`day.k`）
+- Area: タイムラインの上の今日のお題の行（`www/sns.js` の ~~`.dayk`~~、~~`day.k`~~）
 - Decision: お題の行の前に付く金色の「Today」（日本語は「お題」）の見出しを外す。お題の文と、その下の「自分の言語で」・日付はそのまま。
 - Reason: オーナーの言葉「今日のお題にtodayってあるでしょ？そこいらない」（2026-09-30）。
 - Affected features: タイムライン。
