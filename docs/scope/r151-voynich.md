@@ -11,7 +11,7 @@
 - `tools/official-shot.mjs` ── 本物のアプリを起動し、その言語を読み込んで絵を撮る（ゲートに入れない）
 - `shots/r151-*.png`、`shots/r151b-*.png`
 - `official/ref/` ── 使った写本のページ（Beinecke/Yale 2014 の撮影、パブリックドメイン）と `SOURCE.md`、字ごとの切り抜き `official/ref/glyphs/`
-- `official/voynich-trace.mjs` など、写本の画像から線を起こす道具（`official/` の下）
+- `official/voynich-trace.py` ── 写本の画像から線を起こす道具
 - この文書
 
 ## 触らない

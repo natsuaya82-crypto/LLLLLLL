@@ -20,6 +20,12 @@
                                    drawn from the ink it carries (rule 8)
      shots/r151-line-large.png     the same row with the line set at 30px
      shots/r151-line-dark.png      the same, dark
+     shots/r151-passage.png        the first five lines of f1r, one line each
+     shots/r151-spacing.png        the first line at the gap 1 and the gap 0
+     shots/r151-compare.png        the first line of f1r cropped from the scan
+                                   (official/ref/f1r.jpg), and under it the
+                                   same EVA line as the app draws it, at the
+                                   same x-height
 
    The line is cut by postInk() -- longest name first -- so `cthres` is cth,
    r, e, s and not c, t, h.
@@ -147,6 +153,88 @@ await pg.evaluate(() => {
   renderMount();
 });
 await shoot('sheet', '.vsh');
+
+/* Lines drawn by the app on their own, the way somebody else's post draws
+   them: the .pline of postRow() and nothing else of the row, set at `px`.
+   `lines` is [caption, EVA, gap] -- the gap is the post's own (ink.sp). */
+async function lineAt(sel, lines, px) {
+  await pg.evaluate(({ sel, lines, px }) => {
+    var box = document.createElement('div');
+    box.className = sel.slice(1);
+    box.style.cssText = 'padding:12px 16px;background:var(--bg);color:var(--tx);display:inline-block';
+    for (var i = 0; i < lines.length; i++) {
+      var ln = lines[i][1], ink = postInk(ln);
+      var row = document.createElement('div');
+      row.innerHTML = postRow({ id: 'pv' + i, at: Date.now() - 60000, lang: 'voynich', lname: 'Voynich', ln: ln,
+                                who: 'Lingua', hd: 'lingua', mine: false, av: { ch: 'L' }, mn: '', ui: 'en',
+                                ink: { g: ink.g, s: ink.s, sp: lines[i][2] } });
+      var pl = row.querySelector('.pline');
+      pl.style.cssText = 'font-size:' + px + 'px!important;line-height:1.35!important;white-space:pre!important;margin:0';
+      if (lines[i][0]) {
+        var cap = document.createElement('div');
+        cap.textContent = lines[i][0];
+        cap.style.cssText = 'font:13px sans-serif;color:var(--txs);margin-top:10px';
+        box.appendChild(cap);
+      }
+      box.appendChild(pl);
+    }
+    var app = document.getElementById('app');
+    app.innerHTML = '';
+    app.appendChild(box);
+    renderMount();
+  }, { sel, lines, px });
+  await pg.evaluate(() => document.fonts.ready);
+}
+
+/* The first five lines of f1r, in EVA (Zandbergen-Landini). */
+const F1R = [
+  'fachys ykal ar ataiin shol shory cthres y kor sholdy',
+  'sory ckhar or y kair chtaiin shar are cthar cthar dan',
+  'syaiir sheky or ykaiin shod cthoary cthes daraiin sy',
+  'soiin oteey oteos roloty cthar daiin otaiin or okan',
+  'dair y chear cthaiin cphar cfhaiin',
+];
+
+/* (d) the passage and (e) the gap, 1 and 0, on a page wide enough to hold a
+   line of the manuscript */
+await pg.setViewportSize({ width: 1180, height: 900 });
+await open(false);
+await lineAt('.vps', F1R.map((l) => ['', l, 1]), 30);
+await shoot('passage', '.vps');
+await open(false);
+await lineAt('.vgap', [['gap 1', F1R[0], 1], ['gap 0', F1R[0], 0]], 30);
+await shoot('spacing', '.vgap');
+
+/* (f) the comparison: the line on the page, and under it the same EVA line
+   as the app draws it, at the same x-height. The page's x-height is measured
+   off the scan (voynich-trace.py's band, edge of ink to edge of ink); the
+   app's is measured by painting an o in the line's own face at 200px and
+   counting the rows it inks. */
+const SCAN = 'data:image/jpeg;base64,' + fs.readFileSync(path.join(ROOT, 'official', 'ref', 'f1r.jpg')).toString('base64');
+const CROP = { x: 238, y: 178, w: 786, h: 72, xh: 12, k: 1.4 };
+await open(false);
+await lineAt('.vcmp', [['', 'o', 1]], 200);
+const px = await pg.evaluate((target) => {
+  var pl = document.querySelector('.vcmp .pline'), ff = getComputedStyle(pl).fontFamily;
+  var c = document.createElement('canvas'); c.width = 400; c.height = 400;
+  var x = c.getContext('2d'); x.font = '200px ' + ff; x.fillStyle = '#000';
+  x.fillText(pl.textContent, 50, 300);
+  var d = x.getImageData(0, 0, 400, 400).data, top = -1, bot = -1, r, i;
+  for (r = 0; r < 400; r++) for (i = 0; i < 400; i++) if (d[(r * 400 + i) * 4 + 3] > 128) { if (top < 0) top = r; bot = r; break; }
+  return Math.round(target * 200 / (bot - top + 1));
+}, CROP.xh * CROP.k);
+console.log('comparison: the line set at ' + px + 'px, so its o is ' + (CROP.xh * CROP.k) + 'px tall like the page\'s');
+await open(false);
+await lineAt('.vcmp', [['', F1R[0], 1]], px);
+await pg.evaluate(({ SCAN, CROP }) => {
+  var img = document.createElement('div');
+  img.style.cssText = 'width:' + CROP.w * CROP.k + 'px;height:' + CROP.h * CROP.k + 'px;margin-bottom:8px;' +
+    'background:url(' + SCAN + ') no-repeat;background-size:' + 1263 * CROP.k + 'px auto;' +
+    'background-position:-' + CROP.x * CROP.k + 'px -' + CROP.y * CROP.k + 'px';
+  var box = document.querySelector('.vcmp');
+  box.insertBefore(img, box.firstChild);
+}, { SCAN, CROP });
+await shoot('compare', '.vcmp');
 
 /* (b) every drawn letter, large, on the drawing surface */
 if (!ONLY) {
