@@ -12,10 +12,13 @@
    word that was not it. CLAUDE.md § The past: what a thing meant when it was
    made goes ON it, and nothing re-generates it from the present.
 
-   WORDS MADE UP (vGen). A candidate is the language's sounds in its syllable
-   shapes, and can be spelled with its letters; the shapes chosen are the
-   language's (STG.syl, the `phases` slice); a candidate pressed is the add
-   sheet with its spelling, and Add puts it in.
+   WORDS MADE UP -- one button on the new-word sheet (OWNER 2026-09-30).
+   Pressing it fills everything but the meaning: the spelling, its reading
+   and the part of speech. What a word is like is learned from the
+   dictionary, per part of speech, so a dictionary whose verbs all end in -a
+   makes verbs ending in -a. Too few words and it is the letters' sounds in
+   the language's shapes (STG.syl, read and never written). The sheet that
+   changes a word has no such button, and the dictionary no door to a list.
 
    WHERE A WORD CAME FROM. Chosen on the relate list (no ring), a draft of the
    edit sheet until Save, drawn as a tree up and down (vEty), and the trail
@@ -89,70 +92,90 @@ const R = await pg.evaluate(() => {
     out.fails.push('1b. `tir` was deleted and its old past tense `tira` is in no list and ' +
       'on no page -- still in WORDS, and nowhere a person can reach it');
 
-  /* ---- 2. the shapes a language makes words in -------------------------
-     None chosen: read off the dictionary (tir is one CVC syllable). Chosen
-     on the screen, by pressing: CV and nothing else. What was chosen is the
-     language's -- in the `phases` slice, which is on the road up. */
+  /* ---- 2. learned from the dictionary: verbs end in -a -----------------
+     Pressed on the sheet itself, forty times, with the part of speech left
+     to the dictionary; then with the person's own choice of verb. */
   start();
-  const read = genShapes().slice();
-  out.said.push('2. shapes read off the fixture dictionary: ' + read.join(' '));
-  if (read.indexOf('CVC') < 0)
-    out.fails.push('2. `tir` is a CVC word and the shapes read off the dictionary are ' +
-      JSON.stringify(read));
-  if ((STG.syl || []).length)
-    out.fails.push('2. reading the shapes wrote them onto the language (' +
-      JSON.stringify(STG.syl) + ') -- nobody pressed anything');
-  go('gen'); screen(); go('gensyl'); screen();
-  if (genShapes().indexOf('CV') < 0) genSylSet('CV');
-  genShapes().slice().forEach(s => { if (s !== 'CV') genSylSet(s); });
-  const kept = slRd(langKey('phases')) || '';
-  out.said.push('2b. chosen by pressing: STG.syl ' + JSON.stringify(STG.syl) +
-    ', and the phases slice carries ' + JSON.stringify((JSON.parse(kept || '{}') || {}).syl));
-  if (JSON.stringify(STG.syl) !== '["CV"]')
-    out.fails.push('2b. CV alone was pressed on, and STG.syl is ' + JSON.stringify(STG.syl));
-  if (kept.indexOf('"syl":["CV"]') < 0)
-    out.fails.push('2b. the shapes were chosen and the `phases` slice does not carry them -- ' +
-      'they would not reach the server and would be gone at the next launch');
-  if (SLICES.indexOf('phases') < 0)
-    out.fails.push('2b. `phases` is not in SLICES, so nothing puts it up');
-  /* and the last one stays on */
-  genSylSet('CV');
-  if (JSON.stringify(STG.syl) !== '["CV"]')
-    out.fails.push('2c. the last shape was taken off (' + JSON.stringify(STG.syl) + ') -- none ' +
-      'chosen reads the dictionary again, so the shapes being taken off come back ticked');
+  WORDS = [
+    { hw:'kana', ph:['k','a','n','a'], mns:['x'], pos:'v', at:1 },
+    { hw:'tira', ph:['t','i','r','a'], mns:['x'], pos:'v', at:2 },
+    { hw:'sema', ph:['s','e','m','a'], mns:['x'], pos:'v', at:3 },
+    { hw:'lora', ph:['l','o','r','a'], mns:['x'], pos:'v', at:4 },
+    { hw:'pika', ph:['p','i','k','a'], mns:['x'], pos:'v', at:5 },
+    { hw:'kan',  ph:['k','a','n'],     mns:['x'], pos:'n', at:6 },
+    { hw:'tiron',ph:['t','i','r','o','n'], mns:['x'], pos:'n', at:7 },
+    { hw:'sen',  ph:['s','e','n'],     mns:['x'], pos:'n', at:8 },
+    { hw:'morin',ph:['m','o','r','i','n'], mns:['x'], pos:'n', at:9 },
+    { hw:'pol',  ph:['p','o','l'],     mns:['x'], pos:'n', at:10 }];
+  const syl0 = JSON.stringify(STG.syl);
+  openAdd(''); screen();
+  const press = () => { const b = document.querySelector('#app [data-do="wdGen"]'); if (b) b.click(); return !!b; };
+  const made = [], badV = [];
+  let btn = true;
+  for (let i = 0; i < 40 && btn; i++) {
+    btn = press();
+    const seq = (wEdit.seq || []).slice();
+    made.push({ hw: spWord(wEdit.sp || []), pos: wEdit.pos, seq });
+    if (wEdit.pos === 'v' && seq[seq.length - 1] !== 'a') badV.push(spWord(wEdit.sp || []));
+  }
+  const vs = made.filter(m => m.pos === 'v'), ns = made.filter(m => m.pos === 'n');
+  out.said.push('2. forty presses: ' + vs.length + ' verbs (' + vs.slice(0, 5).map(m => m.hw).join(' ') +
+    '), ' + ns.length + ' nouns (' + ns.slice(0, 5).map(m => m.hw).join(' ') + ')');
+  if (!btn) out.fails.push('2. the new-word sheet has no 自動生成 button to press');
+  if (!vs.length) out.fails.push('2. forty presses on a dictionary half verbs made no verb -- the part of speech is not drawn from the dictionary');
+  if (!ns.length) out.fails.push('2. forty presses on a dictionary half nouns made no noun');
+  if (badV.length) out.fails.push('2. every verb in the dictionary ends in -a and these were made as verbs: ' + badV.slice(0, 6).join(' '));
+  const kinds = {}; made.forEach(m => { kinds[m.hw] = 1; });
+  if (Object.keys(kinds).length < 10) out.fails.push('2. forty presses gave ' + Object.keys(kinds).length + ' different words -- pressing again is meant to give another');
+  /* the person's own part of speech is kept */
+  wdSetPos('v');
+  const kept = [];
+  for (let i = 0; i < 15; i++) { press(); kept.push(wEdit.pos + ':' + spWord(wEdit.sp || [])); }
+  const notV = kept.filter(k => k.indexOf('v:') !== 0 || !/a$/.test(k));
+  out.said.push('2b. verb chosen on the sheet, fifteen presses: ' + kept.slice(0, 5).join(' '));
+  if (notV.length) out.fails.push('2b. verb was chosen on the sheet and a press gave ' + notV.slice(0, 4).join(' '));
+  if (JSON.stringify(STG.syl) !== syl0) out.fails.push('2c. pressing wrote STG.syl (' + JSON.stringify(STG.syl) + ') -- it is read, never written');
 
-  /* ---- 3. the words it makes ------------------------------------------ */
-  const S = genSounds(), all = S.c.concat(S.v);
-  const ws = genWords(30);
-  const bad = [];
-  ws.forEach(g => {
-    const pat = g.seq.map(x => ipaIsVowel(x) ? 'V' : 'C').join('');
-    if (!/^(CV)+$/.test(pat)) bad.push(g.hw + ' is ' + pat + ', not CV syllables');
-    g.seq.forEach(x => { if (all.indexOf(x) < 0) bad.push(g.hw + ' has /' + x + '/, which no letter writes'); });
-    g.sp.forEach(st => { if (!st.l || !ltById(st.l)) bad.push(g.hw + ' has a position no letter spells'); });
-    if (JSON.stringify(spPh(g.sp)) !== JSON.stringify(g.seq)) bad.push(g.hw + ' is spelled with letters that read ' + spPh(g.sp).join('') + ', not ' + g.seq.join(''));
-    if (findWord(g.hw)) bad.push(g.hw + ' is already in the dictionary');
-    if (asTaken()[g.seq.join('')]) bad.push(g.hw + ' sounds like a word the dictionary has');
-  });
-  out.said.push('3. ' + ws.length + ' words made in CV out of ' + all.length +
-    ' sounds the letters write, e.g. ' + ws.slice(0, 4).map(g => g.hw + ' ' + phIpa(g.seq)).join(', '));
-  if (ws.length < 10) out.fails.push('3. asked for 30 words and got ' + ws.length);
-  bad.slice(0, 6).forEach(b => out.fails.push('3. ' + b));
+  /* ---- 3. what a press fills, and what it leaves ---------------------- */
+  start();
+  openAdd(''); screen();
+  press();
+  const hw3 = spWord(wEdit.sp || []), rd = (document.getElementById('wd-rd') || {}).textContent || '';
+  const ln = (document.getElementById('wd-ln') || {}).value || '';
+  out.said.push('3. one press: spelled ' + hw3 + ', reading ' + JSON.stringify(rd) + ', ' + wEdit.pos +
+    ', meanings ' + JSON.stringify(wEdit.mns) + ', the field holds ' + JSON.stringify(ln));
+  if (!hw3) out.fails.push('3. a press left the spelling empty');
+  if (JSON.stringify(spPh(wEdit.sp || [])) !== JSON.stringify(wEdit.seq) || !wEdit.seq.length)
+    out.fails.push('3. the reading is not the one the spelling reads');
+  if (!rd.trim()) out.fails.push('3. the reading on the sheet is empty after a press');
+  if (!ln) out.fails.push('3. the spelling field is empty after a press -- the sheet was not redrawn');
+  if (!wEdit.pos) out.fails.push('3. a press left no part of speech');
+  if ((wEdit.mns || []).length) out.fails.push('3. a press wrote a meaning: ' + JSON.stringify(wEdit.mns));
+  (wEdit.sp || []).forEach(st => { if (!st.l || !ltById(st.l)) out.fails.push('3. ' + hw3 + ' has a position no letter spells'); });
+  if (findWord(hw3)) out.fails.push('3. a press put ' + hw3 + ' into the dictionary before Save');
+  keepPress();
+  if (!findWord(hw3)) out.fails.push('3. Save on the sheet did not put ' + hw3 + ' in');
 
-  /* ---- 4. one pressed goes onto the add sheet, and in by Add ---------- */
-  go('gen'); screen();
-  const g0 = GEN.ws[0];
-  genTake(0);
-  const onSheet = here().r === 'form' && JSON.stringify(spWord(wEdit.sp)) === JSON.stringify(g0.hw);
-  out.said.push('4. pressed ' + g0.hw + ': standing on ' + here().r + ':' + here().a +
-    ', the sheet is spelled ' + spWord(wEdit.sp || []));
-  if (!onSheet) out.fails.push('4. pressing a made-up word did not open the add sheet with its spelling');
-  screen();
-  addOne();
-  const got = findWord(g0.hw);
-  if (!got || JSON.stringify(wPh(got)) !== JSON.stringify(g0.seq))
-    out.fails.push('4. Add on the sheet did not put ' + g0.hw + ' into the dictionary reading ' +
-      phIpa(g0.seq) + ' (' + JSON.stringify(got && wPh(got)) + ')');
+  /* ---- 4. where it is not --------------------------------------------- */
+  start();
+  openEdit('kano'); screen();
+  const onEdit = !!document.querySelector('#app [data-do="wdGen"]');
+  go('words'); screen();
+  const door = [...document.querySelectorAll('#app [data-do="go"]')].some(e => /"gen/.test(e.getAttribute('data-a') || ''));
+  out.said.push('4. 自動生成 on the edit sheet: ' + onEdit + '; a door from the dictionary to a list: ' + door +
+    '; routes gen/gensyl: ' + (!!PAGES.gen || !!PAGES.gensyl));
+  if (onEdit) out.fails.push('4. the sheet that changes a word carries 自動生成 -- 「直す画面にいらねえだろ」');
+  if (door) out.fails.push('4. the dictionary still has a door to the list of made-up words');
+  if (PAGES.gen || PAGES.gensyl) out.fails.push('4. the gen/gensyl routes are still there');
+
+  /* ---- 4b. too few words: the letters' sounds, in STG.syl's shapes ---- */
+  start();
+  WORDS = []; STG.syl = ['CV'];
+  const few = genWords(20, null), badF = [];
+  few.forEach(g => { const pat = g.seq.map(x => ipaIsVowel(x) ? 'V' : 'C').join(''); if (!/^(CV)+$/.test(pat)) badF.push(g.hw + ' ' + pat); });
+  out.said.push('4b. an empty dictionary with CV chosen: ' + few.slice(0, 5).map(g => g.hw).join(' '));
+  if (few.length < 10) out.fails.push('4b. an empty dictionary made ' + few.length + ' words from its letters, not 20');
+  if (badF.length) out.fails.push('4b. STG.syl says CV and these were made: ' + badF.slice(0, 4).join(', '));
 
   /* ---- 5. choosing the word one came from ----------------------------- */
   start();

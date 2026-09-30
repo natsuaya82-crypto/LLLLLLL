@@ -1398,12 +1398,12 @@ export function halfDone(){
        openAdd() keeps what is on it when it is reopened by its own redraw or
        on the way back from the picker, which is the whole point of it, and a
        fixture that lands on the form twice gets the second of those. */
-    /* THE SHEET THAT MAKES A WORD, BOTH STATES OF ITS CORNER. 「追加」 is
-       grey until there is a spelling to add and gold the moment there is
-       (www/wordsheet.js § wdAddOn) -- 「なにもない時は薄い灰色、何か打ったら
-       金にする」 OWNER 2026-09-03 -- and it was grey through both for as long
-       as the sheet has existed. The fault is nearly always in the state
-       nobody photographed, so both are here.
+    /* THE SHEET THAT MAKES A WORD, BOTH STATES OF ITS CORNER. Its Save is
+       www/shell.js § KEEP's (OWNER 2026-09-30 「saveじゃダメなの？」), grey
+       until something is on the sheet and gold the moment there is --
+       「なにもない時は薄い灰色、何か打ったら金にする」 OWNER 2026-09-03. The
+       fault is nearly always in the state nobody photographed, so both are
+       here -- and the sheet after 自動生成.
 
        openAdd() is called TWICE on purpose, exactly as the synonym face
        below does it: what a form has in its corner is a string taken when
@@ -1415,6 +1415,10 @@ export function halfDone(){
                                                 addW = null; return h; }],
     ['the new word sheet, with a spelling typed', () => { window.route='words'; NAV=[{r:'words'}];
                                                 openAdd(''); wEdit.sp = spType('ka'); wdSync();
+                                                openAdd(''); const h = vForm();
+                                                addW = null; return h; }],
+    ['the new word sheet, after 自動生成', () => { window.route='words'; NAV=[{r:'words'}];
+                                                openAdd(''); wdGen();
                                                 openAdd(''); const h = vForm();
                                                 addW = null; return h; }],
     ['the new word sheet, with a synonym', () => { window.route='words'; NAV=[{r:'words'}];
