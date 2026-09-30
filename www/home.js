@@ -608,24 +608,29 @@ function pfList(){
      OWNER 2026-09-26. Which posts, and when, is the server's answer to this
      page (pfBoosts(), www/sns.js) -- the same post is passed on by several
      people at several times, so the time is the page's and not the post's. */
-  var bo=pfBoosts(pfMine()? meHandle() : h), at={}, i, id, q;
-  for(i=0;i<mine.length;i++) at[mine[i].id]=mine[i].at;
+  /* Both are asked by the name the answer uses, the server's: a post written
+     on this phone is drawn from its copy here, whose own id is the phone's
+     and whose `sid` is the server's, so asking by `p.id` found no pass on
+     it and it was drawn with no 「〇〇がリポスト」 (2026-09-29, tl-check 14f). */
+  var bo=pfBoosts(pfMine()? meHandle() : h), at={}, i, id, q,
+      nm=function(p){ return p.sid || p.id; };
+  for(i=0;i<mine.length;i++) at[nm(mine[i])]=mine[i].at;
   for(id in bo){
     if(!Object.prototype.hasOwnProperty.call(bo, id)) continue;
     q=postById(id);
     if(!postShown(q)) continue;
-    if(at[q.id]===undefined) mine.push(q);
-    at[q.id]=Math.max(at[q.id] || 0, bo[id].at);
+    if(at[id]===undefined) mine.push(q);
+    at[id]=Math.max(at[id] || 0, bo[id].at);
   }
   /* THE PIN IS THE PAGE'S (profile.pin, whoOf) -- that one first, wearing
      the mark; a copy, so nothing on the post itself says so. */
   var pin=(whoOf(pfMine()? meHandle() : h) || {}).pin || '';
   mine.sort(function(a, b){
-    return ((b.id===pin?1:0)-(a.id===pin?1:0)) || (at[b.id]-at[a.id]);
+    return ((b.id===pin?1:0)-(a.id===pin?1:0)) || (at[nm(b)]-at[nm(a)]);
   });
   /* and the ones it passed on say so 「〇〇がリポスト」 (www/post.js § postRp) */
   return mine.map(function(p){
-    var q=postRp(p, bo[p.id]), c, k;
+    var q=postRp(p, bo[nm(p)]), c, k;
     if(p.id!==pin) return q;
     c={};
     for(k in q) if(Object.prototype.hasOwnProperty.call(q, k)) c[k]=q[k];

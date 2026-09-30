@@ -60,6 +60,12 @@ const uiLang = li >= 0 ? argv[li + 1] : 'en';
    focus, so the first field on the screen is given it. */
 const ki = argv.indexOf('--kb');
 const kbUp = ki >= 0 ? Number(argv[ki + 1]) || 0 : 0;
+/* --play: the frame Google Play takes for a phone -- 9:16 at 1080 x 1920, one
+   screen and not the whole page (a taller picture is past Play's 2:1), and a
+   JPEG because Play refuses a PNG with an alpha channel. 405 x 720 is the
+   width of an ordinary Android phone at 8/3. tools/play-shots.mjs runs it for
+   the ten languages. */
+const play = argv.indexOf('--play') >= 0;
 /* everything that is not a flag, and not the word after --lang. li is -1 when
    there is no --lang, and li + 1 is then 0, which silently ate whichever
    screen was asked for first. */
@@ -80,8 +86,8 @@ fs.mkdirSync(OUT, { recursive: true });
 /* A phone, not a desktop window: this is a Capacitor app and a screen that
    only holds together at 1200 px wide is not a screen anyone will see. */
 const br = await chromium.launch(LAUNCH);
-const pg = await br.newPage({ viewport: { width: 390, height: 844 - kbUp },
-                              deviceScaleFactor: 2 });
+const pg = await br.newPage({ viewport: play ? { width: 405, height: 720 } : { width: 390, height: 844 - kbUp },
+                              deviceScaleFactor: play ? 8 / 3 : 2 });
 await pg.goto(`http://localhost:${PORT}/`);
 /* index.html holds a splash over everything for the later of 900 ms and the
    first draw, then fades it for another 420. Waiting a fixed moment
@@ -311,9 +317,9 @@ for (const spec of shots) {
                                             : spec.replace(/[:/#]+/g, '-')) +
                (kbUp ? '-kb' + kbUp : '') +
                (dark ? '-dark' : '') +
-               (uiLang === 'en' ? '' : '-' + uiLang) + '.png';
+               (uiLang === 'en' ? '' : '-' + uiLang) + (play ? '-play.jpg' : '.png');
   const file = path.join(OUT, name);
-  await pg.screenshot({ path: file, fullPage: true });
+  await pg.screenshot(play ? { path: file, type: 'jpeg', quality: 92 } : { path: file, fullPage: true });
   made.push(path.relative(ROOT, file));
 }
 

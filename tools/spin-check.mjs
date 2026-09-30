@@ -17,10 +17,21 @@
         same press: the mark did not come down between them
      4  a press that sends nothing turns nothing
      5  a request nobody pressed for (a list read on its own) turns nothing
+     9-11  AND IT IS DRAWN, with a server that answers as fast as the real
+        one can: Save, the heart and the arrow each put the star on the
+        screen WHOLE while their requests are out. The questions above ask
+        the class; this asks the pixels' opacity, frame by frame. The class
+        was right on the phone and the owner saw nothing: 「保存を押しても
+        星が出ない」 実機 1.0.3, 2026-09-29 (r140). Four slice_puts go out
+        side by side and a near server answers them all in tens of
+        milliseconds, and the star used to FADE IN over .24s -- so it was
+        taken down again at 0.00 of the way in. The three are three roads
+        (keepSave, a post's heart, a language taken) through the one star.
 
    Run: node tools/spin-check.mjs
         node tools/spin-check.mjs --shot r111   (also photographs the save
-        in Japanese while it is out, into shots/r111-saving.png)        */
+        in Japanese while it is out, into shots/r111-saving.png, and the
+        screen just before the press, shots/r111-idle.png)        */
 import { seed } from './fixture.mjs';
 import { fileURLToPath } from 'url';
 import path from 'path';
@@ -33,12 +44,12 @@ const br = await chromium.launch(LAUNCH);
 const pg = await br.newPage({ viewport:{ width:390, height:844 } });
 const errs = [];
 pg.on('pageerror', (e) => errs.push(String(e && e.message || e)));
-/* a server that answers everything, 300ms late */
-let asked = 0;
+/* a server that answers everything, 300ms late -- and 20ms for 9-11 */
+let asked = 0, LATE = 300;
 await pg.route(/\/(rest|storage|auth)\/v1\//, async (route) => {
   asked++;
   const req = route.request(), u = req.url(), m = req.method();
-  await new Promise((f) => setTimeout(f, 300));
+  await new Promise((f) => setTimeout(f, LATE));
   let body = '[]', status = 200;
   if (m === 'POST' && u.indexOf('/rest/v1/language') >= 0) {
     let b = {}; try { b = JSON.parse(req.postData() || '{}'); } catch (e) {}
@@ -61,6 +72,23 @@ await pg.evaluate(({ s, ja }) => {
 await pg.waitForTimeout(800);
 
 const spin = () => pg.evaluate(() => document.getElementById('netspin').className.indexOf('on') >= 0);
+/* What is DRAWN while a press is out: every frame from the press until the
+   star has gone again, the class and the opacity the frame was painted at. */
+async function drawn(press) {
+  await pg.evaluate(() => {
+    var el = document.getElementById('netspin'), t0 = performance.now();
+    window.__fr = [];
+    (function f(){
+      window.__fr.push([el.className.indexOf('on') >= 0 ? 1 : 0, +getComputedStyle(el).opacity]);
+      if (performance.now() - t0 < 700) requestAnimationFrame(f);
+    })();
+  });
+  await press();
+  await pg.waitForTimeout(900);
+  const fr = await pg.evaluate(() => window.__fr);
+  const on = fr.filter((x) => x[0]);
+  return { frames: on.length, most: on.length ? Math.max.apply(null, on.map((x) => x[1])) : 0 };
+}
 let fails = 0, n = 0;
 function say(ok, what, got) {
   n++; if (!ok) fails++;
@@ -74,6 +102,7 @@ await pg.click('[data-do="editLetter"]');
 await pg.waitForTimeout(200);
 await pg.evaluate(() => { GE.st = [{ pts:[[100,100],[400,400]] }]; render(); });
 const before = asked;
+if (shot) await pg.screenshot({ path: path.join(dir, '..', 'shots', shot + '-idle.png') });
 await pg.click('[data-do="keepPress"]');
 const seen = [], still = [];
 const t0 = Date.now();
@@ -152,6 +181,37 @@ const busy7 = await pg.evaluate(() => !!document.querySelector('#app [aria-busy=
 if (shot) { await pg.waitForTimeout(200); await pg.screenshot({ path: path.join(dir, '..', 'shots', shot + '-dl.png') }); }
 await pg.waitForTimeout(900);
 say(had7 && s7 && !busy7, '\u2193 pressed: the star is up at once, and no row draws a meter of its own', { had7, s7, busy7, lid7 });
+
+/* 9-11: drawn, with a near server */
+LATE = 20;
+await pg.evaluate(() => { var l = LETTERS[1]; go('letter', l.id); });
+await pg.waitForTimeout(400);
+await pg.click('[data-do="editLetter"]');
+await pg.waitForTimeout(200);
+await pg.evaluate(() => { GE.st = [{ pts:[[120,100],[120,400]] }]; render(); });
+const d10 = await drawn(() => pg.click('[data-do="keepPress"]'));
+say(d10.frames > 0 && d10.most >= 0.99 && await pg.evaluate(() => here().r) === 'letter',
+    'Save, answered in ' + LATE + 'ms: the star is DRAWN whole while it is out (' + d10.frames + ' frames, most ' + d10.most.toFixed(2) + ')', d10);
+const d11 = await drawn(() => pg.evaluate(() => {
+  var p = POSTS.filter(function (x){ return x.mine && !x.to && !x.toh; })[1] || POSTS[0], b;
+  if (!p.sid) p.sid = 'S-spin2';
+  p.ilike = false;
+  NAV = [{ r:'profile' }]; route = 'profile'; render();
+  b = document.querySelector('#app [data-do="postLike"][data-a=\'' + JSON.stringify([p.id]) + '\']');
+  if (b) b.click();
+}));
+say(d11.frames > 0 && d11.most >= 0.99, '\u2661, answered in ' + LATE + 'ms: the star is drawn whole (' + d11.frames + ' frames, most ' + d11.most.toFixed(2) + ')', d11);
+const d12 = await drawn(() => pg.evaluate(() => {
+  var lid = 'spin-lang-2';
+  WLD_HAVE[lid] = { id:lid, name:'Tamwe', owner:'somebody-else', pub:'2026-08-01' };
+  WLDS_HAVE[lid] = { wld:{ body: JSON.stringify({ dl:true }), no:1 } };
+  langOwnGot(lid, 'somebody-else');
+  ABOPEN.wlddl = true;
+  NAV = [{ r:'about', a:lid }]; route = 'about'; render();
+  var b = document.querySelector('#app [data-do="wldGet"]');
+  if (b) b.click();
+}));
+say(d12.frames > 0 && d12.most >= 0.99, '\u2193, answered in ' + LATE + 'ms: the star is drawn whole (' + d12.frames + ' frames, most ' + d12.most.toFixed(2) + ')', d12);
 
 say(errs.length === 0, 'nothing threw', errs);
 await br.close();

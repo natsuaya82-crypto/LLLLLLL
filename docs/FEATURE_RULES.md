@@ -255,6 +255,47 @@ it is quoted, and where a decision has never been made the row in
 - Implementation status:
 ```
 
+### 2026-09-30 投げ縄で選んだ線だけが動く
+- Date: 2026-09-30
+- Area: 字を描く画面の投げ縄（r113、`www/glyph.js`）
+- Decision: 投げ縄で線を選んで動かすと、**選んだ線だけ**が動く。選んでいない線（つながっている斜め線・横棒など）は動かない。投げ縄の目的は「線全体を選択して動かす」こと。
+- Reason: オーナーの言葉「そもそも線全体を選択して動かすのが目的なんでしょ？」「なんでこうやって全体が動くの？」「選択してるのが縦の線なんだら横の線が動くのが謎」（2026-09-30、実機 1.0.3 のスクショ）。
+- Affected features: 字を描く画面。
+- Affected data: 無い（描いた線の座標が今までどおり保存される）。
+- Implementation status: r144 に渡した。
+
+### 2026-09-30 今日のお題の行の「Today（お題）」の見出しは要らない
+- Date: 2026-09-30
+- Area: タイムラインの上の今日のお題の行（`www/sns.js` の ~~`.dayk`~~、~~`day.k`~~）
+- Decision: お題の行の前に付く金色の「Today」（日本語は「お題」）の見出しを外す。お題の文と、その下の「自分の言語で」・日付はそのまま。
+- Reason: オーナーの言葉「今日のお題にtodayってあるでしょ？そこいらない」（2026-09-30）。
+- Affected features: タイムライン。
+- Affected data: 無い。
+- Implementation status: r139 に渡した。
+
+### 2026-09-30 単語の自動生成の入口は「＋」から。単語を足す画面の確定は「保存」。書きかけで戻る時は確認
+- Date: 2026-09-30
+- Area: 辞書（`www/words.js` の右上の「作る」）、単語を足す画面（`www/wordsheet.js`）、戻る時の確認（`keepDrafting()`、`www/shell.js`）
+- Decision:
+  - 単語の自動生成は**新しい単語の画面（New word）だけ**に置く。直す画面には置かない（「直す画面にいらねえだろ」2026-09-30）。押すと、意味以外の欄が埋まる（「自動生成ボタン押したらここが埋まるみたいな感じ」「意味とか以外ね」）── つづり・読み・品詞。つづりは辞書にある単語から学ぶ：音の使われ方と、品詞ごとの形（例「動詞は a で終わる」なら動詞は a で終わらせる）（「単語がたくさんあればそれを読み込んで動詞はaで終わるからaねってできるわけでしょ？」）。もう一度押すと別の単語。辞書の右上の「作る」、候補の一覧の画面（~~`vGen`~~）・音節の形の画面（~~`vGenSyl`~~、C・V の一覧）は無くす。
+  - 単語を足す画面の確定は「＋」の印ではなく「保存」の文字にする。
+  - 単語を足す画面で何か入れてから戻る時、ほかの保存のある画面と同じく「保存しますか」の確認を出す。
+- Reason: オーナーの言葉「2でしょ」「単語追加する時の+マークわかりにくいんだけど。saveじゃダメなの？」「入力して戻る時普通に戻るけど、ポップ出す仕様はなんで適応されてないの？」（2026-09-30）。
+  2026-09-26 の「新しい章として作る」の入口の部分を差し替え。CLAUDE.md の「add is the plus」は、この画面の確定には当てはめない。
+- Affected features: 辞書、単語を足す画面、単語の自動生成。
+- Affected data: 無い（`STG.syl` は書かなくなり、あれば読む）。
+- Implementation status: r142 ── コード確認、実機未確認。自動生成は `wdGen()`（`www/wordsheet.js`）、辞書から学ぶのは `genWords()`（`www/assist.js`）、確定と戻る時の確認は `wdKeepOn()` → `keepOn()`。文法の枠から開く単語の画面（`openSlot`、`www/phases.js`）は ＋ のまま。
+
+### 2026-09-29 Android: 個人のアカウント、連絡先 Lingua@tokinets.com、Apple のサインインは置かない
+- Date: 2026-09-29
+- Area: Google Play の出し方（`docs/ANDROID.md` § オーナーがすること・§ 足りない物）、Android のサインイン（§ サインイン）
+- Decision: Play Console のデベロッパー アカウントは**個人**で作る（本番の前にクローズド テスト 12 人以上・14 日間が要る）。ストアの連絡先のメールは `Lingua@tokinets.com`。Android には Apple のサインインを**置かない**（Google とメールだけ）。カテゴリはまだ決まっていない。
+- Reason: オーナーの言葉「Android個人で行く」「Lingua@tokinets.comで」「おかない！」（2026-09-29）。
+- Affected features: Android のサインイン画面、Play の掲載。
+- Affected data: 無い。
+- Affected docs: `docs/ANDROID.md`。
+- Implementation status: Apple のボタンは Android では既に閉じている（r122）。アカウントとメールはオーナーが Play Console で。
+
 ### 2026-09-29 写真タブ ── プロフィールの「投稿・返信・写真・いいね」、X のメディアタブと同じ
 - Date: 2026-09-29
 - Area: プロフィールのタブ（`PF_TABS`・`pfMedia()`・`pfGrid()`、`www/home.js`）、読む所（`askMedia()`、`www/sns.js`・`netMediaBy()`、`www/net.js`）
@@ -547,7 +588,7 @@ it is quoted, and where a decision has never been made the row in
 - Affected data: 語の由来の持ち方・組み合わせの型は新しく保存する物 ── 各セッションが CHANGELOG に先に書く。
 - Affected docs: この項、CLAUDE.md「A chapter that is closed」（Make の段を書き直した）。
 - Implementation status: 字を組み合わせた一マス（書き方 `block`、`SCRIPT.blk`）と SVG の書き出し（文字ぜんぶ・一文字）は r102
-  （`claude/r102-block`）、書き出しの画面は r104（`claude/r104-blk`）、描いたままの位置で重ねる一マスは r105（`claude/r105-quad`）── コード確認、実機未確認。単語の自動生成（`vGen`・`vGenSyl`、`STG.syl`）と語源の系統図
+  （`claude/r102-block`）、書き出しの画面は r104（`claude/r104-blk`）、描いたままの位置で重ねる一マスは r105（`claude/r105-quad`）── コード確認、実機未確認。単語の自動生成（~~`vGen`~~・~~`vGenSyl`~~、`STG.syl`。入口は 2026-09-30 に新しい単語の画面のボタンへ、r142）と語源の系統図
   （`vEty`、単語の `from`）は r101（`docs/scope/r101-gen.md`）── コード確認、実機未確認。「?」の中の使い方は r103（`docs/scope/r103-help.md`）
   ── コード確認、実機未確認。三つとも integ-0905 に入っている。
 

@@ -863,28 +863,55 @@ const more = await pg.evaluate(() => {
     var e = document.querySelector('.navtop [data-do="addOne"]');
     return !e ? 'gone' : (e.classList.contains('navon') ? 'gold' : 'grey');
   }
+  /* THE SHEET THAT MAKES A WORD IS A SCREEN WITH A SAVE, like every other
+     one (OWNER 2026-09-30 「単語追加する時の+マークわかりにくいんだけど。
+     saveじゃダメなの？」「入力して戻る時普通に戻るけど、ポップ出す仕様はなんで
+     適応されてないの？」). Measured before it was changed: typing onto it left
+     KEEP empty -- wdFormHTML() armed the buffer only `if(!mk)` and
+     wdKeepOn() returned on `addW` -- so back found nothing to ask about. The
+     corner is keepBtnHTML()'s Save now, and the arrow asks. */
   goTab('build'); openAdd(''); render();
-  out.addArrive = addBtnOn();
+  out.addArrive = navOn();
+  out.addPlus = addBtnOn();
   var wln = document.getElementById('wd-ln');
   wln.value = 'ka'; wln.dispatchEvent(new Event('input', { bubbles: true }));
-  out.addTyped = addBtnOn();
-  /* What the screen's own answer is, so the two are compared rather than the
-     colour being asserted on its own: a button that was gold for a reason
-     that is not this one would pass that. */
-  out.addWould = !!wdAddOn();
+  out.addTyped = navOn();
   /* AND A RENDER LEAVES IT WHERE IT IS. The corner of a form is not rebuilt
      by render(), so a paint that happened and a paint that survives are two
      claims, and the second is the one somebody actually sees. */
   render();
-  out.addRendered = addBtnOn();
-  wln = document.getElementById('wd-ln');
-  wln.value = ''; wln.dispatchEvent(new Event('input', { bubbles: true }));
-  out.addRubbed = addBtnOn();
-  out.addWouldNot = !!wdAddOn();
+  out.addRendered = navOn();
   /* AND IT WROTE NOTHING. 「打ったら覚える、ボタンが書く」 -- a word typed
-     onto a sheet that makes one is not a word until 「追加」 is pressed. */
+     onto a sheet that makes one is not a word until the Save is pressed. */
   out.addMade = !!findWord('ka');
-  closeSheet({ target: { id: 'sbg' } });
+  /* Back with a spelling on it asks, once, and stays while it is asking. */
+  var adAsked = 0, adNo = null, adYes = null, adPop = popAsk;
+  popAsk = function(q, y, yl, nl, n){ adAsked++; adYes = y; adNo = n; };
+  back();
+  popAsk = adPop;
+  out.addAsked = adAsked;
+  out.addStayed = here().r === 'form' && String(here().a) === 'add:';
+  if(adNo) adNo();
+  out.addNoLeft = here().r !== 'form';
+  out.addNoWrote = !!findWord('ka');
+  /* And Yes writes it: the same Save, reached from the question. */
+  goTab('build'); openAdd(''); render();
+  out.addFreshAsk = keepDirty(keepKey());
+  wln = document.getElementById('wd-ln');
+  wln.value = 'ka'; wln.dispatchEvent(new Event('input', { bubbles: true }));
+  adYes = null; popAsk = function(q, y){ adYes = y; };
+  back();
+  popAsk = adPop;
+  var adSend = window.netSaveNow;
+  window.netSaveNow = function(cb){ if(cb) cb(true); };
+  if(adYes) adYes();
+  window.netSaveNow = adSend;
+  out.addYesWrote = !!findWord('ka');
+  out.addYesLeft = here().r !== 'form';
+  /* and the next new word opens on an empty sheet that asks nothing */
+  openAdd(''); render();
+  out.addNextClean = !keepDirty(keepKey()) && navOn() === 'grey';
+  popOff(); back();
 
   /* AND THE SAME SHEET OPENED ON A SLOT OF THE GRAMMAR. It is the word sheet
      (www/phases.js § openSlot) with the two things the slot already knows
@@ -994,7 +1021,7 @@ const walk = await pg.evaluate(({ s }) => {
   const seedAgain = window.__seed;
   seedAgain();
   SET.walked = true; planGot('pro');
-  const out = { stands: [], fails: [], fields: 0, presses: 0, gold: 0, refused: 0, lit: 0, noes: 0, yeses: 0 };
+  const out = { stands: [], fails: [], fields: 0, presses: 0, gold: 0, refused: 0, lit: 0, noes: 0, yeses: 0, throws: 0 };
 
   langRowGot(langId); langStore();
   netSend = function(method, path, body, tok, ok){
@@ -1158,6 +1185,56 @@ const walk = await pg.evaluate(({ s }) => {
     if(!b || typeof b.now !== 'function')
       out.fails.push(lab + ': a Save in the bar over a screen that hands no now()');
     if(saveOn()) out.fails.push(lab + ': a GOLD Save on arrival');
+
+    /* 24 -- A SAVE THAT THROWS IS SAID, AND THE NEXT PRESS GOES.
+       「画面には表示されてないし保存しましたって出ないから戻るボタンしか
+       押せねえ」 OWNER 実機 1.0.3, 2026-09-30. keepSave() (www/shell.js)
+       raised KEEP_BUSY and then ran the screen's save with nothing round it,
+       so one throw anywhere in there left it raised: that press said
+       nothing, and every Save after it, on every screen, returned at
+       `if(KEEP_BUSY) return;` and said nothing either, until the app was
+       closed. The throw is put in by hand here, once, into the screen's own
+       save -- WHAT threw on the owner's phone is not known (docs/scope/
+       r143-save.md) -- and what is asked is what the person sees. */
+    /* 25 -- AND A PRESS THAT FINDS A SAVE STILL RAISED WITH NOTHING ON THE
+       WIRE IS NOT SWALLOWED. Raised by hand, with no request out and nothing
+       queued: that is a save nothing is carrying, and the press says so and
+       goes. */
+    if(stand(go1) && KEEP[keepKey()]){
+      var k24 = keepKey(), b24 = KEEP[k24], real24 = b24.save, said24 = [],
+          t24 = window.toast, sn24 = window.netSaveNow, sent24 = 0, went24;
+      window.toast = function(m){ said24.push(String(m)); };
+      window.netSaveNow = function(cb){ sent24++; if(cb) cb(true); };
+      b24.save = function(){ throw new Error('r143'); };
+      try { keepPress(); } catch(e){}
+      b24.save = real24;
+      if(!said24.length) out.fails.push(lab + ': a Save that threw said nothing');
+      if(KEEP_BUSY) out.fails.push(lab + ': a Save that threw left the next one shut (KEEP_BUSY)');
+      said24 = []; sent24 = 0;
+      try { popOff(); } catch(e){}
+      try { if(KEEP[k24] && keepKey() === k24) keepPress(); } catch(e){}
+      /* Sent, or refused by the screen in its own words (a word form with
+         no spelling says so): either is an answer. Silence is not. */
+      went24 = sent24 || said24.length;
+      if(!went24) out.fails.push(lab + ': after a Save that threw, the next press sent nothing and said nothing');
+      KEEP_BUSY = false;
+      if(stand(go1) && KEEP[keepKey()]){
+        said24 = []; sent24 = 0;
+        KEEP_BUSY = true;
+        try { keepPress(); } catch(e){}
+        if(!said24.length) out.fails.push(lab + ': a press over a save nothing is carrying said nothing');
+        if(!sent24 && said24.length < 2)
+          out.fails.push(lab + ': a press over a save nothing is carrying went nowhere after saying so');
+        KEEP_BUSY = false;
+      }
+      window.toast = t24; window.netSaveNow = sn24;
+      /* and the walk goes on from where it was, as 23 does */
+      for(var kk24 in KEEP) if(Object.prototype.hasOwnProperty.call(KEEP, kk24)) keepDrop(kk24);
+      try { popOff(); } catch(e){}
+      out.throws++;
+      /* a Save that landed went back a page; the fields below are this screen's */
+      if(!stand(go1)) continue;
+    }
 
     /* the fields, from the page */
     var fs = fields();
@@ -1369,13 +1446,19 @@ if(more.glAsked !== 1) fails.push('back off a changed drawing asked ' + more.glA
 if(!more.glStayed) fails.push('back off a changed drawing left the screen while the question was up');
 if(!more.glNoLeft) fails.push('No did not leave the drawing screen');
 if(more.glNoWrote) fails.push('No wrote the drawing onto the letter');
-if(more.addArrive !== 'grey') fails.push('the sheet that makes a word opened with 追加 ' + more.addArrive);
-if(!more.addWould) fails.push('a spelling typed onto a new word sheet and addOne() would still refuse it');
-if(more.addTyped !== 'gold') fails.push('a spelling typed onto a new word sheet left 追加 ' + more.addTyped);
-if(more.addRendered !== 'gold') fails.push('a render put 追加 back to ' + more.addRendered + ' over a sheet holding a word');
-if(more.addWouldNot) fails.push('the spelling was rubbed out and addOne() would still take it');
-if(more.addRubbed !== 'grey') fails.push('the spelling rubbed out left 追加 ' + more.addRubbed);
+if(more.addArrive !== 'grey') fails.push('the sheet that makes a word opened with its Save ' + more.addArrive);
+if(more.addPlus !== 'gone') fails.push('the sheet that makes a word still carries the ＋ (addOne) in its corner: ' + more.addPlus);
+if(more.addTyped !== 'gold') fails.push('a spelling typed onto a new word sheet left the Save ' + more.addTyped);
+if(more.addRendered !== 'gold') fails.push('a render put the Save back to ' + more.addRendered + ' over a sheet holding a word');
 if(more.addMade) fails.push('typing a spelling onto a new word sheet wrote the word');
+if(more.addAsked !== 1) fails.push('back off a new word sheet holding a spelling asked ' + more.addAsked + ' times, not once');
+if(!more.addStayed) fails.push('back off a new word sheet left it while the question was up');
+if(!more.addNoLeft) fails.push('No did not leave the new word sheet');
+if(more.addNoWrote) fails.push('No wrote the new word into the dictionary');
+if(more.addFreshAsk) fails.push('a fresh new word sheet opened already changed');
+if(!more.addYesWrote) fails.push('Yes on the way off a new word sheet did not write the word');
+if(!more.addYesLeft) fails.push('Yes on the way off a new word sheet did not leave it once the save landed');
+if(!more.addNextClean) fails.push('the new word sheet opened after a saved one is not clean -- it asks about a word already in');
 if(more.slotArrive !== 'grey') fails.push("a grammar slot's sheet opened with 追加 " + more.slotArrive);
 if(more.slotTyped !== 'gold') fails.push("a spelling typed onto a grammar slot's sheet left 追加 " + more.slotTyped);
 if(more.slotRendered !== 'gold') fails.push('a render put 追加 back to ' + more.slotRendered + " over a grammar slot's sheet holding a word");
@@ -1488,6 +1571,8 @@ console.log('every screen with a Save (' + walk.stands.length + '), asked of the
             ' of those changes answered 「いいえ」 on the way out and each gave back what the ' +
             'screen opened with, wrote nothing and sent nothing, and ' + walk.yeses +
             ' of them pressed again and Saved wrote the language');
+console.log('a Save that throws, and a press over a save nothing is carrying: asked of ' + walk.throws +
+            ' screens with a Save -- each said so, and the next press went');
 
 r.screens.forEach((s) => {
   console.log('  ' + s.n + ' (' + s.key + ')');

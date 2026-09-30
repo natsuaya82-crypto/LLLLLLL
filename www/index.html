@@ -622,11 +622,18 @@ canvas.pkc{width:34px;height:34px;display:block}
    It stands OUTSIDE `#sbg` for that reason and not for a layering one: the
    scrim's press is `closeSheet`, and this must do nothing when it is
    pressed. `#netspin` is the empty div at the foot of this file, and
-   www/net.js § netSpin puts the mark in it and takes `on` on and off. */
+   www/net.js § netSpin puts the mark in it and takes `on` on and off.
+
+   IT COMES UP AT ONCE AND GOES DOWN QUIETLY. The .24s is the way down only:
+   `.on` has no transition, so the first frame after a press is the star
+   whole. It used to fade in as well, and a save a near server answers in
+   tens of milliseconds was over before the fade was -- the class was on
+   and the screen showed nothing 「保存を押しても星が出ない」 実機 1.0.3,
+   2026-09-29 (r140). tools/spin-check.mjs 9-11 asks the painted opacity. */
 .netspin{position:fixed;inset:0;z-index:42;display:flex;align-items:center;
          justify-content:center;background:rgba(0,0,0,.5);
          opacity:0;pointer-events:none;transition:.24s}
-.netspin.on{opacity:1;pointer-events:auto}
+.netspin.on{opacity:1;pointer-events:auto;transition:none}
 .netspin .mk{width:22px;height:22px;color:var(--gold);
              display:flex;align-items:center;justify-content:center;
              animation:pullsp .9s linear infinite}
@@ -2159,10 +2166,8 @@ a.set{text-decoration:none}
 .dayline{display:block;font-size:.95rem;line-height:26px;color:var(--tx);
          overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dayrb .wrt{display:block;font-size:1rem;line-height:26px}
-/* The label in front of the sentence. */
-.dayk{color:var(--gold);font-weight:600;margin-right:8px}
 /* And which day the sentence is for. On the second line, quiet, because it
-   qualifies the label rather than competing with the sentence. */
+   qualifies the sentence rather than competing with it. */
 .dayd{margin-left:10px;font-size:.82rem;color:var(--txs)}
 /* The post a reply is going into, above what you are writing. It is shaped
    the way every other row in this app is -- a hairline under it -- rather

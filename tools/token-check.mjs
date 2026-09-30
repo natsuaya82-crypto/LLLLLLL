@@ -40,11 +40,16 @@ const WIRE = `
                     this.responseText = ''; }
   FakeX.prototype.open = function(m, u){ this.m = m; this.u = u; };
   FakeX.prototype.setRequestHeader = function(k, v){ this.h[k] = v; };
+  FakeX.prototype.getResponseHeader = function(k){
+    return /content-type/i.test(k) && this.readyState === 4
+      ? (this.status === 200 && this.responseType ? 'image/jpeg' : 'application/json') : null;
+  };
   FakeX.prototype.send = function(b){
     var self = this;
     var rec = { m:this.m, u:this.u, tok:String(this.h['Authorization'] || ''),
                 pre:String(this.h['Prefer'] || ''), ct:String(this.h['Content-Type'] || ''),
-                body:b, to:this.timeout, blob:this.responseType === 'blob' };
+                body:b, to:this.timeout,
+                blob:this.responseType === 'blob' || this.responseType === 'arraybuffer' };
     window.__X.sent.push(rec);
     var st = window.__X.refuse(rec);
     setTimeout(function(){
@@ -55,13 +60,27 @@ const WIRE = `
         ? JSON.stringify({ access_token:'AT' + window.__X.sent.length,
                            refresh_token:'RT', user:{ id:'me' } })
         : '[]';
-      /* a picture asked for as bytes comes back as bytes */
-      self.response = (rec.blob && st === 200) ? new Blob(['img'], { type:'image/jpeg' }) : null;
+      /* What a refusal SAYS, where a claim wants it said: Storage answers a
+         dead token with 400 and a body, not 401 (measured on the real bucket,
+         Actions run 36536615180 -- docs/scope/r131-pic.md). */
+      if (st !== 200 && window.__X.say) self.responseText = window.__X.say(rec) || '';
+      /* A request asked for as bytes gets bytes back, the refusal's body
+         included, in the type it asked for -- the real XMLHttpRequest has no
+         responseText then, and reading it throws. */
+      if (rec.blob) {
+        var txt = st === 200 ? 'img' : self.responseText;
+        self.response = self.responseType === 'arraybuffer'
+          ? new TextEncoder().encode(txt).buffer
+          : new Blob([txt], { type: st === 200 ? 'image/jpeg' : 'application/json' });
+        Object.defineProperty(self, 'responseText', { get: function(){
+          throw new Error('InvalidStateError: responseType is ' + self.responseType); } });
+      }
       if (self.onreadystatechange) self.onreadystatechange();
     }, 0);
   };
   window.XMLHttpRequest = FakeX;
-  window.__reset = function(){ window.__X.sent = []; window.__X.refuse = function(){ return 200; }; };
+  window.__reset = function(){ window.__X.sent = []; window.__X.refuse = function(){ return 200; };
+                               window.__X.say = null; };
   window.__count = function(re){
     return window.__X.sent.filter(function(r){ return new RegExp(re).test(r.u); }).length;
   };
@@ -445,6 +464,61 @@ say(eight.pic.drawn && eight.pic.tries === 2 && eight.pic.last === 'Bearer ' + e
 say(eight.pic.counted === 0,
     'and a picture filling in is not a press, even when one is under way — ' +
     'nothing to dim the screen for: ' + eight.pic.counted + ' counted');
+
+/* ---- 8b. and the picture's own server says it with a 400 ------------------
+   「人の投稿の写真が枠だけ」 OWNER 実機 174-175, 2026-09-29. Storage does not
+   answer a dead token with 401: the real bucket answered a broken one with
+   HTTP 400 and {"statusCode":"403","error":"Unauthorized",...} (Actions run
+   36536615180). The renewal above asked for 401 alone, so an hour after the
+   launch every photograph came back 400, NET_MED wrote 0, and the frame stayed
+   empty until the app was opened again. Two pictures at once, so what is held
+   is also that one refresh serves both and neither is left at 0. */
+const eightB = await pg.evaluate(async ({ w, s }) => {
+  eval(w); eval(s); window.__reset();
+  netMediaForget();
+  SESS = { at:'OLD3', rt:'r', uid:'me', anon:false };
+  window.__X.refuse = function(r){
+    return (/object\/authenticated\/post-media\//.test(r.u) && r.tok === 'Bearer OLD3') ? 400 : 200;
+  };
+  window.__X.say = function(r){
+    return /object\/authenticated/.test(r.u)
+      ? JSON.stringify({ statusCode:'403', error:'Unauthorized', message:'jwt expired', code:'AccessDenied' })
+      : '';
+  };
+  var got = {};
+  netMedia('u/p/0.t.jpg', function(x){ got.a = x; });
+  netMedia('u/p/1.t.jpg', function(x){ got.b = x; });
+  await wait(200);
+  var pic = window.__of('object/authenticated/post-media/');
+  var o = { a: String(got.a || ''), b: String(got.b || ''), tries: pic.length,
+            refreshes: window.__count('grant_type=refresh_token'),
+            last: pic.length ? pic[pic.length - 1].tok : '', at: SESS && SESS.at,
+            med: [typeof NET_MED['u/p/0.t.jpg'], typeof NET_MED['u/p/1.t.jpg']] };
+  /* And a refusal that is NOT the token -- the object is not there -- is not
+     renewed: 400 with statusCode 404 is what it is. */
+  window.__reset(); netMediaForget();
+  window.__X.refuse = function(r){ return /object\/authenticated/.test(r.u) ? 400 : 200; };
+  window.__X.say = function(){ return JSON.stringify({ statusCode:'404', error:'not_found', message:'Object not found' }); };
+  var gone = null;
+  netMedia('u/p/9.jpg', function(x){ gone = x; });
+  await wait(150);
+  o.gone = { got: gone, tries: window.__count('object/authenticated'),
+             refreshes: window.__count('grant_type=refresh_token'), med: NET_MED['u/p/9.jpg'] };
+  netMediaForget();
+  return o;
+}, { w: WIRE, s: wait });
+
+say(eightB.a.indexOf('blob:') === 0 && eightB.b.indexOf('blob:') === 0 &&
+    eightB.last === 'Bearer ' + eightB.at && eightB.tries === 4,
+    'a picture an hour after the launch, refused the way Storage refuses (400, ' +
+    'Unauthorized), is renewed and fetched again and drawn: ' + eightB.tries +
+    ' tries, ' + JSON.stringify([eightB.a.slice(0, 5), eightB.b.slice(0, 5)]));
+say(eightB.refreshes === 1 && eightB.med[0] === 'string' && eightB.med[1] === 'string',
+    'one refresh serves both pictures, and neither is left at 0 in NET_MED: ' +
+    eightB.refreshes + ' refresh, ' + JSON.stringify(eightB.med));
+say(eightB.gone.tries === 1 && eightB.gone.refreshes === 0 && eightB.gone.med === 0,
+    'a 400 that is not the token (the object is not there) is not renewed and not ' +
+    'asked again: ' + JSON.stringify(eightB.gone));
 
 /* ---- 9. and there is ONE way out, counted rather than listed -------------
    Every way a page can reach a server, looked for in every file under www/
