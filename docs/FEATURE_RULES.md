@@ -255,6 +255,15 @@ it is quoted, and where a decision has never been made the row in
 - Implementation status:
 ```
 
+### 2026-09-30 1枚目のキーボードは今のまま（字に連動、直せない）
+- Date: 2026-09-30
+- Area: キーボードの1枚目（`kbFixed()`、`www/keyboard.js`）
+- Decision: 1枚目は今のまま残す ── QWERTY の位置に言語の字を当てはめ、開くたびに字から組み立て直す、直せない1枚。自由に作るのは2枚目以降。
+- Reason: オーナーの言葉「1枚目は今のままで」（2026-09-30）。1枚目は字との対応が決まっている線引きで、自由に直せると足した字がそのキーボードにどう出るかの線が無くなる。
+- Affected features: キーボード。
+- Affected data: 無い。
+- Implementation status: 変更なし。
+
 ### 2026-09-30 投げ縄で選んだ線だけが動く
 - Date: 2026-09-30
 - Area: 字を描く画面の投げ縄（r113、`www/glyph.js`）
