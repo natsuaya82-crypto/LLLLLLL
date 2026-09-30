@@ -22,8 +22,9 @@
    The geometry: one letter is one square cell (advance = the 800 square), so
    the spacing between letters is even by construction the way kana are, and
    there is no spacing solver anywhere in the app. The pen is GPEN below, and
-   a stroke may carry a width of its own no wider than it (GE_W). The cell is
-   a measured decision, not taste; tools/font-spike/README.md is the evidence.
+   a stroke may carry a width of its own, 12 to 40 about the pen's 24 (GE_W).
+   The cell is a measured decision, not taste; tools/font-spike/README.md is
+   the evidence.
 
    Every stroke is a convex nib swept along a polyline, which is the convex
    hull of the nib at both ends — so every contour is a convex polygon, which
@@ -74,13 +75,16 @@ var GPEN={width:24, angleDeg:0, contrast:1.0, curve:36};
    pen above -- which is every stroke written before a stroke could carry
    one, so nothing stored is rewritten and a stroke of 24 writes no `w`.
 
-   The top is the pen, because the ceiling in the paragraph above is about
-   two strokes on adjacent dots and not about taste: wider than 24 and they
-   weld into one. Whether to go past it is the owner's and has not been
-   asked. `dots` are what the row of dots offers, and a new stroke begins at
-   the middle one (GEW). inkW() is the one place that says what a stroke's
-   width is, and inkDef() hands every drawer a stroke whose `w` it has said. */
-var GE_W={min:6, max:24, dots:[6,10,14,19,24]};
+   `dots` are what the row of dots offers, and a new stroke begins at the
+   middle one (GEW), which is the pen: 「太さの点は 12・18・24・32・40、新しい
+   線は真ん中の 24 から」 OWNER 2026-09-30 -- the widest being the width every
+   letter already had was the fault. Past the pen, two strokes on adjacent dots
+   weld into one; that is the owner's to choose now. `min` and `max` are what
+   a stroke is READ as, and `min` is 6 rather than the thinnest dot because a
+   stroke saved at 6 or 10 before the dots moved keeps the width it was drawn
+   at. inkW() is the one place that says what a stroke's width is, and
+   inkDef() hands every drawer a stroke whose `w` it has said. */
+var GE_W={min:6, max:40, dots:[12,18,24,32,40]};
 function inkW(s){
   var w=s && s.w;
   if(typeof w!=='number' || !(w>0)) return GPEN.width;
@@ -1470,8 +1474,8 @@ function geCur(){
 }
 /* A new stroke, at the width chosen and on the layer being drawn on -- each
    written only when it is not what a stroke without it is read as (24 for
-   `w`, inkW; 1 for `ly`, inkLy). So a stroke begun at the middle dot carries
-   `w`. The one place a stroke is begun. */
+   `w`, inkW; 1 for `ly`, inkLy). So a stroke begun at the middle dot, which
+   is the pen, carries no `w`. The one place a stroke is begun. */
 function geNewSt(){
   var st={pts:[]};
   if(GEW!==GPEN.width) st.w=GEW;
@@ -1848,8 +1852,8 @@ function geClear(){ geMark(); GE.st=[]; GE.si=-1; GE.pi=-1; GE.seal=false;
    pressed. 「点でいいや基本が真ん中で線ごとに選べるようにして」 OWNER
    2026-09-30 (the 追記 after r148). Where you stand, like the zoom: not
    stored, and it stays from one letter to the next so an alphabet drawn thin
-   is not chosen thin twenty-six times. A stroke that carries no `w` is still
-   24 (inkW) -- only what is drawn from now on begins at the middle.
+   is not chosen thin twenty-six times. The middle is 24, the pen, which is
+   also what a stroke carrying no `w` is read as (inkW).
 
    With strokes lit by the rope, a dot is their width as well -- the one
    road for both, and geMark() before it so the step back puts it back. */

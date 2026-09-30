@@ -1388,24 +1388,24 @@ export function halfDone(){
                                                  window.route='glyph';
                                                  NAV=[{r:'glyph', a:GE.lid}]; return vGlyph(); }],
     /* The width and the layers (OWNER 2026-09-30 and its 追記). One letter of
-       thin and thick strokes with the row of dots at the middle one, the
+       strokes at 12, 40 and 24 with the row of dots at the middle one, the
        same letter with a stroke lit by the rope after a dot changed it (GEW
        put back before the face returns, so every face after it begins at the
        middle), and the letter split over two layers with the second on the
        paper, the first faint under it. GE is never saved from here. */
     ...(() => {
-      const ink = () => [{pts:[[184,184],[184,616]], w:6}, {pts:[[184,400],[616,184]], w:14},
+      const ink = () => [{pts:[[184,184],[184,616]], w:12}, {pts:[[184,400],[616,184]], w:40},
                          {pts:[[184,400],[616,616]]}];
       return [
         ['a letter in the editor, the width as dots', () => {
           editGlyph('k'); GE.st = ink(); GE.si = 2; GE.seal = true;
           window.route = 'glyph'; NAV = [{r:'glyph', a:GE.lid}]; return vGlyph();
         }],
-        ['a letter in the editor, a lit stroke made thin', () => {
+        ['a letter in the editor, a lit stroke made thick', () => {
           editGlyph('k'); GE.st = ink(); GE.si = 2; GE.seal = true;
           GE.ls = true; GE.lsSel = [2];
           window.route = 'glyph'; NAV = [{r:'glyph', a:GE.lid}];
-          const keep = GEW; geWidth(6);
+          const keep = GEW; geWidth(40);
           const h = vGlyph(); GEW = keep; return h;
         }],
         ['a letter in the editor, layer 2 on the paper', () => {

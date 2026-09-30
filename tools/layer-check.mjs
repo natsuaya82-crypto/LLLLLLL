@@ -35,10 +35,12 @@
                      line there across the whole canvas.
      the pad      -- the square drawn again small under the rail is gone, and
                      the layers stand where it was.
-     the dots     -- OWNER 2026-09-30, the 追記 after r148 (r154): no slider; a
-                     letter opens on the middle dot and a stroke drawn before
-                     any is pressed carries 14, while a stroke with no width
-                     stays 24 and is saved with none; a dot pressed with
+     the dots     -- OWNER 2026-09-30, the 追記 after r148 (r154) and the
+                     one that night (r155): no slider; the dots are 12 18 24
+                     32 40, a letter opens on the middle one, 24, and a stroke
+                     drawn before any is pressed carries no width, as a stroke
+                     with no width is 24 and is saved with none; a stroke
+                     saved at 6 or 10 before the dots moved is still 6 or 10; a dot pressed with
                      strokes lit changes those and no other, and the step back
                      puts it back; over the rows a heading with the + at its
                      end, the only +, under a line, and the last row scrolls
@@ -114,6 +116,9 @@ const r = await pg.evaluate(async ({s}) => {
   out.w24 = ink(OLD.map(function(x){ var c = JSON.parse(J(x)); c.w = 24; return c; })) === out.oldPx;
   out.thinPx = parseInt(ink([{pts:[[184,184],[184,616]], w:6}]), 10);
   out.fullPx = parseInt(ink([{pts:[[184,184],[184,616]]}]), 10);
+  out.fatPx = parseInt(ink([{pts:[[184,184],[184,616]], w:40}]), 10);
+  /* a stroke saved at a dot the row no longer offers reads what it was saved at */
+  out.pastW = [6, 10, 14, 19].map(function(w){ return inkW({w:w}); }).join(',');
 
   /* ---- a width off somebody else's post is held to the range ------------ */
   var big = inkAdv([{pts:[[400,184],[400,616]], w:5000}], 36);
@@ -144,12 +149,13 @@ const r = await pg.evaluate(async ({s}) => {
   out.after = after.join(' ');
   /* before any dot is pressed, the middle one is lit and a stroke begins
      at it 「基本が真ん中」 OWNER 2026-09-30 */
+  out.dotsAre = [].map.call(document.querySelectorAll('.gwidth button'), function(b){ return b.getAttribute('data-a'); }).join(' ');
   out.midLit = [].map.call(document.querySelectorAll('.gwidth button.on'), function(b){ return b.getAttribute('data-a'); }).join(' ');
   drag(P(4,4), P(4,16));
-  out.newW = (GE.st[GE.st.length - 1] || {}).w;
+  out.newNoW = GE.st.length === 1 && !('w' in GE.st[0]);
   GE.st = []; GE.si = -1; GE.seal = false; GE.undo = []; GE.redo = []; render();
-  /* the dot for 6, pressed as a finger presses it */
-  var dot = document.querySelector('.gwidth button[data-a="[6]"]');
+  /* the dot for 12, pressed as a finger presses it */
+  var dot = document.querySelector('.gwidth button[data-a="[12]"]');
   out.dot = !!dot;
   if (dot) dot.click();
   drag(P(4,4), P(4,16));
@@ -157,7 +163,7 @@ const r = await pg.evaluate(async ({s}) => {
   out.drawnW = drawn ? drawn.w : null;
   function press(w){ var b = document.querySelector('.gwidth button[data-a="[' + w + ']"]'); if (b) b.click(); return !!b; }
   out.slide = !!document.querySelector('.gwidth input, .gwslide');
-  press(10);
+  press(18);
   drag(P(10,4), P(10,16));
   out.tenW = (GE.st[GE.st.length - 1] || {}).w;
   press(24);
@@ -167,7 +173,7 @@ const r = await pg.evaluate(async ({s}) => {
      puts back the width it had -- the same dot, the same road */
   GE.ls = true; GE.lsSel = [2]; render();
   var others = J([GE.st[0], GE.st[1]]);
-  press(14);
+  press(40);
   out.litW = GE.st[2].w;
   out.litOthers = J([GE.st[0], GE.st[1]]) === others;
   geUndo();
@@ -182,7 +188,7 @@ const r = await pg.evaluate(async ({s}) => {
   await saved();
   var back = (ltById(l.id) || {}).st || [];
   out.keptW = back.map(function(x){ return x.w === undefined ? '-' : x.w; }).join(',');
-  out.sentW = __SENT.some(function(x){ return x.indexOf('\\"w\\":6') >= 0 || x.indexOf('"w":6') >= 0; });
+  out.sentW = __SENT.some(function(x){ return x.indexOf('\\"w\\":12') >= 0 || x.indexOf('"w":12') >= 0; });
   /* and the font writer was handed it, and inked it: a stroke straight down
      is as wide as its width */
   var nm = glyphName(l.id), got = null;
@@ -192,7 +198,8 @@ const r = await pg.evaluate(async ({s}) => {
     var cs = LinguaFont.glyphContours({strokes:[back[0]]}, GPEN), e = LinguaFont.profile(cs);
     out.fontStrokeW = Math.round(e.xMax - e.xMin);
     out.fontBase = BUILT.every(function(b){ return b.base === geBase(); });
-    /* the glyph's own ink in the font: narrower than the same letter at 24 */
+    /* the glyph's own ink in the font follows its strokes: the left one at
+       12 is 6 in from where 24 puts it, the right one at 40 is 8 out */
     var m = got.f.metrics[nm];
     out.fontWide = Math.round(m.xMax - m.xMin);
     var m24 = build0([{name:'x', roman:'x', strokes: back.map(function(x){ var c = JSON.parse(J(x)); delete c.w; return c; })}],
@@ -201,9 +208,9 @@ const r = await pg.evaluate(async ({s}) => {
   }
   /* what the keyboard is sent moves with it */
   var st1 = ltById(l.id).st; var keepW = st1[0].w;
-  var before = scriptSig(); st1[0].w = 12; var s12 = scriptSig(); st1[0].w = 16; var s16 = scriptSig();
+  var before = scriptSig(); st1[0].w = 16; var s16 = scriptSig(); st1[0].w = 32; var s32 = scriptSig();
   st1[0].w = keepW;
-  out.sigMoves = s12 !== s16 && before !== s12;
+  out.sigMoves = s16 !== s32 && before !== s16;
   out.sigMovedOnSave = sig0 !== scriptSig();
   /* a post written now carries the width; one written before keeps its own */
   var pink = postInkOf([{ id: l.id }]);
@@ -484,26 +491,29 @@ say(r.oldPx === OLD_PX, 'a stroke with no width draws what it always drew: ' + r
 say(r.oldFont === OLD_FONT, 'and the fixture\'s font is the same bytes it was: ' + r.oldFont + ' (was ' + OLD_FONT + ')');
 say(r.w24, 'and no width is 24, to the pixel');
 say(r.thinPx > 0 && r.thinPx * 2 < r.fullPx, 'a stroke of 6 inks ' + r.thinPx + 'px where the pen inks ' + r.fullPx);
-say(r.bigW > 0 && r.bigW <= 24, 'a width of 5000 off a post is held to the pen: ' + r.bigW + ' wide');
-say(r.midLit === '[14]', 'a letter opens with the middle dot lit: ' + r.midLit);
-say(r.newW === 14, 'a stroke drawn before any dot is pressed carries the middle one, 14 (' + r.newW + ')');
+say(r.bigW > 24 && r.bigW <= 40, 'a width of 5000 off a post is held to the widest dot: ' + r.bigW + ' wide');
+say(r.fatPx > r.fullPx, 'a stroke of 40 inks ' + r.fatPx + 'px where the pen inks ' + r.fullPx);
+say(r.pastW === '6,10,14,19', 'a stroke saved at 6, 10, 14 or 19 reads what it was saved at: ' + r.pastW);
+say(r.dotsAre === '[12] [18] [24] [32] [40]', 'the dots are 12 18 24 32 40: ' + r.dotsAre);
+say(r.midLit === '[24]', 'a letter opens with the middle dot lit: ' + r.midLit);
+say(r.newNoW, 'a stroke drawn before any dot is pressed is the middle one, 24, and carries no width');
 say(r.dot && !r.slide, 'the width is a row of dots to press, and there is no slider');
-say(r.drawnW === 6, 'a stroke drawn after the dot for 6 is pressed carries 6 (' + r.drawnW + ')');
-say(r.tenW === 10, 'the dot for 10 gives 10 (' + r.tenW + ')');
+say(r.drawnW === 12, 'a stroke drawn after the dot for 12 is pressed carries 12 (' + r.drawnW + ')');
+say(r.tenW === 18, 'the dot for 18 gives 18 (' + r.tenW + ')');
 say(r.defaultNoW, 'a stroke at 24 writes no width, as every stroke before it');
-say(r.litW === 14 && r.litOthers, 'a dot pressed with a stroke lit goes on that stroke and no other (' + r.litW + ')');
-say(r.undoW && r.redoW === 14, 'and the step back puts back the width it had, the step forward the new one');
-say(r.keptW === '6,10,14', 'and the Save keeps each one: ' + r.keptW);
+say(r.litW === 40 && r.litOthers, 'a dot pressed with a stroke lit goes on that stroke and no other (' + r.litW + ')');
+say(r.undoW && r.redoW === 40, 'and the step back puts back the width it had, the step forward the new one');
+say(r.keptW === '12,18,40', 'and the Save keeps each one: ' + r.keptW);
 say(r.sentW, 'and what went up to the server carries it');
-say(r.fontHad && r.fontStrokeW === 6, 'the font writer was handed the letter, and its stroke of 6 is ' + r.fontStrokeW + ' wide');
-say(r.fontWide < r.font24Wide, 'the glyph in the font is ' + r.fontWide + ' wide where the same letter at 24 is ' + r.font24Wide);
+say(r.fontHad && r.fontStrokeW === 12, 'the font writer was handed the letter, and its stroke of 12 is ' + r.fontStrokeW + ' wide');
+say(r.fontWide === r.font24Wide - 6 + 8, 'the glyph in the font is ' + r.fontWide + ' wide where the same letter at 24 is ' + r.font24Wide + ' (12 on the left, 40 on the right)');
 say(r.fontBase, 'every face is built on geBase()');
-say(r.sigMoves && r.sigMovedOnSave, 'a width changed moves what the keyboard is sent (12 -> 16 too)');
-say(r.postW === 6 && r.postInkW === 6, 'a post written now carries the width and its ink is ' + r.postInkW + ' wide');
+say(r.sigMoves && r.sigMovedOnSave, 'a width changed moves what the keyboard is sent (16 -> 32 too)');
+say(r.postW === 12 && r.postInkW === 12, 'a post written now carries the width and its ink is ' + r.postInkW + ' wide');
 say(r.oldPostW === 24, 'a post written before keeps what it carried: ' + r.oldPostW + ' wide while the letter is thin');
-say(r.keyW === 6, 'a key\'s outline, which the keyboard extension is handed, is ' + r.keyW + ' wide');
+say(r.keyW === 12, 'a key\'s outline, which the keyboard extension is handed, is ' + r.keyW + ' wide');
 
-say(r.oldOnPaper === 24 && r.oldKept === '-,14', 'a stroke with no width is 24 on the paper and saved beside a new one still has none: ' + r.oldKept);
+say(r.oldOnPaper === 24 && r.oldKept === '-,40', 'a stroke with no width is 24 on the paper and saved beside a new one at the dot last pressed still has none: ' + r.oldKept);
 
 say(r.opensOn1, 'a letter with a stroke on layer 2 opens on layer 1 with layer 2 waiting');
 say(r.fingerLeft && r.fingerOn1, 'a finger on a dot of layer 2 draws on layer 1 and moves nothing of 2');
