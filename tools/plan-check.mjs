@@ -238,6 +238,27 @@ const r = await pg.evaluate(({ s }) => {
   planGot('free');
   out.freeNoMid = has('plus') === false;
 
+  /* ---- 4c. the font file leaves on every plan ---------------------------
+     「svgとフォント無料でいいよ」 OWNER 2026-09-30. The real ltFontOut() is
+     pressed on free and what is asked is whether the file reached the share
+     road -- LinguaShare's sheet() -- or was turned round at a price. Only the
+     native hand-over is stood in for; the press itself is the app's. */
+  (function(){
+    var realPlug = window.sharePlug, realAsk = window.popAsk, realToast = window.toast;
+    var realB64 = SFONT.b64, asked = [];
+    window.sharePlug = function(){
+      return function(plug, how){ asked.push(how); return Promise.resolve({}); };
+    };
+    window.popAsk = function(){ asked.push('ask'); };
+    window.toast = function(){};
+    SFONT.b64 = 'AAAA';
+    planGot('free');
+    ltFontOut();
+    out.fontFree = asked.join(' ');
+    window.sharePlug = realPlug; window.popAsk = realAsk; window.toast = realToast;
+    SFONT.b64 = realB64;
+  })();
+
   /* ---- 4c. the word ceiling is the plan's, and it is a number ----------
      One thousand on Basic, none at all on Plus. Asked of wordCap() and of
      what the list actually shows, because those are two things and the fault
@@ -1831,14 +1852,17 @@ say(r.paidAll, 'and open on plus');
 say(r.canTypo, 'and a name that is not in the table throws rather than reading as free');
 
 say(r.rungs.free === '', 'free opens nothing (' + (r.rungs.free || 'nothing') + ')');
-say(r.rungs.plus === 'dl font letters snd wsys',
-    'plus opens the font of its drawn letters, its own letters, its own sounds ' +
-    'and a writing system (' + r.rungs.plus + ')');
+say(r.rungs.plus === 'dl letters snd wsys',
+    'plus opens its own letters, its own sounds, a writing system ' +
+    'and a download (' + r.rungs.plus + ')');
 say(r.rungs.pro.split(' ').length === r.canCount,
     'pro opens all ' + r.canCount + ' (' + r.rungs.pro.split(' ').length + ')');
 say(r.midUp && r.midNotTop, 'plus meets its own rung and not the one above it');
 say(r.topHasMid, 'and pro meets plus\'s -- a ladder, not three equals signs');
 say(r.freeNoMid, 'while free meets neither');
+say(r.fontFree === 'sheet',
+    'the font file of the drawn letters leaves on free, by the share road and not a price (' +
+    (r.fontFree || 'nothing') + ')');
 
 
 say(r.penOnFree, 'the pencil is drawn on the free plan');

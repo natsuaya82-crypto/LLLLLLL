@@ -29,6 +29,7 @@
  *
  * glyphs: [{ name: 'a', roman: 'a', strokes: [ { closed: true, pts: [[x,y,'c'],...] } ] }]
  *   pts   [x, y] or [x, y, 'c'] where 'c' means round this corner into a curve
+ *   w     optional: this stroke's width; absent means pen.width
  *   A glyph carries `strokes` OR `sh`, never both. `sh` is a letter drawn
  *   somewhere else and brought in on a sheet: [[[x,y],...], ...], rings of
  *   outline in the same authoring square, an outer ring and the ring of a hole
@@ -511,12 +512,19 @@ var LinguaFont = (function () {
   function glyphContours(g, pen) {
     /* Brought in on a sheet: it is ink already, and nothing sweeps it. */
     if (g.sh && g.sh.length) return shapeContours(g.sh);
-    var N = nib(pen), w = pen.width, out = [];
+    /* The pen is the default and a stroke may carry its own width, `w`.
+       A stroke without one is drawn with the pen, which is every stroke
+       written before strokes could carry one. What range a width may be is
+       the caller's to hold; this only reads it. */
+    var N0 = nib(pen), out = [];
     /* A corner between two segments that continue straight on has no notch to
        fill, and its hull comes back a line. Nothing downstream wants a
        contour with no inside. */
     var add = function (c) { if (c.length > 2) out.push(c); };
     g.strokes.forEach(function (st) {
+      var w = (typeof st.w === 'number' && st.w > 0) ? st.w : pen.width;
+      var N = (w === pen.width) ? N0
+            : nib({ width: w, angleDeg: pen.angleDeg, contrast: pen.contrast });
       var line = toPolyline(st, pen && pen.curve);
       if (st.fill) {
         earCut(fillRing(line)).forEach(function (tri) {
@@ -999,8 +1007,8 @@ var LinguaFont = (function () {
     raw.forEach(function (q0) {
       var cs = q0.cs, sx = 1;
       if (mode === 'fit' && !q0.g.sh) {
-        // rescale the SKELETON before the nib sweep, so the stroke stays exactly
-        // PEN.width. Scaling the outline afterwards would vary the pen per glyph,
+        // rescale the SKELETON before the nib sweep, so each stroke stays exactly
+        // its own width. Scaling the outline afterwards would vary the pen per glyph,
         // which is the one thing the user ruled out.
         // A glyph brought in on a sheet has no skeleton to rescale, and its pen
         // is the person's rather than this app's, so it is left as drawn.
@@ -1010,7 +1018,7 @@ var LinguaFont = (function () {
         sx = Math.max(0.35, Math.min(2.2, (inner - PEN.width) / skel));
         cs = glyphContours({
           strokes: q0.g.strokes.map(function (st) {
-            return { closed: st.closed, fill: st.fill, pts: st.pts.map(function (p) {
+            return { closed: st.closed, fill: st.fill, w: st.w, pts: st.pts.map(function (p) {
               return [(p[0] - pre.xMin) * sx + pre.xMin, p[1], p[2]]; }) };
           }),
         }, PEN);

@@ -876,9 +876,8 @@ function vLetters(){
     '</div></div>';
 }
 /* THE FONT OF THE DRAWN LETTERS, OUT OF THE APP. 「フォントの書き出しはそれで
-   いいよ」「フォントの書き出しを求める声多いんよな」 OWNER 2026-09-25 -- Plus
-   (can('font')), and on free the press is the same upgrade pop every other
-   closed door gives.
+   いいよ」「フォントの書き出しを求める声多いんよな」 OWNER 2026-09-25, on
+   every plan 「svgとフォント無料でいいよ」 OWNER 2026-09-30.
 
    What goes out is SFONT.b64: the bytes LinguaFont.build made for the letters
    as they are now, the same font the app itself is set in -- render() keeps it
@@ -895,7 +894,6 @@ function vLetters(){
    answered, and must not be guessed at. */
 function ltFontOut(){
   var p;
-  if(upStop(can('font'))) return;
   if(!SFONT.b64){ toast(t('kb.font.none')); return; }
   p=sharePlug();
   if(!p){ toast(t('card.nofile')); return; }

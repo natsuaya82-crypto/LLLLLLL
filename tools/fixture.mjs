@@ -1319,33 +1319,67 @@ export function halfDone(){
                                                    window.route='glyph';
                                                    NAV=[{r:'glyph', a:GE.lid}]; return vGlyph(); }],
     /* The rope (OWNER 2026-09-27): down with nothing lit, where the bin is
-       grey, and down with dots lit, where it is up. Neither is reached by
+       grey, and down with a stroke lit, where it is up. Neither is reached by
        walking routes -- the rope is a press on this screen. */
     ['a letter in the editor, the rope down', () => { editGlyph('k'); GE.ls=true; GE.lsSel=[];
                                                       window.route='glyph';
                                                       NAV=[{r:'glyph', a:GE.lid}]; return vGlyph(); }],
-    ['a letter in the editor, dots lit', () => { editGlyph('k'); GE.ls=true;
+    ['a letter in the editor, a stroke lit', () => { editGlyph('k'); GE.ls=true;
                                                  GE.st=[{pts:[[184,184],[184,400],[184,616]]}];
-                                                 GE.si=0; GE.seal=true; GE.lsSel=[[0,1],[0,2]];
+                                                 GE.si=0; GE.seal=true; GE.lsSel=[0];
                                                  window.route='glyph';
                                                  NAV=[{r:'glyph', a:GE.lid}]; return vGlyph(); }],
-    /* What a finger chose, chosen by the real geLsUp() off a finger's path:
-       a trace down part of a long line (only what it passed lights), a
-       thumb's ring that does not close (only what is inside lights), and
-       the traced dots after they were pulled three steps right. */
+    /* The width and the layers (OWNER 2026-09-30 and its 追記). One letter of
+       thin and thick strokes under each of the two choosers the owner is to
+       compare -- the row of dots and the slider (GEWV, put back before the
+       face returns so every face after it has the dots) -- and the same
+       letter split over two layers with the second on the paper, the first
+       faint under it. GE is never saved from here. */
     ...(() => {
-      const lasso = (path, pull) => () => {
+      const ink = () => [{pts:[[184,184],[184,616]], w:6}, {pts:[[184,400],[616,184]], w:14},
+                         {pts:[[184,400],[616,616]]}];
+      const at = (v, w) => () => {
+        editGlyph('k'); GE.st = ink(); GE.si = 2; GE.seal = true; GEW = w;
+        const keep = GEWV; GEWV = v;
+        window.route = 'glyph'; NAV = [{r:'glyph', a:GE.lid}];
+        const h = vGlyph(); GEWV = keep; GEW = GPEN.width; return h;
+      };
+      return [
+        ['a letter in the editor, the width as dots', at('dots', 14)],
+        ['a letter in the editor, the width on a slider', at('slide', 14)],
+        ['a letter in the editor, layer 2 on the paper', () => {
+          editGlyph('k');
+          const st = ink();
+          GE.rest = [st[0], st[1]]; GE.st = [Object.assign({ly:2}, st[2])];
+          GE.lys = 2; GE.ly = 2; GE.si = 0; GE.seal = true;
+          window.route = 'glyph'; NAV = [{r:'glyph', a:GE.lid}]; return vGlyph();
+        }],
+      ];
+    })(),
+    /* What a finger chose, chosen by the real geLsUp() off a finger's path:
+       a trace down part of a long line and a thumb's ring round part of one
+       (a stroke taken in part lights nothing), and the owner's A with the
+       vertical ringed, before and after it is pulled three steps right --
+       「投げ縄で選んだ線だけが動く」 OWNER 2026-09-30: the diagonals that
+       share its apex stay where they were. */
+    ...(() => {
+      const lasso = (path, pull, st) => () => {
         editGlyph('k');
         const o = GGRID.inset, D = geStep(), P = (i, j) => [o + i*D, o + j*D];
         const L = [], R = [];
         for (let y = 2; y <= 18; y += 2) L.push(P(6, y));
         for (let x = 6; x <= 16; x += 2) R.push(P(x, 10));
-        GE.st = [{pts:L}, {pts:R}]; GE.si = 1; GE.seal = true; GE.ls = true;
+        GE.st = st ? JSON.parse(JSON.stringify(st)) : [{pts:L}, {pts:R}];
+        GE.si = GE.st.length - 1; GE.seal = true; GE.ls = true;
         GE.lsPath = path(P, D); GE.lsMove = null; GE.lsSel = [];
         geLsUp({});
-        if (pull) GE.lsSel.forEach(s => { GE.st[s[0]].pts[s[1]][0] += 3*D; });
+        if (pull) GE.lsSel.forEach(si => { GE.st[si].pts.forEach(p => { p[0] += 3*D; }); });
         window.route = 'glyph'; NAV = [{r:'glyph', a:GE.lid}]; return vGlyph();
       };
+      /* the owner's A as it is stored on production */
+      const A = [{pts:[[400,220],[400,544]]}, {pts:[[400,220],[184,544]]}, {pts:[[400,220],[616,544]]},
+                 {pts:[[292,436],[544,436]]}, {pts:[[256,436],[292,436]]}];
+      const ringV = P => [P(9.5,4.5), P(10.5,4.5), P(10.5,14.5), P(9.5,14.5), P(9.5,4.5)];
       const trace = P => [P(6,5), P(6,6.5), P(6,8), P(6,9.5)];
       const thumb = (P, D) => {
         const t = [];
@@ -1357,7 +1391,8 @@ export function halfDone(){
       };
       return [['a letter in the editor, part of a line traced', lasso(trace, false)],
               ['a letter in the editor, a thumb\'s ring round part of a line', lasso(thumb, false)],
-              ['a letter in the editor, the traced dots pulled', lasso(trace, true)]];
+              ['a letter in the editor, the vertical of an A ringed', lasso(ringV, false, A)],
+              ['a letter in the editor, the vertical of an A pulled', lasso(ringV, true, A)]];
     })(),
     /* The IPA, opened from the letter it is about, and again from the
        inventory -- one page, two things a press means, so both are walked.

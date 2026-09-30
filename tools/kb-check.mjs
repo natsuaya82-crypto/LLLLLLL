@@ -3850,7 +3850,8 @@ const SF = await sf.evaluate(({ s }) => {
       out.foSame = !!(sh[2] && sh[2].b64) && sh[2].b64 === fontOf(built[0]);
       out.foShared = sf[0] === 'LinguaShare' && sf[1] === 'shareFile' && sf[2] && sf[2].file === 'Font.otf';
       out.foName = sh[2] ? sh[2].name : '';
-      /* on free: the upgrade pop, and nothing crosses the bridge */
+      /* on free too: no pop, and the same .otf crosses the bridge -- font
+         export is every plan (OWNER 2026-09-30, 「svgとフォント無料でいいよ」) */
       calls.length = 0; popOff();
       planGot('free');
       ltFontOut();
@@ -5018,8 +5019,8 @@ say(SF.foBuilt && SF.foSheet && SF.foSame,
     'the font goes out as an .otf, byte for byte what LinguaFont.build made [' +
     [SF.foBuilt, SF.foSheet, SF.foSame].join(' ') + ']');
 say(SF.foShared, 'and the file it wrote is the one handed to the share sheet (' + SF.foName + ')');
-say(SF.foFreePop && SF.foFreeNothing,
-    'on free the press is the upgrade pop, and nothing crosses the bridge [' +
+say(!SF.foFreePop && !SF.foFreeNothing,
+    'on free the press is the same export -- no upgrade pop, and the font crosses the bridge [' +
     [SF.foFreePop, SF.foFreeNothing].join(' ') + ']');
 say(SF.foNoneNothing, 'and with nothing drawn there is no file to hand over');
 say(SF.k3One,

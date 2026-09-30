@@ -464,9 +464,9 @@ And the same reason the corners needed `box-check`: prose does not hold a rule.
 **One part of it is held: a name a document gives is a name the code has.**
 `docs-check` counts, in every document that is not a day's record
 (`docs/CHANGELOG.md`, the handovers, the dated `CHECK-` pages, `docs/reports/`,
-`docs/scope/`): every call in backticks — `langKey()`, `can('font')` — against
+`docs/scope/`): every call in backticks — `langKey()`, `can('letters')` — against
 what `www/`, `ios/`, `tools/` and `supabase/` define; every other name in
-backticks — `PLAN`, `STG.order`, `CAN.font` — against the code with its comments
+backticks — `PLAN`, `STG.order`, `CAN.letters` — against the code with its comments
 taken out; every code file, every check named by name and every npm script against what
 git and `package.json` have; every sentence saying how many checks the gate
 has, which fails whatever the number; every OWNER date a code comment quotes,
@@ -750,8 +750,7 @@ of the handlers somebody thought of.
 ```
 
 `www/act.js` holds the tables and the one delegated listener: `DO` (pressed),
-`AFTER` (a second name on the same press), `IN` (typed into), `CH` (changed),
-`KD` (Enter). Arguments travel as JSON, so a number stays a number and nothing
+`IN` (typed into), `CH` (changed), `KD` (Enter). Arguments travel as JSON, so a number stays a number and nothing
 is escaped by hand.
 
 Every name a screen can say is registered in `www/act-map.js` **with the function
@@ -870,7 +869,7 @@ above to be about. It catches a typo the same way: `wSrot='a'` would make a
 second global and leave the sort where it was.
 
 **And what money buys, which is the same sentence a third time.** `CAN` in
-`core.js` names every capability a plan opens, and `can('font')` is the
+`core.js` names every capability a plan opens, and `can('letters')` is the
 only way to ask. **This line does not list them**: every version of it that did
 went stale, in both directions — a name that was not a capability, and
 capabilities left off while checks and a rung of the plans page ran on them.
@@ -2286,7 +2285,7 @@ the string and the function — and `act-check` fails on either half alone.
 | file | what it is |
 |---|---|
 | `www/core.js` | language registry, `t()`, storage |
-| `www/act.js` | the action tables and the one delegated listener (`DO`/`AFTER`/`IN`/`CH`/`KD`) |
+| `www/act.js` | the action tables and the one delegated listener (`DO`/`IN`/`CH`/`KD`) |
 | `www/act-map.js` | every name a screen may say, bound to the real function |
 | `www/route-map.js` | every route, bound to the view it shows |
 | `www/boot.js` | where the app starts |

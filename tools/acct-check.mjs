@@ -2122,7 +2122,7 @@ const R = await pg.evaluate(async () => {
   const realAsk43 = window.popAsk, realToast43 = window.toast;
   window.popAsk = (msg) => { said43.push('ask'); };
   window.toast = (msg) => { said43.push('toast:' + msg); };
-  const stopped43 = upStop(can('font'));
+  const stopped43 = upStop(can('letters'));
   window.popAsk = realAsk43; window.toast = realToast43;
   if (!stopped43) no('43: 訊けていないのに通した');
   if (said43.filter((x) => x === 'ask').length)
@@ -2133,7 +2133,7 @@ const R = await pg.evaluate(async () => {
   planGot('free');
   const said43b = [];
   window.popAsk = (msg) => { said43b.push('ask'); };
-  upStop(can('font'));
+  upStop(can('letters'));
   window.popAsk = realAsk43;
   if (!said43b.length)
     no('43: 訊けていて足りないのに、値段の頁へ送らない');
