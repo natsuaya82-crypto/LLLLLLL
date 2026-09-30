@@ -504,6 +504,13 @@ export function seed(){
      not the length of two lists this phone read (www/me.js § whoOf). */
   WHO_HAVE.aya  = { who:'Aya',  hd:'aya',  av:null, lname:'Shango',
                     bio:'', fo:2, fr:1, out:false };
+  /* AND AN OFFICIAL ACCOUNT (profile.official, docs/FEATURE_RULES.md
+     2026-09-30): its page draws 「DL可能言語」 where everybody else's draws a
+     language, and the list behind it is what it has published (DL_HAVE,
+     www/me.js § vDlLangs). */
+  WHO_HAVE.lingua = { who:'Lingua', hd:'lingua', av:null, lname:'',
+                      bio:'', fo:0, fr:5, out:false, off:true, uid:'u-lingua' };
+  DL_HAVE.lingua = [{ id:'L-voy', name:'Voynich' }, { id:'L-rong', name:'Rongorongo' }];
   /* AND WHETHER YOU FOLLOW EACH OF THEM, AND THEY YOU -- the door onto any
      page that draws a person asks it (`rel`, www/me.js § REL). */
   REL = { iri:{i:true, u:true}, veth:{i:true, u:false} };
@@ -1330,29 +1337,47 @@ export function halfDone(){
                                                  window.route='glyph';
                                                  NAV=[{r:'glyph', a:GE.lid}]; return vGlyph(); }],
     /* The width and the layers (OWNER 2026-09-30 and its 追記). One letter of
-       thin and thick strokes under each of the two choosers the owner is to
-       compare -- the row of dots and the slider (GEWV, put back before the
-       face returns so every face after it has the dots) -- and the same
-       letter split over two layers with the second on the paper, the first
-       faint under it. GE is never saved from here. */
+       thin and thick strokes with the row of dots at the middle one, the
+       same letter with a stroke lit by the rope after a dot changed it (GEW
+       put back before the face returns, so every face after it begins at the
+       middle), and the letter split over two layers with the second on the
+       paper, the first faint under it. GE is never saved from here. */
     ...(() => {
       const ink = () => [{pts:[[184,184],[184,616]], w:6}, {pts:[[184,400],[616,184]], w:14},
                          {pts:[[184,400],[616,616]]}];
-      const at = (v, w) => () => {
-        editGlyph('k'); GE.st = ink(); GE.si = 2; GE.seal = true; GEW = w;
-        const keep = GEWV; GEWV = v;
-        window.route = 'glyph'; NAV = [{r:'glyph', a:GE.lid}];
-        const h = vGlyph(); GEWV = keep; GEW = GPEN.width; return h;
-      };
       return [
-        ['a letter in the editor, the width as dots', at('dots', 14)],
-        ['a letter in the editor, the width on a slider', at('slide', 14)],
+        ['a letter in the editor, the width as dots', () => {
+          editGlyph('k'); GE.st = ink(); GE.si = 2; GE.seal = true;
+          window.route = 'glyph'; NAV = [{r:'glyph', a:GE.lid}]; return vGlyph();
+        }],
+        ['a letter in the editor, a lit stroke made thin', () => {
+          editGlyph('k'); GE.st = ink(); GE.si = 2; GE.seal = true;
+          GE.ls = true; GE.lsSel = [2];
+          window.route = 'glyph'; NAV = [{r:'glyph', a:GE.lid}];
+          const keep = GEW; geWidth(6);
+          const h = vGlyph(); GEW = keep; return h;
+        }],
         ['a letter in the editor, layer 2 on the paper', () => {
           editGlyph('k');
           const st = ink();
           GE.rest = [st[0], st[1]]; GE.st = [Object.assign({ly:2}, st[2])];
           GE.lys = 2; GE.ly = 2; GE.si = 0; GE.seal = true;
           window.route = 'glyph'; NAV = [{r:'glyph', a:GE.lid}]; return vGlyph();
+        }],
+        /* The layers panel (r148): three layers, the second renamed, and the
+           third either hidden from the paper or shown. */
+        ...[['a letter in the editor, a layer named and one hidden', true],
+            ['a letter in the editor, a layer named and all shown', false]].map(([label, hide]) => [label, () => {
+          editGlyph('k');
+          const st = ink();
+          GE.st = [st[0]]; GE.rest = [Object.assign({ly:2}, st[1]), Object.assign({ly:3}, st[2])];
+          GE.lys = 3; GE.ly = 1; GE.si = 0; GE.seal = true;
+          GE.lyn = {2: '斜線'}; GE.hid = hide ? {3: true} : {};
+          window.route = 'glyph'; NAV = [{r:'glyph', a:GE.lid}]; return vGlyph();
+        }]),
+        ['the page a layer is renamed on', () => {
+          editGlyph('k'); GE.lys = 2; GE.lyn = {2: '斜線'};
+          geLayerName(2); return vForm();
         }],
       ];
     })(),
@@ -1561,6 +1586,23 @@ export function halfDone(){
         WHO_HAVE['iri'] = { who:'Iri', hd:'iri', av:{ch:'Ж'}, lname:'Vethi',
                              bio:'', fo:2, fr:3, out:false };
         return h; }],
+    /* ---- 公式アカウント（profile.official、決定 2026-09-30）---------------
+       言語の一行の代わりに「DL可能言語」の一行。人のページとして見る顔、自分が
+       公式の時の自分のページ、その先の一覧（二つ）、空の一覧。 */
+    ['an official account\'s profile', () => {
+        window.route='profile'; NAV=[{r:'profile', a:'lingua'}];
+        const h = vProfile(); NAV=[{r:'profile'}]; return h; }],
+    ['your own profile, when this account is official', () => {
+        window.route='profile'; NAV=[{r:'profile'}];
+        WHO_HAVE.aya.off = true;
+        const h = vProfile(); WHO_HAVE.aya.off = false; return h; }],
+    ['an official account\'s languages', () => {
+        window.route='dllangs'; NAV=[{r:'profile', a:'lingua'}, {r:'dllangs', a:'lingua'}];
+        const h = vDlLangs(); NAV=[{r:'profile'}]; window.route='profile'; return h; }],
+    ['an official account\'s languages, none', () => {
+        window.route='dllangs'; NAV=[{r:'profile', a:'lingua'}, {r:'dllangs', a:'nobody'}];
+        DL_HAVE.nobody = [];
+        const h = vDlLangs(); delete DL_HAVE.nobody; NAV=[{r:'profile'}]; window.route='profile'; return h; }],
     /* 長いときは一行のまま、はみ出た分が … になります（meWhereRow）。
        リンクが先に縮み、位置は入る限り全部。三つの形と、人のページ。 */
     ...[['both', 'tokinets.com/lingua/a-very-long-address-that-goes-on', '谷の上の古い図書館のとなり'],

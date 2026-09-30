@@ -540,6 +540,7 @@ function pullForget(){
   folForget();
   netPplDrop('block'); netPplDrop('mute');
   WLD_HAVE={}; WLDS_HAVE={};
+  DL_HAVE={};
 }
 acctMem(pullForget);
 /* One answer forgotten: switching the language the app is read in re-asks the
@@ -643,6 +644,9 @@ pullOn('lang',    function(ok, bad, p, a){
                   });
 pullOn('seen',    function(ok, bad, p, a){ wldSeenAsk(a, ok, bad); }, function(a){ return wldSeenGot(a); });
 pullOn('mod',     function(ok, bad){ modAsk(ok, bad); });
+/* WHAT AN OFFICIAL ACCOUNT HAS PUBLISHED (www/me.js § vDlLangs), by the uuid
+   on the row `who` brought, the way askPosts() asks. */
+pullOn('dllangs', askDlLangs, function(h){ return !!DL_HAVE[String(h||'')]; });
 /* WHO THIS ACCOUNT HAS BLOCKED, by handle (www/net.js § netPplRead), for
    the one thing that still asks: whether the ... on a person says 「ブロック」
    or 「解除」. Their posts are left out by the server and need nothing here. */
@@ -712,6 +716,8 @@ pageReads('langs',   function(){ return [['mylangs']]; });
 /* Somebody else's language, or -- with no argument -- your own open one. */
 pageReads('about',   function(a){ return a? [['seen', String(a)]] : langId? [['lang', langId]] : []; });
 pageReads('mod',     function(){ return [['mod']]; }, true);
+/* an official account's published languages (www/me.js § vDlLangs) */
+pageReads('dllangs', function(a){ return [['dllangs', String(a||'') || meHandle()]]; });
 /* EVERY QUESTION A PAGE READS, AND ONE CALLBACK WHEN THEY ARE ALL IN --
    handed whether every one of them got through (pullWait). www/shell.js
    § navLand is the door that waits on it; the launch waits on it for the
@@ -959,6 +965,14 @@ function askWho(ok, bad, person, h){
      you follow each other (relAsk never asks about your own handle). */
   whoAsk(h, one, no);
   relAsk([h], one, no);
+}
+function askDlLangs(ok, bad, person, h){
+  h=String(h||'');
+  pullWait('who', h, function(){
+    var uid=(h===meHandle())? netUid() : ((WHO_HAVE[h] || {}).uid || '');
+    if(!uid){ DL_HAVE[h]=[]; ok(0); return; }
+    netDlLangs(uid, function(list){ DL_HAVE[h]=list; ok(1); }, bad);
+  });
 }
 /* WHAT EACH PERSON'S PAGE WAS TOLD THEY PASSED ON: handle -> post id ->
    who and when (`rp`, www/net.js § netRow, with `at`). Only the server's answer (posts_by() in supabase/schema.sql) writes

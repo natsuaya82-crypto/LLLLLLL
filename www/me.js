@@ -701,7 +701,7 @@ function meCard(){
        where a timeline puts an affiliation and is exactly the wrong size for
        the thing this whole app is about.
        「フォローと自己紹介の間に」「linguaパッチの代わり」 */
-    wldRow()+
+    (whoOf(meHandle()).off? dlRow(meHandle()) : wldRow())+
     /* There is no way in on the profile any more. 「get a バッチ消していいよ。
        なんか品がないそこに並ぶと」 OWNER 2026-09-01. It sat between what
        somebody says about themselves and how many people read them, which is
@@ -892,7 +892,8 @@ function whoOf(h){
                somebody else's page reads it off the same column
                (「課金者にちゃんと…ダイヤ見えるようになってる？」 OWNER
                2026-09-26). */
-            mine:true, badge:(WHO_HAVE[h] || {}).badge, pin:String(ME.pin||'')};
+            mine:true, badge:(WHO_HAVE[h] || {}).badge, pin:String(ME.pin||''),
+            off:!!(WHO_HAVE[h] || {}).off};
   /* THE SERVER IS THE RECORD. What it sent is what the person looks like NOW,
      which is the right answer for a page about them; a post's copy is frozen
      at the moment it was written (rule 8) and is right for the post. */
@@ -934,10 +935,12 @@ function whoOf(h){
                reason `bio` above is: what somebody wrote about themselves is
                shown, and nothing written draws no row (meWhereRow). */
             link:got.link||'', loc:got.loc||'',
-            fo:got.fo, fr:got.fr, out:!!got.out};
+            fo:got.fo, fr:got.fr, out:!!got.out,
+            /* Lingua's own account (profile.official) -- whoLangRow() */
+            off:!!got.off};
   /* Nobody by that name, here or anywhere yet: no name, no face, and no
      count -- an unanswered number is not a zero, one line up. */
-  return {who:'', hd:h, av:null, lname:'', bio:'', out:false, badge:false};
+  return {who:'', hd:h, av:null, lname:'', bio:'', out:false, badge:false, off:false};
 }
 /* ---- WHETHER YOU FOLLOW SOMEBODY, AND WHETHER THEY FOLLOW YOU ----------
    「開いた時は通知とタイムラインだけ」 OWNER 2026-09-23.
@@ -1247,6 +1250,29 @@ function meWhereRow(link, loc){
      place kept whole for as long as it fits (.pwhere, www/index.html). */
   return '<div class="pbio pwhere">'+out+'</div>';
 }
+/* ---- AN OFFICIAL ACCOUNT'S LANGUAGES ------------------------------------
+   「アンタイトルドのところがそもそもみんなと違くなるようにしたいの」 OWNER
+   2026-09-30 (docs/FEATURE_RULES.md). On Lingua's own account -- the server's
+   mark, profile.official -- the one language a profile shows is replaced by
+   ONE row, and it goes to the languages that account has published, each of
+   which opens its own page, where a chapter is taken with its ↓. Every other
+   profile draws its language exactly as before. */
+var DL_HAVE={};
+function dlRow(h){
+  return '<button class="wldrow"' + DO('go', ['dllangs', String(h||'')]) + '>'+
+    '<span class="wldnm">'+esc(t('dl.langs'))+'</span>'+ICON_GO+'</button>';
+}
+function vDlLangs(){
+  var h=String(here().a||'') || meHandle(), list=DL_HAVE[h] || [];
+  return '<div class="view">'+navTop('')+'<div class="body">'+
+    (list.length
+      ? list.map(function(l){
+          return '<button class="wldrow"' + DO('go', ['about', l.id]) + '>'+
+            '<span class="wldnm">'+esc(langNameSaid(l.name))+'</span>'+ICON_GO+'</button>';
+        }).join('')
+      : snsEmpty('dllangs', '<div class="note">'+esc(t('langs.none'))+'</div>', h))+
+    '</div></div>';
+}
 function whoBackTag(h){
   if(!meFollowed(h)) return '';
   return '<span class="whyou">'+esc(t('me.follows.you'))+'</span>';
@@ -1317,7 +1343,7 @@ function whoCard(h){
        `.wldrow` was written as a button and has said `background:none;
        border:0; font-family:inherit; text-align:left` since then, so the two
        faces are one rule and the row does not move when it becomes pressable. */
-    (p.lname
+    (p.off? dlRow(h) : p.lname
       ? ((p.lpub && p.lid)
           ? '<button class="wldrow"' + DO('go', ["about", String(p.lid)]) + '>'+
               '<span class="wldnm">'+esc(p.lname)+'</span></button>'

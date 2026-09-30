@@ -166,6 +166,10 @@ function viewLeft(from, to){
      chosen, and the trail still has `kb` on it; a tab or the way back off the
      chapter does not. www/keyboard.js § kbLeft. */
   if(from==='kb' && !navHas('kb')) kbLeft();
+  /* Which layers are out of sight on the paper, the same way round: the page
+     that renames a layer is deeper, a tab or the way back is not.
+     www/glyph.js § geLayerEye. */
+  if(from==='glyph' && !navHas('glyph') && GE) GE.hid={};
 }
 
 /* ---- where you are, and what you came through ------------------------
@@ -1223,6 +1227,8 @@ var PAGES={
   photo:   {tab:'feed', k:'post.pic'},
   drafts:  {tab:'feed', k:'post.drafts.t'},
   langs:   {tab:'profile', k:'langs.title'},
+  /* An official account's published languages (www/me.js § vDlLangs). */
+  dllangs: {tab:'profile', k:'dl.langs'},
   plans:   {tab:'profile',  k:'plans.title'},
   mod:     {tab:'profile',  k:'mod.title'},
   admin:   {tab:'profile',  k:'admin.title'}

@@ -1952,6 +1952,21 @@ function netLangSeen(lid, ok, bad){
            nwords:Number(r.nwords)||0, nletters:Number(r.nletters)||0 });
     }, bad);
 }
+/* THE LANGUAGES ONE ACCOUNT HAS PUBLISHED, for an official account's
+   「DL可能言語」 (docs/FEATURE_RULES.md 2026-09-30). `language_seen` answers
+   with published languages and your own, so `published_at` is asked for as
+   well: your own unpublished one is not a language anybody can take. Oldest
+   first, the order a profile's one language is chosen in. */
+function netDlLangs(uid, ok, bad){
+  netGet('/rest/v1/language_seen?select=id,name,created_at'+
+         '&owner=eq.'+encodeURIComponent(String(uid||''))+
+         '&published_at=not.is.null&order=created_at.asc&limit='+NET_PAGE,
+    function(d){
+      var out=[], i;
+      for(i=0;i<d.length;i++) out.push({ id:String(d[i].id||''), name:String(d[i].name||'') });
+      ok(out);
+    }, bad);
+}
 /* Every slice of one language, as {kind: {body, no}}. */
 /* A PostgREST `in.(...)` list. The slice kinds are the twelve names in
    SLICES and nothing a person types, so there is nothing to escape -- and
@@ -3654,7 +3669,7 @@ function netLike(q){
    for them: one person by handle, and many people at once. A `select=` written
    out twice is two lists that come to differ, and the one that differs is the
    one nobody is looking at. */
-var NET_WHO_SEL='/rest/v1/profile_seen?select=id,handle,display,av,bio,link,loc,banned_at,fo,fr,lang_id,lang_name,lang_pub,badge,pin';
+var NET_WHO_SEL='/rest/v1/profile_seen?select=id,handle,display,av,bio,link,loc,banned_at,fo,fr,lang_id,lang_name,lang_pub,badge,pin,official';
 /* And one place turns a row into a person, for the same reason. */
 /* THE LANGUAGE IS ON THE ROW AND IS NOT A SECOND REQUEST.
    「なんか全体的に遅くない？」 OWNER 2026-09-08 (143). It used to be
@@ -3680,6 +3695,9 @@ function netWhoRow(r){
           out:!!r.banned_at,
           /* the post at the top of their page (profile.pin), '' for none */
           pin:String(r.pin||''),
+          /* Lingua's own account (profile.official): its page offers the
+             languages it has published in place of the one language */
+          off:!!r.official,
           /* the account's uuid, which somebody's posts are keyed on */
           uid:String(r.id||'')}, r);
 }
