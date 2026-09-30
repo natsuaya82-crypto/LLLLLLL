@@ -141,7 +141,7 @@ for (const dark of [false, true]) {
 /* the sheet: every drawn letter at one size, by the app's own ltInk() */
 await open(false);
 await pg.evaluate(() => {
-  var h = '<style>.vsh{display:flex;flex-wrap:wrap;gap:6px;padding:12px}' +
+  var h = '<style>.vsh{display:flex;flex-wrap:wrap;gap:6px;padding:12px 12px 140px}' +
           '.vsh div{width:80px;text-align:center;font:12px sans-serif;color:var(--tx)}' +
           '.vsh canvas.tc{width:80px!important;height:80px!important;display:block}</style><div class="vsh">';
   for (var i = 0; i < LETTERS.length; i++) {

@@ -10,8 +10,8 @@
 - `official/voynich-draw.mjs` ── 線の元（格子の目で書いた字の形）から `voynich.json` を書く小さな Node の道具
 - `tools/official-shot.mjs` ── 本物のアプリを起動し、その言語を読み込んで絵を撮る（ゲートに入れない）
 - `shots/r151-*.png`、`shots/r151b-*.png`
-- `official/ref/` ── 使った写本のページ（Beinecke/Yale 2014 の撮影、パブリックドメイン）と `SOURCE.md`、字ごとの切り抜き `official/ref/glyphs/`
-- `official/voynich-trace.py` ── 写本の画像から線を起こす道具
+- `official/ref/` ── 比較に使う写本のページ（Beinecke/Yale 2014 の撮影、パブリックドメイン）と `SOURCE.md`
+- `official/voynich-eva.py` ── 線の点と、見本の絵に重ねて確かめる道具
 - この文書
 
 ## 触らない
@@ -19,6 +19,5 @@
 - サーバーへ置くのはリーダー。この枝は置かない。
 
 ## 字の形の出どころ
-Yale（Beinecke MS 408、パブリックドメイン）の写本の画像から**なぞる**（2026-09-30 の追記）。EVA は「どの形がどの字か」を知るためだけに使う。字ごとに写本から 2〜3 例を切り抜き、いちばん読める一つの中心線を取り、アプリの格子の目に合わせて線にする。
-既存のヴォイニッチ用フォント（EVA Hand・pk「ヴォイニッチ手稿」・ヴォイニッチ等幅・Megami Voynich ほか）のファイルは開かない・なぞらない・読まない。
-画像は GitHub の `sunkencity999/voynich-atlas` の `images/web/` から取る（ウェブの Yale・archive.org・Wikimedia はネットワークで止まっている）。出どころは `official/ref/SOURCE.md`。
+**EVA Hand A を見本の絵として**描き起こす（2026-09-30 の追記、オーナー「一旦見本の絵としてやってみて」）。フォントを大きく表示し、アプリの格子を重ね、線の真ん中に目で点を置く。フォントのファイルから輪郭・点・経路は取り出さず、ファイルはリポジトリに入れない。
+写本の画像は `official/ref/f1r.jpg` だけ残す ── 比較の絵に使う。出どころは `official/ref/SOURCE.md`。

@@ -2,18 +2,16 @@
    official/voynich-draw.mjs — the Voynich manuscript's letters, as the
    `letters` slice the app stores.
 
-   Run it:   python3 official/voynich-trace.py   -> official/voynich-strokes.json
+   Run it:   python3 official/voynich-eva.py     -> official/voynich-strokes.json
              node official/voynich-draw.mjs       -> official/voynich.json
 
    NOT a check and not in the gate. It is how official/voynich.json is made.
 
-   WHERE THE SHAPES COME FROM. official/voynich-trace.py, which traces every
-   letter off the manuscript's own pages (official/ref/, Beinecke MS 408, the
-   2014 Beinecke/Yale scans, public domain) and puts the centre line on the
-   app's lattice. This file only turns those lattice points into strokes and
-   hands them to the app. No Voynich font file -- EVA Hand, pk「ヴォイニッチ
-   手稿」, ヴォイニッチ等幅, Megami Voynich or any other -- was opened, read or
-   traced: docs/FEATURE_RULES.md § 2026-09-30 and its 追記.
+   WHERE THE SHAPES COME FROM. official/voynich-eva.py: points placed by eye
+   on the app's lattice, with the font Voynich EVA Hand A shown as a picture
+   under it (「一旦見本の絵としてやってみて」 OWNER 2026-09-30). Nothing is taken
+   out of the font file. This file only turns those lattice points into
+   strokes and hands them to the app.
 
    WHAT A LETTER IS CALLED. EVA (the European Voynich Alphabet, Landini and
    Zandbergen): one lower-case roman letter per basic glyph, and the letter
@@ -32,8 +30,8 @@
 
    THE LATTICE. Twenty-one dots each way (GGRID in www/glyph.js), [column,
    row] from 0 to 20; a third element 'c' is a point the line bends through.
-   The metric is voynich-trace.py's: the x-height is rows 11-17, a gallows
-   reaches row 1, a tail row 20. Every stroke is the full pen (no `w`, which
+   The metric is voynich-eva.py's: the x-height is rows 10-15, a gallows
+   reaches row 0, a tail row 20. Every stroke is the full pen (no `w`, which
    inkW() reads as 24): the manuscript's pen is a fifth of the x-height, and
    24 is the widest the app has.
    --------------------------------------------------------------------------- */
@@ -50,7 +48,7 @@ const WWW = path.join(ROOT, 'www');
 const OUT = path.join(HERE, 'voynich.json');
 const PORT = 8161;
 
-/* ---- the shapes: traced, read from voynich-trace.py's output ---------- */
+/* ---- the shapes: drawn in voynich-eva.py, read from its output -------- */
 const TRACED = JSON.parse(fs.readFileSync(path.join(HERE, 'voynich-strokes.json'), 'utf8'));
 export const GLYPHS = {};
 for (const k in TRACED) GLYPHS[k] = TRACED[k].strokes;
