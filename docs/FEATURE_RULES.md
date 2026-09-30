@@ -297,6 +297,15 @@ it is quoted, and where a decision has never been made the row in
 - 追記（同日）: 字の割り当ては EVA、形の見本は Yale（Beinecke MS 408、パブリックドメイン）の写本の画像 ──「無料のEva yaleの使おう」。既存のフォント（pk「ヴォイニッチ手稿」・EVA Hand・ヴォイニッチ等幅）の形は使わない。記憶で描いた一版目は「ぽいけど全然違くね？」で描き直し。
 - Implementation status: 線は r151 に渡した。アカウントはオーナーが作る。
 
+### 2026-09-30 今日のお題は文の形を日ごとに回す、5日に1回は難しい日
+- Date: 2026-09-30
+- Area: 今日のお題を作る関数（`supabase/functions/daily-prompt/index.ts`、`SHAPES`・`shapeOf()`）
+- Decision: お題の文の形（時制・相・法・態・疑問・命令・比較・関係節・引用など 35 種）を、日付で順に回して AI に指定する。5 日に 1 回は難しい日（節が二つ、または形を二つ組み合わせる、英語で 18 語まで）。今までの「現在か過去」は外す。
+- Reason: ユーザーの声「The prompts should include other TAM than just simple past. So far they're all past tense.」（9/26〜30 の 5 日すべて過去形だった）と、オーナーの言葉「もっと色々たくさん回そうよ。毎日変わるんだし色々なことできるんだし、たまに難しいのでもいいし」（2026-09-30）。
+- Affected features: 今日のお題。
+- Affected data: 無い（明日からのお題の中身が変わるだけ。過去のお題はそのまま）。
+- Implementation status: 関数を書き換えて置いた。次の日のお題から。
+
 ### 2026-09-30 作れる言語と DL 言語の数は 1・3・無限。人の言語は使うだけ
 - Date: 2026-09-30
 - Area: 作れる言語の数（`langCap()`、`FREE_LANGS`・`PLUS_LANGS`、前は ~~`PRO_LANGS`~~）、DL 言語の数（`dlCap()`、`FREE_DL`・`PLUS_DL`、前は ~~`PRO_DL`~~ と ~~`CAN.dl`~~）、`www/core.js`。人の言語（`langLocked()`）と外へ出す道。

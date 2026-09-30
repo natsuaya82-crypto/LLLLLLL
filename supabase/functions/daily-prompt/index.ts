@@ -51,6 +51,58 @@ const SCHEMA = {
   required: LANGS,
 };
 
+/* WHAT SHAPE TODAY'S SENTENCE TAKES. The rules below used to say 「present or
+   past tense」 and the model chose the past every day -- 2026-09-26 to 30
+   were all simple past, and a user said so: 「The prompts should include other
+   TAM than just simple past」. 「もっと色々たくさん回そうよ。毎日変わるんだし
+   色々なことできるんだし、たまに難しいのでもいいし」 OWNER 2026-09-30.
+   So the shape is not the model's choice: the day picks it, in order, and
+   every fifth day is a hard one. One list, one pick (shapeOf). */
+const SHAPES = [
+  'simple present, a habit (e.g. "The baker opens the shop every morning.")',
+  'present progressive, happening right now',
+  'simple past',
+  'future (will / going to)',
+  'present perfect (has / have done)',
+  'past progressive (was doing when something happened)',
+  'past perfect (had done before something else)',
+  'future perfect or future progressive',
+  'an imperative, telling someone to do something',
+  'a polite request or offer (Could you... / Would you like...)',
+  'a yes/no question',
+  'a wh- question (who, what, where, when, why, how)',
+  'a negative sentence',
+  'a negative question (Did you not... / Is there no...)',
+  'ability or possibility (can, could, may, might)',
+  'obligation or advice (must, have to, should)',
+  'a wish or desire (I want / I wish / I hope)',
+  'a real condition (If it rains, ...)',
+  'an unreal condition (If I had wings, I would...)',
+  'the passive voice (The bread was eaten by...)',
+  'a causative (She made him carry... / They let the dog...)',
+  'a comparison (bigger than, as ... as)',
+  'a superlative (the tallest, the oldest)',
+  'a relative clause (the man who..., the tree that...)',
+  'reported speech (She said that...)',
+  'numbers and counting (three birds, the second day)',
+  'possession (my sister\'s house, the dog\'s bone)',
+  'a command to a group, or "let us..." (Let us go to the river.)',
+  'an exclamation (How cold the water is!)',
+  'giving a reason (because / so)',
+  'two actions in sequence (first..., then...)',
+  'something that almost happened, or did not happen yet (still / not yet / already)',
+  'a question about the future (Will you come...?)',
+  'describing a place: there is / there are',
+  'a sentence about feelings or the senses (I feel / it smells / it sounds)',
+];
+function shapeOf(day: string): { shape: string; hard: boolean } {
+  const n = Math.floor(Date.parse(day + 'T00:00:00Z') / 86400000);
+  const hard = n % 5 === 0;
+  let shape = SHAPES[((n % SHAPES.length) + SHAPES.length) % SHAPES.length];
+  if (hard) shape += ', and make it a HARD day: two clauses, or two of the grammar features above combined in one sentence';
+  return { shape, hard };
+}
+
 const RULES = `You write one sentence a day for Lingua, an app where people
 build their own languages. Everybody in the world sees the same sentence and
 translates it into the language they invented, so the sentence has to be
@@ -60,9 +112,11 @@ Write ONE sentence, then give it in all of these languages: ${LANGS.join(', ')}.
 
 Hard rules. Break any of them and the day is wasted:
 - ONE sentence. No question mark unless the sentence really is a question.
-- Between 3 and 12 words in English.
-- Everyday, concrete, physical, present or past tense. Something a person
-  could have said out loud today.
+- Between 3 and {MAX} words in English.
+- Everyday, concrete, physical. Something a person could have said out loud
+  today.
+- TODAY'S GRAMMAR SHAPE, and the sentence must clearly be this: {SHAPE}.
+  The translations keep the same shape as far as each language allows.
 - Only words a small invented language would plausibly have: weather, food,
   the body, family, animals, walking, sleeping, water, fire, the sky, tools.
 - NO proper nouns. No place names, no brands, no people, no holidays.
@@ -81,7 +135,7 @@ function bad(s: unknown): string | null {
   if (typeof s !== 'string') return 'not a string';
   const v = s.trim();
   if (!v) return 'empty';
-  if (v.length > 120) return 'longer than 120 characters';
+  if (v.length > 180) return 'longer than 180 characters';
   if (/[\n\r]/.test(v)) return 'has a line break';
   if (/[#*_`|]/.test(v)) return 'has markup or a hashtag';
   if (/https?:\/\//i.test(v)) return 'has a link';
@@ -143,7 +197,9 @@ Deno.serve(async (req: Request) => {
     const seen = ((await past.json()) || []).map((r: { text: string }) => '- ' + r.text)
                                             .join('\n') || '- (nothing yet)';
 
-    const ask = RULES.replace('{DAY}', day).replace('{SEEN}', seen);
+    const sh = shapeOf(day);
+    const ask = RULES.replace('{DAY}', day).replace('{SEEN}', seen)
+                     .replace('{SHAPE}', sh.shape).replace('{MAX}', sh.hard ? '18' : '12');
     /* The model says 503 「high demand」 on some mornings -- 2026-09-27 16:00
        UTC was one, and that day had no sentence. 「毎日同じ時間に変わるように」
        OWNER 2026-09-27. So a busy answer is asked again, three times, a few
