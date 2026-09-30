@@ -3771,14 +3771,17 @@ const R = await pg.evaluate(async () => {
     langId = ID66;
     /* スライスと、古い版がディスクに残した「サーバーと合意した印」（`.was`、
        2026-09-27 まで電話がまとめていた頃の物）。 */
+    /* 書いた人が先 ── 写しはどれも「この言語は自分の物か」（langOut()、
+       www/core.js）を訊いてから書かれるので、答えの無い言語には何も書かれず、
+       この節は「残っていない」を測れなくなります。 */
+    langOwnGot(ID66, A);
     slWr(langKeyOf(ID66, 'words'), '[{"hw":"nokori"}]');
     localStorage.setItem(langKeyOf(ID66, 'words') + '.was', '[{"hw":"nokori"}]');
-    slGot(langKeyOf(ID66, 'words'), '[{"hw":"nokori"}]');
-    /* そして `language` 行の列 ── 名前・書記体系・書いた人。スライスでは
+    slGot(ID66, 'words', '[{"hw":"nokori"}]');
+    /* そして `language` 行の列 ── 名前・書記体系。スライスでは
        ないので `SLICES` には居ません。 */
     langNameGot(ID66, '消される言語');
     langWsysGot(ID66, 'abugida');
-    langOwnGot(ID66, A);
 
     lsWipeAcct(A);
 

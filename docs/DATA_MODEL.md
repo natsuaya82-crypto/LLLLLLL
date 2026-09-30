@@ -107,10 +107,13 @@ the person's settings on the handset, so somebody with two languages had one
 answer for both and a published language could not say which it was.
 `langNameOf()` and `langWsysOf()` in `www/core.js` are how the two are asked;
 each keeps the server's answer in memory and a picture on the disk
-(`lingua.<id>.name.got`, `lingua.<id>.wsys.got`) with no road up. Empty `wsys`
+(`lingua.<id>.name.got`, `lingua.<id>.wsys.got`) with no road up — for this
+account's own languages only: `slGot()` asks `langOut()` first, and nothing
+of somebody else's language is written to the phone (OWNER 2026-09-30). Empty `wsys`
 is **nobody has said**, not a fifth kind, and `wsGuess()` answers for it.
 `language.owner` — who WROTE it — is a fourth of the same shape
-(`langOwnOf()`, `lingua.<id>.owner.got`), and `language.created_at` — WHEN it
+(`langOwnOf()`, `lingua.<id>.owner.got` — kept for every language, because it
+is an account's id and the answer `langOut()` reads), and `language.created_at` — WHEN it
 was made — is a fifth (`langMadeOf()`, `lingua.<id>.made.got`, 2026-09-12).
 
 **What that fifth one decides is which language is the MAIN one**, and it is
@@ -312,7 +315,8 @@ and that is how one person's deletion erased another person's language.
   that language's row out of LANGS
   every lingua.… key whose last part is this uid -- lingua.set.<uid>,
     lingua.me.<uid>, lingua.posts.<uid>, lingua.drafts.<uid>,
-    lingua.langs.<uid>, lingua.cur.<uid>, lingua.take.<uid>
+    lingua.langs.<uid>, lingua.cur.<uid>, and lingua.take.<uid> where an
+    older version wrote it
   and when lingua.set's old `acct` stamp names this account: its part of the
     old live keys (acctMoved) -- lingua.me, lingua.posts, lingua.drafts,
     lingua.cur whole, its rows of lingua.langs and its fields of lingua.set,
@@ -496,18 +500,12 @@ else's page, filed under that language's own id so a second download of it
 lands in the same place and does not make a second copy. 「ダウンロードボタン押しても言語追加されないけど？」「いつまでもfalseだった
 とかやめてね。」 OWNER 2026-09-01 is the sentence that closed the gap.
 
-**そして「この端末はその答えを聞いたことがある」の写しが一枚あります** ──
-`lingua.take.<uid>`（`acctKeep('take')`、`www/core.js` § LTAKE・§ ACCT）。`language_take`
-がその起動で答えた言語の番号の並びで、**サーバーの答えの写しであって、誰かの
-作ったものではありません**。
-
-| | |
-|---|---|
-| 鍵 | `lingua.take.<uid>` ── 末尾がアカウントの名前なので `lsWipeAcct()` が数えて取る（一覧に足す必要はない） |
-| 書く | `langTookGot()` ── 答えが来た時だけ。`null`（＝訊けていない）は書かない |
-| 読む | アカウントの入れ物（`acctKeep('take')`・`acctFor()`）── **手元のアカウントの分だけ**。起動と入り（`netTook`）、出る時は `acctFor('')` で忘れる |
-| 上る道 | **無し。**これを送る所はどこにも無く、作ってはいけない ── 何を取ったかは `language_take` で、訊くのは `netTakes()` |
-| なぜ在るか | 「前に読み込んだの出していいよ。何か更新するならクルクルが必要」OWNER 2026-09-12。無ければ電波の無い起動で `langWhose()` が `LW_WAIT` を返し、取った言語が丸ごと消えて見える |
+**`language_take` の答えはメモリにだけ在ります**（`langTookGot()`、`www/core.js`
+§ LTAKE）。「だから端末に置くのもng」OWNER 2026-09-30 ── 人の言語はサーバーに
+だけ置くので、何を取ったかも端末には書きません。アカウントが替わると忘れ
+（`acctMem`）、電波の無い起動では「訊けていない」で、取った言語は出ません。
+2026-09-12 から 09-30 までのビルドが書いた `lingua.take.<uid>` は読まず、消し
+ません（アカウントを消す時に `lsWipeAcct()` が数えて取る）。
 
 段を訊けていない起動では `dlCap()` は数ではなく（`planNum()` が `null`）、
 天井が数でない間は何も畳みません。

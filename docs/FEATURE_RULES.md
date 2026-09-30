@@ -285,7 +285,7 @@ it is quoted, and where a decision has never been made the row in
 - Affected features: プランの画面、言語の追加、他の人の言語の取り込み。
 - Affected data: 無い（数を変えるだけ。上限を超えた言語はどれも残る）。
 - 追記（同日）: 外へ出す線 ──「カード投稿はok」「svgやファイル書き出しはng」「だから端末に置くのもng」「サーバーであればスクショ以外で持っていけないでしょ？著作権関連するんだからそこはしっかりやろう」。人の言語は**サーバーにだけ**置く：端末のディスク（`localStorage` の読み込み済みの写し・`.got`・App Group など）に書かない。電波の無い時に人の言語を眺める写しも持たない（自分の言語の写しは今のまま）。ファイル（フォント・SVG・シート）・コピー・iPhone のキーボードへ送るのは不可。カード（投稿の画像）は可。r150 に渡した。
-- Implementation status: (1) は r149 に渡した。(2) の編集は既に止まっている（`langLocked()`）。外へ出す道は測ると 6 つとも開いている ── フォント（`ltFontOut`）、SVG（`ltSvgOut`）、iPhone のキーボードへ送る（`sharePush`）、カード（`cardSave`）、書き取りシート（`shMake`）、コピー（`postCopy`）。まだ直していない。
+- Implementation status: (1) は r149 に渡した。(2) の編集は既に止まっている（`langLocked()`）。外へ出す道と端末に置く物は r150 ── コード確認、実機未確認。一つの問い `langOut()`（`www/core.js`）を、ファイル（`ltFontOut`・`ltSvgSend`・`shMake`・単語と例文のカード `cardSave`）、iPhone のキーボード（`sharePush`）、コピー（`postCopy`）、端末の写し（`slGot`）が聞く。`language_take` の答えはメモリだけ。投稿のカードは出る。`theirs-check` が数える。単語・例文のカードを「出さない」側に入れたのはオーナーに確かめていない（「カード投稿はok」は投稿のカードとして読んだ）。前のビルドが端末に書いた人の言語の写しは消していない ── 消すかはオーナーの判断。
 
 ### 2026-09-30 文法で形が変わる表意文字の仕組みを 1.0.4 で作る
 - Date: 2026-09-30
@@ -1432,7 +1432,9 @@ it is quoted, and where a decision has never been made the row in
     あれが言語切り替えになるって感じ」がそのまま生きている。2026-09-05 の
     「確定は一個前へ戻る」は**言語の選択には掛からない**。
   - (b) 「前に読み込んだの出していいよ。何か更新するならクルクルが必要」──
-    **電波が無い起動では、前に読み込んだ物を出す。取った言語も。**更新と保存は
+    **電波が無い起動では、前に読み込んだ物を出す。**~~取った言語も。~~ ──
+    2026-09-30 に差し替え：人の言語は端末に置かず、電波の無い時は出さない
+    （上の「作れる言語と DL 言語の数は 1・3・無限」の追記）。更新と保存は
     クルクル →「接続できません」。2026-09-04「前に読み込んだ分は出て欲しい。
     制作も眺めたい人はいるだろうし、」の再確認。
   - (c) 「文字0はアルファベットでいいやん」── **新しい言語は、段を問わず
@@ -1460,18 +1462,14 @@ it is quoted, and where a decision has never been made the row in
   なかった（2026-09-11 の hunt #6）。(d) は ★ が二つの道になるため。
 - Affected features: 言語の一覧・切り替え、電波なしの画面、文字、検索、段
 - Affected data: (c) **増減なし**（有料の言語が三十八字を持つようになるだけ、
-  移行なし）。(b) **鍵が一つ増える** ── `lingua.take.<uid>`、`language_take` の
-  答えの写し、そのアカウントの物、上る道なし（`docs/CHANGELOG.md` 2026-09-12、
-  `docs/DATA_MODEL.md`）。(a)(d)(e)(f) なし
+  移行なし）。(b) ~~**鍵が一つ増える** ── `lingua.take.<uid>`~~ ── 2026-09-30
+  に差し替え：`language_take` の答えはメモリにだけ置き、鍵は書かない
+  （`docs/CHANGELOG.md` 2026-09-30）。(a)(d)(e)(f) なし
 - Affected docs: `CLAUDE.md`（規則 22・§ What the free plan is）、
   `docs/DATA_MODEL.md`、`docs/PAID_FEATURES.md`、`docs/CHANGELOG.md`、
   `docs/BACKLOG.md`
 - Implementation status: `claude/r33-owner`。**(c) は IMPLEMENTED**（CODE
-  CONFIRMED、`plan-check`）。**(b) は半分** ── 取った言語は端末に残って
-  `langWhose()` が read と答えるようになった（`again-check`）が、**一覧にはまだ
-  出ない**：段を訊けていない起動では `dlCap()` が 0 になり読む側の一覧が畳まれる
-  ため。段の決めごとなので決めずに置いてある（`docs/BACKLOG.md` § 段を訊けて
-  いない間、一覧を切るか）。**(d) は既にそうなっている**
+  CONFIRMED、`plan-check`）。**(b)** ~~は半分 ── 取った言語は端末に残って `langWhose()` が read と答える~~ ── 2026-09-30 に差し替え：取った言語は電波の無い起動で出さない（`again-check`、`theirs-check`）。**(d) は既にそうなっている**
   （`snsSearchesHTML('sns.saved', …, null)`、`www/sns.js` ── `drop` が `null`
   なので保存した検索の行に × は描かれない。× が付いているのは「最近の検索」の
   ほうで、そちらは ★ ではない。2026-09-12 に読んで確かめた、変更なし）。

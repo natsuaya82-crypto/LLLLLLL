@@ -9,12 +9,14 @@
 - `www/sheet.js` — 書き取りシート（`shMake`・`openWrOut`・入口）
 - `www/post.js` — コピー（`postCopy`）
 - `www/share.js` — iPhone のキーボードへ渡す（`shareSig`）
-- `tools/store-check.mjs` または新しいチェック（数える方と振る舞い）、`tools/gate.mjs`、`package.json`、`tools/fixture.mjs`
+- `www/card.js`（`cardOut()`・`cardSave`・右上の共有）と `www/wordsheet.js`（単語・例文のカードの共有マーク）── 単語と例文のカードは言語の中身のファイルなので
+- `tools/theirs-check.mjs`（新しい）、`tools/store-check.mjs`、`tools/gate.mjs`、`package.json`
+- 旧仕様（取った言語の写しがディスクに在る／App Group に前の人の言語を渡す）を主張していた `tools/again-check.mjs`・`tools/conv-check.mjs`、`slGot()` の引数が変わった `tools/acct-check.mjs`・`tools/state-check.mjs`
 - `CLAUDE.md`（規則 22 と Online の節）、`docs/DATA_MODEL.md`、`docs/DATA_SAFETY.md`、`docs/CHANGELOG.md`、`docs/FEATURE_RULES.md`（決定ログの実装状況の行）
 - `shots/r150-*.png`
 
 ## 変えないもの
 - 編集を止める `langLocked()` の中身
-- カード（`cardSave`、`www/card.js`）── 「カード投稿はok」
+- 投稿のカードが出ること（`cardSave` の投稿の場合、`www/card.js`）── 「カード投稿はok」
 - 電話に既にある人の言語の写し ── 自動では消さない。消すかどうかはオーナーに聞く
 - `docs/STATE.md`（リーダーのもの。直す文はリーダーに渡す）

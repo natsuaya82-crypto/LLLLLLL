@@ -515,7 +515,7 @@ function langNameGot(id, nm){
   var k=String(id||''), v=String(nm||'');
   if(!k) return;
   LNAME[k]=v;
-  slGot(langNameKey(k), v);
+  slGot(k, 'name', v);
   /* the open language's name is a global the screens read, exactly the way
      WORDS is: one thing seen from many places, not a second answer */
   if(k===langId) langName=v;
@@ -574,7 +574,7 @@ function langWsysGot(id, w){
   var k=String(id||''), v=String(w||'');
   if(!k) return;
   LWSYS[k]=v;
-  slGot(langWsysKey(k), v);
+  slGot(k, 'wsys', v);
 }
 function langWsysOf(id){
   var k=String(id||''), p;
@@ -612,7 +612,7 @@ function langOwnGot(id, uid){
       was=Object.prototype.hasOwnProperty.call(LOWN, k)? LOWN[k] : '';
   if(!k) return;
   LOWN[k]=v;
-  slGot(langOwnKey(k), v);
+  slGot(k, 'owner', v);
   /* AND THE OPEN LANGUAGE HAS JUST BECOME WRITABLE (§ langLocked), so what
      could not be written while nobody had answered goes in now rather than on
      the next launch -- migrateAll() below, the old shapes brought forward
@@ -666,7 +666,7 @@ function langMadeGot(id, at){
   var k=String(id||''), v=String(at||'');
   if(!k) return;
   LMADE[k]=v;
-  slGot(langMadeKey(k), v);
+  slGot(k, 'made', v);
 }
 function langMadeOf(id){
   var k=String(id||''), p;
@@ -701,45 +701,26 @@ function langRowUp(id){ return LROW[String(id||'')]===1; }
    session or lets through the fourth. netTakes() (www/net.js) is what fills
    it and dlStop() is what waits for it. */
 var LTAKE=null;
-/* AND THE PICTURE OF THAT ANSWER, FILED UNDER THE ACCOUNT IT IS ABOUT.
-   「前に読み込んだの出していいよ。何か更新するならクルクルが必要」 OWNER
-   2026-09-12.
+/* AND IT IS IN MEMORY ONLY. 「だから端末に置くのもng」 OWNER 2026-09-30.
 
-   `null` means 「not asked」 and a launch with no signal never asks, so a
-   language somebody TOOK answered LW_WAIT and was not drawn -- the person
-   opened the app in a tunnel and their own languages were there (the `owner`
-   picture, § langOwnOf) while everything they had taken off somebody else's
-   page had gone. This is the same shape as those pictures and for the same
-   reason: the server's answer in memory, a picture of it on the disk, and
-   NO ROAD UP -- nothing here is ever sent, merged or preferred, it is only
-   what the last answer was.
+   This used to be written to the disk as `lingua.take.<uid>` so a launch
+   with no signal could draw the languages somebody had taken
+   （「前に読み込んだの出していいよ」 OWNER 2026-09-12). Somebody else's
+   language is the server's and not this phone's now (§ langOut), and with no
+   signal it is not shown: `null` is 「not asked」, langWhose() answers
+   LW_WAIT for it, and it waits for the answer rather than being drawn from a
+   copy. An account's OWN languages are not this and still come back with no
+   signal off their pictures (§ langOwnOf).
 
-   FILED UNDER THE ACCOUNT, which is the whole of why it is safe. The key ends
-   in the uid, so lsWipeAcct() takes it by COUNTING the namespace rather than
-   by a list somebody has to remember to add to (§ lsWipeAcct), and it is read
-   for the account in hand and never for the one before it --
-   「違うアカウントでログインしてんのに前のやつ出てくるんだけど？」 OWNER
-   2026-08-31 is what reading somebody else's picture looks like.
-
-   A language that came down this way is READ and not written, exactly as it
-   was before: langWhose() answers LW_READ off it, every writer refuses, and
-   updating or saving with no signal says 「接続できません」 rather than
-   quietly working on a copy. */
+   A key an older version wrote is not read and not removed
+   (docs/CHANGELOG.md 2026-09-30); deleting the account takes it with the
+   namespace (§ lsWipeAcct). */
 function langTookGot(ids){
-  var got=(ids && typeof ids.length==='number')? ids : null;
-  LTAKE=got;
-  /* Only an ANSWER is drawn. `null` is 「nobody has said」, and writing that
-     down as an empty list would turn 「I have not been told」 into 「you have
-     taken nothing」 on the next launch -- the two sides langWhose() exists to
-     keep apart. Nothing is removed either: the picture that is there stays
-     there until this account's next answer replaces it or the account goes. */
-  if(got) saveTry(function(){ acctPut('take', got); });
+  LTAKE=(ids && typeof ids.length==='number')? ids : null;
 }
-/* THE PICTURE IS READ BY THE CONTAINER (§ ACCT), for the account in hand and
-   never for the one before it, and a phone with nobody on it has been told
-   nothing. */
-acctKeep('take', function(){ return LTAKE; },
-         function(v){ LTAKE=(v && typeof v.length==='number')? v : null; });
+/* FORGOTTEN WHERE THE ACCOUNT CHANGES (§ ACCT), and a phone with nobody on
+   it has been told nothing. */
+acctMem(function(){ LTAKE=null; });
 function langTook(){ return LTAKE? LTAKE.length : null; }
 /* Whether THIS account took this language, asked by the server's id for it.
    lsWipeAcct() is what wants it: a downloaded language is written by somebody
@@ -990,7 +971,22 @@ function slRd(k){
    別の枝 (CLAUDE.md § Data). It took '' as nothing, so a name the server had
    emptied came back with no signal as whatever an older version called the
    language (state-check G, rule-audit-2026-09-27-core C1). */
-function slGot(k, body){
+function slGot(id, kind, body){
+  var k=langKeyOf(String(id||''), kind);
+  /* NOTHING OF SOMEBODY ELSE'S LANGUAGE IS WRITTEN TO THIS PHONE'S DISK, AND
+     NOTHING OF ONE NOBODY HAS ANSWERED FOR -- langOut() below, the one
+     question every way out of memory asks (OWNER 2026-09-30). The picture is
+     for looking at your OWN language with no signal; somebody else's is on
+     the server and in memory while the app runs, and nowhere else.
+
+     WHO WROTE IT does not ask, and it is not the language: it is an account's
+     id, the answer langOut() itself reads (langOwnOf). Asked first it would
+     be 「nobody has said」 and nothing of your own would ever be kept. And an
+     index row of somebody else's language with no answer about its owner is
+     indistinguishable from core.js's own empty stub, which netLangsGone()
+     (www/net.js) drops on a launch whose take answer did not arrive --
+     measured (again-check, 「答えが来ていない起動では何も落ちない」). */
+  if(kind!=='owner' && !langOut(id)) return;
   try{
     if(body===null) localStorage.removeItem(slGotKey(k));
     else localStorage.setItem(slGotKey(k), String(body));
@@ -1386,13 +1382,15 @@ function langSeenAdd(sid, name, owner){
      the index had nothing, so a second download could not rename a language
      somebody was reading; the name is the server's answer now and a fresher
      one of those is not a rename. */
-  if(name) langNameGot(id, name);
-  /* AND WHO WROTE IT. It used to stamp whoever was signed in -- 「whoever
+  /* WHO WROTE IT FIRST. It used to stamp whoever was signed in -- 「whoever
      took it」 -- into the same field a language's own maker went into, so one
      word answered two questions and the two came apart exactly here. Who
      wrote it is `language_seen.owner` and comes in with the row; that this
-     account TOOK it is a `language_take` row and netTakePut() writes it. */
+     account TOOK it is a `language_take` row and netTakePut() writes it.
+     First, because every picture after it asks langOut(), which is this
+     answer (§ slGot). */
   if(owner) langOwnGot(id, owner);
+  if(name) langNameGot(id, name);
   langStore();
   return id;
 }
@@ -1459,6 +1457,23 @@ function langWhose(id){
   return langTookHas(k)? LW_READ : LW_NONE;
 }
 function langMine(id){ return langWhose(id)===LW_MINE; }
+/* ---- WHETHER A LANGUAGE MAY LEAVE MEMORY -- THE ONE QUESTION -------------
+   「カード投稿はok」「svgやファイル書き出しはng」「だから端末に置くのもng」
+   「サーバーであればスクショ以外で持っていけないでしょ？著作権関連するんだから
+   そこはしっかりやろう」 OWNER 2026-09-30, on every plan.
+
+   Somebody else's language is USED inside Lingua -- its letters shown and
+   typed in this app's own fields, posts written in it, its meanings read --
+   and it lives on the server and in memory while the app runs. Nothing of it
+   goes anywhere else: not a file (a font, an SVG, a sheet, a word's card),
+   not the clipboard, not the system keyboard's App Group, and not this
+   phone's disk (slGot). A card of a POST is not the language leaving -- a
+   post is already on the timeline, and cardSave() lets it out as a post.
+
+   Every way out asks this and nothing else, and `theirs-check` counts them.
+   The answer is langWhose()'s, so 「nobody has answered yet」 is not 「mine」:
+   nothing leaves until the server has said whose it is. */
+function langOut(id){ return langWhose(id)===LW_MINE; }
 /* AND WHETHER IT IS SOMEBODY ELSE'S, which is not 「not mine」.
    langWhose() has a third answer, 「not asked yet」, and a question that
    folds it into either side draws a guess (CLAUDE.md rule 22). langLocked()

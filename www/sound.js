@@ -848,8 +848,11 @@ function vLetters(){
        And the same mark is where the letters leave as SVG -- 「svgも足そう」
        OWNER 2026-09-26 -- so it goes to the screen that says which, vLtOut();
        a pop was asked instead and taken off 「そのポップでフォントとsvg出すのは
-       やめてくれ」 OWNER 2026-09-26. */
-    navTop('', helpQ('letters')+navDo(t('lt.out'), 'go', ['ltout'], false, {icon:ICON_SHARE}))+
+       やめてくれ」 OWNER 2026-09-26.
+       Not on somebody else's language: nothing of it leaves the app
+       (langOut(), www/core.js). */
+    navTop('', helpQ('letters')+(langOut(langId)?
+      navDo(t('lt.out'), 'go', ['ltout'], false, {icon:ICON_SHARE}) : ''))+
     '<div class="body">'+
     (wsHasMarks()
       ? '<button class="trow"' + DO('go', ["abugida"]) + ' style="margin-top:6px">'+
@@ -894,6 +897,7 @@ function vLetters(){
    answered, and must not be guessed at. */
 function ltFontOut(){
   var p;
+  if(!langOut(langId)) return;
   if(!SFONT.b64){ toast(t('kb.font.none')); return; }
   p=sharePlug();
   if(!p){ toast(t('card.nofile')); return; }
@@ -918,8 +922,9 @@ function ltFontName(){
    not a line. */
 function vLtOut(){
   return '<div class="view">'+navTop('')+'<div class="body">'+
-    '<button class="set"' + DO('ltFontOut') + '><span class="sl">'+esc(t('lt.out.font'))+'</span></button>'+
-    '<button class="set"' + DO('ltSvgOut') + '><span class="sl">'+esc(t('lt.out.svg'))+'</span></button>'+
+    (langOut(langId)?
+      '<button class="set"' + DO('ltFontOut') + '><span class="sl">'+esc(t('lt.out.font'))+'</span></button>'+
+      '<button class="set"' + DO('ltSvgOut') + '><span class="sl">'+esc(t('lt.out.svg'))+'</span></button>' : '')+
     '</div></div>';
 }
 /* THE DRAWN LETTERS AS SVG. 「svgも足そう」 OWNER 2026-09-26. Every plan: a
@@ -962,6 +967,7 @@ function ltSvg(lts){
    UTF-8 first -- a letter's name can be anything. */
 function ltSvgSend(lts, name){
   var p, b64;
+  if(!langOut(langId)) return;
   if(!lts.length){ toast(t('kb.font.none')); return; }
   p=sharePlug();
   if(!p){ toast(t('card.nofile')); return; }
@@ -1396,11 +1402,12 @@ function vLetter(){
        「書いた文字の横に並べてその二つで中央取る感じにして」 OWNER 2026-09-27
        -- it stood in the bar beside the Save, which is the one screen where a
        share is not in the corner. Only on a letter with a shape -- there is
-       nothing to put in the file otherwise. ltSvgOne(). */
+       nothing to put in the file otherwise, and not on somebody else's
+       language, which does not leave the app (langOut()). ltSvgOne(). */
     '<div class="ltrow">'+
       '<button class="spbig"' + DO('editLetter', [lid]) + '>'+
         ltInk(l, '<span class="nol">'+ICON_PEN+'</span>')+'</button>'+
-      (inkGeo(l)
+      ((inkGeo(l) && langOut(langId))
         ? '<button class="ltshare" aria-label="'+esc(t('lt.out.svg'))+'"' + DO('ltSvgOne', [lid]) + '>'+ICON_SHARE+'</button>'
         : '')+
     '</div>'+

@@ -499,6 +499,12 @@ function shareSig(){
      (www/core.js § langForAcct), and that is nobody's to hand over either. */
   var who=(netSignedIn() && !LANG_WAIT)? netUid() : '';
   if(!who) return '';
+  /* AND NOT SOMEBODY ELSE'S LANGUAGE. The App Group is on this phone, and
+     nothing of a language this account did not write leaves the app
+     (langOut(), www/core.js, OWNER 2026-09-30). '' and not null, LANG_WAIT's
+     answer for LANG_WAIT's reason: the keyboard is handed nothing, so what
+     it held before -- which may be the last account's -- does not stay. */
+  if(!langOut(langId)) return '';
   /* AND WITH NO ANSWER ABOUT THE PLAN THERE IS NOTHING TO SIGN, which is a
      third answer and not the empty one. '' means 「hand over nothing」 and
      empties the App Group; null means 「nothing is decided」, and what the

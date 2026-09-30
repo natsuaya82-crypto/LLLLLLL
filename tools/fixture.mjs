@@ -791,7 +791,29 @@ export function halfDone(){
                     ln: 'abab baa', who: 'Iri', hd: 'iri', mn: 'the steppe after rain',
                     ui: 'en', ink: { g: __STEM, s: [0, 1, 0, 1, ' ', 1, 0, 0], sp } });
   };
+  /* THE FIXTURE'S OWN LANGUAGE, AS SOMEBODY ELSE'S THAT THIS ACCOUNT TOOK --
+     the same letters and words, so a picture of it stands beside the picture
+     of your own and the only difference is whose it is. Nothing of it leaves
+     the app (www/core.js § langOut, OWNER 2026-09-30), so the doors out are
+     not drawn: that is only ever seen in these faces. Put back afterwards. */
+  const __theirs = (fn) => {
+    const was = LOWN[langId], tk = LTAKE;
+    LOWN[langId] = 'somebody-else'; LTAKE = [langId];
+    try { return fn(); }
+    finally { if (was === undefined) delete LOWN[langId]; else LOWN[langId] = was; LTAKE = tk; }
+  };
+  const __outFaces = [
+    ['letters', () => { window.route = 'letters'; NAV = [{ r:'letters' }]; return vLetters(); }],
+    ['one letter', () => { const l = LETTERS.filter((x) => inkGeo(x))[0];
+       window.route = 'letter'; NAV = [{ r:'letters' }, { r:'letter', a:l.id }]; return vLetter(); }],
+    ['a word', () => { openWord(WORDS[0].hw); return vForm(); }],
+    ['the handwriting sheet', () => { SH = shBlank(); openWrite(); return vForm(); }],
+  ];
   return [
+    ...__outFaces.map(([n, f]) => [n + ', somebody else\'s language', () => __theirs(f)]),
+    /* and the same four of your own, beside them, so the pair differs in
+       whose it is and in nothing else */
+    ...__outFaces.map(([n, f]) => [n + ', your own language', f]),
     /* The account screen has two faces and the walk arrives signed IN, so the
        way in -- the three sign-in buttons and the mail door -- is on neither
        of them without this. It used to be the other way round; seed() signs

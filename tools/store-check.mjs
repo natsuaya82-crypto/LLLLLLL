@@ -101,7 +101,7 @@ const ROADS = {
      `slMine()` for everything that sends, which does not -- so it can be
      drawn and can never be merged, sent, or preferred to an answer that has
      just arrived. */
-  'core.js:slGot:slGotKey(k)': { whose: 'lang', phone: 'what the server last said this slice was, kept so a launch with no signal draws the language instead of nothing. It belongs to the account the slice does -- filed under `lingua.<id>.<slice>`, so wipeLangsGo() takes it with the language and lsWipeAcct(), which counts the `lingua.<id>.` namespace rather than walking SLICES, takes it with the account (acct-check 66; until 2026-09-11 it walked SLICES and left the `name`/`wsys`/`owner` pictures behind, because those are columns of the `language` row and were born after that loop). It has no road UP and must not be given one: `slMine()` in www/core.js is what keeps it out of netSlice1(), netSaveNow() and both of the 「fills in and stops」 reads' },
+  'core.js:slGot:slGotKey(k)': { whose: 'lang', phone: 'what the server last said this slice was, kept so a launch with no signal draws the language instead of nothing -- this account\'s OWN language only: slGot() asks langOut() first, so nothing of somebody else\'s is ever written here (OWNER 2026-09-30, theirs-check). It belongs to the account the slice does -- filed under `lingua.<id>.<slice>`, so wipeLangsGo() takes it with the language and lsWipeAcct(), which counts the `lingua.<id>.` namespace rather than walking SLICES, takes it with the account (acct-check 66; until 2026-09-11 it walked SLICES and left the `name`/`wsys`/`owner` pictures behind, because those are columns of the `language` row and were born after that loop). It has no road UP and must not be given one: `slMine()` in www/core.js is what keeps it out of netSlice1(), netSaveNow() and both of the 「fills in and stops」 reads' },
   /* AND ONE WRITE THAT ADDS NO KEY EITHER, for the opposite reason: it is a
      key this phone already has, written down again under the language's own
      number. langsCarry() in www/core.js is the 2026-09-10 migration -- a
@@ -270,7 +270,6 @@ const ACCT_ROADS = {
   set:    { phone: 'the account\'s fields of the settings -- FIELDS below answers for each one, and the ones with a road go up by it' },
   langs:  { phone: 'a picture, for looking at, of which languages this account had the last time the server answered -- 「前に読み込んだの出していいよ」 OWNER 2026-09-12. What they ARE is the `language` table, and `owner=eq.<me>` is the whole of the list: netLangsDown() REPLACES this from that answer (www/net.js § netLangsGone, 2026-09-15). No road UP and nothing counts from it (www/core.js § LMINE)' },
   cur:    { phone: 'which of this account\'s languages is open -- where somebody is standing, not what they made' },
-  take:   { phone: 'which of somebody else\'s languages this account had TAKEN, as the `language_take` table last answered (www/core.js § LTAKE). A picture of a server answer so a launch with no signal draws them: 「前に読み込んだの出していいよ。何か更新するならクルクルが必要」 OWNER 2026-09-12. No road UP -- netTakes() is what asks' }
 };
 const kept = new Map();
 for (const f of files) {

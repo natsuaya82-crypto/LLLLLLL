@@ -2063,8 +2063,9 @@ function netSlices(sid, ok, bad, kinds, cols){
    server's own id, so two walks running at once see each other's entries
    (acct-check 13, 2026-09-09).
 
-   WHO WROTE IT goes on the PICTURE here and not on LOWN (www/core.js
-   § langOwnGot): the picture is what the list is DRAWN from (langOwnOf), and
+   WHO WROTE IT goes on the PICTURE here, first -- every other picture asks
+   langOut(), which reads it (www/core.js § slGot) -- and not on LOWN
+   (§ langOwnGot): the picture is what the list is DRAWN from (langOwnOf), and
    LOWN is also 「this language may be written」, which waits for the slices
    so that 「the server has said it is mine」 is also 「what is on the screen
    is the server's」 (quiet-check 2). netLangFill() writes LOWN. */
@@ -2080,6 +2081,9 @@ function netLangsWalk(d, done){
     own=String(row.owner||netUid());
     nid=String(row.id);
     NET_LROW[nid]={owner:own};
+    /* WHO WROTE IT FIRST: every picture below asks langOut(), and this is
+       the answer it reads (www/core.js § slGot). */
+    slGot(nid, 'owner', own);
     if(!LANGS[nid]){
       /* Somebody else's is stamped with its owner (langSeenAdd); this
          account's is an entry and nothing else. The entry first, so slices
@@ -2096,7 +2100,6 @@ function netLangsWalk(d, done){
     langNameGot(nid, row.name);
     langWsysGot(nid, row.wsys);
     langMadeGot(nid, row.created_at);
-    slGot(langOwnKey(nid), own);
   }
   if(rows.length) langStore();
   if(made) render();
@@ -2145,7 +2148,7 @@ function netLangFill(id, ok, bad){
          after this is understood by the server as a removal (§ NET_BASE),
          and the picture for a launch with no signal (slGot, www/core.js) */
       netBaseSet(nid, k, there[k].no);
-      slGot(langKeyOf(nid, k), there[k].body);
+      slGot(nid, k, there[k].body);
     }
     /* The OPEN language's slices came down, so what the screens are holding
        is the picture: read it in the way langOpen() does, HERE, before
@@ -2522,7 +2525,7 @@ function netSliceUp(id, kind, done, bad){
         /* the server's answer, written by the app and not by a person */
         if(now!==mine){ slMend(k); slAsApp(slWr, [k, now]); moved=true; }
         slSettled(k);
-        slGot(k, now);
+        slGot(id, kind, now);
       }
       done(moved);
     }, bad);

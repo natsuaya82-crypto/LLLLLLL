@@ -413,8 +413,8 @@ What is still true and still this file's job to say: **none of it may reach
 anybody's data.** An enterprise plan that lapses, a bill that goes unpaid, a
 project that gets suspended — each of those is the entitlement check failing,
 and the rule at the head of this file already says what happens then: fewer
-buttons, never fewer words, and every byte where it was. The phone keeps the
-language as it was last loaded, read-only (`CLAUDE.md` rule 22); a server that
+buttons, never fewer words, and every byte where it was. The phone keeps its own
+languages as they were last loaded, read-only (`CLAUDE.md` rule 22); a server that
 stops answering is a person who can still look at their language.
 
 `CAN` in `www/core.js` names every capability, and `can('x')` is the only way

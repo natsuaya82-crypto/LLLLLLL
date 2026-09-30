@@ -102,6 +102,12 @@ an account removes it (`slRm()`). That key can be the only copy of
 something somebody spent months on. Copying costs a
 few hundred kilobytes and cannot lose anything; moving could.
 
+Somebody else's language is not written to the disk at all (`langOut()` in
+`www/core.js`, OWNER 2026-09-30). What an older version already wrote of one —
+its `.got` pictures, `lingua.take.<uid>` — is not removed automatically: it
+goes with the language or the account as everything else does, and whether to
+take it sooner is the owner's (`docs/CHANGELOG.md` 2026-09-30).
+
 ### 3. "Empty" and "broken" are not the same state
 
 An empty language is a legitimate state — somebody just made one. Wreckage is

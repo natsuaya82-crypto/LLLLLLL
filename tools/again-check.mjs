@@ -1314,16 +1314,19 @@ const seenUp = await pg.evaluate(async ({ s, srv }) => {
   await new Promise(function(f){ netTakes(function(){ f(); }, function(){ f(); }); });
   await wait(300);
   langStore();
+  var theirsOnDisk = [];
   for (i = 0; i < localStorage.length; i++){
     k = localStorage.key(i);
     if (k && k.indexOf('.got') === k.length - 4) got++;
+    if (k && k.indexOf('theirs-9') !== -1 && k.indexOf('lingua.langs.') !== 0 &&
+        k !== langKeyOf('theirs-9', 'owner') + '.got') theirsOnDisk.push(k);
   }
   /* The slices handed on are THIS language's. The taken one's words are on
      the server too now, and the stages below rebuild `S.slice` by walking it
      for 「the words slice」 -- with two of those, they would be measuring the
      wrong language's body. */
   return { id:id, gotKeys:got, took:langTook(), tookRow:!!LANGS['theirs-9'],
-           pic:!!localStorage.getItem('lingua.take.me3'),
+           pic:!!localStorage.getItem('lingua.take.me3'), theirsOnDisk:theirsOnDisk,
            srv:JSON.stringify({ lang:S.lang, take:S.take,
              slice:S.slice.filter(function(r){ return r.language === id; }) }) };
 }, { s: seed.toString(), srv: SERVER });
@@ -1331,9 +1334,17 @@ const seenUp = await pg.evaluate(async ({ s, srv }) => {
 say(seenUp.gotKeys > 0,
     'サーバーから降りた分がディスクに写してある ── これが無ければ下の三つは ' +
     '「まだ何も無い」を測っているだけになる（' + seenUp.gotKeys + ' 本）');
-say(seenUp.took === 1 && seenUp.tookRow && seenUp.pic,
+say(seenUp.took === 1 && seenUp.tookRow,
     'そして人の言語を一本取ってある ── `language_take` の答えが ' +
-    seenUp.took + ' 本、その写しもディスクにある（土台）');
+    seenUp.took + ' 本（土台）');
+/* 「だから端末に置くのもng」 OWNER 2026-09-30 (www/core.js § langOut). The
+   answer about what was taken, and every picture of the language taken, stay
+   in memory. What is on the disk is ids: the index row, and who wrote it
+   (`owner.got`, an account's id -- § slGot says why it stays). */
+say(!seenUp.pic && seenUp.theirsOnDisk.length === 0,
+    '**人の言語は端末のディスクに一つも書かれない** ── `lingua.take` ' +
+    (seenUp.pic ? 'が在る' : 'は無い') + '、その言語の鍵 ' +
+    JSON.stringify(seenUp.theirsOnDisk));
 
 /* 二段目 ── アプリを閉じて、電波の無いところで開く。localStorage は消さない。
    それが「閉じた」であって「機種変」ではない（機種変は上の 2 番）。 */
@@ -1358,6 +1369,7 @@ const offline = await pg.evaluate(async () => {
            dlCap:dlCap(), langCap:langCap(),
            /* 足の「n hidden」。畳まれた時だけ描かれるので、**無い**ことが
               主張です ── 数える物はあるのに一覧から外した、の印。 */
+           hidWord:t('cap.hid').replace('{0}', '').replace(/^\s+|\s+$/g, ''),
            capHid:(function(){
              var m=list.match(/class="note">([^<]*)</g);
              return m? String(m[m.length-1]).replace(/^class="note">/, '').replace(/<$/, '') : ''; })(),
@@ -1374,11 +1386,10 @@ say(offline.words > 0 && offline.name === 'Kela',
     (offline.name || '名前なし') + '）');
 say(offline.onScreen,
     'そして辞書の画面に本当に並んでいる ── 変数に入っているだけではない');
-say(offline.read && offline.took === 1,
-    '**電波が無くても、取った言語はこの端末に残って「read」と答える** ── ' +
-    '`language_take` の写しから ' + offline.took + ' 本、「' + offline.whose +
-    '」（写しは読むだけ。更新も保存もクルクル→「接続できません」で、そこは' +
-    '変えていない）。写しが無ければここは「wait」で、一覧にも数にも入らない');
+say(!offline.read && offline.took === null && offline.whose === 'wait',
+    '**電波が無いと、取った言語は出ない** ── 人の言語はサーバーにだけ在る' +
+    '（OWNER 2026-09-30）。`language_take` の答えは ' + JSON.stringify(offline.took) +
+    '（訊けていない）、「' + offline.whose + '」');
 /* **そして一覧に出ます。壁は二枚ありました。**
    一枚目は写しで、上の主張がそれです。二枚目は天井で、`dlCap()` は
    `has('plus')` で答えていました ── 段を訊けていない起動では 0 なので、
@@ -1395,10 +1406,10 @@ say(offline.read && offline.took === 1,
    `dlStop()` が「接続できません」で止めたままで、止めなくなっていたらここが
    赤くなります ── 一覧に出す事と作れる事を取り違えるのが、この直しの唯一の
    壊れ方なので。 */
-say(offline.listed && offline.capHid === '',
-    '**電波が無くても、取った言語が一覧に出る** ── 段を訊けていない天井は ' +
+say(!offline.listed && offline.capHid.indexOf(offline.hidWord) === -1,
+    '**電波が無いと、取った言語は一覧に出ない** ── そして段を訊けていない天井は ' +
     JSON.stringify(offline.dlCap) + '（0 ではなく「まだ無い」）で、' +
-    'langsSeen() は畳まない。足の hidden も無い（「' + offline.capHid + '」）');
+    '足の hidden も無い（「' + offline.capHid + '」）');
 say(offline.dlStopped && offline.dlSaidOff &&
     offline.makeStopped && offline.makeSaidOff,
     'そして天井は緩んでいない ── ダウンロードも「言語を追加」も止まり、' +
@@ -2403,9 +2414,11 @@ const goneA = await pg.evaluate(async ({ s, srv }) => {
            srv: JSON.stringify({ lang:S.lang, slice:S.slice, take:S.take }) };
 }, { s: seed.toString(), srv: SERVER });
 
+/* 写しは書かれない ── 人の言語はサーバーにだけ（OWNER 2026-09-30、
+   www/core.js § langOut）。索引の行（id だけ）が、落とす物のすべてです。 */
 say(goneA.row === true && goneA.stay === true &&
-    goneA.gotLetters === '[{"id":"sh1"}]' && goneA.gotWords === '[{"hw":"kel"}]',
-    '（前提）取った言語が二つ索引に居て、写しがディスクに残っている ── ' +
+    goneA.gotLetters === null && goneA.gotWords === null,
+    '（前提）取った言語が二つ索引に居て、中身の写しはディスクに無い ── ' +
     'gone-1 ' + goneA.row + '、stay-1 ' + goneA.stay + '、写しは ' +
     JSON.stringify(goneA.gotLetters) + ' と ' + JSON.stringify(goneA.gotWords));
 
@@ -2432,16 +2445,13 @@ const goneNull = await pg.evaluate(async ({ srv, saved }) => {
            stay: !!LANGS['stay-1'] };
 }, { srv: SERVER, saved: goneA.srv });
 
-/* `langTook()` はこの起動で **2** です。写しを置いた 2026-09-12 より前は
-   `null` で、その `null` が「0 ではない」を言っていました ── 言いたいこと
-   （**「無い」ではない**）は変わっておらず、答えているものが「訊けていない」
-   から「前に聞いた答え」に変わっただけです。落ちないことが主張の本体で、
-   それは行と写しが見ています。「本当に訊けていない端末」── 写しがまだ一枚も
-   無いアカウント ── は今も `null` で、それは `acct-check` 65 が見ています。 */
-say(goneNull.took === 2 && goneNull.row === true &&
-    goneNull.got === '[{"id":"sh1"}]' && goneNull.stay === true,
+/* `langTook()` はこの起動で `null` ── 訊けていない、であって 0 ではない。
+   取った答えはメモリにだけ在る（OWNER 2026-09-30）ので、前の起動の答えは
+   持ち越されません。落ちないことが主張の本体で、それは索引の行が見ています。 */
+say(goneNull.took === null && goneNull.row === true &&
+    goneNull.got === null && goneNull.stay === true,
     '**答えが来ていない起動では何も落ちない** ── langTook() は ' +
-    JSON.stringify(goneNull.took) + '（0 ではなく、前に聞いた答えの数）、' +
+    JSON.stringify(goneNull.took) + '（0 ではなく、訊けていない）、' +
     '行 ' + goneNull.row + '、写し ' + JSON.stringify(goneNull.got));
 
 /* 1。同じ状態で、答えが来る起動。 */
@@ -2481,8 +2491,8 @@ const goneB = await pg.evaluate(async ({ srv, saved, lid }) => {
   };
 }, { srv: SERVER, saved: goneA.srv, lid: goneA.lid });
 
-say(goneB.was.row === true && goneB.was.got === '[{"id":"sh1"}]',
-    '（前提）落とす前は索引に行があり、写しも残っている ── 行 ' +
+say(goneB.was.row === true && goneB.was.got === null,
+    '（前提）落とす前は索引に行があり、写しは無い ── 行 ' +
     goneB.was.row + '、写し ' + JSON.stringify(goneB.was.got));
 say(goneB.row === false && goneB.letters === null && goneB.words === null &&
     goneB.got === null && goneB.was1 === null && goneB.stored === false,
@@ -2775,10 +2785,10 @@ say(addOff.words2 === addOff.before + 1 && addOff.onServer2 &&
 
 /* ---- 写しは、そのアカウントのものだけ ------------------------------------
    「違うアカウントでログインしてんのに前のやつ出てくるんだけど？」OWNER
-   2026-08-31。取った言語の答えの写しを一枚ディスクに置いたので（2026-09-12、
-   `lingua.take.<uid>`）、その日の形に戻る道が一本増えました ── 鍵に uid が
-   入っていて、`langTookFor()` が手元のアカウントの分しか読まない、というのが
-   それを塞いでいる全部です。読んだだけでは分からないので**押して測ります**。
+   2026-08-31。取った言語の答えはメモリにだけ在り（OWNER 2026-09-30、
+   `www/core.js` § langOut ── 2026-09-12 から 09-30 までは `lingua.take.<uid>`
+   に写していた）、アカウントが替わると忘れる（`acctMem`）。読んだだけでは
+   分からないので**押して測ります**。
 
    **ファイルの最後に置いてあります。**別のアカウントで立ち上げ直す節なので、
    その起動が投げて落ちた要求を積んだページを次の節へ渡してしまう ── ポップの
@@ -2805,9 +2815,9 @@ const takeA = await pg.evaluate(async ({ s, srv }) => {
            pic:localStorage.getItem('lingua.take.tk1') };
 }, { s: seed.toString(), srv: SERVER });
 
-say(takeA.took === 1 && takeA.read && takeA.pic === '["tk-theirs"]',
-    '（前提）取った言語が一本あって、その答えの写しがディスクに在る ── ' +
-    'langTook() ' + JSON.stringify(takeA.took) + '、写し ' +
+say(takeA.took === 1 && takeA.read && takeA.pic === null,
+    '（前提）取った言語が一本あって、その答えはメモリにだけ在る ── ' +
+    'langTook() ' + JSON.stringify(takeA.took) + '、ディスク ' +
     JSON.stringify(takeA.pic));
 
 /* 別のアカウントで、電波の無いところで開く ── 前の人の写しが読まれるなら、
@@ -2834,10 +2844,6 @@ say(takeB.uid === 'tk2' && takeB.took === null && !takeB.read && !takeB.listed,
     '**別のアカウントで入ると、前の人の取った言語は出ない** ── langTook() は ' +
     JSON.stringify(takeB.took) + '（訊けていない）、「' + takeB.whose +
     '」で一覧にも無い');
-say(takeB.pic,
-    'そして前の人の写しは消えていない ── 預けてあるだけで、戻れば戻る' +
-    '（消えるのはそのアカウントを削除したとき ── lsWipeAcct が鍵の末尾の ' +
-    'uid で数えて取る）');
 
 /* ---- 7. TWO PHONES, ONE THING CHANGED ON BOTH: THE LATER CHANGE STANDS ----
    「普通後から変えたほうになる？アプリ気になるそこ」 OWNER 2026-09-04
