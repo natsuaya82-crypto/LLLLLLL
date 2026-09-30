@@ -20,8 +20,8 @@
    reads back like any other. What this adds is one image per box, drawn
    before the box: the letter as the font draws it, at the scale the lattice
    was planned at (an o 5.5 steps tall, its foot on row 15, the letter's
-   middle on column 10; a benched gallows wider than the lattice is narrowed
-   to fit), in GREY. How grey is the reader's to say: shScan() calls a pixel
+   middle on column 10), all of it then made SCALE times smaller (below),
+   a benched gallows still wider than the lattice narrowed to fit, in GREY. How grey is the reader's to say: shScan() calls a pixel
    ink when it is darker than 0.85 of the paper round it, so the letter is
    0.90 -- visible to a person, paper to the reader. The run proves it rather
    than trusting that sum: it draws the finished page, blank, and reads it
@@ -50,6 +50,11 @@ if (!FONT) { console.error('--font <Voynich_EVA_Hand_A.ttf> is needed'); process
    w (the font has none), and the six composites. */
 const NAMES = 'a c d e f g h i j k l m n o p q r s t v x y z ch sh cth ckh cph cfh'.split(' ');
 const GREY = 0.90;
+/* Every letter a little smaller than the plan, and all by the same factor:
+   「比率を少しづつ小さくして」「全部小さくしないとバランスおかしくなるでしょ」
+   OWNER 2026-09-30. Shrunk about the o's foot and the middle column, so the
+   foot stays on row 15 and the letters keep their proportions to each other. */
+const SCALE = 0.9;
 
 const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css' };
 const srv = http.createServer((q, r) => {
@@ -65,7 +70,7 @@ await pg.goto(`http://localhost:${PORT}/`);
 await pg.waitForSelector('#splash', { state: 'detached', timeout: 10000 });
 
 const font = 'data:font/ttf;base64,' + fs.readFileSync(FONT).toString('base64');
-const got = await pg.evaluate(async ({ font, names, GREY }) => {
+const got = await pg.evaluate(async ({ font, names, GREY, SCALE }) => {
   var ff = new FontFace('EvaHandSheet', 'url(' + font + ')');
   await ff.load(); document.fonts.add(ff);
 
@@ -87,12 +92,13 @@ const got = await pg.evaluate(async ({ font, names, GREY }) => {
   o = probe('o', px);
   var footY = (40 + 36 * 15.3) * U, span = (800 - 2 * 32) * U;  /* the o's ink foot; the widest allowed */
   function under(t) {
-    var b = probe(t, px), w = b.x1 - b.x0 + 1, k = w > span ? span / w : 1;
+    var b = probe(t, px), w = (b.x1 - b.x0 + 1) * SCALE, k = w > span ? span / w : 1;
     var c = document.createElement('canvas'); c.width = R; c.height = R;
     var g = c.getContext('2d');
     g.save();
-    g.translate(R / 2, footY - (o.y1 - o.base));                  /* o's foot on row 15.3 */
-    g.scale(k, 1);
+    g.translate(R / 2, footY);                                   /* o's foot on row 15.3 */
+    g.scale(SCALE * k, SCALE);
+    g.translate(0, -(o.y1 - o.base));
     g.font = px + 'px EvaHandSheet';
     g.fillText(t, -((b.x0 + b.x1) / 2 - b.left), 0);             /* the ink's middle on column 10 */
     g.restore();
@@ -179,7 +185,7 @@ const got = await pg.evaluate(async ({ font, names, GREY }) => {
   var bin = [];
   for (i = 0; i < out.length; i++) bin.push(out.charCodeAt(i) & 255);
   return { pdf: bin, reads: reads, narrowed: narrowed, png: reads.png };
-}, { font, names: NAMES, GREY });
+}, { font, names: NAMES, GREY, SCALE });
 await br.close(); srv.close();
 if (got.fail) { console.error(got.fail); process.exit(1); }
 
