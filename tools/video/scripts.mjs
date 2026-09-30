@@ -531,6 +531,45 @@ export const SCRIPTS = {
     ],
   },
 
+  /* On a paid plan: a letter past a to z (can('letters'), Plus), drawn and
+     named, given a sound off the IPA chart (can('snd')); and digits counting
+     in base 12 (can('letters')). The plan is set to Pro in the page
+     (planGot), as tools/fixture.mjs does for the paid faces.
+     The direction (can('dir')) is not in it: filmed on 2026-09-30, a line of
+     this language's own letters written top to bottom came out with every
+     letter on its side, and right to left came out right-aligned with the
+     words still left to right. Why has not been found; reported, not filmed. */
+  'plus': {
+    view: [393, 852, 3], size: [1080, 2340], out: 'promo/plus', hq: true, slow: 2,
+    music: 'sigmamusicart-background-music-inspiring-525840.mp3',
+    setup: [{ eval: DICT_TIDY }, { eval: "planGot('pro'); render();" }, { go: 'ltset', a: 'alpha' }],
+    steps: [
+      { cap: 'Paid plans: go past a to z', capAt: 600, wait: 1800 },
+      { cap: 'Add a letter', capAt: 600, wait: 200 },
+      { tap: 'do:newLetter', wait: 1000 },
+      { tap: 'do:editLetter', wait: 900 },
+      { cap: 'Draw it', capAt: 650, wait: 200 },
+      { draw: [
+          [[0.26, 0.30], [0.40, 0.70], [0.54, 0.30], [0.68, 0.70]],
+          [[0.26, 0.50], [0.74, 0.50]],
+        ], gap: 300, wait: 700 },
+      { tap: 'do:keepPress', wait: 1200 },
+      { cap: 'Name it anything', capAt: 600, wait: 200 },
+      { type: 'ph', into: '#lt-rom', delay: 260, wait: 1400, still: 'x1-new-letter' },
+      { cap: 'Choose its sound from the IPA', capAt: 600, wait: 200 },
+      { tap: 'do:openSnd', wait: 1000 },
+      { tap: '[data-do=ipaToggle][data-a*="m.fricative"]', wait: 1000 },
+      { tap: '[data-do=ltTakeSnd][data-a=\'["ɸ"]\']', wait: 1300, still: 'x1b-sound' },
+      { tap: 'do:keepPress', wait: 1000 },
+      { tap: 'do:keepPress', wait: 1600, still: 'x2-alphabet' },
+      { cap: 'Count in base 12', capAt: 600, wait: 200 },
+      { go: 'ltset', a: 'num' },
+      { wait: 900 },
+      { tap: '[data-do=numStepBase][data-a="[1]"]', wait: 900 },
+      { tap: '[data-do=numStepBase][data-a="[1]"]', wait: 2400, still: 'x5-base12' },
+    ],
+  },
+
   /* The dictionary, in two films 「いいよ」 OWNER 2026-09-30 -- the one
      film asked for was split in two: making words, and using the
      dictionary. Filmed as the keyboard film was (393x852, 1080x2340, hq,
