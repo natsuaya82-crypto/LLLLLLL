@@ -5461,8 +5461,9 @@ and is never merged into your own」と言っている。**入らない、は二
   itself, so: ~~`ghDemo`~~ ~~`ghDraw`~~ ~~`ghEase`~~ ~~`ghField`~~ ~~`ghInk`~~ ~~`ghMount`~~ ~~`ghPos`~~
   ~~`ghSeg`~~ ~~`ghShow`~~ ~~`ghTick`~~ → `geHint*`. Its uppercase globals take ~~`GE_`~~,
   which ~~`GE_MAXPTS`~~ already established in the same file: ~~`GHINT`~~ ~~`GHP`~~
-  ~~`GHTAP`~~ ~~`GHCYC`~~ ~~`GHDCYC`~~ ~~`GHDEMO`~~ → `GE_HINT` `GE_HINT_P` `GE_HINT_TAP`
-  `GE_HINT_CYC` `GE_HINT_DCYC` `GE_HINT_DEMO`.
+  ~~`GHTAP`~~ ~~`GHCYC`~~ ~~`GHDCYC`~~ ~~`GHDEMO`~~ → ~~`GE_HINT`~~ ~~`GE_HINT_P`~~ ~~`GE_HINT_TAP`~~
+  ~~`GE_HINT_CYC`~~ ~~`GE_HINT_DCYC`~~ ~~`GE_HINT_DEMO`~~ (the canvas went on 2026-09-30, r145:
+  the layers stand where it was).
 
   **(3) `note*` in `notes.js` is the chapter spelled long, and goes to
   `nt*`.** ~~`noteRead`~~ ~~`noteCut`~~ ~~`noteHead`~~ ~~`noteBody`~~ ~~`noteAt`~~ → `nt*`, and

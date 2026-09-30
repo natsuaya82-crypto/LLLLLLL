@@ -175,7 +175,7 @@ session. `claude/admin` has the rest.
     shell.js       PAGES: what a route is called, which tab it is under
     route-map.js   page('build', vBuild) — the route bound to its view
     act-map.js     act('openWord', openWord) — a name bound to its function
-    act.js         DO / AFTER / IN / CH / KD, and one delegated listener
+    act.js         DO / IN / CH / KD, and one delegated listener
 ```
 
 A button carries a **name**, never code. `tools/act-check.mjs` proves both

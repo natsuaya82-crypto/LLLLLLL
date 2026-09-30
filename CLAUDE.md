@@ -750,8 +750,7 @@ of the handlers somebody thought of.
 ```
 
 `www/act.js` holds the tables and the one delegated listener: `DO` (pressed),
-`AFTER` (a second name on the same press), `IN` (typed into), `CH` (changed),
-`KD` (Enter). Arguments travel as JSON, so a number stays a number and nothing
+`IN` (typed into), `CH` (changed), `KD` (Enter). Arguments travel as JSON, so a number stays a number and nothing
 is escaped by hand.
 
 Every name a screen can say is registered in `www/act-map.js` **with the function
@@ -2286,7 +2285,7 @@ the string and the function — and `act-check` fails on either half alone.
 | file | what it is |
 |---|---|
 | `www/core.js` | language registry, `t()`, storage |
-| `www/act.js` | the action tables and the one delegated listener (`DO`/`AFTER`/`IN`/`CH`/`KD`) |
+| `www/act.js` | the action tables and the one delegated listener (`DO`/`IN`/`CH`/`KD`) |
 | `www/act-map.js` | every name a screen may say, bound to the real function |
 | `www/route-map.js` | every route, bound to the view it shows |
 | `www/boot.js` | where the app starts |
