@@ -257,7 +257,7 @@ it is quoted, and where a decision has never been made the row in
 
 ### 2026-09-30 フォントの書き出しは無料、ウェブ版も作る
 - Date: 2026-09-30
-- Area: フォントのファイルの書き出し（`ltFontOut()`、`CAN.font`、`www/core.js`・`www/keyboard.js`）、SVG の書き出し（元から全プラン）、ウェブ版
+- Area: フォントのファイルの書き出し（`ltFontOut()`、~~`CAN.font`~~、`www/core.js`・`www/sound.js`）、SVG の書き出し（元から全プラン）、ウェブ版
 - Decision: フォントのファイル（OTF）の書き出しを全プランでできるようにする（2026-09-25「フォントの書き出しは Plus」を差し替え）。SVG は元から全プラン。ウェブ版も作る（2026-09-26「無料・ブラウザ版は入れない」を差し替え）── Android と同じく「作っているのでお待ちください」と言う。
 - Reason: オーナーの言葉「svgとフォント無料でいいよ。今から直して」「Androidとウェブ版は作っているのでお待ちくださいでいいよ」（2026-09-30）。
 - Affected features: 字の書き出し、プランの画面（Plus の段からフォントの書き出しが消える）。

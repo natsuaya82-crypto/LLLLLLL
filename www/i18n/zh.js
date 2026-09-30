@@ -956,7 +956,6 @@ defLang('zh', (function(){
       "plan.plus.3" : "音节文字、辅音文字、元音附标文字或语素文字",
       "plan.plus.4" : "最多 1000 个词",
       "plan.plus.6" : "最多下载一门语言",
-      "plan.plus.7" : "把画的字导出为字体（OTF）",
       "plan.pro.1" : "Plus 的全部，另外：",
       "plan.pro.2" : "词数不受限制",
       "plan.pro.4" : "自己的语法阶段和书写方向",

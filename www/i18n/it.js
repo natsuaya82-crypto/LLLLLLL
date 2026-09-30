@@ -949,7 +949,6 @@ defLang('it', (function(){
       "plan.plus.3" : "Un sillabario, un abjad, un abugida o una logografia",
       "plan.plus.4" : "Fino a 1000 parole",
       "plan.plus.6" : "Una lingua scaricata",
-      "plan.plus.7" : "Esporta le tue lettere come font (OTF)",
       "plan.pro.1" : "Tutto di Plus, e:",
       "plan.pro.2" : "Parole senza limite",
       "plan.pro.4" : "Fasi della grammatica tue e il verso della scrittura",

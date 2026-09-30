@@ -909,7 +909,6 @@ defLang('es', (function(){
       "plan.plus.3" : "Un silabario, un abyad, una abugida o una logografía",
       "plan.plus.4" : "Hasta 1000 palabras",
       "plan.plus.6" : "Un idioma descargado",
-      "plan.plus.7" : "Exporta tus letras como fuente (OTF)",
       "plan.pro.1" : "Todo lo de Plus, y:",
       "plan.pro.2" : "Palabras sin límite",
       "plan.pro.4" : "Etapas de gramática propias y la dirección de escritura",

@@ -938,7 +938,6 @@ defLang('de', (function(){
       "plan.plus.3" : "Eine Silbenschrift, ein Abjad, eine Abugida oder eine Logographie",
       "plan.plus.4" : "Bis zu 1000 Wörter",
       "plan.plus.6" : "Eine heruntergeladene Sprache",
-      "plan.plus.7" : "Deine Buchstaben als Schrift exportieren (OTF)",
       "plan.pro.1" : "Alles aus Plus, und:",
       "plan.pro.2" : "Wörter ohne Grenze",
       "plan.pro.4" : "Eigene Grammatikstufen und die Schreibrichtung",

@@ -863,7 +863,6 @@ defLang('en', (function(){
       "plan.plus.3" : "A syllabary, an abjad, an abugida or a logography",
       "plan.plus.4" : "Up to 1000 words",
       "plan.plus.6" : "One language downloaded",
-      "plan.plus.7" : "Export your letters as a font (OTF)",
       "plan.pro.1" : "Everything in Plus, and:",
       "plan.pro.2" : "Words without a limit",
       "plan.pro.4" : "Grammar stages of your own, and which way it is written",

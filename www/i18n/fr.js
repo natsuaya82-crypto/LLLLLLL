@@ -997,7 +997,6 @@ defLang('fr', (function(){
       "plan.plus.3" : "Un syllabaire, un abjad, un abugida ou une logographie",
       "plan.plus.4" : "Jusqu'à 1000 mots",
       "plan.plus.6" : "Une langue téléchargée",
-      "plan.plus.7" : "Exportez vos lettres en police (OTF)",
       "plan.pro.1" : "Tout ce que Plus a, et :",
       "plan.pro.2" : "Des mots sans limite",
       "plan.pro.4" : "Vos propres étapes de grammaire et le sens d'écriture",

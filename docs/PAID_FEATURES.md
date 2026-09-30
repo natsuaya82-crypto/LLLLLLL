@@ -236,7 +236,7 @@ Plus < Pro` needs nobody told which is which.
 | `wsys` a writing system that is not an alphabet | — | yes | yes |
 | `snd` choose the sound, not the letter's own | — | yes | yes |
 | keyboards — built, of drawn letters or any character | yes | yes | yes |
-| `font` the font file of the letters you drew | — | **yes** | yes |
+| the font file of the letters you drew (not in `CAN`, 2026-09-30) | yes | yes | yes |
 | `dl` a chapter of somebody else's language | — | **yes** | yes |
 | editing a post you have sent (not in `CAN`, 2026-09-28) | yes | yes | yes |
 | words | 100 | 1000 | no ceiling — `words` |
@@ -277,8 +277,8 @@ are to draw — free has the slots — and so how many there are to put on a key
 nothing in the keyboard asks a plan. There is no capability and no ceiling for
 it, and the ones there were (~~`CAN.kb`~~, ~~`kbCap()`~~) are deleted.
 
-**`font` is Plus's** — 「フォントの書き出しはそれでいいよ」 OWNER 2026-09-25,
-down from Pro (2026-09-24), where it had not been built. The share mark at the
+**The font file is every plan's** — 「svgとフォント無料でいいよ」 OWNER
+2026-09-30, and nothing asks a plan for it. The share mark at the
 top right of the letters screen (「フォントは文字なんだから文字から」 OWNER
 2026-09-25) hands the font of the drawn letters (`SFONT.b64`, the bytes
 `LinguaFont.build` made) to iOS's share sheet as an `.otf` — `ltFontOut()`.
@@ -427,7 +427,6 @@ a `can()` given anything but a literal, and a `has()` anywhere else.
 |---|---|---|
 | `letters` | plus | adding, naming and deleting a letter |
 | `wsys` | plus | a writing system that is not an alphabet |
-| `font` | plus | the font file of the letters you drew, through the share sheet |
 | `dl` | plus | taking a chapter of somebody else's language. How many is `dlCap()` |
 | `snd` | plus | choosing a sound, rather than taking the letter's own |
 | `words` | pro | no ceiling on the dictionary at all. The ceiling itself is `wordCap()` |
@@ -575,9 +574,8 @@ behind it, and what it opened went with it.
 
 ```
   free    draw your own letters. 100 words. One language. Keyboards of
-          any characters
-  plus    build it yourself. 1000 words. The font of your letters.
-          One download
+          any characters. The font of your letters
+  plus    build it yourself. 1000 words. One download
   pro     no ceiling on the words. Three languages,
           three downloads, the grammar, the direction, the file roads
 ```

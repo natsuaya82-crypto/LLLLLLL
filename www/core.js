@@ -2094,8 +2094,7 @@ var PLANS=[
      does nothing until the product is made. What is NOT allowed is the other
      way round -- a product on sale that the app does not name. */
   {id:'plus', name:'Plus', mo:'plan.price.plus', yr:'plan.price.plus.yr', off:'17',
-   lines:['plan.plus.1','plan.plus.2','plan.plus.3','plan.plus.4','plan.plus.7',
-          'plan.plus.6']},
+   lines:['plan.plus.1','plan.plus.2','plan.plus.3','plan.plus.4','plan.plus.6']},
   /* Pro opens with "everything in Plus, and:" rather than repeating the lines
      above it. Three pages that each list everything are three pages somebody
      has to compare word by word; the ladder is the thing being sold and it
@@ -2802,11 +2801,6 @@ var CAN={
      free」 (docs/FEATURES.md § 4, 2026-08-19). How many is dlCap() above, and
      the two landed together -- see the comment there for why. */
   dl:      'plus',
-  /* The font file of the letters somebody drew, out of the app through the
-     share sheet. 「フォントの書き出しはそれでいいよ」 OWNER 2026-09-25, Plus --
-     down from Pro (2026-09-24), where it had not been built. ltFontOut() in
-     www/keyboard.js is the one place it is asked. */
-  font:    'plus',
   snd:     'plus',   /* choosing a sound, rather than taking the letter's own */
   /* The mark beside your name. 「バッチはplusから」 -- Plus in the old three
      names, which is Pro in these. Nothing on the phone GATES it: whoever

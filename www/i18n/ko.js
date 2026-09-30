@@ -1126,7 +1126,6 @@ defLang('ko', (function(){
       "plan.plus.3" : "음절문자, 아브자드, 아부기다, 표어문자",
       "plan.plus.4" : "단어 1000개까지",
       "plan.plus.6" : "내려받은 언어 한 개까지",
-      "plan.plus.7" : "그린 글자를 폰트로 내보내기 (OTF)",
       "plan.pro.1" : "Plus의 모든 것에 더해",
       "plan.pro.2" : "단어 수 제한 없음",
       "plan.pro.4" : "나만의 문법 단계와 쓰는 방향",

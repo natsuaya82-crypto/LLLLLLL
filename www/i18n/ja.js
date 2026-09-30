@@ -865,7 +865,6 @@ defLang('ja', (function(){
       "plan.plus.3" : "音節文字・アブジャド・アブギダ・表語文字",
       "plan.plus.4" : "単語は1000語まで",
       "plan.plus.6" : "ダウンロードした言語1つまで",
-      "plan.plus.7" : "フォントの書き出し（OTF）",
       "plan.pro.1" : "Plus のすべてに加えて",
       "plan.pro.2" : "単語は無制限",
       "plan.pro.4" : "自分の文法段階と、書字方向の指定",
