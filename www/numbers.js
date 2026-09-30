@@ -190,6 +190,11 @@ function numBaseRows(){
      replaced by 「無料でもplusでもproでも同じ画面なのよ。でも無料から文字を
      足すところは課金のポップが出ないといけない」 OWNER 2026-09-01. */
   var b=numBase(), lo=NUM_BASES[0], hi=NUM_BASES[NUM_BASES.length-1];
+  /* Somebody else's language: the base is read, not stepped (langLocked,
+     www/core.js; OWNER 2026-09-30). */
+  if(langLocked())
+    return '<div class="set numbase"><span class="sl">'+esc(t('num.base'))+'</span>'+
+      '<span class="sv">'+esc(numLabel(b))+'</span></div>';
   return '<div class="set numbase">'+
     '<span class="sl">'+esc(t('num.base'))+'</span>'+
     '<span class="nbstep">'+
@@ -235,6 +240,9 @@ function numFace(k){
    and make it. The sign and the word are one thing seen from two chapters. */
 function numWordRow(l){
   var w=numWordFor(l.val);
+  /* Making the word is the language's, and somebody else's is read here
+     (langLocked, www/core.js): with no word there is nothing to open. */
+  if(!w && langLocked()) return '';
   return '<div class="sec">'+esc(t('num.word'))+'</div>'+
     '<button class="trow"' + DO('openSlot', ["count", numLabel(l.val)]) + '>'+
       '<span class="rn"></span><span class="rt">'+esc(w? w.hw : t('stg.make'))+'</span>'+

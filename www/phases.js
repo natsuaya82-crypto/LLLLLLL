@@ -1010,6 +1010,9 @@ function g2BookPage(b){
 
 function stSlotRow(p, k){
   var w=stWordFor(p, k);
+  /* 作成 is the making side's; somebody else's empty slot has nothing in it
+     to open (langLocked, www/core.js) */
+  if(!w && langLocked()) return '';
   return '<button class="stslot'+(w?' has':'')+'"' + DO('openSlot', [p.id, k]) + '>'+
     (p.id==='count'? numFace(k) : '')+
     '<span class="psm">'+esc(stSlotLabel(p, k))+'</span>'+
@@ -1041,6 +1044,15 @@ function stDetailHTML(p){
      drawn out of it. www/shell.js § KEEP. The rule and the examples have a
      page each and carry their own. */
   stKeepOn(p.id);
+  /* Somebody else's stage is read: its examples open to be read, and the
+     rules page, the note and the delete -- which are all writing -- are not
+     drawn; a note they wrote is shown (langLocked, www/core.js). */
+  if(langLocked()){
+    out+=stPageRow(t('stg.ex'), String(stEx(p.id).length||''), DO('openStEx', [p.id]));
+    if(STG.notes && STG.notes[p.id]) out+='<div class="sec">'+t('stg.note')+'</div>'+
+      '<div class="set"><span class="sl">'+esc(STG.notes[p.id])+'</span></div>';
+    return out;
+  }
   out+=stPageRow(t('stg.rules'), '', DO('openStRules', [p.id]))+
        stPageRow(t('stg.ex'), String(stEx(p.id).length||''), DO('openStEx', [p.id]));
 

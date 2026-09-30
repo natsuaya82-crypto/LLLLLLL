@@ -1345,6 +1345,11 @@ function pageName(r, a){
    A button that COMMITS a form still says what it does. This is the other
    thing: one more row of a list that is already on the screen. */
 function secAdd(label, doAttr, aria){
+  /* Every ＋ beside a heading adds to the language that is open -- a meaning,
+     an example, a rule, a class -- and somebody else's language is added to by
+     nobody (langLocked, www/core.js; OWNER 2026-09-30): the heading stays and
+     the ＋ does not. One place, because every caller is that sentence. */
+  if(langLocked()) return '<div class="sec">'+label+'</div>';
   return '<div class="sec secadd">'+label+
     '<button class="secplus"'+doAttr+' aria-label="'+esc(aria)+'">'+ICON_ADD+'</button></div>';
 }

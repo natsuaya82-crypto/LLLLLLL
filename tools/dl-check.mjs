@@ -235,7 +235,11 @@ const r = await pg.evaluate(async ({ s, sid }) => {
        question than the one it prints. */
     var picks = ['wSelOn', 'kbSelOn', 'ntSelOn'];
     out.doorsUp = [];
-    ['words', 'ltset', 'gram', 'kb', 'notes', 'about'].forEach(function(r){
+    /* Not `kb`: a keyboard the person who took it builds is theirs, on their
+       own row, and the language does not move -- 「ないやつは自作可能」 OWNER
+       2026-09-30 (docs/FEATURE_RULES.md § 2026-09-30 「DL可能言語」 (2)).
+       tools/taken-check.mjs holds that half. */
+    ['words', 'ltset', 'gram', 'notes', 'about'].forEach(function(r){
       try {
         window.route = r; NAV = [{ r:r }];
         render();
@@ -575,10 +579,13 @@ say(!r.opens || (r.madeBy && r.madeBy.length === 0 && r.surfaceSlices),
 say(!r.opens || !r.othersSeen || [].every(function(n){ return r.othersSeen[n]; }),
     'and every name listed as another session\'s is still one this walk trips -- the list only shrinks (' +
     Object.keys(r.othersSeen || {}).join(' ') + ')');
-/* and the presses this was written for are on the surface -- a walk that
-   no longer reaches them is green about nothing */
-say(!r.opens || ['abNudge', 'abScale', 'numStepBase'].every(function(n){ return r.pressedNames && r.pressedNames[n]; }),
-    'and the walk reaches the abugida bench and the base ± (' +
+/* and the presses this was written for are not on the surface at all any
+   more: moving the abugida's mark and stepping the base are not drawn on
+   somebody else's language (OWNER 2026-09-30; tools/taken-check.mjs counts
+   every editor). Pressed by name anyway they still write nothing -- the
+   savers claim above. */
+say(!r.opens || ['abNudge', 'abScale', 'numStepBase'].every(function(n){ return !(r.pressedNames && r.pressedNames[n]); }),
+    'and the abugida bench and the base ± are not drawn on it (' +
     ['abNudge', 'abScale', 'numStepBase'].filter(function(n){ return r.pressedNames && r.pressedNames[n]; }).join(' ') + ')');
 say(r.stillTheirs,
     'and what landed is still theirs after all of that — byte for byte the ' +

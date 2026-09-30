@@ -1385,6 +1385,18 @@ function geBtn(fn,n,key,en,on){
          geIcon(n)+'</button>';
 }
 function vGlyph(){
+  /* THE PAPER IS FOR DRAWING, AND SOMEBODY ELSE'S LETTER IS NOT DRAWN ON.
+     「dl言語は…編集はできない」 OWNER 2026-09-30 (langLocked, www/core.js).
+     The letter page does not offer this road on a taken language
+     (vLetter, www/sound.js); standing here anyway -- a trail kept from
+     before, a language switched under it -- shows the letter and nothing to
+     draw with. */
+  if(langLocked()){
+    var lt=ltById(here().a);
+    return '<div class="view">'+navTop('')+'<div class="body">'+
+      (lt? '<div class="ltrow"><div class="spbig">'+ltInk(lt, '')+'</div></div>' : '')+
+      '</div></div>';
+  }
   /* GE is always set by editGlyph before this is routed to; the fallback is
      for the release check, which walks every view cold. */
   if(!GE) GE=newGE('a');

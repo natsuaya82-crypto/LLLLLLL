@@ -1409,6 +1409,10 @@ function fmrSetAt(v){ fmrKeep(function(r){ r.at=(v==='start')? 'start':'end'; })
    not offered again. */
 function vFm(){
   var a=String(here().a||''), w, now, rest, hw;
+  /* A list to CHOOSE on, reached only from a word being written -- and
+     somebody else's word is not written (langLocked, www/core.js; OWNER
+     2026-09-30). Standing here anyway, there is nothing on it for them. */
+  if(langLocked()) return viewGone();
   if(a.charAt(0)==='#'){
     rest=wfmArg(a.slice(1));
     w=findWord(rest.hw);

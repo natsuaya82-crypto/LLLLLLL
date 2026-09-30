@@ -805,8 +805,12 @@ export function halfDone(){
      a file, the handwriting sheet -- are not drawn, while a word's card is
      「カードはok」: that is only ever seen in these faces. Put back afterwards. */
   const __theirs = (fn) => {
+    /* KEEP too: opening a language empties it (viewReset, www/shell.js), so
+       a Save buffer left by a render of your own is not on theirs -- and it
+       is not put back, because the bar's Save is painted from it after the
+       face is drawn (keepBtnPaint) */
     const was = LOWN[langId], tk = LTAKE;
-    LOWN[langId] = 'somebody-else'; LTAKE = [langId];
+    LOWN[langId] = 'somebody-else'; LTAKE = [langId]; KEEP = {};
     try { return fn(); }
     finally { if (was === undefined) delete LOWN[langId]; else LOWN[langId] = was; LTAKE = tk; }
   };
