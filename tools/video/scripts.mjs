@@ -498,6 +498,39 @@ export const SCRIPTS = {
     ],
   },
 
+  /* The calendar: a month is a word (www/cal.js). The months and the days of
+     the week are word slots in the grammar book's appendix, each made where
+     it is asked for, and the home screen's calendar and clock (the digits
+     page shows them) draw what was made, in the language's own digits. */
+  'calendar': {
+    view: [393, 852, 3], size: [1080, 2340], out: 'promo/calendar', hq: true, slow: 2,
+    music: 'echoes_of_lumen-vlog-background-music-596303.mp3',
+    setup: [{ eval: DICT_TIDY }, { eval: DICT_RULES }, { go: 'gram', a: 'book:app' }],
+    steps: [
+      { cap: 'Name the months yourself', capAt: 600, wait: 200 },
+      { tap: '[data-do=stOpen][data-a*=month]', wait: 1700, still: 'c1-months' },
+      { cap: 'Each one is a word of your language', capAt: 600, wait: 200 },
+      { tap: '[data-do=openSlot][data-a*=January]', wait: 1000 },
+      { type: 'kanu', lingua: true, into: '#wd-ln', delay: 260, wait: 1200, still: 'c2-january' },
+      { tap: 'do:addOne', wait: 1300 },
+      { tap: 'do:back', wait: 900 },
+      { tap: '[data-do=openSlot][data-a*=February]', wait: 900 },
+      { type: 'sari', lingua: true, into: '#wd-ln', delay: 260, wait: 900 },
+      { tap: 'do:addOne', wait: 1300 },
+      { tap: 'do:back', wait: 900 },
+      { tap: '[data-do=openSlot][data-a*=March]', wait: 900 },
+      { type: 'tomo', lingua: true, into: '#wd-ln', delay: 260, wait: 900 },
+      { tap: 'do:addOne', wait: 1300 },
+      { tap: 'do:back', wait: 1700, still: 'c3-three' },
+      { cap: 'And the days of the week', capAt: 600, wait: 200 },
+      { tap: 'do:back', wait: 900 },
+      { tap: '[data-do=stOpen][data-a*=wday]', wait: 2000, still: 'c4-week' },
+      { cap: 'Your digits, your clock', capAt: 600, wait: 200 },
+      { go: 'ltset', a: 'num' },
+      { scroll: 400, wait: 3200, still: 'c5-home' },
+    ],
+  },
+
   /* The dictionary, in two films 「いいよ」 OWNER 2026-09-30 -- the one
      film asked for was split in two: making words, and using the
      dictionary. Filmed as the keyboard film was (393x852, 1080x2340, hq,
