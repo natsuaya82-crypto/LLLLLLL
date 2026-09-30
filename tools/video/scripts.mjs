@@ -570,6 +570,32 @@ export const SCRIPTS = {
     ],
   },
 
+  /* A word list somebody already has, brought in whole (www/import.js, Pro:
+     can('data') opens the door). Pasted as a spreadsheet would paste it,
+     each column given its role, and in. */
+  'import': {
+    view: [393, 852, 3], size: [1080, 2340], out: 'promo/import', hq: true, slow: 2,
+    music: 'verclub_music-background-music-571037.mp3',
+    setup: [{ eval: DICT_TIDY }, { eval: DICT_RULES }, { eval: "planGot('pro'); render();" }, { go: 'settings' }],
+    steps: [
+      { cap: 'Got a word list?', capAt: 710, wait: 1600 },
+      { tap: '[data-do=go][data-a*=\'"data"\']', wait: 1000, still: 'i1-data' },
+      { tap: 'do:openImport', wait: 900 },
+      { cap: 'Paste it in', capAt: 710, wait: 200 },
+      { tap: '[data-do=impStep][data-a*=paste]', wait: 800 },
+      { type: 'word,meaning,part of speech\nnira,sun,noun\nsoma,moon,noun\nvela,to fly,verb\nkiru,bright,adjective', into: '#f-csv', delay: 35, wait: 1000, still: 'i2-pasted' },
+      { tap: 'do:impScan', wait: 1400 },
+      { cap: 'Every column read', capAt: 710, wait: 2600, still: 'i3-columns' },
+      { tap: 'text:Next', wait: 1500, still: 'i4-ready' },
+      { cap: 'One tap', capAt: 710, wait: 200 },
+      { tap: 'do:doImport', wait: 1500 },
+      { cap: 'In your dictionary', capAt: 710, wait: 200 },
+      { go: 'words' },
+      { wait: 400 },
+      { scroll: 700, wait: 2800, still: 'i5-in' },
+    ],
+  },
+
   /* The dictionary, in two films 「いいよ」 OWNER 2026-09-30 -- the one
      film asked for was split in two: making words, and using the
      dictionary. Filmed as the keyboard film was (393x852, 1080x2340, hq,
