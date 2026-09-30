@@ -88,6 +88,7 @@ Marked separately, because they are not the same question:
 | Accounts — sign up, in, out, verify, reset | shipped | yes | — | `lingua.sess` (tokens only) | decided |
 | Profile — face, name, handle, bio, **and your posts** | shipped | yes | — | the `profile` row on the server; `lingua.me` is the copy | decided |
 | Pin a post to your profile | shipped | yes | — | `post.pin`, one at a time | decided |
+| Official account — 「DL可能言語」 on its profile | **built 2026-09-30 (r152)**, not device confirmed; the mark is not set on the server until `supabase/once/2026-09-30-official.sql` is run | yes | — | `profile.official` (server, set by hand; no grant writes it), read on `profile_seen`; the list is `language_seen` by owner, published only | decided 2026-09-30 — the one language row is replaced by one row; the list page is `dllangs` (`vDlLangs()`, `www/me.js`); each row opens that language's `about` page |
 | Share a post — the card | shipped | yes | — | none | decided |
 | Cloud storage of a language | **shipped**, **not device confirmed** | **yes** | same | every slice, as `slice` rows | decided — **everybody, on every plan** 「クラウドは全員で」 (2026-08-22), re-confirmed 2026-08-26 「基本は全部サーバー管理」. The money is still a real question — see `docs/PAID_FEATURES.md` — it is not a reason to defer |
 | A photograph on a post | shipped | **yes** | yes | `pics` on the post (up to `POST_PICS`), each up to the `post-media` bucket, `POST_PIC`/`POST_PICQ`, `POST_BYTES` ceiling | decided |

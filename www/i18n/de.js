@@ -922,6 +922,7 @@ defLang('de', (function(){
       "confirm.wipe"     : "Alles löschen? Dein Konto und jeder Beitrag, jedes Foto und jede Aufnahme gehen vom Server; jede Sprache, jeder Buchstabe und jede Einstellung geht von diesem Telefon. Nichts lässt sich zurückholen. Kündige dein Abo, bevor du dein Konto löschst.",
       "confirm.wipe.langs": "{0} löschen? Alles darin Erstellte geht verloren: die Wörter, die Buchstaben, das Schriftsystem, die Tastatur, die Notizen und die Laute. Sie wird aus deinem Konto entfernt und kommt daher auf keinem anderen Telefon zurück. Deine anderen Sprachen, deine Beiträge und dein Konto bleiben. Dies kann nicht rückgängig gemacht werden.",
       "langs.title"      : "Sprachen",
+      "dl.langs"         : "Herunterladbare Sprachen",
       "langs.mine"       : "Deine Sprachen",
       "langs.reading"    : "Zum Lesen",
       "langs.untitled"   : "Unbenannt",

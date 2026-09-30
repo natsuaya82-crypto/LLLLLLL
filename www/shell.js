@@ -1223,6 +1223,8 @@ var PAGES={
   photo:   {tab:'feed', k:'post.pic'},
   drafts:  {tab:'feed', k:'post.drafts.t'},
   langs:   {tab:'profile', k:'langs.title'},
+  /* An official account's published languages (www/me.js § vDlLangs). */
+  dllangs: {tab:'profile', k:'dl.langs'},
   plans:   {tab:'profile',  k:'plans.title'},
   mod:     {tab:'profile',  k:'mod.title'},
   admin:   {tab:'profile',  k:'admin.title'}

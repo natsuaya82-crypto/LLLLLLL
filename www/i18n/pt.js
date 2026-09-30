@@ -940,6 +940,7 @@ defLang('pt', (function(){
       "confirm.wipe"     : "Apagar tudo? A sua conta e todas as publicações, fotografias e gravações saem do servidor; todos os idiomas, letras e definições saem deste telefone. Não é possível desfazer. Cancele a sua assinatura antes de excluir a sua conta.",
       "confirm.wipe.langs": "Excluir {0}? Tudo o que foi criado nele desaparece: as palavras, as letras, o sistema de escrita, o teclado, as notas e os sons. Ele é removido da sua conta, portanto não voltará em outro telefone. Seus outros idiomas, suas publicações e sua conta permanecem. Isto não pode ser desfeito.",
       "langs.title"      : "Idiomas",
+      "dl.langs"         : "Idiomas para baixar",
       "langs.mine"       : "Seus idiomas",
       "langs.reading"    : "Leitura",
       "langs.untitled"   : "Sem título",

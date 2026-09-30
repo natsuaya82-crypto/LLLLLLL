@@ -933,6 +933,7 @@ defLang('it', (function(){
       "confirm.wipe"     : "Cancellare tutto? Il tuo account e ogni post, fotografia e registrazione se ne vanno dal server; ogni lingua, lettera e impostazione se ne va da questo telefono. Nulla può essere recuperato. Annulla l'abbonamento prima di eliminare l'account.",
       "confirm.wipe.langs": "Eliminare {0}? Tutto ciò che vi è stato creato scompare: le parole, le lettere, il sistema di scrittura, la tastiera, le note e i suoni. Viene rimossa dal tuo account, quindi non tornerà su un altro telefono. Le altre lingue, i tuoi post e il tuo account restano. Non è reversibile.",
       "langs.title"      : "Lingue",
+      "dl.langs"         : "Lingue scaricabili",
       "langs.mine"       : "Le tue lingue",
       "langs.reading"    : "Lettura",
       "langs.untitled"   : "Senza titolo",
