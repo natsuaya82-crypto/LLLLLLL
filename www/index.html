@@ -3265,6 +3265,12 @@ button.spbig{display:block;width:100%;background:none;border:0;padding:0;font:in
    the pencil. The picture is twice what it was 「もう少しデカくして欲しい」.
    One type size on the row class, so every row is one height. */
 .glayers{max-width:420px;margin:0 auto;padding:4px 0}
+/* The heading over the rows, with the + at its right end, and the line over
+   it that parts the layers from the dots -- one side, the same line the rail
+   has, and nothing round it. */
+.glyhd{display:flex;align-items:center;justify-content:space-between;
+       border-top:1px solid var(--line);padding:0 0 0 12px;color:var(--txs);
+       font-size:15px;line-height:20px}
 .glyr{display:flex;align-items:center;font-size:15px;line-height:20px}
 .glayers .glysel{flex:1 1 auto;min-width:0;justify-content:flex-start;gap:14px;
                  font-size:15px;line-height:20px;padding:4px 8px}

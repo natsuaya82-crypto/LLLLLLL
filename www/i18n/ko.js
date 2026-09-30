@@ -939,6 +939,7 @@ defLang('ko', (function(){
       "glyph.circle.d" : "방금 그은 획을 곡선으로 바꿉니다. 다시 누르면 곧게 돌아갑니다.",
       "glyph.clear.d" : "네모 안을 모두 지웁니다.",
       "glyph.lasso.d" : "둘러싼 점, 긋고 지나간 점이 선택됩니다. 선택된 점을 끌면 모두 함께 움직이고, 휴지통은 점과 그 점에 닿은 선을 지웁니다.",
+      "glyph.layers" : "레이어",
       "glyph.width.n" : "굵기 {0}",
       "glyph.layer" : "레이어 {0}",
       "glyph.layer.add" : "레이어 추가",

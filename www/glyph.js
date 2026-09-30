@@ -1942,9 +1942,16 @@ function geLayerAdd(){
    Each picture is what is drawn on that layer and nothing else
    (「レイヤーはこいつみたいにちゃんと書いてるのがわかるようにして」): the
    canvas is filled by geLayerInks(), which geDraw() calls, so the picture of
-   the layer under the finger moves with the finger. */
+   the layer under the finger moves with the finger.
+
+   Over the rows, a heading with the + at its end, under a line that parts it
+   from the dots 「点の列 → 区切りの線 → 『レイヤー　＋』の見出し → レイヤー
+   1…」 OWNER 2026-09-30 (「上と被ってるから」). The + stands there and
+   nowhere else. */
 function geLayersHTML(){
-  var h='<div class="glayers">', n, hid, on;
+  var h='<div class="glayers"><div class="glyhd"><span>'+esc(t('glyph.layers'))+'</span>'+
+    '<button class="glyadd"'+DO('geLayerAdd')+
+    ' aria-label="'+esc(t('glyph.layer.add'))+'">'+ICON_ADD+'</button></div>', n, hid, on;
   for(n=1;n<=GE.lys;n++){
     hid=!!GE.hid[n]; on=n===GE.ly;
     h+='<div class="glyr'+(on?' on':'')+'">'+
@@ -1959,8 +1966,7 @@ function geLayersHTML(){
          ' aria-label="'+esc(t('glyph.layer.rename'))+'">'+ICON_PEN+'</button>'+
        '</div>';
   }
-  return h+'<div class="glyr"><button class="glyadd"'+DO('geLayerAdd')+
-    ' aria-label="'+esc(t('glyph.layer.add'))+'">'+ICON_ADD+'</button></div></div>';
+  return h+'</div>';
 }
 /* What a letter's layers are called: `lyn`, the layer's number to the name
    somebody gave it. Nothing else is read out of it -- a key that is not a

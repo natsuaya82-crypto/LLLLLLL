@@ -748,6 +748,7 @@ defLang('de', (function(){
       "glyph.circle.d" : "Biegt den eben gezogenen Strich. Noch einmal drücken macht ihn wieder gerade.",
       "glyph.clear.d" : "Nimmt alles aus dem Quadrat.",
       "glyph.lasso.d" : "Punkte einkreisen oder über sie streichen, um sie auszuwählen. Einen ausgewählten ziehen verschiebt alle; der Papierkorb entfernt sie und die Linien, die sie berühren.",
+      "glyph.layers" : "Ebenen",
       "glyph.width.n" : "Stärke {0}",
       "glyph.layer" : "Ebene {0}",
       "glyph.layer.add" : "Ebene hinzufügen",

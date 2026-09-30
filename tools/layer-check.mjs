@@ -40,7 +40,9 @@
                      any is pressed carries 14, while a stroke with no width
                      stays 24 and is saved with none; a dot pressed with
                      strokes lit changes those and no other, and the step back
-                     puts it back.
+                     puts it back; over the rows a heading with the + at its
+                     end, the only +, under a line, and the last row scrolls
+                     clear of the tab bar.
 
    Run: node tools/layer-check.mjs                                        */
 import { seed } from './fixture.mjs';
@@ -279,6 +281,30 @@ const r = await pg.evaluate(async ({s}) => {
   out.plus = GE.lys === 3 && GE.ly === 3 && GE.st.length === 0;
   out.rowSays = [].map.call(document.querySelectorAll('.glayers .glysel, .glayers .glyadd'), function(b){
     return (/\bon\b/.test(b.parentNode.className) ? '*' : '') + (b.getAttribute('data-a') || '+'); }).join(' ');
+  /* the + is in the heading, at its right end, and nowhere else; the
+     heading is the first thing of the panel, with a line over it and
+     nothing round it */
+  var hd = document.querySelector('.glayers > .glyhd');
+  out.hdFirst = !!hd && hd === document.querySelector('.glayers').firstElementChild;
+  out.hdSays = hd ? hd.textContent : '';
+  out.hdPlus = !!hd && !!hd.lastElementChild && hd.lastElementChild.getAttribute('data-do') === 'geLayerAdd' &&
+    hd.lastElementChild.textContent === '' && !!hd.lastElementChild.querySelector('svg');
+  out.plusCount = document.querySelectorAll('[data-do="geLayerAdd"]').length;
+  if (hd) {
+    var cs0 = getComputedStyle(hd);
+    out.hdLine = cs0.borderTopStyle === 'solid' && cs0.borderBottomStyle === 'none' &&
+      cs0.borderLeftStyle === 'none' && cs0.borderRightStyle === 'none' && cs0.borderTopLeftRadius === '0px';
+  }
+  /* and the last row can be scrolled clear of the tab bar -- with eight
+     layers, so the panel runs past the foot of the phone */
+  for (var ad = 0; ad < 5; ad++) geLayerAdd();
+  out.lysMany = document.querySelectorAll('.glayers .glyr').length;
+  window.scrollTo(0, 1e6);
+  for (var sc = document.querySelector('.glayers'); sc; sc = sc.parentElement) sc.scrollTop = 1e6;
+  var rowsNow = document.querySelectorAll('.glayers .glyr'), lastRow = rowsNow[rowsNow.length - 1],
+      tb = document.querySelector('.tabbar');
+  out.lastClear = lastRow && tb ? Math.round(tb.getBoundingClientRect().top - lastRow.getBoundingClientRect().bottom) : null;
+  window.scrollTo(0, 0);
 
   /* ---- each layer is a small picture of its own strokes ----------------- */
   inkSet(l, [{pts:[P(4,4), P(4,16)]}, {pts:[P(12,4), P(12,16)], ly:2}]);
@@ -490,6 +516,10 @@ say(r.undoLeft, 'every step back on layer 1 leaves what was drawn on layer 2');
    opened with and the one drawn on it */
 say(r.savedLy === '1,2,2', 'saved, both layers come back, in layer order: ' + r.savedLy);
 say(r.plus, 'the + makes a third layer and puts you on it: ' + r.rowSays);
+say(r.hdFirst && r.hdSays === 'Layers' && r.hdPlus && r.plusCount === 1,
+    'over the rows a heading, "' + r.hdSays + '", with the + as a mark at its right end, and ' + r.plusCount + ' + in all');
+say(r.hdLine, 'a line over the heading parts it from the dots, and nothing round it');
+say(r.lastClear !== null && r.lastClear >= 0, 'scrolled to the foot, the last of ' + r.lysMany + ' layer rows stands ' + r.lastClear + 'px clear of the tab bar');
 
 var pc = r.pic;
 say(pc[0] && pc[1] && pc[2] && pc[0].left > 0 && pc[1].right > 0 && pc[0].left + pc[0].right > pc[2].left + pc[2].right,
@@ -497,8 +527,8 @@ say(pc[0] && pc[1] && pc[2] && pc[0].left > 0 && pc[1].right > 0 && pc[0].left +
     ', the empty 3 inks ' + (pc[2] && pc[2].left + pc[2].right));
 say(pc[0] && pc[1] && pc[0].right === 0 && pc[1].left === 0,
     'and only what is on it: layer 2\'s stroke in 1\'s picture ' + (pc[0] && pc[0].right) + ', 1\'s in 2\'s ' + (pc[1] && pc[1].left));
-say(r.rows.length === 4 && /^geLayerEye geLayer\[pic\]"Layer 1" geLayerName$/.test(r.rows[0]) &&
-    /^geLayerAdd$/.test(r.rows[3]) && r.picOn,
+say(r.rows.length === 3 && r.rows.every(function(x, k){
+      return new RegExp('^geLayerEye geLayer\\[pic\\]"Layer ' + (k+1) + '" geLayerName$').test(x); }) && r.picOn,
     'a row per layer -- the eye, the picture and its name, the pencil -- and the chosen one marked: ' + r.rows.join(' | '));
 say(r.picMoves, 'the picture of the layer being drawn on moves with the finger');
 say(r.picPx > 32, 'the pictures are bigger than r147\'s 32px: ' + r.picPx + 'px');
