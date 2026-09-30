@@ -994,7 +994,7 @@ const walk = await pg.evaluate(({ s }) => {
   const seedAgain = window.__seed;
   seedAgain();
   SET.walked = true; planGot('pro');
-  const out = { stands: [], fails: [], fields: 0, presses: 0, gold: 0, refused: 0, lit: 0, noes: 0, yeses: 0 };
+  const out = { stands: [], fails: [], fields: 0, presses: 0, gold: 0, refused: 0, lit: 0, noes: 0, yeses: 0, throws: 0 };
 
   langRowGot(langId); langStore();
   netSend = function(method, path, body, tok, ok){
@@ -1158,6 +1158,56 @@ const walk = await pg.evaluate(({ s }) => {
     if(!b || typeof b.now !== 'function')
       out.fails.push(lab + ': a Save in the bar over a screen that hands no now()');
     if(saveOn()) out.fails.push(lab + ': a GOLD Save on arrival');
+
+    /* 24 -- A SAVE THAT THROWS IS SAID, AND THE NEXT PRESS GOES.
+       「画面には表示されてないし保存しましたって出ないから戻るボタンしか
+       押せねえ」 OWNER 実機 1.0.3, 2026-09-30. keepSave() (www/shell.js)
+       raised KEEP_BUSY and then ran the screen's save with nothing round it,
+       so one throw anywhere in there left it raised: that press said
+       nothing, and every Save after it, on every screen, returned at
+       `if(KEEP_BUSY) return;` and said nothing either, until the app was
+       closed. The throw is put in by hand here, once, into the screen's own
+       save -- WHAT threw on the owner's phone is not known (docs/scope/
+       r143-save.md) -- and what is asked is what the person sees. */
+    /* 25 -- AND A PRESS THAT FINDS A SAVE STILL RAISED WITH NOTHING ON THE
+       WIRE IS NOT SWALLOWED. Raised by hand, with no request out and nothing
+       queued: that is a save nothing is carrying, and the press says so and
+       goes. */
+    if(stand(go1) && KEEP[keepKey()]){
+      var k24 = keepKey(), b24 = KEEP[k24], real24 = b24.save, said24 = [],
+          t24 = window.toast, sn24 = window.netSaveNow, sent24 = 0, went24;
+      window.toast = function(m){ said24.push(String(m)); };
+      window.netSaveNow = function(cb){ sent24++; if(cb) cb(true); };
+      b24.save = function(){ throw new Error('r143'); };
+      try { keepPress(); } catch(e){}
+      b24.save = real24;
+      if(!said24.length) out.fails.push(lab + ': a Save that threw said nothing');
+      if(KEEP_BUSY) out.fails.push(lab + ': a Save that threw left the next one shut (KEEP_BUSY)');
+      said24 = []; sent24 = 0;
+      try { popOff(); } catch(e){}
+      try { if(KEEP[k24] && keepKey() === k24) keepPress(); } catch(e){}
+      /* Sent, or refused by the screen in its own words (a word form with
+         no spelling says so): either is an answer. Silence is not. */
+      went24 = sent24 || said24.length;
+      if(!went24) out.fails.push(lab + ': after a Save that threw, the next press sent nothing and said nothing');
+      KEEP_BUSY = false;
+      if(stand(go1) && KEEP[keepKey()]){
+        said24 = []; sent24 = 0;
+        KEEP_BUSY = true;
+        try { keepPress(); } catch(e){}
+        if(!said24.length) out.fails.push(lab + ': a press over a save nothing is carrying said nothing');
+        if(!sent24 && said24.length < 2)
+          out.fails.push(lab + ': a press over a save nothing is carrying went nowhere after saying so');
+        KEEP_BUSY = false;
+      }
+      window.toast = t24; window.netSaveNow = sn24;
+      /* and the walk goes on from where it was, as 23 does */
+      for(var kk24 in KEEP) if(Object.prototype.hasOwnProperty.call(KEEP, kk24)) keepDrop(kk24);
+      try { popOff(); } catch(e){}
+      out.throws++;
+      /* a Save that landed went back a page; the fields below are this screen's */
+      if(!stand(go1)) continue;
+    }
 
     /* the fields, from the page */
     var fs = fields();
@@ -1488,6 +1538,8 @@ console.log('every screen with a Save (' + walk.stands.length + '), asked of the
             ' of those changes answered 「いいえ」 on the way out and each gave back what the ' +
             'screen opened with, wrote nothing and sent nothing, and ' + walk.yeses +
             ' of them pressed again and Saved wrote the language');
+console.log('a Save that throws, and a press over a save nothing is carrying: asked of ' + walk.throws +
+            ' screens with a Save -- each said so, and the next press went');
 
 r.screens.forEach((s) => {
   console.log('  ' + s.n + ' (' + s.key + ')');
