@@ -309,6 +309,16 @@ async function open(br) {
      is never answered, and the star stood over the rest of the film and
      took every press after it. */
   await pg.evaluate(() => { window.netOn = function () {}; });
+  /* And a profile's save is heard the way a language's is: netPut() is the
+     one save for a profile row, and here a profile says it landed with what
+     it sent. Every other kind goes where it always went. */
+  await pg.evaluate(() => {
+    var put = window.netPut;
+    window.netPut = function (to, id, row, ok, bad) {
+      if (to !== 'profile') return put.apply(this, arguments);
+      setTimeout(function () { ok(row); }, 250 * (window.__vK || 1));
+    };
+  });
   return { ctx, pg };
 }
 

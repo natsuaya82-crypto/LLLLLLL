@@ -466,6 +466,38 @@ export const SCRIPTS = {
     ],
   },
 
+  /* Who you are and how the app looks: the profile and its editor, light and
+     dark, and the ten languages the app speaks. The picture is iOS's own
+     sheet (UIAlertController), so it is not in a browser's film. p1 is taken
+     out as in 'post'. */
+  'profile': {
+    view: [393, 852, 3], size: [1080, 2340], out: 'promo/profile', hq: true, slow: 2,
+    music: 'atlasaudio-music-background-606270.mp3',
+    setup: [{ eval: "POSTS = POSTS.filter(function (p) { return p.id !== 'p1'; }); render();" }, { go: 'profile' }],
+    steps: [
+      { cap: 'Your profile', capAt: 600, wait: 1800, still: 'f1-profile' },
+      { cap: 'Your name, and a line about you', capAt: 600, wait: 200 },
+      { tap: 'do:openMe', wait: 900 },
+      { tap: '#me-bio', wait: 200 },
+      { eval: "document.getElementById('me-bio').select()", wait: 150 },
+      { type: 'I make Shango, the language of the valley', delay: 55, wait: 1200, still: 'f2-edit' },
+      { tap: 'do:keepPress', wait: 1800, still: 'f3-saved' },
+      { cap: 'Light or dark', capAt: 600, wait: 200 },
+      { tap: '[data-do=go][data-a*=settings]', wait: 900 },
+      { tap: '[data-do=go][data-a*=look]', wait: 900 },
+      { tap: '[data-do=setTheme][data-a*=light]', wait: 1600, still: 'f4-light' },
+      { tap: '[data-do=setTheme][data-a*=dark]', wait: 1200 },
+      { tap: 'do:back', wait: 800 },
+      { cap: 'The app speaks ten languages', capAt: 600, wait: 200 },
+      { tap: '[data-do=go][data-a*=\'"ui"\']', wait: 1000 },
+      { tap: '[data-do=setUi][data-a*=ja]', wait: 1300, still: 'f5-japanese' },
+      { tap: '[data-do=setUi][data-a*=es]', wait: 1100 },
+      { tap: '[data-do=setUi][data-a*=ko]', wait: 1100 },
+      { tap: '[data-do=setUi][data-a*=en]', wait: 1400 },
+      { tap: 'do:back', wait: 2400, still: 'f6-settings' },
+    ],
+  },
+
   /* The dictionary, in two films 「いいよ」 OWNER 2026-09-30 -- the one
      film asked for was split in two: making words, and using the
      dictionary. Filmed as the keyboard film was (393x852, 1080x2340, hq,
