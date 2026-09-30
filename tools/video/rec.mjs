@@ -303,6 +303,12 @@ async function open(br) {
      of a post, and here it says the row landed. */
   await pg.evaluate(() => { window.netPush = function (p, ok) { if (ok) setTimeout(function () { ok('v' + Date.now()); }, 350 * (window.__vK || 1)); }; });
   await pg.evaluate(() => { window.netPop = function () { if (typeof netSpin === 'function') netSpin(false); return true; }; });
+  /* And the star a press puts over the screen while its request is out
+     (netOn(), www/net.js) is not put up: with no server here a request
+     somebody pressed for -- a letter's save sends more than netSaveNow() --
+     is never answered, and the star stood over the rest of the film and
+     took every press after it. */
+  await pg.evaluate(() => { window.netOn = function () {}; });
   return { ctx, pg };
 }
 

@@ -280,6 +280,52 @@ export const SCRIPTS = {
     ],
   },
 
+  /* The alphabet chapter, round the whole of it: the three lists, a letter's
+     sound, a letter borrowed from a script that exists, the marks, the digits
+     and the base they count in, and the way out as a font. */
+  'alphabet': {
+    view: [393, 852, 3], size: [1080, 2340], out: 'promo/alphabet', hq: true, slow: 2,
+    music: 'atlasaudio-music-background-606270.mp3',
+    setup: [{ go: 'letters' }],
+    steps: [
+      { cap: 'Your alphabet, all in one place', capAt: 600, wait: 1800, still: 'a1-letters' },
+      { cap: 'a to z, in your own shapes', capAt: 600, wait: 200 },
+      { tap: '[data-do=go][data-a=\'["ltset","alpha"]\']', wait: 1800, still: 'a2-alphabet' },
+      { cap: 'Tap to hear one', capAt: 600, wait: 200 },
+      { tap: 'do:sayPh', nth: 0, wait: 900 },
+      { tap: 'do:sayPh', nth: 1, wait: 1000 },
+      { cap: 'Sort them your way', capAt: 600, wait: 200 },
+      { tap: 'do:nextLtSort', wait: 1500 },
+      { tap: 'do:nextLtSort', wait: 900 },
+      { cap: 'Every letter has a sound', capAt: 600, wait: 200 },
+      { tap: '[data-do=ltGo][data-a=\'["lt.c"]\']', wait: 1000 },
+      { tap: 'do:openSnd', wait: 1200, still: 'a3-sounds' },
+      { cap: 'Hear every sound of your language', capAt: 600, wait: 200 },
+      { tap: 'do:sayPh', nth: 0, wait: 800 },
+      { tap: 'do:sayPh', nth: 4, wait: 800 },
+      { tap: 'do:sayPh', nth: 6, wait: 1000 },
+      { tap: 'do:back', wait: 900 },
+      { cap: 'Or borrow one from a real script', capAt: 600, wait: 200 },
+      { tap: 'do:back', wait: 900 },
+      { tap: '[data-do=ltGo][data-a=\'["lt.q"]\']', wait: 1000 },
+      { tap: 'do:openPick', wait: 1200, still: 'a4-scripts' },
+      { tap: '[data-do=pkKind][data-a*=greek]', wait: 1100 },
+      { tap: '[data-do=pkTake][data-a*="Ψ"]', wait: 900 },
+      { tap: 'do:keepPress', wait: 700 },
+      { tap: 'do:back', wait: 1800, still: 'a5-borrowed' },
+      { cap: 'Even ! and ? are yours', capAt: 600, wait: 200 },
+      { tap: 'do:back', wait: 700 },
+      { tap: 'do:back', wait: 900 },
+      { tap: '[data-do=go][data-a=\'["ltset","mark"]\']', wait: 1800 },
+      { cap: 'Your own digits too', capAt: 600, wait: 200 },
+      { tap: 'do:back', wait: 800 },
+      { tap: '[data-do=go][data-a=\'["ltset","num"]\']', wait: 1800, still: 'a6-digits' },
+      { cap: 'Take them out as a font', capAt: 600, wait: 200 },
+      { tap: 'do:back', wait: 800 },
+      { tap: '[data-do=go][data-a=\'["ltout"]\']', wait: 3400, still: 'a8-export' },
+    ],
+  },
+
   /* The dictionary, in two films 「いいよ」 OWNER 2026-09-30 -- the one
      film asked for was split in two: making words, and using the
      dictionary. Filmed as the keyboard film was (393x852, 1080x2340, hq,

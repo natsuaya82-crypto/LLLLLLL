@@ -6,7 +6,7 @@
 
 | ファイル | 長さ | 作者（名前から） | 使った動画 |
 |---|---|---|---|
-| `atlasaudio-music-background-606270.mp3` | 2:10 | atlasaudio | ― |
+| `atlasaudio-music-background-606270.mp3` | 2:10 | atlasaudio | `promo/alphabet/alphabet.mp4` |
 | `echoes_of_lumen-vlog-background-music-596303.mp3` | 0:57 | echoes_of_lumen | `promo/keyboard/keyboard-reddit.mp4` |
 | `sigmamusicart-background-music-inspiring-525840.mp3` | 2:07 | sigmamusicart | `promo/draw/draw-tools.mp4` |
 | `sub_clair-background-music-550483.mp3` | 2:11 | sub_clair | `promo/words/words-make.mp4` |
