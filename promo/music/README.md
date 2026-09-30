@@ -8,8 +8,8 @@
 |---|---|---|---|
 | `atlasaudio-music-background-606270.mp3` | 2:10 | atlasaudio | ― |
 | `echoes_of_lumen-vlog-background-music-596303.mp3` | 0:57 | echoes_of_lumen | `promo/keyboard/keyboard-reddit.mp4` |
-| `sigmamusicart-background-music-inspiring-525840.mp3` | 2:07 | sigmamusicart | ― |
-| `sub_clair-background-music-550483.mp3` | 2:11 | sub_clair | ― |
-| `verclub_music-background-music-571037.mp3` | 2:54 | verclub_music | ― |
+| `sigmamusicart-background-music-inspiring-525840.mp3` | 2:07 | sigmamusicart | `promo/draw/draw-tools.mp4` |
+| `sub_clair-background-music-550483.mp3` | 2:11 | sub_clair | `promo/words/words-make.mp4` |
+| `verclub_music-background-music-571037.mp3` | 2:54 | verclub_music | `promo/words/words-use.mp4` |
 
 使い方: `tools/video/scripts.mjs` の台本に `music: 'ファイル名'` と書くと、`tools/video/rec.mjs` がタップ音の下に小さく敷き、最後の 2 秒でフェードアウトさせる。
