@@ -851,6 +851,7 @@ defLang('en', (function(){
       'confirm.wipe.langs' : "Delete {0}? Everything made in it goes -- the words, the letters, the writing system, the keyboard, the notes and the sounds. It is removed from your account, so it will not come back on another phone. Your other languages, your posts and your account stay. This cannot be undone.",
       /* languages */
       'langs.title'     : "Languages",
+      'dl.langs'        : "Downloadable languages",
       'langs.mine'      : "Your languages",
       'langs.reading'   : "Reading",
       'langs.untitled'  : "Untitled",

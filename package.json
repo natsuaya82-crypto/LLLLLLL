@@ -38,6 +38,7 @@
     "layer": "node tools/layer-check.mjs",
     "guide": "node tools/guide-check.mjs",
     "block": "node tools/block-check.mjs",
+    "official": "node tools/official-check.mjs",
     "base": "node tools/base-check.mjs",
     "word": "node tools/word-check.mjs",
     "gen": "node tools/gen-check.mjs",

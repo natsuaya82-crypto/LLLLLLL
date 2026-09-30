@@ -504,6 +504,13 @@ export function seed(){
      not the length of two lists this phone read (www/me.js § whoOf). */
   WHO_HAVE.aya  = { who:'Aya',  hd:'aya',  av:null, lname:'Shango',
                     bio:'', fo:2, fr:1, out:false };
+  /* AND AN OFFICIAL ACCOUNT (profile.official, docs/FEATURE_RULES.md
+     2026-09-30): its page draws 「DL可能言語」 where everybody else's draws a
+     language, and the list behind it is what it has published (DL_HAVE,
+     www/me.js § vDlLangs). */
+  WHO_HAVE.lingua = { who:'Lingua', hd:'lingua', av:null, lname:'',
+                      bio:'', fo:0, fr:5, out:false, off:true, uid:'u-lingua' };
+  DL_HAVE.lingua = [{ id:'L-voy', name:'Voynich' }, { id:'L-rong', name:'Rongorongo' }];
   /* AND WHETHER YOU FOLLOW EACH OF THEM, AND THEY YOU -- the door onto any
      page that draws a person asks it (`rel`, www/me.js § REL). */
   REL = { iri:{i:true, u:true}, veth:{i:true, u:false} };
@@ -1598,6 +1605,23 @@ export function halfDone(){
         WHO_HAVE['iri'] = { who:'Iri', hd:'iri', av:{ch:'Ж'}, lname:'Vethi',
                              bio:'', fo:2, fr:3, out:false };
         return h; }],
+    /* ---- 公式アカウント（profile.official、決定 2026-09-30）---------------
+       言語の一行の代わりに「DL可能言語」の一行。人のページとして見る顔、自分が
+       公式の時の自分のページ、その先の一覧（二つ）、空の一覧。 */
+    ['an official account\'s profile', () => {
+        window.route='profile'; NAV=[{r:'profile', a:'lingua'}];
+        const h = vProfile(); NAV=[{r:'profile'}]; return h; }],
+    ['your own profile, when this account is official', () => {
+        window.route='profile'; NAV=[{r:'profile'}];
+        WHO_HAVE.aya.off = true;
+        const h = vProfile(); WHO_HAVE.aya.off = false; return h; }],
+    ['an official account\'s languages', () => {
+        window.route='dllangs'; NAV=[{r:'profile', a:'lingua'}, {r:'dllangs', a:'lingua'}];
+        const h = vDlLangs(); NAV=[{r:'profile'}]; window.route='profile'; return h; }],
+    ['an official account\'s languages, none', () => {
+        window.route='dllangs'; NAV=[{r:'profile', a:'lingua'}, {r:'dllangs', a:'nobody'}];
+        DL_HAVE.nobody = [];
+        const h = vDlLangs(); delete DL_HAVE.nobody; NAV=[{r:'profile'}]; window.route='profile'; return h; }],
     /* 長いときは一行のまま、はみ出た分が … になります（meWhereRow）。
        リンクが先に縮み、位置は入る限り全部。三つの形と、人のページ。 */
     ...[['both', 'tokinets.com/lingua/a-very-long-address-that-goes-on', '谷の上の古い図書館のとなり'],

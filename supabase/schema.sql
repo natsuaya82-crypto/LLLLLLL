@@ -121,6 +121,18 @@ alter table profile add column if not exists loc text
 -- second one it should become a table of its own rather than a second boolean.
 alter table profile add column if not exists staff boolean not null default false;
 
+-- And the official mark: this account is Lingua's own, and its page offers
+-- the languages it has published in place of the one language every other
+-- profile shows (docs/FEATURE_RULES.md 2026-09-30, 「アンタイトルドのところが
+-- そもそもみんなと違くなるようにしたいの」). It answers that one question and
+-- no other -- not staff, not a plan, not a badge.
+--
+-- Set by hand, the way `staff` is: no grant at the foot of this file names it,
+-- so no account can write it on itself or anybody else. Read by everybody
+-- signed in, through `profile_seen`. rls-check: 「B cannot make itself
+-- official」.
+alter table profile add column if not exists official boolean not null default false;
+
 -- And the one above it, which is a different question: not "may this account
 -- answer a report" but "may this account decide WHO answers reports". One
 -- person holds it -- 「俺は権限者で他はスタッフみたいな感じで」 -- and nothing
@@ -2329,6 +2341,8 @@ create view profile_seen as
          badge_of(p.id) as badge,
          -- the post at the top of their page (profile.pin), for whoever reads it
          p.pin,
+         -- whether this is Lingua's own account (profile.official)
+         p.official,
          (select count(*) from follow f where f.follower = p.id) as fo,
          (select count(*) from follow f where f.followed = p.id) as fr,
          l.id                          as lang_id,

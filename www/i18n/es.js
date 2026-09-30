@@ -898,6 +898,7 @@ defLang('es', (function(){
       "confirm.wipe"     : "¿Borrar todo? Tu cuenta y cada publicación, foto y grabación se eliminan del servidor; los idiomas, las letras y los ajustes se eliminan de este teléfono. No se puede deshacer. Cancela tu suscripción antes de eliminar tu cuenta.",
       "confirm.wipe.langs": "¿Eliminar {0}? Se pierde todo lo creado en él: las palabras, las letras, el sistema de escritura, el teclado, las notas y los sonidos. Se elimina de tu cuenta, así que no volverá en otro teléfono. Tus otros idiomas, tus publicaciones y tu cuenta permanecen. Esto no se puede deshacer.",
       "langs.title"      : "Idiomas",
+      "dl.langs"         : "Idiomas descargables",
       "langs.mine"       : "Tus idiomas",
       "langs.reading"    : "Lectura",
       "langs.untitled"   : "Sin título",

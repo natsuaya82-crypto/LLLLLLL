@@ -120,9 +120,8 @@ was made — is a fifth (`langMadeOf()`, `lingua.<id>.made.got`, 2026-09-12).
 the rule the server already wrote down rather than a second one: `profile_seen`
 picks `lang_id` by ordering `language_seen` `created_at asc limit 1`
 (`supabase/schema.sql`), so the language on somebody's profile is already the
-first one they made — except an official account's, whose profile lists the
-languages it publishes in that line's place (OWNER 2026-09-30; a mark on the
-server says which accounts are official, r152). The phone reads the same column in the same direction.
+first one they made — except on an official account, whose page shows its
+published languages instead (§ Lingua's own account). The phone reads the same column in the same direction.
 `langsByAge()` (`www/core.js`) is the one place that puts a list of languages in
 that order — a language with no answer goes LAST, because one minted here and
 not yet sent is the newest thing in the index — `langMainId()` is its first
@@ -927,6 +926,18 @@ be the opposite — it would hold somebody to a change they have not made.
 
 **It is not on `profile_seen`.** When somebody last changed their name is not
 something other people are shown.
+
+## Lingua's own account
+
+**The column: `profile.official`, a boolean, false unless set.** Whether this
+account is Lingua's own — today @lingua alone (docs/FEATURE_RULES.md
+2026-09-30). It answers one question: on this account's page, the one
+language a profile shows is replaced by 「DL可能言語」, the languages it has
+published (`vDlLangs()` in `www/me.js`, read by `netDlLangs()`). It is **in
+neither grant on `profile`**, the way `staff` is not, so no account can write
+it on itself or anybody else — it is set in the dashboard or by a file under
+`supabase/once/`. It **is** on `profile_seen`, for everybody signed in, because
+somebody else's page is drawn from it. `rls-check` holds both halves.
 
 ## What money is allowed to touch
 
