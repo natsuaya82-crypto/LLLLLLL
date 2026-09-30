@@ -817,18 +817,34 @@ function ltHidHTML(k){
   if(!n) return '';
   return capWarnHTML(t('cap.hid', n));
 }
-function ltSeen(){
-  if(!langShaped(can('letters'))) return LETTERS;
-  return LETTERS.filter(ltIsBase);
+/* AND ON SOMEBODY ELSE'S LANGUAGE, ONLY WHAT ITS MAKER DREW.
+   「DLした言語はDLした分だけ入るんだからなんで鉛筆が出るの？」「書いてない文字
+   が入る必要があるの？」 OWNER 2026-09-30. Every language is born with the
+   slots (ltSlotsFill), so a taken one arrived with every slot its maker never
+   drew on, each a pencil its taker cannot use. Drawn is ltHasShape() -- a
+   shape or a borrowed character -- the one sentence for 「somebody made
+   something of this letter」. Nothing leaves the maker's slices: this is what
+   is SHOWN, and the plan's fold above is the other half of the same answer.
+
+   ltShown() is the question, of one letter of the open language; ltSeen() is
+   the alphabet it lets through, and everything that lists or offers the
+   letters asks one of the two (tools/taken-check.mjs walks every face). */
+function ltShown(l){
+  if(langTheirs(langId)) return ltHasShape(l);
+  return !langShaped(can('letters')) || ltIsBase(l);
 }
-/* How many are not on screen. With no room named it is the alphabet entire,
+function ltSeen(){ return LETTERS.filter(ltShown); }
+/* How many the PLAN is keeping off the screen -- the fold, and only the fold:
+   a slot somebody else's language was never drawn on is not hidden from
+   anybody, and saying 「N hidden」 about it would be an upgrade line on a
+   language no plan touches. With no room named it is the alphabet entire,
    which is what the settings row asks; named a room, it is that room's own --
    the digits room said "4 hidden" while every digit it holds was on screen,
-   because the number it printed was the whole alphabet's. It is the one split
-   ltOfKind() makes, asked of LETTERS instead of ltSeen(). */
+   because the number it printed was the whole alphabet's. */
 function ltHidden(k){
-  if(!k) return LETTERS.length-ltSeen().length;
-  return ltOfKindIn(LETTERS,k).length-ltOfKind(k).length;
+  var list=k? ltOfKindIn(LETTERS,k) : LETTERS;
+  if(!langShaped(can('letters'))) return 0;
+  return list.filter(function(l){ return !ltIsBase(l); }).length;
 }
 function ltOfKind(k){ return ltOfKindIn(ltSeen(),k); }
 function ltOfKindIn(list,k){
@@ -1162,8 +1178,10 @@ function vLtset(){
        sound whose letter the free plan hides, each asking to be drawn again.
        「無料に戻ったけど…それ以外の文字が普通にいるってこと」 OWNER
        2026-09-01. can('snd') is the same door the sound chart behind a letter
-       is already behind; nothing is deleted and paying brings the offer back. */
-    var free=(pick && can('snd') && ltFil==='all' && !ltQ)? sndLoose() : [];
+       is already behind; nothing is deleted and paying brings the offer back.
+       And not on somebody else's language, on any plan: a cell here MAKES a
+       letter, and its taker draws none (langLocked, OWNER 2026-09-30). */
+    var free=(pick && !langLocked() && can('snd') && ltFil==='all' && !ltQ)? sndLoose() : [];
     if(!list.length && !free.length)
       return '<div class="note">'+t('lt.none')+'</div>';
     return '<div class="ltgrid'+(ltWob? ' held':'')+'" id="'+gid+'" data-k="'+esc(k)+'">'+
