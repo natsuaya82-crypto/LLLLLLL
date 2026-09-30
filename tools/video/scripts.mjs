@@ -628,6 +628,32 @@ export const SCRIPTS = {
     ],
   },
 
+  /* A draft: a line kept for later and picked up again. The drafts list
+     waits for the server's answer (pullHad('drafts')); here it is told it
+     has one, and netDraftUp() is heard in rec.mjs. p1 out as in 'post'. */
+  'drafts': {
+    view: [393, 852, 3], size: [1080, 2340], out: 'promo/drafts', hq: true, slow: 2,
+    music: 'sub_clair-background-music-550483.mp3',
+    setup: [{ eval: "POSTS = POSTS.filter(function (p) { return p.id !== 'p1'; }); PULL_GOT[pullKey('drafts')] = 1; render();" }, { go: 'feed' }],
+    steps: [
+      { cap: 'Not finished yet?', capAt: 600, wait: 200 },
+      { tap: '[data-do=openPost][data-a*=new]', wait: 900 },
+      { type: 'kano mos', lingua: true, into: 'do:pwFocusLn', delay: 260, wait: 900 },
+      { cap: 'Keep it as a draft', capAt: 600, wait: 200 },
+      { tap: 'do:draftKeep', wait: 1900, still: 'd1-kept' },
+      { cap: 'Pick it up any time', capAt: 600, wait: 200 },
+      { tap: '[data-do=openPost][data-a*=new]', wait: 900 },
+      { tap: '[data-do=go][data-a*=drafts]', wait: 1500, still: 'd2-list' },
+      { tap: '[data-do=draftOpen][data-a="[0]"]', wait: 1100 },
+      { cap: 'Finish it', capAt: 600, wait: 200 },
+      { tap: 'do:pwFocusLn', wait: 200 },
+      { eval: "(function(){var e=document.getElementById('pw-ln'); e.focus(); if(e.setSelectionRange){e.setSelectionRange(e.value.length,e.value.length);} else {var r=document.createRange(); r.selectNodeContents(e); r.collapse(false); var s=getSelection(); s.removeAllRanges(); s.addRange(r);}})()", wait: 150 },
+      { type: ' sar', lingua: true, delay: 260, wait: 900, still: 'd3-open' },
+      { tap: 'do:pwSend', wait: 1800 },
+      { cap: 'And post it', capAt: 600, wait: 2600, still: 'd4-posted' },
+    ],
+  },
+
   /* The dictionary, in two films 「いいよ」 OWNER 2026-09-30 -- the one
      film asked for was split in two: making words, and using the
      dictionary. Filmed as the keyboard film was (393x852, 1080x2340, hq,

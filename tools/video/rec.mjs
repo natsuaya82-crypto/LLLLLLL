@@ -309,6 +309,9 @@ async function open(br) {
      is never answered, and the star stood over the rest of the film and
      took every press after it. */
   await pg.evaluate(() => { window.netOn = function () {}; });
+  /* And a draft kept is heard the same way: netDraftUp() is the one send
+     of a draft, and here it says the row landed. */
+  await pg.evaluate(() => { window.netDraftUp = function (d, ok) { setTimeout(function () { ok(null); }, 250 * (window.__vK || 1)); }; });
   /* And a profile's save is heard the way a language's is: netPut() is the
      one save for a profile row and a language's columns (the writing
      system is one), and here those two say they landed with what they
