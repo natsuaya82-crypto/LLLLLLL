@@ -402,6 +402,36 @@ export const SCRIPTS = {
     ],
   },
 
+  /* The timeline, used: somebody else's post answered in your
+     own letters and made into a card; a maker's profile, and the notices.
+     What waits on the server is not in it (no server here): opening a
+     thread, a like, a repost, a tag's search, a voice (its file), and the
+     profile's photos and likes tabs. p1 is taken out as in 'post'. */
+  'timeline': {
+    view: [393, 852, 3], size: [1080, 2340], out: 'promo/timeline', hq: true, slow: 2,
+    music: 'verclub_music-background-music-571037.mp3',
+    setup: [{ eval: "POSTS = POSTS.filter(function (p) { return p.id !== 'p1'; }); render();" }, { go: 'feed' }],
+    steps: [
+      { cap: 'A timeline where everyone writes their own language', capAt: 600, wait: 2400, still: 't1-feed' },
+      { cap: 'Reply in your own letters', capAt: 600, wait: 200 },
+      { tap: '[data-do=postReply][data-a*=p2]', wait: 1000 },
+      { type: 'sar mos', lingua: true, into: 'do:pwFocusLn', delay: 260, wait: 1200, still: 't2-reply' },
+      { tap: 'do:pwSend', wait: 1600 },
+      { cap: 'Share any post as a card', capAt: 600, wait: 200 },
+      { tap: '[data-do=postCard][data-a*=p2]', wait: 1800, still: 't3-card' },
+      { cap: 'In any shape', capAt: 600, wait: 200 },
+      { tap: '[data-do=cardSetShape][data-a*="1:1"]', wait: 1300 },
+      { tap: '[data-do=cardSetShape][data-a*="9:16"]', wait: 1500 },
+      { tap: 'do:back', wait: 900 },
+      { cap: 'Every maker has a profile', capAt: 600, wait: 200 },
+      { eval: "profileOpen('iri')", wait: 1500, still: 't6-profile' },
+      { cap: 'Their posts and their replies', capAt: 600, wait: 200 },
+      { tap: '[data-do=pfSetTab][data-a*=re]', wait: 2200 },
+      { cap: 'See who answered you', capAt: 600, wait: 200 },
+      { tap: '[data-do=goTab][data-a*=notif]', wait: 2600, still: 't7-notices' },
+    ],
+  },
+
   /* The dictionary, in two films 「いいよ」 OWNER 2026-09-30 -- the one
      film asked for was split in two: making words, and using the
      dictionary. Filmed as the keyboard film was (393x852, 1080x2340, hq,
