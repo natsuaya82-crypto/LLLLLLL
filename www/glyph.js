@@ -2590,11 +2590,18 @@ function gePinReset(){
 
    The same habit as the keyboard's sheet: pressing selects, and the buttons
    over the paper act on what is selected. With the rope down a finger does
-   not draw -- it throws a ring, and the dots inside it light, whichever
-   stroke they belong to and however long ago it was drawn. A lit dot pulled
-   takes every lit dot the same distance, on the lattice, and the lines that
-   run through them stretch and bend with them; the bin takes the lit dots and
-   every stretch of line that touches one.
+   not draw -- it throws a ring, and the STROKES inside it light, however long
+   ago they were drawn.
+
+   WHAT IS SELECTED IS A STROKE, WHOLE. 「そもそも線全体を選択して動かすのが
+   目的なんでしょ？」「選択してるのが縦の線なんだら横の線が動くのが謎」 OWNER
+   2026-09-30. GE.lsSel is a list of stroke numbers and nothing finer, and a
+   stroke is lit when the finger took EVERY dot of it. A dot is not a thing
+   the rope selects: the apex of an A is a dot of three strokes, and ringing
+   the vertical used to light it for all three, so the diagonals' tops went
+   with the vertical. A lit stroke pulled takes every lit stroke the same
+   distance, on the lattice, and a stroke that is not lit does not move one
+   dot, even where it meets a lit one; the bin takes the lit strokes.
 
    A THIRD ENTRANCE, beside the pinch, and for the pinch's reason: geDown,
    geMove and geUp are the drawing and are not told about any of this.
@@ -2608,11 +2615,9 @@ function geLasso(){
   GE.ls=!GE.ls; GE.lsSel=[]; GE.lsPath=null; GE.lsMove=null; GE.pi=-1;
   render();
 }
-/* whether stroke si's dot pi is lit */
-function geLsLit(si, pi){
-  var i, q=GE.lsSel||[];
-  for(i=0;i<q.length;i++) if(q[i][0]===si && q[i][1]===pi) return true;
-  return false;
+/* whether stroke si is lit */
+function geLsLit(si){
+  return (GE.lsSel||[]).indexOf(si)!==-1;
 }
 /* Inside the ring, the ring closed by its own ends. Even-odd, so a ring that
    crosses itself leaves out what it went round twice, which is what it
@@ -2671,29 +2676,35 @@ function geLsPast(path, q){
   for(i=1;i<path.length;i++) if(geLsSeg(q, path[i-1], path[i])<=r) return true;
   return false;
 }
-/* A lit dot within a step of the finger picks up all of them. Within a step,
-   not on the dot: the lit dots are there to be pulled, and a dot a third of a
-   fingertip across is something to aim at only when there is no other way. */
+/* A dot of a lit stroke within a step of the finger picks up all of them.
+   Within a step, not on the dot: the lit strokes are there to be pulled, and
+   a dot a third of a fingertip across is something to aim at only when there
+   is no other way. */
 function geLsNear(p){
-  var q=GE.lsSel||[], i, d, pt, best=-1, bd=geStep()*1.5;
+  var q=GE.lsSel||[], i, j, s, d, bd=geStep()*1.5;
   for(i=0;i<q.length;i++){
-    pt=GE.st[q[i][0]] && GE.st[q[i][0]].pts[q[i][1]];
-    if(!pt) continue;
-    d=Math.max(Math.abs(pt[0]-p[0]), Math.abs(pt[1]-p[1]));
-    if(d<=bd){ bd=d; best=i; }
+    s=GE.st[q[i]];
+    if(!s) continue;
+    for(j=0;j<s.pts.length;j++){
+      d=Math.max(Math.abs(s.pts[j][0]-p[0]), Math.abs(s.pts[j][1]-p[1]));
+      if(d<=bd) return true;
+    }
   }
-  return best;
+  return false;
 }
 function geLsDown(ev){
   if(ev.preventDefault) ev.preventDefault();
   var c=ev.currentTarget, raw=geXY(c,ev), i, q;
   GE.drag=true;
   if(c.setPointerCapture) try{ c.setPointerCapture(ev.pointerId); }catch(e){}
-  if(geLsNear(raw)>=0){
-    /* where every lit dot was, so the drag is always "where it was, plus how
-       far the finger has come" and never a sum of little steps */
+  if(geLsNear(raw)){
+    /* where every dot of every lit stroke was, so the drag is always "where
+       it was, plus how far the finger has come" and never a sum of little
+       steps */
     q=GE.lsSel; GE.lsMove={from:geAt(c,ev), was:[], moved:false};
-    for(i=0;i<q.length;i++) GE.lsMove.was.push(GE.st[q[i][0]].pts[q[i][1]].slice(0,2));
+    for(i=0;i<q.length;i++){
+      GE.lsMove.was.push(GE.st[q[i]].pts.map(function(pt){ return pt.slice(0,2); }));
+    }
     GE.pre=JSON.stringify(GE.st);
   }else{
     GE.lsMove=null; GE.lsSel=[]; GE.lsPath=[raw];
@@ -2704,22 +2715,22 @@ function geLsMove(ev){
   if(ev && ev.preventDefault) ev.preventDefault();
   if(!GE || !GE.drag) return;
   var c=ev.currentTarget, m=GE.lsMove, p, dx, dy, lo=GGRID.inset, hi=800-GGRID.inset,
-      i, w, x0=1e9, x1=-1e9, y0=1e9, y1=-1e9, pt, last;
+      i, j, w, x0=1e9, x1=-1e9, y0=1e9, y1=-1e9, pt, last;
   if(m){
     p=geAt(c,ev); dx=p[0]-m.from[0]; dy=p[1]-m.from[1];
     /* All of them the same distance, so the one nearest the edge says how
        far: a letter pulled against the side of the square stops there
        whole, rather than the dots at that side piling up on the edge. */
-    for(i=0;i<m.was.length;i++){
-      w=m.was[i];
+    for(i=0;i<m.was.length;i++) for(j=0;j<m.was[i].length;j++){
+      w=m.was[i][j];
       if(w[0]<x0) x0=w[0]; if(w[0]>x1) x1=w[0];
       if(w[1]<y0) y0=w[1]; if(w[1]>y1) y1=w[1];
     }
     if(dx<lo-x0) dx=lo-x0; if(dx>hi-x1) dx=hi-x1;
     if(dy<lo-y0) dy=lo-y0; if(dy>hi-y1) dy=hi-y1;
-    for(i=0;i<GE.lsSel.length;i++){
-      pt=GE.st[GE.lsSel[i][0]].pts[GE.lsSel[i][1]];
-      pt[0]=m.was[i][0]+dx; pt[1]=m.was[i][1]+dy;
+    for(i=0;i<GE.lsSel.length;i++) for(j=0;j<m.was[i].length;j++){
+      pt=GE.st[GE.lsSel[i]].pts[j];
+      pt[0]=m.was[i][j][0]+dx; pt[1]=m.was[i][j][1]+dy;
     }
     if(dx||dy) m.moved=true;
     geDraw();
@@ -2745,58 +2756,28 @@ function geLsUp(ev){
     GE.lsSel=[];
     /* What the finger did says which of the two it was, and there is one
        button: 「投げ縄に、なぞったら線が動かせる機能も追加して」 OWNER
-       2026-09-27. A ring (geLsShut) lights the dots inside it; a trace
-       lights the dots it passed and stops where it stopped. A tap is
-       neither, and puts the lit dots out. */
+       2026-09-27. A ring (geLsShut) takes the dots inside it; a trace
+       takes the dots it passed. A stroke every dot of which was taken is
+       lit, and one the finger took only part of is not. A tap is neither,
+       and puts the lit strokes out. */
     var shut=geLsShut(ring);
     if(ring.length>=2){
       GE.st.forEach(function(s, si){
-        s.pts.forEach(function(q, pi){
-          if(shut? geLsIn(ring, q) : geLsPast(ring, q)) GE.lsSel.push([si, pi]);
-        });
+        if(s.pts.length && s.pts.every(function(q){
+          return shut? geLsIn(ring, q) : geLsPast(ring, q);
+        })) GE.lsSel.push(si);
       });
     }
     GE.lsPath=null;
   }
   geDraw(); geTools();
 }
-/* The bin. A lit dot goes, and so does every stretch of line that has it at
-   one end: what is left of a stroke is the runs of dots between the lit
-   ones, each a stroke of its own, not one dot of them moved. A closed
-   stroke opened by the bin runs on round its join, so it comes apart into
-   as few pieces as the lit dots make.
-
-   A run of ONE dot is not kept: it was the end of a stretch that has gone,
-   and a dot left on its own would be drawn as a blot of ink nobody made. A
-   stroke that was a single dot to begin with is somebody's dot, and unless
-   it is lit it is not touched. */
+/* The bin takes the lit strokes, whole, and every other stroke is left
+   exactly as it was. */
 function geLsBin(){
   if(!GE || !(GE.lsSel||[]).length) return;
   geMark();
-  var out=[];
-  GE.st.forEach(function(s, si){
-    var n=s.pts.length, hit=[], any=false, i, start, run, piece, key;
-    for(i=0;i<n;i++){ hit.push(geLsLit(si, i)); if(hit[i]) any=true; }
-    if(!any){ out.push(s); return; }
-    start=0;
-    if(s.closed){ for(i=0;i<n;i++) if(hit[i]){ start=i+1; break; } }
-    run=[];
-    function flush(){
-      if(run.length>=2){
-        piece={pts:run};
-        for(key in s){
-          if(s.hasOwnProperty(key) && key!=='pts' && key!=='closed' && key!=='k') piece[key]=s[key];
-        }
-        out.push(piece);
-      }
-      run=[];
-    }
-    for(i=0;i<n;i++){
-      var j=(start+i)%n;
-      if(hit[j]) flush(); else run.push(s.pts[j]);
-    }
-    flush();
-  });
+  var out=GE.st.filter(function(s, si){ return !geLsLit(si); });
   GE.st=out;
   GE.lsSel=[]; GE.si=GE.st.length-1; GE.pi=-1;
   GE.seal=!!(GE.st.length && GE.st[GE.st.length-1].pts.length);
@@ -3060,9 +3041,10 @@ function geDraw(){
   }
   GE.st.forEach(function(s,si){
     s.pts.forEach(function(p,pi){
-      var lit=GE.ls && geLsLit(si, pi);
-      /* a lit dot is the chosen dot's own mark, a size down so that a row of
-         them lit side by side are still dots and not one gold bar */
+      var lit=GE.ls && geLsLit(si);
+      /* every dot of a lit stroke wears the chosen dot's own mark, a size
+         down so that a row of them lit side by side are still dots and not
+         one gold bar */
       if(lit){
         x.beginPath(); x.arc(X(p[0]),Y(p[1]),k*15,0,Math.PI*2);
         x.fillStyle = (p[2]==='c') ? cssVar('--pur') : cssVar('--gold'); x.fill();
