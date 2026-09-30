@@ -723,7 +723,6 @@ defLang('es', (function(){
       "glyph.width" : "Grosor",
       "glyph.width.n" : "Grosor {0}",
       "glyph.layer" : "Capa {0}",
-      "glyph.layer.n" : "{0}",
       "glyph.layer.add" : "Añadir capa",
       "fmr.title"        : "Formas hechas por una regla",
       "fmr.add"          : "Letras que añade",

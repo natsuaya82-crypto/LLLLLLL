@@ -231,7 +231,30 @@ const r = await pg.evaluate(async ({s}) => {
   if (plus) plus.click();
   out.plus = GE.lys === 3 && GE.ly === 3 && GE.st.length === 0;
   out.rowSays = [].map.call(document.querySelectorAll('.glayers button'), function(b){
-    return (/\bon\b/.test(b.className) ? '*' : '') + (b.textContent || '+'); }).join(' ');
+    return (/\bon\b/.test(b.className) ? '*' : '') + (b.getAttribute('data-a') || '+'); }).join(' ');
+
+  /* ---- each layer is a small picture of its own strokes ----------------- */
+  inkSet(l, [{pts:[P(4,4), P(4,16)]}, {pts:[P(12,4), P(12,16)], ly:2}]);
+  GE = null; editLetter(l.id); render(); geLayerAdd(); geLayer(2); geDraw();
+  /* ink inside the frame, left and right of the line half-way between the
+     two strokes -- layer 1's is left of it and layer 2's right */
+  function pic(n){
+    var c = document.querySelector('canvas.glyc[data-ly="' + n + '"]');
+    if (!c) return null;
+    var S = c.width, d = c.getContext('2d').getImageData(0, 0, S, S).data, cut = (P(4,0)[0] + P(12,0)[0]) / 2 / 800 * S;
+    var o = { left:0, right:0 }, m = Math.ceil(S / 12), px, py;
+    for (py = m; py < S - m; py++) for (px = m; px < S - m; px++)
+      if (d[(py*S + px)*4 + 3] > 0) { if (px < cut) o.left++; else o.right++; }
+    return o;
+  }
+  out.pic = [pic(1), pic(2), pic(3)];
+  out.picText = [].map.call(document.querySelectorAll('.glayers button'), function(b){ return b.textContent; }).join('');
+  out.picOn = !!document.querySelector('.glayers button.on canvas.glyc[data-ly="2"]');
+  /* and it moves with the finger, with nothing rendered in between */
+  geLayer(1); var b1 = pic(1);
+  drag(P(10,4), P(10,16));
+  var a1 = pic(1);
+  out.picMoves = b1 && a1 && a1.right > b1.right;
 
   /* ---- the baseline on the paper ---------------------------------------- */
   GE = null; editLetter(l.id); GE.st = []; GE.rest = []; render(); geDraw();
@@ -283,6 +306,14 @@ say(r.undoLeft, 'every step back on layer 1 leaves what was drawn on layer 2');
 say(r.savedLy === '1,2,2', 'saved, both layers come back, in layer order: ' + r.savedLy);
 say(r.plus, 'the + makes a third layer and puts you on it: ' + r.rowSays);
 
+var pc = r.pic;
+say(pc[0] && pc[1] && pc[2] && pc[0].left > 0 && pc[1].right > 0 && pc[0].left + pc[0].right > pc[2].left + pc[2].right,
+    'each layer is a picture of what is on it: 1 inks ' + (pc[0] && pc[0].left) + ', 2 inks ' + (pc[1] && pc[1].right) +
+    ', the empty 3 inks ' + (pc[2] && pc[2].left + pc[2].right));
+say(pc[0] && pc[1] && pc[0].right === 0 && pc[1].left === 0,
+    'and only what is on it: layer 2\'s stroke in 1\'s picture ' + (pc[0] && pc[0].right) + ', 1\'s in 2\'s ' + (pc[1] && pc[1].left));
+say(r.picText === '' && r.picOn, 'the row is pictures and no words, the chosen one marked: "' + r.picText + '"');
+say(r.picMoves, 'the picture of the layer being drawn on moves with the finger');
 say(r.noPad, 'the square drawn again small under the rail is gone');
 say(/^gwidth.* glayers$/.test(r.after), 'and under the rail are the width and the layers: ' + r.after);
 say(r.baseRow > 0.95 && r.offRow < 0.5, 'the paper draws the baseline across the whole canvas at geBase() (' +

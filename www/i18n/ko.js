@@ -942,7 +942,6 @@ defLang('ko', (function(){
       "glyph.width" : "굵기",
       "glyph.width.n" : "굵기 {0}",
       "glyph.layer" : "레이어 {0}",
-      "glyph.layer.n" : "{0}",
       "glyph.layer.add" : "레이어 추가",
       "fmr.title"        : "규칙으로 만드는 형태",
       "fmr.add"          : "붙이는 글자",

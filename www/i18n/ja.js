@@ -679,7 +679,6 @@ defLang('ja', (function(){
       'glyph.width' : "太さ",
       'glyph.width.n' : "太さ {0}",
       'glyph.layer' : "レイヤー {0}",
-      'glyph.layer.n' : "{0}",
       'glyph.layer.add' : "レイヤーを追加",
       'fmr.title'        : "規則で作る形",
       'fmr.add'          : "付ける文字",

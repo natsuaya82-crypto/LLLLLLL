@@ -811,7 +811,6 @@ defLang('fr', (function(){
       "glyph.width" : "Épaisseur",
       "glyph.width.n" : "Épaisseur {0}",
       "glyph.layer" : "Calque {0}",
-      "glyph.layer.n" : "{0}",
       "glyph.layer.add" : "Ajouter un calque",
       "fmr.title"        : "Formes faites par une règle",
       "fmr.add"          : "Lettres ajoutées",

@@ -770,7 +770,6 @@ defLang('pt', (function(){
       "glyph.width" : "Espessura",
       "glyph.width.n" : "Espessura {0}",
       "glyph.layer" : "Camada {0}",
-      "glyph.layer.n" : "{0}",
       "glyph.layer.add" : "Adicionar camada",
       "fmr.title"        : "Formas feitas por uma regra",
       "fmr.add"          : "Letras que acrescenta",
