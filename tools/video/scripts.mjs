@@ -742,6 +742,35 @@ export const SCRIPTS = {
     ],
   },
 
+  /* Letters on a photograph: the photo is opened from the composer, a line
+     of your own letters is put on it, moved, coloured, and the photo is cut
+     to size. What is put on it is drawn INTO the picture when it is sent
+     (post-check). The photo is tools/video/photo-mountains.jpg. */
+  'photo-letters': {
+    view: [393, 852, 3], size: [1080, 2340], out: 'promo/post', hq: true, slow: 2,
+    music: 'sigmamusicart-background-music-inspiring-525840.mp3',
+    setup: [{ eval: "POSTS = POSTS.filter(function (p) { return p.id !== 'p1'; }); render();" }, { go: 'feed' },
+            { tap: '[data-do=openPost][data-a*=new]', wait: 600 },
+            { pick: 'tools/video/photo-mountains.jpg' }, { tap: 'do:pwPickLib', wait: 900 }],
+    steps: [
+      { cap: 'Write on your photo', capAt: 600, wait: 200 },
+      { tap: '[data-do=pwMarkOpen]', wait: 1400, still: 'pl1-open' },
+      { tap: '[data-do=pwTool][data-a*=mark]', wait: 700 },
+      { type: 'kano mos', lingua: true, into: '#mk-tx', delay: 260, wait: 900, still: 'pl2-typed' },
+      { cap: 'Any colour', capAt: 600, wait: 200 },
+      { tap: '[data-do=pwMarkInk][data-a*=mk2]', wait: 700 },
+      { tap: '[data-do=pwMarkInk][data-a*=mk5]', wait: 700 },
+      { tap: '[data-do=pwMarkInk][data-a*=mk0]', wait: 900 },
+      { cap: 'Any size', capAt: 600, wait: 200 },
+      { draw: [[[0.5, 0.5], [0.5, 0.32]], [[0.5, 0.32], [0.5, 0.62]]], on: '#mk-size', gap: 300, wait: 1200, still: 'pl3-size' },
+      { cap: 'Done', capAt: 600, wait: 200 },
+      { tap: '[data-do=pwMarkClose]', nth: 1, wait: 1300, still: 'pl4-back' },
+      { type: 'kano mos', lingua: true, into: 'do:pwFocusLn', delay: 220, wait: 600 },
+      { cap: 'Your letters go with the photo', capAt: 600, wait: 200 },
+      { tap: 'do:pwSend', wait: 2800, still: 'pl5-posted' },
+    ],
+  },
+
   /* The dictionary, in two films 「いいよ」 OWNER 2026-09-30 -- the one
      film asked for was split in two: making words, and using the
      dictionary. Filmed as the keyboard film was (393x852, 1080x2340, hq,
