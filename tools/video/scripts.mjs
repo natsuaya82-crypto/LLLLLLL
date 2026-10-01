@@ -693,6 +693,26 @@ export const SCRIPTS = {
     ],
   },
 
+  /* Find: one search over the whole language -- words, meanings, and every
+     word a sound or a letter is in (vFind, www/home.js). */
+  'find': {
+    view: [393, 852, 3], size: [1080, 2340], out: 'promo/find', hq: true, slow: 2,
+    music: 'verclub_music-background-music-571037.mp3',
+    setup: [{ eval: DICT_TIDY }, { go: 'build' }],
+    steps: [
+      { cap: 'Find anything in your language', capAt: 600, wait: 200 },
+      { tap: '[data-do=go][data-a*=find]', wait: 1700, still: 'n1-find' },
+      { cap: 'By word or meaning', capAt: 600, wait: 200 },
+      { type: 'mountain', into: '#f-q', delay: 140, wait: 2000, still: 'n2-word' },
+      { tap: '#f-x', wait: 800 },
+      { cap: 'Every word with a sound', capAt: 600, wait: 200 },
+      { tap: '[data-do=fPick][data-a=\'["s","k"]\']', wait: 2200, still: 'n3-sound' },
+      { tap: '[data-do=fPick][data-a=\'["s","k"]\']', wait: 800 },
+      { cap: 'Every word with a letter', capAt: 600, wait: 200 },
+      { tap: '[data-do=fPick][data-a=\'["l","lt.a"]\']', wait: 2600, still: 'n4-letter' },
+    ],
+  },
+
   /* The dictionary, in two films 「いいよ」 OWNER 2026-09-30 -- the one
      film asked for was split in two: making words, and using the
      dictionary. Filmed as the keyboard film was (393x852, 1080x2340, hq,
