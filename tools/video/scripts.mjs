@@ -715,6 +715,33 @@ export const SCRIPTS = {
     ],
   },
 
+  /* A keyboard, part 2: a second layer (and the keys to it and back, put
+     on by the app), the roman letter on every key, and changing the
+     arrangement afterwards. One board made before the camera starts. */
+  'keyboard-layers': {
+    view: [393, 852, 3], size: [1080, 2340], out: 'promo/keyboard', hq: true, slow: 2,
+    music: 'echoes_of_lumen-vlog-background-music-596303.mp3',
+    setup: [{ eval: "kbAdd('qwerty');" }, { go: 'kb' }, { tap: '[data-do=kbGoBoard][data-a="[1]"]', wait: 600 }],
+    steps: [
+      { cap: 'More keys than fit? Add a layer', capAt: 640, wait: 1600, still: 'k2-01-board' },
+      { tap: 'do:kbAddLay', wait: 1800, still: 'k2-02-layer2' },
+      { cap: 'The keys there and back are added for you', capAt: 640, wait: 200 },
+      { tap: '[data-do=kbGoLay][data-a="[0]"]', wait: 2200, still: 'k2-03-switch' },
+      { cap: 'Show or hide the roman letter on each key', capAt: 640, wait: 200 },
+      { tap: 'do:setKbRom', wait: 1600, still: 'k2-04-roman' },
+      { tap: 'do:setKbRom', wait: 1400 },
+      { tap: 'do:keepPress', wait: 1000 },
+      { tap: '[data-do=kbGoBoard][data-a="[1]"]', wait: 900 },
+      { cap: 'Or start over in another layout', capAt: 640, wait: 200 },
+      { tap: 'do:kbMore', wait: 900 },
+      { tap: 'do:kbRepat', wait: 1500, still: 'k2-05-patterns' },
+      { tap: '[data-do=kbSetPat][data-a*=flick]', pop: true, wait: 1400 },
+      { cap: 'It asks first', capAt: 640, wait: 1400 },
+      { tap: 'do:popYes', wait: 600 },
+      { cap: 'Flick, with your letters already on it', capAt: 640, wait: 2800, still: 'k2-06-flick' },
+    ],
+  },
+
   /* The dictionary, in two films 「いいよ」 OWNER 2026-09-30 -- the one
      film asked for was split in two: making words, and using the
      dictionary. Filmed as the keyboard film was (393x852, 1080x2340, hq,
