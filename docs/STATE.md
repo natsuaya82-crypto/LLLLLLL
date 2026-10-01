@@ -79,7 +79,7 @@ keystore、Google の webClientId）と端末で見るものは `docs/ANDROID.md
 - **r95**: キーボードはプランで分けない（~~`CAN.kb`~~・~~`kbCap()`~~ は消えた）、フォントの書き出しは `can('font')`（Plus）。
 - **r96**: 字を選ぶ画面は一つ（`pkKindsHTML()`・`pkKind()`、種類は `WORLD_SCRIPTS`）、複数のキーに①②③の順で確定で一度に、
   フォントの書き出しは文字の画面の右上、手書きのキーボード（`ios/App/LinguaKeyboard/hand.js`）。
-- **r97**: 投稿の画面は揺れない（`keepStill()`）、App Store の評価のお願い（`rateOpen()`、起動の五回目）。
+- **r97**: 投稿の画面は揺れない（`keepStill()`）、App Store の評価のお願い（~~`rateOpen()`~~、起動の五回目 ── r158 で初めてログインした直後に）。
 - **r98**: 引用はリポストの数に入る（`post_seen.boosts`）、キーボードの高さの測り（~~`SET.vvkb`~~）を消す、購入後の表示はサーバーの答え（`storeSaid()`）。
 - **r99**: 意味のオン・オフは設定と同じ丸いスイッチ、意訳は意味の欄の中身の字、スレッドの本文と意味を長押しで選んでコピー。
 - **r100**: プロフィールの投稿にその人のリポストも（`posts_by()`）、端末の設定の四つ（order・script・read・voice）を消す（`SET_GONE`・`setGoneDrop()`）、

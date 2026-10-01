@@ -4996,36 +4996,53 @@ const R = await pg.evaluate(async () => {
     say('93: 顔は描いて書かない ── 行を描いても ME.av もディスクも動かず、付けるのは移行（自分の言語）');
   }
 
-  /* ---- 94. App Store の評価のお願いは、そのアカウントが開いた五回目に一度
-     「評価のやつつけよう」「cやね」（開いた五回目） OWNER 2026-09-25。数える
-     のは rateOpen()（www/core.js）一か所で、数はアカウントの物（SET.opened、
-     lingua.set.<uid>）── 端末の物ではない。iOS への頼みは本物の口
-     （Capacitor.nativePromise）を差し替えて数えます。 */
+  /* ---- 94. App Store の評価のお願いは、そのアカウントが初めてログインした直後に一度
+     「評価のやつつけよう」 OWNER 2026-09-25、「ログインしてすぐに出すのは？」「a」
+     （同じ項の箇条、2026-10-01 に差し替え）── 開いた五回目はやめた。頼むのは storeRate()（www/store.js）
+     で、呼ぶのは obWhoGo()（www/onboard.js）の netMakeProfile() の成功の答えの中
+     だけ。profile 行はアカウントに一度しか作れない（主キー）ので、「初めて」は
+     サーバーが持っていて、端末は何も数えない。iOS への頼みは本物の口
+     （Capacitor.nativePromise）を差し替えて数えます。
+
+     1. 起動（bootSession()）を六回 → 頼まない。
+     2. 戻ってきたアカウントの入り直し（netTook()）→ 頼まない。
+     3. 新しいアカウントが扉で行を作った → 一度だけ頼む。
+     4. 行がもうある（insert が 409）→ 頼まない。 */
   {
     start();
     const wasCap = window.Capacitor, asked94 = [];
     /* 答えの来ない口: 何を繋いでも自分を返す（storeSync も同じ口を使う） */
     const never = { then: function () { return never; }, catch: function () { return never; } };
     window.Capacitor = { nativePromise: function (plug, what) {
-      if (what === 'review') asked94.push(plug + '.' + what + '@' + SET.opened);
+      if (what === 'review') asked94.push(plug + '.' + what);
       return never;
     } };
-    netOut(); arrive(A);
-    for (let i = 0; i < 6; i++) rateOpen();
-    if (asked94.join(' ') !== 'LinguaStore.review@5')
-      no('94: 六回開いて、評価のお願いは五回目に一度のはず ── ' +
+    for (let i = 0; i < 6; i++) bootSession();
+    if (asked94.length)
+      no('94: 起動で評価のお願いを頼んだ ── ' + asked94.length + ' 回（起動では頼まない）');
+    netOut(); arrive(B); netOut(); arrive(A);
+    if (asked94.length)
+      no('94: 戻ってきたアカウントの入り直しで頼んだ ── ' + asked94.length + ' 回');
+    /* 扉の最後の一段: 名前と @ を打って「次へ」。@ は空いている、行は作れる。 */
+    const keepId94 = netIdOf, keepPost94 = netPost;
+    netIdOf = (h, ok) => ok(null);
+    netPost = (path, body, tok, ok) => ok([body]);
+    OBM.busy = false; OBM.nm = 'ナツ'; OBM.hd = 'natsu94';
+    obWhoGo();
+    if (asked94.join(' ') !== 'LinguaStore.review')
+      no('94: 新しいアカウントが扉で行を作ったのに、頼んだのは一度ではない ── ' +
          (asked94.join(' ') || '一度も頼んでいない'));
-    netOut(); arrive(B);
-    if (SET.opened !== undefined)
-      no('94: **A の開いた数が B に渡っている** ── ' + SET.opened +
-         '。数はアカウントの物');
-    rateOpen();
-    if (asked94.length !== 1) no('94: B の一回目で頼んだ ── ' + asked94.join(' '));
-    netOut(); arrive(A);
-    if (SET.opened !== 6)
-      no('94: A に戻ると A の数（6）のはず ── ' + SET.opened);
+    /* 行がもうある: サーバーは二度目の insert を 409 で断る。 */
+    netPost = (path, body, tok, ok, bad) => (path.indexOf('/rest/v1/profile') === 0 ?
+      bad({ code: '23505' }, 409, '409') : ok([body]));
+    OBM.busy = false; OBM.nm = 'ナツ'; OBM.hd = 'natsu94';
+    obWhoGo();
+    netIdOf = keepId94; netPost = keepPost94;
+    if (asked94.length !== 1)
+      no('94: 行がもうある二度目の後も、頼んだのは扉の一度だけのはず ── ' + asked94.length + ' 回');
     window.Capacitor = wasCap;
-    say('94: 評価のお願いは開いた五回目に一度、数はアカウントの物（A 6、B 1）');
+    say('94: 評価のお願いは新しいアカウントの行ができた時に一度 ── 起動六回 0、入り直し 0、' +
+        '扉 1、行がもうある 0');
   }
 
   /* ---- 96. ピン留めはサーバーの物（オーナーの答え 2、2026-09-28） -----------

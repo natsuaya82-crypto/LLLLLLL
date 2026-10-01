@@ -43,6 +43,27 @@ function storePlug(){
 }
 function storeOn(){ return !!storePlug(); }
 
+/* ---- THE APP STORE'S REQUEST FOR A RATING --------------------------------
+   「評価のやつつけよう」 OWNER 2026-09-25, and WHEN: 「レビュー入れるやつを
+   さ、ログインしてすぐに出すのは？」「a」, which replaced the fifth opening
+   in that entry's own bullet on 2026-10-01 -- docs/FEATURE_RULES.md,
+   2026-09-25 カテゴリはグラフィック&デザイン、App Store の評価のお願い.
+
+   Asked from ONE line, obWhoGo() in www/onboard.js, inside the answer to
+   netMakeProfile(): that is where an ACCOUNT comes into existence, and it
+   happens once per account because `profile.id` is the primary key -- a
+   second insert is refused by the server. So 「the first sign-in」 is the
+   account's and is held by the server; nothing here counts and nothing is
+   written down. A sign-in on another phone, or again after signing out,
+   finds the row already there and never reaches that line.
+
+   Whether anything is drawn, and how often in a year, is iOS's
+   (ios/App/App/LinguaStore.swift § review). */
+function storeRate(){
+  var np=storePlug();
+  if(np) np('LinguaStore', 'review', {}).then(null, function(){});
+}
+
 /* WHAT COMES BACK FROM THE APP STORE IS RECEIPTS, NOT A PLAN.
    「だから端末でやるわけねえだろ」 OWNER 2026-09-03,
    「アカウントごとなんだから、違うアカウントで復元できるのおかしいだろ。

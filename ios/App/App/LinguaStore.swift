@@ -443,9 +443,10 @@ public class LinguaStorePlugin: CAPPlugin, CAPBridgedPlugin, PurchasesDelegate {
   }
 
   /// The App Store's own request for a rating. 「評価のやつつけよう」
-  /// 「cやね」（開いた五回目） OWNER 2026-09-25 -- docs/FEATURE_RULES.md,
-  /// 2026-09-25 カテゴリはグラフィック&デザイン、App Store の評価のお願い.
-  /// WHEN it is asked is www/core.js § rateOpen, the one place that counts;
+  /// OWNER 2026-09-25, and 「ログインしてすぐに出すのは？」「a」 (that
+  /// entry's bullet, replaced 2026-10-01) -- docs/FEATURE_RULES.md, 2026-09-25 カテゴリはグラフィック&
+  /// デザイン、App Store の評価のお願い. WHEN it is asked is www/store.js
+  /// § storeRate: once, when an account's `profile` row is made at the door;
   /// WHETHER anything appears is iOS's (at most three times a year, never in
   /// TestFlight's way that a person can rely on), so this answers only that
   /// it asked. Drawn by iOS -- one of the two system dialogs CLAUDE.md

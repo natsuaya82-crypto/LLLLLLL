@@ -8,6 +8,13 @@ refactor, a feature and a rename never arrive in the same diff.
 The order is the order to do them in.
 
 
+## 設定の `opened` 欄が端末に残る（2026-10-01、r158-rate、オーナーの判断が要ります）
+
+起動の数で、r97 の評価のお願い（開いた五回目）が `lingua.set.<uid>` に書いていました。r158 で評価のお願いは
+アカウントの profile 行ができた時に一度（`storeRate()`、`www/store.js`）になり、誰も書かず誰も読みません。
+`SET_GONE`（`www/core.js`）に入れれば起動の時に消えますが、消すのはオーナーの「消していいよ」が要る
+（2026-09-26 の前例）ので入れていません。残っていても何も起きません。
+
 ## 派生の新しい単語の画面で元の単語を押すと落ちる（2026-09-30、r153 の `taken-check` が見つけた）
 - **道**: 単語 → 一つの単語 → 編集（`openEdit`）→ 派生（`wdDerive`）→ 新しい単語の画面（`form|add:<元の単語>`）で、元の単語の行（`openWord`）を押す。
 - **起きること**: `Uncaught TypeError: Cannot read properties of null (reading 'sp')` ── `wdSigEdit`（`www/wordsheet.js`）← `wdNow` ← `keepRead` ← `keepDirty`。道の下にある編集の画面（`form|edit:<単語>`）の保存の下書きが、`wEdit` が空になった後に読まれる。

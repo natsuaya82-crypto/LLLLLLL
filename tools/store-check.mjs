@@ -384,7 +384,12 @@ const FIELDS = {
      them, and a phone that has them has them taken off at launch --
      `SET_GONE` in www/core.js, 「1 消す」「消していいよ」 OWNER 2026-09-26,
      the DELETE REVIEWs in docs/CHANGELOG.md 2026-09-25 and 2026-09-26. */
-  opened:   { phone: 'how many times this ACCOUNT has opened the app, counted by rateOpen() (www/core.js) so the fifth asks the App Store for a rating (OWNER 2026-09-25). Filed under `lingua.set.<uid>` with the rest of the account\'s settings, and sent nowhere: a launch sends nothing' },
+  /* `opened` STOOD HERE AND IS GONE (2026-10-01): the count of launches
+     rateOpen() kept so the fifth asked for a rating. The rating is asked
+     when an account's profile row is made (www/store.js § storeRate), so
+     nothing writes or reads it. It is NOT in `SET_GONE` -- taking it off a
+     phone is the owner's (docs/BACKLOG.md) -- so it stays in
+     `lingua.set.<uid>` where an older version wrote it. */
   wldMoved: { phone: 'the mark that 「what the language is for」 has been moved out of the settings and into the language. A migration mark, and the ACCOUNT\'s like `SET.world` it marks: kept with it under `lingua.set.<uid>`, so the next account to sign in has its own moved (r73 § 2-7)' },
   doneMoved: { phone: 'the mark that the old `done` has been copied into `walked` (walkedMigrate, www/core.js). A migration mark -- it is what the old field\'s absence used to say, now that the migration copies and removes nothing' },
   sndMoved: { phone: 'the mark that SET.snd -- the sounds from when there was one list per person -- has been copied into the language. A migration mark; SET.snd itself is left where it was, and this sits beside it under the same account' },

@@ -762,10 +762,10 @@ it is quoted, and where a decision has never been made the row in
 
 ### 2026-09-26 1.0.3 の残りの答え ── キーボードの高さの測りは消す、評価は起動だけ数える、引用はリポストの数に入る、ミュートした人の引用元も出す
 - Date: 2026-09-26
-- Area: 端末の設定（キーボードの高さの測り）、評価のお願い（`rateOpen()`）、投稿のリポストの数、引用の表示
+- Area: 端末の設定（キーボードの高さの測り）、評価のお願い（~~`rateOpen()`~~）、投稿のリポストの数、引用の表示
 - Decision:
   - 端末に残っているキーボードの高さの測り（もう誰も読まない）は**消す**（DELETE REVIEW は `docs/CHANGELOG.md` 2026-09-25）。
-  - 評価のお願いの「開いた」は**起動だけを数える**。バックグラウンドから戻った時は数えない（今の形のまま）。
+  - 評価のお願いの数え方: 【差し替え済み 2026-10-01】── 開いた数は数えない。差し替えた決定: 2026-09-25「カテゴリはグラフィック&デザイン、App Store の評価のお願いを出す…」の二つ目の箇条（頼むのは初めてログインした直後）。
   - **引用はリポストの数に入る**（Twitter と同じ数え方）。引用だけの数は別に出さない。
   - ミュートした人の投稿を引用した投稿でも、**引用元の中身を出す**（今の形のまま）。
 - Reason: オーナーの言葉「1 消す」「2 数えない」「5 リツイートと同じ数の数え方で足してっていい」「6 出していいよ」。
@@ -824,7 +824,7 @@ it is quoted, and where a decision has never been made the row in
 - Affected features: 評価のお願い（新しい、`ios/` と `www/` から呼ぶ一か所）。
 - Affected data: 無し。
 - Affected docs: この項、CLAUDE.md § Shape の五つ目、2026-09-01 の標準ダイアログの項、`store/*.json` の keywords。
-- Implementation status: キーワードは `store/*.json` に入った（App Store Connect へは 1.0.3 の版と一緒に送る）。評価のお願いは **IMPLEMENTED（CODE CONFIRMED のみ、実機未確認）** r97-still ── `rateOpen()`（`www/core.js`、数は `SET.opened`、アカウントの物）、`LinguaStore` の `review`、`acct-check` 94。カテゴリは `tools/store-localize.mjs` の `CATEGORY`、1.0.3 の版の文と一緒に App Store Connect へ（2026-09-29）。
+- Implementation status: キーワードは `store/*.json` に入った（App Store Connect へは 1.0.3 の版と一緒に送る）。評価のお願いは **IMPLEMENTED（CODE CONFIRMED のみ、実機未確認）** r158-rate ── `obWhoGo()`（`www/onboard.js`）の `netMakeProfile()` の成功の答えの中で `storeRate()`（`www/store.js`）。profile 行はアカウントに一度しか作れない（主キー）ので一度。`LinguaStore` の `review`、`acct-check` 94。r97 の開いた五回目（~~`rateOpen()`~~）は消した。カテゴリは `tools/store-localize.mjs` の `CATEGORY`、1.0.3 の版の文と一緒に App Store Connect へ（2026-09-29）。
 
 ### 2026-09-25 キーボードはプランで分けない ── 置ける字は自作文字と既存の文字、差は自作文字をいくつ作れるかだけ（1.0.3）
 - Date: 2026-09-25

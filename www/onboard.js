@@ -1569,6 +1569,9 @@ function obWhoGo(){
          `handle` is set one line above, so meHandle() is this account and not
          the last one. */
       if(!meFollows(OB_LINGUA)) meFollow(OB_LINGUA);
+      /* And the App Store's request for a rating, here for the same reason:
+         this answer comes once per account (www/store.js § storeRate). */
+      storeRate();
       /* A brand new account made from Settings is still somebody who has a
          language -- they signed up late, not early. */
       if(obReturn()) return;
