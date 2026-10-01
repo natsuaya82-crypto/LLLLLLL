@@ -161,3 +161,47 @@
 | free-plan | 無料でできること（38 字・100 語・キーボード・投稿） | プラン | Free: your own a–z, 100 words, posts | |
 | paid-plans | 有料で広がること（どの段で何が開くかは `PLANS`・`CAN` を読んで字幕を決める） | プラン → 段 | (撮る前に決める) | |
 | nothing-is-lost | プランが切れても何も消えない | プラン | Your words stay yours, always | |
+
+## promo/ に撮った動画（1080×2340、H.264＋AAC、曲とタップ音、字幕は英語）
+
+上の項目は一本ずつの短い案だった。今あるのは、近い項目をまとめた一本ずつ。台本は `tools/video/scripts.mjs` の同じ名前。
+
+| 動画 | 入っている項目 | 長さ |
+|---|---|---|
+| `promo/draw/draw-tools.mp4` | round-a-line, fill-a-shape, undo-redo, lasso-move, clear-letter, 太さ、レイヤー | 47.8 秒 |
+| `promo/alphabet/alphabet.mp4` | alphabet-overview, hear-a-letter, letter-sort, letter-sound（見て聞くだけ）, borrow-a-character, marks, digits, export-font | 43.3 秒 |
+| `promo/keyboard/keyboard-reddit.mp4` | build-a-keyboard, key-any-character, add-a-row, delete-a-column, align-a-row, merge-keys, keyboard-undo, 六つの配置 | 55.3 秒 |
+| `promo/keyboard/keyboard-layers.mp4` | add-a-layer, letter-on-key, change-pattern | 25.3 秒 |
+| `promo/words/words-make.mp4` | add-a-word, meanings, part-of-speech, register, fields, examples, inflection, derivation, etymology, generate-words, hear-a-word | 64.6 秒 |
+| `promo/words/words-use.mp4` | search-words, filter-words, sort-words, word-page, inflection, examples, etymology, word-card, 選んで消す・元に戻す | 45.4 秒 |
+| `promo/find/find.mp4` | 言語全体を語・意味・音・字で探す | 19.6 秒 |
+| `promo/grammar/grammar.mp4` | grammar-chapters, word-order, 意味から行を作る, form-rules | 32.8 秒 |
+| `promo/calendar/calendar.mp4` | calendar（月・曜日の名前、ホーム画面の時計と暦） | 32.6 秒 |
+| `promo/language/language.mp4` | about-page, publish-language（落とせる部分）, notebook | 33.7 秒 |
+| `promo/post/post.mp4` | first-post, meaning-line, tags, photo-post | 29.6 秒 |
+| `promo/post/photo-letters.mp4` | letters-on-photo | 22.8 秒 |
+| `promo/drafts/drafts.mp4` | drafts | 21.6 秒 |
+| `promo/timeline/timeline.mp4` | reply, post-card, profile（人の）, notices | 26.3 秒 |
+| `promo/profile/profile.mp4` | profile, edit-profile, theme, app-language | 29.3 秒 |
+| `promo/start/start.mp4` | はじめの一歩（オンボーディング：a を描く、案内、名前、扉） | 38.1 秒 |
+| `promo/plus/plus.mp4`（有料） | new-letter, rename-letter, letter-sound（選ぶ）, number-base | 30.8 秒 |
+| `promo/abugida/abugida.mp4`（有料） | abugida | 27.4 秒 |
+| `promo/import/import.mp4`（有料） | import-a-list | 26.1 秒 |
+
+撮っていない物と、わけ:
+
+- サーバーの答えが要る物（撮影はサーバー無し）: thread, like, repost, quote, explore の検索, follow, 声の再生, プロフィールの写真・いいねタブ
+- iOS 側の物: 顔の写真（UIAlertController）, apply-to-phone, type-in-your-letters, push-settings
+- 撮ると不具合に見えた物: vertical-writing, right-to-left（下の「見つけた事」）
+- 値段・プランの言葉はオーナーの物なので: free-plan, paid-plans, nothing-is-lost
+- syllabary, abjad, block-script, logography: 切り替えても字の頁に見える違いが無かった
+
+撮っていて見つけた事（アプリは直していない。原因はどれも確かめていない）:
+
+- 名詞を保存すると、フィクスチャの古い指小形の規則（派生・全品詞）が意味の無い語を一つ足す
+- 品詞を選ばずに Generate を押すと品詞が変わる
+- 例文欄に Lingua キーボードの字（PUA）で打つと欄の中が豆腐になる（追加後の行は正しい）
+- 自分の字の縦書きで、字が一つずつ横倒しに並ぶ（作成欄・送った投稿とも）。人の縦書きの投稿は立っている
+- 右から左にすると、行は右に寄るが語の並びは左から右のまま
+- 開いた下書きは、打つ位置が行の頭にある
+- オンボーディングの見本のタイムラインの写真（www/img/pic1-5.jpg）が `netMediaSrc()` で Storage のパスとして扱われ、src の無い空の枠になる（ページで読んだ。実機は未確認）
