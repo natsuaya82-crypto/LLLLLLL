@@ -654,6 +654,45 @@ export const SCRIPTS = {
     ],
   },
 
+  /* The first minutes: the onboarding as somebody new meets it -- draw an a,
+     the walk, the name. Put in front of the camera the way tools/fixture.mjs
+     puts its onboarding faces there (SET.done off, ob at its first step).
+     Its screens say what they are, so the captions stay out of the way. */
+  'start': {
+    view: [393, 852, 3], size: [1080, 2340], out: 'promo/start', hq: true, slow: 2,
+    music: 'echoes_of_lumen-vlog-background-music-596303.mp3',
+    setup: [{ eval: "POSTS = POSTS.filter(function (p) { return p.id !== 'p1'; }); SET.done=false; SET.walked=false; SET.obback=null; ob=obBlank(); ob.step=OB_DRAW; GE=null; render();" }],
+    steps: [
+      { cap: 'Your first minute in Lingua', capAt: 330, wait: 2200, still: 's1-draw' },
+      { cap: '', wait: 300 },
+      { draw: [
+          [[0.30, 0.74], [0.50, 0.26], [0.70, 0.74]],
+          [[0.38, 0.56], [0.62, 0.56]],
+        ], gap: 350, wait: 900, still: 's2-a' },
+      { tap: 'do:obDone', wait: 1800, still: 's3-tour' },
+      { tap: '[data-do=goTab][data-a*=build]', wait: 1500 },
+      { tap: '[data-do=go][data-a=\'["kb"]\']', wait: 1500 },
+      { tap: '[data-do=kbGoBoard][data-a="[0]"]', wait: 3000, still: 's4-key' },
+      { tap: 'do:back', wait: 1500 },
+      { tap: '[data-do=go][data-a*=letters]', wait: 3000, still: 's5-letters' },
+      { tap: '.body', wait: 1500 },
+      { tap: 'do:back', wait: 1500 },
+      /* The sample timeline's photographs are the app's own files (www/img/
+         pic1-5.jpg), and netMediaSrc() (www/net.js) takes a path that is not
+         data:, blob: or http for a path in Storage, so on 2026-09-30 every
+         one of them came out with data-med and no src -- an empty frame where
+         the photo is. Reported, not fixed; for the film the page is given
+         the file it names. */
+      { tap: '[data-do=goTab][data-a*=feed]', wait: 300 },
+      { eval: "Array.prototype.forEach.call(document.querySelectorAll('img[data-med^=\"img/\"]'), function (e) { e.src = e.getAttribute('data-med'); })", wait: 1700, still: 's6-sns' },
+      { tap: 'text:Next', wait: 1600 },
+      { tap: '#ob-name', wait: 200 },
+      { eval: "document.getElementById('ob-name').select()", wait: 150 },
+      { type: 'Velira', delay: 160, wait: 1200, still: 's7-name' },
+      { tap: 'do:obName', wait: 3200, still: 's8-door' },
+    ],
+  },
+
   /* The dictionary, in two films 「いいよ」 OWNER 2026-09-30 -- the one
      film asked for was split in two: making words, and using the
      dictionary. Filmed as the keyboard film was (393x852, 1080x2340, hq,

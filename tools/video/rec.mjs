@@ -60,7 +60,7 @@ function frameOf(sc) {
 }
 const FPS = 30;
 const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css',
-               '.png': 'image/png', '.svg': 'image/svg+xml', '.woff2': 'font/woff2',
+               '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.svg': 'image/svg+xml', '.woff2': 'font/woff2',
                '.otf': 'font/otf', '.ttf': 'font/ttf' };
 
 const argv = process.argv.slice(2);
