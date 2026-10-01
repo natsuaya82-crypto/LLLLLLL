@@ -167,7 +167,9 @@ const r = await pg.evaluate(({ s }) => {
   for (j = 0; j < 30; j++) WORDS.push({ hw: 'fmw0y' + j, mns: ['a word'], pos: 'v', from: 'fmw0', fm: 'i~g' + j });
   save();
   out.fmHeld = WORDS.length;
-  out.fmForms = wForms(WORDS[0]).length;
+  /* The 60 placed and stored ones. A rule's own form (the fixture's 指小, which
+     is a form on the page since 2026-10-01, r159) is not what this is about. */
+  out.fmForms = wForms(WORDS[0]).filter(function(x){ return x.by !== 'rule'; }).length;
   out.fmRoom = capOK(1);
   out.fmFull = capOK(2);
   var fmWas = bytes();
