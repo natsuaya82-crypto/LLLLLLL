@@ -710,6 +710,8 @@ export const SCRIPTS = {
       { tap: '[data-do=fPick][data-a=\'["s","k"]\']', wait: 800 },
       { cap: 'Every word with a letter', capAt: 600, wait: 200 },
       { tap: '[data-do=fPick][data-a=\'["l","lt.a"]\']', wait: 2600, still: 'n4-letter' },
+      { cap: 'Tap one to open it', capAt: 600, wait: 200 },
+      { tap: '[data-do=openWord][data-a=\'["sar"]\']', wait: 2800 },
     ],
   },
 
