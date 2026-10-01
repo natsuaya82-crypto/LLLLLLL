@@ -53,7 +53,8 @@ the whole of it.
 roads call it — `netSaveNow()` on a save a person makes, `netLangSync()` at the
 door (what the walk made). **A launch sends nothing** (2026-09-23,
 `tools/quiet-check.mjs`): until a language's slices have come down in this run
-of the app, what is on the screen is the picture, `langLocked()` refuses every
+of the app, what is on the screen is the picture (of this account's own
+languages only — somebody else's has none on this phone, 2026-09-30), `langLocked()` refuses every
 save onto it, and a slice goes up only when a PERSON wrote it
 (`LTOUCH` in `www/core.js`) — a slice the app itself changed inside a server
 answer (the free alphabet topped up, a migration) goes with the next thing
@@ -101,6 +102,12 @@ reason — `slMine()` (`www/core.js`) reads the old `lingua.<id>.<slice>` key,
 an account removes it (`slRm()`). That key can be the only copy of
 something somebody spent months on. Copying costs a
 few hundred kilobytes and cannot lose anything; moving could.
+
+Somebody else's language is not written to the disk at all (`langOut()` in
+`www/core.js`, OWNER 2026-09-30). What an older version already wrote of one —
+its `.got` pictures, `lingua.take.<uid>` — is not removed automatically: it
+goes with the language or the account as everything else does, and whether to
+take it sooner is the owner's (`docs/CHANGELOG.md` 2026-09-30).
 
 ### 3. "Empty" and "broken" are not the same state
 

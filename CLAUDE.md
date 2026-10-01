@@ -58,10 +58,43 @@ follows, blocks and reports 「SNSは全部サーバー」 — **and the languag
 every slice of it, the keyboard among them, because a keyboard is part of a
 language. **The server is the only place a language LIVES** — a slice is in
 memory while the app is running (rule 22, OWNER 2026-09-04). The phone keeps a
-copy of the timeline, and of the language as it was last loaded, so that with
-no signal there is still something to look at 「前に読み込んだ分は出て欲しい。
-制作も眺めたい人はいるだろうし、」 OWNER 2026-09-04. **That copy is read-only
-and it never goes back up** — it is never where a thing lives.
+copy of the timeline, and of this account's OWN languages as they were last
+loaded, so that with no signal there is still something to look at 「前に読み込
+んだ分は出て欲しい。制作も眺めたい人はいるだろうし、」 OWNER 2026-09-04. **That
+copy is read-only and it never goes back up** — it is never where a thing lives.
+
+**Somebody else's language is on the server and in memory, and nowhere else**
+「カード投稿はok」「svgやファイル書き出しはng」「だから端末に置くのもng」
+OWNER 2026-09-30, on every plan. It is USED inside Lingua — its letters shown
+and typed in this app's fields and on the Lingua keyboard, posts written in
+it, its meanings read — and nothing of it leaves: not a file (font, SVG, the
+handwriting sheet), not the clipboard, and not this phone's disk, so with no
+signal it is not shown. Two roads are not leaving and do not ask: a card — of
+a post, a word or an example — is a picture 「カードはok」, and the Lingua
+keyboard's App Group is how anybody types drawn letters inside Lingua, so a
+taken language is handed over there as one's own is 「端末に置くものがそもそも
+ないでしょ？」 OWNER 2026-09-30. `langOut()` (`www/core.js`) is the one
+question — langWhose()'s 「mine」, so 「nobody has answered」 is not mine — and
+every way out asks it. **`theirs-check` holds it**: it counts every way out in
+`www/` by what it is and fails one that does not ask, and takes a language
+from another account and finds nothing of it on the disk, no way out on its
+screens, its word's card offered and its keyboard handed over.
+It looks the same on every plan: nothing of it is folded and no upgrade
+line is drawn 「dl言語は有料無料関係ない」 — what a plan does to a
+language's shape is `langShaped()` (`www/core.js`), which a taken
+language never is — and no control that would change it is drawn;
+`langLocked()` is the one question and **`taken-check` holds it** by
+walking your own language to find every editor and then every face of
+a taken copy. The one thing its taker makes is a keyboard of their own
+for it 「ないやつは自作可能」 OWNER 2026-09-30, which is theirs — the
+`take_kb` row, not the language's `kb` slice.
+And what of its alphabet is shown is what its maker DREW: every language
+is born with the slots (`ltSlotsFill()`), and a slot nobody drew on is not
+shown to the person who took it 「書いてない文字が入る必要があるの？」
+OWNER 2026-09-30 — not listed, not offered, not on a key. Drawn is
+`ltHasShape()`; the question is `ltShown()` (`www/sound.js`), and
+`ltSeen()` is the alphabet it lets through. Nothing leaves the maker's
+slices; `taken-check` holds it.
 
 **NOTHING IS THE PHONE'S. EVERYTHING IS THE ACCOUNT'S.**
 「端末ごとにやることなんてねえよ」「アカウントごとってずっと言ってるよな？」
@@ -108,8 +141,8 @@ OWNER 2026-09-24. **Making and
 saving need a signal** 「オンラインのみで行こうってことになってる今後オフライン
 対応する時にまた考えることにした」 OWNER 2026-09-04: with none there is nothing
 to send, and 「電波が無いときはログインできない」 is what a screen says about
-signing in. **What there IS with no signal is what was loaded before, to look
-at** 「前に読み込んだ分は出て欲しい。制作も眺めたい人はいるだろうし、」 OWNER
+signing in. **What there IS with no signal is what was loaded before of this
+account's own, to look at** 「前に読み込んだ分は出て欲しい。制作も眺めたい人はいるだろうし、」 OWNER
 2026-09-04. Looking is the whole of it: nothing is made, nothing is saved, and
 nothing on that copy ever travels back to the server (rule 22).
 
@@ -875,7 +908,7 @@ went stale, in both directions — a name that was not a capability, and
 capabilities left off while checks and a rung of the plans page ran on them.
 Read `CAN`. `npm run dead` prints the number it actually counted on every run
 ("what money buys: N capabilities in CAN"), which is the thing to read.
-`has()` names a *plan* and is `core.js`'s alone. `dead-check` refuses a
+`has()` names a *plan* and is `core.js`'s alone. So is `planNo()`: what a plan does to a language's shape is asked through `langShaped()`, and `taken-check` holds that nothing outside `core.js` calls `planNo()`. `dead-check` refuses a
 capability nothing asks for (a price with nothing behind it), a `can('x')` in
 no plan (false on every plan — a locked door nobody can open, and nothing says
 so), a `can()` given anything but a literal, and a `has()` anywhere else.
@@ -1856,8 +1889,10 @@ arrive at a screen drawn from it, and `netLangFill()` brings it back.
 
 **There is one copy on this phone and it is READ-ONLY.**
 「前に読み込んだ分は出て欲しい。制作も眺めたい人はいるだろうし、」 OWNER
-2026-09-04. With no signal the app shows the language as it was last loaded, so
-that somebody can look at what they made. **Looking is the whole of it** —
+2026-09-04. With no signal the app shows this account's own language as it was
+last loaded, so that somebody can look at what they made. Somebody else's
+language has no copy here at all 「だから端末に置くのもng」 OWNER 2026-09-30
+(§ Online, `langOut()`). **Looking is the whole of it** —
 nothing is made on it, nothing is saved to it, and **it never goes back to the
 server. The road is one way.**
 
@@ -1872,7 +1907,8 @@ off that road is `slMine()` — the up road asks it, and the picture is not in
 it. With no road back, a copy that is wrong costs the copy and nothing else.
 
 **The picture is `lingua.<id>.<slice>.got`.** `slGot()` in `core.js` writes
-it the moment this phone and the server hold the same string, `slRd()` reads
+it the moment this phone and the server hold the same string — for a language
+`langOut()` says is this account's, and never for anybody else's — `slRd()` reads
 it last — after memory and after an older version's disk key — and `slMine()`
 never reads it at all, which is the whole of the one-way line.
 
@@ -1947,8 +1983,8 @@ number written here has already been wrong twice.** The index
 (`lingua.langs.<uid>`, `lingua.cur.<uid>`) is a picture of which languages this
 account had when the server last answered, and where somebody is standing —
 what the app asks the server WITH, rather than the answer. The session, this
-handset's setup, and each account's settings, timeline copy, profile copy and
-picture of which of somebody else's it has taken are the rest — every one of
+handset's setup, and each account's settings, timeline copy and profile copy
+are the rest — every one of
 them but the session and the setup under `lingua.<name>.<uid>`, written there
 the moment it is written (`acctPut()`, `www/core.js` § ACCT, r79).
 
@@ -1960,7 +1996,9 @@ somebody else's this account has taken」 a row in `language_take`, because
 `LANGS[id].uid` had been answering that and 「who made it」 with one field.
 Each is asked through one function (`langNameOf`, `langWsysOf`,
 `langOwnOf` in `www/core.js`, `wldPubOf` in `www/home.js`), each keeps the server's answer in
-memory and a picture on the disk with no road up, and each has THREE states:
+memory and — for this account's own languages — a picture on the disk with no
+road up (who WROTE it is kept for every language: it is an account's id, and
+the answer `langOut()` reads), and each has THREE states:
 mine, somebody else's, and **not asked yet** — which is drawn as neither.
 **WHEN a language was made is a fifth of exactly that shape** (`langMadeOf`,
 `language.created_at`, 2026-09-12), and what it answers is which of this
@@ -1972,18 +2010,13 @@ in one place, `langMainId()` is its first element, and a language with no
 answer goes last, because one minted here and not yet sent is the newest thing
 in the index.
 
-**`language_take` is kept the same way, and it had to be.** 「前に読み込んだの
-出していいよ。何か更新するならクルクルが必要」 OWNER 2026-09-12: the answer was
-memory-only, so a launch with no signal had 「not asked」 for it, and every
-language somebody had TAKEN off another page fell to 「nobody has said」 —
-their own were on the screen, out of the pictures above, and the rest had
-gone. `langTookGot()` writes the picture and the account's container
-(`www/core.js` § ACCT) reads it, filed under the account it is about
-(`lingua.take.<uid>`), so signing in as somebody
-else reads that account's own and never the one before it
-（「違うアカウントでログインしてんのに前のやつ出てくるんだけど？」 OWNER
-2026-08-31). No road up, and a language that comes back this way is still only
-READ: updating or saving with no signal is 「接続できません」.
+**`language_take` is in memory and nowhere else** 「だから端末に置くのもng」
+OWNER 2026-09-30. `langTookGot()` keeps the answer for the account in hand and
+the container forgets it when the account changes (`acctMem`), so signing in
+as somebody else never reads the one before it （「違うアカウントでログインして
+んのに前のやつ出てくるんだけど？」 OWNER 2026-08-31). With no signal it is
+「not asked」, and a language somebody took waits for the answer rather than
+being drawn from a copy.
 
 **And every key of that copy belongs to an ACCOUNT.**
 「端末ごとにやることなんてねえよ」 OWNER 2026-09-03. This section used to end

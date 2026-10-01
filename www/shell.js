@@ -166,6 +166,10 @@ function viewLeft(from, to){
      chosen, and the trail still has `kb` on it; a tab or the way back off the
      chapter does not. www/keyboard.js § kbLeft. */
   if(from==='kb' && !navHas('kb')) kbLeft();
+  /* Which layers are out of sight on the paper, the same way round: the page
+     that renames a layer is deeper, a tab or the way back is not.
+     www/glyph.js § geLayerEye. */
+  if(from==='glyph' && !navHas('glyph') && GE) GE.hid={};
 }
 
 /* ---- where you are, and what you came through ------------------------
@@ -1223,6 +1227,8 @@ var PAGES={
   photo:   {tab:'feed', k:'post.pic'},
   drafts:  {tab:'feed', k:'post.drafts.t'},
   langs:   {tab:'profile', k:'langs.title'},
+  /* An official account's published languages (www/me.js § vDlLangs). */
+  dllangs: {tab:'profile', k:'dl.langs'},
   plans:   {tab:'profile',  k:'plans.title'},
   mod:     {tab:'profile',  k:'mod.title'},
   admin:   {tab:'profile',  k:'admin.title'}
@@ -1339,6 +1345,11 @@ function pageName(r, a){
    A button that COMMITS a form still says what it does. This is the other
    thing: one more row of a list that is already on the screen. */
 function secAdd(label, doAttr, aria){
+  /* Every ＋ beside a heading adds to the language that is open -- a meaning,
+     an example, a rule, a class -- and somebody else's language is added to by
+     nobody (langLocked, www/core.js; OWNER 2026-09-30): the heading stays and
+     the ＋ does not. One place, because every caller is that sentence. */
+  if(langLocked()) return '<div class="sec">'+label+'</div>';
   return '<div class="sec secadd">'+label+
     '<button class="secplus"'+doAttr+' aria-label="'+esc(aria)+'">'+ICON_ADD+'</button></div>';
 }

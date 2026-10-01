@@ -890,19 +890,26 @@ function openWrite(){
 /* The mark, or nothing at all when this file is being run without the app
    around it. helpQ() is www/home.js's. */
 function shQ(){ return (typeof helpQ === 'function') ? helpQ('wr') : ''; }
+/* Making one is a file of the language's letters leaving the app, so it is
+   not offered on somebody else's language (langOut(), www/core.js). */
 function shRoomHTML(){
   return '<div class="toc">'+
+    (langOut(langId)?
     '<button class="trow"' + DO('openWrOut') + '>'+
       '<span class="rn"></span><span class="rt">'+esc(t('wr.make'))+'</span>'+
-      '<span class="lead"></span><span class="rv"></span>'+ICON_GO+'</button>'+
+      '<span class="lead"></span><span class="rv"></span>'+ICON_GO+'</button>' : '')+
+    /* bringing one in writes the alphabet, and somebody else's alphabet is
+       written by nobody (langLocked, www/core.js; OWNER 2026-09-30) */
+    (langLocked()? '' :
     '<button class="trow"' + DO('openWrIn') + '>'+
       '<span class="rn"></span><span class="rt">'+esc(t('wr.read'))+'</span>'+
-      '<span class="lead"></span><span class="rv"></span>'+ICON_GO+'</button>'+
+      '<span class="lead"></span><span class="rv"></span>'+ICON_GO+'</button>')+
     '</div>';
 }
 
 /* ---- making one -------------------------------------------------------- */
 function openWrOut(){
+  if(!langOut(langId)) return;
   /* Making the sheet ends in iOS's share sheet (shMake), so it is the share
      mark at the top right of the bar and the words are its label -- CLAUDE.md
      § AN OPERATION THAT HAS A MARK, 「共有マークを右上」 OWNER 2026-09-23. */
@@ -1157,6 +1164,7 @@ function shDropOld(){
 
 function shMake(){
   var s = shState(), names = shNames(s.names), pdf, b64, p;
+  if(!langOut(langId)) return;
   if(!names.length){ toast(t('wr.none')); return; }
   pdf = shSheet(names, shPics(names));
   /* null is the packet refusing to fit the strip. A sheet that cannot name
@@ -1527,6 +1535,10 @@ function shBoxShape(scan, i, RES){
 function shTakeIn(){
   var s = shState(), n = 0, i, g, v, d;
   if(!s.got) return;
+  /* ltNew() below puts the letter in LETTERS before the save asks anything,
+     so somebody else's alphabet would grow on the screen with nothing
+     written -- the same line abMark() carries (langLocked, www/core.js). */
+  if(langLocked()) return;
   /* And the refusal stands HERE as well as on the screen, because a button is
      not the only way in -- the action tables reach this by name. It is the
      same one line newLetter() already carries, and it is a door:

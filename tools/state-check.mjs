@@ -341,11 +341,12 @@ say(!E.other.length, 'F. somebody else\'s ink, gap and slices are shape-checked,
    (rule-audit-2026-09-27-core C1). */
 const G = await pg.evaluate(() => {
   LANGS.Lg = { name: '古い名前' };
+  langOwnGot('Lg', netUid());   /* this account's: a picture asks langOut() */
   langNameGot('Lg', 'いまの名前');
   langNameGot('Lg', '');
   delete LNAME.Lg;              /* the next launch: memory is empty */
   var got = langNameOf('Lg');
-  delete LANGS.Lg; slGot(langNameKey('Lg'), null);
+  slGot('Lg', 'name', null); delete LANGS.Lg;
   return got;
 });
 say(G === '', 'G. a name the server emptied stays empty with no signal, and is not an older name: ' + JSON.stringify(G));

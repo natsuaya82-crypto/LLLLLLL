@@ -107,17 +107,21 @@ the person's settings on the handset, so somebody with two languages had one
 answer for both and a published language could not say which it was.
 `langNameOf()` and `langWsysOf()` in `www/core.js` are how the two are asked;
 each keeps the server's answer in memory and a picture on the disk
-(`lingua.<id>.name.got`, `lingua.<id>.wsys.got`) with no road up. Empty `wsys`
+(`lingua.<id>.name.got`, `lingua.<id>.wsys.got`) with no road up — for this
+account's own languages only: `slGot()` asks `langOut()` first, and nothing
+of somebody else's language is written to the phone (OWNER 2026-09-30). Empty `wsys`
 is **nobody has said**, not a fifth kind, and `wsGuess()` answers for it.
 `language.owner` — who WROTE it — is a fourth of the same shape
-(`langOwnOf()`, `lingua.<id>.owner.got`), and `language.created_at` — WHEN it
+(`langOwnOf()`, `lingua.<id>.owner.got` — kept for every language, because it
+is an account's id and the answer `langOut()` reads), and `language.created_at` — WHEN it
 was made — is a fifth (`langMadeOf()`, `lingua.<id>.made.got`, 2026-09-12).
 
 **What that fifth one decides is which language is the MAIN one**, and it is
 the rule the server already wrote down rather than a second one: `profile_seen`
 picks `lang_id` by ordering `language_seen` `created_at asc limit 1`
 (`supabase/schema.sql`), so the language on somebody's profile is already the
-first one they made. The phone reads the same column in the same direction.
+first one they made — except on an official account, whose page shows its
+published languages instead (§ Lingua's own account). The phone reads the same column in the same direction.
 `langsByAge()` (`www/core.js`) is the one place that puts a list of languages in
 that order — a language with no answer goes LAST, because one minted here and
 not yet sent is the newest thing in the index — `langMainId()` is its first
@@ -139,6 +143,14 @@ disk alike, so a key written under a language tomorrow is taken the day it is
 written. `acct-check` 66 holds it. **Two other places still walk `SLICES` for
 the same job** — 「この言語を削除」 and the sweep of a DL language whose
 original is gone — and `docs/BACKLOG.md` carries them.
+
+**Those pictures are of this account's OWN languages only.** Somebody else's
+language is held on the server and nowhere on this phone's disk — no `.got`,
+no picture of a slice, no copy for a launch with no signal
+「サーバーであればスクショ以外で持っていけないでしょ？」 OWNER 2026-09-30.
+`slGot()` asks `langOut()` before it writes, so none is written for a taken
+language; who WROTE it (`owner.got`, an account's id) is the one picture kept
+for every language, because it is the answer `langOut()` reads.
 
 | `made` | — | **not a slice.** `lingua.<id>.made.got` is the picture of `language.created_at` and nothing writes a `made` slice — it is listed here only so the key is not read as one | — |
 | `lang` | — | the language's name, and **nothing in `www/` reads or writes it** since 2026-09-08. What a language is called is the `language.name` column on the server; `langNameOf()` in `www/core.js` is how it is asked, `LNAME` holds what the server has said this session, and `lingua.<id>.name.got` is the picture a launch with no signal draws from. The slice stays in `SLICES` and is not deleted — what an older version wrote is left exactly where it is | text |
@@ -312,7 +324,8 @@ and that is how one person's deletion erased another person's language.
   that language's row out of LANGS
   every lingua.… key whose last part is this uid -- lingua.set.<uid>,
     lingua.me.<uid>, lingua.posts.<uid>, lingua.drafts.<uid>,
-    lingua.langs.<uid>, lingua.cur.<uid>, lingua.take.<uid>
+    lingua.langs.<uid>, lingua.cur.<uid>, and lingua.take.<uid> where an
+    older version wrote it
   and when lingua.set's old `acct` stamp names this account: its part of the
     old live keys (acctMoved) -- lingua.me, lingua.posts, lingua.drafts,
     lingua.cur whole, its rows of lingua.langs and its fields of lingua.set,
@@ -496,21 +509,31 @@ else's page, filed under that language's own id so a second download of it
 lands in the same place and does not make a second copy. 「ダウンロードボタン押しても言語追加されないけど？」「いつまでもfalseだった
 とかやめてね。」 OWNER 2026-09-01 is the sentence that closed the gap.
 
-**そして「この端末はその答えを聞いたことがある」の写しが一枚あります** ──
-`lingua.take.<uid>`（`acctKeep('take')`、`www/core.js` § LTAKE・§ ACCT）。`language_take`
-がその起動で答えた言語の番号の並びで、**サーバーの答えの写しであって、誰かの
-作ったものではありません**。
-
-| | |
-|---|---|
-| 鍵 | `lingua.take.<uid>` ── 末尾がアカウントの名前なので `lsWipeAcct()` が数えて取る（一覧に足す必要はない） |
-| 書く | `langTookGot()` ── 答えが来た時だけ。`null`（＝訊けていない）は書かない |
-| 読む | アカウントの入れ物（`acctKeep('take')`・`acctFor()`）── **手元のアカウントの分だけ**。起動と入り（`netTook`）、出る時は `acctFor('')` で忘れる |
-| 上る道 | **無し。**これを送る所はどこにも無く、作ってはいけない ── 何を取ったかは `language_take` で、訊くのは `netTakes()` |
-| なぜ在るか | 「前に読み込んだの出していいよ。何か更新するならクルクルが必要」OWNER 2026-09-12。無ければ電波の無い起動で `langWhose()` が `LW_WAIT` を返し、取った言語が丸ごと消えて見える |
+**`language_take` の答えはメモリにだけ在ります**（`langTookGot()`、`www/core.js`
+§ LTAKE）。「だから端末に置くのもng」OWNER 2026-09-30 ── 人の言語はサーバーに
+だけ置くので、何を取ったかも端末には書きません。アカウントが替わると忘れ
+（`acctMem`）、電波の無い起動では「訊けていない」で、取った言語は出ません。
+2026-09-12 から 09-30 までのビルドが書いた `lingua.take.<uid>` は読まず、消し
+ません（アカウントを消す時に `lsWipeAcct()` が数えて取る）。
 
 段を訊けていない起動では `dlCap()` は数ではなく（`planNum()` が `null`）、
 天井が数でない間は何も畳みません。
+
+**人の言語はプランで畳みません**（OWNER 2026-09-30「dl言語は有料無料関係ない」）。
+字・単語・文法の段・書き方・向きのどれも、作った人の物のまま見えます。プランが
+言語の形を変えるのは `langShaped()`（`www/core.js`）が答え、人の言語では必ず
+「変えない」です。`taken-check` が持ちます。
+
+**取った人が作るキーボードは、取った人の物です**（OWNER 2026-09-30、「DL可能
+言語」の決定の (2)）。サーバーの `take_kb` ── 一行が（取った人, 言語）で、
+`body` は `kb` スライスと同じ形 `{kbs, at, v}`。作った人の `kb` スライスは一バイト
+も動きません。本人だけが読み書きし（`uid = auth.uid()`）、書けるのは取った言語
+にだけ（`language_took()`）。DELETE は許していません ── 取った言語を外しても
+（`netTakeDrop()`）行は残り、もう一度取れば戻ります。アカウントを消すとその行も
+消えます（`auth.users` の cascade）。言語への外部キーは無く、作った人が言語を
+消しても行は残ります。端末には書かず、メモリの `KBT`（`www/keyboard.js`）だけ
+── 言語と一緒に `netTakeKbRead()`（`www/net.js`）が下ろし、保存で
+`netTakeKbPut()` が上げます。`taken-check` と `rls-check` が持ちます。
 
 `wldGet()` (`www/home.js`) is the one road in: it writes the index row FIRST,
 so a slice can never sit in storage under a language the index does not know,
@@ -520,7 +543,8 @@ and then writes the slices it was asked for with `langKeyOf(id, kind)`.
 2026-09-02, and the answers are here rather than in a log somebody has to find.
 
 1. **Where the slices live.** A downloaded language is `lingua.<id>.<slice>`
-   like any other, or it is not a language at all — `langKeyOf(id, slice)` is
+   like any other — in memory, and **never on this phone's disk** (2026-09-30,
+   r150) — or it is not a language at all — `langKeyOf(id, slice)` is
    the only thing that knows how a language is filed and a second answer is
    the bug `CLAUDE.md` names twice (the keyboard, the world).
 2. **It does not go up into this account's rows.** OWNER 2026-09-01, asked
@@ -544,20 +568,20 @@ and then writes the slices it was asked for with `langKeyOf(id, kind)`.
    the grammar is `phases` **and** `gram2`, and half a chapter in the index
    would look like a grammar somebody could open.
 4. **The ceiling counts it separately, and both numbers are decided.**
-   OWNER 2026-09-01: 「別に数える」; OWNER 2026-09-02:
-   「plusからです」「plusは1つproは3つ」.
+   OWNER 2026-09-01: 「別に数える」; OWNER 2026-09-30:
+   「DL言語1言語無料、plus、3言語、pro無限」「作れる言語も1、3、無限」.
 
    ```
-     langCap()  FREE_LANGS 1   PRO_LANGS 3    languages you MAKE   langWhose() mine
-     dlCap()    PLUS_DL    1   PRO_DL     3    languages you READ   language_take rows
+     langCap()  FREE_LANGS 1   PLUS_LANGS 3   Pro Infinity   languages you MAKE   langWhose() mine
+     dlCap()    FREE_DL    1   PLUS_DL    3   Pro Infinity   languages you READ   language_take rows
    ```
 
    `langCount()` counts the ones `langWhose()` answers **mine** for and
    `dlCount()` is the server's own count of `language_take`, so signing in as
    somebody else hands you neither their languages nor their downloads. A
    language nobody has answered for is in neither number — a ceiling measured
-   against an unanswered language refuses somebody their own next one. Free is nought downloads: the plan is the
-   door and the ceiling is the room, asked in that order in `wldGet()`.
+   against an unanswered language refuses somebody their own next one. Every plan
+   may take: the ceiling is the only thing `wldGet()` asks.
    **Neither ceiling removes or counts down anything, and the LIST FOLDS.**
    OWNER 2026-09-12 「有料が消えて無料に残った後は非表示じゃないの？」. Somebody
    whose plan ended keeps **every** language, byte for byte, on the server and
@@ -916,6 +940,18 @@ be the opposite — it would hold somebody to a change they have not made.
 
 **It is not on `profile_seen`.** When somebody last changed their name is not
 something other people are shown.
+
+## Lingua's own account
+
+**The column: `profile.official`, a boolean, false unless set.** Whether this
+account is Lingua's own — today @lingua alone (docs/FEATURE_RULES.md
+2026-09-30). It answers one question: on this account's page, the one
+language a profile shows is replaced by 「DL可能言語」, the languages it has
+published (`vDlLangs()` in `www/me.js`, read by `netDlLangs()`). It is **in
+neither grant on `profile`**, the way `staff` is not, so no account can write
+it on itself or anybody else — it is set in the dashboard or by a file under
+`supabase/once/`. It **is** on `profile_seen`, for everybody signed in, because
+somebody else's page is drawn from it. `rls-check` holds both halves.
 
 ## What money is allowed to touch
 

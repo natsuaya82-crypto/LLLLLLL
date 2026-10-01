@@ -53,6 +53,13 @@ did not write, and every global above is still 「the one in front of me」 — 
 the line `sides-check` holds does not move, it just has a case where the
 language in front of you is one you may not edit. What stops the edit is not a
 locked door but `langLocked()` (`www/core.js`), asked at every saver.
+**And it is used, never had** (OWNER 2026-09-30, every plan): nothing of it
+leaves the app — no font, SVG or sheet file, no copy — and a card of a post, a
+word or an example is a picture and may leave, and its keyboard is handed to
+the Lingua keyboard as one's own is, which is typing inside Lingua rather than
+leaving; nothing of it is written to this phone's
+disk, so it has no copy for a launch with no signal. `langOut()` (`www/core.js`)
+is the one question every way out asks, and `theirs-check` counts them.
 `docs/DATA_MODEL.md` § a language that is only read is the whole of it.
 
 ## Where the truth lives

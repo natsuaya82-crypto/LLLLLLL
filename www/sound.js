@@ -160,12 +160,17 @@ function vWsys(){
   /* Every kind, on every plan, and the buffer registered before the bar is
      built -- keepBtnHTML() inside navTop() is what puts the Save there. */
   wsKeepOn();
+  /* On somebody else's language the two are READ: the rows say which, and
+     nothing is pressed (langLocked, www/core.js; OWNER 2026-09-30). The
+     switch under them is this person's own setting and stays. */
+  var ro=langLocked(), ws=ro? wsys() : wsKept('ws'), dr=ro? scriptDir() : wsKept('dir');
+  function row(fn, k, label, on){
+    return (ro? '<div class="set">' : '<button class="set"' + DO(fn, [k]) + '>')+
+      '<span class="sl">'+esc(label)+'</span>'+
+      '<span class="sv">'+(on? ICON_TICK : '')+'</span>'+(ro? '</div>' : '</button>');
+  }
   return '<div class="view">'+navTop('', helpQ('wsys'))+'<div class="body">'+
-    WSYS.map(function(k){
-      return '<button class="set"' + DO('wsPick', [k]) + '>'+
-        '<span class="sl">'+esc(t('ws.k.'+k))+'</span>'+
-        '<span class="sv">'+(wsKept('ws')===k? ICON_TICK : '')+'</span></button>';
-    }).join('')+
+    WSYS.map(function(k){ return row('wsPick', k, t('ws.k.'+k), ws===k); }).join('')+
     /* Which way it is written. Here rather than in the person's settings
        because it is the language's -- one language, one answer, and it goes
        to the server with the rest of the language (`SCRIPT.dir`, the
@@ -179,11 +184,7 @@ function vWsys(){
        よっては課金を促すって話なの」 OWNER 2026-09-01. A row that answers
        with the popup is not a row nothing can press. */
     '<div class="sec">'+t('dir.title')+'</div>'+
-    DIRS.map(function(k){
-      return '<button class="set"' + DO('dirPick', [k]) + '>'+
-        '<span class="sl">'+esc(t('dir.'+k))+'</span>'+
-        '<span class="sv">'+(wsKept('dir')===k? ICON_TICK : '')+'</span></button>';
-    }).join('')+
+    DIRS.map(function(k){ return row('dirPick', k, t('dir.'+k), dr===k); }).join('')+
     /* Roman or your own letters is the same kind of decision -- it changes
        every screen in the app and nobody flips it twice a day -- so it sits
        with the others rather than under a specimen box on a chapter. */
@@ -264,7 +265,10 @@ function abScale(f){
   saveLetters(); installScriptFont(); render();
 }
 function vAbugida(){
-  var vs=wsVows(), cs=wsCons(), v=abVowel(), vl=ltMain(v);
+  /* Somebody else's abugida is looked at here -- every consonant wearing the
+     mark -- and the mark is not moved and no cell is drawn (langLocked,
+     www/core.js; OWNER 2026-09-30). */
+  var vs=wsVows(), cs=wsCons(), v=abVowel(), vl=ltMain(v), ro=langLocked();
   if(!wsHasMarks())
     return '<div class="view">'+navTop('')+'<div class="body">'+
       '<div class="note">'+t('ab.notabugida')+'</div>'+
@@ -277,7 +281,7 @@ function vAbugida(){
     (v
       ? '<div class="abmark">'+
           '<div class="abmh">'+esc(t('ab.mark', v))+'</div>'+
-          '<div class="abctl">'+
+          (ro? '' : '<div class="abctl">'+
             '<button' + DO('abNudge', [-1, 0]) + ' aria-label="'+esc(t('ab.left'))+'">'+ICON_ARR_L+'</button>'+
             '<button' + DO('abNudge', [1, 0]) + ' aria-label="'+esc(t('ab.right'))+'">'+ICON_ARR_R+'</button>'+
             '<button' + DO('abNudge', [0, -1]) + ' aria-label="'+esc(t('ab.up'))+'">'+ICON_ARR_U+'</button>'+
@@ -286,14 +290,15 @@ function vAbugida(){
             '<button' + DO('abScale', [0.8]) + '>'+t('ab.smaller')+'</button>'+
             (inkRings(inkGeo(vl))? '' :
               '<button' + DO('editGlyph', [v]) + '>'+ICON_PEN+t('ab.draw')+'</button>')+
-          '</div></div>'+
+          '</div>')+'</div>'+
         '<div class="sec">'+t('ab.every', v)+'</div>'+
         (cs.length
           ? '<div class="abgrid">'+cs.map(function(c){
               var u=wsKey([c,v]), own=!!inkGeo(ltMain(u));
-              return '<button class="abcell'+(own?' own':'')+'"' + DO('editGlyph', [u]) + '>'+
+              return (ro? '<div class="abcell'+(own?' own':'')+'">'
+                        : '<button class="abcell'+(own?' own':'')+'"' + DO('editGlyph', [u]) + '>')+
                 '<canvas class="tc" data-r="'+esc(u)+'"></canvas>'+
-                '<span class="abu">'+esc(u)+'</span></button>';
+                '<span class="abu">'+esc(u)+'</span>'+(ro? '</div>' : '</button>');
             }).join('')+'</div>'+
             ''
           : '<div class="note">'+t('ab.nocons')+'</div>')
@@ -812,18 +817,34 @@ function ltHidHTML(k){
   if(!n) return '';
   return capWarnHTML(t('cap.hid', n));
 }
-function ltSeen(){
-  if(!planNo(can('letters'))) return LETTERS;
-  return LETTERS.filter(ltIsBase);
+/* AND ON SOMEBODY ELSE'S LANGUAGE, ONLY WHAT ITS MAKER DREW.
+   「DLした言語はDLした分だけ入るんだからなんで鉛筆が出るの？」「書いてない文字
+   が入る必要があるの？」 OWNER 2026-09-30. Every language is born with the
+   slots (ltSlotsFill), so a taken one arrived with every slot its maker never
+   drew on, each a pencil its taker cannot use. Drawn is ltHasShape() -- a
+   shape or a borrowed character -- the one sentence for 「somebody made
+   something of this letter」. Nothing leaves the maker's slices: this is what
+   is SHOWN, and the plan's fold above is the other half of the same answer.
+
+   ltShown() is the question, of one letter of the open language; ltSeen() is
+   the alphabet it lets through, and everything that lists or offers the
+   letters asks one of the two (tools/taken-check.mjs walks every face). */
+function ltShown(l){
+  if(langTheirs(langId)) return ltHasShape(l);
+  return !langShaped(can('letters')) || ltIsBase(l);
 }
-/* How many are not on screen. With no room named it is the alphabet entire,
+function ltSeen(){ return LETTERS.filter(ltShown); }
+/* How many the PLAN is keeping off the screen -- the fold, and only the fold:
+   a slot somebody else's language was never drawn on is not hidden from
+   anybody, and saying 「N hidden」 about it would be an upgrade line on a
+   language no plan touches. With no room named it is the alphabet entire,
    which is what the settings row asks; named a room, it is that room's own --
    the digits room said "4 hidden" while every digit it holds was on screen,
-   because the number it printed was the whole alphabet's. It is the one split
-   ltOfKind() makes, asked of LETTERS instead of ltSeen(). */
+   because the number it printed was the whole alphabet's. */
 function ltHidden(k){
-  if(!k) return LETTERS.length-ltSeen().length;
-  return ltOfKindIn(LETTERS,k).length-ltOfKind(k).length;
+  var list=k? ltOfKindIn(LETTERS,k) : LETTERS;
+  if(!langShaped(can('letters'))) return 0;
+  return list.filter(function(l){ return !ltIsBase(l); }).length;
 }
 function ltOfKind(k){ return ltOfKindIn(ltSeen(),k); }
 function ltOfKindIn(list,k){
@@ -848,8 +869,11 @@ function vLetters(){
        And the same mark is where the letters leave as SVG -- 「svgも足そう」
        OWNER 2026-09-26 -- so it goes to the screen that says which, vLtOut();
        a pop was asked instead and taken off 「そのポップでフォントとsvg出すのは
-       やめてくれ」 OWNER 2026-09-26. */
-    navTop('', helpQ('letters')+navDo(t('lt.out'), 'go', ['ltout'], false, {icon:ICON_SHARE}))+
+       やめてくれ」 OWNER 2026-09-26.
+       Not on somebody else's language: nothing of it leaves the app
+       (langOut(), www/core.js). */
+    navTop('', helpQ('letters')+(langOut(langId)?
+      navDo(t('lt.out'), 'go', ['ltout'], false, {icon:ICON_SHARE}) : ''))+
     '<div class="body">'+
     (wsHasMarks()
       ? '<button class="trow"' + DO('go', ["abugida"]) + ' style="margin-top:6px">'+
@@ -868,10 +892,16 @@ function vLetters(){
        (OWNER DECISION 2026-08-23) and the gate is one line in `CAN` --
        `write: 'pro'` -- in www/core.js, which this session does not own and
        which another branch is changing today. docs/CHANGELOG.md says so out
-       loud rather than leaving it to be found. */
+       loud rather than leaving it to be found.
+
+       Not on somebody else's language: the sheet's two rows are making one
+       (which leaves the app, langOut) and bringing one in (which writes the
+       alphabet, langLocked), and neither is theirs -- a row onto a page with
+       nothing on it is not drawn (OWNER 2026-09-30). */
+    (langLocked()? '' :
     '<button class="trow"' + DO('openWrite') + '>'+
       '<span class="rn"></span><span class="rt">'+esc(t('wr.title'))+'</span>'+
-      '<span class="lead"></span><span class="rv"></span>'+ICON_GO+'</button>'+
+      '<span class="lead"></span><span class="rv"></span>'+ICON_GO+'</button>')+
     '</div>'+
     '</div></div>';
 }
@@ -894,6 +924,7 @@ function vLetters(){
    answered, and must not be guessed at. */
 function ltFontOut(){
   var p;
+  if(!langOut(langId)) return;
   if(!SFONT.b64){ toast(t('kb.font.none')); return; }
   p=sharePlug();
   if(!p){ toast(t('card.nofile')); return; }
@@ -918,8 +949,9 @@ function ltFontName(){
    not a line. */
 function vLtOut(){
   return '<div class="view">'+navTop('')+'<div class="body">'+
-    '<button class="set"' + DO('ltFontOut') + '><span class="sl">'+esc(t('lt.out.font'))+'</span></button>'+
-    '<button class="set"' + DO('ltSvgOut') + '><span class="sl">'+esc(t('lt.out.svg'))+'</span></button>'+
+    (langOut(langId)?
+      '<button class="set"' + DO('ltFontOut') + '><span class="sl">'+esc(t('lt.out.font'))+'</span></button>'+
+      '<button class="set"' + DO('ltSvgOut') + '><span class="sl">'+esc(t('lt.out.svg'))+'</span></button>' : '')+
     '</div></div>';
 }
 /* THE DRAWN LETTERS AS SVG. 「svgも足そう」 OWNER 2026-09-26. Every plan: a
@@ -962,6 +994,7 @@ function ltSvg(lts){
    UTF-8 first -- a letter's name can be anything. */
 function ltSvgSend(lts, name){
   var p, b64;
+  if(!langOut(langId)) return;
   if(!lts.length){ toast(t('kb.font.none')); return; }
   p=sharePlug();
   if(!p){ toast(t('card.nofile')); return; }
@@ -1145,8 +1178,10 @@ function vLtset(){
        sound whose letter the free plan hides, each asking to be drawn again.
        「無料に戻ったけど…それ以外の文字が普通にいるってこと」 OWNER
        2026-09-01. can('snd') is the same door the sound chart behind a letter
-       is already behind; nothing is deleted and paying brings the offer back. */
-    var free=(pick && can('snd') && ltFil==='all' && !ltQ)? sndLoose() : [];
+       is already behind; nothing is deleted and paying brings the offer back.
+       And not on somebody else's language, on any plan: a cell here MAKES a
+       letter, and its taker draws none (langLocked, OWNER 2026-09-30). */
+    var free=(pick && !langLocked() && can('snd') && ltFil==='all' && !ltQ)? sndLoose() : [];
     if(!list.length && !free.length)
       return '<div class="note">'+t('lt.none')+'</div>';
     return '<div class="ltgrid'+(ltWob? ' held':'')+'" id="'+gid+'" data-k="'+esc(k)+'">'+
@@ -1365,7 +1400,14 @@ function ltAbField(l, id){
    called Letter holding three buttons that each said Letter -- one of which
    said "create" and redrew this one. */
 function vLetter(){
-  var lid=here().a, l=ltById(lid);
+  var lid=here().a, l=ltById(lid),
+      /* SOMEBODY ELSE'S LANGUAGE IS READ HERE, NOT CHANGED. 「dl言語は…編集は
+         できない」 OWNER 2026-09-30, on every plan: every control below that
+         changes the letter -- drawing it, naming it, its sound, borrowing a
+         character, the note, deleting it -- is not drawn, and what it holds
+         is shown to read. langLocked() is the one question
+         (tools/taken-check.mjs walks every face and counts). */
+      ro=langLocked();
   if(!l) return viewGone();
   /* The two fields on this page are typed into a buffer, so it has to exist
      before they are drawn out of it. www/letters.js § ltKeepOn. */
@@ -1396,11 +1438,14 @@ function vLetter(){
        「書いた文字の横に並べてその二つで中央取る感じにして」 OWNER 2026-09-27
        -- it stood in the bar beside the Save, which is the one screen where a
        share is not in the corner. Only on a letter with a shape -- there is
-       nothing to put in the file otherwise. ltSvgOne(). */
+       nothing to put in the file otherwise, and not on somebody else's
+       language, which does not leave the app (langOut()). ltSvgOne(). */
     '<div class="ltrow">'+
-      '<button class="spbig"' + DO('editLetter', [lid]) + '>'+
-        ltInk(l, '<span class="nol">'+ICON_PEN+'</span>')+'</button>'+
-      (inkGeo(l)
+      (ro
+        ? '<div class="spbig">'+ltInk(l, '')+'</div>'
+        : '<button class="spbig"' + DO('editLetter', [lid]) + '>'+
+            ltInk(l, '<span class="nol">'+ICON_PEN+'</span>')+'</button>')+
+      ((inkGeo(l) && langOut(langId))
         ? '<button class="ltshare" aria-label="'+esc(t('lt.out.svg'))+'"' + DO('ltSvgOne', [lid]) + '>'+ICON_SHARE+'</button>'
         : '')+
     '</div>'+
@@ -1413,7 +1458,7 @@ function vLetter(){
        ltIsBase() in letters.js is the one place that says which those are,
        and the + on the alphabet is what somebody wanting a differently-named letter
        does instead. */
-    (!ltIsBase(l)
+    (!ltIsBase(l) && !ro
       ? '<div class="sec">'+t('lt.ab.h')+'</div>'+ltAbField(l, lid)
       : '')+
     (numIsDigit(l)? numWordRow(l) : '')+
@@ -1421,25 +1466,29 @@ function vLetter(){
        reporting the sound, and the sound was set on a chapter of its own two
        screens away. 「アルファベットのページから音を変更するボタン押して変更でき
        るようにして」 */
-    '<button class="set" style="border-bottom:none"' + DO('openSnd', [lid]) + '>'+
+    (ro? '<div class="set" style="border-bottom:none">'
+       : '<button class="set" style="border-bottom:none"' + DO('openSnd', [lid]) + '>')+
       '<span class="sl">'+t('toc.sound')+'</span>'+
       '<span class="sv">'+(numIsDigit(l)
         ? esc(t('num.h'))
         : ltUnits(l).length
           ? (ltHasSound(l)? '/'+esc(l.snd.join('/'))+'/' : esc(l.snd.join(' ')))
-          : esc(t('lt.reads.none')))+'</span>'+ICON_GO+'</button>'+
+          : esc(t('lt.reads.none')))+'</span>'+(ro? '</div>' : ICON_GO+'</button>')+
     /* What the letter MEANS, for the writing systems where it means something.
        A logography's letter is a word, and a word has a sense that no sound
        and no name can carry; a syllabary's letter may be a name somebody
        wants to remember. It is free text and the app never reads it -- it is
        the person's note about their own letter.
        「標語文字の人は意味を持たせたいだろうから、メモ欄追加してもいいかも」 */
-    '<div class="sec">'+t('lt.note')+'</div>'+
-    lnField('lt-nt', '', IN('ltSetNote'), keepVal(keepKeyOf('letter', lid), 'nt'), 'ntin')+
+    (ro
+      ? (l.nt? '<div class="sec">'+t('lt.note')+'</div><div class="set"><span class="sl">'+esc(l.nt)+'</span></div>' : '')
+      : '<div class="sec">'+t('lt.note')+'</div>'+
+        lnField('lt-nt', '', IN('ltSetNote'), keepVal(keepKeyOf('letter', lid), 'nt'), 'ntin'))+
     (l.ch
       ? '<div class="gborrow" style="margin-top:8px"><span class="gbch">'+esc(l.ch)+'</span>'+
         '<span class="gbl">'+t('glyph.borrowed')+'</span>'+
-        '<button class="gbx"' + DO('ltDropChar', [lid]) + '>'+t('ch.clear')+'</button></div>'
+        (ro? '' : '<button class="gbx"' + DO('ltDropChar', [lid]) + '>'+t('ch.clear')+'</button>')+'</div>'
+      : ro? ''
       : '<button class="btn ghost wide"' + DO('openPick', [lid]) + '>'+
         t('glyph.borrow')+'</button>')+
     /* 「複製するボタンいらんやろ」 OWNER 2026-09-01. It was the way to have a
@@ -1448,7 +1497,7 @@ function vLetter(){
        same room, so the function went with the button. */
     /* The same question the ⊖ asks, asked once (ltCanDelete, www/letters.js):
        one of the first thirty-eight has no delete anywhere. */
-    (ltCanDelete(ltById(lid))
+    (ltCanDelete(ltById(lid)) && !ro
       ? '<div class="grpsep"></div><button class="set end"' + DO('ltDelete', [lid]) + '>'+
         '<span class="sl bad">'+t('glyph.del')+'</span></button>'
       : '')+

@@ -112,7 +112,7 @@ function wsGuess(){
    the line taken out: the fixture's free language came back `syll`, and the
    characters borrowed for it stopped being drawn.
 
-   planNo() is the whole of what changed: it is true for 「free」 and not for
+   planNo() (asked through langShaped()) is the whole of what changed: it is true for 「free」 and not for
    「nobody has asked」 (www/core.js § has), and falling to `alpha` on the
    second is this app telling somebody who
    PAID that their abugida is an alphabet -- on a launch with no signal, and
@@ -127,7 +127,7 @@ function wsGuess(){
    room, and which says 「接続できません」 rather than a price while nobody
    has asked. */
 function wsys(){
-  if(planNo(can('wsys'))) return 'alpha';
+  if(langShaped(can('wsys'))) return 'alpha';
   var w=langWsysOf(langId);
   return WSYS.indexOf(w)>=0 ? w : wsGuess();
 }
@@ -403,7 +403,7 @@ var DIRS=['ltr', 'rtl', 'ttb-rl', 'ttb-lr'];
    sent before verify-plan lands does not carry `ltr` for a language written
    right to left -- pwSend() puts scriptDir() ON the post (The past). */
 function scriptDir(){
-  if(planNo(can('dir'))) return 'ltr';
+  if(langShaped(can('dir'))) return 'ltr';
   return DIRS.indexOf(SCRIPT.dir)>=0 ? SCRIPT.dir : 'ltr';
 }
 /* What a direction is called in CSS. `writing-mode` is the whole of it for

@@ -1880,6 +1880,33 @@ function netTakeDrop(sid, ok, bad){
     },
     function(d, st, m){ if(bad) bad(d, st, m); });
 }
+/* AND THE KEYBOARDS THIS ACCOUNT BUILT FOR A LANGUAGE IT TOOK.
+   -------------------------------------------------------------------------
+   「ないやつは自作可能」 OWNER 2026-09-30. `take_kb` in supabase/schema.sql,
+   one row per (account, language), this account's and nobody else's; what it
+   holds is www/keyboard.js § KBT. It comes down with the language it is
+   for (pullOn('lang'), www/sns.js), because which keyboard goes to the phone
+   is the taker's to say and the phone is handed one on every render.
+
+   It FILLS IN what is missing and stops: a record this phone is holding --
+   built and not yet sent -- is not written over by the server's older one. */
+function netTakeKbRead(sid, ok, bad){
+  var id=String(sid||'');
+  if(!id){ ok(0); return; }
+  netGet('/rest/v1/take_kb?select=body&uid=eq.'+encodeURIComponent(netUid())+
+         '&language=eq.'+encodeURIComponent(id)+'&limit=1',
+    function(d){
+      var k=null;
+      if(d && d.length && d[0] && d[0].body){ try{ k=JSON.parse(d[0].body); }catch(e){ k=null; } }
+      if(!KBT[id] && k && typeof k==='object' && k.kbs) KBT[id]=kbIded(k);
+      ok(1);
+    }, bad);
+}
+/* And up, the whole record, when a keyboard of the taker's is saved
+   (kbWrite, www/keyboard.js). The language's own rows are not touched. */
+function netTakeKbPut(sid, rec, ok, bad){
+  netPut('takekb', String(sid||''), {body:JSON.stringify(rec || kbMint())}, ok, bad);
+}
 /* AND HOW THIS LANGUAGE IS WRITTEN.
    -------------------------------------------------------------------------
    「端末に残すものないんですけど」 OWNER 2026-09-08. The same shape as
@@ -1950,6 +1977,21 @@ function netLangSeen(lid, ok, bad){
            license:String(r.license||''), wsys:String(r.wsys||''),
            pub:r.published_at? String(r.published_at) : '',
            nwords:Number(r.nwords)||0, nletters:Number(r.nletters)||0 });
+    }, bad);
+}
+/* THE LANGUAGES ONE ACCOUNT HAS PUBLISHED, for an official account's
+   「DL可能言語」 (docs/FEATURE_RULES.md 2026-09-30). `language_seen` answers
+   with published languages and your own, so `published_at` is asked for as
+   well: your own unpublished one is not a language anybody can take. Oldest
+   first, the order a profile's one language is chosen in. */
+function netDlLangs(uid, ok, bad){
+  netGet('/rest/v1/language_seen?select=id,name,created_at'+
+         '&owner=eq.'+encodeURIComponent(String(uid||''))+
+         '&published_at=not.is.null&order=created_at.asc&limit='+NET_PAGE,
+    function(d){
+      var out=[], i;
+      for(i=0;i<d.length;i++) out.push({ id:String(d[i].id||''), name:String(d[i].name||'') });
+      ok(out);
     }, bad);
 }
 /* Every slice of one language, as {kind: {body, no}}. */
@@ -2063,8 +2105,9 @@ function netSlices(sid, ok, bad, kinds, cols){
    server's own id, so two walks running at once see each other's entries
    (acct-check 13, 2026-09-09).
 
-   WHO WROTE IT goes on the PICTURE here and not on LOWN (www/core.js
-   § langOwnGot): the picture is what the list is DRAWN from (langOwnOf), and
+   WHO WROTE IT goes on the PICTURE here, first -- every other picture asks
+   langOut(), which reads it (www/core.js § slGot) -- and not on LOWN
+   (§ langOwnGot): the picture is what the list is DRAWN from (langOwnOf), and
    LOWN is also 「this language may be written」, which waits for the slices
    so that 「the server has said it is mine」 is also 「what is on the screen
    is the server's」 (quiet-check 2). netLangFill() writes LOWN. */
@@ -2080,6 +2123,9 @@ function netLangsWalk(d, done){
     own=String(row.owner||netUid());
     nid=String(row.id);
     NET_LROW[nid]={owner:own};
+    /* WHO WROTE IT FIRST: every picture below asks langOut(), and this is
+       the answer it reads (www/core.js § slGot). */
+    slGot(nid, 'owner', own);
     if(!LANGS[nid]){
       /* Somebody else's is stamped with its owner (langSeenAdd); this
          account's is an entry and nothing else. The entry first, so slices
@@ -2096,7 +2142,6 @@ function netLangsWalk(d, done){
     langNameGot(nid, row.name);
     langWsysGot(nid, row.wsys);
     langMadeGot(nid, row.created_at);
-    slGot(langOwnKey(nid), own);
   }
   if(rows.length) langStore();
   if(made) render();
@@ -2145,7 +2190,7 @@ function netLangFill(id, ok, bad){
          after this is understood by the server as a removal (§ NET_BASE),
          and the picture for a launch with no signal (slGot, www/core.js) */
       netBaseSet(nid, k, there[k].no);
-      slGot(langKeyOf(nid, k), there[k].body);
+      slGot(nid, k, there[k].body);
     }
     /* The OPEN language's slices came down, so what the screens are holding
        is the picture: read it in the way langOpen() does, HERE, before
@@ -2446,6 +2491,13 @@ var NET_PUT={
     return {method:'PATCH', path:'/rest/v1/profile?id=eq.'+encodeURIComponent(uid), body:r,
             got:function(d){ return (d && d.length)? d[0] : null; }};
   },
+  /* An upsert: the first keyboard a taker builds makes the row, every save
+     after writes over it (supabase/schema.sql § take_kb). */
+  takekb: function(lid, r){
+    return {method:'POST', path:'/rest/v1/take_kb', up:true,
+            body:{uid:netUid(), language:lid, body:r.body, at:(new Date()).toISOString()},
+            got:function(d){ return (d && d.length)? d[0] : null; }};
+  },
   prefs: function(uid, r){
     return {method:'POST', path:'/rest/v1/rpc/prefs_put', body:r,
             got:function(d){ return (d && typeof d==='object')? d : null; }};
@@ -2522,7 +2574,7 @@ function netSliceUp(id, kind, done, bad){
         /* the server's answer, written by the app and not by a person */
         if(now!==mine){ slMend(k); slAsApp(slWr, [k, now]); moved=true; }
         slSettled(k);
-        slGot(k, now);
+        slGot(id, kind, now);
       }
       done(moved);
     }, bad);
@@ -3654,7 +3706,7 @@ function netLike(q){
    for them: one person by handle, and many people at once. A `select=` written
    out twice is two lists that come to differ, and the one that differs is the
    one nobody is looking at. */
-var NET_WHO_SEL='/rest/v1/profile_seen?select=id,handle,display,av,bio,link,loc,banned_at,fo,fr,lang_id,lang_name,lang_pub,badge,pin';
+var NET_WHO_SEL='/rest/v1/profile_seen?select=id,handle,display,av,bio,link,loc,banned_at,fo,fr,lang_id,lang_name,lang_pub,badge,pin,official';
 /* And one place turns a row into a person, for the same reason. */
 /* THE LANGUAGE IS ON THE ROW AND IS NOT A SECOND REQUEST.
    「なんか全体的に遅くない？」 OWNER 2026-09-08 (143). It used to be
@@ -3680,6 +3732,9 @@ function netWhoRow(r){
           out:!!r.banned_at,
           /* the post at the top of their page (profile.pin), '' for none */
           pin:String(r.pin||''),
+          /* Lingua's own account (profile.official): its page offers the
+             languages it has published in place of the one language */
+          off:!!r.official,
           /* the account's uuid, which somebody's posts are keyed on */
           uid:String(r.id||'')}, r);
 }

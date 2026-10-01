@@ -47,8 +47,8 @@ smooth hook depending on one toggle. `l` in the proof is four vertices with two 
 them curved.
 
 **The pen is ONE global setting for the whole writing system** — `width`,
-`angleDeg`, `contrast` — and a stroke may carry a width of its own, no wider
-than the pen: `w`, `GE_W` in `www/glyph.js` 「そもそもフォントを作るのに太さが
+`angleDeg`, `contrast` — and a stroke may carry a width of its own, a dot of
+12 to 40 with the pen's 24 in the middle: `w`, `GE_W` in `www/glyph.js` 「そもそもフォントを作るのに太さが
 選べないのは変だよね？」 OWNER 2026-09-30.
 
 Two things fall out of that last decision for free, and they are the reason to

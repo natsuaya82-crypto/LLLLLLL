@@ -82,6 +82,7 @@ page('thread',   vThread);
 page('photo',    vPhoto);
 page('drafts',   vDrafts);
 page('langs',    vLangs);
+page('dllangs',  vDlLangs);
 page('mod',      vMod);
 page('admin',    vAdmin);
 page('plans',    vPlans);

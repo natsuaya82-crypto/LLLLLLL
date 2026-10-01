@@ -47,13 +47,12 @@ await pg.waitForSelector('#splash', { state:'detached', timeout:20000 });
 const r = await pg.evaluate(async ({ s, sid }) => {
   eval('(' + s + ')()');
   SET.walked = true;
-  /* ON PLUS, WHICH IS THE RUNG. 「plusからです」OWNER 2026-09-02, replacing
-     「Downloading a keyboard or an alphabet is free」(docs/FEATURES.md § 4,
-     2026-08-19). This line used to say `free`, deliberately, and its own
-     comment said it was what would turn red the day a rung was put on the
-     row. It did. What free and pro do about it is asked further down, in
-     claims of their own. */
-  planGot('plus'); save();
+  /* ON FREE, THE LOWEST RUNG THAT MAY TAKE. 「DL言語1言語無料」OWNER
+     2026-09-30, replacing 「plusからです」(2026-09-02). This walk is the
+     whole road -- the ↓ drawn, pressed, and the slices landing -- so walking
+     it on free is what says a free account can take its one. What the
+     second one does, and the other rungs, is asked in claims of their own. */
+  planGot('free'); save();
 
   /* ---- the network, and ONLY the network ------------------------------
      What the server really answers with is what supabase/schema.sql's
@@ -236,7 +235,11 @@ const r = await pg.evaluate(async ({ s, sid }) => {
        question than the one it prints. */
     var picks = ['wSelOn', 'kbSelOn', 'ntSelOn'];
     out.doorsUp = [];
-    ['words', 'ltset', 'gram', 'kb', 'notes', 'about'].forEach(function(r){
+    /* Not `kb`: a keyboard the person who took it builds is theirs, on their
+       own row, and the language does not move -- 「ないやつは自作可能」 OWNER
+       2026-09-30 (docs/FEATURE_RULES.md § 2026-09-30 「DL可能言語」 (2)).
+       tools/taken-check.mjs holds that half. */
+    ['words', 'ltset', 'gram', 'notes', 'about'].forEach(function(r){
       try {
         window.route = r; NAV = [{ r:r }];
         render();
@@ -436,15 +439,19 @@ const r = await pg.evaluate(async ({ s, sid }) => {
      「plusからです」「dlはしかもplusは1つproは3つ DL言語とmake言語でそれぞれ
      別の最大値ね？」OWNER 2026-09-02.
 
-     Asked of the app rather than restated here: dlCap() is the number and
-     can('dl') is the door, and both are read out of core.js. What is claimed
-     is the shape -- free cannot, plus is one, pro is three, and the two
-     ceilings never touch each other. */
+     「DL言語1言語無料、plus、3言語、pro無限にしない？」OWNER 2026-09-30
+     replaced both of those numbers and the door: every plan may take, and
+     how many is the one thing a plan decides.
+
+     Asked of the app rather than restated here: dlCap() is the number, read
+     out of core.js. What is claimed is the shape -- free is one, plus is
+     three, pro has none, and the two ceilings never touch each other.
+     Infinity does not survive JSON out of the page, so it comes back a word. */
   out.caps = {};
   var langsWas = JSON.parse(JSON.stringify(LANGS));
   ['free','plus','pro'].forEach(function(pl){
     planGot(pl);
-    out.caps[pl] = { door: can('dl'), cap: dlCap() };
+    out.caps[pl] = dlCap() === Infinity ? 'none' : dlCap();
   });
   /* And the two counts are counting different things, with a download and a
      made language both in the index at once. */
@@ -572,10 +579,13 @@ say(!r.opens || (r.madeBy && r.madeBy.length === 0 && r.surfaceSlices),
 say(!r.opens || !r.othersSeen || [].every(function(n){ return r.othersSeen[n]; }),
     'and every name listed as another session\'s is still one this walk trips -- the list only shrinks (' +
     Object.keys(r.othersSeen || {}).join(' ') + ')');
-/* and the presses this was written for are on the surface -- a walk that
-   no longer reaches them is green about nothing */
-say(!r.opens || ['abNudge', 'abScale', 'numStepBase'].every(function(n){ return r.pressedNames && r.pressedNames[n]; }),
-    'and the walk reaches the abugida bench and the base ± (' +
+/* and the presses this was written for are not on the surface at all any
+   more: moving the abugida's mark and stepping the base are not drawn on
+   somebody else's language (OWNER 2026-09-30; tools/taken-check.mjs counts
+   every editor). Pressed by name anyway they still write nothing -- the
+   savers claim above. */
+say(!r.opens || ['abNudge', 'abScale', 'numStepBase'].every(function(n){ return !(r.pressedNames && r.pressedNames[n]); }),
+    'and the abugida bench and the base ± are not drawn on it (' +
     ['abNudge', 'abScale', 'numStepBase'].filter(function(n){ return r.pressedNames && r.pressedNames[n]; }).join(' ') + ')');
 say(r.stillTheirs,
     'and what landed is still theirs after all of that — byte for byte the ' +
@@ -588,12 +598,9 @@ say(r.syncRefused,
       : '') +
     (r.syncBusy ? ' (a sync was still running, so this one never asked)' : ''));
 
-say(r.caps && r.caps.free.door === false && r.caps.free.cap === 0,
-    'the free plan cannot download at all — 「plusからです」');
-say(r.caps && r.caps.plus.door === true && r.caps.plus.cap === 1,
-    'plus may, and may hold one (' + (r.caps ? r.caps.plus.cap : '?') + ')');
-say(r.caps && r.caps.pro.door === true && r.caps.pro.cap === 3,
-    'pro may, and may hold three (' + (r.caps ? r.caps.pro.cap : '?') + ')');
+say(r.caps && r.caps.free === 1 && r.caps.plus === 3 && r.caps.pro === 'none',
+    'free may hold one, plus three, pro any number — 「1言語無料、plus、3言語、pro無限」 (' +
+    (r.caps ? r.caps.free + ' ' + r.caps.plus + ' ' + r.caps.pro : '?') + ')');
 say(r.dlIsNotMade && r.madeCount === 1 && r.dlCount === 1,
     'and the two ceilings are two numbers — with a made language and a ' +
     'downloaded one both in the index, making counts ' + r.madeCount +
@@ -601,7 +608,7 @@ say(r.dlIsNotMade && r.madeCount === 1 && r.dlCount === 1,
 
 say(r.capPro && r.capPro.own === 3 && r.capPro.read === 3,
     'on pro all of them are listed — three made, three read');
-say(r.capFree && r.capFree.own === 1 && r.capFree.read === 0,
+say(r.capFree && r.capFree.own === 1 && r.capFree.read === 1,
     'and a plan that ENDS cuts the list to the ceiling (' +
     (r.capFree ? r.capFree.own + ' made, ' + r.capFree.read + ' read' : '?') + ')');
 say(r.capFree && r.capFree.isMain && !r.capFree.openOnIt,

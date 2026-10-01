@@ -3279,8 +3279,11 @@ function postCutOf(p){
        copy never carries what the page shows: it carries the spelling.
      * a post of mine, in the language that is open, ALSO carries its letters
        by id (PUA_CLIP, www/glyph.js), which is what puaPaste() puts back into
-       a field of this app as the letters they are. Anybody else's post
-       carries nothing but the spelling -- their shape is not made mine.
+       a field of this app as the letters they are -- when that language is
+       one this account wrote. The clipboard is the phone's, so somebody
+       else's language does not go on it (langOut(), www/core.js). Anybody
+       else's post carries nothing but the spelling -- their shape is not
+       made mine.
 
    A shape's spelling is the letter's name on my own post (postCutOf). On
    anybody else's the post carries its line and its shapes but not which
@@ -3289,7 +3292,7 @@ function postCutOf(p){
 function postCopyTab(p, el){
   var ink=postInkOr(p), side=postSide(p),
       ids=[], cut, tab=[], w=0, inw=false, i, j, x, ch, words, shw={};
-  cut=(p.mine && p.lang===langId && postInkOK(p.ink))? postCutOf(p) : [];
+  cut=(p.mine && p.lang===langId && langOut(p.lang) && postInkOK(p.ink))? postCutOf(p) : [];
   for(i=0;i<cut.length;i++) if(cut[i].id!==undefined) ids.push(cut[i].id);
   for(i=0;i<ink.s.length;i++){
     x=ink.s[i];

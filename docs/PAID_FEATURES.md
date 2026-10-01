@@ -237,16 +237,17 @@ Plus < Pro` needs nobody told which is which.
 | `snd` choose the sound, not the letter's own | — | yes | yes |
 | keyboards — built, of drawn letters or any character | yes | yes | yes |
 | the font file of the letters you drew (not in `CAN`, 2026-09-30) | yes | yes | yes |
-| `dl` a chapter of somebody else's language | — | **yes** | yes |
+| a chapter of somebody else's language (not in `CAN`, 2026-09-30) | yes | yes | yes |
 | editing a post you have sent (not in `CAN`, 2026-09-28) | yes | yes | yes |
 | words | 100 | 1000 | no ceiling — `words` |
-| languages on the account | **1** | **1** | **3** |
-| how many DL'd languages | **0** | **1** | **3** |
+| languages on the account | **1** | **3** | no ceiling |
+| how many DL'd languages | **1** | **3** | no ceiling |
 | `gram` `dir` `data` `file` `badge` | — | — | yes |
 
-Seven of those eleven rows are a DOOR, which is a name in `CAN`, three are a
-NUMBER, which is a function beside `wordCap()`, and the keyboards are neither
-— every plan, no number. The numbers are the ones this file has had wrong most
+A row that starts with a name in backticks is a DOOR, which is a name in
+`CAN`; the three with a count are a NUMBER, which is a function beside
+`wordCap()`; the rest are every plan's, and taking a language is one of them —
+its only limit is its number. The numbers are the ones this file has had wrong most
 often, so they are written once, machine-read, in § The four numbers below.
 
 **The words ceiling is a number, not a door.** `wordCap()` is the one place
@@ -283,36 +284,48 @@ top right of the letters screen (「フォントは文字なんだから文字�
 2026-09-25) hands the font of the drawn letters (`SFONT.b64`, the bytes
 `LinguaFont.build` made) to iOS's share sheet as an `.otf` — `ltFontOut()`.
 
-**`dl` is Plus's, and its numbers are the owner's of 2026-09-02.**
+**Taking a language is every plan's, and how many is the owner's of 2026-09-30.**
 
 ```
-plusからです
-dlはしかもplusは1つproは3つ DL言語とmake言語でそれぞれ別の最大値
-                                                     OWNER 2026-09-02
+DL言語1言語無料、plus、3言語、pro無限にしない？
+作れる言語も1、3、無限にするのはどう思う？
+                                                     OWNER 2026-09-30
 ```
 
-**Free 0, Plus 1, Pro 3.** `dlCap()` in `www/core.js` is the number and
-`can('dl')` is the door; `dlCount()` is the server's count of this account's
-`language_take` rows and `dlStop()` is the refusal. `dl-check` holds all four.
+**Free 1, Plus 3, Pro no limit** — for languages taken, and the same three for
+languages made. `dlCap()` and `langCap()` in `www/core.js` are the numbers, Pro
+is `Infinity` (the shape `wordCap()` already had), `dlCount()` is the server's
+count of this account's `language_take` rows and `dlStop()` is the refusal.
+`plan-check` and `dl-check` hold them. There is no door in `CAN` for taking:
+every plan may, so a capability would be a price with nothing behind it — it
+was ~~`CAN.dl`~~ at `plus` from 2026-09-02 until this.
 
-**Free does not download at all**, and that is the same sentence said twice:
-「plusからです」, and 「無料はdlさせるなんか話した？　公式アセットのdlは
-plusからっていう決定事項あんのになんで聞いてくんの？」
+**Somebody else's language is USED, never HAD, on every plan.**
+「dl言語は厳しくしないと、アプリ内で文字を使う、意味を見たりって言う編集はできない
+し外にも持ち出しできないようにしないといけないプランでも変わらない。人が作ったやつ
+はね」 OWNER 2026-09-30. Its letters are typed and its meanings read inside
+Lingua — on the Lingua keyboard too, which is handed it as it is handed one's
+own; it is not edited (`langLocked()`); nothing of it leaves the app — no
+font, SVG or sheet file, no copy — and nothing of it is written to this
+phone's disk, so there is no copy of it for a launch with no signal. A card —
+of a post, a word or an example — may leave. Where a taken language came with no
+keyboard, the taker may build their own. No plan changes any of this;
+`langOut()` (`www/core.js`) is asked by every way out, and `theirs-check`
+counts them.
 
-**A DL'd language is counted SEPARATELY from your own**, which is what
-「それぞれ別の最大値」 says. Two ceilings and not one: `langCount()` counts
-what `langWhose()` answers mine for and has never seen a download, `dlCount()`
-counts `language_take` rows and has never seen a language somebody made. Filling one leaves the other where it was.
+**A DL'd language is counted SEPARATELY from your own** 「DL言語とmake言語で
+それぞれ別の最大値」 OWNER 2026-09-02. Two ceilings and not one: `langCount()`
+counts what `langWhose()` answers mine for and has never seen a download,
+`dlCount()` counts `language_take` rows and has never seen a language somebody
+made. Filling one leaves the other where it was.
 
-`CAN.dl` and `dlCap()` landed together on 2026-09-02, which is the rule the
-keyboard's door set while it had one: a door opened with no number behind it hands Plus whatever the code
-happened to allow, and that is neither number the owner said. The caller is
-`www/home.js` — `upStop(can('dl'))` and `dlStop()` in front of the download.
+**Pro has no rung on which the + or the ↓ goes away**: `planFits()` never says
+no to `Infinity`, so there is nothing to hide and no count to show.
 
 **Nothing here may take a language away.** The rule at the head of this file
 covers a downloaded language the same as any other: a plan that lapses means
 fewer buttons — no new download, and the door drawn anyway — and never fewer
-languages. Somebody who downloaded three **keeps** three, byte for byte, and
+languages. Somebody who downloaded more than the ceiling **keeps** every one, byte for byte, and
 the list draws the ceiling's worth of them with 「非表示 n」 under it — 「有料が
 消えて無料に残った後は非表示じゃないの？」 OWNER 2026-09-12, exactly the way
 `langCap()`'s ceiling folds and never deletes. Paying again draws them all and
@@ -413,8 +426,8 @@ What is still true and still this file's job to say: **none of it may reach
 anybody's data.** An enterprise plan that lapses, a bill that goes unpaid, a
 project that gets suspended — each of those is the entitlement check failing,
 and the rule at the head of this file already says what happens then: fewer
-buttons, never fewer words, and every byte where it was. The phone keeps the
-language as it was last loaded, read-only (`CLAUDE.md` rule 22); a server that
+buttons, never fewer words, and every byte where it was. The phone keeps its own
+languages as they were last loaded, read-only (`CLAUDE.md` rule 22); a server that
 stops answering is a person who can still look at their language.
 
 `CAN` in `www/core.js` names every capability, and `can('x')` is the only way
@@ -427,7 +440,6 @@ a `can()` given anything but a literal, and a `has()` anywhere else.
 |---|---|---|
 | `letters` | plus | adding, naming and deleting a letter |
 | `wsys` | plus | a writing system that is not an alphabet |
-| `dl` | plus | taking a chapter of somebody else's language. How many is `dlCap()` |
 | `snd` | plus | choosing a sound, rather than taking the letter's own |
 | `words` | pro | no ceiling on the dictionary at all. The ceiling itself is `wordCap()` |
 | `data` | pro | CSV out |
@@ -470,11 +482,14 @@ fails when this block and that file disagree.
 ```
 FREE_LIMIT   100     the free dictionary
 PLUS_LIMIT   1000    Plus's dictionary. Pro has none -- that is can('words')
-FREE_LANGS   1       languages of your own. Plus is the same number
-PRO_LANGS    3
-PLUS_DL      1       languages downloaded, which is a second ceiling
-PRO_DL       3
+FREE_LANGS   1       languages of your own
+PLUS_LANGS   3       Pro has none -- langCap() answers Infinity
+FREE_DL      1       languages downloaded, which is a second ceiling
+PLUS_DL      3       Pro has none -- dlCap() answers Infinity
 ```
+
+The last four lines are the code as it stands, and they are the owner's
+numbers of 2026-09-30: 1 / 3 / unlimited for both.
 
 **A fifth ceiling is not in that block, and that is deliberate: how long a
 post may be.** `postCap()` sits beside `wordCap()` and answers `POST_MAX` on
@@ -503,8 +518,9 @@ the ceiling is on the ACCOUNT, not on each language and not on a phone —
 the account is asked.
 
 **And the ceilings are on the plans screen**, because a number that is sold and
-never said is a number nobody is buying: `plan.pro.6` `plan.pro.7`
-`plan.plus.6` carry the three of them, as names rather than sentences. Free's
+never said is a number nobody is buying: `plan.free.6`, `plan.plus.7`
+`plan.plus.6` and `plan.pro.6` `plan.pro.7` carry them, as names rather than
+sentences. Free's
 hundred words and Plus's thousand were already there.
 
 ## When a plan ends
@@ -518,7 +534,7 @@ deleted.** Those are two halves of one sentence and neither may be dropped.
 | the alphabet | **lists the free thirty-eight** — a–z, `!`, `?`, a digit per value of the base | `ltSeen()`, `www/sound.js` |
 | a stage of your own | **is not on the list**; the fifteen are | `stHidden()`, `www/phases.js` |
 | languages of your own | **lists the one made FIRST** — the main language (2026-09-12). The open one is not swapped in; where the ceiling comes down under somebody standing in another, `langMainFall()` opens the main one | `langsList()`/`langsSeen()`, `www/home.js`; `langsByAge()`/`langMainId()`/`langMainFall()`, `www/core.js` |
-| languages downloaded | **lists none** | `langsSeen()` with `dlCap()` |
+| languages downloaded | **lists the first one** | `langsSeen()` with `dlCap()` |
 | the writing system | an alphabet | `wsys()`, `www/wsys.js` |
 | the direction | left→right | `setScriptDir()`, `www/wsys.js` |
 | CSV, file import, the sheet | gone, as they always were on free | `can()` on the press |
@@ -573,11 +589,11 @@ somebody who is about to pay, so Studio is out until the seam has something
 behind it, and what it opened went with it.
 
 ```
-  free    draw your own letters. 100 words. One language. Keyboards of
-          any characters. The font of your letters
-  plus    build it yourself. 1000 words. One download
-  pro     no ceiling on the words. Three languages,
-          three downloads, the grammar, the direction, the file roads
+  free    draw your own letters. 100 words. One language, one download.
+          Keyboards of any characters. The font of your letters
+  plus    build it yourself. 1000 words. Three languages, three downloads
+  pro     no ceiling on the words, the languages or the downloads,
+          the grammar, the direction, the file roads
 ```
 
 Neither paid rung is given fewer than the one below it of anything — "I paid

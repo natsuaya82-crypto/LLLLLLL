@@ -870,6 +870,9 @@ function g2CardName(bd, r){
   return (bd==='np')? t('gram.np.'+r) : t('gram.role.'+r);
 }
 function g2Card(bd, r, act, arg, cls){
+  /* A card is moved by pressing it, and somebody else's order is read, not
+     arranged (langLocked, www/core.js): the card stands where it is. */
+  if(langLocked()) return '<span class="gordc'+(cls||'')+'" data-gr="'+esc(r)+'">'+esc(g2CardName(bd, r))+'</span>';
   return '<button class="gordc'+(cls||'')+'" data-gr="'+esc(r)+'"' +
     DO(act, arg) + '>'+esc(g2CardName(bd, r))+'</button>';
 }
@@ -892,8 +895,11 @@ function g2Board(c){
   g2KeepOn(b);
   seq=g2Seq();
   for(i=0;i<seq.length;i++) on+=g2Card(b.id, seq[i], 'g2Take', [i], '');
-  for(i=0;i<b.cards.length;i++)
-    if(seq.indexOf(b.cards[i])<0) off+=g2Card(b.id, b.cards[i], 'g2Put', [b.cards[i]], ' off');
+  /* the tray is what is still to be placed, and on somebody else's language
+     nothing is placed */
+  if(!langLocked())
+    for(i=0;i<b.cards.length;i++)
+      if(seq.indexOf(b.cards[i])<0) off+=g2Card(b.id, b.cards[i], 'g2Put', [b.cards[i]], ' off');
   return '<div class="gordtop">'+
            '<div class="gordput" data-gord="on">'+on+'</div>'+
            /* THE LINE COMES OUT AFTER A CARD GOES ON, and not before.
@@ -990,8 +996,10 @@ function g2Row(lab, add, side, from, to, act, arg, id){
       ((to || side)? '<span class="psi">'+sfontHTML(to)+'</span>' : '')+
       '</button></div>';
   }
+  /* No `act` is a row to read: a rule of somebody else's language, whose
+     editor is not theirs to open (g2FmRows). */
   return '<div class="fmmk">'+
-    '<button class="stslot has"' + DO(act, arg) + '>'+
+    (act? '<button class="stslot has"' + DO(act, arg) + '>' : '<div class="stslot has">')+
     '<span class="psm">'+lab+'</span>'+
     (add? '<span class="psw">'+sfontHTML(add)+'</span>' : '')+
     (side? '<span class="psi">'+esc(side)+'</span>' : '')+
@@ -1004,7 +1012,7 @@ function g2Row(lab, add, side, from, to, act, arg, id){
        form. Nothing on the screen changes; what changes is that the row means
        the same thing whether or not there is a word to try it on. */
     ((to || side)? '<span class="psi">'+sfontHTML(to)+'</span>' : '')+
-    ICON_GO+'</button></div>';
+    (act? ICON_GO+'</button>' : '</div>')+'</div>';
 }
 /* ---- choosing several rules, and taking them away ----------------------
    The same shape kbSelDel() and ntSelDel() are, down to the names, because it
@@ -1128,6 +1136,8 @@ function g2Nouns(){
     k=a[i];
     w=stWordFor(p, k);
     if(!w){
+      /* 作成 is the making side's; on somebody else's there is nothing here */
+      if(langLocked()) continue;
       out+='<button class="stslot"' + DO('openSlot', ['part', k]) + '>'+
         '<span class="psm">'+gEg(k)+'</span>'+
         '<span class="psn">'+t('stg.make')+'</span>'+ICON_GO+'</button>';
@@ -1712,6 +1722,9 @@ function gPolEgList(r, which){
    against. */
 function g2PolOpen(c, r){
   var key=String(c.id);
+  /* Somebody else's rule is read: the two lines are what it holds, and there
+     is no Save because there is nothing to write (langLocked, www/core.js). */
+  if(langLocked()){ G2POL={at:'', a:gPolEgList(r, 'a'), b:gPolEgList(r, 'b')}; return; }
   if(G2POL.at!==key){
     G2POL={at:key, a:gPolEgList(r, 'a'), b:gPolEgList(r, 'b')};
     keepDrop(keepKey());
@@ -1737,8 +1750,9 @@ function g2PolPage(c){
 function g2PolLine(which){
   var a=G2POL[(which==='b')? 'b' : 'a'], out='', i;
   for(i=0;i<a.length;i++)
-    out+='<button class="gordc"' + DO('g2PolTake', [which, i]) + '>'+
-      sfontHTML(wOut(a[i]))+'</button>';
+    out+= langLocked()
+      ? '<span class="gordc">'+sfontHTML(wOut(a[i]))+'</span>'
+      : '<button class="gordc"' + DO('g2PolTake', [which, i]) + '>'+sfontHTML(wOut(a[i]))+'</button>';
   return '<div class="gordrow" data-gpol="'+esc(which)+'">'+out+'</div>';
 }
 function g2PolTake(which, i){
@@ -2211,7 +2225,7 @@ function g2FmRows(fm, pos){
        is no sentence to write, and ❶ is what this list has always numbered by.
        Everything else says what it does. */
     out+=g2Row(g2FmSent(a[i], pos) || g2Num(i), '', '', '', '',
-               'openFmr', [id], id);
+               langLocked()? '' : 'openFmr', [id], id);
   }
   return out;
 }
@@ -2220,6 +2234,7 @@ function g2FmRows(fm, pos){
    (g2FmSec() below). It says the form and it says 作成, which is what every row in this
    app says where the thing is not made. */
 function g2FmSlot(pos, fm){
+  if(langLocked()) return '';
   return '<button class="stslot"' + DO('fmrNew', [pos, fm]) + '>'+
     '<span class="psm">'+esc(fmLabel(fm))+'</span>'+
     '<span class="psn">'+t('stg.make')+'</span>'+ICON_GO+'</button>';

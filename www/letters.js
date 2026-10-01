@@ -538,7 +538,7 @@ var LT_START='abcdefghijklmnopqrstuvwxyz!?';
    on any plan.
 
    kbFixed() finds the free keyboard's keys by name: kbNamed('a') walks
-   LETTERS for one called `a`. So a renamed `a` is a key that answers to
+   the letters on screen (ltSeen) for one called `a`. So a renamed `a` is a key that answers to
    nothing -- and ltStart(), which tops a free language up by name, then makes
    a NEW empty letter called `a` and puts that on the key. Somebody who paid,
    renamed a letter, drew on it, and let the plan lapse would find a blank
@@ -721,7 +721,7 @@ function ltStart(){
   /* An alphabet that doubled before the ids were steady stays doubled:
      「昔の版で自動で増えた文字: 消さずに残す」 OWNER 2026-09-24. The launch
      takes no row out of anybody's alphabet. */
-  if(planNo(ok)) ltSlotsFill();
+  if(langShaped(ok)) ltSlotsFill();
 }
 /* What this letter reads, spelled the way a person would write it. One word
    per unit, separated by spaces, because a letter may read more than one
@@ -890,7 +890,7 @@ function ltSetRoman(id, sp){
      「無料で作ってる範囲の名前変更は無しでしょ。有料は追加できるというだけで」
      Decision log, 2026-08-22.
 
-     The free QWERTY finds its keys BY NAME -- kbNamed('a') walks LETTERS for
+     The free QWERTY finds its keys BY NAME -- kbNamed('a') walks the letters on screen for
      one called `a` -- so a renamed slot is a key nothing can find, and
      ltStart() then fills the hole with a new EMPTY letter: what somebody drew
      stays in the alphabet and leaves the keyboard, with nothing anywhere
@@ -1072,7 +1072,7 @@ function ltFreeSlot(l, nm0){
   /* A slot is the free plan's, and a name nobody has answered the plan for
      takes nobody's row (www/core.js § has): measured, a Pro letter renamed to
      a slot's name before verify-plan answered was spliced out of LETTERS. */
-  if(!planNo(can('letters'))) return null;
+  if(!langShaped(can('letters'))) return null;
   var nm=String((nm0===undefined? (l&&l.ab) : nm0)||'').toLowerCase(), i, s;
   if(!nm) return null;
   for(i=0;i<LETTERS.length;i++){

@@ -10,7 +10,7 @@
 /* Free accounts hit a ceiling; saying so before they reach it reads as
    information rather than as an interruption. */
 function capBanner(){
-  if(!planNo(can('words'))) return '';
+  if(!langShaped(can('words'))) return '';
   var left=wordCap()-WORDS.length;
   if(left>20 || left<0) return '';
   return capWarnHTML(t('cap.warn', left));
@@ -1780,25 +1780,16 @@ function wldDlKind(r){
    is the section's own -- 「文字」「キーボード」 -- because that is what it is;
    nothing here invents a word for downloading. */
 function wldGetRow(sec, lid){
-  /* THE PRESS ASKS THE PLAN, because a closed door is drawn. wldGet() puts
-     upStop(can('dl')) and dlStop() in front of the download -- the door and
-     the ceiling. The one thing the row asks is dlFull(), and dlStop() asks
-     the same function: on the top plan with the ceiling met there is no door
-     to draw (OWNER 2026-09-25).
-
-     It used to say the row needed no plan because downloading letters and a
-     keyboard was free; that was 2026-08-19 and 「plusからです」 OWNER
-     2026-09-02 replaced it. `CAN.dl` is `plus` and has been since. */
+  /* THE ROW ASKS NO PLAN. Every plan may take (「DL言語1言語無料」 OWNER
+     2026-09-30), and how many is dlStop()'s, asked by wldGet() on the press:
+     a ceiling met on free or plus is a closed door drawn, and pro has no
+     ceiling to meet. */
   var st=wldTakeOf(lid, sec.r), nm='<span class="sl">'+esc(wldSecNm(sec))+'</span>';
   /* A state and not a control once it is the tick: role="img" -- a name with
      no role reads as something to press (press-check). While it comes down
      it is the ↓ it was, under the star (wldGet). */
   if(st==='took') return '<div class="set">'+nm+
     '<span class="sv wldgot" role="img" aria-label="'+esc(t('wld.took'))+'">'+ICON_TOOK+'</span></div>';
-  /* A language not taken yet, on the top plan with the ceiling met: nothing
-     to take and nothing to buy, so the chapter is its name and no ↓
-     (www/core.js § FULL ON THE TOP RUNG). */
-  if(langWhose(lid)!==LW_READ && dlFull()) return '<div class="set">'+nm+'</div>';
   return '<button class="set"' + DO('wldGet', [String(lid||''), sec.r]) + '>'+nm+
     '<span class="sv">'+ICON_DL+'</span></button>';
 }
@@ -1843,13 +1834,12 @@ function wldTakeOf(lid, r){
 function wldGet(lid, r){
   var id=String(lid||''), kinds=wldDlKind(r), seen=wldSeen(id);
   if(!id || !kinds || !kinds.length) return;
-  /* WHETHER, AND THEN HOW MANY. 「plusからです」「plusは1つproは3つ」OWNER
-     2026-09-02. The plan is the door and the ceiling is the room, asked here
-     in the one place a download happens. A chapter of a language this
+  /* HOW MANY, and nothing else: every plan may take, and 「DL言語1言語無料、
+     plus、3言語、pro無限」 OWNER 2026-09-30 is the ceiling, asked here in the
+     one place a download happens. A chapter of a language this
      account is ALREADY reading does not meet the ceiling again: it is not
      another language, it is more of one already counted -- and langWhose()
      (www/core.js) is the server's answer to that, not this phone's index. */
-  if(upStop(can('dl'))) return;
   if(langWhose(id)!==LW_READ && dlStop()) return;
   netSlices(id, function(m){
     var got=[], i, o;
@@ -2737,10 +2727,9 @@ document.addEventListener('touchcancel', langSwUp, false);
    It is drawn on a plan that cannot press it: a closed door is shown rather
    than hidden, because there is a bigger plan behind it. 「だいたい無料で使え
    ないやつは表示させていいよ。課金させる動線を減らしたくない」 What happens on
-   the press is langStop()'s, in core.js. The one plan with nothing behind the
-   door is the top one with the ceiling met, and there it is not drawn at all
-   「＋があるところからプラスをなくすだけ」 OWNER 2026-09-25 -- langFull(),
-   which langStop() asks too, so the draw and the press are one function.
+   the press is langStop()'s, in core.js. The top plan has no ceiling
+   (「pro無限」 OWNER 2026-09-30), so there is no rung where the + is not
+   drawn.
 
    A row and not a button of its own shape: it is the last row of a list, and
    rows in one list are one height. Same tag, same class, same two spans as
@@ -2749,9 +2738,6 @@ document.addEventListener('touchcancel', langSwUp, false);
    tile with a + in it and the words beside it, which is where 「アカウントを
    追加」 sits in the app this is modelled on. */
 function langAddRow(){
-  /* On the top plan with the ceiling met there is nothing to add and nothing
-     to buy, so there is no + (www/core.js § FULL ON THE TOP RUNG). */
-  if(langFull()) return '';
   return '<button class="lgrow"' + DO('langNew') + '>'+
     '<span class="pav lgav lgadd">'+ICON_ADD+'</span>'+
     '<span class="lgn">'+esc(t('langs.new'))+'</span></button>';
