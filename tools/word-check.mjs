@@ -1060,7 +1060,7 @@ const R = await pg.evaluate(() => {
   LOWN[langId] = 'somebody-else';
   const lockedNow = langLocked();
   openWord('mos'); render();
-  const penThere = !!document.querySelector('[data-do="openEdit"], [data-do="openWfm"], [data-do="fmrAdd"]');
+  const penThere = !!document.querySelector('[data-do="openEdit"], [data-do="openWfm"]');
   openEdit('mos');
   const lockedOn = here().a;
   if (lockedWas === undefined) delete LOWN[langId]; else LOWN[langId] = lockedWas;

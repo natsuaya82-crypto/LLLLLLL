@@ -692,13 +692,6 @@ defLang('en', (function(){
       'fmr.sel.row' : 'Choose this rule',
       'fmr.sel.ask' : 'Delete {0} rules?',
       'fmr.sel.ask.1' : 'Delete this rule?',
-      'fmr.todo'         : "Make the {0} forms this word has not got",
-      'fmr.todo.1'       : "Make the form this word has not got",
-      'fmr.made'         : "{0} words made",
-      'fmr.made.1'       : "1 word made",
-      'fmr.off'          : "Do not make this form",
-      'fmr.with'         : "Added, with {0} forms",
-      'fmr.with.1'       : "Added, with one form",
       'home.write'      : "New word",
       /* words */
       /* AI に相談する -- www/assist.js builds the link. The sentences below

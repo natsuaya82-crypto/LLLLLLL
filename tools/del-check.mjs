@@ -90,7 +90,6 @@ const DELETES = {
   clearSearch: { takes: null, asks: false },
   snsClearQ:  { takes: null, asks: false },
   geClear:    { takes: null, asks: false },
-  addFmDrop:  { takes: null, asks: false },
   wdDelMn:    { takes: null, asks: false },
   kbDelKey:   { takes: null, asks: false },
   pwDropPic:  { takes: null, asks: false },

@@ -2271,8 +2271,7 @@ function g2FmSec(c, fm){
    fmrMake() is asked, which is the one place that says what a rule makes of a
    word -- so a condition on an old rule is obeyed here without this knowing
    what a condition is, and a word the rule does not reach is simply not on the
-   table. A word a rule MADE is left out for the reason fmrTodo() leaves it out:
-   a plural of a plural is not a word in anybody's language.
+   table.
 
    wordsSeen() and not WORDS. What a plan hides from the dictionary it hides
    here too -- the same one place decides, so the two screens cannot come out

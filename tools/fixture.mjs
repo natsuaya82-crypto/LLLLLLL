@@ -402,12 +402,10 @@ export function seed(){
             offers it would never be drawn. */
          fm:[{id:'fr1', pos:'n', fm:'pl', at:'end', drop:0, when:'',
               add:[{l:'l1', u:'k'}]},
-            /* And a DERIVATION, which is the only kind of rule that still
-               makes a word (an inflection is a form of one since 2026-09-23).
-               No screen writes one any more -- the grammar book's sections
-               are all inflections -- so this is a rule an older language
-               carries, and the button on a word's page and the rows on the
-               new-word sheet are what it still drives. */
+            /* And a DERIVATION. No screen writes one any more -- the grammar
+               book's sections are all inflections -- so this is a rule an
+               older language carries. What it makes is a form on the word's
+               page, like an inflection's (OWNER 2026-10-01), and never a word. */
             {id:'fr2', pos:'', fm:'dim', at:'end', drop:0, when:'',
               add:[{l:'l1', u:'k'}]}]};
   /* SOMETHING UNREAD, so the number on the bell is a state the walk reaches.

@@ -274,7 +274,7 @@ npm run post
 
 ## 16. 形から新しい語を作る所が二回 ── **閉じた。二回ではなく三回でした**
 
-`fmrWord(w, m)`（`www/wordsheet.js`）。`fmrAdd()` と `addFmWrite()` の二つが
+~~`fmrWord(w, m)`~~（`www/wordsheet.js`）。~~`fmrAdd()`~~ と ~~`addFmWrite()`~~ の二つが（三つとも r159 で消えた ── 規則は語を作らない）
 呼びます（三つ目の ~~`fmrAddAll()`~~ はその後に消えた）。三つ目の注記は「made the way fmrAdd()
 makes one」と自分で言っていて、それを持っているものは何もありませんでした。
 

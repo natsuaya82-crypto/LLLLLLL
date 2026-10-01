@@ -794,11 +794,6 @@ defLang('zh', (function(){
       "fmr.sel.row" : "选择这条规则",
       "fmr.sel.ask" : "删除 {0} 条规则？",
       "fmr.sel.ask.1" : "删除这条规则？",
-      "fmr.todo"         : "补上还没有的 {0} 个形式",
-      "fmr.made"         : "造了 {0} 个词",
-      "fmr.off" : "不生成这个形式",
-      "fmr.with" : "已添加，连同 {0} 个形式",
-      "fmr.with.1" : "已添加，连同一个形式",
       "home.write"       : "新的词",
       /* AI に相談する -- www/assist.js builds the link. The sentences below
          are the PROMPT, and they are here for the same reason every other

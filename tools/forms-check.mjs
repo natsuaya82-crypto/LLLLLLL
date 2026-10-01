@@ -16,7 +16,10 @@
         form, is still in WORDS byte for byte after a save, and is in no list
         and no count
      4. a form placed by hand wins over what a rule makes of the same label
-     5. a rule for an inflection offers no word to make; only a derivation does
+     5. a derivation is a form too (OWNER 2026-10-01): saving a noun on the
+        new-word screen with a diminutive rule writes that one word and no
+        other, the word's page shows the diminutive under its label, and a
+        derived word somebody already has is still there byte for byte
 
    The ceiling is tools/plan-check.mjs's, the keyboard's conversion is
    tools/conv-check.mjs's and the meaning line is
@@ -96,8 +99,36 @@ const r = await pg.evaluate(async ({ s }) => {
   out.placedWins = won ? (won.by + ':' + won.hw) : '';
   delete findWord('sar').fms;
 
-  /* 5 */
-  out.todo = fmrTodo(findWord('sar')).map(function (m) { return m.fm; }).join(' ');
+  /* 5 -- the fixture's `fr2` is a diminutive for every part of speech. An
+     older derived word is put in the way addFmWrite() used to write one. */
+  var oldDer = { hw:'sark', pos:'n', at:5, from:'sar', fm:'dim',
+                 sp:[{ l:'l1', u:'s' }, { l:'l1', u:'a' }, { l:'l1', u:'r' }, { l:'l1', u:'k' }],
+                 mns:[], mn:'' };
+  WORDS.push(oldDer); save();
+  var oldDerWas = JSON.stringify(oldDer);
+  var n5 = WORDS.length;
+  addPos = 'n';
+  openAdd('');
+  wdSetLn('tamo');
+  out.sheetOffers = document.querySelectorAll('#app [data-do="addFmDrop"]').length;
+  keepPress();
+  await new Promise(function (res) { setTimeout(res, 50); });
+  out.derAdded = WORDS.length - n5;
+  out.derWords = WORDS.filter(function (w) { return w.from === 'tamo'; })
+                      .map(function (w) { return w.hw; }).join(' ');
+  var dim = findWord('tamo') ? wFormOf(findWord('tamo'), 'dim') : null;
+  out.derForm = dim ? (dim.by + ':' + dim.hw) : '';
+  openWord('tamo');
+  /* In the list of FORMS -- a row that opens the form's screen. The family
+     draws a derived word as a .wdrow too, so the class alone was green with
+     the old road in. */
+  out.derOnPage = Array.prototype.some.call(document.querySelectorAll('#app .wdrow[data-do="openWfm"]'), function (b) {
+    var f = b.querySelector('.wdrowf'), w = b.querySelector('.wdroww');
+    return !!f && !!w && f.textContent === fmLabel('dim') && w.textContent.indexOf('tamok') >= 0;
+  });
+  var still = findWord('sark');
+  out.oldDerKept = !!still && JSON.stringify(still) === oldDerWas;
+  out.oldDerListed = wordsSeen().some(function (w) { return String(w.hw) === 'sark'; });
 
   out.before = before;
   return out;
@@ -121,10 +152,16 @@ say(!r.oldListed, 'but it is not in the dictionary list -- it is listed under it
 say(r.oldCounted === 2, 'and neither of the two stored that way is counted (' + r.oldCounted + ' left out)');
 say(r.ruleBy === 'rule', 'a rule answers for a label nobody placed (' + (r.ruleBy || 'nothing') + ')');
 say(r.placedWins === 'placed:saren', 'and a form placed by hand wins over it (' + (r.placedWins || 'nothing') + ')');
-say(r.todo === 'dim', 'a rule for an inflection offers no word to make -- only the derivation does (' + (r.todo || 'nothing') + ')');
+say(r.sheetOffers === 0, 'the new-word screen offers no derived word to write with it (' + r.sheetOffers + ' rows)');
+say(r.derAdded === 1 && !r.derWords, 'saving a noun with a diminutive rule adds that one word and no other (' +
+    r.derAdded + ' added' + (r.derWords ? ': ' + r.derWords : '') + ')');
+say(r.derForm === 'rule:tamok', 'and the diminutive is a form of it, made by the rule (' + (r.derForm || 'nothing') + ')');
+say(r.derOnPage, 'and the word\'s page lists it among its forms, under its label');
+say(r.oldDerKept, 'a derived word somebody already has is still in the dictionary, byte for byte');
+say(r.oldDerListed, 'and still in the dictionary list');
 say(!pageErrors.length, 'and the page threw nothing' + (pageErrors.length ? ' (' + pageErrors[0] + ')' : ''));
 
 if (bad.length) { console.error('\nforms: ' + bad.length + ' FAILED'); process.exit(1); }
-console.log('\nforms: an inflection is not a word -- it is written on its word, with a label and a' +
-  ' form or not at all, an old one is read where it is and kept, and a placed one' +
-  ' wins over the rule.');
+console.log('\nforms: an inflection is not a word, and neither is what a derivation rule makes --' +
+  ' it is written on its word, with a label and a form or not at all, an old one is read where' +
+  ' it is and kept, and a placed one wins over the rule.');

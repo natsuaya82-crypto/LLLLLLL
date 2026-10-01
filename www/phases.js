@@ -540,7 +540,6 @@ function openSlot(pid, k){
     wdMnNew=false; wdExNew=false; wdSubNew=false;
     wEdit={seq:[], sp:[], mns:[stSlotLabel(p, key)], pos:p.pos,
            reg:'', tags:[], ety:'', nt:''};
-    addFmClear();
     wdSync();
   }
   /* Which slot this draft fills. addOne() writes it onto the word, and

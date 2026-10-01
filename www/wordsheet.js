@@ -67,7 +67,6 @@ function openAdd(from){
     if(addFrom) addW.from=addFrom;
     wEdit={seq:[], sp:JSON.parse(JSON.stringify(par? spOf(par) : [])),
            mns:[], pos:addPos, sub:'', reg:'', tags:[], ety:'', nt:''};
-    addFmClear();
     wdSync();
   }
   openForm('add:'+addFrom,
@@ -92,13 +91,10 @@ function addWrite(){
   /* The word is what was typed, letter by letter -- not the sounds those
      letters happen to read. */
   var sp=(wEdit && wEdit.sp) || [], hw=spWord(sp), d=addW;
-  var syn, ant, w, made;
+  var syn, ant, w;
   if(!d) return null;
   if(!sp.length || !hw){ toast(t('toast.hw2')); return null; }
-  /* The word AND the forms going in with it. Asking for room for one and then
-     writing four is how a free language ends up over its own limit. */
-  addFmSync();
-  if(capStop(1+addFms.length)) return null;
+  if(capStop(1)) return null;
   if(findWord(hw)){ toast(t('toast.dup')); return null; }
   /* After the guards, so a refused Save leaves the boxes holding what was
      typed rather than having quietly eaten it. */
@@ -127,19 +123,16 @@ function addWrite(){
     WORDS.push(w);
     syn.forEach(function(o){ wRelToggle(hw, 'syn', o); });
     ant.forEach(function(o){ wRelToggle(hw, 'ant', o); });
-    /* And the forms, after the word they are of is in the dictionary: each
-       of them points at it by name. */
-    made=addFmWrite(hw);
     save();
   });
-  return {hw:hw, made:made};
+  return {hw:hw};
 }
 /* The paper put away, once the word is UP and not before: 「打ったものは欄に
    残る」 -- a refusal leaves the sheet exactly as the person left it. And its
    buffer with it, so the next new word is measured from empty. */
 function addDone(){
   keepDrop(keepKeyOf('form', 'add:'+addFrom));
-  addW=null; addFmClear(); addFrom=''; addSlot='';
+  addW=null; addFrom=''; addSlot='';
 }
 /* THE GRAMMAR SLOT'S BUTTON. The same write, sent the same way keepSave()
    sends it -- snapped first, netSaveNow() (www/net.js) as the one road up,
@@ -152,7 +145,7 @@ function addOne(){
     if(!up){ keepBack(snap); return; }
     addDone();
     if(here().r==='form') back();
-    toast(r.made? tn('fmr.with', r.made) : t('toast.added.1', r.hw));
+    toast(t('toast.added.1', r.hw));
     openWord(r.hw);
   });
 }
@@ -191,7 +184,6 @@ function wdSetLn(v){
   wdKeepTouch();
   lnGrow('wd-ln');
   wdSounds();
-  addFmPaint();
 }
 /* Typing does not redraw the sheet, so everything on it that is worked out
    from the spelling is written again here: the IPA, the syllables, and the
@@ -716,12 +708,14 @@ function fmGroup(f){
   if(fmOwn(f)) return String(f).charAt(0);
   return (FM_INF.indexOf(f)>=0)? 'i' : ((FM_DER.indexOf(f)>=0)? 'd' : '');
 }
-/* WHETHER A LABEL IS AN INFLECTION, which since 2026-09-23 is whether it makes
-   a word at all: an inflection is a form OF a word and a derivation is another
-   word. Anything that is not a derivation -- a label of ours, one somebody
-   wrote under 活用, and the agreement labels a noun class makes
-   (`ncls~n`, which fmGroup() has no group for) -- is a form. It is the line
-   gFmRules() in www/grammar.js has always drawn for the engine, drawn here once. */
+/* WHETHER A LABEL IS AN INFLECTION. Anything that is not a derivation -- a
+   label of ours, one somebody wrote under 活用, and the agreement labels a noun
+   class makes (`ncls~n`, which fmGroup() has no group for) -- is one. It is the
+   line gFmRules() in www/grammar.js has always drawn for the engine, drawn here
+   once. What a RULE makes is a form whichever side of this line its label is
+   on (wForms(), 2026-10-01); what this still decides is how a word stored
+   before then is read -- an old inflection is its parent's form (wIsForm()),
+   an old derivation stays a word. */
 function fmInf(f){ return !!f && fmGroup(f)!=='d'; }
 function fmLabel(f){
   if(!f) return '';
@@ -865,13 +859,12 @@ function fmGroupHTML(hw, g, now){
    section already gives: 「型決めても英語みたいに変わってる可能性もあるやん」.
    A rule does not declare that every verb HAS a past tense.
 
-   What a rule gives is two different things since 2026-09-23, because an
-   inflection is not a word (§ the forms of a word, below). A rule for an
-   INFLECTION answers on the word's page as it is asked and is stored nowhere;
-   go/went is placed there by hand, and placing it is not working around the
-   rule -- it is the rule not applying, which is what an irregular is. A rule
-   for a DERIVATION still offers: press the button on a word and the words it
-   makes appear as ordinary words, each editable and deletable like any other. */
+   What a rule gives is a FORM, never a word -- an inflection since 2026-09-23,
+   and a derivation since 2026-10-01 「縮小系だけ入るの変なら他と合わせればいい」
+   (§ the forms of a word, below). It answers on the word's page as it is asked
+   and is stored nowhere; go/went is placed there by hand, and placing it is not
+   working around the rule -- it is the rule not applying, which is what an
+   irregular is. */
 function fmRules(){ if(!STG.fm) STG.fm=[]; return STG.fm; }
 /* WHICH RULE AN ID IS, AND IT IS THE ONE PLACE THAT CHOOSES. A rule being
    written for the first time is not in the chapter yet -- it is the draft
@@ -935,81 +928,6 @@ function fmrMake(w, r){
   if(!hw || hw===String(w.hw)) return null;
   return {id:r.id, fm:r.fm, sp:sp, hw:hw};
 }
-/* The forms this word has not got. A rule is skipped when the word already
-   wears that label -- an irregular past that was typed by hand is the past,
-   and offering to make a second one beside it would be the app arguing with
-   the person about their own language.
-
-   A word a rule MADE has no forms of its own. It carries fm, and a plural of
-   a plural is not a word in anybody's language: the rules were run on the
-   made words too, so every press of "n words" made another generation and the
-   count never came down. */
-function fmrTodo(w){
-  var a=fmRules(), kids=w? wKids(w) : [], out=[], i, j, m, has;
-  if(!w || w.fm) return out;
-  for(i=0;i<a.length;i++){
-    /* An inflection is not a word (§ the forms of a word): its rule answers on
-       the word's page as it is asked, and there is nothing here to make. */
-    if(fmInf(a[i].fm)) continue;
-    m=fmrMake(w, a[i]);
-    if(!m || findWord(m.hw)) continue;
-    has=false;
-    for(j=0;j<kids.length;j++) if((kids[j].fm||'')===String(m.fm||'')) has=true;
-    if(has) continue;
-    out.push(m);
-  }
-  return out;
-}
-/* WHAT A FORM IS, and it is one place. This was written out three times --
-   in fmrAdd(), in a bulk maker since deleted and in addFmWrite() -- and the third one's
-   comment said "made the way fmrAdd() makes one", which nothing held. A word
-   is what it has ON it, so adding anything to a form meant finding all three.
-
-   It is a DERIVATION, and only ever one since 2026-09-23 -- an inflection is
-   not a word (§ the forms of a word). A derivation takes no meaning: "one who
-   wakes early" is a different word that happens to be built out of this one,
-   and filling in the parent's meaning there would be the app claiming to know
-   what somebody's word means. It comes out with no meaning, and the half-done
-   list on the search tab is already the screen that says so.
-
-   Nothing marks it as having been made by a rule, because nothing about it is
-   different from a word somebody typed. */
-function fmrWord(w, m){
-  var nw={hw:m.hw, pos:w.pos, at:Date.now(), from:String(w.hw), fm:m.fm,
-          sp:JSON.parse(JSON.stringify(m.sp)), mns:[], mn:''};
-  return nw;
-}
-/* Making them, for one word. What a form IS is fmrWord() above; this is the
-   list of them, the room for them, and the word's page again afterwards. */
-function fmrAdd(hw){
-  var w=findWord(hw), todo=w? fmrTodo(w) : [], i, m, nw, made=[];
-  if(!w || !todo.length || langLocked()) return;
-  if(capStop(todo.length)) return;
-  for(i=0;i<todo.length;i++){
-    m=todo[i];
-    if(findWord(m.hw)) continue;
-    nw=fmrWord(w, m);
-    WORDS.push(nw); made.push(m.hw);
-  }
-  if(!made.length) return;
-  save();
-  /* The word's page again, not merely a redraw. It is a form, and a form
-     holds the html it was opened with -- so what the button did would have
-     stayed invisible under the button, which would go on offering to do it.
-     Opening it again is what addOne() does after writing a word, for the
-     same reason. */
-  toast(tn('fmr.made', made.length));
-  openWord(String(w.hw));
-}
-/* The row on a word's page. Only when there is something to make: a button
-   that does nothing when pressed is worse than no button. */
-function fmrTodoHTML(w){
-  var todo=fmrTodo(w);
-  if(!todo.length || langLocked()) return '';
-  return '<button class="btn ghost wide"' +
-    DO('fmrAdd', [String(w.hw)]) + '>'+ICON_ADD+
-    esc(tn('fmr.todo', todo.length))+'</button>';
-}
 
 /* ---- the forms of a word -------------------------------------------------
    「語ページの活用一覧に出てくる。活用は活用であって単語じゃない。その代わり
@@ -1058,7 +976,7 @@ function wForms(w){
     put({fm:String(a[i].fm), hw:String(a[i].hw), sp:spOf(a[i]), by:'old'});
   a=fmRules();
   for(pass=0;pass<2;pass++) for(i=0;i<a.length;i++){
-    if(!fmInf(a[i].fm) || ((a[i].when==='x')!==(pass===0))) continue;
+    if((a[i].when==='x')!==(pass===0)) continue;
     x=fmrMake(w, a[i]);
     if(x) put({fm:String(x.fm), hw:x.hw, sp:x.sp, by:'rule'});
   }
@@ -1182,102 +1100,6 @@ function wfmDelGo(hw, was){
   keepDrop(keepKeyOf('form', wfmKey(hw, was)));
   save();
   back();
-}
-
-/* ---- the forms on the sheet the word is coined on ------------------------
-   A rule was only ever spent after the fact. The word went in, and then its
-   page offered to make the forms it had not got, or the rules screen offered
-   to make every one of them across the whole dictionary -- both of which are
-   going back for something you were holding a moment ago.
-
-   So the rules are spent where the word is written. Type a spelling and every
-   rule that fits shows what it makes, spelled out; the row can be typed over
-   or taken off; Add writes what is left. 「保存したら出る。消してたら消す。」
-
-   Three things this remembers, and they are all about the sheet rather than
-   about the language, so all three go when the sheet closes:
-
-   `addFmEd` -- a form somebody typed over. It wins from then on: changing the
-   head re-spells only the rows nobody has touched, because a rule is a way of
-   saving typing and not an opinion about the word.
-   「あくまで規則は作るのを楽にするためのツール」
-
-   `addFmOff` -- a row taken off. It stays off even if the head is retyped
-   into something the rule fits again: it was answered once.
-
-   Nothing here deletes. The minus is on a word that does not exist yet. */
-var addFms=[], addFmEd={}, addFmOff={};
-function addFmClear(){ addFms=[]; addFmEd={}; addFmOff={}; }
-/* The draft as a word, which is all fmrMake() ever wanted of one. */
-function addFmDraft(){
-  var sp=(wEdit && wEdit.sp) || [];
-  return {hw:spWord(sp), sp:sp, pos:(wEdit && wEdit.pos) || ''};
-}
-function addFmSync(){
-  var a=fmRules(), w=addFmDraft(), i, m;
-  addFms=[];
-  if(!addW || !w.hw || !w.sp.length) return;
-  for(i=0;i<a.length;i++){
-    if(addFmOff[a[i].id]) continue;
-    /* The words made with this one, which are derivations: an inflection is
-       the word's own and is on its page the moment the word exists. */
-    if(fmInf(a[i].fm)) continue;
-    m=fmrMake(w, a[i]);
-    if(!m) continue;
-    /* Typed over: the letters are the person's, and the headword is those
-       letters rather than the ones the rule would have put there. */
-    if(addFmEd[a[i].id]){
-      m.sp=addFmEd[a[i].id];
-      m.hw=spWord(m.sp);
-    }
-    if(!m.hw) continue;
-    addFms.push(m);
-  }
-}
-/* Its own node, so the head field can be typed into without the sheet being
-   rebuilt under the thumb: what changes as somebody types is this block and
-   nothing else. */
-function addFmBoxHTML(){ return '<div id="wd-fms">'+addFmHTML()+'</div>'; }
-function addFmPaint(){
-  var e=document.getElementById('wd-fms');
-  if(!e) return;
-  e.outerHTML=addFmBoxHTML();
-  lnGrowAll();
-}
-function addFmHTML(){
-  addFmSync();
-  if(!addFms.length) return '';
-  return '<div class="sec">'+esc(t('fmr.title'))+'</div>'+
-    '<div class="fmmks">'+addFms.map(function(m){
-      return '<div class="fmmk"><span class="fmmkf">'+esc(fmLabel(m.fm))+'</span>'+
-        spTypeField('fmmk-'+m.id, IN('addFmSet', [m.id]), m.sp, 'whin')+
-        '<button class="mnx"' + DO('addFmDrop', [m.id]) + ' aria-label="'+
-          esc(t('fmr.off'))+'">'+ICON_MINUS+'</button></div>';
-    }).join('')+'</div>';
-}
-function addFmSet(id, v){
-  addFmEd[String(id)]=spType(v);
-  lnGrow('fmmk-'+id);
-}
-function addFmDrop(id){
-  addFmOff[String(id)]=1;
-  delete addFmEd[String(id)];
-  addFmPaint();
-}
-/* Written when the word is. Each is fmrWord() -- the same word fmrAdd()
-   writes. A form whose spelling is already a word in the
-   dictionary is skipped rather than overwriting it: two words cannot share a
-   headword, and the one already there is the one somebody wrote. */
-function addFmWrite(hw){
-  var par=findWord(hw), i, m, nw, made=0;
-  if(!par) return 0;
-  for(i=0;i<addFms.length;i++){
-    m=addFms[i];
-    if(!m.hw || findWord(m.hw)) continue;
-    nw=fmrWord(par, m);
-    WORDS.push(nw); made++;
-  }
-  return made;
 }
 
 /* ---- writing one -------------------------------------------------------- */
@@ -1686,12 +1508,6 @@ function wdFormHTML(){
     (wdFrom()? wdFmHTML() : '')+
     wdRegHTML()+
 
-    /* The forms the rules make of it, where a word is coined and nowhere
-       else. A word that already exists has its forms already, and re-spelling
-       them under it would be the app arguing about a language it did not
-       write. 「あくまで追加したとき」 */
-    (mk? addFmBoxHTML() : '')+
-
     '<div class="sec">'+t('word.tags')+'</div>'+
     wdTagsHTML()+
 
@@ -1990,7 +1806,7 @@ function wdViewHTML(){
         }).join('')+'</div>'
       : '<div class="note">'+esc(t('sent.nomean'))+'</div>')+
     wfmSecHTML(w)+
-    wdSecHTML(t('word.family'), wdFamHTML(w)+etyDoorHTML(w)+fmrTodoHTML(w))+
+    wdSecHTML(t('word.family'), wdFamHTML(w)+etyDoorHTML(w))+
     wdSecHTML(t('word.syn'), wdRelsHTML(w,'syn'))+
     wdSecHTML(t('word.ant'), wdRelsHTML(w,'ant'))+
     wdSecHTML(ICON_LINE+t('word.ex'), ex.length

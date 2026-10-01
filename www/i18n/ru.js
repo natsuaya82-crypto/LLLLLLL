@@ -792,16 +792,6 @@ defLang('ru', (function(){
       "fmr.sel.row" : "Выбрать это правило",
       "fmr.sel.ask" : "Удалить правила: {0}?",
       "fmr.sel.ask.1" : "Удалить это правило?",
-      "fmr.todo"         : "Создать {0} недостающих форм",
-      "fmr.todo.1"       : "Создать недостающую форму",
-      "fmr.todo.few"     : "Создать {0} недостающие формы",
-      "fmr.made"         : "Создано слов: {0}",
-      "fmr.made.1"       : "Создано 1 слово",
-      "fmr.off" : "Не создавать эту форму",
-      "fmr.with" : "Добавлено, с {0} формами",
-      "fmr.with.1" : "Добавлено, с одной формой",
-      "fmr.with.few" : "Добавлено, с {0} формами",
-      "fmr.made.few"     : "Создано {0} слова",
       "home.write"        : "Новое слово",
       /* AI に相談する -- www/assist.js builds the link. The sentences below
          are the PROMPT, and they are here for the same reason every other

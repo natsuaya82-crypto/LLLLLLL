@@ -702,13 +702,6 @@ defLang('ja', (function(){
       'fmr.sel.row' : 'この規則を選ぶ',
       'fmr.sel.ask' : '{0} 件の規則を削除しますか？',
       'fmr.sel.ask.1' : 'この規則を削除しますか？',
-      'fmr.todo'         : "まだ無い{0}つの形を作る",
-      'fmr.todo.1'       : "まだ無い形を作る",
-      'fmr.made'         : "{0}語できた",
-      'fmr.made.1'       : "1語できた",
-      'fmr.off'          : "この形は作らない",
-      'fmr.with'         : "{0}つの形と一緒に追加",
-      'fmr.with.1'       : "1つの形と一緒に追加",
       'home.write'      : '単語の作成',
       /* AI に相談する -- www/assist.js builds the link. The sentences below
          are the PROMPT, and they are here for the same reason every other

@@ -30,7 +30,6 @@
 act('abNudge', abNudge);
 act('abScale', abScale);
 act('addOne', addOne);
-act('addFmDrop', addFmDrop);
 act('back', back);
 /* backKeep and backDrop are NOT here. The two answers the back arrow asks
    for when a post is half-written go to popAsk() as functions
@@ -413,7 +412,6 @@ actIn('wdSetNt', wdSetNt);
 /* A word is typed on the free plan, in three places: the new-word sheet, the
    editor, and the word a grammar stage asks for. */
 actIn('wdSetLn', wdSetLn);
-actIn('addFmSet', addFmSet);
 actIn('wfmSetF', wfmSetF);
 actIn('ipaSetQ', ipaSetQ);
 actIn('ltSetQ', ltSetQ);
@@ -434,7 +432,6 @@ act('g2SelOn', g2SelOn);
 act('g2SelOff', g2SelOff);
 act('g2SelTap', g2SelTap);
 act('g2SelDel', g2SelDel);
-act('fmrAdd', fmrAdd);
 act('fmrSetAt', fmrSetAt);
 act('regPick', regPick);
 actKey('fmNew', fmNew);

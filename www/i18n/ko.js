@@ -965,11 +965,6 @@ defLang('ko', (function(){
       "fmr.sel.row" : "이 규칙 선택",
       "fmr.sel.ask" : "규칙 {0}개를 삭제할까요?",
       "fmr.sel.ask.1" : "이 규칙을 삭제할까요?",
-      "fmr.todo"         : "아직 없는 {0}개의 형태 만들기",
-      "fmr.made"         : "{0}개의 낱말을 만들었습니다",
-      "fmr.off" : "이 형태는 만들지 않기",
-      "fmr.with" : "{0}개의 형태와 함께 추가",
-      "fmr.with.1" : "형태 하나와 함께 추가",
       "home.write"       : "새 단어",
       /* AI に相談する -- www/assist.js builds the link. The sentences below
          are the PROMPT, and they are here for the same reason every other

@@ -678,6 +678,13 @@ does not count it toward the plan's ceiling. It is **not in the dictionary list*
 either (`wordsSeen()` in `www/words.js` leaves out what `wIsForm()` names) —
 it is listed under 活用 on its parent's page, and stays in `WORDS` unchanged.
 
+**A derivation a rule makes is not a word either** (OWNER 2026-10-01): a rule's
+form is a form whatever its label, so `wForms()` answers a diminutive the way it
+answers a plural, and nothing writes one into `WORDS`. A word with `from` and a
+derivation `fm` is either one somebody wrote themselves or one a rule wrote
+before 2026-10-01 (`mns` empty). Both are left exactly as they are and both stay
+words — in the list, in the family and in the etymology tree.
+
 A word is **current data**. A card of a word follows the letters being redrawn,
 and that is correct.
 

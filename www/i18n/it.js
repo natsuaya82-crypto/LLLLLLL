@@ -786,13 +786,6 @@ defLang('it', (function(){
       "fmr.sel.row" : "Scegli questa regola",
       "fmr.sel.ask" : "Eliminare {0} regole?",
       "fmr.sel.ask.1" : "Eliminare questa regola?",
-      "fmr.todo"         : "Fare le {0} forme che mancano",
-      "fmr.todo.1"       : "Fare la forma che manca",
-      "fmr.made"         : "{0} parole create",
-      "fmr.made.1"       : "1 parola creata",
-      "fmr.off" : "Non creare questa forma",
-      "fmr.with" : "Aggiunta, con {0} forme",
-      "fmr.with.1" : "Aggiunta, con una forma",
       "home.write"       : "Parola nuova",
       /* AI に相談する -- www/assist.js builds the link. The sentences below
          are the PROMPT, and they are here for the same reason every other
