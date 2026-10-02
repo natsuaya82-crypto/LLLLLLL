@@ -447,7 +447,6 @@ actKey('obName', obName);
 actKey('snsGo', snsGo);
 actKey('stAddEx', stAddEx);
 actKey('subNew', subNew);
-actKey('wdAddEx', wdAddEx);
 actKey('wdAddMn', wdAddMn);
 
 act('wldGet', wldGet);

@@ -1016,6 +1016,29 @@ export function halfDone(){
         pwSetLn(new Array(POST_MAX + 14).join('a'));
         pwSetMn('the mountain is seen');
         const h = vForm(); PW = pwBlank(); return h; }],
+    /* A sentence typed on two lines, written and shown 「改行はできるべき
+       でしょ」 OWNER 2026-10-02 (docs/scope/r161-lines.md). Each puts back
+       what it changed: nothing re-seeds between faces. */
+    ['the composer, its meaning on two lines', () => {
+        PW = pwBlank(); openPost();
+        pwSetLn('kano tir'); pwSetMn('the mountain\nis seen');
+        const h = vForm(); PW = pwBlank(); return h; }],
+    ['a post whose meaning is two lines', () => {
+        const p = POSTS.filter((q) => !q.nm && !q.pr)[0], was = p.mn;
+        p.mn = 'the mountain\nis seen';
+        window.route = 'feed'; NAV = [{ r:'feed' }];
+        const h = vFeed(); p.mn = was; return h; }],
+    ['an example on two lines', () => {
+        const w = findWord('kano'), was = w.ex;
+        w.ex = [{ ln:'kano\ntir', gl:'the mountain\nis seen' }];
+        openWord('kano'); const h = vForm(); w.ex = was; return h; }],
+    ['an overview row on two lines', () => {
+        const w = world(), was = w.ovs;
+        w.ovs = [{ id:'O1', k:'the land\nand its people', v:'a valley\nbetween two rivers' }];
+        wldPubGot(langId, true);
+        wldSecs().forEach(function(sec){ ABOPEN[sec.r] = true; });
+        window.route = 'about'; NAV = [{ r:'about' }];
+        const h = vAbout(); w.ovs = was; return h; }],
     /* 撮れるポップ。**id を外して返します** ── `tools/shot.mjs` は写真を撮る
        前に必ず `popOff()` を呼び（電波なしの「接続できません」を消すため）、
        それが `#pop` を名前で探すので、id を持ったまま返した顔は**白紙で

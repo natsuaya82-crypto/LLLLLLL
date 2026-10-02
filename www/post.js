@@ -1688,7 +1688,7 @@ function pwHTML(){
       '<div class="pwmnrow">'+
       (pwMnOff()? '' :
         lnField('pw-mn', t('post.mn'),
-          (PW.pr? ' readonly' : '')+IN('pwSetMn'), PW.mn, 'pwmn'))+
+          (PW.pr? ' readonly' : '')+IN('pwSetMn'), PW.mn, 'pwmn lnlines'))+
       (PW.pr? '' :
         '<button class="pwmnsw" aria-pressed="'+(pwMnOff()? 'false' : 'true')+
           '" aria-label="'+esc(t('post.mn.sw'))+'"'+DO('pwMnSw')+'>'+

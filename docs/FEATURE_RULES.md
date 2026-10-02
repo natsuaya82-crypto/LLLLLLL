@@ -314,7 +314,7 @@ it is quoted, and where a decision has never been made the row in
 - Decision: 文章を書く欄は改行ボタンで改行できる ── 投稿の意味（`pw-mn`）、例文とその訳（`sx-ln`・`sx-gl`・`wd-exl`・`wd-exg`）、一文字のメモ（`lt-nt`）、問い合わせの本文（`cont-b`）、言語ページの概要の各欄（`wld-ov-*`）。名前・ID・リンク・場所・検索・つづり・語形・ラベル・タグなど一語を入れる欄は一行のまま（2026-09-03「必要ないところで開業できるのやめて欲しい」はそのまま）。
 - Reason: ユーザー「改行ボタン押しても改行されない」。r160 が測った ── 自作キーボードの改行は "\n" を送っていて、止めていたのは `.lnin` の Enter を止める一行。オーナー「意味のところとか改行できない。全部できるんじゃないの？」「改行はできるべきでしょ」「一行のままのやつはそのままにしてバランス見てるのよ」（2026-10-01〜02）。
 - Affected data: 無い（これから書く文に改行が入るだけ）。
-- Implementation status: r161 に渡す。
+- Implementation status: r161-lines（CODE CONFIRMED のみ）── 欄は `lnlines` を付け、見せる所は `www/index.html` の pre-wrap 一行とカードの `cardWrap()`。`pua-check` G・H が持つ。**文法の章の例文（`sx-ln`・`sx-gl`）はまだ一行** ── 足す道が Enter しか無いので止めた（`docs/scope/r161-lines.md`）。
 
 ### 2026-10-01 派生の規則で作る語も、元の語のページに出すだけ（一覧に勝手に足さない）
 - Date: 2026-10-01

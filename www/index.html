@@ -965,6 +965,15 @@ canvas.pkc{width:34px;height:34px;display:block}
 .numcn{position:relative}
 .numsep{display:inline-block;padding:0 .1em;opacity:.55}
 .pmn{font-size:.75rem;line-height:1.5;color:var(--txs);margin-top:8px}
+/* WHERE A SENTENCE SOMEBODY TYPED IS SHOWN, IT HAS THE BREAKS THEY TYPED.
+   The fields these are written in take Enter as a new line (`lnlines`,
+   www/act.js) 「改行はできるべきでしょ」 OWNER 2026-10-02, and every one of
+   them was shown with the break folded into a space: a post's meaning, an
+   example and its translation, a letter's note, a row of a language's
+   overview. One rule for all of them, so a place that shows one tomorrow
+   is added here rather than given its own. The card is a canvas and breaks
+   in cardWrap() (www/card.js). pua-check H measures each. */
+.pmn,.exl,.exg,.abfk,.abfv,.ltnt{white-space:pre-wrap}
 /* WHAT A POST IS FILED UNDER, under the translation.
    「リプライトゥー@〇〇のサイズ感で翻訳の下で最大4つまで別枠で入れられると
    かは？」 OWNER 2026-09-15 ── 字の大きさは「@〇〇 への返信」の行と同じ物、

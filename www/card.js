@@ -472,21 +472,16 @@ function cardLines(x, s, max, high, size, fam, style, lines){
     sz-=2;
   }
   x.font=pre+sz+'px '+fam;
-  return {sz:sz, ln:[String(s)]};
+  return {sz:sz, ln:cardWrap(x, s, Infinity)};
 }
 function cardLead(sz){ return Math.round(sz*1.10); }
+/* cardWrap() with a ceiling: no more than `lines`, and no word wider than the
+   line, or null so the caller tries a smaller size. */
 function cardSplit(x, s, max, lines){
-  var words=String(s).split(/\s+/), out=[], cur='', i, join;
-  for(i=0;i<words.length;i++){
-    if(!words[i]) continue;
-    join = cur? cur+' '+words[i] : words[i];
-    if(x.measureText(join).width<=max){ cur=join; continue; }
-    if(!cur) return null;                       /* one word wider than the line */
-    out.push(cur); cur=words[i];
-    if(out.length>=lines) return null;
-  }
-  if(cur) out.push(cur);
-  return out.length? out : null;
+  var out=cardWrap(x, s, max), i;
+  if(!out.length || out.length>lines) return null;
+  for(i=0;i<out.length;i++) if(x.measureText(out[i]).width>max) return null;
+  return out;
 }
 
 /* The card is set in the app's own two faces: the capitals in the display
@@ -636,17 +631,25 @@ function cardBlock(x, line, bx, by, bw, bh, cap){
 /* Wrapping for a column whose width is fixed and whose height is not: the
    page grows downward and the foot is drawn from the bottom up, so a long
    sense does not have to be squeezed into a line count the way a card's
-   meaning does. */
+   meaning does -- cardSplit() is this with a ceiling, so the card has one
+   way to wrap.
+
+   A typed newline is a new line here as it is on the screen: the fields a
+   sentence is written in take Enter 「改行はできるべきでしょ」 OWNER
+   2026-10-02, and splitting on every kind of space folded it into one. */
 function cardWrap(x, s, max){
-  var words=String(s||'').split(/\s+/), out=[], cur='', i, join;
-  for(i=0;i<words.length;i++){
-    if(!words[i]) continue;
-    join = cur? cur+' '+words[i] : words[i];
-    if(x.measureText(join).width<=max){ cur=join; continue; }
+  var paras=String(s||'').split('\n'), out=[], p, words, cur, i, join;
+  for(p=0;p<paras.length;p++){
+    words=paras[p].split(/\s+/); cur='';
+    for(i=0;i<words.length;i++){
+      if(!words[i]) continue;
+      join = cur? cur+' '+words[i] : words[i];
+      if(x.measureText(join).width<=max){ cur=join; continue; }
+      if(cur) out.push(cur);
+      cur=words[i];
+    }
     if(cur) out.push(cur);
-    cur=words[i];
   }
-  if(cur) out.push(cur);
   return out;
 }
 function cardRule(x, y, x0, x1, col, lw){

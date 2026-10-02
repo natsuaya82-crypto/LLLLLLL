@@ -577,7 +577,7 @@ function vContact(){
        One rule under it and nothing else -- no frame, no corner, no panel. */
     '<div class="grpsep"></div><div class="field ctbody">'+
       '<label>'+esc(t('contact.body'))+'</label>'+
-      lnField('cont-b', '', IN('contactSet', ['body']), CONT.body, 'fitin')+
+      lnField('cont-b', '', IN('contactSet', ['body']), CONT.body, 'fitin lnlines')+
     '</div>'+
     '</div></div>';
 }

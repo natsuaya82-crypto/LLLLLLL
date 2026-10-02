@@ -852,7 +852,7 @@ const R = await pg.evaluate(() => {
   wdExOpen();
   document.getElementById('wd-exl').value = puaTyped;
   document.getElementById('wd-exg').value = '';
-  wdAddEx();
+  wdExOpen();   /* the ＋ takes the box; Enter there is a new line (r161) */
   const puaRow = (findWord('mos').ex || []).slice(-1)[0];
   const puaStored = puaRow ? String(puaRow.ln) : '';
   const puaDrawn = [].slice.call(document.querySelectorAll('.exl'))
@@ -912,7 +912,7 @@ const R = await pg.evaluate(() => {
   wdExOpen();
   document.getElementById('wd-exl').value = 'mos tir';
   document.getElementById('wd-exg').value = '';
-  wdAddEx();
+  wdExOpen();   /* the ＋ takes the box; Enter there is a new line (r161) */
   const exGold = keepDirty(exKey);
   keepNo(exKey);
   const exAfterNo = (findWord('mos').ex || []).length;

@@ -2347,7 +2347,7 @@ function wldPage(ed, L, lid){
                 /* One per row, so the id carries the row's own. */
                 '<div class="field ovk">'+
                   lnField('wld-ov-'+row.id, '', IN('wldOvSet', [row.id, "k"]),
-                          wldTyped(wldKeyOv(row.id, 'k')))+
+                          wldTyped(wldKeyOv(row.id, 'k')), 'lnlines')+
                 '</div>'+
                 /* 「消したかったらマイナスボタン」 OWNER 2026-08-25. It was a
                    cross, which is what CLOSES a thing; the pair the owner
