@@ -840,6 +840,12 @@ export function halfDone(){
     ['the keyboards', () => { window.route = 'kb'; NAV = [{ r:'kb' }]; kbShow = 0; return vKb(); }],
     ['a keyboard of the taker\'s own', () => __takerKb(() => {
        window.route = 'kb'; NAV = [{ r:'kb' }, { r:'kb', a:'1' }]; return vKb(); })],
+    /* The maker's note on a letter, read and never written: it is lines
+       (r161, OWNER 2026-10-02), and `.ltnt` is worn only here. */
+    ['one letter with its maker\'s note', () => { const l = LETTERS.filter((x) => inkGeo(x))[0], was = l.nt;
+       l.nt = 'a note\non two lines';
+       try { window.route = 'letter'; NAV = [{ r:'letters' }, { r:'letter', a:l.id }]; return vLetter(); }
+       finally { if (was === undefined) delete l.nt; else l.nt = was; } }],
   ];
   return [
     ...__takenFaces.map(([n, f]) => [n + ', somebody else\'s language', () => __theirs(f)]),
