@@ -972,6 +972,56 @@ if (mk.stored.indexOf('\u00b6') < 0)
              'backup file and from the slice row on the server. A migration copies and ' +
              'never removes what it read.');
 
+/* ---- `,` and `.` join the slots, and nothing that was there moves --------
+   「コンマとピリオドくらいはありやな」 OWNER 2026-10-02: LT_START is a to z,
+   ! ? , . now. A free language from before has the thirty-eight it was made
+   with; the launch (ltStart(), once the plan has answered) gives it the two it
+   is missing and leaves every letter it had exactly as it was -- the same
+   bytes, in the same order. A paid one is not topped up at all: a paid plan
+   may delete its letters, and a launch that put them back would be undoing
+   somebody (www/letters.js § ltSlotsFill).
+
+   What is compared is the alphabet the launch read off the old keys, BEFORE
+   the plan answers, against the same alphabet after -- so the only writer in
+   between is the one this is about. */
+const oldSlots = (planId) => pg.evaluate(() => {
+  localStorage.clear();
+  localStorage.setItem('lingua.langs', JSON.stringify({ LP: { name: 'Punct', mine: true } }));
+  localStorage.setItem('lingua.cur', 'LP');
+  localStorage.setItem('lingua.LP.lang', 'Punct');
+  var ls = [], i, c, old = 'abcdefghijklmnopqrstuvwxyz!?', mark = { '!': 'ex', '?': 'qm' };
+  for (i = 0; i < old.length; i++) {
+    c = old.charAt(i);
+    ls.push({ id: 'lt.' + (mark[c] || c), st: null, ch: '', nm: '', snd: [/[a-z]/.test(c) ? c : c],
+              chose: 0, ab: c });
+  }
+  for (i = 0; i < 10; i++) ls.push({ id: 'lt.n' + i, st: null, ch: '', nm: '', snd: [], chose: 0, val: i });
+  /* drawn on, and one somebody added on a paid plan once */
+  ls[0].st = [{ pts: [[100, 100], [700, 700]] }];
+  ls.push({ id: 'l9_0_0', st: [{ pts: [[1, 1], [9, 9]] }], ch: '', nm: '', snd: [], chose: 0, ab: 'qx' });
+  localStorage.setItem('lingua.LP.letters', JSON.stringify(ls));
+}).then(async () => {
+  await oldPhone();
+  await pg.reload(); await settle(); await ownerSaid();
+  return pg.evaluate((p) => {
+    var before = LETTERS.map(function (l){ return JSON.stringify(l); });
+    planTook(p);
+    var after = LETTERS.map(function (l){ return JSON.stringify(l); });
+    var at = 0, i;
+    for (i = 0; i < after.length && at < before.length; i++) if (after[i] === before[at]) at++;
+    return { kept: at === before.length, before: before.length, after: after.length,
+             added: LETTERS.slice(before.length).map(function (l){ return l.id + '=' + ltName(l); }).join(' '),
+             stored: (JSON.parse(slRd(langKey('letters')) || '[]') || []).length };
+  }, planId);
+});
+const pf = await oldSlots('free');
+want('a free language from before keeps every letter it had, byte for byte and in order', pf.kept, true);
+want('and the launch gives it `,` and `.` and nothing else', pf.added, 'lt.cm=, lt.pd=.');
+want('and what is held is what is in the slice', pf.stored, pf.after);
+const pp = await oldSlots('pro');
+want('a paid language from before is not topped up', pp.added, '');
+want('and keeps every letter it had, byte for byte', pp.kept && pp.after === pp.before, true);
+
 /* ---- a language with no grammar of its own is left with none ------------
    CLAUDE.md § Data: *"empty" and "broken" are different states and must not
    share a branch* -- and so are "empty" and ABSENT. www/backup.js says the

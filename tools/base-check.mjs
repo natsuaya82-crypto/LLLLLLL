@@ -330,7 +330,7 @@ const r = await pg.evaluate(({s}) => {
      mark that IS drawn takes the letter away. */
   /* EVERY PAGE THE ALPHABET IS SPLIT ACROSS, and not just the letters.
      「それはページが分かれていてもだよ？」OWNER 2026-09-02: a-z is one page,
-     0-9 another, ! ? another, and the numbering runs 1 to 38 across all of
+     0-9 another, ! ? , . another, and the numbering runs 1 to 40 across all of
      them. ltCanDelete() asks the LETTER and not the page, so this walks every
      kind rather than trusting that. */
   planGot('pro');
@@ -599,29 +599,29 @@ say(r.rmPlain.kind === 'alpha' && r.rmPlain.name === 'zz' && r.rmPlain.at !== 'l
     r.rmPlain.name + ' at ' + r.rmPlain.at + ')');
 
 say(r.wob && r.wob.baseMarks === 0,
-    'not one of the first thirty-eight carries a ⊖ — on any of the pages the ' +
-    'alphabet is split across, because the numbering runs 1 to 38 through ' +
+    'not one of the first forty carries a ⊖ — on any of the pages the ' +
+    'alphabet is split across, because the numbering runs 1 to 40 through ' +
     'all of them (' +
     (r.wob ? r.wob.baseMarks + ' of ' + r.wob.baseSeen + ', pages: ' +
              r.wob.kinds.join(' ') : '?') + ')');
 say(r.wob && r.wob.addedMarked,
-    'the thirty-ninth, the first letter somebody adds, carries one');
+    'the forty-first, the first letter somebody adds, carries one');
 say(r.wob && r.wob.pressed > 0 && r.wob.popless === 0 &&
     r.wob.dead === 0 && r.wob.moved === r.wob.pressed,
     'and every ⊖ that is drawn takes its letter away (' +
     (r.wob ? r.wob.moved + ' of ' + r.wob.pressed : '?') + ')');
 
-say(r.slotN === 38 && r.slotSame === 38,
+say(r.slotN === 40 && r.slotSame === 40,
     'a slot wears the same id whenever ltStart runs -- first launch, a second ' +
     'language later in the same session, and another phone from zero (' +
     r.slotSame + ' of ' + r.slotN + ' agree, `a` is ' + (r.slotA || 'nothing') + ')');
-say(r.wasDoubled === 76 && r.keptN === 76 && r.keptSame && r.keptDrawn === 1,
+say(r.wasDoubled === 80 && r.keptN === 80 && r.keptSame && r.keptDrawn === 1,
     'an alphabet that doubled before the ids were steady keeps every row through ' +
     'a launch -- 「消さずに残す」 OWNER 2026-09-24 (' +
     r.wasDoubled + ' -> ' + r.keptN + ', same rows in the same order: ' + r.keptSame +
     ', drawn: ' + r.keptDrawn + ')');
 
-say(r.keptN2 === 76 && r.keptSame2,
+say(r.keptN2 === 80 && r.keptSame2,
     'and with the empty copy first and the drawn one after it, nothing is taken ' +
     'either (' + r.keptN2 + ' letters, same rows: ' + r.keptSame2 + ')');
 say(r.idApart && r.idShape,

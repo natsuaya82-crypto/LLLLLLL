@@ -510,7 +510,10 @@ function ltNew(o){
   return l;
 }
 /* ---- the alphabet a free language starts with -------------------------
-   Twenty-six letters and two marks, already there, waiting to be drawn on.
+   Twenty-six letters and four marks, already there, waiting to be drawn on.
+   `,` and `.` joined `!` and `?` on 2026-10-02 「コンマとピリオドくらいはありやな」
+   OWNER: the free QWERTY's bottom row is `! ? , . space return` (KB_ENDS,
+   www/keyboard.js), and a key there finds its letter by name like every other.
 
    The free app is one sentence: your own shapes for a-z. There is no adding
    a letter, no deleting one and no renaming one -- so the slot is the whole
@@ -524,16 +527,16 @@ function ltNew(o){
    name. So this can run on any launch, and a paid language that comes back
    down to free is filled in rather than rearranged.
 
-   Nothing here sets `ord`, so the twenty-eight sort by name -- which is abc,
-   and the two marks after it, because that is where ltAbcKey puts a name
+   Nothing here sets `ord`, so the thirty sort by name -- which is abc,
+   and the four marks after it, because that is where ltAbcKey puts a name
    that is not roman.
 
    Paid does not get this. A syllabary, an abjad and a logography are all
    paid, and handing a logography twenty-six roman letters on the day it is
    made would be the app deciding what somebody's writing is -- which is the
    one thing the alphabet chapter is written not to do. */
-var LT_START='abcdefghijklmnopqrstuvwxyz!?';
-/* One of the letters every language starts with -- a to z, ! and ?, and a
+var LT_START='abcdefghijklmnopqrstuvwxyz!?,.';
+/* One of the letters every language starts with -- a to z, ! ? , ., and a
    digit for every value of the base. Its NAME is not the person's to change,
    on any plan.
 
@@ -591,15 +594,15 @@ function ltIsBase(l){ return !!l && !!ltSlotKey(l); }
 
    A slot is not somebody's letter. It is the free plan's `a`, it is the same
    `a` on every phone and at every launch, and its id says so. Two runs of
-   ltStart() anywhere now produce the same thirty-eight ids, so the merge sees
+   ltStart() anywhere now produce the same slot ids, so the merge sees
    one of each and there is nothing to double.
 
-   The marks are spelled out rather than put in the id: `!` and `?` are fine in
+   The marks are spelled out rather than put in the id: `!` `?` `,` `.` are fine in
    a JSON string and are not fine everywhere an id is put -- kbFixed() writes
    one into a `data-lt` attribute and the onboarding reads it back out of a CSS
    selector. Letters and digits only, so there is nowhere for it to need
    escaping. */
-var LT_SLOT_MARK={'!':'ex', '?':'qm'};
+var LT_SLOT_MARK={'!':'ex', '?':'qm', ',':'cm', '.':'pd'};
 function ltSlotId(key){
   var k=String(key);
   return (k.charAt(0)==='#')? ('lt.n'+k.slice(1)) : ('lt.'+(LT_SLOT_MARK[k] || k));
@@ -616,8 +619,9 @@ function ltSlotIdFree(key){
    「a-z 0-9 !?に1からナンバリングしてそれ以降に追加されるのは消す」
    「次に文字追加したら39になるよね？39以降は消せるんだよね？」OWNER 2026-09-02.
 
-   The first thirty-eight are a-z, 0-9 and ! ?, numbered 1 to 38, and they are
-   not deletable. The thirty-ninth is the first letter somebody adds, and from
+   The slots are a-z, 0-9 and ! ? , . -- forty, numbered 1 to 40 since `,` and
+   `.` joined on 2026-10-02 (thirty-eight when the owner counted) -- and they
+   are not deletable. The next is the first letter somebody adds, and from
    there they go whole. That is the numbering staying still, which is what the
    QWERTY needs: kbFixed() finds its keys BY NAME, so a row taken away is a key
    answering to nothing.
@@ -628,7 +632,7 @@ function ltSlotIdFree(key){
    all thirty-eight and pressing it opened a question whose yes did nothing.
    「長押しの後から-の3個目以降に普通に反応しなくなる」 */
 function ltCanDelete(l){ return !!l && !ltIsBase(l); }
-/* THE THIRTY-EIGHT SLOTS, PUT IN WHERE THEY ARE MISSING -- a to z, ! ?, and
+/* THE SLOTS, PUT IN WHERE THEY ARE MISSING -- a to z, ! ? , ., and
    a digit for every value the base can write.
 
    ONE PLACE, AND TWO MOMENTS ASK IT. ltStart() below is the launch, and it
@@ -1113,7 +1117,7 @@ function ltDelete(id){
   /* Not on the free plan. 「最初の無料枠で登録した文字はいじれないからね？
      書き換えるのはできるけど、消せはしないから。」 OWNER 2026-08-25 -- a
      confirmation of what was already written down: the free plan IS the
-     thirty-eight slots, the QWERTY finds its keys BY NAME, and a slot taken
+     slots, the QWERTY finds its keys BY NAME, and a slot taken
      away is a key answering to nothing.
 
      Both doors onto this ARE drawn on free now -- the mark on a held cell and
@@ -1136,7 +1140,7 @@ function ltDeleteGo(id){
   /* A SLOT IS EMPTIED, NOT REMOVED. 「無料のa-zが普通に削除できるの何？削除して
      もいいけど枠は消えないでくれよ」 OWNER 2026-09-02.
 
-     The thirty-eight are what the free plan IS -- a to z, ! ? and a digit per
+     The slots are what the free plan IS -- a to z, ! ? , . and a digit per
      value of the base -- and the QWERTY finds its keys BY NAME (kbFixed() in
      www/keyboard.js builds from LETTERS every time it is drawn). Take the row
      away and the key that answers to it is a key answering to nothing. On free
