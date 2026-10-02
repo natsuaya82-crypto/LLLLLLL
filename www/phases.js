@@ -665,16 +665,25 @@ function stEx(id){ if(!STG.ex) STG.ex={}; if(!STG.ex[id]) STG.ex[id]=[]; return 
    handful of strings, and flattening it into several would be the stage
    written down twice.
 
-   WHAT IS TYPED INTO THE THREE BOXES IS NOT IN IT. Those are one more example
-   being written, and Enter is what makes it one -- exactly as the meaning and
-   the example on the word sheet work. It is the list that this page holds. */
+   WHAT IS TYPED INTO THE THREE BOXES IS IN IT TOO, as `lb`, `ln` and `gl`
+   (stExType()), and the ＋ and the Save are the two presses that make it a
+   line -- stExTake() is the one place either does. Enter is a new line: an
+   example is sentences 「改行はできるべきでしょ」, and 「なんのために＋とか
+   そういうボタン用意してると思ってんの？」 OWNER 2026-10-02. Before that Enter
+   was the only road in, so a line typed and saved without it was on nothing
+   the Save read and went without a word. */
 function stExKeepOn(id){
   /* Not in somebody else's language: saveStg() refuses one, so a buffer here
      would put a Save in the bar that could not write. */
   if(!stExOn(id) || langLocked()) return;
   keepOn(keepKeyOf('form', 'stex:'+id),
          function(){ return {ex:JSON.stringify(stEx(id))}; },
-         function(v, done){ stKeepSave(id, v); done(true); });
+         function(v, done){
+           var a=stExTake(id, v);
+           if(!a){ done(false); return; }
+           stExDone(v, a);
+           stKeepSave(id, v); done(true);
+         });
 }
 /* The lines on the page: what has been added and taken off, or what the stage
    holds. There is no buffer in somebody else's language, and `ex` is never
@@ -687,21 +696,24 @@ function stExKept(id){
   return (a && a.length!==undefined)? a : stEx(id);
 }
 function stExPut(id, a){ keepSet('ex', JSON.stringify(a)); openStEx(id); }
-function stAddEx(id){
-  var a=document.getElementById('sx-lb'), b=document.getElementById('sx-ln'),
-      c=document.getElementById('sx-gl');
-  if(!b) return;
-  /* The line, or -- when none was written and a meaning was -- the line this
-     language makes of that meaning. gExLine() in www/grammar.js is where that
-     is decided, so this stays one question asked in one place: it reads the
-     dictionary and the word order, and it can be put samples through in Node.
-     What was typed always wins; only an empty line is filled in. */
-  var gl=actVal(c).trim();
-  var ln=gExLine(actVal(b), gl);
-  if(!ln){ toast(t('word.ex.need')); return; }
-  stExPut(id, stExKept(id).concat([
-    {lb:actVal(a).trim(), ln:ln, gl:gl}]));
+/* What is typed, kept as it is typed so the Save lights and a repaint keeps
+   it. */
+function stExType(f, v){ keepSet(f, String(v||'')); }
+/* The list with the line in the boxes on the end of it -- or the list as it
+   is when nothing was typed, or null (said) when something was and there is
+   no line to make of it. The line, or -- when none was written and a meaning
+   was -- the line this language makes of that meaning: gExLine() in
+   www/grammar.js is where that is decided. What was typed always wins; only
+   an empty line is filled in. */
+function stExTake(id, v){
+  var lb=String(v.lb||'').trim(), gl=String(v.gl||'').trim(), ln;
+  if(!lb && !gl && !String(v.ln||'').trim()) return stExKept(id);
+  ln=gExLine(String(v.ln||''), gl);
+  if(!ln){ toast(t('word.ex.need')); return null; }
+  return stExKept(id).concat([{lb:lb, ln:ln, gl:gl}]);
 }
+/* And the buffer holding it: the list, and three empty boxes. */
+function stExDone(v, a){ v.ex=JSON.stringify(a); v.lb=''; v.ln=''; v.gl=''; }
 function stDelEx(id, i){
   var a=stExKept(id).slice();
   a.splice(i,1);
@@ -709,10 +721,25 @@ function stDelEx(id, i){
 }
 /* Two lines side by side is the whole of comparing: a label on each says what
    the pair is a pair of -- 肯定 / 否定 -- and the two read as one thought. */
-/* The same as the word sheet's: the field for one more appears when the `+`
-   on the heading is pressed. */
+/* The same as the word sheet's ＋ (wdOpenMore() in www/wordsheet.js): it
+   finishes the boxes in front of you and opens the next empty ones. From the
+   chapter's page there are no boxes yet, so it only opens them. */
 var stExNew='';
-function stExOpen(id){ stExNew=id; openStEx(id); }
+function stExOpen(id){
+  var k=keepKeyOf('form', 'stex:'+id), v, a, e;
+  if(keepKey()===k){
+    v=keepNow(k); a=stExTake(id, v);
+    if(!a) return;
+    /* Nothing typed is nothing written: the screen holds what it held. */
+    if(a.length!==stExKept(id).length){
+      stExDone(v, a);
+      keepSet('ex', v.ex); keepSet('lb', ''); keepSet('ln', ''); keepSet('gl', '');
+    }
+  }
+  stExNew=id; openStEx(id);
+  e=document.getElementById('sx-ln'); if(e) e.focus();
+}
+function stExTyped(id, f){ return keepVal(keepKeyOf('form', 'stex:'+id), f); }
 function stExHTML(id){
   var a=stExKept(id);
   return (a.length
@@ -722,9 +749,10 @@ function stExHTML(id){
       }).join('')+'</div>'
     : '')+
     (stExNew===id? '<div class="exadd">'+
-      lnField('sx-lb', t('stg.ex.lb.ph'), '', '', 'exsm')+
-      lnField('sx-ln', exHint(), KD('stAddEx', [id]), '')+
-      lnField('sx-gl', t('word.ex.gl.ph'), KD('stAddEx', [id]), '')+
+      lnField('sx-lb', t('stg.ex.lb.ph'), IN('stExType', ['lb']),
+        stExTyped(id, 'lb'), 'exsm')+
+      lnField('sx-ln', exHint(), IN('stExType', ['ln']), stExTyped(id, 'ln'), 'lnlines')+
+      lnField('sx-gl', t('word.ex.gl.ph'), IN('stExType', ['gl']), stExTyped(id, 'gl'), 'lnlines')+
     '</div>' : '');
 }
 

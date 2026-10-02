@@ -375,11 +375,9 @@ if (F.bad.length)
    whether or not it is stopped -- then `c`, and what the field holds and what
    its receiver was handed are read.
 
-   `sx-ln` and `sx-gl`, a grammar chapter's example, are on neither list:
-   Enter is the only road that adds one (stAddEx), so they wait on the owner
-   (docs/scope/r161-lines.md). */
-const LINES = ['pw-ln', 'pw-mn', 'wd-exl', 'wd-exg', 'lt-nt', 'cont-b', 'wld-ov-*'];
-const WAITS = ['sx-ln', 'sx-gl'];
+   `sx-ln` and `sx-gl`, a grammar chapter's example, joined the list when
+   their ＋ took over adding one 「文法の章の例文も」 OWNER 2026-10-02. */
+const LINES = ['pw-ln', 'pw-mn', 'wd-exl', 'wd-exg', 'sx-ln', 'sx-gl', 'lt-nt', 'cont-b', 'wld-ov-*'];
 const gKey = (id) => /^wld-ov-/.test(id) ? 'wld-ov-*' : id;
 const Gfaces = await pg.evaluate(() => {
   const faces = [], seen = {};
@@ -404,7 +402,6 @@ const Gfaces = await pg.evaluate(() => {
 });
 const G = { asked: 0, bad: [], found: {} };
 for (const f of Gfaces) {
-  if (WAITS.indexOf(f.key) !== -1) continue;
   /* A field is asked on the first face that draws it again: some faces are
      what an earlier one left behind, which is what the walk saw. */
   const ok = await pg.evaluate(({ ks, key }) => {
@@ -471,6 +468,42 @@ else {
   }, Gex);
   if (last !== 'kano\ntir') G.bad.push('an example typed on two lines went onto the word as ' + JSON.stringify(last));
 }
+/* and a grammar stage's example the same way: two lines with Enter in each
+   box, nothing added by Enter, and the ＋ puts both on the list as typed */
+const Gst = await pg.evaluate(() => {
+  window.__seed(); SET.walked = true;
+  popOff(); viewReset();
+  const id = stAll()[0].id;
+  window.__stid = id;
+  stExNew = ''; openStEx(id); stExOpen(id); render();
+  window.__stn = stExKept(id).length;
+  const e = document.getElementById('sx-ln');
+  if (!e) return 'no #sx-ln';
+  e.focus(); return null;
+});
+if (Gst) G.bad.push('a grammar stage: ' + Gst);
+else {
+  await pg.keyboard.type('kano');
+  await pg.keyboard.press('Enter');
+  await pg.keyboard.type('tir');
+  await pg.evaluate(() => document.getElementById('sx-gl').focus());
+  await pg.keyboard.type('AA');
+  await pg.keyboard.press('Enter');
+  await pg.keyboard.type('BB');
+  const st = await pg.evaluate(() => {
+    const id = window.__stid, was = window.__stn, now = stExKept(id).length;
+    if (now !== was) return 'Enter added ' + (now - was) + ' examples';
+    const b = document.querySelector('#app [data-do="stExOpen"]');
+    if (!b) return 'no ＋';
+    b.click();
+    const a = stExKept(id), x = a[a.length - 1];
+    if (a.length !== was + 1) return 'the ＋ left ' + a.length + ' examples where there were ' + was;
+    const f = document.getElementById('sx-ln');
+    if (!f || f.value !== '') return 'the ＋ did not open an empty box after it (' + (f ? JSON.stringify(f.value) : 'none') + ')';
+    return x.ln + '|' + x.gl;
+  });
+  if (st !== 'kano\ntir|AA\nBB') G.bad.push('a grammar stage\'s example typed on two lines: ' + JSON.stringify(st));
+}
 if (G.asked < 30) fails.push('G  only ' + G.asked + ' fields were pressed Enter in, so G holds nothing');
 if (G.bad.length) fails.push('G  Enter: ' + G.bad.slice(0, 8).join(' | '));
 
@@ -516,6 +549,11 @@ const H = await pg.evaluate(() => {
   out['an example\'s translation on the word'] = two(app, 'AAAA', 'BBBB');
   out['an example\'s translation on its card'] = painted('x', 'kano#0');
   out['an example\'s translation on the word\'s card'] = painted('w', 'kano');
+  const sid = stAll()[0].id;
+  stEx(sid).splice(0, stEx(sid).length, { lb: '', ln: 'kano\ntir', gl: 'CCCC\nDDDD' });
+  popOff(); viewReset(); stExNew = ''; openStEx(sid); render();
+  out['a stage\'s example\'s line'] = two(app.querySelector('.exl'), 'kano', 'tir');
+  out['a stage\'s example\'s translation'] = two(app, 'CCCC', 'DDDD');
   const l = LETTERS.filter((x) => inkGeo(x))[0];
   l.nt = 'AAAA\nBBBB';
   LOWN[langId] = 'somebody-else';
@@ -559,5 +597,5 @@ console.log('pua: ' + A.fields + ' fields on ' + A.screens + ' screens typed int
             '     ' + spFound.length + ' spelling fields (' + spFound.join(' ') + ') show the drawn letters, and\n' +
             '     none of them does with the switch off;\n' +
             '     Enter pressed in ' + G.asked + ' fields: ' + LINES.length + ' kinds take a new line and it reaches\n' +
-            '     their receivers, every other one-word field drops it (' + WAITS.join(' ') + ' wait on the owner);\n' +
+            '     their receivers, every other one-word field drops it; a word\'s and a stage\'s ＋ add two lines;\n' +
             '     ' + Object.keys(H).length + ' places a sentence is shown keep its two lines.');

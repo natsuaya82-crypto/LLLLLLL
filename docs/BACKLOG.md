@@ -2236,13 +2236,13 @@ grammar2 は案1 で進めた。**逆にするなら移行のコミットだけ�
 
 ## 意味から一行が組み上がるようになったので、「例文を入力してください」が半分しか本当でない
 
-`44dabdd`（置き場所①）が入ったあと、`www/phases.js` の `stAddEx()` は
-こうなっている:
+`44dabdd`（置き場所①）が入ったあと、`www/phases.js` の `stExTake()`
+（例文の ＋ と保存が通る一か所。2026-10-02 まではこれが Enter の ~~`stAddEx()`~~
+だった）はこうなっている:
 
 ```js
-  var gl=String((c&&c.value)||'').trim();
-  var ln=gExLine(String(b.value||''), gl);
-  if(!ln){ toast(t('word.ex.need')); return; }
+  ln=gExLine(String(v.ln||''), gl);
+  if(!ln){ toast(t('word.ex.need')); return null; }
 ```
 
 `word.ex.need` は「例文を入力してください」/ "Write the line first"。
@@ -2251,7 +2251,7 @@ grammar2 は案1 で進めた。**逆にするなら移行のコミットだけ�
 割れた:
 
 ```
-  両方とも空          「例文を入力してください」── 本当。
+  行も意味も空でラベルだけ  「例文を入力してください」── 本当。
   意味は書いたが、その意味のどの語も辞書に無い
                       「例文を入力してください」── 半分しか本当でない。
 ```

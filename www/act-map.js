@@ -408,6 +408,7 @@ actIn('wldArtB', wldArtB);
 actIn('wldOvSet', wldOvSet);
 actIn('stNote', stNote);
 actIn('stSetRules', stSetRules);
+actIn('stExType', stExType);
 actIn('wdSetNt', wdSetNt);
 /* A word is typed on the free plan, in three places: the new-word sheet, the
    editor, and the word a grammar stage asks for. */
@@ -445,7 +446,6 @@ actIn('wdSetEty', wdSetEty);
 /* ---- Enter ------------------------------------------------------------- */
 actKey('obName', obName);
 actKey('snsGo', snsGo);
-actKey('stAddEx', stAddEx);
 actKey('subNew', subNew);
 actKey('wdAddMn', wdAddMn);
 

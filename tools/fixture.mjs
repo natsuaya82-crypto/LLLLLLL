@@ -4058,8 +4058,8 @@ export function halfDone(){
     ['what a stage says its rule is', () => { openStRules('greet'); return vForm(); }],
     ['the examples of a stage', () => { popOff(); keepDrop(keepKeyOf('form', 'stex:greet'));
                                         stExNew=''; openStEx('greet'); return vForm(); }],
-    /* AND ONE JUST ADDED. Enter in the box puts the line on the page and the
-       Save in the corner writes it onto the stage (www/phases.js § ADDING AND
+    /* AND ONE JUST ADDED. The ＋ puts the line in the boxes on the page and
+       the Save in the corner writes it onto the stage (www/phases.js § ADDING AND
        REMOVING AN EXAMPLE CHOOSES) -- it used to write on the Enter, with no
        Save to press. Both states, because the fault is nearly always in the
        one nobody photographed: the line has to be on the page and the corner
@@ -4074,6 +4074,21 @@ export function halfDone(){
           [{lb:'', ln:'kano tir', gl:'it sees the mountain'}]));
         return vForm(); }],
     ['an example being written', () => {
+        stExOpen('greet');
+        const h=vForm(); stExNew=''; return h; }],
+    /* Enter is a new line in both boxes 「文法の章の例文も」 OWNER 2026-10-02:
+       two lines typed, and the same two after the ＋ took them onto the list
+       and opened the next empty boxes. */
+    ['an example being written on two lines', () => {
+        popOff(); keepDrop(keepKeyOf('form', 'stex:greet'));
+        stExNew=''; stExOpen('greet');
+        keepSet('ln', 'kano tir\ntir kano'); keepSet('gl', 'it sees\nthe mountain');
+        openStEx('greet');
+        const h=vForm(); stExNew=''; return h; }],
+    ['an example on two lines, after the ＋', () => {
+        popOff(); keepDrop(keepKeyOf('form', 'stex:greet'));
+        stExNew=''; stExOpen('greet');
+        keepSet('ln', 'kano tir\ntir kano'); keepSet('gl', 'it sees\nthe mountain');
         stExOpen('greet');
         const h=vForm(); stExNew=''; return h; }],
     /* The sheet (www/sheet.js, chapter 26). Four faces, because they share no

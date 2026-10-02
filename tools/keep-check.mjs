@@ -929,29 +929,35 @@ const more = await pg.evaluate(() => {
   out.slotMade = !!findWord('to');
   closeSheet({ target: { id: 'sbg' } });
 
-  /* ---- AN EXAMPLE ADDED TO A GRAMMAR STAGE, WHICH IS ENTER --------------
+  /* ---- AN EXAMPLE ADDED TO A GRAMMAR STAGE, WHICH IS THE ＋ --------------
      The three boxes an example is written in are not there until the ＋ on
      the heading is pressed, and the walk rebuilds the screen before every
      press -- so it can open them or press something, never both. And what
-     commits the line is ENTER in the box, which is not a press at all. The
-     ✕ beside a line the walk does reach; this is the other half.
+     commits the line is the SAME ＋ pressed again with the boxes filled
+     「文法の章の例文も」 OWNER 2026-10-02 -- Enter is a new line. The ✕ beside
+     a line the walk does reach; this is the other half.
 
      It used to push the line onto the stage and save, with no Save in the
      corner to press and an arrow that asked nothing. */
   popOff(); viewReset();
   var stid = stAll()[0].id;
+  var exType = function(id, v){
+    var e = document.getElementById(id);
+    if(e){ e.value = v; e.dispatchEvent(new Event('input', { bubbles: true })); }
+  };
   goTab('build'); stExNew = ''; openStEx(stid); render();
   out.exArrive = navOn();
   out.exWas = stEx(stid).length;
   stExOpen(stid); render();
-  var exl = document.getElementById('sx-ln'), exg = document.getElementById('sx-gl');
-  if(exl){ exl.value = 'kano tir'; }
-  if(exg){ exg.value = 'it sees'; }
-  if(exl) exl.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+  exType('sx-ln', 'kano tir'); exType('sx-gl', 'it sees');
+  out.exTyped = navOn();
+  stExOpen(stid);
   out.exOnPage = (document.querySelectorAll('#app .exlist .exrow') || []).length;
   out.exGold = navOn();
-  /* 「打ったら覚える、ボタンが書く」 -- Enter wrote nothing onto the stage. */
+  /* 「打ったら覚える、ボタンが書く」 -- the ＋ wrote nothing onto the stage. */
   out.exOnPress = stEx(stid).length;
+  /* and one more typed and left in the boxes: the Save takes it too */
+  exType('sx-ln', 'tir kano');
   keepPress();
   out.exOnSave = stEx(stid).length;
   popOff();
@@ -1464,12 +1470,13 @@ if(more.slotTyped !== 'gold') fails.push("a spelling typed onto a grammar slot's
 if(more.slotRendered !== 'gold') fails.push('a render put 追加 back to ' + more.slotRendered + " over a grammar slot's sheet holding a word");
 if(more.slotMade) fails.push("typing a spelling onto a grammar slot's sheet wrote the word");
 if(more.exArrive !== 'grey') fails.push("a stage's examples opened with its Save " + more.exArrive);
-if(more.exOnPage !== more.exWas + 1) fails.push('an example typed and entered put ' + more.exOnPage +
+if(more.exTyped !== 'gold') fails.push('an example typed into its boxes left the Save ' + more.exTyped);
+if(more.exOnPage !== more.exWas + 1) fails.push('an example typed and ＋ put ' + more.exOnPage +
     ' lines on the page and the stage had ' + more.exWas);
 if(more.exGold !== 'gold') fails.push('an example added left the Save ' + more.exGold);
 if(more.exOnPress !== more.exWas) fails.push('an example added wrote it onto the stage before anybody saved');
-if(more.exOnSave !== more.exWas + 1) fails.push('the Save left the stage holding ' + more.exOnSave +
-    ' examples and the page was showing ' + more.exOnPage);
+if(more.exOnSave !== more.exWas + 2) fails.push('the Save left the stage holding ' + more.exOnSave +
+    ' examples where it had ' + more.exWas + ', one was added by the ＋ and one was left typed in the boxes');
 if(more.pkArrive !== 'grey') fails.push('the character picker opened with its Save ' + more.pkArrive);
 if(more.pkWas !== '') fails.push('the letter the picker opened on already wore a character: ' + more.pkWas);
 if(!more.pkHadStrokes) fails.push('the letter the picker opened on was not drawn, so there is nothing for a borrowed character to replace');
