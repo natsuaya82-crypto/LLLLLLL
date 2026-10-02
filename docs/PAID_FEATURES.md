@@ -531,7 +531,7 @@ deleted.** Those are two halves of one sentence and neither may be dropped.
 | | on free again | what shortens it |
 |---|---|---|
 | the dictionary | **lists the first 100 words**, in the order they were made | `wordsSeen()`, `www/words.js` |
-| the alphabet | **lists the free thirty-eight** — a–z, `!`, `?`, a digit per value of the base | `ltSeen()`, `www/sound.js` |
+| the alphabet | **lists the free slots** — a–z, `!`, `?`, `,`, `.`, a digit per value of the base | `ltSeen()`, `www/sound.js` |
 | a stage of your own | **is not on the list**; the fifteen are | `stHidden()`, `www/phases.js` |
 | languages of your own | **lists the one made FIRST** — the main language (2026-09-12). The open one is not swapped in; where the ceiling comes down under somebody standing in another, `langMainFall()` opens the main one | `langsList()`/`langsSeen()`, `www/home.js`; `langsByAge()`/`langMainId()`/`langMainFall()`, `www/core.js` |
 | languages downloaded | **lists the first one** | `langsSeen()` with `dlCap()` |
@@ -604,8 +604,8 @@ Plus's rung, Plus does not meet Pro's, and free meets neither.
 ## What the free plan is
 
 One sentence: **your own shapes for a–z and 0–9.** `ltSlotsFill` puts
-thirty-eight letters there — a to z, `!`, `?`, and a digit for every value the
-base has — and nothing on the free plan adds, deletes or renames one. Drawing
+forty letters there — a to z, `!`, `?`, `,`, `.`, and a digit for every value the
+base has (`,` and `.` since 2026-10-02) — and nothing on the free plan adds, deletes or renames one. Drawing
 on them is the whole of it.
 
 **それは「無料に配るもの」ではなく「言語の始まりの姿」で、段を問いません。**

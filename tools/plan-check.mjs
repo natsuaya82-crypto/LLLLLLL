@@ -791,6 +791,9 @@ const r = await pg.evaluate(({ s }) => {
      paid alphabet may be deleted and renamed (can('letters')), so a launch
      that topped it up would put back what somebody took away. */
   out.proLts = LETTERS.length;
+  /* `,` and `.` among them, under the ids a slot wears (OWNER 2026-10-02) */
+  out.proMarks = ['lt.ex', 'lt.qm', 'lt.cm', 'lt.pd'].map(function(id){
+    var l = ltById(id); return l ? ltName(l) : '-'; }).join(' ');
   var spell = 'kata', sp = [], ch, j2, hit;
   for (j2 = 0; j2 < spell.length; j2++){
     ch = spell.charAt(j2); hit = null;
@@ -1957,9 +1960,11 @@ say(r.freeMadeNone && r.freeWent && r.freeSaidNothing,
     'and yes goes to the plans screen, still without making one [' + [r.freeMadeNone, r.freeWent, r.freeSaidNothing].join(' ') + ']');
 say(r.proMade && r.proOpened, 'pressed on pro it is made and opened');
 say(r.proEmpty, 'and it arrives empty rather than carrying the last one\'s words');
-say(r.proLts === 38,
-    '**有料で「言語を追加」した言語も、三十八の枠で始まる** ── ' + r.proLts +
-    ' 文字（a〜z・! ?・底の数だけの数字）。「文字0はアルファベットでいいやん」');
+say(r.proMarks === '! ? , .',
+    'その枠に「,」「.」がある ── ! ? と同じに名前で、id は lt.cm と lt.pd（' + r.proMarks + '）');
+say(r.proLts === 40,
+    '**有料で「言語を追加」した言語も、四十の枠で始まる** ── ' + r.proLts +
+    ' 文字（a〜z・! ? , .・底の数だけの数字）。「文字0はアルファベットでいいやん」');
 say(r.proSpelled === 'kata',
     'だから最初の語の綴りが打てる ── その言語自身の文字で「' +
     (r.proSpelled || '（打てない）') + '」');

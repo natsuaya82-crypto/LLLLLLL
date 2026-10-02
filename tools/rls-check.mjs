@@ -278,10 +278,10 @@ create table net._sent (n serial, url text, body jsonb, headers jsonb, timeout i
 /* Every claim schema.sql makes, as somebody trying to break it. Adding a
    policy means adding the line here that somebody would use against it --
    a policy with no attempt against it is a policy nobody has read. */
-/* THIRTY-EIGHT SLOTS, four ways: blank (as ltStart() makes them), the same
+/* THE FORTY SLOTS (LT_START in www/letters.js and a digit for each of ten), four ways: blank (as ltStart() makes them), the same
    ids a second time, drawn on, and drawn on under the ids an alphabet that
    doubled before the ids were steady still carries. */
-const ALPHA38 = `select
+const ALPHA40 = `select
     json_agg(case when c ~ '^[0-9]$' then json_build_object('id', 'lt.n' || c, 'val', c::int)
                   else json_build_object('id', 'lt.' || c, 'nm', c) end order by o) as blank,
     json_agg(case when c ~ '^[0-9]$' then json_build_object('id', 'lt.n' || c, 'val', c::int)
@@ -294,7 +294,7 @@ const ALPHA38 = `select
                   then json_build_object('id', 'l' || o || '_6', 'val', c::int, 'st', '[{"pts":[[1,1],[9,9]]}]'::json)
                   else json_build_object('id', 'l' || o || '_6', 'nm', c, 'st', '[{"pts":[[1,1],[9,9]]}]'::json) end
              order by o) as old
-  from unnest(string_to_array('a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y,z,!,?,0,1,2,3,4,5,6,7,8,9', ','))
+  from unnest(string_to_array('a|b|c|d|e|f|g|h|i|j|k|l|m|n|o|p|q|r|s|t|u|v|w|x|y|z|!|?|,|.|0|1|2|3|4|5|6|7|8|9', '|'))
        with ordinality t(c, o)`;
 
 const CASES = [
@@ -565,31 +565,31 @@ const CASES = [
        on conflict (language,kind) do update set body=excluded.body, ed=excluded.ed`],
   ['and the 1 is gone while the other phone’s 3 stays', 'ok', A, 0,
     `select 1 from slice where language='${LD}' and kind='letters' and body::jsonb='[2,3]'::jsonb`],
-  /* THE ALPHABET, PUT TOGETHER: the thirty-eight slots (a to z, ! and ?, and
+  /* THE ALPHABET, PUT TOGETHER: the forty slots (a to z, ! ? , ., and
      a digit for each of ten values) are one letter each on every phone
      -- 「文字増殖してるんだけど何で？」 OWNER 2026-09-04 -- and nothing anybody
      drew is taken by a blank. These were tools/base-check.mjs's, asked of the
      phone's syMerge(); the merge is the server's now, so they are asked of it.
      `lt.<slot>` is the id a slot wears (www/letters.js § ltSlotId). */
-  ['two copies of one free alphabet come to thirty-eight, not seventy-six', 'ok', A, 0,
-    `with z as (${ALPHA38}) select 1 from z
-      where json_array_length(slice_merge('letters', blank::text, blank2::text, '', false)::json) = 38`],
+  ['two copies of one free alphabet come to forty, not eighty', 'ok', A, 0,
+    `with z as (${ALPHA40}) select 1 from z
+      where json_array_length(slice_merge('letters', blank::text, blank2::text, '', false)::json) = 40`],
   ['an alphabet that has not arrived here does not write blanks over the drawn one', 'ok', A, 0,
-    `with z as (${ALPHA38}), m as (select slice_merge('letters', blank::text, drawn::text, '', false)::json j from z)
-     select 1 from m where json_array_length(j) = 38
-        and (select count(*) from json_array_elements(j) e where slice_made('letters', e)) = 38`],
+    `with z as (${ALPHA40}), m as (select slice_merge('letters', blank::text, drawn::text, '', false)::json j from z)
+     select 1 from m where json_array_length(j) = 40
+        and (select count(*) from json_array_elements(j) e where slice_made('letters', e)) = 40`],
   ['and an empty copy coming back the other way takes nothing away', 'ok', A, 0,
-    `with z as (${ALPHA38}), m as (select slice_merge('letters', drawn::text, blank::text, '', true)::json j from z)
-     select 1 from m where json_array_length(j) = 38
-        and (select count(*) from json_array_elements(j) e where slice_made('letters', e)) = 38`],
+    `with z as (${ALPHA40}), m as (select slice_merge('letters', drawn::text, blank::text, '', true)::json j from z)
+     select 1 from m where json_array_length(j) = 40
+        and (select count(*) from json_array_elements(j) e where slice_made('letters', e)) = 40`],
   ['blanks under today\u2019s ids meeting drawings under the old ids are one letter each, drawn', 'ok', A, 0,
-    `with z as (${ALPHA38}), m as (select slice_merge('letters', blank::text, old::text, '', false)::json j from z)
-     select 1 from m where json_array_length(j) = 38
-        and (select count(*) from json_array_elements(j) e where slice_made('letters', e)) = 38`],
+    `with z as (${ALPHA40}), m as (select slice_merge('letters', blank::text, old::text, '', false)::json j from z)
+     select 1 from m where json_array_length(j) = 40
+        and (select count(*) from json_array_elements(j) e where slice_made('letters', e)) = 40`],
   ['and where both were drawn on under two ids, both are kept', 'ok', A, 0,
-    `with z as (${ALPHA38}), m as (select slice_merge('letters', old::text, drawn::text, '', false)::json j from z)
-     select 1 from m where json_array_length(j) = 76
-        and (select count(*) from json_array_elements(j) e where slice_made('letters', e)) = 76`],
+    `with z as (${ALPHA40}), m as (select slice_merge('letters', old::text, drawn::text, '', false)::json j from z)
+     select 1 from m where json_array_length(j) = 80
+        and (select count(*) from json_array_elements(j) e where slice_made('letters', e)) = 80`],
   /* AND A KEYBOARD IS ITS ID: two copies of one board are one board, and a
      board added on each phone is two (「何もしていないのにキーボードが8枚に
      増える」 OWNER 2026-09-06; www/keyboard.js § kbId). */

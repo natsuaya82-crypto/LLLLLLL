@@ -32,6 +32,12 @@ final class KeyView: UIView {
   /// Only where the face is a DRAWN shape. A key whose face is already a
   /// letter or a borrowed character would be saying the same thing twice.
   private var mark: UILabel?
+  /// The delete key's mark, the system's own `delete.left` -- a box pointing
+  /// left with an × in it, which is what every iPhone keyboard's delete key
+  /// wears. The text "⌫" was drawn by GlyphView in whatever font answered it
+  /// and read as a back key: 「デリートキーがもどるきーみたいでわかりにくい」
+  /// OWNER 2026-10-02. The app draws the same mark (ICON_DEL, www/glyph.js).
+  private var icon: UIImageView?
 
   init(key: Key, box: CGFloat, mark wantsMark: Bool) {
     self.key = key
@@ -43,7 +49,13 @@ final class KeyView: UIView {
 
     faceView.box = box
     switch key.k {
-    case "del":  faceView.text = "⌫"
+    case "del":
+      faceView.text = ""
+      let iv = UIImageView(image: UIImage(systemName: "delete.left"))
+      iv.tintColor = .label
+      iv.contentMode = .scaleAspectFit
+      addSubview(iv)
+      icon = iv
     case "next": faceView.text = "🌐"
     case "ret":  faceView.text = "⏎"
     // A gap: the half key that insets a row, or the room under a key joined
@@ -115,6 +127,13 @@ final class KeyView: UIView {
        key to min(width, height) -- and this decides how much room it gets. */
     let inset = min(bounds.width, bounds.height) * 0.14
     faceView.frame = bounds.insetBy(dx: inset, dy: inset)
+    // The size a letter's face would be, centred: the mark is as big as the
+    // keys' letters, not as wide as a three-key delete.
+    if let iv = icon {
+      let side = min(bounds.width, bounds.height) * 0.5
+      iv.frame = CGRect(x: bounds.midX - side / 2, y: bounds.midY - side / 2,
+                        width: side, height: side)
+    }
     // The bottom-right CORNER. The four flick faces sit at the middles of the
     // edges rather than at the corners, so this does not land on one even on a
     // key that has all four.

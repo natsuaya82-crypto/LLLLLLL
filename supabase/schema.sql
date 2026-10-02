@@ -933,8 +933,9 @@ language sql immutable as $$
     else 'j' || x::jsonb::text end
 $$;
 
--- Which of the thirty-eight a letter is (www/letters.js § ltSlotKey says the same):
--- a digit by its value, a to z, ! and ? by a one-character name.
+-- Which slot a letter is (www/letters.js § ltSlotKey says the same, and LT_START
+-- is the same string as the one below): a digit by its value, a to z, ! ? , .
+-- by a one-character name.
 create or replace function slice_slot(kind text, x json) returns text
 language plpgsql immutable as $$
 declare nm text := '';
@@ -948,7 +949,7 @@ begin
       from json_array_elements(x -> 'snd') with ordinality as t(e, o);
   end if;
   nm := translate(coalesce(nm, ''), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz');
-  if length(nm) = 1 and position(nm in 'abcdefghijklmnopqrstuvwxyz!?') > 0 then
+  if length(nm) = 1 and position(nm in 'abcdefghijklmnopqrstuvwxyz!?,.') > 0 then
     return 's' || nm; end if;
   return '';
 end $$;

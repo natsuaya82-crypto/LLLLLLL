@@ -314,7 +314,7 @@ it is quoted, and where a decision has never been made the row in
 - Decision: (1) 「,」と「.」を、どのプランでも最初からある描く枠に足す（今は a〜z・!・?・数字）。(2) 1 枚目の QWERTY の一番下の段は `! ? , . [スペース 4] [改行 2]`（横 10 のまま。スペースは 6 から 4）。(3) 削除キーは戻る矢印ではなく、iPhone の削除キーと同じ「⌫」（四角に ×）の形。アプリの中もキーボードも。
 - Reason: ユーザー「キーボードにカスタムの句読点や数字を追加する方法はない…次回のアップデートで」。オーナー「コンマとピリオドくらいはありやな。ただキーボードにどう入れるかだよね」→ 一番下の段に並べる案に「それでやってみて」。「デリートキーがもどるきーみたいでわかりにくいから🔳❌みたいなやつにして」（2026-10-02）。
 - Affected data: 新しい言語に「,」「.」の空の枠が入る。無料の言語は起動の補充（`ltStart()`）で入る。有料の言語には足さない（有料は字を消せるので、起動で足すと消した物が戻る ── 今の ! ? と同じ扱い）。その場合キーは普通の「,」「.」の字。何も消さない。
-- Implementation status: r162 に渡す。
+- Implementation status: r162 で実装（`LT_START`・`slice_slot()`・`KB_ENDS`・`ICON_DEL`・`KeyBoardView.swift` の `delete.left`）。本番の `schema.sql` はまだ流していない。端末は未確認。
 
 ### 2026-10-02 文章を書く欄は改行できる。一語の欄は一行のまま
 - Date: 2026-10-02
@@ -857,7 +857,7 @@ it is quoted, and where a decision has never been made the row in
   - **キーボードはプランで分けない。** 無料でも全部の機能で好きに作れる（キーボードのカスタマイズのアプリとしても使える）。
   - **キーに置ける字は二種類**: その言語の自作文字と、既存の文字（Unicode のどの字でも）。既存の文字はキーの画面の
     種類の一覧から選ぶ（2026-09-25「字を選ぶ画面は一つ」の項）── 文字の画面を通さない。自作文字だけが文字の画面で描いて登録する。
-  - **無料と Plus の差は、自作文字をいくつ作れるかだけ。** 無料の自作文字は a〜z・!・?・0〜9 の決まった枠（`ltSlotsFill()`）なので、
+  - **無料と Plus の差は、自作文字をいくつ作れるかだけ。** 無料の自作文字は a〜z・!・?・,・.・0〜9 の決まった枠（`ltSlotsFill()`、「,」「.」は 2026-10-02 から）なので、
     キーボードに置ける自作文字も自然にそれだけになる。キーボードの側に縛りは入れない。
   - ~~フォントのファイルの書き出しは Plus~~ ── 2026-09-30 に差し替え：フォントのファイルの書き出しは全プラン（下の「フォントの書き出しは無料」）。
   - **手書きのキーボード**: キーボードの面に指で書くと、その言語の自作文字の中から一番近い字が入る。プランで分けない。
@@ -1497,7 +1497,7 @@ it is quoted, and where a decision has never been made the row in
     クルクル →「接続できません」。2026-09-04「前に読み込んだ分は出て欲しい。
     制作も眺めたい人はいるだろうし、」の再確認。
   - (c) 「文字0はアルファベットでいいやん」── **新しい言語は、段を問わず
-    a〜z・! ?・底の数だけの数字の三十八字で始まる。**
+    a〜z・! ? , .・底の数だけの数字の字で始まる。**（「,」「.」は 2026-10-02 の決定で足した。四十字）
   - (d) 「（★の ×は）つけない！」── **保存した検索に × は付けない。**外すのは
     ★ 一つの道。
   - (e) 「プランが終了しました」は**サーバーの答えで出す** ── `plan` 表に列を
@@ -6177,8 +6177,8 @@ for.
 ### Decision
 - Date: 2026-08-11
 - Area: The free plan
-- Decision: The free plan is your own shapes for a–z, `!`, `?` and the digits —
-  thirty-eight slots, drawing only. Nothing on free adds, renames or deletes a
+- Decision: The free plan is your own shapes for a–z, `!`, `?`, `,`, `.` and the digits —
+  forty slots (`,` and `.` added 2026-10-02), drawing only. Nothing on free adds, renames or deletes a
   letter. The keyboard is a fixed QWERTY with the drawn letters substituted in,
   with nothing to set.
 - Reason: 「無料の場合はもう最初からa〜z!?が置いてあってそこから書くだけで追加する
@@ -6193,8 +6193,8 @@ for.
 - Date: 2026-08-11
 - Area: The free keyboard's face
 - Decision: One face, and no second page. Digits above the QWERTY. The
-  bottom bar is `! ? スペース 改行` — the two marks together at the near
-  end — and the delete key is **three** keys wide, hard against the right
+  bottom bar is ~~`! ? スペース 改行`~~ ── 2026-10-02 に差し替え：`! ? , . スペース 改行`（「「,」と「.」を描く枠に足す…」の項）
+  — the marks together at the near end — and the delete key is **three** keys wide, hard against the right
   edge. Every row comes to ten.
 - Reason: 「2ページ目なしでqwertyの上に1〜0の数字と！？入れてこれで無料版1ページに
   抑えよう」「これスペースデカすぎやね。！スペース？みたいにできない？」

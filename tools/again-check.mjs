@@ -2172,8 +2172,8 @@ say(oneA.old1 === '[{"hw":"tuf"}]' && oneA.old2 === '[{"hw":"kef"}]' &&
     JSON.stringify(oneA.old2) + '、新しい番号の下 ' +
     JSON.stringify(String(oneA.upWords || '').slice(0, 40)) +
     '、開いている言語の一語目 ' + JSON.stringify(oneA.word0) + '）');
-say(oneC.mine === true && !oneC.lock && oneC.letters === 38,
-    'そして開いた言語は自分のもの ── 無料の a〜z と ！？と数字で 38（文字 ' +
+say(oneC.mine === true && !oneC.lock && oneC.letters === 40,
+    'そして開いた言語は自分のもの ── 無料の a〜z と ！？，．と数字で 40（文字 ' +
     oneC.letters + '、locked ' + oneC.lock + '、mine ' + oneC.mine + '）');
 say(oneC.sent > 0,
     'そして保存が飛ぶ ── 送った slice ' + oneC.sent + ' 件');
