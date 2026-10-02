@@ -308,6 +308,14 @@ it is quoted, and where a decision has never been made the row in
 - Affected data: 無い（明日からのお題の中身が変わるだけ。過去のお題はそのまま）。
 - Implementation status: 関数を書き換えて置いた。次の日のお題から。
 
+### 2026-10-02 例文を書く所は一つの仕組み（単語の例文と文法の章の例文）
+- Date: 2026-10-02
+- Area: 単語の例文（`wd-exl`・`wd-exg`、`wdTakeFields()`、`wdOpenMore()`）と文法の章の例文（`sx-ln`・`sx-gl`、`stExTake()`）。
+- Decision: 例文を書く・足す・保存で取り込む・戻る時に聞く、を一つの仕組みにして、単語と文法の章の両方がそれを使う。今は二つが別々に書かれていて、単語の例文は打っただけで戻ると黙って消え、文法の章は聞く ── 同じアプリで動きが違う。
+- Reason: オーナー「アプリ内で挙動が違うのがおかしいだろベタガキしてるからそうなんだろ一本化しろや」（2026-10-02）。r163 が測った（単語の例文は `keepDirty` false、`back()` で問いが出ない）。
+- Affected data: 無い（打った物が消えなくなるだけ）。
+- Implementation status: r164 に渡す。
+
 ### 2026-10-02 文法の章の例文も、改行ボタンは改行、足すのは ＋
 - Date: 2026-10-02
 - Area: 文法の章の例文の欄（`sx-ln`・`sx-gl`、KD ~~`stAddEx`~~、見出しの ＋ `stExOpen`、バーの保存 `stExKeepOn`）。
