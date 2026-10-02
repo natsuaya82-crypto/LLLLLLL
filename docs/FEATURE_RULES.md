@@ -297,7 +297,8 @@ it is quoted, and where a decision has never been made the row in
 - Affected data: 公式アカウントの `language`・`slice` の行（サーバーにリーダーが置く）。アプリのコードは変わらない。
 - 追記（同日）: 字の割り当ては EVA、形の見本は Yale（Beinecke MS 408、パブリックドメイン）の写本の画像 ──「無料のEva yaleの使おう」。既存のフォント（pk「ヴォイニッチ手稿」・EVA Hand・ヴォイニッチ等幅）の形は使わない。記憶で描いた一版目は「ぽいけど全然違くね？」で描き直し。
 - 追記（同日、夜）: 写本からなぞった形で進める。字の間隔は 0（字をくっつける）──「3は0」。
-- Implementation status: 線は r151 に渡した。アカウントはオーナーが作る。
+- 追記（2026-10-02）: ヴォイニッチは作らない ──「ボイニッチはいらない」。`claude/r151-voynich` は取り込まない。
+- Implementation status: 作らない（2026-10-02）。
 
 ### 2026-09-30 今日のお題は文の形を日ごとに回す、5日に1回は難しい日
 - Date: 2026-09-30
