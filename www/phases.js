@@ -748,7 +748,7 @@ function stExHTML(id){
           exBtn('stDelEx', [id, i], 'word.ex.del', ICON_CROSS));
       }).join('')+'</div>'
     : '')+
-    (stExNew===id? '<div class="exadd">'+
+    (stExNew===id && !langLocked()? '<div class="exadd">'+
       lnField('sx-lb', t('stg.ex.lb.ph'), IN('stExType', ['lb']),
         stExTyped(id, 'lb'), 'exsm')+
       lnField('sx-ln', exHint(), IN('stExType', ['ln']), stExTyped(id, 'ln'), 'lnlines')+
