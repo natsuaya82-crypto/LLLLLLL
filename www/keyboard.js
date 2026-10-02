@@ -1061,9 +1061,12 @@ function kbNameHTML(i){
    「これスペースデカすぎやね。！スペース？みたいにできない？」 It also evens the
    rows out: ten, nine, and seven letters with a delete three keys wide. */
 var KB_QWERTY=['qwertyuiop', 'asdfghjkl', 'zxcvbnm'];
-/* The two that sit beside the space. Marks, so they are found by name over
-   every letter exactly as the rows above are. */
-var KB_ENDS='!?';
+/* The four that sit before the space, in this order. Marks, so they are
+   found by name over every letter exactly as the rows above are; one with no
+   letter is the plain character (kbRom), as a digit is.
+   「コンマとピリオドくらいはありやな」→ `! ? , . スペース 改行` OWNER
+   2026-10-02 -- the slots are in LT_START (www/letters.js). */
+var KB_ENDS='!?,.';
 /* The row above it, in the order a phone puts them: one to nine, then zero.
    These are the person's OWN digits now, found by value, because ltStart
    gives a free language a digit for every value its base has and they are
@@ -1083,9 +1086,9 @@ var KB_ENDS='!?';
    1ページに抑えよう」 A second face on free would have held these and nothing
    else, which is a key to reach a row.
 
-   Ten is already the widest row on the board. `!` and `?` are not up here
-   with them -- twelve across a phone is narrower than a thumb -- they are
-   beside the space, where KB_ENDS puts them. */
+   Ten is already the widest row on the board. The marks are not up here
+   with them -- fourteen across a phone is narrower than a thumb -- they are
+   before the space, where KB_ENDS puts them. */
 var KB_DIGITS='1234567890';
 /* A key that types a character rather than a letter. The digits here, and the
    roman face the conversion needs -- neither is one of the person's letters,
@@ -1191,16 +1194,19 @@ function kbFixed(){
      ends of the bar, and it had no return at all: a keyboard that cannot
      start a new line is a keyboard nobody can send a message on, and free is
      the plan most people will ever have. The marks moved together to the
-     near end to make room. 「！？スペース　改行」 */
-  var sp=kbKey('sp'), ret=kbKey('ret'), bot=[];
-  var end0=kbNamed(KB_ENDS.charAt(0)), end1=kbNamed(KB_ENDS.charAt(1));
-  /* 1 + 1 + 6 + 2 = ten, the same as every row above. */
-  sp.w=6; ret.w=2;
-  /* The same, and the sum is the reason it matters here too: the bar is 1 + 1
-     + 6 + 2, so a missing `!` makes it nine and the bar stops agreeing with
-     the rows above it. */
-  bot.push(end0? kbFix(KB_ENDS.charAt(0), end0) : kbRom(KB_ENDS.charAt(0)));
-  bot.push(end1? kbFix(KB_ENDS.charAt(1), end1) : kbRom(KB_ENDS.charAt(1)));
+     near end to make room. 「！？スペース　改行」
+
+     Then `,` and `.` beside them, and the space gave up two keys for them
+     (OWNER 2026-10-02, KB_ENDS above). */
+  var sp=kbKey('sp'), ret=kbKey('ret'), bot=[], end, ei;
+  /* 1 + 1 + 1 + 1 + 4 + 2 = ten, the same as every row above. */
+  sp.w=4; ret.w=2;
+  /* The same, and the sum is the reason it matters here too: a missing `!`
+     makes the bar nine and it stops agreeing with the rows above it. */
+  for(ei=0;ei<KB_ENDS.length;ei++){
+    end=kbNamed(KB_ENDS.charAt(ei));
+    bot.push(end? kbFix(KB_ENDS.charAt(ei), end) : kbRom(KB_ENDS.charAt(ei)));
+  }
   bot.push(sp);
   bot.push(ret);
   rows.push(bot);

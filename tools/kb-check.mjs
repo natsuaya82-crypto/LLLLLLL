@@ -2022,11 +2022,24 @@ const r = await pg.evaluate(({ s }) => {
     var withLt = face('0');
     out.freeRows = withLt.rows;
     out.freeKeys = withLt.keys;
+    /* THE BAR ALONG THE BOTTOM: `! ? , . space return`, 1+1+1+1+4+2.
+       「コンマとピリオドくらいはありやな」 OWNER 2026-10-02. Each mark is the
+       language's own letter where it has one, found by name. */
+    function barOf(){
+      var rr = kbFixed().lay[0].rows, b = rr[rr.length - 1], o = [], i, k;
+      for (i = 0; i < b.length; i++){
+        k = b[i];
+        o.push((k.k === 'lt' ? 'lt' + ltName(ltById(k.v)) : k.k === 'rom' ? 'rom' + k.v : k.k) + ':' + (k.w || 1));
+      }
+      return o.join(' ');
+    }
+    out.freeBar = barOf();
     out.freeNothingToPress = withLt.press === 0;
 
     /* the same language with its letters not there yet */
     LETTERS.length = 0;
     var bare = face('0');
+    out.freeBareBar = barOf();
     out.freeBareRows = bare.rows;
     out.freeBareKeys = bare.keys;
 
@@ -4594,7 +4607,11 @@ say(r.ltpSqOpened && r.ltpSqSheet && r.ltpSqStayed && r.ltpSqPut,
    「無料のキーボードはqwartyに書いた文字が置き換わるだけなのにキーボード自体
    消えてる」 OWNER 2026-09-01, build #106 */
 say(r.freeNoEditor, 'board 0, the QWERTY the free plan types on, has no editor');
-say(r.freeRows === 5 && r.freeKeys === 43,
+say(r.freeBar === 'lt!:1 lt?:1 lt,:1 lt.:1 sp:4 ret:2',
+    'the bar along the bottom is ! ? , . space return, 1+1+1+1+4+2, each mark the language’s own letter (' + r.freeBar + ')');
+say(r.freeBareBar === 'rom!:1 rom?:1 rom,:1 rom.:1 sp:4 ret:2',
+    'and a mark with no letter is the plain character, the bar still ten across (' + r.freeBareBar + ')');
+say(r.freeRows === 5 && r.freeKeys === 45,
     'and it has a keyboard all the same -- the QWERTY, drawn (' +
     r.freeRows + ' rows, ' + r.freeKeys + ' keys)');
 say(r.freeRows > 0 && r.freeNothingToPress,
