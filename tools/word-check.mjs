@@ -702,11 +702,18 @@ const R = await pg.evaluate(() => {
      meaning and no example. It is here rather than in press-check for the
      same reason as everything above -- it takes three acts in a row, and a
      walk that rebuilds the screen between presses can never make them. */
+  /* An example's boxes are typed into, and what is typed is held where the
+     sheet's Save measures it (www/wordsheet.js § WRITING AN EXAMPLE, ONCE) --
+     so a box is filled the way a thumb fills it, with its input event. */
+  const exBox = (id, v) => {
+    const e = document.getElementById(id);
+    if (e) { e.value = v; e.dispatchEvent(new Event('input', { bubbles: true })); }
+  };
   openAdd('');
   wdSetLn('zoro');
   document.getElementById('wd-mn').value = 'a written meaning';
-  document.getElementById('wd-exl').value = 'zoro tira';
-  document.getElementById('wd-exg').value = 'a gloss';
+  exBox('ex-ln', 'zoro tira');
+  exBox('ex-gl', 'a gloss');
   addOne();
   const zo = findWord('zoro');
   out.said.push('added without pressing Enter, the word carries: ' +
@@ -726,9 +733,9 @@ const R = await pg.evaluate(() => {
 
   /* And Save, on a word that already exists, which is the same boxes. */
   openEdit('kano');
-  wdMnNew = true; wdExNew = true; wdPaint();
+  wdMnNew = true; exNew = 'w:'; wdPaint();
   document.getElementById('wd-mn').value = 'a second meaning';
-  document.getElementById('wd-exl').value = 'kano tira';
+  exBox('ex-ln', 'kano tira');
   wdWrite();
   const ka = findWord('kano');
   out.said.push('saved without pressing Enter, the word carries: ' +
@@ -768,17 +775,17 @@ const R = await pg.evaluate(() => {
       'carries ' + JSON.stringify(wEdit.mns));
 
   openEdit('mos');
-  document.getElementById('wd-exl').value = 'mos kano';
-  document.getElementById('wd-exg').value = 'the mountain is tall';
-  wdExOpen();
+  exBox('ex-ln', 'mos kano');
+  exBox('ex-gl', 'the mountain is tall');
+  exAdd('w', '');
   const mo = findWord('mos');
   out.said.push('an example put in with ＋ alone: ' +
     JSON.stringify(mo.ex ? mo.ex.map(e => e.ln) : null) +
-    ', and the box is back: ' + !!document.getElementById('wd-exl'));
+    ', and the box is back: ' + !!document.getElementById('ex-ln'));
   if (!(mo.ex || []).some(e => e.ln === 'mos kano'))
     out.fails.push('an example was typed and ＋ threw it away: ' +
       JSON.stringify(mo.ex));
-  if (!document.getElementById('wd-exl'))
+  if (!document.getElementById('ex-ln'))
     out.fails.push('＋ was pressed on the examples and left no box to type in');
 
   /* ---- and nothing wears the drawn font that the drawn font cannot draw --
@@ -849,10 +856,10 @@ const R = await pg.evaluate(() => {
   openEdit('mos');
   /* 'mos' already carries an example from the claim above, so the box is not
      drawn until the ＋ opens one. */
-  wdExOpen();
-  document.getElementById('wd-exl').value = puaTyped;
-  document.getElementById('wd-exg').value = '';
-  wdExOpen();   /* the ＋ takes the box; Enter there is a new line (r161) */
+  exAdd('w', '');
+  exBox('ex-ln', puaTyped);
+  exBox('ex-gl', '');
+  exAdd('w', '');   /* the ＋ takes the box; Enter there is a new line (r161) */
   const puaRow = (findWord('mos').ex || []).slice(-1)[0];
   const puaStored = puaRow ? String(puaRow.ln) : '';
   const puaDrawn = [].slice.call(document.querySelectorAll('.exl'))
@@ -909,10 +916,10 @@ const R = await pg.evaluate(() => {
   openWord('mos'); openEdit('mos');
   const exGrey = !keepDirty(keepKey()), exKey = keepKey();
   const exBefore = (findWord('mos').ex || []).length;
-  wdExOpen();
-  document.getElementById('wd-exl').value = 'mos tir';
-  document.getElementById('wd-exg').value = '';
-  wdExOpen();   /* the ＋ takes the box; Enter there is a new line (r161) */
+  exAdd('w', '');
+  exBox('ex-ln', 'mos tir');
+  exBox('ex-gl', '');
+  exAdd('w', '');   /* the ＋ takes the box; Enter there is a new line (r161) */
   const exGold = keepDirty(exKey);
   keepNo(exKey);
   const exAfterNo = (findWord('mos').ex || []).length;

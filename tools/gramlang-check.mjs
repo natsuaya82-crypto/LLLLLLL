@@ -2237,7 +2237,7 @@ want('and a rule with both says both', sent.both,
    chapters were made pages.
 
    THE WAY IN IS EITHER OF TWO NAMES and that is not the fault: a stage's
-   ROW says `openStEx` and a chapter's ＋ says `stExOpen`, which is the same
+   ROW says `openStEx` and a chapter's ＋ says `exAdd`, which is the same
    page opened with the field for one more already showing. Both are asked for,
    so a section reached by only one of them is still reached. What is NOT
    allowed is a section reached by neither. */
@@ -2249,7 +2249,7 @@ const ex = await pg.evaluate(() => {
     render();
   };
   const plus = () => Array.prototype.filter.call(
-    document.querySelectorAll('#app [data-do="stExOpen"],#app [data-do="openStEx"]'),
+    document.querySelectorAll('#app [data-do="exAdd"],#app [data-do="openStEx"]'),
     () => true);
   const out = { none: [], stuck: [], n: 0 };
   g2Secs().forEach((s) => {

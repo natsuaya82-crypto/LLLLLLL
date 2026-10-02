@@ -375,9 +375,10 @@ if (F.bad.length)
    whether or not it is stopped -- then `c`, and what the field holds and what
    its receiver was handed are read.
 
-   `sx-ln` and `sx-gl`, a grammar chapter's example, joined the list when
-   their ＋ took over adding one 「文法の章の例文も」 OWNER 2026-10-02. */
-const LINES = ['pw-ln', 'pw-mn', 'wd-exl', 'wd-exg', 'sx-ln', 'sx-gl', 'lt-nt', 'cont-b', 'wld-ov-*'];
+   `ex-ln` and `ex-gl` are an example's, and they are ONE pair of boxes on
+   the word's sheet and on a grammar stage's page alike (www/wordsheet.js
+   § WRITING AN EXAMPLE, ONCE) 「一本化しろや」 OWNER 2026-10-02. */
+const LINES = ['pw-ln', 'pw-mn', 'ex-ln', 'ex-gl', 'lt-nt', 'cont-b', 'wld-ov-*'];
 const gKey = (id) => /^wld-ov-/.test(id) ? 'wld-ov-*' : id;
 const Gfaces = await pg.evaluate(() => {
   const faces = [], seen = {};
@@ -444,65 +445,44 @@ for (const f of Gfaces) {
     G.bad.push('#' + f.id + ' is one word and Enter gave ' + JSON.stringify(r.v));
 }
 LINES.forEach((k) => { if (!G.found[k]) G.bad.push(k + ' is on the list and no screen drew it, so G holds nothing for it'); });
-/* and the word's example, all the way in: two lines typed with Enter go
-   onto the word by the ＋ */
-const Gex = await pg.evaluate(() => {
-  window.__seed(); SET.walked = true;
-  openWord('kano'); openEdit('kano'); wdExNew = true;
-  document.getElementById('app').innerHTML = vForm();
-  const n = (wdW().ex || []).length, e = document.getElementById('wd-exl');
-  if (!e) return 'no #wd-exl';
-  e.value = 'kano'; e.focus(); e.setSelectionRange(4, 4);
-  return n;
-});
-if (typeof Gex === 'string') G.bad.push('the word sheet: ' + Gex);
-else {
-  await pg.keyboard.press('Enter');
-  await pg.keyboard.type('tir');
-  const last = await pg.evaluate((n) => {
-    const b = document.querySelector('#app [data-do="wdExOpen"]');
-    if (!b) return 'no ＋';
-    b.click();
-    const ex = wdW().ex || [];
-    return ex.length > n ? ex[ex.length - 1].ln : 'nothing added';
-  }, Gex);
-  if (last !== 'kano\ntir') G.bad.push('an example typed on two lines went onto the word as ' + JSON.stringify(last));
-}
-/* and a grammar stage's example the same way: two lines with Enter in each
-   box, nothing added by Enter, and the ＋ puts both on the list as typed */
-const Gst = await pg.evaluate(() => {
-  window.__seed(); SET.walked = true;
-  popOff(); viewReset();
-  const id = stAll()[0].id;
-  window.__stid = id;
-  stExNew = ''; openStEx(id); stExOpen(id); render();
-  window.__stn = stExKept(id).length;
-  const e = document.getElementById('sx-ln');
-  if (!e) return 'no #sx-ln';
-  e.focus(); return null;
-});
-if (Gst) G.bad.push('a grammar stage: ' + Gst);
-else {
+/* and an example, all the way in, in BOTH places it is written -- the word's
+   sheet and a grammar stage's page -- with the same claims, because it is one
+   mechanism (www/wordsheet.js § WRITING AN EXAMPLE, ONCE): two lines typed
+   with a real Enter in each box, nothing added by the Enter, and the ＋ puts
+   both on the list as typed and opens an empty box after it. */
+for (const at of ['w', 'st']) {
+  const name = at === 'w' ? 'the word sheet' : 'a grammar stage';
+  const ready = await pg.evaluate((at) => {
+    window.__seed(); SET.walked = true;
+    popOff(); viewReset();
+    if (at === 'w') { openWord('kano'); openEdit('kano'); window.__exid = ''; exNew = 'w:'; render(); wdPaint(); }
+    else { window.__exid = stAll()[0].id; exNew = 'st:' + window.__exid; openStEx(window.__exid); render(); }
+    window.__exn = exAt(at).list(window.__exid).length;
+    const e = document.getElementById('ex-ln');
+    if (!e) return 'no #ex-ln';
+    e.focus(); return null;
+  }, at);
+  if (ready) { G.bad.push(name + ': ' + ready); continue; }
   await pg.keyboard.type('kano');
   await pg.keyboard.press('Enter');
   await pg.keyboard.type('tir');
-  await pg.evaluate(() => document.getElementById('sx-gl').focus());
+  await pg.evaluate(() => document.getElementById('ex-gl').focus());
   await pg.keyboard.type('AA');
   await pg.keyboard.press('Enter');
   await pg.keyboard.type('BB');
-  const st = await pg.evaluate(() => {
-    const id = window.__stid, was = window.__stn, now = stExKept(id).length;
+  const got = await pg.evaluate((at) => {
+    const id = window.__exid, was = window.__exn, now = exAt(at).list(id).length;
     if (now !== was) return 'Enter added ' + (now - was) + ' examples';
-    const b = document.querySelector('#app [data-do="stExOpen"]');
+    const b = document.querySelector('#app [data-do="exAdd"]');
     if (!b) return 'no ＋';
     b.click();
-    const a = stExKept(id), x = a[a.length - 1];
+    const a = exAt(at).list(id), x = a[a.length - 1];
     if (a.length !== was + 1) return 'the ＋ left ' + a.length + ' examples where there were ' + was;
-    const f = document.getElementById('sx-ln');
+    const f = document.getElementById('ex-ln');
     if (!f || f.value !== '') return 'the ＋ did not open an empty box after it (' + (f ? JSON.stringify(f.value) : 'none') + ')';
     return x.ln + '|' + x.gl;
-  });
-  if (st !== 'kano\ntir|AA\nBB') G.bad.push('a grammar stage\'s example typed on two lines: ' + JSON.stringify(st));
+  }, at);
+  if (got !== 'kano\ntir|AA\nBB') G.bad.push(name + '\'s example typed on two lines: ' + JSON.stringify(got));
 }
 if (G.asked < 30) fails.push('G  only ' + G.asked + ' fields were pressed Enter in, so G holds nothing');
 if (G.bad.length) fails.push('G  Enter: ' + G.bad.slice(0, 8).join(' | '));
@@ -551,7 +531,7 @@ const H = await pg.evaluate(() => {
   out['an example\'s translation on the word\'s card'] = painted('w', 'kano');
   const sid = stAll()[0].id;
   stEx(sid).splice(0, stEx(sid).length, { lb: '', ln: 'kano\ntir', gl: 'CCCC\nDDDD' });
-  popOff(); viewReset(); stExNew = ''; openStEx(sid); render();
+  popOff(); viewReset(); exNew = ''; openStEx(sid); render();
   out['a stage\'s example\'s line'] = two(app.querySelector('.exl'), 'kano', 'tir');
   out['a stage\'s example\'s translation'] = two(app, 'CCCC', 'DDDD');
   const l = LETTERS.filter((x) => inkGeo(x))[0];

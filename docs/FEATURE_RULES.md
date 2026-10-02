@@ -310,19 +310,19 @@ it is quoted, and where a decision has never been made the row in
 
 ### 2026-10-02 例文を書く所は一つの仕組み（単語の例文と文法の章の例文）
 - Date: 2026-10-02
-- Area: 単語の例文（`wd-exl`・`wd-exg`、`wdTakeFields()`、`wdOpenMore()`）と文法の章の例文（`sx-ln`・`sx-gl`、`stExTake()`）。
+- Area: 単語の例文（`ex-ln`・`ex-gl`、`wdTakeFields()`、~~`wdOpenMore()`~~）と文法の章の例文（`ex-lb`・`ex-ln`・`ex-gl`、~~`stExTake()`~~）。
 - Decision: 例文を書く・足す・保存で取り込む・戻る時に聞く、を一つの仕組みにして、単語と文法の章の両方がそれを使う。今は二つが別々に書かれていて、単語の例文は打っただけで戻ると黙って消え、文法の章は聞く ── 同じアプリで動きが違う。
 - Reason: オーナー「アプリ内で挙動が違うのがおかしいだろベタガキしてるからそうなんだろ一本化しろや」（2026-10-02）。r163 が測った（単語の例文は `keepDirty` false、`back()` で問いが出ない）。
 - Affected data: 無い（打った物が消えなくなるだけ）。
-- Implementation status: r164 に渡す。
+- Implementation status: r164-ex（CODE CONFIRMED のみ）── 欄・＋・取り込み・✕ は `www/wordsheet.js` § WRITING AN EXAMPLE, ONCE の一つ（`exHTML()`・`exType()`・`exAdd()`・`exTake()`/`exTook()`・`exDel()`）。各側は置き場だけを渡す（`wdExAt()` は `w.ex` と下書き `wEdit`、`stExAt()` は保存のバッファ → `STG.ex`）。単語の保存・「追加」は `wdTakeFields()`、章の保存は `stExKeepOn()` が、同じ `exTook()` を通る。`pua-check` G・H と `keep-check` が両方を歩く。
 
 ### 2026-10-02 文法の章の例文も、改行ボタンは改行、足すのは ＋
 - Date: 2026-10-02
-- Area: 文法の章の例文の欄（`sx-ln`・`sx-gl`、KD ~~`stAddEx`~~、見出しの ＋ `stExOpen`、バーの保存 `stExKeepOn`）。
+- Area: 文法の章の例文の欄（今は `ex-ln`・`ex-gl`、KD ~~`stAddEx`~~、見出しの ＋ 今は `exAdd`、バーの保存 `stExKeepOn`）。
 - Decision: 改行ボタン（Enter）は改行。例文を足すのは ＋ ── 単語の例文と同じ形（＋ を押すと欄の中身を足して次の欄を開く）。Enter で足すのはやめる。
 - Reason: r161 が「足す道が Enter だけ」で止めた。オーナー「ダメでしょ！なんのために＋とかそういうボタン用意してると思ってんの？」（2026-10-02）。
 - Affected data: 無い。
-- Implementation status: r163-stex（CODE CONFIRMED のみ）── 欄は `lnlines`、Enter で足す ~~`stAddEx`~~ は消した。＋（`stExOpen`）とバーの保存（`stExKeepOn`）は同じ `stExTake()` で欄の例文を一覧に入れる。欄に打った物は保存ボタンのバッファ（`stExType`）に入るので保存が光る。`pua-check` G・`keep-check` が持つ。
+- Implementation status: r163-stex（CODE CONFIRMED のみ）── 欄は `lnlines`、Enter で足す ~~`stAddEx`~~ は消した。＋ とバーの保存（`stExKeepOn`）は同じ取り込みで欄の例文を一覧に入れ、欄に打った物は保存ボタンのバッファに入るので保存が光る。r164-ex で単語の例文と一つの仕組みになった（上の決定）。`pua-check` G・`keep-check` が持つ。
 
 ### 2026-10-02 「,」と「.」を描く枠に足す。一番下の段は「! ? , . スペース 改行」、削除キーは ⌫ の形
 - Date: 2026-10-02

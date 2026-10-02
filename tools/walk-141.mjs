@@ -289,9 +289,9 @@ did('辞書に立つ（自作フォント on）',
   ok('二つ目の欄が開く', d.box, J(d));
 }
 {
-  did('例文の ＋ を押す', J(await tap('wdExOpen')));
-  const d = await E(() => ({ ln: !!document.getElementById('wd-exl'),
-                             gl: !!document.getElementById('wd-exg'),
+  did('例文の ＋ を押す', J(await tap('exAdd')));
+  const d = await E(() => ({ ln: !!document.getElementById('ex-ln'),
+                             gl: !!document.getElementById('ex-gl'),
                              focus: document.activeElement
                                       ? document.activeElement.id : null }));
   did('例文の欄', J(d));
@@ -305,7 +305,7 @@ did('辞書に立つ（自作フォント on）',
     const lts = ltPuaOrder();
     if (lts.length < 3) return null;
     const s = ltPua(0) + ltPua(1) + ltPua(2);
-    const a = document.getElementById('wd-exl'), b = document.getElementById('wd-exg');
+    const a = document.getElementById('ex-ln'), b = document.getElementById('ex-gl');
     if (!a) return null;
     a.value = s;
     a.dispatchEvent(new Event('input', { bubbles: true }));
@@ -314,7 +314,7 @@ did('辞書に立つ（自作フォント on）',
     return { pua: s, roman: lts.slice(0, 3).map(ltName).join('') };
   });
   did('例文の欄に自作キーボードの字（PUA）を打つ', J(typed));
-  did('例文の ＋ をもう一度押して確定', J(await tap('wdExOpen')));
+  did('例文の ＋ をもう一度押して確定', J(await tap('exAdd')));
   await beat(200);
   const d = await E(() => {
     const w = wdW();

@@ -537,7 +537,7 @@ function openSlot(pid, k){
   if(fresh){
     openHw=''; addFrom='';
     addW={hw:'', mns:[], pos:p.pos, syn:[], ant:[], ex:[]};
-    wdMnNew=false; wdExNew=false; wdSubNew=false;
+    wdMnNew=false; exNew=''; wdSubNew=false;
     wEdit={seq:[], sp:[], mns:[stSlotLabel(p, key)], pos:p.pos,
            reg:'', tags:[], ety:'', nt:''};
     wdSync();
@@ -665,13 +665,11 @@ function stEx(id){ if(!STG.ex) STG.ex={}; if(!STG.ex[id]) STG.ex[id]=[]; return 
    handful of strings, and flattening it into several would be the stage
    written down twice.
 
-   WHAT IS TYPED INTO THE THREE BOXES IS IN IT TOO, as `lb`, `ln` and `gl`
-   (stExType()), and the ＋ and the Save are the two presses that make it a
-   line -- stExTake() is the one place either does. Enter is a new line: an
-   example is sentences 「改行はできるべきでしょ」, and 「なんのために＋とか
-   そういうボタン用意してると思ってんの？」 OWNER 2026-10-02. Before that Enter
-   was the only road in, so a line typed and saved without it was on nothing
-   the Save read and went without a word. */
+   WHAT IS TYPED INTO THE THREE BOXES IS IN IT TOO, as `exlb`, `exln` and
+   `exgl`, and the ＋ and the Save are the two presses that make it a line.
+   The boxes, the ＋, the take and the ✕ are the word sheet's too and are
+   written once, in www/wordsheet.js § WRITING AN EXAMPLE, ONCE; this page is
+   only where they go (stExAt below). */
 function stExKeepOn(id){
   /* Not in somebody else's language: saveStg() refuses one, so a buffer here
      would put a Save in the bar that could not write. */
@@ -679,9 +677,7 @@ function stExKeepOn(id){
   keepOn(keepKeyOf('form', 'stex:'+id),
          function(){ return {ex:JSON.stringify(stEx(id))}; },
          function(v, done){
-           var a=stExTake(id, v);
-           if(!a){ done(false); return; }
-           stExDone(v, a);
+           if(!exTook('st', id)){ done(false); return; }
            stKeepSave(id, v); done(true);
          });
 }
@@ -695,65 +691,39 @@ function stExKept(id){
   try{ a=JSON.parse(s); }catch(e){ a=null; }
   return (a && a.length!==undefined)? a : stEx(id);
 }
-function stExPut(id, a){ keepSet('ex', JSON.stringify(a)); openStEx(id); }
-/* What is typed, kept as it is typed so the Save lights and a repaint keeps
-   it. */
-function stExType(f, v){ keepSet(f, String(v||'')); }
-/* The list with the line in the boxes on the end of it -- or the list as it
-   is when nothing was typed, or null (said) when something was and there is
-   no line to make of it. The line, or -- when none was written and a meaning
-   was -- the line this language makes of that meaning: gExLine() in
-   www/grammar.js is where that is decided. What was typed always wins; only
-   an empty line is filled in. */
-function stExTake(id, v){
-  var lb=String(v.lb||'').trim(), gl=String(v.gl||'').trim(), ln;
-  if(!lb && !gl && !String(v.ln||'').trim()) return stExKept(id);
-  ln=gExLine(String(v.ln||''), gl);
-  if(!ln){ toast(t('word.ex.need')); return null; }
-  return stExKept(id).concat([{lb:lb, ln:ln, gl:gl}]);
+/* The stage's place for an example: the list and what is typed are both in
+   the Save's buffer, so the Save lights as it is typed and the stage is
+   written only when it is pressed; a line carries a label (肯定 / 否定).
+
+   The buffer is named rather than taken from the screen in front, because
+   the ＋ is pressed from two screens -- this page, and the chapter's page
+   (www/grammar.js § g2ChapEx), which has no buffer of its own and whose ＋ is
+   the way onto this one. The Save's own press is the third road in, and it
+   is handed the same buffer, so it is made here when it is not there yet
+   (stExKeepOn() is what opening this page does first anyway): a ✕ pressed
+   on the chapter's page is then this page's draft, with its Save lit, and
+   not a press that went nowhere. */
+function stExSet(id, f, v){
+  var b;
+  stExKeepOn(id);
+  b=KEEP[keepKeyOf('form', 'stex:'+id)];
+  if(!b) return;
+  b.v[f]=String(v);
+  keepBtnPaint();
 }
-/* And the buffer holding it: the list, and three empty boxes. */
-function stExDone(v, a){ v.ex=JSON.stringify(a); v.lb=''; v.ln=''; v.gl=''; }
-function stDelEx(id, i){
-  var a=stExKept(id).slice();
-  a.splice(i,1);
-  stExPut(id, a);
-}
-/* Two lines side by side is the whole of comparing: a label on each says what
-   the pair is a pair of -- 肯定 / 否定 -- and the two read as one thought. */
-/* The same as the word sheet's ＋ (wdOpenMore() in www/wordsheet.js): it
-   finishes the boxes in front of you and opens the next empty ones. From the
-   chapter's page there are no boxes yet, so it only opens them. */
-var stExNew='';
-function stExOpen(id){
-  var k=keepKeyOf('form', 'stex:'+id), v, a, e;
-  if(keepKey()===k){
-    v=keepNow(k); a=stExTake(id, v);
-    if(!a) return;
-    /* Nothing typed is nothing written: the screen holds what it held. */
-    if(a.length!==stExKept(id).length){
-      stExDone(v, a);
-      keepSet('ex', v.ex); keepSet('lb', ''); keepSet('ln', ''); keepSet('gl', '');
-    }
-  }
-  stExNew=id; openStEx(id);
-  e=document.getElementById('sx-ln'); if(e) e.focus();
-}
-function stExTyped(id, f){ return keepVal(keepKeyOf('form', 'stex:'+id), f); }
-function stExHTML(id){
-  var a=stExKept(id);
-  return (a.length
-    ? '<div class="exlist">'+a.map(function(e,i){
-        return exRowHTML(e, exSeq(e.ln),
-          exBtn('stDelEx', [id, i], 'word.ex.del', ICON_CROSS));
-      }).join('')+'</div>'
-    : '')+
-    (stExNew===id && !langLocked()? '<div class="exadd">'+
-      lnField('sx-lb', t('stg.ex.lb.ph'), IN('stExType', ['lb']),
-        stExTyped(id, 'lb'), 'exsm')+
-      lnField('sx-ln', exHint(), IN('stExType', ['ln']), stExTyped(id, 'ln'), 'lnlines')+
-      lnField('sx-gl', t('word.ex.gl.ph'), IN('stExType', ['gl']), stExTyped(id, 'gl'), 'lnlines')+
-    '</div>' : '');
+function stExAt(){
+  var k=function(id){ return keepKeyOf('form', 'stex:'+id); };
+  return {
+    lb:true,
+    list:function(id){ return stExKept(id); },
+    put:function(id, a){ stExSet(id, 'ex', JSON.stringify(a)); },
+    typed:function(id){
+      return {lb:keepVal(k(id), 'exlb'), ln:keepVal(k(id), 'exln'), gl:keepVal(k(id), 'exgl')};
+    },
+    type:function(id, f, v){ stExSet(id, 'ex'+f, v); },
+    paint:function(id){ openStEx(id); },
+    tail:function(){ return ''; }
+  };
 }
 
 /* 規則 IS A PAGE, AND SO IS 例文.
@@ -817,7 +787,7 @@ function openStEx(id){
      a Save from -- www/shell.js § KEEP. */
   stExKeepOn(id);
   openForm('stex:'+id, t('stg.ex'),
-    secAdd(ICON_LINE+t('stg.ex'), DO('stExOpen', [id]), t('word.mn.add'))+stExHTML(id));
+    secAdd(ICON_LINE+t('stg.ex'), DO('exAdd', ['st', id]), t('word.mn.add'))+exHTML('st', id));
 }
 FORM_OPEN.stex=function(a){ openStEx(String(a||'')); };
 /* The way in. The row says what is behind it and how much of it there is --

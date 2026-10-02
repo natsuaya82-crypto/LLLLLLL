@@ -63,7 +63,7 @@ function openAdd(from){
        the register, the fields, the etymology, the note -- is in wEdit, the
        same as when the word already exists. */
     addW={hw:'', mns:[], pos:addPos, syn:[], ant:[], ex:[]};
-    wdMnNew=false; wdExNew=false; wdSubNew=false;
+    wdMnNew=false; exNew=''; wdSubNew=false;
     if(addFrom) addW.from=addFrom;
     wEdit={seq:[], sp:JSON.parse(JSON.stringify(par? spOf(par) : [])),
            mns:[], pos:addPos, sub:'', reg:'', tags:[], ety:'', nt:''};
@@ -98,7 +98,7 @@ function addWrite(){
   if(findWord(hw)){ toast(t('toast.dup')); return null; }
   /* After the guards, so a refused Save leaves the boxes holding what was
      typed rather than having quietly eaten it. */
-  wdTakeFields();
+  if(!wdTakeFields()) return null;
   addPos=wEdit.pos;
   syn=(d.syn||[]).slice(); ant=(d.ant||[]).slice();
   /* No `ph` on it: the spelling is the word, and what it sounds like is
@@ -267,28 +267,25 @@ function vSpell(){
    for the SECOND one onwards -- 「追加した後意味が1つ目から+ボタン押さないと
    いけない」 OWNER 2026-09-05. Once pressed it stays for the rest of the sheet,
    so a word with five meanings is five presses of Enter and not five of
-   anything else. wdMnShow()/wdExShow() are the one place each answers it. */
-var wdMnNew=false, wdExNew=false;
+   anything else. wdMnShow() is the one place it is answered for a meaning, and
+   exShow() below for an example. */
+var wdMnNew=false;
 /* 「＋」 does not make the box appear -- it finishes the box in front of you
    and opens the next one. It was `flag=true; wdPaint()`, which reads no box
    at all: a first meaning typed and then ＋ was repainted out of wEdit, which
    had never been told about it, and the meaning was gone
-   「意味の2つ目を＋で足すと1つ目が消える」 OWNER 2026-09-06. The example's ＋
-   did the same, and with no example yet its box was already on the screen, so
-   the press changed nothing whatever 「例文の＋を押しても反応しない」.
+   「意味の2つ目を＋で足すと1つ目が消える」 OWNER 2026-09-06.
 
-   One road for both, and it is the road that already exists: wdAddMn() is
-   wdTakeFields() -- the one place that reads the boxes -- then the store and
-   the repaint. What ＋ adds to it is standing in the box that came back, so
-   the press answers even when the box was already there. */
-function wdOpenMore(id){
-  wdAddMn();
-  var e=document.getElementById(id); if(e) e.focus();
+   wdAddMn() is wdTakeFields() -- the one place that reads the boxes -- then
+   the store and the repaint. What ＋ adds to it is standing in the box that
+   came back, so the press answers even when the box was already there. An
+   example's ＋ is exAdd() below, which is the same press on both places an
+   example is written. */
+function wdMnOpen(){
+  wdMnNew=true; wdAddMn();
+  var e=document.getElementById('wd-mn'); if(e) e.focus();
 }
-function wdMnOpen(){ wdMnNew=true; wdOpenMore('wd-mn'); }
-function wdExOpen(){ wdExNew=true; wdOpenMore('wd-exl'); }
 function wdMnShow(){ return wdMnNew || !(wEdit && wEdit.mns && wEdit.mns.length); }
-function wdExShow(){ var w=wdW(); return wdExNew || !(w && w.ex && w.ex.length); }
 function wdMnsHTML(){
   var rows=wEdit.mns.map(function(m,i){
     return '<div class="mnrow"><span class="mnv">'+esc(m)+'</span>'+
@@ -457,26 +454,135 @@ function exHint(){
   var a=WORDS.slice(0,2).map(function(w){ return String(w.hw); });
   return a.length>1? a.join(' ') : (a[0]||'');
 }
-function wdExHTML(){
-  var w=wdW(); if(!w) return '';
-  var ex=w.ex||[];
-  return (ex.length
-    ? '<div class="exlist">'+ex.map(function(e,i){
-        /* No card off a word that is not in the dictionary yet: a card is
-           made from a headword, and this one has none until Add. */
-        return exRowHTML(e, exSeq(e.ln),
-          (addW? '' : exBtn('cardOpen', ["x", openHw+'#'+i], 'card.title', ICON_SHARE))+
-          exBtn('wdDelEx', [i], 'word.ex.del', ICON_CROSS));
+/* ---- WRITING AN EXAMPLE, ONCE -----------------------------------------------
+   「アプリ内で挙動が違うのがおかしいだろベタガキしてるからそうなんだろ一本化しろや」
+   OWNER 2026-10-02. An example is written in two places -- on a word's sheet,
+   and on a grammar stage's or chapter's page -- and each had written its own
+   boxes, its own ＋, its own way of taking what was typed and its own ✕. They
+   had drifted: on the word's sheet what was typed reached nothing the Save
+   measured, so the Save stayed grey and the arrow went back without asking and
+   the line was gone; on the stage it lit and asked. docs/scope/r163-stex.md
+   measured both.
+
+   So this is the one shape, and a place says only WHERE: `exAt(at)` hands the
+   list (`list`/`put` -- the word's `w.ex`, the stage's `STG.ex[id]` by way of
+   its Save's buffer), where the half-typed line is held while it is typed
+   (`typed`/`type` -- the word sheet's draft wEdit, the stage's buffer), what
+   repaints (`paint`), what else stands at the end of a row (`tail`, the
+   word's card), and whether a line carries a label (`lb`, the stage's 肯定 /
+   否定 -- a word's line never had one, and giving it one would be a new
+   thing stored). Everything else is said here once:
+
+   - Enter is a new line, because an example is sentences 「改行はできるべき
+     でしょ」 OWNER 2026-10-02 (the boxes wear `lnlines`).
+   - ＋ takes what is typed onto the list and opens the next empty boxes
+     (exAdd). The bar's Save takes it too: the word's through wdTakeFields(),
+     the stage's in its keepOn() -- both by exTook()/exTake().
+   - What is typed is held where the place's Save measures it, so the Save
+     lights as it is typed and going back with something typed asks
+     (www/shell.js § KEEP). Nothing typed asks nothing.
+   - Somebody else's language has no boxes, no ＋ and no ✕ (langLocked). */
+var exNew='';
+function exAt(at){ return at==='st'? stExAt() : wdExAt(); }
+function exTyped(at, id, f){
+  var o=exAt(at).typed(id);
+  return String((o && o[f]) || '');
+}
+function exType(at, id, f, v){
+  if(langLocked()) return;
+  exAt(at).type(id, f, String(v||''));
+}
+/* The list with the line in the boxes on the end of it -- or the list as it
+   is when nothing was typed, or null (said) when something was and there is
+   no line to make of it. The line, or -- when none was written and a meaning
+   was -- the line this language makes of that meaning: gExLine() in
+   www/grammar.js decides that. What was typed always wins; only an empty line
+   is filled in. */
+function exTake(at, id){
+  var p=exAt(at), lb=p.lb? exTyped(at, id, 'lb').trim() : '',
+      gl=exTyped(at, id, 'gl').trim(), ln=exTyped(at, id, 'ln');
+  if(!lb && !gl && !ln.trim()) return p.list(id);
+  ln=gExLine(ln, gl);
+  if(!ln){ toast(t('word.ex.need')); return null; }
+  return p.list(id).concat([p.lb? {lb:lb, ln:ln, gl:gl} : {ln:ln, gl:gl}]);
+}
+/* Taken: the list written where the place keeps it, and the boxes empty. It
+   says whether it could. Nothing typed is nothing written: the screen holds
+   what it held. */
+function exTook(at, id){
+  var p=exAt(at), a=exTake(at, id);
+  if(!a) return false;
+  if(a.length===p.list(id).length) return true;
+  p.put(id, a);
+  if(p.lb) p.type(id, 'lb', '');
+  p.type(id, 'ln', ''); p.type(id, 'gl', '');
+  return true;
+}
+/* The ＋. It finishes the boxes in front of you and opens the next empty ones;
+   where there are none yet it only opens them. */
+function exAdd(at, id){
+  var e;
+  if(langLocked() || !exTook(at, id)) return;
+  exNew=at+':'+id;
+  exAt(at).paint(id);
+  e=document.getElementById('ex-ln'); if(e) e.focus();
+}
+function exDel(at, id, i){
+  var p=exAt(at), a;
+  if(langLocked()) return;
+  a=p.list(id).slice(); a.splice(i, 1);
+  p.put(id, a); p.paint(id);
+}
+/* The boxes are there when there is nothing yet, and after the ＋ -- the
+   same answer as a meaning's (wdMnShow above). */
+function exShow(at, id){
+  return !langLocked() && (exNew===at+':'+id || !exAt(at).list(id).length);
+}
+function exListHTML(at, id){
+  var p=exAt(at), a=p.list(id);
+  return a.length
+    ? '<div class="exlist">'+a.map(function(e, i){
+        return exRowHTML(e, exSeq(e.ln), p.tail(id, i)+
+          (langLocked()? '' : exBtn('exDel', [at, id, i], 'word.ex.del', ICON_CROSS)));
       }).join('')+'</div>'
-    : '')+
-    (wdExShow()? '<div class="exadd">'+
-      lnField('wd-exl', exHint(), '', '', 'lnlines')+
-      lnField('wd-exg', '', ' aria-label="'+esc(t('word.ex.gl.ph'))+'"', '', 'lnlines')+
+    : '';
+}
+function exHTML(at, id){
+  var p=exAt(at);
+  return exListHTML(at, id)+
+    (exShow(at, id)? '<div class="exadd">'+
+      (p.lb? lnField('ex-lb', t('stg.ex.lb.ph'), IN('exType', [at, id, 'lb']),
+                     exTyped(at, id, 'lb'), 'exsm') : '')+
+      lnField('ex-ln', exHint(), IN('exType', [at, id, 'ln']), exTyped(at, id, 'ln'), 'lnlines')+
+      lnField('ex-gl', t('word.ex.gl.ph'), IN('exType', [at, id, 'gl']), exTyped(at, id, 'gl'), 'lnlines')+
     '</div>' : '');
 }
-function wdDelEx(i){
-  var w=wdW(); if(!w || !w.ex) return;
-  w.ex.splice(i,1); wdStore(); wdPaint();
+/* The word's place. The list is on the word -- the one being made or the one
+   being edited (wdW) -- and the half-typed line is on the sheet's draft,
+   wEdit, beside the note and the etymology that are typed into it the same
+   way; wdSigEdit() counts it, so the Save lights and leaving asks. It never
+   reaches the word: wdPutExtras() and addWrite() write what they name. A
+   card is made from a headword, so a word not in the dictionary yet has
+   none. */
+function wdExAt(){
+  return {
+    lb:false,
+    list:function(){ var w=wdW(); return (w && w.ex) || []; },
+    put:function(id, a){ var w=wdW(); if(w && (a.length || w.ex)) w.ex=a; },
+    typed:function(){ return (wEdit && wEdit.exT) || {}; },
+    type:function(id, f, v){
+      if(!wEdit) return;
+      if(!wEdit.exT) wEdit.exT={};
+      wEdit.exT[f]=v;
+      wdKeepTouch();
+    },
+    /* The meaning's box is taken with it, as every press on this sheet does
+       (wdAddMn), or the repaint would drop what was typed there. */
+    paint:function(){ wdAddMn(); },
+    tail:function(id, i){
+      return addW? '' : exBtn('cardOpen', ["x", openHw+'#'+i], 'card.title', ICON_SHARE);
+    }
+  };
 }
 /* Choosing the other end of a relation: every word, ticked or not. */
 function vRelate(){
@@ -1514,8 +1620,8 @@ function wdFormHTML(){
     '<div class="sec">'+t('word.ant')+'</div>'+
     wdRelHTML('ant')+
 
-    secAdd(ICON_LINE+t('word.ex'), DO('wdExOpen'), t('word.mn.add'))+
-    wdExHTML()+
+    secAdd(ICON_LINE+t('word.ex'), DO('exAdd', ['w', '']), t('word.mn.add'))+
+    exHTML('w', '')+
 
     '<div class="sec">'+t('word.note')+'</div>'+
     wdNoteHTML()+
@@ -1585,9 +1691,15 @@ function wdSig(sp, mns, pos, sub, reg, tags, ety, nt, w){
   return JSON.stringify([sp||[], mns||[], pos||'', String(sub||''), reg||'',
                          tags||[], String(ety||''), String(nt||''), on]);
 }
+/* With the example half-typed in its boxes on the end (exT, § WRITING AN
+   EXAMPLE, ONCE), and nothing at all while those are empty -- so a sheet
+   that opened with empty boxes and has them empty again is the sheet it
+   opened as. */
 function wdSigEdit(){
+  var x=wEdit.exT || {};
   return wdSig(wEdit.sp, wEdit.mns, wEdit.pos, wEdit.sub, wEdit.reg,
-               wEdit.tags, wEdit.ety, wEdit.nt, addW || findWord(openHw));
+               wEdit.tags, wEdit.ety, wEdit.nt, addW || findWord(openHw))+
+    ((x.ln || x.gl)? JSON.stringify([String(x.ln||''), String(x.gl||'')]) : '');
 }
 /* THE SHEET, SAID ONCE. It is asked rather than told: whatever is on wEdit
    at this moment is what the screen is holding, so a meaning added, a tag
@@ -1856,7 +1968,7 @@ function openWord(hw){
 /* The same sheet a new word is written on, opened on one that exists. */
 function openEdit(hw){
   var w=findWord(hw); if(!w || langLocked()) return;
-  openHw=w.hw; addW=null; wdMnNew=false; wdExNew=false; wdSubNew=false;
+  openHw=w.hw; addW=null; wdMnNew=false; exNew=''; wdSubNew=false;
   wEdit={seq:wPh(w).slice(), sp:JSON.parse(JSON.stringify(spOf(w))), mns:wMns(w).slice(),
          pos:w.pos, sub:subOf(w), reg:w.reg||'', tags:(w.tags||[]).slice(),
          ety:w.ety||'', nt:w.nt||''};
@@ -1913,49 +2025,32 @@ function wdSetRd(v){
     spSetU(sp[i], i<us.length? (i===sp.length-1? us.slice(i).join('') : us[i]) : '');
   wdSync();
 }
-/* WHAT IS STILL IN THE TWO BOXES. A meaning and an example reached the sheet
-   by pressing Enter in the box they were typed into, and 「追加」 and the Save
-   in the corner looked at neither box -- so a word written straight down and
-   added without pressing Enter arrived carrying no meaning and no example.
-   Nothing threw: they were typed, they were on the screen, and they had never
-   been anywhere else. The note, the etymology and the tags were unaffected
-   because those are written into wEdit as they are typed.
+/* WHAT IS STILL IN THE BOXES. A meaning reached the sheet by pressing Enter
+   in its box, and 「追加」 and the Save in the corner looked at no box -- so a
+   word written straight down and added without pressing Enter arrived
+   carrying no meaning. Nothing threw: it was typed, it was on the screen, and
+   it had never been anywhere else.
 
    One function, and every road into the sheet's content goes through it:
-   Enter on the meaning's box, either ＋ (wdOpenMore), 「追加」, and Save. An
-   example's boxes take Enter as a new line -- an example is sentences
-   「改行はできるべきでしょ」 OWNER 2026-10-02 -- so it goes in by the ＋ or
-   the Save. The boxes are not emptied here --
-   what empties them is the repaint that follows, built out of wEdit, so there
-   is one answer to what is in them. */
+   Enter on the meaning's box, either ＋, 「追加」, and Save. The example is
+   exTook() (§ WRITING AN EXAMPLE, ONCE), the same take the stage's Save
+   makes. It answers false when an example was typed and no line could be
+   made of it, which the Save and 「追加」 take as a refusal. The meaning's box
+   is not emptied here -- what empties it is the repaint that follows, built
+   out of wEdit, so there is one answer to what is in it.
+
+   Whatever the Lingua keyboard put in a box comes back to roman first
+   (actVal() and the IN receiver both read through puaTyped(), www/act.js):
+   an example typed on somebody's own keyboard was stored as U+E000 upward
+   and drawn in .exl, which has no glyph up there -- 「▓▓▓」 on the owner's
+   phone, build 140. */
 function wdTakeFields(){
-  var w=wdW(), e=document.getElementById('wd-mn'),
-      a=document.getElementById('wd-exl'), b=document.getElementById('wd-exg'), v, ln;
+  var e=document.getElementById('wd-mn'), v;
   if(e && wEdit){
     v=actVal(e).trim();
     if(v && wEdit.mns.indexOf(v)<0) wEdit.mns.push(v);
   }
-  if(w && a){
-    /* Whatever the Lingua keyboard put in the field comes back to roman
-       first, exactly as a typed SPELLING does (www/letters.js § spType).
-       This is the same one mechanism, not a second one: the private use area
-       is what that keyboard types INTO a field and it goes no further --
-       everything past here is the roman spelling, which is what findWord(),
-       exSeq() and exGloss() read and what a card and an export carry.
-
-       An example typed on somebody's own keyboard was stored as U+E000
-       upward and drawn in .exl, which is var(--face-caps) and has no glyph
-       up there: 「▓▓▓」 on the owner's phone, build 140. Nothing threw --
-       the line was stored, read back and rendered; it was rendered in a font
-       that has no such characters. The gloss under it was wrong for the same
-       reason, because findWord() had never heard of those characters
-       either. */
-    ln=actVal(a).trim();
-    if(ln){
-      if(!w.ex) w.ex=[];
-      w.ex.push({ln:ln, gl:actVal(b).trim()});
-    }
-  }
+  return exTook('w', '');
 }
 function wdAddMn(){ wdTakeFields(); wdStore(); wdPaint(); }
 function wdDelMn(i){ wEdit.mns.splice(i,1); wdPaint(); }
@@ -2010,7 +2105,7 @@ function wdWrite(){
   var clash=findWord(hw);
   if(clash && clash!==w){ toast(t('toast.dup')); return false; }
   /* Same as addOne(): after the guards, so a refused Save keeps the boxes. */
-  wdTakeFields();
+  if(!wdTakeFields()) return false;
   var old=String(w.hw);
   /* The sheet writes what the sheet holds. `ph` -- the sounds that came with
      the word, off an import or off the one migration that gave the oldest

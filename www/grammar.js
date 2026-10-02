@@ -2598,8 +2598,8 @@ function g2ChapRow(c, n){
    heading. Nothing new is stored and nothing new decides anything: what a
    chapter had to have was somewhere to put the line that shows the rule. */
 function g2ChapEx(id){
-  return secAdd(ICON_LINE+t('stg.ex'), DO('stExOpen', [id]), t('word.mn.add'))+
-    stExHTML(id);
+  return secAdd(ICON_LINE+t('stg.ex'), DO('exAdd', ['st', id]), t('word.mn.add'))+
+    exListHTML('st', id);
 }
 /* One chapter's page. It is handed the chapter rather than the argument:
    vGram() looks it up, because it is vGram() that has to fall back to the

@@ -1146,12 +1146,14 @@ export function halfDone(){
        window.route = 'sub'; NAV = [{ r:'sub' }]; return vSub(); }],
     ['one more meaning', () => { openEdit('kano'); wdMnNew = true;
                                  return sheet('<div id="wd-body">'+wdFormHTML()+'</div>'); }],
-    ['one more example', () => { openEdit('kano'); wdExNew = true;
+    ['one more example', () => { openEdit('kano'); exNew = 'w:';
                                  return sheet('<div id="wd-body">'+wdFormHTML()+'</div>'); }],
-    ['one more example of a stage', () => {
-       const id = stAll()[0].id;
-       window.route = 'gram'; NAV = [{ r:'gram', a:id }]; stExNew = id;
-       const h = vGram(); stExNew = ''; return h; }],
+    /* Enter is a new line in both boxes, on the word as on a stage (www/wordsheet.js
+       § WRITING AN EXAMPLE, ONCE): two lines typed, held on the sheet's draft. */
+    ['an example of a word being written on two lines', () => {
+       openEdit('kano'); exNew = 'w:';
+       exType('w', '', 'ln', 'kano tir\ntir kano'); exType('w', '', 'gl', 'it sees\nthe mountain');
+       const h = sheet('<div id="wd-body">'+wdFormHTML()+'</div>'); exNew = ''; return h; }],
     ['a label of your own', () => {
        window.route = 'fm'; NAV = [{ r:'fm', a:'tira' }]; fmNewG = 'd';
        const h = vFm(); fmNewG = ''; return h; }],
@@ -4057,7 +4059,7 @@ export function halfDone(){
        them exist only while it is out. */
     ['what a stage says its rule is', () => { openStRules('greet'); return vForm(); }],
     ['the examples of a stage', () => { popOff(); keepDrop(keepKeyOf('form', 'stex:greet'));
-                                        stExNew=''; openStEx('greet'); return vForm(); }],
+                                        exNew=''; openStEx('greet'); return vForm(); }],
     /* AND ONE JUST ADDED. The ＋ puts the line in the boxes on the page and
        the Save in the corner writes it onto the stage (www/phases.js § ADDING AND
        REMOVING AN EXAMPLE CHOOSES) -- it used to write on the Enter, with no
@@ -4069,28 +4071,29 @@ export function halfDone(){
        one. */
     ['the examples of a stage, one just added', () => {
         popOff(); keepDrop(keepKeyOf('form', 'stex:greet'));
-        stExNew=''; openStEx('greet');
-        stExPut('greet', stExKept('greet').concat(
-          [{lb:'', ln:'kano tir', gl:'it sees the mountain'}]));
+        exNew=''; openStEx('greet');
+        exType('st', 'greet', 'ln', 'kano tir'); exType('st', 'greet', 'gl', 'it sees the mountain');
+        exAdd('st', 'greet');
+        exNew=''; openStEx('greet');
         return vForm(); }],
     ['an example being written', () => {
-        stExOpen('greet');
-        const h=vForm(); stExNew=''; return h; }],
+        exAdd('st', 'greet');
+        const h=vForm(); exNew=''; return h; }],
     /* Enter is a new line in both boxes 「文法の章の例文も」 OWNER 2026-10-02:
        two lines typed, and the same two after the ＋ took them onto the list
        and opened the next empty boxes. */
     ['an example being written on two lines', () => {
         popOff(); keepDrop(keepKeyOf('form', 'stex:greet'));
-        stExNew=''; stExOpen('greet');
-        keepSet('ln', 'kano tir\ntir kano'); keepSet('gl', 'it sees\nthe mountain');
+        exNew=''; exAdd('st', 'greet');
+        exType('st', 'greet', 'ln', 'kano tir\ntir kano'); exType('st', 'greet', 'gl', 'it sees\nthe mountain');
         openStEx('greet');
-        const h=vForm(); stExNew=''; return h; }],
+        const h=vForm(); exNew=''; return h; }],
     ['an example on two lines, after the ＋', () => {
         popOff(); keepDrop(keepKeyOf('form', 'stex:greet'));
-        stExNew=''; stExOpen('greet');
-        keepSet('ln', 'kano tir\ntir kano'); keepSet('gl', 'it sees\nthe mountain');
-        stExOpen('greet');
-        const h=vForm(); stExNew=''; return h; }],
+        exNew=''; exAdd('st', 'greet');
+        exType('st', 'greet', 'ln', 'kano tir\ntir kano'); exType('st', 'greet', 'gl', 'it sees\nthe mountain');
+        exAdd('st', 'greet');
+        const h=vForm(); exNew=''; return h; }],
     /* The sheet (www/sheet.js, chapter 26). Four faces, because they share no
        buttons: the room, the names being typed, the one control before a file
        has been handed over, and what came off one afterwards.
