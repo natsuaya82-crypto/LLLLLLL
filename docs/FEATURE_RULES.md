@@ -308,6 +308,14 @@ it is quoted, and where a decision has never been made the row in
 - Affected data: 無い（明日からのお題の中身が変わるだけ。過去のお題はそのまま）。
 - Implementation status: 関数を書き換えて置いた。次の日のお題から。
 
+### 2026-10-02 文法の章の例文も、改行ボタンは改行、足すのは ＋
+- Date: 2026-10-02
+- Area: 文法の章の例文の欄（`sx-ln`・`sx-gl`、KD `stAddEx`、見出しの ＋ `stExOpen`、バーの保存 `stExKeepOn`）。
+- Decision: 改行ボタン（Enter）は改行。例文を足すのは ＋ ── 単語の例文と同じ形（＋ を押すと欄の中身を足して次の欄を開く）。Enter で足すのはやめる。
+- Reason: r161 が「足す道が Enter だけ」で止めた。オーナー「ダメでしょ！なんのために＋とかそういうボタン用意してると思ってんの？」（2026-10-02）。
+- Affected data: 無い。
+- Implementation status: r163 に渡す。
+
 ### 2026-10-02 「,」と「.」を描く枠に足す。一番下の段は「! ? , . スペース 改行」、削除キーは ⌫ の形
 - Date: 2026-10-02
 - Area: 言語が生まれる時の枠（`ltSlotsFill()`、`www/letters.js`）、無料の QWERTY（`kbFixed()`・`KB_ENDS`、`www/keyboard.js`）、削除キーの絵（`ICON_BACK` を使っている所、`ios/App/LinguaKeyboard/KeyBoardView.swift`）。
