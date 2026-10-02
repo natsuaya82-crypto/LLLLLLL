@@ -1481,9 +1481,9 @@ function vLetter(){
        the person's note about their own letter.
        「標語文字の人は意味を持たせたいだろうから、メモ欄追加してもいいかも」 */
     (ro
-      ? (l.nt? '<div class="sec">'+t('lt.note')+'</div><div class="set"><span class="sl">'+esc(l.nt)+'</span></div>' : '')
+      ? (l.nt? '<div class="sec">'+t('lt.note')+'</div><div class="set"><span class="sl ltnt">'+esc(l.nt)+'</span></div>' : '')
       : '<div class="sec">'+t('lt.note')+'</div>'+
-        lnField('lt-nt', '', IN('ltSetNote'), keepVal(keepKeyOf('letter', lid), 'nt'), 'ntin'))+
+        lnField('lt-nt', '', IN('ltSetNote'), keepVal(keepKeyOf('letter', lid), 'nt'), 'ntin lnlines'))+
     (l.ch
       ? '<div class="gborrow" style="margin-top:8px"><span class="gbch">'+esc(l.ch)+'</span>'+
         '<span class="gbl">'+t('glyph.borrowed')+'</span>'+

@@ -470,18 +470,9 @@ function wdExHTML(){
       }).join('')+'</div>'
     : '')+
     (wdExShow()? '<div class="exadd">'+
-      lnField('wd-exl', exHint(), KD('wdAddEx'), '')+
-      lnField('wd-exg', '', ' aria-label="'+esc(t('word.ex.gl.ph'))+'"' + KD('wdAddEx'), '')+
+      lnField('wd-exl', exHint(), '', '', 'lnlines')+
+      lnField('wd-exg', '', ' aria-label="'+esc(t('word.ex.gl.ph'))+'"', '', 'lnlines')+
     '</div>' : '');
-}
-/* An example needs its line: a gloss on its own is a gloss of nothing, and
-   Enter on the empty box says so rather than doing nothing quietly. What it
-   then takes is wdTakeFields() above -- the same act, not a copy of it. */
-function wdAddEx(){
-  var a=document.getElementById('wd-exl');
-  if(!a) return;
-  if(!actVal(a).trim()){ toast(t('word.ex.need')); return; }
-  wdTakeFields(); wdStore(); wdPaint();
 }
 function wdDelEx(i){
   var w=wdW(); if(!w || !w.ex) return;
@@ -1930,8 +1921,11 @@ function wdSetRd(v){
    been anywhere else. The note, the etymology and the tags were unaffected
    because those are written into wEdit as they are typed.
 
-   One function, and all four roads into the sheet's content go through it:
-   Enter on either box, 「追加」, and Save. The boxes are not emptied here --
+   One function, and every road into the sheet's content goes through it:
+   Enter on the meaning's box, either ＋ (wdOpenMore), 「追加」, and Save. An
+   example's boxes take Enter as a new line -- an example is sentences
+   「改行はできるべきでしょ」 OWNER 2026-10-02 -- so it goes in by the ＋ or
+   the Save. The boxes are not emptied here --
    what empties them is the repaint that follows, built out of wEdit, so there
    is one answer to what is in them. */
 function wdTakeFields(){

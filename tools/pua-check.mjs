@@ -26,6 +26,10 @@
    D. A line of a letter with no name is a line, and is posted.
    E. A line on a photograph: a newline typed there is a second line, and a
       space is the ordinary face's space (inkSpace), as on the post.
+   F. A field a spelling is typed into is set in the drawn letters.
+   G. Enter is a new line in a field that is sentences, and nothing in one
+      that is a word -- every `.lnin` on every route and face.
+   H. Where those sentences are shown, the new line is still there.
 
    A browser, on its own port.
    --------------------------------------------------------------------------- */
@@ -360,6 +364,182 @@ if (F.bad.length)
   fails.push('F  a field a spelling is typed into does not show the drawn letters the same way as the rest: ' +
              [...new Set(F.bad)].slice(0, 8).join(' | '));
 
+/* ---- G. Enter: a new line where a sentence is written, nothing elsewhere ---
+   「改行はできるべきでしょ」「一行のままのやつはそのままにしてバランス見てるの
+   よ」 OWNER 2026-10-02. The fields that are sentences are the owner's list
+   and are written here as that list; every OTHER `.lnin` is a word and
+   drops Enter (2026-09-03). The surface is every field on every route and
+   face, so a field added tomorrow is one or the other tomorrow.
+
+   A REAL Enter, through the keyboard -- a synthetic keydown inserts nothing
+   whether or not it is stopped -- then `c`, and what the field holds and what
+   its receiver was handed are read.
+
+   `sx-ln` and `sx-gl`, a grammar chapter's example, are on neither list:
+   Enter is the only road that adds one (stAddEx), so they wait on the owner
+   (docs/scope/r161-lines.md). */
+const LINES = ['pw-ln', 'pw-mn', 'wd-exl', 'wd-exg', 'lt-nt', 'cont-b', 'wld-ov-*'];
+const WAITS = ['sx-ln', 'sx-gl'];
+const gKey = (id) => /^wld-ov-/.test(id) ? 'wld-ov-*' : id;
+const Gfaces = await pg.evaluate(() => {
+  const faces = [], seen = {};
+  window.__faces = [];
+  Object.keys(PAGES).forEach((r) => window.__faces.push(['route', r]));
+  window.__halfDone().forEach(([label], i) => window.__faces.push(['face', label, i]));
+  window.__show = (k) => {
+    const f = window.__faces[k], app = document.getElementById('app');
+    window.__seed(); SET.walked = true;
+    if (f[0] === 'route') { window.route = f[1]; NAV = [{ r: f[1] }]; render(); }
+    else app.innerHTML = window.__halfDone()[f[2]][1]();
+  };
+  window.__faces.forEach((f, k) => {
+    try { window.__show(k); } catch (e) { return; }
+    document.querySelectorAll('#app textarea.lnin[id]').forEach((el) => {
+      const key = /^wld-ov-/.test(el.id) ? 'wld-ov-*' : el.id;
+      if (!seen[key]) { seen[key] = { ks: [], id: el.id, key: key }; faces.push(seen[key]); }
+      seen[key].ks.push(k);
+    });
+  });
+  return faces;
+});
+const G = { asked: 0, bad: [], found: {} };
+for (const f of Gfaces) {
+  if (WAITS.indexOf(f.key) !== -1) continue;
+  /* A field is asked on the first face that draws it again: some faces are
+     what an earlier one left behind, which is what the walk saw. */
+  const ok = await pg.evaluate(({ ks, key }) => {
+    let el = null;
+    for (let i = 0; i < ks.length && !el; i++) {
+      try { window.__show(ks[i]); } catch (e) { continue; }
+      el = [...document.querySelectorAll('#app textarea.lnin[id]')]
+        .filter((e) => (/^wld-ov-/.test(e.id) ? 'wld-ov-*' : e.id) === key)[0] || null;
+    }
+    window.__got = null;
+    window.__real = { i: {}, k: {} };
+    Object.keys(ACT_IN).forEach((n) => { window.__real.i[n] = ACT_IN[n];
+      ACT_IN[n] = function () { window.__got = [].slice.call(arguments); }; });
+    Object.keys(ACT_KEY).forEach((n) => { window.__real.k[n] = ACT_KEY[n]; ACT_KEY[n] = function () {}; });
+    if (!el) return null;
+    el.value = 'ab'; el.focus(); el.setSelectionRange(2, 2);
+    return document.activeElement === el ? el.id :
+      'could not be focused (' + (el.readOnly ? 'readonly ' : '') + getComputedStyle(el).display + ')';
+  }, f);
+  if (!ok || ok.indexOf(' ') !== -1) { G.bad.push('#' + f.id + ' ' + (ok || 'not drawn again')); continue; }
+  f.id = ok;
+  await pg.keyboard.press('Enter');
+  await pg.keyboard.type('c');
+  const r = await pg.evaluate((id) => {
+    const el = document.getElementById(id), v = el ? el.value : null,
+          got = window.__got, inn = el && el.getAttribute('data-in');
+    Object.keys(window.__real.i).forEach((n) => { ACT_IN[n] = window.__real.i[n]; });
+    Object.keys(window.__real.k).forEach((n) => { ACT_KEY[n] = window.__real.k[n]; });
+    if (el) el.blur();
+    return { v: v, got: inn ? JSON.stringify(got) : null };
+  }, f.id);
+  G.asked++;
+  G.found[f.key] = 1;
+  const lines = LINES.indexOf(f.key) !== -1;
+  if (lines && r.v !== 'ab\nc')
+    G.bad.push('#' + f.id + ' is sentences and Enter gave ' + JSON.stringify(r.v) + ', not a new line');
+  else if (lines && r.got !== null && r.got.indexOf('ab\\nc') === -1)
+    G.bad.push('#' + f.id + ' kept the new line and its receiver was handed ' + r.got);
+  else if (!lines && r.v !== 'abc')
+    G.bad.push('#' + f.id + ' is one word and Enter gave ' + JSON.stringify(r.v));
+}
+LINES.forEach((k) => { if (!G.found[k]) G.bad.push(k + ' is on the list and no screen drew it, so G holds nothing for it'); });
+/* and the word's example, all the way in: two lines typed with Enter go
+   onto the word by the ＋ */
+const Gex = await pg.evaluate(() => {
+  window.__seed(); SET.walked = true;
+  openWord('kano'); openEdit('kano'); wdExNew = true;
+  document.getElementById('app').innerHTML = vForm();
+  const n = (wdW().ex || []).length, e = document.getElementById('wd-exl');
+  if (!e) return 'no #wd-exl';
+  e.value = 'kano'; e.focus(); e.setSelectionRange(4, 4);
+  return n;
+});
+if (typeof Gex === 'string') G.bad.push('the word sheet: ' + Gex);
+else {
+  await pg.keyboard.press('Enter');
+  await pg.keyboard.type('tir');
+  const last = await pg.evaluate((n) => {
+    const b = document.querySelector('#app [data-do="wdExOpen"]');
+    if (!b) return 'no ＋';
+    b.click();
+    const ex = wdW().ex || [];
+    return ex.length > n ? ex[ex.length - 1].ln : 'nothing added';
+  }, Gex);
+  if (last !== 'kano\ntir') G.bad.push('an example typed on two lines went onto the word as ' + JSON.stringify(last));
+}
+if (G.asked < 30) fails.push('G  only ' + G.asked + ' fields were pressed Enter in, so G holds nothing');
+if (G.bad.length) fails.push('G  Enter: ' + G.bad.slice(0, 8).join(' | '));
+
+/* ---- H. where those sentences are SHOWN, they are two lines ---------------
+   Measured on the page: the second line's top is below the first's, in the
+   real drawer. The card is a canvas, so what fillText() was handed is read. */
+const H = await pg.evaluate(() => {
+  const out = {};
+  const app = document.getElementById('app');
+  const two = (root, A, B) => {
+    if (!root) return 'not drawn';
+    const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    let a = null, b = null, n;
+    while ((n = w.nextNode())) {
+      const i = n.data.indexOf(A), j = n.data.indexOf(B, i >= 0 ? i + A.length : 0);
+      if (i >= 0 && a === null) { const r = document.createRange(); r.setStart(n, i); r.setEnd(n, i + A.length);
+        a = r.getBoundingClientRect().top; }
+      if (j >= 0 && b === null) { const r = document.createRange(); r.setStart(n, j); r.setEnd(n, j + B.length);
+        b = r.getBoundingClientRect().top; }
+    }
+    if (a === null || b === null) return 'not drawn';
+    return b > a + 2 ? 'two' : 'one line';
+  };
+  const painted = (k, v) => {
+    const P = CanvasRenderingContext2D.prototype, real = P.fillText, seen = [];
+    P.fillText = function (s) { seen.push(String(s)); return real.apply(this, arguments); };
+    CARD = { k: k, v: v };
+    try { cardPaint(document.createElement('canvas')); } finally { P.fillText = real; }
+    const a = seen.filter((s) => s.indexOf('AAAA') >= 0), b = seen.filter((s) => s.indexOf('BBBB') >= 0);
+    if (!a.length || !b.length) return 'not painted';
+    return a.some((s) => s.indexOf('BBBB') >= 0) ? 'one line' : 'two';
+  };
+  window.__seed(); SET.walked = true;
+  const p = POSTS.filter((q) => !q.nm && !q.pr)[0];
+  p.mn = 'AAAA\nBBBB';
+  window.route = 'feed'; NAV = [{ r: 'feed' }]; render();
+  out['a post\'s meaning on the timeline'] = two(app, 'AAAA', 'BBBB');
+  out['a post\'s meaning on its card'] = painted('p', p.id);
+  const w = findWord('kano');
+  w.ex = [{ ln: 'kano\ntir', gl: 'AAAA\nBBBB' }];
+  openWord('kano');
+  out['an example\'s line on the word'] = two(app.querySelector('.exl'), 'kano', 'tir');
+  out['an example\'s translation on the word'] = two(app, 'AAAA', 'BBBB');
+  out['an example\'s translation on its card'] = painted('x', 'kano#0');
+  out['an example\'s translation on the word\'s card'] = painted('w', 'kano');
+  const l = LETTERS.filter((x) => inkGeo(x))[0];
+  l.nt = 'AAAA\nBBBB';
+  LOWN[langId] = 'somebody-else';
+  window.route = 'letter'; NAV = [{ r: 'letter', a: l.id }]; render();
+  out['a letter\'s note, read'] = two(app, 'AAAA', 'BBBB');
+  delete LOWN[langId];
+  window.__seed(); SET.walked = true;
+  world().ovs = [{ id: 'O1', k: 'AAAA\nBBBB', v: 'CCCC\nDDDD' }];
+  wldPubGot(langId, true);
+  wldSecs().forEach(function (sec) { ABOPEN[sec.r] = true; });
+  window.route = 'about'; NAV = [{ r: 'about' }]; render();
+  out['an overview row\'s name, read'] = two(app, 'AAAA', 'BBBB');
+  out['an overview row\'s value, read'] = two(app, 'CCCC', 'DDDD');
+  const was = netFeedbackSend; let sent = null;
+  netFeedbackSend = function (k, txt) { sent = txt; };
+  try { CONT = { kind: 'opinion', body: 'AAAA\nBBBB', busy: false }; contactGo(); }
+  finally { netFeedbackSend = was; CONT = { kind: 'opinion', body: '', busy: false }; }
+  out['the contact, as sent'] = sent === 'AAAA\nBBBB' ? 'two' : JSON.stringify(sent);
+  return out;
+});
+const Hbad = Object.keys(H).filter((k) => H[k] !== 'two');
+if (Hbad.length) fails.push('H  a sentence typed on two lines is shown as: ' +
+                            Hbad.map((k) => k + ' -- ' + H[k]).join(' | '));
+
 if (errs.length) fails.push('the page threw: ' + errs.slice(0, 3).join(' | '));
 await br.close();
 srv.close();
@@ -377,4 +557,7 @@ console.log('pua: ' + A.fields + ' fields on ' + A.screens + ' screens typed int
             '     written with; a letter with no name posts; a line on a photograph breaks at a\n' +
             '     newline and spaces with the ordinary face;\n' +
             '     ' + spFound.length + ' spelling fields (' + spFound.join(' ') + ') show the drawn letters, and\n' +
-            '     none of them does with the switch off.');
+            '     none of them does with the switch off;\n' +
+            '     Enter pressed in ' + G.asked + ' fields: ' + LINES.length + ' kinds take a new line and it reaches\n' +
+            '     their receivers, every other one-word field drops it (' + WAITS.join(' ') + ' wait on the owner);\n' +
+            '     ' + Object.keys(H).length + ' places a sentence is shown keep its two lines.');

@@ -195,6 +195,14 @@ function actWire(root){
      arrived here and nowhere else. Asked of the class rather than of a list
      of ids, so a field lnField() builds tomorrow is one line tomorrow.
 
+     A field that is SENTENCES says so with `lnlines`, and keeps Enter as a
+     new line 「改行はできるべきでしょ」「一行のままのやつはそのままにして
+     バランス見てるのよ」 OWNER 2026-10-02: the post's line and its meaning,
+     a word's example and its translation, a letter's note, the contact's
+     body, each row of a language's overview. lnField()'s caller puts the
+     class on; nothing here names a field. A field that wears it carries no
+     `data-kd` -- Enter cannot be a new line and a press at once.
+
      The line about yourself is really several lines and keeps its breaks:
      `me-bio` is a bare textarea that never went through lnField(), so it
      wears no `.lnin` and this never sees it.
@@ -207,9 +215,8 @@ function actWire(root){
      press that runs a name never also does what Enter would have done. */
   root.addEventListener('keydown', function(e){
     if(e.key!=='Enter' && e.keyCode!==13) return;
-    /* ...unless the field says it is lines: `lnlines`, which the composer's
-       body wears, because a post is lines 「投稿の改行ができない」 (OWNER,
-       build 171). The field says so, not a list of ids here. */
+    /* ...unless the field says it is lines: `lnlines` (above). The field
+       says so, not a list of ids here. */
     var c=' '+String((e.target && e.target.className)||'')+' ',
         one=c.indexOf(' lnin ')>=0 && c.indexOf(' lnlines ')<0,
         el=actOf(e.target, 'data-kd');
