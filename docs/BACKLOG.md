@@ -2236,12 +2236,12 @@ grammar2 は案1 で進めた。**逆にするなら移行のコミットだけ�
 
 ## 意味から一行が組み上がるようになったので、「例文を入力してください」が半分しか本当でない
 
-`44dabdd`（置き場所①）が入ったあと、`www/phases.js` の `stExTake()`
-（例文の ＋ と保存が通る一か所。2026-10-02 まではこれが Enter の ~~`stAddEx()`~~
-だった）はこうなっている:
+`44dabdd`（置き場所①）が入ったあと、`www/wordsheet.js` の `exTake()`
+（例文の ＋ と保存が通る一か所。単語の例文と文法の章の例文の両方 ── r164 で一つ。
+2026-10-02 まではこれが文法の章だけの Enter の ~~`stAddEx()`~~ だった）はこうなっている:
 
 ```js
-  ln=gExLine(String(v.ln||''), gl);
+  ln=gExLine(ln, gl);
   if(!ln){ toast(t('word.ex.need')); return null; }
 ```
 

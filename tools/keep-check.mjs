@@ -929,37 +929,84 @@ const more = await pg.evaluate(() => {
   out.slotMade = !!findWord('to');
   closeSheet({ target: { id: 'sbg' } });
 
-  /* ---- AN EXAMPLE ADDED TO A GRAMMAR STAGE, WHICH IS THE ＋ --------------
-     The three boxes an example is written in are not there until the ＋ on
-     the heading is pressed, and the walk rebuilds the screen before every
-     press -- so it can open them or press something, never both. And what
-     commits the line is the SAME ＋ pressed again with the boxes filled
-     「文法の章の例文も」 OWNER 2026-10-02 -- Enter is a new line. The ✕ beside
-     a line the walk does reach; this is the other half.
+  /* ---- AN EXAMPLE, ON THE WORD AND ON A GRAMMAR STAGE, WHICH IS THE ＋ ----
+     It is ONE mechanism in two places (www/wordsheet.js § WRITING AN EXAMPLE,
+     ONCE) 「アプリ内で挙動が違うのがおかしいだろ…一本化しろや」 OWNER 2026-10-02,
+     so the same claims are asked of both, in one loop: the Save grey on
+     arrival, gold as soon as something is typed into the boxes, the ＋ puts
+     the line on the page and writes nothing down, going back with something
+     typed asks and with nothing typed does not, the Save takes a line left
+     typed in the boxes too, and somebody else's language has no box, no ＋
+     and no ✕. The walk rebuilds the screen before every press, so it can
+     open the boxes or press something, never both -- this is the other half.
 
-     It used to push the line onto the stage and save, with no Save in the
-     corner to press and an arrow that asked nothing. */
-  popOff(); viewReset();
-  var stid = stAll()[0].id;
-  var exType = function(id, v){
-    var e = document.getElementById(id);
+     What is WRITTEN DOWN is read off the slice, because the word's list is
+     on the word and the word is in memory as a draft (www/shell.js
+     § keepDrafting): the slice is what a save writes. */
+  var exPlaces = [['w', ''], ['st', stAll()[0].id]];
+  var exStored = function(at, id){
+    var s;
+    if(at === 'w'){
+      s = JSON.parse(slRd(langKey('words')) || '[]').filter(function(w){ return w.hw === 'kano'; })[0];
+      return ((s && s.ex) || []).length;
+    }
+    s = JSON.parse(slRd(langKey('phases')) || '{}');
+    return ((s.ex && s.ex[id]) || []).length;
+  };
+  var exBox = function(f, v){
+    var e = document.getElementById(f);
     if(e){ e.value = v; e.dispatchEvent(new Event('input', { bubbles: true })); }
   };
-  goTab('build'); stExNew = ''; openStEx(stid); render();
-  out.exArrive = navOn();
-  out.exWas = stEx(stid).length;
-  stExOpen(stid); render();
-  exType('sx-ln', 'kano tir'); exType('sx-gl', 'it sees');
-  out.exTyped = navOn();
-  stExOpen(stid);
-  out.exOnPage = (document.querySelectorAll('#app .exlist .exrow') || []).length;
-  out.exGold = navOn();
-  /* 「打ったら覚える、ボタンが書く」 -- the ＋ wrote nothing onto the stage. */
-  out.exOnPress = stEx(stid).length;
-  /* and one more typed and left in the boxes: the Save takes it too */
-  exType('sx-ln', 'tir kano');
-  keepPress();
-  out.exOnSave = stEx(stid).length;
+  var exOpen = function(at, id){
+    popOff(); viewReset(); goTab('build');
+    if(at === 'w'){ openWord('kano'); openEdit('kano'); render(); }
+    else { openStEx(id); render(); }
+  };
+  var exAsks = function(){
+    var asked = false, op = popAsk;
+    popAsk = function(){ asked = true; };
+    back();
+    popAsk = op;
+    return asked;
+  };
+  out.ex = {};
+  exPlaces.forEach(function(p){
+    var at = p[0], id = p[1], o = {}, sv = window.netSaveNow;
+    /* everything written down first, so a save measured below is this one */
+    popOff(); viewReset(); goTab('build'); save(); saveStg();
+    exOpen(at, id);
+    o.arrive = navOn();
+    o.was = exStored(at, id);
+    o.asksClean = exAsks();
+    exOpen(at, id);
+    exAdd(at, id);
+    o.onPage0 = document.querySelectorAll('#app .exlist .exrow').length;
+    exBox('ex-ln', 'kano tir'); exBox('ex-gl', 'it sees');
+    o.typed = navOn();
+    o.asksTyped = exAsks();
+    exAdd(at, id);
+    o.onPage = document.querySelectorAll('#app .exlist .exrow').length - o.onPage0;
+    o.gold = navOn();
+    o.onPress = exStored(at, id);
+    /* and one more typed and left in the boxes: the Save takes it too */
+    exBox('ex-ln', 'tir kano');
+    window.netSaveNow = function(cb){ if(cb) cb(true); };
+    keepPress();
+    window.netSaveNow = sv;
+    o.onSave = exStored(at, id);
+    /* somebody else's language: no box, no ＋, no ✕, and typing reaches nothing */
+    exOpen(at, id);
+    var own = LOWN[langId];
+    LOWN[langId] = 'somebody-else';
+    exNew = at + ':' + id;   /* the state after the ＋, where the boxes would be */
+    var h = exHTML(at, id);
+    exType(at, id, 'ln', 'mos');
+    o.lockedDraws = /id="ex-ln"|data-do="exAdd"|data-do="exDel"/.test(h);
+    o.lockedTook = exTyped(at, id, 'ln');
+    LOWN[langId] = own; exNew = '';
+    popOff(); viewReset();
+    out.ex[at] = o;
+  });
   popOff();
 
   return out;
@@ -1469,14 +1516,20 @@ if(more.slotArrive !== 'grey') fails.push("a grammar slot's sheet opened with �
 if(more.slotTyped !== 'gold') fails.push("a spelling typed onto a grammar slot's sheet left 追加 " + more.slotTyped);
 if(more.slotRendered !== 'gold') fails.push('a render put 追加 back to ' + more.slotRendered + " over a grammar slot's sheet holding a word");
 if(more.slotMade) fails.push("typing a spelling onto a grammar slot's sheet wrote the word");
-if(more.exArrive !== 'grey') fails.push("a stage's examples opened with its Save " + more.exArrive);
-if(more.exTyped !== 'gold') fails.push('an example typed into its boxes left the Save ' + more.exTyped);
-if(more.exOnPage !== more.exWas + 1) fails.push('an example typed and ＋ put ' + more.exOnPage +
-    ' lines on the page and the stage had ' + more.exWas);
-if(more.exGold !== 'gold') fails.push('an example added left the Save ' + more.exGold);
-if(more.exOnPress !== more.exWas) fails.push('an example added wrote it onto the stage before anybody saved');
-if(more.exOnSave !== more.exWas + 2) fails.push('the Save left the stage holding ' + more.exOnSave +
-    ' examples where it had ' + more.exWas + ', one was added by the ＋ and one was left typed in the boxes');
+['w', 'st'].forEach((at) => {
+  const o = more.ex[at], name = at === 'w' ? "a word's examples" : "a stage's examples";
+  if(o.arrive !== 'grey') fails.push(name + ' opened with the Save ' + o.arrive);
+  if(o.asksClean) fails.push(name + ': going back with nothing typed asked');
+  if(o.typed !== 'gold') fails.push(name + ': an example typed into its boxes left the Save ' + o.typed);
+  if(!o.asksTyped) fails.push(name + ': going back with an example typed in its boxes asked nothing');
+  if(o.onPage !== 1) fails.push(name + ': an example typed and ＋ put ' + o.onPage + ' lines on the page');
+  if(o.gold !== 'gold') fails.push(name + ': an example added left the Save ' + o.gold);
+  if(o.onPress !== o.was) fails.push(name + ': an example added was written down before anybody saved');
+  if(o.onSave !== o.was + 2) fails.push(name + ': the Save left ' + o.onSave + ' examples written where there were ' +
+      o.was + ', one was added by the ＋ and one was left typed in the boxes');
+  if(o.lockedDraws) fails.push(name + ': somebody else\'s language draws a box, a ＋ or a ✕');
+  if(o.lockedTook) fails.push(name + ': typing into somebody else\'s language was held: ' + JSON.stringify(o.lockedTook));
+});
 if(more.pkArrive !== 'grey') fails.push('the character picker opened with its Save ' + more.pkArrive);
 if(more.pkWas !== '') fails.push('the letter the picker opened on already wore a character: ' + more.pkWas);
 if(!more.pkHadStrokes) fails.push('the letter the picker opened on was not drawn, so there is nothing for a borrowed character to replace');
@@ -1563,9 +1616,9 @@ walk.fails.forEach((m) => fails.push(m));
 console.log('the character picker: the Save grey on arrival, gold on a character pressed, ' +
             'the letter untouched and the screen still there until it was pressed, and then 「' +
             more.pkWroteOnSave + '」 on the letter in place of what was drawn');
-console.log("a stage's examples: the Save grey on arrival, an example entered shows on the page " +
-            'and turns it gold, the stage untouched until it was pressed, and then ' +
-            more.exOnSave + ' of them on the stage');
+console.log("an example, on a word and on a stage, by the same claims: the Save grey on arrival, gold on typing, " +
+            'back asks only then, the ＋ shows it and writes nothing, the Save takes the typed one too (' +
+            more.ex.w.onSave + ' on the word, ' + more.ex.st.onSave + ' on the stage), nothing on a taken language');
 console.log('the sheet that makes a word, from the dictionary and from a grammar slot: ' +
             '追加 grey on arrival, gold on a spelling typed, gold still after a render, ' +
             'grey again when it is rubbed out, and no word written');
