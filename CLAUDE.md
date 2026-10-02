@@ -786,6 +786,19 @@ of the handlers somebody thought of.
 `IN` (typed into), `CH` (changed), `KD` (Enter). Arguments travel as JSON, so a number stays a number and nothing
 is escaped by hand.
 
+**Enter is a new line where somebody writes sentences, and nothing else.** A
+field built by `lnField()` is one line and Enter opens none in it 「必要ないところで
+開業できるのやめて欲しい」 OWNER 2026-09-03; a field that is sentences wears
+`lnlines` and the return key makes a line there — the post, its meaning, an
+example and its translation (a word's and a grammar stage's), a letter's note, the
+contact body, the language page's overview 「改行はできるべきでしょ」「一行のままの
+やつはそのままにしてバランス見てるのよ」 OWNER 2026-10-02. The field says so, not a
+list of ids in `act.js`. **Enter never adds**: an example goes in with the ＋ or
+the bar's Save (`stExTake()` for a stage) 「なんのために＋とかそういうボタン用意
+してると思ってんの？」 OWNER 2026-10-02. What is shown keeps the breaks
+(`white-space:pre-wrap` in `www/index.html`, `cardWrap()` on a card). `pua-check`
+G and H and `keep-check` hold it.
+
 Every name a screen can say is registered in `www/act-map.js` **with the function
 itself, not its name** — `act('openWord', openWord)` — so a deleted function stops
 the app loudly on load instead of failing on someone's phone weeks later.
@@ -2082,11 +2095,12 @@ described, which is what `box-check` says a stale baseline becomes.
 ## What the free plan is
 
 One sentence: **your own shapes for a-z and 0-9.** `ltSlotsFill` puts
-thirty-eight letters into a language the moment it is made — a to z, `!`, `?`,
-and a digit for every value the base has — and nothing on the free plan adds
+forty letters into a language the moment it is made — a to z, `!`, `?`, `,`,
+`.`, and a digit for every value the base has (`,` and `.` since 2026-10-02
+「コンマとピリオドくらいはありやな」) — and nothing on the free plan adds
 one, deletes one or renames one. Drawing on them is the whole of it.
 
-**The thirty-eight are not what the free plan is GIVEN, they are what a
+**The forty are not what the free plan is GIVEN, they are what a
 language STARTS as, on every plan.** 「文字0はアルファベットでいいやん」 OWNER
 2026-09-12: 「言語を追加」 on the paid plan made a language with no letters at
 all, so the first word typed into it came back 「つづりは2文字以上必要です」
@@ -2097,7 +2111,7 @@ language only**, because a paid plan may delete and rename its letters and a
 launch that topped one up would put back what somebody took away.
 
 That is not a restriction bolted onto the app; it is what makes the rest of the
-free plan possible. Because the letters are exactly a-z, `!` and `?`, and their
+free plan possible. Because the letters are exactly a-z, `!`, `?`, `,` and `.`, and their
 names cannot change, the first keyboard is a **QWERTY with the drawn letters
 substituted in** — `kbFixed()`, built from `LETTERS` every time it is shown,
 stored nowhere. **Keyboards are not divided by plan** (OWNER 2026-09-25,
@@ -2125,8 +2139,9 @@ of what it is, and it is also the order it counts in. `ltKinds()` therefore
 shows the digits room on free — what free still cannot do is ADD one, which is
 `can('letters')` and is asked at the foot of the room.
 
-And `!` and `?` stand together at the near end of the bar along the bottom —
-`! ? space return` 「！？スペース　改行」, because a keyboard that cannot start
+And `!` `?` `,` `.` stand together at the near end of the bar along the bottom —
+`! ? , . space return` 「！？スペース　改行」, `,` and `.` beside them since
+2026-10-02 (`KB_ENDS`), because a keyboard that cannot start
 a new line is one nobody can send a message on — and the delete takes the slack
 at the end of the third row, so every row is ten across and the columns line
 up. `kbFixed()` is the one place the shape is written; read it rather than a
