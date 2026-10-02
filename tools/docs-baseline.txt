@@ -34,8 +34,3 @@ owner 2026-08-31
 owner 2026-09-07
 owner 2026-09-10
 owner 2026-09-16
-
-# r164-ex: CLAUDE.md rule 3 names the stage's take, which is now the one
-# exTook() for a word and a stage. CLAUDE.md is the leader's to change
-# (docs/scope/r164-ex.md § CLAUDE.md); this line goes with that edit.
-call CLAUDE.md stExTake

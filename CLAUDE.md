@@ -794,7 +794,8 @@ example and its translation (a word's and a grammar stage's), a letter's note, t
 contact body, the language page's overview 「改行はできるべきでしょ」「一行のままの
 やつはそのままにしてバランス見てるのよ」 OWNER 2026-10-02. The field says so, not a
 list of ids in `act.js`. **Enter never adds**: an example goes in with the ＋ or
-the bar's Save (`stExTake()` for a stage) 「なんのために＋とかそういうボタン用意
+the bar's Save — one mechanism for a word's and a stage's, `exTook()` in
+`www/wordsheet.js` 「一本化しろや」 OWNER 2026-10-02 「なんのために＋とかそういうボタン用意
 してると思ってんの？」 OWNER 2026-10-02. What is shown keeps the breaks
 (`white-space:pre-wrap` in `www/index.html`, `cardWrap()` on a card). `pua-check`
 G and H and `keep-check` hold it.
