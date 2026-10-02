@@ -20,4 +20,26 @@
 - `www/act.js`・`www/post.js`・欄のクラス（r161）、CLAUDE.md（下にリーダー向けの差し替え文）、ほかの画面、サーバーの他の関数
 
 ## CLAUDE.md（リーダーが直す）
-（実装後にここへ書く）
+
+§ What the free plan is の四か所。数は四十（a〜z 26・! ? , . 4・数字 10）。
+
+1. 2084〜2086 行
+   - 今: 「`ltSlotsFill` puts thirty-eight letters into a language the moment it is made — a to z, `!`, `?`, and a digit for every value the base has」
+   - 差し替え: 「`ltSlotsFill` puts forty letters into a language the moment it is made — a to z, `!`, `?`, `,`, `.`, and a digit for every value the base has (`,` and `.` since 2026-10-02 「コンマとピリオドくらいはありやな」)」
+2. 2089 行
+   - 今: 「**The thirty-eight are not what the free plan is GIVEN, …」
+   - 差し替え: 「**The forty are not what the free plan is GIVEN, …」（後ろはそのまま）
+3. 2100 行
+   - 今: 「Because the letters are exactly a-z, `!` and `?`, and their names cannot change」
+   - 差し替え: 「Because the letters are exactly a-z, `!`, `?`, `,` and `.`, and their names cannot change」
+4. 2128〜2129 行
+   - 今: 「And `!` and `?` stand together at the near end of the bar along the bottom — `! ? space return` 「！？スペース　改行」, because …」
+   - 差し替え: 「And `!` `?` `,` `.` stand together at the near end of the bar along the bottom — `! ? , . space return` 「！？スペース　改行」, `,` and `.` beside them since 2026-10-02, because …」（`KB_ENDS` が並び、`kbFixed()` が形）
+
+ほかに「削除キーは ⌫（`ICON_DEL`）、戻るは `ICON_BACK`」を足すなら rule の「AN OPERATION THAT HAS A MARK」の段落の「delete is the bin」の後ろ ── ただしゴミ箱（消す操作）とキーボードの削除キーは別物なので、足さなくても嘘にはならない。リーダーの判断。
+
+## 結果
+- 枠: `6e05d88a`、一番下の段: `c3483944`、削除キー: `59ba7d3f`。
+- 回したチェック: FAST 全部、kb・migrate・plan・conv・base・again・taken・theirs・sheet・pua・open・act・i18n・line、`npm run rls` ── 全部緑。press とゲート全体は回していない（サブリーダー）。
+- 本番の Supabase には `schema.sql`（`slice_slot()`）を流す必要がある（オーナー）。
+- Swift（`delete.left`）は端末のビルドでしか見られない。
