@@ -1367,7 +1367,9 @@ function kbSrcLt(src, id){
 }
 function kbFace(key, src){
   if(!key) return '';
-  if(key.k==='del') return ICON_BACK;
+  /* The delete key is the mark every phone's delete key wears, not the back
+     arrow: 「デリートキーがもどるきーみたいでわかりにくい」 OWNER 2026-10-02. */
+  if(key.k==='del') return ICON_DEL;
   /* 「改行もいるだろ」 A keyboard that cannot start a new line is a keyboard
      nobody can write a message on. It was not among the kinds a key could be
      -- letter, space, delete, layer -- and the omission was invisible,

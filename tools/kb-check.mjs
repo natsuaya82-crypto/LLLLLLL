@@ -2034,6 +2034,18 @@ const r = await pg.evaluate(({ s }) => {
       return o.join(' ');
     }
     out.freeBar = barOf();
+    /* the delete key wears the delete mark, and no key wears the back
+       arrow -- asked of the keys, because the screen's own way back is that
+       arrow and is not a key. By the path's `d`: the page writes `<path/>`
+       back out as `<path></path>`, so the icon's string is never there. */
+    function dOf(svg){ var m = /<path d="([^"]+)"/.exec(svg); return m ? m[1] : '?'; }
+    var keysOn = document.querySelectorAll('#kb .kbk'), withDel = 0, withBack = 0, ki;
+    for (ki = 0; ki < keysOn.length; ki++){
+      if (keysOn[ki].innerHTML.indexOf(dOf(ICON_DEL)) >= 0) withDel++;
+      if (keysOn[ki].innerHTML.indexOf(dOf(ICON_BACK)) >= 0) withBack++;
+    }
+    out.delIcon = kbFace({k: 'del'}) === ICON_DEL && ICON_DEL !== ICON_BACK;
+    out.delDrawn = withDel === 1 && withBack === 0;
     out.freeNothingToPress = withLt.press === 0;
 
     /* the same language with its letters not there yet */
@@ -4611,6 +4623,8 @@ say(r.freeBar === 'lt!:1 lt?:1 lt,:1 lt.:1 sp:4 ret:2',
     'the bar along the bottom is ! ? , . space return, 1+1+1+1+4+2, each mark the language’s own letter (' + r.freeBar + ')');
 say(r.freeBareBar === 'rom!:1 rom?:1 rom,:1 rom.:1 sp:4 ret:2',
     'and a mark with no letter is the plain character, the bar still ten across (' + r.freeBareBar + ')');
+say(r.delIcon && r.delDrawn,
+    'the delete key wears the delete mark ⌫ and not the back arrow 「デリートキーがもどるきーみたい」 OWNER 2026-10-02 [' + r.delIcon + ' ' + r.delDrawn + ']');
 say(r.freeRows === 5 && r.freeKeys === 45,
     'and it has a keyboard all the same -- the QWERTY, drawn (' +
     r.freeRows + ' rows, ' + r.freeKeys + ' keys)');

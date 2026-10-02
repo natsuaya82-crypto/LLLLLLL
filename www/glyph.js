@@ -1061,6 +1061,14 @@ var ICON_MUTE=ICON_SPK.replace('</svg>',
 var ICON_BACK='<svg class="ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" '+
   'stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
   '<path d="M20 12H4.6"/><path d="M10.5 5.5 4 12l6.5 6.5"/></svg>';
+/* The delete key's mark, the one every phone keyboard draws: a box pointing
+   left with an × in it. ICON_BACK is going back a screen and nothing else --
+   on a key it read as a back key 「デリートキーがもどるきーみたいでわかりにくい」
+   OWNER 2026-10-02. The Lingua keyboard draws the system's own (delete.left,
+   ios/App/LinguaKeyboard/KeyBoardView.swift). */
+var ICON_DEL='<svg class="ic" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" '+
+  'stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
+  '<path d="M8.5 5.5H21v13H8.5L2.5 12Z"/><path d="M11.5 9l6 6"/><path d="M17.5 9l-6 6"/></svg>';
 /* The return key's arrow, the one every phone keyboard draws: down the right,
    left along the bottom, and a head on the end of it. */
 var ICON_RET='<svg class="ic" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" '+
