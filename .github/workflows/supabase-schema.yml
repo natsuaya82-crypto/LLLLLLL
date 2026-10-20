@@ -108,7 +108,7 @@ jobs:
           echo '== 断られた要求（4xx・5xx）'
           q "select timestamp, event_message from logs where (event_message like '% | 4__ |%' or event_message like '% | 5__ |%') order by timestamp desc limit 40"
           echo '== Postgres のエラー'
-          q "select timestamp, event_message from logs where (event_message like '%ERROR%' or event_message like '%denied%') order by timestamp desc limit 40"
+          q "select timestamp, event_message from logs where (event_message like '%ERROR%' or event_message like '%denied%' or event_message like '%violates%' or event_message like '%row-level%') order by timestamp desc limit 40"
 
       - name: 読む（通知の道と schema の新しさ）
         if: inputs.action != 'logs'
