@@ -19,7 +19,8 @@ where it starts.
 - **測ったこと**: 本番で `POST /rest/v1/language` が 403、Postgres は `new row violates row-level security policy for table "language"`。アプリは `Prefer: return=representation` で行を作るので、作った行は SELECT の policy も通る必要がある。`language_read` は `lang_readable(id)` だけで、これは `language` 表を引き直す関数なので、同じ文で作っている行が見えず、本人の行でも偽になる。`rls-check` の「A makes A's language」に `returning id` を足して赤を見た。
 - **変えたこと**: `language_read` を `owner = auth.uid() or lang_readable(id)` に（持ち主はその行の列で判定）。他人の言語の見え方は変わらない。
 - **データ**: 何も消えない・動かない。policy だけ。本番への反映はオーナーの了承後（`supabase-schema.yml` の apply）。
-- **確認**: `npm run rls` 緑。実機は未確認。
+- **確認**: `npm run rls` 緑。本番に apply（2026-10-20 19:03）、本番で @lingua として RETURNING 付きで作って巻き戻し、通った（`supabase/once/2026-10-20-lang-make.sql`）。DEVICE CONFIRMED: オーナーの実機で保存できた（2026-10-20）。
+- **本番で分かったこと**: 新しい `language` 行は 2026-09-25 01:11 が最後。それ以降、行がまだ無い言語の保存は全部 403 で止まっていた。
 
 ### 2026-10-02 例文を書く所は一つの仕組み ── 単語の例文と文法の章の例文（r164-ex）
 - **決定**: `docs/FEATURE_RULES.md` § Owner decision log 2026-10-02「例文を書く所は一つの仕組み（単語の例文と文法の章の例文）」。r163-stex が測った違い（`docs/scope/r163-stex.md` § 見つけたが触っていない）。
