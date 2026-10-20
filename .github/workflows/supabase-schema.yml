@@ -102,20 +102,13 @@ jobs:
               --data-urlencode "sql=$1" > out.json
             head -c 6000 out.json; echo
           }
-          # 2026-09-23 から一つの logs 表（ClickHouse の SQL、source_name で分ける）。
-          echo '== logs 表の形（edge_logs を 2 行そのまま）'
-          q "select * from logs where source_name = 'edge_logs' and event_message like '%slice%' order by timestamp desc limit 3"
-          echo '== 断られた要求'
-          q "select datetime(timestamp) as t, request.method as m, request.path as p, request.search as s, response.status_code as c from edge_logs cross join unnest(metadata) as md cross join unnest(md.request) as request cross join unnest(md.response) as response where response.status_code >= 400 order by timestamp desc limit 60"
+          # 2026-09-23 から一つの logs 表（ClickHouse の SQL、source_name で分ける、* は使えない）。
           echo '== 言語の保存（slice への要求、状態に関係なく）'
-          q "select datetime(timestamp) as t, request.method as m, request.path as p, response.status_code as c from edge_logs cross join unnest(metadata) as md cross join unnest(md.request) as request cross join unnest(md.response) as response where request.path like '%slice%' order by timestamp desc limit 40"
-          echo '== daily-prompt の答え（24 時間）'
-          S=$(date -u -d '24 hours ago' +%Y-%m-%dT%H:%M:%SZ)
-          q "select datetime(timestamp) as t, response.status_code as c, m.execution_time_ms as ms from function_edge_logs cross join unnest(metadata) as m cross join unnest(m.request) as request cross join unnest(m.response) as response where request.url like '%daily-prompt%' order by timestamp desc limit 20"
-          q "select datetime(timestamp) as t, event_message as msg from function_logs cross join unnest(metadata) as m where m.function_id is not null and event_message like '%refused%' or event_message like '%model%' order by timestamp desc limit 20"
-          S=$(date -u -d '6 hours ago' +%Y-%m-%dT%H:%M:%SZ)
+          q "select timestamp, event_message from logs where source_name = 'edge_logs' and event_message like '%slice%' order by timestamp desc limit 40"
+          echo '== 断られた要求（4xx・5xx）'
+          q "select timestamp, event_message from logs where source_name = 'edge_logs' and (event_message like '% | 4__ |%' or event_message like '% | 5__ |%') order by timestamp desc limit 40"
           echo '== Postgres のエラー'
-          q "select datetime(timestamp) as t, parsed.error_severity as sev, event_message as msg from postgres_logs cross join unnest(metadata) as md cross join unnest(md.parsed) as parsed where parsed.error_severity in ('ERROR','FATAL','PANIC') order by timestamp desc limit 40"
+          q "select timestamp, event_message from logs where source_name = 'postgres_logs' and (event_message like '%ERROR%' or event_message like '%denied%') order by timestamp desc limit 40"
 
       - name: 読む（通知の道と schema の新しさ）
         if: inputs.action != 'logs'
