@@ -104,11 +104,11 @@ jobs:
           }
           # 2026-09-23 から一つの logs 表（ClickHouse の SQL、source_name で分ける、* は使えない）。
           echo '== 言語の保存（slice への要求、状態に関係なく）'
-          q "select timestamp, event_message from logs where source_name = 'edge_logs' and event_message like '%slice%' order by timestamp desc limit 40"
+          q "select timestamp, event_message from logs where event_message like '%slice%' order by timestamp desc limit 40"
           echo '== 断られた要求（4xx・5xx）'
-          q "select timestamp, event_message from logs where source_name = 'edge_logs' and (event_message like '% | 4__ |%' or event_message like '% | 5__ |%') order by timestamp desc limit 40"
+          q "select timestamp, event_message from logs where (event_message like '% | 4__ |%' or event_message like '% | 5__ |%') order by timestamp desc limit 40"
           echo '== Postgres のエラー'
-          q "select timestamp, event_message from logs where source_name = 'postgres_logs' and (event_message like '%ERROR%' or event_message like '%denied%') order by timestamp desc limit 40"
+          q "select timestamp, event_message from logs where (event_message like '%ERROR%' or event_message like '%denied%') order by timestamp desc limit 40"
 
       - name: 読む（通知の道と schema の新しさ）
         if: inputs.action != 'logs'
