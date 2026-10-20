@@ -96,12 +96,15 @@ jobs:
         run: |
           S=$(date -u -d '6 hours ago' +%Y-%m-%dT%H:%M:%SZ); E=$(date -u +%Y-%m-%dT%H:%M:%SZ)
           q(){
-            curl -s -G "https://api.supabase.com/v1/projects/$PROJECT_REF/analytics/endpoints/logs.all" \
+            curl -s -G "https://api.supabase.com/v1/projects/$PROJECT_REF/analytics/endpoints/logs" \
               -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
               --data-urlencode "iso_timestamp_start=$S" --data-urlencode "iso_timestamp_end=$E" \
               --data-urlencode "sql=$1" > out.json
             head -c 6000 out.json; echo
           }
+          # 2026-09-23 から一つの logs 表（ClickHouse の SQL、source_name で分ける）。
+          echo '== logs 表の形（edge_logs を 2 行そのまま）'
+          q "select * from logs where source_name = 'edge_logs' and event_message like '%slice%' order by timestamp desc limit 3"
           echo '== 断られた要求'
           q "select datetime(timestamp) as t, request.method as m, request.path as p, request.search as s, response.status_code as c from edge_logs cross join unnest(metadata) as md cross join unnest(md.request) as request cross join unnest(md.response) as response where response.status_code >= 400 order by timestamp desc limit 60"
           echo '== 言語の保存（slice への要求、状態に関係なく）'
