@@ -1953,7 +1953,13 @@ create policy language_read on language for select
   -- `language?id=in.(…)` for the rows of what this account has taken
   -- (netTakenDown in www/net.js), and a row refused here is a language with
   -- no name, no writing system and nothing said about it.
-  using (lang_readable(id));
+  -- The owner is asked off the row's own column, not through lang_readable():
+  -- a row is made with RETURNING (netPost asks return=representation), so the
+  -- new row has to pass this policy too, and a function that looks the table
+  -- up again cannot see a row its own statement is still inserting -- the
+  -- owner's own language came back 42501 and nothing could be saved.
+  -- rls-check: 「A makes A's language」 inserts with `returning id`.
+  using (owner = auth.uid() or lang_readable(id));
 drop policy if exists language_make on language;
 create policy language_make on language for insert
   with check (is_signed() and owner = auth.uid());

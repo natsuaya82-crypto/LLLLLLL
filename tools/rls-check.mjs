@@ -459,7 +459,7 @@ const CASES = [
 
   /* --- a language is the owner\u2019s, and unpublished means unpublished --- */
   ['A makes A\u2019s language',               'ok',     A, 0,
-    `insert into language(id,owner,name) values ('${L}','${A}','Ayan')`],
+    `insert into language(id,owner,name) values ('${L}','${A}','Ayan') returning id`],
   ['A reads A\u2019s unpublished language',   'ok',     A, 0,
     `select 1 from language where id='${L}'`],
   ['B cannot see it while unpublished',       'denied', B, 0,

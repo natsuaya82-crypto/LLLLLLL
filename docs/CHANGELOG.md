@@ -15,6 +15,12 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### 2026-10-20 自分の言語の行を作れない（保存が「That did not work.」）── `language_read`
+- **測ったこと**: 本番で `POST /rest/v1/language` が 403、Postgres は `new row violates row-level security policy for table "language"`。アプリは `Prefer: return=representation` で行を作るので、作った行は SELECT の policy も通る必要がある。`language_read` は `lang_readable(id)` だけで、これは `language` 表を引き直す関数なので、同じ文で作っている行が見えず、本人の行でも偽になる。`rls-check` の「A makes A's language」に `returning id` を足して赤を見た。
+- **変えたこと**: `language_read` を `owner = auth.uid() or lang_readable(id)` に（持ち主はその行の列で判定）。他人の言語の見え方は変わらない。
+- **データ**: 何も消えない・動かない。policy だけ。本番への反映はオーナーの了承後（`supabase-schema.yml` の apply）。
+- **確認**: `npm run rls` 緑。実機は未確認。
+
 ### 2026-10-02 例文を書く所は一つの仕組み ── 単語の例文と文法の章の例文（r164-ex）
 - **決定**: `docs/FEATURE_RULES.md` § Owner decision log 2026-10-02「例文を書く所は一つの仕組み（単語の例文と文法の章の例文）」。r163-stex が測った違い（`docs/scope/r163-stex.md` § 見つけたが触っていない）。
 - **人が気づくこと（単語の例文 `wd-exl`・`wd-exg`）**: 欄に打つと、それだけで右上の保存（新しい語なら「追加」）が光る。打ったまま戻ると「保存しますか」と聞かれる（今までは聞かれずに黙って消えた）。意味を ✕ で消すなど語のシートが描き直されても、欄に打った物は残る（今までは消えた）。訳だけ打って行を書かずに ＋／保存を押すと、文法の章と同じく、その意味からこの言語の一行を作るか、作れなければ「例文を入力してください」と言って止まる（今までは黙って捨てた）。
