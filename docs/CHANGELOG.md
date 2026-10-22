@@ -15,6 +15,13 @@ where it starts.
 
 ## Unreleased — code confirmed, **not yet confirmed on a device**
 
+### 2026-10-22 線を全部消して保存した字は空の字になる ── `slice_arr()`
+- **人が気づくこと**: 字の線を全部消して保存すると、その字は空のまま残る。今までは保存のあと、消す前の形に戻っていた。別の電話で消した字も、こちらで空になる。
+- **原因（測った）**: サーバーが字の並びを合わせる時、「空の字は描いた字の場所を取らない」を、二つの側が最後に合意した版（base）を見ずに一律に当てていた。同じ字の線を消した保存も「まだ届いていない空の枠」と同じに扱われ、サーバーにあった消す前の絵が勝っていた。`rls-check` に、合意した版が描いた字のまま片方が空にした場合を三件足し、直す前に三件とも赤を確認した。
+- **変えたこと**: 空の字と描いた字が一つの枠で会った時、空の字が**同じ字**で、描いた方が**二つの側が最後に合意した形のまま**なら、空の字を答えにする。それ以外（合意したことの無い空の枠、新しい電話の空の字の並び）は、今まで通り描いた字を残す（`rls-check` に一件、今までの四件もそのまま緑）。
+- **データ**: 消えるのは、人が自分で線を全部消して保存した字の、消す前の絵だけ。その版はサーバーの履歴（`slice_hist`、三つ前まで）には残る。それ以外の字・語・言語は何も動かない。
+- **確認**: `npm run rls` 緑（732）。本番への反映は apply の後。実機は未確認。
+
 ### 2026-10-20 自分の言語の行を作れない（保存が「That did not work.」）── `language_read`
 - **測ったこと**: 本番で `POST /rest/v1/language` が 403、Postgres は `new row violates row-level security policy for table "language"`。アプリは `Prefer: return=representation` で行を作るので、作った行は SELECT の policy も通る必要がある。`language_read` は `lang_readable(id)` だけで、これは `language` 表を引き直す関数なので、同じ文で作っている行が見えず、本人の行でも偽になる。`rls-check` の「A makes A's language」に `returning id` を足して赤を見た。
 - **変えたこと**: `language_read` を `owner = auth.uid() or lang_readable(id)` に（持ち主はその行の列で判定）。他人の言語の見え方は変わらない。

@@ -586,6 +586,26 @@ const CASES = [
     `with z as (${ALPHA40}), m as (select slice_merge('letters', blank::text, old::text, '', false)::json j from z)
      select 1 from m where json_array_length(j) = 40
         and (select count(*) from json_array_elements(j) e where slice_made('letters', e)) = 40`],
+  /* AND A LETTER WHOSE LINES WERE ALL TAKEN OFF IS SAVED BLANK. 「保存したなら
+     空の文字になるべき」 OWNER 2026-10-22. The two last agreed on the drawing
+     (base), and one side has the same letter with nothing on it: that is a
+     person erasing it, not an alphabet that has not arrived, so the blank is
+     the answer -- on this phone or on the other one. */
+  ['a letter erased here is blank after the save', 'ok', A, 0,
+    `with z as (${ALPHA40}), m as (select slice_merge('letters', blank::text, drawn::text, drawn::text, false)::json j from z)
+     select 1 from m where json_array_length(j) = 40
+        and (select count(*) from json_array_elements(j) e where slice_made('letters', e)) = 0`],
+  ['and so when the server’s side is the later one', 'ok', A, 0,
+    `with z as (${ALPHA40}), m as (select slice_merge('letters', blank::text, drawn::text, drawn::text, true)::json j from z)
+     select 1 from m where json_array_length(j) = 40
+        and (select count(*) from json_array_elements(j) e where slice_made('letters', e)) = 0`],
+  ['a letter erased on the other phone is blank here too', 'ok', A, 0,
+    `with z as (${ALPHA40}), m as (select slice_merge('letters', drawn::text, blank::text, drawn::text, true)::json j from z)
+     select 1 from m where json_array_length(j) = 40
+        and (select count(*) from json_array_elements(j) e where slice_made('letters', e)) = 0`],
+  ['but a blank never takes a drawing the two did not agree on', 'ok', A, 0,
+    `with z as (${ALPHA40}), m as (select slice_merge('letters', blank::text, drawn::text, old::text, false)::json j from z)
+     select 1 from m where (select count(*) from json_array_elements(j) e where slice_made('letters', e)) = 40`],
   ['and where both were drawn on under two ids, both are kept', 'ok', A, 0,
     `with z as (${ALPHA40}), m as (select slice_merge('letters', old::text, drawn::text, '', false)::json j from z)
      select 1 from m where json_array_length(j) = 80

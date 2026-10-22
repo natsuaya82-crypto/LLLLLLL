@@ -255,6 +255,24 @@ it is quoted, and where a decision has never been made the row in
 - Implementation status:
 ```
 
+### 2026-10-22 線を全部消して保存した字は、空の字になる
+- Date: 2026-10-22
+- Area: サーバーで字の並び（`letters`）を合わせる所（`slice_arr()`、`supabase/schema.sql`）
+- Decision: 字の線を全部消して保存したら、その字は空の字として残る。消す前の形には戻らない。別の電話で消した場合も同じ。ただし、二つの電話が同じ絵で合意したことの無い空の字（まだ届いていない字の並び、新しい電話の空の枠）は、今まで通り描いた字を消さない。
+- Reason: オーナーの言葉「保存したなら空の文字になるべきでは？」（2026-10-22、「a. 空の字として残す／b. 消す前の形が残る」への答え）。
+- Affected features: 字を描く画面の保存、二台の電話で字を直す時。
+- Affected data: 線を全部消して保存した字が、サーバーでも空になる（今までは消す前の絵がサーバーに残り、電話にも戻ってきた）。
+- Implementation status: `slice_arr()` を書き直し、`rls-check` に四件（赤を確認してから直した）。本番のサーバーへの反映は integ-0905 からの apply。
+
+### 2026-10-22 紙の下絵を薄くする件（r141）は 1.0.4 に入れない
+- Date: 2026-10-22
+- Area: 紙から取り込んだ字の下絵（`www/glyph.js`、今は濃さ 0.16）
+- Decision: 一旦なし。1.0.4 には何も入れない。
+- Reason: オーナーの言葉「1は一旦なし」（2026-10-22）。コードでは既に 0.16 で描いていて、実機で濃く見える原因が分かっていない。
+- Affected features: 無い。
+- Affected data: 無い。
+- Implementation status: 何もしない。`claude/r141-trace` は取り込まない。
+
 ### 2026-09-30 フォントの書き出しは無料、ウェブ版も作る
 - Date: 2026-09-30
 - Area: フォントのファイルの書き出し（`ltFontOut()`、~~`CAN.font`~~、`www/core.js`・`www/sound.js`）、SVG の書き出し（元から全プラン）、ウェブ版

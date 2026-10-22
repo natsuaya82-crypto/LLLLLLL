@@ -982,15 +982,19 @@ $$;
 -- first, then the server's, one row per key, each key where it first
 -- appeared, and the server's row taking the place when the server's side is
 -- the later one. The alphabet has two more sentences -- a blank never takes a
--- drawing's place, and two drawn rows under one slot are both kept -- and they
+-- drawing's place UNLESS it is that same letter with the drawing the two last
+-- agreed on taken off, which is somebody erasing it (「保存したなら空の文字に
+-- なるべき」 OWNER 2026-10-22), and two drawn rows under one slot are both
+-- kept -- and they
 -- need the rows one after another, so the alphabet is walked; it is the only
 -- slice where slice_made() can be true, and for every other slice the walk
 -- comes to exactly the query below.
 create or replace function slice_arr(kind text, mine json, theirs json, base json, later boolean)
 returns json language plpgsql immutable as $$
 declare
-  v_at jsonb := '{}'; v_out json[] := '{}'; v_x json; v_k text; v_s text; v_j int; v_i int; v_r json;
-  v_sides int[]; v_es json[]; v_ks text[];
+  v_at jsonb := '{}'; v_out json[] := '{}'; v_x json; v_y json; v_d json; v_b json;
+  v_k text; v_s text; v_j int; v_i int; v_r json;
+  v_sides int[]; v_es json[]; v_ks text[]; v_was jsonb := '{}';
 begin
   with b as (select slice_key(kind, e) k, e::jsonb v, o
                from json_array_elements(coalesce(base, '[]'::json)) with ordinality t(e, o)),
@@ -1026,6 +1030,12 @@ begin
     return v_r;
   end if;
 
+  -- What the two last agreed on, letter by letter.
+  select coalesce(jsonb_object_agg(k, v), '{}') into v_was from (
+    select distinct on (slice_key(kind, e)) slice_key(kind, e) k, e::jsonb v
+      from json_array_elements(coalesce(base, '[]'::json)) with ordinality t(e, o)
+     order by slice_key(kind, e), o desc) w;
+
   for v_i in 1..array_length(v_sides, 1) loop
     v_x := v_es[v_i]; v_k := v_ks[v_i];
     v_s := slice_slot(kind, v_x);
@@ -1034,11 +1044,20 @@ begin
     if v_j is null then
       v_at := v_at || jsonb_build_object(v_s, coalesce(array_length(v_out, 1), 0) + 1);
       v_out := v_out || v_x;
-    elsif not slice_made(kind, v_out[v_j]) and slice_made(kind, v_x) then
-      v_out[v_j] := v_x;
-    elsif slice_key(kind, v_out[v_j]) <> v_k and slice_made(kind, v_out[v_j]) and slice_made(kind, v_x) then
+      continue;
+    end if;
+    v_y := v_out[v_j];
+    if slice_made(kind, v_y) <> slice_made(kind, v_x) then
+      -- A blank and a drawing under one slot.
+      if slice_made(kind, v_x) then v_d := v_x; v_b := v_y; else v_d := v_y; v_b := v_x; end if;
+      if slice_key(kind, v_b) = slice_key(kind, v_d) and v_was -> slice_key(kind, v_d) = v_d::jsonb then
+        v_out[v_j] := v_b;
+      else
+        v_out[v_j] := v_d;
+      end if;
+    elsif slice_key(kind, v_y) <> v_k and slice_made(kind, v_y) then
       v_out := v_out || v_x;
-    elsif v_sides[v_i] = 2 and later and not (slice_made(kind, v_out[v_j]) and not slice_made(kind, v_x)) then
+    elsif v_sides[v_i] = 2 and later then
       v_out[v_j] := v_x;
     end if;
   end loop;
