@@ -1190,6 +1190,59 @@ const R = await pg.evaluate(() => {
     out.fails.push('the deleted letter\'s save buffer is still held -- it is ' +
       'measuring what somebody typed against a letter that no longer answers');
 
+
+  /* ---- the word you are deriving from, pressed on the new word's sheet --
+     Open a word, Edit, derive, and on the new word's sheet press the row of
+     the word it comes from (docs/BACKLOG.md, 2026-09-30, found by
+     taken-check). openWord() emptied the one draft both sheets share before
+     the move asked whether anything on them was unsaved, so the question
+     read a sheet that was no longer there and threw. Asked twice: with
+     nothing typed it goes without a word, and with something typed on the
+     new word's sheet it asks first and the typing is still there to answer
+     about. */
+  const drvThrew = []; let drvStep = '';
+  const drvErr = (e) => drvThrew.push(String(e && e.message || e));
+  window.addEventListener('error', (ev) => drvErr(ev.error || ev.message));
+  const drvGo = (typed) => {
+    start();
+    try {
+      drvStep = 'open'; openWord('kano'); screen();
+      drvStep = 'edit'; openEdit('kano'); screen();
+      drvStep = 'derive'; wdDerive(); drvStep = 'derived'; screen();
+      drvStep = 'press';
+      const at = here().r + ':' + here().a;
+      if (typed) { wEdit.nt = 'half a note'; screen(); }
+      openWord('kano');
+      const pop = (() => { const p = document.getElementById('pop');
+        return !!(p && /(^|\s)on(\s|$)/.test(p.className)); })();
+      if (!pop) screen();
+      return { at, now: here().r + ':' + here().a, pop,
+               kept: !!(wEdit && wEdit.nt === 'half a note') };
+    } catch (e) { drvErr(drvStep + ': ' + (e && e.stack || e)); return { at: '?', now: '?', pop: false, kept: false }; }
+  };
+  const drv0 = drvGo(false);
+  const drv0Threw = drvThrew.slice();
+  drvThrew.length = 0;
+  const drv1 = drvGo(true);
+  const drv1Threw = drvThrew.slice();
+  out.said.push('deriving from kano, then pressing kano on the new sheet: from ' + drv0.at +
+    ' to ' + drv0.now + ', threw ' + JSON.stringify(drv0Threw) + '; with a note typed: ' +
+    'to ' + drv1.now + ', asked ' + drv1.pop + ', the note still there ' + drv1.kept +
+    ', threw ' + JSON.stringify(drv1Threw));
+  if (drv0.at !== 'form:add:kano')
+    out.fails.push('deriving from kano did not open the new word\'s sheet (' + drv0.at +
+      ') -- this claim asked nothing');
+  if (drv0Threw.length || drv1Threw.length)
+    out.fails.push('pressing the word it comes from on the new word\'s sheet threw: ' +
+      JSON.stringify(drv0Threw.concat(drv1Threw)));
+  if (drv0.now !== 'form:word:kano' || drv0.pop)
+    out.fails.push('with nothing typed, pressing kano on the new word\'s sheet lands on ' +
+      drv0.now + (drv0.pop ? ' with a question up' : '') + ', not on kano\'s page');
+  if (!drv1.pop || !drv1.kept)
+    out.fails.push('with a note typed on the new word\'s sheet, pressing kano ' +
+      (drv1.pop ? '' : 'did not ask first') + (drv1.kept ? '' : (drv1.pop ? '' : ' and ') +
+      'threw the note away before anybody was asked'));
+
   return out;
 });
 

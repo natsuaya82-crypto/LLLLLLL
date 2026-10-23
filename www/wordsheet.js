@@ -1956,8 +1956,18 @@ HELP.rel=function(){
     helpStep(2, t('hp.rl.2'), t('hp.rl.2.d'))+
     helpPara(t('hp.rl.p'))};
 };
+/* THE MOVE FIRST, AND THE PAGE ON ARRIVAL -- the shape wdDerive() has. Both
+   sheets (a word's and a new word's) keep what was typed on them in one draft
+   (wEdit, addW), and this page has none, so opening it empties that draft.
+   Emptied at the press, it was gone before the move asked whether a sheet
+   being left had anything unsaved on it: the question read a draft that was
+   no longer there and threw, and what was typed went without anybody being
+   asked (docs/BACKLOG.md 2026-09-30). So a press somewhere else only moves,
+   and the page is built when the route is reached -- vForm() opens it through
+   FORM_OPEN.word, which is this, standing on it. */
 function openWord(hw){
   var w=findWord(hw); if(!w) return;
+  if(!(here().r==='form' && here().a==='word:'+w.hw)){ go('form', 'word:'+w.hw); return; }
   openHw=w.hw; addW=null; wEdit=null;
   openForm('word:'+w.hw, wOut(w.hw), '<div id="wd-view">'+wdViewHTML()+'</div>',
            function(){ geTiles(); },
