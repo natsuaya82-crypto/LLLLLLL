@@ -255,6 +255,24 @@ it is quoted, and where a decision has never been made the row in
 - Implementation status:
 ```
 
+### 2026-10-23 文法で形が変わる表意文字の仕組みは 1.0.4 の後で作る
+- Date: 2026-10-23
+- Area: 表意文字（logography）の書き方、キーボード
+- Decision: 文法（形）に合わせて表意文字の形が変わる仕組みは、1.0.4 には入れず、その後で作る（2026-09-30「1.0.4 で作る」を差し替え）。今は形ごとに別の字として描き、それぞれをキーに置く。
+- Reason: オーナーの言葉「表意文字は後でにしよう」（2026-10-23、「語を字に切る所・フォント・キーボードの変換表・投稿とカードを一緒に変えるので、すぐにはできない」への答え）。Reddit には 2026-09-30 に「1.0.4 で」と答えている。
+- Affected features: 表意文字、キーボード、文法。
+- Affected data: まだ決まっていない（印を後ろに付けるか重ねるかは、作りながらオーナーに見てもらう）。
+- Implementation status: まだ何も無い。
+
+### 2026-10-23 プライバシーポリシー：13 歳以上、メールでの削除は 30 日以内
+- Date: 2026-10-23
+- Area: プライバシーポリシーの案（tokine2 `claude/lingua-privacy2`、`lingua/privacy.html`）
+- Decision: 対象は 13 歳以上。アプリの外（メール）でのアカウント削除の依頼は 30 日以内に対応する。公開するのは英語版。日本語訳はオーナーが読むためのもの。
+- Reason: オーナーの言葉「13以上。日本語版は俺が読むように。」「30日以内で。」（2026-10-22・23）。メールの窓口は Google Play の決まり（アプリの外から削除を頼めること）のため。
+- Affected features: プライバシーポリシー。
+- Affected data: 無い。
+- Implementation status: 案は書いた。まだ公開していない（tokine2 の main に入れると tokinets.com に出る）。
+
 ### 2026-10-22 線を全部消して保存した字は、空の字になる
 - Date: 2026-10-22
 - Area: サーバーで字の並び（`letters`）を合わせる所（`slice_arr()`、`supabase/schema.sql`）
@@ -390,14 +408,8 @@ it is quoted, and where a decision has never been made the row in
 - 追記（同日）: DL した言語には、作った人が**描いていない字は出さない** ── 言語は a〜z・!?・数字の枠を持って生まれるので、描かれていない枠が人の言語の字の一覧に形の無い字（鉛筆の絵）として並んでいた。DL した人は描けないので要らない（「DLした言語はDLした分だけ入るんだからなんで鉛筆が出るの？」「書いてない文字が入る必要があるの？」）。作った人の言語のデータは変えない ── DL した側で出さないだけ。r157 で入った（CODE CONFIRMED のみ）── 「描いた」は `ltHasShape()`（描いた形か借りた字）、問いは `ltShown()`（`www/sound.js`）一つで、`ltSeen()` はそれで絞った一覧。字の部屋・検索・キーボードの型・無料の QWERTY（描いていない字のキーはローマ字のキー）・字を選ぶ一覧が聞く。字の無い音のセル（押すと字を作る）は `langLocked()` で描かない。`taken-check` 1f〜1i・6d が数える。
 - Implementation status: (1) は入った（`claude/r149-caps`、CODE CONFIRMED のみ）── Pro は `Infinity`（`wordCap()` と同じ形）、取ることの扉（~~`CAN.dl`~~）は無くなり、「一番上の段で満杯」（~~`planTopFull()`~~）も起きないので消した。`plan-check`・`dl-check`・`paid-check` が持つ。(2) の編集は既に止まっている（`langLocked()`）。外へ出す道と端末に置く物は r150 ── コード確認、実機未確認。一つの問い `langOut()`（`www/core.js`）を、ファイル（`ltFontOut`・`ltSvgSend`・`shMake`）、コピー（`postCopy`）、端末の写し（`slGot`）が聞く。`language_take` の答えはメモリだけ。カード（投稿・単語・例文、`cardSave`）と Lingua キーボードへ渡すこと（`sharePush`）は出口ではないので聞かない（上の追記）── 人の言語でも単語のカードが出て、キーボードはその言語の物が渡る。`theirs-check` が数える。前のビルドが端末に書いた人の言語の写しは消していない ── 消すかはオーナーの判断。
 
-### 2026-09-30 文法で形が変わる表意文字の仕組みを 1.0.4 で作る
-- Date: 2026-09-30
-- Area: 表意文字（logography）の書き方、キーボード
-- Decision: 文法（形）に合わせて表意文字の形が変わる仕組みを 1.0.4 で作る。今は形ごとに別の字として描き、それぞれをキーに置く。
-- Reason: オーナーの言葉「じゃあその仕組みは1.0.4で作るって伝えよう」（2026-09-30、Reddit の質問「Will be able to make keyboard with ideograms that change shape bcz of grammar?」への答え）。
-- Affected features: 表意文字、キーボード、文法。
-- Affected data: まだ決まっていない（形の決め方はオーナーに聞いてから）。
-- Implementation status: まだ何も無い。
+### 【差し替え済み 2026-10-23】文法で形が変わる表意文字の仕組みを 1.0.4 で作る
+- 差し替えた決定: 「文法で形が変わる表意文字の仕組みは 1.0.4 の後で作る」（2026-10-23）
 
 ### 2026-09-30 字が入ったキー二つを結合すると、左（上）が残る
 - Date: 2026-09-30
