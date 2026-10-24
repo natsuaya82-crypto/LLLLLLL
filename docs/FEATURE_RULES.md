@@ -255,6 +255,16 @@ it is quoted, and where a decision has never been made the row in
 - Implementation status:
 ```
 
+### 2026-10-24 タイムラインの控えは新しい 50 件
+- Date: 2026-10-24
+- Area: 電話に置くタイムラインの控え（`lingua.posts.<uid>`）
+- Decision: 電波がない時に見るための控えは、新しい順に 50 件。まだサーバーに届いていない自分の投稿は、50 件に入らなくても残す。投稿に入っている顔写真（`body.av`）はそのまま。
+- Reason: オーナーの言葉「控えは最新の50とかでいいやん」「アイコンを入れても最新の50で問題ないならそのままでいいよ」（2026-10-24、タイムラインで「The timeline is full」が出たことへの答え）。
+- Affected features: タイムライン（電波がない時）。
+- Affected data: 電話の控えの、51 件目より古い投稿が書かれなくなる。サーバーは何も動かない。
+- Affected docs: `docs/CHANGELOG.md` 2026-10-24。
+- Implementation status: `savePosts()` → `postsKept()`（`www/post.js`）、`copy-check` が持つ。実機は未確認。
+
 ### 2026-10-23 文法で形が変わる表意文字の仕組みは 1.0.4 の後で作る
 - Date: 2026-10-23
 - Area: 表意文字（logography）の書き方、キーボード

@@ -236,7 +236,9 @@ is emptied in the same turn the server's answer arrives
 (`wipeAllGo()` → `wipeHere()`, `www/settings.js`), and a press that lost its
 signal changed nothing anywhere — 「削除し切ってないと消えない」 OWNER
 2026-09-03. `lingua.posts` (`POSTS`) is **the copy of** the
-timeline and `lingua.drafts` (`DRAFTS`) **the copy of** what was written and not
+timeline — its newest `POST_KEEP` posts and any of this account's that
+has not reached the server (`postsKept()`, 「控えは最新の50とかでいいやん」
+OWNER 2026-10-24) — and `lingua.drafts` (`DRAFTS`) **the copy of** what was written and not
 sent — both live on the server, and both are read here so that the app works
 with no signal. A draft is the composer,
 kept: the line, the meaning, whom it answers, the pictures with their letters

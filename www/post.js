@@ -44,10 +44,29 @@ var POSTS=[];
    timeline that silently stops saving is a timeline that loses whatever was
    written after it filled up.
 
-   It says so instead. Nothing is deleted to make room -- pruning somebody's
-   own posts to fit one more is exactly what docs/DATA_SAFETY.md forbids. */
+   It says so instead.
+
+   WHAT IS WRITTEN IS THE NEWEST POST_KEEP, and nothing else of the timeline.
+   「控えは最新の50とかでいいやん」 OWNER 2026-10-24. This is the copy for
+   looking at with no signal, and every post lives on the server: the copy
+   used to be every post this phone had ever read, added to and never cut, so
+   it grew until the phone's allowance was full -- 167 posts on the server
+   came to 1.3 million characters, nine tenths of it the face each one
+   carries -- and then 「タイムラインがいっぱい」 came up on the timeline.
+   What is in memory is not cut; only what is written. A post that has not
+   reached the server (postUnsent()) is written whatever its age, because
+   this phone is the only place it is. */
+var POST_KEEP=50;
+function postsKept(){
+  var all=POSTS.slice(0), out=[], i, n=0;
+  all.sort(function(a, b){ return (Number(b.at) || 0)-(Number(a.at) || 0); });
+  for(i=0;i<all.length;i++)
+    if(postUnsent(all[i])) out.push(all[i]);
+    else if(n<POST_KEEP){ out.push(all[i]); n++; }
+  return out;
+}
 function savePosts(){
-  try{ acctPut('posts', POSTS); return true; }
+  try{ acctPut('posts', postsKept()); return true; }
   catch(e){ toast(t('post.full')); return false; }
 }
 /* ---- and these belong to an ACCOUNT, not to the phone --------------------

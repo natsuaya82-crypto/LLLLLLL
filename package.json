@@ -52,6 +52,7 @@
     "sheet": "node tools/sheet-check.mjs",
     "draft": "node tools/draft-check.mjs",
     "world": "node tools/world-check.mjs",
+    "copy": "node tools/copy-check.mjs",
     "take": "node tools/take-check.mjs",
     "theirs": "node tools/theirs-check.mjs",
     "taken": "node tools/taken-check.mjs",
